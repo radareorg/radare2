@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015-2016 - maijin */
+/* radare - LGPL3 - 2015-2017 - usr_share */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -10,16 +10,16 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	const ut8* buf_hdr = buf;
 	ut16 cksum1, cksum2;
 
-	if ((length & 0x8000) == 0x200) buf_hdr += 0x200;
+	if ((length & LOROM_PAGE_SIZE) == SMC_HEADER_SIZE) buf_hdr += SMC_HEADER_SIZE;
 
-	//determine if ROM is headered, and add a 0x200 gap if so. 
-	cksum1 = r_read_le16(buf_hdr + 0x7FDC);
-	cksum2 = r_read_le16(buf_hdr + 0x7FDE);
+	//determine if ROM is headered, and add a SMC_HEADER_SIZE gap if so. 
+	cksum1 = r_read_le16(buf_hdr + LOROM_HDR_LOC + 0x1C);
+	cksum2 = r_read_le16(buf_hdr + LOROM_HDR_LOC + 0x1E);
 
 	if (cksum1 == (ut16)~cksum2) return true;
 	
-	cksum1 = r_read_le16(buf_hdr + 0xFFDC);
-	cksum2 = r_read_le16(buf_hdr + 0xFFDE);
+	cksum1 = r_read_le16(buf_hdr + HIROM_HDR_LOC + 0x1C);
+	cksum2 = r_read_le16(buf_hdr + HIROM_HDR_LOC + 0x1E);
 	
 	if (cksum1 == (ut16)~cksum2) return true;
 	return false;
@@ -40,12 +40,12 @@ static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 
 	int hdroffset = 0;
-	if ((arch->size & 0x8000) == 0x200) hdroffset = 0x200;
+	if ((arch->size & LOROM_PAGE_SIZE) == SMC_HEADER_SIZE) hdroffset = SMC_HEADER_SIZE;
 
 	sfc_int_hdr sfchdr;
 	memset (&sfchdr, 0, SFC_HDR_SIZE);
 
-	int reat = r_buf_read_at (arch->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
+	int reat = r_buf_read_at (arch->buf, LOROM_HDR_LOC + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
 		eprintf ("Unable to read SFC/SNES header\n");
 		return NULL;
@@ -55,7 +55,7 @@ static RBinInfo* info(RBinFile *arch) {
 
 		// if the fixed 0x33 byte or the LoROM indication are not found, then let's try interpreting the ROM as HiROM
 		
-		reat = r_buf_read_at (arch->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
+		reat = r_buf_read_at (arch->buf, HIROM_HDR_LOC + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
 			eprintf ("Unable to read SFC/SNES header\n");
 			return NULL;
@@ -141,12 +141,12 @@ static RList* sections(RBinFile *arch) {
 	ut8 is_hirom = 0;
 	int i=0; //0x8000-long bank number for loops
 	
-	if ((arch->size & 0x8000) == 0x200) hdroffset = 0x200;
+	if ((arch->size & LOROM_PAGE_SIZE) == SMC_HEADER_SIZE) hdroffset = SMC_HEADER_SIZE;
 
 	sfc_int_hdr sfchdr;
 	memset (&sfchdr, 0, SFC_HDR_SIZE);
 
-	int reat = r_buf_read_at (arch->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
+	int reat = r_buf_read_at (arch->buf, LOROM_HDR_LOC + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
 		eprintf ("Unable to read SFC/SNES header\n");
 		return NULL;
@@ -156,7 +156,7 @@ static RList* sections(RBinFile *arch) {
 
 		// if the fixed 0x33 byte or the LoROM indication are not found, then let's try interpreting the ROM as HiROM
 		
-		reat = r_buf_read_at (arch->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
+		reat = r_buf_read_at (arch->buf, HIROM_HDR_LOC + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
 			eprintf ("Unable to read SFC/SNES header\n");
 			return NULL;
@@ -172,8 +172,6 @@ static RList* sections(RBinFile *arch) {
 	
 	if (!(ret = r_list_new ()))
 		return NULL;
-
-
 	if (is_hirom) {
 		
 		for (i=0; i < ((arch->size - hdroffset)/ 0x8000) ; i++) {
@@ -181,7 +179,6 @@ static RList* sections(RBinFile *arch) {
 			addrom(ret,"ROM",i,hdroffset + i*0x8000,0x400000 + (i*0x8000), 0x8000);
 			if (i % 2) addrom(ret,"ROM_MIRROR",i,hdroffset + i*0x8000,(i*0x8000), 0x8000);
 		}
-
 	} else {
 		for (i=0; i < ((arch->size - hdroffset)/ 0x8000) ; i++) {
 
@@ -288,15 +285,6 @@ static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RE
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
-	/*
-	RBinAddr *ptr = NULL;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = INES_HDR_SIZE;
-	ptr->vaddr = ROM_START_ADDRESS;
-	r_list_append (ret, ptr);
-	*/
 	return ret;
 }
 
