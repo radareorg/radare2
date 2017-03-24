@@ -516,10 +516,10 @@ R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
 
 /* debug session */
 R_API void r_debug_session_free (void *p) ;
-R_API int r_debug_session_list (RDebug *dbg);
-R_API int r_debug_session_add (RDebug *dbg);
-R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session);
-R_API int r_debug_session_set_idx (RDebug *dbg, int idx);
+R_API void r_debug_session_list (RDebug *dbg);
+R_API bool r_debug_session_add (RDebug *dbg);
+R_API void r_debug_session_set (RDebug *dbg, RDebugSession *session);
+R_API bool r_debug_session_set_idx (RDebug *dbg, int idx);
 R_API RDebugSession* r_debug_session_get (RDebug *dbg, ut64 addr);
 
 /* plugin pointers */

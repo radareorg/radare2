@@ -2,42 +2,41 @@
 #include <r_debug.h>
 
 R_API void r_debug_session_free (void *p) {
-	RDebugSession *session = (RDebugSession*)p;
-	free (session);
+  free (p);
 }
 
 static int r_debug_session_lastid (RDebug *dbg) {
   return r_list_length (dbg->sessions);
 }
 
-R_API int r_debug_session_list (RDebug *dbg) {
+R_API void r_debug_session_list (RDebug *dbg) {
   const char *comment;
   ut32 count = 0;
-	RListIter *iterse, *itersn;
-	RDebugSnap *snap;
+  RListIter *iterse, *itersn;
+  RDebugSnap *snap;
   RDebugSession *session;
-	r_list_foreach (dbg->sessions, iterse, session) {
+  r_list_foreach (dbg->sessions, iterse, session) {
     count = 0;
     dbg->cb_printf ("session:%2d\tat:0x%08"PFMT64x"\n", session->key.id, session->key.addr);
-	  r_list_foreach (session->memlist, itersn, snap) {
-		  comment = "";
-		  if (snap->comment && *snap->comment)
-			  comment = snap->comment;
-		  dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d crc: %x  --  %s\n",
-		                  count, snap->addr, snap->addr_end, snap->size, snap->crc, comment);
-		  count++;
+    r_list_foreach (session->memlist, itersn, snap) {
+      comment = "";
+      if (snap->comment && *snap->comment)
+        comment = snap->comment;
+        dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d crc: %x  --  %s\n",
+                      count, snap->addr, snap->addr_end, snap->size, snap->crc, comment);
+      count++;
     }
-	}
+  }
 }
 
-R_API int r_debug_session_add (RDebug *dbg) {
-	RDebugSession *session;
+R_API bool r_debug_session_add (RDebug *dbg) {
+  RDebugSession *session;
   RDebugSnap *snap;
   RListIter *iter, *start, *iterr;
   ut64 addr;
   int i;
-	session = R_NEW0 (RDebugSession);
-  if (!session) return 0;
+  session = R_NEW0 (RDebugSession);
+  if (!session) return false;
 
   addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
   session->key = (RDebugKey) { addr, r_debug_session_lastid (dbg) };
@@ -64,10 +63,10 @@ R_API int r_debug_session_add (RDebug *dbg) {
   }
 
   r_list_append (dbg->sessions, session);
-  return 1;
+  return true;
 }
 
-R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session) {
+R_API void r_debug_session_set (RDebug *dbg, RDebugSession *session) {
   RDebugSnap *snap;
   RRegArena *arena;
   RListIter *iter, *iterr;
@@ -85,25 +84,24 @@ R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session) {
   r_list_foreach (session->memlist, iter, snap) {
     r_debug_snap_set (dbg, snap);
   }
-  return 1;
 }
 
-R_API int r_debug_session_set_idx (RDebug *dbg, int idx) {
+R_API bool r_debug_session_set_idx (RDebug *dbg, int idx) {
   RDebugSession *session;
   RListIter *iter;
   ut32 count = 0;
 
   if (!dbg || idx < 0)
-    return 0;
+    return false;
 
   r_list_foreach (dbg->sessions, iter, session) {
     if (count == idx) {
       r_debug_session_set (dbg, session);
-      return 1;
+      return true;
     }
     count++;
   }
-  return 0;
+  return false;
 }
 
 R_API RDebugSession* r_debug_session_get (RDebug *dbg, ut64 addr) {
