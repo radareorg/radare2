@@ -577,8 +577,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (f && *f->name && strncmp (f->name, "sect", 4)) {
 					fcn->name = strdup (f->name);
 				} else {
-					fcn->name = r_str_newf ("%s.%08"PFMT64x,
-						r_anal_fcn_type_tostring (fcn->type), fcn->addr);
+					const char *fcnpfx = fcnpfx = r_anal_fcn_type_tostring (fcn->type);
+					if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
+						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+					}
+					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
 				}
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");
