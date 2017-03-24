@@ -2255,9 +2255,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}
 						}
+					}
+					if (entry && entry != UT64_MAX) {
 						r_core_seek (core, entry, 1);
 					}
-					//r_core_cmd (core, "s entry0", 0);
 				}
 			}
 			break;
