@@ -468,9 +468,14 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 					strcpy (str, "0x");
 					p = str + 2;
 				}
-				for (i = 0; i < len; i++) {
+				const int bytes = (len > 40)? 40: len;
+				for (i = 0; i < bytes; i++) {
 					sprintf (p, "%02x", buf[i]);
 					p += 2;
+				}
+				if (bytes != len) {
+					strcpy (p, "...");
+					p += 3;
 				}
 				*p = 0;
 			} else {
@@ -2801,6 +2806,48 @@ reread:
 		free (arg);
 	}
 	break;
+	case 'f': /* search file  "/f [file] ([offset] ([size])) */
+		if (input[1] == ' ') {
+			char *arg = strdup (input + 2);
+			char *off = strchr (arg, ' ');
+			char *sze = NULL;
+			int size = 0;
+			int offset = 0;
+			if (off) {
+				*off++ = 0;
+				offset = r_num_math (core->num, off);
+				sze = strchr (off, ' ');
+				if (sze) {
+					size = r_num_math (core->num, sze);
+				}
+			}
+			if (offset > size) {
+				eprintf ("Invalid offset or size\n");
+			} else {
+				ut8 *buf = (ut8*)r_file_slurp (arg, &size);
+				if (buf) {
+					RSearchKeyword *kw;
+					r_search_reset (core->search, R_SEARCH_KEYWORD);
+					r_search_set_distance (core->search, (int)
+							r_config_get_i (core->config, "search.distance"));
+					kw = r_search_keyword_new (buf + offset, size - offset, NULL, 0, NULL);
+					if (kw) {
+						r_search_kw_add (core->search, kw);
+						// eprintf ("Searching %d bytes...\n", kw->keyword_length);
+						r_search_begin (core->search);
+						dosearch = true;
+					} else {
+						eprintf ("no keyword\n");
+					}
+					free (buf);
+				} else {
+					eprintf ("Cannot open '%s'\n", arg);
+				}
+			}
+		} else {
+			eprintf ("Usage: /f [file] ([offset] ([size]))\n");
+		}
+		break;
 	case 'x': /* search hex */
 		if (input[1] == '?') {
 			const char *help_msg[] = {
@@ -2940,7 +2987,8 @@ again:
 			"/C", "[ar]", "search for crypto materials",
 			"/d", " 101112", "search for a deltified sequence of bytes",
 			"/e", " /E.F/i", "match regular expression",
-			"/E", " esil-expr", "offset matching given esil expressions %%= here ",
+			"/E", " esil-expr", "offset matching given esil expressions %%= here",
+			"/f", " file [off] [sz]", "search contents of file with offset and size",
 			"/i", " foo", "search for string 'foo' ignoring case",
 			"/m", " magicfile", "search for matching magic file (use blocksize)",
 			"/o", "", "show offset of previous instruction",
