@@ -78,7 +78,19 @@ R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr) {
 	return NULL;
 }
 
-R_API int r_debug_snap_set (RDebug *dbg, int idx) {
+R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap) {
+	RListIter *iter;
+	RDebugMap *map;
+	eprintf ("Writing %d bytes to 0x%08"PFMT64x"...\n", snap->size, snap->addr);
+	r_list_foreach (dbg->maps, iter, map) {
+		if (snap->addr <= map->addr && map->addr_end <= snap->addr_end) {
+			dbg->iob.write_at (dbg->iob.io, map->addr, snap->data, map->addr_end - map->addr);
+		}
+	}
+	return 1;
+}
+
+R_API int r_debug_snap_set_idx (RDebug *dbg, int idx) {
 	RDebugSnap *snap;
 	RListIter *iter;
 	ut32 count = 0;
@@ -86,8 +98,7 @@ R_API int r_debug_snap_set (RDebug *dbg, int idx) {
 		return 0;
 	r_list_foreach (dbg->snaps, iter, snap) {
 		if (count == idx) {
-			eprintf ("Writing %d bytes to 0x%08"PFMT64x"...\n", snap->size, snap->addr);
-			dbg->iob.write_at (dbg->iob.io, snap->addr, snap->data, snap->size);
+			r_debug_snap_set (dbg, snap);
 			break;
 		}
 		count++;
