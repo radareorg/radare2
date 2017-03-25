@@ -389,7 +389,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) *ok = 1;
-		ut8 buf[sizeof (ut64)] = {0};
+		ut8 buf[sizeof (ut64)] = R_EMPTY;
 		(void)r_io_read_at (core->io, n, buf, refsz);
 		switch (refsz) {
 		case 8:

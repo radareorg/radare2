@@ -2797,7 +2797,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	ut64 addr_end;
 	AeaStats stats;
 	const char *esilstr;
-	RAnalOp aop = {0};
+	RAnalOp aop = R_EMPTY;
 	ut8 *buf;
 	RList* regnow;
 	if (!core)
@@ -3284,7 +3284,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_set_asm_configs (core, new_arch, new_bits, segoff);
 		}
 		int ret, bufsz;
-		RAnalOp aop = {0};
+		RAnalOp aop = R_EMPTY;
 		bufsz = r_hex_str2bin (hex, (ut8*)hex);
 		ret = r_anal_op (core->anal, &aop, core->offset,
 			(const ut8*)hex, bufsz);

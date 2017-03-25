@@ -6,7 +6,7 @@
 #include <r_core.h>
 #include <spp/spp.h>
 
-static bool is_valid_project_name (const char *name) {
+static bool is_valid_project_name(const char *name) {
 	int i;
 	if (r_str_endswith (name, ".zip")) {
 		return false;
@@ -26,7 +26,7 @@ static bool is_valid_project_name (const char *name) {
 		if (name[i] >= 'A' && name[i] <= 'Z') {
 			continue;
 		}
-		if (IS_DIGIT(name[i])) {
+		if (IS_DIGIT (name[i])) {
 			continue;
 		}
 		return false;
@@ -44,7 +44,7 @@ static char *projectScriptPath(RCore *core, const char *file) {
 			return NULL;
 		}
 		prjfile = r_file_abspath (r_config_get (
-			core->config, "dir.projects"));
+				core->config, "dir.projects"));
 		prjfile = r_str_append (prjfile, R_SYS_DIR);
 		prjfile = r_str_append (prjfile, file);
 		if (!r_file_exists (prjfile) || r_file_is_directory (prjfile)) {
@@ -63,7 +63,7 @@ static char *projectScriptPath(RCore *core, const char *file) {
 
 static int projectInit(RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (
-		core->config, "dir.projects"));
+			core->config, "dir.projects"));
 	int ret = r_sys_mkdirp (prjdir);
 	if (!ret) {
 		eprintf ("Cannot mkdir dir.projects\n");
@@ -122,7 +122,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 			// todo. escape string
 			if (r_core_is_project (core, foo)) {
 				r_cons_printf ("%s\"%s\"",
-					isfirst ?"":",", foo);
+					isfirst? "": ",", foo);
 				isfirst = false;
 			}
 		}
@@ -163,7 +163,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			RList *files = r_sys_dir (path);
 			r_list_foreach (files, iter, f) {
 				char *filepath = r_str_append (strdup (path), R_SYS_DIR);
-				filepath =r_str_append (filepath, f);
+				filepath = r_str_append (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
 					r_file_rm (filepath);
@@ -205,7 +205,7 @@ static bool projectLoadRop(RCore *core, const char *prjfile) {
 		// XXX
 		eprintf ("ENDS WITH\n");
 		path = strdup (prjfile);
-		path [strlen (path) - 3] = 0;
+		path[strlen (path) - 3] = 0;
 	} else if (r_file_fexists ("%s" R_SYS_DIR "rc", prjDir, prjfile)) {
 		path = r_str_newf ("%s" R_SYS_DIR, prjDir, prjfile);
 	} else {
@@ -329,7 +329,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 	ps->core = core;
 	ps->prjName = strdup (prjName);
 	ps->rcPath = strdup (rcPath);
-	RThread* th = r_th_new (projectLoadBackground, ps, false);
+	RThread *th = r_th_new (projectLoadBackground, ps, false);
 	r_th_start (th, true);
 	return th;
 }
@@ -351,7 +351,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		return false;
 	}
 	filepath = r_core_project_info (core, prj);
-	//eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
+	// eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
 	/* if it is not an URI */
 	if (!filepath) {
 		eprintf ("Cannot retrieve information for project '%s'\n", prj);
@@ -369,7 +369,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	}
 	oldbin = strdup (r_config_get (core->config, "file.path"));
 	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
-		//eprintf ("Reloading project\n");
+		// eprintf ("Reloading project\n");
 		askuser = 0;
 #if 0
 		free (prj);
@@ -404,7 +404,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		}
 	}
 	if (thready) {
-		(void)r_core_project_load_bg (core, prjfile, prj);
+		(void) r_core_project_load_bg (core, prjfile, prj);
 		ret = true;
 	} else {
 		/* load sdb stuff in here */
@@ -562,7 +562,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
-			"s 0x%08"PFMT64x"\n", core->offset);
+			"s 0x%08"PFMT64x "\n", core->offset);
 		r_cons_flush ();
 	}
 
@@ -714,11 +714,11 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 	return ret;
 }
 
-R_API char *r_core_project_notes_file (RCore *core, const char *prjName) {
+R_API char *r_core_project_notes_file(RCore *core, const char *prjName) {
 	char *notes_txt;
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s"R_SYS_DIR"%s"R_SYS_DIR"notes.txt", prjpath, prjName);
+	notes_txt = r_str_newf ("%s"R_SYS_DIR "%s"R_SYS_DIR "notes.txt", prjpath, prjName);
 	free (prjpath);
 	return notes_txt;
 }
@@ -759,7 +759,7 @@ static bool projectLoadXrefs(RCore *core, const char *prjName) {
 		sdb_free (DB);
 	}
 	const char *xrefs_path = r_file_fexists ("%s" R_SYS_DIR "xrefs.sdb", path)
-		? "xrefs.sdb": "xrefs";
+	                         ? "xrefs.sdb": "xrefs";
 	DB = sdb_new (path, xrefs_path, 0);
 	if (!DB) {
 		free (db);
@@ -777,8 +777,8 @@ R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcp
 	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
 	const bool scr_interactive = r_config_get_i (core->config, "scr.interactive");
 	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
-	(void)projectLoadRop (core, prjName);
-	(void)projectLoadXrefs (core, prjName);
+	(void) projectLoadRop (core, prjName);
+	(void) projectLoadXrefs (core, prjName);
 	bool ret = r_core_cmd_file (core, rcpath);
 	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_i (core->config, "scr.interactive", scr_interactive);

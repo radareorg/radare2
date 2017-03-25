@@ -2410,7 +2410,7 @@ static bool isDisasmPrint(int mode) {
 static void handleHints(RCore *core) {
 	//TODO extend for more anal hints
 	int i = 0;
-	char ch[64] = {0};
+	char ch[64] = R_EMPTY;
 	const char *lines[] = {"[dh]- Define anal hint:"
 		," b [16,32,64]     set bits hint"
 		, NULL};

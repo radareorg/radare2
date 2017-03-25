@@ -894,7 +894,7 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	RBinSection *s;
 	RCore *core = r_core_new ();
 	RList * sects = NULL;
-	char buf[20] = {0};
+	char buf[20] = R_EMPTY;
 	int offset, err, i, j = 0;
 
 	if (!core) {
@@ -3354,7 +3354,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		break;
 	case 's': // "dss"
 		{
-			char delb[128] = {0};
+			char delb[128] = R_EMPTY;
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
@@ -3376,7 +3376,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		}
 	case 'o': // "dso"
 		{
-			char delb[128] = {0};
+			char delb[128] = R_EMPTY;
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);

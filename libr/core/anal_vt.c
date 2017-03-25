@@ -43,7 +43,7 @@ static int valueInTextSection(RCore *core, ut64 curAddress) {
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {
-	RAsmOp asmop = {0};
+	RAsmOp asmop = R_EMPTY;
 	RAnalRef *xref;
 	RListIter *xrefIter;
 	ut8 buf[VTABLE_BUFF_SIZE];

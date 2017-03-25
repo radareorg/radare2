@@ -513,7 +513,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						break;
 					}
 				} else if (type == 's') { //Cs
-					char tmp[256] = {0};
+					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
 					name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);

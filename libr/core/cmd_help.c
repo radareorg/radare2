@@ -76,7 +76,7 @@ R_API void r_core_clippy(const char *msg) {
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128] = {0};
+	char *p, out[128] = R_EMPTY;
 	ut64 n, n2;
 	int i;
 	RList *tmp;

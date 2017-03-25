@@ -8,7 +8,9 @@
 #include <r_list.h>
 #include <stdio.h>
 
-static RCorePlugin *cmd_static_plugins[] = { R_CORE_STATIC_PLUGINS };
+static RCorePlugin *cmd_static_plugins[] = {
+	R_CORE_STATIC_PLUGINS
+};
 
 R_API int r_core_plugin_deinit(RCmd *cmd) {
 	RListIter *iter;
@@ -38,7 +40,7 @@ R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 R_API int r_core_plugin_init(RCmd *cmd) {
 	int i;
 	cmd->plist = r_list_newf (NULL); // memleak or dblfree
-	for (i=0; cmd_static_plugins[i]; i++) {
+	for (i = 0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
 			eprintf ("Error loading cmd plugin\n");
 			return false;

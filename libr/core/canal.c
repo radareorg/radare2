@@ -1442,7 +1442,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 #define FMT_GV 1
 #define FMT_JS 2
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
-	RAnalFunction fakefr = {0};
+	RAnalFunction fakefr = R_EMPTY;
 	const char *font = r_config_get (core->config, "graph.font");
 	const char *format = r_config_get (core->config, "graph.format");
 	int is_html = r_cons_singleton ()->is_html;
@@ -2416,7 +2416,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
 	int ret, i, count = 0;
-	RAnalOp op = {0};
+	RAnalOp op = R_EMPTY;
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
 	// TODO: get current section range here or gtfo
@@ -3362,7 +3362,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	ut64 size;
 	int idx;
 	RAnalEsil esil_cpy;
-	RAnalOp op = {0};
+	RAnalOp op = R_EMPTY;
 	RAnalFunction *fcn = NULL;
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
@@ -3472,7 +3472,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 #if 0
 	RAsmOp asmop;
 #endif
-	RAnalOp op = {0};
+	RAnalOp op = R_EMPTY;
 	ut8 *buf = NULL;
 	bool end_address_set = false;
 	int i, iend;
