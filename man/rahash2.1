@@ -55,7 +55,7 @@ Show result using OpenSSH's VisualHostKey randomart algorithm
 .It Fl s Ar string
 Hash this string instead of using the 'source' and 'hash-file' arguments.
 .It Fl S Ar [^]s:string|hexstr
-Set seed to hash with, use ^to prefix seed, otherwise its suffixed.
+Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed is just a dash '-' it will read from stdin, this is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
 .It Fl f Ar from
 Start hashing at given address
 .It Fl t Ar to

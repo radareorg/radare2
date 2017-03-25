@@ -38,6 +38,14 @@ static void do_hash_seed(const char *seed) {
 		return;
 	}
 	_s = &s;
+	if (!strcmp (seed, "-")) {
+		s.buf = (ut8 *)r_stdin_slurp (&s.len);
+		return;
+	}
+	if (seed[0] == '@') {
+		s.buf = (ut8 *)r_file_slurp (seed + 1, &s.len);
+		return;
+	}
 	s.buf = (ut8 *) malloc (strlen (seed) + 128);
 	if (!s.buf) {
 		_s = NULL;
@@ -287,6 +295,7 @@ static int do_help(int line) {
 		" -i num      repeat hash N iterations\n"
 		" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
 		" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
+		"             (- will slurp the key from stdin, the @ prefix points to a file\n"
 		" -k          show hash using the openssh's randomkey algorithm\n"
 		" -q          run in quiet mode (-qq to show only the hash)\n"
 		" -L          list all available algorithms (see -a)\n"
