@@ -617,7 +617,14 @@ static const char *radare_argv[] = {
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
 	"pfj", "pfj.", "pfv", "pfv.",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
-	"#!pipe", "z", "zf", "zF", "zFd", "zh", "zn", "zn-",
+	"z", "z*", "zj", "z-", "z-*",
+	"zaa", "zaaf", "zaaF", "zae", "zaef", "zaeF", "zam", "zamf", "zamF",
+	"zo", "zoz", "zos",
+	"zfd", "zfs", "zfz",
+	"z/", "z/*",
+	"zc",
+	"zs", "zs+", "zs-", "zs-*", "zsr",
+	"#!pipe",
 	NULL
 };
 
@@ -829,7 +836,12 @@ static int autocomplete(RLine *line) {
 		     !strncmp (line->buffer.data, "oc ", 3) ||
 		     !strncmp (line->buffer.data, "r2 ", 3) ||
 		     !strncmp (line->buffer.data, "cd ", 3) ||
-		     !strncmp (line->buffer.data, "zF ", 3) ||
+		     !strncmp (line->buffer.data, "zo ", 3) ||
+		     !strncmp (line->buffer.data, "zoz ", 4) ||
+		     !strncmp (line->buffer.data, "zos ", 4) ||
+		     !strncmp (line->buffer.data, "zfd ", 4) ||
+		     !strncmp (line->buffer.data, "zfs ", 4) ||
+		     !strncmp (line->buffer.data, "zfz ", 4) ||
 		     !strncmp (line->buffer.data, "on ", 3) ||
 		     !strncmp (line->buffer.data, "op ", 3) ||
 		     !strncmp (line->buffer.data, ". ", 2) ||
@@ -1000,6 +1012,28 @@ openfile:
 				if (i + 1 < TMP_ARGV_SZ) {
 					tmp_argv[i++] = "*";
 				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "zs ", 3)) {
+			const char *msg = line->buffer.data + 3;
+			RSpaces zs = core->anal->zign_spaces;
+			int j, i = 0;
+			for (j = 0; j < R_SPACES_MAX; j++) {
+				if (zs.spaces[j]) {
+					if (i == TMP_ARGV_SZ - 1) {
+						break;
+					}
+					if (!strncmp (msg, zs.spaces[j], strlen (msg))) {
+						if (i + 1 < TMP_ARGV_SZ) {
+							tmp_argv[i++] = zs.spaces[j];
+						}
+					}
+				}
+			}
+			if (strlen (msg) == 0 && i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = "*";
 			}
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
