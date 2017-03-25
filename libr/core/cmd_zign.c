@@ -179,6 +179,7 @@ exit_case_fcn:
 			RListIter *iter = NULL;
 			int minzlen = r_config_get_i (core->config, "zign.min");
 			int maxzlen = r_config_get_i (core->config, "zign.max");
+			int count = 0;
 
 			r_cons_break_push (NULL, NULL);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -187,9 +188,12 @@ exit_case_fcn:
 				}
 				if (!addFcnBytes (core, fcni, NULL, type, minzlen, maxzlen)) {
 					eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
+					continue;
 				}
+				count++;
 			}
 			r_cons_break_pop ();
+			eprintf ("generated zignatures: %d\n", count);
 		}
 		break;
 	case '?':
@@ -366,6 +370,7 @@ exit_case_fcn:
 		{
 			RAnalFunction *fcni = NULL;
 			RListIter *iter = NULL;
+			int count = 0;
 
 			r_cons_break_push (NULL, NULL);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -374,9 +379,12 @@ exit_case_fcn:
 				}
 				if (!addFcnMetrics (core, fcni, NULL)) {
 					eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
+					continue;
 				}
+				count++;
 			}
 			r_cons_break_pop ();
+			eprintf ("generated zignatures: %d\n", count);
 		}
 		break;
 	case '?':
