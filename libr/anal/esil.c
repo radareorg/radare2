@@ -210,6 +210,13 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
+	if (esil->cmd_mdev && esil->mdev_range) {
+		if (r_str_range_in (esil->mdev_range, addr)) {
+			if (esil->cmd (esil, esil->cmd_mdev, addr, 0)) {
+				return true;
+			}
+		}
+	}
 	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 }
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -250,6 +257,13 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
+	}
+	if (esil->cmd_mdev && esil->mdev_range) {
+		if (r_str_range_in (esil->mdev_range, addr)) {
+			if (esil->cmd (esil, esil->cmd_mdev, addr, 1)) {
+				return true;
+			}
+		}
 	}
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
 	if (ret != len) {

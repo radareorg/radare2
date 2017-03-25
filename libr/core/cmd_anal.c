@@ -2277,7 +2277,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
-R_API int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int a1, int a2);
+R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	// Stepping
 	int ret;
@@ -3129,9 +3130,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				const char *s = r_config_get (core->config, "cmd.esil.intr");
 				if (s) {
 					char *my = strdup (s);
-					if (my)
+					if (my) {
 						r_config_set (core->config, "cmd.esil.intr", my);
-					free (my);
+						free (my);
+					}
 				}
 			}
 			break;

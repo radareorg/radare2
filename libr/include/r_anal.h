@@ -1012,7 +1012,9 @@ typedef struct r_anal_esil_t {
 	RAnalReil *Reil;
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when an interrupt occurs
-	int (*cmd)(ESIL *esil, const char *name, int a0, int a1);
+	char *cmd_mdev; // r2 (external) command to run when an interrupt occurs
+	char *mdev_range; // string containing the r_str_range to match for read/write accesses
+	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 } RAnalEsil;
 

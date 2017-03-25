@@ -976,10 +976,10 @@ static int cb_hexcomments(void *user, void *data) {
 	return true;
 }
 
-R_API int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int a1, int a2) {
+R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
-		r_core_cmdf (core, "%s %d %d", cmd, a1, a2);
+		r_core_cmdf (core, "%s %"PFMT64d" %" PFMT64d, cmd, a1, a2);
 		return true;
 	}
 	return false;
@@ -991,6 +991,25 @@ static int cb_cmd_esil_intr(void *user, void *data) {
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		core->anal->esil->cmd_intr = node->value;
+	}
+	return true;
+}
+
+static int cb_mdevrange(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->mdev_range = node->value;
+	}
+	return true;
+}
+
+static int cb_cmd_esil_mdev(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		core->anal->esil->cmd_mdev = node->value;
 	}
 	return true;
 }
@@ -2043,6 +2062,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.visual", "", "Replace current print mode");
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
 
+	SETCB("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
 	SETCB("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
 
@@ -2136,6 +2156,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("esil.romem", "false", "Set memory as read-only for ESIL");
 	SETPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
 	SETPREF("esil.nonull", "false", "Prevent memory read, memory write at null pointer");
+	SETCB("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
 
 	/* scr */
 #if __EMSCRIPTEN__
