@@ -2617,8 +2617,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 				ALIGN;
-				ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, p,
-						*flag ? " ; " : "", flag, nl);
+				if (ds->opstr && *flag && strstr (ds->opstr, flag)) {
+					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, p, nl);
+				} else {
+					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, p,
+							*flag ? " ; " : "", flag, nl);
+				}
 			} else {
 				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
