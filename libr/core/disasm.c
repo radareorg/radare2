@@ -2617,7 +2617,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 				ALIGN;
-				if (*flag && strstr (ds->opstr, flag)) {
+				if (ds->opstr && *flag && strstr (ds->opstr, flag)) {
 					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, p, nl);
 				} else {
 					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, p,
