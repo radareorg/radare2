@@ -316,7 +316,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 
 		if (zfo) {
 			zfo->io_backref = io;
-			res = r_io_desc_new (&r_io_plugin_zip, zfo->fd,
+			res = r_io_desc_new (io, &r_io_plugin_zip,
 				zfo->name, rw, mode, zfo);
 		}
 		r_list_append (list_fds, res);
@@ -473,14 +473,14 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			eprintf ("Warning: File did not exist, creating a new one.\n");
 		}
 		zfo->io_backref = io;
-		res = r_io_desc_new (&r_io_plugin_zip, zfo->fd,
+		res = r_io_desc_new (io, &r_io_plugin_zip,
 			zfo->name, rw, mode, zfo);
 	}
 
 	if (!res) {
 		eprintf ("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
-		//free (zfo); zfo is already freed by r_io_desc_new
+		//free (zfo); zfo is already freed by r_io_desc_new	//WTF
 		r_io_desc_free (res);
 		res = NULL;
 	}

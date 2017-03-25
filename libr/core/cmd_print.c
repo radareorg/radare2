@@ -2312,7 +2312,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	if (totalsize == UT64_MAX) {
 		if (core->file && core->io) {
-			totalsize = r_io_desc_size (core->io, core->file->desc);
+			totalsize = r_io_desc_size (core->file->desc);
 			if ((st64) totalsize < 1) {
 				totalsize = -1;
 			}
@@ -2510,7 +2510,7 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 	for (i = 0; i < len; i += step) {
 		delta = (st32 *) (buf + i);
 		addr = offset + *delta;
-		if (!r_io_is_valid_offset (core->io, addr, 0)) {
+		if (!r_io_is_valid_real_offset (core->io, addr, 0)) {
 			break;
 		}
 		if (mode == '*') {
@@ -2744,8 +2744,8 @@ static inline int cmd_pxb_k(const ut8 *buffer, int x) {
 
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
-	ut64 off, from, to, at, ate, piece;
-	RCore *core = (RCore *) data;
+	ut64 off, from, to, at, ate, piece, fsz = 0;
+	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
 	ut64 tmpseek = UT64_MAX;
 	RCoreAnalStats *as;
@@ -2970,7 +2970,7 @@ static int cmd_print(void *data, const char *input) {
 					RIOSection *s = r_io_section_vget (core->io, at);
 					if (use_color) {
 						if (s) {
-							if (s->flags & 1) {
+							if (s->flags & R_IO_EXEC) {
 								r_cons_print (Color_BGBLUE);
 							} else {
 								r_cons_print (Color_BGGREEN);
@@ -2993,9 +2993,26 @@ static int cmd_print(void *data, const char *input) {
 						r_cons_memcat ("_", 1);
 					}
 				}
+			}
+		}
+		if (fsz < 1) {
+			fsz = (core->file && core->io)? r_io_desc_size (core->file->desc): 0;
+		}
+#if 0
+		if (nbsz) {
+			ut64 obsz = core->blocksize;
+			switch (input1) {
+			case 'p':
+			case 'e':
+				if (fsz==UT64_MAX) {
+					eprintf ("Cannot determine file size\n");
+					goto beach;
+				}
+				nbsz = fsz / nbsz;
 				break;
 			}
 		}
+#endif
 		switch (mode) {
 		case 'j':
 			r_cons_strcat ("]}\n");
@@ -3729,7 +3746,8 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 		}
 			break;
-		case 'j': // "psj"
+#if 0
+		case 'j':
 			if (l > 0) {
 				char *str, *type;
 				ut64 vaddr;
@@ -3769,7 +3787,8 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
-		case 'i': // psi
+#endif
+		case 'i': //psi
 			if (l > 0) {
 				ut8 *buf = malloc (1024);
 				int delta = 512;

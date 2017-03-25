@@ -1860,10 +1860,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'g':
 			if (core->io->va) {
-				ut64 offset = r_io_section_get_vaddr (core->io, 0);
-				if (offset == -1) {
-					offset = 0;
-				}
+				ut64 offset = r_io_section_get_paddr_at (core->io, 0LL);
+				offset = offset != UT64_MAX ? offset : 0LL;
 				r_core_seek (core, offset, 1);
 			} else {
 				r_core_seek (core, 0, 1);
@@ -1875,22 +1873,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			int scols = r_config_get_i (core->config, "hex.cols");
 			if (core->file) {
 				if (core->io->va) {
-					ut64 offset = r_io_section_get_vaddr (core->io, 0);
-					if (offset == UT64_MAX) {
-						offset = r_io_desc_size (core->io,
-							core->file->desc)
-						- core->blocksize + 2 * scols;
+					RIOSection *sect = r_io_section_get (core->io, 0LL);
+					if (!sect) {
+						offset = r_io_desc_size (core->file->desc) - core->blocksize + 2 * scols;
 						ret = r_core_seek (core, offset, 1);
 					} else {
-						offset += r_io_desc_size (core->io,
-							core->file->desc)
-						- core->blocksize + 2 * scols;
+						offset = sect->vaddr + r_io_desc_size (core->file->desc)
+									- core->blocksize + 2 * scols;
 						ret = r_core_seek (core, offset, 1);
 					}
 				} else {
-					ret = r_core_seek (core,
-						r_io_desc_size (core->io, core->file->desc)
-						- core->blocksize + 2 * scols, 1);
+					ret = r_core_seek (core, r_io_desc_size (core->file->desc)
+					  			- core->blocksize + 2 * scols, 1);
 				}
 			} else {
 				ret = -1;
@@ -1959,80 +1953,83 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 			}
-			break;
-		case 'J':
-			if (core->print->cur_enabled) {
-				cursor_nextrow (core, true);
-			} else {
-				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
-					ut64 addr = core->print->screen_bounds;
-					if (core->io->pava) {
-						addr = core->offset + 32;
-					} else {
-						if (core->print->screen_bounds == core->offset) {
-							addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
-						}
-					}
-					r_core_seek (core, addr, 1);
+		break;
+	case 'J':
+		if (core->print->cur_enabled) {
+			cursor_nextrow (core, true);
+		} else {
+			if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
+				ut64 addr = core->print->screen_bounds;
+/*				if (core->io->pava) {
+					addr = core->offset + 32;
 				} else {
-					r_core_seek (core, core->offset + obs, 1);
+*/					
+				if (core->print->screen_bounds == core->offset) {
+					addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
 				}
-			}
-			break;
-		case 'k':
-			if (core->print->cur_enabled) {
-				cursor_prevrow (core, false);
+//				}
+				r_core_seek (core, addr, 1);
 			} else {
-				if (r_config_get_i (core->config, "scr.wheelnkey")) {
-					r_core_cmd0 (core, "sp");
-				} else {
-					int times = wheelspeed;
-					if (times < 1) {
-						times = 1;
-					}
-					while (times--) {
-						if (isDisasmPrint (core->printidx)) {
-							RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-							if (f && f->folded) {
-								cols = core->offset - f->addr; // + f->size;
-								if (cols < 1) {
-									cols = 4;
-								}
-							} else {
-								cols = prevopsz (core, core->offset);
+				r_core_seek (core, core->offset + obs, 1);
+			}
+		}
+		break;
+	case 'k':
+		if (core->print->cur_enabled) {
+			cursor_prevrow (core, false);
+		} else {
+			if (r_config_get_i (core->config, "scr.wheelnkey")) {
+				r_core_cmd0 (core, "sp");
+			} else {
+				int times = wheelspeed;
+				if (times < 1) {
+					times = 1;
+				}
+				while (times--) {
+					if (isDisasmPrint (core->printidx)) {
+						RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+						if (f && f->folded) {
+							cols = core->offset - f->addr; // + f->size;
+							if (cols < 1) {
+								cols = 4;
 							}
+						} else {
+							cols = prevopsz (core, core->offset);
 						}
-						r_core_seek_delta (core, -cols);
 					}
+					r_core_seek_delta (core, -cols);
 				}
 			}
-			break;
-		case 'K':
-			if (core->print->cur_enabled) {
-				cursor_prevrow (core, true);
-			} else {
-				if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
-					int delta = (core->print->screen_bounds - core->offset);
-					if (core->io->pava) {
-						r_core_seek_delta (core, -32);
-					} else {
-						if (core->offset >= delta) {
-							r_core_seek (core, core->offset - delta, 1);
-						} else {
-							r_core_seek (core, 0, 1);
-						}
-					}
+		}
+		break;
+	case 'K':
+		if (core->print->cur_enabled) {
+			cursor_prevrow (core, true);
+		} else {
+			if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
+				int delta = (core->print->screen_bounds - core->offset);
+#if 0				
+				if (core->io->pava) {
+					r_core_seek_delta (core, -32);
 				} else {
 					ut64 at = (core->offset > obs)? core->offset - obs: 0;
 					if (core->offset > obs) {
 						r_core_seek (core, at, 1);
-					} else {
-						r_core_seek (core, 0, 1);
+					}	
+					if (core->offset >= delta) {
+						r_core_seek (core, core->offset - delta, 1);
 					}
+				}		
+#endif
+				if (core->offset >= delta) {
+					r_core_seek (core, core->offset - delta, 1);
+				} else {
+					r_core_seek (core, 0, 1);
 				}
 			}
-			break;
-		case '[':
+		}
+		break;
+	case '[':
 			if (core->print->cur_enabled) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 				if (cmtcol > 2) {
@@ -2527,8 +2524,13 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
 	{
-		ut64 sz = r_io_size (core->io);
-		ut64 pa = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		SdbList *secs;
+		RIOSection *s;
+		ut64 pa, sz = r_io_size (core->io);
+		secs = r_io_section_vget_secs_at (core->io, core->offset);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		pa = s ? core->offset - s->vaddr + s->paddr : core->offset;
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;
 		} else {

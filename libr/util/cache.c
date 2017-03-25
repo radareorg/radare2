@@ -5,8 +5,8 @@
 #include <r_util.h>
 // TODO: optimize reallocs.. store RBuffer info.. wait. extend r_buf_ for that?
 
-R_API RCache *r_cache_new() {
-	RCache *c = R_NEW0 (RCache);
+R_API RCache* r_cache_new() {
+	RCache* c = R_NEW0 (RCache);
 	if (!c) {
 		return NULL;
 	}
@@ -16,12 +16,12 @@ R_API RCache *r_cache_new() {
 	return c;
 }
 
-R_API void r_cache_free(RCache *c) {
+R_API void r_cache_free(RCache* c) {
 	free (c->buf);
 	free (c);
 }
 
-R_API const ut8 *r_cache_get(RCache *c, ut64 addr, int *len) {
+R_API const ut8* r_cache_get(RCache* c, ut64 addr, int* len) {
 	if (!c->buf) {
 		return NULL;
 	}
@@ -37,11 +37,10 @@ R_API const ut8 *r_cache_get(RCache *c, ut64 addr, int *len) {
 	if (len) {
 		*len = c->len - (addr - c->base);
 	}
-	// eprintf ("4 - %d\n", (addr-c->base));
 	return c->buf + (addr - c->base);
 }
 
-R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
+R_API int r_cache_set(RCache* c, ut64 addr, const ut8* buf, int len) {
 	if (!c->buf) {
 		c->buf = malloc (len);
 		if (!c->buf) {
@@ -51,7 +50,7 @@ R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 		c->base = addr;
 		c->len = len;
 	} else if (addr < c->base) {
-		ut8 *b;
+		ut8* b;
 		int baselen = (c->base - addr);
 		int newlen = baselen + ((len > c->len)? len: c->base);
 		// XXX expensive heap usage. must simplify
@@ -67,7 +66,7 @@ R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 		c->base = addr;
 		c->len = newlen;
 	} else if ((addr + len) > (c->base + c->len)) {
-		ut8 *b;
+		ut8* b;
 		int baselen = (addr - c->base);
 		int newlen = baselen + len;
 		b = realloc (c->buf, newlen);
@@ -83,11 +82,10 @@ R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 	return c->len;
 }
 
-R_API void r_cache_flush(RCache *c) {
+R_API void r_cache_flush(RCache* c) {
 	if (c) {
 		c->base = 0;
 		c->len = 0;
-		free (c->buf);
-		c->buf = NULL;
+		R_FREE (c->buf);
 	}
 }

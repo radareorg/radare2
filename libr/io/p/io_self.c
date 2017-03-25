@@ -127,8 +127,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	io->va = true; // nop
 	ret = update_self_regions (io, pid);
 	if (ret) {
-		return r_io_desc_new (&r_io_plugin_self,
-			pid, file, rw, mode, NULL);
+		return r_io_desc_new (io, &r_io_plugin_self,
+			file, rw, mode, NULL);
 	}
 	return NULL;
 }

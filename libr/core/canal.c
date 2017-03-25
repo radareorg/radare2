@@ -178,10 +178,10 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 	} else {
 		int _rwx = -1;
 		RIOSection *ios;
-		RListIter *iter;
+		SdbListIter *iter;
 		if (core->io) {
 			// sections
-			r_list_foreach (core->io->sections, iter, ios) {
+			ls_foreach (core->io->sections, iter, ios) {
 				if (addr >= ios->vaddr && addr < (ios->vaddr + ios->vsize)) {
 					// sections overlap, so we want to get the one with lower perms
 					_rwx = (_rwx != -1) ? R_MIN (_rwx, ios->flags) : ios->flags;
@@ -360,12 +360,8 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
 	ut8 *buf;
 	ut16 bufsz = 1000;
-	RIOSection *sec;
-	if (!refdepth) {
-		return 1;
-	}
-	sec = r_io_section_vget (core->io, ref->addr);
-	if (!sec) {
+	RIOSection *sec = r_io_section_vget (core->io, ref->addr);
+	if (!refdepth || !sec) {
 		return 1;
 	}
 	buf = calloc (bufsz, 1);
@@ -492,18 +488,15 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		RFlagItem *f;
 		RAnalRef *ref;
 		int delta = r_anal_fcn_size (fcn);
-		// XXX hack slow check io error
-		if ((buflen = r_io_read_at (core->io, at + delta, buf, 4) != 4)) {
-			eprintf ("read errro\n");
-			goto error;
-		}
-		// real read.
-		// this is unnecessary if its contiguous
-		buflen = r_io_read_at (core->io, at+delta, buf, core->anal->opt.bb_max_size);
 		if (core->io->va) {
-			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_real_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
+		}
+		buflen = core->anal->opt.bb_max_size;
+		if (!r_io_read_at (core->io, at + delta, buf, buflen)) {
+			eprintf ("read errro\n");
+			goto error;
 		}
 		if (r_cons_is_breaked ()) {
 			break;
@@ -696,7 +689,7 @@ error:
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr + r_anal_fcn_size (fcn);
-			RIOSection *sect = r_io_section_vget (core->io, newaddr);
+			RIOSection *sect = r_io_section_vget (core->io, newaddr);	
 			if (!sect || (sect && (sect->flags & 1))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
@@ -1223,7 +1216,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			}
 #endif
-			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_real_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
 				goto error;
 			}
 			buflen = core->anal->opt.bb_max_size;
@@ -1328,7 +1321,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	r_core_seek_archbits (core, at);
 
 	if (core->io->va) {
-		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
+		if (!r_io_is_valid_real_offset (core->io, at, !core->anal->opt.noncode)) {
 			return false;
 		}
 	}
@@ -2404,8 +2397,8 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	if (depth < 1) {
 		return false;
 	}
-	wordsize = (int)(core->anal->bits / 8);
-	if ((dataptr = r_io_read_i (core->io, ptr, wordsize)) == -1) {
+	wordsize = R_DIM ((int)(core->anal->bits / 8), 1, 8);
+	if (!r_io_read_at (core->io, ptr, (ut8 *)&dataptr, wordsize)) {
 		return false;
 	}
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
@@ -2426,7 +2419,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	if (!buf) {
 		return -1;
 	}
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_use_desc (core->io, core->file->desc->fd);
 	if (!ref) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
@@ -2565,16 +2558,17 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_use_desc (core->io, core->file->desc->fd);
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i, ret;
-		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if (ret != core->blocksize && at + ret-OPSZ < to) {
+		if (!r_io_read_at (core->io, at, buf, core->blocksize) &&		// should this be || ?
+			(at + core->blocksize - OPSZ < to)) {
 			break;
 		}
 		i = 0;
+		ret = core->blocksize;
 		while (at + i < to && i < ret-OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
@@ -2642,11 +2636,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					continue;
 				}
 			} else if (core->io->va) {
-				RListIter *iter = NULL;
+				SdbListIter *iter = NULL;
 				RIOSection *s;
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
-						if (s->vaddr) break;
+						if (s->vaddr) {
+							break;
+						}
 					}
 				}
 				if (!iter) {
@@ -2913,8 +2909,10 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	memset (as->block, 0, as_size);
 	for (at = from; at < to; at += step) {
+		RIOSection *sec = r_io_section_get (core->io, at); 
 		piece = (at - from) / step;
-		as->block[piece].rwx = r_io_section_get_rwx (core->io, at);
+		as->block[piece].rwx = sec ? sec->flags :
+				(core->io->desc ? core->io->desc->flags: 0);
 	}
 	// iter all flags
 	r_list_foreach (core->flags->flags, iter, f) {
@@ -3230,7 +3228,7 @@ static bool myvalid(RIO *io, ut64 addr) {
 	if (addr == UT32_MAX || addr == UT64_MAX) {
 		return false;
 	}
-	if (!r_io_is_valid_offset (io, addr, 0)) {
+	if (!r_io_is_valid_real_offset (io, addr, 0)) {
 		return false;
 	}
 	return true;
