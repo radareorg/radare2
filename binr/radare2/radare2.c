@@ -677,6 +677,7 @@ int main(int argc, char **argv, char **envp) {
 		if (r_config_get_i (r.config, "cfg.plugins")) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 		}
+		run_commands (NULL, prefiles, false);
 		run_commands (cmds, files, quiet);
 		if (quietLeak) {
 			exit (0);
