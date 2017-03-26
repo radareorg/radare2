@@ -107,13 +107,14 @@ R_API int r_debug_snap_set_idx (RDebug *dbg, int idx) {
 }
 
 static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
-	RDebugSnap *snap;
-	if (map->size<1) {
+	if (!dbg || !map || map->size < 1) {
 		eprintf ("Invalid map size\n");
 		return 0;
 	}
-	snap = R_NEW0 (RDebugSnap);
-	if (!snap) return 0;
+	RDebugSnap *snap = R_NEW0 (RDebugSnap);
+	if (!snap) {
+		return 0;
+	}
 	snap->timestamp = sdb_now ();
 	snap->addr = map->addr;
 	snap->addr_end = map->addr_end;
@@ -136,7 +137,7 @@ R_API int r_debug_snap_all(RDebug *dbg, int perms) {
 	RListIter *iter;
 	r_debug_map_sync (dbg);
 	r_list_foreach (dbg->maps, iter, map) {
-		if (!perms || (map->perm & perms)==perms) {
+		if (!perms || (map->perm & perms) == perms) {
 			r_debug_snap_map (dbg, map);
 		}
 	}
