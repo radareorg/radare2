@@ -74,7 +74,7 @@ static ArmOp ops[] = {
 	{ "ldrex", 0x9f0f9000, TYPE_MEM },
 	{ "ldr", 0x9000, TYPE_MEM },
 
-	{ "strex", 0x900f8000, TYPE_MEM },	
+	{ "strex", 0x900f8000, TYPE_MEM },
 	{ "str", 0x8000, TYPE_MEM },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRR },
@@ -776,6 +776,10 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		// XXX: signed unsigned ??
 		// add r, r = 44[7bits,7bits]
 		// adds r, n = 3[r0-7][nn]
+		int reg3 = getreg (ao->a[2]);
+		if (reg3 != -1) {
+			return -1;
+		}
 		int reg = getreg (ao->a[1]);
 		if (reg != -1) {
 			ao->o = 0x44;
@@ -923,7 +927,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				} else {
 					return 0;
 				}
-				
+
 				ret = getreg (ao->a[2]);
 				if (ret != -1) {
 					if (rex) {
@@ -942,7 +946,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						high = shift & 0xFF00;
 						ao->o |= low << 24;
 						ao->o |= high << 8;
-					}				
+					}
 				} else {
 					int num = getnum (ao->a[2]) & 0xfff;
 					if (rex) {
@@ -954,7 +958,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= (num & 0xff) << 24;
 					ao->o |= ((num >> 8) & 0xf) << 16;
 				}
-				
+
 				break;
 			case TYPE_IMM:
 				if (*ao->a[0] ++== '{') {
