@@ -2563,7 +2563,9 @@ static void ds_print_op_push_info(RDisasmState *ds){
 	case R_ANAL_OP_TYPE_PUSH:
 		if (ds->analop.val) {
 			RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.val);
-			if (flag) r_cons_printf (" ; %s", flag->name);
+			if (ds->opstr && flag && !strstr(ds->opstr, flag->name)) {
+				r_cons_printf (" ; %s", flag->name);
+			}
 		}
 		break;
 	}
