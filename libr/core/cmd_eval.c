@@ -372,6 +372,7 @@ static int cmd_eval(void *data, const char *input) {
 			"et", " [key]", "show type of given config variable",
 			"e", " a", "get value of var 'a'",
 			"e", " a=b", "set var 'a' the 'b' value",
+			"e var=?", "", "print all valid values of var",
 			"env", " [k[=v]]", "get/set environment variable",
 			NULL};
 			r_core_cmd_help (core, help_msg);
