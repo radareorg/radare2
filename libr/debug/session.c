@@ -33,7 +33,7 @@ R_API void r_debug_session_list(RDebug *dbg) {
 R_API bool r_debug_session_add(RDebug *dbg) {
 	RDebugSession *session;
 	RDebugSnap *snap;
-	RListIter *iter, *start, *iterr;
+	RListIter *iter, *start;
 	ut64 addr;
 	int i;
 	session = R_NEW0 (RDebugSession);
@@ -81,7 +81,9 @@ R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		iterr = session->reg[i];
 		arena = iterr->data;
-		memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
+		if (dbg->reg->regset[i].arena->bytes) {
+			memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
+		}
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 
