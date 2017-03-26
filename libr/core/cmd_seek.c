@@ -554,7 +554,7 @@ static int cmd_seek(void *data, const char *input) {
 			"sf", " function", "Seek to address of specified function",
 			"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
 			"sl", "[?] [+-]line", "Seek to line",
-			"sn/sp", "", "Seek next/prev scr.nkey",
+			"sn/sp", "", "Seek to next/prev location, as specified by scr.nkey",
 			"so", " [N]", "Seek to N next opcode(s)",
 			"sr", " pc", "Seek to register",
 			"ss", "", "Seek silently (without adding an entry to the seek history)",
