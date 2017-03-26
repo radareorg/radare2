@@ -210,7 +210,8 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode op) {
 	}
 
 	data[l++] = immediate;
-	if ((immediate > 127 || immediate < -128) && op.operands[0].type & OT_DWORD) {
+	if ((immediate > 127 || immediate < -128) &&
+	    ((op.operands[0].type & OT_DWORD) || (op.operands[0].type & OT_QWORD))) {
 		data[l++] = immediate >> 8;
 		data[l++] = immediate >> 16;
 		data[l++] = immediate >> 24;
