@@ -2658,10 +2658,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ALIGN;
 				if (!is_lea_str) {
 					if (ds->opstr && *flag && strstr (ds->opstr, flag)) {
-						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, p, nl);
+						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, refaddr, nl);
 					} else {
-						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, p,
-								*flag ? " ; " : "", flag, nl);
+						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, refaddr,
+							*flag ? " ; " : "", flag, nl);
 					}
 				}
 			} else {
