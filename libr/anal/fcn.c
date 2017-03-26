@@ -53,7 +53,7 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr > b->addr);
+	return (a->addr - b->addr);
 }
 
 static void update_tinyrange_bbs(RAnalFunction *fcn) {
