@@ -245,6 +245,9 @@ HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found) {
 	SdbListIter* iter;
 	HtKv* kv;
 #if USE_KEYLEN
+	if (!key) {
+		return NULL;
+	}
 	ut32 key_len = ht->calcsizeK ((void *)key);
 #endif
 	hash = ht->hashfn (key);
