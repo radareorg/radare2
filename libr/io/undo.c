@@ -97,11 +97,15 @@ R_API void r_io_sundo_reset(RIO *io) {
 	io->undo.redos = 0;
 }
 
-R_API void r_io_sundo_list(RIO *io, int mode) {
+R_API RList *r_io_sundo_list(RIO *io, int mode) {
 	int idx, undos, redos, i, j, start, end;
+	RList* list;
 
+	if (mode == '!') {
+		mode = 0;
+	}
 	if (!io->undo.s_enable) {
-		return;
+		return NULL;
 	}
 	undos = io->undo.undos;
 	redos = io->undo.redos;
@@ -115,6 +119,9 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 	case 'j':
 		io->cb_printf ("[");
 		break;
+	}
+	if (!mode) {
+		list = r_list_newf (free);
 	}
 	const char *comma = "";
 	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
@@ -142,6 +149,12 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 			} else if (j != undos) {
 				io->cb_printf ("f redo_%d @ 0x%"PFMT64x"\n", idx, addr);
 			}
+		default:
+			if (list) {
+				RIOUndos  *u = R_NEW0 (RIOUndos);
+				memcpy (u, undo, sizeof (RIOUndos));
+				r_list_append (list, u);
+			}
 		}
 		j++;
 	}
@@ -153,6 +166,7 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 		io->cb_printf ("%s%"PFMT64d"]\n", comma, io->off);
 		break;
 	}
+	return list;
 }
 
 /* undo writez */

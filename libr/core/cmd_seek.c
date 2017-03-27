@@ -117,7 +117,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 				line_count++;
 				if (line_count % bsz == 0) {
 					ut64 *tmp = realloc (core->print->lines_cache,
-						(line_count + bsz) * sizeof(ut64));
+						(line_count + bsz) * sizeof (ut64));
 					if (tmp) {
 						core->print->lines_cache = tmp;
 					} else {
@@ -328,7 +328,33 @@ static int cmd_seek(void *data, const char *input) {
 	case '*':
 	case '=':
 	case 'j':
-		r_io_sundo_list (core->io, input[0]);
+	case '!':
+		{
+			RList *list = r_io_sundo_list (core->io, input[0]);
+			RListIter *iter;
+			RIOUndos *undo;
+			r_list_foreach (list, iter, undo) {
+				char *name = NULL;
+
+				core->flags->space_strict = true;
+				RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
+				core->flags->space_strict = false;
+				if (f) {
+					if (f->offset != undo->off) {
+						name = r_str_newf ("%s + %d\n", f->name,
+								(int)(undo->off- f->offset));
+					} else {
+						name = strdup (f->name);
+					}
+				}
+				if (!name) {
+					name = strdup ("");
+				}
+				r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name);
+				free (name);
+			}
+			r_list_free (list);
+		}
 		break;
 	case '+':
 		if (input[1] != '\0') {
@@ -543,7 +569,7 @@ static int cmd_seek(void *data, const char *input) {
 			"s+", "", "Redo seek",
 			"s+", " n", "Seek n bytes forward",
 			"s++", "", "Seek blocksize bytes forward",
-			"s[j*=]", "", "List undo seek history (JSON, =list, *r2)",
+			"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names)",
 			"s/", " DATA", "Search for next occurrence of 'DATA'",
 			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
 			"s.", "hexoff", "Seek honoring a base from core->offset",

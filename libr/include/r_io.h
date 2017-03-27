@@ -428,7 +428,7 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset);
 R_API RIOUndos *r_io_sundo_redo(RIO *io);
 R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor);
 R_API void r_io_sundo_reset(RIO *io);
-R_API void r_io_sundo_list(RIO *io, int mode);
+R_API RList *r_io_sundo_list(RIO *io, int mode);
 /* write undo */
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len);
 R_API void r_io_wundo_apply_all(RIO *io, int set);
