@@ -62,19 +62,19 @@ const char* instruction_names[] = {
 	"test","testset","call","tailcall","return","forloop","forprep","tforcall","tforloop","setlist","closure","vararg","extraarg",0
 };
 
-ut32 getInstruction (ut8* data){
+ut32 getInstruction (const ut8* data){
 	ut32 instruction = 0;
-	instruction |= data[0] << 24;
-	instruction |= data[1] << 16;
-	instruction |= data[2] <<  8;
-	instruction |= data[3] <<  0;
+	instruction |= data[3] << 24;
+	instruction |= data[2] << 16;
+	instruction |= data[1] <<  8;
+	instruction |= data[0] <<  0;
 	return instruction;
 }
-void setInstruction (ut32 opcode, ut8* data){
-	data[0] = opcode >> 24;
-	data[1] = opcode >> 16;
-	data[2] = opcode >>  8;
-	data[3] = opcode >>  0;
+void setInstruction (ut32 opcode,ut8* data){
+	data[3] = opcode >> 24;
+	data[2] = opcode >> 16;
+	data[1] = opcode >>  8;
+	data[0] = opcode >>  0;
 }
 
 int findNextWordStart (const char* str){

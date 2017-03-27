@@ -17,11 +17,12 @@ static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 RAsmPlugin r_asm_plugin_lua53 = {
 	.name = "lua53",
-	.desc = "Lua 5.3 VM",
+	.desc = "Lua 5.3 VM assembly plugin",
 	.license = "MIT",
 	.arch = "lua53",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = R_SYS_ENDIAN_LITTLE,
+	.mnemonics = instruction_names,
 	.disassemble = &do_disassemble,
 	.assemble = &do_assemble,
 };
