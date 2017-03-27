@@ -2355,9 +2355,9 @@ static int bin_libs(RCore *r, int mode) {
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_println ("[Linked libraries]");
+		r_cons_println ("[Linked libraries my dudes]");
 	}
-	r_list_foreach (libs, iter, lib) {
+	r_list_foreach (libs_alpha, iter, lib) {
 		if (IS_MODE_SET (mode)) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
