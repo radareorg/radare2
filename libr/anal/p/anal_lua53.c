@@ -197,85 +197,12 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 RAnalOp * op_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
 	
-	return NULL;
 	RAnalOp* analOp = R_NEW0 (RAnalOp);
 	if(analOp == NULL)
 		return NULL;
 	lua53_anal_op (a,analOp,addr,buf,len);
 	return analOp;
 }
-RAnalBlock * bb_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
-	eprintf("WWW\n");
-	
-	return NULL;
-	RAnalBlock* analBb = R_NEW0 (RAnalBlock);
-	if(analBb == NULL)
-		return NULL;
-	
-	ut64 offset = 0;
-	bool eob = false;
-	while(!eob){
-		
-		const ut32 instruction = getInstruction (buf + addr + offset);
-	
-		switch( GET_OPCODE (instruction) ){
-		case OP_JMP:
-		case OP_TAILCALL:
-		case OP_RETURN:
-			eob = true;
-			break;
-		default:
-			offset += 4;
-			break;
-		}
-	}
-	analBb->name =  malloc (9);
-	sprintf(analBb->name,"%08x",addr);
-	analBb->addr = addr;
-	analBb->addr = addr;
-	return analBb;
-}
-/*
-
-typedef struct r_anal_bb_t {
-	char *name;
-	ut64 addr;
-	ut64 jump;
-	ut64 type2;
-	ut64 fail;
-	int size;
-	int type;
-	int type_ex;
-	int ninstr;
-	int returnbb;
-	int conditional;
-	int traced;
-	char *label;
-	ut8 *fingerprint;
-	RAnalDiff *diff;
-	RAnalCond *cond;
-	RAnalSwitchOp *switch_op;
-	// offsets of instructions in this block
-	ut16 *op_pos;
-	// size of the op_pos array
-	int op_pos_size;
-	ut8 *op_bytes;
-	ut8 op_sz;
-	 deprecate ??? where is this used? 
-	 iirc only java. we must use r_anal_bb_from_offset(); instead 
-	RAnalBlock *head;
-	RAnalBlock *tail;
-	RAnalBlock *next;
-	 these are used also in pdr: 
-	RAnalBlock *prev;
-	RAnalBlock *failbb;
-	RAnalBlock *jumpbb;
-	RList struct r_anal_bb_t *cases;
-	ut8 *parent_reg_arena;
-	int stackptr;
-	int parent_stackptr;
-#undef RAnalBlock
-} RAnalBlock;*/
 void addFunction (LuaFunction* func, ParseStruct* parseStruct){
 	RAnalFunction *afunc = parseStruct->data;
 	printf("%08llx\n",afunc->addr);
@@ -291,7 +218,7 @@ void addFunction (LuaFunction* func, ParseStruct* parseStruct){
 	}
 }
 RAnalFunction * fn_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
-	eprintf("SSS\n");
+	
 	RAnalFunction* analFn = R_NEW0 (RAnalFunction);
 	if(analFn == NULL)
 		return NULL;
@@ -309,15 +236,6 @@ RAnalFunction * fn_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
 	return analFn;
 }
 
-static int esil_x86_cs_init (RAnalEsil *esil) {
-	eprintf("SSS3\n");
-	return true;
-}
-
-static int esil_x86_cs_fini (RAnalEsil *esil) {
-	eprintf("SSS4\n");
-	return true;
-}
 int analyze_fns(RAnal *a, ut64 at, ut64 from, int reftype, int depth){
 	printf("%llx\n",at);
 	printf("%llx\n",from);
@@ -334,9 +252,9 @@ RAnalPlugin r_anal_plugin_lua53 = {
 	.desc = "LUA 5.3 VM code analysis plugin",
 	.op = &lua53_anal_op,
 	.esil = false,
-	.op_from_buffer = &op_from_buffer,
-	.bb_from_buffer = &bb_from_buffer,
-	.fn_from_buffer = &fn_from_buffer,
+	//.op_from_buffer = &op_from_buffer, //implemented via lua53_anal_op
+	//.bb_from_buffer = &bb_from_buffer, //not implemented
+	//.fn_from_buffer = &fn_from_buffer, //implemented but not used
 
 };
 

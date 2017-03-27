@@ -9,7 +9,7 @@
 #define isComment(x) (';' == (x))
 
 
-#ifdef DEBUG
+#ifdef LUA_DEBUG
 	#define Dprintf(...) printf(__VA_ARGS__)
 #else
 	#define Dprintf(...) 

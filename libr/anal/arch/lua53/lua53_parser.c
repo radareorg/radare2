@@ -2,7 +2,7 @@
 
 #include <r_types.h>
 
-#ifdef DEBUG
+#ifdef LUA_DEBUG
 	#define Dprintf(...) fprintf(stderr,__VA_ARGS__)
 #else
 	#define Dprintf(...) 
