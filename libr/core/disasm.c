@@ -2577,6 +2577,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	char *esc = ds->show_comment_right? " ": "";
 	char *nl = ds->show_comment_right? "" : "\n";
 	bool string_found = false;
+	bool v_consumed = false;
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
@@ -2584,8 +2585,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		char ch = v;
 		ALIGN;
 		ds_comment (ds, true, "%s; '%c'%s", esc, ch, nl);
+		v_consumed = true;
 	}
 	bool flag_printed = false;
+	if (!v_consumed && p == UT64_MAX && v != UT64_MAX) {
+		p = v; // use immediate as possible ptr
+	}
 	if (p == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p) > 0) {
@@ -2794,9 +2799,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				} else if (!strcmp (kind, "invalid")) {
 					int *n = (int*)&p;
-					ut64 p = ds->analop.val;
-					if (p == UT64_MAX || p == UT32_MAX) {
-						p = ds->analop.ptr;
+					ut64 p = ds->analop.ptr;
+					ut64 v = ds->analop.val;
+					if (p == UT64_MAX && v != UT64_MAX) {
+						p = v; // use immediate as possible ptr
 					}
 					/* avoid double ; -1 */
 					if (p != UT64_MAX && p != UT32_MAX) {

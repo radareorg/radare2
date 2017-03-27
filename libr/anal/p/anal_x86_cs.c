@@ -1853,8 +1853,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				}
 				break;
 			case X86_OP_IMM:
-				if (INSOP(1).imm > 10)
-					op->ptr = INSOP(1).imm;
+				if (INSOP(1).imm > 10) {
+					op->val = INSOP(1).imm;
+				}
 				break;
 			default:
 				break;
