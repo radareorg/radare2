@@ -155,13 +155,12 @@ static bool archIsArmOrThumb(RCore *core) {
 	return false;
 }
 
-R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
+R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize, bool asterisk) {
 	int i, match, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	bool isarm = archIsArmOrThumb (core);
 	ut8 buf[4096];
-	bool asterisk = false;
 	ut64 v64, value = 0;
 	ut32 v32;
 	ut16 v16;
@@ -209,19 +208,6 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 				}
 			}
 			if (match) {
-				if (isarm) {
-					if (value & 1) {
-						// .dword 0x000080b9 in reality is 0x000080b8
-						value--;
-						r_anal_hint_set_bits (core->anal, value, 16);
-						// can we assume is gonna be always a function?
-						r_core_cmdf (core, "f fcn.0x%08"PFMT64x " @0x%08"PFMT64x, value, value);
-					} else {
-						r_core_seek_archbits (core, addr);
-						ut64 bits = r_config_get_i (core->config, "asm.bits");
-						r_anal_hint_set_bits (core->anal, value, bits);
-					}
-				}
 				if (asterisk) {
 					r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", value, addr);
 					r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, addr);
@@ -230,6 +216,19 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 				} else {
 					r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, value, addr);
 					r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, addr);
+					if (isarm) {
+						if (value & 1) {
+							// .dword 0x000080b9 in reality is 0x000080b8
+							value--;
+							r_anal_hint_set_bits (core->anal, value, 16);
+							// can we assume is gonna be always a function?
+							r_core_cmdf (core, "f fcn.0x%08"PFMT64x " @0x%08"PFMT64x, value, value);
+						} else {
+							r_core_seek_archbits (core, addr);
+							ut64 bits = r_config_get_i (core->config, "asm.bits");
+							r_anal_hint_set_bits (core->anal, value, bits);
+						}
+					}
 				}
 				hitctr++;
 			}
@@ -2576,6 +2575,7 @@ reread:
 		// TODO: add support for json
 	{
 		int err = 1, vsize = atoi (input + 1);
+		bool asterisk = strchr (input + 1, '*');
 		if (vsize && input[2] && input[3]) {
 			char *w = strchr (input + 3, ' ');
 			if (w) {
@@ -2585,8 +2585,10 @@ reread:
 				if (vsize > 0) {
 					err = 0;
 					(void) cmd_search_value_in_range (core,
-						param.from, param.to, vmin, vmax, vsize);
-					r_cons_printf ("f-hit*\n");
+						param.from, param.to, vmin, vmax, vsize, asterisk);
+					if (asterisk) {
+						r_cons_printf ("f-hit*\n");
+					}
 				}
 			}
 		}
@@ -2595,7 +2597,7 @@ reread:
 		}
 	}
 	break;
-	case 'v':
+	case 'v': // "/v"
 		if (input[1]) {
 			if (input[2] == 'j') {
 				json = true;
@@ -2652,7 +2654,6 @@ reread:
 			}
 			break;
 		}
-// TODO: Add support for /v4 /v8 /v2
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
@@ -2901,7 +2902,7 @@ reread:
 		break;
 	case '+':
 		if (input[1] == ' ') {
-// TODO: support /+j
+			// TODO: support /+j
 			char *buf = malloc (strlen (input) * 2);
 			char *str = strdup (input + 2);
 			int ochunksize;

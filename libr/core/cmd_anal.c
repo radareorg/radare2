@@ -5062,7 +5062,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	}
 }
 
-extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize);
+extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize, bool asterisk);
 
 static void cmd_anal_aad(RCore *core, const char *input) {
 	RListIter *iter;
@@ -5129,7 +5129,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (core->assembler->bits == 64) {
 		vsize = 8;
 	}
-	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize);
+	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize, asterisk);
 	// TODO: for each hit . must set flag, xref and metadata Cd 4
 	if (asterisk) {
 		r_cons_printf ("f-hit*\n");
