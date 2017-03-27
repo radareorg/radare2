@@ -183,21 +183,25 @@ R_API int r_regex_flags(const char *f) {
 
 R_API void r_regex_fini(RRegex *preg) {
 	struct re_guts *g;
-
-	if (preg->re_magic != MAGIC1)	/* oops */
+	if (!preg) {
+		return;
+	}
+	if (preg->re_magic != MAGIC1) {	/* oops */
 		return;			/* nice to complain, but hard */
+	}
 
 	g = preg->re_g;
-	if (!g || g->magic != MAGIC2)	/* oops again */
+	if (!g || g->magic != MAGIC2) { /* oops again */
 		return;
+	}
 	preg->re_magic = 0;		/* mark it invalid */
 	g->magic = 0;			/* mark it invalid */
 
-	free(g->strip);
-	free(g->sets);
-	free(g->setbits);
-	free(g->must);
-	free(g);
+	free (g->strip);
+	free (g->sets);
+	free (g->setbits);
+	free (g->must);
+	free (g);
 }
 
 R_API void r_regex_free(RRegex *preg) {
