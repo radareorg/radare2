@@ -7,12 +7,12 @@
 #include <r_cons.h>
 #include <r_util.h>
 
-static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name, int type, int minzlen, int maxzlen) {
+static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
+	ut8 *buf = NULL;
 	int fcnlen = 0, len = 0;
-	ut8 *buf = NULL, *mask = NULL;
-	char *zigname = NULL;
+	int minzlen = r_config_get_i (core->config, "zign.min");
+	int maxzlen = r_config_get_i (core->config, "zign.max");
 	bool retval = true;
-	int curspace = core->anal->zign_spaces.space_idx;
 
 	fcnlen = r_anal_fcn_realsize (fcn);
 
@@ -33,52 +33,122 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name, int t
 		goto exit_function;
 	}
 
+	retval = r_sign_add_anal (core->anal, name, len, buf, fcn->addr);
+
+exit_function:
+	free (buf);
+
+	return retval;
+}
+
+static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
+	RSignGraph graph;
+
+	graph.cc = r_anal_fcn_cc (fcn);
+	graph.nbbs = r_list_length (fcn->bbs);
+	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
+
+	return r_sign_add_graph (core->anal, name, graph);
+}
+
+static bool addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
+	char *zigname = NULL;
+	bool retval = true;
+	int curspace = core->anal->zign_spaces.space_idx;
+
 	if (name) {
 		zigname = r_str_new (name);
 	} else {
 		if (curspace != -1) {
 			zigname = r_str_newf ("%s.", core->anal->zign_spaces.spaces[curspace]);
 		}
-		zigname = r_str_appendf (zigname, "%c.%s", type, fcn->name);
+		zigname = r_str_appendf (zigname, "%s", fcn->name);
 	}
 
-	switch (type) {
-	case R_SIGN_EXACT:
-		mask = malloc (len);
-		memset (mask, 0xff, len);
-		retval = r_sign_add_exact (core->anal, zigname, len, buf, mask);
-		break;
-	case R_SIGN_ANAL:
-		retval = r_sign_add_anal (core->anal, zigname, len, buf, fcn->addr);
-		break;
+	if (!addFcnGraph (core, fcn, zigname)) {
+		eprintf ("error: could not add graph zignature for fcn %s\n", fcn->name);
+		retval = false;
+		goto exit_function;
+	}
+	if (!addFcnBytes (core, fcn, zigname)) {
+		eprintf ("error: could not add anal zignature for fcn %s\n", fcn->name);
+		retval = false;
+		goto exit_function;
 	}
 
 exit_function:
-	free (buf);
-	free (mask);
 	free (zigname);
 
 	return retval;
 }
 
-static bool addHex(RCore *core, const char *name, int type, const char *hexbytes) {
+static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
+	const char *ptr = NULL;
+	int i = 0;
+	bool retval = true;
+
+	graph->cc = -1;
+	graph->nbbs = -1;
+	graph->edges = -1;
+	graph->ebbs = -1;
+
+	for (i = 0; i < nargs; i++) {
+		ptr = r_str_word_get0 (args0, i);
+		if (r_str_startswith (ptr, "cc=")) {
+			graph->cc = atoi (ptr + 3);
+		} else if (r_str_startswith (ptr, "nbbs=")) {
+			graph->nbbs = atoi (ptr + 5);
+		} else if (r_str_startswith (ptr, "edges=")) {
+			graph->edges = atoi (ptr + 6);
+		} else if (r_str_startswith (ptr, "ebbs=")) {
+			graph->ebbs = atoi (ptr + 5);
+		} else {
+			retval = false;
+			break;
+		}
+	}
+
+	return retval;
+}
+
+static bool addGraphZign(RCore *core, const char *name, const char *args0, int nargs) {
+	RSignGraph graph;
+
+	if (!parseGraphMetrics (args0, nargs, &graph)) {
+		eprintf ("error: invalid arguments\n");
+		return false;
+	}
+
+	return r_sign_add_graph (core->anal, name, graph);
+}
+
+static bool addBytesZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
+	const char *hexbytes = NULL;
 	ut8 *mask = NULL, *bytes = NULL;
 	int size = 0, blen = 0;
 	bool retval = true;
 
+	if (nargs != 1) {
+		eprintf ("error: invalid syntax\n");
+		retval = false;
+		goto exit_function;
+	}
+
+	hexbytes = r_str_word_get0 (args0, 0);
 	blen = strlen (hexbytes) + 4;
 	bytes = malloc (blen);
 	mask = malloc (blen);
 
 	size = r_hex_str2binmask (hexbytes, bytes, mask);
 	if (size <= 0) {
+		eprintf ("error: cannot parse hexpairs\n");
 		retval = false;
 		goto exit_function;
 	}
 
 	switch (type) {
-	case R_SIGN_EXACT:
-		retval = r_sign_add_exact (core->anal, name, size, bytes, mask);
+	case R_SIGN_BYTES:
+		retval = r_sign_add_bytes (core->anal, name, size, bytes, mask);
 		break;
 	case R_SIGN_ANAL:
 		retval = r_sign_add_anal (core->anal, name, size, bytes, 0);
@@ -92,231 +162,51 @@ exit_function:
 	return retval;
 }
 
-static int cmdAddBytes(void *data, const char *input, int type) {
-	RCore *core = (RCore *) data;
-
-	switch (*input) {
-	case ' ':
-		{
-			const char *name = NULL, *hexbytes = NULL;
-			char *args = NULL;
-			int n = 0;
-			bool retval = true;
-
-			args = r_str_new (input + 1);
-			n = r_str_word_set0 (args);
-
-			if (n != 2) {
-				eprintf ("usage: za%s name bytes\n", type == R_SIGN_ANAL? "a": "e");
-				retval = false;
-				goto exit_case;
-			}
-
-			name = r_str_word_get0 (args, 0);
-			hexbytes = r_str_word_get0 (args, 1);
-
-			if (!addHex (core, name, type, hexbytes)) {
-				eprintf ("error: cannot add zignature\n");
-				retval = false;
-				goto exit_case;
-			}
-
-exit_case:
-			free (args);
-			return retval;
-		}
-		break;
-	case 'f':
-		{
-			RAnalFunction *fcni = NULL;
-			RListIter *iter = NULL;
-			const char *name = NULL, *zigname = NULL;
-			char *args = NULL;
-			int minzlen = r_config_get_i (core->config, "zign.min");
-			int maxzlen = r_config_get_i (core->config, "zign.max");
-			int n = 0;
-			bool retval = true;
-
-			args = r_str_new (r_str_trim_const (input + 1));
-			n = r_str_word_set0 (args);
-
-			if (n > 2) {
-				eprintf ("usage: za%sf [name] [zigname]\n", type == R_SIGN_ANAL? "a": "e");
-				retval = false;
-				goto exit_case_fcn;
-			}
-
-			switch (n) {
-			case 2:
-				zigname = r_str_word_get0 (args, 1);
-			case 1:
-				name = r_str_word_get0 (args, 0);
-			}
-
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				if ((!name && core->offset == fcni->addr) ||
-					(name && !strcmp (name, fcni->name))) {
-					if (!addFcnBytes (core, fcni, zigname, type, minzlen, maxzlen)) {
-						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
-					}
-					break;
-				}
-			}
-			r_cons_break_pop ();
-
-exit_case_fcn:
-			free (args);
-			return retval;
-		}
-		break;
-	case 'F':
-		{
-			RAnalFunction *fcni = NULL;
-			RListIter *iter = NULL;
-			int minzlen = r_config_get_i (core->config, "zign.min");
-			int maxzlen = r_config_get_i (core->config, "zign.max");
-			int count = 0;
-
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				if (!addFcnBytes (core, fcni, NULL, type, minzlen, maxzlen)) {
-					eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
-					continue;
-				}
-				count++;
-			}
-			r_cons_break_pop ();
-			eprintf ("generated zignatures: %d\n", count);
-		}
-		break;
-	case '?':
-		{
-			if (type == R_SIGN_ANAL) {
-				const char *help_msg[] = {
-					"Usage:", "zaa[fF] [args] ", "# Create anal zignature",
-					"zaa ", "name bytes", "create anal zignature",
-					"zaaf ", "[name] [zigname]", "create anal zignature for function",
-					"zaaF ", "", "generate anal zignatures for all functions",
-					NULL};
-				r_core_cmd_help (core, help_msg);
-			} else {
-				const char *help_msg[] = {
-					"Usage:", "zae[fF] [args] ", "# Create anal zignature",
-					"zae ", "name bytes", "create anal zignature",
-					"zaef ", "[name] [zigname]", "create anal zignature for function",
-					"zaeF ", "", "generate anal zignatures for all functions",
-					NULL};
-				r_core_cmd_help (core, help_msg);
-			}
-		}
-		break;
+static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
+	switch (type) {
+	case R_SIGN_BYTES:
+	case R_SIGN_ANAL:
+		return addBytesZign (core, name, type, args0, nargs);
+	case R_SIGN_GRAPH:
+		return addGraphZign (core, name, args0, nargs);
 	default:
-		eprintf ("usage: za%s[fF] [args]\n", type == R_SIGN_ANAL? "a": "e");
-		return false;
+		eprintf ("error: unknown zignature type\n");
 	}
 
-	return true;
+	return false;
 }
 
-static bool addFcnMetrics(RCore *core, RAnalFunction *fcn, const char *name) {
-	RSignMetrics metrics;
-	char *zigname = NULL;
-	bool retval = true;
-	int curspace = core->anal->zign_spaces.space_idx;
-
-	metrics.cc = r_anal_fcn_cc (fcn);
-	metrics.nbbs = r_list_length (fcn->bbs);
-	metrics.edges = r_anal_fcn_count_edges (fcn, &metrics.ebbs);
-
-	if (name) {
-		zigname = r_str_new (name);
-	} else {
-		if (curspace != -1) {
-			zigname = r_str_newf ("%s.", core->anal->zign_spaces.spaces[curspace]);
-		}
-		zigname = r_str_appendf (zigname, "%c.%s", R_SIGN_METRIC, fcn->name);
-	}
-
-	retval = r_sign_add_metric (core->anal, zigname, metrics);
-
-	free (zigname);
-
-	return retval;
-}
-
-static bool parseMetricArgs(const char *args0, int nargs, RSignMetrics *metrics) {
-	const char *ptr = NULL;
-	int i = 0;
-	bool retval = true;
-
-	metrics->cc = -1;
-	metrics->nbbs = -1;
-	metrics->edges = -1;
-	metrics->ebbs = -1;
-
-	for (i = 0; i < nargs; i++) {
-		ptr = r_str_word_get0 (args0, i);
-		if (r_str_startswith (ptr, "cc=")) {
-			metrics->cc = atoi (ptr + 3);
-		} else if (r_str_startswith (ptr, "nbbs=")) {
-			metrics->nbbs = atoi (ptr + 5);
-		} else if (r_str_startswith (ptr, "edges=")) {
-			metrics->edges = atoi (ptr + 6);
-		} else if (r_str_startswith (ptr, "ebbs=")) {
-			metrics->ebbs = atoi (ptr + 5);
-		} else {
-			retval = false;
-			break;
-		}
-	}
-
-	return retval;
-}
-
-static int cmdAddMetric(void *data, const char *input) {
+static int cmdAdd(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case ' ':
 		{
-			RSignMetrics metrics;
-			const char *name = NULL, *args0 = NULL;
+			const char *zigname = NULL, *args0 = NULL;
 			char *args = NULL;
-			int n = 0;
+			int type = 0, n = 0;
 			bool retval = true;
 
 			args = r_str_new (input + 1);
 			n = r_str_word_set0 (args);
 
-			if (n < 2) {
-				eprintf ("usage: zam name metrics\n");
+			if (n < 3) {
+				eprintf ("usage: za zigname type params\n");
 				retval = false;
-				goto exit_case;
+				goto exit_case_manual;
 			}
 
-			name = r_str_word_get0 (args, 0);
-			args0 = r_str_word_get0 (args, 1);
+			zigname = r_str_word_get0 (args, 0);
+			type = r_str_word_get0 (args, 1)[0];
+			args0 = r_str_word_get0 (args, 2);
 
-			if (!parseMetricArgs (args0, n - 1, &metrics)) {
-				eprintf ("error: invalid arguments\n");
-				retval = false;
-				goto exit_case;
-			}
-
-			if (!r_sign_add_metric (core->anal, name, metrics)) {
+			if (!addZign (core, zigname, type, args0, n - 2)) {
 				eprintf ("error: cannot add zignature\n");
 				retval = false;
-				goto exit_case;
+				goto exit_case_manual;
 			}
 
-exit_case:
+exit_case_manual:
 			free (args);
 			return retval;
 		}
@@ -325,7 +215,7 @@ exit_case:
 		{
 			RAnalFunction *fcni = NULL;
 			RListIter *iter = NULL;
-			const char *name = NULL, *zigname = NULL;
+			const char *fcnname = NULL, *zigname = NULL;
 			char *args = NULL;
 			int n = 0;
 			bool retval = true;
@@ -334,7 +224,7 @@ exit_case:
 			n = r_str_word_set0 (args);
 
 			if (n > 2) {
-				eprintf ("usage: zamf [name] [zigname]\n");
+				eprintf ("usage: zaf [fcnname] [zigname]\n");
 				retval = false;
 				goto exit_case_fcn;
 			}
@@ -343,7 +233,7 @@ exit_case:
 			case 2:
 				zigname = r_str_word_get0 (args, 1);
 			case 1:
-				name = r_str_word_get0 (args, 0);
+				fcnname = r_str_word_get0 (args, 0);
 			}
 
 			r_cons_break_push (NULL, NULL);
@@ -351,9 +241,9 @@ exit_case:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if ((!name && core->offset == fcni->addr) ||
-					(name && !strcmp (name, fcni->name))) {
-					if (!addFcnMetrics (core, fcni, zigname)) {
+				if ((!fcnname && core->offset == fcni->addr) ||
+					(fcnname && !strcmp (fcnname, fcni->name))) {
+					if (!addFcnZign (core, fcni, zigname)) {
 						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					}
 					break;
@@ -377,7 +267,7 @@ exit_case_fcn:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (!addFcnMetrics (core, fcni, NULL)) {
+				if (!addFcnZign (core, fcni, NULL)) {
 					eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					continue;
 				}
@@ -389,59 +279,36 @@ exit_case_fcn:
 		break;
 	case '?':
 		if (input[1] == '?') {
-			const char *help_msg[] = {
-				"Examples:", "Metric Zignatures", " examples and documentation",
-				"cc", "", "cyclomatic complexity",
-				"edges", "", "number of edges",
-				"nbbs", "", "number of basic blocks",
-				"ebbs ", "", "number of end basic blocks",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-			r_cons_printf ("Examples:\n"
-				" zam foo cc=2 nbbs=3 edges=3 ebbs=1\n"
-				" zam bar nbbs=3 edges=3\n");
+			r_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
+				"Zignature types:\n"
+				"  b: bytes pattern\n"
+				"  a: bytes pattern (anal mask)\n"
+				"  g: graph metrics\n\n"
+				"Bytes patterns:\n"
+				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
+				"Graph metrics:\n"
+				"  cc:    cyclomatic complexity\n"
+				"  edges: number of edges\n"
+				"  nbbs:  number of basic blocks\n"
+				"  ebbs:  number of end basic blocks\n\n"
+				"Examples:\n"
+				"  za foo b 558bec..e8........\n"
+				"  za foo a e811223344\n"
+				"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
+				"  za foo g nbbs=3 edges=3\n");
 		} else {
 			const char *help_msg[] = {
-				"Usage:", "zam[fF?] [args] ", "# Create metric zignature",
-				"zam?? ", "", "show metrics help",
-				"zam ", "name metrics", "create metric zignature",
-				"zamf ", "[name] [zigname]", "create metric zignature for function",
-				"zamF ", "", "generate metric zignatures for all functions",
+				"Usage:", "za[fF?] [args] ", "# Add zignature",
+				"za ", "zigname type params", "add zignature",
+				"zaf ", "[fcnname] [zigname]", "create zignature for function",
+				"zaF ", "", "generate zignatures for all functions",
+				"za?? ", "", "show extended help",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	default:
-		eprintf ("usage: zam[fF] [args]\n");
-		return false;
-	}
-
-	return true;
-}
-
-static int cmdAdd(void *data, const char *input) {
-	RCore *core = (RCore *) data;
-
-	switch (*input) {
-	case 'a':
-		return cmdAddBytes (data, input + 1, R_SIGN_ANAL);
-	case 'e':
-		return cmdAddBytes (data, input + 1, R_SIGN_EXACT);
-	case 'm':
-		return cmdAddMetric (data, input + 1);
-	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "za[aemg] [args] ", "# Add zignature",
-				"zaa", "[?]", "add anal zignature",
-				"zae", "[?]", "add exact-match zignature",
-				"zam", "[?]", "add metric zignature",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
-		break;
-	default:
-		eprintf ("usage: za[aemg] [args]\n");
+		eprintf ("usage: za[fF?] [args]\n");
 		return false;
 	}
 
@@ -620,19 +487,8 @@ static int cmdSpace(void *data, const char *input) {
 		}
 		break;
 	default:
-		{
-			int i, count = 0;
-
-			for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-				if (!zs->spaces[i]) {
-					continue;
-				}
-				r_cons_printf ("%02d %c %s\n", count,
-						(i == zs->space_idx)? '*': ' ',
-						zs->spaces[i]);
-				count++;
-			}
-		}
+		eprintf ("usage: zs[+-*] [namespace]\n");
+		return false;
 	}
 
 	return true;
@@ -687,11 +543,11 @@ struct ctxSearchCB {
 	int count;
 };
 
-static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, bool rad) {
+static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	char *name;
 
-	name = r_str_newf ("%s.%s_%d", zign_prefix, it->name, count);
+	name = r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
 
 	if (rad) {
 		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, size, addr);
@@ -702,11 +558,11 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 	free(name);
 }
 
-static int metricMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
+static int graphMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 
 	// TODO(nibble): use one counter per metric zign instead of ctx->count
-	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, ctx->rad);
+	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, "graph", ctx->rad);
 	ctx->count++;
 
 	return 1;
@@ -715,7 +571,7 @@ static int metricMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 static int searchHitCB(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 
-	addFlag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->rad);
+	addFlag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	ctx->count++;
 
 	return 1;
@@ -758,7 +614,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 }
 
 static bool search(RCore *core, bool rad) {
-	struct ctxSearchCB metric_match_ctx = { core, rad, 0 };
+	struct ctxSearchCB graph_match_ctx = { core, rad, 0 };
 	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
 	RList *list;
 	RListIter *iter;
@@ -779,7 +635,7 @@ static bool search(RCore *core, bool rad) {
 		}
 	}
 
-	// Anal/Exact search
+	// Bytes search
 	list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, &sin_from, &sin_to);
 	if (list) {
 		r_list_foreach (list, iter, map) {
@@ -792,14 +648,14 @@ static bool search(RCore *core, bool rad) {
 		retval = searchRange (core, sin_from, sin_to, rad, &bytes_search_ctx);
 	}
 
-	// Metric search
+	// Graph search
 	eprintf ("[+] searching function metrics\n");
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		r_sign_match_metric (core->anal, fcni, metricMatchCB, &metric_match_ctx);
+		r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
 	}
 	r_cons_break_pop ();
 
@@ -812,7 +668,7 @@ static bool search(RCore *core, bool rad) {
 		}
 	}
 
-	hits = bytes_search_ctx.count + metric_match_ctx.count;
+	hits = bytes_search_ctx.count + graph_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
@@ -852,7 +708,7 @@ static int cmdCheck(void *data, const char *input) {
 	bool retval = true;
 	bool rad = input[0] == '*';
 	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
-	struct ctxSearchCB metric_match_ctx = { core, rad, 0 };
+	struct ctxSearchCB graph_match_ctx = { core, rad, 0 };
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	int hits = 0;
 
@@ -865,7 +721,7 @@ static int cmdCheck(void *data, const char *input) {
 		}
 	}
 
-	// Anal/Exact search
+	// Bytes search
 	eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
 	ss = r_sign_search_new ();
 	r_sign_search_init (core->anal, ss, searchHitCB, &bytes_search_ctx);
@@ -875,7 +731,7 @@ static int cmdCheck(void *data, const char *input) {
 	}
 	r_sign_search_free (ss);
 
-	// Metric search
+	// Graph search
 	eprintf ("[+] searching function metrics\n");
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -883,7 +739,7 @@ static int cmdCheck(void *data, const char *input) {
 			break;
 		}
 		if (fcni->addr == core->offset) {
-			r_sign_match_metric (core->anal, fcni, metricMatchCB, &metric_match_ctx);
+			r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
 			break;
 		}
 	}
@@ -898,7 +754,7 @@ static int cmdCheck(void *data, const char *input) {
 		}
 	}
 
-	hits = bytes_search_ctx.count + metric_match_ctx.count;
+	hits = bytes_search_ctx.count + graph_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
@@ -943,7 +799,6 @@ static int cmd_zign(void *data, const char *input) {
 				"z/", "[?]", "search zignatures",
 				"zc", "", "check zignatures at address",
 				"zs", "[?]", "manage zignspaces",
-				"NOTE:", "", "bytes can contain '..' (dots) to specify a binary mask",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);

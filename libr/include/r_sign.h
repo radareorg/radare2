@@ -15,35 +15,35 @@ R_LIB_VERSION_HEADER(r_sign);
 #define R_SIGN_VAL_MAXSZ 10240
 
 enum {
-	R_SIGN_EXACT  = 'e',  // Exact match
-	R_SIGN_ANAL   = 'a',  // Anal
-	R_SIGN_METRIC = 'm',  // Function metrics
+	R_SIGN_BYTES = 'b', // bytes pattern
+	R_SIGN_ANAL  = 'a', // bytes pattern (anal mask)
+	R_SIGN_GRAPH = 'g', // graph metrics
 };
 
-typedef struct r_sign_metrics_t {
+typedef struct r_sign_graph_t {
 	int cc;
 	int nbbs;
 	int edges;
 	int ebbs;
-} RSignMetrics;
+} RSignGraph;
+
+typedef struct r_sign_bytes_t {
+	int size;
+	ut8 *bytes;
+	ut8 *mask;
+} RSignBytes;
 
 typedef struct r_sign_item_t {
 	char *name;
 	int space;
-	int type;
 
-	// exact/anal zigns
-	int size;
-	ut8 *bytes;
-	ut8 *mask;
-
-	// metric zigns
-	RSignMetrics metrics;
+	RSignBytes *bytes;
+	RSignGraph *graph;
 } RSignItem;
 
 typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
 typedef int (*RSignSearchCallback)(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user);
-typedef int (*RSignMetricMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
+typedef int (*RSignGraphMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 
 typedef struct r_sign_search_t {
 	RSearch *search;
@@ -53,9 +53,9 @@ typedef struct r_sign_search_t {
 } RSignSearch;
 
 #ifdef R_API
-R_API bool r_sign_add_exact(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
+R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
-R_API bool r_sign_add_metric(RAnal *a, const char *name, RSignMetrics metrics);
+R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 
@@ -65,14 +65,13 @@ R_API RSignSearch *r_sign_search_new();
 R_API void r_sign_search_free(RSignSearch *ss);
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb, void *user);
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
-
-R_API int r_sign_match_metric(RAnal *a, RAnalFunction *fcn, RSignMetricMatchCallback cb, void *user);
+R_API int r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallback cb, void *user);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_save(RAnal *a, const char *file);
 
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
-R_API void r_sign_item_free(void *_item);
+R_API void r_sign_item_free(RSignItem *item);
 
 // TODO
 R_API int r_sign_is_flirt(RBuffer *buf);
