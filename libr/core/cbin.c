@@ -2042,6 +2042,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					if (!arch) arch = info->arch;
 					if (!bits) bits = info->bits;
 				}
+				if (!arch) {
+					arch = r_config_get (r->config, "asm.arch");
+				}
 				r_cons_printf ("Sa %s %d @ 0x%08"
 					PFMT64x"\n", arch, bits, addr);
 			}
