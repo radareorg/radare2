@@ -1823,12 +1823,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		json = 0;
 	}
 
-	if (!strncmp (param->mode, "dbg.", 4) || !strncmp (param->mode, "io.sections", 11)) {
-		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
-	} else {
-		param->boundaries = NULL;
-	}
-
 	maxhits = (int) r_config_get_i (core->config, "search.count");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
 
