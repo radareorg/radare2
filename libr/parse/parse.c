@@ -148,8 +148,8 @@ static char *findNextNumber(char *op) {
 					char *t = p;
 					p++;
 					if (!IS_DIGIT (*p)) {
-						for (;*p && *p != ']'; p++);
-						if (*p == ']') {
+						for (;*t && *t != ']'; t++);
+						if (*t == ']') {
 							continue;
 						} else {
 							p = t;
@@ -259,8 +259,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		}
 		if (p->hint) {
 			int pnumleft, immbase = p->hint->immbase;
-			char num[256], *pnum;
+			char num[256], *pnum, *tmp;
 			bool is_hex = false;
+			int tmp_count;
 			strncpy (num, ptr, sizeof (num)-2);
 			pnum = num;
 			if (!strncmp (pnum, "0x", 2)) {
@@ -283,6 +284,18 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				strcat (num, "b");
 				break;
 			case 2: // hack for ascii
+				tmp_count = 0;
+				for (tmp = data; tmp < ptr; tmp++) {
+					if (*tmp == '[') {
+						tmp_count++;
+					} else if (*tmp == ']') {
+						tmp_count--;
+					}
+				}
+				if (tmp_count > 0) {
+					ptr = ptr2;
+					continue;
+				}
 				memset (num, 0, sizeof (num));
 				pnum = num;
 				*pnum++ = '\'';
