@@ -2943,8 +2943,8 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	}
 	if (!core->anal->esil) {
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		int stacksize = r_config_get_i (core->config, "esil.stacksize");
-		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
+		int esd = r_config_get_i (core->config, "esil.stack.depth");
+		if (!(core->anal->esil = r_anal_esil_new (esd, iotrap))) {
 			R_FREE (ds->esil_regstate);
 			return;
 		}

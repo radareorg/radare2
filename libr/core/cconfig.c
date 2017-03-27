@@ -920,10 +920,10 @@ static int cb_esilverbose (void *user, void *data) {
 	return true;
 }
 
-static int cb_esilstacksize (void *user, void *data) {
+static int cb_esilstackdepth (void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value < 3) {
-		eprintf ("esil.stacksize must be greater than 2\n");
+		eprintf ("esil.stack.depth must be greater than 2\n");
 		node->i_value = 32;
 	}
 	return true;
@@ -1791,7 +1791,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
 	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
-	SETICB("esil.stacksize", 32, &cb_esilstacksize, "Number of elements that can be pushed on the esilstack");
+	SETICB("esil.stack.depth", 32, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
+	SETI("esil.stack.size", 0x1f0000, "Number of elements that can be pushed on the esilstack");
+	SETI("esil.stack.addr", 0x100000, "Number of elements that can be pushed on the esilstack");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
