@@ -99,7 +99,7 @@ R_API void r_io_sundo_reset(RIO *io) {
 
 R_API RList *r_io_sundo_list(RIO *io, int mode) {
 	int idx, undos, redos, i, j, start, end;
-	RList* list;
+	RList* list = NULL;
 
 	if (mode == '!') {
 		mode = 0;
@@ -149,7 +149,8 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 			} else if (j != undos) {
 				io->cb_printf ("f redo_%d @ 0x%"PFMT64x"\n", idx, addr);
 			}
-		default:
+			break;
+		case 0:
 			if (list) {
 				RIOUndos  *u = R_NEW0 (RIOUndos);
 				memcpy (u, undo, sizeof (RIOUndos));

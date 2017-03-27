@@ -333,27 +333,29 @@ static int cmd_seek(void *data, const char *input) {
 			RList *list = r_io_sundo_list (core->io, input[0]);
 			RListIter *iter;
 			RIOUndos *undo;
-			r_list_foreach (list, iter, undo) {
-				char *name = NULL;
+			if (list) {
+				r_list_foreach (list, iter, undo) {
+					char *name = NULL;
 
-				core->flags->space_strict = true;
-				RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-				core->flags->space_strict = false;
-				if (f) {
-					if (f->offset != undo->off) {
-						name = r_str_newf ("%s + %d\n", f->name,
-								(int)(undo->off- f->offset));
-					} else {
-						name = strdup (f->name);
+					core->flags->space_strict = true;
+					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
+					core->flags->space_strict = false;
+					if (f) {
+						if (f->offset != undo->off) {
+							name = r_str_newf ("%s + %d\n", f->name,
+									(int)(undo->off- f->offset));
+						} else {
+							name = strdup (f->name);
+						}
 					}
+					if (!name) {
+						name = strdup ("");
+					}
+					r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name);
+					free (name);
 				}
-				if (!name) {
-					name = strdup ("");
-				}
-				r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name);
-				free (name);
+				r_list_free (list);
 			}
-			r_list_free (list);
 		}
 		break;
 	case '+':
