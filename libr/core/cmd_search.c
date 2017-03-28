@@ -2254,10 +2254,10 @@ static void search_similar_pattern(RCore *core, int count) {
 // a_from <= a_to
 // b_from <= b_to
 // Issues a warning upon invalid input and does nothing.
-void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
+static void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
 		ut64 *out_from, ut64 *out_to) {
 	if (a_from > a_to || b_from > b_to) {
-		eprintf("WARNING: range_get_intersect called on invalid inputs!\n");
+		eprintf ("WARNING: range_get_intersect called on invalid inputs!\n");
 	}
 	*out_from = R_MAX (a_from, b_from);
 	*out_to = R_MIN (a_to, b_to);
@@ -2279,7 +2279,7 @@ static void limit_boundaries(RList *list, ut64 from, ut64 to) {
 	RIOMap *m;
 
 	if (from > to) {
-		eprintf("WARNING: limit_boundaries was called on invalid input range.\n");
+		eprintf ("WARNING: limit_boundaries was called on invalid input range.\n");
 		return;
 	}
 
@@ -2363,7 +2363,7 @@ static int cmd_search(void *data, const char *input) {
 		// UT64_MAX.
 		limit_boundaries (param.boundaries, config_from, config_to);
 		if (param.boundaries->length == 0) {
-			eprintf("search failed: empty search area.\n");
+			eprintf ("search failed: empty search area.\n");
 			ret = false;
 			goto beach;
 		}
