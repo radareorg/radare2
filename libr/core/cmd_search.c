@@ -251,7 +251,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
-                                int blen, const ut8 *mask, int mlen) {
+								int blen, const ut8 *mask, int mlen) {
 	int ret;
 	ut64 at;
 	ut8 *b = (ut8 *) malloc (core->blocksize);
@@ -934,8 +934,8 @@ static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
 
 // TODO: follow unconditional jumps
 static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
-                                   const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget,
-                                   RList *badstart, int *max_count) {
+								   const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget,
+								   RList *badstart, int *max_count) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
@@ -986,7 +986,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 			goto ret;
 		}
 		if (!strncasecmp (asmop.buf_asm, "invalid", strlen ("invalid")) ||
-		    !strncasecmp (asmop.buf_asm, ".byte", strlen (".byte"))) {
+			!strncasecmp (asmop.buf_asm, ".byte", strlen (".byte"))) {
 			valid = false;
 			goto ret;
 		}
@@ -1219,7 +1219,7 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 		return NULL;
 	}
 	prot = r_config_get_i (core->config, "rop.nx")?
-	       R_IO_READ | R_IO_WRITE | R_IO_EXEC: R_IO_EXEC;
+		   R_IO_READ | R_IO_WRITE | R_IO_EXEC: R_IO_EXEC;
 	searchin = r_config_get (core->config, "search.in");
 
 	from = core->offset;
@@ -1235,8 +1235,8 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	}
 
 	if (!strncmp (searchin, "dbg.", 4)\
-	    || !strncmp (searchin, "io.sections", 11)\
-	    || prot & R_IO_EXEC) { /* always true */
+		|| !strncmp (searchin, "io.sections", 11)\
+		|| prot & R_IO_EXEC) { /* always true */
 		list = r_core_get_boundaries_prot (core,
 			prot, searchin, &from, &to);
 	} else {
@@ -1257,7 +1257,7 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	return list;
 }
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep, int regexp) {
-	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	  // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const ut8 prot = r_config_get_i (core->config, "rop.nx")? R_IO_READ | R_IO_WRITE | R_IO_EXEC: R_IO_EXEC;
@@ -1343,8 +1343,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	if (!strncmp (smode, "dbg.", 4)\
-	    || !strncmp (smode, "io.sections", 11)\
-	    || prot & R_IO_EXEC) {
+		|| !strncmp (smode, "io.sections", 11)\
+		|| prot & R_IO_EXEC) {
 		list = r_core_get_boundaries_prot (core, prot, smode, &from, &to);
 	} else {
 		list = NULL;
@@ -1426,7 +1426,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			RAnalOp end_gadget = R_EMPTY;
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
-				    delta - i) <= 0) {
+					delta - i) <= 0) {
 				continue;
 			}
 			if (is_end_gadget (&end_gadget, crop)) {
@@ -1463,8 +1463,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			// instructions, x86 and friends are weird length instructions, so
 			// we'll just assume 15 byte instructions.
 			ropdepth = increment == 1?
-			           max_instr * max_inst_size_x86 /* wow, x86 is long */:
-			           max_instr * increment;
+					   max_instr * max_inst_size_x86 /* wow, x86 is long */:
+					   max_instr * increment;
 			if (r_cons_is_breaked ()) {
 				break;
 			}
@@ -2379,8 +2379,8 @@ static int cmd_search(void *data, const char *input) {
 	   this introduces a bug until we implement backwards search
 	   for all search types
 	   if (config_to < config_from) {
-	        eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
-	        return false;
+			eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
+			return false;
 	   }
 	   since the backward search will be implemented soon I'm not gonna stick
 	   checks for every case in switch // jjdredd
@@ -2391,11 +2391,11 @@ static int cmd_search(void *data, const char *input) {
 	searchflags = r_config_get_i (core->config, "search.flags");
 	// TODO: handle section ranges if from&&to==0
 /*
-        section = r_io_section_vget (core->io, core->offset);
-        if (section) {
-                from += section->vaddr;
-                //fin = ini + s->size;
-        }
+		section = r_io_section_vget (core->io, core->offset);
+		if (section) {
+				from += section->vaddr;
+				//fin = ini + s->size;
+		}
  */
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
@@ -2411,7 +2411,7 @@ static int cmd_search(void *data, const char *input) {
 	   from now on 'from' and 'to' represent only the search boundaries, not
 	   search direction */
 	if (core->io->va) {
-        ut64 tmp = R_MIN (param.from, param.to);
+		ut64 tmp = R_MIN (param.from, param.to);
 		param.to = R_MAX (param.from, param.to);
 		param.from = tmp;
 	} else {
