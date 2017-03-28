@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 
@@ -12,7 +12,7 @@ static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
 static int searchhits = 0;
-static int maplist = 0;
+static bool maplist = false;
 static int maxhits = 0;
 static bool json = false;
 static int first_hit = true;
