@@ -2248,7 +2248,7 @@ static void search_similar_pattern(RCore *core, int count) {
 }
 
 // Returns the intersection of two half-open intervals, [a_from, a_to) and 
-// [b_from, b_to) or [0, 0) if the intersection is empty.
+// [b_from, b_to) or [UT64_MAX, UT64_MAX) if the intersection is empty.
 
 // valid inputs:
 // a_from <= a_to
@@ -2263,8 +2263,8 @@ static void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
 	*out_from = R_MAX (a_from, b_from);
 	*out_to = R_MIN (a_to, b_to);
 	if (*out_from >= *out_to) {
-		*out_from = 0;
-		*out_to = 0;
+		*out_from = UT64_MAX;
+		*out_to = UT64_MAX;
 	}
 }
 
