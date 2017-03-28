@@ -2258,6 +2258,7 @@ static void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
 		ut64 *out_from, ut64 *out_to) {
 	if (a_from > a_to || b_from > b_to) {
 		eprintf ("WARNING: range_get_intersect called on invalid inputs!\n");
+		return;
 	}
 	*out_from = R_MAX (a_from, b_from);
 	*out_to = R_MIN (a_to, b_to);
