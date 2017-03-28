@@ -30,11 +30,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (strstr (a->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
 		}
-		if (strstr (a->cpu, "v8")) {
-			mode |= CS_MODE_V8;
+		if (a->bits != 64) {
+			if (strstr (a->cpu, "v8")) {
+				mode |= CS_MODE_V8;
+			}
 		}
 	}
-	if (a->features) {
+	if (a->features && a->bits != 64) {
 		if (strstr (a->features, "v8")) {
 			mode |= CS_MODE_V8;
 		}
