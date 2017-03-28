@@ -1137,7 +1137,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			if (esil) {
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
-				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
 					core->cons->pal.reg, core->cons->pal.num);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
@@ -1174,7 +1174,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				r_list_append (ropList, (void *) opstr_n);
 			}
 			if (colorize) {
-				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
 					core->cons->pal.reg, core->cons->pal.num);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {

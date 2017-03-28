@@ -1541,7 +1541,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 						RAnalOp aop = {
 							0
 						};
-						char *asm_str = r_print_colorize_opcode (asmop.buf_asm, color_reg, color_num);
+						char *asm_str = r_print_colorize_opcode (core->print, asmop.buf_asm, color_reg, color_num);
 						r_anal_op (core->anal, &aop, core->offset + i,
 							core->block + i, core->blocksize - i);
 						r_parse_filter (core->parser, core->flags,

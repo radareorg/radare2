@@ -238,6 +238,18 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmsecsub(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_SECSUB;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_SECSUB);
+	}
+	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
 static int cb_asmassembler(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1844,6 +1856,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
 	SETPREF("asm.section", "false", "Show section name before offset");
 	SETI("asm.section.col", 20, "Columns width to show asm.section");
+	SETCB("asm.section.sub", "false", &cb_asmsecsub, "Show offsets in disasm prefixed with section/map name");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax");
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");

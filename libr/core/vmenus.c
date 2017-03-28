@@ -73,9 +73,9 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
-		scol1 = r_print_colorize_opcode (s1, color_reg, color_num);
+		scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num);
 		free (s1);
-		scol2 = r_print_colorize_opcode (s2, color_reg, color_num);
+		scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -91,7 +91,7 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	}
 	char *res = strdup("");
 	res = r_str_append (res, r_print_color_op_type (core->print, optype));
-	tmp = r_print_colorize_opcode (source, color_reg, color_num);
+	tmp = r_print_colorize_opcode (core->print, source, color_reg, color_num);
 	res = r_str_append (res, tmp);
 	free (tmp);
 	return res;

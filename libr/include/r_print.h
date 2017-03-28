@@ -24,6 +24,7 @@ extern "C" {
 #define R_PRINT_FLAGS_COMMENT 0x00000400
 #define R_PRINT_FLAGS_COMPACT 0x00000800
 #define R_PRINT_FLAGS_NONHEX  0x00001000
+#define R_PRINT_FLAGS_SECSUB  0x00002000
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
@@ -155,8 +156,8 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
 R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
-R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num);
-R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type);
+R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num);
+R_API const char * r_print_color_op_type(RPrint *p, ut64 anal_type);
 R_API void r_print_set_interrupted(int i);
 R_API void r_print_init_rowoffsets(RPrint *p);
 R_API ut32 r_print_rowoff(RPrint *p, int i);

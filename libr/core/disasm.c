@@ -663,9 +663,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
-		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num);
+		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num);
 		free (s1);
-		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num);
+		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -680,7 +680,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		free (scol2);
 		return source;
 	}
-	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
+	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num);
 }
 
 static void ds_build_op_str(RDisasmState *ds) {
@@ -4250,7 +4250,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					char *buf_asm;
 					RAnalOp aop;
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i);
-					buf_asm = r_print_colorize_opcode (str,
+					buf_asm = r_print_colorize_opcode (core->print, str,
 							core->cons->pal.reg, core->cons->pal.num);
 					r_cons_printf ("%s%s\n",
 							r_print_color_op_type (core->print, aop.type),
