@@ -1257,7 +1257,7 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	return list;
 }
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep, int regexp) {
-	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	  // decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const ut8 prot = r_config_get_i (core->config, "rop.nx")? R_IO_READ | R_IO_WRITE | R_IO_EXEC: R_IO_EXEC;
