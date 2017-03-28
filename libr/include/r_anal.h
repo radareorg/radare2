@@ -1065,6 +1065,7 @@ typedef struct r_anal_plugin_t {
 	int (*fini)(void *user);
 	int (*reset_counter) (RAnal *anal, ut64 start_addr);
 	int (*archinfo)(RAnal *anal, int query);
+	ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data);
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
@@ -1194,7 +1195,6 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
-R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
