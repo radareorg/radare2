@@ -2254,9 +2254,11 @@ static void search_similar_pattern(RCore *core, int count) {
 // a_from <= a_to
 // b_from <= b_to
 // Issues a warning upon invalid input and does nothing.
-
 void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
 		ut64 *out_from, ut64 *out_to) {
+	if (a_from > a_to || b_from > b_to) {
+		eprintf("WARNING: range_get_intersect called on invalid inputs!\n");
+	}
 	*out_from = R_MAX (a_from, b_from);
 	*out_to = R_MIN (a_to, b_to);
 	if (*out_from >= *out_to) {
@@ -2272,7 +2274,6 @@ void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
 // valid inputs:
 // list: not NULL, may be empty.
 // from <= to
-
 static void limit_boundaries(RList *list, ut64 from, ut64 to) {
 	RListIter *it, *__dont_touch;
 	RIOMap *m;
