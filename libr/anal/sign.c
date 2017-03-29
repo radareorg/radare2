@@ -168,11 +168,11 @@ R_API bool r_sign_add_exact(RAnal *a, const char *name, ut64 size, const ut8 *by
 	return addBytes (a, R_SIGN_EXACT, name, size, bytes, mask);
 }
 
-R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes) {
+R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
 	ut8 *mask = NULL;
 	bool retval = true;
 
-	mask = r_anal_mask (a, size, bytes);
+	mask = r_anal_mask (a, size, bytes, at);
 	retval = addBytes (a, R_SIGN_ANAL, name, size, bytes, mask);
 
 	free (mask);

@@ -49,7 +49,7 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name, int t
 		retval = r_sign_add_exact (core->anal, zigname, len, buf, mask);
 		break;
 	case R_SIGN_ANAL:
-		retval = r_sign_add_anal (core->anal, zigname, len, buf);
+		retval = r_sign_add_anal (core->anal, zigname, len, buf, fcn->addr);
 		break;
 	}
 
@@ -81,7 +81,7 @@ static bool addHex(RCore *core, const char *name, int type, const char *hexbytes
 		retval = r_sign_add_exact (core->anal, name, size, bytes, mask);
 		break;
 	case R_SIGN_ANAL:
-		retval = r_sign_add_anal (core->anal, name, size, bytes);
+		retval = r_sign_add_anal (core->anal, name, size, bytes, 0);
 		break;
 	}
 
