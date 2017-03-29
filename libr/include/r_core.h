@@ -591,6 +591,11 @@ R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
 R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);
+typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
+			   bool asterisk, int count);
+R_API int r_core_search_value_in_range (RCore *core, ut64 from, ut64 to,
+					ut64 vmin, ut64 vmax, int vsize,
+					bool asterisk, inRangeCb cb);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;

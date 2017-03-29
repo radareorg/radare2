@@ -5062,8 +5062,6 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	}
 }
 
-extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize, bool asterisk);
-
 static void cmd_anal_aad(RCore *core, const char *input) {
 	RListIter *iter;
 	RAnalRef *ref;
@@ -5077,8 +5075,45 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	r_list_free (list);
 }
 
+
+static bool archIsArmOrThumb(RCore *core) {
+	RAsm *as = core ? core->assembler : NULL;
+	if (as && as->cur && as->cur->arch) {
+		if (r_str_startswith (as->cur->arch, "arm")) {
+			if (as->cur->bits < 64) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
+	bool isarm = archIsArmOrThumb (core);
+	if (isarm) {
+		if (to & 1) {
+			// .dword 0x000080b9 in reality is 0x000080b8
+			to--;
+			r_anal_hint_set_bits (core->anal, to, 16);
+			// can we assume is gonna be always a function?
+		} else {
+			r_core_seek_archbits (core, from);
+			ut64 bits = r_config_get_i (core->config, "asm.bits");
+			r_anal_hint_set_bits (core->anal, from, bits);
+		}
+	}
+	if (asterisk) {
+		r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", to, from);
+		r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, from);
+		r_cons_printf ("f+ sym.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
+	} else {
+		r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, to, from);
+		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
+		r_core_cmdf (core, "f+ sym.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
+	}
+}
+
 static void cmd_anal_aav(RCore *core, const char *input) {
-#define set(x,y) r_config_set(core->config, x, y);
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	RIOSection *s = NULL;
@@ -5102,7 +5137,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 	}
 	seti ("search.align", 4);
-
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		ptr = r_num_math (core->num, arg + 1);
@@ -5129,13 +5163,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (core->assembler->bits == 64) {
 		vsize = 8;
 	}
-	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize, asterisk);
-	// TODO: for each hit . must set flag, xref and metadata Cd 4
-	if (asterisk) {
-		r_cons_printf ("f-hit*\n");
-	} else {
-		r_core_cmd0 (core, "f-hit*");
-	}
+	(void)r_core_search_value_in_range (core, from, to, vmin, vmax, vsize, asterisk, _CbInRangeAav);
 	seti ("search.align", o_align);
 }
 
@@ -5144,7 +5172,6 @@ static bool should_aav(RCore *core) {
 	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 		return false;
 	}
-
 	return true;
 }
 
