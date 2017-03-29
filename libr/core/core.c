@@ -618,7 +618,7 @@ static const char *radare_argv[] = {
 	"pfj", "pfj.", "pfv", "pfv.",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
 	"z", "z*", "zj", "z-", "z-*",
-	"zaa", "zaaf", "zaaF", "zae", "zaef", "zaeF", "zam", "zamf", "zamF",
+	"za", "zaf", "zaF",
 	"zo", "zoz", "zos",
 	"zfd", "zfs", "zfz",
 	"z/", "z/*",
