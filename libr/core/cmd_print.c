@@ -2273,6 +2273,91 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	}
 }
 
+
+static bool checkAnalType(RAnalOp *op, int t) {
+	if (t == 'c') {
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_RCALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_CALL:
+			return true;
+		}
+	} else if (t == 's') {
+		if (op->family == R_ANAL_OP_FAMILY_PRIV) {
+			return true;
+		}
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_SWI:
+			return true;
+		}
+	} else if (t == 'i') {
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_TRAP:
+		case R_ANAL_OP_TYPE_ILL:
+			return true;
+		}
+	} else if (t == 'j') {
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_JMP:
+		//case R_ANAL_OP_TYPE_RJMP:
+		//case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_CJMP:
+			return true;
+		}
+	}
+	return false;
+}
+
+static inline void matchBar(ut8 *ptr, int i) {
+	if (ptr[i] < 0xff) {
+		ptr[i]++;
+	}
+}
+
+static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skipblocks) {
+	ut8 *p;
+	int j, i = 0;
+	ut8 *ptr = calloc (1, nblocks);
+	if (!ptr) {
+		eprintf ("Error: failed to malloc memory");
+		return NULL;
+	}
+	p = malloc (blocksize);
+	if (!p) {
+		R_FREE (ptr);
+		eprintf ("Error: failed to malloc memory");
+		return NULL;
+	}
+	for (i = 0; i < nblocks; i++) {
+		ut64 off = core->offset + (i + skipblocks) * blocksize;
+		for (j = 0; j < blocksize ; j++) {
+			RAnalOp *op = r_core_anal_op (core, off + j);
+			if (op) {
+				if (op->size < 1) {
+					// do nothing
+					if (type == 'i') {
+						matchBar (ptr, i);
+					}
+				} else {
+					if (checkAnalType (op, type)) {
+						matchBar (ptr, i);
+					}
+				}
+				if (op->size > 0) {
+					j += op->size - 1;
+				}
+				r_anal_op_free (op);
+			} else {
+				if (type == 'i') {
+					matchBar (ptr, i);
+				}
+			}
+		}
+	}
+	free (p);
+	return ptr;
+}
+
 static void cmd_print_bars(RCore *core, const char *input) {
 	bool print_bars = false;
 	ut8 *ptr = core->block;
@@ -2339,17 +2424,22 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			"Usage:", "p=[bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 			"p=", "", "print bytes of current block in bars",
 			"p=", "b", "same as above",
+			"p=", "c", "print number of calls per block",
 			"p=", "d", "print different bytes from block",
 			"p=", "e", "print entropy for each filesize/blocksize",
-			"p=", "p", "print number of printable bytes for each filesize/blocksize",
-			"p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
 			"p=", "F", "print number of 0xFF bytes for each filesize/blocksize",
+			"p=", "i", "print number of invalid instructions per block",
+			"p=", "j", "print number of jumps and conditional jumps in block",
+			"p=", "m", "print number of flags and marks in block",
+			"p=", "p", "print number of printable bytes for each filesize/blocksize",
+			"p=", "s", "print number of syscall and priviledged instructions",
+			"p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);
-	}
+		  }
 		break;
-	case 'd':
+	case 'd': // "p=d"
 		if (input[1]) {
 			ut64 bufsz = r_num_math (core->num, input + 3);
 			ut64 curbsz = core->blocksize;
@@ -2367,6 +2457,53 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		} else {
 			cmd_print_eq_dict (core, core->block, core->blocksize);
 		}
+		break;
+	case 'j': // "p=j" cjmp and jmp
+		if ((ptr = analBars (core, 'j', nblocks, blocksize, skipblocks))) {
+			print_bars = true;
+		}
+		break;
+	case 'c': // "p=c" calls
+		if ((ptr = analBars (core, 'c', nblocks, blocksize, skipblocks))) {
+			print_bars = true;
+		}
+		break;
+	case 'i': // "p=i" invalid
+		if ((ptr = analBars (core, 'i', nblocks, blocksize, skipblocks))) {
+			print_bars = true;
+		}
+		break;
+	case 's': // "p=s" syscalls
+		if ((ptr = analBars (core, 's', nblocks, blocksize, skipblocks))) {
+			print_bars = true;
+		}
+		break;
+	case 'm':
+	{
+		ut8 *p;
+		int j, i = 0;
+		ptr = calloc (1, nblocks);
+		if (!ptr) {
+			eprintf ("Error: failed to malloc memory");
+			goto beach;
+		}
+		p = malloc (blocksize);
+		if (!p) {
+			R_FREE (ptr);
+			eprintf ("Error: failed to malloc memory");
+			goto beach;
+		}
+		for (i = 0; i < nblocks; i++) {
+			ut64 off = core->offset + (i + skipblocks) * blocksize;
+			for (j = 0; j < blocksize; j++) {
+				if (r_flag_get_at (core->flags, off + j, false)) {
+					matchBar (ptr, i);
+				}
+			}
+		}
+		free (p);
+		print_bars = true;
+	}
 		break;
 	case 'e': // "p=e" entropy
 	{
@@ -2409,6 +2546,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			eprintf ("Error: failed to malloc memory");
 			goto beach;
 		}
+		int len = 0;
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = (i + skipblocks) * blocksize;
 			r_core_read_at (core, off, p, blocksize);
@@ -2425,8 +2563,16 @@ static void cmd_print_bars(RCore *core, const char *input) {
 					}
 					break;
 				case 'p':
-					if (IS_PRINTABLE (p[j])) {
-						k++;
+					if ((IS_PRINTABLE (p[j]))) {
+						if (p[j + 1] == 0) {
+							k++;
+							j++;
+						}
+						if (len++ > 8) {
+							k++;
+						}
+					} else {
+						len = 0;
 					}
 					break;
 				}

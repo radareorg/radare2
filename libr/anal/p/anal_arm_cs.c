@@ -1741,7 +1741,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		}
 		break;
+	case ARM_INS_MRS:
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+		// TODO: esil for MRS
+		break;
 	case ARM_INS_MSR:
+		op->family = R_ANAL_OP_FAMILY_PRIV;
 		msr_flags = insn->detail->arm.operands[0].reg >> 4;
 		r_strbuf_appendf (&op->esil, "0,",REG(1));
 		if (msr_flags & 1) {
