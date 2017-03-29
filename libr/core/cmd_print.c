@@ -2329,6 +2329,9 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 		return NULL;
 	}
 	for (i = 0; i < nblocks; i++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		ut64 off = core->offset + (i + skipblocks) * blocksize;
 		for (j = 0; j < blocksize ; j++) {
 			RAnalOp *op = r_core_anal_op (core, off + j);
