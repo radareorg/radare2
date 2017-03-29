@@ -2436,6 +2436,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			"p=", "m", "print number of flags and marks in block",
 			"p=", "p", "print number of printable bytes for each filesize/blocksize",
 			"p=", "s", "print number of syscall and priviledged instructions",
+			"p=", "z", "print number of chars in strings in block",
 			"p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
 			NULL
 		};
@@ -2535,6 +2536,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case '0':  // 0x00 bytes
 	case 'F':  // 0xff bytes
 	case 'p':  // printable chars
+	case 'z':  // zero terminated strings
 	{
 		ut8 *p;
 		int i, j, k;
@@ -2565,11 +2567,14 @@ static void cmd_print_bars(RCore *core, const char *input) {
 						k++;
 					}
 					break;
+				case 'z':
 				case 'p':
 					if ((IS_PRINTABLE (p[j]))) {
-						if (p[j + 1] == 0) {
-							k++;
-							j++;
+						if (mode == 'z') {
+							if (p[j + 1] == 0) {
+								k++;
+								j++;
+							}
 						}
 						if (len++ > 8) {
 							k++;
