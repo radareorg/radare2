@@ -51,9 +51,8 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
-static bool addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
+static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;
-	bool retval = true;
 	int curspace = core->anal->zign_spaces.space_idx;
 
 	if (name) {
@@ -66,20 +65,13 @@ static bool addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	}
 
 	if (!addFcnGraph (core, fcn, zigname)) {
-		eprintf ("error: could not add graph zignature for fcn %s\n", fcn->name);
-		retval = false;
-		goto exit_function;
+		eprintf ("warn: could not add graph zignature for fcn %s\n", fcn->name);
 	}
 	if (!addFcnBytes (core, fcn, zigname)) {
-		eprintf ("error: could not add anal zignature for fcn %s\n", fcn->name);
-		retval = false;
-		goto exit_function;
+		eprintf ("warn: could not add anal zignature for fcn %s\n", fcn->name);
 	}
 
-exit_function:
 	free (zigname);
-
-	return retval;
 }
 
 static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
@@ -243,9 +235,7 @@ exit_case_manual:
 				}
 				if ((!fcnname && core->offset == fcni->addr) ||
 					(fcnname && !strcmp (fcnname, fcni->name))) {
-					if (!addFcnZign (core, fcni, zigname)) {
-						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
-					}
+					addFcnZign (core, fcni, zigname);
 					break;
 				}
 			}
@@ -267,10 +257,7 @@ exit_case_fcn:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (!addFcnZign (core, fcni, NULL)) {
-					eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
-					continue;
-				}
+				addFcnZign (core, fcni, NULL);
 				count++;
 			}
 			r_cons_break_pop ();
