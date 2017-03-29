@@ -54,7 +54,7 @@ typedef struct r_sign_search_t {
 
 #ifdef R_API
 R_API bool r_sign_add_exact(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
-R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes);
+R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_metric(RAnal *a, const char *name, RSignMetrics metrics);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);

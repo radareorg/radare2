@@ -288,7 +288,7 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 	return true;
 }
 
-R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
+R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0;
@@ -298,7 +298,7 @@ R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
 	}
 
 	if (anal->cur && anal->cur->anal_mask) {
-		return anal->cur->anal_mask (anal, size, data);
+		return anal->cur->anal_mask (anal, size, data, at);
 	}
 
 	op = r_anal_op_new ();
@@ -306,7 +306,7 @@ R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = r_anal_op (anal, op, 0, data + idx, size - idx)) < 1) {
+		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
