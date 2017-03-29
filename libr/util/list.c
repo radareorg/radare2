@@ -546,81 +546,10 @@ R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
 	}
 }
 
-void r_list_iterative_merge_sort(RList *list, RListComparator compare) {
-	int list_size=1,num_merges,left_size,right_size;
-	RListIter *tail;
-	RListIter *left;
-	RListIter *right;
-	RListIter *next;
-	if (!list || !list->head && !list->head->n) {
-		return;
-	}
-
-	do {
-		num_merges=0;
-		left = list->head;
-		tail = list->head = 0;
-
-    while (left) { // Do this list_len/list_size times:
-			num_merges++;
-			right = left;
-			left_size = 0;
-			right_size = list_size;
-			// Cut list into two halves (but don't overrun)
-			while (right && left_size < list_size) {
-				left_size++;
-				right = right->n;
-			}
-			// Run through the lists appending onto what we have so far.
-			while (left_size > 0 || (right_size > 0 && right)) {
-				// Left empty, take right OR Right empty, take left, OR compare.
-				if (!left_size) {
-					next = right;
-					right = right->n;
-					right_size--;
-				}
-				else if (!right_size || !right) {
-					next = left;
-					left = left->n;
-					left_size--;
-				}
-				else if (compare(left->data, right->data) < 0) {
-					next = left;
-					left = left->n;
-					left_size--;
-				}
-				else {
-					next = right;
-					right = right->n;
-					right_size--;
-				}
-				// Update pointers to keep track of where we are:
-				if (tail) {
-					tail->n = next;
-				} else {
-					list->head = next;
-				}
-				// Sort prev pointer
-				next->p = tail; // Optional.
-				tail = next;
-			}
-			// Right is now AFTER the list we just sorted, so start the next sort there.
-			left = right;
-		}
-		// Terminate the list, double the list-sort size.
-		tail->n = 0;
-		list->tail = tail;
-		list_size <<= 1;
-	} while (num_merges > 1); // If we only did one merge, then we just sorted the whole list.
-}
-
 //chose wisely based on length
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	if (list) {
-		if (list->length > 150000) {
-			r_list_iterative_merge_sort (list, cmp);
-		}
-		else if (list->length > 43) {
+		if (list->length > 43) {
 			r_list_merge_sort (list, cmp);
 		} else {
 			r_list_insertion_sort (list, cmp);

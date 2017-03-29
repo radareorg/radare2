@@ -308,53 +308,48 @@ static int bb_cmp (void *_a, void *_b) {
 	return b->start - a->start;
 }
 
+static void init_bb (bb_t* bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score, int reached, int called) {
+	if (bb) {
+		bb->start = start;
+		bb->end = end;
+		bb->jump = jump;
+		bb->fail = fail;
+		bb->type = type;
+		bb->score = score;
+		bb->reached = reached;
+		bb->called = called;
+	}
+}
+
 static int add_bb (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
-	bb_t *bb = (bb_t*) calloc(1, sizeof(bb_t));
+	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
 		return false;
 	}
-	bb->start = start;
-	bb->end = end;
-	bb->jump = jump;
-	bb->fail = fail;
-	bb->type = type;
-	bb->score = score;
+	init_bb (bb, start, end, jump, fail, type, score, 0, 0);
 	if (jump < UT64_MAX) {
-		bb_t *jump_bb = (bb_t*) calloc(1, sizeof(bb_t));
+		bb_t *jump_bb = (bb_t*) R_NEW0 (bb_t);
 		if (!jump_bb) {
 			eprintf ("Failed to allocate memory for jump block\n");
 			free (bb);
 			return false;
 		}
-		jump_bb->start = jump;
-		jump_bb->end = UT64_MAX;
-		jump_bb->jump = UT64_MAX;
-		jump_bb->fail = UT64_MAX;
 		if (type == CALL) {
-			jump_bb->type = CALL;
-			jump_bb->called += 1;
+			init_bb (jump_bb, jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, 0, 1, 1);
 		} else {
-			jump_bb->type = JUMP;
+			init_bb (jump_bb, jump, UT64_MAX, UT64_MAX, UT64_MAX, JUMP, 0, 1, 0);
 		}
-		jump_bb->score = 0;
-		jump_bb->reached += 1;
 		r_list_append (block_list, jump_bb);
 	}
 	if (fail < UT64_MAX) {
-		bb_t *fail_bb = (bb_t*) calloc(1, sizeof(bb_t));
+		bb_t *fail_bb = (bb_t*) R_NEW0 (bb_t);
 		if (!fail_bb) {
 			eprintf ("Failed to allocate memory for fail block\n");
 			free (bb);
 			return false;
 		}
-		fail_bb->start = fail;
-		fail_bb->end = UT64_MAX;
-		fail_bb->jump = UT64_MAX;
-		fail_bb->fail = UT64_MAX;
-		fail_bb->type = FAIL;
-		fail_bb->score = 0;
-		fail_bb->reached += 1;
+		init_bb (fail_bb, fail, UT64_MAX, UT64_MAX, UT64_MAX, FAIL, 0, 1, 0);
 		r_list_append (block_list, fail_bb);
 	}
 	r_list_append (block_list, bb);
@@ -362,7 +357,8 @@ static int add_bb (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail
 }
 
 void dump_block(bb_t *block) {
-	eprintf ("s: 0x%x e: 0x%x j: 0x%x f: 0x%x\n", block->start, block->end, block->jump, block->fail);
+	eprintf ("s: 0x%"PFMT64x" e: 0x%"PFMT64x" j: 0x%"PFMT64x" f: 0x%"PFMT64x"\n"
+			, block->start, block->end, block->jump, block->fail);
 }
 
 void dump_blocks (RList* list) {
@@ -412,50 +408,39 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 		case R_ANAL_OP_TYPE_NOP:
 			break;
 		case R_ANAL_OP_TYPE_CALL:
-				add_bb (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
-				break;
+			add_bb (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
+			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_ICALL:
 		case R_ANAL_OP_TYPE_RCALL:
 		case R_ANAL_OP_TYPE_IRCALL:
-				break;
+			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
 		case R_ANAL_OP_TYPE_IJMP:
 		case R_ANAL_OP_TYPE_IRJMP:
 		case R_ANAL_OP_TYPE_JMP:
-			{
-				add_bb (block_list, b_start, start + cur + op->size, op->jump, UT64_MAX, NORMAL, block_score);
-
-				b_start = start + cur + op->size;
-				block_score = 0;
-			}
+			add_bb (block_list, b_start, start + cur + op->size, op->jump, UT64_MAX, NORMAL, block_score);
+			b_start = start + cur + op->size;
+			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
-			{
-				// we dont want to add trap stuff
-				if (b_start < start + cur) {
-					add_bb (block_list, b_start, start + cur, UT64_MAX, UT64_MAX, NORMAL, block_score);
-				}
-				b_start = start + cur + op->size;
-				block_score = 0;
-				break;
+			// we dont want to add trap stuff
+			if (b_start < start + cur) {
+				add_bb (block_list, b_start, start + cur, UT64_MAX, UT64_MAX, NORMAL, block_score);
 			}
+			b_start = start + cur + op->size;
+			block_score = 0;
+			break;
 		case R_ANAL_OP_TYPE_RET:
-			{
-				add_bb (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, NORMAL, block_score);
-
-				b_start = start + cur + op->size;
-				block_score = 0;
-				break;
-			}
+			add_bb (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, NORMAL, block_score);
+			b_start = start + cur + op->size;
+			block_score = 0;
+			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			{
-				add_bb (block_list, b_start, start + cur + op->size, op->jump, start + cur + op->size, NORMAL, block_score);
-
-				b_start = start + cur + op->size;
-				block_score = 0;
-			}
+			add_bb (block_list, b_start, start + cur + op->size, op->jump, start + cur + op->size, NORMAL, block_score);
+			b_start = start + cur + op->size;
+			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
 		case R_ANAL_OP_TYPE_ILL:
@@ -465,15 +450,14 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 			break;
 		}
 		cur += op->size;
-		r_anal_op_free(op);
+		r_anal_op_free (op);
 		op = NULL;
 	}
 
 	//eprintf ("Before sort:\n");
 	//dump_blocks( block_list);
 	//eprintf ("After sort:\n");
-	bb_t *cur_bb = NULL;
-	RList *result = r_list_newf(free);
+	RList *result = r_list_newf (free);
 	if (!result) {
 		eprintf ("Failed to create resulting list\n");
 		//TODO handle error
@@ -501,24 +485,18 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 				if (block->type != CALL && next_block->type != CALL) {
 					next_block->reached += 1;
 				}
-				free(block);
+				free (block);
 				continue;
 			}
 
 			// block and next_block share the same start so we copy the
 			// contenct of the block into the next_block and skip the current one
 			if (block->start == next_block->start && next_block->end == UT64_MAX) {
-				next_block->end = block->end;
-				next_block->jump = block->jump;
-				next_block->fail = block->fail;
-				next_block->type = block->type;
-				next_block->score= block->score;
-				next_block->called = block->called;
-				next_block->reached = block->reached;
+				*next_block = *block;
 				if (next_block->type != CALL)  {
 					next_block->reached += 1;
 				}
-				free(block);
+				free (block);
 				continue;
 			}
 
@@ -554,11 +532,9 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 	// we simply assume that non reached blocks or called blocks
 	// are functions
 	r_list_foreach (result, iter, block) {
-		if (block->reached == 0 || block->called >= 1) {
-			ut64 fcn_addr = block->start;
-
+		if (block && (block->reached == 0 || block->called >= 1)) {
 			printFunction(core, block->start, NULL);
-			RStack *stack = r_stack_newf (10, free);
+			RStack *stack = r_stack_newf (100, free);
 			bb_t *jump = NULL;
 			bb_t *fail = NULL;
 
@@ -581,7 +557,8 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 				if (!block) {
 					continue;
 				}
-				r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %llu 0x%08"PFMT64x" 0x%08"PFMT64x"\n", block->start, cur->start, cur->end - cur->start, cur->jump, cur->fail);
+				r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %llu 0x%08"PFMT64x" 0x%08"PFMT64x"\n"
+						, block->start, cur->start, cur->end - cur->start, cur->jump, cur->fail);
 
 				if (cur->jump < UT64_MAX && !sdb_num_get (sdb, Fhandled(cur->jump), NULL)) {
 					jump = sdb_ptr_get (sdb, sdb_fmt (0, "bb.0x%08"PFMT64x, cur->jump), NULL);
@@ -606,8 +583,8 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 				}
 			}
 			r_stack_free (stack);
+			free (block);
 		}
-		free (block);
 	}
 
 	sdb_free (sdb);
