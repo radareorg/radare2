@@ -257,24 +257,9 @@ static int deleteBySpaceCB(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-static int deleteByNameCB(void *user, const char *k, const char *v) {
-	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
-	char *ptr;
-
-	if (!(ptr = strrchr (k, '|'))) {
-		return 1;
-	}
-
-	if (!strcmp (ptr, ctx->buf)) {
-		sdb_remove (ctx->anal->sdb_zigns, k, 0);
-	}
-
-	return 1;
-}
-
 R_API bool r_sign_delete(RAnal *a, const char *name) {
 	struct ctxDeleteCB ctx;
-	int idx = -1;
+	char k[R_SIGN_KEY_MAXSZ];
 
 	// Remove all flags
 	if (name[0] == '*') {
@@ -282,18 +267,16 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 			sdb_reset (a->sdb_zigns);
 			return true;
 		} else {
-			idx = a->zign_spaces.space_idx;
-			serializeKey (a, idx, "", ctx.buf);
 			ctx.anal = a;
+			serializeKey (a, a->zign_spaces.space_idx, "", ctx.buf);
 			sdb_foreach (a->sdb_zigns, deleteBySpaceCB, &ctx);
 			return true;
 		}
 	}
 
 	// Remove specific zign
-	ctx.anal = a;
-	snprintf (ctx.buf, R_SIGN_KEY_MAXSZ, "|%s", name);
-	return sdb_foreach (a->sdb_zigns, deleteByNameCB, &ctx);
+	serializeKey (a, a->zign_spaces.space_idx, name, k);
+	return sdb_remove (a->sdb_zigns, k, 0);
 }
 
 struct ctxListCB {
