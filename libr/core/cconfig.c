@@ -1957,9 +1957,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+
+	// zign
 	SETI("zign.min", 16, "Minimum zignature length");
 	SETI("zign.max", 500, "Maximum zignature length");
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
+	SETPREF("zign.match.graph", "true", "Use graph metrics for matching");
+	SETPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");

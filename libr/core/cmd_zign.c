@@ -603,10 +603,13 @@ static bool search(RCore *core, bool rad) {
 	RAnalFunction *fcni = NULL;
 	RIOMap *map;
 	bool retval = true;
-	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
-	const char *mode = r_config_get (core->config, "search.in");
 	ut64 sin_from = UT64_MAX, sin_to = UT64_MAX;
 	int hits = 0;
+
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	const char *mode = r_config_get (core->config, "search.in");
+	bool useBytes = r_config_get_i (core->config, "zign.match.bytes");
+	bool useGraph = r_config_get_i (core->config, "zign.match.graph");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -618,28 +621,32 @@ static bool search(RCore *core, bool rad) {
 	}
 
 	// Bytes search
-	list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, &sin_from, &sin_to);
-	if (list) {
-		r_list_foreach (list, iter, map) {
-			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
-			retval &= searchRange (core, map->from, map->to, rad, &bytes_search_ctx);
+	if (useBytes) {
+		list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, &sin_from, &sin_to);
+		if (list) {
+			r_list_foreach (list, iter, map) {
+				eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
+				retval &= searchRange (core, map->from, map->to, rad, &bytes_search_ctx);
+			}
+			r_list_free (list);
+		} else {
+			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", sin_from, sin_to);
+			retval = searchRange (core, sin_from, sin_to, rad, &bytes_search_ctx);
 		}
-		r_list_free (list);
-	} else {
-		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", sin_from, sin_to);
-		retval = searchRange (core, sin_from, sin_to, rad, &bytes_search_ctx);
 	}
 
 	// Graph search
-	eprintf ("[+] searching function metrics\n");
-	r_cons_break_push (NULL, NULL);
-	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if (r_cons_is_breaked ()) {
-			break;
+	if (useGraph) {
+		eprintf ("[+] searching function metrics\n");
+		r_cons_break_push (NULL, NULL);
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
 		}
-		r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
+		r_cons_break_pop ();
 	}
-	r_cons_break_pop ();
 
 	if (rad) {
 		r_cons_printf ("fs-\n");
@@ -691,8 +698,11 @@ static int cmdCheck(void *data, const char *input) {
 	bool rad = input[0] == '*';
 	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
 	struct ctxSearchCB graph_match_ctx = { core, rad, 0 };
-	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	int hits = 0;
+
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	bool useBytes = r_config_get_i (core->config, "zign.match.bytes");
+	bool useGraph = r_config_get_i (core->config, "zign.match.graph");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -704,28 +714,32 @@ static int cmdCheck(void *data, const char *input) {
 	}
 
 	// Bytes search
-	eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
-	ss = r_sign_search_new ();
-	r_sign_search_init (core->anal, ss, searchHitCB, &bytes_search_ctx);
-	if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
-		eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
-		retval = false;
+	if (useBytes) {
+		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
+		ss = r_sign_search_new ();
+		r_sign_search_init (core->anal, ss, searchHitCB, &bytes_search_ctx);
+		if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
+			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+			retval = false;
+		}
+		r_sign_search_free (ss);
 	}
-	r_sign_search_free (ss);
 
 	// Graph search
-	eprintf ("[+] searching function metrics\n");
-	r_cons_break_push (NULL, NULL);
-	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if (r_cons_is_breaked ()) {
-			break;
+	if (useGraph) {
+		eprintf ("[+] searching function metrics\n");
+		r_cons_break_push (NULL, NULL);
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (fcni->addr == core->offset) {
+				r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
+				break;
+			}
 		}
-		if (fcni->addr == core->offset) {
-			r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
-			break;
-		}
+		r_cons_break_pop ();
 	}
-	r_cons_break_pop ();
 
 	if (rad) {
 		r_cons_printf ("fs-\n");
