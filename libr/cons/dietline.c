@@ -266,7 +266,7 @@ static int r_line_hist_down() {
 		inithist ();
 	}
 	if (I.history.index < I.history.size
-	    && I.history.data[I.history.index]) {
+		&& I.history.data[I.history.index]) {
 		I.history.index++;
 		if (!I.history.data[I.history.index]) {
 			I.buffer.data[0] = '\0';
@@ -840,7 +840,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 13:
 			if (gcomp && I.buffer.length > 0) {
 				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE-1);
-                I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
+				I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
 				I.buffer.length = strlen (gcomp_line);
 			}
 			gcomp_idx = gcomp = 0;
