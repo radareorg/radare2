@@ -6,6 +6,8 @@
 /* hacky inclusion */
 #include "anal_vt.c"
 
+#define ESIL_STACK_NAME "esil.ram"
+
 R_API bool core_anal_bbs(RCore *core, ut64 len);
 
 /* better aac for windows-x86-32 */
@@ -2668,8 +2670,9 @@ size = r_config_get_i (core->config, "esil.stack.size");
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
-	if (!r_io_section_get_name (core->io, "esil_stack")) {
-		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d esil_stack", addr, addr, size, size);
+	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
+		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
+			ESIL_STACK_NAME, addr, addr, size, size);
 	}
 	initialize_stack (core, addr, size);
 //	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
