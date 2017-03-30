@@ -261,7 +261,7 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	struct ctxDeleteCB ctx;
 	char k[R_SIGN_KEY_MAXSZ];
 
-	// Remove all flags
+	// Remove all zigns
 	if (name[0] == '*') {
 		if (a->zign_spaces.space_idx == -1) {
 			sdb_reset (a->sdb_zigns);
