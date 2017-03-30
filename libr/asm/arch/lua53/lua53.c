@@ -57,7 +57,7 @@ int parseWhitespaces (const char* str);
 int parseInstruction (const char* str);
 
 const char* instruction_names[] = {
-	"move","loadk","loadkx","loadbool","loadnil","getupval","gettabup","gettable","setupval","settabup","settable","newtable","self","add","sub","mul","mod",
+	"move","loadk","loadkx","loadbool","loadnil","getupval","gettabup","gettable","settabup","setupval","settable","newtable","self","add","sub","mul","mod",
 	"pow","div","idiv","bans","bor","bxor","shl","shr","unm","bnot","not","len","concat","jmp","eq","lt","le",
 	"test","testset","call","tailcall","return","forloop","forprep","tforcall","tforloop","setlist","closure","vararg","extraarg",0
 };
@@ -316,16 +316,30 @@ int lua53dissasm (RAsmOp *op, const ut8 *buf, int len){
 			sprintf (op->buf_asm, "%s %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_C(instruction));
 			break;
 		case OP_LOADK:/*     A Bx    R(A) := Kst(Bx)                                 */
+			sprintf (op->buf_asm, "%s %i Kst(%i)", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_Bx(instruction));
+			break;
 		case OP_CLOSURE:/*   A Bx    R(A) := closure(KPROTO[Bx])                     */
-			sprintf (op->buf_asm, "%s %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_Bx(instruction));
+			sprintf (op->buf_asm, "%s %i KPROTO(%i)", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_Bx(instruction));
 			break;
 		case OP_LOADBOOL:/*  A B C   R(A) := (Bool)B; if (C) pc++                    */ 
+		case OP_NEWTABLE:/*  A B C   R(A) := {} (size = B,C)                         */
+		case OP_CONCAT:/*    A B C   R(A) := R(B).. ... ..R(C)                       */
+		case OP_TESTSET:/*   A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
+		case OP_CALL:/*      A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
+		case OP_TAILCALL:/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
+		case OP_SETLIST:/*   A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
+			sprintf (op->buf_asm, "%s %i %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction),GETARG_C(instruction));
+			break;
+		case OP_SELF:/*      A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]             */
 		case OP_GETTABUP:/*  A B C   R(A) := UpValue[B][RK(C)]                       */
 		case OP_GETTABLE:/*  A B C   R(A) := R(B)[RK(C)]                             */
+			if(GETARG_C(instruction) & 0x100)
+				sprintf (op->buf_asm, "%s %i %i K(%i)", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction),GETARG_C(instruction) & 0xFF);
+			else
+				sprintf (op->buf_asm, "%s %i %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction),GETARG_C(instruction));
+			break;
 		case OP_SETTABUP:/*  A B C   UpValue[A][RK(B)] := RK(C)                      */
 		case OP_SETTABLE:/*  A B C   R(A)[RK(B)] := RK(C)                            */
-		case OP_NEWTABLE:/*  A B C   R(A) := {} (size = B,C)                         */
-		case OP_SELF:/*      A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]             */
 		case OP_ADD:/*       A B C   R(A) := RK(B) + RK(C)                           */
 		case OP_SUB:/*       A B C   R(A) := RK(B) - RK(C)                           */
 		case OP_MUL:/*       A B C   R(A) := RK(B) * RK(C)                           */
@@ -338,15 +352,21 @@ int lua53dissasm (RAsmOp *op, const ut8 *buf, int len){
 		case OP_BXOR:/*      A B C   R(A) := RK(B) ~ RK(C)                           */
 		case OP_SHL:/*       A B C   R(A) := RK(B) << RK(C)                          */
 		case OP_SHR:/*       A B C   R(A) := RK(B) >> RK(C)                          */
-		case OP_CONCAT:/*    A B C   R(A) := R(B).. ... ..R(C)                       */
 		case OP_EQ:/*        A B C   if ((RK(B) == RK(C)) ~= A) then pc++            */
 		case OP_LT:/*        A B C   if ((RK(B) <  RK(C)) ~= A) then pc++            */
 		case OP_LE:/*        A B C   if ((RK(B) <= RK(C)) ~= A) then pc++            */
-		case OP_TESTSET:/*   A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
-		case OP_CALL:/*      A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
-		case OP_TAILCALL:/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
-		case OP_SETLIST:/*   A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
-			sprintf (op->buf_asm, "%s %i %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction),GETARG_C(instruction));
+		
+			if(GETARG_B(instruction) & 0x100){
+				if(GETARG_C(instruction) & 0x100)
+					sprintf (op->buf_asm, "%s %i K(%i) K(%i)", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction) & 0xFF,GETARG_C(instruction) & 0xFF);
+				else
+					sprintf (op->buf_asm, "%s %i K(%i) %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction) & 0xFF,GETARG_C(instruction));
+			}else{
+				if(GETARG_C(instruction) & 0x100)
+					sprintf (op->buf_asm, "%s %i %i K(%i)", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction),GETARG_C(instruction) & 0xFF);
+				else
+					sprintf (op->buf_asm, "%s %i %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_B(instruction),GETARG_C(instruction));
+			}
 			break;
 		case OP_JMP:/*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
 		case OP_FORLOOP:/*   A sBx   R(A)+=R(A+2);
@@ -356,7 +376,7 @@ int lua53dissasm (RAsmOp *op, const ut8 *buf, int len){
 			sprintf (op->buf_asm, "%s %i %i", instruction_names[GET_OPCODE(instruction)], GETARG_A(instruction),GETARG_sBx(instruction));
 			break;
 		case OP_EXTRAARG:/*   Ax      extra (larger) argument for previous opcode     */
-			sprintf (op->buf_asm, "%s %i", instruction_names[GET_OPCODE(instruction)], GETARG_Ax(instruction));
+			sprintf (op->buf_asm, "%s Kst(%i)", instruction_names[GET_OPCODE(instruction)], GETARG_Ax(instruction));
 		break;
 	}
 	return 4;

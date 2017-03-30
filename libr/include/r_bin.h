@@ -358,7 +358,7 @@ typedef struct r_bin_section_t {
 	int bits;
 	bool has_strings;
 	bool add; // indicates when you want to add the section to io `S` command
-	bool is_data;	
+	bool is_data;
 } RBinSection;
 
 typedef struct r_bin_class_t {

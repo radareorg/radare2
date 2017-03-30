@@ -10,7 +10,6 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	
 	if (!op)
 		return 0;
-	
 	memset (op, 0, sizeof (RAnalOp));
 	
 	const ut32 instruction = getInstruction (data);
@@ -149,6 +148,7 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		break;
 	case OP_TAILCALL:/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
 		op->type = R_ANAL_OP_TYPE_RCALL;
+		op->type2 = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -4;
@@ -194,67 +194,72 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	}
 	return op->size;
 }
+void addFunction (LuaFunction* func, ParseStruct* parseStruct){
+	if(!func->parent_func){
+		RAnalFunction *afunc = parseStruct->data;
+		afunc->addr += func->code_offset + lua53_data.intSize;
+		printf("%08llx\n",afunc->addr);
+		printf("%08llx\n",func->code_offset + lua53_data.intSize);
+		if(afunc->addr != func->code_offset + lua53_data.intSize){
+			afunc->name = malloc(func->name_size + 1);
+			memcpy(afunc->name,func->name_ptr,func->name_size);
+			afunc->name[func->name_size] = '\0';
+			
+			afunc->stack = 0;
+		}
+	}
+}
+int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype){
+	
+	Dprintf ("Analyze Function: 0x%llx\n",addr);
+	LuaFunction* function = findLuaFunctionByCodeAddr (addr);
+	if(function){
+		fcn->maxstack = function->maxStackSize;
+		fcn->nargs = function->numParams;
+	}
+	fcn->addr = addr;
+	return 0;
+}
 
 RAnalOp * op_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
 	
+	fprintf(stderr,"OP\n");
 	RAnalOp* analOp = R_NEW0 (RAnalOp);
 	if(analOp == NULL)
 		return NULL;
 	lua53_anal_op (a,analOp,addr,buf,len);
 	return analOp;
 }
-void addFunction (LuaFunction* func, ParseStruct* parseStruct){
-	RAnalFunction *afunc = parseStruct->data;
-	printf("%08llx\n",afunc->addr);
-	printf("%08llx\n",func->code_offset + lua53_intSize);
-	if(afunc->addr != func->code_offset + lua53_intSize){
-		afunc->name = malloc(func->name_size + 1);
-		memcpy(afunc->name,func->name_ptr,func->name_size);
-		afunc->name[func->name_size] = '\0';
-		
-		afunc->stack = 0;
-		afunc->maxstack = func->maxStackSize;
-		afunc->nargs = func->numParams;
-	}
-}
 RAnalFunction * fn_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
 	
+	fprintf(stderr,"FUNC\n");
 	RAnalFunction* analFn = R_NEW0 (RAnalFunction);
 	if(analFn == NULL)
 		return NULL;
-	ParseStruct parseStruct;
-	memset (&parseStruct,0,sizeof(parseStruct));
-	parseStruct.onFunction = addFunction;
-	parseStruct.data = analFn;
-	analFn->addr = addr;
-	
-	ut64 headersize =  4 + 1 + 1 + 6 + 5 + buf[15] + buf[16] + 1;//header + version + format + stringterminators + sizes + integer + number + upvalues
-	
-	parseFunction (buf, headersize, len, 0,&parseStruct);
-	
+	lua53_anal_fcn (a,analFn,addr,buf,len,0);
 	
 	return analFn;
 }
 
-int analyze_fns(RAnal *a, ut64 at, ut64 from, int reftype, int depth){
-	printf("%llx\n",at);
-	printf("%llx\n",from);
-	printf("%x\n",reftype);
-	printf("%x\n",depth);
-	return R_ANAL_RET_NEW;
+int finit(void *user) {
+	if(lua53_data.functionList){
+		r_list_free (lua53_data.functionList);
+		lua53_data.functionList = 0;
+	}
+	return 0;
 }
+
 RAnalPlugin r_anal_plugin_lua53 = {
 	.name = "lua53",
 	.desc = "LUA 5.3 analysis plugin",
 	.arch = "lua53",
-	.license = "MIT",
+	.license = "MIT",	
 	.bits = 32,
 	.desc = "LUA 5.3 VM code analysis plugin",
 	.op = &lua53_anal_op,
+	.fcn = &lua53_anal_fcn,
 	.esil = false,
-	//.op_from_buffer = &op_from_buffer, //implemented via lua53_anal_op
-	//.bb_from_buffer = &bb_from_buffer, //not implemented
-	//.fn_from_buffer = &fn_from_buffer, //implemented but not used
+	.fini = &finit,
 
 };
 

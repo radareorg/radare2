@@ -3,17 +3,21 @@
 #include <r_types.h>
 
 #ifdef LUA_DEBUG
-	#define Dprintf(...) fprintf(stderr,__VA_ARGS__)
+	#define Dprintf(...) eprintf(__VA_ARGS__)
 #else
 	#define Dprintf(...) 
 #endif
 
 
-int lua53_intSize;
-int lua53_sizeSize;
-int lua53_instructionSize;
-int lua53_luaIntSize;
-int lua53_luaNumberSize;
+struct{
+	int intSize;
+	int sizeSize;
+	int instructionSize;
+	int luaIntSize;
+	int luaNumberSize;
+	RList* functionList;
+} lua53_data;
+
 
 ut64 parseNumber(const ut8* data, ut64 bytesize){
 	int i;
@@ -24,18 +28,17 @@ ut64 parseNumber(const ut8* data, ut64 bytesize){
 	return res;
 }
 
-#define parseInt(data) parseNumber(data, lua53_intSize) 
-#define parseSize(data) parseNumber(data, lua53_sizeSize) 
-#define parseInstruction(data) parseNumber(data, lua53_instructionSize) 
-#define parseLuaInt(data) parseNumber(data, lua53_luaIntSize) 
-#define parseLuaNumber(data) parseNumber(data, lua53_luaNumberSize) 
+#define parseInt(data) parseNumber(data, lua53_data.intSize) 
+#define parseSize(data) parseNumber(data, lua53_data.sizeSize) 
+#define parseInstruction(data) parseNumber(data, lua53_data.instructionSize) 
+#define parseLuaInt(data) parseNumber(data, lua53_data.luaIntSize) 
+#define parseLuaNumber(data) parseNumber(data, lua53_data.luaNumberSize) 
 
 
 typedef struct lua_function{
-	const ut8* data;
 	ut64 offset;
 	
-	char* name_ptr;
+	char* name_ptr;//only valid in onFunction methon
 	ut64 name_size;
 	
 	ut64 lineDefined;
@@ -44,7 +47,7 @@ typedef struct lua_function{
 	ut8 isVarArg;
 	ut8 maxStackSize;
 	
-	struct lua_function* parent_func;
+	struct lua_function* parent_func;//if != NULL, should always be valid
 	
 	ut64 const_size;
 	ut64 code_size;
@@ -60,18 +63,57 @@ typedef struct lua_function{
 	ut64 size;
 } LuaFunction;
 
+RList *lua53_function_list;
+
 struct lua_parse_struct;
 
 typedef void (*OnFunction) (LuaFunction* function, struct lua_parse_struct* parseStruct);
 typedef void (*OnString) (const ut8* data, ut64 offset, ut64 size, struct lua_parse_struct* parseStruct);
+typedef void (*OnConst) (const ut8* data, ut64 offset, ut64 size, struct lua_parse_struct* parseStruct);
 
 typedef struct lua_parse_struct{
 	OnString onString;
 	OnFunction onFunction;
+	OnConst onConst;
 	void* data;
 } ParseStruct;
 
+int storeLuaFunction(LuaFunction* function){
+	if(!lua53_data.functionList){
+		lua53_data.functionList = r_list_new ();
+		if(!lua53_data.functionList){
+			return 0;
+		}
+	}
+	r_list_append (lua53_data.functionList,function);
+	return 1;
+}
 
+LuaFunction* findLuaFunction(ut64 addr){
+	if(!lua53_data.functionList)
+		return NULL;
+	LuaFunction *function = NULL;
+	RListIter *iter = NULL;
+	r_list_foreach (lua53_data.functionList, iter, function) {
+		
+		Dprintf ("Search 0x%llx\n",function->offset);
+		if(function->offset == addr)
+			return function;
+	}
+	return NULL;
+}
+LuaFunction* findLuaFunctionByCodeAddr(ut64 addr){
+	if(!lua53_data.functionList)
+		return NULL;
+	LuaFunction *function = NULL;
+	RListIter *iter = NULL;
+	r_list_foreach (lua53_data.functionList, iter, function) {
+		if(function->code_offset +  lua53_data.intSize <= addr && addr < function->const_offset)
+			return function;
+		
+	}
+	return NULL;
+}
 
 ut64 parseString (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
 ut64 parseStringR (const ut8* data, ut64 offset, const ut64 size, char** str_ptr, ut64* str_len, ParseStruct* parseStruct);
@@ -82,7 +124,6 @@ ut64 parseConstants (const ut8* data, ut64 offset, const ut64 size, ParseStruct*
 ut64 parseUpvalues (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
 ut64 parseProtos (const ut8* data, ut64 offset, const ut64 size, LuaFunction* func, ParseStruct* parseStruct);
 ut64 parseDebug (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
-
 
 ut64 parseHeader(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	
@@ -95,103 +136,123 @@ ut64 parseHeader(const ut8* data, ut64 offset, const ut64 size, ParseStruct* par
 		if(memcmp (data + offset, "\x19\x93\r\n\x1a\n", 6))//for version 5.3
 			return 0;
 		offset += 6;
-		lua53_intSize = data[offset + 0];
-		lua53_sizeSize = data[offset + 1];
-		lua53_instructionSize = data[offset + 2];
-		lua53_luaIntSize = data[offset + 3];
-		lua53_luaNumberSize = data[offset + 4];
+		lua53_data.intSize = data[offset + 0];
+		lua53_data.sizeSize = data[offset + 1];
+		lua53_data.instructionSize = data[offset + 2];
+		lua53_data.luaIntSize = data[offset + 3];
+		lua53_data.luaNumberSize = data[offset + 4];
 		
-		Dprintf ("Int Size: %i\n",lua53_intSize);
-		Dprintf ("Size Size: %i\n",lua53_sizeSize);
-		Dprintf ("Instruction Size: %i\n",lua53_instructionSize);
-		Dprintf ("Lua Int Size: %i\n",lua53_luaIntSize);
-		Dprintf ("Lua Number Size: %i\n",lua53_luaNumberSize);
+		Dprintf ("Int Size: %i\n",lua53_data.intSize);
+		Dprintf ("Size Size: %i\n",lua53_data.sizeSize);
+		Dprintf ("Instruction Size: %i\n",lua53_data.instructionSize);
+		Dprintf ("Lua Int Size: %i\n",lua53_data.luaIntSize);
+		Dprintf ("Lua Number Size: %i\n",lua53_data.luaNumberSize);
 		
 		offset += 5;
-		if(offset + lua53_luaIntSize + lua53_luaNumberSize >= size)//check again the remainingsize because an int and number is appended to the header
+		if(offset + lua53_data.luaIntSize + lua53_data.luaNumberSize >= size)//check again the remainingsize because an int and number is appended to the header
 			return 0;
 		if(parseLuaInt (data + offset) != 0x5678)//check the appended integer
 			return 0;
-		offset += lua53_luaIntSize;
+		offset += lua53_data.luaIntSize;
 		ut64 num = parseLuaNumber (data + offset);
 		if(*((double*)&num) != 370.5)//check the appended number
 			return 0;
-		offset += lua53_luaNumberSize;
+		offset += lua53_data.luaNumberSize;
 		Dprintf ("Is a Lua Binary\n");
 		return offset;
 	}
 	return 0;
 }
+
 ut64 parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* parent_func, ParseStruct* parseStruct){
 	
-	ut64 baseoffset = offset;
+	Dprintf ("Function 0x%llx\n",offset);
+	LuaFunction* function = findLuaFunction (offset);
+	if(function){//if a function object was cached
+		Dprintf ("Found cached Functione: 0x%llx\n",function->offset);
+		
+		if(parseStruct != NULL && parseStruct->onString != NULL)
+			parseConstants (data, function->const_offset, size, parseStruct);
+		
+		parseProtos (data, function->protos_offset, size, function, parseStruct);
+		
+		if(parseStruct != NULL && parseStruct->onString != NULL)
+			parseDebug (data, function->debug_offset, size, parseStruct);
+		
+		if(parseStruct != NULL && parseStruct->onFunction != NULL)
+			parseStruct->onFunction (function, parseStruct);
+		return offset + function->size;
+	}else{
+		
+		ut64 baseoffset = offset;
+		
+		function = R_NEW0 (LuaFunction);
+		function->parent_func = parent_func;
+		function->offset = offset;
+		offset = parseStringR (data, offset, size, &function->name_ptr, &function->name_size, parseStruct);
+		if(offset == 0) return 0;
+		
+		
+		function->lineDefined = parseInt (data + offset);
+		Dprintf ("Line Defined: %llu\n",function->lineDefined);
+		function->lastLineDefined = parseInt (data + offset + lua53_data.intSize);
+		Dprintf ("Last Line Defined: %llu\n",function->lastLineDefined);
+		offset += lua53_data.intSize*2;
+		function->numParams = data[offset + 0];
+		Dprintf ("Param Count: %d\n",function->numParams);
+		function->isVarArg = data[offset + 1];
+		Dprintf ("Is VarArgs: %d\n",function->isVarArg);
+		function->maxStackSize = data[offset + 2];
+		Dprintf ("Max Stack Size: %d\n",function->maxStackSize);
+		offset += 3;
+		
+		function->code_offset = offset;
+		function->code_size = parseInt (data + offset);
+		offset = parseCode (data, offset, size, parseStruct);
+		if(offset == 0) return 0;
+		function->const_offset = offset;
+		function->const_size = parseInt (data + offset);
+		offset = parseConstants (data, offset, size, parseStruct);
+		if(offset == 0) return 0;
+		function->upvalue_offset = offset;
+		function->upvalue_size = parseInt (data + offset);
+		offset = parseUpvalues (data, offset, size, parseStruct);
+		if(offset == 0) return 0;
+		function->protos_offset = offset;
+		function->protos_size = parseInt (data + offset);
+		offset = parseProtos (data, offset, size, function, parseStruct);
+		if(offset == 0) return 0;
+		function->debug_offset = offset;
+		offset = parseDebug (data, offset, size, parseStruct);
+		if(offset == 0) return 0;
+		
+		function->size = offset - baseoffset;
+		if(parseStruct && parseStruct->onFunction)
+			parseStruct->onFunction (function, parseStruct);
+		if(!storeLuaFunction (function)){
+			free (function);
+		}
+		return offset;
+	}
 	
-	Dprintf ("Function\n");
-	LuaFunction function;
-	ZERO_FILL (function);
-	function.parent_func = parent_func;
-	function.data = data;
-	function.offset = offset;
-	offset = parseStringR (data, offset, size, &function.name_ptr, &function.name_size, parseStruct);
-	if(offset == 0) return 0;
-	
-	
-	function.lineDefined = parseInt (data + offset);
-	Dprintf ("Line Defined: %llu\n",function.lineDefined);
-	function.lastLineDefined = parseInt (data + offset + lua53_intSize);
-	Dprintf ("Last Line Defined: %llu\n",function.lastLineDefined);
-	offset += lua53_intSize*2;
-	function.numParams = data[offset + 0];
-	Dprintf ("Param Count: %d\n",function.numParams);
-	function.isVarArg = data[offset + 1];
-	Dprintf ("Is VarArgs: %d\n",function.isVarArg);
-	function.maxStackSize = data[offset + 2];
-	Dprintf ("Max Stack Size: %d\n",function.maxStackSize);
-	offset += 3;
-	
-	function.code_offset = offset;
-	function.code_size = parseInt (data + offset);
-	offset = parseCode (data, offset, size, parseStruct);
-	if(offset == 0) return 0;
-	function.const_offset = offset;
-	function.const_size = parseInt (data + offset);
-	offset = parseConstants (data, offset, size, parseStruct);
-	if(offset == 0) return 0;
-	function.upvalue_offset = offset;
-	function.upvalue_size = parseInt (data + offset);
-	offset = parseUpvalues (data, offset, size, parseStruct);
-	if(offset == 0) return 0;
-	function.protos_offset = offset;
-	function.protos_size = parseInt (data + offset);
-	offset = parseProtos (data, offset, size, &function, parseStruct);
-	if(offset == 0) return 0;
-	function.debug_offset = offset;
-	offset = parseDebug (data, offset, size, parseStruct);
-	if(offset == 0) return 0;
-	
-	function.size = offset - baseoffset;
-	if(parseStruct && parseStruct->onFunction)
-		parseStruct->onFunction (&function, parseStruct);
-	return offset;
 }
 ut64 parseCode(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
-	if(offset + length*lua53_instructionSize >= size)
+	if(offset + length*lua53_data.instructionSize >= size)
 		return 0;
 	Dprintf ("Function has %llu Instructions\n",length);
 	
-	return offset + length*lua53_instructionSize;
+	return offset + length*lua53_data.instructionSize;
 }
 ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
-	
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
 	Dprintf ("Function has %llu Constants\n",length);
 	
@@ -210,16 +271,16 @@ ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* 
 			break;
 			case (3 | (0 << 4))://Number
 			{
-#ifdef DEBUG
+#ifdef LUA_DEBUG
 				ut64 num = parseLuaNumber (data + offset);
 				Dprintf ("Number %f\n",*((double*)&num));
 #endif
-				offset += lua53_luaNumberSize;
+				offset += lua53_data.luaNumberSize;
 			}
 			break;
 			case (3 | (1 << 4))://Integer
 				Dprintf ("Integer %llu\n",parseLuaInt (data + offset));
-				offset += lua53_luaIntSize;
+				offset += lua53_data.luaIntSize;
 			break;
 			case (4 | (0 << 4))://Short String
 			case (4 | (1 << 4))://Long String
@@ -234,10 +295,10 @@ ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* 
 }
 ut64 parseUpvalues(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
 	Dprintf ("Function has %llu Upvalues\n",length);
 	
@@ -251,42 +312,44 @@ ut64 parseUpvalues(const ut8* data, ut64 offset, const ut64 size, ParseStruct* p
 }
 ut64 parseProtos(const ut8* data, ut64 offset, const ut64 size, LuaFunction* func, ParseStruct* parseStruct){
 	
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
 	Dprintf ("Function has %llu Prototypes\n",length);
 	
 	int i;
 	for(i = 0;i < length; i++){
 		offset = parseFunction (data,offset,size,func,parseStruct);
+		if(offset == 0)
+			return 0;
 	}
 	
 	return offset;
 }
 ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
 	if(length != 0){
 		Dprintf ("Instruction-Line Mappings %llu\n",length);
-		if(offset + lua53_intSize * length >= size)
+		if(offset + lua53_data.intSize * length >= size)
 			return 0;
 		int i;
 		for(i = 0;i < length; i++){
 			Dprintf ("Instruction %d Line %llu\n",i,parseInt (data + offset));
-			offset += lua53_intSize;
+			offset += lua53_data.intSize;
 		}
 	}
 	
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
 	if(length != 0){
 		Dprintf ("LiveRanges: %llu\n",length);
@@ -295,22 +358,22 @@ ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* pars
 			Dprintf ("LiveRange %d:\n",i);
 			offset = parseString (data,offset,size,parseStruct);
 			if(offset == 0) return 0;
-#ifdef DEBUG
+#ifdef LUA_DEBUG
 			ut64 num1 = parseInt (data + offset);
 #endif
-			offset += lua53_intSize;
-#ifdef DEBUG
+			offset += lua53_data.intSize;
+#ifdef LUA_DEBUG
 			ut64 num2 = parseInt (data + offset);
 #endif
-			offset += lua53_intSize;
+			offset += lua53_data.intSize;
 			Dprintf ("%llu - %llu\n",num1, num2);
 		}
 	}
 	
-	if(offset + lua53_intSize >= size)
+	if(offset + lua53_data.intSize >= size)
 		return 0;
 	length = parseInt (data + offset);
-	offset += lua53_intSize;
+	offset += lua53_data.intSize;
 	
 	if(length != 0){
 		Dprintf ("Up-Values: %llu\n",length);
@@ -333,7 +396,7 @@ ut64 parseStringR (const ut8* data, ut64 offset, const ut64 size, char** str_ptr
 	offset += 1;
 	if(functionNameSize == 0xFF){
 		functionNameSize = parseSize(data + offset);
-		offset += lua53_sizeSize;
+		offset += lua53_data.sizeSize;
 	}
 	if(functionNameSize != 0){
 		if(str_ptr)
