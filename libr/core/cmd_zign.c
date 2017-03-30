@@ -64,12 +64,8 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 		zigname = r_str_appendf (zigname, "%s", fcn->name);
 	}
 
-	if (!addFcnGraph (core, fcn, zigname)) {
-		eprintf ("warn: could not add graph zignature for fcn %s\n", fcn->name);
-	}
-	if (!addFcnBytes (core, fcn, zigname)) {
-		eprintf ("warn: could not add anal zignature for fcn %s\n", fcn->name);
-	}
+	addFcnGraph (core, fcn, zigname);
+	addFcnBytes (core, fcn, zigname);
 
 	free (zigname);
 }
@@ -193,7 +189,6 @@ static int cmdAdd(void *data, const char *input) {
 			args0 = r_str_word_get0 (args, 2);
 
 			if (!addZign (core, zigname, type, args0, n - 2)) {
-				eprintf ("error: cannot add zignature\n");
 				retval = false;
 				goto exit_case_manual;
 			}
