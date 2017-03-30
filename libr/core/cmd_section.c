@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_types.h"
 #include "r_io.h"
 
-static int __dump_sections_to_disk(RCore *core) {
+static bool dumpSectionsToDisk(RCore *core) {
 	char file[512];
 	RListIter *iter;
 	RIOSection *s;
@@ -25,10 +25,10 @@ static int __dump_sections_to_disk(RCore *core) {
 		eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
 		free (buf);
 	}
-	return false;
+	return true;
 }
 
-static int __dump_section_to_disk(RCore *core, char *file) {
+static bool dumpSectionToDisk(RCore *core, char *file) {
 	char *heapfile = NULL;
 	ut64 o = core->offset;
 	RListIter *iter;
@@ -143,7 +143,7 @@ static int cmd_section(void *data, const char *input) {
 	case 'j': // "Sj"
 		r_core_cmd0 (core, "iSj");
 		break;
-	case 'a':
+	case 'a': // "Sa"
 		switch (input[1]) {
 		case '\0':
 			{
@@ -223,18 +223,18 @@ static int cmd_section(void *data, const char *input) {
 		int len = 128;
 		switch (input[1]) {
 		case 0:
-			__dump_section_to_disk (core, NULL);
+			(void) dumpSectionToDisk (core, NULL);
 			break;
 		case ' ':
 			if (input[2]) {
 				file = (char *)malloc(len * sizeof(char));
 				snprintf (file, len, "%s", input + 2);
 			}
-			__dump_section_to_disk (core, file);
+			(void) dumpSectionToDisk (core, file);
 			free (file);
 			break;
 		case 'a':
-			__dump_sections_to_disk (core);
+			(void)dumpSectionsToDisk (core);
 			break;
 		}
 		}

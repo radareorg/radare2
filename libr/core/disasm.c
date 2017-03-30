@@ -2697,8 +2697,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						}
 					}
 					ALIGN;
-					ds_comment (ds, true, "%s; [0x%" PFMT64x":%d]=0x%" PFMT64x "%s%s%s",
-						esc, refaddr, ds->analop.refptr, n, (flag && *flag) ? " " : "", flag, nl);
+					{
+						const char *refptrstr = "";
+						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
+							RIOSection *s = core->print->iob.section_vget (core->print->iob.io, n);
+							if (s) {
+								refptrstr = s->name;
+							}
+						}
+						ds_comment (ds, true, "%s; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s%s",
+							esc, refaddr, ds->analop.refptr, refptrstr, *refptrstr?".":"",
+							n, (flag && *flag) ? " " : "", flag, nl);
+					}
 					free (msg2);
 				}
 				// not just for LEA
