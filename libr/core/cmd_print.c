@@ -2533,10 +2533,10 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		print_bars = true;
 	}
 	break;
-	case '0':  // 0x00 bytes
-	case 'F':  // 0xff bytes
-	case 'p':  // printable chars
-	case 'z':  // zero terminated strings
+	case '0': // 0x00 bytes
+	case 'F': // 0xff bytes
+	case 'p': // printable chars
+	case 'z': // zero terminated strings
 	{
 		ut8 *p;
 		int i, j, k;
@@ -2568,19 +2568,21 @@ static void cmd_print_bars(RCore *core, const char *input) {
 					}
 					break;
 				case 'z':
-				case 'p':
 					if ((IS_PRINTABLE (p[j]))) {
-						if (mode == 'z') {
-							if (p[j + 1] == 0) {
-								k++;
-								j++;
-							}
+						if (p[j + 1] == 0) {
+							k++;
+							j++;
 						}
 						if (len++ > 8) {
 							k++;
 						}
 					} else {
 						len = 0;
+					}
+					break;
+				case 'p':
+					if ((IS_PRINTABLE (p[j]))) {
+						k++;
 					}
 					break;
 				}
