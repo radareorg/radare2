@@ -2352,6 +2352,8 @@ repeat:
 	r_asm_set_pc (core->assembler, addr);
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+	// update the esil pointer because RAnal.op() can change it
+	esil = core->anal->esil;
 	if (op.size < 1) {
 		op.size = 1; // avoid inverted stepping
 	}
@@ -2432,7 +2434,7 @@ repeat:
 		}
 	}
 	// check esil
-	if (esil->trap) {
+	if (esil && esil->trap) {
 		if (core->anal->esil->verbose) {
 			eprintf ("TRAP\n");
 		}
