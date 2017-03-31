@@ -47,7 +47,7 @@ sh.exe -c "export PATH=${MINGW_BIN_PATH}:${MINGW_MSYS_PATH}:${GIT_BIN_PATH}:${PA
 sh.exe -c "uname | tr 'A-Z' 'a-z'"
 sh.exe -c "echo CC=${CC}"
 sh.exe -c "sed -i '/xtensa/d' plugins.def.cfg"
-sh.exe -c "export PATH=${MINGW_BIN_PATH}:${MINGW_MSYS_PATH}:${GIT_BIN_PATH}:${PATH} ; ./configure --with-ostype=mingw32 --build=i686-unknown-windows-gnu ; make -j1 CC='gcc -static-libgcc'; make w32dist USE_ZIP=NO"
+sh.exe -c "export PATH=${MINGW_BIN_PATH}:${MINGW_MSYS_PATH}:${GIT_BIN_PATH}:${PATH} ; ./configure --with-ostype=mingw32 --build=i686-unknown-windows-gnu && make -j1 CC='gcc -static-libgcc' && make w32dist USE_ZIP=NO"
 rem if "%APPVEYOR%" == "True" (
 rem     appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.iss
 rem     appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.ico
