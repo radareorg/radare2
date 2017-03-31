@@ -66,6 +66,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 
 	addFcnGraph (core, fcn, zigname);
 	addFcnBytes (core, fcn, zigname);
+	r_sign_add_offset (core->anal, zigname, fcn->addr);
 
 	free (zigname);
 }
@@ -150,6 +151,21 @@ exit_function:
 	return retval;
 }
 
+static bool addOffsetZign(RCore *core, const char *name, const char *args0, int nargs) {
+	const char *offstr = NULL;
+	ut64 offset = UT64_MAX;
+
+	if (nargs != 1) {
+		eprintf ("error: invalid syntax\n");
+		return false;
+	}
+
+	offstr = r_str_word_get0 (args0, 0);
+	offset = r_num_get (core->num, offstr);
+
+	return r_sign_add_offset (core->anal, name, offset);
+}
+
 static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
 	switch (type) {
 	case R_SIGN_BYTES:
@@ -157,6 +173,8 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 		return addBytesZign (core, name, type, args0, nargs);
 	case R_SIGN_GRAPH:
 		return addGraphZign (core, name, args0, nargs);
+	case R_SIGN_OFFSET:
+		return addOffsetZign (core, name, args0, nargs);
 	default:
 		eprintf ("error: unknown zignature type\n");
 	}

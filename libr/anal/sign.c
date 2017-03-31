@@ -23,13 +23,12 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 		}
 
 		switch (i) {
-		case 0:
-			// Const "zign" string
+		case 0: // const "zign" string
 			break;
-		case 1:
+		case 1: // space
 			it->space = r_space_add (&a->zign_spaces, token);
 			break;
-		case 2:
+		case 2: // name
 			it->name = r_str_new (token);
 			break;
 		}
@@ -43,14 +42,14 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 		}
 
 		switch (i) {
-		case 0:
-			size = sdb_atoi (token);
+		case 0: // bytes pattern size
+			size = atoi (token);
 			if (size > 0) {
 				it->bytes = R_NEW0 (RSignBytes);
 				it->bytes->size = size;
 			}
 			break;
-		case 1:
+		case 1: // bytes pattern
 			if (it->bytes) {
 				if (strlen (token) != 2 * it->bytes->size) {
 					retval = false;
@@ -60,7 +59,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 				r_hex_str2bin (token, it->bytes->bytes);
 			}
 			break;
-		case 2:
+		case 2: // bytes pattern mask
 			if (it->bytes) {
 				if (strlen (token) != 2 * it->bytes->size) {
 					retval = false;
@@ -70,11 +69,14 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 				r_hex_str2bin (token, it->bytes->mask);
 			}
 			break;
-		case 3:
+		case 3: // graph metrics
 			if (strlen (token) == 2 * sizeof (RSignGraph)) {
 				it->graph = R_NEW0 (RSignGraph);
 				r_hex_str2bin (token, (ut8 *) it->graph);
 			}
+			break;
+		case 4: // offset
+			it->offset = atoll (token);
 			break;
 		default:
 			retval = false;
@@ -105,7 +107,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	RSignGraph *graph = it->graph;
 
 	if (k) {
-		serializeKey(a, it->space, it->name, k);
+		serializeKey (a, it->space, it->name, k);
 	}
 
 	if (v) {
@@ -121,11 +123,12 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			r_hex_bin2str ((ut8 *) graph, sizeof (RSignGraph), hexgraph);
 		}
 
-		snprintf (v, R_SIGN_VAL_MAXSZ, "%d|%s|%s|%s",
+		snprintf (v, R_SIGN_VAL_MAXSZ, "%d|%s|%s|%s|%"PFMT64d,
 			bytes? bytes->size: 0,
 			bytes? hexbytes: "0",
 			bytes? hexmask: "0",
-			graph? hexgraph: "0");
+			graph? hexgraph: "0",
+			it->offset);
 
 		free (hexbytes);
 		free (hexmask);
@@ -157,13 +160,17 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 		dst->graph = R_NEW0 (RSignGraph);
 		*dst->graph = *src->graph;
 	}
+
+	if (src->offset != UT64_MAX) {
+		dst->offset = src->offset;
+	}
 }
 
 static bool addItem(RAnal *a, RSignItem *it) {
 	char key[R_SIGN_KEY_MAXSZ], val[R_SIGN_VAL_MAXSZ];
 	const char *curval;
 	bool retval = true;
-	RSignItem *curit = R_NEW0 (RSignItem);
+	RSignItem *curit = r_sign_item_new ();
 
 	serialize (a, it, key, val);
 	curval = sdb_const_get (a->sdb_zigns, key, 0);
@@ -185,7 +192,7 @@ exit_function:
 }
 
 static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 	bool retval = true;
 
 	if (r_mem_is_zero (mask, size)) {
@@ -227,13 +234,28 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 }
 
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 	bool retval = true;
 
 	it->name = r_str_new (name);
 	it->space = a->zign_spaces.space_idx;
 	it->graph = R_NEW0 (RSignGraph);
 	*it->graph = graph;
+
+	retval = addItem (a, it);
+
+	r_sign_item_free (it);
+
+	return retval;
+}
+
+R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset) {
+	RSignItem *it = r_sign_item_new ();
+	bool retval = true;
+
+	it->name = r_str_new (name);
+	it->space = a->zign_spaces.space_idx;
+	it->offset = offset;
 
 	retval = addItem (a, it);
 
@@ -329,9 +351,19 @@ static void listGraph(RAnal *a, RSignItem *it, int format) {
 	}
 }
 
+static void listOffset(RAnal *a, RSignItem *it, int format) {
+	if (format == '*') {
+		a->cb_printf ("za %s o 0x%08"PFMT64x"\n", it->name, it->offset);
+	} else if (format == 'j') {
+		a->cb_printf ("\"offset\":%"PFMT64d"}", it->offset);
+	} else {
+		a->cb_printf ("  offset: 0x%08"PFMT64x"\n", it->offset);
+	}
+}
+
 static int listCB(void *user, const char *k, const char *v) {
 	struct ctxListCB *ctx = (struct ctxListCB *) user;
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 
 	if (!deserialize (a, it, k, v)) {
@@ -383,6 +415,14 @@ static int listCB(void *user, const char *k, const char *v) {
 		listGraph (a, it, ctx->format);
 	}
 
+	// Graph metrics
+	if (it->offset != UT64_MAX) {
+		if (ctx->format == 'j') {
+			a->cb_printf (",");
+		}
+		listOffset (a, it, ctx->format);
+	}
+
 	// End item
 	if (ctx->format == 'j') {
 		a->cb_printf ("}");
@@ -418,7 +458,7 @@ struct ctxCountForCB {
 
 static int countForCB(void *user, const char *k, const char *v) {
 	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 
 	if (!deserialize (ctx->anal, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
@@ -452,7 +492,7 @@ struct ctxUnsetForCB {
 static int unsetForCB(void *user, const char *k, const char *v) {
 	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 	Sdb *db = ctx->anal->sdb_zigns;
 	RAnal *a = ctx->anal;
 
@@ -525,7 +565,7 @@ struct ctxForeachCB {
 
 static int foreachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 	int retval = 1;
 
@@ -672,8 +712,17 @@ R_API int r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallba
 	return 0;
 }
 
-R_API RSignItem *r_sign_item_dup(RSignItem *it) {
+R_API RSignItem *r_sign_item_new() {
 	RSignItem *ret = R_NEW0 (RSignItem);
+
+	ret->offset = UT64_MAX;
+	ret->space = -1;
+
+	return ret;
+}
+
+R_API RSignItem *r_sign_item_dup(RSignItem *it) {
+	RSignItem *ret = r_sign_item_new ();
 
 	ret->name = r_str_new (it->name);
 	ret->space = it->space;
@@ -714,7 +763,7 @@ R_API void r_sign_item_free(RSignItem *item) {
 static int loadCB(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
-	RSignItem *it = R_NEW0 (RSignItem);
+	RSignItem *it = r_sign_item_new ();
 
 	if (!deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
