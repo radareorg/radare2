@@ -3208,11 +3208,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'S':
-			if (r_config_get_i (core->config, "cfg.debug")) {
-				r_core_cmd0 (core, "dso;.dr*");
-			} else {
-				graph_single_step_over (core, g);
-			}
+			graph_single_step_over (core, g);
 			break;
 		case 'x':
 		case 'X':
