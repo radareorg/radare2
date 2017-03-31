@@ -149,7 +149,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			}
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
 			if (fsz != UT64_MAX) {
-				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+				pair ("size", r_num_units (NULL, fsz));
 			}
 			pair ("iorw", r_str_bool ( io_cache ||\
 					cf->desc->flags & R_IO_WRITE ));
