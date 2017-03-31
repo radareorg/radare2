@@ -224,22 +224,30 @@ R_API int r_line_hist_add(const char *line) {
 	if (!I.history.data) {
 		inithist ();
 	}
-	if (I.history.top >= I.history.size) {
-		I.history.top = I.history.index = 0; // workaround
-	}
 	/* ignore dup */
-	if (I.history.index > 0) {
-		const char *data = I.history.data[I.history.index - 1];
+	if (I.history.top > 0) {
+		const char *data = I.history.data[I.history.top - 1];
 		if (data && !strcmp (line, data)) {
 			return false;
 		}
 	}
-	if (line && *line) { // && I.history.index < I.history.size) {
-		I.history.data[I.history.top++] = strdup (line);
-		I.history.index = I.history.top;
-		return true;
+	if (!line) {
+		return false;
 	}
-	return false;
+	if (!*line) {
+		return false;
+	}
+	if (I.history.top == I.history.size) {
+		int i;
+		free (I.history.data[0]);
+		for (i = 0; i <= I.history.size - 2; i++) {
+			I.history.data[i] = I.history.data[i + 1];
+		}
+		I.history.top--;
+	}
+	I.history.data[I.history.top++] = strdup (line);
+	I.history.index = I.history.top;
+	return true;
 }
 
 static int r_line_hist_up() {
@@ -265,21 +273,20 @@ static int r_line_hist_down() {
 	if (!I.history.data) {
 		inithist ();
 	}
-	if (I.history.index < I.history.size
-		&& I.history.data[I.history.index]) {
-		I.history.index++;
-		if (!I.history.data[I.history.index]) {
-			I.buffer.data[0] = '\0';
-			I.buffer.index = I.buffer.length = 0;
-			return 0;
-		}
-		if (I.history.data[I.history.index]) {
-			strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE - 1);
-			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-		}
-		return true;
+	if (I.history.index == I.history.top) {
+		return false;
 	}
-	return false;
+	I.history.index++;
+	if (I.history.index == I.history.top) {
+		I.buffer.data[0] = '\0';
+		I.buffer.index = I.buffer.length = 0;
+		return false;
+	}
+	if (I.history.data[I.history.index]) {
+		strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE - 1);
+		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+	}
+	return true;
 }
 
 R_API const char *r_line_hist_get(int n) {
@@ -1203,7 +1210,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				r_line_hist_up ();
 			}
 			break;
-		case 27: //esc-5b-41-00-00
+		case 27: // escape sequence
 			buf[0] = r_line_readchar();
 			switch (buf[0]) {
 			case -1:
@@ -1249,7 +1256,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 				if (buf[0] == 0x5b) { // [
 					switch (buf[1]) {
-					case 0x33: // supr
+					case '3': // supr
 						if (I.buffer.index < I.buffer.length) {
 							memmove (I.buffer.data + I.buffer.index, 
 								I.buffer.data + I.buffer.index + 1,
@@ -1262,7 +1269,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						break;
 						/* arrows */
-					case 0x41:
+					case 'A': // up arrow
 						if (gcomp) {
 							gcomp_idx++;
 						} else if (r_line_hist_up () == -1) {
@@ -1270,7 +1277,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							return NULL;
 						}
 						break;
-					case 0x42:
+					case 'B': // down arrow
 						if (gcomp) {
 							if (gcomp_idx > 0) {
 								gcomp_idx--;
@@ -1280,7 +1287,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							return NULL;
 						}
 						break;
-					case 0x43: // C --> right arrow
+					case 'C': // right arrow
 #if USE_UTF8
 					{
 						char *s = I.buffer.data+I.buffer.index+1;
@@ -1299,7 +1306,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 								: I.buffer.length;
 #endif
 						break;
-					case 0x44: // D --> left arrow
+					case 'D': // left arrow
 #if USE_UTF8
 					{
 						char *s = I.buffer.data+I.buffer.index-1;
