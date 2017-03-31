@@ -13,11 +13,13 @@ R_LIB_VERSION_HEADER(r_sign);
 
 #define R_SIGN_KEY_MAXSZ 1024
 #define R_SIGN_VAL_MAXSZ 10240
+#define R_SIGN_MAXREFS 512
 
 enum {
-	R_SIGN_BYTES = 'b', // bytes pattern
-	R_SIGN_ANAL  = 'a', // bytes pattern (anal mask)
-	R_SIGN_GRAPH = 'g', // graph metrics
+	R_SIGN_BYTES  = 'b', // bytes pattern
+	R_SIGN_ANAL   = 'a', // bytes pattern (anal mask)
+	R_SIGN_GRAPH  = 'g', // graph metrics
+	R_SIGN_OFFSET = 'o', // offset
 };
 
 typedef struct r_sign_graph_t {
@@ -39,6 +41,7 @@ typedef struct r_sign_item_t {
 
 	RSignBytes *bytes;
 	RSignGraph *graph;
+	ut64 offset;
 } RSignItem;
 
 typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
@@ -56,6 +59,7 @@ typedef struct r_sign_search_t {
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
+R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 
@@ -70,6 +74,7 @@ R_API int r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallba
 R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_save(RAnal *a, const char *file);
 
+R_API RSignItem *r_sign_item_new();
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 
