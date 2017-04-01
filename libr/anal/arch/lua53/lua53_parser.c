@@ -96,7 +96,7 @@ LuaFunction* findLuaFunction(ut64 addr){
 	RListIter *iter = NULL;
 	r_list_foreach (lua53_data.functionList, iter, function) {
 		
-		Dprintf ("Search 0x%llx\n",function->offset);
+		Dprintf ("Search 0x%"PFMT64x"\n",function->offset);
 		if(function->offset == addr)
 			return function;
 	}
@@ -166,10 +166,10 @@ ut64 parseHeader(const ut8* data, ut64 offset, const ut64 size, ParseStruct* par
 
 ut64 parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* parent_func, ParseStruct* parseStruct){
 	
-	Dprintf ("Function 0x%llx\n",offset);
+	Dprintf ("Function 0x%"PFMT64x"\n",offset);
 	LuaFunction* function = findLuaFunction (offset);
 	if(function){//if a function object was cached
-		Dprintf ("Found cached Functione: 0x%llx\n",function->offset);
+		Dprintf ("Found cached Functione: 0x%"PFMT64x"\n",function->offset);
 		
 		if(parseStruct != NULL && parseStruct->onString != NULL)
 			parseConstants (data, function->const_offset, size, parseStruct);
@@ -194,9 +194,9 @@ ut64 parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* 
 		
 		
 		function->lineDefined = parseInt (data + offset);
-		Dprintf ("Line Defined: %llu\n",function->lineDefined);
+		Dprintf ("Line Defined: %"PFMT64x"\n",function->lineDefined);
 		function->lastLineDefined = parseInt (data + offset + lua53_data.intSize);
-		Dprintf ("Last Line Defined: %llu\n",function->lastLineDefined);
+		Dprintf ("Last Line Defined: %"PFMT64x"\n",function->lastLineDefined);
 		offset += lua53_data.intSize*2;
 		function->numParams = data[offset + 0];
 		Dprintf ("Param Count: %d\n",function->numParams);
@@ -244,7 +244,7 @@ ut64 parseCode(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parse
 	
 	if(offset + length*lua53_data.instructionSize >= size)
 		return 0;
-	Dprintf ("Function has %llu Instructions\n",length);
+	Dprintf ("Function has %"PFMT64x" Instructions\n",length);
 	
 	return offset + length*lua53_data.instructionSize;
 }
@@ -254,7 +254,7 @@ ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* 
 	ut64 length = parseInt (data + offset);
 	offset += lua53_data.intSize;
 	
-	Dprintf ("Function has %llu Constants\n",length);
+	Dprintf ("Function has %"PFMT64x" Constants\n",length);
 	
 	int i;
 	for(i = 0;i < length; i++){
@@ -279,7 +279,7 @@ ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* 
 			}
 			break;
 			case (3 | (1 << 4))://Integer
-				Dprintf ("Integer %llu\n",parseLuaInt (data + offset));
+				Dprintf ("Integer %"PFMT64x"\n",parseLuaInt (data + offset));
 				offset += lua53_data.luaIntSize;
 			break;
 			case (4 | (0 << 4))://Short String
@@ -300,7 +300,7 @@ ut64 parseUpvalues(const ut8* data, ut64 offset, const ut64 size, ParseStruct* p
 	ut64 length = parseInt (data + offset);
 	offset += lua53_data.intSize;
 	
-	Dprintf ("Function has %llu Upvalues\n",length);
+	Dprintf ("Function has %"PFMT64x" Upvalues\n",length);
 	
 	int i;
 	for(i = 0;i < length; i++){
@@ -317,7 +317,7 @@ ut64 parseProtos(const ut8* data, ut64 offset, const ut64 size, LuaFunction* fun
 	ut64 length = parseInt (data + offset);
 	offset += lua53_data.intSize;
 	
-	Dprintf ("Function has %llu Prototypes\n",length);
+	Dprintf ("Function has %"PFMT64x" Prototypes\n",length);
 	
 	int i;
 	for(i = 0;i < length; i++){
@@ -336,12 +336,12 @@ ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* pars
 	offset += lua53_data.intSize;
 	
 	if(length != 0){
-		Dprintf ("Instruction-Line Mappings %llu\n",length);
+		Dprintf ("Instruction-Line Mappings %"PFMT64x"\n",length);
 		if(offset + lua53_data.intSize * length >= size)
 			return 0;
 		int i;
 		for(i = 0;i < length; i++){
-			Dprintf ("Instruction %d Line %llu\n",i,parseInt (data + offset));
+			Dprintf ("Instruction %d Line %"PFMT64x"\n",i,parseInt (data + offset));
 			offset += lua53_data.intSize;
 		}
 	}
@@ -352,7 +352,7 @@ ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* pars
 	offset += lua53_data.intSize;
 	
 	if(length != 0){
-		Dprintf ("LiveRanges: %llu\n",length);
+		Dprintf ("LiveRanges: %"PFMT64x"\n",length);
 		int i;
 		for(i = 0;i < length; i++){
 			Dprintf ("LiveRange %d:\n",i);
@@ -366,7 +366,6 @@ ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* pars
 			ut64 num2 = parseInt (data + offset);
 #endif
 			offset += lua53_data.intSize;
-			Dprintf ("%llu - %llu\n",num1, num2);
 		}
 	}
 	
@@ -376,7 +375,7 @@ ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* pars
 	offset += lua53_data.intSize;
 	
 	if(length != 0){
-		Dprintf ("Up-Values: %llu\n",length);
+		Dprintf ("Up-Values: %"PFMT64x"\n",length);
 		int i;
 		for(i = 0;i < length; i++){
 			Dprintf ("Up-Value %d:\n",i);

@@ -8,8 +8,8 @@
 
 static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	
-	if (!op)
-		return 0;
+	if (!op) return 0;
+	
 	memset (op, 0, sizeof (RAnalOp));
 	
 	const ut32 instruction = getInstruction (data);
@@ -19,6 +19,8 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
+	if(GET_OPCODE (instruction) > OP_EXTRAARG)
+		return op->size;
 	op->mnemonic = strdup(instruction_names[GET_OPCODE (instruction)]);
 	switch( GET_OPCODE (instruction) ){
 	case OP_MOVE:/*      A B     R(A) := R(B)                                    */
@@ -199,8 +201,6 @@ void addFunction (LuaFunction* func, ParseStruct* parseStruct){
 	if(!func->parent_func){
 		RAnalFunction *afunc = parseStruct->data;
 		afunc->addr += func->code_offset + lua53_data.intSize;
-		printf("%08llx\n",afunc->addr);
-		printf("%08llx\n",func->code_offset + lua53_data.intSize);
 		if(afunc->addr != func->code_offset + lua53_data.intSize){
 			afunc->name = malloc(func->name_size + 1);
 			memcpy(afunc->name,func->name_ptr,func->name_size);
@@ -212,7 +212,7 @@ void addFunction (LuaFunction* func, ParseStruct* parseStruct){
 }
 int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype){
 	
-	Dprintf ("Analyze Function: 0x%llx\n",addr);
+	Dprintf ("Analyze Function: 0x%"PFMT64x"\n",addr);
 	LuaFunction* function = findLuaFunctionByCodeAddr (addr);
 	if(function){
 		fcn->maxstack = function->maxStackSize;
@@ -226,8 +226,8 @@ RAnalOp * op_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
 	
 	fprintf(stderr,"OP\n");
 	RAnalOp* analOp = R_NEW0 (RAnalOp);
-	if(analOp == NULL)
-		return NULL;
+	if(analOp == NULL) return NULL;
+	
 	lua53_anal_op (a,analOp,addr,buf,len);
 	return analOp;
 }
@@ -235,8 +235,8 @@ RAnalFunction * fn_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
 	
 	fprintf(stderr,"FUNC\n");
 	RAnalFunction* analFn = R_NEW0 (RAnalFunction);
-	if(analFn == NULL)
-		return NULL;
+	if(analFn == NULL) return NULL;
+	
 	lua53_anal_fcn (a,analFn,addr,buf,len,0);
 	
 	return analFn;
