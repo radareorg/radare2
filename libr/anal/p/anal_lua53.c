@@ -19,6 +19,7 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
+	op->mnemonic = strdup(instruction_names[GET_OPCODE (instruction)]);
 	switch( GET_OPCODE (instruction) ){
 	case OP_MOVE:/*      A B     R(A) := R(B)                                    */
 		op->type = R_ANAL_OP_TYPE_MOV;

@@ -58,7 +58,7 @@ int parseInstruction (const char* str);
 
 const char* instruction_names[] = {
 	"move","loadk","loadkx","loadbool","loadnil","getupval","gettabup","gettable","settabup","setupval","settable","newtable","self","add","sub","mul","mod",
-	"pow","div","idiv","bans","bor","bxor","shl","shr","unm","bnot","not","len","concat","jmp","eq","lt","le",
+	"pow","div","idiv","band","bor","bxor","shl","shr","unm","bnot","not","len","concat","jmp","eq","lt","le",
 	"test","testset","call","tailcall","return","forloop","forprep","tforcall","tforloop","setlist","closure","vararg","extraarg",0
 };
 
