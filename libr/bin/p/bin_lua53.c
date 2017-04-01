@@ -278,8 +278,7 @@ void addEntry (LuaFunction* func, ParseStruct* parseStruct){
 	if(func->parent_func == NULL){
 		RBinAddr *ptr = NULL;
 		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr = func->code_offset + lua53_data.intSize;
-			ptr->vaddr = func->code_offset + lua53_data.intSize;
+			ptr->paddr = ptr->vaddr = func->code_offset + lua53_data.intSize;
 			r_list_append (parseStruct->data, ptr);
 		}
 	}

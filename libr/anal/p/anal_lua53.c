@@ -7,14 +7,11 @@
 #include "../arch/lua53/lua53_parser.c"
 
 static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	
 	if (!op) return 0;
-	
+
 	memset (op, 0, sizeof (RAnalOp));
-	
 	const ut32 instruction = getInstruction (data);
 	ut32 extraArg = 0;
-	
 	op->addr = addr;
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -57,14 +54,11 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		break;
 	case OP_SETTABLE:/*  A B C   R(A)[RK(B)] := RK(C)                            */
 		break;
-
 	case OP_NEWTABLE:/*  A B C   R(A) := {} (size = B,C)                         */
 		op->type = R_ANAL_OP_TYPE_NEW;
 		break;
-
 	case OP_SELF:/*      A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]             */
 		break;
-
 	case OP_ADD:/*       A B C   R(A) := RK(B) + RK(C)                           */
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
@@ -110,10 +104,8 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		break;
 	case OP_LEN:/*       A B     R(A) := length of R(B)                          */
 		break;
-
 	case OP_CONCAT:/*    A B C   R(A) := R(B).. ... ..R(C)                       */
 		break;
-
 	case OP_JMP:/*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = op->addr + 4*(GETARG_sBx (instruction));
@@ -134,7 +126,6 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->jump = op->addr + 8;
 		op->fail = op->addr + 4;
 		break;
-
 	case OP_TEST:/*      A C     if not (R(A) <=> C) then pc++                   */
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = op->addr + 8;
@@ -145,7 +136,6 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->jump = op->addr + 8;
 		op->fail = op->addr + 4;
 		break;
-
 	case OP_CALL:/*      A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
 		op->type = R_ANAL_OP_TYPE_RCALL;
 		break;
@@ -162,7 +152,6 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -4;
 		break;
-
 	case OP_FORLOOP:/*   A sBx   R(A)+=R(A+2);
 							if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -174,7 +163,6 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->jump = op->addr + 4 + 4*(GETARG_sBx (instruction));
 		op->fail = op->addr + 4;
 		break;
-
 	case OP_TFORCALL:/*  A C     R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));  */
 		op->type = R_ANAL_OP_TYPE_RCALL;
 		break;
@@ -183,15 +171,11 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->jump = op->addr + 4 + 4*(GETARG_sBx (instruction));
 		op->fail = op->addr + 4;
 		break;
-
 	case OP_SETLIST:/*   A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
 		op->type = R_ANAL_OP_TYPE_STORE;
 		break;
-
 	case OP_CLOSURE:/*   A Bx    R(A) := closure(KPROTO[Bx])                     */
-
 	case OP_VARARG:/*    A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
-	
 	case OP_EXTRAARG:/*   Ax      extra (larger) argument for previous opcode     */
 		break;
 	}
@@ -205,13 +189,11 @@ void addFunction (LuaFunction* func, ParseStruct* parseStruct){
 			afunc->name = malloc(func->name_size + 1);
 			memcpy(afunc->name,func->name_ptr,func->name_size);
 			afunc->name[func->name_size] = '\0';
-			
 			afunc->stack = 0;
 		}
 	}
 }
 int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype){
-	
 	Dprintf ("Analyze Function: 0x%"PFMT64x"\n",addr);
 	LuaFunction* function = findLuaFunctionByCodeAddr (addr);
 	if(function){
@@ -220,26 +202,6 @@ int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int
 	}
 	fcn->addr = addr;
 	return 0;
-}
-
-RAnalOp * op_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
-	
-	fprintf(stderr,"OP\n");
-	RAnalOp* analOp = R_NEW0 (RAnalOp);
-	if(analOp == NULL) return NULL;
-	
-	lua53_anal_op (a,analOp,addr,buf,len);
-	return analOp;
-}
-RAnalFunction * fn_from_buffer(RAnal *a, ut64 addr, const ut8* buf, ut64 len){
-	
-	fprintf(stderr,"FUNC\n");
-	RAnalFunction* analFn = R_NEW0 (RAnalFunction);
-	if(analFn == NULL) return NULL;
-	
-	lua53_anal_fcn (a,analFn,addr,buf,len,0);
-	
-	return analFn;
 }
 
 int finit(void *user) {
@@ -254,7 +216,7 @@ RAnalPlugin r_anal_plugin_lua53 = {
 	.name = "lua53",
 	.desc = "LUA 5.3 analysis plugin",
 	.arch = "lua53",
-	.license = "MIT",	
+	.license = "MIT",
 	.bits = 32,
 	.desc = "LUA 5.3 VM code analysis plugin",
 	.op = &lua53_anal_op,
