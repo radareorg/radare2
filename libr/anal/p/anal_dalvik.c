@@ -474,6 +474,9 @@ static int set_reg_profile(RAnal *anal) {
 
 static bool is_valid_offset(RAnal *anal, ut64 addr, int hasperm) {
 	RBinDexObj *bin_dex = (RBinDexObj*) anal->binb.bin->cur->o->bin_obj;
+	if (!bin_dex) {
+		return false;
+	}
 	return addr >= bin_dex->code_from && addr <= bin_dex->code_to;
 }
 

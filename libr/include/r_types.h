@@ -23,6 +23,10 @@
 #undef R_FREE
 #endif
 
+#ifdef R_NEWCOPY
+#undef R_NEWCOPY
+#endif
+
 // HACK to fix capstone-android-mips build
 #undef mips
 #define mips mips
@@ -49,7 +53,8 @@
 #undef MAXCOMLEN	/* redefined in zipint.h */
 #endif
 
-#if (OpenBSD >= 201605) /* release >= 5.9 */
+/* release >= 5.9 */
+#if __OpenBSD__ && OpenBSD >= 201605
 #define LIBC_HAVE_PLEDGE 1
 #else
 #define LIBC_HAVE_PLEDGE 0
@@ -229,10 +234,19 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
+#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)
+static inline void *r_new_copy(int size, void *data) {
+	void *a = malloc(size);
+	if (a) {
+		memcpy (a, data, size);
+	}
+	return a;
+}
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 #define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
+#define R_PTR_MOVE(d,s) d=s;s=NULL;
 
 #define R_PTR_ALIGN(v,t) \
 	((char *)(((size_t)(v) ) \

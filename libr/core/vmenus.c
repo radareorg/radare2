@@ -73,9 +73,9 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
-		scol1 = r_print_colorize_opcode (s1, color_reg, color_num);
+		scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num);
 		free (s1);
-		scol2 = r_print_colorize_opcode (s2, color_reg, color_num);
+		scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -90,9 +90,9 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 		return source;
 	}
 	char *res = strdup("");
-	res = r_str_concat (res, r_print_color_op_type (core->print, optype));
-	tmp = r_print_colorize_opcode (source, color_reg, color_num);
-	res = r_str_concat (res, tmp);
+	res = r_str_append (res, r_print_color_op_type (core->print, optype));
+	tmp = r_print_colorize_opcode (core->print, source, color_reg, color_num);
+	res = r_str_append (res, tmp);
 	free (tmp);
 	return res;
 }
@@ -741,19 +741,17 @@ static bool r_core_visual_config_hud(RCore *core) {
 // TODO: show only N elements of the list
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
-static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const char *grep) {
+static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const char *grep, RList *list) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	RListIter *iter;
 	RBinClass *c, *cur = NULL;
 	RBinSymbol *m, *mur = NULL;
-	RList *list;
 	int i = 0;
 	int skip = idx - 10;
 
 	switch (mode) {
 	case 'c':
 		r_cons_printf ("Classes:\n\n");
-		list = r_bin_get_classes (core->bin);
 		r_list_foreach (list, iter, c) {
 			if (grep) {
 				if (!r_str_casestr (c->name, grep)) {
@@ -847,14 +845,18 @@ R_API int r_core_visual_classes(RCore *core) {
 	int oldcur = 0;
 	char *grep = NULL;
 	bool grepmode = false;
-
+	RList *list = r_bin_get_classes (core->bin);
+	if (r_list_empty (list)) {
+		r_cons_message ("No Classes");
+		return false;
+	}
 	for (;;) {
 		int cols;
 		r_cons_clear00 ();
 		if (grepmode) {
 			r_cons_printf ("Grep: %s\n", grep? grep: "");
 		}
-		ptr = show_class (core, mode, option, cur, grep);
+		ptr = show_class (core, mode, option, cur, grep, list);
 		switch (mode) {
 		case 'm':
 			mur = (RBinSymbol*)ptr;
@@ -892,7 +894,7 @@ R_API int r_core_visual_classes(RCore *core) {
 				break;
 			default:
 				grep = grep
-					? r_str_concatf (grep, "%c", ch)
+					? r_str_appendf (grep, "%c", ch)
 					: r_str_newf ("%c", ch);
 				break;
 			}
@@ -1004,10 +1006,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int delta = 7;
 	int menu = 0;
 
-	for (j=i=0; i<R_FLAG_SPACES_MAX; i++)
-		if (core->flags->spaces[i])
+	for (j=i=0; i<R_FLAG_SPACES_MAX; i++) {
+		if (core->flags->spaces[i]) {
 			j = 1;
-	if (j==0) menu = 1;
+		}
+	}
+	if (j == 0) {
+		menu = 1;
+	}
 	for (;;) {
 		r_cons_clear00 ();
 
@@ -1052,7 +1058,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				default: format = 0; continue;
 				}
 				if (*cmd) r_core_cmd (core, cmd, 0);
-			} else r_cons_printf ("(no flags)\n");
+			} else {
+				r_cons_printf ("(no flags)\n");
+			}
 		} else {
 			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
@@ -1410,7 +1418,8 @@ static void config_visual_hit_i(RCore *core, const char *name, int delta) {
 	struct r_config_node_t *node;
 	node = r_config_node_get (core->config, name);
 	if (node && ((node->flags & CN_INT) || (node->flags & CN_OFFT))) {
-		r_config_set_i(core->config, name, r_config_get_i(core->config, name)+delta);
+		int hitDelta = r_config_get_i (core->config, name) + delta;
+		(void) r_config_set_i (core->config, name, hitDelta);
 	}
 }
 
@@ -2398,6 +2407,35 @@ static bool isDisasmPrint(int mode) {
 	return (mode == 1 || mode == 2);
 }
 
+static void handleHints(RCore *core) {
+	//TODO extend for more anal hints
+	int i = 0;
+	char ch[64] = R_EMPTY;
+	const char *lines[] = {"[dh]- Define anal hint:"
+		," b [16,32,64]     set bits hint"
+		, NULL};
+	for (i = 0; lines[i]; i++) {
+		r_cons_fill_line ();
+		r_cons_printf ("\r%s\n", lines[i]);
+	}
+	r_cons_flush ();
+	r_line_set_prompt ("anal hint: ");
+	if (r_cons_fgets (ch, sizeof (ch) - 1, 0, NULL) > 0) {
+		switch (ch[0]) {
+		case 'b':
+			{
+			int bits = atoi (r_str_trim_head_tail (ch + 1));
+			if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
+				r_anal_hint_set_bits (core->anal, core->offset, bits);
+			}
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 R_API void r_core_visual_define (RCore *core, const char *args) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
@@ -2440,7 +2478,7 @@ R_API void r_core_visual_define (RCore *core, const char *args) {
 		," i    immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
-		," h    highlight word"
+		," h    define anal hint"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
 		," r    rename function"
@@ -2669,7 +2707,8 @@ repeat:
 		r_cons_any_key (NULL);
 		break;
 	case 'h': // "Vdh"
-		r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, off);
+		handleHints (core);
+		//r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, off);
 		break;
 	case 'r': // "Vdr"
 		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, off);
@@ -2847,7 +2886,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (%s)\n",
 			opt, k, color, atoi (cstr+7), cstr+1);
 		r_core_cmdf (core, "ec %s %s", k, color);
-		r_core_cmd0 (core, "pd 25");
+		r_core_cmd0 (core, "pd $r-8");
 		r_cons_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);

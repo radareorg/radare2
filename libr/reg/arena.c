@@ -185,12 +185,12 @@ R_API void r_reg_arena_free(RRegArena* ra) {
 }
 
 R_API void r_reg_arena_swap(RReg* reg, int copy) {
-	// XXX this api should be deprecated
+	/* XXX: swap current arena to head(previous arena) */
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		if (r_list_length (reg->regset[i].pool) > 1) {
-			RListIter* ia = reg->regset[i].pool->tail;
-			RListIter* ib = reg->regset[i].pool->tail->p;
+			RListIter* ia = reg->regset[i].cur;
+			RListIter* ib = reg->regset[i].pool->head;
 			void* tmp = ia->data;
 			ia->data = ib->data;
 			ib->data = tmp;
@@ -200,10 +200,6 @@ R_API void r_reg_arena_swap(RReg* reg, int copy) {
 			break;
 		}
 	}
-#if 0
-	int index = (++reg->iters) % 2;
-	r_reg_arena_set (reg, index, copy);
-#endif
 }
 
 R_API void r_reg_arena_pop(RReg* reg) {
@@ -218,6 +214,7 @@ R_API void r_reg_arena_pop(RReg* reg) {
 		a = reg->regset[i].pool->tail->data;
 		if (a) {
 			reg->regset[i].arena = a;
+			reg->regset[i].cur = reg->regset[i].pool->tail;
 		}
 	}
 }
@@ -241,6 +238,7 @@ R_API int r_reg_arena_push(RReg* reg) {
 		}
 		r_list_push (reg->regset[i].pool, b);
 		reg->regset[i].arena = b;
+		reg->regset[i].cur = reg->regset[i].pool->tail;
 	}
 	return r_list_length (reg->regset[0].pool);
 }

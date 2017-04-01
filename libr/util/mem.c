@@ -47,8 +47,8 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 		return ret;
 	}
 	for (i = 0; i < len; i++) {
-		mdest[i] = dest[i]&mask[i];
-		morig[i] = orig[i]&mask[i];
+		mdest[i] = dest[i] & mask[i];
+		morig[i] = orig[i] & mask[i];
 	}
 	ret = memcmp (mdest, morig, len);
 	free (mdest);
@@ -58,7 +58,7 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	ut8 srcmask, dstmask;
-	int bytes = (int)(bits / 8);
+	int bytes = (int) (bits / 8);
 	bits = bits % 8;
 	memcpy (dst, src, bytes);
 	if (bits) {
@@ -81,40 +81,42 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	int nbits = bits;
 #if 0
 	int dofb, sofb;
-	int bdoff = (doff/8);
-	int bsoff = (soff/8);
+	int bdoff = (doff / 8);
+	int bsoff = (soff / 8);
 	int nbits = 0;
 	ut8 mask;
-	int sdelta = soff-doff;
+	int sdelta = soff - doff;
 	/* apply delta offsets */
-	src = src+bsoff;
-	dst = dst+bdoff;
-	dofb=doff%8;
-	sofb=soff%8;
-	if (sofb||dofb) {
+	src = src + bsoff;
+	dst = dst + bdoff;
+	dofb = doff % 8;
+	sofb = soff % 8;
+	if (sofb || dofb) {
 		// TODO : this algorithm is not implemented
-		int mask = (1<<sofb);
-		int nmask = 0xff^mask;
-		int s = src[0]<<sofb;
-		int d = dst[0]<<dofb;
-		if (soff == doff && bits==1) {
-			mask = 0xff^(1<<dofb);
-			dst[0] = ((src[0]&mask) | (dst[0]&mask));
-		} else printf("TODO: Oops. not supported method of bitcopy\n");
+		int mask = (1 << sofb);
+		int nmask = 0xff ^ mask;
+		int s = src[0] << sofb;
+		int d = dst[0] << dofb;
+		if (soff == doff && bits == 1) {
+			mask = 0xff ^ (1 << dofb);
+			dst[0] = ((src[0] & mask) | (dst[0] & mask));
+		} else {
+			printf ("TODO: Oops. not supported method of bitcopy\n");
+		}
 /*
-	1) shift algin src i dst
-	2) copy (8-dofb) bits from dst to src
-	3) dst[0] = dst[0]&^(0x1<<nbits) | (src&(1<<nbits))
-*/
+        1) shift algin src i dst
+        2) copy (8-dofb) bits from dst to src
+        3) dst[0] = dst[0]&^(0x1<<nbits) | (src&(1<<nbits))
+ */
 		src++;
 		dst++;
 	}
 /*
-doff  v
-dst |__________|___________|
-soff     v
-src |__________|_________|
-*/
+   doff  v
+   dst |__________|___________|
+   soff     v
+   src |__________|_________|
+ */
 #endif
 	r_mem_copybits (dst, src, nbits);
 }
@@ -135,17 +137,17 @@ R_API ut64 r_mem_get_num(const ut8 *b, int size) {
 }
 
 // TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
-R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num) {
+R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	// LITTLE ENDIAN is the default for streams
 	switch (dest_size) {
 	case 1:
-		r_write_le8 (dest, (ut8)(num & UT8_MAX));
+		r_write_le8 (dest, (ut8) (num & UT8_MAX));
 		break;
 	case 2:
-		r_write_le16 (dest, (ut16)(num & UT16_MAX));
+		r_write_le16 (dest, (ut16) (num & UT16_MAX));
 		break;
 	case 4:
-		r_write_le32 (dest, (ut32)(num & UT32_MAX));
+		r_write_le32 (dest, (ut32) (num & UT32_MAX));
 		break;
 	case 8:
 		r_write_le64 (dest, num);
@@ -159,7 +161,7 @@ R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num) {
 // The default endian is LE for streams.
 // This function either swaps or copies len bytes depending on bool big_endian
 // TODO: Remove completely
-R_API void r_mem_swaporcopy(ut8* dest, const ut8* src, int len, bool big_endian) {
+R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian) {
 	if (big_endian) {
 		r_mem_swapendian (dest, src, len);
 	} else {
@@ -211,15 +213,17 @@ R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
 	}
 }
 
-//R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
-//R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
+// R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
+// R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
-	int i, until = hlen-nlen+1;
-	if (hlen<1 || nlen<1)
+	int i, until = hlen - nlen + 1;
+	if (hlen < 1 || nlen < 1) {
 		return NULL;
-	for (i=0; i<until; i++) {
-		if (!memcmp (haystack+i, needle, nlen))
-			return haystack+i;
+	}
+	for (i = 0; i < until; i++) {
+		if (!memcmp (haystack + i, needle, nlen)) {
+			return haystack + i;
+		}
 	}
 	return NULL;
 }
@@ -237,8 +241,8 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 		until -= (until % align);
 	}
 	for (i = 0; i < until; i += align) {
-		if (!memcmp (haystack+i, needle, nlen)) {
-			return haystack+i;
+		if (!memcmp (haystack + i, needle, nlen)) {
+			return haystack + i;
 		}
 	}
 	return NULL;
@@ -247,17 +251,24 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 #if __UNIX__
 	int p = 0;
-	if (strchr (prot, 'x')) p |= PROT_EXEC;
-	if (strchr (prot, 'r')) p |= PROT_READ;
-	if (strchr (prot, 'w')) p |= PROT_WRITE;
-	if (mprotect (ptr, size, p)==-1)
+	if (strchr (prot, 'x')) {
+		p |= PROT_EXEC;
+	}
+	if (strchr (prot, 'r')) {
+		p |= PROT_READ;
+	}
+	if (strchr (prot, 'w')) {
+		p |= PROT_WRITE;
+	}
+	if (mprotect (ptr, size, p) == -1) {
 		return false;
+	}
 #elif __WINDOWS__ || __CYGWIN__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
 	w = strchr (prot, 'w')? 1: 0;
-	x = strchr (prot, 'x')? 1: 0;;
+	x = strchr (prot, 'x')? 1: 0;
 	if (w && x) {
 		return false;
 	}
@@ -272,12 +283,12 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 		return false;
 	}
 #else
-	#warning Unknown platform
+#warning Unknown platform
 #endif
 	return true;
 }
 
-R_API void *r_mem_dup (void *s, int l) {
+R_API void *r_mem_dup(void *s, int l) {
 	void *d = malloc (l);
 	if (!d) {
 		return NULL;
@@ -296,12 +307,30 @@ R_API void r_mem_reverse(ut8 *b, int l) {
 	}
 }
 
-R_API bool r_mem_is_printable (const ut8 *a, int la) {
+R_API bool r_mem_is_printable(const ut8 *a, int la) {
 	int i;
-	for (i = 0; i< la; i++) {
+	for (i = 0; i < la; i++) {
 		if (a[i] != '\n' && a[i] != '\t' && !IS_PRINTABLE (a[i])) {
 			return false;
 		}
 	}
 	return true;
+}
+
+R_API bool r_mem_is_zero(const ut8 *b, int l) {
+	int i;
+	for (i = 0; i < l; i++) {
+		if (b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API void *r_mem_alloc(int sz) {
+	return calloc (sz, 1);
+}
+
+R_API void r_mem_free(void *p) {
+	free (p);
 }

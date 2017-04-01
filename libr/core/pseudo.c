@@ -58,7 +58,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (!bb) break;
 		r_cons_push ();
 		char *code = r_core_cmd_str (core, sdb_fmt(0,
-			"pDI %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+			"pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
 		memset (indentstr, ' ', indent*I_TAB);
 		indentstr [(indent*I_TAB)-2] = 0;

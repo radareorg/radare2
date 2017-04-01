@@ -1,5 +1,6 @@
 #!/bin/sh
 FILES="
+libr/util/mem.c
 libr/util/base64.c
 libr/util/name.c
 libr/util/idpool.c
@@ -31,9 +32,12 @@ libr/include/r_list.h
 libr/include/r_reg.h
 libr/include/r_util.h
 
+libr/anal/var.c
+libr/anal/fcn.c
 libr/anal/cycles.c
 libr/anal/esil.c
 libr/anal/data.c
+libr/anal/flirt.c
 libr/anal/p/anal_arc.c
 
 libr/config/config.c
@@ -52,6 +56,7 @@ libr/bin/format/objc/mach0_classes.c
 libr/cons/hud.c
 libr/cons/2048.c
 libr/cons/utf8.c
+libr/cons/grep.c
 libr/cons/line.c
 libr/cons/canvas.c
 libr/cons/editor.c
@@ -59,23 +64,35 @@ libr/cons/editor.c
 libr/core/file.c
 libr/core/yank.c
 libr/core/blaze.c
+libr/core/cmd_egg.c
 
 binr/radare2/radare2.c
 binr/rabin2/rabin2.c
+binr/radiff2/radiff2.c
 binr/rasm2/rasm2.c
 binr/rax2/rax2.c
 "
+
+chk() {
+	if [ -z "$2" ]; then
+		return 0
+	fi
+	echo "$1" | grep -q "$2"
+}
+
 case "$1" in
-"help"|-h)
-	echo "Usage. sys/indent-whitelist.sh [commit] [apply]"
+help|-h)
+	echo "Usage. sys/indent-whitelist.sh [--fix] [regex]"
 	;;
-"commit")
-	sys/indent.sh -i ${FILES}
-	git commit sys/indent* ${FILES}
-	;;
-"apply")
-	sys/indent.sh -i ${FILES}
+--fix)
+	for f in $FILES ; do
+		chk $f $2 || continue
+		r2pm -r sys/indent.sh -i $f
+	done
 	;;
 *)
-	sys/indent.sh -u ${FILES}
+	for f in $FILES ; do
+		chk $f $1 || continue
+		r2pm -r sys/indent.sh -u $f
+	done
 esac

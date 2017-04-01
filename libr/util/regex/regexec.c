@@ -155,11 +155,9 @@ r_regex_exec(const RRegex *preg, const char *string, size_t nmatch,
 	g = preg->re_g;
 	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2)
 		return(R_REGEX_BADPAT);
-	assert(!(g->iflags&BAD));
 	if (g->iflags&BAD)		/* backstop for no-debug case */
 		return(R_REGEX_BADPAT);
 	eflags = GOODFLAGS(eflags);
-
 	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&R_REGEX_LARGE))
 		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));
 	else

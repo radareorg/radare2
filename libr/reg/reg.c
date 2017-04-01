@@ -232,6 +232,9 @@ R_API RReg* r_reg_new() {
 		reg->regset[i].arena = arena;
 	}
 	r_reg_arena_push (reg);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		reg->regset[i].cur = r_list_tail (reg->regset[i].pool);
+	}
 	return reg;
 }
 

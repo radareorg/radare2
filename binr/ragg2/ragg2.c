@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
 			bits = atoi (optarg);
 			break;
 		case 'B':
-			bytes = r_str_concat (bytes, optarg);
+			bytes = r_str_append (bytes, optarg);
 			break;
 		case 'C':
 			contents = optarg;

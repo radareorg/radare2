@@ -23,7 +23,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 		if (!dollar) {
 			break;
 		}
-		buf = r_str_concatlen (buf, msg, dollar-msg);
+		buf = r_str_appendlen (buf, msg, dollar-msg);
 		if (dollar[1]=='{') {
 			// find }
 			end = strchr (dollar+2, '}');
@@ -32,7 +32,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 				end++;
 			} else {
 				msg = dollar+1;
-				buf = r_str_concat (buf, "$");
+				buf = r_str_append (buf, "$");
 				continue;
 			}
 		} else {
@@ -46,14 +46,14 @@ static char *filterFlags(RCore *core, const char *msg) {
 			ut64 val = r_num_math (core->num, word);
 			char num[32];
 			snprintf (num, sizeof (num), "0x%"PFMT64x, val);
-			buf = r_str_concat (buf, num);
+			buf = r_str_append (buf, num);
 			msg = end;
 		} else {
 			break;
 		}
 		free (word);
 	}
-	buf = r_str_concat (buf, msg);
+	buf = r_str_append (buf, msg);
 	return buf;
 }
 
@@ -76,7 +76,7 @@ R_API void r_core_clippy(const char *msg) {
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128] = {0};
+	char *p, out[128] = R_EMPTY;
 	ut64 n, n2;
 	int i;
 	RList *tmp;
@@ -667,7 +667,7 @@ static int cmd_help(void *data, const char *input) {
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 				r_line_set_prompt (foo);
 				r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
-				foo[strlen (foo)] = 0;
+				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = r_num_math (core->num, foo);
 				}

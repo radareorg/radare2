@@ -43,7 +43,7 @@ static int valueInTextSection(RCore *core, ut64 curAddress) {
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {
-	RAsmOp asmop = {0};
+	RAsmOp asmop = R_EMPTY;
 	RAnalRef *xref;
 	RListIter *xrefIter;
 	ut8 buf[VTABLE_BUFF_SIZE];
@@ -88,7 +88,7 @@ RList* search_virtual_tables(RCore *core){
 	r_list_foreach (core->io->sections, iter, section) {
 		if (!strcmp (section->name, ".rodata")) {
 			ut8 *segBuff = calloc (1, section->size);
-			r_io_read_at (core->io, section->offset, segBuff, section->size);
+			r_io_read_at (core->io, section->paddr, segBuff, section->size);
 			startAddress = section->vaddr;
 			endAddress = startAddress + (section->size) - (bits/8);
 			while (startAddress <= endAddress) {
@@ -183,3 +183,33 @@ static void r_core_anal_list_vtables_all(void *core) {
 	r_list_free (vtables);
 }
 
+static rtti_struct* get_rtti_data (RCore *core, ut64 atAddress) {
+	ut64 bits = r_config_get_i (core->config, "asm.bits");
+	int wordSize = bits / 8;
+	ut64 BaseLocatorAddr = r_io_read_i (core->io, atAddress - wordSize, wordSize);
+	eprintf ("Trying to parse rtti at 0x%08"PFMT64x"\n", BaseLocatorAddr);
+	return NULL;
+}
+
+RList* r_core_anal_parse_rtti (void *core, bool printJson) {
+	RList* vtables = search_virtual_tables ((RCore *)core);
+	RListIter* vtableIter;
+	RList* rtti_structures = r_list_new ();
+	vtable_info* table;
+
+	if (vtables) {
+		r_list_foreach (vtables, vtableIter, table) {
+			rtti_struct* current_rtti = get_rtti_data ((RCore *)core, table->saddr);
+			if (current_rtti) {
+				current_rtti->vtable_start_addr = table->saddr;
+				r_list_append (rtti_structures, current_rtti);
+			}
+		}
+	}
+	r_list_free (vtables);
+	return rtti_structures;
+}
+
+R_API void r_core_anal_print_rtti (void *core) {
+	eprintf ("Work in progress\n");
+}

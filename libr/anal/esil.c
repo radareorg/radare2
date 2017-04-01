@@ -33,19 +33,27 @@ static inline ut64 genmask(int bits) {
 }
 
 static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
-	if (!esil || !str) return false;
-	if (IS_DIGIT(*str)) {
-		if (num) *num = r_num_get (NULL, str);
+	if (!esil || !str) {
+		return false;
+	}
+	if (IS_DIGIT (*str)) {
+		if (num) {
+			*num = r_num_get (NULL, str);
+		}
 		return true;
 	}
-	if (num) *num = 0;
+	if (num) {
+		*num = 0;
+	}
 	return false;
 }
 
 static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
-	if (!r_anal_esil_reg_read (esil, str, num, NULL))
-		if (!isnum (esil, str, num))
+	if (!r_anal_esil_reg_read (esil, str, num, NULL)) {
+		if (!isnum (esil, str, num)) {
 			return false;
+		}
+	}
 	return true;
 }
 
@@ -210,6 +218,13 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
+	if (esil->cmd_mdev && esil->mdev_range) {
+		if (r_str_range_in (esil->mdev_range, addr)) {
+			if (esil->cmd (esil, esil->cmd_mdev, addr, 0)) {
+				return true;
+			}
+		}
+	}
 	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 }
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -250,6 +265,13 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
+	}
+	if (esil->cmd_mdev && esil->mdev_range) {
+		if (r_str_range_in (esil->mdev_range, addr)) {
+			if (esil->cmd (esil, esil->cmd_mdev, addr, 1)) {
+				return true;
+			}
+		}
 	}
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
 	if (ret != len) {
@@ -427,7 +449,7 @@ not_a_number:
 
 static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	ut8 bit;
-	if (!str || !*str) {
+	if (!esil || !str || !*str) {
 		return false;
 	}
 	if (esil->cb.hook_flag_read) {
@@ -598,7 +620,9 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 		return false;
 	}
 	if (regname[0] == ESIL_INTERNAL_PREFIX && regname[1]) {
-		if (size) *size = esil->anal->bits;
+		if (size) {
+			*size = esil->anal->bits;
+		}
 		return esil_internal_read (esil, regname, num);
 	}
 	if (!num) num = &localnum;

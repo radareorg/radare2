@@ -81,7 +81,6 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc) {
-		eprintf ("INValid fd\n");
 		return 0LL;
 	}
 #if __WINDOWS__
@@ -445,7 +444,8 @@ int main(int argc, char **argv, char **envp) {
 	const char *forcebin = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
-	int quiet = false;
+	bool quiet = false;
+	bool quietLeak = false;
 	int is_gdb = false;
 	const char * s_seek = NULL;
 	RList *cmds = r_list_new ();
@@ -489,7 +489,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -606,6 +606,10 @@ int main(int argc, char **argv, char **envp) {
 		case 'P':
 			patchfile = optarg;
 			break;
+		case 'Q':
+			quiet = true;
+			quietLeak = true;
+			break;
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
@@ -673,7 +677,11 @@ int main(int argc, char **argv, char **envp) {
 		if (r_config_get_i (r.config, "cfg.plugins")) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 		}
+		run_commands (NULL, prefiles, false);
 		run_commands (cmds, files, quiet);
+		if (quietLeak) {
+			exit (0);
+		}
 		r_io_plugin_list (r.io);
 		r_cons_flush ();
 		r_list_free (evals);
@@ -849,7 +857,7 @@ int main(int argc, char **argv, char **envp) {
 						}
 					}
 					escaped_path = r_str_arg_escape (path);
-					pfile = r_str_concat (pfile, escaped_path);
+					pfile = r_str_append (pfile, escaped_path);
 					file = pfile; // probably leaks
 					R_FREE (escaped_path);
 					R_FREE (path);
@@ -857,16 +865,16 @@ int main(int argc, char **argv, char **envp) {
 #else
 				{
 					char *escaped_path = r_str_arg_escape (f);
-					pfile = r_str_concat (pfile, escaped_path);
-					file = pfile; // r_str_concat (file, escaped_path);
+					pfile = r_str_append (pfile, escaped_path);
+					file = pfile; // r_str_append (file, escaped_path);
 					free (escaped_path);
 				}
 #endif
 				optind++;
 				while (optind < argc) {
 					char *escaped_arg = r_str_arg_escape (argv[optind]);
-					file = r_str_concat (file, " ");
-					file = r_str_concat (file, escaped_arg);
+					file = r_str_append (file, " ");
+					file = r_str_append (file, escaped_arg);
 					free (escaped_arg);
 					optind++;
 				}
@@ -953,7 +961,9 @@ int main(int argc, char **argv, char **envp) {
 				va = 2;
 			}
 			if (run_anal > 0) {
-				eprintf ("USING 0x%" PFMT64x "\n", baddr);
+				if (baddr && baddr != UT64_MAX) {
+					eprintf ("Using 0x%" PFMT64x "\n", baddr);
+				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
@@ -1179,8 +1189,9 @@ int main(int argc, char **argv, char **envp) {
 				}
 				if (lock) r_th_lock_enter (lock);
 				/* -1 means invalid command, -2 means quit prompt loop */
-				if ((ret = r_core_prompt_exec (&r)) == -2)
+				if ((ret = r_core_prompt_exec (&r)) == -2) {
 					break;
+				}
 				if (lock) r_th_lock_leave (lock);
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					eprintf ("rabin thread end \n");
@@ -1212,6 +1223,10 @@ int main(int argc, char **argv, char **envp) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r.dbg, 0, false, 9); // KILL
+#if __WINDOWS__
+							} else {
+								r_debug_detach (r.dbg, r.dbg->pid);
+#endif
 							}
 						} else continue;
 					}
@@ -1249,6 +1264,10 @@ int main(int argc, char **argv, char **envp) {
 	ret = r.num->value;
 
 beach:
+	if (quietLeak) {
+		exit (ret);
+		return ret;
+	}
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
 	// exectution.

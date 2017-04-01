@@ -75,37 +75,37 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
 			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAvBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAAAvBBBB: // buf[1] seems useless :/
 			vA = (buf[3] << 8) | buf[2];
 			vB = (buf[5] << 8) | buf[4];
 			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAA:
 			vA = (int) buf[1];
 			snprintf (str, sizeof (str), " v%i", vA);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAcB:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
 			snprintf (str, sizeof (str), " v%i, %#x", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBB:
 			vA = (int) buf[1];
 			{
 				short sB = (buf[3] << 8) | buf[2];
 				snprintf (str, sizeof (str), " v%i, %#04hx", vA, sB);
-				strasm = r_str_concat (strasm, str);
+				strasm = r_str_append (strasm, str);
 			}
 			break;
 		case fmtopvAAcBBBBBBBB:
@@ -116,7 +116,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			} else { //const
 				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBB0000:
 			vA = (int) buf[1];
@@ -127,7 +127,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			} else {
 				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBBBBBBBBBBBBBB:
 			vA = (int) buf[1];
@@ -138,52 +138,52 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				((llint)buf[8] << 48) | ((llint)buf[9] << 56);
 			#undef llint
 			snprintf (str, sizeof (str), " v%i:v%i, 0x%"PFMT64x, vA, vA + 1, lB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAvBBvCC:
 			vA = (int) buf[1];
 			vB = (int) buf[2];
 			vC = (int) buf[3];
 			snprintf (str, sizeof (str), " v%i, v%i, v%i", vA, vB, vC);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAvBBcCC:
 			vA = (int) buf[1];
 			vB = (int) buf[2];
 			vC = (int) buf[3];
 			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBcCCCC:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3] << 8) | buf[2];
 			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAA:
 			vA = (char) buf[1];
 			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] << 8 | buf[2]);
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
 			vB = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
 			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB * 2));
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA*2)); // vA : word -> byte
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBpCCCC: // if-*
 			vA = buf[1] & 0x0f;
@@ -191,13 +191,13 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vC = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
 			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, a->pc + (vC * 2));
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + vB); // + (vB*2));
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineI:
 			vA = (int) (buf[1] & 0x0f);
@@ -220,9 +220,9 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			default:
 				snprintf (str, sizeof (str), " {}");
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			snprintf (str, sizeof (str), ", [%04x]", vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineIR:
 		case fmtoptinvokeVSR:
@@ -230,7 +230,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3] << 8) | buf[2];
 			vC = (buf[5] << 8) | buf[4];
 			snprintf (str, sizeof (str), " {v%i..v%i}, [%04x]", vC, vC + vA - 1, vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinvokeVS:
 			vA = (int) (buf[1] & 0xf0) >> 4;
@@ -254,9 +254,9 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				snprintf (str, sizeof (str), " {}");
 				break;
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			snprintf (str, sizeof (str), ", [%04x]", vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAtBBBB: // "sput-*"
 			vA = (int) buf[1];
@@ -283,7 +283,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 					snprintf (str, sizeof (str), " v%i, %s", vA, flag_str);
 				}
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptopvAvBoCCCC:
 			vA = (buf[1] & 0x0f);
@@ -295,7 +295,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			} else {
 				snprintf (str, sizeof (str), " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopAAtBBBB:
 			vA = (int) buf[1];
@@ -306,7 +306,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			} else {
 				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBtCCCC:
 			vA = (buf[1] & 0x0f);
@@ -329,7 +329,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 					snprintf (str, sizeof (str), " v%i, v%i, field+%i", vA, vB, vC);
 				}
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
@@ -341,7 +341,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			else {
 				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvCCCCmBBBB:
 			vA = (int) buf[1];
@@ -364,7 +364,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 					snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 				}
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvXtBBBB:
 			vA = (int) (buf[1] & 0xf0) >> 4;
@@ -391,7 +391,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				default:
 					snprintf (str, sizeof (str), " {}");
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			if (buf[0] == 0x24) { // filled-new-array
 				flag_str = R_ASM_GET_NAME (a, 'c', vB);
 				if (flag_str) {
@@ -408,7 +408,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				}
 
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinvokeI: // Any opcode has this formats
 		case fmtoptinvokeIR:

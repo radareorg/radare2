@@ -5,13 +5,12 @@
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
 
-#define SPR_HID0		0x3f0 /* Hardware Implementation Register 0 */
-#define SPR_HID1		0x3f1 /* Hardware Implementation Register 1 */
-#define SPR_HID2		0x3f3 /* Hardware Implementation Register 2 */
-#define SPR_HID4		0x3f4 /* Hardware Implementation Register 4 */
-#define SPR_HID5		0x3f6 /* Hardware Implementation Register 5 */
-#define SPR_HID6		0x3f9 /* Hardware Implementation Register 6 */
-
+#define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
+#define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
+#define SPR_HID2 0x3f3 /* Hardware Implementation Register 2 */
+#define SPR_HID4 0x3f4 /* Hardware Implementation Register 4 */
+#define SPR_HID5 0x3f6 /* Hardware Implementation Register 5 */
+#define SPR_HID6 0x3f9 /* Hardware Implementation Register 6 */
 
 struct Getarg {
 	csh handle;
@@ -457,7 +456,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
+#if CS_API_MAJOR >= 4
 		case PPC_INS_CMPB:
+#endif
 		case PPC_INS_CMPD:
 		case PPC_INS_CMPDI:
 		case PPC_INS_CMPLD:

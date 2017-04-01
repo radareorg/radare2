@@ -281,8 +281,8 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 	if (files) {
 		ret = r_cons_hud (files, tmp);
 		if (ret) {
-			tmp = r_str_concat (tmp, "/");
-			tmp = r_str_concat (tmp, ret);
+			tmp = r_str_append (tmp, "/");
+			tmp = r_str_append (tmp, ret);
 			ret = r_file_abspath (tmp);
 			free (tmp);
 			tmp = ret;

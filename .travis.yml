@@ -32,6 +32,9 @@ cache:
   - ccache
   - apt
 
+before_script:
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 7
+
 script:
   - git clone --depth 1 `doc/repo REGRESSIONS`
   - ./configure --prefix=`pwd`/install > /dev/null
@@ -47,6 +50,10 @@ script:
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
+  - cd new
+  - npm install
+  - node bin/r2r.js
+  - cd ..
   - VERBOSE=1 make -k all
   - make unit_tests
 

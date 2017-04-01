@@ -7,7 +7,7 @@
 #include "../../anal/arch/lua53/lua53_parser.c"
 
 
-static int check_bytes(const ut8 *buf, ut64 length);
+static bool check_bytes(const ut8 *buf, ut64 length);
 
 static int init(void *user) {
 	Dprintf ("Init\n");
@@ -21,14 +21,14 @@ static int finit(void *user) {
 	}
 	return 0;
 }
-static int load(RBinFile *arch){
+static bool load(RBinFile *arch){
 	Dprintf ("Load\n");
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
 	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	Dprintf ("Check\n");
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
@@ -37,7 +37,7 @@ static int check(RBinFile *arch) {
 
 
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	ParseStruct parseStruct;
 	ut64 parsedbytes = lua53parseHeader (buf,0,length,&parseStruct);
 	if(parsedbytes)
@@ -225,7 +225,6 @@ static RList* strings(RBinFile *arch) {
 	return parseStruct.data;
 }
 static RList* symbols(RBinFile *arch) {
-	
 	Dprintf ("Symbols\n");
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;

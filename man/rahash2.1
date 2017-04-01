@@ -1,10 +1,10 @@
 .Dd Feb 6, 2015
 .Dt RAHASH2 1
 .Sh NAME
-.Nm hasher2
+.Nm rahash2
 .Nd block based hashing utility
 .Sh SYNOPSIS
-.Nm hasher2
+.Nm rahash2
 .Op Fl BdDehjrkvq
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
@@ -22,13 +22,13 @@
 .Sh DESCRIPTION
 This program is part of the radare project.
 .Pp
-Hasher allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
+Rahash2 allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
 You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
 .Pp
 This command can be used to calculate hashes of a certain part of a file or a command line passed string.
 .Pp
-This is the command used by the '#' command of radare.
+This is the command used by the 'ph' command of radare.
 .Bl -tag -width Fl
 .It Fl a Ar algo
 Select an algorithm for the hashing. Valid values are listed in: rahash2 -L
@@ -55,7 +55,7 @@ Show result using OpenSSH's VisualHostKey randomart algorithm
 .It Fl s Ar string
 Hash this string instead of using the 'source' and 'hash-file' arguments.
 .It Fl S Ar [^]s:string|hexstr
-Set seed to hash with, use ^to prefix seed, otherwise its suffixed.
+Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed is just a dash '-' it will read from stdin, this is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
 .It Fl f Ar from
 Start hashing at given address
 .It Fl t Ar to

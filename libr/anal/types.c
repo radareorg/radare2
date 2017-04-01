@@ -61,9 +61,9 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 				break;
 			}
 			sdb_unset (db, sdb_fmt (-1, "%s.%s", name, tmp), 0);
-			sdb_unset (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);			
+			sdb_unset (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);
 		}
-		sdb_unset (db, name, 0);		
+		sdb_unset (db, name, 0);
 	} else {
 		eprintf ("Unrecognized type \"%s\"\n", kind);
 	}
@@ -118,69 +118,6 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	return 0;
 }
 
-R_API RList *r_anal_type_fcn_list(RAnal *anal) {
-	SdbList *sdb_list = sdb_foreach_match (anal->sdb_types, "=^func$", false);
-	RList *list = r_list_newf ((RListFree)r_anal_fcn_free);
-	char *name, *value;
-	const char *key;
-	SdbListIter *sdb_iter;
-	int args_n, i;
-	SdbKv *kv;
-
-	if (!list || !sdb_list) {
-		r_list_free (list);
-		ls_free (sdb_list);
-		return 0;
-	}
-	ls_foreach (sdb_list, sdb_iter, kv) {
-		RAnalFunction *fcn = r_anal_fcn_new ();
-		r_list_append (list, fcn);
-		//setting function name and return type
-		fcn->name = strdup (kv->key);
-		//setting function return type
-		key = sdb_fmt (-1, "func.%s.ret", kv->key);
-		fcn->rets = sdb_get (anal->sdb_types, key, 0);
-		//setting calling conventions
-		key = sdb_fmt (-1, "func.%s.cc", kv->key);
-		fcn->cc = sdb_get (anal->sdb_types, key, 0);
-		//Filling function args
-		key = sdb_fmt (-1, "func.%s.args", kv->key);
-		value = sdb_get (anal->sdb_types, key, 0);
-		args_n = r_num_math (NULL, value);
-		free (value);
-		if (!args_n) {
-			continue;
-		}
-		//XXX we should handle as much calling conventions
-		//for as much architectures as we want here
-		fcn->vars = r_list_newf ((RListFree)r_anal_var_free);
-		if (!fcn->vars) {
-			continue;
-		}
-		for (i = 0; i < args_n; i++) {
-			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
-			value = sdb_get (anal->sdb_types, key, 0);
-			if (value) {
-				name = strstr (value, ",");
-				*name++ = 0;
-				RAnalVar *arg = R_NEW0 (RAnalVar);
-				arg->name = strdup (name);
-				arg->type = value;
-				arg->kind = 'a';
-				//TODO Calculate the size and the delta
-				arg->delta = i;
-				r_list_append (fcn->vars, arg);
-			}
-		}
-	}
-	ls_free (sdb_list);
-	if (r_list_empty (list)) {
-		r_list_free (list);
-		return NULL;
-	}
-	return list;
-}
-
 R_API char* r_anal_type_to_str (RAnal *a, const char *type) {
 	// convert to C text... maybe that should be in format string..
 	return NULL;
@@ -224,8 +161,8 @@ static void filter_type(char *t) {
 }
 
 R_API char *r_anal_type_format(RAnal *anal, const char *t) {
-	int n, m;
-	char *p, *q, var[128], var2[128], var3[128];
+	int n;
+	char *p, var[128], var2[128], var3[128];
 	char *fmt = NULL;
 	char *vars = NULL;
 	Sdb *DB = anal->sdb_types;
@@ -242,38 +179,25 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (DB, var, n, NULL)); n++) {
 			const char *tfmt;
-			char *type, *type2;
+			char *type;
 			int elements;
 			//int off;
 			//int size;
+			bool isStruct = false;
+			bool isEnum = false;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
 			type = sdb_array_get (DB, var2, 0, NULL);
 			if (type) {
 				//off = sdb_array_get_num (DB, var2, 1, NULL);
 				//size = sdb_array_get_num (DB, var2, 2, NULL);
 				if (!strncmp (type, "struct ", 7)) {
+					char* struct_name = type + 7;
 					// TODO: iterate over all the struct fields, and format the format and vars
-					snprintf (var3, sizeof (var3), "struct.%s", type+7);
-					for (m = 0; (q = sdb_array_get (DB, var3, m, NULL)); m++) {
-						snprintf (var2, sizeof (var2), "%s.%s", var3, q);
-						type2 = sdb_array_get (DB, var2, 0, NULL); // array of type, size, ..
-						if (type2) {
-							char var4[128];
-							snprintf (var4, sizeof (var4), "type.%s", type2);
-							tfmt = sdb_const_get (DB, var4, NULL);
-							if (tfmt) {
-								filter_type (type2);
-								fmt = r_str_concat (fmt, tfmt);
-								vars = r_str_concat (vars, q);
-								vars = r_str_concat (vars, " ");
-							} else eprintf ("Cannot resolve3 type '%s'\n", var3);
-						} else eprintf ("Cannot resolve type '%s'\n", var2);
-						free (type2);
-						free (q);
-					}
+					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
+					fmt = r_str_append (fmt, "?");
+					vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					vars = r_str_append (vars, " ");
 				} else {
-					bool isStruct = false;
-					bool isEnum = false;
 					elements = sdb_array_get_num (DB, var2, 2, NULL);
 					// special case for char[]. Use char* format type without *
 					if (!strncmp (type, "char", 5) && elements > 0) {
@@ -285,6 +209,9 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 						if (!strncmp (type, "enum ", 5)) {
 							snprintf (var3, sizeof (var3), "%s", type + 5);
 							isEnum = true;
+						} else if (!strncmp (type, "struct ", 7)) {
+							snprintf (var3, sizeof (var3), "%s", type + 7);
+							isStruct = true;
 						} else {
 							snprintf (var3, sizeof (var3), "type.%s", type);
 						}
@@ -293,20 +220,20 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 					if (tfmt) {
 						filter_type (type);
 						if (elements > 0) {
-							fmt = r_str_concatf (fmt, "[%d]", elements);
+							fmt = r_str_appendf (fmt, "[%d]", elements);
 						}
 						if (isStruct) {
-							fmt = r_str_concat (fmt, "?");
-							vars = r_str_concatf (vars, "(%s)%s", p, p);
-							vars = r_str_concat (vars, " ");
+							fmt = r_str_append (fmt, "?");
+							vars = r_str_appendf (vars, "(%s)%s", p, p);
+							vars = r_str_append (vars, " ");
 						} else if (isEnum) {
-							fmt = r_str_concat (fmt, "E");
-							vars = r_str_concatf (vars, "(%s)%s", type + 5, p);
-							vars = r_str_concat (vars, " ");
+							fmt = r_str_append (fmt, "E");
+							vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
+							vars = r_str_append (vars, " ");
 						} else {
-							fmt = r_str_concat (fmt, tfmt);
-							vars = r_str_concat (vars, p);
-							vars = r_str_concat (vars, " ");
+							fmt = r_str_append (fmt, tfmt);
+							vars = r_str_append (vars, p);
+							vars = r_str_append (vars, " ");
 						}
 					} else {
 						eprintf ("Cannot resolve type '%s'\n", var3);
@@ -316,8 +243,8 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 			free (type);
 			free (p);
 		}
-		fmt = r_str_concat (fmt, " ");
-		fmt = r_str_concat (fmt, vars);
+		fmt = r_str_append (fmt, " ");
+		fmt = r_str_append (fmt, vars);
 		free (vars);
 		return fmt;
 	}
@@ -396,7 +323,7 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 		}
 	}
 	// strip r2 prefixes (sym, sym.imp, etc')
-	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') { 
+	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') {
 		offset+=4;
 	}
 	slen -= offset;

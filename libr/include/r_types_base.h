@@ -44,6 +44,7 @@ typedef struct _utX{
 #define R_TRUE 1
 #define R_TRUFAE 2
 #define R_NOTNULL (void*)(size_t)1
+#define R_EMPTY { 0 }
 
 /* limits */
 #undef UT64_MAX

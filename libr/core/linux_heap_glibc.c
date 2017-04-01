@@ -215,7 +215,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 		const char *dir_build_id = "/.build-id";
 		const char *symname = "main_arena";
 		const char *libc_ver_end = NULL;
-		char hash[64] = {0}, *path = NULL;
+		char hash[64] = R_EMPTY, *path = NULL;
 		bool is_debug_file[6];
 		GHT libc_addr = GHT_MAX, vaddr = GHT_MAX;
 
@@ -262,7 +262,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 			if (r_file_exists (path)) {
 				goto arena;
 			}
-			path = r_str_concat (path, ".debug");
+			path = r_str_append (path, ".debug");
 			if (r_file_exists (path)) {
 				goto arena;
 			}
@@ -649,7 +649,7 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	RAGraph *g = r_agraph_new (can);
-	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
+	RANode *top = R_EMPTY, *chunk_node = R_EMPTY, *prev_node = R_EMPTY;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk)),*prev_c = R_NEW0 (GH(RHeapChunk));
 	if (!cnk || !prev_c || !g || !can) {
 		free (cnk);
@@ -728,7 +728,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	can->color = r_config_get_i (core->config, "scr.color");
 	RAGraph *g = r_agraph_new (can);
-	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
+	RANode *top = R_EMPTY, *chunk_node = R_EMPTY, *prev_node = R_EMPTY;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk)), *prev_c = R_NEW0 (GH(RHeapChunk));
 
 	if (!cnk || !prev_c) {

@@ -32,22 +32,11 @@ typedef struct __attribute__((__packed__)) {
 	ut8 uuid[16];
 } PebbleAppInfo;
 
-static Sdb* get_sdb (RBinObject *o) {
-        if (!o) return NULL;
-        //struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-        //if (bin->kv) return kv;
-        return NULL;
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (length<8)
-		return 0;
-	if (!memcmp (buf, "PBLAPP\x00\x00", 8))
-		return 1;
-	return 0;
-}
-
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
@@ -59,7 +48,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return R_NOTNULL;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
@@ -202,7 +191,6 @@ struct r_bin_plugin_t r_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,

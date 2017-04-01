@@ -37,6 +37,24 @@ static int meta_count_for(void *user, int idx) {
 	return r_meta_space_count_for (anal, idx);
 }
 
+static void zign_unset_for(void *user, int idx) {
+	RSpaces *s = (RSpaces*)user;
+	RAnal *anal = (RAnal*)s->user;
+	r_sign_space_unset_for (anal, idx);
+}
+
+static int zign_count_for(void *user, int idx) {
+	RSpaces *s = (RSpaces*)user;
+	RAnal *anal = (RAnal*)s->user;
+	return r_sign_space_count_for (anal, idx);
+}
+
+static void zign_rename_for(void *user, int idx, const char *oname, const char *nname) {
+	RSpaces *s = (RSpaces*)user;
+	RAnal *anal = (RAnal*)s->user;
+	r_sign_space_rename_for (anal, idx, oname, nname);
+}
+
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
@@ -53,13 +71,15 @@ R_API RAnal *r_anal_new() {
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
 	anal->opt.noncode = false; // do not analyze data by default
+	r_space_new (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, NULL, anal);
+	r_space_new (&anal->zign_spaces, "zs", zign_unset_for, zign_count_for, zign_rename_for, anal);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
-	r_space_init (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, anal);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
+	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
@@ -106,7 +126,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
-	r_space_fini (&a->meta_spaces);
+	r_space_free (&a->meta_spaces);
+	r_space_free (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
 	r_list_free (a->types);
@@ -165,10 +186,13 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			if (change) {
 				r_anal_set_fcnsign (anal, NULL);
 			}
+#if 1
+			/* invalidate esil state? really ? */
 			if (anal->esil) {
 				r_anal_esil_free (anal->esil);
 				anal->esil = NULL;
 			}
+#endif
 			return true;
 		}
 	}
@@ -267,49 +291,35 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 	return true;
 }
 
-R_API char *r_anal_strmask (RAnal *anal, const char *data) {
+R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
-	ut8 *buf = NULL;
-	char *ret = NULL;
-	int oplen, len, idx = 0;
+	ut8 *ret = NULL;
+	int oplen, idx = 0;
 
-	if (data && *data) {
-		ret = strdup (data);
-		buf = malloc (1 + strlen (data));
-		op = r_anal_op_new ();
-	}
-	if (!op || !ret || !buf) {
-		free (op);
-		free (buf);
-		free (ret);
+	if (!data) {
 		return NULL;
 	}
-	len = r_hex_str2bin (data, buf);
-	while (idx < len) {
-		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) < 1) {
+
+	if (anal->cur && anal->cur->anal_mask) {
+		return anal->cur->anal_mask (anal, size, data, at);
+	}
+
+	op = r_anal_op_new ();
+	ret = malloc (size);
+	memset (ret, 0xff, size);
+
+	while (idx < size) {
+		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx)) < 1) {
 			break;
 		}
-		switch (op->type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_IRCALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-			if (op->nopcode != 0) {
-				memset (ret + (idx + op->nopcode) * 2,
-					'.', (oplen - op->nopcode) * 2);
-			}
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
+			memset (ret + idx + op->nopcode, 0, oplen - op->nopcode);
 		}
 		idx += oplen;
 	}
+
 	free (op);
-	free (buf);
+
 	return ret;
 }
 
@@ -384,6 +394,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_hints);
 	sdb_reset (anal->sdb_xrefs);
 	sdb_reset (anal->sdb_types);
+	sdb_reset (anal->sdb_zigns);
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();
 #if USE_NEW_FCN_STORE

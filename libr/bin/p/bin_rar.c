@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake */
+/* radare - LGPL - Copyright 2012-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -14,30 +14,34 @@ typedef struct r_bin_obj_rar_t {
 	Sdb *kv;
 } RRarBinObj;
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 16)
-		if (!memcmp (buf, RARVMHDR, 16))
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 16) {
+		if (!memcmp (buf, RARVMHDR, 16)) {
 			return true;
+		}
+	}
 	return false;
 }
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+}
+
+static Sdb *get_sdb(RBinFile *bf) {
+	RBinObject *o = bf->o;
+	if (!o) {
+		return NULL;
+	}
 	struct r_bin_obj_rar_t *bin = (struct r_bin_obj_rar_t *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin->kv) {
+		return bin->kv;
+	}
 	return NULL;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	RBuffer *tbuf = NULL;
 	RRarBinObj *res = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) {
@@ -52,11 +56,11 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return res;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	return check (arch);
 }
 
-static int destroy (RBinFile *arch) {
+static int destroy(RBinFile *arch) {
 	return true;
 }
 
@@ -64,16 +68,18 @@ static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static RList* entries(RBinFile *arch) {
-	RList* ret = r_list_new ();;
+static RList *entries(RBinFile *arch) {
+	RList *ret = r_list_new ();;
 	RBinAddr *ptr = NULL;
-	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
-	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
-	ut64 sz = arch && bin_obj ? r_buf_size (bin_obj->buf) : 0;
+	RRarBinObj *bin_obj = arch && arch->o? arch->o->bin_obj: NULL;
+	const ut8 *buf = bin_obj? r_buf_buffer (bin_obj->buf): NULL;
+	ut64 sz = arch && bin_obj? r_buf_size (bin_obj->buf): 0;
 
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	ret->free = free;
-	if (bin_obj && sz > 0x30 && !memcmp (buf+0x30, RAR_CONST, 16)) {
+	if (bin_obj && sz > 0x30 && !memcmp (buf + 0x30, RAR_CONST, 16)) {
 		if ((ptr = R_NEW (RBinAddr))) {
 			ptr->vaddr = ptr->paddr = 0x9a;
 			r_list_append (ret, ptr);
@@ -82,26 +88,30 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
-	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
+	RRarBinObj *bin_obj = arch && arch->o? arch->o->bin_obj: NULL;
+	const ut8 *buf = bin_obj? r_buf_buffer (bin_obj->buf): NULL;
 	ut64 sz = 0;
-	if (bin_obj)
+	if (bin_obj) {
 		sz = r_buf_size (bin_obj->buf);
+	}
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 
 	// TODO: return NULL here?
-	if (!buf || sz < 0x30 || memcmp (buf+0x30, RAR_CONST, 16))
+	if (!buf || sz < 0x30 || memcmp (buf + 0x30, RAR_CONST, 16)) {
 		return ret;
+	}
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strncpy (ptr->name, "header", R_BIN_SIZEOF_STRINGS);
 	ptr->size = ptr->vsize = 0x9a;
 	ptr->paddr = 0;
@@ -111,8 +121,9 @@ static RList* sections(RBinFile *arch) {
 	r_list_append (ret, ptr);
 
 	/* rarvm code */
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strncpy (ptr->name, "rarvm", R_BIN_SIZEOF_STRINGS);
 	ptr->vsize = ptr->size = sz - 0x9a;
 	ptr->vaddr = ptr->paddr = 0x9a;
@@ -122,23 +133,23 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* imports(RBinFile *arch) {
+static RList *imports(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* libs(RBinFile *arch) {
+static RList *libs(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
-	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
-	ut64 sz = arch && bin_obj ? r_buf_size (bin_obj->buf): 0;
+	RRarBinObj *bin_obj = arch && arch->o? arch->o->bin_obj: NULL;
+	const ut8 *buf = bin_obj? r_buf_buffer (bin_obj->buf): NULL;
+	ut64 sz = arch && bin_obj? r_buf_size (bin_obj->buf): 0;
 	int bits = 32; // Default value
 
 	if (!ret || !buf || sz < 0x30) {
@@ -151,7 +162,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->os = strdup ("rar");
 	ret->arch = strdup ("rar");
 	ret->machine = strdup ("rarvm");
-	if (!memcmp (buf+0x30, RAR_CONST, 16)) {
+	if (!memcmp (buf + 0x30, RAR_CONST, 16)) {
 		ret->subsystem = strdup ("rarvm");
 		ret->bclass = strdup ("program");
 		ret->type = strdup ("EXEC (Compressed executable)");
@@ -171,11 +182,11 @@ static RBinInfo* info(RBinFile *arch) {
 
 static ut64 size(RBinFile *arch) {
 	// TODO: walk rar structures and guess size here...
-	return 0x9a+128; // XXX
+	return 0x9a + 128; // XXX
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	RBuffer *buf = r_buf_new ();
 	return buf;
 }

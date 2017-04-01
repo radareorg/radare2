@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 
 #if 1
 	printf (">>>> %s <<<<\n", sdb_json_unindent (buf));
-	printf (">>>> %s <<<<\n", sdb_json_indent (buf));
+	printf (">>>> %s <<<<\n", sdb_json_indent (buf, "  "));
 // set value //
 	path = "glossary.title";
 	char *s = api_json_set (buf, path, "patata");

@@ -16,6 +16,9 @@ extern "C" {
 #include "cdb_make.h"
 #include "sdb_version.h"
 
+#undef r_offsetof
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
 #define SDB_MAX_VALUE 0xffffff
@@ -210,7 +213,7 @@ SDB_API int sdb_json_num_set(Sdb* s, const char *k, const char *p, int v, ut32 c
 SDB_API int sdb_json_num_dec(Sdb* s, const char *k, const char *p, int n, ut32 cas);
 SDB_API int sdb_json_num_inc(Sdb* s, const char *k, const char *p, int n, ut32 cas);
 
-char *sdb_json_indent(const char *s);
+char *sdb_json_indent(const char *s, const char *tab);
 char *sdb_json_unindent(const char *s);
 
 typedef struct {

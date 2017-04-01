@@ -2,118 +2,116 @@
 
 #include <r_anal.h>
 
-R_API int r_space_get(RSpaces *f, const char *name) {
+R_API void r_space_new(RSpaces *s, const char *name, void (*unset_for)(void*,int), int (*count_for)(void*,int), void (*rename_for)(void*,int,const char*,const char*), void *user) {
+	int i;
+	s->name = r_str_new (name);
+	s->space_idx = -1;
+	s->spacestack = r_list_new ();
+	s->cb_printf = (PrintfCallback)printf;
+	s->unset_for = unset_for;
+	s->count_for = count_for;
+	s->rename_for = rename_for;
+	s->user = user;
+	for (i = 0; i < R_SPACES_MAX; i++) {
+		s->spaces[i] = NULL;
+	}
+}
+
+R_API void r_space_free(RSpaces *s) {
 	int i;
 	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (f->spaces[i]) {
-			if (!strcmp (name, f->spaces[i])) {
-				return i;
-			}
+		R_FREE (s->spaces[i]);
+	}
+	r_list_free (s->spacestack);
+	free (s->name);
+}
+
+R_API int r_space_get(RSpaces *s, const char *name) {
+	int i;
+	if (!name || *name == '*') {
+		return -1;
+	}
+	for (i = 0; i < R_SPACES_MAX; i++) {
+		if (s->spaces[i] && !strcmp (name, s->spaces[i])) {
+			return i;
 		}
 	}
 	return -1;
 }
 
-R_API const char *r_space_get_i (RSpaces *f, int idx) {
-	if (idx==-1 || idx>=R_SPACES_MAX|| !f || !f->spaces[idx] || !*f->spaces[idx]) {
+R_API const char *r_space_get_i(RSpaces *s, int idx) {
+	if (idx==-1 || idx>=R_SPACES_MAX) {
 		return "";
 	}
-	return f->spaces[idx];
+	return s->spaces[idx];
 }
 
-R_API void r_space_init(RSpaces *f, const char *name, void (*unset_for)(void*,int), int (*count_for)(void*,int), void *user) {
+R_API int r_space_add(RSpaces *s, const char *name) {
 	int i;
-	f->name = r_str_new (name);
-	f->space_idx = -1;
-	f->space_idx2 = -1;
-	f->spacestack = r_list_new ();
-	f->cb_printf = (PrintfCallback)printf;
-	f->unset_for = unset_for;
-	f->count_for = count_for;
-	f->user = user;
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		f->spaces[i] = NULL;
+	if (!name || *name == '*') {
+		return -1;
 	}
+	for (i = 0; i < R_SPACES_MAX; i++) {
+		if (s->spaces[i] && !strcmp (name, s->spaces[i])) {
+			return i;
+		}
+	}
+	// not found
+	for (i = 0; i < R_SPACES_MAX; i++) {
+		if (!s->spaces[i]) {
+			s->spaces[i] = strdup (name);
+			return i;
+		}
+	}
+	return -1;
 }
 
-R_API void r_space_fini(RSpaces *f) {
-	int i;
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		R_FREE (f->spaces[i]);
-	}
-	r_list_free (f->spacestack);
-	free (f->name);
-}
-
-R_API int r_space_push(RSpaces *f, const char *name) {
+R_API bool r_space_push(RSpaces *s, const char *name) {
 	int ret = false;
 	if (name && *name) {
-		if (f->space_idx != -1 && f->spaces[f->space_idx]) {
-			r_list_push (f->spacestack, f->spaces[f->space_idx]);
+		if (s->space_idx >= 0 && s->spaces[s->space_idx]) {
+			r_list_push (s->spacestack, s->spaces[s->space_idx]);
 		} else {
-			r_list_push (f->spacestack, "*");
+			r_list_push (s->spacestack, "*");
 		}
-		r_space_set (f, name);
+		r_space_set (s, name);
 		ret = true;
 	}
 	return ret;
 }
 
-R_API int r_space_pop(RSpaces *f) {
-	char *p = r_list_pop (f->spacestack);
+R_API bool r_space_pop(RSpaces *s) {
+	char *p = r_list_pop (s->spacestack);
 	if (p) {
 		if (*p) {
-			r_space_set (f, p);
+			r_space_set (s, p);
 		}
 		return true;
 	}
 	return false;
 }
 
-R_API int r_space_set(RSpaces *f, const char *name) {
-	int i;
-	if (!name || *name == '*') {
-		f->space_idx = -1;
-		return f->space_idx;
-	}
-
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (f->spaces[i] != NULL)
-		if (!strcmp (name, f->spaces[i])) {
-			f->space_idx = i;
-			return f->space_idx;
-		}
-	}
-	/* not found */
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!f->spaces[i]) {
-			f->spaces[i] = strdup (name);
-			f->space_idx = i;
-			break;
-		}
-	}
-	return f->space_idx;
+R_API int r_space_set(RSpaces *s, const char *name) {
+	s->space_idx = r_space_add (s, name);
+	return s->space_idx;
 }
 
-R_API int r_space_unset (RSpaces *f, const char *fs) {
+R_API int r_space_unset (RSpaces *s, const char *name) {
 	int i, count = 0;
-	if (!fs) {
-		return r_space_set (f, NULL);
+	if (!name) {
+		r_space_set (s, NULL);
 	}
 	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!f->spaces[i]) {
+		if (!s->spaces[i]) {
 			continue;
 		}
-		if (!fs || !strcmp (fs, f->spaces[i])) {
-			if (f->space_idx == i) {
-				f->space_idx = -1;
+		if (!name || !strcmp (name, s->spaces[i])) {
+			if (s->space_idx == i) {
+				s->space_idx = -1;
 			}
-			if (f->space_idx2 == i) {
-				f->space_idx2 = -1;
-			}
-			R_FREE (f->spaces[i]);
-			if (f->unset_for) {
-				f->unset_for (f, i);
+			R_FREE (s->spaces[i]);
+			if (s->unset_for) {
+				s->unset_for (s, i);
 			}
 			count++;
 		}
@@ -121,30 +119,34 @@ R_API int r_space_unset (RSpaces *f, const char *fs) {
 	return count;
 }
 
-static int r_space_count (RSpaces *f, int n) {
-	if (f->count_for) {
-		return f->count_for (f, n);
+static int r_space_count (RSpaces *s, int n) {
+	if (s->count_for) {
+		return s->count_for (s, n);
 	}
 	return 0;
 }
 
-R_API int r_space_list(RSpaces *f, int mode) {
+R_API int r_space_list(RSpaces *s, int mode) {
 	const char *defspace = NULL;
 	int count, len, i, j = 0;
 	if (mode == 'j') {
-		f->cb_printf ("[");
+		s->cb_printf ("[");
 	}
 	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!f->spaces[i]) continue;
-		count = r_space_count (f, i);
-		if (mode=='j') {
-			f->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
-					j? ",":"", f->spaces[i],
-					(i==f->space_idx)? ",\"selected\":true":"",
-					count);
-		} else if (mode=='*') {
-			f->cb_printf ("%s %s\n", f->name, f->spaces[i]);
-			if (i==f->space_idx) defspace = f->spaces[i];
+		if (!s->spaces[i]) {
+			continue;
+		}
+		count = r_space_count (s, i);
+		if (mode == 'j') {
+			s->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
+				j? ",": "", s->spaces[i],
+				(i == s->space_idx)? ",\"selected\":true": "",
+				count);
+		} else if (mode == '*') {
+			s->cb_printf ("%s %s\n", s->name, s->spaces[i]);
+			if (i == s->space_idx) {
+				defspace = s->spaces[i];
+			}
 		} else {
 			#define INDENT 5
 			char num0[64], num1[64], spaces[32];
@@ -157,42 +159,53 @@ R_API int r_space_list(RSpaces *f, int mode) {
 			} else {
 				spaces[0] = 0;
 			}
-			f->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
-					(i==f->space_idx)?'*':'.',
-					f->spaces[i]);
+			s->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
+					(i == s->space_idx)? '*': '.',
+					s->spaces[i]);
 		}
 		j++;
 	}
 	if (defspace) {
-		f->cb_printf ("%s %s # current\n", f->name, defspace);
+		s->cb_printf ("%s %s # current\n", s->name, defspace);
 	}
 	if (mode == 'j') {
-		f->cb_printf ("]\n");
+		s->cb_printf ("]\n");
 	}
 	return j;
 }
 
-R_API int r_space_rename (RSpaces *f, const char *oname, const char *nname) {
+R_API bool r_space_rename (RSpaces *s, const char *oname, const char *nname) {
 	int i;
+
 	if (!oname) {
-		if (f->space_idx == -1) {
+		if (s->space_idx == -1) {
 			return false;
 		}
-		oname = f->spaces[f->space_idx];
+		oname = s->spaces[s->space_idx];
 	}
 	if (!nname) {
 		return false;
 	}
+
 	while (*oname==' ') {
 		oname++;
 	}
 	while (*nname==' ') {
 		nname++;
 	}
+
+	if (r_space_get (s, nname) != -1) {
+		eprintf ("error: dupplicated name\n");
+		return false;
+	}
+
 	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
-			free (f->spaces[i]);
-			f->spaces[i] = strdup (nname);
+		if (s->spaces[i] && !strcmp (oname, s->spaces[i])) {
+			if (s->rename_for) {
+				s->rename_for (s, i, oname, nname);
+			}
+			free (s->spaces[i]);
+			s->spaces[i] = strdup (nname);
 			return true;
 		}
 	}

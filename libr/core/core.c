@@ -389,7 +389,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) *ok = 1;
-		ut8 buf[sizeof (ut64)] = {0};
+		ut8 buf[sizeof (ut64)] = R_EMPTY;
 		(void)r_io_read_at (core->io, n, buf, refsz);
 		switch (refsz) {
 		case 8:
@@ -480,7 +480,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				RListIter *iter;
 				RIOSection *s;
 				r_list_foreach (core->io->sections, iter, s) {
-					if (!s->vaddr && s->offset) {
+					if (!s->vaddr && s->paddr) {
 						continue;
 					}
 					if (s->vaddr < lower) lower = s->vaddr;
@@ -617,7 +617,14 @@ static const char *radare_argv[] = {
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
 	"pfj", "pfj.", "pfv", "pfv.",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
-	"#!pipe", "z", "zf", "zF", "zFd", "zh", "zn", "zn-",
+	"z", "z*", "zj", "z-", "z-*",
+	"za", "zaf", "zaF",
+	"zo", "zoz", "zos",
+	"zfd", "zfs", "zfz",
+	"z/", "z/*",
+	"zc",
+	"zs", "zs+", "zs-", "zs-*", "zsr",
+	"#!pipe",
 	NULL
 };
 
@@ -829,7 +836,12 @@ static int autocomplete(RLine *line) {
 		     !strncmp (line->buffer.data, "oc ", 3) ||
 		     !strncmp (line->buffer.data, "r2 ", 3) ||
 		     !strncmp (line->buffer.data, "cd ", 3) ||
-		     !strncmp (line->buffer.data, "zF ", 3) ||
+		     !strncmp (line->buffer.data, "zo ", 3) ||
+		     !strncmp (line->buffer.data, "zoz ", 4) ||
+		     !strncmp (line->buffer.data, "zos ", 4) ||
+		     !strncmp (line->buffer.data, "zfd ", 4) ||
+		     !strncmp (line->buffer.data, "zfs ", 4) ||
+		     !strncmp (line->buffer.data, "zfz ", 4) ||
 		     !strncmp (line->buffer.data, "on ", 3) ||
 		     !strncmp (line->buffer.data, "op ", 3) ||
 		     !strncmp (line->buffer.data, ". ", 2) ||
@@ -1000,6 +1012,28 @@ openfile:
 				if (i + 1 < TMP_ARGV_SZ) {
 					tmp_argv[i++] = "*";
 				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "zs ", 3)) {
+			const char *msg = line->buffer.data + 3;
+			RSpaces zs = core->anal->zign_spaces;
+			int j, i = 0;
+			for (j = 0; j < R_SPACES_MAX; j++) {
+				if (zs.spaces[j]) {
+					if (i == TMP_ARGV_SZ - 1) {
+						break;
+					}
+					if (!strncmp (msg, zs.spaces[j], strlen (msg))) {
+						if (i + 1 < TMP_ARGV_SZ) {
+							tmp_argv[i++] = zs.spaces[j];
+						}
+					}
+				}
+			}
+			if (strlen (msg) == 0 && i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = "*";
 			}
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
@@ -1249,7 +1283,7 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		int isFirst = true;
-		ret = r_str_concatf (ret, "0x%08"PFMT64x" : ", val);
+		ret = r_str_appendf (ret, "0x%08"PFMT64x" : ", val);
 		for (i = 0; i < 32; i++) {
 			if (!(val & (1 << i))) {
 				continue;
@@ -1259,12 +1293,12 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 			if (isFirst) {
 				isFirst = false;
 			} else {
-				ret = r_str_concat (ret, " | ");
+				ret = r_str_append (ret, " | ");
 			}
 			if (res) {
-				ret = r_str_concat (ret, res);
+				ret = r_str_append (ret, res);
 			} else {
-				ret = r_str_concatf (ret, "0x%x", (1<<i));
+				ret = r_str_appendf (ret, "0x%x", (1<<i));
 			}
 		}
 	} else {
@@ -1593,7 +1627,6 @@ R_API int r_core_init(RCore *core) {
 	core->io->cb_core_cmd = core_cmd_callback;
 	core->io->cb_core_cmdstr = core_cmdstr_callback;
 	core->io->cb_core_post_write = core_post_write_callback;
-	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
@@ -1633,7 +1666,6 @@ R_API int r_core_init(RCore *core) {
 // XXX pushing unititialized regstate results in trashed reg values
 //	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
-	core->sign->cb_printf = r_cons_printf;
 	core->io->cb_printf = r_cons_printf;
 	core->dbg->cb_printf = r_cons_printf;
 	core->dbg->bp->cb_printf = r_cons_printf;
@@ -1698,7 +1730,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_cons_free ();
 	r_cons_singleton()->teefile = NULL; // HACK
 	r_search_free (c->search);
-	r_sign_free (c->sign);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
@@ -2361,4 +2392,69 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 #endif
 	}
 	return b;
+}
+
+
+R_API int r_core_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
+				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
+	int i, match, align = core->search->align, hitctr = 0;
+	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
+	ut8 buf[4096];
+	ut64 v64, value = 0;
+	ut32 v32;
+	ut16 v16;
+	if (from >= to) {
+		eprintf ("Error: from must be lower than to\n");
+		return -1;
+	}
+	if (vmin >= vmax) {
+		eprintf ("Error: vmin must be lower than vmax\n");
+		return -1;
+	}
+	r_cons_break_push (NULL, NULL);
+	while (from < to) {
+		memset (buf, 0, sizeof (buf)); // probably unnecessary
+		(void) r_io_read_at (core->io, from, buf, sizeof (buf));
+		if (r_cons_is_breaked ()) {
+			goto beach;
+		}
+		for (i = 0; i < sizeof (buf) - vsize; i++) {
+			void *v = (buf + i);
+			ut64 addr = from + i;
+			if (r_cons_is_breaked ()) {
+				goto beach;
+			}
+			if (align && (addr) % align) {
+				continue;
+			}
+			match = false;
+			switch (vsize) {
+			case 1: value = *(ut8 *) (v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
+			case 2: v16 = *((ut16 *) (v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+			case 4: v32 = *((ut32 *) (v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+			case 8: v64 = *((ut64 *) (v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
+			default: eprintf ("Unknown vsize\n"); return -1;
+			}
+			if (match && !vinfun) {
+				if (vinfunr) {
+					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				} else {
+					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				}
+			}
+			if (match) {
+				cb (core, addr, value, vsize, asterisk, hitctr);
+				hitctr++;
+			}
+		}
+		from += sizeof (buf);
+	}
+beach:
+	r_cons_break_pop ();
+	return hitctr;
 }

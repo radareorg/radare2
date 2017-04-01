@@ -595,7 +595,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 	.esil = false,
 	.arch = "m68k",
 	.set_reg_profile = &set_reg_profile,
-	.bits = 32,
+	.bits = 16 | 32,
 	.op = &analop,
 };
 #else

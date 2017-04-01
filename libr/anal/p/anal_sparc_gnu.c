@@ -603,6 +603,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 RAnalPlugin r_anal_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.desc = "SPARC analysis plugin",
@@ -610,6 +614,7 @@ RAnalPlugin r_anal_plugin_sparc_gnu = {
 	.arch = "sparc",
 	.bits = 32 | 64,
 	.op = &sparc_op,
+	.archinfo = archinfo,
 	.set_reg_profile = set_reg_profile,
 };
 

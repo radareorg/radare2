@@ -86,11 +86,11 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 			vendaddr = tmp_vaddr + tmp_len;				            //calculate the virtual end address
 			if (vendaddr > (section->vaddr + section->vsize))	    //check if the virtual end address is in the section too
 				vendaddr = section->vaddr + section->vsize;	        //if not, size it down
-			maddr = tmp_vaddr - section->vaddr + section->offset;	//calculate the map address (address inside the map)
-			if (maddr > (section->offset + section->size)) {	    //check if the maddr is inside the physical section, if not, skip some things
+			maddr = tmp_vaddr - section->vaddr + section->paddr;	//calculate the map address (address inside the map)
+			if (maddr > (section->paddr + section->size)) {	    //check if the maddr is inside the physical section, if not, skip some things
 			} else {
-				if ((vendaddr - section->vaddr + section->offset) > (section->offset + section->size)) {	//check if the virtual part of the section fits into the physical part
-					r_io_mread (io, section->fd, maddr, tmp_buf, (section->offset + section->size) - maddr);//if not, read as far as possible
+				if ((vendaddr - section->vaddr + section->paddr) > (section->paddr + section->size)) {	//check if the virtual part of the section fits into the physical part
+					r_io_mread (io, section->fd, maddr, tmp_buf, (section->paddr + section->size) - maddr);//if not, read as far as possible
 				} else {
 					r_io_mread (io, section->fd, maddr, tmp_buf, vendaddr - tmp_vaddr);	//read from the sections fd
 				}

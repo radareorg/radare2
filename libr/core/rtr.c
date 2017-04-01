@@ -356,11 +356,11 @@ static char *rtr_dir_files (const char *path) {
 	eprintf ("Listing directory %s\n", path);
 	r_list_foreach (files, iter, file) {
 		if (file[0] == '.') continue;
-		ptr = r_str_concatf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
+		ptr = r_str_appendf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
 			path, file, file);
 	}
 	r_list_free (files);
-	return r_str_concat (ptr, "</body></html>\n");
+	return r_str_append (ptr, "</body></html>\n");
 }
 
 #if __UNIX__
@@ -385,7 +385,7 @@ static void activateDieTime (RCore *core) {
 // return 1 on error
 static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
-	char headers[128] = {0};
+	char headers[128] = R_EMPTY;
 	RSocketHTTPRequest *rs;
 	char buf[32];
 	int ret = 0;
@@ -467,7 +467,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	core->config = newcfg;
 
 	r_config_set (core->config, "asm.cmtright", "false");
+#if 0
+	// WHY
 	r_config_set (core->config, "scr.html", "true");
+#endif
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
@@ -635,7 +638,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 					httpref_enabled = false;
 				}
 
-				while (*cmd == '/') cmd++;
+				while (*cmd == '/') {
+					cmd++;
+				}
 				if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
 					r_socket_http_response (rs, 503, "", 0, headers);
 				} else {
@@ -708,8 +713,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 				}
 				// FD IS OK HERE
 				if (rs->path [strlen (rs->path) - 1] == '/') {
-					path = r_str_concat (path, "index.html");
-					//rs->path = r_str_concat (rs->path, "index.html");
+					path = r_str_append (path, "index.html");
+					//rs->path = r_str_append (rs->path, "index.html");
 				} else {
 					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (r_file_is_directory (path)) {
@@ -1385,7 +1390,7 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 			int ret = r_socket_read (s, buf, sizeof (buf));
 			if (ret < 1) break;
 			buf[ret] = 0;
-			rbuf = r_str_concat (rbuf, (const char *)buf);
+			rbuf = r_str_append (rbuf, (const char *)buf);
 		}
 	} else {
 		eprintf ("Cannot connect\n");

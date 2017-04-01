@@ -5,7 +5,7 @@
 
 #define STDIN_BUFFER_SIZE 354096
 #define R_STATIC_ASSERT(x)\
-	switch (0) { \
+	switch (0) {\
 	case 0:\
 	case (x):;\
 	}
@@ -25,23 +25,25 @@ static int format_output(char mode, const char *s) {
 	}
 	if (flags & 2) {
 		ut64 n2 = n;
-		r_mem_swapendian ((ut8 *)&n, (ut8 *)&n2, (n >> 32)? 8: 4);
+		r_mem_swapendian ((ut8 *) &n, (ut8 *) &n2, (n >> 32)? 8: 4);
 	}
 	switch (mode) {
-	case 'I': printf ("%" PFMT64d "\n", n); break;
+	case 'I':
+		printf ("%" PFMT64d "\n", n);
+		break;
 	case '0': {
 		int len = strlen (s);
 		if (len > 0 && s[len - 1] == 'f') {
 			R_STATIC_ASSERT (sizeof (float) == 4)
-			float f = (float)num->fvalue;
-			ut8 *p = (ut8 *)&f;
+			float f = (float) num->fvalue;
+			ut8 *p = (ut8 *) &f;
 			printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		} else {
 			printf ("0x%" PFMT64x "\n", n);
 		}
 	} break;
 	case 'F': {
-		float *f = (float *)&n;
+		float *f = (float *) &n;
 		printf ("%ff\n", *f);
 	} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
@@ -50,13 +52,17 @@ static int format_output(char mode, const char *s) {
 		if (n) {
 			r_num_to_bits (strbits, n);
 			printf ("%sb\n", strbits);
-		} else printf ("0b\n");
+		} else {
+			printf ("0b\n");
+		}
 		break;
 	case 'T':
 		if (n) {
 			r_num_to_trits (strbits, n);
 			printf ("%st\n", strbits);
-		} else printf ("0t\n");
+		} else {
+			printf ("0t\n");
+		}
 		break;
 	default:
 		eprintf ("Unknown output mode %d\n", mode);
@@ -112,10 +118,12 @@ static int rax(char *str, int len, int last) {
 	ut8 *buf;
 	char *p, out_mode = (flags & 128)? 'I': '0';
 	int i;
-	if (!(flags & 4) || !len)
+	if (!(flags & 4) || !len) {
 		len = strlen (str);
-	if ((flags & 4))
+	}
+	if ((flags & 4)) {
 		goto dotherax;
+	}
 	if (*str == '=') {
 		switch (atoi (str + 1)) {
 		case 2: force_mode = 'B'; break;
@@ -154,7 +162,9 @@ static int rax(char *str, int len, int last) {
 			default:
 				out_mode = (flags ^ 32)? '0': 'I';
 				if (str[1] >= '0' && str[1] <= '9') {
-					if (str[2] == 'x') out_mode = 'I';
+					if (str[2] == 'x') {
+						out_mode = 'I';
+					}
 					return format_output (out_mode, str);
 				}
 				printf ("Usage: rax2 [options] [expr ...]\n");
@@ -162,8 +172,9 @@ static int rax(char *str, int len, int last) {
 			}
 			str++;
 		}
-		if (last)
+		if (last) {
 			return !use_stdin ();
+		}
 		return true;
 	}
 	if (!flags && r_str_nlen (str, 2) == 1) {
@@ -182,8 +193,10 @@ dotherax:
 		buf = malloc (n);
 		if (buf) {
 			memset (buf, '\0', n);
-			n = r_hex_str2bin (str, (ut8 *)buf);
-			if (n > 0) fwrite (buf, n, 1, stdout);
+			n = r_hex_str2bin (str, (ut8 *) buf);
+			if (n > 0) {
+				fwrite (buf, n, 1, stdout);
+			}
 #if __EMSCRIPTEN__
 			puts ("");
 #endif
@@ -194,7 +207,7 @@ dotherax:
 	}
 	if (flags & (1 << 2)) { // -S
 		for (i = 0; i < len; i++) {
-			printf ("%02x", (ut8)str[i]);
+			printf ("%02x", (ut8) str[i]);
 		}
 		printf ("\n");
 		return true;
@@ -218,20 +231,20 @@ dotherax:
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
 		ut32 *m;
-		buf = (ut8 *)malloc (n);
+		buf = (ut8 *) malloc (n);
 		if (!buf) {
 			return false;
 		}
-		m = (ut32 *)buf;
+		m = (ut32 *) buf;
 		memset (buf, '\0', n);
-		n = r_hex_str2bin (str, (ut8 *)buf);
+		n = r_hex_str2bin (str, (ut8 *) buf);
 		if (n < 1 || !memcmp (str, "0x", 2)) {
 			ut64 q = r_num_math (num, str);
-			s = r_print_randomart ((ut8 *)&q, sizeof (q), q);
+			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
 			printf ("%s\n", s);
 			free (s);
 		} else {
-			s = r_print_randomart ((ut8 *)buf, n, *m);
+			s = r_print_randomart ((ut8 *) buf, n, *m);
 			printf ("%s\n", s);
 			free (s);
 		}
@@ -241,21 +254,25 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			ut8 *np = (ut8 *)&n;
-			if (flags & 1)
+			ut8 *np = (ut8 *) &n;
+			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
-			else printf ("%02x%02x%02x%02x"
+			} else {
+				printf ("%02x%02x%02x%02x"
 					"%02x%02x%02x%02x\n",
 					np[0], np[1], np[2], np[3],
 					np[4], np[5], np[6], np[7]);
+			}
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32) (n & UT32_MAX);
-			ut8 *np = (ut8 *)&n32;
-			if (flags & 1)
+			ut8 *np = (ut8 *) &n32;
+			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
-			else printf ("%02x%02x%02x%02x\n",
+			} else {
+				printf ("%02x%02x%02x%02x\n",
 					np[0], np[1], np[2], np[3]);
+			}
 		}
 		fflush (stdout);
 		return true;
@@ -280,11 +297,11 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 31) {
 			// is >32bit
-			n = (st64) (st32)n;
+			n = (st64) (st32) n;
 		} else if (n >> 14) {
-			n = (st64) (st16)n;
+			n = (st64) (st16) n;
 		} else if (n >> 7) {
-			n = (st64) (st8)n;
+			n = (st64) (st8) n;
 		}
 		printf ("%" PFMT64d "\n", n);
 		fflush (stdout);
@@ -293,7 +310,7 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			ut8 *np = (ut8 *)&n;
+			ut8 *np = (ut8 *) &n;
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
@@ -305,7 +322,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32) (n & UT32_MAX);
-			ut8 *np = (ut8 *)&n32;
+			ut8 *np = (ut8 *) &n32;
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
@@ -323,14 +340,14 @@ dotherax:
 	} else if (flags & (1 << 11)) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
-		r_print_date_unix (p, (const ut8 *)&n, sizeof (ut32));
+		r_print_date_unix (p, (const ut8 *) &n, sizeof (ut32));
 		r_print_free (p);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
 		const int len = strlen (str);
 		char *out = calloc (sizeof (char), ((len + 1) * 4) / 3);
 		if (out) {
-			r_base64_encode (out, (const ut8 *)str, len);
+			r_base64_encode (out, (const ut8 *) str, len);
 			printf ("%s\n", out);
 			fflush (stdout);
 			free (out);
@@ -387,16 +404,16 @@ dotherax:
 			n, n, n, unit, s, a);
 
 		if (n >> 32) {
-			eprintf ("%" PFMT64d " ", (st64)n);
+			eprintf ("%" PFMT64d " ", (st64) n);
 		} else {
-			eprintf ("%d ", (st32)n);
+			eprintf ("%d ", (st32) n);
 		}
 		if (asnum) {
 			eprintf ("\"%s\" ", asnum);
 			free (asnum);
 		}
 		/* binary and floating point */
-		r_str_bits (out, (const ut8 *)&n, sizeof (n), NULL);
+		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
 
@@ -426,9 +443,9 @@ dotherax:
 	} else if (str[strlen (str) - 1] == 'd') {
 		out_mode = 'I';
 		str[strlen (str) - 1] = 'b';
-		//TODO: Move print into format_output
+		// TODO: Move print into format_output
 	} else if (str[strlen (str) - 1] == 'f') {
-		ut8 *p = (ut8 *)&f;
+		ut8 *p = (ut8 *) &f;
 		sscanf (str, "%f", &f);
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		return true;
@@ -446,25 +463,28 @@ dotherax:
 
 static int use_stdin() {
 	char *buf = calloc (1, STDIN_BUFFER_SIZE + 1);
-	int l; //, sflag = (flags & 5);
+	int l; // , sflag = (flags & 5);
 	if (!buf) {
 		return 0;
 	}
 	if (!(flags & 16384)) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
-			//make sure we don't read beyond boundaries
+			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
-			if (n < 1)
+			if (n < 1) {
 				break;
+			}
 			l += n;
 			if (buf[l - 1] == 0) {
 				l--;
 				continue;
 			}
 			buf[n] = 0;
-			//if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
+			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
 			buf[strlen (buf)] = '\0';
-			if (!rax (buf, l, 0)) break;
+			if (!rax (buf, l, 0)) {
+				break;
+			}
 			l = -1;
 		}
 	} else {
@@ -477,7 +497,7 @@ static int use_stdin() {
 	return 0;
 }
 
-int main (int argc, char** argv) {
+int main(int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {

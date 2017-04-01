@@ -211,13 +211,13 @@ BuildAndInstall() {
 			sys/mingw32.sh
 			;;
 		"Android ARM")
-			sys/android-arm.sh
+			sys/android-target.sh arm
 			;;
 		"Android MIPS")
-			sys/android-mips.sh
+			sys/android-target.sh mips
 			;;
 		"Android X86")
-			sys/android-x86.sh
+			sys/android-target.sh x86
 			;;
 		esac
 	done

@@ -909,9 +909,9 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 	return ptr;
 }
 
-R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
+R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
 	char *msg = r_str_newlen (string, slen);
-	char *ret = r_str_concat (ptr, msg);
+	char *ret = r_str_append (ptr, msg);
 	free (msg);
 	return ret;
 }
@@ -920,7 +920,7 @@ R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
  */
-R_API char *r_str_concat(char *ptr, const char *string) {
+R_API char *r_str_append(char *ptr, const char *string) {
 	int slen, plen;
 	if (!string && !ptr) {
 		return NULL;
@@ -941,7 +941,7 @@ R_API char *r_str_concat(char *ptr, const char *string) {
 	return ptr;
 }
 
-R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
+R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 	int ret;
 	char string[4096];
 	va_list ap;
@@ -954,18 +954,18 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 			return NULL;
 		}
 		vsnprintf (p, ret + 1, fmt, ap);
-		ptr = r_str_concat (ptr, p);
+		ptr = r_str_append (ptr, p);
 		free (p);
 	} else {
-		ptr = r_str_concat (ptr, string);
+		ptr = r_str_append (ptr, string);
 	}
 	va_end (ap);
 	return ptr;
 }
 
-R_API char *r_str_concatch(char *x, char y) {
+R_API char *r_str_appendch(char *x, char y) {
 	char b[2] = { y, 0 };
-	return r_str_concat (x,b);
+	return r_str_append (x,b);
 }
 
 // XXX: wtf must deprecate
@@ -1397,6 +1397,23 @@ R_API int r_str_is_printable(const char *str) {
 		str++;
 	}
 	return 1;
+}
+
+R_API bool r_str_is_printable_incl_newlines(const char *str) {
+	while (*str) {
+		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
+		if (ulen > 1) {
+			str += ulen;
+			continue;
+		}
+		if (!IS_PRINTABLE (*str)) {
+			if (*str != '\r' && *str != '\n' && *str != '\t') {
+				return false;
+			}
+		}
+		str++;
+	}
+	return true;
 }
 
 // Length in chars of a wide string (find better name?)
@@ -1849,7 +1866,7 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 	for (; *r; r++) {
 		if (*r == ',') {
 			cb (u, atoi (p));
-			p = r+1;
+			p = r + 1;
 		}
 		if (*r == '-') {
 			if (p != r) {
@@ -1868,6 +1885,48 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 	if (*p) {
 		cb (u, atoi (p));
 	}
+}
+
+R_API bool r_str_range_in(const char *r, ut64 addr) {
+	const char *p = r;
+	ut64 min = UT64_MAX;
+	ut64 max = 0;
+	if (!r) {
+		return false;
+	}
+	for (; *r; r++) {
+		if (*r == ',') {
+			if (max == 0) {
+				if (addr == r_num_get (NULL, p)) {
+					return true;
+				}
+			} else {
+				if (addr >= min && addr <= r_num_get (NULL, p)) {
+					return true;
+				}
+			}
+			p = r + 1;
+		}
+		if (*r == '-') {
+			if (p != r) {
+				ut64 from = r_num_get (NULL, p);
+				ut64 to = r_num_get (NULL, r + 1);
+				if (addr >= from && addr <= to) {
+					return true;
+				}
+			} else {
+				fprintf (stderr, "Invalid range\n");
+			}
+			for (r++; *r && *r!=','&& *r!='-'; r++);
+			p = r;
+		}
+	}
+	if (*p) {
+		if (addr == r_num_get (NULL, p)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // convert from html escaped sequence "foo%20bar" to "foo bar"
@@ -2045,7 +2104,7 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
-			*d++ = '\\';
+		//	*d++ = '\\';
 			*d++ = 'u';
 			*d++ = '0';
 			*d++ = '0';

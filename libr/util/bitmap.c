@@ -72,8 +72,10 @@ static void unset_values(Bitmap *bitmap, const uint32_t *values, int len) {
 
 static void check_values(Bitmap *bitmap, const uint32_t *values, int len, bool is_set) {
 	int i;
-	for(i=0; i < len; i++) {
-		assert(r_bitmap_test(bitmap, values[i]) == is_set);
+	for(i = 0; i < len; i++) {
+		if (r_bitmap_test(bitmap, values[i]) != is_set) {
+			eprintf ("Value not set\n");
+		}
 	}
 }
 

@@ -505,6 +505,20 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	return false;
 }
 
+R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
+	if (!core || !core->bin || !core->bin->cur) {
+		return 0;
+	}
+	if (baddr == UT64_MAX) {
+		return 0;
+	}
+	RBinFile *bf = core->bin->cur;
+	bf->o->baddr = baddr;
+	bf->o->loadaddr = baddr;
+	r_bin_object_set_items (bf, bf->o);
+	return 1;
+}
+
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);

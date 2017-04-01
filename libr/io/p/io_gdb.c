@@ -124,7 +124,16 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	return offset;
+	switch (whence) {
+	case R_IO_SEEK_SET:
+		return offset;
+	case R_IO_SEEK_CUR:
+		return io->off + offset;
+	case R_IO_SEEK_END:
+		return desc->exec_file_sz + offset;
+	default:
+		return offset;
+	}
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -179,4 +188,3 @@ RIOPlugin r_io_plugin_gdb = {
 	.system = __system,
 	.isdbg = true
 };
-

@@ -285,9 +285,9 @@ typedef struct r_bin_xtr_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*check)(RBin *bin);
+	bool (*check)(RBin *bin);
 // XXX: ut64 for size is maybe too much, what about st64? signed sizes are useful for detecting errors
-	int (*check_bytes)(const ut8 *bytes, ut64 sz);
+	bool (*check_bytes)(const ut8 *bytes, ut64 sz);
 	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
 	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
 	RBinXtrData * (*extract)(RBin *bin, int idx);
@@ -306,13 +306,13 @@ typedef struct r_bin_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	Sdb * (*get_sdb)(RBinObject *obj);
-	int (*load)(RBinFile *arch);
+	Sdb * (*get_sdb)(RBinFile *obj);
+	bool (*load)(RBinFile *arch);
 	void *(*load_bytes)(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
-	int (*check)(RBinFile *arch);
-	int (*check_bytes)(const ut8 *buf, ut64 length);
+	bool (*check)(RBinFile *arch);
+	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	ut64 (*baddr)(RBinFile *arch);
 	ut64 (*boffset)(RBinFile *arch);
 	RBinAddr* (*binsym)(RBinFile *arch, int num);
@@ -581,6 +581,7 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx);
 R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id );
 R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id);
+R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinFile * r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char *arch, int bits, const char *name);
@@ -677,6 +678,7 @@ extern RBinPlugin r_bin_plugin_avr;
 extern RBinPlugin r_bin_plugin_menuet;
 extern RBinPlugin r_bin_plugin_wasm;
 extern RBinPlugin r_bin_plugin_lua53;
+extern RBinPlugin r_bin_plugin_nro;
 
 #ifdef __cplusplus
 }

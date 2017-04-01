@@ -54,44 +54,32 @@ static inline int is_arm(struct PE_(r_bin_pe_obj_t)* bin) {
 	return 0;
 }
 
-struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)* bin) {
+struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_addr_t* entry;
 	ut8 b[512];
-
+	int n = 0;
 	if (!bin || !bin->b) {
 		return 0LL;
 	}
 	entry = PE_(r_bin_pe_get_entrypoint) (bin);
-	// option2: /x 8bff558bec83ec20
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
 		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x "\n", entry->paddr);
 		free (entry);
 		return NULL;
 	}
-	
-	/* Decode the jmp instruction, this gets the address of the 'main'
-	* function for PE produced by a compiler whose name someone forgot to
-	* write down. */
-	// this is dirty only a single byte check, can return false positives
-	if (b[367] == 0xe8) {
-		const st32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
-		entry->paddr += 367 + 5 + jmp_dst;
-		entry->vaddr += 367 + 5 + jmp_dst;
-		return entry;
-	}
 	// MSVC SEH
 	// E8 13 09 00 00  call    0x44C388
 	// E9 05 00 00 00  jmp     0x44BA7F
-	// from des address of jmp search for 68 xx xx xx xx e8 and test xx xx xx xx = imagebase
-	// 68 00 00 40 00  push    0x400000
-	// E8 3E F9 FF FF  call    0x44B4FF
 	if (b[0] == 0xe8 && b[5] == 0xe9) {
 		const st32 jmp_dst = b[6] | (b[7] << 8) | (b[8] << 16) | (b[9] << 24);
 		entry->paddr += (5 + 5 + jmp_dst);
 		entry->vaddr += (5 + 5 + jmp_dst);
 		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
-			int n = 0;
+			// case1:
+			// from des address of jmp search for 68 xx xx xx xx e8 and test xx xx xx xx = imagebase
+			// 68 00 00 40 00  push    0x400000
+			// E8 3E F9 FF FF  call    0x44B4FF
 			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
 			for (n = 0; n < sizeof (b) - 5; n++) {
 				if (b[n] == 0x68 && *((ut32*) &b[n + 1]) == imageBase && b[n + 5] == 0xe8) {
@@ -101,10 +89,62 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)*
 					return entry;
 				}
 			}
+			//case2:
+			// from des address of jmp search for 50 FF xx FF xx E8
+			//50			 push    eax
+			//FF 37			 push    dword ptr[edi]
+			//FF 36          push    dword ptr[esi]
+			//E8 6F FC FF FF call    _main
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x50 && b[n+1] == 0xff && b[n + 3] == 0xff && b[n + 5] == 0xe8) {
+					const st32 call_dst = b[n + 6] | (b[n + 7] << 8) | (b[n + 8] << 16) | (b[n + 9] << 24);
+					entry->paddr += (n + 5 + 5 + call_dst);
+					entry->vaddr += (n + 5 + 5 + call_dst);
+					return entry;
+				}
+			}
+			//case3:
+			//50                                         push    eax
+			//FF 35 0C E2 40 00                          push    xxxxxxxx
+			//FF 35 08 E2 40 00                          push    xxxxxxxx
+			//E8 2B FD FF FF                             call    _main
+			for (n = 0; n < sizeof (b) - 17; n++) {
+				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 7] == 0xff && b[n + 13] == 0xe8) {
+					const st32 call_dst = b[n + 14] | (b[n + 15] << 8) | (b[n + 16] << 16) | (b[n + 17] << 24);
+					entry->paddr += (n + 5 + 13 + call_dst);
+					entry->vaddr += (n + 5 + 13 + call_dst);
+					return entry;
+				}
+			}
+
 		}
 	}
-
-	// Microsoft Visual-C
+	// MSVC AMD64
+	// 48 83 EC 28       sub     rsp, 0x28
+	// E8 xx xx xx xx    call    xxxxxxxx
+	// 48 83 C4 28       add     rsp, 0x28
+	// E9 xx xx xx xx    jmp     xxxxxxxx
+	if (b[4] == 0xe8 && b[13] == 0xe9) {
+		const st32 jmp_dst = b[14] | (b[15] << 8) | (b[16] << 16) | (b[17] << 24);
+		entry->paddr += (5 + 13 + jmp_dst);
+		entry->vaddr += (5 + 13 + jmp_dst);
+		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
+			// from des address of jmp, search for 4C ... 48 ... 8B ... E8
+			// 4C 8B C0                    mov     r8, rax
+			// 48 8B 17                    mov     rdx, qword [rdi]
+			// 8B 0B                       mov     ecx, dword [rbx]
+			// E8 xx xx xx xx              call    main
+			for (n = 0; n < sizeof (b) - 13; n++) {
+				if (b[n] == 0x4c && b[n + 3] == 0x48 && b[n + 6] == 0x8b && b[n + 8] == 0xe8) {
+					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
+					entry->paddr += (n + 5 + 8 + call_dst);
+					entry->vaddr += (n + 5 + 8 + call_dst);
+					return entry;
+				}
+			}
+		}
+	}
+	//Microsoft Visual-C
 	// 50                  push eax
 	// FF 75 9C            push dword [ebp - local_64h]
 	// 56                  push    esi
@@ -115,7 +155,6 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)*
 	// 89 45 A0            mov dword [ebp - local_60h], eax
 	// 50                  push    eax
 	// E8 2D 00 00  00     call 0x4015a6
-
 	if (b[188] == 0x50 && b[201] == 0xe8) {
 		const st32 call_dst = b[201 + 1] | (b[201 + 2] << 8) | (b[201 + 3] << 16) | (b[201 + 4] << 24);
 		entry->paddr += (201 + 5 + call_dst);
@@ -126,11 +165,120 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)*
 	return NULL;
 }
 
+struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
+	struct r_bin_pe_addr_t* entry;
+	int sw = 0;
+	ut8 b[1024];
+	int n = 0;
+	if (!bin || !bin->b) {
+		return 0LL;
+	}
+	entry = PE_(r_bin_pe_get_entrypoint) (bin);
+	ZERO_FILL (b);
+	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
+		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x "\n", entry->paddr);
+		free (entry);
+		return NULL;
+	}
+	// mingw
+	//55                                         push    ebp
+	//89 E5                                      mov     ebp, esp
+	//83 EC 08                                   sub     esp, 8
+	//C7 04 24 01 00 00 00                       mov     dword ptr[esp], 1
+	//FF 15 C8 63 41 00                          call    ds : __imp____set_app_type
+	//E8 B8 FE FF FF                             call    ___mingw_CRTStartup
+	if (b[0] == 0x55 && b[1] == 0x89 && b[3] == 0x83 && b[6] == 0xc7 && b[13] == 0xff && b[19] == 0xe8) {
+		const st32 jmp_dst = b[20] | (b[21] << 8) | (b[22] << 16) | (b[23] << 24);
+		entry->paddr += (5 + 19 + jmp_dst);
+		entry->vaddr += (5 + 19 + jmp_dst);
+		sw = 1;
+	}
+	//83 EC 1C                                   sub     esp, 1Ch
+	//C7 04 24 01 00 00 00                       mov[esp + 1Ch + var_1C], 1
+	//FF 15 F8 60 40 00                          call    ds : __imp____set_app_type
+	//E8 6B FD FF FF                             call    ___mingw_CRTStartup
+	if (b[0] == 0x83 && b[3] == 0xc7 && b[10] == 0xff && b[16] == 0xe8) {
+		const st32 jmp_dst = b[17] | (b[18] << 8) | (b[19] << 16) | (b[20] << 24);
+		entry->paddr += (5 + 16 + jmp_dst);
+		entry->vaddr += (5 + 16 + jmp_dst);
+		sw = 1;
+	}
+	//83 EC 0C                                            sub     esp, 0Ch
+	//C7 05 F4 0A 81 00 00 00 00 00                       mov     ds : _mingw_app_type, 0
+	//ED E8 3E AD 24 00                                      call    ___security_init_cookie
+	//F2 83 C4 0C                                            add     esp, 0Ch
+	//F5 E9 86 FC FF FF                                      jmp     ___tmainCRTStartup
+	if (b[0] == 0x83 && b[3] == 0xc7 && b[13] == 0xe8 && b[18] == 0x83 && b[21] == 0xe9) {
+		const st32 jmp_dst = b[22] | (b[23] << 8) | (b[24] << 16) | (b[25] << 24);
+		entry->paddr += (5 + 21 + jmp_dst);
+		entry->vaddr += (5 + 21 + jmp_dst);
+		sw = 1;
+	}
+	if (sw) {
+		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
+			// case1:
+			// from des address of call search for a1 xx xx xx xx 89 xx xx e8 xx xx xx xx
+			//A1 04 50 44 00                             mov     eax, ds:dword_445004
+			//89 04 24                                   mov[esp + 28h + lpTopLevelExceptionFilter], eax
+			//E8 A3 01 00 00                             call    sub_4013EE
+			// ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
+			for (n = 0; n < sizeof (b) - 12; n++) {
+				if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
+					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
+					entry->paddr += (n + 5 + 8 + call_dst);
+					entry->vaddr += (n + 5 + 8 + call_dst);
+					return entry;
+				}
+			}
+		}
+	}
+	free (entry);
+	return NULL;
+}
+
+struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
+	struct r_bin_pe_addr_t *entry;
+	ut8 b[512];
+	if (!bin || !bin->b) {
+		return 0LL;
+	}
+	entry = PE_ (r_bin_pe_get_entrypoint) (bin);
+	// option2: /x 8bff558bec83ec20
+	ZERO_FILL (b);
+	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
+		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x"\n", entry->paddr);
+		free (entry);
+		return NULL;
+	}
+	/* Decode the jmp instruction, this gets the address of the 'main'
+	   function for PE produced by a compiler whose name someone forgot to
+	   write down. */
+	// this is dirty only a single byte check, can return false positives
+	if (b[367] == 0xe8) {
+		const st32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
+		entry->paddr += 367 + 5 + jmp_dst;
+		entry->vaddr += 367 + 5 + jmp_dst;
+		return entry;
+	}
+	free (entry);
+	return NULL;
+}
+
+struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
+	struct r_bin_pe_addr_t *entry;
+	entry = PE_(check_msvcseh) (bin);
+	if (entry == NULL)
+		entry = PE_(check_mingw) (bin);
+	if (entry == NULL)
+		entry = PE_(check_unknow) (bin);
+
+	return entry;
+}
+
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)
 static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
-
 	for (i = 0; i < bin->num_sections; i++) {
 		section_base = bin->section_header[i].VirtualAddress;
 		section_size = bin->section_header[i].Misc.VirtualSize;
@@ -535,8 +683,9 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 		r_sys_perror ("malloc (section header)");
 		goto out_error;
 	}
-	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
-		bin->nt_headers->file_header.SizeOfOptionalHeader,
+	bin->section_header_offset = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
+		bin->nt_headers->file_header.SizeOfOptionalHeader;
+	if (r_buf_read_at (bin->b, bin->section_header_offset,
 		(ut8*) bin->section_header, sections_size) == -1) {
 		bprintf ("Warning: read (sections)\n");
 		R_FREE (bin->section_header);
@@ -751,27 +900,24 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		goto fail;
 	}
 
-
 	eprintf ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
 		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
 
 	// read the version string
 	int len = metadata->VersionStringLength; // XXX: dont trust this length
 	if (len > 0) {
-		metadata->VersionString = calloc (1, len);
+		metadata->VersionString = calloc (1, len + 1);
 		if (!metadata->VersionString) {
 			goto fail;
 		}
 
-		rr = r_buf_read_at (bin->b, metadata_directory + 16,
-			(ut8*) (metadata->VersionString), len);
+		rr = r_buf_read_at (bin->b, metadata_directory + 16, (ut8*)(metadata->VersionString),  len);
 		if (rr != len) {
 			eprintf ("Warning: read (metadata header) - cannot parse version string\n");
 			free (metadata->VersionString);
 			free (metadata);
 			return 0;
 		}
-
 		eprintf (".NET Version: %s\n", metadata->VersionString);
 	}
 
@@ -814,8 +960,15 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			goto fail;
 		}
 
-		int c = bin_pe_read_metadata_string (stream_name, (char *)(bin->b->buf + start_of_stream + 8));
+		if (r_buf_size (bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
+			free (stream_name);
+			free (stream);
+			goto fail;
+		}
+		int c = bin_pe_read_metadata_string (stream_name,
+			(char *)(bin->b->buf + start_of_stream + 8));
 		if (c == 0) {
+			free (stream_name);
 			free (stream);
 			goto fail;
 		}

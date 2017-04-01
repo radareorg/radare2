@@ -11,7 +11,7 @@
  * - command : is used to calculate the checksum needs to be null terminated
  * @returns : calculated checksum
  */
-uint8_t cmd_checksum(const char* command) {
+uint8_t cmd_checksum(const char *command) {
 	uint8_t sum = 0;
 	while (*command != '\0') {
 		sum += *command++;
@@ -26,10 +26,12 @@ uint64_t unpack_uint64(char *buff, int len) {
 	int nibble;
 	uint64_t retval = 0;
 	while (len) {
-		nibble = hex2int(*buff++);
+		nibble = hex2int (*buff++);
 		retval |= nibble;
 		len--;
-		if (len) retval = retval << 4;
+		if (len) {
+			retval = retval << 4;
+		}
 	}
 	return retval;
 }
@@ -38,12 +40,14 @@ uint64_t unpack_uint64(char *buff, int len) {
  * Changed byte order and
  * converts the value into uint64_t
  */
-uint64_t unpack_uint64_co(char* buff, int len) {
+uint64_t unpack_uint64_co(char *buff, int len) {
 	uint64_t result = 0;
 	int i;
-	for (i = len - 2; i >= 0; i-=2) {
+	for (i = len - 2; i >= 0; i -= 2) {
 		result |= unpack_uint64 (&buff[i], 2);
-		if (i) result <<= 8;
+		if (i) {
+			result <<= 8;
+		}
 	}
 	return result;
 }
@@ -53,9 +57,15 @@ uint64_t unpack_uint64_co(char* buff, int len) {
  * @returns value of hex or -1 on error
  */
 int hex2int(int ch) {
-	if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
-	if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
-	if (ch >= '0' && ch <= '9') return ch - '0';
+	if (ch >= 'a' && ch <= 'f') {
+		return ch - 'a' + 10;
+	}
+	if (ch >= 'A' && ch <= 'F') {
+		return ch - 'A' + 10;
+	}
+	if (ch >= '0' && ch <= '9') {
+		return ch - '0';
+	}
 	return -1;
 }
 
@@ -64,44 +74,66 @@ int hex2int(int ch) {
  * @returns hex char or -1 on error
  */
 int int2hex(int i) {
-	if (i >= 0 && i <= 9) return i + 48;
-	if (i >= 10 && i <= 15) return i + 87;
+	if (i >= 0 && i <= 9) {
+		return i + 48;
+	}
+	if (i >= 10 && i <= 15) {
+		return i + 87;
+	}
 	return -1;
 }
 
-char hex2char(char* hex) {
-	uint8_t result = hex2int ((int)hex[0]);
+char hex2char(char *hex) {
+	uint8_t result = hex2int ((int) hex[0]);
 	result <<= 4;
 	result |= hex2int (hex[1]);
 	return (char) result;
 }
 
-int unpack_hex(char* src, ut64 len, char* dst) {
+int unpack_hex(char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
-		int val = hex2int (src[(i*2)]);
+		int val = hex2int (src[(i * 2)]);
 		val <<= 4;
-		val |= hex2int (src[(i*2)+1]);
+		val |= hex2int (src[(i * 2) + 1]);
 		dst[i++] = val;
 	}
 	dst[i] = '\0';
 	return len;
 }
 
-int pack_hex(char* src, ut64 len, char* dst) {
+int pack_hex(char *src, ut64 len, char *dst) {
 	int i = 0;
 	int x = 0;
-	while (i < (len*2)) {
+	while (i < (len * 2)) {
 		int val = (src[x] & 0xf0) >> 4;
 		dst[i++] = int2hex (val);
 		dst[i++] = int2hex (src[x++] & 0x0f);
 	}
 	dst[i] = '\0';
-	return (len/2);
+	return (len / 2);
 }
 
-void hexdump(void* ptr, ut64 len, ut64 offset) {
-	unsigned char* data = (unsigned char*)ptr;
+int pack_hex_uint64(ut64 src, char *dst) {
+	int len = 0;
+	int i;
+	char temp[16];
+	do {
+		temp[len++] = int2hex (src & 0x0F);
+		src >>= 4;
+	} while (src > 0);
+	if (len > 0 && temp[len - 1] == '0') {
+		len--;
+	}
+	for (i = 0; i < len; i++) {
+		dst[i] = temp[len - 1 - i];
+	}
+	dst[len] = '\0';
+	return len;
+}
+
+void hexdump(void *ptr, ut64 len, ut64 offset) {
+	unsigned char *data = (unsigned char *) ptr;
 	int x = 0;
 	char hex[49], *p;
 	char txt[17], *c;
@@ -109,14 +141,14 @@ void hexdump(void* ptr, ut64 len, ut64 offset) {
 	while (x < len) {
 		p = hex;
 		c = txt;
-		curr_offset = x+offset;
+		curr_offset = x + offset;
 
 		do {
 			p += sprintf (p, "%02x ", data[x]);
-			*c++ = (data[x] >= 32 && data[x] <= 127) ? data[x] : '.';
+			*c++ = (data[x] >= 32 && data[x] <= 127)? data[x]: '.';
 		} while (++x % 16 && x < len);
 
 		*c = '\0';
-		eprintf ("0x%016"PFMT64x": %-48s- %s\n", (curr_offset), hex, txt);
+		eprintf ("0x%016"PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
 	}
 }

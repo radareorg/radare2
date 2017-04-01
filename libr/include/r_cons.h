@@ -633,7 +633,7 @@ typedef struct r_ascii_node_t {
 	int is_dummy;
 	int is_reversed;
 	int klass;
-	bool mini;
+	bool is_mini;
 } RANode;
 
 #define R_AGRAPH_MODE_NORMAL 0

@@ -3,8 +3,7 @@
 
 #include <r_types.h>
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_list.h>
+#include <r_search.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,57 +11,72 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_sign);
 
+#define R_SIGN_KEY_MAXSZ 1024
+#define R_SIGN_VAL_MAXSZ 10240
+
 enum {
-	R_SIGN_BYTE = 'b',
-	R_SIGN_FUNC = 'f',
-	R_SIGN_HEAD = 'h',
-	R_SIGN_ANAL = 'a',
-	R_SIGN_BODY = 'p',
+	R_SIGN_BYTES = 'b', // bytes pattern
+	R_SIGN_ANAL  = 'a', // bytes pattern (anal mask)
+	R_SIGN_GRAPH = 'g', // graph metrics
 };
 
-/* signature struct */
-typedef struct r_sign_item_t {
-	int type;
-	char *name;
+typedef struct r_sign_graph_t {
+	int cc;
+	int nbbs;
+	int edges;
+	int ebbs;
+} RSignGraph;
+
+typedef struct r_sign_bytes_t {
 	int size;
-	ut64 addr;
 	ut8 *bytes;
 	ut8 *mask;
+} RSignBytes;
+
+typedef struct r_sign_item_t {
+	char *name;
+	int space;
+
+	RSignBytes *bytes;
+	RSignGraph *graph;
 } RSignItem;
 
-typedef struct r_sign_t {
-	int s_anal;
-	int s_byte;
-	int s_head;
-	int s_func; // TODO: this must be an array count[N]
-	char *ns;
-	PrintfCallback cb_printf;
-	RList *items;
-	int matches;
-} RSign;
+typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
+typedef int (*RSignSearchCallback)(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user);
+typedef int (*RSignGraphMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 
-typedef int (*RSignCallback)(RSignItem *si, void *user);
+typedef struct r_sign_search_t {
+	RSearch *search;
+	RList *items;
+	RSignSearchCallback cb;
+	void *user;
+} RSignSearch;
 
 #ifdef R_API
-R_API RSign *r_sign_new(void);
-R_API bool r_sign_add(RSign *sig, RAnal *anal, int type,
-		const char *name, const char *arg);
-R_API RSign *r_sign_free(RSign *sig);
-R_API void r_sign_ns(RSign *sig, const char *str);
-R_API void r_sign_list(RSign *sig, int rad, int json);
-R_API void r_sign_reset(RSign *sig);
-R_API void r_sign_item_free(void *_item);
-R_API int r_sign_remove_ns(RSign* sig, const char* ns);
-R_API int r_sign_is_flirt (RBuffer *buf);
-R_API void r_sign_flirt_dump (const RAnal *anal, const char *flirt_file);
-R_API void r_sign_flirt_scan (const RAnal *anal, const char *flirt_file);
+R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
+R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
+R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
+R_API bool r_sign_delete(RAnal *a, const char *name);
+R_API void r_sign_list(RAnal *a, int format);
 
-// old api
-R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd);
-R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len);
-R_API int r_sign_load_file(RSign *sig, const char *file);
-R_API int r_sign_option(RSign *sig, const char *option);
-R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value);
+R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
+
+R_API RSignSearch *r_sign_search_new();
+R_API void r_sign_search_free(RSignSearch *ss);
+R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb, void *user);
+R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
+R_API int r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallback cb, void *user);
+
+R_API bool r_sign_load(RAnal *a, const char *file);
+R_API bool r_sign_save(RAnal *a, const char *file);
+
+R_API RSignItem *r_sign_item_dup(RSignItem *it);
+R_API void r_sign_item_free(RSignItem *item);
+
+// TODO
+R_API int r_sign_is_flirt(RBuffer *buf);
+R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
+R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file);
 #endif
 
 #ifdef __cplusplus

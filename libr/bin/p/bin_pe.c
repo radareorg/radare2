@@ -6,19 +6,14 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb (RBinFile *bf) {
+	RBinObject *o = bf->o;
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
 		return NULL;
 	}	
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
-	if (bin && bin->kv) {
-		return bin->kv;
-	}
-	return NULL;
+	return bin? bin->kv: NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -37,7 +32,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return res;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	void *res;
 	const ut8 *bytes;
 	ut64 sz;
@@ -330,7 +325,7 @@ static RList* imports(RBinFile *arch) {
 		{
 			ut8 addr[4];
 			r_buf_read_at (arch->buf, imports[i].paddr, addr, 4);
-			ut64 newaddr = r_read_le32 (&addr);
+			ut64 newaddr = (ut64) r_read_le32 (&addr);
 			rel->vaddr = newaddr;
 		}
 		rel->paddr = imports[i].paddr;
@@ -528,14 +523,7 @@ static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 }
 
 #if !R_BIN_PE64
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int idx;
 	if (!buf) {
 		return false;
@@ -552,6 +540,13 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		}
 	}
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
@@ -766,6 +761,8 @@ static void header(RBinFile *arch) {
 	}
 }
 
+extern struct r_bin_write_t r_bin_write_pe;
+
 RBinPlugin r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
@@ -790,7 +787,8 @@ RBinPlugin r_bin_plugin_pe = {
 	.relocs = &relocs,
 	.minstrlen = 4,
 	.create = &create,
-	.get_vaddr = &get_vaddr
+	.get_vaddr = &get_vaddr,
+	.write = &r_bin_write_pe
 };
 
 #ifndef CORELIB

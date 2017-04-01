@@ -99,19 +99,17 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	 *        refline, we free that level.
 	 */
 
-	list = r_list_new ();
+	list = r_list_newf (free);
 	if (!list) {
 		return NULL;
 	}
-	list->free = free;
-	sten = r_list_new ();
+	sten = r_list_newf ((RListFree)free);
 	if (!sten) {
 		goto list_err;
 	}
-	sten->free = (RListFree)free;
-
+	r_cons_break_push (NULL, NULL);
 	/* analyze code block */
-	while (ptr < end) {
+	while (ptr < end && !r_cons_is_breaked ()) {
 		if (nlines != -1) {
 			if (!nlines) {
 				break;
@@ -180,6 +178,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		ptr += sz;
 	}
 	r_anal_op_fini (&op);
+	r_cons_break_pop ();
 
 	free_levels = R_NEWS0 (ut8, r_list_length (list) + 1);
 	if (!free_levels) {
@@ -478,7 +477,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 		}
 	}
-	str = r_str_concat (str, (dir == 1) ? "-> "
+	str = r_str_append (str, (dir == 1) ? "-> "
 		: (dir == 2) ? "=< " : "   ");
 
 	if (core->cons->use_utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {

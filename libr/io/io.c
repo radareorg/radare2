@@ -359,10 +359,6 @@ int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
 		return R_FAIL;
 	if (io->ff)
 		memset (buf, io->Oxff, len);
-	if (io->raw) {
-		r_io_seek (io, addr, R_IO_SEEK_SET);
-		return r_io_read_internal (io, buf, len);
-	}
 	if (io->va) {
 		r_io_vread (io, addr, buf, len); //must check return-stat
 		if (io->cached)
@@ -409,13 +405,6 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 	}
 
-	if (io->raw) {
-		if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX) {
-			memset (buf, io->Oxff, len);
-		}
-		return r_io_read_internal (io, buf, len);
-	}
-
 	io->off = addr;
 	memset (buf, io->Oxff, len); // probably unnecessary
 
@@ -449,7 +438,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				// is there a map somewhere within the next range for
 				// us to read from
 				next_sec = r_io_section_get_first_in_vaddr_range (io, addr + w, addr + len + w);
-				next_sec_addr = next_sec? next_sec->offset: UT64_MAX;
+				next_sec_addr = next_sec? next_sec->paddr: UT64_MAX;
 
 				if (!next_sec) {
 					next_map = r_io_map_get_first_map_in_range (io, addr + w, addr + len + w);
@@ -818,7 +807,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	// XXX: list_empty trick must be done in r_io_set_va();
 	//eprintf ("-(seek)-> 0x%08llx\n", offset);
 	//if (!io->debug && io->va && !r_list_empty (io->sections)) {
-	if (!io->debug || !io->raw) { //
+	if (!io->debug) {
 		if (io->va && !r_list_empty (io->sections)) {
 			ut64 o = r_io_section_vaddr_to_maddr_try (io, offset);
 			if (o != UT64_MAX) {
@@ -1081,7 +1070,8 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 				"Allocating R_IO_MAX_ALLOC set as the environment variable.\n", io->maxalloc);
 		*out_sz = io->maxalloc;
 	}
-	buf = malloc (*out_sz);
+	buf = malloc (*out_sz + 1);
+	buf[*out_sz] = 0;
 	if (!buf) {
 		if (*out_sz > R_IO_MAX_ALLOC) {
 			char *num_unit = r_num_units (NULL, *out_sz);
@@ -1090,7 +1080,8 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 				num_unit, (ut64)R_IO_MAX_ALLOC);
 			free (num_unit);
 			*out_sz = R_IO_MAX_ALLOC;
-			buf = malloc (*out_sz);
+			buf = malloc (*out_sz + 1);
+			buf[*out_sz] = 0;
 		}
 		if (!buf) {
 			char *num_unit = r_num_units (NULL, *out_sz);
@@ -1112,10 +1103,6 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 
 static RIO *r_io_bind_get_io(RIOBind *bnd) {
 	return bnd? bnd->io: NULL;
-}
-
-R_API void r_io_set_raw(RIO *io, int raw) {
-	io->raw = raw? 1: 0;
 }
 
 // check if reading at offset or writting to offset is reasonable

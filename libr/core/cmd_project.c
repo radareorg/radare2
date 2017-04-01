@@ -50,6 +50,7 @@ static int cmd_project(void *data, const char *input) {
 		r_core_project_list (core, input[1]);
 		break;
 	case 'd':
+	case '-':
 		r_core_project_delete (core, file);
 		break;
 	case 's':
@@ -214,6 +215,7 @@ static int cmd_project(void *data, const char *input) {
 			"Po", " [file]", "open project",
 			"Ps", " [file]", "save project",
 			"PS", " [file]", "save script file",
+			"P-", " [file]", "delete project (alias for Pd)",
 			"NOTE:", "", "See 'e??prj.'",
 			"NOTE:", "", "project are stored in ~/.config/radare2/projects",
 			NULL

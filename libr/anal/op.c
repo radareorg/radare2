@@ -48,6 +48,7 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	op->src[2] = NULL;
 	r_anal_value_free (op->dst);
 	op->dst = NULL;
+	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
 	R_FREE (op->mnemonic);

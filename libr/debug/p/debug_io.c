@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 pancake */
+/* radare - LGPL - Copyright 2016-2017 pancake */
 
 #include <r_io.h>
 #include <r_asm.h>
@@ -128,7 +128,6 @@ static int __io_kill(RDebug *dbg, int pid, int tid, int sig) {
 
 RDebugPlugin r_debug_plugin_io = {
 	.name = "io",
-	.keepio = 1,
 	.license = "MIT",
 	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,

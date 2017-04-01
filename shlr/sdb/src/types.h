@@ -41,14 +41,10 @@
 #endif
 
 #include <inttypes.h>
-#if __CYGWIN__
-#define HAVE_MMAN 1
 #define ULLFMT "ll"
-#elif __SDB_WINDOWS__
+#if __SDB_WINDOWS__ && !__CYGWIN__
 #define HAVE_MMAN 0
-#define ULLFMT "I64"
 #else
-#define ULLFMT "ll"
 #define HAVE_MMAN 1
 #endif
 

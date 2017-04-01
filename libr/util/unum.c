@@ -62,7 +62,12 @@ R_API char *r_num_units(char *buf, ut64 num) {
 	char unit;
 	int tnum;
 	double fnum = num;
-	if (!buf) buf = malloc (32);
+	if (!buf) {
+		buf = malloc (32);
+		if (!buf) {
+			return NULL;
+		}
+	}
 	//if (num>=TB) { unit = 'T'; fnum = num/TB; } else
 	if (num>=GB) { unit = 'G'; fnum = fnum/GB; } else
 	if (num>=MB) { unit = 'M'; fnum = fnum/MB; } else
@@ -178,16 +183,35 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			}
 			break;
 		case 'K': case 'k':
-			sscanf (str, "%"PFMT64d, &ret);
-			ret *= 1024;
+			if (strchr (str, '.')) {
+				double d = 0;
+				sscanf (str, "%lf", &d);
+				ret = (ut64)(d * KB);
+			} else {
+				ret = 0LL;
+				sscanf (str, "%"PFMT64d, &ret);
+				ret *= KB;
+			}
 			break;
 		case 'M': case 'm':
-			sscanf (str, "%"PFMT64d, &ret);
-			ret *= 1024*1024;
+			if (strchr (str, '.')) {
+				double d = 0;
+				sscanf (str, "%lf", &d);
+				ret = (ut64)(d * MB);
+			} else {
+				sscanf (str, "%"PFMT64d, &ret);
+				ret *= MB;
+			}
 			break;
 		case 'G': case 'g':
-			sscanf (str, "%"PFMT64d, &ret);
-			ret *= 1024*1024*1024;
+			if (strchr (str, '.')) {
+				double d = 0;
+				sscanf (str, "%lf", &d);
+				ret = (ut64)(d * GB);
+			} else {
+				sscanf (str, "%"PFMT64d, &ret);
+				ret *= GB;
+			}
 			break;
 		default:
 #if 0

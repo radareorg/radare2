@@ -117,24 +117,49 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	}
 }
 
+static int cmp(const void *a, const void *b) {
+	RDebugMap *ma = (RDebugMap*) a;
+	RDebugMap *mb = (RDebugMap*) b;
+	return ma->addr - mb->addr;
+}
+
+static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
+	RDebugMap *map;
+	RListIter *iter;
+	*min = UT64_MAX;
+	*max = 0;
+	r_list_foreach (maps, iter, map) {
+		if (skip > 0) {
+			skip--;
+			continue;
+		}
+		if (map->addr < *min) {
+			*min = map->addr;
+		}
+		if (map->addr_end > *max) {
+			*max = map->addr_end;
+		}
+	}
+	return (*max - *min) / width;
+}
+
 static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, PrintfCallback cb_printf, int bits, int cons_width) {
 	ut64 mul, min = -1, max = 0;
-	int width = cons_width - 80;
+	int width = cons_width - 90;
 	RListIter *iter;
 	RDebugMap *map;
-	if (width < 1) width = 30;
-	r_list_foreach (maps, iter, map) {
-		if (map->addr < min)
-			min = map->addr;
-		if (map->addr_end > max)
-			max = map->addr_end;
+	if (width < 1) {
+		width = 30;
 	}
-	mul = (max - min) / width;
+	r_list_sort (maps, cmp);
+	mul = findMinMax (maps, &min, &max, 0, width);
+	ut64 last = min;
 	if (min != -1 && mul != 0) {
 		const char *c = "", *c_end = "";
 		const char *fmtstr;
 		char buf[56];
 		int j;
+		int count = 0;
 		r_list_foreach (maps, iter, map) {
 			r_num_units (buf, map->size);
 			if (use_color) {
@@ -151,9 +176,13 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 				c = "";
 				c_end = "";
 			}
+			if ((map->addr - last) > UT32_MAX) {
+				mul = findMinMax (maps, &min, &max, count, width);
+			}
+			count++;
 			fmtstr = bits & R_SYS_BITS_64 ?
-				"sys %04s %c %s0x%016"PFMT64x"%s |" :
-				"sys %04s %c %s0x%08"PFMT64x"%s |";
+				"sys %6s %c %s0x%016"PFMT64x"%s |" :
+				"sys %6s %c %s0x%08"PFMT64x"%s |";
 			cb_printf (fmtstr, buf,
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',
@@ -172,6 +201,7 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 				"| %s0x%08"PFMT64x"%s %s %s\n";
 			cb_printf (fmtstr, c, map->addr_end, c_end,
 				r_str_rwx_i (map->perm), map->name);
+			last = map->addr;
 		}
 	}
 }
@@ -185,8 +215,8 @@ R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color, int co
 		}
 		if (dbg->maps_user) {
 			print_debug_map_ascii_art (dbg->maps_user,
-				addr, use_color,
-				dbg->cb_printf, dbg->bits, cons_cols);
+				addr, use_color, dbg->cb_printf,
+				dbg->bits, cons_cols);
 		}
 	}
 }
@@ -195,12 +225,14 @@ R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm,
 	RDebugMap *map;
 	/* range could be 0k on OpenBSD, it's a honeypot */
 	if (!name || addr > addr_end) {
-		eprintf ("r_debug_map_new: error assert(\
+		eprintf ("r_debug_map_new: error (\
 			%"PFMT64x">%"PFMT64x")\n", addr, addr_end);
 		return NULL;
 	}
 	map = R_NEW0 (RDebugMap);
-	if (!map) return NULL;
+	if (!map) {
+		return NULL;
+	}
 	map->name = strdup (name);
 	map->addr = addr;
 	map->addr_end = addr_end;

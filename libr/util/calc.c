@@ -101,7 +101,9 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 
 static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	RNumCalcValue v = {0};
-	if (get) get_token (num, nc);
+	if (get) {
+		get_token (num, nc);
+	}
 	switch (nc->curr_tok) {
 	case RNCNUMBER:
 		v = nc->number_value;
@@ -127,10 +129,14 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		v = nc->number_value;
 		get_token (num, nc);
 		return Nneg (nc->number_value); //prim (num, nc, 1), 1);
-	case RNCINC: return Naddi (prim (num, nc, 1), 1);
-	case RNCDEC: return Naddi (prim (num, nc, 1), -1);
-	case RNCORR: return Norr (v, prim (num, nc, 1));
-	case RNCMINUS: return Nsub (v, prim (num, nc, 1));
+	case RNCINC:
+		return Naddi (prim (num, nc, 1), 1);
+	case RNCDEC:
+		return Naddi (prim (num, nc, 1), -1);
+	case RNCORR:
+		return Norr (v, prim (num, nc, 1));
+	case RNCMINUS:
+		return Nsub (v, prim (num, nc, 1));
 	case RNCLEFTP:
 		v = expr (num, nc, 1);
 		if (nc->curr_tok == RNCRIGHTP) {
@@ -207,11 +213,14 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	}
 	str[i] = 0;
 	*n = Nset (r_num_get (num, str));
-	if (IS_DIGIT(*str) && strchr (str, '.')) { 
+	if (IS_DIGIT (*str) && strchr (str, '.')) {
 		if (sscanf (str, "%lf", &d) < 1) {
 			return 0;
 		}
-		*n = Nsetf (d);
+		if (n->n < d) {
+			*n = Nsetf (d);
+		}
+		n->d = d;
 	}
 	return 1;
 }

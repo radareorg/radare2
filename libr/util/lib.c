@@ -91,11 +91,11 @@ R_API char *r_lib_path(const char *libname) {
 #if __APPLE__
 	char *env = r_sys_getenv ("DYLD_LIBRARY_PATH");
 	const char *ext = ".dylib";
-	env = r_str_concat (env, ":/lib:/usr/lib:/usr/local/lib");
+	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
 #elif __UNIX__
 	char *env = r_sys_getenv ("LD_LIBRARY_PATH");
 	const char *ext = ".so";
-	env = r_str_concat (env, ":/lib:/usr/lib:/usr/local/lib");
+	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
 #else
 	char *env = strdup (".:../../../../../../../windows/system32");
 	const char *ext = ".dll";

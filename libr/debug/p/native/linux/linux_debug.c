@@ -83,7 +83,7 @@ int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 								} else {
 									name = r_reg_get_name (dbg->reg, R_REG_NAME_A1);
 								}
-								b->data = r_str_concatf (b->data, ";ps@r:%s", name);
+								b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 								dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
 							} else if (r_str_startswith (p, "dbg.unlibs")) {
 								dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
@@ -159,7 +159,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
-			eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", data);
+			eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
 			add_and_attach_new_thread (dbg, (int)data);
 			return R_DEBUG_REASON_NEW_TID;
 		}
@@ -171,7 +171,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
-			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", data);
+			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
 			dbg->forked_pid = data;
 			// TODO: more handling here?
 			/* we have a new process that we are already tracing */
@@ -183,7 +183,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, data);
+		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, (ut64)data);
 		return R_DEBUG_REASON_EXIT_PID;
 	default:
 		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
@@ -262,7 +262,7 @@ static int stop_process (int pid) {
 }
 				
 void linux_attach_new_process (RDebug *dbg) {
-	int ret = detach_procs_and_threads (dbg);
+	(void)detach_procs_and_threads (dbg);
 
 	if (dbg->threads) {
 		r_list_free (dbg->threads);
@@ -306,15 +306,21 @@ static void set_pid_signalled_status (RDebug *dbg, int pid, bool value) {
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
-	RDebugReasonType reason;
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	bool done = false;
-	bool self_signalled;
 
+	int status, flags = __WALL | WNOHANG;
 repeat:
 	do {
-		self_signalled = get_pid_signalled_status (dbg, pid);
-		int status;
-		int ret = waitpid (pid, &status, __WALL|WNOHANG);
+		bool self_signalled = get_pid_signalled_status (dbg, pid);
+		int ret = waitpid (pid, &status, flags);
+		if (ret < 0) {
+			perror ("waitpid");
+			break;
+		}
+		if (ret == 0) {
+			flags = __WALL;
+		}
 		if (ret) {
 			reason = linux_ptrace_event (dbg, pid, status);
 

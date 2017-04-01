@@ -25,6 +25,8 @@ R_API RParse *r_parse_new() {
 	p->parsers->free = NULL; // memleak
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
+	p->relsub = false;
+	p->localvar_only = false;
 	for (i = 0; parse_static_plugins[i]; i++) {
 		r_parse_add (p, parse_static_plugins[i]);
 	}
@@ -137,9 +139,24 @@ static char *findNextNumber(char *op) {
 				bool is_space = ansi_found;
 				ansi_found = false;
 				if (!is_space) {
-					is_space = (p == op || *o == ' ' || *o == ',' || *o == '[');
+					is_space = p == op;
+					if (!is_space && o) {
+						is_space = (*o == ' ' || *o == ',' || *o == '[');
+					}
 				}
-				if (is_space && IS_DIGIT(*p)) {
+				if (*p == '[') {
+					char *t = p;
+					p++;
+					if (!IS_DIGIT (*p)) {
+						for (;*t && *t != ']'; t++);
+						if (*t == ']') {
+							continue;
+						} else {
+							p = t;
+						}
+					}
+				}
+				if (is_space && IS_DIGIT (*p)) {
 					return p;
 				}
 				o = p++;
@@ -198,7 +215,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				if (!flag) {
 					flag = r_flag_get_i (f, off);
 				}
-				if (p->relsub_addr) {
+				if (!flag && p->relsub_addr) {
 					computed = true;
 					flag2 = r_flag_get_i2 (f, p->relsub_addr);
 					if (!flag2) {
@@ -242,8 +259,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		}
 		if (p->hint) {
 			int pnumleft, immbase = p->hint->immbase;
-			char num[256], *pnum;
+			char num[256], *pnum, *tmp;
 			bool is_hex = false;
+			int tmp_count;
 			strncpy (num, ptr, sizeof (num)-2);
 			pnum = num;
 			if (!strncmp (pnum, "0x", 2)) {
@@ -251,7 +269,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && ISHEXCHAR(*pnum)) || IS_DIGIT(*pnum)) {
+				if ((is_hex && ISHEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
 					continue;
 				}
 				break;
@@ -266,6 +284,18 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				strcat (num, "b");
 				break;
 			case 2: // hack for ascii
+				tmp_count = 0;
+				for (tmp = data; tmp < ptr; tmp++) {
+					if (*tmp == '[') {
+						tmp_count++;
+					} else if (*tmp == ']') {
+						tmp_count--;
+					}
+				}
+				if (tmp_count > 0) {
+					ptr = ptr2;
+					continue;
+				}
 				memset (num, 0, sizeof (num));
 				pnum = num;
 				*pnum++ = '\'';

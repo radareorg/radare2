@@ -31,7 +31,8 @@ static inline bool setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	return true;
 }
 
-static Sdb* get_sdb(RBinObject *o) {
+static Sdb* get_sdb(RBinFile *bf) {
+	RBinObject *o = bf->o;
 	if (o && o->bin_obj) {
 		struct Elf_(r_bin_elf_obj_t) *bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
 		return bin->kv;
@@ -71,7 +72,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 }
 
 /* TODO: must return bool */
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o) {
@@ -134,7 +135,8 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
-			//ret->vaddr --; // noes
+			ret->vaddr--; 
+			ret->paddr--; 
 		}
 	}
 	return ret;
@@ -696,15 +698,15 @@ static RList* patch_relocs(RBin *b) {
 		return relocs (r_bin_cur (b));
 	}
 	r_list_foreach (io->sections, iter, s) {
-		if (s->offset > offset) {
-			offset = s->offset;
+		if (s->paddr > offset) {
+			offset = s->paddr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->offset + g->size;
+	n_off = g->paddr + g->size;
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
@@ -886,12 +888,12 @@ static void headers32(RBinFile *arch) {
 	p ("0x00000014  ShOff       0x%08x\n", r_read_le32 (buf + 20));
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
 		&& buf[4] != 2;
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
@@ -997,7 +999,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 RBinPlugin r_bin_plugin_elf = {
 	.name = "elf",
-	.desc = "ELF format r_bin plugin",
+	.desc = "ELF format r2 plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,

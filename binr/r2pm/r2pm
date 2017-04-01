@@ -91,7 +91,7 @@ init|up|update)
 		git pull || exit 1
 	else
 		echo git clone https://github.com/radare/radare2-pm
-		git clone --depth=3 https://github.com/radare/radare2-pm || exit 1
+		git clone --depth=3 --recursive https://github.com/radare/radare2-pm || exit 1
 		cd radare2-pm
 		pwd
 	fi
@@ -210,13 +210,13 @@ R2PM_GIT() {
 	else
 		DIR="$2"
 	fi
-	cd "${R2PM_GITDIR}"
+	cd "${R2PM_GITDIR}" || exit 1
 	if [ ${IS_LOCAL} = 0 ]; then
 		if [ -d "${DIR}" ]; then
 			cd "${DIR}"
 			git pull
 		else
-			git clone --depth 1 "${URL}" "${DIR}" || R2PM_FAIL "Oops"
+			git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 			cd "${DIR}" || R2PM_FAIL "Oops"
 		fi
 	fi
@@ -472,7 +472,7 @@ ls)
 				cd "$URL"
 				git pull
 			else
-				git clone --depth=2 "$URL" "$NAME"
+				git clone --recursive --depth=2 "$URL" "$NAME"
 			fi
 			if [ ! -d "$NAME/db" ]; then
 				echo "This is not an r2pm repository"
@@ -484,6 +484,9 @@ ls)
 		ls
 	fi
 	popd > /dev/null
+	;;
+-H)
+	s='$'; eval echo $s$2
 	;;
 *|help|-h)
 	echo "Usage: r2pm [init|update|cmd] [...]"
@@ -499,6 +502,7 @@ ls)
 	echo " -t,test FX,XX,BR BID        check in travis regressions"
 	echo " -v,version                  show version"
 	echo " -h,help                     show this message"
+	echo " -H variable                 show value of given variable"
 	echo " -c,clean ([git/dir])        clear source cache (GITDIR)"
 	echo " -w <pkgname>                what/where is installed"
 	echo " init | update ..            initialize/update database"
