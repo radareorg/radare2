@@ -181,21 +181,9 @@ static int lua53_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	}
 	return op->size;
 }
-void addFunction (LuaFunction* func, ParseStruct* parseStruct){
-	if(!func->parent_func){
-		RAnalFunction *afunc = parseStruct->data;
-		afunc->addr += func->code_offset + lua53_data.intSize;
-		if(afunc->addr != func->code_offset + lua53_data.intSize){
-			afunc->name = malloc(func->name_size + 1);
-			memcpy(afunc->name,func->name_ptr,func->name_size);
-			afunc->name[func->name_size] = '\0';
-			afunc->stack = 0;
-		}
-	}
-}
-int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype){
+static int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype){
 	Dprintf ("Analyze Function: 0x%"PFMT64x"\n",addr);
-	LuaFunction* function = findLuaFunctionByCodeAddr (addr);
+	LuaFunction* function = lua53findLuaFunctionByCodeAddr (addr);
 	if(function){
 		fcn->maxstack = function->maxStackSize;
 		fcn->nargs = function->numParams;
@@ -204,7 +192,7 @@ int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int
 	return 0;
 }
 
-int finit(void *user) {
+static int finit(void *user) {
 	if(lua53_data.functionList){
 		r_list_free (lua53_data.functionList);
 		lua53_data.functionList = 0;

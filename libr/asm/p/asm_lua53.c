@@ -22,7 +22,6 @@ RAsmPlugin r_asm_plugin_lua53 = {
 	.arch = "lua53",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.mnemonics = instruction_names,
 	.disassemble = &do_disassemble,
 	.assemble = &do_assemble,
 };

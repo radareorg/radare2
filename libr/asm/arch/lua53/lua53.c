@@ -44,17 +44,15 @@ typedef enum {
 ut32* current_write_prt;
 ut32 current_write_index;
 
-int findNextWordStart (const char* str);
+static int findNextWordStart (const char* str);
 
-int parseParameters (const char* str,OpCode opCode);
+static int parseParameters (const char* str,OpCode opCode);
 
-int parseParameter (const char* str,Parameter parameter);
+static int parseParameter (const char* str,Parameter parameter);
 
-int parseNextInstruction (const char* str);
+static int parseNextInstruction (const char* str);
 
-int parseWhitespaces (const char* str);
-
-int parseInstruction (const char* str);
+static int parseWhitespaces (const char* str);
 
 const char* instruction_names[] = {
 	"move","loadk","loadkx","loadbool","loadnil","getupval","gettabup","gettable","settabup","setupval","settable","newtable","self","add","sub","mul","mod",
@@ -62,7 +60,7 @@ const char* instruction_names[] = {
 	"test","testset","call","tailcall","return","forloop","forprep","tforcall","tforloop","setlist","closure","vararg","extraarg",0
 };
 
-ut32 getInstruction (const ut8* data){
+static ut32 getInstruction (const ut8* data){
 	ut32 instruction = 0;
 	instruction |= data[3] << 24;
 	instruction |= data[2] << 16;
@@ -70,14 +68,14 @@ ut32 getInstruction (const ut8* data){
 	instruction |= data[0] <<  0;
 	return instruction;
 }
-void setInstruction (ut32 opcode,ut8* data){
+static void setInstruction (ut32 opcode,ut8* data){
 	data[3] = opcode >> 24;
 	data[2] = opcode >> 16;
 	data[1] = opcode >>  8;
 	data[0] = opcode >>  0;
 }
 
-int findNextWordStart (const char* str){
+static int findNextWordStart (const char* str){
 	int chars_skipped = 0;
 	char c;
 	char comment_char;
@@ -108,7 +106,7 @@ int findNextWordStart (const char* str){
 	Dprintf ("Parsed %i empty Chars\n",chars_skipped);
 	return chars_skipped;
 }
-int parseNextInstruction (const char* str){
+static int parseNextInstruction (const char* str){
 	int chars_skipped = 0;
 	doParse0(chars_skipped,findNextWordStart,str);
 	const char* str_ptr = str + chars_skipped;
@@ -139,7 +137,7 @@ int parseNextInstruction (const char* str){
 	Dprintf ("Error\n");
 	return -1;
 }
-int parseWhitespaces (const char* str){
+static int parseWhitespaces (const char* str){
 	int skipped_whitespace = 0;
 	char c = str[skipped_whitespace];
 	while( isWhitespace(c) ){
@@ -149,7 +147,7 @@ int parseWhitespaces (const char* str){
 	return skipped_whitespace;
 }
 
-int parseParameters (const char* str,OpCode opCode){
+static int parseParameters (const char* str,OpCode opCode){
 	int chars_skipped = 0;
 	doParse0(chars_skipped,parseWhitespaces,str);
 	switch(opCode){
@@ -224,7 +222,7 @@ int parseParameters (const char* str,OpCode opCode){
 	}
 	return chars_skipped;
 }
-int parseParameter (const char* str,Parameter parameter){
+static int parseParameter (const char* str,Parameter parameter){
 	int skipped_chars = findNextWordStart (str);
 	int resultingNumber = 0;
 	bool negative = false;

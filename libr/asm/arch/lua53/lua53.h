@@ -108,8 +108,8 @@ enum OpMode {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 /* creates a mask with 'n' 0 bits at position 'p' */
 #define MASK0(n,p)      (~MASK1(n,p))
 
-ut32 getInstruction(const ut8* data);
-void setInstruction(ut32 opcode, ut8* data);
+static ut32 getInstruction(const ut8* data);
+static void setInstruction(ut32 opcode, ut8* data);
 
 
 /*

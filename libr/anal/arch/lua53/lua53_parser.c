@@ -17,7 +17,7 @@ struct{
 } lua53_data;
 
 
-ut64 parseNumber(const ut8* data, ut64 bytesize){
+static ut64 parseNumber(const ut8* data, ut64 bytesize){
 	int i;
 	ut64 res = 0;
 	for(i = 0; i < bytesize;i++){
@@ -76,30 +76,7 @@ typedef struct lua_parse_struct{
 	void* data;
 } ParseStruct;
 
-int storeLuaFunction(LuaFunction* function){
-	if(!lua53_data.functionList){
-		lua53_data.functionList = r_list_new ();
-		if(!lua53_data.functionList){
-			return 0;
-		}
-	}
-	r_list_append (lua53_data.functionList,function);
-	return 1;
-}
-
-LuaFunction* findLuaFunction(ut64 addr){
-	if(!lua53_data.functionList)
-		return NULL;
-	LuaFunction *function = NULL;
-	RListIter *iter = NULL;
-	r_list_foreach (lua53_data.functionList, iter, function) {
-		Dprintf ("Search 0x%"PFMT64x"\n",function->offset);
-		if(function->offset == addr)
-			return function;
-	}
-	return NULL;
-}
-LuaFunction* findLuaFunctionByCodeAddr(ut64 addr){
+LuaFunction* lua53findLuaFunctionByCodeAddr(ut64 addr){
 	if(!lua53_data.functionList)
 		return NULL;
 	LuaFunction *function = NULL;
@@ -111,17 +88,42 @@ LuaFunction* findLuaFunctionByCodeAddr(ut64 addr){
 	return NULL;
 }
 
-ut64 parseString (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
-ut64 parseStringR (const ut8* data, ut64 offset, const ut64 size, char** str_ptr, ut64* str_len, ParseStruct* parseStruct);
-ut64 parseHeader (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
-ut64 parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* parent_func, ParseStruct* parseStruct);
-ut64 parseCode (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
-ut64 parseConstants (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
-ut64 parseUpvalues (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
-ut64 parseProtos (const ut8* data, ut64 offset, const ut64 size, LuaFunction* func, ParseStruct* parseStruct);
-ut64 parseDebug (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+static int storeLuaFunction(LuaFunction* function){
+	if(!lua53_data.functionList){
+		lua53_data.functionList = r_list_new ();
+		if(!lua53_data.functionList){
+			return 0;
+		}
+	}
+	r_list_append (lua53_data.functionList,function);
+	return 1;
+}
 
-ut64 parseHeader(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
+static LuaFunction* findLuaFunction(ut64 addr){
+	if(!lua53_data.functionList)
+		return NULL;
+	LuaFunction *function = NULL;
+	RListIter *iter = NULL;
+	r_list_foreach (lua53_data.functionList, iter, function) {
+		Dprintf ("Search 0x%"PFMT64x"\n",function->offset);
+		if(function->offset == addr)
+			return function;
+	}
+	return NULL;
+}
+
+ut64 lua53parseHeader (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+ut64 lua53parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* parent_func, ParseStruct* parseStruct);
+
+static ut64 parseString (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+static ut64 parseStringR (const ut8* data, ut64 offset, const ut64 size, char** str_ptr, ut64* str_len, ParseStruct* parseStruct);
+static ut64 parseCode (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+static ut64 parseConstants (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+static ut64 parseUpvalues (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+static ut64 parseProtos (const ut8* data, ut64 offset, const ut64 size, LuaFunction* func, ParseStruct* parseStruct);
+static ut64 parseDebug (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct);
+
+ut64 lua53parseHeader(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 
 	if (data && offset + 16 <= size && !memcmp (data + offset, "\x1bLua", 4)) {//check the header
 		offset += 4;
@@ -160,7 +162,7 @@ ut64 parseHeader(const ut8* data, ut64 offset, const ut64 size, ParseStruct* par
 	return 0;
 }
 
-ut64 parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* parent_func, ParseStruct* parseStruct){
+ut64 lua53parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* parent_func, ParseStruct* parseStruct){
 	Dprintf ("Function 0x%"PFMT64x"\n",offset);
 	LuaFunction* function = findLuaFunction (offset);
 	if(function){//if a function object was cached
@@ -228,7 +230,7 @@ ut64 parseFunction (const ut8* data, ut64 offset, const ut64 size, LuaFunction* 
 		return offset;
 	}
 }
-ut64 parseCode(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
+static ut64 parseCode(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
@@ -240,7 +242,7 @@ ut64 parseCode(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parse
 
 	return offset + length*lua53_data.instructionSize;
 }
-ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
+static ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
@@ -284,7 +286,7 @@ ut64 parseConstants(const ut8* data, ut64 offset, const ut64 size, ParseStruct* 
 	}
 	return offset;
 }
-ut64 parseUpvalues(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
+static ut64 parseUpvalues(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
@@ -299,7 +301,7 @@ ut64 parseUpvalues(const ut8* data, ut64 offset, const ut64 size, ParseStruct* p
 	}
 	return offset;
 }
-ut64 parseProtos(const ut8* data, ut64 offset, const ut64 size, LuaFunction* func, ParseStruct* parseStruct){
+static ut64 parseProtos(const ut8* data, ut64 offset, const ut64 size, LuaFunction* func, ParseStruct* parseStruct){
 	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
@@ -308,13 +310,13 @@ ut64 parseProtos(const ut8* data, ut64 offset, const ut64 size, LuaFunction* fun
 
 	int i;
 	for(i = 0;i < length; i++){
-		offset = parseFunction (data,offset,size,func,parseStruct);
+		offset = lua53parseFunction (data,offset,size,func,parseStruct);
 		if(offset == 0)
 			return 0;
 	}
 	return offset;
 }
-ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
+static ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	if(offset + lua53_data.intSize >= size)
 		return 0;
 	ut64 length = parseInt (data + offset);
@@ -366,10 +368,10 @@ ut64 parseDebug(const ut8* data, ut64 offset, const ut64 size, ParseStruct* pars
 	}
 	return offset;
 }
-ut64 parseString (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
+static ut64 parseString (const ut8* data, ut64 offset, const ut64 size, ParseStruct* parseStruct){
 	return parseStringR (data,offset,size,0,0,parseStruct);
 }
-ut64 parseStringR (const ut8* data, ut64 offset, const ut64 size, char** str_ptr, ut64* str_len, ParseStruct* parseStruct){
+static ut64 parseStringR (const ut8* data, ut64 offset, const ut64 size, char** str_ptr, ut64* str_len, ParseStruct* parseStruct){
 	ut64 functionNameSize = data[offset + 0];
 	offset += 1;
 	if(functionNameSize == 0xFF){

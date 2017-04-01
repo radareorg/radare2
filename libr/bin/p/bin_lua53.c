@@ -21,7 +21,7 @@ static int finit(void *user) {
 	}
 	return 0;
 }
-int load(RBinFile *arch){
+static int load(RBinFile *arch){
 	Dprintf ("Load\n");
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
 	ut64 sz = arch? r_buf_size (arch->buf): 0;
@@ -39,7 +39,7 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	ParseStruct parseStruct;
-	ut64 parsedbytes = parseHeader (buf,0,length,&parseStruct);
+	ut64 parsedbytes = lua53parseHeader (buf,0,length,&parseStruct);
 	if(parsedbytes)
 		Dprintf ( "It is a Lua Binary!!!\n");
 	return parsedbytes != 0;
@@ -66,7 +66,7 @@ static void addSection (RList *list, const char *name, ut64 addr, ut32 size, boo
 	r_list_append (list, binSection);
 }
 
-void addSections (LuaFunction* func, ParseStruct* parseStruct){
+static void addSections (LuaFunction* func, ParseStruct* parseStruct){
 	
 	char* string;
 	if(func->name_size == 0 || func->name_ptr == 0){
@@ -115,13 +115,13 @@ static RList* sections (RBinFile *arch) {
 	addSection (parseStruct.data,"lua-header",0,headersize, false);
 	
 	//parse functions
-	parseFunction (bytes,headersize,sz,0,&parseStruct);
+	lua53parseFunction (bytes,headersize,sz,0,&parseStruct);
 	
 	Dprintf ("End Section\n");
 	return parseStruct.data;
 }
 
-void addString(const ut8 *buf, ut64 offset, ut64 length,ParseStruct* parseStruct){
+static void addString(const ut8 *buf, ut64 offset, ut64 length,ParseStruct* parseStruct){
 	RBinString* binstring = R_NEW0 (RBinString);
 	
 	if(binstring == NULL)
@@ -135,7 +135,7 @@ void addString(const ut8 *buf, ut64 offset, ut64 length,ParseStruct* parseStruct
 	r_list_append (parseStruct->data, binstring);
 }
 
-void addSymbol (RList *list, char *name, ut64 addr, ut32 size, const char* type) {
+static void addSymbol (RList *list, char *name, ut64 addr, ut32 size, const char* type) {
 	
 	RBinSymbol* binSymbol = R_NEW0 (RBinSymbol);
 	if(binSymbol == NULL)
@@ -149,7 +149,7 @@ void addSymbol (RList *list, char *name, ut64 addr, ut32 size, const char* type)
 	binSymbol->type = type;
 	r_list_append (list, binSymbol);
 }
-void handleFuncSymbol (LuaFunction* func, ParseStruct* parseStruct){
+static void handleFuncSymbol (LuaFunction* func, ParseStruct* parseStruct){
 	
 	RBinSymbol* binSymbol = R_NEW0 (RBinSymbol);
 	
@@ -219,7 +219,7 @@ static RList* strings(RBinFile *arch) {
 	if(!parseStruct.data)
 		return NULL;
 	
-	parseFunction (bytes,headersize,sz,0,&parseStruct);
+	lua53parseFunction (bytes,headersize,sz,0,&parseStruct);
 	
 	Dprintf ("End Strings\n");
 	return parseStruct.data;
@@ -254,7 +254,7 @@ static RList* symbols(RBinFile *arch) {
 	addSymbol (parseStruct.data,"check-number",17 + bytes[15],bytes[16],"FLOAT");
 	addSymbol (parseStruct.data,"upvalues",17 + bytes[15] + bytes[16],1,"NUM");
 	
-	parseFunction (bytes,headersize,sz,0,&parseStruct);
+	lua53parseFunction (bytes,headersize,sz,0,&parseStruct);
 	
 	Dprintf ("End Symbols\n");
 	return parseStruct.data;
@@ -273,7 +273,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->big_endian = 0;
 	return ret;
 }
-void addEntry (LuaFunction* func, ParseStruct* parseStruct){
+static void addEntry (LuaFunction* func, ParseStruct* parseStruct){
 	
 	if(func->parent_func == NULL){
 		RBinAddr *ptr = NULL;
@@ -299,7 +299,7 @@ static RList* entries(RBinFile *arch) {
 	if(!parseStruct.data)
 		return NULL;
 	
-	parseFunction (bytes,headersize,sz,0,&parseStruct);
+	lua53parseFunction (bytes,headersize,sz,0,&parseStruct);
 	
 	Dprintf ("End Entries\n");
 	return parseStruct.data;
