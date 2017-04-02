@@ -423,6 +423,8 @@ extern bfd_boolean generic_symbol_is_valid
 extern void init_disassemble_info (struct disassemble_info *dinfo, void *stream,
 				   fprintf_ftype fprintf_func);
 
+extern int print_insn_tricore (bfd_vma memaddr, struct disassemble_info *info);
+
 /* For compatibility with existing code.  */
 #define INIT_DISASSEMBLE_INFO(INFO, STREAM, FPRINTF_FUNC) \
   init_disassemble_info (&(INFO), (STREAM), (fprintf_ftype) (FPRINTF_FUNC))
