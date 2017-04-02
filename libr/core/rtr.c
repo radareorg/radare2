@@ -865,8 +865,12 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			eprintf ("TODO: Visual mode should be enabled on local\n");
 		} else {
 			const char *tpath = r_str_trim_const (path + 1);
-			HttpThread ht = { core, launch, strdup (tpath) };
-			httpthread = r_th_new (r_core_rtr_http_thread, &ht, false);
+			//HttpThread ht = { core, launch, strdup (tpath) };
+			HttpThread *ht = calloc (sizeof (HttpThread), 1);
+			ht->core = core;
+			ht->launch = launch;
+			ht->path = strdup (tpath);
+			httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
 			r_th_start (httpthread, true);
 			eprintf ("Background http server started.\n");
 		}
