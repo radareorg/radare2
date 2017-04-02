@@ -481,7 +481,7 @@ static int use_stdin() {
 			}
 			buf[n] = 0;
 			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
-			buf[strlen (buf)] = '\0';
+			buf[STDIN_BUFFER_SIZE] = '\0'; 
 			if (!rax (buf, l, 0)) {
 				break;
 			}

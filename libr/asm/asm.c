@@ -775,7 +775,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				ptr = ptr_start;
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
 					a->syntax = R_ASM_SYNTAX_INTEL;
-				} else if (!strncmp (ptr, ".att_syntax", 10)) {
+				} else if (!strncmp (ptr, ".att_syntax", 11)) {
 					a->syntax = R_ASM_SYNTAX_ATT;
 				} else if (!strncmp (ptr, ".endian", 7)) {
 					r_asm_set_big_endian (a, atoi (ptr + 7));
@@ -789,7 +789,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				} else if (!strncmp (ptr, ".string ", 8)) {
 					r_str_chop (ptr + 8);
 					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
-				} else if (!strncmp (ptr, ".ascii ", 6)) {
+				} else if (!strncmp (ptr, ".ascii", 6)) {
 					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
 				} else if (!strncmp (ptr, ".align", 6)) {
 					ret = r_asm_pseudo_align (acode, &op, ptr + 7);

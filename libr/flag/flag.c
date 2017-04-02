@@ -352,7 +352,7 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 		if (!strncmp (item->name, "fcn.", 4)) {
 			continue;
 		}
-		if (!strncmp (item->name, "section.", 4)) {
+		if (!strncmp (item->name, "section.", 8)) {
 			continue;
 		}
 		if (r_str_nlen (item->name, 5) > 4 &&
