@@ -166,6 +166,23 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 	return r_sign_add_offset (core->anal, name, offset);
 }
 
+static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
+	const char *refs[R_SIGN_MAXREFS];
+	int i;
+
+	if (nargs < 1) {
+		eprintf ("error: invalid syntax\n");
+		return false;
+	}
+
+	for (i = 0; i < R_SIGN_MAXREFS - 1 && i < nargs; i++) {
+		refs[i] = r_str_word_get0 (args0, i);
+	}
+	refs[i] = NULL;
+
+	return r_sign_add_refs (core->anal, name, refs);
+}
+
 static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
 	switch (type) {
 	case R_SIGN_BYTES:
@@ -175,6 +192,8 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 		return addGraphZign (core, name, args0, nargs);
 	case R_SIGN_OFFSET:
 		return addOffsetZign (core, name, args0, nargs);
+	case R_SIGN_REFS:
+		return addRefsZign (core, name, args0, nargs);
 	default:
 		eprintf ("error: unknown zignature type\n");
 	}
@@ -283,7 +302,9 @@ exit_case_fcn:
 				"Zignature types:\n"
 				"  b: bytes pattern\n"
 				"  a: bytes pattern (anal mask)\n"
-				"  g: graph metrics\n\n"
+				"  g: graph metrics\n"
+				"  o: original offset\n"
+				"  r: references\n\n"
 				"Bytes patterns:\n"
 				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
 				"Graph metrics:\n"
@@ -295,7 +316,9 @@ exit_case_fcn:
 				"  za foo b 558bec..e8........\n"
 				"  za foo a e811223344\n"
 				"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
-				"  za foo g nbbs=3 edges=3\n");
+				"  za foo g nbbs=3 edges=3\n"
+				"  za foo o 0x08048123\n"
+				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n");
 		} else {
 			const char *help_msg[] = {
 				"Usage:", "za[fF?] [args] ", "# Add zignature",
