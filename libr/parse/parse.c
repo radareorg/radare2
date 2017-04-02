@@ -276,7 +276,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 								if (ptr_left < str) break;
 
 								for (; ptr_esc >= str && *ptr_esc != 0x1b; ptr_esc--);
-								if (ptr_esc < str) break;
+								if (ptr_esc < str) ptr_esc = ptr_end - flag_len + 1;
 
 								copied_len = ptr_end - ptr_esc + 1;
 								memmove (ptr_left, ptr_esc, copied_len);
