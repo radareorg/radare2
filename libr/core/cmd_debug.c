@@ -3197,7 +3197,7 @@ beach:
 		break;
 	case 'p':
 		{ // XXX: this is very slow
-			SdbList *secs;
+			RIOSection *section;
 			ut64 pc;
 			int n = 0;
 			int t = core->dbg->trace->enabled;
@@ -3209,11 +3209,11 @@ beach:
 				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
 				//XXX TODO use map-API here
-				secs = r_io_section_vget_secs_at (core->io, pc);	
-				if (r_cons_singleton ()->breaked)
+				section = r_io_section_vget (core->io, pc);	
+				if (r_cons_is_breaked ()) {
 					break;
-			} while (!secs);
-			ls_free (secs);
+				}
+			} while (!section);
 			eprintf ("\n");
 			core->dbg->trace->enabled = t;
 			r_cons_break_pop ();
@@ -3344,12 +3344,10 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
-				SdbList *secs = r_io_section_vget_secs_at (core->io, aop.jump);
-				if (!secs) {
+				RIOSection *sec = r_io_section_vget (core->io, aop.jump);
+				if (!sec) {
 					r_debug_step_over (core->dbg, times);
 					continue;
-				} else {
-					ls_free (secs);
 				}
 			}
 			r_debug_step (core->dbg, 1);

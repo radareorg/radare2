@@ -839,8 +839,8 @@ repeat:
 			{
 				bool must_eob = anal->opt.eobjmp;
 				if (!must_eob) {
-					SdbList *secs = anal->iob.section_vget_secs_at (anal->iob.io, addr);
-					SdbList *secsj = anal->iob.section_vget_secs_at (anal->iob.io, op.jump);
+					SdbList *secs = anal->iob.sections_vget (anal->iob.io, addr);
+					SdbList *secsj = anal->iob.sections_vget (anal->iob.io, op.jump);
 					RIOSection *s = secs ? ls_pop (secs) : NULL;
 					RIOSection *d = secsj? ls_pop (secsj) : NULL;
 					ls_free (secs);
@@ -1039,7 +1039,7 @@ repeat:
 			}
 			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
-				SdbList *secs = anal->iob.section_vget_secs_at (anal->iob.io, addr);
+				SdbList *secs = anal->iob.sections_vget (anal->iob.io, addr);
 				RIOSection *s = secs ? ls_pop (secs) : NULL;
 				ls_free (secs);
 				if (s && s->name) {

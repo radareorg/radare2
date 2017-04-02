@@ -477,7 +477,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->write_at = r_io_write_at;
 	bnd->system = r_io_system;
 	bnd->is_valid_offset = r_io_is_valid_real_offset;
-	bnd->section_vget_secs_at = r_io_section_vget_secs_at;
+	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;
 	return true;
 }

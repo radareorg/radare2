@@ -323,10 +323,12 @@ static int cmd_section(void *data, const char *input) {
 		if (input[1] == '*') {
 			r_io_section_init (core->io);
 		} else if (input[1] == '0' && input[2]=='x') {		//uses the offset
-			SdbList *secs = r_io_section_vget_secs_at (core->io, r_num_get (NULL, input + 1));
+			SdbList *secs = r_io_sections_vget (core->io, r_num_get (NULL, input + 1));
 			SdbListIter *iter;
 			RIOSection *s;
-			if (!secs) return 0;
+			if (!secs) {
+				return 0;
+			}
 			ls_foreach (secs, iter, s) {
 				r_io_section_rm (core->io, s->id);
 			}
@@ -402,8 +404,10 @@ static int cmd_section(void *data, const char *input) {
 		SdbListIter *iter;
 		RIOSection *s;
 		if (core->io->va || core->io->debug) {
-			secs = r_io_section_vget_secs_at (core->io, core->offset);
-		} else secs = r_io_section_get_secs_at (core->io, core->offset);
+			secs = r_io_sections_vget (core->io, core->offset);
+		} else {
+			secs = r_io_sections_get (core->io, core->offset);
+		}
 		if (secs) {
 			ls_foreach (secs, iter, s) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",

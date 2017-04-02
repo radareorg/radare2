@@ -632,7 +632,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_println (s->name);
 		}
 #endif
-		if ((sections = r_io_section_get_secs_at (core->io, n))) {
+		if ((sections = r_io_sections_get (core->io, n))) {
 			ls_foreach (sections, iter, s) {
 				r_cons_printf ("%s\n", s->name);
 			}

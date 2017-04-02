@@ -507,11 +507,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'w':
 			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			{
-				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
-				s = secs ? ls_pop (secs) : NULL;
-				ls_free (secs);
-			}
+			s = r_io_section_vget (core->io, core->offset);
 			return s? (str[2]=='S'? s->size: s->vaddr): 0LL;
 		case 'D':
 			if (IS_DIGIT (str[2])) {
@@ -530,11 +526,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '$': return core->offset;
 		case 'o': 
 			{
-				SdbList *secs;
-				RIOSection *s;
-				secs = r_io_section_vget_secs_at (core->io, core->offset);
-				s = secs ? ls_pop (secs) : NULL;
-				ls_free (secs);
+				RIOSection *s = r_io_section_vget (core->io, core->offset);
 				return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			}
 		case 'C': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
@@ -1348,9 +1340,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	} else {
 		mapname = NULL;
 	}
-	secs = value? r_io_section_vget_secs_at (core->io, value): NULL;
-	sect = secs ? ls_pop (secs): NULL;
-	ls_free (secs);
+	sect = r_io_section_vget (core->io, value);
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -1773,11 +1763,10 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
-	RIOSection *sec = secs ? ls_pop (secs) : NULL;
-	if (!sec) return;
-	ls_free (secs);
-
+	RIOSection *sec = r_io_section_vget (r->io, r->offset); 
+	if (!sec) {
+		return;
+	}
 	snprintf (s, maxlen, "%s:", sec->name);
 }
 

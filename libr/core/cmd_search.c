@@ -1865,7 +1865,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					eprintf ("\n\n");
 					break;
 				}
-				if (!r_io_is_valid_real_offset (core->io, at, R_IO_READ)) {
+				if (!r_io_is_valid_real_offset (core->io, at, R_IO_READ)) {
 					break;
 				}
 				r_io_read_at (core->io, at, buf, bufsz);

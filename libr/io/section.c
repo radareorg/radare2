@@ -215,7 +215,7 @@ R_API void r_io_section_cleanup(RIO *io) {
 	}
 }
 
-R_API SdbList *r_io_section_get_secs_at(RIO *io, ut64 paddr) {
+R_API SdbList *r_io_sections_get(RIO *io, ut64 paddr) {
 	SdbList *ret = NULL;
 	SdbListIter *iter;
 	RIOSection *s;
@@ -226,7 +226,6 @@ R_API SdbList *r_io_section_get_secs_at(RIO *io, ut64 paddr) {
 		if (paddr >= s->paddr && paddr < (s->paddr + s->size)) {
 			if (!ret) {
 				ret = ls_new ();
-				ret->free = NULL;
 			}
 			ls_prepend (ret, s);
 		}
@@ -234,7 +233,7 @@ R_API SdbList *r_io_section_get_secs_at(RIO *io, ut64 paddr) {
 	return ret;
 }
 
-R_API SdbList *r_io_section_vget_secs_at(RIO *io, ut64 vaddr) {
+R_API SdbList *r_io_sections_vget(RIO *io, ut64 vaddr) {
 	SdbList *ret = NULL;
 	SdbListIter *iter;
 	RIOSection *s;
@@ -255,7 +254,7 @@ R_API SdbList *r_io_section_vget_secs_at(RIO *io, ut64 vaddr) {
 
 R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr) {
 	if (io) {
-		SdbList *sects = r_io_section_vget_secs_at (io, vaddr);
+		SdbList *sects = r_io_sections_vget (io, vaddr);
 		RIOSection *ret = NULL;
 		if (sects) {
 			if (ls_length (sects)) {
@@ -270,7 +269,7 @@ R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr) {
 
 R_API RIOSection* r_io_section_get(RIO *io, ut64 vaddr) {
 	if (io) {
-		SdbList *sects = r_io_section_get_secs_at (io, vaddr);
+		SdbList *sects = r_io_sections_get (io, vaddr);
 		RIOSection *ret = NULL;
 		if (sects) {
 			if (ls_length (sects)) {
@@ -285,7 +284,7 @@ R_API RIOSection* r_io_section_get(RIO *io, ut64 vaddr) {
 
 R_API ut64 r_io_section_get_vaddr_at(RIO *io, ut64 paddr) {
 	if (io) {
-		SdbList *sects = r_io_section_vget_secs_at (io, paddr);
+		SdbList *sects = r_io_sections_vget (io, paddr);
 		ut64 ret = UT64_MAX;
 		if (sects) {
 			if (ls_length (sects)) {
@@ -301,7 +300,7 @@ R_API ut64 r_io_section_get_vaddr_at(RIO *io, ut64 paddr) {
 
 R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 paddr) {
 	if (io) {
-		SdbList *sects = r_io_section_get_secs_at (io, paddr);
+		SdbList *sects = r_io_sections_get (io, paddr);
 		ut64 ret = UT64_MAX;
 		if (sects) {
 			if (ls_length (sects)) {
