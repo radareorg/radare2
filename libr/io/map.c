@@ -9,7 +9,7 @@
 
 R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap* map = NULL;
-	if (!size || !io || !io->maps || ((UT64_MAX - size + 1) < addr)) {
+	if (!size || !io || !io->maps || ((UT64_MAX - size + 1) < addr) || !io->map_ids) {
 		return NULL;
 	}
 	map = R_NEW0 (RIOMap);
@@ -36,9 +36,7 @@ static void _map_free(void* p) {
 
 R_API void r_io_map_init(RIO* io) {
 	if (io && !io->maps) {
-		if ((io->maps = ls_new ())) {
-			io->maps->free = _map_free;
-		}
+		io->maps = ls_newf ((SdbListFree)_map_free);
 		if (io->map_ids) {
 			r_id_pool_free (io->map_ids);
 		}
@@ -63,7 +61,7 @@ R_API bool r_io_map_exists(RIO* io, RIOMap* map) {
 
 // check if a map with specified id exists
 R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
-	return !!(r_io_map_resolve (io, id));
+	return r_io_map_resolve (io, id) != NULL;
 }
 
 R_API RIOMap* r_io_map_resolve(RIO* io, ut32 id) {
@@ -81,9 +79,12 @@ R_API RIOMap* r_io_map_resolve(RIO* io, ut32 id) {
 }
 
 R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
-	RIODesc* desc = r_io_desc_get (io, fd);                                                 //check if desc exists
+	//check if desc exists
+	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
-		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC), delta, addr, size);   //a map cannot have higher permissions than the desc belonging to it
+		//a map cannot have higher permissions than the desc belonging to it
+		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
+					delta, addr, size);
 	}
 	return NULL;
 }
@@ -127,21 +128,21 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 	if (!io || !io->maps) {
 		return ret;
 	}
-	for (iter = io->maps->head; iter != NULL; iter = ator) {
-		ator = iter->n;
-		map = iter->data;
-		if (!map) {                                                                     //this is done in r_io_map_cleanup too, but preventing some segfaults here too won't hurt
+	ls_foreach_safe (io->maps, iter, ator, map) {
+		if (!map) {
 			ls_delete (io->maps, iter);
 		} else if (map->fd == fd) {
-			ret = true;                                                             //a map with (map->fd == fd) existed/was found and will be deleted now
 			r_id_pool_kick_id (io->map_ids, map->id);
-			ls_delete (io->maps, iter);                                             //delete iter and map
+			//delete iter and map
+			ls_delete (io->maps, iter);
+			ret = true;
 		}
 	}
 	return ret;
 }
 
 //brings map with specified id to the top of of the list
+//return a boolean denoting whether is was possible to priorized
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	SdbListIter* iter;
 	RIOMap* map;
@@ -149,49 +150,40 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		return false;
 	}
 	ls_foreach (io->maps, iter, map) {
-		if (map->id == id) {                                                            //search for iter with the correct map
-			if (io->maps->tail == iter) {                                           //check if map is allready at the top
-				return true;
-			}
-			if (iter->p) {                                                          //bring iter with correct map to the front
-				iter->p->n = iter->n;
-			}
-			if (iter->n) {
-				iter->n->p = iter->p;
-			}
-			if (io->maps->head == iter) {
-				io->maps->head = iter->n;
-			}
-			io->maps->tail->n = iter;
-			iter->p = io->maps->tail;
-			io->maps->tail = iter;
-			iter->n = NULL;
-			return true;                                                            //TRUE if the map could be priorized
+		//search for iter with the correct map
+		if (map->id == id) {
+			ls_split_iter (io->maps, iter);
+			ls_append (io->maps, iter);
+			return true;
 		}
 	}
-	return false;                                                                           //FALSE if not
+	return false;
 }
 
 R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	SdbListIter* iter, * ator;
-	SdbList* queue;
+	RIOMap *map;
+	SdbList* list;
 	if (!io || !io->maps) {
 		return false;
 	}
-	queue = ls_new ();
-	r_io_map_cleanup (io);                  //we need a clean list for this, or this becomes a segfault-field
-	queue->free = io->maps->free = NULL;    //tempory set, to speed up ls_delete a bit
-	for (iter = io->maps->head; iter != NULL; iter = ator) {
-		ator = iter->n;
-		if (((RIOMap*) (iter->data))->fd == fd) {
-			ls_prepend (queue, iter->data);
+	if (!(list = ls_new ())) {
+		return false;
+	}
+	//we need a clean list for this, or this becomes a segfault-field
+	r_io_map_cleanup (io);
+	//tempory set to avoid free the map and to speed up ls_delete a bit
+	io->maps->free = NULL;
+	ls_foreach_safe (io->maps, iter, ator, map) {
+		if (map->fd == fd) {
+			ls_prepend (list, iter->data);
 			ls_delete (io->maps, iter);
 		}
 	}
-	while (queue->length) {
-		ls_append (io->maps, ls_pop (queue));
+	while (ls_length (list)) {
+		ls_append (io->maps, ls_pop (list));
 	}
-	ls_free (queue);
+	ls_free (list);
 	io->maps->free = _map_free;
 	return true;
 }
@@ -204,17 +196,18 @@ R_API void r_io_map_cleanup(RIO* io) {
 	if (!io || !io->maps) {
 		return;
 	}
-	if (!io->files) {                                                                       //remove all maps if no descs exist
+	//remove all maps if no descs exist
+	if (!io->files) {
 		r_io_map_fini (io);
 		r_io_map_init (io);
 		return;
 	}
-	for (iter = io->maps->head; iter != NULL; iter = ator) {
-		map = iter->data;
-		ator = iter->n;
-		if (!map) {                                                                     //remove iter if the map is a null-ptr, this may fix some segfaults
+	ls_foreach_safe (io->maps, iter, ator, map) {
+		//remove iter if the map is a null-ptr, this may fix some segfaults
+		if (!map) {
 			ls_delete (io->maps, iter);
-		} else if (!r_io_desc_get (io, map->fd)) {                                      //delete map and iter if no desc exists for map->fd in io->files
+		} else if (!r_io_desc_get (io, map->fd)) {
+			//delete map and iter if no desc exists for map->fd in io->files
 			r_id_pool_kick_id (io->map_ids, map->id);
 			ls_delete (io->maps, iter);
 		}
@@ -236,10 +229,10 @@ R_API bool r_io_map_is_in_range(RIOMap* map, ut64 from, ut64 to) { //rename pls
 	if (!map || (to < from)) {
 		return false;
 	}
-	if (map->from <= from && from <= map->to) {
+	if (R_BETWEEN (map->from, from, map->to)) {
 		return true;
 	}
-	if (map->from <= to && to <= map->to) {
+	if (R_BETWEEN (map->from, to, map->to)) {
 		return true;
 	}
 	if (map->from > from && to > map->to) {
