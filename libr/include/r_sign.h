@@ -20,6 +20,7 @@ enum {
 	R_SIGN_ANAL   = 'a', // bytes pattern (anal mask)
 	R_SIGN_GRAPH  = 'g', // graph metrics
 	R_SIGN_OFFSET = 'o', // offset
+	R_SIGN_REFS   = 'r', // refs
 };
 
 typedef struct r_sign_graph_t {
@@ -42,6 +43,7 @@ typedef struct r_sign_item_t {
 	RSignBytes *bytes;
 	RSignGraph *graph;
 	ut64 offset;
+	char *refs[R_SIGN_MAXREFS];
 } RSignItem;
 
 typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
@@ -60,6 +62,7 @@ R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *by
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
 R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset);
+R_API bool r_sign_add_refs(RAnal *a, const char *name, const char *refs[]);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 
