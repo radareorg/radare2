@@ -355,6 +355,9 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 		if (!strncmp (item->name, "section.", 8)) {
 			continue;
 		}
+		if (!strncmp (item->name, "section_end.", 12)) {
+			continue;
+		}
 		if (r_str_nlen (item->name, 5) > 4 &&
 		    item->name[3] == '.') {
 			oitem = item;
