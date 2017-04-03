@@ -122,13 +122,11 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			hexgraph = calloc (1, sizeof (RSignGraph) * 2 + 1);
 			r_hex_bin2str ((ut8 *) graph, sizeof (RSignGraph), hexgraph);
 		}
-		if (it->refs[0]) {
-			for (i = 0; i < R_SIGN_MAXREFS - 1 && it->refs[i]; i++) {
-				if (i > 0) {
-					refs = r_str_appendch (refs, ',');
-				}
-				refs = r_str_append (refs, it->refs[i]);
+		for (i = 0; it->refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
+			if (i > 0) {
+				refs = r_str_appendch (refs, ',');
 			}
+			refs = r_str_append (refs, it->refs[i]);
 		}
 
 		snprintf (v, R_SIGN_VAL_MAXSZ, "%d|%s|%s|%s|%"PFMT64d"|%s",
@@ -147,6 +145,8 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 }
 
 static void mergeItem(RSignItem *dst, RSignItem *src) {
+	int i;
+
 	if (src->bytes) {
 		if (dst->bytes) {
 			free (dst->bytes->bytes);
@@ -173,6 +173,10 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 
 	if (src->offset != UT64_MAX) {
 		dst->offset = src->offset;
+	}
+
+	for (i = 0; src->refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
+		dst->refs[i] = r_str_new (src->refs[i]);
 	}
 }
 
@@ -358,7 +362,7 @@ static void listBytes(RAnal *a, RSignItem *it, int format) {
 	if (format == '*') {
 		a->cb_printf ("za %s b %s\n", it->name, strbytes);
 	} else if (format == 'j') {
-		a->cb_printf ("\"bytes\":\"%s\"", strbytes);
+		a->cb_printf ("\"bytes\":\"%s\",", strbytes);
 	} else {
 		a->cb_printf ("  bytes: %s\n", strbytes);
 	}
@@ -373,7 +377,7 @@ static void listGraph(RAnal *a, RSignItem *it, int format) {
 		a->cb_printf ("za %s g cc=%d nbbs=%d edges=%d ebbs=%d\n",
 			it->name, graph->cc, graph->nbbs, graph->edges, graph->ebbs);
 	} else if (format == 'j') {
-		a->cb_printf ("\"graph\":{\"cc\":\"%d\",\"nbbs\":\"%d\",\"edges\":\"%d\",\"ebbs\":\"%d\"}",
+		a->cb_printf ("\"graph\":{\"cc\":\"%d\",\"nbbs\":\"%d\",\"edges\":\"%d\",\"ebbs\":\"%d\"},",
 			graph->cc, graph->nbbs, graph->edges, graph->ebbs);
 	} else {
 		a->cb_printf ("  graph: cc=%d nbbs=%d edges=%d ebbs=%d\n",
@@ -385,7 +389,7 @@ static void listOffset(RAnal *a, RSignItem *it, int format) {
 	if (format == '*') {
 		a->cb_printf ("za %s o 0x%08"PFMT64x"\n", it->name, it->offset);
 	} else if (format == 'j') {
-		a->cb_printf ("\"offset\":%"PFMT64d, it->offset);
+		a->cb_printf ("\"offset\":%"PFMT64d",", it->offset);
 	} else {
 		a->cb_printf ("  offset: 0x%08"PFMT64x"\n", it->offset);
 	}
@@ -795,6 +799,7 @@ R_API RSignItem *r_sign_item_new() {
 
 R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	RSignItem *ret = r_sign_item_new ();
+	int i;
 
 	ret->name = r_str_new (it->name);
 	ret->space = it->space;
@@ -811,6 +816,10 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	if (it->graph) {
 		ret->graph = R_NEW0 (RSignGraph);
 		*ret->graph = *it->graph;
+	}
+
+	for (i = 0; it->refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
+		ret->refs[i] = r_str_new (it->refs[i]);
 	}
 
 	return ret;

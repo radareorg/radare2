@@ -51,6 +51,37 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
+static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
+	RListIter *iter;
+	RAnalRef *refi;
+	RFlagItem *flag;
+	char *refs[R_SIGN_MAXREFS];
+	int i = 0, n = 0;
+	bool retval = true;
+
+	r_list_foreach (fcn->refs, iter, refi) {
+		if (n >= R_SIGN_MAXREFS - 1) {
+			break;
+		}
+		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
+			flag = r_flag_get_i2 (core->flags, refi->addr);
+			if (flag) {
+				refs[n] = r_str_newf (flag->name);
+				n++;
+			}
+		}
+	}
+	refs[n] = NULL;
+
+	retval = r_sign_add_refs (core->anal, name, (const char **)refs);
+
+	for (i = 0; i < n; i++) {
+		free (refs[i]);
+	}
+
+	return retval;
+}
+
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;
 	int curspace = core->anal->zign_spaces.space_idx;
@@ -66,6 +97,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 
 	addFcnGraph (core, fcn, zigname);
 	addFcnBytes (core, fcn, zigname);
+	addFcnRefs (core, fcn, zigname);
 	r_sign_add_offset (core->anal, zigname, fcn->addr);
 
 	free (zigname);
