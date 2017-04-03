@@ -834,6 +834,13 @@ static int r_core_rtr_http_thread (RThread *th) {
 	}
 	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
 	R_FREE (ht->path);
+	if (ret) {
+		int p = r_config_get_i (ht->core->config, "http.port");
+		r_config_set_i (ht->core->config, "http.port",  p + 1);
+		if (p >= r_config_get_i (ht->core->config, "http.maxport")) {
+			return false;
+		}
+	}
 	return ret;
 }
 
@@ -1277,7 +1284,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (*input == '&') {
+	if (*input == '&') { // "=h&"
 		if (rapthread) {
 			eprintf ("RAP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");

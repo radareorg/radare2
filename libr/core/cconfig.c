@@ -2133,7 +2133,8 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("http.root", R2_WWWROOT, "http root directory");
 #endif
-	SETPREF("http.port", "9090", "Server port");
+	SETPREF("http.port", "9090", "HTTP server port");
+	SETPREF("http.maxport", "9999", "Last HTTP server port");
 	SETPREF("http.ui", "m", "Default webui (enyo, m, p, t)");
 	SETPREF("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
