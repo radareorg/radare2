@@ -753,8 +753,10 @@ static void ds_build_op_str(RDisasmState *ds) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
 			asm_str = colorize_asm_string (core, ds);
-			free (ds->opstr);
-			ds->opstr = strdup (asm_str);
+			if (asm_str) {
+				free (ds->opstr);
+				ds->opstr = strdup (asm_str);
+			}
 			//core->parser->flagspace = ofs; // ???
 		} else {
 			if (!ds->opstr) {
