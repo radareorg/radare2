@@ -13,7 +13,7 @@ R_LIB_VERSION_HEADER(r_sign);
 
 #define R_SIGN_KEY_MAXSZ 1024
 #define R_SIGN_VAL_MAXSZ 10240
-#define R_SIGN_MAXREFS 512
+#define R_SIGN_MAXREFS 128
 
 enum {
 	R_SIGN_BYTES  = 'b', // bytes pattern

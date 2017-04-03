@@ -7,6 +7,42 @@
 #include <r_cons.h>
 #include <r_util.h>
 
+const char *getRealRef(RCore *core, ut64 off) {
+	RFlagItem *item;
+	RListIter *iter;
+	RList *list;
+
+	list = ht_find (core->flags->ht_off, sdb_fmt (2, "flg.%"PFMT64x, off), NULL);
+	if (!list) {
+		return NULL;
+	}
+
+	r_list_foreach (list, iter, item) {
+		if (!item->name) {
+			continue;
+		}
+		/* catch sym. first */
+		if (!strncmp (item->name, "loc.", 4)) {
+			continue;
+		}
+		if (!strncmp (item->name, "fcn.", 4)) {
+			continue;
+		}
+		if (!strncmp (item->name, "section.", 8)) {
+			continue;
+		}
+		if (!strncmp (item->name, "section_end.", 12)) {
+			continue;
+		}
+		if (!strncmp (item->name, "sub.", 4)) {
+			continue;
+		}
+		return item->name;
+	}
+
+	return NULL;
+}
+
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	ut8 *buf = NULL;
 	int fcnlen = 0, len = 0;
@@ -54,7 +90,7 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
 	RListIter *iter;
 	RAnalRef *refi;
-	RFlagItem *flag;
+	const char *flag;
 	char *refs[R_SIGN_MAXREFS];
 	int i = 0, n = 0;
 	bool retval = true;
@@ -64,9 +100,9 @@ static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
 			break;
 		}
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
-			flag = r_flag_get_i2 (core->flags, refi->addr);
+			flag = getRealRef (core, refi->addr);
 			if (flag) {
-				refs[n] = r_str_newf (flag->name);
+				refs[n] = r_str_newf (flag);
 				n++;
 			}
 		}
