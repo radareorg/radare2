@@ -54,6 +54,7 @@ typedef struct r_io_undo_w_t {
 
 typedef struct r_io_t {
 	struct r_io_desc_t *desc;
+	RStack *st_descs; //used to push/pop temporal desc
 	ut64 off;
 	int bits;
 	int va;		//all of this config stuff must be in 1 int
@@ -68,7 +69,7 @@ typedef struct r_io_t {
 //#warning remove debug from RIO
 	RIDPool *sec_ids;
 	RIDPool *map_ids;
-	SdbList *maps;
+	SdbList *maps; //from tail backwards maps with higher priority are found
 	SdbList *sections;
 	RIDStorage *files;
 	RCache *buffer;
@@ -151,7 +152,7 @@ typedef struct r_io_map_t {
 	ut32 id;
 	ut64 from;
 	ut64 to;
-	ut64 delta;
+	ut64 delta; //this delta means paddr when talking about section
 	char *name;
 } RIOMap;
 

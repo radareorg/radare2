@@ -8,28 +8,41 @@ R_API bool r_io_desc_init(RIO* io) {
 	if (!io || io->files) {
 		return false;
 	}
-	io->files = r_id_storage_new (3, 0x80000000);   //fd is signed
+	//fd is signed
+	io->files = r_id_storage_new (3, 0x80000000);   
+	if (!io->files) {
+		return NULL;
+	}
+	io->st_descs = r_stack_new (2);
+	if (!io->st_descs) {
+		return NULL;
+	}
 	return true;
 }
 
 //shall be used by plugins for creating descs
-R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int flags, int mode, void* data)     { //XXX kill mode
-	RIODesc* desc = NULL;
+//XXX kill mode
+R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri,
+			      int flags, int mode, void* data) {
+	ut32 fd32 = 0;
+	RIODesc* desc = R_NEW0 (RIODesc);
+	if (!desc) {
+		return NULL;
+	}
 	// this is because emscript is a bitch
 	if (!io || !plugin || !uri || !io->files) {
 		return NULL;
 	}
-	ut32 fd32 = 0;
 	if (!r_id_pool_grab_id (io->files->pool, &fd32)) {
 		return NULL;
 	}
-	desc = R_NEW0 (RIODesc);
 	desc->fd = fd32;
 	desc->io = io;
 	desc->plugin = plugin;
 	desc->data = data;
 	desc->flags = flags;
-	desc->uri = strdup (uri);                       //because the uri-arg may live on the stack
+	//because the uri-arg may live on the stack
+	desc->uri = strdup (uri);
 	return desc;
 }
 
@@ -146,7 +159,8 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 R_API int r_io_desc_get_pid(RIO* io, int fd) {
 	RIODesc* desc;
 	if (!io || !io->files) {
-		return -2;              //-1 is reserved for plugin internal errors
+		//-1 is reserved for plugin internal errors
+		return -2;
 	}
 	if (!(desc = r_io_desc_get (io, fd))) {
 		return -3;
@@ -198,7 +212,9 @@ R_API bool r_io_desc_fini(RIO* io) {
 	}
 	r_id_storage_foreach (io->files, desc_fini_cb, io);
 	r_id_storage_free (io->files);
+	r_stack_free (io->st_descs);
 	io->files = NULL;
-	io->desc = NULL;                                                        //no map-cleanup here, to keep it modular useable
+	//no map-cleanup here, to keep it modular useable
+	io->desc = NULL;
 	return true;
 }

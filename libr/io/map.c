@@ -19,10 +19,12 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	}
 	map->fd = fd;
 	map->from = addr;
-	map->to = addr + size - 1; // RIOMap describes an interval  of addresses (map->from; map->to)
+	// RIOMap describes an interval of addresses (map->from; map->to)
+	map->to = addr + size - 1; 
 	map->flags = flags;
 	map->delta = delta;
-	ls_append (io->maps, map); // new map lives on the top
+	// new map lives on the top, being top the list's tail
+	ls_append (io->maps, map); 
 	return map;
 }
 
@@ -141,7 +143,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 	return ret;
 }
 
-//brings map with specified id to the top of of the list
+//brings map with specified id to the tail of of the list
 //return a boolean denoting whether is was possible to priorized
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	SdbListIter* iter;

@@ -8,7 +8,7 @@
 
 #include <sdb.h>
 
-static void map_list (RIO *io, int mode, RPrint *print) {
+static void map_list(RIO *io, int mode, RPrint *print) {
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!io || !io->maps || !print || !print->cb_printf) {
@@ -30,7 +30,7 @@ static void map_list (RIO *io, int mode, RPrint *print) {
 	}
 }
 
-static bool desc_list_cb (void *user, void *data, ut32 id) {
+static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
 	RIOMap *map;
@@ -50,7 +50,7 @@ static bool desc_list_cb (void *user, void *data, ut32 id) {
 	return true;
 }
 
-static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
+static inline ut32 find_binfile_id_by_fd(RBin *bin, ut32 fd) {
 	RListIter *it;
 	RBinFile *bf;
 	r_list_foreach (bin->binfiles, it, bf) {

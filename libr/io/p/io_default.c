@@ -128,9 +128,11 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	mmo->mode = mode;
 	mmo->flags = flags;
 	mmo->io_backref = io;
-	if (flags & R_IO_WRITE)
+	if (flags & R_IO_WRITE) {
 		mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
-	else mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
+	} else {
+		mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
+	}
 
 	if (mmo->fd == -1) {
 		free (mmo->filename);
@@ -319,7 +321,9 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 // default open should permit opening 
 static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *iod;
-	if (!r_io_def_mmap_check_default (file) ) return NULL;
+	if (!r_io_def_mmap_check_default (file)) {
+		return NULL;
+	}
 	iod = r_io_def_mmap_open (io, file, flags, mode);
 	return iod;
 // NTOE: uncomment this line to support loading files in ro as fallback is rw fails
