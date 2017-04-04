@@ -673,59 +673,66 @@ static int bin_info(RCore *r, int mode) {
 		if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("{");
 		}
-		pair_bool ("havecode", havecode, mode, false);
-		pair_bool ("pic", info->has_pi, mode, false);
-		pair_bool ("canary", info->has_canary, mode, false);
-		pair_bool ("nx", info->has_nx, mode, false);
-		pair_bool ("crypto", info->has_crypto, mode, false);
-		pair_bool ("va", info->has_va, mode, false);
-		pair_str ("intrp", info->intrp, mode, false);
-		pair_str ("bintype", info->rclass, mode, false);
-		pair_str ("class", info->bclass, mode, false);
-		pair_str ("lang", info->lang, mode, false);
 		pair_str ("arch", info->arch, mode, false);
+		pair_int ("binsz", r_bin_get_size (r->bin), mode, false);
+		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
+		pair_bool ("canary", info->has_canary, mode, false);
+		pair_str ("class", info->bclass, mode, false);
+		if (info->actual_checksum) {
+			/* computed checksum */
+			pair_str ("cmp.csum", info->actual_checksum, mode, false);
+		}
+		pair_str ("compiled", compiled, mode, false);
+		pair_bool ("crypto", info->has_crypto, mode, false);
+		tmp_buf = r_str_escape (info->debug_file_name);
+		pair_str ("dbg_file", tmp_buf, mode, false);
+		free (tmp_buf);
+		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
+		pair_bool ("havecode", havecode, mode, false);
+		if (info->claimed_checksum) {
+			/* checksum specified in header */
+			pair_str ("hdr.csum", info->claimed_checksum, mode, false);
+		}
+		pair_str ("guid", info->guid, mode, false);
+		pair_str ("intrp", info->intrp, mode, false);
+		pair_str ("lang", info->lang, mode, false);
+		pair_bool ("linenum", R_BIN_DBG_LINENUMS & info->dbg_info, mode, false);
+		pair_bool ("lsyms", R_BIN_DBG_SYMS & info->dbg_info, mode, false);
 		pair_str ("machine", info->machine, mode, false);
-		pair_str ("os", info->os, mode, false);
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		if (v != -1) {
+			pair_int ("maxopsz", v, mode, false);
+		}
 		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 		if (v != -1) {
 			pair_int ("minopsz", v, mode, false);
 		}
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v != -1) {
-			pair_int ("maxopsz", v, mode, false);
+		pair_bool ("nx", info->has_nx, mode, false);
+		pair_str ("os", info->os, mode, false);
+		if (info->rclass && !strcmp (info->rclass, "pe")) {
+			pair_bool ("overlay", info->pe_overlay, mode, false);
 		}
 		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) {
 			pair_int ("pcalign", v, mode, false);
 		}
-		pair_str ("subsys", info->subsystem, mode, false);
-		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
-		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);
-		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
-		pair_bool ("linenum", R_BIN_DBG_LINENUMS & info->dbg_info, mode, false);
-		pair_bool ("lsyms", R_BIN_DBG_SYMS & info->dbg_info, mode, false);
+		pair_bool ("pic", info->has_pi, mode, false);
 		pair_bool ("relocs", R_BIN_DBG_RELOCS & info->dbg_info, mode, false);
+		tmp_buf = sdb_get (obj->kv, "elf.relro", 0);
+		if (tmp_buf) {
+			pair_str ("relro", tmp_buf, mode, false);
+			free (tmp_buf);
+		}
 		pair_str ("rpath", info->rpath, mode, false);
-		pair_int ("binsz", r_bin_get_size (r->bin), mode, false);
-		pair_str ("compiled", compiled, mode, false);
-		tmp_buf = r_str_escape (info->debug_file_name);
-		pair_str ("dbg_file", tmp_buf, mode, false);
-		free (tmp_buf);
-		if (info->claimed_checksum) {
-			/* checksum specified in header */
-			pair_str ("hdr.csum", info->claimed_checksum, mode, false);
-		}
-		if (info->actual_checksum) {
-			/* computed checksum */
-			pair_str ("cmp.csum", info->actual_checksum, mode, false);
-		}
 		if (info->rclass && !strcmp (info->rclass, "pe")) {
-			pair_bool ("overlay", info->pe_overlay, mode, false);
 			//this should be moved if added to mach0 (or others)
 			pair_bool ("signed", info->signature, mode, false);
 		}
-
+		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
+		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);
+		pair_str ("subsys", info->subsystem, mode, false);
+		pair_bool ("va", info->has_va, mode, true);
 		for (i = 0; info->sum[i].type; i++) {
 			RBinHash *h = &info->sum[i];
 			ut64 hash = r_hash_name_to_bits (h->type);
@@ -742,7 +749,7 @@ static int bin_info(RCore *r, int mode) {
 			}
 			r_cons_newline ();
 		}
-		pair_str ("guid", info->guid, mode, true);
+		
 		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
 	}
 	r_core_anal_type_init (r);
