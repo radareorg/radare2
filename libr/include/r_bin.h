@@ -358,7 +358,7 @@ typedef struct r_bin_section_t {
 	int bits;
 	bool has_strings;
 	bool add; // indicates when you want to add the section to io `S` command
-	bool is_data;	
+	bool is_data;
 } RBinSection;
 
 typedef struct r_bin_class_t {
@@ -677,6 +677,7 @@ extern RBinPlugin r_bin_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_avr;
 extern RBinPlugin r_bin_plugin_menuet;
 extern RBinPlugin r_bin_plugin_wasm;
+extern RBinPlugin r_bin_plugin_lua53;
 extern RBinPlugin r_bin_plugin_nro;
 
 #ifdef __cplusplus

@@ -535,7 +535,7 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
 		return (char *)nullstr;
 	}
-	for (i = 0; *ptr && i != idx; i++) {
+	for (i = 0; i != idx; i++) {
 		ptr += strlen (ptr) + 1;
 	}
 	return ptr;

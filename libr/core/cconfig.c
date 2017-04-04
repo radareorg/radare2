@@ -1964,6 +1964,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
 	SETPREF("zign.match.graph", "true", "Use graph metrics for matching");
 	SETPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
+	SETPREF("zign.match.offset", "true", "Use original offset for matching");
+	SETPREF("zign.match.refs", "true", "Use references for matching");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
@@ -2133,7 +2135,8 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("http.root", R2_WWWROOT, "http root directory");
 #endif
-	SETPREF("http.port", "9090", "Server port");
+	SETPREF("http.port", "9090", "HTTP server port");
+	SETPREF("http.maxport", "9999", "Last HTTP server port");
 	SETPREF("http.ui", "m", "Default webui (enyo, m, p, t)");
 	SETPREF("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");

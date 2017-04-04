@@ -24,7 +24,7 @@
 ut64 mask64(ut64 mb, ut64 me) {
     int i;
     ut64 mask = 0;
-    if (mb < 0 || me < 0 || mb > 63 || me > 63) {
+    if (mb > 63 || me > 63) {
         return mask;
     }
 
