@@ -238,6 +238,18 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmsecsub(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_SECSUB;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_SECSUB);
+	}
+	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
 static int cb_asmassembler(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1844,6 +1856,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
 	SETPREF("asm.section", "false", "Show section name before offset");
 	SETI("asm.section.col", 20, "Columns width to show asm.section");
+	SETCB("asm.section.sub", "false", &cb_asmsecsub, "Show offsets in disasm prefixed with section/map name");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax");
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
@@ -1944,9 +1957,15 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+
+	// zign
 	SETI("zign.min", 16, "Minimum zignature length");
 	SETI("zign.max", 500, "Maximum zignature length");
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
+	SETPREF("zign.match.graph", "true", "Use graph metrics for matching");
+	SETPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
+	SETPREF("zign.match.offset", "true", "Use original offset for matching");
+	SETPREF("zign.match.refs", "true", "Use references for matching");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
@@ -2116,7 +2135,8 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("http.root", R2_WWWROOT, "http root directory");
 #endif
-	SETPREF("http.port", "9090", "Server port");
+	SETPREF("http.port", "9090", "HTTP server port");
+	SETPREF("http.maxport", "9999", "Last HTTP server port");
 	SETPREF("http.ui", "m", "Default webui (enyo, m, p, t)");
 	SETPREF("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");

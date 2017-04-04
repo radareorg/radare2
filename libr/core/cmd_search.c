@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 
@@ -12,7 +12,7 @@ static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
 static int searchhits = 0;
-static int maplist = 0;
+static bool maplist = false;
 static int maxhits = 0;
 static bool json = false;
 static int first_hit = true;
@@ -143,101 +143,6 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 		from++;
 	}
 	r_cons_break_pop ();
-}
-
-static bool archIsArmOrThumb(RCore *core) {
-	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
-		ut64 bits = r_config_get_i (core->config, "asm.bits");
-		if (bits < 64) {
-			return true;
-		}
-	}
-	return false;
-}
-
-R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize, bool asterisk) {
-	int i, match, align = core->search->align, hitctr = 0;
-	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
-	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
-	bool isarm = archIsArmOrThumb (core);
-	ut8 buf[4096];
-	ut64 v64, value = 0;
-	ut32 v32;
-	ut16 v16;
-	if (from >= to) {
-		eprintf ("Error: from must be lower than to\n");
-		return -1;
-	}
-	if (vmin >= vmax) {
-		eprintf ("Error: vmin must be lower than vmax\n");
-		return -1;
-	}
-	r_cons_break_push (NULL, NULL);
-	while (from < to) {
-		memset (buf, 0, sizeof (buf)); // probably unnecessary
-		(void) r_io_read_at (core->io, from, buf, sizeof (buf));
-		if (r_cons_is_breaked ()) {
-			goto beach;
-		}
-		for (i = 0; i < sizeof (buf) - vsize; i++) {
-			void *v = (buf + i);
-			ut64 addr = from + i;
-			if (r_cons_is_breaked ()) {
-				goto beach;
-			}
-			if (align && (addr) % align) {
-				continue;
-			}
-			match = false;
-			switch (vsize) {
-			case 1: value = *(ut8 *) (v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
-			case 2: v16 = *((ut16 *) (v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
-			case 4: v32 = *((ut32 *) (v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
-			case 8: v64 = *((ut64 *) (v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
-			default: eprintf ("Unknown vsize\n"); return -1;
-			}
-			if (match && !vinfun) {
-				if (vinfunr) {
-					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
-						match = false;
-					}
-				} else {
-					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
-						match = false;
-					}
-				}
-			}
-			if (match) {
-				if (asterisk) {
-					r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", value, addr);
-					r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, addr);
-					r_cons_printf ("f hit0_%d = 0x%"PFMT64x " # from 0x%"PFMT64x "\n",
-						hitctr, addr, value);
-				} else {
-					r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, value, addr);
-					r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, addr);
-					if (isarm) {
-						if (value & 1) {
-							// .dword 0x000080b9 in reality is 0x000080b8
-							value--;
-							r_anal_hint_set_bits (core->anal, value, 16);
-							// can we assume is gonna be always a function?
-							r_core_cmdf (core, "f fcn.0x%08"PFMT64x " @0x%08"PFMT64x, value, value);
-						} else {
-							r_core_seek_archbits (core, addr);
-							ut64 bits = r_config_get_i (core->config, "asm.bits");
-							r_anal_hint_set_bits (core->anal, value, bits);
-						}
-					}
-				}
-				hitctr++;
-			}
-		}
-		from += sizeof (buf);
-	}
-beach:
-	r_cons_break_pop ();
-	return hitctr;
 }
 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
@@ -1137,7 +1042,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			if (esil) {
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
-				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
 					core->cons->pal.reg, core->cons->pal.num);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
@@ -1174,7 +1079,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				r_list_append (ropList, (void *) opstr_n);
 			}
 			if (colorize) {
-				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
 					core->cons->pal.reg, core->cons->pal.num);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
@@ -1956,7 +1861,8 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			r_list_append (param->boundaries, map);
 			maplist = true;
 		}
-		buf = (ut8 *) malloc (core->blocksize);
+		buf = (ut8 *) malloc (core->blocksize + 1);
+		buf[core->blocksize] = 0;
 		bufsz = core->blocksize;
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (param->boundaries, iter, map) {
@@ -2294,6 +2200,32 @@ static void limit_boundaries(RList *list, ut64 from, ut64 to) {
 			m->to = newto;
 		}
 	}
+}
+
+static bool isArm(RCore *core) {
+	RAsm *as = core ? core->assembler : NULL;
+	if (as && as->cur && as->cur->arch) {
+		if (r_str_startswith (as->cur->arch, "arm")) {
+			if (as->cur->bits < 64) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
+	bool isarm = isArm (core);
+	// this is expensive operation that could be cached but is a callback
+	// and for not messing adding a new param 
+	const char *prefix = r_config_get (core->config, "search.prefix");
+	if (isarm) {
+		if (to & 1) {
+			to--;
+		}
+	}
+	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to); 
+	r_core_cmdf (core, "f %s.0x%08"PFMT64x" %d = 0x%08"PFMT64x "# from 0x%"PFMT64x "\n", prefix, to, vsize, to, from);
 }
 
 static int cmd_search(void *data, const char *input) {
@@ -2643,11 +2575,10 @@ reread:
 				ut64 vmax = r_num_math (core->num, w);
 				if (vsize > 0) {
 					err = 0;
-					(void) cmd_search_value_in_range (core,
-						param.from, param.to, vmin, vmax, vsize, asterisk);
-					if (asterisk) {
-						r_cons_printf ("f-hit*\n");
-					}
+					int hits = r_core_search_value_in_range (core, param.from,
+									param.to, vmin, vmax, vsize, asterisk,
+									_CbInRangeSearchV);
+					eprintf ("hits: %d\n", hits);
 				}
 			}
 		}
@@ -3056,8 +2987,8 @@ again:
 			"/P", " patternsize", "search similar blocks",
 			"/r[e]", " sym.printf", "analyze opcode reference an offset (/re for esil)",
 			"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
-			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
-			"/V", "[1248] min max", "look for an `asm.bigendian` 32bit value in range",
+			"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
+			"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
 			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
 			"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
 			"/x", " ff..33", "search for hex string ignoring some nibbles",

@@ -85,13 +85,8 @@ static void r_core_file_info(RCore *core, int mode) {
 	}
 	if (info) {
 		fn = info->file;
-		switch (mode) {
-		case R_CORE_BIN_JSON:
+		if (mode == R_CORE_BIN_JSON) {
 			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
-			break;
-		default:
-			pair ("type", info->type);
-			break;
 		}
 	} else {
 		fn = (cf && cf->desc)? cf->desc->name: NULL;
@@ -114,6 +109,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
+				r_cons_printf (",\"humansz\":\"%s\"", r_num_units (NULL, fsz));
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache ||\
 					cf->desc->flags & R_IO_WRITE ));
@@ -138,31 +134,41 @@ static void r_core_file_info(RCore *core, int mode) {
 		r_cons_printf ("}");
 	} else if (cf && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
-		pair ("file", fn? fn: cf->desc->uri);
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
 		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
-			if (cf->desc->referer && *cf->desc->referer) {
-				pair ("referer", cf->desc->referer);
-			}
+			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
+		}
+		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
+		if (cf->desc) {
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
-			if (fsz != UT64_MAX) {
-				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
-			}
-			pair ("iorw", r_str_bool ( io_cache ||\
-					cf->desc->flags & R_IO_WRITE ));
+		}
+		pair ("file", fn? fn: cf->desc->uri);
+		if (plugin) {
+			pair ("format", plugin->name);
+		}
+		if (cf->desc) {
+			pair ("iorw", r_str_bool (io_cache || cf->desc->flags & R_IO_WRITE ));
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 					(ut64) core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
 		}
-		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
 		if (binfile && binfile->curxtr) {
 			pair ("packet", binfile->curxtr->name);
 		}
-		if (plugin) {
-			pair ("format", plugin->name);
+		if (cf->desc && cf->desc->referer && *cf->desc->referer) {
+			pair ("referer", cf->desc->referer);
+		}
+		if (cf->desc) {
+			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+			if (fsz != UT64_MAX) {
+				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+				pair ("humansz", r_num_units (NULL, fsz));
+			}
+		}
+		if (info) {
+			pair ("type", info->type);
 		}
 	}
 }
@@ -200,9 +206,10 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 		if (obj && bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
 				r_cons_printf (",\"bin\":");
+			} else {
+				r_cons_printf("\n");
 			}
-			r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-				mode, va, NULL, NULL);
+				r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
 			r_cons_printf ("}\n");

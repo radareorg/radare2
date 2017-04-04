@@ -663,9 +663,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
-		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num);
+		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num);
 		free (s1);
-		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num);
+		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -680,7 +680,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		free (scol2);
 		return source;
 	}
-	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
+	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num);
 }
 
 static void ds_build_op_str(RDisasmState *ds) {
@@ -753,8 +753,10 @@ static void ds_build_op_str(RDisasmState *ds) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
 			asm_str = colorize_asm_string (core, ds);
-			free (ds->opstr);
-			ds->opstr = strdup (asm_str);
+			if (asm_str) {
+				free (ds->opstr);
+				ds->opstr = strdup (asm_str);
+			}
 			//core->parser->flagspace = ofs; // ???
 		} else {
 			if (!ds->opstr) {
@@ -2581,7 +2583,7 @@ static void ds_print_op_push_info(RDisasmState *ds){
 	case R_ANAL_OP_TYPE_PUSH:
 		if (ds->analop.val) {
 			RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.val);
-			if (flag && (!ds->opstr || !strstr(ds->opstr, flag->name))) {
+			if (flag && !strstr (ds->opstr, flag->name)) {
 				r_cons_printf (" ; %s", flag->name);
 			}
 		}
@@ -2659,7 +2661,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 				ALIGN;
 				if (!is_lea_str) {
-					if (ds->opstr && *flag && strstr (ds->opstr, flag)) {
+					if (*flag && strstr (ds->opstr, flag)) {
 						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, refaddr, nl);
 					} else {
 						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, refaddr,
@@ -2697,8 +2699,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						}
 					}
 					ALIGN;
-					ds_comment (ds, true, "%s; [0x%" PFMT64x":%d]=0x%" PFMT64x "%s%s%s",
-						esc, refaddr, ds->analop.refptr, n, (flag && *flag) ? " " : "", flag, nl);
+					{
+						const char *refptrstr = "";
+						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
+							RIOSection *s = core->print->iob.section_vget (core->print->iob.io, n);
+							if (s) {
+								refptrstr = s->name;
+							}
+						}
+						ds_comment (ds, true, "%s; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s%s",
+							esc, refaddr, ds->analop.refptr, refptrstr, *refptrstr?".":"",
+							n, (flag && *flag) ? " " : "", flag, nl);
+					}
 					free (msg2);
 				}
 				// not just for LEA
@@ -3654,7 +3666,11 @@ toro:
 
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs (ds);
+			ds_build_op_str (ds);
 			ds_print_ptr (ds, len + 256, idx);
+			if (!ds->pseudo) {
+				R_FREE (ds->opstr);
+			}
 			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
 			if (ds->show_emu) {
@@ -4250,7 +4266,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					char *buf_asm;
 					RAnalOp aop;
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i);
-					buf_asm = r_print_colorize_opcode (str,
+					buf_asm = r_print_colorize_opcode (core->print, str,
 							core->cons->pal.reg, core->cons->pal.num);
 					r_cons_printf ("%s%s\n",
 							r_print_color_op_type (core->print, aop.type),

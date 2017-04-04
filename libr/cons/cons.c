@@ -1223,6 +1223,9 @@ R_API char *r_cons_lastline (int *len) {
 
 /* swap color from foreground to background, returned value must be freed */
 R_API char *r_cons_swap_ground(const char *col) {
+	if (!col) {
+		return NULL;
+	}
 	if (!strncmp (col, "\x1b[48;5;", 7)) {
 		/* rgb background */
 		return r_str_newf ("\x1b[38;5;%s", col+7);

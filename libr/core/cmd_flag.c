@@ -279,14 +279,16 @@ rep:
 		if (*cstr == '.') {
 			input++;
 			goto rep;
-#if 0
-eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
-			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
-#endif
 		} else {
-			r_flag_set (core->flags, cstr, off, bsze);
+			bool addFlag = true;
+			if (input[0] == '+') {
+				if (r_flag_get_at (core->flags, off, false)) {
+					addFlag = false;
+				}
+			}
+			if (addFlag) {
+				r_flag_set (core->flags, cstr, off, bsze);
+			}
 		}
 		}
 		break;

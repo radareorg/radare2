@@ -171,6 +171,11 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 			io->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->paddr,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
+			if (s->arch && s->bits) {
+				const char *archName = r_sys_arch_str (s->arch);
+				io->cb_printf ("Sa %s %d 0x%08"PFMT64x"\n",
+					archName, s->bits, s->vaddr);
+			}
 			free (n);
 		} else {
 			io->cb_printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x

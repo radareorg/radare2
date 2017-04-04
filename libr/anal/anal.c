@@ -186,10 +186,13 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			if (change) {
 				r_anal_set_fcnsign (anal, NULL);
 			}
+#if 1
+			/* invalidate esil state? really ? */
 			if (anal->esil) {
 				r_anal_esil_free (anal->esil);
 				anal->esil = NULL;
 			}
+#endif
 			return true;
 		}
 	}
@@ -288,39 +291,7 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 	return true;
 }
 
-R_API char *r_anal_strmask (RAnal *anal, const char *data) {
-	RAnalOp *op = NULL;
-	ut8 *buf = NULL;
-	char *ret = NULL;
-	int oplen, len, idx = 0;
-
-	if (data && *data) {
-		ret = strdup (data);
-		buf = malloc (1 + strlen (data));
-		op = r_anal_op_new ();
-	}
-	if (!op || !ret || !buf) {
-		free (op);
-		free (buf);
-		free (ret);
-		return NULL;
-	}
-	len = r_hex_str2bin (data, buf);
-	while (idx < len) {
-		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) < 1) {
-			break;
-		}
-		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
-			memset (ret + (idx + op->nopcode) * 2, '.', (oplen - op->nopcode) * 2);
-		}
-		idx += oplen;
-	}
-	free (op);
-	free (buf);
-	return ret;
-}
-
-R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
+R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0;
@@ -329,12 +300,16 @@ R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
 		return NULL;
 	}
 
+	if (anal->cur && anal->cur->anal_mask) {
+		return anal->cur->anal_mask (anal, size, data, at);
+	}
+
 	op = r_anal_op_new ();
 	ret = malloc (size);
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = r_anal_op (anal, op, 0, data + idx, size - idx)) < 1) {
+		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {

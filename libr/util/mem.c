@@ -326,3 +326,11 @@ R_API bool r_mem_is_zero(const ut8 *b, int l) {
 	}
 	return true;
 }
+
+R_API void *r_mem_alloc(int sz) {
+	return calloc (sz, 1);
+}
+
+R_API void r_mem_free(void *p) {
+	free (p);
+}

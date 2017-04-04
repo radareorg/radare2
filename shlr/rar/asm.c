@@ -122,8 +122,10 @@ int rarvm_assemble (Bitbuf *b, const char *c) {
                 }
 		if (opcodes[opnum].flags & 2) {
 			SKIPSPACES (arg1);
-			if (!assemble_arg (b, arg1))
+			if (!assemble_arg (b, arg1)) {
+				free (str);
 				return 0;
+			}
 		}
 	}
 	free (str);

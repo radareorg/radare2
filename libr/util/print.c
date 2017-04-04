@@ -1612,7 +1612,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 #define COLORIZE_BUFSIZE 1024
 static char o[COLORIZE_BUFSIZE];
 
-R_API char* r_print_colorize_opcode(char *p, const char *reg, const char *num) {
+R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	ut32 c_reset = strlen (Color_RESET);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
@@ -1757,6 +1757,15 @@ R_API char* r_print_colorize_opcode(char *p, const char *reg, const char *num) {
 				if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
+				}
+				if (print->flags & R_PRINT_FLAGS_SECSUB) {
+					RIOSection *s = print->iob.section_vget (print->iob.io, r_num_get (NULL, p + i));
+					if (s) {
+						strcpy (o + j, s->name);
+						j += strlen (o + j);
+						strcpy (o + j, ".");
+						j++;
+					}
 				}
 				strcpy (o + j, num);
 				j += strlen (num);

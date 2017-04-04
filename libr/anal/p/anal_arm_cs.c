@@ -1741,7 +1741,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		}
 		break;
+	case ARM_INS_MRS:
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+		// TODO: esil for MRS
+		break;
 	case ARM_INS_MSR:
+		op->family = R_ANAL_OP_FAMILY_PRIV;
 		msr_flags = insn->detail->arm.operands[0].reg >> 4;
 		r_strbuf_appendf (&op->esil, "0,",REG(1));
 		if (msr_flags & 1) {
@@ -2690,6 +2695,51 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; // XXX
 }
 
+static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
+	RAnalOp *op = NULL;
+	ut8 *ret = NULL;
+	int oplen, idx = 0, obits = anal->bits;
+	RAnalHint *hint = NULL;
+
+	if (!data) {
+		return NULL;
+	}
+
+	op = r_anal_op_new ();
+	ret = malloc (size);
+	memset (ret, 0xff, size);
+
+	while (idx < size) {
+		hint = r_anal_hint_get (anal, at + idx);
+		if (hint) {
+			if (hint->bits != 0) {
+				anal->bits = hint->bits;
+			}
+			free (hint);
+		}
+
+		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx)) < 1) {
+			break;
+		}
+		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
+			switch (oplen) {
+			case 2:
+				memcpy (ret + idx, "\xf0\x00", 2);
+				break;
+			case 4:
+				memcpy (ret + idx, "\xff\xf0\x00\x00", 4);
+				break;
+			}
+		}
+		idx += oplen;
+	}
+
+	anal->bits = obits;
+	free (op);
+
+	return ret;
+}
+
 RAnalPlugin r_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
@@ -2698,6 +2748,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.arch = "arm",
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
+	.anal_mask = anal_mask,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
 };

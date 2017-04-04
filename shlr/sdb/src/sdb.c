@@ -708,7 +708,6 @@ static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb,
 			free (v);
 			if (kv && kv->key && kv->value) {
 				if (!cb (user, kv->key, kv->value)) {
-					free (v);
 					return false;
 				}
 				if (cb2) {

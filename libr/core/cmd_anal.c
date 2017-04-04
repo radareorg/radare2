@@ -6,6 +6,8 @@
 /* hacky inclusion */
 #include "anal_vt.c"
 
+#define ESIL_STACK_NAME "esil.ram"
+
 R_API bool core_anal_bbs(RCore *core, ut64 len);
 
 /* better aac for windows-x86-32 */
@@ -2350,6 +2352,8 @@ repeat:
 	r_asm_set_pc (core->assembler, addr);
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+	// update the esil pointer because RAnal.op() can change it
+	esil = core->anal->esil;
 	if (op.size < 1) {
 		op.size = 1; // avoid inverted stepping
 	}
@@ -2430,7 +2434,7 @@ repeat:
 		}
 	}
 	// check esil
-	if (esil->trap) {
+	if (esil && esil->trap) {
 		if (core->anal->esil->verbose) {
 			eprintf ("TRAP\n");
 		}
@@ -2668,8 +2672,9 @@ size = r_config_get_i (core->config, "esil.stack.size");
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
-	if (!r_io_section_get_name (core->io, "esil_stack")) {
-		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d esil_stack", addr, addr, size, size);
+	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
+		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
+			ESIL_STACK_NAME, addr, addr, size, size);
 	}
 	initialize_stack (core, addr, size);
 //	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
@@ -4039,8 +4044,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
-						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
-										core->cons->pal.num);
+						buf_asm = r_print_colorize_opcode (core->print, str,
+							core->cons->pal.reg, core->cons->pal.num);
 					} else {
 						buf_asm = r_str_new (str);
 					}
@@ -4118,8 +4123,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
-						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
-										core->cons->pal.num);
+						buf_asm = r_print_colorize_opcode (core->print, str,
+							core->cons->pal.reg, core->cons->pal.num);
 					} else {
 						buf_asm = r_str_new (str);
 					}
@@ -5062,8 +5067,6 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	}
 }
 
-extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize, bool asterisk);
-
 static void cmd_anal_aad(RCore *core, const char *input) {
 	RListIter *iter;
 	RAnalRef *ref;
@@ -5077,8 +5080,45 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	r_list_free (list);
 }
 
+
+static bool archIsArmOrThumb(RCore *core) {
+	RAsm *as = core ? core->assembler : NULL;
+	if (as && as->cur && as->cur->arch) {
+		if (r_str_startswith (as->cur->arch, "arm")) {
+			if (as->cur->bits < 64) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
+	bool isarm = archIsArmOrThumb (core);
+	if (isarm) {
+		if (to & 1) {
+			// .dword 0x000080b9 in reality is 0x000080b8
+			to--;
+			r_anal_hint_set_bits (core->anal, to, 16);
+			// can we assume is gonna be always a function?
+		} else {
+			r_core_seek_archbits (core, from);
+			ut64 bits = r_config_get_i (core->config, "asm.bits");
+			r_anal_hint_set_bits (core->anal, from, bits);
+		}
+	}
+	if (asterisk) {
+		r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", to, from);
+		r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, from);
+		r_cons_printf ("f+ sym.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
+	} else {
+		r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, to, from);
+		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
+		r_core_cmdf (core, "f+ sym.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
+	}
+}
+
 static void cmd_anal_aav(RCore *core, const char *input) {
-#define set(x,y) r_config_set(core->config, x, y);
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	RIOSection *s = NULL;
@@ -5102,7 +5142,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 	}
 	seti ("search.align", 4);
-
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		ptr = r_num_math (core->num, arg + 1);
@@ -5129,13 +5168,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (core->assembler->bits == 64) {
 		vsize = 8;
 	}
-	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize, asterisk);
-	// TODO: for each hit . must set flag, xref and metadata Cd 4
-	if (asterisk) {
-		r_cons_printf ("f-hit*\n");
-	} else {
-		r_core_cmd0 (core, "f-hit*");
-	}
+	(void)r_core_search_value_in_range (core, from, to, vmin, vmax, vsize, asterisk, _CbInRangeAav);
 	seti ("search.align", o_align);
 }
 
@@ -5144,7 +5177,6 @@ static bool should_aav(RCore *core) {
 	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 		return false;
 	}
-
 	return true;
 }
 

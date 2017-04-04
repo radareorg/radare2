@@ -618,7 +618,7 @@ static const char *radare_argv[] = {
 	"pfj", "pfj.", "pfv", "pfv.",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
 	"z", "z*", "zj", "z-", "z-*",
-	"zaa", "zaaf", "zaaF", "zae", "zaef", "zaeF", "zam", "zamf", "zamF",
+	"za", "zaf", "zaF",
 	"zo", "zoz", "zos",
 	"zfd", "zfs", "zfz",
 	"z/", "z/*",
@@ -2392,4 +2392,69 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 #endif
 	}
 	return b;
+}
+
+
+R_API int r_core_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
+				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
+	int i, match, align = core->search->align, hitctr = 0;
+	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
+	ut8 buf[4096];
+	ut64 v64, value = 0;
+	ut32 v32;
+	ut16 v16;
+	if (from >= to) {
+		eprintf ("Error: from must be lower than to\n");
+		return -1;
+	}
+	if (vmin >= vmax) {
+		eprintf ("Error: vmin must be lower than vmax\n");
+		return -1;
+	}
+	r_cons_break_push (NULL, NULL);
+	while (from < to) {
+		memset (buf, 0, sizeof (buf)); // probably unnecessary
+		(void) r_io_read_at (core->io, from, buf, sizeof (buf));
+		if (r_cons_is_breaked ()) {
+			goto beach;
+		}
+		for (i = 0; i < sizeof (buf) - vsize; i++) {
+			void *v = (buf + i);
+			ut64 addr = from + i;
+			if (r_cons_is_breaked ()) {
+				goto beach;
+			}
+			if (align && (addr) % align) {
+				continue;
+			}
+			match = false;
+			switch (vsize) {
+			case 1: value = *(ut8 *) (v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
+			case 2: v16 = *((ut16 *) (v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+			case 4: v32 = *((ut32 *) (v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+			case 8: v64 = *((ut64 *) (v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
+			default: eprintf ("Unknown vsize\n"); return -1;
+			}
+			if (match && !vinfun) {
+				if (vinfunr) {
+					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				} else {
+					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				}
+			}
+			if (match) {
+				cb (core, addr, value, vsize, asterisk, hitctr);
+				hitctr++;
+			}
+		}
+		from += sizeof (buf);
+	}
+beach:
+	r_cons_break_pop ();
+	return hitctr;
 }
