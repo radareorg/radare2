@@ -940,7 +940,7 @@ R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCal
 	struct ctxFcnMatchCB ctx = { a, fcn, cb, user };
 
 	if (!a || !fcn || !cb) {
-		return 0;
+		return false;
 	}
 
 	return r_sign_foreach (a, offsetMatchCB, &ctx);
@@ -985,7 +985,7 @@ R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallbac
 	struct ctxFcnMatchCB ctx = { a, fcn, cb, user };
 
 	if (!a || !fcn || !cb) {
-		return 0;
+		return false;
 	}
 
 	return r_sign_foreach (a, refsMatchCB, &ctx);
