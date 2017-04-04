@@ -149,10 +149,6 @@ static void r_core_file_info(RCore *core, int mode) {
 			pair ("format", plugin->name);
 		}
 		if (cf->desc) {
-			if (fsz != UT64_MAX) {
-				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
-				pair ("humansz", r_num_units (NULL, fsz));
-			}
 			pair ("iorw", r_str_bool (io_cache || cf->desc->flags & R_IO_WRITE ));
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 					(ut64) core->io->desc->obsz));
@@ -168,6 +164,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			ut64 fsz = r_io_desc_size (core->io, cf->desc);
 			if (fsz != UT64_MAX) {
 				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+				pair ("humansz", r_num_units (NULL, fsz));
 			}
 		}
 		if (info) {
