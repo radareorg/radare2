@@ -7,42 +7,6 @@
 #include <r_cons.h>
 #include <r_util.h>
 
-const char *getRealRef(RCore *core, ut64 off) {
-	RFlagItem *item;
-	RListIter *iter;
-	RList *list;
-
-	list = ht_find (core->flags->ht_off, sdb_fmt (2, "flg.%"PFMT64x, off), NULL);
-	if (!list) {
-		return NULL;
-	}
-
-	r_list_foreach (list, iter, item) {
-		if (!item->name) {
-			continue;
-		}
-		/* catch sym. first */
-		if (!strncmp (item->name, "loc.", 4)) {
-			continue;
-		}
-		if (!strncmp (item->name, "fcn.", 4)) {
-			continue;
-		}
-		if (!strncmp (item->name, "section.", 8)) {
-			continue;
-		}
-		if (!strncmp (item->name, "section_end.", 12)) {
-			continue;
-		}
-		if (!strncmp (item->name, "sub.", 4)) {
-			continue;
-		}
-		return item->name;
-	}
-
-	return NULL;
-}
-
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	ut8 *buf = NULL;
 	int fcnlen = 0, len = 0;
@@ -88,32 +52,17 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 }
 
 static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
-	RListIter *iter;
-	RAnalRef *refi;
-	const char *flag;
-	char *refs[R_SIGN_MAXREFS];
-	int i = 0, n = 0;
+	char **refs;
 	bool retval = true;
 
-	r_list_foreach (fcn->refs, iter, refi) {
-		if (n >= R_SIGN_MAXREFS - 1) {
-			break;
-		}
-		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
-			flag = getRealRef (core, refi->addr);
-			if (flag) {
-				refs[n] = r_str_newf (flag);
-				n++;
-			}
-		}
+	refs = r_sign_fcn_refs (core->anal, fcn);
+	if (!refs) {
+		return false;
 	}
-	refs[n] = NULL;
+	
+	retval = r_sign_add_refs (core->anal, name, refs);
 
-	retval = r_sign_add_refs (core->anal, name, (const char **)refs);
-
-	for (i = 0; i < n; i++) {
-		free (refs[i]);
-	}
+	r_sign_fcn_refs_free (refs);
 
 	return retval;
 }
@@ -235,20 +184,27 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 }
 
 static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
-	const char *refs[R_SIGN_MAXREFS];
+	char *refs[R_SIGN_MAXREFS];
 	int i;
+	bool retval = true;
 
 	if (nargs < 1) {
 		eprintf ("error: invalid syntax\n");
 		return false;
 	}
 
-	for (i = 0; i < R_SIGN_MAXREFS - 1 && i < nargs; i++) {
-		refs[i] = r_str_word_get0 (args0, i);
+	for (i = 0; i < nargs && i < R_SIGN_MAXREFS - 1; i++) {
+		refs[i] = r_str_new (r_str_word_get0 (args0, i));
 	}
 	refs[i] = NULL;
 
-	return r_sign_add_refs (core->anal, name, refs);
+	retval = r_sign_add_refs (core->anal, name, refs);
+
+	for (i = 0; refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
+		free (refs[i]);
+	}
+
+	return retval;
 }
 
 static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
@@ -632,6 +588,7 @@ struct ctxSearchCB {
 	RCore *core;
 	bool rad;
 	int count;
+	const char *prefix;
 };
 
 static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
@@ -649,20 +606,20 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 	free(name);
 }
 
-static int graphMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
+static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 
-	// TODO(nibble): use one counter per metric zign instead of ctx->count
-	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, "graph", ctx->rad);
+	addFlag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->prefix, ctx->rad);
 	ctx->count++;
 
 	return 1;
 }
 
-static int searchHitCB(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user) {
+static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 
-	addFlag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
+	// TODO(nibble): use one counter per metric zign instead of ctx->count
+	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, ctx->prefix, ctx->rad);
 	ctx->count++;
 
 	return 1;
@@ -705,8 +662,6 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 }
 
 static bool search(RCore *core, bool rad) {
-	struct ctxSearchCB graph_match_ctx = { core, rad, 0 };
-	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
 	RList *list;
 	RListIter *iter;
 	RAnalFunction *fcni = NULL;
@@ -715,10 +670,17 @@ static bool search(RCore *core, bool rad) {
 	ut64 sin_from = UT64_MAX, sin_to = UT64_MAX;
 	int hits = 0;
 
+	struct ctxSearchCB bytes_search_ctx = { core, rad, 0, "bytes" };
+	struct ctxSearchCB graph_match_ctx = { core, rad, 0, "graph" };
+	struct ctxSearchCB offset_match_ctx = { core, rad, 0, "offset" };
+	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
+
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	const char *mode = r_config_get (core->config, "search.in");
 	bool useBytes = r_config_get_i (core->config, "zign.match.bytes");
 	bool useGraph = r_config_get_i (core->config, "zign.match.graph");
+	bool useOffset = r_config_get_i (core->config, "zign.match.offset");
+	bool useRefs = r_config_get_i (core->config, "zign.match.refs");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -744,15 +706,23 @@ static bool search(RCore *core, bool rad) {
 		}
 	}
 
-	// Graph search
-	if (useGraph) {
+	// Function search
+	if (useGraph || useOffset || useRefs) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
+			if (useGraph) {
+				r_sign_match_graph (core->anal, fcni, fcnMatchCB, &graph_match_ctx);
+			}
+			if (useOffset) {
+				r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
+			}
+			if (useRefs){
+				r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
+			}
 		}
 		r_cons_break_pop ();
 	}
@@ -766,7 +736,8 @@ static bool search(RCore *core, bool rad) {
 		}
 	}
 
-	hits = bytes_search_ctx.count + graph_match_ctx.count;
+	hits = bytes_search_ctx.count + graph_match_ctx.count +
+		offset_match_ctx.count + refs_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
@@ -805,13 +776,18 @@ static int cmdCheck(void *data, const char *input) {
 	ut64 at = core->offset;
 	bool retval = true;
 	bool rad = input[0] == '*';
-	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
-	struct ctxSearchCB graph_match_ctx = { core, rad, 0 };
 	int hits = 0;
+
+	struct ctxSearchCB bytes_search_ctx = { core, rad, 0, "bytes" };
+	struct ctxSearchCB graph_match_ctx = { core, rad, 0, "graph" };
+	struct ctxSearchCB offset_match_ctx = { core, rad, 0, "offset" };
+	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	bool useBytes = r_config_get_i (core->config, "zign.match.bytes");
 	bool useGraph = r_config_get_i (core->config, "zign.match.graph");
+	bool useOffset = r_config_get_i (core->config, "zign.match.offset");
+	bool useRefs = r_config_get_i (core->config, "zign.match.refs");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -834,8 +810,8 @@ static int cmdCheck(void *data, const char *input) {
 		r_sign_search_free (ss);
 	}
 
-	// Graph search
-	if (useGraph) {
+	// Function search
+	if (useGraph || useOffset || useRefs) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -843,7 +819,15 @@ static int cmdCheck(void *data, const char *input) {
 				break;
 			}
 			if (fcni->addr == core->offset) {
-				r_sign_match_graph (core->anal, fcni, graphMatchCB, &graph_match_ctx);
+				if (useGraph) {
+					r_sign_match_graph (core->anal, fcni, fcnMatchCB, &graph_match_ctx);
+				}
+				if (useOffset) {
+					r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
+				}
+				if (useRefs){
+					r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
+				}
 				break;
 			}
 		}
@@ -859,7 +843,8 @@ static int cmdCheck(void *data, const char *input) {
 		}
 	}
 
-	hits = bytes_search_ctx.count + graph_match_ctx.count;
+	hits = bytes_search_ctx.count + graph_match_ctx.count +
+		offset_match_ctx.count + refs_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;

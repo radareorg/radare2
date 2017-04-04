@@ -1964,6 +1964,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
 	SETPREF("zign.match.graph", "true", "Use graph metrics for matching");
 	SETPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
+	SETPREF("zign.match.offset", "true", "Use original offset for matching");
+	SETPREF("zign.match.refs", "true", "Use references for matching");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
