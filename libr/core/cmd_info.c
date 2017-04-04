@@ -204,10 +204,8 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 		if (obj && bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
 				r_cons_printf (",\"bin\":");
-			} else {
-				r_cons_printf("\n");
 			}
-				r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
+			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
 			r_cons_printf ("}\n");
