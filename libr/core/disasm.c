@@ -748,16 +748,10 @@ static void ds_build_op_str(RDisasmState *ds) {
 					core->parser->relsub_addr = num;
 				}
 			}
-			r_parse_filter (core->parser, core->flags, ds->opstr, ds->str, sizeof (ds->str), core->print->big_endian);
+			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
-			asm_str = colorize_asm_string (core, ds);
-			if (asm_str) {
-				free (ds->opstr);
-				ds->opstr = strdup (asm_str);
-			}
-			//core->parser->flagspace = ofs; // ???
 		} else {
 			if (!ds->opstr) {
 				ds->opstr = strdup (asm_str? asm_str: "");

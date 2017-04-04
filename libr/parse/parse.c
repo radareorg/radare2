@@ -253,6 +253,41 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 					*ptr = 0;
 					snprintf (str, len, "%s%s%s", data, flag->name,
 							(ptr != ptr2) ? ptr2 : "");
+
+					if (p->relsub_addr) {
+						int flag_len = strlen (flag->name);
+						char *ptr_end = str + strlen (data) + flag_len - 1;
+						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
+						bool ansi_found = false;
+						int copied_len;
+						while (*ptr_right) {
+							if (*ptr_right == 0x1b) {
+								while (*ptr_right && *ptr_right != 'm') ptr_right++;
+								if (*ptr_right) ptr_right++;
+								ansi_found = true;
+								continue;
+							} else if (*ptr_right == ']') {
+								ptr_left = ptr_esc = ptr_end - flag_len;
+								while (ptr_left >= str) {
+									if (*ptr_left == '[' &&
+									    (ptr_left == str || *(ptr_left - 1) != 0x1b)) break;
+									ptr_left--;
+								}
+								if (ptr_left < str) break;
+
+								for (; ptr_esc >= str && *ptr_esc != 0x1b; ptr_esc--);
+								if (ptr_esc < str) ptr_esc = ptr_end - flag_len + 1;
+
+								copied_len = ptr_end - ptr_esc + 1;
+								memmove (ptr_left, ptr_esc, copied_len);
+								sprintf (ptr_left + copied_len, "%s%s",
+									 ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
+									 ptr_right + 1);
+								break;
+							} else break;
+						}
+					}
+
 					return true;
 				}
 			}
