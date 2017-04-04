@@ -484,7 +484,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 					op->operands[operand].reg = r_num_math (NULL, token + 1);
 					break;
 				}
-				mem_opt = get_mem_option (token);			
+				mem_opt = get_mem_option (token);
 				if (mem_opt != -1) {
 					op->operands_count ++;
 					op->operands[operand].type = ARM_MEM_OPT;
@@ -505,7 +505,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				if (x) {
 					x[0] = '\0';
 				}
-				mem_opt = get_mem_option (token);			
+				mem_opt = get_mem_option (token);
 				if (mem_opt != -1) {
 					op->operands_count ++;
 					op->operands[operand].type = ARM_MEM_OPT;
@@ -518,8 +518,6 @@ static bool parseOperands(char* str, ArmOp *op) {
 				x = strchr (token, ',');
 				if (x) {
 					x[0] = '\0';
-				} else {
-					break;
 				}
 				op->operands_count ++;
 				switch (imm_count) {

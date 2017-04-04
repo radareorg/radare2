@@ -24,7 +24,7 @@
 ut64 mask64(ut64 mb, ut64 me) {
     int i;
     ut64 mask = 0;
-    if (mb < 0 || me < 0 || mb > 63 || me > 63) {
+    if (mb > 63 || me > 63) {
         return mask;
     }
 
@@ -1344,7 +1344,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						} else if (letter == 4 && i == 32) {
 							w = inv_mask64 (argv[4], argv[3]);
 						} else if (letter == 4 && i >= 33 && i <= 35) {
-							w = cmask32 (argv[4], argv[5]);
+							w = cmask32 (argv[3], argv[4]);
 						} else if (letter == 1 && i >= 36 && i <= 43) {
 							int to = atoi (w);
 							switch(to) {

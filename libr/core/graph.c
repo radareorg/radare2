@@ -3208,11 +3208,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'S':
-			if (r_config_get_i (core->config, "cfg.debug")) {
-				r_core_cmd0 (core, "dso;.dr*");
-			} else {
-				graph_single_step_over (core, g);
-			}
+			graph_single_step_over (core, g);
 			break;
 		case 'x':
 		case 'X':
@@ -3244,33 +3240,34 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" \"            - toggle graph.refs\n"
 				" /            - highlight text\n"
 				" |            - set cmd.gprompt\n"
+				" _            - enter hud selector\n"
 				" >            - show function callgraph (see graph.refs)\n"
 				" <            - show program callgraph (see graph.refs)\n"
 				" Home/End     - go to the top/bottom of the canvas\n"
 				" Page-UP/DOWN - scroll canvas up/down\n"
 				" C            - toggle scr.colors\n"
 				" d            - rename function\n"
+				" F            - enter flag selector\n"
+				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
+				" G            - debug trace callgraph (generated with dtc)\n"
 				" hjkl         - scroll canvas\n"
 				" HJKL         - move node\n"
 				" m/M          - change mouse modes\n"
-				" y            - toggle node folding/minification\n"
 				" n/N          - next/previous scr.nkey (function/flag..)\n"
+				" o            - go/seek to given offset\n"
+				" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
+				" q            - back to Visual mode\n"
+				" r            - refresh graph\n"
+				" R            - randomize colors\n"
+				" s/S          - step / step over\n"
 				" tab          - select next node\n"
 				" TAB          - select previous node\n"
 				" t/f          - follow true/false edges\n"
-				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
-				" G            - debug trace callgraph (generated with dtc)\n"
-				" F            - enter flag selector\n"
-				" _            - enter hud selector\n"
-				" o            - go/seek to given offset\n"
-				" r            - refresh graph\n"
-				" R            - randomize colors\n"
 				" u/U          - undo/redo seek\n"
-				" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
-				" s/S          - step / step over\n"
 				" V            - toggle basicblock / call graphs\n"
 				" w            - toggle between movements speed 1 and graph.scroll\n"
 				" x/X          - jump to xref/ref\n"
+				" y            - toggle node folding/minification\n"
 				" Z            - follow parent node");
 			r_cons_flush ();
 			r_cons_any_key (NULL);

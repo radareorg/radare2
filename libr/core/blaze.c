@@ -583,11 +583,11 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 				}
 			}
 			r_stack_free (stack);
-			free (block);
+			// free (block);
 		}
 	}
 
-	sdb_free (sdb);
+	// sdb_free (sdb);
 	eprintf ("After merge %d blocks\n", result->length);
 	return true;
 }

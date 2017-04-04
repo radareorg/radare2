@@ -109,8 +109,8 @@ SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp) {
 			iter = iter->n;
 		}
 		list->tail = iter;
+		list->sorted = true;
 	}
-	list->sorted = true;
 	return true;
 }
 

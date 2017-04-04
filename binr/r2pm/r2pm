@@ -58,7 +58,7 @@ TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
 R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
-R2PM_ETCD="${R2HOMEDIR}/radare2/radare2rc.d"
+R2PM_ETCD="${R2HOMEDIR}/radare2rc.d"
 IS_LOCAL=0
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"

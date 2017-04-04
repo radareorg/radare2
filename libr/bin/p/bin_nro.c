@@ -94,8 +94,8 @@ static ut64 readLE64(RBuffer *buf, int off) {
 
 static const char *readString(RBuffer *buf, int off) {
 	int left = 0;
-	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 0? data: NULL;
+	const char *data = (const char *)r_buf_get_at (buf, off, &left);
+	return left > 0 ? data: NULL;
 }
 
 static const char *fileType(const ut8 *buf) {
@@ -178,7 +178,7 @@ static void walkSymbols (RBinFile *bf, ut64 symtab, ut64 strtab, ut64 strtab_siz
 		ut64 size = readLE64 (bf->buf, symtab + i + 8);
 		i += 16; // NULL, NULL
 		ut64 name = readLE32 (bf->buf, symtab + i);
-		ut64 type = readLE32 (bf->buf, symtab + i + 4);
+		//ut64 type = readLE32 (bf->buf, symtab + i + 4);
 		const char *symName = readString (bf->buf, strtab + name);
 		if (!symName) {
 			break;
@@ -188,14 +188,13 @@ static void walkSymbols (RBinFile *bf, ut64 symtab, ut64 strtab, ut64 strtab_siz
 			ut64 pltSym = readLE64 (bf->buf, relplt + (import * 24));
 			eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
 		} else {
-			eprintf ("f sym.%s %d 0x%"PFMT64x"\n", symName, size, addr);
+			eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
 		}
 		i += 8 - 1;
 	}
 }
 
 static void parseMod (RBinFile *bf, ut32 mod0) {
-	int bufsz = r_buf_size (bf->buf);
 	ut32 ptr = readLE32 (bf->buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
@@ -243,7 +242,7 @@ static void parseMod (RBinFile *bf, ut32 mod0) {
 		eprintf ("symtab = 0x%llx\n", mo.symtab - mo.base);
 		eprintf ("strtab = 0x%llx\n", mo.strtab - mo.base);
 		eprintf ("strtabsz = 0x%llx\n", mo.strtab_size);
-		ut32 modo = mh.mod_object;
+		//ut32 modo = mh.mod_object;
 		ut64 strtab = mo.strtab - mo.base;
 		ut64 symtab = mo.symtab - mo.base;
 		walkSymbols (bf, symtab, strtab, mo.strtab_size, mo.relplt - mo.base);

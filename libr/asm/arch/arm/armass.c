@@ -145,10 +145,10 @@ static int getnum(const char *str) {
 static ut32 getimmed8(const char *str) {
 	ut32 num = getnum (str);
 	ut32 rotate;
-	if (num >= 0 && num <= 0xff) {
+	if (num <= 0xff) {
 		return num;
 	} else {
-		for (rotate=1; rotate<16; rotate++) {
+		for (rotate = 1; rotate < 16; rotate++) {
 			// rol 2
 			num = ((num << 2) | (num >> 30));
 			if (num == (num & 0xff)) {
