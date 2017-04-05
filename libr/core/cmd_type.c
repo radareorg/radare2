@@ -396,7 +396,10 @@ static int cmd_type(void *data, const char *input) {
 					char *out, *tmp;
 					tmp = r_core_editor (core, NULL, "");
 					if (tmp) {
-						out = r_parse_c_string (tmp);
+						const char *aa = r_config_get (core->config, "asm.arch");
+						int asmbits = r_config_get_i (core->config, "asm.bits");
+						const char *os = r_config_get (core->config, "asm.os");
+						out = r_parse_c_string (core->anal, tmp, aa, asmbits, os);
 						if (out) {
 							//		r_cons_strcat (out);
 							save_parsed_type (core, out);
@@ -405,7 +408,10 @@ static int cmd_type(void *data, const char *input) {
 						free (tmp);
 					}
 				} else {
-					char *out = r_parse_c_file (filename);
+					const char *aa = r_config_get (core->config, "asm.arch");
+					int asmbits = r_config_get_i (core->config, "asm.bits");
+					const char *os = r_config_get (core->config, "asm.os");
+					char *out = r_parse_c_file (core->anal, filename, aa, asmbits, os);
 					if (out) {
 						//r_cons_strcat (out);
 						save_parsed_type (core, out);
@@ -444,7 +450,10 @@ static int cmd_type(void *data, const char *input) {
 			snprintf (tmp, sizeof (tmp) - 1, "%s;", input + 2);
 			//const char *string = input + 2;
 			//r_anal_str_to_type (core->anal, string);
-			char *out = r_parse_c_string (tmp);
+			const char *aa = r_config_get (core->config, "asm.arch");
+			int asmbits = r_config_get_i (core->config, "asm.bits");
+			const char *os = r_config_get (core->config, "asm.os");
+			char *out = r_parse_c_string (core->anal, tmp, aa, asmbits, os);
 			if (out) {
 				//r_cons_strcat (out);
 				save_parsed_type (core, out);

@@ -539,23 +539,27 @@ static void tcc_cleanup(void)
     macro_ptr = NULL;
 }
 
-LIBTCCAPI TCCState *tcc_new(void)
+LIBTCCAPI TCCState *tcc_new(const char* arch, int bits, const char *os)
 {
     TCCState *s;
     char buffer[100];
     int a,b,c;
 
+	if (!arch || !os) return NULL;
     tcc_cleanup();
-
     s = tcc_mallocz(sizeof(TCCState));
-    if (!s)
-        return NULL;
+    if (!s) {
+		return NULL;
+	}
     tcc_state = s;
 #ifdef __WINDOWS__
     tcc_set_lib_path_w32(s);
 #else
     tcc_set_lib_path(s, CONFIG_TCCDIR);
 #endif
+	s->arch = strdup(arch);
+	s->bits = bits;
+	s->os = strdup(os);
     s->output_type = TCC_OUTPUT_MEMORY;
     preprocess_new();
     s->include_stack_ptr = s->include_stack;
@@ -578,70 +582,74 @@ LIBTCCAPI TCCState *tcc_new(void)
     tcc_define_symbol(s, "__STDC_HOSTED__", NULL);
 
     /* target defines */
-#if defined(TCC_TARGET_I386)
-    tcc_define_symbol(s, "__i386__", NULL);
-    tcc_define_symbol(s, "__i386", NULL);
-    tcc_define_symbol(s, "i386", NULL);
-#elif defined(TCC_TARGET_X86_64)
-    tcc_define_symbol(s, "__x86_64__", NULL);
-#elif defined(TCC_TARGET_ARM)
-    tcc_define_symbol(s, "__ARM_ARCH_4__", NULL);
-    tcc_define_symbol(s, "__arm_elf__", NULL);
-    tcc_define_symbol(s, "__arm_elf", NULL);
-    tcc_define_symbol(s, "arm_elf", NULL);
-    tcc_define_symbol(s, "__arm__", NULL);
-    tcc_define_symbol(s, "__arm", NULL);
-    tcc_define_symbol(s, "arm", NULL);
-    tcc_define_symbol(s, "__APCS_32__", NULL);
-#endif
+	if (!strncmp(arch, "x86", 3)) {
+		if (bits == 32 || bits == 16) {
+			tcc_define_symbol(s, "__i386__", NULL);
+			tcc_define_symbol(s, "__i386", NULL);
+			tcc_define_symbol(s, "i386", NULL);
+		} else {
+			tcc_define_symbol(s, "__x86_64__", NULL);
+		}
+	} else if (!strncmp(arch, "arm", 3)) {
+		tcc_define_symbol(s, "__ARM_ARCH_4__", NULL);
+		tcc_define_symbol(s, "__arm_elf__", NULL);
+		tcc_define_symbol(s, "__arm_elf", NULL);
+		tcc_define_symbol(s, "arm_elf", NULL);
+		tcc_define_symbol(s, "__arm__", NULL);
+		tcc_define_symbol(s, "__arm", NULL);
+		tcc_define_symbol(s, "arm", NULL);
+		tcc_define_symbol(s, "__APCS_32__", NULL);
+	}
+	// TODO: Add other architectures
+	// TODO: Move that in SDB
 
-#ifdef TCC_TARGET_PE
-    tcc_define_symbol(s, "__WINDOWS__", NULL);
-# ifdef TCC_TARGET_X86_64
-    tcc_define_symbol(s, "_WIN64", NULL);
-# endif
-#else
-    tcc_define_symbol(s, "__unix__", NULL);
-    tcc_define_symbol(s, "__unix", NULL);
-    tcc_define_symbol(s, "unix", NULL);
-# if defined(__linux)
-    tcc_define_symbol(s, "__linux__", NULL);
-    tcc_define_symbol(s, "__linux", NULL);
-# endif
-# if defined(__FreeBSD__)
-#  define str(s) #s
-    tcc_define_symbol(s, "__FreeBSD__", str( __FreeBSD__));
-#  undef str
-# endif
-# if defined(__FreeBSD_kernel__)
-    tcc_define_symbol(s, "__FreeBSD_kernel__", NULL);
-# endif
-#endif
+	if (!strncmp(os, "windows", 7)) {
+		tcc_define_symbol(s, "__WINDOWS__", NULL);
+		if (bits == 64) {
+			tcc_define_symbol(s, "_WIN64", NULL);
+		}
+	} else {
+		tcc_define_symbol(s, "__unix__", NULL);
+		tcc_define_symbol(s, "__unix", NULL);
+		tcc_define_symbol(s, "unix", NULL);
+
+		if (!strncmp(os, "linux", 5)) {
+			tcc_define_symbol(s, "__linux__", NULL);
+			tcc_define_symbol(s, "__linux", NULL);
+		}
+#define str(s) #s
+		if (!strncmp(os, "freebsd", 7)) {
+			tcc_define_symbol(s, "__FreeBSD__", str( __FreeBSD__));
+		}
+#undef str
+	}
+
+// FIXME: No need for that, afaik. Remove in the next release
+//#if defined(__FreeBSD_kernel__)
+//    tcc_define_symbol(s, "__FreeBSD_kernel__", NULL);
+//#endif
 
     /* TinyCC & gcc defines */
-#if defined TCC_TARGET_PE && defined TCC_TARGET_X86_64
-    tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long long");
-    tcc_define_symbol(s, "__PTRDIFF_TYPE__", "long long");
-#else
-    tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long");
-    tcc_define_symbol(s, "__PTRDIFF_TYPE__", "long");
-#endif
+	if (!strncmp(os, "windows", 7) && (bits == 64)) {
+		tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long long");
+		tcc_define_symbol(s, "__PTRDIFF_TYPE__", "long long");
+	} else {
+		tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long");
+		tcc_define_symbol(s, "__PTRDIFF_TYPE__", "long");
+	}
 
-#ifdef TCC_TARGET_PE
-    tcc_define_symbol(s, "__WCHAR_TYPE__", "unsigned short");
-#else
-    tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
-#endif
-
-#ifndef TCC_TARGET_PE
-    /* glibc defines */
-    tcc_define_symbol(s, "__REDIRECT(name, proto, alias)", "name proto __asm__ (#alias)");
-    tcc_define_symbol(s, "__REDIRECT_NTH(name, proto, alias)", "name proto __asm__ (#alias) __THROW");
-    /* default library paths */
-    tcc_add_library_path(s, CONFIG_TCC_LIBPATHS);
-    /* paths for crt objects */
-    tcc_split_path(s, (void ***)&s->crt_paths, &s->nb_crt_paths, CONFIG_TCC_CRTPREFIX);
-#endif
+	if (!strncmp(os, "windows", 7)) {
+		tcc_define_symbol(s, "__WCHAR_TYPE__", "unsigned short");
+	} else {
+		tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
+		/* glibc defines */
+		tcc_define_symbol(s, "__REDIRECT(name, proto, alias)", "name proto __asm__ (#alias)");
+		tcc_define_symbol(s, "__REDIRECT_NTH(name, proto, alias)", "name proto __asm__ (#alias) __THROW");
+		/* default library paths */
+		tcc_add_library_path(s, CONFIG_TCC_LIBPATHS);
+		/* paths for crt objects */
+		tcc_split_path(s, (void ***)&s->crt_paths, &s->nb_crt_paths, CONFIG_TCC_CRTPREFIX);
+	}
 
     s->alacarte_link = 1;
     s->nocommon = 1;
@@ -653,9 +661,12 @@ LIBTCCAPI TCCState *tcc_new(void)
 #if 0 /* def TCC_TARGET_PE */
     s->leading_underscore = 1;
 #endif
-#ifdef TCC_TARGET_I386
-    s->seg_size = 32;
-#endif
+	if (!strncmp(arch, "x86", 3)) {
+		// TODO: Set it to 16 for 16bit x86
+		if (bits == 32 || bits == 16) {
+			s->seg_size = 32;
+		}
+	}
     return s;
 }
 
@@ -681,6 +692,10 @@ LIBTCCAPI void tcc_delete(TCCState *s1)
     free(s1->deps_outfile);
     dynarray_reset(&s1->files, &s1->nb_files);
     dynarray_reset(&s1->target_deps, &s1->nb_target_deps);
+
+	/* target config */
+	free(s1->arch);
+	free(s1->os);
 
 #ifdef TCC_IS_NATIVE
 # ifdef HAVE_SELINUX
