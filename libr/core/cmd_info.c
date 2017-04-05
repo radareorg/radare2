@@ -109,7 +109,11 @@ static void r_core_file_info(RCore *core, int mode) {
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
-				r_cons_printf (",\"humansz\":\"%s\"", r_num_units (NULL, fsz));
+				char *humansz = r_num_units (NULL, fsz);
+				if (humansz) {
+					r_cons_printf (",\"humansz\":\"%s\"", humansz);
+					free (humansz);
+				}
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache ||\
 					cf->desc->flags & R_IO_WRITE ));
@@ -144,7 +148,9 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (cf->desc) {
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
 		}
-		pair ("file", fn? fn: cf->desc->uri);
+		if (fn || (cf->desc && cf->desc->uri)) {
+			pair ("file", fn? fn: cf->desc->uri);
+		}
 		if (plugin) {
 			pair ("format", plugin->name);
 		}
@@ -162,7 +168,11 @@ static void r_core_file_info(RCore *core, int mode) {
 			ut64 fsz = r_io_desc_size (core->io, cf->desc);
 			if (fsz != UT64_MAX) {
 				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
-				pair ("humansz", r_num_units (NULL, fsz));
+				char *humansz = r_num_units (NULL, fsz);
+				if (humansz) {
+					pair ("humansz", humansz);
+					free (humansz);
+				}
 			}
 		}
 		if (info) {

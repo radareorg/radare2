@@ -460,7 +460,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		{
 			st64 val = 0;
 			size_t n = read_i64_leb128 (buf + 1, buf + len, &val);
-			sprintf (op->buf_asm, "i64.const 0x%08x", val);
+			if (val < 1) {
+				sprintf (op->buf_asm, "i64.const %" PFMT64d, val);
+			} else {
+				sprintf (op->buf_asm, "i64.const 0x%08" PFMT64x, val);
+			}
 			rep += n;
 		}
 		break;

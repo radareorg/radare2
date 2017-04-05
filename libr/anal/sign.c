@@ -972,6 +972,7 @@ static int refsMatchCB(RSignItem *it, void *user) {
 		}
 	}
 	if (ctx->cb) {
+		free (refs);
 		return ctx->cb (it, ctx->fcn, ctx->user);
 	}
 
