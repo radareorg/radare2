@@ -71,9 +71,9 @@ R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 
 R_API RSignSearch *r_sign_search_new();
 R_API void r_sign_search_free(RSignSearch *ss);
-R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb, void *user);
+R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user);
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
-R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallback cb, void *user);
+R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGraphMatchCallback cb, void *user);
 R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user);
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
 

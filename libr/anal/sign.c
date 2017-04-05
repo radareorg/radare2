@@ -842,16 +842,11 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 	return 1;
 }
 
-R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb, void *user) {
-	RCore *core = a->coreb.core;
-	struct ctxAddSearchKwCB ctx = { ss, 0 };
+R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user) {
+	struct ctxAddSearchKwCB ctx = { ss, minsz };
 
 	if (!a || !ss || !cb) {
 		return;
-	}
-
-	if (core) {
-		ctx.minsz = r_config_get_i (core->config, "zign.minsz");
 	}
 
 	ss->cb = cb;
@@ -924,16 +919,11 @@ static int graphMatchCB(RSignItem *it, void *user) {
 	return 1;
 }
 
-R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallback cb, void *user) {
-	RCore *core = a->coreb.core;
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
+R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGraphMatchCallback cb, void *user) {
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, mincc };
 
 	if (!a || !fcn || !cb) {
 		return false;
-	}
-
-	if (core) {
-		ctx.mincc = r_config_get_i (core->config, "zign.mincc");
 	}
 
 	return r_sign_foreach (a, graphMatchCB, &ctx);

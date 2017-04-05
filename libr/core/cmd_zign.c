@@ -620,9 +620,11 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 	int rlen;
 	bool retval = true;
 
+	int minsz = r_config_get_i (core->config, "zign.minsz");
+
 	ss = r_sign_search_new ();
 	ss->search->align = r_config_get_i (core->config, "search.align");
-	r_sign_search_init (core->anal, ss, searchHitCB, ctx);
+	r_sign_search_init (core->anal, ss, minsz, searchHitCB, ctx);
 
 	r_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
@@ -664,6 +666,7 @@ static bool search(RCore *core, bool rad) {
 	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	int mincc = r_config_get_i (core->config, "zign.mincc");
 	const char *mode = r_config_get (core->config, "search.in");
 	bool useBytes = r_config_get_i (core->config, "zign.bytes");
 	bool useGraph = r_config_get_i (core->config, "zign.graph");
@@ -703,7 +706,7 @@ static bool search(RCore *core, bool rad) {
 				break;
 			}
 			if (useGraph) {
-				r_sign_match_graph (core->anal, fcni, fcnMatchCB, &graph_match_ctx);
+				r_sign_match_graph (core->anal, fcni, mincc, fcnMatchCB, &graph_match_ctx);
 			}
 			if (useOffset) {
 				r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
@@ -772,6 +775,8 @@ static int cmdCheck(void *data, const char *input) {
 	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	int minsz = r_config_get_i (core->config, "zign.minsz");
+	int mincc = r_config_get_i (core->config, "zign.mincc");
 	bool useBytes = r_config_get_i (core->config, "zign.bytes");
 	bool useGraph = r_config_get_i (core->config, "zign.graph");
 	bool useOffset = r_config_get_i (core->config, "zign.offset");
@@ -790,7 +795,7 @@ static int cmdCheck(void *data, const char *input) {
 	if (useBytes) {
 		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
 		ss = r_sign_search_new ();
-		r_sign_search_init (core->anal, ss, searchHitCB, &bytes_search_ctx);
+		r_sign_search_init (core->anal, ss, minsz, searchHitCB, &bytes_search_ctx);
 		if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
@@ -808,7 +813,7 @@ static int cmdCheck(void *data, const char *input) {
 			}
 			if (fcni->addr == core->offset) {
 				if (useGraph) {
-					r_sign_match_graph (core->anal, fcni, fcnMatchCB, &graph_match_ctx);
+					r_sign_match_graph (core->anal, fcni, mincc, fcnMatchCB, &graph_match_ctx);
 				}
 				if (useOffset) {
 					r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
