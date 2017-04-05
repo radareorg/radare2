@@ -554,9 +554,6 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 					free (cur);
 					continue;
 				}
-				if (!block) {
-					continue;
-				}
 				r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %llu 0x%08"PFMT64x" 0x%08"PFMT64x"\n"
 						, block->start, cur->start, cur->end - cur->start, cur->jump, cur->fail);
 
@@ -589,6 +586,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 
 	// sdb_free (sdb);
 	eprintf ("After merge %d blocks\n", result->length);
+	r_list_free (result);
 	return true;
 }
 
@@ -619,7 +617,7 @@ R_API bool core_anal_bbs2(RCore *core, ut64 len) {
 		oi = i;
 		ut64 obb_addr = abb->bb_addr;
 mountain:
-		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX (0, len - i), 16))) {
+		if (r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX (0, len - i), 16)) < 1) {
 			continue;
 		}
 		int next = bbExist (abb, at + i);
@@ -678,10 +676,7 @@ mountain:
 						}
 						free (nat);
 					} while (!r_list_empty (abb->nextbbs));
-					if (ti != -1) {
-						i = ti;
-						ti = -1;
-					}
+					ti = -1;
 				}
 				i = oi;
 				abb->bb_addr = obb_addr;
