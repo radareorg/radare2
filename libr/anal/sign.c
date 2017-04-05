@@ -949,7 +949,7 @@ R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCal
 static int refsMatchCB(RSignItem *it, void *user) {
 	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
 	char **refs = NULL;
-	int i = 0;
+	int i = 0, retval = 1;
 
 	if (!it->refs[0]) {
 		return 1;
@@ -963,23 +963,25 @@ static int refsMatchCB(RSignItem *it, void *user) {
 	for (i = 0; ; i++) {
 		if (!refs[i] || !it->refs[i]) {
 			if (refs[i] != it->refs[i]) {
+				retval = 1;
 				goto exit_function;
 			}
 			break;
 		}
 		if (strcmp (refs[i], it->refs[i])) {
+			retval = 1;
 			goto exit_function;
 		}
 	}
 	if (ctx->cb) {
-		free (refs);
-		return ctx->cb (it, ctx->fcn, ctx->user);
+		retval = ctx->cb (it, ctx->fcn, ctx->user);
+		goto exit_function;
 	}
 
 exit_function:
 	r_sign_fcn_refs_free (refs);
 
-	return 1;
+	return retval;
 }
 
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user) {
