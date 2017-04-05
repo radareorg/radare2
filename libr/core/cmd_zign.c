@@ -10,20 +10,11 @@
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	ut8 *buf = NULL;
 	int fcnlen = 0, len = 0;
-	int minzlen = r_config_get_i (core->config, "zign.minsz");
-	int maxzlen = r_config_get_i (core->config, "zign.maxsz");
 	bool retval = true;
+	int maxsz = r_config_get_i (core->config, "zign.maxsz");
 
 	fcnlen = r_anal_fcn_realsize (fcn);
-
-	if (fcnlen < minzlen) {
-		eprintf ("warn: omitting %s bytes zignature (length is %d, check zign.minsz)\n",
-			fcn->name, fcnlen);
-		retval = false;
-		goto exit_function;
-	}
-
-	len = R_MIN (fcnlen, maxzlen);
+	len = R_MIN (fcnlen, maxsz);
 
 	buf = malloc (len);
 
@@ -43,17 +34,8 @@ exit_function:
 
 static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	RSignGraph graph;
-	int cc = -1;
-	int mincc = r_config_get_i (core->config, "zign.mincc");
 
-	cc = r_anal_fcn_cc (fcn);
-	if (cc < mincc) {
-		eprintf ("warn: omitting %s graph zignature (CC is %d, check zign.mincc)\n",
-			fcn->name, cc);
-		return false;
-	}
-
-	graph.cc = cc;
+	graph.cc = r_anal_fcn_cc (fcn);
 	graph.nbbs = r_list_length (fcn->bbs);
 	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
 
@@ -685,10 +667,10 @@ static bool search(RCore *core, bool rad) {
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	const char *mode = r_config_get (core->config, "search.in");
-	bool useBytes = r_config_get_i (core->config, "zign.match.bytes");
-	bool useGraph = r_config_get_i (core->config, "zign.match.graph");
-	bool useOffset = r_config_get_i (core->config, "zign.match.offset");
-	bool useRefs = r_config_get_i (core->config, "zign.match.refs");
+	bool useBytes = r_config_get_i (core->config, "zign.bytes");
+	bool useGraph = r_config_get_i (core->config, "zign.graph");
+	bool useOffset = r_config_get_i (core->config, "zign.offset");
+	bool useRefs = r_config_get_i (core->config, "zign.refs");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -792,10 +774,10 @@ static int cmdCheck(void *data, const char *input) {
 	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
-	bool useBytes = r_config_get_i (core->config, "zign.match.bytes");
-	bool useGraph = r_config_get_i (core->config, "zign.match.graph");
-	bool useOffset = r_config_get_i (core->config, "zign.match.offset");
-	bool useRefs = r_config_get_i (core->config, "zign.match.refs");
+	bool useBytes = r_config_get_i (core->config, "zign.bytes");
+	bool useGraph = r_config_get_i (core->config, "zign.graph");
+	bool useOffset = r_config_get_i (core->config, "zign.offset");
+	bool useRefs = r_config_get_i (core->config, "zign.refs");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);

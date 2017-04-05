@@ -1960,13 +1960,13 @@ R_API int r_core_config_init(RCore *core) {
 
 	// zign
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
-	SETI("zign.minsz", 16, "Minimum zignature length");
 	SETI("zign.maxsz", 500, "Maximum zignature length");
-	SETI("zign.mincc", 10, "Minimum cyclomatic complexity");
-	SETPREF("zign.match.graph", "true", "Use graph metrics for matching");
-	SETPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
-	SETPREF("zign.match.offset", "true", "Use original offset for matching");
-	SETPREF("zign.match.refs", "true", "Use references for matching");
+	SETI("zign.minsz", 16, "Minimum zignature length for matching");
+	SETI("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
+	SETPREF("zign.graph", "true", "Use graph metrics for matching");
+	SETPREF("zign.bytes", "true", "Use bytes patterns for matching");
+	SETPREF("zign.offset", "true", "Use original offset for matching");
+	SETPREF("zign.refs", "true", "Use references for matching");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");

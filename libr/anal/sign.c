@@ -34,11 +34,12 @@ const char *getRealRef(RCore *core, ut64 off) {
 R_API char **r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
+	RCore *core = a->coreb.core;
 	const char *flag = NULL;
 	char **refs = NULL;
 	int i = 0;
 
-	if (!a || !fcn || !a->coreb.core) {
+	if (!a || !fcn || !core) {
 		return NULL;
 	}
 
@@ -49,7 +50,7 @@ R_API char **r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 			break;
 		}
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
-			flag = getRealRef (a->coreb.core, refi->addr);
+			flag = getRealRef (core, refi->addr);
 			if (flag) {
 				refs[i] = r_str_newf (flag);
 				i++;
@@ -819,13 +820,23 @@ static int searchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
-static int searchCB(RSignItem *it, void *user) {
-	RSignSearch *ss = (RSignSearch *) user;
+struct ctxAddSearchKwCB {
+	RSignSearch *ss;
+	int minsz;
+};
+
+static int addSearchKwCB(RSignItem *it, void *user) {
+	struct ctxAddSearchKwCB *ctx = (struct ctxAddSearchKwCB *) user;
+	RSignSearch *ss = ctx->ss;
+	RSignBytes *bytes = it->bytes;
 	RSearchKeyword *kw = NULL;
 	RSignItem *it2 = NULL;
-	RSignBytes *bytes = it->bytes;
 
 	if (!bytes) {
+		return 1;
+	}
+
+	if (bytes->size < ctx->minsz) {
 		return 1;
 	}
 
@@ -840,8 +851,15 @@ static int searchCB(RSignItem *it, void *user) {
 }
 
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb, void *user) {
+	RCore *core = a->coreb.core;
+	struct ctxAddSearchKwCB ctx = { ss, 0 };
+
 	if (!a || !ss || !cb) {
 		return;
+	}
+
+	if (core) {
+		ctx.minsz = r_config_get_i (core->config, "zign.minsz");
 	}
 
 	ss->cb = cb;
@@ -850,7 +868,7 @@ R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb,
 	r_list_purge (ss->items);
 	r_search_reset (ss->search, R_SEARCH_KEYWORD);
 
-	r_sign_foreach (a, searchCB, ss);
+	r_sign_foreach (a, addSearchKwCB, &ctx);
 	r_search_begin (ss->search);
 	r_search_set_callback (ss->search, searchHitCB, ss);
 }
@@ -888,12 +906,18 @@ struct ctxFcnMatchCB {
 	RAnalFunction *fcn;
 	RSignGraphMatchCallback cb;
 	void *user;
+	int mincc;
 };
 
 static int graphMatchCB(RSignItem *it, void *user) {
 	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
+	RSignGraph *graph = it->graph;
 
-	if (!it->graph) {
+	if (!graph) {
+		return 1;
+	}
+
+	if (graph->cc < ctx->mincc) {
 		return 1;
 	}
 
@@ -909,10 +933,15 @@ static int graphMatchCB(RSignItem *it, void *user) {
 }
 
 R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, RSignGraphMatchCallback cb, void *user) {
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user };
+	RCore *core = a->coreb.core;
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
 
 	if (!a || !fcn || !cb) {
 		return false;
+	}
+
+	if (core) {
+		ctx.mincc = r_config_get_i (core->config, "zign.mincc");
 	}
 
 	return r_sign_foreach (a, graphMatchCB, &ctx);
@@ -937,7 +966,7 @@ static int offsetMatchCB(RSignItem *it, void *user) {
 }
 
 R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user) {
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user };
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
 
 	if (!a || !fcn || !cb) {
 		return false;
@@ -985,7 +1014,7 @@ exit_function:
 }
 
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user) {
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user };
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
 
 	if (!a || !fcn || !cb) {
 		return false;
