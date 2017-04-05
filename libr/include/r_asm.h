@@ -246,7 +246,6 @@ extern RAsmPlugin r_asm_plugin_tricore;
 extern RAsmPlugin r_asm_plugin_pic18c;
 extern RAsmPlugin r_asm_plugin_rsp;
 extern RAsmPlugin r_asm_plugin_wasm;
-extern RAsmPlugin r_asm_plugin_lua53;
 
 #endif
 
