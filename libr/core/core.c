@@ -648,7 +648,7 @@ static int autocomplete(RLine *line) {
 	if (core) {
 		r_core_free_autocomplete (core);
 		char *ptr = strchr (line->buffer.data, '@');
-		if (ptr && line->buffer.data+line->buffer.index >= ptr) {
+		if (ptr && strchr (ptr + 1, ' ') && line->buffer.data+line->buffer.index >= ptr) {
 			int sdelta, n, i = 0;
 			ptr = (char *)r_str_chop_ro (ptr+1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
