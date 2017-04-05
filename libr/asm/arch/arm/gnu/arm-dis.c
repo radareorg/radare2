@@ -3195,6 +3195,7 @@ typedef struct
 }
 arm_regname;
 
+#define REGNAMESZ 9
 static const arm_regname regnames[] =
 {
   { "reg-names-raw", N_("Select raw register names"),
@@ -3668,7 +3669,9 @@ print_insn_coprocessor (bfd_vma pc,
 			      is_unpredictable = TRUE;
 			    u_reg = value;
 			  }
-			func (stream, "%s", arm_regnames[value]);
+			if (value < REGNAMESZ) {
+				func (stream, "%s", arm_regnames[value]);
+			}
 			break;
 		      case 'V':
 			if (given & (1 << 6))
@@ -3904,7 +3907,9 @@ print_insn_coprocessor (bfd_vma pc,
 		      int offset = given & 0xff;
 		      int multiplier = (given & 0x00000100) ? 4 : 1;
 
-		      func (stream, "[%s", arm_regnames [(given >> 16) & 0xf]);
+		      if (value < REGNAMESZ) {
+			      func (stream, "[%s", arm_regnames [(given >> 16) & 0xf]);
+		      }
 
 #if 0
 		      if (multiplier > 1)
@@ -5033,7 +5038,9 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 				  is_unpredictable = TRUE;
 				U_reg = value;
 			      }
+			if (value < REGNAMESZ) {
 			    func (stream, "%s", arm_regnames[value]);
+}
 			    break;
 			  case 'd':
 			    func (stream, "%ld", value);

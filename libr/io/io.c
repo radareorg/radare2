@@ -511,7 +511,6 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		ret = r_io_read_internal (io, buf + w, l);
 		if (ret < 1) {
 			memset (buf + w, io->Oxff, l); // reading out of file
-			ret = l;
 		} else if (ret < l) {
 			l = ret;
 		}
