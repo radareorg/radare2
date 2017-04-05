@@ -31,6 +31,7 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	if (!strcmp (kind, "type")) {
 		sdb_unset (db, sdb_fmt (-1, "type.%s", name), 0);
 		sdb_unset (db, sdb_fmt (-1, "type.%s.size", name), 0);
+		sdb_unset (db, sdb_fmt (-1, "type.%s.meta", name), 0);
 		sdb_unset (db, name, 0);
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		int i, n = sdb_array_length(db, sdb_fmt (-1, "%s.%s", kind, name));
