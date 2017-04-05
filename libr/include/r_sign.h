@@ -13,7 +13,6 @@ R_LIB_VERSION_HEADER(r_sign);
 
 #define R_SIGN_KEY_MAXSZ 1024
 #define R_SIGN_VAL_MAXSZ 10240
-#define R_SIGN_MAXREFS 128
 
 enum {
 	R_SIGN_BYTES  = 'b', // bytes pattern
@@ -43,7 +42,7 @@ typedef struct r_sign_item_t {
 	RSignBytes *bytes;
 	RSignGraph *graph;
 	ut64 offset;
-	char *refs[R_SIGN_MAXREFS];
+	RList *refs;
 } RSignItem;
 
 typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
@@ -64,7 +63,7 @@ R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *by
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
 R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset);
-R_API bool r_sign_add_refs(RAnal *a, const char *name, char **refs);
+R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 
@@ -85,8 +84,7 @@ R_API RSignItem *r_sign_item_new();
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 
-R_API char **r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
-R_API void r_sign_fcn_refs_free(char **refs);
+R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
 
 // TODO
 R_API int r_sign_is_flirt(RBuffer *buf);

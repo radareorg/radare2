@@ -31,48 +31,29 @@ const char *getRealRef(RCore *core, ut64 off) {
 	return NULL;
 }
 
-R_API char **r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
+R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
 	RCore *core = a->coreb.core;
+	RList *refs = NULL;
 	const char *flag = NULL;
-	char **refs = NULL;
-	int i = 0;
 
 	if (!a || !fcn || !core) {
 		return NULL;
 	}
 
-	refs = malloc (R_SIGN_MAXREFS * sizeof (char*));
+	refs = r_list_newf ((RListFree) free);
 
 	r_list_foreach (fcn->refs, iter, refi) {
-		if (i >= R_SIGN_MAXREFS - 1) {
-			break;
-		}
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			flag = getRealRef (core, refi->addr);
 			if (flag) {
-				refs[i] = r_str_newf (flag);
-				i++;
+				r_list_append (refs, r_str_newf (flag));
 			}
 		}
 	}
-	refs[i] = NULL;
 
 	return refs;
-}
-
-R_API void r_sign_fcn_refs_free(char **refs) {
-	int i;
-
-	if (!refs) {
-		return;
-	}
-
-	for (i = 0; refs[i] && i < R_SIGN_MAXREFS; i++) {
-		free (refs[i]);
-	}
-	free (refs);
 }
 
 static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
@@ -145,10 +126,10 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	refs = r_str_new (token);
 	nrefs = r_str_split (refs, ',');
 	if (nrefs > 0) {
-		for (i = 0; i < nrefs && i < R_SIGN_MAXREFS - 1; i++) {
-			it->refs[i] = r_str_new (r_str_word_get0 (refs, i));
+		it->refs = r_list_newf ((RListFree) free);
+		for (i = 0; i < nrefs; i++) {
+			r_list_append (it->refs, r_str_newf (r_str_word_get0 (refs, i)));
 		}
-		it->refs[i] = NULL;
 	}
 
 exit_function:
@@ -169,7 +150,9 @@ static void serializeKeySpaceStr(RAnal *a, const char *space, const char* name, 
 }
 
 static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
-	char *hexbytes = NULL, *hexmask = NULL, *hexgraph = NULL, *refs = NULL;
+	RListIter *iter = NULL;
+	char *hexbytes = NULL, *hexmask = NULL, *hexgraph = NULL;
+	char *refs = NULL, *ref = NULL;
 	int i = 0, len = 0;
 	RSignBytes *bytes = it->bytes;
 	RSignGraph *graph = it->graph;
@@ -190,11 +173,12 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			hexgraph = calloc (1, sizeof (RSignGraph) * 2 + 1);
 			r_hex_bin2str ((ut8 *) graph, sizeof (RSignGraph), hexgraph);
 		}
-		for (i = 0; it->refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
+		r_list_foreach (it->refs, iter, ref) {
 			if (i > 0) {
 				refs = r_str_appendch (refs, ',');
 			}
-			refs = r_str_append (refs, it->refs[i]);
+			refs = r_str_append (refs, ref);
+			i++;
 		}
 
 		snprintf (v, R_SIGN_VAL_MAXSZ, "%d|%s|%s|%s|%"PFMT64d"|%s",
@@ -213,7 +197,8 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 }
 
 static void mergeItem(RSignItem *dst, RSignItem *src) {
-	int i;
+	RListIter *iter = NULL;
+	char *ref = NULL;
 
 	if (src->bytes) {
 		if (dst->bytes) {
@@ -231,9 +216,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	}
 
 	if (src->graph) {
-		if (dst->graph) {
-			free (dst->graph);
-		}
+		free (dst->graph);
 
 		dst->graph = R_NEW0 (RSignGraph);
 		*dst->graph = *src->graph;
@@ -243,8 +226,13 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 		dst->offset = src->offset;
 	}
 
-	for (i = 0; src->refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
-		dst->refs[i] = r_str_new (src->refs[i]);
+	if (src->refs) {
+		r_list_free (dst->refs);
+
+		dst->refs = r_list_newf ((RListFree) free);
+		r_list_foreach (src->refs, iter, ref) {
+			r_list_append (dst->refs, r_str_new (ref));
+		}
 	}
 }
 
@@ -369,9 +357,10 @@ R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset) {
 	return retval;
 }
 
-R_API bool r_sign_add_refs(RAnal *a, const char *name, char **refs) {
+R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs) {
 	RSignItem *it = NULL;
-	int i = 0;
+	RListIter *iter = NULL;
+	char *ref = NULL;
 	bool retval = true;
 
 	if (!a || !name || !refs) {
@@ -383,10 +372,10 @@ R_API bool r_sign_add_refs(RAnal *a, const char *name, char **refs) {
 	it->name = r_str_new (name);
 	it->space = a->zign_spaces.space_idx;
 
-	for (i = 0; refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
-		it->refs[i] = r_str_new (refs[i]);
+	it->refs = r_list_newf ((RListFree) free);
+	r_list_foreach (refs, iter, ref) {
+		r_list_append (it->refs, r_str_newf (ref));
 	}
-	it->refs[i] = NULL;
 
 	retval = addItem (a, it);
 
@@ -497,6 +486,8 @@ static void listOffset(RAnal *a, RSignItem *it, int format) {
 }
 
 static void listRefs(RAnal *a, RSignItem *it, int format) {
+	RListIter *iter = NULL;
+	char *ref = NULL;
 	int i = 0;
 
 	if (format == '*') {
@@ -507,7 +498,7 @@ static void listRefs(RAnal *a, RSignItem *it, int format) {
 		a->cb_printf ("  refs: ");
 	}
 
-	for (i = 0; i < R_SIGN_MAXREFS - 1 && it->refs[i]; i++) {
+	r_list_foreach (it->refs, iter, ref) {
 		if (i > 0) {
 			if (format == '*') {
 				a->cb_printf (" ");
@@ -518,10 +509,11 @@ static void listRefs(RAnal *a, RSignItem *it, int format) {
 			}
 		}
 		if (format == 'j') {
-			a->cb_printf ("\"%s\"", it->refs[i]);
+			a->cb_printf ("\"%s\"", ref);
 		} else {
-			a->cb_printf ("%s", it->refs[i]);
+			a->cb_printf ("%s", ref);
 		}
+		i++;
 	}
 
 	if (format == 'j') {
@@ -594,7 +586,7 @@ static int listCB(void *user, const char *k, const char *v) {
 	}
 
 	// References
-	if (it->refs[0]) {
+	if (it->refs) {
 		listRefs (a, it, ctx->format);
 	} else if (ctx->format == 'j') {
 		a->cb_printf ("\"refs\":[]");
@@ -977,10 +969,11 @@ R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCal
 
 static int refsMatchCB(RSignItem *it, void *user) {
 	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
-	char **refs = NULL;
+	RList *refs = NULL;
+	char *ref_a = NULL, *ref_b = NULL;
 	int i = 0, retval = 1;
 
-	if (!it->refs[0]) {
+	if (!it->refs) {
 		return 1;
 	}
 
@@ -989,26 +982,31 @@ static int refsMatchCB(RSignItem *it, void *user) {
 	if (!refs) {
 		return 1;
 	}
+
 	for (i = 0; ; i++) {
-		if (!refs[i] || !it->refs[i]) {
-			if (refs[i] != it->refs[i]) {
+		ref_a = (char *) r_list_get_n (it->refs, i);
+		ref_b = (char *) r_list_get_n (refs, i);
+
+		if (!ref_a || !ref_b) {
+			if (ref_a != ref_b) {
 				retval = 1;
 				goto exit_function;
 			}
 			break;
 		}
-		if (strcmp (refs[i], it->refs[i])) {
+		if (strcmp (ref_a, ref_b)) {
 			retval = 1;
 			goto exit_function;
 		}
 	}
+
 	if (ctx->cb) {
 		retval = ctx->cb (it, ctx->fcn, ctx->user);
 		goto exit_function;
 	}
 
 exit_function:
-	r_sign_fcn_refs_free (refs);
+	r_list_free (refs);
 
 	return retval;
 }
@@ -1035,7 +1033,8 @@ R_API RSignItem *r_sign_item_new() {
 
 R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	RSignItem *ret = NULL;
-	int i = 0;
+	RListIter *iter = NULL;
+	char *ref = NULL;
 
 	if (!it) {
 		return NULL;
@@ -1059,35 +1058,27 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 		*ret->graph = *it->graph;
 	}
 
-	for (i = 0; it->refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
-		ret->refs[i] = r_str_new (it->refs[i]);
+	ret->refs = r_list_newf ((RListFree) free);
+	r_list_foreach (it->refs, iter, ref) {
+		r_list_append (ret->refs, r_str_new (ref));
 	}
 
 	return ret;
 }
 
 R_API void r_sign_item_free(RSignItem *item) {
-	int i = 0;
-
 	if (!item) {
 		return;
 	}
 
 	free (item->name);
-
 	if (item->bytes) {
 		free (item->bytes->bytes);
 		free (item->bytes->mask);
 		free (item->bytes);
 	}
-
-	if (item->graph) {
-		free (item->graph);
-	}
-
-	for (i = 0; i < R_SIGN_MAXREFS - 1 && item->refs[i]; i++) {
-		free (item->refs[i]);
-	}
+	free (item->graph);
+	r_list_free (item->refs);
 
 	free (item);
 }

@@ -43,7 +43,7 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 }
 
 static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
-	char **refs;
+	RList *refs;
 	bool retval = true;
 
 	refs = r_sign_fcn_refs (core->anal, fcn);
@@ -53,7 +53,7 @@ static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
 	
 	retval = r_sign_add_refs (core->anal, name, refs);
 
-	r_sign_fcn_refs_free (refs);
+	r_list_free (refs);
 
 	return retval;
 }
@@ -175,8 +175,8 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 }
 
 static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
-	char *refs[R_SIGN_MAXREFS];
-	int i;
+	RList *refs = NULL;
+	int i = 0;
 	bool retval = true;
 
 	if (nargs < 1) {
@@ -184,16 +184,14 @@ static bool addRefsZign(RCore *core, const char *name, const char *args0, int na
 		return false;
 	}
 
-	for (i = 0; i < nargs && i < R_SIGN_MAXREFS - 1; i++) {
-		refs[i] = r_str_new (r_str_word_get0 (args0, i));
+	refs = r_list_newf ((RListFree) free);
+	for (i = 0; i < nargs; i++) {
+		r_list_append (refs, r_str_new (r_str_word_get0 (args0, i)));
 	}
-	refs[i] = NULL;
 
 	retval = r_sign_add_refs (core->anal, name, refs);
 
-	for (i = 0; refs[i] && i < R_SIGN_MAXREFS - 1; i++) {
-		free (refs[i]);
-	}
+	r_list_free (refs);
 
 	return retval;
 }
