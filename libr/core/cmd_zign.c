@@ -10,14 +10,14 @@
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	ut8 *buf = NULL;
 	int fcnlen = 0, len = 0;
-	int minzlen = r_config_get_i (core->config, "zign.min");
-	int maxzlen = r_config_get_i (core->config, "zign.max");
+	int minzlen = r_config_get_i (core->config, "zign.minsz");
+	int maxzlen = r_config_get_i (core->config, "zign.maxsz");
 	bool retval = true;
 
 	fcnlen = r_anal_fcn_realsize (fcn);
 
 	if (fcnlen < minzlen) {
-		eprintf ("warn: omitting %s zignature is too small. Length is %d. Check zign.min.\n",
+		eprintf ("warn: omitting %s bytes zignature (length is %d, check zign.minsz)\n",
 			fcn->name, fcnlen);
 		retval = false;
 		goto exit_function;
@@ -43,8 +43,17 @@ exit_function:
 
 static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	RSignGraph graph;
+	int cc = -1;
+	int mincc = r_config_get_i (core->config, "zign.mincc");
 
-	graph.cc = r_anal_fcn_cc (fcn);
+	cc = r_anal_fcn_cc (fcn);
+	if (cc < mincc) {
+		eprintf ("warn: omitting %s graph zignature (CC is %d, check zign.mincc)\n",
+			fcn->name, cc);
+		return false;
+	}
+
+	graph.cc = cc;
 	graph.nbbs = r_list_length (fcn->bbs);
 	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
 
@@ -461,7 +470,7 @@ static int cmdFile(void *data, const char *input) {
 				"Usage:", "zo[zs] filename ", "# Manage zignature files",
 				"zo ", "filename", "load zinatures from sdb file",
 				"zoz ", "filename", "load zinatures from gzipped sdb file",
-				"zos ", "filename", "save zignatures to sdb file",
+				"zos ", "filename", "save zignatures to sdb file (merge if file exists)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -582,7 +591,6 @@ static int cmdFlirt(void *data, const char *input) {
 
 	return true;
 }
-
 
 struct ctxSearchCB {
 	RCore *core;

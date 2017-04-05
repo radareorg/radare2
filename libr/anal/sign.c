@@ -96,7 +96,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	// name (2)
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
 
-	// Deserialize val: size|bytes|mask|graph
+	// Deserialize val: size|bytes|mask|graph|offset|refs
 	n = r_str_split (v2, '|');
 	if (n != 6) {
 		retval = false;

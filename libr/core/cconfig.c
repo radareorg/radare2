@@ -1959,9 +1959,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 
 	// zign
-	SETI("zign.min", 16, "Minimum zignature length");
-	SETI("zign.max", 500, "Maximum zignature length");
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
+	SETI("zign.minsz", 16, "Minimum zignature length");
+	SETI("zign.maxsz", 500, "Maximum zignature length");
+	SETI("zign.mincc", 10, "Minimum cyclomatic complexity");
 	SETPREF("zign.match.graph", "true", "Use graph metrics for matching");
 	SETPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
 	SETPREF("zign.match.offset", "true", "Use original offset for matching");
