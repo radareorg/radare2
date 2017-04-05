@@ -533,8 +533,9 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				ut64 o = r_io_section_maddr_to_vaddr (io, addr + w);
 				if (o == UT64_MAX) {
 					ut64 o = r_io_section_vaddr_to_maddr_try (io, addr + w);
-					if (o == UT64_MAX)
+					if (o == UT64_MAX) {
 						memset (buf + w, io->Oxff, l);
+					}
 				}
 				break;
 			}
@@ -620,11 +621,14 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	}
 
 	buffer = malloc (tmp_size);
+	if (!buffer) {
+		return false;
+	}
 	// shift the bytes over by size
-	r_io_seek (io, curr_off, R_IO_SEEK_SET);
+	(void) r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	r_io_read (io, buffer, tmp_size);
 	// move/write the bytes
-	r_io_seek (io, curr_off + size, R_IO_SEEK_SET);
+	(void) r_io_seek (io, curr_off + size, R_IO_SEEK_SET);
 	r_io_write (io, buffer, tmp_size);
 	// zero out new bytes
 	if (cur_size < size) {
@@ -632,17 +636,17 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 		buffer = malloc (size);
 	}
 	memset (buffer, 0, size);
-	r_io_seek (io, curr_off, R_IO_SEEK_SET);
+	(void) r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	r_io_write (io, buffer, size);
 	// reset the cursor
-	r_io_seek (io, curr_off, R_IO_SEEK_SET);
+	(void) r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	free (buffer);
 	return true;
 }
 
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
 	if (!size) return false;
-	r_io_seek (io, addr, R_IO_SEEK_SET);
+	(void) r_io_seek (io, addr, R_IO_SEEK_SET);
 	return r_io_extend (io, size);
 }
 
@@ -1071,6 +1075,9 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 		*out_sz = io->maxalloc;
 	}
 	buf = malloc (*out_sz + 1);
+	if (!buf) {
+		return NULL;
+	}
 	buf[*out_sz] = 0;
 	if (!buf) {
 		if (*out_sz > R_IO_MAX_ALLOC) {
@@ -1147,24 +1154,16 @@ if (hasperm) {
 	if (io->debug) {
 		// TODO check debug maps here
 		return true;
-	} else {
-		if (io_sectonly) {
-			if (r_list_empty (io->sections)) {
-				return true;
-			}
-			return (r_io_map_exists_for_offset (io, offset) ||
-				r_io_section_exists_for_vaddr (io, offset, hasperm));
-		} else {
-			if (!io_va) {
-				if (!io_va && r_io_map_exists_for_offset (io, offset)) {
-					return true;
-				}
-			}
-			return r_io_section_exists_for_vaddr (io, offset, hasperm);
-			//return (offset < r_io_size (io));
-		}
 	}
-	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
-	r_sys_backtrace ();
-	return R_FAIL;
+	if (io_sectonly) {
+		if (r_list_empty (io->sections)) {
+			return true;
+		}
+		return (r_io_map_exists_for_offset (io, offset) ||
+			r_io_section_exists_for_vaddr (io, offset, hasperm));
+	}
+	if (!io_va && r_io_map_exists_for_offset (io, offset)) {
+		return true;
+	}
+	return r_io_section_exists_for_vaddr (io, offset, hasperm);
 }

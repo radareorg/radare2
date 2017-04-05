@@ -531,8 +531,9 @@ static int cmd_open(void *data, const char *input) {
 			ut64 ba = 0L;
 			ut64 ma = 0L;
 			char *fn = strdup (input + (isn? 2:1));
-			if (!*fn) {
+			if (!fn || !*fn) {
 				eprintf ("Usage: on [file]\n");
+				free (fn);
 				break;
 			}
 			ptr = strchr (fn, ' ');

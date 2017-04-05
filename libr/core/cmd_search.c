@@ -2777,6 +2777,7 @@ reread:
 					eprintf ("Cannot open '%s'\n", arg);
 				}
 			}
+			free (arg);
 		} else {
 			eprintf ("Usage: /f [file] ([offset] ([size]))\n");
 		}

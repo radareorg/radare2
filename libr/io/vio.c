@@ -197,7 +197,7 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 		}
 		return R_FAIL;
 	}
-	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	(void) r_io_seek (io, paddr, R_IO_SEEK_SET);
 	if (io->buffer_enabled){
 #if	VIO_DEBUG
 		read_from = "buffer";
@@ -306,7 +306,7 @@ R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
 	}
 	if ((UT64_MAX - len) < paddr)			//prevent overflows
 		len = UT64_MAX - paddr;
-	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	(void) r_io_seek (io, paddr, R_IO_SEEK_SET);
 	if (io->desc && io->desc->plugin && io->desc->plugin->write) {
 #if	VIO_DEBUG
 		written_to = io->desc->plugin->name;

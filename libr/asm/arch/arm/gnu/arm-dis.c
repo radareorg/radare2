@@ -3906,12 +3906,14 @@ print_insn_coprocessor (bfd_vma pc,
 
 		      func (stream, "[%s", arm_regnames [(given >> 16) & 0xf]);
 
+#if 0
 		      if (multiplier > 1)
 			{
 			  value_in_comment = offset * multiplier;
 			  if (NEGATIVE_BIT_SET)
-			    value_in_comment = - value_in_comment;
+			    value_in_comment = -value_in_comment;
 			}
+#endif
 
 		      if (offset)
 			{

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -161,7 +161,7 @@ static int rafind_open(char *file) {
 
 	curfile = file;
 	r_search_begin (rs);
-	r_io_seek (io, from, R_IO_SEEK_SET);
+	(void) r_io_seek (io, from, R_IO_SEEK_SET);
 	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
 	for (cur = from; !last && cur < to; cur += bsize) {
 		if ((cur + bsize) > to) {

@@ -1761,6 +1761,10 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
 					RIOSection *s = print->iob.section_vget (print->iob.io, r_num_get (NULL, p + i));
 					if (s) {
+						if (strlen (s->name) + j + 1 >= COLORIZE_BUFSIZE) {
+							eprintf ("stop before overflow\n");
+							break;
+						}
 						strcpy (o + j, s->name);
 						j += strlen (o + j);
 						strcpy (o + j, ".");
