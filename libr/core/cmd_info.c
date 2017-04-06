@@ -100,7 +100,11 @@ static void r_core_file_info(RCore *core, int mode) {
 				uri = "";
 			}
 		}
-		r_cons_printf (",\"file\":\"%s\"", uri);
+		{
+			char *escapedFile = r_str_escape (uri);
+			r_cons_printf (",\"file\":\"%s\"", escapedFile);
+			free (escapedFile);
+		}
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
