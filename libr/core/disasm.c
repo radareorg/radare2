@@ -2709,7 +2709,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 				// not just for LEA
 				f2 = r_flag_get_i (core->flags, refaddr);
-				if (f2 && f != f2) {
+				if (f2 && f != f2 && !strstr (ds->opstr, f2->name)) {
 					ALIGN;
 					ds_comment (ds, true, "%s; LEA %s%s", esc, f2->name, nl);
 				}
