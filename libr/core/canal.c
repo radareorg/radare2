@@ -987,7 +987,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			r_anal_var_count (core->anal, fcn, 'b', 0));
 		r_cons_printf (",\"size\":%d", r_anal_fcn_size (fcn));
 		r_cons_printf (",\"stack\":%d", fcn->maxstack);
-		r_cons_printf (",\"type\":%d", fcn->type); // TODO: output string
+		r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 		//r_cons_printf (",\"cc\":%d", fcn->call); // TODO: calling convention
 		if (fcn->dsc) r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);
 		r_cons_printf (",\"blocks\":[");
