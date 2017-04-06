@@ -1115,7 +1115,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
 				const char *difftype = bbi->diff? (\
 					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
-					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "gray";
+					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "orange";
 				const char *diffname = bbi->diff? (\
 					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "match":
 					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "unmatch": "new"): "unk";

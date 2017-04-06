@@ -291,10 +291,10 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		// the final distance is the last byte we processed in the inner loop.
 		// v0 is used instead of v1 because we switched the pointers before exiting the outer loop
 		*distance = v0[stop];
-		if (similarity) {
-			double diff = (double) (*distance) / (double) (R_MAX (aLen, bLen));
-			*similarity = (double)1 - diff;
-		}
+	}
+	if (similarity) {
+		double diff = (double) (v0[stop]) / (double) (R_MAX (aLen, bLen));
+		*similarity = (double)1 - diff;
 	}
 	free (v0);
 	free (v1);
