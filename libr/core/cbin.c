@@ -48,8 +48,14 @@ static void pair_int(const char *a, int n, int mode, bool last) {
 
 static void pair_str(const char *a, const char *b, int mode, int last) {
 	if (IS_MODE_JSON (mode)) {
-		if (!b) b = "";
-		pair (a, sdb_fmt (0, "\"%s\"", b), mode, last);
+		if (!b) {
+			b = "";
+		}
+		char *eb = r_str_escape (b);
+		if (eb) {
+			pair (a, sdb_fmt (0, "\"%s\"", eb), mode, last);
+			free (eb);
+		}
 	} else {
 		pair (a, b, mode, last);
 	}
