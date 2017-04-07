@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -738,10 +738,13 @@ rep:
 		}
 		break;
 	case '?':
-	{
+		if (input[1]) {
+			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
+		} else {
 		const char *help_msg[] = {
 		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
 		"f","","list flags (will only list flags from selected flagspaces)",
+		"f?","flagname","check if flag exists or not, See ?? and ?!",
 		"f."," [*[*]]","list local per-function flags (*) as r2 commands",
 		"f.","blah=$$+12","set local function label named 'blah'",
 		"f*","","list flags in r commands",
