@@ -1002,7 +1002,7 @@ int main(int argc, char **argv, char **envp) {
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
 					(debug || r.io->va) ? "" : "p", r.file->desc->name);
 			/* TODO: only load data if no project is used */
-			lock = r_th_lock_new ();
+			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 			// rabin_delegate (NULL);
 		} // else eprintf ("Metadata loaded from 'prj.name'\n");

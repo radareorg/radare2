@@ -2661,21 +2661,24 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
+	r_th_lock_enter (core->lock);
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
 			if (strchr (cstr, invalid_chars[i])) {
-				return 1;
+				ret = true;
+				goto beach;
 			}
 		}
 		if (strncmp (cstr, core->cmdfilter, strlen (core->cmdfilter))) {
-			return 1;
+			ret = true;
+			goto beach;
 		}
 	}
 	if (core->cmdremote) {
 		if (*cstr != '=' && *cstr != 'q' && strncmp (cstr, "!=", 2)) {
 			r_io_system (core->io, cstr);
-			return 0;
+			goto beach; // false
 		}
 	}
 
@@ -2686,16 +2689,16 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (!strncmp (cstr, "/*", 2)) {
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
+			goto beach; // false
 		}
 		core->incomment = true;
 	} else if (!strncmp (cstr, "*/", 2)) {
 		core->incomment = false;
-		return false;
+		goto beach; // false
 	}
-	if (core->incomment)
-		return false;
-
+	if (core->incomment) {
+		goto beach; // false
+	}
 	if (log && (*cstr && (*cstr != '.' || !strncmp (cstr, ".(", 2)))) {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);
@@ -2703,7 +2706,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 	ocmd = cmd = malloc (strlen (cstr) + 4096);
 	if (!ocmd) {
-		return false;
+		goto beach;
 	}
 	r_str_cpy (cmd, cstr);
 	if (log) {
@@ -2716,7 +2719,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		free (core->oobi);
 		core->oobi = NULL;
 		core->oobi_len = 0;
-		return 0;
+		goto beach;
 	}
 	core->cmd_depth--;
 	for (rcmd = cmd;;) {
@@ -2739,6 +2742,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	free (core->oobi);
 	core->oobi = NULL;
 	core->oobi_len = 0;
+beach:
+	r_th_lock_leave (core->lock);
 	return ret;
 }
 

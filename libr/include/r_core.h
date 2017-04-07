@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -166,6 +166,7 @@ typedef struct r_core_t {
 	bool fixedblock;
 	char *cmdfilter;
 	bool break_loop;
+	RThreadLock *lock;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -187,7 +188,7 @@ R_API RCons *r_core_get_cons (RCore *core);
 R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
-R_API int r_core_init(RCore *core);
+R_API bool r_core_init(RCore *core);
 R_API RCore *r_core_new(void);
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);

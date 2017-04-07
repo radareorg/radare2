@@ -1520,7 +1520,7 @@ static int mywrite(const ut8 *buf, int len) {
 	return r_cons_memcat ((const char *)buf, len);
 }
 
-R_API int r_core_init(RCore *core) {
+R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
@@ -1529,6 +1529,7 @@ R_API int r_core_init(RCore *core) {
 		return false;
 	}
 	r_core_setenv (core);
+	core->lock = r_th_lock_new (true);
 	core->cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;

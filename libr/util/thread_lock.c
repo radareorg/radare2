@@ -1,18 +1,26 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_th.h>
 
 /* locks/mutex/sems */
 
-R_API RThreadLock *r_th_lock_new() {
-	RThreadLock *thl = R_NEW(RThreadLock);
+R_API RThreadLock *r_th_lock_new(bool recursive) {
+	RThreadLock *thl = R_NEW0 (RThreadLock);
 	if (thl) {
 		thl->refs = 0;
 #if HAVE_PTHREAD
-		pthread_mutex_init (&thl->lock, NULL);
+		if (recursive) {
+			pthread_mutexattr_t attr;
+			pthread_mutexattr_init (&attr);
+			pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
+			pthread_mutex_init (&thl->lock, &attr);
+		} else {
+			pthread_mutex_init (&thl->lock, NULL);
+		}
 #elif __WINDOWS__ && !defined(__CYGWIN__)
 		//thl->lock = CreateSemaphore(NULL, 0, 1, NULL);
-		InitializeCriticalSection(&thl->lock);
+		// TODO: obey `recursive`
+		InitializeCriticalSection (&thl->lock);
 #endif
 	}
 	return thl;
@@ -32,7 +40,7 @@ R_API int r_th_lock_wait(RThreadLock *thl) {
 
 R_API int r_th_lock_enter(RThreadLock *thl) {
 #if HAVE_PTHREAD
-	pthread_mutex_lock(&thl->lock);
+	pthread_mutex_lock (&thl->lock);
 #elif __WINDOWS__ && !defined(__CYGWIN__)
 	EnterCriticalSection (&thl->lock);
 #endif
@@ -46,8 +54,9 @@ R_API int r_th_lock_leave(RThreadLock *thl) {
 	LeaveCriticalSection (&thl->lock);
 	//ReleaseSemaphore (thl->lock, 1, NULL);
 #endif
-	if (thl->refs>0)
+	if (thl->refs > 0) {
 		thl->refs--;
+	}
 	return thl->refs;
 }
 
