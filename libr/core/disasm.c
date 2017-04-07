@@ -129,6 +129,7 @@ typedef struct r_disam_options_t {
 	int oplen;
 	bool show_varxs;
 	bool show_vars;
+	bool show_varsum;
 	int midflags;
 	const char *pal_comment;
 	const char *color_comment;
@@ -447,6 +448,7 @@ static RDisasmState * ds_init(RCore *core) {
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
 	ds->show_vars = r_config_get_i (core->config, "asm.vars");
+	ds->show_varsum = r_config_get_i (core->config, "asm.varsum");
 	ds->show_varxs = r_config_get_i (core->config, "asm.varxs");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
@@ -1103,6 +1105,22 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 		base, sign, delta);
 }
 
+static void printVarSummary(RDisasmState *ds, RList *list, const char *name) {
+	RAnalVar *var;
+	RListIter *iter;
+	int vars = 0;
+	int args = 0;
+	r_list_foreach (list, iter, var) {
+		if (var->delta > 0) {
+			args++;
+		} else {
+			vars++;
+		}
+	}
+	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
+	r_cons_printf ("%s: %d (vars %d, args %d)\n", name, vars + args, vars, args);
+}
+
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
@@ -1186,7 +1204,17 @@ static void ds_show_functions(RDisasmState *ds) {
 		ds->pre = r_str_append (ds->pre, " ");
 	}
 	ds->stackptr = core->anal->stackptr;
-	if (ds->show_vars) {
+	if (ds->show_vars && ds->show_varsum) {
+		RList *bp_vars = r_anal_var_list (core->anal, f, 'b');
+		RList *rg_vars = r_anal_var_list (core->anal, f, 'r');
+		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
+		printVarSummary (ds, bp_vars, "bp");
+		printVarSummary (ds, sp_vars, "sp");
+		printVarSummary (ds, rg_vars, "rg");
+		r_list_free (bp_vars);
+		r_list_free (rg_vars);
+		r_list_free (sp_vars);
+	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;

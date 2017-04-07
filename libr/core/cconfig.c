@@ -1873,6 +1873,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
+	SETPREF("asm.varsum", "false", "Show variables summary instead of full list in disasm");
 	SETPREF("asm.varsub_only", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETPREF("asm.relsub", "true", "Substitute pc relative expressions in disasm");
 	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
