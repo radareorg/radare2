@@ -521,6 +521,9 @@ R_API void r_cons_filter() {
 
 R_API void r_cons_push() {
 	if (I.cons_stack) {
+		if (I.buffer_len < 1) {
+			return;
+		}
 		RConsStack *data = R_NEW0 (RConsStack);
 		data->buf = malloc (I.buffer_len);
 		if (!data->buf) {
@@ -552,7 +555,7 @@ R_API void r_cons_pop() {
 		if (!data) {
 			return;
 		}
-		if (!data->buf) {
+		if (!data->buf || data->buf_size < 1 || data->buf_len < 1) {
 			free (data);
 			return;
 		}
