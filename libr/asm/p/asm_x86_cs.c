@@ -8,14 +8,15 @@
 
 static csh cd = 0;
 static int n = 0;
-static cs_insn *insn = NULL;
 
 static bool the_end(void *p) {
+#if 0
 #if !USE_ITER_API
 	if (insn) {
 		cs_free (insn, n);
 		insn = NULL;
 	}
+#endif
 #endif
 	if (cd) {
 		cs_close (&cd);
@@ -69,14 +70,19 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		return true;
 	}
+	cs_insn *insn = NULL;
 #if USE_ITER_API
 	{
 		size_t size = len;
-		if (!insn) {
+		if (!insn || cd < 1) {
 			insn = cs_malloc (cd);
 		}
-		insn->size = 1;
+		if (!insn) {
+			cs_free (insn, n);
+			return 0;
+		}
 		memset (insn, 0, insn->size);
+		insn->size = 1;
 		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
 	}
 #else
@@ -99,7 +105,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				insn->op_str);
 		ptrstr = strstr (op->buf_asm, "ptr ");
 		if (ptrstr) {
-			memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
+			memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
 		}
 	}
 	if (a->syntax == R_ASM_SYNTAX_JZ) {
@@ -112,8 +118,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #if USE_ITER_API
 	/* do nothing because it should be allocated once and freed in the_end */
 #else
-	cs_free (insn, n);
-	insn = NULL;
+	if (insn) {
+		cs_free (insn, n);
+	}
 #endif
 	return op->size;
 }
