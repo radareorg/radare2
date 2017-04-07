@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2016 - pancake */
+/* radare2 - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -204,6 +204,45 @@ static const char* getspr(struct Getarg *gop, int n) {
 		break;
 	}
 	return cspr;
+}
+
+static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+	int i;
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, "{");
+	cs_sysz *x = &insn->detail->sysz;
+	r_strbuf_append (buf, "\"operands\":[");
+	for (i = 0; i < x->op_count; i++) {
+		cs_sysz_op *op = &x->operands[i];
+		if (i > 0) {
+			r_strbuf_append (buf, ",");
+		}
+		r_strbuf_append (buf, "{");
+		switch (op->type) {
+		case SYSZ_OP_REG:
+			r_strbuf_append (buf, "\"type\":\"reg\"");
+			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			break;
+		case SYSZ_OP_IMM:
+			r_strbuf_append (buf, "\"type\":\"imm\"");
+			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			break;
+		case SYSZ_OP_MEM:
+			r_strbuf_append (buf, "\"type\":\"mem\"");
+			if (op->mem.base != SYSZ_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+			}
+			r_strbuf_appendf (buf, ",\"index\":%"PFMT64d"", (st64)op->mem.index);
+			r_strbuf_appendf (buf, ",\"length\":%"PFMT64d"", (st64)op->mem.length);
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
+			break;
+		default:
+			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			break;
+		}
+		r_strbuf_append (buf, "}");
+	}
+	r_strbuf_append (buf, "]}");
 }
 
 #define PPCSPR(n) getspr(&gop, n)
@@ -448,6 +487,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
+		opex (&op->opex, handle, insn);
 		struct Getarg gop = {
 			.handle = handle,
 			.insn = insn,
