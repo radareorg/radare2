@@ -2573,6 +2573,7 @@ static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
 
 static void cmd_esil_mem(RCore *core, const char *input) {
 	ut64 curoff = core->offset;
+	const char *patt = "";
 	ut64 addr = 0x100000;
 	ut32 size = 0xf0000;
 	char name[128];
@@ -2601,8 +2602,9 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		return;
 	}
 
-addr = r_config_get_i (core->config, "esil.stack.addr");
-size = r_config_get_i (core->config, "esil.stack.size");
+	addr = r_config_get_i (core->config, "esil.stack.addr");
+	size = r_config_get_i (core->config, "esil.stack.size");
+	patt = r_config_get (core->config, "esil.stack.pattern");
 
 	p = strncpy (nomalloc, input, 255);
 	if ((p = strchr (p, ' '))) {
@@ -2659,6 +2661,22 @@ size = r_config_get_i (core->config, "esil.stack.size");
 	if (cf) {
 		r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
 		r_flag_set (core->flags, "aeim.stack", addr, size);
+	}
+	if (pattern && *pattern) {
+		switch (*pattern) {
+		case '0':
+			// do nothing
+			break;
+		case 'd':
+			r_core_cmdf (core, "wopD %d @ 0x%"PFMT64x, size, addr);
+			break;
+		case 'i':
+			r_core_cmdf (core, "woe 0 255 1 @ 0x%"PFMT64x"!%d",addr, size);
+			break;
+		case 'w':
+			r_core_cmdf (core, "woe 0 0xffff 1 4 @ 0x%"PFMT64x"!%d",addr, size);
+			break;
+		}
 	}
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
