@@ -19,7 +19,6 @@ static bool snes_asm_fini (void* user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;
-}
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = snesDisass (snesflags->M, snesflags->X, a->pc, op, buf, len);
