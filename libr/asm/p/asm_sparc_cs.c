@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2016 - pancake */
+/* radare2 - LGPL - Copyright 2014-2017 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -48,6 +48,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
 		insn->mnemonic, insn->op_str[0]? " ": "",
 		insn->op_str);
+	r_str_replace_char (op->buf_asm, '%', 0);
 	// TODO: remove the '$'<registername> in the string
 	cs_free (insn, n);
 	beach:
@@ -69,7 +70,7 @@ RAsmPlugin r_asm_plugin_sparc_cs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_sparc_cs,
 	.version = R2_VERSION

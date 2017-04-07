@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2016 - pancake */
+/* radare2 - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -178,8 +178,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (insn) {
 		opex (&op->opex, *handle, insn);
 		// caching operands
-		for (i=0; i<insn->detail->mips.op_count && i<8; i++) {
-			*str[i]=0;
+		for (i = 0; i < insn->detail->mips.op_count && i < 8; i++) {
+			*str[i] = 0;
 			ARG (i);
 		}
 	}
