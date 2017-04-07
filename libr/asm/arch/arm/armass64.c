@@ -47,13 +47,15 @@ typedef struct operand_t {
 	};
 } Operand;
 
+#define MAX_OPERANDS 7
+
 typedef struct Opcode_t {
 	char *mnemonic;
 	ut32 op[3];
 	size_t op_len;
 	ut8 opcode[3];
 	int operands_count;
-	Operand operands[5];
+	Operand operands[MAX_OPERANDS];
 } ArmOp;
 
 static int get_mem_option(char *token) {
@@ -546,7 +548,10 @@ static bool parseOperands(char* str, ArmOp *op) {
 		}
 		token = ++x;
 		operand ++;
-
+		if (operand > MAX_OPERANDS) {
+			free (t);
+			return false;	
+		}
 	}
 	free (t);
 	return true;
@@ -563,13 +568,14 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 	space[0] = '\0';
 	op->mnemonic = in;
 	space ++;
-	parseOperands (space, op);
-	return true;
+	return parseOperands (space, op);
 }
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
-	parseOpcode (str, &ops);
+	if (!parseOpcode (str, &ops)) {
+		return -1;
+	}
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "mov", 3)) {
 		*op = mov (&ops);
