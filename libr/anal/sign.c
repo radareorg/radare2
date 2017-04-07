@@ -34,11 +34,17 @@ const char *getRealRef(RCore *core, ut64 off) {
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
-	RCore *core = a->coreb.core;
+	RCore *core = NULL;
 	RList *refs = NULL;
 	const char *flag = NULL;
 
-	if (!a || !fcn || !core) {
+	if (!a || !fcn) {
+		return NULL;
+	}
+
+	core = a->coreb.core;
+
+	if (!core) {
 		return NULL;
 	}
 
