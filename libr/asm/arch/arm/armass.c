@@ -38,6 +38,7 @@ enum {
 	TYPE_MOVT = 13,
 	TYPE_UDF = 14,
 	TYPE_SHFT = 15,
+	TYPE_COPROC = 16,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -116,6 +117,8 @@ static ArmOp ops[] = {
 	{"asr", 0x5000a0e1, TYPE_SHFT},
 	{"lsl", 0x1000a0e1, TYPE_SHFT},
 	{"ror", 0x7000a0e1, TYPE_SHFT},
+
+	{"mrc", 0x100010ee, TYPE_COPROC},
 
 	{ NULL }
 };
@@ -895,6 +898,7 @@ static int findyz(int x, int *y, int *z) {
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int i, j, ret, reg, a, b;
+	int coproc, opc;
 	bool rex = false;
 	int shift, low, high;
 	for (i = 0; ops[i].name; i++) {
@@ -1149,6 +1153,49 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					return 0;
 				}
 				ao->o |= reg << 24;
+				break;
+			case TYPE_COPROC:
+				//printf ("%s %s %s %s %s\n", ao->a[0], ao->a[1], ao->a[2], ao->a[3], ao->a[4] );
+				coproc = getnum (ao->a[0] + 1);
+				if (coproc == -1 || coproc > 9) {
+					return 0;
+				}
+				ao->o |= coproc << 16;
+
+				opc = getnum (ao->a[1]);
+				if (opc == -1 || opc > 7) {
+					return 0;
+				}
+				ao->o |= opc << 13;
+
+				reg = getreg (ao->a[2]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 20;
+
+				// coproc register 1
+				coproc = getnum (ao->a[3] + 1);
+				if (coproc == -1 || coproc > 15) {
+					return 0;
+				}
+				ao->o |= coproc << 8;
+
+				coproc = getnum (ao->a[4] + 1);
+				if (coproc == -1 || coproc > 15) {
+					return 0;
+				}
+				ao->o |= coproc << 24;
+
+				coproc = getnum (ao->a[5]);
+				if (coproc > -1) {
+					if (coproc > 7) {
+						return 0;
+					}
+					// optional opcode
+					ao->o |= coproc << 29;
+				}
+
 				break;
 			}
 			return 1;
