@@ -23,6 +23,57 @@
 #define MEMDISP(x) insn->detail->m68k.operands[x].mem.disp
 // TODO scale and disp
 
+static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+	int i;
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, "{");
+	cs_m68k *x = &insn->detail->m68k;
+	r_strbuf_append (buf, "\"operands\":[");
+	for (i = 0; i < x->op_count; i++) {
+		cs_m68k_op *op = &x->operands[i];
+		if (i > 0) {
+			r_strbuf_append (buf, ",");
+		}
+		r_strbuf_append (buf, "{");
+		switch (op->type) {
+		case M68K_OP_REG:
+			r_strbuf_append (buf, "\"type\":\"reg\"");
+			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			break;
+		case M68K_OP_IMM:
+			r_strbuf_append (buf, "\"type\":\"imm\"");
+			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			break;
+		case M68K_OP_MEM:
+			r_strbuf_append (buf, "\"type\":\"mem\"");
+			if (op->mem.base_reg != M68K_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.base_reg));
+			}
+			if (op->mem.index_reg != M68K_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.index_reg));
+			}
+			if (op->mem.in_base_reg != M68K_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.in_base_reg));
+			}
+			r_strbuf_appendf (buf, ",\"in_disp\":%"PFMT64d"", op->mem.in_disp);
+			r_strbuf_appendf (buf, ",\"out_disp\":%"PFMT64d"", op->mem.out_disp);
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
+			r_strbuf_appendf (buf, ",\"scale\":%"PFMT64d"", (st64)op->mem.scale);
+			r_strbuf_appendf (buf, ",\"bitfield\":%"PFMT64d"", (st64)op->mem.bitfield);
+			r_strbuf_appendf (buf, ",\"width\":%"PFMT64d"", (st64)op->mem.width);
+			r_strbuf_appendf (buf, ",\"offset\":%"PFMT64d"", (st64)op->mem.offset);
+			r_strbuf_appendf (buf, ",\"index_size\":%"PFMT64d"", (st64)op->mem.index_size);
+			break;
+		default:
+			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			break;
+		}
+		r_strbuf_append (buf, "}");
+	}
+	r_strbuf_append (buf, "]");
+	r_strbuf_append (buf, "}");
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
@@ -60,7 +111,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n<1 || insn->size<1) {
+	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
@@ -76,6 +127,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->delay = 0;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
+	opex (&op->opex, handle, insn);
 	switch (insn->id) {
 	case M68K_INS_INVALID:
 		op->type  = R_ANAL_OP_TYPE_ILL;
