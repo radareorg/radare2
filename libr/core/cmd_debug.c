@@ -3673,6 +3673,7 @@ static int cmd_debug(void *data, const char *input) {
 			const char * help_message[] = {
 				"Usage: di", "", "Debugger target information",
 				"di", "", "Show debugger target information",
+				"di*", "", "Same as above, but in r2 commands",
 				"dij", "", "Same as above, but in JSON format",
 				NULL
 			};
@@ -3680,60 +3681,74 @@ static int cmd_debug(void *data, const char *input) {
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			char *escaped_str;
 			switch (input[1]) {
-				case '\0':
+			case '\0':
 #define P r_cons_printf
 #define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
-					if (rdi) {
-						const char *s = r_signal_to_string (core->dbg->reason.signum);
-						P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
-						P ("signal=%s\n", s? s: "none");
-						P ("signum=%d\n", core->dbg->reason.signum);
-						P ("sigpid=%d\n", core->dbg->reason.tid);
-						P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
-						P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
-						P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
-						P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
-						P ("pid=%d\n", rdi->pid);
-						P ("tid=%d\n", rdi->tid);
-						P ("uid=%d\n", rdi->uid);
-						P ("gid=%d\n", rdi->gid);
-						if (rdi->exe && *rdi->exe)
-							P ("exe=%s\n", rdi->exe);
-						if (rdi->cmdline && *rdi->cmdline)
-							P ("cmdline=%s\n", rdi->cmdline);
-						if (rdi->cwd && *rdi->cwd)
-							P ("cwd=%s\n", rdi->cwd);
-						if (rdi->kernel_stack && *rdi->kernel_stack)
-							P ("kernel_stack=\n%s\n", rdi->kernel_stack);
-					}
-					if (stop != -1) P ("stopreason=%d\n", stop);
-					break;
-				case 'j':
-					P ("{");
-					if (rdi) {
-						const char *s = r_signal_to_string (core->dbg->reason.signum);
-						P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
-						P ("\"signal\":\"%s\",", s? s: "none");
-						P ("\"signum\":%d,", core->dbg->reason.signum);
-						P ("\"sigpid\":%d,", core->dbg->reason.tid);
-						P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
-						P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
-						P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core, NULL));
-						P ("\"pid\":%d,", rdi->pid);
-						P ("\"tid\":%d,", rdi->tid);
-						P ("\"uid\":%d,", rdi->uid);
-						P ("\"gid\":%d,", rdi->gid);
-						if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
-							if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
-						if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
-					}
-					P ("\"stopreason\":%d}\n", stop);
-					break;
+				if (rdi) {
+					const char *s = r_signal_to_string (core->dbg->reason.signum);
+					P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
+					P ("signal=%s\n", s? s: "none");
+					P ("signum=%d\n", core->dbg->reason.signum);
+					P ("sigpid=%d\n", core->dbg->reason.tid);
+					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
+					P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
+					P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
+					P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
+					P ("pid=%d\n", rdi->pid);
+					P ("tid=%d\n", rdi->tid);
+					P ("uid=%d\n", rdi->uid);
+					P ("gid=%d\n", rdi->gid);
+					if (rdi->exe && *rdi->exe)
+						P ("exe=%s\n", rdi->exe);
+					if (rdi->cmdline && *rdi->cmdline)
+						P ("cmdline=%s\n", rdi->cmdline);
+					if (rdi->cwd && *rdi->cwd)
+						P ("cwd=%s\n", rdi->cwd);
+					if (rdi->kernel_stack && *rdi->kernel_stack)
+						P ("kernel_stack=\n%s\n", rdi->kernel_stack);
+				}
+				if (stop != -1) P ("stopreason=%d\n", stop);
+				break;
+			case '*':
+				if (rdi) {
+					r_cons_printf ("f dbg.signal = %d\n", core->dbg->reason.signum);
+					r_cons_printf ("f dbg.sigpid = %d\n", core->dbg->reason.tid);
+					r_cons_printf ("f dbg.inbp = %d\n", core->dbg->reason.bp_addr? 1: 0);
+					r_cons_printf ("f dbg.sigaddr = 0x%"PFMT64x"\n", core->dbg->reason.addr);
+					r_cons_printf ("f dbg.baddr = 0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
+					r_cons_printf ("f dbg.pid = %d\n", rdi->pid);
+					r_cons_printf ("f dbg.tid = %d\n", rdi->tid);
+					r_cons_printf ("f dbg.uid = %d\n", rdi->uid);
+					r_cons_printf ("f dbg.gid = %d\n", rdi->gid);
+
+				}
+				break;
+			case 'j':
+				P ("{");
+				if (rdi) {
+					const char *s = r_signal_to_string (core->dbg->reason.signum);
+					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
+					P ("\"signal\":\"%s\",", s? s: "none");
+					P ("\"signum\":%d,", core->dbg->reason.signum);
+					P ("\"sigpid\":%d,", core->dbg->reason.tid);
+					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
+					P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
+					P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core, NULL));
+					P ("\"pid\":%d,", rdi->pid);
+					P ("\"tid\":%d,", rdi->tid);
+					P ("\"uid\":%d,", rdi->uid);
+					P ("\"gid\":%d,", rdi->gid);
+					if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
+						if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
+					if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
+				}
+				P ("\"stopreason\":%d}\n", stop);
+				break;
 #undef P
 #undef PS
-				case '?':
-				default:
-					r_core_cmd_help (core, help_message);
+			case '?':
+			default:
+				r_core_cmd_help (core, help_message);
 			}
 			if (rdi)
 				r_debug_info_free (rdi);

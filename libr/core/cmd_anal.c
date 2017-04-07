@@ -2662,8 +2662,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
 		r_flag_set (core->flags, "aeim.stack", addr, size);
 	}
-	if (pattern && *pattern) {
-		switch (*pattern) {
+	if (patt && *patt) {
+		switch (*patt) {
 		case '0':
 			// do nothing
 			break;
