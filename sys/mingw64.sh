@@ -18,5 +18,5 @@ fi
 
 make clean
 ./configure --without-gmp --with-compiler=x86_64-w64-mingw32-gcc --with-ostype=windows --host=x86_64-unknown-windows --without-ssl
-make -s -j ${MAKE_JOBS} CC="${C} -static-libgcc" && \
+make -s -j ${MAKE_JOBS} CC="${C} -g -static-libgcc" && \
 make w64dist
