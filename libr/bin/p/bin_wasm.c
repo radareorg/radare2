@@ -300,7 +300,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *) x, y)
 #define D(x) r_buf_append_ut32 (buf, x)
 	B ("\x00" "asm", 4);
-	D (0xd); // TODO: add padding
+	B ("\x01\x00\x00\x00", 4);
 	return buf;
 }
 

@@ -12,7 +12,7 @@
 // https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md
 
 #define R_BIN_WASM_MAGIC_BYTES "\x00" "asm"
-#define R_BIN_WASM_VERSION 0xd
+#define R_BIN_WASM_VERSION 0x1
 #define R_BIN_WASM_STRING_LENGTH 256
 #define R_BIN_WASM_MAX_NUM_PARAM 16
 #define R_BIN_WASM_END_OF_CODE 0xb
