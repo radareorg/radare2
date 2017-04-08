@@ -10,8 +10,10 @@ struct instruction {
 			in_reg:2,
 			in_opcode:4,
 			in_operand:8;
-#if __sun
+#if __sun || defined(_MSC_VER)
+#ifndef _MSC_VER
 #warning XXX related to sunstudio :O
+#endif
 };
 #else
 } __packed;

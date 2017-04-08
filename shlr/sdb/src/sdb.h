@@ -1,7 +1,7 @@
 #ifndef SDB_H
 #define SDB_H
 
-#ifndef O_BINARY
+#if !defined(O_BINARY) && !defined(_MSC_VER)
 #define O_BINARY 0
 #endif
 
@@ -29,7 +29,7 @@ extern "C" {
 #define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
 #endif
 
-#if __SDB_WINDOWS__ && !__CYGWIN__
+#if __SDB_WINDOWS__ && !__CYGWIN__ && !_MSC_VER
 #include <windows.h>
 #include <fcntl.h>
 #include <stdbool.h>

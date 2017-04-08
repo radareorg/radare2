@@ -6,6 +6,7 @@ ifeq ($(R2DIR),)
 $(error ERROR: Cannot find R2DIR. Please define this variable)
 else
 LIBR=$(R2DIR)/libr
+MSVC=$(R2DIR)/msvc
 endif
 endif
 SHLR:=$(LIBR)/../shlr

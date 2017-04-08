@@ -30,6 +30,9 @@ static const ut8 Rcon[30] = {
 void aes_expkey (const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb])
 #else
 // XXX this is wrong, but at least it compiles
+#ifdef _MSC_VER
+#pragma message ("AES broken for non-gcc compilers")
+#else
 #warning AES broken for non-gcc compilers
 void aes_expkey (const struct aes_state *st, ut32 ***expkey)
 #endif

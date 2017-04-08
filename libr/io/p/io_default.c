@@ -3,6 +3,9 @@
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
+#ifdef _MSC_VER
+typedef unsigned int ssize_t;
+#endif
 
 typedef struct r_io_mmo_t {
 	char * filename;

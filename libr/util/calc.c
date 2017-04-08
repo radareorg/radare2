@@ -12,7 +12,9 @@
 #include <r_util.h>
 #include <ctype.h>
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 /* accessors */
 static inline RNumCalcValue Nset(ut64 v) { RNumCalcValue n; n.d = (double)v; n.n = v; return n; }

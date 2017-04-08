@@ -46,6 +46,10 @@
 #include <io.h>
 #endif
 
+#ifdef _MSC_VER
+typedef unsigned int ssize_t;
+#endif
+
 #ifndef _ZIP_COMPILING_DEPRECATED
 #define ZIP_DISABLE_DEPRECATED
 #endif

@@ -3,7 +3,9 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include "gzguts.h"
 
 #if defined(__WINDOWS__) && !defined(__BORLANDC__)

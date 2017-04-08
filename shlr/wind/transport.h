@@ -5,7 +5,7 @@
 
 #ifndef HAVE_EPRINTF
 #include <stdio.h>
-#define eprintf(x,y...) fprintf(stderr,x,##y)
+#define eprintf(...) { fprintf(stderr,##__VA_ARGS__); }
 #define HAVE_EPRINTF 1
 #endif
 

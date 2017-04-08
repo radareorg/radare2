@@ -4,7 +4,9 @@
 #include "r_print.h"
 
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 
 #define CTXMINB 5

@@ -3,7 +3,7 @@
 #include <r_anal.h>
 
 #define DB a->sdb_hints
-#define setf(x,y...) snprintf(x,sizeof(x)-1,##y)
+#define setf(x,...) snprintf(x,sizeof(x)-1,##__VA_ARGS__)
 
 R_API void r_anal_hint_clear(RAnal *a) {
 	sdb_reset (a->sdb_hints);

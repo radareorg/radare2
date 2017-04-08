@@ -81,6 +81,11 @@
 #define MINGW32 1
 #endif
 
+#ifdef _MSC_VER
+  /* Useful for windows _CONTEXT structure declaration */
+  #define _X86_
+#endif
+
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
   #define __BSD__ 0
   #define __UNIX__ 1
@@ -89,17 +94,24 @@
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
-#if __WINDOWS__ || _WIN32 || __CYGWIN__ || MINGW32
-  #define __addr_t_defined
-  #include <windows.h>
-#endif
 #if __WINDOWS__ || _WIN32 || MINGW32 && !(__MINGW64__ || __CYGWIN__)
+  #ifdef _MSC_VER
+  /* Must be included before windows.h */
+  #include <winsock2.h>
+  #define WIN32_LEAN_AND_MEAN
+  #else
+  /* Deprecated */
   #include <winsock.h>
+  #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
   #undef __UNIX__
   #undef __BSD__
+#endif
+#if __WINDOWS__ || _WIN32 || __CYGWIN__ || MINGW32
+  #define __addr_t_defined
+  #include <windows.h>
 #endif
 
 #if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
@@ -148,7 +160,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <sys/time.h>
 #include <fcntl.h> /* for O_RDONLY */
 #include <r_endian.h> /* needs size_t */
 
@@ -288,11 +299,12 @@ static inline void *r_new_copy(int size, void *data) {
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
-#endif
 #include <unistd.h>
+#include <sys/time.h>
+#endif
 
 #ifndef HAVE_EPRINTF
-#define eprintf(x,y...) fprintf(stderr,x,##y)
+#define eprintf(...) fprintf(stderr,__VA_ARGS__)
 #define eprint(x) fprintf(stderr,"%s\n",x)
 #define HAVE_EPRINTF 1
 #endif

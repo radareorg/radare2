@@ -850,7 +850,11 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 }
 
 R_API void r_core_anal_hint_list(RAnal *a, int mode) {
+#ifdef _MSC_VER
+	HintListState hls = {0};
+#else
 	HintListState hls = {};
+#endif
 	hls.mode = mode;
 	hls.count = 0;
 	hls.a = a;

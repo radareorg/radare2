@@ -2223,8 +2223,7 @@ static void
 print_register_offset_address (char *buf, size_t size,
 			       const aarch64_opnd_info *opnd)
 {
-  const size_t tblen = 16;
-  char tb[tblen];		/* Temporary buffer.  */
+  char tb[16];		/* Temporary buffer.  */
   bfd_boolean lsl_p = FALSE;	/* Is LSL shift operator?  */
   bfd_boolean wm_p = FALSE;	/* Should Rm be Wm?  */
   bfd_boolean print_extend_p = TRUE;
@@ -2256,9 +2255,9 @@ print_register_offset_address (char *buf, size_t size,
   if (print_extend_p)
     {
       if (print_amount_p)
-	snprintf (tb, tblen, ",%s %d", shift_name, opnd->shifter.amount); // #
+	snprintf (tb, 16, ",%s %d", shift_name, opnd->shifter.amount); // #
       else
-	snprintf (tb, tblen, ",%s", shift_name);
+	snprintf (tb, 16, ",%s", shift_name);
     }
   else
     tb[0] = '\0';

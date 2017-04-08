@@ -275,7 +275,11 @@ static int cmp(const void *a, const void *b) {
 	const char *ca = r_str_chop_ro (a);
 	const char *cb = r_str_chop_ro (b);
 	if (!a || !b) {
+#ifdef _MSC_VER
+		return (int) (size_t) ((char*) a - (char*) b);
+#else
 		return (int) (size_t) (a - b);
+#endif
 	}
 	if (sorted_column > 0) {
 		da = strdup (ca);

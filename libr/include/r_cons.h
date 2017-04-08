@@ -12,7 +12,6 @@ extern "C" {
 #include <sdb.h>
 
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -25,6 +24,9 @@ extern "C" {
 #if __WINDOWS__ && !defined(__CYGWIN__)
 #include <windows.h>
 #include <wincon.h>
+#endif
+#ifndef _MSC_VER
+#include <unistd.h>
 #endif
 
 /* constants */

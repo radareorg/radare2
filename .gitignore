@@ -9,6 +9,9 @@ clang-log/
 *.sdb
 *.dylib
 *.dll
+*.lib
+*.obj
+*.ilk
 *.dSYM
 supported.*
 config.mk
@@ -17,6 +20,9 @@ langs.cfg
 .*.swp
 .*.swo
 *.un~
+*.pdb
+*.lib
+*.ilk
 binr/r2agent/r2agent
 binr/r2agent/r2agent.exe
 binr/rabin2/rabin2
@@ -46,7 +52,6 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
-shlr/grub/libgrubfs.lib
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
@@ -58,7 +63,6 @@ shlr/sdb/src/.sdb.exe
 shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
-shlr/sdb/src/libsdb.lib
 shlr/spp/config.h
 shlr/capstone/
 sys/.mark_python-deps

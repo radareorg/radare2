@@ -14,6 +14,10 @@
 #define st8 signed char
 #define boolt int
 
+#ifdef _MSC_VER
+#define __attribute__(x)
+#endif
+
 typedef struct _ut80 {
 	ut64 Low;
 	ut16 High;

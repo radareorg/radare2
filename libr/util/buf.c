@@ -501,7 +501,11 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
 		switch (fmt[j]) {
+		#ifdef _MSC_VER
+		case'0':case'1':case'2':case'3':case'4':case'5':case'6':case'7':case'8':case'9':
+		#else
 		case '0'...'9':
+		#endif
 			if (m == 1)
 				m = r_num_get (NULL, &fmt[j]);
 			continue;
@@ -652,7 +656,11 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		}
 		if (newlen > b->length) {
 			b->length = newlen;
+#ifdef _MSC_VER
+			_chsize (b->fd, newlen);
+#else
 			ftruncate (b->fd, newlen);
+#endif
 		}
 		return r_sandbox_write (b->fd, buf, len);
 	}

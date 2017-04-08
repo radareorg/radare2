@@ -7,6 +7,9 @@ static char *lpTmpBuffer; //[0x2800u];
 #define SIZE_BUF 0x5800 * 2
 
 #if __WINDOWS__
+#ifdef _MSC_VER
+#pragma comment(lib, "user32.lib")
+#endif
 int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
 	LPVOID pProcessMemory;
 	HANDLE hInjectThread;

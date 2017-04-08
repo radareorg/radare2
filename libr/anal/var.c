@@ -16,10 +16,10 @@ struct VarType {
 
 #define SDB_VARTYPE_FMT "czdz"
 
-#define EXISTS(x, y ...) snprintf (key, sizeof (key) - 1, x, ## y), sdb_exists (DB, key)
-#define SETKEY(x, y ...) snprintf (key, sizeof (key) - 1, x, ## y);
-#define SETKEY2(x, y ...) snprintf (key2, sizeof (key) - 1, x, ## y);
-#define SETVAL(x, y ...) snprintf (val, sizeof (val) - 1, x, ## y);
+#define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
+#define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
+#define SETKEY2(x, ...) snprintf (key2, sizeof (key) - 1, x, ## __VA_ARGS__);
+#define SETVAL(x, ...) snprintf (val, sizeof (val) - 1, x, ## __VA_ARGS__);
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
 	char *fmt = r_anal_type_format (anal, type);
 	RRegItem *i;

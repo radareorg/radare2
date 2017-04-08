@@ -6,7 +6,9 @@
 #include <r_types.h>
 #include <r_util.h>
 #include "pe.h"
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 #include <time.h>
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452

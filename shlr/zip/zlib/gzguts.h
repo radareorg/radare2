@@ -21,7 +21,9 @@
 #include <stdio.h>
 #include "zlib.h"
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <limits.h>
 #include <fcntl.h>

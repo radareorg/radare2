@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 //#include <err.h>
 #include <string.h>
 #define assert(x) if (!(x)) { eprintf("assert ##x##\n"); return; }

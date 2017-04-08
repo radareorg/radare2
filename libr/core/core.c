@@ -1829,7 +1829,11 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 }
 
 static void set_prompt (RCore *r) {
+#ifdef _MSC_VER
+#define max_tmp_size 128
+#else
 	size_t max_tmp_size = 128;
+#endif
 	char tmp[max_tmp_size];
 	char *prompt = NULL;
 	char *filename = strdup ("");
@@ -1890,6 +1894,9 @@ static void set_prompt (RCore *r) {
 
 	R_FREE (filename);
 	R_FREE (prompt);
+#ifdef _MSC_VER
+#undef max_tmp_size
+#endif
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {

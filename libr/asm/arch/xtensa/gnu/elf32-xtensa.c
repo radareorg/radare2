@@ -22,7 +22,9 @@
 #include "dis-asm.h"
 #include <stdio.h>
 #include <stdarg.h>
+#ifndef _MSC_VER
 #include <strings.h>
+#endif
 #include <string.h>
 
 #include "bfdlink.h"

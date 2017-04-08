@@ -5,7 +5,9 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include "sdb.h"
 
 typedef struct {

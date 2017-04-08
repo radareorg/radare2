@@ -1022,3 +1022,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
   (*info->fprintf_func) (stream, _("unknown"));
   return sizeof (buffer);
 }
+
+#ifdef _MSC_VER
+#undef xmalloc
+#endif

@@ -1,9 +1,10 @@
 /* radare - LGPL - Copyright 2006-2015 - pancake */
 
-#include <errno.h>
+/* must be included first because of winsock2.h and windows.h */
+#include <r_socket.h>
 #include <r_types.h>
 #include <r_util.h>
-#include <r_socket.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -11,7 +12,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+#pragma comment(lib, "ws2_32.lib")
+#endif
 
 #if EMSCRIPTEN
 #define NETWORK_DISABLED 1
@@ -107,7 +110,11 @@ R_API bool r_socket_is_connected (RSocket *s) {
 #if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
 	char buf[2];
 	r_socket_block_time (s, 0, 0);
+#ifdef _MSC_VER
+	int ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
+#else
 	ssize_t ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
+#endif
 	r_socket_block_time (s, 1, 0);
 	return ret? true: false;
 #else
@@ -181,7 +188,11 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
+#ifdef _MSC_VER
+	s->fd = INVALID_SOCKET;
+#else
 	s->fd = -1;
+#endif
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
@@ -213,7 +224,11 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		return false;
 	}
 	s->fd = socket (AF_INET, SOCK_STREAM, 0);
+#ifdef _MSC_VER
+	if (s->fd == INVALID_SOCKET)
+#else
 	if (s->fd == -1)
+#endif
 		return false;
 
 	unsigned long iMode = 1;
@@ -225,14 +240,22 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname (host);
 	if (he == (struct hostent*)0) {
+#ifdef _MSC_VER
+		closesocket (s->fd);
+#else
 		close (s->fd);
+#endif
 		return false;
 	}
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	s->port = r_socket_port_by_name (port);
 	sa.sin_port = htons (s->port);
 	if (!connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
+#ifdef _MSC_VER
+		closesocket (s->fd);
+#else
 		close (s->fd);
+#endif
 		return false;
 	}
 	iMode = 0;
@@ -351,7 +374,11 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 
 /* close the file descriptor associated with the RSocket s */
 R_API int r_socket_close_fd (RSocket *s) {
+#ifdef _MSC_VER
+	return s->fd != INVALID_SOCKET ? closesocket (s->fd) : false;
+#else
 	return s->fd != -1 ? close (s->fd) : false;
+#endif
 }
 
 /* shutdown the socket and close the file descriptor */
@@ -450,14 +477,22 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 	s->sa.sin_port = htons (s->port); // TODO honor etc/services
 	if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof (s->sa)) < 0) {
 		r_sys_perror ("bind");
+#ifdef _MSC_VER
+		closesocket (s->fd);
+#else
 		close (s->fd);
+#endif
 		return false;
 	}
 #if __UNIX__ || defined(__CYGWIN__)
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	if (listen (s->fd, 32) < 0) {
+#ifdef _MSC_VER
+		closesocket (s->fd);
+#else
 		close (s->fd);
+#endif
 		return false;
 	}
 #if HAVE_LIB_SSL
@@ -636,7 +671,12 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		} else
 #endif
 		{
+#ifdef _MSC_VER
+			char* winbuf = (char*) buf + len;
+			ret = send (s->fd, winbuf, b, 0);
+#else
 			ret = send (s->fd, buf+delta, b, 0);
+#endif
 		}
 		//if (ret == 0) return -1;
 		if (ret<1) break;

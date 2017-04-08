@@ -6,7 +6,7 @@ ALL_TARGETS+=${TARGET_BOCHS}
 
 LIB_PATH=$(SHLR)/bochs/
 CFLAGS+=-I$(SHLR)/bochs/include/
-LDFLAGS+=$(SHLR)/bochs/lib/libbochs.a
+LDFLAGS+=$(SHLR)/bochs/lib/libbochs.$(EXT_AR)
 
 include $(LIBR)/socket/deps.mk
 

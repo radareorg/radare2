@@ -111,7 +111,11 @@ static int update_self_regions(RIO *io, int pid) {
 
 	return true;
 #else
+#ifdef _MSC_VER
+#pragma message ("Not yet implemented for this platform")
+#else
 	#warning not yet implemented for this platform
+#endif
 	return false;
 #endif
 }
@@ -292,7 +296,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		// TODO: use setitimer
 		alarm (atoi (cmd + 6));
 #else
+#ifdef _MSC_VER
+#pragma message ("self:// alarm is not implemented for this platform yet")
+#else
 	#warning "self:// alarm is not implemented for this platform yet"
+#endif
 #endif
 	} else if (!strncmp (cmd, "dlsym ", 6)) {
 		const char *symbol = cmd + 6;

@@ -46,7 +46,7 @@
 #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
 #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
 
-#define grub_dprintf(condition, fmt, args...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, fmt, ## args)
+#define grub_dprintf(condition, fmt, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, fmt, ## __VA_ARGS__)
 /* XXX: If grub_memmove is too slow, we must implement grub_memcpy.  */
 #define grub_memcpy(d,s,n)	grub_memmove ((d), (s), (n))
 

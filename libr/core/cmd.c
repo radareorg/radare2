@@ -638,7 +638,20 @@ static int cmd_interpret(void *data, const char *input) {
 		}
 		break;
 #if 1
+#ifdef _MSC_VER
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+#else
 	case '0'...'9':
+#endif
 		eprintf ("|ERROR| No .[0..9] to avoid infinite loops\n");
 		break;
 #endif
@@ -1255,7 +1268,11 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		}
 	}
 #else
+#ifdef _MSC_VER
+#pragma message ("r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM")
+#else
 #warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
+#endif
 	eprintf ("r_core_cmd_pipe: unimplemented for this platform\n");
 #endif
 	if (pipecolor != -1)

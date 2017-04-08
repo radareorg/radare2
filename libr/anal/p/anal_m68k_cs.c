@@ -8,7 +8,11 @@
 #define CAPSTONE_HAS_M68K 1
 #else
 #define CAPSTONE_HAS_M68K 0
+#ifdef _MSC_VER
+#pragma message ("Cannot find capstone-m68k support")
+#else
 #warning Cannot find capstone-m68k support
+#endif
 #endif
 
 #if CAPSTONE_HAS_M68K

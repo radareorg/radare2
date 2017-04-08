@@ -113,6 +113,8 @@ int errnoconvert (int x) {
 		{NTO_ELIBEXEC, ENOEXEC},
 		{NTO_EILSEQ, EILSEQ},
 		{NTO_ENOSYS, ENOSYS}
+#else
+		{0}
 #endif
 	};
 	int i;

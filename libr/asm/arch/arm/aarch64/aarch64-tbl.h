@@ -24,7 +24,7 @@
 /* Operand type.  */
 
 #define OPND(x)	AARCH64_OPND_##x
-#define OP0() {}
+#define OP0() { 0 }
 #define OP1(a) {OPND(a)}
 #define OP2(a,b) {OPND(a), OPND(b)}
 #define OP3(a,b,c) {OPND(a), OPND(b), OPND(c)}
@@ -1766,8 +1766,8 @@ struct aarch64_opcode aarch64_opcode_table[] =
   {"br", 0xd61f0000, 0xfffffc1f, branch_reg, 0, CORE, OP1 (Rn), QL_I1X, 0},
   {"blr", 0xd63f0000, 0xfffffc1f, branch_reg, 0, CORE, OP1 (Rn), QL_I1X, 0},
   {"ret", 0xd65f0000, 0xfffffc1f, branch_reg, 0, CORE, OP1 (Rn), QL_I1X, F_OPD0_OPT | F_DEFAULT (30)},
-  {"eret", 0xd69f03e0, 0xffffffff, branch_reg, 0, CORE, OP0 (), {}, 0},
-  {"drps", 0xd6bf03e0, 0xffffffff, branch_reg, 0, CORE, OP0 (), {}, 0},
+  {"eret", 0xd69f03e0, 0xffffffff, branch_reg, 0, CORE, OP0 (), { 0 }, 0},
+  {"drps", 0xd6bf03e0, 0xffffffff, branch_reg, 0, CORE, OP0 (), { 0 }, 0},
   /* Compare & branch (immediate).  */
   {"cbz", 0x34000000, 0x7f000000, compbranch, 0, CORE, OP2 (Rt, ADDR_PCREL19), QL_R_PCREL, F_SF},
   {"cbnz", 0x35000000, 0x7f000000, compbranch, 0, CORE, OP2 (Rt, ADDR_PCREL19), QL_R_PCREL, F_SF},
@@ -1850,14 +1850,14 @@ struct aarch64_opcode aarch64_opcode_table[] =
   {"umnegl", 0x9ba0fc00, 0xffe0fc00, dp_3src, 0, CORE, OP3 (Rd, Rn, Rm), QL_I3SAMEL, F_ALIAS},
   {"umulh", 0x9bc07c00, 0xffe08000, dp_3src, 0, CORE, OP3 (Rd, Rn, Rm), QL_I3SAMEX, 0},
   /* Excep'n generation.  */
-  {"svc", 0xd4000001, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, 0},
-  {"hvc", 0xd4000002, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, 0},
-  {"smc", 0xd4000003, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, 0},
-  {"brk", 0xd4200000, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, 0},
-  {"hlt", 0xd4400000, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, 0},
-  {"dcps1", 0xd4a00001, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, F_OPD0_OPT | F_DEFAULT (0)},
-  {"dcps2", 0xd4a00002, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, F_OPD0_OPT | F_DEFAULT (0)},
-  {"dcps3", 0xd4a00003, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), {}, F_OPD0_OPT | F_DEFAULT (0)},
+  {"svc", 0xd4000001, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, 0},
+  {"hvc", 0xd4000002, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, 0},
+  {"smc", 0xd4000003, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, 0},
+  {"brk", 0xd4200000, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, 0},
+  {"hlt", 0xd4400000, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, 0},
+  {"dcps1", 0xd4a00001, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, F_OPD0_OPT | F_DEFAULT (0)},
+  {"dcps2", 0xd4a00002, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, F_OPD0_OPT | F_DEFAULT (0)},
+  {"dcps3", 0xd4a00003, 0xffe0001f, exception, 0, CORE, OP1 (EXCEPTION), { 0 }, F_OPD0_OPT | F_DEFAULT (0)},
   /* Extract.  */
   {"extr", 0x13800000, 0x7fa00000, extract, 0, CORE, OP4 (Rd, Rn, Rm, IMMS), QL_EXTR, F_HAS_ALIAS | F_SF | F_N},
   {"ror", 0x13800000, 0x7fa00000, extract, OP_ROR_IMM, CORE, OP3 (Rd, Rm, IMMS), QL_SHIFT, F_ALIAS | F_CONV},
@@ -2072,18 +2072,18 @@ struct aarch64_opcode aarch64_opcode_table[] =
   {"adr", 0x10000000, 0x9f000000, pcreladdr, 0, CORE, OP2 (Rd, ADDR_PCREL21), QL_ADRP, 0},
   {"adrp", 0x90000000, 0x9f000000, pcreladdr, 0, CORE, OP2 (Rd, ADDR_ADRP), QL_ADRP, 0},
   /* System.  */
-  {"msr", 0xd500401f, 0xfff8f01f, ic_system, 0, CORE, OP2 (PSTATEFIELD, UIMM4), {}, 0},
-  {"hint", 0xd503201f, 0xfffff01f, ic_system, 0, CORE, OP1 (UIMM7), {}, F_HAS_ALIAS},
-  {"nop", 0xd503201f, 0xffffffff, ic_system, 0, CORE, OP0 (), {}, F_ALIAS},
-  {"yield", 0xd503203f, 0xffffffff, ic_system, 0, CORE, OP0 (), {}, F_ALIAS},
-  {"wfe", 0xd503205f, 0xffffffff, ic_system, 0, CORE, OP0 (), {}, F_ALIAS},
-  {"wfi", 0xd503207f, 0xffffffff, ic_system, 0, CORE, OP0 (), {}, F_ALIAS},
-  {"sev", 0xd503209f, 0xffffffff, ic_system, 0, CORE, OP0 (), {}, F_ALIAS},
-  {"sevl", 0xd50320bf, 0xffffffff, ic_system, 0, CORE, OP0 (), {}, F_ALIAS},
-  {"clrex", 0xd503305f, 0xfffff0ff, ic_system, 0, CORE, OP1 (UIMM4), {}, F_OPD0_OPT | F_DEFAULT (0xF)},
-  {"dsb", 0xd503309f, 0xfffff0ff, ic_system, 0, CORE, OP1 (BARRIER), {}, 0},
-  {"dmb", 0xd50330bf, 0xfffff0ff, ic_system, 0, CORE, OP1 (BARRIER), {}, 0},
-  {"isb", 0xd50330df, 0xfffff0ff, ic_system, 0, CORE, OP1 (BARRIER_ISB), {}, F_OPD0_OPT | F_DEFAULT (0xF)},
+  {"msr", 0xd500401f, 0xfff8f01f, ic_system, 0, CORE, OP2 (PSTATEFIELD, UIMM4), { 0 }, 0},
+  {"hint", 0xd503201f, 0xfffff01f, ic_system, 0, CORE, OP1 (UIMM7), { 0 }, F_HAS_ALIAS},
+  {"nop", 0xd503201f, 0xffffffff, ic_system, 0, CORE, OP0 (), { 0 }, F_ALIAS},
+  {"yield", 0xd503203f, 0xffffffff, ic_system, 0, CORE, OP0 (), { 0 }, F_ALIAS},
+  {"wfe", 0xd503205f, 0xffffffff, ic_system, 0, CORE, OP0 (), { 0 }, F_ALIAS},
+  {"wfi", 0xd503207f, 0xffffffff, ic_system, 0, CORE, OP0 (), { 0 }, F_ALIAS},
+  {"sev", 0xd503209f, 0xffffffff, ic_system, 0, CORE, OP0 (), { 0 }, F_ALIAS},
+  {"sevl", 0xd50320bf, 0xffffffff, ic_system, 0, CORE, OP0 (), { 0 }, F_ALIAS},
+  {"clrex", 0xd503305f, 0xfffff0ff, ic_system, 0, CORE, OP1 (UIMM4), { 0 }, F_OPD0_OPT | F_DEFAULT (0xF)},
+  {"dsb", 0xd503309f, 0xfffff0ff, ic_system, 0, CORE, OP1 (BARRIER), { 0 }, 0},
+  {"dmb", 0xd50330bf, 0xfffff0ff, ic_system, 0, CORE, OP1 (BARRIER), { 0 }, 0},
+  {"isb", 0xd50330df, 0xfffff0ff, ic_system, 0, CORE, OP1 (BARRIER_ISB), { 0 }, F_OPD0_OPT | F_DEFAULT (0xF)},
   {"sys", 0xd5080000, 0xfff80000, ic_system, 0, CORE, OP5 (UIMM3_OP1, Cn, Cm, UIMM3_OP2, Rt), QL_SYS, F_HAS_ALIAS | F_OPD4_OPT | F_DEFAULT (0x1F)},
   {"at", 0xd5080000, 0xfff80000, ic_system, 0, CORE, OP2 (SYSREG_AT, Rt), QL_SRC_X, F_ALIAS},
   {"dc", 0xd5080000, 0xfff80000, ic_system, 0, CORE, OP2 (SYSREG_DC, Rt), QL_SRC_X, F_ALIAS},
@@ -2113,7 +2113,7 @@ struct aarch64_opcode aarch64_opcode_table[] =
   {"bgt", 0x5400000c, 0xff00001f, condbranch, 0, CORE, OP1 (ADDR_PCREL19), QL_PCREL_NIL, F_ALIAS | F_PSEUDO},
   {"ble", 0x5400000d, 0xff00001f, condbranch, 0, CORE, OP1 (ADDR_PCREL19), QL_PCREL_NIL, F_ALIAS | F_PSEUDO},
 
-  {0, 0, 0, 0, 0, 0, {}, {}, 0},
+  {0, 0, 0, 0, 0, 0, { 0 }, { 0 }, 0},
 };
 
 #ifdef AARCH64_OPERANDS

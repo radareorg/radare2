@@ -6,7 +6,7 @@ ALL_TARGETS+=${TARGET_GDB}
 
 LIB_PATH=$(SHLR)/gdb/
 CFLAGS+=-I$(SHLR)/gdb/include/
-LDFLAGS+=$(SHLR)/gdb/lib/libgdbr.a
+LDFLAGS+=$(SHLR)/gdb/lib/libgdbr.$(EXT_AR)
 
 include $(LIBR)/socket/deps.mk
 

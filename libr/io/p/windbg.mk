@@ -6,7 +6,7 @@ ALL_TARGETS+=${TARGET_WINDBG}
 
 LIB_PATH=$(SHLR)/wind
 CFLAGS+=-I$(SHLR)/wind
-LDFLAGS+=$(SHLR)/wind/libr_wind.a
+LDFLAGS+=$(SHLR)/wind/libr_wind.$(EXT_AR)
 
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a

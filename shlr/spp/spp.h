@@ -14,6 +14,7 @@ int r_sys_setenv(const char *key, const char *value);
 
 #ifdef __WINDOWS__
 #include <io.h>
+#include <r_types_base.h>
 #define popen    _popen
 #define pclose   _pclose
 #define srandom  srand

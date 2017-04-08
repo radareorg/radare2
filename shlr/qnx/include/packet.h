@@ -3,14 +3,16 @@
 #define PACKET_H
 
 #include <stdint.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include "libqnxr.h"
 #include <stdio.h>
 #if __WINDOWS__
 #include <windows.h>
-#if !__CYGWIN__
+#if !__CYGWIN__ && !defined(MSC_VER)
 #include <winsock.h>
 #endif
 #endif

@@ -1,3 +1,4 @@
+include ../../libr/config.mk
 include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
@@ -26,21 +27,21 @@ endif
 endif
 
 CFLAGS+=-I../../libr/include
-LIBAR=libr_wind.a
+LIBAR=libr_wind.${EXT_AR}
 LDFLAGS+=-L../../libr/util
 LIBS=-lr_util
 
 OFILES=transport.o kd.o wind.o iob_pipe.o
 
-all: libr_wind.a
+all: ${LIBAR}
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
-libr_wind.a: $(OFILES)
-	rm -f libr_wind.a
-	${AR} q libr_wind.a ${OFILES}
-	${RANLIB} libr_wind.a
+${LIBAR}: $(OFILES)
+	rm -f ${LIBAR}
+	${AR} q ${LIBAR} ${OFILES}
+	${RANLIB} ${LIBAR}
 
 clean:
-	rm -f $(OBJS) libr_wind.a $(OFILES)
+	rm -f $(OBJS) ${LIBAR} $(OFILES)

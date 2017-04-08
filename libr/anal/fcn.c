@@ -29,8 +29,8 @@
 #define MAX_JMPTBL_JMP 10000
 
 #define DB a->sdb_fcns
-#define EXISTS(x, y ...) snprintf (key, sizeof(key) - 1, x, ## y), sdb_exists (DB, key)
-#define SETKEY(x, y ...) snprintf (key, sizeof (key) - 1, x, ## y);
+#define EXISTS(x, ...) snprintf (key, sizeof(key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
+#define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
 
 #define VERBOSE_DELAY if (0)
 

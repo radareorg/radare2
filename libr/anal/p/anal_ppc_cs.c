@@ -18,7 +18,7 @@ struct Getarg {
 	int bits;
 };
 
-#define esilprintf(op, fmt, arg...) r_strbuf_appendf (&op->esil, fmt, ##arg)
+#define esilprintf(op, fmt, ...) r_strbuf_appendf (&op->esil, fmt, ##__VA_ARGS__)
 #define INSOPS insn->detail->ppc.op_count
 #define INSOP(n) insn->detail->ppc.operands[n]
 #define IMM(x) (ut64)(insn->detail->ppc.operands[x].imm)

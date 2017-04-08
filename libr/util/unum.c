@@ -280,9 +280,14 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 		num->dbz = 0;
 	}
 	ret = r_num_calc (num, str, &err);
-	if (err) eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
-	else if (num) num->value = ret;
-	if (num) num->value = ret;
+	if (err) {
+		eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
+	} else if (num) {
+		num->value = ret;
+	}
+	if (num) {
+		num->value = ret;
+	}
 	return ret;
 #else
 	ut64 ret = 0LL;

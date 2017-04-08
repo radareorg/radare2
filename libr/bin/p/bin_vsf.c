@@ -127,6 +127,10 @@ static RList *mem(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile* arch) {
+#ifdef _MSC_VER
+#pragma message ("Windows: WARNING: vsf_sections bypassed !")
+	return NULL;
+#else
 	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) arch->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
@@ -292,6 +296,7 @@ static RList* sections(RBinFile* arch) {
 	}
 
 	return ret;
+#endif
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -494,8 +499,12 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->name, _symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
+#ifdef _MSC_VER
+#pragma message("Windows: WARNING (TODO): vsf symbols bypassed")
+#else
 		ptr->paddr = (vsf_obj->mem + offset) - (void *)arch->buf->buf +
 			     _symbols[i].address;
+#endif
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}
@@ -523,7 +532,11 @@ static RList* entries(RBinFile *arch) {
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
+#ifdef _MSC_VER
+#pragma message("Windows: WARNING (TODO): vsf entries bypassed")
+#else
 	ptr->paddr = (vsf_obj->mem + offset) - (void*) arch->buf->buf;
+#endif
 	ptr->vaddr = vsf_obj->maincpu ? vsf_obj->maincpu->pc : 0;
 	r_list_append (ret, ptr);
 

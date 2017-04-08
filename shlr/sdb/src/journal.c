@@ -1,7 +1,11 @@
 /* sdb - MIT - Copyright 2011-2016 - pancake */
 
 #include "sdb.h"
+#ifdef _MSC_VER
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 
 static const char *sdb_journal_filename(Sdb *s) {
@@ -96,7 +100,11 @@ SDB_API bool sdb_journal_log(Sdb *s, const char *key, const char *val) {
 
 SDB_API bool sdb_journal_clear(Sdb *s) {
 	if (s->journal != -1) {
+#ifdef _MSC_VER
+		return !_chsize (s->journal, 0);
+#else
 		return !ftruncate (s->journal, 0);
+#endif
 	}
 	return false;
 }

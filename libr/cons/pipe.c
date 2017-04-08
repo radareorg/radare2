@@ -1,7 +1,9 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_cons.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <limits.h>
 
 //TODO: cons_pipe should be using a stack pipe_push, pipe_pop

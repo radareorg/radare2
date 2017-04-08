@@ -1,1 +1,1 @@
-LINK+=../../shlr/qnx/lib/libqnxr.a
+LINK+=../../shlr/qnx/lib/libqnxr.$(EXT_AR)

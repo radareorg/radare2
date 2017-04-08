@@ -52,14 +52,14 @@ OBJS = adler32.o crc32.o deflate.o infback.o \
 	zutil.o compress.o uncompr.o gzclose.o \
 	gzlib.o gzread.o gzwrite.o
 
-#OFILES= libr_z.a $(OBJS)
+#OFILES= libr_z.$(EXT_AR) $(OBJS)
 OFILES= $(OBJS)
 
 CFLAGS+=-Wall
 CFLAGS+=-I../../libr/include -I../include/
 #LDFLAGS+=-L../../../libr/util
 LIBNAME=libr_z.${SOVER}
-LIBAR=libr_z.a
+LIBAR=libr_z.$(EXT_AR)
 
 all: ${LIBNAME} ${LIBAR}
 
@@ -69,9 +69,9 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS}
 
-libr_z.a: ${OFILES}
+libr_z.$(EXT_AR): ${OFILES}
 	${CC_AR} ${OFILES}
-	${RANLIB} libr_z.a
+	${RANLIB} libr_z.$(EXT_AR)
 
 clean:
-	rm -f ${LIBNAME} *.o *.a *.d *.dylib *.so
+	rm -f ${LIBNAME} *.o *.$(EXT_AR) *.d *.dylib *.so

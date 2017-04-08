@@ -5,6 +5,12 @@ ALL_TARGETS+=${TARGET_MREPLACE}
 STATIC_OBJ+=${OBJ_MREPLACE}
 
 ${TARGET_MREPLACE}: ${OBJ_MREPLACE}
+ifeq ($(CC),cccl)
 	${CC} $(call libname,parse_mreplace) ${CFLAGS} $(LDFLAGS) \
 		${OBJ_MREPLACE} \
-		-L ../util -L ../../util -lr_util
+		-L../util -L../../util -llibr_util
+else
+	${CC} $(call libname,parse_mreplace) ${CFLAGS} $(LDFLAGS) \
+		${OBJ_MREPLACE} \
+		-L../util -L../../util -lr_util
+endif

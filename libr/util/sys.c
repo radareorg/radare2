@@ -43,12 +43,19 @@ extern char **environ;
 #endif
 #endif
 #if __WINDOWS__ && !defined(__CYGWIN__)
-# include <io.h>
+//TODO Unsure about commenting this
+//# include <io.h>
 # include <winbase.h>
+
+#ifdef _MSC_VER
+#include <psapi.h>
+#include <direct.h>
+#else
 typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
 typedef DWORD WINAPI (*GetProcessImageFileNameA_t) (HANDLE, LPTSTR, DWORD);
 static GetProcessImageFileNameA_t GetProcessImageFileNameA;
 static QueryFullProcessImageNameA_t QueryFullProcessImageNameA;
+#endif
 #endif
 
 R_LIB_VERSION(r_util);
@@ -108,7 +115,11 @@ R_API int r_sys_truncate(const char *file, int sz) {
 	if (fd != -1) {
 		return false;
 	}
+#ifdef _MSC_VER
+	_chsize (fd, sz);
+#else
 	ftruncate (fd, sz);
+#endif
 	close (fd);
 	return true;
 #else
@@ -143,6 +154,9 @@ R_API RList *r_sys_dir(const char *path) {
 #else
 	struct dirent *entry;
 	DIR *dir = r_sandbox_opendir (path);
+#ifdef _MSC_VER
+#pragma message ("TODO Windows support here, check pending PR about dirent.h")
+#else
 	if (dir) {
 		list = r_list_new ();
 		if (list) {
@@ -202,7 +216,11 @@ R_API void r_sys_backtrace(void) {
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
+#ifdef _MSC_VER
+#pragma message ("TODO: r_sys_bt : unimplemented")
+#else
 #warning TODO: r_sys_bt : unimplemented
+#endif
 #endif
 }
 
@@ -241,7 +259,11 @@ R_API int r_sys_clearenv(void) {
 #endif
 	return 0;
 #else
+#ifdef _MSC_VER
+#pragma message ("r_sys_clearenv : unimplemented for this platform")
+#else
 #warning r_sys_clearenv : unimplemented for this platform
+#endif
 	return 0;
 #endif
 }
@@ -561,7 +583,11 @@ R_API int r_sys_cmdbg (const char *str) {
 	exit (0);
 	return -1;
 #else
+#ifdef _MSC_VER
+#pragma message ("r_sys_cmdbg is not implemented for this platform")
+#else
 #warning r_sys_cmdbg is not implemented for this platform
+#endif
 	return -1;
 #endif
 }
@@ -803,6 +829,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
+#ifndef _MSC_VER
 	if (!GetProcessImageFileNameA) {
 		if (!QueryFullProcessImageNameA) {
 			QueryFullProcessImageNameA = (QueryFullProcessImageNameA_t) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
@@ -821,6 +848,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 	}
+#endif
 	HANDLE handle = NULL;
 	TCHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
@@ -907,7 +935,11 @@ R_API int r_sys_getpid() {
 #elif __WINDOWS__ && !defined(__CYGWIN__)
 	return GetCurrentProcessId();
 #else
+#ifdef _MSC_VER
+#pragma message ("r_sys_getpid not implemented for this platform")
+#else
 #warning r_sys_getpid not implemented for this platform
+#endif
 	return -1;
 #endif
 }

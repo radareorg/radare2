@@ -5,10 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <fcntl.h>
-#include <r_util.h>
 #include <r_socket.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -295,7 +297,11 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 	close (saved_stdout);
 	return 0;
 #else
+#ifdef _MSC_VER
+#pragma message ("TODO: handle_redirection_proc: Not implemented for this platform")
+#else
 #warning handle_redirection_proc : unimplemented for this platform
+#endif
 	return -1;
 #endif
 }
@@ -325,7 +331,11 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			}
 		}
 #else
+#ifdef _MSC_VER
+#pragma message ("string redirection handle not yet done")
+#else
 #warning quoted string redirection handle not yet done
+#endif
 #endif
 		return 0;
 	} else if (cmd[0] == '!') {
@@ -711,7 +721,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 				is_child = true;
 
 				if (p->_dofork && !p->_dodebug) {
+#ifdef _MSC_VER
+					int child_pid = r_sys_fork ();
+#else
 					pid_t child_pid = r_sys_fork ();
+#endif
 					if (child_pid == -1) {
 						eprintf("rarun2: cannot fork\n");
 						r_socket_free (child);

@@ -23,7 +23,7 @@ BEXE=${BIN}${EXT_EXE}
 
 ifeq ($(WITHNONPIC),1)
 ## LDFLAGS+=$(addsuffix /lib${BINDEPS}.a,$(addprefix ../../libr/,$(subst r_,,$(BINDEPS))))
-LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.a ; done )
+LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.${EXT_AR} ; done )
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/grub/libgrubfs.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
@@ -33,11 +33,15 @@ LDFLAGS+=../../shlr/java/libr_java.a
 LDFLAGS+=../../libr/util/libr_util.a
 ifneq (${ANDROID},1)
 ifneq (${OSTYPE},linux)
+ifneq ($(CC),cccl)
 LDFLAGS+=-lpthread
 endif
 endif
+endif
 ifneq (${OSTYPE},haiku)
+ifneq ($(CC),cccl)
 LDFLAGS+=-lm
+endif
 endif
 endif
 LDFLAGS+=${DL_LIBS}

@@ -9,7 +9,7 @@ CFLAGS+=-DHAVE_STRING_H=1
 all: $(OUT)
 
 $(OUT):
-	$(CC) $(CFLAGS) $(LDFLAGS) -c `echo $@|sed -e 's,\.o,\.c,g'`
+	$(CC) $(CFLAGS) $(LDFLAGS) -c `echo $@|sed -e 's,\.o,\.c,g'` -o $@
 
 sync:
 	rm -rf tmp
