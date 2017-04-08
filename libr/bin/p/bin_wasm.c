@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - pancake */
+/* radare2 - LGPL - Copyright 2017 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -7,11 +7,11 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length >= 4 && !memcmp (buf, "\x00" "asm", 4));
-}
+#include "wasm/wasm.h"
 
-static ut64 entrypoint = UT64_MAX;
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
+}
 
 static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
@@ -20,14 +20,29 @@ static bool check(RBinFile *arch) {
 }
 
 static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void *) (size_t) check_bytes (buf, sz);
+
+	if (!buf || !sz || sz == UT64_MAX) {
+		return NULL;
+	}
+	if (!check_bytes(buf, sz)) {
+		return NULL;
+	}
+	return r_bin_wasm_init (arch);
+
 }
 
 static bool load(RBinFile *arch) {
-	return check (arch);
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	if (!arch || !arch->o) {
+		return false;
+	}
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	return arch->o->bin_obj != NULL;
 }
 
 static int destroy(RBinFile *arch) {
+	r_bin_wasm_destroy (arch);
 	return true;
 }
 
@@ -42,152 +57,203 @@ static RBinAddr *binsym(RBinFile *arch, int type) {
 static RList *sections(RBinFile *arch);
 
 static RList *entries(RBinFile *arch) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
 
-	if (!(ret = r_list_new ())) {
+	RBinWasmObj *bin = arch && arch->o ? arch->o->bin_obj : NULL;
+
+    // TODO
+    RList *ret;
+    RBinAddr *ptr = NULL;
+	ut64 addr = 0x0;
+
+    if (!(ret = r_list_newf ((RListFree)free))) {
+        return NULL;
+    }
+
+	if (!(addr = (ut64) r_bin_wasm_get_entrypoint (bin))) {
 		return NULL;
 	}
-	if (entrypoint == UT64_MAX) {
-		r_list_free (sections (arch));
-	}
-	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entrypoint;
-		ptr->vaddr = entrypoint;
-		r_list_append (ret, ptr);
-	}
-	return ret;
+
+    if ((ptr = R_NEW0 (RBinAddr))) {
+        ptr->paddr = addr;
+        ptr->vaddr = addr;
+        r_list_append (ret, ptr);
+    }
+    return ret;
 }
 
 static RList *sections(RBinFile *arch) {
+
+	RBinWasmObj *bin = arch && arch->o ? arch->o->bin_obj : NULL;
+
 	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-	// ut64 textsize, datasize, symssize, spszsize, pcszsize;
-	if (!arch->o->info) {
+	RList *secs = NULL;
+    RBinSection *ptr = NULL;
+	RBinWasmSection *sec;
+
+	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
 
-	if (!(ret = r_list_new ())) {
+	if (!(secs = r_bin_wasm_get_sections (bin))) {
 		return NULL;
 	}
-	ret->free = free;
 
-	int next, i = 0;
-	ut8 *buf = arch->buf->buf; // skip magic + version
-	for (i = 8; i < arch->buf->length;) {
-		int id = buf[i];
-#if 0
-		1 Type Function signature declarations
-		2 Import Import declarations
-		3 Function Function declarations
-		4 Table Indirect function table and other tables
-		5 Memory Memory attributes
-		6 Global Global declarations
-		7 Export Exports
-		8 Start Start function declaration
-		9 Element Elements section
-		10 Code Function bodies(code)
-		11 Data Data segments
-#endif
-		ut64 res = 0;
-		ut8 *p = buf + i + 1;
-		const ut8 *afterBuf = r_uleb128 (p, 8, &res);
-		int payloadLen = res;
-		int payloadSize = (int) (size_t) (afterBuf - p);
+	RListIter *iter;
+	r_list_foreach (secs, iter, sec) {
 
-		p += payloadSize;
-
-		afterBuf = r_uleb128 (p, 8, &res);
-		int nameLen = res;
-		int nameSize = (int) (size_t) (afterBuf - p);
-
-		eprintf (" 0x%x len = %d (%d) %d (%d): ", i, payloadLen, payloadSize, nameLen, nameSize);
-
-		next = i + payloadSize + nameSize + payloadLen; // payloadLen - payloadSize - nameSize; //nameSize - nameLen + 1; //payloadLen + nameLen + 1;
-		switch (id) {
-		case 1: // "type"
-			eprintf ("type: function signature declarations\n");
-			break;
-		case 2:
-			eprintf ("import:\n");
-			break;
-		case 3:
-			eprintf ("function:\n");
-			break;
-		case 4:
-			eprintf ("table:\n");
-			break;
-		case 5:
-			eprintf ("memory:\n");
-			break;
-		case 6:
-			eprintf ("global:\n");
-			break;
-		case 7:
-			eprintf ("export:\n");
-			break;
-		case 8:
-			eprintf ("start:\n");
-			break;
-		case 9:
-			eprintf ("element:\n");
-			break;
-		case 10: //
-			eprintf ("code:\n");
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			strncpy (ptr->name, "code", R_BIN_SIZEOF_STRINGS);
-			ptr->size = payloadLen;
-			ptr->vsize = payloadLen;
-			ptr->paddr = i + nameLen + payloadSize + nameSize + 1 + payloadSize;
-			ptr->vaddr = ptr->paddr;
-			if (entrypoint == UT64_MAX) {
-				entrypoint = ptr->vaddr;
-			}
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
-			ptr->add = true;
-			r_list_append (ret, ptr);
-			break;
-		case 11: //
-			eprintf ("data:\n");
-			break;
-		default:
-			eprintf ("unknown type id: %d\n", id);
+		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		if (next <= i) {
-			eprintf ("Error: prevent infinite loop\n");
-			break;
+
+		strncpy (ptr->name, (char*)sec->name, R_BIN_SIZEOF_STRINGS);
+		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
+			ptr->is_data = true;
 		}
-		i = next;
+
+		ptr->size = sec->payload_len;
+		ptr->vsize = sec->payload_len;
+		ptr->vaddr = sec->offset;
+		ptr->paddr = sec->offset;
+		ptr->add = true;
+		// TODO permissions
+		ptr->srwx = 0;
+
+		r_list_append (ret, ptr);
+	
 	}
-	// add text segment
-#if 0
-	textsize = r_mem_get_num (arch->buf->buf + 4, 4);
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
-	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
-	ptr->size = textsize;
-	ptr->vsize = textsize + (textsize % 4096);
-	ptr->paddr = 8 * 4;
-	ptr->vaddr = ptr->paddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
-	ptr->add = true;
-	r_list_append (ret, ptr);
-#endif
+
 	return ret;
+
 }
 
 static RList *symbols(RBinFile *arch) {
-	// TODO: parse symbol table
-	return NULL;
+
+	RBinWasmObj *bin;
+    RList *ret, *codes, *imports;
+    RBinSymbol *ptr = NULL;
+
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		return NULL;
+	}
+	bin = arch->o->bin_obj;
+
+	if (!(ret = r_list_newf ((RListFree)free))) {
+		return NULL;
+	}
+
+	if (!(codes = r_bin_wasm_get_codes (bin))) {
+		return NULL;
+	}
+
+	if (!(imports = r_bin_wasm_get_imports (bin))) {
+		return NULL;
+	}
+
+	RListIter *iter;
+	ut32 i = 0;
+	
+	RBinWasmImportEntry *imp;
+	r_list_foreach (imports, iter, imp) {
+		if (!(ptr = R_NEW0 (RBinSymbol))) {
+			break;
+		}
+		char tmp[R_BIN_SIZEOF_STRINGS];
+		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "imp.%s.%s", imp->module_str, imp->field_str);
+		ptr->name = strdup(tmp);
+		ptr->forwarder = r_str_const ("NONE");
+		ptr->bind = r_str_const ("NONE");
+		switch (imp->kind) {
+		case 0: ptr->type = r_str_const ("FUNC"); break;
+		case 1: ptr->type = r_str_const ("TABLE"); break;
+		case 2: ptr->type = r_str_const ("MEMORY"); break;
+		case 3: ptr->type = r_str_const ("GLOBAL"); break;
+		}
+		ptr->size = 0;
+		ptr->vaddr = 0;
+		ptr->paddr = 0;
+		ptr->ordinal = i;
+		i += 1;
+		r_list_append (ret, ptr);
+	}
+	
+	RBinWasmCodeEntry *func;
+	r_list_foreach (codes, iter, func) {
+		if (!(ptr = R_NEW0 (RBinSymbol))) {
+			break;
+		}
+		char tmp[R_BIN_SIZEOF_STRINGS];
+		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fnc.%d", i);
+		ptr->name = strdup(tmp);
+		ptr->forwarder = r_str_const ("NONE");
+		ptr->bind = r_str_const ("NONE");
+		ptr->type = r_str_const ("FUNC");
+		ptr->size = func->len;
+		ptr->vaddr = (ut64)func->code;
+		ptr->paddr = (ut64)func->code;
+		ptr->ordinal = i;
+		i += 1;
+		r_list_append (ret, ptr);
+	}
+
+	// TODO: use custom section "name" if present
+	// TODO: exports, globals, tables and memories
+
+	return ret;
+
 }
 
 static RList *imports(RBinFile *arch) {
-	return NULL;
+
+	RBinWasmObj *bin = NULL;
+	RList *imports = NULL;
+	RBinImport *ptr = NULL;
+	RList *ret = NULL;
+
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		return NULL;
+	}
+	bin = arch->o->bin_obj;
+
+	if (!(ret = r_list_newf (r_bin_import_free))) {
+		return NULL;
+	}
+
+	if (!(imports = r_bin_wasm_get_imports (bin))) {
+		r_list_free (ret);
+		return NULL;
+	}
+
+	RListIter *iter = NULL;
+	RBinWasmImportEntry *import = NULL;
+	ut32 i = 0;
+
+	r_list_foreach (imports, iter, import) {
+		if (!(ptr = R_NEW0 (RBinImport))) {
+			break;
+		}
+		ptr->name = strdup (import->field_str);
+		ptr->classname = strdup (import->module_str);
+		ptr->ordinal = i;
+		ptr->bind = r_str_const ("NONE");
+		switch(import->kind) {
+		case R_BIN_WASM_EXTERNALKIND_Function:
+			ptr->type = r_str_const ("FUNC");
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Table:
+			ptr->type = r_str_const ("TABLE");
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Memory:
+			ptr->type = r_str_const ("MEM");
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Global:
+			ptr->type = r_str_const ("GLOBAL");
+			break;
+		}
+		r_list_append (ret, ptr);
+	}
+
+	return ret;
+
 }
 
 static RList *libs(RBinFile *arch) {
@@ -217,19 +283,15 @@ static RBinInfo *info(RBinFile *arch) {
 }
 
 static ut64 size(RBinFile *arch) {
-	ut64 text, data, syms, spsz;
+
 	if (!arch->o->info) {
 		arch->o->info = info (arch);
 	}
 	if (!arch->o->info) {
 		return 0;
 	}
-	// TODO: reuse section list
-	text = r_mem_get_num (arch->buf->buf + 4, 4);
-	data = r_mem_get_num (arch->buf->buf + 8, 4);
-	syms = r_mem_get_num (arch->buf->buf + 16, 4);
-	spsz = r_mem_get_num (arch->buf->buf + 24, 4);
-	return text + data + syms + spsz + (6 * 4);
+
+	return arch->buf->length;
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
@@ -238,7 +300,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *) x, y)
 #define D(x) r_buf_append_ut32 (buf, x)
 	B ("\x00" "asm", 4);
-	D (0xc); // TODO: last version is 0xd
+	D (0xd); // TODO: add padding
 	return buf;
 }
 
