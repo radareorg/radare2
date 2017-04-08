@@ -3742,15 +3742,16 @@ toro:
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_fcn_name (ds);
 				ds_print_color_reset (ds);
+				ds_print_comments_right (ds);
 				ds_print_esil_anal (ds);
 				ds_show_refs (ds);
 			}
 		} else {
+			if (ds->show_comments && ds->show_comment_right) {
+				ds_print_color_reset (ds);
+				ds_print_comments_right (ds);
+			}
 			ds->mi_found = false;
-		}
-		if (ds->show_comments && ds->show_comment_right) {
-			ds_print_color_reset (ds);
-			ds_print_comments_right (ds);
 		}
 
 		r_cons_newline ();
