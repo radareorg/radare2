@@ -528,10 +528,10 @@ R_API void r_cons_push() {
 				free (data);
 				return;
 			}
+			memcpy (data->buf, I.buffer, I.buffer_len);
 		} else {
 			data->buf = NULL;
 		}
-		memcpy (data->buf, I.buffer, I.buffer_len);
 		data->buf_len = I.buffer_len;
 		data->buf_size = I.buffer_sz;
 		data->grep = R_NEW0 (RConsGrep);
@@ -568,11 +568,11 @@ R_API void r_cons_pop() {
 			}
 			free (I.buffer);
 			I.buffer = tmp;
+			memcpy (I.buffer, data->buf, data->buf_len);
 		} else {
 			free (I.buffer);
 			I.buffer = NULL;
 		}
-		memcpy (I.buffer, data->buf, data->buf_len);
 		I.buffer_len = data->buf_len;
 		I.buffer_sz = data->buf_size;
 		if (data->grep) {
