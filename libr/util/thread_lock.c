@@ -7,6 +7,7 @@
 R_API RThreadLock *r_th_lock_new(bool recursive) {
 	RThreadLock *thl = R_NEW0 (RThreadLock);
 	if (thl) {
+		// TODO: thl->refs is inconsistently guarded by mutexes and could race
 		thl->refs = 0;
 #if HAVE_PTHREAD
 		if (recursive) {
@@ -18,8 +19,7 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 			pthread_mutex_init (&thl->lock, NULL);
 		}
 #elif __WINDOWS__ && !defined(__CYGWIN__)
-		//thl->lock = CreateSemaphore(NULL, 0, 1, NULL);
-		// TODO: obey `recursive`
+		// TODO: obey `recursive` (currently it is always recursive)
 		InitializeCriticalSection (&thl->lock);
 #endif
 	}
@@ -27,14 +27,8 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 }
 
 R_API int r_th_lock_wait(RThreadLock *thl) {
-#if HAVE_PTHREAD
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
-#elif __WINDOWS__ && !defined(__CYGWIN__)
-	WaitForSingleObject (thl->lock, INFINITE);
-#else
-	while (r_th_lock_check (thl));
-#endif
 	return 0;
 }
 
@@ -52,7 +46,6 @@ R_API int r_th_lock_leave(RThreadLock *thl) {
 	pthread_mutex_unlock (&thl->lock);
 #elif __WINDOWS__ && !defined(__CYGWIN__)
 	LeaveCriticalSection (&thl->lock);
-	//ReleaseSemaphore (thl->lock, 1, NULL);
 #endif
 	if (thl->refs > 0) {
 		thl->refs--;
@@ -61,7 +54,6 @@ R_API int r_th_lock_leave(RThreadLock *thl) {
 }
 
 R_API int r_th_lock_check(RThreadLock *thl) {
-//w32 // TryEnterCriticalSection(&thl->lock);
 	return thl->refs;
 }
 
@@ -71,7 +63,6 @@ R_API void *r_th_lock_free(RThreadLock *thl) {
 		pthread_mutex_destroy (&thl->lock);
 #elif __WINDOWS__ && !defined(__CYGWIN__)
 		DeleteCriticalSection (&thl->lock);
-		CloseHandle (thl->lock);
 #endif
 		free (thl);
 	}
