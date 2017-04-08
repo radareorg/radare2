@@ -43,7 +43,7 @@ code, debugging programs, attaching to remote gdb servers, ..
    w64, Solaris, Haiku, FirefoxOS
 
    * **Bindings:**
-	* Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
+	* Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
    Guile, php5, newlisp, Ruby, Java, OCaml, ...
 
 # Dependencies
