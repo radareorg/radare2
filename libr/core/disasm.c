@@ -3735,18 +3735,22 @@ toro:
 			}
 			ds_print_core_vmode (ds);
 			// ds_print_cc_update (ds);
+
+			ds_print_op_push_info (ds);
+			ds_cdiv_optimization (ds);
+			if (ds->show_comments && ds->show_comment_right) {
+				ds_print_ptr (ds, len + 256, idx);
+				ds_print_fcn_name (ds);
+				ds_print_color_reset (ds);
+				ds_print_esil_anal (ds);
+				ds_show_refs (ds);
+			}
 		} else {
 			ds->mi_found = false;
 		}
-		ds_print_op_push_info (ds);
-		ds_cdiv_optimization (ds);
 		if (ds->show_comments && ds->show_comment_right) {
-			ds_print_ptr (ds, len + 256, idx);
-			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
 			ds_print_comments_right (ds);
-			ds_print_esil_anal (ds);
-			ds_show_refs (ds);
 		}
 
 		r_cons_newline ();
