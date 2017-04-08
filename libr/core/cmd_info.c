@@ -215,7 +215,7 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 			r_cons_printf (",\"core\":");
 		}
 		r_core_file_info (core, mode);
-		if (obj && bin_is_executable (obj)) {
+		if (bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
 				r_cons_printf (",\"bin\":");
 			}

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2016 - pancake */
+/* radare2 - LGPL - Copyright 2008-2017 - pancake */
 
 #include <r_cons.h>
 #include <r_print.h>
@@ -265,7 +265,7 @@ static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
-		eprintf("{ctrl+c} pressed.\n");
+		eprintf ("{ctrl+c} pressed.\n");
 		return true;
 	}
 	return false;
@@ -522,9 +522,12 @@ R_API void r_cons_filter() {
 R_API void r_cons_push() {
 	if (I.cons_stack) {
 		if (I.buffer_len < 1) {
-			return;
+			I.buffer_len = 1;
 		}
 		RConsStack *data = R_NEW0 (RConsStack);
+		if (!data) {
+			return;
+		}
 		data->buf = malloc (I.buffer_len);
 		if (!data->buf) {
 			free (data);
@@ -555,7 +558,7 @@ R_API void r_cons_pop() {
 		if (!data) {
 			return;
 		}
-		if (!data->buf || data->buf_size < 1 || data->buf_len < 1) {
+		if (!data->buf) { // || data->buf_size < 1 || data->buf_len < 1) {
 			free (data);
 			return;
 		}
@@ -814,6 +817,9 @@ club:
 
 R_API void r_cons_printf(const char *format, ...) {
 	va_list ap;
+	if (!format || !*format) {
+		return;
+	}
 	va_start (ap, format);
 	r_cons_printf_list (format, ap);
 	va_end (ap);
@@ -896,7 +902,7 @@ R_API int r_cons_get_cursor(int *rows) {
 	for (i = 0; i < I.buffer_len; i++) {
 		// ignore ansi chars, copypasta from r_str_ansi_len
 		if (I.buffer[i] == 0x1b) {
-			char ch2 = I.buffer[i+1];
+			char ch2 = I.buffer[i + 1];
 			char *str = I.buffer;
 			if (ch2 == '\\') {
 				i++;
@@ -1122,7 +1128,7 @@ R_API void r_cons_set_cup(int enable) {
 }
 
 R_API void r_cons_column(int c) {
-	char *b = malloc (I.buffer_len+1);
+	char *b = malloc (I.buffer_len + 1);
 	if (!b) {
 		return;
 	}
@@ -1132,7 +1138,7 @@ R_API void r_cons_column(int c) {
 	// align current buffer N chars right
 	r_cons_strcat_justify (b, c, 0);
 	r_cons_gotoxy (0, 0);
-	free(b);
+	free (b);
 }
 
 static int lasti = 0; /* last interactive mode */
