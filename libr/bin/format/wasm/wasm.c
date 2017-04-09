@@ -140,7 +140,8 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 	strncpy (ret+i, "(", 1);
 	i += 1;
 
-	for (int p = 0; p < ptr->param_count; p++ ) {
+	int p;
+	for (p = 0; p < ptr->param_count; p++ ) {
 		R_BIN_WASM_VALUETYPETOSTRING (ret+i, ptr->param_types[p], i); // i+=3
 		if (p < ptr->param_count - 1) {
 			strncpy (ret+i, ", ", 2);
@@ -196,7 +197,8 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 			return ret;
 		}
 
-		for (int j = 0; j < ptr->param_count; j++) {
+		int j;
+		for (j = 0; j < ptr->param_count; j++) {
 			if (!(consume_s8 (buf + i, buf + len, (st8*)&ptr->param_types[j], &i))) {
 				free (ptr);
 				return ret;
