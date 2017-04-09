@@ -1107,7 +1107,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	ut8 rl[sizeof (Elf_(Rel))] = {0};
 	ut8 rla[sizeof (Elf_(Rela))] = {0};
 	RBinElfSection *rel_sec = NULL;
-	Elf_(Addr) plt_sym_addr = UT32_MAX;
+	Elf_(Addr) plt_sym_addr = -1;
 	ut64 got_addr, got_offset;
 	ut64 plt_addr;
 	int j, k, tsize, len, nrel;
@@ -1116,15 +1116,15 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	const char *rela_sect[] = { ".rela.plt", ".rel.plt", ".rela.dyn", ".rel.dyn", NULL };
 
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
-		return UT32_MAX;
+		return -1;
 	}
 	if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
 		(got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1) {
-		return UT32_MAX;
+		return -1;
 	}
 	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
 		(got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1) {
-		return UT32_MAX;
+		return -1;
 	}
 	if (bin->is_rela == DT_REL) {
 		j = 0;
@@ -1141,24 +1141,24 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		tsize = sizeof (Elf_(Rela));
 	}
 	if (!rel_sec) {
-		return UT32_MAX;
+		return -1;
 	}
 	if (rel_sec->size < 1) {
-		return UT32_MAX;
+		return -1;
 	}
 	nrel = (ut32)((int)rel_sec->size / (int)tsize);
 	if (nrel < 1) {
-		return UT32_MAX;
+		return -1;
 	}
 	if (is_rela) {
 		rela = calloc (nrel, tsize);
 		if (!rela) {
-			return UT32_MAX;
+			return -1;
 		}
 	} else {
 		rel = calloc (nrel, tsize);
 		if (!rel) {
-			return UT32_MAX;
+			return -1;
 		}
 	}
 	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
@@ -1227,7 +1227,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 				plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
 				if (plt_addr == -1) {
 					free (rela);
-					return UT32_MAX;
+					return -1;
 				}
 				if (reloc_type == R_386_PC16) {
 					plt_addr += k * 12 + 20;
@@ -1384,7 +1384,7 @@ done:
 	return plt_sym_addr;
 out:
 	free (REL);
-	return UT32_MAX;
+	return -1;
 }
 
 int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
@@ -2508,8 +2508,8 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == STN_UNDEF) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
-			} else {
-				toffset = get_import_addr (bin, i);
+			} else if ((toffset = get_import_addr (bin, i)) == -1){
+				toffset = 0;
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_SYMBOLS &&
@@ -2631,8 +2631,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 				if (d->offset == p->offset) {
 					p->in_shdr = true;
 					if (*p->name && strcmp (d->name, p->name)) {
-						//eprintf ("%s by %s\n", p->name, d->name);
-						//strcpy (d->name, p->name);
+						strcpy (d->name, p->name);
 					}
 				}
 				p++;
@@ -2786,8 +2785,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
-					} else {
-						toffset = get_import_addr (bin, k);
+					} else if ((toffset = get_import_addr (bin, k)) == -1){
+						toffset = 0;
 					}
 					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS &&
