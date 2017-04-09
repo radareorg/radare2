@@ -561,7 +561,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			if (procfs_pid_slurp (i, "cmdline", buf, sizeof(buf)) == -1)
 				continue;
 
-			r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+			r_list_append (list, r_debug_pid_new (buf, i, 0, 's', 0));
 		}
 	}
 #else /* rest is BSD */
