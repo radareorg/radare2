@@ -80,6 +80,15 @@ typedef struct {
 	ut32 bss_size;
 } MODMeta;
 
+typedef struct {
+	ut32 *strings;
+	RList *methods_list;
+	RList *imports_list;
+	RList *classes_list;
+} RBinNROObj;
+
+static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0);
+
 static ut32 readLE32(RBuffer *buf, int off) {
 	int left = 0;
 	const ut8 *data = r_buf_get_at (buf, off, &left);
@@ -125,7 +134,16 @@ static bool check(RBinFile *arch) {
 }
 
 static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return (void *) (size_t) check_bytes (buf, sz);
+	RBinNROObj *bin = R_NEW0 (RBinNROObj);
+	if (!bin) {
+		return NULL;
+	}
+	bin->methods_list = r_list_newf ((RListFree)free);
+	bin->imports_list = r_list_newf ((RListFree)free);
+	bin->classes_list = r_list_newf ((RListFree)free);
+	ut32 mod0 = readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
+	parseMod (arch, bin, mod0);
+	return (void *) bin;//(size_t) check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *arch) {
@@ -171,7 +189,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static void walkSymbols (RBinFile *bf, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt) {
+static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt) {
 	int i, import = 0;
 	for (i = 8; i < 99999; i++) {
 		ut64 addr = readLE64 (bf->buf, symtab + i);
@@ -183,18 +201,55 @@ static void walkSymbols (RBinFile *bf, ut64 symtab, ut64 strtab, ut64 strtab_siz
 		if (!symName) {
 			break;
 		}
+		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		if (!sym) {
+			break;
+		}		
+		sym->type = r_str_const ("FUNC");
+		sym->bind = r_str_const ("NONE");
+		sym->size = size;
+
 		if (addr == 0) {
 			import ++;
 			ut64 pltSym = readLE64 (bf->buf, relplt + (import * 24));
-			eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
+			RBinImport *imp = R_NEW0 (RBinImport);
+			if (!imp) {
+				break;
+			}
+			imp->name  = strdup (symName);
+			if (!imp->name) {
+				break;
+			}
+			imp->type = r_str_const ("FUNC");
+			if (!imp->type) {
+				break;
+			}
+			imp->bind = r_str_const ("NONE");
+			if (!imp->bind) {
+				break;
+			}
+			imp->ordinal = bin->imports_list->length;
+			r_list_append (bin->imports_list, imp);
+			sym->name = r_str_newf ("imp.%s", symName);
+			if (!sym->name) {
+				break;
+			}
+			sym->paddr = sym->vaddr =  pltSym - 8;
+			//eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
 		} else {
-			eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
+			sym->name = strdup (symName);
+			if (!sym->name) {
+				break;
+			}
+			sym->paddr = sym->vaddr = addr;
+			//eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
 		}
+		r_list_append (bin->methods_list, sym);
 		i += 8 - 1;
 	}
 }
 
-static void parseMod (RBinFile *bf, ut32 mod0) {
+static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0) {
 	ut32 ptr = readLE32 (bf->buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
@@ -245,7 +300,7 @@ static void parseMod (RBinFile *bf, ut32 mod0) {
 		//ut32 modo = mh.mod_object;
 		ut64 strtab = mo.strtab - mo.base;
 		ut64 symtab = mo.symtab - mo.base;
-		walkSymbols (bf, symtab, strtab, mo.strtab_size, mo.relplt - mo.base);
+		walkSymbols (bf, bin, symtab, strtab, mo.strtab_size, mo.relplt - mo.base);
 	}
 }
 
@@ -294,8 +349,6 @@ static RList *sections(RBinFile *arch) {
 	} else {
 		eprintf ("Invalid MOD0 address\n");
 	}
-
-	parseMod (arch, mod0);
 
 	ut32 sig0 = readLE32 (arch->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
@@ -360,12 +413,27 @@ static RList *sections(RBinFile *arch) {
 }
 
 static RList *symbols(RBinFile *arch) {
-	// TODO: parse symbol table
-	return NULL;
+	RBinNROObj *bin;
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		return NULL;
+	}
+	bin = (RBinNROObj*) arch->o->bin_obj;
+	if (!bin) {
+		return NULL;
+	}
+	return bin->methods_list;
 }
 
 static RList *imports(RBinFile *arch) {
-	return NULL;
+	RBinNROObj *bin;
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		return NULL;
+	}
+	bin = (RBinNROObj*) arch->o->bin_obj;
+	if (!bin) {
+		return NULL;
+	}
+	return bin->imports_list;
 }
 
 static RList *libs(RBinFile *arch) {
