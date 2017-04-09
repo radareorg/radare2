@@ -1396,7 +1396,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 /* imp. is a prefix that can be rewritten by the symbol table */
 static ut64 impaddr(RBin *bin, int va, const char *name) {
-	char impname[512];
+	char *impname;
 	RList *symbols;
 	RBinSymbol *s;
 
@@ -1406,8 +1406,7 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	// TODO: avoid using snprintf here
-	snprintf (impname, sizeof (impname), "imp.%s", name);
+	impname = sdb_fmt (2, "imp.%s", name);
 	s = get_symbol (bin, symbols, impname, 0LL);
 	if (s) {
 		if (va) {

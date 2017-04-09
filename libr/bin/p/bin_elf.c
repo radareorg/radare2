@@ -592,10 +592,9 @@ static RList* relocs(RBinFile *arch) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (arch));
