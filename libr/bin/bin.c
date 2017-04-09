@@ -826,8 +826,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	return res;
 }
 
-R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr,
-			 int xtr_idx) {
+R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
 	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, 0, NULL);
 }
 
@@ -1139,8 +1138,7 @@ static RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes,
-						ut64 sz) {
+R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz) {
 	RBinPlugin *plugin;
 	RListIter *it;
 	if (!bin || !bytes) {
@@ -1425,8 +1423,7 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		}
 	}
 
-	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0,
-			      r_buf_size (bf->buf));
+	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 	// size is set here because the reported size of the object depends on
 	// if loaded from xtr plugin or partially read
 	if (o && !o->size) {

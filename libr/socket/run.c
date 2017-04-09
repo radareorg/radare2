@@ -734,6 +734,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				eprintf ("Cannot chroot to %s\n", p->_chroot);
 				return 1;
 			} else {
+				(void) chdir ("/");
 				if (p->_chgdir) {
 					if (chdir (p->_chgdir) == -1) {
 						eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);

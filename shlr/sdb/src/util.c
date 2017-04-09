@@ -142,7 +142,7 @@ SDB_API char *sdb_aslice(char *out, int from, int to) {
 			end = str + strlen (str);
 		}
 		len = (size_t)(end - str);
-		memcpy (out, str, len);
+		memmove (out, str, len);
 		out[len] = 0;
 		return out;
 	}

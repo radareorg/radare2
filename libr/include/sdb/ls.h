@@ -17,7 +17,8 @@ typedef struct ls_t {
 	SdbListIter *head;
 	SdbListIter *tail;
 	SdbListFree free;
-	SdbListComparator sorted;
+	SdbListComparator cmp;
+	bool sorted;
 } SdbList;
 
 #define ls_foreach(list, it, pos) \
@@ -47,6 +48,7 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data);
 SDB_API SdbListIter *ls_prepend(SdbList *list, void *data);
 //SDB_API void ls_add_sorted(SdbList *list, void *data, SdbListComparator cmp);
 SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp);
+SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp);
 
 SDB_API void ls_delete(SdbList *list, SdbListIter *iter);
 SDB_API bool ls_delete_data(SdbList *list, void *ptr);
@@ -64,5 +66,9 @@ SDB_API void *ls_get_top(SdbList *list);
 SDB_API void *ls_pop(SdbList *list);
 SDB_API void ls_reverse(SdbList *list);
 SDB_API SdbList *ls_clone(SdbList *list);
+SDB_API int ls_join(SdbList *first, SdbList *second);
+SDB_API int ls_del_n(SdbList *list, int n);
+SDB_API SdbListIter *ls_insert(SdbList *list, int n, void *data);
+SDB_API void *ls_pop_head(SdbList *list);
 
 #endif

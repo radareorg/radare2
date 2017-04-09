@@ -20,7 +20,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	struct {
 		RAnalValue* value;
 		char esil[32];
-	} parsed_operands[RSP_MAX_OPNDS];
+	} parsed_operands[RSP_MAX_OPNDS] = {0};
 	ut32 iw;
 	rsp_instruction r_instr;
 

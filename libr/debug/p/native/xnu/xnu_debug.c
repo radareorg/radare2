@@ -794,7 +794,6 @@ static uid_t uidFromPid(pid_t pid) {
 	struct kinfo_proc process;
 	size_t procBufferSize = sizeof (process);
 
-uid = 0;
 	// Compose search path for sysctl. Here you can specify PID directly.
 	const u_int pathLenth = 4;
 	int path[pathLenth] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
