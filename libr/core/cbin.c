@@ -2176,9 +2176,9 @@ static int bin_fields(RCore *r, int mode, int va) {
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s{\"name\":\"%s\","
-				"\"vaddr\":%"PFMT64d",",
-				"\"paddr\":%"PFMT64d"",
-				iter->p?",":"",
+				"\"vaddr\":%"PFMT64d","
+				"\"paddr\":%"PFMT64d,
+				iter->p? ",": "",
 				field->name,
 				field->vaddr,
 				field->paddr
