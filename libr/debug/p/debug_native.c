@@ -487,7 +487,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		struct dirent *de;
 
 		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
 
 		/* list parents */
 		dh = opendir ("/proc");
