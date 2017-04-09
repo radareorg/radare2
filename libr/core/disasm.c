@@ -755,6 +755,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
 		} else {
+			free (ds->opstr);
 			ds->opstr = strdup (asm_str? asm_str: "");
 		}
 	}

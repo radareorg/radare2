@@ -1112,8 +1112,9 @@ int main(int argc, char **argv, char **envp) {
 		char *s = r_core_cmd_str (&r, "ieq");
 		if (s && *s) {
 			int da = r_config_get_i (r.config, "file.analyze");
-			if (da > do_analysis)
+			if (da > do_analysis) {
 				do_analysis = da;
+			}
 		}
 		free (s);
 	}
