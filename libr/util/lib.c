@@ -306,6 +306,11 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 
 R_API int r_lib_opendir(RLib *lib, const char *path) {
 	char file[1024];
+#if __WINDOWS__
+	WIN32_FIND_DATA dir;
+	HANDLE fh;
+	char directory[256];
+#endif
 	struct dirent *de;
 	DIR *dh;
 
@@ -316,6 +321,23 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	if (!path)
 		return false;
 
+#if __WINDOWS__
+	snprintf(directory, sizeof(directory), "%s\\*.*", path);
+	fh = FindFirstFile (directory, &dir);
+	if (fh == INVALID_HANDLE_VALUE) {
+		IFDBG eprintf ("Cannot open directory '%s'\n", file);
+		return false;
+	}
+	do {
+		snprintf (file, sizeof (file), "%s/%s", path, dir.cFileName);
+		if(r_lib_dl_check_filename (dir.cFileName)) {
+			r_lib_open (lib, file);
+		} else {
+			IFDBG eprintf ("Cannot open %s \n", dir.cFileName);
+		}
+	}while (FindNextFile (fh, &dir));
+	FindClose (fh);
+#else
 	dh = opendir (path);
 	if (!dh) {
 		IFDBG eprintf ("Cannot open directory '%s'\n", path);
@@ -330,6 +352,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		}
 	}
 	closedir (dh);
+#endif
 	return true;
 }
 
