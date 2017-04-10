@@ -1547,8 +1547,9 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
 		r_name_filter (sn->classflag, MAXFLAG_LEN);
-		sn->methname = r_str_newf ("%s::%s", sn->classname, sym->name);
-		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
+		const char *name = sym->dname? sym->dname: sym->name;
+		sn->methname = r_str_newf ("%s::%s", sn->classname, name);
+		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, name);
 		r_name_filter (sn->methflag, strlen (sn->methflag));
 	} else {
 		sn->classname = NULL;
@@ -1654,7 +1655,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 					r_anal_hint_set_bits (r->anal, addr, force_bits);
 				}
 			}
-
 			if (!strncmp (symbol->name, "imp.", 4)) {
 				if (lastfs != 'i') {
 					r_flag_space_set (r->flags, "imports");
