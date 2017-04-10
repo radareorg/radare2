@@ -1117,7 +1117,6 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 get_classes_error:
 	r_list_free (sctns);
 	r_list_free (ret);
-	r_bin_class_free (klass);
-	//__r_bin_class_free (klass);
+	// XXX DOUBLE FREE r_bin_class_free (klass);
 	return NULL;
 }

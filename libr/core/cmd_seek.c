@@ -183,7 +183,6 @@ static int cmd_seek(void *data, const char *input) {
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
-	int sign = 1;
 	{
 		const char *u_num = inputnum? inputnum + 1: input + 1;
 		off = r_num_math (core->num, u_num);
@@ -191,10 +190,29 @@ static int cmd_seek(void *data, const char *input) {
 			off = -off;
 		}
 	}
+	int sign = 1;
 	if (input[0] == ' ') {
 		switch (input[1]) {
-		case '-': sign = -1;
-		case '+': input++; break;
+		case '-':
+			sign = -1;
+			/* pass thru */
+		case '+':
+			input++;
+			break;
+		}
+	}
+	bool silent = false;
+	if (*input == 's') {
+		silent = true;
+		input++;
+		if (*input == '?') {
+			const char *help_message[] = {
+				"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
+				"s?", "", "Works with all s subcommands",
+				NULL
+			};
+			r_core_cmd_help (core, help_message);
+			return 0;
 		}
 	}
 
@@ -252,7 +270,9 @@ static int cmd_seek(void *data, const char *input) {
 				break;
 			case 1:
 				off = cb.addr;
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				if (!silent) {
+					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				}
 				r_core_seek (core, off, 1);
 				r_core_block_read (core);
 				break;
@@ -272,7 +292,9 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case ' ':
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		r_core_seek (core, off * sign, 1);
 		r_core_block_read (core);
 		break;
@@ -361,7 +383,9 @@ static int cmd_seek(void *data, const char *input) {
 	case '+':
 		if (input[1] != '\0') {
 			int delta = (input[1] == '+')? core->blocksize: off;
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			}
 			r_core_seek_delta (core, delta);
 		} else {
 			RIOUndos *undo = r_io_sundo_redo (core->io);
@@ -373,7 +397,9 @@ static int cmd_seek(void *data, const char *input) {
 	case '-':
 		if (input[1] != '\0') {
 			int delta = (input[1] == '-')? -core->blocksize: -off;
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			}
 			r_core_seek_delta (core, delta);
 		} else {
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
@@ -384,11 +410,15 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case 'n':
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 		break;
 	case 'p':
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 		break;
 	case 'a':
@@ -405,14 +435,18 @@ static int cmd_seek(void *data, const char *input) {
 			r_cmd_call (core->rcmd, cmd);
 			free (cmd);
 		}
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		r_core_seek_align (core, off, 0);
 		break;
 	case 'b':
 		if (off == 0) {
 			off = core->offset;
 		}
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		r_core_anal_bb_seek (core, off);
 		break;
 	case 'f': // "sf"
@@ -532,32 +566,6 @@ static int cmd_seek(void *data, const char *input) {
 	break;
 	case ':':
 		printPadded (core, atoi (input + 1));
-		break;
-	case 's':
-		switch (input[1]) {
-		case 'r':
-			if (!input[2] || !input[3]) {
-				eprintf ("|Usage| 'ssr PC' seek to program counter register\n");
-				break;
-			}
-			seek_to_register (core, input + 3, true);
-			break;
-		case '?': {
-			const char *help_message[] = {
-				"Usage: ss", "", " # Seek silently commands (without adding the address to the seek history)",
-				"ss", " addr", "Seek silently to address",
-				"ssr", " pc", "Seek silently to register",
-				NULL
-			};
-			r_core_cmd_help (core, help_message);
-			}
-			break;
-		default:
-			r_core_seek (core, off * sign, 1);
-			r_core_block_read (core);
-			break;
-		}
-
 		break;
 	case '?': {
 		const char *help_message[] = {
