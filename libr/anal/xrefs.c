@@ -120,7 +120,6 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	if (!list) {
 		return NULL;
 	}
-	list->free = NULL; // XXX
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_NULL, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CODE, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CALL, to);
@@ -138,7 +137,6 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 	if (!list) {
 		return NULL;
 	}
-	list->free = NULL;
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_NULL, from);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CODE, from);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CALL, from);

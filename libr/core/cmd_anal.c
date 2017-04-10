@@ -3940,34 +3940,41 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		NULL };
 	switch (input[0]) {
 	case '-': { // "ax-"
-		const char *inp;
-		ut64 b;
-		char *p;
 		RList *list;
 		RListIter *iter;
 		RAnalRef *ref;
-		for (inp = input + 1; *inp && IS_WHITESPACE (*inp); inp++) {
-			//nothing to see here
-		}
-		if (!strcmp (inp, "*")) {
+		char *cp_inp = strdup (input + 1);
+		char *ptr = r_str_trim_head (cp_inp); 
+		if (!strcmp (ptr, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
-			p = strdup (inp);
-			if (p) {
-				b = r_num_math (core->num, p);
-				free (p);
-			} else {
-				//b = UT64_MAX;
-				b = core->offset;
+			int n = r_str_word_set0 (ptr);
+			ut64 from = UT64_MAX, to = UT64_MAX;
+			switch (n) {
+			case 2:
+				from = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				//fall through
+			case 1: // get addr
+				to = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				break;
+			default:
+				to = core->offset;
+				break;
 			}
-			list = r_anal_refs_get (core->anal, b);
+			list = r_anal_xrefs_get (core->anal, to);
 			if (list) {
 				r_list_foreach (list, iter, ref) {
-					r_anal_ref_del (core->anal, ref->at, ref->addr);
+					if (from != UT64_MAX && from == ref->addr) {
+						r_anal_ref_del (core->anal, ref->addr, ref->at);
+					}
+					if (from == UT64_MAX) {
+						r_anal_ref_del (core->anal, ref->addr, ref->at);
+					}
 				}
 				r_list_free (list);
 			}
 		}
+		free (cp_inp);
 	} break;
 	case 'g': // "axg"
 		{
