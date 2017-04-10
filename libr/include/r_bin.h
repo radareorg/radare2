@@ -382,6 +382,7 @@ typedef struct r_bin_class_t {
 typedef struct r_bin_symbol_t {
 	/* heap-allocated */
 	char *name;
+	char *dname;
 	char *classname;
 	/* const-unique-strings */
 	const char *forwarder;
@@ -485,8 +486,6 @@ typedef struct r_bin_bind_t {
 
 #ifdef R_API
 
-#define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
-
 /* bin.c */
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
@@ -554,6 +553,7 @@ R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
 
 R_API RBinClass *r_bin_class_get (RBinFile *binfile, const char *name);
 R_API RBinClass *r_bin_class_new (RBinFile *binfile, const char *name, const char *super, int view);
+R_API void r_bin_class_free(RBinClass *c);
 R_API RBinSymbol *r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
 

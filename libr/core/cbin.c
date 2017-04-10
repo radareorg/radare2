@@ -2327,7 +2327,7 @@ static int bin_classes(RCore *r, int mode) {
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				r_cons_printf ("0x%08"PFMT64x" method %d %s\n",
-					sym->vaddr, m, sym->name);
+					sym->vaddr, m, sym->dname? sym->dname: sym->name);
 				m++;
 			}
 		}

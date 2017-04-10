@@ -211,6 +211,25 @@ static RList* symbols(RBinFile *arch) {
 			break;
 		}
 		ptr->name = strdup ((char*)symbols[i].name);
+		if (ptr->name[0] == '_' && strncmp (ptr->name, "imp.", 4)) {
+			char *dn = r_bin_demangle (arch, ptr->name, ptr->name, ptr->vaddr);
+			if (dn) {
+				ptr->dname = dn;
+				char *p = strchr (dn, '.');
+				if (p) {
+					if (IS_UPPER (ptr->name[0])) {
+						ptr->classname = strdup (ptr->name);
+						ptr->classname[p - ptr->name] = 0;
+					} else if (IS_UPPER (p[1])) {
+						ptr->classname = strdup (p + 1);
+						p = strchr (ptr->classname, '.');
+						if (p) {
+							*p = 0;
+						}
+					}
+				}
+			}
+		}
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
 				"LOCAL": "GLOBAL");
