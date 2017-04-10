@@ -290,7 +290,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		if (eq) {
 			ctx--;
 			if (ctx == -1) {
-				printf ("...\n");
+				r_cons_printf ("...\n");
 				continue;
 			}
 			if (ctx < 0) {
