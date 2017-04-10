@@ -320,7 +320,7 @@ static char *utf16_to_utf8 (const wchar_t *wc) {
 static wchar_t *utf8_to_utf16 (const char *cstring) {
 	wchar_t *rutf16;
 	int wcsize;
-
+	
 	rutf16 = NULL;
 	wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0); 
 	if ( wcsize > 0 ) {
@@ -351,7 +351,6 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	if (!path) {
 		return false;
 	}
-
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	wcpath = utf8_to_utf16 (path);
 	if (!wcpath) {
