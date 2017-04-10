@@ -423,6 +423,11 @@ static RList* symbols(RBinFile *arch) {
 		ptr->type = r_str_const (symbol[i].type);
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
+		//special case where there is not entry in the plt for the import
+		if (ptr->vaddr == UT32_MAX) {
+			ptr->paddr = 0;
+			ptr->vaddr = 0;
+		}
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
