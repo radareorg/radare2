@@ -34,9 +34,12 @@ static const char *arch = NULL;
 static int bits = 0;
 static int anal_all = 0;
 static bool verbose = false;
+static RList *evals = NULL;
 
 static RCore *opencore(const char *f) {
+	RListIter *iter;
 	const ut64 baddr = UT64_MAX;
+	const char *e;
 	RCore *c = r_core_new ();
 	if (!c) {
 		return NULL;
@@ -44,6 +47,9 @@ static RCore *opencore(const char *f) {
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", true);
+	r_list_foreach (evals, iter, e) {
+		r_config_eval (c->config, e);
+	}
 	if (f) {
 		if (!r_core_file_open (c, f, 0, 0)) {
 			r_core_free (c);
@@ -238,6 +244,7 @@ static int show_help(int v) {
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
 			"  -D         show disasm instead of hexpairs\n"
+			"  -e [k=v]   set eval config var value for all RCore instances\n"
 			"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
 			"  -i         diff imports of target files (see -u, -U and -z)\n"
 			"  -j         output in json format\n"
@@ -497,7 +504,9 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OijrhcdsS:uUvVxt:zq")) != -1) {
+	evals = r_list_newf (NULL);
+
+	while ((o = getopt (argc, argv, "Aa:b:CDe:npg:OijrhcdsS:uUvVxt:zq")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -507,6 +516,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'b':
 			bits = atoi (optarg);
+			break;
+		case 'e':
+			r_list_append (evals, optarg);
 			break;
 		case 'p':
 			useva = false;
