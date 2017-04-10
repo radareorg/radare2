@@ -208,6 +208,7 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 	char *homedir = r_str_home (R2_HOMEDIR);
+	char *homeplugs = r_str_newf ("%s" R_SYS_DIR "plugins", homedir);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -220,7 +221,7 @@ static int main_print_var(const char *var_name) {
 		{ "LIBEXT", R_LIB_EXT },
 		{ "RHOMEDIR", homedir },
 		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
-		{ "USER_PLUGINS", r_str_home (R2_HOMEDIR) },
+		{ "USER_PLUGINS", homeplugs },
 		{ NULL, NULL }
 	};
 	if (var_name) {
@@ -238,6 +239,7 @@ static int main_print_var(const char *var_name) {
 		}
 	}
 	free (homedir);
+	free (homeplugs);
 	return 0;
 }
 
