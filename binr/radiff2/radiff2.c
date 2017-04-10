@@ -47,6 +47,7 @@ static RCore *opencore(const char *f) {
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", true);
+	r_config_set_i (c->config, "scr.interactive", false);
 	r_list_foreach (evals, iter, e) {
 		r_config_eval (c->config, e);
 	}
