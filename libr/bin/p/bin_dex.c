@@ -882,12 +882,6 @@ static ut64 dex_get_type_offset(RBinFile *arch, int type_idx) {
 	return bin->header.types_offset + type_idx * 0x04; //&bin->types[type_idx];
 }
 
-static void __r_bin_class_free(RBinClass *p) {
-	r_list_free (p->methods);
-	r_list_free (p->fields);
-	r_bin_class_free (p);
-}
-
 static char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
 	int cid, tid;
 	if (!bin || !c || !bin->types) {
@@ -1438,7 +1432,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		r_list_free (bin->methods_list);
 		return false;
 	}
-	bin->classes_list = r_list_newf ((RListFree)__r_bin_class_free);
+	bin->classes_list = r_list_newf ((RListFree)r_bin_class_free);
 	if (!bin->classes_list) {
 		r_list_free (bin->methods_list);
 		r_list_free (bin->imports_list);
