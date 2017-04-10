@@ -593,6 +593,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 #endif
 		method->vaddr = m.imp;
 		method->type = is_static ? "FUNC" : "METH";
+        if (is_static) {
+            method->method_flags |= R_BIN_METH_CLASS;
+        }
 		if (is_thumb (arch)) {
 			if (method->vaddr & 1) {
 				method->vaddr >>= 1;
@@ -891,7 +894,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 #endif
 
 	if (cro.baseMethods > 0) {
-		get_method_list_t (cro.baseMethods, arch, klass->name, klass, false);
+		get_method_list_t (cro.baseMethods, arch, klass->name, klass, (cro.flags & RO_META) ? true : false);
 	}
 
 	if (cro.baseProtocols > 0) {

@@ -800,6 +800,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 		r_cons_printf ("MethodsFor: %s\n\n", _c->name);
 		r_list_foreach (_c->methods, iter, m) {
 			const char *name = m->dname? m->dname: m->name;
+			char *mflags;
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
 					i++;
@@ -814,20 +815,26 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 					}
 				}
 			}
+
+			mflags = r_core_bin_method_flags_str (m, 0);
+
 			if (show_color) {
 				if (i == idx) {
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
-							PFMT64x Color_YELLOW "  %s\n" Color_RESET,
-						i, clr, m->vaddr, name);
+							PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
+						i, clr, m->vaddr, mflags, name);
 				} else {
-					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
-						i, core->cons->pal.offset, m->vaddr, name);
+					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET" %s %s\n",
+						i, core->cons->pal.offset, m->vaddr, mflags, name);
 				}
 			} else {
-				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
-					(i==idx)? ">>": "- ", i, m->vaddr, name);
+				r_cons_printf ("%s %02d 0x%08"PFMT64x" %s %s\n",
+					(i==idx)? ">>": "- ", i, m->vaddr, mflags, name);
 			}
+
+			R_FREE (mflags);
+
 			if (i++ == idx) {
 				mur = m;
 			}
@@ -2796,7 +2803,7 @@ repeat:
 				}
 				is_wide = true;
 				j++;
-			} 
+			}
 		}
 		name[4 + n] = '\0';
 		//handle wide strings
