@@ -87,7 +87,7 @@ typedef struct {
 	RList *classes_list;
 } RBinNROObj;
 
-static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0);
+static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr);
 
 static ut32 readLE32(RBuffer *buf, int off) {
 	int left = 0;
@@ -105,6 +105,10 @@ static const char *readString(RBuffer *buf, int off) {
 	int left = 0;
 	const char *data = (const char *)r_buf_get_at (buf, off, &left);
 	return left > 0 ? data: NULL;
+}
+
+static ut64 baddr(RBinFile *arch) {
+	return readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
 }
 
 static const char *fileType(const ut8 *buf) {
@@ -138,11 +142,12 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	if (!bin) {
 		return NULL;
 	}
+	ut64 ba = baddr (arch);
 	bin->methods_list = r_list_newf ((RListFree)free);
 	bin->imports_list = r_list_newf ((RListFree)free);
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
-	parseMod (arch, bin, mod0);
+	parseMod (arch, bin, mod0, ba);
 	return (void *) bin;//(size_t) check_bytes (buf, sz);
 }
 
@@ -152,10 +157,6 @@ static bool load(RBinFile *arch) {
 
 static int destroy(RBinFile *arch) {
 	return true;
-}
-
-static ut64 baddr(RBinFile *arch) {
-	return readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
 }
 
 static RBinAddr *binsym(RBinFile *arch, int type) {
@@ -189,7 +190,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt) {
+static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
 	int i, import = 0;
 	for (i = 8; i < 99999; i++) {
 		ut64 addr = readLE64 (bf->buf, symtab + i);
@@ -234,14 +235,16 @@ static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab
 			if (!sym->name) {
 				break;
 			}
-			sym->paddr = sym->vaddr =  pltSym - 8;
+			sym->paddr = pltSym - 8;
+			sym->vaddr = sym->paddr + baddr;
 			//eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
 		} else {
 			sym->name = strdup (symName);
 			if (!sym->name) {
 				break;
 			}
-			sym->paddr = sym->vaddr = addr;
+			sym->paddr = addr;
+			sym->vaddr = sym->paddr + baddr;
 			//eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
 		}
 		r_list_append (bin->methods_list, sym);
@@ -249,7 +252,7 @@ static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab
 	}
 }
 
-static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0) {
+static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr) {
 	ut32 ptr = readLE32 (bf->buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
@@ -300,7 +303,7 @@ static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0) {
 		//ut32 modo = mh.mod_object;
 		ut64 strtab = mo.strtab - mo.base;
 		ut64 symtab = mo.symtab - mo.base;
-		walkSymbols (bf, bin, symtab, strtab, mo.strtab_size, mo.relplt - mo.base);
+		walkSymbols (bf, bin, symtab, strtab, mo.strtab_size, mo.relplt - mo.base, baddr);
 	}
 }
 
