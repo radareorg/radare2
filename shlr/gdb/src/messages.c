@@ -146,7 +146,7 @@ int handle_qSupported(libgdbr_t *g) {
 	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	char *tok = NULL;
 	tok = strtok (g->data, ";");
-	while (tok != NULL) {
+	while (tok) {
 		if (r_str_startswith (tok, "PacketSize=")) {
 			g->stub_features.pkt_sz = strtoul (tok + strlen ("PacketSize="), NULL, 16);
 		} else if (r_str_startswith (tok, "qXfer:")) {

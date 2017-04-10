@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 pancake */
+/* radare - LGPL - Copyright 2010-2017 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -130,7 +130,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case R_IO_SEEK_CUR:
 		return io->off + offset;
 	case R_IO_SEEK_END:
-		return desc->exec_file_sz + offset;
+		return UT64_MAX;
 	default:
 		return offset;
 	}
@@ -139,7 +139,9 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
-	if (!desc || !desc->data) return -1;
+	if (!desc || !desc->data) {
+		return -1;
+	}
 	return debug_gdb_read_at(buf, count, addr);
 }
 
@@ -188,3 +190,11 @@ RIOPlugin r_io_plugin_gdb = {
 	.system = __system,
 	.isdbg = true
 };
+
+#ifndef CORELIB
+RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_IO,
+	.data = &r_io_plugin_gdb,
+	.version = R2_VERSION
+};
+#endif

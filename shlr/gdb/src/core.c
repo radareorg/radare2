@@ -1,4 +1,4 @@
-/* libgdbr - LGPL - Copyright 2014-2016 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2017 - defragger */
 
 #include "libgdbr.h"
 #include "core.h"
@@ -481,7 +481,6 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
-
 	// Check if trace is already running
 	ret = send_command (g, "qTStatus");
 	if (ret < 0) {
@@ -490,7 +489,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = handle_qStatus (g);
 	if (ret < 0) {
-		return ret;
+		// qTStatus unsupported for this gdbserver
+		// return ret;
 	}
 
 	// Query the thread / process id
@@ -501,7 +501,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = handle_qC (g);
 	if (ret < 0) {
-		return ret;
+		// qC unsupported
+		//return ret;
 	}
 
 	// Check if remote server attached to or created process
@@ -536,10 +537,13 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = send_ack (g);
 	if (!*g->data || g->data[0] != 'F' || g->data[1] == '-') {
+		eprintf ("handle gF\n");
+		return 0;
 		return -1;
 	}
 	if (ret < 0) {
-		return ret;
+		eprintf ("handle gF\n");
+		// return ret;
 	}
 
 	// Get name of file being executed
@@ -725,13 +729,11 @@ int gdbr_send_command(libgdbr_t *g, char *command) {
 }
 
 int gdbr_write_bin_registers(libgdbr_t *g){
-	uint64_t buffer_size;
-	char *command;
 	if (!g) {
 		return -1;
 	}
-	buffer_size = g->data_len * 2 + 8;
-	command = calloc (buffer_size, sizeof (char));
+	uint64_t buffer_size = g->data_len * 2 + 8;
+	char *command = calloc (buffer_size, sizeof (char));
 	if (!command) {
 		return -1;
 	}
@@ -749,7 +751,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 
 int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	int ret;
-	char command[255] = {};
+	char command[255] = { 0 };
 	if (!g) {
 		return -1;
 	}
@@ -808,7 +810,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	}
 	gdbr_read_registers (g);
 	len = strlen (registers);
-	buff = calloc (len, sizeof(char));
+	buff = calloc (len, sizeof (char));
 	if (!buff) {
 		return -1;
 	}
