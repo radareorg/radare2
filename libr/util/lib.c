@@ -344,7 +344,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	}
 	do {
 		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
-		wcsize = WideCharToMultiByte(CP_UTF8, 0, file, -1, NULL, 0, NULL, NULL);
+		wcsize = WideCharToMultiByte (CP_UTF8, 0, file, -1, NULL, 0, NULL, NULL);
 		if (wcsize > 0) {
 			WideCharToMultiByte (CP_UTF8, 0, file, -1, &wctocbuff[0], wcsize, NULL, NULL);
 			if (r_lib_dl_check_filename (wctocbuff)) {
