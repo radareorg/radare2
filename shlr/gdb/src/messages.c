@@ -47,7 +47,13 @@ int handle_cmd(libgdbr_t *g) {
 
 int handle_qStatus(libgdbr_t *g) {
 	char *tok = NULL;
+	if (!g || !g->data) {
+		return -1;
+	}
 	tok = strtok (g->data, ";");
+	if (!tok) {
+		return -1;
+	}
 	// TODO: We do not yet handle the case where a trace is already running
 	if (strncmp (tok, "T0", 2)) {
 		send_ack (g);

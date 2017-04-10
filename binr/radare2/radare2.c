@@ -829,7 +829,6 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					r_config_set (r.config, "io.raw", "false");
 /*
 					if (fh) {
 						r_core_bin_load (&r, pfile);
