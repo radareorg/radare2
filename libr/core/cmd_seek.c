@@ -163,13 +163,6 @@ static int cmd_seek(void *data, const char *input) {
 	char *cmd, *p;
 	ut64 off;
 
-	if (*input == 'r') {
-		if (input[1] && input[2]) {
-			seek_to_register (core, input + 2, false);
-		} else {
-			eprintf ("|Usage| 'sr PC' seek to program counter register\n");
-		}
-	}
 	if (!*input) {
 		r_cons_printf ("0x%"PFMT64x "\n", core->offset);
 		return 0;
@@ -217,6 +210,13 @@ static int cmd_seek(void *data, const char *input) {
 	}
 
 	switch (*input) {
+	case 'r':
+		if (input[1] && input[2]) {
+			seek_to_register (core, input + 2, silent);
+		} else {
+			eprintf ("|Usage| 'sr PC' seek to program counter register\n");
+		}
+		break;
 	case 'C':
 		if (input[1] == '*') {
 			r_core_cmd0 (core, "C*~^\"CC");
