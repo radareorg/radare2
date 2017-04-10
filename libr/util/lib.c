@@ -304,15 +304,40 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 	return ret;
 }
 
+static char *utf16_to_utf8 (const wchar_t *wc) {
+	char *rutf8;
+	int csize;
+	
+	rutf8 = NULL;
+	csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL);
+	if (csize > 0) {
+		rutf8 = malloc (csize);
+		WideCharToMultiByte (CP_UTF8, 0, wc, -1, rutf8, csize, NULL, NULL);
+	}
+	return rutf8;
+}
+
+static wchar_t *utf8_to_utf16 (const char *cstring) {
+	wchar_t *rutf16;
+	int wcsize;
+
+	rutf16 = NULL;
+	wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0); 
+	if ( wcsize > 0 ) {
+		rutf16 = (wchar_t *) malloc (sizeof (wchar_t *) * wcsize);
+		MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
+	}
+	return rutf16;
+}
+
 R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	wchar_t file[1024];
 	WIN32_FIND_DATAW dir;
 	HANDLE fh;
-	size_t psize = strlen (path) +1;
-	wchar_t *wcpath;
 	wchar_t directory[260];
-	char wctocbuff[1024];
+	wchar_t *wcpath;
+	char *wctocbuff;
 #else
 	char file[1024];
 	struct dirent *de;
@@ -328,13 +353,10 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	}
 
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	int wcsize = MultiByteToWideChar (CP_UTF8, 0, path, -1, NULL, 0);
-	if (wcsize < 1) {
-		IFDBG eprintf ("MultiByteToWideChar failed");
-		return false;
+	wcpath = utf8_to_utf16 (path);
+	if (!wcpath) {
+		return false;	
 	}
-	wcpath = (wchar_t *) malloc (sizeof(wchar_t) * wcsize);
-	MultiByteToWideChar (CP_UTF8, 0, path, -1, wcpath, wcsize);
 	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);	
 	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
@@ -344,15 +366,14 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	}
 	do {
 		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
-		wcsize = WideCharToMultiByte (CP_UTF8, 0, file, -1, NULL, 0, NULL, NULL);
-		if (wcsize > 0) {
-			WideCharToMultiByte (CP_UTF8, 0, file, -1, &wctocbuff[0], wcsize, NULL, NULL);
+		wctocbuff = utf16_to_utf8 (file);
+		if (wctocbuff) {
 			if (r_lib_dl_check_filename (wctocbuff)) {
-				WideCharToMultiByte (CP_UTF8, 0, file, -1, &wctocbuff[0], wcsize, NULL, NULL);	
 				r_lib_open (lib, wctocbuff);
 			} else {
 				IFDBG eprintf ("Cannot open %ls\n", dir.cFileName);
 			}
+			free (wctocbuff);
 		}
 	}while (FindNextFileW (fh, &dir));
 	FindClose (fh);
