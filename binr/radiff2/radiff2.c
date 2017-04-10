@@ -274,10 +274,10 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 	int ctx = DUMP_CONTEXT;
 	switch (w) {
 	case 8:
-		printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
+		r_cons_printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
 		break;
 	case 16:
-		printf ("  offset     "
+		r_cons_printf ("  offset     "
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF    "
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
 		break;
@@ -300,57 +300,58 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		} else {
 			ctx = DUMP_CONTEXT;
 		}
-		printf (eq? Color_GREEN: Color_RED);
-		printf ("0x%08x%c ", i, eq? ' ': '!');
-		printf (Color_RESET);
+		r_cons_printf (eq? Color_GREEN: Color_RED);
+		r_cons_printf ("0x%08x%c ", i, eq? ' ': '!');
+		r_cons_printf (Color_RESET);
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%02x", a[i + j]);
+			r_cons_printf ("%02x", a[i + j]);
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf (" ");
+		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%c", IS_PRINTABLE (a[i + j])? a[i + j]: '.');
+			r_cons_printf ("%c", IS_PRINTABLE (a[i + j])? a[i + j]: '.');
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf ("   ");
+		r_cons_printf ("   ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%02x", b[i + j]);
+			r_cons_printf ("%02x", b[i + j]);
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf (" ");
+		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%c", IS_PRINTABLE (b[i + j])? b[i + j]: '.');
+			r_cons_printf ("%c", IS_PRINTABLE (b[i + j])? b[i + j]: '.');
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf ("\n");
+		r_cons_printf ("\n");
 	}
 	if (as != bs) {
-		printf ("...\n");
+		r_cons_printf ("...\n");
 	}
+	r_cons_flush();
 }
 
 static void handle_sha256(const ut8 *block, int len) {
@@ -717,6 +718,9 @@ int main(int argc, char **argv) {
 
 	switch (mode) {
 	case MODE_COLS:
+		if (!c && !r_list_empty (evals)) {
+			c = opencore (NULL);
+		}
 		dump_cols (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112)? 16: 8);
 		break;
 	case MODE_DIFF:
