@@ -658,8 +658,9 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 				f->vaddr, c->name, f->name));
 		}
 		r_list_foreach (c->methods, iter2, m) {
+			const char *name = m->dname? m->dname: m->name;
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
-				m->vaddr, c->name, m->name));
+				m->vaddr, c->name, name));
 		}
 	}
 	res = r_cons_hud (list, NULL);
@@ -798,8 +799,9 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 		}
 		r_cons_printf ("MethodsFor: %s\n\n", _c->name);
 		r_list_foreach (_c->methods, iter, m) {
+			const char *name = m->dname? m->dname: m->name;
 			if (grep) {
-				if (!r_str_casestr (m->name, grep)) {
+				if (!r_str_casestr (name, grep)) {
 					i++;
 					continue;
 				}
@@ -817,14 +819,14 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
 							PFMT64x Color_YELLOW "  %s\n" Color_RESET,
-						i, clr, m->vaddr, m->name);
+						i, clr, m->vaddr, name);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
-						i, core->cons->pal.offset, m->vaddr, m->name);
+						i, core->cons->pal.offset, m->vaddr, name);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
-					(i==idx)? ">>": "- ", i, m->vaddr, m->name);
+					(i==idx)? ">>": "- ", i, m->vaddr, name);
 			}
 			if (i++ == idx) {
 				mur = m;
