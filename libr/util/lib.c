@@ -305,38 +305,58 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 }
 
 R_API int r_lib_opendir(RLib *lib, const char *path) {
-	char file[1024];
-#if __WINDOWS__
-	WIN32_FIND_DATA dir;
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	wchar_t file[1024];
+	WIN32_FIND_DATAW dir;
 	HANDLE fh;
-	char directory[256];
-#endif
+	size_t psize = strlen (path) +1;
+	wchar_t *wcpath;
+	wchar_t directory[260];
+	char wctocbuff[1024];
+#else
+	char file[1024];
 	struct dirent *de;
 	DIR *dh;
-
-#ifdef LIBR_PLUGINS
-	if (!path)
-		path = LIBR_PLUGINS;
 #endif
-	if (!path)
+#ifdef LIBR_PLUGINS
+	if (!path) {
+		path = LIBR_PLUGINS;
+	}
+#endif
+	if (!path) {
 		return false;
+	}
 
-#if __WINDOWS__
-	snprintf(directory, sizeof(directory), "%s\\*.*", path);
-	fh = FindFirstFile (directory, &dir);
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	int wcsize = MultiByteToWideChar (CP_UTF8, 0, path, -1, NULL, 0);
+	if (wcsize < 1) {
+		IFDBG eprintf ("MultiByteToWideChar failed");
+		return false;
+	}
+	wcpath = (wchar_t *) malloc (sizeof(wchar_t) * wcsize);
+	MultiByteToWideChar (CP_UTF8, 0, path, -1, wcpath, wcsize);
+	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);	
+	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
-		IFDBG eprintf ("Cannot open directory '%s'\n", file);
+		IFDBG eprintf ("Cannot open directory %ls\n", wcpath);
+		free (wcpath);
 		return false;
 	}
 	do {
-		snprintf (file, sizeof (file), "%s/%s", path, dir.cFileName);
-		if(r_lib_dl_check_filename (dir.cFileName)) {
-			r_lib_open (lib, file);
-		} else {
-			IFDBG eprintf ("Cannot open %s \n", dir.cFileName);
+		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
+		wcsize = WideCharToMultiByte(CP_UTF8, 0, file, -1, NULL, 0, NULL, NULL);
+		if (wcsize > 0) {
+			WideCharToMultiByte (CP_UTF8, 0, file, -1, &wctocbuff[0], wcsize, NULL, NULL);
+			if (r_lib_dl_check_filename (wctocbuff)) {
+				WideCharToMultiByte (CP_UTF8, 0, file, -1, &wctocbuff[0], wcsize, NULL, NULL);	
+				r_lib_open (lib, wctocbuff);
+			} else {
+				IFDBG eprintf ("Cannot open %ls\n", dir.cFileName);
+			}
 		}
-	}while (FindNextFile (fh, &dir));
+	}while (FindNextFileW (fh, &dir));
 	FindClose (fh);
+	free (wcpath);
 #else
 	dh = opendir (path);
 	if (!dh) {
