@@ -665,6 +665,10 @@ R_API RList *r_bin_classes_from_symbols (RBinFile *bf, RBinObject *o) {
 			}
 		}
 	}
+	if (r_list_empty (classes)) {
+		r_list_free (classes);
+		return NULL;
+	}
 	return classes;
 }
 
