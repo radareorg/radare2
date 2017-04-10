@@ -5507,6 +5507,8 @@ static int cmd_anal(void *data, const char *input) {
 	const char *help_msg_ad[] = {
 		"Usage:", "ad", "[kt] [...]",
 		"ad", " [N] [D]", "analyze N data words at D depth",
+		"ad4", " [N] [D]", "analyze N data words at D depth (asm.bits=32)",
+		"ad8", " [N] [D]", "analyze N data words at D depth (asm.bits=64)",
 		"adf", "", "analyze data in function (use like .adf @@=`afl~[0]`",
 		"adfg", "", "analyze data in function gaps",
 		"adt", "", "analyze data trampolines (wip)",
@@ -5648,7 +5650,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_config_set_i (core->config, "asm.xrefs", xr);
 		}
 		break;
-	case 'd':
+	case 'd': // "ad"
 		switch (input[1]) {
 		case 'f':
 			if (input[2] == 'g') {
@@ -5673,15 +5675,21 @@ static int cmd_anal(void *data, const char *input) {
 			if (b < 1) {
 				b = 1;
 			}
-			r_core_anal_data (core, core->offset, a, b);
+			r_core_anal_data (core, core->offset, a, b, 0);
 		} break;
 		case 'k':
 			r = r_anal_data_kind (core->anal,
 					core->offset, core->block, core->blocksize);
 			r_cons_println (r);
 			break;
-		case '\0':
-			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1);
+		case '\0': // "ad"
+			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 0);
+			break;
+		case '4': // "ad4"
+			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 4);
+			break;
+		case '8': // "ad8"
+			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 8);
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_ad);

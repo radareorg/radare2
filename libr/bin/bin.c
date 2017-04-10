@@ -2456,25 +2456,21 @@ R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 }
 
 R_API RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
-	RBinObject *o = binfile? binfile->o: NULL;
-	RList *list = NULL;
-	RListIter *iter;
-	RBinClass *c;
-
-	if (!o) {
+	if (!binfile || !binfile->o || !name) {
 		return NULL;
 	}
-	list = o->classes;
+	RBinClass *c;
+	RListIter *iter;
+	RList *list = binfile->o->classes;
 	r_list_foreach (list, iter, c) {
-		if (!strcmp (c->name, name))
+		if (!strcmp (c->name, name)) {
 			return c;
+		}
 	}
 	return NULL;
 }
 
-R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile,
-					  const char *classname,
-					  const char *name, int nargs) {
+R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	RBinClass *c = r_bin_class_get (binfile, classname);
 	if (!c) {
 		c = r_bin_class_new (binfile, classname, NULL, 0);
@@ -2499,8 +2495,7 @@ R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile,
 	return sym;
 }
 
-R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname,
-				  const char *name) {
+R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
 	//TODO: add_field into class
 	//eprintf ("TODO add field: %s \n", name);
 }
@@ -2615,8 +2610,7 @@ R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name) {
 	return bf;
 }
 
-R_API RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name,
-					   int idx) {
+R_API RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) {
 	RListIter *iter;
 	RBinFile *bf = NULL;
 	int i = 0;
