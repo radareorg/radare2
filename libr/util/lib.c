@@ -307,11 +307,11 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 static char *utf16_to_utf8 (const wchar_t *wc) {
 	char *rutf8;
 	int csize;
-	
-	csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL);
-	if (csize > 0) {
-		rutf8 = malloc (csize);
-		WideCharToMultiByte (CP_UTF8, 0, wc, -1, rutf8, csize, NULL, NULL);
+
+	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL))) {
+		if ((rutf8 = malloc (csize))) {
+			WideCharToMultiByte (CP_UTF8, 0, wc, -1, rutf8, csize, NULL, NULL);
+		}
 	}
 	return rutf8;
 }
@@ -319,11 +319,11 @@ static char *utf16_to_utf8 (const wchar_t *wc) {
 static wchar_t *utf8_to_utf16 (const char *cstring) {
 	wchar_t *rutf16;
 	int wcsize;
-	
-	wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0); 
-	if ( wcsize > 0 ) {
-		rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t));
-		MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
+
+	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0))) {
+		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+			MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
+		}
 	}
 	return rutf16;
 }
