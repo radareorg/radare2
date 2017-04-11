@@ -3587,18 +3587,15 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		if (!(s->flags & R_IO_EXEC)) {
 			continue;
 		}
-		if (s->vaddr < min) {
-			min = s->vaddr;
-		}
-		if (s->vaddr + s->vsize > max) {
-			max = s->vaddr + s->vsize;
-		}
+		min = s->vaddr;
+		max = s->vaddr + s->vsize;
+		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 	}
-	if (min == UT64_MAX) {
+	if (r_list_empty (core->io->sections)) {
 		min = core->offset;
 		max = 0xffff + min;
+		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 	}
-	r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 }
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {

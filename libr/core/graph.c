@@ -280,9 +280,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 
 	if (G (n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
 		    n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
-		unsigned int body_x = center_x >= delta_x? 0: delta_x - center_x;
-		unsigned int body_y = center_y >= delta_y? 0: delta_y - center_y;
-		unsigned int body_h = BORDER_HEIGHT >= n->h? 1: n->h - BORDER_HEIGHT;
+		ut32 body_x = center_x >= delta_x? 0: delta_x - center_x;
+		ut32 body_y = center_y >= delta_y? 0: delta_y - center_y;
+		ut32 body_h = BORDER_HEIGHT >= n->h? 1: n->h - BORDER_HEIGHT;
 
 		if (g->zoom < ZOOM_DEFAULT) {
 			body_h--;
