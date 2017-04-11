@@ -303,7 +303,7 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 
 	return ret;
 }
-
+#if __WINDOWS__ && !defined(__CYGWIN__)
 static char *utf16_to_utf8 (const wchar_t *wc) {
 	char *rutf8;
 	int csize;
@@ -329,6 +329,7 @@ static wchar_t *utf8_to_utf16 (const char *cstring) {
 	}
 	return rutf16;
 }
+#endif
 
 R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __WINDOWS__ && !defined(__CYGWIN__)
