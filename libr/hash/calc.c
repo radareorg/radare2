@@ -2,6 +2,10 @@
 
 #include "r_hash.h"
 
+#if __BYTE_ORDER == __BIG_ENDIAN && !(__WINDOWS__ || _WIN32 || __CYGWIN__ || MINGW32)
+#define USE_MEMCPY	1
+#endif
+
 #define SWAP16_TO(x,y) ((x)[1]=(y)&0xff);((x)[0]=((y)>>8)&0xff);
 #define SWAP24_TO(x,y) ((x)[2]=(y)&0xff);((x)[1]=((y)>>8)&0xff);((x)[0]=((y)>>16)&0xff);
 #define SWAP32_TO(x,y) (x)[3]=(y)&0xff;(x)[2]=((y)>>8)&0xff;(x)[1]=((y)>>16)&0xff;(x)[0]=((y)>>24)&0xff;
@@ -37,7 +41,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC16) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
 #else
 		SWAP16_TO (ctx->digest, res);
@@ -46,7 +50,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC32) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
 #else
 		SWAP32_TO (ctx->digest, res);
@@ -105,7 +109,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	if (algobit & R_HASH_CRC15_CAN) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_15_CAN);
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC15_CAN);
 #else
 		SWAP16_TO (ctx->digest, res);
@@ -114,7 +118,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC16_HDLC) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_HDLC);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16_HDLC);
 #else
 		SWAP16_TO (ctx->digest, res);
@@ -123,7 +127,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC16_USB) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_USB);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16_USB);
 #else
 		SWAP16_TO (ctx->digest, res);
@@ -132,7 +136,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC16_CITT) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_CITT);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16_CITT);
 #else
 		SWAP16_TO (ctx->digest, res);
@@ -142,7 +146,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	if (algobit & R_HASH_CRC24) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_24);
 //		res <<= 8;
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC24);
 #else
 		SWAP24_TO (ctx->digest, res);
@@ -151,7 +155,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC32C) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32C);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32C);
 #else
 		SWAP32_TO (ctx->digest, res);
@@ -160,7 +164,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC32_ECMA_267) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32_ECMA_267);
-#if __BYTE_ORDER != __BIG_ENDIAN
+#ifdef USE_MEMCPY
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32_ECMA_267);
 #else
 		SWAP32_TO (ctx->digest, res);
