@@ -950,13 +950,15 @@ static int esil_ifset(RAnalEsil *esil) {
 #endif
 
 static int esil_if(RAnalEsil *esil) {
-	ut64 num;
+	ut64 num = 0LL;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		// TODO: check return value
 		(void)r_anal_esil_get_parm (esil, src, &num);
 		// condition not matching, skipping until }
-		if (!num) esil->skip = true;
+		if (!num) {
+			esil->skip = true;
+		}
 		free (src);
 		return true;
 	}
