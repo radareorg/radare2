@@ -155,7 +155,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	ut8 *buf;
 	int ret = 0;
 	ut64 i;
-	int first = 1;
+	bool first = true;
 	if (algobit == R_HASH_NONE) {
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
@@ -199,7 +199,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				r_hash_do_begin (ctx, i);
 				if (rad == 'j') {
 					if (first) {
-						first = 0;
+						first = false;
 					} else {
 						printf (",");
 					}
