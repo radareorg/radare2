@@ -105,30 +105,29 @@ static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 #define R_BIN_WASM_VALUETYPETOSTRING(p, type, i) {\
 	switch(type) {\
 	case R_BIN_WASM_VALUETYPE_i32:\
-		strncpy(p, "i32", 3);\
+		strcpy(p, "i32");\
 		break;\
 	case R_BIN_WASM_VALUETYPE_i64:\
-		strncpy(p, "i64", 3);\
+		strcpy(p, "i64");\
 		break;\
 	case R_BIN_WASM_VALUETYPE_f32:\
-		strncpy(p, "f32", 3);\
+		strcpy(p, "f32");\
 		break;\
 	case R_BIN_WASM_VALUETYPE_f64:\
-		strncpy(p, "f64", 3);\
+		strcpy(p, "f64");\
 		break;\
 	}\
 	i+= 3;\
 }
 
 static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
-
 	if (!ptr || ptr->to_str) {
 		return NULL;
 	}
 
 	char *ret;
 
-	int i = 0, sz;
+	int p, i = 0, sz;
 
 	sz = (ptr->param_count + ptr->return_count) * 5 + 9;
 
@@ -137,29 +136,27 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 		return NULL;
 	}
 
-	strncpy (ret+i, "(", 1);
-	i += 1;
+	strcpy (ret + i, "(");
+	i++;
 
-	int p;
 	for (p = 0; p < ptr->param_count; p++ ) {
 		R_BIN_WASM_VALUETYPETOSTRING (ret+i, ptr->param_types[p], i); // i+=3
 		if (p < ptr->param_count - 1) {
-			strncpy (ret+i, ", ", 2);
+			strcpy (ret+i, ", ");
 			i += 2;
 		}
 	}		
 
-	strncpy (ret+i, ") -> (", 6);
+	strcpy (ret + i, ") -> (");
 	i += 6;
 
 	if (ptr->return_count == 1) {
-		R_BIN_WASM_VALUETYPETOSTRING (ret+i, ptr->return_type, i);
+		R_BIN_WASM_VALUETYPETOSTRING (ret + i, ptr->return_type, i);
 	}
 
-	strncpy(ret+i, ")", 1);
+	strcpy (ret + i, ")");
 
 	return ret;
-
 }
 
 // Parsing
@@ -721,7 +718,6 @@ void r_bin_wasm_destroy (RBinFile *arch) {
 	free (bin->g_start);
 	free (bin);
 	arch->o->bin_obj = NULL;
-
 }
 
 RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
@@ -779,49 +775,49 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 
 		case R_BIN_WASM_SECTION_TYPE:
 			//eprintf("section type: 0x%x, ", i);
-			strncpy (ptr->name, "type", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "type");
 			ptr->name_len = 4;
 			break;
 
 		case R_BIN_WASM_SECTION_IMPORT:
 			//eprintf("section import: 0x%x, ", i);
-			strncpy (ptr->name, "import", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "import");
 			ptr->name_len = 6;
 			break;
 
 		case R_BIN_WASM_SECTION_FUNCTION:
 			//eprintf("section function: 0x%x, ", i);
-			strncpy (ptr->name, "function", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "function");
 			ptr->name_len = 8;
 			break;
 
 		case R_BIN_WASM_SECTION_TABLE:
 			//eprintf("section table: 0x%x, ", i);
-			strncpy (ptr->name, "table", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "table");
 			ptr->name_len = 5;
 			break;
 
 		case R_BIN_WASM_SECTION_MEMORY:
 			//eprintf("section memory: 0x%x, ", i);
-			strncpy (ptr->name, "memory", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "memory");
 			ptr->name_len = 6;
 			break;
 
 		case R_BIN_WASM_SECTION_GLOBAL:
 			//eprintf("section global: 0x%x, ", i);
-			strncpy (ptr->name, "global", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "global");
 			ptr->name_len = 6;
 			break;
 
 		case R_BIN_WASM_SECTION_EXPORT:
 			//eprintf("section export: 0x%x, ", i);
-			strncpy (ptr->name, "export", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "export");
 			ptr->name_len = 6;
 			break;
 
 		case R_BIN_WASM_SECTION_START:
 			//eprintf("section start: 0x%x\n", i);
-			strncpy (ptr->name, "start", R_BIN_WASM_STRING_LENGTH);
+			strcpy (ptr->name, "start");
 			ptr->name_len = 5;
 			break;
 
@@ -954,11 +950,9 @@ RList *r_bin_wasm_get_exports (RBinWasmObj *bin) {
 	bin->g_exports = r_bin_wasm_get_export_entries (bin, export);
 
 	return bin->g_exports;
-
 }
 
 RList *r_bin_wasm_get_types (RBinWasmObj *bin) {
-
 	RBinWasmSection *type = NULL;
 	RList *types = NULL;
 
@@ -983,7 +977,6 @@ RList *r_bin_wasm_get_types (RBinWasmObj *bin) {
 	bin->g_types = r_bin_wasm_get_type_entries (bin, type);
 
 	return bin->g_types;
-
 }
 
 RList *r_bin_wasm_get_tables (RBinWasmObj *bin) {
@@ -1013,11 +1006,9 @@ RList *r_bin_wasm_get_tables (RBinWasmObj *bin) {
 
 	r_list_free (tables);
 	return bin->g_tables;
-
 }
 
 RList *r_bin_wasm_get_memories (RBinWasmObj *bin) {
-
 	RBinWasmSection *memory;
 	RList *memories;
 
@@ -1042,11 +1033,9 @@ RList *r_bin_wasm_get_memories (RBinWasmObj *bin) {
 	bin->g_memories = r_bin_wasm_get_memory_entries (bin, memory);
 
 	return bin->g_memories;
-
 }
 
 RList *r_bin_wasm_get_globals (RBinWasmObj *bin) {
-
 	RBinWasmSection *global = NULL;
 	RList *globals = NULL;
 
@@ -1071,11 +1060,9 @@ RList *r_bin_wasm_get_globals (RBinWasmObj *bin) {
 	bin->g_globals = r_bin_wasm_get_global_entries (bin, global);
 
 	return bin->g_globals;
-
 }
 
 RList *r_bin_wasm_get_elements (RBinWasmObj *bin) {
-
 	RBinWasmSection *element = NULL;
 	RList *elements = NULL;
 
@@ -1100,11 +1087,9 @@ RList *r_bin_wasm_get_elements (RBinWasmObj *bin) {
 	bin->g_elements = r_bin_wasm_get_element_entries (bin, element);
 
 	return bin->g_elements;
-
 }
 
 RList *r_bin_wasm_get_codes (RBinWasmObj *bin) {
-
 	RBinWasmSection *code = NULL;;
 	RList *codes = NULL;
 
@@ -1129,11 +1114,9 @@ RList *r_bin_wasm_get_codes (RBinWasmObj *bin) {
 	bin->g_codes = r_bin_wasm_get_code_entries (bin, code);
 
 	return bin->g_codes;
-
 }
 
 RList *r_bin_wasm_get_datas (RBinWasmObj *bin) {
-
 	RBinWasmSection *data = NULL;
 	RList *datas = NULL;
 
@@ -1158,6 +1141,4 @@ RList *r_bin_wasm_get_datas (RBinWasmObj *bin) {
 	bin->g_datas = r_bin_wasm_get_data_entries (bin, data);
 
 	return bin->g_datas;
-
 }
-
