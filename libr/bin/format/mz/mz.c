@@ -14,12 +14,9 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	ut16 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
 #endif
 	/* Value of CS in DOS header may be negative */
-	const short cs = (const short)bin->dos_header->cs;
-	if (cs < 0) {
-		return -1;
-	}
-	const int paddr = ((bin->dos_header->header_paragraphs + cs) << 4) + \
-			bin->dos_header->ip;
+	const short cs = bin->dos_header->cs;
+	ut32 pa = bin->dos_header->header_paragraphs + cs;
+	const ut32 paddr = (pa<<4) + bin->dos_header->ip;
 	if (paddr >= 0 && paddr < bin->dos_file_size) {
 		return paddr;
 	}
