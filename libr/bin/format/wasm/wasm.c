@@ -235,7 +235,6 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 }
 
 static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
-
 	RList *ret = NULL;
 	RBinWasmImportEntry *ptr = NULL;
 
@@ -249,67 +248,66 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 	ut32 i = 0, r = 0;
 
 	while (i < len && r < count) {
-
 		if (!(ptr = R_NEW0 (RBinWasmImportEntry))) {
 			return ret;
 		}
-
 		if (!(consume_u32 (buf + i, buf + len, &ptr->module_len, &i))) {
-			free (ptr);
-			return ret;
+			goto culvert;
 		}
-
-		if (!(consume_str (buf + i, buf + len, ptr->module_len,
-				ptr->module_str, &i))) {
-			free (ptr);
-			return ret;
+		if (!(consume_str (buf + i, buf + len, ptr->module_len, ptr->module_str, &i))) {
+			goto culvert;
 		}
-
 		if (!(consume_u32 (buf + i, buf + len, &ptr->field_len, &i))) {
-			free (ptr);
-			return ret;
+			goto culvert;
 		}
-
 		if (!(consume_str (buf + i, buf + len, ptr->field_len, ptr->field_str, &i))) {
-			free (ptr);
-			return ret;
+			goto culvert;
 		} 
-
 		if (!(consume_u8 (buf + i, buf + len, &ptr->kind, &i))) {
-			free (ptr);
-			return ret;
+			goto culvert;
 		}
-
 		switch (ptr->kind) {
 		case 0: // Function
-			if (!(consume_u32 (buf + i, buf + len, &ptr->type_f, &i))) return 0;
+			if (!(consume_u32 (buf + i, buf + len, &ptr->type_f, &i))) {
+				goto sewer;
+			}
 			break;
 		case 1: // Table
-			if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->type_t.elem_type, &i))) return 0; // varint7
-			if (!(consume_limits (buf + i, buf + len, &ptr->type_t.limits, &i))) return 0;	
+			if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->type_t.elem_type, &i))) {
+				goto sewer; // varint7
+			}
+			if (!(consume_limits (buf + i, buf + len, &ptr->type_t.limits, &i))) {
+				goto sewer;
+			}
 			break;
 		case 2: // Memory
-			if (!(consume_limits (buf + i, buf + len, &ptr->type_m.limits, &i))) return 0;	
+			if (!(consume_limits (buf + i, buf + len, &ptr->type_m.limits, &i))) {
+				goto sewer;
+			}
 			break;
 		case 3: // Global
-			if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->type_g.content_type, &i))) return 0; // varint7
-			if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->type_g.mutability, &i))) return 0; // varuint1
+			if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->type_g.content_type, &i))) {
+				goto sewer; // varint7
+			}
+			if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->type_g.mutability, &i))) {
+				goto sewer; // varuint1
+			}
 			break;
 		default:
-			return 0;
+			goto sewer;
 		}
-
 		r_list_append (ret, ptr);
-
-		r += 1;
-
+		r++;
 	}
-
+	return ret;
+sewer:
+	ret = NULL;
+culvert:
+	free (ptr);
 	return ret;
 }
 
 static RList *r_bin_wasm_get_export_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
-
 	RList *ret = NULL;
 	RBinWasmExportEntry *ptr = NULL;
 
@@ -323,7 +321,6 @@ static RList *r_bin_wasm_get_export_entries (RBinWasmObj *bin, RBinWasmSection *
 	ut32 i = 0, r = 0;
 
 	while (i < len && r < count) {
-
 		if (!(ptr = R_NEW0 (RBinWasmExportEntry))) {
 			return ret;
 		}
@@ -349,16 +346,12 @@ static RList *r_bin_wasm_get_export_entries (RBinWasmObj *bin, RBinWasmSection *
 		}
 
 		r_list_append (ret, ptr);
-
-		r += 1;
-
+		r++;
 	}
-
 	return ret;
 }
 
 static RList *r_bin_wasm_get_code_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
-
 	RList *ret = NULL;
 	RBinWasmCodeEntry *ptr = NULL;
 
@@ -667,9 +660,9 @@ static RList *r_bin_wasm_get_element_entries (RBinWasmObj *bin, RBinWasmSection 
 
 	return ret;
 }
+
 // Public functions
 RBinWasmObj *r_bin_wasm_init (RBinFile *arch) {
-
 	RBinWasmObj *bin = R_NEW0 (RBinWasmObj);
 	if (!bin) {
 		return NULL;
@@ -681,6 +674,7 @@ RBinWasmObj *r_bin_wasm_init (RBinFile *arch) {
 	bin->size = (ut32)arch->buf->length;
 	if (!r_buf_set_bytes (bin->buf, arch->buf->buf, bin->size)) {
 		r_bin_wasm_destroy (arch);
+		free (bin);
 		return NULL;
 	}
 
@@ -692,7 +686,7 @@ RBinWasmObj *r_bin_wasm_init (RBinFile *arch) {
 	bin->g_imports = r_bin_wasm_get_imports (bin);	
 	bin->g_exports = r_bin_wasm_get_exports (bin);
 	bin->g_tables = r_bin_wasm_get_tables (bin);
-	bin->g_memories= r_bin_wasm_get_memories (bin);
+	bin->g_memories = r_bin_wasm_get_memories (bin);
 	bin->g_globals = r_bin_wasm_get_globals (bin);
 	bin->g_codes = r_bin_wasm_get_codes (bin);
 	bin->g_datas = r_bin_wasm_get_datas (bin);
@@ -701,11 +695,9 @@ RBinWasmObj *r_bin_wasm_init (RBinFile *arch) {
 	bin->entrypoint = r_bin_wasm_get_entrypoint (bin);
 
 	return bin;
-
 }
 
 void r_bin_wasm_destroy (RBinFile *arch) {
-
 	RBinWasmObj *bin;
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
@@ -733,7 +725,6 @@ void r_bin_wasm_destroy (RBinFile *arch) {
 }
 
 RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
-
 	RList *ret = NULL;
 	RBinWasmSection *ptr = NULL;
 
@@ -884,73 +875,57 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 }
 
 ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin) {
-
 	RList *secs = NULL;
 	RBinWasmStartEntry *start = NULL;
 	RBinWasmSection *sec = NULL;
 	RBinWasmCodeEntry *func = NULL;
 
 	if (!bin || !bin->g_sections) {
-		return 0x0;
+		return 0;
 	}
-
 	if (bin->entrypoint) {
 		return bin->entrypoint;
 	}
-
 	if (bin->g_start) {
 		start = bin->g_start;
-	} else if (!(secs = r_bin_wasm_get_sections_by_id (bin->g_sections,
-							R_BIN_WASM_SECTION_START))) {
-		return 0x0;
+	} else if (!(secs = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_START))) {
+		return 0;
 	} else if (!(sec = (RBinWasmSection*) r_list_first (secs))) {
-		return 0x0;
+		return 0;
 	} else {
 		start = r_bin_wasm_get_start (bin, sec);
 		bin->g_start = start;
 	}
 
 	if (!start) {
-		return 0x0;
+		return 0;
 	}
 
 	// FIX: entrypoint can be also an import
 	func = r_list_get_n (r_bin_wasm_get_codes (bin), start->index);
-	if (!func) {
-		return 0x0;
-	}
-
-	return (ut32)func->code;
+	return (ut32)func? func->code: 0;
 
 }
 
 RList *r_bin_wasm_get_imports (RBinWasmObj *bin) {
-
 	RBinWasmSection *import = NULL;
 	RList *imports = NULL;
 
 	if (!bin || !bin->g_sections) {
 		return NULL;
 	}
-
 	if (bin->g_imports) {
 		return bin->g_imports;
 	}
-
 	if (!(imports = r_bin_wasm_get_sections_by_id (bin->g_sections,
 						R_BIN_WASM_SECTION_IMPORT))) {
 		return r_list_new();
 	}
-
 	// support for multiple import sections against spec
 	if (!(import = (RBinWasmSection*) r_list_first (imports))) {
 		return r_list_new();
 	}
-
-	bin->g_imports = r_bin_wasm_get_import_entries (bin, import);
-
-	return bin->g_imports;
-
+	return bin->g_imports = r_bin_wasm_get_import_entries (bin, import);
 }
 
 RList *r_bin_wasm_get_exports (RBinWasmObj *bin) {
@@ -1012,7 +987,6 @@ RList *r_bin_wasm_get_types (RBinWasmObj *bin) {
 }
 
 RList *r_bin_wasm_get_tables (RBinWasmObj *bin) {
-
 	RBinWasmSection *table = NULL;
 	RList *tables = NULL;
 
@@ -1031,11 +1005,13 @@ RList *r_bin_wasm_get_tables (RBinWasmObj *bin) {
 
 	// support for multiple export sections against spec
 	if (!(table = (RBinWasmSection*) r_list_first (tables))) {
+		r_list_free (tables);
 		return r_list_new();
 	}
 
 	bin->g_tables = r_bin_wasm_get_table_entries (bin, table);
 
+	r_list_free (tables);
 	return bin->g_tables;
 
 }

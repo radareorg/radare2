@@ -291,16 +291,16 @@ static void radare2_rc(RCore *r) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
 		}
 		r_core_cmd_file (r, homerc);
-		free (homerc);
 	}
+	free (homerc);
 	homerc = r_str_home (".config/radare2/radare2rc");
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
 		}
 		r_core_cmd_file (r, homerc);
-		free (homerc);
 	}
+	free (homerc);
 	homerc = r_str_home (".config/radare2/radare2rc.d");
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {

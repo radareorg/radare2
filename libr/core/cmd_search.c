@@ -2606,7 +2606,7 @@ reread:
 				char *p, *str;
 				strstart = 2 + json + ignorecase;
 				len = strlen (input + strstart);
-				str = malloc ((len + 1) * 2);
+				str = calloc ((len + 1), 2);
 				for (p2 = input + strstart, p = str; *p2; p += 2, p2++) {
 					if (ignorecase) {
 						p[0] = tolower ((const ut8) *p2);
