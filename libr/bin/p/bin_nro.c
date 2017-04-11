@@ -192,6 +192,8 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
 	int i, import = 0;
+	RBinSymbol *sym;
+	RBinImport *imp;
 	for (i = 8; i < 99999; i++) {
 		ut64 addr = readLE64 (bf->buf, symtab + i);
 		ut64 size = readLE64 (bf->buf, symtab + i + 8);
@@ -202,10 +204,10 @@ static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab
 		if (!symName) {
 			break;
 		}
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
 			break;
-		}		
+		}
 		sym->type = r_str_const ("FUNC");
 		sym->bind = r_str_const ("NONE");
 		sym->size = size;
@@ -213,27 +215,28 @@ static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab
 		if (addr == 0) {
 			import ++;
 			ut64 pltSym = readLE64 (bf->buf, relplt + (import * 24));
-			RBinImport *imp = R_NEW0 (RBinImport);
+			imp = R_NEW0 (RBinImport);
 			if (!imp) {
+				R_FREE (sym);
 				break;
 			}
 			imp->name  = strdup (symName);
 			if (!imp->name) {
-				break;
+				goto out_walk_symbol;
 			}
 			imp->type = r_str_const ("FUNC");
 			if (!imp->type) {
-				break;
+				goto out_walk_symbol;
 			}
 			imp->bind = r_str_const ("NONE");
 			if (!imp->bind) {
-				break;
+				goto out_walk_symbol;
 			}
 			imp->ordinal = bin->imports_list->length;
 			r_list_append (bin->imports_list, imp);
 			sym->name = r_str_newf ("imp.%s", symName);
 			if (!sym->name) {
-				break;
+				goto out_walk_symbol;
 			}
 			sym->paddr = pltSym - 8;
 			sym->vaddr = sym->paddr + baddr;
@@ -241,6 +244,7 @@ static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab
 		} else {
 			sym->name = strdup (symName);
 			if (!sym->name) {
+				R_FREE (sym);
 				break;
 			}
 			sym->paddr = addr;
@@ -250,6 +254,12 @@ static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab
 		r_list_append (bin->methods_list, sym);
 		i += 8 - 1;
 	}
+    return;
+
+out_walk_symbol:
+	R_FREE (sym);
+	R_FREE (imp);
+	return;
 }
 
 static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr) {
