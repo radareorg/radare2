@@ -559,7 +559,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		return ret;
 	}
 	read_packet (g);
-	ret = handle_execFileRead (g);
+	(void) handle_execFileRead (g);
 
 	// Open the file
 	char *file_to_hex = calloc (2, strlen (g->exec_file_name) + 1);
@@ -675,10 +675,9 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	if (!g || !data) {
 		return -1;
 	}
-	command_len = snprintf (command, 255,
-		"%s%016"PFMT64x ",%"PFMT64d ":",
-		CMD_WRITEMEM, address, len);
-	tmp = calloc (command_len + (len * 2), sizeof(ut8));
+	command_len = snprintf (command, sizeof (command) - 1,
+		"%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM, address, len);
+	tmp = calloc (command_len + (len * 2), sizeof (char));
 	if (!tmp) {
 		return -1;
 	}
@@ -828,9 +827,9 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		// time to find the current register
 		while (g->registers[i].size > 0) {
 			if (strcmp (g->registers[i].name, reg) == 0) {
-				const uint64_t register_size = g->registers[i].size;
-				const uint64_t offset = g->registers[i].offset;
-				char *value = malloc ((register_size * 2) + 1);
+				const ut64 register_size = g->registers[i].size;
+				const ut64 offset = g->registers[i].offset;
+				char *value = calloc (register_size + 1, 2);
 				if (!value) {
 					free (buff);
 					return -1;
