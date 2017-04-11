@@ -303,19 +303,80 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 
 	return ret;
 }
+#if __WINDOWS__ && !defined(__CYGWIN__)
+static char *utf16_to_utf8 (const wchar_t *wc) {
+	char *rutf8;
+	int csize;
+
+	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL))) {
+		if ((rutf8 = malloc (csize))) {
+			WideCharToMultiByte (CP_UTF8, 0, wc, -1, rutf8, csize, NULL, NULL);
+		}
+	}
+	return rutf8;
+}
+
+static wchar_t *utf8_to_utf16 (const char *cstring) {
+	wchar_t *rutf16;
+	int wcsize;
+
+	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0))) {
+		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+			MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
+		}
+	}
+	return rutf16;
+}
+#endif
 
 R_API int r_lib_opendir(RLib *lib, const char *path) {
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	wchar_t file[1024];
+	WIN32_FIND_DATAW dir;
+	HANDLE fh;
+	wchar_t directory[MAX_PATH];
+	wchar_t *wcpath;
+	char *wctocbuff;
+#else
 	char file[1024];
 	struct dirent *de;
 	DIR *dh;
-
-#ifdef LIBR_PLUGINS
-	if (!path)
-		path = LIBR_PLUGINS;
 #endif
-	if (!path)
+#ifdef LIBR_PLUGINS
+	if (!path) {
+		path = LIBR_PLUGINS;
+	}
+#endif
+	if (!path) {
 		return false;
-
+	}
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	wcpath = utf8_to_utf16 (path);
+	if (!wcpath) {
+		return false;	
+	}
+	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);	
+	fh = FindFirstFileW (directory, &dir);
+	if (fh == INVALID_HANDLE_VALUE) {
+		IFDBG eprintf ("Cannot open directory %ls\n", wcpath);
+		free (wcpath);
+		return false;
+	}
+	do {
+		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
+		wctocbuff = utf16_to_utf8 (file);
+		if (wctocbuff) {
+			if (r_lib_dl_check_filename (wctocbuff)) {
+				r_lib_open (lib, wctocbuff);
+			} else {
+				IFDBG eprintf ("Cannot open %ls\n", dir.cFileName);
+			}
+			free (wctocbuff);
+		}
+	} while (FindNextFileW (fh, &dir));
+	FindClose (fh);
+	free (wcpath);
+#else
 	dh = opendir (path);
 	if (!dh) {
 		IFDBG eprintf ("Cannot open directory '%s'\n", path);
@@ -330,6 +391,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		}
 	}
 	closedir (dh);
+#endif
 	return true;
 }
 
