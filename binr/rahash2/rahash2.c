@@ -192,7 +192,6 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		printf ("[");
 	}
 	if (incremental) {
-		//R_HASH_ALL
 		for (i = 1; i < R_HASH_ALL; i <<= 1) {
 			if (algobit & i) {
 				ut64 hashbit = i & algobit;
@@ -432,7 +431,8 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 }
 
 int main(int argc, char **argv) {
-	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
+	ut64 i;
+	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	const char *decrypt = NULL;
