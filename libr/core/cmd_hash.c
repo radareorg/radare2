@@ -14,8 +14,6 @@ static void handle_sha1 (const ut8 *block, int len);
 static void handle_sha256 (const ut8 *block, int len);
 static void handle_sha512 (const ut8 *block, int len);
 static void handle_adler32 (const ut8 *block, int len);
-static void handle_crc32 (const ut8 *block, int len);
-static void handle_crc16 (const ut8 *block, int len);
 static void handle_xor (const ut8 *block, int len);
 static void handle_entropy (const ut8 *block, int len);
 static void handle_hamdist (const ut8 *block, int len);
@@ -25,12 +23,12 @@ static void handle_mod255 (const ut8 *input, int len);
 static void handle_luhn (const ut8 *input, int len);
 static void handle_crc8_smbus (const ut8 *block, int len);
 static void handle_crc15_can (const ut8 *block, int len);
-static void handle_crc16_2 (const ut8 *block, int len);
+static void handle_crc16 (const ut8 *block, int len);
 static void handle_crc16_hdlc (const ut8 *block, int len);
 static void handle_crc16_usb (const ut8 *block, int len);
 static void handle_crc16_citt (const ut8 *block, int len);
 static void handle_crc24 (const ut8 *block, int len);
-static void handle_crc32_2 (const ut8 *block, int len);
+static void handle_crc32 (const ut8 *block, int len);
 static void handle_crc32c (const ut8 *block, int len);
 static void handle_crc32_ecma_267 (const ut8 *block, int len);
 
@@ -46,8 +44,6 @@ static RHashHashHandlers hash_handlers[] = {
 	{"sha256", handle_sha256},
 	{"sha512", handle_sha512},
 	{"adler32", handle_adler32},
-	{"crc32", handle_crc32},
-	{"crc16", handle_crc16},
 	{"xor", handle_xor},
 	{"entropy", handle_entropy},
 	{"parity", handle_parity},
@@ -57,12 +53,12 @@ static RHashHashHandlers hash_handlers[] = {
 	{"luhn", handle_luhn},
 	{"crc8-smbus", handle_crc8_smbus},
 	{"crc15-can", handle_crc15_can},
-	{"crc16-2", handle_crc16_2},
+	{"crc16", handle_crc16},
 	{"crc16-hdlc", handle_crc16_hdlc},
 	{"crc16-usb", handle_crc16_usb},
 	{"crc16-citt", handle_crc16_citt},
 	{"crc24", handle_crc24},
-	{"crc32-2", handle_crc32_2},
+	{"crc32", handle_crc32},
 	{"crc32-c", handle_crc32c},
 	{"crc32-ecma-267", handle_crc32_ecma_267},
 	{NULL, NULL},
@@ -119,14 +115,6 @@ static void handle_adler32 (const ut8 *block, int len) {
 	r_cons_printf ("%02x%02x%02x%02x\n", b[0], b[1], b[2], b[3]);
 }
 
-static void handle_crc32 (const ut8 *block, int len) {
-	r_cons_printf ("%08x\n", r_hash_crc32 (block, len));
-}
-
-static void handle_crc16 (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc16 (0, block, len));
-}
-
 static void handle_xor (const ut8 *block, int len) {
 	r_cons_printf ("%02x\n", r_hash_xor (block, len));
 }
@@ -165,7 +153,7 @@ static void handle_crc15_can (const ut8 *block, int len) {
 	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_15_CAN));
 }
 
-static void handle_crc16_2 (const ut8 *block, int len) {
+static void handle_crc16 (const ut8 *block, int len) {
 	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16));
 }
 
@@ -185,7 +173,7 @@ static void handle_crc24 (const ut8 *block, int len) {
 	r_cons_printf ("%06x\n", r_hash_crc_preset (block, len, CRC_PRESET_24));
 }
 
-static void handle_crc32_2 (const ut8 *block, int len) {
+static void handle_crc32 (const ut8 *block, int len) {
 	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32));
 }
 

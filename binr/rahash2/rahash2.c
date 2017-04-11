@@ -118,7 +118,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 	}
 }
 
-static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print, int le) {
+static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
 	int dlen;
 	if (len < 0) {
 		return 0;
@@ -154,7 +154,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	RHash *ctx;
 	ut8 *buf;
 	int ret = 0;
-	int i, first = 1;
+	ut64 i;
+	int first = 1;
 	if (algobit == R_HASH_NONE) {
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
@@ -191,9 +192,10 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		printf ("[");
 	}
 	if (incremental) {
-		for (i = 1; i < 0x800000; i <<= 1) {
+		//R_HASH_ALL
+		for (i = 1; i < R_HASH_ALL; i <<= 1) {
 			if (algobit & i) {
-				int hashbit = i & algobit;
+				ut64 hashbit = i & algobit;
 				int dlen = r_hash_size (hashbit);
 				r_hash_do_begin (ctx, i);
 				if (rad == 'j') {
@@ -204,18 +206,15 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					}
 				}
 				if (s.buf && s.prefix) {
-					do_hash_internal (ctx,
-						hashbit, s.buf, s.len, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				for (j = from; j < to; j += bsize) {
 					int len = ((j + bsize) > to)? (to - j): bsize;
 					r_io_pread (io, j, buf, len);
-					do_hash_internal (ctx, hashbit, buf,
-						len, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, buf, len, rad, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
-					do_hash_internal (ctx, hashbit, s.buf,
-						s.len, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				r_hash_do_end (ctx, i);
 				if (iterations > 0) {
@@ -245,10 +244,10 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		if (s.buf) {
 			eprintf ("Warning: Seed ignored on per-block hashing.\n");
 		}
-		for (i = 1; i < 0x800000; i <<= 1) {
+		for (i = 1; i < R_HASH_ALL; i <<= 1) {
 			ut64 f, t, ofrom, oto;
 			if (algobit & i) {
-				int hashbit = i & algobit;
+				ut64 hashbit = i & algobit;
 				ofrom = from;
 				oto = to;
 				f = from;
@@ -309,13 +308,13 @@ static int do_help(int line) {
 
 static void algolist() {
 	ut64 bits;
-	int i;
+	ut64 i;
 	eprintf ("Available Hashes: \n");
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			printf ("  %s\n", name);
+			eprintf ("  %s\n", name);
 		}
 	}
 	eprintf ("\n");
@@ -332,7 +331,7 @@ static void algolist() {
 		if (!name || !*name) {
 			break;
 		}
-		printf ("  %s\n", name);
+		eprintf ("  %s\n", name);
 	}
 }
 
@@ -627,16 +626,14 @@ int main(int argc, char **argv) {
 				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
 				return 1;
 			}
-			for (i = 1; i < 0x800000; i <<= 1) {
+			for (i = 1; i < R_HASH_ALL; i <<= 1) {
 				if (algobit & i) {
-					int hashbit = i & algobit;
+					ut64 hashbit = i & algobit;
 					ctx = r_hash_new (true, hashbit);
 					from = 0;
 					to = strsz;
-					do_hash_internal (ctx, hashbit,
-						(const ut8 *) str, strsz, rad, 1, ule);
-					compare_hashes (ctx, compareBin,
-						r_hash_size (algobit), &ret);
+					do_hash_internal (ctx, hashbit, (const ut8 *) str, strsz, rad, 1, ule);
+					compare_hashes (ctx, compareBin, r_hash_size (algobit), &ret);
 					r_hash_free (ctx);
 				}
 			}

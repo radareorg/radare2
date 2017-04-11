@@ -53,15 +53,15 @@ static void crc_final (R_CRC_CTX *ctx, ut32 *r) {
 
 R_CRC_CTX crc_presets[] = {
 	{ 0xFFFFFFFF, 32, 1, 0x04C11DB7, 0xFFFFFFFF }, //CRC-32, test vector for "1234567892: cbf43926
-	{ 0x0000, 16, 1, 0x8005, 0x0000 },       //CRC-16-IBM, test vector for "1234567892: bb3d
+	{ 0x0000    , 16, 1, 0x8005    , 0x0000 },     //CRC-16-IBM, test vector for "1234567892: bb3d
 	{ 0x00000000, 32, 0, 0x80000011, 0x00000000 }, //CRC-32-ECMA-267 (EDC for DVD sectors), test vector for "1234567892: b27ce117
 	{ 0xFFFFFFFF, 32, 1, 0x1EDC6F41, 0xFFFFFFFF }, //CRC-32C, test vector for "1234567892: e3069283
-	{ 0xB704CE, 24, 0, 0x864CFB, 0x000000 }, //CRC-24, test vector for "1234567892: 21cf02
-	{ 0xFFFF, 16, 0, 0x1021, 0x0000 },       //CRC-16-CITT, test vector for "1234567892: 29b1
-	{ 0xFFFF, 16, 1, 0x8005, 0xFFFF },       //CRC-16-USB, test vector for "1234567892:  b4c8
-	{ 0xFFFF, 16, 1, 0x1021, 0xFFFF },       //CRC-HDLC, test vector for "1234567892: 906e
-	{ 0x0000, 15, 0, 0x4599, 0x0000 },       //CRC-15-CAN, test vector for "1234567892: 059e
-	{ 0x00, 8, 0, 0x07, 0x00 },              //CRC-8-SMBUS, test vector for "1234567892: f4
+	{ 0xB704CE  , 24, 0, 0x864CFB  , 0x000000 },   //CRC-24, test vector for "1234567892: 21cf02
+	{ 0xFFFF    , 16, 0, 0x1021    , 0x0000 },     //CRC-16-CITT, test vector for "1234567892: 29b1
+	{ 0xFFFF    , 16, 1, 0x8005    , 0xFFFF },     //CRC-16-USB, test vector for "1234567892:  b4c8
+	{ 0xFFFF    , 16, 1, 0x1021    , 0xFFFF },     //CRC-HDLC, test vector for "1234567892: 906e
+	{ 0x0000    , 15, 0, 0x4599    , 0x0000 },     //CRC-15-CAN, test vector for "1234567892: 059e
+	{ 0x00      ,  8, 0, 0x07      , 0x00 },       //CRC-8-SMBUS, test vector for "1234567892: f4
 };
 
 void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
@@ -84,21 +84,5 @@ ut32 r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
 	return r;
 }
 
-#if 0
-#include <stdio.h>
-int main() {
-	int i;
-	ut32 r;
-	R_CRC_CTX crc32;
 
-	for (i = CRC_32; i <= CRC_8_SMBUS; i++) {
-		crc_init_preset (&crc32, (enum CRC_PRESETS) i);
-		crc_update (&crc32, (ut8 *) "123456789", 9);
-		crc_final (&crc32, &r);
-		printf ("%08x\n", r);
-	}
-
-	return 0;
-}
-#endif
 

@@ -136,14 +136,12 @@ typedef struct r_hash_seed_t {
 #define R_HASH_LUHN 1 << 20
 #define R_HASH_CRC8_SMBUS 1 << 21
 #define R_HASH_CRC15_CAN 1 << 22
-#define R_HASH_CRC16_2 1 << 23
-#define R_HASH_CRC16_HDLC 1 << 24
-#define R_HASH_CRC16_USB 1 << 25
-#define R_HASH_CRC16_CITT 1 << 26
-#define R_HASH_CRC24 1 << 27
-#define R_HASH_CRC32_2 1 << 28
-#define R_HASH_CRC32C 1 << 29
-#define R_HASH_CRC32_ECMA_267 1 << 30
+#define R_HASH_CRC16_HDLC 1 << 23
+#define R_HASH_CRC16_USB 1 << 24
+#define R_HASH_CRC16_CITT 1 << 25
+#define R_HASH_CRC24 1 << 26
+#define R_HASH_CRC32C 1 << 27
+#define R_HASH_CRC32_ECMA_267 1 << 28
 #define R_HASH_ALL 0x1FFFFFFFF
 
 #ifdef R_API
@@ -172,8 +170,6 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *input, int len);
 /* XXX : crc16 should use 0 as arg0 by default */
 /* static methods */
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len);
-R_API ut16 r_hash_crc16(ut16 crc, const ut8 *buffer, ut64 len);
-R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len);
 R_API ut32 r_hash_adler32(const ut8 *buf, int len);
 R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_xor(const ut8 *b, ut64 len);
@@ -181,7 +177,7 @@ R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
 R_API int r_hash_parity(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
 R_API ut64 r_hash_luhn(const ut8 *buf, ut64 len);
-ut32 r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset);
+R_API ut32 r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, int len);
