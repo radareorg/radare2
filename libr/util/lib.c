@@ -308,7 +308,6 @@ static char *utf16_to_utf8 (const wchar_t *wc) {
 	char *rutf8;
 	int csize;
 	
-	rutf8 = NULL;
 	csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL);
 	if (csize > 0) {
 		rutf8 = malloc (csize);
@@ -321,10 +320,9 @@ static wchar_t *utf8_to_utf16 (const char *cstring) {
 	wchar_t *rutf16;
 	int wcsize;
 	
-	rutf16 = NULL;
 	wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0); 
 	if ( wcsize > 0 ) {
-		rutf16 = (wchar_t *) malloc (sizeof (wchar_t *) * wcsize);
+		rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t));
 		MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
 	}
 	return rutf16;
@@ -336,7 +334,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	wchar_t file[1024];
 	WIN32_FIND_DATAW dir;
 	HANDLE fh;
-	wchar_t directory[260];
+	wchar_t directory[MAX_PATH];
 	wchar_t *wcpath;
 	char *wctocbuff;
 #else
@@ -375,7 +373,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 			}
 			free (wctocbuff);
 		}
-	}while (FindNextFileW (fh, &dir));
+	} while (FindNextFileW (fh, &dir));
 	FindClose (fh);
 	free (wcpath);
 #else
