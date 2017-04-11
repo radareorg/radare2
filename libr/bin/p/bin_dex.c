@@ -328,7 +328,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		return;
 	}
 
-	RListIter *iter = r_list_iterator (params);
+	RListIter *iter;
 	char *name;
 	char *type;
 	int reg;
@@ -1380,7 +1380,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		if (dexdump) { 
 			rbin->cb_printf ("  Virtual methods   -\n");
 		}
-		p = parse_dex_class_method (
+		parse_dex_class_method (
 			binfile, bin, c, cls, p, p_end, sym_count,
 			c->class_data->virtual_methods_size, methods, false);
 	}
@@ -1497,6 +1497,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			}
 			len = strlen (class_name);
 			if (len < 1) {
+				free (class_name);
 				continue;
 			}
 			class_name = r_str_replace (class_name, ";", "", 0);
