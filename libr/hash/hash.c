@@ -28,16 +28,16 @@ static const hash_name_bytes[] = {
 	// {"base91", R_HASH_BASE91},
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
-	{ "crc8-smbus", R_HASH_CRC8_SMBUS },
-	{ "crc15-can", R_HASH_CRC15_CAN },
+	{ "crc8smbus", R_HASH_CRC8_SMBUS },
+	{ "crc15can", R_HASH_CRC15_CAN },
 	{ "crc16", R_HASH_CRC16 },
-	{ "crc16-hdlc", R_HASH_CRC16_HDLC },
-	{ "crc16-usb", R_HASH_CRC16_USB },
-	{ "crc16-citt", R_HASH_CRC16_CITT },
+	{ "crc16hdlc", R_HASH_CRC16_HDLC },
+	{ "crc16usb", R_HASH_CRC16_USB },
+	{ "crc16citt", R_HASH_CRC16_CITT },
 	{ "crc24", R_HASH_CRC24 },
 	{ "crc32", R_HASH_CRC32 },
-	{ "crc32-c", R_HASH_CRC32C },
-	{ "crc32-ecma-267", R_HASH_CRC32_ECMA_267 },
+	{ "crc32c", R_HASH_CRC32C },
+	{ "crc32ecma267", R_HASH_CRC32_ECMA_267 },
 	{ NULL, 0 }
 };
 
