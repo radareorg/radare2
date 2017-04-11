@@ -123,9 +123,9 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 			return false;
 		}
 
-		memcpy (names[ct_name], buf + 3 + tmp_size + 1,
-			buf[3 + tmp_size]);
-
+		if ((tmp_size + 4 + buf[3 + tmp_size]) < record->size) {
+			memcpy (names[ct_name], buf + 3 + tmp_size + 1, buf[3 + tmp_size]);
+		}
 		ct_name++;
 		tmp_size += buf[3 + tmp_size] + 1;
 	}

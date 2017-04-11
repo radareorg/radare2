@@ -74,8 +74,12 @@ static struct Type flags [] = {
 };
 
 static const char *getnum(const char* n, int *num) {
-	if (num) *num = atoi (n);
-	while (*n>='0' && *n <='9') n++;
+	if (num && *n) {
+		*num = atoi (n);
+	}
+	while (*n && *n>='0' && *n <='9') {
+		n++;
+	}
 	return n;
 }
 
@@ -225,7 +229,15 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			break;
 		}
 	}
-	p += (tail? 1: 2);
+	if (tail) {
+		if (*p) {
+			p++;
+		}
+	} else {
+		if (*p && p[1]) {
+			p += 2;
+		}
+	}
 
 	// XXX
 	q = getnum (p, NULL);
