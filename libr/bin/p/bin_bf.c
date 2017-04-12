@@ -90,21 +90,13 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return is_bf;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
 static RList *entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
@@ -120,7 +112,6 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.entries = entries,

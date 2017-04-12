@@ -17,7 +17,7 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	const short cs = bin->dos_header->cs;
 	ut32 pa = bin->dos_header->header_paragraphs + cs;
 	const ut32 paddr = (pa<<4) + bin->dos_header->ip;
-	if (paddr >= 0 && paddr < bin->dos_file_size) {
+	if (paddr < bin->dos_file_size) {
 		return paddr;
 	}
 	return -1;

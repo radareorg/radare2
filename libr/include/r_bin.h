@@ -335,7 +335,6 @@ typedef struct r_bin_plugin_t {
 	void *(*load_bytes)(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
-	bool (*check)(RBinFile *arch);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	ut64 (*baddr)(RBinFile *arch);
 	ut64 (*boffset)(RBinFile *arch);

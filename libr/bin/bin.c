@@ -1044,7 +1044,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr && xtr->check (bin) && xtr->check_bytes (buf_bytes, sz)) {
+			if (xtr && xtr->check_bytes (buf_bytes, sz)) {
 				if (xtr && (xtr->extract_from_bytes ||
 					    xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
@@ -1488,7 +1488,7 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		xtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
 	}
 
-	if (xtr && xtr->check && xtr->check_bytes (bytes, sz)) {
+	if (xtr && xtr->check_bytes (bytes, sz)) {
 		return r_bin_file_xtr_load_bytes (bin, xtr, file,
 						bytes, sz, file_sz, baseaddr, loadaddr, 0,
 						fd, rawstr);

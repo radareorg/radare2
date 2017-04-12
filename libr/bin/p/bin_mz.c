@@ -63,12 +63,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return ret;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	const ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
 		ut64 loadaddr, Sdb *sdb) {
 	const struct r_bin_mz_obj_t *res = NULL;
@@ -214,7 +208,6 @@ RBinPlugin r_bin_plugin_mz = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.sections = &sections,

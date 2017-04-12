@@ -169,13 +169,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length > 2 && !memcmp (buf, "\x56\x5a", 2));
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
 RBinPlugin r_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin", // Terse Executable format
@@ -184,8 +177,7 @@ RBinPlugin r_bin_plugin_te = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
-	.check_bytes = check_bytes,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

@@ -68,12 +68,6 @@ static bool check_bytes(const ut8 *b, ut64 length) {
 	return check_bytes_rjmp (b, length);
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
@@ -164,7 +158,6 @@ RBinPlugin r_bin_plugin_avr = {
 	.desc = "ATmel AVR MCUs",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
-	.check = &check,
 	.entries = &entries,
 	.symbols = &symbols,
 	.check_bytes = &check_bytes,

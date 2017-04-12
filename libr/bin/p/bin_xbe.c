@@ -16,16 +16,6 @@ static bool check_bytes(const ut8 *buf, ut64 size) {
 	return (size > sizeof (xbe_header) && header->magic == XBE_MAGIC);
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	const ut64 size = arch? r_buf_size (arch->buf): 0;
-
-	if (!arch || !arch->o || !bytes) {
-		return false;
-	}
-	return check_bytes (bytes, size);
-}
-
 static bool load(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = NULL;
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
@@ -378,7 +368,6 @@ RBinPlugin r_bin_plugin_xbe = {
 	.license = "LGPL3",
 	.load = &load,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.binsym = &binsym,

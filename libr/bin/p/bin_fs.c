@@ -11,26 +11,25 @@ static char *fsname(const ut8* buf, ut64 length) {
 	ut8 fs_lbuf[1024];
 	int i, j, len, ret = false;
 
-	for (i=0; fstypes[i].name ; i++) {
+	for (i = 0; fstypes[i].name; i++) {
 		RFSType *f = &fstypes[i];
 
 		len = R_MIN (f->buflen, sizeof (fs_lbuf));
 		memset (fs_lbuf, 0, sizeof (fs_lbuf));
 
-		if (f->bufoff+len > length) break;
-		memcpy (fs_lbuf, buf+f->bufoff, len);
+		if (f->bufoff + len > length) break;
+		memcpy (fs_lbuf, buf + f->bufoff, len);
 
-		if (( f->buflen > 0) && (len >= f->buflen)) {
+		if ((f->buflen > 0) && (len >= f->buflen)) {
 			int min = R_MIN (f->buflen, sizeof (fs_lbuf));
 			if (!memcmp (fs_lbuf, f->buf, min)) {
-
 				ret = true;
 				len = R_MIN (f->bytelen, sizeof (fs_lbuf));
 
-				if (f->byteoff+len > length) break;
-				memcpy (fs_lbuf, buf+f->byteoff, len);
+				if (f->byteoff + len > length) break;
+				memcpy (fs_lbuf, buf + f->byteoff, len);
 
-				for (j=0; j<f->bytelen; j++) {
+				for (j = 0; j < f->bytelen; j++) {
 					if (fs_lbuf[j] != f->byte) {
 						ret = false;
 						break;
@@ -44,26 +43,25 @@ static char *fsname(const ut8* buf, ut64 length) {
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || (st64)length <1) return false;
+	if (!buf || (st64)length < 1) {
+		return false;
+	}
 	char *p = fsname (buf, length);
 	free (p);
 	return p != NULL;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	if (check_bytes (buf, sz))
+	if (check_bytes (buf, sz)) {
 		return R_NOTNULL;
+	}
 	return NULL;
 }
 
 static bool load(RBinFile *arch) {
-	return check (arch);
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb) != NULL;
 }
 
 static int destroy(RBinFile *arch) {
@@ -116,7 +114,6 @@ RBinPlugin r_bin_plugin_fs = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.strings = &strings,
