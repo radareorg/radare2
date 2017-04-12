@@ -23,7 +23,6 @@
  */
 
 #define _GNU_SOURCE 1
-
 #include <dirent.h>
 #include <stddef.h>
 #include <stdlib.h>

@@ -1,5 +1,4 @@
 /* radare - LGPL - Copyright 2011-2012 - pancake */
-
 #include <r_util.h>
 #include <stdbool.h>
 #include <stdlib.h>

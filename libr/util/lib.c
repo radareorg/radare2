@@ -4,7 +4,9 @@
 #include "r_util.h"
 #include "r_lib.h"
 #include <stdio.h>
+#if !(__WINDOWS__ && !defined(__CYGWIN__))
 #include <dirent.h>
+#endif
 
 R_LIB_VERSION(r_lib);
 
