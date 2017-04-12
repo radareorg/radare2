@@ -661,7 +661,11 @@ int main(int argc, char **argv, char **envp) {
 				char *program = strstr (msg, "program=");
 				if (program) {
 					program += 8;
-					char *p = strchr (program, '\n');
+					char *p = 0;
+					p = strstr (program, "\r\n");
+					if (!p) {
+						p = strchr (program, '\n');
+					}
 					if (p) {
 						*p = 0;
 						pfile = strdup (program);
