@@ -2272,6 +2272,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_hudstuff (core);
 			break;
 		case ';':
+			r_cons_gotoxy (0, 0);
 			r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
 			showcursor (core, true);
 			r_cons_flush ();
