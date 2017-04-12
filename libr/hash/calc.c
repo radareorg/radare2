@@ -2,14 +2,6 @@
 
 #include "r_hash.h"
 
-#if __BYTE_ORDER == __BIG_ENDIAN && !(__WINDOWS__ || _WIN32 || __CYGWIN__ || MINGW32)
-#define USE_MEMCPY	1
-#endif
-
-#define SWAP16_TO(x,y) ((x)[1]=(y)&0xff);((x)[0]=((y)>>8)&0xff);
-#define SWAP24_TO(x,y) ((x)[2]=(y)&0xff);((x)[1]=((y)>>8)&0xff);((x)[0]=((y)>>16)&0xff);
-#define SWAP32_TO(x,y) (x)[3]=(y)&0xff;(x)[2]=((y)>>8)&0xff;(x)[1]=((y)>>16)&0xff;(x)[0]=((y)>>24)&0xff;
-
 /* TODO: do it more beautiful with structs and not spaguetis */
 R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	if (len < 0) {
@@ -41,20 +33,12 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC16) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
-#else
-		SWAP16_TO (ctx->digest, res);
-#endif
+		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC16;
 	}
 	if (algobit & R_HASH_CRC32) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
-#else
-		SWAP32_TO (ctx->digest, res);
-#endif
+		r_write_be32 (ctx->digest, res);
 		return R_HASH_SIZE_CRC32;
 	}
 	if (algobit & R_HASH_XXHASH) {
@@ -108,67 +92,37 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC15_CAN) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_15_CAN);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC15_CAN);
-#else
-		SWAP16_TO (ctx->digest, res);
-#endif
+		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC15_CAN;
 	}
 	if (algobit & R_HASH_CRC16_HDLC) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_HDLC);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16_HDLC);
-#else
-		SWAP16_TO (ctx->digest, res);
-#endif
+		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC16_HDLC;
 	}
 	if (algobit & R_HASH_CRC16_USB) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_USB);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16_USB);
-#else
-		SWAP16_TO (ctx->digest, res);
-#endif
+		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC16_USB;
 	}
 	if (algobit & R_HASH_CRC16_CITT) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_CITT);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16_CITT);
-#else
-		SWAP16_TO (ctx->digest, res);
-#endif
+		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC16_CITT;
 	}
 	if (algobit & R_HASH_CRC24) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_24);
-//		res <<= 8;
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC24);
-#else
-		SWAP24_TO (ctx->digest, res);
-#endif
+		r_write_be24 (ctx->digest, res);
 		return R_HASH_SIZE_CRC24;
 	}
 	if (algobit & R_HASH_CRC32C) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32C);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32C);
-#else
-		SWAP32_TO (ctx->digest, res);
-#endif
+		r_write_be32 (ctx->digest, res);
 		return R_HASH_SIZE_CRC32C;
 	}
 	if (algobit & R_HASH_CRC32_ECMA_267) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32_ECMA_267);
-#ifdef USE_MEMCPY
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32_ECMA_267);
-#else
-		SWAP32_TO (ctx->digest, res);
-#endif
+		r_write_be32 (ctx->digest, res);
 		return R_HASH_SIZE_CRC32_ECMA_267;
 	}
 	return 0;
