@@ -10,35 +10,59 @@
 // Consume functions
 static size_t consume_u32 (ut8 *buf, ut8 *max, ut32 *out, ut32 *offset) {
 	size_t n;
-	if (!buf || !max || !out) return 0;
-	if (!(n = read_u32_leb128 (buf, max, out)) || n > 5) return 0;
-	if (offset) *offset += n; 
+	if (!buf || !max || !out) {
+		return 0;
+	}
+	if (!(n = read_u32_leb128 (buf, max, out)) || n > 5) {
+		return 0;
+	}
+	if (offset) {
+		*offset += n;
+	}
 	return n;
 }
+
 static size_t consume_s32 (ut8 *buf, ut8 *max, st32 *out, ut32 *offset) {
 	size_t n;
-	if (!buf || !max || !out) return 0;
-	if (!(n = read_i32_leb128 (buf, max, out)) || n > 5) return 0;
-	if (offset) *offset += n; 
+	if (!buf || !max || !out) {
+		return 0;
+	}
+	if (!(n = read_i32_leb128 (buf, max, out)) || n > 5) {
+		return 0;
+	}
+	if (offset) {
+		*offset += n;
+	}
 	return n;
 }
+
 static size_t consume_u8 (ut8 *buf, ut8 *max, ut8 *out, ut32 *offset) {
 	size_t n;
 	ut32 tmp;
-	if (!(n = consume_u32 (buf, max, &tmp, offset)) || n > 1) return 0;
+	if (!(n = consume_u32 (buf, max, &tmp, offset)) || n > 1) {
+		return 0;
+	}
 	*out = tmp & 0x7f;
 	return 1;	
 }
+
 static size_t consume_s8 (ut8 *buf, ut8 *max, st8 *out, ut32 *offset) {
 	size_t n;
 	ut32 tmp;
-	if (!(n = consume_u32 (buf, max, &tmp, offset)) || n > 1) return 0;
+	if (!(n = consume_u32 (buf, max, &tmp, offset)) || n > 1) {
+		return 0;
+	}
 	*out = (st8)(tmp & 0x7f);
 	return 1;	
 }
+
 static size_t consume_str (ut8 *buf, ut8 *max, size_t sz, char *out, ut32 *offset) {
-	if (!buf || !max || !out || !sz) return 0;
-	if (!(buf + sz < max)) return 0;
+	if (!buf || !max || !out || !sz) {
+		return 0;
+	}
+	if (!(buf + sz < max)) {
+		return 0;
+	}
 	strncpy ((char*)out, (char*)buf, R_MIN (R_BIN_WASM_STRING_LENGTH-1, sz));
 	if (offset) *offset += sz;
 	return sz;
@@ -49,10 +73,15 @@ static size_t consume_init_expr (ut8 *buf, ut8 *max, ut8 eoc, void *out, ut32 *o
 		// TODO: calc the expresion with the bytcode (ESIL?)
 		i += 1;
 	}
-	if (buf[i] != eoc) return 0;
-	if (offset) *offset += i + 1;
+	if (buf[i] != eoc) {
+		return 0;
+	}
+	if (offset) {
+		*offset += i + 1;
+	}
 	return i + 1;
 }
+
 static size_t consume_locals (ut8 *buf, ut8 *max, ut32 count, RBinWasmCodeEntry *out, ut32 *offset) {
 	ut32 i = 0, j = 0;
 	if (count < 1) return 0;
@@ -75,6 +104,7 @@ static size_t consume_locals (ut8 *buf, ut8 *max, ut32 count, RBinWasmCodeEntry 
 	if (offset) *offset += i;
 	return j;
 }
+
 static size_t consume_limits (ut8 *buf, ut8 *max, struct r_bin_wasm_resizable_limits_t *out, ut32 *offset) {
 	ut32 i = 0;
 	if (!(consume_u8 (buf + i, max, &out->flags, &i))) return 0;
@@ -561,9 +591,12 @@ static RList *r_bin_wasm_get_table_entries (RBinWasmObj *bin, RBinWasmSection *s
 }
 
 static RList *r_bin_wasm_get_global_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
-
 	RList *ret = NULL;
 	RBinWasmGlobalEntry *ptr = NULL;
+	int buflen = bin->buf->length;
+	if (sec->payload_data + 32 > buflen) {
+		return NULL;
+	}
 
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
@@ -574,33 +607,26 @@ static RList *r_bin_wasm_get_global_entries (RBinWasmObj *bin, RBinWasmSection *
 	ut32 count = sec->count;
 	ut32 i = 0, r = 0;
 
-	while (i < len && r < count) {
-
+	while (i < len && len < buflen && r < count) {
 		if (!(ptr = R_NEW0 (RBinWasmGlobalEntry))) {
 			return ret;
 		}
 
-		if (!(consume_u8 (buf + i, buf + len, (ut8*)&ptr->content_type, &i))) {
-			free (ptr);
-			return ret;
+		if (len + 8 > buflen || !(consume_u8 (buf + i, buf + len, (ut8*)&ptr->content_type, &i))) {
+			goto beach;
 		}
-
-		if (!(consume_u8 (buf + i, buf + len, &ptr->mutability, &i))) {
-			free (ptr);
-			return ret;
+		if (len + 8 > buflen || !(consume_u8 (buf + i, buf + len, &ptr->mutability, &i))) {
+			goto beach;
 		}
-
-		if (!(consume_init_expr (buf + i, buf + len, R_BIN_WASM_END_OF_CODE, NULL, &i))) {
-			free (ptr);
-			return ret;
+		if (len + 8 > buflen || !(consume_init_expr (buf + i, buf + len, R_BIN_WASM_END_OF_CODE, NULL, &i))) {
+			goto beach;
 		}
-
 		r_list_append (ret, ptr);
-
-		r += 1;
-
+		r++;
 	}
-
+	return ret;
+beach:
+	free (ptr);
 	return ret;
 }
 
