@@ -18,6 +18,7 @@
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
+
 static void pair(const char *a, const char *b, int mode, bool last) {
 	if (!b || !(*b)) {
 		return;
@@ -754,7 +755,7 @@ static int bin_info(RCore *r, int mode) {
 			}
 			r_cons_newline ();
 		}
-		
+
 		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
 	}
 	r_core_anal_type_init (r);
@@ -2281,7 +2282,9 @@ static int bin_classes(RCore *r, int mode) {
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				if (!mergeflags && !flag_exists (r->flags, sym->name)) {
-					char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
+					char *mflags = r_core_bin_method_flags_str (sym, mode);
+					char *method = sdb_fmt (1, "method%s.%s.%s", mflags, c->name, sym->name);
+					R_FREE (mflags);
 					r_name_filter (method, -1);
 					r_flag_set (r->flags, method, sym->vaddr, 1);
 				}
@@ -2298,8 +2301,9 @@ static int bin_classes(RCore *r, int mode) {
 					c->name, c->super, c->index);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				r_cons_printf ("f method.%s.%s = 0x%"PFMT64x"\n",
-					c->name, sym->name, sym->vaddr);
+				char *mflags = r_core_bin_method_flags_str (sym, mode);
+				r_cons_printf ("f method%s.%s.%s = 0x%"PFMT64x"\n", mflags, c->name, sym->name, sym->vaddr);
+				R_FREE (mflags);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			if (c->super) {
@@ -2312,8 +2316,10 @@ static int bin_classes(RCore *r, int mode) {
 					c->index);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				r_cons_printf ("%s{\"name\":\"%s\",\"static\":%s,\"addr\":%"PFMT64d"}",
-					iter2->p? ",": "", sym->name, (sym->bind && strcmp (sym->bind, "METH"))? "true": "false", sym->vaddr);
+				char *mflags = r_core_bin_method_flags_str (sym, mode);
+				r_cons_printf ("%s{\"name\":\"%s\",\"flags\":%s,\"addr\":%"PFMT64d"}",
+					iter2->p? ",": "", sym->name, mflags, sym->vaddr);
+				R_FREE (mflags);
 			}
 			r_cons_printf ("]}");
 		} else {
@@ -2326,8 +2332,10 @@ static int bin_classes(RCore *r, int mode) {
 				r_cons_newline ();
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				r_cons_printf ("0x%08"PFMT64x" method %d %s\n",
-					sym->vaddr, m, sym->dname? sym->dname: sym->name);
+				char *mflags = r_core_bin_method_flags_str (sym, mode);
+				r_cons_printf ("0x%08"PFMT64x" method %d %s %s\n",
+					sym->vaddr, m, mflags, sym->dname? sym->dname: sym->name);
+				R_FREE (mflags);
 				m++;
 			}
 		}
@@ -2924,4 +2932,83 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 	//r_core_file_set_by_file (core, cur_cf);
 	//r_core_bin_bind (core, cur_bf);
 	return count;
+}
+
+R_API char *r_core_bin_method_flags_str(RBinSymbol *sym, int mode) {
+	char *str;
+	RStrBuf *buf;
+	int i, len = 0;
+
+	buf = r_strbuf_new ("");
+	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
+		if (!sym->method_flags) {
+			goto out;
+		}
+
+		for (i = 0; i != 64; i++) {
+			ut64 flag = sym->method_flags & (1L << i);
+			if (flag) {
+				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
+				if (flag_string) {
+					r_strbuf_appendf (buf, ".%s", flag_string);
+				}
+			}
+		}
+	} else if (IS_MODE_JSON (mode)) {
+		if (!sym->method_flags) {
+			r_strbuf_append (buf, "[]");
+			goto out;
+		}
+
+		r_strbuf_append (buf, "[");
+
+		for (i = 0; i != 64; i++) {
+			ut64 flag = sym->method_flags & (1L << i);
+			if (flag) {
+				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
+
+				if (len != 0) {
+					r_strbuf_append (buf, ",");
+				}
+				if (flag_string) {
+					r_strbuf_appendf (buf, "\"%s\"", flag_string);
+				} else {
+					r_strbuf_appendf (buf, "\"0x%08"PFMT64x"\"", flag);
+				}
+				len++;
+			}
+		}
+
+		r_strbuf_append (buf, "]");
+	} else {
+		int pad_len = 4; //TODO: move to a config variable
+
+		if (!sym->method_flags) {
+			goto padding;
+		}
+		for (i = 0; i != 64; i++) {
+			ut64 flag = sym->method_flags & (1L << i);
+			if (flag) {
+				const char *flag_string = r_bin_get_meth_flag_string (flag, true);
+
+				if (flag_string) {
+					r_strbuf_append (buf, flag_string);
+				} else {
+					r_strbuf_append (buf, "?");
+				}
+
+				len++;
+			}
+		}
+padding:
+		for ( ; len < pad_len; len++) {
+			r_strbuf_append (buf, " ");
+		}
+	}
+
+out:
+	str = strdup (r_strbuf_get (buf));
+	r_strbuf_free (buf);
+
+	return str;
 }

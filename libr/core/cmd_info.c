@@ -517,16 +517,20 @@ static int cmd_info(void *data, const char *input) {
 								r_cons_printf (",\"methods\":[");
 								r_list_foreach (cls->methods, iter2, sym) {
 									const char *comma = iter2->p? ",": "";
-									r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d "}",
-										comma, sym->name, sym->vaddr);
+									char *flags = r_core_bin_method_flags_str (sym, R_CORE_BIN_JSON);
+									r_cons_printf ("%s{\"name\":\"%s\",\"flags\":%s,\"vaddr\":%"PFMT64d "}",
+										comma, sym->name, flags, sym->vaddr);
+									R_FREE (flags);
 								}
 								r_cons_printf ("]");
 								break;
 							default:
 								r_cons_printf ("class %s\n", cls->name);
 								r_list_foreach (cls->methods, iter2, sym) {
-									r_cons_printf ("0x%08"PFMT64x " method %s %s\n",
-										sym->vaddr, cls->name, sym->name);
+									char *flags = r_core_bin_method_flags_str (sym, 0);
+									r_cons_printf ("0x%08"PFMT64x " method %s %s %s\n",
+										sym->vaddr, cls->name, flags, sym->name);
+									R_FREE (flags);
 								}
 								break;
 							}
