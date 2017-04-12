@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2016 - pancake */
 
 #include <r_fs.h>
-#if !(__WINDOWS__ && !defined(__CYGWIN__))
-#include <dirent.h>
-#endif
 #include <sys/stat.h>
 
 static RFSFile* fs_squash_open(RFSRoot *root, const char *path) {
