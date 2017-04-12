@@ -14,7 +14,6 @@
 #include <dirent.h>
 #endif
 #include <sys/time.h>
-#include "r_util/r_utfxconv.h"
 #include "r_util/r_base64.h"
 #include "r_util/r_base91.h"
 #include "r_util/r_buf.h"
