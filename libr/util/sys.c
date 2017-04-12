@@ -127,24 +127,13 @@ R_API RList *r_sys_dir(const char *path) {
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath;
 	char *cfname;
-	
-	if (!path) {
-		return list;
-	}
-	if (r_sandbox_enable (0)) {
-		if (path && !r_sandbox_check_path (path)) {
-			return list;
-		}
-	}
-	wcpath = r_utf8_to_utf16 (path);
-	if (!wcpath) {
-		return list;
-	}
-	swprintf (dir, sizeof (dir), L"%ls\\*.*", wcpath);
-	fh = FindFirstFileW (dir, &entry);
+
+	fh = r_sandbox_opendir (path, &entry, &dir, wcpath);	
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
-		free (wcpath);
+		if (wcpath) {
+			free (wcpath);
+		}
 		return list;
 	}
 	list = r_list_new ();

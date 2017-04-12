@@ -7,7 +7,9 @@
  * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
  * path are ok.
  */
-#if !(__WINDOWS__ && !defined(__CYGWIN__))
+#if __WINDOWS__ && !defined(__CYGWIN__)
+R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry, char *dir, wchar_t *wcpath);
+#else
 R_API DIR* r_sandbox_opendir(const char *path);
 #endif
 R_API int r_sandbox_lseek(int fd, ut64 addr, int mode);

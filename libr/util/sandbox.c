@@ -277,7 +277,23 @@ R_API int r_sandbox_kill(int pid, int sig) {
 #endif
 	return -1;
 }
-#if !(__WINDOWS__ && !defined(__CYGWIN__))
+#if __WINDOWS__ && !defined(__CYGWIN__)
+R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry, char *dir, wchar_t *wcpath) {
+	if (!path)
+		return NULL;
+	if (r_sandbox_enable (0)) {
+		if (path && !r_sandbox_check_path (path)) {
+			return NULL;
+		}
+	}
+	if (!(wcpath = r_utf8_to_utf16 (path))) {
+		return NULL;
+	}
+	swprintf (dir, MAX_PATH, L"%ls\\*.*", wcpath);
+
+	return FindFirstFileW (dir, entry);
+}
+#else
 R_API DIR* r_sandbox_opendir (const char *path) {
 	if (!path)
 		return NULL;
@@ -286,6 +302,7 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 			return NULL;
 		}
 	}
+
 	return opendir (path);
 }
 #endif
