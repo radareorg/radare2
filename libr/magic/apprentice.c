@@ -510,17 +510,17 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	struct r_magic_entry *marray;
 	struct stat st;
 	int errs = 0;
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __UNIX__
+	DIR *dir;
+	struct dirent *d;
+	char subfn[MAXPATHLEN];
+#else	
 	HANDLE hdir;
 	WIN32_FIND_DATAW entry;
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath;
 	char *cfname;
-	char subfn[1024];
-#else
-	DIR *dir;
-	struct dirent *d;
-	char subfn[MAXPATHLEN];
+	char subfn[1024];	
 #endif
 	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
 
