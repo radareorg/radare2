@@ -559,7 +559,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				FindClose (hdir);
 			}
 			free (wcpath);
-		} else errs++;
+		} else {
+			errs++;
+		}
 #else
 		dir = opendir (fn);
 		if (dir) {
@@ -571,7 +573,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				//else perror (subfn);
 			}
 			closedir (dir);
-		} else errs++;
+		} else {
+			errs++;
+		}
 #endif
 	} else load_1 (ms, action, fn, &errs, &marray, &marraycount);
 	if (errs)
