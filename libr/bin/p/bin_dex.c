@@ -9,6 +9,23 @@
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
 
+/* method flags */
+#define R_DEX_METH_PUBLIC 0x0001
+#define R_DEX_METH_PRIVATE 0x0002
+#define R_DEX_METH_PROTECTED 0x0004
+#define R_DEX_METH_STATIC 0x0008
+#define R_DEX_METH_FINAL 0x0010
+#define R_DEX_METH_SYNCHRONIZED 0x0020
+#define R_DEX_METH_BRIDGE 0x0040
+#define R_DEX_METH_VARARGS 0x0080
+#define R_DEX_METH_NATIVE 0x0100
+#define R_DEX_METH_ABSTRACT 0x0400
+#define R_DEX_METH_STRICT 0x0800
+#define R_DEX_METH_SYNTHETIC 0x1000
+#define R_DEX_METH_MIRANDA 0x8000
+#define R_DEX_METH_CONSTRUCTOR 0x10000
+#define R_DEX_METH_DECLARED_SYNCHRONIZED 0x20000
+
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
 static bool dexdump = false;
@@ -1261,49 +1278,49 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 }
 
 static void set_method_flags(RBinSymbol * sym, ut64 MA) {
-	if (MA & 0x0001) {
+	if (MA & R_DEX_METH_PUBLIC) {
 		sym->method_flags |= R_BIN_METH_PUBLIC;
 	}
-	if (MA & 0x0002) {
+	if (MA & R_DEX_METH_PRIVATE) {
 		sym->method_flags |= R_BIN_METH_PRIVATE;
 	}
-	if (MA & 0x0004) {
+	if (MA & R_DEX_METH_PROTECTED) {
 		sym->method_flags |= R_BIN_METH_PROTECTED;
 	}
-	if (MA & 0x0008) {
+	if (MA & R_DEX_METH_STATIC) {
 		sym->method_flags |= R_BIN_METH_STATIC;
 	}
-	if (MA & 0x0010) {
+	if (MA & R_DEX_METH_FINAL) {
 		sym->method_flags |= R_BIN_METH_FINAL;
 	}
-	if (MA & 0x0020) {
+	if (MA & R_DEX_METH_SYNCHRONIZED) {
 		sym->method_flags |= R_BIN_METH_SYNCHRONIZED;
 	}
-	if (MA & 0x0040) {
+	if (MA & R_DEX_METH_BRIDGE) {
 		sym->method_flags |= R_BIN_METH_BRIDGE;
 	}
-	if (MA & 0x0080) {
+	if (MA & R_DEX_METH_VARARGS) {
 		sym->method_flags |= R_BIN_METH_VARARGS;
 	}
-	if (MA & 0x0100) {
+	if (MA & R_DEX_METH_NATIVE) {
 		sym->method_flags |= R_BIN_METH_NATIVE;
 	}
-	if (MA & 0x0400) {
+	if (MA & R_DEX_METH_ABSTRACT) {
 		sym->method_flags |= R_BIN_METH_ABSTRACT;
 	}
-	if (MA & 0x0800) {
+	if (MA & R_DEX_METH_STRICT) {
 		sym->method_flags |= R_BIN_METH_STRICT;
 	}
-	if (MA & 0x1000) {
+	if (MA & R_DEX_METH_SYNTHETIC) {
 		sym->method_flags |= R_BIN_METH_SYNTHETIC;
 	}
-	if (MA & 0x8000) {
+	if (MA & R_DEX_METH_MIRANDA) {
 		sym->method_flags |= R_BIN_METH_MIRANDA;
 	}
-	if (MA & 0x10000) {
+	if (MA & R_DEX_METH_CONSTRUCTOR) {
 		sym->method_flags |= R_BIN_METH_CONSTRUCTOR;
 	}
-	if (MA & 0x20000) {
+	if (MA & R_DEX_METH_DECLARED_SYNCHRONIZED) {
 		sym->method_flags |= R_BIN_METH_DECLARED_SYNCHRONIZED;
 	}
 }
