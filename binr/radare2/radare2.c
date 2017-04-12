@@ -662,7 +662,7 @@ int main(int argc, char **argv, char **envp) {
 				if (program) {
 					program += 8;
 					char *p = 0;
-					p = strstr (program, '\r\n');
+					p = strstr (program, "\r\n");
 					if (!p) {
 						p = strchr (program, '\n');
 					}
