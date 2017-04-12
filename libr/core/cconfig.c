@@ -1829,7 +1829,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETPREF("asm.bytes", "true", "Display the bytes of each instruction");
 	SETPREF("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
-	SETICB("asm.midflags", 1, &cb_midflags, "Realign disassembly if there is a flag in the middle of an instruction");
+	SETICB("asm.midflags", 2, &cb_midflags, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
