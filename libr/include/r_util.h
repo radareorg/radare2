@@ -10,7 +10,9 @@
 #include <r_list.h> // radare linked list
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <r_th.h>
+#if !(__WINDOWS__ && !defined(__CYGWIN__))
 #include <dirent.h>
+#endif
 #include <sys/time.h>
 #include "r_util/r_utfxconv.h"
 #include "r_util/r_base64.h"

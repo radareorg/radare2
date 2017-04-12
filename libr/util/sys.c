@@ -131,6 +131,14 @@ R_API RList *r_sys_dir(const char *path) {
 	wchar_t *wcpath;
 	char *cfname;
 	
+	if (!path) {
+		return list;
+	}
+	if (r_sandbox_enable (0)) {
+		if (path && !r_sandbox_check_path (path)) {
+			return list;
+		}
+	}
 	wcpath = r_utf8_to_utf16 (path);
 	if (!wcpath) {
 		return list;

@@ -277,7 +277,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 #endif
 	return -1;
 }
-
+#if !(__WINDOWS__ && !defined(__CYGWIN__))
 R_API DIR* r_sandbox_opendir (const char *path) {
 	if (!path)
 		return NULL;
@@ -288,7 +288,7 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	}
 	return opendir (path);
 }
-
+#endif
 R_API int r_sys_stop () {
 	int pid;
 	if (enabled) {
