@@ -724,7 +724,12 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->bclass = r_bin_dex_get_version (arch->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
-	ret->subsystem = strdup ("any");
+	const char *kw = "Landroid/support/wearable/view";
+	if (r_mem_mem (arch->buf->buf, arch->buf->length, kw, strlen (kw))) {
+		ret->subsystem = strdup ("android-wear");
+	} else {
+		ret->subsystem = strdup ("android");
+	}
 	ret->machine = strdup ("Dalvik VM");
 	h = &ret->sum[0];
 	h->type = "sha1";
