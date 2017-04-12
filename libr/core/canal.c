@@ -32,7 +32,6 @@ static void loganal(ut64 from, ut64 to, int depth) {
 
 static RCore *mycore = NULL;
 
-
 // XXX: copypaste from anal/data.c
 #define MINLEN 1
 static int is_string (const ut8 *buf, int size, int *len) {
@@ -3440,7 +3439,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	free (tmp_esil_str);
 
 	cur = addr + idx;
-	R_FREE(op.mnemonic);
+	R_FREE (op.mnemonic);
 	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
 		free (buf);
 		return;
