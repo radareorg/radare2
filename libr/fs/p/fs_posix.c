@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_fs.h>
-#if !(__WNDOWS__ && !defined(__CYGWIN__))
+#if !(__WINDOWS__ && !defined(__CYGWIN__))
 #include <dirent.h>
 #endif
 #include <sys/stat.h>
