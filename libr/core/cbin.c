@@ -2316,10 +2316,15 @@ static int bin_classes(RCore *r, int mode) {
 					c->index);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_method_flags_str (sym, mode);
-				r_cons_printf ("%s{\"name\":\"%s\",\"flags\":%s,\"addr\":%"PFMT64d"}",
-					iter2->p? ",": "", sym->name, mflags, sym->vaddr);
-				R_FREE (mflags);
+				if (sym->method_flags) {
+					char *mflags = r_core_bin_method_flags_str (sym, mode);
+					r_cons_printf ("%s{\"name\":\"%s\",\"flags\":%s,\"addr\":%"PFMT64d"}",
+						iter2->p? ",": "", sym->name, mflags, sym->vaddr);
+					R_FREE (mflags);
+				} else {
+					r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d"}",
+						iter2->p? ",": "", sym->name, sym->vaddr);
+				}
 			}
 			r_cons_printf ("]}");
 		} else {

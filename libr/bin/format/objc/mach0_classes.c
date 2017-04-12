@@ -593,9 +593,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 #endif
 		method->vaddr = m.imp;
 		method->type = is_static ? "FUNC" : "METH";
-        if (is_static) {
-            method->method_flags |= R_BIN_METH_CLASS;
-        }
+		if (is_static) {
+			method->method_flags |= R_BIN_METH_CLASS;
+		}
 		if (is_thumb (arch)) {
 			if (method->vaddr & 1) {
 				method->vaddr >>= 1;
