@@ -5343,6 +5343,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmdf (core, "dh %s;dpa", dh_orig);
 				}
 			}
+			r_core_seek (core, curseek, 1);
 		jacuzzi:
 			flag_every_function (core);
 			r_cons_break_pop ();
