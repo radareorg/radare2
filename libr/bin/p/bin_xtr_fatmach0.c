@@ -31,18 +31,6 @@ static bool checkHeader(const ut8 *h, int sz) {
 	return false;
 }
 
-static bool check(RBin *bin) {
-	int ret = false;
-	RMmap *m = r_file_mmap (bin->file, false, 0);
-	if (!m || !m->buf) {
-		r_file_mmap_free (m);
-		return false;
-	}
-	ret = checkHeader (m->buf, m->len);
-	r_file_mmap_free (m);
-	return ret;
-}
-
 static bool check_bytes(const ut8* bytes, ut64 sz) {
 	if (!bytes || sz < 0x300) {
 		return false;
@@ -199,7 +187,6 @@ RBinXtrPlugin r_bin_xtr_plugin_fatmach0 = {
 	.name = "fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
 	.license = "LGPL3",
-	.check = &check,
 	.load = &load,
 	.size = &size,
 	.extract = &extract,

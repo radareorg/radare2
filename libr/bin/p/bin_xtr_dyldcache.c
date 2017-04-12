@@ -17,14 +17,6 @@ static bool check_bytes(const ut8* buf, ut64 sz) {
 	return (buf && sz > 3 && !memcmp (buf, "\x64\x79\x6c\x64", 4));
 }
 
-static bool check(RBin *bin) {
-	int size = 0, ret = false;
-	ut8 *filebuf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &size);
-	ret = check_bytes (filebuf, size);
-	free (filebuf);
-	return ret;
-}
-
 // TODO: destroy must be void?
 static int destroy(RBin *bin) {
 	return free_xtr (bin->cur->xtr_obj);
@@ -179,7 +171,6 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_xtr_dyldcache = {
 	.name = "xtr_dyldcache",
 	.desc = "dyld cache bin extractor plugin",
 	.license = "LGPL3",
-	.check = &check,
 	.load = &load,
 	.extract = &extract,
 	.extractall = &extractall,
