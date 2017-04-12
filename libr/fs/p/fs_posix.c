@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_fs.h>
+#include <dirent.h>
 #include <sys/stat.h>
 
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
