@@ -483,7 +483,6 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		} else {
 			paddr = 0;
 		}
-		//if (!paddr || paddr==UT64_MAX)
 		if (paddr == UT64_MAX) {
 			paddr = r_io_map_select (io, addr); // XXX
 		}

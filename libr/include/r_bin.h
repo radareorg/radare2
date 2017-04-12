@@ -65,6 +65,30 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_HEADER   0x2000000
 #define R_BIN_REQ_LISTPLUGINS   0x4000000
 
+/* RBinSymbol->method_flags : */
+#define R_BIN_METH_CLASS 0x0000000000000001L
+#define R_BIN_METH_STATIC 0x0000000000000002L
+#define R_BIN_METH_PUBLIC 0x0000000000000004L
+#define R_BIN_METH_PRIVATE 0x0000000000000008L
+#define R_BIN_METH_PROTECTED 0x0000000000000010L
+#define R_BIN_METH_INTERNAL 0x0000000000000020L
+#define R_BIN_METH_OPEN 0x0000000000000040L
+#define R_BIN_METH_FILEPRIVATE 0x0000000000000080L
+#define R_BIN_METH_FINAL 0x0000000000000100L
+#define R_BIN_METH_VIRTUAL 0x0000000000000200L
+#define R_BIN_METH_CONST 0x0000000000000400L
+#define R_BIN_METH_MUTATING 0x0000000000000800L
+#define R_BIN_METH_ABSTRACT 0x0000000000001000L
+#define R_BIN_METH_SYNCHRONIZED 0x0000000000002000L
+#define R_BIN_METH_NATIVE 0x0000000000004000L
+#define R_BIN_METH_BRIDGE 0x0000000000008000L
+#define R_BIN_METH_VARARGS 0x0000000000010000L
+#define R_BIN_METH_SYNTHETIC 0x0000000000020000L
+#define R_BIN_METH_STRICT 0x0000000000040000L
+#define R_BIN_METH_MIRANDA 0x0000000000080000L
+#define R_BIN_METH_CONSTRUCTOR 0x0000000000100000L
+#define R_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
+
 enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
@@ -358,7 +382,7 @@ typedef struct r_bin_section_t {
 	int bits;
 	bool has_strings;
 	bool add; // indicates when you want to add the section to io `S` command
-	bool is_data;	
+	bool is_data;
 } RBinSection;
 
 typedef struct r_bin_class_t {
@@ -382,6 +406,7 @@ typedef struct r_bin_class_t {
 typedef struct r_bin_symbol_t {
 	/* heap-allocated */
 	char *name;
+	char *dname;
 	char *classname;
 	/* const-unique-strings */
 	const char *forwarder;
@@ -397,6 +422,8 @@ typedef struct r_bin_symbol_t {
 	ut32 ordinal;
 	ut32 visibility;
 	int bits;
+	/* see R_BIN_METH_* constants */
+	ut64 method_flags;
 } RBinSymbol;
 
 typedef struct r_bin_import_t {
@@ -485,8 +512,6 @@ typedef struct r_bin_bind_t {
 
 #ifdef R_API
 
-#define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
-
 /* bin.c */
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
@@ -540,6 +565,7 @@ R_API bool r_bin_lang_cxx(RBinFile *binfile);
 R_API bool r_bin_lang_msvc(RBinFile *binfile);
 R_API bool r_bin_lang_dlang(RBinFile *binfile);
 R_API bool r_bin_lang_rust(RBinFile *binfile);
+R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
@@ -554,6 +580,7 @@ R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
 
 R_API RBinClass *r_bin_class_get (RBinFile *binfile, const char *name);
 R_API RBinClass *r_bin_class_new (RBinFile *binfile, const char *name, const char *super, int view);
+R_API void r_bin_class_free(RBinClass *c);
 R_API RBinSymbol *r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
 
@@ -651,7 +678,6 @@ extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dex;
 extern RBinPlugin r_bin_plugin_dummy;
-extern RBinPlugin r_bin_plugin_rar;
 extern RBinPlugin r_bin_plugin_coff;
 extern RBinPlugin r_bin_plugin_ningb;
 extern RBinPlugin r_bin_plugin_ningba;

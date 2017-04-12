@@ -228,24 +228,26 @@ R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, in
 
 R_API void r_anal_data_free(RAnalData *d) {
 	if (d) {
-		if (d->buf != (ut8 *)&(d->sbuf)) free (d->buf);
+		if (d->buf != (ut8 *)&(d->sbuf)) {
+			free (d->buf);
+		}
 		free (d->str);
 		free (d);
 	}
 }
 
-R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
+R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
-	int word = R_MIN (8, bits / 8);
+	int word = wordsize? wordsize: R_MIN (8, bits / 8);
 
 	if (size < 4) {
 		return NULL;
 	}
-	if (size >= word && is_invalid (buf, word))
-		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID,
-					-1, buf, word);
+	if (size >= word && is_invalid (buf, word)) {
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID, -1, buf, word);
+	}
 	{
 		int i, len = R_MIN (size, 64);
 		int is_pattern = 0;
@@ -256,7 +258,9 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 			if (ch2 == buf[i]) {
 				ch2++;
 				is_sequence++;
-			} else is_sequence = 0;
+			} else {
+				is_sequence = 0;
+			}
 			if (ch == buf[i]) {
 				is_pattern++;
 			}
@@ -270,30 +274,27 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 						buf, is_pattern);
 		}
 	}
-	if (size >= word && is_null (buf, word))
-		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NULL,
-					-1, buf, word);
-	if (is_bin (buf, size))
-		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1,
-					buf, word);
+	if (size >= word && is_null (buf, word)) {
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NULL, -1, buf, word);
+	}
+	if (is_bin (buf, size)) {
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1, buf, word);
+	}
 	if (size >= word) {
 		dst = is_pointer (anal, buf, word);
-		if (dst) return r_anal_data_new (addr,
-						R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
+		if (dst) {
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
+		}
 	}
 	switch (is_string (buf, size, &nsize)) {
-	case 1: return r_anal_data_new_string (addr, (const char *)buf,
-					nsize, R_ANAL_DATA_TYPE_STRING);
-	case 2: return r_anal_data_new_string (addr, (const char *)buf,
-					nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
+	case 1: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_STRING);
+	case 2: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
 	}
 	if (size >= word) {
 		n = is_number (buf, word);
-		if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER,
-					n, buf, word);
+		if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n, buf, word);
 	}
-	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst,
-				buf, R_MIN (word, size));
+	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst, buf, R_MIN (word, size));
 }
 
 R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len) {
@@ -307,7 +308,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	for (i = j = 0; i < len; j++) {
 		if (str && !buf[i])
 			str++;
-		data = r_anal_data (a, addr + i, buf + i, len - i);
+		data = r_anal_data (a, addr + i, buf + i, len - i, 0);
 		if (!data) {
 			i += word;
 			continue;

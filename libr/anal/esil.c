@@ -227,6 +227,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	}
 	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 }
+
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
@@ -949,13 +950,15 @@ static int esil_ifset(RAnalEsil *esil) {
 #endif
 
 static int esil_if(RAnalEsil *esil) {
-	ut64 num;
+	ut64 num = 0LL;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		// TODO: check return value
 		(void)r_anal_esil_get_parm (esil, src, &num);
 		// condition not matching, skipping until }
-		if (!num) esil->skip = true;
+		if (!num) {
+			esil->skip = true;
+		}
 		free (src);
 		return true;
 	}
@@ -1543,7 +1546,7 @@ static int esil_deceq(RAnalEsil *esil) {
 static int esil_poke_n(RAnalEsil *esil, int bits) {
 	ut64 bitmask = genmask (bits - 1);
 	ut64 num, addr;
-	ut8 b[8];
+	ut8 b[8] = {0};
 	ut64 n;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);

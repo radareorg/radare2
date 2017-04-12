@@ -95,7 +95,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	}
 
 	dexhdr->class_size = classes_size / DEX_CLASS_SIZE;
-	bin->classes = (struct dex_class_t *) malloc (sizeof (struct dex_class_t) * dexhdr->class_size);
+	bin->classes = (struct dex_class_t *) calloc (dexhdr->class_size, sizeof (struct dex_class_t));
 	for (i = 0; i < dexhdr->class_size; i++) {
 		ut64 offset = dexhdr->class_offset + i * DEX_CLASS_SIZE;
 		if (offset + 32 > bin->size) {
@@ -122,7 +122,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		methods_size = 0;
 	}
 	dexhdr->method_size = methods_size / sizeof (struct dex_method_t);
-	bin->methods = (struct dex_method_t *) calloc (methods_size, 1);
+	bin->methods = (struct dex_method_t *) calloc (methods_size + 1, 1);
 	for (i = 0; i < dexhdr->method_size; i++) {
 		ut64 offset = dexhdr->method_offset + i * sizeof (struct dex_method_t);
 		if (offset + 8 > bin->size) {
@@ -145,7 +145,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		types_size = 0;
 	}
 	dexhdr->types_size = types_size / sizeof (struct dex_type_t);
-	bin->types = (struct dex_type_t *) calloc (types_size, 1);
+	bin->types = (struct dex_type_t *) calloc (types_size + 1, 1);
 	for (i = 0; i < dexhdr->types_size; i++) {
 		ut64 offset = dexhdr->types_offset + i * sizeof (struct dex_type_t);
 		if (offset + 4 > bin->size) {
@@ -167,7 +167,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		fields_size = 0;
 	}
 	dexhdr->fields_size = fields_size / sizeof (struct dex_field_t);
-	bin->fields = (struct dex_field_t *) calloc (fields_size, 1);
+	bin->fields = (struct dex_field_t *) calloc (fields_size + 1, 1);
 	for (i = 0; i < dexhdr->fields_size; i++) {
 		ut64 offset = dexhdr->fields_offset + i * sizeof (struct dex_field_t);
 		if (offset + 8 > bin->size) {
@@ -188,7 +188,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (dexhdr->prototypes_offset + protos_size >= bin->size) {
 		protos_size = bin->size - dexhdr->prototypes_offset;
 	}
-	if (protos_size < 0) {
+	if (protos_size < 1) {
 		dexhdr->prototypes_size = 0;
 		return bin;
 	}

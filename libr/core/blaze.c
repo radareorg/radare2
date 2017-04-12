@@ -551,7 +551,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 				sdb_num_set (sdb, Fhandled(cur->start), 1, 0);
 				// we ignore negative blocks
 				if ((st64)(cur->end - cur->start) < 0) {
-					free (cur);
+					// XXX leak of crash free (cur);
 					continue;
 				}
 				r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %llu 0x%08"PFMT64x" 0x%08"PFMT64x"\n"

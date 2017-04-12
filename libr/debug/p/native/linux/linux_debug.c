@@ -382,13 +382,14 @@ int match_pid(const void *pid_o, const void *th_o) {
 }
 
 void add_and_attach_new_thread(RDebug *dbg, int tid) {
+	int uid = getuid(); // XXX
 	char info[1024] = {0};
 	RDebugPid *tid_info;
 
 	if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 		tid_info = fill_pid_info (info, NULL, tid);
 	} else {
-		tid_info = r_debug_pid_new ("new_path", tid, 's', 0);
+		tid_info = r_debug_pid_new ("new_path", tid, uid, 's', 0);
 	}
 	(void) linux_attach (dbg, tid);
 	r_list_append (dbg->threads, tid_info);
@@ -569,8 +570,12 @@ RList *linux_thread_list(int pid, RList *list) {
 			}
 			int tid = atoi (de->d_name);
 			char info[1024];
-
+			int uid = 0;
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
+				ptr = strstr (info, "Uid:");
+				if (ptr) {
+					uid = atoi (ptr + 4);
+				}
 				ptr = strstr (info, "Tgid:");
 				if (ptr) {
 					int tgid = atoi (ptr + 5);
@@ -592,7 +597,7 @@ RList *linux_thread_list(int pid, RList *list) {
 				// Get information about pid (status, pc, etc.)
 				pid_info = fill_pid_info (info, buf, tid);
 			} else {
-				pid_info = r_debug_pid_new (buf, tid, 's', 0);
+				pid_info = r_debug_pid_new (buf, tid, uid, 's', 0);
 			}
 			r_list_append (list, pid_info);
 		}
@@ -606,8 +611,12 @@ RList *linux_thread_list(int pid, RList *list) {
 			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
 				continue;
 			}
-
+			int uid = 0;
 			/* look for a thread group id */
+			ptr = strstr (buf, "Uid:");
+			if (ptr) {
+				uid = atoi (ptr + 4);
+			}
 			ptr = strstr (buf, "Tgid:");
 			if (ptr) {
 				int tgid = atoi (ptr + 5);
@@ -620,8 +629,7 @@ RList *linux_thread_list(int pid, RList *list) {
 					/* fall back to auto-id */
 					snprintf (buf, sizeof(buf), "thread_%d", thid++);
 				}
-
-				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
 		}
 	}

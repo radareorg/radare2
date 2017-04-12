@@ -11,9 +11,7 @@ typedef enum optype_t {
 	ARM_GPR = 1,
 	ARM_CONSTANT = 2,
 	ARM_FP = 4,
-	ARM_LSL = 8,
-	ARM_SHIFT = 16,
-	ARM_MEM_OPT = 32
+	ARM_MEM_OPT = 8
 } OpType;
 
 typedef enum regtype_t {
@@ -522,22 +520,8 @@ static bool parseOperands(char* str, ArmOp *op) {
 					x[0] = '\0';
 				}
 				op->operands_count ++;
-				switch (imm_count) {
-					case 0:
-						op->operands[operand].type = ARM_CONSTANT;
-						op->operands[operand].immediate = r_num_math (NULL, token);
-					break;
-					case 1:
-						op->operands[operand].type = ARM_LSL;
-						op->operands[operand].lsl = r_num_math (NULL, token);
-					break;
-					case 2:
-						op->operands[operand].type = ARM_SHIFT;
-						op->operands[operand].shift = r_num_math (NULL, token);
-					break;
-					case 3:
-					break;
-				}
+				op->operands[operand].type = ARM_CONSTANT;
+				op->operands[operand].immediate = r_num_math (NULL, token);
 				imm_count++;
 			break;
 		}

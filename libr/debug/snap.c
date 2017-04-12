@@ -126,7 +126,7 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 	}
 	eprintf ("Reading %d bytes from 0x%08"PFMT64x"...\n", snap->size, snap->addr);
 	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
-	snap->crc = r_hash_crc32 (snap->data, snap->size);
+	snap->crc = r_hash_crc_preset (snap->data, snap->size, CRC_PRESET_32);
 
 	r_list_append (dbg->snaps, snap);
 	return 1;

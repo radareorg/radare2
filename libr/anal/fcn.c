@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2017 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -818,6 +818,14 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+			{
+				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op.jump, false);
+				if (fi && strstr (fi->name, "imp.")) {
+					FITFCNSZ ();
+					r_anal_op_fini (&op);
+					return R_ANAL_RET_END;
+				}
+			}
 			if (op.jump == UT64_MAX) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);

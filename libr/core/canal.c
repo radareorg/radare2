@@ -32,7 +32,6 @@ static void loganal(ut64 from, ut64 to, int depth) {
 
 static RCore *mycore = NULL;
 
-
 // XXX: copypaste from anal/data.c
 #define MINLEN 1
 static int is_string (const ut8 *buf, int size, int *len) {
@@ -2822,12 +2821,12 @@ R_API void r_core_anal_setup_enviroment (RCore *core) {
 	free (str);
 }
 
-R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
+R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize) {
 	RAnalData *d;
 	ut64 dstaddr = 0LL;
 	ut8 *buf = core->block;
 	int len = core->blocksize;
-	int word = core->assembler->bits /8;
+	int word = wordsize ? wordsize: core->assembler->bits / 8;
 	char *str;
 	int i, j;
 
@@ -2838,9 +2837,9 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	}
 	memset (buf, 0xff, len);
 	r_io_read_at (core->io, addr, buf, len);
-	buf[len-1] = 0;
+	buf[len - 1] = 0;
 
-	for (i = j = 0; j < count; j++ ) {
+	for (i = j = 0; j < count; j++) {
 		if (i >= len) {
 			r_io_read_at (core->io, addr + i, buf, len);
 			buf[len] = 0;
@@ -2851,7 +2850,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		/* r_anal_data requires null-terminated buffer according to coverity */
 		/* but it should not.. so this must be fixed in anal/data.c instead of */
 		/* null terminating here */
-		d = r_anal_data (core->anal, addr + i, buf + i, len - i);
+		d = r_anal_data (core->anal, addr + i, buf + i, len - i, wordsize);
 		str = r_anal_data_to_string (d);
 		r_cons_println (str);
 
@@ -2861,7 +2860,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 				r_cons_printf ("`- ");
 				dstaddr = r_mem_get_num (buf + i, word);
 				if (depth > 0) {
-					r_core_anal_data (core, dstaddr, 1, depth - 1);
+					r_core_anal_data (core, dstaddr, 1, depth - 1, wordsize);
 				}
 				i += word;
 				break;
@@ -3440,7 +3439,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	free (tmp_esil_str);
 
 	cur = addr + idx;
-	R_FREE(op.mnemonic);
+	R_FREE (op.mnemonic);
 	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
 		free (buf);
 		return;

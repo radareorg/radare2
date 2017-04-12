@@ -268,7 +268,7 @@ R_API ut8 *r_bin_java_cp_get_name_type(RBinJavaObj *bin, ut32 *out_sz, ut16 name
 
 R_API char *convert_string(const char *bytes, ut32 len) {
 	ut32 idx = 0, pos = 0;
-	ut32 str_sz = 4 * len + 1;
+	ut32 str_sz = 32 * len + 1;
 	char *cpy_buffer = len > 0 ? malloc (str_sz) : NULL;
 	if (!cpy_buffer) {
 		return cpy_buffer;
@@ -1614,8 +1614,12 @@ R_API RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 	}
 	buf_sz += java_constant_info->len;
 	if (java_constant_info->tag == 1) {
-		str_len = R_BIN_JAVA_USHORT (buf, offset + 1);
-		buf_sz += str_len;
+		if (offset + 32 < len) {
+			str_len = R_BIN_JAVA_USHORT (buf, offset + 1);
+			buf_sz += str_len;
+		} else {
+			return NULL;
+		}
 	}
 	cp_buf = calloc (buf_sz, 1);
 	if (!cp_buf) {
@@ -1780,7 +1784,7 @@ R_API char *r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx) {
 		return NULL;
 	}
 	item = (RBinJavaCPTypeObj *) r_list_get_n (cp_list, idx);
-	if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
+	if (item && item->tag == R_BIN_JAVA_CP_UTF8 && item->metas->ord == idx) {
 		value = convert_string ((const char *) item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 	}
 	if (value == NULL) {

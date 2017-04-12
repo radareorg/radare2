@@ -1418,9 +1418,14 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				// utf8 backward size
 				do {
 					I.buffer.length--;
+					if (I.buffer.length < 0) {
+						I.buffer.length = 0;
+						break;
+					}
 					s = I.buffer.data + I.buffer.length;
 					i++;
 				} while ((*s & 0xc0) == 0x80);
+
 				I.buffer.index = I.buffer.length;
 #else
 				I.buffer.index = --I.buffer.length;

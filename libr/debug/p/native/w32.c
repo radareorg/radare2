@@ -818,7 +818,7 @@ RList *w32_thread_list (int pid, RList *list) {
 				print_lasterr((char *)__FUNCTION__, "OpenThread");
                                 goto err_load_th;
 			}
-			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 's', 0));
+			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 0, 's', 0));
                 }
         } while (Thread32Next (th, &te32));
 err_load_th:
@@ -832,21 +832,21 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 		FALSE, pe->th32ProcessID);
 
 	if (process == INVALID_HANDLE_VALUE || !w32_queryfullprocessimagename) {
-		return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
+		return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 0, 's', 0);
 	}
 
-	char image_name[MAX_PATH+1];
+	char image_name[MAX_PATH + 1];
 	image_name[0] = '\0';
 	DWORD length = MAX_PATH;
 
 	if (w32_queryfullprocessimagename (process, 0,
 		image_name, (PDWORD)&length)) {
 		CloseHandle(process);
-		return r_debug_pid_new (image_name, pe->th32ProcessID, 's', 0);
+		return r_debug_pid_new (image_name, pe->th32ProcessID, 0, 's', 0);
 	}
 
 	CloseHandle(process);
-	return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
+	return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 0, 's', 0);
 }
 
 RList *w32_pids (int pid, RList *list) {

@@ -3587,18 +3587,15 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		if (!(s->flags & R_IO_EXEC)) {
 			continue;
 		}
-		if (s->vaddr < min) {
-			min = s->vaddr;
-		}
-		if (s->vaddr + s->vsize > max) {
-			max = s->vaddr + s->vsize;
-		}
+		min = s->vaddr;
+		max = s->vaddr + s->vsize;
+		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 	}
-	if (min == UT64_MAX) {
+	if (r_list_empty (core->io->sections)) {
 		min = core->offset;
 		max = 0xffff + min;
+		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 	}
-	r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 }
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
@@ -3940,34 +3937,41 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		NULL };
 	switch (input[0]) {
 	case '-': { // "ax-"
-		const char *inp;
-		ut64 b;
-		char *p;
 		RList *list;
 		RListIter *iter;
 		RAnalRef *ref;
-		for (inp = input + 1; *inp && IS_WHITESPACE (*inp); inp++) {
-			//nothing to see here
-		}
-		if (!strcmp (inp, "*")) {
+		char *cp_inp = strdup (input + 1);
+		char *ptr = r_str_trim_head (cp_inp); 
+		if (!strcmp (ptr, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
-			p = strdup (inp);
-			if (p) {
-				b = r_num_math (core->num, p);
-				free (p);
-			} else {
-				//b = UT64_MAX;
-				b = core->offset;
+			int n = r_str_word_set0 (ptr);
+			ut64 from = UT64_MAX, to = UT64_MAX;
+			switch (n) {
+			case 2:
+				from = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				//fall through
+			case 1: // get addr
+				to = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				break;
+			default:
+				to = core->offset;
+				break;
 			}
-			list = r_anal_refs_get (core->anal, b);
+			list = r_anal_xrefs_get (core->anal, to);
 			if (list) {
 				r_list_foreach (list, iter, ref) {
-					r_anal_ref_del (core->anal, ref->at, ref->addr);
+					if (from != UT64_MAX && from == ref->addr) {
+						r_anal_ref_del (core->anal, ref->addr, ref->at);
+					}
+					if (from == UT64_MAX) {
+						r_anal_ref_del (core->anal, ref->addr, ref->at);
+					}
 				}
 				r_list_free (list);
 			}
 		}
+		free (cp_inp);
 	} break;
 	case 'g': // "axg"
 		{
@@ -4662,7 +4666,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case 'f': // "agf"
-		r_core_visual_graph (core, NULL, NULL, false);
+		if (input[1] == 't') { // "agft" - tiny graph
+			r_core_visual_graph (core, NULL, NULL, 2);
+		} else {
+			r_core_visual_graph (core, NULL, NULL, false);
+		}
 		break;
 	case '-':
 		r_agraph_reset (core->graph);
@@ -5339,6 +5347,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmdf (core, "dh %s;dpa", dh_orig);
 				}
 			}
+			r_core_seek (core, curseek, 1);
 		jacuzzi:
 			flag_every_function (core);
 			r_cons_break_pop ();
@@ -5507,6 +5516,8 @@ static int cmd_anal(void *data, const char *input) {
 	const char *help_msg_ad[] = {
 		"Usage:", "ad", "[kt] [...]",
 		"ad", " [N] [D]", "analyze N data words at D depth",
+		"ad4", " [N] [D]", "analyze N data words at D depth (asm.bits=32)",
+		"ad8", " [N] [D]", "analyze N data words at D depth (asm.bits=64)",
 		"adf", "", "analyze data in function (use like .adf @@=`afl~[0]`",
 		"adfg", "", "analyze data in function gaps",
 		"adt", "", "analyze data trampolines (wip)",
@@ -5648,7 +5659,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_config_set_i (core->config, "asm.xrefs", xr);
 		}
 		break;
-	case 'd':
+	case 'd': // "ad"
 		switch (input[1]) {
 		case 'f':
 			if (input[2] == 'g') {
@@ -5673,15 +5684,21 @@ static int cmd_anal(void *data, const char *input) {
 			if (b < 1) {
 				b = 1;
 			}
-			r_core_anal_data (core, core->offset, a, b);
+			r_core_anal_data (core, core->offset, a, b, 0);
 		} break;
 		case 'k':
 			r = r_anal_data_kind (core->anal,
 					core->offset, core->block, core->blocksize);
 			r_cons_println (r);
 			break;
-		case '\0':
-			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1);
+		case '\0': // "ad"
+			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 0);
+			break;
+		case '4': // "ad4"
+			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 4);
+			break;
+		case '8': // "ad8"
+			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 8);
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_ad);

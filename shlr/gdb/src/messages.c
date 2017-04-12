@@ -46,21 +46,31 @@ int handle_cmd(libgdbr_t *g) {
 }
 
 int handle_qStatus(libgdbr_t *g) {
-	char *tok = NULL;
-	tok = strtok (g->data, ";");
+	if (!g || !g->data || !*g->data) {
+		return -1;
+	}
+	char *data = strdup (g->data);
+	char *tok = strtok (data, ";");
+	if (!tok) {
+		free (data);
+		return -1;
+	}
 	// TODO: We do not yet handle the case where a trace is already running
 	if (strncmp (tok, "T0", 2)) {
 		send_ack (g);
+		free (data);
 		return -1;
 	}
 	// Ensure that trace was never run
 	while (tok != NULL) {
 		if (!strncmp (tok, "tnotrun:0", 9)) {
+			free (data);
 			return send_ack (g);
 		}
 		tok = strtok (NULL, ";");
 	}
 	send_ack (g);
+	free (data);
 	return -1;
 }
 
@@ -140,7 +150,7 @@ int handle_qSupported(libgdbr_t *g) {
 	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	char *tok = NULL;
 	tok = strtok (g->data, ";");
-	while (tok != NULL) {
+	while (tok) {
 		if (r_str_startswith (tok, "PacketSize=")) {
 			g->stub_features.pkt_sz = strtoul (tok + strlen ("PacketSize="), NULL, 16);
 		} else if (r_str_startswith (tok, "qXfer:")) {

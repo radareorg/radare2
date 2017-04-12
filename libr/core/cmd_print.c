@@ -2136,7 +2136,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	}
 	/* TODO: Simplify this spaguetti monster */
 	while (osize > 0 && hash_handlers[pos].name) {
-		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
+		if (!r_str_ccmp (hash_handlers[pos].name, input, ' ')) {
 			hash_handlers[pos].handler (core->block, len);
 			handled_cmd = true;
 			break;

@@ -346,7 +346,7 @@ R_API void r_core_anal_hint_print (RAnal* a, ut64 addr, int mode);
 R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
-R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
+R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize);
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int gv);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr);
@@ -485,6 +485,8 @@ typedef struct r_core_bin_filter_t {
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum);
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
+R_API char *r_core_bin_method_flags_str(RBinSymbol *sym, int mode);
+
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);
 R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd);

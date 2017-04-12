@@ -34,9 +34,12 @@ static const char *arch = NULL;
 static int bits = 0;
 static int anal_all = 0;
 static bool verbose = false;
+static RList *evals = NULL;
 
 static RCore *opencore(const char *f) {
+	RListIter *iter;
 	const ut64 baddr = UT64_MAX;
+	const char *e;
 	RCore *c = r_core_new ();
 	if (!c) {
 		return NULL;
@@ -44,6 +47,10 @@ static RCore *opencore(const char *f) {
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", true);
+	r_config_set_i (c->config, "scr.interactive", false);
+	r_list_foreach (evals, iter, e) {
+		r_config_eval (c->config, e);
+	}
 	if (f) {
 		if (!r_core_file_open (c, f, 0, 0)) {
 			r_core_free (c);
@@ -238,6 +245,7 @@ static int show_help(int v) {
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
 			"  -D         show disasm instead of hexpairs\n"
+			"  -e [k=v]   set eval config var value for all RCore instances\n"
 			"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
 			"  -i         diff imports of target files (see -u, -U and -z)\n"
 			"  -j         output in json format\n"
@@ -267,10 +275,10 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 	int ctx = DUMP_CONTEXT;
 	switch (w) {
 	case 8:
-		printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
+		r_cons_printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
 		break;
 	case 16:
-		printf ("  offset     "
+		r_cons_printf ("  offset     "
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF    "
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
 		break;
@@ -283,7 +291,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		if (eq) {
 			ctx--;
 			if (ctx == -1) {
-				printf ("...\n");
+				r_cons_printf ("...\n");
 				continue;
 			}
 			if (ctx < 0) {
@@ -293,57 +301,58 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		} else {
 			ctx = DUMP_CONTEXT;
 		}
-		printf (eq? Color_GREEN: Color_RED);
-		printf ("0x%08x%c ", i, eq? ' ': '!');
-		printf (Color_RESET);
+		r_cons_printf (eq? Color_GREEN: Color_RED);
+		r_cons_printf ("0x%08x%c ", i, eq? ' ': '!');
+		r_cons_printf (Color_RESET);
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%02x", a[i + j]);
+			r_cons_printf ("%02x", a[i + j]);
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf (" ");
+		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%c", IS_PRINTABLE (a[i + j])? a[i + j]: '.');
+			r_cons_printf ("%c", IS_PRINTABLE (a[i + j])? a[i + j]: '.');
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf ("   ");
+		r_cons_printf ("   ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%02x", b[i + j]);
+			r_cons_printf ("%02x", b[i + j]);
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf (" ");
+		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				printf (eq2? Color_GREEN: Color_RED);
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
 			}
-			printf ("%c", IS_PRINTABLE (b[i + j])? b[i + j]: '.');
+			r_cons_printf ("%c", IS_PRINTABLE (b[i + j])? b[i + j]: '.');
 			if (!eq) {
-				printf (Color_RESET);
+				r_cons_printf (Color_RESET);
 			}
 		}
-		printf ("\n");
+		r_cons_printf ("\n");
 	}
 	if (as != bs) {
-		printf ("...\n");
+		r_cons_printf ("...\n");
 	}
+	r_cons_flush();
 }
 
 static void handle_sha256(const ut8 *block, int len) {
@@ -497,7 +506,9 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OijrhcdsS:uUvVxt:zq")) != -1) {
+	evals = r_list_newf (NULL);
+
+	while ((o = getopt (argc, argv, "Aa:b:CDe:npg:OijrhcdsS:uUvVxt:zq")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -507,6 +518,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'b':
 			bits = atoi (optarg);
+			break;
+		case 'e':
+			r_list_append (evals, optarg);
 			break;
 		case 'p':
 			useva = false;
@@ -705,6 +719,9 @@ int main(int argc, char **argv) {
 
 	switch (mode) {
 	case MODE_COLS:
+		if (!c && !r_list_empty (evals)) {
+			c = opencore (NULL);
+		}
 		dump_cols (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112)? 16: 8);
 		break;
 	case MODE_DIFF:

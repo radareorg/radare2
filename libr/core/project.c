@@ -62,8 +62,7 @@ static char *projectScriptPath(RCore *core, const char *file) {
 }
 
 static int projectInit(RCore *core) {
-	char *prjdir = r_file_abspath (r_config_get (
-			core->config, "dir.projects"));
+	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	int ret = r_sys_mkdirp (prjdir);
 	if (!ret) {
 		eprintf ("Cannot mkdir dir.projects\n");

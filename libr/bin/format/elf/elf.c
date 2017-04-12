@@ -1169,7 +1169,9 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		if (rel_sec->offset + j + tsize > bin->size) {
 			goto out;
 		}
-		len = r_buf_read_at (bin->b, rel_sec->offset + j, is_rela? rla: rl, is_rela? sizeof (Elf_(Rela)): sizeof (Elf_(Rel)));
+		len = r_buf_read_at (
+			bin->b, rel_sec->offset + j, is_rela ? rla : rl,
+			is_rela ? sizeof (Elf_ (Rela)) : sizeof (Elf_ (Rel)));
 		if (len < 1) {
 			goto out;
 		}
@@ -1245,7 +1247,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 				plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
 				if (plt_addr == -1) {
 					free (rela);
-					return -1;
+					return UT32_MAX;
 				}
 				switch (reloc_type) {
 				case R_386_8:
@@ -1293,7 +1295,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 							//XXX HACK ALERT!!!! full relro?? try to fix it 
 							//will there always be .plt.got, what would happen if is .got.plt?
 							RBinElfSection *s = get_section_by_name (bin, ".plt.got");
- 							if (Elf_(r_bin_elf_has_relro)(bin) != R_ELF_FULL_RELRO || !s) {
+ 							if (Elf_(r_bin_elf_has_relro)(bin) < R_ELF_PART_RELRO || !s) {
 								goto done;
 							}
 							plt_addr = s->offset;
@@ -1304,7 +1306,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 								  form
 
 								  ff253a152000   JMP QWORD [RIP + 0x20153A]
-								  6690		   NOP
+								  6690		     NOP
 								  ----
 								  ff25ec9f0408   JMP DWORD [reloc.puts_236]
 
@@ -2462,7 +2464,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	if (!sym || !ret) {
 		goto beach;
 	}
-	for (i = 0, ret_ctr = 0; i < nsym; i++) {
+	for (i = 1, ret_ctr = 0; i < nsym; i++) {
 		if (i >= capacity1) { // maybe grow
 			// You take what you want, but you eat what you take.
 			Elf_(Sym)* temp_sym = (Elf_(Sym)*) realloc(sym, (capacity1 * GROWTH_FACTOR) * sym_size);
@@ -2502,12 +2504,11 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		sym[i].st_shndx = READ16 (s, j);
 #endif
 		// zero symbol is always empty
-		if (i == 0) continue;
 		// Examine entry and maybe store
 		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == STN_UNDEF) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
-			} else if ((toffset = get_import_addr (bin, i)) == -1) {
+			} else if ((toffset = get_import_addr (bin, i)) == -1){
 				toffset = 0;
 			}
 			tsize = 16;
@@ -2784,15 +2785,17 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
-					} else if ((toffset = get_import_addr (bin, k)) == -1) {
+					} else if ((toffset = get_import_addr (bin, k)) == -1){
 						toffset = 0;
 					}
 					tsize = 16;
-				} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
-						ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
+				} else if (type == R_BIN_ELF_SYMBOLS &&
+					   sym[k].st_shndx != STN_UNDEF &&
+					   ELF_ST_TYPE (sym[k].st_info) != STT_SECTION &&
+					   ELF_ST_TYPE (sym[k].st_info) != STT_FILE) {
 					//int idx = sym[k].st_shndx;
 					tsize = sym[k].st_size;
-					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
+					toffset = (ut64)sym[k].st_value; 
 				} else {
 					continue;
 				}
@@ -2830,6 +2833,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 	}
 	if (!ret) {
+		eprintf ("CALLING FROM PHDR\n");
 		return (type == R_BIN_ELF_SYMBOLS)
 				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
 				: Elf_(r_bin_elf_get_phdr_imports) (bin);

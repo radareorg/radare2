@@ -393,7 +393,7 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid);
 //R_API int r_debug_pid_del(RDebug *dbg);
 //R_API int r_debug_pid_del_thread(RDebug *dbg);
 R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt);
-R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc);
+R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
 R_API RList *r_debug_pids(RDebug *dbg, int pid);
 

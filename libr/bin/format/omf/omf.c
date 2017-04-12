@@ -101,33 +101,26 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 			break;
 		}
 		// sometimes there is a name with a null size so we just skip it
-		if (!buf[3 + tmp_size]) {
+		char cb = buf[3 + tmp_size];
+		if (cb < 1) {
 			names[ct_name++] = NULL;
 			tmp_size++;
 			continue;
 		}
-
-		if (record->size + 3 < buf[3 + tmp_size] + tmp_size) {
+		if (record->size + 3 < tmp_size + cb) {
 			eprintf ("Invalid Lnames record (bad size)\n");
 			free (ret);
 			return false;
 		}
-
-		if (!(buf[3 + tmp_size] + 1)) {
-			free (ret);
-			return false;
-		}
-
-		if (!(names[ct_name] = R_NEWS0 (char, buf[3 + tmp_size] + 1))) {
+		if (!(names[ct_name] = R_NEWS0 (char, cb + 1))) {
 			free_lname (ret);
 			return false;
 		}
-
-		memcpy (names[ct_name], buf + 3 + tmp_size + 1,
-			buf[3 + tmp_size]);
-
+		if ((tmp_size + 4 + cb) < buf_size) {
+			memcpy (names[ct_name], buf + 3 + tmp_size + 1, cb);
+		}
 		ct_name++;
-		tmp_size += buf[3 + tmp_size] + 1;
+		tmp_size += cb + 1; //buf[3 + tmp_size] + 1;
 	}
 	return true;
 }
@@ -708,23 +701,29 @@ int r_bin_omf_send_sections(RList *list, OMF_segment *section, r_bin_omf_obj *ob
 }
 
 ut64 r_bin_omf_get_paddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
-	OMF_data *data;
 	ut64 offset = 0;
-
-	if (sym->seg_idx - 1 > obj->nb_section)
-		return 0;
-
-	data = obj->sections[sym->seg_idx - 1]->data;
+	if (!obj->sections) {
+		return 0LL;
+	}
+	if (sym->seg_idx - 1 > obj->nb_section) {
+		return 0LL;
+	}
+	int sidx = sym->seg_idx - 1;
+	OMF_data *data = obj->sections[sidx]->data;
 	while (data) {
 		offset += data->size;
-		if (sym->offset < offset)
+		if (sym->offset < offset) {
 			return sym->offset - data->offset + data->paddr;
-	  data = data->next;
+		}
+		data = data->next;
 	}
 	return 0;
 }
 
 ut64 r_bin_omf_get_vaddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
+	if (!obj->sections) {
+		return 0LL;
+	}
 	if (sym->seg_idx - 1 > obj->nb_section) {
 		eprintf ("Invalid segment index for symbol %s\n", sym->name);
 		return 0;

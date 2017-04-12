@@ -208,6 +208,7 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 	char *homedir = r_str_home (R2_HOMEDIR);
+	char *homeplugs = r_str_newf ("%s" R_SYS_DIR "plugins", homedir);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -220,7 +221,7 @@ static int main_print_var(const char *var_name) {
 		{ "LIBEXT", R_LIB_EXT },
 		{ "RHOMEDIR", homedir },
 		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
-		{ "USER_PLUGINS", r_str_home (R2_HOMEDIR) },
+		{ "USER_PLUGINS", homeplugs },
 		{ NULL, NULL }
 	};
 	if (var_name) {
@@ -238,6 +239,7 @@ static int main_print_var(const char *var_name) {
 		}
 	}
 	free (homedir);
+	free (homeplugs);
 	return 0;
 }
 
@@ -289,16 +291,16 @@ static void radare2_rc(RCore *r) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
 		}
 		r_core_cmd_file (r, homerc);
-		free (homerc);
 	}
+	free (homerc);
 	homerc = r_str_home (".config/radare2/radare2rc");
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
 		}
 		r_core_cmd_file (r, homerc);
-		free (homerc);
 	}
+	free (homerc);
 	homerc = r_str_home (".config/radare2/radare2rc.d");
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
@@ -659,7 +661,11 @@ int main(int argc, char **argv, char **envp) {
 				char *program = strstr (msg, "program=");
 				if (program) {
 					program += 8;
-					char *p = strchr (program, '\n');
+					char *p = 0;
+					p = strstr (program, "\r\n");
+					if (!p) {
+						p = strchr (program, '\n');
+					}
 					if (p) {
 						*p = 0;
 						pfile = strdup (program);
@@ -827,7 +833,6 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					r_config_set (r.config, "io.raw", "false");
 /*
 					if (fh) {
 						r_core_bin_load (&r, pfile);
@@ -1112,8 +1117,9 @@ int main(int argc, char **argv, char **envp) {
 		char *s = r_core_cmd_str (&r, "ieq");
 		if (s && *s) {
 			int da = r_config_get_i (r.config, "file.analyze");
-			if (da > do_analysis)
+			if (da > do_analysis) {
 				do_analysis = da;
+			}
 		}
 		free (s);
 	}
