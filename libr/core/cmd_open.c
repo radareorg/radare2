@@ -311,7 +311,7 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 		r_core_bin_rebase (core, new_baddr);
 		// r_core_bin_load (core, newfile, new_baddr);
 		// reload symbols with new baddr
-		r_core_cmd0 (core, ".is*");
+		r_core_cmd0 (core, ".isrzM*");
 	}
 #endif
 	r_core_cmd0 (core, "sr PC");
