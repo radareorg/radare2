@@ -64,6 +64,7 @@ static RList *entries(RBinFile *arch) {
     }
 
 	if (!(addr = (ut64) r_bin_wasm_get_entrypoint (bin))) {
+		r_list_free (ret);
 		return NULL;
 	}
 
@@ -76,9 +77,7 @@ static RList *entries(RBinFile *arch) {
 }
 
 static RList *sections(RBinFile *arch) {
-
 	RBinWasmObj *bin = arch && arch->o ? arch->o->bin_obj : NULL;
-
 	RList *ret = NULL;
 	RList *secs = NULL;
     RBinSection *ptr = NULL;
@@ -89,10 +88,11 @@ static RList *sections(RBinFile *arch) {
 	}
 
 	if (!(secs = r_bin_wasm_get_sections (bin))) {
+		r_list_free (ret);
 		return NULL;
 	}
 
-	RListIter *iter;
+	RListIter *iter = NULL;
 	r_list_foreach (secs, iter, sec) {
 
 		if (!(ptr = R_NEW0 (RBinSection))) {
@@ -113,15 +113,12 @@ static RList *sections(RBinFile *arch) {
 		ptr->srwx = 0;
 
 		r_list_append (ret, ptr);
-	
 	}
-
+	free (iter);
 	return ret;
-
 }
 
 static RList *symbols(RBinFile *arch) {
-
 	RBinWasmObj *bin;
     RList *ret, *codes, *imports;
     RBinSymbol *ptr = NULL;
@@ -136,14 +133,16 @@ static RList *symbols(RBinFile *arch) {
 	}
 
 	if (!(codes = r_bin_wasm_get_codes (bin))) {
+		free (ret);
 		return NULL;
 	}
 
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
+		free (ret);
 		return NULL;
 	}
 
-	RListIter *iter;
+	RListIter *iter = NULL;;
 	ut32 i = 0;
 	
 	RBinWasmImportEntry *imp;
@@ -169,6 +168,8 @@ static RList *symbols(RBinFile *arch) {
 		i += 1;
 		r_list_append (ret, ptr);
 	}
+	free (iter);
+	iter = NULL;
 	
 	RBinWasmCodeEntry *func;
 	r_list_foreach (codes, iter, func) {
@@ -188,16 +189,14 @@ static RList *symbols(RBinFile *arch) {
 		i += 1;
 		r_list_append (ret, ptr);
 	}
+	free (iter);
 
 	// TODO: use custom section "name" if present
 	// TODO: exports, globals, tables and memories
-
 	return ret;
-
 }
 
 static RList *imports(RBinFile *arch) {
-
 	RBinWasmObj *bin = NULL;
 	RList *imports = NULL;
 	RBinImport *ptr = NULL;
@@ -220,7 +219,6 @@ static RList *imports(RBinFile *arch) {
 	RListIter *iter = NULL;
 	RBinWasmImportEntry *import = NULL;
 	ut32 i = 0;
-
 	r_list_foreach (imports, iter, import) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
@@ -245,9 +243,8 @@ static RList *imports(RBinFile *arch) {
 		}
 		r_list_append (ret, ptr);
 	}
-
+	free (iter);
 	return ret;
-
 }
 
 static RList *libs(RBinFile *arch) {

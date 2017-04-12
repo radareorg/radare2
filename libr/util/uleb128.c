@@ -137,7 +137,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
       ((type)((value) << SHIFT_AMOUNT(type, sign_bit)) >> \
           SHIFT_AMOUNT(type, sign_bit))
 
-R_API size_t read_u32_leb128(const ut8* p, const ut8* max, ut32* out_value) {
+R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
     if (p < max && (p[0] & 0x80) == 0) {
         *out_value = LEB128_1(ut32);
         return 1;
@@ -162,7 +162,7 @@ R_API size_t read_u32_leb128(const ut8* p, const ut8* max, ut32* out_value) {
     }
 }
 
-R_API size_t read_i32_leb128(const ut8* p, const ut8* max, st32* out_value) {
+R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
     if (p < max && (p[0] & 0x80) == 0) {
         ut32 result = LEB128_1(ut32);
         *out_value = SIGN_EXTEND(ut32, result, 6);
@@ -181,20 +181,21 @@ R_API size_t read_i32_leb128(const ut8* p, const ut8* max, st32* out_value) {
         return 4;
     } else if (p+4 < max && (p[4] & 0x80) == 0) {
         /* the top bits should be a sign-extension of the sign bit */
-        // bool sign_bit_set = (p[4] & 0x8);
-        // int top_bits = p[4] & 0xf0;
-        // if ((sign_bit_set && top_bits != 0x70) || (!sign_bit_set && top_bits != 0)) {}
+        bool sign_bit_set = (p[4] & 0x8);
+        int top_bits = p[4] & 0xf0;
+        if ((sign_bit_set && top_bits != 0x70) || (!sign_bit_set && top_bits != 0)) {
+			return 0;
+		}
         ut32 result = LEB128_5(ut32);
         *out_value = result;
         return 5;
     } else {
         /* past the end */
-        *out_value = 0;
         return 0;
     }
 }
 
-R_API size_t read_u64_leb128(const ut8* p, const ut8* max, ut64* out_value) {
+R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
     if (p < max && (p[0] & 0x80) == 0) {
         *out_value = LEB128_1(ut64);
         return 1;
@@ -232,7 +233,7 @@ R_API size_t read_u64_leb128(const ut8* p, const ut8* max, ut64* out_value) {
     }
 }
 
-R_API size_t read_i64_leb128(const ut8* p, const ut8* max, st64* out_value) {
+R_API size_t read_i64_leb128 (const ut8* p, const ut8* max, st64* out_value) {
     if (p < max && (p[0] & 0x80) == 0) {
         ut64 result = LEB128_1(ut64);
         *out_value = SIGN_EXTEND(ut64, result, 6);
@@ -271,9 +272,11 @@ R_API size_t read_i64_leb128(const ut8* p, const ut8* max, st64* out_value) {
         return 9;
     } else if (p + 9 < max && (p[9] & 0x80) == 0) {
         /* the top bits should be a sign-extension of the sign bit */
-        // bool sign_bit_set = (p[9] & 0x1);
-        // int top_bits = p[9] & 0xfe;
-        // if ((sign_bit_set && top_bits != 0x7e) || (!sign_bit_set && top_bits != 0)) {}
+        bool sign_bit_set = (p[9] & 0x1);
+        int top_bits = p[9] & 0xfe;
+        if ((sign_bit_set && top_bits != 0x7e) || (!sign_bit_set && top_bits != 0)) {
+			return 0;	
+		}
         ut64 result = LEB128_10(ut64);
         *out_value = result;
         return 10;
@@ -284,6 +287,19 @@ R_API size_t read_i64_leb128(const ut8* p, const ut8* max, st64* out_value) {
 
 }
 
+#undef BYTE_AT
+#undef LEB128_1
+#undef LEB128_2
+#undef LEB128_3
+#undef LEB128_4
+#undef LEB128_5
+#undef LEB128_6
+#undef LEB128_7
+#undef LEB128_8
+#undef LEB128_9
+#undef LEB128_10
+#undef SHIFT_AMOUNT
+#undef SIGN_EXTEND
 
 #if 0
 main() {
