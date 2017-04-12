@@ -107,6 +107,10 @@ static bool is_mini(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_MINI;
 }
 
+static bool is_tiny(const RAGraph *g) {
+	return g->is_tiny || g->mode == R_AGRAPH_MODE_TINY;
+}
+
 static bool is_summary(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_SUMMARY;
 }
@@ -123,7 +127,9 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 	static char m[20];
 	const char *submode;
 
-	if (is_mini (g)) {
+	if (is_tiny (g)) {
+		submode = "TINY";
+	} else if (is_mini (g)) {
 		submode = "MINI";
 	} else if (is_offset (g)) {
 		submode = "OFF";
@@ -187,8 +193,7 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom) {
 	}
 }
 
-static void mini_RANode_print(const RAGraph *g, const RANode *n,
-                              int cur, bool print_details) {
+static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool details) {
 	char title[TITLE_LEN];
 	int x, delta_x = 0;
 
@@ -205,7 +210,7 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n,
 		return;
 	}
 
-	if (print_details) {
+	if (details) {
 		if (cur) {
 			W (&MINIGRAPH_NODE_TEXT_CUR[delta_x]);
 			(void) G (-g->can->sx, -g->can->sy + 2);
@@ -218,7 +223,6 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n,
 			char *str = "____";
 			if (n->title) {
 				int l = strlen (n->title);
-
 				str = n->title;
 				if (l > MINIGRAPH_NODE_TITLE_LEN) {
 					str += l - MINIGRAPH_NODE_TITLE_LEN;
@@ -235,10 +239,19 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n,
 	return;
 }
 
+static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
+	G (n->x, n->y);
+	if (cur) {
+		W ("##");
+	} else {
+		W ("()");
+	}
+}
+
 static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
-	unsigned int center_x = 0, center_y = 0;
-	unsigned int delta_x = 0, delta_txt_x = 0;
-	unsigned int delta_y = 0, delta_txt_y = 0;
+	ut32 center_x = 0, center_y = 0;
+	ut32 delta_x = 0, delta_txt_x = 0;
+	ut32 delta_y = 0, delta_txt_y = 0;
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
@@ -363,7 +376,6 @@ static int **get_crossing_matrix(const RGraph *g,
 						if (gt == gk || gt == gs) {
 							continue;
 						}
-
 						ak = get_anode (gk);
 						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
@@ -491,7 +503,6 @@ static void view_dummy(const RGraphEdge *e, const RGraphVisitor *vis) {
 	if (!a || !b) {
 		return;
 	}
-
 	if (R_ABS (a->layer - b->layer) > 1) {
 		RGraphEdge *new_e = R_NEW0 (RGraphEdge);
 		if (!new_e) {
@@ -644,7 +655,7 @@ static void create_layers(RAGraph *g) {
 	}
 
 	for (i = 0; i < g->n_layers; ++i) {
-		if (sizeof(RGraphNode *) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
+		if (sizeof (RGraphNode *) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
 			continue;
 		}
 		g->layers[i].nodes = R_NEWS0 (RGraphNode *,
@@ -1347,12 +1358,10 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
  * "fixed". The previous layer depends on the direction used during the layers
  * traversal */
 static void place_sequence(const RAGraph *g, int l, const RGraphNode *bm, const RGraphNode *bp, int from_up, int va, int vr) {
-	int vt;
-
 	if (vr == va + 1) {
 		place_single (g, l, bm, bp, from_up, va);
 	} else if (vr > va + 1) {
-		vt = (vr + va) / 2;
+		int vt = (vr + va) / 2;
 		place_sequence (g, l, bm, bp, from_up, va, vt);
 		place_sequence (g, l, bm, bp, from_up, vt, vr);
 		combine_sequences (g, l, bm, bp, from_up, va, vr);
@@ -1497,12 +1506,11 @@ static void create_edge_from_dummies(const RAGraph *g, RANode *an, RList *toremo
 	RGraphNode *from = r_list_get_n (r_graph_innodes (g->graph, n), 0);
 	RANode *a_from = get_anode (from);
 	RListIter *(*add_to_list)(RList *, void *) = NULL;
-	AEdge *e;
 	if (!a_from) {
 		return;
 	}
 
-	e = R_NEW0 (AEdge);
+	AEdge *e = R_NEW0 (AEdge);
 	if (!e) {
 		return;
 	}
@@ -1675,6 +1683,9 @@ static void set_layout(RAGraph *g) {
 				for (k = 0; k < n->layer; ++k) {
 					n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
 				}
+				if (g->is_tiny) {
+					n->y = n->layer;
+				}
 			}
 		}
 		/* finalize x coordinate */
@@ -1682,6 +1693,9 @@ static void set_layout(RAGraph *g) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
 				n->x -= n->w / 2;
+				if (g->is_tiny) {
+					n->x /= 8;
+				}
 			}
 		}
 		break;
@@ -2267,7 +2281,9 @@ static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
 
 static void agraph_print_node(const RAGraph *g, RANode *n) {
 	const int cur = g->curnode && get_anode (g->curnode) == n;
-	if (is_mini (g) || n->is_mini) {
+	if (g->is_tiny) {
+		tiny_RANode_print (g, n, cur);
+	} else if (is_mini (g) || n->is_mini) {
 		mini_RANode_print (g, n, cur, is_mini (g));
 	} else {
 		normal_RANode_print (g, n, cur);
@@ -2418,8 +2434,16 @@ static void agraph_toggle_callgraph(RAGraph *g) {
 }
 
 static void agraph_set_zoom(RAGraph *g, int v) {
-	g->mode = v <= 0? R_AGRAPH_MODE_MINI: R_AGRAPH_MODE_NORMAL;
-	g->zoom = R_MAX (0, v);
+	g->is_tiny = false;
+	if (v == 0) {
+		g->mode = R_AGRAPH_MODE_MINI;
+	} else if (v < 0) {
+		g->mode = R_AGRAPH_MODE_TINY;
+		g->is_tiny = true;
+	} else {
+		g->mode = R_AGRAPH_MODE_NORMAL;
+	}
+	g->zoom = R_MAX (-10, v);
 	g->need_update_dim = true;
 	g->need_set_layout = true;
 }
@@ -2459,7 +2483,6 @@ static void agraph_merge_child(RAGraph *g, int idx) {
 		// r_agraph_set_curnode (g, get_anode (cn));
 		// agraph_refresh (grd);
 		// r_agraph_add_edge (g, from, to);
-
 		char *neis = sdb_get (g->db, K_NEIGHBOURS (ann), 0);
 		sdb_set_owned (g->db, K_NEIGHBOURS (ann), neis, 0);
 		r_agraph_del_node (g, ann->title);
@@ -2469,6 +2492,13 @@ static void agraph_merge_child(RAGraph *g, int idx) {
 	// agraph_update_seek (g, get_anode (g->curnode), false);
 }
 #endif
+
+static void agraph_toggle_tiny (RAGraph *g) {
+	g->is_tiny = !g->is_tiny;
+	g->need_update_dim = 1;
+	agraph_refresh (r_cons_singleton ()->event_data);
+	agraph_set_layout ((RAGraph *) g, r_cons_singleton ()->is_interactive);
+}
 
 static void agraph_toggle_mini(RAGraph *g) {
 	RANode *n = get_anode (g->curnode);
@@ -2541,7 +2571,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		char *title = get_title (off);
 		RANode *cur_anode = get_anode (g->curnode);
 		if (fcn && ((is_interactive && !cur_anode) ||
-		            (cur_anode && strcmp (cur_anode->title, title) != 0))) {
+				(cur_anode && strcmp (cur_anode->title, title) != 0))) {
 			g->update_seek_on = r_agraph_get_node (g, title);
 			if (g->update_seek_on) {
 				r_agraph_set_curnode (g, g->update_seek_on);
@@ -2549,7 +2579,6 @@ static int check_changes(RAGraph *g, int is_interactive,
 			}
 		}
 		free (title);
-
 		g->can->color = r_config_get_i (core->config, "scr.color");
 	}
 	if (g->update_seek_on || g->force_update_seek) {
@@ -2596,7 +2625,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		g->can->sy = -g->y + 1;
 	}
 
-	agraph_print_edges (g);
+	if (!g->is_tiny) {
+		agraph_print_edges (g);
+	}
 	agraph_print_nodes (g);
 
 	/* print the graph title */
@@ -2634,10 +2665,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 		ut64 addr = r_reg_get_value (core->dbg->reg, r);
 		RANode *acur = get_anode (g->curnode);
-		char *title;
 
 		addr = r_core_anal_get_bbaddr (core, addr);
-		title = get_title (addr);
+		char *title = get_title (addr);
 
 		if (!acur || strcmp (acur->title, title) != 0) {
 			r_core_cmd0 (core, "sr PC");
@@ -3077,6 +3107,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			return false;
 		}
 		g = r_agraph_new (can);
+		g->is_tiny = is_interactive == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
 		if (!g) {
 			r_cons_canvas_free (can);
@@ -3108,11 +3139,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		return false;
 	}
 	grd->g = g;
-	grd->fs = is_interactive;
+	grd->fs = is_interactive == 1;
 	grd->core = core;
 	grd->fcn = fcn != NULL? &fcn: NULL;
 	ret = agraph_refresh (grd);
-	if (!ret || !is_interactive) {
+	if (!ret || is_interactive != 1) {
 		r_cons_newline ();
 		exit_graph = true;
 		is_error = !ret;
@@ -3130,7 +3161,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			is_error = true;
 			break;
 		}
-
 		r_cons_show_cursor (false);
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		if (wheel) {
@@ -3161,9 +3191,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case '0':
 			agraph_set_zoom (g, ZOOM_DEFAULT);
@@ -3216,7 +3248,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (!fcn) {
 				break;
 			}
-
 			ut64 old_off = core->offset;
 			ut64 off = r_core_anal_get_bbaddr (core, core->offset);
 			r_core_seek (core, off, 0);
@@ -3232,6 +3263,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+				" :e cmd.gprompt = agft   - show tinygraph in one side\n"
 				" +/-/0        - zoom in/out/default\n"
 				" ;            - add comment in current basic block\n"
 				" .            - center graph to the current node\n"
@@ -3268,6 +3300,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" w            - toggle between movements speed 1 and graph.scroll\n"
 				" x/X          - jump to xref/ref\n"
 				" y            - toggle node folding/minification\n"
+				" Y            - toggle tiny graph\n"
 				" Z            - follow parent node");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
@@ -3399,6 +3432,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'N':
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			break;
+		case 'Y':
+			agraph_toggle_tiny (g);
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case 'y':
 			agraph_toggle_mini (g);
 			break;
@@ -3409,7 +3446,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				RANode *n = get_anode (g->curnode);
 				if (n) {
-					n->y += movspeed;
+					if (g->is_tiny) {
+						n->y++;
+					} else {
+						n->y += movspeed;
+					}
 				}
 			}
 			break;
@@ -3420,7 +3461,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				RANode *n = get_anode (g->curnode);
 				if (n) {
-					n->y -= movspeed;
+					if (g->is_tiny) {
+						n->y --;
+					} else {
+						n->y -= movspeed;
+					}
 				}
 			}
 			break;
@@ -3432,7 +3477,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				RANode *n = get_anode (g->curnode);
 				if (n) {
-					n->x -= movspeed;
+					if (g->is_tiny) {
+						n->x --;
+					} else {
+						n->x -= movspeed;
+					}
 				}
 			}
 			break;
@@ -3443,7 +3492,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		{
 			RANode *n = get_anode (g->curnode);
 			if (n) {
-				n->x += movspeed;
+				if (g->is_tiny) {
+					n->x++;
+				} else {
+					n->x += movspeed;
+				}
 			}
 			break;
 		}

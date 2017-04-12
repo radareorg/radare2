@@ -4666,7 +4666,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case 'f': // "agf"
-		r_core_visual_graph (core, NULL, NULL, false);
+		if (input[1] == 't') { // "agft" - tiny graph
+			r_core_visual_graph (core, NULL, NULL, 2);
+		} else {
+			r_core_visual_graph (core, NULL, NULL, false);
+		}
 		break;
 	case '-':
 		r_agraph_reset (core->graph);
