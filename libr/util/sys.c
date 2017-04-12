@@ -10,9 +10,6 @@
 # endif
 #endif
 #include <sys/types.h>
-#if !(__WINDOWS__ && !defined(__CYGWIN__))
-#include <dirent.h>
-#endif
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
