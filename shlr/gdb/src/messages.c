@@ -46,27 +46,31 @@ int handle_cmd(libgdbr_t *g) {
 }
 
 int handle_qStatus(libgdbr_t *g) {
-	char *tok = NULL;
-	if (!g || !g->data) {
+	if (!g || !g->data || !*g->data) {
 		return -1;
 	}
-	tok = strtok (g->data, ";");
+	char *data = strdup (g->data);
+	char *tok = strtok (data, ";");
 	if (!tok) {
+		free (data);
 		return -1;
 	}
 	// TODO: We do not yet handle the case where a trace is already running
 	if (strncmp (tok, "T0", 2)) {
 		send_ack (g);
+		free (data);
 		return -1;
 	}
 	// Ensure that trace was never run
 	while (tok != NULL) {
 		if (!strncmp (tok, "tnotrun:0", 9)) {
+			free (data);
 			return send_ack (g);
 		}
 		tok = strtok (NULL, ";");
 	}
 	send_ack (g);
+	free (data);
 	return -1;
 }
 
