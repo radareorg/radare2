@@ -89,9 +89,10 @@ static const char *numpos(const char* n) {
 }
 
 static const char *getstring(const char *s, int len) {
-	static char buf[256];
-	if (len < 0 || len > sizeof (buf) - 2)
+	static char buf[256] = {0};
+	if (len < 0 || len > sizeof (buf) - 2) {
 		return NULL;
+	}
 	strncpy (buf, s, len);
 	buf[len] = 0;
 	return buf;
@@ -392,14 +393,14 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 						break;
 					case '_':
 						// swift string
-						{
+						if (q[0] && q[1] && q[2]) {
 							strcat (out, "..");
 							int n;
 							const char *Q = getnum (q + 2, &n);
 							strcat (out, getstring (Q, n));
 							q = Q + n + 1;
+							continue;
 						}
-						continue;
 						break;
 					}
 					break;
