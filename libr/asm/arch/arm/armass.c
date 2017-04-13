@@ -200,7 +200,7 @@ static int getreg(const char *str) {
 	}
 	if (*str == 'r') {
 		int reg = atoi (str + 1);
-		if (reg < 16) {
+		if (reg < 16 && reg >= 0) {
 			return reg;
 		}
 	}
@@ -1047,10 +1047,19 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->a[2] = ao->a[1];
 					ao->a[1] = ao->a[0];
 				}
-				ao->o |= getreg (ao->a[0]) << 20;
-				ao->o |= getreg (ao->a[1]) << 8;
-				ret = getreg (ao->a[2]);
-				ao->o |= (ret != -1)? ret << 24 : 2 | getnum (ao->a[2]) << 24;
+				reg = getreg (ao->a[0]);
+				if (reg == -1) {
+					return 0;
+				}
+				ao->o |= reg << 20;
+
+				reg = getreg (ao->a[1]);
+				if (reg == -1) {
+					return 0;
+				}
+				ao->o |= reg << 8;
+				reg = getreg (ao->a[2]);
+				ao->o |= (reg != -1)? reg << 24 : 2 | getnum (ao->a[2]) << 24;
 				if (ao->a[3]) {
 					ao->o |= getshift (ao->a[3]);
 				}
@@ -1073,11 +1082,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				break;
 			case TYPE_MOV:
-				if (!strcmpnull (ao->op, "movs"))
+				if (!strcmpnull (ao->op, "movs")) {
 					ao->o = 0xb0e1;
+				}
 				ao->o |= getreg (ao->a[0]) << 20;
 				ret = getreg (ao->a[1]);
-				if (ret!=-1) {
+				if (ret != -1) {
 					ao->o |= ret << 24;
 				} else {
 					int immed = getimmed8 (ao->a[1]);
@@ -1085,6 +1095,10 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				break;
 			case TYPE_MOVW:
+				reg = getreg (ao->a[0]);
+				if (reg == -1) {
+					return 0;
+				}
 				ao->o |= getreg (ao->a[0]) << 20;
 				ret = getnum (ao->a[1]);
 
