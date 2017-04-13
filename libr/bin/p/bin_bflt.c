@@ -301,15 +301,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return length > 4 && !memcmp (buf, "bFLT", 4);
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	if (!bytes || !sz) {
-		return false;
-	}
-	return check_bytes (bytes, sz);
-}
-
 static int destroy(RBinFile *arch) {
 	r_bin_bflt_free ((struct r_bin_bflt_obj *) arch->o->bin_obj);
 	return true;
@@ -322,7 +313,6 @@ RBinPlugin r_bin_plugin_bflt = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.info = &info,

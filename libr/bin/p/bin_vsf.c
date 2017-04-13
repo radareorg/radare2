@@ -39,12 +39,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
@@ -549,7 +543,6 @@ struct r_bin_plugin_t r_bin_plugin_vsf = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_bytes = &load_bytes,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.sections = sections,

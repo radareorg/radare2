@@ -19,12 +19,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
@@ -283,7 +277,6 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.binsym = &binsym,

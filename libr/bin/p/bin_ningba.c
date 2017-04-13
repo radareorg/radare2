@@ -16,13 +16,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (lict, lic_gba, 156))? 1: 0;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
 static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
 	ut64 sz = arch? r_buf_size (arch->buf): 0;
@@ -40,14 +33,13 @@ static int destroy(RBinFile *arch) {
 }
 
 static RList *entries(RBinFile *arch) {
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf (free);
 	RBinAddr *ptr = NULL;
 
 	if (arch && arch->buf) {
 		if (!ret) {
 			return NULL;
 		}
-		ret->free = free;
 		if (!(ptr = R_NEW0 (RBinAddr))) {
 			return ret;
 		}
@@ -111,7 +103,6 @@ RBinPlugin r_bin_plugin_ningba = {
 	.license = "LGPL3",
 	.load = &load,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.info = &info,

@@ -52,12 +52,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
@@ -86,7 +80,6 @@ RBinPlugin r_bin_plugin_zimg = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.info = &info,

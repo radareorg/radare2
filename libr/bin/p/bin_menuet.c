@@ -62,18 +62,14 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return (void*)(size_t)check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *arch) {
-	return check (arch);
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb) != NULL;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -216,7 +212,6 @@ RBinPlugin r_bin_plugin_menuet = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.size = &size,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.entries = &entries,

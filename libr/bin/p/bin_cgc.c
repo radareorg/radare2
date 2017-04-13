@@ -16,12 +16,6 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return buf && length > 4 && !memcmp (buf, CGCMAG, SCGCMAG) && buf[4] != 2;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
@@ -111,7 +105,6 @@ RBinPlugin r_bin_plugin_cgc = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
