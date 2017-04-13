@@ -56,7 +56,7 @@ generate_configh () {
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && echo "     0"
       oldlib=$lib
-      if type perl > /dev/null; then
+      if type perl > /dev/null 2>&1 ; then
         uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
       else
         uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
@@ -75,7 +75,7 @@ generate_configh () {
     plg=$(echo $a | cut -d . -f 2) # plugin name
     if [ ! "$oldlib" = "$lib" ]; then
       oldlib=$lib
-      if type perl > /dev/null; then
+      if type perl > /dev/null 2>&1; then
         uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
       else
         uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
@@ -98,7 +98,7 @@ generate_configmk () {
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && printf "\n"
       oldlib=$lib
-      if type perl > /dev/null; then
+      if type perl > /dev/null 2>&1 ; then
         uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
       else
         uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
@@ -114,7 +114,7 @@ generate_configmk () {
   # fill the holes with love
   for a in ${SHARED} ; do
     lib=$(echo $a | cut -d . -f 1) # library
-    if type perl > /dev/null; then
+    if type perl > /dev/null 2>&1 ; then
       uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
     else
       uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
