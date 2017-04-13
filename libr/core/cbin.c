@@ -552,13 +552,14 @@ static int save_ptr(void *p, const char *k, const char *v) {
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
-	Sdb *sdbs[2];
-	sdbs[0] = sdb_new0 ();
-	sdbs[1] = core->anal->sdb_cc;
+	Sdb *sdbs[2] = {
+		sdb_new0 (),
+		core->anal->sdb_cc
+	};
 	//save pointers and values stored inside them
 	//to recover from freeing heeps
 	const char *defaultcc = sdb_const_get (sdbs[1], "default.cc", 0);
-	sdb_set (sdbs[0], sdb_fmt (-1, "0x%08"PFMT64x, defaultcc), defaultcc, 0);
+	sdb_set (sdbs[0], sdb_fmt (-1, "0x%08"PFMT64x, r_num_get (NULL, defaultcc)), defaultcc, 0);
 	sdb_foreach (core->anal->sdb_cc, save_ptr, sdbs);
 	sdb_reset ( core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
