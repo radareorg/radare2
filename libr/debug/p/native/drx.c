@@ -95,6 +95,14 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	case 2: len = 1<<2; break;
 	case 4: len = 3<<2; break;
 	case 8: len = 2<<2; break; // AMD64 only
+	case -1:
+	{
+		I386_DR_DISABLE (control, n);
+		control &= I386_DR_CONTROL_MASK;
+		drx[DR_CONTROL] = control;
+		drx[n] = 0;
+		return true;
+	}
 	default:
 		eprintf ("Invalid DRX length (%d) must be 1, 2, 4, 8 bytes\n", len);
 		return false;
