@@ -175,7 +175,6 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
-		data = NULL;
 		data = oneshot (bin, buf, size, i);
 		r_list_append (res, data);
 	}

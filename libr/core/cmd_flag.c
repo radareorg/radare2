@@ -702,11 +702,13 @@ rep:
 			ut64 addr = core->offset;
 			RFlagItem *f = NULL;
 			bool space_strict = true;
+			bool strict_offset = false;
 			switch (input[1]) {
 			case '?':
 				eprintf ("Usage: fd[d] [offset|flag|expression]\n");
-				eprintf ("  fd $$   # describe flag + delta for given offset\n");
-				eprintf ("  fdd $$  # describe flag without space restrictions\n");
+				eprintf (" fd $$   # describe flag + delta for given offset\n");
+				eprintf (" fd.     # check flags in current address (no delta)\n");
+				eprintf (" fdd $$  # describe flag without space restrictions\n");
 				if (str) {
 					free (str);
 				}
@@ -720,12 +722,19 @@ rep:
 					addr = r_num_math (core->num, input + 3);
 				}
 				break;
+			case '.':
+				strict_offset = true;
+				if (input[2] == ' ') {
+					addr = r_num_math (core->num, input + 3);
+				}
+				break;
+				break;
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
 			}
 			core->flags->space_strict = space_strict;
-			f = r_flag_get_at (core->flags, addr, true);
+			f = r_flag_get_at (core->flags, addr, !strict_offset);
 			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
