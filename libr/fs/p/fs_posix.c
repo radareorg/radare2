@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_fs.h>
-#include <dirent.h>
 #include <sys/stat.h>
 
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
@@ -33,17 +32,60 @@ static void fs_posix_close(RFSFile *file) {
 }
 
 static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
-	char fullpath[4096];
 	RList *list;
+	char fullpath[4096];
 	struct stat st;
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	WIN32_FIND_DATAW entry;
+	HANDLE fh;
+	wchar_t *wcpath;
+	char *wctocbuff;
+	wchar_t directory[MAX_PATH];
+#else
 	struct dirent *de;
-	DIR *dir = opendir (path);
-	if (!dir) {
-		return NULL;
-	}
+	DIR *dir;
+#endif	
 	list = r_list_new ();
 	if (!list) {
-		closedir (dir);
+		return NULL;
+	}
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	wcpath = r_utf8_to_utf16 (path);
+	if (!wcpath) {
+		return NULL;
+	}
+	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);
+	fh = FindFirstFileW (directory, &entry);
+	if (fh == INVALID_HANDLE_VALUE) {
+		free (wcpath);
+		return NULL;
+	}
+	do {
+		if ((wctocbuff = r_utf16_to_utf8 (entry.cFileName))) {
+			RFSFile *fsf = r_fs_file_new (NULL, wctocbuff);
+			if (!fsf) {
+				r_list_free (list);
+				FindClose (fh);
+				return NULL;
+			}
+			fsf->type = 'f';
+			snprintf (fullpath, sizeof (fullpath)-1, "%s/%s", path, wctocbuff);
+			if (!stat (fullpath, &st)) {
+				fsf->type = S_ISDIR (st.st_mode)?'d':'f';
+				fsf->time = st.st_atime;
+			} else {
+				fsf->type = 'f';
+				fsf->time = 0;
+			}
+			r_list_append (list, fsf);
+			free (wctocbuff);
+		}
+
+	} while (FindNextFileW (fh, &entry));
+	FindClose (fh);
+#else
+	dir = opendir (path);
+	if (!dir) {
 		return NULL;
 	}
 	while ((de = readdir (dir))) {
@@ -65,6 +107,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 		r_list_append (list, fsf);
 	}
 	closedir (dir);
+#endif
 	return list;
 }
 
