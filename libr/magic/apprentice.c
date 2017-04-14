@@ -36,11 +36,6 @@
 #include <r_util.h>
 #include <sys/param.h>
 #include <ctype.h>
-#if (__WINDOWS__ && !defined(__CYGWIN__))
-//#include <Windows.h>
-#else
-#include <dirent.h>
-#endif
 #if __UNIX__
 #define QUICK 1
 #include <sys/mman.h>
