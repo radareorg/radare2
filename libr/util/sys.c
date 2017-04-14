@@ -131,9 +131,7 @@ R_API RList *r_sys_dir(const char *path) {
 	fh = r_sandbox_opendir (path, &entry, dir, wcpath);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
-		if (wcpath) {
-			free (wcpath);
-		}
+		free (wcpath);
 		return list;
 	}
 	list = r_list_new ();
