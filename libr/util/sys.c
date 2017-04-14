@@ -134,9 +134,8 @@ R_API RList *r_sys_dir(const char *path) {
 		free (wcpath);
 		return list;
 	}
-	list = r_list_new ();
+	list = r_list_newf (free);
 	if (list) {
-		list->free = free;
 		do {
 			if ((cfname = r_utf16_to_utf8 (entry.cFileName))) {
 				r_list_append (list, strdup (cfname));
