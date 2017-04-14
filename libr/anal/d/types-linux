@@ -1,4 +1,4 @@
-__asset_fail=func
+__assert_fail=func
 func.__assert_fail.args=4
 func.__assert_fail.arg.0=const char *,assertion
 func.__assert_fail.arg.1=const char *,file
@@ -17,7 +17,7 @@ _Exit=func
 func._Exit.args=1
 func._Exit.arg.0=int,status
 func._Exit.noreturn=true
-fun._Exit.ret=void
+func._Exit.ret=void
 
 __libc_init=func
 func.__libc_init.args=3

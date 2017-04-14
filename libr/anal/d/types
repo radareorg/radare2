@@ -181,8 +181,8 @@ func.strndup.arg.1=int,n
 func.strndup.ret=char *
 
 getprogname=func
-func.strndup.args=0
-func.strndup.ret=const char *
+func.getprogname.args=0
+func.getprogname.ret=const char *
 
 strncpy=func
 func.strncpy.args=3
@@ -1822,7 +1822,7 @@ func.strlen.ret=size_t
 symlink=func
 func.symlink.args=2
 func.symlink.arg.0=const char *,path1
-func.symlink.arg.2=const char *,path2
+func.symlink.arg.1=const char *,path2
 func.symlink.ret=int
 
 umask=func
@@ -2696,10 +2696,10 @@ humanize_number=func
 func.humanize_number.args=1
 func.humanize_number.arg.0=char *,buf
 func.humanize_number.arg.1=size_t,len
-func.humanize_number.arg.2,int64_t,number
-func.humanize_number.arg.3,const char *,suffix
-func.humanize_number.arg.4,int,scale
-func.humanize_number.arg.5,int,flags
+func.humanize_number.arg.2=int64_t,number
+func.humanize_number.arg.3=const char *,suffix
+func.humanize_number.arg.4=int,scale
+func.humanize_number.arg.5=int,flags
 func.humanize_number.ret=int
 
 pututxline=func

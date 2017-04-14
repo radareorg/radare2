@@ -48,7 +48,7 @@ type.DWORD32.size=32
 
 DWORD64=type
 type.DWORD64=q
-rtpe.DWORD64.size=64
+type.DWORD64.size=64
 
 FLOAT=type
 type.FLOAT=f
@@ -243,10 +243,10 @@ func.GetAtomName.arg.2=int,size
 func.GetAtomName.ret=UINT
 
 GetModuleFileName=func
-func.GetModuleFileName.args.3
-func.GetModuleFileName.arg0=HMODULE,hModule
-func.GetModuleFileName.arg1=LPTSTR,lpFilename
-func.GetModuleFileName.arg2=DWORD,nSize
+func.GetModuleFileName.args=3
+func.GetModuleFileName.arg.0=HMODULE,hModule
+func.GetModuleFileName.arg.1=LPTSTR,lpFilename
+func.GetModuleFileName.arg.2=DWORD,nSize
 func.GetModuleFileName.ret=DWORD
 
 GetSystemTimeAsFileTime=func
@@ -10837,14 +10837,12 @@ GetFileVersionInfoSizeA=func
 func.GetFileVersionInfoSizeA.args=2
 func.GetFileVersionInfoSizeA.arg.0=LPSTR,lptstrFilename
 func.GetFileVersionInfoSizeA.arg.1=LPDWORD,lpdwHandle
-
 func.GetFileVersionInfoSizeA.ret=dword
 
 GetFileVersionInfoSizeW=func
 func.GetFileVersionInfoSizeW.args=2
 func.GetFileVersionInfoSizeW.arg.0=LPWSTR,lptstrFilename
 func.GetFileVersionInfoSizeW.arg.1=LPDWORD,lpdwHandle
-
 func.GetFileVersionInfoSizeW.ret=dword
 
 GetFileVersionInfoA=func
@@ -10853,7 +10851,6 @@ func.GetFileVersionInfoA.arg.0=LPSTR,lptstrFilename
 func.GetFileVersionInfoA.arg.1=DWORD,dwHandle
 func.GetFileVersionInfoA.arg.2=DWORD,dwLen
 func.GetFileVersionInfoA.arg.3=LPVOID,lpData
-
 func.GetFileVersionInfoA.ret=bool
 
 GetFileVersionInfoW=func
@@ -10862,7 +10859,6 @@ func.GetFileVersionInfoW.arg.0=LPWSTR,lptstrFilename
 func.GetFileVersionInfoW.arg.1=DWORD,dwHandle
 func.GetFileVersionInfoW.arg.2=DWORD,dwLen
 func.GetFileVersionInfoW.arg.3=LPVOID,lpData
-
 func.GetFileVersionInfoW.ret=bool
 
 GetVersion=func
