@@ -350,9 +350,9 @@ void GH(print_heap_chunk)(RCore *core) {
 		r_core_read_at (core, chunk + SZ * 2, (ut8 *)data, size);
 		PRINT_GA ("chunk data = \n");
 		r_print_hexdump (core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ);
-		free (cnk);
 		free (data);
 	}
+	free (cnk);
 }
 
 static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, GH(RHeap_MallocState) *main_arena, GHT brk_start) {
