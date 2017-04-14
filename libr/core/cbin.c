@@ -1727,7 +1727,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				iter->p?",":"", str,
+				exponly?"":iter->p?",":"", str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
 				(int)symbol->size,
