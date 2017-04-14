@@ -8,7 +8,7 @@
  * path are ok.
  */
 #if __WINDOWS__ && !defined(__CYGWIN__)
-R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry, char *dir, wchar_t *wcpath);
+R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry, wchar_t *dir, wchar_t *wcpath);
 #else
 R_API DIR* r_sandbox_opendir(const char *path);
 #endif
