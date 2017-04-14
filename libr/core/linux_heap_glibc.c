@@ -21,6 +21,10 @@
 #define GHT_MAX UT64_MAX
 #endif
 
+#define PREV_INUSE 0x1
+#define IS_MMAPPED 0x2
+#define NON_MAIN_ARENA 0x4
+
 static void GH(update_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena) {
 	(void)r_core_read_at (core, m_arena, (ut8 *)main_arena, sizeof (GH(RHeap_MallocState)));
 }
@@ -317,13 +321,13 @@ void GH(print_heap_chunk)(RCore *core) {
 	PRINT_GA (" {\n  prev_size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->prev_size);
 	PRINT_GA (",\n  size = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size);
+	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 	PRINT_GA(",\n  flags: |N:");
-	PRINTF_BA("%1d", cnk->size & 4);
+	PRINTF_BA("%1d", cnk->size & NON_MAIN_ARENA);
 	PRINT_GA(" |M:");
-	PRINTF_BA("%1d", cnk->size & 2);
+	PRINTF_BA("%1d", cnk->size & IS_MMAPPED);
 	PRINT_GA(" |P:");
-	PRINTF_BA("%1d", cnk->size & 1);
+	PRINTF_BA("%1d", cnk->size & PREV_INUSE);
 
 	PRINT_GA (",\n  fd = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->fd);
