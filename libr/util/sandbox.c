@@ -279,8 +279,9 @@ R_API int r_sandbox_kill(int pid, int sig) {
 }
 #if __WINDOWS__ && !defined(__CYGWIN__)
 R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry, wchar_t *dir, wchar_t *wcpath) {
-	if (!path)
+	if (!path) {
 		return NULL;
+	}
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {
 			return NULL;
