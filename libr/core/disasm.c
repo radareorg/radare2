@@ -2604,7 +2604,7 @@ static void ds_print_op_push_info(RDisasmState *ds){
 	case R_ANAL_OP_TYPE_PUSH:
 		if (ds->analop.val) {
 			RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.val);
-			if (flag && !strstr (ds->opstr, flag->name)) {
+			if (flag && (!ds->opstr || !strstr (ds->opstr, flag->name))) {
 				r_cons_printf (" ; %s", flag->name);
 			}
 		}
@@ -2682,7 +2682,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 				ALIGN;
 				if (!is_lea_str) {
-					if (*flag && strstr (ds->opstr, flag)) {
+					if (*flag && ds->opstr && strstr (ds->opstr, flag)) {
 						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, refaddr, nl);
 					} else {
 						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, refaddr,
@@ -2736,7 +2736,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 				// not just for LEA
 				f2 = r_flag_get_i (core->flags, refaddr);
-				if (f2 && f != f2 && !strstr (ds->opstr, f2->name)) {
+				if (f2 && f != f2 && (!ds->opstr || !strstr (ds->opstr, f2->name))) {
 					ALIGN;
 					ds_comment (ds, true, "%s; LEA %s%s", esc, f2->name, nl);
 				}
