@@ -1,29 +1,27 @@
-/* sdb - MIT - Copyright 2007-2016 - pancake, alvaro */
+/* sdb - MIT - Copyright 2007-2017 - pancake, alvaro */
 
 #include <string.h>
 #include "ls.h"
 
-#define LS_MERGE_DEPTH 50
-
 SDB_API SdbList *ls_newf(SdbListFree freefn) {
-	SdbList *list = R_NEW (SdbList);
-	if (!list) {
-		return NULL;
+	SdbList *list = ls_new ();
+	if (list) {
+		list->free = freefn;
 	}
-	list->head = NULL;
-	list->tail = NULL;
-	list->free = freefn; // HACK
-	list->length = 0;
 	return list;
 }
 
 SDB_API SdbList *ls_new() {
-	return ls_newf (free /*XXX HACK*/);
+	SdbList *list = R_NEW0 (SdbList);
+	if (!list) {
+		return NULL;
+	}
+	return list;
 }
 
-static void ls_insertion_sort(SdbList *list, SdbListComparator cmp) {
+static void ls_insertion_sort_iter(SdbListIter *iter, SdbListComparator cmp) {
 	SdbListIter *it, *it2;
-	for (it = list->head; it && it->data; it = it->n) {
+	for (it = iter; it && it->data; it = it->n) {
 		for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
 			if (cmp (it->data, it2->data) > 0) {
 				void *t = it->data;
@@ -34,23 +32,39 @@ static void ls_insertion_sort(SdbList *list, SdbListComparator cmp) {
 	}
 }
 
+static void ls_insertion_sort(SdbList *list, SdbListComparator cmp) {
+	ls_insertion_sort_iter (list->head, cmp);
+}
+
 static SdbListIter *_merge(SdbListIter *first, SdbListIter *second, SdbListComparator cmp) {
-	if (!first) { 
-		return second;
+	SdbListIter *next = NULL, *result = NULL, *head = NULL;
+	while (first || second) {
+		if (!second) {
+			next = first;
+			first = first->n;
+		} else if (!first) {
+			next = second;
+			second = second->n;
+		} else if (cmp (first->data, second->data) < 0) {
+			next = first;
+			first = first->n;
+		} else {
+			next = second;
+			second = second->n;
+		}
+		if (!head) {
+			result = next;
+			head = result;
+			head->p = NULL;
+		} else {
+			result->n = next;
+			next->p = result;
+			result = result->n;
+		}
 	}
-	if (!second) {
-		return first;
-	}
-	if (cmp (first->data, second->data) > 0) {
-		second->n = _merge (first, second->n, cmp);
-		second->n->p = second;
-		second->p = NULL;
-		return second;
-	} 
-	first->n = _merge (first->n, second, cmp);
-	first->n->p = first;
-	first->p = NULL;
-	return first;
+	head->p = NULL;
+	next->n = NULL;
+	return head;
 }
 
 static SdbListIter * _sdb_list_split(SdbListIter *head) {
@@ -71,45 +85,37 @@ static SdbListIter * _sdb_list_split(SdbListIter *head) {
 	return tmp;
 }
 
-static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp, int depth) {
+static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp) {
 	SdbListIter *second;
 	if (!head || !head->n) {
 		return head;
 	}
-	if (depth == LS_MERGE_DEPTH) {
-		SdbListIter *it, *it2;
-		for (it = head; it && it->data; it = it->n) {
-			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
-				if (cmp (it->data, it2->data) > 0) {
-					void *t = it->data;
-					it->data = it2->data;
-					it2->data = t;
-				}
-			}
-		}
-		return head;
-	}
 	second = _sdb_list_split (head);
-	head = _merge_sort (head, cmp, depth++);
-	second = _merge_sort (second, cmp, depth++);
+	head = _merge_sort (head, cmp);
+	second = _merge_sort (second, cmp);
 	return _merge (head, second, cmp);
 }
 
-static void ls_merge_sort(SdbList *list, SdbListComparator cmp) {
+SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp) {
+	if (!cmp) {
+		return false;
+	}
 	if (list && list->head && cmp) {
 		SdbListIter *iter;
-		list->head = _merge_sort (list->head, cmp, 0);
+		list->head = _merge_sort (list->head, cmp);
 		//update tail reference
 		iter = list->head;
 		while (iter && iter->n) {
 			iter = iter->n;
 		}
 		list->tail = iter;
+		list->sorted = true;
 	}
+	return true;
 }
 
 SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp) {
-	if (!cmp || list->sorted == cmp) {
+	if (!cmp || list->cmp == cmp) {
 		return false;
 	}
 	if (list->length > 43) {
@@ -117,7 +123,8 @@ SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp) {
 	} else {
 		ls_insertion_sort (list, cmp);
 	}
-	list->sorted = cmp;
+	list->cmp = cmp;
+	list->sorted = true;
 	return true;
 }
 
@@ -208,7 +215,7 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 		list->head = it;
 	}
 	list->length++;
-	list->sorted = NULL;
+	list->sorted = false;
 	return it;
 }
 
@@ -228,7 +235,7 @@ SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
 		list->tail = it;
 	}
 	list->length++;
-	list->sorted = NULL;
+	list->sorted = false;
 	return it;
 }
 
@@ -248,8 +255,110 @@ SDB_API void *ls_pop(SdbList *list) {
 			free (iter);
 			list->length--;
 		}
-		list->sorted = NULL;
 		return data;
 	}
 	return NULL;
+}
+
+
+SDB_API int ls_join(SdbList *list1, SdbList *list2) {
+	if (!list1 || !list2) {
+		return 0;
+	}
+	if (!(list2->length)) {
+		return 0;
+	}
+	if (!(list1->length)) {
+		list1->head = list2->head;
+		list1->tail = list2->tail;
+	} else {
+		list1->tail->n = list2->head;
+		list2->head->p = list1->tail;
+		list1->tail = list2->tail;
+		list1->tail->n = NULL;
+	}
+	list1->length += list2->length;
+	list2->head = list2->tail = NULL;
+	list1->sorted = false;
+	return 1;
+}
+
+
+SDB_API SdbListIter *ls_insert(SdbList *list, int n, void *data) {
+	SdbListIter *it, *item;
+	int i;
+	if (list) {
+		if (!list->head || !n) {
+			return ls_prepend (list, data);
+		}
+		for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
+			if (i == n) {
+				item = R_NEW0 (SdbListIter);
+				if (!item) {
+					return NULL;
+				}
+				item->data = data;
+				item->n = it;
+				item->p = it->p;
+				if (it->p) {
+					it->p->n = item;
+				}
+				it->p = item;
+				list->length++;
+				list->sorted = false;
+				return item;
+			}
+		}
+	}
+	return ls_append (list, data);
+}
+
+
+SDB_API void *ls_pop_head(SdbList *list) {
+	void *data = NULL;
+	SdbListIter *iter;
+	if (list) {
+		if (list->head) {
+			iter = list->head;
+			if (list->head == list->tail) {
+				list->head = list->tail = NULL;
+			} else {
+				list->head = iter->n;
+				list->head->p = NULL;
+			}
+			data = iter->data;
+			free (iter);
+		}
+		list->length--;
+		return data;
+	}
+	return NULL;
+}
+
+
+SDB_API int ls_del_n(SdbList *list, int n) {
+	SdbListIter *it;
+	int i;
+	if (!list) {
+		return false;
+	}
+	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
+		if (i == n) {
+			if (!it->p && !it->n) {
+				list->head = list->tail = NULL;
+			} else if (!it->p) {
+				it->n->p = NULL;
+				list->head = it->n;
+			} else if (!it->n) {
+				it->p->n = NULL;
+				list->tail = it->p;
+			} else {
+				it->p->n = it->n;
+				it->n->p = it->p;
+			}
+			free (it);
+			list->length--;
+			return true;
+		}
+	return false;
 }

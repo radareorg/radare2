@@ -490,8 +490,8 @@ R_API char *r_file_root(const char *root, const char *path) {
 	while (strstr (s, "//")) {
 		s = r_str_replace (s, "//", "", 1);
 	}
-	ret = r_str_concat (strdup (root), R_SYS_DIR);
-	ret = r_str_concat (ret, s);
+	ret = r_str_append (strdup (root), R_SYS_DIR);
+	ret = r_str_append (ret, s);
 	free (s);
 	return ret;
 }

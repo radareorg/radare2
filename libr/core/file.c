@@ -505,6 +505,20 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	return false;
 }
 
+R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
+	if (!core || !core->bin || !core->bin->cur) {
+		return 0;
+	}
+	if (baddr == UT64_MAX) {
+		return 0;
+	}
+	RBinFile *bf = core->bin->cur;
+	bf->o->baddr = baddr;
+	bf->o->loadaddr = baddr;
+	r_bin_object_set_items (bf, bf->o);
+	return 1;
+}
+
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
@@ -798,6 +812,11 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	// check load addr to make sure its still valid
 	r_bin_bind (r->bin, &(fh->binb));
+
+	if (!r->files) {
+		r->files = r_list_newf ((RListFree)r_core_file_free);
+	}
+
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
 	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
@@ -893,19 +912,6 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 			ret = r_core_file_set_by_file (r, prev_cf);
 		}
 	}
-#if 0
-	{
-		RListIter *iter;
-		RIODesc *iod;
-		RCoreFile *mcf;
-		r_list_foreach (r->files, iter, mcf) {
-			r_cons_printf ("[cf]--> %p %p %d\n", mcf, mcf->desc, mcf->desc->fd);
-		}
-		r_list_foreach (r->io->files, iter, iod) {
-			r_cons_printf ("[io]--> %p %d\n", iod, iod->fd);
-		}
-	}
-#endif
 	return ret;
 }
 
@@ -949,7 +955,35 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			break;
 		case '*':
 		case 'r':
-			r_cons_printf ("o %s 0x%"PFMT64x "\n", f->desc->uri, (ut64) from);
+			{
+				RListIter *it;
+				RBinFile *bf;
+				r_list_foreach (core->bin->binfiles, it, bf) {
+					if (bf->fd == f->desc->fd) {
+						char *absfile = r_file_abspath (f->desc->uri);
+						r_cons_printf ("o %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+						free(absfile);
+					}
+				}
+			}
+			break;
+		case 'n':
+			{
+				RListIter *it;
+				RBinFile *bf;
+				bool header_loaded = false;
+				r_list_foreach (core->bin->binfiles, it, bf) {
+					if (bf->fd == f->desc->fd) {
+						header_loaded = true;
+						break;
+					}
+				}
+				if (!header_loaded) {
+					char *absfile = r_file_abspath (f->desc->uri);
+					r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+					free(absfile);
+				}
+			}
 			break;
 		default:
 		{
@@ -1026,17 +1060,18 @@ R_API int r_core_file_binlist(RCore *core) {
 R_API int r_core_file_close_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
+	if (fd == -1) {
+		r_list_free (core->files);
+		core->files = NULL;
+		core->file = NULL;
+		return true;
+	}
 	r_list_foreach (core->files, iter, file) {
-		if (file->desc->fd == fd || fd == -1) {
+		if (file->desc->fd == fd) {
 			r_core_file_close (core, file);
 			if (file == core->file) {
 				core->file = NULL; // deref
 			}
-#if 0
-			if (r_list_empty (core->files)) {
-				core->file = NULL;
-			}
-#endif
 			return true;
 		}
 	}

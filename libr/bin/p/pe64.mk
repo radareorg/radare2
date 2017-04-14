@@ -1,4 +1,4 @@
-OBJ_PE64=bin_pe64.o ../format/pe/pe64.o
+OBJ_PE64=bin_pe64.o bin_write_pe64.o ../format/pe/pe64.o ../format/pe/pe64_write.o
 
 STATIC_OBJ+=${OBJ_PE64}
 TARGET_PE64=bin_pe64.${EXT_SO}

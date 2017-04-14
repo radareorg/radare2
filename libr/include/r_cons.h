@@ -633,14 +633,15 @@ typedef struct r_ascii_node_t {
 	int is_dummy;
 	int is_reversed;
 	int klass;
-	bool mini;
+	bool is_mini;
 } RANode;
 
 #define R_AGRAPH_MODE_NORMAL 0
 #define R_AGRAPH_MODE_OFFSET 1
 #define R_AGRAPH_MODE_MINI 2
-#define R_AGRAPH_MODE_SUMMARY 3
-#define R_AGRAPH_MODE_MAX 4
+#define R_AGRAPH_MODE_TINY 3
+#define R_AGRAPH_MODE_SUMMARY 4
+#define R_AGRAPH_MODE_MAX 5
 
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);
@@ -655,8 +656,9 @@ typedef struct r_ascii_graph_t {
 
 	int layout;
 	int is_instep;
+	bool is_tiny;
 	int mode;
-	int is_callgraph;
+	bool is_callgraph;
 	int zoom;
 	int movspeed;
 

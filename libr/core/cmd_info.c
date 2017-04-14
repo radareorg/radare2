@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <string.h>
 #include "r_bin.h"
@@ -85,13 +85,8 @@ static void r_core_file_info(RCore *core, int mode) {
 	}
 	if (info) {
 		fn = info->file;
-		switch (mode) {
-		case R_CORE_BIN_JSON:
+		if (mode == R_CORE_BIN_JSON) {
 			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
-			break;
-		default:
-			pair ("type", info->type);
-			break;
 		}
 	} else {
 		fn = (cf && cf->desc)? cf->desc->name: NULL;
@@ -105,7 +100,11 @@ static void r_core_file_info(RCore *core, int mode) {
 				uri = "";
 			}
 		}
-		r_cons_printf (",\"file\":\"%s\"", uri);
+		{
+			char *escapedFile = r_str_escape (uri);
+			r_cons_printf (",\"file\":\"%s\"", escapedFile);
+			free (escapedFile);
+		}
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
@@ -114,6 +113,11 @@ static void r_core_file_info(RCore *core, int mode) {
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
+				char *humansz = r_num_units (NULL, fsz);
+				if (humansz) {
+					r_cons_printf (",\"humansz\":\"%s\"", humansz);
+					free (humansz);
+				}
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache ||\
 					cf->desc->flags & R_IO_WRITE ));
@@ -138,31 +142,45 @@ static void r_core_file_info(RCore *core, int mode) {
 		r_cons_printf ("}");
 	} else if (cf && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
-		pair ("file", fn? fn: cf->desc->uri);
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
 		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
-			if (cf->desc->referer && *cf->desc->referer) {
-				pair ("referer", cf->desc->referer);
-			}
-			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
-			if (fsz != UT64_MAX) {
-				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
-			}
-			pair ("iorw", r_str_bool ( io_cache ||\
-					cf->desc->flags & R_IO_WRITE ));
-			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
-					(ut64) core->io->desc->obsz));
-			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
+			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
-		if (binfile && binfile->curxtr) {
-			pair ("packet", binfile->curxtr->name);
+		if (cf->desc) {
+			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
+		}
+		if (fn || (cf->desc && cf->desc->uri)) {
+			pair ("file", fn? fn: cf->desc->uri);
 		}
 		if (plugin) {
 			pair ("format", plugin->name);
+		}
+		if (cf->desc) {
+			pair ("iorw", r_str_bool (io_cache || cf->desc->flags & R_IO_WRITE ));
+			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
+		}
+		if (binfile && binfile->curxtr) {
+			pair ("packet", binfile->curxtr->name);
+		}
+		if (cf->desc && cf->desc->referer && *cf->desc->referer) {
+			pair ("referer", cf->desc->referer);
+		}
+		if (cf->desc) {
+			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+			if (fsz != UT64_MAX) {
+				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+				char *humansz = r_num_units (NULL, fsz);
+				if (humansz) {
+					pair ("humansz", humansz);
+					free (humansz);
+				}
+			}
+		}
+		if (info) {
+			pair ("type", info->type);
 		}
 	}
 }
@@ -197,12 +215,11 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 			r_cons_printf (",\"core\":");
 		}
 		r_core_file_info (core, mode);
-		if (obj && bin_is_executable (obj)) {
+		if (bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
 				r_cons_printf (",\"bin\":");
 			}
-			r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-				mode, va, NULL, NULL);
+			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
 			r_cons_printf ("}\n");
@@ -378,8 +395,25 @@ static int cmd_info(void *data, const char *input) {
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0); break;
 		case 'L':
-			r_bin_list (core->bin, input[1] == 'j');
-			break;
+		{
+			char *ptr = strchr (input, ' ');
+			int json = input[1] == 'j'? 'j': 0;
+
+			if (ptr && ptr[1]) {
+				const char *plugin_name = ptr + 1;
+				if (is_array) {
+					r_cons_printf ("\"plugin\": ");
+				}
+				r_bin_list_plugin (core->bin, plugin_name, json);
+			} else {
+				r_bin_list (core->bin, json);
+			}
+
+			newline = false;
+
+			goto done;
+		}
+		break;
 		case 's':
 			if (input[1] == '.') {
 				ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
@@ -483,16 +517,26 @@ static int cmd_info(void *data, const char *input) {
 								r_cons_printf (",\"methods\":[");
 								r_list_foreach (cls->methods, iter2, sym) {
 									const char *comma = iter2->p? ",": "";
-									r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d "}",
-										comma, sym->name, sym->vaddr);
+
+									if (sym->method_flags) {
+										char *flags = r_core_bin_method_flags_str (sym, R_CORE_BIN_JSON);
+										r_cons_printf ("%s{\"name\":\"%s\",\"flags\":%s,\"vaddr\":%"PFMT64d "}",
+											comma, sym->name, flags, sym->vaddr);
+										R_FREE (flags);
+									} else {
+										r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d "}",
+											comma, sym->name, sym->vaddr);
+									}
 								}
 								r_cons_printf ("]");
 								break;
 							default:
 								r_cons_printf ("class %s\n", cls->name);
 								r_list_foreach (cls->methods, iter2, sym) {
-									r_cons_printf ("0x%08"PFMT64x " method %s %s\n",
-										sym->vaddr, cls->name, sym->name);
+									char *flags = r_core_bin_method_flags_str (sym, 0);
+									r_cons_printf ("0x%08"PFMT64x " method %s %s %s\n",
+										sym->vaddr, cls->name, flags, sym->name);
+									R_FREE (flags);
 								}
 								break;
 							}
@@ -558,7 +602,7 @@ static int cmd_info(void *data, const char *input) {
 				"iI", "", "Binary info",
 				"ik", " [query]", "Key-value database from RBinObject",
 				"il", "", "Libraries",
-				"iL", "", "List all RBin plugins loaded",
+				"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
 				"im", "", "Show info about predefined memory allocation",
 				"iM", "", "Show main address",
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",

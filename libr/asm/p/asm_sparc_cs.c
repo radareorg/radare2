@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2016 - pancake */
+/* radare2 - LGPL - Copyright 2014-2017 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -8,8 +8,8 @@ static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
-	int n, ret = -1;
-	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int n = -1, ret = -1;
+	int mode = CS_MODE_BIG_ENDIAN;
 	if (a->cpu && *a->cpu) {
 		if (!strcmp (a->cpu, "v9")) {
 			mode |= CS_MODE_V9;
@@ -30,7 +30,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!op) {
 		return 0;
 	}
-	n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
+	if (a->big_endian) {
+		n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
+	}
 	if (n < 1) {
 		strcpy (op->buf_asm, "invalid");
 		op->size = 4;
@@ -46,6 +48,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
 		insn->mnemonic, insn->op_str[0]? " ": "",
 		insn->op_str);
+	r_str_replace_char (op->buf_asm, '%', 0);
 	// TODO: remove the '$'<registername> in the string
 	cs_free (insn, n);
 	beach:
@@ -67,7 +70,7 @@ RAsmPlugin r_asm_plugin_sparc_cs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_sparc_cs,
 	.version = R2_VERSION

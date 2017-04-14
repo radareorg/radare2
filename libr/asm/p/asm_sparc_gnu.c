@@ -49,7 +49,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
-	if (len<4) return -1;
+	if (len < 4) {
+		return -1;
+	}
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 	// disasm inverted
@@ -62,18 +64,23 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &print_address;
-	disasm_obj.endian = !a->big_endian;
+	disasm_obj.endian = a->big_endian;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = ((a->bits == 64)
 			   ? bfd_mach_sparc_v9b
 			   : 0);
 
-	op->buf_asm[0]='\0';
+	op->buf_asm[0] = '\0';
 	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->size == -1)
+	if (!strncmp (op->buf_asm, "unknown", 7)) {
+		strncpy (op->buf_asm, "invalid", R_ASM_BUFSIZE);
+	}
+
+	if (op->size == -1) {
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+	}
 	return op->size;
 }
 

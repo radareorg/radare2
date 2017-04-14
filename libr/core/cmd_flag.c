@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -279,14 +279,16 @@ rep:
 		if (*cstr == '.') {
 			input++;
 			goto rep;
-#if 0
-eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
-			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
-#endif
 		} else {
-			r_flag_set (core->flags, cstr, off, bsze);
+			bool addFlag = true;
+			if (input[0] == '+') {
+				if (r_flag_get_at (core->flags, off, false)) {
+					addFlag = false;
+				}
+			}
+			if (addFlag) {
+				r_flag_set (core->flags, cstr, off, bsze);
+			}
 		}
 		}
 		break;
@@ -700,11 +702,13 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			ut64 addr = core->offset;
 			RFlagItem *f = NULL;
 			bool space_strict = true;
+			bool strict_offset = false;
 			switch (input[1]) {
 			case '?':
 				eprintf ("Usage: fd[d] [offset|flag|expression]\n");
-				eprintf ("  fd $$   # describe flag + delta for given offset\n");
-				eprintf ("  fdd $$  # describe flag without space restrictions\n");
+				eprintf (" fd $$   # describe flag + delta for given offset\n");
+				eprintf (" fd.     # check flags in current address (no delta)\n");
+				eprintf (" fdd $$  # describe flag without space restrictions\n");
 				if (str) {
 					free (str);
 				}
@@ -718,12 +722,19 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 					addr = r_num_math (core->num, input + 3);
 				}
 				break;
+			case '.':
+				strict_offset = true;
+				if (input[2] == ' ') {
+					addr = r_num_math (core->num, input + 3);
+				}
+				break;
+				break;
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
 			}
 			core->flags->space_strict = space_strict;
-			f = r_flag_get_at (core->flags, addr, true);
+			f = r_flag_get_at (core->flags, addr, !strict_offset);
 			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
@@ -736,10 +747,13 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		}
 		break;
 	case '?':
-	{
+		if (input[1]) {
+			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
+		} else {
 		const char *help_msg[] = {
 		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
 		"f","","list flags (will only list flags from selected flagspaces)",
+		"f?","flagname","check if flag exists or not, See ?? and ?!",
 		"f."," [*[*]]","list local per-function flags (*) as r2 commands",
 		"f.","blah=$$+12","set local function label named 'blah'",
 		"f*","","list flags in r commands",

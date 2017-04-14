@@ -12,4 +12,4 @@ fi
 [ -z "${SUDO}" ] && SUDO=sudo
 echo "Uninstalling r2 from ${PREFIX}..."
 ./configure --prefix="${PREFIX}"
-${SUDO} ${MAKE} purge
+${SUDO} ${MAKE} purge2

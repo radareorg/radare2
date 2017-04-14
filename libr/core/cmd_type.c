@@ -27,7 +27,7 @@ static void show_help(RCore *core) {
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
 		"tos", " <path>", "Load types from parsed Sdb database",
-		"tp", " <type>  = <address>", "cast data at <adress> to <type> and print it",
+		"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
 		"ts", "[?]", "print loaded struct types",
 		"tu", "[?]", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
@@ -108,10 +108,16 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	// First, if this exists, let's remove it.
 	char *type = strdup (parsed);
 	if (type) {
-		char *name = strtok (type, "=");
-		if (!name || strchr (name, '\n') || strchr (name, ';')) {
-			/* do nothing */
-		} else {
+		char *name = NULL;
+		if ((name = strstr (type, "=type")) || (name = strstr (type, "=struct")) || (name = strstr (type, "=union")) ||
+			(name = strstr (type, "=enum")) || (name = strstr (type, "=func"))) {
+			*name = 0;
+			while (name - 1 >= type && *(name - 1) != '\n') {
+				name--;
+			}
+
+		}
+		if (name) {
 			r_core_cmdf (core, "\"t- %s\"", name);
 			// Now add the type to sdb.
 			sdb_query_lines (core->anal->sdb_types, parsed);
@@ -455,7 +461,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *help_message[] = {
 				"Usage:", "", "",
 				"tl", "", "list all links in readable format",
-				"tl", "[typename]", "link a type to current adress.",
+				"tl", "[typename]", "link a type to current address.",
 				"tl", "[typename] = [address]", "link type to given address.",
 				"tls", "[address]", "show link at given address",
 				"tl-*", "", "delete all links.",

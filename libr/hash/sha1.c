@@ -83,8 +83,7 @@ void SHA1_Init(R_SHA_CTX *ctx) {
 	ctx->lenW = 0;
 	ctx->sizeHi = ctx->sizeLo = 0;
 
-	/* Initialize H with the magic constants (see FIPS180 for constants)
-	*/
+	// Initialize H with the magic constants (see FIPS180 for constants)
 	ctx->H[0] = 0x67452301;
 	ctx->H[1] = 0xefcdab89;
 	ctx->H[2] = 0x98badcfe;
@@ -100,8 +99,7 @@ void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
 	const ut8 *dataIn = _dataIn;
 	int i;
 
-	/* Read the data into W and process blocks as they get full
-	*/
+	// Read the data into W and process blocks as they get full
 	for (i = 0; i < len; i++) {
 		ctx->W[ctx->lenW / 4] <<= 8;
 		ctx->W[ctx->lenW / 4] |= (unsigned int) dataIn[i];

@@ -23,7 +23,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 		if (!dollar) {
 			break;
 		}
-		buf = r_str_concatlen (buf, msg, dollar-msg);
+		buf = r_str_appendlen (buf, msg, dollar-msg);
 		if (dollar[1]=='{') {
 			// find }
 			end = strchr (dollar+2, '}');
@@ -32,7 +32,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 				end++;
 			} else {
 				msg = dollar+1;
-				buf = r_str_concat (buf, "$");
+				buf = r_str_append (buf, "$");
 				continue;
 			}
 		} else {
@@ -46,14 +46,14 @@ static char *filterFlags(RCore *core, const char *msg) {
 			ut64 val = r_num_math (core->num, word);
 			char num[32];
 			snprintf (num, sizeof (num), "0x%"PFMT64x, val);
-			buf = r_str_concat (buf, num);
+			buf = r_str_append (buf, num);
 			msg = end;
 		} else {
 			break;
 		}
 		free (word);
 	}
-	buf = r_str_concat (buf, msg);
+	buf = r_str_append (buf, msg);
 	return buf;
 }
 
@@ -76,7 +76,7 @@ R_API void r_core_clippy(const char *msg) {
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128] = {0};
+	char *p, out[128] = R_EMPTY;
 	ut64 n, n2;
 	int i;
 	RList *tmp;
@@ -408,53 +408,16 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '@':
 		{
-		const char* help_msg[] = {
-			"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
-			"0", "", "alias for 's 0'",
-			"0x", "addr", "alias for 's 0x..'",
-			"#", "cmd", "if # is a number repeat the command # times",
-			"/*", "", "start multiline comment",
-			"*/", "", "end multiline comment",
-			".", "cmd", "execute output of command as r2 script",
-			".:", "8080", "wait for commands on port 8080",
-			".!", "rabin2 -re $FILE", "run command output as r2 script",
-			"*", "", "output of command in r2 script format (CC*)",
-			"j", "", "output of command in JSON format (pdj)",
-			"~", "?", "count number of lines (like wc -l)",
-			"~", "??", "show internal grep help",
-			"~", "..", "internal less",
-			"~", "{}", "json indent",
-			"~", "{}..", "json indent and less",
-			"~", "word", "grep for lines matching word",
-			"~", "!word", "grep for lines NOT matching word",
-			"~", "word[2]", "grep 3rd column of lines matching word",
-			"~", "word:3[0]", "grep 1st column from the 4th line matching word",
-			"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-			"@", " addr[!blocksize]", "temporary set a new blocksize",
-			"@a:", "arch[:bits]", "temporary set arch and bits",
-			"@b:", "bits", "temporary set asm.bits",
-			"@e:", "k=v,k=v", "temporary change eval vars",
-			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
-			"@i:", "nth.op", "temporary seek to the Nth relative instruction",
-			"@f:", "file", "temporary replace block with file contents",
-			"@o:", "fd", "temporary switch to another fd",
-			"@s:", "string", "same as above but from a string",
-			"@x:", "909192", "from hex pairs string",
-			"@..", "from to", "temporary set from and to for commands supporting ranges",
-			"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
-			"@@", " hit*", "run the command on every flag matching 'hit*'",
-			"@@?", "[ktfb..]", "show help for the iterator operator",
-			"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
-			">", "file", "pipe output of command to file",
-			">>", "file", "append to file",
-			"H>", "file", "pipe output of command to file in HTML",
-			"H>>", "file", "append to file with the output of command in HTML",
-			"`", "pdi~push:0[0]`",  "replace output of command inside the line",
-			"|", "cmd", "pipe output to command (pd|less) (.dr*)",
-			NULL};
-		r_core_cmd_help (core, help_msg);
-		return 0;
+		if (input[1] == '@'){
+			helpCmdForeach (core);
+		} else {
+			helpCmdAt (core);
 		}
+		}
+		break;
+	case '&':
+		helpCmdTasks (core);
+		break;
 	case '$':
 		if (input[1] == '?') {
 			const char* help_msg[] = {
@@ -704,7 +667,7 @@ static int cmd_help(void *data, const char *input) {
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 				r_line_set_prompt (foo);
 				r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
-				foo[strlen (foo)] = 0;
+				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = r_num_math (core->num, foo);
 				}

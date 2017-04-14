@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2016 - pancake */
+/* radare2 - LGPL - Copyright 2014-2017 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -13,12 +13,55 @@
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC insn->detail->sparc.cc
 
+static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+	int i;
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, "{");
+	cs_sparc *x = &insn->detail->sparc;
+	r_strbuf_append (buf, "\"operands\":[");
+	for (i = 0; i < x->op_count; i++) {
+		cs_sparc_op *op = &x->operands[i];
+		if (i > 0) {
+			r_strbuf_append (buf, ",");
+		}
+		r_strbuf_append (buf, "{");
+		switch (op->type) {
+		case SPARC_OP_REG:
+			r_strbuf_append (buf, "\"type\":\"reg\"");
+			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			break;
+		case SPARC_OP_IMM:
+			r_strbuf_append (buf, "\"type\":\"imm\"");
+			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			break;
+		case SPARC_OP_MEM:
+			r_strbuf_append (buf, "\"type\":\"mem\"");
+			if (op->mem.base != SPARC_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+			}
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			break;
+		default:
+			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			break;
+		}
+		r_strbuf_append (buf, "}");
+	}
+	r_strbuf_append (buf, "]");
+	r_strbuf_append (buf, "}");
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
 	int mode, n, ret;
-	mode = CS_MODE_BIG_ENDIAN;
+
+	if (!a->big_endian) {
+		return -1;
+	}
+
+	mode = CS_MODE_LITTLE_ENDIAN;
 	if (!strcmp (a->cpu, "v9"))
 		mode |= CS_MODE_V9;
 	if (mode != omode) {
@@ -46,9 +89,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
+		opex (&op->opex, handle, insn);
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
+		case SPARC_INS_INVALID:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		case SPARC_INS_MOV:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
@@ -270,6 +317,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 RAnalPlugin r_anal_plugin_sparc_cs = {
 	.name = "sparc",
 	.desc = "Capstone SPARC analysis",
@@ -277,6 +328,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.bits = 32|64,
+	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 };

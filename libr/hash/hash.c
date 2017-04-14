@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2007-2016 pancake */
+/* radare - LGPL - Copyright 2007-2017 pancake */
 
-#include "r_hash.h"
-#include "r_util.h"
+#include <r_hash.h>
 
 R_LIB_VERSION (r_hash);
 
@@ -18,8 +17,6 @@ static const hash_name_bytes[] = {
 	{ "sha256", R_HASH_SHA256 },
 	{ "sha384", R_HASH_SHA384 },
 	{ "sha512", R_HASH_SHA512 },
-	{ "crc16", R_HASH_CRC16 },
-	{ "crc32", R_HASH_CRC32 },
 	{ "adler32", R_HASH_ADLER32 },
 	{ "xxhash", R_HASH_XXHASH },
 	{ "parity", R_HASH_PARITY },
@@ -31,6 +28,16 @@ static const hash_name_bytes[] = {
 	// {"base91", R_HASH_BASE91},
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
+	{ "crc8smbus", R_HASH_CRC8_SMBUS },
+	{ "crc15can", R_HASH_CRC15_CAN },
+	{ "crc16", R_HASH_CRC16 },
+	{ "crc16hdlc", R_HASH_CRC16_HDLC },
+	{ "crc16usb", R_HASH_CRC16_USB },
+	{ "crc16citt", R_HASH_CRC16_CITT },
+	{ "crc24", R_HASH_CRC24 },
+	{ "crc32", R_HASH_CRC32 },
+	{ "crc32c", R_HASH_CRC32C },
+	{ "crc32ecma267", R_HASH_CRC32_ECMA_267 },
 	{ NULL, 0 }
 };
 
@@ -89,7 +96,7 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	int i, c;
-	for (c = i = 0, --len; i < len; i++) {
+	for (c = i = 0, len--; i < len; i++) {
 		c += R_ABS (b[i + 1] - b[i]);
 	}
 	return c;
@@ -109,6 +116,7 @@ R_API int r_hash_size(ut64 algo) {
 	#define ALGOBIT(x) if (algo & R_HASH_ ## x) { return R_HASH_SIZE_ ## x; }
 	ALGOBIT (MD4);
 	ALGOBIT (MD5);
+	ALGOBIT (SHA1);
 	ALGOBIT (SHA256);
 	ALGOBIT (SHA384);
 	ALGOBIT (SHA512);
@@ -124,6 +132,14 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (MOD255);
 	ALGOBIT (PCPRINT);
 	ALGOBIT (LUHN);
+	ALGOBIT (CRC8_SMBUS);
+	ALGOBIT (CRC15_CAN);
+	ALGOBIT (CRC16_HDLC);
+	ALGOBIT (CRC16_USB);
+	ALGOBIT (CRC16_CITT);
+	ALGOBIT (CRC24);
+	ALGOBIT (CRC32C);
+	ALGOBIT (CRC32_ECMA_267);
 	return 0;
 }
 

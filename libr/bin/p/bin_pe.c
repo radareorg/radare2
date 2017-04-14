@@ -6,19 +6,14 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb (RBinFile *bf) {
+	RBinObject *o = bf->o;
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
 		return NULL;
 	}	
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
-	if (bin && bin->kv) {
-		return bin->kv;
-	}
-	return NULL;
+	return bin? bin->kv: NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -37,7 +32,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return res;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	void *res;
 	const ut8 *bytes;
 	ut64 sz;
@@ -207,6 +202,15 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
+static void find_pe_overlay(RBinFile *arch) {
+	ut64 pe_overlay_size;
+	ut64 pe_overlay_offset = PE_(bin_pe_get_overlay) (arch->o->bin_obj, &pe_overlay_size);
+	if (pe_overlay_offset) {
+		sdb_num_set (arch->sdb, "pe_overlay.offset", pe_overlay_offset, 0);
+		sdb_num_set (arch->sdb, "pe_overlay.size", pe_overlay_size, 0);
+	}
+}
+
 static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
@@ -255,6 +259,7 @@ static RList* symbols(RBinFile *arch) {
         }
         free (imports);
 	}
+	find_pe_overlay(arch);
 	return ret;
 }
 
@@ -320,7 +325,7 @@ static RList* imports(RBinFile *arch) {
 		{
 			ut8 addr[4];
 			r_buf_read_at (arch->buf, imports[i].paddr, addr, 4);
-			ut64 newaddr = r_read_le32 (&addr);
+			ut64 newaddr = (ut64) r_read_le32 (&addr);
 			rel->vaddr = newaddr;
 		}
 		rel->paddr = imports[i].paddr;
@@ -429,13 +434,15 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
+	struct PE_ (r_bin_pe_obj_t) *bin;
 	SDebugInfo di = {{0}};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	ut32 claimed_checksum, actual_checksum;
+	ut32 claimed_checksum, actual_checksum, pe_overlay;
 
 	if (!ret) {
 		return NULL;
-	}	
+	}
+	bin = arch->o->bin_obj;
 	arch->file = strdup (arch->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (arch->o->bin_obj);
 	ret->rclass = strdup ("pe");
@@ -456,6 +463,7 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum) (arch->o->bin_obj);
 	actual_checksum  = PE_(bin_pe_get_actual_checksum) (arch->o->bin_obj);
+	pe_overlay = sdb_num_get (arch->sdb, "pe_overlay.size", 0);
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
@@ -464,6 +472,8 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_pi = haschr (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
 	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
+	ret->pe_overlay = pe_overlay > 0;
+	ret->signature = bin ? bin->is_signed : false;
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
@@ -513,14 +523,7 @@ static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 }
 
 #if !R_BIN_PE64
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int idx;
 	if (!buf) {
 		return false;
@@ -619,8 +622,36 @@ static char *signature (RBinFile *arch) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
-	return (char *) bin->pkcs7;
+	return (char *) bin->signature_dump;
 }
+
+static RBinField *newField(const char *name, ut64 addr) {
+	RBinField *bf = R_NEW0 (RBinField);
+	bf->name = strdup (name);
+	bf->vaddr = bf->paddr = addr;
+	return bf;
+}
+
+static RList *fields(RBinFile *arch) {
+	const ut8 *buf = arch ? r_buf_buffer (arch->buf) : NULL;
+
+	if (!buf) {
+		return NULL;
+	}
+	RList *list = r_list_new ();
+	struct PE_(r_bin_pe_obj_t) * bin = arch->o->bin_obj;
+
+	// TODO: we should use pf*
+	ut64 at = r_offsetof (PE_(image_nt_headers), Signature);
+	r_list_append (list, newField ("signature", at));
+
+	at = r_offsetof (PE_(image_optional_header), AddressOfEntryPoint);
+	at += bin->dos_header->e_lfanew;
+	r_list_append (list, newField ("entrypoint", at));
+
+	return list;
+}
+
 static void header(RBinFile *arch) {
 	struct PE_(r_bin_pe_obj_t) * bin = arch->o->bin_obj;
 	struct r_bin_t *rbin = arch->rbin;
@@ -723,7 +754,9 @@ static void header(RBinFile *arch) {
 	}
 }
 
-struct r_bin_plugin_t r_bin_plugin_pe = {
+extern struct r_bin_write_t r_bin_write_pe;
+
+RBinPlugin r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
 	.license = "LGPL3",
@@ -731,7 +764,6 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.binsym = &binsym,
@@ -742,15 +774,17 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.imports = &imports,
 	.info = &info,
 	.header = &header,
+	.fields = &fields,
 	.libs = &libs,
 	.relocs = &relocs,
 	.minstrlen = 4,
 	.create = &create,
-	.get_vaddr = &get_vaddr
+	.get_vaddr = &get_vaddr,
+	.write = &r_bin_write_pe
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pe,
 	.version = R2_VERSION

@@ -58,8 +58,8 @@
 !:mime	video/x-msvideo
 >>12    string          LIST
 >>>20   string          hdrlavih
->>>>&36 lelong          x               \b, %lu x
->>>>&40 lelong          x               %lu,
+>>>>&36 lelong          x               \b, %u x
+>>>>&40 lelong          x               %u,
 >>>>&4  lelong          >1000000        <1 fps,
 >>>>&4  lelong          1000000         1.00 fps,
 >>>>&4  lelong          500000          2.00 fps,

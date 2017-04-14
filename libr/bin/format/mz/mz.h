@@ -20,7 +20,7 @@ struct r_bin_mz_reloc_t {
 struct r_bin_mz_obj_t {
 	const MZ_image_dos_header *dos_header;
 	const void *dos_extended_header;
-	const MZ_image_relocation_entry *relocation_entries;
+	MZ_image_relocation_entry *relocation_entries;
 
 	int dos_extended_header_size;
 

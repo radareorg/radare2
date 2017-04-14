@@ -101,7 +101,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	HANDLE th = INVALID_HANDLE_VALUE;
 	if (!*cmd) return -1;
 	setup_tokens ();
-	char *_cmd = io->args ? r_str_concatf (strdup (cmd), " %s", io->args) :
+	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 				strdup (cmd);
 	char **argv = r_str_argv (_cmd, NULL);
 	// We need to build a command line with quoted argument and escaped quotes
@@ -164,10 +164,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		goto err_fork;
         }
 
-	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
-
+	if (th != INVALID_HANDLE_VALUE) {
+		CloseHandle (th);
+	}
+	
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
-	io->winbase = de.u.CreateProcessInfo.lpBaseOfImage;
+	io->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	io->wintid = tid;
 	io->winpid = pid;
 	return pid;
@@ -216,7 +218,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		pid_t p = -1;
 		int ret, useASLR = io->aslr;
 		char *_cmd = io->args
-			? r_str_concatf (strdup (cmd), " %s", io->args)
+			? r_str_appendf (strdup (cmd), " %s", io->args)
 			: strdup (cmd);
 		argv = r_str_argv (_cmd, NULL);
 		if (!argv) {
@@ -326,7 +328,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			exit (1);
 		} else {
 			char *_cmd = io->args ?
-				r_str_concatf (strdup (cmd), " %s", io->args) :
+				r_str_appendf (strdup (cmd), " %s", io->args) :
 				strdup (cmd);
 
 			trace_me ();

@@ -39,7 +39,7 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 static st64 read_sleb128(ulebr *r, ut8 *end) {
 	st64 result = 0;
 	int bit = 0;
-	ut8 byte;
+	ut8 byte = 0;
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
@@ -270,6 +270,7 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			memcpy (&bin->sects[k].sectname, &sec[i], 16);
 			i += 16;
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
+			bin->sects[k].segname[15] = 0;
 			i += 16;
 #if R_BIN_MACH064
 			bin->sects[k].addr = r_read_ble64 (&sec[i], bin->big_endian);
@@ -592,8 +593,12 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				bin->signature = calloc (1, len + 1);
 				if (bin->signature) {
 					ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
-					memcpy (bin->signature, src, len);
-					bin->signature[len] = '\0';
+					if (off + sizeof (struct blob_t) + len < bin->b->length) {
+						memcpy (bin->signature, src, len);
+						bin->signature[len] = '\0';
+						return true;
+					}
+					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 					return true;
 				}
 			} else {
@@ -852,8 +857,12 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_SEGMENT_64";
 	case LC_SYMTAB:
 		return "LC_SYMTAB";
+	case LC_SYMSEG:
+		return "LC_SYMSEG";
 	case LC_DYSYMTAB:
 		return "LC_DYSYMTAB";
+	case LC_FUNCTION_STARTS:
+		return "LC_FUNCTION_STARTS";
 	case LC_DYLIB_CODE_SIGN_DRS:
 		return "LC_DYLIB_CODE_SIGN_DRS";
 	case LC_VERSION_MIN_MACOSX:
@@ -864,14 +873,28 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_VERSION_MIN_TVOS";
 	case LC_VERSION_MIN_WATCHOS:
 		return "LC_VERSION_MIN_WATCHOS";
+	case LC_DYLD_INFO:
+		return "LC_DYLD_INFO";
+	case LC_SOURCE_VERSION:
+		return "LC_SOURCE_VERSION";
+	case LC_MAIN:
+		return "LC_MAIN";
 	case LC_UUID:
-		return "LC_VERSION_MIN_UUID";
+		return "LC_UUID";
 	case LC_ENCRYPTION_INFO_64:
 		return "LC_ENCRYPTION_INFO_64";
 	case LC_ENCRYPTION_INFO:
 		return "LC_ENCRYPTION_INFO";
 	case LC_LOAD_DYLINKER:
 		return "LC_LOAD_DYLINKER";
+	case LC_LOAD_DYLIB:
+		return "LC_LOAD_DYLIB";
+	case LC_THREAD:
+		return "LC_THREAD";
+	case LC_UNIXTHREAD:
+		return "LC_UNIXTHREAD";
+	case LC_IDENT:
+		return "LC_IDENT";
 	}
 	return "";
 }
@@ -1281,7 +1304,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sections[i].size = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
-			r_str_ncpy (sectname, seg->segname, sizeof (sectname)-1);
+			r_str_ncpy (sectname, seg->segname, sizeof (sectname) - 1);
 			// hack to support multiple sections with same name
 			sections[i].srwx = prot2perm (seg->initprot);
 			sections[i].last = 0;
@@ -1434,7 +1457,6 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (symbols_size < 1) {
 		return NULL;
 	}
-
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
@@ -2304,7 +2326,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 	return addr;
 }
 
-void MACH0_(headerfields)(RBinFile *file) {
+void MACH0_(mach_headerfields)(RBinFile *file) {
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
@@ -2342,7 +2364,7 @@ void MACH0_(headerfields)(RBinFile *file) {
 	}
 }
 
-RList* MACH0_(fields)(RBinFile *arch) {
+RList* MACH0_(mach_fields)(RBinFile *arch) {
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(arch->buf);
 	if (!mh) {
 		return NULL;

@@ -2,7 +2,11 @@
 
 #include <r_th.h>
 
+#if __WINDOWS__ && !defined(__CYGWIN__)
+static DWORD WINAPI _r_th_launcher(void *_th) {
+#else
 static void *_r_th_launcher(void *_th) {
+#endif
 	int ret;
 	RThread *th = _th;
 	th->ready = true;
@@ -40,7 +44,7 @@ R_API int r_th_push_task(struct r_th_t *th, void *user) {
 R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
 	if (th) {
-		th->lock = r_th_lock_new ();
+		th->lock = r_th_lock_new (false);
 		th->running = false;
 		th->fun = fun;	
 		th->user = user;
@@ -50,7 +54,7 @@ R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 #if HAVE_PTHREAD
 		pthread_create (&th->tid, NULL, _r_th_launcher, th);
 #elif __WINDOWS__ && !defined(__CYGWIN__)
-		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, &th->tid);
+		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
 	}
 	return th;
@@ -70,6 +74,8 @@ R_API int r_th_kill(RThread *th, int force) {
 #else
 	pthread_cancel (th->tid);
 #endif
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	TerminateThread (th->tid, -1);
 #endif
 	return 0;
 }
@@ -97,13 +103,15 @@ R_API bool r_th_start(RThread *th, int enable) {
 
 R_API int r_th_wait(struct r_th_t *th) {
 	int ret = false;
-#if HAVE_PTHREAD
 	void *thret;
 	if (th) {
+#if HAVE_PTHREAD
 		ret = pthread_join (th->tid, &thret);
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+		ret = WaitForSingleObject (th->tid, INFINITE);
+#endif
 		th->running = false;
 	}
-#endif
 	return ret;
 }
 
@@ -113,6 +121,9 @@ R_API int r_th_wait_async(struct r_th_t *th) {
 
 R_API void *r_th_free(struct r_th_t *th) {
 	r_th_kill (th, true);
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	CloseHandle (th->tid);
+#endif
 	r_th_lock_free (th->lock);
 	free (th);
 	return NULL;

@@ -256,8 +256,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case '.':
 		  {
+			  ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
 			  char *comment = r_meta_get_string (
-					  core->anal, R_META_TYPE_COMMENT, addr);
+					  core->anal, R_META_TYPE_COMMENT, at);
 			  if (comment) {
 				  r_cons_println (comment);
 				  free (comment);
@@ -513,7 +514,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						break;
 					}
 				} else if (type == 's') { //Cs
-					char tmp[256] = {0};
+					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
 					name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
@@ -798,6 +799,7 @@ static int cmd_meta(void *data, const char *input) {
 				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 				"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 				"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
+				"CC.", "[addr]", "show comment in current address",
 				"CC!", " [@addr]", "edit comment with $EDITOR",
 				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 				"CCu", " [comment-text] [@addr]", "add unique comment",

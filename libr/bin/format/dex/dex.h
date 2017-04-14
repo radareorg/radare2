@@ -137,6 +137,6 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
 struct r_bin_dex_obj_t *r_bin_dex_new_buf(struct r_buf_t *buf);
 struct r_bin_dex_str_t *r_bin_dex_get_strings (struct r_bin_dex_obj_t* bin);
 
-int dex_read_uleb128 (const ut8 *ptr);
-int dex_read_sleb128 (const char *ptr);
-int dex_uleb128_len (const ut8 *ptr);
+int dex_read_uleb128 (const ut8 *ptr, int size);
+int dex_read_sleb128 (const char *ptr, int size);
+int dex_uleb128_len (const ut8 *ptr, int size);

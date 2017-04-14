@@ -385,11 +385,11 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	int pid, sig;
 	const char *ptr, *help_msg[] = {
 		"Usage:", "dp", " # Process commands",
-		"dp", "", "List current pid and childrens",
+		"dp", "", "List current pid and children",
 		"dp", " <pid>", "List children of pid",
 		"dp*", "", "List all attachable pids",
 		"dp=", "<pid>", "Select pid",
-		"dp-", " <pid>", "Dettach select pid",
+		"dp-", " <pid>", "Detach select pid",
 		"dpa", " <pid>", "Attach and select pid",
 		"dpc", "", "Select forked pid (see dbg.forks)",
 		"dpc*", "", "Display forked pid (see dbg.forks)",
@@ -584,6 +584,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		"dms*", "", "list snapshots in r2 commands",
 		"dms", " addr", "take snapshot with given id of map at address",
 		"dms", "-id", "delete memory snapshot",
+		"dmsA", " id", "apply memory snapshot",
 		"dmsC", " id comment", "add comment for given snapshot",
 		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
 		"dmsw", "", "snapshot of the writable maps",
@@ -657,6 +658,9 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		break;
 	case ' ':
 		r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
+		break;
+	case 'A':
+		r_debug_snap_set_idx (core->dbg, atoi (input + 1));
 		break;
 	case 'C':
 		r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
@@ -890,7 +894,7 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	RBinSection *s;
 	RCore *core = r_core_new ();
 	RList * sects = NULL;
-	char buf[20] = {0};
+	char buf[20] = R_EMPTY;
 	int offset, err, i, j = 0;
 
 	if (!core) {
@@ -1270,14 +1274,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		eprintf ("The address doesn't match with any map.\n");
 		break;
-	case '\0':
-	case '*':
-	case 'j':
-	case 'q':
+	case '\0': // "dm"
+	case '*': // "dm*"
+	case 'j': // "dmj"
+	case 'q': // "dmq"
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, input[0]);
 		break;
-	case '=':
+	case '=': // "dm="
 		r_debug_map_sync (core->dbg);
 		r_debug_map_list_visual (core->dbg, core->offset,
 				r_config_get_i (core->config, "scr.color"),
@@ -2094,6 +2098,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbits", " <index>", "Swap Nth breakpoint trace",
 		//
 		"dbh", " x86", "Set/list breakpoint plugin handlers",
+		"dbh-", " <name>", "Remove breakpoint plugin handler",
 		"drx", " number addr len rwx", "Modify hardware breakpoint",
 		"drx-", "number", "Clear hardware breakpoint",
 		NULL};
@@ -2464,6 +2469,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		case ' ':
 			if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits))
 				eprintf ("Invalid name: '%s'.\n", input + 3);
+			break;
+		case '-':
+			if (!r_bp_plugin_del (core->dbg->bp, input + 4)) {
+				eprintf ("Invalid name: '%s'.\n", input + 4);
+			}
 			break;
 		case '?':
 		default:
@@ -3251,6 +3261,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		"Usage: ds", "", "Step commands",
 		"ds", "", "Step one instruction",
 		"ds", " <num>", "Step <num> instructions",
+		"dsb", "", "Step back one instruction",
 		"dsf", "", "Step until end of frame",
 		"dsi", " <cond>", "Continue until condition matches",
 		"dsl", "", "Step one source line",
@@ -3350,7 +3361,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		break;
 	case 's': // "dss"
 		{
-			char delb[128] = {0};
+			char delb[128] = R_EMPTY;
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
@@ -3372,7 +3383,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		}
 	case 'o': // "dso"
 		{
-			char delb[128] = {0};
+			char delb[128] = R_EMPTY;
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
@@ -3380,6 +3391,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_step_over (core->dbg, times);
 			if (bpi) r_core_cmd0 (core, delb);
+			break;
+		}
+	case 'b': // "dsb"
+		{
+			if (!r_debug_step_back (core->dbg)) {
+				eprintf ("cannot step back\n");
+			}
 			break;
 		}
 	case 'l': // "dsl"
@@ -3445,6 +3463,29 @@ static int cmd_debug(void *data, const char *input) {
 		case 'g': // "dtg"
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
 			break;
+		case 's': // "dts"
+			switch (input[2]) {
+			case 0:
+				r_debug_session_list (core->dbg);
+				break;
+			case '+':
+				r_debug_session_add (core->dbg);
+				break;
+			case 'A':
+				r_debug_session_set_idx (core->dbg, atoi (input + 2));
+				break;
+			default:
+				{
+				const char *help_msg[] = {
+					"Usage:", "dts[*]", "",
+					"dts", "", "List all trace sessions",
+					"dts+", "", "Add trace session",
+					"dtsA", " id", "Apply trace session",
+					NULL };
+				r_core_cmd_help (core, help_msg);
+				}
+			}
+			break;
 		case '-':
 			r_tree_reset (core->dbg->tree);
 			r_debug_trace_free (core->dbg->trace);
@@ -3465,6 +3506,7 @@ static int cmd_debug(void *data, const char *input) {
 					"dtg", "", "Graph call/ret trace",
 					"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
 					"dtgi", "", "Interactive debug trace",
+					"dts", "[?]", "trace sessions",
 					"dt-", "", "Reset traces (instruction/calls)",
 					NULL
 				};
@@ -3631,6 +3673,7 @@ static int cmd_debug(void *data, const char *input) {
 			const char * help_message[] = {
 				"Usage: di", "", "Debugger target information",
 				"di", "", "Show debugger target information",
+				"di*", "", "Same as above, but in r2 commands",
 				"dij", "", "Same as above, but in JSON format",
 				NULL
 			};
@@ -3638,58 +3681,74 @@ static int cmd_debug(void *data, const char *input) {
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			char *escaped_str;
 			switch (input[1]) {
-				case '\0':
+			case '\0':
 #define P r_cons_printf
 #define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
-					if (rdi) {
-						const char *s = r_signal_to_string (core->dbg->reason.signum);
-						P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
-						P ("signal=%s\n", s? s: "none");
-						P ("signum=%d\n", core->dbg->reason.signum);
-						P ("sigpid=%d\n", core->dbg->reason.tid);
-						P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
-						P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
-						P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
-						P ("pid=%d\n", rdi->pid);
-						P ("tid=%d\n", rdi->tid);
-						P ("uid=%d\n", rdi->uid);
-						P ("gid=%d\n", rdi->gid);
-						if (rdi->exe && *rdi->exe)
-							P ("exe=%s\n", rdi->exe);
-						if (rdi->cmdline && *rdi->cmdline)
-							P ("cmdline=%s\n", rdi->cmdline);
-						if (rdi->cwd && *rdi->cwd)
-							P ("cwd=%s\n", rdi->cwd);
-						if (rdi->kernel_stack && *rdi->kernel_stack)
-							P ("kernel_stack=\n%s\n", rdi->kernel_stack);
-					}
-					if (stop != -1) P ("stopreason=%d\n", stop);
-					break;
-				case 'j':
-					P ("{");
-					if (rdi) {
-						const char *s = r_signal_to_string (core->dbg->reason.signum);
-						P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
-						P ("\"signal\":\"%s\",", s? s: "none");
-						P ("\"signum\":%d,", core->dbg->reason.signum);
-						P ("\"sigpid\":%d,", core->dbg->reason.tid);
-						P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
-						P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
-						P ("\"pid\":%d,", rdi->pid);
-						P ("\"tid\":%d,", rdi->tid);
-						P ("\"uid\":%d,", rdi->uid);
-						P ("\"gid\":%d,", rdi->gid);
-						if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
-							if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
-						if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
-					}
-					P ("\"stopreason\":%d}\n", stop);
-					break;
+				if (rdi) {
+					const char *s = r_signal_to_string (core->dbg->reason.signum);
+					P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
+					P ("signal=%s\n", s? s: "none");
+					P ("signum=%d\n", core->dbg->reason.signum);
+					P ("sigpid=%d\n", core->dbg->reason.tid);
+					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
+					P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
+					P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
+					P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
+					P ("pid=%d\n", rdi->pid);
+					P ("tid=%d\n", rdi->tid);
+					P ("uid=%d\n", rdi->uid);
+					P ("gid=%d\n", rdi->gid);
+					if (rdi->exe && *rdi->exe)
+						P ("exe=%s\n", rdi->exe);
+					if (rdi->cmdline && *rdi->cmdline)
+						P ("cmdline=%s\n", rdi->cmdline);
+					if (rdi->cwd && *rdi->cwd)
+						P ("cwd=%s\n", rdi->cwd);
+					if (rdi->kernel_stack && *rdi->kernel_stack)
+						P ("kernel_stack=\n%s\n", rdi->kernel_stack);
+				}
+				if (stop != -1) P ("stopreason=%d\n", stop);
+				break;
+			case '*':
+				if (rdi) {
+					r_cons_printf ("f dbg.signal = %d\n", core->dbg->reason.signum);
+					r_cons_printf ("f dbg.sigpid = %d\n", core->dbg->reason.tid);
+					r_cons_printf ("f dbg.inbp = %d\n", core->dbg->reason.bp_addr? 1: 0);
+					r_cons_printf ("f dbg.sigaddr = 0x%"PFMT64x"\n", core->dbg->reason.addr);
+					r_cons_printf ("f dbg.baddr = 0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
+					r_cons_printf ("f dbg.pid = %d\n", rdi->pid);
+					r_cons_printf ("f dbg.tid = %d\n", rdi->tid);
+					r_cons_printf ("f dbg.uid = %d\n", rdi->uid);
+					r_cons_printf ("f dbg.gid = %d\n", rdi->gid);
+
+				}
+				break;
+			case 'j':
+				P ("{");
+				if (rdi) {
+					const char *s = r_signal_to_string (core->dbg->reason.signum);
+					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
+					P ("\"signal\":\"%s\",", s? s: "none");
+					P ("\"signum\":%d,", core->dbg->reason.signum);
+					P ("\"sigpid\":%d,", core->dbg->reason.tid);
+					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
+					P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
+					P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core, NULL));
+					P ("\"pid\":%d,", rdi->pid);
+					P ("\"tid\":%d,", rdi->tid);
+					P ("\"uid\":%d,", rdi->uid);
+					P ("\"gid\":%d,", rdi->gid);
+					if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
+						if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
+					if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
+				}
+				P ("\"stopreason\":%d}\n", stop);
+				break;
 #undef P
 #undef PS
-				case '?':
-				default:
-					r_core_cmd_help (core, help_message);
+			case '?':
+			default:
+				r_core_cmd_help (core, help_message);
 			}
 			if (rdi)
 				r_debug_info_free (rdi);

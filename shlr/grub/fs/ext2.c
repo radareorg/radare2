@@ -523,7 +523,11 @@ grub_ext2_read_inode (struct grub_ext2_data *data,
   if (grub_errno)
     return grub_errno;
 
-  inodes_per_block = EXT2_BLOCK_SIZE (data) / EXT2_INODE_SIZE (data);
+  int inode_size = EXT2_INODE_SIZE (data);
+  if (inode_size < 1) {
+    return grub_errno = GRUB_ERR_BAD_FS;
+  }
+  inodes_per_block = EXT2_BLOCK_SIZE (data) / inode_size;
   if (inodes_per_block < 1) {
     return grub_errno = GRUB_ERR_BAD_FS;
   }

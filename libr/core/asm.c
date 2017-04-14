@@ -138,7 +138,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				}
 			}
 			if (matches) {
-				code = r_str_concatf (code, "%s; ", op.buf_asm);
+				code = r_str_appendf (code, "%s; ", op.buf_asm);
 				if (matchcount == tokcount - 1) {
 					if (tokcount == 1) {
 						tidx = idx;
@@ -221,7 +221,7 @@ static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 }
 
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid) {
-	RCoreAsmHit hit = {0};
+	RCoreAsmHit hit = R_EMPTY;
 	hit.addr = addr;
 	hit.len = len;
 	hit.valid = is_valid;

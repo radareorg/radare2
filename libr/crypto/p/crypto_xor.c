@@ -6,21 +6,20 @@
 #define MAX_xor_KEY_SIZE 32768
 
 struct xor_state {
-	ut8 key[MAX_xor_KEY_SIZE];
+	ut8 *key;
 	int key_size;
 };
 
 static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) {
 	int i;//index for key
 	
-	if (!state || !key || keylen < 1 || keylen > MAX_xor_KEY_SIZE) {
+	if (!state || !key || keylen < 1) { // || keylen > MAX_xor_KEY_SIZE) {
 		return false;
 	}
 
 	state->key_size = keylen;
-	for(i=0; i < keylen; i++) {
-		state->key[i] = key[i];
-	}
+	state->key = malloc (keylen);
+	memcpy (state->key, key, keylen);
 	return true;
 }
 
@@ -31,7 +30,7 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
 static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	int i;//index for input
 	for (i = 0; i < buflen; i++) {
-			outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
+		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
 	}
 }
 

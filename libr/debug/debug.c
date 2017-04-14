@@ -302,6 +302,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
 	dbg->snaps = r_list_newf (r_debug_snap_free);
+	dbg->sessions = r_list_newf (r_debug_session_free);
 	dbg->pid = -1;
 	dbg->bpsize = 1;
 	dbg->tid = -1;
@@ -345,6 +346,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		r_bp_free (dbg->bp);
 		//r_reg_free(&dbg->reg);
 		r_list_free (dbg->snaps);
+		r_list_free (dbg->sessions);
 		r_list_free (dbg->maps);
 		r_list_free (dbg->maps_user);
 		r_list_free (dbg->threads);
@@ -905,6 +907,43 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
+R_API int r_debug_step_back(RDebug *dbg) {
+	ut64 pc, end;
+	ut8 buf[32];
+	RAnalOp op;
+	RDebugSession *before;
+	if (r_debug_is_dead (dbg)) {
+		return 0;
+	}
+	if (!dbg->anal || !dbg->reg)
+		return 0;
+
+	end = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	/* rollback to previous state */
+	before = r_debug_session_get (dbg, end);
+	if (!before) {
+		return 0;
+	}
+	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
+	r_debug_session_set (dbg, before);
+	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	//eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
+
+	for (;;) {
+		if (r_debug_is_dead (dbg))
+			break;
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		r_io_read_at (dbg->iob.io, pc, buf, sizeof (buf));
+		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
+		//eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
+		if (pc + op.size == end)
+			return 1;
+		if (!r_debug_step (dbg, 1))
+			break;
+	}
+	return 0;
+}
+
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	RDebugReasonType reason, ret = false;
 	RBreakpointItem *bp = NULL;
@@ -948,6 +987,7 @@ repeat:
 #if __linux__
 		if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
+			void linux_attach_new_process (RDebug *dbg);
 			linux_attach_new_process (dbg);
 #endif
 			goto repeat;

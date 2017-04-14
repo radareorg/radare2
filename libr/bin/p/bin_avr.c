@@ -2,10 +2,29 @@
 
 #include <r_bin.h>
 
+#define CHECK4INSTR(b, instr, size) \
+	if (!instr (b) ||\
+		!instr (b + size) ||\
+		!instr (b + size * 2) ||\
+		!instr (b + size * 3)) {\
+		return false;\
+	}
+
+#define CHECK3INSTR(b, instr, size) \
+	if (!instr (b + size) ||\
+		!instr (b + size * 2) ||\
+		!instr (b + size * 3)) {\
+		return false;\
+	}
+
 static ut64 tmp_entry = UT64_MAX;
 
 static bool rjmp(const ut8* b) {
 	return b && ((b[1] & 0xf0) == 0xc0);
+}
+
+static bool jmp(const ut8* b) {
+	return b && (b[0] == 0x0c) && (b[1] == 0x94);
 }
 
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
@@ -14,29 +33,39 @@ static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 	return dst;
 }
 
-static int check_bytes(const ut8 *b, ut64 length) {
-	if (length < 32) {
-		return false;
-	}
-	if (!rjmp (b)) return false;
-	if (!rjmp (b + 2)) return false;
-	if (!rjmp (b + 4)) return false;
-	if (!rjmp (b + 8)) return false;
+static ut64 jmp_dest(const ut8* b) {
+	return (b[2] + (b[3] << 8)) * 2;
+}
+
+static bool check_bytes_rjmp(const ut8 *b, ut64 length) {
+	CHECK3INSTR (b, rjmp, 2);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > length) {
-		return false;
-	}
-	if (!rjmp (b + dst - 2)) {
 		return false;
 	}
 	tmp_entry = dst;
 	return true;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
+
+static bool check_bytes_jmp(const ut8 *b, ut64 length) {
+	CHECK4INSTR (b, jmp, 4);
+	ut64 dst = jmp_dest (b);
+	if (dst < 1 || dst > length) {
+		return false;
+	}
+	tmp_entry = dst;
+	return true;
+}
+
+static bool check_bytes(const ut8 *b, ut64 length) {
+	if (length < 32) {
+		return false;
+	}
+	if (!rjmp (b)) {
+		return check_bytes_jmp (b, length);
+	}
+	return check_bytes_rjmp (b, length);
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -129,7 +158,6 @@ RBinPlugin r_bin_plugin_avr = {
 	.desc = "ATmel AVR MCUs",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
-	.check = &check,
 	.entries = &entries,
 	.symbols = &symbols,
 	.check_bytes = &check_bytes,

@@ -11,6 +11,7 @@ uint64_t unpack_uint64(char *buff, int len);
 uint64_t unpack_uint64_co(char* buff, int len);
 int unpack_hex(char* src, ut64 len, char* dst);
 int pack_hex(char* src, ut64 len, char* dst);
+int pack_hex_uint64(ut64 src, char *dst);
 int hex2int(int ch);
 int int2hex(int i);
 void hexdump(void* ptr, ut64 len, ut64 offset);

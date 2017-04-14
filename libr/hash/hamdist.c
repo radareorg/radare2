@@ -35,7 +35,7 @@ errors that transformed one string into the other.
 static int hamdist(int x, int y) {
 	int dist = 0, val = x^y;
 	while (val) {
-		++dist; 
+		dist++;
 		val &= val - 1;
 	}
 	return dist;
@@ -44,7 +44,7 @@ static int hamdist(int x, int y) {
 R_API ut8 r_hash_hamdist(const ut8 *buf, int len) {
 	int i, x, y;
 	x = y = i = 0;
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		y = buf[i];
 		x = hamdist (x, y);
 	}

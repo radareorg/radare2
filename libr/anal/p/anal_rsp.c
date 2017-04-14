@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - bobby.smiles32@gmail.com */
+/* radare - LGPL - Copyright 2016-2017 - bobby.smiles32@gmail.com */
 /*
  * TODO: finish esil support of the non vector instructions
  * TODO: implement vector instruction using custom esil commands
@@ -11,16 +11,17 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-
 #include "rsp_idec.h"
-
 
 static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	int i;
-	struct {
+	typedef struct {
 		RAnalValue* value;
 		char esil[32];
-	} parsed_operands[RSP_MAX_OPNDS];
+	} ParsedOperands;
+
+	ParsedOperands parsed_operands[RSP_MAX_OPNDS];
+	memset (parsed_operands, 0, sizeof (ParsedOperands) * RSP_MAX_OPNDS);
 	ut32 iw;
 	rsp_instruction r_instr;
 

@@ -11,7 +11,9 @@ static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 	RListIter *it;
 	RBinFile *bf;
 	r_list_foreach (bin->binfiles, it, bf) {
-		if (bf->fd == fd) return bf->id;
+		if (bf->fd == fd) {
+			return bf->id;
+		}
 	}
 	return UT32_MAX;
 }
@@ -22,6 +24,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		"ob", "", "List opened binary files and objid",
 		"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
 		"obb", " [fd]", "Switch to open binfile by fd number",
+		"obr", " [baddr]", "Rebase current bin object",
 		"ob-", " [fd]", "Delete binfile by fd",
 		"obd", " [objid]", "Delete binary file by objid. Do nothing if only one loaded.",
 		"obo", " [objid]", "Switch to open binary file by objid",
@@ -36,7 +39,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '*':
 		r_core_bin_list (core, input[1]);
 		break;
-	case 'b':
+	case 'b': // "obb"
 	{
 		ut32 fd;
 		value = *(input + 3) ? input + 3 : NULL;
@@ -84,6 +87,10 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		free (v);
 		break;
 	}
+	case 'r':
+		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
+		r_core_cmd0 (core, ".is*");
+		break;
 	case 'o':
 		value = input[3] ? input + 3 : NULL;
 		if (!value) {
@@ -301,7 +308,10 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 	if (old_baddr != new_baddr) {
 		r_bin_set_baddr (core->bin, new_baddr);
 		r_config_set_i (core->config, "bin.baddr", new_baddr);
-		r_core_bin_load (core, newfile, new_baddr);
+		r_core_bin_rebase (core, new_baddr);
+		// r_core_bin_load (core, newfile, new_baddr);
+		// reload symbols with new baddr
+		r_core_cmd0 (core, ".isrzM*");
 	}
 #endif
 	r_core_cmd0 (core, "sr PC");
@@ -510,14 +520,20 @@ static int cmd_open(void *data, const char *input) {
 	case 'n': // "on"
 		// like in r2 -n
 		isn = 1;
+		if (input[1] == '*') {
+			r_core_file_list (core, 'n');
+			break;
+		}
+
 		/* fall through */
 	case ' ':
 		{
 			ut64 ba = 0L;
 			ut64 ma = 0L;
 			char *fn = strdup (input + (isn? 2:1));
-			if (!*fn) {
+			if (!fn || !*fn) {
 				eprintf ("Usage: on [file]\n");
+				free (fn);
 				break;
 			}
 			ptr = strchr (fn, ' ');

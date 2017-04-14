@@ -73,8 +73,8 @@ static AbbState *abbstate_new(ut64 len) {
 	abb->len = len;
 	abb->bbs = r_list_new ();
 	if (!abb->bbs) {
-		return NULL;
 		free (buf);
+		return NULL;
 	}
 	abb->nextbbs = r_list_newf (free);
 	abb->fcnents = r_list_newf (free);
@@ -231,8 +231,12 @@ static void printBasicBlocks(AbbState *abb, ut64 fcnaddr, ut64 addr) {
 	}
 }
 
-static void printFunction(ut64 addr, const char *name) {
-	char *_name = name? (char *) name: r_str_newf ("fcn.%" PFMT64x, addr);
+static void printFunction(RCore *core, ut64 addr, const char *name) {
+	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
+	if (!pfx) {
+		pfx = "fcn";
+	}
+	char *_name = name? (char *) name: r_str_newf ("%s.%" PFMT64x, pfx, addr);
 	r_cons_printf ("af+ 0x%08" PFMT64x " %s\n", addr, _name);
 	if (!name) {
 		free (_name);
@@ -247,7 +251,7 @@ static void findFunctions(RCore *core, AbbState *abb) {
 	AbbAddr *a;
 	eprintf ("Found %d functions\n", r_list_length (abb->fcnents));
 	r_list_foreach (abb->fcnents, iter, a) {
-		printFunction (a->addr, NULL); //a->name);
+		printFunction (core, a->addr, NULL); //a->name);
 		printBasicBlocks (abb, a->addr, a->addr);
 	}
 	RAnalBlock *bb;
@@ -255,10 +259,10 @@ static void findFunctions(RCore *core, AbbState *abb) {
 // if there's a flag, consider it a function
 		RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
 		if (fi) {
-			printFunction (bb->addr, fi->name);
+			printFunction (core, bb->addr, fi->name);
 		} else {
 			// eprintf ("# orphan bb 0x%08"PFMT64x"\n", bb->addr);
-			printFunction (bb->addr, NULL);
+			printFunction (core, bb->addr, NULL);
 		}
 		printBasicBlocks (abb, bb->addr, bb->addr);
 		//	printFunction (a->addr, a->name);
@@ -279,7 +283,314 @@ static void findFunctions(RCore *core, AbbState *abb) {
 #endif
 }
 
+typedef enum bb_type {
+	TRAP,
+	NORMAL,
+	JUMP,
+	FAIL,
+	CALL,
+} bb_type_t;
+
+typedef struct bb {
+	ut64 start;
+	ut64 end;
+	ut64 jump;
+	ut64 fail;
+	int score;
+	int called;
+	int reached;
+	bb_type_t type;
+} bb_t;
+
+static int bb_cmp (void *_a, void *_b) {
+	bb_t *a = (bb_t*)_a;
+	bb_t *b = (bb_t*)_b;
+	return b->start - a->start;
+}
+
+static void init_bb (bb_t* bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score, int reached, int called) {
+	if (bb) {
+		bb->start = start;
+		bb->end = end;
+		bb->jump = jump;
+		bb->fail = fail;
+		bb->type = type;
+		bb->score = score;
+		bb->reached = reached;
+		bb->called = called;
+	}
+}
+
+static int add_bb (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
+	if (!bb) {
+		eprintf ("Failed to calloc mem for new basic block!\n");
+		return false;
+	}
+	init_bb (bb, start, end, jump, fail, type, score, 0, 0);
+	if (jump < UT64_MAX) {
+		bb_t *jump_bb = (bb_t*) R_NEW0 (bb_t);
+		if (!jump_bb) {
+			eprintf ("Failed to allocate memory for jump block\n");
+			free (bb);
+			return false;
+		}
+		if (type == CALL) {
+			init_bb (jump_bb, jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, 0, 1, 1);
+		} else {
+			init_bb (jump_bb, jump, UT64_MAX, UT64_MAX, UT64_MAX, JUMP, 0, 1, 0);
+		}
+		r_list_append (block_list, jump_bb);
+	}
+	if (fail < UT64_MAX) {
+		bb_t *fail_bb = (bb_t*) R_NEW0 (bb_t);
+		if (!fail_bb) {
+			eprintf ("Failed to allocate memory for fail block\n");
+			free (bb);
+			return false;
+		}
+		init_bb (fail_bb, fail, UT64_MAX, UT64_MAX, UT64_MAX, FAIL, 0, 1, 0);
+		r_list_append (block_list, fail_bb);
+	}
+	r_list_append (block_list, bb);
+	return true;
+}
+
+void dump_block(bb_t *block) {
+	eprintf ("s: 0x%"PFMT64x" e: 0x%"PFMT64x" j: 0x%"PFMT64x" f: 0x%"PFMT64x"\n"
+			, block->start, block->end, block->jump, block->fail);
+}
+
+void dump_blocks (RList* list) {
+	RListIter *iter;
+	bb_t *block = NULL;
+	r_list_foreach (list, iter, block) {
+		dump_block(block);
+	}
+}
+
+#define Fhandled(x) sdb_fmt(0, "handled.%"PFMT64x"", x)
 R_API bool core_anal_bbs(RCore *core, ut64 len) {
+	ut64 cur = 0;
+	ut64 start = core->offset;
+	ut64 size = len;
+	ut64 b_start = start;
+	RAnalOp *op;
+	RListIter *iter;
+	int block_score = 0;
+	RList *block_list;
+	bb_t *block = NULL;
+
+	Sdb *sdb = sdb_new0 ();
+	if (!sdb) {
+		eprintf ("Failed to initialize sdb db\n");
+		return 0;
+	}
+
+	block_list = r_list_newf(free);
+
+	while (cur < size) {
+		op = r_core_anal_op (core, start + cur);
+
+		if (!op || !op->mnemonic) {
+			block_score -= 10;
+			cur += 1;
+			continue;
+		}
+
+		if (op->mnemonic[0] == '?') {
+			eprintf ("Cannot analyze opcode at %"PFMT64x"\n", start + cur);
+			block_score -= 10;
+			cur += 1;
+			continue;
+		}
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_NOP:
+			break;
+		case R_ANAL_OP_TYPE_CALL:
+			add_bb (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
+			break;
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_ICALL:
+		case R_ANAL_OP_TYPE_RCALL:
+		case R_ANAL_OP_TYPE_IRCALL:
+			break;
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
+		case R_ANAL_OP_TYPE_JMP:
+			add_bb (block_list, b_start, start + cur + op->size, op->jump, UT64_MAX, NORMAL, block_score);
+			b_start = start + cur + op->size;
+			block_score = 0;
+			break;
+		case R_ANAL_OP_TYPE_TRAP:
+			// we dont want to add trap stuff
+			if (b_start < start + cur) {
+				add_bb (block_list, b_start, start + cur, UT64_MAX, UT64_MAX, NORMAL, block_score);
+			}
+			b_start = start + cur + op->size;
+			block_score = 0;
+			break;
+		case R_ANAL_OP_TYPE_RET:
+			add_bb (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, NORMAL, block_score);
+			b_start = start + cur + op->size;
+			block_score = 0;
+			break;
+		case R_ANAL_OP_TYPE_CJMP:
+			add_bb (block_list, b_start, start + cur + op->size, op->jump, start + cur + op->size, NORMAL, block_score);
+			b_start = start + cur + op->size;
+			block_score = 0;
+			break;
+		case R_ANAL_OP_TYPE_UNK:
+		case R_ANAL_OP_TYPE_ILL:
+			block_score -= 10;
+			break;
+		default:
+			break;
+		}
+		cur += op->size;
+		r_anal_op_free (op);
+		op = NULL;
+	}
+
+	//eprintf ("Before sort:\n");
+	//dump_blocks( block_list);
+	//eprintf ("After sort:\n");
+	RList *result = r_list_newf (free);
+	if (!result) {
+		eprintf ("Failed to create resulting list\n");
+		//TODO handle error
+	}
+
+	r_list_sort (block_list, (RListComparator)bb_cmp);
+	//dump_blocks( block_list);
+	eprintf ("First run creates %d blocks\n", block_list->length);
+	eprintf ("## Sorting done ###\n");
+	while (block_list->length > 0) {
+		block = r_list_pop (block_list);
+		if (!block) {
+			eprintf ("Failed to get next block from list\n");
+			continue;
+		}
+
+		if (block_list->length > 0) {
+			bb_t *next_block = (bb_t*) r_list_iter_get_data (block_list->tail);
+			if (!next_block) {
+				eprintf ("No next block to compare with!\n");
+			}
+
+			// current block is just a split block
+			if (block->start == next_block->start && block->end == UT64_MAX) {
+				if (block->type != CALL && next_block->type != CALL) {
+					next_block->reached += 1;
+				}
+				free (block);
+				continue;
+			}
+
+			// block and next_block share the same start so we copy the
+			// contenct of the block into the next_block and skip the current one
+			if (block->start == next_block->start && next_block->end == UT64_MAX) {
+				*next_block = *block;
+				if (next_block->type != CALL)  {
+					next_block->reached += 1;
+				}
+				free (block);
+				continue;
+			}
+
+			if (block->end < UT64_MAX && next_block->start < block->end && next_block->start > block->start) {
+				if (next_block->jump == UT64_MAX) {
+					next_block->jump = block->jump;
+				}
+
+				if (next_block->fail == UT64_MAX) {
+					next_block->fail = block->fail;
+				}
+
+				next_block->end = block->end;
+				block->end = next_block->start;
+				block->jump = next_block->start;
+				block->fail = UT64_MAX;
+				next_block->type = block->type;
+				if (next_block->type != CALL)  {
+					next_block->reached += 1;
+				}
+			}
+		}
+
+		if (r_io_is_valid_offset (core->io, block->start, false)) {
+			if (block->score >= 0) {
+				sdb_ptr_set (sdb, sdb_fmt (0, "bb.0x%08"PFMT64x, block->start), block, 0);
+				r_list_append (result, block);
+			}
+		}
+	}
+
+	// finally search for functions
+	// we simply assume that non reached blocks or called blocks
+	// are functions
+	r_list_foreach (result, iter, block) {
+		if (block && (block->reached == 0 || block->called >= 1)) {
+			printFunction(core, block->start, NULL);
+			RStack *stack = r_stack_newf (100, free);
+			bb_t *jump = NULL;
+			bb_t *fail = NULL;
+
+			if (!r_stack_push (stack, (void*)block)) {
+				eprintf ("Failed to push initial block\n");
+			}
+
+			bb_t *cur = NULL;
+			while (!r_stack_is_empty (stack)) {
+				cur = (bb_t*) r_stack_pop (stack);
+				if (!cur) {
+					continue;
+				}
+				sdb_num_set (sdb, Fhandled(cur->start), 1, 0);
+				// we ignore negative blocks
+				if ((st64)(cur->end - cur->start) < 0) {
+					// XXX leak of crash free (cur);
+					continue;
+				}
+				r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %llu 0x%08"PFMT64x" 0x%08"PFMT64x"\n"
+						, block->start, cur->start, cur->end - cur->start, cur->jump, cur->fail);
+
+				if (cur->jump < UT64_MAX && !sdb_num_get (sdb, Fhandled(cur->jump), NULL)) {
+					jump = sdb_ptr_get (sdb, sdb_fmt (0, "bb.0x%08"PFMT64x, cur->jump), NULL);
+					if (!jump) {
+						eprintf ("Failed to get jump block\n");
+						continue;
+					}
+					if (!r_stack_push (stack, (void*)jump)) {
+						eprintf ("Failed to push jump block to stack\n");
+					}
+				}
+
+				if (cur->fail < UT64_MAX && !sdb_num_get (sdb, Fhandled(cur->fail), NULL)) {
+					fail = sdb_ptr_get (sdb, sdb_fmt (0, "bb.0x%08" PFMT64x, cur->fail), NULL);
+					if (!fail) {
+						eprintf ("Failed to get fail block\n");
+						continue;
+					}
+					if (!r_stack_push (stack, (void*)fail)) {
+						eprintf ("Failed to push jump block to stack\n");
+					}
+				}
+			}
+			r_stack_free (stack);
+			// free (block);
+		}
+	}
+
+	// sdb_free (sdb);
+	eprintf ("After merge %d blocks\n", result->length);
+	r_list_free (result);
+	return true;
+}
+
+R_API bool core_anal_bbs2(RCore *core, ut64 len) {
 	AbbState *abb = abbstate_new (len);
 	if (!abb) {
 		return false;
@@ -306,7 +617,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 		oi = i;
 		ut64 obb_addr = abb->bb_addr;
 mountain:
-		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX (0, len - i), 16))) {
+		if (r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX (0, len - i), 16)) < 1) {
 			continue;
 		}
 		int next = bbExist (abb, at + i);
@@ -365,10 +676,7 @@ mountain:
 						}
 						free (nat);
 					} while (!r_list_empty (abb->nextbbs));
-					if (ti != -1) {
-						i = ti;
-						ti = -1;
-					}
+					ti = -1;
 				}
 				i = oi;
 				abb->bb_addr = obb_addr;

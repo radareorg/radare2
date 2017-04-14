@@ -265,7 +265,7 @@ static siginfo_t *linux_get_siginfo(int pid) {
 }
 
 static bool has_map_deleted_part(char *name) {
-	if (!name) {
+	if (name) {
 		const char deleted_str[] = "(deleted)";
 		int len_name = strlen (name);
 		int len_suffx = strlen (deleted_str);

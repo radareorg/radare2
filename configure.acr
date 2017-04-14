@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 1.3.0-git
+VERSION 1.4.0-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -81,8 +81,6 @@ IFNULL SSL_LDFLAGS {
 }
 
 ARG_WITH USE_RPATH rpath use rpath to build ;
-
-CHKLIB lua5.1
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;

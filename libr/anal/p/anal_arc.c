@@ -457,6 +457,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return 0;
 	}
+	if (len < 8) {
+		//when r_read_me32/be32 oob read
+		return 0;
+	}
 
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->ptr = UT64_MAX;

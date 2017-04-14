@@ -1,7 +1,14 @@
-#CC=arm-linux-androideabi-gcc
+# Ugly yet that's the path inside dockcross
+ifeq (${PATH},"/usr/arm-linux-androideabi/bin/${ARCH}-linux-androideabi-gcc")
+CC=${ARCH}-linux-androideabi-gcc
+RANLIB={ARCH}-linux-androideabi-ranlib
+USERCC=${ARCH}-linux-androideabi-gcc -fPIC -fPIE
+else
 CC=ndk-gcc -fPIC -fPIE
 #RANLIB=ndk-ranlib
 USERCC=ndk-gcc -fPIC -fPIE
+endif
+
 ARCH=arm
 
 ifeq (${NDK_ARCH},x86)

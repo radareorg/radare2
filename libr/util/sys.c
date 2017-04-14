@@ -46,6 +46,10 @@ extern char **environ;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 # include <io.h>
 # include <winbase.h>
+typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
+typedef DWORD WINAPI (*GetProcessImageFileNameA_t) (HANDLE, LPTSTR, DWORD);
+static GetProcessImageFileNameA_t GetProcessImageFileNameA;
+static QueryFullProcessImageNameA_t QueryFullProcessImageNameA;
 #endif
 
 R_LIB_VERSION(r_util);
@@ -158,7 +162,7 @@ R_API void r_sys_backtrace(void) {
 #ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
-	printf ("Backtrace %zd stack frames.\n", size);
+	eprintf ("Backtrace %zd stack frames.\n", size);
 	backtrace_symbols_fd (array, size, 2);
 #elif __APPLE__
 	void **fp = (void **) __builtin_frame_address (0);
@@ -442,13 +446,13 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				if (len) {
 					*len += bytes;
 				}
-				outputptr = r_str_concat (outputptr, buffer);
+				outputptr = r_str_append (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
 				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
 					break;
 				}
 				buffer[sizeof(buffer) - 1] = '\0';
-				*sterr = r_str_concat (*sterr, buffer);
+				*sterr = r_str_append (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				int inputptr_len = strlen (inputptr);
 				bytes = write (sh_in[1], inputptr, inputptr_len);
@@ -774,25 +778,27 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	BOOL WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
-	DWORD WINAPI (*GetProcessImageFileNameA) (HANDLE, LPTSTR, DWORD);
 	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
 	if (!kernel32) {
 		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
-	QueryFullProcessImageNameA = GetProcAddress (kernel32, "QueryFullProcessImageNameA");
-	if (!QueryFullProcessImageNameA) {
-		// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
-		HANDLE psapi = LoadLibrary ("Psapi.dll");
-		if (!psapi) {
-			eprintf ("Error getting the handle to Psapi.dll\n");
-			return NULL;
+	if (!GetProcessImageFileNameA) {
+		if (!QueryFullProcessImageNameA) {
+			QueryFullProcessImageNameA = (QueryFullProcessImageNameA_t) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
 		}
-		GetProcessImageFileNameA = GetProcAddress (psapi, "GetProcessImageFileNameA");
-		if (!GetProcessImageFileNameA) {
-			eprintf ("Error getting the address of GetProcessImageFileNameA\n");
-			return NULL;
+		if (!QueryFullProcessImageNameA) {
+			// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
+			HANDLE psapi = LoadLibrary ("Psapi.dll");
+			if (!psapi) {
+				eprintf ("Error getting the handle to Psapi.dll\n");
+				return NULL;
+			}
+			GetProcessImageFileNameA = (GetProcessImageFileNameA_t) GetProcAddress (psapi, "GetProcessImageFileNameA");
+			if (!GetProcessImageFileNameA) {
+				eprintf ("Error getting the address of GetProcessImageFileNameA\n");
+				return NULL;
+			}
 		}
 	}
 	HANDLE handle = NULL;
@@ -802,13 +808,13 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (handle != NULL) {
 		if (QueryFullProcessImageNameA) {
 			if (QueryFullProcessImageNameA (handle, 0, filename, &maxlength) == 0) {
-				eprintf("Error calling QueryFullProcessImageNameA\n");
+				eprintf ("Error calling QueryFullProcessImageNameA\n");
 				CloseHandle (handle);
 				return NULL;
 			}
 		} else {
 			if (GetProcessImageFileNameA (handle, filename, maxlength) == 0) {
-				eprintf("Error calling GetProcessImageFileNameA\n");
+				eprintf ("Error calling GetProcessImageFileNameA\n");
 				CloseHandle (handle);
 				return NULL;
 			}
@@ -878,6 +884,8 @@ R_API char *r_sys_whoami (char *buf) {
 R_API int r_sys_getpid() {
 #if __UNIX__
 	return getpid ();
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	return GetCurrentProcessId();
 #else
 #warning r_sys_getpid not implemented for this platform
 	return -1;

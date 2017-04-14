@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2015 pancake */
+/* radare - LGPL - Copyright 2013-2017 pancake */
 // r2 -Desil ls
 
 #include <r_asm.h>
@@ -136,7 +136,6 @@ static int __reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 
 RDebugPlugin r_debug_plugin_esil = {
 	.name = "esil",
-	.keepio = 1,
 	.license = "LGPL3",
 	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
@@ -156,7 +155,7 @@ RDebugPlugin r_debug_plugin_esil = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_esil,
 	.version = R2_VERSION

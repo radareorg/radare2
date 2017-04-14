@@ -330,7 +330,7 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 		len--;
 	}
 
-	while (len-- > 0) {
+	while ((len = strlen (in)) > 0) {
 		if (!(*in == '$' && (RS("$SP$", '@')
 				|| RS("$BP$", '*')
 				|| RS("$RF$", '&')

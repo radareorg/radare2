@@ -83,7 +83,7 @@ int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 								} else {
 									name = r_reg_get_name (dbg->reg, R_REG_NAME_A1);
 								}
-								b->data = r_str_concatf (b->data, ";ps@r:%s", name);
+								b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 								dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
 							} else if (r_str_startswith (p, "dbg.unlibs")) {
 								dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
@@ -159,7 +159,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
-			eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", data);
+			eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
 			add_and_attach_new_thread (dbg, (int)data);
 			return R_DEBUG_REASON_NEW_TID;
 		}
@@ -171,7 +171,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
-			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", data);
+			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
 			dbg->forked_pid = data;
 			// TODO: more handling here?
 			/* we have a new process that we are already tracing */
@@ -183,7 +183,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, data);
+		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, (ut64)data);
 		return R_DEBUG_REASON_EXIT_PID;
 	default:
 		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
@@ -262,7 +262,7 @@ static int stop_process (int pid) {
 }
 				
 void linux_attach_new_process (RDebug *dbg) {
-	int ret = detach_procs_and_threads (dbg);
+	(void)detach_procs_and_threads (dbg);
 
 	if (dbg->threads) {
 		r_list_free (dbg->threads);
@@ -306,15 +306,21 @@ static void set_pid_signalled_status (RDebug *dbg, int pid, bool value) {
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
-	RDebugReasonType reason;
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	bool done = false;
-	bool self_signalled;
 
+	int status, flags = __WALL | WNOHANG;
 repeat:
 	do {
-		self_signalled = get_pid_signalled_status (dbg, pid);
-		int status;
-		int ret = waitpid (pid, &status, __WALL|WNOHANG);
+		bool self_signalled = get_pid_signalled_status (dbg, pid);
+		int ret = waitpid (pid, &status, flags);
+		if (ret < 0) {
+			perror ("waitpid");
+			break;
+		}
+		if (ret == 0) {
+			flags = __WALL;
+		}
 		if (ret) {
 			reason = linux_ptrace_event (dbg, pid, status);
 
@@ -376,13 +382,14 @@ int match_pid(const void *pid_o, const void *th_o) {
 }
 
 void add_and_attach_new_thread(RDebug *dbg, int tid) {
+	int uid = getuid(); // XXX
 	char info[1024] = {0};
 	RDebugPid *tid_info;
 
 	if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 		tid_info = fill_pid_info (info, NULL, tid);
 	} else {
-		tid_info = r_debug_pid_new ("new_path", tid, 's', 0);
+		tid_info = r_debug_pid_new ("new_path", tid, uid, 's', 0);
 	}
 	(void) linux_attach (dbg, tid);
 	r_list_append (dbg->threads, tid_info);
@@ -563,8 +570,12 @@ RList *linux_thread_list(int pid, RList *list) {
 			}
 			int tid = atoi (de->d_name);
 			char info[1024];
-
+			int uid = 0;
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
+				ptr = strstr (info, "Uid:");
+				if (ptr) {
+					uid = atoi (ptr + 4);
+				}
 				ptr = strstr (info, "Tgid:");
 				if (ptr) {
 					int tgid = atoi (ptr + 5);
@@ -586,7 +597,7 @@ RList *linux_thread_list(int pid, RList *list) {
 				// Get information about pid (status, pc, etc.)
 				pid_info = fill_pid_info (info, buf, tid);
 			} else {
-				pid_info = r_debug_pid_new (buf, tid, 's', 0);
+				pid_info = r_debug_pid_new (buf, tid, uid, 's', 0);
 			}
 			r_list_append (list, pid_info);
 		}
@@ -600,8 +611,12 @@ RList *linux_thread_list(int pid, RList *list) {
 			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
 				continue;
 			}
-
+			int uid = 0;
 			/* look for a thread group id */
+			ptr = strstr (buf, "Uid:");
+			if (ptr) {
+				uid = atoi (ptr + 4);
+			}
 			ptr = strstr (buf, "Tgid:");
 			if (ptr) {
 				int tgid = atoi (ptr + 5);
@@ -614,8 +629,7 @@ RList *linux_thread_list(int pid, RList *list) {
 					/* fall back to auto-id */
 					snprintf (buf, sizeof(buf), "thread_%d", thid++);
 				}
-
-				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
 		}
 	}

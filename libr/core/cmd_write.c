@@ -365,6 +365,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 		if (out) {
 			r_io_write_at (core->io, core->offset,
 				(ut8*)out, strlen (out));
+			r_core_block_read (core);
 			free (out);
 		}
 	}
@@ -464,7 +465,8 @@ static int cmd_write(void *data, const char *input) {
 			if (len>0) {
 				ut8 *buf = calloc (1, len);
 				if (buf) {
-					r_io_write (core->io, buf, len);
+					r_io_write_at (core->io, core->offset, buf, len);
+					r_core_block_read (core);
 					free (buf);
 				} else eprintf ("Cannot allocate %d bytes\n", (int)len);
 			}
@@ -697,8 +699,15 @@ static int cmd_write(void *data, const char *input) {
 					free (data);
 				}
 			} else {
-				eprintf ("Usage: wp [-|r2patch-file]\n"
-			         "TODO: rapatch format documentation here\n");
+				r_cons_printf ("Usage: wp [-|r2patch-file]\n"
+					" ^# -> comments\n"
+					" . -> execute command\n"
+					" ! -> execute command\n"
+					" OFFSET { code block }\n"
+					" OFFSET \"string\"\n"
+					" OFFSET 01020304\n"
+					" OFFSET : assembly\n"
+					" + {code}|\"str\"|0210|: asm\n");
 			}
 		}
 		break;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -31,7 +31,8 @@ static inline bool setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	return true;
 }
 
-static Sdb* get_sdb(RBinObject *o) {
+static Sdb* get_sdb(RBinFile *bf) {
+	RBinObject *o = bf->o;
 	if (o && o->bin_obj) {
 		struct Elf_(r_bin_elf_obj_t) *bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
 		return bin->kv;
@@ -71,7 +72,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 }
 
 /* TODO: must return bool */
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o) {
@@ -134,7 +135,8 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
-			//ret->vaddr --; // noes
+			ret->vaddr--; 
+			ret->paddr--; 
 		}
 	}
 	return ret;
@@ -322,7 +324,8 @@ static RList* sections(RBinFile *arch) {
 static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **sym) {
 	int bin_bits = Elf_(r_bin_elf_get_bits) (bin);
 	RBinSymbol *ptr = *sym;
-	if (ptr->name[0] == '$' && !ptr->name[2]) {
+	int len = strlen (ptr->name);
+	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
 		switch (ptr->name[1]) {
 		case 'a' : //arm
 			ptr->bits = 32;
@@ -420,6 +423,11 @@ static RList* symbols(RBinFile *arch) {
 		ptr->type = r_str_const (symbol[i].type);
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
+		//special case where there is not entry in the plt for the import
+		if (ptr->vaddr == UT32_MAX) {
+			ptr->paddr = 0;
+			ptr->vaddr = 0;
+		}
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
@@ -589,10 +597,9 @@ static RList* relocs(RBinFile *arch) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (arch));
@@ -695,15 +702,15 @@ static RList* patch_relocs(RBin *b) {
 		return relocs (r_bin_cur (b));
 	}
 	r_list_foreach (io->sections, iter, s) {
-		if (s->offset > offset) {
-			offset = s->offset;
+		if (s->paddr > offset) {
+			offset = s->paddr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->offset + g->size;
+	n_off = g->paddr + g->size;
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
@@ -873,15 +880,21 @@ static ut64 size(RBinFile *arch) {
 
 #if !R_BIN_ELF64 && !R_BIN_CGC
 
-static int check_bytes(const ut8 *buf, ut64 length) {
-	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
-		&& buf[4] != 2;
+static void headers32(RBinFile *arch) {
+#define p arch->rbin->cb_printf
+	const ut8 *buf = r_buf_get_at (arch->buf, 0, NULL);
+	p ("0x00000000  ELF MAGIC   0x%08x\n", r_read_le32 (buf));
+	p ("0x00000004  Type        0x%04x\n", r_read_le16 (buf + 4));
+	p ("0x00000006  Machine     0x%04x\n", r_read_le16 (buf + 6));
+	p ("0x00000008  Version     0x%08x\n", r_read_le32 (buf + 8));
+	p ("0x0000000c  Entrypoint  0x%08x\n", r_read_le32 (buf + 12));
+	p ("0x00000010  PhOff       0x%08x\n", r_read_le32 (buf + 16));
+	p ("0x00000014  ShOff       0x%08x\n", r_read_le32 (buf + 20));
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
+		&& buf[4] != 2;
 }
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
@@ -984,13 +997,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 RBinPlugin r_bin_plugin_elf = {
 	.name = "elf",
-	.desc = "ELF format r_bin plugin",
+	.desc = "ELF format r2 plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
@@ -1002,6 +1014,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.imports = &imports,
 	.info = &info,
 	.fields = &fields,
+	.header = &headers32,
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,

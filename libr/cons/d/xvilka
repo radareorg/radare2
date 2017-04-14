@@ -45,7 +45,7 @@ ec graph.box3 magenta
 ec graph.box4 rgb:000000
 ec graph.true green
 ec graph.false red
-ec graph.trufae blube
+ec graph.trufae blue
 ec graph.current blue
 ec graph.traced yellow
 ec gui.cflow yellow

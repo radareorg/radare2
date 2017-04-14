@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2015-2017 - pancake, alvaro_fe */
 
 #include <r_userconf.h>
 #if DEBUGGER
@@ -437,7 +437,7 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 		thread->state_size = sizeof (thread->gpr);
 		memcpy (&state, &thread->gpr, sizeof (R_REG_T));
 		r_list_append (list, r_debug_pid_new (thread->name,
-			thread->port, 's', CPU_PC));
+			thread->port, getuid (), 's', CPU_PC));
 	}
 	return list;
 }
@@ -786,6 +786,25 @@ static void xnu_collect_thread_state (thread_t port, void *tirp) {
 
 #define CORE_ALL_SECT 0
 
+#include <sys/sysctl.h>
+
+static uid_t uidFromPid(pid_t pid) {
+	uid_t uid = -1;
+
+	struct kinfo_proc process;
+	size_t procBufferSize = sizeof (process);
+
+	// Compose search path for sysctl. Here you can specify PID directly.
+	const u_int pathLenth = 4;
+	int path[pathLenth] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+	int sysctlResult = sysctl (path, pathLenth, &process, &procBufferSize, NULL, 0);
+	// If sysctl did not fail and process with PID available - take UID.
+	if ((sysctlResult == 0) && (procBufferSize != 0)) {
+		uid = process.kp_eproc.e_ucred.cr_uid;
+	}
+	return uid;
+}
+
 bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	int error = 0, i;
 	int tstate_size;
@@ -866,7 +885,7 @@ cleanup:
 }
 
 RDebugPid *xnu_get_pid (int pid) {
-	int psnamelen, foo, nargs, mib[3];
+	int psnamelen, foo, nargs, mib[3], uid;
 	size_t size, argmax = 4096;
 	char *curr_arg, *start_args, *iter_args, *end_args;
 	char *procargs = NULL;
@@ -881,6 +900,8 @@ RDebugPid *xnu_get_pid (int pid) {
 		return NULL;
 	}
 #endif
+	uid = uidFromPid (pid);
+
 	/* Allocate space for the arguments. */
 	procargs = (char *)malloc (argmax);
 	if (!procargs) {
@@ -911,7 +932,7 @@ RDebugPid *xnu_get_pid (int pid) {
 
 	// copy the number of argument to nargs
 	memcpy (&nargs, procargs, sizeof (nargs));
-	iter_args =  procargs + sizeof (nargs);
+	iter_args = procargs + sizeof (nargs);
 	end_args = &procargs[size - 30]; // end of the argument space
 	if (iter_args >= end_args) {
 		eprintf ("getcmdargs(): argument length mismatch");
@@ -930,12 +951,6 @@ RDebugPid *xnu_get_pid (int pid) {
 		free (procargs);
 		return NULL;
 	}
-	/* Iterate through the '\0'-terminated strings and add each string
-	 * to the Python List arglist as a Python string.
-	 * Stop when nargs strings have been extracted.  That should be all
-	 * the arguments.  The rest of the strings will be environment
-	 * strings for the command.
-	 */
 	curr_arg = iter_args;
 	start_args = iter_args; //reset start position to beginning of cmdline
 	foo = 1;
@@ -949,7 +964,7 @@ RDebugPid *xnu_get_pid (int pid) {
 				foo = 0;
 			} else {
 				psname[psnamelen] = ' ';
-				memcpy (psname+psnamelen+1, curr_arg, alen+1);
+				memcpy (psname + psnamelen + 1, curr_arg, alen + 1);
 			}
 			psnamelen += alen;
 			//printf("arg[%i]: %s\n", iter_args, curr_arg);
@@ -971,7 +986,7 @@ RDebugPid *xnu_get_pid (int pid) {
 		return NULL;
 	}
 #endif
-	return r_debug_pid_new (psname, pid, 's', 0); // XXX 's' ??, 0?? must set correct values
+	return r_debug_pid_new (psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
 }
 
 kern_return_t mach_vm_region_recurse (

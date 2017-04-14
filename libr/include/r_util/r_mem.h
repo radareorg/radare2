@@ -31,6 +31,8 @@ R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
 R_API void *r_mem_dup(void *s, int l);
+R_API void *r_mem_alloc(int sz);
+R_API void r_mem_free(void *);
 R_API void r_mem_reverse(ut8 *b, int l);
 R_API int r_mem_protect(void *ptr, int size, const char *prot);
 R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num);
@@ -44,4 +46,5 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
 R_API int r_mem_count(const ut8 **addr);
 R_API bool r_mem_is_printable (const ut8 *a, int la);
+R_API bool r_mem_is_zero(const ut8 *b, int l);
 #endif //  R_MEM_H

@@ -3,12 +3,23 @@
 #include <r_util.h>
 #include <r_print.h>
 
-R_API char* r_print_json_indent(const char* s, bool color) {
+
+static void doIndent(int idt, char** o, const char *tab) {
+	int i;
+	char *x;
+	for (i = 0; i < idt; i++) {
+		for (x = (char*) tab; *x; x++) {
+			*(*o)++ = *x;
+		}
+	}
+}
+
+R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 	if (!color) {
-		return sdb_json_indent (s);
+		return sdb_json_indent (s, tab);
 	}
 	int indent = 0;
-	int i, instr = 0;
+	int instr = 0;
 	bool isValue = false;
 	int osz;
 	char* o, * O, * OE, * tmp;
@@ -73,7 +84,6 @@ R_API char* r_print_json_indent(const char* s, bool color) {
 		if (*s == '\n' || *s == '\r' || *s == '\t' || *s == ' ') {
 			continue;
 		}
-		#define INDENT(x) indent += x; for (i = 0; i < indent; i++) *o++ = '\t'
 		switch (*s) {
 		case ':':
 			*o++ = *s;
@@ -101,20 +111,22 @@ R_API char* r_print_json_indent(const char* s, bool color) {
 			*o++ = *s;
 			*o++ = '\n';
 			isValue = false;
-			INDENT (0);
+			doIndent (indent, &o, tab);
 			break;
 		case '{':
 		case '[':
 			isValue = false;
 			*o++ = *s;
 			*o++ = (indent != -1)? '\n': ' ';
-			INDENT (1);
+			indent++;
+			doIndent (indent, &o, tab);
 			break;
 		case '}':
 		case ']':
 			isValue = false;
 			*o++ = '\n';
-			INDENT (-1);
+			indent--;
+			doIndent (indent, &o, tab);
 			*o++ = *s;
 			break;
 		default:

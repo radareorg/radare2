@@ -114,6 +114,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				}
 			}
 			write (1, "\n\r", 2);
+			// reset colors for next line
+			SetConsoleTextAttribute (hConsole, 1 | 2 | 4 | 8);
 			linelen = 0;
 			continue;
 		}

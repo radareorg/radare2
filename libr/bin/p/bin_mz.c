@@ -4,10 +4,10 @@
 #include <r_bin.h>
 #include "mz/mz.h"
 
-static Sdb * get_sdb(RBinObject *o) {
+static Sdb * get_sdb(RBinFile *bf) {
 	const struct r_bin_mz_obj_t *bin;
-	if (o && o->bin_obj) {
-		bin = (struct r_bin_mz_obj_t *) o->bin_obj;
+	if (bf && bf->o && bf->o->bin_obj) {
+		bin = (struct r_bin_mz_obj_t *) bf->o->bin_obj;
 		if (bin && bin->kv) {
 			return bin->kv;
 		}
@@ -26,7 +26,7 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int exth_offset;
 	int ret = false;
 	if (!buf || length <= 0x3d) {
@@ -63,12 +63,6 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	return ret;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	const ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
 		ut64 loadaddr, Sdb *sdb) {
 	const struct r_bin_mz_obj_t *res = NULL;
@@ -86,7 +80,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
 	return (void *)res;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	if (!arch || !arch->o) {
 		return false;
 	}
@@ -214,7 +208,6 @@ RBinPlugin r_bin_plugin_mz = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.sections = &sections,

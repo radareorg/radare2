@@ -1,11 +1,11 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=1.2.0
+PREVIOUS_RELEASE=1.3.0
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
 BUILDSEC=$(shell date "+__%H:%M:%S")
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
 USE_ZIP=YES
@@ -186,13 +186,13 @@ install-man-symlink:
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
 install-doc:
-	${INSTALL_DIR} "${DESTDIR}${DATADIR}/doc/radare2"
-	for FILE in doc/* ; do ${INSTALL_DATA} $$FILE "${DESTDIR}${DATADIR}/doc/radare2" ; done
+	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
+	for FILE in doc/* ; do ${INSTALL_DATA} $$FILE "${DESTDIR}${DOCDIR}" ; done
 
 install-doc-symlink:
-	${INSTALL_DIR} "${DESTDIR}${DATADIR}/doc/radare2"
+	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
 	cd doc ; for FILE in * ; do \
-		ln -fs "${PWD}/doc/$$FILE" "${DESTDIR}${DATADIR}/doc/radare2" ; done
+		ln -fs "${PWD}/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
 install love: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1
@@ -209,6 +209,7 @@ install love: install-doc install-man install-www
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
@@ -250,6 +251,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	done
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
@@ -262,6 +264,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
+	rm -f $(DESTDIR)$(BINDIR)/r2-docker
 	cd libr && ${MAKE} uninstall PARENT=1
 	cd binr && ${MAKE} uninstall PARENT=1
 	cd shlr && ${MAKE} uninstall PARENT=1
@@ -272,7 +275,7 @@ deinstall uninstall:
 	@echo
 
 purge-doc:
-	rm -rf "${DESTDIR}${DATADIR}/doc/radare2"
+	rm -rf "${DESTDIR}${DOCDIR}"
 	cd man ; for FILE in *.1 ; do rm -f "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
 	rm -f "${DESTDIR}${MANDIR}/man1/r2.1"
 
@@ -309,6 +312,15 @@ purge: purge-doc purge-dev user-uninstall
 	rm -f "${DESTDIR}${LIBDIR}/libr2.${EXT_SO}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2"
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
+
+purge2:
+	$(MAKE) purge
+ifneq ($(PREFIX),/usr)
+	$(MAKE) purge PREFIX=/usr
+endif
+ifneq ($(PREFIX),/usr/local)
+	$(MAKE) purge PREFIX=/usr/local
+endif
 
 R2V=radare2-${VERSION}
 

@@ -1,0 +1,11 @@
+--- a/arch/X86/X86ATTInstPrinter.c	2017-04-09 23:55:04.000000000 +0200
++++ b/arch/X86/X86ATTInstPrinter.c	2017-04-09 23:55:04.000000000 +0200
+@@ -921,7 +921,7 @@
+ 	}
+ 
+ 	if (MI->csh->detail) {
+-		uint8_t access[6];
++		uint8_t access[6] = {0};
+ 
+ 		// some instructions need to supply immediate 1 in the first op
+ 		switch(MCInst_getOpcode(MI)) {

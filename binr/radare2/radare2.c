@@ -81,7 +81,6 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc) {
-		eprintf ("INValid fd\n");
 		return 0LL;
 	}
 #if __WINDOWS__
@@ -209,6 +208,7 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 	char *homedir = r_str_home (R2_HOMEDIR);
+	char *homeplugs = r_str_newf ("%s" R_SYS_DIR "plugins", homedir);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -221,7 +221,7 @@ static int main_print_var(const char *var_name) {
 		{ "LIBEXT", R_LIB_EXT },
 		{ "RHOMEDIR", homedir },
 		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
-		{ "USER_PLUGINS", r_str_home (R2_HOMEDIR) },
+		{ "USER_PLUGINS", homeplugs },
 		{ NULL, NULL }
 	};
 	if (var_name) {
@@ -239,6 +239,7 @@ static int main_print_var(const char *var_name) {
 		}
 	}
 	free (homedir);
+	free (homeplugs);
 	return 0;
 }
 
@@ -277,17 +278,30 @@ static int rabin_delegate(RThread *th) {
 #endif
 
 static void radare2_rc(RCore *r) {
+	char* env_debug = r_sys_getenv ("R_DEBUG");
+	bool has_debug = false;
+	if (env_debug) {
+		has_debug = true;
+		free (env_debug);
+	}
+
 	char *homerc = r_str_home (".radare2rc");
-	if (homerc) {
+	if (homerc && r_file_is_regular (homerc)) {
+		if (has_debug) {
+			eprintf ("USER CONFIG loaded from %s\n", homerc);
+		}
 		r_core_cmd_file (r, homerc);
-		free (homerc);
 	}
-	homerc = r_str_home ("/.config/radare2/radare2rc");
-	if (homerc) {
+	free (homerc);
+	homerc = r_str_home (".config/radare2/radare2rc");
+	if (homerc && r_file_is_regular (homerc)) {
+		if (has_debug) {
+			eprintf ("USER CONFIG loaded from %s\n", homerc);
+		}
 		r_core_cmd_file (r, homerc);
-		free (homerc);
 	}
-	homerc = r_str_home ("/.config/radare2/radare2rc.d");
+	free (homerc);
+	homerc = r_str_home (".config/radare2/radare2rc.d");
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
 			char *file;
@@ -297,6 +311,9 @@ static void radare2_rc(RCore *r) {
 				if (*file != '.') {
 					char *path = r_str_newf ("%s/%s", homerc, file);
 					if (r_file_is_regular (path)) {
+						if (has_debug) {
+							eprintf ("USER CONFIG loaded from %s\n", homerc);
+						}
 						r_core_cmd_file (r, path);
 					}
 					free (path);
@@ -429,7 +446,8 @@ int main(int argc, char **argv, char **envp) {
 	const char *forcebin = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
-	int quiet = false;
+	bool quiet = false;
+	bool quietLeak = false;
 	int is_gdb = false;
 	const char * s_seek = NULL;
 	RList *cmds = r_list_new ();
@@ -473,7 +491,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwfF:H:h::m:e:nk:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -564,7 +582,8 @@ int main(int argc, char **argv, char **envp) {
 			do_list_io_plugins = true;
 			break;
 		case 'm':
-			mapaddr = r_num_math (r.num, optarg); break;
+			mapaddr = r_num_math (r.num, optarg);
+			r_config_set_i (r.config, "file.offset", mapaddr);
 			break;
 		case 'M':
 			r_config_set (r.config, "bin.demangle", "false");
@@ -572,6 +591,7 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'n':
 			run_anal--;
+			r_config_set (r.config, "file.info", "false");
 			break;
 		case 'N':
 			run_rc = 0;
@@ -587,6 +607,10 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'P':
 			patchfile = optarg;
+			break;
+		case 'Q':
+			quiet = true;
+			quietLeak = true;
 			break;
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
@@ -637,7 +661,11 @@ int main(int argc, char **argv, char **envp) {
 				char *program = strstr (msg, "program=");
 				if (program) {
 					program += 8;
-					char *p = strchr (program, '\n');
+					char *p = 0;
+					p = strstr (program, "\r\n");
+					if (!p) {
+						p = strchr (program, '\n');
+					}
 					if (p) {
 						*p = 0;
 						pfile = strdup (program);
@@ -655,7 +683,11 @@ int main(int argc, char **argv, char **envp) {
 		if (r_config_get_i (r.config, "cfg.plugins")) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 		}
+		run_commands (NULL, prefiles, false);
 		run_commands (cmds, files, quiet);
+		if (quietLeak) {
+			exit (0);
+		}
 		r_io_plugin_list (r.io);
 		r_cons_flush ();
 		r_list_free (evals);
@@ -801,7 +833,6 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					r_config_set (r.config, "io.raw", "false");
 /*
 					if (fh) {
 						r_core_bin_load (&r, pfile);
@@ -831,7 +862,7 @@ int main(int argc, char **argv, char **envp) {
 						}
 					}
 					escaped_path = r_str_arg_escape (path);
-					pfile = r_str_concat (pfile, escaped_path);
+					pfile = r_str_append (pfile, escaped_path);
 					file = pfile; // probably leaks
 					R_FREE (escaped_path);
 					R_FREE (path);
@@ -839,16 +870,16 @@ int main(int argc, char **argv, char **envp) {
 #else
 				{
 					char *escaped_path = r_str_arg_escape (f);
-					pfile = r_str_concat (pfile, escaped_path);
-					file = pfile; // r_str_concat (file, escaped_path);
+					pfile = r_str_append (pfile, escaped_path);
+					file = pfile; // r_str_append (file, escaped_path);
 					free (escaped_path);
 				}
 #endif
 				optind++;
 				while (optind < argc) {
 					char *escaped_arg = r_str_arg_escape (argv[optind]);
-					file = r_str_concat (file, " ");
-					file = r_str_concat (file, escaped_arg);
+					file = r_str_append (file, " ");
+					file = r_str_append (file, escaped_arg);
 					free (escaped_arg);
 					optind++;
 				}
@@ -935,7 +966,9 @@ int main(int argc, char **argv, char **envp) {
 				va = 2;
 			}
 			if (run_anal > 0) {
-				eprintf ("USING 0x%" PFMT64x "\n", baddr);
+				if (baddr && baddr != UT64_MAX) {
+					eprintf ("Using 0x%" PFMT64x "\n", baddr);
+				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
@@ -974,7 +1007,7 @@ int main(int argc, char **argv, char **envp) {
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
 					(debug || r.io->va) ? "" : "p", r.file->desc->name);
 			/* TODO: only load data if no project is used */
-			lock = r_th_lock_new ();
+			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 			// rabin_delegate (NULL);
 		} // else eprintf ("Metadata loaded from 'prj.name'\n");
@@ -1084,8 +1117,9 @@ int main(int argc, char **argv, char **envp) {
 		char *s = r_core_cmd_str (&r, "ieq");
 		if (s && *s) {
 			int da = r_config_get_i (r.config, "file.analyze");
-			if (da > do_analysis)
+			if (da > do_analysis) {
 				do_analysis = da;
+			}
 		}
 		free (s);
 	}
@@ -1161,8 +1195,9 @@ int main(int argc, char **argv, char **envp) {
 				}
 				if (lock) r_th_lock_enter (lock);
 				/* -1 means invalid command, -2 means quit prompt loop */
-				if ((ret = r_core_prompt_exec (&r)) == -2)
+				if ((ret = r_core_prompt_exec (&r)) == -2) {
 					break;
+				}
 				if (lock) r_th_lock_leave (lock);
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					eprintf ("rabin thread end \n");
@@ -1194,6 +1229,10 @@ int main(int argc, char **argv, char **envp) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r.dbg, 0, false, 9); // KILL
+#if __WINDOWS__
+							} else {
+								r_debug_detach (r.dbg, r.dbg->pid);
+#endif
 							}
 						} else continue;
 					}
@@ -1231,6 +1270,10 @@ int main(int argc, char **argv, char **envp) {
 	ret = r.num->value;
 
 beach:
+	if (quietLeak) {
+		exit (ret);
+		return ret;
+	}
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
 	// exectution.

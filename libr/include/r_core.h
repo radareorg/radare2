@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -130,7 +130,6 @@ typedef struct r_core_t {
 	RFlag *flags;
 	RSearch *search;
 	RIOSection *section;
-	RSign *sign;
 	RFS *fs;
 	REgg *egg;
 	RCoreLog *log;
@@ -167,6 +166,7 @@ typedef struct r_core_t {
 	bool fixedblock;
 	char *cmdfilter;
 	bool break_loop;
+	RThreadLock *lock;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -188,7 +188,7 @@ R_API RCons *r_core_get_cons (RCore *core);
 R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
-R_API int r_core_init(RCore *core);
+R_API bool r_core_init(RCore *core);
 R_API RCore *r_core_new(void);
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);
@@ -346,7 +346,7 @@ R_API void r_core_anal_hint_print (RAnal* a, ut64 addr, int mode);
 R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
-R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
+R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize);
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int gv);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr);
@@ -402,6 +402,7 @@ R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
 R_API int r_core_bin_set_by_name (RCore *core, const char *name);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
+R_API int r_core_bin_rebase(RCore *core, ut64 baddr);
 R_API void r_core_bin_export_info_rad(RCore *core);
 R_API int r_core_hash_load(RCore *core, const char *file);
 R_API int r_core_bin_list(RCore *core, int mode);
@@ -484,6 +485,8 @@ typedef struct r_core_bin_filter_t {
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum);
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
+R_API char *r_core_bin_method_flags_str(RBinSymbol *sym, int mode);
+
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);
 R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd);
@@ -560,7 +563,8 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
-R_API void r_core_anal_list_vtables(void *core, bool printJson);
+R_API void r_core_anal_list_vtables (void *core, bool printJson);
+R_API void r_core_anal_print_rtti (void *core);
 
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
@@ -590,12 +594,91 @@ R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
 R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);
+typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
+			   bool asterisk, int count);
+R_API int r_core_search_value_in_range (RCore *core, ut64 from, ut64 to,
+					ut64 vmin, ut64 vmax, int vsize,
+					bool asterisk, inRangeCb cb);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_anal;
 
 #endif
+
+/*
+	RTTI Parsing Information
+	MSVC(Microsoft visual studio compiler) rtti structure
+	information:
+*/
+
+typedef struct type_descriptor_t {
+	ut64 pVFTable;//Always point to type_info's vftable
+	int spare;
+	char* className;
+} type_descriptor;
+
+typedef struct class_hierarchy_descriptor_t {
+	int signature;//always 0
+
+	//bit 0 --> Multiple inheritance
+	//bit 1 --> Virtual inheritance
+	int attributes;
+
+	//total no of base classes
+	// including itself
+	int numBaseClasses;
+
+	//Array of base class descriptor's
+	RList* baseClassArray;
+} class_hierarchy_descriptor;
+
+typedef struct base_class_descriptor_t {
+	//Type descriptor of current base class
+	type_descriptor* typeDescriptor;
+
+	//Number of direct bases
+	//of this base class
+	int numContainedBases;
+
+	//vftable offset
+	int mdisp;
+
+	// vbtable offset
+	int pdisp;
+
+	//displacement of the base class
+	//vftable pointer inside the vbtable
+	int vdisp;
+
+	//don't know what's this
+	int attributes;
+
+	//class hierarchy descriptor
+	//of this base class
+	class_hierarchy_descriptor* classDescriptor;
+} base_class_descriptor;
+
+typedef struct rtti_complete_object_locator_t {
+	int signature;
+
+	//within class offset
+	int vftableOffset;
+
+	//don't know what's this
+	int cdOffset;
+
+	//type descriptor for the current class
+	type_descriptor* typeDescriptor;
+
+	//hierarchy descriptor for current class
+	class_hierarchy_descriptor* hierarchyDescriptor;
+} rtti_complete_object_locator;
+
+typedef struct run_time_type_information_t {
+	ut64 vtable_start_addr;
+	ut64 rtti_addr;
+} rtti_struct;
 
 #ifdef __cplusplus
 }

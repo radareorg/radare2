@@ -33,19 +33,27 @@ static inline ut64 genmask(int bits) {
 }
 
 static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
-	if (!esil || !str) return false;
-	if (IS_DIGIT(*str)) {
-		if (num) *num = r_num_get (NULL, str);
+	if (!esil || !str) {
+		return false;
+	}
+	if (IS_DIGIT (*str)) {
+		if (num) {
+			*num = r_num_get (NULL, str);
+		}
 		return true;
 	}
-	if (num) *num = 0;
+	if (num) {
+		*num = 0;
+	}
 	return false;
 }
 
 static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
-	if (!r_anal_esil_reg_read (esil, str, num, NULL))
-		if (!isnum (esil, str, num))
+	if (!r_anal_esil_reg_read (esil, str, num, NULL)) {
+		if (!isnum (esil, str, num)) {
 			return false;
+		}
+	}
 	return true;
 }
 
@@ -210,8 +218,16 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
+	if (esil->cmd_mdev && esil->mdev_range) {
+		if (r_str_range_in (esil->mdev_range, addr)) {
+			if (esil->cmd (esil, esil->cmd_mdev, addr, 0)) {
+				return true;
+			}
+		}
+	}
 	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 }
+
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
@@ -250,6 +266,13 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
+	}
+	if (esil->cmd_mdev && esil->mdev_range) {
+		if (r_str_range_in (esil->mdev_range, addr)) {
+			if (esil->cmd (esil, esil->cmd_mdev, addr, 1)) {
+				return true;
+			}
+		}
 	}
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
 	if (ret != len) {
@@ -427,7 +450,7 @@ not_a_number:
 
 static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	ut8 bit;
-	if (!str || !*str) {
+	if (!esil || !str || !*str) {
 		return false;
 	}
 	if (esil->cb.hook_flag_read) {
@@ -598,7 +621,9 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 		return false;
 	}
 	if (regname[0] == ESIL_INTERNAL_PREFIX && regname[1]) {
-		if (size) *size = esil->anal->bits;
+		if (size) {
+			*size = esil->anal->bits;
+		}
 		return esil_internal_read (esil, regname, num);
 	}
 	if (!num) num = &localnum;
@@ -925,13 +950,15 @@ static int esil_ifset(RAnalEsil *esil) {
 #endif
 
 static int esil_if(RAnalEsil *esil) {
-	ut64 num;
+	ut64 num = 0LL;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		// TODO: check return value
 		(void)r_anal_esil_get_parm (esil, src, &num);
 		// condition not matching, skipping until }
-		if (!num) esil->skip = true;
+		if (!num) {
+			esil->skip = true;
+		}
 		free (src);
 		return true;
 	}
@@ -1519,7 +1546,7 @@ static int esil_deceq(RAnalEsil *esil) {
 static int esil_poke_n(RAnalEsil *esil, int bits) {
 	ut64 bitmask = genmask (bits - 1);
 	ut64 num, addr;
-	ut8 b[8];
+	ut8 b[8] = {0};
 	ut64 n;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);

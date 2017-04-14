@@ -352,7 +352,10 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 		if (!strncmp (item->name, "fcn.", 4)) {
 			continue;
 		}
-		if (!strncmp (item->name, "section.", 4)) {
+		if (!strncmp (item->name, "section.", 8)) {
+			continue;
+		}
+		if (!strncmp (item->name, "section_end.", 12)) {
 			continue;
 		}
 		if (r_str_nlen (item->name, 5) > 4 &&
@@ -400,7 +403,7 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 	const RList *list = r_flag_get_list (f, off);
 	char *p = NULL;
 	r_list_foreach (list, iter, fi) {
-		p = r_str_concatf (p, "%s%s",
+		p = r_str_appendf (p, "%s%s",
 			fi->realname, iter->n ? "," : ":");
 	}
 	return p;

@@ -41,7 +41,7 @@ fi
 make mrproper
 
 ./configure ${CFGFLAGS} --with-compiler=$C --host=$H && \
-	make -s -j ${MAKE_JOBS} CC="${C} -static-libgcc" && \
+	make -s -j ${MAKE_JOBS} CC="${C} -g -static-libgcc" && \
 	make w32dist
 
 LDFLAGS="${OLD_LDFLAGS}"

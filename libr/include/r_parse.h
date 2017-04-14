@@ -23,6 +23,7 @@ typedef struct r_parse_t {
 	int flagspace;
 	int notin_flagspace;
 	bool relsub; // replace rip relative expressions in instruction
+	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
 	int relsub_addr;
 	struct r_parse_plugin_t *cur;
 	RAnal *anal; // weak anal ref

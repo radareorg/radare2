@@ -9,7 +9,7 @@
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE
-#define R_TH_LOCK_T PCRITICAL_SECTION
+#define R_TH_LOCK_T CRITICAL_SECTION
 //HANDLE
 
 #elif HAVE_PTHREAD
@@ -58,7 +58,7 @@ R_API void r_th_break(RThread *th);
 R_API void *r_th_free(RThread *th);
 R_API int r_th_kill(RThread *th, int force);
 
-R_API RThreadLock *r_th_lock_new(void);
+R_API RThreadLock *r_th_lock_new(bool recursive);
 R_API int r_th_lock_wait(RThreadLock *th);
 R_API int r_th_lock_check(RThreadLock *thl);
 R_API int r_th_lock_enter(RThreadLock *thl);

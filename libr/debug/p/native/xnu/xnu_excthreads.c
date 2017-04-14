@@ -377,10 +377,9 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 		if (kr == MACH_RCV_INTERRUPTED ) {
 			eprintf ("message interrupted\n");
 			break;
-		}
-		if (kr == MACH_RCV_TIMED_OUT)
+		} else if (kr == MACH_RCV_TIMED_OUT) {
 			break;
-		if (kr != MACH_MSG_SUCCESS) {
+		} else if (kr != MACH_MSG_SUCCESS) {
 			eprintf ("message didn't succeded\n");
 			break;
 		}
@@ -417,6 +416,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			if (kr != KERN_SUCCESS)
 				eprintf ("failed to deallocate reply port\n");
 		}
+		break; // to avoid infinite loops
 	}
 	return reason;
 }

@@ -52,8 +52,8 @@ R_API int r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
 R_API RCrypto *r_crypto_new(void);
 R_API RCrypto *r_crypto_free(RCrypto *cry);
 R_API bool r_crypto_use(RCrypto *cry, const char *algo);
-R_API int r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, int direction);
-R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv, int ivlen);
+R_API bool r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, int direction);
+R_API bool r_crypto_set_iv(RCrypto *cry, const ut8 *iv, int ivlen);
 R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len);
 R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len);
 R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len);
@@ -90,6 +90,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 #define R_CRYPTO_BLOWFISH 1<<8
 #define R_CRYPTO_CPS2 1<<9
 #define R_CRYPTO_DES_ECB 1<<10
+#define R_CRYPTO_XOR 1<<11
 #define R_CRYPTO_ALL 0xFFFF
 
 #ifdef __cplusplus

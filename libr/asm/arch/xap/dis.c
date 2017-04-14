@@ -6,7 +6,6 @@
 #include <unistd.h>
 //#include <err.h>
 #include <string.h>
-//#include <assert.h>
 #define assert(x) if (!(x)) { eprintf("assert ##x##\n"); return; }
 #include <stdarg.h>
 #include <stdint.h>

@@ -12,15 +12,8 @@
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
-static int check_bytes(const ut8 *buf, ut64 length) {
-	return buf && length > 4 && memcmp (buf, CGCMAG, SCGCMAG) == 0
-		&& buf[4] != 2;
-}
-
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	return buf && length > 4 && !memcmp (buf, CGCMAG, SCGCMAG) && buf[4] != 2;
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
@@ -112,7 +105,6 @@ RBinPlugin r_bin_plugin_cgc = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,

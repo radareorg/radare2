@@ -23,9 +23,9 @@ CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20170227
+CS_UPD=20170318
 CS_BRA=next
-CS_TIP=5b84c691784b5f0adc3c100d6ec5d5bb71ec8532
+CS_TIP=a28ae7d488dfe20855687f5a3ce842196896814a
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -260,8 +260,13 @@ ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
 endif
+../../radare2-webui:
+	cd ../.. ; git clone --depth 1 https://github.com/radare/radare2-webui
 
-www-sync-m sync-www-m:
+../../radare2-webui/dist/m: ../../radare2-webui
+	cd ../../radare2-webui/www/m ; git pull ; npm install ; $(MAKE) release
+
+www-sync-m sync-www-m: ../../radare2-webui/dist/m
 	cp -rf ../../radare2-webui/dist/m www/m.tmp
 	rm -rf www/m
 	mv www/m.tmp www/m

@@ -288,7 +288,7 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 			if (value_dst != diff_dst) {
 				r_list_foreach (constants, iter_const, constant) {
 					if (value_dst == r_num_get (NULL, constant)) {
-						ct = r_str_concatf (ct, "%s <-- 0x%"PFMT64x";", item_dst->name, value_dst);
+						ct = r_str_appendf (ct, "%s <-- 0x%"PFMT64x";", item_dst->name, value_dst);
 					}
 				}
 			}
@@ -386,7 +386,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 				//restore initial value
 				r_reg_set_value (core->dbg->reg, item_src, diff_src);
 				if (value_dst == value_src && value_dst != diff_dst) {
-					mov = r_str_concatf (mov, "%s <-- %s;",
+					mov = r_str_appendf (mov, "%s <-- %s;",
 						item_dst->name, item_src->name);
 				}
 			}
@@ -496,9 +496,9 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 							// r_cons_println ("Debug: FOUND ONE !");
 							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, item_src2->name);
 							if (arithmetic && !strstr (arithmetic, tmp)) {
-								arithmetic = r_str_concat (arithmetic, tmp);
+								arithmetic = r_str_append (arithmetic, tmp);
 							} else if (!arithmetic) {
-								arithmetic = r_str_concat (arithmetic, tmp);
+								arithmetic = r_str_append (arithmetic, tmp);
 							}
 							free (tmp);
 							redundant = true;
@@ -506,9 +506,9 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 							// r_cons_println ("Debug: FOUND ONE reversed!");
 							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src2->name, op, item_src1->name);
 							if (arithmetic && !strstr (arithmetic, tmp)) {
-								arithmetic = r_str_concat (arithmetic, tmp);
+								arithmetic = r_str_append (arithmetic, tmp);
 							} else if (!arithmetic) {
-								arithmetic = r_str_concat (arithmetic, tmp);
+								arithmetic = r_str_append (arithmetic, tmp);
 							}
 							free (tmp);
 						}
@@ -623,18 +623,18 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 							if (simulate && value_dst == *op_result) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
-									arithmetic = r_str_concat (arithmetic, tmp);
+									arithmetic = r_str_append (arithmetic, tmp);
 								} else if (!arithmetic) {
-									arithmetic = r_str_concat (arithmetic, tmp);
+									arithmetic = r_str_append (arithmetic, tmp);
 								}
 								free (tmp);
 								redundant = true;
 							} else if (!redundant && simulate_r && value_dst == *op_result_r) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, constant, op, item_src1->name);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
-									arithmetic = r_str_concat (arithmetic, tmp);
+									arithmetic = r_str_append (arithmetic, tmp);
 								} else if (!arithmetic) {
-									arithmetic = r_str_concat (arithmetic, tmp);
+									arithmetic = r_str_append (arithmetic, tmp);
 								}
 								free (tmp);
 							}

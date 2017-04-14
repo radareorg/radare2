@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,7 +99,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	if (argc>2 && !strcmp (argv[0], "xor")) {
+	if (argc > 2 && !strcmp (argv[0], "xor")) {
 		if (!strcmp (argv[1], argv[2])) {
 			argv[0] = "mov";
 			argv[2] = "0";
@@ -210,6 +210,14 @@ static inline int issegoff (const char *w) {
 }
 #endif
 
+static void parse_localvar(RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign) {
+	if (p->localvar_only) {
+		snprintf (newstr, newstr_len - 1, "[%s]", var);
+	} else {
+		snprintf (newstr, newstr_len - 1, "[%s %c %s]", reg, sign, var);
+	}
+}
+
 static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAnalVar *reg, *bparg, *sparg;
 	RListIter *regiter, *bpargiter, *spiter;
@@ -265,9 +273,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		snprintf (newstr, sizeof (newstr) - 1, "[%s + %s]",
-			p->anal->reg->name[R_REG_NAME_SP],
-			sparg->name);
+		parse_localvar (p, newstr, sizeof (newstr), sparg->name,
+			p->anal->reg->name[R_REG_NAME_SP], '+');
 		if (ucase) {
 			char *plus = strchr (newstr, '+');
 			if (plus) {
@@ -310,9 +317,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		snprintf (newstr, sizeof (newstr) - 1, "[%s %c %s]",
-			p->anal->reg->name[R_REG_NAME_BP], sign,
-			bparg->name);
+		parse_localvar (p, newstr, sizeof (newstr), bparg->name,
+			p->anal->reg->name[R_REG_NAME_BP], sign);
 		if (ucase) {
 			char *plus = strchr (newstr, sign);
 			if (plus) {

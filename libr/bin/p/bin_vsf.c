@@ -24,31 +24,42 @@ static const struct {
 };
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o || !o->bin_obj) {
+static Sdb* get_sdb (RBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) o->bin_obj;
-	if (bin->kv) {
-		return bin->kv;
+	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	return bin? bin->kv: NULL;
+}
+
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (!buf || length < VICE_MAGIC_LEN) {
+		return false;
 	}
-	return NULL;
+	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-
+	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
 	if (check_bytes (buf, sz)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return NULL;
 		}
-		const unsigned char* machine = arch->buf->buf + r_offsetof(struct vsf_hdr, machine);
+		offset = r_offsetof(struct vsf_hdr, machine);
+		if (offset > arch->size) {
+			free (res);
+			return NULL;
+		}
+		const unsigned char* machine = arch->buf->buf + offset;
 		for (; i < MACHINES_MAX; i++) {
-			if (!strncmp((const char*)machine, _machines[i].name, strlen(_machines[i].name))) {
+			if (offset + strlen (_machines[i].name) > arch->size) {
+				free (res);
+				return NULL;
+			}
+			if (!strncmp ((const char *)machine, _machines[i].name,
+				      strlen (_machines[i].name))) {
 				res->machine_idx = i;
 				break;
 			}
@@ -59,7 +70,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			return NULL;
 		}
 		// read all VSF modules
-		int offset = sizeof(struct vsf_hdr);
+		offset = sizeof (struct vsf_hdr);
 		while (offset < sz) {
 			struct vsf_module module;
 			int read = r_buf_fread_at (arch->buf, offset, (ut8*)&module, "16ccci", 1);
@@ -89,19 +100,6 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	}
 	// res will be assigned to arch->o->bin_obj by the callee
 	return res;
-}
-
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < VICE_MAGIC_LEN) {
-		return false;
-	}
-	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
 }
 
 static RList *mem(RBinFile *arch) {
@@ -545,7 +543,6 @@ struct r_bin_plugin_t r_bin_plugin_vsf = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_bytes = &load_bytes,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.sections = sections,

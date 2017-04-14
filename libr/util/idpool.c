@@ -31,7 +31,8 @@ R_API bool r_id_pool_grab_id(RIDPool* pool, ut32* grabber) {
 		return false;
 	}
 	if (pool->freed_ids) {
-		*grabber = (ut32) r_queue_dequeue (pool->freed_ids);
+		ut32 grab = (ut32) (size_t)r_queue_dequeue (pool->freed_ids);
+		*grabber = (ut32) grab;
 		if (r_queue_is_empty (pool->freed_ids)) {
 			r_queue_free (pool->freed_ids);
 			pool->freed_ids = NULL;

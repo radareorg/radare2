@@ -457,18 +457,24 @@ static RList *r_debug_native_tids (RDebug *dbg, int pid) {
 
 static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_pids (pid, list);
 #elif __APPLE__
 	if (pid) {
 		RDebugPid *p = xnu_get_pid (pid);
-		if (p) r_list_append (list, p);
+		if (p) {
+			r_list_append (list, p);
+		}
 	} else {
 		int i;
 		for (i = 1; i < MAXPID; i++) {
 			RDebugPid *p = xnu_get_pid (i);
-			if (p) r_list_append (list, p);
+			if (p) {
+				r_list_append (list, p);
+			}
 		}
 	}
 #elif __linux__
@@ -481,7 +487,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		struct dirent *de;
 
 		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
 
 		/* list parents */
 		dh = opendir ("/proc");
@@ -490,7 +496,10 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			r_list_free (list);
 			return NULL;
 		}
+		int uid, gid;
 		while ((de = readdir (dh))) {
+			uid = 0;
+			gid = 0;
 			/* for each existing pid file... */
 			i = atoi (de->d_name);
 			if (i <= 0) {
@@ -504,17 +513,27 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			}
 			buf[sizeof (buf) - 1] = 0;
 
+			ptr = strstr (buf, "Uid:");
+			if (ptr) {
+				uid = atoi (ptr + 4);
+			}
+
+			ptr = strstr (buf, "Gid:");
+			if (ptr) {
+				gid = atoi (ptr + 4);
+			}
+
 			/* look for the parent process id */
 			ptr = strstr (buf, "PPid:");
 			if (ptr) {
-				int ppid = atoi (ptr + 6);
+				int ppid = atoi (ptr + 5);
 
 				/* if this is the requested process... */
 				if (i == pid) {
-					//eprintf ("PPid: %d\n", ppid);
-					/* append it to the list with parent */
+					// eprintf ("PPid: %d\n", ppid);
+					// append it to the list with parent
 					r_list_append (list, r_debug_pid_new (
-						"(ppid)", ppid, 's', 0));
+						"(ppid)", ppid, uid, 's', 0));
 				}
 
 				/* ignore it if it is not one of our children */
@@ -523,11 +542,10 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 				}
 
 				/* it's a child of the requested pid, read it's command line and add it */
-				if (procfs_pid_slurp (ppid, "cmdline", buf, sizeof(buf)) == -1) {
+				if (procfs_pid_slurp (ppid, "cmdline", buf, sizeof (buf)) == -1) {
 					continue;
 				}
-
-				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
 		}
 		closedir (dh);
@@ -543,7 +561,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			if (procfs_pid_slurp (i, "cmdline", buf, sizeof(buf)) == -1)
 				continue;
 
-			r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+			r_list_append (list, r_debug_pid_new (buf, i, 0, 's', 0));
 		}
 	}
 #else /* rest is BSD */

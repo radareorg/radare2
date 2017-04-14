@@ -44,6 +44,7 @@ typedef struct _utX{
 #define R_TRUE 1
 #define R_TRUFAE 2
 #define R_NOTNULL (void*)(size_t)1
+#define R_EMPTY { 0 }
 
 /* limits */
 #undef UT64_MAX
@@ -77,6 +78,10 @@ typedef struct _utX{
 #define UT8_GT0  0x80U
 #define UT8_MAX  0xFFU
 #define UT8_MIN  0x00U
+
+#define UT64_ALIGN(x) (x + (x - (x % sizeof (ut64))))
+#define UT32_ALIGN(x) (x + (x - (x % sizeof (ut32))))
+#define UT16_ALIGN(x) (x + (x - (x % sizeof (ut16))))
 
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)

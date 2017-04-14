@@ -1,0 +1,43 @@
+__assert_rtn=func
+func.__assert_rtn.args=4
+func.__assert_rtn.arg.0=const char *,assertion
+func.__assert_rtn.arg.1=const char *,file
+func.__assert_rtn.arg.2=unsigned int,line
+func.__assert_rtn.arg.3=const char *,function
+func.__assert_rtn.noreturn=true
+func.__assert_rtn.ret=void
+func.__assert_rtn.cc=amd64
+
+_exit=func
+func._exit.args=1
+func._exit.arg.0=int,status
+func._exit.noreturn=true
+func._exit.ret=void
+func._exit.cc=amd64
+
+abort=func
+func.abort.args=0
+func.abort.noreturn=true
+func.abort.ret=void
+func.abort.cc=amd64
+
+exit=func
+func.exit.args=1
+func.exit.arg.0=int,status
+func.exit.noreturn=true
+func.exit.ret=void
+func.exit.cc=amd64
+
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void
+func.__stack_chk_fail.cc=amd64
+
+sym.imp.err=func
+func.sym.imp.err.args=2
+func.sym.imp.err.arg.0=int,eval
+func.sym.imp.err.arg.1=const char *,msg
+func.sym.imp.err.noreturn=true
+func.sym.imp.err.ret=void
+func.sym.imp.err.cc=amd64

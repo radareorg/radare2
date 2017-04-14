@@ -71,21 +71,50 @@ R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr) {
 	RListIter *iter;
 	RDebugSnap *snap;
 	r_list_foreach (dbg->snaps, iter, snap) {
-		if (snap->addr >= addr && snap->addr_end < addr) {
+		if (R_BETWEEN (snap->addr, addr, snap->addr_end - 1)) {
 			return snap;
 		}
 	}
 	return NULL;
 }
 
-static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
+R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap) {
+	RListIter *iter;
+	RDebugMap *map;
+	eprintf ("Writing %d bytes to 0x%08"PFMT64x"...\n", snap->size, snap->addr);
+	r_list_foreach (dbg->maps, iter, map) {
+		if (snap->addr <= map->addr && map->addr_end <= snap->addr_end) {
+			dbg->iob.write_at (dbg->iob.io, map->addr, snap->data, map->addr_end - map->addr);
+		}
+	}
+	return 1;
+}
+
+R_API int r_debug_snap_set_idx (RDebug *dbg, int idx) {
 	RDebugSnap *snap;
-	if (map->size<1) {
+	RListIter *iter;
+	ut32 count = 0;
+	if (!dbg || idx < 0)
+		return 0;
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (count == idx) {
+			r_debug_snap_set (dbg, snap);
+			break;
+		}
+		count++;
+	}
+	return 1;
+}
+
+static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
+	if (!dbg || !map || map->size < 1) {
 		eprintf ("Invalid map size\n");
 		return 0;
 	}
-	snap = R_NEW0 (RDebugSnap);
-	if (!snap) return 0;
+	RDebugSnap *snap = R_NEW0 (RDebugSnap);
+	if (!snap) {
+		return 0;
+	}
 	snap->timestamp = sdb_now ();
 	snap->addr = map->addr;
 	snap->addr_end = map->addr_end;
@@ -97,7 +126,7 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 	}
 	eprintf ("Reading %d bytes from 0x%08"PFMT64x"...\n", snap->size, snap->addr);
 	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
-	snap->crc = r_hash_crc32 (snap->data, snap->size);
+	snap->crc = r_hash_crc_preset (snap->data, snap->size, CRC_PRESET_32);
 
 	r_list_append (dbg->snaps, snap);
 	return 1;
@@ -108,7 +137,7 @@ R_API int r_debug_snap_all(RDebug *dbg, int perms) {
 	RListIter *iter;
 	r_debug_map_sync (dbg);
 	r_list_foreach (dbg->maps, iter, map) {
-		if (!perms || (map->perm & perms)==perms) {
+		if (!perms || (map->perm & perms) == perms) {
 			r_debug_snap_map (dbg, map);
 		}
 	}

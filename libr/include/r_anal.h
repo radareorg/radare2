@@ -291,7 +291,6 @@ typedef struct r_anal_type_function_t {
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
-	RList *vars;
 #if FCN_OLD
 	RList *refs;
 	RList *xrefs;
@@ -624,7 +623,9 @@ typedef struct r_anal_t {
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
+	Sdb *sdb_zigns;
 	RSpaces meta_spaces;
+	RSpaces zign_spaces;
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
@@ -742,6 +743,7 @@ typedef struct r_anal_op_t {
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // TODO deprecate
 	RStrBuf esil;
+	RStrBuf opex;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
@@ -1010,7 +1012,9 @@ typedef struct r_anal_esil_t {
 	RAnalReil *Reil;
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when an interrupt occurs
-	int (*cmd)(ESIL *esil, const char *name, int a0, int a1);
+	char *cmd_mdev; // r2 (external) command to run when an interrupt occurs
+	char *mdev_range; // string containing the r_str_range to match for read/write accesses
+	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 } RAnalEsil;
 
@@ -1061,6 +1065,7 @@ typedef struct r_anal_plugin_t {
 	int (*fini)(void *user);
 	int (*reset_counter) (RAnal *anal, ut64 start_addr);
 	int (*archinfo)(RAnal *anal, int query);
+	ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data, ut64 at);
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
@@ -1190,7 +1195,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
-R_API char *r_anal_strmask (RAnal *anal, const char *data);
+R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
@@ -1263,6 +1268,7 @@ R_API void r_anal_pin_list(RAnal *a);
 
 /* fcn.c */
 R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
+R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs);
 R_API RAnalFunction *r_anal_fcn_new(void);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);
@@ -1432,6 +1438,7 @@ R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, 
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
@@ -1452,7 +1459,7 @@ typedef struct r_anal_data_t {
 	ut8 sbuf[8];
 } RAnalData;
 
-R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size);
+R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize);
 R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int len);
 R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int size, int wide);
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len);
@@ -1562,6 +1569,11 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode);
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
+
+/* zign spaces */
+R_API int r_sign_space_count_for(RAnal *a, int idx);
+R_API void r_sign_space_unset_for(RAnal *a, int idx);
+R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;

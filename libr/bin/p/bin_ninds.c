@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015 - a0rtega */
+/* radare - LGPL - 2015-2017 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,35 +8,28 @@
 
 #include "../format/nin/nds.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static struct nds_hdr loaded_header;
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	ut8 ninlogohead[6];
-	if (!buf || length < sizeof(struct nds_hdr)) /* header size */
+	if (!buf || length < sizeof(struct nds_hdr)) { /* header size */
 		return false;
-	memcpy(ninlogohead, buf+0xc0, 6);
+	}
+	memcpy (ninlogohead, buf + 0xc0, 6);
 	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
-	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true : false;
+	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true: false;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
 }
 
-static int load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o)
+static bool load(RBinFile *arch) {
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
+	if (!arch || !arch->o) {
 		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
@@ -55,12 +48,13 @@ static ut64 boffset(RBinFile *arch) {
 	return 0LL;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr9 = NULL, *ptr7 = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	if (!(ptr9 = R_NEW0 (RBinSection))) {
 		r_list_free (ret);
 		return NULL;
@@ -92,13 +86,14 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList *entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr9 = NULL, *ptr7 = NULL;
 
 	if (arch && arch->buf) {
-		if (!ret)
+		if (!ret) {
 			return NULL;
+		}
 		ret->free = free;
 		if (!(ptr9 = R_NEW0 (RBinAddr))) {
 			r_list_free (ret);
@@ -112,30 +107,32 @@ static RList* entries(RBinFile *arch) {
 
 		/* ARM9 entry point */
 		ptr9->vaddr = loaded_header.arm9_entry_address;
-		//ptr9->paddr = loaded_header.arm9_entry_address;
+		// ptr9->paddr = loaded_header.arm9_entry_address;
 		r_list_append (ret, ptr9);
 
 		/* ARM7 entry point */
 		ptr7->vaddr = loaded_header.arm7_entry_address;
-		//ptr7->paddr = loaded_header.arm7_entry_address;
+		// ptr7->paddr = loaded_header.arm7_entry_address;
 		r_list_append (ret, ptr7);
 	}
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	char filepath[1024];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 
 	if (!arch || !arch->buf) {
 		free (ret);
 		return NULL;
 	}
 
-	strncpy(filepath, (char *) loaded_header.title, 0xC);
-	strncat(filepath, " - ", 3);
-	strncat(filepath, (char *) loaded_header.gamecode, 0x4);
+	strncpy (filepath, (char *) loaded_header.title, 0xC);
+	strncat (filepath, " - ", 3);
+	strncat (filepath, (char *) loaded_header.gamecode, 0x4);
 
 	ret->file = strdup (filepath);
 	ret->type = strdup ("ROM");
@@ -148,14 +145,13 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_ninds = {
+RBinPlugin r_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS format r_bin plugin",
 	.license = "LGPL3",
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
@@ -165,7 +161,7 @@ struct r_bin_plugin_t r_bin_plugin_ninds = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ninds,
 	.version = R2_VERSION

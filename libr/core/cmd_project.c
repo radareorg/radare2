@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_config.h"
 #include "r_core.h"
@@ -50,6 +50,7 @@ static int cmd_project(void *data, const char *input) {
 		r_core_project_list (core, input[1]);
 		break;
 	case 'd':
+	case '-':
 		r_core_project_delete (core, file);
 		break;
 	case 's':
@@ -68,12 +69,26 @@ static int cmd_project(void *data, const char *input) {
 			eprintf ("Usage: PS [file]\n");
 		}
 		break;
-	case 'n':
-		if (!fileproject || !*fileproject) {
+	case 'n': // "Pn"
+		if (input[1] == '?') {
+			const char *help_msg[] = {
+				"Usage:", "Pn[j-?] [...]", "Project Notes",
+				"Pn", "", "show project notes",
+				"Pn", " -", "edit notes with cfg.editor",
+				"Pn-", "", "delete notes",
+				"Pn-", "str", "delete lines matching /str/ in notes",
+				"Pn+", "str", "append one line to the notes",
+				"Pnx", "", "run project note commands",
+				"Pnj", "", "show notes in base64",
+				"Pnj", " [base64]", "set notes in base64",
+				NULL
+			};
+			r_core_cmd_help (core, help_msg);
+		} else if (!fileproject || !*fileproject) {
 			eprintf ("No project\n");
 		} else {
 			switch (input[1]) {
-			case '-':
+			case '-': // "Pn-"
 				/* remove lines containing specific words */
 			{
 				FILE *fd = r_sandbox_fopen (str, "w");
@@ -85,7 +100,7 @@ static int cmd_project(void *data, const char *input) {
 					int del = 0;
 					if (data) {
 						char *ptr, *nl;
-						for (ptr = data; ptr; ptr = nl)  {
+						for (ptr = data; ptr; ptr = nl) {
 							nl = strchr (ptr, '\n');
 							if (nl) {
 								*nl++ = 0;
@@ -106,7 +121,7 @@ static int cmd_project(void *data, const char *input) {
 				}
 			}
 			break;
-			case ' ':
+			case ' ': // "Pn "
 				if (input[2] == '-') {
 					char *str = r_core_project_notes_file (core, fileproject);
 					// edit with cfg.editor
@@ -118,7 +133,7 @@ static int cmd_project(void *data, const char *input) {
 					}
 					free (str);
 				} else {
-					//char *str = r_core_project_notes_file (core, fileproject);
+					// char *str = r_core_project_notes_file (core, fileproject);
 					// append line to project notes
 					char *str = r_core_project_notes_file (core, fileproject);
 					char *data = r_file_slurp (str, NULL);
@@ -131,7 +146,18 @@ static int cmd_project(void *data, const char *input) {
 					free (data);
 				}
 				break;
-			case 'j':
+			case '+': // "Pn+"
+				{
+					char *str = r_core_project_notes_file (core, fileproject);
+					char *data = r_file_slurp (str, NULL);
+					data = r_str_append (data, input + 2);
+					data = r_str_append (data, "\n");
+					r_file_dump (str, (const ut8*)data, strlen (data), false);
+					free (data);
+					free (str);
+				}
+				break;
+			case 'j': // "Pnj"
 				if (!input[2]) {
 					int len = 0;
 					/* get base64 string */
@@ -161,10 +187,10 @@ static int cmd_project(void *data, const char *input) {
 					eprintf ("Usage: `Pnj` or `Pnj ...`\n");
 				}
 				break;
-			case 'x':
+			case 'x': // "Pnx"
 				r_core_project_execute_cmds (core, fileproject);
 				break;
-			case 0:
+			case 0: // "Pn"
 			{
 				char *str = r_core_project_notes_file (core, fileproject);
 				char *data = r_file_slurp (str, NULL);
@@ -173,22 +199,6 @@ static int cmd_project(void *data, const char *input) {
 					free (data);
 				}
 				free (str);
-			}
-			break;
-			case '?':
-			{
-				const char *help_msg[] = {
-					"Usage:", "Pn[j-?] [...]", "Project Notes",
-					"Pn", "", "show project notes",
-					"Pn", " -", "edit notes with cfg.editor",
-					"Pn-", "", "delete notes",
-					"Pn-", "str", "delete lines matching /str/ in notes",
-					"Pnx", "", "run project note commands",
-					"Pnj", "", "show notes in base64",
-					"Pnj", " [base64]", "set notes in base64",
-					NULL
-				};
-				r_core_cmd_help (core, help_msg);
 			}
 			break;
 			}
@@ -214,6 +224,7 @@ static int cmd_project(void *data, const char *input) {
 			"Po", " [file]", "open project",
 			"Ps", " [file]", "save project",
 			"PS", " [file]", "save script file",
+			"P-", " [file]", "delete project (alias for Pd)",
 			"NOTE:", "", "See 'e??prj.'",
 			"NOTE:", "", "project are stored in ~/.config/radare2/projects",
 			NULL

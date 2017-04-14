@@ -1,5 +1,5 @@
 BIN=rasign2
-BINDEPS=r_anal r_util
+BINDEPS=r_anal r_util r_search
 
 include ../rules.mk
 #include ../../libr/socket/deps.mk

@@ -26,7 +26,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			{
 				unsigned short array_size = buf[2] | (buf[3] << 8);
 				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				sprintf (op->buf_asm, "packed-switch-payload %d, %d", array_size, first_key);
+				snprintf (op->buf_asm, sizeof(op->buf_asm), "packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
 				len = 0;
@@ -38,7 +38,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			// int[size] relative offsets
 			{
 				unsigned short array_size = buf[2] | (buf[3] << 8);
-				sprintf (op->buf_asm, "sparse-switch-payload %d", array_size);
+				snprintf (op->buf_asm, sizeof (op->buf_asm), "sparse-switch-payload %d", array_size);
 				size = 4;
 				payload = 2 * (array_size*4);
 				len = 0;
@@ -74,38 +74,38 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case fmtopvAvB:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			sprintf (str, " v%i, v%i", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAvBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
-			sprintf (str, " v%i, v%i", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAAAvBBBB: // buf[1] seems useless :/
 			vA = (buf[3] << 8) | buf[2];
 			vB = (buf[5] << 8) | buf[4];
-			sprintf (str, " v%i, v%i", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAA:
 			vA = (int) buf[1];
-			sprintf (str, " v%i", vA);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i", vA);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAcB:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			sprintf (str, " v%i, %#x", vA, vB);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, %#x", vA, vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBB:
 			vA = (int) buf[1];
 			{
 				short sB = (buf[3] << 8) | buf[2];
-				sprintf (str, " v%i, %#04hx", vA, sB);
-				strasm = r_str_concat (strasm, str);
+				snprintf (str, sizeof (str), " v%i, %#04hx", vA, sB);
+				strasm = r_str_append (strasm, str);
 			}
 			break;
 		case fmtopvAAcBBBBBBBB:
@@ -116,7 +116,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			} else { //const
 				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBB0000:
 			vA = (int) buf[1];
@@ -127,7 +127,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			} else {
 				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBBBBBBBBBBBBBB:
 			vA = (int) buf[1];
@@ -137,67 +137,67 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				((llint)buf[6] << 32) | ((llint)buf[7] << 40)|
 				((llint)buf[8] << 48) | ((llint)buf[9] << 56);
 			#undef llint
-			sprintf (str, " v%i:v%i, 0x%"PFMT64x, vA, vA + 1, lB);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i:v%i, 0x%"PFMT64x, vA, vA + 1, lB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAvBBvCC:
 			vA = (int) buf[1];
 			vB = (int) buf[2];
 			vC = (int) buf[3];
-			sprintf (str, " v%i, v%i, v%i", vA, vB, vC);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, v%i, v%i", vA, vB, vC);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAvBBcCC:
 			vA = (int) buf[1];
 			vB = (int) buf[2];
 			vC = (int) buf[3];
-			sprintf (str, " v%i, v%i, %#x", vA, vB, vC);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBcCCCC:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3] << 8) | buf[2];
-			sprintf (str, " v%i, v%i, %#x", vA, vB, vC);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAA:
 			vA = (char) buf[1];
-			//sprintf (str, " %i", vA*2); // vA : word -> byte
+			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] << 8 | buf[2]);
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
 			vB = (int) (buf[3] << 8 | buf[2]);
-			//sprintf (str, " v%i, %i", vA, vB);
+			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
 			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB * 2));
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			//sprintf (str, " %#08x", vA*2); // vA: word -> byte
+			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA*2)); // vA : word -> byte
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBpCCCC: // if-*
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (int) (buf[3] << 8 | buf[2]);
-			//sprintf (str, " v%i, v%i, %i", vA, vB, vC);
+			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
 			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, a->pc + (vC * 2));
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + vB); // + (vB*2));
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineI:
 			vA = (int) (buf[1] & 0x0f);
@@ -205,58 +205,58 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			*str = 0;
 			switch (vA) {
 			case 1:
-				sprintf (str, " {v%i}", buf[4] & 0x0f);
+				snprintf (str, sizeof (str), " {v%i}", buf[4] & 0x0f);
 				break;
 			case 2:
-				sprintf (str, " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				snprintf (str, sizeof (str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
 				break;
 			case 3:
-				sprintf (str, " {v%i, v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
 				break;
 			case 4:
-				sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 						(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
 				break;
 			default:
-				sprintf (str, " {}");
+				snprintf (str, sizeof (str), " {}");
 			}
-			strasm = r_str_concat (strasm, str);
-			sprintf (str, ", [%04x]", vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
+			snprintf (str, sizeof (str), ", [%04x]", vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineIR:
 		case fmtoptinvokeVSR:
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			vC = (buf[5] << 8) | buf[4];
-			sprintf (str, " {v%i..v%i}, [%04x]", vC, vC + vA - 1, vB);
-			strasm = r_str_concat (strasm, str);
+			snprintf (str, sizeof (str), " {v%i..v%i}, [%04x]", vC, vC + vA - 1, vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinvokeVS:
 			vA = (int) (buf[1] & 0xf0) >> 4;
 			vB = (buf[3] << 8) | buf[2];
 			switch (vA) {
 			case 1:
-				sprintf (str, " {v%i}", buf[4] & 0x0f);
+				snprintf (str, sizeof (str), " {v%i}", buf[4] & 0x0f);
 				break;
 			case 2:
-				sprintf (str, " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				snprintf (str, sizeof (str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
 				break;
 			case 3:
-				sprintf (str, " {v%i, v%i, v%i}", buf[4] & 0x0f,
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i}", buf[4] & 0x0f,
 						(buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
 				break;
 			case 4:
-				sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 						(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
 				break;
 			default:
-				sprintf (str, " {}");
+				snprintf (str, sizeof (str), " {}");
 				break;
 			}
-			strasm = r_str_concat (strasm, str);
-			sprintf (str, ", [%04x]", vB);
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
+			snprintf (str, sizeof (str), ", [%04x]", vB);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAtBBBB: // "sput-*"
 			vA = (int) buf[1];
@@ -264,26 +264,26 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			if (buf[0] == 0x1a) {
 				offset = R_ASM_GET_OFFSET (a, 's', vB);
 				if (offset == -1) {
-					sprintf (str, " v%i, string+%i", vA, vB);
+					snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
 				} else {
-					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+					snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
 				flag_str = R_ASM_GET_NAME (a, 'c', vB);
 				if (!flag_str) {
-					sprintf (str, " v%i, class+%i", vA, vB);
+					snprintf (str, sizeof (str), " v%i, class+%i", vA, vB);
 				} else {
-					sprintf (str, " v%i, %s", vA, flag_str);
+					snprintf (str, sizeof (str), " v%i, %s", vA, flag_str);
 				}
 			} else {
 				flag_str = R_ASM_GET_NAME (a, 'f', vB);
 				if (!flag_str) {
-					sprintf (str, " v%i, field+%i", vA, vB);
+					snprintf (str, sizeof (str), " v%i, field+%i", vA, vB);
 				} else {
-					sprintf (str, " v%i, %s", vA, flag_str);
+					snprintf (str, sizeof (str), " v%i, %s", vA, flag_str);
 				}
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptopvAvBoCCCC:
 			vA = (buf[1] & 0x0f);
@@ -291,22 +291,22 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vC = (buf[3]<<8) | buf[2];
 			offset = R_ASM_GET_OFFSET (a, 'o', vC);
 			if (offset == -1) {
-				sprintf (str, " v%i, v%i, [obj+%04x]", vA, vB, vC);
+				snprintf (str, sizeof (str), " v%i, v%i, [obj+%04x]", vA, vB, vC);
 			} else {
-				sprintf (str, " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
+				snprintf (str, sizeof (str), " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopAAtBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			offset = R_ASM_GET_OFFSET (a, 't', vB);
 			if (offset == -1) {
-				sprintf (str, " v%i, thing+%i", vA, vB);
+				snprintf (str, sizeof (str), " v%i, thing+%i", vA, vB);
 			} else {
-				sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBtCCCC:
 			vA = (buf[1] & 0x0f);
@@ -315,33 +315,33 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			if (buf[0] == 0x20 || buf[0] == 0x23) { //instance-of & new-array
 				flag_str = R_ASM_GET_NAME (a, 'c', vC);
 				if (flag_str) {
-					sprintf (str, " v%i, v%i, %s", vA, vB, flag_str);
+					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
 				}
 				else {
-					sprintf (str, " v%i, v%i, class+%i", vA, vB, vC);
+					snprintf (str, sizeof (str), " v%i, v%i, class+%i", vA, vB, vC);
 				}
 			} else {
 				flag_str = R_ASM_GET_NAME (a, 'f', vC);
 				if (flag_str) {
-					sprintf (str, " v%i, v%i, %s", vA, vB, flag_str);
+					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
 				}
 				else {
-					sprintf (str, " v%i, v%i, field+%i", vA, vB, vC);
+					snprintf (str, sizeof (str), " v%i, v%i, field+%i", vA, vB, vC);
 				}
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
 			offset = R_ASM_GET_OFFSET (a, 's', vB);
 			if (offset == -1) {
-				sprintf (str, " v%i, string+%i", vA, vB);
+				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
 			}
 			else {
-				sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvCCCCmBBBB:
 			vA = (int) buf[1];
@@ -350,65 +350,65 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			if (buf[0] == 0x25) { // filled-new-array/range
 				flag_str = R_ASM_GET_NAME (a, 'c', vB);
 				if (flag_str) {
-					sprintf (str, " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				}
 				else {
-					sprintf (str, " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
+					snprintf (str, sizeof (str), " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
 				}
 			} else {
 				flag_str = R_ASM_GET_NAME (a, 'm', vB);
 				if (flag_str) {
-					sprintf (str, " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				}
 				else {
-					sprintf (str, " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
+					snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 				}
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvXtBBBB:
 			vA = (int) (buf[1] & 0xf0) >> 4;
 			vB = (buf[3] << 8) | buf[2];
 			switch (vA) {
 				case 1:
-					sprintf (str, " {v%i}", buf[4] & 0x0f);
+					snprintf (str, sizeof (str), " {v%i}", buf[4] & 0x0f);
 					break;
 				case 2:
-					sprintf (str, " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+					snprintf (str, sizeof (str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
 					break;
 				case 3:
-					sprintf (str, " {v%i, v%i, v%i}", buf[4] & 0x0f,
+					snprintf (str, sizeof (str), " {v%i, v%i, v%i}", buf[4] & 0x0f,
 							(buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
 					break;
 				case 4:
-					sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+					snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 							(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
 					break;
 				case 5:
-					sprintf (str, " {v%i, v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+					snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 							(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4, buf[1] & 0x0f); // TOODO: recheck this
 					break;
 				default:
-					sprintf (str, " {}");
+					snprintf (str, sizeof (str), " {}");
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			if (buf[0] == 0x24) { // filled-new-array
 				flag_str = R_ASM_GET_NAME (a, 'c', vB);
 				if (flag_str) {
-					sprintf (str, ", %s ; 0x%x", flag_str, vB);
+					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
 				} else {
-					sprintf (str, ", class+%i", vB);
+					snprintf (str, sizeof (str), ", class+%i", vB);
 				}
 			} else {
 				flag_str = R_ASM_GET_NAME (a, 'm', vB);
 				if (flag_str) {
-					sprintf (str, ", %s ; 0x%x", flag_str, vB);
+					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
 				} else {
-					sprintf (str, ", method+%i", vB);
+					snprintf (str, sizeof (str), ", method+%i", vB);
 				}
 
 			}
-			strasm = r_str_concat (strasm, str);
+			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinvokeI: // Any opcode has this formats
 		case fmtoptinvokeIR:
