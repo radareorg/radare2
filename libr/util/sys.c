@@ -128,7 +128,7 @@ R_API RList *r_sys_dir(const char *path) {
 	wchar_t *wcpath;
 	char *cfname;
 
-	fh = r_sandbox_opendir (path, &entry, &dir, wcpath);	
+	fh = r_sandbox_opendir (path, &entry, dir, wcpath);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		if (wcpath) {
