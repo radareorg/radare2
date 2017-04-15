@@ -109,10 +109,10 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 		offset += 7;
 	}
 	while (*p++ & 0x80);
-  	
-  	if ((value & 0x40) != 0) {
-  		result |= G_GINT64_CONSTANT (-1) << offset;
-  	}
+
+	if ((value & 0x40) != 0) {
+		result |= G_GINT64_CONSTANT (-1) << offset;
+	}
  	*data = p;
 	return result;
 }
@@ -121,39 +121,39 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 
 #define BYTE_AT(type, i, shift) (((type)(p[i]) & 0x7f) << (shift))
 
-#define LEB128_1(type) (BYTE_AT(type, 0, 0))
-#define LEB128_2(type) (BYTE_AT(type, 1, 7) | LEB128_1(type))
-#define LEB128_3(type) (BYTE_AT(type, 2, 14) | LEB128_2(type))
-#define LEB128_4(type) (BYTE_AT(type, 3, 21) | LEB128_3(type))
-#define LEB128_5(type) (BYTE_AT(type, 4, 28) | LEB128_4(type))
-#define LEB128_6(type) (BYTE_AT(type, 5, 35) | LEB128_5(type))
-#define LEB128_7(type) (BYTE_AT(type, 6, 42) | LEB128_6(type))
-#define LEB128_8(type) (BYTE_AT(type, 7, 49) | LEB128_7(type))
-#define LEB128_9(type) (BYTE_AT(type, 8, 56) | LEB128_8(type))
-#define LEB128_10(type) (BYTE_AT(type, 9, 63) | LEB128_9(type))
+#define LEB128_1(type) (BYTE_AT (type, 0, 0))
+#define LEB128_2(type) (BYTE_AT (type, 1, 7) | LEB128_1 (type))
+#define LEB128_3(type) (BYTE_AT (type, 2, 14) | LEB128_2 (type))
+#define LEB128_4(type) (BYTE_AT (type, 3, 21) | LEB128_3 (type))
+#define LEB128_5(type) (BYTE_AT (type, 4, 28) | LEB128_4 (type))
+#define LEB128_6(type) (BYTE_AT (type, 5, 35) | LEB128_5 (type))
+#define LEB128_7(type) (BYTE_AT (type, 6, 42) | LEB128_6 (type))
+#define LEB128_8(type) (BYTE_AT (type, 7, 49) | LEB128_7 (type))
+#define LEB128_9(type) (BYTE_AT (type, 8, 56) | LEB128_8 (type))
+#define LEB128_10(type) (BYTE_AT (type, 9, 63) | LEB128_9 (type))
 
 #define SHIFT_AMOUNT(type, sign_bit) (sizeof(type) * 8 - 1 - (sign_bit))
 #define SIGN_EXTEND(type, value, sign_bit) \
-	((type)((value) << SHIFT_AMOUNT(type, sign_bit)) >> \
-		SHIFT_AMOUNT(type, sign_bit))
+	((type)((value) << SHIFT_AMOUNT (type, sign_bit)) >> \
+		SHIFT_AMOUNT (type, sign_bit))
 
 R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
-	if (p < max && (p[0] & 0x80) == 0) {
-		*out_value = LEB128_1(ut32);
+	if (p < max && !(p[0] & 0x80)) {
+		*out_value = LEB128_1 (ut32);
 		return 1;
-	} else if (p + 1 < max && (p[1] & 0x80) == 0) {
-		*out_value = LEB128_2(ut32);
+	} else if (p + 1 < max && !(p[1] & 0x80)) {
+		*out_value = LEB128_2 (ut32);
 		return 2;
-	} else if (p + 2 < max && (p[2] & 0x80) == 0) {
-		*out_value = LEB128_3(ut32);
+	} else if (p + 2 < max && !(p[2] & 0x80)) {
+		*out_value = LEB128_3 (ut32);
 		return 3;
-	} else if (p + 3 < max && (p[3] & 0x80) == 0) {
-		*out_value = LEB128_4(ut32);
+	} else if (p + 3 < max && !(p[3] & 0x80)) {
+		*out_value = LEB128_4 (ut32);
 		return 4;
-	} else if (p + 4 < max && (p[4] & 0x80) == 0) {
+	} else if (p + 4 < max && !(p[4] & 0x80)) {
 		/* the top bits set represent values > 32 bits */
 		// if (p[4] & 0xf0) {}
-		*out_value = LEB128_5(ut32);
+		*out_value = LEB128_5 (ut32);
 		return 5;
 	} else {
 		/* past the end */
@@ -163,30 +163,30 @@ R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
 }
 
 R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
-	if (p < max && (p[0] & 0x80) == 0) {
-		ut32 result = LEB128_1(ut32);
-		*out_value = SIGN_EXTEND(ut32, result, 6);
+	if (p < max && !(p[0] & 0x80)) {
+		ut32 result = LEB128_1 (ut32);
+		*out_value = SIGN_EXTEND (ut32, result, 6);
 		return 1;
-	} else if (p + 1 < max && (p[1] & 0x80) == 0) {
-		ut32 result = LEB128_2(ut32);
-		*out_value = SIGN_EXTEND(ut32, result, 13);
+	} else if (p + 1 < max && !(p[1] & 0x80)) {
+		ut32 result = LEB128_2 (ut32);
+		*out_value = SIGN_EXTEND (ut32, result, 13);
 		return 2;
-	} else if (p + 2 < max && (p[2] & 0x80) == 0) {
-		ut32 result = LEB128_3(ut32);
-		*out_value = SIGN_EXTEND(ut32, result, 20);
+	} else if (p + 2 < max && !(p[2] & 0x80)) {
+		ut32 result = LEB128_3 (ut32);
+		*out_value = SIGN_EXTEND (ut32, result, 20);
 		return 3;
-	} else if (p + 3 < max && (p[3] & 0x80) == 0) {
-		ut32 result = LEB128_4(ut32);
-		*out_value = SIGN_EXTEND(ut32, result, 27);
+	} else if (p + 3 < max && !(p[3] & 0x80)) {
+		ut32 result = LEB128_4 (ut32);
+		*out_value = SIGN_EXTEND (ut32, result, 27);
 		return 4;
-	} else if (p+4 < max && (p[4] & 0x80) == 0) {
+	} else if (p+4 < max && !(p[4] & 0x80)) {
 		/* the top bits should be a sign-extension of the sign bit */
 		bool sign_bit_set = (p[4] & 0x8);
 		int top_bits = p[4] & 0xf0;
 		if ((sign_bit_set && top_bits != 0x70) || (!sign_bit_set && top_bits != 0)) {
 			return 0;
 		}
-		ut32 result = LEB128_5(ut32);
+		ut32 result = LEB128_5 (ut32);
 		*out_value = result;
 		return 5;
 	} else {
@@ -196,35 +196,35 @@ R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
 }
 
 R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
-	if (p < max && (p[0] & 0x80) == 0) {
-		*out_value = LEB128_1(ut64);
+	if (p < max && !(p[0] & 0x80)) {
+		*out_value = LEB128_1 (ut64);
 		return 1;
-	} else if (p + 1 < max && (p[1] & 0x80) == 0) {
-		*out_value = LEB128_2(ut64);
+	} else if (p + 1 < max && !(p[1] & 0x80)) {
+		*out_value = LEB128_2 (ut64);
 		return 2;
-	} else if (p + 2 < max && (p[2] & 0x80) == 0) {
-		*out_value = LEB128_3(ut64);
+	} else if (p + 2 < max && !(p[2] & 0x80)) {
+		*out_value = LEB128_3 (ut64);
 		return 3;
-	} else if (p + 3 < max && (p[3] & 0x80) == 0) {
-		*out_value = LEB128_4(ut64);
+	} else if (p + 3 < max && !(p[3] & 0x80)) {
+		*out_value = LEB128_4 (ut64);
 		return 4;
-	} else if (p + 4 < max && (p[4] & 0x80) == 0) {
-		*out_value = LEB128_5(ut64);
+	} else if (p + 4 < max && !(p[4] & 0x80)) {
+		*out_value = LEB128_5 (ut64);
 		return 5;
-	} else if (p + 5 < max && (p[5] & 0x80) == 0) {
-		*out_value = LEB128_6(ut64);
+	} else if (p + 5 < max && !(p[5] & 0x80)) {
+		*out_value = LEB128_6 (ut64);
 		return 6;
-	} else if (p + 6 < max && (p[6] & 0x80) == 0) {
-		*out_value = LEB128_7(ut64);
+	} else if (p + 6 < max && !(p[6] & 0x80)) {
+		*out_value = LEB128_7 (ut64);
 		return 7;
-	} else if (p + 7 < max && (p[7] & 0x80) == 0) {
-		*out_value = LEB128_8(ut64);
+	} else if (p + 7 < max && !(p[7] & 0x80)) {
+		*out_value = LEB128_8 (ut64);
 		return 8;
-	} else if (p + 8 < max && (p[8] & 0x80) == 0) {
-		*out_value = LEB128_9(ut64);
+	} else if (p + 8 < max && !(p[8] & 0x80)) {
+		*out_value = LEB128_9 (ut64);
 		return 9;
-	} else if (p + 9 < max && (p[9] & 0x80) == 0) {
-		*out_value = LEB128_10(ut64);
+	} else if (p + 9 < max && !(p[9] & 0x80)) {
+		*out_value = LEB128_10 (ut64);
 		return 10;
 	} else {
 		/* past the end */
@@ -234,50 +234,50 @@ R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
 }
 
 R_API size_t read_i64_leb128 (const ut8* p, const ut8* max, st64* out_value) {
-	if (p < max && (p[0] & 0x80) == 0) {
-		ut64 result = LEB128_1(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 6);
+	if (p < max && !(p[0] & 0x80)) {
+		ut64 result = LEB128_1 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 6);
 		return 1;
-	} else if (p + 1 < max && (p[1] & 0x80) == 0) {
+	} else if (p + 1 < max && !(p[1] & 0x80)) {
 		ut64 result = LEB128_2(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 13);
+		*out_value = SIGN_EXTEND (ut64, result, 13);
 		return 2;
-	} else if (p + 2 < max && (p[2] & 0x80) == 0) {
-		ut64 result = LEB128_3(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 20);
+	} else if (p + 2 < max && !(p[2] & 0x80)) {
+		ut64 result = LEB128_3 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 20);
 		return 3;
-	} else if (p + 3 < max && (p[3] & 0x80) == 0) {
-		ut64 result = LEB128_4(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 27);
+	} else if (p + 3 < max && !(p[3] & 0x80)) {
+		ut64 result = LEB128_4 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 27);
 		return 4;
-	} else if (p + 4 < max && (p[4] & 0x80) == 0) {
-		ut64 result = LEB128_5(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 34);
+	} else if (p + 4 < max && !(p[4] & 0x80)) {
+		ut64 result = LEB128_5 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 34);
 		return 5;
-	} else if (p + 5 < max && (p[5] & 0x80) == 0) {
-		ut64 result = LEB128_6(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 41);
+	} else if (p + 5 < max && !(p[5] & 0x80)) {
+		ut64 result = LEB128_6 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 41);
 		return 6;
-	} else if (p + 6 < max && (p[6] & 0x80) == 0) {
-		ut64 result = LEB128_7(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 48);
+	} else if (p + 6 < max && !(p[6] & 0x80)) {
+		ut64 result = LEB128_7 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 48);
 		return 7;
-	} else if (p + 7 < max && (p[7] & 0x80) == 0) {
-		ut64 result = LEB128_8(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 55);
+	} else if (p + 7 < max && !(p[7] & 0x80)) {
+		ut64 result = LEB128_8 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 55);
 		return 8;
-	} else if (p + 8 < max && (p[8] & 0x80) == 0) {
-		ut64 result = LEB128_9(ut64);
-		*out_value = SIGN_EXTEND(ut64, result, 62);
+	} else if (p + 8 < max && !(p[8] & 0x80)) {
+		ut64 result = LEB128_9 (ut64);
+		*out_value = SIGN_EXTEND (ut64, result, 62);
 		return 9;
-	} else if (p + 9 < max && (p[9] & 0x80) == 0) {
+	} else if (p + 9 < max && !(p[9] & 0x80)) {
 		/* the top bits should be a sign-extension of the sign bit */
 		bool sign_bit_set = (p[9] & 0x1);
 		int top_bits = p[9] & 0xfe;
 		if ((sign_bit_set && top_bits != 0x7e) || (!sign_bit_set && top_bits != 0)) {
 			return 0;	
 		}
-		ut64 result = LEB128_10(ut64);
+		ut64 result = LEB128_10 (ut64);
 		*out_value = result;
 		return 10;
 	} else {
