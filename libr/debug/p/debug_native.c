@@ -572,6 +572,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 # define KP_COMM(x) (x)->p_comm
 # define KP_PID(x) (x)->p_pid
 # define KP_PPID(x) (x)->p_ppid
+# define KP_UID(x) (x)->p_uid
 # define KINFO_PROC kinfo_proc2
 #elif defined(__OpenBSD__)
 # define KVM_OPEN_FLAG KVM_NO_FILES
@@ -580,6 +581,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 # define KP_COMM(x) (x)->p_comm
 # define KP_PID(x) (x)->p_pid
 # define KP_PPID(x) (x)->p_ppid
+# define KP_UID(x) (x)->p_uid
 # define KINFO_PROC kinfo_proc
 #else
 # define KVM_OPEN_FLAG O_RDONLY
@@ -588,6 +590,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 # define KP_COMM(x) (x)->ki_comm
 # define KP_PID(x) (x)->ki_pid
 # define KP_PPID(x) (x)->ki_ppid
+# define KP_UID(x) (x)->ki_uid
 # define KINFO_PROC kinfo_proc
 #endif
 	char errbuf[_POSIX2_LINE_MAX];
@@ -602,12 +605,12 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	if (pid) {
 		kp = KVM_GETPROCS (kd, KERN_PROC_PID, pid, &cnt);
 		if (cnt == 1) {
-			RDebugPid *p = r_debug_pid_new (KP_COMM(kp), pid, 's', 0);
+			RDebugPid *p = r_debug_pid_new (KP_COMM(kp), pid, KP_UID(kp), 's', 0);
 			if (p) r_list_append (list, p);
 			/* we got our process, now fetch the parent process */
 			kp = KVM_GETPROCS (kd, KERN_PROC_PID, KP_PPID(kp), &cnt);
                         if (cnt == 1) {
-				RDebugPid *p = r_debug_pid_new (KP_COMM(kp), KP_PID(kp), 's', 0);
+				RDebugPid *p = r_debug_pid_new (KP_COMM(kp), KP_PID(kp), KP_UID(kp), 's', 0);
 				if (p) r_list_append (list, p);
 			}
 		}
@@ -615,7 +618,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		kp = KVM_GETPROCS (kd, KERN_PROC_UID, geteuid(), &cnt);
 		int i;
 		for (i = 0; i < cnt; i++) {
-			RDebugPid *p = r_debug_pid_new (KP_COMM(kp + i), KP_PID(kp + i), 's', 0);
+			RDebugPid *p = r_debug_pid_new (KP_COMM(kp + i), KP_PID(kp + i), KP_UID(kp), 's', 0);
 			if (p) r_list_append (list, p);
 		}
 	}
