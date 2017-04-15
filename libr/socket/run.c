@@ -71,7 +71,7 @@ R_API void r_run_reset(RRunProfile *p) {
 }
 
 R_API int r_run_parse(RRunProfile *pf, const char *profile) {
-	char *s, *p, *o, *str = strdup (profile);
+	char *p, *o, *str = strdup (profile);
 	if (!str) {
 		return 0;
 	}

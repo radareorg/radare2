@@ -300,6 +300,7 @@ R_API int r_isprint (const RRune c) {
 	return true;
 }
 
+#if __WINDOWS__
 R_API char *r_utf16_to_utf8 (const wchar_t *wc) {
 	char *rutf8;
 	int csize;
@@ -323,3 +324,4 @@ R_API wchar_t *r_utf8_to_utf16 (const char *cstring) {
 	}
 	return rutf16;
 }
+#endif
