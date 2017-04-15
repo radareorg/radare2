@@ -14,7 +14,6 @@
 #define R_BIN_WASM_MAGIC_BYTES "\x00" "asm"
 #define R_BIN_WASM_VERSION 0x1
 #define R_BIN_WASM_STRING_LENGTH 256
-#define R_BIN_WASM_MAX_NUM_PARAM 16
 #define R_BIN_WASM_END_OF_CODE 0xb
 
 #define R_BIN_WASM_SECTION_CUSTOM 0x0
@@ -69,16 +68,15 @@ typedef struct r_bin_wasm_section_t {
 	ut32 payload_data;
 	ut32 payload_len; 
 	ut32 count;
-	RList *entries;
 } RBinWasmSection;
 
 typedef struct r_bin_wasm_type_t {
 	ut8 form; 
 	ut32 param_count; 
-	r_bin_wasm_value_type_t param_types[R_BIN_WASM_MAX_NUM_PARAM]; 
+	r_bin_wasm_value_type_t *param_types;
 	st8 return_count; // MVP = 1
 	r_bin_wasm_value_type_t return_type;
-	char *to_str;
+	char to_str[R_BIN_WASM_STRING_LENGTH];
 } RBinWasmTypeEntry;
 
 // Other Types
@@ -95,8 +93,6 @@ struct r_bin_wasm_table_type_t {
 struct r_bin_wasm_memory_type_t {
 	struct r_bin_wasm_resizable_limits_t limits;
 };
-
-// 
 
 typedef struct r_bin_wasm_import_t {
 	ut32 module_len;
