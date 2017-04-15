@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2016 - pancake */
 
 #include <r_fs.h>
-#include <dirent.h>
 #include <sys/stat.h>
 
 static RFSFile* fs_squash_open(RFSRoot *root, const char *path) {

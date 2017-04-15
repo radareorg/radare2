@@ -10,7 +10,9 @@
 #include <r_list.h> // radare linked list
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <r_th.h>
+#if __UNIX__
 #include <dirent.h>
+#endif
 #include <sys/time.h>
 #include "r_util/r_base64.h"
 #include "r_util/r_base91.h"

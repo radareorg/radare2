@@ -10,7 +10,6 @@
 # endif
 #endif
 #include <sys/types.h>
-#include <dirent.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -122,6 +121,31 @@ R_API int r_sys_truncate(const char *file, int sz) {
 
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	HANDLE fh;
+	WIN32_FIND_DATAW entry;
+	wchar_t dir[MAX_PATH];
+	wchar_t *wcpath;
+	char *cfname;
+
+	fh = r_sandbox_opendir (path, &entry, dir, wcpath);
+	if (fh == INVALID_HANDLE_VALUE) {
+		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
+		free (wcpath);
+		return list;
+	}
+	list = r_list_newf (free);
+	if (list) {
+		do {
+			if ((cfname = r_utf16_to_utf8 (entry.cFileName))) {
+				r_list_append (list, strdup (cfname));
+				free (cfname);
+			}
+		} while (FindNextFileW (fh, &entry));
+	}
+	free (wcpath);
+	FindClose (fh);
+#else
 	struct dirent *entry;
 	DIR *dir = r_sandbox_opendir (path);
 	if (dir) {
@@ -134,6 +158,7 @@ R_API RList *r_sys_dir(const char *path) {
 		}
 		closedir (dir);
 	}
+#endif	
 	return list;
 }
 

@@ -4,7 +4,6 @@
 #include "r_util.h"
 #include "r_lib.h"
 #include <stdio.h>
-#include <dirent.h>
 
 R_LIB_VERSION(r_lib);
 
@@ -303,31 +302,6 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 
 	return ret;
 }
-#if __WINDOWS__ && !defined(__CYGWIN__)
-static char *utf16_to_utf8 (const wchar_t *wc) {
-	char *rutf8;
-	int csize;
-
-	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL))) {
-		if ((rutf8 = malloc (csize))) {
-			WideCharToMultiByte (CP_UTF8, 0, wc, -1, rutf8, csize, NULL, NULL);
-		}
-	}
-	return rutf8;
-}
-
-static wchar_t *utf8_to_utf16 (const char *cstring) {
-	wchar_t *rutf16;
-	int wcsize;
-
-	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0))) {
-		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
-			MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
-		}
-	}
-	return rutf16;
-}
-#endif
 
 R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __WINDOWS__ && !defined(__CYGWIN__)
@@ -351,7 +325,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		return false;
 	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	wcpath = utf8_to_utf16 (path);
+	wcpath = r_utf8_to_utf16 (path);
 	if (!wcpath) {
 		return false;	
 	}
@@ -364,7 +338,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	}
 	do {
 		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
-		wctocbuff = utf16_to_utf8 (file);
+		wctocbuff = r_utf16_to_utf8 (file);
 		if (wctocbuff) {
 			if (r_lib_dl_check_filename (wctocbuff)) {
 				r_lib_open (lib, wctocbuff);

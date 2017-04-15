@@ -36,7 +36,6 @@
 #include <r_util.h>
 #include <sys/param.h>
 #include <ctype.h>
-#include <dirent.h>
 #if __UNIX__
 #define QUICK 1
 #include <sys/mman.h>
@@ -504,12 +503,20 @@ static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r
 static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn, int action) {
 	ut32 marraycount, i, mentrycount = 0, starttest;
 	struct r_magic_entry *marray;
-	char subfn[MAXPATHLEN];
-	struct dirent *d;
 	struct stat st;
 	int errs = 0;
+#if __UNIX__
 	DIR *dir;
-
+	struct dirent *d;
+	char subfn[MAXPATHLEN];
+#else	
+	HANDLE hdir;
+	WIN32_FIND_DATAW entry;
+	wchar_t dir[MAX_PATH];
+	wchar_t *wcpath;
+	char *cfname;
+	char subfn[1024];	
+#endif
 	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
 
         maxmagic = MAXMAGIS;
@@ -529,6 +536,28 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 			free (marray);
 			return  -1;
 		}
+#if __WINDOWS__ && !defined(__CYGWIN__)
+		if ((wcpath = r_utf8_to_utf16 (fn))) {
+			swprintf (dir, sizeof (dir), L"%ls\\*.*", wcpath);
+			hdir = FindFirstFileW (dir, &entry);
+			if (!(hdir == INVALID_HANDLE_VALUE)) {
+				do {
+					if (wcsncmp (entry.cFileName, L".", 1) == 0) continue;
+					if ((cfname = r_utf16_to_utf8 (entry.cFileName))) {
+						snprintf (subfn, sizeof (subfn), "%s/%s", fn, cfname);
+						if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
+							load_1 (ms, action, subfn, &errs, &marray, &marraycount);
+						}
+						free (cfname);
+					}
+				} while (FindNextFileW (hdir, &entry));
+				FindClose (hdir);
+			}
+			free (wcpath);
+		} else {
+			errs++;
+		}
+#else
 		dir = opendir (fn);
 		if (dir) {
 			while ((d = readdir (dir))) {
@@ -539,7 +568,10 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				//else perror (subfn);
 			}
 			closedir (dir);
-		} else errs++;
+		} else {
+			errs++;
+		}
+#endif
 	} else load_1 (ms, action, fn, &errs, &marray, &marraycount);
 	if (errs)
 		goto out;
