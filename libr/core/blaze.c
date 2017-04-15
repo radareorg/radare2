@@ -311,21 +311,21 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
-static int fcnAddBB (fcn_t *fcn, bb_t* block) {
+static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 	if (!fcn) {
 		eprintf ("No function given to add a basic block\n");
-		return 0;
+		return false;
 	}
 	fcn->score += block->score;
 	if (block->type == END) {
-		fcn->ends += 1;
+		fcn->ends++;
 	}
 	if (!fcn->bbs) {
 		eprintf ("Block list not initialized\n");
-		return 0;
+		return false;
 	}
 	r_list_append (fcn->bbs, block);
-	return 1;
+	return true;
 }
 
 static fcn_t* fcnNew (bb_t *block) {
@@ -366,7 +366,7 @@ static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_typ
 	}
 }
 
-static int addBB (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+static bool addBB (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
 	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
@@ -416,7 +416,6 @@ void dump_blocks (RList* list) {
 
 #define Fhandled(x) sdb_fmt(0, "handled.%"PFMT64x"", x)
 R_API bool core_anal_bbs(RCore *core, ut64 len) {
-
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;
@@ -433,6 +432,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 	int block_score = 0;
 	RList *block_list;
 	bb_t *block = NULL;
+	int invalid_instruction_barrier = -20000;
 
 
 	block_list = r_list_new ();
@@ -442,21 +442,21 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 
 	while (cur < size) {
 		// magic number to fix huge section of invalid code fuzz files
-		if (block_score < -20000) {
+		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
 		op = r_core_anal_op (core, start + cur);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
-			cur += 1;
+			cur++;
 			continue;
 		}
 
 		if (op->mnemonic[0] == '?') {
 			eprintf ("Cannot analyze opcode at %"PFMT64x"\n", start + cur);
 			block_score -= 10;
-			cur += 1;
+			cur++;
 			continue;
 		}
 		switch (op->type) {
