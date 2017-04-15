@@ -336,20 +336,21 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	case 0xbd:
 	case 0xbe:
 	case 0xbf:
-		sprintf (op->buf_asm, "%s", opcodes[o]);
+		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", opcodes[o]);
 		break;
 	case 0x02:
 	case 0x03:
 	case 0x04:
 		{
-			if (len < 2) break;
-			if (buf[1] == 0x40) {
-				sprintf (op->buf_asm, "%s", opcodes[o]);
-			} else {
-				// TODO: block_type (value_type)
-				sprintf (op->buf_asm, "%s ...", opcodes[o], buf[1]);
+			if (len >= 2) {
+				if (buf[1] == 0x40) {
+					snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", opcodes[o]);
+				} else {
+					// TODO: block_type (value_type)
+					snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s ...", opcodes[o]);
+				}
+				rep = 2;
 			}
-			rep = 2;
 		}
 		break;
 	case 0x0c:
@@ -358,40 +359,45 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		{
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			sprintf (op->buf_asm, "%s %d", opcodes[o], val);
-			rep += n;
+			if (n > 0 && n < len) {
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %d", opcodes[o], val);
+				rep += n;
+			}
 		}
 		break;
 	case 0x0e:
-		// TODO: br_table
 		{
+			// TODO: br_table
 			ut32 count = 0, table = 0, def = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &count);
-			if (!n || len < n) break;
-			rep += n;
-			int i;
-			for (i = 0; i < count; i++) {
-					n = read_u32_leb128 (buf + n + 1, buf + len, &table);
-					if (!n || len < rep + n) break;
+			if (n > 0 && n < len) {
+				rep += n;
+				int i;
+				for (i = 0; i < count; i++) {
+						n = read_u32_leb128 (buf + n + 1, buf + len, &table);
+						if (!n || len < rep + n) break;
+						rep += n;
+				}
+				n = read_u32_leb128 (buf + n + 1, buf + len, &count);
+				if (n > 0 && n + rep < len) {
+					snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %d ... %d", opcodes[o], count, def);
 					rep += n;
+				}
 			}
-			n = read_u32_leb128 (buf + n + 1, buf + len, &count);
-			if (!n || len < rep + n) break;
-			sprintf (op->buf_asm, "%s %d ... %d", opcodes[o], count, def);
-			rep += n;
 		}
 		break;
 	case 0x11:
 		{
 			ut32 val = 0, reserved = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			rep += n;
-			n = read_u32_leb128 (buf + n + 1, buf + len, &reserved);
-			if (n != 1 || len < rep + n) break;
-			reserved &= 0x1;
-			sprintf (op->buf_asm, "call_indirect %d %d", val, reserved);
+			if (n > 0 && n < len)  {
+				rep += n;
+				n = read_u32_leb128 (buf + n + 1, buf + len, &reserved);
+				if (n == 1 || n + rep < len)  {
+					reserved &= 0x1;
+					snprintf (op->buf_asm, R_ASM_BUFSIZE, "call_indirect %d %d", val, reserved);
+				}
+			}
 		}
 		break;
 	case 0x20:
@@ -402,9 +408,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		{
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			sprintf (op->buf_asm, "%s %d", opcodes[o], val);
-			rep += n;
+			if (n > 0 && n < len) {
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %d", opcodes[o], val);
+				rep += n;
+			}
 		}
 		break;
 	case 0x28:
@@ -433,12 +440,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		{
 			ut32 flag = 0, offset = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &flag);
-			if (!n || len < n) break;
-			rep += n;
-			size_t m = read_u32_leb128 (buf + 1 + n, buf + len, &offset);
-			if (!m || len < rep + m) break;
-			sprintf (op->buf_asm, "%s %d %d", opcodes[o], flag, offset);
-			rep += m;
+			if (n > 0 && n < len) {
+				rep += n;
+				size_t m = read_u32_leb128 (buf + 1 + n, buf + len, &offset);
+				if (m > 0 && rep + m < len) {
+					snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %d %d", opcodes[o], flag, offset);
+					rep += m;
+				}
+			}
 		}
 		break;
 	case 0x3f: 
@@ -446,9 +455,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		{
 			ut32 reserved = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &reserved);
-			if (n != 1 || len < n) break;
-			reserved &= 0x1;
-			sprintf (op->buf_asm, "%s %d", opcodes[o], reserved); 
+			if (n == 1 && n < len) {
+				reserved &= 0x1;
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %d", opcodes[o], reserved); 
+				rep += n;
+			}
 		}
 		break;
 
@@ -456,38 +467,40 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		{
 			st32 val = 0;
 			size_t n = read_i32_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			sprintf (op->buf_asm, "%s %" PRId32, opcodes[o], val);
-			rep += n;
+			if (n > 0 && n < len) {
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PRId32, opcodes[o], val);
+				rep += n;
+			}
 		}
 		break;
 	case 0x42:
 		{
 			st64 val = 0;
 			size_t n = read_i64_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			sprintf (op->buf_asm, "%s %" PRId64, opcodes[o], val);
-			rep += n;
+			if (n > 0 && n < len) {
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PRId64, opcodes[o], val);
+				rep += n;
+			}
 		}
 		break;
 	case 0x43:
-		// f32.const value {uint32}
-		// a constant value interpreted as f32
 		{
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			sprintf (op->buf_asm, "%s %04" PFMT32d, opcodes[o], val);
-			rep += n;
+			if (n > 0 && n < len) {
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PFMT32d, opcodes[o], val);
+				rep += n;
+			}
 		}
 		break;
 	case 0x44:
 		{
 			ut64 val = 0;
 			size_t n = read_u64_leb128 (buf + 1, buf + len, &val);
-			if (!n || len < n) break;
-			sprintf (op->buf_asm, "%s %08" PFMT64d, opcodes[o], val);
-			rep += n;
+			if (n > 0 && n < len) {
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PFMT64d, opcodes[o], val);
+				rep += n;
+			}
 		}
 		break;
 	default:

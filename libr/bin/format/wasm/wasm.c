@@ -14,7 +14,7 @@ static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_u32_leb128 (&b->buf[b->cur], &b->buf[max+1], &tmp))) {
+	if (!(n = read_u32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp))) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -30,7 +30,7 @@ static size_t consume_s32_r (RBuffer *b, ut64 max, st32 *out) {
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_i32_leb128 (&b->buf[b->cur], &b->buf[max+1], &tmp))) {
+	if (!(n = read_i32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp))) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -46,7 +46,7 @@ static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_u32_leb128 (&b->buf[b->cur], &b->buf[max+1], &tmp))) {
+	if (!(n = read_u32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp))) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -62,7 +62,7 @@ static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_i32_leb128 (&b->buf[b->cur], &b->buf[max+1], &tmp)) || n > 2) {
+	if (!(n = read_i32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp)) || n > 2) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -78,7 +78,7 @@ static size_t consume_u1_r (RBuffer *b, ut64 max, ut8 *out) {
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_u32_leb128 (&b->buf[b->cur], &b->buf[max+1], &tmp)) || n > 1) {
+	if (!(n = read_u32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp)) || n > 1) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -95,10 +95,10 @@ static size_t consume_str_r (RBuffer *b, ut64 max, size_t sz, char *out) {
 	if (!(b->cur + sz - 1 <= max)) {
 		return 0;
 	}
-	if (sz == 0) {
-		strcpy(out, "");
+	if (sz > 0) {
+		strncpy (out, (char*)&b->buf[b->cur], R_MIN (R_BIN_WASM_STRING_LENGTH - 1, sz));
 	} else {
-		strncpy (out, (char*)&b->buf[b->cur], R_MIN (R_BIN_WASM_STRING_LENGTH-1, sz));
+		*out = 0;
 	}
 	r_buf_seek (b, sz, R_IO_SEEK_CUR);
 	return sz;
@@ -129,7 +129,7 @@ static size_t consume_locals_r (RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
 		return 0;
 	}
 	if (count > 0) {
-		if (!(out->locals = (struct r_bin_wasm_local_entry_t*)calloc (count, sizeof(struct r_bin_wasm_local_entry_t)))) {
+		if (!(out->locals = R_NEWS0 (struct r_bin_wasm_local_entry_t, count))) {
 			return 0;
 		}
 	}
@@ -173,18 +173,16 @@ static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 	RBinWasmSection *sec = NULL;
 	RList *ret = NULL;	
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (NULL))) {
 		return NULL;
 	}
 
-	RListIter *iter = NULL;
+	RListIter *iter;
 	r_list_foreach (sections, iter, sec) {
 		if (sec->id == id) {
 			r_list_append(ret, sec);
 		}
 	}
-	free (iter);
-	
 	return ret;
 }
 
@@ -208,7 +206,7 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 		return NULL;
 	}
 	char *buf = NULL, *tmp = NULL;
-	if (!(buf = (char*)calloc (ptr->param_count, sizeof(char) * 5))) {
+	if (!(buf = (char*)calloc (ptr->param_count, 5))) {
 		return NULL;
 	}
 	int p;
@@ -229,18 +227,16 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 
 // Free
 static void r_bin_wasm_free_types (RBinWasmTypeEntry *ptr) {
-	if (!ptr) {
-		return;
+	if (ptr) {
+		free (ptr->param_types);
 	}
-	if (ptr->param_types) free (ptr->param_types);
 	free (ptr);
 }
 
 static void r_bin_wasm_free_codes (RBinWasmCodeEntry *ptr) {
-	if (!ptr) {
-		return;
+	if (ptr) {
+		free (ptr->locals);
 	}
-	if (ptr->locals) free (ptr->locals);
 	free (ptr);
 }
 
@@ -279,7 +275,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 			return 0;
 		}
 		if (count > 0) {
-			if (!(ptr->param_types = (r_bin_wasm_value_type_t*)calloc (count, sizeof(r_bin_wasm_value_type_t)))) {
+			if (!(ptr->param_types = R_NEWS0 (r_bin_wasm_value_type_t, count))) {
 				goto beach;
 			}
 		}
@@ -307,7 +303,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 	return ret;
 beach:
 	eprintf("err: beach type entries\n");
-	if (ptr->param_types) free (ptr->param_types);
+	free (ptr->param_types);
 	free (ptr);
 	return ret;
 }
@@ -1005,7 +1001,7 @@ RList *r_bin_wasm_get_types (RBinWasmObj *bin) {
 	}
 	if (!(types = r_bin_wasm_get_sections_by_id (bin->g_sections,
 						R_BIN_WASM_SECTION_TYPE))) {
-		return r_list_newf ((RListFree)r_bin_wasm_free_types);
+		return r_list_new ();
 	}
 	// support for multiple export sections against spec
 	if (!(type = (RBinWasmSection*) r_list_first (types))) {
@@ -1129,15 +1125,15 @@ RList *r_bin_wasm_get_codes (RBinWasmObj *bin) {
 	}
 	if (!(codes = r_bin_wasm_get_sections_by_id (bin->g_sections,
 						R_BIN_WASM_SECTION_CODE))) {
-		return r_list_newf ((RListFree)r_bin_wasm_free_codes);
+		return r_list_new ();
 	}
 	// support for multiple export sections against spec
 	if (!(code = (RBinWasmSection*) r_list_first (codes))) {
-		r_list_free(codes);
+		r_list_free (codes);
 		return r_list_new();
 	}
 	bin->g_codes = r_bin_wasm_get_code_entries (bin, code);
-	r_list_free(codes);
+	r_list_free (codes);
 	return bin->g_codes;
 }
 

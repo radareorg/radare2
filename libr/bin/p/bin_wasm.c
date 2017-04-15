@@ -114,7 +114,6 @@ static RList *sections(RBinFile *arch) {
 
 		r_list_append (ret, ptr);
 	}
-	free (iter);
 	return ret;
 }
 
@@ -142,10 +141,10 @@ static RList *symbols(RBinFile *arch) {
 		return NULL;
 	}
 
-	RListIter *iter = NULL;;
 	ut32 i = 0;
 	
 	RBinWasmImportEntry *imp;
+	RListIter *iter = NULL;;
 	r_list_foreach (imports, iter, imp) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
@@ -168,8 +167,6 @@ static RList *symbols(RBinFile *arch) {
 		i += 1;
 		r_list_append (ret, ptr);
 	}
-	free (iter);
-	iter = NULL;
 	
 	RBinWasmCodeEntry *func;
 	r_list_foreach (codes, iter, func) {
@@ -189,7 +186,6 @@ static RList *symbols(RBinFile *arch) {
 		i += 1;
 		r_list_append (ret, ptr);
 	}
-	free (iter);
 
 	// TODO: use custom section "name" if present
 	// TODO: exports, globals, tables and memories
@@ -243,7 +239,6 @@ static RList *imports(RBinFile *arch) {
 		}
 		r_list_append (ret, ptr);
 	}
-	free (iter);
 	return ret;
 }
 

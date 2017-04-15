@@ -68,7 +68,6 @@ typedef struct r_bin_wasm_section_t {
 	ut32 payload_data;
 	ut32 payload_len; 
 	ut32 count;
-	RList *entries;
 } RBinWasmSection;
 
 typedef struct r_bin_wasm_type_t {
