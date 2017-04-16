@@ -4154,7 +4154,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_cons_printf (",\"fcn_addr\":0");
 			r_cons_printf (",\"fcn_last\":0");
 		}
-		r_cons_printf (",\"size\":%d", oplen);
+		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
 			char *escaped_str = r_str_escape (asmop.buf_asm);
 			r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
