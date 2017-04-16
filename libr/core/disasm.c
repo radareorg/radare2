@@ -3898,6 +3898,13 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->assembler, &ds->asmop,
 			core->block + i, core->blocksize - i);
+		ds->oplen = ret;
+		if (ds->midflags) {
+			int skip_bytes = handleMidFlags (core, ds, true);
+			if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
+				ret = skip_bytes;
+			}
+		}
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + i, core->blocksize - i);
