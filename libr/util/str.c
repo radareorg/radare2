@@ -2100,7 +2100,10 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 		return NULL;
 	}
 	for (i = 0; i < len; s++, i++) {
-		if ((*s >= 0x20) && (*s <= 126)) {
+		if (*s == '\\') {
+			*d++ = '\\';
+			*d++ = '\\';
+		} else if ((*s >= 0x20) && (*s <= 126)) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
