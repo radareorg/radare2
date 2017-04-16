@@ -4129,6 +4129,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
 		oplen = r_asm_op_get_size (&asmop);
+		ds->oplen = oplen;
+		ds->at = at;
+		if (ds->midflags) {
+			int skip_bytes = handleMidFlags (core, ds, true);
+			if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
+				oplen = ds->oplen = ret = skip_bytes;
+			}
+		}
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		if (ds->analop.ptr != UT64_MAX) {
