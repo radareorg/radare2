@@ -458,10 +458,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 			free (out);
 		}
 	} else if (r_parse_is_c_file (file)) {
-		const char *aa = r_config_get (core->config, "asm.arch");
-		int asmbits = r_config_get_i (core->config, "asm.bits");
-		const char *os = r_config_get (core->config, "asm.os");
-		char *out = r_parse_c_file (core->anal, file, aa, asmbits, os);
+		char *out = r_parse_c_file (core->anal, file);
 		if (out) {
 			r_cons_strcat (out);
 			sdb_query_lines (core->anal->sdb_types, out);
