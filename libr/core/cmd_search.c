@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <stddef.h>
 
@@ -394,8 +394,12 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (!first_hit) {
 				r_cons_printf (",");
 			}
-			r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"data\":\"%s\"}",
-				base_addr + addr, kw->kwidx, s);
+			char *es = r_str_escape (s);
+			if (es) {
+				r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"data\":\"%s\"}",
+				  base_addr + addr, kw->kwidx, es);
+				free (es);
+			}
 		} else {
 			r_cons_printf ("0x%08"PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
