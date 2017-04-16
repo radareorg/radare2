@@ -574,7 +574,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 					if (!(*out)) {
 						free (in);
 						free (out);
-						return -1;
+						return 0;
 					} else {
 						break;
 					}
