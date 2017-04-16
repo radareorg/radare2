@@ -468,7 +468,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			st32 val = 0;
 			size_t n = read_i32_leb128 (buf + 1, buf + len, &val);
 			if (n > 0 && n < len) {
-				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PRId32, opcodes[o], val);
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PFMT32d, opcodes[o], val);
 				rep += n;
 			}
 		}
@@ -478,7 +478,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			st64 val = 0;
 			size_t n = read_i64_leb128 (buf + 1, buf + len, &val);
 			if (n > 0 && n < len) {
-				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PRId64, opcodes[o], val);
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PFMT64d, opcodes[o], val);
 				rep += n;
 			}
 		}
@@ -488,7 +488,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + len, &val);
 			if (n > 0 && n < len) {
-				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PFMT32d, opcodes[o], val);
+				long double d =  (long double)val;
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" LDBLFMT, opcodes[o], d);
 				rep += n;
 			}
 		}
@@ -498,7 +499,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			ut64 val = 0;
 			size_t n = read_u64_leb128 (buf + 1, buf + len, &val);
 			if (n > 0 && n < len) {
-				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" PFMT64d, opcodes[o], val);
+				long double d =  (long double)val;
+				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %" LDBLFMT, opcodes[o], d);
 				rep += n;
 			}
 		}
