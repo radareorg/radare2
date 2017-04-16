@@ -89,7 +89,7 @@ static bool is_bin(const ut8 *buf, int size) {
 // TODO: add is_flag, is comment?
 
 // XXX: optimize by removing all strlens here
-R_API char *r_anal_data_to_string(RAnalData *d) {
+R_API char *r_anal_data_to_string(RAnalData *d, RConsPalette *pal) {
 	int i, len, idx, mallocsz = 1024;
 	ut32 n32;
 	char *line;
@@ -101,7 +101,12 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 		eprintf ("Cannot allocate %d bytes\n", mallocsz);
 		return NULL;
 	}
-	snprintf (line, mallocsz, "0x%08" PFMT64x "  ", d->addr);
+	if (pal) {
+		const char *k = pal->offset;
+		snprintf (line, mallocsz, "%s0x%08" PFMT64x Color_RESET"  ", k, d->addr);
+	} else {
+		snprintf (line, mallocsz, "0x%08" PFMT64x "  ", d->addr);
+	}
 	n32 = (ut32)d->ptr;
 	len = R_MIN (d->len, 8);
 	for (i = 0, idx = strlen (line); i < len; i++) {
@@ -121,27 +126,52 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 	if (mallocsz - idx > 12) {
 		switch (d->type) {
 		case R_ANAL_DATA_TYPE_STRING:
-			snprintf (line + idx, mallocsz - idx, "string \"%s\"", d->str);
+			if (pal) {
+				snprintf (line + idx, mallocsz - idx, "%sstring \"%s\""Color_RESET, pal->comment, d->str);
+			} else {
+				snprintf (line + idx, mallocsz - idx, "string \"%s\"", d->str);
+			}
 			break;
 		case R_ANAL_DATA_TYPE_WIDE_STRING:
 			strcat (line, "wide string");
 			break;
 		case R_ANAL_DATA_TYPE_NUMBER:
-			if (n32 == d->ptr) {
-				snprintf (line + idx, mallocsz - idx,
-					"number %d 0x%x", n32, n32);
+			if (pal) {
+				const char *k = pal->num;
+				if (n32 == d->ptr) {
+					snprintf (line + idx, mallocsz - idx,
+							"%snumber %d (0x%x)"Color_RESET, k, n32, n32);
+				} else {
+					snprintf (line + idx, mallocsz - idx,
+							"%snumber %" PFMT64d " (0x%" PFMT64x ")"Color_RESET,
+							k, d->ptr, d->ptr);
+				}
 			} else {
-				snprintf (line + idx, mallocsz - idx,
-					"number %" PFMT64d " 0x%" PFMT64x,
-					d->ptr, d->ptr);
+				if (n32 == d->ptr) {
+					snprintf (line + idx, mallocsz - idx,
+							"number %d 0x%x", n32, n32);
+				} else {
+					snprintf (line + idx, mallocsz - idx,
+							"number %" PFMT64d " 0x%" PFMT64x,
+							d->ptr, d->ptr);
+				}
 			}
 			break;
 		case R_ANAL_DATA_TYPE_POINTER:
 			strcat (line, "pointer ");
-			sprintf (line + strlen (line), " 0x%08" PFMT64x, d->ptr);
+			if (pal) {
+				const char *k = pal->offset;
+				sprintf (line + strlen (line), " %s0x%08" PFMT64x, k, d->ptr);
+			} else {
+				sprintf (line + strlen (line), " 0x%08" PFMT64x, d->ptr);
+			}
 			break;
 		case R_ANAL_DATA_TYPE_INVALID:
-			strcat (line, "invalid");
+			if (pal) {
+				snprintf (line + idx, mallocsz - idx, "%sinvalid"Color_RESET, pal->invalid);
+			} else {
+				strcat (line, "invalid");
+			}
 			break;
 		case R_ANAL_DATA_TYPE_HEADER:
 			strcat (line, "header");
@@ -153,10 +183,18 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 			strcat (line, "pattern");
 			break;
 		case R_ANAL_DATA_TYPE_UNKNOWN:
-			strcat (line, "unknown");
+			if (pal) {
+				snprintf (line + idx, mallocsz - idx, "%sunknown"Color_RESET, pal->invalid);
+			} else {
+				strcat (line, "unknown");
+			}
 			break;
 		default:
-			strcat (line, "(null)");
+			if (pal) {
+				snprintf (line + idx, mallocsz - idx, "%s(null)"Color_RESET, pal->b0x00);
+			} else {
+				strcat (line, "(null)");
+			}
 			break;
 		}
 	}

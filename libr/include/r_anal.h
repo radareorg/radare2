@@ -1464,7 +1464,8 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int size, int wide);
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len);
 R_API void r_anal_data_free (RAnalData *d);
-R_API char *r_anal_data_to_string (RAnalData *d);
+#include <r_cons.h>
+R_API char *r_anal_data_to_string(RAnalData *d, RConsPalette *pal);
 
 R_API void r_meta_free(RAnal *m);
 R_API void r_meta_space_unset_for(RAnal *a, int type);
