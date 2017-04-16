@@ -247,7 +247,7 @@ void dump_type(CType *type, int depth)
 		}
 		eprintf("r = %d\n", type->ref->r);
 		eprintf("associated type:\n");
-		dump_type(&(type->ref->type), --depth);
+		//dump_type(&(type->ref->type), --depth);
 	}
 }
 
@@ -261,7 +261,7 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c)
         ps = &local_stack;
     else
         ps = &global_stack;
-	dump_type(type, 5);
+	//dump_type(type, 5);
     s = sym_push2(ps, v, type->t, c);
     s->type.ref = type->ref;
     s->r = r;
@@ -944,7 +944,7 @@ static void struct_decl(CType *type, int u)
                 }
 				if (strcmp (name, "{")) {
 					char *varstr = get_tok_str (v, NULL);
-					eprintf("%s.%s @ 0x%"PFMT64x"\n", name, varstr, c);
+					//eprintf("%s.%s @ 0x%"PFMT64x"\n", name, varstr, c);
 					tcc_appendf ("%s.%s=0x%"PFMT64x"\n", name, varstr, c);
 					tcc_appendf ("%s.0x%"PFMT64x"=%s\n", name, c, varstr);
 					// TODO: if token already defined throw an error
@@ -1071,7 +1071,7 @@ static void struct_decl(CType *type, int u)
 			{
 				const char *ctype = (a == TOK_UNION)? "union": "struct";
 				int type_bt = type1.t & VT_BTYPE;
-				eprintf("2: %s.%s = %s\n", ctype, name, varstr);
+				//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
 				tcc_appendf ("%s=%s\n", name, ctype);
 				tcc_appendf ("[+]%s.%s=%s\n",
 						ctype, name, varstr);
