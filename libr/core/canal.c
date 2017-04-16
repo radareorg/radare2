@@ -2839,6 +2839,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wo
 	r_io_read_at (core->io, addr, buf, len);
 	buf[len - 1] = 0;
 
+	RConsPalette *pal = r_config_get_i (core->config, "scr.color")? &r_cons_singleton()->pal: NULL;
 	for (i = j = 0; j < count; j++) {
 		if (i >= len) {
 			r_io_read_at (core->io, addr + i, buf, len);
@@ -2851,7 +2852,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wo
 		/* but it should not.. so this must be fixed in anal/data.c instead of */
 		/* null terminating here */
 		d = r_anal_data (core->anal, addr + i, buf + i, len - i, wordsize);
-		str = r_anal_data_to_string (d);
+		str = r_anal_data_to_string (d, pal);
 		r_cons_println (str);
 
 		if (d) {
