@@ -9,8 +9,6 @@
 #include <limits.h>
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
-#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
-#define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
 static void cmd_pCd(RCore *core, const char *input) {
@@ -1350,232 +1348,6 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	r_print_hexdiff (core->print, core->offset, core->block,
 		to + delta, b, core->blocksize, col);
 	free (b);
-}
-
-static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {
-	if (nb_opcodes) {
-		if (nb_bytes) {
-			return j < nb_opcodes && i < nb_bytes;
-		}
-		return j < nb_opcodes;
-	}
-	return i < nb_bytes;
-}
-
-static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
-	int show_offset = r_config_get_i (core->config, "asm.offset");
-	int show_bytes = r_config_get_i (core->config, "asm.bytes");
-	int decode = r_config_get_i (core->config, "asm.decode");
-	int filter = r_config_get_i (core->config, "asm.filter");
-	int show_color = r_config_get_i (core->config, "scr.color");
-	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
-	int esil = r_config_get_i (core->config, "asm.esil");
-	int flags = r_config_get_i (core->config, "asm.flags");
-	int i = 0, j, ret, err = 0;
-	ut64 old_offset = core->offset;
-	RAsmOp asmop;
-	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
-	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
-
-	if (fmt == 'e') {
-		show_bytes = 0;
-		decode = 1;
-	}
-	if (!nb_opcodes && !nb_bytes) {
-		return 0;
-	}
-	if (!nb_opcodes) {
-		nb_opcodes = 0xffff;
-		if (nb_bytes < 0) {
-			// Backward disasm `nb_bytes` bytes
-			nb_bytes = -nb_bytes;
-			core->offset -= nb_bytes;
-			r_core_read_at (core, core->offset, core->block, nb_bytes);
-		}
-	} else if (!nb_bytes) {
-		if (nb_opcodes < 0) {
-			ut64 start;
-			/* Backward disassembly of `ilen` opcodes
-			* - We compute the new starting offset
-			* - Read at the new offset */
-			nb_opcodes = -nb_opcodes;
-			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &start)) {
-				// We have some anal_info.
-				nb_bytes = core->offset - start;
-			} else {
-				// anal ignorance.
-				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
-					nb_opcodes);
-			}
-			if (nb_bytes > core->blocksize) {
-				r_core_block_size (core, nb_bytes);
-			}
-			r_core_read_at (core, core->offset, core->block, nb_bytes);
-		} else {
-			// workaround for the `for` loop below
-			nb_bytes = core->blocksize;
-		}
-	}
-
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, core->offset);
-	}
-
-	int len = (nb_opcodes + nb_bytes) * 5;
-	if (core->fixedblock) {
-		len = core->blocksize;
-	} else {
-		if (len > core->blocksize) {
-			r_core_block_size (core, len);
-			r_core_block_read (core);
-		}
-	}
-	r_cons_break_push (NULL, NULL);
-
-	for (i = j = 0; pdi_check_end (nb_opcodes, nb_bytes, i, j); j++) {
-		RFlagItem *item;
-		if (r_cons_is_breaked ()) {
-			err = 1;
-			break;
-		}
-		RAnalMetaItem *meta = r_meta_find (core->anal, core->offset + i,
-			R_META_TYPE_ANY, R_META_WHERE_HERE);
-		if (meta && meta->size > 0) {
-			switch (meta->type) {
-			case R_META_TYPE_DATA:
-				r_cons_printf (".data: %s\n", meta->str);
-				i += meta->size;
-				continue;
-			case R_META_TYPE_STRING:
-				r_cons_printf (".string: %s\n", meta->str);
-				i += meta->size;
-				continue;
-			case R_META_TYPE_FORMAT:
-				r_cons_printf (".format : %s\n", meta->str);
-				i += meta->size;
-				continue;
-			case R_META_TYPE_MAGIC:
-				r_cons_printf (".magic : %s\n", meta->str);
-				i += meta->size;
-				continue;
-			case R_META_TYPE_RUN:
-				/* TODO */
-				break;
-			}
-		}
-		r_asm_set_pc (core->assembler, core->offset + i);
-		ret = r_asm_disassemble (core->assembler, &asmop, core->block + i,
-			core->blocksize - i);
-		if (fmt == 'C') {
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, core->offset + i);
-			if (comment) {
-				r_cons_printf ("0x%08"PFMT64x " %s\n", core->offset + i, comment);
-				free (comment);
-			}
-			i += ret;
-			continue;
-		}
-		if (flags) {
-			if (fmt != 'e') { // pie
-				item = r_flag_get_i (core->flags, core->offset + i);
-				if (item) {
-					if (show_offset) {
-						r_cons_printf ("0x%08"PFMT64x "  ", core->offset + i);
-					}
-					r_cons_printf ("  %s:\n", item->name);
-				}
-			} // do not show flags in pie
-		}
-		if (show_offset) {
-			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
-			ut64 at = core->offset + i;
-			r_print_offset (core->print, at, 0, show_offseg, show_offdec, 0, NULL);
-		}
-		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (ret < 1) {
-			err = 1;
-			ret = asmop.size;
-			if (ret < 1) {
-				ret = 1;
-			}
-			if (show_bytes) {
-				r_cons_printf ("%14s%02x  ", "", core->block[i]);
-			}
-			r_cons_println ("invalid"); // ???");
-		} else {
-			if (show_bytes) {
-				r_cons_printf ("%16s  ", asmop.buf_hex);
-			}
-			ret = asmop.size;
-			if (decode || esil) {
-				RAnalOp analop = {
-					0
-				};
-				char *tmpopstr, *opstr = NULL;
-				r_anal_op (core->anal, &analop, core->offset + i,
-					core->block + i, core->blocksize - i);
-				tmpopstr = r_anal_op_to_string (core->anal, &analop);
-				if (fmt == 'e') { // pie
-					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
-					r_cons_println (esil);
-				} else {
-					if (decode) {
-						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
-					} else if (esil) {
-						opstr = (R_STRBUF_SAFEGET (&analop.esil));
-					}
-					r_cons_println (opstr);
-				}
-			} else {
-				if (filter) {
-					char opstr[128] = {
-						0
-					};
-					if (asm_ucase) {
-						r_str_case (asmop.buf_asm, 1);
-					}
-					if (show_color) {
-						RAnalOp aop = {
-							0
-						};
-						char *asm_str = r_print_colorize_opcode (core->print, asmop.buf_asm, color_reg, color_num);
-						r_anal_op (core->anal, &aop, core->offset + i,
-							core->block + i, core->blocksize - i);
-						r_parse_filter (core->parser, core->flags,
-							asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
-						r_cons_printf ("%s%s"Color_RESET "\n", r_print_color_op_type (core->print, aop.type), opstr);
-					} else {
-						r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, opstr, sizeof (opstr) - 1, core->print->big_endian);
-						r_cons_println (opstr);
-					}
-				} else {
-					if (show_color) {
-						RAnalOp aop;
-						r_anal_op (core->anal, &aop, core->offset + i,
-							core->block + i, core->blocksize - i);
-						r_cons_printf ("%s%s"Color_RESET "\n",
-							r_print_color_op_type (core->print, aop.type),
-							asmop.buf_asm);
-					} else {
-						r_cons_println (asmop.buf_asm);
-					}
-				}
-			}
-		}
-		i += ret;
-#if 0
-		if ((nb_bytes && (nb_bytes <= i)) || (i >= core->blocksize)) {
-			break;
-		}
-#endif
-	}
-	r_cons_break_pop ();
-	core->offset = old_offset;
-	return err;
 }
 
 static void cmd_print_pwn(const RCore *core) {
@@ -3385,7 +3157,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		case 'd': // "pId" is the same as pDi
 			if (l) {
-				pdi (core, 0, l, 0);
+				r_core_disasm_pdi (core, 0, l, 0);
 			}
 			break;
 		case '?': // "pi?"
@@ -3424,12 +3196,12 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'd': // "pid" is the same as pdi
 			if (l != 0) {
-				pdi (core, l, 0, 0);
+				r_core_disasm_pdi (core, l, 0, 0);
 			}
 			break;
 		case 'e':
 			if (l != 0) {
-				pdi (core, l, 0, 'e');
+				r_core_disasm_pdi (core, l, 0, 'e');
 			}
 			break;
 		case 'f': // "pif"
@@ -3539,7 +3311,7 @@ static int cmd_print(void *data, const char *input) {
 
 		switch (input[1]) {
 		case 'C': // "pdC"
-			pdi (core, l, 0, 'C');
+			r_core_disasm_pdi (core, l, 0, 'C');
 			pd_result = 0;
 			processed_cmd = true;
 			break;
@@ -3557,9 +3329,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'i': // "pdi" // "pDi"
 			processed_cmd = true;
 			if (*input == 'D') {
-				pdi (core, 0, l, 0);
+				r_core_disasm_pdi (core, 0, l, 0);
 			} else {
-				pdi (core, l, 0, 0);
+				r_core_disasm_pdi (core, l, 0, 0);
 			}
 			pd_result = 0;
 			break;
