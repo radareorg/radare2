@@ -19,8 +19,9 @@ static bool snes_asm_fini (void* user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;
+}
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int dis(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = snesDisass (snesflags->M, snesflags->X, a->pc, op, buf, len);
 	if (dlen<0) dlen=0;
 	op->size = dlen;
@@ -43,7 +44,7 @@ RAsmPlugin r_asm_plugin_snes = {
 	.fini = snes_asm_fini,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
-	.disassemble = &disassemble
+	.disassemble = &dis
 };
 
 #ifndef CORELIB

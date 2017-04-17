@@ -31,19 +31,13 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	sfc_int_hdr sfchdr = {0};
+	sfc_int_hdr sfchdr = {{0}};
 	RBinInfo *ret = NULL;
 	int hdroffset = 0;
 
@@ -120,7 +114,7 @@ static RList* symbols(RBinFile *arch) {
 
 static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
-	RBinSection *ptr = NULL;
+	// RBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
 	int i = 0; //0x8000-long bank number for loops
@@ -282,7 +276,6 @@ RBinPlugin r_bin_plugin_sfc = {
 	.desc = "Super NES / Super Famicom ROM file",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
-	.check = &check,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
 	.sections = sections,
