@@ -108,7 +108,7 @@ static const char *readString(RBuffer *buf, int off) {
 }
 
 static ut64 baddr(RBinFile *arch) {
-	return readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
+	return arch? readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
 static const char *fileType(const ut8 *buf) {

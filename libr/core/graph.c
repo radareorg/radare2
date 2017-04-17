@@ -2002,14 +2002,13 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (!f) {
 		return false;
 	}
+	if (!fcn) {
+		fcn = f;
+	}
 
 	r_core_seek (core, f->addr, 1);
 
-	if (fcn) {
-		title = get_title (fcn->addr);
-	} else {
-		title = r_str_newf ("0x%08"PFMT64x, core->offset);
-	}
+	title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, "");
 
 	free (title);

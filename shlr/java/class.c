@@ -8739,9 +8739,10 @@ R_API int U(r_bin_java_double_cp_set)(RBinJavaObj * bin, ut16 idx, ut32 val) {
 	}
 	r_bin_java_check_reset_cp_obj (cp_obj, R_BIN_JAVA_CP_DOUBLE);
 	cp_obj->tag = R_BIN_JAVA_CP_DOUBLE;
-	memcpy (bytes, (const char *) &val, 8);
-	val = r_bin_java_raw_to_long (bytes, 0);
-	memcpy (&cp_obj->info.cp_double.bytes.raw, (const char *) &val, 8);
+	ut64 val64 = val;
+	memcpy (bytes, (const char *) &val64, 8);
+	val64 = r_bin_java_raw_to_long (bytes, 0);
+	memcpy (&cp_obj->info.cp_double.bytes.raw, (const char *) &val64, 8);
 	return true;
 }
 
@@ -8898,21 +8899,39 @@ R_API ut8 *U(r_bin_java_cp_append_ref_cname_fname_ftype)(RBinJavaObj * bin, ut32
 			}
 			bytes = calloc (1, total_len);
 			// class name bytes
+			if (*out_sz + cn_len >= total_len) {
+				goto beach;
+			}
 			memcpy (bytes, cn_bytes + *out_sz, cn_len);
 			*out_sz += cn_len;
 			// field name bytes
+			if (*out_sz + fn_len >= total_len) {
+				goto beach;
+			}
 			memcpy (bytes, fn_bytes + *out_sz, fn_len);
 			*out_sz += fn_len;
 			// field type bytes
+			if (*out_sz + ft_len >= total_len) {
+				goto beach;
+			}
 			memcpy (bytes, ft_bytes + *out_sz, ft_len);
 			*out_sz += ft_len;
 			// class ref bytes
+			if (*out_sz + cref_len >= total_len) {
+				goto beach;
+			}
 			memcpy (bytes, cref_bytes + *out_sz, cref_len);
 			*out_sz += fn_len;
 			// field name and type bytes
+			if (*out_sz + fnt_len >= total_len) {
+				goto beach;
+			}
 			memcpy (bytes, fnt_bytes + *out_sz, fnt_len);
 			*out_sz += fnt_len;
 			// field ref bytes
+			if (*out_sz + fref_len >= total_len) {
+				goto beach;
+			}
 			memcpy (bytes, fref_bytes + *out_sz, fref_len);
 			*out_sz += fref_len;
 		}
