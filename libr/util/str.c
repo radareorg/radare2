@@ -1213,8 +1213,12 @@ static char *r_str_escape_(const char *buf, const int dot_nl) {
 			*q++ = 'r';
 			break;
 		case '\\':
-			*q++ = '\\';
-			*q++ = '\\';
+			if (p[1] == 'u') {
+				*q++ = *p;
+			} else {
+				*q++ = '\\';
+				*q++ = '\\';
+			}
 			break;
 		case '\t':
 			*q++ = '\\';
@@ -2015,8 +2019,7 @@ R_API int r_str_utf16_to_utf8 (ut8 *dst, int len_dst, const ut8 *src, int len_sr
 				c <<= 10;
 				c |= d & 0x03FF;
 				c += 0x10000;
-			}
-			else {
+			} else {
 				len_dst = dst - outstart;
 				len_src = processed - src;
 				return -2;
@@ -2040,7 +2043,7 @@ R_API int r_str_utf16_to_utf8 (ut8 *dst, int len_dst, const ut8 *src, int len_sr
 			bits = 12;
 		}
 
-		for (; bits >= 0; bits-= 6) {
+		for (; bits >= 0; bits -= 6) {
 			if (dst >= outend) {
 				break;
 			}
@@ -2100,7 +2103,7 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 		return NULL;
 	}
 	for (i = 0; i < len; s++, i++) {
-		if ((*s >= 0x20) && (*s <= 126)) {
+		if (((*s >= 0x20) && (*s <= 126)) || (*s == '\\' && s[1] == 'u')) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
@@ -2114,7 +2117,7 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 		}
 	}
 	*d = 0;
-	tmp = realloc (od, strlen (od)+1); // FIT
+	tmp = realloc (od, strlen (od) + 1); // FIT
 	if (!tmp) {
 		free (od);
 		return NULL;

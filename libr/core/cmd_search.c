@@ -326,6 +326,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		ut8 *buf = malloc (buf_sz + 1);
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (json)? 3: 1;
+		const char *type = "hexpair";
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 		{
@@ -333,6 +334,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			char *pre, *pos, *wrd;
 			const int len = kw->keyword_length;
 			char *buf = calloc (1, len + 32 + ctx * 2);
+			type = "string";
 			r_core_read_at (core, addr - ctx, (ut8 *) buf, len + (ctx * 2));
 			pre = getstring (buf, ctx);
 			wrd = r_str_utf16_encode (buf + ctx, len);
@@ -369,8 +371,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				memset (str, 0, len);
 				r_core_read_at (core, base_addr + addr, buf, kw->keyword_length);
 				if (json) {
-					strcpy (str, "0x");
-					p = str + 2;
+					p = str;
 				}
 				const int bytes = (len > 40)? 40: len;
 				for (i = 0; i < bytes; i++) {
@@ -396,8 +397,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			}
 			char *es = r_str_escape (s);
 			if (es) {
-				r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"data\":\"%s\"}",
-				  base_addr + addr, kw->kwidx, es);
+				r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
+					base_addr + addr, kw->kwidx, type, es);
 				free (es);
 			}
 		} else {
