@@ -58,7 +58,7 @@ static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 
 static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
 	size_t n;
-	st32 tmp;
+	ut32 tmp = 0;
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
@@ -205,8 +205,8 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 	if (!ptr) {
 		return NULL;
 	}
-	char *buf = NULL, *tmp = NULL;
-	if (!(buf = (char*)calloc (ptr->param_count, 5))) {
+	char *buf = (char*)calloc (ptr->param_count, 5);
+	if (!buf) {
 		return NULL;
 	}
 	int p;
@@ -216,13 +216,11 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 			strcat (buf, ", ");
 		}
 	}
-	tmp = strdup (buf);
-	free (buf);
-	snprintf(ptr->to_str, R_BIN_WASM_STRING_LENGTH, "(%s) -> (%s)",
-		(ptr->param_count > 0? tmp: ""),
+	snprintf (ptr->to_str, R_BIN_WASM_STRING_LENGTH, "(%s) -> (%s)",
+		(ptr->param_count > 0? buf: ""),
 		(ptr->return_count == 1? r_bin_wasm_valuetype_to_string (ptr->return_type): ""));
+	free (buf);
 	return ptr->to_str;
-
 }
 
 // Free
@@ -272,7 +270,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 		}
 		ut32 count = ptr ? ptr->param_count : 0;
 		if (!(b->cur + (count * 3) <= max)) { // worst case 3 bytes
-			return 0;
+			goto beach;
 		}
 		if (count > 0) {
 			if (!(ptr->param_types = R_NEWS0 (r_bin_wasm_value_type_t, count))) {
@@ -302,9 +300,11 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf("err: beach type entries\n");
-	free (ptr->param_types);
-	free (ptr);
+	eprintf ("err: beach type entries\n");
+	if (ptr) {
+		free (ptr->param_types);
+		free (ptr);
+	}
 	return ret;
 }
 
