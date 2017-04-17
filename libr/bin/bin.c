@@ -809,8 +809,10 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
-R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr,
-		      int xtr_idx, int fd, int rawstr) {
+R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
+	if (!bin) {
+		return false;
+	}
 	// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr,
 	// xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
@@ -1498,7 +1500,7 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		bf = r_bin_file_create_append (bin, file, bytes, sz, file_sz,
 					       rawstr, fd, xtrname, steal_ptr);
 		if (!bf) {
-			if (steal_ptr) { // we own the ptr, free on error
+			if (!steal_ptr) { // we own the ptr, free on error
 				free ((void*) bytes);
 			}
 			return NULL;

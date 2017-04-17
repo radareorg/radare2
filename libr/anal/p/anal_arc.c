@@ -201,7 +201,7 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 }
 
 static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
-	arc_fields fields;
+	arc_fields fields = {0};
 
 	fields.format = (words[0] & 0x00c00000) >> 22;
 	fields.subopcode = (words[0] & 0x003f0000) >> 16;

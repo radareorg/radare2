@@ -53,7 +53,9 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 	char buf[128], *e_str, *out = NULL;
 	int n, len = 0;
-
+	if (!p || !fmt) {
+		return NULL;
+	}
 	for (; *fmt; fmt++) {
 		n = 4;
 		switch (*fmt) {

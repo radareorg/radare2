@@ -1144,8 +1144,7 @@ static void adjust_directions(const RAGraph *g, int i, int from_up, Sdb *D, Sdb 
 			for (k = wma->pos_in_layer + 1; k < wpa->pos_in_layer; ++k) {
 				const RGraphNode *w = g->layers[wma->layer].nodes[k];
 				const RANode *aw = get_anode (w);
-
-				if (aw->is_dummy) {
+				if (aw && aw->is_dummy) {
 					p &= hash_get_int (P, w);
 				}
 			}

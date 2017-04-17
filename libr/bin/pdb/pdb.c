@@ -460,6 +460,10 @@ static bool pdb7_parse(R_PDB *pdb) {
 		goto error;
 	}
 
+	if (page_size < 1 || num_root_index_pages < 1) {
+		eprintf ("invalid root index pages size\n");
+		goto error;
+	}
 	root_page_data = (int *)calloc (page_size, num_root_index_pages);
 	if (!root_page_data) {
 		eprintf ("error memory allocation of root_page_data\n");
@@ -702,7 +706,8 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			//  w word (2 bytes unsigned short in hex)
 			if (res_field[pos] == 'p') {
 				return 1;
-			} else if (res_field[pos] == 'u') {
+			}
+			if (res_field[pos] == 'u') {
 				res_field[pos] = 'w';
 			} else {
 				res_field[pos] = 'w';
@@ -711,7 +716,8 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 		case eCharState:
 			if (res_field[pos] == 'p') {
 				return 1;
-			} else if (res_field[pos] == 'u') {
+			}
+			if (res_field[pos] == 'u') {
 				res_field[pos] = 'b';
 			} else {
 				res_field[pos] = 'c';
@@ -720,11 +726,8 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 		case eLongState:
 			if (res_field[pos] == 'p') {
 				return 1;
-			} else if (res_field[pos] == 'u') {
-				res_field[pos] = 'i';
-			} else {
-				res_field[pos] = 'i';
 			}
+			res_field[pos] = 'i';
 			return 1;
 		case eModifierState:
 			if (res_field[pos] == 'p') {
@@ -736,15 +739,16 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			if (res_field[pos] == 'p') {
 				return 1;
 			}
-
 			res_field[pos] = 'E';
 			tmp = strtok(NULL, " ");
-			name = (char *) malloc(strlen(tmp) + strlen(*name_field) + 1 + 2);
-			strcpy(name, tmp);
-			sprintf(name, "(%s)%s", tmp, *name_field);
+			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
+			if (!name) {
+				return 0;
+			}
+			strcpy (name, tmp);
+			sprintf (name, "(%s)%s", tmp, *name_field);
 			free(*name_field);
 			*name_field = name;
-
 			return 1;
 //		case eDoubleState:
 //			// TODO: what is the flag for double in pf??
@@ -1087,7 +1091,12 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	if ((omap != 0) && (sctns_orig != 0)) {
 		pe_stream = (SPEStream *) sctns_orig->stream;
 	} else {
-		pe_stream = (SPEStream *) sctns->stream;
+		if (sctns) {
+			pe_stream = (SPEStream *) sctns->stream;
+		}
+	}
+	if (!pe_stream) {
+		return;
 	}
 	it = r_list_iterator (gsym_data_stream->globals_list);
 	while (r_list_iter_next (it)) {

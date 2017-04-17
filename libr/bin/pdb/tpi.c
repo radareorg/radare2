@@ -1027,14 +1027,14 @@ static void get_pointer_print_type(void *type, char **name) {
 static void get_modifier_print_type(void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *) type;
 	SType *t = 0;
-	char *tmp_name = 0;
+	char *tmp_name = NULL;
 	int name_len = 0;
-	int need_to_free = 1;
+	bool need_to_free = true;
 	int base_type = 0;
 
 	base_type = ti->get_modified_type (ti, (void **)&t);
 	if (!t) {
-		need_to_free = 0;
+		need_to_free = false;
 		print_base_type (base_type, &tmp_name);
 	} else {
 		ti = &t->type_data;
@@ -1042,21 +1042,23 @@ static void get_modifier_print_type(void *type, char **name) {
 	}
 
 	name_len = strlen ("modifier ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
-	*name = (char *) malloc(name_len + 1);
+	}
+	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
-		free (tmp_name);
+		if (need_to_free) {
+			free (tmp_name);
+		}
 		return;
 	}
 	// name[name_len] = '\0';
 	strcpy (*name, "modifier ");
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
-
+	}
 	if (need_to_free) {
 		free (tmp_name);
-		tmp_name = 0;
 	}
 }
 
