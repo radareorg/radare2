@@ -216,6 +216,38 @@ void handle_posix_error(int err) {
 	}
 }
 
+static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
+	char *expr = NULL;
+	int i;
+	RRunProfile *rp = r_run_new (NULL);
+	if (!rp) {
+		return NULL;
+	}
+	for (i = 0; argv[i]; i++) {
+		rp->_args[i] = argv[i];
+	}
+	rp->_args[i] = NULL;
+	rp->_program = argv[0];
+	rp->_dodebug = true;
+	if (io->runprofile && *io->runprofile) {
+		if (!r_run_parsefile (rp, io->runprofile)) {
+			eprintf ("Can't find profile '%s'\n", io->runprofile);
+			return NULL;
+		}
+	}
+	if (bits == 64) {
+		r_run_parseline (rp, expr=strdup ("bits=64"));
+	} else if (bits == 32) {
+		r_run_parseline (rp, expr=strdup ("bits=32"));
+	}
+	free (expr);
+	if (r_run_config_env (rp)) {
+		eprintf ("Can't config the environment.\n");
+		return NULL;
+	}
+	return rp;
+}
+
 // __UNIX__ (not windows)
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	bool runprofile = io->runprofile && *(io->runprofile);
@@ -286,31 +318,17 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		free (_cmd);
 		return p;
 	} else {
-		char *expr = NULL;
-		int i, ret;
-		RRunProfile *rp = r_run_new (NULL);
+		int ret;
 		argv = r_str_argv (cmd, NULL);
-		for (i = 0; argv[i]; i++) {
-			rp->_args[i] = argv[i];
+		if (!argv) {
+			posix_spawn_file_actions_destroy (&fileActions);
+			return -1;
 		}
-		rp->_args[i] = NULL;
-		rp->_program = argv[0];
-		rp->_dodebug = true;
-		if (io->runprofile && *io->runprofile) {
-			if (!r_run_parsefile (rp, io->runprofile)) {
-				eprintf ("Can't find profile '%s'\n", io->runprofile);
-				exit (MAGIC_EXIT);
-			}
-		}
-		if (bits == 64) {
-			r_run_parseline (rp, expr=strdup ("bits=64"));
-		} else if (bits == 32) {
-			r_run_parseline (rp, expr=strdup ("bits=32"));
-		}
-		free (expr);
-		if (r_run_config_env (rp)) {
-			eprintf ("Can't config the environment.\n");
-			exit (1);
+		RRunProfile *rp = _get_run_profile (io, bits, argv);
+		if (!rp) {
+			r_str_argv_free (argv);
+			posix_spawn_file_actions_destroy (&fileActions);
+			return -1;
 		}
 		if (rp->_args[0]) {
 			if (!rp->_aslr) {
@@ -328,8 +346,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		}
 		r_str_argv_free (argv);
 		r_run_free (rp);
+		posix_spawn_file_actions_destroy (&fileActions);
 		return p;
 	}
+	posix_spawn_file_actions_destroy (&fileActions);
 	return -1;
 #endif
 	int ret, status, child_pid;
@@ -340,30 +360,13 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		break;
 	case 0:
 		if (runprofile) {
-			char *expr = NULL;
-			int i;
-			RRunProfile *rp = r_run_new (NULL);
 			argv = r_str_argv (cmd, NULL);
-			for (i = 0; argv[i]; i++) {
-				rp->_args[i] = argv[i];
+			if (!argv) {
+				exit(1);
 			}
-			rp->_args[i] = NULL;
-			rp->_program = argv[0];
-			rp->_dodebug = true;
-			if (io->runprofile && *io->runprofile) {
-				if (!r_run_parsefile (rp, io->runprofile)) {
-					eprintf ("Can't find profile '%s'\n", io->runprofile);
-					exit (MAGIC_EXIT);
-				}
-			}
-			if (bits == 64) {
-				r_run_parseline (rp, expr=strdup ("bits=64"));
-			} else if (bits == 32) {
-				r_run_parseline (rp, expr=strdup ("bits=32"));
-			}
-			free (expr);
-			if (r_run_config_env (rp)) {
-				eprintf ("Can't config the environment.\n");
+			RRunProfile *rp = _get_run_profile (io, bits, argv);
+			if (!rp) {
+				r_str_argv_free (argv);
 				exit (1);
 			}
 			trace_me ();
