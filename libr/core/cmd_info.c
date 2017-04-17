@@ -101,7 +101,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			}
 		}
 		{
-			char *escapedFile = r_str_escape (uri);
+			char *escapedFile = r_str_utf16_encode (uri, -1);
 			r_cons_printf (",\"file\":\"%s\"", escapedFile);
 			free (escapedFile);
 		}

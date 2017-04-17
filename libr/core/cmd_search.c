@@ -395,12 +395,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (!first_hit) {
 				r_cons_printf (",");
 			}
-			char *es = r_str_escape (s);
-			if (es) {
-				r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
-					base_addr + addr, kw->kwidx, type, es);
-				free (es);
-			}
+			r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
+				base_addr + addr, kw->kwidx, type, s);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
