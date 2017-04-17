@@ -24,6 +24,7 @@ static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
 	return n;
 }
 
+#if UNUSED
 static size_t consume_s32_r (RBuffer *b, ut64 max, st32 *out) {
 	size_t n;
 	st32 tmp;
@@ -39,6 +40,7 @@ static size_t consume_s32_r (RBuffer *b, ut64 max, st32 *out) {
 	}
 	return n;
 }
+#endif
 
 static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
@@ -62,7 +64,7 @@ static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_i32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp)) || n > 2) {
+	if (!(n = read_i32_leb128 (&b->buf[b->cur], (ut8*)&b->buf[max + 1], (int*)&tmp)) || n > 2) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -186,6 +188,7 @@ static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 	return ret;
 }
 
+#if UNUSED
 static const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
@@ -222,6 +225,7 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 	free (buf);
 	return ptr->to_str;
 }
+#endif
 
 // Free
 static void r_bin_wasm_free_types (RBinWasmTypeEntry *ptr) {
@@ -938,7 +942,7 @@ ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin) {
 	}	
 	func = r_list_get_n (bin->g_codes, start->index);
 	r_list_free (secs);
-	return (ut32)func? func->code: 0;
+	return (ut32)(func? func->code: 0);
 }
 
 RList *r_bin_wasm_get_imports (RBinWasmObj *bin) {
