@@ -52,7 +52,7 @@ static void pair_str(const char *a, const char *b, int mode, int last) {
 		if (!b) {
 			b = "";
 		}
-		char *eb = r_str_escape (b);
+		char *eb = r_str_utf16_encode (b, -1);
 		if (eb) {
 			pair (a, sdb_fmt (0, "\"%s\"", eb), mode, last);
 			free (eb);

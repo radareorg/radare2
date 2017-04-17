@@ -1213,12 +1213,8 @@ static char *r_str_escape_(const char *buf, const int dot_nl) {
 			*q++ = 'r';
 			break;
 		case '\\':
-			if (p[1] == 'u') {
-				*q++ = *p;
-			} else {
-				*q++ = '\\';
-				*q++ = '\\';
-			}
+			*q++ = '\\';
+			*q++ = '\\';
 			break;
 		case '\t':
 			*q++ = '\\';
@@ -2103,7 +2099,10 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 		return NULL;
 	}
 	for (i = 0; i < len; s++, i++) {
-		if (((*s >= 0x20) && (*s <= 126)) || (*s == '\\' && s[1] == 'u')) {
+		if (*s == '\\') {
+			*d++ = '\\';
+			*d++ = '\\';
+		} else if ((*s >= 0x20) && (*s <= 126)) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
