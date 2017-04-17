@@ -1,0 +1,67 @@
+diff --git a/arch/TMS320C64x/TMS320C64xInstPrinter.c b/arch/TMS320C64x/TMS320C64xInstPrinter.c
+index fa57893..d6e9896 100644
+--- a/arch/TMS320C64x/TMS320C64xInstPrinter.c
++++ b/arch/TMS320C64x/TMS320C64xInstPrinter.c
+@@ -70,15 +70,14 @@ void TMS320C64x_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
+ 		if((p != NULL) && (((p2 = strchr(p, '[')) != NULL) || ((p2 = strchr(p, '(')) != NULL))) {
+ 			while((p2 > p) && ((*p2 != 'A') && (*p2 != 'B')))
+ 				p2--;
+-            if(p2 == p) {
+-                strcpy(insn_asm, "Invalid!");
+-                return;
+-            } else {
+-			    if(*p2 == 'A')
+-				    strcpy(tmp, "1T");
+-			    else
+-				    strcpy(tmp, "2T");
+-            }
++			if(p2 <= p) {
++				strcpy(insn_asm, "Invalid!");
++				return;
++			}
++			if(*p2 == 'A')
++				strcpy(tmp, "1T");
++			else
++				strcpy(tmp, "2T");
+ 		} else {
+ 			tmp[0] = '\0';
+ 		}
+diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
+index f408668..f442881 100644
+--- a/arch/X86/X86ATTInstPrinter.c
++++ b/arch/X86/X86ATTInstPrinter.c
+@@ -604,6 +604,10 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 		if (MI->Opcode == X86_CALLpcrel16 || MI->Opcode == X86_JMP_2)
+ 			imm = imm & 0xffff;
+ 
++		if (MI->csh->mode == CS_MODE_16) {
++			imm |= (MI->address >> 16) << 16;
++		}
++
+ 		if (imm < 0) {
+ 			SStream_concat(O, "0x%"PRIx64, imm);
+ 		} else {
+diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
+index d7c6d29..83745b9 100644
+--- a/arch/X86/X86IntelInstPrinter.c
++++ b/arch/X86/X86IntelInstPrinter.c
+@@ -733,7 +733,7 @@ void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
+ 	reg = X86_insn_reg_intel(MCInst_getOpcode(MI), &access1);
+ 	if (MI->csh->detail) {
+ #ifndef CAPSTONE_DIET
+-		uint8_t access[6];
++		uint8_t access[6] = {0};
+ #endif
+ 
+ 		// first op can be embedded in the asm by llvm.
+@@ -799,6 +799,10 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 		if (MI->Opcode == X86_CALLpcrel16 || MI->Opcode == X86_JMP_2)
+ 			imm = imm & 0xffff;
+ 
++		if (MI->csh->mode == CS_MODE_16) {
++			imm |= (MI->address >> 16) << 16;
++		}
++
+ 		printImm(MI->csh->syntax, O, imm, true);
+ 
+ 		if (MI->csh->detail) {
