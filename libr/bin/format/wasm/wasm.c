@@ -24,7 +24,7 @@ static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
 	return n;
 }
 
-#if UNUSED
+#if 0
 static size_t consume_s32_r (RBuffer *b, ut64 max, st32 *out) {
 	size_t n;
 	st32 tmp;
@@ -173,12 +173,10 @@ static size_t consume_limits_r (RBuffer *b, ut64 max, struct r_bin_wasm_resizabl
 // Utils
 static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 	RBinWasmSection *sec = NULL;
-	RList *ret = NULL;	
-
-	if (!(ret = r_list_newf (NULL))) {
+	RList *ret = r_list_newf (NULL);
+	if (!ret) {
 		return NULL;
 	}
-
 	RListIter *iter;
 	r_list_foreach (sections, iter, sec) {
 		if (sec->id == id) {
@@ -188,7 +186,7 @@ static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 	return ret;
 }
 
-#if UNUSED
+#if 0
 static const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
