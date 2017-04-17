@@ -166,12 +166,11 @@ R_API RRegArena* r_reg_arena_new(int size) {
 		if (size < 1) {
 			size = 1;
 		}
-		if (!(arena->bytes = malloc (size + 8))) {
+		if (!(arena->bytes = calloc (1, size + 8))) {
 			free (arena);
 			arena = NULL;
 		} else {
 			arena->size = size;
-			memset (arena->bytes, 0, size);
 		}
 	}
 	return arena;
@@ -230,11 +229,9 @@ R_API int r_reg_arena_push(RReg* reg) {
 		if (!b) {
 			continue;
 		}
-		if (a->size >= b->size) {
+		//b->size == a->size always because of how r_reg_arena_new behave
+		if (a->bytes) {
 			memcpy (b->bytes, a->bytes, b->size);
-		} else {
-			memcpy (b->bytes, a->bytes, R_MIN (a->size, b->size));
-			memset (b->bytes + a->size, 0, R_MAX (b->size - a->size, 0));
 		}
 		r_list_push (reg->regset[i].pool, b);
 		reg->regset[i].arena = b;
