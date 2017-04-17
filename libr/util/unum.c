@@ -442,7 +442,7 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 				lgt = strchr (p, '=');
 				if (lgt && lgt > p) {
 					lgt--;
-					if (*lgt=='!') {
+					if (*lgt == '!') {
 						r_str_replace_char (p, '!', ' ');
 						r_str_replace_char (p, '=', '-');
 						n = r_num_math (num, p);

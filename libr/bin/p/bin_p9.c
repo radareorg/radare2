@@ -21,7 +21,7 @@ static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
 	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	ut64 la = (arch && arch->o)? arch->o->loadaddr: 0;
-	return load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL);
 }
 
 static int destroy(RBinFile *arch) {
@@ -246,7 +246,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_p9,
 	.version = R2_VERSION

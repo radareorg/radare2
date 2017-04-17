@@ -3668,7 +3668,8 @@ print_insn_coprocessor (bfd_vma pc,
 			      is_unpredictable = TRUE;
 			    u_reg = value;
 			  }
-			func (stream, "%s", arm_regnames[value]);
+                        func (stream, "%s", arm_regnames [value & 0xf]);
+
 			break;
 		      case 'V':
 			if (given & (1 << 6))

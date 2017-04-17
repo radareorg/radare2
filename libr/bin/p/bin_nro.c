@@ -149,7 +149,7 @@ static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	ut64 la = (arch && arch->o)? arch->o->loadaddr: 0;
-	return load_bytes (arch, bytes, sz, la, arch->sdb) != NULL;
+	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL) != NULL;
 }
 
 static int destroy(RBinFile *arch) {

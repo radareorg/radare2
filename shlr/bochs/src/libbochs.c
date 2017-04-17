@@ -94,7 +94,7 @@ bool bochs_wait(libbochs_t *b) {
 	(void) fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
 	for (;;) {
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
-		if (n >0) {
+		if (n > 0) {
 			lpTmpBuffer[n] = 0;
 			if (b->punteroBuffer + n >= SIZE_BUF - 1) {
 				bochs_reset_buffer(b);

@@ -1595,8 +1595,10 @@ static void analyze_back_edges(const RAGraph *g, RANode *an) {
 					(void *) (size_t) (an->x - 2 - j));
 				r_list_append (e->y, (void *) (size_t) ak->y);
 			} else {
-				r_list_append (e->x,
-					(void *) (size_t) (last->x + last->w + 2 + j));
+				if (last) {
+					r_list_append (e->x,
+							(void *) (size_t) (last->x + last->w + 2 + j));
+				}
 				r_list_append (e->y, (void *) (size_t) ak->y);
 			}
 		}
@@ -2003,7 +2005,11 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	r_core_seek (core, f->addr, 1);
 
-	title = get_title (fcn->addr);
+	if (fcn) {
+		title = get_title (fcn->addr);
+	} else {
+		title = r_str_newf ("0x%08"PFMT64x, core->offset);
+	}
 	fcn_anode = r_agraph_add_node (g, title, "");
 
 	free (title);
