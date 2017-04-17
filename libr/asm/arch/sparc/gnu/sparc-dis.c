@@ -414,7 +414,7 @@ build_hash_table (const sparc_opcode **opcode_table,
   memset (hash_count, 0, HASH_SIZE * sizeof (hash_count[0]));
   if (hash_buf != NULL)
     free (hash_buf);
-  hash_buf = cmalloc (sizeof (* hash_buf), num_opcodes);
+  hash_buf = calloc (sizeof (* hash_buf), num_opcodes);
   if (!hash_buf) {
     return;
   }
