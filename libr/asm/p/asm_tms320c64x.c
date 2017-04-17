@@ -10,7 +10,7 @@ static csh cd = 0;
 #define CAPSTONE_HAS_TMS320C64X 1
 #else
 #define CAPSTONE_HAS_TMS320C64X 0
-#warning Cannot find capstone-m68k support
+#warning Cannot find capstone-tms320c64x support
 #endif
 
 #if CAPSTONE_HAS_TMS320C64X
