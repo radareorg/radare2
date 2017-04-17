@@ -205,21 +205,26 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 	r_x509_parse_name (&tbsc->subject, elems[shift + 4]);
 	r_x509_parse_subjectpublickeyinfo (&tbsc->subjectPublicKeyInfo, elems[shift + 5]);
 	if (tbsc->version > 0) {
-		for (i = shift + 6; i < object->list.length; ++i) {
-			if (elems[i]->klass != CLASS_CONTEXT) continue;
-
+		for (i = shift + 6; i < object->list.length; i++) {
+			if (!elems[i] || elems[i]->klass != CLASS_CONTEXT) {
+				continue;
+			}
 			if (elems[i]->tag == 1) {
 				R_PTR_MOVE (tbsc->issuerUniqueID, object->list.objects[i]);
 //				tbsc->issuerUniqueID = elems[i];
 //				elems[i] = NULL;
 			}
-
+			if (!elems[i]) {
+				continue;
+			}
 			if (elems[i]->tag == 2) {
 				R_PTR_MOVE (tbsc->subjectUniqueID, object->list.objects[i]);
 //				tbsc->subjectUniqueID = elems[i];
 //				elems[i] = NULL;
 			}
-
+			if (!elems[i]) {
+				continue;
+			}
 			if (tbsc->version == 2 && elems[i]->tag == 3 && elems[i]->form == FORM_CONSTRUCTED) {
 				r_x509_parse_extensions (&tbsc->extensions, elems[i]);
 			}
@@ -304,7 +309,7 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 	RX509CertificateRevocationList *crl;
 	RASN1Object **elems;
-	if (!object && object->list.length < 4) {
+	if (!object || object->list.length < 4) {
 		return NULL;
 	}
 	crl = (RX509CertificateRevocationList *) malloc (sizeof (RX509CertificateRevocationList));

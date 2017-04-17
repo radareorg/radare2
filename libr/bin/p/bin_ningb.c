@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013 - 2015 - condret@runas-racer.com */
+/* radare - LGPL - 2013 - 2017 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,8 +13,9 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	ut8 lict[48];
-	if (!buf || length < (0x104+48))
+	if (!buf || length < (0x104 + 48)) {
 		return 0;
+	}
 	memcpy (lict, buf + 0x104, 48);
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
@@ -22,8 +23,11 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) return false;
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	ut64 la = (arch && arch->o) ? arch->o->loadaddr: 0;
+	if (!arch || !arch->o) {
+		return false;
+	}
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, la, arch->sdb);
 	return check_bytes (bytes, sz);
 }
 

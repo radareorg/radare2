@@ -298,7 +298,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
 	bool mod = p? (p->flags & R_PRINT_FLAGS_ADDRMOD): false;
 	char ch = p? ((p->addrmod && mod)? ((addr % p->addrmod)? ' ': ','): ' '): ' ';
-	if (p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
+	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
 	if (use_segoff) {
@@ -1505,11 +1505,19 @@ R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
 				color = Color_BGBLACK;
 				break;
 			}
-			p->cb_printf ("%s  ", color);
+			if (p) {
+				p->cb_printf ("%s  ", color);
+			} else {
+				printf ("%s  ", color);
+			}
 		} else {
 			const char *chstr = "#=-.";
 			const char ch = chstr[c % 4];
-			p->cb_printf ("%c%c", ch, ch);
+			if (p) {
+				p->cb_printf ("%c%c", ch, ch);
+			} else {
+				printf ("%c%c", ch, ch);
+			}
 		}
 		c = 0;
 	}
@@ -1522,10 +1530,14 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 		for (r = 0; r < tiles; r++) {
 			r_print_2bpp_row (p, buf + 2 * i + r * 16);
 		}
-		if (useColor) {
-			p->cb_printf (Color_RESET "\n");
+		if (p) {
+			if (useColor) {
+				p->cb_printf (Color_RESET "\n");
+			} else {
+				p->cb_printf ("\n");
+			}
 		} else {
-			p->cb_printf ("\n");
+			printf ("\n");
 		}
 	}
 }

@@ -707,11 +707,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			if (res_field[pos] == 'p') {
 				return 1;
 			}
-			if (res_field[pos] == 'u') {
-				res_field[pos] = 'w';
-			} else {
-				res_field[pos] = 'w';
-			}
+			res_field[pos] = 'w';
 			return 1;
 		case eCharState:
 			if (res_field[pos] == 'p') {

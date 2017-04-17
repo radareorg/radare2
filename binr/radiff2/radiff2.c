@@ -497,7 +497,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 int main(int argc, char **argv) {
 	const char *columnSort = NULL;
 	const char *addr = NULL;
-	RCore *c, *c2;
+	RCore *c = NULL, *c2 = NULL;
 	RDiff *d;
 	ut8 *bufa, *bufb;
 	int o, sza, szb, /*diffmode = 0,*/ delta = 0;

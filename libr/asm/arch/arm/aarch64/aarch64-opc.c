@@ -840,7 +840,7 @@ static int
 match_operands_qualifier (aarch64_inst *inst, bfd_boolean update_p)
 {
   int i;
-  aarch64_opnd_qualifier_seq_t qualifiers;
+  aarch64_opnd_qualifier_seq_t qualifiers = {0};
 
   if (!aarch64_find_best_match (inst, inst->opcode->qualifiers_list, -1,
 			       qualifiers))

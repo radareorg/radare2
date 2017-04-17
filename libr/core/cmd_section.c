@@ -30,10 +30,13 @@ static bool dumpSectionsToDisk(RCore *core) {
 
 static bool dumpSectionToDisk(RCore *core, char *file) {
 	char *heapfile = NULL;
-	ut64 o = core->offset;
 	RListIter *iter;
 	RIOSection *s;
 	int len = 128;
+	if (!core || !file) {
+		return false;
+	}
+	ut64 o = core->offset;
 	if (core->io->va || core->io->debug) {
 		o = r_io_section_vaddr_to_maddr_try (core->io, o);
 	}
@@ -227,8 +230,10 @@ static int cmd_section(void *data, const char *input) {
 			break;
 		case ' ':
 			if (input[2]) {
-				file = (char *)malloc(len * sizeof(char));
-				snprintf (file, len, "%s", input + 2);
+				file = (char *)calloc (len, sizeof (char));
+				if (file) {
+					snprintf (file, len, "%s", input + 2);
+				}
 			}
 			(void) dumpSectionToDisk (core, file);
 			free (file);

@@ -1322,17 +1322,19 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	free (maps_data);
 	return pnote_data;
 fail:
-	free (elf_proc_note->thread_note->siginfo);
-	free (elf_proc_note->thread_note->prstatus);
-	free (elf_proc_note->thread_note->fp_regset);
+	if (elf_proc_note->thread_note) {
+		free (elf_proc_note->thread_note->siginfo);
+		free (elf_proc_note->thread_note->prstatus);
+		free (elf_proc_note->thread_note->fp_regset);
 #if __i386__
-	free (elf_proc_note->thread_note->fpx_regset);
+		free (elf_proc_note->thread_note->fpx_regset);
 #endif
 #if __i386__ || __x86_64__
-	free (elf_proc_note->thread_note->xsave_data);
+		free (elf_proc_note->thread_note->xsave_data);
 #elif __arm__ || __arm64__
-	free (elf_proc_note->thread_note->arm_vfp_data);
+		free (elf_proc_note->thread_note->arm_vfp_data);
 #endif
+	}
 	free (pnote_data);
 	free (maps_data);
 	free (thread_id);

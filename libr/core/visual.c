@@ -1941,6 +1941,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							if (true) {
 								f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 							}
+							op.size = 1;
 							if (f && f->folded) {
 								cols = core->offset - f->addr + r_anal_fcn_size (f);
 							} else {

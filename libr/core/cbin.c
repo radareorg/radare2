@@ -2103,7 +2103,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					}
 				}
 				if (!bits) {
-					bits = info->bits;
+					bits = info? info->bits: R_SYS_BITS;
 				}
 				snprintf (str, sizeof (str), "arch=%s bits=%d ",
 					r_str_get2 (arch), bits);

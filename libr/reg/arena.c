@@ -233,8 +233,8 @@ R_API int r_reg_arena_push(RReg* reg) {
 		if (a->size >= b->size) {
 			memcpy (b->bytes, a->bytes, b->size);
 		} else {
-			memcpy (b->bytes, a->bytes, a->size);
-			memset (b->bytes + a->size, 0, b->size - a->size);
+			memcpy (b->bytes, a->bytes, R_MIN (a->size, b->size));
+			memset (b->bytes + a->size, 0, R_MAX (b->size - a->size, 0));
 		}
 		r_list_push (reg->regset[i].pool, b);
 		reg->regset[i].arena = b;

@@ -371,7 +371,7 @@ static int cb_asmarch(void *user, void *data) {
 	// changing anal.arch sets types db
 	// so ressetting is redundant and may lead to bugs
 	// 1 case this is usefull is when sdb_types is null
-	if (!core->anal->sdb_types) {
+	if (!core->anal || !core->anal->sdb_types) {
 		r_core_anal_type_init (core);
 	}
 	r_core_anal_cc_init (core);

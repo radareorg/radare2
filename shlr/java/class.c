@@ -2407,29 +2407,24 @@ R_API char *r_bin_java_get_version(RBinJavaObj *bin) {
 }
 
 R_API RList *r_bin_java_get_entrypoints(RBinJavaObj *bin) {
-	RBinAddr *addr;
 	RListIter *iter = NULL, *iter_tmp = NULL;
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
 	RBinJavaField *fm_type;
+	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		if (strcmp (fm_type->name, "main") == 0 ||
-		strcmp (fm_type->name, "<init>") == 0 ||
-		strcmp (fm_type->name, "<clinit>") == 0 ||
-		strstr (fm_type->flags_str, "static") != 0) {
-			addr = R_NEW0 (RBinAddr);
+		if (!strcmp (fm_type->name, "main")
+		|| !strcmp (fm_type->name, "<init>")
+		|| !strcmp (fm_type->name, "<clinit>")
+		|| strstr (fm_type->flags_str, "static")) {
+			RBinAddr *addr = R_NEW0 (RBinAddr);
 			if (addr) {
-				addr->vaddr = addr->paddr =\
-						r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
+				addr->vaddr = addr->paddr = \
+					r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
+				addr->haddr = fm_type->file_offset;
+				r_list_append (ret, addr);
 			}
-			addr->haddr = fm_type->file_offset;
-			r_list_append (ret, addr);
 		}
 	}
 	return ret;
@@ -5021,7 +5016,7 @@ R_API ut8 *r_bin_java_cp_get_8bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const
 	if (!buffer) {
 		return NULL;
 	}
-	ut32 val = 0;
+	ut64 val = 0;
 	if (len < 8) {
 		*out_sz = 0;
 		free (buffer);
