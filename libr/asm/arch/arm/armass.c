@@ -57,12 +57,13 @@ static ArmOp ops[] = {
 	{ "bkpt", 0x2001, TYPE_BKP },
 	{ "subs", 0x5000, TYPE_ARI },
 	{ "sub", 0x4000, TYPE_ARI },
-	{ "sbc", 0xc000, TYPE_ARI },
 	{ "sbcs", 0xd000, TYPE_ARI },
+	{ "sbc", 0xc000, TYPE_ARI },
 	{ "rsb", 0x6000, TYPE_ARI },
 	{ "rsbs", 0x7000, TYPE_ARI },
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
+	{ "bic", 0x0000c0e1, TYPE_ARI },
 
 	{ "udf", 0xf000f000, TYPE_UDF },
 
@@ -105,7 +106,6 @@ static ArmOp ops[] = {
 	{ "eor", 0x2000, TYPE_ARI },
 	{ "orrs", 0x9001, TYPE_ARI },
 	{ "orr", 0x8001, TYPE_ARI },
-	{ "bic", 0x0, TYPE_ARI },
 
 	{ "cmp", 0x5001, TYPE_TST },
 	{ "swp", 0xe1, TYPE_SWP },
