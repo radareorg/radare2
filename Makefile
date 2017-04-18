@@ -163,7 +163,7 @@ distclean mrproper:
 	rm -f libr/libr.a
 	for DIR in libr binr shlr ; do ( cd "$$DIR" ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
-	rm -f libr/include/r_userconf.h libr/config.mk
+	rm -f libr/include/r_userconf.h libr/include/r_version.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
 pkgcfg:
