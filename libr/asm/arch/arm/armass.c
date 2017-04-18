@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -1170,11 +1170,13 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				break;
 			case TYPE_COPROC:
 				//printf ("%s %s %s %s %s\n", ao->a[0], ao->a[1], ao->a[2], ao->a[3], ao->a[4] );
-				coproc = getnum (ao->a[0] + 1);
-				if (coproc == -1 || coproc > 9) {
-					return 0;
+				if (ao->a[0]) {
+					coproc = getnum (ao->a[0] + 1);
+					if (coproc == -1 || coproc > 9) {
+						return 0;
+					}
+					ao->o |= coproc << 16;
 				}
-				ao->o |= coproc << 16;
 
 				opc = getnum (ao->a[1]);
 				if (opc == -1 || opc > 7) {
@@ -1189,17 +1191,23 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg << 20;
 
 				// coproc register 1
-				coproc = getnum (ao->a[3] + 1);
-				if (coproc == -1 || coproc > 15) {
-					return 0;
+				const char *a3 = ao->a[3];
+				if (a3) {
+					coproc = getnum (a3 + 1);
+					if (coproc == -1 || coproc > 15) {
+						return 0;
+					}
+					ao->o |= coproc << 8;
 				}
-				ao->o |= coproc << 8;
 
-				coproc = getnum (ao->a[4] + 1);
-				if (coproc == -1 || coproc > 15) {
-					return 0;
+				const char *a4 = ao->a[4];
+				if (a4) {
+					coproc = getnum (ao->a[4] + 1);
+					if (coproc == -1 || coproc > 15) {
+						return 0;
+					}
+					ao->o |= coproc << 24;
 				}
-				ao->o |= coproc << 24;
 
 				coproc = getnum (ao->a[5]);
 				if (coproc > -1) {
