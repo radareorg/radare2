@@ -86,7 +86,7 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i; // , diffmode = (int)(size_t)user;
-	char s[256];
+	char s[256] = {0};
 	if (showcount) {
 		count++;
 		return 1;
@@ -378,7 +378,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 			return NULL;
 		}
 		size = r_io_size (io);
-		if (size > 0 || size < ST32_MAX) {
+		if (size > 0 && size < ST32_MAX) {
 			data = calloc (1, size);
 			if (r_io_read_at (io, 0, data, size) == size) {
 				if (sz) {
@@ -389,7 +389,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 				R_FREE (data);
 			}
 		} else {
-			eprintf ("slurp: File is too big\n");
+			eprintf ("slurp: Invalid file size\n");
 		}
 		r_io_close (io, d);
 		return data;
