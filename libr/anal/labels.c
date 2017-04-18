@@ -51,7 +51,7 @@ R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *nam
 	return true;
 }
 
-R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad) {
+R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 	if (!anal)
 		return 0;
 

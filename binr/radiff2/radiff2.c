@@ -76,8 +76,12 @@ static bool virgin = true;
 static void readstr(char *s, int sz, const ut8 *buf, int len) {
 	int die = 0;
 	int last = R_MIN (len, sz);
+	if (last < 1) {
+		*s = 0;
+		return;
+	}
 	strncpy (s, (char *) buf, last + die);
-	s[last] = 0;
+	s[last - 1] = 0;
 	while (*s && *s == '\n') {
 		s++;
 	}
