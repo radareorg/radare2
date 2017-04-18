@@ -308,7 +308,8 @@ R_API int r_line_hist_list() {
 	}
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
-			printf (" !%d  # %s\n", i, I.history.data[i]);
+			const char *pad = r_str_pad (' ', 32 - strlen (I.history.data[i]));
+			r_cons_printf ("%s %s # !%d\n", I.history.data[i], pad, i);
 		}
 	}
 	return i;
