@@ -99,8 +99,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case TMS320C64X_INS_INVALID:
 			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
+		case TMS320C64X_INS_AND:
+		case TMS320C64X_INS_ANDN:
+			op->type = R_ANAL_OP_TYPE_AND;
+			break;
+		case TMS320C64X_INS_NOT:
+			op->type = R_ANAL_OP_TYPE_NOT;
+			break;
+		case TMS320C64X_INS_NEG:
+			op->type = R_ANAL_OP_TYPE_NOT;
+			break;
 		case TMS320C64X_INS_SWAP2:
 		case TMS320C64X_INS_SWAP4:
+		op->type = R_ANAL_OP_TYPE_MOV;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case TMS320C64X_INS_BNOP:

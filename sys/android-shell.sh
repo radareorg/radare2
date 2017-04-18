@@ -41,7 +41,7 @@ esac
 
 LANG=C
 export LANG
-ROOT=`dirname $PWD/$0`
+ROOT=`dirname $0`
 OS=`uname|tr 'A-Z' 'a-z'`
 [ "${OS}" = macosx ] && OS=darwin
 
@@ -64,6 +64,9 @@ if [ ! -x /work ]; then
 	fi
 fi
 
+echo ROOT=$ROOT
+echo NDK=$NDK
+echo NDK_ARCH=$NDK_ARCH
 
 #if [ ! -d "${SDK}/tools" ]; then 
 #	echo "Cannot find Android SDK ${SDK}"
@@ -106,8 +109,8 @@ if [ "${BUILD}" != 0 ]; then
 	export NDK_ARCH
 	[ -z "${SHELL}" ] && SHELL=sh
 	SHELL=sh
-	cp ${ROOT}/ndk-gcc ${NDK}
-	chmod +x ${NDK}/ndk-gcc
+	cp -f "${ROOT}/ndk-gcc" "${NDK}"
+	chmod +x "${NDK}/ndk-gcc"
 	CC=ndk-gcc
 	PS1="[r2-android-${NDK_ARCH}]> "
 	export CC
