@@ -394,7 +394,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 	*ptr_end = 0;
 	addr = ptr_end;
-	while ((*addr != '0' || *(addr + 1) != 'x') &&
+	while ((addr[0] != '0' || addr[1] != 'x') &&
 	addr >= esil_buf + 1 && *addr != ',') {
 		addr--;
 	}

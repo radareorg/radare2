@@ -118,7 +118,7 @@ R_API int r_debruijn_offset(ut64 value, bool is_big_endian) {
 		return -1;
 	}
 
-	for (j = 0; j <= 2 && retval == -1; ++j) {
+	for (j = 0; j < 2 && retval == -1; ++j) {
 		pattern = r_debruijn_pattern (lens[j], 0, debruijn_charset);
 
 		buf[8] = '\0';
