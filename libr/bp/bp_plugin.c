@@ -5,14 +5,16 @@
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 	RListIter *iter;
 	RBreakpointPlugin *h;
-	r_list_foreach (bp->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
-			if (bp->cur == h) {
-				bp->cur = NULL;
+	if (name && *name) {
+		r_list_foreach (bp->plugins, iter, h) {
+			if (!strcmp (h->name, name)) {
+				if (bp->cur == h) {
+					bp->cur = NULL;
+				}
+				r_list_delete (bp->plugins, iter);
+				bp->nbps--;
+				return true;
 			}
-			r_list_delete (bp->plugins, iter);
-			bp->nbps--;
-			return true;
 		}
 	}
 	return false;

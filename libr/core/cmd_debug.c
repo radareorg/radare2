@@ -2467,12 +2467,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_plugin_list (core->dbg->bp);
 			break;
 		case ' ':
-			if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits))
-				eprintf ("Invalid name: '%s'.\n", input + 3);
+			if (input[3]) {
+				if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits)) {
+					eprintf ("Invalid name: '%s'.\n", input + 3);
+				}
+			}
 			break;
 		case '-':
-			if (!r_bp_plugin_del (core->dbg->bp, input + 4)) {
-				eprintf ("Invalid name: '%s'.\n", input + 4);
+			if (input[3]) {
+				if (!r_bp_plugin_del (core->dbg->bp, input + 3)) {
+					eprintf ("Invalid name: '%s'.\n", input + 3);
+				}
 			}
 			break;
 		case '?':
