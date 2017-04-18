@@ -121,7 +121,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static char *oldcpu = NULL;
-	static int oldcpucode = 0;
+	// static int oldcpucode = 0;
 	int opsize, cpucode = 0;
 	struct disassemble_info obj;
 	char *options = (a->bits == 16)? "force-thumb": "no-force-thumb";
@@ -167,7 +167,7 @@ cpucode = 66471;
 	}
 	obj.arch = 0;
 	obj.mach = cpucode;
-	oldcpucode = cpucode;
+	// oldcpucode = cpucode;
 
 	obj.buffer = bytes;
 	obj.read_memory_func = &arm_buffer_read_memory;
