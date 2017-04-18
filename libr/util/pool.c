@@ -94,7 +94,6 @@ R_API void r_poolfactory_init(int limit) {
 	if (!single_pf.pools) {
 		return;
 	}
-	memset (single_pf.pools, 0, size);
 }
 
 R_API RPoolFactory *r_poolfactory_new(int limit) {
