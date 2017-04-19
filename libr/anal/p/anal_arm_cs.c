@@ -1110,6 +1110,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
 				"0xffffffff", REG64(0), REG64(0));
 		break;
+	case ARM64_INS_UXTB:
+		r_strbuf_appendf (&op->esil, "%s,0xff,&,%s,=", REG64(1),REG64(0));
+		break;
+	case ARM64_INS_UXTH:
+		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%s,=", REG64(1),REG64(0));
+		break;
 	case ARM64_INS_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
 		break;
