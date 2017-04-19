@@ -878,15 +878,16 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,pc,=", REG64(0));
 		break;
 	case ARM64_INS_B:
+		/* capstone precompute resulting address, using PC + IMM */
 		switch (insn->detail->arm.cc) {
 		case 0:
-			r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", (ut64)addr + IMM64 (0));
+			r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", IMM64 (0));
 			break;
 		case ARM_CC_EQ:
-			r_strbuf_setf (&op->esil, "zf,{,%"PFMT64d",pc,=,}", (ut64)addr + IMM64 (0));
+			r_strbuf_setf (&op->esil, "zf,{,%"PFMT64d",pc,=,}", IMM64 (0));
 			break;
 		case ARM_CC_NE:
-			r_strbuf_setf (&op->esil, "zf,!,{,%"PFMT64d",pc,=,}", (ut64)addr + IMM64 (0));
+			r_strbuf_setf (&op->esil, "zf,!,{,%"PFMT64d",pc,=,}", IMM64 (0));
 			break;
 		default:
 			//TODO
@@ -894,7 +895,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_BL:
-		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", addr + IMM64 (0));
+		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
 		break;
 	case ARM64_INS_BLR:
 		// XXX
