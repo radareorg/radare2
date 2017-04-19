@@ -806,6 +806,19 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			esilprintf (op, "0,cf,=,1,%s,-,1,<<,%s,&,?{,1,cf,=,},%s,%s,>>,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst_r, src, dst_r, dst_w);
 		}
 		break;
+	case X86_INS_CBW:
+	case X86_INS_CWDE:
+	case X86_INS_CDQE:
+		{
+			if (a->bits == 64) {
+				esilprintf (op, "32,eax,>>,eax,rax,=,$c,?{,0xffffffff00000000,rax,|=}");
+			} else if (a->bits == 32) {
+				esilprintf (op, "16,ax,>>,ax,eax,=,$c,?{,0xffff0000,eax,|=}");
+			} else {
+				esilprintf (op, "8,al,>>,al,ax,=,$c,?{,0xff00,ax,|=}");
+			}
+		}
+		break;
 	case X86_INS_CMP:
 	case X86_INS_CMPPD:
 	case X86_INS_CMPPS:
