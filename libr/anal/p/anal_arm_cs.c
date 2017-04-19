@@ -333,6 +333,47 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "}");
 }
 
+static int arm64_reg_width(int reg) {
+	switch (reg) {
+		case ARM64_REG_W0:
+		case ARM64_REG_W1:
+		case ARM64_REG_W2:
+		case ARM64_REG_W3:
+		case ARM64_REG_W4:
+		case ARM64_REG_W5:
+		case ARM64_REG_W6:
+		case ARM64_REG_W7:
+		case ARM64_REG_W8:
+		case ARM64_REG_W9:
+		case ARM64_REG_W10:
+		case ARM64_REG_W11:
+		case ARM64_REG_W12:
+		case ARM64_REG_W13:
+		case ARM64_REG_W14:
+		case ARM64_REG_W15:
+		case ARM64_REG_W16:
+		case ARM64_REG_W17:
+		case ARM64_REG_W18:
+		case ARM64_REG_W19:
+		case ARM64_REG_W20:
+		case ARM64_REG_W21:
+		case ARM64_REG_W22:
+		case ARM64_REG_W23:
+		case ARM64_REG_W24:
+		case ARM64_REG_W25:
+		case ARM64_REG_W26:
+		case ARM64_REG_W27:
+		case ARM64_REG_W28:
+		case ARM64_REG_W29:
+		case ARM64_REG_W30:
+		return 32;
+		break;
+	default:
+		break;
+	}
+	return 64;
+}
+
 static const char *cc_name64(arm64_cc cc) {
 	switch (cc) {
 	case ARM64_CC_EQ: // Equal
@@ -1035,6 +1076,39 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_MOVZ:
 		// XXX: wrongly implemented
 		r_strbuf_setf (&op->esil, "%d,%s,=", IMM64 (1), REG64 (0));
+		break;
+	/* ASR, SXTB, SXTH and SXTW are alias for SBFM */
+	case ARM64_INS_ASR:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_SHR;
+		OPCALL(">>>>");
+		break;
+	case ARM64_INS_SXTB:
+		if (arm64_reg_width(insn->id) == 32) {
+			r_strbuf_setf (&op->esil, "%s,%s,=,8,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffffff00,%s,|=}",
+				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
+				"0xff", REG64(0), REG64(0));
+		} else {
+			r_strbuf_setf (&op->esil, "%s,%s,=,8,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffffffffffffff00,%s,|=}",
+				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
+				"0xff", REG64(0), REG64(0));
+		}
+		break;
+	case ARM64_INS_SXTH: /* halfword */
+		if (arm64_reg_width(insn->id) == 32) {
+			r_strbuf_setf (&op->esil, "%s,%s,=,16,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffff0000,%s,|=}",
+				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
+				"0xffff", REG64(0), REG64(0));
+		} else {
+			r_strbuf_setf (&op->esil, "%s,%s,=,16,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffffffffffffff00,%s,|=}",
+				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
+				"0xffff", REG64(0), REG64(0));
+		}
+		break;
+	case ARM64_INS_SXTW: /* word */
+		r_strbuf_setf (&op->esil, "%s,%s,=,32,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffffffffffffff00,%s,|=}",
+				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
+				"0xffffffff", REG64(0), REG64(0));
 		break;
 	case ARM64_INS_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
