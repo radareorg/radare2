@@ -856,6 +856,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		op->type = R_ANAL_OP_TYPE_SHL;
 		OPCALL("<<");
 		break;
+	case ARM64_INS_ROR:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_ROR;
+		OPCALL(">>>");
+		break;
 	case ARM64_INS_STURB: // sturb wzr, [x9, 0xffffffffffffffff]
 		// TODO
 		break;
