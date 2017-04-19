@@ -205,6 +205,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 				cs_reg_name (handle, op.reg), setarg);
 			return out;
 		} else {
+#if 0
 			if (gop->bits == 64) {
 				switch (op.reg) {
 				case X86_REG_EAX: op.reg = X86_REG_RAX; break;
@@ -220,6 +221,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 				default: break;
 				}
 			}
+#endif
 			return (char *)cs_reg_name (handle, op.reg);
 		}
 	case X86_OP_IMM:
@@ -733,10 +735,11 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
 				dst = getarg (&gop, 0, 0, NULL, DST_AR);
 				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
-				esilprintf (op, "%s,%s,=", src, dst);
 				if (a->bits == 64 && dst64) {
-					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
+					dst = dst64;
+					//r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
 				}
+				esilprintf (op, "%s,%s,=", src, dst);
 				break;
 			}
 		}
