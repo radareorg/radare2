@@ -120,7 +120,13 @@ int handle_fOpen(libgdbr_t *g) {
 }
 
 int handle_fstat(libgdbr_t *g) {
-	if (!*g->data || g->data[0] != 'F' || g->data[1] == '-') {
+	// no data just mean this is not supported by gdb
+	if (!*g->data) {
+        send_ack (g);
+        return 0;
+    }
+
+    if (g->data[0] != 'F' || g->data[1] == '-') {
 		send_ack (g);
 		return -1;
 	}
