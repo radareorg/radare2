@@ -187,9 +187,10 @@ typedef struct r_io_cache_t {
 	int written;
 } RIOCache;
 
+#define R_IO_DESC_CACHE_SIZE 64
 typedef struct r_io_desc_cache_t {
 	ut64 cached;
-	ut8 cdata[64];
+	ut8 cdata[R_IO_DESC_CACHE_SIZE];
 } RIODescCache;
 
 struct r_io_bind_t;

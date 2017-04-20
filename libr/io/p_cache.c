@@ -74,31 +74,27 @@ R_API bool r_io_desc_cache_init(RIODesc *desc) {
 	if (!desc || desc->cache) {
 		return false;
 	}
-	if ((desc->cache = sdb_new0 ())) {
-		return true;
-	}
-	return false;
+	return (desc->cache = sdb_new0 ()) ? true : false;
 }
 
 R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int len) {
 	RIODescCache *cache;
-	ut64 desc_sz = r_io_desc_size (desc);
+	ut64 caddr, desc_sz = r_io_desc_size (desc);
 	char k[64];
-	ut8 *ptr = buf;
-	ut64 caddr;
 	int cbaddr, written = 0;
 	if ((len < 1) || !desc || (desc_sz <= paddr) ||
 	    !desc->io || (!desc->cache && !r_io_desc_cache_init (desc))) {
 		return 0;
 	}
+	//XXX what would happen if paddr + len > desc_sz?
 	if (len > desc_sz) {
 		len = (int)desc_sz;
 	}
 	if (paddr > (desc_sz)) {
 		len = (int)(desc_sz - paddr);
 	}
-	caddr = paddr / 64;
-	cbaddr = paddr % 64;
+	caddr = paddr / R_IO_DESC_CACHE_SIZE;
+	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
 	while (written < len) {
 		sdb_itoa (caddr, k, 10);
 		//get an existing desc-cache, if it exists
@@ -112,21 +108,22 @@ R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int l
 			sdb_num_set (desc->cache, k, (ut64)cache, 0);
 		}
 		//check if the remaining data fits into the cache
-		if ((len - written) > (64 - cbaddr)) {
-			written += (64 - cbaddr);
+		if ((len - written) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
+			written += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			//this can be optimized
-			for (;cbaddr < 64; cbaddr++) {
+			for (; cbaddr < R_IO_DESC_CACHE_SIZE; cbaddr++) {
 				//write to cache
-				cache->cdata[cbaddr] = *ptr;
+				cache->cdata[cbaddr] = *buf;
 				//save, that its cached
 				cache->cached |= (0x1ULL << cbaddr);
-				ptr++;
+				buf++;
 			}
 		} else {
+			//XXX this looks like very suspicious
 			do {
-				cache->cdata[cbaddr] = *ptr;
+				cache->cdata[cbaddr] = *buf;
 				cache->cached |= (0x1ULL << cbaddr);
-				ptr++;
+				buf++;
 				written++;
 				cbaddr++;
 			} while (len > written);
@@ -152,18 +149,18 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 	if (paddr > (desc_sz - len)) {
 		len = (int)(desc_sz - paddr);
 	}
-	caddr = paddr / 64;
-	cbaddr = paddr % 64;
+	caddr = paddr / R_IO_DESC_CACHE_SIZE;
+	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
 	while (amount < len) {
 		sdb_itoa (caddr, k, 10);
 		//get an existing desc-cache, if it exists
 		if (!(cache = (RIODescCache *)sdb_num_get (desc->cache, k, NULL))) {	
-			amount += (64 - cbaddr);
+			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
 		}
-		if ((len - amount) > (64 - cbaddr)) {
-			amount += (64 - cbaddr);
-			for (;cbaddr < 64; cbaddr++) {
+		if ((len - amount) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
+			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
+			for (;cbaddr < R_IO_DESC_CACHE_SIZE; cbaddr++) {
 				if (cache->cached & (0x1ULL << cbaddr)) {
 					*ptr = cache->cdata[cbaddr];
 				}
@@ -200,15 +197,15 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	if (!dcache) {
 		return false;
 	}
-	blockaddr = sdb_atoi (k) * 64;
-	for (i = byteaddr = 0; byteaddr < 64; byteaddr++) {
+	blockaddr = sdb_atoi (k) * R_IO_DESC_CACHE_SIZE;
+	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			if (!prev_written) {
 				cache = R_NEW0 (RIOCache);
 				if (!cache) {
 					return false;
 				}
-				cache->data = malloc (64 - byteaddr);
+				cache->data = malloc (R_IO_DESC_CACHE_SIZE - byteaddr);
 				if (!cache->data) {
 					free (cache);
 					return false;
@@ -220,7 +217,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 			i++;
 		} else if (prev_written) {
 			prev_written = false;
-			char *data = realloc (cache->data, i);
+			ut8 *data = realloc (cache->data, i);
 			if (!data) {
 				return false;
 			}
@@ -234,13 +231,13 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	}
 	if (cache) {
 		cache->size = i;
-		cache->to = blockaddr + 63;
+		cache->to = blockaddr + R_IO_DESC_CACHE_SIZE - 1;
 		r_list_push (writes, cache);
 	}
 	return true;
 }
 
-static void __riocache_free (void *user) {
+static void __riocache_free(void *user) {
 	RIOCache *cache = (RIOCache *)user;
 	if (cache) {
 		free (cache->data);
@@ -292,11 +289,11 @@ static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	if (!cache) {
 		return false;
 	}
-	blockaddr = 64 * sdb_atoi (k);
-	for (i = byteaddr = 0; byteaddr < 64; byteaddr++) {
+	blockaddr = R_IO_DESC_CACHE_SIZE * sdb_atoi (k);
+	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (cache->cached & (0x1LL << byteaddr)) {
 			if (!prev_written) {
-				buf = malloc (64 - byteaddr);
+				buf = malloc (R_IO_DESC_CACHE_SIZE - byteaddr);
 				if (!buf) {
 					return false;
 				}
@@ -315,7 +312,7 @@ static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-R_API bool r_io_desc_cache_commit (RIODesc *desc) {
+R_API bool r_io_desc_cache_commit(RIODesc *desc) {
 	RIODesc *current;
 	if (!desc || !(desc->flags & R_IO_WRITE) || !desc->io || !desc->io->files || !desc->io->p_cache) {
 		return false;
@@ -334,7 +331,7 @@ R_API bool r_io_desc_cache_commit (RIODesc *desc) {
 	return true;
 }
 
-static int __desc_cache_cleanup_cb (void *user, const char *k, const char *v) {
+static int __desc_cache_cleanup_cb(void *user, const char *k, const char *v) {
 	RIODesc *desc = (RIODesc *)user;
 	RIODescCache *cache;
 	ut64 size, blockaddr;
@@ -343,14 +340,14 @@ static int __desc_cache_cleanup_cb (void *user, const char *k, const char *v) {
 		return false;
 	}
 	cache = (RIODescCache *) sdb_atoi (v);
-	blockaddr = 64 * sdb_atoi (k);
+	blockaddr = R_IO_DESC_CACHE_SIZE * sdb_atoi (k);
 	size = r_io_desc_size (desc);
 	if (size <= blockaddr) {
 		free (cache);
 		sdb_unset (desc->cache, k, 0);
 		return true;
 	}
-	if (size <= (blockaddr + 63)) {
+	if (size <= (blockaddr + R_IO_DESC_CACHE_SIZE - 1)) {
 		//this looks scary, but it isn't
 		byteaddr = (int)(size - blockaddr) - 1;		
 		cache->cached &= cleanup_masks[byteaddr];

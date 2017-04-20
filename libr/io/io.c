@@ -273,11 +273,11 @@ R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 		return 0;
 	}
 	r_io_desc_seek (io->desc, paddr, R_IO_SEEK_SET);
-	ret = io->desc->plugin->read (io, io->desc, buf, len);
 	if (io->p_cache) {
-		r_io_desc_cache_read (io->desc, paddr, buf, len);
+		return r_io_desc_cache_read (io->desc, paddr, buf, len);
+	} else {
+		return io->desc->plugin->read (io, io->desc, buf, len);
 	}
-	return ret;
 }
 
 R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
