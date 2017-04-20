@@ -1321,7 +1321,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	if (to < 1) {
 		return NULL;
 	}
-	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct section_t)))) {
+	if (!(sections = calloc (bin->nsects + 1, sizeof (struct section_t)))) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
