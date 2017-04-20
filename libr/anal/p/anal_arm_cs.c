@@ -669,6 +669,82 @@ static int regsize64(cs_insn *insn, int n) {
 
 #define REGSIZE64(x) regsize64 (insn, x)
 
+// return postfix
+const char* arm_prefix_cond(RAnalOp *op, int cond_type)
+{
+	const char *close_cond[3];
+	close_cond[0] = "\0";
+	close_cond[1] = ",}\0";
+	close_cond[2] = ",},}\0";
+	int close_type = 0;
+	switch (cond_type) {
+	case ARM_CC_EQ:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "zf,?{,");
+		break;
+	case ARM_CC_NE:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "zf,!,?{,");
+		break;
+	case ARM_CC_HS:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "cf,?{,");
+		break;
+	case ARM_CC_LO:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "cf,!,?{,");
+		break;
+	case ARM_CC_MI:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,?{,");
+		break;
+	case ARM_CC_PL:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,!,?{,");
+		break;
+	case ARM_CC_VS:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "vf,?{,");
+		break;
+	case ARM_CC_VC:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "vf,!,?{,");
+		break;
+	case ARM_CC_HI:
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "cf,?{,zf,!,?{,");
+		break;
+	case ARM_CC_LS:
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "cf,!,?{,zf,?{,");
+		break;
+	case ARM_CC_GE:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,vf,==,?{,");
+		break;
+	case ARM_CC_LT:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,vf,==,!,?{,");
+		break;
+	case ARM_CC_GT:
+		// zf == 0 && nf == vf
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "zf,!,?{,nf,vf,==,?{,");
+		break;
+	case ARM_CC_LE:
+		// zf == 1 && nf != vf
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "zf,?{,nf,vf,==,!,?{,");
+		break;
+	case ARM_CC_AL:
+		// always executed
+		break;
+	default:
+		break;
+	}
+	return close_cond[close_type];
+}
+
 /* arm64 */
 
 static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
@@ -782,10 +858,13 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 
+	const char *postfix = NULL;
 	opex64 (&op->opex, *handle, insn);
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
+
+	postfix = arm_prefix_cond (op, insn->detail->arm64.cc);
 
 	switch (insn->id) {
 	case ARM64_INS_REV: {
@@ -819,7 +898,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_SUB:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ANAL_OP_TYPE_SUB;
 		OPCALL("-");
 		break;
 	case ARM64_INS_MUL:
@@ -879,20 +958,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_B:
 		/* capstone precompute resulting address, using PC + IMM */
-		switch (insn->detail->arm.cc) {
-		case 0:
-			r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", IMM64 (0));
-			break;
-		case ARM_CC_EQ:
-			r_strbuf_setf (&op->esil, "zf,{,%"PFMT64d",pc,=,}", IMM64 (0));
-			break;
-		case ARM_CC_NE:
-			r_strbuf_setf (&op->esil, "zf,!,{,%"PFMT64d",pc,=,}", IMM64 (0));
-			break;
-		default:
-			//TODO
-			break;
-		}
+		r_strbuf_appendf (&op->esil, "%"PFMT64d",pc,=", IMM64 (0));
+		// Account for conditionals
+		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM64_INS_BL:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
@@ -973,7 +1041,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMP: // cmp w8, 0xd
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=", IMM64(1), REG64(0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), 64);
 		break;
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSEL: // CSEL w8, w13, w14, eq
@@ -1117,10 +1185,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				"0xffffffff", REG64(0), REG64(0));
 		break;
 	case ARM64_INS_UXTB:
-		r_strbuf_appendf (&op->esil, "%s,0xff,&,%s,=", REG64(1),REG64(0));
+		r_strbuf_setf (&op->esil, "%s,0xff,&,%s,=", REG64(1),REG64(0));
 		break;
 	case ARM64_INS_UXTH:
-		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%s,=", REG64(1),REG64(0));
+		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64(1),REG64(0));
 		break;
 	case ARM64_INS_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
@@ -1171,13 +1239,12 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
+
+
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
-	const char *close_cond[3];
-	close_cond[0] = "\0";
-	close_cond[1] = ",}\0";
-	close_cond[2] = ",},}\0";
-	int close_type = 0;
+
 	int i;
+	const char *postfix = NULL;
 	char str[32][32];
 	int msr_flags;
 	//this should be the theory
@@ -1188,76 +1255,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
-	switch (insn->detail->arm.cc) {
-	case ARM_CC_EQ:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,?{,");
-		break;
-	case ARM_CC_NE:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,!,?{,");
-		break;
-	case ARM_CC_HS:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,?{,");
-		break;
-	case ARM_CC_LO:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,!,?{,");
-		break;
-	case ARM_CC_MI:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,?{,");
-		break;
-	case ARM_CC_PL:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,!,?{,");
-		break;
-	case ARM_CC_VS:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "vf,?{,");
-		break;
-	case ARM_CC_VC:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "vf,!,?{,");
-		break;
-	case ARM_CC_HI:
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "cf,?{,zf,!,?{,");
-		break;
-	case ARM_CC_LS:
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "cf,!,?{,zf,?{,");
-		break;
-	case ARM_CC_GE:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,vf,==,?{,");
-		break;
-	case ARM_CC_LT:
-		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,vf,==,!,?{,");
-		break;
-	case ARM_CC_GT:
-		// zf == 0 && nf == vf
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "zf,!,?{,nf,vf,==,?{,");
-		break;
-	case ARM_CC_LE:
-		// zf == 1 && nf != vf
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "zf,?{,nf,vf,==,!,?{,");
-		break;
-	case ARM_CC_AL:
-		// always executed
-		break;
-	default:
-		break;
-	}
-	// TODO: PREFIX CONDITIONAL
+	postfix = arm_prefix_cond (op, insn->detail->arm.cc);
 
 	switch (insn->id) {
 	case ARM_INS_IT:
-		r_strbuf_appendf (&op->esil, "%d,pc,+=%s", op->fail, close_cond[close_type]);
+		r_strbuf_appendf (&op->esil, "%d,pc,+=%s", op->fail, postfix);
 		break;
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
@@ -1378,7 +1380,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%s,!=,$z,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_B:
-		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), close_cond[close_type]);
+		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), postfix);
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -1513,7 +1515,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		}
 		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", close_cond[close_type]);
+		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM_INS_STRHT:
 	case ARM_INS_STRH:
@@ -1627,7 +1629,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		}
 		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", close_cond[close_type]);
+		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM_INS_STRBT:
 	case ARM_INS_STRB:
@@ -1740,7 +1742,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		}
 		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", close_cond[close_type]);
+		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM_INS_TST:
 		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=", ARG(1), ARG(0));
