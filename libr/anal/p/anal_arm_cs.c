@@ -47,6 +47,10 @@
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
+#define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
+#define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
+#define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
+
 static const ut64 bitmask_by_width[] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
 	0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
@@ -1088,21 +1092,40 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%d,1,<<=,%s,&,?{,%"PFMT64d",pc,=,}",
 			IMM64(1), REG64(0), IMM64(2));
 		break;
-	case ARM64_INS_STP: // str x6, x7, [x6,0xf90]
+	case ARM64_INS_STP: // stp x6, x7, [x6,0xf90]
 		{
 		int disp = (int)MEMDISP64(2);
 		char sign = disp>=0?'+':'-';
 		ut64 abs = disp>=0? MEMDISP64(2): -MEMDISP64(2);
-		r_strbuf_setf (&op->esil,
-			"%s,%s,%"PFMT64d",%c,=[],"
-			"%s,%s,%"PFMT64d",%c,%d,+,=[]",
-			REG64(0), MEMBASE64(2), abs, sign,
-			REG64(1), MEMBASE64(2), abs, sign, 8);
+		// Pre-index case
+		if (ISPREINDEX64()) {
+			// "stp x2, x3, [x8, 0x20]
+			// "32,x8,+=,x2,x8,=[],x3,x8,8,+,=[]",
+			r_strbuf_setf(&op->esil,
+					"%d,%s,%c=,%s,%s,=[],%s,%s,8,+,=[]",
+					abs, MEMBASE64(2), sign,
+					REG64(0), MEMBASE64(2),
+					REG64(1), MEMBASE64(2));
+		// Post-index case
+		} else if (ISPOSTINDEX64()) {
+			int val = IMM64(3);
+			sign = val>=0?'+':'-';
+			abs = val>=0? val: -val;
+			// "stp x4, x5, [x8], 0x10"
+			// "x4,x8,16,+,=[],x5,x8,16,+,8,+,=[],16,x8,+="
+			r_strbuf_setf(&op->esil,
+					"%s,%s,%d,%c,=[],%s,%s,%d,%c,8,+,=[],%d,%s,%c=",
+					REG64(0), MEMBASE64(2), abs, sign,
+					REG64(1), MEMBASE64(2), abs, sign,
+					abs, MEMBASE64(2), sign);
+		// Everything else
+		} else {
+			r_strbuf_setf (&op->esil,
+					"%s,%s,%"PFMT64d",%c,=[],"
+					"%s,%s,%"PFMT64d",%c,%d,+,=[]",
+					REG64(0), MEMBASE64(2), abs, sign,
+					REG64(1), MEMBASE64(2), abs, sign, 8);
 		}
-		if (!strcmp ("sp", MEMBASE64(2))) {
-			op->stackop = R_ANAL_STACK_SET;
-			op->stackptr = 0;
-			op->ptr = -MEMDISP64(2);
 		}
 		break;
 	case ARM64_INS_LDP: // ldp x29, x30, [sp], 0x10
@@ -1110,16 +1133,35 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int disp = (int)MEMDISP64(2);
 		char sign = disp>=0?'+':'-';
 		ut64 abs = disp>=0? MEMDISP64(2): -MEMDISP64(2);
-		r_strbuf_setf (&op->esil,
-			"%s,%s,%"PFMT64d",%c,=[],"
-			"%s,%s,%"PFMT64d",%c,%d,+,=[]",
-			REG64(0), MEMBASE64(2), abs, sign,
-			REG64(1), MEMBASE64(2), abs, sign, 8);
+		// Pre-index case
+		// x2,x8,32,+,=[],x3,x8,32,+,8,+,=[]
+		if (ISPREINDEX64()) {
+			// "ldp x0, x1, [x8, -0x10]!"
+			// 16,x8,-=,x0,x8,[],x1,x8,8,+,[]
+			r_strbuf_setf (&op->esil,
+					"%d,%s,%c=,%s,%s,[],%s,%s,8,+,[]",
+					abs, MEMBASE64(2), sign,
+					REG64(0), MEMBASE64(2),
+					REG64(1), MEMBASE64(2));
+		// Post-index case
+		} else if (ISPOSTINDEX64()) {
+			int val = IMM64(3);
+			sign = val>=0?'+':'-';
+			abs = val>=0? val: -val;
+			// ldp x4, x5, [x8], -0x10
+			// x4,x8,16,+,[],x5,x8,16,+,8,+,[],16,x8,+=
+			r_strbuf_setf (&op->esil,
+					"%s,%s,%d,%c,[],%s,%s,%d,%c,8,+,[],%d,%s,%c=",
+					REG64(0), MEMBASE64(2), abs, sign,
+					REG64(1), MEMBASE64(2), abs, sign,
+					abs, MEMBASE64(2), sign);
+		} else {
+			r_strbuf_setf (&op->esil,
+					"%s,%s,%"PFMT64d",%c,[],"
+					"%s,%s,%"PFMT64d",%c,%d,+,[]",
+					REG64(0), MEMBASE64(2), abs, sign,
+					REG64(1), MEMBASE64(2), abs, sign, 8);
 		}
-		if (!strcmp ("sp", MEMBASE64(2))) {
-			op->stackop = R_ANAL_STACK_SET;
-			op->stackptr = 0;
-			op->ptr = MEMDISP64(2);
 		}
 		break;
 	case ARM64_INS_ADRP:
@@ -2043,7 +2085,8 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_GET;
-			op->stackptr = MEMDISP64(1);
+			op->stackptr = 0;
+			op->ptr = MEMDISP64(1);
 		} else {
 			if (ISIMM64(1)) {
 				op->type = R_ANAL_OP_TYPE_LEA;
