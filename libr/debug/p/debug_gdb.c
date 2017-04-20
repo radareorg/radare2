@@ -733,7 +733,7 @@ static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	return !ret;
 }
 
-struct r_debug_plugin_t r_debug_plugin_gdb = {
+RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
