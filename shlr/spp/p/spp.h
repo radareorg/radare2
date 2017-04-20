@@ -31,8 +31,7 @@ static char *cmd_to_str(const char *cmd) {
 	return out;
 }
 
-TAG_CALLBACK(spp_set)
-{
+static TAG_CALLBACK(spp_set) {
 	char *eq, *val = "";
 	if (!echo[ifl]) {
 		return 0;
@@ -50,13 +49,13 @@ TAG_CALLBACK(spp_set)
 		*eq = '\0';
 		val = eq + 1;
 	}
-	if (spp_var_set (buf, val) == -1)
+	if (spp_var_set (buf, val) == -1) {
 		fprintf (stderr, "Invalid variable name '%s' at line %d\n", buf, lineno);
+	}
 	return 0;
 }
 
-TAG_CALLBACK(spp_get)
-{
+static TAG_CALLBACK(spp_get) {
 	char *var;
 	if (!echo[ifl]) {
 		return 0;
@@ -68,12 +67,12 @@ TAG_CALLBACK(spp_get)
 	return 0;
 }
 
-TAG_CALLBACK(spp_getrandom)
-{
+static TAG_CALLBACK(spp_getrandom) {
 	int max;
 	if (!echo[ifl]) {
 		return 0;
 	}
+	// XXX srsly? this is pretty bad random
 	srandom (getpid ()); // TODO: change this to be portable
 	max = atoi (buf);
 	if (max > 0) {
@@ -83,8 +82,7 @@ TAG_CALLBACK(spp_getrandom)
 	return 0;
 }
 
-TAG_CALLBACK(spp_add)
-{
+static TAG_CALLBACK(spp_add) {
 	char res[32];
 	char *var, *eq = strchr (buf, ' ');
 	int ret = 0;
@@ -106,8 +104,7 @@ TAG_CALLBACK(spp_add)
 	return 0;
 }
 
-TAG_CALLBACK(spp_sub)
-{
+static TAG_CALLBACK(spp_sub) {
 	char *eq = strchr(buf, ' ');
 	char *var;
 	int ret = 0;
@@ -127,8 +124,7 @@ TAG_CALLBACK(spp_sub)
 }
 
 // XXX This method needs some love
-TAG_CALLBACK(spp_trace)
-{
+static TAG_CALLBACK(spp_trace) {
 	char b[1024];
 	if (!echo[ifl]) return 0;
 	snprintf(b, 1023, "echo '%s' >&2 ", buf);
@@ -137,16 +133,14 @@ TAG_CALLBACK(spp_trace)
 }
 
 /* TODO: deprecate */
-TAG_CALLBACK(spp_echo)
-{
+static TAG_CALLBACK(spp_echo) {
 	if (!echo[ifl]) return 0;
 	do_printf (out, "%s", buf);
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;
 }
 
-TAG_CALLBACK(spp_error)
-{
+static TAG_CALLBACK(spp_error) {
 	if (!echo[ifl]) {
 		return 0;
 	}
@@ -154,8 +148,7 @@ TAG_CALLBACK(spp_error)
 	return -1;
 }
 
-TAG_CALLBACK(spp_warning)
-{
+static TAG_CALLBACK(spp_warning) {
 	if (!echo[ifl]) {
 		return 0;
 	}
@@ -163,18 +156,17 @@ TAG_CALLBACK(spp_warning)
 	return 0;
 }
 
-TAG_CALLBACK(spp_system)
-{
-	char *str;
-	if (!echo[ifl]) return 0;
-	str = cmd_to_str(buf);
+static TAG_CALLBACK(spp_system) {
+	if (!echo[ifl]) {
+		return 0;
+	}
+	char *str = cmd_to_str (buf);
 	do_printf (out, "%s", str);
 	free(str);
 	return 0;
 }
 
-TAG_CALLBACK(spp_include)
-{
+static TAG_CALLBACK(spp_include) {
 	char *incdir;
 	if (!echo[ifl]) {
 		return 0;
@@ -196,16 +188,14 @@ TAG_CALLBACK(spp_include)
 	return 0;
 }
 
-TAG_CALLBACK(spp_if)
-{
+static TAG_CALLBACK(spp_if) {
 	char *var = spp_var_get(buf);
 	echo[ifl + 1] = (var && *var != '0' && *var != '\0') ? 1 : 0;
 	return 1;
 }
 
 /* {{ ifeq $path / }} */
-TAG_CALLBACK(spp_ifeq)
-{
+static TAG_CALLBACK(spp_ifeq) {
 	char *value = buf;
 	char *eq = strchr(buf, ' ');
 	if (eq) {
@@ -225,8 +215,7 @@ TAG_CALLBACK(spp_ifeq)
 	return 1;
 }
 
-TAG_CALLBACK(spp_hex)
-{
+static TAG_CALLBACK(spp_hex) {
 	int i;
 	for(i = 0; buf[i]; i++) {
 		if (buf[i] >= '0' && buf[i] <= '9') {
@@ -243,8 +232,7 @@ TAG_CALLBACK(spp_hex)
 	return 0;
 }
 
-TAG_CALLBACK(spp_grepline)
-{
+static TAG_CALLBACK(spp_grepline) {
 	FILE *fd;
 	char b[1024];
 	char *ptr;
@@ -268,23 +256,22 @@ TAG_CALLBACK(spp_grepline)
 	return 0;
 }
 
-TAG_CALLBACK(spp_else)
-{
+static TAG_CALLBACK(spp_else) {
 	echo[ifl] = echo[ifl] ? 0 : 1;
 	return 0;
 }
 
-TAG_CALLBACK(spp_ifnot)
-{
+static TAG_CALLBACK(spp_ifnot) {
 	spp_if (buf, out);
 	spp_else (buf, out);
 	return 1;
 }
 
-TAG_CALLBACK(spp_ifin)
-{
+static TAG_CALLBACK(spp_ifin) {
 	char *var, *ptr;
-	if (!echo[ifl]) return 1;
+	if (!echo[ifl]) {
+		return 1;
+	}
 	ptr = strchr (buf, ' ');
 	echo[ifl + 1] = 0;
 	if (ptr) {
@@ -297,13 +284,11 @@ TAG_CALLBACK(spp_ifin)
 	return 1;
 }
 
-TAG_CALLBACK(spp_endif)
-{
+static TAG_CALLBACK(spp_endif) {
 	return -1;
 }
 
-TAG_CALLBACK(spp_default)
-{
+static TAG_CALLBACK(spp_default) {
 	if (!echo[ifl]) {
 		return 0;
 	}
@@ -315,38 +300,35 @@ TAG_CALLBACK(spp_default)
 
 static FILE *spp_pipe_fd = NULL;
 
-TAG_CALLBACK(spp_pipe)
-{
+static TAG_CALLBACK(spp_pipe) {
 	spp_pipe_fd = popen (buf, "w");
 	return 0;
 }
 
 static char *spp_switch_str = NULL;
 
-TAG_CALLBACK(spp_switch)
-{
+static TAG_CALLBACK(spp_switch) {
 	char *var = spp_var_get (buf);
-	if (var)
+	if (var) {
 		spp_switch_str = strdup (var);
-	else spp_switch_str = strdup ("");
+	} else {
+		spp_switch_str = strdup ("");
+	}
 	return 1;
 }
 
-TAG_CALLBACK(spp_case)
-{
+static TAG_CALLBACK(spp_case) {
 	echo[ifl] = strcmp (buf, spp_switch_str)?0:1;
 	return 0;
 }
 
-TAG_CALLBACK(spp_endswitch)
-{
+static TAG_CALLBACK(spp_endswitch) {
 	free (spp_switch_str);
 	spp_switch_str = NULL;
 	return -1;
 }
 
-TAG_CALLBACK(spp_endpipe)
-{
+static TAG_CALLBACK(spp_endpipe) {
 	/* TODO: Get output here */
 	int ret = 0, len = 0;
 	int outlen = 4096;
@@ -369,8 +351,7 @@ TAG_CALLBACK(spp_endpipe)
 	return 0;
 }
 
-PUT_CALLBACK(spp_fputs)
-{
+static PUT_CALLBACK(spp_fputs) {
 	if (spp_pipe_fd) {
 		fprintf (spp_pipe_fd, "%s", buf);
 	} else {
@@ -379,7 +360,7 @@ PUT_CALLBACK(spp_fputs)
 	return 0;
 }
 
-struct Tag spp_tags[] = {
+static struct Tag spp_tags[] = {
 	{ "get", spp_get },
 	{ "hex", spp_hex },
 	{ "getrandom", spp_getrandom },
@@ -408,30 +389,30 @@ struct Tag spp_tags[] = {
 	{ NULL }
 };
 
-ARG_CALLBACK(spp_arg_i)
-{
+static ARG_CALLBACK(spp_arg_i) {
 	r_sys_setenv ("SPP_INCDIR", arg);
 	return 0;
 }
 
-ARG_CALLBACK(spp_arg_d)
-{
+static ARG_CALLBACK(spp_arg_d) {
 	/* TODO: Handle error */
 	char *eq = strchr (arg, '=');
 	if (eq) {
 		*eq = '\0';
 		spp_var_set (arg, eq+1);
-	} else spp_var_set (arg, "");
+	} else {
+		spp_var_set (arg, "");
+	}
 	return 0;
 }
 
-struct Arg spp_args[] = {
+static struct Arg spp_args[] = {
 	{ "-I", "add include directory", 1, spp_arg_i },
 	{ "-D", "define value of variable", 1, spp_arg_d },
 	{ NULL }
 };
 
-struct Proc spp_proc = {
+DLL_LOCAL struct Proc spp_proc = {
 	.name = "spp",
 	.tags = (struct Tag **)spp_tags,
 	.args = (struct Arg **)spp_args,
