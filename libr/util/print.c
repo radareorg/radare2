@@ -1659,6 +1659,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			for (++i; p[i] && p[i] != 'm'; i++) {
 				o[j] = p[i];
 			}
+			j--;
 			continue;
 #else
 			/* copy until 'm' */

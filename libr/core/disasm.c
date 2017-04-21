@@ -3687,7 +3687,7 @@ toro:
 
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs (ds);
-			// ds_build_op_str (ds);
+			ds_build_op_str (ds);
 			ds_print_ptr (ds, len + 256, idx);
 			if (!ds->pseudo) {
 				R_FREE (ds->opstr);
