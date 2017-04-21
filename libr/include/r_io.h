@@ -173,7 +173,7 @@ typedef struct r_io_section_t {
 } RIOSection;
 
 typedef enum {
-	R_IO_SECTION_APPLY_FOR_HEXEDITOR,
+	R_IO_SECTION_APPLY_FOR_PATCH,
 	R_IO_SECTION_APPLY_FOR_ANALYSIS,
 	R_IO_SECTION_APPLY_FOR_EMULATOR
 } RIOSectionApplyMethod;

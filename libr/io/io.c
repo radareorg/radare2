@@ -260,7 +260,6 @@ R_API int r_io_close_all(RIO* io) { // what about undo?
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
-	int ret;
 	if (!io || !buf || len < 1) {
 		return 0;
 	}

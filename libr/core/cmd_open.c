@@ -197,7 +197,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_open_map (RCore *core, const char *input) {
+static void cmd_open_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "om[-] [arg]", " # map opened files",
 		"om", "", "list all defined IO maps",
@@ -232,8 +232,9 @@ static void cmd_open_map (RCore *core, const char *input) {
 
 		break;
 	case 'r':
-		if (input[2] != ' ')
+		if (input[2] != ' ') {
 			break;
+		}
 		P = strchr (input+3, ' ');
 		if (P) {
 			id = (ut32)r_num_math (core->num, input+3);	//mapid
@@ -243,37 +244,49 @@ static void cmd_open_map (RCore *core, const char *input) {
 				ut64 diff = map->to - map->from;
 				map->from = new;
 				map->to = new+diff;			//this is so risky
-			} else eprintf ("Cannot find any map with mapid %d\n", id);
+			} else {
+				eprintf ("Cannot find any map with mapid %d\n", id);
+			}
 		}
 		break;
 	case 's':
-		if (input[2] != 'p' || input[3] != ' ')
+		if (input[2] != 'p' || input[3] != ' ') {
 			break;
-		id = (ut32)r_num_math (core->num, input+4);		//sectionid
-		if (!r_io_section_priorize (core->io, id))
+		}
+		//sectionid
+		id = (ut32)r_num_math (core->num, input + 4);
+		if (!r_io_section_priorize (core->io, id)) {
 			eprintf ("Cannot priorize section with sectionid %d\n", id);
+		}
 		break;
 	case 'b':
-		if (input[2] != 'p' || input[3] != ' ')
+		if (input[2] != 'p' || input[3] != ' ') {
 			break;
-		id = (ut32)r_num_math (core->num, input+4);		//binid
-		if (!r_io_section_priorize_bin (core->io, id))
+		}
+		//binid
+		id = (ut32)r_num_math (core->num, input+4);
+		if (!r_io_section_priorize_bin (core->io, id)) {
 			eprintf ("Cannot priorize bin with binid %d\n", id);
+		}
 		break;
 	case 'f':
-		if (input[2] != 'p' || input[3] != ' ')
+		if (input[2] != 'p' || input[3] != ' ') {
 			break;
+		}
 		fd = r_num_math (core->num, input+4);
-		if (!r_io_map_priorize_for_fd (core->io, (int)fd))
+		if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
 			eprintf ("Cannot priorize any map for fd %d\n", (int)fd);
+		}
 		break;
 	case 'p':
 		if (input[2] != ' ')
 			break;
-		id = (ut32)r_num_math (core->num, input+3);		//mapid
+		id = (ut32)r_num_math (core->num, input + 3);		//mapid
 		if (r_io_map_exists_for_id (core->io, id)) {
 			r_io_map_priorize (core->io, id);
-		} else eprintf ("Cannot find any map with mapid %d\n", id);
+		} else {
+			eprintf ("Cannot find any map with mapid %d\n", id);
+		}
 		break;
 	case ' ':
 		// i need to parse delta, offset, size
@@ -291,17 +304,24 @@ static void cmd_open_map (RCore *core, const char *input) {
 					*r = 0;
 					size = r_num_math (core->num, q+1);
 					delta = r_num_math (core->num, r+1);
-				} else size = r_num_math (core->num, q+1);
-			} else size = r_io_size (core->io);		//XXX
+				} else {
+					size = r_num_math (core->num, q+1);
+				}
+			} else {
+				size = r_io_size (core->io);		//XXX
+			}
 			if ((desc = r_io_desc_get (core->io, fd))) {
 				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
-			} else eprintf ("No file opened with fd %"PFMT64d"\n", fd);
-		} else eprintf ("Invalid use of om . See om? for help.");
+			} else {
+				eprintf ("No file opened with fd %"PFMT64d"\n", fd);
+			}
+		} else {
+			eprintf ("Invalid use of om . See om? for help.");
+		}
 		free (s);
 		break;
 	case '-':
-		r_io_map_del (core->io,
-			r_num_math (core->num, input+2));
+		r_io_map_del (core->io, r_num_math (core->num, input + 2));
 		break;
 	case '\0':
 		map_list (core->io, 0, core->print);

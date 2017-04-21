@@ -20,11 +20,11 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->fd = fd;
 	map->from = addr;
 	// RIOMap describes an interval of addresses (map->from; map->to)
-	map->to = addr + size - 1; 
+	map->to = addr + size - 1;
 	map->flags = flags;
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
-	ls_append (io->maps, map); 
+	ls_append (io->maps, map);
 	return map;
 }
 
@@ -85,7 +85,7 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
+		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC), 
 					delta, addr, size);
 	}
 	return NULL;
@@ -155,7 +155,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		//search for iter with the correct map
 		if (map->id == id) {
 			ls_split_iter (io->maps, iter);
-			ls_append (io->maps, iter);
+			ls_append (io->maps, map);
 			return true;
 		}
 	}
@@ -178,7 +178,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	io->maps->free = NULL;
 	ls_foreach_safe (io->maps, iter, ator, map) {
 		if (map->fd == fd) {
-			ls_prepend (list, iter->data);
+			ls_prepend (list, map);
 			ls_delete (io->maps, iter);
 		}
 	}

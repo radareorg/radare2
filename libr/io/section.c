@@ -432,12 +432,25 @@ static bool _create_null_map(RIO *io, RIOSection *sec, ut64 at) {
 	return true;
 }
 
-static bool _create_file_map(RIO *io, RIOSection *sec, ut64 size) {
+static bool _create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch) {
 	RIOMap *map = NULL;
+	int flags = 0;
+	RIODesc *desc;
 	if (!io || !sec) {
 		return false;
 	}
-	map = r_io_map_add (io, sec->fd, sec->flags, sec->paddr, sec->vaddr, size);
+	desc = r_io_desc_get (io, sec->fd);
+	if (!desc) {
+		return false;
+	}
+	flags = sec->flags;
+	//create file map for patching
+	if (patch) {
+		//add -w to the map for patching if needed
+		//if the file was not opened with -w desc->flags won't have that bit active
+		flags = flags | desc->flags;
+	}
+	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -446,16 +459,7 @@ static bool _create_file_map(RIO *io, RIOSection *sec, ut64 size) {
 	return false;
 }
 
-
-static bool _section_apply_for_hex(RIO *io, RIOSection *sec) {
-	if (sec->paddr != sec->vaddr) {
-		ut64 size = R_MIN (sec->vsize, sec->vsize);
-		return _create_file_map (io, sec, size);
-	}
-	return false;
-}
-
-static bool _section_apply_for_anal(RIO *io, RIOSection *sec) {
+static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) {
 	ut64 at;
 	if (sec->vsize > sec->size) {
 		// in that case, we just have to allocate some memory of the size (vsize-size)
@@ -468,7 +472,7 @@ static bool _section_apply_for_anal(RIO *io, RIOSection *sec) {
 				return false;
 			}
 			// we need to create this map for transfering the flags, no real remapping here
-			if (!_create_file_map (io, sec, sec->size)) {
+			if (!_create_file_map (io, sec, sec->size, patch)) {
 				return false;
 			}
 			return true;
@@ -479,7 +483,7 @@ static bool _section_apply_for_anal(RIO *io, RIOSection *sec) {
 	} else {
 		// same as above
 		if (!sec->filemap) {
-			if (_create_file_map (io, sec, sec->vsize)) {
+			if (_create_file_map (io, sec, sec->vsize, patch)) {
 				return true;
 			}
 		}
@@ -495,7 +499,7 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 	ut8 *buf = NULL;
 	// if the section doesn't allow writing, we don't need to initialize writeable memory
 	if (!(sec->flags & R_IO_WRITE)) {
-		return _section_apply_for_anal (io, sec);
+		return _section_apply_for_anal_patch (io, sec, R_IO_SECTION_APPLY_FOR_ANALYSIS);
 	}
 	if (sec->memmap) {
 		return false;
@@ -542,10 +546,10 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 
 static bool _section_apply(RIO *io, RIOSection *sec, RIOSectionApplyMethod method) {
 	switch (method) {
-	case R_IO_SECTION_APPLY_FOR_HEXEDITOR:
-		return _section_apply_for_hex (io, sec);
+	case R_IO_SECTION_APPLY_FOR_PATCH:
 	case R_IO_SECTION_APPLY_FOR_ANALYSIS:
-		return _section_apply_for_anal (io, sec);
+		return _section_apply_for_anal_patch (io, sec, 
+					method == R_IO_SECTION_APPLY_FOR_ANALYSIS? false : true);
 	case R_IO_SECTION_APPLY_FOR_EMULATOR:
 		return _section_apply_for_emul (io, sec);
 	default:
@@ -560,7 +564,7 @@ R_API bool r_io_section_apply(RIO *io, ut32 id, RIOSectionApplyMethod method) {
 	return _section_apply (io, sec, method);
 }
 
-static bool _section_reapply_anal_or_hex(RIO *io, RIOSection *sec, RIOSectionApplyMethod method) {
+static bool _section_reapply_anal_or_patch(RIO *io, RIOSection *sec, RIOSectionApplyMethod method) {
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!sec) {
@@ -574,8 +578,10 @@ static bool _section_reapply_anal_or_hex(RIO *io, RIOSection *sec, RIOSectionApp
 			}
 		}
 		r_io_map_del (io, sec->memmap);
+		sec->memmap = 0;
 	}
 	r_io_map_del (io, sec->filemap);
+	sec->filemap = 0;
 	return _section_apply (io, sec, method);
 }
 
@@ -691,9 +697,9 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 static bool _section_reapply(RIO *io, RIOSection *sec, RIOSectionApplyMethod method) {
 	r_io_map_cleanup (io);
 	switch (method) {
-	case R_IO_SECTION_APPLY_FOR_HEXEDITOR:
+	case R_IO_SECTION_APPLY_FOR_PATCH:
 	case R_IO_SECTION_APPLY_FOR_ANALYSIS:
-		return _section_reapply_anal_or_hex (io, sec, method);
+		return _section_reapply_anal_or_patch (io, sec, method);
 	case R_IO_SECTION_APPLY_FOR_EMULATOR:
 		return _section_reapply_for_emul (io, sec);
 	default: 

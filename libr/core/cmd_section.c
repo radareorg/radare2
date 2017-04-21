@@ -152,6 +152,54 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 	}
 }
 
+static int cmd_section_reapply(RCore *core, const char *input) {
+	int mode = 0;
+	ut32 id;
+	const char* help_msg[] = {
+		"Usage:","SR[b|s][a|p|e] [id]","",
+		"SRb", "[a|p|e] binid", "Remap sections of binid for Analysis, Patch or Emulation", 
+		"SRs","[a|p|e] secid","Remap section with sectid for Analysis, Patch or Emulation",
+		NULL
+	};
+	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg);
+		break;
+	case 'b':
+	case 's':
+		switch (input[1]) {
+		case 'e':
+			mode = R_IO_SECTION_APPLY_FOR_EMULATOR;
+			break;
+		case 'p':
+			mode = R_IO_SECTION_APPLY_FOR_PATCH;
+			break;
+		case 'a':
+			mode = R_IO_SECTION_APPLY_FOR_ANALYSIS;
+			break;
+		default:
+			r_core_cmd_help (core, help_msg);
+			return 0;
+		}
+		if (*input == 'b') {
+			id = (ut32)r_num_math (core->num, input + 2);
+			if (!r_io_section_reapply_bin (core->io, id, mode)) {
+				eprintf ("Cannot reapply section with binid %d\n", id);
+			}
+		} else {
+			id = (ut32)r_num_math (core->num, input + 2);
+			if (!r_io_section_reapply (core->io, id, mode)) {
+				eprintf ("Cannot reapply section with secid %d\n", id);
+			}
+		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg);
+		break;
+	}
+	return 0;
+}
+
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char* help_msg[] = {
@@ -168,6 +216,7 @@ static int cmd_section(void *data, const char *input) {
 		"Sr"," [name]","rename section on current seek",
 		"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
 		"S-[id]","","remove section identified by id",
+		"SR", "[?]", "Remap sections with different mode of operation", 
 		"S-.","","remove section at core->offset (can be changed with @)",
 		"S.-*","","remove all sections in current offset",
 		NULL
@@ -177,6 +226,8 @@ static int cmd_section(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 // TODO: add command to resize current section
 		break;
+	case 'R' : // "SR"
+		return cmd_section_reapply (core, input + 1);	
 	case 'f': // "Sf"
 		if (input[1] == ' ') {
 			ut64 n = r_num_math (core->num, input + 1);

@@ -588,8 +588,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RBinInfo *info = obj? obj->info: NULL;
 		if (plugin && plugin->name && info) {
 			if (strcmp (plugin->name, "any")) {
-				r_core_bin_set_arch_bits (r, binfile->file,
-					info->arch, info->bits);
+				r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 			}
 		}
 	}
@@ -613,6 +612,14 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			eprintf ("Opening %s\n", lib);
 			r_core_file_loadlib (r, lib, libaddr);
 			libaddr += 0x2000000;
+		}
+	}
+	binfile = r_bin_cur (r->bin);
+	if (binfile) {
+		desc = r_io_desc_get (r->io, binfile->fd);
+		//it means the file was opened for writing
+		if (desc->flags & R_IO_WRITE) {
+			r_io_section_reapply_bin (r->io, binfile->id, R_IO_SECTION_APPLY_FOR_PATCH);
 		}
 	}
 	return true;
