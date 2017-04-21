@@ -8,10 +8,11 @@ Running gdbserver
 
 Connecting from r2
 ------------------
-        $Write failed: Host is down5
+        $ r2 -D gdb gdb://127.0.0.1:2345
 
-Support implementations
-===========
+
+Supported implementations
+=========================
 r2 have support for connecting to remote GDB instances:
 
                 x86-32   x86-64   arm    arm64   sh
