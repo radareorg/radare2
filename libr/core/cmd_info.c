@@ -610,7 +610,7 @@ static int cmd_info(void *data, const char *input) {
 				"is", "", "Symbols",
 				"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 				"iV", "", "Display file version info",
-				"iz", "", "Strings in data sections",
+				"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 				"izz", "", "Search for Strings in the whole binary",
 				"iZ", "", "Guess size of binary program",
 				NULL
