@@ -887,7 +887,7 @@ static int cmd_write(void *data, const char *input) {
 				int fd, i;
 				bool rad = false;
 				if (core && core->io && core->io->p_cache &&
-				   core->print && core->print->cb_printf ) {
+				   core->print && core->print->cb_printf && input[2] && input[3]) {
 					if (input[3] == ' ') {
 						fd = (int)r_num_math (core->num, input+3);
 						desc = r_io_desc_get (core->io, fd);
@@ -946,11 +946,11 @@ static int cmd_write(void *data, const char *input) {
 					"wc","","list all write changes",
 					"wc-"," [from] [to]","remove write op at curseek or given addr",
 					"wc+"," [addr]","commit change from cache to io",
-					"wc*","","\"\" in radare commands",
+					"wc*","","list all write changes in radare commands",
 					"wcr","","reset all write changes in cache",
 					"wci","","commit write cache",
 					"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
-					"wcp*"," [fd]","\"\" in radare commands",
+					"wcp*"," [fd]","list all cached write-operations on p-layer in radare commands",
 					"wcpi"," [fd]", "commit and invalidate pcache for specified fd or current fd",
 					NULL
 				};
