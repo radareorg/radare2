@@ -618,7 +618,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (binfile) {
 		desc = r_io_desc_get (r->io, binfile->fd);
 		//it means the file was opened for writing and not in debug-mode
-		if (desc->flags & R_IO_WRITE && !(desc->flags & R_IO_EXEC)) {
+		if (!desc->plugin->isdbg && desc->flags & R_IO_WRITE) {
 			r_io_section_reapply_bin (r->io, binfile->id, R_IO_SECTION_APPLY_FOR_PATCH);
 		}
 	}
