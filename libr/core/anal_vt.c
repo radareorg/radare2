@@ -13,12 +13,11 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 		int totalMethods = table->methods;
 		ut64 startAddress = table->saddr;
 		int bits = r_config_get_i (core->config, "asm.bits");
+		int big_endian = r_config_get_i (core->config, "cfg.bigendian");
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
-			int sz;
 			ut64 curAddressValue;
-			sz = R_DIM (8, 1, 8);
-			if (!r_io_read_at (core->io, startAddress, (ut8 *)&curAddressValue, sz)) {
+			if (!r_io_read_i (core->io, curAddress, &curAddressValue, 8, big_endian)) {
 				eprintf ("read error\n");
 				break;
 			}
@@ -42,12 +41,14 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 }
 
 static int valueInTextSection(RCore *core, ut64 curAddress) {
-	int sz = R_DIM (8, 1, 8);
-	//value at the current address
+	ut8 buf[8];
 	ut64 curAddressValue;
-	r_io_read_at (core->io, curAddress, (ut8 *)&curAddressValue, sz);
-	//if the value is in text section
-	return inTextSection (core, curAddressValue);
+	int big_endian = r_config_get_i (core->config, "cfg.bigendian");
+	if (r_io_read_i (core->io, curAddress, &curAddressValue, 8, big_endian)) {
+		//if the value is in text section
+		return inTextSection (core, curAddressValue);
+	}
+	return 0;
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {
