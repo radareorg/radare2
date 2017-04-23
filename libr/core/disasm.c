@@ -2743,7 +2743,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 #if 1
-		if (!IS_PRINTABLE (*msg)) {
+		if (!(IS_PRINTABLE (*msg) || ISWHITECHAR (*msg))) {
 			*msg = 0;
 		} else {
 			msg[len - 1] = 0;
@@ -2751,7 +2751,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 #endif
 		f = r_flag_get_i (core->flags, refaddr);
 		if (f) {
-			r_str_filter (msg, 0);
+			if (strlen (msg) != 1) {
+				r_str_filter (msg, 0);
+			}
 			if (!strncmp (msg, "UH..", 4)) {
 				*msg = 0;
 			}
