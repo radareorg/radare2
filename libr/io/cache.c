@@ -6,8 +6,9 @@
 #include "r_io.h"
 
 static void cache_item_free(RIOCache *cache) {
-	if (!cache)
+	if (!cache) {
 		return;
+	}
 	free (cache->data);
 	free (cache->odata);
 	free (cache);
@@ -32,10 +33,11 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	io->cached = 0;
 	r_list_foreach (io->cache, iter, c) {
 		if (c->from >= from && c->to <= to) {
-			if (!r_io_write_at (io, c->from, c->data, c->size))
+			if (!r_io_write_at (io, c->from, c->data, c->size)) {
 				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
-			else 
+			} else  {
 				c->written = true;
+			}
 			break;
 		}
 	}
@@ -52,16 +54,16 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	RIOCache *c;
 	int done = false;
 
-	if (from<to) {
-		//r_list_foreach_safe (io->cache, iter, iter_tmp, c) {
+	if (from < to) {
 		r_list_foreach (io->cache, iter, c) {
 			if (c->from >= from && c->to <= to) {
 				int ioc = io->cached;
-				io->cached = 0;
+				io->cached = false;
 				r_io_write_at (io, c->from, c->odata, c->size);
 				io->cached = ioc;
-				if (!c->written)
+				if (!c->written) {
 					r_list_delete (io->cache, iter);
+				}
 				c->written = false;
 				done = true;
 				break;
@@ -81,39 +83,54 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	r_list_foreach (io->cache, iter, c) {
 		if (rad == 1) {
 			io->cb_printf ("wx ");
-			for (i=0; i<c->size; i++)
+			for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->data[i]);
-			io->cb_printf (" @ 0x%08"PFMT64x, c->from);
+			}
+			io->cb_printf (" @ 0x%08" PFMT64x, c->from);
 			io->cb_printf (" # replaces: ");
-			for (i=0; i<c->size; i++)
+			for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
+			}
 			io->cb_printf ("\n");
 		} else {
-			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ",
-				j, c->from, c->size);
-			for (i=0; i<c->size; i++)
+			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, c->from, c->size);
+			for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
+			}
 			io->cb_printf (" -> ");
-			for (i=0; i<c->size; i++)
+			for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->data[i]);
+			}
 			io->cb_printf (" %s\n", c->written?"(written)":"(not written)");
 		}
 		j++;
 	}
-	if (rad == 2)
+	if (rad == 2) {
 		io->cb_printf ("]");
+	}
 	return false;
 }
 
-R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {		//Review this later
+//Review this later
+R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {		
 	RIOCache *ch;
 	ch = R_NEW0 (RIOCache);
+	if (!ch) {
+		return 0;
+	}
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;
-	ch->odata = (ut8*)malloc (len);
-	ch->data = (ut8*)malloc (len);
-	ch->written = io->cached? 0: 1;
+	ch->odata = (ut8*)calloc (1, len + 1);
+	if (!ch->odata) {
+		return 0;
+	}
+	ch->data = (ut8*)calloc (1, len + 1);
+	if (!ch->data) {
+		free (ch->odata);
+		return 0;
+	}
+	ch->written = io->cached? false: true;
 	r_io_read_at (io, addr, ch->odata, len);
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
@@ -127,25 +144,31 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (len < 0) {
 		return 0;
 	}
-
 	r_list_foreach (io->cache, iter, c) {
-		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-			if (ret>0) {
+		if (r_range_overlap (addr, addr + len - 1, c->from, c->to, &ret)) {
+			if (ret > 0) {
 				da = ret;
 				db = 0;
 				l = c->size;
-			} else if (ret<0) {
+			} else if (ret < 0) {
 				da = 0;
 				db = -ret;
-				l = c->size-db;
+				l = c->size - db;
 			} else {
 				da = 0;
 				db = 0;
 				l = c->size;
 			}
-			if ((l+da)>len) l = len-da;					//say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
-			if (l<1) l = 1; // XXX: fail
-			else memcpy (buf+da, c->data+db, l);
+			//say hello to integer overflow, but this won't happen in realistic 
+			//scenarios because malloc will fail befor
+			if ((l + da) > len) {
+				l = len - da;					
+			}
+			if (l < 1) {
+				l = 1; // XXX: fail
+			} else {
+				memcpy (buf + da, c->data + db, l);
+			}
 		}
 	}
 	return len;

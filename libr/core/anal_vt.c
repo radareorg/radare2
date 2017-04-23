@@ -17,7 +17,7 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
 			ut64 curAddressValue;
-			if (!r_io_read_i (core->io, curAddress, &curAddressValue, 8, big_endian)) {
+			if (!r_io_read_i (core->io, startAddress, &curAddressValue, 8, big_endian)) {
 				eprintf ("read error\n");
 				break;
 			}
@@ -41,7 +41,6 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 }
 
 static int valueInTextSection(RCore *core, ut64 curAddress) {
-	ut8 buf[8];
 	ut64 curAddressValue;
 	int big_endian = r_config_get_i (core->config, "cfg.bigendian");
 	if (r_io_read_i (core->io, curAddress, &curAddressValue, 8, big_endian)) {
