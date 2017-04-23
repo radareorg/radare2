@@ -370,7 +370,7 @@ R_API bool r_io_section_priorize(RIO *io, ut32 id) {
 	ls_foreach_safe (io->sections, iter, niter, sec) {
 		if (sec->id == id) {
 			ls_split_iter (io->sections, iter);
-			ls_append (io->sections, iter);
+			ls_append (io->sections, sec);
 			ret = true;
 			break;
 		}
