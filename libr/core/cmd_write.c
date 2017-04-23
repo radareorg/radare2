@@ -886,55 +886,55 @@ static int cmd_write(void *data, const char *input) {
 				RListIter *iter;
 				int fd, i;
 				bool rad = false;
-				if (core && core->io && core->io->p_cache &&
-				   core->print && core->print->cb_printf && input[2] && input[3]) {
-					if (input[3] == ' ') {
-						fd = (int)r_num_math (core->num, input+3);
-						desc = r_io_desc_get (core->io, fd);
-					} else if (input [3] == '*') {
-						rad = true;
-						if (input[4] == ' ') {
-							fd = (int)r_num_math (core->num, input+4);
-							desc = r_io_desc_get (core->io, fd);
-						} else {
-							desc = core->io->desc;
-						}
-					} else if (input[3] == 'i') {
-						if (input[4] == ' ') {
-							fd = (int)r_num_math (core->num, input+4);
+				if (core && core->io && core->io->p_cache && core->print && core->print->cb_printf) {
+					switch (input[2]) {
+					case 'i' :
+						if (input[3]) {
+							fd = (int)r_num_math (core->num, input + 3);
 							desc = r_io_desc_get (core->io, fd);
 						} else {
 							desc = core->io->desc;
 						}
 						r_io_desc_cache_commit (desc);
 						break;
-					} else {
-						desc = core->io->desc;
-					}
-					if ((caches = r_io_desc_cache_list (desc))) {
-						if (rad) {
-							core->print->cb_printf ("e io.va = false\n");
-							r_list_foreach (caches, iter, cache) {
-								core->print->cb_printf ("wx %02x", cache->data[0]);
-								for (i = 1; i < cache->size; i++) {
-									core->print->cb_printf ("%02x", cache->data[i]);
-								}
-								core->print->cb_printf (" @ 0x%08"PFMT64x" \n", cache->from);
-							}
+					case '*':
+						rad = true;
+					case ' ':
+					case '\0':
+						if (input[2] && input[3]) {
+							fd = (int)r_num_math (core->num, input + 3);
+							desc = r_io_desc_get (core->io, fd);
 						} else {
-							r_list_foreach (caches, iter, cache) {
-								core->print->cb_printf ("0x%08"PFMT64x": %02x", cache->from, cache->odata[0]);
-								for (i = 1; i < cache->size; i++) {
-									core->print->cb_printf ("%02x", cache->odata[i]);
-								}
-								core->print->cb_printf (" -> %02x", cache->data[0]);
-								for (i = 1; i < cache->size; i++) {
-									core->print->cb_printf ("%02x", cache->data[i]);
-								}
-								core->print->cb_printf ("\n");
-							}
+							desc = core->io->desc;
 						}
-						r_list_free (caches);
+						if ((caches = r_io_desc_cache_list (desc))) {
+							if (rad) {
+								core->print->cb_printf ("e io.va = false\n");
+								r_list_foreach (caches, iter, cache) {
+									core->print->cb_printf ("wx %02x", cache->data[0]);
+									for (i = 1; i < cache->size; i++) {
+										core->print->cb_printf ("%02x", cache->data[i]);
+									}
+									core->print->cb_printf (" @ 0x%08"PFMT64x" \n", cache->from);
+								}
+							} else {
+								r_list_foreach (caches, iter, cache) {
+									core->print->cb_printf ("0x%08"PFMT64x": %02x", cache->from, cache->odata[0]);
+									for (i = 1; i < cache->size; i++) {
+										core->print->cb_printf ("%02x", cache->odata[i]);
+									}
+									core->print->cb_printf (" -> %02x", cache->data[0]);
+									for (i = 1; i < cache->size; i++) {
+										core->print->cb_printf ("%02x", cache->data[i]);
+									}
+									core->print->cb_printf ("\n");
+								}
+							}
+							r_list_free (caches);
+						}
+						break;
+					default:
+						break;
 					}
 				}
 			}

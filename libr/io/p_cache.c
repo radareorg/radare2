@@ -279,7 +279,7 @@ static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	RIODescCache *cache;
 	ut64 blockaddr, paddr;
 	int byteaddr, i;
-	ut8 *buf = NULL;
+	ut8 buf[R_IO_DESC_CACHE_SIZE] = {0};
 	bool prev_written = false;
 	if (!desc || !desc->io) {
 		return false;
@@ -292,18 +292,14 @@ static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (cache->cached & (0x1LL << byteaddr)) {
 			if (!prev_written) {
-				buf = malloc (R_IO_DESC_CACHE_SIZE - byteaddr);
-				if (!buf) {
-					return false;
-				}
 				paddr = blockaddr + byteaddr;
+				prev_written = true;
 			}
 			buf[i] = cache->cdata[byteaddr];
 			i++;
 		} else if (prev_written) {
 			prev_written = false;
 			r_io_pwrite_at (desc->io, paddr, buf, i);
-			free (buf);
 			i = 0;
 		}
 	}
