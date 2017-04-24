@@ -29,7 +29,6 @@ struct search_parameters {
 	bool crypto_search;
 	bool bckwrds;
 	bool do_bckwrd_srch;
-	bool use_mread;
 	bool aes_search;
 	bool rsa_search;
 };
@@ -1924,14 +1923,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if ((at + bufsz) > param->to) {
 					bufsz = param->to - at;
 				}
-				if (param->use_mread) {
-					// what about a config var to choose which io api to use?
-					ret = r_io_mread (core->io, fd, at, buf, bufsz);
-				} else {
-					// if seek fails we shouldnt read at all
-					(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-					ret = r_io_read (core->io, buf, bufsz);
-				}
+				// if seek fails we shouldnt read at all
+				(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
+				ret = r_io_read (core->io, buf, bufsz);
 				if (ret < 1) {
 					break;
 				}
@@ -2228,7 +2222,6 @@ static int cmd_search(void *data, const char *input) {
 	param.do_bckwrd_srch = false;
 	param.aes_search = false;
 	param.rsa_search = false;
-	param.use_mread = false;
 	param.do_bckwrd_srch = false;
 
 	c = 0;
@@ -2243,7 +2236,6 @@ static int cmd_search(void *data, const char *input) {
 	param.mode = r_config_get (core->config, "search.in");
 	param.boundaries = r_core_get_boundaries (core, param.mode,
 		&param.from, &param.to);
-	param.use_mread = (!strcmp (param.mode, "maps"))? 1: 0;
 
 	if (__from != UT64_MAX) {
 		param.from = __from;

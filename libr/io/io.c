@@ -351,29 +351,24 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	return ret;
 }
 
-int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
-	RList *maps;
-	RListIter *iter;
-	RIOMap *map;
-	if (!io)
+R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
+	if (!io || !buf) {
 		return R_FAIL;
-	if (io->ff)
-		memset (buf, io->Oxff, len);
-	if (io->va) {
-		r_io_vread (io, addr, buf, len); //must check return-stat
-		if (io->cached)
-			r_io_cache_read (io, addr, buf, len);
-		return len;
 	}
-	maps = r_io_map_get_maps_in_range (io, addr, addr + len);
-	r_list_foreach (maps, iter, map) {
-		r_io_mread (io, map->fd, addr, buf, len); //must check return-stat
+	if (paddr == UT64_MAX) {
+		if (io->ff) {
+			memset (buf, 0xff, len);
+			return len;
+		}
+		return R_FAIL;
 	}
-	r_io_mread (io, io->desc->fd, addr, buf, len); //must check return-stat
-	if (io->cached)
-		r_io_cache_read (io, addr, buf, len);
-	r_list_free (maps);
-	return len;
+	if (io->buffer_enabled) {
+		return r_io_buffer_read (io, paddr, buf, len);
+	} else if (!io->desc || !io->desc->plugin || !io->desc->plugin->read) {
+		return 0;
+	}
+	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	return io->desc->plugin->read (io, io->desc, buf, len);
 }
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
@@ -382,9 +377,6 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 
 	if (!io || !buf || len < 0) {
 		return 0;
-	}
-	if (io->vio) {
-		return r_io_read_cr (io, addr, buf, len);
 	}
 	if (io->sectonly && !r_list_empty (io->sections)) {
 		if (!r_io_section_exists_for_vaddr (io, addr, 0)) {
@@ -771,6 +763,20 @@ cleanup:
 	free (orig_bytes);
 
 	return ret;
+}
+
+R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len) {
+	if (!io || !buf) {
+		return R_FAIL;
+	}
+	if (paddr == UT64_MAX) {
+		return R_FAIL;
+	}
+	if (!io->desc || !io->desc->plugin || !io->desc->plugin->write) {
+		return 0;
+	}
+	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	return io->desc->plugin->write (io, io->desc, buf, len);
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
