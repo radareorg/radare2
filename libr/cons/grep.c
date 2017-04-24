@@ -729,6 +729,14 @@ R_API int r_cons_html_print(const char *ptr) {
 				esc = 0;
 				str = ptr;
 				continue;
+			} else if (!strncmp (ptr, "48;5;", 5)) {
+				char *end = strchr (ptr, 'm');
+				printf ("<font style='background-color:%s'>", gethtmlrgb (ptr));
+				fflush (stdout);
+				tag_font = true;
+				ptr = end;
+				str = ptr + 1;
+				esc = 0;
 			} else if (!strncmp (ptr, "38;5;", 5)) {
 				char *end = strchr (ptr, 'm');
 				printf ("<font color='%s'>", gethtmlrgb (ptr));
