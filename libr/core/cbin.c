@@ -1937,7 +1937,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 #endif
 			r_name_filter (section->name, 128);
 			if (section->format) {
-				r_core_cmdf (r, "%s @ 0x%"PFMT64x, section->format, section->vaddr);
+				// This is damn slow if section vsize is HUGE
+				if (section->vsize < 1024 * 1024 * 2) {
+					r_core_cmdf (r, "%s @ 0x%"PFMT64x, section->format, section->vaddr);
+				}
 			}
 			if (r->bin->prefix) {
 				snprintf (str, sizeof(str)-1, "%s.section.%s",
