@@ -390,6 +390,9 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 
 	// XXX handling basic cases atm
+	if (b_size < 1) {
+		return false;
+	}
 	shift_buf = malloc (b_size);
 	memset (shift_buf, 0, b_size);
 

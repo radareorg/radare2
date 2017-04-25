@@ -214,3 +214,16 @@ Welcome, "reenigne"
 Search returned no hits. Did you mean 'Misassemble'?
 º|<|<|  -( glu glu glu, im the r2 fish )
 Everybody hates warnings. Mr. Pancake, tear down this -Wall
+TIRED OF WAITING
+We fix bugs while you sleep.
+You find bugs while we sleep.
+The stripping process is not deep enough
+Come here, we are relatively friendly
+Don't wait for Travis
+Your problems are solved in an abandoned branch somewhere
+git blind --hard
+You need some new glasses
+aaaa is experimental
+We feed trolls
+Mind the tab
+Buy a Mac

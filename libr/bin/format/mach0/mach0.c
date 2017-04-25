@@ -1119,7 +1119,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_LOAD_WEAK_DYLIB:
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "load_dylib", 0);
 			bin->nlibs++;
-			if (!parse_dylib(bin, off)){
+			if (!parse_dylib (bin, off)){
 				bprintf ("Cannot parse dylib\n");
 				bin->nlibs--;
 				return false;
@@ -1130,30 +1130,31 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			{
 			ut8 dyldi[sizeof (struct dyld_info_command)] = {0};
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dyld_info", 0);
-			bin->dyld_info = malloc (sizeof(struct dyld_info_command));
-
-			if (off + sizeof (struct dyld_info_command) > bin->size){
-				bprintf ("Cannot parse dyldinfo\n");
-				free (bin->dyld_info);
-				return false;
-			}
-			if (r_buf_read_at (bin->b, off, dyldi, sizeof (struct dyld_info_command)) == -1) {
-				free (bin->dyld_info);
-				bin->dyld_info = NULL;
-				bprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
-			} else {
-				bin->dyld_info->cmd = r_read_ble32 (&dyldi[0], bin->big_endian);
-				bin->dyld_info->cmdsize = r_read_ble32 (&dyldi[4], bin->big_endian);
-				bin->dyld_info->rebase_off = r_read_ble32 (&dyldi[8], bin->big_endian);
-				bin->dyld_info->rebase_size = r_read_ble32 (&dyldi[12], bin->big_endian);
-				bin->dyld_info->bind_off = r_read_ble32 (&dyldi[16], bin->big_endian);
-				bin->dyld_info->bind_size = r_read_ble32 (&dyldi[20], bin->big_endian);
-				bin->dyld_info->weak_bind_off = r_read_ble32 (&dyldi[24], bin->big_endian);
-				bin->dyld_info->weak_bind_size = r_read_ble32 (&dyldi[28], bin->big_endian);
-				bin->dyld_info->lazy_bind_off = r_read_ble32 (&dyldi[32], bin->big_endian);
-				bin->dyld_info->lazy_bind_size = r_read_ble32 (&dyldi[36], bin->big_endian);
-				bin->dyld_info->export_off = r_read_ble32 (&dyldi[40], bin->big_endian);
-				bin->dyld_info->export_size = r_read_ble32 (&dyldi[44], bin->big_endian);
+			bin->dyld_info = calloc (1, sizeof (struct dyld_info_command));
+			if (bin->dyld_info) {
+				if (off + sizeof (struct dyld_info_command) > bin->size){
+					bprintf ("Cannot parse dyldinfo\n");
+					R_FREE (bin->dyld_info);
+					return false;
+				}
+				if (r_buf_read_at (bin->b, off, dyldi, sizeof (struct dyld_info_command)) == -1) {
+					free (bin->dyld_info);
+					bin->dyld_info = NULL;
+					bprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
+				} else {
+					bin->dyld_info->cmd = r_read_ble32 (&dyldi[0], bin->big_endian);
+					bin->dyld_info->cmdsize = r_read_ble32 (&dyldi[4], bin->big_endian);
+					bin->dyld_info->rebase_off = r_read_ble32 (&dyldi[8], bin->big_endian);
+					bin->dyld_info->rebase_size = r_read_ble32 (&dyldi[12], bin->big_endian);
+					bin->dyld_info->bind_off = r_read_ble32 (&dyldi[16], bin->big_endian);
+					bin->dyld_info->bind_size = r_read_ble32 (&dyldi[20], bin->big_endian);
+					bin->dyld_info->weak_bind_off = r_read_ble32 (&dyldi[24], bin->big_endian);
+					bin->dyld_info->weak_bind_size = r_read_ble32 (&dyldi[28], bin->big_endian);
+					bin->dyld_info->lazy_bind_off = r_read_ble32 (&dyldi[32], bin->big_endian);
+					bin->dyld_info->lazy_bind_size = r_read_ble32 (&dyldi[36], bin->big_endian);
+					bin->dyld_info->export_off = r_read_ble32 (&dyldi[40], bin->big_endian);
+					bin->dyld_info->export_size = r_read_ble32 (&dyldi[44], bin->big_endian);
+				}
 			}
 			}
 			break;
@@ -1320,7 +1321,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	if (to < 1) {
 		return NULL;
 	}
-	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct section_t)))) {
+	if (!(sections = calloc (bin->nsects + 1, sizeof (struct section_t)))) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
@@ -1747,17 +1748,20 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if ((bind_size + lazy_size)<1) {
 			return NULL;
 		}
-		if (bin->dyld_info->bind_off > bin->size || bin->dyld_info->bind_off + bind_size > bin->size)
+		if (bin->dyld_info->bind_off > bin->size || bin->dyld_info->bind_off + bind_size > bin->size) {
 			return NULL;
+		}
 		if (bin->dyld_info->lazy_bind_off > bin->size || \
-			bin->dyld_info->lazy_bind_off + lazy_size > bin->size)
+			bin->dyld_info->lazy_bind_off + lazy_size > bin->size) {
 			return NULL;
-		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
+		}
+		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size) {
 			return NULL;
+		}
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = calloc (1, (1 + bind_size + lazy_size) * sizeof (struct reloc_t))))
+		if (!(relocs = calloc (1, (1 + bind_size + lazy_size) * sizeof (struct reloc_t)))) {
 			return NULL;
-
+		}
 		opcodes = calloc (1, bind_size + lazy_size + 1);
 		if (!opcodes) {
 			free (relocs);
@@ -1905,12 +1909,14 @@ relocs[i++].last = 0;\
 		free (opcodes);
 	} else {
 		int j;
-		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
+		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
 			return NULL;
-		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct reloc_t))))
+		}
+		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct reloc_t)))) {
 			return NULL;
+		}
 		for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-			if (parse_import_ptr(bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
+			if (parse_import_ptr (bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
 				relocs[i].ord = j;
 				relocs[i++].last = 0;
 			}
@@ -1954,7 +1960,6 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 		}
 		bin->entry = entry->addr;
 	}
-
 	return entry;
 }
 
@@ -1962,10 +1967,12 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 	struct lib_t *libs;
 	int i;
 
-	if (!bin->nlibs)
+	if (!bin->nlibs) {
 		return NULL;
-	if (!(libs = calloc ((bin->nlibs + 1), sizeof(struct lib_t))))
+	}
+	if (!(libs = calloc ((bin->nlibs + 1), sizeof(struct lib_t)))) {
 		return NULL;
+	}
 	for (i = 0; i < bin->nlibs; i++) {
 		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
 		libs[i].name[R_BIN_MACH0_STRING_LENGTH-1] = '\0';
@@ -1978,12 +1985,14 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin) {
 	int i;
 
-	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER)
+	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER) {
 		return 0;
-
-	for (i = 0; i < bin->nsegs; ++i)
-		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0)
+	}
+	for (i = 0; i < bin->nsegs; ++i) {
+		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0) {
 			return bin->segs[i].vmaddr;
+		}
+	}
 	return 0;
 }
 
@@ -2309,8 +2318,9 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 		ut8 b[128];
 		ut64 entry = addr_to_offset(bin, bin->entry);
 		// XXX: X86 only and hacky!
-		if (entry > bin->size || entry + sizeof (b) > bin->size)
+		if (entry > bin->size || entry + sizeof (b) > bin->size) {
 			return 0;
+		}
 		i = r_buf_read_at (bin->b, entry, b, sizeof (b));
 		if (i < 1) {
 			return 0;

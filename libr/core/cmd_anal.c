@@ -3515,12 +3515,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 				len = binfile->size - o;
 			} else {
 				if (binfile->size > core->offset) {
-					if (binfile->size > core->offset) {
-						len = binfile->size - core->offset;
-					} else {
-						eprintf ("Opps something went wrong aac\n");
-						return;
-					}
+					len = binfile->size - core->offset;
 				} else {
 					eprintf ("Oops invalid range\n");
 					len = 0;

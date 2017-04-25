@@ -842,7 +842,7 @@ int main(int argc, char **argv, char **envp) {
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile)? pfile: argv[optind];
-				is_gdb = (!memcmp (f, "gdb://", 6));
+				is_gdb = (!memcmp (f, "gdb://", R_MIN (strlen (f), 6)));
 				if (!is_gdb) {
 					pfile = strdup ("dbg://");
 				}

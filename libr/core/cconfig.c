@@ -371,7 +371,7 @@ static int cb_asmarch(void *user, void *data) {
 	// changing anal.arch sets types db
 	// so ressetting is redundant and may lead to bugs
 	// 1 case this is usefull is when sdb_types is null
-	if (!core->anal->sdb_types) {
+	if (!core->anal || !core->anal->sdb_types) {
 		r_core_anal_type_init (core);
 	}
 	r_core_anal_cc_init (core);
@@ -1184,13 +1184,6 @@ static int cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->autofd = node->i_value;
-	return true;
-}
-
-static int cb_iovio(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->vio = node->i_value;
 	return true;
 }
 
@@ -2284,7 +2277,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
-	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
 	/* file */
 	SETPREF("file.desc", "", "User defined file description (used by projects)");

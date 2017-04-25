@@ -751,11 +751,6 @@ int nto_send (libqnxr_t *g, ut32 len, st32 report_errors) {
 
 	switch (g->channelrd) {
 	case SET_CHANNEL_DEBUG:
-		if (((g->recv.pkt.hdr.cmd & DSHDR_MSG_BIG_ENDIAN) != 0)) {
-			// TODO
-		} else {
-			// TODO
-		}
 		g->recv.pkt.hdr.cmd &= ~DSHDR_MSG_BIG_ENDIAN;
 		if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
 			if (report_errors) {

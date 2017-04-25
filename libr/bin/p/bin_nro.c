@@ -108,7 +108,7 @@ static const char *readString(RBuffer *buf, int off) {
 }
 
 static ut64 baddr(RBinFile *arch) {
-	return readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
+	return arch? readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
 static const char *fileType(const ut8 *buf) {
@@ -148,7 +148,8 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb) != NULL;
+	ut64 la = (arch && arch->o)? arch->o->loadaddr: 0;
+	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL) != NULL;
 }
 
 static int destroy(RBinFile *arch) {

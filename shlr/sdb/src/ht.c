@@ -158,7 +158,7 @@ static void internal_ht_grow(SdbHash* ht) {
 #endif
 
 static bool internal_ht_insert_kv(SdbHash *ht, HtKv *kv, bool update) {
-	bool found;
+	bool found = false;
 	if (!ht || !kv) {
 		return false;
 	}

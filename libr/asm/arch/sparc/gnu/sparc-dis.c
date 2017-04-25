@@ -414,7 +414,10 @@ build_hash_table (const sparc_opcode **opcode_table,
   memset (hash_count, 0, HASH_SIZE * sizeof (hash_count[0]));
   if (hash_buf != NULL)
     free (hash_buf);
-  hash_buf = xmalloc (sizeof (* hash_buf) * num_opcodes);
+  hash_buf = calloc (sizeof (* hash_buf), num_opcodes);
+  if (!hash_buf) {
+    return;
+  }
   for (i = num_opcodes - 1; i >= 0; --i)
     {
       int hash = HASH_INSN (opcode_table[i]->match);

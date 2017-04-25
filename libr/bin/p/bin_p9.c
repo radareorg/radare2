@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -20,7 +20,8 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
 	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	return load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	ut64 la = (arch && arch->o)? arch->o->loadaddr: 0;
+	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL);
 }
 
 static int destroy(RBinFile *arch) {
@@ -245,7 +246,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_p9,
 	.version = R2_VERSION

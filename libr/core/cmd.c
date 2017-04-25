@@ -1861,6 +1861,9 @@ next2:
 			memmove (escape, ptr, strlen (escape));
 			ptr = NULL;
 		}
+	} else if (ptr == cmd && *ptr && ptr[1] == '?') {
+		r_cons_grep_help ();
+		return  true;
 	}
 	if (ptr && *cmd != '.') {
 		*ptr = '\0';

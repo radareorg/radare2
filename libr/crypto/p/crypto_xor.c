@@ -10,13 +10,12 @@ struct xor_state {
 	int key_size;
 };
 
+static struct xor_state st;
+
 static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) {
-	int i;//index for key
-	
 	if (!state || !key || keylen < 1) { // || keylen > MAX_xor_KEY_SIZE) {
 		return false;
 	}
-
 	state->key_size = keylen;
 	state->key = malloc (keylen);
 	memcpy (state->key, key, keylen);
@@ -33,9 +32,6 @@ static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outb
 		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
 	}
 }
-
-static struct xor_state st;
-
 static bool xor_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	return xor_init (&st, key, keylen);
 }

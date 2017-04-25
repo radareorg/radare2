@@ -90,14 +90,16 @@ bool bochs_wait(libbochs_t *b) {
 #else
 	int flags,n;
 	bochs_reset_buffer (b);
-	flags = fcntl (b->hReadPipeIn,F_GETFL,0);
+	flags = fcntl (b->hReadPipeIn, F_GETFL, 0);
 	(void) fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
-	while (1) {
+	for (;;) {
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
-		if (n >0) {
+		if (n > 0) {
 			lpTmpBuffer[n] = 0;
-			if (b->punteroBuffer + n >= SIZE_BUF - 1)
+			if (b->punteroBuffer + n >= SIZE_BUF - 1) {
 				bochs_reset_buffer(b);
+			}
+			// XXX overflow here
 			memcpy (b->data + b->punteroBuffer, lpTmpBuffer, n + 1);
 			b->punteroBuffer += n;
 			if (strstr (&b->data[0], "<bochs:")) {
@@ -182,8 +184,9 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	bool result = false;
 
 	b->data = malloc (SIZE_BUF);
-	if (!b->data) 
+	if (!b->data) {
 		return false;
+	}
 	lpTmpBuffer = malloc (SIZE_BUF);
 	if (!lpTmpBuffer) {
 		R_FREE (b->data);

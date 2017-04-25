@@ -950,11 +950,7 @@ static int cmd_write(void *data, const char *input) {
 							addr = core->offset;
 						}
 						ut8 *buf = calloc (1, sz);
-						if (space) {
-							(void)r_io_vread (core->io, addr, buf, sz);
-						} else {
-							(void)r_io_pread (core->io, addr, buf, sz);
-						}
+						r_io_read_at (core->io, addr, buf, sz);
 						RSocket *s = r_socket_new (false);
 						if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
 							int done = 0;

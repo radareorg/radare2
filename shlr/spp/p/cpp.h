@@ -1,13 +1,11 @@
 /* CPP */
 
-TAG_CALLBACK(cpp_default)
-{
+static TAG_CALLBACK(cpp_default) {
 	do_printf (out, "DEFAULT: (%s)\n", buf);
 	return 0;
 }
 
-TAG_CALLBACK(cpp_error)
-{
+static TAG_CALLBACK(cpp_error) {
 	do_printf (out,"\n");
 	if (echo[ifl] && buf != NULL) {
 		do_printf (out, "ERROR: %s (line=%d)\n", buf, lineno);
@@ -16,8 +14,7 @@ TAG_CALLBACK(cpp_error)
 	return 0;
 }
 
-TAG_CALLBACK(cpp_warning)
-{
+static TAG_CALLBACK(cpp_warning) {
 	do_printf (out,"\n");
 	if (echo[ifl] && buf != NULL) {
 		do_printf (out, "WARNING: line %d: %s\n", lineno, buf);
@@ -25,8 +22,7 @@ TAG_CALLBACK(cpp_warning)
 	return 0;
 }
 
-TAG_CALLBACK(cpp_if)
-{
+static TAG_CALLBACK(cpp_if) {
 	char *var = getenv (buf + ((*buf == '!') ? 1 : 0));
 	if (var && *var=='1')
 		echo[ifl + 1] = 1;
@@ -35,21 +31,18 @@ TAG_CALLBACK(cpp_if)
 	return 1;
 }
 
-TAG_CALLBACK(cpp_ifdef)
-{
+static TAG_CALLBACK(cpp_ifdef) {
 	char *var = getenv (buf);
 	echo[ifl + 1] = var? 1: 0;
 	return 1;
 }
 
-TAG_CALLBACK(cpp_else)
-{
+static TAG_CALLBACK(cpp_else) {
 	echo[ifl] = echo[ifl]? 0: 1;
 	return 0;
 }
 
-TAG_CALLBACK(cpp_ifndef)
-{
+static TAG_CALLBACK(cpp_ifndef) {
 	cpp_ifdef (buf, out);
 	cpp_else (buf, out);
 	return 1;
@@ -63,8 +56,7 @@ static struct cpp_macro_t {
 
 static int cpp_macros_n = 0;
 
-static void cpp_macro_add(char *name, char *args, char *body)
-{
+static void cpp_macro_add(char *name, char *args, char *body) {
 	char *ptr;
 	cpp_macros[cpp_macros_n].args = strdup(args);
 	cpp_macros[cpp_macros_n].body = strdup(body);
@@ -76,8 +68,7 @@ static void cpp_macro_add(char *name, char *args, char *body)
 	cpp_macros_n++;
 }
 
-PUT_CALLBACK(cpp_fputs)
-{
+static PUT_CALLBACK(cpp_fputs) {
 	int i;
 	for (i = 0; i < cpp_macros_n; i++) {
 		if (strstr(buf, cpp_macros[i].name)) {
@@ -89,9 +80,8 @@ PUT_CALLBACK(cpp_fputs)
 	return 0;
 }
 
-TAG_CALLBACK(cpp_define)
-{
-	char *eq = strchr(buf, ' ');
+static TAG_CALLBACK(cpp_define) {
+	char *eq = strchr (buf, ' ');
 	if (eq) {
 		char *ptr = eq + 1;
 		char *macro = strchr(buf, '(');
@@ -116,20 +106,18 @@ TAG_CALLBACK(cpp_define)
 	return 0;
 }
 
-TAG_CALLBACK(cpp_endif)
-{
+static TAG_CALLBACK(cpp_endif) {
 	return -1;
 }
 
-TAG_CALLBACK(cpp_include)
-{
+static TAG_CALLBACK(cpp_include) {
 	if (echo[ifl]) {
 		spp_file (buf, out);
 	}
 	return 0;
 }
 
-struct Tag cpp_tags[] = {
+DLL_LOCAL struct Tag cpp_tags[] = {
 	{ "ifdef", cpp_ifdef },
 	{ "ifndef", cpp_ifndef },
 	{ "endif", cpp_endif },
@@ -145,14 +133,12 @@ struct Tag cpp_tags[] = {
 
 /* arguments */
 
-ARG_CALLBACK(cpp_arg_i)
-{
+static ARG_CALLBACK(cpp_arg_i) {
 	printf("INCLUDEDIR(%s)\n", arg);
 	return 0;
 }
 
-ARG_CALLBACK(cpp_arg_d)
-{
+static ARG_CALLBACK(cpp_arg_d) {
 	// TODO: handle r_sys_setenv==-1
 	char *eq = strchr(arg, '=');
 	if (eq) {
@@ -162,13 +148,13 @@ ARG_CALLBACK(cpp_arg_d)
 	return 0;
 }
 
-struct Arg cpp_args[] = {
+static struct Arg cpp_args[] = {
 	{ "-I", "add include directory", 1, cpp_arg_i },
 	{ "-D", "define value of variable", 1, cpp_arg_d },
 	{ NULL }
 };
 
-struct Proc cpp_proc = {
+DLL_LOCAL struct Proc cpp_proc = {
 	.name = "cpp",
 	.tags = (struct Tag **)cpp_tags,
 	.args = (struct Arg **)cpp_args,

@@ -245,7 +245,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		if (((optype >> 2) ^ 0x3) && (imm & 0x8000))
 			imm = 0 - (0x10000 - imm);
 		switch (optype) {
-		case 1: if (rt) { /* bgez */ } else { /* bltz */ }
+		case 1: // if (rt) { /* bgez */ } else { /* bltz */ }
 		case 4: // beq
 		case 5: // bne // also bnez
 		case 6: // blez

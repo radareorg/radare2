@@ -17,8 +17,13 @@ matrix:
 
 sudo: false
 
+env:
+  - CXX=g++-4.8
+
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - dc
       - binutils
@@ -27,6 +32,8 @@ addons:
       - libelf-dev
       - libdw-dev
       - jq
+      - gcc-4.8
+      - g++-4.8
 
 cache:
   - ccache

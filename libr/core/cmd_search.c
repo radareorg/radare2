@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <stddef.h>
 
@@ -29,7 +29,6 @@ struct search_parameters {
 	bool crypto_search;
 	bool bckwrds;
 	bool do_bckwrd_srch;
-	bool use_mread;
 	bool aes_search;
 	bool rsa_search;
 };
@@ -326,6 +325,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		ut8 *buf = malloc (buf_sz + 1);
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (json)? 3: 1;
+		const char *type = "hexpair";
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 		{
@@ -333,6 +333,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			char *pre, *pos, *wrd;
 			const int len = kw->keyword_length;
 			char *buf = calloc (1, len + 32 + ctx * 2);
+			type = "string";
 			r_core_read_at (core, addr - ctx, (ut8 *) buf, len + (ctx * 2));
 			pre = getstring (buf, ctx);
 			wrd = r_str_utf16_encode (buf + ctx, len);
@@ -369,8 +370,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				memset (str, 0, len);
 				r_core_read_at (core, base_addr + addr, buf, kw->keyword_length);
 				if (json) {
-					strcpy (str, "0x");
-					p = str + 2;
+					p = str;
 				}
 				const int bytes = (len > 40)? 40: len;
 				for (i = 0; i < bytes; i++) {
@@ -394,8 +394,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (!first_hit) {
 				r_cons_printf (",");
 			}
-			r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"data\":\"%s\"}",
-				base_addr + addr, kw->kwidx, s);
+			r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
+				base_addr + addr, kw->kwidx, type, s);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
@@ -1923,14 +1923,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if ((at + bufsz) > param->to) {
 					bufsz = param->to - at;
 				}
-				if (param->use_mread) {
-					// what about a config var to choose which io api to use?
-					ret = r_io_mread (core->io, fd, at, buf, bufsz);
-				} else {
-					// if seek fails we shouldnt read at all
-					(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-					ret = r_io_read (core->io, buf, bufsz);
-				}
+				// if seek fails we shouldnt read at all
+				(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
+				ret = r_io_read (core->io, buf, bufsz);
 				if (ret < 1) {
 					break;
 				}
@@ -2227,7 +2222,6 @@ static int cmd_search(void *data, const char *input) {
 	param.do_bckwrd_srch = false;
 	param.aes_search = false;
 	param.rsa_search = false;
-	param.use_mread = false;
 	param.do_bckwrd_srch = false;
 
 	c = 0;
@@ -2242,7 +2236,6 @@ static int cmd_search(void *data, const char *input) {
 	param.mode = r_config_get (core->config, "search.in");
 	param.boundaries = r_core_get_boundaries (core, param.mode,
 		&param.from, &param.to);
-	param.use_mread = (!strcmp (param.mode, "maps"))? 1: 0;
 
 	if (__from != UT64_MAX) {
 		param.from = __from;

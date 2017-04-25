@@ -1,4 +1,5 @@
-#include <assert.h>
+/*  Rakholiya Jenish - 2017 */
+
 #include <r_types.h>
 #include <r_util.h>
 
@@ -10,7 +11,7 @@
 #define INITIAL_N 128
 #define INITIAL_BIAS 72
 
-int utf32len (unsigned int *input) {
+int utf32len (ut32 *input) {
 	int i = 0;
 	while (*(input + i)) {
 		i++;
@@ -18,7 +19,7 @@ int utf32len (unsigned int *input) {
 	return i;
 }
 
-unsigned char *utf32toutf8 (unsigned int *input) {
+ut8 *utf32toutf8 (ut32 *input) {
 	if (!input) {
 		eprintf ("ERROR input is null\n");
 		return NULL;
@@ -27,7 +28,7 @@ unsigned char *utf32toutf8 (unsigned int *input) {
 	int i = 0;
 	int j = 0;
 	int len = utf32len (input);
-	unsigned char *result = malloc ((len * 4) + 1);
+	ut8 *result = calloc (4, len + 1);
 	if (!result) {
 		eprintf ("ERROR: out of memory\n");
 		return NULL;
@@ -126,7 +127,7 @@ ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
 }
 
 char encode_digit(int c) {
-	assert (c >= 0 && c <= BASE - TMIN);
+//	assert (c >= 0 && c <= BASE - TMIN);
 	if (c > 25) {
 		return c + 22;
 	}

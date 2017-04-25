@@ -1,20 +1,17 @@
 /* CPP */
 
-TAG_CALLBACK(pod_default)
-{
+static TAG_CALLBACK(pod_default) {
 	do_printf (out, "DEFAULT: (%s)\n", buf);
 	return 0;
 }
 
-TAG_CALLBACK(pod_cut)
-{
+static TAG_CALLBACK(pod_cut) {
 	do_printf (out, "\n");
 	echo[ifl] = 0;
 	return 0;
 }
 
-TAG_CALLBACK(pod_head1)
-{
+static TAG_CALLBACK(pod_head1) {
 	echo[ifl] = 1;
 	do_printf (out, "\n");
 	if (!buf) {
@@ -29,18 +26,18 @@ TAG_CALLBACK(pod_head1)
 	return 0;
 }
 
-struct Tag pod_tags[] = {
+static struct Tag pod_tags[] = {
 	{ "head1", pod_head1 },
 	{ "cut", pod_cut },
 	{ NULL, pod_default },
 	{ NULL }
 };
 
-struct Arg pod_args[] = {
+static struct Arg pod_args[] = {
 	{ NULL }
 };
 
-struct Proc pod_proc = {
+DLL_LOCAL struct Proc pod_proc = {
 	.name = "pod",
 	.tags = (struct Tag **)pod_tags,
 	.args = (struct Arg **)pod_args,

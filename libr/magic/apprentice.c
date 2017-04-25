@@ -505,7 +505,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	struct r_magic_entry *marray;
 	struct stat st;
 	int errs = 0;
-#if __UNIX__
+#if !__WINDOWS__
 	DIR *dir;
 	struct dirent *d;
 	char subfn[MAXPATHLEN];

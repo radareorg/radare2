@@ -467,7 +467,7 @@ static void findPair(RCore *core) {
 	p = (const ut8 *) strchr (keys, ch);
 	if (p) {
 		char p_1 = 0;
-		if ((const char *) p != keys) {
+		if ((const char *) p > keys) {
 			p_1 = p[-1];
 		}
 		delta = (size_t) (p - (const ut8 *) keys);
@@ -565,9 +565,10 @@ static void visual_search(RCore *core) {
 	r_cons_fgets (str, sizeof (str), 0, NULL);
 	len = r_hex_str2bin (str, (ut8 *) buf);
 	if (*str == '"') {
-		char *e = strncpy (buf, str + 1, sizeof (buf) - 1);
+		char *e = strncpy (buf + 1, str + 1, sizeof (buf) - 1);
 		if (e) {
-			--e; if (*e == '"') {
+			e--;
+			if (*e == '"') {
 				*e = 0;
 			}
 		}
@@ -586,10 +587,10 @@ static void visual_search(RCore *core) {
 			core->print->ocur = -1;
 		}
 		showcursor (core, true);
-		eprintf ("FOUND IN %d\n", core->print->cur);
+		eprintf ("Found in offset 0x%08"PFMT64x" + %d\n", core->offset, core->print->cur);
 		r_cons_any_key (NULL);
 	} else {
-		eprintf ("Cannot find bytes\n");
+		eprintf ("Cannot find bytes.\n");
 		r_cons_any_key (NULL);
 		r_cons_clear00 ();
 	}
@@ -1941,6 +1942,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							if (true) {
 								f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 							}
+							op.size = 1;
 							if (f && f->folded) {
 								cols = core->offset - f->addr + r_anal_fcn_size (f);
 							} else {

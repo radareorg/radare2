@@ -71,28 +71,22 @@ static RCore *opencore(const char *f) {
 	return c;
 }
 
-
-static bool virgin = true;
 static void readstr(char *s, int sz, const ut8 *buf, int len) {
-	int die = 0;
+	*s = 0;
 	int last = R_MIN (len, sz);
-	strncpy (s, (char *) buf, last + die);
-	s[last] = 0;
+	if (last < 1) {
+		return;
+	}
+	s[sz - 1] = 0;
 	while (*s && *s == '\n') {
 		s++;
 	}
-#if 1
-	char *nl = strchr (s, '\n');
-	if (nl) {
-		*nl = 0;
-	}
-#endif
-	virgin = false;
+	strncpy (s, (char *) buf, last);
 }
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i; // , diffmode = (int)(size_t)user;
-	char s[256];
+	char s[256] = {0};
 	if (showcount) {
 		count++;
 		return 1;
@@ -384,7 +378,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 			return NULL;
 		}
 		size = r_io_size (io);
-		if (size > 0 || size < ST32_MAX) {
+		if (size > 0 && size < ST32_MAX) {
 			data = calloc (1, size);
 			if (r_io_read_at (io, 0, data, size) == size) {
 				if (sz) {
@@ -395,7 +389,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 				R_FREE (data);
 			}
 		} else {
-			eprintf ("slurp: File is too big\n");
+			eprintf ("slurp: Invalid file size\n");
 		}
 		r_io_close (io, d);
 		return data;
@@ -497,7 +491,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 int main(int argc, char **argv) {
 	const char *columnSort = NULL;
 	const char *addr = NULL;
-	RCore *c, *c2;
+	RCore *c = NULL, *c2 = NULL;
 	RDiff *d;
 	ut8 *bufa, *bufb;
 	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
@@ -737,7 +731,6 @@ int main(int argc, char **argv) {
 			printf ("\"}],\n");
 			printf ("\"changes\":[");
 		}
-		virgin = true;
 		if (diffmode == 'U') {
 			r_diff_buffers_unified (d, bufa, sza, bufb, szb);
 		} else {

@@ -25,7 +25,7 @@ void r_core_hack_help(const RCore *core) {
 	r_core_cmd_help(core, help_msg);
 }
 
-R_API int r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
+R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 	const int bits = core->assembler->bits;
 	const ut8 *b = core->block;
 
@@ -41,9 +41,13 @@ R_API int r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			return false;
 		}
 
-		str = malloc (len*2 + 1);
-		for (i=0; i<len; i+=nopsize)
-			memcpy (str+i*2, nopcode, nopsize*2);
+		str = calloc (len + 1, 2);
+		if (!str) {
+			return false;
+		}
+		for (i=0; i < len; i+=nopsize) {
+			memcpy (str + i * 2, nopcode, nopsize*2);
+		}
 		str[len*2] = '\0';
 		r_core_cmdf (core, "wx %s\n", str);
 		free (str);
@@ -135,14 +139,15 @@ R_API int r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 	return true;
 }
 
-R_API int r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
+R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	const ut8 *b = core->block;
-	const int size = analop->size;
+	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
 		if (size * 2 + 1 < size) return false;
 		char *str = malloc (size * 2 + 1);
-		if (!str) return false;
-		int i;
+		if (!str) {
+			return false;
+		}
 		for (i = 0; i < size; i++)
 			memcpy(str + (i * 2), "90", 2);
 		str[size*2] = '\0';
@@ -192,11 +197,13 @@ R_API int r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 }
 
 R_API int r_core_hack(RCore *core, const char *op) {
-	int (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
+	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	if (!asmarch) return false;
 	RAnalOp analop;
 
+	if (!asmarch) {
+		return false;
+	}
 	if (strstr (asmarch, "x86")) {
 		hack = r_core_hack_x86;
 	} else if (strstr (asmarch, "arm")) {

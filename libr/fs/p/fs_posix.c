@@ -86,6 +86,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 #else
 	dir = opendir (path);
 	if (!dir) {
+		r_list_free (list);
 		return NULL;
 	}
 	while ((de = readdir (dir))) {

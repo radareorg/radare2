@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -57,12 +57,13 @@ static ArmOp ops[] = {
 	{ "bkpt", 0x2001, TYPE_BKP },
 	{ "subs", 0x5000, TYPE_ARI },
 	{ "sub", 0x4000, TYPE_ARI },
-	{ "sbc", 0xc000, TYPE_ARI },
 	{ "sbcs", 0xd000, TYPE_ARI },
+	{ "sbc", 0xc000, TYPE_ARI },
 	{ "rsb", 0x6000, TYPE_ARI },
 	{ "rsbs", 0x7000, TYPE_ARI },
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
+	{ "bic", 0x0000c0e1, TYPE_ARI },
 
 	{ "udf", 0xf000f000, TYPE_UDF },
 
@@ -75,7 +76,13 @@ static ArmOp ops[] = {
 	{ "ldrex", 0x9f0f9000, TYPE_MEM },
 	{ "ldr", 0x9000, TYPE_MEM },
 
+	{ "strexh", 0x900fe000, TYPE_MEM },
+	{ "strexb", 0x900fc000, TYPE_MEM },
 	{ "strex", 0x900f8000, TYPE_MEM },
+	{ "strbt", 0x0000e0e4, TYPE_MEM },
+	{ "strb", 0x0000c0e5, TYPE_MEM },
+	{ "strd", 0xf000c0e1, TYPE_MEM },
+	{ "strh", 0xb00080e1, TYPE_MEM },
 	{ "str", 0x8000, TYPE_MEM },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRR },
@@ -105,7 +112,6 @@ static ArmOp ops[] = {
 	{ "eor", 0x2000, TYPE_ARI },
 	{ "orrs", 0x9001, TYPE_ARI },
 	{ "orr", 0x8001, TYPE_ARI },
-	{ "bic", 0x0, TYPE_ARI },
 
 	{ "cmp", 0x5001, TYPE_TST },
 	{ "swp", 0xe1, TYPE_SWP },
@@ -908,7 +914,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (ao->a[0] || ops[i].type == TYPE_BKP)
 			switch (ops[i].type) {
 			case TYPE_MEM:
-				if (!strcmp (ops[i].name + 2, "rex")) {
+				if (!strncmp (ops[i].name, "strex", 5)) {
 					rex = 1;
 				}
 				getrange (ao->a[0]);
@@ -922,8 +928,40 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					if ( (r0 < 0 || r0 > 15) || (r1 > 15 || r1 < 0) ) {
 						return 0;
 					}
-					ao->o |=  r0 << 20;
-					if (!strcmp (ops[i].name, "strex")) {
+					ao->o |= r0 << 20;
+					if (!strcmp (ops[i].name, "strd")) {
+						r1 = getreg (ao->a[2]);
+						if (r1 == -1) {
+							break;
+						}
+						ao->o |= r1 << 8;
+						if (ao->a[3]) {
+							char *bracket = strchr (ao->a[3], ']');
+							if (bracket) {
+								*bracket = '\0';
+							}
+							int num = getnum (ao->a[3]);
+							ao->o |= (num & 0x0f) << 24;
+							ao->o |= ((num >> 4) & 0x0f) << 16;
+						}
+						break;
+					}
+					if (!strcmp (ops[i].name, "strh")) {
+						ao->o |=  r1 << 8;
+						if (ao->a[2]) {
+							reg = getreg (ao->a[2]);
+							if (reg != -1) {
+								ao->o |= reg << 24;
+							} else {
+								ao->o |= 1 << 14;
+								ao->o |= getnum (ao->a[2]) << 24;
+							}
+						} else {
+							ao->o |= 1 << 14;
+						}
+						break;
+					}
+					if (rex) {
 						ao->o |=  r1 << 24;
 					} else {
 						ao->o |=  r1 << 8; // delta
@@ -936,12 +974,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (ret != -1) {
 					if (rex) {
 						ao->o |= 1;
-					} else {
-						ao->o |= (strstr (str,"],")) ? 6 : 7;
-					}
-					if (!strcmp (ops[i].name, "strex")) {
 						ao->o |= (ret & 0x0f) << 8;
 					} else {
+						ao->o |= (strstr (str,"],")) ? 6 : 7;
 						ao->o |= (ret & 0x0f) << 24;
 					}
 					if (ao->a[3]) {
@@ -953,6 +988,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					}
 				} else {
 					int num = getnum (ao->a[2]) & 0xfff;
+					if (err) {
+						break;
+					}
 					if (rex) {
 						ao->o |= 1;
 					} else {
@@ -1170,11 +1208,13 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				break;
 			case TYPE_COPROC:
 				//printf ("%s %s %s %s %s\n", ao->a[0], ao->a[1], ao->a[2], ao->a[3], ao->a[4] );
-				coproc = getnum (ao->a[0] + 1);
-				if (coproc == -1 || coproc > 9) {
-					return 0;
+				if (ao->a[0]) {
+					coproc = getnum (ao->a[0] + 1);
+					if (coproc == -1 || coproc > 9) {
+						return 0;
+					}
+					ao->o |= coproc << 16;
 				}
-				ao->o |= coproc << 16;
 
 				opc = getnum (ao->a[1]);
 				if (opc == -1 || opc > 7) {
@@ -1189,17 +1229,23 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg << 20;
 
 				// coproc register 1
-				coproc = getnum (ao->a[3] + 1);
-				if (coproc == -1 || coproc > 15) {
-					return 0;
+				const char *a3 = ao->a[3];
+				if (a3) {
+					coproc = getnum (a3 + 1);
+					if (coproc == -1 || coproc > 15) {
+						return 0;
+					}
+					ao->o |= coproc << 8;
 				}
-				ao->o |= coproc << 8;
 
-				coproc = getnum (ao->a[4] + 1);
-				if (coproc == -1 || coproc > 15) {
-					return 0;
+				const char *a4 = ao->a[4];
+				if (a4) {
+					coproc = getnum (ao->a[4] + 1);
+					if (coproc == -1 || coproc > 15) {
+						return 0;
+					}
+					ao->o |= coproc << 24;
 				}
-				ao->o |= coproc << 24;
 
 				coproc = getnum (ao->a[5]);
 				if (coproc > -1) {

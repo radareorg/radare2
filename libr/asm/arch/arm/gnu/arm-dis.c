@@ -3668,7 +3668,8 @@ print_insn_coprocessor (bfd_vma pc,
 			      is_unpredictable = TRUE;
 			    u_reg = value;
 			  }
-			func (stream, "%s", arm_regnames[value]);
+                        func (stream, "%s", arm_regnames [value & 0xf]);
+
 			break;
 		      case 'V':
 			if (given & (1 << 6))
@@ -5165,7 +5166,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
   for (insn = thumb_opcodes; insn->assembler; insn++)
     if ((given & insn->mask) == insn->value)
       {
-	signed long value_in_comment = 0;
+	// signed long value_in_comment = 0;
 	const char *c = insn->assembler;
 
 	for (; *c; c++)
@@ -5348,17 +5349,17 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 
 			  case 'd':
 			    func (stream, "%ld", (long) reg);
-			    value_in_comment = reg;
+			    // value_in_comment = reg;
 			    break;
 
 			  case 'H':
 			    func (stream, "%ld", (long) (reg << 1));
-			    value_in_comment = reg << 1;
+			    // value_in_comment = reg << 1;
 			    break;
 
 			  case 'W':
 			    func (stream, "%ld", (long) (reg << 2));
-			    value_in_comment = reg << 2;
+			    // value_in_comment = reg << 2;
 			    break;
 
 			  case 'a':
@@ -5367,7 +5368,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			       before the calculation.  */
 			    info->print_address_func
 			      (((pc + 4) & ~3) + (reg << 2), info);
-			    value_in_comment = 0;
+			    //value_in_comment = 0;
 			    break;
 
 			  case 'x':
@@ -5377,7 +5378,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			  case 'B':
 			    reg = ((reg ^ (1 << bitend)) - (1 << bitend));
 			    info->print_address_func (reg * 2 + pc + 4, info);
-			    value_in_comment = 0;
+			    //value_in_comment = 0;
 			    break;
 
 			  case 'c':
@@ -5408,7 +5409,6 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 
 	      }
 	  }
-
 #if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
@@ -5473,7 +5473,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
     if ((given & insn->mask) == insn->value)
       {
 	bfd_boolean is_unpredictable = FALSE;
-	signed long value_in_comment = 0;
+	// signed long value_in_comment = 0;
 	const char *c = insn->assembler;
 
 	for (; *c; c++)
@@ -5514,7 +5514,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm12 |= (given & 0x00007000u) >> 4;
 		  imm12 |= (given & 0x04000000u) >> 15;
 		  func (stream, "%u", imm12);
-		  value_in_comment = imm12;
+		  //value_in_comment = imm12;
 		}
 		break;
 
@@ -5539,7 +5539,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      imm  = (((imm8 << (32 - mod)) | (imm8 >> mod)) & 0xffffffff);
 		    }
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -5552,7 +5552,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x04000000u) >> 15;
 		  imm |= (given & 0x000f0000u) >> 4;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -5564,7 +5564,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x00000ff0u) >> 0;
 		  imm |= (given & 0x0000000fu) << 12;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -5575,7 +5575,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x000f0000u) >> 4;
 		  imm |= (given & 0x00000fffu) >> 0;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -5586,7 +5586,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x00000fffu);
 		  imm |= (given & 0x000f0000u) >> 4;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -5641,8 +5641,9 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  if (U) /* 12-bit positive immediate offset.  */
 		    {
 		      offset = i12;
-		      if (Rn != 15)
-			value_in_comment = offset;
+		      if (Rn != 15) {
+//			value_in_comment = offset;
+                      }
 		    }
 		  else if (Rn == 15) /* 12-bit negative immediate offset.  */
 		    offset = - (int) i12;
@@ -5724,7 +5725,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      if (off || !U)
 			{
 			  func (stream, ", %c%u", U ? '+' : '-', off * 4);
-			  value_in_comment = (off && U) ? 1 : -1;
+			  //value_in_comment = (off && U) ? 1 : -1;
 			}
 		      func (stream, "]");
 		      if (W)
@@ -5736,12 +5737,12 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      if (W)
 			{
 			  func (stream, "%c%u", U ? '+' : '-', off * 4);
-			  value_in_comment = (off && U) ? 1 : -1;
+			  //value_in_comment = (off && U) ? 1 : -1;
 			}
 		      else
 			{
 			  func (stream, "{%u}", off);
-			  value_in_comment = off;
+			 // value_in_comment = off;
 			}
 		    }
 		}
@@ -5957,17 +5958,17 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		    {
 		    case 'd':
 		      func (stream, "%lu", val);
-		      value_in_comment = val;
+		      //value_in_comment = val;
 		      break;
 
 		    case 'D':
 		      func (stream, "%lu", val + 1);
-		      value_in_comment = val + 1;
+		      // value_in_comment = val + 1;
 		      break;
 
 		    case 'W':
 		      func (stream, "%lu", val * 4);
-		      value_in_comment = val * 4;
+		      // value_in_comment = val * 4;
 		      break;
 
 		    case 'S':

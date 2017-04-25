@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=1.3.0
+PREVIOUS_RELEASE=1.4.0
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
@@ -163,7 +163,7 @@ distclean mrproper:
 	rm -f libr/libr.a
 	for DIR in libr binr shlr ; do ( cd "$$DIR" ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
-	rm -f libr/include/r_userconf.h libr/config.mk
+	rm -f libr/include/r_userconf.h libr/include/r_version.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
 pkgcfg:

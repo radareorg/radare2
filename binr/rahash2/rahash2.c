@@ -197,13 +197,6 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				ut64 hashbit = i & algobit;
 				int dlen = r_hash_size (hashbit);
 				r_hash_do_begin (ctx, i);
-				if (rad == 'j') {
-					if (first) {
-						first = false;
-					} else {
-						printf (",");
-					}
-				}
 				if (s.buf && s.prefix) {
 					do_hash_internal (ctx, hashbit, s.buf, s.len, rad, 0, ule);
 				}
@@ -221,6 +214,13 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				}
 				if (!*r_hash_name (i)) {
 					continue;
+				}
+				if (rad == 'j') {
+					if (first) {
+						first = false;
+					} else {
+						printf (",");
+					}
 				}
 				if (!quiet && rad != 'j') {
 					printf ("%s: ", file);

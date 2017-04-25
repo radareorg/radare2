@@ -27,8 +27,9 @@ void** r_flist_get(void **x) {
 
 R_API void **r_flist_new(int n) {
 	void **it;
-	if (!(it = (void **)malloc ((n+2) * sizeof (void*))))
+	if (!(it = (void **)calloc (n + 2, sizeof (void*)))) {
 		return NULL;
+	}
 	*it = it;
 	memset (++it, 0, (n+1) * sizeof (void*));
 	return it;

@@ -30,9 +30,14 @@ else
 	shift
 fi
 
-type sudo || NOSUDO=1
-[ "$(id -u)" = 0 ] || SUDO=sudo
-[ -n "${NOSUDO}" ] && SUDO="echo NOTE: Please run as root: "
+NOSUDO=""
+type sudo > /dev/null 2>&1 || NOSUDO=1
+SUDO=sudo
+if [ "$(id -u)" = 0 ]; then
+	SUDO=""
+else
+	[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+fi
 
 if [ "${M32}" = 1 ]; then
 	./sys/build-m32.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}

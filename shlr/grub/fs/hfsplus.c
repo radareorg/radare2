@@ -251,7 +251,7 @@ grub_hfsplus_btree_recoffset (struct grub_hfsplus_btree *btree,
   grub_uint16_t *recptr;
   recptr = (grub_uint16_t *) (&cnode[btree->nodesize
 				     - index * sizeof (grub_uint16_t) - 2]);
-  return grub_be_to_cpu16 (*recptr);
+  return recptr? grub_be_to_cpu16 (*recptr): 0;
 }
 
 /* Return a pointer to the record with the index INDEX, in the node
@@ -602,6 +602,9 @@ grub_hfsplus_btree_iterate_node (struct grub_hfsplus_btree *btree,
     {
       char *cnode = (char *) first_node;
 
+      if (!first_node) {
+        return 0;
+      }
       /* Iterate over all records in this node.  */
       for (rec = first_rec; rec < grub_be_to_cpu16 (first_node->count); rec++)
 	{

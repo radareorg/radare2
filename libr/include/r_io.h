@@ -124,7 +124,6 @@ typedef struct r_io_t {
 	int raised;
 	int va;
 	bool pava;
-	int vio; // remove that when vio replaces the old stuff
 	int sectonly;
 	char *referer;
 	char *redirect;
@@ -318,16 +317,13 @@ R_API RIODesc *r_io_use_fd(RIO *io, int fd);
 R_API int r_io_use_desc(RIO *io, RIODesc *fd);
 
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
-R_API int r_io_vread(RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API int r_io_read_internal(RIO *io, ut8 *buf, int len);
-R_API int r_io_mread(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_pread(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz);
 R_API int r_io_write(RIO *io, const ut8 *buf, int len);
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
-R_API int r_io_mwrite(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_pwrite(RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API int r_io_system(RIO *io,  const char *cmd);

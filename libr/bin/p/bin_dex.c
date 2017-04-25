@@ -719,7 +719,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (arch->buf->buf, arch->buf->length, kw, strlen (kw))) {
+	if (r_mem_mem (arch->buf->buf, arch->buf->length, (const ut8*)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");

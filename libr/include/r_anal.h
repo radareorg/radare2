@@ -1580,6 +1580,7 @@ R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const c
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_xap;
 extern RAnalPlugin r_anal_plugin_tms320;
+extern RAnalPlugin r_anal_plugin_tms320c64x;
 extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_arm_gnu;
 extern RAnalPlugin r_anal_plugin_arm_cs;

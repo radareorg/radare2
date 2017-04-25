@@ -3803,7 +3803,7 @@ Implicit_Field_brall_get (const xtensa_insnbuf insn ATTRIBUTE_UNUSED)
 /* Functional units.  */
 
 static xtensa_funcUnit_internal funcUnits[] = {
-
+  { 0 }
 };
 
 

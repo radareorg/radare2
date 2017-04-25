@@ -24,6 +24,7 @@ static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
 	return n;
 }
 
+#if 0
 static size_t consume_s32_r (RBuffer *b, ut64 max, st32 *out) {
 	size_t n;
 	st32 tmp;
@@ -39,6 +40,7 @@ static size_t consume_s32_r (RBuffer *b, ut64 max, st32 *out) {
 	}
 	return n;
 }
+#endif
 
 static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
@@ -58,11 +60,11 @@ static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 
 static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
 	size_t n;
-	st32 tmp;
+	ut32 tmp = 0;
 	if (!b || !b->buf || max >= b->length || b->cur > max) {
 		return 0;
 	}
-	if (!(n = read_i32_leb128 (&b->buf[b->cur], &b->buf[max + 1], &tmp)) || n > 2) {
+	if (!(n = read_i32_leb128 (&b->buf[b->cur], (ut8*)&b->buf[max + 1], (int*)&tmp)) || n > 2) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -171,12 +173,10 @@ static size_t consume_limits_r (RBuffer *b, ut64 max, struct r_bin_wasm_resizabl
 // Utils
 static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 	RBinWasmSection *sec = NULL;
-	RList *ret = NULL;	
-
-	if (!(ret = r_list_newf (NULL))) {
+	RList *ret = r_list_newf (NULL);
+	if (!ret) {
 		return NULL;
 	}
-
 	RListIter *iter;
 	r_list_foreach (sections, iter, sec) {
 		if (sec->id == id) {
@@ -186,6 +186,7 @@ static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 	return ret;
 }
 
+#if 0
 static const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
@@ -205,8 +206,8 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 	if (!ptr) {
 		return NULL;
 	}
-	char *buf = NULL, *tmp = NULL;
-	if (!(buf = (char*)calloc (ptr->param_count, 5))) {
+	char *buf = (char*)calloc (ptr->param_count, 5);
+	if (!buf) {
 		return NULL;
 	}
 	int p;
@@ -216,14 +217,13 @@ static char *r_bin_wasm_type_entry_to_string (RBinWasmTypeEntry *ptr) {
 			strcat (buf, ", ");
 		}
 	}
-	tmp = strdup (buf);
-	free (buf);
-	snprintf(ptr->to_str, R_BIN_WASM_STRING_LENGTH, "(%s) -> (%s)",
-		(ptr->param_count > 0? tmp: ""),
+	snprintf (ptr->to_str, R_BIN_WASM_STRING_LENGTH, "(%s) -> (%s)",
+		(ptr->param_count > 0? buf: ""),
 		(ptr->return_count == 1? r_bin_wasm_valuetype_to_string (ptr->return_type): ""));
+	free (buf);
 	return ptr->to_str;
-
 }
+#endif
 
 // Free
 static void r_bin_wasm_free_types (RBinWasmTypeEntry *ptr) {
@@ -272,7 +272,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 		}
 		ut32 count = ptr ? ptr->param_count : 0;
 		if (!(b->cur + (count * 3) <= max)) { // worst case 3 bytes
-			return 0;
+			goto beach;
 		}
 		if (count > 0) {
 			if (!(ptr->param_types = R_NEWS0 (r_bin_wasm_value_type_t, count))) {
@@ -302,9 +302,11 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf("err: beach type entries\n");
-	free (ptr->param_types);
-	free (ptr);
+	eprintf ("err: beach type entries\n");
+	if (ptr) {
+		free (ptr->param_types);
+		free (ptr);
+	}
 	return ret;
 }
 
@@ -938,7 +940,7 @@ ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin) {
 	}	
 	func = r_list_get_n (bin->g_codes, start->index);
 	r_list_free (secs);
-	return (ut32)func? func->code: 0;
+	return (ut32)(func? func->code: 0);
 }
 
 RList *r_bin_wasm_get_imports (RBinWasmObj *bin) {

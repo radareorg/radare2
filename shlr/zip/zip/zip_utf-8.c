@@ -194,22 +194,34 @@ _zip_unicode_to_utf8_len(zip_uint32_t codepoint)
 
 
 static zip_uint32_t
-_zip_unicode_to_utf8(zip_uint32_t codepoint, zip_uint8_t *buf)
+_zip_unicode_to_utf8(zip_uint32_t codepoint, zip_uint8_t *buf, int len)
 {
     if (codepoint < 0x0080) {
+        if (len < 1) {
+          return len;
+        }
 	buf[0] = codepoint & 0xff;
 	return 1;
     }
     if (codepoint < 0x0800) {
+        if (len < 2) {
+          return len;
+        }
 	buf[0] = UTF_8_LEN_2_MATCH | ((codepoint >> 6) & 0x1f);
 	buf[1] = UTF_8_CONTINUE_MATCH | (codepoint & 0x3f);
 	return 2;
     }
     if (codepoint < 0x10000) {
+        if (len < 3) {
+          return len;
+        }
 	buf[0] = UTF_8_LEN_3_MATCH | ((codepoint >> 12) & 0x0f);
 	buf[1] = UTF_8_CONTINUE_MATCH | ((codepoint >> 6) & 0x3f);
 	buf[2] = UTF_8_CONTINUE_MATCH | (codepoint & 0x3f);
 	return 3;
+    }
+    if (len < 4) {
+      return len;
     }
     buf[0] = UTF_8_LEN_4_MATCH | ((codepoint >> 18) & 0x07);
     buf[1] = UTF_8_CONTINUE_MATCH | ((codepoint >> 12) & 0x3f);
@@ -244,9 +256,10 @@ _zip_cp437_to_utf8(const zip_uint8_t * const _cp437buf, zip_uint32_t len,
     }
 
     offset = 0;
-    for (i=0; i<len; i++)
+    for (i=0; i<len && offset < buflen; i++) {
 	offset += _zip_unicode_to_utf8(_cp437_to_unicode[cp437buf[i]],
-				       utf8buf+offset);
+				       utf8buf+offset, buflen - offset);
+   }
 
     utf8buf[buflen-1] = 0;
     if (utf8_lenp)

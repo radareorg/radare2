@@ -742,7 +742,7 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 				}
 			}
 
-			if (acur && !found) {
+			if (acur && anext && !found) {
 				int space = HORIZONTAL_NODE_SPACING;
 				if (acur->is_reversed && anext->is_reversed) {
 					if (!acur->is_reversed) {
@@ -1125,7 +1125,7 @@ static void adjust_directions(const RAGraph *g, int i, int from_up, Sdb *D, Sdb 
 		const RGraphNode *wp, *vp = g->layers[i + d].nodes[j];
 		const RANode *wpa, *vpa = get_anode (vp);
 
-		if (!vpa->is_dummy) {
+		if (!vpa || !vpa->is_dummy) {
 			continue;
 		}
 		if (from_up) {
@@ -1144,8 +1144,7 @@ static void adjust_directions(const RAGraph *g, int i, int from_up, Sdb *D, Sdb 
 			for (k = wma->pos_in_layer + 1; k < wpa->pos_in_layer; ++k) {
 				const RGraphNode *w = g->layers[wma->layer].nodes[k];
 				const RANode *aw = get_anode (w);
-
-				if (aw->is_dummy) {
+				if (aw && aw->is_dummy) {
 					p &= hash_get_int (P, w);
 				}
 			}
@@ -1197,7 +1196,9 @@ static void place_single(const RAGraph *g, int l, const RGraphNode *bm, const RG
 	if (len == 0) {
 		return;
 	}
-	av->x = sum_x / len;
+	if (av) {
+		av->x = sum_x / len;
+	}
 	if (bm) {
 		const RANode *bma = get_anode (bm);
 		av->x = R_MAX (av->x, bma->x + dist_nodes (g, bm, v));
@@ -1338,7 +1339,7 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
 	for (i = t - 2; i >= a; --i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
-		if (av) {
+		if (av && at) {
 			av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
 		}
 	}
@@ -1346,7 +1347,7 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
 	for (i = t + 1; i < r; ++i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
-		if (av) {
+		if (av && atp) {
 			av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
 		}
 	}
@@ -1375,8 +1376,8 @@ static void original_traverse_l(const RAGraph *g, Sdb *D, Sdb *P, int from_up) {
 	int i, k, va, vr;
 
 	for (i = from_up? 0: g->n_layers - 1;
-	     (from_up && i < g->n_layers) || (!from_up && i >= 0);
-	     i = from_up? i + 1: i - 1) {
+			(from_up && i < g->n_layers) || (!from_up && i >= 0);
+			i = from_up? i + 1: i - 1) {
 		int j;
 		const RGraphNode *bm = NULL;
 		const RANode *bma = NULL;
@@ -1385,7 +1386,7 @@ static void original_traverse_l(const RAGraph *g, Sdb *D, Sdb *P, int from_up) {
 		while (j < g->layers[i].n_nodes && !bm) {
 			const RGraphNode *gn = g->layers[i].nodes[j];
 			const RANode *an = get_anode (gn);
-			if (an->is_dummy) {
+			if (an && an->is_dummy) {
 				va = 0;
 				vr = j;
 				bm = gn;
@@ -1527,7 +1528,7 @@ static void create_edge_from_dummies(const RAGraph *g, RANode *an, RList *toremo
 		add_to_list = r_list_append;
 	}
 
-	while (an->is_dummy) {
+	while (an && an->is_dummy) {
 		add_to_list (toremove, n);
 
 		add_to_list (e->x, (void *) (size_t) an->x);
@@ -1594,8 +1595,10 @@ static void analyze_back_edges(const RAGraph *g, RANode *an) {
 					(void *) (size_t) (an->x - 2 - j));
 				r_list_append (e->y, (void *) (size_t) ak->y);
 			} else {
-				r_list_append (e->x,
-					(void *) (size_t) (last->x + last->w + 2 + j));
+				if (last) {
+					r_list_append (e->x,
+							(void *) (size_t) (last->x + last->w + 2 + j));
+				}
 				r_list_append (e->y, (void *) (size_t) ak->y);
 			}
 		}
@@ -1998,6 +2001,9 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	if (!f) {
 		return false;
+	}
+	if (!fcn) {
+		fcn = f;
 	}
 
 	r_core_seek (core, f->addr, 1);
@@ -2502,7 +2508,9 @@ static void agraph_toggle_tiny (RAGraph *g) {
 
 static void agraph_toggle_mini(RAGraph *g) {
 	RANode *n = get_anode (g->curnode);
-	n->is_mini = !n->is_mini;
+	if (n) {
+		n->is_mini = !n->is_mini;
+	}
 	g->need_update_dim = 1;
 	agraph_refresh (r_cons_singleton ()->event_data);
 	agraph_set_layout ((RAGraph *) g, r_cons_singleton ()->is_interactive);
@@ -3544,13 +3552,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F1:
 			cmd = r_config_get (core->config, "key.f1");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void) r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F2:
 			cmd = r_config_get (core->config, "key.f2");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void) r_core_cmd0 (core, cmd);
 			} else {
 				graph_breakpoint (core);
 			}
@@ -3558,25 +3566,25 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F3:
 			cmd = r_config_get (core->config, "key.f3");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void) r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F4:
 			cmd = r_config_get (core->config, "key.f4");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void) r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F5:
 			cmd = r_config_get (core->config, "key.f5");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F6:
 			cmd = r_config_get (core->config, "key.f6");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F7:
@@ -3606,19 +3614,19 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F10:
 			cmd = r_config_get (core->config, "key.f10");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F11:
 			cmd = r_config_get (core->config, "key.f11");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			}
 			break;
 		case R_CONS_KEY_F12:
 			cmd = r_config_get (core->config, "key.f12");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			}
 			break;
 		case -1: // EOF

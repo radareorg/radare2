@@ -255,6 +255,8 @@ R_API bool r_io_desc_detach (RIO *io, RIODesc *fd) {
 		}
 	}
 	io->files->free = p;
-	r_io_raise (io, prev->fd);
+	if (prev) {
+		r_io_raise (io, prev->fd);
+	}
 	return ret;
 }

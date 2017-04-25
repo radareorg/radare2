@@ -124,14 +124,10 @@ R_API RList *r_sys_dir(const char *path) {
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	HANDLE fh;
 	WIN32_FIND_DATAW entry;
-	wchar_t dir[MAX_PATH];
-	wchar_t *wcpath;
 	char *cfname;
-
-	fh = r_sandbox_opendir (path, &entry, dir, wcpath);
+	fh = r_sandbox_opendir (path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
-		free (wcpath);
 		return list;
 	}
 	list = r_list_newf (free);
@@ -143,7 +139,6 @@ R_API RList *r_sys_dir(const char *path) {
 			}
 		} while (FindNextFileW (fh, &entry));
 	}
-	free (wcpath);
 	FindClose (fh);
 #else
 	struct dirent *entry;

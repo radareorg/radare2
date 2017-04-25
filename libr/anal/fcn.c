@@ -372,7 +372,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
 	st64 ptr;
 	char *sig = r_str_newf (",%s,%s", reg, sign);
-	if (!sig) {
+	if (!sig || !anal) {
 		return;
 	}
 	op_esil = r_strbuf_get (&op->esil);
@@ -394,7 +394,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 	*ptr_end = 0;
 	addr = ptr_end;
-	while ((*addr != '0' || *(addr + 1) != 'x') &&
+	while ((addr[0] != '0' || addr[1] != 'x') &&
 	addr >= esil_buf + 1 && *addr != ',') {
 		addr--;
 	}

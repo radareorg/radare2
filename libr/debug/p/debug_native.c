@@ -545,6 +545,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 				if (procfs_pid_slurp (ppid, "cmdline", buf, sizeof (buf)) == -1) {
 					continue;
 				}
+				// TODO: add support for gid in RDebugPid.new()
 				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
 		}

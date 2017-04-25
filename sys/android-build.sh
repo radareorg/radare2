@@ -91,8 +91,7 @@ export CFLAGS="-fPIC -fPIE"
 
 if [ "${BUILD}" = 1 ]; then
 	if [ -z "${NDK}" ]; then
-		echo "Missing NDK env var. Use ./android-{arm|aarch64|mips|mips64|x86}.sh"
-		exit 1
+		exec sys/android-shell.sh ${NDK_ARCH} $0 $@
 	fi
 	export ANDROID=1
 	# start build

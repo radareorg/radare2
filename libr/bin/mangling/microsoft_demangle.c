@@ -146,7 +146,9 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 		memset (dst, 0, str_for_copy_len);
 	}
 	type_code_str->curr_pos += str_for_copy_len;
-	type_code_str->type_str[type_code_str->curr_pos] = '\0';
+	if (type_code_str->type_str) {
+		type_code_str->type_str[type_code_str->curr_pos] = '\0';
+	}
 
 copy_string_err:
 	return res;
