@@ -4765,12 +4765,14 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 						RAnalOp aop = {
 							0
 						};
-						char *asm_str = r_print_colorize_opcode (core->print, asmop.buf_asm, color_reg, color_num);
+						char *asm_str;
+
 						r_anal_op (core->anal, &aop, core->offset + i,
 							core->block + i, core->blocksize - i);
 						r_parse_filter (core->parser, core->flags,
-							asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
-						r_cons_printf ("%s%s"Color_RESET "\n", r_print_color_op_type (core->print, aop.type), opstr);
+							asmop.buf_asm, opstr, sizeof (opstr) - 1, core->print->big_endian);
+						asm_str = r_print_colorize_opcode (core->print, opstr, color_reg, color_num);
+						r_cons_printf ("%s%s"Color_RESET "\n", r_print_color_op_type (core->print, aop.type), asm_str);
 					} else {
 						r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, opstr, sizeof (opstr) - 1, core->print->big_endian);
