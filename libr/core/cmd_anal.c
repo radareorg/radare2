@@ -814,22 +814,34 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
-static int anal_fcn_list_bb(RCore *core, const char *input) {
+static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
 	RAnalFunction *fcn;
 	RListIter *iter;
 	RAnalBlock *b;
 	int mode = 0;
 	ut64 addr, bbaddr = UT64_MAX;
+	bool firstItem = true;
 
+	if (*input == '.') {
+		one = true;
+		input++;
+	}
 	if (*input) {
 		mode = *input;
+		input++;
+	}
+	if (*input == '.') {
+		one = true;
 		input++;
 	}
 	if (input && *input) {
 		addr = bbaddr = r_num_math (core->num, input);
 	} else {
 		addr = core->offset;
+	}
+	if (one) {
+		bbaddr = addr;
 	}
 	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
@@ -845,8 +857,10 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	}
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
-		if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
-			continue;
+		if (one) {
+			if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
+				continue;
+			}
 		}
 		switch (mode) {
 		case 'r':
@@ -892,16 +906,16 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 			if (b->fail != UT64_MAX) {
 				outputs ++;
 			}
-			r_cons_print ("{");
+			r_cons_printf ("%s{", firstItem? "": ",");
+			firstItem = false;
 			if (b->jump != UT64_MAX) {
 				r_cons_printf ("\"jump\":%"PFMT64d",", b->jump);
 			}
 			if (b->fail != UT64_MAX) {
 				r_cons_printf ("\"fail\":%"PFMT64d",", b->fail);
 			}
-			r_cons_printf ("\"addr\":%" PFMT64d ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}%s",
-				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced), iter->n? ",":"");
-			//%s", b->addr, iter->n? ",": "");
+			r_cons_printf ("\"addr\":%" PFMT64d ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}",
+				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
 			}
 			break;
 		default:
@@ -1545,7 +1559,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'r':
 		case '*':
 		case 'j':
-			anal_fcn_list_bb (core, input + 2);
+			anal_fcn_list_bb (core, input + 2, false);
+			break;
+		case '.':
+			anal_fcn_list_bb (core, input[2]? " $$": input + 2, true);
 			break;
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input + 3);
@@ -1558,6 +1575,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					".afbr-", "", "Set breakpoint on every return address of the function",
 					".afbr-*", "", "Remove breakpoint on every return address of the function",
 					"afb", " [addr]", "list basic blocks of function",
+					"afb.", " [addr]", "show info of current basic block",
 					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
 					"afbr", "", "Show addresses of instructions which leave the function",
 					"afbj", "", "show basic blocks information in json",
