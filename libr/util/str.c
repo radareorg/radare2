@@ -933,10 +933,12 @@ R_API char *r_str_append(char *ptr, const char *string) {
 	}
 	plen = strlen (ptr);
 	slen = strlen (string);
-	ptr = realloc (ptr, slen + plen + 1);
-	if (!ptr) {
+	char *newptr = realloc (ptr, slen + plen + 1);
+	if (!newptr) {
+		free (ptr);
 		return NULL;
 	}
+	ptr = newptr;
 	memcpy (ptr + plen, string, slen + 1);
 	return ptr;
 }

@@ -2925,7 +2925,6 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 		if (s) {
 			r_file_rm (tmp);
 			r_sandbox_disable (0);
-			free (s);
 			free (tmp);
 			free (_cmd);
 			return s;
