@@ -270,10 +270,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_J ("%s"), ARG (0));
 		break;
 	case MIPS_INS_BNE:  // bne $s, $t, offset
+	case MIPS_INS_BNEL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,%s,==,$z,!,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1), ARG (2));
 		break;
 	case MIPS_INS_BEQ:
+	case MIPS_INS_BEQL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,%s,==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1), ARG (2));
 		break;
@@ -293,6 +295,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_BLEZ:
 	case MIPS_INS_BLEZC:
+	case MIPS_INS_BLEZL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,%s,==,$z,?{,"ES_J ("%s")",BREAK,},",
 			ARG (0), ARG (1));
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
@@ -300,6 +303,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_BGEZ:
 	case MIPS_INS_BGEZC:
+	case MIPS_INS_BGEZL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
@@ -321,11 +325,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_BLTZ:
 	case MIPS_INS_BLTZC:
+	case MIPS_INS_BLTZL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BGTZ:
 	case MIPS_INS_BGTZC:
+	case MIPS_INS_BGTZL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,%s,==,$z,?{,BREAK,},", ARG (0));
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J("%s")",}",
 			ARG (0), ARG (1));
@@ -788,6 +794,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_BEQ:
 	case MIPS_INS_BNZ:
 	case MIPS_INS_BNE:
+	case MIPS_INS_BNEL:
+	case MIPS_INS_BEQL:
 	case MIPS_INS_BEQZ:
 	case MIPS_INS_BNEG:
 	case MIPS_INS_BNEGI:
@@ -825,7 +833,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		case MIPS_INS_BGEZC:
 		case MIPS_INS_BLTZC:
 		case MIPS_INS_BGTZC:
-			// compact vesions (no delay)
+			// compact versions (no delay)
 			op->delay = 0;
 			op->fail = addr+4;
 			break;
