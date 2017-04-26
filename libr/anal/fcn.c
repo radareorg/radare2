@@ -373,6 +373,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	st64 ptr;
 	char *sig = r_str_newf (",%s,%s", reg, sign);
 	if (!sig || !anal) {
+		free (sig);
 		return;
 	}
 	op_esil = r_strbuf_get (&op->esil);

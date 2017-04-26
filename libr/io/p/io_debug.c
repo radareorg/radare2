@@ -232,6 +232,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	if (io->runprofile && *io->runprofile) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
 			eprintf ("Can't find profile '%s'\n", io->runprofile);
+			r_run_free (rp);
 			return NULL;
 		}
 	}
@@ -243,6 +244,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	free (expr);
 	if (r_run_config_env (rp)) {
 		eprintf ("Can't config the environment.\n");
+		r_run_free (rp);
 		return NULL;
 	}
 	return rp;

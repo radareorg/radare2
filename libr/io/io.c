@@ -775,7 +775,7 @@ R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len) {
 	if (!io->desc || !io->desc->plugin || !io->desc->plugin->write) {
 		return -1;
 	}
-	if (r_io_seek (io, paddr, R_IO_SEEK_SET) === UT64_MAX) {
+	if (r_io_seek (io, paddr, R_IO_SEEK_SET) == UT64_MAX) {
 		return -1;
 	}
 	return io->desc->plugin->write (io, io->desc, buf, len);

@@ -32,8 +32,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+	return check_bytes (buf, sz) ? R_NOTNULL : NULL;
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -154,10 +153,12 @@ static RList* sections(RBinFile *arch) {
 	}
 
 	if (is_hirom) {
-		for (i=0; i < ((arch->size - hdroffset)/ 0x8000) ; i++) {
-			
-			addrom(ret,"ROM",i,hdroffset + i*0x8000,0x400000 + (i*0x8000), 0x8000);
-			if (i % 2) addrom(ret,"ROM_MIRROR",i,hdroffset + i*0x8000,(i*0x8000), 0x8000);
+		for (i = 0; i < ((arch->size - hdroffset) / 0x8000) ; i++) {
+			// XXX check integer overflow here
+			addrom (ret, "ROM",i,hdroffset + i * 0x8000, 0x400000 + (i * 0x8000), 0x8000);
+			if (i % 2) {
+				addrom(ret, "ROM_MIRROR", i, hdroffset + i * 0x8000,(i * 0x8000), 0x8000);
+			}
 		}
 
 	} else {
@@ -171,7 +172,7 @@ static RList* sections(RBinFile *arch) {
 
 static RList *mem (RBinFile *arch) {
 	RList *ret;
-	RBinMem *m, *n;
+	RBinMem *m;
 	if (!(ret = r_list_new())) {
 		return NULL;
 	}
@@ -185,18 +186,18 @@ static RList *mem (RBinFile *arch) {
 	m->size = LOWRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(n = R_NEW0 (RBinMem))) {
+
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
 	}
-	m->mirrors = r_list_new();
-	n->name = strdup ("LOWRAM_MIRROR");
-	n->addr = LOWRAM_MIRROR_START_ADDRESS;
-	n->size = LOWRAM_MIRROR_SIZE;
-	n->perms = r_str_rwx ("rwx");
-	r_list_append (m->mirrors, n);
-	if (!(n = R_NEW0 (RBinMem))) {
+	m->mirrors = r_list_new ();
+	m->name = strdup ("LOWRAM_MIRROR");
+	m->addr = LOWRAM_MIRROR_START_ADDRESS;
+	m->size = LOWRAM_MIRROR_SIZE;
+	m->perms = r_str_rwx ("rwx");
+	r_list_append (m->mirrors, m);
+	if (!(m = R_NEW0 (RBinMem))) {
 		r_list_free (m->mirrors);
-		m->mirrors = NULL;
 		return ret;
 	}
 	m->name = strdup ("HIRAM");
@@ -204,7 +205,7 @@ static RList *mem (RBinFile *arch) {
 	m->size = HIRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(n = R_NEW0 (RBinMem))) {
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("EXTRAM");
@@ -212,7 +213,7 @@ static RList *mem (RBinFile *arch) {
 	m->size = EXTRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(n = R_NEW0 (RBinMem))) {
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("PPU1_REG");
@@ -247,10 +248,6 @@ static RList *mem (RBinFile *arch) {
 	m->size = PPU2_REG_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
 	return ret;
 }
 

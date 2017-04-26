@@ -14,10 +14,10 @@ static char *encodings[3] = { "ascii", "cp850", NULL };
 
 R_API int r_search_get_encoding(const char *name) {
 	int i;
-	ut32 lename = strlen (name);
-	if (!name) {
+	if (!name || !*name) {
 		return ENCODING_ASCII;
 	}
+	ut32 lename = strlen (name);
 	for (i = 0; encodings[i]; i++) {
 		ut32 sz = R_MIN (strlen (encodings[i]), lename);
 		if (!strncasecmp (name, encodings[i], sz)) {

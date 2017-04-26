@@ -45,8 +45,9 @@ static bool dumpSectionToDisk(RCore *core, char *file) {
 			ut8 *buf = malloc (s->size);
 			r_io_read_at (core->io, s->paddr, buf, s->size);
 			if (!file) {
-				heapfile = (char *)malloc (len * sizeof(char));
+				heapfile = (char *)malloc (len);
 				if (!heapfile) {
+					free (buf);
 					return false;
 				}
 				file = heapfile;
