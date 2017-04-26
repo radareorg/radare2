@@ -4754,39 +4754,33 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 					r_cons_println (opstr);
 				}
 			} else {
+				char opstr[128] = {
+					0
+				};
+				char *asm_str = &asmop.buf_asm;
+
+				if (filter && asm_ucase) {
+					r_str_case (asm_str, 1);
+				}
+
 				if (filter) {
-					char opstr[128] = {
+					r_parse_filter (core->parser, core->flags,
+						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
+					asm_str = &opstr;
+				}
+
+				if (show_color) {
+					RAnalOp aop = {
 						0
 					};
-					if (asm_ucase) {
-						r_str_case (asmop.buf_asm, 1);
-					}
-					if (show_color) {
-						RAnalOp aop = {
-							0
-						};
-						char *asm_str = r_print_colorize_opcode (core->print, asmop.buf_asm, color_reg, color_num);
-						r_anal_op (core->anal, &aop, core->offset + i,
-							core->block + i, core->blocksize - i);
-						r_parse_filter (core->parser, core->flags,
-							asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
-						r_cons_printf ("%s%s"Color_RESET "\n", r_print_color_op_type (core->print, aop.type), opstr);
-					} else {
-						r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, opstr, sizeof (opstr) - 1, core->print->big_endian);
-						r_cons_println (opstr);
-					}
+					r_anal_op (core->anal, &aop, core->offset + i,
+						core->block + i, core->blocksize - i);
+					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num);
+					r_cons_printf ("%s%s"Color_RESET "\n",
+						r_print_color_op_type (core->print, aop.type),
+						asm_str);
 				} else {
-					if (show_color) {
-						RAnalOp aop;
-						r_anal_op (core->anal, &aop, core->offset + i,
-							core->block + i, core->blocksize - i);
-						r_cons_printf ("%s%s"Color_RESET "\n",
-							r_print_color_op_type (core->print, aop.type),
-							asmop.buf_asm);
-					} else {
-						r_cons_println (asmop.buf_asm);
-					}
+					r_cons_println (asm_str);
 				}
 			}
 		}
