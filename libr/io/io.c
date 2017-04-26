@@ -352,22 +352,25 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 }
 
 R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
-	if (!io || !buf) {
-		return R_FAIL;
+	if (!io || !buf || len < 0) {
+		return -1;
 	}
 	if (paddr == UT64_MAX) {
 		if (io->ff) {
 			memset (buf, 0xff, len);
 			return len;
 		}
-		return R_FAIL;
+		return -1;
 	}
 	if (io->buffer_enabled) {
 		return r_io_buffer_read (io, paddr, buf, len);
-	} else if (!io->desc || !io->desc->plugin || !io->desc->plugin->read) {
-		return 0;
 	}
-	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	if (!io->desc || !io->desc->plugin || !io->desc->plugin->read) {
+		return -1;
+	}
+	if (r_io_seek (io, paddr, R_IO_SEEK_SET) == UT64_MAX) {
+		return -1;
+	}
 	return io->desc->plugin->read (io, io->desc, buf, len);
 }
 
@@ -766,16 +769,15 @@ cleanup:
 }
 
 R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len) {
-	if (!io || !buf) {
-		return R_FAIL;
-	}
-	if (paddr == UT64_MAX) {
-		return R_FAIL;
+	if (!io || !buf || paddr == UT64_MAX || len < 0) {
+		return -1;
 	}
 	if (!io->desc || !io->desc->plugin || !io->desc->plugin->write) {
-		return 0;
+		return -1;
 	}
-	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	if (r_io_seek (io, paddr, R_IO_SEEK_SET) === UT64_MAX) {
+		return -1;
+	}
 	return io->desc->plugin->write (io, io->desc, buf, len);
 }
 
@@ -783,7 +785,9 @@ R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (io->cached) {
 		return r_io_cache_write (io, addr, buf, len);
 	}
-	(void)r_io_seek (io, addr, R_IO_SEEK_SET);
+	if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX) {
+		return false;
+	}
 	// errors on seek are checked and ignored here //
 	return r_io_write (io, buf, len);
 }

@@ -126,7 +126,7 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		/* this is a hack to solve issues */
 		return 0;
 	}
-	if (len < 0) {
+	if (len < 1) {
 		return 0;
 	}
 #if 0
@@ -139,12 +139,23 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	}
 #endif
 	ch = R_NEW0 (RIOCache);
-	if (!ch) return 0;
+	if (!ch) {
+		return 0;
+	}
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;
 	ch->odata = (ut8*)malloc (len);
+	if (!ch->odata) {
+		free (ch);
+		return 0;
+	}
 	ch->data = (ut8*)malloc (len);
+	if (!ch->odata) {
+		free (ch->data);
+		free (ch);
+		return 0;
+	}
 	ch->written = io->cached? 0: 1;
 #if 1
 	// we must use raw io here to avoid calling to cacheread and get wrong reads
