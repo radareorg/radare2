@@ -708,7 +708,7 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (help > 1? 2: 0);
 	}
 	if (customRarunProfile) {
-		char *tfn = "/tmp/puta"; //r_file_temp (NULL);
+		char *tfn = r_file_temp (NULL);
 		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
 			eprintf ("Cannot create %s\n", tfn);
 		} else {
