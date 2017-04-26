@@ -321,7 +321,12 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 			case 2: // hack for ascii
 				tmp_count = 0;
 				for (tmp = data; tmp < ptr; tmp++) {
-					if (*tmp == '[') {
+					if (*tmp == 0x1b) {
+						while (tmp < ptr - 1 && *tmp != 'm') {
+							tmp++;
+						}
+						continue;
+					} else if (*tmp == '[') {
 						tmp_count++;
 					} else if (*tmp == ']') {
 						tmp_count--;
