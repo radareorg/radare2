@@ -57,10 +57,10 @@
 #endif
 
 R_API RRunProfile *r_run_new(const char *str) {
-	RRunProfile *p = R_NEW (RRunProfile);
+	RRunProfile *p = R_NEW0 (RRunProfile);
 	if (p) {
 		r_run_reset (p);
-		if (str) r_run_parsefile (p, str);
+		r_run_parsefile (p, str);
 	}
 	return p;
 }
@@ -70,10 +70,13 @@ R_API void r_run_reset(RRunProfile *p) {
 	p->_aslr = -1;
 }
 
-R_API int r_run_parse(RRunProfile *pf, const char *profile) {
+R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
+	if (!pf || !profile) {
+		return false;
+	}
 	char *p, *o, *str = strdup (profile);
 	if (!str) {
-		return 0;
+		return false;
 	}
 	r_str_replace_char (str, '\r',0);
 	for (o = p = str; (o = strchr (p, '\n')); p = o) {
@@ -81,7 +84,7 @@ R_API int r_run_parse(RRunProfile *pf, const char *profile) {
 		r_run_parseline (pf, p);
 	}
 	free (str);
-	return 1;
+	return true;
 }
 
 R_API void r_run_free (RRunProfile *r) {
@@ -263,9 +266,7 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 	// case of interactive programs.
 	int saved_stdin = dup (STDIN_FILENO);
 	int saved_stdout = dup (STDOUT_FILENO);
-
-	int fdm;
-	int pid = forkpty (&fdm, NULL, NULL, NULL);
+	int fdm, pid = forkpty (&fdm, NULL, NULL, NULL);
 	if (in) {
 		dup2 (fdm, STDIN_FILENO);
 	}
@@ -357,17 +358,20 @@ R_API int r_run_parsefile (RRunProfile *p, const char *b) {
 	return 0;
 }
 
-R_API int r_run_parseline (RRunProfile *p, char *b) {
+R_API bool r_run_parseline (RRunProfile *p, char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
-	if (!e) return 0;
-	if (*b=='#') return 0;
+	if (!e || *b == '#') {
+		return 0;
+	}
 	*e++ = 0;
 	if (*e=='$') {
 		must_free = true;
 		e = r_sys_getenv (e);
 	}
-	if (!e) return 0;
+	if (!e) {
+		return 0;
+	}
 	if (!strcmp (b, "program")) p->_args[0] = p->_program = strdup (e);
 	else if (!strcmp (b, "system")) p->_system = strdup (e);
 	else if (!strcmp (b, "aslr")) p->_aslr = parseBool (e);
@@ -421,11 +425,13 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 		FILE *fd = fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
-			if (must_free == true) free (e);
-			return 0;
+			if (must_free == true) {
+				free (e);
+			}
+			return false;
 		}
 		for (;;) {
-			fgets (buf, sizeof (buf)-1, fd);
+			fgets (buf, sizeof (buf) - 1, fd);
 			if (feof (fd)) break;
 			p = strchr (buf, '=');
 			if (p) {
@@ -447,9 +453,10 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	} else if (!strcmp(b, "clearenv")) {
 		r_sys_clearenv ();
 	}
-	if (must_free == true)
+	if (must_free == true) {
 		free (e);
-	return 1;
+	}
+	return true;
 }
 
 R_API const char *r_run_help() {

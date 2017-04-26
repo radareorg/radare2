@@ -4757,7 +4757,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				char opstr[128] = {
 					0
 				};
-				char *asm_str = &asmop.buf_asm;
+				char *asm_str = asmop.buf_asm;
 
 				if (filter && asm_ucase) {
 					r_str_case (asm_str, 1);
@@ -4766,7 +4766,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				if (filter) {
 					r_parse_filter (core->parser, core->flags,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
-					asm_str = &opstr;
+					asm_str = (char *)&opstr;
 				}
 
 				if (show_color) {

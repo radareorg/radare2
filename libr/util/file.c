@@ -808,6 +808,9 @@ R_API char *r_file_temp (const char *prefix) {
 	int namesz;
 	char *name;
 	char *path = r_file_tmpdir ();
+	if (!prefix) {
+		prefix = "";
+	}
 	namesz = strlen (prefix) + strlen (path) + 32;
 	name = malloc (namesz);
 	snprintf (name, namesz, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());

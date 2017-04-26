@@ -18,7 +18,7 @@
 .Op Fl P Ar patch
 .Op Fl R Ar rarun2
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvV
+.Op Fl 0AdDwntLquvVX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -103,6 +103,8 @@ Open in write mode
 Show help message
 .It Fl H
 Show files and environment help
+.It Fl X Ar rarun2-directive
+Specify custom rarun2 directives without having to create a rarun2 profile
 .El
 .Sh SHELL
 Type '?' for help

@@ -129,7 +129,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 
 static int main_help(int line) {
 	if (line < 2) {
-		printf ("Usage: r2 [-ACdfLMnNqStuvwz] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+		printf ("Usage: r2 [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B baddr] [-M maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
@@ -174,6 +174,7 @@ static int main_help(int line) {
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
+		" -X [rr2rule] specify custom rarun2 directive\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
@@ -445,6 +446,7 @@ int main(int argc, char **argv, char **envp) {
 	const char *asmos = NULL;
 	const char *forcebin = NULL;
 	const char *asmbits = NULL;
+	char *customRarunProfile = NULL;
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
 	bool quietLeak = false;
@@ -491,7 +493,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzuX:"
 #if USE_THREADS
 "t"
 #endif
@@ -646,6 +648,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'w':
 			perms = R_IO_READ | R_IO_WRITE;
 			break;
+		case 'X':
+			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", optarg);
+			break;
 		default:
 			help++;
 		}
@@ -701,6 +706,17 @@ int main(int argc, char **argv, char **envp) {
 		r_list_free (files);
 		r_list_free (cmds);
 		return main_help (help > 1? 2: 0);
+	}
+	if (customRarunProfile) {
+		char *tfn = "/tmp/puta"; //r_file_temp (NULL);
+		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
+			eprintf ("Cannot create %s\n", tfn);
+		} else {
+			haveRarunProfile = true;
+			r_config_set (r.config, "dbg.profile", tfn);
+		}
+		// TODO: must be removed or just dont use a temporary file
+		// TODO this current code is leaking temporary files and memory
 	}
 	if (debug == 1) {
 		if (optind >= argc && !haveRarunProfile) {
