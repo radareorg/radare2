@@ -1045,14 +1045,25 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMP: // cmp w8, 0xd
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), 64);
+		if (ISIMM64(1)) {
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), 64);
+		} else {
+			// cmp w10, w11
+			r_strbuf_setf (&op->esil, "%s,%s,==,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", REG64(1), REG64(0), 64);
+		}
 		break;
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSEL: // CSEL w8, w13, w14, eq
-		// TODO: w8 = eq? w13: w14
-		// COND64(4) { ARM64_CC_EQ, NE, HS, ...
-		r_strbuf_setf (&op->esil, "$z,?{,%s,}{,%s,},%s,=",
-			REG64(1), REG64(2), REG64(0));
+		r_strbuf_appendf(&op->esil, "%s,%s,=,BREAK", REG64(1), REG64(0));
+		r_strbuf_appendf(&op->esil, "%s,%s,%s,=", postfix, REG64(2), REG64(0));
+		break;
+	case ARM64_INS_CSET: // cset w8, eq
+		r_strbuf_appendf (&op->esil, "1,%s,=,BREAK", REG64(0));
+		r_strbuf_appendf (&op->esil, "%s,0,%s,=", postfix, REG64(0));
+		break;
+	case ARM64_INS_CINC: // cinc w10, w20, eq
+		r_strbuf_appendf (&op->esil, "1,%s,+,%s,=,BREAK", REG64(1), REG64(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,=", postfix, REG64(1), REG64(0));
 		break;
 	case ARM64_INS_STRB:
 		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]",
