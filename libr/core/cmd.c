@@ -2905,25 +2905,37 @@ R_API int r_core_flush(void *user, const char *cmd) {
 }
 
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
-	char *s, *tmp;
-	r_sandbox_disable (1);
-	if (r_sandbox_enable (0))
+	char *s, *tmp = NULL;
+	if (r_sandbox_enable (0)) {
 		return r_core_cmd_str (core, cmd);
+	}
 	r_cons_reset ();
+	r_sandbox_disable (1);
 	if (r_file_mkstemp ("cmd", &tmp) != -1) {
-		char *_cmd = strdup (cmd);
 		int pipefd = r_cons_pipe_open (tmp, 1, 0);
-		r_sandbox_disable (0);
+		if (pipefd == -1) {
+			r_sandbox_disable (0);
+			return r_core_cmd_str (core, cmd);
+		}
+		char *_cmd = strdup (cmd);
 		r_core_cmd_subst (core, _cmd);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
-		r_sandbox_disable (1);
 		s = r_file_slurp (tmp, NULL);
+		if (s) {
+			r_file_rm (tmp);
+			r_sandbox_disable (0);
+			free (s);
+			free (tmp);
+			free (_cmd);
+			return s;
+		}
+		eprintf ("slurp %s fails\n", tmp);
 		r_file_rm (tmp);
-		r_sandbox_disable (0);
 		free (tmp);
 		free (_cmd);
-		return s;
+		r_sandbox_disable (0);
+		return r_core_cmd_str (core, cmd);
 	}
 	r_sandbox_disable (0);
 	return NULL;

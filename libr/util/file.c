@@ -267,6 +267,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	if (!fd) {
 		return NULL;
 	}
+
 	(void)fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
 	if (!sz) {

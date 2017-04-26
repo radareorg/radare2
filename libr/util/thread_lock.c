@@ -13,7 +13,11 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 		if (recursive) {
 			pthread_mutexattr_t attr;
 			pthread_mutexattr_init (&attr);
+#if !__linux__ || __USE_UNIX98__
 			pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
+#else
+			pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#endif
 			pthread_mutex_init (&thl->lock, &attr);
 		} else {
 			pthread_mutex_init (&thl->lock, NULL);

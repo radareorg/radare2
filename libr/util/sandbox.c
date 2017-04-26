@@ -238,8 +238,9 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 		return NULL;
 	}
 	if (enabled) {
-		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+'))
+		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+')) {
 			return NULL;
+		}
 		epath = expand_home (path);
 		if (!r_sandbox_check_path (epath)) {
 			free (epath);
