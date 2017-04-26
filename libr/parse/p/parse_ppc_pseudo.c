@@ -14,12 +14,83 @@
 #define PFMT32x "lx"
 #endif
 
+#define SPR_MQ          0x0
+#define SPR_XER         0x1
+#define SPR_RTCU        0x4
+#define SPR_RTCL        0x5
+#define SPR_LR          0x8
+#define SPR_CTR         0x9
+#define SPR_DSISR       0x12
+#define SPR_DAR         0x13
+#define SPR_DEC         0x16
+#define SPR_SDR1        0x19
+#define SPR_SRR0        0x1a
+#define SPR_SRR1        0x1b
+#define SPR_VRSAVE      0x100
+#define SPR_TBRL        0x10c
+#define SPR_TBRU        0x10d
+#define SPR_SPRG0       0x110
+#define SPR_SPRG1       0x111
+#define SPR_SPRG2       0x112
+#define SPR_SPRG3       0x113
+#define SPR_EAR         0x11a
+#define SPR_TBL         0x11c
+#define SPR_TBU         0x11d
+#define SPR_PVR         0x11f
+#define SPR_SPEFSCR     0x200
+#define SPR_IBAT0U      0x210
+#define SPR_IBAT0L      0x211
+#define SPR_IBAT1U      0x212
+#define SPR_IBAT1L      0x213
+#define SPR_IBAT2U      0x214
+#define SPR_IBAT2L      0x215
+#define SPR_IBAT3U      0x216
+#define SPR_IBAT3L      0x217
+#define SPR_DBAT0U      0x218
+#define SPR_DBAT0L      0x219
+#define SPR_DBAT1U      0x21a
+#define SPR_DBAT1L      0x21b
+#define SPR_DBAT2U      0x21c
+#define SPR_DBAT2L      0x21d
+#define SPR_DBAT3U      0x21e
+#define SPR_DBAT3L      0x21f
+#define SPR_UMMCR0      0x3a8
+#define SPR_UMMCR1      0x3ac
+#define SPR_UPMC1       0x3a9
+#define SPR_UPMC2       0x3aa
+#define SPR_USIA        0x3ab
+#define SPR_UPMC3       0x3ad
+#define SPR_UPMC4       0x3ae
+#define SPR_MMCR0       0x3b8
+#define SPR_PMC1        0x3b9
+#define SPR_PMC2        0x3ba
+#define SPR_SIA         0x3bb
+#define SPR_MMCR1       0x3bc
+#define SPR_PMC3        0x3bd
+#define SPR_PMC4        0x3be
+#define SPR_SDA         0x3bf
+#define SPR_DMISS       0x3d0
+#define SPR_DCMP        0x3d1
+#define SPR_HASH1       0x3d2
+#define SPR_HASH2       0x3d3
+#define SPR_IMISS       0x3d4
+#define SPR_ICMP        0x3d5
+#define SPR_RPA         0x3d6
 #define SPR_HID0        0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1        0x3f1 /* Hardware Implementation Register 1 */
+#define SPR_IABR        0x3f2
 #define SPR_HID2        0x3f3 /* Hardware Implementation Register 2 */
 #define SPR_HID4        0x3f4 /* Hardware Implementation Register 4 */
+#define SPR_DABR        0x3f5
 #define SPR_HID5        0x3f6 /* Hardware Implementation Register 5 */
 #define SPR_HID6        0x3f9 /* Hardware Implementation Register 6 */
+//#define SPR_L2CR        0x3f9
+#define SPR_ICTC        0x3fb
+#define SPR_THRM1       0x3fc
+#define SPR_THRM2       0x3fd
+#define SPR_THRM3       0x3fe
+#define SPR_PIR         0x3ff
+
 
 ut64 mask64(ut64 mb, ut64 me) {
 	int i;
@@ -134,18 +205,158 @@ static const char* getspr(const char *reg) {
 	if(spr > 9999) return NULL; //just to avoid overflows..
 
 	switch (spr) {
+		case SPR_MQ:
+			return "mq";
+		case SPR_XER:
+			return "xer";
+		case SPR_RTCU:
+			return "rtcu";
+		case SPR_RTCL:
+			return "rtcl";
+		case SPR_LR:
+			return "lr";
+		case SPR_CTR:
+			return "ctr";
+		case SPR_DSISR:
+			return "dsisr";
+		case SPR_DAR:
+			return "dar";
+		case SPR_DEC:
+			return "dec";
+		case SPR_SDR1:
+			return "sdr1";
+		case SPR_SRR0:
+			return "srr0";
+		case SPR_SRR1:
+			return "srr1";
+		case SPR_VRSAVE:
+			return "vrsave";
+		case SPR_TBRL:
+			return "tbrl";
+		case SPR_TBRU:
+			return "tbru";
+		case SPR_SPRG0:
+			return "sprg0";
+		case SPR_SPRG1:
+			return "sprg1";
+		case SPR_SPRG2:
+			return "sprg2";
+		case SPR_SPRG3:
+			return "sprg3";
+		case SPR_EAR:
+			return "ear";
+		case SPR_TBL:
+			return "tbl";
+		case SPR_TBU:
+			return "tbu";
+		case SPR_PVR:
+			return "pvr";
+		case SPR_SPEFSCR:
+			return "spefscr";
+		case SPR_IBAT0U:
+			return "ibat0u";
+		case SPR_IBAT0L:
+			return "ibat0l";
+		case SPR_IBAT1U:
+			return "ibat1u";
+		case SPR_IBAT1L:
+			return "ibat1l";
+		case SPR_IBAT2U:
+			return "ibat2u";
+		case SPR_IBAT2L:
+			return "ibat2l";
+		case SPR_IBAT3U:
+			return "ibat3u";
+		case SPR_IBAT3L:
+			return "ibat3l";
+		case SPR_DBAT0U:
+			return "dbat0u";
+		case SPR_DBAT0L:
+			return "dbat0l";
+		case SPR_DBAT1U:
+			return "dbat1u";
+		case SPR_DBAT1L:
+			return "dbat1l";
+		case SPR_DBAT2U:
+			return "dbat2u";
+		case SPR_DBAT2L:
+			return "dbat2l";
+		case SPR_DBAT3U:
+			return "dbat3u";
+		case SPR_DBAT3L:
+			return "dbat3l";
+		case SPR_UMMCR0:
+			return "ummcr0";
+		case SPR_UMMCR1:
+			return "ummcr1";
+		case SPR_UPMC1:
+			return "upmc1";
+		case SPR_UPMC2:
+			return "upmc2";
+		case SPR_USIA:
+			return "usia";
+		case SPR_UPMC3:
+			return "upmc3";
+		case SPR_UPMC4:
+			return "upmc4";
+		case SPR_MMCR0:
+			return "mmcr0";
+		case SPR_PMC1:
+			return "pmc1";
+		case SPR_PMC2:
+			return "pmc2";
+		case SPR_SIA:
+			return "sia";
+		case SPR_MMCR1:
+			return "mmcr1";
+		case SPR_PMC3:
+			return "pmc3";
+		case SPR_PMC4:
+			return "pmc4";
+		case SPR_SDA:
+			return "sda";
+		case SPR_DMISS:
+			return "dmiss";
+		case SPR_DCMP:
+			return "dcmp";
+		case SPR_HASH1:
+			return "hash1";
+		case SPR_HASH2:
+			return "hash2";
+		case SPR_IMISS:
+			return "imiss";
+		case SPR_ICMP:
+			return "icmp";
+		case SPR_RPA:
+			return "rpa";
 		case SPR_HID0:
 			return "hid0";
 		case SPR_HID1:
 			return "hid1";
+		case SPR_IABR:
+			return "iabr";
 		case SPR_HID2:
 			return "hid2";
 		case SPR_HID4:
 			return "hid4";
+		case SPR_DABR:
+			return "dabr";
 		case SPR_HID5:
 			return "hid5";
 		case SPR_HID6:
 			return "hid6";
+//		case SPR_L2CR:
+//			return "l2cr";
+		case SPR_ICTC:
+			return "ictc";
+		case SPR_THRM1:
+			return "thrm1";
+		case SPR_THRM2:
+			return "thrm2";
+		case SPR_THRM3:
+			return "thrm3";
+		case SPR_PIR:
+			return "pir";
 		default:
 			snprintf(cspr, sizeof(cspr), "spr_%u", spr);
 			break;
