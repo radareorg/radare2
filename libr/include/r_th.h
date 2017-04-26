@@ -13,7 +13,6 @@
 //HANDLE
 
 #elif HAVE_PTHREAD
-#define __USE_UNIX98
 #define __GNU
 #include <pthread.h>
 #define R_TH_TID pthread_t

@@ -123,6 +123,10 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 			break;
 		case '}':
 		case ']':
+			*o++ = 0x1b;
+			*o++ = '[';
+			*o++ = '0';
+			*o++ = 'm';
 			isValue = false;
 			*o++ = '\n';
 			indent--;
@@ -137,4 +141,3 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 	*o = 0;
 	return O;
 }
-
