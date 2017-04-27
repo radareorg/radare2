@@ -1065,9 +1065,24 @@ static int esil_asreq(RAnalEsil *esil) {
 				isNegative = ((st64)op_num)<0;
 			}
 			if (isNegative) {
-				op_num = -op_num;
-				op_num >>= param_num;
-				op_num = -op_num;
+				if (regsize == 32) {
+					op_num = -op_num;
+					if (op_num >> param_num) {
+						op_num >>= param_num;
+						op_num = -op_num;
+					} else {
+						op_num = -1;
+					}
+				} else {
+					ut64 mask = (regsize - 1);
+					param_num &= mask;
+					ut64 left_bits = 0;
+					if (op_num & (1 << (regsize - 1))) {
+						left_bits = (1 << param_num) - 1;
+						left_bits <<= regsize - param_num;
+					}
+					op_num = left_bits | (op_num >> param_num);
+				}
 			} else {
 				op_num >>= param_num;
 			}
