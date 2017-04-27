@@ -1056,8 +1056,15 @@ static int esil_asreq(RAnalEsil *esil) {
 		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
 			ut64 mask = (regsize - 1);
 			param_num &= mask;
-			ut64 left_bits = 0;
-			if ((st64)op_num < 0) {
+			bool isNegative;
+			if (regsize == 32) {
+				isNegative = ((st32)op_num)<0;
+				st32 snum = op_num;
+				op_num = snum;
+			} else {
+				isNegative = ((st64)op_num)<0;
+			}
+			if (isNegative) {
 				op_num = -op_num;
 				op_num >>= param_num;
 				op_num = -op_num;
@@ -1086,7 +1093,23 @@ static int esil_asr(RAnalEsil *esil) {
 	char *param = r_anal_esil_pop (esil);
 	if (op && r_anal_esil_get_parm_size (esil, op, &op_num, &regsize)) {
 		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
-#if OLDCODE
+			bool isNegative;
+			if (regsize == 32) {
+				isNegative = ((st32)op_num)<0;
+				st32 snum = op_num;
+				op_num = snum;
+			} else {
+				isNegative = ((st64)op_num)<0;
+			}
+			if (isNegative) {
+				op_num = -op_num;
+				op_num >>= param_num;
+				op_num = -op_num;
+			} else {
+				op_num >>= param_num;
+			}
+			ut64 res = op_num;
+#if 0
 			ut64 mask = (regsize - 1);
 			param_num &= mask;
 			ut64 left_bits = 0;
@@ -1095,15 +1118,6 @@ static int esil_asr(RAnalEsil *esil) {
 				left_bits <<= regsize - param_num;
 			}
 			ut64 res = left_bits | (op_num >> param_num);
-#else
-			if ((st64)op_num < 0) {
-				op_num = -op_num;
-				op_num >>= param_num;
-				op_num = -op_num;
-			} else {
-				op_num >>= param_num;
-			}
-			ut64 res = op_num;
 #endif
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
