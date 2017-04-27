@@ -4712,10 +4712,10 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				}
 			} // do not show flags in pie
 		}
+		ut64 at = core->offset + i;
 		if (show_offset) {
 			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
 			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
-			ut64 at = core->offset + i;
 			r_print_offset (core->print, at, 0, show_offseg, show_offdec, 0, NULL);
 		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
@@ -4726,12 +4726,12 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				ret = 1;
 			}
 			if (show_bytes) {
-				r_cons_printf ("%14s%02x  ", "", core->block[i]);
+				r_cons_printf ("%18s%02x  ", "", core->block[i]);
 			}
 			r_cons_println ("invalid"); // ???");
 		} else {
 			if (show_bytes) {
-				r_cons_printf ("%16s  ", asmop.buf_hex);
+				r_cons_printf ("%20s  ", asmop.buf_hex);
 			}
 			ret = asmop.size;
 			if (decode || esil) {
@@ -4757,13 +4757,14 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				char opstr[128] = {
 					0
 				};
-				char *asm_str = asmop.buf_asm;
+				char *asm_str = (char *)&asmop.buf_asm;
 
-				if (filter && asm_ucase) {
+				if (asm_ucase) {
 					r_str_case (asm_str, 1);
 				}
 
 				if (filter) {
+					core->parser->hint = r_anal_hint_get (core->anal, at);
 					r_parse_filter (core->parser, core->flags,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
 					asm_str = (char *)&opstr;
