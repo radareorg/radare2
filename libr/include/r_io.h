@@ -54,7 +54,6 @@ typedef struct r_io_undo_w_t {
 
 typedef struct r_io_t {
 	struct r_io_desc_t *desc;
-	RStack *st_descs; //used to push/pop temporal desc
 	ut64 off;
 	int bits;
 	int va;		//all of this config stuff must be in 1 int

@@ -10,6 +10,7 @@ typedef int (*cbOnIterMap) (RIO *io, ut64 addr, ut8*buf, int len);
 static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		       int len, int match_flg, cbOnIterMap op) {
 	RIOMap* map;
+	RIODesc *desc;
 	ut64 vendaddr;
 	if (!io || !buf || len < 1) {
 		return;
@@ -49,17 +50,17 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		len = (int) (vendaddr - vaddr + 1);
 		if (vendaddr <= map->to) {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				r_stack_push (io->st_descs, io->desc);
+				desc = io->desc;
 				r_io_use_desc (io, map->fd);
 				op (io, map->delta, buf, len);
-				io->desc = r_stack_pop (io->st_descs);
+				io->desc = desc;
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				r_stack_push (io->st_descs, io->desc);
+				desc = io->desc;
 				r_io_use_desc (io, map->fd);
 				op (io, map->delta, buf, len - (int) (vendaddr - map->to));
-				io->desc = r_stack_pop (io->st_descs);;
+				io->desc = desc;
 			}
 			vaddr = map->to + 1;
 			buf = buf + (len - (int) (vendaddr - map->to));
@@ -69,18 +70,18 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	} else {
 		if (vendaddr <= map->to) {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				r_stack_push (io->st_descs, io->desc);
+				desc = io->desc;
 				r_io_use_desc (io, map->fd);
 				//warning: may overflow in rare usecases
 				op (io, map->delta + (vaddr - map->from), buf, len);            
-				io->desc = r_stack_pop (io->st_descs);
+				io->desc = desc;
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				r_stack_push (io->st_descs, io->desc);
+				desc = io->desc;
 				r_io_use_desc (io, map->fd);
 				op (io, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to));
-				io->desc = r_stack_pop (io->st_descs);
+				io->desc = desc;
 			}
 			vaddr = map->to + 1;
 			buf = buf + (len - (int) (vendaddr - map->to));

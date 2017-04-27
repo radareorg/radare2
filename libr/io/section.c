@@ -492,7 +492,7 @@ static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) 
 }
 
 static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
-	RIODesc *desc;
+	RIODesc *desc, *oldesc;
 	RIOMap *map;
 	char *uri;
 	size_t size;
@@ -511,7 +511,7 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 		return false;
 	}
 	// save the current desc
-	r_stack_push (io->st_descs, io->desc);
+	oldesc = io->desc;
 	// copy to the buffer
 	r_io_use_desc (io, sec->fd);
 	r_io_pread_at (io, sec->paddr, buf, (int)size);
@@ -533,14 +533,12 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 		// set the flags correctly
 		map->flags = sec->flags;
 		// restore old RIODesc
-		desc = r_stack_pop (io->st_descs);
-		r_io_use_desc (io, desc->fd);
+		r_io_use_desc (io, oldesc->fd);
 		// let the section refere to the map
 		sec->filemap = sec->memmap = map->id;
 		return true;
 	}
-	desc = r_stack_pop (io->st_descs);
-	r_io_use_desc (io, desc->fd);
+	r_io_use_desc (io, oldesc->fd);
 	return false;
 }
 
@@ -591,7 +589,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 	char *uri;
 	ut8 *buf = NULL;
 	size_t size;
-	RIODesc *desc;
+	RIODesc *desc, *oldesc;
 	// in this case the section was applied for patching
 	if (sec->filemap != sec->memmap) {
 		if (!sec->memmap) {
@@ -614,7 +612,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		if (!buf) {
 			return false;
 		}
-		r_stack_push  (io->st_descs, io->desc);
+		oldesc = io->desc;
 		r_io_use_desc (io, map->fd);
 		r_io_pread_at (io, map->delta, buf, (int) size);
 		r_io_close (io, map->fd);
@@ -636,9 +634,8 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		}
 		buf = calloc (1, size + 1);
 		if (!buf) {
-			desc = r_stack_pop (io->st_descs);
-			if (desc) {
-				r_io_use_desc (io, desc->fd);
+			if (oldesc) {
+				r_io_use_desc (io, oldesc->fd);
 			}
 			return false;
 		}
@@ -647,9 +644,8 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		r_io_use_desc (io, map->fd);
 		r_io_pwrite_at (io, 0LL, buf, (int) size);
 		free (buf);
-		desc = r_stack_pop (io->st_descs);
-		if (desc) {
-			r_io_use_desc (io, desc->fd);
+		if (oldesc) {
+			r_io_use_desc (io, oldesc->fd);
 		}
 		sec->filemap = sec->memmap = map->id;
 		return true;

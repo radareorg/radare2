@@ -13,10 +13,6 @@ R_API bool r_io_desc_init(RIO* io) {
 	if (!io->files) {
 		return false;
 	}
-	io->st_descs = r_stack_new (2);
-	if (!io->st_descs) {
-		return false;
-	}
 	return true;
 }
 
@@ -199,7 +195,6 @@ R_API bool r_io_desc_fini(RIO* io) {
 	}
 	r_id_storage_foreach (io->files, desc_fini_cb, io);
 	r_id_storage_free (io->files);
-	r_stack_free (io->st_descs);
 	io->files = NULL;
 	//no map-cleanup here, to keep it modular useable
 	io->desc = NULL;
