@@ -1047,6 +1047,38 @@ static int esil_lsreq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_asreq(RAnalEsil *esil) {
+	int regsize, ret = 0;
+	ut64 op_num, param_num;
+	char *op = r_anal_esil_pop (esil);
+	char *param = r_anal_esil_pop (esil);
+	if (op && r_anal_esil_get_parm_size (esil, op, &op_num, &regsize)) {
+		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
+			ut64 mask = (regsize - 1);
+			param_num &= mask;
+			ut64 left_bits = 0;
+			if ((st64)op_num < 0) {
+				op_num = -op_num;
+				op_num >>= param_num;
+				op_num = -op_num;
+			} else {
+				op_num >>= param_num;
+			}
+			ut64 res = op_num;
+			esil->cur = res;
+			esil->lastsz = esil_internal_sizeof_reg (esil, op);
+			r_anal_esil_reg_write (esil, op, res);
+			// r_anal_esil_pushnum (esil, res);
+			ret = 1;
+		} else {
+			ERR ("esil_asr: empty stack");
+		}
+	}
+	free (param);
+	free (op);
+	return ret;
+}
+
 static int esil_asr(RAnalEsil *esil) {
 	int regsize, ret = 0;
 	ut64 op_num, param_num;
@@ -1054,6 +1086,7 @@ static int esil_asr(RAnalEsil *esil) {
 	char *param = r_anal_esil_pop (esil);
 	if (op && r_anal_esil_get_parm_size (esil, op, &op_num, &regsize)) {
 		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
+#if OLDCODE
 			ut64 mask = (regsize - 1);
 			param_num &= mask;
 			ut64 left_bits = 0;
@@ -1062,6 +1095,16 @@ static int esil_asr(RAnalEsil *esil) {
 				left_bits <<= regsize - param_num;
 			}
 			ut64 res = left_bits | (op_num >> param_num);
+#else
+			if ((st64)op_num < 0) {
+				op_num = -op_num;
+				op_num >>= param_num;
+				op_num = -op_num;
+			} else {
+				op_num >>= param_num;
+			}
+			ut64 res = op_num;
+#endif
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
@@ -2644,6 +2687,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP (">>", esil_lsr);
 	OP (">>=", esil_lsreq);
 	OP (">>>>", esil_asr);
+	OP (">>>>=", esil_asreq);
 	OP (">>>", esil_ror);
 	OP ("<<<", esil_rol);
 	OP ("&", esil_and);

@@ -776,12 +776,19 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case X86_INS_SAR:
-	case X86_INS_SARX:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
-			dst = getarg (&gop, 0, 1, ">>", DST_AR);
+			dst = getarg (&gop, 0, 1, ">>>>", DST_AR);
 			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
+		}
+		break;
+	case X86_INS_SARX:
+		{
+			dst = getarg (&gop, 0, 1, NULL, 0);
+			src = getarg (&gop, 1, 0, NULL, 1);
+			src2 = getarg (&gop, 1, 0, NULL, 2);
+			esilprintf (op, "%s,%s,>>>>,%s,=", src2, src, dst);
 		}
 		break;
 	case X86_INS_SAL:
