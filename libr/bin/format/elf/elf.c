@@ -2833,7 +2833,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 	}
 	if (!ret) {
-		eprintf ("CALLING FROM PHDR\n");
 		return (type == R_BIN_ELF_SYMBOLS)
 				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
 				: Elf_(r_bin_elf_get_phdr_imports) (bin);

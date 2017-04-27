@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2017 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -1102,23 +1102,18 @@ static int esil_asr(RAnalEsil *esil) {
 				isNegative = ((st64)op_num)<0;
 			}
 			if (isNegative) {
-				op_num = -op_num;
-				op_num >>= param_num;
-				op_num = -op_num;
+				ut64 mask = (regsize - 1);
+				param_num &= mask;
+				ut64 left_bits = 0;
+				if (op_num & (1 << (regsize - 1))) {
+					left_bits = (1 << param_num) - 1;
+					left_bits <<= regsize - param_num;
+				}
+				op_num = left_bits | (op_num >> param_num);
 			} else {
 				op_num >>= param_num;
 			}
 			ut64 res = op_num;
-#if 0
-			ut64 mask = (regsize - 1);
-			param_num &= mask;
-			ut64 left_bits = 0;
-			if (op_num & (1 << (regsize - 1))) {
-				left_bits = (1 << param_num) - 1;
-				left_bits <<= regsize - param_num;
-			}
-			ut64 res = left_bits | (op_num >> param_num);
-#endif
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
