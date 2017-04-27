@@ -301,14 +301,22 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 }
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
-	if (!cmd || cmd[0] == '\0') return 0;
+	if (!cmd || cmd[0] == '\0') {
+		return 0;
+	}
+
+#if __APPLE__ && !__POWERPC__
+	//XXX handle this in other layer since things changes a little bit
+	//this seems like a really good place to refactor stuff
+	return 0;
+#endif 
 
 	if (cmd[0] == '"') {
 #if __UNIX__
 		if (in) {
 			int pipes[2];
 			if (pipe (pipes) != -1) {
-				write (pipes[1], cmd+1, strlen (cmd)-2);
+				write (pipes[1], cmd + 1, strlen (cmd)-2);
 				write (pipes[1], "\n", 1);
 				close (0);
 				dup2 (pipes[0], 0);
@@ -340,9 +348,15 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			return 1;
 		}
 #define DUP(x) { close(x); dup2(f,x); }
-		if (in) DUP(0);
-		if (out) DUP(1);
-		if (err) DUP(2);
+		if (in) {
+			DUP(0);
+		}
+		if (out) {
+			DUP(1);
+		}
+		if (err) {
+			DUP(2);
+		}
 		close (f);
 		return 0;
 	}
@@ -643,7 +657,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (handle_redirection (p->_stderr, false, false, true) != 0) {
 		return 1;
 	}
-	if (p->_aslr != -1)
+	if (p->_aslr != -1) 
 		setASLR (p->_aslr);
 #if __UNIX__
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);

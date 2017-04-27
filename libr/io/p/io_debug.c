@@ -253,6 +253,31 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	return rp;
 }
 
+
+#if __APPLE__ && !__POWERPC__
+
+static void handle_redirection(char *path, int flag, posix_spawn_file_actions_t *fileActions, int fd) {
+	int mode = S_IRUSR | S_IWUSR;
+	posix_spawn_file_actions_addopen (fileActions, fd, path, flag, mode);
+
+}
+static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
+	int flag = 0;
+	if (rp->_stdin) {
+		flag |= O_RDONLY;
+		handle_redirection(rp->_stdin, flag, fileActions, STDIN_FILENO);	
+	}
+	if (rp->_stdout) {
+		flag |= O_WRONLY;
+		handle_redirection(rp->_stdout, flag, fileActions, STDOUT_FILENO);
+	}
+	if (rp->_stderr) {
+		flag |= O_WRONLY;
+		handle_redirection(rp->_stderr, flag, fileActions, STDERR_FILENO);
+	}
+}
+#endif
+
 // __UNIX__ (not windows)
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	bool runprofile = io->runprofile && *(io->runprofile);
@@ -316,7 +341,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				argv[0] = dst;
 			}
 		}
-		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
+		ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
 		handle_posix_error (ret);
 		posix_spawn_file_actions_destroy (&fileActions);
 		r_str_argv_free (argv);
@@ -335,6 +360,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			posix_spawn_file_actions_destroy (&fileActions);
 			return -1;
 		}
+		handle_posix_redirection (rp, &fileActions);
 		if (rp->_args[0]) {
 			if (!rp->_aslr) {
 				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
