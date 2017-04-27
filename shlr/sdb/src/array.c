@@ -1,6 +1,7 @@
 /* sdb - MIT - Copyright 2011-2016 - pancake */
 
 #include "sdb.h"
+#include <limits.h>
 
 // TODO: Push should always prepend. do not make this configurable
 #define PUSH_PREPENDS 1
@@ -138,7 +139,8 @@ SDB_API int sdb_array_insert_num(Sdb *s, const char *key, int idx, ut64 val,
 // TODO: done, but there's room for improvement
 SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val,
 			      ut32 cas) {
-	int lnstr, lstr, lval;
+	int lnstr, lstr;
+	size_t lval;
 	char *x, *ptr;
 	const char *str = sdb_const_get_len (s, key, &lstr, 0);
 	if (!str || !*str) {
@@ -150,7 +152,17 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val,
 	// we can optimize this by caching value len in memory . add
 	// sdb_const_get_size()
 	lstr = strlen (str); 
-	x = malloc (lval + lstr + 2);
+
+	// When removing strlen this conversion should be checked
+	size_t lstr_tmp = lstr;
+	if (SZT_ADD_OVFCHK (lval, lstr_tmp) || SZT_ADD_OVFCHK (lval + lstr_tmp, 2)) {
+		return false;
+	}
+	x = malloc (lval + lstr_tmp + 2);
+	if (!x) {
+		return false;
+	}
+
 	if (idx == -1) {
 		memcpy (x, str, lstr);
 		x[lstr] = SDB_RS;
@@ -664,6 +676,7 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 	char *ret, *nstr, *str;
 	int lstr;
 	ut64 *nums;
+
 	str = sdb_get_len (s, key, &lstr, 0);
 	if (!str) {
 		return;
@@ -673,14 +686,24 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 		return;
 	}
 	nums = sdb_fmt_array_num (str);
-	qsort (nums + 1, (int)*nums, sizeof (ut64), int_cmp);
-	nstr = str;
-	memset (nstr, 'q', *nums);
-	nstr += *nums;
-	*nstr = '\0';
-	ret = sdb_fmt_tostr (nums + 1, str);
-	sdb_set_owned (s, key, ret, cas);
 	free (str);
+	if (!nums) {
+		return;
+	}
+
+	qsort (nums + 1, (int)*nums, sizeof (ut64), int_cmp);
+
+	nstr = malloc (*nums + 1);
+	if (!nstr) {
+		return;
+	}
+	memset (nstr, 'q', *nums);
+	nstr[*nums] = '\0';
+
+	ret = sdb_fmt_tostr (nums + 1, nstr);
+	sdb_set_owned (s, key, ret, cas);
+
+	free (nstr);
 	free (nums);
 	return;
 }
