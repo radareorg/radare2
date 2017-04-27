@@ -235,6 +235,9 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 			r_run_free (rp);
 			return NULL;
 		}
+		if (strstr (io->runprofile, R_SYS_DIR ".rarun2.")) {
+			(void)r_file_rm (io->runprofile);
+		}
 	}
 	if (bits == 64) {
 		r_run_parseline (rp, expr=strdup ("bits=64"));

@@ -708,15 +708,14 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (help > 1? 2: 0);
 	}
 	if (customRarunProfile) {
-		char *tfn = r_file_temp (NULL);
+		char *tfn = r_file_temp (".rarun2");
 		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
 			eprintf ("Cannot create %s\n", tfn);
 		} else {
 			haveRarunProfile = true;
 			r_config_set (r.config, "dbg.profile", tfn);
 		}
-		// TODO: must be removed or just dont use a temporary file
-		// TODO this current code is leaking temporary files and memory
+		free (tfn);
 	}
 	if (debug == 1) {
 		if (optind >= argc && !haveRarunProfile) {
