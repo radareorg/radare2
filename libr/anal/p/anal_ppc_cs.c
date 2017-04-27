@@ -665,7 +665,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_SUBFIC:
 		case PPC_INS_SUBFZE:
 			op->type = R_ANAL_OP_TYPE_SUB;
-			esilprintf (op, "%s,%s,-,%s,=", ARG(2), ARG(1), ARG(0));
+			esilprintf (op, "%s,%s,-,%s,=", ARG(1), ARG(2), ARG(0));
 			break;
 		case PPC_INS_ADD:
 		case PPC_INS_ADDI:
