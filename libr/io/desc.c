@@ -11,11 +11,11 @@ R_API bool r_io_desc_init(RIO* io) {
 	//fd is signed
 	io->files = r_id_storage_new (3, 0x80000000);   
 	if (!io->files) {
-		return NULL;
+		return false;
 	}
 	io->st_descs = r_stack_new (2);
 	if (!io->st_descs) {
-		return NULL;
+		return false;
 	}
 	return true;
 }
@@ -25,15 +25,16 @@ R_API bool r_io_desc_init(RIO* io) {
 R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri,
 			      int flags, int mode, void* data) {
 	ut32 fd32 = 0;
-	RIODesc* desc = R_NEW0 (RIODesc);
-	if (!desc) {
-		return NULL;
-	}
+	RIODesc* desc;
 	// this is because emscript is a bitch
 	if (!io || !plugin || !uri || !io->files) {
 		return NULL;
 	}
+	if (!(desc = R_NEW0 (RIODesc))) {
+		return NULL;
+	}
 	if (!r_id_pool_grab_id (io->files->pool, &fd32)) {
+		free (desc);
 		return NULL;
 	}
 	desc->fd = fd32;
@@ -78,7 +79,7 @@ R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
 
 R_API bool r_io_desc_del(RIO* io, int fd) {
 	RIODesc* desc;
-	if (!io || !(desc = r_id_storage_get (io->files, fd))) {
+	if (!io || !io->files || !(desc = r_id_storage_get (io->files, fd))) {
 		return false;
 	}
 	r_io_desc_free (desc);
@@ -89,7 +90,7 @@ R_API bool r_io_desc_del(RIO* io, int fd) {
 }
 
 R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
-	if (!io) {
+	if (!io || !io->files) {
 		return NULL;
 	}
 	return (RIODesc*) r_id_storage_get (io->files, fd);
