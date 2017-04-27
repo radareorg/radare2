@@ -1194,15 +1194,23 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_MOVK: // movk w8, 0x1290
-		// XXX: wrongly implemented
-		r_strbuf_setf (&op->esil, "%d,%"PFMT64d",<<,%s,|=",
-			LSHIFT2_64(1),
-			IMM64 (1),
-			REG64 (0));
+	{
+		unsigned int shift = LSHIFT2_64(1);
+		ut64 shifted_imm = IMM64(1) << shift;
+		ut64 mask = ~(0xffffLL << shift);
+
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,&,%"PFMT64d",|,%s,=",
+			mask,
+			REG64(0),
+			shifted_imm,
+			REG64(0));
+
 		break;
+	}
 	case ARM64_INS_MOVZ:
-		// XXX: wrongly implemented
-		r_strbuf_setf (&op->esil, "%d,%s,=", IMM64 (1), REG64 (0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=",
+			IMM64(1) << LSHIFT2_64(1),
+			REG64 (0));
 		break;
 	/* ASR, SXTB, SXTH and SXTW are alias for SBFM */
 	case ARM64_INS_ASR:
