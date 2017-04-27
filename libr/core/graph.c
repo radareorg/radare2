@@ -3220,12 +3220,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_set (core->config, "cmd.gprompt", buf);
 		}
 		break;
+#if 0
+// disabled for now, ultraslow in most situations
 		case '>':
 			r_core_cmd0 (core, "ag-;.agc* $$;aggi");
 			break;
 		case '<':
 			r_core_cmd0 (core, "ag-;.agc*;aggi");
 			break;
+#endif
 		case 'G':
 			r_core_cmd0 (core, "ag-;.dtg*;aggi");
 			break;
