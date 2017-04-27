@@ -1538,7 +1538,7 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
 			str++;
 			ch++;
 			cw = 0;
-		} else if (*str == 0x1b && str + 1 && *(str + 1) == '[') {
+		} else if (*str == 0x1b && *(str + 1) == '[') {
 			const char *ptr = str;
 			if ((r_end - r) > 3) {
 				/* copy 0x1b and [ */
