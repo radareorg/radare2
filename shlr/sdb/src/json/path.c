@@ -113,34 +113,44 @@ SDB_IPI int json_walk (const char *s) {
 
 SDB_IPI Rangstr json_find (const char *s, Rangstr *rs) {
 #define RESFIXSZ 1024
-	RangstrType resfix[RESFIXSZ], *res = NULL;
+	RangstrType resfix[RESFIXSZ] = {0};
+	RangstrType *res = resfix;
 	int i, j, n, len, ret;
 	Rangstr rsn;
 
 	if (!s) {
 		return rangstr_null ();
 	}
+
 	len = strlen (s);
-	res = (len<RESFIXSZ)? resfix: malloc (sizeof (RangstrType)* (len+1));
-	if (!res) {
-		eprintf ("Cannot allocate %d bytes\n", len+1);
-		return rangstr_null ();
+	if (len > RESFIXSZ) {
+		res = calloc (len + 1, sizeof (RangstrType));
+		if (!res) {
+			eprintf ("Cannot allocate %d bytes\n", len + 1);
+			return rangstr_null ();
+		}
 	}
-	for (i=0; i<len; i++)
-		res[i] = 0;
+
 	ret = js0n ((const unsigned char *)s, len, res);
-#define PFREE(x) if (x&&x!=resfix) free (x)
-	if (ret>0) {
+#define PFREE(x) if (x && x != resfix) free (x)
+	if (ret > 0) {
 		PFREE (res);
 		return rangstr_null ();
 	}
-	if (*s=='[') {
+
+	if (*s == '[') {
 		n = rangstr_int (rs);
-		n++;
-		if (n<0) goto beach;
-		for (i=j=0; res[i] && j<n; i+=2, j++);
-		if (j<n) goto beach;
-		rsn = rangstr_news (s, res, i-2);
+		if (n < 0) {
+			goto beach;
+		}
+
+		for (i = j = 0; res[i] && j < n; i += 2, j++);
+		if (!res[i]) {
+			goto beach;
+		}
+
+		rsn = rangstr_news (s, res, i);
+
 		PFREE (res);
 		return rsn;
 	} else {

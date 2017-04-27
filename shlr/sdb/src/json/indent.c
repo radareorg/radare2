@@ -1,5 +1,7 @@
 /* sdb - MIT - Copyright 2012-2015 - pancake */
 
+#include <limits.h>
+
 static void doIndent(int idt, char **o, const char *tab) {
 	int i;
 	char *x;
@@ -11,39 +13,49 @@ static void doIndent(int idt, char **o, const char *tab) {
 }
 
 SDB_API char *sdb_json_indent(const char *s, const char *tab) {
-	int indent = 0;
+	int idx, indent = 0;
 	int instr = 0;
-	int osz;
-	char *o, *O, *OE, *tmp;
+	size_t o_size = 0;
+	char *o, *O;
 	if (!s) {
 		return NULL;
 	}
-	osz = (1 + strlen (s)) * 20;
-	if (osz < 1) {
-		return NULL;
+
+	size_t tab_len = strlen (tab);
+	for (idx = 0; s[idx]; idx++) {
+		if (o_size > INT_MAX - (indent * tab_len + 2)) {
+			return NULL;
+		}
+
+		if (s[idx] == '{' || s[idx] == '[') {
+			indent++;
+			// 2 corresponds to the \n and the parenthesis
+			o_size += indent * tab_len + 2;
+		} else if (s[idx] == '}' || s[idx] == ']') {
+			if (indent > 0) {
+				indent--;
+			}
+			// 2 corresponds to the \n and the parenthesis
+			o_size += indent * tab_len + 2;
+		} else if (s[idx] == ',') {
+			// 2 corresponds to the \n and the ,
+			o_size += indent * tab_len + 2;
+		} else if (s[idx] == ':') {
+			o_size += 2;
+		} else {
+			o_size++;
+		}
 	}
-	O = malloc (osz);
+	// 2 corresponds to the last \n and \0
+	o_size += 2;
+	indent = 0;
+
+	O = malloc (o_size);
 	if (!O) {
 		return NULL;
 	}
-	OE = O + osz;
+
 	for (o = O; *s; s++) {
-		if (o + indent + 10 > OE) {
-			int delta = o - O;
-			osz += 0x1000 + indent;
-			if (osz < 1) {
-				free (O);
-				return NULL;
-			}
-			tmp = realloc (O, osz);
-			if (!tmp) {
-				free (O);
-				return NULL;
-			}
-			O = tmp;
-			OE = tmp + osz;
-			o = O + delta;
-		}
 		if (instr) {
 			if (s[0] == '"') {
 				instr = 0;
@@ -90,6 +102,7 @@ SDB_API char *sdb_json_indent(const char *s, const char *tab) {
 	}
 	*o++ = '\n';
 	*o = 0;
+
 	return O;
 }
 

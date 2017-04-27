@@ -25,6 +25,10 @@ extern "C" {
 #define SDB_MIN_KEY 1
 #define SDB_MAX_KEY 0xff
 
+#if !defined(SZT_ADD_OVFCHK)
+#define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
+#endif
+
 #if __SDB_WINDOWS__ && !__CYGWIN__
 #include <windows.h>
 #include <fcntl.h>

@@ -167,7 +167,7 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
 	const char *p, *q, *val = NULL;
 	char *eq, *tmp, *json, *next, *quot, *arroba, *res,
-		*cmd, *newcmd = NULL, *oldcmd = NULL;
+		*cmd, *newcmd = NULL, *original_cmd = NULL;
 	StrBuf *out;
 	Sdb *s = r;
 	ut64 n;
@@ -176,7 +176,7 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	}
 	out = strbuf_new ();
 	if (_cmd) {
-		cmd = newcmd = strdup (_cmd);
+		cmd = original_cmd = strdup (_cmd);
 		if (!cmd) {
 			free (out);
 			return NULL;
@@ -232,6 +232,10 @@ repeat:
 			next = strchr (eq + 1, ';');
 			if (next) *next = 0;
 			val = sdb_const_get (s, eq + 1, 0);
+			if (!val) {
+				eprintf ("No value for '%s'\n", eq + 1);
+				goto fail;
+			}
 			if (next) *next = ';';
 			is_ref = 1; // protect readonly buffer from being processed
 		} else {
@@ -348,14 +352,9 @@ next_quote:
 		p = cmd;
 	}
 	if (*cmd == '$') {
+		free (newcmd);
 		char *nc = sdb_get (s, cmd + 1, 0);
-		if (nc) {
-			free (oldcmd);
-			oldcmd = newcmd;
-			cmd = newcmd = nc;
-		} else {
-			cmd = newcmd = strdup ("");
-		}
+		cmd = newcmd = (nc) ? nc : strdup ("");
 	}
 	// cmd = val
 	// cmd is key and val is value
@@ -385,12 +384,16 @@ next_quote:
 	} else if (*cmd == '+' || *cmd == '-') {
 		d = 1;
 		if (!buf) {
-			buf = strdup ("");
+			buf = calloc (1, len);
 			bufset = 1;
 		}
 		*buf = 0;
 		if (cmd[1]=='[') {
 			const char *eb = strchr (cmd, ']');
+			if (!eb) {
+				eprintf ("Missing ']'.\n");
+				goto fail;
+			}
 			int idx = sdb_atoi (cmd + 2);
 			/* +[idx]key=n */
 			/* -[idx]key=n */
@@ -468,10 +471,10 @@ next_quote:
 			// keep base
 			if (base == 16) {
 				w = snprintf (buf, len - 1, "0x%"ULLFMT"x", n);
-				if (w<0 || (size_t)w>len) {
-					if (bufset && len<0xff) {
+				if (w < 0 || (size_t)w > len) {
+					if (bufset && len < 0xff) {
 						free (buf);
-						buf = malloc (0xff);
+						buf = malloc (len = 0xff);
 						if (!buf) {
 							goto fail;
 						}
@@ -481,10 +484,10 @@ next_quote:
 				}
 			} else {
 				w = snprintf (buf, len-1, "%"ULLFMT"d", n);
-				if (w<0 || (size_t)w>len) {
-					if (bufset && len<0xff) {
+				if (w < 0 || (size_t)w > len) {
+					if (bufset && len < 0xff) {
 						free (buf);
-						buf = malloc (0xff);
+						buf = malloc (len = 0xff);
 						if (!buf) {
 							goto fail;
 						}
@@ -501,7 +504,7 @@ next_quote:
 			// if (!eq) ...
 			alength = sdb_array_length (s, p);
 			if (!buf) {
-				buf = malloc (len + 1);
+				buf = malloc (++len);
 				if (!buf) {
 					goto fail;
 				}
@@ -512,7 +515,7 @@ next_quote:
 				if (bufset) {
 					free (buf);
 				}
-				buf = malloc (32);
+				buf = malloc (len = 32);
 				bufset = 1;
 				snprintf (buf, 31, "%d", alength);
 			}
@@ -627,7 +630,7 @@ next_quote:
 							val = NULL;
 						}
 					}
-					if (ok) *buf = 0;
+					if (ok && buf) *buf = 0;
 					else buf = NULL;
 				} else {
 					if (i==0) {
@@ -676,7 +679,7 @@ next_quote:
 						ok = sdb_set (s, p, sval, 0);
 					}
 				}
-				if (ok) {
+				if (ok && buf) {
 					*buf = 0;
 				}
 			} else {
@@ -686,12 +689,16 @@ next_quote:
 				if (cmd[1]) {
 					i = atoi (cmd + 1);
 					buf = sdb_array_get (s, p, i, NULL);
-					bufset = 1;
+					if (buf) {
+						bufset = 1;
+						len = strlen(buf) + 1;
+					}
 					if (encode) {
 						char *newbuf = (void*)sdb_decode (buf, NULL);
 						if (newbuf) {
 							free (buf);
 							buf = newbuf;
+							len = strlen(buf) + 1;
 						}
 					}
 					out_concat (buf);
@@ -700,14 +707,15 @@ next_quote:
 						goto fail;
 					}
 					wl = strlen (sval);
-					if (!buf || wl>len) {
-						buf = malloc (wl+2);
+					if (!buf || wl >= len) {
+						buf = malloc (wl + 2);
 						if (!buf) {
 							free (out->buf);
 							out->buf = NULL;
 							goto fail;
 						}
 						bufset = 1;
+						len = wl + 2;
 					}
 					for (i = 0; sval[i]; i++) {
 						if (sval[i + 1]) {
@@ -721,8 +729,11 @@ next_quote:
 					if (encode) {
 						char *newbuf = (void*)sdb_decode (buf, NULL);
 						if (newbuf) {
-							free (buf);
+							if (bufset) {
+								free (buf);
+							}
 							buf = newbuf;
+							len = strlen (buf) + 1;
 						}
 					}
 					out_concat (buf);
@@ -815,8 +826,8 @@ fail:
 	} else {
 		res = NULL;
 	}
+	free (original_cmd);
 	free (newcmd);
-	free (oldcmd);
 	return res;
 }
 

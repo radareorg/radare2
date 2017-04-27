@@ -43,6 +43,10 @@ SDB_IPI int rangstr_length (Rangstr* rs) {
 }
 
 SDB_IPI int rangstr_int (Rangstr *s) {
+	if (!s || !s->p) {
+		return 0;
+	}
+
 	const int base = 10;
 	int mul = 1;
 	int ch, n = 0;
@@ -92,8 +96,8 @@ SDB_IPI Rangstr rangstr_news (const char *s, RangstrType *res, int i) {
 }
 
 SDB_IPI int rangstr_cmp (Rangstr *a, Rangstr *b) {
-	int la = a->t-a->f;
-	int lb = b->t-b->f;
+	int la = a->t - a->f;
+	int lb = b->t - b->f;
 	int lbz = strlen (b->p + b->f);
 	if (lbz < lb) {
 		lb = lbz;
@@ -101,13 +105,13 @@ SDB_IPI int rangstr_cmp (Rangstr *a, Rangstr *b) {
 	if (la != lb) {
 		return 1;
 	}
-	return memcmp (a->p+a->f, b->p+b->f, la);
+	return memcmp (a->p + a->f, b->p + b->f, la);
 }
 
 SDB_IPI int rangstr_find (Rangstr* a, char ch) {
 	size_t i = a->f;
-	while (i<a->t && a->p[i] && a->p[i] != ch) i++;
-	return a->p[i]? (int)i: -1;
+	while (i < a->t && a->p[i] && a->p[i] != ch) i++;
+	return (i < a->t && a->p[i]) ? (int) i: -1;
 }
 
 SDB_IPI  const char *rangstr_str (Rangstr* rs) {

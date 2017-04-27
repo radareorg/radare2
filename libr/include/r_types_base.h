@@ -87,10 +87,13 @@ typedef struct _utX{
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
 
 /* preventive math overflow checks */
-#define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - x) <= y)
-#define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - x) <= y)
-#define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - x) <= y)
-#define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - x) <= y)
+#if !defined(SZT_ADD_AOVFCHK)
+#define SZT_ADD_OVFCHK(x,y) ((SIZE_MAX - (x)) <= (y))
+#endif
+#define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - (x)) <= (y))
+#define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) <= (y))
+#define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) <= (y))
+#define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) <= (y))
 
 /* copied from bithacks.h */
 #define B_IS_SET(x, n)   (((x) & (1<<(n)))?1:0)
