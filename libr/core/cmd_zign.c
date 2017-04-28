@@ -36,9 +36,10 @@ exit_function:
 static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	RSignGraph graph = {
 		.cc = r_anal_fcn_cc (fcn),
-		.nbbs = r_list_length (fcn->bbs),
-		.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs)
+		.nbbs = r_list_length (fcn->bbs)
 	};
+	// XXX ebbs doesnt gets initialized if calling this from inside the struct
+	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
 	return r_sign_add_graph (core->anal, name, graph);
 }
 

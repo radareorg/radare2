@@ -919,7 +919,6 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 	if (!a || !ss || !buf || len <= 0) {
 		return 0;
 	}
-
 	return r_search_update (ss->search, at, buf, len);
 }
 
@@ -939,7 +938,6 @@ static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
 	if (graph->ebbs != -1 && graph->ebbs != ebbs) {
 		return false;
 	}
-
 	return true;
 }
 
@@ -1077,20 +1075,24 @@ R_API RSignItem *r_sign_item_new() {
 }
 
 R_API RSignItem *r_sign_item_dup(RSignItem *it) {
-	RSignItem *ret = NULL;
 	RListIter *iter = NULL;
 	char *ref = NULL;
-
 	if (!it) {
 		return NULL;
 	}
-
-	ret = r_sign_item_new ();
+	RSignItem *ret = r_sign_item_new ();
+	if (!ret) {
+		return false;
+	}
 	ret->name = r_str_new (it->name);
 	ret->space = it->space;
 
 	if (it->bytes) {
 		ret->bytes = R_NEW0 (RSignBytes);
+		if (!ret->bytes) {
+			r_sign_item_free (ref);
+			return false;
+		}
 		ret->bytes->size = it->bytes->size;
 		ret->bytes->bytes = malloc (it->bytes->size);
 		memcpy (ret->bytes->bytes, it->bytes->bytes, it->bytes->size);
@@ -1100,6 +1102,9 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 
 	if (it->graph) {
 		ret->graph = R_NEW0 (RSignGraph);
+		if (!ret->graph) {
+			return false;
+		}
 		*ret->graph = *it->graph;
 	}
 
