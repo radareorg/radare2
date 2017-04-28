@@ -1031,7 +1031,7 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	for (i = 1; i < ds->oplen; i++) {
 		fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi) {
-			if (fi->name[0] == '$' || fi->realname[0] == '$') {
+			if (ds->midflags == 2 && (fi->name[0] == '$' || fi->realname[0] == '$')) {
 				i = 0;
 			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
 				i = 0;
