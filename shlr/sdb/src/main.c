@@ -66,10 +66,10 @@ static char *stdin_slurp(int *sz) {
 			buf[buf_len - 1] = '\0';
 		}
 
-		char *newbuf = realloc (buf, buf_len);
+		char *newbuf = realloc (buf, buf_len + 1);
 		// realloc behaves like free if buf_len is 0
 		if (!newbuf && buf_len > 0) {
-			free(buf);
+			free (buf);
 		}
 
 		return newbuf;

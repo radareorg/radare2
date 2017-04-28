@@ -695,6 +695,7 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 
 	nstr = malloc (*nums + 1);
 	if (!nstr) {
+		free (nums);
 		return;
 	}
 	memset (nstr, 'q', *nums);
