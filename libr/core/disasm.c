@@ -1033,6 +1033,8 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 		if (fi) {
 			if (fi->name[0] == '$' || fi->realname[0] == '$') {
 				i = 0;
+			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
+				i = 0;
 			} else if (!strncmp (fi->name, "str.", 4)) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
