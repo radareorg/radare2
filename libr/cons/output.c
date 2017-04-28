@@ -200,7 +200,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				str = ptr + 1;// + i-2;
 				continue;
 			}
-			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
+			if (ptr[0]=='0' && ptr[1] == ';' && ptr[2]=='0') {
 				// \x1b[0;0H
 				/** clear screen if gotoxy **/
 				if (vmode) {
@@ -246,7 +246,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				str = ptr + 1;
 				continue;
 				// invert
-			} else if (ptr[0]=='3' && ptr[2]=='m') {
+			} else if (ptr[0]=='3' && (ptr[2]=='m' || ptr[2] == ';')) {
 				// http://www.betarun.com/Pages/ConsoleColor/
 				switch (ptr[1]) {
 				case '0': // BLACK
@@ -327,17 +327,16 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 	}
 	if (vmode) {
 		/* fill partial line */
-		int wlen = cols-linelen-1;
-		char white[1024];
-		//wlen = 5;
+		int wlen = cols-linelen - 1;
 		if (wlen > 0) {
+			char white[1024];
 			memset (white, ' ', sizeof (white));
 			write (1, white, wlen);
 		}
 		/* fill tail */
 		fill_tail (cols, lines);
 	} else {
-		int ll = (size_t)(ptr-str);
+		int ll = (size_t)(ptr - str);
 		if (ll > 0) {
 			write (1, str, ll);
 			linelen += ll;
