@@ -887,12 +887,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			"%"PFMT64d",%s,=", IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_MADD:
-		r_strbuf_setf (&op->esil,
-			"%s,%s,*,%s,+,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,=",
+			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_MSUB:
-		r_strbuf_setf (&op->esil,
-			"%s,%s,*,%s,-,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
+			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_DMB:
 	case ARM64_INS_DSB:
@@ -1260,19 +1260,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
 	case ARM64_INS_BFXIL:
 	{
-		ut64 mask = bitmask_by_width[IMM64(3)-1];
-		ut64 shift = IMM64(2);
+		ut64 mask = bitmask_by_width[IMM64 (3) - 1];
+		ut64 shift = IMM64 (2);
 		ut64 notmask = ~(mask << shift);
 		// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
-
 		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,%s,=",
-			notmask,
-			REG64(0),
-			shift,
-			mask,
-			REG64(1),
-			REG64(0));
-
+			notmask, REG64 (0), shift, mask, REG64 (1), REG64 (0));
 		break;
 	}
 	case ARM64_INS_NEG:
@@ -1280,10 +1273,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (LSHIFT2_64 (1)) {
 			SHIFTED_REG64_APPEND (&op->esil, 1);
 		} else {
-			r_strbuf_appendf (&op->esil, "%s", REG64(1));
+			r_strbuf_appendf (&op->esil, "%s", REG64 (1));
 		}
-		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64(0));
-
+		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
 		break;
 	}
 	return 0;
