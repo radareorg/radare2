@@ -887,8 +887,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			"%"PFMT64d",%s,=", IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_MADD:
-		r_strbuf_setf (&op->esil,
-			"%s,%s,*,%s,+,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,=",
+			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
+		break;
+	case ARM64_INS_MSUB:
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
+			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_DMB:
 	case ARM64_INS_DSB:
@@ -970,8 +974,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
 		break;
 	case ARM64_INS_BLR:
-		// XXX
-		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
+		r_strbuf_setf (&op->esil, "pc,lr,=,%s,pc,=", REG64 (0));
 		break;
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDR:
@@ -1253,6 +1256,26 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
+		break;
+	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
+	case ARM64_INS_BFXIL:
+	{
+		ut64 mask = bitmask_by_width[IMM64 (3) - 1];
+		ut64 shift = IMM64 (2);
+		ut64 notmask = ~(mask << shift);
+		// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
+		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,%s,=",
+			notmask, REG64 (0), shift, mask, REG64 (1), REG64 (0));
+		break;
+	}
+	case ARM64_INS_NEG:
+	case ARM64_INS_NEGS:
+		if (LSHIFT2_64 (1)) {
+			SHIFTED_REG64_APPEND (&op->esil, 1);
+		} else {
+			r_strbuf_appendf (&op->esil, "%s", REG64 (1));
+		}
+		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
 		break;
 	}
 	return 0;
@@ -2707,7 +2730,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	x28	.64	224	0\n"
 		"gpr	x29	.64	232	0\n"
 		"gpr	x30	.64	240	0\n"
-		"gpr	tmp	.64	248	0\n"
+		"gpr	tmp	.64	288	0\n"
 		/* 64bit double */
 		"gpr	d0	.64	0	0\n" // x0
 		"gpr	d1	.64	8	0\n" // x0
