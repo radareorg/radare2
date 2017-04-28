@@ -2411,7 +2411,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	if (!buf) {
 		return -1;
 	}
-	r_io_use_desc (core->io, core->file->desc->fd);
+	r_io_use_fd (core->io, core->file->desc->fd);
 	if (!ref) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
@@ -2550,7 +2550,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
-	r_io_use_desc (core->io, core->file->desc->fd);
+	r_io_use_fd (core->io, core->file->desc->fd);
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {

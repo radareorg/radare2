@@ -331,7 +331,7 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	if (!core->io || !core->file || !core->file->desc || size < 1) {
 		return false;
 	}
-	ret = r_io_use_desc (core->io, core->file->desc->fd);
+	ret = r_io_use_fd (core->io, core->file->desc->fd);
 	if (ret != -1) {
 		ret = r_io_write_at (core->io, addr, buf, size);
 		if (addr >= core->offset && addr <= core->offset + core->blocksize) {
@@ -346,7 +346,7 @@ R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	if (!core->io || !core->file || !core->file->desc || size < 1) {
 		return false;
 	}
-	ret = r_io_use_desc (core->io, core->file->desc->fd);
+	ret = r_io_use_fd (core->io, core->file->desc->fd);
 	if (ret != -1) {
 		ret = r_io_extend_at (core->io, addr, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize) {
@@ -367,7 +367,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 	
 	if (!b_size || b_size == (ut64) -1) {
-		res = r_io_use_desc (core->io, core->file->desc->fd);
+		res = r_io_use_fd (core->io, core->file->desc->fd);
 		file_sz = r_io_size (core->io);
 		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
@@ -400,7 +400,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	else if ( (addr) + dist > fend) {
 		res = false;
 	} else {
-		res = r_io_use_desc (core->io, core->file->desc->fd);
+		res = r_io_use_fd (core->io, core->file->desc->fd);
 		r_io_read_at (core->io, addr, shift_buf, b_size);
 		r_io_write_at (core->io, addr+dist, shift_buf, b_size);
 		res = true;
@@ -417,7 +417,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 	r_list_foreach (core->files, iter, file) {
 		if (file && file->desc){
-			r_io_use_desc (core->io, file->desc->fd);
+			r_io_use_fd (core->io, file->desc->fd);
 			core->switch_file_view = 1;
 			break;
 		}
@@ -431,7 +431,7 @@ R_API int r_core_block_read(RCore *core) {
 		return -1;
 	}
 	if (core->file && core->switch_file_view) {
-		r_io_use_desc (core->io, core->file->desc->fd);
+		r_io_use_fd (core->io, core->file->desc->fd);
 		r_core_bin_set_by_fd (core, core->file->desc->fd);	//needed?
 		core->switch_file_view = 0;
 	}
@@ -445,7 +445,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 		}
 		return false;
 	}
-	r_io_use_desc (core->io, core->file->desc->fd);
+	r_io_use_fd (core->io, core->file->desc->fd);
 	return r_io_read_at (core->io, addr, buf, size);
 }
 

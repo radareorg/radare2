@@ -513,7 +513,7 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 	// save the current desc
 	oldesc = io->desc;
 	// copy to the buffer
-	r_io_use_desc (io, sec->fd);
+	r_io_use_fd (io, sec->fd);
 	r_io_pread_at (io, sec->paddr, buf, (int)size);
 	// craft the uri for the opening the malloc-fd
 	uri = sdb_fmt (3, "malloc://%"PFMT64u "", sec->vsize);
@@ -523,7 +523,7 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 		free (buf);
 		return false;
 	}
-	r_io_use_desc (io, desc->fd);
+	io->desc = desc;
 	// copy from buffer to the malloc-fd
 	r_io_pwrite_at (io, 0LL, buf, (int) size);
 	free (buf);
@@ -533,12 +533,12 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 		// set the flags correctly
 		map->flags = sec->flags;
 		// restore old RIODesc
-		r_io_use_desc (io, oldesc->fd);
+		io->desc = oldesc;
 		// let the section refere to the map
 		sec->filemap = sec->memmap = map->id;
 		return true;
 	}
-	r_io_use_desc (io, oldesc->fd);
+	io->desc = oldesc;
 	return false;
 }
 
@@ -613,7 +613,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 			return false;
 		}
 		oldesc = io->desc;
-		r_io_use_desc (io, map->fd);
+		r_io_use_fd (io, map->fd);
 		r_io_pread_at (io, map->delta, buf, (int) size);
 		r_io_close (io, map->fd);
 		if (sec->size > sec->vsize) {
@@ -624,7 +624,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		uri = sdb_fmt (3, "malloc://%"PFMT64u, sec->vsize);
 		r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
 		map = r_io_map_get (io, sec->vaddr);
-		r_io_use_desc (io, map->fd);
+		r_io_use_fd (io, map->fd);
 		r_io_pwrite_at (io, sec->size, buf, (int) size);
 		free (buf);
 		if (sec->size > sec->vsize) {
@@ -634,19 +634,15 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		}
 		buf = calloc (1, size + 1);
 		if (!buf) {
-			if (oldesc) {
-				r_io_use_desc (io, oldesc->fd);
-			}
+			io->desc = oldesc;
 			return false;
 		}
-		r_io_use_desc (io, sec->fd);
+		r_io_use_fd (io, sec->fd);
 		r_io_pread_at (io, sec->paddr, buf, (int) size);
-		r_io_use_desc (io, map->fd);
+		r_io_use_fd (io, map->fd);
 		r_io_pwrite_at (io, 0LL, buf, (int) size);
 		free (buf);
-		if (oldesc) {
-			r_io_use_desc (io, oldesc->fd);
-		}
+		io->desc = oldesc;
 		sec->filemap = sec->memmap = map->id;
 		return true;
 	}
@@ -662,13 +658,12 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		return _section_apply (io, sec, R_IO_SECTION_APPLY_FOR_EMULATOR);
 	}
 	size = (size_t) (map->to - map->from + 1);
+	//save desc to restore later
 	desc = io->desc;
-	r_io_use_desc (io, map->fd);
-	if (desc == io->desc) {
-		desc = NULL;
-	}
+	r_io_use_fd (io, map->fd);
 	buf = calloc (1, size + 1);
 	if (!buf) {
+		io->desc = desc;
 		return false;
 	}
 	r_io_pread_at (io, map->delta, buf, (int) size);
@@ -680,13 +675,11 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 	uri = sdb_fmt (3, "malloc://%"PFMT64u, sec->vsize);
 	r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
 	map = r_io_map_get (io, sec->vaddr);
-	r_io_use_desc (io, map->fd);
+	r_io_use_fd (io, map->fd);
 	r_io_pwrite_at (io, 0LL, buf, (int) size);
 	free (buf);
 	map->flags = sec->flags;
-	if (desc) {
-		r_io_use_desc (io, desc->fd);
-	}
+	io->desc = desc;
 	return true;
 }
 

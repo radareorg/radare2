@@ -51,14 +51,14 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		if (vendaddr <= map->to) {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
-				r_io_use_desc (io, map->fd);
+				r_io_use_fd (io, map->fd);
 				op (io, map->delta, buf, len);
 				io->desc = desc;
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
-				r_io_use_desc (io, map->fd);
+				r_io_use_fd (io, map->fd);
 				op (io, map->delta, buf, len - (int) (vendaddr - map->to));
 				io->desc = desc;
 			}
@@ -71,7 +71,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		if (vendaddr <= map->to) {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
-				r_io_use_desc (io, map->fd);
+				r_io_use_fd (io, map->fd);
 				//warning: may overflow in rare usecases
 				op (io, map->delta + (vaddr - map->from), buf, len);            
 				io->desc = desc;
@@ -79,7 +79,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
-				r_io_use_desc (io, map->fd);
+				r_io_use_fd (io, map->fd);
 				op (io, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to));
 				io->desc = desc;
 			}
@@ -488,7 +488,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->io = io;
 	bnd->init = true;
 	bnd->get_io = bind_get_io;
-	bnd->desc_use = r_io_use_desc;
+	bnd->desc_use = r_io_use_fd;
 	bnd->desc_get = r_io_desc_get;
 	bnd->desc_size = r_io_desc_size;
 	bnd->open = r_io_open_nomap;
@@ -594,11 +594,17 @@ R_API void r_io_free(RIO* io) {
 	free (io);
 }
 
-R_API bool r_io_use_desc(RIO* io, int fd) {
-	RIODesc* desc;
-	if (!(desc = r_io_desc_get (io, fd))) {
+R_API bool r_io_use_fd(RIO* io, int fd) {
+	if (!io || !io->desc) {
 		return false;
 	}
-	io->desc = desc;
+	if (io->desc->fd != fd) {
+		RIODesc* desc;
+		//update io->desc if fd is not the same
+		if (!(desc = r_io_desc_get (io, fd))) {
+			return false;
+		}
+		io->desc = desc;
+	}
 	return true;
 }

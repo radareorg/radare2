@@ -259,7 +259,7 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	}
 	sdb_foreach (desc->cache, __desc_cache_list_cb, writes);
 	current = desc->io->desc;
-	r_io_use_desc (desc->io, desc->fd);
+	desc->io->desc = desc;
 	desc->io->p_cache = false;
 	r_list_foreach (writes, iter, c) {
 		c->odata = malloc (c->size);
@@ -270,7 +270,7 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 		r_io_pread_at (desc->io, c->from, c->odata, c->size);
 	}
 	desc->io->p_cache = true;
-	r_io_use_desc (desc->io, current->fd);
+	desc->io->desc = current;
 	return writes;
 }
 
@@ -316,13 +316,13 @@ R_API bool r_io_desc_cache_commit(RIODesc *desc) {
 		return true;
 	}
 	current = desc->io->desc;
-	r_io_use_desc (desc->io, desc->fd);
+	desc->io->desc = desc;
 	desc->io->p_cache = false;
 	sdb_foreach (desc->cache, __desc_cache_commit_cb, desc);
 	sdb_free (desc->cache);
 	desc->cache = NULL;
 	desc->io->p_cache = true;
-	r_io_use_desc (desc->io, current->fd);
+	desc->io->desc = current;
 	return true;
 }
 

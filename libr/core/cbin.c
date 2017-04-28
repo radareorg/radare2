@@ -2822,7 +2822,7 @@ R_API int r_core_bin_raise(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	}
 	binfile = r_core_bin_cur (core);
 	if (binfile) {
-		r_io_use_desc (core->io, binfile->fd);
+		r_io_use_fd (core->io, binfile->fd);
 	}
 	// it should be 0 to use r_io_use_fd in r_core_block_read
 	core->switch_file_view = 0;
@@ -2838,7 +2838,7 @@ R_API bool r_core_bin_delete(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	}
 	RBinFile *binfile = r_core_bin_cur (core);
 	if (binfile) {
-		r_io_use_desc (core->io, binfile->fd);
+		r_io_use_fd (core->io, binfile->fd);
 	}
 	core->switch_file_view = 0;
 	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core);

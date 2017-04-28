@@ -1978,7 +1978,7 @@ repeat_arroba:
 			case 'o': // "@o:3"
 				if (ptr[1] == ':') {
 					tmpfd = core->io->desc->fd;
-					r_io_use_desc (core->io, atoi (ptr + 2));
+					r_io_use_fd (core->io, atoi (ptr + 2));
 				}
 				break;
 			case 'a': // "@a:"
@@ -2130,7 +2130,7 @@ next_arroba:
 			tmpasm = NULL;
 		}
 		if (tmpfd != -1) {
-			r_io_use_desc (core->io, tmpfd);
+			r_io_use_fd (core->io, tmpfd);
 		}
 		if (tmpbits) {
 			r_config_set (core->config, "asm.bits", tmpbits);

@@ -418,7 +418,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	if (!desc) {
 		return false;
 	}
-	r_io_use_desc (r->io, desc->fd);
+	r_io_use_fd (r->io, desc->fd);
 
 	if (!r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
@@ -561,7 +561,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_core_file_do_load_for_io_plugin (r, baddr, laddr);
 		}
 		// Restore original desc
-		r_io_use_desc (r->io, desc->fd);
+		r_io_use_fd (r->io, desc->fd);
 	}
 
 	if (cf && binfile && desc) {
@@ -998,7 +998,7 @@ R_API int r_core_file_bin_raise(RCore *core, ut32 binfile_idx) {
 	int res = false;
 	if (bf) {
 		res = r_bin_file_set_cur_binfile (bin, bf);
-		if (res) r_io_use_desc (core->io, bf->fd);
+		if (res) r_io_use_fd (core->io, bf->fd);
 		res = res ? r_core_file_set_by_fd (core, bf->fd) : res;
 		if (res) core->switch_file_view = 1;
 	}
@@ -1141,7 +1141,7 @@ R_API int r_core_file_set_by_file(RCore *core, RCoreFile *cf) {
 		core->offset = cf && cf->map? cf->map->from: 0LL;
 		core->file = cf;
 		if (desc) {
-			r_io_use_desc (core->io, desc->fd);
+			r_io_use_fd (core->io, desc->fd);
 			r_core_bin_set_by_fd (core, desc->fd);
 		}
 		return true;

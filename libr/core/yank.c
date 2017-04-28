@@ -98,7 +98,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 		free (buf);
 	}
 	if (fd != -1) {
-		r_io_use_desc (core->io, fd);
+		r_io_use_fd (core->io, fd);
 		core->switch_file_view = 1;
 		r_core_block_read (core);
 	}

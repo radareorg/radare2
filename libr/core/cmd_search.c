@@ -1831,7 +1831,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			}
 
 			fd = core->io->desc->fd;
-			r_io_use_desc (core->io, map->fd);			//this needs some review
+			r_io_use_fd (core->io, map->fd);			//this needs some review
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
 			}
@@ -1928,7 +1928,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			r_list_free (param->boundaries);
 			param->boundaries = NULL;
 		}
-		r_io_use_desc (core->io, ofd);
+		r_io_use_fd (core->io, ofd);
 	//} else eprintf ("No keywords defined\n");
 
 	/* Crazy party counter (kill me please) */

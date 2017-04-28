@@ -315,7 +315,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 		off = r_num_math (core->num, input+2);
 	}
 	if (core->file && core->file->desc) {
-		r_io_use_desc (core->io, core->file->desc->fd);
+		r_io_use_fd (core->io, core->file->desc->fd);
 	}
 	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (res == UT64_MAX) return;
@@ -383,7 +383,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 			}
 		}
 		if (core->file->desc)
-			r_io_use_desc (core->io, core->file->desc->fd);
+			r_io_use_fd (core->io, core->file->desc->fd);
 		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
 		WSEEK (core, size);
 		free (buf);
@@ -975,7 +975,7 @@ static int cmd_write(void *data, const char *input) {
 		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str, len);
 #if 0
-		r_io_use_desc (core->io, core->file->desc);
+		r_io_use_fd (core->io, core->file->desc);
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 #endif
 		WSEEK (core, len);
@@ -991,7 +991,7 @@ static int cmd_write(void *data, const char *input) {
 			core->num->value = 0;
 		}
 #if 0
-		r_io_use_desc (core->io, core->file->desc);
+		r_io_use_fd (core->io, core->file->desc);
 #endif
 		WSEEK (core, len + 1);
 		r_core_block_read (core);
@@ -1137,7 +1137,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			str = tmp;
 			if (core->file->desc) {
-				r_io_use_desc (core->io, core->file->desc->fd);
+				r_io_use_fd (core->io, core->file->desc->fd);
 			}
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
@@ -1171,7 +1171,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else if (r_file_exists (arg)) {
 				if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-					r_io_use_desc (core->io, core->file->desc->fd);
+					r_io_use_fd (core->io, core->file->desc->fd);
 					if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
 						core->num->value = size;
 						WSEEK (core, size);
@@ -1305,7 +1305,7 @@ static int cmd_write(void *data, const char *input) {
 		case ' ':
 			if (size>0) {
 				if (core->file->desc)
-					r_io_use_desc (core->io, core->file->desc->fd);
+					r_io_use_fd (core->io, core->file->desc->fd);
 				r_io_set_write_mask (core->io, (const ut8*)str, size);
 				WSEEK (core, size);
 				eprintf ("Write mask set to '");
@@ -1357,7 +1357,7 @@ static int cmd_write(void *data, const char *input) {
 		if (core->oobi) {
 			eprintf ("Writing oobi buffer!\n");
 			if (core->file->desc) {
-				r_io_use_desc (core->io, core->file->desc->fd);
+				r_io_use_fd (core->io, core->file->desc->fd);
 			}	
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
