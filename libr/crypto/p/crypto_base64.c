@@ -1,11 +1,11 @@
+/* radare - LGPL - Copyright 2016-2017 - rakholiyajenish.07 */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 #include <r_util.h>
 
-static int flag = 0;
-
 static bool base64_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
+	cry->dir = direction;
 	return true;
 }
 
@@ -20,15 +20,22 @@ static bool base64_use(const char *algo) {
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
-	if (flag == 0) {
+	if (cry->dir == 0) {
 		olen = ((len + 2) / 3 ) * 4;
 		obuf = malloc (olen + 1);
+		if (!obuf) {
+			return false;
+		}
 		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
-	} else if (flag == 1) {
+	} else if (cry->dir == 1) {
 		olen = (len / 4) * 3;
-		if (len > 0)					//to prevent invalid access of memory
+		if (len > 0) {
 			olen -= (buf[len-1] == '=') ? ((buf[len-2] == '=') ? 2 : 1) : 0;
+		}
 		obuf = malloc (olen + 1);
+		if (!obuf) {
+			return false;
+		}
 		olen = r_base64_decode (obuf, (const char *)buf, len);
 	}
 	if (olen > 0) {
@@ -52,7 +59,7 @@ RCryptoPlugin r_crypto_plugin_base64 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_base64,
 	.version = R2_VERSION

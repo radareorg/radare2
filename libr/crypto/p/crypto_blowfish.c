@@ -164,13 +164,10 @@ static void swap(ut32 *left, ut32 *right) {
 }
 
 static ut32 F(struct blowfish_state *const state, const ut32 inbuf) {
-	ut8 a, b, c, d;
-
-	a = (inbuf >> 24) & 0xff;
-	b = (inbuf >> 16) & 0xff;
-	c = (inbuf >> 8) & 0xff;
-	d = (inbuf) & 0xff;
-
+	ut8 a = (inbuf >> 24) & 0xff;
+	ut8 b = (inbuf >> 16) & 0xff;
+	ut8 c = (inbuf >> 8) & 0xff;
+	ut8 d = (inbuf) & 0xff;
 	return ((state->s[0][a] + state->s[1][b]) ^ state->s[2][c]) + state->s[3][d];
 }
 
@@ -215,7 +212,9 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
 		//length of encrypted output of blowfish is multiple of 8 bytes. 
-		if (buflen%8 != 0) eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+		if ((buflen%8) != 0) {
+			eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+		}
 		return;
 	}
 
@@ -287,11 +286,10 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-static struct blowfish_state st;
-static int flag = 0;
+static struct blowfish_state st = {0};
 
 static bool blowfish_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
+	cry->dir = direction;
 	return blowfish_init (&st, key, keylen);
 }
 
@@ -304,11 +302,16 @@ static bool blowfish_use(const char *algo) {
 }
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
+	if (!cry || !buf) {
+		return false;
+	}
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
-	if (flag == 0) {
+	if (!obuf) {
+		return false;
+	}
+	if (cry->dir == 0) {
 		blowfish_crypt (&st, buf, obuf, len);
-	} else if (flag == 1) {
+	} else if (cry->dir == 1) {
 		blowfish_decrypt (&st, buf, obuf, len);
 	}
 	r_crypto_append (cry, obuf, len);
@@ -330,7 +333,7 @@ RCryptoPlugin r_crypto_plugin_blowfish = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_blowfish,
 	.version = R2_VERSION,

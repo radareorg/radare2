@@ -30,6 +30,7 @@ typedef struct r_crypto_t {
 	ut8 *output;
 	int output_len;
 	int output_size;
+	int dir;
 	void *user;
 	RList *plugins;
 } RCrypto;

@@ -14,6 +14,8 @@ struct des_state {
 	int i;
 };
 
+static struct des_state st = {{0}};
+
 static ut32 be32(const ut8 *buf4) {
 	ut32 val = buf4[0] << 8;
 	val |= buf4[1];
@@ -32,7 +34,9 @@ static void wbe32(ut8 *buf4, ut32 val) {
 }
 
 static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
-	if (!st || !input || !output) return false;
+	if (!st || !input || !output) {
+		return false;
+	}
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
  
@@ -71,10 +75,6 @@ static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-
-static struct des_state st;
-static bool doEncrypt = true;
-
 static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
@@ -86,7 +86,7 @@ static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int
 
 	st.key_size = DES_KEY_SIZE;
 	st.rounds = 16;
-	doEncrypt = direction == 0;
+	cry->dir = direction; // = direction == 0;
 	// key permutation to derive round keys
 	r_des_permute_key (&keylo, &keyhi);
 
@@ -103,7 +103,7 @@ static int des_get_key_size (RCrypto *cry) {
 }
 
 static bool des_use (const char *algo) {
-	return !strcmp (algo, "des-ecb");
+	return algo && !strcmp (algo, "des-ecb");
 }
 
 static bool update (RCrypto *cry, const ut8 *buf, int len) {
@@ -136,15 +136,15 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 //	}
 
 	int i;
-	if (doEncrypt) {
+	if (cry->dir) {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (BLOCK_SIZE * i);
-			des_encrypt (&st, ibuf + next, obuf + next);
+			des_decrypt (&st, ibuf + next, obuf + next);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (BLOCK_SIZE * i);
-			des_decrypt (&st, ibuf + next, obuf + next);
+			des_encrypt (&st, ibuf + next, obuf + next);
 		}
 	}
 

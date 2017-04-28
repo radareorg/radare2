@@ -400,54 +400,32 @@ exit_function:
 	return retval;
 }
 
-static int cmdFile(void *data, const char *input) {
+static int cmdOpen(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case ' ':
-		{
-			const char *filename;
-
-			if (input[1] != '\x00') {
-				filename = input + 1;
-				return r_sign_load (core->anal, filename);
-			} else {
-				eprintf ("usage: zo filename\n");
-				return false;
-			}
+		if (input[1]) {
+			return r_sign_load (core->anal, input + 1);
 		}
-		break;
+		eprintf ("usage: zo filename\n");
+		return false;
 	case 's':
-		{
-			const char *filename;
-
-			if (input[1] == ' ' && input[2] != '\x00') {
-				filename = input + 2;
-				return r_sign_save (core->anal, filename);
-			} else {
-				eprintf ("usage: zos filename\n");
-				return false;
-			}
+		if (input[1] == ' ' && input[2]) {
+			return r_sign_save (core->anal, input + 2);
 		}
-		break;
+		eprintf ("usage: zos filename\n");
+		return false;
 	case 'z':
-		{
-			const char *filename = NULL;
-
-			if (input[1] == ' ' && input[2] != '\x00') {
-				filename = input + 2;
-			} else {
-				eprintf ("usage: zoz filename\n");
-				return false;
-			}
-
-			return loadGzSdb (core->anal, filename);
+		if (input[1] == ' ' && input[2]) {
+			return loadGzSdb (core->anal, input + 2);
 		}
-		break;
+		eprintf ("usage: zoz filename\n");
+		return false;
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "zo[zs] filename ", "# Manage zignature files",
+				"Usage:", "zo[zs] filename ", "# Manage zignature files (see dir.zignatures)",
 				"zo ", "filename", "load zinatures from sdb file",
 				"zoz ", "filename", "load zinatures from gzipped sdb file",
 				"zos ", "filename", "save zignatures to sdb file (merge if file exists)",
@@ -469,20 +447,18 @@ static int cmdSpace(void *data, const char *input) {
 
 	switch (*input) {
 	case '+':
-		if (input[1] != '\x00') {
-			r_space_push (zs, input + 1);
-		} else {
+		if (!input[1]) {
 			eprintf ("usage: zs+zignspace\n");
 			return false;
 		}
+		r_space_push (zs, input + 1);
 		break;
 	case 'r':
-		if (input[1] == ' ' && input[2] != '\x00') {
-			r_space_rename (zs, NULL, input + 2);
-		} else {
+		if (input[1] != ' ' || !input[2]) {
 			eprintf ("usage: zsr newname\n");
 			return false;
 		}
+		r_space_rename (zs, NULL, input + 2);
 		break;
 	case '-':
 		if (input[1] == '\x00') {
@@ -499,12 +475,11 @@ static int cmdSpace(void *data, const char *input) {
 		r_space_list (zs, input[0]);
 		break;
 	case ' ':
-		if (input[1] != '\x00') {
-			r_space_set (zs, input + 1);
-		} else {
+		if (!input[1]) {
 			eprintf ("usage: zs zignspace\n");
 			return false;
 		}
+		r_space_set (zs, input + 1);
 		break;
 	case '?':
 		{
@@ -568,7 +543,6 @@ static int cmdFlirt(void *data, const char *input) {
 		eprintf ("usage: zf[dsz] filename\n");
 		return false;
 	}
-
 	return true;
 }
 
@@ -588,10 +562,10 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 	if (rad) {
 		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, size, addr);
 	} else {
-		r_flag_set(core->flags, name, addr, size);
+		r_flag_set (core->flags, name, addr, size);
 	}
 
-	free(name);
+	free (name);
 }
 
 static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user) {
@@ -605,24 +579,23 @@ static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user)
 
 static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
-
 	// TODO(nibble): use one counter per metric zign instead of ctx->count
 	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, ctx->prefix, ctx->rad);
 	ctx->count++;
-
 	return 1;
 }
 
 static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSearchCB *ctx) {
-	RSignSearch *ss;
 	ut8 *buf = malloc (core->blocksize);
 	ut64 at;
 	int rlen;
 	bool retval = true;
-
 	int minsz = r_config_get_i (core->config, "zign.minsz");
 
-	ss = r_sign_search_new ();
+	if (!buf) {
+		return false;
+	}
+	RSignSearch *ss = r_sign_search_new ();
 	ss->search->align = r_config_get_i (core->config, "search.align");
 	r_sign_search_init (core->anal, ss, minsz, searchHitCB, ctx);
 
@@ -644,7 +617,6 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 		}
 	}
 	r_cons_break_pop ();
-
 	free (buf);
 	r_sign_search_free (ss);
 
@@ -856,7 +828,7 @@ static int cmd_zign(void *data, const char *input) {
 		r_sign_delete (core->anal, input + 1);
 		break;
 	case 'o':
-		return cmdFile (data, input + 1);
+		return cmdOpen (data, input + 1);
 	case 'a':
 		return cmdAdd (data, input + 1);
 	case 'f':

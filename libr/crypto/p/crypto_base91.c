@@ -1,13 +1,13 @@
+/* radare - LGPL - Copyright 2016-2017 - rakholiyajenish.07 */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 #include <r_util.h>
 
 #define INSIZE 32768
 
-static int flag = 0;
-
 static bool base91_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
+	cry->dir = direction;
 	return true;
 }
 
@@ -16,15 +16,21 @@ static int base91_get_key_size(RCrypto *cry) {
 }
 
 static bool base91_use(const char *algo) {
-	return !strcmp (algo, "base91");
+	return algo && !strcmp (algo, "base91");
 }
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
-	int olen = INSIZE; //a way to optimise memory allocation.
+	int olen = INSIZE;
+	if (!cry || !buf || len < 1) {
+		return false;
+	}
 	ut8 *obuf = malloc (olen);
-	if (flag == 0) {
+	if (!obuf) {
+		return false;
+	}
+	if (cry->dir == 0) {
 		olen = r_base91_encode ((char *)obuf, (const ut8 *)buf, len);
-	} else if (flag == 1) {
+	} else if (cry->dir == 1) {
 		olen = r_base91_decode (obuf, (const char *)buf, len);
 	}
 	r_crypto_append (cry, obuf, olen);
@@ -46,7 +52,7 @@ RCryptoPlugin r_crypto_plugin_base91 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_base91,
 	.version = R2_VERSION

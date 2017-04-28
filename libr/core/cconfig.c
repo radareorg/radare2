@@ -2007,6 +2007,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 #endif
+	SETPREF("dir.zignatures", "~/"R2_HOMEDIR"/zigns", "Default path for zignatures (see zo command)");
 	SETPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");

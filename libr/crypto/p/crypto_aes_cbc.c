@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2016-2017 - rakholiyajenish.07 */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 #include "crypto_aes_algo.h"
@@ -5,9 +7,8 @@
 #define BLOCK_SIZE 16
 
 static struct aes_state st;
-int flag = 0;
-bool iv_set = 0;
-ut8 iv[32];
+static bool iv_set = 0;
+static ut8 iv[32];
 
 static bool aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
@@ -17,7 +18,7 @@ static bool aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, 
 	st.rounds = 6 + (int)(keylen / 4);
 	st.columns = (int)(keylen / 4);
 	memcpy (st.key, key, keylen);
-	flag = direction;
+	cry->dir = direction;
 	return true;
 }
 
@@ -35,7 +36,7 @@ static bool aes_cbc_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
 }
 
 static bool aes_cbc_use(const char *algo) {
-	return !strcmp (algo, "aes-cbc");
+	return algo && !strcmp (algo, "aes-cbc");
 }
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
@@ -64,7 +65,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	int i, j;
-	if (flag == 0) {
+	if (cry->dir == 0) {
 		for (i = 0; i < blocks; i++) {
 			for (j = 0; j < BLOCK_SIZE; j++) {
 				ibuf[i * BLOCK_SIZE + j] ^= iv[j];
@@ -72,7 +73,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 			aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			memcpy (iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
-	} else if (flag == 1) {
+	} else if (cry->dir == 1) {
 		for (i = 0; i < blocks; i++) {
 			aes_decrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			for (j = 0; j < BLOCK_SIZE; j++) {

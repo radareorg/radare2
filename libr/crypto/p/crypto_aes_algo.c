@@ -42,13 +42,17 @@ void aes_expkey (const struct aes_state *st, ut32 ***expkey)
 	const ut8 *key = st->key;
 	st32 i, j, r;
 
-	for (i = 0; i <= st->rounds; i++)
-		for (j = 0; j < Nb; j++)
+	for (i = 0; i <= st->rounds; i++) {
+		for (j = 0; j < Nb; j++) {
 			expkey[0][i][j] = 0;
+		}
+	}
 
-	for (i = 0; i <= st->rounds; i++)
-		for (j = 0; j < Nb; j++)
+	for (i = 0; i <= st->rounds; i++) {
+		for (j = 0; j < Nb; j++) {
 			expkey[1][i][j] = 0;
+		}
+	}
 
 	// Copy user material bytes into temporary ints
 	for (i = 0; i < st->columns; i++) {
