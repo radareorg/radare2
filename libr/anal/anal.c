@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -123,6 +123,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	/* TODO: Free anals here */
 	R_FREE (a->cpu);
 	R_FREE (a->os);
+	R_FREE (a->zign_path);
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);

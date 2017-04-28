@@ -78,6 +78,7 @@ R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCal
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
+R_API char *r_sign_path(RAnal *a, const char *file);
 R_API bool r_sign_save(RAnal *a, const char *file);
 
 R_API RSignItem *r_sign_item_new();

@@ -1145,22 +1145,56 @@ zilla:
 	return 1;
 }
 
+R_API char *r_sign_path(RAnal *a, const char *file) {
+	char *abs = r_file_abspath (file);
+	if (abs) {
+		if (r_file_is_regular (abs)) {
+			return abs;
+		}
+		free (abs);
+	}
+	if (a->zign_path) {
+		abs = r_str_newf ("%s%s%s", a->zign_path, R_SYS_DIR, file);
+		if (r_file_is_regular (abs)) {
+			return abs;
+		}
+		free (abs);
+	} else {
+		char *home = r_str_home (".config/radare2/zigns/");
+		abs = r_str_newf ("%s%s%s", home, R_SYS_DIR, file);
+		free (home);
+		if (r_file_is_regular (abs)) {
+			return abs;
+		}
+		free (abs);
+	}
+	const char *pfx = R2_PREFIX "/share/radare2/" R2_VERSION "/zigns";
+	abs = r_str_newf ("%s%s%s", pfx, R_SYS_DIR, file);
+	if (r_file_is_regular (abs)) {
+		return abs;
+	}
+	free (abs);
+	return NULL;
+}
+
 R_API bool r_sign_load(RAnal *a, const char *file) {
 	if (!a || !file) {
 		return false;
 	}
-	if (!r_file_exists (file)) {
+	char *path = r_sign_path (a, file);
+	if (!r_file_exists (path)) {
 		eprintf ("error: file %s does not exist\n", file);
 		return false;
 	}
-	Sdb *db = sdb_new (NULL, file, 0);
+	Sdb *db = sdb_new (NULL, path, 0);
 	if (!db) {
+		free (path);
 		return false;
 	}
 	sdb_foreach (db, loadCB, a);
 	sdb_close (db);
 	sdb_free (db);
-
+	free (path);
 	return true;
 }
 

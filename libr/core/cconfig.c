@@ -674,6 +674,14 @@ static int cb_asmsyntax(void *user, void *data) {
 	return true;
 }
 
+static int cb_dirzigns(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free (core->anal->zign_path);
+	core->anal->zign_path = strdup (node->value);
+	return true;
+}
+
 static int cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2007,7 +2015,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 #endif
-	SETPREF("dir.zignatures", "~/"R2_HOMEDIR"/zigns", "Default path for zignatures (see zo command)");
+	SETCB("dir.zigns", "~/"R2_HOMEDIR"/zigns", &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");

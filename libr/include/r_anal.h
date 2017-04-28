@@ -626,6 +626,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_zigns;
 	RSpaces meta_spaces;
 	RSpaces zign_spaces;
+	char *zign_path;
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root

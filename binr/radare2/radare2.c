@@ -186,8 +186,9 @@ static int main_help(int line) {
 		" file     ${filename}.r2\n"
 		"Plugins:\n"
 		" plugins  "R2_PREFIX"/lib/radare2/last\n"
-		" user     ~/.config/radare2/plugins\n"
+		" USER_PLUGINS ~/.config/radare2/plugins\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
+		" USER_ZIGNS   ~/.config/radare2/zigns\n"
 		"Environment:\n"
 		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
@@ -210,6 +211,7 @@ static int main_print_var(const char *var_name) {
 	int i = 0;
 	char *homedir = r_str_home (R2_HOMEDIR);
 	char *homeplugs = r_str_newf ("%s" R_SYS_DIR "plugins", homedir);
+	char *homezigns = r_str_newf ("%s" R_SYS_DIR "zigns", homedir);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -223,6 +225,7 @@ static int main_print_var(const char *var_name) {
 		{ "RHOMEDIR", homedir },
 		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
 		{ "USER_PLUGINS", homeplugs },
+		{ "USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
 	if (var_name) {
@@ -241,6 +244,7 @@ static int main_print_var(const char *var_name) {
 	}
 	free (homedir);
 	free (homeplugs);
+	free (homezigns);
 	return 0;
 }
 
