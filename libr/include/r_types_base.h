@@ -13,6 +13,7 @@
 #define ut8 unsigned char
 #define st8 signed char
 #define boolt int
+
 typedef struct _ut80 {
 	ut64 Low;
 	ut16 High;
@@ -87,7 +88,7 @@ typedef struct _utX{
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
 
 /* preventive math overflow checks */
-#if !defined(SZT_ADD_AOVFCHK)
+#if !defined(SZT_ADD_OVFCHK)
 #define SZT_ADD_OVFCHK(x,y) ((SIZE_MAX - (x)) <= (y))
 #endif
 #define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - (x)) <= (y))

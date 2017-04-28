@@ -55,6 +55,7 @@ typedef struct r_disam_options_t {
 	int acase;
 	bool capitalize;
 	bool show_flgoff;
+	bool hasMidflag;
 	int atabs;
 	int atabsonce;
 	int atabsoff;
@@ -1026,25 +1027,27 @@ static void ds_atabs_option(RDisasmState *ds) {
 static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	RFlagItem *fi;
 	int i;
+	ds->hasMidflag = false;
 	for (i = 1; i < ds->oplen; i++) {
 		fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi) {
-			if (!strncmp (fi->name, "str.", 4)) {
+			if (ds->midflags == 2 && (fi->name[0] == '$' || fi->realname[0] == '$')) {
+				i = 0;
+			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
+				i = 0;
+			} else if (!strncmp (fi->name, "str.", 4)) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
-				return i;
-			}
-			if (!strncmp (fi->name, "reloc.", 6)) {
+			} else if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
 					r_cons_printf ("(%s)\n", fi->name);
 				}
 				continue;
-			}
-			if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
-				if (!strncmp (fi->name, "sym.", 4)) {
-					return i;
+			} else if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
+				if (strncmp (fi->name, "sym.", 4)) {
+					continue;
 				}
-				continue;
 			}
+			ds->hasMidflag = true;
 			return i;
 		}
 	}
@@ -1067,7 +1070,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	if (p) {
 		res[0] = 'b';
 	}
-	if (t) {
+	if (ds->hasMidflag) {
 		res[1] = '~';
 	}
 	if (q) {
