@@ -2647,7 +2647,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 	}
-	bool flag_printed = false;
 	if (p == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p) > 0 || ((st64)refaddr) > 0) {
@@ -2785,10 +2784,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					ds_comment (ds, true, "%s; \"%s\" @ 0x%"PFMT64x"%s", esc, msg, refaddr, nl);
 				}
 			} else {
-				if (!flag_printed) {
+				if (!ds->opstr || !strstr (ds->opstr, f->name)) {
 					ALIGN;
 					ds_comment (ds, true, "%s; %s%s", esc, f->name, nl);
-					flag_printed = true;
 				}
 			}
 		} else {
