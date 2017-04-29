@@ -2603,12 +2603,15 @@ static void ds_print_asmop_payload(RDisasmState *ds) {
 }
 
 static void ds_print_op_push_info(RDisasmState *ds){
+	char *spc = ds->show_comment_right ? " " : "";
+	char *nl = ds->show_comment_right ? "" : "\n";
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_PUSH:
 		if (ds->analop.val) {
 			RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.val);
 			if (flag && (!ds->opstr || !strstr (ds->opstr, flag->name))) {
-				r_cons_printf (" ; %s", flag->name);
+				ALIGN;
+				ds_comment (ds, true, "%s; %s%s", spc, flag->name, nl);
 			}
 		}
 		break;
@@ -3691,6 +3694,7 @@ toro:
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs (ds);
 			ds_build_op_str (ds);
+			ds_print_op_push_info (ds);
 			ds_print_ptr (ds, len + 256, idx);
 			if (!ds->pseudo) {
 				R_FREE (ds->opstr);
@@ -3738,9 +3742,9 @@ toro:
 			ds_print_core_vmode (ds);
 			// ds_print_cc_update (ds);
 
-			ds_print_op_push_info (ds);
 			ds_cdiv_optimization (ds);
 			if (ds->show_comments && ds->show_comment_right) {
+				ds_print_op_push_info (ds);
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_fcn_name (ds);
 				ds_print_color_reset (ds);
