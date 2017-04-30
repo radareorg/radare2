@@ -2386,6 +2386,7 @@ static void ds_print_import_name(RDisasmState *ds) {
 static void ds_print_fcn_name(RDisasmState *ds) {
 	int delta;
 	const char *label;
+	char *spc = ds->show_comment_right ? " " : "";
 	char *nl = ds->show_comment_right ? "" : "\n";
 	RAnalFunction *f;
 	RCore *core = ds->core;
@@ -2400,7 +2401,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			const char *ioname = r_syscall_get_io (sc, imm);
 			if (ioname && *ioname) {
 				ALIGN;
-				ds_comment (ds, true, "; IO %s%s", ioname, nl);
+				ds_comment (ds, true, "%s; IO %s%s", spc, ioname, nl);
 				ds->has_description = true;
 			}
 		}
@@ -2416,17 +2417,17 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
 			if (label) {
 				ALIGN;
-				ds_comment (ds, true, "; %s.%s%s", f->name, label, nl);
+				ds_comment (ds, true, "%s; %s.%s%s", spc, f->name, label, nl);
 			} else {
 				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
 					ALIGN;
 					if (delta > 0) {
-						ds_comment (ds, true, "; %s+0x%x%s", f->name, delta, nl);
+						ds_comment (ds, true, "%s; %s+0x%x%s", spc, f->name, delta, nl);
 					} else if (delta < 0) {
-						ds_comment (ds, true, "; %s-0x%x%s", f->name, -delta, nl);
+						ds_comment (ds, true, "%s; %s-0x%x%s", spc, f->name, -delta, nl);
 					} else {
-						ds_comment (ds, true, "; %s%s", f->name, nl);
+						ds_comment (ds, true, "%s; %s%s", spc, f->name, nl);
 					}
 				}
 			}
