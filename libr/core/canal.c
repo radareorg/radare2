@@ -1701,7 +1701,7 @@ R_API int r_core_anal_fcn_list_size(RCore *core) {
 
 static int cmpfcn(const void *_a, const void *_b) {
 	const RAnalFunction *_fcn1 = _a, *_fcn2 = _b;
-	return (_fcn1->addr > _fcn2->addr);
+	return (_fcn1->addr - _fcn2->addr);
 }
 
 /* Fill out metadata struct of functions */
