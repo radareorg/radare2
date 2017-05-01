@@ -2289,13 +2289,12 @@ static int bin_classes(RCore *r, int mode) {
 			const char *classname = sdb_fmt (0, "class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
-				if (!mergeflags && !flag_exists (r->flags, sym->name)) {
-					char *mflags = r_core_bin_method_flags_str (sym, mode);
-					char *method = sdb_fmt (1, "method%s.%s.%s", mflags, c->name, sym->name);
-					R_FREE (mflags);
-					r_name_filter (method, -1);
-					r_flag_set (r->flags, method, sym->vaddr, 1);
-				}
+				char *mflags = r_core_bin_method_flags_str (sym, mode);
+				char *method = sdb_fmt (1, "method%s.%s.%s",
+					mflags, c->name, sym->name);
+				R_FREE (mflags);
+				r_name_filter (method, -1);
+				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s%s%s\n",
