@@ -294,8 +294,11 @@ static int cb_asmassembler(void *user, void *data) {
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (!core || !core->assembler) {
+		return;
+	}
 	const char *arch = r_config_get (core->config, "asm.arch");
-	if (!core || !core->assembler || !arch || !(*arch)) {
+	if (!arch || !*arch) {
 		return;
 	}
 	r_list_purge (node->options);
