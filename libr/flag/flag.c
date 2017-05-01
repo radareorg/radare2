@@ -200,7 +200,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			if (in_range && (flag->offset < range_from || flag->offset >= range_to)) {
 				continue;
 			}
-			f->cb_printf ("%s{\"name\":\"%s\",\"size\":\"%"PFMT64d"\",",
+			f->cb_printf ("%s{\"name\":\"%s\",\"size\":%"PFMT64d",",
 				first?"":",", flag->name, flag->size);
 			if (flag->alias) {
 				f->cb_printf ("\"alias\":\"%s\"", flag->alias);
