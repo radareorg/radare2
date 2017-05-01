@@ -30,6 +30,25 @@ static void loganal(ut64 from, ut64 to, int depth) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
 }
 
+static char *getFunctionName(RCore *core, ut64 addr) {
+	RBinClass *klass;
+	RBinSymbol *method;
+	RListIter *iter, *iter2;
+        RList *klasses = r_bin_get_classes (core->bin);
+	r_list_foreach (klasses, iter, klass) {
+		r_list_foreach (klass->methods, iter2, method) {
+			if (method->vaddr == addr) {
+				return r_str_newf ("method.%s.%s", klass->name, method->name);
+			}
+		}
+	}
+	RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
+	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
+		return strdup (fi->name);
+	}
+	return NULL;
+}
+
 static RCore *mycore = NULL;
 
 // XXX: copypaste from anal/data.c
@@ -252,7 +271,9 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
 		char *name = r_core_anal_fcn_autoname (core, fcn->addr, 0);
-		if (name && (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9))) {
+		if (name && (!strncmp (fcn->name, "method.", 7) || \
+				!strncmp (fcn->name, "fcn.", 4) || \
+				!strncmp (fcn->name, "sym.func.", 9))) {
 			r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), name);
 			free (fcn->name);
 			fcn->name = name;
@@ -298,14 +319,19 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (strstr (f->name, ".getopt")) {
 					use_getopt = 1;
 				}
+				if (!strncmp (f->name, "method.", 7)) {
+					free (do_call);
+					do_call = strdup (f->name + 7);
+					break;
+				}
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
-					do_call = strdup (f->name+8);
+					do_call = strdup (f->name + 8);
 					break;
 				}
 				if (!strncmp (f->name, "reloc.", 6)) {
 					free (do_call);
-					do_call = strdup (f->name+6);
+					do_call = strdup (f->name + 6);
 					break;
 				}
 			}
@@ -417,8 +443,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth - 1);
 		}
 	}
-
-	free(buf);
+	free (buf);
 	return 1;
 }
 
@@ -475,10 +500,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	}
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
-	RFlagItem *fi = r_flag_get_at (core->flags, at, false);
-	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
-		fcn->name = strdup (fi->name);
-	} else {
+	fcn->name = getFunctionName (core, at);
+
+	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
 	buf = malloc (core->anal->opt.bb_max_size);
@@ -486,7 +510,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
 	}
-
 	do {
 		RFlagItem *f;
 		RAnalRef *ref;
