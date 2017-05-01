@@ -2031,7 +2031,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETPREF ("bin.classes", "true", "Load classes from rbin on startup");
-	SETPREF ("bin.mergeflags", "true", "Merge symbols with the same name into the same flag");
 	SETCB ("bin.verbose", "true", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
