@@ -496,7 +496,7 @@ static int cmd_info(void *data, const char *input) {
 						} else {
 							const char * first_char = input + ((input[1] == ' ') ? 1 : 2);
 							int not_space = strspn (first_char, " ");
-							if (*(first_char + not_space)) {
+							if (first_char[not_space]) {
 								cls_name = first_char + not_space;
 							}
 						}
