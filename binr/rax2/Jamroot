@@ -1,4 +1,0 @@
-exe rax2 : rax2.c :
-    <linkflags>-ldl
-    <library>../../libr/util
-    <include>../../libr/include ;

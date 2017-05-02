@@ -1,9 +1,0 @@
-exe rahash2 : rahash2.c :
-    <library>../../libr/util
-    <library>../../libr/hash
-    <library>../../libr/socket
-    <library>../../libr/io
-    <library>../../shlr/zip
-    <library>../../shlr/gdb
-    <cflags>-Wl,-ldl
-    <include>../../libr/include ;

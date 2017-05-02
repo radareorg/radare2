@@ -1,3 +1,0 @@
-OBJS = syscall.c ioports.c ;
-
-lib r_syscall : $(OBJS) : <include>../include <library>../util <library>../db ;

@@ -1,5 +1,0 @@
-lib java : code.c class.c ops.c :
-    <include>../../libr/include
-    <library>../../libr/util
-    <library>../sdb
-;

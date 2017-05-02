@@ -1,3 +1,0 @@
-OBJS = socket.c proc.c http.c http_server.c run.c ;
-
-lib r_socket : $(OBJS) : <include>../include <library>../util ;

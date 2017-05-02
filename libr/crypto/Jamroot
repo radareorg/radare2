@@ -1,4 +1,0 @@
-OBJS = crypto.c ;
-OBJS += p/crypto_aes.c p/crypto_aes_algo.c p/crypto_xor.c p/crypto_blowfish.c p/crypto_rc2.c p/crypto_rot.c p/crypto_rol.c p/crypto_ror.c p/crypto_base64.c p/crypto_base91.c p/crypto_aes_cbc.c p/crypto_punycode.c, p/crypto_rc6.c;
-
-lib r_crypto : $(OBJS) : <include>../include <library>../util ;
