@@ -154,6 +154,9 @@ void reil_cast_size(RAnalEsil *esil, RAnalReilArg *src, RAnalReilArg *dst) {
 	char tmp_buf[REGBUFSZ];
 	RAnalReilInst *ins;
 
+	if (!src || !dst) {
+		return;
+	}
 	// No need to case sizes if dst and src are of same size.
 	if (src->size == dst->size) {
 		reil_push_arg(esil, src);
