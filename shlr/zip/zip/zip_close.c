@@ -610,13 +610,12 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
         sprintf(temp, "%s.XXXXXX", za->zn);
     }
 
-#if __WIN32__ || __MINGW32__ || defined(__WINDOWS__)
     if ((tfd=open(temp, O_RDWR|O_CREAT, 0644)) == -1) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	free(temp);
 	return NULL;
     }
-#else
+#if 0
 	umask (S_IWGRP | S_IWOTH);
     if ((tfd=mkstemp(temp)) == -1) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);

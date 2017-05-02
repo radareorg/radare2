@@ -472,7 +472,6 @@ void _zip_string_write(const struct zip_string *, FILE *);
 int _zip_changed(const struct zip *, zip_uint64_t *);
 const char *_zip_get_name(struct zip *, zip_uint64_t, zip_flags_t, struct zip_error *);
 int _zip_local_header_read(struct zip *, int);
-void *_zip_memdup(const void *, size_t, struct zip_error *);
 zip_int64_t _zip_name_locate(struct zip *, const char *, zip_flags_t, struct zip_error *);
 struct zip *_zip_new(struct zip_error *);
 zip_uint16_t _zip_read2(const zip_uint8_t **);

@@ -61,7 +61,7 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_get_compression_implementation.o \
 	zip_get_encryption_implementation.o zip_get_file_comment.o \
 	zip_get_num_entries.o zip_get_num_files.o zip_get_name.o \
-	zip_memdup.o zip_name_locate.o zip_new.o zip_open.o \
+	zip_name_locate.o zip_new.o zip_open.o \
 	zip_rename.o zip_replace.o zip_set_archive_comment.o \
 	zip_set_archive_flag.o zip_set_default_password.o \
 	zip_set_file_comment.o zip_set_file_compression.o \

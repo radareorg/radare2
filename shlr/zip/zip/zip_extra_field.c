@@ -200,16 +200,19 @@ _zip_ef_new(zip_uint16_t id, zip_uint16_t size, const zip_uint8_t *data, zip_fla
 
     ef->next = NULL;
     ef->flags = flags;
+	ef->data = NULL;
     ef->id = id;
     ef->size = size;
     if (size > 0) {
-	if ((ef->data=(zip_uint8_t *)_zip_memdup(data, size, NULL)) == NULL) {
+	zip_uint8_t *p = malloc (size);
+	if (p) {
+		ef->data = p;	
+		memcpy (p, data, size);
+	} else {
 	    free(ef);
 	    return NULL;
 	}
     }
-    else
-	ef->data = NULL;
 
     return ef;
 }
