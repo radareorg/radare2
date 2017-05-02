@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 // pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 // pancake */
 
 static int cmd_mkdir(void *data, const char *input) {
 	char *res = r_syscmd_mkdir (input);
@@ -196,21 +196,21 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case '?': {
 		const char* help_msg[] = {
-			"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
-			"m", "", "List all mountpoints in human readable format",
-			"m*", "", "Same as above, but in r2 commands",
-			"ml", "", "List filesystem plugins",
-			"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
-			"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
-			"m-/", "", "Umount given path (/)",
-			"my", "", "Yank contents of file into clipboard",
-			"mo", " /foo", "Get offset and size of given file",
-			"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
-			"mf", "[?] [o|n]", "Search files for given filename or for offset",
-			"md", " /", "List directory contents for path",
-			"mp", "", "List all supported partition types",
-			"mp", " msdos 0", "Show partitions in msdos format at offset 0",
-			"ms", " /mnt", "Open filesystem prompt at /mnt",
+			"Usage:", "m[-?*dgy] [...] ", "Управление Точками подключения  ",
+			"m", "", "Список всех точек подключения в удобочитаемом формате",
+			"m*", "", "То же, что и выше, но в командах r2",
+			"ml", "", "Список плагинов файловой системы",
+			"m", " /mnt", "Установить fs в /mnt с автоопределением fs и текущим смещением",
+			"m", " /mnt ext2 0", "Монтировать ext2 fs в /mnt с дельта 0 на IO",
+			"m-/", "", "Указанный путь к Umount(/)",
+			"my", "", "Закрепить содержимое файла в буфере обмена",
+			"mo", " /foo", "Получить смещение и размер заданного файла",
+			"mg", " /foo", "Получить содержимое файла / каталога, сбрасываемого на диск(XXX?)",
+			"mf", "[?] [o|n]", "Поиск файлов для заданного имени файла или для смещения",
+			"md", " /", "Отображать содержимое каталога для пути",
+			"mp", "", "Список всех поддерживаемых типов ",
+			"mp", " msdos 0", "Показывать разделы в формате msdos со смещением 0",
+			"ms", " /mnt", "Открыть приглашение файловой системы в /mnt",
 			//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
 			NULL};
 		r_core_cmd_help (core, help_msg);

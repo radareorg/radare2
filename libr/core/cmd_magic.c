@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2015 - pancake */
 #include <stddef.h>
 
 #include "r_config.h"

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+﻿/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 #include <stddef.h>
 
 #include "r_cons.h"
@@ -237,12 +237,12 @@ static int cmd_hash(void *data, const char *input) {
 	if (*input == '?') {
 		const char *helpmsg3[] = {
 		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
-		" #", "", "comment - do nothing",
-		" #!","","list all available interpreters",
-		" #!python","","run python commandline",
-		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
+		" #", "", "Комментарий - ничего не делать",
+		" #!","","Список всех доступных интерпретаторов",
+		" #!python","","Запустить командную линию python",
+		" #!python"," foo.py","Запустить сценарий pooon foo.py (аналогично '. Foo.py')",
 		//" #!python <<EOF        get python code until 'EOF' mark\n"
-		" #!python"," arg0 a1 <<q","set arg0 and arg1 and read until 'q'",
+		" #!python"," arg0 a1 <<q","Set arg0 и arg1 и читать до 'q'",
 		NULL};
 		r_core_cmd_help (core, helpmsg3);
 		return false;

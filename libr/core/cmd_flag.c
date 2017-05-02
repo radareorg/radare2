@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -455,17 +455,17 @@ rep:
 		case '?':
 			{
 			const char *help_msg[] = {
-			"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
-			"fs","","display flagspaces",
-			"fs"," *","select all flagspaces",
-			"fs"," flagspace","select flagspace or create if it doesn't exist",
-			"fs","-flagspace","remove flagspace",
-			"fs","-*","remove all flagspaces",
-			"fs","+foo","push previous flagspace and set",
-			"fs","-","pop to the previous flagspace",
-			"fs","-.","remove the current flagspace",
-			"fsm"," [addr]","move flags at given address to the current flagspace",
-			"fsr"," newname","rename selected flagspace",
+			"Usage: fs","[*] [+-][flagspace|addr]", " # Управление пространствами флагов",
+			"fs","","Отображать флаги",
+			"fs"," *","Выбрать все флаги",
+			"fs"," flagspace","Выбрать флаг или создать, если он не существует",
+			"fs","-flagspace","Удалить флаг",
+			"fs","-*","Удалить все флаги",
+			"fs","+foo","Выбрать предыдущий флаг и установить",
+			"fs","-","pop предыдущий флаг",
+			"fs","-.","Удалить текущий флаг",
+			"fsm"," [addr]","Перемещение флагов по заданному адресу в текущее пространство флагов",
+			"fsr"," newname","Переименовать выбранное пространство флагов",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}
@@ -538,8 +538,8 @@ rep:
 	case 'c':
 		if (input[1]=='?' || input[1] != ' ') {
 			const char *help_msg[] = {
-			"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
-			"fc", " flagname", "Get current color for given flagname",
+			"Usage: fc", "<flagname> [color]", " # Список цветов с 'ecs'",
+			"fc", " flagname", "Получить текущий цвет для данного флага",
 			"fc", " flagname color", "Set color to a flag",
 			NULL
 			};
@@ -751,46 +751,46 @@ rep:
 			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
 		} else {
 		const char *help_msg[] = {
-		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
-		"f","","list flags (will only list flags from selected flagspaces)",
-		"f?","flagname","check if flag exists or not, See ?? and ?!",
-		"f."," [*[*]]","list local per-function flags (*) as r2 commands",
-		"f.","blah=$$+12","set local function label named 'blah'",
-		"f*","","list flags in r commands",
-		"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
-		"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
-		"f"," name 12 33 [cmt]","same as above + optional comment",
-		"f-",".blah@fcn.foo","delete local label from function at current seek (also f.-)",
-		"f--","","delete all flags and flagspaces (deinit)",
-		"f+","name 12 @ 33","like above but creates new one if doesnt exist",
-		"f-","name","remove flag 'name'",
-		"f-","@addr","remove flag at address expression",
-		"f."," fname","list all local labels for the given function",
-		"f="," [glob]","list range bars graphics with flag offsets and sizes",
-		"fa"," [name] [alias]","alias a flag to evaluate an expression",
-		"fb"," [addr]","set base address for new flags",
-		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
-		"fc"," [?][name] [color]","set color for given flag",
-		"fC"," [name] [cmt]","set comment for given flag",
-		"fd"," addr","return flag+delta",
-		"fe-","","resets the enumerator counter",
-		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
-		"fi"," [size] | [from] [to]","show flags in current block or range",
-		"fg","","bring visual mode to foreground",
-		"fj","","list flags in JSON format",
-		"fl"," ([flag]) [size]","show or set flag length (size)",
-		"fla"," [glob]","automatically compute the size of all flags matching glob",
-		"fm"," addr","move flag at current offset to new address",
-		"fn","","list flags displaying the real name (demangled)",
-		"fo","","show fortunes",
+		"Usage: f","[?] [flagname]", " # Управление флагами смещения-названия",
+		"f","","Список флагов (будет только список флагов из выбранных flagspaces)",
+		"f?","flagname","Проверить, существует ли флаг или нет, см. ?? а также ?!",
+		"f."," [*[*]]","Список локальных флажков функций (*) в качестве команд r2",
+		"f.","blah=$$+12","Установить локальную метку функции с именем 'blah'",
+		"f*","","Флаги списка в r командах",
+		"f"," name 12 @ 33","Установить 'name' флага с длиной 12 по смещению 33",
+		"f"," name = 33","Псевдоним для 'f name @ 33' или 'f name 1 33'",
+		"f"," name 12 33 [cmt]","То же, что и выше + дополнительный комментарий",
+		"f-",".blah@fcn.foo","Удалить локальную метку из функции при текущем поиске (также f.-)",
+		"f--","","Удалить все флаги и пространства флагов (deinit)",
+		"f+","name 12 @ 33","Как и выше, но создает новый, если не существует",
+		"f-","name","Удалить флаг 'name'",
+		"f-","@addr","Удалить флаг при выражении адреса",
+		"f."," fname","Список всех локальных ярлыков для данной функции",
+		"f="," [glob]","Графическое отображение диапазонов графики с смещениями и размерами флага",
+		"fa"," [name] [alias]","Alias - флаг для оценки выражения",
+		"fb"," [addr]","Установить базовый адрес для новых флагов",
+		"fb"," [addr] [flag*]","Перемещение флагов, соответствующих 'flag', по относительным адресам",
+		"fc"," [?][name] [color]","Установить цвет для данного флага",
+		"fC"," [name] [cmt]","Установить комментарий для данного флага",
+		"fd"," addr","Флаг возврата + дельта ",
+		"fe-","","Сбрасывает счетчик",
+		"fe"," [name]","Создать имя флага. # Num # перечисляемого флаг. См. Fe?",
+		"fi"," [size] | [from] [to]","Показывать флаги в текущем блоке или диапазоне",
+		"fg","","Вывести визуальный режим на передний план",
+		"fj","","Флаги списка в формате JSON",
+		"fl"," ([flag]) [size]","Показать или установить длину флага (размер)",
+		"fla"," [glob]","Автоматически вычисляет размер всех флагов, соответствующих glob",
+		"fm"," addr","Переместить флаг с текущим смещением на новый адрес",
+		"fn","","Список флагов, показывающие реальное имя (декодированный)",
+		"fo","","Показать fortunes",
 		//" fc [name] [cmt]  ; set execution command for a specific flag"
-		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
-		"fR"," [?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
-		"fs","[?]+-*","manage flagspaces",
-		"fS","[on]","sort flags by offset or name",
+		"fr"," [old] [[new]]","Переименовать флаг (если не используется новый флаг)",
+		"fR"," [?] [f] [t] [m]","Переместить все флаги, соответствующие f & ~ m 'f'rom,' t'o, 'm'ask",
+		"fs","[?]+-*","Управлять пространствами флагов",
+		"fS","[on]","Сортировать флаги по смещению или имени",
 		"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
-		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
-		"fz"," [?][name]","add named flag zone -name to delete. see fz?[name]",
+		"fx","[d]","Показать hexdump (или disasm) флага: flagsize",
+		"fz"," [?][name]","Добавьте именованный флаг zone -name для удаления. См. Fz? [Name]",
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		break;

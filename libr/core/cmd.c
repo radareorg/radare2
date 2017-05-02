@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -134,10 +134,10 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 
 static int cmd_uname(void *data, const char *input) {
 	const char* help_msg[] = {
-		"Usage:", "u", "uname or undo write/seek",
-		"u", "", "show system uname",
-		"uw", "", "alias for wc (requires: e io.cache=true)",
-		"us", "", "alias for s- (seek history)",
+		"Usage:", "u", "uname или отменить запись / поиск",
+		"u", "", "Показать системную uname",
+		"uw", "", "Псевдоним для wc (Требует: e io.cache=true)",
+		"us", "", "Псевдоним для s- (Искать историю)",
 		NULL};
 	switch (input[0]) {
 	case '?':
@@ -169,14 +169,14 @@ static int cmd_alias(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input == '?') {
 		const char* help_msg[] = {
-			"Usage:", "$alias[=cmd] [args...]", "Alias commands",
-			"$", "", "list all defined aliases",
-			"$*", "", "same as above, but using r2 commands",
-			"$", "dis='af;pdf'", "create command - analyze to show function",
-			"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
-			"$", "dis=", "undefine alias",
-			"$", "dis", "execute the previously defined alias",
-			"$", "dis?", "show commands aliased by 'analyze'",
+			"Usage:", "$alias[=cmd] [args...]", "Команды псевдонимы",
+			"$", "", "Cписок всех определенных псевдонимов",
+			"$*", "", "То же, что и выше, но с использованием команд r2",
+			"$", "dis='af;pdf'", "создать команду - проанализировать, чтобы показать функцию",
+			"$", "test=#!pipe node /tmp/test.js", "Создать команду - скрипт rlangpipe",
+			"$", "dis=", "Неопределенный псевдоним",
+			"$", "dis", "Выполнить ранее определенный псевдоним",
+			"$", "dis?", "Показать команды с именем 'analyze'",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 		return 0;
@@ -406,23 +406,23 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	default:{
 		const char* help_msg[] = {
-		"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-		"y", "", "show yank buffer information (srcoff len bytes)",
-		"y", " 16", "copy 16 bytes into clipboard",
-		"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
-		"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
-		"yz", "", "copy up to blocksize zero terminated string bytes into clipboard",
-		"yz", " 16", "copy up to 16 zero terminated string bytes into clipboard",
-		"yz", " @ 0x200", "copy up to blocksize zero terminated string bytes into clipboard from 0x200",
-		"yz", " 16 @ 0x200", "copy up to 16 zero terminated string bytes into clipboard from 0x200",
-		"yp", "", "print contents of clipboard",
-		"yx", "", "print contents of clipboard in hexadecimal",
-		"ys", "", "print contents of clipboard as string",
-		"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
-		"ytf", " file", "dump the clipboard to given file",
-		"yf", " 64 0x200", "file copy 64 bytes from 0x200 from file (opens w/ io), use -1 for all bytes",
-		"yfa", " file copy", "copy all bytes from file (opens w/ io)",
-		"yy", " 0x3344", "paste clipboard",
+		"Usage:", "y[ptxy] [len] [[@]addr]", " # Смотрите wd? для memcpy, также как и 'yf'.",
+		"y", "", "Показывать информацию буфера (scroff len bytes)",
+		"y", " 16", "Копировать 16 байтов в буфер обмена",
+		"y", " 16 0x200", "Копировать 16 байтов в буфер обмена с 0x200",
+		"y", " 16 @ 0x200", "Копировать 16 байтов в буфер обмена с 0x200",
+		"yz", "", "Копировать до блокировки строки с нулевым символом в буфер обмена",
+		"yz", " 16", "Копировать до 16 байтов строки с нулевым символом в буфер обмена",
+		"yz", " @ 0x200", "Копировать до блокировки нулевых байтов строки строки в буфер обмена с 0x200",
+		"yz", " 16 @ 0x200", "Копировать до 16 нулевых оконечных байтов в буфер обмена с 0x200",
+		"yp", "", "Печатать содержимое буфера обмена",
+		"yx", "", "Печатать содержимое буфера обмена в шестнадцатеричном формате",
+		"ys", "", "Выводить содержимое буфера обмена в виде строки",
+		"yt", " 64 0x200", "Копировать 64 байта из текущего потока в 0x200",
+		"ytf", " file", "Дамп буфера обмена для данного файла",
+		"yf", " 64 0x200", "Файл копирует 64 байта из 0x200 из файла (открывает w / io), использует -l для всех байтов",
+		"yfa", " file copy", "Скопировать все байты из файла (открывается с помощью w / io)",
+		"yy", " 0x3344", "Вставить буфер обмена",
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		}
@@ -623,16 +623,16 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '?':{
 		const char* help_msg[] = {
-		"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", " # define macro or load r2, cparse or rlang file",
-		".", "", "repeat last command backward",
-		".", "r2cmd", "interpret the output of the command as r2 commands",
-		"..", "", "repeat last command forward (same as \\n)",
-		".:", "8080", "listen for commands on given tcp port",
-		".", " foo.r2", "interpret r2 script",
-		".-", "", "open cfg.editor and interpret tmp file",
-		".!", "rabin -ri $FILE", "interpret output of command",
-		".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
-		"./", " ELF", "interpret output of command /m ELF as r. commands",
+		"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", " # Определить макрос или загрузить файл r2, cparse или rlang",
+		".", "", "Повторить последнюю команду",
+		".", "r2cmd", "Интерпретировать вывод команды как команды r2",
+		"..", "", "Повторить последнюю команду дальше (то же, что \\ n)",
+		".:", "8080", "Прослушивать команды на заданном tcp-порте",
+		".", " foo.r2", "Интерпретировать скрипт r2",
+		".-", "", "Открыть cfg.editor и интерпретировать tmp-файл",
+		".!", "rabin -ri $FILE", "Интерпретировать вывод команды",
+		".", "(foo 1 2 3)", "Запустить макрос 'foo' с аргументами 1, 2, 3",
+		"./", " ELF", "Интерпретировать вывод команды / m ELF как r.commands",
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		}
@@ -787,16 +787,16 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	case '?': {
 			const char* help_msg[] = {
-			"Usage:", "k[s] [key[=value]]", "Sdb Query",
-			"k", " foo=bar", "set value",
-			"k", " foo", "show value",
-			"k", "", "list keys",
-			"ko", " [file.sdb] [ns]", "open file into namespace",
-			"kd", " [file.sdb] [ns]", "dump namespace to disk",
-			"ks", " [ns]", "enter the sdb query shell",
-			"k", " anal/meta/*", "ist kv from anal > meta namespaces",
-			"k", " anal/**", "list namespaces under anal",
-			"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
+			"Usage:", "k[s] [key[=value]]", "Запрос Sdb",
+			"k", " foo=bar", "Установленное значение",
+			"k", " foo", "показать значение",
+			"k", "", "Список ключей",
+			"ko", " [file.sdb] [ns]", "Открыть файл в пространстве имен",
+			"kd", " [file.sdb] [ns]", "дамп имен на диск",
+			"ks", " [ns]", "Введите командную строку sdb",
+			"k", " anal/meta/*", "ist kv из anal в meta пространство имен",
+			"k", " anal/**", "Список имен под anal",
+			"k", " anal/meta/meta.0x80404", "Получить значение для ключа meta.0x80404",
 			//"kl", " ha.sdb", "load keyvalue from ha.sdb",
 			//"ks", " ha.sdb", "save keyvalue to ha.sdb",
 			NULL,
@@ -862,14 +862,14 @@ static int cmd_bsize(void *data, const char *input) {
 		break;
 	case '?':{
 		const char* help_msg[] = {
-			"Usage:",  "b[f] [arg]\n", "Get/Set block size",
-			"b", "", "display current block size",
-			"b", " 33", "set block size to 33",
-			"b", "+3", "increase blocksize by 3",
-			"b", "-16", "decrease blocksize by 16",
-			"b", " eip+4", "numeric argument can be an expression",
-			"bf", " foo", "set block size to flag size",
-			"bm", " 1M", "set max block size",
+			"Usage:",  "b[f] [arg]\n", "Получить / установить размер блока",
+			"b", "", "отобразить текущий размер блока",
+			"b", " 33", "Установить размер блока до 33",
+			"b", "+3", "Увеличить размер блока на 3",
+			"b", "-16", "Уменьшить размер блока на 16",
+			"b", " eip+4", "Числовым аргументом может быть выражение",
+			"bf", " foo", "Установить размер блока для размера флага",
+			"bm", " 1M", "Установить максимальный размер блока",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);
@@ -925,13 +925,13 @@ static int cmd_resize(void *data, const char *input) {
 	default:
 	case '?':{
 		const char* help_msg[] = {
-			"Usage:", "r[+-][ size]", "Resize file",
-			"r", "", "display file size",
-			"r", " size", "expand or truncate file to given size",
-			"r-", "num", "remove num bytes, move following data down",
-			"r+", "num", "insert num bytes, move following data up",
-			"rm" ," [file]", "remove file",
-			"r2" ," [file]", "launch r2",
+			"Usage:", "r[+-][ size]", "Изменить размер файла",
+			"r", "", "Показать размер файла",
+			"r", " size", "Разворачивать или обрезать файл до заданного размера",
+			"r-", "num", "Удалить число байтов, переместить следующие данные вниз",
+			"r+", "num", "Вставить число байтов, переместить следующие данные вверх",
+			"rm" ," [file]", "удалить файл",
+			"r2" ," [file]", "Запуск r2",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
@@ -1079,11 +1079,11 @@ static int cmd_pointer(void *data, const char *input) {
 	while (*input == ' ') input++;
 	if (!*input || *input == '?') {
 		const char* help_msg[] = {
-			"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
-			"*", "entry0=cc", "write trap in entrypoint",
-			"*", "entry0+10=0x804800", "write value in delta address",
-			"*", "entry0", "read byte at given address",
-			"TODO: last command should honor asm.bits", "", "",
+			"Usage:", "*<addr>[=[0x]value]", "Чтение / запись данных / значений указателя",
+			"*", "entry0=cc", "Записать trap в точке входа",
+			"*", "entry0+10=0x804800", "Записать значение в дельта-адрес",
+			"*", "entry0", "Читать байт по указанному адресу",
+			"TODO: Последняя команда должна выполнять asm.bits", "", "",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		return ret;
@@ -1111,10 +1111,10 @@ static int cmd_env(void *data, const char *input) {
 	case '?':
 		{
 		const char* help_msg[] = {
-			"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
-			"%", "", "list all environment variables",
-			"%", "SHELL", "prints SHELL value",
-			"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
+			"Usage:", "%[name[=value]]", "Задайте для каждого NAME значение VALUE в среде",
+			"%", "", "Список всех переменных сред",
+			"%", "SHELL", "Выводит значение SHELL",
+			"%", "TMPDIR=/tmp", "Устанавливает значение TMPDIR в \"/tmp\"",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
@@ -1300,7 +1300,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
-	}	
+	}
 	cmt = *icmd ? strchr (icmd + 1, '#'): NULL;
 	if (cmt && (cmt[1] == ' ' || cmt[1] == '\t')) {
 		*cmt = 0;
@@ -1588,9 +1588,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				if (!strcmp (ptr + 1, "?")) { // "|?"
 					// TODO: should be disable scr.color in pd| ?
 					eprintf ("Usage: <r2command> | <program|H|>\n");
-					eprintf (" pd|?   - show this help\n");
-					eprintf (" pd|    - disable scr.html and scr.color\n");
-					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
+					eprintf (" pd|?   - Показать эту справку\n");
+					eprintf (" pd|    - Отключить scr.html и scr.color\n");
+					eprintf (" pd|H   - включить scr.html, соблюдать scr.color\n");
 					return ret;
 				} else if (!strcmp (ptr + 1, "H")) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
@@ -2586,7 +2586,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_cmd_macro_call (&core->rcmd->macro, each + 2);
 				if (!core->rcmd->macro.brk_value) {
 					break;
-				}		
+				}
 				addr = core->rcmd->macro._brk_value;
 				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
@@ -3003,47 +3003,47 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd->nullcallback = r_core_cmd_nullcallback;
 	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
-	r_cmd_add (core->rcmd, "0x",       "alias for px", &cmd_ox);
-	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
-	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
-	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
-	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
-	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
-	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
-	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
-	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
-	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
-	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
-	r_cmd_add (core->rcmd, "Text",     "Text log utility", &cmd_log);
-	r_cmd_add (core->rcmd, "t",        "type information (cparse)", &cmd_type);
+	r_cmd_add (core->rcmd, "0x",       "Псевдоним для px", &cmd_ox);
+	r_cmd_add (core->rcmd, "x",        "Псевдоним для px", &cmd_hexdump);
+	r_cmd_add (core->rcmd, "mount",    "Монтировать файловую систему", &cmd_mount);
+	r_cmd_add (core->rcmd, "analysis", "Анализ", &cmd_anal);
+	r_cmd_add (core->rcmd, "flag",     "получить / установить флаги", &cmd_flag);
+	r_cmd_add (core->rcmd, "g",        "egg Манипуляция", &cmd_egg);
+	r_cmd_add (core->rcmd, "debug",    "Отладчик", &cmd_debug);
+	r_cmd_add (core->rcmd, "ls",       "Список файлов и каталогов", &cmd_ls);
+	r_cmd_add (core->rcmd, "info",     "Получить информацию о файле", &cmd_info);
+	r_cmd_add (core->rcmd, "cmp",      "Сравнить память", &cmd_cmp);
+	r_cmd_add (core->rcmd, "seek",     "Искать смещения", &cmd_seek);
+	r_cmd_add (core->rcmd, "Text",     "Утилита текстового журнала", &cmd_log);
+	r_cmd_add (core->rcmd, "t",        "Информация о типе (cparse)", &cmd_type);
 	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
-	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
-	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
-	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
-	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
-	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
-	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
-	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
-	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
-	r_cmd_add (core->rcmd, "open",     "open or map file", &cmd_open);
-	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
-	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
-	r_cmd_add (core->rcmd, "Visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add (core->rcmd, "visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add (core->rcmd, "*",        "pointer read/write", &cmd_pointer);
-	r_cmd_add (core->rcmd, "&",        "threading capabilities", &cmd_thread);
-	r_cmd_add (core->rcmd, "%",        "short version of 'env' command", &cmd_env);
-	r_cmd_add (core->rcmd, "!",        "run system command", &cmd_system);
+	r_cmd_add (core->rcmd, "Section",  "Раздел настроек io", &cmd_section);
+	r_cmd_add (core->rcmd, "bsize",    "Изменить размер блока", &cmd_bsize);
+	r_cmd_add (core->rcmd, "kuery",    "Выполнить запрос sdb", &cmd_kuery);
+	r_cmd_add (core->rcmd, "eval",     "Оценка переменной конфигурации", &cmd_eval);
+	r_cmd_add (core->rcmd, "print",    "Распечатать текущий блок", &cmd_print);
+	r_cmd_add (core->rcmd, "write",    "Написать байты", &cmd_write);
+	r_cmd_add (core->rcmd, "Code",     "Метаданные кода", &cmd_meta);
+	r_cmd_add (core->rcmd, "Project",  "Проект", &cmd_project);
+	r_cmd_add (core->rcmd, "open",     "Открыть или отобразить файл", &cmd_open);
+	r_cmd_add (core->rcmd, "yank",     "Копировать байты", &cmd_yank);
+	r_cmd_add (core->rcmd, "resize",   "Изменить размер файла", &cmd_resize);
+	r_cmd_add (core->rcmd, "Visual",   "Войти в визуальный режим", &cmd_visual);
+	r_cmd_add (core->rcmd, "visual",   "Войти в визуальный режим", &cmd_visual);
+	r_cmd_add (core->rcmd, "*",        "Указатель на чтение / запись", &cmd_pointer);
+	r_cmd_add (core->rcmd, "&",        "Возможности многопоточности", &cmd_thread);
+	r_cmd_add (core->rcmd, "%",        "Короткая версия команды 'env'", &cmd_env);
+	r_cmd_add (core->rcmd, "!",        "Команда запуска системы", &cmd_system);
 	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
-	r_cmd_add (core->rcmd, "\\",       "alias for =!", &cmd_rap_run);
-	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);
-	r_cmd_add (core->rcmd, "?",        "help message", &cmd_help);
-	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
-	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
-	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
-	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
-	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
-	r_cmd_add (core->rcmd, "u",        "uname/undo", &cmd_uname);
-	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
-	r_cmd_add (core->rcmd, "Q",        "alias for q!", &cmd_Quit);
+	r_cmd_add (core->rcmd, "\\",       "Псевдоним для =!", &cmd_rap_run);
+	r_cmd_add (core->rcmd, "#",        "Вычислять хеш", &cmd_hash);
+	r_cmd_add (core->rcmd, "?",        "Справочное сообщение", &cmd_help);
+	r_cmd_add (core->rcmd, "$",        "Псевдоним", &cmd_alias);
+	r_cmd_add (core->rcmd, ".",        "Интерпретировать", &cmd_interpret);
+	r_cmd_add (core->rcmd, "/",        "Поиск kw, модель aes", &cmd_search);
+	r_cmd_add (core->rcmd, "-",        "Открыть cfg.editor и запустить скрипт", &cmd_stdin);
+	r_cmd_add (core->rcmd, "(",        "Макрос", &cmd_macro);
+	r_cmd_add (core->rcmd, "u",        "Вывод информации о системе/назад", &cmd_uname);
+	r_cmd_add (core->rcmd, "quit",     "Выход из программы", &cmd_quit);
+	r_cmd_add (core->rcmd, "Q",        "Псевдоним для q!", &cmd_Quit);
 }

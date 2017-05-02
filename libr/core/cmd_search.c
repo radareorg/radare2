@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <stddef.h>
 
@@ -2176,14 +2176,14 @@ static bool isArm(RCore *core) {
 void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
-	// and for not messing adding a new param 
+	// and for not messing adding a new param
 	const char *prefix = r_config_get (core->config, "search.prefix");
 	if (isarm) {
 		if (to & 1) {
 			to--;
 		}
 	}
-	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to); 
+	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	r_core_cmdf (core, "f %s.0x%08"PFMT64x" %d = 0x%08"PFMT64x "# from 0x%"PFMT64x "\n", prefix, to, vsize, to, from);
 }
 
@@ -2350,14 +2350,14 @@ reread:
 	case 'R':
 		if (input[1] == '?') {
 			const char *help_msg[] = {
-				"Usage: /R", "", "Search for ROP gadgets",
-				"/R", " [filter-by-string]", "Show gadgets",
-				"/R/", " [filter-by-regexp]", "Show gadgets [regular expression]",
-				"/Rl", " [filter-by-string]", "Show gadgets in a linear manner",
-				"/R/l", " [filter-by-regexp]", "Show gadgets in a linear manner [regular expression]",
-				"/Rj", " [filter-by-string]", "JSON output",
-				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
-				"/Rk", " [select-by-class]", "Query stored ROP gadgets",
+				"Usage: /R", "", "Поиск устройств ROP",
+				"/R", " [filter-by-string]", "Показать устройства",
+				"/R/", " [filter-by-regexp]", "Показать устройства [Регулярное выражение]",
+				"/Rl", " [filter-by-string]", "Показать устройства линейно",
+				"/R/l", " [filter-by-regexp]", "Показать устройства линейно [Регулярное выражение]",
+				"/Rj", " [filter-by-string]", "JSON вывод",
+				"/R/j", " [filter-by-regexp]", "JSON вывод [Регулярное выражение]",
+				"/Rk", " [select-by-class]", "Запрос сохраненных устройств ROP",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -2366,10 +2366,10 @@ reread:
 		} else if (input[1] == 'k') {
 			if (input[2] == '?') {
 				const char *help_msg[] = {
-					"Usage: /Rk", "", "Query stored ROP gadgets",
-					"/Rk", " [nop|mov|const|arithm|arithm_ct]", "Show gadgets",
-					"/Rkj", "", "JSON output",
-					"/Rkq", "", "List Gadgets offsets",
+					"Usage: /Rk", "", "Запрос сохраненных устройств ROP",
+					"/Rk", " [nop|mov|const|arithm|arithm_ct]", "Показать устройства",
+					"/Rkj", "", "JSON вывод",
+					"/Rkq", "", "Список смещений устройств",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -2453,9 +2453,9 @@ reread:
 			dosearch = false;
 			param.crypto_search = false;
 			const char *help_msg[] = {
-				"Usage: /C", "", "Search for crypto materials",
-				"/Ca", "", "Search for AES keys",
-				"/Cr", "", "Search for private RSA keys",
+				"Usage: /C", "", "Поиск криптографических материалов",
+				"/Ca", "", "Поиск ключей AES",
+				"/Cr", "", "Поиск приватных ключей RSA",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -2786,9 +2786,9 @@ reread:
 	case 'x': /* search hex */
 		if (input[1] == '?') {
 			const char *help_msg[] = {
-				"Usage:", "/x [hexpairs]:[binmask]", "Search in memory",
-				"/x ", "9090cd80", "search for those bytes",
-				"/x ", "9090cd80:ffff7ff0", "search with binary mask",
+				"Usage:", "/x [hexpairs]:[binmask]", "Поиск в памяти",
+				"/x ", "9090cd80", "Искать эти байты",
+				"/x ", "9090cd80:ffff7ff0", "Поиск с использованием двоичной маски",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -2819,14 +2819,14 @@ reread:
 	case 'c': /* search asm */
 		if (input[1] == '?') {
 			const char *help_msg[] = {
-				"Usage:", "/c [inst]", " Search for asm",
-				"/c ", "instr", "search for instruction 'instr'",
-				"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
-				"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
-				"/c/ ", "instr1;instr2", "search for regex instruction 'instr1' followed by regex 'instr2'",
-				"/cj ", "instr", "json output",
-				"/c/j ", "instr", "regex search with json output",
-				"/c* ", "instr", "r2 command output",
+				"Usage:", "/c [inst]", " Поиск asm",
+				"/c ", "instr", "Поиск инструкции 'instr'",
+				"/c/ ", "instr", "Поиск инструкции, которая соответствует регулярному выражению 'instr'",
+				"/c ", "instr1;instr2", "Поиск инструкции 'instr1', за которой следует 'instr2'",
+				"/c/ ", "instr1;instr2", "Поиск инструкции regex 'instr1' с последующим регулярным выражением 'instr2'",
+				"/cj ", "instr", "json вывод",
+				"/c/j ", "instr", "Поиск по регулярному выражению с выходом json",
+				"/c* ", "instr", "Вывод команды r2",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -2906,39 +2906,39 @@ again:
 	break;
 	case '?': {
 		const char *help_msg[] = {
-			"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)",
-			"/", " foo\\x00", "search for string 'foo\\0'",
-			"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
-			"/!", " ff", "search for first occurrence not matching",
-			"/+", " /bin/sh", "construct the string with chunks",
-			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
-			"//", "", "repeat last search",
-			"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
-			"/a", " jmp eax", "assemble opcode and search its bytes",
-			"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
-			"/b", "", "search backwards",
-			"/B", "", "search recognized RBin headers",
-			"/c", " jmp [esp]", "search for asm code",
-			"/C", "[ar]", "search for crypto materials",
-			"/d", " 101112", "search for a deltified sequence of bytes",
-			"/e", " /E.F/i", "match regular expression",
-			"/E", " esil-expr", "offset matching given esil expressions %%= here",
-			"/f", " file [off] [sz]", "search contents of file with offset and size",
-			"/i", " foo", "search for string 'foo' ignoring case",
-			"/m", " magicfile", "search for matching magic file (use blocksize)",
-			"/o", "", "show offset of previous instruction",
-			"/p", " patternsize", "search for pattern of given size",
-			"/P", " patternsize", "search similar blocks",
-			"/r[e]", " sym.printf", "analyze opcode reference an offset (/re for esil)",
-			"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
-			"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
-			"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
-			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
-			"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
-			"/x", " ff..33", "search for hex string ignoring some nibbles",
-			"/x", " ff0033", "search for hex string",
-			"/x", " ff43 ffd0", "search for hexpair with mask",
-			"/z", " min max", "search for strings of given size",
+			"Usage:", "/[amx/] [arg]", "Поиск материалов (см.'e??search' для вариантов)",
+			"/", " foo\\x00", "Поиск строки 'foo \\ 0'",
+			"/j", " foo\\x00", "Поиск строки 'foo \\ 0'(json вывод)",
+			"/!", " ff", "Поиск первого поялвения несоответствия",
+			"/+", " /bin/sh", "Построить строку с кусками",
+			"/!x", " 00", "Обратный поиск в hexa (найти первый байт!= 0x00)",
+			"//", "", "Повторить последний поиск",
+			"/h", "[t] [hash] [len]", "Найти блок, соответствующий этому хэшу. См. /#?",
+			"/a", " jmp eax", "Собрать код операции и найти его байты ",
+			"/A", " jmp", "Найти проанализированные инструкции этого типа (/ A? Для справки)",
+			"/b", "", "поиск в обратном направлении",
+			"/B", "", "Поиск распознанных заголовков ROBin",
+			"/c", " jmp [esp]", "Поиск по ASM-кодам",
+			"/C", "[ar]", "Поиск криптографических материалов",
+			"/d", " 101112", "Поиск упорядоченной последовательности байтов",
+			"/e", " /E.F/i", "Совпадение регулярного выражения",
+			"/E", " esil-expr", "Смещение, соответствующее данным выражениям esil %% = here",
+			"/f", " file [off] [sz]", "Искать содержимое файла со смещением и размером",
+			"/i", " foo", "Искать строку 'foo' игнорируя регистр",
+			"/m", " magicfile", "Поиск подходящего волшебного файла (использовать blockize)",
+			"/o", "", "Показать смещение предыдущей команды",
+			"/p", " patternsize", "Поиск образца заданного размера",
+			"/P", " patternsize", "Поиск похожих блоков",
+			"/r[e]", " sym.printf", "Проанализировать ссылку кода операции на смещение (/ re для esil)",
+			"/R", " [grepopcode]", "Поиск совпадающих устройств ROP, разделенных точкой с запятой ",
+			"/v", "[1248] value", "Поиск 32-разрядного значения `cfg.bigendian`",
+			"/V", "[1248] min max", "Поиск 32-разрядного значения `cfg.bigendian` в диапазоне",
+			"/w", " foo", "Поиск широкой строки 'f\\0o\\0o\\0'",
+			"/wi", " foo", "Поиск широкой строки без учета регистра 'f\\0o\\0o\\0'",
+			"/x", " ff..33", "Поиск шестнадцатеричной строки без учета некоторых участков",
+			"/x", " ff0033", "Поиск шестнадцатеричной строки ",
+			"/x", " ff43 ffd0", "Поиск шестнадцатеричной строки с маской",
+			"/z", " min max", "Поиск строк заданного размера ",
 #if 0
 			"\nConfiguration:", "", " (type `e??search.` for a complete list)",
 			"e", " cmd.hit = x", "command to execute on every search hit",

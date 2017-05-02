@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+﻿/* radare - LGPL - Copyright 2009-2016 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 #include <string.h>
 
 #include "r_anal.h"
@@ -8,28 +8,28 @@
 
 static void show_help(RCore *core) {
 	const char *help_message[] = {
-		"Usage: t", "", "# cparse types commands",
-		"t", "", "List all loaded types",
-		"t", " <type>", "Show type in 'pf' syntax",
-		"t*", "", "List types info in r2 commands",
-		"t-", " <name>", "Delete types by its name",
-		"t-*", "", "Remove all types",
+		"Usage: t", "", "# Команды типов cparse",
+		"t", "", "Список всех загруженных типов",
+		"t", " <type>", "Показать тип в синтаксисе 'pf'",
+        "t*", "", "Список типов информации в командах r2",
+		"t-", " <name>", "Удалить типы по имени ",
+        "t-*", "", "Удалить все типы",
 		//"t-!", "",          "Use to open $EDITOR",
-		"tb", " <enum> <value>", "Show matching enum bitfield for given number",
-		"te", "[?]", "List all loaded enums",
-		"te", " <enum> <value>", "Show name for given enum number",
-		"td", "[?] <string>", "Load types from string",
-		"tf", "", "List all loaded functions signatures",
-		"tk", " <sdb-query>", "Perform sdb query",
-		"tl", "[?]", "Show/Link type to an address",
+		"tb", " <enum> <value>", "Покаpать совпадающее битовое поле перечисления для заданного числа",
+        "te", "[?]", "Список всех загруженных перечислений",
+		"te", " <enum> <value>", "Показывать имя заданного номера перечисления",
+		"td", "[?] <string>", "Загрузить типы из строки",
+		"tf", "", "Список всех загруженных функций подписей",
+		"tk", " <sdb-query>", "Выполнить запрос sdb",
+		"tl", "[?]", "Показать/связать тип с адресом",
 		//"to",  "",         "List opened files",
-		"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
-		"to", " -", "Open cfg.editor to load types",
-		"to", " <path>", "Load types from C header file",
-		"tos", " <path>", "Load types from parsed Sdb database",
-		"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
-		"ts", "[?]", "print loaded struct types",
-		"tu", "[?]", "print loaded union types",
+		"tn", "[?] [-][addr]", "Управлять атрибутами и метками функции noreturn",
+		"to", " -", "Открыть cfg.editor для загрузки типов",
+		"to", " <path>", "Типы загрузки из файла заголовка C",
+		"tos", " <path>", "Типы загрузки из разобранной базы данных Sdb",
+		"tp", " <type>  = <address>", "Преобразовать данные с <address> в <type> и распечатать",
+		"ts", "[?]", "Печатать загруженные типы структуры",
+		"tu", "[?]", "Печатать загруженные типы соединений",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL };
 	r_core_cmd_help (core, help_message);
@@ -53,11 +53,11 @@ static void showFormat(RCore *core, const char *name) {
 
 static void cmd_type_noreturn(RCore *core, const char *input) {
 	const char *help_msg[] = {
-		"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
-		"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
-		"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
-		"tn", "-*", "remove all no-return references",
-		"tn", "", "list them all",
+		"Usage:", "tn [-][0xaddr|symname]", " Управлять невозвратными знаками",
+		"tn[a]", " 0x3000", "остановить анализ функции, если вызов/JMP по этому адресу",
+		"tn[n]", " sym.imp.exit", "То же, что и выше, но для названий флагов/fcn",
+		"tn", "-*", "Удалить все невозвратные ссылки",
+		"tn", "", "Список всех",
 		NULL };
 	switch (input[0]) {
 	case '-': // "tn-"
@@ -287,9 +287,9 @@ static int cmd_type(void *data, const char *input) {
 		case '?': {
 			const char *help_message[] = {
 				"USAGE ts[...]", " [type]", "",
-				"ts", "", "List all loaded structs",
-				"ts", " [type]", "Show pf format string for given struct",
-				"ts?", "", "show this help",
+				"ts", "", "Список всех загруженных структур",
+				"ts", " [type]", "Показать строку формата pf для данной структуры",
+				"ts?", "", "Показать эту справку",
 				NULL };
 			r_core_cmd_help (core, help_message);
 		} break;
@@ -345,9 +345,9 @@ static int cmd_type(void *data, const char *input) {
 		if (input[1] == '?') {
 			const char *help_message[] = {
 				"USAGE te[...]", "", "",
-				"te", "", "List all loaded enums",
-				"te", " <enum> <value>", "Show name for given enum number",
-				"te?", "", "show this help",
+				"te", "", "Список всех загруженных перечислений",
+				"te", " <enum> <value>", "Показать имя заданного номера перечисления",
+				"te?", "", "Показать эту справку",
 				NULL };
 			r_core_cmd_help (core, help_message);
 			break;
@@ -432,7 +432,7 @@ static int cmd_type(void *data, const char *input) {
 		if (input[1] == '?') {
 			const char *help_message[] = {
 				"Usage:", "\"td [...]\"", "",
-				"td", "[string]", "Load types from string",
+				"td", "[string]", "Загрузка типов из строки",
 				NULL };
 			r_core_cmd_help (core, help_message);
 			r_cons_printf ("Note: The td command should be put between double quotes\n"
@@ -460,14 +460,14 @@ static int cmd_type(void *data, const char *input) {
 		case '?': {
 			const char *help_message[] = {
 				"Usage:", "", "",
-				"tl", "", "list all links in readable format",
-				"tl", "[typename]", "link a type to current address.",
-				"tl", "[typename] = [address]", "link type to given address.",
-				"tls", "[address]", "show link at given address",
-				"tl-*", "", "delete all links.",
-				"tl-", "[address]", "delete link at given address.",
-				"tl*", "", "list all links in radare2 command format",
-				"tl?", "", "print this help.",
+				"tl", "", "Перечислить все ссылки в читаемом формате",
+				"tl", "[typename]", "Тип ссылки с текущим адресом.",
+				"tl", "[typename] = [address]", "Тип ссылки на заданный адрес.",
+				"tls", "[address]", "Показать ссылку по указанному адресу",
+				"tl-*", "", "Удалить все ссылки.",
+				"tl-", "[address]", "Удалить ссылку по указанному адресу.",
+				"tl*", "", "Перечислить все ссылки в формате команды radare2",
+				"tl?", "", "Распечатайте эту справку.",
 				NULL };
 			r_core_cmd_help (core, help_message);
 			} break;

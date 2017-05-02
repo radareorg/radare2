@@ -1,30 +1,30 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include "r_core.h"
 
 static void showhelp(RCore *core) {
 	const char *help_msg[] = {
 		"Usage:", "c[?dfx] [argument]", " # Compare",
-		"c", " [string]", "Compare a plain with escaped chars string",
-		"c*", " [string]", "Compare a plain with escaped chars string (output r2 commands)",
-		"c4", " [value]", "Compare a doubleword from a math expression",
-		"c8", " [value]", "Compare a quadword from a math expression",
-		"cat", " [file]", "Show contents of file (see pwd, ls)",
-		"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
-		"ccc", " [at] [(at)]", "Same as above, but only showing different lines",
-		"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
+		"c", " [string]", "Сравнение  с бегущей строкой символов",
+		"c*", " [string]", "Сравнение  с бегущей строкой символов (Выходные команды r2)",
+		"c4", " [value]", "Сравнение двойного слова из математического выражения",
+		"c8", " [value]", "Сравнить четверное слово из математического выражения",
+		"cat", " [file]", "Показать содержимое файла (см. Pwd, ls)",
+		"cc", " [at] [(at)]", "Сравнивает hexdump в двух столбцах размера блока",
+		"ccc", " [at] [(at)]", "То же, что и выше, но только показывает разные линии",
+		"ccd", " [at] [(at)]", "Сравнивает в двух столбцах степени отклонения размера блока",
 		// "cc", " [offset]", "code bindiff current block against offset"
 		// "cD", " [file]", "like above, but using radiff -b",
-		"cf", " [file]", "Compare contents of file at current seek",
-		"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
-		"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
-		"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
-		"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-		"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
-		"cw", "[?] [us?] [...]", "Compare memory watchers",
-		"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
-		"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
-		"cX", " [addr]", "Like 'cc' but using hexdiff output",
+		"cf", " [file]", "Сравнить содержимое файла при текущем поиске",
+		"cg", "[?] [o] [file]", "Графические различия текущего файла и [файла]",
+		"cl|cls|clear", "", "Очистить экран, (clear0 до перехода 0, 0)",
+		"cu", "[?] [addr] @at", "Сравните hexdump памяти $$ и dst в унифицированном diff",
+		"cud", " [addr] @at", "Унифицированная разновидность diff от $$ и заданный адрес",
+		"cv", "[1248] [addr] @at", "Сравнить 1,2,4,8-байтовое значение",
+		"cw", "[?] [us?] [...]", "Сравнить просмотры памяти",
+		"cx", " [hexpair]", "Сравните шестнадцатеричную строку (используйте '.' В качестве подстановочного символа)",
+		"cx*", " [hexpair]", "Сравнение шестнадцатеричной строки (выходные команды r2)",
+		"cX", " [addr]", "Подобно 'cc', но используя hexdiff output",
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
@@ -255,14 +255,14 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 		break;
 	case '?': {
 		const char *help_message[] = {
-			"Usage: cw", "", "Watcher commands",
-			"cw", "", "List all compare watchers",
-			"cw", " addr", "List all compare watchers",
-			"cw", " addr sz cmd", "Add a memory watcher",
+			"Usage: cw", "", "Команды Watcher",
+			"cw", "", "Список всех сравнений watchers",
+			"cw", " addr", "Список всех сравнений watchers",
+			"cw", " addr sz cmd", "Добавление памяти watcher",
 			// "cws", " [addr]", "Show watchers",
-			"cw", "*", "List compare watchers in r2 cmds",
-			"cwr", " [addr]", "Reset/revert watchers",
-			"cwu", " [addr]", "Update watchers",
+			"cw", "*", "Список всех сравнений watchers в r2 cmds",
+			"cwr", " [addr]", "Сбросить / вернуть watchers",
+			"cwu", " [addr]", "Обновить watchers",
 			NULL
 		};
 		r_core_cmd_help (core, help_message);
@@ -618,10 +618,10 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		default: {
 			const char *help_message[] = {
-				"Usage: cg", "", "Graph code commands",
-				"cg", "", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
-				"cgf", "[fcn]", "Compare functions (curseek vs fcn)",
-				"cgo", "", "Opcode-bytes code graph diff",
+				"Usage: cg", "", "Команды графического кода",
+				"cg", "", "Соотношение между функциями (Столбцы: off-A, match-ratio, off-B)",
+				"cgf", "[fcn]", "Сравнение функций (curseek vs fcn)",
+				"cgo", "", "Различия байтов опкода и кода графики",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
@@ -673,10 +673,10 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		default: {
 			const char *help_msg[] = {
-				"Usage: cu", " [offset]", "# Creates a unified hex patch",
-				"cu", " $$+1 > p", "Compare current seek and +1",
-				"cud", " $$+1 > p", "Compare disasm current seek and +1",
-				"wu", " p", "Apply unified hex patch",
+				"Usage: cu", " [offset]", "# Создает унифицированный шестнадцатеричный патч",
+				"cu", " $$+1 > p", "Сравнить текущий поиск и +1",
+				"cud", " $$+1 > p", "Сравните отклонение текущего поиска и +1",
+				"wu", " p", "Применить унифицированный шестнадцатеричный патч",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);

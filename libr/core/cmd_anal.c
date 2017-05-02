@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, maijin */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake, maijin */
 
 #include "r_util.h"
 #include "r_core.h"
@@ -49,8 +49,8 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 static void type_cmd_help(RCore *core) {
 	const char *help_msg[] = {
 		"Usage:", "aftm", "",
-		"afta", "", "Setup memory and analyse do type matching analysis for all functions",
-		"aftm", "", "type matching analysis",
+		"afta", "", "Настроить память и выполнить анализ соответствия типов для всех функций",
+		"aftm", "", "Анализ соответствия типов",
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
@@ -143,48 +143,48 @@ static void flag_every_function(RCore *core) {
 static void var_help(RCore *core, char ch) {
 	const char *help_sp[] = {
 		"Usage:", "afvs", " [idx] [type] [name]",
-		"afvs", "", "list stack based arguments and locals",
-		"afvs*", "", "same as afvs but in r2 commands",
-		"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
-		"afvsj", "", "return list of stack based arguments and locals in JSON format",
-		"afvs-", " [name]", "delete stack based argument or locals with the given name",
-		"afvsg", " [idx] [addr]", "define var get reference",
-		"afvss", " [idx] [addr]", "define var set reference",
+		"afvs", "", "Список стек аргументов и локальных переменных",
+		"afvs*", "", "То же, что и afvs, но в командах r2",
+		"afvs", " [idx] [name] [type]", "Определить аргументы , локальные переменные",
+		"afvsj", "", "Возвращает список аргументов стека и локальных файлов в формате JSON",
+		"afvs-", " [name]", "Удалить аргумент стека или локальные переменные с заданным именем",
+		"afvsg", " [idx] [addr]", "Определить справку переменных",
+		"afvss", " [idx] [addr]", "Получить справку переменных",
 		NULL
 	};
 	const char *help_bp[] = {
 		"Usage:", "afvb", " [idx] [type] [name]",
-		"afvb", "", "list base pointer based arguments, locals",
-		"afvb*", "", "same as afvb but in r2 commands",
-		"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
-		"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
-		"afvb-", " [name]", "delete argument/locals at the given name",
-		"afvbg", " [idx] [addr]", "define var get reference",
-		"afvbs", " [idx] [addr]", "define var set reference",
+		"afvb", "", "Список стек аргументов и локальных переменных",
+		"afvb*", "", "То же, что и afvs, но в командах r2",
+		"afvb", " [idx] [name] ([type])", "Определить аргументы стека, локальные переменные",
+		"afvbj", "", "Возвращает список аргументов стека и локальных файлов в формате JSON",
+		"afvb-", " [name]", "Удалить аргумент стека или локальные переменные с заданным именем",
+		"afvbg", " [idx] [addr]", "Определить справку переменных",
+		"afvbs", " [idx] [addr]", "Получить справку переменных",
 		NULL
 	};
 	const char *help_reg[] = {
 		"Usage:", "afvr", " [reg] [type] [name]",
-		"afvr", "", "list register based arguments",
-		"afvr*", "", "same as afvr but in r2 commands",
-		"afvr", " [reg] [name] ([type])", "define register arguments",
-		"afvrj", "", "return list of register arguments in JSON format",
-		"afvr-", " [name]", "delete register arguments at the given index",
-		"afvrg", " [reg] [addr]", "define argument get reference",
-		"afvrs", " [reg] [addr]", "define argument set reference",
+		"afvr", "", "Список аргументов регистра",
+		"afvr*", "", "То же, что и afvr, но в командах r2",
+		"afvr", " [reg] [name] ([type])", "Определять аргументы регистров",
+		"afvrj", "", "Возвращает список аргументов регистра в формате JSON",
+		"afvr-", " [name]", "Удалить аргументы регистра по указанному индексу",
+		"afvrg", " [reg] [addr]", "Определить аргумент получить ссылку",
+		"afvrs", " [reg] [addr]", "Определить ссылку на аргумент",
 		NULL
 	};
 	const char *help_general[] = {
 		"Usage:", "afv","[rbs]",
-		"afvr", "[?]", "manipulate register based arguments",
-		"afvb", "[?]", "manipulate bp based arguments/locals",
-		"afvs", "[?]", "manipulate sp based arguments/locals",
-		"afvR", " [varname]", "list addresses where vars are accessed",
-		"afvW", " [varname]", "list addresses where vars are accessed",
-		"afva", "", "analyze function arguments/locals",
-		"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-		"afvn", " [old_name] [new_name]", "rename argument/local",
-		"afvt", " [name] [new_type]", "change type for given argument/local",
+		"afvr", "[?]", "Управление аргументами регистра",
+		"afvb", "[?]", "Управление bp аргументами/локальными переменными",
+		"afvs", "[?]", "Управление sp аргументами/локальными переменными",
+		"afvR", " [varname]", "Список адресов, где доступны переменные",
+		"afvW", " [varname]", "Список адресов, где доступны переменные",
+		"afva", "", "Анализировать аргументы функции / локальные переменные",
+		"afvd", " name", "Команда output r2 для отображения значения аргументов / локальных переменных в отладчике",
+		"afvn", " [old_name] [new_name]", "Переименовать аргумент / локальную переменную",
+		"afvt", " [name] [new_type]", "изменение типа для данного аргумента / локальной переменной",
 		NULL
 	};
 	switch (ch) {
@@ -1368,9 +1368,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '?':
 			eprintf ("Usage: afi[jl*] <addr>\n"); break;
-			eprintf ("afij - function info in json format\n");
-			eprintf ("afil - verbose function info\n");
-			eprintf ("afi* - function, variables and arguments\n");
+			eprintf ("afij - Информация о функции в формате json\n");
+			eprintf ("afil - Подробная информация о функции\n");
+			eprintf ("afi* - Функции, переменные и аргументы\n");
 			break;
 		case 'j':   // "afij"
 		case 'l':   // "afil"
@@ -1388,13 +1388,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			case '?':
 			{
 				const char *help_msg[] = {
-					"Usage:", "afl", " List all functions",
-					"afl", "", "list functions",
-					"aflj", "", "list functions in json",
-					"afll", "", "list functions in verbose mode",
-					"aflq", "", "list functions in quiet mode",
-					"aflqj", "", "list functions in json quiet mode",
-					"afls", "", "print sum of sizes of all functions",
+					"Usage:", "afl", " Список всех функций",
+					"afl", "", "список функций",
+					"aflj", "", "Список функций в json",
+					"afll", "", "Список функций в расширенном режиме",
+					"aflq", "", "Список функций в скрытом режиме",
+					"aflqj", "", "Список функций в JSon скрытом режиме",
+					"afls", "", "Вывод суммы размеров всех функций",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 			}
@@ -1471,11 +1471,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		const char *help_afC[] = {
 			"Usage:", "afC[agl?]", "",
-			"afC", " convention", "Manually set calling convention for current function",
-			"afC", "", "Show Calling convention for the Current function",
-			"afCa", "", "Analyse function for finding the current calling convention",
-			"afCl", "", "List all available calling conventions",
-			"afCo", " path", "Open Calling Convention sdb profile from given path",
+			"afC", " convention", "Ручная установка соглашения о вызовах для текущей функции",
+			"afC", "", "Показать соглашение о вызове для текущей функции",
+			"afCa", "", "Анализ функции для поиска текущего соглашения о вызовах",
+			"afCl", "", "Список всех доступных соглашений о вызовах",
+			"afCo", " path", "Открыть профиль sdb соглашения о вызове по заданному пути",
 			NULL };
 		switch (input[2]) {
 		case 'o':{
@@ -1554,15 +1554,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '?':
 			{
 				const char *help_msg[] = {
-					"Usage:", "afb", " List basic blocks of given function",
-					".afbr-", "", "Set breakpoint on every return address of the function",
-					".afbr-*", "", "Remove breakpoint on every return address of the function",
-					"afb", " [addr]", "list basic blocks of function",
-					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
-					"afbr", "", "Show addresses of instructions which leave the function",
-					"afbj", "", "show basic blocks information in json",
-					"afbe", "bbfrom bbto", "add basic-block edge for switch-cases",
-					"afB", " [bits]", "define asm.bits for the given function",
+					"Usage:", "afb", " Список основных блоков заданной функции",
+					".afbr-", "", "Установить контрольную точку для каждого обратного адреса функции",
+					".afbr-*", "", "Удалить контрольную точку для каждого обратного адреса функции",
+					"afb", " [addr]", "список основных блоков функции",
+					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "Добавить основной блок вручную",
+					"afbr", "", "Показать адреса инструкций, которые оставляют функцию",
+					"afbj", "", "Показать информацию об основных блоках в json",
+					"afbe", "bbfrom bbto", "Добавить границу основного блока для случаев автоматического выключения ",
+					"afB", " [bits]", "Определить asm.bits для данной функции",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -1614,10 +1614,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default:
 			{
 				const char *help_msg[] = {
-					"Usage:", "afn[sa]", " Analyze function names",
-					"afn", " [name]", "rename the function",
-					"afna", "", "construct a function name for the current offset",
-					"afns", "", "list all strings associated with the current function",
+					"Usage:", "afn[sa]", " Анализ названий функций",
+					"afn", " [name]", "Переименовать функцию",
+					"afna", "", "Создатьть имя функции для текущего смещения",
+					"afns", "", "список всех строк, связанных с текущей функцией",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -1737,11 +1737,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '?':
 			{
 			const char *help_msg[] = {
-				"Usage:", "afx[-cCd?] [src] [dst]", "# manage function references (see also ar?)",
-				"afxc", " sym.main+0x38 sym.printf", "add code ref",
-				"afxC", " sym.main sym.puts", "add call ref",
-				"afxd", " sym.main str.helloworld", "add data ref",
-				"afx-", " sym.main str.helloworld", "remove reference",
+				"Usage:", "afx[-cCd?] [src] [dst]", "#Управлять справками функций (см. также ar?)",
+				"afxc", " sym.main+0x38 sym.printf", "Добавить код справки",
+				"afxC", " sym.main sym.puts", "Добавить вызов справки",
+				"afxd", " sym.main str.helloworld", "Добавиьт данные справки",
+				"afx-", " sym.main str.helloworld", "Удалить справку",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 			}
@@ -1762,30 +1762,30 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		{ // "af?"
 		const char *help_msg[] = {
 			"Usage:", "af", "",
-			"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
-			"afr", " ([name]) ([addr])", "analyze functions recursively",
-			"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
-			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
-			"afb", "[?] [addr]", "List basic blocks of given function",
-			"afB", " 16", "set current function as thumb (change asm.bits)",
-			"afc[c]", " ([addr])@[addr]", "calculate the Cycles (afc) or Cyclomatic Complexity (afcc)",
-			"afC", "[?] type @[addr]", "set calling convention for function",
-			"aft", "[?]", "type matching, type propagation",
-			"aff", "", "re-adjust function boundaries to fit",
-			"afF", "[1|0|]", "fold/unfold/toggle",
-			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-			"afl", "[?] [l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
-			"afo", " [fcn.name]", "show address for the function named like this",
-			"afm", " name", "merge two functions",
-			"afM", " name", "print functions map",
-			"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
-			"afna", "", "suggest automatic name for current offset",
-			"afs", " [addr] [fcnsign]", "get/set function signature at current address",
-			"afS", "[stack_size]", "set stack frame size for function at current address",
-			"afu", " [addr]", "resize and analyze function from current address until addr",
-			"afv[bsra]", "?", "manipulate args, registers and variables in function",
-			"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
+			"af", " ([name]) ([addr])", "Анализировать функции (начинать с addr или $$)",
+			"afr", " ([name]) ([addr])", "Анализировать функции рекурсивно",
+			"af+", " addr name [type] [diff]", "Ручная работа функции (Требует afb +)",
+			"af-", " [addr]", "Очистить все данные анализа функции (или функции в addr)",
+			"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "Добавить bb в функцию @ fcnaddr",
+			"afb", "[?] [addr]", "Список основных блоков заданной функции",
+			"afB", " 16", "Установить текущую функцию как thumb (изменить asm.bits)",
+			"afc[c]", " ([addr])@[addr]", "Вычислить Циклы (afc) или Цикломатическую Сложность (afcc)",
+			"afC", "[?] type @[addr]", "Вызвать соглашение о вызовах функции",
+			"aft", "[?]", "Тип соответствия, распространение типа",
+			"aff", "", "Перенастроить границы функций, чтобы они соответствовали",
+			"afF", "[1|0|]", "Свернуть / развернуть / переключить",
+			"afi", " [addr|fcn.name]", "Показать информацию о функции (подробный afl)",
+			"afl", "[?] [l*] [fcn name]", "Список функций (addr, size, bbs, name) (см. Afll)",
+			"afo", " [fcn.name]", "показать адрес для функции с именем, как это",
+			"afm", " name", "Объединить две функции",
+			"afM", " name", "Печать карты функции",
+			"afn", "[?] name [addr]", "Переименовать имя для функции по адресу (также изменить флаг)",
+			"afna", "", "Предложить автоматическое имя для текущего смещения",
+			"afs", " [addr] [fcnsign]", "Получить / установить подпись функции по текущему адресу",
+			"afS", "[stack_size]", "Установить размер кадра стека для функции по текущему адресу",
+			"afu", " [addr]", "Изменять размер и анализировать функцию с текущего адреса до addr",
+			"afv[bsra]", "?", "Управлять аргументами, регистрами и переменными в функции",
+			"afx", "[cCd-] src dst", "Добавление/удаление кода/Вызова/данных/строки справка",
 			NULL };
 		r_core_cmd_help (core, help_msg);
 		}
@@ -1936,48 +1936,48 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 
 static void ar_show_help(RCore *core) {
 	const char *help_message[] = {
-		"Usage: ar", "", "# Analysis Registers",
-		"ar", "", "Show 'gpr' registers",
-		"ar0", "", "Reset register arenas to 0",
-		"ara", "[?]", "Manage register arenas",
-		"ar", " 16", "Show 16 bit registers",
-		"ar", " 32", "Show 32 bit registers",
-		"ar", " all", "Show all bit registers",
-		"ar", " <type>", "Show all registers of given type",
-		"arC", "", "Display register profile comments",
-		"arr", "", "Show register references (telescoping)",
-		"ar=", "", "Show register values in columns",
-		"ar?", " <reg>", "Show register value",
-		"arb", " <type>", "Display hexdump of the given arena",
-		"arc", " <name>", "Conditional flag registers",
-		"ard", " <name>", "Show only different registers",
-		"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-		"aro", "", "Show old (previous) register values",
-		"arp", "[?] <file>", "Load register profile from file",
-		"ars", "", "Stack register state",
-		"art", "", "List all register types",
-		"arw", " <hexnum>", "Set contents of the register arena",
-		".ar*", "", "Import register values as flags",
-		".ar-", "", "Unflag all registers",
+		"Usage: ar", "", "#Регистры анализа",
+		"ar", "", "Показывать регистры «gpr»",
+		"ar0", "", "Сбросить регистры в 0",
+		"ara", "[?]", "Управление полями регистров",
+		"ar", " 16", "Показать 16-разрядные регистры",
+		"ar", " 32", "Показать 32-разрядные регистры",
+		"ar", " all", "Показать все битовые регистры",
+		"ar", " <type>", "Показать все регистры заданного типа",
+		"arC", "", "Показывать комментарии профиля регистрации",
+		"arr", "", "Показать ссылки на регистры (телескопирование)",
+		"ar=", "", "Показывать значения регистров в столбцах",
+		"ar?", " <reg>", "Показывать значение регистра",
+		"arb", " <type>", "Отобразить 16-ричный дамп для данного поля",
+		"arc", " <name>", "Условные регистры флагов",
+		"ard", " <name>", "Показывать только разные регистры",
+		"arn", " <regalias>", "Получить рег.имена для pc, sp, bp, a0-3, zf, cf, of, sg",
+		"aro", "", "Показывать старые (предыдущие) значения регистра",
+		"arp", "[?] <file>", "Загрузить профиль регистрации из файла",
+		"ars", "", "Состояние стека регистра ",
+		"art", "", "Список всех типов регистров",
+		"arw", " <hexnum>", "Задать содержимое регистра",
+		".ar*", "", "Импортировать значения регистров в качестве флагов",
+		".ar-", "", "Отменить все регистры",
 		NULL };
 	r_core_cmd_help (core, help_message);
 }
 
 static void cmd_ara_help(RCore *core) {
 	const char *help_msg[] = {
-		"Usage:", "ara[+-s]", "Register Arena Push/Pop/Swap",
-		"ara", "", "show all register arenas allocated",
-		"ara", "+", "push a new register arena for each type",
-		"ara", "-", "pop last register arena",
-		"aras", "", "swap last two register arenas",
+		"Usage:", "ara[+-s]", "Регистр Arena Push/Pop/Swap",
+		"ara", "", "Показать все выделенные поля регистров",
+		"ara", "+", "Нажмите новую область регистра для каждого типа",
+		"ara", "-", "pop последнего поля регистра",
+		"aras", "", "Swap два последних поля",
 		NULL };
 	r_core_cmd_help (core, help_msg);
 }
 
 static void cmd_arw_help (RCore *core) {
 	const char *help_msg[] = {
-		"Usage:", " arw ", "# Set contents of the register arena",
-		"arw", " <hexnum>", "Set contents of the register arena",
+		"Usage:", " arw ", "# Задать содержимое поля регистра",
+		"arw", " <hexnum>", "Задать содержимое поля регистра",
 		NULL };
 	r_core_cmd_help (core, help_msg);
 }
@@ -2157,10 +2157,10 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			break;
 		case '?': {
 			const char *help_msg[] = {
-				"Usage:", "drs", " # Register states commands",
-				"drs", "", "List register stack",
-				"drs+", "", "Push register state",
-				"drs-", "", "Pop register state",
+				"Usage:", "drs", " # Команды состояния регистров",
+				"drs", "", "Список стека регистра",
+				"drs+", "", "Push состояние регистра",
+				"drs-", "", "Pop состоянре регистра ",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 		} break;
@@ -2929,14 +2929,14 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 
 static void aea_help(RCore *core) {
 	const char *help_msg[] = {
-		"Examples:", "aea", " show regs used in a range",
-		"aea", " [ops]", "Show regs used in N instructions",
-		"aeaf", "", "Show regs used in current function",
-		"aear", " [ops]", "Show regs read in N instructions",
-		"aeaw", " [ops]", "Show regs written in N instructions",
-		"aean", " [ops]", "Show regs not written in N instructions",
-		"aeaj", " [ops]", "Show aea output in JSON format",
-		"aeA", " [len]", "Show regs used in N bytes (subcommands are the same)",
+		"Examples:", "aea", " Показать регистры, используемые в диапазоне",
+		"aea", " [ops]", "Показать регистры, используемые в N командах",
+		"aeaf", "", "Показать регистры, используемые в текущей функции ",
+		"aear", " [ops]", "Показать регистры, прочитанные в N командах",
+		"aeaw", " [ops]", "Показать регистры, записанные в N командах",
+		"aean", " [ops]", "Показать регистры, не записанные в N командах",
+		"aeaj", " [ops]", "Показать вывод aea в формате JSON",
+		"aeA", " [len]", "Показать регистры, используемые в N байтах (подкоманды одинаковы)",
 		NULL };
 	r_core_cmd_help (core, help_msg);
 }
@@ -2944,10 +2944,10 @@ static void aea_help(RCore *core) {
 static void cmd_anal_esil(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "aep[-c] ", " [...]",
-		"aepc", " [addr]", "change program counter for esil",
-		"aep", "-[addr]", "remove pin",
-		"aep", " [name] @ [addr]", "set pin",
-		"aep", "", "list pins",
+		"aepc", " [addr]", "Сменить счетчик программ для esil",
+		"aep", "-[addr]", "Удалить pin",
+		"aep", " [name] @ [addr]", "Установить pin",
+		"aep", "", "Спиоск pins",
 		NULL };
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -3067,11 +3067,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'c':
 		if (input[1] == '?') { // "aec?"
 			const char *help_msg[] = {
-				"Examples:", "aec", " continue until ^c",
-				"aec", "", "Continue until exception",
-				"aecs", "", "Continue until syscall",
-				"aecu", "[addr]", "Continue until address",
-				"aecue", "[addr]", "Continue until esil expression",
+				"Examples:", "aec", " Продолжать до тех пор, пока ^c",
+				"aec", "", "Продолжать до исключения",
+				"aecs", "", "Продолжать до системного вызова",
+				"aecu", "[addr]", "Продолжfть до адреса",
+				"aecue", "[addr]", "Продолжаnm до выражения esil",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == 's') { // "aecs"
@@ -3330,7 +3330,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case '?':
 		if (input[1] == '?') {
 			const char *help_msg[] = {
-				"Examples:", "ESIL", " examples and documentation",
+				"Examples:", "ESIL", " Примеры и документация",
 				"+", "=", "A+=B => B,A,+=",
 				"+", "", "A=A+B => B,A,+,A,=",
 				"*", "=", "A*=B => B,A,*=",
@@ -3338,26 +3338,26 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"&", "=", "and ax, bx => bx,ax,&=",
 				"|", "", "or r0, r1, r2 => r2,r1,|,r0,=",
 				"^", "=", "xor ax, bx => bx,ax,^=",
-				">>", "=", "shr ax, bx => bx,ax,>>=  # shift right",
-				"<<", "=", "shr ax, bx => bx,ax,<<=  # shift left",
+				">>", "=", "shr ax, bx => bx,ax,>>=  # shift правый",
+				"<<", "=", "shr ax, bx => bx,ax,<<=  # shift левый",
 				"", "[]", "mov eax,[eax] => eax,[],eax,=",
 				"=", "[]", "mov [eax+3], 1 => 1,3,eax,+,=[]",
 				"=", "[1]", "mov byte[eax],1 => 1,eax,=[1]",
 				"=", "[8]", "mov [rax],1 => 1,rax,=[8]",
 				"$", "", "int 0x80 => 0x80,$",
-				"$$", "", "simulate a hardware trap",
-				"==", "", "pops twice, compare and update esil flags",
-				"<", "", "compare for smaller",
-				"<", "=", "compare for smaller or equal",
-				">", "", "compare for bigger",
-				">", "=", "compare bigger for or equal",
-				"?{", "", "if popped value != 0 run the block until }",
-				"POP", "", "drops last element in the esil stack",
-				"TODO", "", "the instruction is not yet esilized",
-				"STACK", "", "show contents of stack",
-				"CLEAR", "", "clears the esil stack",
-				"BREAK", "", "terminates the string parsing",
-				"GOTO", "", "jump to the Nth word popped from the stack",
+				"$$", "", "Имитировать аппаратную ловушку",
+				"==", "", "Выталкивает дважды, сравнивает и обновляет флаги esil",
+				"<", "", "Сравнение меньше",
+				"<", "=", "Сравнение меньше или равно",
+				">", "", "Сравнение больше",
+				">", "=", "Сравнение больше или равно",
+				"?{", "", "Если значение! = 0 запустить блок до}",
+				"POP", "", "Удаляет последний элемент в стеке esil",
+				"TODO", "", "Инструкция еще не в esil",
+				"STACK", "", "Показать содержимое стека",
+				"CLEAR", "", "Очищает стек esil",
+				"BREAK", "", "Завершает разбор строки",
+				"GOTO", "", "Перейти к N-му слову, выскоченному из стека",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 			break;
@@ -3365,29 +3365,29 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	/* fall through */
 	default: {
 		const char *help_msg[] = {
-			"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
-			"ae?", "", "show this help",
-			"ae??", "", "show ESIL help",
-			"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
-			"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
-			"aeip", "", "initialize ESIL program counter to curseek",
-			"ae", " [expr]", "evaluate ESIL expression",
-			"aex", " [hex]", "evaluate opcode expression",
-			"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
-			"aep", "[?] [addr]", "change esil PC to this address",
-			"aef", " [addr]", "emulate function",
-			"aek", " [query]", "perform sdb query on ESIL.info",
-			"aek-", "", "resets the ESIL.info sdb instance",
-			"aec", "[?]", "continue until ^C",
-			"aecs", " [sn]", "continue until syscall number",
-			"aecu", " [addr]", "continue until address",
-			"aecue", " [esil]", "continue until esil expression match",
-			"aetr", "[esil]", "Convert an ESIL Expression to REIL",
-			"aes", "", "perform emulated debugger step",
-			"aeso", " ", "step over",
-			"aesu", " [addr]", "step until given address",
-			"aesue", " [esil]", "step until esil expression match",
-			"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
+			"Usage:", "ae[idesr?] [arg]", "Эмулирование кода ESIL",
+			"ae?", "", "Показать эту справку",
+			"ae??", "", "Показать справку ESIL",
+			"aei", "", "Инициализировать состояние ESIL VM (aei- деинициализировать)",
+			"aeim", " [addr] [size] [name]", "Инициализировать стек ESIL VM (aeim- удалить)",
+			"aeip", "", "Инициализировать счетчик программ ESIL для curseek",
+			"ae", " [expr]", "Оценивать выражение ESIL",
+			"aex", " [hex]", "Вычислять выражение опкода",
+			"ae[aA]", "[f] [count]", "Анализировать доступ к esil (regs, mem ..)",
+			"aep", "[?] [addr]", "Изменить esil PC на этот адрес",
+			"aef", " [addr]", "моделировать функцию",
+			"aek", " [query]", "Выполнить запрос sdb на ESIL.info",
+			"aek-", "", "Сбрасывает экземпляр ESIL.info sdb",
+			"aec", "[?]", "Продолжайте, пока не ^C",
+			"aecs", " [sn]", "продолжаются до числа системных вызовов",
+			"aecu", " [addr]", "Продолжить до адреса",
+			"aecue", " [esil]", "Продолжайте, пока выражение esil не будет соответствовать",
+			"aetr", "[esil]", "Преобразование выражения ESIL в REIL",
+			"aes", "", "Выполнить эмулируемый шаг отладчика",
+			"aeso", " ", "Перешагнуть",
+			"aesu", " [addr]", "Шаг до адреса",
+			"aesue", " [esil]", "Шаг до соответствия выражения esil",
+			"aer", " [..]", "Обрабатывать регистры ESIL типа 'ar' или 'dr'",
 			NULL };
 		r_core_cmd_help (core, help_msg);
 	} break;
@@ -3416,13 +3416,13 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?': {
 		const char *help_msg[] = {
-			"Usage:", "ao[e?] [len]", "Analyze Opcodes",
-			"aoj", " N", "display opcode analysis information in JSON for N opcodes",
-			"aoe", " N", "display esil form for N opcodes",
-			"aor", " N", "display reil form for N opcodes",
-			"aos", " [esil]", "show sdb representation of esil expression (TODO)",
-			"ao", " 5", "display opcode analysis of 5 opcodes",
-			"ao*", "", "display opcode in r commands",
+			"Usage:", "ao[e?] [len]", "Анализ опкодов",
+			"aoj", " N", "Отображать информацию анализа опкода в JSON для N опкодов",
+			"aoe", " N", "Отображение формы esil для N опкодов",
+			"aor", " N", "Форма отображения reil для N опкодов",
+			"aos", " [esil]", "Show sdb представление выражения esil (TODO)",
+			"ao", " 5", "Отобразить анализ опкода из 5 опкодов",
+			"ao*", "", "Отобразить код операции в командах r ",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);
@@ -3728,16 +3728,16 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	char *out;
 	int n;
 	const char *help_msg[] = {
-		"Usage: as[ljk?]", "", "syscall name <-> number utility",
-		"as", "", "show current syscall and arguments",
-		"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
-		"asc[a]", " 4", "dump syscall info in .asm or .h",
-		"asf", " [k[=[v]]]", "list/set/unset pf function signatures (see fcnsign)",
-		"asj", "", "list of syscalls in JSON",
-		"asl", "", "list of syscalls by asm.os and asm.arch",
-		"asl", " close", "returns the syscall number for close",
-		"asl", " 4", "returns the name of the syscall number 4",
-		"ask", " [query]", "perform syscall/ queries",
+		"Usage: as[ljk?]", "", "Имя системного вызоав <-> утилита номер",
+		"as", "", "Показать текущие системные вызовы и аргументы",
+		"as", " 4", "показать системный вызов 4 на основе asm.os и текущих REGS/mem",
+		"asc[a]", " 4", "дамп системного вызова данные в .asm или .h",
+		"asf", " [k[=[v]]]", "Список/установить/снять pf подписи функций (см. Fcnsign)",
+		"asj", "", "Список системных вызовов в JSON ",
+		"asl", "", "Список системных вызовов от asm.os и asm.arch",
+		"asl", " close", "Возвращает номер syscall для закрытия",
+		"asl", " 4", "возвращает имя системного вызова номер 4",
+		"ask", " [query]", "Выполнять системные вызовы / запросы",
 		NULL };
 
 	switch (input[0]) {
@@ -3915,20 +3915,20 @@ static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
-		"Usage:", "ax[?d-l*]", " # see also 'afx?'",
-		"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
-		"axc", " addr [at]", "add code jmp ref // unused?",
-		"axC", " addr [at]", "add code call ref",
-		"axg", " addr", "show xrefs graph to reach current function",
-		"axd", " addr [at]", "add data ref",
-		"axj", "", "list refs in json format",
-		"axF", " [flg-glob]", "find data/code references of flags",
-		"axt", " [addr]", "find data/code references to this address",
-		"axf", " [addr]", "find data/code references from this address",
-		"ax-", " [at]", "clean all refs (or refs from addr)",
-		"ax", "", "list refs",
-		"axk", " [query]", "perform sdb query",
-		"ax*", "", "output radare commands",
+		"Usage:", "ax[?d-l*]", " # См. Также 'afx?'",
+		"ax", " addr [at]", "Добавить код ref, указывающий на addr (из curseek)",
+		"axc", " addr [at]", "Добавить код jmp ref // unused?",
+		"axC", " addr [at]", "добавить код вызова справки",
+		"axg", " addr", "Показать график xrefs для достижения текущей функции",
+		"axd", " addr [at]", "Добавить данные ref",
+		"axj", "", "Список ссылок в формате json",
+		"axF", " [flg-glob]", "Найти ссылки на данные / код флагов",
+		"axt", " [addr]", "Найти ссылки на данные / код по этому адресу",
+		"axf", " [addr]", "Найти ссылки на данные / код с этого адреса",
+		"ax-", " [at]", "Очистить все ссылки (или ссылки от addr)",
+		"ax", "", "список ссылок",
+		"axk", " [query]", "Выполнить запрос sdb",
+		"ax*", "", "Команды вывода radare",
 		NULL };
 	switch (input[0]) {
 	case '-': { // "ax-"
@@ -3936,7 +3936,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RListIter *iter;
 		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
-		char *ptr = r_str_trim_head (cp_inp); 
+		char *ptr = r_str_trim_head (cp_inp);
 		if (!strcmp (ptr, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
@@ -4199,23 +4199,23 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 }
 static void cmd_anal_hint(RCore *core, const char *input) {
 	const char *help_msg[] = {
-		"Usage:", "ah[lba-]", "Analysis Hints",
-		"ah?", "", "show this help",
-		"ah?", " offset", "show hint of given offset",
-		"ah", "", "list hints in human-readable format",
-		"ah.", "", "list hints in human-readable format from current offset",
-		"ah-", "", "remove all hints",
-		"ah-", " offset [size]", "remove hints at given offset",
-		"ah*", " offset", "list hints in radare commands format",
-		"aha", " ppc 51", "set arch for a range of N bytes",
-		"ahb", " 16 @ $$", "force 16bit for current instruction",
-		"ahc", " 0x804804", "override call/jump address",
-		"ahf", " 0x804840", "override fallback address for call",
-		"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
-		"ahs", " 4", "set opcode size=4",
-		"ahS", " jz", "set asm.syntax=jz for this opcode",
-		"aho", " foo a0,33", "replace opcode string",
-		"ahe", " eax+=3", "set vm analysis string",
+		"Usage:", "ah[lba-]", "Анализ подсказок",
+		"ah?", "", "Показать эту справку",
+		"ah?", " offset", "Показать подсказку о данном смещении",
+		"ah", "", "список подсказок в удобном для восприятия человека формата",
+		"ah.", "", "список подсказок в удобной для восприятия человеком форме от текущего смещения",
+		"ah-", "", "Удалить все подсказки",
+		"ah-", " offset [size]", "Удалять подсказки при заданном смещении",
+		"ah*", " offset", "Выводить подсказки в формате радара",
+		"aha", " ppc 51", "Установить арку для диапазона из N байтов",
+		"ahb", " 16 @ $$", "Мощность16 бит для текущей команды",
+		"ahc", " 0x804804", "Переопределить адрес вызова / перехода",
+		"ahf", " 0x804840", "переопределить резервный адрес для вызова",
+		"ahi", "[?] 10", "Определить числовую базу для непосредственных элементов (1, 8, 10, 16, s)",
+		"ahs", " 4", "Установить размер кода операции = 4",
+		"ahS", " jz", "Установите asm.syntax = jz для этого кода операции",
+		"aho", " foo a0,33", "Заменить строку кода операции",
+		"ahe", " eax+=3", "Установить vm строку анализа",
 		NULL };
 	switch (input[0]) {
 	case '?':
@@ -4265,15 +4265,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'i': // "ahi"
 		if (input[1] == '?') {
 			const char* help_msg[] = {
-				"Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
-				"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
-				"ahi", " b", "set base to binary (1)",
-				"ahi", " d", "set base to decimal (10)",
-				"ahi", " h", "set base to hexadecimal (16)",
-				"ahi", " o", "set base to octal (8)",
-				"ahi", " i", "set base to IP address (32)",
-				"ahi", " S", "set base to syscall (80)",
-				"ahi", " s", "set base to string (2)",
+				"Usage", "ahi [sbodh] [@ offset]", " Определить числовую базу",
+				"ahi", " [base]", "Установить числовую базу (1, 2, 8, 10, 16))",
+				"ahi", " b", "Установить базу двоичную (1)",
+				"ahi", " d", "Установить базу десятичную (10)",
+				"ahi", " h", "Установить базу шестнадцатеричной (16)",
+				"ahi", " o", "Установить основание восьмеричное (8)",
+				"ahi", " i", "Установить базу в IP-адрес (32)",
+				"ahi", " S", "Установить базу в syscall (80)",
+				"ahi", " s", "Установить базу в строку (2)",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == ' ') {
@@ -4444,11 +4444,11 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "agn [title] [body]", "",
 		"Examples:", "", "",
-		"agn", " title1 body1", "Add a node with title \"title1\" and body \"body1\"",
-		"agn", " \"title with space\" \"body with space\"", "Add a node with spaces in the title and in the body",
-		"agn", " title1 base64:Ym9keTE=", "Add a node with the body specified as base64",
-		"agn-", " title1", "Remove a node with title \"title1\"",
-		"agn?", "", "Show this help",
+		"agn", " title1 body1", "Добавьте узел с заголовком \"title1\" и телом \"body1\"",
+		"agn", " \"title with space\" \"body with space\"", "Добавить узел с пробелами в названии и в теле",
+		"agn", " title1 base64:Ym9keTE=", "Добавить узел с телом, указанным как base64",
+		"agn-", " title1", "Удалить узел с заголовком \"title1\"",
+		"agn?", "", "Показать эту справку",
 		NULL };
 
 	switch (*input) {
@@ -4513,10 +4513,10 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "age [title1] [title2]", "",
 		"Examples:", "", "",
-		"age", " title1 title2", "Add an edge from the node with \"title1\" as title to the one with title \"title2\"",
-		"age", " \"title1 with spaces\" title2", "Add an edge from node \"title1 with spaces\" to node \"title2\"",
-		"age-", " title1 title2", "Remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
-		"age?", "", "Show this help",
+		"age", " title1 title2", "Добавьте ребро из узла с \"title1\" в качестве заголовка для названия \"title2\"",
+		"age", " \"title1 with spaces\" title2", "Добавить ребро из узла \"title1 с пробелами\" в узел \"title2\"",
+		"age-", " title1 title2", "Удалите ребро с узла с \"title1\" в качестве заголовка для названия \"title2\"",
+		"age?", "", "Показать эту справку",
 		NULL };
 
 	switch (*input) {
@@ -4561,13 +4561,13 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 
 static void cmd_agraph_print(RCore *core, const char *input) {
 	const char *help_msg[] = {
-		"Usage:", "agg[kid?*]", "print graph",
-		"agg", "", "show current graph in ascii art",
-		"aggk", "", "show graph in key=value form",
-		"aggi", "", "enter interactive mode for the current graph",
-		"aggd", "", "print the current graph in GRAPHVIZ dot format",
-		"aggv", "", "run graphviz + viewer (see 'e cmd.graph')",
-		"agg*", "", "in r2 commands, to save in projects, etc",
+		"Usage:", "agg[kid?*]", "Печать графика",
+		"agg", "", "Показать текущий график в ascii",
+		"aggk", "", "Показать график в форме ключ = значение",
+		"aggi", "", "войти в интерактивный режим для текущего графа",
+		"aggd", "", "Распечатать текущий график в формате GRAPHVIZ dot",
+		"aggv", "", "Запустить graphviz + viewer (см. 'e cmd.graph')",
+		"agg*", "", "В командах r2, для сохранения в проектах и т. Д.",
 		NULL };
 	switch (*input) {
 	case 'k': // "aggk"
@@ -4640,23 +4640,23 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
 	const char *arg;
 	const char *help_msg[] = {
-		"Usage:", "ag[?f]", "Graphviz/graph code",
-		"ag", " [addr]", "output graphviz code (bb at addr and children)",
-		"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
-		"aga", " [addr]", "idem, but only addresses",
-		"agc", "[j] [addr]", "output graphviz call graph of function",
-		"agC", "[j]", "Same as agc -1. full program callgraph",
-		"agd", " [fcn name]", "output graphviz code of diffed function",
-		"age", "[?] title1 title2", "Add an edge to the current graph",
-		"agf", " [addr]", "Show ASCII art graph of given function",
-		"agg", "[?] [kdi*]", "Print graph in ASCII-Art, graphviz, k=v, r2 or visual",
-		"agj", " [addr]", "idem, but in JSON format",
-		"agk", " [addr]", "idem, but in SDB key-value format",
-		"agl", " [fcn name]", "output graphviz code using meta-data",
-		"agn", "[?] title body", "Add a node to the current graph",
-		"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
-		"agt", " [addr]", "find paths from current offset to given address",
-		"agv", "", "Show function graph in web/png (see graph.web and cmd.graph) or agf for asciiart",
+		"Usage:", "ag[?f]", "Graphviz / графический код",
+		"ag", " [addr]", "Вывод кода graphviz (bb в addr и children)",
+		"ag-", "", "Сбросить текущий график ASCII (см. Agn, age, agg?)",
+		"aga", " [addr]", "Idem, но только адреса",
+		"agc", "[j] [addr]", "Вывод Graphviz вызывает график функции",
+		"agC", "[j]", "То же, что и agc -1. Полная программа вызова графика",
+		"agd", " [fcn name]", "Вывод графического кода функции diffed",
+		"age", "[?] title1 title2", "Добавить ребро к текущему графу",
+		"agf", " [addr]", "Показать график ASCII для данной функции",
+		"agg", "[?] [kdi*]", "Печатать график в ASCII-Art, graphviz, k=v, r2 или наглядный",
+		"agj", " [addr]", "Idem, но в формате JSON",
+		"agk", " [addr]", "Idem, но в формате ключа и значения SDB",
+		"agl", " [fcn name]", "Вывод графического кода с использованием метаданных",
+		"agn", "[?] title body", "Добавить узел в текущий график",
+		"ags", " [addr]", "Вывод простого графического вызова графика функции (только bb offset)",
+		"agt", " [addr]", "Найти пути от текущего смещения до заданного адреса",
+		"agv", "", "Показать график функции в веб / PNG (см graph.web и cmd.graph) или AGF для AsciiArt",
 		NULL };
 
 	switch (input[0]) {
@@ -4765,19 +4765,19 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
-		"at", "", "list all traced opcode ranges",
-		"at-", "", "reset the tracing information",
-		"at*", "", "list all traced opcode offsets",
-		"at+", " [addr] [times]", "add trace for address N times",
-		"at", " [addr]", "show trace info at address",
-		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"att", " [tag]", "select trace tag (no arg unsets)",
+		"at", "", "Список всех трассированных диапазонов опкодов",
+		"at-", "", "Сбросить данные трассировки",
+		"at*", "", "Вывести все трассированные смещения кода операции",
+		"at+", " [addr] [times]", "Добавить трассировку для адреса N раз",
+		"at", " [addr]", "Показать информацию о трассировке по адресу",
+		"ate", "[?]", "Показать журналы трассировки esil (anal.trace)",
+		"att", " [tag]", "Выбрать метку трассировки (без аргументов))",
 		"at%", "", "TODO",
-		"ata", " 0x804020 ...", "only trace given addresses",
-		"atr", "", "show traces as range commands (ar+)",
-		"atd", "", "show disassembly trace (use .atd)",
-		"atl", "", "list all traced addresses (useful for @@= `atl`)",
-		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
+		"ata", " 0x804020 ...", "Трассировка только данных адресов",
+		"atr", "", "Отображать трассы в виде команд (ar+)",
+		"atd", "", "показать разборку след (использование .atd)",
+		"atl", "", "Список всех трассированных адресов (использовать @@= `atl`)",
+		"atD", "", "Показать карликовую трассировку  (at*|rsc dwarf-traces $FILE)",
 		NULL };
 
 	switch (input[0]) {
@@ -4842,12 +4842,12 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		default:
 			{
 			const char *help_msg[] = {
-				"Usage:", "ate", " Show esil trace logs",
-				"ate", "", "Esil trace log for a single instruction",
-				"ate", " [idx]", "show commands for that index log",
-				"ate", "-*", "delete all esil traces",
-				"atei", "", "esil trace log single instruction",
-				"atek", " [sdb query]", "esil trace log single instruction from sdb",
+				"Usage:", "ate", " Показать журналы трассировки esil",
+				"ate", "", "Журнал трассировки Esil для одной команды",
+				"ate", " [idx]", "показать команды для этого журнала индекса",
+				"ate", "-*", "Удалить все следы esil",
+				"atei", "", "Однократная запись журнала трассировки esil",
+				"atek", " [sdb query]", "Esil log одиночная инструкция от sdb",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 		}
@@ -4919,10 +4919,10 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	char *ptr;
 	int rad, n;
 	const char *help_msg_aar[] = {
-		"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
-		"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
-		"aarj", " [sz]", "list found xrefs in JSON format",
-		"aar*", " [sz]", "list found xrefs in radare commands format",
+		"Usage:", "aar", "[j*] [sz] #Поиск и анализ внешних ссылок",
+		"aar", " [sz]", "Анализировать xrefs в текущем разделе или sz байт кода",
+		"aarj", " [sz]", "Список найденных Xrefs в формате JSON",
+		"aar*", " [sz]", "Список найденных xrefs в формате радара",
 		NULL };
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
@@ -5203,23 +5203,23 @@ static bool should_aav(RCore *core) {
 
 static int cmd_anal_all(RCore *core, const char *input) {
 	const char *help_msg_aa[] = {
-		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
-		"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
-		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
-		"aaa", "[?]", "autoname functions after aa (see afna)",
-		"aab", "[?]", "aab across io.sections.text",
-		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
-		"aad", " [len]", "analyze data references to code",
-		"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-		"aai", "[j]", "show info of all analysis parameters",
-		"aar", "[?] [len]", "analyze len bytes of instructions for references",
-		"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
-		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
-		"aat", " [len]", "analyze all consecutive functions in section",
-		"aaT", " [len]", "analyze code after trap-sleds",
-		"aap", "", "find and analyze function preludes",
-		"aav", " [sat]", "find values referencing a specific section or map",
-		"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
+		"Usage:", "aa[0*?]", " # См. Также 'af' и 'afna'",
+		"aa", " ", "Псевдоним для 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
+		"aa*", "", "Проанализировать все флаги, начиная с sym. (af @@ sym.*)",
+		"aaa", "[?]", "Функции автоименования после aa (см. Afna)",
+		"aab", "[?]", "aab через io.sections.text",
+		"aac", " [len]", "Анализировать вызовы функций(af @@ `pi len~call[1]`)",
+		"aad", " [len]", "Анализ данных справки о коде",
+		"aae", " [len] ([addr])", "Анализировать ссылки с ESIL (необязательно для адресации)",
+		"aai", "[j]", "Показать информацию обо всех параметрах анализа",
+		"aar", "[?] [len]", "Анализировать длину байтов инструкций для ссылок",
+		"aan", "", "автоименование Функций, которые начинаются с fcn.* или sym.func.*",
+		"aas", " [len]", "Анализировать символы (af @@= `isq~[0]`)",
+		"aat", " [len]", "Анализировать все последовательные функции в разделе",
+		"aaT", " [len]", "анализировать код после ловушки",
+		"aap", "", "Находить и анализировать начало функций",
+		"aav", " [sat]", "Найти значения, ссылающиеся на определенный раздел или карту",
+		"aau", " [len]", "Список областей mem (больше len байтов), не покрываемые функциями",
 		NULL };
 
 	switch (*input) {
@@ -5510,36 +5510,36 @@ static int cmd_anal(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	const char *help_msg_ad[] = {
 		"Usage:", "ad", "[kt] [...]",
-		"ad", " [N] [D]", "analyze N data words at D depth",
-		"ad4", " [N] [D]", "analyze N data words at D depth (asm.bits=32)",
-		"ad8", " [N] [D]", "analyze N data words at D depth (asm.bits=64)",
-		"adf", "", "analyze data in function (use like .adf @@=`afl~[0]`",
-		"adfg", "", "analyze data in function gaps",
-		"adt", "", "analyze data trampolines (wip)",
-		"adk", "", "analyze data kind (code, text, data, invalid, ...)",
+		"ad", " [N] [D]", "Анализировать N слов данных на глубине D",
+		"ad4", " [N] [D]", "Анализировать N слов данных на глубине D(asm.bits=32)",
+		"ad8", " [N] [D]", "Анализировать N слов данных на глубине D(asm.bits=64)",
+		"adf", "", "Анализировать данные в функции (использовать как .adf @@=`afl~[0]`",
+		"adfg", "", "Анализировать данные в функциональных промежутках",
+		"adt", "", "Анализировать батуты данных (wip)",
+		"adk", "", "Анализировать тип данных (код, текст, данные ...)",
 		NULL };
 	const char *help_msg[] = {
 		"Usage:", "a", "[abdefFghoprxstc] [...]",
-		"ab", " [hexpairs]", "analyze bytes",
-		"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
-		"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-		"ac", "[?] [cycles]", "analyze which op could be executed in [cycles]",
-		"ad", "[?]", "analyze data trampoline (wip)",
-		"ad", " [from] [to]", "analyze data pointers to (from-to)",
-		"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
-		"af", "[?]", "analyze Functions",
-		"aF", "", "same as above, but using anal.depth=1",
-		"ag", "[?] [options]", "output Graphviz code",
-		"ah", "[?]", "analysis hints (force opcode size, ...)",
-		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
-		"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
-		"aO", "", "Analyze N instructions in M bytes",
-		"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
-		"ap", "", "find prelude for current offset",
-		"ax", "[?]", "manage refs/xrefs (see also afx?)",
-		"as", "[?] [num]", "analyze syscall using dbg.reg",
-		"at", "[?] [.]", "analyze execution traces",
-		"av", "[?] [.]", "show vtables",
+		"ab", " [hexpairs]", "Анализировать байты",
+		"abb", " [len]", "Проанализировать N основных блоков в [len] (section.size по умолчанию)",
+		"aa", "[?]", "Проанализировать все (fcns + bbs) (aa0, чтобы избежать переименования) ",
+		"ac", "[?] [cycles]", "Проанализировать, какой оператор может быть выполнен в [циклы] ",
+		"ad", "[?]", "Анализировать батуты данных (wip)",
+		"ad", " [from] [to]", "Анализировать указатели данных на (от-до)",
+		"ae", "[?] [expr]", "aАнализировать выражение evc opcode (см. ao)",
+		"af", "[?]", "Анализировать функции ",
+		"aF", "", "То же, что и выше, но с использованием anal.depth = 1",
+		"ag", "[?] [options]", "Вывод Графического кода",
+		"ah", "[?]", "Подсказки для анализа (размер кода операции, ...)",
+		"ai", " [addr]", "Адресная информация (показать perms, stack, heap, ...)",
+		"ao", "[?] [len]", "Анализировать Opcodes (или имитировать)",
+		"aO", "", "Анализ N инструкций в M байтах ",
+		"ar", "[?]", "Как 'dr', но для esil vm. (Регистры)",
+		"ap", "", "Найти начало для текущего смещения",
+		"ax", "[?]", "Управлять refs / xrefs (см. Также afx?)",
+		"as", "[?] [num]", "Анализировать системные вызовы с помощью dbg.reg",
+		"at", "[?] [.]", "анализ выполнения следов",
+		"av", "[?] [.]", "Показать vtables",
 		NULL };
 
 	switch (input[0]) {

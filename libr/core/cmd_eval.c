@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2016 - pancake */
+﻿/* radare2 - LGPL - Copyright 2009-2016 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -228,22 +228,22 @@ static int cmd_eval(void *data, const char *input) {
 		case '?': {
 			const char *helpmsg[] = {
 			"Usage ec[s?] [key][[=| ]fg] [bg]","","",
-			"ec","","list all color keys",
-			"ec*","","same as above, but using r2 commands",
-			"ecd","","set default palette",
-			"ecr","","set random palette",
-			"ecs","","show a colorful palette",
-			"ecj","","show palette in JSON",
-			"ecc"," [prefix]","show palette in CSS",
-			"eco"," dark|white","load white color scheme template",
-			"ecp","","load previous color theme",
-			"ecn","","load next color theme",
-			"ec"," prompt red","change color of prompt",
-			"ec"," prompt red blue","change color and background of prompt",
+			"ec","","список всех цветных клавиш",
+			"ec*","","То же, что и выше, но с использованием команд r2",
+			"ecd","","Установить палитру по умолчанию",
+			"ecr","","Установить произвольную палитру",
+			"ecs","","Показать красочную палитру",
+			"ecj","","Показать палитру в JSON",
+			"ecc"," [prefix]","Показать палитру в CSS",
+			"eco"," dark|white","Загрузить шаблон цветовой схемы белого цвета",
+			"ecp","","Загрузить предыдущую цветовую тему",
+			"ecn","","Загрузить следующую цветовую тему",
+			"ec"," prompt red","Изменить цвет строки",
+			"ec"," prompt red blue","Изменить цвет и фон",
 			""," ","",
 			"colors:","","rgb:000, red, green, blue, ...",
-			"e scr.rgbcolor","=1|0","for 256 color cube (boolean)",
-			"e scr.truecolor","=1|0","for 256*256*256 colors (boolean)",
+			"e scr.rgbcolor","=1|0","Для 256-цветного куба (boolean)",
+			"e scr.truecolor","=1|0","Для 256 * 256 * 256 цветов (boolean)",
 			"$DATADIR/radare2/cons","","~/.config/radare2/cons ./",
 			NULL};
 			r_core_cmd_help (core, helpmsg);
@@ -359,21 +359,21 @@ static int cmd_eval(void *data, const char *input) {
 		default: r_config_list (core->config, input+1, 2); break;
 		case 0:{
 			const char* help_msg[] = {
-			"Usage:", "e [var[=value]]", "Evaluable vars",
-			"e","?asm.bytes", "show description",
-			"e", "??", "list config vars with description",
-			"e", "", "list config vars",
-			"e-", "", "reset config vars",
-			"e*", "", "dump config vars in r commands",
-			"e!", "a", "invert the boolean value of 'a' var",
-			"ee", "var", "open editor to change the value of var",
-			"er", " [key]", "set config key as readonly. no way back",
-			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
-			"et", " [key]", "show type of given config variable",
-			"e", " a", "get value of var 'a'",
-			"e", " a=b", "set var 'a' the 'b' value",
-			"e var=?", "", "print all valid values of var",
-			"env", " [k[=v]]", "get/set environment variable",
+			"Usage:", "e [var[=value]]", "Оценочные переменные",
+			"e","?asm.bytes", "Покажите описание",
+			"e", "??", "Список конфигурационных переменных с описанием",
+			"e", "", "Список конфигурационных переменных",
+			"e-", "", "Сбросить настройки vars",
+			"e*", "", "Сброс конфигурационных переменных в командах r",
+			"e!", "a", "Инвертировать булевское значение 'a' var",
+			"ee", "var", "Открыть редактор для изменения значения var",
+			"er", " [key]", "Установите ключ конфигурации как только для чтения. нет пути назад",
+			"ec", " [k] [color]", "Задать цвет для заданного ключа (подсказка, офсет, ...)",
+			"et", " [key]", "Показать тип заданной переменной конфигурации",
+			"e", " a", "Получить значение var 'a'",
+			"e", " a=b", "Установить var 'a' значение 'b'",
+			"e var=?", "", "Вывести все допустимые значения var",
+			"env", " [k[=v]]", "получить/установить окружающую среду",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}

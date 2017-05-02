@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_config.h"
 #include "r_core.h"
@@ -72,15 +72,15 @@ static int cmd_project(void *data, const char *input) {
 	case 'n': // "Pn"
 		if (input[1] == '?') {
 			const char *help_msg[] = {
-				"Usage:", "Pn[j-?] [...]", "Project Notes",
-				"Pn", "", "show project notes",
-				"Pn", " -", "edit notes with cfg.editor",
-				"Pn-", "", "delete notes",
-				"Pn-", "str", "delete lines matching /str/ in notes",
-				"Pn+", "str", "append one line to the notes",
-				"Pnx", "", "run project note commands",
-				"Pnj", "", "show notes in base64",
-				"Pnj", " [base64]", "set notes in base64",
+				"Usage:", "Pn[j-?] [...]", "Замечания по проекту",
+				"Pn", "", "Показать замечания по проекту",
+				"Pn", " -", "Редактировать заметки с помощью cfg.editor",
+				"Pn-", "", "Удалить заметки",
+				"Pn-", "str", "Удалять строки, соответствующие / str / in notes",
+				"Pn+", "str", "Добавить одну строку к заметкам",
+				"Pnx", "", "Команды запуска проекта",
+				"Pnj", "", "Показывать заметки в base64",
+				"Pnj", " [base64]", "Добавить заметки в base64",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -213,20 +213,20 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	default: {
 		const char *help_msg[] = {
-			"Usage:", "P[?osi] [file]", "Project management",
-			"Pc", " [file]", "show project script to console",
-			"Pd", " [file]", "delete project",
-			"Pi", " [file]", "show project information",
-			"Pl", "", "list all projects",
-			"Pn", "[j]", "show project notes (Pnj for json)",
-			"Pn", " [base64]", "set notes text",
-			"Pn", " -", "edit notes with cfg.editor",
-			"Po", " [file]", "open project",
-			"Ps", " [file]", "save project",
-			"PS", " [file]", "save script file",
-			"P-", " [file]", "delete project (alias for Pd)",
-			"NOTE:", "", "See 'e??prj.'",
-			"NOTE:", "", "project are stored in ~/.config/radare2/projects",
+			"Usage:", "P[?osi] [file]", "Управление проектом",
+			"Pc", " [file]", "Показать код проекта для консоли",
+			"Pd", " [file]", "Удалить проект",
+			"Pi", " [file]", "Показать информацию о проекте",
+			"Pl", "", "Перечислить все проекты",
+			"Pn", "[j]", "Показать заметки проекта (Pnj для json)",
+			"Pn", " [base64]", "Установить текст примечаний",
+			"Pn", " -", "Редактировать заметки с помощью cfg.editor",
+			"Po", " [file]", "Открыть проект",
+			"Ps", " [file]", "Сохранить проект",
+			"PS", " [file]", "Сохранить скрипт файл",
+			"P-", " [file]", "Удалить проект (псевдоним для Pd)",
+			"NOTE:", "", "См. 'e??prj.'",
+			"NOTE:", "", "Проект хранятся в ~ /.config/radare2/projects",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);

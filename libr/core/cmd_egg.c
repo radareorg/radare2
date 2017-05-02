@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
@@ -200,17 +200,17 @@ static int cmd_egg(void *data, const char *input) {
 		break;
 	case '?': {
 		const char *help_msg[] = {
-			"Usage:", "g[wcilper] [arg]", "Go compile shellcodes",
-			"g", " foo.r", "Compile r_egg source file",
-			"gw", "", "Compile and write",
-			"gc", " cmd=/bin/ls", "Set config option for shellcodes and encoders",
-			"gc", "", "List all config options",
-			"gl", " [?]", "List plugins (shellcodes, encoders)",
-			"gs", " name args", "Compile syscall name(args)",
-			"gi", " [type]", "Compile shellcode. like ragg2 -i (see gl or ragg2 -L)",
-			"gp", " padding", "Define padding for command",
-			"ge", " xor", "Specify an encoder",
-			"gr", "", "Reset r_egg",
+			"Usage:", "g[wcilper] [arg]", "Идет компиляция шеллкодов",
+			"g", " foo.r", "Скомпилировать исходный файл r_egg",
+			"gw", "", "Компиляция и запись",
+			"gc", " cmd=/bin/ls", "Настройка конфигурации для шеллкодов и кодеров",
+			"gc", "", "Список всех параметров конфигурации",
+			"gl", " [?]", "Список плагинов (шеллкоды, кодеры)",
+			"gs", " name args", "Компилировать имя syscall (args))",
+			"gi", " [type]", "Скомпилируйте шеллкод. Как ragg2 -i (см. Gl или ragg2-L)",
+			"gp", " padding", "Определить отступы для команды",
+			"ge", " xor", "Укажите кодировщик",
+			"gr", "", "Сбросить r_egg",
 			"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
 			NULL
 		};

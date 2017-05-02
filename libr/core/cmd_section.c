@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
@@ -114,20 +114,20 @@ static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char* help_msg[] = {
 		"Usage:","S[?-.*=adlr] [...]","",
-		"S","","list sections",
-		"S.","","show current section name",
-		"S*","","list sections (in radare commands)",
-		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
-		"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-		"Sd[a]"," [file]","dump current (all) section to a file (see dmd)",
-		"Sl"," [file]","load contents of file into current section (see dml)",
-		"Sf"," [baddr]","Alias for S 0 0 $s $s foo mrwx",
-		"Sj","","list sections in JSON (alias for iSj)",
-		"Sr"," [name]","rename section on current seek",
-		"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
-		"S-[id]","","remove section identified by id",
-		"S-.","","remove section at core->offset (can be changed with @)",
-		"S.-*","","remove all sections in current offset",
+		"S","","Список разделов",
+		"S.","","Показать имя текущего раздела",
+		"S*","","Список разделов (в командах radare)",
+		"S=","","Список разделов (ascii-art bars) (io.va отображает paddr or vaddr)",
+		"Sa","[-] [A] [B] [[off]]","Укажите дугу и биты для данного раздела",
+		"Sd[a]"," [file]","Сбросьте текущий (все) раздел в файл (см. Dmd)",
+		"Sl"," [file]","Загрузить содержимое файла в текущий раздел (см. Dml)",
+		"Sf"," [baddr]","Псевдоним для S 0 0 $ s $ s foo mrwx",
+		"Sj","","Список разделов в формате JSON (псевдоним для ISJ)",
+		"Sr"," [name]","Переименовать раздел по текущему поиску",
+		"S"," off va sz vsz name mrwx","Добавить раздел (if(!vsz)vsz=sz)",
+		"S-[id]","","Удалить раздел, указанный идентификатором",
+		"S-.","","Удалить раздел в core->offset (можно изменить с помощью @)",
+		"S.-*","","Удалить все секции в текущем смещении",
 		NULL
 	};
 	switch (*input) {

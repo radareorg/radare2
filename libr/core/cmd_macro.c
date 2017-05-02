@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2014 - pancake */
 #include "r_cmd.h"
 #include "r_core.h"
 
@@ -14,19 +14,19 @@ static int cmd_macro(void *data, const char *input) {
 	case '(':
 	case '?': {
 		const char* help_msg[] = {
-			"Usage:", "(foo args,cmd1,cmd2,..)", "Aliases",
-			"(foo args,..,..)", "", "define a macro",
-			"(foo args,..,..)()", "", "define and call a macro",
-			"(-foo)", "", "remove a macro",
-			".(foo)", "", "to call it",
-			"()", "", "break inside macro",
-			"(*", "", "list all defined macros",
-			"", "Argument support:", "",
-			"(foo x y, $0 @ $1)", "", "define fun with args (x - $0, y - $1)",
-			".(foo 128 0x804800)", "", "call it with args",
+			"Usage:", "(foo args,cmd1,cmd2,..)", "Псевдонимы",
+			"(foo args,..,..)", "", "Определить макрос",
+			"(foo args,..,..)()", "", "Определить и вызвать макрос",
+			"(-foo)", "", "Удалить макрос",
+			".(foo)", "", "назвать",
+			"()", "", "Перерыв внутри макроса",
+			"(*", "", "Перечислить все определенные макросы",
+			"", "Поддержка аргументов:", "",
+			"(foo x y, $0 @ $1)", "", "Определить fun с помощью args (x - $0, y - $1)",
+			".(foo 128 0x804800)", "", "Вызвать его с помощью args",
 			"", "Iterations:", "",
-			".(foo,() $@)", "", "define iterator returning iter index",
-			"x @@ .(foo)", "", "iterate over them",
+			".(foo,() $@)", "", "Определить итератор, возвращающий индекс iter",
+			"x @@ .(foo)", "", "Перебирать их",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}

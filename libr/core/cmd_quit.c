@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_core.h"
 
@@ -19,12 +19,12 @@ static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char* help_msg[] = {
 		"Usage:",  "q[!][!] [retval]", "",
-		"q","","quit program",
-		"q!","","force quit (no questions)",
-		"q!!","","force quit without saving history",
-		"q"," 1","quit with return value 1",
-		"q"," a-b","quit with return value a-b",
-		"q[y/n][y/n]","","quit, chose to kill process, chose to save project ",
+		"q","","Выйти из программы",
+		"q!","","Принудительный выход (без вопросов)",
+		"q!!","","Принудительный выход без сохранения истории",
+		"q"," 1","Выйти с возвращаемым значением 1",
+		"q"," a-b","Выйти с возвращаемым значением a-b",
+		"q[y/n][y/n]","","Выход, убив процесс или сохранив проект ",
 		NULL};
 	if (input)
 	switch (*input) {
@@ -53,9 +53,9 @@ static int cmd_quit(void *data, const char *input) {
 		}
 
 		if (input[1] == 'y') {
-			core->num->value += 10;	
+			core->num->value += 10;
 		} else if (input[1] == 'n') {
-			core->num->value += 2;	
+			core->num->value += 2;
 		}
 		//exit (*input?r_num_math (core->num, input+1):0);
 		//if (core->http_up) return false; // cancel quit when http is running

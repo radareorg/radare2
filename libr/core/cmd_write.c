@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2016 - pancake */
 #include <stdbool.h>
 #include <string.h>
 
@@ -120,24 +120,24 @@ static void cmd_write_op (RCore *core, const char *input) {
 	int len;
 	const char* help_msg[] = {
 		"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-		"wo[aAdlmorwx24]","", "without hexpair values, clipboard is used",
-		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-		"woA"," [val]","&=  and",
-		"wod"," [val]", "/=  divide",
-		"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-		"woe"," [from to] [step] [wsz=1]","..  create sequence",
-		"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-		"wol"," [val]","<<= shift left",
-		"wom"," [val]", "*=  multiply",
-		"woo"," [val]","|=  or",
-		"wop[DO]"," [arg]","De Bruijn Patterns",
-		"wor"," [val]", ">>= shift right",
-		"woR","","random bytes (alias for 'wr $b')",
-		"wos"," [val]", "-=  substraction",
-		"wow"," [val]", "==  write looped value (alias for 'wb')",
+		"wo[aAdlmorwx24]","", "Без шестнадцатеричных значений, используется буфер обмена",
+		"woa"," [val]", "+=  Дополнение(f.ex: woa 0102)",
+		"woA"," [val]","&=  и",
+		"wod"," [val]", "/=  деление",
+		"woD","[algo] [key] [IV]","Расшифровать текущий блок с заданным алгоритмом и ключом",
+		"woe"," [from to] [step] [wsz=1]","..  Создать последовательность",
+		"woE"," [algo] [key] [IV]", "Зашифровать текущий блок с заданным алгоритмом и ключом",
+		"wol"," [val]","<<= Сдвиг влево",
+		"wom"," [val]", "*=  умножение",
+		"woo"," [val]","|=  или",
+		"wop[DO]"," [arg]","Шаблоны Де Браяна",
+		"wor"," [val]", ">>= Сдвиг вправо",
+		"woR","","Случайные байты (псевдоним для 'wr $ b')",
+		"wos"," [val]", "-=  Вычитание",
+		"wow"," [val]", "==  Записать значение в виде цикла (псевдоним для 'wb')",
 		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
-		"wo2"," [val]","2=  2 byte endian swap",
-		"wo4"," [val]", "4=  4 byte endian swap",
+		"wo2"," [val]","2=  обратный порядок 2 байт подкачки",
+		"wo4"," [val]", "4= обратный порядок 4 байт подкачки",
 		NULL
 	};
 	if (!input[0])
@@ -246,7 +246,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 							len -= res;
 							addr += res;
 						}
-					} 
+					}
 					free (buf);
 				} else {
 					eprintf ("Couldn't generate pattern of length %d\n", len);
@@ -266,8 +266,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 			{
 				const char* wop_help_msg[] = {
 					"Usage:","wop[DO]"," len @ addr | value",
-					"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
-					"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
+					"wopD"," len [@ addr]","Написать шаблон Де Брайна длины 'len' по адресу 'addr'",
+					"wopO"," value", "Находит данное значение в шаблоне Де Брайна при текущем смещении",
 					NULL
 				};
 				r_core_cmd_help (core, wop_help_msg);
@@ -299,9 +299,9 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case '?':
 	{
 		const char* help_msg[] = {
-			"Usage:", "wv[size] [value]", "write value of given size",
-			"wv1", " 234", "write one byte with this value",
-			"wv", " 0x834002", "write dword with this value",
+			"Usage:", "wv[size] [value]", "Написать значение заданного размера",
+			"wv1", " 234", "Напишите один байт с этим значением",
+			"wv", " 0x834002", "Написать dword с этим значением",
 			"Supported sizes are:", "1, 2, 4, 8", "",
 			NULL};
 		r_core_cmd_help (core, help_msg);
@@ -406,33 +406,33 @@ static int cmd_write(void *data, const char *input) {
 	st64 num = 0;
 	const char* help_msg[] = {
 		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
-		"w","[1248][+-][n]","increment/decrement byte,word..",
-		"w"," foobar","write string 'foobar'",
-		"w0"," [len]","write 'len' bytes with value 0x00",
-		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
-		"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
-		"waf"," file","assemble file and write bytes",
-		"wao"," [?] op","modify opcode (change conditional of jump. nop, etc)",
-		"wA"," [?] r 0","alter/modify opcode at current seek (see wA?)",
-		"wb"," 010203","fill current block with cyclic hexpairs",
-		"wB","[-]0xVALUE","set or unset bits with given value",
-		"wc","","list all write changes",
-		"wc","[?][ir*?]","write cache undo/commit/reset/list (io.cache)",
-		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
-		"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
-		"wf"," -|file","write contents of file at current offset",
-		"wh"," r2","whereis/which shell command",
-		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
-		"wo","[?] hex","write in block with operation. 'wo?' fmi",
-		"wp"," [?] -|file","apply radare patch file. See wp? fmi",
-		"wr"," 10","write 10 random bytes",
-		"ws"," pstring","write 1 byte for length and then the string",
-		"wt[f]"," [?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
-		"wts"," host:port [sz]", "send data to remote host:port via tcp://",
-		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-		"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
-		"wv","[?] eip+34","write 32-64 bit value",
-		"wz"," string","write zero terminated string (like w + \\x00)",
+		"w","[1248][+-][n]","Присоеденить/убрать байт, слово..",
+		"w"," foobar","Написать строку 'foobar'",
+		"w0"," [len]","Записать 'len' байты со значением 0x00 ",
+		"w6","[de] base64/hex","написать base64 декодированной или закодированной строки",
+		"wa","[?] push ebp","Написать код операции, разделенный символом ';' (Используйте '\' 'вокруг команды)",
+		"waf"," file","Собрать файл и записать байты",
+		"wao"," [?] op","Изменение кода операции (изменение условного перехода, nop и т. Д.)",
+		"wA"," [?] r 0","Изменить/дополнить опкод при текущем поиске (см. WA?)",
+		"wb"," 010203","Заполнить текущий блок циклическими шестнадцатеричными числами",
+		"wB","[-]0xVALUE","Установить или сбросить биты с заданным значением",
+		"wc","","Список всех изменений записи",
+		"wc","[?][ir*?]","Записать кэш отмен/комментраиев/сброса/список (io.cache)",
+		"wd"," [off] [n]","Дублировать N байтов из смещения в текущем поиске (memcpy) (см. y?)",
+		"we","[?] [nNsxX] [arg]","Расширить операции записи (вставить вместо замены)",
+		"wf"," -|file","Писать содержимое файла с текущим смещением",
+		"wh"," r2","Whereis/which команда оболочки ",
+		"wm"," f0ff","Установить шестнадцатеричную двоичную маску для использования в качестве циклической маски записи",
+		"wo","[?] hex","Записать в блок с операцией. 'Wo?' Fmi",
+		"wp"," [?] -|file","Применить файл радара. См.Wp? Fmi ",
+		"wr"," 10","Написать 10 случайных байтов",
+		"ws"," pstring","Напишите 1 байт для длины, а затем строку",
+		"wt[f]"," [?] file [sz]","Запись в файл (из текущего поиска, блока sz или sz байтов)",
+		"wts"," host:port [sz]", "Отправлять данные на удаленный хост: порт через tcp://",
+		"ww"," foobar","Написать широкую строку'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
+		"wx","[?][fs] 9090","Напишите два отпечатка (из wxfile или wxseek)",
+		"wv","[?] eip+34","Записать значение 32-64 бита",
+		"wz"," string","Записать строку с нулевым символом (например, w + \\ x00) ",
 		NULL
 	};
 
@@ -673,12 +673,12 @@ static int cmd_write(void *data, const char *input) {
 
 		if (cmd_suc == false) {
 			const char* help_msg[] = {
-			"Usage", "", "write extend",
-			"wen", " <num>", "insert num null bytes at current offset",
-			"wex", " <hex_bytes>", "insert bytes at current offset",
-			"weN", " <addr> <len>", "insert bytes at address",
-			"weX", " <addr> <hex_bytes>", "insert bytes at address",
-			"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
+			"Usage", "", "Продлить запись",
+			"wen", " <num>", "Вставить нулевой байт при текущем смещении",
+			"wex", " <hex_bytes>", "Вставить байты при текущем смещении",
+			"weN", " <addr> <len>", "Вставить байты по адресу",
+			"weX", " <addr> <hex_bytes>", "Вставить байты по адресу",
+			"wes", " <addr>  <dist> <block_size>", "Сдвиг блока влево или запись в редакторе",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -801,11 +801,11 @@ static int cmd_write(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage:", " wA", "[type] [value]",
 				"Types", "", "",
-				"r", "", "raw write value",
-				"v", "", "set value (taking care of current address)",
-				"d", "", "destination register",
-				"0", "", "1st src register",
-				"1", "", "2nd src register",
+				"r", "", "Начальное значение записи",
+				"v", "", "Заданное значение (забота о текущем адресе)",
+				"d", "", "Регистр назначения",
+				"0", "", "1-ый регистр src ",
+				"1", "", "2-ой регистр src ",
 				"Example:",  "wA r 0", "# e800000000",
 				NULL};
 			r_core_cmd_help (core, help_msg);
@@ -882,12 +882,12 @@ static int cmd_write(void *data, const char *input) {
 			{
 				const char* help_msg[] = {
 					"Usage:", "wc[ir+-*?]","  # NOTE: Uses io.cache=true",
-					"wc","","list all write changes",
-					"wc-"," [from] [to]","remove write op at curseek or given addr",
-					"wc+"," [addr]","commit change from cache to io",
-					"wc*","","\"\" in radare commands",
-					"wcr","","reset all write changes in cache",
-					"wci","","commit write cache",
+					"wc","","Список всех изменений записи",
+					"wc-"," [from] [to]","Удалить оператор записи в curseek или задать addr",
+					"wc+"," [addr]","Зафиксировать изменения из кэша в io",
+					"wc*","","\"\"в radare командах",
+					"wcr","","Сброс всех изменений записи в кеше",
+					"wci","","Фиксировать кеш записи",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -983,10 +983,10 @@ static int cmd_write(void *data, const char *input) {
 			}
 		} else if (*str == '?' || *str == '\0') {
 			const char* help_msg[] = {
-				"Usage:", "wt[a] file [size]", " Write 'size' bytes in current blok to 'file'",
-				"wta", " [filename]", "append to 'filename'",
-				"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
-				"wtf!", " [filename]", "write to file from current addresss to eof",
+				"Usage:", "wt[a] file [size]", "Записать байты 'size' в текущем блоке в 'file'",
+				"wta", " [filename]", "Добавить к 'filename'",
+				"wtf", " [filename] [size]", "Записать в файл (см. Также 'wxf' и 'wf?')",
+				"wtf!", " [filename]", "Запись в файл с текущего адреса на eof",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			free (ostr);
@@ -1138,9 +1138,9 @@ static int cmd_write(void *data, const char *input) {
 			{
 			const char* help_msg[] = {
 				"Usage:", "wx[f] [arg]", "",
-				"wx", " 9090", "write two intel nops",
-				"wxf", " -|file", "write contents of hexpairs file here",
-				"wxs", " 9090", "write hexpairs and seek at the end",
+				"wx", " 9090", "Написать два чипа Intel",
+				"wxf", " -|file", "Напишисать содержимое шестнадцатеричного файла здесь",
+				"wxs", " 9090", "Писать шестнадцатеричный и искать в конце",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			break;
@@ -1197,11 +1197,11 @@ static int cmd_write(void *data, const char *input) {
 			{
 			const char* help_msg[] = {
 				"Usage:", "wa[of*] [arg]", "",
-				"wa", " nop", "write nopcode using asm.arch and asm.bits",
-				"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
-				"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
-				"waf", "foo.asm" , "assemble file and write bytes",
-				"wao?", "", "show help for assembler operation on current opcode (hack)",
+				"wa", " nop", "Написать nopcode, используя asm.arch и asm.bits",
+				"wa*", " mov eax, 33", "Show 'wx' op с шестнадцатеричными байтами собранного опкода ",
+				"\"wa nop;nop\"", "" , "Собрать несколько инструкций (обратите внимание на цитаты)",
+				"waf", "foo.asm" , "Собрать файл и записать байты ",
+				"wao?", "", "Показать справку по работе ассемблера на текущем коду операции (взломать)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			break;

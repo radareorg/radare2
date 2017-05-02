@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -200,8 +200,8 @@ static int cmd_seek(void *data, const char *input) {
 		input++;
 		if (*input == '?') {
 			const char *help_message[] = {
-				"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
-				"s?", "", "Works with all s subcommands",
+				"Usage: ss", "", " # Поиск молча (не записывается в истории поиска))",
+				"s?", "", "Работает со всеми подкомандами s",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
@@ -283,9 +283,9 @@ static int cmd_seek(void *data, const char *input) {
 			free (cb.str);
 		} else {
 			const char *help_msg[] = {
-				"Usage:", "sC", "Comment grep",
-				"sC", "*", "List all comments",
-				"sC", " str", "Seek to the first comment matching 'str'",
+				"Usage:", "sC", "Комментарий grep",
+				"sC", "*", "Список всех комментариев",
+				"sC", " str", "Поиск первого комментария, соответствующего 'str'",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -523,10 +523,10 @@ static int cmd_seek(void *data, const char *input) {
 		int sl_arg = r_num_math (core->num, input + 1);
 		const char *help_msg[] = {
 			"Usage:", "sl+ or sl- or slc", "",
-			"sl", " [line]", "Seek to absolute line",
-			"sl", "[+-][line]", "Seek to relative line",
-			"slc", "", "Clear line cache",
-			"sll", "", "Show total number of lines",
+			"sl", " [line]", "Искать абсолютную строку",
+			"sl", "[+-][line]", "Искать относительную линию",
+			"slc", "", "Очистить кеш линии",
+			"sll", "", "Показать общее количество строк",
 			NULL
 		};
 		switch (input[1]) {
@@ -569,31 +569,31 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '?': {
 		const char *help_message[] = {
-			"Usage: s", "", " # Seek commands",
-			"s", "", "Print current address",
-			"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
-			"s", " addr", "Seek to address",
-			"s-", "", "Undo seek",
-			"s-", " n", "Seek n bytes backward",
-			"s--", "", "Seek blocksize bytes backward",
-			"s+", "", "Redo seek",
-			"s+", " n", "Seek n bytes forward",
-			"s++", "", "Seek blocksize bytes forward",
-			"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names)",
-			"s/", " DATA", "Search for next occurrence of 'DATA'",
-			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
-			"s.", "hexoff", "Seek honoring a base from core->offset",
-			"sa", " [[+-]a] [asz]", "Seek asz (or bsize) aligned to addr",
-			"sb", "", "Seek aligned to bb start",
-			"sC", "[?] string", "Seek to comment matching given string",
-			"sf", "", "Seek to next function (f->addr+f->size)",
-			"sf", " function", "Seek to address of specified function",
-			"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
-			"sl", "[?] [+-]line", "Seek to line",
-			"sn/sp", "", "Seek to next/prev location, as specified by scr.nkey",
-			"so", " [N]", "Seek to N next opcode(s)",
-			"sr", " pc", "Seek to register",
-			"ss", "", "Seek silently (without adding an entry to the seek history)",
+			"Usage: s", "", " # Поиск команд",
+			"s", "", "Напечатать текущий адрес",
+			"s:", "pad", "Печатать текущий адрес с N простыми нулями (по умолчанию 8)",
+			"s", " addr", "Поиск адреса",
+			"s-", "", "Отменить поиск",
+			"s-", " n", "Искать n байтов назад",
+			"s--", "", "Искать байты блоков в обратном направлении",
+			"s+", "", "Повторить поиск",
+			"s+", " n", "Искать n байтов вперед",
+			"s++", "", "Искать байты блоков вперёд",
+			"s[j*=!]", "", "Список отмененых поисков (JSON, =list, *r2, !=names)",
+			"s/", " DATA", "Поиск следующего появления 'DATA'",
+			"s/x", " 9091", "Поиск следующего появления \\x90\\x91",
+			"s.", "hexoff", "Поиск соблюдения базы в  core->offset",
+			"sa", " [[+-]a] [asz]", "Искать asz (или bsize), выровненные по addr",
+			"sb", "", "Поиск выровнен с началом bb",
+			"sC", "[?] string", "Искать комментарий для соответствующей строки",
+			"sf", "", "Поиск к следующей функции (f->addr+f->size)",
+			"sf", " function", "Искать адрес указанной функции",
+			"sg/sG", "", "Искать начало (sg) или конец (sG) раздела или файла",
+			"sl", "[?] [+-]line", "Искать строку ",
+			"sn/sp", "", "Поиск следующей/предыдущей локации, как указано scr.nkey",
+			"so", " [N]", "Искать следующий код операции N(s)",
+			"sr", " pc", "Поиск регистра",
+			"ss", "", "Поиск молча (без добавления записи в историю поиска)",
 			// "sp [page]  seek page N (page = block)",
 			NULL
 		};

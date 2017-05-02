@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare2 - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -207,17 +207,17 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '?': {
 		const char* help_msg[] = {
 			"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
-			"CC", "", "list all comments in human friendly form",
-			"CC*", "", "list all comments in r2 commands",
-			"CC.", "", "show comment at current offset",
-			"CC,", " [file]", "show or set comment file",
-			"CC", " [text]", "append comment at current address",
-			"CCf", "", "list comments in function",
-			"CC+", " [text]", "append comment at current address",
-			"CC!", "", "edit comment using cfg.editor (vim, ..)",
-			"CC-", " @ cmt_addr", "remove comment at given address",
-			"CCu", " good boy @ addr", "add good boy comment at given address",
-			"CCu", " base64:AA== @ addr", "add comment in base64",
+			"CC", "", "Список всех комментариев в удобной для пользователя форме",
+			"CC*", "", "Список всех комментариев в командах r2",
+			"CC.", "", "Показать комментарий при текущем смещении",
+			"CC,", " [file]", "Показать или установить файл комментария",
+			"CC", " [text]", "Добавить комментарий по текущему адресу",
+			"CCf", "", "Список комментариев в функции",
+			"CC+", " [text]", "Добавить комментарий по текущему адресу",
+			"CC!", "", "Отредактировать комментарий, используя cfg.editor(vim, ..)",
+			"CC-", " @ cmt_addr", "Удалить комментарий по указанному адресу",
+			"CCu", " good boy @ addr", "Добавьте комментарий по указанному адресу",
+			"CCu", " base64:AA== @ addr", "Добавить комментарий в base64",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);
@@ -527,7 +527,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						if (!tmp[j + 1]) {
 							if (j + 3 < sizeof (tmp)) {
 								if (tmp[j + 3]) {
-									break;	
+									break;
 								}
 							}
 							j++;
@@ -582,35 +582,35 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 void r_comment_var_help(RCore *core, char type) {
 	const char *help_bp[] = {
 		"Usage:", "Cvb", "[name] [comment]",
-		"Cvb?", "", "show this help",
-		"Cvb", "", "list all base pointer args/vars comments in human friendly format",
-		"Cvb*", "", "list all base pointer args/vars comments in r2 format",
-		"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
-		"Cvb", " [name]", "Show comments for var/arg at current offset for base pointer",
-		"Cvb", " [name] [comment]", "add/append comment for the variable with the current name",
-		"Cvb!", "[name]", "edit comment using cfg editor",
+		"Cvb?", "", "Показать эту справку",
+		"Cvb", "", "Список всех баз комментариев указателей/переменных в удобном для пользователя формате",
+		"Cvb*", "", "Список всех баз комментариев указателей/переменных в формате r2",
+		"Cvb-", "[name]", "Удалять комментарии для переменных/аргументов при текущем смещении для базового указателя",
+		"Cvb", " [name]", "Показать комментарии для переменных/аргументов при текущем смещении для базового указателя",
+		"Cvb", " [name] [comment]", "добавить/удалить комментарий для переменной текущм именем",
+		"Cvb!", "[name]", "редактировать комментарий, используя cfg редактор",
 		NULL
 	};
 	const char *help_sp[] = {
 		"Usage:", "Cvs", "[name] [comment]",
-		"Cvs?", "", "show this help",
-		"Cvs", "", "list all stack based args/vars comments in human friendly format",
-		"Cvs*", "", "list all stack based args/vars comments in r2 format",
-		"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
-		"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
-		"Cvs", "[name] [comment]", "add/append comment for the variable",
-		"Cvs!", "[name]", "edit comment using cfg editor",
+		"Cvs?", "", "Показать эту справку",
+		"Cvs", "", "Список всех баз комментариев указателей/переменных в удобном для пользователя формате",
+		"Cvs*", "", "Список всех баз комментариев указателей/переменных в формате r2",
+		"Cvs-", "[name]", "Удалять комментарии для указателя стека при данном имени",
+		"Cvs", "[name]", "Показать комментарии для указателя стека переменные/аргументы с таким именем ",
+		"Cvs", "[name] [comment]", "добавить/удалить комментарий для переменной с таким именем ",
+		"Cvs!", "[name]", "редактировать комментарий, используя cfg редактор",
 		NULL
 	};
 	const char *help_reg[] = {
 		"Usage:", "Cvr", "[name] [comment]",
-		"Cvr?", "", "show this help",
-		"Cvr", "", "list all register based args comments in human friendly format",
-		"Cvr*", "", "list all register based args comments in r2 format",
-		"Cvr-", "[name]", "delete comments for register based arg for that name",
-		"Cvr", "[name]", "Show comments for register based arg for that name",
-		"Cvr", "[name] [comment]", "add/append comment for the variable",
-		"Cvr!", "[name]", "edit comment using cfg editor",
+		"Cvr?", "", "Показать эту справку",
+		"Cvr", "", "Список всех баз комментариев аргументов в удобном для пользователя формате",
+		"Cvr*", "", "Список всех баз комментариев указателей в формате r2",
+		"Cvr-", "[name]", "Удалять комментарии для  при данном имени",
+		"Cvr", "[name]", "Показать комментарии для аргумента регистра на основе этого имени",
+		"Cvr", "[name] [comment]", "добавить/удалить комментарий для переменной регистра с таким именем ",
+		"Cvr!", "[name]", "редактировать комментарий, используя cfg редактор",
 		NULL
 	};
 
@@ -793,24 +793,24 @@ static int cmd_meta(void *data, const char *input) {
 	case '\0':
 	case '?':{
 			const char* help_msg[] = {
-				"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
-				"C*", "", "list meta info in r2 commands",
-				"C-", " [len] [[@]addr]", "delete metadata at given address range",
-				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
-				"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
-				"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
-				"CC.", "[addr]", "show comment in current address",
-				"CC!", " [@addr]", "edit comment with $EDITOR",
-				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
-				"CCu", " [comment-text] [@addr]", "add unique comment",
-				"Cv", "[bsr][?]", "add comments to args",
-				"Cs", "[?] [-] [size] [@addr]", "add string",
-				"Cz", "[@addr]", "add zero-terminated string",
-				"Ch", "[-] [size] [@addr]", "hide data",
-				"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
-				"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
-				"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
-				"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
+				"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Управление метаданными ",
+				"C*", "", "Список мета информации в командах r2",
+				"C-", " [len] [[@]addr]", "Удалить метаданные по заданному диапозону адресов",
+				"CL", "[-][*] [file:line] [addr]", "Показать или добавить информацию 'code line' (бинарная информация)",
+				"CS", "[-][space]", "Управлять метапространствами для фильтрации комментариев и т.д.",
+				"CC", "[?] [-] [comment-text] [@addr]", "Добавить / удалить комментарий",
+				"CC.", "[addr]", "Показать комментарий на текущем адресе",
+				"CC!", " [@addr]", "Редактировать комментарий с помощью $ EDITOR",
+				"CCa", "[-at]|[at] [text] [@addr]", "Добавить / удалить комментарий по указанному адресу",
+				"CCu", " [comment-text] [@addr]", "Добавить уникальный комментарий",
+				"Cv", "[bsr][?]", "Добавлять комментарии в args",
+				"Cs", "[?] [-] [size] [@addr]", "Добавить строку",
+				"Cz", "[@addr]", "Добавить строку с нулевым символом",
+				"Ch", "[-] [size] [@addr]", "Скрыть данные",
+				"Cd", "[-] [size] [repeat] [@addr]", "Массив данных  16-ричной  (Cd 4 10 == dword [10])",
+				"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "Форматировать память (см pf?)",
+				"CF", "[sz] [fcn-sign..] [@addr]", "Сигнатура функции",
+				"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (см. pm?)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			}
@@ -831,16 +831,16 @@ static int cmd_meta(void *data, const char *input) {
 		case '?':
 			{
 				const char *help_msg[] = {
-					"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
-					"CS","","display metaspaces",
-					"CS"," *","select all metaspaces",
-					"CS"," metaspace","select metaspace or create if it doesn't exist",
-					"CS","-metaspace","remove metaspace",
-					"CS","-*","remove all metaspaces",
-					"CS","+foo","push previous metaspace and set",
-					"CS","-","pop to the previous metaspace",
+					"Usage: CS","[*] [+-][metaspace|addr]", " # Управление metaspaces",
+					"CS","","Отобразить metaspaces",
+					"CS"," *","Выбрать все metaspaces",
+					"CS"," metaspace","Выбрать metaspace или создать если не существует",
+					"CS","-metaspace","удалить metaspace",
+					"CS","-*","удалить все metaspaces",
+					"CS","+foo","положить предыдущее metaspace и установить",
+					"CS","-","извлечь предыдушему metaspace",
 					//	"CSm"," [addr]","move metas at given address to the current metaspace",
-					"CSr"," newname","rename selected metaspace",
+					"CSr"," newname","удалить выбранное metaspace",
 					NULL};
 				r_core_cmd_help (core, help_msg);
 			}

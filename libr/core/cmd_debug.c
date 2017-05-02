@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_core.h"
 #include "r_util.h"
@@ -384,23 +384,23 @@ static int step_line(RCore *core, int times) {
 static void cmd_debug_pid(RCore *core, const char *input) {
 	int pid, sig;
 	const char *ptr, *help_msg[] = {
-		"Usage:", "dp", " # Process commands",
-		"dp", "", "List current pid and children",
-		"dp", " <pid>", "List children of pid",
-		"dp*", "", "List all attachable pids",
-		"dp=", "<pid>", "Select pid",
-		"dp-", " <pid>", "Detach select pid",
-		"dpa", " <pid>", "Attach and select pid",
-		"dpc", "", "Select forked pid (see dbg.forks)",
-		"dpc*", "", "Display forked pid (see dbg.forks)",
-		"dpe", "", "Show path to executable",
-		"dpf", "", "Attach to pid like file fd // HACK",
-		"dpk", " <pid> [<signal>]", "Send signal to process (default 0)",
-		"dpn", "", "Create new process (fork)",
-		"dptn", "", "Create new thread (clone)",
-		"dpt", "", "List threads of current pid",
-		"dpt", " <pid>", "List threads of process",
-		"dpt=", "<thread>", "Attach to thread",
+		"Usage:", "dp", " # Команды обработки",
+		"dp", "", "Список текущих pid и дочерних элементов",
+		"dp", " <pid>", "Список дочерних элементов pid",
+		"dp*", "", "Перечислить все прикрепляемые заказы",
+		"dp=", "<pid>", "Выбрать pid",
+		"dp-", " <pid>", "Отсоединить выбранный pid",
+		"dpa", " <pid>", "Прикрепите и выберите pid",
+		"dpc", "", "Выберите раздвоенный pid (см. Dbg.forks)",
+		"dpc*", "", "Отобразить раздвоенный pid (см. dbg.forks)",
+		"dpe", "", "Показать путь к исполняемому файлу",
+		"dpf", "", "Прикрепить к pid как файл fd // HACK",
+		"dpk", " <pid> [<signal>]", "Отправка сигнала для обработки (по умолчанию 0)",
+		"dpn", "", "Создать новый процесс (fork)",
+		"dptn", "", "Создать новую тему (клон)",
+		"dpt", "", "Список тем текущего pid ",
+		"dpt", " <pid>", "Список тем процесса",
+		"dpt=", "<thread>", "Прикрепить к потоку",
 		NULL};
 	switch (input[1]) {
 	case 0:
@@ -579,18 +579,18 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dms", " # Memory map snapshots",
-		"dms", "", "List memory snapshots",
-		"dmsj", "", "list snapshots in JSON",
-		"dms*", "", "list snapshots in r2 commands",
-		"dms", " addr", "take snapshot with given id of map at address",
-		"dms", "-id", "delete memory snapshot",
-		"dmsA", " id", "apply memory snapshot",
-		"dmsC", " id comment", "add comment for given snapshot",
-		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
-		"dmsw", "", "snapshot of the writable maps",
-		"dmsa", "", "full snapshot of all `dm` maps",
-		"dmsf", " [file] @ addr", "read snapshot from disk",
-		"dmst", " [file] @ addr", "dump snapshot to disk",
+		"dms", "", "Список снимков памяти",
+		"dmsj", "", "Список снимков в JSON",
+		"dms*", "", "Список снимков в r2 commands",
+		"dms", " addr", "Сделать снимок с заданным map по адресу",
+		"dms", "-id", "Удалить снимок памяти",
+		"dmsA", " id", "Применить снимок памяти",
+		"dmsC", " id comment", "Добавить комментарий к данному снимку",
+		"dmsd", " id", "Hexdiff данный снимок. См. `Ccc`.",
+		"dmsw", "", "Моментальный снимок записываемых карт",
+		"dmsa", "", "Полный моментальный снимок всех карт `dm`",
+		"dmsf", " [file] @ addr", "Читать снимок с диска",
+		"dmst", " [file] @ addr", "Выполнять моментальный снимок на диск",
 		// TODO: dmsj - for json
 		NULL
 	};
@@ -765,11 +765,11 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	RList *list;
 	RListIter *iter;
 	const char* help_msg[] = {
-		"Usage:", "dmm", " # Module memory maps commands",
-		"dmm", "", "List modules of target process",
-		"dmm.", "", "List memory map of current module",
-		"dmmj", "", "List modules of target process (JSON)",
-		"dmm*", "", "List modules of target process (r2 commands)",
+		"Usage:", "dmm", " # Команды карт памяти модуля",
+		"dmm", "", "Список модулей целевого процесса",
+		"dmm.", "", "Список карт памяти текущего модуля",
+		"dmmj", "", "Список модулей целевого процесса(JSON)",
+		"dmm*", "", "Список модулей целевого процесса(r2 commands)",
 		NULL
 	};
 
@@ -949,28 +949,28 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 
 static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
-		"Usage:", "dm", " # Memory maps commands",
-		"dm", "", "List memory maps of target process",
-		"dm=", "", "List memory maps of target process (ascii-art bars)",
-		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
-		"dm.", "", "Show map name of current address",
-		"dm*", "", "List memmaps in radare commands",
-		"dm-", "<address>", "Deallocate memory map of <address>",
-		"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
-		"dmi", " [addr|libname] [symname]", "List symbols of target lib",
-		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
-		"dmi.", "", "List closest symbol to the current address",
-		"dmS", " [addr|libname] [sectname]", "List sections of target lib",
-		"dmS*", " [addr|libname] [sectname]", "List sections of target lib in radare commands",
-		"dmj", "", "List memmaps in JSON format",
-		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
-		"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
-		"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
-		"dms", "[?] <id> <mapaddr>", "take memory snapshot",
-		"dms-", " <id> <mapaddr>", "restore memory snapshot",
-		"dmh", "", "Show map of heap",
+		"Usage:", "dm", " # Команды карт памяти",
+		"dm", "", "Список карт памяти целевого процесса",
+		"dm=", "", "Список карт памяти целевого процесса(ascii-art bars)",
+		"dm", " <address> <size>", "Выделите <размер> байты в <адресе> (везде, если адрес равен -1) в дочернем процессе",
+		"dm.", "", "Показать название текущего адреса",
+		"dm*", "", "Список memmaps в командах радара",
+		"dm-", "<address>", "Освободить карту памяти <address>",
+		"dmd", "[a] [file]", "Выгрузить текущую (все) область отладки карты в файл (from-to.dmp) (см. Sd)",
+		"dmi", " [addr|libname] [symname]", "Список символов целевой библиотеки",
+		"dmi*", " [addr|libname] [symname]", "Список символов целевой библиотеки в radare commands",
+		"dmi.", "", "Список ближайших символов к текущему адресу",
+		"dmS", " [addr|libname] [sectname]", "Список разделов целевой Lib",
+		"dmS*", " [addr|libname] [sectname]", "Список разделов целевой Lib в radare commands",
+		"dmj", "", "Список memmaps в формате JSON",
+		"dml", " <file>", "Загрузить содержимое файла в текущую область карты (см. Sl)",
+		"dmm", "[?][j*]", "Список модулей (библиотеки, двоичные файлы, загружаемые в память)",
+		"dmp", "[?] <address> <size> <perms>", "Измените страницу на <адрес> с помощью <размер>, защита <perms> (rwx)",
+		"dms", "[?] <id> <mapaddr>", "Сделать снимок памяти",
+		"dms-", " <id> <mapaddr>", "Восстановить снимок памяти",
+		"dmh", "", "Показать map of heap",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
+		"TODO:", "", "Файлы карт в памяти процесса. (dmf file @ [addr])",
 		NULL};
 	RListIter *iter;
 	RDebugMap *map;
@@ -999,9 +999,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'p': // "dmp"
 		if (input[1] == '?') {
 			const char* help_msg[] = {
-				"Usage:", "dmp", " Change page permissions",
-				"dmp", " [addr] [size] [perms]", "Change permissions",
-				"dmp", " [perms]", "Change dbg.map permissions",
+				"Usage:", "dmp", " Изменить разрешения страницы",
+				"dmp", " [addr] [size] [perms]", "Изменить разрешения",
+				"dmp", " [perms]", "Изменить разрешения dbg.map",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == ' ') {
@@ -1141,7 +1141,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					ut64 closest_addr = UT64_MAX;
 					RList *symbols = r_bin_get_symbols (core->bin);
 					RBinSymbol *symbol, *closest_symbol = NULL;
-					
+
 					r_list_foreach (symbols, iter, symbol) {
 						if (symbol->vaddr > addr) {
 							if (symbol->vaddr - addr < closest_addr) {
@@ -1168,10 +1168,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		default:
 			{
 				const char *dmi_help_msg[] = {
-					"Usage: dmi", "", " # List/Load Symbols",
-					"dmi", "", "List symbols of target lib",
-					"dmi*", "", "List symbols of target lib in radare commands",
-					"dmi.", "", "List closest symbol to the current address",
+					"Usage: dmi", "", " # Список / Символы нагрузки",
+					"dmi", "", "Список символов целевой библиотеки",
+					"dmi*", "", "Список символов целевой библиотеки в radare commands",
+					"dmi.", "", "Список ближайших символов к текущему адресу",
 					NULL};
 				r_core_cmd_help (core, dmi_help_msg);
 			}
@@ -1321,7 +1321,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 		value = r_reg_get_value (core->dbg->reg, r);
 		rrstr = r_core_anal_hasrefs (core, value, true);
 		if (bits == 64) {
-			if (r->flags) {	
+			if (r->flags) {
 				tmp = r_reg_get_bvalue (reg, r);
 				r_cons_printf ("%6s %018s", r->name, tmp);
 			} else {
@@ -1462,13 +1462,13 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 		{
 			const char *from_a[] = { "arp", "arpi", "arp.", "arpj", "arps" };
 			const char *help_msg[] = {
-				"Usage:", "drp", " # Register profile commands",
-				"drp", "", "Show the current register profile",
-				"drp", " [regprofile-file]", "Set the current register profile",
-				"drpi", "", "Show internal representation of the register profile",
-				"drp.", "", "Show the current fake size",
-				"drpj", "", "Show the current register profile (JSON)",
-				"drps", " [new fake size]", "Set the fake size",
+				"Usage:", "drp", " # Зарегистрировать команды профиля",
+				"drp", "", "Показать текущий профиль реестра",
+				"drp", " [regprofile-file]", "Установить текущий профиль реестра",
+				"drpi", "", "Показать внутреннее представление профиля реестра",
+				"drp.", "", "Показывать текущий размер фальшивки",
+				"drpj", "", "Показать текущий профиль реестра(JSON)",
+				"drps", " [new fake size]", "Установить поддельный размер",
 				NULL
 			};
 			if (from == 'a') {
@@ -1530,40 +1530,40 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			//r_reg_get_value (core->dbg->reg, r));
 		} else {
 			const char * help_message[] = {
-				"Usage: dr", "", "Registers commands",
-				"dr", "", "Show 'gpr' registers",
-				"dr", " <register>=<val>", "Set register value",
-				"dr=", "", "Show registers in columns",
-				"dr?", "<register>", "Show value of given register",
-				"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
-				"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
-				"drC", "", "Show register profile comments",
-				"drc", " [name]", "Related to conditional flag registers",
-				"drd", "", "Show only different registers",
-				"drl", "", "List all register names",
-				"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-				"dro", "", "Show previous (old) values of registers",
-				"drp", " [?] <file>", "Load register metadata file",
-				"drp", "", "Display current register profile",
-				"drpi", "", "Display current internal representation of the register profile",
-				"drps", "", "Fake register profile size",
-				"drr", "", "Show registers references (telescoping)",
-				"drs", " [?]", "Stack register states",
-				"drt", " [?]", "Show all register types",
-				"drt", " flg", "Show flag registers",
-				"drt", " all", "Show all registers",
-				"drt", " 16", "Show 16 bit registers",
-				"drt", " 32", "Show 32 bit registers",
-				"drt", " 80", "Show 80 bit registers (long double)",
-				"drx", " [?]", "Show all debug registers",
-				"drx", " idx addr len rwx", "Modify hardware breakpoint",
-				"drx-", "number", "Clear hardware breakpoint",
-				"drf","","show fpu registers (80 bit long double)",
-				"drm","","show multimedia packed registers",
-				"drm"," mmx0 0 32 = 12","set the first 32 bit word of the mmx reg to 12",
-				"drw"," <hexnum>", "Set contents of the register arena",
-				".dr", "*", "Include common register values in flags",
-				".dr", "-", "Unflag all registers",
+				"Usage: dr", "", "Регистры команд ",
+				"dr", "", "Показать регистры «gpr»",
+				"dr", " <register>=<val>", "Задать значение регистра",
+				"dr=", "", "Показывать регистры в столбцах",
+				"dr?", "<register>", "Показывать значение заданного регистра",
+				"dr8", "[1|2|4|8] [type]", "Отобразить hexdump из gpr arena(WIP)",
+				"drb", "[1|2|4|8] [type]", "Отобразить hexdump из gpr arena (WIP)",
+				"drC", "", "Показать комментарии профиля регистрации",
+				"drc", " [name]", "Связанные с условными флагами регистры",
+				"drd", "", "Показывать только разные регистры",
+				"drl", "", "Список всех имен регистров",
+				"drn", " <pc>", "Получить regname для pc, sp, bp,a0-3,zf,cf,of,sg",
+				"dro", "", "Показать предыдущие (старые) значения регистров",
+				"drp", " [?] <file>", "Загрузите файл метаданных регистра",
+				"drp", "", "Отобразить текущий профиль реестра",
+				"drpi", "", "Показывать текущее внутреннее представление профиля реестра",
+				"drps", "", "Размер фальшивого регистра",
+				"drr", "", "Показать ссылки на регистры (телескопирование)",
+				"drs", " [?]", "Стековый регистр ",
+				"drt", " [?]", "Показать все типы регистров",
+				"drt", " flg", "Показать регистры флага",
+				"drt", " all", "Показать все регистры",
+				"drt", " 16", "Показать 16-разрядные регистры",
+				"drt", " 32", "Показать 32-разрядные регистры",
+				"drt", " 80", "Показать 80-битные регистры (long double)",
+				"drx", " [?]", "Показать все регистры отладки",
+				"drx", " idx addr len rwx", "Изменить аппаратную контрольную точку",
+				"drx-", "number", "Очистить аппаратное прерывание",
+				"drf","","Показать fpu регистры (80 bit long double)",
+				"drm","","Показать мультимедийные упакованные регистры ",
+				"drm"," mmx0 0 32 = 12","Установить первое 32-битовое слово в регистре mmx на 12",
+				"drw"," <hexnum>", "Задать содержимое регистра",
+				".dr", "*", "Включить общие значения регистров во флаги",
+				".dr", "-", "Отменить все регистры",
 				NULL
 			};
 			// TODO: 'drs' to swap register arenas and display old register valuez
@@ -1712,10 +1712,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		default:
 			  {
 				  const char * help_message[] = {
-					  "Usage: drx", "", "Hardware breakpoints commands",
-					  "drx", "", "List all (x86?) hardware breakpoints",
-					  "drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
-					  "drx-", "<number>", "Clear hardware breakpoint",
+					  "Usage: drx", "", "Команды аппаратных прерываний",
+					  "drx", "", "Список всех (x86?) аппаратных прерываний",
+					  "drx", " <number> <address> <length> <perms>", "Изменить аппаратную контрольную точку",
+					  "drx-", "<number>", "Очистить аппаратное прерывание",
 					  NULL
 				  };
 				  r_core_cmd_help (core, help_message);
@@ -1741,10 +1741,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		default:
 			{
 				const char * help_message[] = {
-					"Usage: drs", "", "Register states commands",
-					"drs", "", "List register stack",
-					"drs", "+", "Push register state",
-					"drs", "-", "Pop register state",
+					"Usage: drs", "", "Команды состояния регистров",
+					"drs", "", "Список стеков регистров",
+                    "drs", "+", "Push register state",
+                    "drs", "-", "Состояние регистра pop",
 					NULL
 				};
 				r_core_cmd_help (core, help_message);
@@ -1885,11 +1885,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			default:
 				{
 					const char *help_msg[] = {
-						"Usage:", "drt", " [type] [size]    # debug register types",
-						"drt", "", "List all available register types",
-						"drt", " [size]", "Show all regs in the profile of size",
-						"drt", " [type]", "Show all regs in the profile of this type",
-						"drt", " [type] [size]", "Same as above for type and size",
+						"Usage:", "drt", " [type] [size]    # Типы отладочных регистров",
+						"drt", "", "Список всех доступных типов регистров",
+						"drt", " [size]", "Показать все регистры в профиле размера",
+						"drt", " [type]", "Показать все регистры в профиле типа",
+						"drt", " [type] [size]", "То же, что указано выше для типа и размера",
 						NULL};
 					r_core_cmd_help (core, help_msg);
 				}
@@ -2017,7 +2017,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				case 0:
 					r_cons_printf ("0x%08"PFMT64x"\n", off);
 					break;
-				case 1: 
+				case 1:
 					r_cons_printf ("Unknown register '%s'\n", str + 1);
 					break;
 				case 80:
@@ -2063,44 +2063,44 @@ static void static_debug_stop(void *u) {
 static void r_core_cmd_bp(RCore *core, const char *input) {
 	RBreakpointItem *bpi;
 	const char* help_msg[] = {
-		"Usage: db", "", " # Breakpoints commands",
-		"db", "", "List breakpoints",
-		"db", " sym.main", "Add breakpoint into sym.main",
-		"db", " <addr>", "Add breakpoint",
-		"db", " -<addr>", "Remove breakpoint",
-		"db.", "", "Show breakpoint info in current offset",
-		"dbj", "", "List breakpoints in JSON format",
+		"Usage: db", "", " # Команды контрольных точек",
+		"db", "", "Список контрольных точек",
+		"db", " sym.main", "Добавить контрольную точку в sym.main",
+		"db", " <addr>", "Добавить контрольную точку",
+		"db", " -<addr>", "Remove контрольная точка",
+		"db.", "", "Показать контрольную точку в текущем смещенииt",
+		"dbj", "", "Список контрольных точек в формате JSONt",
 		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
-		"dbC", " <addr> <cmd>", "Set breakpoint condition on command",
-		"dbd", " <addr>", "Disable breakpoint",
-		"dbe", " <addr>", "Enable breakpoint",
-		"dbs", " <addr>", "Toggle breakpoint",
-		"dbf", "", "Put a breakpoint into every no-return function",
+		"dbc", " <addr> <cmd>", "Команда «Выполнить» при нажатии контрольной точки",
+		"dbC", " <addr> <cmd>", "Установить контрольную точку по команде",
+		"dbd", " <addr>", "Отключить контрольную точку",
+		"dbe", " <addr>", "Включить контрольную точку",
+		"dbs", " <addr>", "Переключить контрольную точку",
+		"dbf", "", "Поставьте контрольную точку в каждую функцию без возврата",
 		//
-		"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-		"dbt*", "", "Display backtrace in flags",
-		"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
-		"dbtj", "", "Display backtrace in JSON",
-		"dbte", " <addr>", "Enable Breakpoint Trace",
-		"dbtd", " <addr>", "Disable Breakpoint Trace",
-		"dbts", " <addr>", "Swap Breakpoint Trace",
-		"dbm", " <module> <offset>", "Add a breakpoint at an offset from a module's base",
-		"dbn", " [<name>]", "Show or set name for current breakpoint",
+		"dbt", "[?]", "Отобразить обратную трассировку на основе dbg.btdepth и dbg.btalgo",
+		"dbt*", "", "Отображать обратную трассировку во флажках",
+		"dbt=", "", "Отображать обратную трассировку в одной строке (см. Dbt = s и dbt = b для sp или bp)",
+		"dbtj", "", "Отобразить обратную трассировку в JSON",
+		"dbte", " <addr>", "Включить контрольную точку Trace",
+		"dbtd", " <addr>", "Отключить контрольную точкуTrace",
+		"dbts", " <addr>", "Замена контрольной точки  Trace",
+		"dbm", " <module> <offset>", "Добавить контрольную точку при смещении от основания модуля",
+		"dbn", " [<name>]", "Показать или установить имя текущей контрольной точки",
 		//
-		"dbi", "", "List breakpoint indexes",
-		"dbic", " <index> <cmd>", "Run command at breakpoint index",
-		"dbie", " <index>", "Enable breakpoint by index",
-		"dbid", " <index>", "Disable breakpoint by index",
-		"dbis", " <index>", "Swap Nth breakpoint",
-		"dbite", " <index>", "Enable breakpoint Trace by index",
-		"dbitd", " <index>", "Disable breakpoint Trace by index",
-		"dbits", " <index>", "Swap Nth breakpoint trace",
+		"dbi", "", "Список индексов контрольных точек",
+		"dbic", " <index> <cmd>", "Команда запуска в контрольной точке index",
+		"dbie", " <index>", "Включить контрольную точку по индексу",
+		"dbid", " <index>", "Выключить контрольную точку по индексу",
+		"dbis", " <index>", "Замена Nth контрольной точки",
+		"dbite", " <index>", "Включить контрольную точку Трассировка по индексу",
+		"dbitd", " <index>", "Выключить контрольную точку Трассировка по индексу",
+		"dbits", " <index>", "Заменить контрольную точку Трассировка по индексу",
 		//
-		"dbh", " x86", "Set/list breakpoint plugin handlers",
-		"dbh-", " <name>", "Remove breakpoint plugin handler",
-		"drx", " number addr len rwx", "Modify hardware breakpoint",
-		"drx-", "number", "Clear hardware breakpoint",
+		"dbh", " x86", "Установка/список контрольных точек обработчика плагинов",
+		"dbh-", " <name>", "Удалить контрольную точку обработчика плагинов.",
+		"drx", " number addr len rwx", "Изменить аппаратную контрольную точку",
+		"drx-", "number", "Очистить аппаратную контрольную точку",
 		NULL};
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
@@ -2156,8 +2156,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 't': // "dbt"
 		switch (input[2]) {
 			case 'e': // "dbte"
-				for (p = input + 3; *p == ' '; p++) { 
-					/* nothing to do here */ 
+				for (p = input + 3; *p == ' '; p++) {
+					/* nothing to do here */
 				}
 				if (*p == '*') {
 					r_bp_set_trace_all (core->dbg->bp,true);
@@ -2329,14 +2329,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			default:
 				{
 				const char* dbt_help_msg[] = {
-					"Usage: dbt", "", " # Backtrace commands",
-					"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-					"dbt*", "", "Display backtrace in flags",
-					"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
-					"dbtj", "", "Display backtrace in JSON",
-					"dbte", " <addr>", "Enable Breakpoint Trace",
-					"dbtd", " <addr>", "Disable Breakpoint Trace",
-					"dbts", " <addr>", "Swap Breakpoint Trace",
+					"Usage: dbt", "", " # Команды обратной трассировки",
+					"dbt", "", "Отобразить обратную трассировку на основе dbg.btdepth и dbg.btalgo",
+					"dbt*", "", "Отображать обратную трассировку во флагах",
+					"dbt=", "", "Отображать обратную трассировку в одной строке(see dbt=s and dbt=b for sp or bp)",
+					"dbtj", "", "Отобразить обратную трассировку в JSON",
+					"dbte", " <addr>", "Включить контрольную точку Trace",
+					"dbtd", " <addr>", "Выключить контрольную точку Trace",
+					"dbts", " <addr>", "Изменить контрольную точку Trace",
 					NULL};
 				r_core_cmd_help (core, dbt_help_msg);
 				}
@@ -2467,12 +2467,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_plugin_list (core->dbg->bp);
 			break;
 		case ' ':
-			if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits))
-				eprintf ("Invalid name: '%s'.\n", input + 3);
+			if (input[3]) {
+				if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits)) {
+					eprintf ("Invalid name: '%s'.\n", input + 3);
+				}
+			}
 			break;
 		case '-':
-			if (!r_bp_plugin_del (core->dbg->bp, input + 4)) {
-				eprintf ("Invalid name: '%s'.\n", input + 4);
+			if (input[3]) {
+				if (!r_bp_plugin_del (core->dbg->bp, input + 3)) {
+					eprintf ("Invalid name: '%s'.\n", input + 3);
+				}
 			}
 			break;
 		case '?':
@@ -2824,8 +2829,8 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		} else if (input[1] == '?' || !input[1]) {
 			const char *help_des_msg[] = {
 				"Usage:", "des", "[u] [arg]",
-				"des", " [N]", "step-in N instructions with esildebug",
-				"desu", " [addr]", "esildebug until specific address",
+				"des", " [N]", "Пошаговые инструкции N с esildebug",
+				"desu", " [addr]", "Esildebug до определенного адреса",
 				NULL
 			};
 			r_core_cmd_help (core, help_des_msg);
@@ -2854,12 +2859,12 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		{
 			const char *help_msg[] = {
 				"Usage:", "de", "[-sc] [rwx] [rm] [expr]",
-				"de", "", "list esil watchpoints",
-				"de-*", "", "delete all esil watchpoints",
-				"de", " [rwx] [rm] [addr|reg|from..to]", "stop on condition",
-				"dec", "", "continue execution until matching expression",
-				"des", "[?] [N]", "step-in N instructions with esildebug",
-				"desu", " [addr]", "esildebug until specific address",
+				"de", "", "Перечислить точки наблюдения esil",
+				"de-*", "", "Удалить все точки наблюдения esil ",
+				"de", " [rwx] [rm] [addr|reg|from..to]", "Останавливаться при условии",
+				"dec", "", "Продолжить выполнение до соответствия выражения",
+				"des", "[?] [N]", "Пошаговые инструкции N с esildebug",
+				"desu", " [addr]", "Esildebug до определенного адреса",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -2890,14 +2895,14 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			}
 		} else {
 			const char * help_message[] = {
-				"Usage: dk", "", "Signal commands",
-				"dk", "", "List all signal handlers of child process",
-				"dk", " <signal>", "Send KILL signal to child",
-				"dk", " <signal>=1", "Set signal handler for <signal> in child",
-				"dk?", "<signal>", "Name/signum resolver",
-				"dko", "[?] <signal>", "Reset skip or cont options for given signal",
-				"dko", " <signal> [|skip|cont]", "On signal SKIP handler or CONT into",
-				"dkj", "", "List all signal handlers in JSON",
+				"Usage: dk", "", "Команды сигналов",
+				"dk", "", "Перечислить все обработчики сигналов дочернего процесса",
+				"dk", " <signal>", "Отправить сигнал KILL дочернему процессу",
+				"dk", " <signal>=1", "Установите обработчик сигнала для <signal> в дочерний процесс ",
+				"dk?", "<signal>", "Имя/signum распознавателя",
+				"dko", "[?] <signal>", "Сбросить параметры пропуска или продолжения для заданного сигнала",
+				"dko", " <signal> [|skip|cont]", "Обработчик сигнала SKIP или CONT ",
+				"dkj", "", "Перечислить все обработчики сигналов в JSON",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
@@ -2939,10 +2944,10 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			default:
 				{
 					const char* help_msg[] = {
-						"Usage:", "dko", " # Signal handling commands",
-						"dko", "", "List existing signal handling",
-						"dko", " [signal]", "Clear handling for a signal",
-						"dko", " [signal] [skip|cont]", "Set handling for a signal",
+						"Usage:", "dko", " # Команды управления сигналами",
+						"dko", "", "Список имеющих обработку сигналов",
+						"dko", " [signal]", "Очистить обработку сигнала",
+						"dko", " [signal] [skip|cont]", "Установка обработки для сигнала",
 						NULL
 					};
 					r_core_cmd_help (core, help_msg);
@@ -2984,10 +2989,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 	bool invalid = (!input[0] || !input[1] || !input[2]);
 	if (invalid || (input[2] != ' ' && input[2] != '.')) {
 		const char* help_msg[] = {
-			"Usage:", "dcu", " Continue until address",
-			"dcu", " address", "Continue until address",
-			"dcu", " [..tail]", "Continue until the range",
-			"dcu", " [from] [to]", "Continue until the range",
+			"Usage:", "dcu", " Продолжить до адреса",
+			"dcu", " address", "Продолжить до адреса",
+			"dcu", " [..tail]", "Продолжайте, пока диапазон",
+			"dcu", " [from] [to]", "Продолжайте, пока диапазон",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);
@@ -3061,23 +3066,23 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	char *ptr;
 	const char * help_message[] = {
 		"Usage: dc", "", "Execution continuation commands",
-		"dc", "", "Continue execution of all children",
-		"dc", " <pid>", "Continue execution of pid",
-		"dc", "[-pid]", "Stop execution of pid",
-		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
-		"dcc", "", "Continue until call (use step into)",
-		"dccu", "", "Continue until unknown call (call reg)",
+		"dc", "", "Продолжить выполнение всех дочерних процессов",
+		"dc", " <pid>", "Продолжить выполнение pid",
+		"dc", "[-pid]", "Остановить выполнение pid",
+		"dca", " [sym] [sym].", "Продолжать каждое нажатие по любому данному символу",
+		"dcc", "", "Продолжайте до вызова (используйте шаг в)",
+		"dccu", "", "Продолжайте до неизвестного вызова (рег. Вызова)",
 #if __WINDOWS__ && !__CYGWIN__
-		"dce", "", "Continue execution (pass exception to program)",
+		"dce", "", "Продолжить выполнение (передать исключение в программу)",
 #endif
-		"dcf", "", "Continue until fork (TODO)",
-		"dck", " <signal> <pid>", "Continue sending signal to process",
-		"dco", " <num>", "Step over <num> instructions",
-		"dcp", "", "Continue until program code (mapped io section)",
-		"dcr", "", "Continue until ret (uses step over)",
-		"dcs", "[?] <num>", "Continue until syscall",
-		"dct", " <len>", "Traptrace from curseek to len, no argument to list",
-		"dcu", "[?] [..end|addr] ([end])", "Continue until address (or range)",
+		"dcf", "", "Продолжайте до разветвления (TODO)",
+		"dck", " <signal> <pid>", "Продолжить отправку сигнала для обработки",
+		"dco", " <num>", "Перейти к <num> инструкциям",
+		"dcp", "", "Продолжайте, пока код программы (отображается в разделе io)",
+		"dcr", "", "Продолжайте до тех пор, пока ret (не использует step over)",
+		"dcs", "[?] <num>", "Продолжать до системного вызова",
+		"dct", " <len>", "Traptrace от curseek до len, никаких аргументов в списке",
+		"dcu", "[?] [..end|addr] ([end])", "Продолжайте до адреса (или диапазона)",
 		/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
 		/*"TODO: same for only user/libs side, to avoid steping into libs",*/
 		/*"TODO: support for threads?",*/
@@ -3115,7 +3120,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 				}
 			}
 		}
-		
+
 		eprintf ("Selecting and continuing: %d\n", main_pid);
 		r_debug_select (core->dbg, main_pid, main_pid);
 		r_debug_continue (core->dbg);
@@ -3190,10 +3195,10 @@ beach:
 		case '?':
 			{
 				const char* help_msg[] = {
-					"Usage:", "dcs", " Continue until syscall",
-					"dcs", "", "Continue until next syscall",
-					"dcs [str]", "", "Continue until next call to the 'str' syscall",
-					"dcs", "*", "trace all syscalls, a la strace",
+					"Usage:", "dcs", " Продолжать до системного вызова",
+					"dcs", "", "Продолжайте до следующей Syscal",
+					"dcs [str]", "", "Продолжайте, пока не будет следующий вызов системного вызова 'str'",
+					"dcs", "*", "Отслеживать все системные вызовы, a la strace",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -3258,21 +3263,21 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	RAnalOp aop;
 	int i, times = 1;
 	const char * help_message[] = {
-		"Usage: ds", "", "Step commands",
+		"Usage: ds", "", "Шаговые команды",
 		"ds", "", "Step one instruction",
-		"ds", " <num>", "Step <num> instructions",
-		"dsb", "", "Step back one instruction",
-		"dsf", "", "Step until end of frame",
-		"dsi", " <cond>", "Continue until condition matches",
-		"dsl", "", "Step one source line",
-		"dsl", " <num>", "Step <num> source lines",
-		"dso", " <num>", "Step over <num> instructions",
-		"dsp", "", "Step into program (skip libs)",
-		"dss", " <num>", "Skip <num> step instructions",
-		"dsu", " [?]<address>", "Step until address",
-		"dsui", " <instr>", "Step until an instruction that matches `instr`",
-		"dsue", " <esil>", "Step until esil expression matches",
-		"dsuf", " <flag>", "Step until pc == flag matching name",
+		"ds", " <num>", "Инструкции для шага <num>",
+		"dsb", "", "Шаг назад на одну инструкцию",
+		"dsf", "", "Шаг до конца кадра",
+		"dsi", " <cond>", "Продолжайте до соответствия условий",
+		"dsl", "", "Исходная строка первого шага",
+		"dsl", " <num>", "Шаг <num> исходных строк",
+		"dso", " <num>", "Перейти к <num> инструкциям",
+		"dsp", "", "Шаг в программу (пропустите libs)",
+		"dss", " <num>", "Перейти к шагу <num>",
+		"dsu", " [?]<address>", "Шаг до адреса",
+		"dsui", " <instr>", "Шаг пока не появится инструкция, соответствующая `instr`",
+		"dsue", " <esil>", "Шаг до соответствия выражения esil",
+		"dsuf", " <flag>", "Шаг до тех пор, пока pc==flag",
 		NULL
 	};
 	if (strlen (input) > 2) {
@@ -3478,9 +3483,9 @@ static int cmd_debug(void *data, const char *input) {
 				{
 				const char *help_msg[] = {
 					"Usage:", "dts[*]", "",
-					"dts", "", "List all trace sessions",
-					"dts+", "", "Add trace session",
-					"dtsA", " id", "Apply trace session",
+					"dts", "", "Список всех сеансов трассировки",
+					"dts+", "", "Добавить сеанс трассировки",
+					"dtsA", " id", "Применить сеанс трассировки",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 				}
@@ -3499,15 +3504,15 @@ static int cmd_debug(void *data, const char *input) {
 		default:
 			{
 				const char * help_message[] = {
-					"Usage: dt", "", "Trace commands",
-					"dt", "", "List all traces ",
-					"dtd", "", "List all traced disassembled",
-					"dtc [?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-					"dtg", "", "Graph call/ret trace",
-					"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-					"dtgi", "", "Interactive debug trace",
-					"dts", "[?]", "trace sessions",
-					"dt-", "", "Reset traces (instruction/calls)",
+					"Usage: dt", "", "Команды трассировки",
+					"dt", "", "Перечислить все следы ",
+					"dtd", "", "Список всех трассированных дизассемблированных",
+					"dtc [?][addr]|([from] [to] [addr])", "", "Вызов / возврат трассировки",
+					"dtg", "", "Графический вызов / возврат трассировки",
+					"dtg*", "", "Граф в командах agn / age. Использовать .dtg *; aggi для визуализации",
+					"dtgi", "", "Интерактивная трассировка отладки",
+					"dts", "[?]", "Сеансы трассировки",
+					"dt-", "", "Сбросить следы (инструкция / вызовы)",
 					NULL
 				};
 				r_core_cmd_help (core, help_message);
@@ -3608,15 +3613,15 @@ static int cmd_debug(void *data, const char *input) {
 		default:
 			{
 				const char * help_message[] = {
-					"Usage: dd", "", "Descriptors commands",
-					"dd", "", "List file descriptors",
-					"dd", " <file>", "Open and map that file into the UI",
-					"dd-", "<fd>", "Close stdout fd",
-					"dd*", "", "List file descriptors (in radare commands)",
-					"dds", " <fd> <off>", "seek given fd)",
-					"ddd", " <fd1> <fd2>", "dup2 from fd1 to fd2",
-					"ddr", " <fd> <size>", "read N bytes from fd",
-					"ddw", " <fd> <hexpairs>", "write N bytes to fd",
+					"Usage: dd", "", "Команды дескрипторов",
+					"dd", "", "Список файлов дескрипторов ",
+					"dd", " <file>", "Откройте и сопоставьте этот файл с пользовательским интерфейсом",
+					"dd-", "<fd>", "Закрыть stdout fd",
+					"dd*", "", "Список файлов дескрипторов(В командах radare)",
+					"dds", " <fd> <off>", "Ищите данный fd)",
+					"ddd", " <fd1> <fd2>", "Dup2 от fd1 до fd2",
+					"ddr", " <fd> <size>", "Читать N байтов из fd ",
+					"ddw", " <fd> <hexpairs>", "Записать N байт в fd",
 					NULL
 				};
 				r_core_cmd_help (core, help_message);
@@ -3671,10 +3676,10 @@ static int cmd_debug(void *data, const char *input) {
 	case 'i':
 		{
 			const char * help_message[] = {
-				"Usage: di", "", "Debugger target information",
-				"di", "", "Show debugger target information",
-				"di*", "", "Same as above, but in r2 commands",
-				"dij", "", "Same as above, but in JSON format",
+				"Usage: di", "", "Целевые данные отладчика",
+				"di", "", "Показать целевую информацию об отладчике",
+				"di*", "", "То же, что и выше, но в командах r2",
+				"dij", "", "То же, что и выше, но в формате JSON",
 				NULL
 			};
 			RDebugInfo *rdi = r_debug_info (core->dbg, input + 2);
@@ -3833,15 +3838,15 @@ static int cmd_debug(void *data, const char *input) {
 			default:
 				{
 					const char* help_msg[] = {
-						"Usage: dx", "", " # Code injection commands",
-						"dx", " <opcode>...", "Inject opcodes",
-						"dxa", " nop", "Assemble code and inject",
-						"dxe", " egg-expr", "compile egg expression and inject it",
-						"dxr", " <opcode>...", "Inject opcodes and restore state",
-						"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
+						"Usage: dx", "", " # Команды ввода кода",
+						"dx", " <opcode>...", "Ввод кодов операций",
+						"dxa", " nop", "Соберите код и вставьте",
+						"dxe", " egg-expr", "Скомпилируйте выражение и вставьте его",
+						"dxr", " <opcode>...", "Ввод опкодов и восстановление состояния ",
+						"dxs", " write 1, 0x8048, 12", "Внедрение системных вызовов (см. Gs)",
 						"\nExamples:", "", "",
-						"dx", " 9090", "Inject two x86 nop",
-						"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
+						"dx", " 9090", "Внедрить два x86 nop",
+						"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "Состояние вставки и восстановления",
 						NULL};
 					r_core_cmd_help (core, help_msg);
 				}
@@ -3860,8 +3865,8 @@ static int cmd_debug(void *data, const char *input) {
 			default:
 				{
 					const char* help_msg[] = {
-						"Usage:", "do", " # Debug commands",
-						"do", "", "Open process (reload, alias for 'oo')",
+						"Usage:", "do", " # Команды отладки",
+						"do", "", "Открыть процесс (перезагрузка, псевдоним для 'oo')",
 						"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
 						NULL};
 					r_core_cmd_help (core, help_msg);
@@ -3915,26 +3920,26 @@ static int cmd_debug(void *data, const char *input) {
 	default:
 		{
 			const char* help_msg[] = {
-				"Usage:", "d", " # Debug commands",
-				"db", "[?]", "Breakpoints commands",
-				"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-				"dc", "[?]", "Continue execution",
-				"dd", "[?]", "File descriptors (!fd in r1)",
-				"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
-				"dg", " <file>", "Generate a core-file (WIP)",
-				"dh", " [handler]", "List or set debugger handler",
-				"dH", " [handler]", "Transplant process to a new handler",
-				"di", "[?]", "Show debugger backend information (See dh)",
-				"dk", "[?]", "List, send, get, set, signal handlers of child",
-				"dm", "[?]", "Show memory maps",
-				"do", "[?]", "Open process (reload, alias for 'oo')",
-				"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
-				"dp", "[?]", "List, attach to process or thread id",
-				"dr", "[?]", "Cpu registers",
-				"ds", "[?]", "Step, over, source line",
-				"dt", "[?]", "Display instruction traces (dtr=reset)",
+				"Usage:", "d", " # Команды отладки",
+				"db", "[?]", "Команды точек контроля",
+				"dbt", "[?]", "Отображать обратную трассировку на основе dbg.btdepth и dbg.btalgo ",
+				"dc", "[?]", "Продолжить выполнение",
+				"dd", "[?]", "Дескрипторы файлов(!fd in r1)",
+				"de", "[-sc] [rwx] [rm] [e]", "Отладка с ESIL (см. De?)",
+				"dg", " <file>", "Сгенерируйте core-файл (WIP)",
+				"dh", " [handler]", "Перечислить или установить обработчик отладчика",
+				"dH", " [handler]", "Процесс трансплантации к новому обработчику",
+				"di", "[?]", "Показать бэкэнд-информацию отладчика (см. Dh)",
+				"dk", "[?]", "Перечислить, отправить, получить, установить обработчики сигналов дочернего процесса",
+				"dm", "[?]", "Показать карты памяти",
+				"do", "[?]", "Открыть процесс (перезагрузка, псевдоним для 'oo')",
+				"doo", "[args]", "Повторно открывать в режиме отладчика с помощью args (псевдоним для 'ood')",
+				"dp", "[?]", "Список, прикрепленный к процессу или идентификатор потока",
+				"dr", "[?]", "Регистры процессора",
+				"ds", "[?]", "Шаг, строка исходного текста",
+				"dt", "[?]", "Отображение инструкций (dtr=reset)",
 				"dw", " <pid>", "Block prompt until pid dies",
-				"dx", "[?]", "Inject and run code on target process (See gs)",
+				"dx", "[?]", "Внедрить и запустить код в целевом процессе (см. Gs)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}

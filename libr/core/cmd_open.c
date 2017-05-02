@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_list.h"
 #include "r_config.h"
@@ -20,14 +20,14 @@ static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char* help_msg[] = {
-		"Usage:", "ob", " # List open binary files backed by fd",
-		"ob", "", "List opened binary files and objid",
-		"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
-		"obb", " [fd]", "Switch to open binfile by fd number",
-		"obr", " [baddr]", "Rebase current bin object",
-		"ob-", " [fd]", "Delete binfile by fd",
-		"obd", " [objid]", "Delete binary file by objid. Do nothing if only one loaded.",
-		"obo", " [objid]", "Switch to open binary file by objid",
+		"Usage:", "ob", " # Список открытых двоичных файлов, поддерживаемых fd",
+		"ob", "", "Список открытых двоичных файлов и objid",
+		"ob", " [fd objid]", "Перейти к открытому двоичному файлу по номеру fd и objid",
+		"obb", " [fd]", "Переключиться на открытый файл bin по номеру fd",
+		"obr", " [baddr]", "Восстановить текущий объект bin",
+		"ob-", " [fd]", "Удалить бинарный файл по fd",
+		"obd", " [objid]", "Удалите двоичный файл с помощью objid. Ничего не делать, если загружен только один.",
+		"obo", " [objid]", "Переключиться на открытие бинарного файла с помощью objid",
 		NULL};
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -156,12 +156,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 static void cmd_open_map (RCore *core, const char *input) {
 	const char* help_msg[] = {
-		"Usage:", "om[-] [arg]", " # map opened files",
-		"om", "", "list all defined IO maps",
-		"om", "-0x10000", "remove the map at given address",
-		"om", " fd addr [size]", "create new io map",
-		"omr", " fd|0xADDR ADDR", "relocate current map",
-		"om*", "", "show r2 commands to restore mapaddr",
+		"Usage:", "om[-] [arg]", " # карта открытых файлов",
+		"om", "", "Перечислить все определенные карты ввода-вывода",
+		"om", "-0x10000", "Удалить карту по указанному адресу",
+		"om", " fd addr [size]", "Создать новую io-карту",
+		"omr", " fd|0xADDR ADDR", "Переместить текущую карту",
+		"om*", "", "Показать команды r2 для восстановления mapaddr",
 		NULL };
 	ut64 fd = 0LL;
 	ut64 addr = 0LL;
@@ -324,42 +324,42 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 static int cmd_open(void *data, const char *input) {
 	const char *help_msg[] = {
 		"Usage: o","[com- ] [file] ([offset])","",
-		"o","","list opened files",
-		"o=","","list opened files (ascii-art bars)",
-		"o*","","list opened files in r2 commands",
-		"oa"," [?] [addr]","Open bin info from the given address",
-		"ob"," [?] [lbdos] [...]","list open binary files backed by fd",
-		"oc"," [file]","open core file, like relaunching r2",
-		"oi","[-|idx]","alias for o, but using index instead of fd",
-		"oj","[?]	","list opened files in JSON format",
-		"oL","","list all IO plugins registered",
-		"om","[?]","create, list, remove IO maps",
-		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"oo","[?]","reopen current file (kill+fork in debugger)",
-		"oo","+","reopen current file in read-write",
-		"ood"," [args]","reopen in debugger mode (with args)",
-		"oo[bnm]"," [...]","see oo? for help",
-		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
-		"o"," 4","Switch to open file on fd 4",
-		"o","-1","close file descriptor 1",
-		"o-","*","close all opened files",
-		"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
-		"o"," [file]","open [file] file in read-only",
-		"o","+ [file]","open file in read-write mode",
-		"o"," [file] 0x4000","map file at 0x4000",
+		"o","","Список открытых файлов",
+		"o=","","Список открытых файлов (ascii-art bars)",
+		"o*","","Список открытых файлов в командах r2",
+		"oa"," [?] [addr]","Открыть бинарную информацию по указанному адресу",
+		"ob"," [?] [lbdos] [...]","Список открытых двоичных файлов, поддерживаемых fd",
+		"oc"," [file]","Открыть основной файл, например, перезапустить r2",
+		"oi","[-|idx]","Псевдоним для o, но с использованием индекса вместо fd",
+		"oj","[?]	","Список открытых файлов в формате JSON",
+		"oL","","Список всех зарегистрированных плагинов IO",
+		"om","[?]","Создание, отображение, удаление карт ввода-вывода",
+		"on"," [file] 0x4000","Отобразить необработанный файл в 0x4000 (без участия r_bin)",
+		"oo","[?]","Повторно открыть текущий файл (kill + fork в отладчике)",
+		"oo","+","Повторно открыть текущий файл в режиме чтения-записи",
+		"ood"," [args]","Повторно открыть в режиме отладчика (с args)",
+		"oo[bnm]"," [...]","См. oо? для помощи",
+		"op"," ["R_LIB_EXT"]","Открытый родной плагин r2 (asm, bin, core, ..) ",
+		"o"," 4","Переключиться на открытие файла на fd 4",
+		"o","-1","закрыть файл дескриптора 1",
+		"o-","*","Закрыть все открытые файлы",
+		"o--","","Закрыть все файлы, анализ, binfiles, флаги, так же, как !r2 --",
+		"o"," [file]","Открыть файл [файл] в режиме только для чтения",
+		"o","+ [file]","Открыть файл в режиме чтения-записи",
+		"o"," [file] 0x4000","карта файла на 0x4000",
 		NULL
 	};
 	const char* help_msg_oo[] = {
-		"Usage:", "oo[-] [arg]", " # map opened files",
-		"oo", "", "reopen current file",
-		"oo+", "", "reopen in read-write",
-		"oob", "", "reopen loading rbin info",
-		"ood", "", "reopen in debug mode",
-		"oom", "", "reopen in malloc://",
-		"oon", "", "reopen without loading rbin info",
-		"oon+", "", "reopen in read-write mode without loading rbin info",
-		"oonn", "", "reopen without loading rbin info, but with header flags",
-		"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
+		"Usage:", "oo[-] [arg]", " #карта открытых файлов",
+		"oo", "", "Открыть заново текущий файл",
+		"oo+", "", "Открыть заново в режиме чтение-запись",
+		"oob", "", "Открыть заново загрузку rbin info",
+		"ood", "", "Открыть заново в режиме отладки",
+		"oom", "", "Открыть заново в malloc://",
+		"oon", "", "Открыть заново без загрузки rbin info",
+		"oon+", "", "Открыть заново в режиме чтение-запись без загрузки",
+		"oonn", "", "Открыть заново без загрузки, но с заголовочными флагами",
+		"oonn+", "", "Открыть заново в режиме чтение-запись без загрузки, но с заголовочнными флагами",
 		NULL};
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
@@ -405,9 +405,9 @@ static int cmd_open(void *data, const char *input) {
 	case 'a': // "oa"
 		if ('?' == input[1]) {
 			const char *help_msg[] = {
-				"Usage:", "oa [addr] ([filename])", " # load bininfo and update flags",
-				"oa", " [addr]", "Open bin info from the given address",
-				"oa", " [addr] [filename]", "Open file and load bin info at given address",NULL
+				"Usage:", "oa [addr] ([filename])", " # Загрузка bininfo и флагов загрузки ",
+				"oa", " [addr]", "Открыть бинарную информацию с данного адреса",
+				"oa", " [addr] [filename]", "Открыть файл и загрузить бинарную информацию с данного адреса",NULL
 			};
 			r_core_cmd_help (core, help_msg);
 			break;

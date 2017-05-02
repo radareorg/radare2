@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+﻿/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -50,7 +50,7 @@ static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
 	if (!refs) {
 		return false;
 	}
-	
+
 	retval = r_sign_add_refs (core->anal, name, refs);
 
 	r_list_free (refs);
@@ -334,11 +334,11 @@ exit_case_fcn:
 				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n");
 		} else {
 			const char *help_msg[] = {
-				"Usage:", "za[fF?] [args] ", "# Add zignature",
-				"za ", "zigname type params", "add zignature",
-				"zaf ", "[fcnname] [zigname]", "create zignature for function",
-				"zaF ", "", "generate zignatures for all functions",
-				"za?? ", "", "show extended help",
+				"Usage:", "za[fF?] [args] ", "# Добавление подписи",
+				"za ", "zigname type params", "Добавить подпись",
+				"zaf ", "[fcnname] [zigname]", "Создать подпись для функции",
+				"zaF ", "", "Генерировать подписи для всех функций",
+				"za?? ", "", "Показать расширенную справку",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -447,10 +447,10 @@ static int cmdFile(void *data, const char *input) {
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "zo[zs] filename ", "# Manage zignature files",
-				"zo ", "filename", "load zinatures from sdb file",
-				"zoz ", "filename", "load zinatures from gzipped sdb file",
-				"zos ", "filename", "save zignatures to sdb file (merge if file exists)",
+				"Usage:", "zo[zs] filename ", "# Управление файлами подписи",
+				"zo ", "filename", "Загрузить подписи из файла sdb",
+				"zoz ", "filename", "Загрузить подписи из файла sdb",
+				"zos ", "filename", "Загрузить подписи в файл sdb (объединить, если файл существует)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -509,15 +509,15 @@ static int cmdSpace(void *data, const char *input) {
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "zs[+-*] [namespace] ", "# Manage zignspaces",
-				"zs", "", "display zignspaces",
-				"zs ", "zignspace", "select zignspace",
-				"zs ", "*", "select all zignspaces",
-				"zs-", "zignspace", "delete zignspace",
-				"zs-", "*", "delete all zignspaces",
-				"zs+", "zignspace", "push previous zignspace and set",
-				"zs-", "", "pop to the previous zignspace",
-				"zsr ", "newname", "rename selected zignspace",
+				"Usage:", "zs[+-*] [namespace] ", "#Управление zignspaces",
+				"zs", "", "Показать zignspaces",
+				"zs ", "zignspace", "Выбрать zignspace",
+				"zs ", "*", "Выбрать все zignspaces",
+				"zs-", "zignspace", "Удалить zignspace",
+				"zs-", "*", "Удалить все zignspaces",
+				"zs+", "zignspace", "Вставить предыдущий zignspace и установить",
+				"zs-", "", "Извлечь предыдущий zignspace",
+				"zsr ", "newname", "Переименовать выбранные zignspace",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -556,10 +556,10 @@ static int cmdFlirt(void *data, const char *input) {
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "zf[dsz] filename ", "# Manage FLIRT signatures",
-				"zfd ", "filename", "open FLIRT file and dump",
-				"zfs ", "filename", "open FLIRT file and scan",
-				"zfz ", "filename", "open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)",
+				"Usage:", "zf[dsz] filename ", "# Управление подписями FLIRT",
+				"zfd ", "filename", "Открыть FLIRT-файл и дамп",
+				"zfs ", "filename", "Открыть файл FLIRT и отсканировать",
+				"zfz ", "filename", "Открыть файл FLIRT и получить команды sig (zfz flirt_file> zignatures.sig)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -744,9 +744,9 @@ static int cmdSearch(void *data, const char *input) {
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "z/[*] ", "# Search signatures (see 'e?search' for options)",
-				"z/ ", "", "search zignatures on range and flag matches",
-				"z/* ", "", "search zignatures on range and output radare commands",
+				"Usage:", "z/[*] ", "# Поиск подписей (см. 'e?Search' для опций)",
+				"z/ ", "", "Искать zignatures в диапазоне и совпадениях флагов",
+				"z/* ", "", "Поиск zignatures в диапозоне и вывод radare команд",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -870,18 +870,18 @@ static int cmd_zign(void *data, const char *input) {
 	case '?':
 		{
 			const char* help_msg[] = {
-				"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
-				"z", "", "show zignagures",
-				"z*", "", "show zignatures in radare format",
-				"zj", "", "show zignatures in json format",
-				"z-", "zignature", "delete zignature",
-				"z-", "*", "delete all zignatures",
-				"za", "[?]", "add zignature",
-				"zo", "[?]", "manage zignature files",
-				"zf", "[?]", "manage FLIRT signatures",
-				"z/", "[?]", "search zignatures",
-				"zc", "", "check zignatures at address",
-				"zs", "[?]", "manage zignspaces",
+				"Usage:", "z[*j-aof/cs] [args] ", "# Управление zignatures",
+				"z", "", "Показать zignagures",
+				"z*", "", "Показать zignatures в формате radare",
+				"zj", "", "Показать zignatures в формате json",
+				"z-", "zignature", "Удалить zignature",
+				"z-", "*", "Удалить все zignatures",
+				"za", "[?]", "Добавить zignature",
+				"zo", "[?]", "Управление файлами zignature",
+				"zf", "[?]", "Управление FLIRT signatures",
+				"z/", "[?]", "Поиск zignatures",
+				"zc", "", "Проверка zignatures по адресу",
+				"zs", "[?]", "Управление zignspaces",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);

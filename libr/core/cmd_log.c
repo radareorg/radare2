@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+﻿/* radare - LGPL - Copyright 2009-2014 - pancake */
 #include <string.h>
 
 #include "r_config.h"
@@ -96,19 +96,19 @@ static int cmd_log(void *data, const char *input) {
 	case '?': {
 		const char *help_msg[] = {
 			"Usage:", "T", "[-][ num|msg]",
-			"T", "", "List all Text log messages",
-			"T", " message", "Add new log message",
-			"T", " 123", "List log from 123",
-			"T", " 10 3", "List 3 log messages starting from 10",
-			"T*", "", "List in radare commands",
-			"T-", "", "Delete all logs",
-			"T-", " 123", "Delete logs before 123",
-			"Tl", "", "Get last log message id",
-			"Tj", "", "List in json format",
-			"Tm", " [idx]", "Display log messages without index",
-			"Ts", "", "List files in current directory (see pwd, cd)",
-			"Tp", "[?] [-plug]", "List, load, unload plugins",
-			"TT", "", "Enter into the text log chat console",
+			"T", "", "Список всех сообщений текстового журнала",
+			"T", " message", "Добавить новое сообщение журнала",
+			"T", " 123", "Список журналов с 123",
+			"T", " 10 3", "Список 3 сообщений журнала, начиная с 10 ",
+			"T*", "", "Список в командах радара",
+			"T-", "", "Удалить все журналы",
+			"T-", " 123", "Удалить журналы до 123",
+			"Tl", "", "Получить последний идентификатор сообщения в журнале",
+			"Tj", "", "Список в формате json",
+			"Tm", " [idx]", "Просмотр журнальных сообщений без индекса",
+			"Ts", "", "Список файлов в текущем каталоге (см. Pwd, cd)",
+			"Tp", "[?] [-plug]", "Список, загрузка, выгрузка плагинов",
+			"TT", "", "Войдите в консоль текстового журнала",
 			NULL
 		};
 		r_core_cmd_help (core, help_msg);
@@ -135,9 +135,9 @@ static int cmd_log(void *data, const char *input) {
 		case '?': {
 			const char *help_msg[] = {
 				"Usage:", "Tp", "[-name][ file]",
-				"Tp", "", "List all plugins loaded by RCore.lib",
-				"Tp-", "duk", "Unload plugin matching in filename",
-				"Tp", " blah."R_LIB_EXT, "Load plugin file",
+				"Tp", "", "Список всех плагинов, загруженных RCore.lib",
+				"Tp-", "duk", "Выгрузить совпадение с плагином в имени файла",
+				"Tp", " blah."R_LIB_EXT, "Загрузить файл плагина",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
