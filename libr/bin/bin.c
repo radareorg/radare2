@@ -310,6 +310,18 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 		tmp[i++] = '\0';
 
 		if (runes >= min) {
+			if (str_type == R_STRING_TYPE_ASCII) {
+				// reduce false positives
+				int j;
+				for (j = 0; j < i; j++) {
+					char ch = tmp[j];
+					if (ch != '\n' && ch != '\r' && ch != '\t') {
+						if (!IS_PRINTABLE (tmp[j])) {
+							continue;
+						}
+					}
+				}
+			}
 			if (list) {
 				RBinString *new = R_NEW0 (RBinString);
 				new->type = str_type;
