@@ -1126,11 +1126,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			sign = val>=0?'+':'-';
 			abs = val>=0? val: -val;
 			// "stp x4, x5, [x8], 0x10"
-			// "x4,x8,16,+,=[],x5,x8,16,+,8,+,=[],16,x8,+="
+			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
 			r_strbuf_setf(&op->esil,
-					"%s,%s,%d,%c,=[],%s,%s,%d,%c,8,+,=[],%d,%s,%c=",
-					REG64(0), MEMBASE64(2), abs, sign,
-					REG64(1), MEMBASE64(2), abs, sign,
+					"%s,%s,=[],%s,%s,8,+,=[],%d,%s,%c=",
+					REG64(0), MEMBASE64(2),
+					REG64(1), MEMBASE64(2),
 					abs, MEMBASE64(2), sign);
 		// Everything else
 		} else {
@@ -1163,11 +1163,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			sign = val>=0?'+':'-';
 			abs = val>=0? val: -val;
 			// ldp x4, x5, [x8], -0x10
-			// x4,x8,16,+,[],x5,x8,16,+,8,+,[],16,x8,+=
+			// x4,x8,[],x5,x8,8,+,[],16,x8,+=
 			r_strbuf_setf (&op->esil,
-					"%s,%s,%d,%c,[],%s,%s,%d,%c,8,+,[],%d,%s,%c=",
-					REG64(0), MEMBASE64(2), abs, sign,
-					REG64(1), MEMBASE64(2), abs, sign,
+					"%s,%s,[],%s,%s,8,+,[],%d,%s,%c=",
+					REG64(0), MEMBASE64(2),
+					REG64(1), MEMBASE64(2),
 					abs, MEMBASE64(2), sign);
 		} else {
 			r_strbuf_setf (&op->esil,
