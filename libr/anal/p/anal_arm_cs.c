@@ -1049,10 +1049,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
 		if (ISIMM64(1)) {
-			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), 64);
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,-,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), 64);
 		} else {
 			// cmp w10, w11
-			r_strbuf_setf (&op->esil, "%s,%s,==,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", REG64(1), REG64(0), 64);
+			r_strbuf_setf (&op->esil, "%s,%s,-,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", REG64(1), REG64(0), 32);
 		}
 		break;
 	case ARM64_INS_FCSEL:
@@ -2772,12 +2772,12 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	zr	.64	272	0\n"
 		"gpr	xzr	.64	272	0\n"
 		"gpr	cpsr	.64	280	0	_____tfiae_____________j__qvczn\n"
-		"gpr	pstate	.64	280	0\n" // x0
+		"flg	pstate	.64	280	0\n" // x0
 		// probably wrong
-		"gpr	nf	.1	.2240	0	sign\n" // msb bit of last op
-		"gpr	zf	.1	.2241	0	zero\n" // set if last op is 0
-		"gpr	cf	.1	.2242	0	carry\n" // set if last op carries
-		"gpr	vf	.1	.2243	0	overflow\n"; // set if overflows
+		"flg	nf	.1	.2240	0	sign\n" // msb bit of last op
+		"flg	zf	.1	.2241	0	zero\n" // set if last op is 0
+		"flg	cf	.1	.2242	0	carry\n" // set if last op carries
+		"flg	vf	.1	.2243	0	overflow\n"; // set if overflows
 	} else {
 		p = \
 		"=PC	r15\n"
