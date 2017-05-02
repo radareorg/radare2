@@ -481,18 +481,29 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'c': // for r2 `ic`
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[ljq*] [class-index]\n");
+				eprintf ("Usage: ic[ljq*] [class-index or name]\n");
 			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l') {
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
 				RBinObject *obj = r_bin_cur_object (core->bin);
-				int idx = r_num_math (core->num, input + 2);
-				int count = 0;
 				if (obj) {
 					if (input[2]) {
+						int idx = -1;
+						const char * cls_name = NULL;
+						if (r_num_is_valid_input (core->num, input + 2)) {
+							idx = r_num_math (core->num, input + 2);
+						} else {
+							const char * first_char = input + ((input[1] == ' ') ? 1 : 2);
+							int not_space = strspn (first_char, " ");
+							if (first_char[not_space]) {
+								cls_name = first_char + not_space;
+							}
+						}
+						int count = 0;
 						r_list_foreach (obj->classes, iter, cls) {
-							if (idx != count++) {
+							if ((idx >= 0 && idx != count++) ||
+							   (cls_name && strcmp (cls_name, cls->name) != 0)){
 								continue;
 							}
 							switch (input[1]) {
@@ -542,6 +553,7 @@ static int cmd_info(void *data, const char *input) {
 							}
 							goto done;
 						}
+						goto done;
 					} else {
 						playMsg (core, "classes", r_list_length (obj->classes));
 						if (input[1] == 'l' && obj) { // "icl"
