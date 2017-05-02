@@ -457,6 +457,8 @@ rep:
 			const char *help_msg[] = {
 			"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
 			"fs","","display flagspaces",
+			"fs*","","display flagspaces as r2 commands",
+			"fsj","","display flagspaces in JSON",
 			"fs"," *","select all flagspaces",
 			"fs"," flagspace","select flagspace or create if it doesn't exist",
 			"fs","-flagspace","remove flagspace",
@@ -465,6 +467,9 @@ rep:
 			"fs","-","pop to the previous flagspace",
 			"fs","-.","remove the current flagspace",
 			"fsm"," [addr]","move flags at given address to the current flagspace",
+			"fss","","display flagspaces stack",
+			"fssj","","display flagspaces stack in JSON",
+			"fss*","","display flagspaces stack in r2 commands",
 			"fsr"," newname","rename selected flagspace",
 			NULL};
 			r_core_cmd_help (core, help_msg);
@@ -479,6 +484,9 @@ rep:
 			} else {
 				eprintf ("Usage: fsr [newname]\n");
 			}
+			break;
+		case 's':
+			r_flag_space_stack_list (core->flags, input[2]);
 			break;
 		case '-':
 			switch (input[2]) {
