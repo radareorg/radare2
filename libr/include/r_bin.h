@@ -422,6 +422,7 @@ typedef struct r_bin_symbol_t {
 	int bits;
 	/* see R_BIN_METH_* constants */
 	ut64 method_flags;
+	int dup_count;
 } RBinSymbol;
 
 typedef struct r_bin_import_t {
