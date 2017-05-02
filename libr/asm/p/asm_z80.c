@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -28,7 +28,7 @@ RAsmPlugin r_asm_plugin_z80 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_z80,
 	.version = R2_VERSION

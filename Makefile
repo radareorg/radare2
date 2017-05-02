@@ -384,6 +384,27 @@ menu nconfig:
 pie:
 	sys/pie.sh ${PREVIOUS_RELEASE}
 
+build:
+	meson --prefix=${PREFIX} build
+
+meson-config:
+	cp -f plugins.meson.cfg plugins.cfg
+	./configure-plugins
+	$(MAKE) meson
+
+meson: build
+	time ninja -C build
+
+meson-install:
+	cd build && DESTDIR="$(DESTDIR)" ninja install
+
+MESON_FILES=$(shell find build/libr build/binr -type f| grep -v @)
+meson-symstall:
+	for a in $(MESON_FILES) ; do echo cp -f $$a $$(echo $$a|sed -e s,build/,,) ; done
+	$(MAKE) symstall
+
+.PHONY: meson meson-install
+
 include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip

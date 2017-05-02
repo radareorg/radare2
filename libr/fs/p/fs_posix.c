@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2017 - pancake */
 
 #include <r_fs.h>
+#include <r_lib.h>
 #include <sys/stat.h>
 
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
@@ -121,7 +122,7 @@ static void fs_posix_umount(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
-struct r_fs_plugin_t r_fs_plugin_posix = {
+RFSPlugin r_fs_plugin_posix = {
 	.name = "posix",
 	.desc = "POSIX filesystem",
 	.open = fs_posix_open,
@@ -133,9 +134,9 @@ struct r_fs_plugin_t r_fs_plugin_posix = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_FS,
-        .data = &r_asm_plugin_posix,
+        .data = &r_fs_plugin_posix,
         .version = R2_VERSION
 };
 #endif

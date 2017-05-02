@@ -50,5 +50,5 @@ RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_punycode,
 	.version = R2_VERSION
-}
+};
 #endif

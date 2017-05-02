@@ -1,7 +1,9 @@
-/* radare2 - LGPL - Copyright 2015 - pancake */
+/* radare2 - LGPL - Copyright 2015-2017 - pancake */
 
 /* XXX: maybe this should be implemented in RBin */
 /* we need to extract the code section and get offset flags */
+
+#include <r_fs.h>
 
 typedef struct {
 	ut8 flag; // 0x80 if active

@@ -286,7 +286,7 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-static struct blowfish_state st = {0};
+static struct blowfish_state st = {{0}};
 
 static bool blowfish_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	cry->dir = direction;
@@ -325,6 +325,7 @@ static bool final(RCrypto *cry, const ut8 *buf, int len) {
 
 RCryptoPlugin r_crypto_plugin_blowfish = {
 	.name = "blowfish",
+	.license = "LGPL3",
 	.set_key = blowfish_set_key,
 	.get_key_size = blowfish_get_key_size,
 	.use = blowfish_use,
@@ -336,8 +337,7 @@ RCryptoPlugin r_crypto_plugin_blowfish = {
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_blowfish,
-	.version = R2_VERSION,
-	.license = "LGPL3"
+	.version = R2_VERSION
 };
 #endif
 

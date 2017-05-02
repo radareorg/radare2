@@ -4,6 +4,7 @@
 //static RList *backtrace_frames_x86_32_anal(RDebug *dbg, ut64 at);
 
 /* implementation */
+#include <r_debug.h>
 
 static RList *backtrace_x86_32(RDebug *dbg, ut64 at) {
 	RRegItem *ri;
