@@ -1,7 +1,7 @@
 files=[
 'lang.c',
 'p/c.c',
-'p/cpipe.c',
+# 'p/cpipe.c',
 'p/lib.c',
 'p/pipe.c',
 'p/rust.c',

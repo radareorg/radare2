@@ -207,6 +207,7 @@ r_zip = static_library('r_zip', zlib_files,
 
 r_util = shared_library('r_util', files,
   include_directories: incdir,
+  dependencies: [ldl, pth, utl],
   link_with: [r_zip],
   objects: [
     r_sdb.extract_all_objects()

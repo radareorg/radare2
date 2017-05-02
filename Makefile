@@ -393,7 +393,7 @@ meson-config:
 	$(MAKE) meson
 
 meson: build
-	time ninja -C build
+	ninja -C build
 
 meson-install:
 	cd build && DESTDIR="$(DESTDIR)" ninja install

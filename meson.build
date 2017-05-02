@@ -1,5 +1,20 @@
 project('radare2', 'c')
 
+# system dependencies
+cc = meson.get_compiler('c')
+# required for linux
+ldl = cc.find_library('dl', required: false)
+pth = cc.find_library('pthread', required: false)
+utl = cc.find_library('util', required: false)
+mth = cc.find_library('m', required: false)
+
+# detect OS
+if cc.get_define('__linux__') == '1'
+  host_os = 'linux'
+else
+  host_os = 'darwin'
+endif
+
 subdir('libr/util')
 subdir('binr/rax2')
 
