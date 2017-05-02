@@ -552,6 +552,43 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		return 2;
 	} else
+	if (!strcmpnull (ao->op, "mov.w")) {
+		ao->o = 0x4ff00000;
+		int reg = getreg (ao->a[0]);
+		int num = getnum (ao->a[1]);
+		int top_bits = num & 0xf00;
+		if (reg != -1) {
+			ao->o |= reg;
+			if (num < 256) {
+				ao->o |= num << 8;
+			} else if (num < 512) {
+				if (num & 1) {
+					return 0;
+				}
+				num = (num ^ top_bits) >> 1;
+				ao->o |= 0x00048070 | num << 8;
+			} else if (num < 1024) {
+				if (num & 3) {
+					return 0;
+				}
+				num = (num ^ top_bits) >> 2;
+				ao->o |= 0x00040070 | num << 8;
+			} else if (num < 2048) {
+				if (num & 7) {
+					return 0;
+				}
+				num = (num ^ top_bits) >> 3;
+				ao->o |= 0x00048060 | num << 8;
+			} else if (num == 2048) {
+				ao->o = 0x4ff40060 | reg;
+			} else {
+				return 0;
+			}
+		} else {
+			return 0;
+		}
+		return 8;
+	} else
 	if (!strncmp (ao->op, "ldr", 3)) {
 		char ch = (ao->op[3] == '.') ? ao->op[4] : ao->op[3];
 		getrange (ao->a[1]);
