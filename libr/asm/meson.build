@@ -222,6 +222,9 @@ r_asm = shared_library('r_asm', files,
     'arch/8051'
   ]),
   c_args: ['-DCORELIB'],
-  link_with: [r_util, r_syscall, r_parse, r_lang, capstone, spp],
+  link_with: [r_util, r_syscall, r_parse, r_lang, spp],
+  objects: [
+    capstone.extract_all_objects()
+  ],
   install: true
 )

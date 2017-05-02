@@ -73,7 +73,7 @@ files=[
 'sign.c',
 'state.c',
 'switch.c',
-'test.c',
+# 'test.c',
 'types.c',
 'value.c',
 'var.c',
