@@ -67,14 +67,7 @@ R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
 	if (vaddr) {
 		//hashify (name, vaddr);
 	}
-	if (count > 1) {
-		char *nstr = r_str_newf ("%s_%d", sym->name, count - 1);
-		//this leaks but for security reasons until refactored
-		//the problem is only with ELF's relocs though 
-		//complains go to alvarofe
-		//free (sym->name);
-		sym->name = nstr;
-	}
+    sym->dup_count = count - 1;
 }
 
 R_API void r_bin_filter_symbols(RList *list) {
