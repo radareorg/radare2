@@ -1261,6 +1261,29 @@ static void afcc(RCore *core, const char *input) {
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
+
+	const char *help_msg_afll[] = {
+		"Usage:", "", " List functions in verbose mode",
+		"", "", "",
+		"Table fields:", "", "",
+		"", "", "",
+		"address", "", "start address",
+		"size", "", "function size (realsize)",
+		"nbbs", "", "number of basic blocks",
+		"edges", "", "number of edges between basic blocks",
+		"cc", "", "cyclomatic complexity ( cc = edges - blocks + 2 * exit_blocks)",
+		"cost", "", "cyclomatic cost",
+		"min bound", "", "minimal address",
+		"range", "", "function size",
+		"max bound", "", "maximal address",
+		"calls", "", "number of caller functions",
+		"locals", "", "number of local variables",
+		"args", "", "number of function arguments",
+		"xref", "", "number of cross references",
+		"frame", "", "function stack size",
+		"name", "", "function name",
+		NULL };
+
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case 'f':
@@ -1386,8 +1409,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("afil - verbose function info\n");
 			eprintf ("afi* - function, variables and arguments\n");
 			break;
-		case 'j':   // "afij"
 		case 'l':   // "afil"
+			if (input[3] == '?') {
+				help_msg_afll[1] = "afil";
+				r_core_cmd_help (core, help_msg_afll);
+				break;
+			}
+			/* fallthrough */
+		case 'j':   // "afij"
 		case '*':   // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
 			break;
@@ -1399,22 +1428,28 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
-			case '?':
+		case '?':
 			{
-				const char *help_msg[] = {
-					"Usage:", "afl", " List all functions",
-					"afl", "", "list functions",
-					"aflj", "", "list functions in json",
-					"afll", "", "list functions in verbose mode",
-					"aflq", "", "list functions in quiet mode",
-					"aflqj", "", "list functions in json quiet mode",
-					"afls", "", "print sum of sizes of all functions",
-					NULL };
-				r_core_cmd_help (core, help_msg);
+			const char *help_msg[] = {
+				"Usage:", "afl", " List all functions",
+				"afl", "", "list functions",
+				"aflj", "", "list functions in json",
+				"afll", "", "list functions in verbose mode",
+				"aflq", "", "list functions in quiet mode",
+				"aflqj", "", "list functions in json quiet mode",
+				"afls", "", "print sum of sizes of all functions",
+				NULL };
+			r_core_cmd_help (core, help_msg);
 			}
 			break;
-		case 'j':
 		case 'l':
+			if (input[3] == '?') {
+				help_msg_afll[1] = "afll";
+				r_core_cmd_help (core, help_msg_afll);
+				break;
+			}
+			/* fallthrough */
+		case 'j':
 		case 'q':
 		case 's':
 		case '*':
