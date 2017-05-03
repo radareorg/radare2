@@ -595,7 +595,7 @@ R_API void r_io_free(RIO* io) {
 }
 
 R_API bool r_io_use_fd(RIO* io, int fd) {
-	if (!io || !io->desc) {
+	if (!io || !io->desc) {
 		return false;
 	}
 	if (io->desc->fd != fd) {
