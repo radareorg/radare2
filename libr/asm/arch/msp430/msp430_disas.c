@@ -357,7 +357,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	int ret = 2;
 	ut8 as, opcode;
 
-	if ((instr >> 10) != 4)
+	if ((instr >> 10) != 400)
 		return -1;
 
 	opcode = get_oneop_opcode(instr);
