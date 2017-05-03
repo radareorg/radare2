@@ -2771,13 +2771,12 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	pc	.64	256	0\n"
 		"gpr	zr	.64	272	0\n"
 		"gpr	xzr	.64	272	0\n"
-		"gpr	cpsr	.64	280	0	_____tfiae_____________j__qvczn\n"
-		"flg	pstate	.64	280	0\n" // x0
-		// probably wrong
-		"flg	nf	.1	.2240	0	sign\n" // msb bit of last op
-		"flg	zf	.1	.2241	0	zero\n" // set if last op is 0
-		"flg	cf	.1	.2242	0	carry\n" // set if last op carries
-		"flg	vf	.1	.2243	0	overflow\n"; // set if overflows
+		"flg	pstate	.64	280	0   _____tfiae_____________j__qvczn\n" // x0
+		//"flg	cpsr	.32	280	0\n" //	_____tfiae_____________j__qvczn\n"
+		"flg	vf	.1	280.28	0	overflow\n" // set if overflows
+		"flg	cf	.1	280.29	0	carry\n" // set if last op carries
+		"flg	zf	.1	280.30	0	zero\n" // set if last op is 0
+		"flg	nf	.1	280.31	0	sign\n"; // msb bit of last op
 	} else {
 		p = \
 		"=PC	r15\n"
