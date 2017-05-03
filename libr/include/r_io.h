@@ -63,14 +63,13 @@ typedef struct r_io_section_t {
 typedef struct r_io_desc_t {
 	int fd;
 	int flags;
-	int state;
 	int obsz; // optimal block size
 	char *uri;
 	char *referer;
 	char *name;
 	void *data;
 	struct r_io_plugin_t *plugin;
-	const struct r_io_t *io;
+	struct r_io_t *io;
 } RIODesc;
 
 typedef struct {
@@ -260,7 +259,6 @@ typedef struct r_io_range_t {
 	if (!fname) return NULL; \
 	RIODesc *desc = R_NEW0 (RIODesc); \
 	if (desc != NULL) { \
-		desc->state = R_IO_DESC_TYPE_OPENED; \
 		desc->name = fname? strdup (fname): NULL; \
 		if (desc->name != NULL) { \
 			desc->plugin = fplugin; \

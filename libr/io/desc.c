@@ -142,7 +142,7 @@ R_API void r_io_desc_list (RIO *io) {
 					io->cb_printf ("\t%s", desc->uri);
 				if (desc->name)
 					io->cb_printf ("\t%s", desc->name);
-				io->cb_printf ("\tstate: %i\tflags: %s\n", desc->state, r_str_rwx_i (desc->flags));
+				io->cb_printf ("\tflags: %s\n", r_str_rwx_i (desc->flags));
 			}
 		}
 	}

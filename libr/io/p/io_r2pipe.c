@@ -111,7 +111,6 @@ static int __close(RIODesc *fd) {
 		return -1;
 	r2p_free (fd->data);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
