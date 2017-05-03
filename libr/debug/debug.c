@@ -319,8 +319,8 @@ R_API RDebug *r_debug_new(int hard) {
 	R_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
-	dbg->snaps = r_list_newf (r_debug_snap_free);
-	dbg->sessions = r_list_newf (r_debug_session_free);
+	dbg->snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	dbg->sessions = r_list_newf ((RListFree)r_debug_session_free);
 	dbg->pid = -1;
 	dbg->bpsize = 1;
 	dbg->tid = -1;
@@ -530,7 +530,6 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
-
 	if (pid != -1 && tid != -1) {
 		if (pid != dbg->pid || tid != dbg->tid) {
 			eprintf ("= attach %d %d\n", pid, tid);
@@ -1510,24 +1509,13 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system(dbg->iob.io, "baddr");
 	}
-#if __WINDOWS__
-	typedef struct {
-		int pid;
-		int tid;
-		PROCESS_INFORMATION pi;
-	} RIOW32Dbg;
-	RIODesc *d = dbg->iob.io->desc;
-	if (!strcmp ("w32dbg", d->plugin->name)) {
-		RIOW32Dbg *g = d->data;
-		d->fd = g->pid;
-		r_debug_attach (dbg, g->pid);
-	}
-	return dbg->iob.io->winbase;
-#else
-	int pid = dbg->iob.io->desc->fd;
+	int pid = r_io_desc_get_pid (dbg->iob.io, dbg->iob.io->desc->fd);
 	if (r_debug_attach (dbg, pid) == -1) {
 		return 0LL;
 	}
+#if __WINDOWS__
+	return dbg->iob.io->winbase;
+#else
 	r_debug_select (dbg, pid, pid);
 	r_debug_map_sync (dbg);
 	abspath = r_sys_pid_to_path (pid);

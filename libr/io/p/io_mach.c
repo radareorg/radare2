@@ -338,10 +338,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *pidpath, *endptr;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file, 0)) {
+	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1], false)) {
 		return NULL;
 	}
-	pidfile = file + (file[0] == 'a' ? 9 : 7);
+	pidfile = file + (file[0] == 'a' ? 9 : (file[0] == 's' ? 8 : 7));
 	pid = (int)strtol (pidfile, &endptr, 10);
 	if (endptr == pidfile || pid < 0) {
 		return NULL;
@@ -351,10 +351,19 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	if (!task) {
+		if (pid > 0 && !strncmp (file, "smach://", 8)) {
+			kill (pid, 9);
+			eprintf ("Child killed\n");
+		}
+#if 0
+		/* this is broken, referer gets set in the riodesc after this function returns the riodesc
+		 * the pid > 0 check  doesn't seem to be reasonable to me too
+		 * what was this intended to check anyway ? */
 		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
 			eprintf ("Child killed\n");
 			kill (pid, 9);
 		}
+#endif
 		switch (errno) {
 		case EPERM:
 			eprintf ("Operation not permitted\n");
@@ -377,9 +386,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	pidpath = pid
 		? r_sys_pid_to_path (pid)
 		: strdup ("kernel");
-	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
-		pidpath, rw | R_IO_EXEC, mode, riom);
-	free (pidpath);
+	if (!strncmp (file, "smach://", 8)) {
+		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
+			       rw | R_IO_EXEC, mode, riom);
+	} else {
+		ret = r_io_desc_new (io, &r_io_plugin_mach, file,
+			       rw | R_IO_EXEC, mode, riom);
+	}
+	ret->name = pidpath;
 	return ret;
 }
 
@@ -457,6 +471,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return 1;
 }
 
+static int __get_pid (RIODesc *desc) {
+	RIOMach *mach = desc ? (RIOMach *) desc->data : NULL;
+	if (mach) {
+		return mach->pid;
+	}
+	return -1;
+}
+
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
@@ -465,6 +487,8 @@ RIOPlugin r_io_plugin_mach = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
+	.getpid = __get_pid,
+	.gettid = __get_pid,
 	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,

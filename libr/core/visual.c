@@ -1962,19 +1962,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->io->va) {
 					ut64 offset = r_io_section_get_vaddr (core->io, 0);
 					if (offset == UT64_MAX) {
-						offset = r_io_desc_size (core->io,
-							core->file->desc)
+						offset = r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols;
 						ret = r_core_seek (core, offset, 1);
 					} else {
-						offset += r_io_desc_size (core->io,
-							core->file->desc)
+						offset += r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols;
 						ret = r_core_seek (core, offset, 1);
 					}
 				} else {
 					ret = r_core_seek (core,
-						r_io_desc_size (core->io, core->file->desc)
+						r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols, 1);
 				}
 			} else {
@@ -2345,12 +2343,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						if (s) {
 							entry = s->vaddr;
 						} else {
-							RIOMap *map = r_list_first (core->io->maps);
+							RIOMap *map = ls_pop (core->io->maps);
 							if (map) {
 								entry = map->from;
 							} else {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}
+							ls_prepend (core->io->maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {
