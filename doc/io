@@ -20,3 +20,9 @@ The sections must be asociated to a file, but we should be able to display/use t
 The write ops should only obey to the global io configuration and ignore the section permissions (maybe just throw a warning?)
 
 Atm sections are dupped in io and bin. We should merge them. Maybe using sdb, so we just reuse it
+
+
+* R_API
+
+R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len)
+If the read is successful, the number of bytes read should be returned otherwise -1
