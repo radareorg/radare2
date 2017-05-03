@@ -156,6 +156,12 @@ html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
     $ r2 -c=H /bin/ls
+    
+To use the webserver on Windows, you require a cmd instance 
+with administrator rights. To start the webserver use command
+in the project root.
+
+    radare2.exe -c=H rax2.exe
 
 To use the webserver on Windows, you require a cmd instance
 with administrator rights. To start the webserver use command
