@@ -5,7 +5,6 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/riscv/riscv-opc.c"
 #include "../../asm/arch/riscv/riscv.h"
 
 static bool init = false;
