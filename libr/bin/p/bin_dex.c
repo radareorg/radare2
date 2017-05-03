@@ -150,11 +150,16 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	};
 	int i, count = countOnes (flags);
 	const int kLongest = 21;
+	const int maxSize = (count + 1) * (kLongest + 1);
 	char* str, *cp;
 	// produces a huge number????
 	cp = str = (char*) calloc (count + 1, (kLongest + 1));
 	if (!str) {
 		return NULL;
+	}
+	if (count == 0) {
+		*cp = '\0';
+		return cp;
 	}
 	for (i = 0; i < NUM_FLAGS; i++) {
 		if (flags & 0x01) {
@@ -162,6 +167,9 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 			int len = strlen (accessStr);
 			if (cp != str) {
 				*cp++ = ' ';
+			}
+			if (((cp - str) + len) >= maxSize) {
+				return NULL;
 			}
 			memcpy (cp, accessStr, len);
 			cp += len;
@@ -746,7 +754,7 @@ static RBinInfo *info(RBinFile *arch) {
 		ut32  cc = __adler32 (arch->buf->buf + 12, arch->buf->length - 12);
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
-			eprintf ("wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8\n");
+			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
 		}
 	}
 	ret->arch = strdup ("dalvik");
