@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-#define NPF 7
+#define NPF 8
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
@@ -10,17 +10,16 @@ static void visual_refresh(RCore *core);
 #define PIDX (R_ABS (core->printidx % NPF))
 #define KEY_ALTQ 0xc5
 
-
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
 	"pxw 64@r:SP;dr=;pd $r",
-	"pxw", "pxx", "pxA", "pxa"
+	"pxw", "pxx", "pxA", "pss", "pxa"
 };
 
 static const char *printfmtColumns[] = {
 	"pCx", "pCd $r-1",
 	"pCD",
-	"pCw", "pCc", "pCA", "pCa"
+	"pCw", "pCc", "pCA", "pss", "pCa"
 };
 
 static const char **printfmt = printfmtSingle;

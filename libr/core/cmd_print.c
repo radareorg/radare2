@@ -3819,11 +3819,21 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
-		case 's':
+		case 's': // "pss"
 			if (l > 0) {
+				int h, w = r_cons_get_size (&h);
+				int colwidth = r_config_get_i (core->config, "hex.cols") * 2;
+				core->print->width = (colwidth == 32)?w: colwidth; // w;
+				int bs = core->blocksize;
+				if (len == bs) {
+					len = (h * w) / 3;
+					r_core_block_size (core, len);
+				}
 				r_print_string (core->print, core->offset, core->block,
-					len, R_PRINT_STRING_WRAP);
+						len, R_PRINT_STRING_WRAP);
+				r_core_block_size (core, bs);
 			}
+			break;
 		default:
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block,
