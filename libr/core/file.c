@@ -94,7 +94,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-			ret = r_core_bin_load (core, obinfilepath, baddr);
+			ret = r_core_bin_reload (core, obinfilepath, baddr);
 			if (!ret) {
 				eprintf ("Error: Failed to reload rbin for: %s", path);
 			}
