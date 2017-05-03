@@ -653,7 +653,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 	.name = "m68k.cs (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",
-	.arch = "m68k",
+	.arch = R_SYS_ARCH_M68K,
 	.bits = 32,
 };
 #endif
