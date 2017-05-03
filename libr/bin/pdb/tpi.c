@@ -1520,6 +1520,15 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			memcpy (val->name_or_val, &lf_short, sizeof (SVal_LF_SHORT));
 			break;
 		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT lf_short;
+			READ(*read_bytes, 2, len, lf_short.value, leaf_data, short);
+			parse_sctring(&lf_short.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc(sizeof(SVal_LF_SHORT));
+			memcpy(val->name_or_val, &lf_short, sizeof(SVal_LF_SHORT));
+			break;
+		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT lf_ushort;
