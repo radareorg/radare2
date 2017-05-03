@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='GB: iI Check'
+FILE=../../bins/gb/3D.gb
+CMDS="iI~?Gameboy"
+EXPECT='1
+'
+run_test
