@@ -191,7 +191,6 @@ static int __close(RIODesc *fd) {
 	r_buf_free (rih->rbuf);
 	free (rih);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
@@ -382,8 +381,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			free (str);
 			return NULL;
 		}
-		mal->fd = -1; /* causes r_io_desc_new() to set the correct fd */
-		mal->rbuf = r_buf_new_sparse ();
+		mal->rbuf = r_buf_new_sparse();
 		if (!mal->rbuf) {
 			free (str);
 			free (mal);
@@ -397,8 +395,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		free (str);
-		return r_io_desc_new (&r_io_plugin_ihex,
-			mal->fd, pathname, rw, mode, mal);
+		return r_io_desc_new (io, &r_io_plugin_ihex,
+			pathname, rw, mode, mal);
 	}
 	return NULL;
 }

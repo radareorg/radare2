@@ -63,14 +63,14 @@ typedef struct r_io_section_t {
 typedef struct r_io_desc_t {
 	int fd;
 	int flags;
-	int state;
 	int obsz; // optimal block size
 	char *uri;
 	char *referer;
 	char *name;
 	void *data;
+	Sdb *cache;
 	struct r_io_plugin_t *plugin;
-	const struct r_io_t *io;
+	struct r_io_t *io;
 } RIODesc;
 
 typedef struct {
@@ -119,6 +119,7 @@ typedef struct r_io_t {
 	int cached;
 	int bits;
 	int cached_read;
+	bool p_cache;
 	ut64 off;
 	int debug;
 	int raised;
@@ -134,13 +135,13 @@ typedef struct r_io_t {
 	int write_mask_len;
 	struct r_io_plugin_t *plugin;
 	RIOUndo undo;
-	RList *plugins;
+	SdbList *plugins;
 	RList *sections;
 	int next_section_id;
 	RIOSection *section; /* current section (cache) */
 	/* maps */
-	RList *maps; /*<RIOMap>*/
-	RList *files;
+	SdbList *maps; /*<RIOMap>*/
+	RIDStorage *files;
 	RList *cache;
 	RCache *buffer;
 	int buffer_enabled;
@@ -160,11 +161,9 @@ typedef struct r_io_t {
 	char* (*cb_core_cmdstr)(void *user, const char *str);
 	/* Used for comment generation */
 	void (*cb_core_post_write)(void *user, ut64 maddr, ut8 *orig_bytes, int orig_len);
-	struct r_io_plugin_t *plugin_default;
 } RIO;
 
 typedef struct r_io_plugin_t {
-//	void *plugin;
 	char *name;
 	char *desc;
 	char *version;
@@ -183,6 +182,8 @@ typedef struct r_io_plugin_t {
 	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	int (*close)(RIODesc *desc);
+	int (*getpid)(RIODesc *desc);
+	int (*gettid)(RIODesc *desc);
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
@@ -190,55 +191,50 @@ typedef struct r_io_plugin_t {
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
 
+
+#define R_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+typedef struct r_io_desc_cache_t {
+	ut64 cached;
+	ut8 cdata[R_IO_DESC_CACHE_SIZE];
+} RIODescCache;
+
 struct r_io_bind_t;
-/* TODO: find better name... RIOSetFd_Callback? ..Func? .. too camels here */
-typedef RIO * (*RIOGetIO) (struct r_io_bind_t *iob);
-typedef int (*RIOSetFd)(RIO *io, int fd);
-typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int size);
-typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int size);
-typedef ut64 (*RIOSize)(RIO *io);
-typedef ut64 (*RIOSeek)(RIO *io, ut64 offset, int whence);
 
-typedef RIODesc* (*RIODescGetFD)(RIO *io, int fd);
-typedef RIODesc* (*RIODescOpen)(RIO *io, const char *file, int flags, int mode);
-typedef RIODesc* (*RIODescOpenAt)(RIO *io, const char *file, int flags, int mode, ut64 maddr);
-typedef int (*RIODescClose)(RIO *io, RIODesc *);
-typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
-typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset);
-typedef ut64 (*RIODescSize)(RIO *io, RIODesc *desc);
-typedef int (*RIOIsValidOffset)(RIO *io, ut64 addr, int hasperm);
+typedef RIO *(*RIOGetIO) (struct r_io_bind_t *iob);
+typedef bool (*RIODescUse) (RIO *io, int fd);
+typedef RIODesc *(*RIODescGet) (RIO *io, int fd);
+typedef ut64 (*RIODescSize) (RIODesc *desc);
+typedef RIODesc *(*RIOOpen) (RIO *io, const char *uri, int flags, int mode);
+typedef RIODesc *(*RIOOpenAt) (RIO *io, const  char *uri, int flags, int mode, ut64 at);
+typedef bool (*RIOClose) (RIO *io, int fd);
+typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int len);
+typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int len);
+typedef int (*RIOSystem) (RIO *io, const char* cmd);
+typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef RIOSection* (*RIOSectionVGet)(RIO *io, ut64 addr);
-
-typedef RIOSection* (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
+typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 typedef int (*RIOSectionSetArchBinID)(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
 typedef int (*RIOSectionSetArchBin)(RIO *io, ut64 addr, const char *arch, int bits);
-typedef int (*RIOSystem)(RIO *io, const char *cmd);
 
 /* compile time dependency */
 typedef struct r_io_bind_t {
 	int init;
 	RIO *io;
 	RIOGetIO get_io;
-	RIOSetFd set_fd; // XXX : this is conceptually broken with the new RIODesc foo
+	RIODescUse desc_use;
+	RIODescGet desc_get;
+	RIODescSize desc_size;
+	RIOOpen open;
+	RIOOpenAt open_at;
+	RIOClose close;
 	RIOReadAt read_at;
 	RIOWriteAt write_at;
-	RIOSize size;
-	RIOSeek seek;
 	RIOSystem system;
-	RIOIsValidOffset is_valid_offset;
-
+	RIOIsValidOff is_valid_offset;
 	RIOSectionVGet section_vget;
 	RIOSectionAdd section_add;
 	RIOSectionSetArchBin section_set_arch;
 	RIOSectionSetArchBinID section_set_arch_bin_id;
-
-	RIODescOpen desc_open;
-	RIODescOpenAt desc_open_at;		//esil-gb needs that to allocate mem on init
-	RIODescClose desc_close;
-	RIODescRead desc_read;
-	RIODescSize desc_size;
-	RIODescSeek desc_seek;
-	RIODescGetFD desc_get_by_fd;
 } RIOBind;
 
 typedef struct r_io_cache_t {
@@ -255,32 +251,6 @@ typedef struct r_io_range_t {
 	ut64 to;
 } RIORange;
 
-// XXX: HACK this must be io->desc_new() maybe?
-#define RETURN_IO_DESC_NEW(fplugin,ffd,fname,fflags,mode,fdata) { \
-	if (!fname) return NULL; \
-	RIODesc *desc = R_NEW0 (RIODesc); \
-	if (desc != NULL) { \
-		desc->state = R_IO_DESC_TYPE_OPENED; \
-		desc->name = fname? strdup (fname): NULL; \
-		if (desc->name != NULL) { \
-			desc->plugin = fplugin; \
-			desc->flags = fflags; \
-			if (ffd == -2) { \
-				desc->fd = ((size_t)desc)&0xffffff; \
-			} else \
-			if (ffd == -1) { \
-				desc->fd = ((size_t)desc)&0xffffff; \
-			} else desc->fd = ffd; \
-			desc->data = fdata; \
-		} else { \
-			free (desc); \
-			free (fdata); \
-			desc = NULL; \
-		} \
-	} \
-	/* free (fname); */ \
-	return desc; \
-}
 
 #ifdef R_API
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))
@@ -311,24 +281,26 @@ R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, i
 R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode);
 R_API int r_io_redirect(RIO *io, const char *file);
 //checks if io-access is reasonable at this offset
-R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
+R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 
-R_API RIODesc *r_io_use_fd(RIO *io, int fd);
+R_API int r_io_get_fd(RIO *io);
+R_API bool r_io_use_fd(RIO *io, int fd);
 R_API int r_io_use_desc(RIO *io, RIODesc *fd);
-
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
 R_API int r_io_read_internal(RIO *io, ut8 *buf, int len);
-R_API int r_io_pread(RIO *io, ut64 paddr, ut8 *buf, int len);
+R_API int r_io_pread_at(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
+R_API int r_io_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz);
 R_API int r_io_write(RIO *io, const ut8 *buf, int len);
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
-R_API int r_io_pwrite(RIO *io, ut64 paddr, const ut8 *buf, int len);
+R_API int r_io_pwrite_at(RIO *io, ut64 paddr, const ut8 *buf, int len);
+R_API int r_io_vwrite_at(RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API int r_io_system(RIO *io,  const char *cmd);
 R_API int r_io_plugin_close(RIO *io, RIODesc *desc);
-R_API int r_io_close(RIO *io, RIODesc *desc);
+R_API bool r_io_close(RIO *io, int fd);
 R_API int r_io_close_all(RIO *io);
 R_API ut64 r_io_size(RIO *io); //, int fd);
 R_API bool r_io_resize(RIO *io, ut64 newsize);
@@ -362,6 +334,7 @@ R_API RIOMap *r_io_map_get_local(RIO *io, ut64 addr, int fd);
 R_API int r_io_map_del(RIO *io, int fd);
 R_API int r_io_map(RIO *io, const char *file, ut64 offset);
 R_API ut64 r_io_map_select(RIO *io, ut64 off);
+R_API ut64 r_search_map(RIO *io, ut64 off, ut64 *paddr);
 R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd);
 //R_API int r_io_map_read_rest(RIO *io, ut64 off, ut8 *buf, ut64 len);
 R_API RIOMap *r_io_map_resolve(RIO *io, int fd);
@@ -436,22 +409,33 @@ R_API int r_io_wundo_set_t(RIO *io, RIOUndoWrite *u, int set) ;
 R_API void r_io_wundo_set_all(RIO *io, int set);
 R_API int r_io_wundo_set(RIO *io, int n, int set);
 
-/* io/desc.c */
-R_API void r_io_desc_init(RIO *io);
-R_API void r_io_desc_fini(RIO *io);
-R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data);
-R_API bool r_io_desc_detach (RIO *io, RIODesc *d);
-R_API void r_io_desc_free(RIODesc *desc);
-R_API int r_io_desc_del(RIO *io, int fd);
-R_API RIODesc *r_io_desc_get(RIO *io, int fd);
-R_API int r_io_desc_add(RIO *io, RIODesc *desc);
-R_API int r_io_desc_del(RIO *io, int fd);
-R_API RIODesc *r_io_desc_get(RIO *io, int fd);
-R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc);
-R_API ut64 r_io_fd_size(RIO *io, int fd);
-R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset);
-R_API void r_io_desc_list (RIO *io);
-//R_API int r_io_desc_generate(RIO *io);
+//desc.c
+R_API bool r_io_desc_init (RIO *io);
+R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
+R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int count);
+R_API int r_io_desc_write(RIODesc *desc, const ut8 *buf, int count);
+R_API void r_io_desc_free (RIODesc *desc);
+R_API bool r_io_desc_add (RIO *io, RIODesc *desc);
+R_API bool r_io_desc_del (RIO *io, int fd);
+R_API RIODesc *r_io_desc_get (RIO *io, int fd);
+R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
+R_API ut64 r_io_desc_size (RIODesc *desc);
+R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);
+R_API int r_io_desc_get_pid (RIO *io, int fd);
+R_API int r_io_desc_get_tid (RIO *io, int fd);
+R_API bool r_io_desc_fini (RIO *io);
+R_API void r_io_desc_cache_cleanup(RIODesc *desc);
+
+
+/* io/p_cache.c */
+R_API bool r_io_desc_cache_init (RIODesc *desc);
+R_API int r_io_desc_cache_write (RIODesc *desc, ut64 paddr, const ut8 *buf, int len);
+R_API int r_io_desc_cache_read (RIODesc *desc, ut64 paddr, ut8 *buf, int len);
+R_API bool r_io_desc_cache_commit (RIODesc *desc);
+R_API void r_io_desc_cache_cleanup (RIODesc *desc);
+R_API void r_io_desc_cache_fini (RIODesc *desc);
+R_API void r_io_desc_cache_fini_all (RIO *io);
+R_API RList *r_io_desc_cache_list (RIODesc *desc);
 
 /* buffer.c */
 R_API void r_io_buffer_close(RIO* io);

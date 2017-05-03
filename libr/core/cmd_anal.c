@@ -3239,18 +3239,12 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			break;
 		}
 	}
-	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
-	//	PFMT64x"`", stack_size, stack_addr);
-	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
-	//r_core_cmdf (core, "dr %s=0x%08"PFMT64x, sp, stack_ptr);
 	// SP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_SP);
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
 	// BP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
-	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
-	//r_core_cmdf (core, "f %s=%s", sp, sp);
 	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
 			ESIL_STACK_NAME, addr, addr, size, size);
@@ -3260,7 +3254,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		esil->stack_size = size;
 	}
 	initialize_stack (core, addr, size);
-//	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
 	r_core_seek (core, curoff, 0);
 }
 
@@ -5521,7 +5514,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
 			from = r_config_get_i (core->config, "bin.baddr");
-			to = from + ((core->file)? r_io_desc_size (core->io, core->file->desc): 0);
+			to = from + ((core->file)? r_io_desc_size (core->file->desc): 0);
 			if (!s) {
 				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
 				return; // WTF!

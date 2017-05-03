@@ -1094,7 +1094,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		if (fullfile) {
-			r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+			r_core_block_size (&r, r_io_desc_size (r.file->desc));
 		}
 
 		r_core_seek (&r, r.offset, 1); // read current block
@@ -1176,7 +1176,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 #endif
 	if (fullfile) {
-		r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+		r_core_block_size (&r, r_io_desc_size (r.file->desc));
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);

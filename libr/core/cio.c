@@ -280,6 +280,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 
 	core->offset = addr;
 	core->io->section = core->section; // HACK
+	r_io_map_select (core->io, addr);
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	newsection = core->io->section;
 
@@ -447,9 +448,7 @@ R_API int r_core_block_read(RCore *core) {
 		r_io_use_desc (core->io, core->file->desc);
 		r_core_bin_set_by_fd (core, core->file->desc->fd); //needed?
 		core->switch_file_view = 0;
-	} else	{
-		r_io_use_fd (core->io, core->io->raised); //possibly not needed
-	}
+	} 
 	return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
 }
 

@@ -46,7 +46,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("Failed to initialize windbg context\n");
 		return NULL;
 	}
-	return r_io_desc_new (&r_io_plugin_windbg, -1, file, true, mode, ctx);
+	return r_io_desc_new (io, &r_io_plugin_windbg, file, true, mode, ctx);
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {

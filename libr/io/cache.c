@@ -119,25 +119,7 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 }
 
 R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
-//	int i;
 	RIOCache *ch;
-	if (io->cached == 2) {
-		/* do not allow to use the cache write in debugger mode */
-		/* this is a hack to solve issues */
-		return 0;
-	}
-	if (len < 1) {
-		return 0;
-	}
-#if 0
-	for (i = 0; i<len; i++) {
-		if (buf[i] != 0xff)
-			break;
-	}
-	if (i == len) {
-		return -1;
-	}
-#endif
 	ch = R_NEW0 (RIOCache);
 	if (!ch) {
 		return 0;
@@ -145,29 +127,19 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;
-	ch->odata = (ut8*)malloc (len);
+	ch->odata = (ut8*)calloc (1, len + 1);
 	if (!ch->odata) {
-		free (ch);
 		return 0;
 	}
-	ch->data = (ut8*)malloc (len);
-	if (!ch->odata) {
-		free (ch->data);
-		free (ch);
+	ch->data = (ut8*)calloc (1, len + 1);
+	if (!ch->data) {
+		free (ch->odata);
 		return 0;
 	}
-	ch->written = io->cached? 0: 1;
-#if 1
-	// we must use raw io here to avoid calling to cacheread and get wrong reads
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
-		memset (ch->odata, 0xff, len);
-	r_io_read_internal (io, ch->odata, len);
-#else
+	ch->written = io->cached? false: true;
 	r_io_read_at (io, addr, ch->odata, len);
-#endif
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
-	return len;
 }
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {

@@ -86,7 +86,6 @@ static int __close(RIODesc *fd) {
 	riom->buf = NULL;
 	free (fd->data);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
@@ -118,18 +117,17 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
-		if (mal) {
-			int len;
-			ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
-			mal->buf = r_inflate (data, len, NULL, &mal->size);
-			if (mal->buf) {
-				RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
-					mal->fd, pathname, rw, mode, mal);
-			}
-			free (data);
-			eprintf ("Cannot allocate (%s) %d bytes\n", pathname + 9, mal->size);
-			free (mal);
-		}
+		if (!mal) return NULL;
+		int len;
+		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
+		mal->buf = r_inflate (data, len, NULL, &mal->size);
+		if (mal->buf)
+			return r_io_desc_new (io, &r_io_plugin_malloc,
+				pathname, rw, mode, mal);
+		free (data);
+		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
+			mal->size);
+		free (mal);
 	}
 	return NULL;
 }

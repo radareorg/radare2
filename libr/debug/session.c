@@ -74,7 +74,7 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
 	r_reg_arena_push (dbg->reg);
 
 	/* save memory snapshots */
-	session->memlist = r_list_newf (r_debug_diff_free);
+	session->memlist = r_list_newf ((RListFree)r_debug_diff_free);
 
 	r_debug_map_sync (dbg);
 	r_list_foreach (dbg->maps, iter, map) {
@@ -99,7 +99,7 @@ R_API bool r_debug_session_delete(RDebug *dbg, int idx) {
 	RDebugSession *session;
 	if (idx == -1) {
 		r_list_free (dbg->sessions);
-		dbg->sessions = r_list_newf (r_debug_session_free);
+		dbg->sessions = r_list_newf ((RListFree)r_debug_session_free);
 		return true;
 	}
 	r_list_foreach (dbg->sessions, iter, session) {
@@ -423,7 +423,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		if (!session) {
 			break;
 		}
-		session->memlist = r_list_newf (r_debug_diff_free);
+		session->memlist = r_list_newf ((RListFree)r_debug_diff_free);
 		session->key.id = header.id;
 		session->key.addr = header.addr;
 		r_list_append (dbg->sessions, session);
@@ -469,7 +469,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			/* Restore diff->base */
 			base = r_idx_to_snap (dbg, diffentry.base_idx);
 			snapdiff->base = base;
-			snapdiff->pages = r_list_newf (r_page_data_free);
+			snapdiff->pages = r_list_newf ((RListFree)r_page_data_free);
 			snapdiff->last_changes = R_NEWS0 (RPageData *, base->page_num);
 
 			if (r_list_length (base->history)) {

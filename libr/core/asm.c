@@ -378,7 +378,8 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 	return result;
 }
 
-R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
+R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
+	RList *hits = r_core_asm_hit_list_new();
 	RAsmOp op;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
@@ -398,7 +399,18 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	}
 
 	buf = (ut8 *)malloc (len);
-	if (!buf || r_io_read_at (core->io, addr - len / addrbytes, buf, len) != len) {
+	if (!hits || !buf) {
+		if (hits) {
+			r_list_free (hits);
+		}
+		free (buf);
+		return NULL;
+	}
+	len = len > addr ? addr : len;
+	if (r_io_read_at (core->io, addr - len, buf, len) != len) {
+		if (hits) {
+			r_list_free (hits);
+		}
 		free (buf);
 		r_list_free (hits);
 		return NULL;
@@ -645,22 +657,26 @@ R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, 
 
 /* Compute the len and the starting address
  * when disassembling `nb` opcodes backward. */
-R_API ut32 r_core_asm_bwdis_len (RCore* core, int* instr_len, ut64* start_addr, ut32 nb) {
+R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, ut32 nb) {
 	ut32 instr_run = 0;
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
 	// TODO if length of nb instructions is larger than blocksize
 	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
-	if (instr_len)
+	if (instr_len) {
 		*instr_len = 0;
+	}
 	if (hits && r_list_length (hits) > 0) {
 		hit = r_list_get_bottom (hits);
-		if (start_addr)
+		if (start_addr) {
 			*start_addr = hit->addr;
-		r_list_foreach (hits, iter, hit)
+		}
+		r_list_foreach (hits, iter, hit) {
 			instr_run += hit->len;
-		if (instr_len)
+		}
+		if (instr_len) {
 			*instr_len = instr_run;
+		}
 	}
 	r_list_free (hits);
 	return instr_run;
