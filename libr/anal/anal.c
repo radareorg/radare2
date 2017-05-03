@@ -114,6 +114,11 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	/*
+	 * This could lead to a double free in the case a plugin
+	 * implements a fini function with a free to the plugin itself
+	 */
+	free (p);
 }
 
 R_API RAnal *r_anal_free(RAnal *a) {
