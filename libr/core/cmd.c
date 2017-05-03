@@ -1412,7 +1412,7 @@ static char* findSeparator(char *p) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	const char *quotestr = "`";
 	const char *tick = NULL;
-	char *ptr, *ptr2, *str;
+	char *ptr, *ptr2, *str = NULL;
 	char *arroba = NULL;
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
