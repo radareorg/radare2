@@ -2523,12 +2523,16 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	if (color) {
 		r_cons_strcat (BEGIN);
 	}
-	strncpy (bar, printfmt[PIDX], sizeof (bar) - 1);
-
-	bar[sizeof (bar) - 1] = 0; // '\0'-terminate bar
-	bar[10] = '.'; // chop cmdfmt
-	bar[11] = '.'; // chop cmdfmt
-	bar[12] = 0; // chop cmdfmt
+	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
+	if (cmd_visual && *cmd_visual) {
+		strcpy (bar, cmd_visual);
+	} else {
+		strncpy (bar, printfmt[PIDX], sizeof (bar) - 1);
+		bar[sizeof (bar) - 1] = 0; // '\0'-terminate bar
+		bar[10] = '.'; // chop cmdfmt
+		bar[11] = '.'; // chop cmdfmt
+		bar[12] = 0; // chop cmdfmt
+	}
 	{
 		ut64 sz = r_io_size (core->io);
 		ut64 pa = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
