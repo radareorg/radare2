@@ -652,7 +652,7 @@ R_API void dso_json_num_free (void *y) {
 }
 
 R_API char * dso_json_num_to_str (DsoJsonNum * num) {
-	return r_str_newf ("%"PFMT64d, num->value);
+	return r_str_newf ("%llu", num->value);
 }
 
 R_API DsoJsonObj * dso_json_num_new_from_num (ut64 num) {
