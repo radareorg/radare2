@@ -641,27 +641,40 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 }
 
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
-	int i, wide, zeroend, urlencode;
-	wide = (options & R_PRINT_STRING_WIDE);
-	zeroend = (options & R_PRINT_STRING_ZEROEND);
-	urlencode = (options & R_PRINT_STRING_URLENCODE);
+	int i;
+	bool wide = (options & R_PRINT_STRING_WIDE);
+	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
+	bool wrap = (options & R_PRINT_STRING_WRAP);
+	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	p->interrupt = 0;
+	int col = 0;
 	for (i = 0; !p->interrupt && i < len; i++) {
 		if (zeroend && buf[i] == '\0') {
 			break;
 		}
 		r_print_cursor (p, i, 1);
+		ut8 b = buf[i];
+		if (b == '\n') {
+			col = 0;
+		}
+		col++;
 		if (urlencode) {
 			// TODO: some ascii can be bypassed here
-			p->cb_printf ("%%%02x", buf[i]);
+			p->cb_printf ("%%%02x", b);
 		} else {
-			if (buf[i] == '\n' || IS_PRINTABLE (buf[i])) {
-				p->cb_printf ("%c", buf[i]);
+			if (b == '\n' || IS_PRINTABLE (b)) {
+				p->cb_printf ("%c", b);
 			} else {
-				p->cb_printf ("\\x%02x", buf[i]);
+				p->cb_printf ("\\x%02x", b);
 			}
 		}
 		r_print_cursor (p, i, 0);
+		if (wrap) {
+			if (col + 1 >= p->width) {
+				p->cb_printf ("\n");
+				col = 0;
+			}
+		}
 		if (wide) {
 			i++;
 		}

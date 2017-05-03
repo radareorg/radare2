@@ -2525,7 +2525,10 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
 	if (cmd_visual && *cmd_visual) {
-		strcpy (bar, cmd_visual);
+		strncpy (bar, cmd_visual, sizeof (bar) - 1);
+		bar[10] = '.'; // chop cmdfmt
+		bar[11] = '.'; // chop cmdfmt
+		bar[12] = 0; // chop cmdfmt
 	} else {
 		strncpy (bar, printfmt[PIDX], sizeof (bar) - 1);
 		bar[sizeof (bar) - 1] = 0; // '\0'-terminate bar
