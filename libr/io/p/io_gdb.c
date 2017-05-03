@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 pancake */
+/* radare - LGPL - Copyright 2010-2016 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -76,14 +76,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int i_port = -1;
 	bool isdev = false;
 
-	if (!__plugin_open (io, file, 0))
+	if (!__plugin_open (io, file, 0)) {
 		return NULL;
+	}
 	if (riogdb) {
 		// FIX: Don't allocate more than one gdb RIODesc
 		return riogdb;
 	}
-	strncpy (host, file+6, sizeof (host)-1);
-	host [sizeof (host)-1] = '\0';
+	strncpy (host, file + 6, sizeof (host)-1);
+	host [sizeof (host) - 1] = '\0';
 	if (host[0] == '/') {
 		isdev = true;
 	}
@@ -93,7 +94,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (port) {
 			*port = '\0';
 			port++;
-
 			pid = strchr (port, ':');
 		} else {
 			pid = strchr (host, ':');
@@ -113,7 +113,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		*port = '\0';
 		port++;
-
 		pid = strchr (port, '/');
 	}
 
@@ -129,6 +128,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	riog = R_NEW0 (RIOGdb);
+	if (!riog) {
+		return NULL;
+	}
 	gdbr_init (&riog->desc, false);
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
@@ -140,16 +142,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
 				return NULL;
 			}
-		} else if ((i_pid = desc->pid) < 0) {
-			i_pid = -1;
-		}
-		// Get name
-		char *name = gdbr_exec_file_read (desc, i_pid);
-		if (name) {
-			file = name;
-		}
-		riogdb = r_io_desc_new (&r_io_plugin_gdb, i_pid, file, rw, mode, riog);
-		free (name);
+		} 
+		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, rw, mode, riog);
 		return riogdb;
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
@@ -179,9 +173,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
-	if (!desc || !desc->data) {
-		return -1;
-	}
+	if (!desc || !desc->data) return -1;
 	return debug_gdb_read_at(buf, count, addr);
 }
 
@@ -323,11 +315,3 @@ RIOPlugin r_io_plugin_gdb = {
 	.system = __system,
 	.isdbg = true
 };
-
-#ifndef CORELIB
-RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_gdb,
-	.version = R2_VERSION
-};
-#endif

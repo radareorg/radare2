@@ -100,7 +100,7 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 			null = R_NEW0 (RIONull);
 			null->size = r_num_math (NULL, pathname + 7) + 1;         //???
 			null->offset = 0LL;
-			return r_io_desc_new (&r_io_plugin_null, -2, pathname, rw, mode, null);
+			return r_io_desc_new (io, &r_io_plugin_null, pathname, rw, mode, null);
 		}
 	}
 	return NULL;

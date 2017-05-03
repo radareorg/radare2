@@ -432,14 +432,15 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 		{
 			const int ctx = 16;
+			const int prectx = addr > 16 ? ctx : addr;
 			char *pre, *pos, *wrd;
 			const int len = kw->keyword_length;
 			char *buf = calloc (1, len + 32 + ctx * 2);
 			type = "string";
-			r_core_read_at (core, addr - ctx, (ut8 *) buf, len + (ctx * 2));
-			pre = getstring (buf, ctx);
-			wrd = r_str_utf16_encode (buf + ctx, len);
-			pos = getstring (buf + ctx + len, ctx);
+			r_core_read_at (core, addr - prectx, (ut8 *) buf, len + (ctx * 2));
+			pre = getstring (buf, prectx);
+			wrd = r_str_utf16_encode (buf + prectx, len);
+			pos = getstring (buf + prectx + len, ctx);
 			if (!pos) {
 				pos = strdup ("");
 			}
@@ -451,11 +452,6 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				escaped = true;
 				free (pre_esc);
 				free (pos_esc);
-#if 0
-				char *msg = r_str_newf ("%s%s%s", pre, wrd, pos);
-				s = r_base64_encode_dyn (msg, -1);
-				free (msg);
-#endif
 			} else if (use_color) {
 				s = r_str_newf (".%s"Color_YELLOW "%s"Color_RESET "%s.", pre, wrd, pos);
 			} else {
@@ -575,16 +571,14 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
 	} else if (!strcmp (mode, "io.maps")) {
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOMap *m;
-
 		*from = *to = 0;
-
 		list = r_list_newf (free);
 		if (!list) {
 			return NULL;
 		}
-		r_list_foreach (core->io->maps, iter, m) {
+		ls_foreach (core->io->maps, iter, m) {
 			RIOMap *map = R_NEW0 (RIOMap);
 			if (map) {
 				map->fd = m->fd;
@@ -597,11 +591,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		}
 		return list;
 	} else if (!strcmp (mode, "io.maps.range")) {
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOMap *m;
 		*from = *to = 0;
 		list = r_list_newf (free);
-		r_list_foreach (core->io->maps, iter, m) {
+		ls_foreach (core->io->maps, iter, m) {
 			if (!*from) {
 				*from = m->from;
 				*to = m->to;
@@ -872,9 +866,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					/* TODO: section size? */
 				} else {
 					if (core->file) {
-						*to = r_io_desc_size (core->io, core->file->desc);
-					} else {
-						*to = r_io_desc_size (core->io, NULL);
+						*to = r_io_desc_size (core->file->desc);
 					}
 				}
 			}
@@ -1915,7 +1907,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
 	int ret;
-	int oraise = core->io->raised;
+	int oldfd = r_io_get_fd (core->io);
 	int bufsz;
 
 	if (json) {
@@ -1971,11 +1963,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				break;
 			}
 
-			r_io_raise (core->io, map->fd);
-			fd = core->io->raised;
-			if (fd == -1 && core->io->desc) {
-				fd = core->io->desc->fd;
-			}
+			r_io_use_fd (core->io, map->fd);
 			if (!json) {
 				RSearchKeyword *kw = r_list_first (core->search->kws);
 				eprintf ("Searching %d bytes in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
@@ -2011,10 +1999,13 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					bufsz = param->to - at;
 				}
 				// if seek fails we shouldnt read at all
-				(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-				ret = r_io_read (core->io, buf, bufsz);
+				//(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
+				ret = r_io_read_at (core->io, at, buf, bufsz);
 				if (ret < 1) {
-					break;
+					//HACK to fix issue with .bss sections, SIOL does fix it
+					//creating a mmap 
+					at++;
+					continue;
 				}
 				if (param->crypto_search) {
 					int delta = 0;
@@ -2025,6 +2016,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					}
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at + delta)) {
+							eprintf ("ERROR 2\n");
 							break;
 						}
 						aeskw.count++;
@@ -2075,7 +2067,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			r_list_free (param->boundaries);
 			param->boundaries = NULL;
 		}
-		r_io_raise (core->io, oraise);
+		r_io_use_fd (core->io, oldfd);
 	} else {
 		eprintf ("No keywords defined\n");
 	}
@@ -2861,8 +2853,7 @@ reread:
 			RSearchKeyword *kw;
 			char *s, *p = strdup (input + json + 2);
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
-			r_search_set_distance (core->search, (int)
-				r_config_get_i (core->config, "search.distance"));
+			r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
 			s = strchr (p, ':');
 			if (s) {
 				*s++ = 0;

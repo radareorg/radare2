@@ -51,7 +51,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	// Inicializamos
 	if (bochs_open (&riob->desc, fileBochs, fileCfg) == true) {
 		desc = &riob->desc;
-		riobochs = r_io_desc_new (&r_io_plugin_bochs, -1, file, rw, mode, riob);
+		riobochs = r_io_desc_new (io, &r_io_plugin_bochs, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
 		free(fileBochs);
 		free(fileCfg);
