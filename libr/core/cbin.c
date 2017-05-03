@@ -2386,6 +2386,9 @@ static int bin_libs(RCore *r, int mode) {
 	if (!(libs = r_bin_get_libs (r->bin))) {
 		return false;
 	}
+
+	r_list_sort (libs, (RListComparator)strcmp);
+
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
 	} else if (IS_MODE_NORMAL (mode)) {
