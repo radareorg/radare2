@@ -1517,7 +1517,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				eprintf ("Unknown calling convention '%s'\n"
 					"See afCl for available types\n", cc);
 			} else {
-				fcn->cc = r_anal_cc_to_constant (core->anal, cc);
+				fcn->cc = r_str_const (r_anal_cc_to_constant (core->anal, cc));
 			}
 			}break;
 		case 0:

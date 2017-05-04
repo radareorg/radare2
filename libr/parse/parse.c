@@ -188,9 +188,14 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 #endif
 	ptr2 = NULL;
 	// remove "dword" 2
-	while ((ptr = findNextNumber (ptr))) {
+	char *nptr;
+	while ((nptr = findNextNumber (ptr))) {
+		char *optr = ptr;
+		ptr = nptr;
 		if (x86) {
-			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
+			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++) {
+		//		eprintf ("(%s) (%c)\n", optr, *ptr2);
+			}
 		} else {
 			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
 		}

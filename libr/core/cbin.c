@@ -585,6 +585,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		if (!fcn->cc) {
 			fcn->cc = r_anal_cc_default (core->anal);
 		}
+		fcn->cc = r_str_const (fcn->cc);
 	}
 	sdb_close (sdbs[0]);
 	sdb_free (sdbs[0]);
