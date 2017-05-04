@@ -1541,16 +1541,33 @@ static int esil_inceq(RAnalEsil *esil) {
 
 static int esil_sub(RAnalEsil *esil) {
 	ut64 s = 0, d = 0;
-	if (!popRN (esil, &d)) {
-		ERR ("esil_sub: dst is broken");
-		return false;
+	char * dst = r_anal_esil_pop (esil);
+	if (!dst) {
+		goto dst_broken;
 	}
+	if (r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+	} else {
+		if (!isnum (esil, dst, &d)) {
+			free (dst);
+			goto dst_broken;
+		}
+		esil->lastsz = 64;
+	}
+	free (dst);
+
 	if (!popRN (esil, &s)) {
 		ERR ("esil_sub: src is broken");
 		return false;
 	}
-	r_anal_esil_pushnum (esil, d - s);
+	esil->old = d;
+	esil->cur = d - s;
+	r_anal_esil_pushnum (esil, esil->cur);
 	return true;
+
+dst_broken:
+	ERR ("esil_sub: dst is broken");
+	return false;
 }
 
 static int esil_subeq(RAnalEsil *esil) {
