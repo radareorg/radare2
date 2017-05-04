@@ -2499,6 +2499,9 @@ static char **consts = NULL;
 
 R_API const char *r_str_const(const char *ptr) {
 	int ctr = 0;
+	if (!ptr) {
+		return NULL;
+	}
 	if (consts) {
 		const char *p;
 		while ((p = consts[ctr])) {
