@@ -3382,6 +3382,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else if (!(name = r_anal_type_func_guess (anal, fcn->name))) {
 		return;
 	}
+	char *spc = ds->show_comment_right ? " " : "";
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
@@ -3389,7 +3390,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	const char *fcn_type = r_anal_type_func_ret (anal, name);
 	if (fcn_type && *fcn_type) {
 		r_cons_printf (
-			"; %s%s%s(", fcn_type,
+			"%s; %s%s%s(", spc, fcn_type,
 			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
 			name);
 	}
