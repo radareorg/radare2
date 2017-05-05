@@ -1049,10 +1049,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
 		if (ISIMM64(1)) {
-			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,-,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), arm64_reg_width(insn->id));
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,-,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", IMM64(1), REG64(0), arm64_reg_width(REGID64(0)));
 		} else {
 			// cmp w10, w11
-			r_strbuf_setf (&op->esil, "%s,%s,-,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", REG64(1), REG64(0), arm64_reg_width(insn->id));
+			r_strbuf_setf (&op->esil, "%s,%s,-,$z,zf,=,$s,nf,=,$b%d,cf,=,$o,vf,=", REG64(1), REG64(0), arm64_reg_width(REGID64(0)));
 		}
 		break;
 	case ARM64_INS_FCSEL:
@@ -1222,7 +1222,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		OPCALL(">>>>");
 		break;
 	case ARM64_INS_SXTB:
-		if (arm64_reg_width(insn->id) == 32) {
+		if (arm64_reg_width(REGID64(0)) == 32) {
 			r_strbuf_setf (&op->esil, "%s,%s,=,8,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffffff00,%s,|=}",
 				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
 				"0xff", REG64(0), REG64(0));
@@ -1233,7 +1233,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_SXTH: /* halfword */
-		if (arm64_reg_width(insn->id) == 32) {
+		if (arm64_reg_width(REGID64(0)) == 32) {
 			r_strbuf_setf (&op->esil, "%s,%s,=,16,%s,>>,%s,%s,=,%s,%s,&=,$c,?{,0xffff0000,%s,|=}",
 				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
 				"0xffff", REG64(0), REG64(0));
