@@ -185,12 +185,24 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	if (ptr2) {
 		memmove (ptr2, ptr2 + 6, strlen (ptr2 + 6) + 1);
 	}
+	ptr2 = strstr (ptr, "qword ");
+	if (ptr2) {
+		memmove (ptr2, ptr2 + 6, strlen (ptr2 + 6) + 1);
+	}
 #endif
 	ptr2 = NULL;
 	// remove "dword" 2
 	char *nptr;
 	while ((nptr = findNextNumber (ptr))) {
 		char *optr = ptr;
+#if 0
+		if (nptr[1]== ' ') {
+			for (nptr++;*nptr && *nptr >='0' && *nptr <= '9'; nptr++) {
+			}
+			ptr = nptr;
+			continue;
+		}
+#endif
 		ptr = nptr;
 		if (x86) {
 			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++) {
@@ -258,8 +270,16 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 					*ptr = 0;
 					snprintf (str, len, "%s%s%s", data, flag->name,
 							(ptr != ptr2) ? ptr2 : "");
-
-					if (p->relsub_addr) {
+					bool banned = false;
+					{
+						const char *p = strchr (str, '[');
+						const char *a = strchr (str, '+');
+						const char *m = strchr (str, '*');
+						if (p && a && m) {
+							banned = true;
+						}
+					}
+					if (p->relsub_addr && !banned) { // && strstr (str, " + ")) {
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
@@ -268,31 +288,37 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
 								while (*ptr_right && *ptr_right != 'm') ptr_right++;
-								if (*ptr_right) ptr_right++;
+								if (*ptr_right) {
+									ptr_right++;
+								}
 								ansi_found = true;
 								continue;
-							} else if (*ptr_right == ']') {
+							}
+							if (*ptr_right == ']') {
 								ptr_left = ptr_esc = ptr_end - flag_len;
 								while (ptr_left >= str) {
 									if (*ptr_left == '[' &&
-									    (ptr_left == str || *(ptr_left - 1) != 0x1b)) break;
+									(ptr_left == str || *(ptr_left - 1) != 0x1b)) {
+										break;
+									}
 									ptr_left--;
 								}
-								if (ptr_left < str) break;
-
+								if (ptr_left < str) {
+									break;
+								}
 								for (; ptr_esc >= str && *ptr_esc != 0x1b; ptr_esc--);
-								if (ptr_esc < str) ptr_esc = ptr_end - flag_len + 1;
-
+								if (ptr_esc < str) {
+									ptr_esc = ptr_end - flag_len + 1;
+								}
 								copied_len = ptr_end - ptr_esc + 1;
 								memmove (ptr_left, ptr_esc, copied_len);
 								sprintf (ptr_left + copied_len, "%s%s",
 									 ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
 									 ptr_right + 1);
-								break;
-							} else break;
+							}
+							break;
 						}
 					}
-
 					return true;
 				}
 			}

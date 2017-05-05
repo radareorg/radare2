@@ -1065,7 +1065,7 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 		str_p = str + thunk[i] + delta;
 
 		newo = thunk[i + klen] - thunk[i];
-		r_str_ansi_filter(str_p, NULL, NULL, newo);
+		r_str_ansi_filter (str_p, NULL, NULL, newo);
 		scnd = strdup (str_p + newo);
 		bias = vlen - newo;
 
