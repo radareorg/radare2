@@ -5,7 +5,7 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl ABdDeEfCLvwq
+.Op Fl ABdDeEfCLvwrq
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -58,6 +58,8 @@ List supported asm plugins
 Offset of the opcode to assemble (default is 0)
 .It Fl O Ar ofile
 output to file, for example 'rasm2 \-BF a a.asm'
+.It Fl r
+Show output in r2 script
 .It Fl s Ar syntax
 Select syntax output (intel, att)
 .It Fl w

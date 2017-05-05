@@ -230,6 +230,7 @@ static int rasm_show_help(int v) {
 	return 0;
 }
 
+static bool oneliner = false;
 static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int bin, int hex) {
 	RAsmCode *acode;
 	ut8 *data = NULL;
@@ -239,7 +240,9 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		len /= 8;
 	}
 	if (bin) {
-		if (len < 0) return false;
+		if (len < 0) {
+			return false;
+		}
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else if (ascii) {
@@ -292,7 +295,12 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		if (!(acode = r_asm_mdisassemble (a, data, len))) {
 			goto beach;
 		}
-		printf ("%s", acode->buf_asm);
+		if (oneliner) {
+			r_str_replace_char (acode->buf_asm, '\n', ';');
+			printf ("%s\"\n", acode->buf_asm);
+		} else {
+			printf ("%s", acode->buf_asm);
+		}
 		ret = acode->len;
 		r_asm_code_free (acode);
 	}
@@ -377,6 +385,7 @@ int main (int argc, char *argv[]) {
 	unsigned char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	bool isbig = false;
+	bool rad = false;
 	bool use_spp = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
@@ -433,7 +442,7 @@ int main (int argc, char *argv[]) {
 		bits = r_num_math (NULL, r2bits);
 		free (r2bits);
 	}
-	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:p")) != -1) {
+	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:pr")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -478,6 +487,9 @@ int main (int argc, char *argv[]) {
 			break;
 		case 'j':
 			json = true;
+			break;
+		case 'r':
+			rad = true;
 			break;
 		case 'q':
 			quiet = true;
@@ -703,11 +715,22 @@ int main (int argc, char *argv[]) {
 			if (!strncmp (buf, "0x", 2)) {
 				buf += 2;
 			}
+			if (rad) {
+				oneliner = true;
+				printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+				printf ("e asm.bits=%d\n", bits);
+				printf ("\"wa ");
+			}
 			ret = rasm_disasm ((char *)buf, offset, len,
 					a->bits, ascii, bin, dis - 1);
 		} else if (analinfo) {
 			ret = show_analinfo ((const char *)argv[optind], offset);
 		} else {
+			if (rad) {
+				printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+				printf ("e asm.bits=%d\n", bits);
+				printf ("wx ");
+			}
 			ret = rasm_asm (argv[optind], offset, len, a->bits, bin, use_spp);
 		}
 		if (!ret) {
