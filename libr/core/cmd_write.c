@@ -1027,7 +1027,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			if (tmp) {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->file->desc) - core->offset;
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					if (!sz) {
@@ -1042,7 +1042,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->file->desc) - core->offset;
 					r_core_dump (core, filename, core->offset, (ut64)sz, append);
 				} else {
 					if (!r_file_dump (filename, core->block, core->blocksize, append)) {

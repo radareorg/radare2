@@ -514,7 +514,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (s) {
 			r_core_seek (core, s->vaddr + s->size + 2, 1);
 		} else {
-			r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
+			r_core_seek (core, r_io_desc_size (core->file->desc), 1);
 		}
 	}
 	break;

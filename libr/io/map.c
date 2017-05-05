@@ -8,7 +8,7 @@
 #include <r_list.h>
 
 R_API int r_io_map_count (RIO *io) {
-	return r_list_length (io->maps);
+	return ls_length (io->maps);
 }
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
@@ -22,12 +22,12 @@ R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, u
 	map->delta = delta;
 	map->from = addr;
 	map->to = addr + size;
-	r_list_append (io->maps, map);
+	ls_append (io->maps, map);
 	return map;
 }
 
 R_API void r_io_map_init(RIO *io) {
-	io->maps = r_list_new ();
+	io->maps = ls_new ();
 }
 
 R_API int r_io_map_sort(void *_a, void *_b) {
@@ -43,8 +43,8 @@ R_API int r_io_map_sort(void *_a, void *_b) {
 R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
 	int res = false;
 	RIOMap *map = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, map) {
 		if (map->fd == fd) break;
 		map = NULL;
 	}
@@ -58,8 +58,8 @@ R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
 R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
 	int res = false;
 	RIOMap *map = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, map) {
 		if (map->fd == fd) break;
 		map = NULL;
 	}
@@ -72,8 +72,8 @@ R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
 
 R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 	RIOMap *map;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, map) {
 		if (map->from == map->to && addr >= map->from) {
 			return map;
 		}
@@ -86,9 +86,9 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 
 R_API RIOMap *r_io_map_resolve(RIO *io, int fd) {
 	RIOMap *map;
-	RListIter *iter;
+	SdbListIter *iter;
 	if (io && io->maps) {
-		r_list_foreach (io->maps, iter, map) {
+		ls_foreach (io->maps, iter, map) {
 			if (map->fd == fd) {
 				return map;
 			}
@@ -112,11 +112,10 @@ R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd) {
 
 static RList *r_io_map_get_maps_in_range_prepend(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map;
-	RListIter *iter;
+	SdbListIter *iter;
 	RList *maps = r_list_new ();
 	if (!maps) return NULL;
-	maps->free = NULL;
-	r_list_foreach (io->maps, iter, map) {
+	ls_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) r_list_append(maps, map);
 		//if (map->from == addr && endaddr == map->to) r_list_prepend(maps, map);
 		if (map->from < endaddr && endaddr < map->to) r_list_prepend(maps, map);
@@ -139,11 +138,10 @@ R_API RIOMap *r_io_map_resolve_in_range (RIO *io, ut64 addr, ut64 endaddr, int f
 
 R_API RList *r_io_map_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map;
-	RListIter *iter;
+	SdbListIter *iter;
 	RList *maps = r_list_new ();
 	if (!maps) return NULL;
-	maps->free = NULL;
-	r_list_foreach (io->maps, iter, map) {
+	ls_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) r_list_append(maps, map);
 		//if (map->from == addr && endaddr == map->to) r_list_append(maps, map);
 		if (map->from < endaddr && endaddr < map->to) r_list_append(maps, map);
@@ -154,8 +152,8 @@ R_API RList *r_io_map_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 
 R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) break;
 		//if (map->from == addr && endaddr == map->to) r_list_append(maps, map);
 		if (map->from < endaddr && endaddr < map->to) break;
@@ -167,12 +165,12 @@ R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr)
 
 R_API int r_io_map_del(RIO *io, int fd) {
 	RIOMap *map;
-	RListIter *iter, *tmp;
+	SdbListIter *iter, *tmp;
 	ut8 deleted = false;
 	if (io && io->maps) {
-		r_list_foreach_safe (io->maps, iter, tmp, map) {
+		ls_foreach_safe (io->maps, iter, tmp, map) {
 			if (fd==-1 || map->fd==fd) {
-				r_list_delete (io->maps, iter);
+				ls_delete (io->maps, iter);
 				deleted = true;
 			}
 		}
@@ -183,8 +181,8 @@ R_API int r_io_map_del(RIO *io, int fd) {
 R_API ut64 r_io_map_next(RIO *io, ut64 addr) {
 	ut64 next = UT64_MAX;
 	RIOMap *map;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, map) {
 		if (map->from > addr)
 			if (!next || map->from < next)
 				next = map->from;
@@ -194,10 +192,10 @@ R_API ut64 r_io_map_next(RIO *io, ut64 addr) {
 
 R_API int r_io_map_del_at(RIO *io, ut64 addr) {
 	RIOMap *map;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) {
-			r_list_delete (io->maps, iter);
+			ls_delete (io->maps, iter);
 			return true;
 		}
 	}
@@ -206,10 +204,10 @@ R_API int r_io_map_del_at(RIO *io, ut64 addr) {
 
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
 	RIOMap *map;
-	RListIter *iter;
+	SdbListIter *iter;
 	ut64 next_addr = addr,
 		 end_addr = next_addr + size;
-	r_list_foreach (io->maps, iter, map) {
+	ls_foreach (io->maps, iter, map) {
 		next_addr = R_MAX (next_addr, map->to+(load_align - (map->to % load_align)));
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
 		// adding the check for the map's fd to see if this removes contention for
@@ -227,9 +225,9 @@ R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta
 
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap *map;
-	RListIter *iter;
+	SdbListIter *iter;
 	ut64 end_addr = addr + size;
-	r_list_foreach (io->maps, iter, map) {
+	ls_foreach (io->maps, iter, map) {
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000000
 		// keeping (fd, to, from) tuples as separate maps
 		if ( map->fd == fd && ((map->from <= addr && addr < map->to) ||
@@ -243,8 +241,8 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
 	int res = false;
 	RIOMap *im = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, im) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, im) {
 		if (im->from <= off && off < im->to) {
 			res = true;
 			break;
@@ -258,9 +256,9 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 	ut64 fd = -1;
 	ut64 paddr = off;
 	RIOMap *im = NULL;
-	RListIter *iter;
+	SdbListIter *iter;
 	ut64 prevfrom = 0LL;
-	r_list_foreach (io->maps, iter, im) {
+	ls_foreach (io->maps, iter, im) {
 		if (off >= im->from) {
 			if (prevfrom) {
 				if (im->from < prevfrom) {
@@ -303,8 +301,8 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 	int done = 0;
 	ut64 paddr = off;
 	RIOMap *im = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, im) {
+	SdbListIter *iter;
+	ls_foreach (io->maps, iter, im) {
 		if (im->fd != fd) {
 			continue;
 		}
@@ -330,13 +328,13 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 }
 
 R_API bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOMap *im = NULL;
 	ut64 off = map->from;
 	if (!fd) {
 		return false;
 	}
-	r_list_foreach (io->maps, iter, im) {
+	ls_foreach (io->maps, iter, im) {
 		if (im == map) {
 			continue;
 		}
@@ -349,9 +347,9 @@ R_API bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 
 R_API void r_io_map_list(RIO *io, int mode) {
 	RIOMap *map;
-	RListIter *iter;
+	SdbListIter *iter;
 	if (io && io->maps && io->cb_printf) {
-		r_list_foreach (io->maps, iter, map) {
+		ls_foreach (io->maps, iter, map) {
 			switch (mode) {
 			case 1:
 			case 'r':
