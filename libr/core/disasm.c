@@ -92,6 +92,7 @@ typedef struct r_disam_options_t {
 	int show_symbols_col;
 	bool show_offseg;
 	bool show_flags;
+	bool bblined;
 	bool show_bytes;
 	bool show_reloff;
 	bool show_reloff_flags;
@@ -3031,28 +3032,8 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 }
 
 static void ds_print_bbline(RDisasmState *ds) {
-	if (!ds->show_bbline) {
-		return;
-	}
-	bool showBBLine = false;
-	if (ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)) {
-		showBBLine = true;
-	} else {
-		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_MJMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_RET:
-			showBBLine = true;
-			break;
-		}
-	}
-
-	if (showBBLine) {
+	if (ds->show_bbline && ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)) {
+		ds->bblined = true;
 		ds_setup_print_pre (ds, false, false);
 		ds_update_ref_lines (ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
@@ -3733,6 +3714,30 @@ toro:
 		}
 
 		r_cons_newline ();
+		if (ds->show_bbline && !ds->bblined) {
+			bool showBBLine = false;
+			switch (ds->analop.type) {
+			case R_ANAL_OP_TYPE_MJMP:
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_IJMP:
+			case R_ANAL_OP_TYPE_RJMP:
+			case R_ANAL_OP_TYPE_IRJMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_RET:
+				showBBLine = true;
+				break;
+			}
+			if (showBBLine) {
+				ds_setup_print_pre (ds, false, false);
+				ds_update_ref_lines (ds);
+				if (!ds->linesright && ds->show_lines && ds->line) {
+					r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
+							ds->refline2, COLOR_RESET (ds));
+				}
+				r_cons_printf("|\n");
+			}
+		}
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {
