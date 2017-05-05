@@ -40,16 +40,13 @@ static int __io_posix_open (const char *file, int flags, int mode) {
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
-	if (!mmo) {
-		return UT64_MAX;
-	}
-	if (mmo->rawio) {
-		return lseek (mmo->fd, offset, whence);
-	}
-	if (!mmo->buf) {
-		return UT64_MAX;
-	}
-	ut64 seek_val = mmo->buf->cur;
+	ut64 seek_val = UT64_MAX;
+
+	if (!mmo) return UT64_MAX;
+	if (mmo->rawio) return lseek (mmo->fd, offset, whence);
+	if (!mmo->buf) return UT64_MAX;
+
+	seek_val = mmo->buf->cur;
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = R_MIN (mmo->buf->length, offset);
@@ -131,9 +128,11 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	mmo->mode = mode;
 	mmo->flags = flags;
 	mmo->io_backref = io;
-	if (flags & R_IO_WRITE)
+	if (flags & R_IO_WRITE) {
 		mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
-	else mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
+	} else {
+		mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
+	}
 
 	if (mmo->fd == -1) {
 		free (mmo->filename);
@@ -293,10 +292,10 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
 	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
-	return (mmo)
-		? r_io_desc_new (&r_io_plugin_default, mmo->fd, mmo->filename, flags, mode, mmo)
-		: NULL;
+	if (!mmo) return NULL;
+	return r_io_desc_new (io, &r_io_plugin_default, mmo->filename, flags, mode, mmo);
 }
+
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (fd && fd->data)
@@ -322,7 +321,9 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 // default open should permit opening 
 static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *iod;
-	if (!r_io_def_mmap_check_default (file) ) return NULL;
+	if (!r_io_def_mmap_check_default (file)) {
+		return NULL;
+	}
 	iod = r_io_def_mmap_open (io, file, flags, mode);
 	return iod;
 // NTOE: uncomment this line to support loading files in ro as fallback is rw fails

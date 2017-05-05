@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 pancake */
+/* radare - LGPL - Copyright 2010-2016 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -109,7 +109,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int i_port = atoi(port);
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
-		riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
+		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, rw, mode, riog);
 		return riogdb;
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
@@ -130,7 +130,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case R_IO_SEEK_CUR:
 		return io->off + offset;
 	case R_IO_SEEK_END:
-		return UT64_MAX;
+		return desc->exec_file_sz + offset;
 	default:
 		return offset;
 	}
@@ -139,9 +139,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
-	if (!desc || !desc->data) {
-		return -1;
-	}
+	if (!desc || !desc->data) return -1;
 	return debug_gdb_read_at(buf, count, addr);
 }
 
@@ -190,11 +188,3 @@ RIOPlugin r_io_plugin_gdb = {
 	.system = __system,
 	.isdbg = true
 };
-
-#ifndef CORELIB
-RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_gdb,
-	.version = R2_VERSION
-};
-#endif

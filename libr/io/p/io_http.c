@@ -91,8 +91,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				mal->fd = getmalfd (mal);
 				memcpy (mal->buf, out, mal->size);
 				free (out);
-				return r_io_desc_new (&r_io_plugin_http,
-					mal->fd, pathname, rw, mode, mal);
+				return r_io_desc_new (io, &r_io_plugin_http,
+					pathname, rw, mode, mal);
 			}
 			eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
 			free (mal);

@@ -14,14 +14,14 @@
 #endif
 
 #if DEBUGGER && DEBUGGER_SUPPORTED
-
+#if 0
 static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 	free (io->referer);
 	io->referer = ref? strdup (ref): NULL;
 	free (io->redirect);
 	io->redirect = file? strdup (file): NULL;
 }
-
+#endif
 #define MAGIC_EXIT 123
 
 #include <signal.h>
@@ -198,115 +198,24 @@ static void trace_me () {
 	}
 }
 
-void handle_posix_error(int err) {
-	switch (err) {
-	case 0:
-		// eprintf ("Success\n");
-		break;
-	case 22:
-		eprintf ("posix_spawnp: Invalid argument\n");
-		break;
-	case 86:
-		eprintf ("Unsupported architecture. Please specify -b 32\n");
-		break;
-	default:
-		eprintf ("posix_spawnp: unknown error %d\n", err);
-		perror ("posix_spawnp");
-		break;
-	}
-}
-
-static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
-	char *expr = NULL;
-	int i;
-	RRunProfile *rp = r_run_new (NULL);
-	if (!rp) {
-		return NULL;
-	}
-	for (i = 0; argv[i]; i++) {
-		rp->_args[i] = argv[i];
-	}
-	rp->_args[i] = NULL;
-	rp->_program = strdup (argv[0]);
-	rp->_dodebug = true;
-	if (io->runprofile && *io->runprofile) {
-		if (!r_run_parsefile (rp, io->runprofile)) {
-			eprintf ("Can't find profile '%s'\n", io->runprofile);
-			r_run_free (rp);
-			return NULL;
-		}
-		if (strstr (io->runprofile, R_SYS_DIR ".rarun2.")) {
-			(void)r_file_rm (io->runprofile);
-		}
-	}
-	if (bits == 64) {
-		r_run_parseline (rp, expr=strdup ("bits=64"));
-	} else if (bits == 32) {
-		r_run_parseline (rp, expr=strdup ("bits=32"));
-	}
-	free (expr);
-	if (r_run_config_env (rp)) {
-		eprintf ("Can't config the environment.\n");
-		r_run_free (rp);
-		return NULL;
-	}
-	return rp;
-}
-
-
-#if __APPLE__ && !__POWERPC__
-
-static void handle_redirection(char *path, int flag, posix_spawn_file_actions_t *fileActions, int fd) {
-	int mode = S_IRUSR | S_IWUSR;
-	posix_spawn_file_actions_addopen (fileActions, fd, path, flag, mode);
-
-}
-static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
-	int flag = 0;
-	if (rp->_stdin) {
-		flag |= O_RDONLY;
-		handle_redirection(rp->_stdin, flag, fileActions, STDIN_FILENO);	
-	}
-	if (rp->_stdout) {
-		flag |= O_WRONLY;
-		handle_redirection(rp->_stdout, flag, fileActions, STDOUT_FILENO);
-	}
-	if (rp->_stderr) {
-		flag |= O_WRONLY;
-		handle_redirection(rp->_stderr, flag, fileActions, STDERR_FILENO);
-	}
-}
-#endif
-
 // __UNIX__ (not windows)
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	bool runprofile = io->runprofile && *(io->runprofile);
 	char **argv;
 #if __APPLE__ && !__POWERPC__
-	pid_t p = -1;
-	posix_spawn_file_actions_t fileActions;
-	ut32 ps_flags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
-	sigset_t no_signals;
-	sigset_t all_signals;
-	size_t copied = 1;
-	cpu_type_t cpu = CPU_TYPE_ANY;
-	posix_spawnattr_t attr = {0};
-	posix_spawnattr_init (&attr);
-
-	sigemptyset (&no_signals);
-	sigfillset (&all_signals);
-	posix_spawnattr_setsigmask (&attr, &no_signals);
-	posix_spawnattr_setsigdefault (&attr, &all_signals);
-
-	posix_spawn_file_actions_init (&fileActions);
-	posix_spawn_file_actions_addinherit_np (&fileActions, STDIN_FILENO);
-	posix_spawn_file_actions_addinherit_np (&fileActions, STDOUT_FILENO);
-	posix_spawn_file_actions_addinherit_np (&fileActions, STDERR_FILENO);
-
-	ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
-	ps_flags |= POSIX_SPAWN_START_SUSPENDED;
-#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 	if (!runprofile) {
+#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
+		posix_spawn_file_actions_t fileActions;
+		ut32 ps_flags = POSIX_SPAWN_SETSIGDEF |
+				POSIX_SPAWN_SETSIGMASK;
+   		sigset_t no_signals;
+    		sigset_t all_signals;
+    		sigemptyset (&no_signals);
+    		sigfillset (&all_signals);
+		posix_spawnattr_t attr = {0};
+		size_t copied = 1;
+		cpu_type_t cpu;
+		pid_t p = -1;
 		int ret, useASLR = io->aslr;
 		char *_cmd = io->args
 			? r_str_appendf (strdup (cmd), " %s", io->args)
@@ -322,12 +231,25 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			eprintf ("Invalid execvp\n");
 			return -1;
 		}
+		posix_spawnattr_init (&attr);
 		if (useASLR != -1) {
 			if (!useASLR) {
 				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
 			}
 		}
+
+		posix_spawn_file_actions_init (&fileActions);
+		posix_spawn_file_actions_addinherit_np (&fileActions, STDIN_FILENO);
+		posix_spawn_file_actions_addinherit_np (&fileActions, STDOUT_FILENO);
+		posix_spawn_file_actions_addinherit_np (&fileActions, STDERR_FILENO);
+		ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+		ps_flags |= POSIX_SPAWN_START_SUSPENDED;
+
+   		posix_spawnattr_setsigmask (&attr, &no_signals);
+    		posix_spawnattr_setsigdefault (&attr, &all_signals);
+
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
+		cpu = CPU_TYPE_ANY;
 #if __x86_64__
 		if (bits == 32) {
 			cpu = CPU_TYPE_I386;
@@ -341,49 +263,30 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				argv[0] = dst;
 			}
 		}
-		ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
-		handle_posix_error (ret);
+		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
+		switch (ret) {
+		case 0:
+			// eprintf ("Success\n");
+			break;
+		case 22:
+			eprintf ("posix_spawnp: Invalid argument\n");
+			break;
+		case 86:
+			eprintf ("Unsupported architecture. Please specify -b 32\n");
+			break;
+		default:
+			eprintf ("posix_spawnp: unknown error %d\n", ret);
+			perror ("posix_spawnp");
+			break;
+		}
 		posix_spawn_file_actions_destroy (&fileActions);
 		r_str_argv_free (argv);
 		free (_cmd);
 		return p;
-	} else {
-		int ret;
-		argv = r_str_argv (cmd, NULL);
-		if (!argv) {
-			posix_spawn_file_actions_destroy (&fileActions);
-			return -1;
-		}
-		RRunProfile *rp = _get_run_profile (io, bits, argv);
-		if (!rp) {
-			r_str_argv_free (argv);
-			posix_spawn_file_actions_destroy (&fileActions);
-			return -1;
-		}
-		handle_posix_redirection (rp, &fileActions);
-		if (rp->_args[0]) {
-			if (!rp->_aslr) {
-				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
-			}
-#if __x86_64__
-			if (rp->_bits == 32) {
-				cpu = CPU_TYPE_I386;
-			}
-#endif
-			(void)posix_spawnattr_setflags (&attr, ps_flags);
-			posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
-			ret = posix_spawnp (&p, rp->_args[0], &fileActions, &attr, rp->_args, NULL);
-			handle_posix_error (ret);
-		}
-		r_str_argv_free (argv);
-		r_run_free (rp);
-		posix_spawn_file_actions_destroy (&fileActions);
-		return p;
 	}
-	posix_spawn_file_actions_destroy (&fileActions);
-	return -1;
 #endif
 	int ret, status, child_pid;
+
 	child_pid = r_sys_fork ();
 	switch (child_pid) {
 	case -1:
@@ -391,13 +294,31 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		break;
 	case 0:
 		if (runprofile) {
+			char *expr = NULL;
+			int i;
+			RRunProfile *rp = r_run_new (NULL);
 			argv = r_str_argv (cmd, NULL);
-			if (!argv) {
-				exit(1);
+			for (i = 0; argv[i]; i++) {
+				rp->_args[i] = argv[i];
 			}
-			RRunProfile *rp = _get_run_profile (io, bits, argv);
-			if (!rp) {
-				r_str_argv_free (argv);
+			rp->_args[i] = NULL;
+			rp->_program = argv[0];
+			rp->_dodebug = true;
+			if (io->runprofile && *io->runprofile) {
+				if (!r_run_parsefile (rp, io->runprofile)) {
+					eprintf ("Can't find profile '%s'\n",
+						io->runprofile);
+					exit (MAGIC_EXIT);
+				}
+			}
+			if (bits == 64) {
+				r_run_parseline (rp, expr=strdup ("bits=64"));
+			} else if (bits == 32) {
+				r_run_parseline (rp, expr=strdup ("bits=32"));
+			}
+			free (expr);
+			if (r_run_config_env (rp)) {
+				eprintf ("Can't config the environment.\n");
 				exit (1);
 			}
 			trace_me ();
@@ -485,6 +406,8 @@ static int get_pid_of(RIO *io, const char *procname) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIOPlugin *_plugin;
+	RIODesc *ret = NULL;
 	char uri[128];
 	if (!strncmp (file, "waitfor://", 10)) {
 		const char *procname = file + 10;
@@ -522,21 +445,45 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			ret = _plugin->open (io, uri, rw, mode);
 #elif __APPLE__
-			sprintf (uri, "mach://%d", pid);
+			sprintf (uri, "smach://%d", pid);		//s is for spawn
+			_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
+			if (!_plugin->open || !_plugin->close) {
+				return NULL;
+			}
+			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
-			sprintf (uri, "ptrace://%d", pid);
+			sprintf (uri, "ptrace://%d", pid);	
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			ret = _plugin->open (io, uri, rw, mode);
 #endif
-			my_io_redirect (io, file, uri);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			my_io_redirect (io, file, uri);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (!_plugin->open) {
+				ret = _plugin->open (io, uri, rw, mode);
+			}
 		}
-		return NULL;
+		if (ret) {
+			ret->plugin = _plugin;
+			ret->referer = strdup (file);		//kill this
+		}
 	}
-	my_io_redirect (io, file, NULL);
-	return NULL;
+	return ret;
+}
+
+static int __close (RIODesc *desc) {
+	int ret = -2;
+	eprintf ("something went wrong\n");
+	if (desc) {
+		eprintf ("trying to close %d with io_debug\n", desc->fd);
+		ret = -1;
+	}
+	r_sys_backtrace ();
+	return ret;
 }
 
 RIOPlugin r_io_plugin_debug = {
@@ -546,6 +493,7 @@ RIOPlugin r_io_plugin_debug = {
 	.author = "pancake",
 	.version = "0.1.0",
         .open = __open,
+	.close = __close,
         .check = __plugin_open,
 	.isdbg = true,
 };
