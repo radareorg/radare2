@@ -1949,7 +1949,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
-	SETPREF ("asm.spacy", "false", "Spacy disasm after calls and before flags");
 	SETPREF ("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF ("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
 	SETPREF ("asm.section", "false", "Show section name before offset");

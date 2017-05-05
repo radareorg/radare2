@@ -105,7 +105,6 @@ typedef struct r_disam_options_t {
 	bool show_cmtflgrefs;
 	bool show_cycles;
 	bool show_stackptr;
-	bool show_spacy;
 	bool show_xrefs;
 	bool show_cmtrefs;
 	bool show_functions;
@@ -364,26 +363,6 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 	}
 }
 
-static void ds_print_spacy(RDisasmState *ds, int pre) {
-	RCore *core = ds->core;
-	RAnalFunction *f = NULL;
-	if (pre) {
-		r_cons_newline ();
-	}
-	if (ds->show_functions) {
-		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (!f) {
-			r_cons_print ("  ");
-			ds_print_lines_left (ds);
-		}
-	}
-	if (f) ds_beginline (ds, f, true);
-	ds_print_offset (ds);
-	if (!pre) {
-		r_cons_newline ();
-	}
-}
-
 static RDisasmState * ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
 	if (!ds) {
@@ -426,7 +405,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
-	ds->show_spacy = r_config_get_i (core->config, "asm.spacy");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
 	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
@@ -1508,11 +1486,6 @@ static void ds_show_flags(RDisasmState *ds) {
 			R_FREE (name);
 		} else {
 			r_cons_printf ("%s:\n", flag->name);
-		}
-	}
-	if (ds->show_spacy) {
-		if (!r_list_empty (flaglist)) {
-			ds_print_spacy (ds, false);
 		}
 	}
 }
@@ -3058,12 +3031,28 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 }
 
 static void ds_print_bbline(RDisasmState *ds) {
-	RAnalBlock *bb;
+	if (!ds->show_bbline) {
+		return;
+	}
+	bool showBBLine = false;
+	if (ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)) {
+		showBBLine = true;
+	} else {
+		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_MJMP:
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_RET:
+			showBBLine = true;
+			break;
+		}
+	}
 
-	if (!ds->show_bbline || !ds->fcn) return;
-
-	bb = r_anal_fcn_bbget (ds->fcn, ds->at);
-	if (bb) {
+	if (showBBLine) {
 		ds_setup_print_pre (ds, false, false);
 		ds_update_ref_lines (ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
@@ -3373,21 +3362,6 @@ callfallback:
 beach:
 	r_config_restore (hc);
 	r_config_hold_free (hc);
-	if (ds->show_spacy) {
-		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_MJMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_RET:
-			ds_print_spacy (ds, 1);
-			break;
-		}
-	}
 }
 
 static void ds_print_calls_hints(RDisasmState *ds) {
