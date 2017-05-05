@@ -1404,7 +1404,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afi[jl*] <addr>\n"); break;
+			eprintf ("Usage: afi[jl*] <addr>\n");
 			eprintf ("afij - function info in json format\n");
 			eprintf ("afil - verbose function info\n");
 			eprintf ("afi* - function, variables and arguments\n");
