@@ -12,6 +12,13 @@
 #include <r_th.h>
 #if !__WINDOWS__
 #include <dirent.h>
+#include <signal.h>
+#endif
+#ifdef HAVE_LIB_GMP
+#include <gmp.h>
+#endif
+#if HAVE_LIB_SSL
+#include <openssl/bn.h>
 #endif
 #include <sys/time.h>
 #include "r_util/r_big.h"
@@ -50,15 +57,6 @@
 #include "r_util/r_asn1.h"
 #include "r_util/r_x509.h"
 #include "r_util/r_pkcs7.h"
-#if __UNIX__
-#include <signal.h>
-#endif
-#ifdef HAVE_LIB_GMP
-#include <gmp.h>
-#endif
-#if HAVE_LIB_SSL
-#include <openssl/bn.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
