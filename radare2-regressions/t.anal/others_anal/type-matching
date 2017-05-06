@@ -1,0 +1,108 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="No function"
+FILE=malloc://0x50
+CMDS='aftm
+'
+IGNORE_ERR=0
+EXPECT_ERR='cant find function here
+'
+run_test
+
+NAME="Basic type Matching"
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS="s sym.main
+aa
+aei
+aeim
+td int puts(char *s);
+aftm
+pdf~char * s?
+"
+EXPECT='1
+'
+run_test
+
+NAME="call not function"
+FILE=../../bins/pe/crackme0x00.exe
+CMDS='aa
+s sym._main
+aei
+aeim
+td int strcmp(char *s1, char *s2);
+tk func.strcmp.cc=stdcall
+aftm
+s 0x00401368
+pd 1~char * s1?
+s 0x00401370
+pd 1~char * s2?
+'
+EXPECT="1
+1
+"
+run_test
+
+NAME="Wrong calling convention"
+FILE=../../bins/pe/crackme0x00.exe
+CMDS="s entry0
+af
+tk CRTStartup=func
+tk func.CRTStartup.args=1
+tk func.CRTStartup.arg0= int,who_cares
+tk func.CRTStartup.cc=THE_CC_THAT_NEVER_EXISTED
+tk func.CRTStartup.ret=eax
+aei
+aeim
+aftm
+"
+EXPECT=""
+run_test
+
+NAME="Wrong calling convention"
+FILE=../../bins/mach0/ls-osx-x86_64
+CMDS="s entry0
+aaa
+afta
+CC. @ 0x100001413
+CC. @ 0x10000145b
+CC. @ 0x100001460
+"
+EXPECT="int category
+int fd
+unsigned long request
+"
+run_test
+
+NAME="Function definition"
+FILE=../../bins/elf/arm1.bin
+BROKEN=
+CMDS='afr @ main
+s 0x000082cc
+pd 1~?*xmalloc
+'
+EXPECT="1
+"
+run_test
+
+NAME="Function definition (autorename)"
+FILE=../../bins/pe/hello-mingw32
+BROKEN=
+CMDS='aaa
+s 0x00401255
+pd 1~?ExitProcess(UINT
+'
+EXPECT="1
+"
+run_test
+
+NAME="Function definition"
+FILE=../../bins/elf/ioli/crackme0x00
+BROKEN=
+CMDS='aaa
+s 0x08048469
+pd 1~?strcmp(const
+'
+EXPECT="1
+"
+run_test

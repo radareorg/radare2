@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami dump_imports.exe - open'
+FILE=../../bins/pe/dump_imports.exe
+IGNORE_ERR=1
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test

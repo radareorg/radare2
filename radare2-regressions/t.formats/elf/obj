@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='obj entry'
+FILE=../../bins/elf/analysis/test.obj
+BROKEN=1
+ARGS=
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x00000000 paddr=0x00000040 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
+'
+run_test
+
+NAME='obj entry'
+FILE=../../bins/elf/analysis/test.obj
+BROKEN=1
+ARGS="-B 0x200000"
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x00200000 paddr=0x00000040 baddr=0x00200000 laddr=0x00000000 haddr=0x00000018 type=program
+'
+run_test
+
+NAME='obj main address'
+BROKEN=1
+FILE=../../bins/elf/analysis/test.obj
+ARGS=
+CMDS='?v sym.main
+'
+EXPECT='0x10
+'
+run_test
+
+NAME='obj main address'
+BROKEN=1
+FILE=../../bins/elf/analysis/test.obj
+ARGS="-B 0x200000"
+CMDS='?v sym.main
+'
+EXPECT='0x200010
+'
+run_test
+
+NAME='obj main'
+FILE=../../bins/elf/analysis/test.obj
+BROKEN=1
+ARGS=
+CMDS='pi 3@ sym.main
+'
+EXPECT='push rbp
+mov rbp, rsp
+call 0x19
+'
+run_test
+
+NAME='obj main baddr'
+FILE=../../bins/elf/analysis/test.obj
+BROKEN=1
+ARGS="-B 0x200000"
+CMDS='pi 3@sym.main
+'
+EXPECT='push rbp
+mov rbp, rsp
+call 0x200019
+'
+run_test
+

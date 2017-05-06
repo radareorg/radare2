@@ -1,0 +1,58 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='et'
+FILE=-
+CMDS='et asm.slow
+et asm.bits
+et asm.arch
+et search.from
+'
+EXPECT='bool
+int
+str
+addr
+'
+run_test
+
+
+NAME='e asm.os'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='e asm.os=?
+'
+EXPECT='ios
+dos
+darwin
+linux
+freebsd
+openbsd
+netbsd
+windows
+'
+
+run_test
+
+NAME='e asm.cpu'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='e asm.arch=mips
+e asm.cpu=?
+'
+EXPECT='gp64
+micro
+r6
+v3
+'
+
+run_test
+
+NAME='e asm.syntax'
+FILE=-
+CMDS='wx eb0e
+e asm.arch=x86
+e asm.syntax=masm
+pi 1
+'
+EXPECT='jmp 10h
+'
+
+run_test

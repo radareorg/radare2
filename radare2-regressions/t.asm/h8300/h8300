@@ -1,0 +1,403 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh; done
+
+set_test_params() {
+NAME="h8300: [$1]"
+FILE=malloc://32
+BROKEN=$4
+CMDS='
+e asm.arch=h8300
+e asm.bits=16
+wx '$2'
+pi 1
+'
+EXPECT="$3
+"
+}
+
+set_test_params "ADD.B 1" 0845 'add.b r4h,r5h'
+run_test
+
+set_test_params "ADD.B 2" 8914 'add.b #0x14:8,r1l'
+run_test
+
+set_test_params "ADD.W 1" 0942 'add.w r4,r2'
+run_test
+
+set_test_params "ADDS 1"  0B02 'adds #1,r2'
+run_test
+
+set_test_params "ADDS 2" 0B87 'adds #2,r7'
+run_test
+
+set_test_params "ADDX 1" 9397 'addx #0x97:8,r3h'
+run_test
+
+set_test_params "ADDX 2" 0EAC 'addx r2l,r4l'
+run_test
+
+set_test_params "AND 1" ED89 'and #0x89:8,r5l'
+run_test
+
+set_test_params "AND 2" 1623 'and r2h,r3h'
+run_test
+
+set_test_params "ANDC 1" 0678 'andc #0x78:8,ccr'
+run_test
+
+set_test_params "BAND 1" 7646 'band #0x4:3,r6h'
+run_test
+
+set_test_params "BAND 2" 7C407670 'band #0x7:3,@r4'
+run_test
+
+set_test_params "BAND 3" 7E667640 'band #0x4:3,@0x66:8'
+run_test
+
+set_test_params "BRA" 4077 'bra @@0x77:8'
+run_test
+
+set_test_params "BCLR 1" 7279 'bclr #0x7:3,r1l'
+run_test
+
+set_test_params "BCLR 2" 7D307260 'bclr #0x6:3,@r3'
+run_test
+
+set_test_params "BCLR 3" 7Fa87240 'bclr #0x4:3,@0xa8:8'
+run_test
+
+set_test_params "BCLR 4" 6255 'bclr r5h,r5h'
+run_test
+
+set_test_params "BCLR 5" 7D306260 'bclr r6h,@r3'
+run_test
+
+set_test_params "BCLR 6" 7F776270 'bclr r7h,@0x77:8'
+run_test
+
+set_test_params "BIAND 1" 76BB 'biand #0x3:3,r3l'
+run_test
+
+set_test_params "BIAND 2" 7C507680 'biand #0x0:3,@r5'
+run_test
+
+set_test_params "BIAND 3" 7E997690 'biand #0x1:3,@0x99:8'
+run_test
+
+set_test_params "BILD 1" 7799 'bild #0x1:3,r1l'
+run_test
+
+set_test_params "BILD 2" 7C707790 'bild #0x1:3,@r7'
+run_test
+
+set_test_params "BILD 3" 7E5677A0 'bild #0x2:3,@0x56:8'
+run_test
+
+set_test_params "BIOR 1" 74B9 'bior #0x3:3,r1l'
+run_test
+
+set_test_params "BIOR 2" 7C7074B0 'bior #0x3:3,@r7'
+run_test
+
+set_test_params "BIOR 3" 7E887490 'bior #0x1:3,@0x88:8'
+run_test
+
+set_test_params "BIST 1" 67AB 'bist #0x2:3,r3l'
+run_test
+
+set_test_params "BIST 2" 7D706790 'bist #0x1:3,@r7'
+run_test
+
+set_test_params "BIST 3" 7F9667C0 'bist #0x4:3,@0x96:8'
+run_test
+
+set_test_params "BIXOR 1" 7599 'bixor #0x1:3,r1l'
+run_test
+
+set_test_params "BIXOR 2" 7C607590 'bixor #0x1:3,@r6'
+run_test
+
+set_test_params "BIXOR 3" 7E5675A0 'bixor #0x2:3,@0x56:8'
+run_test
+
+set_test_params "BLD 1" 7779 'bld #0x7:3,r1l'
+run_test
+
+set_test_params "BLD 2" 7C707760 'bld #0x6:3,@r7'
+run_test
+
+set_test_params "BLD 3" 7E147760 'bld #0x6:3,@0x14:8'
+run_test
+
+set_test_params "BNOT 1" 7158 'bnot #0x5:3,r0l'
+run_test
+
+set_test_params "BNOT 2" 7D707150 'bnot #0x5:3,@r7'
+run_test
+
+set_test_params "BNOT 3" 7F997140 'bnot #0x4:3,@0x99:8'
+run_test
+
+set_test_params "BNOT 4" 6178 'bnot r7h,r0l'
+run_test
+
+set_test_params "BNOT 5" 7D506190 'bnot r1l,@r5'
+run_test
+
+set_test_params "BNOT 6" 7F5561B0 'bnot r3l,@0x55:8'
+run_test
+
+set_test_params "BOR 1" 7449 'bor #0x4:3,r1l'
+run_test
+
+set_test_params "BOR 2" 7C407440 'bor #0x4:3,@r4'
+run_test
+
+set_test_params "BOR 3" 7E137450 'bor #0x5:3,@0x13:8'
+run_test
+
+set_test_params "BSET 1" 7047 'bset #0x4:3,r7h'
+run_test
+
+set_test_params "BSET 2" 7D407060 'bset #0x6:3,@r4'
+run_test
+
+set_test_params "BSET 3" 7F887040 'bset #0x4:3,@0x88:8'
+run_test
+
+set_test_params "BSET 4" 6089 'bset r0l,r1l'
+run_test
+
+set_test_params "BSET 5" 7D3060A0 'bset r2l,@r3'
+run_test
+
+set_test_params "BSET 6" 7F776040 'bset r4h,@0x77:8'
+run_test
+
+set_test_params "BSR 1" 5588 'bsr .-120'
+run_test
+
+set_test_params "BSR 2" 5516 'bsr .22'
+run_test
+
+set_test_params "BST 1" 6700 'bst #0x0:3,r0h'
+run_test
+
+set_test_params "BST 2" 7D106700 'bst #0x0:3,@r1'
+run_test
+
+set_test_params "BST 3" 7F886730 'bst #0x3:3,@0x88:8'
+run_test
+
+# BTST
+# BXOR
+
+set_test_params "CMP.B 1" A477  'cmp.b #0x77:8,r4h'
+run_test
+
+set_test_params "CMP.B 2" 1C68 'cmp.b r6h,r0l'
+run_test
+
+set_test_params "CMP.W" 1D54 'cmp.w r5,r4'
+run_test
+
+set_test_params "DAA" 0F0A 'daa r2l'
+run_test
+
+set_test_params "DAS" 1F0B 'das r3l'
+run_test
+
+set_test_params "DEC" 1A0D 'dec r5l'
+run_test
+
+set_test_params "DIVXU" 51A3 'divxu r2l,r3'
+run_test
+
+set_test_params "EEPMOV" 7B5C598F 'eepmov '
+run_test
+
+set_test_params "INC" 0A0B 'inc r3l'
+run_test
+
+set_test_params "JMP 1" 5940 'jmp @r4'
+run_test
+
+set_test_params "JMP 2" 5A001488 'jmp @0x1488:16'
+run_test
+
+set_test_params "JMP 3" 5B40 'jmp @@0x40:8'
+run_test
+
+set_test_params "JSR 1" 5D40 'jsr @r4'
+run_test
+
+set_test_params "JSR 2" 5E009999 'jsr @0x9999:16'
+run_test
+
+set_test_params "JSR 3" 5F93 'jsr @@0x93:8'
+run_test
+
+set_test_params "LDC 1" 0714 'ldc #0x14:8,ccr'
+run_test
+
+set_test_params "LDC 2" 0305 'ldc r5h,ccr'
+run_test
+
+set_test_params "MOV.B 1" 0C89 'mov.b r0l,r1l'
+run_test
+
+set_test_params "MOV.W 1" 0D35 'mov.w r3,r5'
+run_test
+
+set_test_params "MOV.B 2" F399 'mov.b #0x99:8,r3h'
+run_test
+
+set_test_params "MOV.B 3" 6849 'mov.b @r4,r1l'
+run_test
+
+set_test_params "MOV.B 4" 6E369494 'mov.b @(0x9494:16,r3),r6h'
+run_test
+
+set_test_params "MOV.B 5" 6C35 'mov.b @r3+,r5h'
+run_test
+
+set_test_params "MOV.B 6" 2588 'mov.b @0x88:8,r5h'
+run_test
+
+set_test_params "MOV.B 7" 6A097744 'mov.b @0x7744:16,r1l'
+run_test
+
+set_test_params "MOV.B 8" 6882 'mov.b r2h,@r0'
+run_test
+
+set_test_params "MOV.B 9" 6EAA1111 'mov.b r2l,@(0x1111:16,r2)'
+run_test
+
+set_test_params "MOV.B 10" 6C94 'mov.b r4h,@-r1'
+run_test
+
+set_test_params "MOV.B 11" 3914 'mov.b r1l,@0x14:8'
+run_test
+
+set_test_params "MOV.B 12" 6A802222 'mov.b r0h,@0x2222:16'
+run_test
+
+set_test_params "MOV.W 2" 79035555 'mov.w #0x5555:16,r3'
+run_test
+
+set_test_params "MOV.W 3" 6935 'mov.w @r3,r5'
+run_test
+
+set_test_params "MOV.W 4" 6F747711 'mov.w @(0x7711:16,r7),r4'
+run_test
+
+set_test_params "MOV.W 5" 6D63 'mov.w @r6+,r3'
+run_test
+
+set_test_params "MOV.W 6" 6B011234 'mov.w @0x1234:16,r1'
+run_test
+
+set_test_params "MOV.W 7" 69A3 'mov.w r3,@r2'
+run_test
+
+set_test_params "MOV.W 8" 6FB40101 'mov.w r4,@(0x101:16,r3)'
+run_test
+
+set_test_params "MOV.W 9" 6DC1 'mov.w r1,@-r4'
+run_test
+
+set_test_params "MOVFPE" 6A4A3344 'movfpe @0x3344:16,r2l'
+run_test
+
+set_test_params "MOVTPE" 6AcB3322 'movtpe r3l,@0x3322:16'
+run_test
+
+set_test_params "MULXU" 50C3 'mulxu r4l,r3'
+run_test
+
+set_test_params "NEG" 178D 'neg r5l'
+run_test
+
+set_test_params "NOP" 0000 'nop '
+run_test
+
+set_test_params "NOT" 1709 'not r1l'
+run_test
+
+set_test_params "OR 1" C314 'or #0x14:8,r3h'
+run_test
+
+set_test_params "OR 2" 14AB 'or r2l,r3l'
+run_test
+
+set_test_params "ORC" 0455 'orc #0x55:8,ccr'
+run_test
+
+set_test_params "POP" 6d72 'pop r2'
+run_test
+
+set_test_params "PUSH" 6DF3 'push r3'
+run_test
+
+set_test_params "ROTL" 128E 'rotl r6l'
+run_test
+
+set_test_params "ROTR" 138F 'rotr r7l'
+run_test
+
+set_test_params "ROTXL" 120F 'rotxl r7l'
+run_test
+
+set_test_params "ROTXR" 130F 'rotxr r7l'
+run_test
+
+set_test_params "RTE" 5670 'rte '
+run_test
+
+set_test_params "RTS" 5470 'rts '
+run_test
+
+set_test_params "SHAL" 108F 'shal r7l'
+run_test
+
+set_test_params "SHAR" 118E 'shar r6l'
+run_test
+
+set_test_params "SHLL" 100D 'shll r5l'
+run_test
+
+set_test_params "SHLR" 110C 'shlr r4l'
+run_test
+
+set_test_params "SLEEP" 0180 'sleep '
+run_test
+
+set_test_params "STC" 0204 'stc ccr,r4h'
+run_test
+
+set_test_params "SUB.B" 184A 'sub.b r4h,r2l'
+run_test
+
+set_test_params "SUB.W" 1945 'sub.w r4,r5'
+run_test
+
+set_test_params "SUBS 1" 1b02 'subs #1,r2'
+run_test
+
+set_test_params "SUBS 2" 1b83 'subs #2,r3'
+run_test
+
+set_test_params "SUBX 1" B353 'subx #0x53:8,r3h'
+run_test
+
+set_test_params "SUBX 2" 1E7A 'subx r7h,r2l'
+run_test
+
+set_test_params "XOR 1" D599 'xor #0x99:8,r5h'
+run_test
+
+set_test_params "XOR 2" 1588 'xor r0l,r0l'
+run_test
+
+set_test_params "XORC" 0566 'xorc #0x66:8,ccr'
+run_test

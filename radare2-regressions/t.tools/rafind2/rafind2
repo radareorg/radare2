@@ -1,0 +1,37 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='rafind2 -X -s'
+CMDS='!rafind2 -X -s 250382 ../../bins/elf/ioli/crackme0x00'
+EXPECT='0x58f
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+[32m0x0000058f[0m  [35m32[0m[35m35[0m [35m30[0m[35m33[0m [35m38[0m[35m32[0m [32m00[0m[35m49[0m [35m6e[0m[35m76[0m [35m61[0m[35m6c[0m [35m69[0m[35m64[0m [35m20[0m[35m50[0m  [35m2[0m[35m5[0m[35m0[0m[35m3[0m[35m8[0m[35m2[0m[32m.[0m[35mI[0m[35mn[0m[35mv[0m[35ma[0m[35ml[0m[35mi[0m[35md[0m[35m [0m[35mP[0m
+[32m0x0000059f[0m  [35m61[0m[35m73[0m [35m73[0m[35m77[0m [35m6f[0m[35m72[0m [35m64[0m[35m21[0m [37m0a[0m[32m00[0m [35m50[0m[35m61[0m [35m73[0m[35m73[0m [35m77[0m[35m6f[0m  [35ma[0m[35ms[0m[35ms[0m[35mw[0m[35mo[0m[35mr[0m[35md[0m[35m![0m[37m.[0m[32m.[0m[35mP[0m[35ma[0m[35ms[0m[35ms[0m[35mw[0m[35mo[0m
+[32m0x000005af[0m  [35m72[0m[35m64[0m [35m20[0m[35m4f[0m [35m4b[0m[35m20[0m [35m3a[0m[35m29[0m [37m0a[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [35mr[0m[35md[0m[35m [0m[35mO[0m[35mK[0m[35m [0m[35m:[0m[35m)[0m[37m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+[32m0x000005bf[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+[32m0x000005cf[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m       [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+'
+run_test
+
+NAME='rafind2 -r -X -s'
+CMDS='!rafind2 -r -X -s 250382 ../../bins/elf/ioli/crackme0x00'
+EXPECT='f hit0_0 0x0000058f ; ../../bins/elf/ioli/crackme0x00
+'
+run_test
+
+NAME='rafind2 -f 0x00000000 -t 0x00000590 -r -X -s'
+CMDS='!rafind2 -f 0x00000000 -t 0x00001000 -r -X -s 250382 ../../bins/elf/ioli/crackme0x00'
+EXPECT='f hit0_0 0x0000058f ; ../../bins/elf/ioli/crackme0x00
+'
+run_test
+
+NAME='rafind2 -f 0x00010000 -t 0x00020000 -X -s'
+CMDS='!rafind2 -f 0x00010000 -t 0x00020000 -r -X -s 250382 ../../bins/elf/ioli/crackme0x00'
+EXPECT=''
+run_test
+
+NAME='rafind2 -r -X -x'
+CMDS='!rafind2 -r -X -x 323530333832 ../../bins/elf/ioli/crackme0x00'
+EXPECT='f hit0_0 0x0000058f ; ../../bins/elf/ioli/crackme0x00
+'
+run_test

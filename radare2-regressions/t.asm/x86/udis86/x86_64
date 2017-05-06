@@ -1,0 +1,11 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="ldr code analysis"
+BROKEN=
+FILE=-
+CMDS='!rasm2 -a x86.udis -o 0x100001138 -d 7f1a
+'
+EXPECT='jg 0x100001154
+'
+run_test

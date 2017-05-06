@@ -1,0 +1,49 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="io-zip"
+BROKEN=
+FILE=zip://../bins/java/example.zip
+#IGNORE_ERR=1
+IGNORE_RC=1
+CMDS=q
+EXPECT="0 research_data/experiment/decompiler/dumped_jar_dec/c.class
+"
+run_test
+
+NAME="io-zip entrypoints for c.class"
+BROKEN=
+FILE=zip://../bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/c.class
+CMDS=ieq
+EXPECT="0x000002af
+0x000002da
+0x00000312
+0x000003ab
+"
+run_test
+
+NAME="io-zip entrypoints for c.class"
+BROKEN=
+FILE=zip://../bins/java/example.zip::0
+CMDS=ieq
+EXPECT="0x000002af
+0x000002da
+0x00000312
+0x000003ab
+"
+run_test
+
+NAME="io-zip hello.apk"
+BROKEN=
+FILE=apk://../bins/dex/Hello.apk
+CMDS=ieq
+EXPECT="0x000001c0
+"
+run_test
+
+NAME="io-zip hello.apk"
+BROKEN=
+FILE=zip://../bins/dex/Hello.apk
+CMDS=ieq
+EXPECT="0 classes.dex
+"
+run_test

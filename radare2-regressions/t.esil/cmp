@@ -1,0 +1,154 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# 2 < 1
+NAME='cmp 1,2,<'
+FILE=-
+CMDS='"ae 1,2,<"'
+EXPECT='0x0
+'
+run_test
+
+# 1 < 2
+NAME='cmp 2,1,<'
+FILE=-
+CMDS='"ae 2,1,<"'
+EXPECT='0x1
+'
+run_test
+
+# 2 > 1
+NAME='cmp 1,2,>'
+FILE=-
+BROKEN=
+CMDS='"ae 1,2,>"'
+EXPECT='0x1
+'
+run_test
+
+# 1 > 2
+NAME='cmp 2,1,>'
+FILE=-
+BROKEN=
+CMDS='"ae 2,1,>"'
+EXPECT='0x0
+'
+run_test
+
+# 2 <= 1
+NAME='cmp 1,2,<='
+FILE=-
+BROKEN=
+CMDS='"ae 1,2,<="'
+EXPECT='0x0
+'
+run_test
+
+# 1 <= 2
+NAME='cmp 2,1,<='
+FILE=-
+CMDS='"ae 2,1,<="'
+BROKEN=
+EXPECT='0x1
+'
+run_test
+
+# 2 >= 1
+NAME='cmp 1,2,>='
+FILE=-
+BROKEN=
+CMDS='"ae 1,2,>="'
+EXPECT='0x1
+'
+run_test
+
+# 1 >= 2
+NAME='cmp 2,1,>='
+FILE=-
+BROKEN=
+CMDS='"ae 2,1,>="'
+EXPECT='0x0
+'
+run_test
+
+# 1 <= 1
+NAME='cmp 1,1,<='
+FILE=-
+CMDS='"ae 1,1,<="'
+EXPECT='0x1
+'
+run_test
+
+# 2 >= 1
+NAME='cmp 1,1,>='
+FILE=-
+BROKEN=
+CMDS='"ae 1,1,>="'
+EXPECT='0x1
+'
+run_test
+
+# XXX == comparator shuold push the result in the stack?
+# 1 == 1
+NAME='cmp 1,1,=='
+FILE=-
+BROKEN=
+CMDS='"ae 1,1,=="'
+EXPECT='0x1
+'
+run_test
+
+# 1 == 1
+NAME='cmp 1,2,=='
+FILE=-
+BROKEN=
+CMDS='"ae 1,2,=="'
+EXPECT='0x0
+'
+run_test
+
+NAME='cmp -1,1,>'
+FILE=-
+CMDS='"ae -1,1,>"'
+EXPECT='0x1
+'
+run_test
+
+NAME='cmp -1,1,<'
+FILE=-
+CMDS='"ae -1,1,<"'
+EXPECT='0x0
+'
+run_test
+
+NAME='cmp -1,1,>='
+FILE=-
+CMDS='"ae -1,1,>="'
+EXPECT='0x1
+'
+run_test
+
+NAME='cmp -1,1,<='
+FILE=-
+CMDS='"ae -1,1,<="'
+EXPECT='0x0
+'
+run_test
+
+NAME='cmp -1,-2,>='
+FILE=-
+CMDS='"ae -1,-2,>="'
+EXPECT='0x0
+'
+run_test
+
+NAME='cmp -1,-2,<='
+FILE=-
+CMDS='"ae -1,-2,<="'
+EXPECT='0x1
+'
+run_test
+

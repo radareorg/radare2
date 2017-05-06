@@ -1,0 +1,17 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='DOL: sqrxz4 - open'
+FILE=../../bins/psx/HITPSX.EXE
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='DOL: sqrxz4 - iI'
+FILE=../../bins/psx/HITPSX.EXE
+ARGS=''
+CMDS="iI~?psx"
+EXPECT='1
+'
+run_test

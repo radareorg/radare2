@@ -1,0 +1,40 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ppc-elf'
+FILE=../../bins/elf/analysis/elf-ppc-execstack
+ARGS=
+CMDS='e asm.flags=false
+pid 4'
+EXPECT='0x100014e0         7c290b78  mr r9, r1
+0x100014e4         54210036  rlwinm r1, r1, 0, 0, 0x1b
+0x100014e8         38000000  li r0, 0
+0x100014ec         9421fff0  stwu r1, -0x10(r1)
+'
+run_test
+
+NAME='ppc-elf entry0 name issue'
+FILE=../../bins/elf/analysis/elf-ppc-execstack
+ARGS=
+CMDS='?e
+e asm.flags=true
+pid 1
+af
+afi~name[1]
+'
+EXPECT='
+0x100014e0    section..text:
+0x100014e0         7c290b78  mr r9, r1
+entry0
+'
+run_test
+
+NAME='ppc-elf relocs'
+FILE=../../bins/elf/analysis/elf-ppc-execstack
+ARGS=
+CMDS='s 0x10001500
+pi 1
+'
+EXPECT='b sym.imp.__libc_start_main
+'
+run_test

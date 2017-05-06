@@ -1,0 +1,195 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="arm-or-thumb visual bug"
+BROKEN=
+FILE=../../bins/mach0/arm-or-thumb
+CMDS="
+e scr.interactive=1
+e scr.null=1
+Vprdfq
+e scr.null=0
+afi~^size[1]
+"
+EXPECT='32
+'
+run_test
+
+NAME="arm-or-thumb visual bug"
+BROKEN=
+FILE=../../bins/mach0/arm-or-thumb
+CMDS="af
+afi~^size[1]
+"
+EXPECT='32
+'
+run_test
+
+NAME="ARM32 bb 0 size -- af"
+BROKEN=
+FILE=malloc://32
+CMDS="wx ff0000e2010050e30000001affffffea70009de594008de5e4139fe500f09ee5
+e asm.arch=arm
+e asm.bits=32
+af
+# .a2f
+#pdf
+afb
+"
+EXPECT='0x00000000 0x0000000c 00:0000 12 j 0x00000010 f 0x0000000c
+0x0000000c 0x00000010 00:0000 4 j 0x00000010
+0x00000010 0x00000020 00:0000 16
+'
+run_test
+
+NAME="ARM32 bb 0 size -- a2f"
+BROKEN=1
+FILE=malloc://32
+CMDS="wx ff0000e2010050e30000001affffffea70009de594008de5e4139fe500f09ee5
+e asm.arch=arm
+e asm.bits=32
+.a2f
+afb
+"
+EXPECT='0x00000000 0x0000000c 00:0000 12 j 0x00000010 f 0x0000000c
+0x0000000c 0x00000010 00:0000 4 j 0x00000010
+0x00000010 0x00000020 00:0000 16
+'
+run_test
+
+NAME="ldr code analysis"
+FILE=malloc://32
+CMDS="
+wx 20c09fe5 0cc09ae7
+e asm.arch=arm
+e asm.bits=32
+# pd 2 - note different colors
+pi 2
+ao~type[2]
+ao@4~type[2]
+"
+EXPECT='ldr ip, [pc, 0x20]
+ldr ip, [sl, ip]
+address: 0x0
+opcode: ldr ip, [pc, 0x20]
+mnemonic: ldr
+prefix: 0
+id: 75
+bytes: 20c09fe5
+ptr: 0x00000028
+refptr: 4
+size: 4
+type: load
+esil: 2,2,8,$$,+,>>,<<,32,+,[4],ip,=
+stack: null
+family: cpu
+address: 0x4
+opcode: ldr ip, [sl, ip]
+mnemonic: ldr
+prefix: 0
+id: 75
+bytes: 0cc09ae7
+refptr: 0
+size: 4
+type: load
+esil: ip,sl,+,[4],ip,=
+stack: null
+family: cpu
+'
+run_test
+
+NAME="endian"
+BROKEN=
+FILE=malloc://32
+CMDS="
+e asm.arch=arm.gnu
+e asm.bits=32
+wx e59a9ae7
+e cfg.bigendian=false
+pi 1@0
+e cfg.bigendian=true
+pi 1@0
+"
+EXPECT='ldr r9, [sl, r5, ror 21]
+ldr r9, [sl, 2791]
+'
+run_test
+
+NAME="ldr thumb"
+BROKEN=
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx 2249224a
+ao~^ptr
+ao@2~^ptr
+"
+EXPECT='ptr: 0x0000008c
+ptr: 0x0000008c
+'
+run_test
+
+NAME="arm32 bxeq lr"
+BROKEN=
+FILE=malloc://512
+CMDS="
+e asm.calls=false
+e asm.arch=arm
+e asm.bits=32
+wx 021081e0 1eff2f01 0020a0e3 1eff2fe1
+af
+pd 4
+"
+EXPECT="/ (fcn) fcn.00000000 16
+|           0x00000000      021081e0       add r1, r1, r2
+|           0x00000004      1eff2f01       bxeq lr
+|           0x00000008      0020a0e3       mov r2, 0
+\           0x0000000c      1eff2fe1       bx lr
+"
+run_test
+
+
+NAME="arm32 blx switches bits"
+BROKEN=
+FILE=malloc://512
+CMDS="
+e asm.arch=arm
+e asm.bits=32
+wx fffffffa 04210924
+af
+pi 2 @4
+"
+EXPECT="movs r1, 4
+movs r4, 9
+"
+run_test
+
+
+NAME="arm32 bx switches bits on odd location"
+BROKEN=
+FILE=malloc://512
+CMDS="
+e asm.arch=arm
+e asm.bits=32
+wx 0910 a0e3 11ff 2fe1 0421 0924
+aae
+pi 2 @8
+"
+EXPECT="movs r1, 4
+movs r4, 9
+"
+run_test
+
+NAME="ELF ARM: thumb/arm switch"
+BROKEN=
+FILE=../../bins/elf/analysis/libstagefright_soft_g711dec.so
+CMDS='
+af
+afi~size
+afi~size
+'
+EXPECT='size: 28
+size: 28
+'
+run_test

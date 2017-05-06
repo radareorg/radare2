@@ -1,0 +1,420 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='fs-fd-flags-visibility'
+BROKEN=
+CMDS='fs jeje
+f hidden
+fs jojo
+f visible
+fd
+f
+'
+EXPECT='visible
+0x00000000 1 visible
+'
+run_test
+
+NAME='f command with space'
+CMDS='f  foobar=0x1000
+f
+'
+EXPECT='0x00001000 1 foobar
+'
+run_test
+
+NAME='no flags'
+CMDS='f
+'
+EXPECT=''
+run_test
+
+NAME='no flags*'
+CMDS='f*
+'
+EXPECT=''
+run_test
+
+NAME='fs *'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs *
+fs~?^*
+'
+EXPECT='0
+'
+run_test
+
+NAME='fs *'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs *
+fs~?*
+'
+EXPECT='0
+'
+run_test
+
+NAME='fs *'
+FILE=malloc://1024
+BROKEN=
+CMDS='fs-*
+fs flagspace_1
+f flag_in_fs1
+fs flagspace_2
+f flag_in_fs2
+fs *
+f
+'
+EXPECT='0x00000000 1 flag_in_fs1
+0x00000000 1 flag_in_fs2
+'
+run_test
+
+NAME='fs test_flagspace'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs test_flagspace
+fs~?test_flagspace
+'
+EXPECT='1
+'
+run_test
+
+NAME='fs-test_flagspace'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs test_flagspace
+fs-test_flagspace
+fs~?test_flagspace
+'
+EXPECT='0
+'
+run_test
+
+NAME='fs-test_flagspace'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs-*
+fs~?0
+'
+EXPECT='0
+'
+run_test
+
+NAME='fs-.'
+FILE=malloc://1024
+BROKEN=
+CMDS='fs test_flagspace
+fs test_bloh
+fs test_blah
+fs-.
+fs~?test_blah
+'
+EXPECT='0
+'
+run_test
+
+
+NAME='fsm'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs-*
+fs test
+fsm str.Hello_World test
+fs
+'
+EXPECT='0    1 * test
+'
+run_test
+
+NAME='fsr'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='fs-*
+fs test
+fs test
+fsr test2
+fs
+'
+EXPECT='0    0 * test2
+'
+run_test
+
+NAME='fSn'
+FILE=malloc://1024
+BROKEN=
+CMDS='f c @ 0x00000000
+f b @ 0x00000000
+f a @ 0x00000000
+fSn
+f
+'
+EXPECT='0x00000000 1 a
+0x00000000 1 b
+0x00000000 1 c
+'
+run_test
+
+NAME='fSo'
+FILE=malloc://1024
+BROKEN=
+CMDS='f a @ 0x00000002
+f b @ 0x00000001
+f c @ 0x00000000
+fSo
+f
+'
+EXPECT='0x00000000 1 c
+0x00000001 1 b
+0x00000002 1 a
+'
+run_test
+
+NAME='fr'
+FILE=malloc://1024
+BROKEN=
+CMDS='f blah
+fr blah bloh
+f
+'
+EXPECT='0x00000000 1 bloh
+'
+run_test
+
+NAME='fm'
+FILE=malloc://1024
+BROKEN=
+CMDS='f blah
+fm 0x10
+f
+'
+EXPECT='0x00000010 1 blah
+'
+run_test
+
+NAME='fl'
+FILE=malloc://1024
+BROKEN=
+CMDS='f blah 0x0000000a
+fl blah 0x00000003
+fl
+f-blah
+f test 12 @ 33
+f
+fl test 333
+f
+'
+EXPECT='0x00000003
+0x00000021 12 test
+0x00000021 333 test
+'
+run_test
+
+NAME='fj'
+FILE=malloc://1024
+BROKEN=
+CMDS='f blah 0x0000000a @ 0x0000000b
+f bloh 0x00000003 @ 0x00000002
+fj
+'
+EXPECT='[{"name":"blah","size":"10","offset":11},{"name":"bloh","size":"3","offset":2}]
+'
+run_test
+
+NAME='fe'
+FILE=malloc://1024
+BROKEN=
+CMDS='fe a
+fe a
+fe a
+fe-
+fe b
+fe b
+fe b
+f
+'
+EXPECT='0x00000000 1 a.0
+0x00000000 1 a.1
+0x00000000 1 a.2
+0x00000000 1 b.0
+0x00000000 1 b.1
+0x00000000 1 b.2
+'
+run_test
+
+NAME='fd'
+FILE=malloc://1024
+BROKEN=
+CMDS='fe a
+fd 0x100
+'
+EXPECT='a.0 + 256
+'
+run_test
+
+NAME='fC'
+FILE=malloc://1024
+BROKEN=
+CMDS='f a
+fC a blabla
+pd~?blabla
+'
+EXPECT='1
+'
+run_test
+
+NAME='fb'
+FILE=malloc://1024
+BROKEN=
+CMDS='fb 0x100
+f a
+f
+'
+EXPECT='0x00000100 1 a
+'
+run_test
+
+NAME='fb2'
+FILE=malloc://1024
+BROKEN=
+CMDS='fe a
+fe a
+fe a
+fb 0x100 a.*
+f
+'
+EXPECT='0x00000100 1 a.0
+0x00000100 1 a.1
+0x00000100 1 a.2
+'
+run_test
+
+NAME='f--'
+FILE=malloc://1024
+BROKEN=
+CMDS='f a
+f--
+f
+'
+EXPECT=''
+run_test
+
+NAME='f.'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='aaa
+f.blah
+f.
+f.-blah@entry0
+f.
+'
+EXPECT='0x00400410 blah   [entry0 + 0]
+'
+run_test
+
+NAME='f. display'
+FILE=../bins/elf/analysis/main
+BROKEN=
+CMDS='aaa
+e asm.arch=x86
+e asm.bits=32
+s entry0
+e asm.reflines=false
+e asm.offset=false
+e asm.functions=false
+e asm.comments=false
+f--
+f.blah
+pd 1
+'
+EXPECT='           .blah:
+               31ed           xor ebp, ebp
+'
+run_test
+
+NAME='Set/get'
+CMDS='
+f cat
+f rimmer 12
+f lister 32@666
+f kryten 32 666
+f+skutter 1 @ 12
+f
+'
+EXPECT='0x00000000 1 cat
+0x00000000 12 rimmer
+0x0000029a 32 lister
+0x0000029a 32 kryten
+0x0000000c 1 skutter
+'
+run_test
+
+NAME='flags (JSON)'
+CMDS='
+# Add flags.
+f cat
+f rimmer 12
+f lister 32@666
+f kryten 32 666
+f+skutter 1 @ 12
+fj
+'
+EXPECT='[{"name":"cat","size":"1","offset":0},{"name":"rimmer","size":"12","offset":0},{"name":"lister","size":"32","offset":666},{"name":"kryten","size":"32","offset":666},{"name":"skutter","size":"1","offset":12}]
+'
+run_test
+
+NAME='flag alias'
+CMDS='
+fa foo=bar+3
+f bar=3
+?v foo
+'
+EXPECT='0x6
+'
+run_test
+
+NAME='flag alias 2'
+CMDS='
+fa foo bar+3
+f bar=3
+?v foo
+'
+EXPECT='0x6
+'
+run_test
+
+NAME='flag alias infinite check'
+CMDS='
+fa foo=foo+3
+?v foo
+'
+EXPECT='0x3
+'
+run_test
+
+NAME='flag prefix dump'
+CMDS='
+f jiji=1
+f jojo=2
+f base=100
+.f*base
+?vi jiji
+?vi jojo
+'
+EXPECT='101
+102
+'
+run_test
+
+NAME='rename flags from bin'
+FILE='../bins/elf/analysis/main'
+CMDS='f~sym.__libc_csu_init
+fr sym.__libc_csu_init newname
+f~sym.__libc_csu_init
+f~newname
+'
+EXPECT='0x00400520 137 sym.__libc_csu_init
+0x00400520 137 newname
+'
+run_test

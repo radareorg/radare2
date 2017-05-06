@@ -1,0 +1,27 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='MZ: corkami cdogs.exe - open'
+FILE=../../bins/mz/cdogs.exe
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='MZ: corkami cdogs.exe - entrypoint'
+FILE=../../bins/mz/cdogs.exe
+CMDS='
+s
+'
+EXPECT='0x41c
+'
+run_test
+
+NAME='MZ: corkami cdogs.exe - pi 1'
+FILE=../../bins/mz/cdogs.exe
+CMDS='
+pi 1
+'
+EXPECT='jmp 0x4c5
+'
+run_test

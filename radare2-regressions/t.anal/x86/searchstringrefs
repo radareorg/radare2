@@ -1,0 +1,18 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+FILE=../../bins/pe/test.exe
+CMDS='e anal.searchstringrefs=true
+s 0x401000
+af
+afx
+
+'
+EXPECT='d 0x00401006 -> 0x0040d004
+s 0x00401010 -> 0x0040b9a0
+C 0x00401015 -> 0x004010e4
+d 0x0040101e -> 0x0040b9a8
+C 0x00401023 -> 0x004010c7
+C 0x00401032 -> 0x0040103b
+'
+run_test

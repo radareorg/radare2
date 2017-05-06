@@ -1,0 +1,146 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2016 - pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='iphone-arm-esil tests'
+FILE=../bins/mach0/FileDP
+CMDS='s main
+aeim
+e asm.emu=true
+e asm.emustr=false
+pd 4~!--
+'
+EXPECT='            0x000028ec      b0402de9       push {r4, r5, r7, lr}       ; sp=0x177ff0 
+            0x000028f0      08708de2       add r7, sp, 8               ; r7=0x177ff8 
+            0x000028f4      05dd4de2       sub sp, sp, 0x140           ; sp=0x177eb0 
+            0x000028f8      07d0cde3       bic sp, sp, 7               ; sp=0x177eb0 
+'
+
+run_test
+
+NAME='iphone-arm-esil pdsf'
+FILE=../bins/mach0/FileDP
+BROKEN=
+CMDS='s main
+e io.sectonly=true
+e asm.emu=true
+e asm.emustr=true
+af
+pdsf
+'
+EXPECT='0x00002920 "alloc"
+0x00002928 bl sym.imp.objc_msgSend
+0x0000293c "init"
+0x00002940 bl sym.imp.objc_msgSend
+0x0000294c "X..."
+0x0000295c bl sym.imp.objc_msgSend
+0x00002970 bl sym.imp.objc_msgSend
+0x00002998 "Usage: FileDP [-f/-d] [Full path to file/directory] "
+0x0000299c bl sym.imp.puts
+0x000029c8 bl sym.imp.strcmp
+0x00002a1c bl sym.imp.objc_msgSend
+0x00002a38 bl sym.imp.objc_msgSend
+0x00002a64 bl sym.imp.objc_msgSend
+0x00002a90 bl sym.imp.objc_msgSend
+0x00002aa4 bl sym.imp.NSLog
+0x00002ab0 "File Not Found "
+0x00002ab4 bl sym.imp.puts
+0x00002b00 bl sym.imp.objc_msgSend
+0x00002b1c bl sym.imp.objc_msgSend
+0x00002b48 bl sym.imp.objc_msgSend
+0x00002b64 bl sym.imp.objc_msgSend
+0x00002ba4 bl sym.imp.objc_msgSend
+0x00002c00 bl sym.imp.objc_msgSend
+0x00002c54 bl sym.imp.objc_enumerationMutation
+0x00002ca0 bl sym.imp.objc_msgSend
+0x00002cc0 bl sym.imp.objc_msgSend
+0x00002cec bl sym.imp.objc_msgSend
+0x00002cfc str.cstr.file_name_is:_____protection_class:__
+0x00002d04 bl sym.imp.NSLog
+0x00002d50 bl sym.imp.objc_msgSend
+0x00002d84 "Directory Not found "
+0x00002d88 bl sym.imp.puts
+0x00002dac bl sym.imp.objc_msgSend
+0x00002dcc bx lr
+'
+run_test
+
+NAME='sectonly esil stack'
+FILE=../bins/mach0/FileDP
+CMDS='s main
+aeim
+e asm.emu=true
+e asm.emustr=true
+e io.sectonly=false
+.ar*
+pxW 4 @ sp
+e io.sectonly=true
+pxW 4 @ sp
+S 0x100000 0x100000 983040 983040 stack
+pxW 4 @ sp
+'
+EXPECT='0x00178000 0x00000000 sb
+0x00178000 0x00000000 sb
+0x00178000 0x00000000 sb
+'
+
+run_test
+
+NAME='thumb emulation arm issue'
+FILE=../bins/mach0/FileDP
+CMDS='aes
+e asm.bits'
+EXPECT='32
+'
+run_test
+
+NAME='string refs: thumb'
+FILE=../bins/mach0/test-thumb
+CMDS='af
+e asm.emu=true
+e asm.emustr=true
+pdf~?str.string
+'
+EXPECT='6
+'
+run_test
+
+NAME='string refs: arm32'
+FILE=../bins/mach0/test-arm32
+CMDS='af
+e asm.emu=true
+e asm.emustr=true
+pdf~?str.string
+'
+EXPECT='6
+'
+run_test
+
+NAME='string refs: arm64'
+FILE=../bins/mach0/test-arm64
+CMDS='af
+e asm.emu=true
+e asm.emustr=true
+pdf~?str.string
+'
+EXPECT='6
+'
+run_test
+
+NAME='arm32: thumb'
+FILE=../bins/mach0/arm32-ofp.lzh
+CMDS='pd 2~?push
+'
+EXPECT='1
+'
+run_test
+
+NAME='thumb: arm32'
+FILE=../bins/mach0/arm16-ofp.lzh
+CMDS='pd 2~?push
+'
+EXPECT='1
+'
+run_test

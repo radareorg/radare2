@@ -1,0 +1,211 @@
+#!/bin/sh
+# LGPLv3 - Copyright (C) 2014-2017  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='fatmach0 arm16 symbol alignment'
+FILE=../../bins/mach0/a.out
+ARGS=
+CMDS='s sym._call
+pi 1
+'
+EXPECT='push {r7, lr}
+'
+run_test
+
+NAME='mach0 arm16 symbol alignment'
+FILE=../../bins/mach0/a.out.fat/a.out.arm_32.0
+ARGS=
+CMDS='s sym._call
+pi 1
+'
+EXPECT='push {r7, lr}
+'
+run_test
+
+NAME='fatmach0 arm64 symbol alignment'
+FILE=../../bins/mach0/a.out
+ARGS="-a arm -b 64"
+CMDS='s sym._call
+pi 1
+'
+EXPECT='stp x29, x30, [sp, -0x10]!
+'
+run_test
+
+NAME='mach0 arm64 symbol alignment'
+FILE=../../bins/mach0/a.out.fat/a.out.arm_64.1
+ARGS=
+CMDS='s sym._call
+pi 1
+'
+EXPECT='stp x29, x30, [sp, -0x10]!
+'
+run_test
+
+NAME='fatmach0 archs'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+# post-2014-04-18
+CMDS='iA'
+# pre-2014-04-18
+#CMDS='!rabin2 -A $FILE | cut -d " " -f1-4'
+EXPECT='000 0x00001000 13792 x86_64 x86 64 all
+001 0x00005000 13760 x86_32 386
+002 0x00009000 13616 ppc_32 7400
+'
+run_test
+
+NAME='fatmach0 entry0'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-a x86 -b 64'
+CMDS='?v entry0'
+EXPECT='0x100000ef8
+'
+run_test
+
+NAME='fatmach0 entry0 data'
+ESSENTIAL=1
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-a x86 -b 64'
+CMDS='p8 16 @ entry0'
+EXPECT='6a004889e54883e4f0488b7d08488d75
+'
+run_test
+
+NAME='fatmach0 entry1'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-a x86 -b 32'
+CMDS='?v entry0'
+EXPECT='0x1f44
+'
+run_test
+
+NAME='fatmach0 entry1 data'
+ESSENTIAL=1
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-a x86 -b 32'
+CMDS='p8 16 @ entry0'
+EXPECT='6a0089e583e4f083ec108b5d04891c24
+'
+run_test
+
+NAME='fatmach0 entry1 rabin2'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-n'
+CMDS="!rabin2 -a x86 -b 32 -qe ${FILE}"
+EXPECT='0x00001f44
+'
+run_test
+
+NAME='fatmach0 entry1 rabin2'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-n'
+CMDS="!rabin2 -p -a x86 -b 32 -qe ${FILE}"
+EXPECT='0x00005f44
+'
+run_test
+
+NAME='fatmach0 entry1 rabin2 (2)'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-n'
+CMDS="!rabin2 -a x86 -b 32 -e ${FILE} | grep paddr="
+EXPECT='vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00000000 haddr=0x00000420 type=program
+'
+run_test
+
+NAME='fatmach0 entry2'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-a ppc -b 32'
+CMDS='?v entry0'
+EXPECT='0x1f64
+'
+run_test
+
+NAME='fatmach0 entry2 data'
+ESSENTIAL=1
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS='-a ppc -b 32'
+CMDS='p8 16 @ entry0'
+EXPECT='7c3a0b783821fffc5421003438000000
+'
+run_test
+
+NAME='fatmach0 archs'
+BROKEN=
+FILE=../../bins/mach0/mach0-x86-64
+ARGS=
+# post-2014-04-18
+CMDS='iA'
+# pre-2014-04-18
+#CMDS='!rabin2 -A $FILE | cut -d " " -f1-4'
+EXPECT='000 0x00000000 8496 x86_64
+'
+run_test
+
+NAME='fatmach0 rabin2 archs iA'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS="iA"
+EXPECT='000 0x00001000 13792 x86_64 x86 64 all
+001 0x00005000 13760 x86_32 386
+002 0x00009000 13616 ppc_32 7400
+'
+run_test
+
+NAME='fatmach0 rabin2 archs'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=-n
+CMDS="!rabin2 -A ${FILE}"
+EXPECT='000 0x00001000 13792 x86_64 x86 64 all
+001 0x00005000 13760 x86_32 386
+002 0x00009000 13616 ppc_32 7400
+'
+run_test
+
+NAME='fatmach0 extract'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=-n
+CMDS="!rabin2 -x ${FILE};!rm -rf fatmach0-3true.fat"
+EXPECT='fatmach0-3true.fat/fatmach0-3true.x86_64.0 created (13792)
+fatmach0-3true.fat/fatmach0-3true.x86_32.1 created (13760)
+fatmach0-3true.fat/fatmach0-3true.ppc_32.2 created (13616)
+'
+run_test
+
+NAME='fatmach0 sections'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS="-a x86 -b 64"
+CMDS="S=~?"
+EXPECT='10
+'
+run_test
+
+
+NAME='fatmach0 rebase'
+BROKEN=
+FILE=../../bins/mach0/fatmach0-3true
+ARGS="-a x86 -b32 -B 0x90000000"
+CMDS="is"
+EXPECT='[Symbols]
+vaddr=0x90000000 paddr=0x00005000 ord=000 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=__mh_execute_header
+vaddr=0x95613542 paddr=0x00005000 ord=001 fwd=NONE sz=0 bind=LOCAL type=FUNC name=radr://5614542
+vaddr=0x90000f94 paddr=0x00005f94 ord=002 fwd=NONE sz=0 bind=LOCAL type=FUNC name=imp.exit
+
+3 symbols
+'
+run_test

@@ -1,0 +1,117 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## "Test suite test".
+
+NAME='newline ?e \n'
+FILE=malloc://1024
+ARGS=
+CMDS='
+# The test suite is not allowed to interpret the output!
+?e \n
+'
+EXPECT='
+
+'
+run_test newline
+
+## Basic input tests.
+
+NAME='comments'
+FILE=malloc://1024
+ARGS=
+CMDS='
+# This is a comment.
+# This is a comment with a ; in it - and it is still only a comment.
+# Other stuff is also ignored: `..` ~ ..
+
+# But inside a command line only the commands after the # are ignored.
+?v $$ # this must beignored ; ?v $$ | ls
+'
+EXPECT='0x0
+'
+run_test
+
+NAME='w foo#bar'
+FILE=malloc://1024
+ARGS=
+CMDS='
+w foo#bar
+psz
+'
+EXPECT='foo#bar
+'
+run_test
+
+NAME='"quoted"'
+FILE=malloc://1024
+ARGS=
+CMDS='
+"w fuck;you@23"
+psz
+'
+EXPECT='fuck;you@23
+'
+run_test
+
+NAME='"quoted"@addr'
+FILE=malloc://1024
+ARGS=
+CMDS='
+"w fuck;you@23"@0x10
+psz@0x10
+'
+EXPECT='fuck;you@23
+'
+run_test
+
+NAME='"?e foo" "?e bar"'
+FILE=malloc://1024
+ARGS=
+CMDS='
+"?e foo";"?e bar"
+'
+EXPECT='foo
+bar
+'
+run_test
+
+NAME='at3 "?vi $$"@3;"?e bar"'
+FILE=malloc://1024
+ARGS=
+CMDS='"?vi $$"@3;?e bar'
+EXPECT='3
+bar
+'
+run_test
+
+NAME='at3 "?vi $$"@3;"?e bar"'
+FILE=malloc://1024
+ARGS=
+CMDS='"?vi $$"@3;"?e bar"'
+EXPECT='3
+bar
+'
+run_test
+
+NAME='?e foo;?e bar'
+FILE=malloc://1024
+ARGS=
+CMDS='
+?e foo;?e bar
+'
+EXPECT='foo
+bar
+'
+run_test
+
+NAME=';?e bar'
+FILE=malloc://1024
+ARGS=
+CMDS='
+;?e bar
+'
+EXPECT='bar
+'
+run_test

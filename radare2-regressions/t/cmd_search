@@ -1,0 +1,533 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2015  pancake, Edd Barrett, Simon Ruderich, jay
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# "!" - run commands (via system)
+
+NAME='/ search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='
+wx 666f6f00
+/ foo\x00
+'
+EXPECT='0x00000000 hit0_0 "foo\\u0000"
+'
+run_test
+
+NAME='/ search from/to (seek 0)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+BROKEN=
+CMDS='
+s 0
+e search.from = 0
+e search.to = 0x00000050
+/ ELF
+'
+EXPECT='0x00000001 hit0_0 "ELF"
+'
+run_test
+
+NAME='/ search from/to (seek beyond data)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+BROKEN=
+CMDS='
+s 0x1000
+e search.from = 0
+e search.to = 0x00000050
+/ ELF
+'
+EXPECT='0x00000001 hit0_0 "ELF"
+'
+run_test
+
+NAME='/j search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='
+wx 666f6f00
+/j foo\x00
+'
+EXPECT='[{"offset": 0,"id:":0,"data":"foo\\u0000"}]
+'
+run_test
+
+NAME='/! search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='
+wx 666f6f00
+/! ff
+'
+EXPECT='0x00000000 hit0_0 "foo"
+'
+run_test
+
+NAME='/!x search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='
+wx 666f6f00
+/!x 00
+'
+EXPECT='0x00000000 hit0_0 66
+'
+run_test
+
+NAME='// search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='
+wx 666f6f00
+/!x 00
+//
+'
+EXPECT='0x00000000 hit0_0 66
+0x00000000 hit1_0 66
+'
+run_test
+
+NAME='// search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='
+wx 666f6f00
+/!x 00
+//
+'
+EXPECT='0x00000000 hit0_0 66
+0x00000000 hit1_0 66
+'
+run_test
+
+NAME='/a search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='e asm.bits=32
+"wa add esp,8;pop ebx; pop ebp; ret"
+/a add esp, 8
+'
+EXPECT='0x00000000 hit0_0 83c408
+'
+run_test
+
+NAME='/a search from/to (seek 0)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=-n
+CMDS='
+s 0
+e search.from = 0
+e search.to = 0x50
+/a xor al, 0x80
+'
+EXPECT='0x0000003c hit0_0 3480
+0x00000040 hit0_1 3480
+'
+run_test
+
+NAME='/a search from/to (seek 0)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=-n
+CMDS='
+s 0
+e search.from = 0
+e search.to = 0x50
+# /a xor al, 0x80
+/x 3480
+'
+EXPECT='0x0000003c hit0_0 3480
+0x00000040 hit0_1 3480
+'
+run_test
+
+NAME='/a push esp'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+CMDS='
+/a push esp
+'
+EXPECT='0x08048058 hit0_0 54
+0x0804805c hit0_1 54
+0x08048060 hit0_2 54
+0x08048369 hit0_3 54
+'
+run_test
+
+NAME='/a search from/to (seek beyond data)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+CMDS='
+s 0x1000
+e search.from = 0
+e search.to = 0x00000050
+/a xor al, 0x80
+'
+EXPECT='0x0000003c hit0_0 3480
+0x00000040 hit0_1 3480
+'
+run_test
+
+NAME='/x search from/to (seek beyond data)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+CMDS='
+s 0x1000
+e search.from = 0
+e search.to = 0x00000050
+/x 3480
+'
+EXPECT='0x0000003c hit0_0 3480
+0x00000040 hit0_1 3480
+'
+run_test
+
+NAME='/A search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='e asm.bits=32
+"wa add esp,8;pop ebx; pop ebp; ret"
+/A ret
+'
+EXPECT='0x00000005 1 ret
+'
+run_test
+
+NAME='/A search from/to (seek 0)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+BROKEN=
+CMDS='
+s 0
+e search.from = 0
+e search.to = 0x00000050
+/A xor
+'
+EXPECT='0x0000003c 2 xor al, 0x80
+0x00000040 2 xor al, 0x80
+'
+run_test
+
+NAME='/A search from/to (seek beyond data)'
+FILE='../bins/elf/ioli/crackme0x00'
+ARGS=
+BROKEN=
+CMDS='
+s 0x1000
+e search.from = 0
+e search.to = 0x00000050
+/A xor
+'
+EXPECT='0x0000003c 2 xor al, 0x80
+0x00000040 2 xor al, 0x80
+'
+run_test
+
+NAME='Rop search'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='e asm.bits=32
+"wa add esp,8;pop ebx; pop ebp; ret"
+e scr.color=false
+/R
+q
+'
+EXPECT='  0x00000000             83c408  add esp, 8
+  0x00000003                 5b  pop ebx
+  0x00000004                 5d  pop ebp
+  0x00000005                 c3  ret
+
+  0x00000001               c408  les ecx, [eax]
+  0x00000003                 5b  pop ebx
+  0x00000004                 5d  pop ebp
+  0x00000005                 c3  ret
+
+  0x00000002             085b5d  or byte [ebx + 0x5d], bl
+  0x00000005                 c3  ret
+
+'
+run_test
+
+
+NAME='Rop search w/ regexp'
+FILE='malloc://1024'
+ARGS=
+BROKEN=
+CMDS='e asm.bits=32
+"wa add esp,8;pop ebx; pop ebp; ret"
+e scr.color=false
+/R/ or.*bl
+q
+'
+EXPECT='  0x00000002             085b5d  or byte [ebx + 0x5d], bl
+  0x00000005                 c3  ret
+
+'
+run_test
+
+
+NAME='Rop search w/ branch delay (mips)'
+FILE='malloc://128'
+ARGS=
+BROKEN=1
+CMDS='e asm.bits=32
+e asm.arch=mips
+e scr.color=false
+wx 1b000000040000001a0000004c08410018000000040000000800000000000070
+/R
+q
+'
+EXPECT='  0x00000000           1b000000  divu zero, zero, zero
+  0x00000004           04000000  sllv zero, zero, zero
+  0x00000008           1a000000  div zero, zero, zero
+  0x0000000c           4c084100  syscall 0x10421
+
+  0x00000010           18000000  mult zero, zero
+  0x00000014           04000000  sllv zero, zero, zero
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+
+'
+run_test
+
+NAME='/m search from/to (seek 0)'
+FILE='../bins/pe/standard.exe'
+ARGS=
+CMDS='
+s 0
+e search.from = 0
+e search.to = 0x10
+/m
+'
+EXPECT='0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+'
+run_test
+
+NAME='/m search from/to (seek beyond data)'
+FILE='../bins/pe/standard.exe'
+ARGS=
+CMDS='
+s 0x1000
+e search.from = 0
+e search.to = 0x10
+/m
+'
+EXPECT='0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+'
+run_test
+
+NAME='/x search from/to (seek 0)'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+s 0
+e search.from = 0
+e search.to = 0x200
+/x 41424344
+'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME='/x search from/to (seek beyond data)'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+s 0x1000
+e search.from = 0
+e search.to = 0x200
+/x 41424344
+'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME='/m search seek'
+FILE='../bins/pe/standard.exe'
+ARGS=
+CMDS='
+s 0x1000
+/m
+s
+'
+EXPECT='0x1000
+'
+run_test
+
+NAME='/x search seek'
+FILE='../bins/pe/standard.exe'
+ARGS=
+CMDS='
+s 0x1000
+/x 9090cd80
+s
+'
+EXPECT='0x1000
+'
+run_test
+
+NAME='/x wrong entries'
+FILE='../bins/elf/analysis/go_stripped'
+ARGS=
+BROKEN=1
+CMDS='
+/x 653b2530000000724b53b834e7150883ec188
+'
+EXPECT='0x0805ae90 hit0_0 653b2530000000724b53b834e7150883ec
+0x0805b030 hit0_1 653b2530000000724b53b834e7150883ec
+'
+run_test
+
+NAME='search range hex'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+e search.from = 0x50
+e search.to = 0x150
+/x 41424344
+'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME='search range hex'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+e search.from = 0x50
+e search.to = 0x90
+/x 41424344
+'
+EXPECT=''
+run_test
+
+NAME='search range hex'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+e search.from = 0x100
+e search.to = 0x104
+/x 41424344
+'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME='search range hex'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+e search.from = 0x101
+e search.to = 0x104
+/x 41424344
+'
+EXPECT=''
+run_test
+
+NAME='search range hex'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+e search.from = 0x100
+e search.to = 0x103
+/x 41424344
+'
+EXPECT=''
+run_test
+
+NAME='search range hex (@..)'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+/x 41424344 @..0x50 0x150
+'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME='search range hex (@..)'
+FILE='malloc://1024'
+ARGS=
+CMDS='
+w ABCD @ 0x100
+b 0x100
+/x 41424344 @..0x50 0x90
+'
+EXPECT=''
+run_test
+
+NAME="backward search hex"
+FILE=malloc://1024
+CMDS='w ABCD @ 0x100
+e search.from = 0x50
+e search.to = 0x150
+b 0x100
+/bx 41424344'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME="backward search hex"
+FILE=malloc://1024
+CMDS='w ABCD @ 0x100
+e search.from = 0x110
+e search.to = 0x150
+b 0x100
+/bx 41424344'
+EXPECT=''
+run_test
+
+NAME="backward search hex"
+FILE=malloc://1024
+CMDS='w ABCD @ 0x100
+e search.from = 0x100
+e search.to = 0x104
+b 0x100
+/bx 41424344'
+EXPECT='0x00000100 hit0_0 41424344
+'
+run_test
+
+NAME="backward search hex"
+FILE=malloc://1024
+CMDS='w ABCD @ 0x100
+e search.from = 0x100
+e search.to = 0x103
+b 0x100
+/bx 41424344'
+EXPECT=''
+run_test
+
+NAME="backward search hex"
+FILE=malloc://1024
+CMDS='w ABCD @ 0x100
+e search.from = 0x101
+e search.to = 0x104
+b 0x100
+/bx 41424344'
+EXPECT=''
+run_test

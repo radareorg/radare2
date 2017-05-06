@@ -1,0 +1,220 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='loading a BIOS file [64k]'
+FILE=../../bins/firmware/bios_64k.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_64k.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_64k.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='ljmp follow'
+FILE=../../bins/firmware/bios_64k.bin
+ARGS=
+BROKEN=
+CMDS="s \$j
+? \$\$"
+EXPECT='1048490 0xfffaa 03777652 1023.9K f000:0faa 1048490 "\xaa\xff\x0f" 000011111111111110101010 1048490.0 1048490.000000f 1048490.000000
+'
+run_test
+
+NAME='loading a BIOS file [128k]'
+FILE=../../bins/firmware/bios_128k.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_128k.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_128k.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='loading a BIOS file [256k]'
+FILE=../../bins/firmware/bios_256k.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_256k.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_256k.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='loading a BIOS file [512k]'
+FILE=../../bins/firmware/bios_512k.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_512k.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_512k.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='loading a BIOS file [1M]'
+FILE=../../bins/firmware/bios_1M.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_1M.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_1M.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='loading a BIOS file [2M]'
+FILE=../../bins/firmware/bios_2M.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_2M.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_2M.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='loading a BIOS file [4M]'
+FILE=../../bins/firmware/bios_4M.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_4M.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_4M.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test
+
+NAME='loading a BIOS file [8M]'
+FILE=../../bins/firmware/bios_8M.bin
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='entrypoint decoding'
+BROKEN=
+FILE=../../bins/firmware/bios_8M.bin
+ARGS=''
+CMDS='ie~addr'
+EXPECT='vaddr=0x000ffff0 paddr=0x00000000 baddr=0x00000000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME='corrupted section data'
+FILE=../../bins/firmware/bios_8M.bin
+ARGS=''
+BROKEN=
+CMDS="pi 1"
+EXPECT='ljmp 0xf000:0xffaa
+'
+run_test

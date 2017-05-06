@@ -1,0 +1,146 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# fixed in a branch... but breaks others.. must rework
+NAME='quotes multicommands'
+FILE=malloc://128
+BROKEN=
+ARGS="-a x86 -b32 "
+CMDS='"wa nop;nop";pi 3'
+EXPECT='nop
+nop
+add byte [eax], al
+'
+run_test
+
+NAME='quotes multicommands 2'
+FILE=malloc://128
+BROKEN=
+ARGS="-a x86 -b32 "
+CMDS='p8 1;"wa nop;nop";pi 3'
+EXPECT='00
+nop
+nop
+add byte [eax], al
+'
+run_test
+
+NAME='quotes multicommands 2'
+FILE=malloc://128
+BROKEN=
+ARGS="-a x86 -b32 "
+CMDS='"w hello;world";"wa inc eax;inc eax";psz'
+EXPECT='@@llo;world
+'
+run_test
+
+NAME='p8 2@x:9090'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+p8 2 @x:9090
+'
+EXPECT='9090
+'
+run_test
+
+NAME='pi 2@x:9090'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+pi 2 @x:9090
+'
+EXPECT='nop
+nop
+'
+run_test
+
+NAME='pdi 2@x:9090@0x1000'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+pdi 2 @x:9090@0x1000
+'
+EXPECT='0x00001000               90  nop
+0x00001001               90  nop
+'
+run_test
+
+NAME='pd 2@x:9090'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+pd 2 @x:9090
+'
+EXPECT='            0x00000000      90             nop
+            0x00000001      90             nop
+'
+run_test
+
+
+NAME='pad 9090'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+pad 9090
+'
+EXPECT='nop
+nop
+'
+run_test
+
+NAME='pie 90'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 4989d1
+pie 1
+'
+EXPECT='0x00000000 rdx,r9,=
+'
+run_test
+
+NAME='pa nop,nop'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+"pa nop;nop"
+'
+EXPECT='9090
+'
+run_test
+
+NAME='r2 asm with pa'
+CMDS="e asm.arch=x86
+e asm.bits=32
+f TEST=33
+pa mov eax, TEST
+"
+BROKEN=1
+EXPECT="b821000000
+"
+run_test
+
+NAME='r2 asm with pa'
+CMDS="e asm.arch=x86
+e asm.bits=32
+f TEST=33
+pa mov eax, 33
+"
+EXPECT="b821000000
+"
+run_test

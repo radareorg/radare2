@@ -1,0 +1,106 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='af jmp after ret'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
+af
+afl~?
+'
+EXPECT='1
+'
+run_test
+
+
+NAME='af jmp after ret'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
+af
+afl~?
+afl~[2]
+'
+EXPECT='1
+60
+'
+run_test
+
+
+NAME='af 8 bbs 4 ret and some jumps'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=32
+wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
+af
+afb
+'
+EXPECT='0x00000000 0x00000004 00:0000 4 j 0x00000009 f 0x00000004
+0x00000004 0x00000008 00:0000 4 j 0x0000000d f 0x00000008
+0x00000008 0x00000009 00:0000 1
+0x00000009 0x0000000d 00:0000 4 j 0x0000000e
+0x0000000d 0x0000000e 00:0000 1
+0x0000000e 0x00000012 00:0000 4 j 0x00000013 f 0x00000012
+0x00000012 0x00000013 00:0000 1
+0x00000013 0x00000019 00:0000 6
+'
+run_test
+
+
+NAME='af 3bbs with entry in the middle of the function'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=32
+wx 31c031c983c10183c10285c975f231c931c040c3
+s 0xa
+af
+afb
+'
+EXPECT='0x00000000 0x0000000a 00:0000 10 j 0x0000000a
+0x0000000a 0x0000000e 00:0000 4 j 0x00000000 f 0x0000000e
+0x0000000e 0x00000014 00:0000 6
+'
+
+run_test
+
+
+NAME='af 6 bbs with entry at the end of the function'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=32
+wx 31c083c00183e801750831c083e80183c00131c983c10183e90175e431d283ea0183c2017402ebd831c0c3
+s 0x26
+af
+afb
+'
+EXPECT='0x00000000 0x0000000a 00:0000 10 j 0x00000012 f 0x0000000a
+0x0000000a 0x00000012 00:0000 8 j 0x00000012
+0x00000012 0x0000001c 00:0000 10 j 0x00000000 f 0x0000001c
+0x0000001c 0x00000026 00:0000 10 j 0x00000028 f 0x00000026
+0x00000026 0x00000028 00:0000 2 j 0x00000000
+0x00000028 0x0000002b 00:0000 3
+'
+run_test

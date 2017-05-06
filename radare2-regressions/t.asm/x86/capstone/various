@@ -1,0 +1,15 @@
+#!/bin/sh
+for a in . .. ../.. ../../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh; done
+
+NAME='#81 into x86-32 only should return invalid on x86-64'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=x86
+e asm.bits=32
+wx CE
+e asm.bits = 64
+pi 1'
+EXPECT='invalid
+'
+run_test

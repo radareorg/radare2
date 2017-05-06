@@ -1,0 +1,67 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="ao cjmp"
+BROKEN=
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.arch=x86
+e asm.bits=32
+wx 761b
+ao~jump,fail,size
+'
+EXPECT='size: 2
+jump: 0x0000001d
+fail: 0x00000002
+'
+run_test
+
+
+NAME="aoj 31c0"
+BROKEN=
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.arch=x86
+e asm.bits=32
+wx 31c0
+aoj~{}
+'
+EXPECT='[
+  {
+    "opcode": "xor eax, eax",
+    "mnemonic": "xor",
+    "prefix": 0,
+    "id": 334,
+    "opex": {
+      "operands": [
+        {
+          "size": 4,
+          "rw": 3,
+          "type": "reg",
+          "value": "eax"
+        },
+        {
+          "size": 4,
+          "rw": 1,
+          "type": "reg",
+          "value": "eax"
+        }
+      ],
+      "modrm": true
+    },
+    "addr": 0,
+    "bytes": "31c0",
+    "size": 2,
+    "type": "xor",
+    "esil": "eax,eax,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
+    "refptr": 0,
+    "cycles": 1,
+    "delay": 0,
+    "family": "cpu"
+  }
+]
+'
+run_test

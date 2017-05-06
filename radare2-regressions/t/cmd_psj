@@ -1,0 +1,51 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+
+NAME="psj ascii"
+FILE=malloc://128
+CMDS='
+wx 72616461726520697320636f6f6c
+psj 14
+'
+
+EXPECT='{"string":"radare is cool","offset":0,"section":"unknown","length":14,"type":"ascii"}
+'
+
+run_test
+
+
+NAME="psj utf"
+FILE=malloc://128
+CMDS='
+wx e9bb91e5aea2
+psj 6
+'
+EXPECT='{"string":"\\u00e9\\u00bb\\u0091\\u00e5\\u00ae\\u00a2","offset":0,"section":"unknown","length":6,"type":"utf"}
+'
+
+run_test
+
+NAME="psj wide"
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS='
+s 0x08049600
+psj 4
+'
+
+EXPECT='{"string":"\\u000b\\u0000\\u0000\\u0000","offset":134518272,"section":".dynamic","length":4,"type":"wide"}
+'
+
+run_test
+
+
+
+NAME="psj ascii 2"
+FILE=../bins/elf/analysis/hello-android-arm
+CMDS='
+s 0x00008358
+psj 11
+'
+EXPECT='{"string":"Hello World","offset":33624,"section":".rodata","length":11,"type":"ascii"}
+'
+run_test

@@ -1,0 +1,36 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+#pic disassember
+test_pic18c() {
+NAME="pic18c:${2}"
+FILE=malloc://8
+ARGS="-w -a pic18c"
+CMDS='wx '${1}'
+pi 1
+'
+EXPECT="${2}
+"
+run_test
+}
+test_pic18c d125 "addwf 0xd1, 0, 1"
+test_pic18c 3522 "addwfc 0x35, 1, 0"
+test_pic18c 8517 "andwf 0x85, 1, 1"
+test_pic18c 156a "clrf 0x15, 0"
+test_pic18c 481c "comf 0x48, 0, 0"
+test_pic18c 7163 "cpfseq 0x71, 1"
+test_pic18c 6264 "cpfsgt 0x62, 0"
+test_pic18c c460 "cpfslt 0xc4, 0"
+test_pic18c 15f0 "nop"
+test_pic18c 54ce49f0 "movff 0xe54, 0x49"
+test_pic18c 429f "bcf 0x42, 7, 1"
+test_pic18c 120f "addlw 0x12"
+test_pic18c fae7 "bnn 0xfa"
+test_pic18c a1ed12f6 "call 0x612a1, 1"
+test_pic18c 1ed5 "bra 0x51e"
+test_pic18c a7ef13f0 "goto 0x274e"
+test_pic18c 0d01 "movlb 0xd"
+test_pic18c 1200 "return 0"
+test_pic18c 2feea5f0 "lfsr fsr2, 4005"
+test_pic18c 02 "invalid"
+test_pic18c 0200 "invalid"

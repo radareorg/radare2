@@ -1,0 +1,15 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='@@= 10 20 30'
+FILE=-
+ARGS=
+CMDS='?v $$ @@= 10 20 30
+'
+EXPECT='0xa
+0x14
+0x1e
+'
+run_test
+

@@ -1,0 +1,9 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+CMDS='p8 3`~`
+'
+EXPECT='000000
+'
+
+run_test

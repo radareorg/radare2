@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='create pe x86-64'
+FILE=-
+IGNORE_ERR=1
+BROKEN=1
+ARGS=
+CMDS='rm /tmp/tiny64.pe
+!rabin2 -C pe64:cc -a x86 -b 64 /tmp/tiny64.pe
+ls -l /tmp/tiny64.pe~[3]
+rm /tmp/tiny64.pe
+'
+EXPECT='125
+'
+run_test
+
+NAME='create pe x86-64 auto-pe64'
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='rm /tmp/tiny64.pe
+!rabin2 -C pe:cc -a x86 -b 64 /tmp/tiny64.pe
+ls -l /tmp/tiny64.pe~[3]
+rm /tmp/tiny64.pe
+'
+EXPECT='125
+'
+run_test
+
+NAME='create pe x86-32'
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='rm /tmp/tiny32.pe
+!rabin2 -C pe:cc -a x86 -b 32 /tmp/tiny32.pe
+ls -l /tmp/tiny32.pe~[3]
+rm /tmp/tiny32.pe
+'
+EXPECT='125
+'
+run_test
+

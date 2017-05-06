@@ -1,0 +1,10 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='Cvb variable null pointer deref'
+FILE=../bins/elf/analysis/x64-simple
+CMDS='
+aaa
+Cvb local_10'
+EXPECT=''
+run_test

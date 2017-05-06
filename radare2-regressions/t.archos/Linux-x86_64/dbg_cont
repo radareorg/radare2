@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# TODO: This script requires ROOT to be run in OSX
+# (or just sign the r2 binary to get debugger priviledges)
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# "!" - run commands (via system)
+
+NAME='dbg.dcu+step'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+dcu entry0
+dr PC
+ds
+dr PC
+dk 9
+'
+EXPECT='0x080482d0
+0x080482d2
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.dcu+step'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+dcu entry0
+dr PC
+3ds
+dr PC
+dk 9
+'
+EXPECT='0x080482d0
+0x080482d5
+'
+IGNORE_ERR=1
+run_test
+

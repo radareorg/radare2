@@ -1,0 +1,114 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="sega megadrive rom info"
+FILE=../../bins/smd/LiquidSpaceDodgerV3.bin
+ARGS=''
+BROKEN=
+CMDS="i~!fd"
+EXPECT='type     ROM
+file     ../../bins/smd/LiquidSpaceDodgerV3.bin
+size     0x272f8
+iorw     false
+blksz    0x0
+mode     -r--
+block    0x100
+format   smd
+havecode true
+pic      false
+canary   false
+nx       false
+crypto   false
+va       true
+class    SEGA MEGASIS    (C)2015 James L.
+arch     m68k
+bits     16
+machine  Sega Megadrive
+os       smd
+minopsz  1
+maxopsz  16
+pcalign  0
+endian   little
+stripped false
+static   true
+linenum  false
+lsyms    false
+relocs   false
+binsz    160504
+'
+run_test
+
+NAME="sega megadrive rom symbols"
+FILE=../../bins/smd/LiquidSpaceDodgerV3.bin
+ARGS=''
+CMDS="isq"
+EXPECT='0x00000000 0 rom_start
+0xf8720200 0 rom_end
+0x0000ff00 0 ram_start
+0xffffff00 0 ram_end
+0x00fffff0 0 SSP
+0x00000200 0 Reset
+0x00001300 0 BusErr
+0x0000130c 0 InvOpCode
+0x000012a0 0 DivBy0
+0x000012ac 0 Check
+0x000012b8 0 TrapV
+0x000012c4 0 GPF
+0x000012d0 0 Trace
+0x000012dc 0 Reserv0
+0x000012e8 0 Reserv1
+0x000012f4 0 Reserv2
+0x00001294 0 Reserv3
+0x444f4e27 0 Reserv4
+0x54204c4f 0 BadInt
+0x4f4b2041 0 Reserv10
+0x54205448 0 Reserv11
+0x49532100 0 Reserv12
+0x00001294 0 Reserv13
+0x00001294 0 Reserv14
+0x00001294 0 Reserv15
+0x00001294 0 Reserv16
+0x00001294 0 Reserv17
+0x00001294 0 BadIRQ
+0x00001294 0 IRQ1
+0x00001294 0 EXT
+0x00001294 0 IRQ3
+0x00001294 0 HBLANK
+0x00000bb2 0 IRQ5
+0x00001294 0 VBLANK
+0x00000bb8 0 IRQ7
+0x00001294 0 Trap0
+0x00001294 0 Trap1
+0x00001294 0 Trap2
+0x00001294 0 Trap3
+0x00001294 0 Trap4
+0x00001294 0 Trap5
+0x00001294 0 Trap6
+0x00001294 0 Trap7
+0x00001294 0 Trap8
+0x00001294 0 Trap9
+0x00001294 0 Trap10
+0x00001294 0 Trap11
+0x00001294 0 Trap12
+0x00001294 0 Trap13
+0x00001294 0 Trap14
+0x00001294 0 Trap15
+0x00001294 0 Reserv30
+0x00001294 0 Reserv31
+0x00001294 0 Reserv32
+0x00001294 0 Reserv33
+0x00001294 0 Reserv34
+0x00001294 0 Reserv35
+0x00001294 0 Reserv36
+0x00001294 0 Reserv37
+0x00001294 0 Reserv38
+0x00001294 0 Reserv39
+0x00001294 0 Reserv3A
+0x00001294 0 Reserv3B
+0x00001294 0 Reserv3C
+0x00001294 0 Reserv3D
+0x00001294 0 Reserv3E
+0x00001294 0 Reserv3F
+'
+run_test

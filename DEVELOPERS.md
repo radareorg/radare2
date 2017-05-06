@@ -121,12 +121,9 @@ REGRESSION TESTING
 ------------------
 
 The source of the radare2 regression test suite can be found in the
-following github repository.
-```sh
-   git clone git://github.com/radare/radare2-regressions
-```
+`radare2-regressions` directory.
 
-See the README.md file in that repository for further information.
+See the README.md file in that directory for further information.
 
 The existing test coverage can always do with improvement, so if you can
 contribute additions tests that would be gratefully accepted.

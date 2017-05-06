@@ -1,0 +1,58 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='endian tests: pv4'
+FILE=-
+CMDS="e cfg.bigendian=false
+e asm.bits=32
+wx 01020304
+pv4
+e cfg.bigendian=true
+pv4
+"
+EXPECT="0x04030201
+0x01020304
+"
+run_test
+
+NAME='endian tests: pv2'
+FILE=-
+CMDS="e cfg.bigendian=false
+e asm.bits=32
+wx 01020304
+pv2
+e cfg.bigendian=true
+pv2
+"
+EXPECT="0x0201
+0x0102
+"
+run_test
+
+NAME='endian tests: pv8'
+FILE=-
+CMDS="e cfg.bigendian=false
+e asm.bits=32
+wx 0102030405060708
+pv8
+e cfg.bigendian=true
+pv8
+"
+EXPECT="0x0807060504030201
+0x0102030405060708
+"
+run_test
+
+NAME='endian tests: ?v'
+FILE=-
+CMDS='e cfg.bigendian=false
+e asm.bits=32
+wx 01020304
+?v [$$]
+e cfg.bigendian=true
+?v [$$]
+'
+EXPECT="0x4030201
+0x1020304
+"
+run_test

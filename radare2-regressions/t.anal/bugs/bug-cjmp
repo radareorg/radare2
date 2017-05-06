@@ -1,0 +1,27 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="bug-cjmp"
+BROKEN=1
+FILE=../../bins/anal/bug-cjmp
+CMDS="af
+afb
+"
+EXPECT='0x100000f30 0x100000f4c 00:0000 28 j 0x100000f61 f 0x100000f4c
+0x100000f4c 0x100000f61 00:0000 21 j 0x100000f79
+0x100000f61 0x100000f70 00:0000 15
+0x100000f79 0x100000f82 00:0000 9
+'
+run_test
+
+NAME="bug-cjmp-ok"
+BROKEN=
+FILE=../../bins/anal/bug-cjmp-ok
+CMDS="af
+afb
+"
+EXPECT='0x100000f30 0x100000f4c 00:0000 28 j 0x100000f61 f 0x100000f4c
+0x100000f4c 0x100000f61 00:0000 21 j 0x100000f79
+0x100000f61 0x100000f79 00:0000 24 j 0x100000f79
+0x100000f79 0x100000f82 00:0000 9
+'
+run_test

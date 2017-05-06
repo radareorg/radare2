@@ -1,0 +1,73 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='binsym demangling'
+BROKEN=
+ARGS=
+FILE=../../bins/mach0/hellocxx-osx-i386
+CMDS="!rabin2 -qsD cxx all $FILE"
+EXPECT='0x00002054 0 _NXArgc
+0x00002058 0 _NXArgv
+0x00001d9a 0 std::min<unsignedlong>
+0x00002060 0 ___progname
+0x00001000 0 __mh_execute_header
+0x0000205c 0 _environ
+0x00001d52 0 _main
+0x00001c10 0 start
+0x00001ba0 0 __static_initialization_and_destruction_0
+0x00001bf2 0 globalconstructorskeyedtomain
+0x00001c4e 0 std::__verify_grouping
+0x00001dc1 0 ___tcf_0
+0x00001e24 0  stub helpers
+0x00002000 0 _pvars
+0x00002064 0 std::__ioinit
+0x00001dee 0 std::string::size
+0x00001df4 0 std::string::operator[]
+0x00001dfa 0 std::ostream::operator<<
+0x00001e00 0 std::ios_base::Init::Init
+0x00001e06 0 std::ios_base::Init::~Init
+0x00001e12 0 std::operator<<<std::char_traits<char>>
+0x00001e18 0 imp.__cxa_atexit
+0x00001e1e 0 imp.exit
+'
+run_test
+
+NAME='binsym without demangling'
+BROKEN=
+ARGS=-M
+FILE=../../bins/mach0/hellocxx-osx-i386
+CMDS="isq"
+EXPECT='0x00002054 0 _NXArgc
+0x00002058 0 _NXArgv
+0x00001d9a 0 __ZSt3minImERKT_S2_S2_
+0x00002060 0 ___progname
+0x00001000 0 __mh_execute_header
+0x0000205c 0 _environ
+0x00001d52 0 _main
+0x00001c10 0 start
+0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
+0x00001bf2 0 __GLOBAL__I_main
+0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
+0x00001dc1 0 ___tcf_0
+0x00001e24 0  stub helpers
+0x00002000 0 _pvars
+0x00002064 0 __ZStL8__ioinit
+0x00001dee 0 imp._ZNKSs4sizeEv
+0x00001df4 0 imp._ZNKSsixEm
+0x00001dfa 0 imp._ZNSolsEPFRSoS_E
+0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
+0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
+0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+0x00001e18 0 imp.__cxa_atexit
+0x00001e1e 0 imp.exit
+'
+run_test
+
+NAME='bin.demangle=true and symbol'
+BROKEN=
+ARGS='-e bin.demangle=true'
+FILE=../../bins/elf/analysis/hello-linux-i386nold
+CMDS="pi 1 @ 0x08048230"
+EXPECT='call sym.imp.puts
+'
+run_test

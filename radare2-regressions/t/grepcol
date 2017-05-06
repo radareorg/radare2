@@ -1,0 +1,11 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+BROKEN=
+CMDS='?e 0x3~[0]
+?e 0x999~[0]'
+EXPECT='0x3
+0x999
+'
+
+run_test

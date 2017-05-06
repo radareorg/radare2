@@ -1,0 +1,53 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN=tricore
+
+NAME="TriCore lea"
+CMDS="!rasm2 -a tricore -d d916606c
+"
+EXPECT='lea a6, [a1]-14944
+'
+run_test
+
+
+NAME="TriCore sub"
+CMDS="!rasm2 -a tricore -d 200a
+"
+EXPECT='sub.a sp, 10
+'
+run_test
+
+
+NAME="TriCore multi"
+CMDS="!rasm2 -a tricore -d 0f0200007cb10880f8130200
+"
+EXPECT='sh d0, d2, d0
+jnz.a a11, 0x00000006
+ld.bu d0, [a15]8
+st.a [sp]76, a15
+mov d0, d0
+'
+run_test
+
+
+NAME="TriCore multi"
+CMDS="!rasm2 -a tricore -d 0f0200007cb10880f8130200
+"
+EXPECT='sh d0, d2, d0
+jnz.a a11, 0x00000006
+ld.bu d0, [a15]8
+st.a [sp]76, a15
+mov d0, d0
+'
+run_test
+
+
+NAME="TriCore return_0.elf"
+FILE=../../bins/tricore/return_0.elf
+CMDS='iI~arch
+'
+EXPECT='arch     tricore
+'
+run_test
+
+

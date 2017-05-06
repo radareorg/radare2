@@ -1,0 +1,450 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='java straight line'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1b04823c1bac
+pi 8 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java ifeq'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1a04a00008033ca700071b04823c1bac
+pi 14 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_0
+iconst_1
+if_icmpne 0x000c
+iconst_0
+istore_1
+goto 0x0010
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java ifne'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1a049f0008033ca700071b04823c1bac
+pi 14 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_0
+iconst_1
+if_icmpeq 0x000c
+iconst_0
+istore_1
+goto 0x0010
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java ifgte'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1a04a10008033ca700071b04823c1bac
+pi 14 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_0
+iconst_1
+if_icmplt 0x000c
+iconst_0
+istore_1
+goto 0x0010
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java ifgt'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1a04a40008033ca700071b04823c1bac
+pi 14 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_0
+iconst_1
+if_icmple 0x000c
+iconst_0
+istore_1
+goto 0x0010
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java iflte'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1a04a30008033ca700071b04823c1bac
+pi 14 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_0
+iconst_1
+if_icmpgt 0x000c
+iconst_0
+istore_1
+goto 0x0010
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java iflt'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033c1a04a20008033ca700071b04823c1bac
+pi 14 @ 0
+'
+EXPECT='iconst_0
+istore_1
+iload_0
+iconst_1
+if_icmpge 0x000c
+iconst_0
+istore_1
+goto 0x0010
+iload_1
+iconst_1
+ixor
+istore_1
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java simple load return'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 2ab1
+pi 4 @ 0
+'
+EXPECT='aload_0
+return
+nop
+nop
+'
+
+run_test
+
+NAME='java simple for-loop three values'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033d033b043d10643ca700101c1a823d1c1100ff703d8400011a1ba1fff11c91ac
+pi 24 @ 0
+'
+EXPECT='iconst_0
+istore_2
+iconst_0
+istore_0
+iconst_1
+istore_2
+bipush 100
+istore_1
+goto 0x0019
+iload_2
+iload_0
+ixor
+istore_2
+iload_2
+sipush 255
+irem
+istore_2
+iinc 0 1
+iload_0
+iload_1
+if_icmplt 0x000c
+iload_2
+i2b
+ireturn
+'
+
+run_test
+
+
+NAME='java for-loop three values, multiple return points'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033d033b043d10643ca7001a1c1a823d1c1100ffa000061c91ac1c1100ff703d8400011a1ba1ffe71c91ac
+pi 30 @ 0
+'
+EXPECT='iconst_0
+istore_2
+iconst_0
+istore_0
+iconst_1
+istore_2
+bipush 100
+istore_1
+goto 0x0023
+iload_2
+iload_0
+ixor
+istore_2
+iload_2
+sipush 255
+if_icmpne 0x001a
+iload_2
+i2b
+ireturn
+iload_2
+sipush 255
+irem
+istore_2
+iinc 0 1
+iload_0
+iload_1
+if_icmplt 0x000c
+iload_2
+i2b
+ireturn
+'
+
+run_test
+
+NAME='java simple switch statement 4 values no breaks'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033b043ca700371a08703d1caa00000000000029000000000000000300000020000000230000002900000026840202840203840209033c1b1c823c1a100aa1ffc91bac
+pi 29 @ 0
+'
+EXPECT='iconst_0
+istore_0
+iconst_1
+istore_1
+goto 0x003b
+iload_0
+iconst_5
+irem
+istore_2
+iload_2
+tableswitch default: 0x0035
+case 0: goto 0x002c
+case 1: goto 0x002f
+case 2: goto 0x0035
+case 3: goto 0x0032
+iinc 2 2
+iinc 2 3
+iinc 2 9
+iconst_0
+istore_1
+iload_1
+iload_2
+ixor
+istore_1
+iload_0
+bipush 10
+if_icmplt 0x0007
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java simple switch statement 3 values no breaks'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033b043ca7002c1a08703d1caa0000000000001e0000000000000001000000180000001b8402fe8402ff033c1b1c823c1a100aa1ffd41bac00000003000a0000
+pi 26 @ 0
+'
+EXPECT='iconst_0
+istore_0
+iconst_1
+istore_1
+goto 0x0030
+iload_0
+iconst_5
+irem
+istore_2
+iload_2
+tableswitch default: 0x002a
+case 0: goto 0x0024
+case 1: goto 0x0027
+iinc 2 254
+iinc 2 255
+iconst_0
+istore_1
+iload_1
+iload_2
+ixor
+istore_1
+iload_0
+bipush 10
+if_icmplt 0x0007
+iload_1
+ireturn
+'
+
+run_test
+
+NAME='java simple switch statement 4 values'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033b033ca7003c1a08703d1caa0000000000003200000000000000030000002000000026000000320000002c840202a70011840203a7000b840209a70005033c1a100aa1ffc41bac00000003000a0000
+pi 28 @ 0
+'
+EXPECT='iconst_0
+istore_0
+iconst_0
+istore_1
+goto 0x0040
+iload_0
+iconst_5
+irem
+istore_2
+iload_2
+tableswitch default: 0x003e
+case 0: goto 0x002c
+case 1: goto 0x0032
+case 2: goto 0x003e
+case 3: goto 0x0038
+iinc 2 2
+goto 0x0040
+iinc 2 3
+goto 0x0040
+iinc 2 9
+goto 0x0040
+iconst_0
+istore_1
+iload_0
+bipush 10
+if_icmplt 0x0007
+iload_1
+ireturn
+'
+run_test
+
+NAME='java simple switch statement 3 values'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=java
+wx 033b033ca7003c1a08703d1caa0000000000003200000000000000030000002000000026000000320000002c840202a70011840203a7000b840209a70005033c1a100aa1ffc41bac00000003000a0000
+pi 28 @ 0
+'
+EXPECT='iconst_0
+istore_0
+iconst_0
+istore_1
+goto 0x0040
+iload_0
+iconst_5
+irem
+istore_2
+iload_2
+tableswitch default: 0x003e
+case 0: goto 0x002c
+case 1: goto 0x0032
+case 2: goto 0x003e
+case 3: goto 0x0038
+iinc 2 2
+goto 0x0040
+iinc 2 3
+goto 0x0040
+iinc 2 9
+goto 0x0040
+iconst_0
+istore_1
+iload_0
+bipush 10
+if_icmplt 0x0007
+iload_1
+ireturn
+'
+run_test
+
+
+CMDS='
+e asm.arch=java
+wa bipush 32
+s+$l
+wa nop
+s+$l
+wa iadd
+s+$l
+?v $$
+pi 3 @0
+'
+EXPECT='0x4
+bipush 32
+nop
+iadd
+'
+
+run_test

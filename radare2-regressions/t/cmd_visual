@@ -1,0 +1,92 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## test visual mode in batch
+
+NAME='Vc+cq'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e scr.interactive=true
+Vc+cq
+p8 1
+'
+EXPECT='01
+'
+run_test
+
+BROKEN=
+NAME="visual hex scroll"
+CMDS='
+e scr.interactive=true
+e asm.arch=x86
+e asm.bits=64
+wx 4889e54889e5
+Vjq
+s
+'
+EXPECT='0x10
+'
+
+run_test
+
+NAME="visual op scroll"
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+e scr.interactive=true
+wx 4889e54889e5
+Vpjq
+s
+'
+EXPECT='0x3
+'
+
+run_test
+
+BROKEN=
+NAME="visual hex pP scroll"
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+e scr.interactive=true
+wx 4889e54889e5
+VpPjq
+s
+'
+EXPECT='0x10
+'
+run_test
+
+# XXX: cant run much stuff in batch visual mode
+NAME='visual intermediate'
+BROKEN=1
+FILE=../bins/elf/analysis/main
+CMDS='Vpjjjjdi
+d
+qah*
+'
+EXPECT='ahi 10 @ 0x400419
+'
+run_test
+
+NAME='V&q change bits'
+BROKEN=1
+FILE=../bins/elf/ioli/crackme0x00
+ARGS=
+CMDS='
+e scr.interactive=true
+V&q
+af
+pi 1
+V&q
+V&q
+pi 1
+'
+EXPECT='xor ebp, ebp
+xor bp, bp
+'
+run_test

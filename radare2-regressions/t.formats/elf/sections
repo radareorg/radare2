@@ -1,0 +1,81 @@
+#!/bin/sh
+# LGPL - Copyright (C) 2014 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="sections list"
+FILE=../../bins/elf/analysis/main_wrong_sect
+ARGS=
+CMDS='iS
+'
+EXPECT='[Sections]
+idx=00 vaddr=0x00000000 paddr=0x00000000 sz=0 vsz=0 perm=----- name=
+idx=01 vaddr=0x00404500 paddr=0x00000200 sz=28 vsz=28 perm=--r-- name=.interp
+idx=02 vaddr=0x0040021c paddr=0x0000021c sz=32 vsz=32 perm=--r-- name=.note.ABI_tag
+idx=03 vaddr=0x0040023c paddr=0x0000023c sz=36 vsz=36 perm=--r-- name=.note.gnu.build_id
+idx=04 vaddr=0x00400260 paddr=0x00000260 sz=28 vsz=28 perm=--r-- name=.gnu.hash
+idx=05 vaddr=0x00400280 paddr=0x00000280 sz=96 vsz=96 perm=--r-- name=.dynsym
+idx=06 vaddr=0x004002e0 paddr=0x000002e0 sz=61 vsz=61 perm=--r-- name=.dynstr
+idx=07 vaddr=0x0040031e paddr=0x0000031e sz=8 vsz=8 perm=--r-- name=.gnu.version
+idx=08 vaddr=0x00400328 paddr=0x00000328 sz=32 vsz=32 perm=--r-- name=.gnu.version_r
+idx=09 vaddr=0x00400348 paddr=0x00000348 sz=24 vsz=24 perm=--r-- name=.rela.dyn
+idx=10 vaddr=0x00400360 paddr=0x00000360 sz=72 vsz=72 perm=--r-- name=.rela.plt
+idx=11 vaddr=0x004003a8 paddr=0x000003a8 sz=26 vsz=26 perm=--r-x name=.init
+idx=12 vaddr=0x004003d0 paddr=0x000003d0 sz=64 vsz=64 perm=--r-x name=.plt
+idx=13 vaddr=0x00410570 paddr=0x00000410 sz=418 vsz=418 perm=--r-x name=.text
+idx=14 vaddr=0x004005b4 paddr=0x000005b4 sz=9 vsz=9 perm=--r-x name=.fini
+idx=15 vaddr=0x004005c0 paddr=0x000005c0 sz=16 vsz=16 perm=--r-- name=.rodata
+idx=16 vaddr=0x004005d0 paddr=0x000005d0 sz=52 vsz=52 perm=--r-- name=.eh_frame_hdr
+idx=17 vaddr=0x00400608 paddr=0x00000608 sz=212 vsz=212 perm=--r-- name=.eh_frame
+idx=18 vaddr=0x006006e0 paddr=0x000006e0 sz=8 vsz=8 perm=--rw- name=.init_array
+idx=19 vaddr=0x006006e8 paddr=0x000006e8 sz=8 vsz=8 perm=--rw- name=.fini_array
+idx=20 vaddr=0x006006f0 paddr=0x000006f0 sz=8 vsz=8 perm=--rw- name=.jcr
+idx=21 vaddr=0x006006f8 paddr=0x000006f8 sz=464 vsz=464 perm=--rw- name=.dynamic
+idx=22 vaddr=0x006008c8 paddr=0x000008c8 sz=8 vsz=8 perm=--rw- name=.got
+idx=23 vaddr=0x006008d0 paddr=0x000008d0 sz=48 vsz=48 perm=--rw- name=.got.plt
+idx=24 vaddr=0x00600900 paddr=0x00000900 sz=16 vsz=16 perm=--rw- name=.data
+idx=25 vaddr=0x00600910 paddr=0x00000910 sz=8 vsz=8 perm=--rw- name=.bss
+idx=26 vaddr=0x00000000 paddr=0x00000910 sz=34 vsz=34 perm=----- name=.comment
+idx=27 vaddr=0x00000000 paddr=0x00000940 sz=208 vsz=208 perm=----- name=.debug_aranges
+idx=28 vaddr=0x00000000 paddr=0x00000a10 sz=392 vsz=392 perm=----- name=.debug_info
+idx=29 vaddr=0x00000000 paddr=0x00000b98 sz=118 vsz=118 perm=----- name=.debug_abbrev
+idx=30 vaddr=0x00000000 paddr=0x00000c0e sz=329 vsz=329 perm=----- name=.debug_line
+idx=31 vaddr=0x00000000 paddr=0x00000d57 sz=138 vsz=138 perm=----- name=.debug_str
+idx=32 vaddr=0x00000000 paddr=0x00000df0 sz=128 vsz=128 perm=----- name=.debug_ranges
+idx=33 vaddr=0x00000000 paddr=0x00000e70 sz=342 vsz=342 perm=----- name=.shstrtab
+idx=34 vaddr=0x00000000 paddr=0x000018c8 sz=1752 vsz=1752 perm=----- name=.symtab
+idx=35 vaddr=0x00000000 paddr=0x00001fa0 sz=570 vsz=570 perm=----- name=.strtab
+idx=36 vaddr=0x00400040 paddr=0x00000040 sz=448 vsz=448 perm=m-r-x name=PHDR
+idx=37 vaddr=0x00400200 paddr=0x00000200 sz=28 vsz=28 perm=m-r-- name=INTERP
+idx=38 vaddr=0x00400000 paddr=0x00000000 sz=1756 vsz=1756 perm=m-r-x name=LOAD0
+idx=39 vaddr=0x006006e0 paddr=0x000006e0 sz=560 vsz=568 perm=m-rw- name=LOAD1
+idx=40 vaddr=0x006006f8 paddr=0x000006f8 sz=464 vsz=464 perm=m-rw- name=DYNAMIC
+idx=41 vaddr=0x0040021c paddr=0x0000021c sz=68 vsz=68 perm=m-r-- name=NOTE
+idx=42 vaddr=0x004005d0 paddr=0x000005d0 sz=52 vsz=52 perm=m-r-- name=GNU_EH_FRAME
+idx=43 vaddr=0x00000000 paddr=0x00000000 sz=0 vsz=0 perm=m-rw- name=GNU_STACK
+idx=44 vaddr=0x00400000 paddr=0x00000000 sz=64 vsz=64 perm=m-rw- name=ehdr
+
+45 sections
+'
+
+run_test
+
+NAME="section text start (not mapped)"
+FILE=../../bins/elf/analysis/main_wrong_sect
+ARGS=
+CMDS='?v section..text
+'
+EXPECT='0x410570
+'
+
+run_test
+
+NAME="only phdrs mapped"
+FILE=../../bins/elf/analysis/main_wrong_sect
+ARGS=
+CMDS='p8 10 @ section..text
+'
+EXPECT='ffffffffffffffffffff
+'
+
+run_test

@@ -1,0 +1,29 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami dll.dll - open'
+FILE=../../bins/pe/dll.dll
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: corkami dll.dll - entrypoint'
+FILE=../../bins/pe/dll.dll
+CMDS='
+s
+'
+EXPECT='0x1001000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami dll.dll - pi 1'
+FILE=../../bins/pe/dll.dll
+CMDS='e asm.filter=false
+pi 1
+'
+EXPECT='cmp dword [esp + 8], 1
+'
+IGNORE_ERR=1
+run_test

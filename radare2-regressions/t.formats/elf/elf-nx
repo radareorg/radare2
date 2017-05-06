@@ -1,0 +1,11 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: elf-nx - nx enabled'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS='-A'
+CMDS="iI~^nx"
+
+EXPECT='nx       true
+'
+run_test

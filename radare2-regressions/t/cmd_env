@@ -1,0 +1,10 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='env FOO'
+CMDS='env FOO=BAR
+env FOO
+'
+EXPECT='BAR
+'
+run_test

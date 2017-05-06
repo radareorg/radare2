@@ -1,0 +1,174 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014-2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dbg.maps.count/'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='dm~?/
+dk 9'
+EXPECT='4
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.maps.count'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS='dm~?
+dk 9'
+EXPECT='6
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.maps.count.after.map'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS='dm~?
+db sym.imp.puts
+dc~?
+dm~?'
+EXPECT='6
+0
+13
+Hello world!
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.modules.count'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='dmm~?'
+EXPECT='2
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.curmod.count'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='dmm.~?'
+EXPECT='1
+'
+IGNORE_ERR=1
+run_test
+
+NAME='db.maps.symbols.after.map.complete'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS='dm~?
+db sym.imp.puts
+dc~?
+dmi libc~?
+dmi libc~libc|wc -l'
+EXPECT='6
+0
+2392
+45
+Hello world!
+'
+run_test
+
+NAME='dbg.maps.sections.after.map.only_filtered'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS='dm~?
+db sym.imp.puts
+dc~?
+dmS libc~?
+dmS libc~libc|wc -l
+dmS* libc~?
+dmS* libc~libc|wc -l'
+EXPECT='6
+0
+80
+78
+314
+312
+Hello world!
+'
+IGNORE_ERR=1
+run_test
+
+
+NAME='dbg.maps.sections.after.map.complete'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS='dm~?
+db sym.imp.puts
+dc~?
+dmS libc~?
+dmS libc~libc|wc -l
+dmS* libc~?
+dmS* libc~libc|wc -l
+dmS~?
+dmS*~?
+dmS~libc|wc -l
+dmS*~libc|wc -l'
+EXPECT='6
+0
+80
+78
+314
+312
+154
+598
+78
+312
+Hello world!
+'
+IGNORE_ERR=1
+run_test
+
+NAME='db.maps.sections.are.singletons'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS='dmm~?
+db sym.imp.puts
+dc~?
+dmm~?
+S~.text|wc -l
+dmS hello~.text|wc -l
+dmS~x86-helloworld-gcc..text|wc -l
+dmS~libc-2.19.so..text|wc -l
+dmS~ld-2.19.so..text|wc -l'
+EXPECT='2
+0
+3
+1
+1
+1
+1
+1
+Hello world!
+'
+run_test
+
+NAME='db.maps.current.section.after.dmS'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS='dmm~?
+db sym.imp.puts
+dc~?
+dmm~?
+s map._lib_i386_linux_gnu_ld_2.19.so._r_x
+S.~?
+.dmS*~?
+S.~libc-2.19.so..text|wc -l'
+EXPECT='2
+0
+3
+0
+3
+1
+Hello world!
+'
+run_test
+
+

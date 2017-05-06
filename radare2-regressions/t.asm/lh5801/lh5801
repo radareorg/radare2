@@ -1,0 +1,228 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_lh5801() {
+	NAME="$2"
+	FILE=malloc://100
+	ARGS="-a lh5801"
+	CMDS="wx $1; pi 1"
+	EXPECT="$2
+"
+	[ "$3" = BROKEN ] && BROKEN=1
+	run_test
+}
+
+test_lh5801	02		"adc xl"
+test_lh5801	82		"adc xh"
+test_lh5801	03		"adc (x)"
+test_lh5801	fd03		"adc #(x)"
+test_lh5801	a31234		"adc (1234h)"
+test_lh5801	fda31234	"adc #(1234h)"
+
+test_lh5801	b312		"adi a, 12h"
+test_lh5801	4f12		"adi (x), 12h"
+test_lh5801	fd4f12		"adi #(x), 12h"
+test_lh5801	ef123456	"adi (1234h), 56h"
+test_lh5801	fdef123456	"adi #(1234h), 56h"
+
+test_lh5801	9c		"dca (y)"
+test_lh5801	fd9c		"dca #(y)"
+
+test_lh5801	fdca		"adr x"
+
+test_lh5801	00		"sbc xl"
+test_lh5801	80		"sbc xh"
+test_lh5801	01		"sbc (x)"
+test_lh5801	fd01		"sbc #(x)"
+test_lh5801	a11234		"sbc (1234h)"
+test_lh5801	fda11234	"sbc #(1234h)"
+
+test_lh5801	b112		"sbi a, 12h"
+
+test_lh5801	0c		"dcs (x)"
+test_lh5801	fd0c		"dcs #(x)"
+
+test_lh5801	09		"and (x)"
+test_lh5801	fd09		"and #(x)"
+test_lh5801	a91234		"and (1234h)"
+test_lh5801	fda91234	"and #(1234h)"
+
+test_lh5801	b912		"ani a, 12h"
+test_lh5801	4912		"ani (x), 12h"
+test_lh5801	fd4912		"ani #(x), 12h"
+test_lh5801	e9345678	"ani (3456h), 78h"
+test_lh5801	fde9345678	"ani #(3456h), 78h"
+
+test_lh5801	0b		"ora (x)"
+test_lh5801	fd0b		"ora #(x)"
+test_lh5801	ab1234		"ora (1234h)"
+test_lh5801	fdab1234	"ora #(1234h)"
+
+test_lh5801	bb12		"ori a, 12h"
+test_lh5801	4b12		"ori (x), 12h"
+test_lh5801	fd4b12		"ori #(x), 12h"
+test_lh5801	eb123456	"ori (1234h), 56h"
+test_lh5801	fdeb123456	"ori #(1234h), 56h"
+
+test_lh5801	0d		"eor (x)"
+test_lh5801	fd0d		"eor #(x)"
+test_lh5801	ad1234		"eor (1234h)"
+test_lh5801	fdad1234	"eor #(1234h)"
+
+test_lh5801	bd12		"eai 12h"
+
+test_lh5801	dd		"inc a"
+test_lh5801	60		"inc ul"
+test_lh5801	fd60		"inc uh"
+test_lh5801	64		"inc u"
+
+test_lh5801	df		"dec a"
+test_lh5801	62		"dec ul"
+test_lh5801	fd62		"dec uh"
+test_lh5801	66		"dec u"
+
+test_lh5801	06		"cpa xl"
+test_lh5801	86		"cpa xh"
+test_lh5801	07		"cpa (x)"
+test_lh5801	fd07		"cpa #(x)"
+test_lh5801	a71234		"cpa (1234h)"
+test_lh5801	fda71234	"cpa #(1234h)"
+
+test_lh5801	b712		"cpi a, 12h"
+test_lh5801	4e12		"cpi xl, 12h"
+test_lh5801	4c12		"cpi xh, 12h"
+
+test_lh5801	0f		"bit (x)"
+test_lh5801	fd0f		"bit #(x)"
+test_lh5801	af1234		"bit (1234h)"
+test_lh5801	fdaf1234	"bit #(1234h)"
+
+test_lh5801	bf12		"bii a, 12h"
+test_lh5801	4d12		"bii (x), 12h"
+test_lh5801	fd4d12		"bii #(x), 12h"
+test_lh5801	ed345612	"bii (3456h), 12h"
+test_lh5801	fded345612	"bii #(3456h), 12h"
+
+test_lh5801	04		"lda xl"
+test_lh5801	84		"lda xh"
+test_lh5801	05		"lda (x)"
+test_lh5801	fd05		"lda #(x)"
+test_lh5801	a51234		"lda (1234h)"
+test_lh5801	fda51234	"lda #(1234h)"
+
+test_lh5801	47		"lde x"
+test_lh5801	45		"lin x"
+
+test_lh5801	b512		"ldi a, 12h"
+test_lh5801	4a12		"ldi xl, 12h"
+test_lh5801	4812		"ldi xh, 12h"
+test_lh5801	aa1234		"ldi s, 1234h"	BROKEN
+
+test_lh5801	fd08		"ldx x"
+test_lh5801	fd48		"ldx s"
+test_lh5801	fd58		"ldx p"
+
+test_lh5801	0a		"sta xl"
+test_lh5801	08		"sta xh"
+test_lh5801	0e		"sta (x)"
+test_lh5801	fd0e		"sta #(x)"
+test_lh5801	ae3456		"sta (3456h)"
+test_lh5801	fdae3456	"sta #(3456h)"
+
+test_lh5801	43		"sde x"
+test_lh5801	41		"sin x"
+
+test_lh5801	fd4a		"stx x"
+test_lh5801	fd4e		"stx s"
+test_lh5801	fd5e		"stx p"
+
+test_lh5801	fdc8		"psh a"
+test_lh5801	fd98		"psh y"
+
+test_lh5801	fd8a		"pop a"
+test_lh5801	fd1a		"pop y"
+
+test_lh5801	fdec		"att"
+test_lh5801	fdaa		"tta"
+
+test_lh5801	f5		"tin"
+test_lh5801	f7		"cin"
+
+test_lh5801	d8		"rol"		BROKEN
+test_lh5801	d1		"ror"
+
+test_lh5801	d9		"shl"
+test_lh5801	d5		"shr"
+
+test_lh5801	d7		"drl (x)"	BROKEN
+test_lh5801	fdd7		"drl #(x)"	BROKEN
+test_lh5801	d3		"drr (x)"	BROKEN
+test_lh5801	fdd3		"drr #(x)"	BROKEN
+
+test_lh5801	f1		"aex"
+
+test_lh5801	fdce		"am0"
+test_lh5801	fdde		"am1"
+
+test_lh5801	fd8e		"cdv"
+test_lh5801	fdcc		"atp"
+
+test_lh5801	fdc1		"sdp"
+test_lh5801	fdc0		"rdp"
+test_lh5801	e1		"spu"
+test_lh5801	e3		"rpu"
+test_lh5801	a8		"spv"
+test_lh5801	b8		"rpv"
+test_lh5801	fd81		"sie"
+test_lh5801	fdbe		"rie"
+test_lh5801	fb		"sec"
+test_lh5801	f9		"rec"
+
+test_lh5801	fdba		"ita"
+
+test_lh5801	fdb1		"hlt"
+test_lh5801	fd4c		"off"
+test_lh5801	38		"nop"
+
+test_lh5801	ba1234		"jmp 1234h"
+
+test_lh5801	8e12		"bch +12h"
+test_lh5801	9e34		"bch -34h"
+
+test_lh5801	8312		"bcs +12h"
+test_lh5801	9312		"bcs -12h"
+test_lh5801	8112		"bcr +12h"
+test_lh5801	9112		"bcr -12h"
+test_lh5801	8f12		"bvs +12h"
+test_lh5801	9f12		"bvs -12h"
+test_lh5801	8d12		"bvr +12h"
+test_lh5801	9d12		"bvr -12h"
+test_lh5801	8712		"bhs +12h"
+test_lh5801	9712		"bhs -12h"
+test_lh5801	8512		"bhr +12h"
+test_lh5801	9512		"bhr -12h"
+test_lh5801	8b12		"bzs +12h"
+test_lh5801	9b12		"bzs -12h"
+test_lh5801	8912		"bzr +12h"
+test_lh5801	9912		"bzr -12h"
+
+test_lh5801	8830		"lop 30h"
+
+test_lh5801	be1234		"sjp 1234h"
+
+test_lh5801	c0		"vej c0h"
+test_lh5801	c2		"vej c2h"
+
+test_lh5801	c112		"vcr 12h"
+test_lh5801	c312		"vcs 12h"
+test_lh5801	c512		"vhr 12h"
+test_lh5801	c712		"vhs 12h"
+test_lh5801	c912		"vzr 12h"
+test_lh5801	cb12		"vzs 12h"
+test_lh5801	cd12		"vvr 12h"
+test_lh5801	cf12		"vvs 12h"
+
+test_lh5801	cd12		"vmj 12h"	BROKEN # vmj is decoded as vvr.
+
+test_lh5801	9a		"rtn"
+test_lh5801	8a		"rti"

@@ -1,0 +1,33 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=.empty.tmp
+touch $FILE
+CMDS='
+s 0x666
+s
+s 15
+s
+s 034
+s
+s 0
+s+2
+s -1
+s
+s+0x4
+s
+0
+s
+0x12
+s
+'
+EXPECT='0x666
+0xf
+0x1c
+0x1
+0x5
+0x0
+0x12
+'
+run_test
+rm -f $FILE

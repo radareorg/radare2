@@ -1,0 +1,52 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 crowell
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='to'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='to ../bins/headers/s1.h;t S1'
+EXPECT='pf ddd x y z
+'
+run_test
+
+NAME='to'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='to ../bins/headers/s2.h; t S1'
+EXPECT='pf ddd x test z
+'
+run_test
+
+NAME='to'
+FILE=-
+ARGS=
+CMDS='to ../bins/headers/s1.h; to ../bins/headers/s2.h; t S1
+'
+EXPECT='pf ddd x test z
+'
+run_test
+
+NAME='to arrays'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+to ../bins/headers/s3.h
+t S1
+tk S1
+tk struct.S1
+tk struct.S1.x
+tk struct.S1.y
+tk struct.S1.z
+'
+EXPECT='pf [3]d[4]dd x y z
+struct
+x,y,z
+int,0,3
+int,12,4
+int,28,0
+'
+run_test

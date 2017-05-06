@@ -1,0 +1,32 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+BINFILE=/tmp/.___binfile___.
+cp -f ../bins/elf/analysis/main ${BINFILE}
+
+NAME="va+write"
+BROKEN=
+ARGS=-w
+IGNORE_ERR=1
+FILE=${BINFILE}
+CMDS='p8 2
+wx 9090
+p8 2
+'
+EXPECT='31ed
+9090
+'
+run_test
+
+NAME="nova+write"
+BROKEN=
+ARGS=-nw
+IGNORE_ERR=1
+FILE=${BINFILE}
+CMDS='p8 2
+wx 9090
+p8 2
+'
+EXPECT='7f45
+9090
+'
+run_test

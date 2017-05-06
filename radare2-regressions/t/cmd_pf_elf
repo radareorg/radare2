@@ -1,0 +1,149 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 Lukas Dresel
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+
+NAME='32: Elf header size'
+FILE=malloc://1024
+ARGS=
+CMDS='pfo elf32
+pfs.elf_header
+'
+EXPECT="52 bytes
+"
+run_test
+
+NAME='64: Elf header size'
+FILE=malloc://1024
+ARGS=
+CMDS='pfo elf64
+pfs.elf_header
+'
+EXPECT="64 bytes
+"
+run_test
+
+
+NAME='32: Elf program header size'
+FILE=malloc://1024
+ARGS=
+CMDS='pfo elf32
+pfs.elf_phdr
+'
+EXPECT="32 bytes
+"
+run_test
+
+NAME='64: Elf program header size'
+FILE=malloc://1024
+ARGS=
+CMDS='pfo elf64
+pfs.elf_phdr
+'
+EXPECT="56 bytes
+"
+run_test
+
+
+NAME='32: Elf section header size'
+FILE=malloc://1024
+ARGS=
+CMDS='pfo elf32
+pfs.elf_shdr
+'
+EXPECT="40 bytes
+"
+run_test
+
+NAME='64: Elf section header size'
+FILE=malloc://1024
+BROKEN=
+ARGS=
+CMDS='pfo elf64
+pfs.elf_shdr
+'
+EXPECT="64 bytes
+"
+run_test
+
+
+NAME='32: Multiple section headers'
+FILE=malloc://1024
+ARGS=
+CMDS='pfo elf32
+pf [2]? (elf_shdr)sections
+'
+EXPECT=' sections : 
+[
+                struct<elf_shdr>
+                name : 0x00000000 = 0x00000000
+                type : 0x00000004 = type (enum elf_s_type) = 0x0 ; SHT_NULL
+               flags : 0x00000008 = flags (enum elf_s_flags_32) = 0x0 ; SF32_None
+                addr : 0x0000000c = 0x00000000
+              offset : 0x00000010 = 0x00000000
+                size : 0x00000014 = 0x00000000
+                link : 0x00000018 = 0x00000000
+                info : 0x0000001c = 0x00000000
+           addralign : 0x00000020 = 0x00000000
+             entsize : 0x00000024 = 0x00000000
+
+                struct<elf_shdr>
+                name : 0x00000028 = 0x00000000
+                type : 0x0000002c = type (enum elf_s_type) = 0x0 ; SHT_NULL
+               flags : 0x00000030 = flags (enum elf_s_flags_32) = 0x0 ; SF32_None
+                addr : 0x00000034 = 0x00000000
+              offset : 0x00000038 = 0x00000000
+                size : 0x0000003c = 0x00000000
+                link : 0x00000040 = 0x00000000
+                info : 0x00000044 = 0x00000000
+           addralign : 0x00000048 = 0x00000000
+             entsize : 0x0000004c = 0x00000000
+]
+'
+run_test
+
+NAME='64: Multiple section headers'
+FILE=malloc://1024
+BROKEN=
+ARGS=
+CMDS='pfo elf64
+pf [2]? (elf_shdr)sections
+'
+EXPECT=' sections : 
+[
+                struct<elf_shdr>
+                name : 0x00000000 = 0x00000000
+                type : 0x00000004 = type (enum elf_s_type) = 0x0 ; SHT_NULL
+               flags : 0x00000008 = flags (enum elf_s_flags_64) = 0x0 ; SF64_None
+                addr : 0x00000010 = (qword)0x0000000000000000
+              offset : 0x00000018 = (qword)0x0000000000000000
+                size : 0x00000020 = (qword)0x0000000000000000
+                link : 0x00000028 = 0x00000000
+                info : 0x0000002c = 0x00000000
+           addralign : 0x00000030 = (qword)0x0000000000000000
+             entsize : 0x00000038 = (qword)0x0000000000000000
+
+                struct<elf_shdr>
+                name : 0x00000040 = 0x00000000
+                type : 0x00000044 = type (enum elf_s_type) = 0x0 ; SHT_NULL
+               flags : 0x00000048 = flags (enum elf_s_flags_64) = 0x0 ; SF64_None
+                addr : 0x00000050 = (qword)0x0000000000000000
+              offset : 0x00000058 = (qword)0x0000000000000000
+                size : 0x00000060 = (qword)0x0000000000000000
+                link : 0x00000068 = 0x00000000
+                info : 0x0000006c = 0x00000000
+           addralign : 0x00000070 = (qword)0x0000000000000000
+             entsize : 0x00000078 = (qword)0x0000000000000000
+]
+'
+run_test
+
+NAME='Issue 5640 pfj produce wrong json'
+FILE=../bins/elf/analysis/main
+BROKEN=
+ARGS=-nn
+CMDS='pfj {1}? (elf_phdr) @ 0x0000000000000040
+'
+EXPECT='[{"name":"","type":"elf_phdr","offset":64,"value":[{"name":"type","type":"E","offset":64,"value":"elf_p_type"},{"name":"flags","type":"E","offset":68,"value":"elf_p_flags"},{"name":"offset","type":"q","offset":72,"value":64},{"name":"vaddr","type":"q","offset":80,"value":4194368},{"name":"paddr","type":"q","offset":88,"value":4194368},{"name":"filesz","type":"q","offset":96,"value":448},{"name":"memsz","type":"q","offset":104,"value":448},{"name":"align","type":"q","offset":112,"value":8}]}]
+'
+run_test

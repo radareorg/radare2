@@ -1,0 +1,28 @@
+#!/bin/sh
+for a in . .. ../.. ../../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh; done
+
+unset RASM2_NOPLUGINS
+test_vector() {
+NAME="${1} ${BITS}: [${2}]"
+if [ "${4}" = "br" ]; then
+    BROKEN=1
+fi
+CMDS='!rasm2 -a '${1}' -b '${BITS}' "'${2}'"
+'
+EXPECT="${3}
+"
+run_test
+}
+
+PLUGIN=x86.olly
+
+BITS=32
+test_vector "${PLUGIN}" "lea eax, [ecx+1024]" 8d8100040000
+test_vector "${PLUGIN}" "lea ebp, [eax+3]" 8d6803 "br"
+test_vector "${PLUGIN}" "lea ebp, [esp+3]" 8dac2403000000
+test_vector "${PLUGIN}" "lea ebp, [ecx+eax]" 8d2c08
+test_vector "${PLUGIN}" "lea edx, [edx+ecx]" 8d1411
+test_vector "${PLUGIN}" "lea eax, [3]" 8d0503000000
+test_vector "${PLUGIN}" "lea eax, [eax+3]" 8d4003 "br"
+test_vector "${PLUGIN}" "lea ebp, [ebp+3]" 8d6d03 "br"
+test_vector "${PLUGIN}" "lea ebp, [esp+0x28]" 8dac2428000000

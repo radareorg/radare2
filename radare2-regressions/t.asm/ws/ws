@@ -1,0 +1,37 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN=ws
+
+# Tests only whole disassembly opcode
+test_vector() {
+NAME="${1}: [${2}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+wx '${3}'
+pi 1
+'
+EXPECT="${4}
+"
+run_test
+}
+
+test_vector "${PLUGIN}" "INV" 20 "invalid"
+test_vector "${PLUGIN}" "PUSH" 202020090a "push 1"
+test_vector "${PLUGIN}" "MARK" 0a202020092020202009090a "mark 67"
+test_vector "${PLUGIN}" "DUP" 200a20 "dup"
+test_vector "${PLUGIN}" "PUTI" 090a2009 "puti"
+test_vector "${PLUGIN}" "PUSH" 202020092009200a "push 10"
+test_vector "${PLUGIN}" "ADD" 09202020 "add"
+test_vector "${PLUGIN}" "SUB" 09202009 "sub"
+test_vector "${PLUGIN}" "MUL" 0920200a "mul"
+test_vector "${PLUGIN}" "DIV" 09200920 "div"
+test_vector "${PLUGIN}" "MOD" 09200909 "mod"
+test_vector "${PLUGIN}" "STORE" 090920 "store"
+test_vector "${PLUGIN}" "LOAD" 090909 "load"
+test_vector "${PLUGIN}" "EXIT" 0a0a0a "exit"
+test_vector "${PLUGIN}" "JMP" 0a200a20092020202009090a "jmp 67"

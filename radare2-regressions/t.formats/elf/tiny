@@ -1,0 +1,29 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+BROKEN=
+NAME='ELF: corkami tiny.elf - entry0'
+FILE=../../bins/elf/analysis/tiny.elf
+ARGS=''
+CMDS="?v entry0;pid 4 @ entry0"
+EXPECT='0x10020
+0x00010020    entry0:
+0x00010020             b32a  mov bl, 0x2a
+0x00010022             31c0  xor eax, eax
+0x00010024               40  inc eax
+0x00010025             cd80  int 0x80
+'
+run_test
+
+#--- fix needs:
+# e io.va=1
+# S 0x00000000 0x00010000 0x00020040 0x00020040 phdr0 r--
+# S 0x00000000 0x00010000 0x0000002d 0x0000002d ehdr rwx
+NAME='ELF: corkami tiny.elf - sections'
+FILE=../../bins/elf/analysis/tiny.elf
+ARGS=''
+CMDS="S"
+EXPECT='[00] * 0x00000000 mrwx va=0x00010000 sz=0x002d vsz=0x002d uphdr
+[01] * 0x00000000 mrw- va=0x00000000 sz=0x002d vsz=0x002d ehdr
+'
+run_test

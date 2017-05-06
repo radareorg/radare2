@@ -1,0 +1,106 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='endian tests: mips'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='wx 0f84010a
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT='j 0x806103c
+jal 0xe100428
+'
+run_test
+
+NAME='endian tests: arm'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=arm
+e asm.bits=32
+wx 0f84010a
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT='beq 0x61044
+svceq 0x84010a
+'
+run_test
+
+NAME='endian tests: thumb'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 0f84010a
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT='strh r7, [r1, 0x20]
+lsrs r4, r0, 0x1e
+'
+run_test
+
+NAME='endian tests: arm64'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=arm
+wx 3800740a
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT='bic w24, w1, w20, lsr 0
+strb w10, [x0], 7
+'
+run_test
+
+NAME='endian tests: sparc'
+BROKEN=1
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=sparc
+wx 554889e5
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT='call 0x15222794
+invalid
+'
+run_test
+
+NAME='endian tests: sparc.gnu'
+BROKEN=1
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=sparc.gnu
+wx 554889e5
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT='call 0x15222794
+invalid
+'
+run_test

@@ -1,0 +1,125 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014  Maijin
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='pxw cfg.bigendian=true (elf64)'
+BROKEN=
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='e cfg.bigendian=true
+pxw 16'
+EXPECT='0x00400410  0x31ed4989 0xd15e4889 0xe24883e4 0xf0505449  1.I..^H..H...PTI
+'
+run_test
+
+NAME='pxw cfg.bigendian=false (elf64)'
+BROKEN=
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='e cfg.bigendian=false
+pxw 16'
+EXPECT='0x00400410  0x8949ed31 0x89485ed1 0xe48348e2 0x495450f0  1.I..^H..H...PTI
+'
+run_test
+
+NAME='pxw cfg.bigendian=false (pe32)'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e cfg.bigendian=false
+pxw 16'
+EXPECT='0x00401280  0x83e58955 0x04c708ec 0x00000124 0xc815ff00  U.......$.......
+'
+run_test
+
+NAME='pxw cfg.bigendian=true (pe32)'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e cfg.bigendian=true
+pxw 16'
+EXPECT='0x00401280  0x5589e583 0xec08c704 0x24010000 0x00ff15c8  U.......$.......
+'
+run_test
+
+NAME='pxw offsets 16'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e hex.cols=16
+pxw 32~[0]'
+EXPECT='0x00401280
+0x00401290
+'
+run_test
+
+NAME='pxw offsets 12'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e hex.cols=12
+pxw 32~[0]'
+EXPECT='0x00401280
+0x0040128c
+0x00401298
+'
+run_test
+
+NAME='pxw offsets 10'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+BROKEN=
+ARGS=
+CMDS='e hex.cols=10
+pxw 32~[0]'
+EXPECT='0x00401280
+0x0040128a
+0x00401294
+0x0040129e
+'
+run_test
+
+NAME='pxw offsets'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e hex.cols=8
+pxw 32~[0]'
+EXPECT='0x00401280
+0x00401288
+0x00401290
+0x00401298
+'
+run_test
+
+NAME='pxw bytes < 4'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e hex.cols=8
+pxw 2~[1]'
+EXPECT=''
+run_test
+
+NAME='pxw bytes between 4 and 8'
+BROKEN=
+FILE=../bins/pe/hello-mingw32
+ARGS=
+CMDS='e hex.cols=8
+pxw 7~[1]
+pxw 7~[2]'
+EXPECT='0x83e58955
+U...
+'
+run_test
+
+
+NAME='pxq foo-bar'
+BROKEN=
+FILE=-
+CMDS='f foo=10
+f bar=2
+pxq foo-bar~?'
+EXPECT='1
+'
+run_test

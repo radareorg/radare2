@@ -1,0 +1,71 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+unset R2_NOPLUGINS
+
+NAME="${PLUGIN}: idd and idda"
+FILE=../../bins/elf/bomb
+CMDS='e io.cache = 1
+iddi ../../bins/elf/bomb
+wx 900d400000000000b00d400000000000
+idd _IO_marker
+idd _IO_marker._pos
+idda _IO_marker._sbuf._IO_read_base
+'
+EXPECT='_next = 0x400d90,
+_sbuf = 0x400db0,
+_pos = 0x22a0c0c7
+0x400ca0
+0x400dc8
+'
+run_test
+
+NAME="${PLUGIN}: iddv"
+FILE=../../bins/elf/bomb
+CMDS='e io.cache = 1
+iddi ../../bins/elf/bomb
+wx 900d400000000000b00d400000000000
+iddv _IO_marker._sbuf._flags
+'
+EXPECT='0x2029b4
+'
+run_test
+
+NAME="${PLUGIN}: iddlf"
+CMDS='iddi ../../bins/elf/bomb
+iddlf
+'
+EXPECT='f sym.main 311 @ 0x400da0
+'
+run_test
+
+NAME="${PLUGIN}: iddlg"
+CMDS='iddi ../../bins/elf/analysis/pie
+iddlg
+'
+EXPECT='f sym._IO_stdin_used 4 @ 0x65c
+'
+run_test
+
+NAME="${PLUGIN}: iddd -- without array"
+CMDS='iddi ../../bins/elf/bomb
+iddd _IO_marker
+'
+EXPECT='struct _IO_marker {
+  struct _IO_marker *_next;
+  struct _IO_FILE *_sbuf;
+  int _pos;
+};
+'
+run_test
+
+NAME="${PLUGIN}: iddt"
+CMDS='iddi ../../bins/elf/bomb
+iddt _IO_marker._sbuf
+iddt _IO_marker._pos
+'
+EXPECT='struct _IO_FILE * - 8
+int  - 4
+'
+run_test

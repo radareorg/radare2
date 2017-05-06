@@ -1,0 +1,53 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  pancake
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='java prototypes in json'
+FILE=../../bins/java/jdwpexeccmd.class
+IGNORE_ERR=1
+ARGS=
+CMDS='java prototypes j
+'
+EXPECT='{"access_flags":33,"is_public":1,"is_final":0,"is_super":1,"is_interface":0,"is_abstract":0,"is_synthetic":0,"is_annotation":0,"is_enum":0,"name":"JDWPExecCmd","super":"java/lang/Object","interfaces":[],"methods":[],"fields":[],"imports":[]}
+'
+run_test
+
+NAME='java prototypes in ascii'
+FILE=../../bins/java/jdwpexeccmd.class
+IGNORE_ERR=1
+ARGS=
+CMDS='java prototypes a
+'
+EXPECT='import java.lang.StringBuilder;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.lang.Exception;
+import JDWPExecCmd;
+import java.lang.Object;
+import java.lang.String;
+import java.lang.Process;
+import java.io.BufferedReader;
+import java.lang.Exception;
+import java.lang.Runtime;
+import java.lang.Process;
+import java.lang.String;
+
+class JDWPExecCmd { // @0x0000
+
+  // Methods defined in the class
+  public void <init> (); // @0x0323
+  public static java.lang.String run (java.lang.String); // @0x034e
+}
+'
+run_test
+
+NAME='java huge switch case crash'
+FILE=../../bins/java/sjybq.class
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.arch=java
+e scr.null=true
+pd 200
+'
+EXPECT=''
+run_test

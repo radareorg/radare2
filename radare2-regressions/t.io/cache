@@ -1,0 +1,156 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+## cache
+
+# Cache write.
+NAME='io.cache: minimal usage'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e io.cache=1
+wx 010203
+p8 3
+wcr
+# Test write works after disabling the cache.
+e io.cache=0
+wx 040506
+p8 3
+'
+EXPECT='010203
+040506
+'
+run_test
+
+NAME='io.cache: Writing after end of file'
+FILE=../bins/other/0x3
+ARGS=
+BROKEN=1
+CMDS='
+e io.cache=1
+w hello
+x 5
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6865 6c6c 6f                             hello
+'
+run_test
+
+# Cache usage. Cache write, cache reset, cache commit.
+FILE=malloc://1024
+BROKEN=1
+ARGS='io.cache: basic usage'
+ARGS=
+CMDS='
+?e
+b 0xf
+p8
+w no-cache
+p8
+
+e io.cache=1
+w cache-mode
+p8
+
+# Reseting cache restores original data.
+wcr
+p8
+w overwrite
+p8
+wci
+
+# Commit cache overwrites original data.
+p8
+
+# Reset cache with no pending cache entries.
+wcr
+wci
+p8
+'
+EXPECT='
+000000000000000000000000000000
+6e6f2d636163686500000000000000
+63616368652d6d6f64650000000000
+6e6f2d636163686500000000000000
+6f7665727772697465000000000000
+6f7665727772697465000000000000
+6f7665727772697465000000000000
+'
+run_test
+
+# Basic cache usage with an empty file. Cache write, cache reset, cache
+# commit. Also tests if undo at end of file works.
+touch .empty.tmp
+NAME='io.cache: empty file'
+BROKEN=1
+FILE=.empty.tmp
+ARGS='-w'
+CMDS='
+?e
+b 15
+p8
+w no-cache
+p8
+e io.cache=1
+w cache-mode
+p8
+# Reseting cache restores original data.
+wcr
+p8
+w overwrite
+p8
+wci
+# Commit cache overwrites original data.
+p8
+# Reset cache with no pending cache entries.
+wcr
+wci
+p8
+# File was correctly writen.
+cat .empty.tmp
+?e
+'
+EXPECT='
+ffffffffffffffffffffffffffffff
+6e6f2d6361636865ffffffffffffff
+63616368652d6d6f6465ffffffffff
+6e6f2d6361636865ffffffffffffff
+6f7665727772697465ffffffffffff
+6f7665727772697465ffffffffffff
+6f7665727772697465ffffffffffff
+overwrite
+'
+run_test
+rm -f .empty.tmp
+
+NAME='io.cache: Reading behind cache written area'
+FILE=malloc://32
+ARGS=
+CMDS='
+e io.cache = true
+px 32
+s +1
+px 31
+s -1
+wx 90
+px 32
+s +1
+px 31
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000010  0000 0000 0000 0000 0000 0000 0000 0000  ................
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000001  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000011  0000 0000 0000 0000 0000 0000 0000 00    ...............
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  9000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000010  0000 0000 0000 0000 0000 0000 0000 0000  ................
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000001  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000011  0000 0000 0000 0000 0000 0000 0000 00    ...............
+'
+run_test

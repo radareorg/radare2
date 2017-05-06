@@ -1,0 +1,58 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='seekbug pi -x'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e scr.null=true
+s 0x200
+pi -3
+e scr.null=false
+s
+'
+EXPECT="0x200
+"
+run_test
+
+NAME='seekbug pid -x'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e scr.null=true
+s 0x200
+pid -3
+e scr.null=false
+s
+'
+EXPECT="0x200
+"
+run_test
+
+NAME='seekbug pd -x'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e scr.null=true
+s 0x200
+pd -3
+e scr.null=false
+s
+'
+EXPECT="0x200
+"
+run_test
+
+NAME='seekbug px -x'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e scr.null=true
+s 0x200
+px -3
+e scr.null=false
+s
+'
+EXPECT="0x200
+"
+run_test

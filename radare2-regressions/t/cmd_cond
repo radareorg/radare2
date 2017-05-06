@@ -1,0 +1,75 @@
+#!/bin/sh
+# LGPL 3+ - Copyright (C) 2014 pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='condition 33??'
+FILE=-
+ARGS=
+CMDS='?= 33
+?? ?e win
+'
+EXPECT='win
+'
+run_test
+
+NAME='condition 33?!'
+FILE=-
+ARGS=
+CMDS='?= 33
+?! ?e win
+'
+EXPECT=''
+run_test
+
+NAME='condition 0??'
+FILE=-
+ARGS=
+CMDS='?= 0
+?? ?e win
+'
+EXPECT=''
+run_test
+
+NAME='condition 0?!'
+FILE=-
+ARGS=
+CMDS='?= 0
+?! ?e win
+'
+EXPECT='win
+'
+run_test
+
+NAME='oneline condition 33??'
+FILE=-
+ARGS=
+CMDS='?= 33;?? ?e win
+'
+EXPECT='win
+'
+run_test
+
+NAME='oneline condition 33?!'
+FILE=-
+ARGS=
+CMDS='?= 33;?! ?e win
+'
+EXPECT=''
+run_test
+
+NAME='oneline condition 0?!'
+FILE=-
+ARGS=
+CMDS='?= 0;?! ?e win
+'
+EXPECT='win
+'
+run_test
+
+NAME='oneline condition 0??'
+FILE=-
+ARGS=
+CMDS='?= 0;?? ?e win
+'
+EXPECT=''
+run_test

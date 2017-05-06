@@ -1,0 +1,41 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2013  pancake
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+RET=0
+
+NAME='dupfd bug'
+FILE=-
+BROKEN=
+ARGS=
+CMDS='
+e file.nowarn=true
+e file.loadmethod=append
+e scr.null=true
+10o -
+e scr.null=false
+o|sort -u |wc -l|sed -e s,\ ,,g
+'
+EXPECT='11
+'
+run_test
+[ $? != 0 ] && RET=$?
+
+NAME='dupfd hard'
+FILE=-
+BROKEN=
+ARGS=
+CMDS='
+e file.loadmethod=append
+e file.nowarn=true
+e scr.null=true
+1000o -
+e scr.null=false
+o|sort -u |wc -l|sed -e s,\ ,,g
+'
+EXPECT='1001
+'
+run_test
+
+[ $? != 0 ] && RET=$?
+return $RET

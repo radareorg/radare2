@@ -1,0 +1,17 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='address information'
+FILE=../../bins/mach0/mach0-i386
+CMDS='s entry0
+ai
+s sym.__mh_execute_header
+ai
+'
+EXPECT='exec
+read
+flag
+flag
+'
+run_test

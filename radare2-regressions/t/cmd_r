@@ -1,0 +1,29 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014  Maijin
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='r '
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+r
+'
+EXPECT='512
+'
+run_test
+
+
+NAME='wx 90 r pd 1'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='
+wx 90
+r
+pd 1
+'
+EXPECT='512
+            0x00000000      90             nop
+'
+run_test

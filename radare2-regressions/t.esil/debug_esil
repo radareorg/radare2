@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dh esil'
+BROKEN=1
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+dh esil
+aei
+aeim
+dr esp=0x00108000
+.dr*
+"wa mov eax, 0x1234;push eax"
+ds 2
+.dr*
+dr?esp
+?v [esp]
+'
+EXPECT='0x00107ffc
+0x1234
+'
+run_test
+NAME='aek-'
+FILE=-
+ARGS=
+CMDS='
+e esil.stats = true
+wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528
+af
+aei
+aeim
+aeip
+aes
+aek *~?
+aek-
+aek *~?
+'
+EXPECT='6
+0
+'
+run_test
+

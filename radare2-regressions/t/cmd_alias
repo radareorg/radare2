@@ -1,0 +1,47 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='test $alias'
+CMDS='$foo=?e hello
+$foo
+'
+EXPECT='hello
+'
+run_test
+
+NAME='test $alias quotes'
+CMDS='"$foo=?e hello;?e world"
+$foo
+'
+EXPECT='hello
+world
+'
+run_test
+
+NAME='test $alias args'
+CMDS='$foo=!echo hello
+$foo world
+'
+EXPECT='hello world
+'
+run_test
+
+NAME='list $alias'
+CMDS='$foo=a
+$bar=b
+$
+'
+EXPECT='$foo
+$bar
+'
+run_test
+
+NAME='delete $alias'
+CMDS='$foo=a
+$bar=b
+$bar=
+$
+'
+EXPECT='$foo
+'
+run_test

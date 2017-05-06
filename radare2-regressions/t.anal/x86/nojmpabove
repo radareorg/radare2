@@ -1,0 +1,12 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+FILE=../../bins/pe/test.exe
+CMDS='e anal.jmpabove=false
+af
+afb
+
+'
+EXPECT='0x0040132b 0x00401335 00:0000 10
+'
+run_test

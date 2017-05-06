@@ -1,0 +1,872 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2015  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## "i" - get info about opened file
+export BIT_SIZE=`getconf LONG_BIT`
+NAME='ih (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="ihq"
+EXPECT='[Header fields]
+0x00000000 0x00000000 ehdr
+0x000007cc 0x000007cc shoff
+0x00000034 0x00000034 phoff
+0x00000034 0x00000034 phdr_0
+0x00000134 0x00000134 phdr_1
+0x00000000 0x00000000 phdr_2
+0x0000059c 0x0000059c phdr_3
+0x000005a8 0x000005a8 phdr_4
+0x00000148 0x00000148 phdr_5
+0x000004c0 0x000004c0 phdr_6
+0x00000000 0x00000000 phdr_7
+
+11 fields
+'
+run_test
+
+NAME='i (all) (malloc)'
+FILE=malloc://1025
+BROKEN=
+ARGS='-a x86' # we can find native bit size, but need to set arch for minopsz, maxopsz, pcalign
+CMDS='i
+ia
+ia*
+ii
+ii*
+ie
+ie*
+is
+is*
+iS
+iS*
+iz
+iz*
+'
+EXPECT="file     malloc://1025
+fd       42
+size     0x401
+iorw     true
+blksz    0x0
+mode     -rwx
+block    0x100
+format   any
+havecode false
+pic      false
+canary   false
+nx       false
+crypto   false
+va       false
+bits     64
+minopsz  1
+maxopsz  16
+pcalign  0
+endian   little
+stripped false
+static   true
+linenum  false
+lsyms    false
+relocs   false
+binsz    1025
+[Imports]
+
+0 imports
+[Exports]
+
+0 exports
+[Entrypoints]
+
+0 entrypoints
+[Symbols]
+
+0 symbols
+[Sections]
+
+0 sections
+[Memory]
+
+fs imports
+[Imports]
+
+0 imports
+fs imports
+[Entrypoints]
+
+0 entrypoints
+fs symbols
+[Symbols]
+
+0 symbols
+fs symbols
+[Sections]
+
+0 sections
+fs sections
+"
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd       [0-9][0-9]*/fd       42/"'
+run_test
+
+NAME='i (all) (malloc) iI*'
+BROKEN=
+FILE=malloc://1024
+BROKEN=
+ARGS='-a x86' # see previous for caveat
+CMDS='
+i
+i*
+iI
+iI*
+'
+EXPECT="file     malloc://1024
+fd       42
+size     0x400
+iorw     true
+blksz    0x0
+mode     -rwx
+block    0x100
+format   any
+e cfg.bigendian=false
+e asm.bits=${BIT_SIZE}
+e asm.dwarf=false
+e asm.pcalign=0
+havecode false
+pic      false
+canary   false
+nx       false
+crypto   false
+va       false
+bits     ${BIT_SIZE}
+minopsz  1
+maxopsz  16
+pcalign  0
+endian   little
+stripped false
+static   true
+linenum  false
+lsyms    false
+relocs   false
+binsz    1024
+e cfg.bigendian=false
+e asm.bits=${BIT_SIZE}
+e asm.dwarf=false
+e asm.pcalign=0
+"
+FILTER='sed "s/^fd       [0-9][0-9]*/fd       42/"'
+run_test
+
+NAME='i (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="i~!fd"
+EXPECT='type     EXEC (Executable file)
+file     ../bins/elf/analysis/x86-helloworld-gcc
+size     0x1323
+iorw     false
+blksz    0x0
+mode     -r--
+block    0x100
+format   elf
+havecode true
+pic      false
+canary   false
+nx       true
+crypto   false
+va       true
+intrp    /lib/ld-linux.so.2
+bintype  elf
+class    ELF32
+lang     c
+arch     x86
+bits     32
+machine  Intel 80386
+os       linux
+minopsz  1
+maxopsz  16
+pcalign  0
+subsys   linux
+endian   little
+stripped false
+static   false
+linenum  true
+lsyms    true
+relocs   true
+rpath    NONE
+binsz    4899
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd       42/;
+           s/^file	\/.*\.\.\/bins\/elf\/x86-simple$/file	..\/bins\/elf\/x86-simple/;
+           s/^File=\/.*\.\.\/bins\/elf\/x86-simple$/File=..\/bins\/elf\/x86-simple/"'
+run_test
+
+NAME='iA (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="iA"
+EXPECT='000 0x00000000 4899 x86_32
+'
+run_test
+
+NAME='ib'
+BROKEN=
+FILE=../bins/elf/analysis/main
+ARGS=
+CMDS='e bin.baddr=0x00
+e asm.calls=false
+ib
+pi 1
+?p
+'
+EXPECT='xor ebp, ebp
+0x00000410
+'
+run_test
+
+NAME='ib java class file'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='
+e asm.calls=false
+e asm.comments=false
+e asm.cmtflgrefs=false
+e scr.color=false
+e asm.lines=false
+e asm.xrefs=false
+wx cafebabe00000032003a070002010014546573745661726961626c6553776974636855700700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c65010004746869730100164c546573745661726961626c6553776974636855703b010014546573744d756c7469706c655661726961626c650a001000120700110100116a6176612f6c616e672f496e74656765720c0013001401000776616c75654f660100162849294c6a6176612f6c616e672f496e74656765723b0800160100067472796f6e65090018001a0700190100106a6176612f6c616e672f53797374656d0c001b001c0100036f75740100154c6a6176612f696f2f5072696e7453747265616d3b07001e0100176a6176612f6c616e672f537472696e674275696c646572080020010011417474656d7074696e67207072696e74200a001d00220c00050023010015284c6a6176612f6c616e672f537472696e673b29560a001d00250c00260027010006617070656e6401002d284c6a6176612f6c616e672f537472696e673b294c6a6176612f6c616e672f537472696e674275696c6465723b0a001d00290c002a002b010008746f537472696e6701001428294c6a6176612f6c616e672f537472696e673b0a002d002f07002e0100136a6176612f696f2f5072696e7453747265616d0c003000230100057072696e74010001690100134c6a6176612f6c616e672f496e74656765723b01000170010001490100016b0100124c6a6176612f6c616e672f537472696e673b0100016a01000a536f7572636546696c65010019546573745661726961626c6553776974636855702e6a617661002100010003000000000002000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000002000b0000000c000100000005000c000d00000008000e0006000100070000008100040004000000251064b8000f4b10643c12154d033eb20017bb001d59121fb700212cb60024b60028b6002cb100000002000a0000001a0006000000040006000500090006000c0007000e000800240009000b0000002a00040006001f0031003200000009001c003300340001000c0019003500360002000e001700370034000300010038000000020039
+ib
+if
+af
+pdf
+'
+EXPECT='type     JAVA CLASS
+file     malloc://1024
+fd       42
+size     0x400
+iorw     true
+blksz    0x0
+mode     -rwx
+block    0x100
+format   java
+havecode true
+pic      false
+canary   false
+nx       false
+crypto   false
+va       false
+bintype  class
+class    0x3200 0x0000
+lang     java
+arch     java
+bits     32
+machine  jvm
+os       any
+subsys   any
+endian   little
+stripped false
+static   false
+linenum  true
+lsyms    true
+relocs   false
+binsz    1024
+  ;-- entry1:
+/ (fcn) sym.TestVariableSwitchUp.TestMultipleVariable 37
+| 0x000002fd      1064           bipush 100
+| 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
+| 0x00000302      4b             astore_0
+| 0x00000303      1064           bipush 100
+| 0x00000305      3c             istore_1
+| 0x00000306      1215           ldc "tryone"
+| 0x00000308      4d             astore_2
+| 0x00000309      03             iconst_0
+| 0x0000030a      3e             istore_3
+| 0x0000030b      b20017         getstatic java/lang/System/out Ljava/io/PrintStream;
+| 0x0000030e      bb001d         new java/lang/StringBuilder
+| 0x00000311      59             dup
+| 0x00000312      121f           ldc "Attempting print "
+| 0x00000314      b70021         invokespecial java/lang/StringBuilder/<init>(Ljava/lang/String;)V
+| 0x00000317      2c             aload_2
+| 0x00000318      b60024         invokevirtual java/lang/StringBuilder/append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+| 0x0000031b      b60028         invokevirtual java/lang/StringBuilder/toString()Ljava/lang/String;
+| 0x0000031e      b6002c         invokevirtual java/io/PrintStream/print(Ljava/lang/String;)V
+\ 0x00000321      b1             return
+'
+FILTER='sed "s/^fd       [0-9][0-9]*/fd       42/"'
+run_test
+
+NAME='ic cpp classes'
+FILE=../bins/elf/libmagic.so
+ARGS=
+BROKEN=
+CMDS='ic~_JNIEnv
+ic~FindClass
+'
+EXPECT='0x00000000 [0x00006060 - 0x0000697c] (sz 2332) class 0 _JNIEnv
+0x00006060 method 0 FindClass
+'
+run_test
+
+NAME='ie (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="ie"
+EXPECT='[Entrypoints]
+vaddr=0x08048300 paddr=0x00000300 baddr=0x08048000 laddr=0x00000000 haddr=0x00000018 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='iej (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="iej"
+EXPECT='[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"haddr":24,"type":"program"}]
+'
+run_test
+
+
+NAME='ii (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="ii"
+EXPECT='[Imports]
+ordinal=001 plt=0x080482d0 bind=GLOBAL type=FUNC name=puts
+ordinal=002 plt=0x080482e0 bind=UNKNOWN type=NOTYPE name=__gmon_start__
+ordinal=003 plt=0x080482f0 bind=GLOBAL type=FUNC name=__libc_start_main
+
+3 imports
+'
+run_test
+
+NAME='iI (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="iI"
+EXPECT='havecode true
+pic      false
+canary   false
+nx       true
+crypto   false
+va       true
+intrp    /lib/ld-linux.so.2
+bintype  elf
+class    ELF32
+lang     c
+arch     x86
+bits     32
+machine  Intel 80386
+os       linux
+minopsz  1
+maxopsz  16
+pcalign  0
+subsys   linux
+endian   little
+stripped false
+static   false
+linenum  true
+lsyms    true
+relocs   true
+rpath    NONE
+binsz    4899
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd       42/;
+           s/^file	\/.*\.\.\/bins\/elf\/x86-simple$/file	..\/bins\/elf\/x86-simple/;
+           s/^File=\/.*\.\.\/bins\/elf\/x86-simple$/File=..\/bins\/elf\/x86-simple/"'
+run_test
+
+NAME='im'
+FILE=../bins/nes/Pong.nes
+ARGS=
+BROKEN=
+CMDS='im~?SRAM
+'
+EXPECT='1
+'
+run_test
+
+NAME='imj'
+FILE=../bins/nes/Pong.nes
+ARGS=
+BROKEN=
+CMDS='imj~?SRAM
+'
+EXPECT='1
+'
+run_test
+
+NAME='iS (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="iS"
+EXPECT='[Sections]
+idx=00 vaddr=0x00000000 paddr=0x00000000 sz=0 vsz=0 perm=----- name=
+idx=01 vaddr=0x08048134 paddr=0x00000134 sz=19 vsz=19 perm=--r-- name=.interp
+idx=02 vaddr=0x08048148 paddr=0x00000148 sz=32 vsz=32 perm=--r-- name=.note.ABI_tag
+idx=03 vaddr=0x08048168 paddr=0x00000168 sz=36 vsz=36 perm=--r-- name=.note.gnu.build_id
+idx=04 vaddr=0x0804818c paddr=0x0000018c sz=32 vsz=32 perm=--r-- name=.gnu.hash
+idx=05 vaddr=0x080481ac paddr=0x000001ac sz=80 vsz=80 perm=--r-- name=.dynsym
+idx=06 vaddr=0x080481fc paddr=0x000001fc sz=74 vsz=74 perm=--r-- name=.dynstr
+idx=07 vaddr=0x08048246 paddr=0x00000246 sz=10 vsz=10 perm=--r-- name=.gnu.version
+idx=08 vaddr=0x08048250 paddr=0x00000250 sz=32 vsz=32 perm=--r-- name=.gnu.version_r
+idx=09 vaddr=0x08048270 paddr=0x00000270 sz=8 vsz=8 perm=--r-- name=.rel.dyn
+idx=10 vaddr=0x08048278 paddr=0x00000278 sz=24 vsz=24 perm=--r-- name=.rel.plt
+idx=11 vaddr=0x08048290 paddr=0x00000290 sz=35 vsz=35 perm=--r-x name=.init
+idx=12 vaddr=0x080482c0 paddr=0x000002c0 sz=64 vsz=64 perm=--r-x name=.plt
+idx=13 vaddr=0x08048300 paddr=0x00000300 sz=404 vsz=404 perm=--r-x name=.text
+idx=14 vaddr=0x08048494 paddr=0x00000494 sz=20 vsz=20 perm=--r-x name=.fini
+idx=15 vaddr=0x080484a8 paddr=0x000004a8 sz=21 vsz=21 perm=--r-- name=.rodata
+idx=16 vaddr=0x080484c0 paddr=0x000004c0 sz=44 vsz=44 perm=--r-- name=.eh_frame_hdr
+idx=17 vaddr=0x080484ec paddr=0x000004ec sz=176 vsz=176 perm=--r-- name=.eh_frame
+idx=18 vaddr=0x0804959c paddr=0x0000059c sz=4 vsz=4 perm=--rw- name=.init_array
+idx=19 vaddr=0x080495a0 paddr=0x000005a0 sz=4 vsz=4 perm=--rw- name=.fini_array
+idx=20 vaddr=0x080495a4 paddr=0x000005a4 sz=4 vsz=4 perm=--rw- name=.jcr
+idx=21 vaddr=0x080495a8 paddr=0x000005a8 sz=232 vsz=232 perm=--rw- name=.dynamic
+idx=22 vaddr=0x08049690 paddr=0x00000690 sz=4 vsz=4 perm=--rw- name=.got
+idx=23 vaddr=0x08049694 paddr=0x00000694 sz=24 vsz=24 perm=--rw- name=.got.plt
+idx=24 vaddr=0x080496ac paddr=0x000006ac sz=8 vsz=8 perm=--rw- name=.data
+idx=25 vaddr=0x080496b4 paddr=0x000006b4 sz=4 vsz=4 perm=--rw- name=.bss
+idx=26 vaddr=0x00000000 paddr=0x000006b4 sz=17 vsz=17 perm=----- name=.comment
+idx=27 vaddr=0x00000000 paddr=0x000006c5 sz=262 vsz=262 perm=----- name=.shstrtab
+idx=28 vaddr=0x00000000 paddr=0x00000c7c sz=1104 vsz=1104 perm=----- name=.symtab
+idx=29 vaddr=0x00000000 paddr=0x000010cc sz=599 vsz=599 perm=----- name=.strtab
+idx=30 vaddr=0x08048034 paddr=0x00000034 sz=256 vsz=256 perm=m-r-x name=PHDR
+idx=31 vaddr=0x08048134 paddr=0x00000134 sz=19 vsz=19 perm=m-r-- name=INTERP
+idx=32 vaddr=0x08048000 paddr=0x00000000 sz=1436 vsz=1436 perm=m-r-x name=LOAD0
+idx=33 vaddr=0x0804959c paddr=0x0000059c sz=280 vsz=284 perm=m-rw- name=LOAD1
+idx=34 vaddr=0x080495a8 paddr=0x000005a8 sz=232 vsz=232 perm=m-rw- name=DYNAMIC
+idx=35 vaddr=0x08048148 paddr=0x00000148 sz=68 vsz=68 perm=m-r-- name=NOTE
+idx=36 vaddr=0x080484c0 paddr=0x000004c0 sz=44 vsz=44 perm=m-r-- name=GNU_EH_FRAME
+idx=37 vaddr=0x00000000 paddr=0x00000000 sz=0 vsz=0 perm=m-rw- name=GNU_STACK
+idx=38 vaddr=0x08048000 paddr=0x00000000 sz=52 vsz=52 perm=m-rw- name=ehdr
+
+39 sections
+'
+run_test
+
+NAME='il (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="il"
+EXPECT='[Linked libraries]
+libc.so.6
+
+1 library
+'
+run_test
+
+NAME='ir (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="ir"
+EXPECT='[Relocations]
+vaddr=0x08049690 paddr=0x00000690 type=SET_32 __gmon_start__
+vaddr=0x080496a0 paddr=0x000006a0 type=SET_32 puts
+vaddr=0x080496a4 paddr=0x000006a4 type=SET_32 __gmon_start__
+vaddr=0x080496a8 paddr=0x000006a8 type=SET_32 __libc_start_main
+
+4 relocations
+'
+run_test
+
+NAME='is (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="is"
+EXPECT='[Symbols]
+vaddr=0x080495a4 paddr=0x000005a4 ord=030 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__JCR_LIST__
+vaddr=0x08048340 paddr=0x00000340 ord=031 fwd=NONE sz=0 bind=LOCAL type=FUNC name=deregister_tm_clones
+vaddr=0x08048370 paddr=0x00000370 ord=032 fwd=NONE sz=0 bind=LOCAL type=FUNC name=register_tm_clones
+vaddr=0x080483b0 paddr=0x000003b0 ord=033 fwd=NONE sz=0 bind=LOCAL type=FUNC name=__do_global_dtors_aux
+vaddr=0x080496b4 paddr=0x000006b4 ord=034 fwd=NONE sz=1 bind=LOCAL type=OBJECT name=completed.5979
+vaddr=0x080495a0 paddr=0x000005a0 ord=035 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__do_global_dtors_aux_fini_array_entry
+vaddr=0x080483d0 paddr=0x000003d0 ord=036 fwd=NONE sz=0 bind=LOCAL type=FUNC name=frame_dummy
+vaddr=0x0804959c paddr=0x0000059c ord=037 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__frame_dummy_init_array_entry
+vaddr=0x08048598 paddr=0x00000598 ord=040 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__FRAME_END__
+vaddr=0x080495a4 paddr=0x000005a4 ord=041 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__JCR_END__
+vaddr=0x080495a0 paddr=0x000005a0 ord=043 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_end
+vaddr=0x080495a8 paddr=0x000005a8 ord=044 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=_DYNAMIC
+vaddr=0x0804959c paddr=0x0000059c ord=045 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_start
+vaddr=0x08049694 paddr=0x00000694 ord=046 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=_GLOBAL_OFFSET_TABLE_
+vaddr=0x08048490 paddr=0x00000490 ord=047 fwd=NONE sz=2 bind=GLOBAL type=FUNC name=__libc_csu_fini
+vaddr=0x08048330 paddr=0x00000330 ord=049 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__x86.get_pc_thunk.bx
+vaddr=0x080496ac paddr=0x000006ac ord=050 fwd=NONE sz=0 bind=UNKNOWN type=NOTYPE name=data_start
+vaddr=0x080496b4 paddr=0x000006b4 ord=051 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_edata
+vaddr=0x08048494 paddr=0x00000494 ord=052 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_fini
+vaddr=0x080496ac paddr=0x000006ac ord=053 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__data_start
+vaddr=0x080496b0 paddr=0x000006b0 ord=056 fwd=NONE sz=0 bind=GLOBAL type=OBJECT name=__dso_handle
+vaddr=0x080484ac paddr=0x000004ac ord=057 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=_IO_stdin_used
+vaddr=0x08048420 paddr=0x00000420 ord=059 fwd=NONE sz=97 bind=GLOBAL type=FUNC name=__libc_csu_init
+vaddr=0x080496b8 paddr=0x080496b8 ord=060 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_end
+vaddr=0x08048300 paddr=0x00000300 ord=061 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_start
+vaddr=0x080484a8 paddr=0x000004a8 ord=062 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=_fp_hw
+vaddr=0x080496b4 paddr=0x000006b4 ord=063 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__bss_start
+vaddr=0x08048400 paddr=0x00000400 ord=064 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=main
+vaddr=0x080496b4 paddr=0x000006b4 ord=066 fwd=NONE sz=0 bind=GLOBAL type=OBJECT name=__TMC_END__
+vaddr=0x08048290 paddr=0x00000290 ord=068 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_init
+vaddr=0x080482d0 paddr=0x000002d0 ord=001 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.puts
+vaddr=0x080482e0 paddr=0x000002e0 ord=002 fwd=NONE sz=16 bind=UNKNOWN type=NOTYPE name=imp.__gmon_start__
+vaddr=0x080482f0 paddr=0x000002f0 ord=003 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__libc_start_main
+
+33 symbols
+'
+run_test
+
+NAME='iz (file x86)'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS="iz"
+EXPECT='vaddr=0x080484b0 paddr=0x000004b0 ordinal=000 sz=13 len=12 section=.rodata type=ascii string=Hello world!
+'
+run_test
+
+
+NAME='i (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="i~!fd"
+EXPECT='type     EXEC (Executable file)
+file     ../bins/elf/analysis/hello-linux-x86_64
+size     0x1a36
+iorw     false
+blksz    0x0
+mode     -r--
+block    0x100
+format   elf64
+havecode true
+pic      false
+canary   false
+nx       true
+crypto   false
+va       true
+intrp    /lib/ld-linux-x86-64.so.2
+bintype  elf
+class    ELF64
+lang     c
+arch     x86
+bits     64
+machine  AMD x86-64 architecture
+os       linux
+minopsz  1
+maxopsz  16
+pcalign  0
+subsys   linux
+endian   little
+stripped false
+static   false
+linenum  true
+lsyms    true
+relocs   true
+rpath    NONE
+binsz    6710
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd       42/;
+           s/^file	\/.*\.\.\/bins\/elf\/x86_64-simple$/file	..\/bins\/elf\/x86_64-simple/;
+           s/^File=\/.*\.\.\/bins\/elf\/x86_64-simple$/File=..\/bins\/elf\/x86_64-simple/"'
+run_test
+
+NAME='iA (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="iA"
+EXPECT='000 0x00000000 6710 x86_64
+'
+run_test
+
+NAME='ie (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="ie"
+EXPECT='[Entrypoints]
+vaddr=0x00400410 paddr=0x00000410 baddr=0x00400000 laddr=0x00000000 haddr=0x00000018 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='iH (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='iH'
+EXPECT='0x00000000  ELF64       0x464c457f
+0x00000010  Type        0x0002
+0x00000012  Machine     0x003e
+0x00000014  Version     0x00000001
+0x00000018  Entrypoint  0x00400410
+0x00000020  PhOff       0x00000040
+0x00000028  ShOff       0x00000a30
+'
+run_test
+
+NAME='ii (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="ii"
+EXPECT='[Imports]
+ordinal=001 plt=0x004003e0 bind=GLOBAL type=FUNC name=puts
+ordinal=002 plt=0x004003f0 bind=GLOBAL type=FUNC name=__libc_start_main
+ordinal=003 plt=0x00400400 bind=UNKNOWN type=NOTYPE name=__gmon_start__
+
+3 imports
+'
+run_test
+
+NAME='iI (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="iI"
+EXPECT='havecode true
+pic      false
+canary   false
+nx       true
+crypto   false
+va       true
+intrp    /lib/ld-linux-x86-64.so.2
+bintype  elf
+class    ELF64
+lang     c
+arch     x86
+bits     64
+machine  AMD x86-64 architecture
+os       linux
+minopsz  1
+maxopsz  16
+pcalign  0
+subsys   linux
+endian   little
+stripped false
+static   false
+linenum  true
+lsyms    true
+relocs   true
+rpath    NONE
+binsz    6710
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd       42/;
+           s/^file	\/.*\.\.\/bins\/elf\/hello-linux-x86_64$/file	..\/bins\/elf\/hello-linux-x86_64/;
+           s/^File=\/.*\.\.\/bins\/elf\/hello-linux-x86_64/File=..\/bins\/elf\/hello-linux-x86_64/"'
+run_test
+
+NAME='iS (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="iS"
+EXPECT='[Sections]
+idx=00 vaddr=0x00000000 paddr=0x00000000 sz=0 vsz=0 perm=----- name=
+idx=01 vaddr=0x00400200 paddr=0x00000200 sz=26 vsz=26 perm=--r-- name=.interp
+idx=02 vaddr=0x0040021c paddr=0x0000021c sz=32 vsz=32 perm=--r-- name=.note.ABI_tag
+idx=03 vaddr=0x0040023c paddr=0x0000023c sz=36 vsz=36 perm=--r-- name=.note.gnu.build_id
+idx=04 vaddr=0x00400260 paddr=0x00000260 sz=28 vsz=28 perm=--r-- name=.gnu.hash
+idx=05 vaddr=0x00400280 paddr=0x00000280 sz=96 vsz=96 perm=--r-- name=.dynsym
+idx=06 vaddr=0x004002e0 paddr=0x000002e0 sz=61 vsz=61 perm=--r-- name=.dynstr
+idx=07 vaddr=0x0040031e paddr=0x0000031e sz=8 vsz=8 perm=--r-- name=.gnu.version
+idx=08 vaddr=0x00400328 paddr=0x00000328 sz=32 vsz=32 perm=--r-- name=.gnu.version_r
+idx=09 vaddr=0x00400348 paddr=0x00000348 sz=24 vsz=24 perm=--r-- name=.rela.dyn
+idx=10 vaddr=0x00400360 paddr=0x00000360 sz=72 vsz=72 perm=--r-- name=.rela.plt
+idx=11 vaddr=0x004003a8 paddr=0x000003a8 sz=26 vsz=26 perm=--r-x name=.init
+idx=12 vaddr=0x004003d0 paddr=0x000003d0 sz=64 vsz=64 perm=--r-x name=.plt
+idx=13 vaddr=0x00400410 paddr=0x00000410 sz=420 vsz=420 perm=--r-x name=.text
+idx=14 vaddr=0x004005b4 paddr=0x000005b4 sz=9 vsz=9 perm=--r-x name=.fini
+idx=15 vaddr=0x004005c0 paddr=0x000005c0 sz=16 vsz=16 perm=--r-- name=.rodata
+idx=16 vaddr=0x004005d0 paddr=0x000005d0 sz=52 vsz=52 perm=--r-- name=.eh_frame_hdr
+idx=17 vaddr=0x00400608 paddr=0x00000608 sz=212 vsz=212 perm=--r-- name=.eh_frame
+idx=18 vaddr=0x006006e0 paddr=0x000006e0 sz=8 vsz=8 perm=--rw- name=.init_array
+idx=19 vaddr=0x006006e8 paddr=0x000006e8 sz=8 vsz=8 perm=--rw- name=.fini_array
+idx=20 vaddr=0x006006f0 paddr=0x000006f0 sz=8 vsz=8 perm=--rw- name=.jcr
+idx=21 vaddr=0x006006f8 paddr=0x000006f8 sz=464 vsz=464 perm=--rw- name=.dynamic
+idx=22 vaddr=0x006008c8 paddr=0x000008c8 sz=8 vsz=8 perm=--rw- name=.got
+idx=23 vaddr=0x006008d0 paddr=0x000008d0 sz=48 vsz=48 perm=--rw- name=.got.plt
+idx=24 vaddr=0x00600900 paddr=0x00000900 sz=16 vsz=16 perm=--rw- name=.data
+idx=25 vaddr=0x00600910 paddr=0x00000910 sz=8 vsz=8 perm=--rw- name=.bss
+idx=26 vaddr=0x00000000 paddr=0x00000910 sz=17 vsz=17 perm=----- name=.comment
+idx=27 vaddr=0x00000000 paddr=0x00000921 sz=264 vsz=264 perm=----- name=.shstrtab
+idx=28 vaddr=0x00000000 paddr=0x000011b0 sz=1608 vsz=1608 perm=----- name=.symtab
+idx=29 vaddr=0x00000000 paddr=0x000017f8 sz=574 vsz=574 perm=----- name=.strtab
+idx=30 vaddr=0x00400040 paddr=0x00000040 sz=448 vsz=448 perm=m-r-x name=PHDR
+idx=31 vaddr=0x00400200 paddr=0x00000200 sz=26 vsz=26 perm=m-r-- name=INTERP
+idx=32 vaddr=0x00400000 paddr=0x00000000 sz=1756 vsz=1756 perm=m-r-x name=LOAD0
+idx=33 vaddr=0x006006e0 paddr=0x000006e0 sz=560 vsz=568 perm=m-rw- name=LOAD1
+idx=34 vaddr=0x006006f8 paddr=0x000006f8 sz=464 vsz=464 perm=m-rw- name=DYNAMIC
+idx=35 vaddr=0x0040021c paddr=0x0000021c sz=68 vsz=68 perm=m-r-- name=NOTE
+idx=36 vaddr=0x004005d0 paddr=0x000005d0 sz=52 vsz=52 perm=m-r-- name=GNU_EH_FRAME
+idx=37 vaddr=0x00000000 paddr=0x00000000 sz=0 vsz=0 perm=m-rw- name=GNU_STACK
+idx=38 vaddr=0x00400000 paddr=0x00000000 sz=64 vsz=64 perm=m-rw- name=ehdr
+
+39 sections
+'
+run_test
+
+NAME='il (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="il"
+EXPECT='[Linked libraries]
+libc.so.6
+
+1 library
+'
+run_test
+
+NAME='ir (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="ir"
+EXPECT='[Relocations]
+vaddr=0x006008c8 paddr=0x000008c8 type=SET_64 __gmon_start__
+vaddr=0x006008e8 paddr=0x000008e8 type=SET_64 puts
+vaddr=0x006008f0 paddr=0x000008f0 type=SET_64 __libc_start_main
+vaddr=0x006008f8 paddr=0x000008f8 type=SET_64 __gmon_start__
+
+4 relocations
+'
+run_test
+
+NAME='ir (file x86_64, ifunc)'
+FILE=../bins/elf/ifunc_rel64
+ARGS=
+CMDS="ir"
+EXPECT='[Relocations]
+vaddr=0x006b1818 paddr=0x000b1818 type=SET_64 0x004140b0 (ifunc)
+vaddr=0x006b1810 paddr=0x000b1810 type=SET_64 0x00479800 (ifunc)
+vaddr=0x006b1808 paddr=0x000b1808 type=SET_64 0x00414300 (ifunc)
+vaddr=0x006b1800 paddr=0x000b1800 type=SET_64 0x004193f0 (ifunc)
+vaddr=0x006b17f8 paddr=0x000b17f8 type=SET_64 0x00419ad0 (ifunc)
+vaddr=0x006b17f0 paddr=0x000b17f0 type=SET_64 0x00418de0 (ifunc)
+vaddr=0x006b17e8 paddr=0x000b17e8 type=SET_64 0x00418a50 (ifunc)
+vaddr=0x006b17e0 paddr=0x000b17e0 type=SET_64 0x004199b0 (ifunc)
+vaddr=0x006b17d8 paddr=0x000b17d8 type=SET_64 0x004193a0 (ifunc)
+vaddr=0x006b17d0 paddr=0x000b17d0 type=SET_64 0x00416530 (ifunc)
+
+10 relocations
+'
+run_test
+
+
+NAME='is (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="is"
+EXPECT='[Symbols]
+vaddr=0x006006f0 paddr=0x000006f0 ord=030 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__JCR_LIST__
+vaddr=0x00400440 paddr=0x00000440 ord=031 fwd=NONE sz=0 bind=LOCAL type=FUNC name=deregister_tm_clones
+vaddr=0x00400470 paddr=0x00000470 ord=032 fwd=NONE sz=0 bind=LOCAL type=FUNC name=register_tm_clones
+vaddr=0x004004b0 paddr=0x000004b0 ord=033 fwd=NONE sz=0 bind=LOCAL type=FUNC name=__do_global_dtors_aux
+vaddr=0x00600910 paddr=0x00000910 ord=034 fwd=NONE sz=1 bind=LOCAL type=OBJECT name=completed.6724
+vaddr=0x006006e8 paddr=0x000006e8 ord=035 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__do_global_dtors_aux_fini_array_entry
+vaddr=0x004004d0 paddr=0x000004d0 ord=036 fwd=NONE sz=0 bind=LOCAL type=FUNC name=frame_dummy
+vaddr=0x006006e0 paddr=0x000006e0 ord=037 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__frame_dummy_init_array_entry
+vaddr=0x004006d8 paddr=0x000006d8 ord=040 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__FRAME_END__
+vaddr=0x006006f0 paddr=0x000006f0 ord=041 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__JCR_END__
+vaddr=0x006006e8 paddr=0x000006e8 ord=043 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_end
+vaddr=0x006006f8 paddr=0x000006f8 ord=044 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=_DYNAMIC
+vaddr=0x006006e0 paddr=0x000006e0 ord=045 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_start
+vaddr=0x006008d0 paddr=0x000008d0 ord=046 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=_GLOBAL_OFFSET_TABLE_
+vaddr=0x004005b0 paddr=0x000005b0 ord=047 fwd=NONE sz=2 bind=GLOBAL type=FUNC name=__libc_csu_fini
+vaddr=0x00600900 paddr=0x00000900 ord=049 fwd=NONE sz=0 bind=UNKNOWN type=NOTYPE name=data_start
+vaddr=0x00600910 paddr=0x00000910 ord=051 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_edata
+vaddr=0x004005b4 paddr=0x000005b4 ord=052 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_fini
+vaddr=0x00600900 paddr=0x00000900 ord=054 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__data_start
+vaddr=0x00600908 paddr=0x00000908 ord=056 fwd=NONE sz=0 bind=GLOBAL type=OBJECT name=__dso_handle
+vaddr=0x004005c0 paddr=0x000005c0 ord=057 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=_IO_stdin_used
+vaddr=0x00400520 paddr=0x00000520 ord=058 fwd=NONE sz=137 bind=GLOBAL type=FUNC name=__libc_csu_init
+vaddr=0x00600918 paddr=0x00600918 ord=059 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_end
+vaddr=0x00400410 paddr=0x00000410 ord=060 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_start
+vaddr=0x00600910 paddr=0x00000910 ord=061 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__bss_start
+vaddr=0x004004fc paddr=0x000004fc ord=062 fwd=NONE sz=21 bind=GLOBAL type=FUNC name=main
+vaddr=0x00600910 paddr=0x00000910 ord=064 fwd=NONE sz=0 bind=GLOBAL type=OBJECT name=__TMC_END__
+vaddr=0x004003a8 paddr=0x000003a8 ord=066 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_init
+vaddr=0x004003e0 paddr=0x000003e0 ord=001 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.puts
+vaddr=0x004003f0 paddr=0x000003f0 ord=002 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__libc_start_main
+vaddr=0x00400400 paddr=0x00000400 ord=003 fwd=NONE sz=16 bind=UNKNOWN type=NOTYPE name=imp.__gmon_start__
+
+31 symbols
+'
+run_test
+
+NAME='iz (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="iz"
+EXPECT='vaddr=0x004005c4 paddr=0x000005c4 ordinal=000 sz=12 len=11 section=.rodata type=ascii string=Hello World
+'
+run_test
+
+
+NAME='izq (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="izq"
+EXPECT='0x4005c4 12 11 Hello World
+'
+run_test
+
+
+NAME='izqq (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="izqq"
+EXPECT='Hello World
+'
+run_test
+
+
+NAME='izzq (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="izzq~puts"
+EXPECT="0x4002fa 5 4 puts
+0x15b 18 17 puts@@GLIBC_2.2.5
+"
+run_test
+
+
+NAME='izzqq (file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS="izzqq~puts"
+EXPECT='puts
+puts@@GLIBC_2.2.5
+'
+run_test
+
+
+NAME='izzqq malloc://512 '
+FILE=malloc://512
+ARGS=
+CMDS="wx 6a0b58995266682d6389e7682f736800682f62696e89e352e8390000006563686f202222203e202f6574632f736861646f77203b206563686f202222203e202f6574632f706173737764203b20726d202d5266202f00575389e1cd80
+izzqq"
+EXPECT='Rfh-c
+h/sh
+h/bin
+echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
+'
+run_test
+
+NAME='i (no rbin - file x86_64)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS="-n"
+CMDS="i"
+EXPECT='file     ../bins/elf/analysis/hello-linux-x86_64
+fd       42
+size     0x1a36
+iorw     false
+blksz    0x0
+mode     -r--
+block    0x100
+'
+FILTER='sed "s/^fd       [0-9][0-9]*/fd       42/"'
+run_test
+
+NAME="iM command"
+FILE=../bins/elf/redpill
+BROKEN=
+CMDS='iM
+'
+EXPECT='[Main]
+vaddr=0x0000142e paddr=0x0000142e
+'
+run_test

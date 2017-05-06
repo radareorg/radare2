@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='stackptr'
+FILE=../../bins/mach0/mac-ls
+CMDS='s 0x1000039b6
+af
+e asm.lines=false
+e asm.fcnlines=false
+e asm.stackptr=true
+pdr~0x100003b27[1]
+pdf~0x100003b27[1]
+pdr~0x100003b3d[1]
+pdr~0x100003b3e[1]
+pdr~0x100003b40[1]
+pdr~0x100003b42[1]
+pdr~0x100003b44[1]
+pdr~0x100003b46[1]
+'
+EXPECT='104
+104
+48-
+40-
+32-
+24-
+16-
+8-
+'
+run_test

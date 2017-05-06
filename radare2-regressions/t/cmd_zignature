@@ -1,0 +1,271 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='zs unset'
+CMDS='
+zs test1
+zae foo1 aabbccdd
+zae bar1 aabbccdd
+zs test2
+zae foo2 aabbccdd
+zae bar2 aabbccdd
+zs test3
+zae foo3 aabbccdd
+zae bar3 aabbccdd
+zs test1
+zs *
+zs-test2
+z~bar2
+z~foo2
+'
+EXPECT='bar2 e aabbccdd
+foo2 e aabbccdd
+'
+run_test
+
+NAME='zs delete'
+CMDS='
+zs test1
+zae foo1 aabbccdd
+zae bar1 aabbccdd
+zs test2
+zae foo2 aabbccdd
+zae bar2 aabbccdd
+zs test3
+zae foo3 aabbccdd
+zae bar3 aabbccdd
+zs test2
+z-*
+zs *
+z~bar2
+z~foo2
+'
+EXPECT=''
+run_test
+
+NAME='z and binmasks'
+CMDS='
+zae test .abbc.dd..
+z
+'
+EXPECT='test e .abbc.dd..
+'
+run_test
+
+NAME='zae zero mask'
+CMDS='
+zae test ....
+z
+'
+EXPECT=''
+run_test
+
+NAME='zae + z/'
+FILE=../bins/elf/analysis/go_stripped
+CMDS='
+zae sym.fmt.Println 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
+z/
+?v sign.e.sym.fmt.Println_0
+'
+EXPECT='0x805b030
+'
+run_test
+
+NAME='zaa + z/'
+FILE=../bins/elf/analysis/go_stripped
+CMDS='
+zaa sym.fmt.Println 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
+z/
+?v sign.a.sym.fmt.Println_1
+'
+EXPECT='0x805b030
+'
+run_test
+
+NAME='z/ with search.in'
+FILE=../bins/elf/analysis/go_stripped
+CMDS='
+zae date_string 323030362d30312d30322031353a30343a30352e393939393939393939202d30373030204d535400
+zae sym.fmt.Println 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
+fs sign
+f~?
+e search.in=file
+z/
+?v sign.e.date_string_0
+?v sign.e.sym.fmt.Println_0
+f-*
+f~?
+e search.in=io.sections.exec
+z/
+?v sign.e.elf_header_0
+?v sign.e.sym.fmt.Println_0
+'
+EXPECT='0
+0x81a5898
+0x805b030
+0
+0x0
+0x805b030
+'
+run_test
+
+NAME='z/ with search.align'
+FILE=malloc://1024
+CMDS='
+wx 00112233445566778899aabbccddeeff
+zae foo 1122
+fs *
+e search.align=2
+z/
+f~?
+e search.align=1
+z/
+f~?
+'
+EXPECT='0
+1
+'
+run_test
+
+NAME='z/ with search.{from, to}'
+FILE=malloc://1024
+CMDS='
+wx 00112233445566778899aabbccddeeff
+zae a 11223344
+zae b bbccddee
+fs *
+f~?
+e search.in=raw
+e search.from=0x0
+e search.to=0x8
+z/
+?v sign.e.a_0
+?v sign.e.b_0
+f-*
+f~?
+e search.from=0x8
+e search.to=0xf
+z/
+?v sign.e.a_0
+?v sign.e.b_0
+'
+EXPECT='0
+0x1
+0x0
+0
+0x0
+0xb
+'
+run_test
+
+NAME='zae ; z/ ; aa ; axt'
+FILE=../bins/elf/analysis/zigs_stripped
+CMDS='
+zae sym.print 5548....48......48......48......48....bf........b8........e8........90c9c3
+z/
+e anal.hasnext=0
+aa
+axt 0x400536
+'
+EXPECT='call 0x40056f call sign.e.sym.print_0 in main
+'
+run_test
+
+NAME='zaaF'
+FILE=../bins/elf/analysis/zigs
+CMDS='
+aaa
+zaaF
+z*~sym.main[2]
+'
+EXPECT='554889e54883ec1089....48......bf........e8........b800000000c9c3
+'
+run_test
+
+NAME='zaeF'
+FILE=../bins/elf/analysis/zigs
+CMDS='
+aaa
+zaeF
+z*~sym.main[2]
+'
+EXPECT='554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
+'
+run_test
+
+NAME='zc'
+FILE=../bins/elf/analysis/zigs_stripped
+CMDS='
+aa
+zae sym.print 5548....48......48......48......48....bf........b8........e8........90c9c3
+zc @@ fcn*
+?v sign.e.sym.print_0
+'
+EXPECT='0x400536
+'
+run_test
+
+NAME='zc metric zign'
+FILE=../bins/elf/analysis/zigs_stripped
+CMDS='
+aa
+zam sym.print cc=1 nbbs=1 edges=0 ebbs=1
+zc @@ fcn*
+?v sign.m.sym.print_0
+'
+EXPECT='0x400536
+'
+run_test
+
+NAME='z/ metric zign'
+FILE=../bins/elf/analysis/zigs_stripped
+CMDS='
+aa
+zam sym.print_metric cc=1 nbbs=1 edges=0 ebbs=1
+z/
+?v sign.m.sym.print_metric_2
+'
+EXPECT='0x400536
+'
+run_test
+
+NAME='z/ anal + metric zign'
+FILE=../bins/elf/analysis/zigs_stripped
+CMDS='
+aa
+zae sym.print_anal 5548....48......48......48......48....bf........b8........e8........90c9c3
+zam sym.print_metric cc=1 nbbs=1 edges=0 ebbs=1
+z/
+?v sign.e.sym.print_anal_0
+?v sign.m.sym.print_metric_2
+'
+EXPECT='0x400536
+0x400536
+'
+run_test
+
+NAME='aa ; zfs libc.sig'
+FILE=../bins/elf/analysis/pid_stripped
+ARGS=
+CMDS="aa ; zfs ../bins/other/sigs/libc.sig"
+EXPECT='Found flirt.__libc_start_main
+'
+run_test
+
+NAME='zfd libc.sig'
+FILE=../bins/elf/analysis/pid_stripped
+ARGS=
+CMDS="zfd ../bins/other/sigs/libc.sig"
+EXPECT='41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
+ 0. 16 D2A2 0298 0000:__libc_start_main
+'
+run_test
+
+NAME='af ; af ; zfs libc.sig'
+FILE=../bins/elf/analysis/pid_stripped
+ARGS=
+CMDS="s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs ../bins/other/sigs/libc.sig ; afl ~4e2420"
+EXPECT='0x004e2420   40 664          flirt.__libc_start_main
+'
+run_test

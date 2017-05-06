@@ -1,0 +1,26 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: dynamic p_offset'
+FILE=../../bins/elf/analysis/dynamic-poffset
+BROKEN=
+ARGS=''
+CMDS="ir"
+EXPECT='[Relocations]
+vaddr=0x006009a8 paddr=0x000009a8 type=SET_64 write
+vaddr=0x006009b0 paddr=0x000009b0 type=SET_64 close
+vaddr=0x006009b8 paddr=0x000009b8 type=SET_64 __libc_start_main
+vaddr=0x006009c0 paddr=0x000009c0 type=SET_64 open
+vaddr=0x00600988 paddr=0x00000988 type=SET_64 __gmon_start__
+
+5 relocations
+'
+run_test
+
+NAME='ELF: Spurious relocations'
+FILE=../../bins/elf/analysis/spurious-relocs
+BROKEN=
+ARGS=''
+CMDS="ir~vaddr=0x0000003a"
+EXPECT=''
+run_test

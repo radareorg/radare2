@@ -1,0 +1,28 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='delete memory format with Cf-'
+FILE='../../bins/dmg/src/Hello'
+ARGS=
+CMDS='
+pd 1
+Cf 1 x
+pd 1
+Ps temp_proj
+Cf-
+pd 1
+Ps temp_proj
+Po temp_proj
+pd 1
+'
+EXPECT='            0x00000000      57             push rdi
+            0x00000000 format x {
+0x00000000 = 0x6c726f57
+} 1
+temp_proj
+            0x00000000      57             push rdi
+temp_proj
+            0x00000000      57             push rdi
+'
+run_test

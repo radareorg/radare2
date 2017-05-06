@@ -1,0 +1,283 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2016  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# ?vi asumes 64bit values by default
+
+FILE=malloc://1024
+NAME=?vi-1
+ARGS=
+CMDS='
+?vi 0xffffffff
+?vi8 0xffffffff
+?vi4 0xffffffff
+?vi2 0xffffffff
+?vi1 0xffffffff
+?vi4 0xffffffff
+?vi2 0xffff
+?vi1 0xff
+'
+EXPECT='4294967295
+4294967295
+-1
+-1
+-1
+-1
+-1
+-1
+'
+run_test
+
+
+FILE=malloc://1024
+NAME=?vi-8
+ARGS=
+CMDS='
+?vi 0xfffffff8
+?vi4 0xfffffff8
+?vi2 0xfffffff8
+?vi1 0xfffffff8
+?vi4 0xfffffff8
+?vi2 0xfff8
+?vi1 0xf8
+'
+EXPECT='4294967288
+-8
+-8
+-8
+-8
+-8
+-8
+'
+run_test
+
+
+## Missing arguments shouldn't cause a crash.
+
+FILE=malloc://1024
+ARGS=
+CMDS='
+?v
+?=
+??
+?d
+?e
+?r
+?y
+?b
+?f
+?p
+?s
+?S
+?x
+?X
+?l
+?t
+?!
+?+
+?-
+'
+EXPECT_ERR="Use: ?d [opcode]    to get the description of the opcode
+Whitespace expected after '?f'
+Virtual addresses not enabled!
+0.004711
+"
+EXPECT='0
+0x0
+0
+
+0xrandomnr
+
+0b
+
+0
+0x0
+0x0
+0x0
+'
+# %r is a random number. %t displays a different time on each run.
+FILTER="sed -e 's/^0x[0-9a-f][0-9a-f][0-9a-f]*$/0xrandomnr/g;
+             s/^0\\.00[0-9]*$/0.004711/'"
+run_test
+
+
+## "?e" - echo string
+
+NAME='?e'
+FILE=malloc://1024
+ARGS=
+CMDS='
+?e fuck
+?e yeah
+'
+EXPECT='fuck
+yeah
+'
+run_test
+
+
+## "?r" - generate random number between from-to
+
+NAME='?r'
+FILE=malloc://1024
+ARGS=
+CMDS='
+?r
+?r
+?r
+?r
+?r
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+?r 10 16
+'
+EXPECT='0xrandomnr
+0xrandomnr
+0xrandomnr
+0xrandomnr
+0xrandomnr
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xsmallrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+0xlargerrandom
+'
+FILTER="sed 's/^0x[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*$/0xrandomnr/g;
+             s/^0x[0-9]$/0xsmallrandom/g;
+             s/^0x[a-f]$/0xlargerrandom/g'"
+run_test
+
+## "?v" - hex value of math expr
+NAME='?v'
+FILE=--
+ARGS=
+CMDS='
+?v 1024
+?v 0x42
+'
+EXPECT='0x400
+0x42
+'
+run_test
+
+NAME="?v 'A'"
+FILE=--
+ARGS=
+CMDS="?v 'A'
+"
+EXPECT='0x41
+'
+run_test
+
+NAME="?v 'A'+3"
+FILE=--
+ARGS=
+CMDS="?v 'A'+3
+"
+EXPECT='0x44
+'
+run_test
+
+NAME="?v 3+'A'-3"
+FILE=--
+ARGS=
+CMDS="?v 3+'A'-3
+"
+EXPECT='0x41
+'
+run_test
+
+NAME="?v 33^'A'"
+FILE=--
+ARGS=
+CMDS="?v 32^'A'
+"
+EXPECT='0x61
+'
+run_test
+
+NAME="? 1;?v"
+FILE=--
+ARGS=
+CMDS="? 1;?v"
+EXPECT='1 0x1 01 1 0000:0001 1 "\x01" 00000001 1.0 1.000000f 1.000000
+1
+'
+run_test
+
+NAME="? 0;?v"
+FILE=--
+ARGS=
+CMDS="? 0;?v"
+EXPECT='0 0x0 00 0 0000:0000 0 "\0" 00000000 0.0 0.000000f 0.000000
+0
+'
+run_test
+
+NAME="? -1"
+FILE=--
+ARGS=
+CMDS="? -1"
+EXPECT='-1 0xffffffffffffffff 01777777777777777777777 17179869184.0G fffff000:0fff -1 "\xff\xff\xff\xff\xff\xff\xff\xff" 1111111111111111111111111111111111111111111111111111111111111111 -1.0 -1.000000f -1.000000
+'
+run_test
+
+NAME="? 2*1.5"
+FILE=--
+ARGS=
+CMDS="? 2*1.5"
+EXPECT='2 0x2 02 2 0000:0002 2 "\x02" 00000010 3.0 3.000000f 3.000000
+'
+run_test

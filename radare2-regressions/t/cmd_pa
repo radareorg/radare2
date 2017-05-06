@@ -1,0 +1,34 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# TODO: Add tests for mach0, PE, ...
+# TODO: check symbols too
+
+NAME="asm/callflag"
+BROKEN=
+FILE=-
+CMDS='
+e asm.arch=x86
+f eax=33
+pa call eax
+f test=eax
+pa call test
+'
+EXPECT='ffd0
+e81c000000
+'
+run_test
+
+NAME="asm.assembler"
+BROKEN=
+FILE=-
+CMDS='
+e asm.arch=x86
+pa call eax
+e asm.assembler=java
+pa bipush 33
+'
+EXPECT='ffd0
+1021
+'
+run_test

@@ -1,0 +1,163 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="ELF ARM: function arg"
+BROKEN=
+FILE=../../bins/elf/analysis/armcall
+CMDS='
+e asm.calls=false
+afr@main
+afva@sym.call
+pdf@sym.call
+'
+EXPECT='            ;-- $a_10:
+/ (fcn) sym.call 44
+|           ; var int local_8h @ fp-0x8
+|              ; CALL XREF from 0x00010468 (sym.main)
+|           0x00010420      00482de9       push {fp, lr}
+|           0x00010424      04b08de2       add fp, sp, 4
+|           0x00010428      08d04de2       sub sp, sp, 8
+|           0x0001042c      08000be5       str r0, [fp - local_8h]
+|           0x00010430      14009fe5       ldr r0, [loc._d_15]         ; [0x1044c:4]=0x104f0 loc._d_14 ; LEA loc._d_15 ; loc._d_15
+|           0x00010434      08101be5       ldr r1, [fp - local_8h]
+|           0x00010438      a2ffffeb       bl sym.imp.printf
+|           0x0001043c      0030a0e3       mov r3, 0
+|           0x00010440      0300a0e1       mov r0, r3
+|           0x00010444      04d04be2       sub sp, fp, 4
+\           0x00010448      0088bde8       pop {fp, pc}
+'
+run_test
+
+
+NAME="ELF ARM: function args"
+BROKEN=
+FILE=../../bins/elf/analysis/armcall
+CMDS='
+e asm.calls=false
+af@main
+afva@main
+pdf@main
+'
+EXPECT='            ;-- main:
+            ;-- $a_11:
+/ (fcn) sym.main 44
+|           ; var int local_ch @ fp-0xc
+|           ; var int local_8h @ fp-0x8
+|           0x00010450      00482de9       push {fp, lr}
+|           0x00010454      04b08de2       add fp, sp, 4
+|           0x00010458      08d04de2       sub sp, sp, 8
+|           0x0001045c      08000be5       str r0, [fp - local_8h]
+|           0x00010460      0c100be5       str r1, [fp - local_ch]
+|           0x00010464      08001be5       ldr r0, [fp - local_8h]
+|           0x00010468      ecffffeb       bl sym.call
+|           0x0001046c      0030a0e1       mov r3, r0
+|           0x00010470      0300a0e1       mov r0, r3
+|           0x00010474      04d04be2       sub sp, fp, 4
+\           0x00010478      0088bde8       pop {fp, pc}
+'
+run_test
+
+
+NAME="ELF ARM: aav"
+BROKEN=
+FILE=../../bins/elf/analysis/armcall
+CMDS='e asm.calls=false
+aav
+pd 3 @ 0x00010328
+'
+EXPECT='            ;-- $d_2:
+               ; UNKNOWN XREF from 0x00010988 (section_end..eh_frame + 1160)
+            0x00010328      .dword 0x000104e0 ; sym.__libc_csu_fini
+            0x0001032c      .dword 0x00010450 ; sym.main
+               ; UNKNOWN XREF from 0x000102c4 (loc._d_19 + 0)
+            0x00010330      .dword 0x0001047c ; sym.__libc_csu_init
+'
+run_test
+
+NAME="ELF ARM: af and aav"
+FILE=../../bins/elf/arm1.bin
+BROKEN=1
+CMDS='e asm.arch=arm
+e asm.bits=32
+e asm.comments=false
+e asm.bytes=false
+e asm.offset=false
+e asm.flags=false
+af @ sym.call_gmon_start
+af @ entry0
+aav
+pd 1 @ 0x000081e0
+pd 1 @ 0x0000817c
+pd 1 @ 0x00008180
+pd 1 @ 0x00008184
+'
+EXPECT='                 .dword 0x00084758 ; obj.completed.6278
+|                .dword 0x00008b00 ; sym.__libc_csu_fini
+|                .dword 0x00008290 ; sym.main
+|                .dword 0x00008b48 ; sym.__libc_csu_init
+'
+run_test
+
+NAME="ELF ARM: aav string"
+FILE=../../bins/elf/arm1.bin
+BROKEN=1
+CMDS='e asm.arch=arm
+e asm.bits=32
+e asm.comments=false
+e asm.bytes=false
+e asm.offset=false
+e asm.flags=false
+af @ sym.deregister_tm_clones
+aav
+pd 1 @ 0x0001037c
+'
+EXPECT='            .dword 0x0002061f ; str.:__Raspbian_4.9.2_10__4.9.2
+'
+run_test
+
+NAME="ELF ARM: vars"
+BROKEN=
+FILE=../../bins/elf/analysis/arm-ls
+CMDS='
+e asm.calls=false
+s main
+af
+pd 1~local?
+'
+EXPECT='48
+'
+run_test
+
+NAME="sp vars arm16"
+BROKEN=
+FILE=malloc://1024
+CMDS='e asm.arch=arm
+e asm.bits=16
+wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
+aa
+pdf~var
+'
+EXPECT='|           ; var int local_0h @ r13+0x0
+|           ; var int local_4h @ r13+0x4
+|           ; var int local_8h @ r13+0x8
+|           ; var int local_ch @ r13+0xc
+|           ; var int local_10h @ r13+0x10
+|           ; var int local_14h @ r13+0x14
+|           ; var int local_18h @ r13+0x18
+|           ; var int local_1ch @ r13+0x1c
+|           ; var int local_20h @ r13+0x20
+|           ; var int local_24h @ r13+0x24
+|           ; var int local_28h @ r13+0x28
+|           ; var int local_2ch @ r13+0x2c
+|           ; var int local_30h @ r13+0x30
+|           ; var int local_34h @ r13+0x34
+|           ; var int local_38h @ r13+0x38
+|           ; var int local_3ch @ r13+0x3c
+|           ; var int local_40h @ r13+0x40
+|           ; var int local_44h @ r13+0x44
+|           ; var int local_48h @ r13+0x48
+|           ; var int local_4ch @ r13+0x4c
+|           ; var int local_50h @ r13+0x50
+'
+run_test

@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='GBA: 3D - S'
+FILE=../../bins/gba/3D.gba
+CMDS="S"
+EXPECT='[00] * 0x00000000 mr-x va=0x08000000 sz=0x105cc vsz=0x2000000 ROM
+'
+run_test

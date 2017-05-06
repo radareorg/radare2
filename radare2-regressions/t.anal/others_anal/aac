@@ -1,0 +1,43 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2017 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="aac on mips be"
+FILE=../../bins/elf/analysis/mipsbe-busybox
+CMDS="aac
+afl~?
+"
+EXPECT="1317
+"
+run_test
+
+NAME="raw aac with maps (less because of wrong map address)"
+FILE=../../bins/elf/analysis/mipsbe-busybox
+ARGS="-n -m 0x80000 -a mips -b32 -e cfg.bigendian=true"
+CMDS="aac
+afl~?
+"
+EXPECT="4
+"
+run_test
+
+NAME="raw aac (using a PIC bin)"
+FILE=../../bins/elf/libmagic.so
+CMDS="aac
+afl~?
+"
+EXPECT="210
+"
+run_test
+
+NAME="raw aac with maps (using a PIC bin)"
+FILE=../../bins/elf/libmagic.so
+ARGS="-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false"
+CMDS="aac
+e search.in=io.maps
+afl~?
+"
+EXPECT="96
+"
+run_test

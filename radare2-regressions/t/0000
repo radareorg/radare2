@@ -1,0 +1,22 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+BROKEN=1
+FILE='malloc://0x4000'
+CMDS='
+s 0
+e io.va=true
+b 64
+wb 33
+S 0 0x1000 64 64 test
+s 0x1000
+px
+s-16
+px
+'
+EXPECT='aabbccdd
+bbddffff
+ddffffff
+'
+EXPECT_ERR=''
+run_test

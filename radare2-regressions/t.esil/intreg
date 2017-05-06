@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2015 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='intreg $$'
+FILE=-
+ARGS=
+CMDS='s 10
+"ae $$,0,+"'
+EXPECT='0xa
+'
+run_test
+
+NAME='intreg $$'
+FILE=-
+ARGS=
+CMDS='s 10
+"ae 0,$$,+"'
+EXPECT='0xa
+'
+run_test

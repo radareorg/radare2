@@ -1,0 +1,98 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# "!" - run commands (via system)
+
+NAME='!'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+?e fuck
+?e yeah
+!echo fuck
+!echo yeah
+'
+EXPECT='fuck
+yeah
+fuck
+yeah
+'
+run_test
+
+NAME='!| grep'
+FILE=-
+ARGS=
+CMDS='
+!echo fuck|grep bob
+'
+EXPECT=''
+run_test
+
+# BUG in r2: XXX: EXPECT_ERR must be EXPECT (output to stdout)
+NAME='!| sed'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+!echo fuck|sed -e s,fuck,yeah,
+'
+EXPECT='yeah
+'
+run_test
+
+# BUG in r2: XXX: EXPECT_ERR must be EXPECT (output to stdout)
+NAME='?e|'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+?e fuck|sed -e s,fuck,yeah,
+'
+EXPECT='yeah
+'
+run_test
+
+NAME='p8 `?e 3`'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+p8 `?e 3`
+'
+EXPECT='000000
+'
+run_test
+
+BROKEN=
+NAME='p8 `!echo 3`'
+FILE=-
+ARGS=
+CMDS='
+p8 `!echo 3`
+'
+EXPECT='000000
+'
+run_test
+
+NAME='!echo "test"'
+BROKEN=
+CMDS='
+!echo "test"
+"!echo test"
+'
+EXPECT='test
+test
+'
+run_test
+
+NAME='%ENV=33 !echo "$ENV"'
+BROKEN=
+CMDS='
+%ENV=World
+!echo $ENV
+'
+EXPECT='World
+'
+run_test

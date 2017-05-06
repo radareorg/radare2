@@ -1,0 +1,26 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='av list virtual table'
+FILE=../bins/elf/analysis/elf-virtualtable
+CMDS='
+aaa
+av
+'
+EXPECT='
+Vtable Found at 0x00400ce8
+0x00400ce8 : sym.A::greet
+0x00400cf0 : sym.C::printValue
+
+
+Vtable Found at 0x00400d08
+0x00400d08 : sym.A::greet
+0x00400d10 : sym.B::printValue
+
+
+Vtable Found at 0x00400d28
+0x00400d28 : sym.A::greet
+0x00400d30 : sym.A::printValue
+
+'
+run_test

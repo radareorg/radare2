@@ -1,0 +1,394 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh && break ; done
+
+NAME='x86 - init_array detection'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='aa;afl~0x080482e0[3]
+'
+EXPECT='loc.imp.__gmon_start__
+'
+run_test
+
+NAME='x86 - init_array detection'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='S~init_array
+'
+EXPECT='[17] . 0x0000059c -rw- va=0x0804959c sz=0x0004 vsz=0x0004 .init_array
+'
+run_test
+
+NAME='metadata'
+BROKEN=
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='CC
+'
+EXPECT='0x00000000 CCu "section 37 va=0x00000000 pa=0x00000000 sz=0 vsz=0 rwx=m-rw- GNU_STACK"
+0x08048000 CCu "section 38 va=0x08048000 pa=0x00000000 sz=52 vsz=52 rwx=m-rw- ehdr"
+0x08048034 CCu "section 30 va=0x08048034 pa=0x00000034 sz=256 vsz=256 rwx=m-r-x PHDR"
+0x08048134 CCu "section 31 va=0x08048134 pa=0x00000134 sz=19 vsz=19 rwx=m-r-- INTERP"
+0x08048148 CCu "section 35 va=0x08048148 pa=0x00000148 sz=68 vsz=68 rwx=m-r-- NOTE"
+0x08048168 CCu "section 3 va=0x08048168 pa=0x00000168 sz=36 vsz=36 rwx=--r-- .note.gnu.build_id"
+0x0804818c CCu "section 4 va=0x0804818c pa=0x0000018c sz=32 vsz=32 rwx=--r-- .gnu.hash"
+0x080481ac CCu "section 5 va=0x080481ac pa=0x000001ac sz=80 vsz=80 rwx=--r-- .dynsym"
+0x080481fc CCu "section 6 va=0x080481fc pa=0x000001fc sz=74 vsz=74 rwx=--r-- .dynstr"
+0x08048246 CCu "section 7 va=0x08048246 pa=0x00000246 sz=10 vsz=10 rwx=--r-- .gnu.version"
+0x08048250 CCu "section 8 va=0x08048250 pa=0x00000250 sz=32 vsz=32 rwx=--r-- .gnu.version_r"
+0x08048270 CCu "section 9 va=0x08048270 pa=0x00000270 sz=8 vsz=8 rwx=--r-- .rel.dyn"
+0x08048278 CCu "section 10 va=0x08048278 pa=0x00000278 sz=24 vsz=24 rwx=--r-- .rel.plt"
+0x08048290 CCu "section 11 va=0x08048290 pa=0x00000290 sz=35 vsz=35 rwx=--r-x .init"
+0x080482c0 CCu "section 12 va=0x080482c0 pa=0x000002c0 sz=64 vsz=64 rwx=--r-x .plt"
+0x08048300 CCu "section 13 va=0x08048300 pa=0x00000300 sz=404 vsz=404 rwx=--r-x .text"
+0x08048494 CCu "section 14 va=0x08048494 pa=0x00000494 sz=20 vsz=20 rwx=--r-x .fini"
+0x080484a8 CCu "section 15 va=0x080484a8 pa=0x000004a8 sz=21 vsz=21 rwx=--r-- .rodata"
+0x080484c0 CCu "section 36 va=0x080484c0 pa=0x000004c0 sz=44 vsz=44 rwx=m-r-- GNU_EH_FRAME"
+0x080484ec CCu "section 17 va=0x080484ec pa=0x000004ec sz=176 vsz=176 rwx=--r-- .eh_frame"
+0x0804959c CCu "section 33 va=0x0804959c pa=0x0000059c sz=280 vsz=284 rwx=m-rw- LOAD1"
+0x080495a0 CCu "section 19 va=0x080495a0 pa=0x000005a0 sz=4 vsz=4 rwx=--rw- .fini_array"
+0x080495a4 CCu "section 20 va=0x080495a4 pa=0x000005a4 sz=4 vsz=4 rwx=--rw- .jcr"
+0x080495a8 CCu "section 34 va=0x080495a8 pa=0x000005a8 sz=232 vsz=232 rwx=m-rw- DYNAMIC"
+0x08049690 CCu "section 22 va=0x08049690 pa=0x00000690 sz=4 vsz=4 rwx=--rw- .got"
+0x08049694 CCu "section 23 va=0x08049694 pa=0x00000694 sz=24 vsz=24 rwx=--rw- .got.plt"
+0x080496ac CCu "section 24 va=0x080496ac pa=0x000006ac sz=8 vsz=8 rwx=--rw- .data"
+0x080496b4 CCu "section 25 va=0x080496b4 pa=0x000006b4 sz=4 vsz=4 rwx=--rw- .bss"
+0x08049690 data Cd 4
+0x080496a0 data Cd 4
+0x080496a4 data Cd 4
+0x080496a8 data Cd 4
+0x080484b0 string[13] "Hello_world_"
+'
+run_test
+
+NAME='base64 metadata commands'
+BROKEN=
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='C*
+'
+EXPECT='CCu base64:c2VjdGlvbiAzNyB2YT0weDAwMDAwMDAwIHBhPTB4MDAwMDAwMDAgc3o9MCB2c3o9MCByd3g9bS1ydy0gR05VX1NUQUNL @ 0x00000000
+CCu base64:c2VjdGlvbiAzOCB2YT0weDA4MDQ4MDAwIHBhPTB4MDAwMDAwMDAgc3o9NTIgdnN6PTUyIHJ3eD1tLXJ3LSBlaGRy @ 0x08048000
+CCu base64:c2VjdGlvbiAzMCB2YT0weDA4MDQ4MDM0IHBhPTB4MDAwMDAwMzQgc3o9MjU2IHZzej0yNTYgcnd4PW0tci14IFBIRFI= @ 0x08048034
+CCu base64:c2VjdGlvbiAzMSB2YT0weDA4MDQ4MTM0IHBhPTB4MDAwMDAxMzQgc3o9MTkgdnN6PTE5IHJ3eD1tLXItLSBJTlRFUlA= @ 0x08048134
+CCu base64:c2VjdGlvbiAzNSB2YT0weDA4MDQ4MTQ4IHBhPTB4MDAwMDAxNDggc3o9NjggdnN6PTY4IHJ3eD1tLXItLSBOT1RF @ 0x08048148
+CCu base64:c2VjdGlvbiAzIHZhPTB4MDgwNDgxNjggcGE9MHgwMDAwMDE2OCBzej0zNiB2c3o9MzYgcnd4PS0tci0tIC5ub3RlLmdudS5idWlsZF9pZA== @ 0x08048168
+CCu base64:c2VjdGlvbiA0IHZhPTB4MDgwNDgxOGMgcGE9MHgwMDAwMDE4YyBzej0zMiB2c3o9MzIgcnd4PS0tci0tIC5nbnUuaGFzaA== @ 0x0804818c
+CCu base64:c2VjdGlvbiA1IHZhPTB4MDgwNDgxYWMgcGE9MHgwMDAwMDFhYyBzej04MCB2c3o9ODAgcnd4PS0tci0tIC5keW5zeW0= @ 0x080481ac
+CCu base64:c2VjdGlvbiA2IHZhPTB4MDgwNDgxZmMgcGE9MHgwMDAwMDFmYyBzej03NCB2c3o9NzQgcnd4PS0tci0tIC5keW5zdHI= @ 0x080481fc
+CCu base64:c2VjdGlvbiA3IHZhPTB4MDgwNDgyNDYgcGE9MHgwMDAwMDI0NiBzej0xMCB2c3o9MTAgcnd4PS0tci0tIC5nbnUudmVyc2lvbg== @ 0x08048246
+CCu base64:c2VjdGlvbiA4IHZhPTB4MDgwNDgyNTAgcGE9MHgwMDAwMDI1MCBzej0zMiB2c3o9MzIgcnd4PS0tci0tIC5nbnUudmVyc2lvbl9y @ 0x08048250
+CCu base64:c2VjdGlvbiA5IHZhPTB4MDgwNDgyNzAgcGE9MHgwMDAwMDI3MCBzej04IHZzej04IHJ3eD0tLXItLSAucmVsLmR5bg== @ 0x08048270
+CCu base64:c2VjdGlvbiAxMCB2YT0weDA4MDQ4Mjc4IHBhPTB4MDAwMDAyNzggc3o9MjQgdnN6PTI0IHJ3eD0tLXItLSAucmVsLnBsdA== @ 0x08048278
+CCu base64:c2VjdGlvbiAxMSB2YT0weDA4MDQ4MjkwIHBhPTB4MDAwMDAyOTAgc3o9MzUgdnN6PTM1IHJ3eD0tLXIteCAuaW5pdA== @ 0x08048290
+CCu base64:c2VjdGlvbiAxMiB2YT0weDA4MDQ4MmMwIHBhPTB4MDAwMDAyYzAgc3o9NjQgdnN6PTY0IHJ3eD0tLXIteCAucGx0 @ 0x080482c0
+CCu base64:c2VjdGlvbiAxMyB2YT0weDA4MDQ4MzAwIHBhPTB4MDAwMDAzMDAgc3o9NDA0IHZzej00MDQgcnd4PS0tci14IC50ZXh0 @ 0x08048300
+CCu base64:c2VjdGlvbiAxNCB2YT0weDA4MDQ4NDk0IHBhPTB4MDAwMDA0OTQgc3o9MjAgdnN6PTIwIHJ3eD0tLXIteCAuZmluaQ== @ 0x08048494
+CCu base64:c2VjdGlvbiAxNSB2YT0weDA4MDQ4NGE4IHBhPTB4MDAwMDA0YTggc3o9MjEgdnN6PTIxIHJ3eD0tLXItLSAucm9kYXRh @ 0x080484a8
+CCu base64:c2VjdGlvbiAzNiB2YT0weDA4MDQ4NGMwIHBhPTB4MDAwMDA0YzAgc3o9NDQgdnN6PTQ0IHJ3eD1tLXItLSBHTlVfRUhfRlJBTUU= @ 0x080484c0
+CCu base64:c2VjdGlvbiAxNyB2YT0weDA4MDQ4NGVjIHBhPTB4MDAwMDA0ZWMgc3o9MTc2IHZzej0xNzYgcnd4PS0tci0tIC5laF9mcmFtZQ== @ 0x080484ec
+CCu base64:c2VjdGlvbiAzMyB2YT0weDA4MDQ5NTljIHBhPTB4MDAwMDA1OWMgc3o9MjgwIHZzej0yODQgcnd4PW0tcnctIExPQUQx @ 0x0804959c
+CCu base64:c2VjdGlvbiAxOSB2YT0weDA4MDQ5NWEwIHBhPTB4MDAwMDA1YTAgc3o9NCB2c3o9NCByd3g9LS1ydy0gLmZpbmlfYXJyYXk= @ 0x080495a0
+CCu base64:c2VjdGlvbiAyMCB2YT0weDA4MDQ5NWE0IHBhPTB4MDAwMDA1YTQgc3o9NCB2c3o9NCByd3g9LS1ydy0gLmpjcg== @ 0x080495a4
+CCu base64:c2VjdGlvbiAzNCB2YT0weDA4MDQ5NWE4IHBhPTB4MDAwMDA1YTggc3o9MjMyIHZzej0yMzIgcnd4PW0tcnctIERZTkFNSUM= @ 0x080495a8
+CCu base64:c2VjdGlvbiAyMiB2YT0weDA4MDQ5NjkwIHBhPTB4MDAwMDA2OTAgc3o9NCB2c3o9NCByd3g9LS1ydy0gLmdvdA== @ 0x08049690
+CCu base64:c2VjdGlvbiAyMyB2YT0weDA4MDQ5Njk0IHBhPTB4MDAwMDA2OTQgc3o9MjQgdnN6PTI0IHJ3eD0tLXJ3LSAuZ290LnBsdA== @ 0x08049694
+CCu base64:c2VjdGlvbiAyNCB2YT0weDA4MDQ5NmFjIHBhPTB4MDAwMDA2YWMgc3o9OCB2c3o9OCByd3g9LS1ydy0gLmRhdGE= @ 0x080496ac
+CCu base64:c2VjdGlvbiAyNSB2YT0weDA4MDQ5NmI0IHBhPTB4MDAwMDA2YjQgc3o9NCB2c3o9NCByd3g9LS1ydy0gLmJzcw== @ 0x080496b4
+Cd 4 @ 0x08049690
+Cd 4 @ 0x080496a0
+Cd 4 @ 0x080496a4
+Cd 4 @ 0x080496a8
+Cs 13 @ 0x080484b0 # Hello_world_
+'
+run_test
+
+NAME='flags spaces'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='fs
+'
+EXPECT='0    1 . strings
+1   32 . symbols
+2   78 . sections
+3    4 . relocs
+4    3 . imports
+'
+run_test
+
+NAME='flags spaces after analysis'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='
+aa;fs *;fs
+afl~?
+'
+EXPECT='0    1 . strings
+1   32 . symbols
+2   78 . sections
+3    4 . relocs
+4    3 . imports
+5    0 . functions
+14
+'
+run_test
+
+NAME='flags spaces after analysis'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='s entry0+4; af;fs *;fs
+'
+EXPECT='0    1 . strings
+1   32 . symbols
+2   78 . sections
+3    4 . relocs
+4    3 . imports
+5    1 . functions
+'
+run_test
+
+NAME='pb 4'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='pb 4
+'
+EXPECT='0011
+'
+run_test
+
+NAME='pxW 10'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='pxW 10
+'
+EXPECT='0x08048300 0x895eed31 
+0x08048304 0xf0e483e1 
+'
+run_test
+
+NAME='p-'
+# this test is subject to fail in many situations. it's too generalistic, needs
+# to be splitted down into something more unitary to identify what's wrong
+#BROKEN=0
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='p-
+'
+EXPECT='0x8048000 [c_ccs^sszcs_____________________________sss] 0x80496b8
+'
+run_test
+
+NAME='pu 10'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='pu 10
+'
+EXPECT='%31%ed%5e%89%e1%83%e4%f0%50%54
+'
+run_test
+
+NAME='pdn 10'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='e scr.color = 0
+pDi 10
+'
+EXPECT='0x08048300    sym._start:
+0x08048300             31ed  xor ebp, ebp
+0x08048302               5e  pop esi
+0x08048303             89e1  mov ecx, esp
+0x08048305           83e4f0  and esp, 0xfffffff0
+0x08048308               50  push eax
+0x08048309               54  push esp
+'
+run_test
+
+NAME='pi 12'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='pi 12
+'
+EXPECT='xor ebp, ebp
+pop esi
+mov ecx, esp
+and esp, 0xfffffff0
+push eax
+push esp
+push edx
+push sym.__libc_csu_fini
+push sym.__libc_csu_init
+push ecx
+push esi
+push sym.main
+'
+run_test
+
+
+NAME='pc C'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='pc
+'
+EXPECT='#define _BUFFER_SIZE 256
+const uint8_t buffer[256] = {
+  0x31, 0xed, 0x5e, 0x89, 0xe1, 0x83, 0xe4, 0xf0, 0x50, 0x54,
+  0x52, 0x68, 0x90, 0x84, 0x04, 0x08, 0x68, 0x20, 0x84, 0x04,
+  0x08, 0x51, 0x56, 0x68, 0x00, 0x84, 0x04, 0x08, 0xe8, 0xcf,
+  0xff, 0xff, 0xff, 0xf4, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90,
+  0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x8b, 0x1c,
+  0x24, 0xc3, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90,
+  0x66, 0x90, 0x66, 0x90, 0xb8, 0xb7, 0x96, 0x04, 0x08, 0x2d,
+  0xb4, 0x96, 0x04, 0x08, 0x83, 0xf8, 0x06, 0x77, 0x01, 0xc3,
+  0xb8, 0x00, 0x00, 0x00, 0x00, 0x85, 0xc0, 0x74, 0xf6, 0x55,
+  0x89, 0xe5, 0x83, 0xec, 0x18, 0xc7, 0x04, 0x24, 0xb4, 0x96,
+  0x04, 0x08, 0xff, 0xd0, 0xc9, 0xc3, 0x8d, 0xb6, 0x00, 0x00,
+  0x00, 0x00, 0xb8, 0xb4, 0x96, 0x04, 0x08, 0x2d, 0xb4, 0x96,
+  0x04, 0x08, 0xc1, 0xf8, 0x02, 0x89, 0xc2, 0xc1, 0xea, 0x1f,
+  0x01, 0xd0, 0xd1, 0xf8, 0x75, 0x01, 0xc3, 0xba, 0x00, 0x00,
+  0x00, 0x00, 0x85, 0xd2, 0x74, 0xf6, 0x55, 0x89, 0xe5, 0x83,
+  0xec, 0x18, 0x89, 0x44, 0x24, 0x04, 0xc7, 0x04, 0x24, 0xb4,
+  0x96, 0x04, 0x08, 0xff, 0xd2, 0xc9, 0xc3, 0x89, 0xf6, 0x8d,
+  0xbc, 0x27, 0x00, 0x00, 0x00, 0x00, 0x80, 0x3d, 0xb4, 0x96,
+  0x04, 0x08, 0x00, 0x75, 0x13, 0x55, 0x89, 0xe5, 0x83, 0xec,
+  0x08, 0xe8, 0x7c, 0xff, 0xff, 0xff, 0xc6, 0x05, 0xb4, 0x96,
+  0x04, 0x08, 0x01, 0xc9, 0xf3, 0xc3, 0x66, 0x90, 0xa1, 0xa4,
+  0x95, 0x04, 0x08, 0x85, 0xc0, 0x74, 0x1f, 0xb8, 0x00, 0x00,
+  0x00, 0x00, 0x85, 0xc0, 0x74, 0x16, 0x55, 0x89, 0xe5, 0x83,
+  0xec, 0x18, 0xc7, 0x04, 0x24, 0xa4, 0x95, 0x04, 0x08, 0xff,
+  0xd0, 0xc9, 0xe9, 0x79, 0xff, 0xff, 0xff, 0x90, 0xe9, 0x73,
+  0xff, 0xff, 0xff, 0x66, 0x90, 0x90
+};
+'
+run_test
+
+
+NAME='flags (total)'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='f~?
+'
+EXPECT='118
+'
+run_test
+
+NAME='flags'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='f
+'
+EXPECT='0x080484b0 13 str.Hello_world_
+0x08048400 256 main
+0x08048300 1 entry0
+0x00000000 0 section.
+0x00000000 0 section_end.
+0x08048134 19 section..interp
+0x08048147 0 section_end..interp
+0x08048148 32 section..note.ABI_tag
+0x08048168 0 section_end..note.ABI_tag
+0x08048168 36 section..note.gnu.build_id
+0x0804818c 0 section_end..note.gnu.build_id
+0x0804818c 32 section..gnu.hash
+0x080481ac 0 section_end..gnu.hash
+0x080481ac 80 section..dynsym
+0x080481fc 0 section_end..dynsym
+0x080481fc 74 section..dynstr
+0x08048246 0 section_end..dynstr
+0x08048246 10 section..gnu.version
+0x08048250 0 section_end..gnu.version
+0x08048250 32 section..gnu.version_r
+0x08048270 0 section_end..gnu.version_r
+0x08048270 8 section..rel.dyn
+0x08048278 0 section_end..rel.dyn
+0x08048278 24 section..rel.plt
+0x08048290 0 section_end..rel.plt
+0x08048290 35 section..init
+0x080482b3 0 section_end..init
+0x080482c0 64 section..plt
+0x08048300 0 section_end..plt
+0x08048300 404 section..text
+0x08048494 0 section_end..text
+0x08048494 20 section..fini
+0x080484a8 0 section_end..fini
+0x080484a8 21 section..rodata
+0x080484bd 0 section_end..rodata
+0x080484c0 44 section..eh_frame_hdr
+0x080484ec 0 section_end..eh_frame_hdr
+0x080484ec 176 section..eh_frame
+0x0804859c 0 section_end..eh_frame
+0x0804959c 4 section..init_array
+0x080495a0 0 section_end..init_array
+0x080495a0 4 section..fini_array
+0x080495a4 0 section_end..fini_array
+0x080495a4 4 section..jcr
+0x080495a8 0 section_end..jcr
+0x080495a8 232 section..dynamic
+0x08049690 0 section_end..dynamic
+0x08049690 4 section..got
+0x08049694 0 section_end..got
+0x08049694 24 section..got.plt
+0x080496ac 0 section_end..got.plt
+0x080496ac 8 section..data
+0x080496b4 0 section_end..data
+0x080496b4 4 section..bss
+0x080496b8 0 section_end..bss
+0x00000000 17 section..comment
+0x00000011 0 section_end..comment
+0x00000000 262 section..shstrtab
+0x00000106 0 section_end..shstrtab
+0x00000000 1104 section..symtab
+0x00000450 0 section_end..symtab
+0x00000000 599 section..strtab
+0x00000257 0 section_end..strtab
+0x08048034 256 section.PHDR
+0x08048134 0 section_end.PHDR
+0x08048134 19 section.INTERP
+0x08048147 0 section_end.INTERP
+0x08048000 1436 section.LOAD0
+0x0804859c 0 section_end.LOAD0
+0x0804959c 280 section.LOAD1
+0x080496b4 0 section_end.LOAD1
+0x080495a8 232 section.DYNAMIC
+0x08049690 0 section_end.DYNAMIC
+0x08048148 68 section.NOTE
+0x0804818c 0 section_end.NOTE
+0x080484c0 44 section.GNU_EH_FRAME
+0x080484ec 0 section_end.GNU_EH_FRAME
+0x00000000 0 section.GNU_STACK
+0x00000000 0 section_end.GNU_STACK
+0x08048000 52 section.ehdr
+0x08048034 0 section_end.ehdr
+0x08049690 4 reloc.__gmon_start___144
+0x080496a0 4 reloc.puts_160
+0x080496a4 4 reloc.__gmon_start___164
+0x080496a8 4 reloc.__libc_start_main_168
+0x080495a4 0 obj.__JCR_LIST__
+0x08048340 0 sym.deregister_tm_clones
+0x08048370 0 sym.register_tm_clones
+0x080483b0 0 sym.__do_global_dtors_aux
+0x080496b4 1 obj.completed.5979
+0x080495a0 0 obj.__do_global_dtors_aux_fini_array_entry
+0x080483d0 0 sym.frame_dummy
+0x0804959c 0 obj.__frame_dummy_init_array_entry
+0x08048598 0 obj.__FRAME_END__
+0x080495a4 0 obj.__JCR_END__
+0x080495a0 0 loc.__init_array_end
+0x080495a8 0 obj._DYNAMIC
+0x0804959c 0 loc.__init_array_start
+0x08049694 0 obj._GLOBAL_OFFSET_TABLE_
+0x08048490 2 sym.__libc_csu_fini
+0x08048330 4 sym.__x86.get_pc_thunk.bx
+0x080496ac 0 loc.data_start
+0x080496b4 0 loc._edata
+0x08048494 0 sym._fini
+0x080496ac 0 loc.__data_start
+0x080496b0 0 obj.__dso_handle
+0x080484ac 4 obj._IO_stdin_used
+0x08048420 97 sym.__libc_csu_init
+0x080496b8 0 loc._end
+0x08048300 0 sym._start
+0x080484a8 4 obj._fp_hw
+0x080496b4 0 loc.__bss_start
+0x08048400 28 sym.main
+0x080496b4 0 obj.__TMC_END__
+0x08048290 0 sym._init
+0x080482d0 16 sym.imp.puts
+0x080482e0 16 loc.imp.__gmon_start__
+0x080482f0 16 sym.imp.__libc_start_main
+'
+run_test
+
+# that ?e is a hack to workaround the missing trailing newline in pdj
+NAME='x86 - pdj 10'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+CMDS='pdj 10
+?e
+'
+EXPECT='[{"offset":134513408,"esil":"ebp,ebp,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"xor ebp, ebp","bytes":"31ed","family":"cpu","type":"xor","type_num":28,"type2_num":0,"flags":["entry0","section_end..plt","section..text","sym._start"],"comment":"c2VjdGlvbiAxMyB2YT0weDA4MDQ4MzAwIHBhPTB4MDAwMDAzMDAgc3o9NDA0IHZzej00MDQgcnd4PS0tci14IC50ZXh0"},{"offset":134513410,"esil":"esp,[4],esi,=,4,esp,+=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"pop esi","bytes":"5e","family":"cpu","type":"pop","type_num":14,"type2_num":0},{"offset":134513411,"esil":"esp,ecx,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"mov ecx, esp","bytes":"89e1","family":"cpu","type":"mov","type_num":9,"type2_num":0},{"offset":134513413,"esil":"4294967280,esp,&=,$0,of,=,$0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"and esp, 0xfffffff0","bytes":"83e4f0","family":"cpu","type":"and","type_num":27,"type2_num":0},{"offset":134513416,"esil":"eax,4,esp,-=,esp,=[4]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push eax","bytes":"50","family":"cpu","type":"upush","type_num":12,"type2_num":0},{"offset":134513417,"esil":"esp,4,esp,-=,esp,=[4]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push esp","bytes":"54","family":"cpu","type":"upush","type_num":12,"type2_num":0},{"offset":134513418,"esil":"edx,4,esp,-=,esp,=[4]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push edx","bytes":"52","family":"cpu","type":"upush","type_num":12,"type2_num":0},{"offset":134513419,"ptr":134513808,"val":134513808,"esil":"134513808,4,esp,-=,esp,=[4]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"push 0x8048490","bytes":"6890840408","family":"cpu","type":"push","type_num":13,"type2_num":0},{"offset":134513424,"ptr":134513696,"val":134513696,"esil":"134513696,4,esp,-=,esp,=[4]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"push 0x8048420","bytes":"6820840408","family":"cpu","type":"push","type_num":13,"type2_num":0},{"offset":134513429,"esil":"ecx,4,esp,-=,esp,=[4]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push ecx","bytes":"51","family":"cpu","type":"upush","type_num":12,"type2_num":0}]
+
+
+'
+run_test

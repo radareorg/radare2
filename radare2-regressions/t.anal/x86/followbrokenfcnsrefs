@@ -1,0 +1,25 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+FILE=../../bins/pe/bdc1.ex
+CMDS='e anal.brokenrefs=true
+af
+s 0x4068e8
+fd
+s 0x45a708
+fd
+s 0x45a720
+fd
+s 0x45a7a0
+fd
+s 0x4043d8
+fd
+
+'
+EXPECT='fcn.004068e8
+fcn.0045a708
+fcn.0045a720
+fcn.0045a7a0
+fcn.004043d8
+'
+run_test

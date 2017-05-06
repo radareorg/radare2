@@ -1,0 +1,69 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+#
+# In this test, the value of rax after each
+# add instruction is wrong if blocks are
+# emulated linearly or independently
+#
+#      0x00000000      mov rax, 0x10
+#  ┌─< 0x00000007      jne 0x11
+#  │   0x00000009      add rax, 0xb8
+# ┌──< 0x0000000f      jmp 0x17
+# │└─> 0x00000011      add rax, 0xe6
+# └──> 0x00000017      mov rdi, rax
+#      0x0000001a      ret
+#
+
+NAME='pdr recursive emu'
+FILE=malloc://1024
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+e asm.fcnlines=false
+wx 48c7c01000000075084805b8000000eb064805e60000004889c7c3
+af
+e asm.emu=true
+pdr~add rax[6]
+'
+EXPECT='0xc8
+0xf6
+'
+run_test
+
+#
+# same case as before, bringing also gp
+# in the calculation (MIPS)
+#
+#      0x00000000      addiu t0, zero, 0x10
+#      0x00000004      addiu gp, gp, 0xcc
+#  ┌─< 0x00000008      bne t1, t0, 0x20
+#  │   0x0000000c      nop
+#  │   0x00000010      addiu t0, t0, 0xc20
+#  │   0x00000014      addu t0, t0, gp
+# ┌──< 0x00000018      j 0x28
+# ││   0x0000001c      nop
+# │└─> 0x00000020      addiu t0, t0, 0xc30
+# │    0x00000024      addu t0, t0, gp
+# └──> 0x00000028      jr ra
+#      0x0000002c      nop
+#
+
+NAME='pdr recursive emu with gp'
+FILE=malloc://1024
+BROKEN=
+CMDS='
+e asm.arch=mips
+wx 10000824cc009c270500281500000000200c082521401c010a00000800000000300c082521401c010800e003
+af
+e asm.fcnlines=false
+e asm.emu=true
+e anal.gp=0xabc
+pdr~addu t0[7]
+'
+EXPECT='0x17b8
+0x17c8
+'
+run_test
+

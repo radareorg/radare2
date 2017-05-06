@@ -1,0 +1,25 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012-2014  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='base64 encode'
+FILE=-
+ARGS=
+CMDS='b 11
+w hello world
+p6e
+'
+EXPECT='aGVsbG8gd29ybGQ=
+'
+run_test
+
+NAME='base64 decode'
+FILE=-
+ARGS=
+CMDS='b 16
+w aGVsbG8gd29ybGQ=
+p6d
+'
+EXPECT='hello world
+'
+run_test

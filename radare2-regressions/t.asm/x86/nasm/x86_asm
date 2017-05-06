@@ -1,0 +1,39 @@
+#!/bin/sh
+for a in . .. ../.. ../../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh; done
+
+#export RASM2_NOPLUGINS=1
+test_vector() {
+NAME="${1} ${BITS}: [${2}]"
+if [ "${4}" = "br" ]; then
+    BROKEN=1
+fi
+CMDS="!rasm2 -a "${1}" -b "${BITS}" '"${2}"'
+"
+EXPECT="${3}
+"
+run_test
+}
+
+type nasm > /dev/null 2>&1
+if [ $? = 0 ]; then
+    PLUGIN=x86.nasm
+    echo "nasm found in path. testing it..."
+else
+    PLUGIN=x86
+    echo "cant find nasm, using x86"
+fi
+BITS=32
+
+# Multiline label test
+TESTFILE=../../../files/multiline.asm
+NAME='labels replacements (multiline)'
+BROKEN=
+CMDS='!rasm2 -a '${PLUGIN}' -b '${BITS}' -f "'${TESTFILE}'"
+'
+
+EXPECT="9090e8fbffffff
+"
+run_test
+
+
+test_vector "${PLUGIN}" "nop;label:;call label" 90e8fbffffff

@@ -1,0 +1,35 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="unopen read issue"
+BROKEN=1
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='
+p8 1 @ entry0
+f fd=`o malloc://128`
+p8 1 @ 0
+o-fd
+p8 1 @ entry0
+'
+EXPECT='31
+00
+31
+'
+run_test
+
+NAME="unopen read issue 2"
+BROKEN=1
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='
+p8 1 @ entry0
+f fd=`o malloc://128`
+p8 1 @ entry0
+o-fd
+p8 1 @ entry0
+'
+EXPECT='31
+31
+31
+'
+run_test
+

@@ -1,0 +1,17 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+fuzz_test_aaq() {
+  NAME="Other Fuzz aa ; q $1"
+  IGNORE_ERR=1
+  BROKEN=
+  FILE=$1
+  ARGS=
+  CMDS='aaa ; q'
+  EXPECT=''
+  run_test
+}
+
+for f in ../../bins/fuzzed/* ; do
+  fuzz_test_aaq "$f"
+done

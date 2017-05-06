@@ -1,0 +1,116 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='(msg x,?e $0)'
+FILE=-
+ARGS=
+CMDS='
+"(msg x,?e $0)"
+.(msg HelloWorld)'
+EXPECT='HelloWorld
+'
+run_test
+
+NAME='(msg x,?e $0)\n'
+FILE=-
+ARGS=
+CMDS='
+"(msg x,?e $0)"
+.(msg HelloWorld)
+'
+EXPECT='HelloWorld
+'
+run_test
+
+NAME='(msg x,?e $0)\n'
+FILE=-
+ARGS=
+CMDS='
+"(msg x,?e $0)"
+.(msg HelloWorld)
+?e hiz
+'
+EXPECT='HelloWorld
+hiz
+'
+run_test
+
+# passing 2 arguments
+NAME='.(msg x y,?e $0 $1)'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+"(msg x y,?e $0 $1)"
+.(msg Hello World)
+'
+EXPECT='Hello World
+'
+run_test
+
+# whitespace
+NAME='.(msg "foo bar")'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+"(msg x,?e $0)"
+.(msg "Hello World")'
+EXPECT='Hello World
+'
+run_test
+
+# whitespace
+NAME='.(msg foo\ bar)'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+"(msg x,?e $0)"
+.(msg Hello\ World)'
+EXPECT='Hello World
+'
+run_test
+
+# count macros
+NAME='(*~?'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+(foo,bar)
+(bar,cow)
+(*~?
+'
+EXPECT='2
+'
+run_test
+
+# repeated anonymous macro
+NAME='3(foo,p8 4,s+$0)(1)'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+wx 010203040506070809
+3(foo,p8 4,s+$0)(1)'
+EXPECT='01020304
+02030405
+03040506
+'
+run_test
+
+# comma separated commands
+NAME='3(foo,?e a,?e b)()'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+2(foo,?e a,?e b)()'
+EXPECT='a
+b
+a
+b
+'
+run_test

@@ -1,0 +1,78 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='radiff2 -c'
+CMDS='!radiff2 -c ../../bins/other/radiff2/radiff2_c_1 ../../bins/other/radiff2/radiff2_c_2'
+BROKEN=
+EXPECT='1
+'
+run_test
+
+NAME='radiff2 -a -O x86'
+CMDS='!radiff2 -a x86 -O ../../bins/other/radiff2/radiff2_c_1 ../../bins/other/radiff2/radiff2_c_2'
+BROKEN=
+EXPECT='0x00000000 91 => 90 0x00000000
+'
+run_test
+
+
+NAME='radiff2 -g'
+CMDS='!!radiff2 -g main ../../bins/other/radiff2/false ../../bins/other/radiff2/true~digrap'
+BROKEN=
+EXPECT='digraph code {
+'
+run_test
+
+NAME='radiff2 -v~commit?"'
+CMDS='!!radiff2 -v~commit?'
+EXPECT='1
+'
+run_test
+
+NAME='radiff2 -h~Usage?"'
+CMDS='!!radiff2 -h~Usage?'
+EXPECT='1
+'
+run_test
+
+
+NAME='radiff2 string comparsion'
+BROKEN=
+ARGS=
+CMDS="!!radiff2 -z ../../bins/elf/elf_one_symbol_shdr ../../bins/elf/elf_one_symbol_shdr1"
+EXPECT="0x00000000 48656c6c => 41414141 0x00000000
+"
+run_test
+
+NAME='radiff2 unified string comparsion'
+BROKEN=
+ARGS=
+CMDS="!!radiff2 -uz ../../bins/elf/elf_one_symbol_shdr ../../bins/elf/elf_one_symbol_shdr1"
+EXPECT="[31m- Hell
+[0m[32m+ AAAA
+[0m"
+run_test
+
+NAME='radiff2 gnu unified string comparsion'
+BROKEN=
+ARGS=
+CMDS="!!radiff2 -Uz ../../bins/elf/elf_one_symbol_shdr ../../bins/elf/elf_one_symbol_shdr1 | tail -n 3"
+EXPECT="@@ -1 +1 @@
+-Hello world!
++AAAAo world!
+"
+run_test
+
+NAME='radiff2 -AC (elf files)'
+CMDS='!!radiff2 -AC ../../bins/other/radiff2/true ../../bins/other/radiff2/false~?(1.000000)'
+BROKEN=
+EXPECT='54
+'
+run_test
+
+NAME='radiff2 -AC (mach0 fat files)'
+CMDS='!!radiff2 -AC ../../bins/other/radiff2/hellocxx-osx-fat-intel_1 ../../bins/other/radiff2/hellocxx-osx-fat-intel_2~?(1.000000)'
+BROKEN=
+EXPECT='17
+'
+run_test

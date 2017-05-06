@@ -1,0 +1,14 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2014  pancake
+
+for a in . .. ../.. ../../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='multiple files opened'
+FILE="- - -"
+ARGS=
+CMDS='o~?
+'
+EXPECT='3
+'
+run_test
+

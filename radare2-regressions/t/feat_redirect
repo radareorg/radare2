@@ -1,0 +1,76 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2013  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## ">" - redirection
+
+# Test basic redirection.
+NAME="pb>x;!wc -c x"
+FILE=malloc://1024
+ARGS=
+CMDS='
+# Normal redirect.
+p8 10 > dump
+!wc -c dump|awk "{print \$1}"
+# Redirect with output bigger than CONS_MAX_USER.
+p8 12800 > dump
+!wc -c dump|awk "{print \$1}"
+!rm -f dump
+'
+EXPECT='21
+25601
+'
+
+EXPECT_ERR=''
+run_test
+
+NAME="p8|sed -e s,0,x,g>x;cat x;rm x"
+FILE=malloc://512
+ARGS=
+CMDS='
+wv 0x100
+p8 8| sed -e s,1,x,g>x;cat x;rm x
+'
+EXPECT='000x000000000000
+'
+
+EXPECT_ERR=''
+run_test
+
+NAME="?e test>x;cat x;rm x"
+FILE=malloc://512
+ARGS=
+CMDS='
+?e test>x;cat x;rm x
+'
+EXPECT='test
+'
+
+EXPECT_ERR=''
+run_test
+
+NAME="?e test1>x;cat x;rm x"
+FILE=malloc://512
+ARGS=
+CMDS='
+?e test1>x;cat x;rm x
+'
+EXPECT='test1
+'
+
+EXPECT_ERR=''
+run_test
+
+
+NAME="?e test 1>x;cat x;rm x"
+FILE=malloc://512
+ARGS=
+CMDS='
+?e test 1>x;cat x;rm x
+'
+EXPECT='test
+'
+
+EXPECT_ERR=''
+run_test
+

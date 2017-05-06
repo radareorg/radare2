@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami tinydllXP-ld.exe - open'
+FILE=../../bins/pe/tinydllXP-ld.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test

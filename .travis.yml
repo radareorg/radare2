@@ -43,7 +43,7 @@ before_script:
   - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 7
 
 script:
-  - git clone --depth 1 `doc/repo REGRESSIONS`
+  - git clone --depth 1 `doc/repo TEST_BINS` radare2-regressions/bins
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
   - make install > /dev/null

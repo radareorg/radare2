@@ -1,0 +1,23 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+BROKEN=1
+CMDS='
+e asm.arch=x86.udis
+e asm.bits=16
+e io.va=true
+S $s-0x10000 0xf000:0x0000 0x10000 0x10000 bootblk rwx
+e asm.segoff=true
+s 0xf000:0xffaa
+wx e99300
+pi 1
+'
+EXPECT='jmp 0x40
+'
+if [ -n "${TRAVIS}" ]; then
+  unset BROKEN
+  return
+else
+  run_test
+fi
+

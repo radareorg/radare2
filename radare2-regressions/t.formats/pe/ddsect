@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami ddsect.exe - open'
+FILE=../../bins/pe/ddsect.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami ddsect.exe - entrypoint'
+FILE=../../bins/pe/ddsect.exe
+CMDS='
+s
+'
+EXPECT='0x401000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami ddsect.exe - pi 1'
+FILE=../../bins/pe/ddsect.exe
+CMDS='e asm.filter=false
+pi 1
+'
+EXPECT='push 0x401018
+'
+IGNORE_ERR=1
+run_test

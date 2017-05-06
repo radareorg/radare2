@@ -1,0 +1,92 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  pancake
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='syscall emu'
+BROKEN=
+FILE=../../bins/elf/analysis/hello.raw
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+e asm.emu=true
+e asm.bytes=0
+e asm.cmtcol=20
+e asm.lines=false
+pd 20~write,exit
+'
+EXPECT=' 0x00000014      int 0x80; 4 = write (1, "Hello, world!.", 14)
+ 0x0000001b      int 0x80; 1 = exit (1)
+'
+run_test
+
+NAME='Windows Function EMU printf'
+BROKEN=
+FILE=../../bins/pe/standard.exe
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+e asm.os=windows
+e asm.emu=true
+e asm.emuwrite=true
+e asm.bytes=0
+e asm.cmtcol=20
+e asm.lines=false
+aeim
+s 0x00402ade
+pd 4~printf
+'
+EXPECT=' 0x00402ae8      call dword [sym.imp.msvcrt.dll_printf] ; sym.imp.msvcrt.dll_printf ; esp=0x177ff8  ; eip=0x2d08 -> 0xffffff00 reloc.msvcrt.dll_printf_8
+                     ; int printf(const char * format : (*0x402bd2)0x00177ffc =   - RT_MANIFEST resource located.)
+'
+run_test
+
+NAME='Windows Function EMU LoadStringA'
+BROKEN=
+FILE=../../bins/pe/standard.exe
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+e asm.os=windows
+e asm.emu=true
+e asm.emuwrite=true
+e asm.bytes=0
+e asm.cmtcol=20
+e asm.lines=false
+e io.cache=true
+wx 00 @ 0
+aeim
+s 0x00402aee
+pd 10~LoadString
+'
+EXPECT=" 0x00402b00      call dword [sym.imp.user32.dll_LoadStringA] ; sym.imp.user32.dll_LoadStringA ; esp=0x177ff0  ; eip=0x2cfa -> 0xffffff00 reloc.user32.dll_LoadStringA_250
+                     ; long LoadStringA(HINSTANCE hInstance : (*0x0) NULL, UINT uID : (*0x96)0x00177ff8 = 0x1de59203, LPSTR lpBuffer : (*0x402bfd)0x00177ffc = 0x00177ffc -> 0x00000000, int nBufferMax : (*0x1f)0x00178000 = 0)
+"
+run_test
+
+NAME='Linux fcnsign test'
+BROKEN=
+FILE=../../bins/elf/analysis/ls-linux64
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+e asm.emu=true
+e asm.emuwrite=true
+e asm.bytes=0
+e asm.cmtcol=20
+e asm.lines=false
+e asm.fcnlines=false
+aa
+aeim
+s 0x00003cb8-0x30
+pd 20~env
+'
+EXPECT='0x00003cb8      call sym.imp.getenv ; rsp=0x177fe8  ; rip=0x3430 -> 0x97fa2500 sym.imp.getenv
+                    ; char *getenv(const char * name : 0x00015a71 = COLUMNS)
+'
+run_test

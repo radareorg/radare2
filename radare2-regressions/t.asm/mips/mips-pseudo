@@ -1,0 +1,33 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN=mips
+
+NAME="mips hello pseudo move instruction"
+BROKEN=
+ARGS="-e bin.strings=false -e anal.strings=false"
+FILE=../../bins/elf/analysis/mips-hello
+CMDS="
+pd 1 @main+0x18
+e asm.pseudo=true
+pd 1 @main+0x18
+"
+EXPECT='            0x000805b8      21f0a003       move fp, sp
+            0x000805b8      21f0a003       fp = sp
+'
+run_test
+
+
+NAME="mips pseudo sw + 0"
+BROKEN=
+FILE=malloc://32
+ARGS='-a mips -m 0x80100000'
+CMDS="wx 0000beaf
+pd 1
+e asm.pseudo=true
+pd 1
+"
+EXPECT='            0x80100000      0000beaf       sw fp, (sp)
+            0x80100000      0000beaf       [sp + 0] = fp
+'
+run_test
+

@@ -1,0 +1,54 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='cxx compatibility'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D rust _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEED1Ev"'
+EXPECT="std::__cxx11::basic_string<char,std::char_traits<char>,std::allocator<char>>::~basic_string
+"
+run_test
+
+NAME='rust basic nested type'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D rust _ZN5alloc3oom3oom17h722648b727b8bcd0E"'
+EXPECT="alloc::oom::oom::h722648b727b8bcd0
+"
+run_test
+
+NAME='rust basic nested type with hash'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D rust _ZN4core3fmt5Write10write_char17hcc5144a9a84f2b15E"'
+EXPECT="core::fmt::Write::write_char::hcc5144a9a84f2b15
+"
+run_test
+
+NAME='rust static type'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D rust _ZN71_\$LT\$Test\$u20\$\$u2b\$\$u20\$\$u27\$static\$u20\$as\$u20\$foo..Bar\$LT\$Test\$GT\$\$GT\$3barE"'
+EXPECT="<Test + 'static as foo::Bar<Test>>::bar
+"
+run_test
+
+NAME='rust static type with hash'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D rust _ZN96_\$LT\$core..fmt..Write..write_fmt..Adapter\$LT\$\$u27\$a\$C\$\$u20\$T\$GT\$\$u20\$as\$u20\$core..fmt..Write\$GT\$9write_str17he4f4768a2f446facE"'
+EXPECT="<core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
+"
+run_test
+
+NAME='rust function in file'
+BROKEN=
+ARGS=
+FILE=../../bins/elf/rust
+CMDS="aa
+afl~example"
+EXPECT="0x00002b30    2 15           sym._example::Foo_as_example::Bar_::bar::h26dc608664264fb6
+0x00002b40    1 31           sym.example::main::hf45903a20ef2ad21
+"
+run_test
+

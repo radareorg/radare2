@@ -1,0 +1,158 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# "!" - run commands (via system)
+
+NAME='dbg.dc+ds.swstep'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=true
+s 0
+db entry0
+dc
+db-entry0
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+'
+EXPECT='0x080482d0
+0x080482d2
+55
+'
+IGNORE_ERR=1
+run_test
+
+# Covers https://github.com/radare/radare2/issues/4560
+NAME='dbg.dc+ds.swstep2'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=true
+db sym.main
+dc
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+'
+EXPECT='0x08048400
+0x08048401
+55
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.dc+ds.hwstep'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=false
+s 0
+db entry0
+dc
+db-entry0
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+'
+EXPECT='0x080482d0
+0x080482d2
+55
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.dc+ds.hwstep2'
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=false
+db sym.main
+dc
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+'
+EXPECT='0x08048400
+0x08048401
+55
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.dcC+ds.swstep1'
+FILE=../../bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=true
+f times=5
+(times_stop,?e Loop `?vi times`,f times=`?vi times-1`,?= times)
+db 0x4000ce
+dbC 0x4000ce .(times_stop)
+dc
+dk 9
+'
+EXPECT='Loop 5
+Loop 4
+Loop 3
+Loop 2
+Loop 1
+'
+run_test
+
+NAME='dbg.dcC+ds.swstep2'
+FILE=../../bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=true
+e cmd.hitinfo=0
+(break_rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x31c0`,?= test)
+db 0x4000ce
+dbC 0x4000ce .(break_rax)
+dc
+dr rax
+dr rip
+dk 9
+'
+EXPECT='0x000031c0
+0x004000ce
+'
+run_test
+
+NAME='dbg.dcC+ds.swstep3'
+FILE=../../bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=true
+e cmd.hitinfo=0
+(trace_rax,dr rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x0440`,?= test)
+db 0x4000ce
+dbC 0x4000ce .(trace_rax)
+dc
+dk 9
+'
+EXPECT='0x00000000
+0x00000220
+0x000031c0
+0x000033c2
+0x00000249
+0x00000440
+'
+run_test

@@ -1,0 +1,27 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='MZ: corkami ddriving.exe - open'
+FILE=../../bins/mz/ddriving.exe
+ARGS=''
+CMDS="q"
+EXPECT=''
+run_test
+
+NAME='MZ: corkami ddriving.exe - entrypoint'
+FILE=../../bins/mz/ddriving.exe
+CMDS='
+s
+'
+EXPECT='0x254
+'
+run_test
+
+NAME='MZ: corkami ddriving.exe - pi 1'
+FILE=../../bins/mz/ddriving.exe
+CMDS='
+pi 1
+'
+EXPECT='push cs
+'
+run_test

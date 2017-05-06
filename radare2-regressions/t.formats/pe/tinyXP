@@ -1,0 +1,9 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami tinyXP.exe - open'
+FILE=../../bins/pe/tinyXP.exe
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test

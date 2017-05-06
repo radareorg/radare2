@@ -1,0 +1,81 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: main'
+FILE=../../bins/elf/analysis/main
+ARGS=''
+CMDS="?v main"
+EXPECT='0x400506
+'
+run_test
+
+NAME='ELF: main rebased'
+FILE=../../bins/elf/analysis/pie-main
+ARGS='-B 0x200000'
+CMDS="?v main"
+EXPECT='0x203bd0
+'
+run_test
+
+NAME='ELF: main rebased'
+FILE=../../bins/elf/analysis/pie-main
+ARGS='-B 0x100000'
+CMDS="?v main"
+EXPECT='0x103bd0
+'
+run_test
+
+NAME='ELF: main rebased'
+FILE=../../bins/elf/analysis/main
+ARGS='-B 0x200000'
+CMDS="?v main"
+EXPECT='0x200506
+'
+run_test
+
+NAME='ELF: main rebased'
+FILE=-
+ARGS='-B 0x200000'
+CMDS="!rabin2 -qMB 0x200000 ../../bins/elf/analysis/main"
+EXPECT='2098438'
+run_test
+
+NAME='ELF: sym.main'
+FILE=../../bins/elf/analysis/main
+ARGS=''
+CMDS="?v sym.main"
+EXPECT='0x400506
+'
+run_test
+
+NAME='ELF: pie main'
+FILE=../../bins/elf/analysis/pie-main
+ARGS=''
+CMDS="?v main"
+EXPECT='0x3bd0
+'
+run_test
+
+NAME='MIPS: main'
+FILE=../../bins/elf/analysis/mips-main
+ARGS=''
+CMDS="?v main"
+EXPECT='0x4006f0
+'
+run_test
+
+NAME='main non common LD script'
+FILE=../../bins/elf/analysis/custom_ldscript
+ARGS=''
+CMDS="?v main"
+EXPECT='0x1c00844
+'
+run_test
+
+NAME='main wrong sections'
+FILE=../../bins/elf/analysis/main_wrong_sect
+ARGS=''
+CMDS="?v main"
+EXPECT='0x400506
+'
+run_test

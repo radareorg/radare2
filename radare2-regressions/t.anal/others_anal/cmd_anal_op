@@ -1,0 +1,46 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2013-2016 - pancake
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='af x86-32'
+FILE=malloc://16
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+wx 9090
+ao 1~?
+ao 1
+p8 1
+ao 1~?
+'
+EXPECT='12
+address: 0x0
+opcode: nop
+mnemonic: nop
+prefix: 0
+id: 494
+bytes: 90
+refptr: 0
+size: 1
+type: nop
+esil: ,
+stack: null
+family: cpu
+90
+12
+'
+run_test
+
+NAME='af x86-64'
+FILE=malloc://16
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 662e0f1f840000000000
+ao 1~size[1]
+'
+EXPECT='10
+'
+run_test

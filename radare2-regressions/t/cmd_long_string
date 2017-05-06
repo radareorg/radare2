@@ -1,0 +1,19 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012-2016  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='pD@x:90'
+FILE="../bins/mach0/bin_longstring"
+ARGS="-e asm.cmtright=true"
+CMDS='s 0x10000088a; pd 3~string~?'
+EXPECT='8
+'
+run_test
+
+NAME='pD@x:90'
+FILE="../bins/mach0/bin_longstring"
+ARGS="-e asm.cmtright=false"
+CMDS='s 0x10000088a; pd 3~string~?'
+EXPECT='12
+'
+run_test

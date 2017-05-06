@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2015 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='aecs'
+FILE=-
+ARGS='-ax86 -b32'
+IGNORE_ERR=0
+CMDS='
+"wa mov eax,33;int 0x80"
+aecs
+'
+EXPECT_ERR='syscall at 0x00000005
+'
+run_test
+
+NAME='cmd.esil.intr unset'
+FILE=-
+ARGS=''
+IGNORE_ERR=0
+CMDS='
+wx b8010000000f34b801000000cd80ebfe
+10aes
+'
+EXPECT=''
+run_test
+
+NAME='cmd.esil.intr set'
+FILE=-
+ARGS=''
+IGNORE_ERR=0
+CMDS='
+wx b8010000000f34b801000000cd80ebfe
+e cmd.esil.intr=?e SYSCALL
+10aes
+'
+EXPECT='SYSCALL 128 0
+'
+run_test

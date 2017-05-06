@@ -1,0 +1,232 @@
+#!/bin/sh
+
+# TODO: This script requires ROOT to be run in OSX
+# (or just sign the r2 binary to get debugger priviledges)
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# "!" - run commands (via system)
+
+NAME='dbg.step'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='
+.dr*
+s rip
+f a=rip
+wx 90
+pi 1 # hack this shouldnt be here
+ds
+.dr*
+?v rip-a
+'
+EXPECT='nop
+0x1
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.symbols'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='id~?
+dk 9
+'
+EXPECT='0
+'
+run_test
+
+NAME='dso over a breakpoint'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='dr rax=`dr?rip`
+? `dr?rax` - `dr?rip`
+db rip
+dso
+dk 9
+? `dr?rax` - `dr?rip`~?00000000
+'
+EXPECT='0 0x0 00 0 0000:0000 0 00000000 0.0 0.000000f 0.000000
+0
+'
+run_test
+
+NAME='ds on jmp reg'
+FILE=../../bins/elf/analysis/x86-jmpeax
+ARGS='-b 32 -a x86 -d'
+BROKEN=
+CMDS='dcu main
+5ds
+dr eip
+'
+EXPECT='0x080483d0
+'
+run_test
+
+NAME='ds on calls and jumps'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+2ds
+dr rip
+2ds
+dr rip
+2ds
+dr rip
+ds
+dr rip
+2ds
+dr rip
+2ds
+dr rip
+ds
+dr rip
+ds
+dr rip
+dc
+'
+EXPECT='0x0040052f
+0x0040053c
+0x00400549
+0x0040054f
+0x0040055b
+0x00400567
+0x0040056e
+0x00400510
+Hello world
+'
+run_test
+
+NAME='dso on call 1'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+ds
+dr rip
+dso
+dr rip
+'
+EXPECT='0x00400575
+0x0040057c
+Hello world
+'
+run_test
+
+NAME='dso on call 2'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+3ds
+dr rip
+dso
+dr rip
+'
+EXPECT='0x00400539
+0x0040053b
+Hello world
+'
+run_test
+
+NAME='dso on call 3'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+5ds
+dr rip
+dso
+dr rip
+'
+EXPECT='0x00400546
+0x00400548
+Hello world
+'
+run_test
+
+NAME='dso on call 4'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+6ds
+dr rip
+dso
+dr rip
+'
+EXPECT='0x00400549
+0x0040054e
+Hello world
+'
+run_test
+
+NAME='dbg.dsu'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+dsu 0x400546
+dr rip
+'
+EXPECT='0x00400546
+Hello world
+'
+run_test
+
+NAME='dbg.dsui'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+dsui mov eax
+dr rip
+'
+EXPECT='0x00400524
+Hello world
+'
+run_test
+
+NAME='dbg.dsei'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+aei
+dsue 0,eax,==
+dr rip
+'
+EXPECT='0x00400529
+Hello world
+'
+run_test
+
+NAME='dbg.dss'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='dcu main
+4dss
+dr rip
+'
+EXPECT='0x00400582
+'
+run_test
+
+NAME='dbg.dcu can reach main'
+FILE=../../bins/elf/analysis/calls_x64
+ARGS='-a x86 -d'
+BROKEN=
+CMDS='
+dcu main
+?v $$~[1];
+'
+EXPECT='0x400574
+Hello world
+'
+run_test

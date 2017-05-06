@@ -1,0 +1,17 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# TODO: Add tests for mach0, PE, ...
+# TODO: check symbols too
+
+NAME="io/va-entry0 linux-arm"
+BROKEN=1
+FILE=../bins/elf/analysis/hello-android-arm
+CMDS='
+ie*~0x[4]
+e io.va=0
+ie*~0x[4]
+'
+EXPECT='0x00008300
+0x00000300
+'
+run_test

@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='hello world'
+FILE=../bins/bf/hello-ok.bf
+ARGS=-b32
+CMDS='
+f input 128 0x3000
+o malloc://128 0x3000~z
+f screen 80*25 0x4000
+o malloc://80*25 0x4000~z
+f stack 0x200 0x5000
+o malloc://0x200 0x5000~z
+f data 0x1000 0x6000
+o malloc://0x1000 0x6000~z
+ar > /dev/null
+ar brk=stack
+ar scr=screen
+ar kbd=input
+ar ptr=data
+s 0
+150aes
+ps 12 @ screen
+'
+BROKEN=
+EXPECT='Hello World!
+'
+run_test
+
+NAME='loopy hello world'
+FILE=../bins/bf/hello-loops.bf
+ARGS=-b32
+CMDS='
+f input 128 0x3000
+o malloc://128 0x3000~z
+f screen 80*25 0x4000
+o malloc://80*25 0x4000~z
+f stack 0x200 0x5000
+o malloc://0x200 0x5000~z
+f data 0x1000 0x6000
+o malloc://0x1000 0x6000~z
+ar > /dev/null
+ar brk=stack
+ar scr=screen
+ar kbd=input
+ar ptr=data
+s 0
+700aes
+ps 12 @ screen
+'
+BROKEN=
+EXPECT='Hello World!
+'
+run_test

@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: arm relocs'
+FILE=../../bins/elf/analysis/arm-relocs
+ARGS=''
+CMDS="ir*~reloc?
+ir*~!1"
+EXPECT='11
+fs relocs
+f reloc.r0 @ 0x08000034
+f Cd 4 @ 0x08000034
+f Cd 4 @ 0x08000038
+f reloc.r2 @ 0x0800003c
+f Cd 4 @ 0x0800003c
+f reloc.r3 @ 0x08000040
+f Cd 4 @ 0x08000040
+f reloc.r4 @ 0x08000044
+f Cd 4 @ 0x08000044
+f reloc.r0 @ 0x0800004c
+f Cd 4 @ 0x0800004c
+f Cd 4 @ 0x08000050
+f reloc.r2 @ 0x08000054
+f Cd 4 @ 0x08000054
+f reloc.r3 @ 0x08000058
+f Cd 4 @ 0x08000058
+f reloc.r4 @ 0x0800005c
+f Cd 4 @ 0x0800005c
+'
+run_test

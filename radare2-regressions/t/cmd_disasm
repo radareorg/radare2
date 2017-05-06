@@ -1,0 +1,161 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012-2016  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='pD@x:90'
+FILE=-
+ARGS="-a x86 -b 32"
+CMDS='pD@x:90'
+EXPECT='            0x00000000      90             nop
+'
+run_test
+
+NAME='pd@x:90'
+FILE=-
+ARGS="-a x86 -b 32"
+CMDS='pd@x:90'
+EXPECT='            0x00000000      90             nop
+'
+run_test
+
+NAME='pd@x:90909090'
+FILE=-
+BROKEN=1
+ARGS="-a x86 -b 32"
+CMDS='pd@x:90909090'
+EXPECT='            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002      90             nop
+            0x00000003      90             nop
+'
+run_test
+
+NAME='pd@x:909090'
+FILE=-
+ARGS="-a x86 -b 32"
+CMDS='pd@x:909090'
+EXPECT='            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002      90             nop
+'
+run_test
+
+NAME='pd 3;?v'
+FILE=-
+ARGS=
+CMDS='
+wx 00000000000000000000
+e asm.arch=x86
+e asm.bits=32
+pd 4 > /dev/null
+?=
+'
+EXPECT='0x8
+'
+run_test
+
+NAME='wx e9010f;?v $l'
+FILE=-
+ARGS=
+CMDS='
+wx e9010f
+e asm.arch=x86
+e asm.bits=16
+?vi $l
+pi 1
+ao 1~size[1]
+'
+EXPECT='3
+jmp 0xf04
+3
+'
+run_test
+
+NAME='dis-16/32/64'
+FILE=-
+ARGS=
+CMDS='
+wx e99300 e869390000 e828350000
+e asm.arch=x86
+e asm.segoff=1
+e asm.bits=16
+pi 1
+s+3
+e asm.segoff=0
+e asm.bits=32
+pi 1
+s+5
+e asm.bits=64
+pi 1
+'
+EXPECT='jmp 0x96
+call 0x3971
+call 0x3535
+'
+run_test
+
+# TODO test disassembler with higher offsets
+#rasm2 -o 0xfffaa -d e99300 -b16
+#rasm2 -o 0xb77c8192 -d 0e869390000 -b32
+#rasm2 -o 0x7629523a55e3 -d e828350000 -b64
+
+NAME='unaligned arm code'
+FILE=-
+ARGS=
+CMDS='
+wx 00000000
+e asm.bits=16
+e asm.arch=arm
+pi 1 @ 1
+'
+EXPECT='unaligned
+'
+run_test
+
+NAME='unaligned arm code'
+FILE=-
+ARGS=
+CMDS='
+wx 00000000
+e asm.bits=32
+e asm.arch=arm
+pi 1 @ 2
+'
+EXPECT='unaligned
+'
+run_test
+
+NAME='unaligned x86 issue'
+FILE=-
+ARGS=
+CMDS='
+wx 00000000
+e asm.bits=16
+e asm.arch=arm
+pi 2
+e asm.arch=x86
+pi 1 @ 1
+'
+EXPECT='movs r0, r0
+movs r0, r0
+add byte [bx + si], al
+'
+run_test
+
+NAME='reflines on last line'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+e scr.utf8=0
+e asm.lines=1
+e asm.comments=0
+wx 803d1ca0040833740ceb1c83c004a318a0088ffd2a118a00408b1085d275eb
+pd 12~?=
+pd 13~?=
+'
+EXPECT='3
+3
+'
+run_test

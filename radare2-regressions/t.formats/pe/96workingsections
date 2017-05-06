@@ -1,0 +1,245 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami 96workingsections.exe - open and analyze'
+FILE=../../bins/pe/96workingsections.exe
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami 96workingsections.exe - entrypoint'
+FILE=../../bins/pe/96workingsections.exe
+CMDS='
+s
+'
+EXPECT='0x461000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami 96workingsections.exe - pi 1'
+FILE=../../bins/pe/96workingsections.exe
+CMDS='
+pi 1
+'
+EXPECT='jmp 0x461001
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami 96workingsections.exe - section list'
+FILE=../../bins/pe/96workingsections.exe
+ARGS='-n'
+CMDS="!rabin2 -S ${FILE}"
+EXPECT='[Sections]
+idx=00 vaddr=0x00402000 paddr=0x00001200 sz=512 vsz=4096 perm=m--wx name=sect_0
+idx=01 vaddr=0x00403000 paddr=0x00001400 sz=512 vsz=4096 perm=m--wx name=sect_1
+idx=02 vaddr=0x00404000 paddr=0x00001600 sz=512 vsz=4096 perm=m--wx name=sect_2
+idx=03 vaddr=0x00405000 paddr=0x00001800 sz=512 vsz=4096 perm=m--wx name=sect_3
+idx=04 vaddr=0x00406000 paddr=0x00001a00 sz=512 vsz=4096 perm=m--wx name=sect_4
+idx=05 vaddr=0x00407000 paddr=0x00001c00 sz=512 vsz=4096 perm=m--wx name=sect_5
+idx=06 vaddr=0x00408000 paddr=0x00001e00 sz=512 vsz=4096 perm=m--wx name=sect_6
+idx=07 vaddr=0x00409000 paddr=0x00002000 sz=512 vsz=4096 perm=m--wx name=sect_7
+idx=08 vaddr=0x0040a000 paddr=0x00002200 sz=512 vsz=4096 perm=m--wx name=sect_8
+idx=09 vaddr=0x0040b000 paddr=0x00002400 sz=512 vsz=4096 perm=m--wx name=sect_9
+idx=10 vaddr=0x0040c000 paddr=0x00002600 sz=512 vsz=4096 perm=m--wx name=sect_10
+idx=11 vaddr=0x0040d000 paddr=0x00002800 sz=512 vsz=4096 perm=m--wx name=sect_11
+idx=12 vaddr=0x0040e000 paddr=0x00002a00 sz=512 vsz=4096 perm=m--wx name=sect_12
+idx=13 vaddr=0x0040f000 paddr=0x00002c00 sz=512 vsz=4096 perm=m--wx name=sect_13
+idx=14 vaddr=0x00410000 paddr=0x00002e00 sz=512 vsz=4096 perm=m--wx name=sect_14
+idx=15 vaddr=0x00411000 paddr=0x00003000 sz=512 vsz=4096 perm=m--wx name=sect_15
+idx=16 vaddr=0x00412000 paddr=0x00003200 sz=512 vsz=4096 perm=m--wx name=sect_16
+idx=17 vaddr=0x00413000 paddr=0x00003400 sz=512 vsz=4096 perm=m--wx name=sect_17
+idx=18 vaddr=0x00414000 paddr=0x00003600 sz=512 vsz=4096 perm=m--wx name=sect_18
+idx=19 vaddr=0x00415000 paddr=0x00003800 sz=512 vsz=4096 perm=m--wx name=sect_19
+idx=20 vaddr=0x00416000 paddr=0x00003a00 sz=512 vsz=4096 perm=m--wx name=sect_20
+idx=21 vaddr=0x00417000 paddr=0x00003c00 sz=512 vsz=4096 perm=m--wx name=sect_21
+idx=22 vaddr=0x00418000 paddr=0x00003e00 sz=512 vsz=4096 perm=m--wx name=sect_22
+idx=23 vaddr=0x00419000 paddr=0x00004000 sz=512 vsz=4096 perm=m--wx name=sect_23
+idx=24 vaddr=0x0041a000 paddr=0x00004200 sz=512 vsz=4096 perm=m--wx name=sect_24
+idx=25 vaddr=0x0041b000 paddr=0x00004400 sz=512 vsz=4096 perm=m--wx name=sect_25
+idx=26 vaddr=0x0041c000 paddr=0x00004600 sz=512 vsz=4096 perm=m--wx name=sect_26
+idx=27 vaddr=0x0041d000 paddr=0x00004800 sz=512 vsz=4096 perm=m--wx name=sect_27
+idx=28 vaddr=0x0041e000 paddr=0x00004a00 sz=512 vsz=4096 perm=m--wx name=sect_28
+idx=29 vaddr=0x0041f000 paddr=0x00004c00 sz=512 vsz=4096 perm=m--wx name=sect_29
+idx=30 vaddr=0x00420000 paddr=0x00004e00 sz=512 vsz=4096 perm=m--wx name=sect_30
+idx=31 vaddr=0x00421000 paddr=0x00005000 sz=512 vsz=4096 perm=m--wx name=sect_31
+idx=32 vaddr=0x00422000 paddr=0x00005200 sz=512 vsz=4096 perm=m--wx name=sect_32
+idx=33 vaddr=0x00423000 paddr=0x00005400 sz=512 vsz=4096 perm=m--wx name=sect_33
+idx=34 vaddr=0x00424000 paddr=0x00005600 sz=512 vsz=4096 perm=m--wx name=sect_34
+idx=35 vaddr=0x00425000 paddr=0x00005800 sz=512 vsz=4096 perm=m--wx name=sect_35
+idx=36 vaddr=0x00426000 paddr=0x00005a00 sz=512 vsz=4096 perm=m--wx name=sect_36
+idx=37 vaddr=0x00427000 paddr=0x00005c00 sz=512 vsz=4096 perm=m--wx name=sect_37
+idx=38 vaddr=0x00428000 paddr=0x00005e00 sz=512 vsz=4096 perm=m--wx name=sect_38
+idx=39 vaddr=0x00429000 paddr=0x00006000 sz=512 vsz=4096 perm=m--wx name=sect_39
+idx=40 vaddr=0x0042a000 paddr=0x00006200 sz=512 vsz=4096 perm=m--wx name=sect_40
+idx=41 vaddr=0x0042b000 paddr=0x00006400 sz=512 vsz=4096 perm=m--wx name=sect_41
+idx=42 vaddr=0x0042c000 paddr=0x00006600 sz=512 vsz=4096 perm=m--wx name=sect_42
+idx=43 vaddr=0x0042d000 paddr=0x00006800 sz=512 vsz=4096 perm=m--wx name=sect_43
+idx=44 vaddr=0x0042e000 paddr=0x00006a00 sz=512 vsz=4096 perm=m--wx name=sect_44
+idx=45 vaddr=0x0042f000 paddr=0x00006c00 sz=512 vsz=4096 perm=m--wx name=sect_45
+idx=46 vaddr=0x00430000 paddr=0x00006e00 sz=512 vsz=4096 perm=m--wx name=sect_46
+idx=47 vaddr=0x00431000 paddr=0x00007000 sz=512 vsz=4096 perm=m--wx name=sect_47
+idx=48 vaddr=0x00432000 paddr=0x00007200 sz=512 vsz=4096 perm=m--wx name=sect_48
+idx=49 vaddr=0x00433000 paddr=0x00007400 sz=512 vsz=4096 perm=m--wx name=sect_49
+idx=50 vaddr=0x00434000 paddr=0x00007600 sz=512 vsz=4096 perm=m--wx name=sect_50
+idx=51 vaddr=0x00435000 paddr=0x00007800 sz=512 vsz=4096 perm=m--wx name=sect_51
+idx=52 vaddr=0x00436000 paddr=0x00007a00 sz=512 vsz=4096 perm=m--wx name=sect_52
+idx=53 vaddr=0x00437000 paddr=0x00007c00 sz=512 vsz=4096 perm=m--wx name=sect_53
+idx=54 vaddr=0x00438000 paddr=0x00007e00 sz=512 vsz=4096 perm=m--wx name=sect_54
+idx=55 vaddr=0x00439000 paddr=0x00008000 sz=512 vsz=4096 perm=m--wx name=sect_55
+idx=56 vaddr=0x0043a000 paddr=0x00008200 sz=512 vsz=4096 perm=m--wx name=sect_56
+idx=57 vaddr=0x0043b000 paddr=0x00008400 sz=512 vsz=4096 perm=m--wx name=sect_57
+idx=58 vaddr=0x0043c000 paddr=0x00008600 sz=512 vsz=4096 perm=m--wx name=sect_58
+idx=59 vaddr=0x0043d000 paddr=0x00008800 sz=512 vsz=4096 perm=m--wx name=sect_59
+idx=60 vaddr=0x0043e000 paddr=0x00008a00 sz=512 vsz=4096 perm=m--wx name=sect_60
+idx=61 vaddr=0x0043f000 paddr=0x00008c00 sz=512 vsz=4096 perm=m--wx name=sect_61
+idx=62 vaddr=0x00440000 paddr=0x00008e00 sz=512 vsz=4096 perm=m--wx name=sect_62
+idx=63 vaddr=0x00441000 paddr=0x00009000 sz=512 vsz=4096 perm=m--wx name=sect_63
+idx=64 vaddr=0x00442000 paddr=0x00009200 sz=512 vsz=4096 perm=m--wx name=sect_64
+idx=65 vaddr=0x00443000 paddr=0x00009400 sz=512 vsz=4096 perm=m--wx name=sect_65
+idx=66 vaddr=0x00444000 paddr=0x00009600 sz=512 vsz=4096 perm=m--wx name=sect_66
+idx=67 vaddr=0x00445000 paddr=0x00009800 sz=512 vsz=4096 perm=m--wx name=sect_67
+idx=68 vaddr=0x00446000 paddr=0x00009a00 sz=512 vsz=4096 perm=m--wx name=sect_68
+idx=69 vaddr=0x00447000 paddr=0x00009c00 sz=512 vsz=4096 perm=m--wx name=sect_69
+idx=70 vaddr=0x00448000 paddr=0x00009e00 sz=512 vsz=4096 perm=m--wx name=sect_70
+idx=71 vaddr=0x00449000 paddr=0x0000a000 sz=512 vsz=4096 perm=m--wx name=sect_71
+idx=72 vaddr=0x0044a000 paddr=0x0000a200 sz=512 vsz=4096 perm=m--wx name=sect_72
+idx=73 vaddr=0x0044b000 paddr=0x0000a400 sz=512 vsz=4096 perm=m--wx name=sect_73
+idx=74 vaddr=0x0044c000 paddr=0x0000a600 sz=512 vsz=4096 perm=m--wx name=sect_74
+idx=75 vaddr=0x0044d000 paddr=0x0000a800 sz=512 vsz=4096 perm=m--wx name=sect_75
+idx=76 vaddr=0x0044e000 paddr=0x0000aa00 sz=512 vsz=4096 perm=m--wx name=sect_76
+idx=77 vaddr=0x0044f000 paddr=0x0000ac00 sz=512 vsz=4096 perm=m--wx name=sect_77
+idx=78 vaddr=0x00450000 paddr=0x0000ae00 sz=512 vsz=4096 perm=m--wx name=sect_78
+idx=79 vaddr=0x00451000 paddr=0x0000b000 sz=512 vsz=4096 perm=m--wx name=sect_79
+idx=80 vaddr=0x00452000 paddr=0x0000b200 sz=512 vsz=4096 perm=m--wx name=sect_80
+idx=81 vaddr=0x00453000 paddr=0x0000b400 sz=512 vsz=4096 perm=m--wx name=sect_81
+idx=82 vaddr=0x00454000 paddr=0x0000b600 sz=512 vsz=4096 perm=m--wx name=sect_82
+idx=83 vaddr=0x00455000 paddr=0x0000b800 sz=512 vsz=4096 perm=m--wx name=sect_83
+idx=84 vaddr=0x00456000 paddr=0x0000ba00 sz=512 vsz=4096 perm=m--wx name=sect_84
+idx=85 vaddr=0x00457000 paddr=0x0000bc00 sz=512 vsz=4096 perm=m--wx name=sect_85
+idx=86 vaddr=0x00458000 paddr=0x0000be00 sz=512 vsz=4096 perm=m--wx name=sect_86
+idx=87 vaddr=0x00459000 paddr=0x0000c000 sz=512 vsz=4096 perm=m--wx name=sect_87
+idx=88 vaddr=0x0045a000 paddr=0x0000c200 sz=512 vsz=4096 perm=m--wx name=sect_88
+idx=89 vaddr=0x0045b000 paddr=0x0000c400 sz=512 vsz=4096 perm=m--wx name=sect_89
+idx=90 vaddr=0x0045c000 paddr=0x0000c600 sz=512 vsz=4096 perm=m--wx name=sect_90
+idx=91 vaddr=0x0045d000 paddr=0x0000c800 sz=512 vsz=4096 perm=m--wx name=sect_91
+idx=92 vaddr=0x0045e000 paddr=0x0000ca00 sz=512 vsz=4096 perm=m--wx name=sect_92
+idx=93 vaddr=0x0045f000 paddr=0x0000cc00 sz=512 vsz=4096 perm=m--wx name=sect_93
+idx=94 vaddr=0x00460000 paddr=0x0000ce00 sz=512 vsz=4096 perm=m--wx name=sect_94
+idx=95 vaddr=0x00461000 paddr=0x0000d000 sz=512 vsz=4096 perm=m--wx name=sect_95
+
+96 sections
+'
+IGNORE_ERR=1
+run_test
+
+
+NAME='PE: corkami 96workingsections.exe - section list - unfiltered'
+FILE=../../bins/pe/96workingsections.exe
+ARGS='-n'
+CMDS="!rabin2 -uS ${FILE}"
+EXPECT='[Sections]
+idx=00 vaddr=0x00402000 paddr=0x00001200 sz=512 vsz=4096 perm=m--wx name=sect_0
+idx=01 vaddr=0x00403000 paddr=0x00001400 sz=512 vsz=4096 perm=m--wx name=sect_1
+idx=02 vaddr=0x00404000 paddr=0x00001600 sz=512 vsz=4096 perm=m--wx name=sect_2
+idx=03 vaddr=0x00405000 paddr=0x00001800 sz=512 vsz=4096 perm=m--wx name=sect_3
+idx=04 vaddr=0x00406000 paddr=0x00001a00 sz=512 vsz=4096 perm=m--wx name=sect_4
+idx=05 vaddr=0x00407000 paddr=0x00001c00 sz=512 vsz=4096 perm=m--wx name=sect_5
+idx=06 vaddr=0x00408000 paddr=0x00001e00 sz=512 vsz=4096 perm=m--wx name=sect_6
+idx=07 vaddr=0x00409000 paddr=0x00002000 sz=512 vsz=4096 perm=m--wx name=sect_7
+idx=08 vaddr=0x0040a000 paddr=0x00002200 sz=512 vsz=4096 perm=m--wx name=sect_8
+idx=09 vaddr=0x0040b000 paddr=0x00002400 sz=512 vsz=4096 perm=m--wx name=sect_9
+idx=10 vaddr=0x0040c000 paddr=0x00002600 sz=512 vsz=4096 perm=m--wx name=sect_10
+idx=11 vaddr=0x0040d000 paddr=0x00002800 sz=512 vsz=4096 perm=m--wx name=sect_11
+idx=12 vaddr=0x0040e000 paddr=0x00002a00 sz=512 vsz=4096 perm=m--wx name=sect_12
+idx=13 vaddr=0x0040f000 paddr=0x00002c00 sz=512 vsz=4096 perm=m--wx name=sect_13
+idx=14 vaddr=0x00410000 paddr=0x00002e00 sz=512 vsz=4096 perm=m--wx name=sect_14
+idx=15 vaddr=0x00411000 paddr=0x00003000 sz=512 vsz=4096 perm=m--wx name=sect_15
+idx=16 vaddr=0x00412000 paddr=0x00003200 sz=512 vsz=4096 perm=m--wx name=sect_16
+idx=17 vaddr=0x00413000 paddr=0x00003400 sz=512 vsz=4096 perm=m--wx name=sect_17
+idx=18 vaddr=0x00414000 paddr=0x00003600 sz=512 vsz=4096 perm=m--wx name=sect_18
+idx=19 vaddr=0x00415000 paddr=0x00003800 sz=512 vsz=4096 perm=m--wx name=sect_19
+idx=20 vaddr=0x00416000 paddr=0x00003a00 sz=512 vsz=4096 perm=m--wx name=sect_20
+idx=21 vaddr=0x00417000 paddr=0x00003c00 sz=512 vsz=4096 perm=m--wx name=sect_21
+idx=22 vaddr=0x00418000 paddr=0x00003e00 sz=512 vsz=4096 perm=m--wx name=sect_22
+idx=23 vaddr=0x00419000 paddr=0x00004000 sz=512 vsz=4096 perm=m--wx name=sect_23
+idx=24 vaddr=0x0041a000 paddr=0x00004200 sz=512 vsz=4096 perm=m--wx name=sect_24
+idx=25 vaddr=0x0041b000 paddr=0x00004400 sz=512 vsz=4096 perm=m--wx name=sect_25
+idx=26 vaddr=0x0041c000 paddr=0x00004600 sz=512 vsz=4096 perm=m--wx name=sect_26
+idx=27 vaddr=0x0041d000 paddr=0x00004800 sz=512 vsz=4096 perm=m--wx name=sect_27
+idx=28 vaddr=0x0041e000 paddr=0x00004a00 sz=512 vsz=4096 perm=m--wx name=sect_28
+idx=29 vaddr=0x0041f000 paddr=0x00004c00 sz=512 vsz=4096 perm=m--wx name=sect_29
+idx=30 vaddr=0x00420000 paddr=0x00004e00 sz=512 vsz=4096 perm=m--wx name=sect_30
+idx=31 vaddr=0x00421000 paddr=0x00005000 sz=512 vsz=4096 perm=m--wx name=sect_31
+idx=32 vaddr=0x00422000 paddr=0x00005200 sz=512 vsz=4096 perm=m--wx name=sect_32
+idx=33 vaddr=0x00423000 paddr=0x00005400 sz=512 vsz=4096 perm=m--wx name=sect_33
+idx=34 vaddr=0x00424000 paddr=0x00005600 sz=512 vsz=4096 perm=m--wx name=sect_34
+idx=35 vaddr=0x00425000 paddr=0x00005800 sz=512 vsz=4096 perm=m--wx name=sect_35
+idx=36 vaddr=0x00426000 paddr=0x00005a00 sz=512 vsz=4096 perm=m--wx name=sect_36
+idx=37 vaddr=0x00427000 paddr=0x00005c00 sz=512 vsz=4096 perm=m--wx name=sect_37
+idx=38 vaddr=0x00428000 paddr=0x00005e00 sz=512 vsz=4096 perm=m--wx name=sect_38
+idx=39 vaddr=0x00429000 paddr=0x00006000 sz=512 vsz=4096 perm=m--wx name=sect_39
+idx=40 vaddr=0x0042a000 paddr=0x00006200 sz=512 vsz=4096 perm=m--wx name=sect_40
+idx=41 vaddr=0x0042b000 paddr=0x00006400 sz=512 vsz=4096 perm=m--wx name=sect_41
+idx=42 vaddr=0x0042c000 paddr=0x00006600 sz=512 vsz=4096 perm=m--wx name=sect_42
+idx=43 vaddr=0x0042d000 paddr=0x00006800 sz=512 vsz=4096 perm=m--wx name=sect_43
+idx=44 vaddr=0x0042e000 paddr=0x00006a00 sz=512 vsz=4096 perm=m--wx name=sect_44
+idx=45 vaddr=0x0042f000 paddr=0x00006c00 sz=512 vsz=4096 perm=m--wx name=sect_45
+idx=46 vaddr=0x00430000 paddr=0x00006e00 sz=512 vsz=4096 perm=m--wx name=sect_46
+idx=47 vaddr=0x00431000 paddr=0x00007000 sz=512 vsz=4096 perm=m--wx name=sect_47
+idx=48 vaddr=0x00432000 paddr=0x00007200 sz=512 vsz=4096 perm=m--wx name=sect_48
+idx=49 vaddr=0x00433000 paddr=0x00007400 sz=512 vsz=4096 perm=m--wx name=sect_49
+idx=50 vaddr=0x00434000 paddr=0x00007600 sz=512 vsz=4096 perm=m--wx name=sect_50
+idx=51 vaddr=0x00435000 paddr=0x00007800 sz=512 vsz=4096 perm=m--wx name=sect_51
+idx=52 vaddr=0x00436000 paddr=0x00007a00 sz=512 vsz=4096 perm=m--wx name=sect_52
+idx=53 vaddr=0x00437000 paddr=0x00007c00 sz=512 vsz=4096 perm=m--wx name=sect_53
+idx=54 vaddr=0x00438000 paddr=0x00007e00 sz=512 vsz=4096 perm=m--wx name=sect_54
+idx=55 vaddr=0x00439000 paddr=0x00008000 sz=512 vsz=4096 perm=m--wx name=sect_55
+idx=56 vaddr=0x0043a000 paddr=0x00008200 sz=512 vsz=4096 perm=m--wx name=sect_56
+idx=57 vaddr=0x0043b000 paddr=0x00008400 sz=512 vsz=4096 perm=m--wx name=sect_57
+idx=58 vaddr=0x0043c000 paddr=0x00008600 sz=512 vsz=4096 perm=m--wx name=sect_58
+idx=59 vaddr=0x0043d000 paddr=0x00008800 sz=512 vsz=4096 perm=m--wx name=sect_59
+idx=60 vaddr=0x0043e000 paddr=0x00008a00 sz=512 vsz=4096 perm=m--wx name=sect_60
+idx=61 vaddr=0x0043f000 paddr=0x00008c00 sz=512 vsz=4096 perm=m--wx name=sect_61
+idx=62 vaddr=0x00440000 paddr=0x00008e00 sz=512 vsz=4096 perm=m--wx name=sect_62
+idx=63 vaddr=0x00441000 paddr=0x00009000 sz=512 vsz=4096 perm=m--wx name=sect_63
+idx=64 vaddr=0x00442000 paddr=0x00009200 sz=512 vsz=4096 perm=m--wx name=sect_64
+idx=65 vaddr=0x00443000 paddr=0x00009400 sz=512 vsz=4096 perm=m--wx name=sect_65
+idx=66 vaddr=0x00444000 paddr=0x00009600 sz=512 vsz=4096 perm=m--wx name=sect_66
+idx=67 vaddr=0x00445000 paddr=0x00009800 sz=512 vsz=4096 perm=m--wx name=sect_67
+idx=68 vaddr=0x00446000 paddr=0x00009a00 sz=512 vsz=4096 perm=m--wx name=sect_68
+idx=69 vaddr=0x00447000 paddr=0x00009c00 sz=512 vsz=4096 perm=m--wx name=sect_69
+idx=70 vaddr=0x00448000 paddr=0x00009e00 sz=512 vsz=4096 perm=m--wx name=sect_70
+idx=71 vaddr=0x00449000 paddr=0x0000a000 sz=512 vsz=4096 perm=m--wx name=sect_71
+idx=72 vaddr=0x0044a000 paddr=0x0000a200 sz=512 vsz=4096 perm=m--wx name=sect_72
+idx=73 vaddr=0x0044b000 paddr=0x0000a400 sz=512 vsz=4096 perm=m--wx name=sect_73
+idx=74 vaddr=0x0044c000 paddr=0x0000a600 sz=512 vsz=4096 perm=m--wx name=sect_74
+idx=75 vaddr=0x0044d000 paddr=0x0000a800 sz=512 vsz=4096 perm=m--wx name=sect_75
+idx=76 vaddr=0x0044e000 paddr=0x0000aa00 sz=512 vsz=4096 perm=m--wx name=sect_76
+idx=77 vaddr=0x0044f000 paddr=0x0000ac00 sz=512 vsz=4096 perm=m--wx name=sect_77
+idx=78 vaddr=0x00450000 paddr=0x0000ae00 sz=512 vsz=4096 perm=m--wx name=sect_78
+idx=79 vaddr=0x00451000 paddr=0x0000b000 sz=512 vsz=4096 perm=m--wx name=sect_79
+idx=80 vaddr=0x00452000 paddr=0x0000b200 sz=512 vsz=4096 perm=m--wx name=sect_80
+idx=81 vaddr=0x00453000 paddr=0x0000b400 sz=512 vsz=4096 perm=m--wx name=sect_81
+idx=82 vaddr=0x00454000 paddr=0x0000b600 sz=512 vsz=4096 perm=m--wx name=sect_82
+idx=83 vaddr=0x00455000 paddr=0x0000b800 sz=512 vsz=4096 perm=m--wx name=sect_83
+idx=84 vaddr=0x00456000 paddr=0x0000ba00 sz=512 vsz=4096 perm=m--wx name=sect_84
+idx=85 vaddr=0x00457000 paddr=0x0000bc00 sz=512 vsz=4096 perm=m--wx name=sect_85
+idx=86 vaddr=0x00458000 paddr=0x0000be00 sz=512 vsz=4096 perm=m--wx name=sect_86
+idx=87 vaddr=0x00459000 paddr=0x0000c000 sz=512 vsz=4096 perm=m--wx name=sect_87
+idx=88 vaddr=0x0045a000 paddr=0x0000c200 sz=512 vsz=4096 perm=m--wx name=sect_88
+idx=89 vaddr=0x0045b000 paddr=0x0000c400 sz=512 vsz=4096 perm=m--wx name=sect_89
+idx=90 vaddr=0x0045c000 paddr=0x0000c600 sz=512 vsz=4096 perm=m--wx name=sect_90
+idx=91 vaddr=0x0045d000 paddr=0x0000c800 sz=512 vsz=4096 perm=m--wx name=sect_91
+idx=92 vaddr=0x0045e000 paddr=0x0000ca00 sz=512 vsz=4096 perm=m--wx name=sect_92
+idx=93 vaddr=0x0045f000 paddr=0x0000cc00 sz=512 vsz=4096 perm=m--wx name=sect_93
+idx=94 vaddr=0x00460000 paddr=0x0000ce00 sz=512 vsz=4096 perm=m--wx name=sect_94
+idx=95 vaddr=0x00461000 paddr=0x0000d000 sz=512 vsz=4096 perm=m--wx name=sect_95
+
+96 sections
+'
+IGNORE_ERR=1
+run_test

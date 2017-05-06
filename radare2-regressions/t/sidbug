@@ -1,0 +1,10 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=../bins/other/pvm2-indiecito.sid
+IGNORE_ERR=1
+CMDS='/x 01010102
+'
+EXPECT='0x000011fe hit0_0 01010102
+'
+run_test

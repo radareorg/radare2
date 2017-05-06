@@ -1,0 +1,29 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 sqaxomonophonen
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+unset R2_NOPLUGINS
+
+NAME='backwards seek'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=m68k
+e scr.interactive=true
+wx 381869000010533912345678680000202049
+s 0x10
+Vpkq
+s
+Vkq
+s
+Vkq
+s
+Vkq
+s
+'
+EXPECT='0xc
+0x6
+0x2
+0x0
+'
+run_test

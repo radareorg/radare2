@@ -1,0 +1,75 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=malloc://1024
+IGNORE_ERR=1
+CMDS='
+w test
+w test@333
+w test@666
+?e
+e search.in=block
+b 777
+/ test
+'
+EXPECT='
+0x00000000 hit0_0 "test"
+0x0000014d hit0_1 "test"
+0x0000029a hit0_2 "test"
+'
+
+run_test
+
+
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+IGNORE_ERR=1
+CMDS='
+b 0x100
+e search.from = 0x08048301
+e search.to = 0x8048390
+/x b4960408ffd0c9c3
+'
+EXPECT='0x08048362 hit0_0 b4960408ffd0c9c3
+'
+
+run_test
+
+# NOTE: this test fails because the hit is in the middle of two buffers
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+IGNORE_ERR=1
+CMDS='
+b 100
+e search.from = 0x08048301
+e search.to = 0x8048390
+/x b4960408ffd0c9c3
+'
+EXPECT='0x08048362 hit0_0 b4960408ffd0c9c3
+'
+
+run_test
+
+NAME=overlap0
+FILE=-
+IGNORE_ERR=1
+CMDS='
+w AAAA
+/x 4141
+'
+EXPECT='0x00000000 hit0_0 4141
+0x00000002 hit0_1 4141
+'
+run_test
+
+NAME=overlap1
+FILE=-
+IGNORE_ERR=1
+CMDS='
+e search.overlap=true
+w AAAA
+/x 4141
+'
+EXPECT='0x00000000 hit0_0 4141
+0x00000001 hit0_1 4141
+0x00000002 hit0_2 4141
+'
+run_test

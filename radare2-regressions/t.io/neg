@@ -1,0 +1,24 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# TODO: Add tests for mach0, PE, ...
+# TODO: check symbols too
+
+NAME="io/neg"
+BROKEN=
+FILE=-
+CMDS='
+p8 4 @ 0-2
+'
+EXPECT='ffff0000
+'
+run_test
+
+NAME="io/neg 2"
+BROKEN=
+FILE=-
+CMDS='s- 1000
+? $o~?0x0
+'
+EXPECT='1
+'
+run_test

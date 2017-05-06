@@ -1,0 +1,69 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami signature.exe - iC'
+FILE=../../bins/pe/signature.exe
+ARGS=''
+CMDS="iC; q!"
+EXPECT='signedData
+  Version: 1
+  Digest Algorithms:
+    sha1
+  Certificates: 1
+    TBSCertificate:
+      Version: v1
+      Serial Number:
+        01
+      Signature Algorithm:
+        sha1WithRSAEncryption
+      Issuer:
+        countryName: AU
+        stateOrProvinceName: Some-State
+        organizationName: Internet Widgits Pty Ltd
+      Validity:
+        Not Before: 07/02/2011 09:10:26 GMT
+        Not After: 06/02/2013 09:10:26 GMT
+      Subject:
+        countryName: AU
+        stateOrProvinceName: Some-State
+        organizationName: Internet Widgits Pty Ltd
+        organizationalUnitName: code signing
+      Subject Public Key Info:
+        Algorithm: rsaEncryption
+        Module: 01:00:01
+        Exponent: 512 bytes
+      Extensions:
+    Algorithm:
+      sha1WithRSAEncryption
+    Signature: 512 bytes
+  SignerInfos:
+    SignerInfo:
+      Version: v2
+      Issuer
+        countryName: AU
+        stateOrProvinceName: Some-State
+        organizationName: Internet Widgits Pty Ltd
+      Serial Number:
+        01
+      Digest Algorithm:
+        sha1
+      Authenticated Attributes:
+        spcSpOpusInfo: 2 bytes
+        contentType: 12 bytes
+        messageDigest: 22 bytes
+      Digest Encryption Algorithm
+        rsaEncryption
+      Unauthenticated Attributes:
+'
+IGNORE_ERR=1
+run_test
+
+
+NAME='PE: corkami signature.exe - iI'
+FILE=../../bins/pe/signature.exe
+ARGS=''
+CMDS="iI~signed; q!"
+EXPECT='signed   true
+'
+IGNORE_ERR=1
+run_test

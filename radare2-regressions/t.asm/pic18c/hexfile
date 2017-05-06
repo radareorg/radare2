@@ -1,0 +1,12 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="pic18c"
+FILE=ihex://../../bins/pic18c/FreeRTOS-pic18c.hex
+ARGS="-a pic18c"
+CMDS='pi 2
+'
+EXPECT="goto 0x246e
+return 0
+"
+run_test

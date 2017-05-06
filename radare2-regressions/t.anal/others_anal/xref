@@ -1,0 +1,348 @@
+#!/bin/sh
+# LGPL - Copyright (C) 2014-2015 Maijin, pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="axt udis86"
+BROKEN=
+FILE=../../bins/elf/analysis/main
+ARGS=
+CMDS='e asm.arch = x86.udis
+e anal.arch = x86.udis
+e scr.color = false
+e scr.wheel = false
+aa
+axt @ str.Hello_World'
+EXPECT='data 0x40050a mov edi, str.Hello_World in sym.main
+'
+if [ -n "${TRAVIS}" ]; then
+  unset BROKEN
+  return
+else
+  run_test
+fi
+
+NAME="axt capstone x86"
+BROKEN=
+FILE=../../bins/elf/analysis/main
+ARGS=
+CMDS='e asm.arch = x86
+e anal.arch = x86
+e scr.color=false
+e scr.wheel = false
+aa
+axt @ str.Hello_World'
+EXPECT='data 0x40050a mov edi, str.Hello_World in sym.main
+'
+run_test
+
+
+NAME="axt capstone x86: IOLI0"
+BROKEN=
+FILE=../../bins/elf/ioli/crackme0x00
+ARGS=
+CMDS='e asm.arch = x86
+e anal.arch = x86
+e scr.color=false
+e scr.wheel = false
+aa
+axt @ str.Password:'
+EXPECT='data 0x804843c mov dword [esp], str.Password: in main
+'
+run_test
+
+NAME="axt capstone x86: IOLI7 aa"
+BROKEN=
+FILE=../../bins/elf/ioli/crackme0x07
+ARGS=
+CMDS='
+aaa
+axt @ sym.imp.exit'
+EXPECT='call 0x804853d call sym.imp.exit in sub.printf_524
+call 0x80485ab call sym.imp.exit in sub.sscanf_542
+call 0x804866f call sym.imp.exit in sub.strlen_5b9
+'
+run_test
+
+NAME="axt capstone x86: IOLI7 aa"
+BROKEN=
+FILE=../../bins/elf/ioli/crackme0x07
+ARGS=
+CMDS='
+aaaa
+axt @ sym.imp.exit'
+EXPECT='call 0x804853d call sym.imp.exit in sub.printf_524
+call 0x80485ab call sym.imp.exit in sub.sscanf_542
+call 0x804866f call sym.imp.exit in sub.strlen_5b9
+'
+run_test
+
+NAME="axt respect relsub"
+BROKEN=
+FILE=../../bins/pe/ibknoreloc64.exe
+ARGS=
+CMDS='aaa
+e asm.relsub=false
+axt @ sym.imp.msvcrt.dll_printf
+e asm.relsub=true
+axt @ sym.imp.msvcrt.dll_printf
+'
+EXPECT='data 0xffffffffffff100a call qword [rip + 0xd8] in entry0
+data 0xffffffffffff100a call qword [sym.imp.msvcrt.dll_printf] in entry0
+'
+run_test
+
+NAME="axt udis86: IOLI0"
+BROKEN=
+FILE=../../bins/elf/ioli/crackme0x00
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.arch = x86.udis
+e anal.arch = x86.udis
+e scr.color=false
+e scr.wheel = false
+aa
+axt @ str.Password:'
+EXPECT='data 0x804843c mov dword [esp], str.Password: in main
+'
+run_test
+
+NAME="ax-"
+BROKEN=
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='ax 10 20
+ax
+ax-10 20
+ax
+'
+EXPECT='ref.unk.0x14=0xa
+xref.unk.0xa=0x14
+types=code.jmp,code.call,data.mem,data.string
+types=code.jmp,code.call,data.mem,data.string
+'
+run_test
+
+NAME="ax-@"
+BROKEN=
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='s 20
+ax 10
+ax
+ax-10
+ax
+'
+EXPECT='ref.unk.0x14=0xa
+xref.unk.0xa=0x14
+types=code.jmp,code.call,data.mem,data.string
+types=code.jmp,code.call,data.mem,data.string
+'
+run_test
+
+NAME="ax-*"
+BROKEN=
+FILE=-
+IGNORE_ERR=1
+ARGS=
+CMDS='ax 10
+ax
+ax-*
+ax
+'
+EXPECT='ref.unk.0x0=0xa
+xref.unk.0xa=0
+types=code.jmp,code.call,data.mem,data.string
+types=code.jmp,code.call,data.mem,data.string
+'
+
+NAME="axt unknown function"
+BROKEN=
+FILE=../../bins/pe/lab11.malware
+IGNORE_ERR=1
+ARGS=
+CMDS='aaa
+axt fcn.00401270
+'
+EXPECT='call 0x401a1d call fcn.00401270 in unknown function
+'
+
+
+
+run_test
+
+NAME="axf string ref udis86"
+BROKEN=1
+FILE=../../bins/elf/ioli/crackme0x03
+ARGS=
+CMDS='e asm.arch = x86.udis
+e anal.arch = x86.udis
+e scr.color = false
+e scr.wheel = false
+aa
+axt str.Sdvvzrug_RN______
+axf 0x804848a
+'
+EXPECT='data 0x804848a mov dword [esp], str.Sdvvzrug_RN______ in sym.test
+d 0x804848a mov dword [esp], str.Sdvvzrug_RN______
+'
+if [ -n "${TRAVIS}" ]; then
+  unset BROKEN
+  return
+else
+  run_test
+fi
+
+NAME="axf string ref capstone x86"
+BROKEN=1
+FILE=../../bins/elf/ioli/crackme0x03
+ARGS=
+CMDS='e asm.arch = x86
+e anal.arch = x86
+e scr.color = false
+e scr.wheel = false
+aa
+axt str.Sdvvzrug_RN______
+axf 0x804848a
+'
+EXPECT='data 0x804848a mov dword [esp], str.Sdvvzrug_RN______ in sym.test
+d 0x804848a mov dword [esp], str.Sdvvzrug_RN______
+'
+run_test
+
+NAME="x86 ref issue"
+CMDS='
+e asm.bits=64
+e asm.arch=x86
+wx c7052a44000050000000
+ao~^ptr[1]
+'
+EXPECT='0x00004434
+'
+run_test
+
+NAME="strings xref issue"
+FILE=../../bins/elf/redpill
+BROKEN=
+CMDS='
+e anal.strings=true
+aa
+aae
+axt 0x00001d89
+axt 0x00001da0
+axt 0x00001db7
+axt 0x00001dd1
+axt 0x00001de8
+axt 0x00001df4
+axt 0x00001e09
+'
+EXPECT='data 0x1457 lea eax, str.Take_the_Red_Pill____n in main
+data 0x148e lea eax, str.use:_._exploit1_PILL in main
+data 0x14eb lea eax, str.Red_Pill__0x50444552 in main
+data 0x1502 lea eax, str.Your_Pill_0x_08x_n in main
+data 0x1523 lea eax, str._n__Red_Pill in main
+data 0x1557 lea eax, str.fwhibbit_ in main
+data 0x161d lea eax, str._n__Blue_Pill in main
+'
+run_test
+
+NAME='reference to like mov [0x400000], 0x1234'
+BROKEN=
+FILE=../../bins/elf/analysis/reference.out
+ARGS=
+CMDS='
+aaa
+axt@0x0804a01c
+'
+EXPECT='data 0x80483ee mov dword [obj.a], 0x1337 in sym.main
+'
+run_test
+
+NAME='delete references with ax-'
+FILE='../../bins/elf/crackme'
+ARGS=
+CMDS='
+ax 10 20
+ax
+ax- 10
+ax
+ax- 20
+ax
+ax 10 20
+ax 30 40
+ax
+ax-*
+ax
+'
+EXPECT='ref.unk.0x14=0xa
+xref.unk.0xa=0x14
+types=code.jmp,code.call,data.mem,data.string
+ref.unk.0x14=0xa
+xref.unk.0xa=0x14
+types=code.jmp,code.call,data.mem,data.string
+types=code.jmp,code.call,data.mem,data.string
+ref.unk.0x28=0x1e
+ref.unk.0x14=0xa
+xref.unk.0xa=0x14
+xref.unk.0x1e=0x28
+types=code.jmp,code.call,data.mem,data.string
+types=code.jmp,code.call,data.mem,data.string
+'
+run_test
+
+NAME='reference PIC binary'
+BROKEN=
+FILE=../../bins/elf/analysis/xrefpic
+ARGS=
+CMDS='
+e anal.strings=true
+aa
+aae
+axt@0x80484e0
+'
+EXPECT='data 0x8048432 lea eax, str.Hello_PIC_ in main
+'
+run_test
+
+NAME="strings xref issue without relsub"
+FILE=../../bins/elf/redpill
+CMDS='
+e anal.strings=true
+e asm.relsub=false
+aa
+aae
+axt 0x00001d89
+axt 0x00001da0
+axt 0x00001db7
+axt 0x00001dd1
+axt 0x00001de8
+axt 0x00001df4
+axt 0x00001e09
+'
+EXPECT='data 0x1457 lea eax, [esi - 0x2277] in main
+data 0x148e lea eax, [esi - 0x2260] in main
+data 0x14eb lea eax, [esi - 0x2249] in main
+data 0x1502 lea eax, [esi - 0x222f] in main
+data 0x1523 lea eax, [esi - 0x2218] in main
+data 0x1557 lea eax, [esi - 0x220c] in main
+data 0x161d lea eax, [esi - 0x21f7] in main
+'
+run_test
+
+NAME='reference PIC binary without relsub'
+FILE=../../bins/elf/analysis/xrefpic
+ARGS=
+CMDS='
+e anal.strings=true
+e asm.relsub=false
+aa
+aae
+axt@0x80484e0
+'
+EXPECT='data 0x8048432 lea eax, [ebx - 0x1b20] in main
+'
+run_test
+
+

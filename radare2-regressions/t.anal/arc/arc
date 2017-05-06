@@ -1,0 +1,22 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# Branch
+# the ARCtangent A4 Programmers Reference has an example for the encoding
+# of "BRA 8000, jumping 8000 bytes (2000 long words) forward" as:
+#	00100000000000111110100000000000b
+#
+NAME="arc: [B]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+e cfg.bigendian=false
+s 0x40
+wx 00e80320
+ao~jump
+'
+EXPECT='jump: 0x00001f84
+'
+run_test
+

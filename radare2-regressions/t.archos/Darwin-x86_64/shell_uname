@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# "!" - run commands (via system)
+
+NAME='uname'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+!uname
+'
+EXPECT='Darwin
+'
+run_test
+

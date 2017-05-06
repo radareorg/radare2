@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami bigalign.exe - open'
+FILE=../../bins/pe/bigalign.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami bigalign.exe - entrypoint'
+FILE=../../bins/pe/bigalign.exe
+CMDS='
+s
+'
+EXPECT='0x20010000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami bigalign.exe - pi 1'
+FILE=../../bins/pe/bigalign.exe
+CMDS='
+pi 1
+'
+EXPECT='push 0x20010018
+'
+IGNORE_ERR=1
+run_test

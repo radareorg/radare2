@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# r2r entrypoint for the regressions testsuite
+
+# TODO: bisect with -b
+
+R2RDIR="@R2RDIR@"
+TESTRUNNER="run_tests.sh"
+
+if [ "${R2RDIR}" != "@""R2RDIR@" ]; then
+	cd "${R2RDIR}"
+else
+	DIR=`readlink $0`
+	[ -n "${DIR}" ] && cd `dirname $DIR`
+	while [ ! -x r2r ]; do
+		cd ..
+		if [ "`pwd`" = / ]; then
+			echo "Cannot find radare2-regressions/"
+			exit 1
+		fi
+	done
+fi
+
+KW="$1"
+KX="$2"
+
+control_c() {
+	echo "^C"
+	exit 1
+}
+
+trap control_c 2
+
+usage() {
+	echo "Usage: r2r ([-s|-p|-P]) [keyword]"
+	echo "  -s    search only. do not run any test"
+	echo "  -p    run test files in parallel"
+	echo "  -P    run every single test in parallel"
+	echo "  -v    show version"
+}
+
+case "$KW" in
+-v)
+	echo "0.10.2"
+	exit 0
+	;;
+-h)
+	usage
+	exit 0
+	;;
+-P)
+	export HYPERPARALLEL=1
+	TESTRUNNER="run_tests_parallel.sh"
+	shift
+	KW=$1
+	KX="$2"
+	;;
+-p)
+	TESTRUNNER="run_tests_parallel.sh"
+	shift
+	KW=$1
+	KX="$2"
+	;;
+-s)
+	if [ -n "$KX" ]; then
+		find t* | grep "$KX"
+		exit 0
+	else
+		usage
+		exit 1
+	fi
+	;;
+esac
+
+export VERBOSE=1
+
+if [ -n "$KW" ]; then
+	if [ -n "$KX" ]; then
+		TESTS=`find t* | grep -- "$KW" | grep -- "$KX" | grep -v '/\.'`
+	else
+		TESTS=`find t* | grep -- "$KW" | grep -v '/\.'`
+	fi
+	echo
+	echo "$TESTS"
+	echo
+	DIRS=""
+	for a in ${TESTS} ; do
+		SKIP=0
+		if [ -d "$a" ]; then
+			DIRS="${DIRS} $a"
+		else
+			for b in ${DIRS} ; do
+				if [ -n "`echo $a | grep ^$b`" ]; then
+					echo "Skip $a"
+					SKIP=1
+					break
+				fi
+			done
+		fi
+		[ "${SKIP}" = 0 ] && ./${TESTRUNNER} "$a"
+	done
+else
+	usage
+	exit 1
+fi

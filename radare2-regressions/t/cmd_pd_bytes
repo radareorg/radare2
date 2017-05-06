@@ -1,0 +1,80 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='pD -10 @ 10'
+FILE=malloc://512
+CMDS='e anal.hasnext=0
+e asm.linesup=0
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00
+pD -10 @ 0xa
+'
+EXPECT='            0x00000000      b801000000     mov eax, 1
+            0x00000005      4839ca         cmp rdx, rcx
+        ,=< 0x00000008      7f00           jg 0xa
+'
+run_test
+
+
+NAME='pD -10 @ 0'
+FILE=malloc://512
+CMDS='e anal.hasnext=0
+e asm.arch=x86
+e asm.linesup=false
+e asm.bits=64
+wx b8010000004839ca7f00
+pD -10 @ 10
+'
+EXPECT='            0x00000000      b801000000     mov eax, 1
+            0x00000005      4839ca         cmp rdx, rcx
+        ,=< 0x00000008      7f00           jg 0xa
+'
+run_test
+
+NAME='pD 5 @ 0'
+FILE=malloc://512
+CMDS='e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00
+pD 5
+'
+EXPECT='            0x00000000      b801000000     mov eax, 1
+'
+run_test
+
+NAME='pDj 5 @ 0'
+FILE=malloc://512
+CMDS='e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00
+pDj 5 @ 0
+'
+EXPECT='[{"offset":0,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","type_num":9,"type2_num":0}]
+'
+run_test
+
+
+NAME='pD -10'
+FILE=malloc://1024
+BROKEN=
+CMDS='
+e asm.linesup=0
+wx 90909090909090909090 ; s 10 ; pD -10
+'
+EXPECT='            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002      90             nop
+            0x00000003      90             nop
+            0x00000004      90             nop
+            0x00000005      90             nop
+            0x00000006      90             nop
+            0x00000007      90             nop
+            0x00000008      90             nop
+            0x00000009      90             nop
+'
+
+run_test

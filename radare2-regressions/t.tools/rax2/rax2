@@ -1,0 +1,236 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='rax2 =10 0x46'
+CMDS='!rax2 =10 0x46'
+EXPECT='70
+'
+run_test
+
+NAME='rax2 -b 01101000011001010110110001101100011011110111011101101111011100100110110001100100'
+CMDS='!rax2 -b 01101000011001010110110001101100011011110111011101101111011100100110110001100100'
+EXPECT='helloworld'
+run_test
+
+NAME='rax2 -B hello world'
+CMDS='!rax2 -B hello world'
+EXPECT='01101000011001010110110001101100011011110111011101101111011100100110110001100100'
+run_test
+
+NAME='rax2 10'
+CMDS='!rax2 10'
+EXPECT='0xa
+'
+run_test
+
+NAME='rax2 0xa'
+CMDS='!rax2 0xa'
+EXPECT='10
+'
+run_test
+
+NAME='rax2 -1'
+CMDS='!rax2 -1'
+EXPECT='0xffffffffffffffff
+'
+run_test
+
+NAME='rax2 0xffffffffffffffff'
+CMDS='!rax2 0xffffffffffffffff'
+EXPECT='-1
+'
+run_test
+
+NAME='rax2 b30'
+CMDS='!rax2 b3'
+EXPECT='11b
+'
+run_test
+
+NAME='rax2 t42'
+CMDS='!rax2 t42'
+EXPECT='1120t
+'
+run_test
+
+NAME='rax2 1010d'
+CMDS='!rax2 1010d'
+EXPECT='10
+'
+run_test
+
+NAME='rax2 3.33f'
+CMDS='!rax2 3.33f'
+EXPECT='Fx40551eb8
+'
+run_test
+
+NAME='rax2 Fx40551ed8'
+CMDS='!rax2 Fx40551ed8'
+EXPECT='3.330008f
+'
+run_test
+
+NAME='rax2 35o'
+CMDS='!rax2 35o'
+EXPECT='0x1d
+'
+run_test
+
+NAME='rax2 Ox12'
+CMDS='!rax2 Ox12'
+EXPECT='022
+'
+run_test
+
+NAME='rax2 1100011b'
+CMDS='!rax2 1100011b'
+EXPECT='0x63
+'
+run_test
+
+NAME='rax2 Bx63'
+CMDS='!rax2 Bx63'
+EXPECT='1100011b
+'
+run_test
+
+NAME='rax2 Tx23'
+CMDS='!rax2 Tx23'
+EXPECT='1022t
+'
+run_test
+
+NAME='rax2 Tx23'
+CMDS='!rax2 Tx23'
+EXPECT='1022t
+'
+run_test
+
+NAME='cat ../../bins/other/admin.txt | rax2 -S'
+CMDS='!cat ../../bins/other/admin.txt | rax2 -S'
+EXPECT='6161646d696e61
+'
+run_test
+
+NAME='echo "414141" | rax2 -s '
+CMDS='!printf 414141 | rax2 -s'
+EXPECT='AAA'
+run_test
+
+NAME='rax2 -b 01000101 01110110'
+CMDS='!rax2 -b 01000101 01110110'
+EXPECT='Ev'
+run_test
+
+NAME='rax2 -k 33+3'
+CMDS='!rax2 -k 33+3'
+EXPECT='36
+'
+run_test
+
+NAME='rax2 -e 0x00000401'
+CMDS='!rax2 -e 0x00000401'
+EXPECT='17039360
+'
+run_test
+
+NAME='rax2 -f 6.3+2.1'
+CMDS='!rax2 -f 6.3+2.1'
+EXPECT='8.4
+'
+run_test
+
+NAME='rax2 -n 0x1234'
+CMDS='!rax2 -n 0x1234'
+EXPECT='34120000
+'
+run_test
+
+NAME='rax2 -N 0x1234'
+CMDS='!rax2 -N 0x1234'
+EXPECT='\x34\x12\x00\x00
+'
+run_test
+
+NAME='rax2 -d 3'
+CMDS='!rax2 -d 3'
+EXPECT='3
+'
+run_test
+
+NAME='cat ../../bins/other/shellcode.c | rax2 -F'
+CMDS='!cat ../../bins/other/shellcode.c | rax2 -F'
+EXPECT='31c050686e2f7368682f2f626989e35089e25389e1b00bcd80
+'
+run_test
+
+NAME='{0x33,33,23,32}'
+CMDS="echo 'main() {const char *foo = {0x33,33,23,23,23,23,4,13,32,23,32,23,32};}' | rax2 -F"
+EXPECT='332117171717040d2017201720
+'
+run_test
+
+NAME='"\x33\x44\x88"'
+CODE='main(){const char *foo = "\x33\x44\x88"; }'
+CMDS="echo '${CODE}' | rax2 -F"
+EXPECT='334488
+'
+run_test
+
+NAME='rax2 -s 43 4a 50'
+CMDS='!rax2 -s 43 4a 50'
+EXPECT='CJP'
+run_test
+
+NAME='rax2 -s 434a50'
+CMDS='!rax2 -s 434a50'
+EXPECT='CJP'
+run_test
+
+NAME='rax2 -S CJP'
+CMDS='!rax2 -S CJP'
+EXPECT='434a50
+'
+run_test
+
+NAME='rax2 -t 1234567890'
+CMDS='!rax2 -t 1234567890 | cut -d " " -f 1,2'
+EXPECT='2009-02-13 23:31:30
+'
+run_test
+
+NAME='rax2 -x linux osx'
+CMDS='!rax2 -x linux osx'
+EXPECT='0x5ca62a43
+0xad593a1
+'
+run_test
+
+NAME='rax2 -u 3000'
+CMDS='!rax2 -u 3000'
+EXPECT='2.9K
+'
+run_test
+
+NAME='rax2 -h~Usage?"'
+CMDS='!!rax2 -h~Usage?'
+EXPECT='1
+'
+run_test
+
+
+NAME='long number conversion'
+BROKEN=1
+ARGS=
+CMDS='!rax2 10000000000000000000000000000000000000000000000b'
+EXPECT='0x8000000000000000
+'
+
+run_test
+
+NAME='rax2 -121.875f'
+CMDS='!rax2 -121.875f'
+EXPECT='Fxc2f3c000
+'
+run_test

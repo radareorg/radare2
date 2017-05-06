@@ -1,0 +1,121 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_msp430() {
+NAME="msp430:${2}"
+FILE=malloc://8
+ARGS="-w -a msp430"
+CMDS="wx $1;pi 1"
+EXPECT="${2}
+"
+BROKEN=${3}
+run_test
+}
+
+test_msp430 e2d32100 'bis.b #2, &0x0021'
+test_msp430 e2c32600 'bic.b #2, &0x0026'
+test_msp430 e2c22e00 'bic.b #4, &0x002e'
+
+test_msp430 3041 "ret"
+
+test_msp430 fb903b000000 "cmp.b #0x003b, 0x0(r11)"
+
+test_msp430 b01296c0 "call #0xc096"
+
+test_msp430 0924 "jeq $+0x0014"
+
+test_msp430 5f422100 "mov.b &0x0021, r15"
+
+test_msp430 7fe02000 "xor.b #0x0020, r15"
+
+test_msp430 c24f2100 "mov.b r15, &0x0021"
+
+test_msp430 8443faff "clr 0xfffa(r4)"
+
+test_msp430 80433300 "clr 0x0033"
+
+test_msp430 073c "jmp $+0x0010"
+
+test_msp430 5f422100 "mov.b &0x0021, r15"
+
+test_msp430 7fe2 "xor.b #8, r15"
+
+test_msp430 b0422c00 "mov #8, 0x002c"
+
+test_msp430 bb4021000600 "mov #0x0021, 0x6(r11)"
+
+test_msp430 b0422e00 "mov #8, 0x002e" 
+
+test_msp430 924233002e00 "mov &0x0033, &0x002e"
+
+test_msp430 b94003000500 "mov #0x0003, 0x5(r9)"
+
+test_msp430 904233002a00 "mov &0x0033, 0x002a"
+
+test_msp430 90432c00 "mov #1, 0x002c"
+
+test_msp430 b0400a002a00 "mov #0x000a, 0x002a"
+
+test_msp430 924b06003300 "mov 0x6(r11), &0x0033"
+
+test_msp430 9b4a05000600 "mov 0x5(r10), 0x6(r11)"
+
+test_msp430 924603002e00 "mov 0x3(r6), &0x002e"
+
+test_msp430 1b53 "inc r11"
+
+test_msp430 3441 "pop r4"
+
+test_msp430 3b41 "pop r11"
+
+test_msp430 0b63 "adc r11"
+
+test_msp430 4b63 "adc.b r11"
+
+test_msp430 0ba3 "dadc r11"
+
+test_msp430 4ba3 "dadc.b r11"
+
+test_msp430 1b83 "dec r11"
+
+test_msp430 5b83 "dec.b r11"
+
+test_msp430 0b73 "sbc r11"
+
+test_msp430 4b73 "sbc.b r11"
+
+test_msp430 12d3 "setc"
+
+test_msp430 22d3 "setz"
+
+test_msp430 0343 "nop"
+
+test_msp430 22c2 "clrn"
+
+test_msp430 22c3 "clrz"
+
+test_msp430 004a "br r10"
+
+test_msp430 30402100 "br #0x0021"
+
+test_msp430 10420300 "br &0x0003"
+
+test_msp430 0041 "br r1"
+
+test_msp430 2ac2 "bic #4, r10"
+
+test_msp430 2ac3 "bic #2, r10"
+
+test_msp430 3ae3 "inv r10"
+
+test_msp430 b5e30300 "inv 0x3(r5)"
+
+test_msp430 b0e30300 "inv 0x0003"
+
+test_msp430 82930300 "tst &0x0003"
+
+test_msp430 0a93 "tst r10"
+
+test_msp430 85930300 "tst 0x3(r5)"
+
+test_msp430 1312 "push #1"

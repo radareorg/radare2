@@ -1,0 +1,35 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+HELLO=../../bins/dex/Hello.dex
+HELLOSLACK=../../bins/dex/HelloSlack.dex
+
+NAME='loading DEX file'
+FILE=${HELLO}
+ARGS=''
+BROKEN=
+CMDS="iZ"
+EXPECT='1000
+'
+run_test
+
+NAME='Checking file size'
+FILE=${HELLOSLACK}
+ARGS=''
+BROKEN=
+CMDS='?v $s
+iZ'
+EXPECT='0x800
+1000
+'
+run_test
+
+NAME='DEX: entrypoint'
+FILE=${HELLOSLACK}
+ARGS=''
+BROKEN=
+CMDS='?v entry0
+'
+EXPECT='0x1c0
+'
+run_test

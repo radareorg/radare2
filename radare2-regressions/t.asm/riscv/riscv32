@@ -1,0 +1,204 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="${PLUGIN}: RiscV 32-bit disassembly"
+BROKEN=
+CMDS='e asm.arch=riscv
+e asm.bits=32
+wx 7571c1673eceb70703003ed2b1673edee17726c306c722c54ac1ceded2dcd6dadad8ded6e2d4e6d2ead0eece02d402d002dc02d83eda02ccb7040400b7370110 @ 0x0
+wx dc436351f002ba402a449a440a49f659665ad65a465bb65b265c965c065df64d49618280e24763890726724412552258625e9357f4410256bd8b1357f541c258 @ 0x40
+wx b386070133090e411377f7035258b305c70033b7e5003386c840b3bbf600b3b8c800b307a70032873306a84033382e01725e2a8399811395a701bac033071641 @ 0x80
+wx a29bbac299873367b500139ccb0133048e4091823ac83eca056733040441336cdc0093db4b406347e31ef247056763c3e71e9357dc0113973b00d98fbec69317 @ 0xc0
+wx 3c00930df00fbec44ac691470149ee893ed6414ba14cca8d064d964a130900084e8aca89b243a28f8140014981450147014e01488147814601430146014525a8 @ 0x100
+wx 3307c5023333c6020607b38807033a93b306c6028608333e080333070803469e330fc301b38ee600b3b8de00fa9863cc1415638898143387e640330ec341b3b6 @ 0x140
+wx e600b308a701b306de4033b7e800d696ba96b387c7021393860085053307050313d58641b336c8023e973308c802369713d6880106073366c300931818009356 @ 0x180
+wx f801b3877800558f13d887017e97b3b717013e979317870033e8070193578741e39065f7814733878301b336770033e92701de9f85001379f90fba83b69f @ 0x1c0
+pi 184
+'
+EXPECT='addi sp, sp, -144
+lui a5, 0x10
+sw a5, 28(sp)
+lui a5, 0x30
+sw a5, 36(sp)
+lui a5, 0xc
+sw a5, 60(sp)
+lui a5, 0xffff8
+sw s1, 132(sp)
+sw ra, 140(sp)
+sw s0, 136(sp)
+sw s2, 128(sp)
+sw s3, 124(sp)
+sw s4, 120(sp)
+sw s5, 116(sp)
+sw s6, 112(sp)
+sw s7, 108(sp)
+sw s8, 104(sp)
+sw s9, 100(sp)
+sw s10, 96(sp)
+sw s11, 92(sp)
+sw zero, 40(sp)
+sw zero, 32(sp)
+sw zero, 56(sp)
+sw zero, 48(sp)
+sw a5, 52(sp)
+sw zero, 24(sp)
+lui s1, 0x40
+lui a5, 0x10013
+lw a5, 4(a5)
+blez a5, 0x64
+lw ra, 140(sp)
+lw s0, 136(sp)
+lw s1, 132(sp)
+lw s2, 128(sp)
+lw s3, 124(sp)
+lw s4, 120(sp)
+lw s5, 116(sp)
+lw s6, 112(sp)
+lw s7, 108(sp)
+lw s8, 104(sp)
+lw s9, 100(sp)
+lw s10, 96(sp)
+lw s11, 92(sp)
+addi sp, sp, 144
+ret
+lw a5, 24(sp)
+beqz a5, 0x2d8
+lw s0, 28(sp)
+lw a0, 36(sp)
+lw a6, 40(sp)
+lw t3, 56(sp)
+srai a5, s0, 0x1f
+lw a2, 32(sp)
+andi a5, a5, 15
+srai a4, a0, 0x1f
+lw a7, 48(sp)
+add a3, a5, a6
+sub s2, t3, a6
+andi a4, a4, 63
+lw a6, 52(sp)
+add a1, a4, a2
+sltu a4, a1, a4
+sub a2, a7, a2
+sltu s7, a3, a5
+sltu a7, a7, a2
+add a5, a4, a0
+mv a4, a2
+sub a2, a6, a0
+sltu a6, t3, s2
+lw t3, 60(sp)
+mv t1, a0
+srli a1, a1, 0x6
+slli a0, a5, 0x1a
+sw a4, 64(sp)
+sub a4, a2, a7
+add s7, s7, s0
+sw a4, 68(sp)
+srai a5, a5, 0x6
+or a4, a0, a1
+slli s8, s7, 0x1c
+sub s0, t3, s0
+srli a3, a3, 0x4
+sw a4, 16(sp)
+sw a5, 20(sp)
+lui a4, 0x1
+sub s0, s0, a6
+or s8, s8, a3
+srai s7, s7, 0x4
+blt t1, a4, 0x2d4
+lw a5, 28(sp)
+lui a4, 0x1
+blt a5, a4, 0x2d4
+srli a5, s8, 0x1d
+slli a4, s7, 0x3
+or a5, a5, a4
+sw a5, 76(sp)
+slli a5, s8, 0x3
+li s11, 255
+sw a5, 72(sp)
+sw s2, 12(sp)
+li a5, 4
+li s2, 0
+mv s3, s11
+sw a5, 44(sp)
+li s6, 16
+li s9, 8
+mv s11, s2
+lw s10, 64(sp)
+lw s5, 68(sp)
+li s2, 128
+mv s4, s3
+mv s3, s2
+lw t2, 12(sp)
+mv t6, s0
+li ra, 0
+li s2, 0
+li a1, 0
+li a4, 0
+li t3, 0
+li a6, 0
+li a5, 0
+li a3, 0
+li t1, 0
+li a2, 0
+li a0, 0
+j 0x176
+mul a4, a0, a2
+mulhu t1, a2, a2
+slli a4, a4, 0x1
+mul a7, a5, a6
+add t1, t1, a4
+mul a3, a2, a2
+slli a7, a7, 0x1
+mulhu t3, a6, a6
+mul a4, a6, a6
+add t3, t3, a7
+add t5, t1, t3
+add t4, a3, a4
+sltu a7, t4, a3
+add a7, a7, t5
+blt s1, a7, 0x2c6
+beq a7, s1, 0x2c2
+sub a4, a3, a4
+sub t3, t1, t3
+sltu a3, a3, a4
+add a7, a4, s10
+sub a3, t3, a3
+sltu a4, a7, a4
+add a3, a3, s5
+add a3, a3, a4
+mul a5, a5, a2
+slli t1, a3, 0x8
+addi a1, a1, 1
+mul a4, a0, a6
+srai a0, a3, 0x18
+mulhu a3, a6, a2
+add a4, a4, a5
+mul a6, a6, a2
+add a4, a4, a3
+srli a2, a7, 0x18
+slli a4, a4, 0x1
+or a2, t1, a2
+slli a7, a6, 0x1
+srli a3, a6, 0x1f
+add a5, a7, t2
+or a4, a4, a3
+srli a6, a5, 0x18
+add a4, a4, t6
+sltu a5, a5, a7
+add a4, a4, a5
+slli a5, a4, 0x8
+or a6, a5, a6
+srai a5, a4, 0x18
+bne a1, s6, 0x140
+li a5, 0
+add a4, t2, s8
+sltu a3, a4, t2
+or s2, a5, s2
+add t6, t6, s7
+addi ra, ra, 1
+andi s2, s2, 255
+mv t2, a4
+add t6, t6, a3
+'
+run_test
+

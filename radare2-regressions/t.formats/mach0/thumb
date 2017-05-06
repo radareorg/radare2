@@ -1,0 +1,34 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='mach0 thumb entrypoint bits'
+BROKEN=
+FILE=../../bins/mach0/thumb-test
+ARGS=
+CMDS='e asm.bits
+'
+EXPECT='16
+'
+run_test
+
+NAME='mach0 thumb entrypoint info'
+BROKEN=
+FILE=../../bins/mach0/thumb-test
+ARGS=
+CMDS='ie~vaddr
+'
+EXPECT='vaddr=0x0000bfa4 paddr=0x00007fa4 baddr=0x00004000 laddr=0x00000000 haddr=0x00000344 type=program
+'
+run_test
+
+NAME='mach0 non-thumb symbol on thumb bin'
+BROKEN=
+FILE=../../bins/mach0/thumb-test
+ARGS=
+CMDS='pi 1@ sym.imp.strcmp
+'
+EXPECT='ldr pc, [pc, -4]
+'
+run_test

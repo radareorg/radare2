@@ -1,0 +1,265 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh; done
+
+set_test_params() {
+NAME="CR16: [$1]"
+FILE=malloc://32
+BROKEN=$4
+CMDS='
+e asm.arch=cr16
+e asm.bits=16
+wx '$2'
+pi 1
+'
+EXPECT="$3
+"
+}
+
+set_test_params "MOVi 1" 8158 'movb r0,r4'
+run_test
+
+set_test_params "MOVi 2" F179 'movw r8,sp'
+run_test
+
+set_test_params "MOVi 3" 2038 'movw $0x00,r1'
+run_test
+
+set_test_params "MOVi 4" 2018 'movb $0x00,r1'
+run_test
+
+set_test_params "MOVi 5" B139C3A5 'movw $0xa5c3,r13'
+run_test
+
+set_test_params "MOVi 6" B119C4A6 'movb $0xa6c4,r13'
+run_test
+
+set_test_params "MOVXB" F669 'movxb r11,sp'
+run_test
+
+set_test_params "MOVZB" F66B 'movzb r11,sp'
+run_test
+
+set_test_params "MOVD" FE66014E 'movd $0x001f4e01,(r8,r7)'
+run_test
+
+set_test_params "MULSB" 1060 'mulsb r8,r0'
+run_test
+
+set_test_params "MULSW" 9063 'mulsw r8,(r13,r12)'
+run_test
+
+set_test_params "MULUW" 907F 'muluw r8,(r13,r12)'
+run_test
+
+set_test_params "SUBi 1" 535F 'subb r9,r10'
+run_test 
+
+set_test_params "SUBi 2" 537F 'subw r9,r10'
+run_test
+
+set_test_params "SUBi 3" 121F 'subb $0x12,r8'
+run_test
+
+set_test_params "SUBi 4" 113fdeed 'subw $0xedde,r8'
+run_test
+
+set_test_params "CMPi 1" 014F 'cmpb r0,r8'
+run_test
+
+set_test_params "CMPi 2" 016F 'cmpw r0,r8'
+run_test
+
+set_test_params "BEQ0i 1" 1915 'beq0b r8,0xc'
+run_test
+
+set_test_params "BEQ0i 2" 1935 'beq0w r8,0xc'
+run_test
+
+set_test_params "BEQ1i 1" 5915 'beq1b r10,0xc'
+run_test
+
+set_test_params "BEQ1i 2" 7935 'beq1w r11,0xc'
+run_test
+
+set_test_params "BNE0i 1" 8715 'bne0b r12,0x3'
+run_test
+
+set_test_params "BNE0i 2" 8735 'bne0w r12,0x3'
+run_test
+
+set_test_params "BNE1i 1" E715 'bne1b sp,0x3'
+run_test
+
+set_test_params "BNE1i 2" E735 'bne1w sp,0x3'
+run_test
+
+set_test_params "ANDi 1" 8F70 'andw r7,r4'
+run_test
+
+set_test_params "ANDi 2" 8F50 'andb r7,r4'
+run_test
+
+set_test_params "ANDi 3" 1131ceef 'andw $0xefce,r8'
+run_test
+
+set_test_params "ANDi 4" 1111ceef 'andb $0xefce,r8'
+run_test
+
+set_test_params "TBIT 1" 8376 'tbit r1,r4'
+run_test
+
+set_test_params "TBIT 2" BF36 'tbit r5,$0x1f'
+run_test
+
+set_test_params "TBIT 3" B136C1D2 'tbit r5,$0xd2c1'
+run_test
+
+set_test_params "TBITi 1" B165 'tbitw $0x08,0(r9)'
+run_test
+
+set_test_params "TBITi 3" B925DEE1 'tbitw $0x0c,0xe1de(r9)'
+run_test
+
+set_test_params "TBITi 4" B905DEE1 'tbitb $0x0c,0xe1de(r9)'
+run_test
+
+set_test_params "TBITi 5" AA25DEE3 'tbitw $0x05,0x0003e3de'
+run_test
+
+set_test_params "SCOND 1" A66E 'sls r3'
+run_test
+
+set_test_params "LPR" 2270 'lpr r1,psr'
+run_test
+
+set_test_params "SPR" 2272 'spr psr,r1'
+run_test
+
+set_test_params "BCOND disp9" BA54 'bls 0xff5a'
+run_test
+
+set_test_params "BAL 1" 0E34DEED 'bal r0,0xedde'
+run_test
+
+set_test_params "BAL 2" 0A76DEDE 'bal (r1,r0),0x0005dede'
+run_test
+
+set_test_params "BR 1" CA55 'br 0xff4a'
+run_test
+
+set_test_params "BR 2" DE15DDEE 'br 0x0001eedd'
+run_test
+
+set_test_params "BR 3" CA75CC15 'br 0xfffa15cc'
+run_test
+
+set_test_params "EXCP" F47B 'excp 0xa'
+run_test
+
+set_test_params "JCOND 1" AD54 'jls r6'
+run_test
+
+set_test_params "JCOND 2" 4517 'jlo (r3,r2)'
+run_test
+
+set_test_params "JAL 1" 4174 'jal r2,r0'
+run_test
+
+set_test_params "JAL 2" 9217 'jal (r13,r12),(r10,r9)'
+run_test
+
+set_test_params "JUMP 1" CD55 'jump r6'
+run_test
+
+set_test_params "JUMP 2" CB17 'jump (r6,r5)'
+run_test
+
+set_test_params "RETX" FE79 'retx '
+run_test
+
+set_test_params "PUSH" 726C 'push $0x4,r9'
+run_test
+
+set_test_params "POP" D86C 'pop $0x3,r12'
+run_test
+
+set_test_params "POPRET" 606D 'popret $0x4,r0'
+run_test
+
+set_test_params "POPRET 2" E86D 'popret $0x4,r4'
+run_test
+
+set_test_params "LOADi 1" 05AF 'loadw 0x000f(r2),r8'
+run_test
+
+set_test_params "LOADi 2" 058F 'loadb 0x000f(r2),r8'
+run_test
+
+set_test_params "LOADi 3" 03B4FEEF 'loadw 0x0002effe(r1),r0'
+run_test
+
+set_test_params "LOADi 4" 0394FEEF 'loadb 0x0002effe(r1),r0'
+run_test
+
+set_test_params "LOADi 5" 47BCDEAD 'loadw 0x0002adde(r4,r3),r2'
+run_test
+
+set_test_params "LOADi 6" 479CDEAD 'loadb 0x0002adde(r4,r3),r2'
+run_test
+
+set_test_params "LOADi 7" 9FBCCEEA 'loadw 0x0002eace,r4'
+run_test
+
+set_test_params "LOADM" 647E 'loadm $0x4'
+run_test
+
+set_test_params "STORi 1" 05EF 'storw r8,0x000f(r2)'
+run_test
+
+set_test_params "STORi 2" 05CF 'storb r8,0x000f(r2)'
+run_test
+
+set_test_params "STORi 3" 03F4FEEF 'storw r0,0x0002effe(r1)'
+run_test
+
+set_test_params "STORi 4" 03D4FEEF 'storb r0,0x0002effe(r1)'
+run_test
+
+set_test_params "STORi 5" 47FCDEAD 'storw r2,0x0002adde(r4,r3)'
+run_test
+
+set_test_params "STORi 6" 47DCDEAD 'storb r2,0x0002adde(r4,r3)'
+run_test
+
+set_test_params "STORi 7" 9FFCCEEA 'storw r4,0x0002eace'
+run_test
+
+set_test_params "STORi 8" D505DE14 'storb $0x0a,0x14de(r8)'
+run_test
+
+set_test_params "STORi 9" D225BCCB 'storw $0x09,0x0002cbbc'
+run_test
+
+set_test_params "STORi 10" D205BCCB 'storb $0x09,0x0002cbbc'
+run_test
+
+set_test_params "STORi 11" FB64 'storw $0x0d,0(r1)'
+run_test
+
+set_test_params "STORM" E47E 'storm $0x4'
+run_test
+
+set_test_params "DI" DE7D 'di '
+run_test
+
+set_test_params "EI" FE7D 'ei '
+run_test
+
+set_test_params "NOP" 0002  'nop '
+run_test
+
+set_test_params "WAIT" FE7F 'wait '
+run_test
+
+set_test_params "EIWAIT" D67F 'eiwait '
+run_test

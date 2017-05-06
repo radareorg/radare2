@@ -1,0 +1,13 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='BDC bad flag'
+FILE=../../bins/pe/bdc1.ex
+ARGS=
+CMDS="e cfg.bigendian
+"
+
+EXPECT='false
+'
+run_test
+

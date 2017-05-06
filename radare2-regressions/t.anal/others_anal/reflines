@@ -1,0 +1,332 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="reflines offset"
+FILE=malloc://1023
+CMDS='e asm.calls=false
+e asm.bits=32
+e asm.leahints=false
+e asm.cpu=x86
+e asm.linesup=false
+e asm.arch=x86
+e anal.cpu=x86
+e scr.utf8=true
+e asm.comments=false
+e asm.bytes=false
+e scr.color=false
+wx 31c039d6724aeb72908db426000000008d7e0131d289e8f7f131d28944241c89f8f7f13944241c76678b93080200008b028b50143b5018736dc6020983c20189501489f031d201cef7f129d639f5762a8b8b8c05000085c975b683c6018b93080200008b028b50143b50187327c6022083c20139f589501477d68b44242c65330514000000753783c43c5b5e5f5dc39089feebc9c744240420000000890424e87cc9ffffeba6c744240409000000890424e86ac9ffff8b8b8c050000eb84e87d1001008db6000000008dbc270000000055575653e8f7f0ffff81c32b9d010083ec3c658b0d14000000894c242c31c98b6a0c8b720889e929f1c1e90285c9894c241c0f848100000039f50f84930000008b7a1801fdf7d721fd8b7a1089e9896a0c2b4a0489fd2b6a0439e97f718b7a0c31ed
+aa > /dev/null
+pd 38
+'
+EXPECT='┌ (fcn) fcn.00000000 1015
+│           ; var int local_4h @ esp+0x4
+│           ; var int local_1ch @ esp+0x1c
+│           ; var int local_2ch @ esp+0x2c
+│           0x00000000      xor eax, eax
+│           0x00000002      cmp esi, edx
+│       ┌─< 0x00000004      jb 0x50
+│      ┌──< 0x00000006      jmp 0x7a
+       ││   0x00000008      nop
+       ││   0x00000009      lea esi, [esi]
+│     ┌───> 0x00000010      lea edi, [esi + 1]
+│     ↑││   0x00000013      xor edx, edx
+│     ↑││   0x00000015      mov eax, ebp
+│     ↑││   0x00000017      div ecx
+│     ↑││   0x00000019      xor edx, edx
+│     ↑││   0x0000001b      mov dword [local_1ch], eax
+│     ↑││   0x0000001f      mov eax, edi
+│     ↑││   0x00000021      div ecx
+│     ↑││   0x00000023      cmp dword [local_1ch], eax
+│    ┌────< 0x00000027      jbe 0x90
+│    │↑││   0x00000029      mov edx, dword [ebx + 0x208]
+│    │↑││   0x0000002f      mov eax, dword [edx]
+│    │↑││   0x00000031      mov edx, dword [eax + 0x14]
+│    │↑││   0x00000034      cmp edx, dword [eax + 0x18]
+│   ┌─────< 0x00000037      jae 0xa6
+│   ││↑││   0x00000039      mov byte [edx], 9
+│   ││↑││   0x0000003c      add edx, 1
+│   ││↑││   0x0000003f      mov dword [eax + 0x14], edx
+│   ││↑││   0x00000042      mov eax, esi
+│   ││↑││   0x00000044      xor edx, edx
+│   ││↑││   0x00000046      add esi, ecx
+│   ││↑││   0x00000048      div ecx
+│   ││↑││   0x0000004a      sub esi, edx
+│   ││↑││   0x0000004c      cmp ebp, esi
+│  ┌──────< 0x0000004e      jbe 0x7a
+│  │││↑│└─> 0x00000050      mov ecx, dword [ebx + 0x58c]
+│  │││↑│    0x00000056      test ecx, ecx
+│  │││└───< 0x00000058      jne 0x10
+│  │││ │    0x0000005a      add esi, 1
+│  │││ │    0x0000005d      mov edx, dword [ebx + 0x208]
+│  │││ │    0x00000063      mov eax, dword [edx]
+│  │││ │    0x00000065      mov edx, dword [eax + 0x14]
+'
+
+run_test
+
+NAME="reflines offset (ascii)"
+FILE=malloc://1023
+CMDS='e asm.calls=false
+e asm.bits=32
+e asm.leahints=false
+e asm.cpu=x86
+e anal.cpu=x86
+e asm.arch=x86
+e asm.comments=false
+e asm.bytes=false
+e scr.utf8=false
+e scr.color=false
+wx 31c039d6724aeb72908db426000000008d7e0131d289e8f7f131d28944241c89f8f7f13944241c76678b93080200008b028b50143b5018736dc6020983c20189501489f031d201cef7f129d639f5762a8b8b8c05000085c975b683c6018b93080200008b028b50143b50187327c6022083c20139f589501477d68b44242c65330514000000753783c43c5b5e5f5dc39089feebc9c744240420000000890424e87cc9ffffeba6c744240409000000890424e86ac9ffff8b8b8c050000eb84e87d1001008db6000000008dbc270000000055575653e8f7f0ffff81c32b9d010083ec3c658b0d14000000894c242c31c98b6a0c8b720889e929f1c1e90285c9894c241c0f848100000039f50f84930000008b7a1801fdf7d721fd8b7a1089e9896a0c2b4a0489fd2b6a0439e97f718b7a0c31ed
+aa >/dev/null
+pd 38
+'
+EXPECT='/ (fcn) fcn.00000000 1015
+|           ; var int local_4h @ esp+0x4
+|           ; var int local_1ch @ esp+0x1c
+|           ; var int local_2ch @ esp+0x2c
+|           0x00000000      xor eax, eax
+|           0x00000002      cmp esi, edx
+|       ,=< 0x00000004      jb 0x50
+|      ,==< 0x00000006      jmp 0x7a
+       ||   0x00000008      nop
+       ||   0x00000009      lea esi, [esi]
+|     .---> 0x00000010      lea edi, [esi + 1]
+|     !||   0x00000013      xor edx, edx
+|     !||   0x00000015      mov eax, ebp
+|     !||   0x00000017      div ecx
+|     !||   0x00000019      xor edx, edx
+|     !||   0x0000001b      mov dword [local_1ch], eax
+|     !||   0x0000001f      mov eax, edi
+|     !||   0x00000021      div ecx
+|     !||   0x00000023      cmp dword [local_1ch], eax
+|    ,====< 0x00000027      jbe 0x90
+|    |!||   0x00000029      mov edx, dword [ebx + 0x208]
+|    |!||   0x0000002f      mov eax, dword [edx]
+|    |!||   0x00000031      mov edx, dword [eax + 0x14]
+|    |!||   0x00000034      cmp edx, dword [eax + 0x18]
+|   ,=====< 0x00000037      jae 0xa6
+|   ||!||   0x00000039      mov byte [edx], 9
+|   ||!||   0x0000003c      add edx, 1
+|   ||!||   0x0000003f      mov dword [eax + 0x14], edx
+|   ||!||   0x00000042      mov eax, esi
+|   ||!||   0x00000044      xor edx, edx
+|   ||!||   0x00000046      add esi, ecx
+|   ||!||   0x00000048      div ecx
+|   ||!||   0x0000004a      sub esi, edx
+|   ||!||   0x0000004c      cmp ebp, esi
+|  ,======< 0x0000004e      jbe 0x7a
+|  |||!|`-> 0x00000050      mov ecx, dword [ebx + 0x58c]
+|  |||!|    0x00000056      test ecx, ecx
+|  |||`===< 0x00000058      jne 0x10
+|  ||| |    0x0000005a      add esi, 1
+|  ||| |    0x0000005d      mov edx, dword [ebx + 0x208]
+|  ||| |    0x00000063      mov eax, dword [edx]
+|  ||| |    0x00000065      mov edx, dword [eax + 0x14]
+'
+run_test
+
+NAME="reflines offset 2 (ascii)"
+FILE=../../bins/elf/analysis/ls-alxchk
+CMDS='e asm.relsub=false
+e asm.bytes=false
+e asm.leahints=false
+e scr.utf8=false
+e scr.color=false
+s $S
+aaa >/dev/null
+s 0x000113bd
+pd 28
+'
+EXPECT='|       ,=< 0x000113bd      je 0x1144e
+|       |   0x000113c3      mov esi, 0x2f                              ; '"'/'"'
+|       |   0x000113c8      call sym.imp.strrchr                      ; char*strrchr(char *s, int c)
+|       |   0x000113cd      test rax, rax
+|      ,==< 0x000113d0      je 0x11424
+|      ||   0x000113d2      lea rdx, [rax + 1]                         ; 0x1
+|      ||   0x000113d6      mov rcx, rdx
+|      ||   0x000113d9      sub rcx, rbx
+|      ||   0x000113dc      cmp rcx, 6
+|     ,===< 0x000113e0      jle 0x11424
+|     |||   0x000113e2      lea rsi, [rax - 6]
+|     |||   0x000113e6      mov ecx, 7
+|     |||   0x000113eb      lea rdi, [rip + 0x7ebb]                    ; 0x192ad ; str._.libs_ ; "/.libs/" @ 0x192ad
+|     |||   0x000113f2      repe cmpsb byte [rsi], byte ptr [rdi]      ; [0x2700000000:1]=255 ; 0
+|    ,====< 0x000113f4      jne 0x11424
+|    ||||   0x000113f6      mov ecx, 3
+|    ||||   0x000113fb      mov rsi, rdx
+|    ||||   0x000113fe      mov rbx, rdx
+|    ||||   0x00011401      lea rdi, [rip + 0x7ead]                    ; 0x192b5 ; "lt-"
+|    ||||   0x00011408      repe cmpsb byte [rsi], byte ptr [rdi]      ; [0x2700000000:1]=255 ; 0
+|    ||||   0x0001140a      seta sil
+|    ||||   0x0001140e      setb cl
+|    ||||   0x00011411      cmp sil, cl
+|   ,=====< 0x00011414      jne 0x11424
+|   |||||   0x00011416      lea rbx, [rax + 4]                         ; 0x4
+|   |||||   0x0001141a      mov rax, qword [rip + 0xdeaf]              ; [0x1f2d0:8]=0 ; LEA reloc.program_invocation_name_208 ; reloc.program_invocation_name_208
+|   |||||   0x00011421      mov qword [rax], rbx
+|   |||||      ; JMP XREF from 0x000113d0 (sub.program_invocation_name_112_390)
+|   |||||      ; JMP XREF from 0x000113e0 (sub.program_invocation_name_112_390)
+|   |||||      ; JMP XREF from 0x000113f4 (sub.program_invocation_name_112_390)
+|   |||||      ; JMP XREF from 0x00011414 (sub.program_invocation_name_112_390)
+|   ````--> 0x00011424      mov rax, qword [rip + 0xde3d]              ; [0x1f268:8]=0x21680
+'
+run_test
+
+NAME="reflines offset 3 (ascii)"
+FILE=../../bins/elf/analysis/ls-alxchk
+CMDS='e asm.relsub=false
+e asm.bytes=false
+e asm.leahints=false
+e scr.utf8=false
+e scr.color=false
+s $S
+aaa >/dev/null
+s 0x00003ca6
+pd 19
+'
+EXPECT='|           0x00003ca6      cmp eax, 2
+|       ,=< 0x00003ca9      je 0x45ec
+|       |   0x00003caf      cmp eax, 3
+|      ,==< 0x00003cb2      je 0x3ce3
+|      ||   0x00003cb4      sub eax, 1
+|     ,===< 0x00003cb7      je 0x3cbe
+|     |||      ; JMP XREF from 0x000058bc (main)
+|     |||   0x00003cb9      call sym.imp.abort                        ; void abort(void)
+|     |||      ; JMP XREF from 0x00003cb7 (main)
+|     `---> 0x00003cbe      mov edi, 1
+|      ||   0x00003cc3      call sym.imp.isatty                       ; int isatty(int fd)
+|      ||   0x00003cc8      test eax, eax
+|     ,===< 0x00003cca      je 0x4c2e
+|     |||   0x00003cd0      mov dword [rip + 0x1d626], 2               ; [0x21300:4]=-1
+|     |||   0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=255
+|    ,====< 0x00003ce1      jmp 0x3cf9
+|    ||||      ; JMP XREF from 0x00003cb2 (main)
+|    ||`--> 0x00003ce3      mov esi, 5
+|    || |   0x00003ce8      xor edi, edi
+|    || |   0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=-1
+|    || |   0x00003cf4      call fcn.00012740
+|    || |      ; JMP XREF from 0x00004602 (main)
+|    || |      ; JMP XREF from 0x00004c38 (main)
+|    || |      ; JMP XREF from 0x00003ce1 (main)
+|    `----> 0x00003cf9      lea rdi, [rip + 0x14fb4]                   ; 0x18cb4 ; str.QUOTING_STYLE ; "QUOTING_STYLE" @ 0x18cb4
+'
+run_test
+
+NAME="reflines offset 3 (ascii + wide)"
+FILE=../../bins/elf/analysis/ls-alxchk
+CMDS='e asm.relsub=false
+e asm.bytes=false
+e asm.leahints=false
+e scr.utf8=false
+e scr.color=false
+e asm.lineswide=true
+s $S
+aaa >/dev/null
+s 0x00003ca6
+pd 19
+'
+EXPECT='|           0x00003ca6      cmp eax, 2
+|      ,==< 0x00003ca9      je 0x45ec
+|      |    0x00003caf      cmp eax, 3
+|    ,====< 0x00003cb2      je 0x3ce3
+|    | |    0x00003cb4      sub eax, 1
+|  ,======< 0x00003cb7      je 0x3cbe
+|  | | |       ; JMP XREF from 0x000058bc (main)
+|  | | |    0x00003cb9      call sym.imp.abort                        ; void abort(void)
+|  | | |       ; JMP XREF from 0x00003cb7 (main)
+|  `------> 0x00003cbe      mov edi, 1
+|    | |    0x00003cc3      call sym.imp.isatty                       ; int isatty(int fd)
+|    | |    0x00003cc8      test eax, eax
+|  ,======< 0x00003cca      je 0x4c2e
+|  | | |    0x00003cd0      mov dword [rip + 0x1d626], 2               ; [0x21300:4]=-1
+|  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=255
+| ========< 0x00003ce1      jmp 0x3cf9
+|  | | |       ; JMP XREF from 0x00003cb2 (main)
+|  | `----> 0x00003ce3      mov esi, 5
+|  |   |    0x00003ce8      xor edi, edi
+|  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=-1
+|  |   |    0x00003cf4      call fcn.00012740
+|  |   |       ; JMP XREF from 0x00004602 (main)
+|  |   |       ; JMP XREF from 0x00004c38 (main)
+|  |   |       ; JMP XREF from 0x00003ce1 (main)
+| --------> 0x00003cf9      lea rdi, [rip + 0x14fb4]                   ; 0x18cb4 ; str.QUOTING_STYLE ; "QUOTING_STYLE" @ 0x18cb4
+'
+run_test
+
+NAME="reflines offset 3 (ascii + wide)"
+FILE=../../bins/elf/analysis/ls-alxchk
+BROKEN=
+CMDS='e asm.relsub=false
+e asm.bytes=false
+e asm.leahints=false
+e scr.utf8=false
+e scr.color=false
+e asm.lineswide=true
+aaa >/dev/null
+s 0x00003ca6
+pd 19
+'
+EXPECT='|           0x00003ca6      cmp eax, 2
+|      ,==< 0x00003ca9      je 0x45ec
+|      |    0x00003caf      cmp eax, 3
+|    ,====< 0x00003cb2      je 0x3ce3
+|    | |    0x00003cb4      sub eax, 1
+|  ,======< 0x00003cb7      je 0x3cbe
+|  | | |       ; JMP XREF from 0x000058bc (main)
+|  | | |    0x00003cb9      call sym.imp.abort                        ; void abort(void)
+|  | | |       ; JMP XREF from 0x00003cb7 (main)
+|  `------> 0x00003cbe      mov edi, 1
+|    | |    0x00003cc3      call sym.imp.isatty                       ; int isatty(int fd)
+|    | |    0x00003cc8      test eax, eax
+|  ,======< 0x00003cca      je 0x4c2e
+|  | | |    0x00003cd0      mov dword [rip + 0x1d626], 2               ; [0x21300:4]=-1
+|  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=255
+| ========< 0x00003ce1      jmp 0x3cf9
+|  | | |       ; JMP XREF from 0x00003cb2 (main)
+|  | `----> 0x00003ce3      mov esi, 5
+|  |   |    0x00003ce8      xor edi, edi
+|  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=-1
+|  |   |    0x00003cf4      call fcn.00012740
+|  |   |       ; JMP XREF from 0x00004602 (main)
+|  |   |       ; JMP XREF from 0x00004c38 (main)
+|  |   |       ; JMP XREF from 0x00003ce1 (main)
+| --------> 0x00003cf9      lea rdi, [rip + 0x14fb4]                   ; 0x18cb4 ; str.QUOTING_STYLE ; "QUOTING_STYLE" @ 0x18cb4
+'
+run_test
+
+NAME="reflines in noreturn"
+FILE=../../bins/elf/analysis/ls-alxchk
+BROKEN=
+CMDS='e asm.relsub=false
+e asm.bytes=false
+e asm.leahints=false
+e scr.utf8=false
+e scr.color=false
+e asm.lineswide=true
+e asm.comments=0
+aaa >/dev/null
+s 0x00012740
+pdf
+'
+EXPECT='/ (fcn) fcn.00012740 76
+|   fcn.00012740 ();
+|           ; var int local_8h @ rbp-0x8
+|           0x00012740      push rbp
+|           0x00012741      mov rbp, rsp
+|           0x00012744      sub rsp, 0x1030
+|           0x0001274b      or qword [rsp], 0
+|           0x00012750      add rsp, 0x1020
+|           0x00012757      mov rax, qword fs:[0x28]
+|           0x00012760      mov qword [local_8h], rax
+|           0x00012764      xor eax, eax
+|           0x00012766      lea rax, [rip + 0xf033]
+|           0x0001276d      test rdi, rdi
+|           0x00012770      cmovne rax, rdi
+|           0x00012774      mov dword [rax], esi
+|           0x00012776      mov rax, qword [local_8h]
+|           0x0001277a      xor rax, qword fs:[0x28]
+|      ,==< 0x00012783      jne 0x12787
+|      |    0x00012785      leave
+|      |    0x00012786      ret
+\      `--> 0x00012787      call sym.imp.__stack_chk_fail
+'
+run_test

@@ -1,0 +1,71 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2013  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## "wa" - write opcode
+
+NAME='y cat'
+FILE=malloc://1024
+ARGS=
+CMDS='
+w catty @0
+pf z @0x0
+yt 4 0x10
+pf z @0x10
+yp
+'
+EXPECT='0x00000000 = catty
+0x00000010 = catt
+catt
+'
+
+run_test
+
+
+NAME='y, yx cat'
+FILE=malloc://1024
+ARGS=
+CMDS='
+w catty @0
+pf z @0x0
+yt 4 0x10
+pf z @0x10
+yx
+'
+EXPECT='0x00000000 = catty
+0x00000010 = catt
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6361 7474                                catt
+'
+
+run_test
+
+# Yank a string
+NAME='yz'
+FILE=malloc://128
+ARGS=
+CMDS='
+w HelloWorld @0
+yz
+?y
+yz 5
+?y
+yz 4 @ 4
+?y
+yz @ 6
+?y
+yz 2 @ 6
+?y
+b 6
+yz
+?y
+'
+EXPECT='HelloWorld
+Hello
+oWor
+orld
+or
+HelloW
+'
+
+run_test

@@ -1,0 +1,27 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="io pava mode: pd"
+FILE=../bins/elf/true32
+CMDS='
+e io.pava=1
+s 0
+pd 2~0x[0]
+'
+EXPECT='0x08048000
+0x08048002
+'
+run_test
+
+NAME="io pava mode: pid"
+FILE=../bins/elf/true32
+BROKEN=1
+CMDS='
+e io.pava=1
+s 0
+pid 2
+'
+EXPECT='0x08048000    section_end.GNU_STACK:
+0x08048000             7f45  jg 0x47
+0x08048002               4c  dec esp
+'
+run_test

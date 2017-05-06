@@ -1,0 +1,124 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='binopeq(+=)'
+FILE='malloc://1024'
+ARGS=
+CMDS='"aetr eax,ebx,+="'
+EXPECT='0000.00:      ADD     R_ebx:32 ,     R_eax:32 ,      V_00:32
+0000.01:      STR     R_ebx:32 ,              ,      V_01:32
+0000.02:      STR      V_00:32 ,              ,     R_ebx:32
+'
+run_test
+
+NAME='binop(+)'
+FILE='malloc://1024'
+ARGS=
+CMDS='"aetr eax,ebx,+"'
+EXPECT='0000.00:      ADD     R_ebx:32 ,     R_eax:32 ,      V_00:32
+V_00:32
+'
+run_test
+
+NAME='cmp(==)'
+FILE='malloc://1024'
+ARGS=
+CMDS='"aetr eax,ebx,=="'
+EXPECT='0000.00:       EQ     R_ebx:32 ,     R_eax:32 ,      V_00:01
+V_00:1
+'
+run_test
+
+
+NAME='smaller_or_eq(<=)'
+FILE='malloc://1024'
+ARGS=
+CMDS='"aetr eax,ebx,<="'
+EXPECT='0000.00:       LT     R_ebx:32 ,     R_eax:32 ,      V_00:01
+0000.01:       EQ     R_ebx:32 ,     R_eax:32 ,      V_01:01
+0000.02:       OR      V_01:01 ,      V_00:01 ,      V_02:01
+V_02:1
+'
+run_test
+
+NAME='not_eq(!=)'
+FILE='malloc://1024'
+ARGS=
+CMDS='"aetr ebx,!="'
+EXPECT='0000.00:       EQ     R_ebx:32 ,       0x0:32 ,      V_00:01
+0000.01:      STR     R_ebx:32 ,              ,      V_01:32
+0000.02:       OR      V_00:01 ,         0:32 ,      V_02:32
+0000.03:      STR      V_02:32 ,              ,     R_ebx:32
+'
+run_test
+
+NAME='conditional(?{)'
+FILE='malloc://1024'
+ARGS=
+CMDS='e asm.bits=32
+"aetr zf,?{,0x800,eip,=,}"'
+EXPECT='0000.00:      JCC      R_zf:01 ,              ,       0x2:32
+0001.00:      STR     R_eip:32 ,              ,      V_00:32
+0001.01:      JCC         1:01 ,              ,     0x800:32
+'
+run_test
+
+NAME='mem_bineq'
+FILE='malloc://1024'
+ARGS=
+CMDS='e asm.bits=32
+"aetr 0xff,eax,|=[2]"'
+EXPECT='0000.00:      LDM     R_eax:32 ,              ,      V_00:32
+0000.01:       OR      V_00:32 ,         0:16 ,      V_02:16
+0000.02:       OR      0xff:32 ,      V_02:16 ,      V_03:32
+0000.03:      LDM     R_eax:32 ,              ,      V_04:32
+0000.04:      STM      V_03:32 ,              ,     R_eax:32
+'
+run_test
+
+NAME='flags'
+FILE='malloc://1024'
+ARGS=
+CMDS='e asm.bits=32
+aetr 0,0x2147a8,rip,+,[8],==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,='
+EXPECT='0000.00:      ADD       rip    ,  0x2147a8:32 ,      V_00:32
+0001.00:      LDM      V_00:32 ,              ,      V_01:32
+0001.01:       OR      V_01:32 ,         0:64 ,      V_03:64
+0002.00:       EQ      V_03:64 ,         0:32 ,      V_04:01
+0003.00:      STR      V_04:01 ,              ,      R_zf:01
+0004.00:      AND      0x3f:32 ,      0x40:32 ,      V_05:32
+0004.01:      ADD      0x3f:32 ,      V_05:32 ,      V_06:32
+0004.02:      AND      0x3f:32 ,      V_06:32 ,      V_07:32
+0004.03:      SHL       0x2:32 ,      V_07:32 ,      V_08:32
+0004.04:      SUB      V_08:32 ,       0x1:32 ,      V_09:32
+0004.05:      AND      V_09:32 ,      V_03:64 ,      V_10:64
+0004.06:      AND      V_09:32 ,      V_04:01 ,      V_11:32
+0004.07:       LT      V_10:64 ,      V_11:32 ,      V_12:01
+0004.08:      STR      V_12:01 ,              ,      R_cf:01
+0005.00:      AND      0xff:32 ,      V_04:01 ,      V_13:32
+0005.01:      SHR      V_13:32 ,       0x7:32 ,      V_14:32
+0005.02:      SHR      V_13:32 ,       0x6:32 ,      V_15:32
+0005.03:      XOR      V_15:32 ,      V_14:32 ,      V_16:32
+0005.04:      SHR      V_13:32 ,       0x5:32 ,      V_17:32
+0005.05:      SHR      V_13:32 ,       0x4:32 ,      V_18:32
+0005.06:      XOR      V_18:32 ,      V_17:32 ,      V_19:32
+0005.07:      XOR      V_19:32 ,      V_16:32 ,      V_20:32
+0005.08:      SHR      V_13:32 ,       0x3:32 ,      V_21:32
+0005.09:      SHR      V_13:32 ,       0x2:32 ,      V_22:32
+0005.0a:      XOR      V_22:32 ,      V_21:32 ,      V_23:32
+0005.0b:      SHR      V_13:32 ,       0x1:32 ,      V_24:32
+0005.0c:      XOR      V_13:32 ,      V_24:32 ,      V_25:32
+0005.0d:      XOR      V_25:32 ,      V_23:32 ,      V_26:32
+0005.0e:      XOR      V_26:32 ,      V_20:32 ,      V_27:32
+0005.0f:      AND       0x1:32 ,      V_27:32 ,      V_28:32
+0005.10:      NOT      V_28:32 ,              ,      V_29:32
+0005.11:       OR      V_29:32 ,         0:01 ,      V_30:01
+0005.12:      STR      V_30:01 ,              ,      R_pf:01
+0006.00:      SHL       0x1:32 ,      0x3f:32 ,      V_31:32
+0006.01:      AND      V_04:01 ,      V_31:32 ,      V_32:32
+0006.02:      SHR      V_32:32 ,      0x3f:32 ,      V_33:32
+0006.03:       OR      V_33:32 ,         0:01 ,      V_34:01
+0006.04:      STR      V_34:01 ,              ,      R_sf:01
+V_04:1
+'
+run_test

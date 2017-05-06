@@ -1,0 +1,47 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## "wa" - write opcode
+
+NAME='p8 2 @x:9090'
+FILE=malloc://1024
+ARGS=
+CMDS='p8 2 @x:9090
+'
+EXPECT='9090
+'
+run_test
+
+NAME='p8 8 @x:9090'
+FILE=malloc://1024
+ARGS=
+BROKEN=1
+CMDS='p8 8 @x:9090
+'
+EXPECT='9090000000000000'
+run_test
+
+NAME='pi 2 @x:9090'
+FILE=malloc://1024
+ARGS=
+CMDS='pi 2 @x:9090
+'
+EXPECT='nop
+nop
+'
+run_test
+
+NAME='pi 3 @x:9090'
+FILE=malloc://1024
+ARGS=
+BROKEN=1
+CMDS='e asm.arch=x86
+e asm.bits=64
+pi 3 @x:9090
+'
+EXPECT='nop
+nop
+add byte [rax], al
+'
+run_test

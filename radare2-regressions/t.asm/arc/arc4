@@ -1,0 +1,973 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# -------------------------------
+# ADC instruction
+
+# -------------------------------
+# ADD instruction
+NAME="arc4: [ADD]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 107e8e43
+pi 1
+'
+EXPECT='add sp, sp, 0x10
+'
+run_test
+
+NAME="arc4: [ADD.NZ]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 027ca04101000000
+pi 1
+'
+EXPECT='add.nz r13, r0, 1
+'
+run_test
+
+# -------------------------------
+# AND instruction
+NAME="arc4: [AND]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 017ae567
+pi 1
+'
+EXPECT='and.f 0, r10, 1
+'
+run_test
+
+# -------------------------------
+# ASL/LSL instruction
+# -------------------------------
+# ASL instruction
+NAME="arc4: [ASL]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 027e0481
+pi 1
+'
+EXPECT='asl r8, r8, 2
+'
+run_test
+
+# -------------------------------
+# ASR instruction
+NAME="arc4: [ASR]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 19fe2491
+pi 1
+'
+EXPECT='asr r9, r9, 0x19
+'
+run_test
+
+# -------------------------------
+# ASR_m instruction
+# -------------------------------
+# BIC instruction
+NAME="arc4: [BIC]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00068270
+pi 1
+'
+EXPECT='bic r4, r4, r3
+'
+run_test
+
+# -------------------------------
+# B instruction
+NAME="arc4: [B.D]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 20040020 @ 0x207c
+s 0x207c
+pi 1
+'
+EXPECT='b.d 0x000020a0
+'
+run_test
+
+NAME="arc4: [B.D] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 20040020 @ 0x207c
+s 0x207c
+ao 1~jump
+'
+EXPECT='jump: 0x000020a0
+'
+run_test
+
+# -------------------------------
+# B_RA instruction
+# -------------------------------
+# B_Z instruction
+NAME="arc4: [BZ.D]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx a1010020 @ 0x1ff8
+s 0x1ff8
+pi 1
+'
+EXPECT='bz.d 0x00002008
+'
+run_test
+
+# -------------------------------
+# B_NZ instruction
+NAME="arc4: [BNZ.D]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 22030020 @ 0x2100
+s 0x2100
+pi 1
+'
+EXPECT='bnz.d 0x0000211c
+'
+run_test
+
+NAME="arc4: [BNZ.D] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 22030020 @ 0x2100
+s 0x2100
+ao 1~jump
+'
+EXPECT='jump: 0x0000211c
+'
+run_test
+
+NAME="arc4: [BNZ.JD]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx c2100020 @ 0x1f68
+s 0x1f68
+pi 1
+'
+EXPECT='bnz.jd 0x00001ff0
+'
+run_test
+
+NAME="arc4: [BNZ.JD] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx c2100020 @ 0x1f68
+s 0x1f68
+ao 1~jump
+'
+EXPECT='jump: 0x00001ff0
+'
+run_test
+
+# -------------------------------
+# B_P instruction
+# -------------------------------
+# B_N instruction
+# -------------------------------
+# B_C instruction
+NAME="arc4: [BC]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 85050020 @ 0x1518
+s 0x1518
+pi 1
+'
+EXPECT='bc 0x00001548
+'
+run_test
+
+# -------------------------------
+# B_NC instruction
+# -------------------------------
+# B_V instruction
+# -------------------------------
+# B_NV instruction
+# -------------------------------
+# B_GT instruction
+NAME="arc4: [BGT]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 89040020 @ 0x1b18
+s 0x1b18
+pi 1
+'
+EXPECT='bgt 0x00001b40
+'
+run_test
+
+NAME="arc4: [BGT] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 89040020 @ 0x1b18
+s 0x1b18
+ao 1~jump
+'
+EXPECT='jump: 0x00001b40
+'
+run_test
+
+# -------------------------------
+# B_GE instruction
+NAME="arc4: [BGE]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0a090020 @ 0x19cc
+s 0x19cc
+pi 1
+'
+EXPECT='bge 0x00001a18
+'
+run_test
+
+# -------------------------------
+# B_LT instruction
+NAME="arc4: [BLT.D]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx ab020020 @ 0x20a8
+s 0x20a8
+pi 1
+'
+EXPECT='blt.d 0x000020c0
+'
+run_test
+
+# -------------------------------
+# B_LE instruction
+NAME="arc4: [BLE]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0c0b0020 @ 0x1c7c
+s 0x1c7c
+pi 1
+'
+EXPECT='ble 0x00001cd8
+'
+run_test
+
+# -------------------------------
+# B_HI instruction
+NAME="arc4: [BHI]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 8d1e0020 @ 0x2140
+s 0x2140
+pi 1
+'
+EXPECT='bhi 0x00002238
+'
+run_test
+
+# -------------------------------
+# B_LS instruction
+NAME="arc4: [BLS]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0eebff27 @ 0x1f44
+s 0x1f44
+pi 1
+'
+EXPECT='bls 0x00001ea0
+'
+run_test
+
+# -------------------------------
+# B_PNZ instruction
+
+# -------------------------------
+# BL instruction
+
+NAME="arc4: [BL.D]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx a0270228 @ 0x208c
+s 0x208c
+pi 1
+'
+EXPECT='bl.d 0x000031cc
+'
+run_test
+
+NAME="arc4: [BL.D] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx a0270228 @ 0x208c
+s 0x208c
+ao 1~jump
+'
+EXPECT='jump: 0x000031cc
+'
+run_test
+
+# -------------------------------
+# BL_RA instruction
+# -------------------------------
+# BL_Z instruction
+# -------------------------------
+# BL_NZ instruction
+# -------------------------------
+# BL_P instruction
+# -------------------------------
+# BL_N instruction
+# -------------------------------
+# BL_C instruction
+# -------------------------------
+# BL_NC instruction
+# -------------------------------
+# BL_V instruction
+# -------------------------------
+# BL_NV instruction
+# -------------------------------
+# BL_GT instruction
+# -------------------------------
+# BL_GE instruction
+# -------------------------------
+# BL_LT instruction
+# -------------------------------
+# BL_LE instruction
+# -------------------------------
+# BL_HI instruction
+NAME="arc4: [BLHI.D]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx ad130628 @ 0x1148
+s 0x1148
+pi 1
+'
+EXPECT='blhi.d 0x000041e8
+'
+run_test
+
+NAME="arc4: [BLHI] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx ad130628 @ 0x1148
+s 0x1148
+ao 1~jump
+'
+EXPECT='jump: 0x000041e8
+'
+run_test
+
+# -------------------------------
+# BL_LS instruction
+# -------------------------------
+# BL_PNZ instruction
+
+# -------------------------------
+# BRK instruction
+# -------------------------------
+# CMP instruction
+NAME="arc4: [CMP]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0093e557
+pi 1
+'
+EXPECT='cmp r11, r9
+'
+run_test
+
+# -------------------------------
+# EXT instruction
+NAME="arc4: [EXTB]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 008e2018
+pi 1
+'
+EXPECT='extb r1, r1
+'
+run_test
+
+NAME="arc4: [EXTW]"
+FILE=malloc://32
+BROKEN=
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00915f19
+pi 1
+'
+EXPECT='extw r10, 0xffffff00
+'
+run_test
+
+# -------------------------------
+# FLAG instruction
+NAME="arc4: [FLAG]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0180bf1f
+pi 1
+'
+EXPECT='flag 1
+'
+run_test
+
+# -------------------------------
+# J instruction
+NAME="arc4: [J]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00810f38
+pi 1
+'
+EXPECT='j.f [blink]
+'
+run_test
+
+# -------------------------------
+# JL instruction
+NAME="arc4: [JL]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00820438
+pi 1
+'
+EXPECT='jl [r9]
+'
+run_test
+
+NAME="arc4: [JL.D]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 20020c38
+pi 1
+'
+EXPECT='jl.d [r24]
+'
+run_test
+
+NAME="arc4: [JLT.D]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 2b800f38
+pi 1
+'
+EXPECT='jlt.d [blink]
+'
+run_test
+
+# -------------------------------
+# LD instruction
+NAME="arc4: [LD]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00001f0888a20c01
+pi 1
+'
+EXPECT='ld r0, [0x10ca288]
+'
+run_test
+
+NAME="arc4: [LD.A]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 04908008
+pi 1
+'
+EXPECT='ld.a r4, [r1, 4]
+'
+run_test
+
+NAME="arc4: [LDB.A]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 01948008
+pi 1
+'
+EXPECT='ldb.a r4, [r1, 1]
+'
+run_test
+
+NAME="arc4: [LDW]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00082708
+pi 1
+'
+EXPECT='ldw r1, [r14]
+'
+run_test
+
+# -------------------------------
+# LP instruction
+NAME="arc4: [LP]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00020030 @ 0x1558
+s 0x1558
+pi 1
+'
+EXPECT='lp 0x0000156c
+'
+run_test
+
+NAME="arc4: [LP] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00020030 @ 0x1558
+s 0x1558
+ao 1~jump
+'
+EXPECT='jump: 0x0000156c
+'
+run_test
+
+NAME="arc4: [LPNZ]"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 02020030 @ 0x1580
+s 0x1580
+pi 1
+'
+EXPECT='lpnz 0x00001594
+'
+run_test
+
+NAME="arc4: [LPNZ] - jump check"
+FILE=malloc://16384
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 02020030 @ 0x1580
+s 0x1580
+ao 1~jump
+'
+EXPECT='jump: 0x00001594
+'
+run_test
+
+# -------------------------------
+# LR instruction
+NAME="arc4: [LR]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 02a05f09
+pi 1
+'
+# r2 do "lr r10, [lp_start]
+# WTF?
+EXPECT='lr r10, [2]
+'
+run_test
+
+# -------------------------------
+# LSL instruction
+NAME="arc4: [LSL/ASL]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00822040
+pi 1
+'
+# lsl r1, r1 is valid too!!!
+EXPECT='asl r1, r1
+'
+run_test
+
+# -------------------------------
+# LSR instruction
+NAME="arc4: [LSR.F]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0005821f
+pi 1
+'
+EXPECT='lsr.f lp_count, r4
+'
+run_test
+
+NAME="arc4: [LSR]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 037e8188
+pi 1
+'
+EXPECT='lsr r4, r2, 3
+'
+run_test
+
+# -------------------------------
+# LSR_m instruction
+# -------------------------------
+# MAX instruction
+# -------------------------------
+# MIN instruction
+# -------------------------------
+# MOV instruction
+NAME="arc4: [MOV]"
+FILE=malloc://32
+BROKEN=
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0afe5f60
+pi 1
+'
+EXPECT='mov r2, 0xa
+'
+run_test
+
+NAME="arc4: [MOV.F]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00058167
+pi 1
+'
+EXPECT='mov.f lp_count, r2
+'
+run_test
+
+NAME="arc4: [MOV.Z.F]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0109e267
+pi 1
+'
+EXPECT='mov.z.f 0, r4
+'
+run_test
+
+# -------------------------------
+# MUL64 instruction
+# -------------------------------
+# MULU64 instruction
+NAME="arc4: [MULU64]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0088e4af
+pi 1
+'
+EXPECT='mulu64 0, r9. r4
+'
+run_test
+
+# -------------------------------
+# NOP instruction
+NAME="arc4: [NOP]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx ffffff7f
+pi 1
+'
+EXPECT='nop 
+'
+run_test
+
+# -------------------------------
+# NORM instruction
+# -------------------------------
+# OR instruction
+NAME="arc4: [OR]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 007ae06f
+pi 1
+'
+EXPECT='or.f 0, r0, 0
+'
+run_test
+
+# -------------------------------
+# RLC instruction
+# -------------------------------
+# ROL instruction
+# -------------------------------
+# ROR instruction
+NAME="arc4: [ROR]"
+FILE=malloc://32
+BROKEN=
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx fe875f18
+pi 1
+'
+EXPECT='ror r2, 0xfffffffe
+'
+run_test
+
+NAME="arc4: [ROR.Z]"
+FILE=malloc://32
+BROKEN=
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0106bf19feffffff
+pi 1
+'
+EXPECT='ror.z r13, 0xfffffffe
+'
+run_test
+
+# -------------------------------
+# ROR_m instruction
+# -------------------------------
+# RRC instruction
+# -------------------------------
+# SBC instruction
+# -------------------------------
+# SEX instruction
+NAME="arc4: [SEXB.C]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 058a0518
+pi 1
+'
+EXPECT='sexb.c r0, r11
+'
+run_test
+
+# -------------------------------
+# SLEEP instruction
+# -------------------------------
+# SR instruction
+NAME="arc4: [SR]"
+FILE=malloc://32
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 02941f12
+pi 1
+'
+# is that should be "sr r10, [lp_start]"?
+# WTF?
+EXPECT='sr r10, [2]
+'
+run_test
+
+# -------------------------------
+# ST instruction
+NAME="arc4: [ST]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 017e1f102f420401
+pi 1
+'
+EXPECT='st 1, [0x1044230]
+'
+run_test
+
+NAME="arc4: [ST.A]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 04880111
+pi 1
+'
+EXPECT='st.a r4, [r3, 4]
+'
+run_test
+
+# -------------------------------
+# STB instruction
+NAME="arc4: [STB.A]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 01884111
+pi 1
+'
+EXPECT='stb.a r4, [r3, 1]
+'
+run_test
+
+# -------------------------------
+# SUB instruction
+NAME="arc4: [SUB]"
+FILE=malloc://32
+BROKEN=
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 347e8e53
+pi 1
+'
+EXPECT='sub sp, sp, 0x34
+'
+run_test
+
+NAME="arc4: [SUB.NZ]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 021c0050
+pi 1
+'
+EXPECT='sub.nz r0, r0, r14
+'
+run_test
+
+NAME="arc4: [SUB.HI]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 0d000050
+pi 1
+'
+EXPECT='sub.hi r0, r0, r0
+'
+run_test
+
+# -------------------------------
+# SWAP instruction
+# -------------------------------
+# SWI instruction
+NAME="arc4: [SWI]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 02feff1f
+pi 1
+'
+EXPECT='swi 
+'
+run_test
+
+# -------------------------------
+# XOR instruction
+NAME="arc4: [XOR]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 00b84f79
+pi 1
+'
+EXPECT='xor r10, blink, sp
+'
+run_test
+
+# -------------------------------
+
+NAME="ARC4 ISA instruction length"
+FILE=malloc://64
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=32
+wx 017e1f102f420401 @ 0
+wx 0afe5f60 @ 8
+ao 2~size
+'
+EXPECT='size: 8
+size: 4
+'
+run_test

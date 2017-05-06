@@ -1,0 +1,317 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='imul 1 arg'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+"(pi bytes,wx $0,pi 1,pie 1)"
+.(pi 49f7e9)
+'
+EXPECT='imul r9
+0x00000000 r9,rax,*=
+'
+run_test
+
+NAME='imul 2 arg'
+BROKEN=1
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+"(pi bytes,wx $0,pi 1,pie 1)"
+.(pi 0fafc1)
+'
+EXPECT='imul eax, ecx
+0x00000000 ecx,eax,*=
+'
+run_test
+
+NAME='imul 3 arg'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+"(pi bytes,wx $0,pi 1,pie 1)"
+.(pi 4969c367666633)
+'
+EXPECT='imul rax, r11, 0x33666667
+0x00000000 862348903,r11,*,rax,=
+'
+run_test
+
+NAME="esil x86-64 pd deinit"
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+wa mov rax, 11
+e asm.emu=true
+ar rax=33
+e scr.null = true
+pd 2000
+e scr.null = false
+ar rax
+'
+EXPECT='0x00000021
+'
+run_test
+
+NAME="esil x86-64 pd deinit"
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+wa mov rax, 11
+e asm.emu=false
+ar rax=33
+e scr.null = true
+pd 2000
+e scr.null = false
+ar rax
+'
+EXPECT='0x00000021
+'
+run_test
+
+NAME="esil x86-64 pd deinit"
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+wa mov rax, 11
+e asm.emu=true
+ar rax=33
+e scr.null = true
+pi 2000
+e scr.null = false
+ar rax
+'
+EXPECT='0x00000021
+'
+run_test
+
+NAME="esil x86-64 imul"
+CMDS='
+wx 69c389000000
+ao~opcode,esil
+'
+EXPECT='opcode: imul eax, ebx, 0x89
+esil: 137,rbx,*,rax,=
+'
+run_test
+
+NAME="esil x86-64 imul emu"
+CMDS='
+wx 48c7c004000000
+wx 48c7c305000000 @ 7
+wx 69c303000000 @ 14
+3aes
+ar rax
+'
+EXPECT='0x0000000f
+'
+run_test
+
+NAME="esil x86-64 two steps"
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c004000000
+wx 48c7c305000000 @ 7
+pi 2
+2aes
+ar rax
+ar rbx
+'
+EXPECT='mov rax, 4
+mov rbx, 5
+0x00000004
+0x00000005
+'
+run_test
+
+NAME="esil x86-64 aesu"
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c004000000
+wx 48c7c305000000 @ 7
+pi 2
+aesu 14
+ar rax
+ar rbx
+'
+EXPECT='mov rax, 4
+mov rbx, 5
+0x00000004
+0x00000005
+'
+run_test
+
+NAME="esil x86-64 aesu"
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c004000000
+wx 48c7c305000000 @ 7
+pi 2
+aesu 14
+ar rax
+ar rbx
+'
+EXPECT='mov rax, 4
+mov rbx, 5
+0x00000004
+0x00000005
+'
+run_test
+
+NAME="esil x86-64"
+CMDS='
+?e
+e asm.arch=x86
+e asm.bits=64
+wx 488d7768
+ao~opcode,esil
+'
+EXPECT='
+opcode: lea rsi, [rdi + 0x68]
+esil: 0x68,rdi,+,rsi,=
+'
+run_test
+
+NAME="esil x86-64"
+CMDS='
+?e
+e asm.arch=x86
+e asm.bits=64
+wx 488dbdc0fbffff
+ao~opcode,esil
+'
+EXPECT='
+opcode: lea rdi, [rbp - 0x440]
+esil: 0x440,rbp,-,rdi,=
+'
+
+run_test
+
+NAME="esil x86-64"
+CMDS='
+?e
+e asm.arch=x86
+e asm.bits=64
+wx c705dd40000001000000
+ao~opcode,esil
+'
+EXPECT='
+opcode: mov dword [rip + 0x40dd], 1
+esil: 1,0x40dd,rip,+,=[4]
+'
+run_test
+
+NAME="eax/rax"
+BROKEN=
+CMDS='e asm.bits=64
+wa mov eax, 4
+e asm.esil=true
+pd 1
+'
+EXPECT='            0x00000000      b804000000     4,rax,=
+'
+run_test
+
+NAME='reg size bitmask'
+FILE=-
+ARGS=
+CMDS='
+e esil.debug=true
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+aer rsp=0x00108000
+.dr*
+aer rdi=0xFFFFFFFFFFFFFFFF
+ae rdi,rsp,=[8]
+?v [rsp]
+?v [rsp+4]
+?v [rsp+8]
+'
+EXPECT='0xffffffffffffffff
+0xffffffff
+0x0
+'
+run_test
+
+NAME='mem read'
+FILE=-
+ARGS=
+CMDS='
+e esil.debug=true
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+aer rsp=0x00108000
+.aer*
+aer rdi=0xFFFFFFFFFFFFFFFF
+ae rdi,rsp,=[8]
+.aer*
+ae rsp,[8],rax,=
+.aer*
+?v rax
+'
+EXPECT='0xffffffffffffffff
+'
+run_test
+
+NAME='movsxd rax, dword [rdx + rax*4]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+"wx 48630482"
+ao~esil
+'
+EXPECT='esil: rax,4,*,rdx,+,[4],rax,=
+'
+run_test
+
+NAME='lea rax, [rdi + r13*8]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+"wx 4a8d04ef"
+ao~esil,opcode
+'
+EXPECT='opcode: lea rax, [rdi + r13*8]
+esil: r13,8,*,rdi,+,rax,=
+'
+run_test
+
+NAME='lea rbx, [rax + rdx]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+"wx 488d1c10"
+ao~opcode,esil
+'
+EXPECT='opcode: lea rbx, [rax + rdx]
+esil: rdx,rax,+,rbx,=
+'
+run_test

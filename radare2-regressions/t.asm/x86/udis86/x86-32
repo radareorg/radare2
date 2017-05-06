@@ -1,0 +1,88 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+CMDS='
+e asm.arch=x86.udis
+e asm.bits=32
+wa mov eax, 0x21
+   pi 1;s+$l
+wa nop
+   pi 1;s+$l
+wa int 0x80
+   pi 1;s+$l
+?v $$
+'
+EXPECT='mov eax, 0x21
+nop
+int 0x80
+0x8
+'
+
+run_test
+
+NAME="eax vs rax"
+BROKEN=
+CMDS='
+e asm.arch=x86.nz
+e asm.bits=32
+pa mov eax, 33
+pa mov rax, 33
+e asm.bits=64
+pa mov eax, 33
+pa mov rax, 33
+'
+EXPECT='b821000000
+48c7c021000000
+b821000000
+48c7c021000000
+'
+
+run_test
+
+NAME="[rbp+4]"
+BROKEN=
+CMDS='
+e asm.arch=x86.nz
+e asm.bits=64
+pa mov [rbp+4],0
+pa mov [ebp+4],0
+e asm.bits=32
+# pa mov [rbp+4],0
+pa mov [ebp+4],0
+'
+EXPECT='c7450400000000
+67c7450400000000
+c7450400000000
+'
+run_test
+
+NAME="jmp 0x1b"
+BROKEN=
+CMDS='
+e asm.arch=x86.nz
+e asm.bits=32
+pa jmp 0x1b @ 0x14
+'
+EXPECT='eb05
+'
+run_test
+
+NAME="assemble sete al"
+BROKEN=
+CMDS='
+wa sete al
+pi 1
+'
+EXPECT='sete al
+'
+run_test
+
+NAME="Test default assembler"
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+pa jmp 0x1b @ 0x14
+'
+EXPECT='eb05
+'
+run_test

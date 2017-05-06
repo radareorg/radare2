@@ -1,0 +1,80 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014  Maijin
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+r2 -qc?: -- | grep -q yara2
+
+if [ $? = 0 ]; then
+
+
+NAME='yara scan'
+BROKEN=
+FILE=../bins/pe/a.exe
+ARGS=
+CMDS='yara2 scan > /dev/null '
+EXPECT=''
+run_test
+
+NAME='yara add <filedoesnotexist>'
+BROKEN=
+ARGS=
+CMDS='
+yara2 add doesnotexist
+'
+EXPECT_ERR='Unable to open doesnotexist
+'
+run_test
+
+NAME='yara add <file>'
+CMDS='
+yara2 clear
+yara2 add ../files/test_yara.rules
+yara2 list
+'
+EXPECT='TEST
+elf
+'
+EXPECT_ERR='Rules cleared
+'
+run_test
+
+NAME='yara add and scan'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='
+yara2 add ../files/test_yara.rules
+yara2 scan
+'
+EXPECT='elf
+'
+run_test
+
+NAME='yara tags'
+CMDS='
+yara2 tags
+yara2 add ../files/test_yara.rules
+yara2 tags
+'
+EXPECT='[YARA tags]
+crypto
+packer
+[YARA tags]
+crypto
+packer
+test_rule
+'
+run_test
+
+NAME='yara add duplicate then original'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='
+yara2 add ../files/test_yara.rules
+yara2 add ../files/test_yara.rules
+yara2 add ../files/test_yara_2.rules
+'
+EXPECT_ERR='Error: duplicate rule identifier "elf" : ../files/test_yara.rules
+'
+run_test
+
+else
+	echo "WARNING: Yara tests disabled because there's no yara2 plugin in r2"
+fi

@@ -1,0 +1,14 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: dis entry0 hello-android-arm'
+FILE=../../bins/elf/analysis/hello-android-arm
+ARGS=''
+CMDS="pid 4@entry0"
+EXPECT='0x00008300    sym._start:
+0x00008300         0d00a0e1  mov r0, sp
+0x00008304         0010a0e3  mov r1, 0
+0x00008308         04208fe2  add r2, pc, 4
+0x0000830c         04308fe2  add r3, pc, 4
+'
+run_test

@@ -1,0 +1,31 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: bomb - open'
+FILE=../../bins/elf/bomb
+ARGS=''
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test
+
+NAME='ELF: bomb - entrypoint'
+FILE=../../bins/elf/bomb
+BROKEN=
+CMDS='
+s
+'
+EXPECT='0x400c90
+'
+IGNORE_ERR=1
+run_test
+
+NAME='ELF: bomb - pi 1'
+FILE=../../bins/elf/bomb
+CMDS='e asm.filter=false
+pi 1
+'
+EXPECT='xor ebp, ebp
+'
+IGNORE_ERR=1
+run_test

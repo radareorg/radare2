@@ -1,0 +1,90 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2012-2013  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+RET=0
+
+NAME='io.maps alloc map'
+FILE=malloc://1024
+ARGS=
+CMDS='
+s 0
+b 100
+wox 0x10 @ 0
+on malloc://0x1000 0x80000 >/dev/null
+p8 4 @ 0x80000
+'
+EXPECT='00000000
+'
+run_test
+[ $? != 0 ] && RET=$?
+
+# Basic grep.
+NAME='io.maps: o 100'
+FILE=malloc://1024
+ARGS=
+BROKEN=
+CMDS='
+s 0
+b 100
+wox 0x10 @ 0
+o malloc://0x1000 0x80000 > /dev/null
+b 0x1000
+wow 20 @ 0x80000
+b 20
+p8 @ 0
+p8 @ 90
+p8 @ 0x400
+p8 @ 0x80000
+'
+EXPECT='1010101010101010101010101010101010101010
+1010101010101010101000000000000000000000
+ffffffffffffffffffffffffffffffffffffffff
+2020202020202020202020202020202020202020
+'
+run_test
+[ $? != 0 ] && RET=$?
+
+NAME='malloc://128;om 0x100;x@0xff'
+FILE=malloc://128
+CMDS='
+e file.nowarn=true
+e file.loadmethod=append
+om `o~[2]` 0x100
+w pop @ 1
+p8 4 @ 0x100
+'
+EXPECT='00706f70
+'
+run_test
+[ $? != 0 ] && RET=$?
+RET=4
+
+NAME='om 0x100;x@0xff'
+FILE=-
+CMDS='
+e file.nowarn=true
+e file.loadmethod=append
+om `o~[2]` 0x100
+w pop @ 1
+p8 4 @ 0x100
+'
+# will fail because this is attempting to map
+# malloc://512 back onto itself at 0x100
+EXPECT='00000000
+'
+run_test
+[ $? != 0 ] && RET=$?
+RET=4
+
+NAME='o - 0x9000;x@0x8f00'
+FILE=-
+CMDS='o malloc://128 0x9000 > /dev/null
+x 32 @ 0x8ff0
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00008ff0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00009000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+'
+run_test

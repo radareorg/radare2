@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+F=../../bins/java/TryWithResources.class
+
+NAME='Java class parsing errors'
+IGNORE_ERR=0
+BROKEN=1
+FILE=$F
+ARGS=
+CMDS='?e nop
+'
+EXPECT='nop
+'
+EXPECT_ERR=''
+run_test
+

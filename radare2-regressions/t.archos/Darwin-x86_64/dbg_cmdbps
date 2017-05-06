@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# TODO: This script requires ROOT to be run in OSX
+# (or just sign the r2 binary to get debugger priviledges)
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# test debugger command execution...
+
+NAME='dbg.cmdbps'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+db entry0
+e cmd.bp="?e cmd.bp ran"
+dbc `db~[0]` "?e bpcmd ran"
+dc
+dk 9
+'
+EXPECT='cmd.bp ran
+bpcmd ran
+'
+IGNORE_ERR=1
+run_test
+

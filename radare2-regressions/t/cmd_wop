@@ -1,0 +1,116 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 Maijin
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='debruijn little endian'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+e cfg.bigendian=false
+wopO 0x41574141
+'
+EXPECT='64
+'
+run_test
+
+NAME='debruijn big endian'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+e cfg.bigendian=true
+wopO 0x41574141
+'
+EXPECT='65
+'
+run_test
+
+# -------------------------- #
+
+NAME='wopD 0x10 @ 0'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='wopD 0x10 @ 0
+p8 0x10
+'
+EXPECT='41414142414143414144414145414146
+'
+run_test
+
+
+#------------------------
+
+NAME='wopD 0x10 @ 0'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='wopD 0x10 @ 0
+p8 0x10
+'
+EXPECT='41414142414143414144414145414146
+'
+run_test
+
+NAME='wopO 0x41417641'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='wopO 0x41417641
+'
+EXPECT='140
+'
+run_test
+
+NAME='woE woD rc4'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='w helloworld
+woE rc4 key
+woD rc4 key
+ps
+'
+EXPECT='helloworld
+'
+run_test
+
+NAME='woE woD xor'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='w helloworld
+woE xor key
+woD xor key
+ps
+'
+EXPECT='helloworld
+'
+run_test
+
+NAME='woE woD blowfish'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='w helloworld
+woE blowfish key
+woD blowfish key
+ps
+'
+EXPECT='helloworld
+'
+run_test
+
+NAME='woE woD aes-ecb'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='w helloworld
+woE aes-ecb key
+woD aes-ecb key
+ps
+'
+EXPECT='helloworld
+'
+run_test

@@ -1,0 +1,46 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN=mips
+
+NAME="mips hello ref anal"
+BROKEN=
+FILE=../../bins/elf/analysis/mips-hello
+CMDS="
+s sym.main
+aac
+afl~?
+"
+EXPECT='1
+'
+run_test
+
+NAME="mips hello ref anal"
+BROKEN=
+ARGS="-e bin.strings=false -e anal.strings=true"
+FILE=../../bins/elf/analysis/mips.elf
+CMDS="
+s entry0
+aae
+s 0x0041ed50
+pd 5~IGNORE
+"
+EXPECT='            0x0041ed58      24a54268       addiu a1, a1, 0x4268        ; str.IGNORE
+'
+run_test
+
+NAME="mips hello ref anal subtract"
+BROKEN=
+ARGS="-e bin.strings=false -e anal.strings=true"
+FILE=../../bins/elf/analysis/busybox-mips
+CMDS="
+aae @entry0
+pd 1 @0x00406228
+fs strings
+axt str.busybox
+"
+EXPECT='            0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; str.busybox
+data 0x406228 addiu a0, a0, -0x3c04 in unknown function; str.busybox
+'
+
+run_test
+

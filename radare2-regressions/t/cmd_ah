@@ -1,0 +1,54 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='ah- offset'
+FILE=-
+CMDS='
+ahi 10 @ 0
+ahi 8 @ 16
+?e before:
+ah
+ah- 0x10
+?e after:
+ah
+'
+EXPECT="before:
+ 0x00000000 - 0x00000000 => immbase=10
+ 0x00000010 - 0x00000010 => immbase=8
+after:
+ 0x00000000 - 0x00000000 => immbase=10
+"
+run_test
+
+NAME='ah-offset'
+FILE=-
+CMDS='
+ahi 10 @ 0
+ahi 8 @ 16
+?e before:
+ah
+ah-0x10
+?e after:
+ah
+'
+EXPECT="before:
+ 0x00000000 - 0x00000000 => immbase=10
+ 0x00000010 - 0x00000010 => immbase=8
+after:
+ 0x00000000 - 0x00000000 => immbase=10
+"
+run_test
+ 
+NAME='ah*'
+FILE=-
+CMDS='
+ahi 10 @ 0
+ahi 8 @ 16
+ah*
+ah* 16
+'
+EXPECT="ahi 10 @ 0x0
+ahi 8 @ 0x10
+ahi 8 @ 0x10
+"
+run_test

@@ -1,0 +1,39 @@
+#!/bin/sh
+# LGPL - Copyright (C) 2014 Fedor Sakharov
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="anal/fcn_name"
+FILE=../../bins/elf/analysis/main-g
+IGNORE_ERR=1
+ARGS=
+CMDS='s 0x0040042c
+af
+pd 1~sym.call_gmon_start:0'
+EXPECT='/ (fcn) sym.call_gmon_start 23
+'
+run_test
+
+NAME="anal/fcn_subname"
+FILE=../../bins/elf/analysis/main-g
+ARGS=
+# REGRESSION
+IGNORE_ERR=1
+CMDS='s 0x0040042c
+af
+afi~name
+pd 1~sym.call_gmon_start:0'
+EXPECT='name: sym.call_gmon_start
+/ (fcn) sym.call_gmon_start 23
+'
+run_test
+
+NAME="anal/name"
+FILE=../../bins/mach0/ls-osx-x86_64
+ARGS=
+CMDS='af
+afi~name
+'
+EXPECT='name: main
+'
+run_test

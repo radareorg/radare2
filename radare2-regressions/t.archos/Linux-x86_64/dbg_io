@@ -1,0 +1,46 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014-2015 - pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dbg.readpc'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='sr PC
+p8 4
+dk 9
+'
+NOT_EXPECT=1
+EXPECT='ffffffff
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.read.entry0'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=
+CMDS='s entry0
+p8 4
+'
+EXPECT='31ed5e89
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.write'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='s entry0
+p8 2
+wx 9090
+p8 2
+dk 9
+'
+EXPECT='31ed
+9090
+'
+IGNORE_ERR=1
+run_test

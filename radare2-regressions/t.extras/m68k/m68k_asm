@@ -1,0 +1,75 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+unset R2_NOPLUGINS
+
+NAME="${PLUGIN}: m68k filter"
+CMDS='e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0xa10000
+pi 1
+'
+EXPECT='move.w 0x100, 0xa10000.l
+move.w 0x100, foo.bar
+'
+run_test
+
+NAME="${PLUGIN}: m68k filter2"
+CMDS='e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0x100
+pi 1
+'
+EXPECT='move.w 0x100, 0xa10000.l
+move.w foo.bar, 0xa10000.l
+'
+run_test
+
+NAME="${PLUGIN}: m68k 8bit negative branch"
+BROKEN=
+CMDS='e asm.arch=m68k
+s 0x100
+wx 6afc
+pi 1
+'
+EXPECT='bpl.b 0xfe
+'
+run_test
+
+NAME="${PLUGIN}: m68k 16bit negative branch bug"
+BROKEN=
+CMDS='e asm.arch=m68k
+s 0x100
+wx 6a00ff7e
+pi 1
+'
+EXPECT='bpl.w 0x80
+'
+run_test
+
+NAME="${PLUGIN}: m68k 32bit negative branch"
+BROKEN=1
+CMDS='e asm.arch=m68k
+s 0x100
+wx 6affffffff7e
+pi 1
+'
+EXPECT='bpl.l 0x80
+'
+run_test
+
+NAME="${PLUGIN}: m68k symbolic labels"
+BROKEN=
+FILE=../../bins/smd/LiquidSpaceDodgerV3.bin
+CMDS='e asm.arch=m68k
+s 0x21a
+f sym.z80BusReq @ 0x00a11100
+pi 1
+'
+EXPECT='move.w 0x100, sym.z80BusReq
+'
+run_test
