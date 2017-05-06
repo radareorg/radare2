@@ -4078,14 +4078,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '0': // "px0"
 			if (l) {
-				int len;
-				char ch;
-				for (len = 0; len < core->blocksize; len++) {
-					ch =  (char) core->block[len];
-					if (!ch) {
-						break;
-					}
-				}
+				int len = strnlen (core->block, core->blocksize);
 				r_print_bytes (core->print, core->block, len, "%02x");
 			}
 			break;
