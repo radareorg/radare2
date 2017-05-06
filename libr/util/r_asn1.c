@@ -430,6 +430,24 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 	return object;
 }
 
+RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
+	RASN1Binary* bin = NULL;
+	ut8* buf = NULL;
+	if (!buffer || !length) {
+		return NULL;
+	}
+	buf = (ut8*) malloc (length);
+	if (!buf) {
+		return NULL;
+	}
+	memcpy (buf, buffer, length);
+
+	bin = R_NEW0 (RASN1Binary);
+	bin->binary = buf;
+	bin->length = length;
+	return bin;
+}
+
 void r_asn1_free_object (RASN1Object *object) {
 	ut32 i;
 	if (!object) {
@@ -454,6 +472,13 @@ void r_asn1_free_string (RASN1String* str) {
 			free ((char*) str->string);
 		}
 		free (str);
+	}
+}
+
+void r_asn1_free_binary (RASN1Binary* bin) {
+	if (bin) {
+		free ((char*) bin->binary);
+		free (bin);
 	}
 }
 

@@ -55,30 +55,14 @@ bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki, RASN1O
 	r_x509_parse_algorithmidentifier (&spki->algorithm, object->list.objects[0]);
 	if (object->list.objects[1]) {
 		o = object->list.objects[1];
-		R_PTR_MOVE (spki->subjectPublicKey, object->list.objects[1]);
-		//		spki->subjectPublicKey = object->list.objects[1];
-		//		object->list.objects[1] = NULL;
-		//		if (o->length > 32) {
-		//			spki->subjectPublicKey = asn1_stringify_bytes (o->sector, o->length);
-		//		} else {
-		//			spki->subjectPublicKey = asn1_stringify_bits (o->sector, o->length);
-		//		}
+		spki->subjectPublicKey = r_asn1_create_binary (o->sector, o->length);
 		if (o->list.length == 1 && o->list.objects[0]->list.length == 2) {
 			o = o->list.objects[0];
 			if (o->list.objects[0]) {
-				R_PTR_MOVE (spki->subjectPublicKeyExponent, o->list.objects[0]);
-				//				o->list.objects[0] = NULL;
-				//				if (o->list.objects[0]->length > 32) {
-				//					spki->subjectPublicKeyExponent = asn1_stringify_bytes (o->list.objects[0]->sector, o->list.objects[0]->length);
-				//				} else {
-				//					spki->subjectPublicKeyExponent = asn1_stringify_integer (o->list.objects[0]->sector, o->list.objects[0]->length);
-				//				}
+				spki->subjectPublicKeyExponent = r_asn1_create_binary (o->list.objects[0]->sector, o->list.objects[0]->length);
 			}
 			if (o->list.objects[1]) {
-				R_PTR_MOVE (spki->subjectPublicKeyModule, o->list.objects[1]);
-				//				spki->subjectPublicKeyModule = o->list.objects[1];
-				//				o->list.objects[1] = NULL;
-				//				spki->subjectPublicKeyModule = asn1_stringify_integer (o->list.objects[1]->sector, o->list.objects[1]->length);
+				spki->subjectPublicKeyModule = r_asn1_create_binary (o->list.objects[1]->sector, o->list.objects[1]->length);
 			}
 		}
 	}
@@ -143,13 +127,7 @@ bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
 			o = object->list.objects[2];
 		}
 		if (o->tag == TAG_OCTETSTRING) {
-			ext->extnValue = o;
-			if (o == object->list.objects[1]) {
-				object->list.objects[1] = NULL;
-			} else if (object->list.length > 2 &&
-					o == object->list.objects[2]) {
-				object->list.objects[2] = NULL;
-			}
+			ext->extnValue = r_asn1_create_binary (o->sector, o->length);
 		}
 	}
 	return true;
@@ -210,17 +188,13 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 				continue;
 			}
 			if (elems[i]->tag == 1) {
-				R_PTR_MOVE (tbsc->issuerUniqueID, object->list.objects[i]);
-				//				tbsc->issuerUniqueID = elems[i];
-				//				elems[i] = NULL;
+				tbsc->issuerUniqueID = r_asn1_create_binary (object->list.objects[i]->sector, object->list.objects[i]->length);
 			}
 			if (!elems[i]) {
 				continue;
 			}
 			if (elems[i]->tag == 2) {
-				R_PTR_MOVE (tbsc->subjectUniqueID, object->list.objects[i]);
-				//				tbsc->subjectUniqueID = elems[i];
-				//				elems[i] = NULL;
+				tbsc->subjectUniqueID = r_asn1_create_binary (object->list.objects[i]->sector, object->list.objects[i]->length);
 			}
 			if (!elems[i]) {
 				continue;
@@ -264,9 +238,8 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 		free (certificate);
 		return NULL;
 	}
-	R_PTR_MOVE (certificate->signature, object->list.objects[2]);
-	//	certificate->signature = object->list.objects[2];
-	//	object->list.objects[2] = NULL;
+
+	certificate->signature = r_asn1_create_binary (object->list.objects[2]->sector, object->list.objects[2]->length);
 
 	r_x509_parse_tbscertificate (&certificate->tbsCertificate, object->list.objects[0]);
 
@@ -300,8 +273,7 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 	if (!entry) {
 		return NULL;
 	}
-	entry->userCertificate = object->list.objects[0];
-	object->list.objects[0] = NULL;
+	entry->userCertificate = r_asn1_create_binary (object->list.objects[0]->sector, object->list.objects[0]->length);
 	entry->revocationDate = r_asn1_stringify_utctime (object->list.objects[1]->sector, object->list.objects[1]->length);
 	return entry;
 }
@@ -374,7 +346,7 @@ void r_x509_free_name (RX509Name * name) {
 void r_x509_free_extension (RX509Extension * ex) {
 	if (ex) {
 		r_asn1_free_string (ex->extnID);
-		r_asn1_free_object (ex->extnValue);
+		r_asn1_free_binary (ex->extnValue);
 		//this is allocated dinamically so, i'll free
 		free (ex);
 	}
@@ -397,9 +369,9 @@ void r_x509_free_extensions (RX509Extensions * ex) {
 void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki) {
 	if (spki) {
 		r_x509_free_algorithmidentifier (&spki->algorithm);
-		r_asn1_free_object (spki->subjectPublicKey);
-		r_asn1_free_object (spki->subjectPublicKeyExponent);
-		r_asn1_free_object (spki->subjectPublicKeyModule);
+		r_asn1_free_binary (spki->subjectPublicKey);
+		r_asn1_free_binary (spki->subjectPublicKeyExponent);
+		r_asn1_free_binary (spki->subjectPublicKeyModule);
 		// No need to free spki, since it's a static variable.
 	}
 }
@@ -413,8 +385,8 @@ void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc) {
 		r_x509_free_validity (&tbsc->validity);
 		r_x509_free_name (&tbsc->subject);
 		r_x509_free_subjectpublickeyinfo (&tbsc->subjectPublicKeyInfo);
-		r_asn1_free_object (tbsc->subjectUniqueID);
-		r_asn1_free_object (tbsc->issuerUniqueID);
+		r_asn1_free_binary (tbsc->subjectUniqueID);
+		r_asn1_free_binary (tbsc->issuerUniqueID);
 		r_x509_free_extensions (&tbsc->extensions);
 		//no need to free tbsc, since this functions is used internally
 	}
@@ -422,7 +394,7 @@ void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc) {
 
 void r_x509_free_certificate (RX509Certificate * certificate) {
 	if (certificate) {
-		r_asn1_free_object (certificate->signature);
+		r_asn1_free_binary (certificate->signature);
 		r_x509_free_algorithmidentifier (&certificate->algorithmIdentifier);
 		r_x509_free_tbscertificate (&certificate->tbsCertificate);
 		free (certificate);
@@ -431,7 +403,7 @@ void r_x509_free_certificate (RX509Certificate * certificate) {
 
 void r_x509_free_crlentry (RX509CRLEntry *entry) {
 	if (entry) {
-		r_asn1_free_object (entry->userCertificate);
+		r_asn1_free_binary (entry->userCertificate);
 		r_asn1_free_string (entry->revocationDate);
 		free (entry);
 	}
@@ -512,7 +484,7 @@ char* r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, char* b
 	a = spki->algorithm.algorithm ? spki->algorithm.algorithm->string : "Missing";
 	RASN1String* m = NULL;
 	if (spki->subjectPublicKeyModule) {
-		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->sector, spki->subjectPublicKeyModule->length);
+		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
 	}
 	//	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
 	//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
@@ -623,7 +595,7 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 	}
 	p = tmp - buffer;
 	if (tbsc->issuerUniqueID) {
-		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->sector, tbsc->issuerUniqueID->length);
+		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
 		if (iid) {
 			if (length <= p) {
 				r_asn1_free_string (iid);
@@ -639,7 +611,7 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 		r_asn1_free_string (iid);
 	}
 	if (tbsc->subjectUniqueID) {
-		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->sector, tbsc->subjectUniqueID->length);
+		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
 		if (sid) {
 			if (length <= p) {
 				r_asn1_free_string (sid);
@@ -695,7 +667,7 @@ char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32
 		return NULL;
 	}
 	algo = certificate->algorithmIdentifier.algorithm;
-	//	signature = r_asn1_stringify_bytes (certificate->signature->sector, certificate->signature->length);
+	//	signature = r_asn1_stringify_bytes (certificate->signature->binary, certificate->signature->length);
 	//	r = snprintf (buffer + p, length - p, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
 	//				pad, pad2, algo ? algo->string : "",
 	//				pad, certificate->signature->length, signature ? signature->string : "");
@@ -722,7 +694,7 @@ char* r_x509_crlentry_dump (RX509CRLEntry *crle, char* buffer, ut32 length, cons
 	}
 	utc = crle->revocationDate;
 	if (crle->userCertificate) {
-		id = r_asn1_stringify_integer (crle->userCertificate->sector, crle->userCertificate->length);
+		id = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
 	}
 
 	r = snprintf (buffer, length, "%sUser Certificate:\n%s  %s\n"
@@ -787,14 +759,17 @@ RJSVar *r_x509_validity_json (RX509Validity* validity) {
 	if (!validity) {
 		return obj;
 	}
-	if (validity->notBefore)
+	if (validity->notBefore) {
 		r_json_object_add (obj, "NotBefore", r_json_string_new (validity->notBefore->string));
-	if (validity->notAfter)
+	}
+	if (validity->notAfter) {
 		r_json_object_add (obj, "NotAfter", r_json_string_new (validity->notAfter->string));
+	}
 	return obj;
 }
 
 RJSVar *r_x509_name_json (RX509Name* name) {
+	ut32 i;
 	RJSVar* obj = r_json_object_new ();
 	if (!name) {
 		return obj;
@@ -803,7 +778,7 @@ RJSVar *r_x509_name_json (RX509Name* name) {
 		if (!name->oids[i] || !name->names[i]) {
 			continue;
 		}
-		r_json_object_add (obj, name->names[i]->string, r_json_string_new (name->oids[i]->string));
+		r_json_object_add (obj, name->oids[i]->string, r_json_string_new (name->names[i]->string));
 	}
 	return obj;
 }
@@ -818,14 +793,14 @@ RJSVar* r_x509_subjectpublickeyinfo_json (RX509SubjectPublicKeyInfo* spki) {
 		r_json_object_add (obj, "Algorithm", r_json_string_new (spki->algorithm.algorithm->string));
 	}
 	if (spki->subjectPublicKeyModule) {
-		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->sector, spki->subjectPublicKeyModule->length);
+		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
 		if (m) {
 			r_json_object_add (obj, "Module", r_json_string_new (m->string));
 		}
 		r_asn1_free_string (m);
 	}
 	if (spki->subjectPublicKeyExponent) {
-		m = r_asn1_stringify_integer (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
+		m = r_asn1_stringify_integer (spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
 		if (m) {
 			r_json_object_add (obj, "Exponent", r_json_string_new (m->string));
 		}
@@ -834,41 +809,82 @@ RJSVar* r_x509_subjectpublickeyinfo_json (RX509SubjectPublicKeyInfo* spki) {
 	return obj;
 }
 
-char* r_x509_extensions_dump (RX509Extensions* exts, char* buffer, ut32 length, const char* pad) {
-	ut32 i, p, len;
-	int r;
-	char* c;
-	if (!exts || !buffer || !length) {
-		return NULL;
+RJSVar *r_x509_extensions_json (RX509Extensions* exts) {
+	ut32 i;
+	RASN1String *m = NULL;
+	RJSVar* array = NULL;
+	if (!exts) {
+		return array;
 	}
-	if (!pad) {
-		pad = "";
-	}
-	len = length;
-	c = buffer;
-	if (!c) {
-		return NULL;
-	}
-	for (i = 0, p = 0, r = 0; i < exts->length; ++i) {
-		//RASN1String *s;
+	array = r_json_array_new (exts->length);
+	for (i = 0; i < exts->length; ++i) {
 		RX509Extension *e = exts->extensions[i];
-		if (!e) continue;
-		//TODO handle extensions..
-		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
-		if (len < p) {
-			return NULL;
+		RJSVar* obj = r_json_object_new ();
+		if (!e || !obj) continue;
+		if (e->extnID) {
+			r_json_object_add (obj, "OID", r_json_string_new (e->extnID->string));
 		}
-		r = snprintf (c + p, len - p, "%s%s: %s\n%s%u bytes\n", pad,
-					e->extnID ? e->extnID->string : "Missing",
-					e->critical ? "critical" : "",
-					pad, e->extnValue ? e->extnValue->length : 0);
-		p += r;
-		//r_asn1_free_string (s);
-		if (r < 0 || len <= p) {
-			return NULL;
+		if (e->critical) {
+			r_json_object_add (obj, "Critical", r_json_boolean_new (1));
 		}
+		//TODO handle extensions correctly..
+		if (e->extnValue) {
+			m = r_asn1_stringify_integer (e->extnValue->binary, e->extnValue->length);
+			if (m) {
+				r_json_object_add (obj, "Value", r_json_string_new (m->string));
+			}
+			r_asn1_free_string (m);
+		}
+		r_json_array_add (array, obj);
 	}
-	return c + p;
+	return array;
+}
+
+RJSVar *r_x509_crlentry_json (RX509CRLEntry *crle) {
+	RASN1String *m = NULL;
+	RJSVar* obj = r_json_object_new ();
+	if (!crle) {
+		return obj;
+	}
+	if (crle->userCertificate) {
+		m = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
+		if (m) {
+			r_json_object_add (obj, "UserCertificate", r_json_string_new (m->string));
+		}
+		r_asn1_free_string (m);
+	}
+	if (crle->revocationDate) {
+		r_json_object_add (obj, "RevocationDate", r_json_string_new (crle->revocationDate->string));
+	}
+	return obj;
+}
+
+RJSVar *r_x509_crl_json (RX509CertificateRevocationList *crl) {
+	ut32 i;
+	RJSVar* obj = r_json_object_new ();
+	RJSVar* array = NULL;
+	if (!crl) {
+		return obj;
+	}
+
+	if (crl->signature.algorithm) {
+		r_json_object_add (obj, "Signature", r_json_string_new (crl->signature.algorithm->string));
+	}
+	r_json_object_add (obj, "Issuer", r_x509_name_json (&crl->issuer));
+	if (crl->lastUpdate) {
+		r_json_object_add (obj, "LastUpdate", r_json_string_new (crl->lastUpdate->string));
+	}
+	if (crl->nextUpdate) {
+		r_json_object_add (obj, "NextUpdate", r_json_string_new (crl->nextUpdate->string));
+	}
+
+	array = r_json_array_new (crl->length);
+	for (i = 0; i < crl->length; ++i) {
+		r_json_array_add (array, r_x509_crlentry_json (crl->revokedCertificates[i]));
+	}
+
+	r_json_object_add (obj, "RevokedCertificates", array);
+	return obj;
 }
 
 RJSVar *r_x509_tbscertificate_json (RX509TBSCertificate* tbsc) {
@@ -885,47 +901,43 @@ RJSVar *r_x509_tbscertificate_json (RX509TBSCertificate* tbsc) {
 		r_json_object_add (obj, "SignatureAlgorithm", r_json_string_new (tbsc->signature.algorithm->string));
 	}
 	r_json_object_add (obj, "Issuer", r_x509_name_json (&tbsc->issuer));
-	r_json_object_add (obj, "Validity", r_x509_validity_json (&&tbsc->validity));
+	r_json_object_add (obj, "Validity", r_x509_validity_json (&tbsc->validity));
 	r_json_object_add (obj, "Subject", r_x509_name_json (&tbsc->subject));
 	r_json_object_add (obj, "SubjectPublicKeyInfo", r_x509_subjectpublickeyinfo_json (&tbsc->subjectPublicKeyInfo));
 	if (tbsc->issuerUniqueID) {
-		m = r_asn1_stringify_integer (tbsc->issuerUniqueID->sector, tbsc->issuerUniqueID->length);
+		m = r_asn1_stringify_integer (tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
 		if (m) {
 			r_json_object_add (obj, "IssuerUniqueID", r_json_string_new (m->string));
 		}
 		r_asn1_free_string (m);
 	}
 	if (tbsc->subjectUniqueID) {
-		m = r_asn1_stringify_integer (tbsc->subjectUniqueID->sector, tbsc->subjectUniqueID->length);
+		m = r_asn1_stringify_integer (tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
 		if (m) {
 			r_json_object_add (obj, "SubjectUniqueID", r_json_string_new (m->string));
 		}
 		r_asn1_free_string (m);
 	}
-	if (tbsc->extensions) {
-		r_json_object_add (obj, "Extensions", r_x509_extensions_json (&tbsc->extensions));
-	}
-
-
-
+	r_json_object_add (obj, "Extensions", r_x509_extensions_json (&tbsc->extensions));
 	return obj;
 }
 
-RASN1String *r_x509_certificate_json (RX509Certificate *certificate) {
-	RASN1String *tbsc = NULL;
-	char* buf = NULL;
-	int len = 0;
+RJSVar* r_x509_certificate_json (RX509Certificate *certificate) {
+	RASN1String *m = NULL;
+	RJSVar* obj = r_json_object_new ();
 	if (!certificate) {
-		return NULL;
+		return obj;
 	}
-	tbsc = r_x509_tbscertificate_json (&certificate->tbsCertificate);
-	if (!tbsc) {
-		tbsc = r_asn1_create_string2 (ASN1_JSON_NULL, false, sizeof (ASN1_JSON_NULL))
+	r_json_object_add (obj, "TBSCertificate", r_x509_tbscertificate_json (&certificate->tbsCertificate));
+	if (certificate->algorithmIdentifier.algorithm) {
+		r_json_object_add (obj, "Algorithm", r_json_string_new (certificate->algorithmIdentifier.algorithm->string));
 	}
-
-	len = snprintf (NULL, 0, "{\"TBSCertificate\":%s,\"Algorithm\":\"%s\",\"Signature\":\"%s\"}",
-					tbsc->string, certificate->algorithmIdentifier.algorithm->string, certificate->signature->string);
-
-	r_asn1_free_string (tbsc);
-	return r_asn1_create_string (buf, true, len);
+	if (certificate->signature) {
+		m = r_asn1_stringify_integer (certificate->signature->binary, certificate->signature->length);
+		if (m) {
+			r_json_object_add (obj, "Signature", r_json_string_new (m->string));
+		}
+		r_asn1_free_string (m);
+	}
+	return obj;
 }

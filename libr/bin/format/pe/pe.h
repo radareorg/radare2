@@ -100,7 +100,7 @@ struct PE_(r_bin_pe_obj_t) {
 	const char* file;
 	struct r_buf_t* b;
 	Sdb *kv;
-	const char* signature_dump;
+	RCMS* cms;
 	bool is_signed;
 };
 

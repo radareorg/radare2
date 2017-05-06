@@ -51,6 +51,9 @@ RJSVar* r_json_array_new (int len) {
 	if (len) {
 		var->array.a = R_NEWS0 (RJSVar*, len);
 		var->array.l = len;
+	} else {
+		var->array.a = NULL;
+		var->array.l = 0;
 	}
 	var->type = R_JS_ARRAY;
 	return var;
@@ -85,7 +88,7 @@ RJSVar* r_json_null_new () {
 }
 
 void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
-	int len;
+	ut32 len;
 	RJSVar** v;
 	char** c;
 	if (!object || !name || !value) {
@@ -111,9 +114,8 @@ void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 }
 
 void r_json_array_add (RJSVar* array, RJSVar* value) {
-	int len;
+	ut32 len;
 	RJSVar** v;
-	char** c;
 	if (!array || !value) {
 		return;
 	}
@@ -134,7 +136,7 @@ RJSVar* r_json_object_get (RJSVar* object, const char* name) {
 	if (!object || !name) {
 		return NULL;
 	}
-	int i;
+	ut32 i;
 	for (i = 0; i < object->object.l; i++) {
 		if (!strcmp (name, object->object.n[i])) {
 			return object->object.a[i];
@@ -152,7 +154,7 @@ RJSVar* r_json_array_get (RJSVar* array, int index) {
 
 char* r_json_var_string (RJSVar* var, bool expanded) {
 	char *c = NULL;
-	int i, len = 0;
+	ut32 i, len = 0;
 	if (!var) {
 		if (expanded) {
 			len = sizeof (R_JSON_NULL);
@@ -192,6 +194,11 @@ char* r_json_var_string (RJSVar* var, bool expanded) {
 			len = 3;
 			char* p, *e;
 			char** t = R_NEWS0 (char*, var->array.l);
+			if (!t) {
+				c = (char*) malloc (sizeof (R_JSON_EMPTY_ARR));
+				memcpy (c, R_JSON_EMPTY_ARR, sizeof (R_JSON_EMPTY_ARR));
+				break;
+			}
 			for (i = 0; i < var->array.l; i++) {
 				t[i] = r_json_var_string (var->array.a[i], expanded);
 				if (!t[i]) continue;
@@ -219,7 +226,12 @@ char* r_json_var_string (RJSVar* var, bool expanded) {
 	case R_JS_OBJECT:
 		if (var->object.l) {
 			char* p, *e;
-			char** t = R_NEWS0 (char*, var->array.l);
+			char** t = R_NEWS0 (char*, var->object.l);
+			if (!t) {
+				c = (char*) malloc (sizeof (R_JSON_EMPTY_OBJ));
+				memcpy (c, R_JSON_EMPTY_OBJ, sizeof (R_JSON_EMPTY_OBJ));
+				break;
+			}
 			len = 3;
 			for (i = 0; i < var->object.l; i++) {
 				t[i] = r_json_var_string (var->object.a[i], expanded);

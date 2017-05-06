@@ -2117,13 +2117,13 @@ out_error:
 }
 
 static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
-	RCMS *con;
 	ut64 size, vaddr;
 	ut8 *data = NULL;
 	int len;
 	if (!bin || !bin->nt_headers) {
 		return;
 	}
+	bin->cms = NULL;
 	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
 	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
 	data = calloc (1, size);
@@ -2141,22 +2141,7 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 		R_FREE (data);
 		return;
 	}
-	con = r_pkcs7_parse_cms (data, size);
-	bin->is_signed = con != NULL;
-	bin->signature_dump = r_pkcs7_cms_dump (con);
-	if (bin->signature_dump) {
-		int length = strlen (bin->signature_dump);
-		if (length > 0) {
-			char *c = (char*) malloc (length);
-			if (c) {
-				memcpy (c, bin->signature_dump, length);
-				c[length - 1] = '\0';
-				free ((char*)bin->signature_dump);
-				bin->signature_dump = c;
-			}
-		}
-	}
-	r_pkcs7_free_cms (con);
+	bin->cms = r_pkcs7_parse_cms (data, size);
 	R_FREE (data);
 }
 
@@ -3158,7 +3143,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
-	free ((void*)bin->signature_dump);
+	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);
 	bin->b = NULL;
 	free (bin);

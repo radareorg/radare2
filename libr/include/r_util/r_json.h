@@ -25,18 +25,18 @@ typedef struct r_json_var RJSVar;
 
 typedef struct r_json_string {
 	const char* s;
-	int l;
+	ut32 l;
 } RJSString;
 
 typedef struct r_json_array {
 	RJSVar** a;
-	int l;
+	ut32 l;
 } RJSArray;
 
 typedef struct r_json_object {
 	RJSVar** a;
 	const char** n;
-	int l;
+	ut32 l;
 } RJSObject;
 
 struct r_json_var {
@@ -51,20 +51,20 @@ struct r_json_var {
 	};
 };
 
-void r_json_var_free (RJSVar* var);
-RJSVar* r_json_object_new ();
-RJSVar* r_json_array_new (int len);
-RJSVar* r_json_string_new (const char* name);
-RJSVar* r_json_number_new (int value);
-RJSVar* r_json_boolean_new (bool value);
-RJSVar* r_json_null_new ();
+void r_json_var_free(RJSVar* var);
+RJSVar* r_json_object_new();
+RJSVar* r_json_array_new(int len);
+RJSVar* r_json_string_new(const char* name);
+RJSVar* r_json_number_new(int value);
+RJSVar* r_json_boolean_new(bool value);
+RJSVar* r_json_null_new();
 
-void r_json_object_add (RJSVar* object, const char* name, RJSVar* value);
-void r_json_array_add (RJSVar* array, RJSVar* value);
-RJSVar* r_json_object_get (RJSVar* object, const char* name);
-RJSVar* r_json_array_get (RJSVar* array, int index);
+void r_json_object_add(RJSVar* object, const char* name, RJSVar* value);
+void r_json_array_add(RJSVar* array, RJSVar* value);
+RJSVar* r_json_object_get(RJSVar* object, const char* name);
+RJSVar* r_json_array_get(RJSVar* array, int index);
 
-char* r_json_stringify (RJSVar* var, bool expanded);
+char* r_json_stringify(RJSVar* var, bool expanded);
 
 
 
