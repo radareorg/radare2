@@ -4042,7 +4042,6 @@ static int cmd_print(void *data, const char *input) {
 		core->print->use_comments = false;
 	}
 		r_cons_break_push (NULL, NULL);
-
 		switch (input[1]) {
 		case '/':
 			r_core_print_examine (core, input + 2);
