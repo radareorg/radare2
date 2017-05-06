@@ -317,6 +317,10 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
 	length8 = buffer[1];
+	if (length8 > length) {
+		//this length8 is user controlled and can produce oob
+		return NULL;
+	}
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
