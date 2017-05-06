@@ -3656,6 +3656,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 	bufi = 0;
 	if (addr_end - addr > 0xffffff) {
+		free (buf);
 		return;
 	}
 	while (addr < addr_end) {
