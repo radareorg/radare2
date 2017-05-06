@@ -73,7 +73,7 @@ void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
 }
 
 ut32 r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
-	if (!data || !size || preset >= CRC_PRESET_SIZE || preset < 0) {
+	if (!data || !size || preset >= CRC_PRESET_SIZE) {
 		return 0;
 	}
 	ut32 r;

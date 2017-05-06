@@ -194,8 +194,8 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	// remove "dword" 2
 	char *nptr;
 	while ((nptr = findNextNumber (ptr))) {
-		char *optr = ptr;
 #if 0
+		char *optr = ptr;
 		if (nptr[1]== ' ') {
 			for (nptr++;*nptr && *nptr >='0' && *nptr <= '9'; nptr++) {
 			}
