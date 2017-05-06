@@ -17,7 +17,7 @@ typedef struct r_io_mmo_t {
 	int rawio;
 } RIOMMapFileObj;
 
-static int __io_posix_open (const char *file, int flags, int mode) {
+static int __io_posix_open(const char *file, int flags, int mode) {
 	int fd;
 	if (r_file_is_directory (file)) {
 		return -1;
@@ -33,8 +33,7 @@ static int __io_posix_open (const char *file, int flags, int mode) {
 		fd = r_sandbox_open (file, O_BINARY, 0);
 	}
 #else
-	fd = r_sandbox_open (file, (flags & R_IO_WRITE)
-		? (O_RDWR|O_CREAT): O_RDONLY, mode);
+	fd = r_sandbox_open (file, (flags & R_IO_WRITE) ? (O_RDWR|O_CREAT) : O_RDONLY, mode);
 #endif
 	return fd;
 }
@@ -42,9 +41,15 @@ static int __io_posix_open (const char *file, int flags, int mode) {
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 	ut64 seek_val = UT64_MAX;
 
-	if (!mmo) return UT64_MAX;
-	if (mmo->rawio) return lseek (mmo->fd, offset, whence);
-	if (!mmo->buf) return UT64_MAX;
+	if (!mmo) {
+		return UT64_MAX;
+	}
+	if (mmo->rawio) {
+		return lseek (mmo->fd, offset, whence);
+	}
+	if (!mmo->buf) {
+		return UT64_MAX;
+	}
 
 	seek_val = mmo->buf->cur;
 	switch (whence) {
@@ -73,7 +78,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		cur = 0;
 	}
 	st64 sz = r_file_size (mmo->filename);
-	if (sz == 0 || sz > ST32_MAX) {
+	if (!sz || sz > ST32_MAX) {
 		// Do not use mmap if the file is huge
 		mmo->rawio = 1;
 	}
@@ -113,9 +118,9 @@ static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 
 RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
 	RIOMMapFileObj *mmo = NULL;
-	if (!io)
+	if (!io) {
 		return NULL;
-
+	}
 	mmo = R_NEW0 (RIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
@@ -133,7 +138,6 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	} else {
 		mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
 	}
-
 	if (mmo->fd == -1) {
 		free (mmo->filename);
 		free (mmo);
@@ -225,11 +229,13 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	int len = -1;
 	ut64 addr = io->off;
 
-	if (!fd || !fd->data || !buf) return -1;
-
-	mmo = fd->data;
-	if (!mmo)
+	if (!fd || !fd->data || !buf) {
 		return -1;
+	}
+	mmo = fd->data;
+	if (!mmo) {
+		return -1;
+	}
 	if (mmo->rawio) {
 		if (fd->obsz) {
 			char *a_buf;
@@ -239,31 +245,31 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 			//ut64 a_off = (io->off >> 9 ) << 9; //- (io->off & aligned);
 			ut64 a_off = io->off - (io->off % aligned); //(io->off >> 9 ) << 9; //- (io->off & aligned);
 			int a_delta = io->off - a_off;
-			if (a_delta<0) {
+			if (a_delta < 0) {
 				return -1;
 			}
-			a_count = count + (aligned-(count%aligned));
-
-			a_buf = malloc (a_count+aligned);
+			a_count = count + (aligned - (count % aligned));
+			a_buf = malloc (a_count + aligned);
 			if (a_buf) {
 				int i;
 				memset (a_buf, 0xff, a_count+aligned);
-				for (i=0; i< a_count ; i+= aligned) {
-					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
-					(void)read (mmo->fd, a_buf+i, aligned);
+				for (i = 0; i < a_count; i += aligned) {
+					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
+					(void)read (mmo->fd, a_buf + i, aligned);
 				}
 				memcpy (a_buf+a_delta, buf, count);
-				for (i=0; i< a_count ; i+= aligned) {
-					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
-					(void)write (mmo->fd, a_buf+i, aligned);
+				for (i = 0; i < a_count; i += aligned) {
+					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
+					(void)write (mmo->fd, a_buf + i, aligned);
 				}
 			}
 			free (a_buf);
 			return count;
 		}
-		if (lseek (fd->fd, addr, 0) < 0)
+		if (lseek (mmo->fd, addr, 0) < 0) {
 			return -1;
-		len = write (fd->fd, buf, count);
+		}
+		len = write (mmo->fd, buf, count);
 		return len;
 	}
 
