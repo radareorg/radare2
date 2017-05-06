@@ -258,6 +258,7 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	preg->re_flags = cflags;
 	p->ssize = len / (size_t)2 * (size_t)3 + (size_t)1;	/* ugh */
 	if (p->ssize < len) {
+		free ((char *)g);
 		return R_REGEX_ESPACE;
 	}
 
