@@ -19,7 +19,7 @@ enum {
 	R_JS_STRING,
 	R_JS_ARRAY,
 	R_JS_OBJECT,
-} RJSType;
+} RJSVarType;
 
 typedef struct r_json_var RJSVar;
 
