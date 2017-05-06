@@ -878,6 +878,67 @@ static int cmd_write(void *data, const char *input) {
 			memset (core->block, 0xff, core->blocksize);
 			r_core_block_read (core);
 			break;
+		case 'p':
+			{
+				RIODesc *desc;
+				RIOCache *cache;
+				RList *caches;
+				RListIter *iter;
+				int fd, i;
+				bool rad = false;
+				if (core && core->io && core->io->p_cache && core->print && core->print->cb_printf) {
+					switch (input[2]) {
+					case 'i' :
+						if (input[3]) {
+							fd = (int)r_num_math (core->num, input + 3);
+							desc = r_io_desc_get (core->io, fd);
+						} else {
+							desc = core->io->desc;
+						}
+						r_io_desc_cache_commit (desc);
+						break;
+					case '*':
+						rad = true;
+					case ' ':
+					case '\0':
+						if (input[2] && input[3]) {
+							fd = (int)r_num_math (core->num, input + 3);
+							desc = r_io_desc_get (core->io, fd);
+						} else {
+							desc = core->io->desc;
+						}
+						if ((caches = r_io_desc_cache_list (desc))) {
+							if (rad) {
+								core->print->cb_printf ("e io.va = false\n");
+								r_list_foreach (caches, iter, cache) {
+									core->print->cb_printf ("wx %02x", cache->data[0]);
+									for (i = 1; i < cache->size; i++) {
+										core->print->cb_printf ("%02x", cache->data[i]);
+									}
+									core->print->cb_printf (" @ 0x%08"PFMT64x" \n", cache->from);
+								}
+							} else {
+								r_list_foreach (caches, iter, cache) {
+									core->print->cb_printf ("0x%08"PFMT64x": %02x", cache->from, cache->odata[0]);
+									for (i = 1; i < cache->size; i++) {
+										core->print->cb_printf ("%02x", cache->odata[i]);
+									}
+									core->print->cb_printf (" -> %02x", cache->data[0]);
+									for (i = 1; i < cache->size; i++) {
+										core->print->cb_printf ("%02x", cache->data[i]);
+									}
+									core->print->cb_printf ("\n");
+								}
+							}
+							r_list_free (caches);
+						}
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			break;
 		case '?':
 			{
 				const char* help_msg[] = {
@@ -888,6 +949,9 @@ static int cmd_write(void *data, const char *input) {
 					"wc*","","\"\" in radare commands",
 					"wcr","","reset all write changes in cache",
 					"wci","","commit write cache",
+					"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
+					"wcp*"," [fd]","list all cached write-operations on p-layer in radare commands",
+					"wcpi"," [fd]", "commit and invalidate pcache for specified fd or current fd",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);

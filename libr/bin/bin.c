@@ -875,7 +875,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	int res = false;
 	RBinFile *bf = NULL;
 	ut8 *buf_bytes = NULL;
-	ut64 len_bytes = UT64_MAX, sz = UT64_MAX;
+	ut64 sz = UT64_MAX;
 
 	if (!io) {
 		return false;
