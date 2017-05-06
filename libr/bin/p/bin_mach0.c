@@ -26,7 +26,7 @@ static char *entitlements(RBinFile *arch, bool json) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
-	return (char *) strdup (bin->signature);
+	return strdup ((char*) bin->signature);
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
