@@ -319,7 +319,7 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	length8 = buffer[1];
 	if (length8 > length) {
 		//this length8 is user controlled and can produce oob
-		return NULL;
+		goto out_error;
 	}
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
@@ -332,9 +332,7 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 				length64 <<= 8;
 				length64 |= byte;
 				if (length64 > length) {
-					free (object);
-					// Malformed object - overflow
-					return NULL;
+					goto out_error;
 				}
 			}
 			object->sector = buffer + 2 + length8;
@@ -349,9 +347,7 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 				from++;
 			} while (from < end && length64 <= length && byte & 0x80);
 			if (length64 > length) {
-				free (object);
-				// Malformed object - overflow
-				return NULL;
+				goto out_error;
 			}
 			object->sector = from;
 		}
@@ -368,10 +364,12 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	}
 	if (object->length > length) {
 		// Malformed object - overflow from data ptr
-		free(object);
-		return NULL;
+		goto out_error;
 	}
 	return object;
+out_error:
+	free (object);
+	return NULL;
 }
 
 ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
