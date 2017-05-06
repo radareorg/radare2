@@ -10,9 +10,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "libgdbr.h"
-#include "utils.h"
-#include "arch.h"
+#include "../libgdbr.h"
+#include "../utils.h"
+#include "../arch.h"
 
 #define CMD_READREGS	"g"
 #define CMD_WRITEREGS	"G"

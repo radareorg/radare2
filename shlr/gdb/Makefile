@@ -38,7 +38,7 @@ LIB=lib
 TEST_INCLUDES += $(INCLUDES) -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include
 
 SRC_D=src
-SRC_C=$(wildcard $(SRC_D)/*.c)
+SRC_C=$(wildcard $(SRC_D)/*.c) $(wildcard $(SRC_D)/*/*.c)
 SRC_O=$(SRC_C:.c=.o)
 
 TEST_C=$(wildcard $(TEST_D)/*.c)
@@ -65,7 +65,7 @@ clean:
 	-rm -f $(SRC_O)
 	-rm -rf lib
 
-unit: lib 
+unit: lib
 	$(CC) $(CFLAGS) $(TEST_INCLUDES) -c $(UNIT_TEST) -o $(TEST_D)/unit.o
 	$(LD) $(TEST_D)/unit.o -o $(TEST_D)/unit -L$(LIB) -lgdbr -lglib-2.0
 

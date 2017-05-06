@@ -6,6 +6,7 @@
 #include <r_util.h>
 #define IRAPI static inline
 #include <libgdbr.h>
+#include <gdbclient/commands.h>
 
 typedef struct {
 	libgdbr_t desc;
