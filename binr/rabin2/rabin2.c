@@ -435,6 +435,7 @@ static int rabin_do_operation(const char *op) {
 			const char *sign = plg->signature (cur, rad == R_CORE_BIN_JSON);
 			r_cons_println (sign);
 			r_cons_flush ();
+			free ((char*) sign);
 		}
 		}
 		break;
