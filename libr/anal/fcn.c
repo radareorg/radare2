@@ -1058,7 +1058,7 @@ repeat:
 							}
 						}
 					} else {
-						if (in_plt) {
+						if (!in_plt) {
 							goto river;
 						}
 					}
