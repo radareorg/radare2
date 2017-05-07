@@ -1,4 +1,4 @@
-/*! \file */
+/*! For handling responses from gdbserver */
 /**
  * See Appendix E in the gdb manual (GDB Remote Serial Protocol)
  * Packets look following: $ starts a command/packet, the end is indicated
@@ -6,8 +6,8 @@
  * $<command>#<checksum>
  */
 
-#ifndef MESSAGES_H
-#define MESSAGES_H
+#ifndef RESPONSES_H
+#define RESPONSES_H
 
 #include <string.h>
 #include "libgdbr.h"
@@ -29,4 +29,4 @@ int handle_qSupported(libgdbr_t* g);
 int handle_setbp(libgdbr_t* g);
 int handle_removebp(libgdbr_t* g);
 
-#endif
+#endif  // RESPONSES_H

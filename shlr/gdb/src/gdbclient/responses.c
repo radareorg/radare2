@@ -1,8 +1,8 @@
 /* libgdbr - LGPL - Copyright 2014 - defragger */
 
-#include "messages.h"
 #include "arch.h"
-#include "core.h"
+#include "gdbclient/responses.h"
+#include "gdbclient/core.h"
 #include "utils.h"
 #include "r_util/r_str.h"
 

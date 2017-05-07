@@ -3,6 +3,7 @@
 #include <r_asm.h>
 #include <r_debug.h>
 #include <libgdbr.h>
+#include <gdbclient/commands.h>
 
 typedef struct {
 	libgdbr_t desc;
