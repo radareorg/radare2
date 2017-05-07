@@ -7,7 +7,7 @@
  */
 
 #include <r_anal.h>
-
+#include "anal_tms320c64x.c"
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
 static tms320_dasm_t engine = { 0 };
@@ -80,13 +80,16 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len) {
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
-	if (anal->cpu && strcasecmp(anal->cpu, "c54x") == 0)
+	if (anal->cpu && strcasecmp(anal->cpu, "c64x") == 0) {
+		return tms320c64x_analop (anal, op, addr, buf, len);
+	}
+	if (anal->cpu && strcasecmp(anal->cpu, "c54x") == 0) {
 		aop = tms320_c54x_op;
-	if (anal->cpu && strcasecmp(anal->cpu, "c55x") == 0)
+	} else if (anal->cpu && strcasecmp(anal->cpu, "c55x") == 0) {
 		aop = tms320_c55x_op;
-	if (anal->cpu && strcasecmp(anal->cpu, "c55x+") == 0)
+	} else if (anal->cpu && strcasecmp(anal->cpu, "c55x+") == 0) {
 		aop = tms320_c55x_plus_op;
-
+	}
 	return aop(anal, op, addr, buf, len);
 }
 
