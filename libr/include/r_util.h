@@ -20,7 +20,9 @@
 #if HAVE_LIB_SSL
 #include <openssl/bn.h>
 #endif
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 #include "r_util/r_big.h"
 #include "r_util/r_base64.h"
 #include "r_util/r_base91.h"
