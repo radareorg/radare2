@@ -2049,11 +2049,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
   int i, pcrel_p, num_printed;
   for (i = 0, num_printed = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
-#ifdef _MSC_VER
 #define size 128
-#else
-      const size_t size = 128;
-#endif
       char str[size];
       /* We regard the opcode operand info more, however we also look into
 	 the inst->operands to support the disassembling of the optional
@@ -2079,9 +2075,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
       else
 	(*info->fprintf_func) (info->stream, "%s", str);
     }
-#ifdef _MSC_VER
 #undef size
-#endif
 }
 
 /* Print the instruction mnemonic name.  */

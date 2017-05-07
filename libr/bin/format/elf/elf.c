@@ -345,11 +345,7 @@ static int init_strtab(ELFOBJ *bin) {
 
 static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
-#ifdef _MSC_VER
 	Elf_(Dyn) d = {0};
-#else
-	Elf_(Dyn) d = {};
-#endif
 	Elf_(Addr) strtabaddr = 0;
 	ut64 offset = 0;
 	char *strtab = NULL;

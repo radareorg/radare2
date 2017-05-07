@@ -637,25 +637,11 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		}
 		break;
-#if 1
-#ifdef _MSC_VER
-	case '0':
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-#else
-	case '0'...'9':
-#endif
-		eprintf ("|ERROR| No .[0..9] to avoid infinite loops\n");
-		break;
-#endif
 	default:
+		if (*input >= 0 && *input <= 9) {
+			eprintf ("|ERROR| No .[0..9] to avoid infinite loops\n");
+			break;
+		}
 		inp = strdup (input);
 		filter = strchr (inp, '~');
 		if (filter) {
