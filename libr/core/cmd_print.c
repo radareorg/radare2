@@ -4048,9 +4048,10 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?': {
 			const char *help_msg[] = {
-				"Usage:", "px[afoswqWqQ][f]", " # Print heXadecimal",
+				"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
 				"px", "", "show hexdump",
 				"px/", "", "same as x/ in gdb (help x)",
+				"px0", "", "8bit hexpair list of bytes until zero byte",
 				"pxa", "", "show annotated hexdump",
 				"pxA", "", "show op analysis color map",
 				"pxb", "", "dump bits in hexdump form",
@@ -4074,6 +4075,12 @@ static int cmd_print(void *data, const char *input) {
 			};
 			r_core_cmd_help (core, help_msg);
 		}
+			break;
+		case '0': // "px0"
+			if (l) {
+				int len = r_str_nlen (core->block, core->blocksize);
+				r_print_bytes (core->print, core->block, len, "%02x");
+			}
 			break;
 		case 'a': // "pxa"
 			if (l != 0) {
