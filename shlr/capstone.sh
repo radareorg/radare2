@@ -12,7 +12,7 @@ if [ -d capstone -a ! -d capstone/.git ]; then
 	done
 else 
 	if [ ! -d capstone ]; then 
-		git clone -b next --depth 10 "${CS_URL}" capstone || exit 1
+		git clone -b "${CS_BRA}" --depth 10 "${CS_URL}" capstone || exit 1
 	fi
 	cd capstone || exit 1
 	if [ -n "${CS_REV}" ]; then
