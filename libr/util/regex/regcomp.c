@@ -252,23 +252,24 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	 */
 	size_t maxlen = ((size_t) - 1 >> 1) / sizeof (sop) * 2 / 3;
 	if (len >= maxlen) {
-		free ((char *)g);
+		free (g);
 		return R_REGEX_ESPACE;
 	}
 	preg->re_flags = cflags;
 	p->ssize = len / (size_t)2 * (size_t)3 + (size_t)1;	/* ugh */
 	if (p->ssize < len) {
+		free (g);
 		return R_REGEX_ESPACE;
 	}
 
 	p->strip = (sop *)calloc (p->ssize, sizeof (sop));
 	if (!p->strip) {
-		free ((char *)g);
+		free (g);
 		return R_REGEX_ESPACE;
 	}
 	p->slen = 0;
 	if (!p->strip) {
-		free ((char *)g);
+		free (g);
 		return R_REGEX_ESPACE;
 	}
 
