@@ -2711,18 +2711,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (!ds->opstr || !strstr (ds->opstr, addrstr)) {
 				snprintf (addrstr, sizeof (addrstr), "0x%08" PFMT64x, refaddr);
 				if (!ds->opstr || !strstr (ds->opstr, addrstr)) {
-					bool print_refaddr = true;
-					if (refaddr < 10) {
-						snprintf (addrstr, sizeof (addrstr), "%" PFMT64u, refaddr);
-						if (ds->opstr && strstr (ds->opstr, addrstr)) {
-							print_refaddr = false;
-						}
-					}
-					if (print_refaddr) {
-						ALIGN;
-						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, refaddr, nl);
-						refaddr_printed = true;
-					}
+					ALIGN;
+					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, refaddr, nl);
+					refaddr_printed = true;
 				}
 			}
 		}
