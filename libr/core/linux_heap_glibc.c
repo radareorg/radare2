@@ -869,6 +869,11 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+
+		PRINT_GA ("[size: ");
+		PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size);
+		PRINT_GA ("]");
+
 		if (is_free) {
 			PRINT_GA ("[free]");
 		} else  {
@@ -954,6 +959,10 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+
+		PRINT_GA ("[size: ");
+		PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size);
+		PRINT_GA ("]");
 
 		if (is_free) {
 			PRINT_GA ("[free]");

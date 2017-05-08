@@ -21,7 +21,7 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 
 #define NBINS 128
 #define NSMALLBINS 64
-#define NFASTBINS 10
+#define NFASTBINS 8
 #define BINMAPSHIFT 5
 #define SZ core->dbg->bits
 #define BITSPERMAP (1U << BINMAPSHIFT)
