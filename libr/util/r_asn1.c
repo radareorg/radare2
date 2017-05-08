@@ -317,14 +317,10 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
 	length8 = buffer[1];
-	if (length8 > length) {
-		//this length8 is user controlled and can produce oob
-		goto out_error;
-	}
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
-		if (length8) {
+		if (length8 && length8 < length - 2) {
 			ut8 i8;
 			// can overflow.
 			for (i8 = 0; i8 < length8; ++i8) {
