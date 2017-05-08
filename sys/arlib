@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Wrapper around MS's lib.exe to make it act more like Unix ar
 
@@ -14,7 +14,7 @@ esac
 # prog specifies the program that should be run cl.exe
 prog=lib
 # opts specifies the command line to pass to the MSVC program
-libopt=("${slash}nologo")
+libopt="${slash}nologo"
 verbose=1
 
 processargs()
@@ -22,12 +22,12 @@ processargs()
     # Ignore first argument (q, rfs...)
     shift
     # Add out library
-    libopt+=(${slash}out:${1})
+    libopt="${libopt},${slash}out:${1}"
     shift
     # Modify path for files
     for arg in $@; do
-        path=$(cygpath -w ${arg})
-        libopt+=(${path})
+        path=$(cygpath -w "${arg}")
+        libopt="${libopt},${path}"
     done
 
 }
@@ -36,23 +36,24 @@ IFS=""
 processargs $@
 
 # Default LIB environment variable is overwritten by some makefiles ...
-# So we just add it with LIBPATH
+# So we just add it with LIBPATH (LIB is backed up in VC_LIB)
 IFS=";"
 for p in ${VC_LIB}; do
-  libopt+=(${slash}LIBPATH:${p})
+  libopt="${libopt},${slash}LIBPATH:${p}"
 done
 
-if test x$V = x1 ; then
+if test "x$V" = "x1" ; then
     verbose=1
 fi
 
+IFS=","
 if test -n "$verbose" ; then
-  echo -n "$prog"
-  for opt in "${libopt[@]}" ; do
-    echo -n " \"$opt\""
+  printf "%s" "$prog"
+  for opt in ${libopt} ; do
+    printf "%s" " \"$opt\""
   done
   echo ""
 fi
 
-exec $prog ${libopt[@]}
+exec ${prog} ${libopt}
 
