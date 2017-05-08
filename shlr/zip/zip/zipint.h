@@ -47,7 +47,7 @@
 #endif
 
 #ifdef _MSC_VER
-typedef unsigned int ssize_t;
+typedef long ssize_t;
 #endif
 
 #ifndef _ZIP_COMPILING_DEPRECATED

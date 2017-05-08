@@ -113,7 +113,7 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #ifndef _MSC_VER
-#define HAVE_UNISTD_H 1
+#define HAVE_UNISTD_H 0
 #endif
 
 /* Define to 1 if you have the `_close' function. */

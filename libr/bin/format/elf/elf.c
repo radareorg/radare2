@@ -731,11 +731,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		char *vstart = ((char*)defs) + i;
 		char key[32] = {0};
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
-#ifdef _MSC_VER
 		Elf_(Verdaux) aux = {0};
-#else
-		Elf_(Verdaux) aux = {};
-#endif
 		int j = 0;
 		int isum = 0;
 
@@ -867,11 +863,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
 		int j, isum;
 		ut8 *vstart = need + i;
-#ifdef _MSC_VER
 		Elf_(Verneed) vvn = {0};
-#else
-		Elf_(Verneed) vvn = {};
-#endif
 		if (vstart + sizeof (Elf_(Verneed)) > end) {
 			goto beach;
 		}
@@ -903,11 +895,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
 			int k;
 			Elf_(Vernaux) * aux = NULL;
-#ifdef _MSC_VER
 			Elf_(Vernaux) vaux = {0};
-#else
-			Elf_(Vernaux) vaux = {};
-#endif
 			sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
 				goto beach;

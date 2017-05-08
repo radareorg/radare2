@@ -17,9 +17,7 @@
 
 #ifndef KD_H
 #define KD_H
-#ifdef _MSC_VER
 #include <r_types_base.h>
-#endif
 
 enum {
 	KD_E_OK			=  0,

@@ -1685,8 +1685,8 @@ static int esil_poke_some(RAnalEsil *esil) {
 	int regsize;
 	ut64 ptr, regs = 0, tmp;
 	char *count, *dst = r_anal_esil_pop (esil);
+	const int bytes = 64;
 	if (dst && r_anal_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
-#define bytes regsize / 8
 		// reg
 		isregornum (esil, dst, &ptr);
 		count = r_anal_esil_pop (esil);
@@ -1715,7 +1715,6 @@ static int esil_poke_some(RAnalEsil *esil) {
 					ptr += bytes;
 					free (foo);
 				}
-
 			}
 			free (dst);
 			free (count);
@@ -1724,7 +1723,6 @@ static int esil_poke_some(RAnalEsil *esil) {
 		free (dst);
 	}
 	return 0;
-#undef bytes
 }
 
 /* PEEK */

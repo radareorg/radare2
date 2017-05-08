@@ -32,6 +32,8 @@
 
 #define INSNLEN 4
 
+#define SIZE 128
+
 /* Cached mapping symbol state.  */
 enum map_type
 {
@@ -2049,8 +2051,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
   int i, pcrel_p, num_printed;
   for (i = 0, num_printed = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
-#define size 128
-      char str[size];
+      char str[SIZE];
       /* We regard the opcode operand info more, however we also look into
 	 the inst->operands to support the disassembling of the optional
 	 operand.
@@ -2061,7 +2062,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
 	break;
 
       /* Generate the operand string in STR.  */
-      aarch64_print_operand (str, size, pc, opcode, opnds, i, &pcrel_p,
+      aarch64_print_operand (str, SIZE, pc, opcode, opnds, i, &pcrel_p,
 			     &info->target);
 
       /* Print the delimiter (taking account of omitted operand(s)).  */
@@ -2075,7 +2076,6 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
       else
 	(*info->fprintf_func) (info->stream, "%s", str);
     }
-#undef size
 }
 
 /* Print the instruction mnemonic name.  */
