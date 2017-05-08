@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+#define ASN1_JSON_NULL  "null"
+#define ASN1_JSON_EMPTY "{}"
+
 #define ASN1_OID_LEN  64
 
 /* Masks */
