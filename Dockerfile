@@ -73,6 +73,8 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   cd radare2 && \
   ./sys/install.sh && \
   make install && \
+  r2pm init && \
+  r2pm update && \
   apt-get remove --purge -y \
   curl \
   gcc \
