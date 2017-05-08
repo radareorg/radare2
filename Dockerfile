@@ -76,7 +76,6 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   apt-get remove --purge -y \
   curl \
   gcc \
-  git \
   bison \
   pkg-config \
   make \
