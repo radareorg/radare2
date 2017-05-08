@@ -2504,7 +2504,7 @@ static void ds_align_comment(RDisasmState *ds) {
 					r_cons_memset (' ', len);
 				}
 			}
-			r_cons_print(" ");
+			r_cons_print (" ");
 		}
 	}
 }
