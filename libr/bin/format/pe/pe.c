@@ -2142,6 +2142,7 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 		return;
 	}
 	bin->cms = r_pkcs7_parse_cms (data, size);
+	bin->is_signed = bin->cms != NULL;
 	R_FREE (data);
 }
 
