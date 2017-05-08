@@ -12,15 +12,6 @@ extern "C" {
 #define R_JSON_EMPTY_OBJ  "{}"
 #define R_JSON_EMPTY_ARR  "[]"
 
-enum {
-	R_JS_NULL = 0,
-	R_JS_NUMBERS,
-	R_JS_BOOLEAN,
-	R_JS_STRING,
-	R_JS_ARRAY,
-	R_JS_OBJECT,
-} RJSVarType;
-
 typedef struct r_json_var RJSVar;
 
 typedef struct r_json_string {
@@ -41,7 +32,7 @@ typedef struct r_json_object {
 
 struct r_json_var {
 	int type;
-
+	ut32 ref;
 	union {
 		int number;
 		bool boolean;
@@ -65,7 +56,6 @@ RJSVar* r_json_object_get(RJSVar* object, const char* name);
 RJSVar* r_json_array_get(RJSVar* array, int index);
 
 char* r_json_stringify(RJSVar* var, bool expanded);
-
 
 
 #ifdef __cplusplus

@@ -4,15 +4,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "r_asn1_internal.h"
+enum {
+	R_JS_NULL = 0,
+	R_JS_NUMBERS,
+	R_JS_BOOLEAN,
+	R_JS_STRING,
+	R_JS_ARRAY,
+	R_JS_OBJECT,
+} RJSType;
 
 void r_json_var_free (RJSVar* var) {
-	int i;
-	if (!var) {
+	ut32 i;
+	if (!var || var->ref > 1) {
+		if (var)
+			var->ref--;
 		return;
 	}
-
+	var->ref--;
 	switch (var->type) {
 	case R_JS_STRING:
 		free ((char*) var->string.s);
@@ -39,6 +47,9 @@ void r_json_var_free (RJSVar* var) {
 
 RJSVar* r_json_object_new () {
 	RJSVar* var = R_NEW0 (RJSVar);
+	if (!var) {
+		return NULL;
+	}
 	var->type = R_JS_OBJECT;
 	return var;
 }
@@ -48,9 +59,12 @@ RJSVar* r_json_array_new (int len) {
 		return NULL;
 	}
 	RJSVar* var = R_NEW0 (RJSVar);
+	if (!var) {
+		return NULL;
+	}
 	if (len) {
 		var->array.a = R_NEWS0 (RJSVar*, len);
-		var->array.l = len;
+		var->array.l = var->array.a ? len : 0;
 	} else {
 		var->array.a = NULL;
 		var->array.l = 0;
@@ -60,7 +74,13 @@ RJSVar* r_json_array_new (int len) {
 }
 
 RJSVar* r_json_string_new (const char* name) {
+	if (!name) {
+		return NULL;
+	}
 	RJSVar* var = R_NEW0 (RJSVar);
+	if (!var) {
+		return NULL;
+	}
 	var->type = R_JS_STRING;
 	var->string.s = strdup (name);
 	var->string.l = strlen (name) + 1;
@@ -69,6 +89,9 @@ RJSVar* r_json_string_new (const char* name) {
 
 RJSVar* r_json_number_new (int value) {
 	RJSVar* var = R_NEW0 (RJSVar);
+	if (!var) {
+		return NULL;
+	}
 	var->type = R_JS_NUMBERS;
 	var->number = value;
 	return var;
@@ -76,6 +99,9 @@ RJSVar* r_json_number_new (int value) {
 
 RJSVar* r_json_boolean_new (bool value) {
 	RJSVar* var = R_NEW0 (RJSVar);
+	if (!var) {
+		return NULL;
+	}
 	var->type = R_JS_BOOLEAN;
 	var->boolean = value;
 	return var;
@@ -83,6 +109,9 @@ RJSVar* r_json_boolean_new (bool value) {
 
 RJSVar* r_json_null_new () {
 	RJSVar* var = R_NEW0 (RJSVar);
+	if (!var) {
+		return NULL;
+	}
 	var->type = R_JS_NULL;
 	return var;
 }
@@ -94,6 +123,7 @@ void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	if (!object || !name || !value) {
 		return;
 	}
+	value->ref++;
 	len = object->object.l + 1;
 	if (len <= 0) {
 		return;
@@ -119,6 +149,7 @@ void r_json_array_add (RJSVar* array, RJSVar* value) {
 	if (!array || !value) {
 		return;
 	}
+	value->ref++;
 	len = array->array.l + 1;
 	if (len <= 0) {
 		return;
@@ -152,38 +183,49 @@ RJSVar* r_json_array_get (RJSVar* array, int index) {
 	return array->array.a[index];
 }
 
+static char* _r_json_null_str (bool expanded) {
+	char *c = NULL;
+	ut32 len = 0;
+	if (!expanded)
+		return NULL;
+	len = sizeof (R_JSON_NULL);
+	c = (char*) malloc (len);
+	memcpy (c, R_JSON_NULL, len);
+	return c;
+}
+
 char* r_json_var_string (RJSVar* var, bool expanded) {
 	char *c = NULL;
 	ut32 i, len = 0;
 	if (!var) {
-		if (expanded) {
-			len = sizeof (R_JSON_NULL);
-			c = (char*) malloc (len);
-			memcpy (c, R_JSON_NULL, len);
-		}
-		return c;
+		return _r_json_null_str (expanded);
 	}
 	switch (var->type) {
 	case R_JS_NULL:
-		if (expanded) {
-			len = sizeof (R_JSON_NULL);
-			c = (char*) malloc (len);
-			memcpy (c, R_JSON_NULL, len);
-		}
+		c = _r_json_null_str (expanded);
 		break;
 	case R_JS_NUMBERS:
 		len = snprintf (NULL, 0, "%d", var->number) + 1;
 		c = (char*) malloc (len);
+		if (!c) {
+			break;
+		}
 		snprintf (c, len, "%d", var->number);
 		break;
 	case R_JS_BOOLEAN:
 		len = var->boolean ? sizeof (R_JSON_TRUE) : sizeof (R_JSON_FALSE);
 		c = (char*) malloc (len);
+		if (!c) {
+			break;
+		}
 		snprintf (c, len, "%s", var->boolean ? R_JSON_TRUE : R_JSON_FALSE);
 		break;
 	case R_JS_STRING:
 		len = var->string.l + 2;
 		c = (char*) malloc (len);
+		if (!c) {
+			break;
+		}
 		memcpy (c + 1, var->string.s, var->string.l);
 		c[0] = '"';
 		c[len - 2] = '"';
@@ -209,14 +251,18 @@ char* r_json_var_string (RJSVar* var, bool expanded) {
 			e = p + len;
 			for (i = 0; i < var->array.l; i++) {
 				if (!t[i]) continue;
-				p += snprintf (p, e - p, "%s,", t[i]);
+				if (c) {
+					p += snprintf (p, e - p, "%s,", t[i]);
+				}
 				free (t[i]);
 			}
-			c[0] = '[';
-			if (p == c + 1)
-				p++;
-			c[len - (e - p)] = ']';
-			c[len - 1] = 0;
+			if (c) {
+				c[0] = '[';
+				if (p == c + 1)
+					p++;
+				c[len - (e - p)] = ']';
+				c[len - 1] = 0;
+			}
 			free (t);
 		} else {
 			c = (char*) malloc (sizeof (R_JSON_EMPTY_ARR));
@@ -244,20 +290,27 @@ char* r_json_var_string (RJSVar* var, bool expanded) {
 			e = p + len;
 			for (i = 0; i < var->object.l; i++) {
 				if (!t[i]) continue;
-				p += snprintf (p, e - p, "\"%s\":%s,", var->object.n[i], t[i]);
+				if (c) {
+					p += snprintf (p, e - p, "\"%s\":%s,", var->object.n[i], t[i]);
+				}
 				free (t[i]);
 			}
-			c[0] = '{';
-			if (p == c + 1)
-				p++;
-			c[len - (e - p)] = '}';
-			c[len - 1] = 0;
+			if (c) {
+				c[0] = '{';
+				if (p == c + 1)
+					p++;
+				c[len - (e - p)] = '}';
+				c[len - 1] = 0;
+			}
 			free (t);
 		} else {
 			c = (char*) malloc (sizeof (R_JSON_EMPTY_OBJ));
 			memcpy (c, R_JSON_EMPTY_OBJ, sizeof (R_JSON_EMPTY_OBJ));
 		}
 		break;
+	}
+	if (!c) {
+		c = _r_json_null_str (expanded);
 	}
 	return c;
 }
