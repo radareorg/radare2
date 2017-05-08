@@ -34,8 +34,8 @@ static const char* r_vline_u[] = {
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
 	"↑", // LINE_UP
- 	//"┌", // LUP_CORNER
-  	"┘", // LUP_CORNER
+	//"┌", // LUP_CORNER
+	"┘", // LUP_CORNER
 	"└", // RDWN_CORNER
 	"┌", // RUP_CORNER
 	"┐", // LDWN_CORNER
@@ -203,6 +203,7 @@ typedef struct r_disam_options_t {
 	int _tabsoff;
 	bool dwarfFile;
 	bool dwarfAbspath;
+	bool showpayloads;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -243,7 +244,7 @@ static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
 static void ds_print_dwarf(RDisasmState *ds);
-static void ds_print_asmop_payload(RDisasmState *ds);
+static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 
@@ -339,7 +340,7 @@ static void ds_comment_lineup(RDisasmState *ds) {
 static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
-   	if (ds->show_comments && ds->show_comment_right && align) {
+	if (ds->show_comments && ds->show_comment_right && align) {
 		ds_align_comment (ds);
 	}
 	r_cons_printf_list (format, ap);
@@ -499,6 +500,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->esil_old_pc = UT64_MAX;
 	ds->esil_regstate = NULL;
 	ds->esil_likely = false;
+
+	ds->showpayloads = r_config_get_i (ds->core->config, "asm.payloads");
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
@@ -941,7 +944,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			ds_pre_xrefs (ds);
 			//those extra space to align
 			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
-			  	COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
+				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
 				refi->addr, name, COLOR_RESET (ds));
 			R_FREE (name);
 		}
@@ -1612,7 +1615,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	if (ds->pseudo) {
 		r_parse_parse (core->parser, ds->opstr
-		  		? ds->opstr
+				? ds->opstr
 				: ds->asmop.buf_asm,
 				ds->str);
 		free (ds->opstr);
@@ -2212,7 +2215,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			}
 			pad[j] = '\0';
 		} else {
-		    	pad[0] = 0;
+			pad[0] = 0;
 		}
 	} else {
 		if (ds->show_flag_in_bytes) {
@@ -2550,7 +2553,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 	}
 }
 
-static void ds_print_asmop_payload(RDisasmState *ds) {
+static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->show_varxs) {
 		// XXX asume analop is filled
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
@@ -2572,8 +2575,15 @@ static void ds_print_asmop_payload(RDisasmState *ds) {
 			break;
 		}
 	}
-	if (ds->asmop.payload != 0)
+	if (ds->asmop.payload != 0) {
 		r_cons_printf ("\n; .. payload of %d bytes", ds->asmop.payload);
+		if (ds->showpayloads) {
+			int x;
+			for (x = 0; x < ds->asmop.payload; ++x) {
+				r_cons_printf ("\n        0x%x", buf[ds->oplen + x]);
+			}
+		}
+	}
 }
 
 /* convert numeric value in opcode to ascii char or number */
@@ -2639,7 +2649,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					flag = f->name;
 				} else if (ds->show_slow) {
 					(void)r_io_read_at (ds->core->io, ds->analop.ptr,
-							    (ut8 *)str + 1, sizeof (str) - 1);
+								(ut8 *)str + 1, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
 					if (str[1] && r_str_is_printable_incl_newlines (str + 1)) {
 						str[0] = '"';
@@ -3066,7 +3076,7 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 	//r_cons_newline ();
 	r_cons_printf ("%s", type);
 	r_core_cmdf (core, "pf %s%s %s @ 0x%08" PFMT64x,
-		     (on_stack == 1) ? "*" : "", fmt, name, addr);
+		(on_stack == 1) ? "*" : "", fmt, name, addr);
 	r_cons_chop ();
 	r_cons_chop ();
 }
@@ -3138,7 +3148,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;
 	}
- 	if (!ds->show_emu) {
+	if (!ds->show_emu) {
 		goto beach;
 	}
 	if (!can_emulate_metadata (core, at)) {
@@ -3686,7 +3696,7 @@ toro:
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
-			ds_print_asmop_payload (ds);
+			ds_print_asmop_payload (ds, buf + idx);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
@@ -3760,6 +3770,7 @@ toro:
 		if (inc < 1) {
 			inc = 1;
 		}
+		inc += ds->asmop.payload;
 	}
 	R_FREE (nbuf);
 	r_cons_break_pop ();
@@ -4226,8 +4237,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		r_cons_printf ("}");
-		i += oplen; // bytes
-		k += oplen; // delta from addr
+		i += oplen + asmop.payload; // bytes
+		k += oplen + asmop.payload; // delta from addr
 		j++; // instructions
 		line++;
 
@@ -4493,7 +4504,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_color_reset (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
-			ds_print_asmop_payload (ds);
+			ds_print_asmop_payload (ds, buf + idx);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
