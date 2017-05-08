@@ -82,7 +82,7 @@ static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X);
 	} else {
 #if CAPSTONE_HAS_TMS320C64X
-		if (a->cpu && strcasecmp (a->cpu, "c64x")) {
+		if (a->cpu && !strcasecmp (a->cpu, "c64x")) {
 			return tms320c64x_disassemble (a, op, buf, len);
 		}
 #endif
