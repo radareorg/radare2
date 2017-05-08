@@ -436,13 +436,16 @@ RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	buf = (ut8*) malloc (length);
+	buf = (ut8*) calloc (sizeof (*buf), length);
 	if (!buf) {
 		return NULL;
 	}
-	memcpy (buf, buffer, length);
-
 	bin = R_NEW0 (RASN1Binary);
+	if (!bin) {
+		free (buf);
+		return NULL;
+	}
+	memcpy (buf, buffer, length);
 	bin->binary = buf;
 	bin->length = length;
 	return bin;
