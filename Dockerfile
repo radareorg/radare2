@@ -73,13 +73,9 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   cd radare2 && \
   ./sys/install.sh && \
   make install && \
+  apt-get install -y xz-utils && \
   apt-get remove --purge -y \
-  curl \
-  gcc \
-  git \
   bison \
-  pkg-config \
-  make \
   python-pip \
   glib-2.0 && \
   apt-get autoremove --purge -y && \
@@ -94,6 +90,11 @@ RUN useradd -m r2 && \
 USER r2
 WORKDIR /home/r2
 ENV HOME /home/r2
+
+# Setup r2pm
+RUN r2pm init && \
+  r2pm update && \
+  chown -R r2:r2 /home/r2/.config
 
 # Base command for container
 CMD ["/bin/bash"]
