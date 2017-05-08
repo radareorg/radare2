@@ -57,11 +57,10 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		}
 		r_strbuf_append (buf, "}");
 	}
-	r_strbuf_append (buf, "]");
-	r_strbuf_append (buf, "}");
+	r_strbuf_append (buf, "]}");
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -192,6 +191,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 static int archinfo(RAnal *anal, int q) {
 	return 4; /* :D */
 }
+#endif
+/*
 
 RAnalPlugin r_anal_plugin_tms320c64x = {
 	.name = "tms320c64x",
@@ -220,3 +221,4 @@ RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
+*/
