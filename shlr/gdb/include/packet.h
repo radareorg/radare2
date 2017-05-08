@@ -3,9 +3,7 @@
 #define PACKET_H
 
 #include <stdint.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include "libgdbr.h"

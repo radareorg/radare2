@@ -2,13 +2,6 @@
 
 #include "r_print.h"
 #include "r_util.h"
-#ifndef _MSC_VER
-#include <unistd.h>
-#include <sys/time.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#endif
 
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
 	ut8 _time[2] = { buf[0], buf[1] };

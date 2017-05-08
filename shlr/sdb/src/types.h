@@ -41,11 +41,7 @@
 #define DIRSEP '/'
 #endif
 
-#ifndef _MSC_VER
 #include <unistd.h>
-#else
-#include <io.h>
-#endif
 
 #include <inttypes.h>
 #define ULLFMT "ll"

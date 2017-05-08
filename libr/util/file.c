@@ -13,10 +13,8 @@
 #if __APPLE__
 #include <copyfile.h>
 #endif
-#ifndef _MSC_VER
 #include <sys/time.h>
 #include <unistd.h>
-#endif
 
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;

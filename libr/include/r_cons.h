@@ -25,9 +25,7 @@ extern "C" {
 #include <windows.h>
 #include <wincon.h>
 #endif
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 
 /* constants */
 #define CONS_MAX_USER 102400

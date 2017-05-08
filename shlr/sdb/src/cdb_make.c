@@ -2,11 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#else
-#include <io.h>
-#endif
 #include "sdb.h"
 #include "cdb.h"
 #include "cdb_make.h"

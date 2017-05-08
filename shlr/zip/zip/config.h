@@ -58,7 +58,9 @@
 #define HAVE_SNPRINTF 1
 
 /* Define to 1 if the system has the type `ssize_t'. */
+#ifndef _MSC_VER
 #define HAVE_SSIZE_T 1
+#endif
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
@@ -112,8 +114,10 @@
 #define HAVE_UINT8_T 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#ifndef _MSC_VER
+#ifdef _MSC_VER
 #define HAVE_UNISTD_H 0
+#else
+#define HAVE_UNISTD_H 1
 #endif
 
 /* Define to 1 if you have the `_close' function. */

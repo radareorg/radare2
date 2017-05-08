@@ -5,9 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include <r_types.h>
 #include <r_util.h>
 #include <r_bin.h>

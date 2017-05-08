@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(MINGW32) && !defined(_MSC_VER)
+#if !defined(MINGW32)
 #include <unistd.h>
 #endif
 
