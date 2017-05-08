@@ -73,8 +73,6 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   cd radare2 && \
   ./sys/install.sh && \
   make install && \
-  r2pm init && \
-  r2pm update && \
   apt-get remove --purge -y \
   curl \
   gcc \
@@ -90,6 +88,11 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
 RUN useradd -m r2 && \
   adduser r2 sudo && \
   echo "r2:r2" | chpasswd
+
+# Setup r2pm
+RUN r2pm init && \
+  r2pm update && \
+  chown -R r2:r2 /home/r2/.config
 
 # Initilise base user
 USER r2
