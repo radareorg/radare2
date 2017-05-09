@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2016 pancake */
+/* radare - LGPL - Copyright 2011-2017 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_lang.h"
 
-static int lang_vala_file(RLang *lang, const char *file) {
+static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	void *lib;
 	char *p, name[512], buf[512];
 	char *vapidir, *srcdir, *libname;
@@ -35,13 +35,16 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	vapidir = r_sys_getenv ("VAPIDIR");
+	char *tail = silent?  " > /dev/null 2>&1": "";
 	if (vapidir) {
 		if (*vapidir) {
-			snprintf (buf, sizeof (buf)-1, "valac -d %s --vapidir=%s --pkg r_core -C %s",
-				srcdir, vapidir, name);
+			snprintf (buf, sizeof (buf)-1, "valac -d %s --vapidir=%s --pkg r_core -C %s %s",
+				srcdir, vapidir, name, tail);
 		}
 		free (vapidir);
-	} else snprintf (buf, sizeof(buf)-1, "valac -d %s --pkg r_core -C %s", srcdir, name);
+	} else {
+		snprintf (buf, sizeof (buf) - 1, "valac -d %s --pkg r_core -C %s %s", srcdir, name, tail);
+	}
 	free (srcdir);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
@@ -60,7 +63,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	snprintf (buf, sizeof (buf), "./lib%s."R_LIB_EXT, libname);
 	free (libname);
 	lib = r_lib_dl_open (buf);
-	if (lib!= NULL) {
+	if (lib != NULL) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) fcn (lang->user);
@@ -73,22 +76,32 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	return 0;
 }
 
+static int vala_run_file(RLang *lang, const char *file) {
+	return lang_vala_file(lang, file, false);
+}
+
 static int lang_vala_init(void *user) {
 	// TODO: check if "valac" is found in path
 	return true;
 }
 
 static int lang_vala_run(RLang *lang, const char *code, int len) {
+	bool silent = !strncmp (code, "-s", 2);
 	FILE *fd = fopen (".tmp.vala", "w");
 	if (fd) {
+		if (silent) {
+			code += 2;
+		}
 		fputs ("using Radare;\n\npublic static void entry(RCore core) {\n", fd);
 		fputs (code, fd);
 		fputs (";\n}\n", fd);
 		fclose (fd);
-		lang_vala_file (lang, ".tmp.vala");
+		lang_vala_file (lang, ".tmp.vala", silent);
 		r_file_rm (".tmp.vala");
-	} else eprintf ("Cannot open .tmp.vala\n");
-	return true;
+		return true;
+	}
+	eprintf ("Cannot open .tmp.vala\n");
+	return false;
 }
 
 static struct r_lang_plugin_t r_lang_plugin_vala = {
@@ -98,5 +111,5 @@ static struct r_lang_plugin_t r_lang_plugin_vala = {
 	.desc = "Vala language extension",
 	.run = lang_vala_run,
 	.init = (void*)lang_vala_init,
-	.run_file = (void*)lang_vala_file,
+	.run_file = (void*)vala_run_file,
 };
