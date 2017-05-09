@@ -1,0 +1,8 @@
+option('without-debugger', type: 'boolean', value: false)
+option('without-gpl', type: 'boolean', value: false)
+
+option('with-syszip', type: 'boolean', value: false)
+option('with-sysmagic', type: 'boolean', value: false)
+option('with-syscapstone', type: 'boolean', value: false)
+
+option('plugins', type: 'string', value: 'plugins.meson.cfg')
