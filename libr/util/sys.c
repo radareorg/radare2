@@ -42,13 +42,20 @@ extern char **environ;
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__ && (defined(_MSC_VER) || !defined(__CYGWIN__))
+#if __WINDOWS__ && !defined(__CYGWIN__)
 # include <io.h>
 # include <winbase.h>
+#ifdef _MSC_VER
+#include <psapi.h>
+#include <io.h>
+#include <process.h>  // to allow getpid under windows msvc compilation
+#include <direct.h>  // to allow getcwd under windows msvc compilation
+#else
 typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
 typedef DWORD WINAPI (*GetProcessImageFileNameA_t) (HANDLE, LPTSTR, DWORD);
 static GetProcessImageFileNameA_t GetProcessImageFileNameA;
 static QueryFullProcessImageNameA_t QueryFullProcessImageNameA;
+#endif
 #endif
 
 R_LIB_VERSION(r_util);
@@ -108,7 +115,11 @@ R_API int r_sys_truncate(const char *file, int sz) {
 	if (fd != -1) {
 		return false;
 	}
+#ifdef _MSC_VER
+	_chsize (fd, sz);
+#else
 	ftruncate (fd, sz);
+#endif
 	close (fd);
 	return true;
 #else
@@ -265,7 +276,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	SetEnvironmentVariable (key, (LPSTR)value);
+	SetEnvironmentVariableA (key, (LPSTR)value);
 	return 0; // TODO. get ret
 #else
 #warning r_sys_setenv : unimplemented for this platform
@@ -346,7 +357,7 @@ R_API char *r_sys_getenv(const char *key) {
 		return NULL;
 	}
 	envbuf[0] = 0;
-	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
+	GetEnvironmentVariableA (key, (LPSTR)&envbuf, sizeof (envbuf));
 	// TODO: handle return value of GEV
 	return *envbuf? strdup (envbuf): NULL;
 #else
@@ -621,7 +632,7 @@ R_API bool r_sys_mkdir(const char *dir) {
 		return false;
 	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	return CreateDirectory (dir, NULL) != 0;
+	return CreateDirectoryA (dir, NULL) != 0;
 #else
 	return mkdir (dir, 0755) != -1;
 #endif
@@ -810,11 +821,12 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
+	HANDLE kernel32 = LoadLibraryA ("Kernel32.dll");
 	if (!kernel32) {
 		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
+#ifndef _MSC_VER
 	if (!GetProcessImageFileNameA) {
 		if (!QueryFullProcessImageNameA) {
 			QueryFullProcessImageNameA = (QueryFullProcessImageNameA_t) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
@@ -833,8 +845,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 	}
+#endif
 	HANDLE handle = NULL;
-	TCHAR filename[MAX_PATH];
+	CHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
 	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (handle != NULL) {

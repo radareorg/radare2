@@ -16,7 +16,7 @@ R_LIB_VERSION(r_lib);
   #define DLCLOSE(x) dlclose(x)
 #elif __WINDOWS__
 #include <windows.h>
-  #define DLOPEN(x)  LoadLibrary(x)
+  #define DLOPEN(x)  LoadLibraryA(x)
   #define DLSYM(x,y) GetProcAddress(x,y)
   #define DLCLOSE(x) 0//(x)
 //CloseLibrary(x)
@@ -167,7 +167,7 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 	return NULL;
 }
 
-R_API R_API int r_lib_close(RLib *lib, const char *file) {
+R_API int r_lib_close(RLib *lib, const char *file) {
 	RLibPlugin *p;
 	RListIter *iter, *iter_tmp;
 	r_list_foreach_safe (lib->plugins, iter, iter_tmp, p) {

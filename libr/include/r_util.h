@@ -20,6 +20,10 @@
 #if HAVE_LIB_SSL
 #include <openssl/bn.h>
 #endif
+#ifdef _MSC_VER
+#include <windows.h>
+int gettimeofday (struct timeval* p, void* tz);
+#endif
 #include <sys/time.h>
 #include "r_util/r_big.h"
 #include "r_util/r_base64.h"

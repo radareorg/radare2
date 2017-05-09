@@ -31,7 +31,7 @@
 #define __MINGW__ 1
 #endif
 
-#if __WIN32__ || __MINGW__ || __WINDOWS__
+#if __WIN32__ || __MINGW__ || __WINDOWS__ || _MSC_VER
 #define __SDB_WINDOWS__ 1
 #include <windows.h>
 #define DIRSEP '\\'
@@ -40,8 +40,6 @@
 #define __SDB_WINDOWS__ 0
 #define DIRSEP '/'
 #endif
-
-#include <unistd.h>
 
 #include <inttypes.h>
 #define ULLFMT "ll"
@@ -55,7 +53,7 @@
 #define USE_MMAN HAVE_MMAN
 #endif
 
-
+#include <unistd.h>
 #ifndef UNUSED
 #  define UNUSED
 #  ifdef __GNUC__
