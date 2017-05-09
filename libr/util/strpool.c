@@ -122,12 +122,16 @@ R_API char *r_strpool_next(RStrpool *p, int index) {
 
 R_API char *r_strpool_slice (RStrpool *p, int index) {
 	int idx, len;
-	char *o, *x = r_strpool_get_i (p, index+1);
-	if (!x) return NULL;
-	idx = (size_t)(x-p->str);
+	char *o, *x = r_strpool_get_i (p, index + 1);
+	if (!x || !*x) {
+		return NULL;
+	}
+	idx = (size_t)(x - p->str);
 	len = p->len - idx;
-	o = malloc (len+128);
-	if (!o) return NULL;
+	o = malloc (len + 128);
+	if (!o) {
+		return NULL;
+	}
 	memcpy (o, x, len);
 	free (p->str);
 	p->str = o;

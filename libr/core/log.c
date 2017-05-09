@@ -66,16 +66,27 @@ R_API void r_core_log_add(RCore *core, const char *msg) {
 R_API void r_core_log_del(RCore *core, int n) {
 	int idx;
 	if (n > 0) {
-		if (n > core->log->last) {
-			n = core->log->last;
+		if (n + 1 >= core->log->last) {
+			core->log->first = core->log->last;
+			r_strpool_empty (core->log->sp);
+			return;
+		}
+		if (n < core->log->first) {
+			return;
 		}
 		idx = n - core->log->first;
 		if (idx < 0) {
 			return;
 		}
 		core->log->first += idx + 1;
-		/* s= */ r_strpool_get_i (core->log->sp, idx);
-		r_strpool_slice (core->log->sp, idx);
+		char *msg = r_strpool_get_i (core->log->sp, idx);
+		// if (idx >= core->log->last) {
+		if (!msg || !*msg) {
+			core->log->first = core->log->last;
+			r_strpool_empty (core->log->sp);
+		} else {
+			r_strpool_slice (core->log->sp, idx);
+		}
 	} else {
 		core->log->first = core->log->last;
 		r_strpool_empty (core->log->sp);
