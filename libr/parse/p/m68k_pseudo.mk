@@ -6,12 +6,12 @@ STATIC_OBJ+=${OBJ_M68KPSEUDO}
 ifeq ($(CC),cccl)
 LIBDEPS=-L../../util -llibr_util
 LIBDEPS+=-L../../flag -llibr_flag
-LIBDEPS+=$(STOP)/zip/librz.lib
 else
 LIBDEPS=-L../../util -lr_util
 LIBDEPS+=-L../../flag -lr_flag
-LIBDEPS+=$(STOP)/zip/librz.a
 endif
+
+include $(STOP)/zip/deps.mk
 
 ${TARGET_M68KPSEUDO}: ${OBJ_M68KPSEUDO}
 	${CC} $(call libname,parse_m68k_pseudo) ${LIBDEPS} \

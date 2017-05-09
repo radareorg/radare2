@@ -1,1 +1,1 @@
-LINK+=../../shlr/gdb/lib/libr_wind.a
+LINK+=$(STOP)/wind/libr_wind.${EXT_AR}

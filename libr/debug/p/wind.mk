@@ -14,7 +14,7 @@ LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp
 LDFLAGS+=-L$(LTOP)/io -lr_io
 
-LDFLAGS+=-L$(SHLR)/wind -lr_wind
+include $(STOP)/wind/deps.mk
 
 OBJ_WIND=debug_wind.o 
 
