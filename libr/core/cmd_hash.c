@@ -210,12 +210,25 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		return true;
 	}
 	p = strchr (input, ' ');
-	if (p) *p=0;
+	bool doEval = false;
+	if (p) {
+		*p++ = 0;
+		char *_e = strstr (p, "-e");
+		if (_e) {
+			doEval = true;
+			p = _e + 2;
+			p = r_str_chop (p);
+		}
+	}
 	// TODO: set argv here
 	if (r_lang_use (core->lang, lang)) {
 		r_lang_setup (core->lang);
 		if (p) {
-			r_lang_run_file (core->lang, p+1);
+			if (doEval) {
+				r_lang_run_string (core->lang, p);
+			} else {
+				r_lang_run_file (core->lang, p);
+			}
 		} else {
 			if (r_config_get_i (core->config, "scr.interactive")) {
 				r_lang_prompt (core->lang);
