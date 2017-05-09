@@ -651,6 +651,7 @@ typedef struct r_anal_t {
 	RList /*RAnalRange*/ *bits_ranges;
 	RListComparator columnSort;
 	int stackptr;
+	bool (*log)(struct r_anal_t *anal, const char *msg);
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);

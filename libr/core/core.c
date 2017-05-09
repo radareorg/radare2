@@ -1520,6 +1520,14 @@ static int mywrite(const ut8 *buf, int len) {
 	return r_cons_memcat ((const char *)buf, len);
 }
 
+static bool r_core_anal_log(struct r_anal_t *anal, const char *msg) {
+	RCore *core = anal->user;
+	if (core->cfglog) {
+		r_core_log_add (core, msg);
+	}
+	return true;
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -1606,7 +1614,7 @@ R_API bool r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
-
+	core->anal->log = r_core_anal_log;
 	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;

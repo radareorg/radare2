@@ -113,6 +113,11 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	} else {
 		ret = false;
 	}
+	if (a->log) {
+		char *msg = r_str_newf (":C%c %s @ 0x%"PFMT64x, type, s, addr);
+		a->log (a, msg);
+		free (msg);
+	}
 	e_str = sdb_encode ((const void*)s, -1);
 	snprintf (val, sizeof (val)-1, "%d,%d,%s", (int)size, space_idx, e_str);
 	sdb_set (DB, key, val, 0);
