@@ -234,6 +234,8 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #else
   #if defined(__GNUC__) && __GNUC__ >= 4
     #define R_API __attribute__((visibility("default")))
+  #elif defined(_MSC_VER)
+    #define R_API __declspec(dllexport)
   #else
     #define R_API
   #endif
