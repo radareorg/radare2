@@ -392,14 +392,15 @@ meson-windows:
 	cp -f libr/config.h.meson libr/config.h
 
 meson-config:
+	# TODO: this is wrong for each platform different plugins must be compiled
 	cp -f plugins.meson.cfg plugins.cfg
 	./configure-plugins
-	# TODO: this is wrong for each platform different plugins must be compiled
 	cp -f libr/config.mk libr/config.mk.meson
 	cp -f libr/config.h libr/config.h.meson
 	$(MAKE) meson
 
 meson: build
+	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
 	ninja -C build
 
 meson-install:

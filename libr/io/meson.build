@@ -23,8 +23,6 @@ files=[
 'p/io_ptrace.c',
 #'p/io_qnx.c',
 'p/io_r2k.c',
-'p/io_r2k_linux.c',
-#'p/io_r2k_windows.c',
 'p/io_r2pipe.c',
 'p/io_r2web.c',
 'p/io_rap.c',
@@ -37,6 +35,18 @@ files=[
 #'p/io_windbg.c',
 #'p/io_zip.c',
 ]
+
+if host_os == 'linux'
+files += [
+  'p/io_r2k_linux.c',
+]
+endif
+
+if host_os == 'windows'
+files += [
+  'p/io_r2k_windows.c',
+]
+endif
 
 r_io = shared_library('r_io', files,
   include_directories: include_directories(['../include']),

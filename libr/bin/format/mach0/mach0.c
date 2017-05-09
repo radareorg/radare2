@@ -544,7 +544,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	struct linkedit_data_command link = {0};
 	ut8 lit[sizeof (struct linkedit_data_command)] = {0};
 	struct blob_index_t idx = {0};
-	struct super_blob_t super = {0};
+	struct super_blob_t super = {{0}};
 
 	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
 		return false;
