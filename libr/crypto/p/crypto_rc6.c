@@ -29,7 +29,7 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 	int u = w / 8;
 	int c = keylen / u;
 	int t = 2 * r + 4;
-	ut32 L[c];
+	ut32 *L = (ut32*) calloc (c, sizeof (ut32));
 	ut32 A = 0, B = 0, k = 0, j = 0;
 	ut32 v = 3 * t; //originally v = 2 * ((c > t) ? c : t);
 
@@ -55,13 +55,14 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 	}
 	
 	state->key_size = keylen/8;
+	free (L);
 	return true;
 }
 
 static void rc6_encrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *outbuf) {
 	ut32 t, u;
 	ut32 aux;
-	ut32 data[BLOCK_SIZE/4];
+	ut32 data[BLOCK_SIZE / 4];
 	int i;
 	int off = 0;
 	for (i = 0; i < BLOCK_SIZE / 4; i++) {

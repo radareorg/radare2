@@ -8,7 +8,6 @@
 #include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <sys/param.h>
 
 #if DEBUGGER
 
@@ -1589,7 +1588,11 @@ RDebugPlugin r_debug_plugin_native = {
 	.bits = 0,
 	.arch = 0,
 	.canstep = 0,
+#ifdef _MSC_VER
+#pragma message("Unsupported architecture")
+#else
 #warning Unsupported architecture
+#endif
 #endif
 	.init = &r_debug_native_init,
 	.step = &r_debug_native_step,

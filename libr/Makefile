@@ -34,7 +34,7 @@ all:
 	${MAKE} $(LIBS6)
 	${MAKE} $(LIBS7)
 ifeq (${WITHNONPIC},1)
-	${MAKE} libr.a
+	${MAKE} libr.${EXT_AR}
 endif
 
 # looks hacky :D
@@ -42,10 +42,10 @@ endif
 
 S=$
 B=`
-libr.a:
+libr.${EXT_AR}:
 	rm -rf .libr
 	mkdir .libr
-	for FILE in */libr_*.a ../shlr/*/*.a ; do \
+	for FILE in */libr_*.${EXT_AR} ../shlr/*/*.${EXT_AR} ; do \
 		F=${B}basename $$FILE${B} ; \
 		Q=${B}dirname $$FILE${B} ; \
 		D=${B}basename $$Q${B} ; \
@@ -55,11 +55,11 @@ libr.a:
 		(cd .libr/$$D && ${AR} x $$F || true ) ; \
 	done
 	echo lets ar
-	cd .libr ; ${AR} qv libr.a `find * -iname *.o 2> /dev/null`
+	cd .libr ; ${AR} qv libr.${EXT_AR} `find * -iname *.${EXT_AR} 2> /dev/null`
 	echo lets m
-	mv .libr/libr.a libr.a
+	mv .libr/libr.${EXT_AR} libr.${EXT_AR}
 	echo ranlibin
-	${RANLIB} libr.a
+	${RANLIB} libr.${EXT_AR}
 	rm -rf .libr
 
 __AR=xcrun --sdk iphoneos ar
@@ -67,21 +67,21 @@ __RANLIB=xcrun --sdk iphoneos ranlib
 a:
 	rm -rf .libr
 	mkdir .libr
-	for FILE in */libr_*.a ; do \
+	for FILE in */libr_*.${EXT_AR} ; do \
 		mkdir -p .libr/$$FILE ; \
 		cp -f $$FILE .libr/$$FILE ; \
-		(cd .libr/$$FILE ; ${__AR} x *.a ; rm -f *.a ) ; \
+		(cd .libr/$$FILE ; ${__AR} x *.${EXT_AR} ; rm -f *.${EXT_AR} ) ; \
 		done
-	cd .libr ; ${__AR} qv libr.a `find * -iname *.o`
-	mv .libr/libr.a libr.a
-	${__RANLIB} libr.a
-	lipo -info libr.a
+	cd .libr ; ${__AR} qv libr.${EXT_AR} `find * -iname *.o`
+	mv .libr/libr.${EXT_AR} libr.${EXT_AR}
+	${__RANLIB} libr.${EXT_AR}
+	lipo -info libr.${EXT_AR}
 	rm -rf .libr
 
-gnu_libr.a: $(shell ls */libr_*.a 2>/dev/null)
-	rm -f libr.a
-	echo CREATE libr.a > libr.m
-	for FILE in */libr_*.a ; do echo ADDLIB $$FILE >> libr.m ; done
+gnu_libr.${EXT_AR}: $(shell ls */libr_*.${EXT_AR} 2>/dev/null)
+	rm -f libr.
+	echo CREATE libr.${EXT_AR} > libr.m
+	for FILE in */libr_*.${EXT_AR} ; do echo ADDLIB $$FILE >> libr.m ; done
 	echo SAVE >> libr.m
 	# ar -M is a gnu-ism .. try to find a proper portable way to do that
 	${CC_AR} -M < libr.m
@@ -158,7 +158,7 @@ install: install-includes install-pkgconfig
 	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
 	# object archives
-	@for FILE in `find * -type f -iname "*.a" | grep -v fs/p` ; do \
+	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
 	# plugins
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/radare2/${VERSION}"
@@ -176,7 +176,7 @@ deinstall uninstall:
 	FILE=`echo $$FILE | awk -F / '{ print $$NF; }'`; \
 	echo "${DESTDIR}${LIBDIR}/$$FILE" ; rm -f "${DESTDIR}${LIBDIR}/$$FILE" ; done
 	# object archives
-	-@for FILE in `find * | grep -e '\.a$$'` ; do \
+	-@for FILE in `find * | grep -e '\.${EXT_AR}$$'` ; do \
 	FILE=`echo $$FILE | awk -F / '{ print $$NF; }'`; \
 	echo "${DESTDIR}${LIBDIR}/$$FILE" ; rm -f "${DESTDIR}${LIBDIR}/$$FILE" ; done
 	# includes
@@ -203,11 +203,11 @@ deinstall uninstall:
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so.${LIBVERSION}"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so.0"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so"
-	rm -rf "${DESTDIR}${LIBDIR}/libr_*.a"
+	rm -rf "${DESTDIR}${LIBDIR}/libr_*.${EXT_AR}"
 	rm -rf "${DESTDIR}${LIBDIR}/libr2.so"*
-	rm -rf "${DESTDIR}${LIBDIR}/libr2.a"
+	rm -rf "${DESTDIR}${LIBDIR}/libr2.${EXT_AR}"
 	rm -rf "${DESTDIR}${LIBDIR}/libr.so"*
-	rm -rf "${DESTDIR}${LIBDIR}/libr.a"
+	rm -rf "${DESTDIR}${LIBDIR}/libr.${EXT_AR}"
 	rm -rf "${DESTDIR}${DATADIR}/doc/radare2"
 	@echo libr aka radare2 has been uninstalled from PREFIX=${DESTDIR}${PREFIX}
 

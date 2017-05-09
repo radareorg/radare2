@@ -203,7 +203,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 }
 
 int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
-	char command[255] = {};
+	char command[255] = {0};
 	int ret;
 	if (!g) {
 		return -1;
@@ -225,7 +225,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
-	char command[255] = {};
+	char command[255] = {0};
 	int ret = 0;
 	int command_len;
 	char *tmp;
@@ -442,7 +442,7 @@ int test_command(libgdbr_t *g, const char *command) {
 }
 
 int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
-	char tmp[255] = {};
+	char tmp[255] = {0};
 	int ret;
 	if (!g) {
 		return -1;
@@ -466,7 +466,7 @@ int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
 }
 
 int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type) {
-	char tmp[255] = {};
+	char tmp[255] = {0};
 	int ret = 0;
 	if (!g) {
 		return -1;
@@ -520,7 +520,7 @@ int gdbr_remove_hwbp(libgdbr_t *g, ut64 address) {
 }
 
 int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
-	char tmp[255] = {};
+	char tmp[255] = {0};
 	int ret = 0;
 	if (!g) {
 		return -1;

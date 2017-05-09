@@ -3,7 +3,12 @@
 #define LIBQNXR_H
 
 #include <stdint.h>
+#ifdef _MSC_VER
+typedef unsigned int ssize_t;
+typedef int pid_t;
+#else
 #include <unistd.h>
+#endif
 
 #include "arch.h"
 #include "r_types_base.h"

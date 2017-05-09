@@ -12,7 +12,6 @@ extern "C" {
 #include <sdb.h>
 
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -26,6 +25,7 @@ extern "C" {
 #include <windows.h>
 #include <wincon.h>
 #endif
+#include <unistd.h>
 
 /* constants */
 #define CONS_MAX_USER 102400

@@ -4,7 +4,8 @@ include ../../mk/$(COMPILER).mk
 include ../../shlr/zip/deps.mk
 EDITOR?=vim
 CC?=gcc
-AR?=ar
+CC_AR?=ar
+AR?=$(CC_AR)
 RANLIB?=ranlib
 LIBNAME=libgdbr
 LIBFILE=$(LIBNAME).$(EXT_SO)
@@ -13,8 +14,15 @@ CFLAGS+=-Iinclude -I${LIBR}/include
 MAJOR=0
 MINOR=1
 LD=$(CC)
+ifeq ($(LD),cccl)
+LDFLAGS+=-L${LIBR}/socket -llibr_socket
+LDFLAGS+=-L${LIBR}/util -llibr_util
+EXT_AR?=lib
+else
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
+EXT_AR?=a
+endif
 
 ifeq (${OSTYPE},darwin)
 LDFLAGS_SHARED=-dynamiclib
@@ -44,7 +52,7 @@ SRC_O=$(SRC_C:.c=.o)
 TEST_C=$(wildcard $(TEST_D)/*.c)
 TEST_O=$(TEST_C:.c=.o)
 
-all: $(LIB)/$(LIBNAME).a
+all: $(LIB)/$(LIBNAME).${EXT_AR}
 #	make
 
 default: make
@@ -55,11 +63,11 @@ prepare:
 $(LIB):
 	mkdir -p $(LIB)
 
-$(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
+$(LIB)/$(LIBNAME).${EXT_AR}: $(LIB) $(SRC_O)
 	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
-	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
+	$(AR) rvs $(LIB)/$(LIBNAME).${EXT_AR} $(SRC_O)
 	# required for solaris and w32
-	$(RANLIB) $(LIB)/$(LIBNAME).a
+	$(RANLIB) $(LIB)/$(LIBNAME).${EXT_AR}
 
 clean:
 	-rm -f $(SRC_O)

@@ -7,6 +7,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#endif
 
 /* stable code */
 static const char *nullstr = "";

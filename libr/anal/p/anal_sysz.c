@@ -10,7 +10,7 @@
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
+#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->sysz.operands[n]
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {

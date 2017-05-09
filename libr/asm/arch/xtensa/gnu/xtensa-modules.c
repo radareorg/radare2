@@ -3824,7 +3824,7 @@ static xtensa_regfile_internal regfiles[] = {
 /* Interfaces.  */
 
 static xtensa_interface_internal interfaces[] = {
-
+  { 0 }
 };
 
 

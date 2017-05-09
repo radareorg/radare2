@@ -42,7 +42,7 @@ extern char **environ;
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__ && (defined(_MSC_VER) || !defined(__CYGWIN__))
 # include <io.h>
 # include <winbase.h>
 typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
@@ -202,7 +202,11 @@ R_API void r_sys_backtrace(void) {
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
+#ifdef _MSC_VER
+#pragma message ("TODO: r_sys_bt : unimplemented")
+#else
 #warning TODO: r_sys_bt : unimplemented
+#endif
 #endif
 }
 
@@ -241,7 +245,11 @@ R_API int r_sys_clearenv(void) {
 #endif
 	return 0;
 #else
+#ifdef _MSC_VER
+#pragma message ("r_sys_clearenv : unimplemented for this platform")
+#else
 #warning r_sys_clearenv : unimplemented for this platform
+#endif
 	return 0;
 #endif
 }
@@ -561,7 +569,11 @@ R_API int r_sys_cmdbg (const char *str) {
 	exit (0);
 	return -1;
 #else
+#ifdef _MSC_VER
+#pragma message ("r_sys_cmdbg is not implemented for this platform")
+#else
 #warning r_sys_cmdbg is not implemented for this platform
+#endif
 	return -1;
 #endif
 }

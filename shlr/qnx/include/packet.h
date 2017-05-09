@@ -10,7 +10,7 @@
 #include <stdio.h>
 #if __WINDOWS__
 #include <windows.h>
-#if !__CYGWIN__
+#if !__CYGWIN__ && !defined(MSC_VER)
 #include <winsock.h>
 #endif
 #endif

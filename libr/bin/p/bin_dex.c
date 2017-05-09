@@ -428,6 +428,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
 				free (params);
+				free (debug_locals);
 				return;
 			}
 			// Emit what was previously there, if anything
@@ -469,6 +470,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
 				free (params);
+				free (debug_locals);
 				return;
 			}
 
@@ -506,6 +508,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
 				free (params);
+				free (debug_locals);
 				return;
 			}
 			if (debug_locals[register_num].live) {
@@ -534,6 +537,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
 				free (params);
+				free (debug_locals);
 				return;
 			}
 			if (!debug_locals[register_num].live) {
@@ -593,6 +597,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	if (!dexdump) {
 		free (debug_positions);
 		free (emitted_debug_locals);
+		free (debug_locals);
 		free (params);
 		return;
 	}

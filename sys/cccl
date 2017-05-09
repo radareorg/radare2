@@ -1,0 +1,316 @@
+#!/bin/sh
+
+# cccl
+# Wrapper around MS's cl.exe to make it act more like Unix cc
+#
+# Copyright (C) 2000-2015 by contributors listed in the AUTHORS file.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Modified for radare2 purposes
+
+
+usage()
+{
+    cat <<EOF
+Usage: cccl [--cccl-link] [--cccl-muffle] [--cccl-verbose] [--help] [--version]
+       [OPTIONS]
+
+cccl is a wrapper around Microsoft's cl.exe compiler.  It translates parameters
+given by [OPTIONS] that Unix cc understands into parameters that cl understands.
+EOF
+}
+
+case ${MACHTYPE} in
+    *-msys)
+        slash="-"
+        ;;
+    *)
+        slash="/"
+        ;;
+esac
+
+# prog specifies the program that should be run cl.exe
+prog=cl
+# opts specifies the command line to pass to the MSVC program
+clopt="${slash}nologo"
+linkopt="${slash}link"
+debug=
+# gotparam is 0 if we didn't ever see a param, in which case we show usage()
+gotparam=
+muffle=
+verbose=
+shared_index=-1
+
+processargs()
+{
+### Run through every option and convert it to the proper MS one
+while test $# -gt 0; do
+    case "$1" in
+    -D*) optarg= ;;
+    -*=*) optarg=$(echo "$1" | sed 's,[-_a-zA-Z0-9]*=,,') ;;
+    *) optarg= ;;
+    esac
+    gotparam=1
+
+    case "$1" in
+    --help)
+        usage
+        exit 0
+        ;;
+
+    --cccl-link)
+        # One single option for the linker
+        shift
+        case "$1" in
+        /*)
+            val=$(echo "$1" | cut -c2-)
+            linkopt="${linkopt} ${slash}${val}"
+            ;;
+
+        *)
+            linkopt="${linkopt} $1"
+            ;;
+        esac
+        ;;
+
+    --cccl-muffle)
+        # Remove the unnecessary junk that the compiler outputs to stdout
+        muffle=1
+        ;;
+
+    --cccl-verbose)
+        verbose=1
+        ;;
+
+    --version)
+        cat <<EOF
+cccl 1.0
+EOF
+        exit 0;
+        ;;
+
+    -ansi)
+        clopt="${clopt},${slash}Za"
+        ;;
+
+    -c)
+        # -c (compile only) is actually the same, but for clarity...
+        clopt="${clopt},${slash}c"
+        ;;
+
+    -g[0-9] | -g)
+        # cl only supports one debugging level
+        clopt="${clopt},${slash}Zi"
+        debug=1
+        ;;
+
+    -O0)
+        clopt="${clopt},${slash}Ot"
+        ;;
+
+    -O2)
+        clopt="${clopt},${slash}O2"
+        ;;
+        
+    -I*)
+        path=$(echo "$1" | sed 's,-I,,')
+        path=$(cygpath -aw "$path")
+        clopt="${clopt},${slash}I${path}"
+        ;;
+
+    -L*)
+        path=$(echo "$1" | sed 's,-L,,')
+        path=$(cygpath -aw "$path")
+        linkopt="${linkopt},${slash}LIBPATH:$path"
+        ;;
+
+    -l*)
+        lib=$(echo "$1" | sed 's,-l,,')
+        lib="$lib.lib"
+        clopt="${clopt},${lib}"
+        ;;
+
+    -m386)
+        clopt="${clopt},${slash}G3"
+        ;;
+
+    -m486)
+        clopt="${clopt},${slash}G4"
+        ;;
+
+    -mpentium)
+        clopt="${clopt},${slash}G5"
+        ;;
+
+    -mpentiumpro)
+        clopt="${clopt},${slash}G6"
+        ;;
+
+    -o)
+        # specifying output file, is it an object or an executable
+        shift
+        path=$(cygpath -w "$1")
+        case "${path}" in
+        *.o | *.obj)
+            clopt="${clopt},${slash}Fo${path}"
+            ;;
+
+        *.exe | *.dll | *.pyd)
+            clopt="${clopt},${slash}Fe${path}"
+            ;;
+        *)
+            echo "Warning: Could not understand -o directive. Producing .exe by default."
+            clopt="${clopt},${slash}Fe${path}.exe"
+            ;;
+        esac
+        ;;
+
+    -pedantic)
+        #ignore pedantic
+        ;;
+
+    -W*)
+        #ignore warnings
+        ;;
+
+    -fno-strict-aliasing*)
+        #ignore aliasing
+        ;;
+
+    -isystem)
+        shift
+        clopt="${clopt},${slash}I$1"
+        ;;
+
+    -MT)
+        exit 0
+        ;;
+
+    -mno-cygwin)
+        ;;
+
+    -shared)
+        shared_index=${#clopt[@]}
+        clopt="${clopt},${slash}LD"
+        ;;
+
+    -std=*)
+        #ignore std
+        ;;
+
+    -MMD)
+        #ignore MMD
+        ;;
+
+    -*)
+        # Remaining '-' options are passed to the compiler
+        val=$(echo "$1" | cut -c2-)
+        if test x$optarg != x ; then
+            clopt="${clopt},${slash}${val}=$optarg"
+        else
+            clopt="${clopt},${slash}${val}"
+        fi
+        ;;
+
+    *.cc | *.cxx | *.C)
+        # C++ source file with non .cpp extension, make sure cl understand 
+        # that it is C++
+        clopt="${clopt},${slash}Tp$1"
+        ;;
+
+    *.c)
+        # Translate it into windows path in case it's a linux absolute path
+        # Because /cygdrive/d/wtf would be read as an option
+        path=$(cygpath -w "$1")
+        clopt="${clopt},${path}"
+        ;;
+
+    *.a)
+        # Translate it into .lib and make sure it's a windows path cf above
+        path=$(cygpath -w "$1" | sed 's,\.a,.lib,')
+        clopt="${clopt},${path}"
+        ;;
+
+    /link)
+        # Same behaviour as cl - all options after /link are linker options
+        shift
+        while test $# -gt 0; do
+            case "$1" in
+            /*)
+                val=$(echo "$1" | cut -c2-)
+                linkopt="${linkopt},${slash}${val}"
+                ;;
+
+            *)
+                linkopt="${linkopt},$1"
+                ;;
+            esac
+            shift
+        done
+        ;;
+
+    /*)
+        # All '/' options are assumed to be for cl and are passed through
+        val=$(echo "$1" | cut -c2-)
+        clopt="${clopt},${slash}${val}"
+        ;;
+
+    *)
+        clopt="${clopt},$1"
+        ;;
+
+    esac
+    shift
+done
+}
+
+# Whitespace in paths is dealt with by setting IFS and using bash arrays
+# Except additional arguments in CCCL_OPTIONS need to be space separated
+processargs ${CCCL_OPTIONS}
+IFS=""
+processargs $@
+
+if test "$shared_index" -ge 0 -a -n "$debug"; then
+    clopt[$shared_index]="${slash}LDd"
+fi
+
+if test x$gotparam = x ; then
+    usage
+    exit 1
+fi
+
+if test "x$V" = "x1" ; then
+    verbose=1
+fi
+
+IFS=","
+if test -n "$verbose" ; then
+  printf "%s" "$prog"
+  for opt in ${clopt} ; do
+    printf "%s" " \"$opt\""
+  done
+  for opt in ${linkopt} ; do
+    printf "%s" " \"$opt\""
+  done
+  echo ""
+fi
+
+if test -z "$muffle" ; then
+    exec $prog $clopt $linkopt
+else
+  # tr needed below for $ in regex to work (simple alternative to dos2unix)
+    exec $prog $clopt $linkopt | tr -d '\r' | grep -v -e "\.cpp$" -e "\.cxx$" -e "\.cc$" -e "\.C$" -e "\.c$" -e "^   Creating library" -e "^Generating Code"
+    exit $?
+fi
+

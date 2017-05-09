@@ -61,7 +61,11 @@ void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
 }
 
 char *mreplace(char *string, char *se,char *rep) {
+#ifdef _MSC_VER
+#define nmatch 16
+#else
 	const size_t nmatch = 16;
+#endif
 	memChunk *search,*temp,*found,*ffound;
 	unsigned long offset = 0;
 	RRegexMatch pm[nmatch];
@@ -145,6 +149,9 @@ char *mreplace(char *string, char *se,char *rep) {
 	memFree (ffound);
 	r_regex_free (re);
 	return res;
+#ifdef _MSC_VER
+#undef nmatch
+#endif
 }
 
 char *treplace(char *data,char *search,char *replace){

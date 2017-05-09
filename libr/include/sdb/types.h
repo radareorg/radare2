@@ -6,9 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #undef eprintf
-#define eprintf(x,y...) fprintf(stderr,x,##y)
+#define eprintf(...) fprintf(stderr,__VA_ARGS__)
 
 #ifndef SDB_API
 #if defined(__GNUC__) && __GNUC__ >= 4
@@ -30,7 +31,7 @@
 #define __MINGW__ 1
 #endif
 
-#if __WIN32__ || __MINGW__ || __WINDOWS__
+#if __WIN32__ || __MINGW__ || __WINDOWS__ || defined(_MSC_VER)
 #define __SDB_WINDOWS__ 1
 #include <windows.h>
 #define DIRSEP '\\'
@@ -40,8 +41,10 @@
 #define DIRSEP '/'
 #endif
 
+#include <unistd.h>
 #include <inttypes.h>
 #define ULLFMT "ll"
+
 #if __SDB_WINDOWS__ && !__CYGWIN__
 #define HAVE_MMAN 0
 #else
@@ -52,7 +55,6 @@
 #define USE_MMAN HAVE_MMAN
 #endif
 
-#include <unistd.h>
 
 #ifndef UNUSED
 #  define UNUSED

@@ -6,7 +6,7 @@ ALL_TARGETS+=${TARGET_QNX}
 
 LIB_PATH=$(SHLR)/qnx/
 CFLAGS+=-I$(SHLR)/qnx/include/
-LDFLAGS+=$(SHLR)/qnx/lib/libqnxr.a
+LDFLAGS+=$(SHLR)/qnx/lib/libqnxr.$(EXT_AR)
 
 include $(LIBR)/socket/deps.mk
 

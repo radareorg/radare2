@@ -25,7 +25,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _MSC_VER
 #include <getopt.h>
+#endif
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>

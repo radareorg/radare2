@@ -345,7 +345,7 @@ static int init_strtab(ELFOBJ *bin) {
 
 static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
-	Elf_(Dyn) d = {};
+	Elf_(Dyn) d = {0};
 	Elf_(Addr) strtabaddr = 0;
 	ut64 offset = 0;
 	char *strtab = NULL;
@@ -731,7 +731,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		char *vstart = ((char*)defs) + i;
 		char key[32] = {0};
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
-		Elf_(Verdaux) aux = {};
+		Elf_(Verdaux) aux = {0};
 		int j = 0;
 		int isum = 0;
 
@@ -863,7 +863,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
 		int j, isum;
 		ut8 *vstart = need + i;
-		Elf_(Verneed) vvn = {};
+		Elf_(Verneed) vvn = {0};
 		if (vstart + sizeof (Elf_(Verneed)) > end) {
 			goto beach;
 		}
@@ -895,7 +895,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
 			int k;
 			Elf_(Vernaux) * aux = NULL;
-			Elf_(Vernaux) vaux = {};
+			Elf_(Vernaux) vaux = {0};
 			sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
 				goto beach;

@@ -1012,7 +1012,7 @@ bool wind_break (WindCtx *ctx) {
 }
 
 int wind_break_read (WindCtx *ctx) {
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(_MSC_VER)
     static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
 	if (!w32_CancelIoEx) {
 		HANDLE lib;

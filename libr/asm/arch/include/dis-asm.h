@@ -436,4 +436,8 @@ extern int print_insn_tricore (bfd_vma memaddr, struct disassemble_info *info);
 }
 #endif
 
+#ifdef _MSC_VER
+#undef xmalloc
+#endif
+
 #endif /* ! defined (DIS_ASM_H) */

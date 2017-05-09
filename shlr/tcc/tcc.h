@@ -37,7 +37,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
+#ifndef _MSC_VER
 #include <math.h>
+#endif
 #include <signal.h>
 #include <fcntl.h>
 #include <setjmp.h>
@@ -93,6 +95,10 @@ typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long int uint64_t;
+#ifdef _MSC_VER
+typedef char int8_t;
+typedef long long int int64_t;
+#endif
 #endif
 
 #define LDOUBLE_SIZE 12

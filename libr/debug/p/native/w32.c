@@ -11,6 +11,11 @@
 #ifndef WINAPI
 #define WINAPI
 #endif
+#ifdef _MSC_VER
+#pragma message("WARNING: WINAPI: Temporary hack for windows...")
+#undef WINAPI
+#define WINAPI
+#endif
 
 // XXX remove
 #define WIN32_PI(x) x
@@ -98,10 +103,12 @@ return (0);
 
 //BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
 
+#ifndef _MSC_VER
 BOOL WINAPI DebugBreakProcess(
   HANDLE Process
   //_In_  HANDLE Process
 );
+#endif
 typedef struct _SYSTEM_HANDLE
 {
 	ULONG ProcessId;
@@ -483,11 +490,10 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	}
 
 	/* Translate path with device name to drive letters. */
-	int temp_size = 512;
-	TCHAR temp_buffer[temp_size];
+	TCHAR temp_buffer[512];
 	temp_buffer[0] = '\0';
 
-	if (!GetLogicalDriveStrings (temp_size-1, temp_buffer)) {
+	if (!GetLogicalDriveStrings (511, temp_buffer)) {
 		free (filename);
 		UnmapViewOfFile (map);
 		CloseHandle (handle_file_map);
@@ -586,7 +592,7 @@ typedef struct {
 	LPVOID lpThreadLocalBase;
 	LPVOID lpStartAddress;
 	PVOID lpThreadEntryPoint;
-	DWORD dwExitCode
+	DWORD dwExitCode;
 } THREAD_ITEM, *PTHREAD_ITEM;
 LPVOID lstThread = 0;
 PTHREAD_ITEM lstThreadPtr = 0;
@@ -1062,7 +1068,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 		}
 	}
 	for (x = 0; x < 8; x++) {
-		xmm[x] = (ut128)*((ut128 *)&ctx->ExtendedRegisters[(10 + x) * 16]);
+		xmm[x] = *((ut128 *)&ctx->ExtendedRegisters[(10 + x) * 16]);
 	}
 	nxmm = 8;
 #endif

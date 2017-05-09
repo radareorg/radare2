@@ -13,9 +13,12 @@ else
 ifneq (,$(findstring msys,${OSTYPE}))
 PIC_CFLAGS=
 else
+ifeq ($(CC),cccl)
+PIC_CFLAGS=
+else
 PIC_CFLAGS=-fPIC
 endif
 endif
 endif
 endif
-
+endif

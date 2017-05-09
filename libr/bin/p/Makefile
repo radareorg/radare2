@@ -2,9 +2,15 @@ include ../../config.mk
 include ../../../mk/platform.mk
 
 CFLAGS+=-I$(LTOP)/include -I$(LTOP)/bin/format/ -Wall $(PIC_CFLAGS)
+ifeq ($(CC),cccl)
+LDFLAGS+=-L$(LTOP)/util -llibr_util
+LDFLAGS+=-L$(LTOP)/bin -llibr_bin
+LDFLAGS+=-L$(LTOP)/io -llibr_io
+else
 LDFLAGS+=-L$(LTOP)/util -lr_util
 LDFLAGS+=-L$(LTOP)/bin -lr_bin
 LDFLAGS+=-L$(LTOP)/io -lr_io
+endif
 SHLR=$(LTOP)/../shlr
 
 foo: all

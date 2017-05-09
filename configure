@@ -434,7 +434,6 @@ if [ $? = 0 ]; then
 echo yes; HAVE_PKGCFG_CAPSTONE=1; 
 CAPSTONE_LDFLAGS=$tmp; fi; fi
 if [ 11 = "$WITH_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
-
 USE_CAPSTONE="1"
 else
 USE_CAPSTONE="0"; fi

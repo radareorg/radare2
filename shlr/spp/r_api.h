@@ -22,7 +22,9 @@
   #include <windows.h>
 #endif
 #if __WIN32__ || MINGW32 && !__CYGWIN__
+  #ifndef _MSC_VER
   #include <winsock.h>
+  #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
   #define __WINDOWS__ 1

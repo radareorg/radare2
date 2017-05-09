@@ -541,10 +541,10 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	int i,len;
 	ut32 data;
 	bin->signature = NULL;
-	struct linkedit_data_command link = {};
+	struct linkedit_data_command link = {0};
 	ut8 lit[sizeof (struct linkedit_data_command)] = {0};
-	struct blob_index_t idx = {};
-	struct super_blob_t super = {};
+	struct blob_index_t idx = {0};
+	struct super_blob_t super = {0};
 
 	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
 		return false;
@@ -585,7 +585,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				break;
 			}
-			struct blob_t entitlements = {}; 
+			struct blob_t entitlements = {0}; 
 			entitlements.magic = r_read_ble32 (bin->b->buf + off, little_);
 			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, little_);
 			len = entitlements.length - sizeof(struct blob_t);

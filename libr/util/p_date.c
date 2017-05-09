@@ -2,13 +2,6 @@
 
 #include "r_print.h"
 #include "r_util.h"
-#if 1
-#include <unistd.h>
-#include <sys/time.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#endif
 
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
 	ut8 _time[2] = { buf[0], buf[1] };
@@ -108,7 +101,11 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 	}
 #else
         *str = 0;
+#ifdef _MSC_VER
+#pragma message ("r_print_date_now NOT IMPLEMENTED FOR THIS PLATFORM")
+#else
 #warning r_print_date_now NOT IMPLEMENTED FOR THIS PLATFORM
+#endif
 #endif
 	return ret;
 }

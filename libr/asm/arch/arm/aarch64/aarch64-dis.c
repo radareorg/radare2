@@ -32,6 +32,8 @@
 
 #define INSNLEN 4
 
+#define SIZE 128
+
 /* Cached mapping symbol state.  */
 enum map_type
 {
@@ -726,15 +728,12 @@ aarch64_ext_limm (const aarch64_operand *self ATTRIBUTE_UNUSED,
     }
   else
     {
-      switch (S)
-	{
-	case 0x00 ... 0x1f: /* 0xxxxx */ simd_size = 32;           break;
-	case 0x20 ... 0x2f: /* 10xxxx */ simd_size = 16; S &= 0xf; break;
-	case 0x30 ... 0x37: /* 110xxx */ simd_size =  8; S &= 0x7; break;
-	case 0x38 ... 0x3b: /* 1110xx */ simd_size =  4; S &= 0x3; break;
-	case 0x3c ... 0x3d: /* 11110x */ simd_size =  2; S &= 0x1; break;
-	default: return 0;
-	}
+      if (S >= 0x00 && S <= 0x1f) { simd_size = 32; }
+      else if (S >= 0x20 && S <= 0x2f) { simd_size = 16; S &= 0xf; }
+      else if (S >= 0x30 && S <= 0x37) { simd_size = 8; S &= 0x7; }
+      else if (S >= 0x38 && S <= 0x3b) { simd_size = 4; S &= 0x3; }
+      else if (S >= 0x3c && S <= 0x3d) { simd_size = 2; S &= 0x1; }
+      else { return 0; }
       mask = (1ull << simd_size) - 1;
       /* Top bits are IGNORED.  */
       R &= simd_size - 1;
@@ -2052,8 +2051,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
   int i, pcrel_p, num_printed;
   for (i = 0, num_printed = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
-      const size_t size = 128;
-      char str[size];
+      char str[SIZE];
       /* We regard the opcode operand info more, however we also look into
 	 the inst->operands to support the disassembling of the optional
 	 operand.
@@ -2064,7 +2062,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
 	break;
 
       /* Generate the operand string in STR.  */
-      aarch64_print_operand (str, size, pc, opcode, opnds, i, &pcrel_p,
+      aarch64_print_operand (str, SIZE, pc, opcode, opnds, i, &pcrel_p,
 			     &info->target);
 
       /* Print the delimiter (taking account of omitted operand(s)).  */

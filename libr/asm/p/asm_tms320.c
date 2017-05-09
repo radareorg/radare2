@@ -71,7 +71,7 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 
 #include "../arch/tms320/tms320_dasm.h"
 
-static tms320_dasm_t engine = { };
+static tms320_dasm_t engine = { 0 };
 
 static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->cpu && strcasecmp (a->cpu, "c54x") == 0) {

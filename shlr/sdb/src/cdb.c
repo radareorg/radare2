@@ -101,7 +101,7 @@ bool cdb_read(struct cdb *c, char *buf, ut32 len, ut32 pos) {
 		return false;
 	}
 	while (len > 0) {
-		ssize_t r = read (c->fd, buf, len);
+		ut32 r = read (c->fd, buf, len);
 		if (r < 1 || (ut32) r != len) {
 			return false;
 		}

@@ -645,7 +645,9 @@ extern void setproctitle (const char *name, ...);
    USE_C_ALLOCA yourself.  The canonical autoconf macro C_ALLOCA is
    also set/unset as it is often used to indicate whether code needs
    to call alloca(0).  */
+#ifndef _MSC_VER
 extern void *C_alloca (size_t) ATTRIBUTE_MALLOC;
+#endif
 #undef alloca
 #if GCC_VERSION >= 2000 && !defined USE_C_ALLOCA
 # define alloca(x) __builtin_alloca(x)
@@ -656,7 +658,11 @@ extern void *C_alloca (size_t) ATTRIBUTE_MALLOC;
    char *const libiberty_nptr = (char *const) alloca (libiberty_len); \
    (char *) memcpy (libiberty_nptr, libiberty_optr, libiberty_len); }))
 #else
+#ifdef _MSC_VER
+# define alloca(x) _alloca(x)
+#else
 # define alloca(x) C_alloca(x)
+#endif
 # undef USE_C_ALLOCA
 # define USE_C_ALLOCA 1
 # undef C_ALLOCA

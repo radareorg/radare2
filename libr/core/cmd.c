@@ -637,12 +637,11 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		}
 		break;
-#if 1
-	case '0'...'9':
-		eprintf ("|ERROR| No .[0..9] to avoid infinite loops\n");
-		break;
-#endif
 	default:
+		if (*input >= 0 && *input <= 9) {
+			eprintf ("|ERROR| No .[0..9] to avoid infinite loops\n");
+			break;
+		}
 		inp = strdup (input);
 		filter = strchr (inp, '~');
 		if (filter) {
@@ -1255,7 +1254,11 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		}
 	}
 #else
+#ifdef _MSC_VER
+#pragma message ("r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM")
+#else
 #warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
+#endif
 	eprintf ("r_core_cmd_pipe: unimplemented for this platform\n");
 #endif
 	if (pipecolor != -1)

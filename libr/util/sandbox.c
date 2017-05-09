@@ -306,7 +306,6 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 			return NULL;
 		}
 	}
-
 	return opendir (path);
 }
 #endif

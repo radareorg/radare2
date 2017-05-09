@@ -2223,7 +2223,7 @@ static void
 print_register_offset_address (char *buf, size_t size,
 			       const aarch64_opnd_info *opnd)
 {
-  const size_t tblen = 16;
+#define tblen 16
   char tb[tblen];		/* Temporary buffer.  */
   bfd_boolean lsl_p = FALSE;	/* Is LSL shift operator?  */
   bfd_boolean wm_p = FALSE;	/* Should Rm be Wm?  */
@@ -2266,6 +2266,7 @@ print_register_offset_address (char *buf, size_t size,
   snprintf (buf, size, "[%s,%c%d%s]",
 	    get_64bit_int_reg_name (opnd->addr.base_regno, 1),
 	    wm_p ? 'w' : 'x', opnd->addr.offset.regno, tb);
+#undef tblen
 }
 
 /* Generate the string representation of the operand OPNDS[IDX] for OPCODE

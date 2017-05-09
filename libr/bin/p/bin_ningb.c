@@ -86,10 +86,17 @@ static RList* sections(RBinFile *arch){
 
 	r_buf_read_at (arch->buf, 0x148, &bank, 1);
 	bank = gb_get_rombanks(bank);
+#ifdef _MSC_VER
+	RBinSection **rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank);
+#else
 	RBinSection *rombank[bank];
+#endif
 
 	if (!arch->buf) {
 		free (ret);
+#ifdef _MSC_VER
+		free (rombank);
+#endif
 		return NULL;
 	}
 
@@ -116,6 +123,9 @@ static RList* sections(RBinFile *arch){
 		rombank[i]->add = true;
 		r_list_append (ret,rombank[i]);
 	}
+#ifdef _MSC_VER
+	free (rombank);
+#endif
 	return ret;
 }
 

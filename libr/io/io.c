@@ -4,6 +4,10 @@
 #include "r_util.h"
 #include <stdio.h>
 
+#ifdef _MSC_VER
+#pragma comment(lib, "advapi32.lib")
+#endif
+
 R_LIB_VERSION (r_io);
 
 /* allocate 128 MB */

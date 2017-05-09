@@ -3251,7 +3251,7 @@ beach:
 	return 1;
 }
 
-static char *get_corefile_name (const char *raw_name, pid_t pid) {
+static char *get_corefile_name (const char *raw_name, int pid) {
 	return (!*raw_name)?
 		r_str_newf ("core.%u", pid) :
 		r_str_chop (strdup (raw_name));

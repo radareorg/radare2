@@ -17,6 +17,7 @@
 
 #ifndef KD_H
 #define KD_H
+#include <r_types_base.h>
 
 enum {
 	KD_E_OK			=  0,

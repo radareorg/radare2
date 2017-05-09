@@ -42,6 +42,9 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	stream.opaque = Z_NULL;
 
 	// + 32 tells zlib not to care whether the stream is a zlib or gzip stream
+#ifdef _MSC_VER
+#pragma message ("TODO: Windows support here. Check dirent.h PR")
+#else
 	if (inflateInit2 (&stream, MAX_WBITS + 32) != Z_OK) {
 		return NULL;
 	}
@@ -77,5 +80,6 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	err_exit:
 	inflateEnd (&stream);
 	free (dst);
+#endif
 	return NULL;
 }

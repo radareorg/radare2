@@ -90,10 +90,11 @@ R_API int r_magic_errno(RMagic* m) {
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <sys/param.h>	/* for MAXPATHLEN */
+#endif
 #include <sys/stat.h>
 #include <r_magic.h>
 
@@ -139,6 +140,10 @@ static void free_mlist(struct mlist *mlist) {
 	free (ml);
 }
 
+#ifdef _MSC_VER
+static int info_from_stat(RMagic *ms, short int md) {
+#pragma message("TODO Windows: info_from_stat not supported.")
+#else
 static int info_from_stat(RMagic *ms, mode_t md) {
 	/* We cannot open it, but we were able to stat it. */
 	if (md & 0222)
@@ -152,6 +157,7 @@ static int info_from_stat(RMagic *ms, mode_t md) {
 			return -1;
 	if (file_printf (ms, "no read permission") == -1)
 		return -1;
+#endif
 	return 0;
 }
 
@@ -161,6 +167,10 @@ static void close_and_restore (const RMagic *ms, const char *name, int fd, const
 }
 
 static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
+#ifdef _MSC_VER
+#pragma message ("WARNING: magic/magic.c: file_or_fd bypassed !")
+	return 0;
+#else
 	int ispipe = 0, rv = -1;
 	unsigned char *buf;
 	struct stat sb;
@@ -250,6 +260,7 @@ done:
 	free (buf);
 	close_and_restore (ms, inname, fd, &sb);
 	return rv == 0 ? file_getbuffer(ms) : NULL;
+#endif
 }
 
 /* API */

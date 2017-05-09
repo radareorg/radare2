@@ -98,7 +98,11 @@ static bool strmatch(char *entry, char *filter, char* mask, const int mask_size)
 R_API char *r_cons_hud(RList *list, const char *prompt) {
 	const int buf_size = 128;
 	int ch, nch, first_line, current_entry_n, j, i = 0;
-	char *p, *x, user_input[buf_size], mask[buf_size];
+	char *p, *x;
+#ifdef _MSC_VER
+#define buf_size 128
+#endif
+	char user_input[buf_size], mask[buf_size];
 	int last_color_change, top_entry_n = 0;
 	char *selected_entry = NULL;
 	char tmp, last_mask = 0;

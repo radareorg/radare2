@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #if __WINDOWS__ || __CYGWIN__ || MINGW32
 #include <windows.h>

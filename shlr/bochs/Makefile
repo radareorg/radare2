@@ -11,8 +11,13 @@ CFLAGS+=-Iinclude -I${LIBR}/include
 MAJOR=0
 MINOR=1
 LD=$(CC)
+ifeq ($(LD),cccl)
+LDFLAGS+=-L${LIBR}/socket -llibr_socket
+LDFLAGS+=-L${LIBR}/util -llibr_util
+else
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
+endif
 ifeq ($(OSTYPE),darwin)
 LDFLAGS_SHARED=-dynamiclib
 else
@@ -26,17 +31,17 @@ SRC_D=src
 SRC_C=$(wildcard $(SRC_D)/*.c)
 SRC_O=$(SRC_C:.c=.o)
 
-all: lib/$(LIBNAME).a
+all: lib/$(LIBNAME).$(EXT_AR)
 
 #$(LD) -shared -Wl,-soname,$(LIBNAME).so -o lib/$(LIBNAME).so $(SRC_O)
 lib:
 	mkdir -p lib
 
-lib/$(LIBNAME).a: lib $(SRC_O)
+lib/$(LIBNAME).$(EXT_AR): lib $(SRC_O)
 	mkdir -p lib
 	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o lib/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
-	$(AR) rvs lib/$(LIBNAME).a $(SRC_O)
-	$(RANLIB) lib/$(LIBNAME).a
+	$(AR) rvs lib/$(LIBNAME).$(EXT_AR) $(SRC_O)
+	$(RANLIB) lib/$(LIBNAME).$(EXT_AR)
 
 clean:
 	-rm -f $(SRC_O)

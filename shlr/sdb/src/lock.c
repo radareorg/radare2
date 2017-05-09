@@ -2,7 +2,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include "sdb.h"
 
@@ -50,7 +54,7 @@ SDB_API int sdb_lock_wait(const char *s) {
 	// wait forever here?
  	while (!sdb_lock (s)) {
 		// TODO: if waiting too much return 0
-#if __SDB_WINDOWS__
+#if __SDB_WINDOWS__ || _MSC_VER
 	 	Sleep (500); // hack
 #else
 	// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);

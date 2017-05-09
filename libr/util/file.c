@@ -3,11 +3,9 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
-#include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #if __UNIX__
 #include <sys/mman.h>
@@ -15,6 +13,8 @@
 #if __APPLE__
 #include <copyfile.h>
 #endif
+#include <sys/time.h>
+#include <unistd.h>
 
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
@@ -32,7 +32,11 @@ R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	if (fd == -1) {
 		return false;
 	}
+#ifdef _MSC_VER
+        _chsize (fd, newsize);
+#else
 	ftruncate (fd, newsize);
+#endif
 	close (fd);
 	return true;
 }
@@ -91,9 +95,11 @@ R_API bool r_file_is_directory(const char *str) {
 	if (stat (str, &buf) == -1) {
 		return false;
 	}
+#ifdef S_IFBLK
 	if ((S_IFBLK & buf.st_mode) == S_IFBLK) {
 		return false;
 	}
+#endif
 	return (S_IFDIR == (S_IFDIR & buf.st_mode))? true: false;
 }
 
@@ -113,10 +119,20 @@ R_API bool r_file_exists(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
+#ifdef _MSC_VER
+	WIN32_FIND_DATA FindFileData;
+	HANDLE handle = FindFirstFile (str, &FindFileData);
+	int found = handle != INVALID_HANDLE_VALUE;
+	if (found) {
+		FindClose (handle);
+	}
+	return found > 0;
+#else
 	if (stat (str, &buf) == -1) {
 		return false;
 	}
 	return (S_ISREG (buf.st_mode))? true: false;
+#endif
 }
 
 R_API long r_file_proc_size(FILE *fd) {
@@ -250,7 +266,9 @@ R_API char *r_stdin_slurp (int *sz) {
 	}
 	return buf;
 #else
+#ifndef _MSC_VER
 	#warning TODO r_stdin_slurp
+#endif
 	return NULL;
 #endif
 }

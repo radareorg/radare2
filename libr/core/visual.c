@@ -927,7 +927,7 @@ R_API int r_core_visual_xrefs_X(RCore *core) {
 	int skip = 0;
 	int idx = 0;
 	char cstr[32];
-	const int maxcount = 9;
+#define maxcount 9
 	ut64 references[maxcount];
 	ut64 addr = core->offset;
 	if (core->print->cur_enabled) {
@@ -1056,6 +1056,7 @@ repeat:
 	eprintf ("TODO: sdbize xrefs here\n");
 #endif
 	return ret;
+#undef maxcount
 }
 
 #if __WINDOWS__ && !__CYGWIN__

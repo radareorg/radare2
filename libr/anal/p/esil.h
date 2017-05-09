@@ -3,7 +3,7 @@
 
 #include "udis86/extern.h"
 /* This may be useful for other architectures */
-#define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
+#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 
 #define UDIS86_ESIL_ARGUMENTS const UDis86OPInfo *info, RAnalOp *op, const char *dst, const char *src, const char *src2
 
@@ -28,7 +28,7 @@ typedef struct udis86_esil_t {
 
 #define UDIS86_ESIL_HANDLER(name) JOIN (JOIN (__x86_, name), _to_esil)
 #define UDIS86_ESIL_PROTO(name) void UDIS86_ESIL_HANDLER (name) (UDIS86_ESIL_ARGUMENTS)
-#define UDIS86_ESIL(name, fmt, arg...) UDIS86_ESIL_PROTO (name) { esilprintf (op, fmt, ##arg); }
+#define UDIS86_ESIL(name, fmt, ...) UDIS86_ESIL_PROTO (name) { esilprintf (op, fmt, ##__VA_ARGS__); }
 
 UDis86Esil *udis86_esil_get_handler (enum ud_mnemonic_code);
 

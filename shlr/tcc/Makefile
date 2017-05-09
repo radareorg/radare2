@@ -28,19 +28,25 @@ LDFLAGS+=-shared
 ifeq (${OSNAME},darwin)
 SOEXT?=dylib
 else
+ifeq ($(CC),cccl)
+EXT_AR=lib
+SOEXT?=dll
+else
+EXT_AR=a
 SOEXT?=so
+endif
 endif
 LIBNAME=libr_tcc.${SOEXT}
 
-all: ${LIBNAME} libr_tcc.a
+all: ${LIBNAME} libr_tcc.$(EXT_AR)
 
 ${LIBNAME}: ${OFILES}
 	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}
 
-libr_tcc.a: ${OFILES}
-	rm -f libr_tcc.a
-	${AR} q libr_tcc.a ${OFILES}
-	${RANLIB} libr_tcc.a
+libr_tcc.$(EXT_AR): ${OFILES}
+	rm -f libr_tcc.$(EXT_AR)
+	${AR} q libr_tcc.$(EXT_AR) ${OFILES}
+	${RANLIB} libr_tcc.$(EXT_AR)
 
 clean:
-	rm -f ${LIBNAME} *.o *.a
+	rm -f ${LIBNAME} *.o *.$(EXT_AR)

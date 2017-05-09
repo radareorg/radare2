@@ -5,7 +5,11 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
+#ifdef _MSC_VER
+typedef struct art_header_t {
+#else
 typedef struct __packed art_header_t {
+#endif
 	ut8 magic[4];
 	ut8 version[4];
 	ut32 image_base;

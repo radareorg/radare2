@@ -1685,8 +1685,8 @@ static int esil_poke_some(RAnalEsil *esil) {
 	int regsize;
 	ut64 ptr, regs = 0, tmp;
 	char *count, *dst = r_anal_esil_pop (esil);
+	const int bytes = 64;
 	if (dst && r_anal_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
-		ut8 bytes = regsize / 8;
 		// reg
 		isregornum (esil, dst, &ptr);
 		count = r_anal_esil_pop (esil);
