@@ -11,16 +11,19 @@ CORE_SHARED2_JAVA=
 STATIC_OBJ+=${CORE_OBJ_JAVA}
 #SHARED_OBJ+=${CORE_OBJ_JAVA}
 CORE_TARGET_JAVA=core_java.${EXT_SO}
+LDFLAGS+=$(LINK)
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${CORE_TARGET_JAVA}
 DEPS+=r_crypto
+include $(STOP)/java/deps.mk
 
 ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
-	${CC} $(call libname,core_java) ${CFLAGS} \
+	echo ${CORE_OBJ_JAVA}
+	${CC} $(call libname,core_java) ${CFLAGS} $(LDFLAGS) \
 		-o core_java.${EXT_SO} \
-		$(SHLR)/java/libr_java.a \
-		$(SHLR)/sdb/src/libsdb.a \
 		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA} \
+		$(SHLR)/java/libr_java.$(EXT_AR) \
+		$(SHLR)/sdb/src/libsdb.$(EXT_AR) \
 		-L$(LIBR)/crypto -lr_crypto
 endif

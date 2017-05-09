@@ -13,6 +13,9 @@ endif
 
 -include ../../global.mk
 -include ../../../global.mk
+
+-include $(STOP)/qnx/deps.mk
+
 LDFLAGS+=-L$(LTOP)/util -lr_util
 LDFLAGS+=-L$(LTOP)/cons -lr_cons
 LDFLAGS+=-L$(LTOP)/parse -lr_parse

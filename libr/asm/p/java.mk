@@ -12,6 +12,6 @@ ALL_TARGETS+=${TARGET_JAVA}
 ${TARGET_JAVA}: ${OBJ_JAVA} ${SHARED2_JAVA}
 	${CC} $(call libname,asm_java) ${LDFLAGS} ${CFLAGS} \
 		-o asm_java.${EXT_SO} ${OBJ_JAVA} ${SHARED2_JAVA} \
-		$(SHLR)/java/libr_java.a \
-		$(SHLR)/sdb/src/libsdb.a
+		$(SHLR)/java/libr_java.$(EXT_AR) \
+		$(SHLR)/sdb/src/libsdb.$(EXT_AR)
 endif

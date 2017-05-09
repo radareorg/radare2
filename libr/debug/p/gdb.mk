@@ -13,9 +13,13 @@ endif
 
 -include ../../global.mk
 -include ../../../global.mk
+
+-include $(STOP)/gdb/deps.mk
+LDFLAGS+=$(LINK)
 LDFLAGS+=-L$(LTOP)/util -lr_util
 LDFLAGS+=-L$(LTOP)/cons -lr_cons
 LDFLAGS+=-L$(LTOP)/parse -lr_parse
+LDFLAGS+=-L$(LTOP)/socket -lr_socket
 LDFLAGS+=-L$(LTOP)/anal -lr_anal
 LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp

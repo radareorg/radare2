@@ -12,7 +12,11 @@ CFLAGS+=-L../../anal -lr_anal -L../../egg -lr_egg -L../../flag -lr_flag
 CFLAGS+=-L../../syscall -lr_syscall -L../../socket -lr_socket -L../../search -lr_search
 CFLAGS+= -L../../lang -lr_lang -L../../debug -lr_debug
 CFLAGS+=-L../../bp -lr_bp -L../../reg -lr_reg -L../../asm -lr_asm
-CFLAGS+=../../../shlr/sdb/src/libsdb.a
+
+#CFLAGS+=../../../shlr/sdb/src/libsdb.a
+
+LDFLAGS+=$(STOP)/sdb/src/libsdb.a
+include $(STOP)/java/deps.mk
 include $(STOP)/gdb/deps.mk
 include $(STOP)/wind/deps.mk
 #CFLAGS+=-L../../anal -lr_anal -L../../core -lr_core

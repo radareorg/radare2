@@ -7,6 +7,7 @@ endif
 LIBAR?=libr_java.$(EXT_AR)
 
 include ../../config-user.mk
+include ../../libr/config.mk
 include ../../global.mk
 include ../../mk/platform.mk
 _INCLUDE_MK_GCC_=

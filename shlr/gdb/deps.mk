@@ -1,1 +1,1 @@
-LINK+=../../shlr/gdb/lib/libgdbr.$(EXT_AR)
+LINK+=$(STOP)/gdb/lib/libgdbr.$(EXT_AR)

@@ -13,7 +13,7 @@ ifeq ($(WITHNONPIC),1)
 else
 include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
-LINK+=$(SHLR)/java/libr_java.a
+include $(STOP)/java/deps.mk
 endif
 
 .PHONY: all plugins
