@@ -9,6 +9,7 @@ http://sourceforge.net/p/devkitpro/ndstool/ci/master/tree/source/header.h
 
 #include <r_types_base.h>
 
+R_PACKED (
 struct nds_hdr
 {
     st8 title[0xC];
@@ -68,7 +69,7 @@ struct nds_hdr
     ut16 logo_crc;
     ut16 header_crc;
 
-} __attribute__((packed));
+});
 
 #endif /* NIN_NDS_H */
 

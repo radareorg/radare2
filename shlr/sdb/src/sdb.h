@@ -29,15 +29,17 @@ extern "C" {
 #define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
 #endif
 
-#if __SDB_WINDOWS__ && !__CYGWIN__ && !_MSC_VER
+#if __SDB_WINDOWS__ && !__CYGWIN__
 #include <windows.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
+#ifndef _MSC_VER
 extern __attribute__((dllimport)) void *__cdecl _aligned_malloc(size_t, size_t);
 extern char *strdup (const char *);
+#endif
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
 //#define SDB_MODE 0

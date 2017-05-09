@@ -23,7 +23,8 @@
 #define N_TEXT 7
 #define N_DATA 11
 
-typedef struct __attribute__((packed)) {
+R_PACKED (
+typedef struct {
 	ut32 text_paddr[N_TEXT];
 	ut32 data_paddr[N_DATA];
 	ut32 text_vaddr[N_TEXT];
@@ -35,7 +36,7 @@ typedef struct __attribute__((packed)) {
 	ut32 entrypoint;
 	ut32 padding[10];
 	// 0x100 -- start of data section
-} DolHeader;
+}) DolHeader;
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || length < 6) {

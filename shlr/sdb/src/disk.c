@@ -10,7 +10,7 @@
 #include "sdb.h"
 
 #if __SDB_WINDOWS__
-#define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
+#define r_sys_mkdir(x) (CreateDirectoryA(x,NULL)!=0)
 #ifndef ERROR_ALREADY_EXISTS
 #define ERROR_ALREADY_EXISTS 183
 #endif
@@ -106,7 +106,7 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 		reopen = true;
 	}
 #if __SDB_WINDOWS__
-	if (MoveFileEx (s->ndump, s->dir, MOVEFILE_REPLACE_EXISTING)) {
+	if (MoveFileExA (s->ndump, s->dir, MOVEFILE_REPLACE_EXISTING)) {
 		//eprintf ("Error 0x%02x\n", GetLastError ());
 	}
 #else

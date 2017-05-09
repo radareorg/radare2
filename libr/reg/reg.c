@@ -2,6 +2,9 @@
 
 #include <r_reg.h>
 #include <r_util.h>
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 
 R_LIB_VERSION (r_reg);
 

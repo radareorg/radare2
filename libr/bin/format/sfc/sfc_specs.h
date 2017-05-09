@@ -42,7 +42,8 @@
 #define EXTRAM_START_ADDRESS		    0x7E8000
 #define EXTRAM_SIZE			    0x18000
 
-typedef struct __attribute__((__packed__)) {
+R_PACKED (
+typedef struct {
 	char name[0x15];	//game title.
 	ut8 rom_setup;		//ROM setup (LoROM/HiROM, etc.)
 	ut8 rom_type;	
@@ -53,6 +54,6 @@ typedef struct __attribute__((__packed__)) {
 	ut8 rom_version;
 	ut16 comp_check;	//should be equal to ~checksum
 	ut16 checksum;
-} sfc_int_hdr;
+}) sfc_int_hdr;
 
 #endif // _SFC_SPECS_H

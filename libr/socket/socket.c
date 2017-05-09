@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -671,12 +672,7 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		} else
 #endif
 		{
-#ifdef _MSC_VER
-			char* winbuf = (char*) buf + len;
-			ret = send (s->fd, winbuf, b, 0);
-#else
-			ret = send (s->fd, buf+delta, b, 0);
-#endif
+			ret = send (s->fd, (char *)buf+delta, b, 0);
 		}
 		//if (ret == 0) return -1;
 		if (ret<1) break;

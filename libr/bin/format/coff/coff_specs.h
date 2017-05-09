@@ -129,6 +129,7 @@
 #define COFF_SYM_CLASS_WEAK_EXTERNAL	105
 #define COFF_SYM_CLASS_CLR_TOKEN	107
 
+R_PACKED(
 struct coff_hdr {
 	ut16 f_magic;	/* Magic number */	
 	ut16 f_nscns;	/* Number of Sections */
@@ -137,8 +138,9 @@ struct coff_hdr {
 	ut32 f_nsyms;	/* Number of Symbols */
 	ut16 f_opthdr;	/* sizeof(Optional Header) */
 	ut16 f_flags;	/* Flags */
-} __attribute__((packed));
+});// __attribute__ ((packed));
 
+R_PACKED (
 struct coff_opt_hdr {
 	ut16 magic;			/* Magic Number                    */
 	ut16 vstamp;		/* Version stamp                   */
@@ -148,8 +150,9 @@ struct coff_opt_hdr {
 	ut32 entry;			/* Entry point                     */
 	ut32 text_start;	/* Base of Text used for this file */
 	ut32 data_start;	/* Base of Data used for this file */
-} __attribute__((packed));
+});
 
+R_PACKED (
 struct coff_scn_hdr {
 	char s_name[8];	/* Section Name */
 	ut32 s_paddr;	/* Physical Address */
@@ -161,8 +164,9 @@ struct coff_scn_hdr {
 	ut16 s_nreloc;	/* Number of Relocation table entries */
 	ut16 s_nlnno;	/* Number of Line Number table entries */
 	ut32 s_flags;	/* Flags for this section */
-} __attribute__((packed));
+});
 
+R_PACKED (
 struct coff_symbol {
 	char n_name[8];	/* Symbol Name */
 	ut32 n_value;	/* Value of Symbol */
@@ -170,12 +174,12 @@ struct coff_symbol {
 	ut16 n_type;	/* Symbol Type */
 	ut8 n_sclass;	/* Storage Class */
 	ut8 n_numaux;	/* Auxiliary Count */
-} __attribute__((packed));
+});
 
+R_PACKED (
 struct coff_reloc {
 	ut32 r_vaddr;	/* Reference Address */
 	ut32 r_symndx;	/* Symbol index */
 	ut16 r_type;	/* Type of relocation */
-} __attribute__((packed));
-
+});
 #endif /* COFF_SPECS_H */

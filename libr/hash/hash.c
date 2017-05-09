@@ -1,7 +1,9 @@
 /* radare - LGPL - Copyright 2007-2017 pancake */
 
 #include <r_hash.h>
-
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 R_LIB_VERSION (r_hash);
 
 struct {

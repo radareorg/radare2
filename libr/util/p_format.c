@@ -4,7 +4,9 @@
 #include "r_util.h"
 #include "r_print.h"
 #include "r_reg.h"
-
+#ifdef _MSC_VER
+#include <time.h>
+#endif 
 #define NOPTR 0
 #define PTRSEEK 1
 #define PTRBACK 2

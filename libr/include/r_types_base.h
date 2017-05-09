@@ -14,10 +14,6 @@
 #define st8 signed char
 #define boolt int
 
-#ifdef _MSC_VER
-#define __attribute__(x)
-#endif
-
 typedef struct _ut80 {
 	ut64 Low;
 	ut16 High;
@@ -133,5 +129,9 @@ typedef struct _utX{
 #if !defined(NAN)
 #define NAN (0.0f/0.0f)
 #endif
-
+#ifdef _MSC_VER
+#define R_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#elif defined(__GNUC__)
+#define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
 #endif

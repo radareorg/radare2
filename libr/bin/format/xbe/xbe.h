@@ -11,7 +11,7 @@
 #define XBE_KP_CHIHIRO 0x2290059D
 
 #define XBE_MAX_THUNK 378
-
+R_PACKED(
 typedef struct {
 	ut32 magic;
 	ut8  signature[0x100];
@@ -37,12 +37,13 @@ typedef struct {
 	ut32 kernel_lib_addr;
 	ut32 xapi_lib_addr;
 	ut32 shit[2];
-} __attribute__((packed)) xbe_header;
+}) xbe_header;
+
 
 #define SECT_FLAG_X 0x00000004
 #define SECT_FLAG_W 0x00000001
-
-typedef struct {
+R_PACKED (
+typedef struct  {
 	ut32 flags;
 	ut32 vaddr;
 	ut32 vsize;
@@ -52,13 +53,16 @@ typedef struct {
 	ut32 refcount;
 	ut32 shit[2];
 	ut8  digest[20];
-} __attribute__((packed)) xbe_section;
+}) xbe_section;
 
-typedef struct {
-	char name[8];
-	ut16 major, minor, build;
+R_PACKED (
+typedef struct  {
+	ut8 name[8];
+	ut16 major;
+	ut16 minor;
+	ut16 build;
 	ut16 flags;
-} __attribute__((packed)) xbe_lib;
+}) xbe_lib;
 
 typedef struct {
 	xbe_header *header;
