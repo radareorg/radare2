@@ -339,7 +339,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		return;
 	}
 
-	struct dex_debug_local_t debug_locals[regsz+1];
+	struct dex_debug_local_t *debug_locals = calloc(sizeof (struct dex_debug_local_t),regsz+1);
 	memset (debug_locals, 0, sizeof (struct dex_debug_local_t) * regsz);
 	if (!(MA & 0x0008)) {
 		debug_locals[argReg].name = "this";
@@ -352,6 +352,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	if (!(params = dex_method_signature2 (bin, MI))) {
 		free (debug_positions);
 		free (emitted_debug_locals);
+		free (debug_locals);
 		return;
 	}
 
@@ -364,6 +365,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		if ((argReg >= regsz) || !type || parameters_size <= 0) {
 			free (debug_positions);
 			free (params);
+			free (debug_locals);
 			free (emitted_debug_locals);
 			return;
 		}
@@ -391,6 +393,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	}
 
 	if (!p4) {
+		free (debug_locals);
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;
@@ -643,6 +646,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		}
 	}
 	free (debug_positions);
+	free (debug_locals);
 	free (emitted_debug_locals);
 	free (params);
 }
