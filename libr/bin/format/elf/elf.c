@@ -1537,6 +1537,12 @@ static ut64 getmainsymbol(ELFOBJ *bin) {
 		return UT64_MAX;
 	}
 	for (i = 0; !symbol[i].last; i++) {
+		if (!strncmp (symbol[i].name, "Java", 4)) {
+			if (r_str_endswith (symbol[i].name, "_init")) {
+				ut64 paddr = symbol[i].offset;
+				return Elf_(r_bin_elf_p2v) (bin, paddr);
+			}
+		}
 		if (!strcmp (symbol[i].name, "main")) {
 			ut64 paddr = symbol[i].offset;
 			return Elf_(r_bin_elf_p2v) (bin, paddr);
