@@ -20,10 +20,6 @@
 #define HAVE_UNISTD_H 1
 #define HAVE_WCHAR_H 1
 
-#ifdef _MSC_VER
-#undef HAVE_UNISTD_H
-#endif
-
 // TODO: add dependency for zlib?
 /* #define	HAVE_ZLIB_H	1	DO NOT ENABLE YET -- chl */
 /* #define	HAVE_LIBZ	1	DO NOT ENABLE YET -- ian */

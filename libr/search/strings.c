@@ -1,7 +1,9 @@
 /* radare - LGPL - Copyright 2006-2009 pancake<nopcode.org> */
 
 #include "r_search.h"
-
+#if _MSC_VER
+#define strncasecmp strnicmp
+#endif
 // TODO: this file needs some love
 enum {
 	ENCODING_ASCII = 0,

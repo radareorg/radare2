@@ -61,7 +61,8 @@
 #define JOYPAD_PORT1                        0x4016
 #define JOYPAD_PORT2                        0x4017
 
-typedef struct __attribute__((__packed__)) {
+R_PACKED (
+typedef struct  {
 	char id[0x4];					// NES\x1A
 	ut8 prg_page_count_16k;				 // number of PRG-ROM pages
 	ut8 chr_page_count_8k;				// number of CHR-ROM pages
@@ -69,6 +70,6 @@ typedef struct __attribute__((__packed__)) {
 	ut8 rom_control_byte_1;				 // flags describing ROM image
 	ut8 ram_bank_count_8k;				// size of PRG RAM
 	ut8 reserved[7];				// zero filled
-} ines_hdr;
+}) ines_hdr;
 
 #endif // _NES_H

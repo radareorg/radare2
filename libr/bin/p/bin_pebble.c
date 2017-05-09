@@ -9,12 +9,15 @@
 
 #define APP_NAME_BYTES 32
 #define COMPANY_NAME_BYTES 32
-typedef struct __attribute__((__packed__)) {
+
+R_PACKED (
+typedef struct  {
 	ut8 major; //!< "compatibility" version number
 	ut8 minor;
-} Version;
+}) Version;
 
-typedef struct __attribute__((__packed__)) {
+R_PACKED (
+typedef struct  {
 	char header[8];                   //!< Sentinal value, should always be 'PBLAPP\0\0'
 	Version struct_version;           //!< version of this structure's format
 	Version sdk_version;              //!< version of the SDK used to build this app
@@ -30,7 +33,7 @@ typedef struct __attribute__((__packed__)) {
 	ut32 reloc_list_start;        //!< The offset of the address relocation list
 	ut32 num_reloc_entries;       //!< The number of entries in the address relocation list
 	ut8 uuid[16];
-} PebbleAppInfo;
+}) PebbleAppInfo;
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));

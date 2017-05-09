@@ -279,7 +279,6 @@ static int readchar_win() {
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf[128];
-	int dir;
 	int i;
 do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
@@ -448,7 +447,6 @@ R_API int r_cons_readchar() {
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
-ignore:
 	ret = ReadConsole (h, buf, 1, &out, NULL);
 	FlushConsoleInputBuffer(h);
 	if (!ret)

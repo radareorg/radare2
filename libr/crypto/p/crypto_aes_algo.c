@@ -41,7 +41,12 @@ void aes_expkey (const struct aes_state *st, ut32 ***expkey)
 	// ut32 expkey[2][st->rounds + 1][Nb];
 	// memcpy (&expkey, _expkey, 2 * (st->rounds + 1) * Nb);
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
-	ut32 tk[st->columns], tt;
+#ifdef _MSC_VER
+	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
+#else
+	ut32 tk[st->columns];
+#endif
+	ut32 tt;
 	st32 idx = 0, t = 0;
 	const ut8 *key = st->key;
 	st32 i, j, r;
@@ -106,6 +111,9 @@ void aes_expkey (const struct aes_state *st, ut32 ***expkey)
 				U2[(ut8)(tt >> 8)] ^ U3[(ut8)tt];
 		}
 	}
+#ifdef _MSC_VER
+	free (tk);
+#endif
 }
 
 // Convenience method to encrypt exactly one block of plaintext, assuming
@@ -113,7 +121,11 @@ void aes_expkey (const struct aes_state *st, ut32 ***expkey)
 // in         - The plaintext
 // result     - The ciphertext generated from a plaintext using the key
 void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
+#ifdef _MSC_VER
+	ut32 expkey[2][(6 + (256 / 4)) + 1][Nb];
+#else
 	ut32 expkey[2][st->rounds + 1][Nb];
+#endif
 	aes_expkey(st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;
@@ -191,7 +203,12 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 // in         - The ciphertext.
 // result     - The plaintext generated from a ciphertext using the session key.
 void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
+#ifdef _MSC_VER
+	ut32 expkey[2][(6 + (256 / 4)) + 1][Nb];
+#else
 	ut32 expkey[2][st->rounds + 1][Nb];
+#endif
+	
 	aes_expkey(st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;

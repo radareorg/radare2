@@ -23,7 +23,8 @@ typedef enum {
 	SNES9X,
 } emulator_used;
 
-typedef struct __attribute__((__packed__)) { //SNES9x
+R_PACKED(
+typedef struct { //SNES9x
 	char	song_title [32];
 	char	game_title [32];
 	char	name_of_dumper [16];
@@ -35,9 +36,10 @@ typedef struct __attribute__((__packed__)) { //SNES9x
 	bool default_channel_disabled;
 	emulator_used emulator_used[1];
 	ut8 reserved[1];
-} id666_tag_text;
+}) id666_tag_text;
 
-typedef struct __attribute__((__packed__)) { //ZSNES
+R_PACKED (
+typedef struct { //ZSNES
 	char	song_title [32];
 	char	game_title [32];
 	char	name_of_dumper [16];
@@ -49,30 +51,35 @@ typedef struct __attribute__((__packed__)) { //ZSNES
 	char	artist_song [32];
 	bool default_channel_disabled;
 	ut8 reserved[1];
-} id666_tag_binary;
+}) id666_tag_binary;
 
-typedef struct __attribute__((__packed__))	{
+R_PACKED (
+typedef struct 	{
 	char	signature [33];
 	ut8	 signature2 [2];
 	ut8 has_id666;
 	ut8 version;
-} spc_hdr;
+}) spc_hdr;
 
-typedef struct __attribute__((__packed__))	{
-	ut8 pcl, pch;
+R_PACKED (
+typedef struct {
+	ut8 pcl;
+	ut8 pch;
 	ut8 a;
 	ut8 x;
 	ut8 y;
 	ut8 psw;
 	ut8 sp;
-	ut8 reserved_1, reserved_2;
-} spc_reg;
+	ut8 reserved_1;
+	ut8 reserved_2;
+}) spc_reg;
 
-typedef struct __attribute__((__packed__))	{
+R_PACKED (
+typedef struct {
 	ut8 ram [0x10000];
 	ut8 dsp [128];
 	ut8 unused [0x40];
 	ut8 ipl_rom [0x40];
-} spc_data;
+}) spc_data;
 
 #endif // _SPC_H

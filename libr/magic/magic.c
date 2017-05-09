@@ -30,7 +30,14 @@
 
 #include <r_userconf.h>
 #include <r_types.h>
-
+#ifdef _MSC_VER
+#include <sys\stat.h>
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define S_IFIFO		(-1)
+#define S_ISFIFO(m)	(((m) & S_IFIFO) == S_IFIFO)
+#define MAXPATHLEN 255
+#endif
 R_LIB_VERSION (r_magic);
 
 #if USE_LIB_MAGIC
@@ -90,6 +97,7 @@ R_API int r_magic_errno(RMagic* m) {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #ifndef _MSC_VER
@@ -140,11 +148,7 @@ static void free_mlist(struct mlist *mlist) {
 	free (ml);
 }
 
-#ifdef _MSC_VER
-static int info_from_stat(RMagic *ms, short int md) {
-#pragma message("TODO Windows: info_from_stat not supported.")
-#else
-static int info_from_stat(RMagic *ms, mode_t md) {
+static int info_from_stat(RMagic *ms, unsigned short md) {
 	/* We cannot open it, but we were able to stat it. */
 	if (md & 0222)
 		if (file_printf (ms, "writable, ") == -1)
@@ -157,7 +161,6 @@ static int info_from_stat(RMagic *ms, mode_t md) {
 			return -1;
 	if (file_printf (ms, "no read permission") == -1)
 		return -1;
-#endif
 	return 0;
 }
 
@@ -167,14 +170,10 @@ static void close_and_restore (const RMagic *ms, const char *name, int fd, const
 }
 
 static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
-#ifdef _MSC_VER
-#pragma message ("WARNING: magic/magic.c: file_or_fd bypassed !")
-	return 0;
-#else
 	int ispipe = 0, rv = -1;
 	unsigned char *buf;
 	struct stat sb;
-	ssize_t nbytes = 0;	/* number of bytes read from a datafile */
+	int  nbytes = 0;	/* number of bytes read from a datafile */
 
 	/*
 	 * one extra for terminating '\0', and
@@ -260,7 +259,6 @@ done:
 	free (buf);
 	close_and_restore (ms, inname, fd, &sb);
 	return rv == 0 ? file_getbuffer(ms) : NULL;
-#endif
 }
 
 /* API */

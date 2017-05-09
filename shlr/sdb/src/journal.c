@@ -1,11 +1,8 @@
 /* sdb - MIT - Copyright 2011-2016 - pancake */
 
 #include "sdb.h"
-#ifdef _MSC_VER
 #include <io.h>
-#else
 #include <unistd.h>
-#endif
 #include <fcntl.h>
 
 static const char *sdb_journal_filename(Sdb *s) {

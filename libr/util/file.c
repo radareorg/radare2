@@ -3,9 +3,11 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
+#include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 #if __UNIX__
 #include <sys/mman.h>
@@ -13,9 +15,9 @@
 #if __APPLE__
 #include <copyfile.h>
 #endif
-#include <sys/time.h>
-#include <unistd.h>
-
+#if _MSC_VER
+#include <process.h>
+#endif
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -120,8 +122,8 @@ R_API bool r_file_exists(const char *str) {
 		return false;
 	}
 #ifdef _MSC_VER
-	WIN32_FIND_DATA FindFileData;
-	HANDLE handle = FindFirstFile (str, &FindFileData);
+	WIN32_FIND_DATAA FindFileData;
+	HANDLE handle = FindFirstFileA (str, &FindFileData);
 	int found = handle != INVALID_HANDLE_VALUE;
 	if (found) {
 		FindClose (handle);
@@ -266,8 +268,10 @@ R_API char *r_stdin_slurp (int *sz) {
 	}
 	return buf;
 #else
-#ifndef _MSC_VER
-	#warning TODO r_stdin_slurp
+#ifdef _MSC_VER
+#pragma message (" TODO r_stdin_slurp")
+#else
+#warning TODO r_stdin_slurp
 #endif
 	return NULL;
 #endif
@@ -425,7 +429,6 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 	int sz, i, lines, selection = -1;
 	struct timeval tv;
 	int start = *line;
-
 	if ((str = r_file_slurp (file, &sz))) {
 		gettimeofday (&tv, NULL);
 		srand (getpid() + tv.tv_usec);
@@ -580,13 +583,13 @@ R_API bool r_file_rm(const char *file) {
 	}
 	if (r_file_is_directory (file)) {
 #if __WINDOWS__
-		return !RemoveDirectory (file);
+		return !RemoveDirectoryA (file);
 #else
 		return !rmdir (file);
 #endif
 	} else {
 #if __WINDOWS__
-		return !DeleteFile (file);
+		return !DeleteFileA (file);
 #else
 		return !unlink (file);
 #endif
@@ -617,7 +620,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	HANDLE fh;
 	DWORD written = 0;
 	if (r_sandbox_enable (0)) return -1;
-	fh = CreateFile (file, GENERIC_READ|GENERIC_WRITE,
+	fh = CreateFileA (file, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
@@ -662,12 +665,12 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	if (r_sandbox_enable (0)) {
 		return -1;
 	}
-	fh = CreateFile (file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	fh = CreateFileA (file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("CreateFile");
 		return -1;
 	}
-	fm = CreateFileMapping (fh, NULL, PAGE_READONLY, 0, 0, NULL);
+	fm = CreateFileMappingA (fh, NULL, PAGE_READONLY, 0, 0, NULL);
 	if (fm != INVALID_HANDLE_VALUE) {
 		ut8 *obuf = MapViewOfFile (fm, FILE_MAP_READ, 0, 0, len);
 		memcpy (obuf, buf, len);
@@ -715,7 +718,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 }
 #elif __WINDOWS__
 static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
-	m->fh = CreateFile (file, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
+	m->fh = CreateFileA (file, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
 		FILE_SHARE_READ|(m->rw?FILE_SHARE_WRITE:0), NULL,
 		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
@@ -723,7 +726,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 		free (m);
 		return NULL;
 	}
-	m->fm = CreateFileMapping (m->fh, NULL, PAGE_READONLY, 0, 0, NULL);
+	m->fm = CreateFileMappingA (m->fh, NULL, PAGE_READONLY, 0, 0, NULL);
 		//m->rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		m->buf = MapViewOfFile (m->fm, 
@@ -842,7 +845,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	char name[1024];
 #if __WINDOWS__
 	h = -1;
-	if (GetTempFileName (path, prefix, 0, name)) {
+	if (GetTempFileNameA (path, prefix, 0, name)) {
 		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	}
 #else

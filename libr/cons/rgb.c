@@ -173,7 +173,7 @@ R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, int is_bg) {
 #if __WINDOWS__ && !__CYGWIN__
 #ifdef _MSC_VER
-#pragma message "r_cons_rgb not yet supported on windows"
+#pragma message ("r_cons_rgb not yet supported on windows")
 #else
 #warning r_cons_rgb not yet supported on windows
 #endif
