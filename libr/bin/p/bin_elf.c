@@ -145,16 +145,17 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 static RList* entries(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t)* obj;
 	RBinAddr *ptr = NULL;
+	struct r_bin_elf_symbol_t *symbol;
 	RList *ret;
+	int i;
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
 	}
 	obj = arch->o->bin_obj;
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
@@ -177,6 +178,25 @@ static RList* entries(RBinFile *arch) {
 		}
 	}
 	r_list_append (ret, ptr);
+	//add entrypoint for jni libraries
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (obj))) {
+		return ret;
+	}
+	for (i = 0; !symbol[i].last; i++) {
+		if (!strncmp (symbol[i].name, "Java", 4)) {
+			if (r_str_endswith (symbol[i].name, "_init")) {
+				if (!(ptr = R_NEW0 (RBinAddr))) {
+					return ret;
+				}
+				ptr->paddr = symbol[i].offset;
+				ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+				ptr->haddr = UT64_MAX;
+				ptr->type = R_BIN_ENTRY_TYPE_INIT;
+				r_list_append (ret, ptr);
+				break;
+			}
+		}
+	}
 	return ret;
 }
 
