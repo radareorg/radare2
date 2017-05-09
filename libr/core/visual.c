@@ -28,6 +28,14 @@ static const char **printfmt = printfmtSingle;
 #define USE_THREADS 1
 
 #if USE_THREADS
+static int visual_repeat_thread_anykey(RThread *th) {
+	RCore *core = th->user;
+	r_cons_any_key (NULL);
+	eprintf ("^C  \n");
+	core->cons->breaked = true;
+	return 0;
+}
+
 static int visual_repeat_thread(RThread *th) {
 	RCore *core = th->user;
 	int i = 0;
@@ -52,6 +60,7 @@ static void visual_repeat(RCore *core) {
 	int atport = r_config_get_i (core->config, "scr.atport");
 	if (atport) {
 #if __UNIX__ && !__APPLE__
+// TODO: Add support for iterm2 and terminal for mac, see rarop source for more info
 		int port = r_config_get_i (core->config, "http.port");
 		if (!r_core_rtr_http (core, '&', NULL)) {
 			const char *xterm = r_config_get (core->config, "cmd.xterm");
@@ -66,15 +75,16 @@ static void visual_repeat(RCore *core) {
 		r_cons_any_key (NULL);
 #endif
 	} else {
-		RThread *th = r_th_new (visual_repeat_thread, core, 0);
+		RThread *th = r_th_new (visual_repeat_thread_anykey, core, 0);
 		if (!th) {
 			return;
 		}
+
+		visual_repeat_thread (th);
+/*
 		r_th_start (th, 1);
+*/
 		//	r_cons_break_push (NULL, NULL);
-		r_cons_any_key (NULL);
-		eprintf ("^C  \n");
-		core->cons->breaked = true;
 		r_th_wait (th);
 		//	r_cons_break_pop ();
 	}
