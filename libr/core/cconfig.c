@@ -784,7 +784,9 @@ static int cb_timezone(void *user, void *data) {
 }
 
 static int cb_cfglog(void *user, void *data) {
-	// TODO do something here
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cfglog = node->i_value;
 	return true;
 }
 
@@ -835,6 +837,14 @@ static int cb_cfgsanbox(void *user, void *data) {
 		eprintf ("Cannot disable sandbox\n");
 	}
 	return (!node->i_value && ret)? 0: 1;
+}
+
+static int cb_cmdlog(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	R_FREE (core->cmdlog);
+	core->cmdlog = strdup (node->value);
+	return true;
 }
 
 static int cb_cmdrepeat(void *user, void *data) {
@@ -2196,6 +2206,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.gprompt", "", "Graph visual prompt commands");
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
+	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
 	SETPREF ("cmd.prompt", "", "Prompt commands");
 	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "Empty command an alias for '..' (repeat last command)");
 	SETPREF ("cmd.fcn.new", "", "Run when new function is analyzed");

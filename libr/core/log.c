@@ -59,8 +59,18 @@ R_API void r_core_log_free(RCoreLog *log) {
 }
 
 R_API void r_core_log_add(RCore *core, const char *msg) {
+	static bool inProcess = false;
 	r_strpool_append (core->log->sp, msg);
 	core->log->last++;
+	if (core->cmdlog && *core->cmdlog) {
+		if (inProcess) {
+			// avoid infinite recursive calls
+			return;
+		}
+		inProcess = true;
+		r_core_cmd0 (core, core->cmdlog);
+		inProcess = false;
+	}
 }
 
 R_API void r_core_log_del(RCore *core, int n) {

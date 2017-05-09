@@ -140,6 +140,8 @@ typedef struct r_core_t {
 	RAGraph *graph;
 	char *cmdqueue;
 	char *lastcmd;
+	char *cmdlog;
+	bool cfglog;
 	int cmdrepeat;
 	ut64 inc;
 	int rtr_n;
