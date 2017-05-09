@@ -958,7 +958,10 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_IRETQ:
 	case X86_INS_SYSRET:
 		{
-		int cleanup = (int)INSOP(0).imm;
+		int cleanup = 0;
+		if (INSOPS > 0) {
+			cleanup = (int)INSOP(0).imm;
+		}
 		esilprintf (op, "%s,[%d],%s,=,%d,%s,+=",
 			sp, rs, pc, rs + cleanup, sp);
 		}
