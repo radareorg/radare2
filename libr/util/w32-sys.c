@@ -29,11 +29,11 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 	int i = 0;
 	char fullpath[MAX_PATH + 1];
 
-	if (!GetModuleFileName(NULL, fullpath, MAX_PATH + 1)) {
+	if (!GetModuleFileNameA (NULL, fullpath, MAX_PATH + 1)) {
 		return false;
 	}
 
-	if (!GetShortPathName(fullpath, buf, MAX_PATH+1)) {
+	if (!GetShortPathNameA (fullpath, buf, MAX_PATH+1)) {
 		return false;
 	}
 
@@ -74,7 +74,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 
 	CreateChildProcess (cmd, out);
 
-	in = CreateFile (argv0,
+	in = CreateFileA (argv0,
 			GENERIC_READ,
 			FILE_SHARE_READ,
 			NULL,
@@ -101,7 +101,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 
 static int CreateChildProcess(const char *szCmdline, HANDLE out) {
 	PROCESS_INFORMATION piProcInfo;
-	STARTUPINFO siStartInfo;
+	STARTUPINFOA siStartInfo;
 	BOOL bSuccess = FALSE;
 
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION) );
@@ -115,7 +115,7 @@ static int CreateChildProcess(const char *szCmdline, HANDLE out) {
 	siStartInfo.hStdInput = NULL;
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-	bSuccess = CreateProcess (NULL,
+	bSuccess = CreateProcessA (NULL,
 			(LPSTR)szCmdline,// command line
 			NULL,          // process security attributes
 			NULL,          // primary thread security attributes

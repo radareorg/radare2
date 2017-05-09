@@ -13,6 +13,7 @@ typedef struct boot_img_hdr BootImage;
 #define BOOT_ARGS_SIZE 512
 #define BOOT_EXTRA_ARGS_SIZE 1024
 
+R_PACKED (
 struct boot_img_hdr {
 	ut8 magic[BOOT_MAGIC_SIZE];
 
@@ -35,7 +36,7 @@ struct boot_img_hdr {
 	/* Supplemental command line data; kept here to maintain
 	 * binary compatibility with older versions of mkbootimg */
 	ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
-} __attribute__((packed));
+});
 
 typedef struct {
 	Sdb *kv;

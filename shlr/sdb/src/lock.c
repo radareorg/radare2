@@ -2,13 +2,13 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef _MSC_VER
-#include <windows.h>
-#else
 #include <unistd.h>
-#endif
 #include <fcntl.h>
 #include "sdb.h"
+#ifdef _MSC_VER
+#include <process.h>
+#include <windows.h>
+#endif
 
 SDB_API const char *sdb_lock_file(const char *f) {
 	static char buf[128];

@@ -79,7 +79,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		arr += 2;
 		for (num[0] = numi = bufi = 0; bufi < count && *arr; arr++) {
 			switch (*arr) {
-#ifdef _MSC_VER
 			case '0':
 			case '1':
 			case '2':
@@ -90,9 +89,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			case '7':
 			case '8':
 			case '9':
-#else
-			case '0'...'9':
-#endif
 				num[numi++] = *arr;
 				num[numi] = 0;
 				break;

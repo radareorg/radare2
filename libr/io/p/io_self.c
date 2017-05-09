@@ -19,6 +19,9 @@
 #include <mach/task_info.h>
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
 #endif
+#ifdef _MSC_VER
+#include <process.h>  // to compile getpid for msvc windows
+#endif
 
 #define PERM_READ 4
 #define PERM_WRITE 2

@@ -51,7 +51,7 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "w32://", 6)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		const char *filename = pathname+6;
-		w32->hnd = CreateFile (filename,
+		w32->hnd = CreateFileA (filename,
 			GENERIC_READ | rw?GENERIC_WRITE:0,
 			FILE_SHARE_READ | rw? FILE_SHARE_WRITE:0,
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);

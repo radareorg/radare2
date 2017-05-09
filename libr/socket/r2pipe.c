@@ -50,12 +50,12 @@ R_API int r2p_close(R2Pipe *r2p) {
 #if __WINDOWS__ && !defined(__CYGWIN__)
 static int w32_createChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
-	STARTUPINFO siStartInfo;
+	STARTUPINFOA siStartInfo;
 	BOOL bSuccess = FALSE;
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
 	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	bSuccess = CreateProcess (NULL, (LPSTR)szCmdline, NULL, NULL,
+	bSuccess = CreateProcessA (NULL, (LPSTR)szCmdline, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	if (!bSuccess)
 		return false;
@@ -66,7 +66,7 @@ static int w32_createChildProcess(const char * szCmdline) {
 
 static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
 	CHAR buf[1024];
-	r2p->pipe = CreateNamedPipe ("\\\\.\\pipe\\R2PIPE_IN",
+	r2p->pipe = CreateNamedPipeA ("\\\\.\\pipe\\R2PIPE_IN",
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
@@ -230,7 +230,7 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 /* TODO: add timeout here ? */
 R_API char *r2p_read(R2Pipe *r2p) {
 	int bufsz = 0;
-	char *newbuf, *buf = NULL;
+	char *buf = NULL;
 	if (!r2p) return NULL;
 	bufsz = 4096;
 	buf = calloc (1, bufsz);
@@ -248,6 +248,7 @@ R_API char *r2p_read(R2Pipe *r2p) {
 	}
 	buf[bufsz - 1] = 0;
 #else
+	char *newbuf;
 	int i, rv;
 	for (i = 0; i < bufsz; i++) {
 		rv = read (r2p->output[0], buf + i, 1);

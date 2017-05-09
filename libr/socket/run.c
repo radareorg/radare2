@@ -48,6 +48,10 @@
 #include <util.h>
 #endif
 #endif
+#ifdef _MSC_VER
+#include <direct.h>   // to compile chdir in msvc windows
+#include <process.h>  // to compile execv in msvc windows
+#endif
 
 #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !defined(__sun)
 

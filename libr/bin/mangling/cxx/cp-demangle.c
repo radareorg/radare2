@@ -5520,8 +5520,13 @@ d_demangle_callback (const char *mangled, int options,
     di.comps = comps;
     di.subs = subs;
 #else
+#ifdef _MSC_VER
+	  di.comps = calloc (di.num_comps * sizeof (*di.comps),1);
+	  di.subs = calloc (di.num_subs * sizeof (*di.subs),1);
+#else
     di.comps = alloca (di.num_comps * sizeof (*di.comps));
     di.subs = alloca (di.num_subs * sizeof (*di.subs));
+#endif	
 #endif
 
     switch (type)
@@ -5799,8 +5804,13 @@ is_ctor_or_dtor (const char *mangled,
     di.comps = comps;
     di.subs = subs;
 #else
-    di.comps = alloca (di.num_comps * sizeof (*di.comps));
-    di.subs = alloca (di.num_subs * sizeof (*di.subs));
+#ifdef _MSC_VER
+	  di.comps = calloc (di.num_comps * sizeof (*di.comps), 1);
+	  di.subs = calloc (di.num_subs * sizeof (*di.subs), 1);
+#else
+	  di.comps = alloca (di.num_comps * sizeof (*di.comps));
+	  di.subs = alloca (di.num_subs * sizeof (*di.subs));
+#endif	
 #endif
 
     dc = cplus_demangle_mangled_name (&di, 1);

@@ -95,8 +95,8 @@ err_enable:
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
-        STARTUPINFO si = { sizeof (si) };
-        DEBUG_EVENT de;
+    STARTUPINFOA si = { sizeof (si) };
+    DEBUG_EVENT de;
 	int pid, tid;
 	HANDLE th = INVALID_HANDLE_VALUE;
 	if (!*cmd) return -1;
@@ -143,7 +143,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	cmdline[cmd_i] = '\0';
 
-        if (!CreateProcess (argv[0], cmdline, NULL, NULL, FALSE,
+        if (!CreateProcessA (argv[0], cmdline, NULL, NULL, FALSE,
 			CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 			NULL, NULL, &si, &pi)) {
 		r_sys_perror ("CreateProcess");
