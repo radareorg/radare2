@@ -18,17 +18,17 @@ typedef struct r_pkcs7_digestalgorithmidentifiers_t {
 
 typedef struct r_pkcs7_contentinfo_t {
 	RASN1String *contentType; //OID
-	RASN1Object *content; // optional. oid structure definition
+	RASN1Binary *content; // optional. oid structure definition
 } RPKCS7ContentInfo;
 
 typedef struct r_pkcs7_issuerandserialnumber_t {
 	RX509Name issuer;
-	RASN1Object *serialNumber;
+	RASN1Binary *serialNumber;
 } RPKCS7IssuerAndSerialNumber;
 
 typedef struct r_pkcs7_attribute_t {
 	RASN1String *oid; //OID
-	RASN1Object *data; // optional. oid structure definition
+	RASN1Binary *data; // optional. oid structure definition
 } RPKCS7Attribute;
 
 typedef struct r_pkcs7_attributes_t {
@@ -42,7 +42,7 @@ typedef struct r_pkcs7_signerinfo_t {
 	RX509AlgorithmIdentifier digestAlgorithm;
 	RPKCS7Attributes authenticatedAttributes; //Optional
 	RX509AlgorithmIdentifier digestEncryptionAlgorithm;
-	RASN1Object *encryptedDigest;
+	RASN1Binary *encryptedDigest;
 	RPKCS7Attributes unauthenticatedAttributes; //Optional
 } RPKCS7SignerInfo;
 
@@ -68,6 +68,7 @@ typedef struct r_pkcs7_container_t {
 R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
 R_API void r_pkcs7_free_cms(RCMS* container);
 R_API char* r_pkcs7_cms_dump(RCMS* container);
+R_API RJSVar *r_pkcs7_cms_json(RCMS* container);
 
 #endif /* R_PKCS7_H */
 

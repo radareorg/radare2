@@ -55,6 +55,7 @@
 #include "r_util/r_utf8.h"
 #include "r_util/r_id_storage.h"
 #include "r_util/r_asn1.h"
+#include "r_util/r_json.h"
 #include "r_util/r_x509.h"
 #include "r_util/r_pkcs7.h"
 

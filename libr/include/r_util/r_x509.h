@@ -42,25 +42,25 @@ typedef struct r_x509_keyusage_t {
  */
 
 typedef struct r_x509_authoritykeyidentifier_t {
-	RASN1Object *keyIdentifier;
+	RASN1Binary *keyIdentifier;
 	RX509Name authorityCertIssuer;
-	RASN1Object *authorityCertSerialNumber;
+	RASN1Binary *authorityCertSerialNumber;
 } RX509AuthorityKeyIdentifier;
 
 typedef struct r_x509_subjectpublickeyinfo_t {
 	RX509AlgorithmIdentifier algorithm;
 	//This is a bit string, but it encapsulate mod + pubkey
-	RASN1Object *subjectPublicKey; // BIT STRING
+	RASN1Binary *subjectPublicKey; // BIT STRING
 	//This struct won't follow RFC,
 	//just because it should be seen as this.
-	RASN1Object *subjectPublicKeyExponent;
-	RASN1Object *subjectPublicKeyModule;
+	RASN1Binary *subjectPublicKeyExponent;
+	RASN1Binary *subjectPublicKeyModule;
 } RX509SubjectPublicKeyInfo;
 
 typedef struct r_x509_extension_t {
 	RASN1String *extnID; // OBJECT IDENTIFIER
 	bool critical;
-	RASN1Object *extnValue; // OCTET STRING
+	RASN1Binary *extnValue; // OCTET STRING
 } RX509Extension;
 
 typedef struct r_x509_extensions_t {
@@ -76,22 +76,22 @@ typedef struct r_x509_tbscertificate_t {
 	RX509Validity validity;
 	RX509Name subject;
 	RX509SubjectPublicKeyInfo subjectPublicKeyInfo;
-	RASN1Object *issuerUniqueID; // BIT STRING
-	RASN1Object *subjectUniqueID; // BIT STRING
+	RASN1Binary *issuerUniqueID; // BIT STRING
+	RASN1Binary *subjectUniqueID; // BIT STRING
 	RX509Extensions extensions;
 } RX509TBSCertificate;
 
 typedef struct r_x509_certificate_t {
 	RX509TBSCertificate tbsCertificate;
 	RX509AlgorithmIdentifier algorithmIdentifier;
-	RASN1Object *signature; // BIT STRING
+	RASN1Binary *signature; // BIT STRING
 } RX509Certificate;
 
 
 // RFC 1422
 
 typedef struct r_x509_crlentry {
-	RASN1Object *userCertificate; //INTEGER ?
+	RASN1Binary *userCertificate; //INTEGER ?
 	RASN1String *revocationDate; //UTCTime
 } RX509CRLEntry;
 
@@ -107,11 +107,13 @@ typedef struct r_x509_certificaterevocationlist {
 R_API RX509CertificateRevocationList* r_x509_parse_crl(RASN1Object *object);
 R_API void r_x509_free_crl(RX509CertificateRevocationList *crl);
 R_API char* r_x509_crl_dump(RX509CertificateRevocationList *crl, char* buffer, ut32 length, const char* pad);
+R_API RJSVar *r_x509_crl_json(RX509CertificateRevocationList *crl);
 
 R_API RX509Certificate *r_x509_parse_certificate(RASN1Object *object);
 R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length);
 R_API void r_x509_free_certificate(RX509Certificate* certificate);
 R_API char* r_x509_certificate_dump(RX509Certificate* certificate, char* buffer, ut32 length, const char* pad);
+R_API RJSVar* r_x509_certificate_json(RX509Certificate *certificate);
 
 
 #ifdef __cplusplus

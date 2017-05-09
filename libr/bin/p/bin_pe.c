@@ -616,13 +616,21 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static char *signature (RBinFile *arch) {
+static char *signature (RBinFile *arch, bool json) {
+	char* c = NULL;
 	struct PE_ (r_bin_pe_obj_t) * bin;
 	if (!arch || !arch->o || !arch->o->bin_obj) {
-		return NULL;
+		return c;
 	}
 	bin = arch->o->bin_obj;
-	return (char *) bin->signature_dump;
+	if (json) {
+		RJSVar *json = r_pkcs7_cms_json (bin->cms);
+		c = r_json_stringify (json, false);
+		r_json_var_free (json);
+	} else {
+		c = r_pkcs7_cms_dump (bin->cms);
+	}
+	return c;
 }
 
 static RBinField *newField(const char *name, ut64 addr) {
