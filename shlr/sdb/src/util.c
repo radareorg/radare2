@@ -86,11 +86,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	}
 	if (!n) {
 		if (os) {
-#ifdef _MSC_VER
-			return _strdup ("0");
-#else
 			return strdup ("0");
-#endif
 		}
 		strcpy (s, "0");
 		return s;
@@ -110,11 +106,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 		s[i--] = '0';
 	}
 	if (os) {
-#ifdef _MSC_VER
-		return _strdup (s + i + 1);
-#else
 		return strdup (s + i + 1);
-#endif
 	}
 	if (copy_string) {
 		// unnecessary memmove in case we use the return value

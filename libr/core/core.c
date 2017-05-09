@@ -1829,12 +1829,7 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 }
 
 static void set_prompt (RCore *r) {
-#ifdef _MSC_VER
-#define max_tmp_size 128
-#else
-	size_t max_tmp_size = 128;
-#endif
-	char tmp[max_tmp_size];
+	char tmp[128];
 	char *prompt = NULL;
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
@@ -1868,7 +1863,7 @@ static void set_prompt (RCore *r) {
 
 		a = ((r->offset >> 16) << 12);
 		b = (r->offset & 0xffff);
-		snprintf (tmp, max_tmp_size, "%04x:%04x", a, b);
+		snprintf (tmp, 128, "%04x:%04x", a, b);
 	} else {
 		char p[64], sec[32];
 		int promptset = false;
@@ -1887,16 +1882,13 @@ static void set_prompt (RCore *r) {
 		snprintf (tmp, sizeof (tmp), "%s%s", sec, p);
 	}
 
-	chop_prompt (filename, tmp, max_tmp_size);
+	chop_prompt (filename, tmp, 128);
 	prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
 		tmp, END);
 	r_line_set_prompt (prompt ? prompt : "");
 
 	R_FREE (filename);
 	R_FREE (prompt);
-#ifdef _MSC_VER
-#undef max_tmp_size
-#endif
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {

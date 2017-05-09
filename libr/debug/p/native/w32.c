@@ -490,17 +490,15 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	}
 
 	/* Translate path with device name to drive letters. */
-#define temp_size 512
-	TCHAR temp_buffer[temp_size];
+	TCHAR temp_buffer[512];
 	temp_buffer[0] = '\0';
 
-	if (!GetLogicalDriveStrings (temp_size-1, temp_buffer)) {
+	if (!GetLogicalDriveStrings (511, temp_buffer)) {
 		free (filename);
 		UnmapViewOfFile (map);
 		CloseHandle (handle_file_map);
 		return NULL;
 	}
-#undef temp_size
 
 	TCHAR name[MAX_PATH];
 	TCHAR drive[3] = TEXT (" :");

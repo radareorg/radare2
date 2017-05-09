@@ -3824,9 +3824,7 @@ static xtensa_regfile_internal regfiles[] = {
 /* Interfaces.  */
 
 static xtensa_interface_internal interfaces[] = {
-#ifdef _MSC_VER
   { 0 }
-#endif
 };
 
 
