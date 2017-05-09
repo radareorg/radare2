@@ -16,9 +16,6 @@ R_LIB_VERSION (r_io);
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
-static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz);
-static RIO *r_io_bind_get_io(RIOBind *bnd);
-
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW0 (RIO);
 	if (!io) {
@@ -82,10 +79,9 @@ R_API RIO *r_io_free(RIO *io) {
 	if (!io) {
 		return NULL;
 	}
-	R_FREE (io->plugin_default);
-	r_list_free (io->plugins);
+	ls_free (io->plugins);
 	r_list_free (io->sections);
-	r_list_free (io->maps);
+	ls_free (io->maps);
 	r_list_free (io->undo.w_list);
 	r_cache_free (io->buffer);
 	r_list_free (io->cache);
@@ -193,17 +189,35 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 	return list_fds;
 }
 
-R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
-	RIODesc *desc;
-	if (!io || !file || io->redirect) {
+R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
+	RIODesc* desc;
+	RIOPlugin* plugin;
+	if (!io || !io->files || !uri) {
 		return NULL;
 	}
-	desc = __getioplugin (io, file, flags, mode);
-	if (desc) {
-		r_io_desc_add (io, desc);
-		if (io->autofd || !io->desc)
-			r_io_use_desc (io, desc);
-	} // else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
+	plugin = r_io_plugin_resolve (io, uri, 0);
+	if (!plugin || !plugin->open || !plugin->close) {
+		return NULL;
+	}
+	desc = plugin->open (io, uri, flags, mode);
+	if (!desc) {
+		return NULL;
+	}
+	//for none static callbacks, those that cannot use r_io_desc_new
+	if (!desc->plugin) {                                    
+		desc->plugin = plugin;
+	}
+	if (!desc->uri) {
+		desc->uri = strdup (uri);
+	}
+	if (!desc->name) {
+		desc->name = strdup (uri);
+	}
+	r_io_desc_add (io, desc);
+	//set desc as current if autofd or io->desc==NULL
+	if (io->autofd || !io->desc) {                          
+		io->desc = desc;
+	}
 	return desc;
 }
 
@@ -216,7 +230,7 @@ R_API RIODesc *r_io_open_at(RIO *io, const char *file, int flags, int mode, ut64
 	desc = __getioplugin (io, file, flags, mode);
 	if (desc) {
 		r_io_desc_add (io, desc);
-		size = r_io_desc_size (io, desc);
+		size = r_io_desc_size (desc);
 		if (io->autofd || !io->desc) {
 			r_io_use_desc (io, desc);
 		}
@@ -253,7 +267,7 @@ R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
 
 R_API int r_io_reopen(RIO *io, RIODesc *desc, int flags, int mode) {
 	RIODesc *n = NULL;
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOMap *map;
 	if (desc && desc->uri && io && io->files && (desc == r_io_desc_get (io, desc->fd))) {
 		n = __getioplugin (io, desc->uri, flags, mode);
@@ -262,7 +276,7 @@ R_API int r_io_reopen(RIO *io, RIODesc *desc, int flags, int mode) {
 		}
 		r_io_section_rm_all (io, desc->fd);
 		if (io->maps) {
-			r_list_foreach (io->maps, iter, map) {
+			ls_foreach (io->maps, iter, map) {
 				if (map->fd == desc->fd) {
 					map->fd = n->fd;
 					map->flags &= n->flags;
@@ -289,12 +303,19 @@ R_API int r_io_use_desc(RIO *io, RIODesc *d) {
 	return false;
 }
 
-R_API RIODesc *r_io_use_fd(RIO *io, int fd) {
-	RIODesc *desc = r_io_desc_get (io, fd);
-	if (!desc) return NULL;
-	io->desc = desc;
-	io->plugin = desc->plugin;
-	return desc;
+R_API bool r_io_use_fd(RIO* io, int fd) {
+	if (!io || !io->desc) {
+		return false;
+	}
+	if (io->desc->fd != fd) {
+		RIODesc* desc;
+		//update io->desc if fd is not the same
+		if (!(desc = r_io_desc_get (io, fd))) {
+			return false;
+		}
+		io->desc = desc;
+	}
+	return true;
 }
 
 static bool readcache = false;
@@ -315,7 +336,7 @@ R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 		}
 #endif
 	} else if (!io->desc) {
-		if (io->files && r_list_length (io->files) != 0) {
+		if (io->files) {
 			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
 		}
 		source = "FAILED";
@@ -349,29 +370,6 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	ret = r_io_read_at (io, vaddr, buf, len);
 	if (ret > 0) io->off += ret;
 	return ret;
-}
-
-R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
-	if (!io || !buf || len < 0) {
-		return -1;
-	}
-	if (paddr == UT64_MAX) {
-		if (io->ff) {
-			memset (buf, 0xff, len);
-			return len;
-		}
-		return -1;
-	}
-	if (io->buffer_enabled) {
-		return r_io_buffer_read (io, paddr, buf, len);
-	}
-	if (!io->desc || !io->desc->plugin || !io->desc->plugin->read) {
-		return -1;
-	}
-	if (r_io_seek (io, paddr, R_IO_SEEK_SET) == UT64_MAX) {
-		return -1;
-	}
-	return io->desc->plugin->read (io, io->desc, buf, len);
 }
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
@@ -520,7 +518,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (cov != len) {
 			}
 #endif
-		} else if (r_list_length (io->maps) > 1) {
+		} else if (ls_length (io->maps) > 1) {
 			if (!io->debug && ms > 0) {
 				//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
 				/* check if address is vaddred in sections */
@@ -768,19 +766,6 @@ cleanup:
 	return ret;
 }
 
-R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len) {
-	if (!io || !buf || paddr == UT64_MAX || len < 0) {
-		return -1;
-	}
-	if (!io->desc || !io->desc->plugin || !io->desc->plugin->write) {
-		return -1;
-	}
-	if (r_io_seek (io, paddr, R_IO_SEEK_SET) == UT64_MAX) {
-		return -1;
-	}
-	return io->desc->plugin->write (io, io->desc, buf, len);
-}
-
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (io->cached) {
 		return r_io_cache_write (io, addr, buf, len);
@@ -858,7 +843,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 
 R_API ut64 r_io_fd_size(RIO *io, int fd) {
 	RIODesc *desc = r_io_desc_get (io, fd);
-	return r_io_desc_size (io, desc);
+	return r_io_desc_size (desc);
 }
 
 R_API bool r_io_is_blockdevice(RIO *io) {
@@ -926,32 +911,22 @@ R_API int r_io_plugin_close(RIO *io, RIODesc *desc) {
 	return -1;
 }
 
-R_API int r_io_close(RIO *io, RIODesc *d) {
-	RIODesc *cur = NULL;
-	if (!io || !d) {
-		return -1;
+R_API bool r_io_close(RIO *io, int fd) {
+	RIODesc* desc = r_io_desc_get (io, fd);
+	if (!desc || !desc->plugin || !desc->plugin->close) {
+		return false;
 	}
-	if (d != io->desc) {
-		cur = io->desc;
+	if (desc->plugin->close (desc)) {
+		return false;
 	}
-	if (r_io_use_desc (io, d)) {
-		int nfd = d->fd;
-		RIODesc *desc = r_io_desc_get (io, nfd);
-		if (desc) {
-			if (desc == io->desc) {
-				cur = NULL;
-			}
-			r_io_map_del (io, nfd);
-			r_io_section_rm_all (io, nfd);
-			r_io_plugin_close (io, io->desc);
-			//r_io_desc_del (io, desc->fd);
-		}
-		if (nfd == io->raised) {
-			io->raised = -1;
-		}
-	}
-	io->desc = cur;
-	return false;
+	// remove entry from sdb-instance and free the desc-struct
+	r_io_desc_del (io, fd); 
+	// remove all dead maps
+#if 0
+	r_io_map_cleanup (io); 
+	r_io_section_cleanup (io);
+#endif
+	return true;
 }
 
 R_API int r_io_close_all(RIO *io) {
@@ -974,27 +949,30 @@ R_API int r_io_close_all(RIO *io) {
 	return 1;
 }
 
+
+static RIO* bind_get_io (RIOBind* iob) {
+	return iob? iob->io: NULL;
+}
+
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {
+	if (!io || !bnd) {
+		return false;
+	}
 	bnd->io = io;
 	bnd->init = true;
-	bnd->get_io = r_io_bind_get_io;
+	bnd->get_io = bind_get_io;
+	bnd->desc_use = r_io_use_fd;
+	bnd->desc_get = r_io_desc_get;
+	bnd->desc_size = r_io_desc_size;
+	bnd->open = r_io_open_nomap;
+	bnd->open_at = r_io_open_at;
+	bnd->close = r_io_close;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
-	bnd->size = r_io_size;
-	bnd->seek = r_io_seek;
 	bnd->system = r_io_system;
 	bnd->is_valid_offset = r_io_is_valid_offset;
-
-	bnd->desc_open = r_io_open_nomap;
-	bnd->desc_open_at = r_io_open_at;
-	bnd->desc_close = r_io_close;
-	bnd->desc_read = r_io_desc_read;
-	bnd->desc_size = r_io_desc_size;
-	bnd->desc_seek = r_io_desc_seek;
-	bnd->desc_get_by_fd = r_io_desc_get;
-
-	bnd->section_add = r_io_section_add;
 	bnd->section_vget = r_io_section_vget;
+	bnd->section_add = r_io_section_add;
 
 	bnd->section_set_arch = r_io_section_set_archbits;
 	bnd->section_set_arch_bin_id = r_io_section_set_archbits_bin_id;
@@ -1054,101 +1032,28 @@ R_API int r_io_create(RIO *io, const char *file, int mode, int type) {
 }
 
 R_API void r_io_sort_maps(RIO *io) {
-	r_list_sort (io->maps, (RListComparator)r_io_map_sort);
-}
-
-// THIS IS pread.. a weird one
-static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
-	ut8 *buf = NULL;
-	ut64 off = 0;
-
-	if (!io || !out_sz) {
-		return NULL;
-	}
-	if (!desc) {
-		desc = io->desc;
-	}
-	if (*out_sz == UT64_MAX) {
-		*out_sz = r_io_desc_size (io, desc);
-	}
-	if (*out_sz == 0x8000000) {
-		*out_sz = 1024 * 1024 * 1; // 2MB
-	}
-	off = io->off;
-	if (*out_sz == UT64_MAX) {
-		return NULL;
-	}
-	if (io->maxalloc && *out_sz > io->maxalloc) {
-		eprintf ("WARNING: File is greater than 0x%"PFMT64x" bytes.\n"
-				"Allocating R_IO_MAX_ALLOC set as the environment variable.\n", io->maxalloc);
-		*out_sz = io->maxalloc;
-	}
-	buf = malloc (*out_sz + 1);
-	if (!buf) {
-		return NULL;
-	}
-	buf[*out_sz] = 0;
-	if (!buf) {
-		if (*out_sz > R_IO_MAX_ALLOC) {
-			char *num_unit = r_num_units (NULL, *out_sz);
-			eprintf ("Failed to allocate %s bytes.\n"
-				"Allocating %"PFMT64u" bytes.\n",
-				num_unit, (ut64)R_IO_MAX_ALLOC);
-			free (num_unit);
-			*out_sz = R_IO_MAX_ALLOC;
-			buf = malloc (*out_sz + 1);
-			buf[*out_sz] = 0;
-		}
-		if (!buf) {
-			char *num_unit = r_num_units (NULL, *out_sz);
-			eprintf ("Failed to allocate %s bytes.\n", num_unit);
-			free (num_unit);
-			return NULL;
-		}
-	}
-	if (buf && desc->plugin && desc->plugin->read) {
-		if (!buf || !desc->plugin->read (io, desc, buf, *out_sz)) {
-			free (buf);
-			io->off = off;
-			return NULL;
-		}
-	}
-	io->off = off;
-	return buf;
-}
-
-static RIO *r_io_bind_get_io(RIOBind *bnd) {
-	return bnd? bnd->io: NULL;
+	ls_sort (io->maps, (RListComparator)r_io_map_sort);
 }
 
 // check if reading at offset or writting to offset is reasonable
-R_API int r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
+R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 	if (!io) {
 		eprintf ("r_io_is_valid_offset: io is NULL\n");
 		r_sys_backtrace ();
-		return R_FAIL;
+		return false;
 	}
 	bool io_sectonly = io->sectonly;
 	bool io_va = io->va;
 	if (!io->files) {
 		eprintf ("r_io_is_valid_offset: io->files is NULL\n");
 		r_sys_backtrace ();
-		return R_FAIL;
-	}
-	if (r_list_empty (io->files)) {
 		return false;
 	}
 	if (!io->desc) {
 		eprintf ("r_io_is_valid_offset: io->desc is NULL\n");
 		r_sys_backtrace ();
-		return R_FAIL;
+		return false;
 	}
-#if 0
-if (hasperm) {
-	int ret = (r_io_map_exists_for_offset (io, offset) ||
-			r_io_section_exists_for_vaddr (io, offset, hasperm));
-}
-#endif
 	if (r_list_empty (io->sections)) {
 		if ((r_io_map_exists_for_offset (io, offset))) {
 			return true;
@@ -1175,4 +1080,41 @@ if (hasperm) {
 		return true;
 	}
 	return r_io_section_exists_for_vaddr (io, offset, hasperm);
+}
+
+
+R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
+	int ret = 0;
+	if (!io || !buf || len < 1) {
+		return 0;
+	}
+	if (io->ff) {
+		memset (buf, 0xff, len);
+	}
+	//check pointers and permissions
+	if (!io->desc || !(io->desc->flags & R_IO_READ) || !io->desc->plugin ||
+	    !io->desc->plugin->read || !len) {
+		return 0;
+	}
+	r_io_desc_seek (io->desc, paddr, R_IO_SEEK_SET);
+	ret = io->desc->plugin->read (io, io->desc, buf, len);
+	if (io->p_cache) {
+		r_io_desc_cache_read (io->desc, paddr, buf, len);
+	}
+	return ret;
+}
+
+
+R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
+	//check pointers and permissions
+	if (!io || !buf || !io->desc ||
+	    (!io->p_cache && !(io->desc->flags & R_IO_WRITE)) ||
+	    !io->desc->plugin || !io->desc->plugin->write || len < 1) {
+		return 0;
+	}
+	if (io->p_cache) {
+		return r_io_desc_cache_write (io->desc, paddr, buf, len);
+	}
+	r_io_desc_seek (io->desc, paddr, R_IO_SEEK_SET);
+	return io->desc->plugin->write (io, io->desc, buf, len);
 }

@@ -499,7 +499,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'b': return core->blocksize;
 		case 's':
 			if (core->file) {
-				return r_io_desc_size (core->io, core->file->desc);
+				return r_io_desc_size (core->file->desc);
 			}
 			return 0LL;
 		case 'w':
@@ -2087,7 +2087,7 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-								perm, 0, 0, r_io_desc_size (core->io, file->desc));
+								perm, 0, 0, r_io_desc_size (file->desc));
 						if (core->file && core->file->desc) {
 							pipefd = core->file->desc->fd;
 						} else {
@@ -2227,7 +2227,7 @@ reaccept:
 				x = r_read_at_be64 (buf, 1);
 				if (buf[0] == 2) {
 					if (core->file) {
-						x = r_io_desc_size (core->io, core->file->desc);
+						x = r_io_desc_size (core->file->desc);
 					} else {
 						x = 0;
 					}

@@ -168,7 +168,7 @@ static int rafind_open(char *file) {
 			bsize = to - cur;
 			last = true;
 		}
-		ret = r_io_pread (io, cur, buf, bsize);
+		ret = r_io_pread_at (io, cur, buf, bsize);
 		if (ret == 0) {
 			if (nonstop) {
 				continue;

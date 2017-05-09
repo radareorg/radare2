@@ -464,16 +464,14 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
 	} else if (!strcmp (mode, "io.maps")) {
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOMap *m;
-
 		*from = *to = 0;
-
 		list = r_list_newf (free);
 		if (!list) {
 			return NULL;
 		}
-		r_list_foreach (core->io->maps, iter, m) {
+		ls_foreach (core->io->maps, iter, m) {
 			RIOMap *map = R_NEW0 (RIOMap);
 			if (map) {
 				map->fd = m->fd;
@@ -486,11 +484,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		}
 		return list;
 	} else if (!strcmp (mode, "io.maps.range")) {
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOMap *m;
 		*from = *to = 0;
 		list = r_list_newf (free);
-		r_list_foreach (core->io->maps, iter, m) {
+		ls_foreach (core->io->maps, iter, m) {
 			if (!*from) {
 				*from = m->from;
 				*to = m->to;
@@ -758,9 +756,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					/* TODO: section size? */
 				} else {
 					if (core->file) {
-						*to = r_io_desc_size (core->io, core->file->desc);
-					} else {
-						*to = r_io_desc_size (core->io, NULL);
+						*to = r_io_desc_size (core->file->desc);
 					}
 				}
 			}

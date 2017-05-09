@@ -5228,7 +5228,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
 			from = r_config_get_i (core->config, "bin.baddr");
-			to = from + ((core->file)? r_io_desc_size (core->io, core->file->desc): 0);
+			to = from + ((core->file)? r_io_desc_size (core->file->desc): 0);
 			if (!s) {
 				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
 				return; // WTF!

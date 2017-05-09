@@ -2172,7 +2172,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	if (totalsize == UT64_MAX) {
 		if (core->file && core->io) {
-			totalsize = r_io_desc_size (core->io, core->file->desc);
+			totalsize = r_io_desc_size (core->file->desc);
 			if ((st64) totalsize < 1) {
 				totalsize = -1;
 			}

@@ -111,7 +111,6 @@ static int __close(RIODesc *fd) {
 		return -1;
 	r2p_free (fd->data);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
@@ -133,8 +132,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		r2p = r2p_open (pathname + 9);
 	}
-	return r2p? r_io_desc_new (&r_io_plugin_r2pipe,
-		r2p->child, pathname, rw, mode, r2p): NULL;
+	return r2p? r_io_desc_new (io, &r_io_plugin_r2pipe,
+		pathname, rw, mode, r2p): NULL;
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *msg) {
