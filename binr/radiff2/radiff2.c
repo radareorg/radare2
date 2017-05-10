@@ -346,7 +346,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 	if (as != bs) {
 		r_cons_printf ("...\n");
 	}
-	r_cons_flush();
+	r_cons_flush ();
 }
 
 static void handle_sha256(const ut8 *block, int len) {
