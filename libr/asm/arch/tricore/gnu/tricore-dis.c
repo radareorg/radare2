@@ -25,7 +25,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #include "sysdep.h"
 #include "opcode/tricore.h"
 #include "dis-asm.h"
+#ifndef _MSC_VER
 #include "libiberty.h"
+#else
+#include <stdlib.h>
+#define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
+#define XCNEWVEC(T, N)		((T *) calloc ((N), sizeof (T)))
+#define XNEW(T)			((T *) malloc (sizeof (T)))
+#define xmalloc malloc
+#endif
 
 #if 0
 #define REGPREFIX "%%"

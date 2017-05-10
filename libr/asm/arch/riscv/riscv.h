@@ -334,13 +334,16 @@ enum
 };
 
 
-#if 0
+#if 0 || _MSC_VER
 extern const char * const riscv_gpr_names_numeric[NGPR];
 extern const char * const riscv_gpr_names_abi[NGPR];
 extern const char * const riscv_fpr_names_numeric[NFPR];
 extern const char * const riscv_fpr_names_abi[NFPR];
-
-extern const struct riscv_opcode riscv_opcodes[];
+extern struct riscv_opcode *riscv_opcodes;
+//extern const struct riscv_opcode riscv_opcodes[];
+#ifdef _MSC_VER
+extern int bfd_riscv_num_opcodes;
+#endif
 #endif
 #define NUMOPCODES bfd_riscv_num_opcodes
 
