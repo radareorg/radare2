@@ -27,7 +27,15 @@
 // #include "opcode/arm.h"
 #include "opintl.h"
 // #include "safe-ctype.h"
+#ifndef _MSC_VER
 #include "libiberty.h"
+#else
+#include <stdlib.h>
+#define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
+#define XCNEWVEC(T, N)		((T *) calloc ((N), sizeof (T)))
+#define XNEW(T)			((T *) malloc (sizeof (T)))
+#define ARRAY_SIZE _countof
+#endif
 #include "floatformat.h"
 
 /* FIXME: This shouldn't be done here.  */

@@ -19,7 +19,9 @@
  */
 
 #include "tcc.h"
-
+#ifdef _MSC_VER
+#include <math.h>
+#endif
 /********************************************************/
 /* global variables */
 

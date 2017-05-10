@@ -27,7 +27,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "format.h"
-
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 /* Formats a disassembled operand with its prefix (such as 'R' to indicate a register) into the
  * pointer to a C-string strOperand, which must be free'd after it has been used.
  * I decided to format the disassembled operands individually into strings for maximum flexibility,

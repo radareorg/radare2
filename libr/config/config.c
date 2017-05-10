@@ -2,7 +2,9 @@
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
-
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	RConfigNode *node;
 	if (STRNULL (name)) {

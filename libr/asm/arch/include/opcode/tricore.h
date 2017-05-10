@@ -104,6 +104,8 @@ typedef enum _tricore_fmt
 
 #if defined(__STDC__) || defined(ALMOST_STDC)
 # define F(x) TRICORE_FMT_ ## x
+#elif defined(_MSC_VER)
+# define F(x) TRICORE_FMT_ ## x
 #else
 # define F(x) TRICORE_FMT_/**/x
 #endif

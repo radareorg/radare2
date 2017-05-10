@@ -26,10 +26,19 @@
 #include <string.h>
 #include "xtensa-isa.h"
 #include "ansidecl.h"
-#include "libiberty.h"
-#include "dis-asm.h"
-
 #include <setjmp.h>
+#include "dis-asm.h"
+#ifndef _MSC_VER
+#include "libiberty.h"
+#else
+#include <stdlib.h>
+#define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
+#define XCNEWVEC(T, N)		((T *) calloc ((N), sizeof (T)))
+#define XNEW(T)			((T *) malloc (sizeof (T)))
+#define xmalloc malloc
+#endif
+
+
 
 extern xtensa_isa xtensa_default_isa;
 

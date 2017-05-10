@@ -6,6 +6,9 @@
 #if __WINDOWS__
 #include <windows.h>
 #endif
+#ifdef _MSC_VER
+#include <process.h>
+#endif
 
 static int lang_pipe_run(RLang *lang, const char *code, int len);
 static int lang_pipe_file(RLang *lang, const char *file) {
@@ -15,13 +18,13 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 #if __WINDOWS__
 static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
-	STARTUPINFO siStartInfo;
+	STARTUPINFOA siStartInfo;
 	BOOL bSuccess = FALSE;
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
 	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	LPTSTR szCmdLine2 = strdup (szCmdline);
-	bSuccess = CreateProcess (NULL, szCmdLine2, NULL, NULL,
+	char * szCmdLine2 = strdup (szCmdline);
+	bSuccess = CreateProcessA (NULL, szCmdLine2, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	free (szCmdLine2);
 	//CloseHandle (piProcInfo.hProcess);
@@ -32,7 +35,7 @@ static BOOL bStopThread = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 4096
-DWORD WINAPI ThreadFunction(LPVOID lpParam) {
+static DWORD WINAPI ThreadFunction(LPVOID lpParam) {
 	RLang * lang = lpParam;
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = FALSE;
@@ -177,8 +180,8 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	HANDLE hThread = 0;
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
-	SetEnvironmentVariable ("R2PIPE_PATH", r2pipe_var);
-	hPipeInOut = CreateNamedPipe (r2pipe_paz,
+	SetEnvironmentVariableA ("R2PIPE_PATH", r2pipe_var);
+	hPipeInOut = CreateNamedPipeA (r2pipe_paz,
 			PIPE_ACCESS_DUPLEX,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
@@ -190,7 +193,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		hThread = CreateThread (NULL, 0, ThreadFunction, lang, 0,0);
 		WaitForSingleObject (hproc, INFINITE);
 		bStopThread = TRUE;
-		DeleteFile (r2pipe_paz);
+		DeleteFileA (r2pipe_paz);
 		WaitForSingleObject (hThread, INFINITE);
 		CloseHandle (hPipeInOut);
 	}

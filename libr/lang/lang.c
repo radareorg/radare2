@@ -13,6 +13,9 @@ R_LIB_VERSION(r_lang);
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
 #endif
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 
 static RLang *__lang = NULL;
 

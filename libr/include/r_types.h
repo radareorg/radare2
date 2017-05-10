@@ -84,6 +84,8 @@
 #ifdef _MSC_VER
   /* Useful for windows _CONTEXT structure declaration */
   #define _X86_
+  #define strcasecmp stricmp
+  #define strncasecmp strnicmp
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
