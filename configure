@@ -163,6 +163,7 @@ EOF2
 printf "
 Optional Features:
   --disable-debugger     disable native debugger features 
+  --no-unused-warnings   hide compiler warnings about unused variables/parameters/functions
   --with-sysmagic        force to use system's magic 
   --disable-loadlibs     disable loading plugins 
   --without-fork         disable fork 
@@ -276,6 +277,8 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without
 	INFODIR="$value"; ;;
 --mandir)
 	MANDIR="$value"; ;;
+--no-unused-warnings)
+	CFLAGS="${CFLAGS} -Wunused-but-set-parameter -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable"; ;;
 
 "--disable-debugger") DEBUGGER="0"; ;;
 "--with-sysmagic") USE_MAGIC="1"; ;;
