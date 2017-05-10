@@ -19,7 +19,7 @@
 
 #if CAPSTONE_HAS_TMS320C64X
 
-#define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
+#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, __VA_ARGS__)
 #define INSOP(n) insn->detail->tms320c64x.operands[n]
 #define INSCC insn->detail->tms320c64x.cc
 

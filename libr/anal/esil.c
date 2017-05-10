@@ -1685,7 +1685,7 @@ static int esil_poke_some(RAnalEsil *esil) {
 	int regsize;
 	ut64 ptr, regs = 0, tmp;
 	char *count, *dst = r_anal_esil_pop (esil);
-	const int bytes = 64;
+#define BYTES_SIZE 64
 	if (dst && r_anal_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
 		// reg
 		isregornum (esil, dst, &ptr);
@@ -1693,7 +1693,7 @@ static int esil_poke_some(RAnalEsil *esil) {
 		if (count) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
-				ut8 b[bytes];
+				ut8 b[BYTES_SIZE];
 				ut64 num64;
 				for (i = 0; i < regs; i++) {
 					char *foo = r_anal_esil_pop (esil);
@@ -1707,12 +1707,12 @@ static int esil_poke_some(RAnalEsil *esil) {
 					/* TODO: implement peek here */
 					// read from $dst
 					r_write_ble (b, num64, esil->anal->big_endian, regsize);
-					ret = r_anal_esil_mem_write (esil, ptr, b, bytes);
-					if (ret != bytes) {
+					ret = r_anal_esil_mem_write (esil, ptr, b, BYTES_SIZE);
+					if (ret != BYTES_SIZE) {
 						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
-					ptr += bytes;
+					ptr += BYTES_SIZE;
 					free (foo);
 				}
 			}
