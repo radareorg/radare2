@@ -22,6 +22,7 @@
 #include <grub/misc.h>
 #include <grub/disk.h>
 #include <grub/dl.h>
+#include <r_types.h>
 
 #ifndef MODE_USTAR
 /* cpio support */
@@ -45,6 +46,8 @@ struct head
 #else
 /* tar support */
 #define MAGIC_USTAR	"ustar"
+
+R_PACKED (
 struct head
 {
   char name[100];
@@ -63,7 +66,7 @@ struct head
   char devmajor[8];
   char devminor[8];
   char prefix[155];
-} __attribute__ ((packed));
+});
 #endif
 
 struct grub_cpio_data

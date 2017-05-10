@@ -186,14 +186,3 @@ struct grub_partition_map grub_apple_partition_map =
     .name = "apple",
     .iterate = apple_partition_map_iterate,
   };
-
-GRUB_MOD_INIT(part_apple)
-{
-  grub_partition_map_register (&grub_apple_partition_map);
-}
-
-GRUB_MOD_FINI(part_apple)
-{
-  grub_partition_map_unregister (&grub_apple_partition_map);
-}
-

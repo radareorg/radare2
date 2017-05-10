@@ -235,8 +235,8 @@ grub_fbfs_close (grub_file_t file)
 }
 
 static grub_err_t
-grub_fbfs_label (grub_device_t device __attribute ((unused)),
-		 char **label __attribute ((unused)))
+grub_fbfs_label (grub_device_t device ,
+		 char **label)
 {
   *label = 0;
   return GRUB_ERR_NONE;

@@ -3,7 +3,11 @@
 #include <r_fs.h>
 #include <r_lib.h>
 #include <sys/stat.h>
-
+#ifdef _MSC_VER
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define MAXPATHLEN 255
+#endif
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);

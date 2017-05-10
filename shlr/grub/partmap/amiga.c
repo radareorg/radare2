@@ -22,7 +22,8 @@
 #include <grub/mm.h>
 #include <grub/partition.h>
 #include <grub/dl.h>
-
+#include <r_types.h>
+R_PACKED(
 struct grub_amiga_rdsk
 {
   /* "RDSK".  */
@@ -37,8 +38,9 @@ struct grub_amiga_rdsk
   grub_uint32_t fslst;
 
   /* The other information is not important for us.  */
-} __attribute__ ((packed));
+});
 
+R_PACKED(
 struct grub_amiga_partition
 {
   /* "PART".  */
@@ -63,7 +65,7 @@ struct grub_amiga_partition
   grub_uint32_t highcyl;
 
   grub_uint32_t firstcyl;
-} __attribute__ ((packed));
+});
 
 struct grub_partition_map grub_amiga_partition_map;
 
@@ -141,13 +143,3 @@ struct grub_partition_map grub_amiga_partition_map =
     .name = "amiga",
     .iterate = amiga_partition_map_iterate,
   };
-
-GRUB_MOD_INIT(part_amiga)
-{
-  grub_partition_map_register (&grub_amiga_partition_map);
-}
-
-GRUB_MOD_FINI(part_amiga)
-{
-  grub_partition_map_unregister (&grub_amiga_partition_map);
-}

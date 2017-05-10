@@ -22,7 +22,7 @@
 #include <grub/symbol.h>
 #include <grub/types.h>
 #include <grub/err.h>
-
+#include "r_types.h"
 /* The signature.  */
 #define GRUB_PC_PARTITION_SIGNATURE		0xaa55
 
@@ -54,6 +54,7 @@
 #define GRUB_PC_PARTITION_TYPE_LINUX_RAID	0xfd
 
 /* The partition entry.  */
+R_PACKED(
 struct grub_msdos_partition_entry
 {
   /* If active, 0x80, otherwise, 0x00.  */
@@ -83,9 +84,10 @@ struct grub_msdos_partition_entry
 
   /* The length in sector units.  */
   grub_uint32_t length;
-} __attribute__ ((packed));
+});
 
 /* The structure of MBR.  */
+R_PACKED (
 struct grub_msdos_partition_mbr
 {
   /* The code area (actually, including BPB).  */
@@ -96,7 +98,7 @@ struct grub_msdos_partition_mbr
 
   /* The signature 0xaa55.  */
   grub_uint16_t signature;
-} __attribute__ ((packed));
+});
 
 
 

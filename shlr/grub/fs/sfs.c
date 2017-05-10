@@ -25,16 +25,18 @@
 #include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
-
+#include <r_types.h>
 /* The common header for a block.  */
+R_PACKED (
 struct grub_sfs_bheader
 {
   grub_uint8_t magic[4];
   grub_uint32_t chksum;
   grub_uint32_t ipointtomyself;
-} __attribute__ ((packed));
+});
 
 /* The sfs rootblock.  */
+R_PACKED (
 struct grub_sfs_rblock
 {
   struct grub_sfs_bheader header;
@@ -45,9 +47,10 @@ struct grub_sfs_rblock
   grub_uint8_t unused3[8];
   grub_uint32_t rootobject;
   grub_uint32_t btree;
-} __attribute__ ((packed));
+});
 
 /* A SFS object container.  */
+R_PACKED (
 struct grub_sfs_obj
 {
   grub_uint8_t unused1[4];
@@ -55,28 +58,31 @@ struct grub_sfs_obj
   grub_uint8_t unused2[4];
   union
   {
-    struct
+	R_PACKED (
+	struct
     {
       grub_uint32_t first_block;
       grub_uint32_t size;
-    } file __attribute__ ((packed));
-    struct
+    }) file ;
+	R_PACKED (
+	struct
     {
       grub_uint32_t hashtable;
       grub_uint32_t dir_objc;
-    } dir __attribute__ ((packed));
+    }) dir ;
   } file_dir;
   grub_uint8_t unused3[4];
   grub_uint8_t type;
   grub_uint8_t filename[1];
   grub_uint8_t comment[1];
-} __attribute__ ((packed));
+});
 
 #define	GRUB_SFS_TYPE_DELETED	32
 #define	GRUB_SFS_TYPE_SYMLINK	64
 #define	GRUB_SFS_TYPE_DIR	128
 
 /* A SFS object container.  */
+R_PACKED (
 struct grub_sfs_objc
 {
   struct grub_sfs_bheader header;
@@ -85,22 +91,25 @@ struct grub_sfs_objc
   grub_uint32_t prev;
   /* The amount of objects depends on the blocksize.  */
   struct grub_sfs_obj objects[1];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_sfs_btree_node
 {
   grub_uint32_t key;
   grub_uint32_t data;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_sfs_btree_extent
 {
   grub_uint32_t key;
   grub_uint32_t next;
   grub_uint32_t prev;
   grub_uint16_t size;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_sfs_btree
 {
   struct grub_sfs_bheader header;
@@ -110,7 +119,7 @@ struct grub_sfs_btree
   /* Normally this can be kind of node, but just extents are
      supported.  */
   struct grub_sfs_btree_node node[1];
-} __attribute__ ((packed));
+});
 
 
 

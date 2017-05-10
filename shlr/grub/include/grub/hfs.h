@@ -20,6 +20,7 @@
 #define GRUB_HFS_HEADER	1
 
 #include <grub/types.h>
+#include <r_types.h>
 
 #define GRUB_HFS_MAGIC		0x4244
 
@@ -36,6 +37,7 @@ typedef struct grub_hfs_extent grub_hfs_datarecord_t[3];
 
 /* The HFS superblock (The official name is `Master Directory
    Block').  */
+R_PACKED (
 struct grub_hfs_sblock
 {
   grub_uint16_t magic;
@@ -56,6 +58,6 @@ struct grub_hfs_sblock
   grub_hfs_datarecord_t extent_recs;
   grub_uint32_t catalog_size;
   grub_hfs_datarecord_t catalog_recs;
-} __attribute__ ((packed));
+});
 
 #endif /* ! GRUB_HFS_HEADER */
