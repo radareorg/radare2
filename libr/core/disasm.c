@@ -2632,13 +2632,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (!flag_printed) {
 				list = r_flag_get_list (core->flags, p);
 				r_list_foreach (list, iter, f) {
-					if (!f->name
-					    || !strncmp (f->name, "loc.", 4)
-					    || !strncmp (f->name, "fcn.", 4)
-					    || !strncmp (f->name, "section.", 8)
-					    || !strncmp (f->name, "section_end.", 12)) {
-						continue;
-					}
 					if (!ds->opstr || !strstr (ds->opstr, f->name)) {
 						ALIGN;
 						ds_comment (ds, true, "; %s%s", f->name, nl);
@@ -2672,12 +2665,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 				if (!is_lea_str) {
-					if (!flag_printed && *flag
-					    && strncmp (flag, "loc.", 4)
-					    && strncmp (flag, "fcn.", 4)
-					    && strncmp (flag, "section.", 8)
-					    && strncmp (flag, "section_end.", 12)
-					    && (!ds->opstr || !strstr (ds->opstr, flag))) {
+					if (!flag_printed && *flag && (!ds->opstr || !strstr (ds->opstr, flag))) {
 						ALIGN;
 						ds_comment (ds, true, "; %s%s", flag, nl);
 						flag_printed = true;
