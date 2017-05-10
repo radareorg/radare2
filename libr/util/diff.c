@@ -285,7 +285,7 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	}
 	//Clean up output on loop exit (purely aesthetic)
 	if (verbose) {
-		eprintf ("\rProcessing %d of %d (loops=%llu)\n", i, aLen,loops);
+		eprintf ("\rProcessing %d of %d (loops=%"PFMT64d")\n", i, aLen,loops);
 	}
 	if (distance) {
 		// the final distance is the last byte we processed in the inner loop.

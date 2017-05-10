@@ -132,18 +132,16 @@ error:
 }
 
 static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
-	proc_per_thread_t *t;
 	char *temp_p_sigpend, *temp_p_sighold, *p_sigpend, *p_sighold;
-	char *buff;
 	int size;
 	const char * file = sdb_fmt (0, "/proc/%d/task/%d/stat", pid, tid);
 
-	buff = r_file_slurp (file, &size);
+	char *buff = r_file_slurp (file, &size);
 	if (!buff) {
 		return NULL;
 	}
 
-	t = R_NEW0 (proc_per_thread_t);
+	proc_per_thread_t *t = R_NEW0 (proc_per_thread_t);
 	if (!t) {
 		return NULL;
 	}
@@ -154,10 +152,10 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		char no_char;
 		ut32 no_ui;
 		sscanf (buff,  "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu"
-		  "%llu %llu %ld %lu",
-			   &no_num, no_str, &no_char, &no_num, &no_num, &no_num,
-			   &no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
-			   &no_lui, &t->utime, &t->stime, &t->cutime, &t->cstime);
+			"%"PFMT64x" %"PFMT64x" %ld %lu",
+			&no_num, no_str, &no_char, &no_num, &no_num, &no_num,
+			&no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
+			&no_lui, &t->utime, &t->stime, &t->cutime, &t->cstime);
 		free (buff);
 	}
 

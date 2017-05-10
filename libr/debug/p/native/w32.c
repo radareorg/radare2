@@ -582,7 +582,9 @@ static void * r_debug_findlib (void * BaseOfDll) {
 			libPtr = (PLIB_ITEM)((ULONG_PTR)libPtr + sizeof (LIB_ITEM));
 		}
 	}
+	return NULL;
 }
+
 // thread list
 typedef struct {
 	int pid;

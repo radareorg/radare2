@@ -14,6 +14,7 @@ CFLAGS+=-DCORELIB -Iformat -Imangling
 
 include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
+include $(SHLR)/java/deps.mk
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o dbginfo.o bin_write.o demangle.o dwarf.o filter.o
@@ -25,6 +26,5 @@ OBJS+=mangling/swift.o mangling/swift-sd.o
 OBJS+=mangling/dlang.o
 OBJS+=pdb/pdb_downloader.o pdb/omap.o pdb/stream_pe.o pdb/gdata.o
 OBJS+=pdb/fpo.o pdb/dbi.o pdb/tpi.o pdb/stream_file.o pdb/pdb.o
-LINK+=$(SHLR)/java/libr_java.a
 
 include $(TOP)/libr/rules.mk

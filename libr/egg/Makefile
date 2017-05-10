@@ -3,7 +3,6 @@ include ../config.mk
 NAME=r_egg
 DEPS=r_asm r_syscall r_util r_parse r_reg r_anal 
 DEPS+=r_flag r_cons
-LINK+=$(SHLR)/java/libr_java.a
 
 OBJS=egg.o egg_lang.o
 OBJS+=emit_x86.o
@@ -15,6 +14,7 @@ all: ${LIBSO} ${LIBAR}
 
 P=p/
 include ${STATIC_EGG_PLUGINS}
+include $(STOP)/java/deps.mk
 
 ifneq (${STATIC_OBJ},)
 OBJS+=$(subst ..,${P}..,$(subst egg_,${P}egg_,$(STATIC_OBJ)))

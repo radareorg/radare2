@@ -1,9 +1,12 @@
+/* radare2 - LGPL - Copyright 2017 - wargio */
+
 #include <r_util.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 enum {
 	R_JS_NULL = 0,
 	R_JS_NUMBERS,
@@ -13,7 +16,7 @@ enum {
 	R_JS_OBJECT,
 } RJSType;
 
-void r_json_var_free (RJSVar* var) {
+R_API void r_json_var_free (RJSVar* var) {
 	ut32 i;
 	if (!var || var->ref > 1) {
 		if (var)
@@ -45,16 +48,15 @@ void r_json_var_free (RJSVar* var) {
 	free (var);
 }
 
-RJSVar* r_json_object_new () {
+R_API RJSVar* r_json_object_new () {
 	RJSVar* var = R_NEW0 (RJSVar);
-	if (!var) {
-		return NULL;
+	if (var) {
+		var->type = R_JS_OBJECT;
 	}
-	var->type = R_JS_OBJECT;
 	return var;
 }
 
-RJSVar* r_json_array_new (int len) {
+R_API RJSVar* r_json_array_new (int len) {
 	if (len < 0) {
 		return NULL;
 	}
@@ -73,7 +75,7 @@ RJSVar* r_json_array_new (int len) {
 	return var;
 }
 
-RJSVar* r_json_string_new (const char* name) {
+R_API RJSVar* r_json_string_new (const char* name) {
 	if (!name) {
 		return NULL;
 	}
@@ -87,7 +89,7 @@ RJSVar* r_json_string_new (const char* name) {
 	return var;
 }
 
-RJSVar* r_json_number_new (int value) {
+R_API RJSVar* r_json_number_new (int value) {
 	RJSVar* var = R_NEW0 (RJSVar);
 	if (!var) {
 		return NULL;
@@ -97,7 +99,7 @@ RJSVar* r_json_number_new (int value) {
 	return var;
 }
 
-RJSVar* r_json_boolean_new (bool value) {
+R_API RJSVar* r_json_boolean_new (bool value) {
 	RJSVar* var = R_NEW0 (RJSVar);
 	if (!var) {
 		return NULL;
@@ -107,7 +109,7 @@ RJSVar* r_json_boolean_new (bool value) {
 	return var;
 }
 
-RJSVar* r_json_null_new () {
+R_API RJSVar* r_json_null_new () {
 	RJSVar* var = R_NEW0 (RJSVar);
 	if (!var) {
 		return NULL;
@@ -116,7 +118,7 @@ RJSVar* r_json_null_new () {
 	return var;
 }
 
-void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
+R_API void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	ut32 len;
 	RJSVar** v;
 	char** c;
@@ -143,7 +145,7 @@ void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	object->object.n = (const char**) c;
 }
 
-void r_json_array_add (RJSVar* array, RJSVar* value) {
+R_API void r_json_array_add (RJSVar* array, RJSVar* value) {
 	ut32 len;
 	RJSVar** v;
 	if (!array || !value) {
@@ -163,7 +165,7 @@ void r_json_array_add (RJSVar* array, RJSVar* value) {
 	array->array.a = v;
 }
 
-RJSVar* r_json_object_get (RJSVar* object, const char* name) {
+R_API RJSVar* r_json_object_get (RJSVar* object, const char* name) {
 	if (!object || !name) {
 		return NULL;
 	}
@@ -176,7 +178,7 @@ RJSVar* r_json_object_get (RJSVar* object, const char* name) {
 	return NULL;
 }
 
-RJSVar* r_json_array_get (RJSVar* array, int index) {
+R_API RJSVar* r_json_array_get (RJSVar* array, int index) {
 	if (!array || index <= 0 || index >= array->array.l) {
 		return NULL;
 	}
@@ -184,17 +186,18 @@ RJSVar* r_json_array_get (RJSVar* array, int index) {
 }
 
 static char* _r_json_null_str (bool expanded) {
-	char *c = NULL;
-	ut32 len = 0;
-	if (!expanded)
+	if (!expanded) {
 		return NULL;
-	len = sizeof (R_JSON_NULL);
-	c = (char*) malloc (len);
-	memcpy (c, R_JSON_NULL, len);
+	}
+	const int len = sizeof (R_JSON_NULL);
+	char *c = (char*) malloc (len);
+	if (c) {
+		memcpy (c, R_JSON_NULL, len);
+	}
 	return c;
 }
 
-char* r_json_var_string (RJSVar* var, bool expanded) {
+R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 	char *c = NULL;
 	ut32 i, len = 0;
 	if (!var) {
@@ -315,11 +318,9 @@ char* r_json_var_string (RJSVar* var, bool expanded) {
 	return c;
 }
 
-char* r_json_stringify (RJSVar* var, bool expanded) {
-	char* s = NULL;
+R_API char* r_json_stringify (RJSVar* var, bool expanded) {
 	if (!var || (var->type != R_JS_OBJECT && var->type != R_JS_ARRAY)) {
 		return NULL;
 	}
-	s = r_json_var_string (var, expanded);
-	return s;
+	return r_json_var_string (var, expanded);
 }
