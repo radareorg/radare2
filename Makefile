@@ -397,7 +397,6 @@ meson-config:
 	./configure-plugins
 	cp -f libr/config.mk libr/config.mk.meson
 	cp -f libr/config.h libr/config.h.meson
-	$(MAKE) meson
 
 meson: build
 	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
