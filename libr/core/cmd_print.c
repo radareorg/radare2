@@ -2539,7 +2539,15 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			r_anal_op_fini (&aop);
 			r_asm_set_pc (core->assembler, addr + i);
 			ret = r_asm_disassemble (core->assembler, &asmop, buf + i, len - i);
+			if (ret < 0) {
+				asmop.size = 1;
+				continue;
+			}
 			ret = r_anal_op (core->anal, &aop, addr + i, buf +i , len - i);
+			if (ret < 0) {
+				aop.size = 1;
+				continue;
+			}
 			if (loop > 0) {
 				const char *x = sdb_const_get (db, sdb_fmt (-1, "label.0x%"PFMT64x, addr + i), NULL);
 				if (x) {
@@ -3391,7 +3399,7 @@ static int cmd_print(void *data, const char *input) {
 				if (f) {
 					func_walk_blocks (core, f, input[2], 'D');
 				} else {
-					disasm_recursive (core, core->offset, 'D');
+					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				}
 				pd_result = true;
 			}
