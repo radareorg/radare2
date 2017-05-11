@@ -1,2 +1,2 @@
-/* This file is only included with mscv build */
+//fake include file to avoid error on windows compilation.
 #include <io.h>

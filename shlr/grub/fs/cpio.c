@@ -27,6 +27,7 @@
 #ifndef MODE_USTAR
 /* cpio support */
 #define	MAGIC_BCPIO	070707
+R_PACKED(
 struct head
 {
   grub_uint16_t magic;
@@ -42,7 +43,7 @@ struct head
   grub_uint16_t namesize;
   grub_uint16_t filesize_1;
   grub_uint16_t filesize_2;
-} __attribute__ ((packed));
+});
 #else
 /* tar support */
 #define MAGIC_USTAR	"ustar"
