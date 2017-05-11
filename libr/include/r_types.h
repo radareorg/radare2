@@ -169,11 +169,6 @@
 extern "C" {
 #endif
 
-#define R_LIB_VERSION_HEADER(x) \
-const char *x##_version()
-#define R_LIB_VERSION(x) \
-const char *x##_version () { return "" R2_GITTAP; }
-
 #define TODO(x) eprintf(__func__"  " x)
 
 // TODO: FS or R_SYS_DIR ??
@@ -242,6 +237,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
     #define R_API
   #endif
 #endif
+
+#define R_LIB_VERSION_HEADER(x) \
+R_API const char *x##_version()
+#define R_LIB_VERSION(x) \
+R_API const char *x##_version () { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
