@@ -213,8 +213,12 @@ grub_partition_get_name (const grub_partition_t partition)
     {
       /* Even on 64-bit machines this buffer is enough to hold
 	 longest number.  */
-      char * buf = grub_malloc(grub_strlen (part->partmap->name) + 25);
-      int strl;
+#ifndef _MSC_VER
+	  char buf[grub_strlen (part->partmap->name) + 25];
+#else
+	  char * buf = grub_malloc(grub_strlen (part->partmap->name) + 25);
+#endif
+	  int strl;
       grub_snprintf (buf, sizeof (buf), "%s%d", part->partmap->name,
 		     part->number + 1);
       strl = grub_strlen (buf);

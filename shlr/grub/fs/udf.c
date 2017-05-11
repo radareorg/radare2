@@ -765,9 +765,15 @@ grub_udf_iterate_dir (grub_fshelp_node_t dir,
       else
 	{
 	  enum grub_fshelp_filetype type;
-	  grub_uint8_t * raw = grub_malloc(dirent.file_ident_length);
-	  grub_uint16_t * utf16 = grub_malloc(dirent.file_ident_length - 1);
-	  grub_uint8_t * filename= grub_malloc(dirent.file_ident_length * 2);
+#ifndef _MSC_VER
+	  grub_uint8_t raw[dirent.file_ident_length];
+	  grub_uint16_t utf16[dirent.file_ident_length - 1];
+	  grub_uint8_t filename[dirent.file_ident_length * 2];
+#else
+	  grub_uint8_t * raw = grub_malloc (dirent.file_ident_length);
+	  grub_uint16_t * utf16 = grub_malloc (dirent.file_ident_length - 1);
+	  grub_uint8_t * filename = grub_malloc (dirent.file_ident_length * 2);
+#endif
 	  grub_size_t utf16len = 0;
 
 	  type = ((dirent.characteristics & GRUB_UDF_FID_CHAR_DIRECTORY) ?

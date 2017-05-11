@@ -484,7 +484,11 @@ grub_nilfs2_btree_lookup (struct grub_nilfs2_data *data,
 			  grub_uint64_t key, int need_translate)
 {
   struct grub_nilfs2_btree_node *node;
+#ifndef _MSC_VER
+  unsigned char block[NILFS2_BLOCK_SIZE (data)];
+#else
   unsigned char * block = grub_malloc(NILFS2_BLOCK_SIZE (data));
+#endif
   grub_uint64_t ptr;
   int level, found, index;
 
@@ -838,7 +842,11 @@ grub_nilfs2_iterate_dir (grub_fshelp_node_t dir,
 
       if (dirent.name_len != 0)
 	{
+#ifndef _MSC_VER
+	  char filename[dirent.name_len + 1];
+#else
 	  char * filename = grub_malloc(dirent.name_len + 1);
+#endif
 	  struct grub_fshelp_node *fdiro;
 	  enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
 

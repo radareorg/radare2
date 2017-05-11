@@ -483,8 +483,11 @@ grub_xfs_iterate_dir (grub_fshelp_node_t dir,
 	    void *inopos = (((char *) de)
 			    + sizeof (struct grub_xfs_dir_entry)
 			    + de->len - 1);
-	    char * name = grub_malloc(de->len + 1);
-
+#ifndef _MSC_VER
+		char name[de->len + 1];
+#else
+		char * name = grub_malloc(de->len + 1);
+#endif
 	    if (smallino)
 	      {
 		ino = grub_be_to_cpu32 (*(grub_uint32_t *) inopos);

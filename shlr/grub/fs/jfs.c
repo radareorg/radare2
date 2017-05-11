@@ -624,7 +624,11 @@ grub_jfs_read_file (struct grub_jfs_data *data,
 static grub_err_t
 grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 {
+#ifndef _MSC_VER
+  char fpath[grub_strlen (path)];
+#else
   char * fpath = grub_malloc(grub_strlen (path));
+#endif  
   char *name = fpath;
   char *next;
   struct grub_jfs_diropen *diro;
@@ -716,8 +720,11 @@ static grub_err_t
 grub_jfs_lookup_symlink (struct grub_jfs_data *data, int ino)
 {
   int size = grub_le_to_cpu64 (data->currinode.size);
+#ifndef _MSC_VER
+  char symlink[size + 1];
+#else
   char *symlink = grub_malloc(size + 1);
-
+#endif
   if (++data->linknest > GRUB_JFS_MAX_SYMLNK_CNT)
     return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 

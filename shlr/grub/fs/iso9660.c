@@ -594,7 +594,11 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	}
 
       {
+#ifndef _MSC_VER
+	char name[dirent.namelen + 1];
+#else
 	char * name = grub_malloc(dirent.namelen + 1);
+#endif
 	int nameoffset = offset + sizeof (dirent);
 	struct grub_fshelp_node *node;
 	int sua_off = (sizeof (dirent) + dirent.namelen + 1
