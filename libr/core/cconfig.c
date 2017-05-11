@@ -1924,6 +1924,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
 	n = NODEICB ("asm.midflags", 2, &cb_midflags);
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
+	SETPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
 	SETPREF ("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
