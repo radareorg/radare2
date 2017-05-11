@@ -228,11 +228,14 @@ void *grub_memset (void *s, int c, grub_size_t n);
 grub_size_t grub_strlen (const char *s);
 #ifdef _MSC_VER
 #include <stdio.h>
-//#define grub_printf printf
-//#define grub_printf_ printf
-//#define grub_real_dprintf(a,b,c,d,...) printf(d,__VA_ARGS__)
-//#define grub_snprintf(a,b,c,d,...) printf(d,__VA_ARGS__)
-//#define grub_xasprintf(a,...) printf (a,__VA_ARGS__)
+int grub_printf (const char *fmt, ...);
+int grub_printf_ (const char *fmt, ...);
+void grub_real_dprintf (const char *file,
+	const int line,
+	const char *condition,
+	const char *fmt, ...);
+int grub_snprintf (char *str, grub_size_t n, const char *fmt, ...);
+char *grub_xasprintf (const char *fmt, ...);
 #else
 int grub_printf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 int grub_printf_ (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
