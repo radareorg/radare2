@@ -335,7 +335,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 
 /*** ^^^ thready ***/
 
-R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
+R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
 	char *prj, *filepath, *oldbin;
@@ -402,21 +402,17 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 			return false;
 		}
 	}
+
+	if (close_current_session && r_config_get_i (core->config, "file.info")) {
+		mapaddr = r_config_get_i (core->config, "file.offset");
+		(void)r_core_bin_load (core, filepath, mapaddr? mapaddr: UT64_MAX);
+	}
 	if (thready) {
 		(void) r_core_project_load_bg (core, prjfile, prj);
 		ret = true;
 	} else {
 		/* load sdb stuff in here */
 		ret = r_core_project_load (core, prjfile, prj);
-	}
-
-	if (close_current_session && r_config_get_i (core->config, "file.info")) {
-		mapaddr = r_config_get_i (core->config, "file.offset");
-		if (mapaddr) {
-			r_core_bin_load (core, filepath, mapaddr);
-		} else {
-			r_core_bin_load (core, filepath, UT64_MAX);
-		}
 	}
 	newbin = r_config_get (core->config, "file.path");
 	if (strcmp (oldbin, newbin)) {
