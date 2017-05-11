@@ -266,16 +266,17 @@ grub_ufs_get_file_block (struct grub_ufs_data *data, unsigned int blk)
 #ifdef MODE_UFS2
 #ifndef _MSC_VER
 	  grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
+#else
+	  grub_uint64_t *indir = grub_malloc(blksz / sizeof (grub_uint64_t));
 #endif
-	  grub_uint64_t * indir = grub_malloc(blksz / sizeof (grub_uint64_t));
 #else
 #ifndef _MSC_VER
 	  grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
 #else
-	  grub_uint32_t * indir = grub_malloc(blksz / sizeof (grub_uint32_t));
+	  grub_uint32_t *indir = grub_malloc(blksz / sizeof (grub_uint32_t));
 #endif
 #endif
-      grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 0) << log2_blksz,
+	  grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 0) << log2_blksz,
 		      0, sizeof (indir), indir);
       return indir[blk];
     }
@@ -287,15 +288,17 @@ grub_ufs_get_file_block (struct grub_ufs_data *data, unsigned int blk)
 #ifdef MODE_UFS2
 #ifndef _MSC_VER
 	  grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
+#else
+	  grub_uint64_t *indir = grub_malloc(blksz / sizeof (grub_uint64_t));
 #endif
-	  grub_uint64_t * indir = grub_malloc (blksz / sizeof (grub_uint64_t));
 #else
 #ifndef _MSC_VER
 	  grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
 #else
-	  grub_uint32_t * indir = grub_malloc (blksz / sizeof (grub_uint32_t));
+	  grub_uint32_t *indir = grub_malloc(blksz / sizeof (grub_uint32_t));
 #endif
 #endif
+
       grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 1) << log2_blksz,
 		      0, sizeof (indir), indir);
       grub_disk_read (data->disk,
