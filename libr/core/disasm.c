@@ -1012,7 +1012,7 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	int i;
 	ds->hasMidflag = false;
 
-	if (core->print->cur != -1) {
+	if (ds->midcursor && core->print->cur != -1) {
 		ut64 cur = core->offset + core->print->cur;
 		ut64 from = ds->at;
 		ut64 to = ds->at + ds->oplen;
