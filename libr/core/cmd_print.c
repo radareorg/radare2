@@ -2526,6 +2526,46 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	}
 }
 
+#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
+	Sdb *db = sdb_new0 ();
+	RAsmOp asmop = {0};
+	RAnalOp aop = {0};
+	int i, ret;
+	ut8 *buf = core->block;
+	int loop, len = core->blocksize;
+	for (loop = 0; loop < 2 ; loop ++) {
+		for (i = 0; i < len; i+= aop.size) {
+			r_anal_op_fini (&aop);
+			r_asm_set_pc (core->assembler, addr + i);
+			ret = r_asm_disassemble (core->assembler, &asmop, buf + i, len - i);
+			ret = r_anal_op (core->anal, &aop, addr + i, buf +i , len - i);
+			if (loop > 0) {
+				const char *x = sdb_const_get (db, sdb_fmt (-1, "label.0x%"PFMT64x, addr + i), NULL);
+				if (x) {
+					r_cons_printf ("%s:\n", x);
+				}
+				char *asm_str = asmop.buf_asm;
+				char *color_reg = P(reg): Color_YELLOW;
+				char *color_num = P(num): Color_CYAN;
+				asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num);
+				r_cons_printf ("0x%08"PFMT64x" %20s %s\n", addr + i, asmop.buf_hex, asm_str);
+			}
+			switch (aop.type) {
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+				r_cons_printf ("--\n");
+				sdb_set (db, sdb_fmt (-1, "label.0x%"PFMT64x, aop.jump),
+						sdb_fmt (-1, "from.0x%"PFMT64x, addr + i), 0);
+				break;
+			}
+		}
+	}
+	r_anal_op_fini (&aop);
+	sdb_free (db);
+}
+
 static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print) {
 	RListIter *iter;
 	RAnalBlock *b;
@@ -3340,6 +3380,9 @@ static int cmd_print(void *data, const char *input) {
 			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
 			pd_result = true;
 			break;
+		case 'R': // "pdR"
+			disasm_recursive (core, core->offset, 'D');
+			break;
 		case 'r': // "pdr"
 			processed_cmd = true;
 			{
@@ -3348,7 +3391,7 @@ static int cmd_print(void *data, const char *input) {
 				if (f) {
 					func_walk_blocks (core, f, input[2], 'D');
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					disasm_recursive (core, core->offset, 'D');
 				}
 				pd_result = true;
 			}
