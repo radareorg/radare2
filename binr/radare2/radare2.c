@@ -1174,7 +1174,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
-			r_core_cmd (&r, "fo", 0);
+			r_core_print_fortune (&r);
 			r_cons_flush ();
 		}
 	}

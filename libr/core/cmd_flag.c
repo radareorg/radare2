@@ -95,6 +95,53 @@ static void flagbars(RCore *core, const char *glob) {
 	}
 }
 
+R_API void r_core_print_fortune(RCore *core) {
+	// TODO: use file.fortunes // can be dangerous in sandbox mode
+	const char *fortunes_tips = R2_PREFIX "/share/doc/radare2/fortunes.tips";
+	const char *fortunes_fuun = R2_PREFIX "/share/doc/radare2/fortunes.fun";
+	const char *fortunes_nsfw = R2_PREFIX "/share/doc/radare2/fortunes.nsfw";
+	const char *fortunes_crep = R2_PREFIX "/share/doc/radare2/fortunes.creepy";
+	const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
+	char *line = NULL, *templine = NULL;
+	int i = 0;
+	if (strstr (types, "tips")) {
+		templine = r_file_slurp_random_line_count (fortunes_tips, &i);
+		line = templine;
+	}
+	if (strstr (types, "fun")) {
+		templine = r_file_slurp_random_line_count (fortunes_fuun, &i);
+		if (templine) {
+			free (line);
+			line = templine;
+		}
+	}
+	if (strstr (types, "nsfw")) {
+		templine = r_file_slurp_random_line_count (fortunes_nsfw, &i);
+		if (templine) {
+			free (line);
+			line = templine;
+		}
+	}
+	if (strstr (types, "creepy")) {
+		templine = r_file_slurp_random_line_count (fortunes_crep, &i);
+		if (templine) {
+			free (line);
+			line = templine;
+		}
+	}
+	if (line) {
+		if (r_config_get_i (core->config, "cfg.fortunes.clippy")) {
+			r_core_clippy (line);
+		} else {
+			r_cons_printf (" -- %s\n", line);
+		}
+		if (r_config_get_i (core->config, "cfg.fortunes.tts")) {
+			r_sys_tts (line, true);
+		}
+		free (line);
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -595,52 +642,8 @@ rep:
 			free (p);
 		} else eprintf ("Usage: fC [name] [comment]\n");
 		break;
-	case 'o':
-		{ // TODO: use file.fortunes // can be dangerous in sandbox mode
-			const char *fortunes_tips = R2_PREFIX "/share/doc/radare2/fortunes.tips";
-			const char *fortunes_fuun = R2_PREFIX "/share/doc/radare2/fortunes.fun";
-			const char *fortunes_nsfw = R2_PREFIX "/share/doc/radare2/fortunes.nsfw";
-			const char *fortunes_crep = R2_PREFIX "/share/doc/radare2/fortunes.creepy";
-			const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
-			char *line = NULL, *templine = NULL;
-			int i = 0;
-			if (strstr (types, "tips")) {
-				templine = r_file_slurp_random_line_count (fortunes_tips, &i);
-				line = templine;
-			}
-			if (strstr (types, "fun")) {
-				templine = r_file_slurp_random_line_count (fortunes_fuun, &i);
-				if (templine) {
-					free (line);
-					line = templine;
-				}
-			}
-			if (strstr (types, "nsfw")) {
-				templine = r_file_slurp_random_line_count (fortunes_nsfw, &i);
-				if (templine) {
-					free (line);
-					line = templine;
-				}
-			}
-			if (strstr (types, "creepy")) {
-				templine = r_file_slurp_random_line_count (fortunes_crep, &i);
-				if (templine) {
-					free (line);
-					line = templine;
-				}
-			}
-			if (line) {
-				if (r_config_get_i (core->config, "cfg.fortunes.clippy")) {
-					r_core_clippy (line);
-				} else {
-					r_cons_printf (" -- %s\n", line);
-				}
-				if (r_config_get_i (core->config, "cfg.fortunes.tts")) {
-					r_sys_tts (line, true);
-				}
-				free (line);
-			}
-		}
+	case 'o': // "fo"
+		r_core_print_fortune (core);
 		break;
 	case 'r':
 		if (input[1]==' ' && input[2]) {
