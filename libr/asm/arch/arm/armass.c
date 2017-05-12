@@ -153,6 +153,9 @@ static int getnum(const char *str) {
 
 static ut32 getimmed8(const char *str) {
 	ut32 num = getnum (str);
+	if (err) {
+		return 0;
+	}
 	ut32 rotate;
 	if (num <= 0xff) {
 		return num;
@@ -1187,6 +1190,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= ret << 24;
 				} else {
 					int immed = getimmed8 (ao->a[1]);
+					if (err) {
+						return 0;
+					}
 					ao->o |= 0xa003 | (immed & 0xff) << 24 | (immed >> 8) << 16;
 				}
 				break;
