@@ -159,6 +159,14 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 		entry->vaddr += (201 + 5 + call_dst);
 		return entry;
 	}
+
+	if (b[292] == 0x50 && b[303] == 0xe8) {
+		const st32 call_dst = b[303 + 1] | (b[303 + 2] << 8) | (b[303 + 3] << 16) | (b[303 + 4] << 24);
+		entry->paddr += (303 + 5 + call_dst);
+		entry->vaddr += (303 + 5 + call_dst);
+		return entry;
+	}
+
 	free (entry);
 	return NULL;
 }
