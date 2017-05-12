@@ -333,7 +333,12 @@ extern unsigned int xcrc32 (const unsigned char *, int, unsigned int);
    as new/delete and new[]/delete[].  */
 
 /* Scalar allocators.  */
-
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define xmalloc malloc
+#define xcalloc calloc
+#define xrealloc realloc
+#endif
 #define XALLOCA(T)		((T *) alloca (sizeof (T)))
 #define XNEW(T)			((T *) xmalloc (sizeof (T)))
 #define XCNEW(T)		((T *) xcalloc (1, sizeof (T)))
@@ -658,11 +663,7 @@ extern void *C_alloca (size_t) ATTRIBUTE_MALLOC;
    char *const libiberty_nptr = (char *const) alloca (libiberty_len); \
    (char *) memcpy (libiberty_nptr, libiberty_optr, libiberty_len); }))
 #else
-#ifdef _MSC_VER
-# define alloca(x) _alloca(x)
-#else
 # define alloca(x) C_alloca(x)
-#endif
 # undef USE_C_ALLOCA
 # define USE_C_ALLOCA 1
 # undef C_ALLOCA
