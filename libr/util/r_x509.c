@@ -820,7 +820,10 @@ RJSVar *r_x509_extensions_json (RX509Extensions* exts) {
 	for (i = 0; i < exts->length; ++i) {
 		RX509Extension *e = exts->extensions[i];
 		RJSVar* obj = r_json_object_new ();
-		if (!e || !obj) continue;
+		if (!e || !obj) {
+			r_json_var_free (obj);
+			continue;
+		}
 		if (e->extnID) {
 			r_json_object_add (obj, "OID", r_json_string_new (e->extnID->string));
 		}

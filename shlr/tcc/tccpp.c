@@ -20,7 +20,6 @@
 
 #include "tcc.h"
 #include <math.h>
-
 /********************************************************/
 /* global variables */
 

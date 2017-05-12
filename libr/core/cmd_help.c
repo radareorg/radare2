@@ -255,7 +255,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[1] == 'j') {
 				json = true;
 			}
-			const int id = (input[2]== ' ')
+			const int id = (input[1] != '\0' && input[2] == ' ')
 				?(int)r_num_math (core->num, input + 2): -1;
 			char *ops = r_asm_mnemonics (core->assembler, id, json);
 			if (ops) {

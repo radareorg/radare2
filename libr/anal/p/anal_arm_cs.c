@@ -1269,7 +1269,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	}
 	case ARM64_INS_NEG:
+#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
+#endif
 		if (LSHIFT2_64 (1)) {
 			SHIFTED_REG64_APPEND (&op->esil, 1);
 		} else {

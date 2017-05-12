@@ -14,6 +14,7 @@
 #include <getopt.c>
 #include "../blob/version.c"
 
+
 #if USE_THREADS
 #include <r_th.h>
 static char *rabin_cmd = NULL;
@@ -611,9 +612,8 @@ int main(int argc, char **argv, char **envp) {
 				r_core_project_list (&r, 0);
 				r_cons_flush ();
 				return 0;
-			} else {
-				r_config_set (r.config, "prj.name", optarg);
 			}
+			r_config_set (r.config, "prj.name", optarg);
 			break;
 		case 'P':
 			patchfile = optarg;
@@ -1103,10 +1103,12 @@ int main(int argc, char **argv, char **envp) {
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
-			if (sha1 && *sha1 && strcmp (sha1, nsha1))
+			if (!quiet && sha1 && *sha1 && strcmp (sha1, nsha1)) {
 				eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
-			if (path && *path && strcmp (path, npath))
+			}
+			if (!quiet && path && *path && strcmp (path, npath)) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
+			}
 			free (sha1);
 			free (path);
 		}
@@ -1124,16 +1126,18 @@ int main(int argc, char **argv, char **envp) {
 			char f[128];
 			snprintf (f, sizeof (f), "%s.r2", pfile);
 			if (r_file_exists (f)) {
-				if (!quiet)
+				if (!quiet) {
 					eprintf ("NOTE: Loading '%s' script.\n", f);
+				}
 				r_core_cmd_file (&r, f);
 			}
 		}
 	}
 	{
 		const char *global_rc = R2_PREFIX"/share/radare2/radare2rc";
-		if (r_file_exists (global_rc))
+		if (r_file_exists (global_rc)) {
 			(void)r_core_run_script (&r, global_rc);
+		}
 	}
 	// only analyze if file contains entrypoint
 	{
@@ -1174,7 +1178,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
-			r_core_cmd (&r, "fo", 0);
+			r_core_print_fortune (&r);
 			r_cons_flush ();
 		}
 	}

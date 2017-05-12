@@ -132,6 +132,7 @@ typedef struct r_disam_options_t {
 	bool show_vars;
 	bool show_varsum;
 	int midflags;
+	bool midcursor;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -417,6 +418,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabsonce");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabsoff");
 	ds->midflags = r_config_get_i (core->config, "asm.midflags");
+	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	if (ds->pseudo) {
@@ -1009,6 +1011,15 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	RFlagItem *fi;
 	int i;
 	ds->hasMidflag = false;
+
+	if (ds->midcursor && core->print->cur != -1) {
+		ut64 cur = core->offset + core->print->cur;
+		ut64 from = ds->at;
+		ut64 to = ds->at + ds->oplen;
+		if (cur > from && cur < to) {
+			return cur - from;
+		}
+	}
 	for (i = 1; i < ds->oplen; i++) {
 		fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi) {

@@ -136,6 +136,7 @@ R_API void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	}
 	c = (char**) realloc (object->object.n, len * sizeof (char*));
 	if (!c) {
+		free (v);
 		return;
 	}
 	v[len - 1] = value;

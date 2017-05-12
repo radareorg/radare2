@@ -83,14 +83,13 @@ enum ExtReadWrite
 
 
 /* constructor function */
-void build_ARC_extmap (void* text_bfd);
-
+extern void build_ARC_extmap (void* text_bfd);
 /* accessor functions */
-enum ExtReadWrite arcExtMap_coreReadWrite (int  regnum);
-const char*       arcExtMap_coreRegName   (int  regnum);
-const char*       arcExtMap_auxRegName    (long regnum);
-const char*       arcExtMap_condCodeName  (int  code);
-const char*       arcExtMap_instName      (int  opcode, int insn, int* flags);
+extern enum ExtReadWrite arcExtMap_coreReadWrite (int  regnum);
+extern const char*       arcExtMap_coreRegName   (int  regnum);
+extern const char*       arcExtMap_auxRegName    (long regnum);
+extern const char*       arcExtMap_condCodeName  (int  code);
+extern const char*       arcExtMap_instName      (int  opcode, int insn, int* flags);
 /* dump function (for debugging) */
 void dump_ARC_extmap (void);
 

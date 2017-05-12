@@ -64,6 +64,9 @@ static inline void r_cons_write(const char *buf, int len) {
 		}
 	}
 #else
+	if (I.fdout < 1) {
+		I.fdout = 1;
+	}
 	(void) write (I.fdout, buf, len);
 #endif
 }
