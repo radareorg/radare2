@@ -2637,7 +2637,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (!flag_printed) {
 				list = r_flag_get_list (core->flags, p);
 				r_list_foreach (list, iter, f) {
-					if (is_filtered_flag(f->name)) {
+					if (is_filtered_flag (f->name)) {
 						continue;
 					}
 					if (!ds->opstr || !strstr (ds->opstr, f->name)) {
