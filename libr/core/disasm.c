@@ -2439,10 +2439,10 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 				}
 				shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
 				if (shortcut) {
-					r_cons_printf (" ;[%s]", shortcut);
+					r_cons_printf (";[%s]", shortcut);
 					free (shortcut);
 				} else {
-					r_cons_strcat (" ;[?]");
+					r_cons_strcat (";[?]");
 				}
 				if (ds->show_color) r_cons_strcat (Color_RESET);
 			}
@@ -2457,13 +2457,13 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
 			if (shortcut) {
 				if (core->is_asmqjmps_letter) {
-					r_cons_printf (" ;[g%s]", shortcut);
+					r_cons_printf (";[g%s]", shortcut);
 				} else {
-					r_cons_printf (" ;[%s]", shortcut);
+					r_cons_printf (";[%s]", shortcut);
 				}
 				free (shortcut);
 			} else {
-				r_cons_strcat (" ;[?]");
+				r_cons_strcat (";[?]");
 			}
 			if (ds->show_color) {
 				r_cons_strcat (Color_RESET);
@@ -2482,13 +2482,13 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
 			if (shortcut) {
 				if (core->is_asmqjmps_letter) {
-					r_cons_printf (" ;[g%s]", shortcut);
+					r_cons_printf (";[g%s]", shortcut);
 				} else {
-					r_cons_printf (" ;[%s]", shortcut);
+					r_cons_printf (";[%s]", shortcut);
 				}
 				free (shortcut);
 			} else {
-				r_cons_strcat (" ;[?]");
+				r_cons_strcat (";[?]");
 			}
 			if (ds->show_color) {
 				r_cons_strcat (Color_RESET);
