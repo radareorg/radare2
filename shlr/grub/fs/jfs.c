@@ -25,6 +25,7 @@
 #include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/charset.h>
+#include <r_types.h>
 
 #define GRUB_JFS_MAX_SYMLNK_CNT	8
 #define GRUB_JFS_FILETYPE_MASK	0170000
@@ -55,7 +56,7 @@ struct grub_jfs_sblock
   grub_uint8_t unused2[32];
   grub_uint8_t uuid[16];
 };
-
+R_PACKED (
 struct grub_jfs_extent
 {
   /* The length of the extent in filesystem blocks.  */
@@ -65,16 +66,18 @@ struct grub_jfs_extent
   /* The physical offset of the first block on the disk.  */
   grub_uint8_t blk1;
   grub_uint32_t blk2;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_jfs_iag
 {
   grub_uint8_t unused[3072];
   struct grub_jfs_extent inodes[128];
-} __attribute__ ((packed));
+});
 
 
 /* The head of the tree used to find extents.  */
+R_PACKED (
 struct grub_jfs_treehead
 {
   grub_uint64_t next;
@@ -86,9 +89,10 @@ struct grub_jfs_treehead
   grub_uint16_t count;
   grub_uint16_t max;
   grub_uint8_t unused2[10];
-} __attribute__ ((packed));
+});
 
 /* A node in the extent tree.  */
+R_PACKED (
 struct grub_jfs_tree_extent
 {
   grub_uint8_t flags;
@@ -99,9 +103,10 @@ struct grub_jfs_tree_extent
   grub_uint32_t offset2;
 
   struct grub_jfs_extent extent;
-} __attribute__ ((packed));
+});
 
 /* The tree of directory entries.  */
+R_PACKED (
 struct grub_jfs_tree_dir
 {
   /* Pointers to the previous and next tree headers of other nodes on
@@ -120,18 +125,20 @@ struct grub_jfs_tree_dir
   /* The location of the sorted array of pointers to dirents.  */
   grub_uint8_t sindex;
   grub_uint8_t unused[10];
-} __attribute__ ((packed));
+});
 
 /* An internal node in the dirents tree.  */
+R_PACKED (
 struct grub_jfs_internal_dirent
 {
   struct grub_jfs_extent ex;
   grub_uint8_t next;
   grub_uint8_t len;
   grub_uint16_t namepart[11];
-} __attribute__ ((packed));
+});
 
 /* A leaf node in the dirents tree.  */
+R_PACKED (
 struct grub_jfs_leaf_dirent
 {
   /* The inode for this dirent.  */
@@ -142,17 +149,20 @@ struct grub_jfs_leaf_dirent
   grub_uint8_t len;
   grub_uint16_t namepart[11];
   grub_uint32_t index;
-} __attribute__ ((packed));
+});
 
 /* A leaf in the dirents tree.  This one is used if the previously
    dirent was not big enough to store the name.  */
+
+R_PACKED (
 struct grub_jfs_leaf_next_dirent
 {
   grub_uint8_t next;
   grub_uint8_t len;
   grub_uint16_t namepart[15];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_jfs_inode
 {
   grub_uint32_t stamp;
@@ -164,16 +174,18 @@ struct grub_jfs_inode
   grub_uint32_t mode;
   grub_uint8_t unused3[72];
   grub_uint8_t unused4[96];
-
+  R_PACKED (
   union
   {
     /* The tree describing the extents of the file.  */
-    struct 
+	R_PACKED (
+	struct 
     {
       struct grub_jfs_treehead tree;
       struct grub_jfs_tree_extent extents[16];
-    } __attribute__ ((packed)) file;
-    union
+    }) file;
+	R_PACKED (
+	union
     {
       /* The tree describing the dirents.  */
       struct
@@ -189,16 +201,17 @@ struct grub_jfs_inode
 	grub_uint8_t sorted[8];
       } header;
       struct grub_jfs_leaf_dirent dirents[8];
-    } dir __attribute__ ((packed));
+	}) dir;
     /* Fast symlink.  */
     struct
     {
       grub_uint8_t unused[32];
       grub_uint8_t path[128];
     } symlink;
-  } __attribute__ ((packed));
-} __attribute__ ((packed));
+  });
+});
 
+R_PACKED (
 struct grub_jfs_data
 {
   struct grub_jfs_sblock sblock;
@@ -207,18 +220,20 @@ struct grub_jfs_data
   struct grub_jfs_inode currinode;
   int pos;
   int linknest;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_jfs_diropen
 {
   int index;
+  R_PACKED (
   union
   {
     struct grub_jfs_tree_dir header;
     struct grub_jfs_leaf_dirent dirent[0];
     struct grub_jfs_leaf_next_dirent next_dirent[0];
     char sorted[0];
-  } *dirpage __attribute__ ((packed));
+  }) *dirpage;
   struct grub_jfs_data *data;
   struct grub_jfs_inode *inode;
   int count;
@@ -229,7 +244,7 @@ struct grub_jfs_diropen
   /* The filename and inode of the last read dirent.  */
   char name[255];
   grub_uint32_t ino;
-} __attribute__ ((packed));
+});
 
 
 static grub_dl_t my_mod;
@@ -609,7 +624,11 @@ grub_jfs_read_file (struct grub_jfs_data *data,
 static grub_err_t
 grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 {
+#ifndef _MSC_VER
   char fpath[grub_strlen (path)];
+#else
+  char * fpath = grub_malloc(grub_strlen (path));
+#endif  
   char *name = fpath;
   char *next;
   struct grub_jfs_diropen *diro;
@@ -701,8 +720,11 @@ static grub_err_t
 grub_jfs_lookup_symlink (struct grub_jfs_data *data, int ino)
 {
   int size = grub_le_to_cpu64 (data->currinode.size);
+#ifndef _MSC_VER
   char symlink[size + 1];
-
+#else
+  char *symlink = grub_malloc(size + 1);
+#endif
   if (++data->linknest > GRUB_JFS_MAX_SYMLNK_CNT)
     return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 

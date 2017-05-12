@@ -27,6 +27,7 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/charset.h>
+#include <r_types.h>
 
 #define GRUB_ISO9660_FSTYPE_DIR		0040000
 #define GRUB_ISO9660_FSTYPE_REG		0100000
@@ -46,14 +47,16 @@
 #define GRUB_ISO9660_VOLDESC_END	255
 
 /* The head of a volume descriptor.  */
+R_PACKED (
 struct grub_iso9660_voldesc
 {
   grub_uint8_t type;
   grub_uint8_t magic[5];
   grub_uint8_t version;
-} __attribute__ ((packed));
+});
 
 /* A directory entry.  */
+R_PACKED (
 struct grub_iso9660_dir
 {
   grub_uint8_t len;
@@ -66,8 +69,9 @@ struct grub_iso9660_dir
   grub_uint8_t flags;
   grub_uint8_t unused2[6];
   grub_uint8_t namelen;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_iso9660_date
 {
   grub_uint8_t year[4];
@@ -78,9 +82,10 @@ struct grub_iso9660_date
   grub_uint8_t second[2];
   grub_uint8_t hundredth[2];
   grub_uint8_t offset;
-} __attribute__ ((packed));
+});
 
 /* The primary volume descriptor.  Only little endian is used.  */
+R_PACKED (
 struct grub_iso9660_primary_voldesc
 {
   struct grub_iso9660_voldesc voldesc;
@@ -97,9 +102,10 @@ struct grub_iso9660_primary_voldesc
   grub_uint8_t unused6[624];
   struct grub_iso9660_date created;
   struct grub_iso9660_date modified;
-} __attribute__ ((packed));
+});
 
 /* A single entry in the path table.  */
+R_PACKED (
 struct grub_iso9660_path
 {
   grub_uint8_t len;
@@ -107,19 +113,21 @@ struct grub_iso9660_path
   grub_uint32_t first_sector;
   grub_uint16_t parentdir;
   grub_uint8_t name[0];
-} __attribute__ ((packed));
+});
 
 /* An entry in the System Usage area of the directory entry.  */
+R_PACKED (
 struct grub_iso9660_susp_entry
 {
   grub_uint8_t sig[2];
   grub_uint8_t len;
   grub_uint8_t version;
-  grub_uint8_t data[0];
-} __attribute__ ((packed));
+  grub_uint8_t *data;
+});
 
 /* The CE entry.  This is used to describe the next block where data
    can be found.  */
+R_PACKED (
 struct grub_iso9660_susp_ce
 {
   struct grub_iso9660_susp_entry entry;
@@ -129,7 +137,7 @@ struct grub_iso9660_susp_ce
   grub_uint32_t off_be;
   grub_uint32_t len;
   grub_uint32_t len_be;
-} __attribute__ ((packed));
+});
 
 struct grub_iso9660_data
 {
@@ -586,7 +594,11 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	}
 
       {
+#ifndef _MSC_VER
 	char name[dirent.namelen + 1];
+#else
+	char * name = grub_malloc(dirent.namelen + 1);
+#endif
 	int nameoffset = offset + sizeof (dirent);
 	struct grub_fshelp_node *node;
 	int sua_off = (sizeof (dirent) + dirent.namelen + 1

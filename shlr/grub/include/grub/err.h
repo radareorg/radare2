@@ -67,6 +67,9 @@ void grub_fatal (const char *fmt, ...);
 void grub_error_push (void);
 int grub_error_pop (void);
 void grub_print_error (void);
+#ifdef _MSC_VER
+int grub_err_printf (const char *fmt, ...);
+#else
 int grub_err_printf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
+#endif
 #endif /* ! GRUB_ERR_HEADER */

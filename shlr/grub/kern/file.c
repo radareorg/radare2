@@ -178,8 +178,8 @@ grub_file_seek (grub_file_t file, grub_off_t offset)
 }
 
 static void
-grub_file_pb_show_default (int num __attribute__((unused)),
-			   int total __attribute__((unused)))
+grub_file_pb_show_default (int num ,
+			   int total )
 {
   grub_printf (".");
   grub_refresh ();

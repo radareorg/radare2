@@ -24,16 +24,16 @@
 #include <grub/disk.h>
 #include <grub/dl.h>
 #include <grub/types.h>
-
+#include <r_types.h>
 #define BTRFS_SIGNATURE "_BHRfS_M"
-
+R_PACKED(
 struct btrfs_superblock
 { 
   grub_uint8_t dummy1[32];
   grub_uint16_t uuid[8];
   grub_uint8_t dummy2[16];
   grub_uint8_t signature[sizeof (BTRFS_SIGNATURE) - 1];
-} __attribute__ ((packed));
+});
 
 struct grub_btrfs_data
 {
@@ -65,18 +65,17 @@ grub_btrfs_mount (grub_disk_t disk)
 }
 
 static grub_err_t
-grub_btrfs_open (struct grub_file *file __attribute__ ((unused)),
-		 const char *name __attribute__ ((unused)))
+grub_btrfs_open (struct grub_file *file ,
+		 const char *name )
 {
   return grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET, "only detection is supported for Btrfs");
 }
 
 static grub_err_t
 grub_btrfs_dir (grub_device_t device,
-                const char *path __attribute__ ((unused)),
+                const char *path ,
                 int (*hook) (const char *filename,
-                             const struct grub_dirhook_info *info)
-                __attribute__ ((unused)))
+                             const struct grub_dirhook_info *info))
 {
   struct grub_btrfs_data *data = grub_btrfs_mount (device->disk);
   if (grub_errno)

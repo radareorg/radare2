@@ -24,6 +24,7 @@
 #include <grub/disk.h>
 #include <grub/dl.h>
 #include <grub/types.h>
+#include <r_types.h>
 
 #ifdef MODE_UFS2
 #define GRUB_UFS_MAGIC		0x19540119
@@ -125,6 +126,7 @@ struct grub_ufs_sblock
 
 #ifdef MODE_UFS2
 /* UFS inode.  */
+R_PACKED(
 struct grub_ufs_inode
 {
   grub_uint16_t mode;
@@ -158,9 +160,10 @@ struct grub_ufs_inode
   };
 
   grub_uint8_t unused[24];
-} __attribute__ ((packed));
+});
 #else
 /* UFS inode.  */
+R_PACKED(
 struct grub_ufs_inode
 {
   grub_uint16_t mode;
@@ -185,10 +188,11 @@ struct grub_ufs_inode
   grub_uint32_t gen;
   grub_uint32_t unused;
   grub_uint8_t pad[12];
-} __attribute__ ((packed));
+});
 #endif
 
 /* Directory entry.  */
+R_PACKED(
 struct grub_ufs_dirent
 {
   grub_uint32_t ino;
@@ -202,7 +206,7 @@ struct grub_ufs_dirent
       grub_uint8_t namelen_bsd;
     };
   };
-} __attribute__ ((packed));
+});
 
 /* Information about a "mounted" ufs filesystem.  */
 struct grub_ufs_data
@@ -260,11 +264,19 @@ grub_ufs_get_file_block (struct grub_ufs_data *data, unsigned int blk)
   if (blk < indirsz)
     {
 #ifdef MODE_UFS2
-      grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
+#ifndef _MSC_VER
+	  grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
 #else
-      grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
+	  grub_uint64_t *indir = grub_malloc(blksz / sizeof (grub_uint64_t));
 #endif
-      grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 0) << log2_blksz,
+#else
+#ifndef _MSC_VER
+	  grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
+#else
+	  grub_uint32_t *indir = grub_malloc(blksz / sizeof (grub_uint32_t));
+#endif
+#endif
+	  grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 0) << log2_blksz,
 		      0, sizeof (indir), indir);
       return indir[blk];
     }
@@ -274,9 +286,17 @@ grub_ufs_get_file_block (struct grub_ufs_data *data, unsigned int blk)
   if (blk < indirsz * indirsz)
     {
 #ifdef MODE_UFS2
-      grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
+#ifndef _MSC_VER
+	  grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
 #else
-      grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
+	  grub_uint64_t *indir = grub_malloc(blksz / sizeof (grub_uint64_t));
+#endif
+#else
+#ifndef _MSC_VER
+	  grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
+#else
+	  grub_uint32_t *indir = grub_malloc(blksz / sizeof (grub_uint32_t));
+#endif
 #endif
 
       grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 1) << log2_blksz,
@@ -412,8 +432,11 @@ grub_ufs_read_inode (struct grub_ufs_data *data, int ino, char *inode)
 static grub_err_t
 grub_ufs_lookup_symlink (struct grub_ufs_data *data, int ino)
 {
+#ifndef _MSC_VER
   char symlink[INODE_SIZE (data)];
-
+#else
+  char * symlink = grub_malloc(INODE_SIZE (data));
+#endif
   if (++data->linknest > GRUB_UFS_MAX_SYMLNK_CNT)
     return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 
@@ -450,7 +473,11 @@ grub_ufs_lookup_symlink (struct grub_ufs_data *data, int ino)
 static grub_err_t
 grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 {
+#ifndef _MSC_VER
   char fpath[grub_strlen (path) + 1];
+#else
+  char * fpath = grub_malloc(grub_strlen (path) + 1);
+#endif
   char *name = fpath;
   char *next;
   unsigned int pos = 0;
@@ -492,8 +519,11 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
       namelen = grub_num_to_cpu16 (dirent.namelen, data->be);
 #endif
       {
+#ifndef _MSC_VER
 	char filename[namelen + 1];
-
+#else
+	char * filename = grub_malloc(namelen + 1);
+#endif
 	if (grub_ufs_read_file (data, 0, 0, pos + sizeof (dirent),
 				namelen, filename) < 0)
 	  return grub_errno;
@@ -644,7 +674,11 @@ grub_ufs_dir (grub_device_t device, const char *path,
 #endif
 
       {
+#ifndef _MSC_VER
 	char filename[namelen + 1];
+#else
+	char * filename = grub_malloc (namelen + 1);
+#endif
 	struct grub_dirhook_info info;
 	struct grub_ufs_inode inode;
 

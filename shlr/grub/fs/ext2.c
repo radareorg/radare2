@@ -385,7 +385,11 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
 
   if (grub_le_to_cpu32(inode->flags) & EXT4_EXTENTS_FLAG)
     {
-      char buf[EXT2_BLOCK_SIZE(data)];
+#ifndef _MSC_VER
+	  char buf[EXT2_BLOCK_SIZE (data)];
+#else
+	  char * buf = grub_malloc (EXT2_BLOCK_SIZE(data));
+#endif
       struct grub_ext4_extent_header *leaf;
       struct grub_ext4_extent *ext;
       int i;
@@ -674,7 +678,11 @@ grub_ext2_iterate_dir (grub_fshelp_node_t dir,
 
       if (dirent.namelen != 0)
 	{
-	  char filename[dirent.namelen + 1];
+#ifndef _MSC_VER
+	  char filename[dirent.namelen + 1]; 
+#else
+	  char * filename = grub_malloc (dirent.namelen + 1);
+#endif
 	  struct grub_fshelp_node *fdiro;
 	  enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
 

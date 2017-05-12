@@ -21,13 +21,14 @@
 
 #include <grub/types.h>
 
+R_PACKED(
 struct grub_gpt_part_type
 {
   grub_uint32_t data1;
   grub_uint16_t data2;
   grub_uint16_t data3;
   grub_uint8_t data4[8];
-} __attribute__ ((aligned(8)));
+});
 typedef struct grub_gpt_part_type grub_gpt_part_type_t;
 
 #define GRUB_GPT_PARTITION_TYPE_EMPTY \
@@ -47,6 +48,7 @@ typedef struct grub_gpt_part_type grub_gpt_part_type_t;
   }
 #endif
 
+R_PACKED (
 struct grub_gpt_header
 {
   grub_uint8_t magic[8];
@@ -63,8 +65,9 @@ struct grub_gpt_header
   grub_uint32_t maxpart;
   grub_uint32_t partentry_size;
   grub_uint32_t partentry_crc32;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_gpt_partentry
 {
   grub_gpt_part_type_t type;
@@ -73,6 +76,6 @@ struct grub_gpt_partentry
   grub_uint64_t end;
   grub_uint64_t attrib;
   char name[72];
-} __attribute__ ((packed));
+});
 
 #endif /* ! GRUB_GPT_PARTITION_HEADER */

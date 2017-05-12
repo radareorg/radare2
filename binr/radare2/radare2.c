@@ -2,7 +2,11 @@
 
 #define USE_THREADS 1
 #define UNCOLORIZE_NONTTY 0
-
+#ifdef _MSC_VER
+#ifndef WIN32_LEAN_AND_MEAN 
+#define WIN32_LEAN_AND_MEAN
+#endif
+#endif
 #include <sdb.h>
 #include <r_core.h>
 #include <r_io.h>

@@ -38,6 +38,7 @@
 #include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
+#include <r_types.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -73,7 +74,7 @@ enum grub_reiserfs_item_type
     GRUB_REISERFS_ANY,
     GRUB_REISERFS_UNKNOWN
   };
-
+R_PACKED (
 struct grub_reiserfs_superblock
 {
   grub_uint32_t block_count;
@@ -100,30 +101,34 @@ struct grub_reiserfs_superblock
   grub_uint32_t inode_generation;
   grub_uint8_t unused[4];
   grub_uint16_t uuid[8];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_journal_header
 {
   grub_uint32_t last_flush_uid;
   grub_uint32_t unflushed_offset;
   grub_uint32_t mount_id;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_description_block
 {
   grub_uint32_t id;
   grub_uint32_t len;
   grub_uint32_t mount_id;
   grub_uint32_t real_blocks[0];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_commit_block
 {
   grub_uint32_t id;
   grub_uint32_t len;
   grub_uint32_t real_blocks[0];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_stat_item_v1
 {
   grub_uint16_t mode;
@@ -136,8 +141,9 @@ struct grub_reiserfs_stat_item_v1
   grub_uint32_t ctime;
   grub_uint32_t rdev;
   grub_uint32_t first_direct_byte;
-} __attribute__ ((packed));
+});
 
+R_PACKED(
 struct grub_reiserfs_stat_item_v2
 {
   grub_uint16_t mode;
@@ -151,39 +157,45 @@ struct grub_reiserfs_stat_item_v2
   grub_uint32_t ctime;
   grub_uint32_t blocks;
   grub_uint32_t first_direct_byte;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_key
 {
   grub_uint32_t directory_id;
   grub_uint32_t object_id;
   union
   {
-    struct
+	R_PACKED (
+	struct
     {
       grub_uint32_t offset;
       grub_uint32_t type;
-    } v1 __attribute__ ((packed));
-    struct
+	}) v1;
+	R_PACKED (
+	struct
     {
       grub_uint64_t offset_type;
-    } v2 __attribute__ ((packed));
+	}) v2;
   } u;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_item_header
 {
   struct grub_reiserfs_key key;
+  R_PACKED (
   union
   {
     grub_uint16_t free_space;
     grub_uint16_t entry_count;
-  } u __attribute__ ((packed));
+  }) u;
   grub_uint16_t item_size;
   grub_uint16_t item_location;
   grub_uint16_t version;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_block_header
 {
   grub_uint16_t level;
@@ -191,15 +203,17 @@ struct grub_reiserfs_block_header
   grub_uint16_t free_space;
   grub_uint16_t reserved;
   struct grub_reiserfs_key block_right_delimiting_key;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_disk_child
 {
   grub_uint32_t block_number;
   grub_uint16_t size;
   grub_uint16_t reserved;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_reiserfs_directory_header
 {
   grub_uint32_t offset;
@@ -207,7 +221,7 @@ struct grub_reiserfs_directory_header
   grub_uint32_t object_id;
   grub_uint16_t location;
   grub_uint16_t state;
-} __attribute__ ((packed));
+});
 
 struct grub_fshelp_node
 {

@@ -145,12 +145,3 @@ struct grub_partition_map grub_msdos_partition_map =
     .iterate = pc_partition_map_iterate,
   };
 
-GRUB_MOD_INIT(part_msdos)
-{
-  grub_partition_map_register (&grub_msdos_partition_map);
-}
-
-GRUB_MOD_FINI(part_msdos)
-{
-  grub_partition_map_unregister (&grub_msdos_partition_map);
-}

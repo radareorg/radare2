@@ -1143,7 +1143,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-bool init_pdb_parser(R_PDB *pdb, const char *filename) {
+R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 	char *signature = NULL;
 	int bytes_read = 0;
 

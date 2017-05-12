@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with BURG.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include <r_types.h>
 #ifndef GRUB_FBFS_H
 #define GRUB_FBFS_H	1
 
@@ -28,6 +28,7 @@
 #define FB_VER_MAJOR	1
 #define FB_VER_MINOR	6
 
+R_PACKED(
 struct fb_mbr
 {
   grub_uint8_t jmp_code;
@@ -41,8 +42,9 @@ struct fb_mbr
   grub_uint32_t fb_magic;	/* 0x1b4  */
   grub_uint8_t mbr_table[0x46];	/* 0x1b8  */
   grub_uint16_t end_magic;	/* 0x1fe  */
-} __attribute__((packed));
+});
 
+R_PACKED (
 struct fb_data
 {
   grub_uint16_t boot_size;	/* 0x200  */
@@ -53,8 +55,9 @@ struct fb_data
   grub_uint16_t list_size;	/* 0x208  */
   grub_uint16_t pri_size;	/* 0x20a  */
   grub_uint32_t ext_size;	/* 0x20c  */
-} __attribute__((packed));
+});
 
+R_PACKED (
 struct fb_ar_data
 {
   grub_uint32_t ar_magic;	/* 0x200  */
@@ -64,8 +67,9 @@ struct fb_ar_data
   grub_uint16_t list_size;	/* 0x208  */
   grub_uint16_t pri_size;	/* 0x20a  */
   grub_uint32_t ext_size;	/* 0x20c  */
-} __attribute__((packed));
+});
 
+R_PACKED (
 struct fbm_file
 {
   grub_uint8_t size;
@@ -74,6 +78,6 @@ struct fbm_file
   grub_uint32_t data_size;
   grub_uint32_t data_time;
   char name[0];
-} __attribute__((packed));
+});
 
 #endif /* ! GRUB_FBFS_H */

@@ -4,7 +4,8 @@
 /* we need to extract the code section and get offset flags */
 
 #include <r_fs.h>
-
+#include <r_types.h>
+R_PACKED (
 typedef struct {
 	ut8 flag; // 0x80 if active
 	ut8 start_head;
@@ -16,13 +17,13 @@ typedef struct {
 	ut8 end_cylinder;
 	ut32 start; // sector count (starting from 0)
 	ut32 length; // in sector
-} __attribute__ ((packed)) DOS_ENTRY;
-
+}) DOS_ENTRY;
+R_PACKED (
 typedef struct {
 	ut8 code[446]; // code
 	DOS_ENTRY entries[4];
 	ut16 aa55; // the signature
-} __attribute__ ((packed)) MBR;
+}) MBR;
 
 static int fs_part_dos(void *disk, void *ptr, void *closure) {
 	int i;

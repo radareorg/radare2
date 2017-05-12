@@ -34,6 +34,7 @@
 #include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
+#include <r_types.h>
 
 #define NILFS_INODE_BMAP_SIZE	7
 
@@ -123,18 +124,14 @@ struct grub_nilfs2_super_block
   grub_uint32_t s_c_block_max;
   grub_uint32_t s_reserved[192];
 };
-
+R_PACKED (
 struct grub_nilfs2_dir_entry
 {
   grub_uint64_t inode;
   grub_uint16_t rec_len;
   grub_uint8_t name_len;
   grub_uint8_t file_type;
-#if 0				/* followed by file name. */
-  char name[NILFS_NAME_LEN];
-  char pad;
-#endif
-} __attribute__ ((packed));
+});
 
 enum
 {
@@ -487,7 +484,11 @@ grub_nilfs2_btree_lookup (struct grub_nilfs2_data *data,
 			  grub_uint64_t key, int need_translate)
 {
   struct grub_nilfs2_btree_node *node;
+#ifndef _MSC_VER
   unsigned char block[NILFS2_BLOCK_SIZE (data)];
+#else
+  unsigned char * block = grub_malloc(NILFS2_BLOCK_SIZE (data));
+#endif
   grub_uint64_t ptr;
   int level, found, index;
 
@@ -841,7 +842,11 @@ grub_nilfs2_iterate_dir (grub_fshelp_node_t dir,
 
       if (dirent.name_len != 0)
 	{
+#ifndef _MSC_VER
 	  char filename[dirent.name_len + 1];
+#else
+	  char * filename = grub_malloc(dirent.name_len + 1);
+#endif
 	  struct grub_fshelp_node *fdiro;
 	  enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
 

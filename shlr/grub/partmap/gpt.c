@@ -118,12 +118,3 @@ struct grub_partition_map grub_gpt_partition_map =
     .iterate = gpt_partition_map_iterate,
   };
 
-GRUB_MOD_INIT(part_gpt)
-{
-  grub_partition_map_register (&grub_gpt_partition_map);
-}
-
-GRUB_MOD_FINI(part_gpt)
-{
-  grub_partition_map_unregister (&grub_gpt_partition_map);
-}

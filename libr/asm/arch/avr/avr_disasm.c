@@ -27,7 +27,7 @@
 #include "avr_disasm.h"
 #include "errorcodes.h"
 #include "avr_instructionset.c"
-
+#include <r_types.h>
 /* AVR instructionSet is defined in avrinstructionset.c */
 //extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 

@@ -28,9 +28,14 @@
 
 #include "arc-ext.h"
 #include "arc.h"
+#ifndef _MSC_VER
+// if one of this files are includes they make a #define const .....
+//  the const prefix is used bellow for api definitions.
+// If u define the new value of const this dont match with previus const int arc-ext.h api definition
+//  giving a compiler error under MSVC
 #include "libiberty.h"
 #include "sysdep.h"
-
+#endif
 
 /******************************************************************************/
 /*                                                                            */

@@ -91,7 +91,11 @@ find_file (const char *currpath, grub_fshelp_node_t currroot,
 	   grub_fshelp_node_t *currfound,
 	   struct grub_fshelp_find_file_closure *c)
 {
-  char fpath[grub_strlen (currpath) + 1];
+#ifndef _MSC_VER
+	char fpath[grub_strlen (currpath) + 1];
+#else
+	char *fpath = grub_malloc (grub_strlen (currpath) + 1);
+#endif
   char *name = fpath;
   char *next;
   enum grub_fshelp_filetype type = GRUB_FSHELP_DIR;

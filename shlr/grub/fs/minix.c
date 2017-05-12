@@ -292,8 +292,11 @@ grub_minix_read_inode (struct grub_minix_data *data, int ino)
 static grub_err_t
 grub_minix_lookup_symlink (struct grub_minix_data *data, int ino)
 {
+#ifndef _MSC_VER
   char symlink[GRUB_MINIX_INODE_SIZE (data) + 1];
-
+#else
+  char *symlink = grub_malloc(GRUB_MINIX_INODE_SIZE (data) + 1);
+#endif
   if (++data->linknest > GRUB_MINIX_MAX_SYMLNK_CNT)
     return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 
@@ -324,7 +327,11 @@ grub_minix_lookup_symlink (struct grub_minix_data *data, int ino)
 static grub_err_t
 grub_minix_find_file (struct grub_minix_data *data, const char *path)
 {
+#ifndef _MSC_VER
   char fpath[grub_strlen (path) + 1];
+#else
+  char * fpath = grub_malloc(grub_strlen (path) + 1);
+#endif
   char *name = fpath;
   char *next;
   unsigned int pos = 0;
@@ -351,8 +358,11 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
   do
     {
       grub_uint16_t ino;
-      char filename[data->filename_size + 1];
-
+#ifndef _MSC_VER
+	  char filename[data->filename_size + 1];
+#else
+	  char * filename = grub_malloc(data->filename_size + 1);
+#endif
       if (grub_strlen (name) == 0)
 	return GRUB_ERR_NONE;
 
@@ -491,8 +501,12 @@ grub_minix_dir (grub_device_t device, const char *path,
   while (pos < GRUB_MINIX_INODE_SIZE (data))
     {
       grub_uint16_t ino;
-      char filename[data->filename_size + 1];
-      int dirino = data->ino;
+#ifndef _MSC_VER
+	  char filename[data->filename_size + 1];
+#else
+	  char * filename = grub_malloc(data->filename_size + 1);
+#endif      
+	  int dirino = data->ino;
       struct grub_dirhook_info info;
       grub_memset (&info, 0, sizeof (info));
 
@@ -587,8 +601,8 @@ grub_minix_close (grub_file_t file)
 
 
 static grub_err_t
-grub_minix_label (grub_device_t device __attribute ((unused)),
-		char **label __attribute ((unused)))
+grub_minix_label (grub_device_t device ,
+		char **label )
 {
   return GRUB_ERR_NONE;
 }

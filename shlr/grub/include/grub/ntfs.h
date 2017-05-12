@@ -18,6 +18,7 @@
  */
 
 #ifndef GRUB_NTFS_H
+#include <r_types.h>
 #define GRUB_NTFS_H	1
 
 #define FILE_MFT      0
@@ -93,7 +94,7 @@
 #define v16at(buf,ofs)	valueat(buf,ofs,grub_uint16_t)
 #define v32at(buf,ofs)	valueat(buf,ofs,grub_uint32_t)
 #define v64at(buf,ofs)	valueat(buf,ofs,grub_uint64_t)
-
+R_PACKED (
 struct grub_ntfs_bpb
 {
   grub_uint8_t jmp_boot[3];
@@ -116,7 +117,7 @@ struct grub_ntfs_bpb
   grub_int8_t reserved_5[3];
   grub_uint64_t num_serial;
   grub_uint32_t checksum;
-} __attribute__ ((packed));
+});
 
 #define grub_ntfs_file grub_fshelp_node
 

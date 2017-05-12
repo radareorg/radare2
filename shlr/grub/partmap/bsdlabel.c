@@ -87,13 +87,3 @@ struct grub_partition_map grub_bsdlabel_partition_map =
     .name = "bsd",
     .iterate = bsdlabel_partition_map_iterate,
   };
-
-GRUB_MOD_INIT(part_bsd)
-{
-  grub_partition_map_register (&grub_bsdlabel_partition_map);
-}
-
-GRUB_MOD_FINI(part_bsd)
-{
-  grub_partition_map_unregister (&grub_bsdlabel_partition_map);
-}

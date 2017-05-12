@@ -26,6 +26,7 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/charset.h>
+#include <r_types.h>
 
 #define GRUB_UDF_MAX_PDS		2
 #define GRUB_UDF_MAX_PMS		6
@@ -112,37 +113,43 @@
 #define GRUB_UDF_PARTMAP_TYPE_1		1
 #define GRUB_UDF_PARTMAP_TYPE_2		2
 
+R_PACKED (
 struct grub_udf_lb_addr
 {
   grub_uint32_t block_num;
   grub_uint16_t part_ref;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_short_ad
 {
   grub_uint32_t length;
   grub_uint32_t position;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_long_ad
 {
   grub_uint32_t length;
   struct grub_udf_lb_addr block;
   grub_uint8_t imp_use[6];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_extent_ad
 {
   grub_uint32_t length;
   grub_uint32_t start;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_charspec
 {
   grub_uint8_t charset_type;
   grub_uint8_t charset_info[63];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_timestamp
 {
   grub_uint16_t type_and_timezone;
@@ -155,15 +162,16 @@ struct grub_udf_timestamp
   grub_uint8_t centi_seconds;
   grub_uint8_t hundreds_of_micro_seconds;
   grub_uint8_t micro_seconds;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_regid
 {
   grub_uint8_t flags;
   grub_uint8_t ident[23];
   grub_uint8_t ident_suffix[8];
-} __attribute__ ((packed));
-
+});
+R_PACKED (
 struct grub_udf_tag
 {
   grub_uint16_t tag_ident;
@@ -174,8 +182,9 @@ struct grub_udf_tag
   grub_uint16_t desc_crc;
   grub_uint16_t desc_crc_length;
   grub_uint32_t tag_location;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_fileset
 {
   struct grub_udf_tag tag;
@@ -196,8 +205,9 @@ struct grub_udf_fileset
   struct grub_udf_regid domain_ident;
   struct grub_udf_long_ad next_ext;
   struct grub_udf_long_ad streamdir_icb;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_icbtag
 {
   grub_uint32_t prior_recorded_num_direct_entries;
@@ -208,8 +218,9 @@ struct grub_udf_icbtag
   grub_uint8_t file_type;
   struct grub_udf_lb_addr parent_idb;
   grub_uint16_t flags;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_file_ident
 {
   struct grub_udf_tag tag;
@@ -218,8 +229,9 @@ struct grub_udf_file_ident
   grub_uint8_t file_ident_length;
   struct grub_udf_long_ad icb;
   grub_uint16_t imp_use_length;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_file_entry
 {
   struct grub_udf_tag tag;
@@ -243,8 +255,9 @@ struct grub_udf_file_entry
   grub_uint32_t ext_attr_length;
   grub_uint32_t alloc_descs_length;
   grub_uint8_t ext_attr[1872];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_extended_file_entry
 {
   struct grub_udf_tag tag;
@@ -272,21 +285,24 @@ struct grub_udf_extended_file_entry
   grub_uint32_t ext_attr_length;
   grub_uint32_t alloc_descs_length;
   grub_uint8_t ext_attr[1832];
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_vrs
 {
   grub_uint8_t type;
   grub_uint8_t magic[5];
   grub_uint8_t version;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_avdp
 {
   struct grub_udf_tag tag;
   struct grub_udf_extent_ad vds;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_udf_pd
 {
   struct grub_udf_tag tag;
@@ -298,7 +314,7 @@ struct grub_udf_pd
   grub_uint32_t access_type;
   grub_uint32_t start;
   grub_uint32_t length;
-} __attribute__ ((packed));
+});
 
 struct grub_udf_partmap
 {
@@ -319,6 +335,7 @@ struct grub_udf_partmap
   };
 };
 
+R_PACKED (
 struct grub_udf_lvd
 {
   struct grub_udf_tag tag;
@@ -334,7 +351,7 @@ struct grub_udf_lvd
   grub_uint8_t imp_use[128];
   struct grub_udf_extent_ad integrity_seq_ext;
   grub_uint8_t part_maps[1608];
-} __attribute__ ((packed));
+});
 
 struct grub_udf_data
 {
@@ -748,9 +765,15 @@ grub_udf_iterate_dir (grub_fshelp_node_t dir,
       else
 	{
 	  enum grub_fshelp_filetype type;
+#ifndef _MSC_VER
 	  grub_uint8_t raw[dirent.file_ident_length];
 	  grub_uint16_t utf16[dirent.file_ident_length - 1];
 	  grub_uint8_t filename[dirent.file_ident_length * 2];
+#else
+	  grub_uint8_t * raw = grub_malloc (dirent.file_ident_length);
+	  grub_uint16_t * utf16 = grub_malloc (dirent.file_ident_length - 1);
+	  grub_uint8_t * filename = grub_malloc (dirent.file_ident_length * 2);
+#endif
 	  grub_size_t utf16len = 0;
 
 	  type = ((dirent.characteristics & GRUB_UDF_FID_CHAR_DIRECTORY) ?

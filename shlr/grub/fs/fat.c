@@ -50,7 +50,7 @@
 				 | GRUB_FAT_ATTR_DIRECTORY \
 				 | GRUB_FAT_ATTR_ARCHIVE \
 				 | GRUB_FAT_ATTR_VOLUME_ID)
-
+R_PACKED(
 struct grub_fat_bpb
 {
   grub_uint8_t jmp_boot[3];
@@ -67,9 +67,11 @@ struct grub_fat_bpb
   grub_uint16_t num_heads;
   grub_uint32_t num_hidden_sectors;
   grub_uint32_t num_total_sectors_32;
+  R_PACKED(
   union
   {
-    struct
+    R_PACKED(
+	struct
     {
       grub_uint8_t num_ph_drive;
       grub_uint8_t reserved;
@@ -77,8 +79,9 @@ struct grub_fat_bpb
       grub_uint32_t num_serial;
       grub_uint8_t label[11];
       grub_uint8_t fstype[8];
-    } __attribute__ ((packed)) fat12_or_fat16;
-    struct
+    }) fat12_or_fat16;
+    R_PACKED(
+	struct
     {
       grub_uint32_t sectors_per_fat_32;
       grub_uint16_t extended_flags;
@@ -93,10 +96,10 @@ struct grub_fat_bpb
       grub_uint32_t num_serial;
       grub_uint8_t label[11];
       grub_uint8_t fstype[8];
-    } __attribute__ ((packed)) fat32;
-  } __attribute__ ((packed)) version_specific;
-} __attribute__ ((packed));
-
+    }) fat32;
+  }) version_specific;
+});
+R_PACKED(
 struct grub_fat_dir_entry
 {
   grub_uint8_t name[11];
@@ -111,8 +114,9 @@ struct grub_fat_dir_entry
   grub_uint16_t w_date;
   grub_uint16_t first_cluster_low;
   grub_uint32_t file_size;
-} __attribute__ ((packed));
+});
 
+R_PACKED(
 struct grub_fat_long_name_entry
 {
   grub_uint8_t id;
@@ -123,7 +127,7 @@ struct grub_fat_long_name_entry
   grub_uint16_t name2[6];
   grub_uint16_t first_cluster;
   grub_uint16_t name3[2];
-} __attribute__ ((packed));
+});
 
 struct grub_fat_data
 {

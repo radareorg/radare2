@@ -704,8 +704,12 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list ar
 
 	  if (p > fmt)
 	    {
-	      char s[p - fmt + 1];
-	      grub_strncpy (s, fmt, p - fmt);
+#ifndef _MSC_VER
+		  char s[p - fmt + 1];
+#else
+		  char *s = grub_malloc(p - fmt + 1);
+#endif
+		  grub_strncpy (s, fmt, p - fmt);
 	      s[p - fmt] = 0;
 	      if (s[0] == '0')
 		zerofill = '0';
@@ -722,7 +726,11 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list ar
 
 	      if (p > fmt)
 		{
+#ifndef _MSC_VER
 		  char fstr[p - fmt + 1];
+#else
+		  char * fstr = grub_malloc(p - fmt + 1);
+#endif
 		  grub_strncpy (fstr, fmt, p - fmt);
 		  fstr[p - fmt] = 0;
 		  format2 = grub_strtoul (fstr, 0, 10);

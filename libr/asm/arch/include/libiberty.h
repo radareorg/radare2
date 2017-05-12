@@ -308,7 +308,12 @@ extern double physmem_available (void);
    as new/delete and new[]/delete[].  */
 
 /* Scalar allocators.  */
-
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define xmalloc malloc
+#define xcalloc calloc
+#define xrealloc realloc
+#endif
 #define XNEW(T)			((T *) xmalloc (sizeof (T)))
 #define XCNEW(T)		((T *) xcalloc (1, sizeof (T)))
 #define XDELETE(P)		free ((void*) (P))

@@ -84,16 +84,14 @@ enum ExtReadWrite
 
 /* constructor function */
 extern void build_ARC_extmap (void* text_bfd);
-#ifndef _MSC_VER
 /* accessor functions */
 extern enum ExtReadWrite arcExtMap_coreReadWrite (int  regnum);
 extern const char*       arcExtMap_coreRegName   (int  regnum);
 extern const char*       arcExtMap_auxRegName    (long regnum);
 extern const char*       arcExtMap_condCodeName  (int  code);
 extern const char*       arcExtMap_instName      (int  opcode, int insn, int* flags);
-#endif
 /* dump function (for debugging) */
-extern void dump_ARC_extmap (void);
+void dump_ARC_extmap (void);
 
 #endif /* ARC_EXTENSIONS_H */
 /******************************************************************************/

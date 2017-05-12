@@ -63,8 +63,7 @@ static void pair_str(const char *a, const char *b, int mode, int last) {
 }
 
 #define STR(x) (x)?(x):""
-// XXX - this may lead to conflicts with set by name
-static int r_core_bin_set_cur(RCore *core, RBinFile *binfile);
+R_API int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 
 static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {

@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "r_socket.h"
 #include "r_types.h"
 #include "r_magic.h"
 #include "r_io.h"
@@ -28,7 +28,6 @@ extern "C" {
 #include "r_config.h"
 #include "r_bin.h"
 #include "r_hash.h"
-#include "r_socket.h"
 #include "r_util.h"
 #include "r_crypto.h"
 #include "r_bind.h"

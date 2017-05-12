@@ -25,19 +25,22 @@
 #include <grub/symbol.h>
 #include <grub/types.h>
 #include <grub/err.h>
+#include <r_types.h>
 
 #define GRUB_PARTMAP_SUN_PC_MAGIC 0xDABE
 #define GRUB_PARTMAP_SUN_PC_MAX_PARTS 16
 #define GRUB_PARTMAP_SUN_PC_WHOLE_DISK_ID 0x05
 
+R_PACKED (
 struct grub_sun_pc_partition_descriptor
 {
   grub_uint16_t id;
   grub_uint16_t unused;
   grub_uint32_t start_sector;
   grub_uint32_t num_sectors;
-} __attribute__ ((packed));
+});
 
+R_PACKED (
 struct grub_sun_pc_block
 {
   grub_uint8_t unused[72];
@@ -45,7 +48,7 @@ struct grub_sun_pc_block
   grub_uint8_t unused2[244];
   grub_uint16_t  magic;         /* Magic number.  */
   grub_uint16_t  csum;          /* Label xor'd checksum.  */
-} __attribute__ ((packed));
+});
 
 struct grub_partition_map grub_sun_pc_partition_map;
 
@@ -133,14 +136,4 @@ struct grub_partition_map grub_sun_pc_partition_map =
     .name = "sunpc",
     .iterate = sun_pc_partition_map_iterate,
   };
-
-GRUB_MOD_INIT(part_sunpc)
-{
-  grub_partition_map_register (&grub_sun_pc_partition_map);
-}
-
-GRUB_MOD_FINI(part_sunpc)
-{
-  grub_partition_map_unregister (&grub_sun_pc_partition_map);
-}
 

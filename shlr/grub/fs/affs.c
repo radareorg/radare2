@@ -25,21 +25,23 @@
 #include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
-
-/* The affs bootblock.  */
+#include "r_types.h"
+ /* The affs bootblock.  */
+R_PACKED(
 struct grub_affs_bblock
 {
   grub_uint8_t type[3];
   grub_uint8_t flags;
   grub_uint32_t checksum;
   grub_uint32_t rootblock;
-} __attribute__ ((packed));
+});
 
 /* Set if the filesystem is a AFFS filesystem.  Otherwise this is an
    OFS filesystem.  */
 #define GRUB_AFFS_FLAG_FFS	1
 
 /* The affs rootblock.  */
+R_PACKED(
 struct grub_affs_rblock
 {
   grub_uint8_t type[4];
@@ -48,9 +50,10 @@ struct grub_affs_rblock
   grub_uint32_t unused2;
   grub_uint32_t checksum;
   grub_uint32_t hashtable[1];
-} __attribute__ ((packed));
+});
 
 /* The second part of a file header block.  */
+R_PACKED(
 struct grub_affs_file
 {
   grub_uint8_t unused1[12];
@@ -63,7 +66,7 @@ struct grub_affs_file
   grub_uint32_t parent;
   grub_uint32_t extension;
   grub_int32_t type;
-} __attribute__ ((packed));
+});
 
 /* The location of `struct grub_affs_file' relative to the end of a
    file header block.  */

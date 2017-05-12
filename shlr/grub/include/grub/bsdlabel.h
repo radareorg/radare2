@@ -62,8 +62,9 @@
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_EXT2FS	17
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_NTFS	18
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_RAID	19
-
+#include <r_types.h>
 /* The BSD partition entry.  */
+R_PACKED(
 struct grub_partition_bsd_entry
 {
   grub_uint32_t size;
@@ -72,9 +73,10 @@ struct grub_partition_bsd_entry
   grub_uint8_t fs_type;
   grub_uint8_t fs_fragments;
   grub_uint16_t fs_cylinders;
-} __attribute__ ((packed));
+});
 
 /* The BSD disk label. Only define members useful for GRUB.  */
+R_PACKED(
 struct grub_partition_bsd_disk_label
 {
   grub_uint32_t magic;
@@ -84,6 +86,6 @@ struct grub_partition_bsd_disk_label
   grub_uint16_t num_partitions;
   grub_uint32_t boot_size;
   grub_uint32_t superblock_size;
-} __attribute__ ((packed));
+});
 
 #endif /* ! GRUB_PC_PARTITION_HEADER */
