@@ -1,7 +1,113 @@
 /* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_core.h>
+#define TYPE_NONE		0
+#define TYPE_STR		1
+#define TYPE_SYM		2
+#define IS_CHAR(x)		(IS_UPPER(x) || IS_LOWER(x))
+#define IS_STRING(x)	(x+3<end && *x == 's' && *(x+1) == 't' && *(x+2) == 'r' && *(x+3) == '.')
+#define IS_SYMBOL(x)	(x+3<end && *x == 's' && *(x+1) == 'y' && *(x+2) == 'm' && *(x+3) == '.')
 
+void find_and_change (char* in, int len) {
+	char *comment, *left, *right, *end;
+	int leftlen, rightlen, linecount;
+	int type = TYPE_NONE;
+	if (!in || len <= 0) {
+		return;
+	}
+	end = in + len;
+	comment = NULL;
+	// >>
+	right = NULL;
+	// <<
+	left = NULL;
+	leftlen = 0;
+	rightlen = 0;
+	linecount = 0;
+	for (; in < end && *in; ++in) {
+		if (*in == '\n') {
+			if (type == TYPE_SYM && linecount < 1) {
+				linecount++;
+				continue;
+			}
+			if (type != TYPE_NONE && right && left && rightlen > 0 && leftlen > 0) {
+				char* copy = NULL;
+				if (leftlen > rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
+					memcpy (copy, left, leftlen);
+					memcpy (left, right, rightlen);
+					memmove (comment - leftlen + rightlen, comment, right - comment);
+					memcpy (right, copy, leftlen);
+					left[rightlen] = ' ';
+				} else if (leftlen < rightlen && (copy = (char*) malloc (rightlen)) != NULL) {
+					memcpy (copy, right, rightlen);
+					memcpy (right + rightlen - leftlen, left, leftlen);
+					memmove (comment + rightlen - leftlen, comment, right - comment);
+					memcpy (left, copy, rightlen);
+					right[rightlen] = ' ';
+				} else if (leftlen == rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
+					memcpy (copy, right, leftlen);
+					memcpy (right, left, leftlen);
+					memcpy (left, copy, leftlen);
+				}
+				free (copy);
+			}
+
+			comment = NULL;
+			// >>
+			right = NULL;
+			// <<
+			left = NULL;
+			leftlen = 0;
+			rightlen = 0;
+			linecount = 0;
+			type = TYPE_NONE;
+			continue;
+		} else if (!comment && *in == ';' && *(in + 1) == ' ') {
+			eprintf ("\nfound ;\n");
+			comment = in;
+			continue;
+		} else if (!comment && type == TYPE_NONE) {
+			eprintf ("%c", *in);
+			if (IS_STRING (in)) {
+				eprintf ("\nfound string: '%.*s'\n", 16, in);
+				type = TYPE_STR;
+				left = in;
+			} else if (IS_SYMBOL (in)) {
+				eprintf ("\nfound symbol: '%.*s'\n", 16, in);
+				type = TYPE_SYM;
+				left = in;
+			}
+			continue;
+		} else if (type == TYPE_STR) {
+			if (!leftlen && left && IS_WHITESPACE (*in)) {
+				leftlen = in - left;
+				eprintf ("\nfound string end: '%.*s'\n", leftlen, left);
+			} else if (comment && *in == '"' && *(in - 1) != '\\') {
+				if (!right) {
+					right = in;
+					eprintf ("\nfound string: '%.*s'\n", 16, right);
+				} else {
+					rightlen = in - right + 1;
+					eprintf ("\nfound string end: '%.*s'\n", rightlen, right);
+				}
+			}
+			continue;
+		} else if (type == TYPE_SYM) {
+			if (!leftlen && left && IS_WHITESPACE (*in)) {
+				leftlen = in - left + 3;
+				eprintf ("\nfound symbol end: '%.*s'\n", leftlen, left);
+			} else if (comment && *in == '(' && IS_CHAR (*(in - 1)) && !right) {
+				right = in - 1;
+				while (IS_CHAR (*right)) right--;
+				eprintf ("\nfound function: '%.*s'\n", 16, right);
+			} else if (comment && *in == ')' && *(in + 1) != '\'') {
+				rightlen = in - right + 1;
+				eprintf ("\nfound function end: '%.*s'\n", rightlen, right);
+			}
+		}
+	}
+	fflush(stderr);
+}
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	Sdb *db;
@@ -27,6 +133,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.offset", 0);
 	r_config_set_i (core->config, "asm.flags", 0);
+	r_config_set_i (core->config, "asm.emu", 1);
 	r_config_set_i (core->config, "asm.fcnlines", 0);
 	r_config_set_i (core->config, "asm.comments", 1);
 	r_config_set_i (core->config, "asm.functions", 0);
@@ -57,18 +164,19 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #define SET_INDENT(x) { memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
 		if (!bb) break;
 		r_cons_push ();
-		char *code = r_core_cmd_str (core, sdb_fmt(0,
-			"pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, sdb_fmt (0, "pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
-		memset (indentstr, ' ', indent*I_TAB);
-		indentstr [(indent*I_TAB)-2] = 0;
+		memset (indentstr, ' ', indent * I_TAB);
+		indentstr [(indent * I_TAB) - 2] = 0;
 		code = r_str_prefix_all (code, indentstr);
-		code[strlen(code)-1] = 0; // chop last newline
+		int len = strlen (code);
+		code[len - 1] = 0; // chop last newline
 		//r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
 		//if (nindent != indent) {
 		//	r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
 		//}
-		if (!sdb_const_get (db, K_MARK(bb->addr), 0)) {
+		find_and_change (code, len);
+		if (!sdb_const_get (db, K_MARK (bb->addr), 0)) {
 			bool mustprint = !queuegoto || queuegoto != bb->addr;
 			if (mustprint) {
 				if (queuegoto) {
@@ -79,7 +187,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				indentstr[(indent * I_TAB) - 2] = 0;
 				r_cons_printf ("\n%s", code);
 				free (code);
-				sdb_num_set (db, K_MARK(bb->addr), 1, 0);
+				sdb_num_set (db, K_MARK (bb->addr), 1, 0);
 			}
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
@@ -87,17 +195,17 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			// XXX check if cant pop
 			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
-			if (addr==UT64_MAX) {
+			if (addr == UT64_MAX) {
 				int i;
 				nindent = 1;
-				for (i=indent; i!=nindent; i--) {
+				for (i = indent; i != nindent; i--) {
 					SET_INDENT (i);
 					r_cons_printf ("\n%s}", indentstr);
 				}
 				r_cons_printf ("\n%sreturn;\n", indentstr);
 				break;
 			}
-			if (sdb_num_get (db, K_ELSE(bb->addr), 0)) {
+			if (sdb_num_get (db, K_ELSE (bb->addr), 0)) {
 				if (!strcmp (blocktype, "else")) {
 					r_cons_printf ("\n%s } %s {", indentstr, blocktype);
 				} else {
@@ -116,22 +224,22 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				break;
 			}
 			//eprintf ("next is %llx\n", addr);
-			nindent = sdb_num_get (db, K_INDENT(addr), NULL);
+			nindent = sdb_num_get (db, K_INDENT (addr), NULL);
 			if (indent > nindent && !strcmp (blocktype, "else")) {
 				int i;
-				for (i=indent; i!=nindent; i--) {
+				for (i = indent; i != nindent; i--) {
 					SET_INDENT (i);
 					r_cons_printf ("\n%s }", indentstr);
 				}
 			}
 			indent = nindent;
 		} else {
-			sdb_set (db, K_INDENT(bb->addr), "passed", 0);
+			sdb_set (db, K_INDENT (bb->addr), "passed", 0);
 			if (bb->jump != UT64_MAX) {
 				int swap = 1;
 				// TODO: determine which branch take first
-				ut64 jump = swap? bb->jump: bb->fail;
-				ut64 fail = swap? bb->fail: bb->jump;
+				ut64 jump = swap ? bb->jump : bb->fail;
+				ut64 fail = swap ? bb->fail : bb->jump;
 				// if its from another function chop it!
 				RAnalFunction *curfcn = r_anal_get_fcn_in (core->anal, jump, R_ANAL_FCN_TYPE_NULL);
 				if (curfcn != fcn) {
@@ -139,9 +247,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					r_cons_printf ("\n  // chop\n");
 					break;
 				}
-				if (sdb_get (db, K_INDENT(jump), 0)) {
+				if (sdb_get (db, K_INDENT (jump), 0)) {
 					// already tracekd
-					if (!sdb_get (db, K_INDENT(fail), 0)) {
+					if (!sdb_get (db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					}
 				} else {
@@ -153,21 +261,21 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					if (fail != UT64_MAX) {
 						// do not push if already pushed
 						indent++;
-						if (sdb_get (db, K_INDENT(bb->fail), 0)) {
+						if (sdb_get (db, K_INDENT (bb->fail), 0)) {
 							/* do nothing here */
 							eprintf ("BlockAlready 0x%"PFMT64x"\n", bb->addr);
 						} else {
-					//		r_cons_printf (" { RADICAL %llx\n", bb->addr);
+							//		r_cons_printf (" { RADICAL %llx\n", bb->addr);
 							sdb_array_push_num (db, "indent", fail, 0);
-							sdb_num_set (db, K_INDENT(fail), indent, 0);
-							sdb_num_set (db, K_ELSE(fail), 1, 0);
+							sdb_num_set (db, K_INDENT (fail), indent, 0);
+							sdb_num_set (db, K_ELSE (fail), 1, 0);
 							r_cons_printf (" {");
 						}
 					} else {
 						r_cons_printf ("\n%s do", indentstr);
 						sdb_array_push_num (db, "indent", jump, 0);
-						sdb_num_set (db, K_INDENT(jump), indent, 0);
-						sdb_num_set (db, K_ELSE(jump), 1, 0);
+						sdb_num_set (db, K_INDENT (jump), indent, 0);
+						sdb_num_set (db, K_ELSE (jump), 1, 0);
 						if (jump <= bb->addr) {
 							blocktype = "while";
 						} else {
@@ -180,12 +288,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			} else {
 				ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 				if (addr == UT64_MAX) {
-					r_cons_printf ("\nbreak\n");
+					//r_cons_printf ("\nbreak\n");
 					break;
 				}
 				bb = r_anal_bb_from_offset (core->anal, addr);
-				nindent = sdb_num_get (db, K_INDENT(addr), NULL);
-				if (indent>nindent) {
+				nindent = sdb_num_get (db, K_INDENT (addr), NULL);
+				if (indent > nindent) {
 					int i;
 					for (i = indent; i != nindent; i--) {
 						SET_INDENT (i);
