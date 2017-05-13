@@ -1878,9 +1878,9 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	if (!p || !buf || len < 1 || wordsize < 1) {
 		return 0;
 	}
-	int words = (len / wordsize);
+	int i, words = (len / wordsize);
 	p->cb_printf ("[");
-	for (int i = 0; i < words; i++) {
+	for (i = 0; i < words; i++) {
 		ut16 w16 = r_read_ble16 (&buf16[i], p->big_endian);
 		ut32 w32 = r_read_ble32 (&buf32[i], p->big_endian);
 		ut64 w64 = r_read_ble64 (&buf64[i], p->big_endian);
