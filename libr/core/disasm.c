@@ -1050,15 +1050,16 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	RCore *core = ds->core;
 	char res[] = "     ";
 	void *p;
-	int q, t;
 	if (!ds->show_marks) {
 		return;
 	}
-	q = core->print->cur_enabled &&
+	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
 	p = r_bp_get_at (core->dbg->bp, ds->at);
-	t = ds->midflags && handleMidFlags (core, ds, false) > 0;
+	if (ds->midflags) {
+		(void)handleMidFlags (core, ds, false);
+	}
 	if (p) {
 		res[0] = 'b';
 	}
