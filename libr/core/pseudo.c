@@ -42,14 +42,14 @@ static void find_and_change (char* in, int len) {
 				char* copy = NULL;
 				if (leftlen > rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
 					memcpy (copy, left, leftlen);
-					eprintf ("CopyL: '%.*s'\n\n", leftlen, copy);
+					// eprintf ("CopyL: '%.*s'\n\n", leftlen, copy);
 					memcpy (left, right, rightlen);
 					memmove (comment - leftlen + rightlen, comment, right - comment);
 					memcpy (right - leftlen + rightlen, copy, leftlen);
 				} else if (leftlen < rightlen) {
 					if (linecount < 1 && (copy = (char*) malloc (rightlen))) {
 						memcpy (copy, right, rightlen);
-						eprintf ("CopyR: '%.*s'\n\n", rightlen, copy);
+						// eprintf ("CopyR: '%.*s'\n\n", rightlen, copy);
 						memcpy (right + rightlen - leftlen, left, leftlen);
 						memmove (comment + rightlen - leftlen, comment, right - comment);
 						memcpy (left + rightlen - leftlen, copy, rightlen);
@@ -62,7 +62,7 @@ static void find_and_change (char* in, int len) {
 					}
 				} else if (leftlen == rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
 					memcpy (copy, right, leftlen);
-					eprintf ("CopyE: '%.*s'\n\n", leftlen, copy);
+					// eprintf ("CopyE: '%.*s'\n\n", leftlen, copy);
 					memcpy (right, left, leftlen);
 					memcpy (left, copy, leftlen);
 				}
@@ -107,7 +107,7 @@ static void find_and_change (char* in, int len) {
 		} else if (type == TYPE_STR) {
 			if (!leftlen && left && IS_WHITESPACE (*in)) {
 				leftlen = in - left;
-				eprintf ("found string left: '%.*s'\n", leftlen, left);
+				// eprintf ("found string left: '%.*s'\n", leftlen, left);
 			} else if (comment && *in == '"' && *(in - 1) != '\\') {
 				if (!right) {
 					right = in;
@@ -115,14 +115,14 @@ static void find_and_change (char* in, int len) {
 					rightcolor--;
 				} else {
 					rightlen = in - right + 1;
-					eprintf ("found string right: '%.*s'\n", rightlen, right);
+					// eprintf ("found string right: '%.*s'\n", rightlen, right);
 				}
 			}
 			continue;
 		} else if (type == TYPE_SYM) {
 			if (!leftlen && left && IS_WHITESPACE (*in)) {
 				leftlen = in - left + 3;
-				eprintf ("found symbol left: '%.*s'\n", leftlen, left);
+				// eprintf ("found symbol left: '%.*s'\n", leftlen, left);
 			} else if (comment && *in == '(' && IS_CHAR (*(in - 1)) && !right) {
 				right = in - 1;
 				while (IS_CHAR (*right)) right--;
@@ -135,7 +135,7 @@ static void find_and_change (char* in, int len) {
 				rightcolor--;
 			} else if (comment && *in == ')' && *(in + 1) != '\'') {
 				rightlen = in - right + 1;
-				eprintf ("found function right: '%.*s'\n", rightlen, right);
+				// eprintf ("found function right: '%.*s'\n", rightlen, right);
 			}
 		}
 	}
