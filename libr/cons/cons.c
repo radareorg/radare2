@@ -793,14 +793,11 @@ club:
 		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap);
 		if (written >= size) { /* not all bytes were written */
 			palloc (written);
-			va_copy (ap, ap2);
-			va_copy (ap2, ap);
 			written = vsnprintf (I.buffer + I.buffer_len, written, format, ap2);
 			if (written >= size) {
 				palloc (written);
 				goto club;
 			}
-			va_end (ap2);
 		}
 		I.buffer_len += written;
 	} else {
