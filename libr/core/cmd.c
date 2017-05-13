@@ -183,7 +183,9 @@ static int cmd_alias(void *data, const char *input) {
 	}
 	i = strlen (input);
 	buf = malloc (i + 2);
-	if (!buf) return 0;
+	if (!buf) {
+		return 0;
+	}
 	*buf = '$'; // prefix aliases with a dash
 	memcpy (buf + 1, input, i + 1);
 	q = strchr (buf, ' ');
@@ -193,19 +195,16 @@ static int cmd_alias(void *data, const char *input) {
 	/* create alias */
 	if ((def && q && (def < q)) || (def && !q)) {
 		*def++ = 0;
-		size_t len = strlen(def);
-
+		size_t len = strlen (def);
 		/* Remove quotes */
 		if ((def[0] == '\'') && (def[len - 1] == '\'')) {
 			def[len - 1] = 0x00;
 			def++;
 		}
-
 		if (!q || (q && q>def)) {
 			if (*def) r_cmd_alias_set (core->rcmd, buf, def, 0);
 			else r_cmd_alias_del (core->rcmd, buf);
 		}
-
 	/* Show command for alias */
 	} else if (desc && !q) {
 		char *v;
@@ -322,7 +321,9 @@ static int cmd_rap(void *data, const char *input) {
 			r_io_system (core->io, input + 1);
 		}
 		break;
-	default: r_core_rtr_cmd (core, input);
+	default:
+		r_core_rtr_cmd (core, input);
+		break;
 	}
 	return 0;
 }
@@ -343,7 +344,9 @@ static int cmd_yank(void *data, const char *input) {
 		core->num->value = core->yank_buf->length;
 		break;
 	case 'y':
-		while (input[1] == ' ') input++;
+		while (input[1] == ' ') {
+			input++;
+		}
 		n = input[1]? r_num_math (core->num, input + 1): core->offset;
 		r_core_yank_paste (core, n, 0);
 		break;
@@ -2344,8 +2347,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 }
 
 static void foreachOffset (RCore *core, const char *cmd, const char *each) {
+	char *str = strdup (cmd);
 	ut64 addr;
-	char *str;
 	/* foreach list of items */
 	do {
 		while (*each == ' ') {
@@ -2354,20 +2357,26 @@ static void foreachOffset (RCore *core, const char *cmd, const char *each) {
 		if (!*each) {
 			break;
 		}
+		char *nl = strchr (each, '\n');
+		if (nl) {
+			*nl = 0;
+			each = nl + 1;
+		}
 		str = strchr (each, ' ');
 		if (str) {
 			*str = '\0';
 			addr = r_num_math (core->num, each);
 			*str = ' ';
+			each = str + 1;
 		} else {
 			addr = r_num_math (core->num, each);
 		}
 		//eprintf ("; 0x%08"PFMT64x":\n", addr);
-		each = str + 1;
 		r_core_seek (core, addr, 1);
 		r_core_cmd (core, cmd, 0);
 		r_cons_flush ();
 	} while (str != NULL);
+	free (str);
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -2506,7 +2515,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			goto out_finish;
 		}
 		break;
-	case 'c':
+	case 'c': // "@@c:"
 		if (each[1] == ':') {
 			char *arg = r_core_cmd_str (core, each + 2);
 			if (arg) {
