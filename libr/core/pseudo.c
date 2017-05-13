@@ -86,6 +86,8 @@ static void find_and_change (char* in, int len) {
 			continue;
 		} else if (!comment && *in == ';' && *(in + 1) == ' ') {
 			comment = in - 1;
+			comment[1] = '/';
+			comment[2] = '/';
 			while (!IS_WHITESPACE (*(comment - commentcolor))) commentcolor++;
 			commentcolor--;
 			continue;
