@@ -7,15 +7,15 @@ ec push black
 ec pop black
 ec cmp black
 ec nop blue
-ec jmp green
-ec cjmp green
-ec call bgreen
+ec jmp magenta
+ec cjmp magenta
+ec call white green
 ec input black
 ec fline red
 ec prompt black
-ec flag green
-ec fname green
-ec comment black
+ec flag blue
+ec fname blue
+ec comment magenta
 ec reg blue
 ec creg blue
 ec trap red
@@ -26,7 +26,7 @@ ec b0xff red
 ec b0x00 rgb:777
 ec btext black
 ec offset black
-ec flow red
+ec flow magenta
 ec fline green
 ec mov black
 ec invalid red
