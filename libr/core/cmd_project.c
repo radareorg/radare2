@@ -57,12 +57,8 @@ static int cmd_project(void *data, const char *input) {
 		if (!file || !file[0]) { /* if no argument specified use current project */
 			file = str;
 		}
-		r_config_set (core->config, "prj.name", file);
 		if (r_core_project_save (core, file)) {
 			r_cons_println (file);
-		} else {
-			// reset prj.name on fail
-			r_config_set (core->config, "prj.name", str);
 		}
 		break;
 	case 'S':

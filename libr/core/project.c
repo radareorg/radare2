@@ -588,6 +588,7 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 	char *scriptPath, *prjDir;
 	SdbListIter *it;
 	SdbNs *ns;
+	char *oldPrjName = NULL;
 
 	if (!prjName || !*prjName) {
 		return false;
@@ -650,11 +651,17 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 			free (rop_path);
 		}
 	}
+
+	const char *oldPrjNameC = r_config_get (core->config, "prj.name");
+	if (oldPrjNameC) {
+		oldPrjName = strdup (oldPrjNameC);
+	}
+	r_config_set (core->config, "prj.name", prjName);
+
 	if (!projectSaveScript (core, scriptPath, R_CORE_PRJ_ALL ^ R_CORE_PRJ_XREFS)) {
 		eprintf ("Cannot open '%s' for writing\n", prjName);
 		ret = false;
 	}
-
 	if (r_config_get_i (core->config, "prj.files")) {
 		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
 		char *binFile = r_core_project_info (core, prjName);
@@ -706,6 +713,11 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 	if (scr_null) {
 		r_config_set_i (core->config, "scr.null", true);
 	}
+	if (!ret) {
+		// reset prj.name on fail
+		r_config_set (core->config, "prj.name", oldPrjName);
+	}
+	free(oldPrjName);
 	return ret;
 }
 
