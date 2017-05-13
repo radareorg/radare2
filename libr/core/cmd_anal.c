@@ -4136,6 +4136,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			}
 			r_list_free (list);
+		} else {
+			if (input[1] == 'j') { // "axtj"
+				r_cons_print ("[]\n");
+			}
 		}
 	} break;
 	case 'f': { // "axf"
@@ -4214,6 +4218,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			}
 			r_list_free (list_);
+		} else {
+			if (input[1] == 'j') { // axfj
+				r_cons_print ("[]\n");
+			}
 		}
 	} break;
 	case 'F':
