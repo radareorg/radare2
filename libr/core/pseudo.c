@@ -308,7 +308,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 							sdb_array_push_num (db, "indent", fail, 0);
 							sdb_num_set (db, K_INDENT (fail), indent, 0);
 							sdb_num_set (db, K_ELSE (fail), 1, 0);
-							r_cons_printf (" {");
+							SET_INDENT (indent);
+							r_cons_printf ("\n%s {", indentstr);
 						}
 					} else {
 						r_cons_printf ("\n%s do", indentstr);
@@ -320,7 +321,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						} else {
 							blocktype = "else";
 						}
-						r_cons_printf (" {");
+						r_cons_printf ("\n%s {", indentstr);
 						indent++;
 					}
 				}
