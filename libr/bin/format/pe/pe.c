@@ -70,7 +70,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 	// E8 13 09 00 00  call    0x44C388
 	// E9 05 00 00 00  jmp     0x44BA7F
 	if (b[0] == 0xe8 && b[5] == 0xe9) {
-		const st32 jmp_dst = b[6] | (b[7] << 8) | (b[8] << 16) | (b[9] << 24);
+		const st32 jmp_dst = r_read_ble32 (b + 6, bin->big_endian);
 		entry->paddr += (5 + 5 + jmp_dst);
 		entry->vaddr += (5 + 5 + jmp_dst);
 		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
@@ -81,7 +81,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
 			for (n = 0; n < sizeof (b) - 5; n++) {
 				if (b[n] == 0x68 && *((ut32*) &b[n + 1]) == imageBase && b[n + 5] == 0xe8) {
-					const st32 call_dst = b[n + 6] | (b[n + 7] << 8) | (b[n + 8] << 16) | (b[n + 9] << 24);
+					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
 					entry->vaddr += (n + 5 + 5 + call_dst);
 					return entry;
@@ -95,7 +95,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			//E8 6F FC FF FF call    _main
 			for (n = 0; n < sizeof (b) - 5; n++) {
 				if (b[n] == 0x50 && b[n+1] == 0xff && b[n + 3] == 0xff && b[n + 5] == 0xe8) {
-					const st32 call_dst = b[n + 6] | (b[n + 7] << 8) | (b[n + 8] << 16) | (b[n + 9] << 24);
+					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
 					entry->vaddr += (n + 5 + 5 + call_dst);
 					return entry;
@@ -108,7 +108,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			//E8 2B FD FF FF                             call    _main
 			for (n = 0; n < sizeof (b) - 17; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 7] == 0xff && b[n + 13] == 0xe8) {
-					const st32 call_dst = b[n + 14] | (b[n + 15] << 8) | (b[n + 16] << 16) | (b[n + 17] << 24);
+					const st32 call_dst = r_read_ble32 (b + n + 14, bin->big_endian);
 					entry->paddr += (n + 5 + 13 + call_dst);
 					entry->vaddr += (n + 5 + 13 + call_dst);
 					return entry;
@@ -123,7 +123,8 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 	// 48 83 C4 28       add     rsp, 0x28
 	// E9 xx xx xx xx    jmp     xxxxxxxx
 	if (b[4] == 0xe8 && b[13] == 0xe9) {
-		const st32 jmp_dst = b[14] | (b[15] << 8) | (b[16] << 16) | (b[17] << 24);
+		//const st32 jmp_dst = b[14] | (b[15] << 8) | (b[16] << 16) | (b[17] << 24);
+		const st32 jmp_dst = r_read_ble32 (b + 14, bin->big_endian);
 		entry->paddr += (5 + 13 + jmp_dst);
 		entry->vaddr += (5 + 13 + jmp_dst);
 		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
@@ -134,7 +135,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			// E8 xx xx xx xx              call    main
 			for (n = 0; n < sizeof (b) - 13; n++) {
 				if (b[n] == 0x4c && b[n + 3] == 0x48 && b[n + 6] == 0x8b && b[n + 8] == 0xe8) {
-					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
+					const st32 call_dst = r_read_ble32 (b + n + 9, bin->big_endian);
 					entry->paddr += (n + 5 + 8 + call_dst);
 					entry->vaddr += (n + 5 + 8 + call_dst);
 					return entry;
@@ -154,14 +155,14 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 	// 50                  push    eax
 	// E8 2D 00 00  00     call 0x4015a6
 	if (b[188] == 0x50 && b[201] == 0xe8) {
-		const st32 call_dst = b[201 + 1] | (b[201 + 2] << 8) | (b[201 + 3] << 16) | (b[201 + 4] << 24);
+		const st32 call_dst = r_read_ble32 (b + 202, bin->big_endian);
 		entry->paddr += (201 + 5 + call_dst);
 		entry->vaddr += (201 + 5 + call_dst);
 		return entry;
 	}
 
 	if (b[292] == 0x50 && b[303] == 0xe8) {
-		const st32 call_dst = b[303 + 1] | (b[303 + 2] << 8) | (b[303 + 3] << 16) | (b[303 + 4] << 24);
+		const st32 call_dst = r_read_ble32 (b + 304, bin->big_endian);
 		entry->paddr += (303 + 5 + call_dst);
 		entry->vaddr += (303 + 5 + call_dst);
 		return entry;
