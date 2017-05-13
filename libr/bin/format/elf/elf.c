@@ -1558,7 +1558,16 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		bprintf ("Warning: read (main)\n");
 		return 0;
 	}
-// find 'main' symbol first
+	// ARM64
+	if (buf[0x18+3] == 0x58 && buf[0x2f] == 0x00) {
+#define BUF_U32(i) ((ut32)(buf[i+0]+(buf[i+1]<<8)+(buf[i+2]<<16)+(buf[i+3]<<24)))
+		ut32 entry_vaddr = Elf_(r_bin_elf_p2v) (bin, entry);
+		ut32 main_addr = BUF_U32(0x30);
+		if ((main_addr >> 16) == (entry_vaddr >> 16)) {
+			return Elf_(r_bin_elf_v2p) (bin, main_addr);
+		}
+	}
+
 	// TODO: Use arch to identify arch before memcmp's
 	// ARM
 	ut64 text = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
