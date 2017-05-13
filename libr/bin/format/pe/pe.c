@@ -244,16 +244,19 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 
 struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_addr_t *entry;
-	ut8 b[512];
 	if (!bin || !bin->b) {
 		return 0LL;
 	}
+	ut8 *b = calloc (1, 512);
+	if (!b) {
+		return NULL;
+	}
 	entry = PE_ (r_bin_pe_get_entrypoint) (bin);
 	// option2: /x 8bff558bec83ec20
-	ZERO_FILL (b);
-	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
+	if (r_buf_read_at (bin->b, entry->paddr, b, 512) < 1) {
 		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x"\n", entry->paddr);
 		free (entry);
+		free (b);
 		return NULL;
 	}
 	/* Decode the jmp instruction, this gets the address of the 'main'
@@ -264,21 +267,39 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 		const st32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
 		entry->paddr += 367 + 5 + jmp_dst;
 		entry->vaddr += 367 + 5 + jmp_dst;
+		free (b);
 		return entry;
 	}
+	int i;
+	for (i = 0; i < 512 - 16 ; i++) {
+		// 5. ff 15 .. .. .. .. 50 e8 [main]
+		if (!memcmp (b + i, "\xff\x15", 2)) {
+			if (b[i+6] == 0x50) {
+				if (b[i+7] == 0xe8) {
+					const st32 call_dst = b[i + 8] | (b[i + 9] << 8) | (b[i + 10] << 16) | (b[i + 11] << 24);
+					entry->paddr = entry->vaddr - entry->paddr;
+					entry->vaddr += (i + 7 + 5 + (long)call_dst);
+					entry->paddr += entry->vaddr;
+
+					return entry;
+				}
+			}
+		}
+	}
 	free (entry);
+	free (b);
 	return NULL;
 }
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
-	struct r_bin_pe_addr_t *entry = PE_(check_msvcseh) (bin);
-	if (!entry) {
-		entry = PE_(check_mingw) (bin);
+	struct r_bin_pe_addr_t *main = PE_(check_msvcseh) (bin);
+	if (!main) {
+		main = PE_(check_mingw) (bin);
 	}
-	if (!entry) {
-		entry = PE_(check_unknow) (bin);
+	if (!main) {
+		main = PE_(check_unknow) (bin);
 	}
-	return entry;
+	return main;
 }
 
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)
