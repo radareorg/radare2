@@ -24,7 +24,7 @@
 /* Operand type.  */
 
 #define OPND(x)	AARCH64_OPND_##x
-#define OP0() {{0}}
+#define OP0() {0}
 #define OP1(a) {OPND(a)}
 #define OP2(a,b) {OPND(a), OPND(b)}
 #define OP3(a,b,c) {OPND(a), OPND(b), OPND(c)}
@@ -2113,7 +2113,7 @@ struct aarch64_opcode aarch64_opcode_table[] =
   {"bgt", 0x5400000c, 0xff00001f, condbranch, 0, CORE, OP1 (ADDR_PCREL19), QL_PCREL_NIL, F_ALIAS | F_PSEUDO},
   {"ble", 0x5400000d, 0xff00001f, condbranch, 0, CORE, OP1 (ADDR_PCREL19), QL_PCREL_NIL, F_ALIAS | F_PSEUDO},
 
-  {0, 0, 0, 0, 0, 0, {{0}}, {{0}}, 0},
+  {0, 0, 0, 0, 0, 0, {0}, {{0}}, 0},
 };
 
 #ifdef AARCH64_OPERANDS
