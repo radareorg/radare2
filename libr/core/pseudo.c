@@ -8,14 +8,15 @@
 #define IS_STRING(x)	(x+3<end && *x == 's' && *(x+1) == 't' && *(x+2) == 'r' && *(x+3) == '.')
 #define IS_SYMBOL(x)	(x+3<end && *x == 's' && *(x+1) == 'y' && *(x+2) == 'm' && *(x+3) == '.')
 
-void find_and_change (char* in, int len) {
-	char *comment, *left, *right, *end;
-	int leftlen, rightlen, linecount;
-	int type = TYPE_NONE;
+static void find_and_change (char* in, int len) {
+	char *comment, *left, *right, *linebegin, *end;
+	int leftlen, rightlen, leftpos, leftcolor, commentcolor, rightcolor, linecount;
+	int type;
 	if (!in || len <= 0) {
 		return;
 	}
 	end = in + len;
+
 	comment = NULL;
 	// >>
 	right = NULL;
@@ -24,28 +25,44 @@ void find_and_change (char* in, int len) {
 	leftlen = 0;
 	rightlen = 0;
 	linecount = 0;
-	for (; in < end && *in; ++in) {
-		if (*in == '\n') {
+	leftpos = 0;
+	leftcolor = 0;
+	rightcolor = 0;
+	commentcolor = 0;
+	type = TYPE_NONE;
+	linebegin = in + 1;
+	for (linebegin = in; in < end; ++in) {
+		if (*in == '\n' || !*in) {
 			if (type == TYPE_SYM && linecount < 1) {
 				linecount++;
+				linebegin = in + 1;
 				continue;
 			}
 			if (type != TYPE_NONE && right && left && rightlen > 0 && leftlen > 0) {
 				char* copy = NULL;
 				if (leftlen > rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
 					memcpy (copy, left, leftlen);
+					eprintf ("CopyL: '%.*s'\n\n", leftlen, copy);
 					memcpy (left, right, rightlen);
 					memmove (comment - leftlen + rightlen, comment, right - comment);
-					memcpy (right, copy, leftlen);
-					left[rightlen] = ' ';
-				} else if (leftlen < rightlen && (copy = (char*) malloc (rightlen)) != NULL) {
-					memcpy (copy, right, rightlen);
-					memcpy (right + rightlen - leftlen, left, leftlen);
-					memmove (comment + rightlen - leftlen, comment, right - comment);
-					memcpy (left, copy, rightlen);
-					right[rightlen] = ' ';
+					memcpy (right - leftlen + rightlen, copy, leftlen);
+				} else if (leftlen < rightlen) {
+					if (linecount < 1 && (copy = (char*) malloc (rightlen))) {
+						memcpy (copy, right, rightlen);
+						eprintf ("CopyR: '%.*s'\n\n", rightlen, copy);
+						memcpy (right + rightlen - leftlen, left, leftlen);
+						memmove (comment + rightlen - leftlen, comment, right - comment);
+						memcpy (left + rightlen - leftlen, copy, rightlen);
+					} else if (linecount > 0 && (copy = (char*) malloc (linebegin - left))) {
+						memcpy (copy, left, linebegin - left);
+						memset (right - leftpos, ' ', leftpos);
+						*(right - leftpos - 1) = '\n';
+						memcpy (comment + 3, copy, linebegin - left);
+						memset (left, ' ', leftlen);
+					}
 				} else if (leftlen == rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
 					memcpy (copy, right, leftlen);
+					eprintf ("CopyE: '%.*s'\n\n", leftlen, copy);
 					memcpy (right, left, leftlen);
 					memcpy (left, copy, leftlen);
 				}
@@ -60,49 +77,65 @@ void find_and_change (char* in, int len) {
 			leftlen = 0;
 			rightlen = 0;
 			linecount = 0;
+			leftpos = 0;
+			leftcolor = 0;
+			rightcolor = 0;
+			commentcolor = 0;
 			type = TYPE_NONE;
+			linebegin = in + 1;
 			continue;
 		} else if (!comment && *in == ';' && *(in + 1) == ' ') {
-			eprintf ("\nfound ;\n");
-			comment = in;
+			comment = in - 1;
+			while (!IS_WHITESPACE (*(comment - commentcolor))) commentcolor++;
+			commentcolor--;
 			continue;
 		} else if (!comment && type == TYPE_NONE) {
-			eprintf ("%c", *in);
 			if (IS_STRING (in)) {
-				eprintf ("\nfound string: '%.*s'\n", 16, in);
 				type = TYPE_STR;
 				left = in;
+				while (!IS_WHITESPACE (*(left - leftcolor))) leftcolor++;
+				leftcolor--;
+				leftpos = left - linebegin;
 			} else if (IS_SYMBOL (in)) {
-				eprintf ("\nfound symbol: '%.*s'\n", 16, in);
 				type = TYPE_SYM;
 				left = in;
+				while (!IS_WHITESPACE (*(left - leftcolor))) leftcolor++;
+				leftcolor--;
+				leftpos = left - linebegin;
 			}
 			continue;
 		} else if (type == TYPE_STR) {
 			if (!leftlen && left && IS_WHITESPACE (*in)) {
 				leftlen = in - left;
-				eprintf ("\nfound string end: '%.*s'\n", leftlen, left);
+				eprintf ("found string left: '%.*s'\n", leftlen, left);
 			} else if (comment && *in == '"' && *(in - 1) != '\\') {
 				if (!right) {
 					right = in;
-					eprintf ("\nfound string: '%.*s'\n", 16, right);
+					while (!IS_WHITESPACE (*(right - rightcolor))) rightcolor++;
+					rightcolor--;
 				} else {
 					rightlen = in - right + 1;
-					eprintf ("\nfound string end: '%.*s'\n", rightlen, right);
+					eprintf ("found string right: '%.*s'\n", rightlen, right);
 				}
 			}
 			continue;
 		} else if (type == TYPE_SYM) {
 			if (!leftlen && left && IS_WHITESPACE (*in)) {
 				leftlen = in - left + 3;
-				eprintf ("\nfound symbol end: '%.*s'\n", leftlen, left);
+				eprintf ("found symbol left: '%.*s'\n", leftlen, left);
 			} else if (comment && *in == '(' && IS_CHAR (*(in - 1)) && !right) {
 				right = in - 1;
 				while (IS_CHAR (*right)) right--;
-				eprintf ("\nfound function: '%.*s'\n", 16, right);
+				if (*right == ' ') {
+					right--;
+					while (IS_CHAR (*right)) right--;
+					right++;
+				}
+				while (!IS_WHITESPACE (*(right - rightcolor))) rightcolor++;
+				rightcolor--;
 			} else if (comment && *in == ')' && *(in + 1) != '\'') {
 				rightlen = in - right + 1;
-				eprintf ("\nfound function end: '%.*s'\n", rightlen, right);
+				eprintf ("found function right: '%.*s'\n", rightlen, right);
 			}
 		}
 	}
@@ -121,11 +154,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_save_num (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", NULL);
 	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.fcnlines", "asm.comments", NULL);
 	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmtcol", "asm.filter", NULL);
+	r_config_save_num (hc, "scr.color", "io.cache", "asm.emu", "asm.emuwrite", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		r_config_hold_free (hc);
 		return false;
 	}
+	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_i (core->config, "asm.pseudo", 1);
 	r_config_set_i (core->config, "asm.decode", 0);
 	r_config_set_i (core->config, "asm.filter", 1);
@@ -133,7 +168,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.offset", 0);
 	r_config_set_i (core->config, "asm.flags", 0);
+	r_config_set_i (core->config, "io.cache", 1);
 	r_config_set_i (core->config, "asm.emu", 1);
+	r_config_set_i (core->config, "asm.emuwrite", 1);
 	r_config_set_i (core->config, "asm.fcnlines", 0);
 	r_config_set_i (core->config, "asm.comments", 1);
 	r_config_set_i (core->config, "asm.functions", 0);
