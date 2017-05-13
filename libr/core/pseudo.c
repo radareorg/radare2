@@ -172,7 +172,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.flags", 0);
 	r_config_set_i (core->config, "asm.emu", 1);
 	r_config_set_i (core->config, "asm.emustr", 1);
-	r_config_set_i (core->config, "asm.emuwrite", 1);
+	r_config_set_i (core->config, "asm.emuwrite", 0);
 	r_config_set_i (core->config, "asm.fcnlines", 0);
 	r_config_set_i (core->config, "asm.comments", 1);
 	r_config_set_i (core->config, "asm.functions", 0);
@@ -348,7 +348,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		//n_bb --;
 	} while (n_bb > 0);
-	r_cons_printf ("}\n");
+	r_cons_printf ("\n}\n");
 	r_config_restore (hc);
 	r_config_hold_free (hc);
 	sdb_free (db);
