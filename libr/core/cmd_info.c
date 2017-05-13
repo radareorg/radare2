@@ -432,7 +432,14 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL, obj? r_list_length (obj->symbols): 0);
 				break;
 			}
-		case 'R':
+		case 'R': 
+			if  (input[1] == '*') {
+				mode = R_CORE_BIN_RADARE;
+			} else if (input[1] == 'j') {
+				mode = R_CORE_BIN_JSON;
+			}
+			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0); 
+			break;
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
 		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1); break;
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS, NULL, obj? r_list_length (obj->imports): 0); break;

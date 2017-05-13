@@ -62,6 +62,16 @@ struct r_bin_pe_lib_t {
 	int last;
 };
 
+
+typedef struct _PE_RESOURCE {
+	char *timestr;
+	char *type;
+	char *language;
+	int name;
+	Pe_image_resource_data_entry *data;
+} r_pe_resource;
+
+
 #endif
 
 struct PE_(r_bin_pe_obj_t) {
@@ -97,6 +107,7 @@ struct PE_(r_bin_pe_obj_t) {
 	bool verbose;
 	int big_endian;
 	RList* relocs;
+	RList* resources; //RList of r_pe_resources
 	const char* file;
 	struct r_buf_t* b;
 	Sdb *kv;
@@ -147,3 +158,4 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin);
 bool PE_(r_bin_pe_section_perms)(struct PE_(r_bin_pe_obj_t) *bin, const char *name, int perms);
+R_API void PE_(bin_pe_parse_resource) (struct PE_(r_bin_pe_obj_t) *bin);
