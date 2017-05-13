@@ -2006,8 +2006,8 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	char *name = get_fcn_name (core, fcn);
-	r_cons_printf ("f %s %d 0x%08"PFMT64x"\n", name, r_anal_fcn_size (fcn), fcn->addr);
-	r_cons_printf ("af+ 0x%08"PFMT64x" %s %c %c\n",
+	r_cons_printf ("\"f %s %d 0x%08"PFMT64x"\"\n", name, r_anal_fcn_size (fcn), fcn->addr);
+	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
 			fcn->addr, name, //r_anal_fcn_size (fcn), name,
 			fcn->type == R_ANAL_FCN_TYPE_LOC?'l':
 			fcn->type == R_ANAL_FCN_TYPE_SYM?'s':
