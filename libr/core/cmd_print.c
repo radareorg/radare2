@@ -4094,6 +4094,9 @@ static int cmd_print(void *data, const char *input) {
 	}
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
+		case 'j':
+			r_print_jsondump (core->print, core->block, core->blocksize, 8);
+			break;
 		case '/':
 			r_core_print_examine (core, input + 2);
 			break;
@@ -4281,7 +4284,11 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'w': // "pxw"
 			if (l != 0) {
-				r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
+				if (input[2] == 'j') {
+					r_print_jsondump (core->print, core->block, len, 32);
+				} else {
+					r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
+				}
 			}
 			break;
 		case 'W': // "pxW"
@@ -4376,10 +4383,14 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'h':
+		case 'h': // pxh
 			if (l) {
-				r_print_hexdump (core->print, core->offset,
-					core->block, len, 32, 2);
+				if (input[2] == 'j') {
+					r_print_jsondump (core->print, core->block, len, 16);
+				} else {
+					r_print_hexdump (core->print, core->offset,
+						core->block, len, 32, 2);
+				}
 			}
 			break;
 		case 'H':
@@ -4419,12 +4430,16 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'q':
+		case 'q': // "pxq"
 			if (l) {
-				r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
+				if (input[2] == 'j') {
+					r_print_jsondump (core->print, core->block, len, 64);
+				} else {
+					r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
+				}
 			}
 			break;
-		case 'Q':
+		case 'Q': // "pxQ"
 			// TODO. show if flag name, or inside function
 			if (l) {
 				len = len - (len % 8);
@@ -4462,7 +4477,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 's':
+		case 's': // "pxs"
 			if (l) {
 				core->print->flags |= R_PRINT_FLAGS_SPARSE;
 				r_print_hexdump (core->print, core->offset, core->block, len, 16, 1);
