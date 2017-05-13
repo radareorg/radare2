@@ -2756,10 +2756,14 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		f = r_flag_get_i (core->flags, refaddr);
 		if (f) {
 			if (strlen (msg) != 1) {
-				r_str_filter (msg, 0);
-			}
-			if (!strncmp (msg, "UH..", 4)) {
-				*msg = 0;
+				char *msg2 = r_str_new (msg);
+				if (msg2) {
+					r_str_filter (msg2, 0);
+					if (!strncmp (msg2, "UH..", 4)) {
+						*msg = 0;
+					}
+					free (msg2);
+				}
 			}
 			if (*msg) {
 				if (strlen (msg) == 1) {
@@ -2771,19 +2775,29 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						if (!msg[i]) {
 							break;
 						}
-						if (IS_PRINTABLE (msg[i])) {
-							ds_comment (ds, false, "%c", msg[i]);
-						} else {
-							ds_comment (ds, false, "\\x%02x", msg[i]);
-						}
 						if (!msg[i+1]) {
-							i++;
+							if (IS_PRINTABLE (msg[i])) {
+								ds_comment (ds, false, "%c", msg[i]);
+							} else {
+								char *escchar = r_str_escape (&msg[i]);
+								if (escchar) {
+									ds_comment (ds, false, "%s", escchar);
+									free (escchar);
+								}
+							}
+						} else {
+							ds_comment (ds, false, "\\x%02x\\x%02x", msg[i], msg[i+1]);
 						}
+						i++;
 					}
 					ds_comment (ds, false, "\"%s", nl);
 				} else {
-					ALIGN;
-					ds_comment (ds, true, "; \"%s\"%s", msg, nl);
+					char *escstr = r_str_escape (msg);
+					if (escstr) {
+						ALIGN;
+						ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
+						free (escstr);
+					}
 				}
 			}
 		} else {
