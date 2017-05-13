@@ -280,7 +280,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 					entry->paddr = entry->vaddr - entry->paddr;
 					entry->vaddr += (i + 7 + 5 + (long)call_dst);
 					entry->paddr += entry->vaddr;
-
+					free (b);
 					return entry;
 				}
 			}
