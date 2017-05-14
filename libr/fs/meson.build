@@ -54,7 +54,8 @@ grub = static_library('grub', grub_files,
   include_directories: include_directories([
     '../../libr/include',
     '../../shlr/',
-    '../../shlr/grub/include'
+    '../../shlr/grub/include',
+	platform_librinc
   ])
 )
 
@@ -87,7 +88,8 @@ files=[
 r_fs = shared_library('r_fs', files,
   include_directories: include_directories([
     '../include',
-    '../../shlr/grub/include'
+    '../../shlr/grub/include',
+	platform_librinc
   ]),
   link_with: [r_util, grub],
   install: true

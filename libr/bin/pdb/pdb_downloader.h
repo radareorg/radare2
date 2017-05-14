@@ -1,6 +1,6 @@
 #ifndef PDB_DOWNLOADER_H
 #define PDB_DOWNLOADER_H
-
+#include <r_types.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,13 +25,13 @@ typedef struct SPDBDownloader {
 /// \param opt PDB options
 /// \param pdb_downloader PDB downloader that will be init
 ///
-void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pdb_downloader);
+R_API void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pdb_downloader);
 
 ///
 /// \brief deinitialization of PDB downloader
 /// \param pdb_downloader PDB downloader that will be deinit
 ///
-void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
+R_API void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
 
 #ifdef __cplusplus
 }

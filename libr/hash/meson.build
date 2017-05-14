@@ -16,7 +16,10 @@ files=[
 ]
 
 r_hash = shared_library('r_hash', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include'],
+  platform_librinc
+  ),
   dependencies: [mth],
   link_with: [r_util],
   install: true

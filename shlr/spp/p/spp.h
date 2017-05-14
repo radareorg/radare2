@@ -1,7 +1,6 @@
 /* Mini MCMS :: renamed to 'spp'? */
 
 #include <unistd.h>
-
 static char *spp_var_get(char *var) {
 	return getenv(var);
 }

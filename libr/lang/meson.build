@@ -9,7 +9,10 @@ files=[
 ]
 
 r_lang = shared_library('r_lang', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include',
+  platform_librinc
+  ]),
   c_args: ['-DCORELIB'],
   link_with: [r_util, r_cons],
   install: true

@@ -72,7 +72,7 @@ files=[
 'regex/regerror.c'
 ]
 
-incdir = include_directories('../include')
+incdir = '../include'
 
 sdb_files=[
 '../../shlr/sdb/src/array.c',
@@ -197,21 +197,30 @@ zlib_files=[
 '../../shlr/zip/zlib/zutil.c'
 ]
 
-r_sdb = shared_library('r_sdb', sdb_files,
-  include_directories: include_directories('../../shlr/sdb/src'))
+r_sdb = static_library('r_sdb', sdb_files,
+  include_directories: include_directories([
+  '../../shlr/sdb/src',
+  '../../libr/include/sdb',
+  platform_librinc
+  ]))
 
 r_zip = static_library('r_zip', zlib_files,
   include_directories: include_directories([
     '../../libr/include',
-    '../../shlr/zip/include'
+    '../../shlr/zip/include',
+	platform_librinc
   ]))
 
 r_util = shared_library('r_util', files,
-  include_directories: incdir,
+  include_directories: include_directories([
+	incdir,
+	platform_librinc,
+	'../../shlr/zip/include']
+  ),
   dependencies: [ldl, pth, utl],
-  link_with: [r_zip],
   objects: [
-    r_sdb.extract_all_objects()
+    r_sdb.extract_all_objects(),
+	r_zip.extract_all_objects()
   ],
   install: true
 )

@@ -13,7 +13,10 @@ files=[
 ]
 
 r_bp = shared_library('r_bp', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include'],
+  platform_librinc
+  ),
   c_args: ['-DCORELIB'],
   link_with: [r_util],
   install: true

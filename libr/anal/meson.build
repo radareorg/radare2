@@ -86,9 +86,15 @@ r_anal = shared_library('r_anal', files,
     '../asm/arch/include/',
     'arch/gb',
     '../../shlr/capstone/include',
-    '../../shlr'
+    '../../shlr',
+	platform_librinc
   ]),
   c_args: ['-DCORELIB'],
-  link_with: [r_util, r_reg, r_syscall, r_search, r_cons, capstone],
+  link_with: [r_util, r_reg, r_syscall, r_search, r_cons],
+  objects: [
+    capstone.extract_all_objects(),
+	r_sdb.extract_all_objects(),
+	spp.extract_all_objects(),
+  ],
   install: true
 )

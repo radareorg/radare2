@@ -9,7 +9,10 @@ files=[
 ]
 
 r_socket = shared_library('r_socket', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include',
+  platform_librinc
+  ]),
   dependencies: [utl],
   link_with: [r_util],
   c_args : '-DCORELIB=1',
