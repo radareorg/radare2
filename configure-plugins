@@ -32,6 +32,10 @@ help () {
 
 cfg=./plugins.cfg
 
+if [ ! -f "$cfg" ]; then
+  cp -f ./plugins.def.cfg plugins.cfg
+fi
+
 load () {
   if [ -e $cfg ]; then 
     echo "configure-plugins: Loading $cfg .."
@@ -43,8 +47,9 @@ load () {
 }
 
 save () {
-  echo "STATIC=\"$STATIC\"" > $cfg
-  echo "SHARED=\"$SHARED\"" >>$cfg
+  cp $cfg plugins.cfg
+ # echo "STATIC=\"$STATIC\"" > $cfg
+ # echo "SHARED=\"$SHARED\"" >>$cfg
 }
 
 generate_configh () {

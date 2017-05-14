@@ -12,7 +12,6 @@
      &r_anal_plugin_6502, \
      &r_anal_plugin_arc, \
      &r_anal_plugin_arm_cs, \
-     &r_anal_plugin_avr, \
      &r_anal_plugin_bf, \
      &r_anal_plugin_cris, \
      &r_anal_plugin_dalvik, \
@@ -47,7 +46,6 @@
      &r_asm_plugin_arm_as, \
      &r_asm_plugin_arm_cs, \
      &r_asm_plugin_arm_winedbg, \
-     &r_asm_plugin_avr, \
      &r_asm_plugin_bf, \
      &r_asm_plugin_cris_gnu, \
      &r_asm_plugin_dalvik, \
@@ -92,7 +90,6 @@
 #define R_BIN_STATIC_PLUGINS \
      &r_bin_plugin_any, \
      &r_bin_plugin_art, \
-     &r_bin_plugin_avr, \
      &r_bin_plugin_bf, \
      &r_bin_plugin_bflt, \
      &r_bin_plugin_bios, \

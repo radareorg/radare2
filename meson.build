@@ -20,6 +20,9 @@ if host_machine.system() == 'windows'
   platform_librinc  = ['../include/msvc']
   platform_binrinc  = ['../../libr/include/msvc']
   host_os = 'windows'
+else
+  platform_librinc = []
+  platform_binrinc = []
 endif
 subdir('libr/util')
 subdir('binr/rax2')

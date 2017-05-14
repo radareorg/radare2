@@ -24,7 +24,6 @@ files=[
 #'p/native/drx.c',
 #'p/native/maps/darwin.c',
 #'p/native/maps/windows.c',
-#'p/native/procfs.c',  # we need check to add this file to non win build
 #'p/native/reg.c',
 #'p/native/w32.c',
 #'p/native/windows/windows_debug.c',
@@ -41,6 +40,11 @@ if host_os == 'linux'
     'p/native/linux/linux_debug.c',
     'p/native/linux/linux_coredump.c'
   ]
+endif
+if host_os != 'windows'
+ files += [
+  'p/native/procfs.c'
+ ]
 endif
 
 if host_os == 'darwin'
