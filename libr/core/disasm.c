@@ -2776,7 +2776,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							break;
 						}
 						if (!msg[i+1]) {
-							if (IS_PRINTABLE (msg[i])) {
+							if (IS_PRINTABLE (msg[i])
+							    && msg[i] != '"' && msg[i] != '\\') {
 								ds_comment (ds, false, "%c", msg[i]);
 							} else {
 								char *escchar = r_str_escape (&msg[i]);
