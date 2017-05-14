@@ -106,7 +106,7 @@ fileslist=(
 
 FMT=gcc
 if [ -n "${SHELLCHECK_XML}" ]; then
-  FMT=checkstyle
+	FMT=checkstyle
 fi
 SHCHK="shellcheck --format=${FMT}"
 

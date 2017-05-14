@@ -213,7 +213,7 @@ install love: install-doc install-man install-www
 	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
-	sys/ldconfig.sh
+	$(SHELL) sys/ldconfig.sh
 	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 # Remove make .d files. fixes build when .c files are removed
@@ -260,7 +260,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 		rm -f last ; ln -fs $(VERSION) last
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
-	sys/ldconfig.sh
+	$(SHELL) sys/ldconfig.sh
 	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 deinstall uninstall:
