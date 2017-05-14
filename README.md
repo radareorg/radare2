@@ -99,7 +99,7 @@ To update package use the command
 
 All language bindings are under the r2-bindings directory.
 You will need to install swig and valabind in order to
-build the bindings for Python, LUA, etc..
+build the bindings for Python, Lua, etc..
 
 APIs are defined in vapi files which are then translated
 to swig interfaces, nodejs-ffi or other and then compiled.
