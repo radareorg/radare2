@@ -381,13 +381,29 @@ static int cmd_section(void *data, const char *input) {
 			if (core->io->va || core->io->debug) {
 				o = r_io_section_vaddr_to_maddr_try (core->io, o);
 			}
-			r_list_foreach (core->io->sections, iter, s) {
-				if (o >= s->paddr && o < s->paddr + s->size) {
-					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-						s->paddr + s->vaddr,
-						s->paddr + s->vaddr + s->size,
-						s->name);
-					break;
+			if (input[1] == 'j') { // "S.j"
+				r_cons_printf ("[");
+				r_list_foreach (core->io->sections, iter, s) {
+					if (o >= s->paddr && o < s->paddr + s->size) {
+						char *name = r_str_escape (s->name);
+						r_cons_printf ("{\"start\":%" PFMT64u ",\"end\":%" PFMT64u ",\"name\":\"%s\"}",
+							s->paddr + s->vaddr,
+							s->paddr + s->vaddr + s->size,
+							name);
+						free (name);
+						break;
+					}
+				}
+				r_cons_printf ("]");
+			} else {
+				r_list_foreach (core->io->sections, iter, s) {
+					if (o >= s->paddr && o < s->paddr + s->size) {
+						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+							s->paddr + s->vaddr,
+							s->paddr + s->vaddr + s->size,
+							s->name);
+						break;
+					}
 				}
 			}
 		}
