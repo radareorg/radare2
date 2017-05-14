@@ -221,18 +221,25 @@ do_it_again:
 }
 
 R_API int r_line_hist_add(const char *line) {
+	if (!line || !*line) {
+		return false;
+	}
 	if (!I.history.data) {
 		inithist ();
 	}
 	/* ignore dup */
+	if (I.history.index != I.history.top) {
+		if (I.history.index + 1 != I.history.top) {
+			I.history.data[I.history.top++] = strdup (line);
+		}
+		I.history.index = I.history.top;
+		return true;
+	}
 	if (I.history.top > 0) {
 		const char *data = I.history.data[I.history.top - 1];
 		if (data && !strcmp (line, data)) {
 			return false;
 		}
-	}
-	if (!line || !*line) {
-		return false;
 	}
 	if (I.history.top == I.history.size) {
 		int i;
