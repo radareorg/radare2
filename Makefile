@@ -78,7 +78,7 @@ libr/include/r_version.h:
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
-	sh configure-plugins
+	$(SHELL) ./configure-plugins
 
 w32:
 	sys/mingw32.sh
@@ -214,7 +214,7 @@ install love: install-doc install-man install-www
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
-	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
+	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 # Remove make .d files. fixes build when .c files are removed
 rmd:
@@ -261,7 +261,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
-	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
+	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
