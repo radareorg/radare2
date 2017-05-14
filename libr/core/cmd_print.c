@@ -1252,10 +1252,10 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 			"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n"
 			);
 		break;
-	case 's':
+	case 's': // "x/s"
 		r_core_cmdf (core, "psb %d @ 0x%"PFMT64x, count * size, addr);
 		break;
-	case 'o':
+	case 'o': // "x/o"
 		r_core_cmdf (core, "pxo %d @ 0x%"PFMT64x, count * size, addr);
 		break;
 	case 'f':
@@ -3790,10 +3790,14 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'b': // "psb"
 			if (l > 0) {
+				int quiet = input[2] == 'q'; // "psbq"
 				char *s = malloc (core->blocksize + 1);
 				int i, j, hasnl = 0;;
 				if (s) {
 					memset (s, 0, core->blocksize);
+					if (!quiet) {
+						r_print_offset (core->print, core->offset, 0, 0, 0, 0, NULL);
+					}
 					// TODO: filter more chars?
 					for (i = j = 0; i < core->blocksize; i++) {
 						char ch = (char) core->block[i];
@@ -3802,6 +3806,9 @@ static int cmd_print(void *data, const char *input) {
 								s[j] = 0;
 								if (*s) {
 									r_cons_println (s);
+									if (!quiet) {
+										r_print_offset (core->print, core->offset + i, 0, 0, 0, 0, NULL);
+									}
 								}
 								j = 0;
 								s[0] = 0;
