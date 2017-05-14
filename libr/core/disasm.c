@@ -2780,7 +2780,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							    && msg[i] != '"' && msg[i] != '\\') {
 								ds_comment (ds, false, "%c", msg[i]);
 							} else {
-								char *escchar = r_str_escape (&msg[i]);
+								char *escchar = r_str_escape_all (&msg[i]);
 								if (escchar) {
 									ds_comment (ds, false, "%s", escchar);
 									free (escchar);
@@ -2793,7 +2793,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 					ds_comment (ds, false, "\"%s", nl);
 				} else {
-					char *escstr = r_str_escape (msg);
+					char *escstr = r_str_escape_all (msg);
 					if (escstr) {
 						ALIGN;
 						ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
