@@ -12,7 +12,7 @@
 int r_sys_setenv(const char *key, const char *value);
 #endif
 
-#if defined (_MSC_VER) || (__WINDOWS__)
+#ifdef __WINDOWS__
 #include <io.h>
 #include <r_types_base.h>
 #define popen    _popen

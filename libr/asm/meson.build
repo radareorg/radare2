@@ -7,7 +7,9 @@ spp = static_library('spp', spp_files,
     '../../shlr/spp/',
 	'../../libr/include',
 	platform_librinc
-  ]))
+  ]),
+  c_args: ['-DHAVE_R_UTIL']
+  )
 
 cs_files=[
 '../../shlr/capstone//arch/AArch64/AArch64BaseInfo.c',
