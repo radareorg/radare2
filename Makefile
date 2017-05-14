@@ -3,6 +3,7 @@ include global.mk
 
 PREVIOUS_RELEASE=1.4.0
 
+MESON?=meson
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
@@ -385,19 +386,19 @@ pie:
 	sys/pie.sh ${PREVIOUS_RELEASE}
 
 build:
-	meson --prefix=${PREFIX} build
+	$(MESON) --prefix="${PREFIX}" build
 
 meson-windows:
 	cp -f libr/config.mk.meson libr/config.mk
 	cp -f libr/config.h.meson libr/config.h
 
-meson-config:
+meson-config meson-cfg meson-conf:
 	# TODO: this is wrong for each platform different plugins must be compiled
 	cp -f plugins.meson.cfg plugins.cfg
 	./configure --prefix=/usr
 	$(MAKE) libr/include/r_version.h
-	cp -f libr/config.mk libr/config.mk.meson
-	cp -f libr/config.h libr/config.h.meson
+#	cp -f libr/config.mk libr/config.mk.meson
+#	cp -f libr/config.h libr/config.h.meson
 	cp -f shlr/spp/config.def.h shlr/spp/config.h
 
 meson: build
@@ -407,9 +408,48 @@ meson: build
 meson-install:
 	cd build && DESTDIR="$(DESTDIR)" ninja install
 
-MESON_FILES=$(shell find build/libr build/binr -type f| grep -v @)
+B=$(DESTDIR)$(BINDIR)
+L=$(DESTDIR)$(LIBDIR)
+
 meson-symstall:
-	for a in $(MESON_FILES) ; do echo cp -f $$a $$(echo $$a|sed -e s,build/,,) ; done
+	ln -fs $(PWD)/binr/r2pm/r2pm  ${B}/r2pm
+	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
+	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2
+	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2
+	ln -fs $(PWD)/build/binr/rahash2/rahash2 ${B}/rahash2
+	ln -fs $(PWD)/build/binr/rabin2/rabin2 ${B}/rabin2
+	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2
+	ln -fs $(PWD)/build/binr/ragg2/ragg2 ${B}/ragg2
+	cd $(B) && ln -fs radare2 r2
+	ln -fs $(PWD)/build/libr/util/libr_util.$(SO_EXT) ${L}/libr_util.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/bp/libr_bp.$(SO_EXT) ${L}/libr_bp.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/syscall/libr_syscall.$(SO_EXT) ${L}/libr_syscall.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/cons/libr_cons.$(SO_EXT) ${L}/libr_cons.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/search/libr_search.$(SO_EXT) ${L}/libr_search.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/magic/libr_magic.$(SO_EXT) ${L}/libr_magic.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/flag/libr_flag.$(SO_EXT) ${L}/libr_flag.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/reg/libr_reg.$(SO_EXT) ${L}/libr_reg.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/bin/libr_bin.$(SO_EXT) ${L}/libr_bin.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/config/libr_config.$(SO_EXT) ${L}/libr_config.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/parse/libr_parse.$(SO_EXT) ${L}/libr_parse.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/lang/libr_lang.$(SO_EXT) ${L}/libr_lang.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/asm/libr_asm.$(SO_EXT) ${L}/libr_asm.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/anal/libr_anal.$(SO_EXT) ${L}/libr_anal.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/egg/libr_egg.$(SO_EXT) ${L}/libr_egg.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/fs/libr_fs.$(SO_EXT) ${L}/libr_fs.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/debug/libr_debug.$(SO_EXT) ${L}/libr_debug.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/core/libr_core.$(SO_EXT) ${L}/libr_core.$(SO_EXT)
+	# TODO: missing libr/*/d .. no sdb binary is compiled to precompile those files
+
+meson-uninstall:
+	$(MAKE) uninstall
+
+meson-clean:
+	rm -rf build
+
+MESON_FILES=$(shell find build/libr build/binr -type f| grep -v @)
+meson-symstall-experimental:
+	for a in $(MESON_FILES) ; do echo ln -fs $(PWD)/$$a $(PWD)/$$(echo $$a|sed -e s,build/,,) ; done
 	$(MAKE) symstall
 
 .PHONY: meson meson-install

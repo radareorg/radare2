@@ -67,6 +67,25 @@ using root privileges and sudo, simply run:
 
     $ sys/user.sh
 
+# Building with meson + ninja
+
+The sys/install.sh method uses acr+make to build r2 from sources, which is the default
+and recommended way, but there's also a work-in-progress support for Meson. Here's how
+to build r2 with meson and ninja (supports linux, mac and windows)
+
+   $ make meson            # will run make meson-config automatically
+   $ make meson-symstall   # symstall the meson build into PREFIX (/usr)
+   $ make meson-uninstall  # uninstall the meson installation
+
+At the moment, the meson build system doesnt supports much configuration options and it
+is not able to build all the plugins, it has been tested to work on the following hosts:
+
+* Rpi3-arm32
+* macOS-x86-64
+* Termux/Android-arm64
+* VoidLinux-x86-64
+* Windows-x86-64
+
 # Uninstall
 
 In case of a polluted filesystem you can uninstall the current
