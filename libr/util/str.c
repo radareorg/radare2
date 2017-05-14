@@ -1195,7 +1195,7 @@ R_API void r_str_sanitize(char *c) {
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, const int dot_nl) {
+static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc_seq) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1240,27 +1240,29 @@ static char *r_str_escape_(const char *buf, const int dot_nl) {
 			*q++ = 'b';
 			break;
 		case 0x1b: // ESC
-			p++;
-			/* Parse the ANSI code (only the graphic mode
-			 * set ones are supported) */
-			if (*p == '\0') {
-				goto out;
-			}
-			if (*p == '[') {
-				for (p++; *p != 'm'; p++) {
-					if (*p == '\0') {
-						goto out;
+			if (ign_esc_seq) {
+				p++;
+				/* Parse the ANSI code (only the graphic mode
+				 * set ones are supported) */
+				if (*p == '\0') {
+					goto out;
+				}
+				if (*p == '[') {
+					for (p++; *p != 'm'; p++) {
+						if (*p == '\0') {
+							goto out;
+						}
 					}
 				}
+				break;
 			}
-			break;
 		default:
 			/* Outside the ASCII printable range */
 			if (!IS_PRINTABLE (*p)) {
 				*q++ = '\\';
 				*q++ = 'x';
-				*q++ = '0'+((*p)>>4);
-				*q++ = '0'+((*p)&0xf);
+				*q++ = "0123456789abcdef"[*p >> 4];
+				*q++ = "0123456789abcdef"[*p & 0xf];
 			} else {
 				*q++ = *p;
 			}
@@ -1273,11 +1275,15 @@ out:
 }
 
 R_API char *r_str_escape(const char *buf) {
-	return r_str_escape_ (buf, false);
+	return r_str_escape_ (buf, false, true);
+}
+
+R_API char *r_str_escape_all(const char *buf) {
+	return r_str_escape_ (buf, false, false);
 }
 
 R_API char *r_str_escape_dot(const char *buf) {
-	return r_str_escape_ (buf, true);
+	return r_str_escape_ (buf, true, true);
 }
 
 /* ansi helpers */
