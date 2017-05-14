@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -558,7 +558,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		return r_asm_code_free (acode);
 	}
 	memcpy (acode->buf, buf, len);
-	if (!(acode->buf_hex = malloc (2 * len+1))) {
+	if (!(acode->buf_hex = calloc (2, len + 1))) {
 		return r_asm_code_free (acode);
 	}
 	r_hex_bin2str (buf, len, acode->buf_hex);

@@ -60,12 +60,12 @@ To build the bindings you need latest valabind, g++ and swig2.
 The easiest way to install radare2 from git is by running
 the following command:
 
-    $ sys/install.sh
+	$ sys/install.sh
 
 If you want to install radare2 in the home directory without
 using root privileges and sudo, simply run:
 
-    $ sys/user.sh
+	$ sys/user.sh
 
 # Building with meson + ninja
 
@@ -73,9 +73,9 @@ The sys/install.sh method uses acr+make to build r2 from sources, which is the d
 and recommended way, but there's also a work-in-progress support for Meson. Here's how
 to build r2 with meson and ninja (supports linux, mac and windows)
 
-   $ make meson            # will run make meson-config automatically
-   $ make meson-symstall   # symstall the meson build into PREFIX (/usr)
-   $ make meson-uninstall  # uninstall the meson installation
+	$ make meson            # will run make meson-config automatically
+	$ make meson-symstall   # symstall the meson build into PREFIX (/usr)
+	$ make meson-uninstall  # uninstall the meson installation
 
 At the moment, the meson build system doesnt supports much configuration options and it
 is not able to build all the plugins, it has been tested to work on the following hosts:
@@ -91,8 +91,8 @@ is not able to build all the plugins, it has been tested to work on the followin
 In case of a polluted filesystem you can uninstall the current
 version or remove all previous installations:
 
-    $ make uninstall
-    $ make purge
+	$ make uninstall
+	$ make purge
 
 # Package manager
 
@@ -100,19 +100,19 @@ Radare2 has its own package manager - r2pm. It's packages
 repository is on [GitHub too](https://github.com/radare/radare2-pm).
 To start to use it for the first time you need to initialize packages:
 
-    $ r2pm init
+	$ r2pm init
 
 And to refresh packages before installation/updating a new one:
 
-    $ r2pm update
+	$ r2pm update
 
 To install package use the command
 
-    $ r2pm install [package name]
+	$ r2pm install [package name]
 
 To update package use the command
 
-    $ r2pm update [package name]
+	$ r2pm update [package name]
 
 # Bindings
 
@@ -125,7 +125,7 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-    $ r2pm install python
+	$ r2pm install python
 
 In addition there are `r2pipe` bindings, which are an API
 interface to interact with the prompt, passing commands
@@ -133,10 +133,10 @@ and receivent the output as a string, many commands support
 JSON output, so it's integrated easily with many languages
 in order to deserialize it into native objects.
 
-    $ npm install r2pipe   # NodeJS
-    $ gem install r2pipe   # Ruby
-    $ pip install r2pipe   # Python
-    $ opam install radare2 # OCaml
+	$ npm install r2pipe   # NodeJS
+	$ gem install r2pipe   # Ruby
+	$ pip install r2pipe   # Python
+	$ opam install radare2 # OCaml
 
 And also for Go, Rust, Swift, D, .NET, Java, NewLisp, Perl, Haskell,
 Vala, OCaml, and many more to come!
@@ -174,18 +174,22 @@ radare2 comes with an embedded webserver that serves a pure
 html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
-    $ r2 -c=H /bin/ls
+	$ r2 -c=H /bin/ls
 
 To use the webserver on Windows, you require a cmd instance
 with administrator rights. To start the webserver use command
 in the project root.
 
-    > radare2.exe -c=H rax2.exe
+	> radare2.exe -c=H rax2.exe
 
 # Pointers
 
 Website: http://www.radare.org/
 
 IRC: irc.freenode.net #radare
+
+Telegram: https://t.me/radare
+
+Matrix: @radare2:matrix.org
 
 Twitter: @radareorg
