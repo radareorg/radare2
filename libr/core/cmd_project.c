@@ -58,7 +58,6 @@ static int cmd_project(void *data, const char *input) {
 			file = str;
 		}
 		if (r_core_project_save (core, file)) {
-			r_config_set (core->config, "prj.name", file);
 			r_cons_println (file);
 		}
 		break;
