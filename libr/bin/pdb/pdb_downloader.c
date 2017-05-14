@@ -94,7 +94,7 @@ static int download(struct SPDBDownloader *pd) {
 	return res;
 }
 
-R_API void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
+void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = R_NEW0 (SPDBDownloaderOpt);
 	if (!pd->opt) return;
 	pd->opt->dbg_file = strdup(opt->dbg_file);
@@ -106,7 +106,7 @@ R_API void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->download = download;
 }
 
-R_API void deinit_pdb_downloader(SPDBDownloader *pd) {
+void deinit_pdb_downloader(SPDBDownloader *pd) {
 	R_FREE(pd->opt->dbg_file);
 	R_FREE(pd->opt->guid);
 	R_FREE(pd->opt->symbol_server);
