@@ -488,6 +488,20 @@ error:
 	return false;
 }
 
+static char *_time_stamp_to_str(ut32 timeStamp) {
+	struct my_timezone {
+		int tz_minuteswest;     /* minutes west of Greenwich */
+		int tz_dsttime;         /* type of DST correction */
+	} tz;
+	struct timeval tv;
+	int gmtoff;
+	time_t ts = (time_t) timeStamp;
+	gettimeofday (&tv, (void*) &tz);
+	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
+	ts += gmtoff;
+	return r_str_chop (strdup (ctime (&ts)));
+}
+
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
@@ -563,23 +577,9 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 	// adding compile time to the SDB
 	{
-		struct my_timezone {
-			int tz_minuteswest;     /* minutes west of Greenwich */
-			int tz_dsttime;         /* type of DST correction */
-		} tz;
-		struct timeval tv;
-		int gmtoff;
-		char* timestr;
-		time_t ts = (time_t) bin->nt_headers->file_header.TimeDateStamp;
 		sdb_num_set (bin->kv, "image_file_header.TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, 0);
-		gettimeofday (&tv, (void*) &tz);
-		gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
-		ts += gmtoff;
-		timestr = r_str_chop (strdup (ctime (&ts)));
-		// gmt offset for pe date is t->tm_gmtoff
-		sdb_set_owned (bin->kv,
-			"image_file_header.TimeDateStamp_string",
-			timestr, 0);
+		char *timestr = _time_stamp_to_str (bin->nt_headers->file_header.TimeDateStamp);
+		sdb_set_owned (bin->kv, "image_file_header.TimeDateStamp_string", timestr, 0);
 	}
 	bin->optional_header = &bin->nt_headers->optional_header;
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
@@ -1196,10 +1196,25 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t)* bin) {
 	return true;
 }
 
+static void _free_resources(r_pe_resource *rs) {
+	if (rs) {
+		free (rs->timestr);
+		free (rs->data);
+		free (rs->type);
+		free (rs);
+	}
+}
+
+
 static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * resource_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_RESOURCE];
 	PE_DWord resource_dir_paddr = bin_pe_rva_to_paddr (bin, resource_dir->VirtualAddress);
 	if (!resource_dir_paddr) {
+		return false;
+	}
+
+	bin->resources = r_list_newf ((RListFree)_free_resources);
+	if (!bin->resources) {
 		return false;
 	}
 	if (!(bin->resource_directory = malloc (sizeof(*bin->resource_directory)))) {
@@ -1216,6 +1231,8 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->resource_directory_offset = resource_dir_paddr;
 	return true;
 }
+
+
 
 static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord callbacks) {
 	PE_DWord paddr, haddr;
@@ -2028,124 +2045,307 @@ static Sdb* Pe_r_bin_store_resource_version_info(PE_VS_VERSIONINFO* vs_VersionIn
 	return sdb;
 }
 
-void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin) {
-	char key[30];
-	ut64 off = 0;
-	int counter = 0;
-	Sdb* sdb = NULL;
-	if (!bin || !bin->resource_directory) {
+static char* _resource_lang_str(int id) {
+	switch(id) {
+	case 0x00: return "LANG_NEUTRAL";
+	case 0x7f: return "LANG_INVARIANT";
+	case 0x36: return "LANG_AFRIKAANS";
+	case 0x1c: return "LANG_ALBANIAN ";
+	case 0x01: return "LANG_ARABIC";
+	case 0x2b: return "LANG_ARMENIAN"; 
+	case 0x4d: return "LANG_ASSAMESE"; 
+	case 0x2c: return "LANG_AZERI"; 
+	case 0x2d: return "LANG_BASQUE"; 
+	case 0x23: return "LANG_BELARUSIAN"; 
+	case 0x45: return "LANG_BENGALI"; 
+	case 0x02: return "LANG_BULGARIAN"; 
+	case 0x03: return "LANG_CATALAN"; 
+	case 0x04: return "LANG_CHINESE"; 
+	case 0x1a: return "LANG_CROATIAN"; 
+	case 0x05: return "LANG_CZECH"; 
+	case 0x06: return "LANG_DANISH"; 
+	case 0x65: return "LANG_DIVEHI"; 
+	case 0x13: return "LANG_DUTCH"; 
+	case 0x09: return "LANG_ENGLISH"; 
+	case 0x25: return "LANG_ESTONIAN"; 
+	case 0x38: return "LANG_FAEROESE"; 
+	case 0x29: return "LANG_FARSI"; 
+	case 0x0b: return "LANG_FINNISH"; 
+	case 0x0c: return "LANG_FRENCH"; 
+	case 0x56: return "LANG_GALICIAN"; 
+	case 0x37: return "LANG_GEORGIAN"; 
+	case 0x07: return "LANG_GERMAN"; 
+	case 0x08: return "LANG_GREEK"; 
+	case 0x47: return "LANG_GUJARATI"; 
+	case 0x0d: return "LANG_HEBREW"; 
+	case 0x39: return "LANG_HINDI"; 
+	case 0x0e: return "LANG_HUNGARIAN"; 
+	case 0x0f: return "LANG_ICELANDIC"; 
+	case 0x21: return "LANG_INDONESIAN"; 
+	case 0x10: return "LANG_ITALIAN"; 
+	case 0x11: return "LANG_JAPANESE"; 
+	case 0x4b: return "LANG_KANNADA"; 
+	case 0x60: return "LANG_KASHMIRI"; 
+	case 0x3f: return "LANG_KAZAK"; 
+	case 0x57: return "LANG_KONKANI"; 
+	case 0x12: return "LANG_KOREAN"; 
+	case 0x40: return "LANG_KYRGYZ"; 
+	case 0x26: return "LANG_LATVIAN"; 
+	case 0x27: return "LANG_LITHUANIAN"; 
+	case 0x2f: return "LANG_MACEDONIAN"; 
+	case 0x3e: return "LANG_MALAY"; 
+	case 0x4c: return "LANG_MALAYALAM"; 
+	case 0x58: return "LANG_MANIPURI"; 
+	case 0x4e: return "LANG_MARATHI"; 
+	case 0x50: return "LANG_MONGOLIAN"; 
+	case 0x61: return "LANG_NEPALI"; 
+	case 0x14: return "LANG_NORWEGIAN"; 
+	case 0x48: return "LANG_ORIYA"; 
+	case 0x15: return "LANG_POLISH"; 
+	case 0x16: return "LANG_PORTUGUESE"; 
+	case 0x46: return "LANG_PUNJABI"; 
+	case 0x18: return "LANG_ROMANIAN"; 
+	case 0x19: return "LANG_RUSSIAN"; 
+	case 0x4f: return "LANG_SANSKRIT"; 
+	case 0x59: return "LANG_SINDHI"; 
+	case 0x1b: return "LANG_SLOVAK"; 
+	case 0x24: return "LANG_SLOVENIAN"; 
+	case 0x0a: return "LANG_SPANISH "; 
+	case 0x41: return "LANG_SWAHILI"; 
+	case 0x1d: return "LANG_SWEDISH"; 
+	case 0x5a: return "LANG_SYRIAC"; 
+	case 0x49: return "LANG_TAMIL"; 
+	case 0x44: return "LANG_TATAR"; 
+	case 0x4a: return "LANG_TELUGU"; 
+	case 0x1e: return "LANG_THAI"; 
+	case 0x1f: return "LANG_TURKISH"; 
+	case 0x22: return "LANG_UKRAINIAN"; 
+	case 0x20: return "LANG_URDU"; 
+	case 0x43: return "LANG_UZBEK"; 
+	case 0x2a: return "LANG_VIETNAMESE"; 
+	case 0x3c: return "LANG_GAELIC"; 
+	case 0x3a: return "LANG_MALTESE"; 
+	case 0x28: return "LANG_MAORI"; 
+	case 0x17: return "LANG_RHAETO_ROMANCE"; 
+	case 0x3b: return "LANG_SAAMI"; 
+	case 0x2e: return "LANG_SORBIAN"; 
+	case 0x30: return "LANG_SUTU"; 
+	case 0x31: return "LANG_TSONGA"; 
+	case 0x32: return "LANG_TSWANA"; 
+	case 0x33: return "LANG_VENDA"; 
+	case 0x34: return "LANG_XHOSA"; 
+	case 0x35: return "LANG_ZULU"; 
+	case 0x8f: return "LANG_ESPERANTO"; 
+	case 0x90: return "LANG_WALON"; 
+	case 0x91: return "LANG_CORNISH"; 
+	case 0x92: return "LANG_WELSH"; 
+	case 0x93: return "LANG_BRETON"; 
+	default: return "UNKNOWN";
+	}
+}
+
+static char* _resource_type_str(int type) {
+	switch (type) {
+	case 1: return "CURSOR";
+	case 2: return "BITMAP";
+	case 3: return "ICON";
+	case 4: return "MENU";
+	case 5: return "DIALOG";
+	case 6: return "STRING";
+	case 7: return "FONTDIR";
+	case 8: return "FONT";
+	case 9: return "ACCELERATOR";
+	case 10: return "RCDATA";
+	case 11: return "MESSAGETABLE";
+	case 12: return "GROUP_CURSOR";
+	case 14: return "GROUP_ICON";
+	case 16: return "VERSION";
+	case 17: return "DLGINCLUDE";
+	case 19: return "PLUGPLAY";
+	case 20: return "VXD";
+	case 21: return "ANICURSOR";
+	case 22: return "ANIICON";
+	case 23: return "HTML";
+	case 24: return "MANIFEST";
+	default: return "UNKNOWN";
+	}
+}
+
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {
+	int index = 0;
+	int totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
+	ut64 rsrc_base = bin->resource_directory_offset;
+	ut64 off;
+	if (totalRes > R_PE_MAX_RESOURCES) {
 		return;
 	}
-	sdb = sdb_new0 ();
+	for (index = 0; index < totalRes; index++) {
+		Pe_image_resource_directory_entry entry;
+		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
+		char *key = sdb_fmt (0, "0x%08"PFMT64x, off);
+		if (sdb_ht_find (dirs, key, NULL)) {
+			break;
+		}
+		sdb_ht_insert (dirs, key, "1");
+		if (off > bin->size || off + sizeof(entry) > bin->size) {
+			break;
+		}
+		if (r_buf_read_at (bin->b, off, (ut8*)&entry, sizeof(entry)) < 1) {
+			eprintf ("Warning: read resource entry\n");
+			break;
+		}
+		if (entry.u2.s.DataIsDirectory) {
+			//detect here malicious file trying to making us infinite loop
+			Pe_image_resource_directory identEntry;
+			off = rsrc_base + entry.u2.s.OffsetToDirectory;
+			int len = r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof(identEntry));
+			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
+				eprintf ("Warning: parsing resource directory\n");
+			}
+			_parse_resource_directory (bin, &identEntry, entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
+			continue;
+		}
+
+		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
+		if (!data) {
+			break;
+		}
+		off = rsrc_base + entry.u2.OffsetToData;
+		if (off > bin->size || off + sizeof (data) > bin->size) {
+			free (data);
+			break;
+		}
+		if (r_buf_read_at (bin->b, off, (ut8*)data, sizeof (*data)) != sizeof (*data)) {
+			eprintf ("Warning: read (resource data entry)\n");
+			free (data);
+			break;
+		}
+		if (type == PE_RESOURCE_ENTRY_VERSION) {
+			char key[64];
+			int counter = 0;
+			Sdb *sdb = sdb_new0 ();
+			if (!sdb) {
+				free (data);
+				sdb_free (sdb);
+				continue;
+			}
+			PE_DWord data_paddr = bin_pe_rva_to_paddr (bin, data->OffsetToData);
+			if (!data_paddr) {
+				bprintf ("Warning: bad RVA in resource data entry\n");
+				free (data);
+				sdb_free (sdb);
+				continue;
+			}
+			PE_DWord cur_paddr = data_paddr;
+			if ((cur_paddr & 0x3) != 0) {
+				bprintf ("Warning: not aligned version info address\n");
+				free (data);
+				sdb_free (sdb);
+				continue;
+			}
+			while (cur_paddr < data_paddr + data->Size && cur_paddr < bin->size) {
+				PE_VS_VERSIONINFO* vs_VersionInfo = Pe_r_bin_pe_parse_version_info (bin, cur_paddr);
+				if (vs_VersionInfo) {
+					snprintf (key, 30, "VS_VERSIONINFO%d", counter++);
+					sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info (vs_VersionInfo));
+				} else {
+					break;
+				}
+				cur_paddr += vs_VersionInfo->wLength;
+				free_VS_VERSIONINFO (vs_VersionInfo);
+				align32 (cur_paddr);
+			}
+			sdb_ns_set (bin->kv, "vs_version_info", sdb);
+		}
+		r_pe_resource *rs = R_NEW0 (r_pe_resource);
+		if (!rs) {
+			free (data);
+			break;
+		}
+		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp); 	
+		rs->type = strdup (_resource_type_str (type));
+		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
+		rs->data = data;
+		rs->name = id;
+		r_list_append (bin->resources, rs);
+	}
+}
+
+static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
+	RListIter *iter;
+	r_pe_resource *rs;
+	int index = 0;
+	ut64 paddr = 0;
+	char *key;
+	Sdb *sdb = sdb_new0 ();
 	if (!sdb) {
 		return;
 	}
-	// XXX: assume there is only 3 layers in the tree
-	ut32 totalRes = bin->resource_directory->NumberOfNamedEntries + bin->resource_directory->NumberOfIdEntries;
-	ut32 curRes = bin->resource_directory->NumberOfNamedEntries;
-	for (; curRes < totalRes; curRes++) {
-		Pe_image_resource_directory_entry typeEntry;
-		off = bin->resource_directory_offset + sizeof (*bin->resource_directory) + curRes * sizeof (typeEntry);
-		if (off > bin->size || off + sizeof(Pe_image_resource_directory_entry) > bin->size) {
-			goto out_error;
-		}
-		if (r_buf_read_at (bin->b, off, (ut8*) &typeEntry, sizeof(Pe_image_resource_directory_entry)) < 1) {
-			bprintf ("Warning: read (resource type directory entry)\n");
-			goto out_error;
-		}
-		if (!typeEntry.u1.s.NameIsString && typeEntry.u1.Id == PE_RESOURCE_ENTRY_VERSION) {
-			Pe_image_resource_directory identDir;
-			off = bin->resource_directory_offset + typeEntry.u2.s.OffsetToDirectory;
-			if (off > bin->size || off + sizeof(Pe_image_resource_directory) > bin->size) {
-				goto out_error;
-			}
-			if (r_buf_read_at (bin->b, off, (ut8*) &identDir, sizeof(Pe_image_resource_directory)) < 1) {
-				bprintf ("Warning: read (resource identifier directory)\n");
-				goto out_error;
-			}
-			ut32 totalIdent = identDir.NumberOfNamedEntries + identDir.NumberOfIdEntries;
-			ut32 curIdent = 0;
-			for (; curIdent < totalIdent; curIdent++) {
-				Pe_image_resource_directory_entry identEntry;
-				off = bin->resource_directory_offset + typeEntry.u2.s.OffsetToDirectory +
-				sizeof(identDir) + curIdent * sizeof(identEntry);
-				if (off > bin->size || off + sizeof(Pe_image_resource_directory_entry) > bin->size) {
-					goto out_error;
-				}
-				if (r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof(Pe_image_resource_directory_entry)) < 1) {
-					bprintf ("Warning: read (resource identifier entry)\n");
-					goto out_error;
-				}
-				if (!identEntry.u2.s.DataIsDirectory) {
-					continue;
-				}
-				Pe_image_resource_directory langDir;
-				off = bin->resource_directory_offset + identEntry.u2.s.OffsetToDirectory;
-				if (off > bin->size || off + sizeof (Pe_image_resource_directory) > bin->size) {
-					goto out_error;
-				}
-				if (r_buf_read_at (bin->b, off, (ut8*) &langDir, sizeof(Pe_image_resource_directory)) < 1) {
-					bprintf ("Warning: read (resource language directory)\n");
-					goto out_error;
-				}
-				ut32 totalLang = langDir.NumberOfNamedEntries + langDir.NumberOfIdEntries;
-				ut32 curLang = 0;
-				for (; curLang < totalLang; curLang++) {
-					Pe_image_resource_directory_entry langEntry;
-					off = bin->resource_directory_offset + identEntry.u2.s.OffsetToDirectory + sizeof(langDir) + curLang * sizeof(langEntry);
-					if (off > bin->size || off + sizeof(Pe_image_resource_directory_entry) > bin->size) {
-						goto out_error;
-					}
-					if (r_buf_read_at (bin->b, off, (ut8*) &langEntry, sizeof(Pe_image_resource_directory_entry)) < 1) {
-						bprintf ("Warning: read (resource language entry)\n");
-						goto out_error;
-					}
-					if (langEntry.u2.s.DataIsDirectory) {
-						continue;
-					}
-					Pe_image_resource_data_entry data;
-					off = bin->resource_directory_offset + langEntry.u2.OffsetToData;
-					if (off > bin->size || off + sizeof (Pe_image_resource_data_entry) > bin->size) {
-						goto out_error;
-					}
-					if (r_buf_read_at (bin->b, off, (ut8*) &data, sizeof (data)) != sizeof (data)) {
-						bprintf ("Warning: read (resource data entry)\n");
-						goto out_error;
-					}
-					PE_DWord data_paddr = bin_pe_rva_to_paddr (bin, data.OffsetToData);
-					if (!data_paddr) {
-						bprintf ("Warning: bad RVA in resource data entry\n");
-						goto out_error;
-					}
-					PE_DWord cur_paddr = data_paddr;
-					if ((cur_paddr & 0x3) != 0) {
-						// XXX: mb align address and read structure?
-						bprintf ("Warning: not aligned version info address\n");
-						continue;
-					}
-					while(cur_paddr < data_paddr + data.Size && cur_paddr < bin->size) {
-						PE_VS_VERSIONINFO* vs_VersionInfo = Pe_r_bin_pe_parse_version_info (bin, cur_paddr);
-						if (vs_VersionInfo) {
-							snprintf (key, 30, "VS_VERSIONINFO%d", counter++);
-							sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info (vs_VersionInfo));
-						} else {
-							break;
-						}
-						cur_paddr += vs_VersionInfo->wLength;
-						free_VS_VERSIONINFO (vs_VersionInfo);
-						align32 (cur_paddr);
-					}
-				}
-			}
-		}
+	r_list_foreach (bin->resources, iter, rs) {
+		key = sdb_fmt (0, "resource.%d.timestr", index);
+		sdb_set (sdb, key, rs->timestr, 0);
+		key = sdb_fmt (0, "resource.%d.paddr", index);
+		paddr = bin_pe_rva_to_paddr (bin, rs->data->OffsetToData);
+		sdb_num_set (sdb, key, paddr, 0);
+		key = sdb_fmt (0, "resource.%d.name", index);
+		sdb_num_set (sdb, key, rs->name, 0);
+		key = sdb_fmt (0, "resource.%d.size", index);
+		sdb_num_set (sdb, key, rs->data->Size, 0);
+		key = sdb_fmt (0, "resource.%d.type", index);
+		sdb_set (sdb, key, rs->type, 0);
+		key = sdb_fmt (0, "resource.%d.language", index);
+		sdb_set (sdb, key, rs->language, 0);
+		index++;
 	}
-	sdb_ns_set (bin->kv, "vs_version_info", sdb);
-out_error:
-	sdb_free (sdb);
-	return;
+	sdb_ns_set (bin->kv, "pe_resource", sdb);
 }
 
-static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
+
+R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
+	int index = 0;
+	ut64 off = 0, rsrc_base = bin->resource_directory_offset;
+	Pe_image_resource_directory *rs_directory = bin->resource_directory;
+	ut32 curRes = 0;
+	ut32 totalRes = 0;
+	SdbHash *dirs = sdb_ht_new (); //to avoid infinite loops
+	if (!dirs) {
+		return;
+	}
+	if (!rs_directory) {
+		return;
+	}
+	curRes = rs_directory->NumberOfNamedEntries;
+	totalRes = curRes + rs_directory->NumberOfIdEntries;
+	if (totalRes > R_PE_MAX_RESOURCES) {
+		eprintf ("Error parsing resource directory\n");
+		return;
+	}
+	for (index = 0; index < totalRes; index++) {
+		Pe_image_resource_directory_entry typeEntry;
+		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
+		sdb_ht_insert (dirs, sdb_fmt (0, "0x%08"PFMT64x, off), "1");
+		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
+			break;
+		}
+		if (r_buf_read_at (bin->b, off, (ut8*)&typeEntry, sizeof(typeEntry)) < 1) {
+			eprintf ("Warning: read resource  directory entry\n");
+			break;
+		}
+		if (typeEntry.u2.s.DataIsDirectory) {
+			Pe_image_resource_directory identEntry;
+			off = rsrc_base + typeEntry.u2.s.OffsetToDirectory;
+			int len = r_buf_read_at (bin->b, off, (ut8*)&identEntry, sizeof(identEntry));
+			if (len < 1 || len != sizeof (identEntry)) {
+				eprintf ("Warning: parsing resource directory\n");
+			}
+			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs);
+		}
+	}
+	sdb_ht_free (dirs);
+	_store_resource_sdb (bin);
+}
+
+static void bin_pe_get_certificate(struct PE_ (r_bin_pe_obj_t) * bin) {
 	ut64 size, vaddr;
 	ut8 *data = NULL;
 	int len;
@@ -2205,7 +2405,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin_pe_init_clr_hdr (bin);
 	bin_pe_init_metadata_hdr (bin);
 	bin_pe_init_overlay (bin);
-	PE_(r_bin_store_all_resource_version_info) (bin);
+	PE_(bin_pe_parse_resource) (bin);
 	bin->relocs = NULL;
 	return true;
 }
@@ -2349,7 +2549,6 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	if (!bin || !bin->data_directory) {
 		return NULL;
 	}
-
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	export_dir_rva = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
@@ -2360,7 +2559,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
-		if (exports_sz < 0) {
+		if (exports_sz < 0 || exports_sz > bin->size) {
 			return NULL;
 		}
 		if (!(exports = malloc (exports_sz))) {
@@ -3173,6 +3372,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
+	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);
 	bin->b = NULL;
