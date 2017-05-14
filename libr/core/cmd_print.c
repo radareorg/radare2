@@ -1238,7 +1238,8 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	case 'g': size = 8; break;
 	}
 	if ((p = strchr (str, ' '))) {
-		addr = r_num_math (core->num, p + 1);
+		*p++ = 0;
+		addr = r_num_math (core->num, p);
 	}
 	switch (*str) {
 	case '?':
