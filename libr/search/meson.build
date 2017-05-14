@@ -11,7 +11,10 @@ files=[
 ]
 
 r_search = shared_library('r_search', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include'],
+  platform_librinc
+  ),
   link_with: [r_util],
   install: true
 )

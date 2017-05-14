@@ -4,8 +4,12 @@ spp_files=[
 
 spp = static_library('spp', spp_files,
   include_directories: include_directories([
-    '../../shlr/spp/'
-  ]))
+    '../../shlr/spp/',
+	'../../libr/include',
+	platform_librinc
+  ]),
+  c_args: ['-DHAVE_R_UTIL']
+  )
 
 cs_files=[
 '../../shlr/capstone//arch/AArch64/AArch64BaseInfo.c',
@@ -72,7 +76,7 @@ files=[
 'p/asm_arc.c',
 'p/asm_arm_as.c',
 'p/asm_arm_cs.c',
-#'p/asm_arm_gnu.c',
+'p/asm_arm_gnu.c',
 'p/asm_arm_winedbg.c',
 'p/asm_avr.c',
 'p/asm_bf.c',
@@ -89,7 +93,7 @@ files=[
 'p/asm_i8080.c',
 #'p/asm_java.c',
 'p/asm_lanai_gnu.c',
-#'p/asm_lh5801.c',
+'p/asm_lh5801.c',
 'p/asm_lm32.c',
 'p/asm_m68k_cs.c',
 'p/asm_malbolge.c',
@@ -101,7 +105,7 @@ files=[
 'p/asm_pic18c.c',
 'p/asm_ppc_cs.c',
 'p/asm_ppc_gnu.c',
-#'p/asm_propeller.c',
+'p/asm_propeller.c',
 'p/asm_riscv.c',
 'p/asm_rsp.c',
 'p/asm_sh.c',
@@ -110,10 +114,10 @@ files=[
 'p/asm_sparc_gnu.c',
 'p/asm_spc700.c',
 'p/asm_sysz.c',
-#'p/asm_tms320.c',
-#'p/asm_tms320c64x.c',
+'p/asm_tms320.c',
+'p/asm_tms320c64x.c',
 'p/asm_tricore.c',
-#'p/asm_v810.c',
+'p/asm_v810.c',
 'p/asm_v850.c',
 'p/asm_vax.c',
 'p/asm_wasm.c',
@@ -142,10 +146,10 @@ files=[
 'arch//arm/gnu/arm-dis.c',
 'arch//arm/gnu/floatformat.c',
 'arch//arm/winedbg/be_arm.c',
-#'arch//avr/avr_disasm.c',
+'arch//avr/avr_disasm.c',
 #'arch//avr/avr_instructionset.c',
 'arch//avr/disasm.c',
-#'arch//avr/format.c',
+'arch//avr/format.c',
 'arch//cr16/cr16_disas.c',
 'arch//cris/gnu/cris-dis.c',
 'arch//cris/gnu/cris-opc.c',
@@ -219,12 +223,15 @@ r_asm = shared_library('r_asm', files,
     'arch/propeller',
     'arch/ebc',
     'arch/cr16',
-    'arch/8051'
+    'arch/8051',
+	platform_librinc
   ]),
   c_args: ['-DCORELIB'],
-  link_with: [r_util, r_syscall, r_parse, r_lang, spp],
+  link_with: [r_util, r_syscall, r_parse, r_lang, r_flag,r_socket],
   objects: [
-    capstone.extract_all_objects()
+    capstone.extract_all_objects(),
+	r_sdb.extract_all_objects(),
+	spp.extract_all_objects(),
   ],
   install: true
 )

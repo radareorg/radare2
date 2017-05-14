@@ -105,8 +105,16 @@ files=[
 ]
 
 r_bin = shared_library('r_bin', files,
-  include_directories: include_directories(['../include','mangling', 'format']),
+  include_directories: include_directories([
+  '../include',
+  'mangling',
+  'format',
+  platform_librinc
+  ]),
   c_args: ['-DCORELIB'],
   link_with: [r_util, r_io, r_socket, r_magic],
+  objects: [
+    r_sdb.extract_all_objects()
+  ],
   install: true
 )

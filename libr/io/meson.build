@@ -49,7 +49,10 @@ files += [
 endif
 
 r_io = shared_library('r_io', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include'],
+  platform_librinc
+  ),
   link_with: [r_util, r_socket],
   c_args : '-DCORELIB=1',
   install: true

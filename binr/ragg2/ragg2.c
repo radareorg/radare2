@@ -96,7 +96,11 @@ static int openfile (const char *f, int x) {
 #if __UNIX__
 	if (x) fchmod (fd, 0755);
 #endif
+#if _MSC_VER
+	_chsize (fd, 0);
+#else
 	ftruncate (fd, 0);
+#endif
 	close (1);
 	dup2 (fd, 1);
 	return fd;

@@ -19,7 +19,10 @@ files=[
 ]
 
 r_crypto = shared_library('r_crypto', files,
-  include_directories: include_directories(['../include']),
+  include_directories: include_directories([
+  '../include'],
+  platform_librinc
+  ),
   link_with: [r_util],
   c_args : '-DCORELIB=1',
   install: true

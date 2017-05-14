@@ -86,6 +86,7 @@
   #define _X86_
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
+  #define __WINDOWS__ 1
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)

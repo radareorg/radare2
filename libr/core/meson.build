@@ -60,8 +60,15 @@ files=[
 ]
 
 r_core = shared_library('r_core', files,
-  include_directories: include_directories(['../include','../../shlr']),
+  include_directories: include_directories([
+  '../include','../../shlr',
+  platform_librinc
+  ]),
   c_args: ['-DCORELIB'],
   link_with: [r_util, r_reg, r_syscall, r_search, r_cons, r_anal, r_socket, r_io, r_fs, r_lang, r_hash, r_flag, r_parse, r_egg, r_debug, r_magic, r_crypto, r_config, r_bin],
+  objects: [
+    r_sdb.extract_all_objects(),
+	spp.extract_all_objects()
+  ],  
   install: true
 )

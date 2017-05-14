@@ -1,6 +1,6 @@
 #ifndef PDB_DOWNLOADER_H
 #define PDB_DOWNLOADER_H
-
+#include <r_types.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

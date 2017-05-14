@@ -24,7 +24,11 @@ include_directories: include_directories(['../include', '../../shlr/tcc']),
 )
 
 r_parse = shared_library('r_parse', files,
-  include_directories: include_directories(['../include', '../../shlr/tcc']),
+  include_directories: include_directories([
+  '../include',
+  '../../shlr/tcc',
+  platform_librinc
+  ]),
   c_args: ['-DCORELIB'],
   link_with: [r_util, r_flag, r_syscall, r_reg, tcc],
   install: true
