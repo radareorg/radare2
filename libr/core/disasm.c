@@ -2787,7 +2787,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								}
 							}
 						} else {
-							ds_comment (ds, false, "\\x%02x\\x%02x", msg[i], msg[i+1]);
+							ds_comment (ds, false, "\\u%02x%02x", msg[i+1], msg[i]);
 						}
 						i++;
 					}
