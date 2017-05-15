@@ -329,6 +329,9 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 		//but from here we can not access config API
 		imageBase = 0x10000;
 	}
+	if (imageBase < bin->size) {
+		imageBase = 0x8000000;
+	}
 	return imageBase;
 }
 
