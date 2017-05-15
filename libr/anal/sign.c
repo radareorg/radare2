@@ -95,7 +95,6 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	if (size > 0) {
 		it->bytes = R_NEW0 (RSignBytes);
 		if (!it->bytes) {
-			free (it);
 			goto zilla;
 		}
 		it->bytes->size = size;
