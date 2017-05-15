@@ -39,6 +39,7 @@ enum {
 	TYPE_UDF = 14,
 	TYPE_SHFT = 15,
 	TYPE_COPROC = 16,
+	TYPE_ENDIAN= 17,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -125,6 +126,7 @@ static ArmOp ops[] = {
 	{"ror", 0x7000a0e1, TYPE_SHFT},
 
 	{"mrc", 0x100010ee, TYPE_COPROC},
+	{"setend", 0x000001f1, TYPE_ENDIAN},
 
 	{ NULL }
 };
@@ -324,9 +326,11 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 		*ao->a[i] = 0;
 		ao->a[i]++;
 	}
-	for (i=0; i<16; i++)
-		while (ao->a[i] && *ao->a[i] == ' ')
+	for (i=0; i<16; i++) {
+		while (ao->a[i] && *ao->a[i] == ' ') {
 			ao->a[i]++;
+		}
+	}
 }
 
 static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
@@ -1269,6 +1273,15 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					return 0;
 				}
 				ao->o |= reg << 24;
+				break;
+			case TYPE_ENDIAN:
+				if (!strcmp (ao->a[0], "le")) {
+					ao->o |= 0;
+				} else if (!strcmp (ao->a[0], "be")) {
+					ao->o |= 0x20000;
+				} else {
+					return 0;
+				}
 				break;
 			case TYPE_COPROC:
 				//printf ("%s %s %s %s %s\n", ao->a[0], ao->a[1], ao->a[2], ao->a[3], ao->a[4] );
