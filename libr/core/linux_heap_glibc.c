@@ -83,7 +83,7 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState)
 	PRINTF_BA ("0x%08x\n", (ut32)main_arena->flags);
 	PRINT_GA ("  fastbinsY = {\n");
 
-	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
+	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS - 2; i++, j++, k += SZ * 2) {
 		PRINTF_YA (" Fastbin %02d: ", j);
 		PRINT_GA (" chunksize:");
 		PRINTF_BA (" == %04d ", k);
