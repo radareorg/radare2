@@ -112,17 +112,13 @@ To start to use it for the first time you need to initialize packages:
 
 	$ r2pm init
 
-And to refresh packages before installation/updating a new one:
+Refresh the packages database before installing any package:
 
 	$ r2pm update
 
-To install package use the command
+To install a package use the following command:
 
 	$ r2pm install [package name]
-
-To update package use the command
-
-	$ r2pm update [package name]
 
 # Bindings
 
@@ -135,7 +131,9 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-	$ r2pm install python
+	$ r2pm install lang-python
+	$ r2pm install r2api-python
+	$ r2pm install r2pipe-python
 
 In addition there are `r2pipe` bindings, which are an API
 interface to interact with the prompt, passing commands

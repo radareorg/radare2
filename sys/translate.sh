@@ -3,8 +3,21 @@ if [ -z "$1" ]; then
 	echo "Usage: sys/translate.sh [--list,--reset] [lang|path]"
 	echo "Languages:"
 	echo "- english"
-	cd sys/lang && ls | xargs echo -
+	if [ -d "sys/lang" ]; then
+		cd sys/lang && ls | xargs echo -
+	else
+		echo "Run --update for more languages"
+	fi
 	exit 1
+fi
+
+if [ "$1" = "--update" ]; then
+	if [ -d "sys/lang" ]; then
+		( cd sys/lang && git pull )
+	else
+		git clone --depth 1 https://github.com/radare/radare2-translations sys/lang || exit 1
+	fi
+	exit 0
 fi
 
 if [ "$1" = "-l" -o "$1" = "--list" ]; then
