@@ -3379,7 +3379,7 @@ print_insn_coprocessor (bfd_vma pc,
     {
       unsigned long u_reg = 16;
       bfd_boolean is_unpredictable = FALSE;
-      signed long value_in_comment = 0;
+      // long value_in_comment = 0;
       const char *c;
 
       if (ARM_FEATURE_ZERO (insn->arch))
@@ -3491,8 +3491,8 @@ print_insn_coprocessor (bfd_vma pc,
 
 			if (NEGATIVE_BIT_SET)
 			  offset = - offset;
-			if (rn != 15)
-			  value_in_comment = offset;
+		//	if (rn != 15)
+			  // value_in_comment = offset;
 		      }
 
 		    if (PRE_BIT_SET)
@@ -3522,7 +3522,7 @@ print_insn_coprocessor (bfd_vma pc,
 			    func (stream, ", {%s%d}",
 				  (NEGATIVE_BIT_SET && !offset) ? "-" : "",
 				  (int) offset);
-			    value_in_comment = offset;
+			//    value_in_comment = offset;
 			  }
 		      }
 		    if (rn == 15 && (PRE_BIT_SET || WRITEBACK_BIT_SET))
@@ -3695,7 +3695,7 @@ print_insn_coprocessor (bfd_vma pc,
 			break;
 		      case 'd':
 			func (stream, "%ld", value);
-			value_in_comment = value;
+			// value_in_comment = value;
 			break;
 		      case 'E':
                         {
@@ -4132,7 +4132,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
     {
       if ((given & insn->mask) == insn->value)
 	{
-	  signed long value_in_comment = 0;
+	  // signed long value_in_comment = 0;
 	  bfd_boolean is_unpredictable = FALSE;
 	  const char *c;
 
@@ -4483,7 +4483,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			    break;
 			  case 'd':
 			    func (stream, "%ld", value);
-			    value_in_comment = value;
+			    // value_in_comment = value;
 			    break;
 			  case 'e':
 			    func (stream, "%ld", (1ul << width) - value);
