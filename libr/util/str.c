@@ -1261,7 +1261,7 @@ static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc
 			if (!IS_PRINTABLE (*p)) {
 				*q++ = '\\';
 				*q++ = 'x';
-				*q++ = "0123456789abcdef"[*p >> 4];
+				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
 				*q++ = "0123456789abcdef"[*p & 0xf];
 			} else {
 				*q++ = *p;
