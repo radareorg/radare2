@@ -1,147 +1,164 @@
 /* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_core.h>
-#define TYPE_NONE		0
-#define TYPE_STR		1
-#define TYPE_SYM		2
-#define IS_CHAR(x)		(IS_UPPER(x) || IS_LOWER(x))
-#define IS_STRING(x)	(x+3<end && *x == 's' && *(x+1) == 't' && *(x+2) == 'r' && *(x+3) == '.')
-#define IS_SYMBOL(x)	(x+3<end && *x == 's' && *(x+1) == 'y' && *(x+2) == 'm' && *(x+3) == '.')
+#define TYPE_NONE 0
+#define TYPE_STR 1
+#define TYPE_SYM 2
+#define IS_ALPHA(x) (IS_UPPER(x) || IS_LOWER(x))
+#define IS_STRING(x,y) ((x)+3<end && *x == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
+#define IS_SYMBOL(x,y) ((x)+3<end && *x == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
+
+typedef struct _find_ctx {
+	char *comment;
+	char *left;
+	char *right;
+	char *linebegin;
+	int leftlen;
+	int rightlen;
+	int leftpos;
+	int leftcolor;
+	int commentcolor;
+	int rightcolor;
+	int linecount;
+	int type;
+} RFindCTX;
 
 static void find_and_change (char* in, int len) {
-	char *comment, *left, *right, *linebegin, *end;
-	int leftlen, rightlen, leftpos, leftcolor, commentcolor, rightcolor, linecount;
-	int type;
-	if (!in || len <= 0) {
+	// just to avoid underflows.. len can't be < then len(padding).
+	if (!in || len < 1) {
 		return;
 	}
+	char *end;
+	RFindCTX ctx = {0};
 	end = in + len;
-
-	comment = NULL;
-	// >>
-	right = NULL;
-	// <<
-	left = NULL;
-	leftlen = 0;
-	rightlen = 0;
-	linecount = 0;
-	leftpos = 0;
-	leftcolor = 0;
-	rightcolor = 0;
-	commentcolor = 0;
-	type = TYPE_NONE;
-	linebegin = in + 1;
-	for (linebegin = in; in < end; ++in) {
+//	type = TYPE_NONE;
+	for (ctx.linebegin = in; in < end; ++in) {
 		if (*in == '\n' || !*in) {
-			if (type == TYPE_SYM && linecount < 1) {
-				linecount++;
-				linebegin = in + 1;
+			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
+				ctx.linecount++;
+				ctx.linebegin = in + 1;
 				continue;
 			}
-			if (type != TYPE_NONE && right && left && rightlen > 0 && leftlen > 0) {
+			if (ctx.type != TYPE_NONE && ctx.right && ctx.left && ctx.rightlen > 0 && ctx.leftlen > 0) {
 				char* copy = NULL;
-				if (leftlen > rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
-					memcpy (copy, left, leftlen);
-					// eprintf ("CopyL: '%.*s'\n\n", leftlen, copy);
-					memcpy (left, right, rightlen);
-					memmove (comment - leftlen + rightlen, comment, right - comment);
-					memcpy (right - leftlen + rightlen, copy, leftlen);
-				} else if (leftlen < rightlen) {
-					if (linecount < 1 && (copy = (char*) malloc (rightlen))) {
-						memcpy (copy, right, rightlen);
-						// eprintf ("CopyR: '%.*s'\n\n", rightlen, copy);
-						memcpy (right + rightlen - leftlen, left, leftlen);
-						memmove (comment + rightlen - leftlen, comment, right - comment);
-						memcpy (left + rightlen - leftlen, copy, rightlen);
-					} else if (linecount > 0 && (copy = (char*) malloc (linebegin - left))) {
-						memcpy (copy, left, linebegin - left);
-						memset (right - leftpos, ' ', leftpos);
-						*(right - leftpos - 1) = '\n';
-						memcpy (comment + 3, copy, linebegin - left);
-						memset (left, ' ', leftlen);
+				if (ctx.leftlen > ctx.rightlen) {
+					copy = (char*) malloc (ctx.leftlen);
+					if (copy != NULL) {
+						memcpy (copy, ctx.left, ctx.leftlen);
+						memcpy (ctx.left, ctx.right, ctx.rightlen);
+						memmove (ctx.comment - ctx.leftlen + ctx.rightlen, ctx.comment, ctx.right - ctx.comment);
+						memcpy (ctx.right - ctx.leftlen + ctx.rightlen, copy, ctx.leftlen);
 					}
-				} else if (leftlen == rightlen && (copy = (char*) malloc (leftlen)) != NULL) {
-					memcpy (copy, right, leftlen);
-					// eprintf ("CopyE: '%.*s'\n\n", leftlen, copy);
-					memcpy (right, left, leftlen);
-					memcpy (left, copy, leftlen);
+				} else if (ctx.leftlen < ctx.rightlen) {
+					if (ctx.linecount < 1) {
+						copy = (char*) malloc (ctx.rightlen);
+						if (copy != NULL) {
+							memcpy (copy, ctx.right, ctx.rightlen);
+							memcpy (ctx.right + ctx.rightlen - ctx.leftlen, ctx.left, ctx.leftlen);
+							memmove (ctx.comment + ctx.rightlen - ctx.leftlen, ctx.comment, ctx.right - ctx.comment);
+							memcpy (ctx.left + ctx.rightlen - ctx.leftlen, copy, ctx.rightlen);
+						}
+					} else {
+//						copy = (char*) malloc (ctx.linebegin - ctx.left);
+//						if (copy != NULL) {
+//							memcpy (copy, ctx.left, ctx.linebegin - ctx.left);
+						memset (ctx.right - ctx.leftpos, ' ', ctx.leftpos);
+						*(ctx.right - ctx.leftpos - 1) = '\n';
+//							memcpy (ctx.comment + 3, copy, ctx.linebegin - ctx.left);
+						memset (ctx.left, ' ', ctx.leftlen);
+						memset (ctx.linebegin - ctx.leftlen, ' ', ctx.leftlen);
+//						}
+					}
+				} else if (ctx.leftlen == ctx.rightlen) {
+					copy = (char*) malloc (ctx.leftlen);
+					if (copy != NULL) {
+						memcpy (copy, ctx.right, ctx.leftlen);
+						memcpy (ctx.right, ctx.left, ctx.leftlen);
+						memcpy (ctx.left, copy, ctx.leftlen);
+					}
 				}
 				free (copy);
 			}
-
-			comment = NULL;
-			// >>
-			right = NULL;
-			// <<
-			left = NULL;
-			leftlen = 0;
-			rightlen = 0;
-			linecount = 0;
-			leftpos = 0;
-			leftcolor = 0;
-			rightcolor = 0;
-			commentcolor = 0;
-			type = TYPE_NONE;
-			linebegin = in + 1;
-			continue;
-		} else if (!comment && *in == ';' && *(in + 1) == ' ') {
-			comment = in - 1;
-			comment[1] = '/';
-			comment[2] = '/';
-			while (!IS_WHITESPACE (*(comment - commentcolor))) commentcolor++;
-			commentcolor--;
-			continue;
-		} else if (!comment && type == TYPE_NONE) {
-			if (IS_STRING (in)) {
-				type = TYPE_STR;
-				left = in;
-				while (!IS_WHITESPACE (*(left - leftcolor))) leftcolor++;
-				leftcolor--;
-				leftpos = left - linebegin;
-			} else if (IS_SYMBOL (in)) {
-				type = TYPE_SYM;
-				left = in;
-				while (!IS_WHITESPACE (*(left - leftcolor))) leftcolor++;
-				leftcolor--;
-				leftpos = left - linebegin;
+			memset(&ctx, 0, sizeof(ctx));
+			ctx.linebegin = in + 1;
+		} else if (!ctx.comment && *in == ';' && in[1] == ' ') {
+			ctx.comment = in - 1;
+			ctx.comment[1] = '/';
+			ctx.comment[2] = '/';
+			while (!IS_WHITESPACE (*(ctx.comment - ctx.commentcolor))) {
+				ctx.commentcolor++;
 			}
-			continue;
-		} else if (type == TYPE_STR) {
-			if (!leftlen && left && IS_WHITESPACE (*in)) {
-				leftlen = in - left;
-				// eprintf ("found string left: '%.*s'\n", leftlen, left);
-			} else if (comment && *in == '"' && *(in - 1) != '\\') {
-				if (!right) {
-					right = in;
-					while (!IS_WHITESPACE (*(right - rightcolor))) rightcolor++;
-					rightcolor--;
+			ctx.commentcolor--;
+		} else if (!ctx.comment && ctx.type == TYPE_NONE) {
+			if (IS_STRING (in, ctx)) {
+				ctx.type = TYPE_STR;
+				ctx.left = in;
+				while (!IS_WHITESPACE (*(ctx.left - ctx.leftcolor))) {
+					ctx.leftcolor++;
+				}
+				ctx.leftcolor--;
+				ctx.leftpos = ctx.left - ctx.linebegin;
+			} else if (IS_SYMBOL (in, ctx)) {
+				ctx.type = TYPE_SYM;
+				ctx.left = in;
+				while (!IS_WHITESPACE (*(ctx.left - ctx.leftcolor))) {
+					ctx.leftcolor++;
+				}
+				ctx.leftcolor--;
+				ctx.leftpos = ctx.left - ctx.linebegin;
+			}
+		} else if (ctx.type == TYPE_STR) {
+			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
+				ctx.leftlen = in - ctx.left;
+			} else if (ctx.comment && *in == '"' && in[-1] != '\\') {
+				if (!ctx.right) {
+					ctx.right = in;
+					while (!IS_WHITESPACE (*(ctx.right - ctx.rightcolor))) {
+						ctx.rightcolor++;
+					}
+					ctx.rightcolor--;
 				} else {
-					rightlen = in - right + 1;
-					// eprintf ("found string right: '%.*s'\n", rightlen, right);
+					ctx.rightlen = in - ctx.right + 1;
 				}
 			}
-			continue;
-		} else if (type == TYPE_SYM) {
-			if (!leftlen && left && IS_WHITESPACE (*in)) {
-				leftlen = in - left + 3;
-				// eprintf ("found symbol left: '%.*s'\n", leftlen, left);
-			} else if (comment && *in == '(' && IS_CHAR (*(in - 1)) && !right) {
-				right = in - 1;
-				while (IS_CHAR (*right)) right--;
-				if (*right == ' ') {
-					right--;
-					while (IS_CHAR (*right)) right--;
-					right++;
+		} else if (ctx.type == TYPE_SYM) {
+			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
+				ctx.leftlen = in - ctx.left + 3;
+			} else if (ctx.comment && *in == '(' && (IS_ALPHA (in[-1]) || *ctx.right == '*') && !ctx.right) {
+				// ok so i've found a function written in this way:
+				// type = [const|void|int|float|double|short|long]
+				// type fcn_name (type arg1, type arg2, ...)
+				// right now 'in' points at '(', but the function name is before, so i'll go back
+				// till a space is found
+				// 'int print(const char*, ...)'
+				//           ^
+				ctx.right = in - 1;
+				while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+					ctx.right--;
 				}
-				while (!IS_WHITESPACE (*(right - rightcolor))) rightcolor++;
-				rightcolor--;
-			} else if (comment && *in == ')' && *(in + 1) != '\'') {
-				rightlen = in - right + 1;
-				// eprintf ("found function right: '%.*s'\n", rightlen, right);
+				// 'int print(const char*, ...)'
+				//     ^
+				// right now 'in' points at ' ' before 'p' , but there can be a return value
+				// like 'int' in 'int print(const char*, ...)'.
+				// so to find for example 'int' we have to go back till a space is found.
+				// if a non alpha is found, then we can cut from the function name
+				if (*ctx.right == ' ') {
+					ctx.right--;
+					while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+						ctx.right--;
+					}
+					// moving forward since it points now to non alpha.
+					ctx.right++;
+				}
+				while (!IS_WHITESPACE (*(ctx.right - ctx.rightcolor))) {
+					ctx.rightcolor++;
+				}
+				ctx.rightcolor--;
+			} else if (ctx.comment && *in == ')' && in[1] != '\'') {
+				ctx.rightlen = in - ctx.right + 1;
 			}
 		}
 	}
-	fflush(stderr);
 }
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
@@ -172,13 +189,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.flags", 0);
 	r_config_set_i (core->config, "asm.emu", 1);
 	r_config_set_i (core->config, "asm.emustr", 1);
-	r_config_set_i (core->config, "asm.emuwrite", 0);
+	r_config_set_i (core->config, "asm.emuwrite", 1);
 	r_config_set_i (core->config, "asm.fcnlines", 0);
 	r_config_set_i (core->config, "asm.comments", 1);
 	r_config_set_i (core->config, "asm.functions", 0);
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.section", 0);
 	r_config_set_i (core->config, "asm.cmtcol", 30);
+	r_core_cmd0 (core, "aeim");
 
 	db = sdb_new0 ();
 
