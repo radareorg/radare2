@@ -2697,7 +2697,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			// eprintf ("Deinitialized %s\n", name);
 			return;
 		}
-		eprintf ("Already initialized\n");
+		//eprintf ("Already initialized\n");
 		return;
 	}
 	if (*input == '-') {
