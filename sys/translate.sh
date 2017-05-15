@@ -1,25 +1,39 @@
 #!/bin/sh
 if [ -z "$1" ]; then
-	echo "Usage: sys/translate.sh [--reset] [lang|path]"
-	cd sys/lang && ls
+	echo "Usage: sys/translate.sh [--list,--reset] [lang|path]"
+	echo "Languages:"
+	echo "- english"
+	cd sys/lang && ls | xargs echo -
 	exit 1
 fi
 
-if [ "$1" = "--reset" ]; then
-	RESET=1
-	shift
-else
-	RESET=0
+if [ "$1" = "-l" -o "$1" = "--list" ]; then
+	echo english
+	cd sys/lang && ls | cat
+	exit 0
 fi
 
-if [ -d "$1" ]; then
+if [ "$1" = english ]; then
+	RESET=1
+	N=catalan
+else
+	if [ "$1" = "--reset" ]; then
+		RESET=1
+		shift
+	else
+		RESET=0
+	fi
+	N="$1"
+fi
+
+if [ -d "$N" ]; then
 	:
 else
-	if [ -d "sys/lang/$1" ]; then
-		L="sys/lang/$1"
+	if [ -d "sys/lang/$N" ]; then
+		L="sys/lang/$N"
 	else
-		if [ -d "$1" ]; then
-			L="$1"
+		if [ -d "$N" ]; then
+			L="$N"
 		else
 			echo "Invalid language"
 			exit 1
