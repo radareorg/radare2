@@ -2316,12 +2316,14 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 		return;
 	}
 	if (!rs_directory) {
+		sdb_ht_free (dirs);
 		return;
 	}
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
 		eprintf ("Error parsing resource directory\n");
+		sdb_ht_free (dirs);
 		return;
 	}
 	for (index = 0; index < totalRes; index++) {
