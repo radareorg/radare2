@@ -33,6 +33,8 @@ fi
 NOSUDO=""
 type sudo > /dev/null 2>&1 || NOSUDO=1
 SUDO=sudo
+[ -n "${NOSUDO}" ] && SUDO=
+
 if [ "$(id -u)" = 0 ]; then
 	SUDO=""
 else
