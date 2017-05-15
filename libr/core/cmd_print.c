@@ -3513,6 +3513,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("]}\n");
 					pd_result = 0;
 				} else if (f) {
+#if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						if (tmp_func->addr > f->addr) {
 							break;
@@ -3521,11 +3522,14 @@ static int cmd_print(void *data, const char *input) {
 						r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, cont_size, tmp_func->addr);
 					}
 					cont_size = tmp_get_contsize (f);
-					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, cont_size, f->addr);
+#endif
+					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size, f->addr);
+#if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						cont_size = tmp_get_contsize (tmp_func);
 						r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, cont_size, tmp_func->addr);
 					}
+#endif
 					pd_result = 0;
 				} else {
 					eprintf ("pdf: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
