@@ -14,10 +14,17 @@ static void doIndent(int idt, char** o, const char *tab) {
 	}
 }
 
+#define EMIT_ESC(s, code) {			\
+	if (color) {				\
+		char *p = code;			\
+		*s++ = 0x1b;			\
+		while (*p) {			\
+			*s++ = *p++;		\
+		}				\
+	}					\
+} while (0);
+
 R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
-	if (!color) {
-		return sdb_json_indent (s, tab);
-	}
 	int indent = 0;
 	int instr = 0;
 	bool isValue = false;
@@ -30,6 +37,7 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 	if (osz < 1) {
 		return NULL;
 	}
+
 	O = malloc (osz);
 	if (!O) {
 		return NULL;
@@ -59,25 +67,25 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 				*o++ = *s;
 			}
 			if (instr) {
-				*o++ = 0x1b;
-				*o++ = '[';
 				if (isValue) {
-					*o++ = '3';
-					*o++ = '4';
+					EMIT_ESC (o, "[34m");
 				} else {
-					*o++ = '3';
-					*o++ = '3';
+					EMIT_ESC (o, "[33m");
 				}
-				*o++ = 'm';
 			} else {
-				*o++ = 0x1b;
-				*o++ = '[';
-				*o++ = '0';
-				*o++ = 'm';
+				EMIT_ESC (o, "[0m");
 			}
 			*o++ = *s;
 			continue;
 		}
+		if (indent <= 0) {
+			// non-JSON part
+			if (s[0] != '{' && s[0] != '[') {
+				*o++ = *s;
+				continue;
+			}
+		}
+
 		if (s[0] == '"') {
 			instr = 1;
 		}
@@ -89,25 +97,14 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 			*o++ = *s;
 			*o++ = ' ';
 			if (!strncmp (s + 1, "true", 4)) {
-				*o++ = 0x1b;
-				*o++ = '[';
-				*o++ = '3';
-				*o++ = '2';
-				*o++ = 'm';
+				EMIT_ESC (o, "[32m");
 			} else if (!strncmp (s + 1, "false", 5)) {
-				*o++ = 0x1b;
-				*o++ = '[';
-				*o++ = '3';
-				*o++ = '1';
-				*o++ = 'm';
+				EMIT_ESC (o, "[31m");
 			}
 			isValue = true;
 			break;
 		case ',':
-			*o++ = 0x1b;
-			*o++ = '[';
-			*o++ = '0';
-			*o++ = 'm';
+			EMIT_ESC (o, "[0m");
 			*o++ = *s;
 			*o++ = '\n';
 			isValue = false;
@@ -123,10 +120,7 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 			break;
 		case '}':
 		case ']':
-			*o++ = 0x1b;
-			*o++ = '[';
-			*o++ = '0';
-			*o++ = 'm';
+			EMIT_ESC (o, "[0m");
 			isValue = false;
 			*o++ = '\n';
 			indent--;
@@ -137,7 +131,8 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 			*o++ = *s;
 		}
 	}
-	*o++ = '\n';
 	*o = 0;
 	return O;
 }
+
+#undef EMIT_ESC
