@@ -3523,7 +3523,8 @@ static int cmd_print(void *data, const char *input) {
 					}
 					cont_size = tmp_get_contsize (f);
 #endif
-					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size, f->addr);
+					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x,
+						f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
 #if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						cont_size = tmp_get_contsize (tmp_func);
