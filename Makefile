@@ -395,7 +395,7 @@ meson-windows:
 meson-config meson-cfg meson-conf:
 	# TODO: this is wrong for each platform different plugins must be compiled
 	cp -f plugins.meson.cfg plugins.cfg
-	./configure --prefix=/usr
+	./configure --prefix="${PREFIX}"
 	$(MAKE) libr/include/r_version.h
 #	cp -f libr/config.mk libr/config.mk.meson
 #	cp -f libr/config.h libr/config.h.meson

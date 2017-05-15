@@ -139,7 +139,7 @@ static int main_help(int line) {
 	}
 	if (line != 1) {
 		printf (
-		" --           open radare2 on an empty file\n"
+		" --           run radare2 without opening any empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
 		" =            read file from stdin (use -i and -c to run cmds)\n"
 		" -=           perform !=! command to run all commands remotely\n"
