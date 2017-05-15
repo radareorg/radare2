@@ -219,7 +219,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		return 0;
 	case H8300_ADDS:
 		r_strbuf_appendf (&op->esil, "%d,r%u,+=",
-			((buf[1] & 0xf0) == 0x08) ? 2 : 1, rd());
+			((buf[1] & 0xf0) == 0x80) ? 2 : 1, rd());
 		return 0;
 	case H8300_MOV_1:
 		/*TODO check if flags are set internally or not*/
@@ -305,23 +305,23 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-=", rsB(), rdB(1));
 		//setZ
 		setHb_B;
-		setV("%o") ;
-		setCb_B ;
+		setV("%o");
+		setCb_B;
 		setN;
 		maskB(1);
 		setZ;
 		return 0;
 	case H8300_SUBW:
-		r_strbuf_appendf(&op->esil, "r%u,r%u,-=", rs(), rd());
+		r_strbuf_appendf (&op->esil, "r%u,r%u,-=", rs(), rd());
 		setHb_W;
-		setV("%o") ;
-		setCb_W ;
+		setV ("%o");
+		setCb_W;
 		setN;
 		mask();
 		setZ;
 		return 0;
 	case H8300_DEC:
-		r_strbuf_appendf(&op->esil, "1,r%u%c,-=", rdB(1));
+		r_strbuf_appendf (&op->esil, "1,r%u%c,-=", rdB(1));
 		//setZ
 		setV("%o");
 		setN;
@@ -330,13 +330,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		return 0;
 	case H8300_SUBS:
 		r_strbuf_appendf(&op->esil, "%d,r%u,-=",
-				( (buf[1] & 0xf0) == 0x08) ? 2 : 1, rd());
+			( (buf[1] & 0xf0) == 0x80) ? 2 : 1, rd());
 		return 0;
 	case H8300_CMP_1:
 		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-", rsB(), rdB(1));
 		//setZ
 		setHb_B;
-		setV("%o") ;
+		setV("%o");
 		setCb_B;
 		setN;
 		maskB(1);
@@ -345,9 +345,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_CMP_2:
 		r_strbuf_appendf(&op->esil, "r%u,r%u,-", rs(), rd());
 		//setZ
-		setHb_W ;
+		setHb_W;
 		setV("%o");
-		setCb_W ;
+		setCb_W;
 		setN;
 		mask();
 		setZ;
@@ -355,11 +355,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_SUBX:
 		//Rd – (Rs) – C → Rd
 		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-=,C,r%u%c,-=",
-				rsB(), rdB(1), rdB(1));
+			rsB(), rdB(1), rdB(1));
 		//setZ
-		setHb_B ;
-		setV("%o") ;
-		setCb_B ;
+		setHb_B;
+		setV("%o");
+		setCb_B;
 		setN;
 		maskB(1);
 		setZ;

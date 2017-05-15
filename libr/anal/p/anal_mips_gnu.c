@@ -191,7 +191,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			break;
 		}
 		//family = 'J';
-	} else if ((optype & 0x10) == 0x1c) {
+	} else if ((optype & 0x1c) == 0x1c) {
 /*
 	C-TYPE
 	======

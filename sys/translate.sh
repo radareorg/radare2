@@ -1,10 +1,15 @@
 #!/bin/sh
 if [ -z "$1" ]; then
-	echo "Usage: sys/translate.sh [--list,--reset] [lang|path]"
+	echo "Usage:"
+	echo " sys/translate.sh [--options] [lang|path]"
+	echo "Options:"
+	echo " --list       list all supported languages"
+	echo " --update     update from radare2-translations git"
+	echo " --reset      restore default strings"
 	echo "Languages:"
-	echo "- english"
+	echo " - english"
 	if [ -d "sys/lang" ]; then
-		cd sys/lang && ls | xargs echo -
+		cd sys/lang && ls | xargs echo ' -'
 	else
 		echo "Run --update for more languages"
 	fi
