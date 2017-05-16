@@ -2199,6 +2199,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		const char *help_msg[] = {
 			"Usage:", "p=[bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 			"p=", "", "print bytes of current block in bars",
+			"p==", "[..]", "same subcommands as p=, but using flame column graph instead of rows",
 			"p=", "b", "same as above",
 			"p=", "c", "print number of calls per block",
 			"p=", "d", "print different bytes from block",
@@ -2215,6 +2216,97 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		};
 		r_core_cmd_help (core, help_msg);
 		  }
+		break;
+	case '=': // "p=="
+		switch (submode) {
+	case '0': // 0x00 bytes
+	case 'F': // 0xff bytes
+	case 'p': // printable chars
+	case 'z': // zero terminated strings
+	{
+		ut8 *p;
+		int i, j, k;
+		ptr = calloc (1, nblocks);
+		if (!ptr) {
+			eprintf ("Error: failed to malloc memory");
+			goto beach;
+		}
+		p = calloc (1, blocksize);
+		if (!p) {
+			R_FREE (ptr);
+			eprintf ("Error: failed to malloc memory");
+			goto beach;
+		}
+		int len = 0;
+		for (i = 0; i < nblocks; i++) {
+			ut64 off = (i + skipblocks) * blocksize;
+			r_core_read_at (core, off, p, blocksize);
+			for (j = k = 0; j < blocksize; j++) {
+				switch (submode) {
+				case '0':
+					if (!p[j]) {
+						k++;
+					}
+					break;
+				case 'f':
+					if (p[j] == 0xff) {
+						k++;
+					}
+					break;
+				case 'z':
+					if ((IS_PRINTABLE (p[j]))) {
+						if (p[j + 1] == 0) {
+							k++;
+							j++;
+						}
+						if (len++ > 8) {
+							k++;
+						}
+					} else {
+						len = 0;
+					}
+					break;
+				case 'p':
+					if ((IS_PRINTABLE (p[j]))) {
+						k++;
+					}
+					break;
+				}
+			}
+			ptr[i] = 256 * k / blocksize;
+		}
+		r_print_columns (core->print, ptr, nblocks, 14);
+		free (p);
+	}
+	break;
+		case 'e':
+	{
+		ut8 *p;
+		int i = 0;
+		ptr = calloc (1, nblocks);
+		if (!ptr) {
+			eprintf ("Error: failed to malloc memory");
+			goto beach;
+		}
+		p = malloc (blocksize);
+		if (!p) {
+			R_FREE (ptr);
+			eprintf ("Error: failed to malloc memory");
+			goto beach;
+		}
+		for (i = 0; i < nblocks; i++) {
+			ut64 off = core->offset + (i + skipblocks) * blocksize;
+			r_core_read_at (core, off, p, blocksize);
+			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
+		}
+		free (p);
+			r_print_columns (core->print, ptr, nblocks, 14); //core->block, core->blocksize, 10);
+	}
+			break;
+		default:
+			r_print_columns (core->print, core->block, core->blocksize, 14);
+			break;
+		}
 		break;
 	case 'd': // "p=d"
 		if (input[1]) {

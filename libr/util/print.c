@@ -16,6 +16,26 @@ static void libc_printf(const char *format, ...) {
 }
 static bool isInterrupted = false;
 
+R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
+	int i, j, cols = 78;
+	int rows = height > 0 ? height : 10;
+	// int realrows = rows * 2;
+	p->cb_printf (" | ");
+	for (i = 0; i<rows; i++) {
+		int threshold = i * (0xff / rows);
+		for (j = 0; j < cols; j++) {
+			int realJ = j * (len/cols);
+			if (buf[realJ] < threshold) {
+				p->cb_printf ("#");
+			} else {
+				p->cb_printf (" ");
+			}
+		}
+		p->cb_printf ("\n | ");
+	}
+	p->cb_printf ("\n");
+}
+
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) {
 	int imax = lines_cache_sz;
 	int imin = 0;
