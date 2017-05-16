@@ -280,14 +280,16 @@ int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 }
 
 // http://dfrws.org/2007/proceedings/p62-dolan-gavitt.pdf
+R_PACKED (
 typedef struct {
 	char tag[4];
 	uint32_t start_vpn;
 	uint32_t end_vpn;
 	uint32_t parent;
-	uint32_t left, right;
+	uint32_t left;
+	uint32_t right;
 	uint32_t flags;
-} __attribute__((packed)) mmvad_short;
+}) mmvad_short;
 
 int
 wind_walk_vadtree (WindCtx *ctx, ut64 address, ut64 parent) {
