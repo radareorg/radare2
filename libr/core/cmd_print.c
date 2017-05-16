@@ -3317,7 +3317,7 @@ static int cmd_print(void *data, const char *input) {
 // r_cons_printf ("|Usage: pi[defj] [num]\n");
 		{
 			const char *help_msg[] = {
-				"Usage:", "pi[defrj] [num]", "",
+				"Usage:", "pi[bdefrj] [num]", "",
 				"pir", "", "like 'pdr' but with 'pI' output",
 				NULL
 			};
@@ -3368,6 +3368,17 @@ static int cmd_print(void *data, const char *input) {
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				func_walk_blocks (core, f, input[1], 'I');
+			} else {
+				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
+			}
+		}
+		break;
+		case 'b': //pib
+		{
+			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
+			if (b) {
+					r_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
 			} else {
 				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
