@@ -96,7 +96,7 @@ typedef struct libgdbr_stub_features_t {
 /*!
  * Structure for fstat data sent by gdb remote server
  */
-
+R_PACKED(
 typedef struct libgdbr_fstat_t {
 	unsigned dev;
 	unsigned ino;
@@ -111,7 +111,7 @@ typedef struct libgdbr_fstat_t {
 	unsigned atime;
 	unsigned mtime;
 	unsigned ctime;
-} __attribute__((packed)) libgdbr_fstat_t;
+}) libgdbr_fstat_t;
 
 /*!
  * Core "object" that saves

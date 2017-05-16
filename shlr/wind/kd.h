@@ -54,6 +54,7 @@ enum {
 #define DBGKD_VERS_FLAG_DATA	0x0002
 #define DBGKD_VERS_FLAG_PTR64	0x0004
 
+R_PACKED (
 typedef struct kd_req_t {
 	uint32_t req;
 	uint16_t cpu_level;
@@ -62,11 +63,13 @@ typedef struct kd_req_t {
 	// Pad to 16-byte boundary (?)
 	uint32_t pad;
 	union {
+		R_PACKED(
 		struct {
 			uint64_t addr;
 			uint32_t length;
 			uint32_t read;
-		} __attribute__((packed)) r_mem;
+		}) r_mem;
+		R_PACKED (
 		struct {
 			uint16_t major;
 			uint16_t minor;
@@ -78,7 +81,7 @@ typedef struct kd_req_t {
 			uint64_t kernel_base;
 			uint64_t mod_addr;
 			uint64_t dbg_addr;
-		} __attribute__((packed)) r_ver;
+		}) r_ver;
 		struct {
 			uint32_t reason;
 			uint32_t tf;
@@ -116,10 +119,10 @@ typedef struct kd_req_t {
 		uint8_t raw[40];
 	};
 	uint8_t data[0];
-} __attribute__((packed)) kd_req_t;
+}) kd_req_t;
 
 #define KD_EXC_BKPT 0x80000003
-
+R_PACKED (
 typedef struct kd_stc_64 {
 	uint32_t state;
 	uint16_t cpu_level;
@@ -129,14 +132,15 @@ typedef struct kd_stc_64 {
 	uint64_t kthread;
 	uint64_t pc;
 	union {
+		R_PACKED (
 		struct {
 			uint32_t code;
 			uint32_t flags;
 			uint64_t ex_record;
 			uint64_t ex_addr;
-		} __attribute__((packed)) exception;
+		}) exception;
 	};
-} __attribute__((packed)) kd_stc_64;
+}) kd_stc_64;
 
 typedef struct kd_ioc_t {
 	uint32_t req;
@@ -144,6 +148,7 @@ typedef struct kd_ioc_t {
 	uint64_t pad[7];
 } kd_ioc_t;
 
+R_PACKED (
 typedef struct kd_packet_t {
 	uint32_t leader;
 	uint16_t type;
@@ -151,7 +156,7 @@ typedef struct kd_packet_t {
 	uint32_t id;
 	uint32_t checksum;
 	uint8_t data[0];
-} __attribute__((packed)) kd_packet_t;
+}) kd_packet_t;
 
 // Compile time assertions macros taken from :
 // http://www.pixelbeat.org/programming/gcc/static_assert.html
