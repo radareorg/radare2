@@ -19,11 +19,16 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define PRINT_BA(msg) PRINT_A (Color_BLUE, msg)
 #define PRINT_RA(msg) PRINT_A (Color_RED, msg)
 
+#define PREV_INUSE 0x1
+#define IS_MMAPPED 0x2
+#define NON_MAIN_ARENA 0x4
+
 #define NBINS 128
 #define NSMALLBINS 64
 #define NFASTBINS 10
 #define BINMAPSHIFT 5
 #define SZ core->dbg->bits
+#define FASTBIN_IDX_TO_SIZE(i) ((SZ * 4) + (SZ * 2) * (i - 1))
 #define BITSPERMAP (1U << BINMAPSHIFT)
 #define BINMAPSIZE (NBINS / BITSPERMAP)
 #define MAX(a,b) (((a)>(b))?(a):(b))
