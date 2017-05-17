@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2016 - pancake */
+/* radare2 - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -10,6 +10,7 @@ static bool getNext = false;
 static bool load_theme(RCore *core, const char *path) {
 	core->cmdfilter = "ec ";
 	bool res = r_core_cmd_file (core, path);
+	r_cons_pal_update_event ();
 	core->cmdfilter = NULL;
 	return res;
 }

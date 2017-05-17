@@ -1333,6 +1333,7 @@ static RPrint staticp = {
 
 /* TODO: handle screen width */
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
+	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
 		p = &staticp;
@@ -1439,15 +1440,12 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	const int show_colors = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *firebow[6] = {
-		Color_BGBLUE,
-		Color_BGGREEN,
-		Color_BGMAGENTA,
-		Color_BGRED,
-		Color_BGYELLOW,
-		Color_BGWHITE,
-	};
+	const char *firebow[6] = { NULL };
 	int i = 0, j;
+
+	for (i = 0; i < 6; i++) {
+		firebow[i] = p->cb_color (i, 6, true);
+	}
 #define INC 5
 #if TOPLINE
 	if (arr[0] > 1) {
@@ -1922,4 +1920,3 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	p->cb_printf ("]\n");
 	return words;
 }
-

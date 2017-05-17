@@ -427,7 +427,6 @@ R_API void *r_list_get_n(const RList *list, int n) {
 	return NULL;
 }
 
-
 R_API RListIter *r_list_contains(const RList *list, const void *p) {
 	void *q;
 	RListIter *iter;

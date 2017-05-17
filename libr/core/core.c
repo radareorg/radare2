@@ -1553,6 +1553,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;
 	core->print->cb_printf = r_cons_printf;
+	core->print->cb_color = r_cons_rainbow_get;
 	core->print->write = mywrite;
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;

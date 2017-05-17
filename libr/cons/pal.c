@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake, sghctoma */
+/* radare - LGPL - Copyright 2013-2017 - pancake, sghctoma */
 
 #include <r_cons.h>
 
@@ -13,6 +13,8 @@ R_API void r_cons_pal_free () {
 R_API void r_cons_pal_init (const char *foo) {
 	RCons *cons = r_cons_singleton ();
 	memset (&cons->pal, 0, sizeof (cons->pal));
+	cons->pal.rainbow = NULL;
+	cons->pal.rainbow_sz = 0;
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
@@ -82,6 +84,8 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.list[5] = strdup (Color_GRAY);
 	cons->pal.list[6] = strdup (Color_BLUE);
 	cons->pal.list[7] = strdup (Color_GREEN);
+
+	r_cons_pal_update_event();
 }
 
 struct {
@@ -145,6 +149,7 @@ R_API void r_cons_pal_random () {
 		if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
 		cons->pal.list[i] = r_cons_color_random (0);
 	}
+	r_cons_pal_update_event();
 }
 
 R_API char *r_cons_pal_parse (const char *str) {
@@ -390,7 +395,9 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 	char *name, **color, rgbstr[32];
 	const char *hasnext;
 	int i;
-	if (rad == 'j') r_cons_print ("{");
+	if (rad == 'j') {
+		r_cons_print ("{");
+	}
 	for (i = 0; keys[i].name; i++) {
 		color = (char**) (p + keys[i].off);
 		switch (rad) {
@@ -448,7 +455,9 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 				keys[i].name);
 		}
 	}
-	if (rad == 'j') r_cons_print ("}\n");
+	if (rad == 'j') {
+		r_cons_print ("}\n");
+	}
 }
 
 R_API int r_cons_pal_set(const char *key, const char *val) {
@@ -467,8 +476,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 R_API const char *r_cons_pal_get_i(int n) {
 	int i;
 	for (i = 0; i < n && keys[i].name; i++) {}
-	if (i == n) return keys[n].name;
-	return NULL;
+	return (i == n) ? keys[n].name : NULL;
 }
 
 R_API const char *r_cons_pal_get (const char *key) {
@@ -480,4 +488,76 @@ R_API const char *r_cons_pal_get (const char *key) {
 		}
 	}
 	return "";
+}
+
+R_API void r_cons_pal_update_event() {
+	RConsPalette *pal = & (r_cons_singleton ()->pal);
+	ut8 *p = (ut8*)pal;
+	Sdb *db = sdb_new0 ();
+	RCons *cons = r_cons_singleton ();
+	int i, n = 0;
+	for (i = 0; keys[i].name; i++) {
+		char **color = (char**) (p + keys[i].off);
+		ut8 r, g, b;
+		r = g = b = 0;
+		r_cons_rgb_parse (*color, &r, &g, &b, NULL);
+		if (r <= 0x20 && g <= 0x20 && b < 0x20) {
+			continue;
+		}
+		if (r >= 0xf0  && g >= 0xf0 && b >= 0xf0) {
+			continue;
+		}
+		const char *rgb = sdb_fmt (0, "rgb:%02x%02x%02x", r, g, b);
+		sdb_set (db, rgb, "1", 0);
+	}
+	SdbList *list = sdb_foreach_list (db, true);
+	SdbListIter *iter;
+	SdbKv *kv;
+	r_cons_rainbow_free ();
+	r_cons_rainbow_new (list->length);
+	ls_foreach (list, iter, kv) {
+		cons->pal.rainbow[n++] = strdup (kv->key);
+	}
+	cons->pal.rainbow_sz = n;
+	ls_free (list);
+	sdb_free (db);
+}
+
+R_API void r_cons_rainbow_new(int sz) {
+	RCons *cons = r_cons_singleton ();
+	cons->pal.rainbow_sz = sz;
+	free (cons->pal.rainbow);
+	cons->pal.rainbow = calloc (sizeof (char *), sz);
+}
+
+R_API void r_cons_rainbow_free() {
+	RCons *cons = r_cons_singleton ();
+	int i, sz = cons->pal.rainbow_sz;
+	if (cons->pal.rainbow) {
+		for (i = 0; i < sz ; i++) {
+			free (cons->pal.rainbow[i]);
+		}
+	}
+	cons->pal.rainbow_sz = 0;
+	R_FREE (cons->pal.rainbow);
+}
+
+R_API const char *r_cons_rainbow_get(int idx, int last, bool bg) {
+	RCons *cons = r_cons_singleton ();
+	if (last < 0) {
+		last = cons->pal.rainbow_sz;
+	}
+	if (idx < 0 || idx >= last || !cons->pal.rainbow) {
+		return NULL;
+	}
+	int x = (last == cons->pal.rainbow_sz)
+		? idx : (cons->pal.rainbow_sz * idx) / (last + 1);
+	const char *a = cons->pal.rainbow[x];
+	if (bg) {
+		char *dup = r_str_newf ("%s %s", a, a);
+		const char *res = r_cons_pal_parse (dup);
+		free (dup);
+		return res;
+	}
+	return r_cons_pal_parse (a);
 }

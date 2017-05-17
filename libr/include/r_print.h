@@ -46,6 +46,7 @@ typedef struct r_print_t {
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
 	void (*cb_printf)(const char *str, ...);
+	const char *(*cb_color)(int idx, int last, bool bg);
 	int (*disasm)(void *p, ut64 addr);
 	void (*oprintf)(const char *str, ...);
 	char* (*get_bitfield)(void *user, const char *name, ut64 value);
