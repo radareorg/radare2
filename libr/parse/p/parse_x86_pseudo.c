@@ -215,36 +215,65 @@ static void parse_localvar(RParse *p, char *newstr, size_t newstr_len, const cha
 	} else {
 		snprintf (newstr, newstr_len - 1, "[%s %c %s]", reg, sign, var);
 	}
+	if (p->localvar_only) {
+		snprintf (newstr, newstr_len - 1, "%s", var);
+	} else {
+		snprintf (newstr, newstr_len - 1, "%c%s(%%%s)", sign, var, reg);
+	}
 }
 
 static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	RList *regs, *bpargs, *spargs;
 	RAnalVar *reg, *bparg, *sparg;
 	RListIter *regiter, *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
-	if (!tstr) return false;
-	RList *regs, *bpargs, *spargs;
+	if (!tstr) {
+		return false;
+	}
+
+	bool att = strchr (data, '%');
 
 	if (p->relsub) {
-		char *rip = (char *)r_str_casestr (tstr, "[rip");
-		if (rip) {
-			char *ripend = strchr (rip + 3, ']');
-			const char *plus = strchr (rip, '+');
-			const char *neg = strchr (rip, '-');
-			char *tstr_new;
-			ut64 repl_num = oplen + addr;
+		if (att) {
+			char *rip = (char *)r_str_casestr (tstr, "(%rip)");
+			if (rip) {
+				*rip = 0;
+				char *pre = tstr;
+				char *pos = rip + 6;
+				char *word = strchr (tstr, ' ');
+				if (word) {
+					*word++ = 0;
+					*rip = 0;
+					st64 n = r_num_math (NULL, word);
+					ut64 repl_num = oplen + addr + n;
+					char *tstr_new = r_str_newf ("%s 0x%08"PFMT64x"%s", pre, repl_num, pos);
+					*rip = '(';
+					free (tstr);
+					tstr = tstr_new;
+				}
+			}
+		} else {
+			char *rip = (char *)r_str_casestr (tstr, "[rip");
+			if (rip) {
+				char *ripend = strchr (rip + 3, ']');
+				const char *plus = strchr (rip, '+');
+				const char *neg = strchr (rip, '-');
+				char *tstr_new;
+				ut64 repl_num = oplen + addr;
 
-			if (!ripend) ripend = "]";
-			if (plus) repl_num += r_num_get (NULL, plus + 1);
-			if (neg) repl_num -= r_num_get (NULL, neg + 1);
+				if (!ripend) ripend = "]";
+				if (plus) repl_num += r_num_get (NULL, plus + 1);
+				if (neg) repl_num -= r_num_get (NULL, neg + 1);
 
-			rip[1] = '\0';
-			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
-			free (tstr);
-			tstr = tstr_new;
-			if (!strncasecmp (tstr, "lea", 3)) {
-				r_str_replace_char (tstr, '[', 0);
-				r_str_replace_char (tstr, ']', 0);
+				rip[1] = '\0';
+				tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
+				free (tstr);
+				tstr = tstr_new;
+				if (!strncasecmp (tstr, "lea", 3)) {
+					r_str_replace_char (tstr, '[', 0);
+					r_str_replace_char (tstr, ']', 0);
+				}
 			}
 		}
 	}
@@ -302,16 +331,22 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			sign = '-';
 			bparg->delta = -bparg->delta;
 		}
-		if (bparg->delta < 10) {
+		if (att) {
 			snprintf (oldstr, sizeof (oldstr) - 1,
-				"[%s %c %d]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				sign, bparg->delta);
+				"%c0x%x(%%%s)", sign,
+				bparg->delta, p->anal->reg->name[R_REG_NAME_BP]);
 		} else {
-			snprintf (oldstr, sizeof (oldstr) - 1,
-				"[%s %c 0x%x]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				sign, bparg->delta);
+			if (bparg->delta < 10) {
+				snprintf (oldstr, sizeof (oldstr) - 1,
+					"[%s %c %d]",
+					p->anal->reg->name[R_REG_NAME_BP],
+					sign, bparg->delta);
+			} else {
+				snprintf (oldstr, sizeof (oldstr) - 1,
+					"[%s %c 0x%x]",
+					p->anal->reg->name[R_REG_NAME_BP],
+					sign, bparg->delta);
+			}
 		}
 		if (ucase) {
 			r_str_case (oldstr, true);
