@@ -108,5 +108,5 @@ struct v850_cmd {
 	char	operands[V850_INSTR_MAXLEN];
 };
 
-int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd);
+R_API int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd);
 #endif /* R2_V850_DISASM_H */

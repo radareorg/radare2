@@ -237,9 +237,9 @@ typedef struct {
 #define INSN_FLAG(af, av)		{ .f = af, .v = TMS320_FLAG_##av }
 #define INSN_SYNTAX(...)		(char *)#__VA_ARGS__
 
-extern int tms320_dasm(tms320_dasm_t *, const ut8 *, int);
+R_API extern int tms320_dasm(tms320_dasm_t *, const ut8 *, int);
 
-extern int tms320_dasm_init(tms320_dasm_t *);
-extern int tms320_dasm_fini(tms320_dasm_t *);
+R_API extern int tms320_dasm_init(tms320_dasm_t *);
+R_API extern int tms320_dasm_fini(tms320_dasm_t *);
 
 #endif /* __TMS320_DASM_H__ */

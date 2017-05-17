@@ -19,7 +19,7 @@ typedef struct libbochs_t {
 	HANDLE hWritePipeOut;
 	HANDLE ghWriteEvent;
 	PROCESS_INFORMATION processInfo;
-	STARTUPINFO info;
+	STARTUPINFOA info;
 #else
 	int hReadPipeIn;
 	int hReadPipeOut;

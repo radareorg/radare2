@@ -141,6 +141,6 @@ struct v810_cmd {
 	char operands[V810_INSTR_MAXLEN];
 };
 
-int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd);
+R_API int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd);
 
 #endif /* R2_V810_DISASM_H */

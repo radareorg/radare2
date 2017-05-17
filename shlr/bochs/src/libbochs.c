@@ -205,9 +205,9 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	if (CreatePipe (&b->hReadPipeIn, &b->hReadPipeOut, &PipeAttributes, SIZE_BUF) &&
 	    CreatePipe (&b->hWritePipeIn, &b->hWritePipeOut, &PipeAttributes, SIZE_BUF)
 	   ) {
-		memset (&b->info, 0, sizeof (STARTUPINFO));
+		memset (&b->info, 0, sizeof (STARTUPINFOA));
 		memset (&b->processInfo, 0, sizeof (PROCESS_INFORMATION));
-		b->info.cb = sizeof (STARTUPINFO);
+		b->info.cb = sizeof (STARTUPINFOA);
 		b->info.hStdError = b->hReadPipeOut;
 		b->info.hStdOutput = b->hReadPipeOut;
 		b->info.hStdInput = b->hWritePipeIn;
