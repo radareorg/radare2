@@ -46,7 +46,7 @@ struct cr16_cmd {
 	char	operands[CR16_INSTR_MAXLEN];
 };
 
-int cr16_decode_command(const ut8 *instr, struct cr16_cmd *cmd);
+R_API int cr16_decode_command(const ut8 *instr, struct cr16_cmd *cmd);
 
 enum cr16_opcodes {
 	CR16_ADD	= 0x0,

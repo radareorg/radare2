@@ -19,8 +19,8 @@ enum {
 	ARG,    // register
 };
 
-r_8051_op r_8051_decode(const ut8 *buf, int len);
-char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len);
+R_API r_8051_op r_8051_decode(const ut8 *buf, int len);
+R_API char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len);
 
 #endif /* 8051_DISASM_H */
 

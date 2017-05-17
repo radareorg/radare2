@@ -84,5 +84,5 @@ struct msp430_cmd {
 	char	operands[MSP430_INSTR_MAXLEN];
 };
 
-int msp430_decode_command(const ut8 *instr, struct msp430_cmd *cmd);
+R_API int msp430_decode_command(const ut8 *instr, struct msp430_cmd *cmd);
 #endif /* MSP430_DISAS_H */

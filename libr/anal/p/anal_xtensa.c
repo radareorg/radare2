@@ -11,7 +11,7 @@
 #define CM ","
 #define XTENSA_MAX_LENGTH 8
 
-extern xtensa_isa xtensa_default_isa;
+xtensa_isa xtensa_default_isa;
 
 static int xtensa_length(const ut8 *insn) {
 	static int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
