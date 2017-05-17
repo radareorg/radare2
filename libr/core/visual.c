@@ -52,7 +52,8 @@ static int visual_repeat_thread(RThread *th) {
 		r_sys_sleep (1);
 	}
 	r_cons_break_pop ();
-	r_th_kill (th, 1);
+	core->cons->breaked = true;
+	r_th_wait (th);
 	return 0;
 }
 
