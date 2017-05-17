@@ -29,7 +29,7 @@ ec pop rgb:0ff
 ec jmp rgb:f0f
 ec cjmp rgb:f0f
 ec call rgb:f0f
-ec nop rgb:2da
+ec nop rgb:0ff
 ec trap rgb:f0f
 ec cmp rgb:0ff
 ec reg rgb:f0f
@@ -45,5 +45,17 @@ ec graph.box4 rgb:f0f
 ec graph.true rgb:f0f
 ec graph.false rgb:0ff
 ec graph.trufae rgb:f0f
-ec graph.current rgb:af2
+ec graph.current rgb:0ff
 ec graph.traced rgb:f0f
+
+ec gui.cflow rgb:0ff
+ec gui.dataoffset rgb:0ff
+ec gui.background rgb:0ff
+ec gui.alt_background rgb:0ff
+ec gui.border rgb:0ff
+
+ec ai.read rgb:0ff
+ec ai.write rgb:f0f
+ec ai.exec rgb:f0f
+ec ai.seq rgb:f0f
+ec ai.ascii rgb:f0f
