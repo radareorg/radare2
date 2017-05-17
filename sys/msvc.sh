@@ -1,10 +1,7 @@
 #!/bin/sh
-
-#make clean
 CC=cccl
 
 # Configure
-#COMPILER=${CC} USERCC=${CC} CC=${CC} LD=${CC} ./configure --with-ostype=windows --with-nonpic --without-pic
 if [ ! -e "libr/config.mk" ]; then
 	COMPILER=${CC} USERCC=${CC} CC=${CC} LD=${CC} ./configure --with-ostype=windows
 	if [ $? -ne 0 ]; then
@@ -14,8 +11,8 @@ if [ ! -e "libr/config.mk" ]; then
 	rm test.exe test.obj
 fi
 
-# TODO I cannot say why cl.exe does not use the environment variables when ran from make
-# so I give it to cl.exe with -LIBPATH (translated from -L by cccl)
+# cl.exe does not use the environment variables when ran from make
+# so let's give it to cl.exe with -LIBPATH (translated from -L by cccl)
 _IFS=${IFS}
 IFS=\;
 for path in ${LIBPATH}${LIB}; do
@@ -24,10 +21,10 @@ done
 IFS=${_IFS}
 
 # Use /FS to allow cl.exe to write to the same .pdb file
-CFLAGS="/FS"
+CFLAGS="-FS"
 # Include msvc directory to provide unistd.h and sys/time.h
 INC_DIR=$(cygpath -aw $(pwd)/libr/include/msvc)
-CFLAGS="${CFLAGS} /I\"${INC_DIR}\""
+CFLAGS="${CFLAGS} -I\"${INC_DIR}\""
 
 export CCCL_OPTIONS="--cccl-verbose"
 export CFLAGS="${CFLAGS}"
@@ -44,8 +41,8 @@ sed -i "s,p/z80.mk ,," libr/config.mk
 
 # Now we can make
 make CC=${CC} USERCC=${CC} HOST_CC=${CC} USE_CAPSTONE=1
-
-#make w64dist
+ERR=$?
 
 # Reset capstone Makefile (git)
 sed -i s/CS_RELEASE=1/CS_RELEASE=0/ shlr/Makefile
+exit $ERR

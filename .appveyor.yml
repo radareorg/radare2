@@ -1,0 +1,75 @@
+# Version format
+version: 1.5.0.{build}-git
+
+# Skip Github tags
+skip_tags: true
+
+# VM Template
+image: Visual Studio 2015
+
+# Clone depth
+clone_depth: 1
+
+# Branches to clone
+branches:
+  only:
+    - master
+
+# Environment variables
+environment:
+  matrix:
+    # TODO Add missing build platforms
+    # MSVC Variables
+    #- builder: msvc
+    # MESON Variables
+    - builder: msvc_meson
+      PYTHON: 'C:\\Python36-x64'
+      BUILD_DIR: build
+      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
+    # MINGW32 Variables
+    - builder: mingw32
+      EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
+    # MSYS2 Variables
+    #- builder: msys2
+    #  MSYS2_DIR: msys64
+    #  MSYS2_ARCH: x86_64
+    #  MSYSTEM: MINGW64
+    ## CYGWIN32 Variables
+    #- builder: cygwin32
+    #  init_command: git config --global core.autocrlf input
+    #  CYG_CACHE: 'C:\cygwin\var\cache\setup'
+    #  CYG_BASH: 'C:\cygwin\bin\bash'
+    #  ZIP_ROOT: '%APPVEYOR_BUILD_FOLDER%\zip'
+  ARTIFACT_ZIP: 'radare2-%builder%-%APPVEYOR_BUILD_VERSION%.zip'
+
+# Init
+init:
+  - cmd: "%init_command%"
+
+# Required softwares for building
+install:
+  # TODO Add ninja and meson to cached folder (and capstone)
+  - cmd: if %builder% == msvc_meson ( %PYTHON%\python.exe -m pip install meson && powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
+
+# Cached folders
+cache:
+- "%CYG_CACHE%"
+- "%ZIP_ROOT%"
+
+# Build scripts
+build_script:
+  - cmd: if %builder% == msvc ( sys\msvc.bat && make windist WINBITS=%builder% )
+  - cmd: if %builder% == msvc_meson ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && cd shlr && git clone https://github.com/aquynh/capstone && cd capstone && git checkout next && git reset --hard 2b84c0cf2c992e7010d7f67535cc791bd1d2e427 && cd ..\.. && make meson-config && %PYTHON%\\python.exe C:\\Python36-x64\\Scripts\\meson.py %BUILD_DIR% && ninja.exe -C build && ninja.exe -C build install && echo %ARTIFACT_ZIP% && zip -r %ARTIFACT_ZIP% C:\bin C:\lib )
+  - cmd: if %builder% == mingw32 ( sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
+  - cmd: if %builder% == msys2 ( set && set PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;"%PATH%" && echo "%PATH%" && sh.exe -c "export PATH=${PATH}:/mingw64/bin; ./configure --build=i686-unknown-windows-gnu ; mingw32-make -j1 ; mingw32-make windist WINBITS=%builder%" )
+  - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
+
+# Artifacts
+artifacts:
+- path: "%ARTIFACT_ZIP%"
+
+# Disable test
+test: off
+
+# Disable deployment
+deploy: off

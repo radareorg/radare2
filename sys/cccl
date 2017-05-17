@@ -213,6 +213,10 @@ EOF
         #ignore MMD
         ;;
 
+    -fPIC)
+        #ignore fPIC
+        ;;
+
     -*)
         # Remaining '-' options are passed to the compiler
         val=$(echo "$1" | cut -c2-)
@@ -259,9 +263,14 @@ EOF
             shift
         done
         ;;
+    /*/*)
+	# If there are multiple slashes, then it's an absoulte path
+        path=$(cygpath -aw "$1")
+        clopt="${clopt},${path}"
+	;;
 
     /*)
-        # All '/' options are assumed to be for cl and are passed through
+	# All '/' options (except the one above) are assumed to be options
         val=$(echo "$1" | cut -c2-)
         clopt="${clopt},${slash}${val}"
         ;;

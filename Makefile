@@ -97,6 +97,7 @@ w64dist:
 	${MAKE} windist WINBITS=w64
 
 WINDIST=${WINBITS}dist
+ZIPNAME?=radare2-${WINBITS}-${VERSION}.zip
 
 C=$(shell printf "\033[32m")
 R=$(shell printf "\033[0m")
@@ -151,7 +152,7 @@ windist:
 	@mv "${WINDIST}" "radare2-${WINBITS}-${VERSION}"
 	@rm -f "radare2-${WINBITS}-${VERSION}.zip"
 ifneq ($(USE_ZIP),NO)
-	$(ZIP) -r "radare2-${WINBITS}-${VERSION}.zip" "radare2-${WINBITS}-${VERSION}"
+	$(ZIP) -r "${ZIPNAME}" "radare2-${WINBITS}-${VERSION}"
 endif
 
 clean: rmd
