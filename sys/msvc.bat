@@ -11,15 +11,27 @@ set VC_VARS_ALL=
 if ["%VC_VARS_ALL%"] == [""] goto :FindVcVars else goto :SetVars
 
 :FindVcVars
+setlocal enabledelayedexpansion
 echo VC_VARS_ALL was not set, trying to find its location...
 set KEY_NAME="HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7"
+set VC_VER=0
 for /F "skip=2 tokens=1,2*" %%A in ('REG QUERY %KEY_NAME% 2^>nul') do (
-    set VC_DIR=%%C
+    for /F "tokens=1,2 delims=." %%X in ("%%A") do (
+        set VER=%%X
+    )
+    if !VER! GTR !VC_VER! (
+        set VC_VER=!VER!
+        set VC_DIR=%%C
+    )
 )
 if ["%VC_DIR%"] == [""] goto :FindFail
+endlocal & (
+    set "VC_DIR=%VC_DIR%"
+    set "VC_VER=%VC_VER%"
+)
 
 :VcVarsDefaults
-echo Found VC_DIR location: %VC_DIR%
+echo Found VC_DIR location: %VC_DIR% (version %VC_VER%)
 if exist "%VC_DIR%VC\Auxiliary\Build\vcvarsall.bat" (
     set vcvarsall="%VC_DIR%VC\Auxiliary\Build\vcvarsall.bat"
 )
@@ -49,12 +61,12 @@ set VC_LIB=%LIB%
 :Bash
 echo Calling script...
 PATH=%cd%\sys;C:\cygwin64\bin;%PATH%
-bash sys\msvc.sh
-goto :End
+cmd /c bash sys\msvc.sh
+exit /b %errorlevel%
 
+goto :End
 :FindFail
 echo Could not find the vcvarsall.bat location.
 echo Maybe are you missing Visual Studio compiler ?
 echo Try setting it manually at the beginning of this file.
-
 :End

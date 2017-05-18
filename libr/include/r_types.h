@@ -419,7 +419,7 @@ static inline void *r_new_copy(int size, void *data) {
 #ifdef _WIN64
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#define __x86_64__
+#define __x86_64__ 1
 #else
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32)
