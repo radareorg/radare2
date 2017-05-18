@@ -21,12 +21,12 @@
 #define GHT_MAX UT64_MAX
 #endif
 
-#define PREV_INUSE 0x1
-#define IS_MMAPPED 0x2
-#define NON_MAIN_ARENA 0x4
-
 static void GH(update_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena) {
 	(void)r_core_read_at (core, m_arena, (ut8 *)main_arena, sizeof (GH(RHeap_MallocState)));
+}
+
+static void GH(update_global_max_fast)(RCore *core, GHT g_max_fast, GHT *global_max_fast) {
+	(void)r_core_read_at (core, g_max_fast, (ut8 *)global_max_fast, sizeof (GHT));
 }
 
 static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
@@ -42,7 +42,7 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 	}
 }
 
-static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena, int format) {
+static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena, GHT global_max_fast, int format) {
 	int i, j, k, start, offset = SZ * 12 + sizeof (int) * 2;
 	GHT apart[NSMALLBINS + 1] = { 0LL };
 	if (format == '*') {
@@ -83,8 +83,12 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState)
 	PRINTF_BA ("0x%08x\n", (ut32)main_arena->flags);
 	PRINT_GA ("  fastbinsY = {\n");
 
-	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS - 2; i++, j++, k += SZ * 2) {
-		PRINTF_YA (" Fastbin %02d: ", j);
+	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
+		if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
+			PRINTF_YA (" Fastbin %02d\n", j);
+		} else {
+			PRINTF_RA (" Fastbin %02d\n", j);
+		}
 		PRINT_GA (" chunksize:");
 		PRINTF_BA (" == %04d ", k);
 		PRINTF_GA ("0x%"PFMT64x, (ut64)main_arena->fastbinsY[i]);
@@ -206,7 +210,13 @@ static GHT GH(get_vaddr_symbol)(const char *path, const char *symname) {
 	return vaddr;
 }
 
-static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocState) *main_arena) {
+static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) {
+	const char *dir_dbg = "/usr/lib/debug";
+	const char *dir_build_id = "/.build-id";
+	const char *libc_ver_end = NULL;
+	char hash[64] = R_EMPTY, *path = NULL;
+	bool is_debug_file[6];
+	GHT libc_addr = GHT_MAX, vaddr = GHT_MAX;
 	RListIter *iter;
 	RDebugMap *map;
 
@@ -214,91 +224,111 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 		return false;
 	}
 
-	if (*m_arena == GHT_MAX) {
-		const char *dir_dbg = "/usr/lib/debug";
-		const char *dir_build_id = "/.build-id";
-		const char *symname = "main_arena";
-		const char *libc_ver_end = NULL;
-		char hash[64] = R_EMPTY, *path = NULL;
-		bool is_debug_file[6];
-		GHT libc_addr = GHT_MAX, vaddr = GHT_MAX;
-
-		r_debug_map_sync (core->dbg);
-		r_list_foreach (core->dbg->maps, iter, map) {
-			if (strstr (map->name, "/libc-")) {
-				libc_addr = map->addr;
-				libc_ver_end = map->name;
-				break;
-			}
+	r_debug_map_sync (core->dbg);
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (strstr (map->name, "/libc-")) {
+			libc_addr = map->addr;
+			libc_ver_end = map->name;
+			break;
 		}
-		if (!libc_ver_end) {
-			eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
-			return false;
-		}
-		is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
-		is_debug_file[1] = str_start_with (libc_ver_end, "/usr/lib32/");
-		is_debug_file[2] = str_start_with (libc_ver_end, "/usr/lib64/");
-		is_debug_file[3] = str_start_with (libc_ver_end, "/lib/");
-		is_debug_file[4] = str_start_with (libc_ver_end, "/lib32/");
-		is_debug_file[5] = str_start_with (libc_ver_end, "/lib64/");
+	}
+	if (!libc_ver_end) {
+		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
+		return false;
+	}
+	is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
+	is_debug_file[1] = str_start_with (libc_ver_end, "/usr/lib32/");
+	is_debug_file[2] = str_start_with (libc_ver_end, "/usr/lib64/");
+	is_debug_file[3] = str_start_with (libc_ver_end, "/lib/");
+	is_debug_file[4] = str_start_with (libc_ver_end, "/lib32/");
+	is_debug_file[5] = str_start_with (libc_ver_end, "/lib64/");
 
-		if (!is_debug_file[0] && !is_debug_file[1] && \
-		!is_debug_file[2] && !is_debug_file[3] && \
-		!is_debug_file[4] && !is_debug_file[5]) {
-			path = r_cons_input ("Is a custom library? (LD_PRELOAD=..) Enter full path glibc: ");
-			if (r_file_exists (path)) {
-				goto arena;
-			}
+	if (!is_debug_file[0] && !is_debug_file[1] && \
+	!is_debug_file[2] && !is_debug_file[3] && \
+	!is_debug_file[4] && !is_debug_file[5]) {
+		path = r_cons_input ("Is a custom library? (LD_PRELOAD=..) Enter full path glibc: ");
+		if (r_file_exists (path)) {
+			goto found;
 		}
+	}
 
-		if (is_debug_file[0] || is_debug_file[1] || is_debug_file[2]) {
-			free (path);
-			path = r_str_newf ("%s", libc_ver_end);
-			if (r_file_exists (path)) {
-				goto arena;
-			}
+	if (is_debug_file[0] || is_debug_file[1] || is_debug_file[2]) {
+		free (path);
+		path = r_str_newf ("%s", libc_ver_end);
+		if (r_file_exists (path)) {
+			goto found;
 		}
+	}
 
-		if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
-		r_file_is_directory ("/usr/lib/debug")) {
-			free (path);
-			path = r_str_newf ("%s%s", dir_dbg, libc_ver_end);
-			if (r_file_exists (path)) {
-				goto arena;
-			}
-			path = r_str_append (path, ".debug");
-			if (r_file_exists (path)) {
-				goto arena;
-			}
+	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
+	r_file_is_directory ("/usr/lib/debug")) {
+		free (path);
+		path = r_str_newf ("%s%s", dir_dbg, libc_ver_end);
+		if (r_file_exists (path)) {
+			goto found;
 		}
-
-		if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
-		r_file_is_directory ("/usr/lib/debug/.build-id")) {
-			get_hash_debug_file (libc_ver_end, hash, sizeof (hash) - 1);
-			libc_ver_end = hash;
-			free (path);
-			path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
-			if (r_file_exists (path)) {
-				goto arena;
-			}
+		path = r_str_append (path, ".debug");
+		if (r_file_exists (path)) {
+			goto found;
 		}
+	}
 
-		goto not_arena;
-arena:
-		vaddr = GH(get_vaddr_symbol) (path, symname);
-		if (libc_addr != GHT_MAX && vaddr && vaddr != GHT_MAX) {
-			*m_arena = libc_addr + vaddr;
-			if (main_arena){
-				GH(update_main_arena) (core, *m_arena, main_arena);
-				free (path);
+	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
+	r_file_is_directory ("/usr/lib/debug/.build-id")) {
+		get_hash_debug_file (libc_ver_end, hash, sizeof (hash) - 1);
+		libc_ver_end = hash;
+		free (path);
+		path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
+		if (r_file_exists (path)) {
+			goto found;
+		}
+	}
+
+	goto not_found;
+found:
+	vaddr = GH(get_vaddr_symbol) (path, symname);
+	if (libc_addr != GHT_MAX && vaddr && vaddr != GHT_MAX) {
+		*symbol = libc_addr + vaddr;
+		free (path);
+		return true;
+	}
+not_found:
+	eprintf (
+	  "Warning: glibc library with symbol %s could not be "
+	"found. Is libc6-dbg installed?\n", symname);
+	free (path);
+	return false;
+}
+
+static bool GH(r_resolve_global_max_fast)(RCore *core, GHT *g_max_fast, GHT *global_max_fast) {
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return false;
+	}
+	if (*g_max_fast == GHT_MAX) {
+		if (GH(r_resolve_symbol) (core, g_max_fast, "global_max_fast")) {
+			if (global_max_fast) {
+				GH(update_global_max_fast) (core, *g_max_fast, global_max_fast);
 				return true;
 			}
 		}
-not_arena:
-		eprintf (
-		  "Warning: glibc library with symbol main_arena could not be "
-		"found. Is libc6-dbg installed?\n");
-		free (path);
+		return false;
+	} else {
+		GH(update_global_max_fast) (core, *g_max_fast, global_max_fast);
+	}
+	return true;
+}
+
+static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocState) *main_arena) {
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return false;
+	}
+	if (*m_arena == GHT_MAX) {
+		if (GH(r_resolve_symbol) (core, m_arena, "main_arena")) {
+			if (main_arena) {
+				GH(update_main_arena) (core, *m_arena, main_arena);
+				return true;
+			}
+		}
 		return false;
 	} else {
 		GH(update_main_arena) (core, *m_arena, main_arena);
@@ -612,7 +642,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, GH(RHeap_MallocState) *
 	return 0;
 }
 
-void GH(print_heap_fastbin)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena, const char *input) {
+void GH(print_heap_fastbin)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena, GHT global_max_fast, const char *input) {
 	int i;
 	GHT num_bin = GHT_MAX;
 	GHT offset = sizeof (int) * 2;
@@ -621,7 +651,11 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *mai
 	case '\0': // dmhf
 		PRINT_YA ("fastbinY {\n");
 		for (i = 1; i <= NFASTBINS; i++) {
-			PRINTF_YA (" Fastbin %02d\n", i);
+			if (FASTBIN_IDX_TO_SIZE(i) <= global_max_fast) {
+				PRINTF_YA (" Fastbin %02d\n", i);
+			} else {
+				PRINTF_RA (" Fastbin %02d\n", i);
+			}
 			if (!GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1)) {
 				PRINT_GA ("  Empty bin");
 				PRINT_BA ("  0x0\n");
@@ -897,7 +931,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 }
 
 static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
 
@@ -1067,8 +1101,9 @@ static const char* GH(help_msg)[] = {
 };
 
 static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
-	static GHT m_arena = GHT_MAX, initial_brk = GHT_MAX;
+	static GHT m_arena = GHT_MAX, g_max_fast = GHT_MAX, initial_brk = GHT_MAX;
 	GH(RHeap_MallocState) *main_arena = R_NEW0 (GH(RHeap_MallocState));
+	GHT global_max_fast = GHT_MAX;
 	if (!main_arena) {
 		return false;
 	}
@@ -1099,17 +1134,18 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case '*':
 	case 'm': // "dmhm"
-		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) &&
+			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
 			input += 1;
 			if (!strcmp (input,"\0")) {
-				GH(print_main_arena) (core, m_arena, main_arena, *input);
+				GH(print_main_arena) (core, m_arena, main_arena, global_max_fast, *input);
 			} else {
 				GHT m_state = strstr (input, "0x")
 					? (GHT)strtol (input, NULL, 0)
 					: (GHT)strtol (input, NULL, 16);
 				GH(RHeap_MallocState) *malloc_state = R_NEW0 (GH(RHeap_MallocState));
 				(void) r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (GH(RHeap_MallocState)));
-				GH(print_main_arena) (core, m_state, malloc_state, *input);
+				GH(print_main_arena) (core, m_state, malloc_state, global_max_fast, *input);
 				free (malloc_state);
 			}
 		}
@@ -1140,10 +1176,11 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "dmhf"
-		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) &&
+			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
 
 			if (!strchr (input + 1, ':')) {
-				GH(print_heap_fastbin) (core, m_arena, main_arena, input+1);
+				GH(print_heap_fastbin) (core, m_arena, main_arena, global_max_fast, input+1);
 			} else {
 				char *m_state_str, *bin, *dup = strdup (input+1);
 				bin = strtok (dup, ":");
@@ -1153,7 +1190,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 					: (GHT)strtol (m_state_str, NULL, 16);
 				GH(RHeap_MallocState) *malloc_state = R_NEW0 (GH(RHeap_MallocState));
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (GH(RHeap_MallocState)));
-				GH(print_heap_fastbin) (core, m_state, malloc_state, bin);
+				GH(print_heap_fastbin) (core, m_state, malloc_state, global_max_fast, bin);
 				free (malloc_state);
 				free (dup);
 			}
