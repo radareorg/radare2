@@ -956,14 +956,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch;
-	const char **colors = (const char **) &core->cons->pal.list;
-#if 0
-	const char *colors[] = {
-		Color_WHITE, /*Color_GREEN,*/ Color_YELLOW, Color_RED,
-		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
-	};
-#endif
-// const char* colors[] = Colors_PLAIN;
+	const char *colors[10] = {NULL};
+	for (i = 0; i < 10; i++) {
+		colors[i] = r_cons_rainbow_get (i, 10, false);
+	}
 	const int col = core->print->col;
 	RFlagItem *flag, *current_flag = NULL;
 	char **note;
@@ -980,16 +976,16 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	nb_cons_cols += 17;
 	rows = len / nb_cols;
 
-	chars = calloc (nb_cols * 20, sizeof(char));
+	chars = calloc (nb_cols * 20, sizeof (char));
 	if (!chars) {
 		return;
 	}
-	note = calloc (nb_cols, sizeof(char *));
+	note = calloc (nb_cols, sizeof (char *));
 	if (!note) {
 		free (chars);
 		return;
 	}
-	bytes = calloc (nb_cons_cols * 20, sizeof(char));
+	bytes = calloc (nb_cons_cols * 20, sizeof (char));
 	if (!bytes) {
 		free (chars);
 		free (note);
@@ -1070,7 +1066,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				note[j] = r_str_prefix (strdup (flag->name), "/");
 				marks = true;
 				color_idx++;
-				color_idx %= R_CONS_PALETTE_LIST_SIZE;
+				color_idx %= 10;
 				current_flag = flag;
 			} else {
 				// Are we past the current flag?

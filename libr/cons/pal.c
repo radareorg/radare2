@@ -501,10 +501,10 @@ R_API void r_cons_pal_update_event() {
 		ut8 r, g, b;
 		r = g = b = 0;
 		r_cons_rgb_parse (*color, &r, &g, &b, NULL);
-		if (r <= 0x20 && g <= 0x20 && b < 0x20) {
+		if (r <= 0x50 && g <= 0x50 && b < 0x50) {
 			continue;
 		}
-		if (r >= 0xf0  && g >= 0xf0 && b >= 0xf0) {
+		if (r >= 0xe0  && g >= 0xe0 && b >= 0xe0) {
 			continue;
 		}
 		const char *rgb = sdb_fmt (0, "rgb:%02x%02x%02x", r, g, b);
