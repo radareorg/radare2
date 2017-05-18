@@ -888,6 +888,71 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	return ret;
 }
 
+// path = "<port> <file_name>"
+static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
+	RSocket *sock, *client;
+	int p;
+	char port[10];
+	const char *file;
+	while (*path && *path == ' ') {
+		path++;
+	}
+	if (!*path) {
+		eprintf ("gdbserver: Port not specified\n");
+		return 1;
+	}
+	if (path && (p = atoi (path))) {
+		if (p < 0 || p > 65535) {
+			eprintf ("gdbserver: Invalid port: %s\n", port);
+			return 1;
+		}
+		snprintf (port, sizeof (port) - 1, "%d", p);
+		if (!(file = strchr (path, ' ')) || !*file || !*(file + 1)) {
+			eprintf ("gdbserver: File not specified\n");
+			return 1;
+		}
+		file++;
+	}
+
+	if (!(sock = r_socket_new (false))) {
+		eprintf ("gdbserver: Could not open socket for listening\n");
+		return 1;
+	}
+	if (!r_socket_listen (sock, port, NULL)) {
+		r_socket_free (sock);
+		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
+		return 1;
+	}
+	core->gdbserver_up = 1;
+	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
+
+	while (1) {
+		if (!(client = r_socket_accept (sock))) {
+			break;
+		}
+		r_socket_close (client);
+		break;
+	}
+	core->gdbserver_up = 0;
+	r_socket_free (sock);
+	return 0;
+}
+
+R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path) {
+	int ret;
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: connect disabled\n");
+		return 1;
+	}
+	// TODO: do stuff with launch
+	if (core->gdbserver_up) {
+		eprintf ("gdbserver is already running\n");
+		return 1;
+	}
+	ret = r_core_rtr_gdb_run (core, launch, path);
+	return ret;
+}
+
 R_API void r_core_rtr_help(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
@@ -912,6 +977,8 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=h&", " port", "start http server in background)",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
+	"\ngdbserver:", "", "",
+	"=g", " port file", "listen on 'port' for debugging 'file' using gdbserver",
 	NULL };
 	r_core_cmd_help (core, help_msg);
 }

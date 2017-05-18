@@ -306,6 +306,9 @@ static int cmd_rap(void *data, const char *input) {
 		}
 		r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		break;
+	case 'g':
+		r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		break;
 	case '?': r_core_rtr_help (core); break;
 	case '+': r_core_rtr_add (core, input + 1); break;
 	case '-': r_core_rtr_remove (core, input + 1); break;
@@ -1306,7 +1309,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
-	}	
+	}
 	cmt = *icmd ? strchr (icmd + 1, '#'): NULL;
 	if (cmt && (cmt[1] == ' ' || cmt[1] == '\t')) {
 		*cmt = 0;
@@ -2619,7 +2622,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_cmd_macro_call (&core->rcmd->macro, each + 2);
 				if (!core->rcmd->macro.brk_value) {
 					break;
-				}		
+				}
 				addr = core->rcmd->macro._brk_value;
 				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);

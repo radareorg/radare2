@@ -154,6 +154,7 @@ typedef struct r_core_t {
 	bool keep_asmqjmps;
 	// visual
 	int http_up;
+	int gdbserver_up;
 	int printidx;
 	int vseek;
 	bool in_search;
@@ -507,6 +508,7 @@ R_API void r_core_rtr_session(RCore *core, const char *input);
 R_API void r_core_rtr_cmd(RCore *core, const char *input);
 R_API int r_core_rtr_http(RCore *core, int launch, const char *path);
 R_API int r_core_rtr_http_stop(RCore *u);
+R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 
 R_API void r_core_visual_config (RCore *core);
 R_API void r_core_visual_mounts (RCore *core);
