@@ -3876,6 +3876,11 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			nb_bytes = -nb_bytes;
 			core->offset -= nb_bytes;
 			r_core_read_at (core, core->offset, core->block, nb_bytes);
+		} else {
+			if (nb_bytes > core->blocksize) {
+				r_core_block_size (core, nb_bytes);
+				r_core_read_at (core, core->offset, core->block, nb_bytes);
+			}
 		}
 	}
 
