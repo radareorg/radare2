@@ -5269,7 +5269,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "[?]", "autoname functions after aa (see afna)",
-		"aab", "[?]", "aab across io.sections.text",
+		"aab", "", "aab across io.sections.text",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aad", " [len]", "analyze data references to code",
 		"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
