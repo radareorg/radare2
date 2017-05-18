@@ -687,6 +687,7 @@ int main(int argc, char **argv, char **envp) {
 				free (msg);
 			} else {
 				eprintf ("Cannot read dbg.profile\n");
+				pfile = NULL; //strdup ("");
 			}
 		} else {
 			pfile = argv[optind] ? strdup (argv[optind]) : NULL;
@@ -815,17 +816,16 @@ int main(int argc, char **argv, char **envp) {
 			char path[1024];
 			snprintf (path, sizeof (path) - 1, "malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
-			if (fh) {
-				r_io_write_at (r.io, 0, buf, sz);
-				r_core_block_read (&r);
-				free (buf);
-				// TODO: load rbin thing
-			} else {
+			if (!fh) {
 				r_cons_flush ();
 				free (buf);
 				eprintf ("Cannot open %s\n", path);
 				return 1;
 			}
+			r_io_write_at (r.io, 0, buf, sz);
+			r_core_block_read (&r);
+			free (buf);
+			// TODO: load rbin thing
 		} else {
 			eprintf ("Cannot slurp from stdin\n");
 			return 1;
@@ -865,13 +865,13 @@ int main(int argc, char **argv, char **envp) {
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile)? pfile: argv[optind];
-				is_gdb = (!memcmp (f, "gdb://", R_MIN (strlen (f), 6)));
+				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
 				if (!is_gdb) {
 					pfile = strdup ("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
-				{
+				if (f) {
 					char *path, *escaped_path;
 					if (strchr (f, '/')) {
 						// f is a path
@@ -891,7 +891,7 @@ int main(int argc, char **argv, char **envp) {
 					R_FREE (path);
 				}
 #else
-				{
+				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
 					file = pfile; // r_str_append (file, escaped_path);
