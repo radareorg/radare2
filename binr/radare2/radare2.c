@@ -839,7 +839,7 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
-			if (optind >= argc && !haveRarunProfile) {
+			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
 				return 1;
 			}
