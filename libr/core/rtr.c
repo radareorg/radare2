@@ -2,6 +2,8 @@
 
 #include "r_core.h"
 #include "r_socket.h"
+#include "gdb/include/libgdbr.h"
+#include "gdb/include/gdbserver/core.h"
 
 #if 0
 SECURITY IMPLICATIONS
@@ -894,6 +896,8 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	int p;
 	char port[10];
 	const char *file;
+	char cmd_buf[64];
+	libgdbr_t *g;
 	while (*path && *path == ' ') {
 		path++;
 	}
@@ -913,7 +917,6 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		}
 		file++;
 	}
-
 	if (!(sock = r_socket_new (false))) {
 		eprintf ("gdbserver: Could not open socket for listening\n");
 		return 1;
@@ -923,17 +926,33 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
 		return 1;
 	}
+	if (!(g = R_NEW0(libgdbr_t))) {
+		r_socket_free (sock);
+		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
+		return 1;
+	}
+	gdbr_init (g);
 	core->gdbserver_up = 1;
 	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
 
 	while (1) {
-		if (!(client = r_socket_accept (sock))) {
+		if (!(g->sock = r_socket_accept (sock))) {
 			break;
 		}
-		r_socket_close (client);
+		g->connected = 1;
+		while (!gdbr_server_read (g, cmd_buf, sizeof (cmd_buf) - 1)) {
+			if (*cmd_buf) {
+				cmd_buf[sizeof (cmd_buf) - 1] = '\0';
+				eprintf ("cmd: %s\n", cmd_buf);
+			}
+		}
+		r_socket_close (g->sock);
+		g->connected = 0;
 		break;
 	}
 	core->gdbserver_up = 0;
+	gdbr_cleanup (g);
+	free (g);
 	r_socket_free (sock);
 	return 0;
 }

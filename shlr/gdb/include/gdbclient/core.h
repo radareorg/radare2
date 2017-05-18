@@ -1,6 +1,6 @@
 /*! \file */
-#ifndef CORE_H
-#define CORE_H
+#ifndef GDB_CLIENT_CORE_H
+#define GDB_CLIENT_CORE_H
 
 #include "r_types.h"
 
@@ -65,4 +65,4 @@ int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint t
 
 int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type);
 
-#endif
+#endif  // GDB_CLIENT_CORE_H

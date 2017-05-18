@@ -46,6 +46,7 @@ endif
 endif
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${LINK}
+LDFLAGS+=-lr_socket
 
 REAL_LDFLAGS=$(subst -shared,,$(LDFLAGS))
 
