@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake */
+/* radare - LGPL - Copyright 2014-2017 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -126,12 +126,13 @@ static char *getstr(const char *src) {
 		ret = strdup (src+1);
 		if (ret) {
 			len = strlen (ret);
-			if (len>0) {
+			if (len > 0) {
 				len--;
-				if (ret[len]=='\'') {
+				if (ret[len] == '\'') {
 					ret[len] = 0;
 					return ret;
-				} else eprintf ("Missing \"\n");
+				}
+				eprintf ("Missing \"\n");
 			}
 			free (ret);
 		}
@@ -458,7 +459,9 @@ R_API bool r_run_parseline (RRunProfile *p, char *b) {
 		}
 		for (;;) {
 			fgets (buf, sizeof (buf) - 1, fd);
-			if (feof (fd)) break;
+			if (feof (fd)) {
+				break;
+			}
 			p = strchr (buf, '=');
 			if (p) {
 				*p = 0;
