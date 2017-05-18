@@ -370,7 +370,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 
 R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
-	char *d, *dst = (char *) malloc ((strlen (str) + 2) * 32);
+	char *d, *dst = (char *) calloc ((strlen (str) + 2), 32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_0x00 = "";
 	const char *color_0x7f = "";
@@ -706,8 +706,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 static const char hex[16] = "0123456789ABCDEF";
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len; i++) {
 		p->cb_printf ("%02x ", buf[i]);
+	}
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {

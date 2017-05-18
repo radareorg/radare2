@@ -2627,6 +2627,11 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 		for (i = 0; i < len; i+= aop.size) {
 			r_anal_op_fini (&aop);
 			r_asm_set_pc (core->assembler, addr + i);
+			//if (i + 8 >= len) {
+			//	eprintf ("WARNING: block size is too small\n");
+			// TODO: reimplement using dynamic memory accesses, not just the block
+			//	break;
+			//}
 			ret = r_asm_disassemble (core->assembler, &asmop, buf + i, len - i);
 			if (ret < 0) {
 				asmop.size = 1;
@@ -2646,16 +2651,22 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				char *color_reg = P(reg): Color_YELLOW;
 				char *color_num = P(num): Color_CYAN;
 				asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num);
-				r_cons_printf ("0x%08"PFMT64x" %20s %s\n", addr + i, asmop.buf_hex, asm_str);
+				char *hexstr = r_print_hexpair (core->print, asmop.buf_hex, -1);
+				const char *pad = r_str_pad (' ', 20 - strlen (asmop.buf_hex));
+				r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
+				r_cons_printf (" %s%s %s\n", pad, hexstr, asm_str);
+				free (hexstr);
 			}
 			switch (aop.type) {
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
-				r_cons_printf ("--\n");
 				sdb_set (db, sdb_fmt (-1, "label.0x%"PFMT64x, aop.jump),
-						sdb_fmt (-1, "from.0x%"PFMT64x, addr + i), 0);
+					sdb_fmt (-1, "from.0x%"PFMT64x, addr + i), 0);
 				break;
+			}
+			if (aop.size < 1) {
+				aop.size += 1;
 			}
 		}
 	}
@@ -3489,7 +3500,9 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = true;
 			break;
 		case 'R': // "pdR"
+			processed_cmd = true;
 			disasm_recursive (core, core->offset, 'D');
+			pd_result = true;
 			break;
 		case 'r': // "pdr"
 			processed_cmd = true;
