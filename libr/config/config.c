@@ -385,6 +385,9 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->value = strdup ("");
 				node->i_value = 0;
 			} else {
+				if (node->value == value) {
+					goto beach;
+				}
 				free (node->value);
 				node->value = strdup (value);
 				if (IS_DIGIT (*value)) {
