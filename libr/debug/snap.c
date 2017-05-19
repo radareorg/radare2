@@ -98,12 +98,11 @@ R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr) {
 R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap) {
 	RListIter *iter;
 	RDebugSnapDiff *diff;
-	int page_size = getpagesize ();
 	eprintf ("Writing %d bytes to 0x%08"PFMT64x"...\n", snap->size, snap->addr);
 	/* XXX: Set all history from oldest one. It's bit ugly. */
 	r_list_foreach (snap->history, iter, diff) {
-		ut64 addr = snap->addr + diff->page_off * page_size;
-		dbg->iob.write_at (dbg->iob.io, addr, diff->data, page_size);
+		ut64 addr = snap->addr + diff->page_off * SNAP_PAGE_SIZE;
+		dbg->iob.write_at (dbg->iob.io, addr, diff->data, SNAP_PAGE_SIZE);
 	}
 	return 1;
 }
@@ -132,8 +131,7 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 	ut8 *hash;
 	ut64 addr;
 	ut64 algobit = r_hash_name_to_bits ("sha256");
-	int page_size = getpagesize ();
-	ut32 page_num = map->size / page_size;
+	ut32 page_num = map->size / SNAP_PAGE_SIZE;
 	int digest_size;
 	/* Get an existing snapshot entry */
 	RDebugSnap *snap = r_debug_snap_get (dbg, map->addr);
@@ -159,9 +157,9 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 		dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 
 		/* Calculate all hashes of pages */
-		for (addr = snap->addr; addr < snap->addr_end; addr += page_size) {
-			ut32 page_off = (addr - snap->addr) / page_size;
-			digest_size = r_hash_calculate (snap->hash_ctx, algobit, addr, page_size);
+		for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
+			ut32 page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
+			digest_size = r_hash_calculate (snap->hash_ctx, algobit, addr, SNAP_PAGE_SIZE);
 			hash = malloc (digest_size);
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
@@ -225,15 +223,14 @@ R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base) {
 	ut64 addr;
 	int digest_size;
 	ut32 page_off;
-	int page_size = getpagesize ();
 	ut64 algobit = r_hash_name_to_bits ("sha256");
 
 	/* Compare hash of pages. */
-	for (addr = base->addr; addr < base->addr_end; addr += page_size) {
+	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		ut8 *prev_hash, *cur_hash;
-		digest_size = r_hash_calculate (base->hash_ctx, algobit, addr, page_size);
+		digest_size = r_hash_calculate (base->hash_ctx, algobit, addr, SNAP_PAGE_SIZE);
 		cur_hash = base->hash_ctx->digest;
-		page_off = (addr - base->addr) / page_size;
+		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
 		/* Check If there is last change for this page. */
 		if ((last = base->last_changes[page_off])) {
 			/* Use hash of last change */
@@ -248,10 +245,10 @@ R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base) {
 			new = malloc (sizeof (RDebugSnapDiff));
 
 			new->page_off = page_off;
-			new->data = malloc (page_size);
-			memcpy (new->data, addr, page_size);
-			digest_size = r_hash_calculate (base->hash_ctx, algobit, new->data, page_size);
-			memcpy (new->hash, base->hash_ctx->digest, page_size);
+			new->data = malloc (SNAP_PAGE_SIZE);
+			memcpy (new->data, addr, SNAP_PAGE_SIZE);
+			digest_size = r_hash_calculate (base->hash_ctx, algobit, new->data, SNAP_PAGE_SIZE);
+			memcpy (new->hash, base->hash_ctx->digest, SNAP_PAGE_SIZE);
 
 			r_list_append (base->history, new);
 			base->last_changes [page_off] = new;

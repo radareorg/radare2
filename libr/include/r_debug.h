@@ -44,6 +44,7 @@ R_LIB_VERSION_HEADER(r_debug);
 #define PTRACE_SYSCALL PT_STEP
 #endif
 
+#define SNAP_PAGE_SIZE 512
 
 /*
  * states that a process can be in
