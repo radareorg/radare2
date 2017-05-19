@@ -941,6 +941,9 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		}
 		g->connected = 1;
 		while (!gdbr_server_read (g, cmd_buf, sizeof (cmd_buf) - 1)) {
+			if (!strncmp (cmd_buf, "q", sizeof (cmd_buf))) {
+				break;
+			}
 			if (*cmd_buf) {
 				cmd_buf[sizeof (cmd_buf) - 1] = '\0';
 				eprintf ("cmd: %s\n", cmd_buf);

@@ -5,6 +5,7 @@
 #include "gdbclient/core.h"
 #include "arch.h"
 #include "libgdbr.h"
+#include "gdbr_common.h"
 #include "packet.h"
 #include "r_util/r_strbuf.h"
 
@@ -29,7 +30,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	g->connected = 1;
 	// TODO add config possibility here
-	ret = send_command (g, message);
+	ret = send_msg (g, message);
 	if (ret < 0) {
 		return ret;
 	}
@@ -39,7 +40,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		return ret;
 	}
 	// Check if trace is already running
-	ret = send_command (g, "qTStatus");
+	ret = send_msg (g, "qTStatus");
 	if (ret < 0) {
 		return ret;
 	}
@@ -51,7 +52,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 
 	// Query the thread / process id
-	ret = send_command (g, "qC");
+	ret = send_msg (g, "qC");
 	if (ret < 0) {
 		return ret;
 	}
@@ -67,9 +68,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		char pid_buf[20] = { 0 };
 		pack_hex_uint64 (g->pid, pid_buf);
 		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qAttached:%s", pid_buf);
-		ret = send_command (g, tmp.buf);
+		ret = send_msg (g, tmp.buf);
 	} else {
-		ret = send_command (g, "qAttached");
+		ret = send_msg (g, "qAttached");
 	}
 	if (ret < 0) {
 		return ret;
@@ -86,7 +87,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		char pid_buf[20] = { 0 };
 		pack_hex_uint64 (g->pid, pid_buf);
 		snprintf (tmp.buf, sizeof (tmp.buf), "vFile:setfs:%s", pid_buf);
-		ret = send_command (g, tmp.buf);
+		ret = send_msg (g, tmp.buf);
 		if (ret < 0) {
 			return ret;
 		}
@@ -108,9 +109,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		char pid_buf[20] = { 0 };
 		pack_hex_uint64 (g->pid, pid_buf);
 		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qXfer:exec-file:read:%s:0,fff", pid_buf);
-		ret = send_command (g, tmp.buf);
+		ret = send_msg (g, tmp.buf);
 	} else {
-		ret = send_command (g, "qXfer:exec-file:read::0,fff");
+		ret = send_msg (g, "qXfer:exec-file:read::0,fff");
 	}
 	if (ret < 0) {
 		return ret;
@@ -127,9 +128,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	r_strbuf_setf (&tmp, "vFile:open:%s,0,0", file_to_hex);
 	free (file_to_hex);
 	if (tmp.ptr) {
-		ret = send_command (g, tmp.ptr);
+		ret = send_msg (g, tmp.ptr);
 	} else {
-		ret = send_command (g, tmp.buf);
+		ret = send_msg (g, tmp.buf);
 	}
 	r_strbuf_fini (&tmp);
 	if (ret < 0) {
@@ -143,7 +144,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 
 	// Get fstat data for file
 	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "vFile:fstat:%"PFMT32x, g->exec_fd);
-	ret = send_command (g, tmp.buf);
+	ret = send_msg (g, tmp.buf);
 	if (ret < 0) {
 		return ret;
 	}
@@ -165,7 +166,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		pack_hex_uint64 (g->tid, tid_buf);
 		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%s", tid_buf);
 	}
-	ret = send_command (g, tmp.buf);
+	ret = send_msg (g, tmp.buf);
 	if (ret < 0) {
 		return ret;
 	}
@@ -191,7 +192,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
-	ret = send_command (g, CMD_READREGS);
+	ret = send_msg (g, CMD_READREGS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -213,7 +214,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 	if (ret < 0) {
 		return ret;
 	}
-	ret = send_command (g, command);
+	ret = send_msg (g, command);
 	if (ret < 0) {
 		return ret;
 	}
@@ -240,7 +241,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	}
 	memcpy (tmp, command, command_len);
 	pack_hex ((char *) data, len, (tmp + command_len));
-	ret = send_command (g, tmp);
+	ret = send_msg (g, tmp);
 	free (tmp);
 	if (ret < 0) {
 		return ret;
@@ -272,7 +273,7 @@ int gdbr_send_command(libgdbr_t *g, char *command) {
 	}
 	strcpy (cmd, CMD_QRCMD);
 	pack_hex (command, strlen (command), (cmd + strlen (CMD_QRCMD)));
-	ret = send_command (g, cmd);
+	ret = send_msg (g, cmd);
 	free (cmd);
 	if (ret < 0) {
 		return ret;
@@ -295,7 +296,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 	}
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command + 1);
-	if (send_command (g, command) < 0) {
+	if (send_msg (g, command) < 0) {
 		free (command);
 		return -1;
 	}
@@ -314,7 +315,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	ret = snprintf (command, 255, "%s%d=", CMD_WRITEREG, index);
 	memcpy (command + ret, value, len);
 	pack_hex (value, len, (command + ret));
-	if (send_command (g, command) < 0) {
+	if (send_msg (g, command) < 0) {
 		return -1;
 	}
 	if (read_packet (g) >= 0) {
@@ -420,7 +421,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	}
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command + 1);
-	ret = send_command (g, command);
+	ret = send_msg (g, command);
 	if (ret < 0) {
 		free (command);
 		return ret;
@@ -432,7 +433,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 }
 
 int test_command(libgdbr_t *g, const char *command) {
-	int ret = send_command (g, command);
+	int ret = send_msg (g, command);
 	if (ret < 0) {
 		return ret;
 	}
@@ -455,7 +456,7 @@ int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
 	if (ret < 0) {
 		return ret;
 	}
-	ret = send_command (g, tmp);
+	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
@@ -492,7 +493,7 @@ int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint t
 	if (ret < 0) {
 		return ret;
 	}
-	ret = send_command (g, tmp);
+	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
@@ -544,7 +545,7 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
 	if (ret < 0) {
 		return ret;
 	}
-	ret = send_command (g, tmp);
+	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
@@ -552,33 +553,4 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
 		return handle_removebp (g);
 	}
 	return 0;
-}
-
-int send_ack(libgdbr_t *g) {
-	if (g) {
-		g->send_buff[0] = '+';
-		g->send_len = 1;
-		send_packet (g);
-		return 0;
-	}
-	return -1;
-}
-
-int send_command(libgdbr_t *g, const char *command) {
-	uint8_t checksum;
-	int ret;
-
-	if (!g || !command) {
-		return -1;
-	}
-	checksum = cmd_checksum (command);
-	ret = snprintf (g->send_buff, g->send_max,
-		"$%s#%.2x", command, checksum);
-	if (ret >= 0) {
-		g->send_len = ret;
-		ret = send_packet (g);
-		g->send_len = ret;
-		return ret;
-	}
-	return -1;
 }

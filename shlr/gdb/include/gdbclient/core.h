@@ -39,27 +39,12 @@ enum Breakpoint {
 };
 
 /*!
- * \brief Function sends a command to the gdbserver
- * \param g the "instance" of the current libgdbr session
- * \param command the command that will be sent
- * \returns a failure code (currently -1) or 0 if call successfully
- */
-int send_command(libgdbr_t* g, const char* command);
-
-/*!
  * \brief Function sends a vCont command to the gdbserver
  * \param g thre "instance" of the current libgdbr session
  * \param command the command that will be sent (i.e. 's,S,c,C...')
  * \returns -1 if something went wrong
  */
 int send_vcont(libgdbr_t* g, const char* command, int thread_id);
-
-/*!
- * \brief Functions sends a single ack ('+')
- * \param g the "instance" of the current libgdbr session
- * \returns -1 if something went wrong
- */
-int send_ack(libgdbr_t* g);
 
 int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint type);
 

@@ -151,7 +151,7 @@ static int __close(RIODesc *fd) {
 	return -1;
 }
 
-int send_command(libgdbr_t* g, const char* command);
+int send_msg(libgdbr_t* g, const char* command);
 int read_packet(libgdbr_t* instance);
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
@@ -162,7 +162,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                         " =!pid      - show targeted pid\n"
                         " =!pkt s    - send packet 's'\n");
 	} else if (!strncmp (cmd, "pkt ", 4)) {
-		send_command (desc, cmd + 4);
+		send_msg (desc, cmd + 4);
 		int r = read_packet (desc);
 		eprintf ("r = %d\n", r);
 	} else if (!strncmp (cmd, "pid", 3)) {
