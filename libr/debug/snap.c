@@ -3,8 +3,20 @@
 #include <r_debug.h>
 #include <r_hash.h>
 
+R_API RDebugSnap* r_debug_snap_new() {
+	RDebugSnap *snap = R_NEW0 (RDebugSnap);
+	if (!snap) {
+		return NULL;
+	}
+	snap->history = r_list_newf (r_debug_diff_free);
+	snap->crcs = r_list_new ();
+	return snap;
+}
+
 R_API void r_debug_snap_free (void *p) {
 	RDebugSnap *snap = (RDebugSnap*)p;
+	r_list_free (snap->crcs);
+	r_list_free (snap->history);
 	free (snap->data);
 	free (snap->comment);
 	free (snap);
@@ -51,15 +63,15 @@ R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
 			comment = snap->comment;
 		switch (mode) {
 		case 'j':
-			dbg->cb_printf ("{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"crc\":%d,\"comment\":\"%s\"}%s",
-				count, snap->addr, snap->size, snap->crc, comment, comma);
+			dbg->cb_printf ("{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"comment\":\"%s\"}%s",
+				count, snap->addr, snap->size, comment, comma);
 			break;
 		case '*':
 			dbg->cb_printf ("dms 0x%08"PFMT64x"\n", snap->addr);
 			break;
 		default:
-			dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d crc: %x  --  %s\n",
-				count, snap->addr, snap->addr_end, snap->size, snap->crc, comment);
+			dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d  --  %s\n",
+				count, snap->addr, snap->addr_end, snap->size, comment);
 		}
 		count++;
 	}
@@ -111,7 +123,7 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 		eprintf ("Invalid map size\n");
 		return 0;
 	}
-	RDebugSnap *snap = R_NEW0 (RDebugSnap);
+	RDebugSnap *snap = r_debug_snap_new ();
 	if (!snap) {
 		return 0;
 	}
@@ -126,7 +138,6 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 	}
 	eprintf ("Reading %d bytes from 0x%08"PFMT64x"...\n", snap->size, snap->addr);
 	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
-	snap->crc = r_hash_crc_preset (snap->data, snap->size, CRC_PRESET_32);
 
 	r_list_append (dbg->snaps, snap);
 	return 1;
@@ -168,4 +179,8 @@ R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg) {
 		count++;
 	}
 	return 1;
+}
+
+R_API void r_debug_diff_free (void *p) {
+	free (p);
 }

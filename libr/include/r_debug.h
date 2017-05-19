@@ -153,13 +153,21 @@ typedef struct r_debug_desc_t {
 	ut64 off;
 } RDebugDesc;
 
+typedef struct r_debug_snap_diff_t {
+	ut64 addr;
+	ut64 addr_end;
+	ut8 *data;
+	ut32 crc;
+} RDebugSnapDiff;
+
 typedef struct r_debug_snap_t {
 	ut64 addr;
 	ut64 addr_end;
 	ut8 *data;
 	ut32 size;
 	ut64 timestamp;
-	ut32 crc;
+	RList *crcs; // <u32>
+	RList *history; // <RDebugSnapDiff*>
 	char *comment;
 } RDebugSnap;
 
@@ -503,16 +511,19 @@ R_API int r_debug_esil_watch_empty(RDebug *dbg);
 R_API void r_debug_esil_prestep (RDebug *d, int p);
 
 /* snap */
+R_API RDebugSnap* r_debug_snap_new(void);
 R_API void r_debug_snap_free(void *snap);
 R_API int r_debug_snap_delete(RDebug *dbg, int idx);
 R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
-R_API int r_debug_snap_diff(RDebug *dbg, int idx);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
 R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_set_idx (RDebug *dbg, int idx);
 R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
+
+/* snap diff */
+R_API void r_debug_diff_free (void *p) ;
 
 /* debug session */
 R_API void r_debug_session_free (void *p) ;
