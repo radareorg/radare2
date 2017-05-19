@@ -79,7 +79,7 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 		free (esil);
 		return NULL;
 	}
-	if (!(esil->stack = malloc (sizeof(char *) * stacksize))) {
+	if (!(esil->stack = calloc (sizeof (char *), stacksize))) {
 		free (esil);
 		return NULL;
 	}
@@ -560,8 +560,13 @@ static int esil_internal_write(RAnalEsil *esil, const char *str, ut64 num) {
 }
 
 R_API int r_anal_esil_get_parm_size(RAnalEsil *esil, const char *str, ut64 *num, int *size) {
+	if (!str || !*str) {
+		return false;
+	}
 	int parm_type = r_anal_esil_get_parm_type (esil, str);
-	if (!num || !esil) return false;
+	if (!num || !esil) {
+		return false;
+	}
 	switch (parm_type) {
 	case R_ANAL_ESIL_PARM_INTERNAL:
 		// *num = esil_internal_read (esil, str, num);
@@ -1298,6 +1303,21 @@ static int esil_goto(RAnalEsil *esil) {
 	if (src && *src && r_anal_esil_get_parm (esil, src, &num)) {
 		esil->parse_goto = num;
 	}
+	free (src);
+	return 1;
+}
+
+static int esil_repeat(RAnalEsil *esil) {
+	char *dst = r_anal_esil_pop (esil); // destaintion of the goto
+	char *src = r_anal_esil_pop (esil); // value of the counter
+	ut64 n, num = 0;
+	if (r_anal_esil_get_parm (esil, src, &n) && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (n > 1) {
+			esil->parse_goto = num;
+			r_anal_esil_pushnum (esil, n - 1);
+		}
+	}
+	free (dst);
 	free (src);
 	return 1;
 }
@@ -2820,6 +2840,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("[4]", esil_peek4);
 	OP ("[8]", esil_peek8);
 	OP ("STACK", r_anal_esil_dumpstack);
+	OP ("REPEAT", esil_repeat);
 	OP ("POP", esil_pop);
 	OP ("TODO", esil_todo);
 	OP ("GOTO", esil_goto);
