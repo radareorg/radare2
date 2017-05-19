@@ -14,7 +14,7 @@ static void doIndent(int idt, char** o, const char *tab) {
 	}
 }
 
-#define EMIT_ESC(s, code) {			\
+#define EMIT_ESC(s, code) do {			\
 	if (color) {				\
 		char *p = code;			\
 		*s++ = 0x1b;			\

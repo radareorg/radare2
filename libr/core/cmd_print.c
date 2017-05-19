@@ -2216,6 +2216,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case '=': // "p=="
 		switch (submode) {
 	case '0': // 0x00 bytes
+	case 'f': // 0xff bytes
 	case 'F': // 0xff bytes
 	case 'p': // printable chars
 	case 'z': // zero terminated strings
