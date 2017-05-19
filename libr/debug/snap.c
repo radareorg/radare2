@@ -68,15 +68,15 @@ R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
 			comment = snap->comment;
 		switch (mode) {
 		case 'j':
-			dbg->cb_printf ("{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"comment\":\"%s\"}%s",
-				count, snap->addr, snap->size, comment, comma);
+			dbg->cb_printf ("{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"history\":%d,\"comment\":\"%s\"}%s",
+				count, snap->addr, snap->size, r_list_length (snap->history), comment, comma);
 			break;
 		case '*':
 			dbg->cb_printf ("dms 0x%08"PFMT64x"\n", snap->addr);
 			break;
 		default:
-			dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d  --  %s\n",
-				count, snap->addr, snap->addr_end, snap->size, comment);
+			dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" history: %d size: %d  --  %s\n",
+				count, snap->addr, snap->addr_end, r_list_length (snap->history), snap->size, comment);
 		}
 		count++;
 	}
@@ -159,10 +159,14 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 		/* Calculate all hashes of pages */
 		for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 			ut32 page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
-			digest_size = r_hash_calculate (snap->hash_ctx, algobit, addr, SNAP_PAGE_SIZE);
+			int size = R_MIN (SNAP_PAGE_SIZE, snap->size);
+			ut8 *buf = malloc (size);
+			dbg->iob.read_at (dbg->iob.io, addr, buf, size);
+			digest_size = r_hash_calculate (snap->hash_ctx, algobit, buf, size);
 			hash = malloc (digest_size);
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
+			free (buf);
 		}
 
 		r_list_append (dbg->snaps, snap);
@@ -228,7 +232,10 @@ R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base) {
 	/* Compare hash of pages. */
 	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		ut8 *prev_hash, *cur_hash;
-		digest_size = r_hash_calculate (base->hash_ctx, algobit, addr, SNAP_PAGE_SIZE);
+		int size = R_MIN (base->size, SNAP_PAGE_SIZE);
+		ut8 *buf = malloc (size);
+		dbg->iob.read_at (dbg->iob.io, addr, buf, size);
+		digest_size = r_hash_calculate (base->hash_ctx, algobit, buf, size);
 		cur_hash = base->hash_ctx->digest;
 		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
 		/* Check If there is last change for this page. */
@@ -245,13 +252,14 @@ R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base) {
 			new = malloc (sizeof (RDebugSnapDiff));
 
 			new->page_off = page_off;
-			new->data = malloc (SNAP_PAGE_SIZE);
-			memcpy (new->data, addr, SNAP_PAGE_SIZE);
-			digest_size = r_hash_calculate (base->hash_ctx, algobit, new->data, SNAP_PAGE_SIZE);
-			memcpy (new->hash, base->hash_ctx->digest, SNAP_PAGE_SIZE);
+			new->data = malloc (size);
+			dbg->iob.read_at (dbg->iob.io, addr, new->data, size);
+			digest_size = r_hash_calculate (base->hash_ctx, algobit, new->data, size);
+			memcpy (new->hash, base->hash_ctx->digest, size);
 
 			r_list_append (base->history, new);
 			base->last_changes [page_off] = new;
 		}
+		free (buf);
 	}
 }
