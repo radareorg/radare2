@@ -2925,6 +2925,9 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 	if (size < 1 || addr == UT64_MAX) {
 		return NULL;
 	}
+	if (!r_config_get_i (core->config, "bin.relocs")) {
+		return NULL;
+	}
 	list = r_bin_get_relocs (core->bin);
 	r_list_foreach (list, iter, r) {
 		if ((r->vaddr >= addr) && (r->vaddr < (addr + size))) {
