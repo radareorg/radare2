@@ -274,8 +274,8 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 					{
 						const char *p = strchr (str, '[');
 						const char *a = strchr (str, '+');
-						const char *m = strchr (str, '*');
-						if (p && a && m) {
+						/*const char *m = strchr (str, '*');*/
+						if (p && a) {
 							banned = true;
 						}
 					}
