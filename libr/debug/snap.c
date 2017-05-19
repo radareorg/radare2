@@ -1,24 +1,29 @@
 /* radare - LGPL - Copyright 2015 - pancake */
 
 #include <r_debug.h>
-#include <r_hash.h>
 
 R_API RDebugSnap* r_debug_snap_new() {
 	RDebugSnap *snap = R_NEW0 (RDebugSnap);
+	ut64 algobit = r_hash_name_to_bits ("sha256");
 	if (!snap) {
 		return NULL;
 	}
 	snap->history = r_list_newf (r_debug_diff_free);
-	snap->crcs = r_list_new ();
+	snap->hash_ctx = r_hash_new (true, algobit);
 	return snap;
 }
 
 R_API void r_debug_snap_free (void *p) {
 	RDebugSnap *snap = (RDebugSnap*)p;
-	r_list_free (snap->crcs);
+	ut32 i = 0;
 	r_list_free (snap->history);
 	free (snap->data);
 	free (snap->comment);
+	for (i = 0; i < snap->page_num; i++) {
+		free (snap->hashes[i]);
+	}
+	free (snap->hashes);
+	free (snap->last_changes);
 	free (snap);
 }
 
@@ -123,23 +128,50 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 		eprintf ("Invalid map size\n");
 		return 0;
 	}
-	RDebugSnap *snap = r_debug_snap_new ();
+	ut8 *hash;
+	ut64 addr;
+	ut64 algobit = r_hash_name_to_bits ("sha256");
+	int page_size = getpagesize ();
+	ut32 page_num = map->size / page_size;
+	int digest_size;
+	/* Get an existing snapshot entry */
+	RDebugSnap *snap = r_debug_snap_get (dbg, map->addr);
 	if (!snap) {
-		return 0;
-	}
-	snap->timestamp = sdb_now ();
-	snap->addr = map->addr;
-	snap->addr_end = map->addr_end;
-	snap->size = map->size;
-	snap->data = malloc (map->size);
-	if (!snap->data) {
-		free (snap);
-		return 0;
-	}
-	eprintf ("Reading %d bytes from 0x%08"PFMT64x"...\n", snap->size, snap->addr);
-	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
+		/* Create a new one */
+		if (!(snap = r_debug_snap_new ())) {
+			return 0;
+		}
+		snap->timestamp = sdb_now ();
+		snap->addr = map->addr;
+		snap->addr_end = map->addr_end;
+		snap->size = map->size;
+		snap->page_num = page_num;
+		snap->data = malloc (map->size);
+		if (!snap->data) {
+			free (snap);
+			return 0;
+		}
+		snap->hashes = malloc (sizeof (ut8*) * page_num);
+		snap->last_changes = calloc (page_num, sizeof (RDebugSnapDiff*));
 
-	r_list_append (dbg->snaps, snap);
+		eprintf ("Reading %d bytes from 0x%08"PFMT64x"...\n", snap->size, snap->addr);
+		dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
+
+		/* Calculate all hashes of pages */
+		for (addr = snap->addr; addr < snap->addr_end; addr += page_size) {
+			ut32 page_off = (addr - snap->addr) / page_size;
+			digest_size = r_hash_calculate (snap->hash_ctx, algobit, addr, page_size);
+			hash = malloc (digest_size);
+			memcpy (hash, snap->hash_ctx->digest, digest_size);
+			snap->hashes[page_off] = hash;
+		}
+
+		r_list_append (dbg->snaps, snap);
+	} else {
+		/* A base snapshot have already been saved. *
+			So we only need to save different parts. */
+		r_debug_diff_add (dbg, snap);
+	}
 	return 1;
 }
 
@@ -182,5 +214,46 @@ R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg) {
 }
 
 R_API void r_debug_diff_free (void *p) {
-	free (p);
+	RDebugSnapDiff *diff = (RDebugSnapDiff *) p;
+	free (diff->data);
+	free (diff);
+}
+
+R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base) {
+	RDebugSnapDiff *last, *new;
+	ut64 addr;
+	int digest_size;
+	ut32 page_off;
+	int page_size = getpagesize ();
+	ut64 algobit = r_hash_name_to_bits ("sha256");
+
+	/* Compare hash of pages. */
+	for (addr = base->addr; addr < base->addr_end; addr += page_size) {
+		ut8 *prev_hash, *cur_hash;
+		digest_size = r_hash_calculate (base->hash_ctx, algobit, addr, page_size);
+		cur_hash = base->hash_ctx->digest;
+		page_off = (addr - base->addr) / page_size;
+		/* Check If there is last change for this page. */
+		if ((last = base->last_changes[page_off])) {
+			/* Use hash of last change */
+			prev_hash = last->hash;
+		} else {
+			/* Use hash of base */
+			prev_hash = base->hashes[page_off];
+		}
+
+		/* Memory is changed. So add new diff entry for this addr */
+		if (memcmp (cur_hash, prev_hash, digest_size) != 0) {
+			new = malloc (sizeof (RDebugSnapDiff));
+
+			new->page_off = page_off;
+			new->data = malloc (page_size);
+			memcpy (new->data, addr, page_size);
+			digest_size = r_hash_calculate (base->hash_ctx, algobit, new->data, page_size);
+			memcpy (new->hash, base->hash_ctx->digest, page_size);
+
+			r_list_append (base->history, new);
+			base->last_changes [page_off] = new;
+		}
+	}
 }

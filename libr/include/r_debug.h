@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_anal.h>
 #include <r_cons.h>
+#include <r_hash.h>
 #include <r_util.h>
 #include <r_reg.h>
 #include <r_bp.h>
@@ -154,10 +155,9 @@ typedef struct r_debug_desc_t {
 } RDebugDesc;
 
 typedef struct r_debug_snap_diff_t {
-	ut64 addr;
-	ut64 addr_end;
+	int page_off;
 	ut8 *data;
-	ut32 crc;
+	ut8 hash[128];
 } RDebugSnapDiff;
 
 typedef struct r_debug_snap_t {
@@ -165,8 +165,11 @@ typedef struct r_debug_snap_t {
 	ut64 addr_end;
 	ut8 *data;
 	ut32 size;
+	ut32 page_num;
 	ut64 timestamp;
-	RList *crcs; // <u32>
+	RHash *hash_ctx;
+	ut8 **hashes; // Hash of each pages
+	RDebugSnapDiff **last_changes; // Last diff entries of each pages
 	RList *history; // <RDebugSnapDiff*>
 	char *comment;
 } RDebugSnap;
@@ -524,6 +527,7 @@ R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
 
 /* snap diff */
 R_API void r_debug_diff_free (void *p) ;
+R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base);
 
 /* debug session */
 R_API void r_debug_session_free (void *p) ;
