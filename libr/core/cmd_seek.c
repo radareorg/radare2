@@ -384,23 +384,28 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] != '\0') {
 			int delta = (input[1] == '+')? core->blocksize: off;
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				r_io_sundo_push (core->io, core->offset,
+					r_print_get_cursor (core->print));
 			}
 			r_core_seek_delta (core, delta);
+			r_core_block_read (core);
 		} else {
 			RIOUndos *undo = r_io_sundo_redo (core->io);
 			if (undo) {
 				r_core_seek (core, undo->off, 0);
+				r_core_block_read (core);
 			}
 		}
 		break;
-	case '-':
+	case '-': // "s-"
 		if (input[1] != '\0') {
 			int delta = (input[1] == '-')? -core->blocksize: -off;
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				r_io_sundo_push (core->io, core->offset,
+					r_print_get_cursor (core->print));
 			}
 			r_core_seek_delta (core, delta);
+			r_core_block_read (core);
 		} else {
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			if (undo) {
