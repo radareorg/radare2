@@ -123,6 +123,15 @@ R_API int r_debug_snap_set_idx (RDebug *dbg, int idx) {
 	return 1;
 }
 
+/* XXX: Just for debugging. Duplicate soon */
+static void print_hash (ut8 *hash, int digest_size) {
+	int i = 0;
+	for (i = 0; i < digest_size; i++) {
+		eprintf ("%02"PFMT64x,hash[i]);
+	}
+	eprintf ("\n");
+}
+
 static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {
 		eprintf ("Invalid map size\n");
@@ -156,17 +165,17 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 		eprintf ("Reading %d bytes from 0x%08"PFMT64x"...\n", snap->size, snap->addr);
 		dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 
+		ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, snap->size);
+
 		/* Calculate all hashes of pages */
 		for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 			ut32 page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
-			int size = R_MIN (SNAP_PAGE_SIZE, snap->size);
-			ut8 *buf = malloc (size);
-			dbg->iob.read_at (dbg->iob.io, addr, buf, size);
-			digest_size = r_hash_calculate (snap->hash_ctx, algobit, buf, size);
+			digest_size = r_hash_calculate (snap->hash_ctx, algobit, &snap->data[addr - snap->addr], clust_page);
 			hash = malloc (digest_size);
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
-			free (buf);
+			//eprintf ("0x%08"PFMT64x"(page: %d)...\n",addr, page_off);
+			//print_hash (hash, digest_size);
 		}
 
 		r_list_append (dbg->snaps, snap);
@@ -228,38 +237,41 @@ R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base) {
 	int digest_size;
 	ut32 page_off;
 	ut64 algobit = r_hash_name_to_bits ("sha256");
+	ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, base->size);
 
 	/* Compare hash of pages. */
 	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		ut8 *prev_hash, *cur_hash;
-		int size = R_MIN (base->size, SNAP_PAGE_SIZE);
-		ut8 *buf = malloc (size);
-		dbg->iob.read_at (dbg->iob.io, addr, buf, size);
-		digest_size = r_hash_calculate (base->hash_ctx, algobit, buf, size);
+		ut8 *buf = malloc (clust_page);
+		/* Copy current memory value to buf and calculate cur_hash from it. */
+		dbg->iob.read_at (dbg->iob.io, addr, buf, clust_page);
+		digest_size = r_hash_calculate (base->hash_ctx, algobit, buf, clust_page);
 		cur_hash = base->hash_ctx->digest;
+
 		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
-		/* Check If there is last change for this page. */
+		/* Check If there is any last change for this page. */
 		if ((last = base->last_changes[page_off])) {
-			/* Use hash of last change */
+			/* Use hash of last SnapDiff */
+			//eprintf ("found diff\n");
 			prev_hash = last->hash;
 		} else {
-			/* Use hash of base */
+			/* Use hash of base snapshot */
+			//eprintf ("use base\n");
 			prev_hash = base->hashes[page_off];
 		}
-
-		/* Memory is changed. So add new diff entry for this addr */
+		/* Memory has been changed. So add new diff entry for this addr */
 		if (memcmp (cur_hash, prev_hash, digest_size) != 0) {
-			new = malloc (sizeof (RDebugSnapDiff));
-
+			//eprintf ("different: 0x%08"PFMT64x"(page %d)...\n", addr, page_off);
+			//print_hash (cur_hash, digest_size);
+			//print_hash (prev_hash, digest_size);
+			/* Create new diff entry, save one page and calculate hash. */
+			new = (RDebugSnapDiff *) malloc (sizeof (RDebugSnapDiff));
 			new->page_off = page_off;
-			new->data = malloc (size);
-			dbg->iob.read_at (dbg->iob.io, addr, new->data, size);
-			digest_size = r_hash_calculate (base->hash_ctx, algobit, new->data, size);
-			memcpy (new->hash, base->hash_ctx->digest, size);
+			new->data = buf;
+			memcpy (new->hash, cur_hash, digest_size);
 
 			r_list_append (base->history, new);
 			base->last_changes [page_off] = new;
 		}
-		free (buf);
 	}
 }
