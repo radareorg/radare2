@@ -118,7 +118,7 @@ R_API RDebugSession *r_debug_session_get(RDebug *dbg, ut64 addr) {
 	r_list_foreach_prev (dbg->sessions, iter, session) {
 		if (session->key.addr != addr) {
 			/* Sessions are saved along program flow. So key must be compared by "!=" not "<". *
-				 ex. Some operations like, jmp, can go back to former address in normal program flow. */
+			         ex. Some operations like, jmp, can go back to former address in normal program flow. */
 			return session;
 		}
 	}
