@@ -362,17 +362,60 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	return ilen;
 }
 
+static int set_reg_profile(RAnal *anal) {
+	const char *p =
+		"=PC	mpc\n"
+		"=SP	sp\n"
+		"=A0	af\n"
+		"=A1	bc\n"
+		"=A2	de\n"
+		"=A3	hl\n"
+
+		"gpr	mpc	.32	0	0\n"
+		"gpr	pc	.16	0	0\n"
+		"gpr	m	.16	2	0\n"
+
+		"gpr	sp	.16	4	0\n"
+
+		"gpr	af	.16	6	0\n"
+		"gpr	f	.8	6	0\n"
+		"gpr	a	.8	7	0\n"
+		"gpr	Z	.1	.55	0\n"
+		"gpr	N	.1	.54	0\n"
+		"gpr	H	.1	.53	0\n"
+		"gpr	C	.1	.52	0\n"
+
+		"gpr	bc	.16	8	0\n"
+		"gpr	c	.8	8	0\n"
+		"gpr	b	.8	9	0\n"
+
+		"gpr	de	.16	10	0\n"
+		"gpr	e	.8	10	0\n"
+		"gpr	d	.8	11	0\n"
+
+		"gpr	hl	.16	12	0\n"
+		"gpr	l	.8	12	0\n"
+		"gpr	h	.8	13	0\n"
+
+		"gpr	mbcrom	.16	14	0\n"
+		"gpr	mbcram	.16	16	0\n"
+
+		"gpr	ime	.1	18	0\n";
+	return r_reg_set_profile_string (anal->reg, p);
+}
+
 RAnalPlugin r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
 	.license = "LGPL3",
 	.bits = 16,
+	.set_reg_profile = &set_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
 	.op = &z80_anal_op,
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_z80,
 	.version = R2_VERSION
