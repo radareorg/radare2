@@ -3756,6 +3756,7 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 	ut32 linenum_len = attr->info.line_number_table_attr.line_number_table_length;
 	RList *linenum_list = attr->info.line_number_table_attr.line_number_table;
 	if (linenum_len > sz) {
+		free (attr);
 		return NULL;
 	}
 	for (i = 0; i < linenum_len; i++) {
