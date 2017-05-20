@@ -383,6 +383,8 @@ R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
 	it->space = a->zign_spaces.space_idx;
 	it->graph = R_NEW0 (RSignGraph);
 	if (!it->graph) {
+		free (it->name);
+		free (it);
 		return false;
 	}
 	*it->graph = graph;
@@ -1102,6 +1104,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	if (it->graph) {
 		ret->graph = R_NEW0 (RSignGraph);
 		if (!ret->graph) {
+			r_sign_item_free (ret);
 			return false;
 		}
 		*ret->graph = *it->graph;
@@ -1119,7 +1122,6 @@ R_API void r_sign_item_free(RSignItem *item) {
 	if (!item) {
 		return;
 	}
-
 	free (item->name);
 	if (item->bytes) {
 		free (item->bytes->bytes);
@@ -1188,6 +1190,7 @@ R_API bool r_sign_load(RAnal *a, const char *file) {
 	char *path = r_sign_path (a, file);
 	if (!r_file_exists (path)) {
 		eprintf ("error: file %s does not exist\n", file);
+		free (path);
 		return false;
 	}
 	Sdb *db = sdb_new (NULL, path, 0);
