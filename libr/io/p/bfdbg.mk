@@ -11,7 +11,7 @@ LINKFLAGS+=../../io/libr_io.a
 else
 LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L../../cons -lr_cons
-LINKFLAGS+=-L.. -L../../lib -lr_io 
+LINKFLAGS+=-L.. -lr_io
 endif
 
 ${TARGET_BFDBG}: ${OBJ_BFDBG}

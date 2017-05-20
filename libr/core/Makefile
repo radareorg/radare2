@@ -32,6 +32,7 @@ OBJS+=$(STATIC_OBJS)
 
 #STATIC_OBJS=$(subst ..,p/..,$(subst core_,p/core_,$(STATIC_OBJ)))
 
+include $(TOP)/shlr/gdb/deps.mk
 include $(LTOP)/rules.mk
 
 # include plugins

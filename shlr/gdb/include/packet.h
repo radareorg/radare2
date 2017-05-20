@@ -3,7 +3,6 @@
 #define PACKET_H
 
 #include <stdint.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include "libgdbr.h"
