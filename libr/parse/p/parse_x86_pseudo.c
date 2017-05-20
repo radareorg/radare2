@@ -214,7 +214,7 @@ static void parse_localvar(RParse *p, char *newstr, size_t newstr_len, const cha
 		if (p->localvar_only) {
 			snprintf (newstr, newstr_len - 1, "%s", var);
 		} else {
-			snprintf (newstr, newstr_len - 1, "%c%s(%%%s)", sign, var, reg);
+			snprintf (newstr, newstr_len - 1, "%s(%%%s)", var, reg);
 		}
 	} else {
 		if (p->localvar_only) {
@@ -222,6 +222,27 @@ static void parse_localvar(RParse *p, char *newstr, size_t newstr_len, const cha
 		} else {
 			snprintf (newstr, newstr_len - 1, "[%s %c %s]", reg, sign, var);
 		}
+	}
+}
+
+static inline void mk_reg_str(const char *regname, int delta, bool sign,
+				bool att, char *dest, int len)
+{
+	if (att) {
+		if (delta < 10)
+			snprintf(dest, len - 1, "%s%d(%%%s)", sign? "" : "-",
+				 delta, regname);
+		else
+			snprintf(dest, len - 1, "%s0x%x(%%%s)", sign? "" : "-",
+				 delta, regname);
+
+	} else {
+		if (delta < 10)
+			snprintf(dest, len - 1, "[%s %c %d]",
+				regname, sign? '+':'-', delta);
+		else
+			snprintf(dest, len - 1, "[%s %c 0x%x]",
+				regname, sign? '+':'-', delta);
 	}
 }
 
@@ -294,13 +315,10 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
 	}
 	r_list_foreach (spargs, spiter, sparg) {
-		if (sparg->delta < 10) {
-			snprintf (oldstr, sizeof (oldstr)-1, "[%s + %d]",
-				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
-		} else {
-			snprintf (oldstr, sizeof (oldstr)-1, "[%s + 0x%x]",
-				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
-		}
+		// assuming delta always positive?
+		mk_reg_str(p->anal->reg->name[R_REG_NAME_SP],
+			sparg->delta, true, att, oldstr, sizeof(oldstr));
+
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
@@ -316,12 +334,14 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 				r_str_case (newstr, true);
 			}
 		}
-		if (strstr (tstr, oldstr)) {
+		char *ptr = strstr(tstr, oldstr);
+		if (ptr && (!att || *(ptr - 1) != '-')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			if (strstr (tstr, oldstr)) {
+			ptr = strstr(tstr, oldstr);
+			if (ptr && (!att || *(ptr - 1) != '-')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
 			}
@@ -334,23 +354,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			sign = '-';
 			bparg->delta = -bparg->delta;
 		}
-		if (att) {
-			snprintf (oldstr, sizeof (oldstr) - 1,
-				"%c0x%x(%%%s)", sign,
-				bparg->delta, p->anal->reg->name[R_REG_NAME_BP]);
-		} else {
-			if (bparg->delta < 10) {
-				snprintf (oldstr, sizeof (oldstr) - 1,
-					"[%s %c %d]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					sign, bparg->delta);
-			} else {
-				snprintf (oldstr, sizeof (oldstr) - 1,
-					"[%s %c 0x%x]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					sign, bparg->delta);
-			}
-		}
+		mk_reg_str(p->anal->reg->name[R_REG_NAME_BP],
+			bparg->delta, sign=='+', att, oldstr, sizeof(oldstr));
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
@@ -366,12 +371,14 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 				r_str_case (newstr, true);
 			}
 		}
-		if (strstr (tstr, oldstr)) {
+		char *ptr = strstr(tstr, oldstr);
+		if (ptr && (!att || *(ptr - 1) != '-')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			if (strstr (tstr, oldstr)) {
+			ptr = strstr(tstr, oldstr);
+			if (ptr && (!att || *(ptr - 1) != '-')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
 			}
