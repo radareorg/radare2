@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_anal.h>
 #include <r_cons.h>
+#include <r_hash.h>
 #include <r_util.h>
 #include <r_reg.h>
 #include <r_bp.h>
@@ -43,6 +44,7 @@ R_LIB_VERSION_HEADER(r_debug);
 #define PTRACE_SYSCALL PT_STEP
 #endif
 
+#define SNAP_PAGE_SIZE 4096
 
 /*
  * states that a process can be in
@@ -153,13 +155,23 @@ typedef struct r_debug_desc_t {
 	ut64 off;
 } RDebugDesc;
 
+typedef struct r_debug_snap_diff_t {
+	int page_off;
+	ut8 *data;
+	ut8 hash[128];
+} RDebugSnapDiff;
+
 typedef struct r_debug_snap_t {
 	ut64 addr;
 	ut64 addr_end;
 	ut8 *data;
 	ut32 size;
+	ut32 page_num;
 	ut64 timestamp;
-	ut32 crc;
+	RHash *hash_ctx;
+	ut8 **hashes; // Hash of each pages
+	RDebugSnapDiff **last_changes; // Last diff entries of each pages
+	RList *history; // <RDebugSnapDiff*>
 	char *comment;
 } RDebugSnap;
 
@@ -503,16 +515,20 @@ R_API int r_debug_esil_watch_empty(RDebug *dbg);
 R_API void r_debug_esil_prestep (RDebug *d, int p);
 
 /* snap */
+R_API RDebugSnap* r_debug_snap_new(void);
 R_API void r_debug_snap_free(void *snap);
 R_API int r_debug_snap_delete(RDebug *dbg, int idx);
 R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
-R_API int r_debug_snap_diff(RDebug *dbg, int idx);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
 R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_set_idx (RDebug *dbg, int idx);
 R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
+
+/* snap diff */
+R_API void r_debug_diff_free (void *p) ;
+R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base);
 
 /* debug session */
 R_API void r_debug_session_free (void *p) ;

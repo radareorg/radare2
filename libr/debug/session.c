@@ -23,8 +23,8 @@ R_API void r_debug_session_list(RDebug *dbg) {
 			if (snap->comment && *snap->comment) {
 				comment = snap->comment;
 			}
-			dbg->cb_printf ("%d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d crc: %x  --  %s\n",
-				count, snap->addr, snap->addr_end, snap->size, snap->crc, comment);
+			dbg->cb_printf ("%d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d  --  %s\n",
+				count, snap->addr, snap->addr_end, snap->size, comment);
 			count++;
 		}
 	}
@@ -117,6 +117,8 @@ R_API RDebugSession *r_debug_session_get(RDebug *dbg, ut64 addr) {
 	RListIter *iter;
 	r_list_foreach_prev (dbg->sessions, iter, session) {
 		if (session->key.addr != addr) {
+			/* Sessions are saved along program flow. So key must be compared by "!=" not "<". *
+			         ex. Some operations like, jmp, can go back to former address in normal program flow. */
 			return session;
 		}
 	}
