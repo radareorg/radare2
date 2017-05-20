@@ -892,12 +892,14 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 
 // path = "<port> <file_name>"
 static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
-	RSocket *sock, *client;
+	RSocket *sock;
 	int p;
 	char port[10];
 	const char *file;
 	char cmd_buf[64];
 	libgdbr_t *g;
+	RCoreFile *cf;
+
 	while (*path && *path == ' ') {
 		path++;
 	}
@@ -908,28 +910,35 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	if (path && (p = atoi (path))) {
 		if (p < 0 || p > 65535) {
 			eprintf ("gdbserver: Invalid port: %s\n", port);
-			return 1;
+			return -1;
 		}
 		snprintf (port, sizeof (port) - 1, "%d", p);
 		if (!(file = strchr (path, ' ')) || !*file || !*(file + 1)) {
 			eprintf ("gdbserver: File not specified\n");
-			return 1;
+			return -1;
 		}
 		file++;
 	}
+
+	if (!(cf = r_core_file_open (core, file, R_IO_READ, 0))) {
+		eprintf ("Cannot open file (%s)\n", file);
+		return -1;
+	}
+	r_core_file_reopen_debug (core, "");
+
 	if (!(sock = r_socket_new (false))) {
 		eprintf ("gdbserver: Could not open socket for listening\n");
-		return 1;
+		return -1;
 	}
 	if (!r_socket_listen (sock, port, NULL)) {
 		r_socket_free (sock);
 		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
-		return 1;
+		return -1;
 	}
 	if (!(g = R_NEW0(libgdbr_t))) {
 		r_socket_free (sock);
 		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
-		return 1;
+		return -1;
 	}
 	gdbr_init (g);
 	core->gdbserver_up = 1;
@@ -947,15 +956,16 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			if (*cmd_buf) {
 				cmd_buf[sizeof (cmd_buf) - 1] = '\0';
 				eprintf ("cmd: %s\n", cmd_buf);
+				r_core_cmd (core, cmd_buf, 0);
 			}
 		}
-		r_socket_close (g->sock);
 		g->connected = 0;
 		break;
 	}
 	core->gdbserver_up = 0;
 	gdbr_cleanup (g);
 	free (g);
+	r_socket_close (g->sock);
 	r_socket_free (sock);
 	return 0;
 }
