@@ -778,9 +778,29 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_SAR:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
+			ut64 val = 0;
+			switch (gop.insn->detail->x86.operands[0].size) {
+			case 1:
+				val = 0x80;
+				break;
+			case 2:
+				val = 0x8000;
+				break;
+			case 4:
+				val = 0x80000000;
+				break;
+			case 8:
+				val = 0x8000000000000000;
+				break;
+			default:
+				val = 0x80;
+			}
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			esilprintf (op, "%s,1,%s,>>,0x%"PFMT64x",%s,&,|,%s,=,1,%s,&,cf,=,1,REPEAT", src, dst, val, dst, dst, dst);
+			/*src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 1, ">>>>", DST_AR);
-			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
+			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);*/
 		}
 		break;
 	case X86_INS_SARX:
