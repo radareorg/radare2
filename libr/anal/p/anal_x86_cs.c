@@ -778,15 +778,22 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_SAR:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
-			unsigned long long val = 0x80;
-			if (gop.insn->detail->x86.operands[0].size == 1) {
+			ut64 val = 0;
+			switch (gop.insn->detail->x86.operands[0].size) {
+			case 1:
 				val = 0x80;
-			} else if (gop.insn->detail->x86.operands[0].size == 2) {
+				break;
+			case 2:
 				val = 0x8000;
-			} else if (gop.insn->detail->x86.operands[0].size == 4) {
+				break;
+			case 4:
 				val = 0x80000000;
-			} else if (gop.insn->detail->x86.operands[0].size == 8) {
+				break;
+			case 8:
 				val = 0x8000000000000000;
+				break;
+			default:
+				val = 0x80;
 			}
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
