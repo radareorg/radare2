@@ -982,7 +982,7 @@ static int cmd_write(void *data, const char *input) {
 				"Usage:", "wt[a] file [size]", " Write 'size' bytes in current blok to 'file'",
 				"wta", " [filename]", "append to 'filename'",
 				"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
-				"wtf!", " [filename]", "write to file from current addresss to eof",
+				"wtf!", " [filename]", "write to file from current address to eof",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			free (ostr);
