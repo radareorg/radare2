@@ -2603,22 +2603,21 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 	if (strncmp (name, "str.", 4)) {
 		return false;
-	} else {
-		ut64 refaddr = ds->analop.ptr;
-		char *anal_flag = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
-		if (anal_flag) {
-			anal_flag = strdup (anal_flag);
-			if (anal_flag) {
-				r_name_filter (anal_flag, -1);
-				if (!strcmp (&name[4], anal_flag)) {
-					free (anal_flag);
-					return true;
-				}
-				free (anal_flag);
-			}
-		}
-		return false;
 	}
+	ut64 refaddr = ds->analop.ptr;
+	char *anal_flag = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
+	if (anal_flag) {
+		anal_flag = strdup (anal_flag);
+		if (anal_flag) {
+			r_name_filter (anal_flag, -1);
+			if (!strcmp (&name[4], anal_flag)) {
+				free (anal_flag);
+				return true;
+			}
+			free (anal_flag);
+		}
+	}
+	return false;
 }
 
 /* convert numeric value in opcode to ascii char or number */
