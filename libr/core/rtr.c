@@ -900,12 +900,12 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	libgdbr_t *g;
 	RCoreFile *cf;
 
-	while (*path && *path == ' ') {
+	while (*path && isspace (*path)) {
 		path++;
 	}
 	if (!*path) {
 		eprintf ("gdbserver: Port not specified\n");
-		return 1;
+		return -1;
 	}
 	if (path && (p = atoi (path))) {
 		if (p < 0 || p > 65535) {
@@ -913,11 +913,17 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			return -1;
 		}
 		snprintf (port, sizeof (port) - 1, "%d", p);
-		if (!(file = strchr (path, ' ')) || !*file || !*(file + 1)) {
+		if (!(file = strchr (path, ' '))) {
 			eprintf ("gdbserver: File not specified\n");
 			return -1;
 		}
-		file++;
+		while (*file && isspace (*file)) {
+			file++;
+		}
+		if (!*file) {
+			eprintf ("gdbserver: File not specified\n");
+			return -1;
+		}
 	}
 
 	if (!(cf = r_core_file_open (core, file, R_IO_READ, 0))) {
@@ -960,12 +966,12 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			}
 		}
 		g->connected = 0;
+		/* TODO: Wait for connections */
 		break;
 	}
 	core->gdbserver_up = 0;
 	gdbr_cleanup (g);
 	free (g);
-	r_socket_close (g->sock);
 	r_socket_free (sock);
 	return 0;
 }
@@ -974,12 +980,12 @@ R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
-		return 1;
+		return -1;
 	}
 	// TODO: do stuff with launch
 	if (core->gdbserver_up) {
 		eprintf ("gdbserver is already running\n");
-		return 1;
+		return -1;
 	}
 	ret = r_core_rtr_gdb_run (core, launch, path);
 	return ret;

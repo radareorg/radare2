@@ -3,6 +3,7 @@
 #include "arch.h"
 #include "gdbclient/responses.h"
 #include "gdbclient/core.h"
+#include "gdbr_common.h"
 #include "utils.h"
 #include "r_util/r_str.h"
 

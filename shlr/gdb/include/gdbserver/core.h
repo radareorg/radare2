@@ -8,5 +8,7 @@
 // on success, failure code (currently -1) on failure
 int gdbr_server_read(libgdbr_t *g, char *buf, size_t max_len);
 
+// Send command to the remote gdb instance
+int gdbr_server_send(libgdbr_t *g, const char *buf, size_t max_len);
 
 #endif  // GDB_SERVER_CORE_H
