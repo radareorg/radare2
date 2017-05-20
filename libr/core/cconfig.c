@@ -2159,6 +2159,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB ("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 	SETPREF ("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
+	SETPREF ("dbg.trace.libs", "true", "Trace library code too");
 	SETPREF ("dbg.exitkills", "true", "Kill process on exit");
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 

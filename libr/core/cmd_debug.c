@@ -2632,13 +2632,20 @@ static void trace_traverse (RTree *t) {
 }
 
 static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_addr) {
-	int shallow_trace = r_config_get_i (core->config, "dbg.trace.inrange");
+	bool shallow_trace = r_config_get_i (core->config, "dbg.trace.inrange");
+	bool trace_libs = r_config_get_i (core->config, "dbg.trace.libs");
 	Sdb *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RDebug *dbg = core->dbg;
 	ut64 debug_to = UT64_MAX;
 	RTreeNode *cur;
 	int n = 0;
+
+	if (!trace_libs) {
+		shallow_trace = true;
+		RList *bounds = r_core_get_boundaries (core, "dbg.program", &from, &to);
+		r_list_free (bounds);
+	}
 
 	/* set root if not already present */
 	r_tree_add_node (tr, NULL, NULL);
@@ -2650,17 +2657,21 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 		RAnalOp aop;
 		int addr_in_range;
 
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->breaked) {
 			break;
-		if (r_debug_is_dead (dbg))
+		}
+		if (r_debug_is_dead (dbg)) {
 			break;
-		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to))
+		}
+		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to)) {
 			break;
-		else if (!r_debug_step (dbg, 1))
+		} else if (!r_debug_step (dbg, 1)) {
 			break;
+		}
 		debug_to = UT64_MAX;
-		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false))
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			break;
+		}
 		addr = r_debug_reg_get (dbg, "PC");
 		addr_in_range = addr >= from && addr < to;
 
@@ -2682,12 +2693,14 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 				r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 				called_addr = r_debug_reg_get (dbg, "PC");
 				called_in_range = called_addr >= from && called_addr < to;
-				if (!called_in_range && addr_in_range && shallow_trace)
+				if (!called_in_range && addr_in_range && shallow_trace) {
 					debug_to = addr;
+				}
 				if (addr_in_range) {
-					cur = add_trace_tree_child(tracenodes, tr, cur, addr);
-					if (debug_to != UT64_MAX)
+					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
+					if (debug_to != UT64_MAX) {
 						cur = cur->parent;
+					}
 				}
 				// TODO: push pc+aop.length into the call path stack
 				break;
@@ -2695,12 +2708,14 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 		case R_ANAL_OP_TYPE_CALL:
 			{
 				int called_in_range = aop.jump >= from && aop.jump < to;
-				if (!called_in_range && addr_in_range && shallow_trace)
+				if (!called_in_range && addr_in_range && shallow_trace) {
 					debug_to = aop.addr + aop.size;
+				}
 				if (addr_in_range) {
-					cur = add_trace_tree_child(tracenodes, tr, cur, addr);
-					if (debug_to != UT64_MAX)
+					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
+					if (debug_to != UT64_MAX) {
 						cur = cur->parent;
+					}
 				}
 				break;
 			}
@@ -2713,8 +2728,9 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 			// TODO: step into and check return address if correct
 			// if not correct we are hijacking the control flow (exploit!)
 #endif
-			if (cur != tr->root)
+			if (cur != tr->root) {
 				cur = cur->parent;
+			}
 #if 0
 			if (addr != gn->addr) {
 				eprintf ("Oops. invalid return address 0x%08"PFMT64x

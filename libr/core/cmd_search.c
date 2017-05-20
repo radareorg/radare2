@@ -655,9 +655,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (core->io->debug) {
 			int mask = 0;
 			int add = 0;
-			int heap = false;
-			int stack = false;
-			int all = false;
+			bool heap = false;
+			bool stack = false;
+			bool all = false;
+			bool first = false;
 			RListIter *iter;
 			RDebugMap *map;
 
@@ -687,19 +688,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 				}
 			} else {
-				if (!strcmp (mode, "dbg.maps")) {
-					all = true;
-				}
-				if (!strcmp (mode, "dbg.maps.exec")) {
+				if (!strcmp (mode, "dbg.program")) {
+					first = true;
 					mask = R_IO_EXEC;
-				}
-				if (!strcmp (mode, "dbg.maps.write")) {
+				} else if (!strcmp (mode, "dbg.maps")) {
+					all = true;
+				} else if (!strcmp (mode, "dbg.maps.exec")) {
+					mask = R_IO_EXEC;
+				} else if (!strcmp (mode, "dbg.maps.write")) {
 					mask = R_IO_WRITE;
-				}
-				if (!strcmp (mode, "dbg.heap")) {
+				} else if (!strcmp (mode, "dbg.heap")) {
 					heap = true;
-				}
-				if (!strcmp (mode, "dbg.stack")) {
+				} else if (!strcmp (mode, "dbg.stack")) {
 					stack = true;
 				}
 
@@ -733,6 +733,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						nmap->flags = map->perm;
 						nmap->delta = 0;
 						r_list_append (list, nmap);
+						if (first) {
+							break;
+						}
 					}
 				}
 			}
