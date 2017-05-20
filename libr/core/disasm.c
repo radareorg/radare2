@@ -3070,16 +3070,15 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	}
 }
 
-static void ds_print_bbline(RDisasmState *ds) {
-	if (ds->show_bbline && ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)) {
-		ds->bblined = true;
+static void ds_print_bbline(RDisasmState *ds, bool force) {
+	if (ds->show_bbline && (force || (ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)))) {
 		ds_setup_print_pre (ds, false, false);
 		ds_update_ref_lines (ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
 			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 				ds->refline2, COLOR_RESET (ds));
 		}
-		r_cons_printf("|\n");
+		r_cons_printf ("\n");
 	}
 }
 
@@ -3664,7 +3663,7 @@ toro:
 				ds->analop.ptr = ds->hint->ptr;
 			}
 		}
-		ds_print_bbline (ds);
+		ds_print_bbline (ds, false);
 		if (ds->at >= addr) {
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 		}
@@ -3753,8 +3752,7 @@ toro:
 		}
 
 		r_cons_newline ();
-		if (ds->show_bbline && !ds->bblined) {
-			bool showBBLine = false;
+		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UJMP:
@@ -3764,17 +3762,8 @@ toro:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_RET:
-				showBBLine = true;
+				ds_print_bbline (ds, true);
 				break;
-			}
-			if (showBBLine) {
-				ds_setup_print_pre (ds, false, false);
-				ds_update_ref_lines (ds);
-				if (!ds->linesright && ds->show_lines && ds->line) {
-					r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
-							ds->refline2, COLOR_RESET (ds));
-				}
-				r_cons_printf("|\n");
 			}
 		}
 		if (ds->line) {
@@ -4567,7 +4556,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
 			}
-			ds_print_bbline (ds);
+			ds_print_bbline (ds, false);
 
 			bb_size_consumed += ds->oplen;
 			ds->index += ds->oplen;
