@@ -223,6 +223,25 @@ R2PM_GIT() {
 	fi
 }
 
+R2PM_SVN() {
+	URL="$1"
+	if [ -z "$2" ]; then
+		DIR="${NAME}"
+	else
+		DIR="$2"
+	fi
+	cd "${R2PM_GITDIR}" || exit 1
+	if [ ${IS_LOCAL} = 0 ]; then
+		if [ -d "${DIR}" ]; then
+			cd "${DIR}"
+			svn up
+		else
+			svn co "${URL}" "${DIR}"
+			cd "${DIR}" || R2PM_FAIL "Oops"
+		fi
+	fi
+}
+
 R2PM_FAIL() {
 	echo "\033[31mERROR: \033[32m$@\033[0m"
 	exit 1
