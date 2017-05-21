@@ -477,6 +477,7 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
+	case R_ANAL_OP_FAMILY_SSE: return "sse";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
 	default:
@@ -491,6 +492,7 @@ R_API int r_anal_op_family_from_string(const char *f) {
 	if (!strcmp (f, "cpu")) return R_ANAL_OP_FAMILY_CPU;
 	if (!strcmp (f, "fpu")) return R_ANAL_OP_FAMILY_FPU;
 	if (!strcmp (f, "mmx")) return R_ANAL_OP_FAMILY_MMX;
+	if (!strcmp (f, "sse")) return R_ANAL_OP_FAMILY_SSE;
 	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
 	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
 	return R_ANAL_OP_FAMILY_UNKNOWN;

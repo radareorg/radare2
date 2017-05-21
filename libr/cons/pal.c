@@ -102,7 +102,7 @@ struct {
 	{ "magenta",  Color_MAGENTA,  Color_BGMAGENTA },
 	{ "bmagenta", Color_BMAGENTA, Color_BGMAGENTA },
 	{ "yellow",   Color_YELLOW,   Color_BGYELLOW },
-	{ "byellow",  Color_BYELLOW,  Color_BGYELLOW },
+	{ "byellow",  Color_BYELLOW,  Color_BGBYELLOW },
 	{ "cyan",     Color_CYAN,     Color_BGCYAN },
 	{ "bcyan",    Color_BCYAN,    Color_BGCYAN },
 	{ "blue",     Color_BLUE,     Color_BGBLUE },
