@@ -1540,7 +1540,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drC", "", "Show register profile comments",
 				"drc", " [name]", "Related to conditional flag registers",
 				"drd", "", "Show only different registers",
-				"drl", "", "List all register names",
+				"drl", "[j]", "List all register names",
 				"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 				"dro", "", "Show previous (old) values of registers",
 				"drp", "[?] <file>", "Load register metadata file",
@@ -1570,15 +1570,38 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_core_cmd_help (core, help_message);
 		}
 		break;
-	case 'l': // "drl"
-		//r_core_cmd0 (core, "drp~[1]");
+	case 'l': // "drl[j]"
 		{
-			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
-			if (rs) {
-				RRegItem *r;
-				RListIter *iter;
-				r_list_foreach (rs->regs, iter, r) {
-					r_cons_println (r->name);
+			bool json_out = false;
+			switch (str[1]) {
+			case 'j':
+				json_out = true;
+				/* fall trhu */
+			case 0:
+				{
+					RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+					if (rs) {
+						RRegItem *r;
+						RListIter *iter;
+						i = 0;
+						if (json_out) {
+							r_cons_printf ("[");
+						}
+						r_list_foreach (rs->regs, iter, r) {
+							if (json_out) {
+								r_cons_printf ("%s\"%s\"",
+									(i ? "," : ""),
+									r->name);
+								i++;
+							} else {
+								r_cons_println (r->name);
+							}
+						}
+						if (json_out) {
+							r_cons_printf ("]");
+						}
+					}
+					break;
 				}
 			}
 		}
