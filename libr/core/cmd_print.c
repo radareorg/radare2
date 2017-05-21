@@ -2819,6 +2819,173 @@ static inline int cmd_pxb_k(const ut8 *buffer, int x) {
 	return buffer[3 - x] << (8 * x);
 }
 
+static const char* bits_to_c_code_fmtstr(int bits) {
+	switch (bits) {
+	case 16:
+		return "0x%04x";
+	case 32:
+		return "0x%08xU";
+	case 64:
+		return "0x%016" PFMT64x "ULL";
+	default:
+		return "0x%02x";
+	}
+}
+
+static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w) {
+	const char *fmtstr;
+	int i, bits;
+
+	ws = R_MAX (1, R_MIN (ws, 8));
+	bits = ws * 8;
+	fmtstr = bits_to_c_code_fmtstr (bits);
+	len /= ws;
+
+	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
+	p->cb_printf ("const uint%d_t buffer[%d] = {", bits, len);
+
+	p->interrupt = 0;
+
+	for (i = 0; !p->interrupt && i < len; i++) {
+		if (!(i % w)) {
+			p->cb_printf ("\n  ");
+		}
+		r_print_cursor (p, i, 1);
+		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
+		if ((i + 1) < len) {
+			p->cb_printf (",");
+
+			if ((i + 1) % w) {
+				p->cb_printf (" ");
+			}
+		}
+		r_print_cursor (p, i, 0);
+		buf += ws;
+	}
+	p->cb_printf ("\n};\n");
+}
+
+R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
+	int i, w = p->cols * 0.7;
+	if (w < 1) {
+		w = 1;
+	}
+	switch (lang) {
+	case '?':
+		r_cons_println ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
+		"  pc     C\n"
+		"  pc*    print 'wx' r2 commands\n"
+		"  pch    C half-words (2 byte)\n"
+		"  pcw    C words (4 byte)\n"
+		"  pcd    C dwords (8 byte)\n"
+		"  pca    GAS .byte blob\n"
+		"  pcA    .bytes with instructions in comments\n"
+		"  pcs    string\n"
+		"  pcS    shellscript that reconstructs the bin\n"
+		"  pcj    json\n"
+		"  pcJ    javascript\n"
+		"  pcp    python");
+		break;
+	case '*':
+		p->cb_printf ("wx ");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (i && !(i % 16)) {
+				p->cb_printf (";s+16\nwx ");
+			}
+			p->cb_printf ("%02x", buf[i]);
+		}
+		if (i && !(i % 16)) {
+			p->cb_printf (";s+16\n");
+		} else {
+			p->cb_printf (";s+%d\n", (i % 16));
+		}
+		p->cb_printf ("s-%d\n", len);
+		break;
+	case 'A': // "pcA"
+		/* implemented in core because of disasm :( */
+		break;
+	case 'a': // "pca"
+		p->cb_printf ("shellcode:");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (!(i % 8)) {
+				p->cb_printf ("\n.byte ");
+			} else {
+				p->cb_printf (", ");
+			}
+			p->cb_printf ("0x%02x", buf[i]);
+		}
+		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
+		break;
+	case 's': // "pcs"
+		p->cb_printf ("\"");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			p->cb_printf ("\\x%02x", buf[i]);
+		}
+		p->cb_printf ("\"\n");
+		break;
+	case 'S': // "pcS"
+	{
+		const int trunksize = 16;
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (!(i % trunksize)) {
+				p->cb_printf ("printf \"");
+			}
+			p->cb_printf ("\\%03o", buf[i]);
+			if ((i % trunksize) == (trunksize - 1)) {
+				p->cb_printf ("\" %s bin\n", (i <= trunksize)? ">": ">>");
+			}
+		}
+		if ((i % trunksize)) {
+			p->cb_printf ("\" %s bin\n", (i <= trunksize)? ">": ">>");
+		}
+	} break;
+	case 'J': {
+		char *out = malloc (len * 3);
+		p->cb_printf ("var buffer = new Buffer(\"");
+		out[0] = 0;
+		r_base64_encode (out, buf, len);
+		p->cb_printf ("%s", out);
+		p->cb_printf ("\", 'base64');\n");
+		free (out);
+	} break;
+	case 'j':
+		p->cb_printf ("[");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			r_print_cursor (p, i, 1);
+			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_cursor (p, i, 0);
+		}
+		p->cb_printf ("]\n");
+		break;
+	case 'P':
+	case 'p': // pcp"
+		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", *[", len);
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (!(i % w)) {
+				p->cb_printf ("\n");
+			}
+			r_print_cursor (p, i, 1);
+			p->cb_printf ("0x%02x%s", buf[i], (i + 1 < len)? ",": "])");
+			r_print_cursor (p, i, 0);
+		}
+		p->cb_printf ("\n");
+		break;
+	case 'h':
+		print_c_code (p, addr, buf, len, 2, p->cols / 2); // 9
+		break;
+	case 'w':
+		print_c_code (p, addr, buf, len, 4, p->cols / 3); // 6);
+		break;
+	case 'd':
+		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
+		break;
+	default:
+		print_c_code (p, addr, buf, len, 1, p->cols / 1.5); // 12);
+		break;
+	}
+}
+
+
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;

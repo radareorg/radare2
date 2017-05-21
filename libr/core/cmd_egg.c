@@ -160,7 +160,7 @@ static int cmd_egg(void *data, const char *input) {
 		RListIter *iter;
 		REggPlugin *p;
 		r_list_foreach (egg->plugins, iter, p) {
-			printf ("%s  %6s : %s\n",
+			r_cons_printf ("%s  %6s : %s\n",
 				(p->type == R_EGG_PLUGIN_SHELLCODE)?
 				"shc": "enc", p->name, p->desc);
 		}

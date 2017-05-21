@@ -1559,7 +1559,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_cons_println (fcn->cc);
 			break;
 		default:
-			eprintf ("See afC?\n");
+			r_cons_println ("See afC?");
 		}
 		}break;
 	case 'B': // "afB" // set function bits
@@ -4917,7 +4917,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
-		eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
+		r_cons_printf ("Current Tag: %d", core->dbg->trace->tag);
 		break;
 	case 'a':
 		eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
@@ -5323,7 +5323,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case '\0': // "aa"
 	case 'a':
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
-			eprintf ("Usage: See aa? for more help\n");
+			r_cons_println ("Usage: See aa? for more help");
 		} else {
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
@@ -5585,7 +5585,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ab", " [hexpairs]", "analyze bytes",
 		"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
 		"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-		"ac", "[?] [cycles]", "analyze which op could be executed in [cycles]",
+		"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 		"ad", "[?]", "analyze data trampoline (wip)",
 		"ad", " [from] [to]", "analyze data pointers to (from-to)",
 		"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",

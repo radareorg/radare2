@@ -7,13 +7,13 @@
 static void cmd_fz(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		eprintf ("Usage: fz[?|-name| name] [@addr]\n");
-		eprintf (" fz math    add new flagzone named 'math'\n");
-		eprintf (" fz-math    remove the math flagzone\n");
-		eprintf (" fz-*       remove all flagzones\n");
-		eprintf (" fz.        show around flagzone context\n");
-		eprintf (" fz:        show what's in scr.flagzone for visual\n");
-		eprintf (" fz*        dump into r2 commands, for projects\n");
+		r_cons_println ("Usage: fz[?|-name| name] [@addr]");
+		r_cons_println (" fz math    add new flagzone named 'math'");
+		r_cons_println (" fz-math    remove the math flagzone");
+		r_cons_println (" fz-*       remove all flagzones");
+		r_cons_println (" fz.        show around flagzone context");
+		r_cons_println (" fz:        show what's in scr.flagzone for visual");
+		r_cons_println (" fz*        dump into r2 commands, for projects");
 		break;
 	case '.':
 		{
@@ -240,32 +240,39 @@ rep:
 		r_flag_get_i2 (core->flags, r_num_math (core->num, input+1));
 		break;
 	case 'R': // "fR"
-		{
-		if (*str == '\0'){
+		switch(*str) {
+		case '\0':
 			eprintf ("Usage: fR [from] [to] ([mask])\n");
 			eprintf ("Example to relocate PIE flags on debugger:\n"
 				" > fR entry0 `dm~:1[1]`\n");
 			break;
-		}
-		char *p = strchr (str+1, ' ');
-		ut64 from, to, mask = 0xffff;
-		int ret;
-		if (p) {
-			char *q = strchr (p+1, ' ');
-			*p = 0;
-			if (q) {
-				*q = 0;
-				mask = r_num_math (core->num, q+1);
+		case '?':
+			r_cons_println ("Usage: fR [from] [to] ([mask])");
+			r_cons_println ("Example to relocate PIE flags on debugger:\n"
+				" > fR entry0 `dm~:1[1]`");
+			break;
+		default:
+            {
+				char *p = strchr (str+1, ' ');
+				ut64 from, to, mask = 0xffff;
+				int ret;
+				if (p) {
+					char *q = strchr (p+1, ' ');
+					*p = 0;
+					if (q) {
+						*q = 0;
+						mask = r_num_math (core->num, q+1);
+					}
+					from = r_num_math (core->num, str+1);
+					to = r_num_math (core->num, p+1);
+					ret = r_flag_relocate (core->flags, from, mask, to);
+					eprintf ("Relocated %d flags\n", ret);
+				} else {
+					eprintf ("Usage: fR [from] [to] ([mask])\n");
+					eprintf ("Example to relocate PIE flags on debugger:\n"
+						" > fR entry0 `dm~:1[1]`\n");
+				}
 			}
-			from = r_num_math (core->num, str+1);
-			to = r_num_math (core->num, p+1);
-			ret = r_flag_relocate (core->flags, from, mask, to);
-			eprintf ("Relocated %d flags\n", ret);
-		} else {
-			eprintf ("Usage: fR [from] [to] ([mask])\n");
-			eprintf ("Example to relocate PIE flags on debugger:\n"
-				" > fR entry0 `dm~:1[1]`\n");
-		}
 		}
 		break;
 	case 'b': // "fb"
