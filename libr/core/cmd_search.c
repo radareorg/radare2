@@ -1611,15 +1611,19 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		mode = *input;
 		input++;
 		break;
+	case 0:
+		r_cons_printf (
+			"Usage: /A[f][?jq] [op.type | op.family]\n"
+			" /A?      - list all opcode types\n"
+			" /Af?     - list all opcode families\n"
+			" /A ucall - find calls with unknown destination\n"
+			" /Af sse  - find SSE instructions\n");
+		return;
 	case '?':
-		r_cons_printf ("Usage: /A[jq]%s [type]\n", chk_family? "f": "");
 		for (i = 0; i < 64; i++) {
-			const char *str;
-			if (chk_family) {
-				str = r_anal_op_family_to_string (i);
-			} else {
-				str = r_anal_optype_to_string (i);
-			}
+			const char *str = chk_family
+				? r_anal_op_family_to_string (i)
+				: r_anal_optype_to_string (i);
 			if (chk_family && atoi (str)) {
 				break;
 			}

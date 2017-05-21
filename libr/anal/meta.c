@@ -63,9 +63,8 @@ static int meta_inrange_add (RAnal *a, ut64 addr, int size) {
 static int meta_inrange_del (RAnal *a, ut64 addr, int size) {
 	int set = 0;
 	char key[64];
-	ut64 base, base2;
-	base = META_RANGE_BASE (addr);
-	base2 = META_RANGE_BASE (addr+size);
+	ut64 base = META_RANGE_BASE (addr);
+	ut64 base2 = META_RANGE_BASE (addr+size);
 // TODO: optimize this thing?
 	for (; base<base2; base += META_RANGE_SIZE) {
 		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);

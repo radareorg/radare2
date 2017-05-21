@@ -2774,7 +2774,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					int i = 0;
 					ALIGN;
 					ds_comment (ds, true, "; \"");
-					for (i = 0; i < len; i++) {
+					for (i = 0; i < len; i+=2) {
 						if (!msg[i]) {
 							break;
 						}
@@ -2792,7 +2792,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						} else {
 							ds_comment (ds, false, "\\u%02x%02x", msg[i+1], msg[i]);
 						}
-						i++;
 					}
 					ds_comment (ds, false, "\"%s", nl);
 				} else {
