@@ -201,7 +201,7 @@ static RList *mem (RBinFile *arch) {
 	r_list_append (m->mirrors, m);
 	m_bak = m;
 	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (mbak->mirrors);
+		r_list_free (m_bak->mirrors);
 		return ret;
 	}
 	m->name = strdup ("HIRAM");
