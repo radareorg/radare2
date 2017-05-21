@@ -2397,6 +2397,7 @@ static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym)
 	switch (ELF_ST_BIND(sym->st_info)) {
 	case STB_LOCAL:  s_bind ("LOCAL"); break;
 	case STB_GLOBAL: s_bind ("GLOBAL"); break;
+	case STB_WEAK:   s_bind ("WEAK"); break;
 	case STB_NUM:    s_bind ("NUM"); break;
 	case STB_LOOS:   s_bind ("LOOS"); break;
 	case STB_HIOS:   s_bind ("HIOS"); break;
