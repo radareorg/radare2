@@ -236,7 +236,7 @@ R2PM_SVN() {
 			cd "${DIR}"
 			svn up
 		else
-			svn co "${URL}" "${DIR}"
+			svn co "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 			cd "${DIR}" || R2PM_FAIL "Oops"
 		fi
 	fi
