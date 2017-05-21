@@ -335,13 +335,13 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			}
 		}
 		char *ptr = strstr(tstr, oldstr);
-		if (ptr && (!att || *(ptr - 1) != '-')) {
+		if (ptr && (!att || *(ptr - 1) == ' ')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
 			ptr = strstr(tstr, oldstr);
-			if (ptr && (!att || *(ptr - 1) != '-')) {
+			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
 			}
@@ -372,13 +372,13 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			}
 		}
 		char *ptr = strstr(tstr, oldstr);
-		if (ptr && (!att || *(ptr - 1) != '-')) {
+		if (ptr && (!att || *(ptr - 1) == ' ')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
 			ptr = strstr(tstr, oldstr);
-			if (ptr && (!att || *(ptr - 1) != '-')) {
+			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
 			}
