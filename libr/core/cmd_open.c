@@ -693,22 +693,15 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'c':
-		if ('?' == input[1]) {
-			const char *help_msg[] = {
-				"oc"," [file]","open core file, like relaunching r2",NULL
-			};
-			r_core_cmd_help (core, help_msg);
-			break;
-		}
-		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
-		// memleak? lose all settings wtf
-		// if load fails does not fallbacks to previous file
-		r_core_fini (core);
-		r_core_init (core);
 		if (input[1] && input[2]) {
+			if (r_sandbox_enable (0)) {
+				eprintf ("This command is disabled in sandbox mode\n");
+				return 0;
+			}
+			// memleak? lose all settings wtf
+			// if load fails does not fallbacks to previous file
+			r_core_fini (core);
+			r_core_init (core);
 			if (!r_core_file_open (core, input + 2, R_IO_READ, 0)) {
 				eprintf ("Cannot open file\n");
 			}
