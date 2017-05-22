@@ -934,6 +934,19 @@ static int str_start_with(const char *ptr, const char *str) {
 
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
+static ut64 addroflib(RCore *core, const char *libname) {
+	RListIter *iter;
+	RDebugMap *map;
+
+	r_debug_map_sync (core->dbg);
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (strstr (map->name, libname)) {
+			return map->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
 static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RDebugMap *map;
@@ -1082,6 +1095,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'i': // "dmi"
 		switch (input[1]) {
 		case 0:
+		case ' ':
 		case '*':
 			{
 				const char *libname = NULL, *symname = NULL, *mode = "", *a0;
@@ -1098,6 +1112,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				switch (i) {
 				case 2:
 					symname = r_str_word_get0 (ptr, 1);
+					// fall thru
 				case 1:
 					a0 = r_str_word_get0 (ptr, 0);
 					addr = r_num_math (core->num, a0);
@@ -1105,6 +1120,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						libname = r_str_word_get0 (ptr, 0);
 					}
 					break;
+				}
+				if (libname && !addr) {
+					addr = addroflib (core, libname);
+					if (addr == UT64_MAX) {
+						eprintf ("Unknown library, or not found in dm\n");
+					}
 				}
 				map = get_closest_map (core, addr);
 				if (map) {
@@ -1169,7 +1190,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			{
 				const char *dmi_help_msg[] = {
 					"Usage: dmi", "", " # List/Load Symbols",
-					"dmi", "", "List symbols of target lib",
+					"dmi", "[libname] [symname]", "List symbols of target lib",
 					"dmi*", "", "List symbols of target lib in radare commands",
 					"dmi.", "", "List closest symbol to the current address",
 					NULL};
