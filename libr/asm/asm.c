@@ -143,6 +143,7 @@ R_API RAsm *r_asm_new() {
 	if (!a) {
 		return NULL;
 	}
+	a->dataalign = 1;
 	a->bits = R_SYS_BITS;
 	a->syntax = R_ASM_SYNTAX_INTEL;
 	a->plugins = r_list_newf ((RListFree)plugin_free);

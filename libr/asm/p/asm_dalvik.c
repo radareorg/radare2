@@ -15,6 +15,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char str[1024], *strasm;
 	ut64 offset;
 	const char *flag_str; 
+	a->dataalign = 2;
 
 	op->buf_asm[0] = 0;
 	if (buf[0] == 0x00) { /* nop */
@@ -54,7 +55,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				snprintf (op->buf_asm, sizeof (op->buf_asm),
 					"fill-array-data-payload %d, %d",
 					elem_width, array_size);
-				payload = 2 * ((array_size * elem_width+1)/2);
+				payload = array_size * elem_width;
 			}
 			size = 8;
 			len = 0;
