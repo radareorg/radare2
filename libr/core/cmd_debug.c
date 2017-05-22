@@ -2967,9 +2967,9 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 						NULL
 					};
 					r_core_cmd_help (core, help_msg);
-					eprintf ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
+					r_cons_println ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
 							"  skip means do not enter into the signal handler\n"
-							"  continue means enter into the signal handler\n");
+							"  continue means enter into the signal handler");
 				}
 		}
 	} else if (*input == 'j') {
@@ -3355,8 +3355,8 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			step_until (core, r_num_math (core->num, input + 2)); // XXX dupped by times
 			break;
 		default:
-			eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
-					" 'f'lag, 'e'sil or 'i'nstruction matching\n");
+			r_cons_println ("Usage: dsu[fei] [arg]  . step until address ' ',"
+					" 'f'lag, 'e'sil or 'i'nstruction matching");
 			return 0;
 		}
 		break;
@@ -3472,7 +3472,7 @@ static int cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case 'c': // "dtc"
 			if (input[2] == '?') {
-				eprintf ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger\n");
+				r_cons_println ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger");
 			} else {
 				debug_trace_calls (core, input + 2);
 			}

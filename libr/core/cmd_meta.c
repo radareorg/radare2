@@ -427,7 +427,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				"to match the total struct size in mem.\n");
 			break;
 		default:
-			eprintf ("See C?\n");
+			r_cons_println ("See C?");
 			break;
 		}
 	case '-':
