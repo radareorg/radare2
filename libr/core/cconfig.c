@@ -179,6 +179,15 @@ static int cb_analafterjmp(void *user, void *data) {
 	return true;
 }
 
+static int cb_analstrings(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value) {
+		r_config_set (core->config, "bin.strings", "false");
+	}
+	return true;
+}
+
 static int cb_analsleep(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1549,7 +1558,8 @@ static int cb_zoombyte(void *user, void *data) {
 			core->print->zoom->mode = *node->value;
 			break;
 		default:
-			eprintf ("Invalid zoom.byte value. See pz? for help\n");
+			r_cons_printf ("p\nf\ns\n0\nF\ne\nh\n");
+			// eprintf ("Invalid zoom.byte value. See pz? for help\n");
 			return false;
 	}
 	return true;
@@ -1871,7 +1881,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
-	SETPREF ("anal.strings", "false", "Identify and register strings during analysis (aar only)");
+	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
 	SETPREF ("anal.vars", "true",  "Analyze local variables and arguments");
 	SETPREF ("anal.vinfun", "true",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETPREF ("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");

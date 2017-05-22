@@ -2845,6 +2845,9 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	}
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
+	if (r_config_get_i (core->config, "anal.strings")) {
+		r_core_cmd0 (core, "aar");
+	}
 	if ((action & R_CORE_BIN_ACC_STRINGS)) ret &= bin_strings (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) ret &= bin_raw_strings (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_INFO)) ret &= bin_info (core, mode);

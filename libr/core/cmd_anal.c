@@ -5045,7 +5045,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	if (to - from > r_io_size (core->io)) {
 		return false;
 	}
-
 	return r_core_anal_search_xrefs (core, from, to, rad);
 }
 
