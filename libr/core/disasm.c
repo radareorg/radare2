@@ -2600,6 +2600,11 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
+static inline bool is_filtered_flag(const char *name) {
+	return (!strncmp (name, "section.", 8)
+		|| !strncmp (name, "section_end.", 12));
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
@@ -2642,10 +2647,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
 				refaddr = p;
-				if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
-					ALIGN;
-					ds_comment (ds, true, "; %s%s", f->name, nl);
-					flag_printed = true;
+			}
+			if (!flag_printed) {
+				list = r_flag_get_list (core->flags, p);
+				r_list_foreach (list, iter, f) {
+					if (is_filtered_flag (f->name)) {
+						continue;
+					}
+					if (!ds->opstr || !strstr (ds->opstr, f->name)) {
+						ALIGN;
+						ds_comment (ds, true, "; %s%s", f->name, nl);
+						flag_printed = true;
+					}
 				}
 			}
 		}
@@ -2674,7 +2687,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 				if (!is_lea_str) {
-					if (!flag_printed && *flag && (!ds->opstr || !strstr (ds->opstr, flag))) {
+					if (!flag_printed && *flag && !is_filtered_flag (flag)
+					    && (!ds->opstr || !strstr (ds->opstr, flag))) {
 						ALIGN;
 						ds_comment (ds, true, "; %s%s", flag, nl);
 						flag_printed = true;
