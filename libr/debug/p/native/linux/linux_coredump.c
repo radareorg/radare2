@@ -919,7 +919,7 @@ static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
 	}
 	transfer.iov_base = fpxregset;
 	transfer.iov_len = sizeof (elf_fpxregset_t);
-	if (ptrace (PTRACE_GETREGSET, tid, (unsigned int)NT_PRXFPREG, &transfer) < 0) {
+	if (ptrace (PTRACE_GETREGS, tid, (unsigned int)NT_PRXFPREG, &transfer) < 0) {
 		perror ("linux_get_fpx_regset");
 		return NULL;
 	}
