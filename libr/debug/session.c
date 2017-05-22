@@ -14,17 +14,19 @@ R_API void r_debug_session_list(RDebug *dbg) {
 	ut32 count = 0;
 	RListIter *iterse, *itersn;
 	RDebugSnap *snap;
+	RDebugSnapDiff *diff;
 	RDebugSession *session;
 	r_list_foreach (dbg->sessions, iterse, session) {
 		count = 0;
 		dbg->cb_printf ("session:%2d\tat:0x%08"PFMT64x "\n", session->key.id, session->key.addr);
-		r_list_foreach (session->memlist, itersn, snap) {
+		r_list_foreach (session->memlist, itersn, diff) {
+			snap = diff->base;
 			comment = "";
 			if (snap->comment && *snap->comment) {
 				comment = snap->comment;
 			}
-			dbg->cb_printf ("%d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d  --  %s\n",
-				count, snap->addr, snap->addr_end, snap->size, comment);
+			dbg->cb_printf ("\t- %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d (page: %d)  --  %s\n",
+				count, snap->addr, snap->addr_end, snap->size, diff->page_off, comment);
 			count++;
 		}
 	}
@@ -33,7 +35,8 @@ R_API void r_debug_session_list(RDebug *dbg) {
 R_API bool r_debug_session_add(RDebug *dbg) {
 	RDebugSession *session;
 	RDebugSnap *snap;
-	RListIter *iter, *start;
+	RDebugSnapDiff *diff;
+	RListIter *iter, *tail;
 	ut64 addr;
 	int i;
 	session = R_NEW0 (RDebugSession);
@@ -54,17 +57,17 @@ R_API bool r_debug_session_add(RDebug *dbg) {
 	r_reg_arena_push (dbg->reg);
 
 	/* save memory snapshots */
-	session->memlist = r_list_newf (r_debug_snap_free);
-	start = r_list_tail (dbg->snaps);
+	session->memlist = r_list_newf (r_debug_diff_free);
+
 	r_debug_snap_all (dbg, R_IO_RW);
-	if (!start) {
-		start = r_list_head (dbg->snaps);
-	} else {
-		start = start->n;
-	}
-	// XXX
-	for (iter = start; iter && (snap = iter->data); iter = iter->n) {
-		r_list_append (session->memlist, snap);
+
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (r_list_length (snap->history) > 0) {
+			/* Diff history exists */
+			tail = r_list_tail (snap->history);
+			diff = (RDebugSnapDiff *)tail->data;
+			r_list_append (session->memlist, diff);
+		}
 	}
 
 	r_list_append (dbg->sessions, session);
@@ -72,7 +75,7 @@ R_API bool r_debug_session_add(RDebug *dbg) {
 }
 
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
-	RDebugSnap *snap;
+	RDebugSnapDiff *diff;
 	RRegArena *arena;
 	RListIter *iter, *iterr;
 	int i;
@@ -87,9 +90,9 @@ R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 
-	/* Restore all memory values from memory snapshots*/
-	r_list_foreach (session->memlist, iter, snap) {
-		r_debug_snap_set (dbg, snap);
+	/* Restore all memory values from memory (diff) snapshots */
+	r_list_foreach (session->memlist, iter, diff) {
+		r_debug_diff_set (dbg, diff);
 	}
 }
 

@@ -155,7 +155,9 @@ typedef struct r_debug_desc_t {
 	ut64 off;
 } RDebugDesc;
 
+struct r_debug_snap_t;
 typedef struct r_debug_snap_diff_t {
+	struct r_debug_snap_t *base;
 	int page_off;
 	ut8 *data;
 	ut8 hash[128];
@@ -183,7 +185,7 @@ typedef struct r_debug_key {
 typedef struct r_debug_session_t {
 	RDebugKey key;
 	RListIter *reg[R_REG_TYPE_LAST];
-	RList *memlist; // <RDebugSnap*>
+	RList *memlist; // <RDebugSnapDiff*>
 } RDebugSession;
 
 typedef struct r_debug_trace_t {
@@ -529,6 +531,7 @@ R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
 /* snap diff */
 R_API void r_debug_diff_free (void *p) ;
 R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base);
+R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff);
 
 /* debug session */
 R_API void r_debug_session_free (void *p) ;

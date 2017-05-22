@@ -98,14 +98,18 @@ R_API RDebugSnap *r_debug_snap_get(RDebug *dbg, ut64 addr) {
 	return NULL;
 }
 
+R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
+	ut64 addr = diff->base->addr + diff->page_off * SNAP_PAGE_SIZE;
+	dbg->iob.write_at (dbg->iob.io, addr, diff->data, SNAP_PAGE_SIZE);
+}
+
 R_API int r_debug_snap_set(RDebug *dbg, RDebugSnap *snap) {
 	RListIter *iter;
 	RDebugSnapDiff *diff;
 	eprintf ("Writing %d bytes to 0x%08"PFMT64x "...\n", snap->size, snap->addr);
 	/* XXX: Set all history from oldest one. It's bit ugly. */
 	r_list_foreach (snap->history, iter, diff) {
-		ut64 addr = snap->addr + diff->page_off * SNAP_PAGE_SIZE;
-		dbg->iob.write_at (dbg->iob.io, addr, diff->data, SNAP_PAGE_SIZE);
+		r_debug_diff_set (dbg, diff);
 	}
 	return 1;
 }
@@ -271,6 +275,7 @@ R_API void r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 			// print_hash (prev_hash, digest_size);
 			/* Create new diff entry, save one page and calculate hash. */
 			new = (RDebugSnapDiff *) malloc (sizeof (RDebugSnapDiff));
+			new->base = base;
 			new->page_off = page_off;
 			new->data = buf;
 			memcpy (new->hash, cur_hash, digest_size);
