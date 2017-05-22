@@ -59,6 +59,24 @@ files=[
 'yank.c'
 ]
 
+gdbr_files=[
+  '../../shlr/gdb/src/arch.c',
+  '../../shlr/gdb/src/common.c',
+  '../../shlr/gdb/src/libgdbr.c',
+  '../../shlr/gdb/src/packet.c',
+  '../../shlr/gdb/src/utils.c',
+  '../../shlr/gdb/src/gdbclient/core.c',
+  '../../shlr/gdb/src/gdbclient/responses.c',
+  '../../shlr/gdb/src/gdbserver/core.c'
+]
+
+gdbr = static_library('gdbr', gdbr_files,
+  include_directories: include_directories([
+  '../../shlr/gdb/include',
+  '../../libr/include',
+  platform_librinc
+  ]))
+
 r_core = shared_library('r_core', files,
   include_directories: include_directories([
   '../include','../../shlr',
@@ -68,7 +86,8 @@ r_core = shared_library('r_core', files,
   link_with: [r_util, r_reg, r_syscall, r_search, r_cons, r_anal, r_socket, r_io, r_fs, r_lang, r_hash, r_flag, r_parse, r_egg, r_debug, r_magic, r_crypto, r_config, r_bin],
   objects: [
     r_sdb.extract_all_objects(),
-	spp.extract_all_objects()
-  ],  
+	spp.extract_all_objects(),
+	gdbr.extract_all_objects()
+  ],
   install: true
 )

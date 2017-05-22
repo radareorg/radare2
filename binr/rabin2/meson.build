@@ -8,6 +8,6 @@ executable('rabin2', 'rabin2.c',
   objects: [
     r_sdb.extract_all_objects(),
 	r_bin.extract_all_objects()
-  ],    
+  ],
   install: true
 )

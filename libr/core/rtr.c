@@ -2,6 +2,8 @@
 
 #include "r_core.h"
 #include "r_socket.h"
+#include "gdb/include/libgdbr.h"
+#include "gdb/include/gdbserver/core.h"
 
 #if 0
 SECURITY IMPLICATIONS
@@ -888,6 +890,107 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	return ret;
 }
 
+// path = "<port> <file_name>"
+static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
+	RSocket *sock;
+	int p;
+	char port[10];
+	const char *file;
+	char cmd_buf[64];
+	libgdbr_t *g;
+	RCoreFile *cf;
+
+	while (*path && isspace (*path)) {
+		path++;
+	}
+	if (!*path) {
+		eprintf ("gdbserver: Port not specified\n");
+		return -1;
+	}
+	if (path && (p = atoi (path))) {
+		if (p < 0 || p > 65535) {
+			eprintf ("gdbserver: Invalid port: %s\n", port);
+			return -1;
+		}
+		snprintf (port, sizeof (port) - 1, "%d", p);
+		if (!(file = strchr (path, ' '))) {
+			eprintf ("gdbserver: File not specified\n");
+			return -1;
+		}
+		while (*file && isspace (*file)) {
+			file++;
+		}
+		if (!*file) {
+			eprintf ("gdbserver: File not specified\n");
+			return -1;
+		}
+	}
+
+	if (!(cf = r_core_file_open (core, file, R_IO_READ, 0))) {
+		eprintf ("Cannot open file (%s)\n", file);
+		return -1;
+	}
+	r_core_file_reopen_debug (core, "");
+
+	if (!(sock = r_socket_new (false))) {
+		eprintf ("gdbserver: Could not open socket for listening\n");
+		return -1;
+	}
+	if (!r_socket_listen (sock, port, NULL)) {
+		r_socket_free (sock);
+		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
+		return -1;
+	}
+	if (!(g = R_NEW0(libgdbr_t))) {
+		r_socket_free (sock);
+		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
+		return -1;
+	}
+	gdbr_init (g);
+	core->gdbserver_up = 1;
+	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
+
+	while (1) {
+		if (!(g->sock = r_socket_accept (sock))) {
+			break;
+		}
+		g->connected = 1;
+		while (!gdbr_server_read (g, cmd_buf, sizeof (cmd_buf) - 1)) {
+			if (!strncmp (cmd_buf, "q", sizeof (cmd_buf))) {
+				break;
+			}
+			if (*cmd_buf) {
+				cmd_buf[sizeof (cmd_buf) - 1] = '\0';
+				eprintf ("cmd: %s\n", cmd_buf);
+				r_core_cmd (core, cmd_buf, 0);
+			}
+		}
+		g->connected = 0;
+		/* TODO: Wait for connections */
+		break;
+	}
+	core->gdbserver_up = 0;
+	gdbr_cleanup (g);
+	free (g);
+	r_socket_free (sock);
+	return 0;
+}
+
+R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path) {
+	int ret;
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: connect disabled\n");
+		return -1;
+	}
+	// TODO: do stuff with launch
+	if (core->gdbserver_up) {
+		eprintf ("gdbserver is already running\n");
+		return -1;
+	}
+	ret = r_core_rtr_gdb_run (core, launch, path);
+	return ret;
+}
+
 R_API void r_core_rtr_help(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
@@ -912,6 +1015,8 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=h&", " port", "start http server in background)",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
+	"\ngdbserver:", "", "",
+	"=g", " port file", "listen on 'port' for debugging 'file' using gdbserver",
 	NULL };
 	r_core_cmd_help (core, help_msg);
 }

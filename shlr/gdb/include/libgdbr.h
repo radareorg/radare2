@@ -5,8 +5,6 @@
 #include <stdint.h>
 #ifdef _MSC_VER
 typedef unsigned int ssize_t;
-#else
-#include <unistd.h>
 #endif
 
 #include "arch.h"
