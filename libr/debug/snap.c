@@ -97,7 +97,7 @@ R_API RDebugSnap *r_debug_snap_get(RDebug *dbg, ut64 addr) {
 	return NULL;
 }
 
-static void r_page_data_set (RDebug *dbg, RPageData *page) {
+static void r_page_data_set(RDebug *dbg, RPageData *page) {
 	RDebugSnapDiff *diff = page->diff;
 	ut64 addr = diff->base->addr + page->page_off * SNAP_PAGE_SIZE;
 	dbg->iob.write_at (dbg->iob.io, addr, page->data, SNAP_PAGE_SIZE);
@@ -107,12 +107,12 @@ static void r_page_data_set (RDebug *dbg, RPageData *page) {
 R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 	RPageData *prev_page, *last_page;
 	RDebugSnap *snap = diff->base;
-	//assert (r_list_length (snap->history) > 0);
-	RDebugSnapDiff *latest = 	(RDebugSnapDiff *)r_list_tail (snap->history)->data;
+	// assert (r_list_length (snap->history) > 0);
+	RDebugSnapDiff *latest = (RDebugSnapDiff *) r_list_tail (snap->history)->data;
 	ut64 addr;
 	ut32 page_off;
 
-	eprintf ("Apply diff [0x%08"PFMT64x", 0x%08"PFMT64x"]\n", snap->addr, snap->addr_end);
+	eprintf ("Apply diff [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", snap->addr, snap->addr_end);
 
 	/* Role back page datas that's been changed **after** specified SnapDiff 'diff' */
 	for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
@@ -124,7 +124,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 			ut64 addr = snap->addr + off;
 			/* Copy a page data of base snap to current addr. (i.e. role back) */
 			dbg->iob.write_at (dbg->iob.io, addr, snap->data + off, SNAP_PAGE_SIZE);
-			//eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			// eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
 		}
 	}
 
@@ -133,7 +133,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 		page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 		if ((prev_page = diff->last_changes[page_off])) {
 			r_page_data_set (dbg, prev_page);
-			//eprintf ("Update 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			// eprintf ("Update 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
 		}
 	}
 }
@@ -169,7 +169,7 @@ static void print_hash(ut8 *hash, int digest_size) {
 	eprintf ("\n");
 }
 
-R_API RDebugSnapDiff* r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
+R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {
 		eprintf ("Invalid map size\n");
 		return 0;
@@ -275,7 +275,7 @@ R_API void r_debug_diff_free(void *p) {
 	free (diff);
 }
 
-R_API RDebugSnapDiff* r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
+R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 	RDebugSnapDiff *prev_diff = NULL, *new_diff;
 	RPageData *new_page, *last_page;
 	ut64 addr;
@@ -325,14 +325,14 @@ R_API RDebugSnapDiff* r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 			new_page->page_off = page_off;
 			new_page->data = buf;
 			memcpy (new_page->hash, cur_hash, digest_size);
-			new_diff->last_changes [page_off] = new_page; //Update last change to new page
+			new_diff->last_changes[page_off] = new_page;	// Update last change to new page
 			r_list_append (new_diff->pages, new_page);
 		}
 	}
 	if (r_list_length (new_diff->pages)) {
 		RPageData *page;
 		RListIter *iter;
-		eprintf ("saved: 0x%08"PFMT64x"(page: ", addr);
+		eprintf ("saved: 0x%08"PFMT64x "(page: ", addr);
 		r_list_foreach (new_diff->pages, iter, page) {
 			eprintf ("%d ", page->page_off);
 		}
