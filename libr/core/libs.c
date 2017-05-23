@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_core.h"
 #include "../config.h"
@@ -116,5 +116,6 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	
 	free (homeplugindir);
 	core->times->loadlibs_time = r_sys_now () - prev;
+	r_list_free (files);
 	return true;
 }

@@ -162,7 +162,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                         " =!pid      - show targeted pid\n"
                         " =!pkt s    - send packet 's'\n");
 	} else if (!strncmp (cmd, "pkt ", 4)) {
-		send_msg (desc, cmd + 4);
+		if (send_msg (desc, cmd + 4) == -1) {
+			return false;
+		}
 		int r = read_packet (desc);
 		eprintf ("r = %d\n", r);
 	} else if (!strncmp (cmd, "pid", 3)) {

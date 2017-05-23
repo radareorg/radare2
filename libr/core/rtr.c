@@ -895,11 +895,14 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	RSocket *sock;
 	int p;
 	char port[10];
-	const char *file;
+	const char *file = NULL;
 	char cmd_buf[64];
 	libgdbr_t *g;
 	RCoreFile *cf;
 
+	if (!core || !path) {
+		return -1;
+	}
 	while (*path && isspace (*path)) {
 		path++;
 	}

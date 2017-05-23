@@ -10,12 +10,14 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	if (!(buf = malloc (128))) {
 		return -1;
 	}
-	snprintf (buf, 127, "PacketSize=%x", g->read_max - 1);
+	snprintf (buf, 127, "PacketSize=%x", (ut32) (g->read_max - 1));
 	ret = handle_qSupported (g);
 	if (ret < 0) {
 		return ret;
 	}
-	return send_msg (g, buf);
+	int res = send_msg (g, buf);
+	free (buf);
+	return res;
 }
 
 static int _server_handle_qTStatus(libgdbr_t *g) {
