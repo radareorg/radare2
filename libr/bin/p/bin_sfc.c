@@ -175,6 +175,7 @@ static RList* sections(RBinFile *arch) {
 static RList *mem (RBinFile *arch) {
 	RList *ret;
 	RBinMem *m;
+	RBinMem *m_bak;
 	if (!(ret = r_list_new())) {
 		return NULL;
 	}
@@ -198,8 +199,9 @@ static RList *mem (RBinFile *arch) {
 	m->size = LOWRAM_MIRROR_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (m->mirrors, m);
+	m_bak = m;
 	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (m->mirrors);
+		r_list_free (m_bak->mirrors);
 		return ret;
 	}
 	m->name = strdup ("HIRAM");
