@@ -292,7 +292,7 @@ static void radare2_rc(RCore *r) {
 	bool has_debug = false;
 	if (env_debug) {
 		has_debug = true;
-		free (env_debug);
+		R_FREE (env_debug);
 	}
 
 	char *homerc = r_str_home (".radare2rc");

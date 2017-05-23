@@ -101,6 +101,20 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 #endif
 	}
 #endif
+	// load script plugins
+	char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+        RList *files = r_sys_dir (homeplugindir);
+	RListIter *iter;
+	char *file;
+	r_list_foreach (files, iter, file) {
+		bool isScript = r_str_endswith (file, ".py") || r_str_endswith (file, ".js") || r_str_endswith (file, ".lua");
+		if (isScript) {
+			// eprintf ("-> %s\n", file);
+			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
+		}
+	}
+	
+	free (homeplugindir);
 	core->times->loadlibs_time = r_sys_now () - prev;
 	return true;
 }
