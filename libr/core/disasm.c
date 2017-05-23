@@ -2592,9 +2592,13 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->asmop.payload != 0) {
 		r_cons_printf ("\n; .. payload of %d bytes", ds->asmop.payload);
 		if (ds->showpayloads) {
+			int mod = ds->asmop.payload % ds->core->assembler->dataalign;
 			int x;
 			for (x = 0; x < ds->asmop.payload; ++x) {
-				r_cons_printf ("\n        0x%x", buf[ds->oplen + x]);
+				r_cons_printf ("\n        0x%02x", buf[ds->oplen + x]);
+			}
+			for (x = 0; x < mod; ++x) {
+				r_cons_printf ("\n        0x%02x ; alignment", buf[ds->oplen + ds->asmop.payload + x]);
 			}
 		}
 	}
@@ -3786,7 +3790,7 @@ toro:
 		if (inc < 1) {
 			inc = 1;
 		}
-		inc += ds->asmop.payload;
+		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
 	}
 	R_FREE (nbuf);
 	r_cons_break_pop ();
@@ -4258,8 +4262,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		r_cons_printf ("}");
-		i += oplen + asmop.payload; // bytes
-		k += oplen + asmop.payload; // delta from addr
+		i += oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
+		k += oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
 		j++; // instructions
 		line++;
 
