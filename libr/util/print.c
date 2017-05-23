@@ -20,20 +20,37 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	int i, j, cols = 78;
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
-	p->cb_printf (" | ");
+	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
+	if (colors) {
+		for (i = 0; i < rows; i++) {
+			int threshold = i * (0xff / rows);
+			for (j = 0; j < cols; j++) {
+				int realJ = j * len / cols;
+				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
+					p->cb_printf (Color_BGRED"_" Color_RESET);
+				} else {
+					p->cb_printf (" ");
+				}
+			}
+			p->cb_printf ("\n");
+		}
+		return;
+	}
+
 	for (i = 0; i<rows; i++) {
 		int threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
-			int realJ = j * (len/cols);
-			if (buf[realJ] < threshold) {
-				p->cb_printf ("#");
+			int realJ = j * len / cols;
+			if (255 - buf[realJ] < threshold) {
+				p->cb_printf ("|");
+			} else if (i + 1 == rows) {
+				p->cb_printf ("_");
 			} else {
 				p->cb_printf (" ");
 			}
 		}
-		p->cb_printf ("\n | ");
+		p->cb_printf ("\n");
 	}
-	p->cb_printf ("\n");
 }
 
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) {
