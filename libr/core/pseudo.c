@@ -124,7 +124,7 @@ static void find_and_change (char* in, int len) {
 		} else if (ctx.type == TYPE_SYM) {
 			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
 				ctx.leftlen = in - ctx.left + 3;
-			} else if (ctx.comment && *in == '(' && (IS_ALPHA (in[-1]) || *ctx.right == '*') && !ctx.right) {
+			} else if (ctx.comment && *in == '(' && IS_ALPHA (in[-1]) && !ctx.right) {
 				// ok so i've found a function written in this way:
 				// type = [const|void|int|float|double|short|long]
 				// type fcn_name (type arg1, type arg2, ...)
