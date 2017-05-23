@@ -155,10 +155,19 @@ typedef struct r_debug_desc_t {
 	ut64 off;
 } RDebugDesc;
 
-typedef struct r_debug_snap_diff_t {
+struct r_debug_snap_diff_t;
+typedef struct r_page_data_t {
+	struct r_debug_snap_diff_t *diff; // Pointing SnapDiff that has this pagedata.
 	int page_off;
 	ut8 *data;
 	ut8 hash[128];
+} RPageData;
+
+struct r_debug_snap_t;
+typedef struct r_debug_snap_diff_t {
+	struct r_debug_snap_t *base;
+	RList *pages; // <RPageData*>
+	RPageData **last_changes; // Last diff entries of each pages
 } RDebugSnapDiff;
 
 typedef struct r_debug_snap_t {
@@ -170,7 +179,6 @@ typedef struct r_debug_snap_t {
 	ut64 timestamp;
 	RHash *hash_ctx;
 	ut8 **hashes; // Hash of each pages
-	RDebugSnapDiff **last_changes; // Last diff entries of each pages
 	RList *history; // <RDebugSnapDiff*>
 	char *comment;
 } RDebugSnap;
@@ -183,7 +191,7 @@ typedef struct r_debug_key {
 typedef struct r_debug_session_t {
 	RDebugKey key;
 	RListIter *reg[R_REG_TYPE_LAST];
-	RList *memlist; // <RDebugSnap*>
+	RList *memlist; // <RDebugSnapDiff*>
 } RDebugSession;
 
 typedef struct r_debug_trace_t {
@@ -521,14 +529,19 @@ R_API int r_debug_snap_delete(RDebug *dbg, int idx);
 R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
+R_API RDebugSnapDiff* r_debug_snap_map(RDebug *dbg, RDebugMap *map);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
 R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_set_idx (RDebug *dbg, int idx);
 R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
 
 /* snap diff */
-R_API void r_debug_diff_free (void *p) ;
-R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base);
+R_API void r_debug_diff_free (void *p);
+R_API RDebugSnapDiff* r_debug_diff_add(RDebug *dbg, RDebugSnap *base);
+R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff);
+
+/* page data */
+R_API void r_page_data_free(void *p);
 
 /* debug session */
 R_API void r_debug_session_free (void *p) ;
