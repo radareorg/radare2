@@ -495,8 +495,9 @@ R_API int r_debug_start(RDebug *dbg, const char *cmd) {
 }
 
 R_API int r_debug_detach(RDebug *dbg, int pid) {
-	if (dbg->h && dbg->h->detach)
+	if (dbg->h && dbg->h->detach) {
 		return dbg->h->detach (dbg, pid);
+	}
 	return false;
 }
 

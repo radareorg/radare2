@@ -197,6 +197,7 @@ int xnu_detach(RDebug *dbg, int pid) {
 	//we mark the task as not longer available since we deallocated the ref
 	task_dbg = 0;
 	r_list_free (dbg->threads);
+	dbg->threads = NULL;
 	return true;
 #endif
 }
