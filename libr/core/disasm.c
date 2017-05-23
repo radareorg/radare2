@@ -205,6 +205,7 @@ typedef struct r_disam_options_t {
 	bool dwarfFile;
 	bool dwarfAbspath;
 	bool showpayloads;
+	bool showrelocs;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -504,6 +505,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->esil_likely = false;
 
 	ds->showpayloads = r_config_get_i (ds->core->config, "asm.payloads");
+	ds->showrelocs = r_config_get_i (core->config, "bin.relocs");
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
@@ -2928,9 +2930,6 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 	if (size < 1 || addr == UT64_MAX) {
 		return NULL;
 	}
-	if (!r_config_get_i (core->config, "bin.relocs")) {
-		return NULL;
-	}
 	list = r_bin_get_relocs (core->bin);
 	r_list_foreach (list, iter, r) {
 		if ((r->vaddr >= addr) && (r->vaddr < (addr + size))) {
@@ -2941,6 +2940,9 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 }
 
 static void ds_print_relocs(RDisasmState *ds) {
+	if (!ds->showrelocs || !ds->show_slow) {
+		return;
+	}
 	RCore *core = ds->core;
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 
@@ -3089,7 +3091,7 @@ static void get_fcn_args_info(RAnal *anal, const char *fcn_name, int arg_num, co
 		char **orig_c_type, char **c_type, const char **fmt, ut64 *size, const char **source) {
 	*name = r_anal_type_func_args_name (anal, fcn_name, arg_num);
 	*orig_c_type = r_anal_type_func_args_type (anal, fcn_name, arg_num);
-	if (!strncmp("const ", *orig_c_type, 6)) {
+	if (!strncmp ("const ", *orig_c_type, 6)) {
 		*c_type = *orig_c_type+6;
 	} else {
 		*c_type = *orig_c_type;
