@@ -1141,7 +1141,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					ut64 closest_addr = UT64_MAX;
 					RList *symbols = r_bin_get_symbols (core->bin);
 					RBinSymbol *symbol, *closest_symbol = NULL;
-					
+
 					r_list_foreach (symbols, iter, symbol) {
 						if (symbol->vaddr > addr) {
 							if (symbol->vaddr - addr < closest_addr) {
@@ -1321,7 +1321,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 		value = r_reg_get_value (core->dbg->reg, r);
 		rrstr = r_core_anal_hasrefs (core, value, true);
 		if (bits == 64) {
-			if (r->flags) {	
+			if (r->flags) {
 				tmp = r_reg_get_bvalue (reg, r);
 				r_cons_printf ("%6s %018s", r->name, tmp);
 			} else {
@@ -2017,7 +2017,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				case 0:
 					r_cons_printf ("0x%08"PFMT64x"\n", off);
 					break;
-				case 1: 
+				case 1:
 					r_cons_printf ("Unknown register '%s'\n", str + 1);
 					break;
 				case 80:
@@ -2156,8 +2156,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 't': // "dbt"
 		switch (input[2]) {
 			case 'e': // "dbte"
-				for (p = input + 3; *p == ' '; p++) { 
-					/* nothing to do here */ 
+				for (p = input + 3; *p == ' '; p++) {
+					/* nothing to do here */
 				}
 				if (*p == '*') {
 					r_bp_set_trace_all (core->dbg->bp,true);
@@ -3136,7 +3136,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 				}
 			}
 		}
-		
+
 		eprintf ("Selecting and continuing: %d\n", main_pid);
 		r_debug_select (core->dbg, main_pid, main_pid);
 		r_debug_continue (core->dbg);
@@ -3493,7 +3493,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_session_add (core->dbg);
 				break;
 			case 'A':
-				r_debug_session_set_idx (core->dbg, atoi (input + 2));
+				r_debug_session_set_idx (core->dbg, atoi (input + 4));
 				break;
 			default:
 				{
