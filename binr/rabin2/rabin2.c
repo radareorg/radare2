@@ -74,7 +74,7 @@ static int rabin_show_help(int v) {
 		" -v              display version and quit\n"
 		" -V              Show binary version information\n"
 		" -x              extract bins contained in file\n"
-		" -X [fmt] [f] .. package in fat or zip the given files andbins contained in file\n"
+		" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 		" -z              strings (from data section)\n"
 		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
 		" -zzz            dump raw strings to stdout (for huge files)\n"
