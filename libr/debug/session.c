@@ -97,7 +97,6 @@ R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
 		}
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
-
 	/* Restore all memory values from memory (diff) snapshots */
 	r_list_foreach (session->memlist, iter, diff) {
 		r_debug_diff_set (dbg, diff);
@@ -112,9 +111,8 @@ R_API bool r_debug_session_set_idx(RDebug *dbg, int idx) {
 	if (!dbg || idx < 0) {
 		return false;
 	}
-
 	r_list_foreach (dbg->sessions, iter, session) {
-		if (count == idx) {
+		if (session->key.id == idx) {
 			r_debug_session_set (dbg, session);
 			return true;
 		}
