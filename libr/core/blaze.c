@@ -463,17 +463,14 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 		case R_ANAL_OP_TYPE_NOP:
 			break;
 		case R_ANAL_OP_TYPE_CALL:
-			addBB (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
+			if (r_anal_noreturn_at (core->anal, op->jump)) {
+				addBB (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
+				b_start = start + cur + op->size;
+				block_score = 0;
+			} else {
+				addBB (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
+			}
 			break;
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_IRCALL:
-			break;
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
 		case R_ANAL_OP_TYPE_JMP:
 			addBB (block_list, b_start, start + cur + op->size, op->jump, UT64_MAX, END, block_score);
 			b_start = start + cur + op->size;
