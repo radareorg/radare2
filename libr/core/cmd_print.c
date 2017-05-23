@@ -945,6 +945,7 @@ stage_left:
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
+	core->print->use_comments = r_config_get_i (core->config, "hex.comments");
 	int flagsz = r_config_get_i (core->config, "hex.flagsz");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
@@ -1198,6 +1199,17 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		}
 		r_cons_strcat (bytes);
 		r_cons_strcat (chars);
+
+
+		if (core->print->use_comments) {
+			for (j = 0; j < nb_cols; j++) {
+				const char *comment = core->print->get_comments (core->print->user, addr + j);
+				if (comment) {
+					r_cons_printf (" ; %s", comment);
+				}
+			}
+		}
+
 		r_cons_newline ();
 		addr += nb_cols;
 	}
@@ -4512,6 +4524,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'c':
+			// LOL? :D
 			core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
 			if (l) {
 				ut64 from = r_config_get_i (core->config, "diff.from");

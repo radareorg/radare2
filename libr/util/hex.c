@@ -205,12 +205,14 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		}
 		/* comments */
 		if (*in == '#' || (*in == '/' && in[1] == '/')) {
-			if ((in = strchr (in, '\n')))
+			if ((in = strchr (in, '\n'))) {
 				in++;
+			}
 			continue;
 		} else if (*in == '/' && in[1] == '*') {
-			if ((in = strstr (in, "*/")))
+			if ((in = strstr (in, "*/"))) {
 				in += 2;
+			}
 			continue;
 		} else if (!IS_WHITESPACE (*in) && *in != '\n') {
 			/* this is not a valid string */
