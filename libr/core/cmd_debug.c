@@ -3492,7 +3492,7 @@ static int cmd_debug(void *data, const char *input) {
 			case '+':
 				r_debug_session_add (core->dbg);
 				break;
-			case 'A':
+			case 'A': // for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));
 				break;
 			default:
@@ -3501,7 +3501,6 @@ static int cmd_debug(void *data, const char *input) {
 					"Usage:", "dts[*]", "",
 					"dts", "", "List all trace sessions",
 					"dts+", "", "Add trace session",
-					"dtsA", " id", "Apply trace session",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 				}
