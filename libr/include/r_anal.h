@@ -653,6 +653,7 @@ typedef struct r_anal_t {
 	RListComparator columnSort;
 	int stackptr;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
+	char *cmdtail;
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);

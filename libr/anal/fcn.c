@@ -441,13 +441,34 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
-static bool is_delta_pointer_table(RAnal *anal, ut64 ptr) {
+static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 	int i;
 	ut64 dst;
-	st32 jmptbl[32] = {
+	st32 jmptbl[64] = {
 		0
 	};
-	anal->iob.read_at (anal->iob.io, ptr, (ut8 *) &jmptbl, 32);
+	/* check if current instruction is followed by an ujmp */
+	ut8 buf[64];
+	anal->iob.read_at (anal->iob.io, addr, (ut8 *) buf, 64);
+	RAnalOp aop = {0};
+	bool isValid = false;
+	for (i = 0; i + 8 < 64; i++) {
+		int len = r_anal_op (anal, &aop, addr + i, buf + i, 64 - i);
+		if (len < 1) {
+			len = 1;
+		}
+		if (aop.type == R_ANAL_OP_TYPE_UJMP || aop.type == R_ANAL_OP_TYPE_RJMP) {
+			isValid = true;
+			break;
+		}
+		i += len - 1;
+	}
+	if (!isValid) {
+		return false;
+	}
+	
+	/* check if jump table contains valid deltas */
+	anal->iob.read_at (anal->iob.io, ptr, (ut8 *) &jmptbl, 64);
 	// XXX this is not endian safe
 	for (i = 0; i < 4; i++) {
 		dst = ptr + jmptbl[0];
@@ -499,9 +520,9 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 		case R_ANAL_OP_TYPE_RET:
 		case R_ANAL_OP_TYPE_JMP:
 			// eprintf ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
-			eprintf ("afb+ 0x%"PFMT64x " 0x%"PFMT64x " %d\n",
+			anal->cmdtail = r_str_appendf (anal->cmdtail, "afb+ 0x%"PFMT64x " 0x%"PFMT64x " %d\n",
 				fcn->addr, addr, idx + oplen);
-			eprintf ("afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
+			anal->cmdtail = r_str_appendf (anal->cmdtail, "afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
 				addr_bbsw, addr);
 			return idx + oplen;
 		}
@@ -583,8 +604,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	bb = appendBasicBlock (anal, fcn, addr);
 
-	VERBOSE_ANAL eprintf("Append bb at 0x%08"PFMT64x
-	" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
 
 	bool last_is_push = false;
 	ut64 last_push_addr = UT64_MAX;
@@ -601,13 +621,13 @@ repeat:
 		r_anal_op_fini (&op);
 		if (isInvalidMemory (buf + idx, len - idx)) {
 			FITFCNSZ ();
-			VERBOSE_ANAL eprintf("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
 			return R_ANAL_RET_ERROR;
 		}
 		// check if opcode is in another basic block
 		// in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
-			VERBOSE_ANAL eprintf("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
+			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
 			} else {
@@ -749,8 +769,9 @@ repeat:
 				}
 			}
 			if (anal->opt.jmptbl) {
-				if (is_delta_pointer_table (anal, op.ptr)) {
-					anal->cb_printf ("pxt. 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
+				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
+					anal->cmdtail = r_str_appendf (anal->cmdtail, "pxt. 0x%08" PFMT64x
+						" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
 					// jmptbl_addr = op.ptr;
 					// jmptbl_size = -1;
 					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);

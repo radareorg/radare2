@@ -5657,8 +5657,11 @@ static int cmd_anal(void *data, const char *input) {
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'f': // "af"
-		if (!cmd_anal_fcn (core, input)) {
+		{
+		int res = cmd_anal_fcn (core, input);
+		if (!res) {
 			return false;
+		}
 		}
 		break;
 	case 'g':

@@ -60,7 +60,7 @@ R_LIB_VERSION_HEADER(r_core);
 
 #define RTR_MAX_HOSTS 255
 
-#define R_CORE_CMD_DEPTH 10
+#define R_CORE_CMD_DEPTH 100
 
 typedef struct r_core_rtr_host_t {
 	int proto;

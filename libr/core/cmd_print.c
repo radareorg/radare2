@@ -2532,14 +2532,18 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 		case '.':
 			r_core_cmdf (core, "CC-@ 0x%08"PFMT64x "\n", origin);
 			r_core_cmdf (core, "CC switch table @ 0x%08"PFMT64x "\n", origin);
+			r_core_cmdf (core, "f switch.0x%08"PFMT64x"=0x%08"PFMT64x"\n", origin, origin);
+			r_core_cmdf (core, "f jmptbl.0x%08"PFMT64x"=0x%08"PFMT64x"\n", offset, offset); //origin, origin);
 			r_core_cmdf (core, "axd 0x%"PFMT64x " 0x%08"PFMT64x "\n", origin, offset);
 			break;
 		}
 	} else if (mode == '.') {
 		r_core_cmdf (core, "CC-@ 0x%08"PFMT64x "\n", origin);
-		r_core_cmdf (core, "CC switch table @ 0x%08"PFMT64x "\n", offset);
+		r_core_cmdf (core, "CC switch basic block @ 0x%08"PFMT64x "\n", offset);
+		r_core_cmdf (core, "f switch.0x%08"PFMT64x"=0x%08"PFMT64x"\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
-	for (i = 0; i < len; i += step) {
+	int n = 0;
+	for (i = 0; i < len; i += step, n++) {
 		delta = (st32 *) (buf + i);
 		addr = offset + *delta;
 		if (!r_io_is_valid_offset (core->io, addr, 0)) {
@@ -2549,14 +2553,15 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 			r_cons_printf ("af case.%d.0x%"PFMT64x " 0x%08"PFMT64x "\n", i, offset, addr);
 			r_cons_printf ("ax 0x%"PFMT64x " 0x%08"PFMT64x "\n", offset, addr);
 			r_cons_printf ("ax 0x%"PFMT64x " 0x%08"PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
-			r_cons_printf ("aho case 0x%"PFMT64x " 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
+			r_cons_printf ("aho case 0x%"PFMT64x " 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			r_cons_printf ("ahs %d @ 0x%08"PFMT64x "\n", step, offset + i);
 		} else if (mode == '.') {
-			r_core_cmdf (core, "af case.%d.0x%"PFMT64x " @ 0x%08"PFMT64x "\n", i, offset, addr);
+			r_core_cmdf (core, "af case.%d.0x%"PFMT64x " @ 0x%08"PFMT64x "\n", n, offset, addr);
 			r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%08"PFMT64x "\n", offset, addr);
 			r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%08"PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
-			r_core_cmdf (core, "CC+ case %d: 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", i / step, addr, origin);
-			r_core_cmdf (core, "aho case %d 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
+			// r_core_cmdf (core, "CC+ case %d: 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", i / step, addr, origin);
+			r_core_cmdf (core, "CCu case %d: @ 0x%08"PFMT64x "\n", n, addr); //, origin);
+			r_core_cmdf (core, "aho case %d 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", n, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			r_core_cmdf (core, "ahs %d @ 0x%08"PFMT64x "\n", step, offset + i);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x " -> 0x%08"PFMT64x "\n", offset + i, addr);

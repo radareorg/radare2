@@ -2793,13 +2793,27 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		}
 		rcmd = ptr + 1;
 	}
+	if (core->anal->cmdtail) {
+		char *res = core->anal->cmdtail;
+		core->anal->cmdtail = NULL;
+		r_core_cmd_lines (core, res);
+		free (res);
+	}
 	core->cmd_depth++;
 	free (ocmd);
 	free (core->oobi);
 	core->oobi = NULL;
 	core->oobi_len = 0;
+	return ret;
 beach:
 	r_th_lock_leave (core->lock);
+	/* run pending analysis commands */
+	if (core->anal->cmdtail) {
+		char *res = core->anal->cmdtail;
+		core->anal->cmdtail = NULL;
+		r_core_cmd0 (core, res);
+		free (res);
+	}
 	return ret;
 }
 
