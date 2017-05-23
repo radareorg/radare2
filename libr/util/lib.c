@@ -266,7 +266,7 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 	RListIter *iter;
 	int ret = false;
 
-	if (!handler || !lib || !file || !stru) {
+	if (!lib || !file || !stru) {
 		return R_FAIL;
 	}
 	if (stru->version) {
@@ -283,7 +283,9 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 			// TODO: reload if opening again?
 			// TODO: store timestamp of file
 			// TODO: autoreload plugins if updated \o/
-			r_lib_dl_close (handler);
+			if (handler) {
+				r_lib_dl_close (handler);
+			}
 			return R_FAIL;
 		}
 	}
@@ -300,7 +302,9 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
 		free (p->file);
 		free (p);
-		r_lib_dl_close (handler);
+		if (handler) {
+			r_lib_dl_close (handler);
+		}	
 	} else r_list_append (lib->plugins, p);
 
 	return ret;
