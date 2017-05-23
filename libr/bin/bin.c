@@ -2636,7 +2636,7 @@ R_API ut64 r_bin_a2b(RBin *bin, ut64 addr) {
 
 R_API ut64 r_bin_get_size(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	return o? o->size: UT64_MAX;
+	return o ? o->size : 0;
 }
 
 R_API int r_bin_file_delete_all(RBin *bin) {
