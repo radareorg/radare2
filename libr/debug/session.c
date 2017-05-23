@@ -30,7 +30,7 @@ R_API void r_debug_session_list(RDebug *dbg) {
 			dbg->cb_printf ("\t- %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d ",
 				count, snap->addr, snap->addr_end, snap->size);
 			dbg->cb_printf ("(pages: ");
-			r_list_foreach (diff->pages, itersn, page) {
+			r_list_foreach (diff->pages, iterpg, page) {
 				dbg->cb_printf ("%d ", page->page_off);
 			}
 			dbg->cb_printf (")\n");
@@ -44,8 +44,9 @@ R_API bool r_debug_session_add(RDebug *dbg) {
 	RDebugSnap *snap;
 	RDebugSnapDiff *diff;
 	RListIter *iter, *tail;
+	RDebugMap *map;
 	ut64 addr;
-	int i;
+	int i, perms = R_IO_RW;
 	session = R_NEW0 (RDebugSession);
 	if (!session) {
 		return false;
@@ -66,14 +67,14 @@ R_API bool r_debug_session_add(RDebug *dbg) {
 	/* save memory snapshots */
 	session->memlist = r_list_newf (r_debug_diff_free);
 
-	r_debug_snap_all (dbg, R_IO_RW);
-
-	r_list_foreach (dbg->snaps, iter, snap) {
-		if (r_list_length (snap->history) > 0) {
-			/* Diff history exists */
-			tail = r_list_tail (snap->history);
-			diff = (RDebugSnapDiff *)tail->data;
-			r_list_append (session->memlist, diff);
+	r_debug_map_sync (dbg);
+	r_list_foreach (dbg->maps, iter, map) {
+		if (!perms || (map->perm & perms) == perms) {
+			diff = r_debug_snap_map (dbg, map);
+			if (diff) {
+				/* Add diff history */
+				r_list_append (session->memlist, diff);
+			}
 		}
 	}
 

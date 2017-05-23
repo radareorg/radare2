@@ -134,12 +134,8 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 	}
 }
 
+// XXX: snap_set will be duplicated soon
 R_API int r_debug_snap_set(RDebug *dbg, RDebugSnap *snap) {
-	RListIter *iter;
-	RDebugSnapDiff *diff;
-	ut64 addr;
-	eprintf ("Writing %d bytes to 0x%08"PFMT64x "...\n", snap->size, snap->addr);
-	// XXX:
 	return 1;
 }
 
@@ -169,7 +165,7 @@ static void print_hash(ut8 *hash, int digest_size) {
 	eprintf ("\n");
 }
 
-static int r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
+R_API RDebugSnapDiff* r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {
 		eprintf ("Invalid map size\n");
 		return 0;
@@ -218,9 +214,9 @@ static int r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	} else {
 		/* A base snapshot have already been saved. *
 		        So we only need to save different parts. */
-		r_debug_diff_add (dbg, snap);
+		return r_debug_diff_add (dbg, snap);
 	}
-	return 1;
+	return NULL;
 }
 
 R_API int r_debug_snap_all(RDebug *dbg, int perms) {
@@ -275,7 +271,7 @@ R_API void r_debug_diff_free(void *p) {
 	free (diff);
 }
 
-R_API void r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
+R_API RDebugSnapDiff* r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 	RDebugSnapDiff *prev_diff = NULL, *new_diff;
 	RPageData *new_page, *last_page;
 	ut64 addr;
@@ -340,5 +336,7 @@ R_API void r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 		r_list_append (base->history, new_diff);
 	} else {
 		r_debug_diff_free (new_diff);
+		return NULL;
 	}
+	return new_diff;
 }

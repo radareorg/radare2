@@ -167,7 +167,7 @@ struct r_debug_snap_t;
 typedef struct r_debug_snap_diff_t {
 	struct r_debug_snap_t *base;
 	RList *pages; // <RPageData*>
-	RPageData **last_changes; // Last diff entries of each pages	
+	RPageData **last_changes; // Last diff entries of each pages
 } RDebugSnapDiff;
 
 typedef struct r_debug_snap_t {
@@ -529,6 +529,7 @@ R_API int r_debug_snap_delete(RDebug *dbg, int idx);
 R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
+R_API RDebugSnapDiff* r_debug_snap_map(RDebug *dbg, RDebugMap *map);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
 R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_set_idx (RDebug *dbg, int idx);
@@ -536,7 +537,7 @@ R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
 
 /* snap diff */
 R_API void r_debug_diff_free (void *p);
-R_API void r_debug_diff_add (RDebug *dbg, RDebugSnap *base);
+R_API RDebugSnapDiff* r_debug_diff_add(RDebug *dbg, RDebugSnap *base);
 R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff);
 
 /* page data */
