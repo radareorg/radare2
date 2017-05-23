@@ -1,9 +1,6 @@
 #!/bin/sh
 # r2pm
 
-# Bail out on errors
-set -e
-
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
 [ -z "${WGET}" ] && WGET=wget
