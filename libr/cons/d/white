@@ -1,4 +1,5 @@
 ec label rgb:c60
+ec help blue
 ec math blue
 ec bin blue
 ec crypto magenta

@@ -237,13 +237,12 @@ void r_pkcs7_free_signerinfos (RPKCS7SignerInfos *ss) {
 }
 
 bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object) {
-	RASN1Object **elems;
 	ut32 shift = 3;
 	if (!sd || !object || object->list.length < 4) {
 		return false;
 	}
 	memset (sd, 0, sizeof (RPKCS7SignedData));
-	elems = object->list.objects;
+	RASN1Object **elems = object->list.objects;
 	//Following RFC
 	sd->version = (ut32) elems[0]->sector[0]; 
 	r_pkcs7_parse_digestalgorithmidentifier (&sd->digestAlgorithms, elems[1]);
