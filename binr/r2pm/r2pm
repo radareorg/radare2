@@ -1,4 +1,8 @@
 #!/bin/sh
+# r2pm
+
+# Bail out on errors
+set -e
 
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
@@ -15,38 +19,54 @@ MAKE=make
 [ -z "${CURL}" ] && CURL=curl
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
-export MAKE
-export GLOBAL=0
-export R2PM_JOBS=4
-export R2VERSION="`r2 -qv`"
+export \
+	MAKE \
+	GLOBAL=0 \
+	R2PM_JOBS=4 \
+	R2VERSION="`r2 -qv`"
+
 PREFIX="`r2 -H PREFIX`"
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
-export LIBEXT="`r2 -H LIBEXT`"
-export R2HOMEDIR="`r2 -H RHOMEDIR`"
-#[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
-#export R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
-export R2PM_PLUGDIR="`r2 -H USER_PLUGINS`"
-# prefix
-export R2PM_SYSPREFIX="${PREFIX}"
-export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
-export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
-# bindir
-export R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin"
-export R2PM_SYSBINDIR="${BINDIR}"
-export R2PM_BINDIR=${R2PM_HOMEBINDIR}
-# www
-export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
-export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
-export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
-# pkgconfig
-export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-export CFLAGS="-I${R2PM_HOMEPREFIX}/include"
-export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 
-export R2PM_PYPATH="${R2PM_PREFIX}/python"
-export R2PM_OLDPWD="${PWD}"
+export \
+	LIBEXT="`r2 -H LIBEXT`" \
+	R2HOMEDIR="`r2 -H RHOMEDIR`"
+
+# prefix
+export \
+	R2PM_SYSPREFIX="${PREFIX}" \
+	R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix" \
+	R2PM_PREFIX="${R2PM_HOMEPREFIX}"
+
+# bindir
+export \
+	R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin" \
+	R2PM_SYSBINDIR="${BINDIR}"
+
+[ -z "${R2PM_BINDIR}" ] && R2PM_BINDIR=${R2PM_HOMEBINDIR}
+export R2PM_BINDIR
+
+# plugdir
+[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
+export R2PM_PLUGDIR
+
+# www
+export \
+	R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`" \
+	R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/" \
+	R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
+
+# pkgconfig
+export \
+	PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" \
+	CFLAGS="-I${R2PM_HOMEPREFIX}/include" \
+	LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
+
+export \
+	R2PM_PYPATH="${R2PM_PREFIX}/python" \
+	R2PM_OLDPWD="${PWD}"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
@@ -58,15 +78,12 @@ fi
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
+[ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
 R2PM_ETCD="${R2HOMEDIR}/radare2rc.d"
-IS_LOCAL=0
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
 	R2PM_GITDIR="${R2PM_USRDIR}/git/"
-else
-	IS_LOCAL=1
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${HOME}/.config/radare2/r2pm/db" ]; then
@@ -81,18 +98,19 @@ fi
 if [ -f "d/baleful" ]; then
 	R2PM_DBDIR="$(pwd)/d/"
 fi
+
 case "$1" in
 init|up|update)
-	R2PM_DBDIR="${HOME}/.config/radare2/r2pm/db"
-	mkdir -p "${R2PM_USRDIR}"/git
-	cd "${R2PM_USRDIR}"/git
+	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
+	mkdir -p "${R2PM_GITDIR}"
+	cd "${R2PM_GITDIR}"
 	if [ -d radare2-pm ]; then
 		cd radare2-pm
 		git reset --hard @^^
-		git pull || exit 1
+		git pull
 	else
 		echo git clone https://github.com/radare/radare2-pm
-		git clone --depth=3 --recursive https://github.com/radare/radare2-pm || exit 1
+		git clone --depth=3 --recursive https://github.com/radare/radare2-pm
 		cd radare2-pm
 		pwd
 	fi
@@ -112,7 +130,7 @@ init|up|update)
 		rm -f "${R2PM_DBDIR}"
 	fi
 
-	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/db "${R2PM_DBDIR}" || exit 1
+	ln -fs "${R2PM_GITDIR}/radare2-pm/db" "${R2PM_DBDIR}"
 	if [ "$1" = "init" ]; then
 		echo "r2pm database initialized. Use 'r2pm update' to update later today."
 	fi
@@ -120,8 +138,7 @@ init|up|update)
 	;;
 esac
 if [ ! -d "${R2PM_DBDIR}" ]; then
-	R2PM_DBDIR=""
-	echo "\$R2PM_DBDIR: No such file or directory."
+	echo '$R2PM_DBDIR: No such file or directory.'
 	echo "Run 'r2pm init' to initialize the package repository"
 	exit 1
 fi
@@ -141,14 +158,14 @@ R2PM_DESC() {
 
 R2PM_SUDO() {
 	if [ "${GLOBAL}" = 1 ]; then
-		${SUDO} $*
+		${SUDO} "$@"
 	else
-		$*
+		"$@"
 	fi
 }
 
 R2PM_List() {
-	cd "${R2PM_USRDIR}/pkg" || exit 1
+	cd "${R2PM_USRDIR}/pkg"
 	if [ -n "$1" ]; then
 		ls | grep -i "$1"
 	else
@@ -172,8 +189,8 @@ R2PM_Search() {
 
 R2PM_TGZ() {
 	URL="$1"
-	TARBALL="`basename $1`"
 	if [ -z "$2" ]; then
+		TARBALL="`basename $1`"
 		DIR="`echo ${TARBALL} | awk -F .t '{print $1}'`"
 	else
 		DIR="$2"
@@ -182,26 +199,24 @@ R2PM_TGZ() {
 		TARBALL="$3"
 	fi
 	cd "${R2PM_GITDIR}"
-	if [ ${IS_LOCAL} = 0 ]; then
-		${WGET} -O ${TARBALL} -c "${URL}"
-		if [ -d "${DIR}" ]; then
-			echo "Already uncompressed."
+	${WGET} -O ${TARBALL} -c "${URL}"
+	if [ -d "${DIR}" ]; then
+		echo "Already uncompressed."
+	else
+		if [ "`echo ${URL} | grep -e tgz -e tar.gz`" ]; then
+			tar xzvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .tbz2 -e tar.bz2`" ]; then
+			tar xjvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
+			tar xJvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .zip`" ]; then
+			unzip -o "${TARBALL}"
 		else
-			if [ "`echo ${URL} | grep -e tgz -e tar.gz`" ]; then
-				tar xzvf "${TARBALL}"
-			elif [ "`echo ${URL} | grep -e .tbz2 -e tar.bz2`" ]; then
-				tar xjvf "${TARBALL}"
-			elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
-				tar xJvf "${TARBALL}"
-			elif [ "`echo ${URL} | grep -e .zip`" ]; then
-				unzip -o "${TARBALL}"
-			else
-				echo "Dunno"
-				exit 1
-			fi
+			echo "Dunno"
+			exit 1
 		fi
-		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
+	cd "${DIR}" || R2PM_FAIL "Oops"
 }
 
 R2PM_GIT() {
@@ -211,34 +226,13 @@ R2PM_GIT() {
 	else
 		DIR="$2"
 	fi
-	cd "${R2PM_GITDIR}" || exit 1
-	if [ ${IS_LOCAL} = 0 ]; then
-		if [ -d "${DIR}" ]; then
-			cd "${DIR}"
-			git pull
-		else
-			git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
-			cd "${DIR}" || R2PM_FAIL "Oops"
-		fi
-	fi
-}
-
-R2PM_SVN() {
-	URL="$1"
-	if [ -z "$2" ]; then
-		DIR="${NAME}"
+	cd "${R2PM_GITDIR}"
+	if [ -d "${DIR}" ]; then
+		cd "${DIR}"
+		git pull
 	else
-		DIR="$2"
-	fi
-	cd "${R2PM_GITDIR}" || exit 1
-	if [ ${IS_LOCAL} = 0 ]; then
-		if [ -d "${DIR}" ]; then
-			cd "${DIR}"
-			svn up
-		else
-			svn co "${URL}" "${DIR}" || R2PM_FAIL "Oops"
-			cd "${DIR}" || R2PM_FAIL "Oops"
-		fi
+		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
+		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
 }
 
@@ -257,11 +251,11 @@ R2PM_Info() {
 	if [ -n "${R2PM_DBDIR}" -a -d "${R2PM_DBDIR}" ]; then
 		echo "# Repository Database:"
 		cd "${R2PM_DBDIR}"
-		echo "# $(ls |wc -l) Packages" >&2
+		printf "# $(ls |wc -l) Packages" >&2
 	fi
 	cd "${R2PM_USRDIR}/pkg"
 	echo "# Installed:"
-	printf "# $(ls |wc -l) Packages\n#  " >&2
+	printf "# %s Packages\n#  " "$(ls | wc -l)" >&2
 	du -hs "${HOME}/.config/radare2" >&2
 }
 
@@ -281,7 +275,7 @@ R2PM_DEPS() {
 	if [ -n "${R2PM_IGNORE_DEPS}" ]; then
 		return
 	fi
-	for a in $@ ; do
+	for a in "$@" ; do
 		echo "DEPENDS: $a"
 		r2pm -w "$a"
 		doInstall=$?
@@ -289,7 +283,7 @@ R2PM_DEPS() {
 			doInstall=1
 		fi
 		if [ $doInstall = 1 ]; then
-			r2pm -i "$a" || exit 1
+			r2pm -i "$a"
 		fi
 	done
 }
@@ -307,7 +301,7 @@ r2pm_install() {
 	if [ -z "$2" ]; then
 		R2PM_Info
 	else
-		FILE="$(pkgFilePath $2)"
+		FILE="$(pkgFilePath "$2")"
 		if [ -f "${FILE}" ]; then
 			NAME="$2"
 			ACTION=Install
@@ -348,7 +342,7 @@ export PYTHON_PATH="${R2PM_PYPATH}:${PYTHON_PATH}"
 
 case "$1" in
 -i|install)
-	r2pm_install $@
+	r2pm_install "$@"
 	;;
 -uu)
 	FILE="${R2PM_USRDIR}/pkg/$2"
@@ -356,7 +350,7 @@ case "$1" in
 	rm -f "${FILE}"
 	;;
 -u|uninstall)
-	r2pm_uninstall $@
+	r2pm_uninstall "$@"
 	;;
 -t|test)
 	[ -n "$2" ] && TRAVIS_TYPE="$2"
@@ -382,7 +376,7 @@ case "$1" in
 	;;
 -r|run)
 	shift
-	PATH="${R2PM_BINDIR}:${PATH}" $*
+	PATH="${R2PM_BINDIR}:${PATH}" "$@"
 	;;
 -v|version)
 	echo "r2pm ${R2VERSION}"
@@ -397,7 +391,7 @@ case "$1" in
 	if [ ! -d "${R2PM_PLUGDIR}" ]; then
 		mkdir -p "${R2PM_PLUGDIR}"
 	fi
-	r2pm_install $@
+	r2pm_install "$@"
 	;;
 -gu|global-uninstall)
 	GLOBAL=1
@@ -406,7 +400,7 @@ case "$1" in
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
-	r2pm_uninstall $@
+	r2pm_uninstall "$@"
 	;;
 -c|clean)
 	if [ -n "$2" ]; then
@@ -441,7 +435,7 @@ what|-w)
 	;;
 cd)
 	if [ -n "$2" ]; then
-		cd ${R2PM_GITDIR}/$2 || exit 1
+		cd "${R2PM_GITDIR}/$2"
 		export R2PM_LEVEL=$((${R2PM_LEVEL}+1))
 		echo "Entering into ${SHELL} level ${R2PM_LEVEL}."
 		PS1="r2pm:${R2PM_LEVEL}:\W\$ " ${SHELL}
@@ -462,13 +456,14 @@ ls)
 	;;
 -a|add)
 	if [ "$2" = "help" ]; then
-		echo "Usage: r2pm -a [url] ([name]) # manage package repositories"
-		echo " $ r2pm -a https://github.com/foo/bar  # register bar repo"
-		echo " $ r2pm -a                             # list all repos"
-		echo " $ r2pm -a - bar                       # delete 'foo' repo"
+		printf '%s\n' \
+			"Usage: r2pm -a [url] ([name]) # manage package repositories" \
+			" $ r2pm -a https://github.com/foo/bar  # register bar repo" \
+			" $ r2pm -a                             # list all repos" \
+			" $ r2pm -a - bar                       # delete 'foo' repo"
 		exit 1
 	fi
-	pushd "${R2PM_DBDIR}" > /dev/null
+	cd "${R2PM_DBDIR}"
 	cd ..
 	mkdir -p db2
 	cd db2
@@ -503,35 +498,46 @@ ls)
 	else
 		ls
 	fi
-	popd > /dev/null
+	cd "$WRKDIR"
 	;;
 -H)
-	s='$'; eval echo $s$2
+	if [ -z "$2" ]; then
+		printf "%s\n" \
+			"Usage: r2pm -H [VARNAME]" \
+			" $ r2pm -H LIBDIR   # show LIBDIR" \
+			" $ r2pm -H PREFIX   # show PREFIX"
+		exit 1
+	fi
+	eval echo "\$$2"
 	;;
 *|help|-h)
-	echo "Usage: r2pm [init|update|cmd] [...]"
-	echo "Commands:"
-	echo " -i,info                     pkgs info"
-	echo " -i,install <pkgname>        baleful"
-	echo " -gi,global-install <pkg>    install baleful in system"
-	echo " -gu,global-uninstall <pkg>  uninstall pkg from systemdir"
-	echo " -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)"
-	echo " -l,list                     list installed pkgs"
-	echo " -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH"
-	echo " -s,search [<keyword>]       search in database"
-	echo " -t,test FX,XX,BR BID        check in travis regressions"
-	echo " -v,version                  show version"
-	echo " -h,help                     show this message"
-	echo " -H variable                 show value of given variable"
-	echo " -c,clean ([git/dir])        clear source cache (GITDIR)"
-	echo " -w <pkgname>                what/where is installed"
-	echo " init | update ..            initialize/update database"
-	echo " cd [git/dir]                cd into given git (see 'r2pm ls')"
-	echo " ls                          ls all cloned git repos in GITDIR"
-	echo "Environment:"
-	echo "SUDO=sudo                    use this tool as sudo"
-	echo "R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins"
-	echo "R2PM_BINDIR=~/.config/radare2/prefix/bin # bindir in r2's PATH"
-	echo "R2PM_PLUGDIR=/usr/lib/radare2/last/      # for system-wide plugin installs"
+	cat <<HELP
+Usage: r2pm [init|update|cmd] [...]
+Commands:
+ -i,info                     pkgs info
+ -i,install <pkgname>        baleful
+ -gi,global-install <pkg>    install baleful in system
+ -gu,global-uninstall <pkg>  uninstall pkg from systemdir
+ -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
+ -l,list                     list installed pkgs
+ -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
+ -s,search [<keyword>]       search in database
+ -t,test FX,XX,BR BID        check in travis regressions
+ -v,version                  show version
+ -h,help                     show this message
+ -H variable                 show value of given variable
+ -c,clean ([git/dir])        clear source cache (GITDIR)
+ -w <pkgname>                what/where is installed
+ init | update ..            initialize/update database
+ cd [git/dir]                cd into given git (see 'r2pm ls')
+ ls                          ls all cloned git repos in GITDIR
+Environment:
+ SUDO=sudo                    use this tool as sudo
+ R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins
+ R2PM_BINDIR=~/.config/radare2/prefix/bin # bindir in r2's PATH
+ R2PM_PLUGDIR=/usr/lib/radare2/last/      # for system-wide plugin installs
+ R2PM_DBDIR=~/.config/radare2/r2pm/db     # location of the db
+ R2PM_GITDIR=~/.config/radare2/r2pm/git   # cloned git repositories
+HELP
 	;;
 esac
