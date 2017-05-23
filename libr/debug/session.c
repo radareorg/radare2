@@ -12,10 +12,12 @@ static int r_debug_session_lastid(RDebug *dbg) {
 R_API void r_debug_session_list(RDebug *dbg) {
 	const char *comment;
 	ut32 count = 0;
-	RListIter *iterse, *itersn;
+	RListIter *iterse, *itersn, *iterpg;
 	RDebugSnap *snap;
 	RDebugSnapDiff *diff;
 	RDebugSession *session;
+	RPageData *page;
+
 	r_list_foreach (dbg->sessions, iterse, session) {
 		count = 0;
 		dbg->cb_printf ("session:%2d\tat:0x%08"PFMT64x "\n", session->key.id, session->key.addr);
@@ -25,8 +27,13 @@ R_API void r_debug_session_list(RDebug *dbg) {
 			if (snap->comment && *snap->comment) {
 				comment = snap->comment;
 			}
-			dbg->cb_printf ("\t- %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d (page: %d)  --  %s\n",
-				count, snap->addr, snap->addr_end, snap->size, diff->page_off, comment);
+			dbg->cb_printf ("\t- %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d ",
+				count, snap->addr, snap->addr_end, snap->size);
+			dbg->cb_printf ("(pages: ");
+			r_list_foreach (diff->pages, itersn, page) {
+				dbg->cb_printf ("%d ", page->page_off);
+			}
+			dbg->cb_printf (")\n");
 			count++;
 		}
 	}
