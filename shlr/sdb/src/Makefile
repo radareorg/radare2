@@ -54,7 +54,7 @@ endif
 	${CC} ${CFLAGS} ${LDFLAGS} -o ${BIN} main.o ${OBJ}
 
 mrproper clean:
-	rm -rf ${OBJ} ${SOBJ} main.o libsdb.$(EXT_AR) a.out ${BIN} sdb.dSYM
+	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM
 	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${EXT_SO} *.${EXT_SO}.*
 
 # rules #

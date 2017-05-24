@@ -77,7 +77,7 @@ INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
 	$(INSTALL_LIB) src/libsdb.${EXT_SO} ${DESTDIR}${LIBDIR}
-	$(INSTALL_DATA) src/libsdb.$(EXT_AR) ${DESTDIR}${LIBDIR}
+	$(INSTALL_DATA) src/libsdb.a ${DESTDIR}${LIBDIR}
 	-if [ "$(EXT_SO)" != "$(SOVER)" ]; then \
 	  cd ${DESTDIR}${LIBDIR} ; \
 	  mv libsdb.$(EXT_SO) libsdb.$(SOVER) ; \
@@ -87,7 +87,7 @@ install: pkgconfig install-dirs
 	$(INSTALL_DATA) $(INCFILES) ${DESTDIR}${INCDIR}/sdb
 	$(INSTALL_PROGRAM) src/sdb ${DESTDIR}${BINDIR}
 ifeq ($(BUILD_MEMCACHE),1)
-	$(INSTALL_DATA) memcache/libmcsdb.$(EXT_AR) ${DESTDIR}${LIBDIR}
+	$(INSTALL_DATA) memcache/libmcsdb.a ${DESTDIR}${LIBDIR}
 	$(INSTALL_DATA) memcache/mcsdb.h ${DESTDIR}${INCDIR}/sdb
 	$(INSTALL_PROGRAM) memcache/mcsdbd ${DESTDIR}${BINDIR}
 	$(INSTALL_PROGRAM) memcache/mcsdbc ${DESTDIR}${BINDIR}
@@ -108,7 +108,7 @@ deinstall uninstall:
 	rm -f ${DESTDIR}${BINDIR}/mcsdbc
 	rm -f ${DESTDIR}${BINDIR}/mcsdbd
 	rm -f ${DESTDIR}${LIBDIR}/libsdb.*
-	rm -f ${DESTDIR}${LIBDIR}/libmcsdb.$(EXT_AR)
+	rm -f ${DESTDIR}${LIBDIR}/libmcsdb.a
 	rm -f ${DESTDIR}${LIBDIR}/pkgconfig/sdb.pc
 	rm -f ${DESTDIR}${LIBDIR}/pkgconfig/mcsdb.pc
 	rm -f ${DESTDIR}${MANDIR}/sdb.1

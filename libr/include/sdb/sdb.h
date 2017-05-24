@@ -1,7 +1,7 @@
 #ifndef SDB_H
 #define SDB_H
 
-#if !defined(O_BINARY) && !defined(_MSC_VER)
+#ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
@@ -29,7 +29,7 @@ extern "C" {
 #define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
 #endif
 
-#if __SDB_WINDOWS__ && !__CYGWIN__ && !_MSC_VER
+#if __SDB_WINDOWS__ && !__CYGWIN__
 #include <windows.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -92,6 +92,7 @@ typedef struct sdb_t {
 	SdbList *hooks;
 	SdbKv tmpkv;
 	ut32 depth;
+	bool timestamped;
 } Sdb;
 
 typedef struct sdb_ns_t {
