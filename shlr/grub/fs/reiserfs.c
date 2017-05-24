@@ -52,6 +52,7 @@
 #define REISERFS_MAX_LABEL_LENGTH 16
 #define REISERFS_LABEL_OFFSET 0x64
 
+#undef S_IFLNK
 #define S_IFLNK 0xA000
 
 static grub_dl_t my_mod;

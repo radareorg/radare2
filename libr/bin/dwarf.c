@@ -331,7 +331,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 				if (hdr->file_names) {
 					hdr->file_names[count].name = calloc (sizeof(char), namelen);
 					snprintf (hdr->file_names[count].name, namelen - 1,
-						"%s/%s", include_dir, filename);
+						"%s/%s", include_dir? include_dir : "", filename);
 					hdr->file_names[count].name[namelen - 1] = '\0';
 					free (allocated_id);
 					hdr->file_names[count].id_idx = id_idx;
