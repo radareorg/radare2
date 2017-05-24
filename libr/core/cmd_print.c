@@ -3122,7 +3122,6 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '-': // "p-"
 		mode = input[1];
-		w = len? len: core->print->cols * 4;
 		w = core->print->cols * 2.7;
 		if (mode == 'j') {
 			r_cons_strcat ("{");
