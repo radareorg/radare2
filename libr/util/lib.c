@@ -80,7 +80,11 @@ R_API void *r_lib_dl_sym(void *handler, const char *name) {
 }
 
 R_API int r_lib_dl_close(void *handler) {
-	return DLCLOSE (handler);
+	int ret = -1;
+	if (handler) {
+		ret = DLCLOSE (handler);
+	}
+	return ret;
 }
 
 /* ---- */
@@ -277,16 +281,16 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 		}
 	}
 	// TODO: Use Sdb here. just a single line
-	r_list_foreach (lib->plugins, iter, p) {
-		if (samefile (file, p->file)) {
-			IFDBG eprintf ("Dupped\n");
-			// TODO: reload if opening again?
-			// TODO: store timestamp of file
-			// TODO: autoreload plugins if updated \o/
-			if (handler) {
+	if (handler) {
+		r_list_foreach (lib->plugins, iter, p) {
+			if (samefile (file, p->file)) {
+				IFDBG eprintf ("Dupped\n");
+				// TODO: reload if opening again?
+				// TODO: store timestamp of file
+				// TODO: autoreload plugins if updated \o/
 				r_lib_dl_close (handler);
+				return R_FAIL;
 			}
-			return R_FAIL;
 		}
 	}
 
@@ -302,9 +306,7 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
 		free (p->file);
 		free (p);
-		if (handler) {
-			r_lib_dl_close (handler);
-		}	
+		r_lib_dl_close (handler);
 	} else r_list_append (lib->plugins, p);
 
 	return ret;
