@@ -488,8 +488,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "bflrl", "if (!cond) call A", 1},
 		{ "bl", "call A", 1},
 		{ "bla", "call A", 1},
-		{ "blr", "ret", 0},
-		{ "blrl", "ret", 0},
+		{ "blr", "return", 0},
+		{ "blrl", "return", 0},
+		{ "bltlr", "if (A & FLG_LT) return", 1},
+		{ "blelr", "if (A & FLG_LE) return", 1},
+		{ "bgtlr", "if (A & FLG_GT) return", 1},
+		{ "bgelr", "if (A & FLG_GE) return", 1},
+		{ "bnelr", "if (A & FLG_NE) return", 1},
+		{ "beqlr", "if (A & FLG_EQ) return", 1},
 		{ "brinc", "A = bit_revese(B, C)", 3},
 		{ "bt", "if (cond) goto A", 1},
 		{ "bta", "if (cond) goto A", 1},
@@ -1618,7 +1624,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf, *ptr, *optr;
 
 	if (!strcmp (data, "jr ra")) {
-		strcpy (str, "ret");
+		strcpy (str, "return");
 		return true;
 	}
 
