@@ -164,7 +164,7 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 static void print_hash(ut8 *hash, int digest_size) {
 	int i = 0;
 	for (i = 0; i < digest_size; i++) {
-		eprintf ("%02"PFMT64x, hash[i]);
+		eprintf ("%02"PFMT32x, hash[i]);
 	}
 	eprintf ("\n");
 }
