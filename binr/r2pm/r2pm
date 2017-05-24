@@ -16,31 +16,27 @@ MAKE=make
 [ -z "${CURL}" ] && CURL=curl
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
-export \
-	MAKE \
-	GLOBAL=0 \
-	R2PM_JOBS=4 \
-	R2VERSION="`r2 -qv`"
+export MAKE
+export GLOBAL=0
+export R2PM_JOBS=4
+export R2VERSION="`r2 -qv`"
 
 PREFIX="`r2 -H PREFIX`"
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
 
-export \
-	LIBEXT="`r2 -H LIBEXT`" \
-	R2HOMEDIR="`r2 -H RHOMEDIR`"
+export LIBEXT="`r2 -H LIBEXT`"
+export R2HOMEDIR="`r2 -H RHOMEDIR`"
 
 # prefix
-export \
-	R2PM_SYSPREFIX="${PREFIX}" \
-	R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix" \
-	R2PM_PREFIX="${R2PM_HOMEPREFIX}"
+export R2PM_SYSPREFIX="${PREFIX}"
+export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
+export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
 
 # bindir
-export \
-	R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin" \
-	R2PM_SYSBINDIR="${BINDIR}"
+export R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin"
+export R2PM_SYSBINDIR="${BINDIR}"
 
 [ -z "${R2PM_BINDIR}" ] && R2PM_BINDIR=${R2PM_HOMEBINDIR}
 export R2PM_BINDIR
@@ -50,20 +46,17 @@ export R2PM_BINDIR
 export R2PM_PLUGDIR
 
 # www
-export \
-	R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`" \
-	R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/" \
-	R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
+export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
+export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
+export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 
 # pkgconfig
-export \
-	PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" \
-	CFLAGS="-I${R2PM_HOMEPREFIX}/include" \
-	LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
+export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="-I${R2PM_HOMEPREFIX}/include"
+export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 
-export \
-	R2PM_PYPATH="${R2PM_PREFIX}/python" \
-	R2PM_OLDPWD="${PWD}"
+export R2PM_PYPATH="${R2PM_PREFIX}/python"
+export R2PM_OLDPWD="${PWD}"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
