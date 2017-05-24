@@ -1722,6 +1722,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				R_FREE (string2);
 			}
 		}
+		str = strstr (line, ";-- ");
+		if (str) {
+			r_cons_printf ("%s\n", str + 4);
+		}
 		// XXX leak
 		str = strstr (line, " str.");
 		if (str) {
