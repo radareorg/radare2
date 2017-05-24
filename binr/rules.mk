@@ -30,6 +30,7 @@ LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/wind/libr_wind.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/java/libr_java.a
+LDFLAGS+=../../libr/socket/libr_socket.a
 LDFLAGS+=../../libr/util/libr_util.a
 ifneq (${ANDROID},1)
 ifneq (${OSTYPE},linux)
