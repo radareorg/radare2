@@ -1,0 +1,36 @@
+--- a/SStream.c	2017-05-25 01:12:09.000000000 +0200
++++ b/SStream.c	2017-05-25 01:13:10.000000000 +0200
+@@ -52,6 +52,8 @@
+ // print number with prefix #
+ void printInt64Bang(SStream *O, int64_t val)
+ {
++	SStream_concat(O, "#%"PRIu64, val);
++#if 0
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+ 			SStream_concat(O, "#0x%"PRIx64, val);
+@@ -63,6 +65,7 @@
+ 		else
+ 			SStream_concat(O, "#-%"PRIu64, -val);
+ 	}
++#endif
+ }
+ 
+ void printUInt64Bang(SStream *O, uint64_t val)
+@@ -76,6 +79,8 @@
+ // print number
+ void printInt64(SStream *O, int64_t val)
+ {
++	SStream_concat(O, "-%"PRIu64, -val);
++#if 0
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+ 			SStream_concat(O, "0x%"PRIx64, val);
+@@ -87,6 +92,7 @@
+ 		else
+ 			SStream_concat(O, "-%"PRIu64, -val);
+ 	}
++#endif
+ }
+ 
+ // print number in decimal mode
