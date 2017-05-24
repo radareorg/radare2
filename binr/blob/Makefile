@@ -11,10 +11,6 @@ LDFLAGS+=-pie
 endif
 SHLR=../../shlr
 
-include ../../config-user.mk
-include ../../shlr/zip/deps.mk
-include ../../shlr/bochs/deps.mk
-include ../../shlr/qnx/deps.mk
 
 ifneq (${ANDROID},1)
 ifneq (${OSTYPE},linux)
@@ -82,6 +78,11 @@ LDFLAGS+=-L../../libr/search -lr_search
 LDFLAGS+=-L../../libr/config -lr_config
 endif
 LDFLAGS+=${LINK}
+
+include ../../libr/config.mk
+include ../../shlr/zip/deps.mk
+include ../../shlr/bochs/deps.mk
+include ../../shlr/qnx/deps.mk
 
 all: symlinks
 
