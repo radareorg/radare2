@@ -146,9 +146,12 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 }
 
 static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	ut64 la = (arch && arch->o)? arch->o->loadaddr: 0;
+	if (!arch || !arch->buf || !arch->o) {
+		return false;
+	}
+	const ut64 sz = r_buf_size (arch->buf);
+	const ut64 la = arch->o->loadaddr;
+	const ut8 *bytes = r_buf_buffer (arch->buf);
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL);
 	return arch->o->bin_obj != NULL;
 }
