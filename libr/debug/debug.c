@@ -608,8 +608,8 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 
 		bool libs_bp = (dbg->glob_libs || dbg->glob_unlibs) ? true : false;
 		/* if the underlying stop reason is a breakpoint, call the handlers */
-		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP || 
-			(libs_bp && 
+		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP ||
+			(libs_bp &&
 			((reason == R_DEBUG_REASON_NEW_LIB) || (reason == R_DEBUG_REASON_EXIT_LIB)))) {
 			RRegItem *pc_ri;
 			RBreakpointItem *b = NULL;
@@ -1305,8 +1305,8 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 	return 0;
 }
 
-R_API int r_debug_is_dead(RDebug *dbg) {
-	int is_dead = (dbg->pid == -1);
+R_API bool r_debug_is_dead(RDebug *dbg) {
+	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3));
 	if (!is_dead && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}

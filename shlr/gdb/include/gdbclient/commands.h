@@ -19,6 +19,13 @@ int gdbr_connect(libgdbr_t *g, const char *server, int port);
  */
 int gdbr_disconnect(libgdbr_t *g);
 
+/*!
+ * \brief kills the process the remote gdbserver is debugging (TODO: handle pid)
+ * \retuns a failure code (currently -1) or 0 if call successfully
+ */
+bool gdbr_kill(libgdbr_t *g);
+
+
 // Commands
 int gdbr_continue(libgdbr_t *g, int thread_id);
 int gdbr_step(libgdbr_t *g, int thread_id);

@@ -115,7 +115,7 @@ static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	return false;
 }
 
-static int __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
+static bool __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
 	// TODO: ESIL reset
 	return true;
 }

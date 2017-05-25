@@ -187,6 +187,28 @@ int gdbr_disconnect(libgdbr_t *g) {
 	return 0;
 }
 
+bool gdbr_kill(libgdbr_t *g) {
+	char buf[20];
+	int ret;
+	char pid_buf[20] = { 0 };
+	if (!g || !g->sock || !g->pid) {
+		return false;
+	}
+	pack_hex_uint64 (g->pid, pid_buf);
+	snprintf (buf, sizeof (buf) - 1, "vKill;%s", pid_buf);
+	if ((ret = send_msg (g, buf)) < 0) {
+		return false;
+	}
+	read_packet (g);
+	if ((ret = send_ack (g)) < 0) {
+		return false;
+	}
+	if (strncmp (g->data, "OK", 2)) {
+		return false;
+	}
+	return true;
+}
+
 int gdbr_read_registers(libgdbr_t *g) {
 	int ret = -1;
 	if (!g) {
