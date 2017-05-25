@@ -734,10 +734,10 @@ static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	return !ret;
 }
 
-static int r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	// TODO kill based on pid and signal
 	if (sig != 0) {
-		return !gdbr_kill (desc);
+		return gdbr_kill (desc);
 	}
 	return true;
 }

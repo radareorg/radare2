@@ -252,7 +252,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
-#elif __CYGWIN__ 
+#elif __CYGWIN__
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
@@ -1134,8 +1134,8 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 	return last;
 }
 
-static int r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
-	int ret = false;
+static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
+	bool ret = false;
 	if (pid == 0) pid = dbg->pid;
 #if __WINDOWS__ && !__CYGWIN__
 	if (sig==0)

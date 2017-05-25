@@ -1305,8 +1305,8 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 	return 0;
 }
 
-R_API int r_debug_is_dead(RDebug *dbg) {
-	int is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3));
+R_API bool r_debug_is_dead(RDebug *dbg) {
+	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3));
 	if (!is_dead && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}

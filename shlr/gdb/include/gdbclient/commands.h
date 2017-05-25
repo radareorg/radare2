@@ -23,7 +23,7 @@ int gdbr_disconnect(libgdbr_t *g);
  * \brief kills the process the remote gdbserver is debugging (TODO: handle pid)
  * \retuns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_kill(libgdbr_t *g);
+bool gdbr_kill(libgdbr_t *g);
 
 
 // Commands

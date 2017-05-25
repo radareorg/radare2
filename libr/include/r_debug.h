@@ -337,7 +337,7 @@ typedef struct r_debug_plugin_t {
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(RDebug *dbg, int pid);
 	bool (*gcore)(RDebug *dbg, RBuffer *dest);
-	int (*kill)(RDebug *dbg, int pid, int tid, int sig);
+	bool (*kill)(RDebug *dbg, int pid, int tid, int sig);
 	RList* (*kill_list)(RDebug *dbg);
 	int (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg, ut64 at);
@@ -481,7 +481,7 @@ R_API int r_debug_stop(RDebug *dbg);
 /* backtrace */
 R_API RList *r_debug_frames(RDebug *dbg, ut64 at);
 
-R_API int r_debug_is_dead(RDebug *dbg);
+R_API bool r_debug_is_dead(RDebug *dbg);
 R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 /* args XXX: weird food */
 R_API ut64 r_debug_arg_get(RDebug *dbg, int fast, int num);
