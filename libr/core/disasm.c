@@ -133,6 +133,7 @@ typedef struct r_disam_options_t {
 	bool show_varsum;
 	int midflags;
 	bool midcursor;
+	bool show_noisy_comments;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -492,6 +493,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
+	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -2601,7 +2603,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 }
 
 static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
-	if (strncmp (name, "str.", 4)) {
+	if (ds->show_noisy_comments || strncmp (name, "str.", 4)) {
 		return false;
 	}
 	ut64 refaddr = ds->analop.ptr;
