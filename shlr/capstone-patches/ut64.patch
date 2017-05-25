@@ -1,6 +1,8 @@
---- a/SStream.c	2017-05-25 01:12:09.000000000 +0200
-+++ b/SStream.c	2017-05-25 01:13:10.000000000 +0200
-@@ -76,6 +79,8 @@
+diff --git a/SStream.c b/SStream.c
+index c90cf1a..b1405c5 100644
+--- a/SStream.c
++++ b/SStream.c
+@@ -76,6 +76,8 @@ void printUInt64Bang(SStream *O, uint64_t val)
  // print number
  void printInt64(SStream *O, int64_t val)
  {
@@ -9,7 +11,7 @@
  	if (val >= 0) {
  		if (val > HEX_THRESHOLD)
  			SStream_concat(O, "0x%"PRIx64, val);
-@@ -87,6 +92,7 @@
+@@ -87,6 +89,7 @@ void printInt64(SStream *O, int64_t val)
  		else
  			SStream_concat(O, "-%"PRIu64, -val);
  	}
@@ -17,3 +19,20 @@
  }
  
  // print number in decimal mode
+@@ -115,6 +118,8 @@ void printInt32Bang(SStream *O, int32_t val)
+ 
+ void printInt32(SStream *O, int32_t val)
+ {
++			SStream_concat(O, "0x%x", val);
++#if 0
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+ 			SStream_concat(O, "0x%x", val);
+@@ -126,6 +131,7 @@ void printInt32(SStream *O, int32_t val)
+ 		else
+ 			SStream_concat(O, "-%u", -val);
+ 	}
++#endif
+ }
+ 
+ void printUInt32Bang(SStream *O, uint32_t val)
