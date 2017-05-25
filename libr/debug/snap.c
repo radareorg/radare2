@@ -161,18 +161,18 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 }
 
 /* XXX: Just for debugging. Duplicate soon */
-static void print_hash(ut8 *hash, int digest_size) {
+/* static void print_hash(ut8 *hash, int digest_size) {
 	int i = 0;
 	for (i = 0; i < digest_size; i++) {
 		eprintf ("%02"PFMT32x, hash[i]);
 	}
 	eprintf ("\n");
-}
+} */
 
 R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {
 		eprintf ("Invalid map size\n");
-		return 0;
+		return NULL;
 	}
 	ut8 *hash;
 	ut64 addr;
@@ -184,7 +184,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!snap) {
 		/* Create a new one */
 		if (!(snap = r_debug_snap_new ())) {
-			return 0;
+			return NULL;
 		}
 		snap->timestamp = sdb_now ();
 		snap->addr = map->addr;
@@ -194,7 +194,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		snap->data = malloc (map->size);
 		if (!snap->data) {
 			free (snap);
-			return 0;
+			return NULL;
 		}
 		snap->hashes = malloc (sizeof (ut8 *) * page_num);
 
@@ -241,7 +241,10 @@ R_API int r_debug_snap(RDebug *dbg, ut64 addr) {
 		eprintf ("Cannot find map at 0x%08"PFMT64x "\n", addr);
 		return 0;
 	}
-	return r_debug_snap_map (dbg, map);
+	if (!r_debug_snap_map (dbg, map)) {
+		return 0;
+	}
+	return 1;
 }
 
 R_API int r_debug_snap_comment(RDebug *dbg, int idx, const char *msg) {
