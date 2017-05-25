@@ -41,9 +41,8 @@ R_API void r_debug_session_list(RDebug *dbg) {
 
 R_API bool r_debug_session_add(RDebug *dbg) {
 	RDebugSession *session;
-	RDebugSnap *snap;
 	RDebugSnapDiff *diff;
-	RListIter *iter, *tail;
+	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr;
 	int i, perms = R_IO_RW;
