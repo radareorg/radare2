@@ -193,11 +193,13 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		snap->page_num = page_num;
 		snap->data = malloc (map->size);
 		if (!snap->data) {
-			free (snap);
-			return NULL;
+			goto error;
 		}
-		snap->hashes = malloc (sizeof (ut8 *) * page_num);
-
+		snap->hashes = R_NEWS0 (ut8 *, page_num);
+		if (!snap->hashes) {
+			free (snap->data);
+			goto error;
+		}
 		eprintf ("Reading %d bytes from 0x%08"PFMT64x "...\n", snap->size, snap->addr);
 		dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 
@@ -215,11 +217,15 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		}
 
 		r_list_append (dbg->snaps, snap);
+		goto okay;
 	} else {
 		/* A base snapshot have already been saved. *
 		        So we only need to save different parts. */
 		return r_debug_diff_add (dbg, snap);
 	}
+error:
+	free (snap);
+okay:
 	return NULL;
 }
 
@@ -287,10 +293,13 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 	ut64 algobit = r_hash_name_to_bits ("sha256");
 	ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, base->size);
 
-	new_diff = (RDebugSnapDiff *) malloc (sizeof (RDebugSnapDiff));
+	new_diff = R_NEW0 (RDebugSnapDiff);
+	if (!new_diff) {
+		goto error;
+	}
 	new_diff->base = base;
 	new_diff->pages = r_list_newf (r_page_data_free);
-	new_diff->last_changes = calloc (base->page_num, sizeof (RPageData *));
+	new_diff->last_changes = R_NEWS0 (RPageData *, base->page_num);
 
 	if (r_list_length (base->history)) {
 		/* Inherit last changes from previous SnapDiff */
@@ -323,7 +332,7 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 			// print_hash (cur_hash, digest_size);
 			// print_hash (prev_hash, digest_size);
 			/* Create new page diff entry, save one page and calculate hash. */
-			new_page = (RPageData *) malloc (sizeof (RPageData));
+			new_page = R_NEW0 (RPageData);
 			new_page->diff = new_diff;
 			new_page->page_off = page_off;
 			new_page->data = buf;
@@ -341,9 +350,12 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 		}
 		eprintf (")\n");
 		r_list_append (base->history, new_diff);
+		return new_diff;
 	} else {
 		r_debug_diff_free (new_diff);
 		return NULL;
 	}
-	return new_diff;
+error:
+	free (new_diff);
+	return NULL;
 }
