@@ -1437,8 +1437,8 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	}
 	{
 		ut8 buf[128], widebuf[256];
-		const char *c = core->cons->pal.ai_ascii;
-		const char *cend = Color_RESET;
+		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->pal.ai_ascii: "";
+		const char *cend = (c && *c) ? Color_RESET: "";
 		int len, r;
 		r = r_io_read_at (core->io, value, buf, sizeof (buf));
 		buf[sizeof (buf) - 1] = 0;
@@ -1490,6 +1490,9 @@ R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
 	ut64 type;
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
+		return NULL;
+	}
+	if (!r_config_get_i (core->config, "scr.color")) {
 		return NULL;
 	}
 	type = r_core_anal_address (core, addr);
