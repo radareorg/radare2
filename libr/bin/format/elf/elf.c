@@ -2851,7 +2851,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
 
-	nsym = Elf_(fix_symbols) (bin, ret_ctr, R_BIN_ELF_SYMBOLS, &ret);
+	nsym = Elf_(fix_symbols) (bin, ret_ctr, R_BIN_ELF_IMPORTS, &ret);
 	if (nsym == -1) {
 		goto beach;
 	}
