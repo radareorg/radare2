@@ -133,6 +133,7 @@ typedef struct r_disam_options_t {
 	bool show_varsum;
 	int midflags;
 	bool midcursor;
+	bool show_noisy_comments;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -493,6 +494,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
+	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -2606,6 +2608,26 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
+static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
+	if (ds->show_noisy_comments || strncmp (name, "str.", 4)) {
+		return false;
+	}
+	ut64 refaddr = ds->analop.ptr;
+	char *anal_flag = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
+	if (anal_flag) {
+		anal_flag = strdup (anal_flag);
+		if (anal_flag) {
+			r_name_filter (anal_flag, -1);
+			if (!strcmp (&name[4], anal_flag)) {
+				free (anal_flag);
+				return true;
+			}
+			free (anal_flag);
+		}
+	}
+	return false;
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
@@ -2648,7 +2670,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
 				refaddr = p;
-				if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+				if (!flag_printed && !is_filtered_flag (ds, f->name)
+				    && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 					ALIGN;
 					ds_comment (ds, true, "; %s%s", f->name, nl);
 					flag_printed = true;
@@ -2680,7 +2703,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 				if (!is_lea_str) {
-					if (!flag_printed && *flag && (!ds->opstr || !strstr (ds->opstr, flag))) {
+					if (!flag_printed && *flag && !is_filtered_flag (ds, flag)
+					    && (!ds->opstr || !strstr (ds->opstr, flag))) {
 						ALIGN;
 						ds_comment (ds, true, "; %s%s", flag, nl);
 						flag_printed = true;
@@ -2808,6 +2832,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						free (escstr);
 					}
 				}
+			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+				ALIGN;
+				ds_comment (ds, true, "; %s%s", f->name, nl);
+				flag_printed = true;
 			}
 		} else {
 			if (refaddr == UT64_MAX || refaddr == UT32_MAX) {
