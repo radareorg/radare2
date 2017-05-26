@@ -3006,14 +3006,15 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 
 
 static int cmd_print(void *data, const char *input) {
-	int mode, w, p, i, l, len, total[10];
-	ut64 off, from, to, at, ate, piece;
 	RCore *core = (RCore *) data;
-	ut32 tbs = core->blocksize;
-	ut64 tmpseek = UT64_MAX;
 	RCoreAnalStats *as;
-	int ret = 0;
-	ut64 n;
+	RCoreAnalStatsItem total = {0};
+	int mode, w, p, i, l, len, ret;
+	ut32 tbs = core->blocksize;
+	ut64 n, off, from, to, at, ate, piece;
+	ut64 tmpseek = UT64_MAX;
+	mode = w = p = i = l = len = ret = 0;
+	n = off = from = to = at = ate = piece = 0;
 
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
@@ -3122,15 +3123,11 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '-': // "p-"
 		mode = input[1];
-		w = len? len: core->print->cols * 4;
 		w = core->print->cols * 2.7;
 		if (mode == 'j') {
 			r_cons_strcat ("{");
 		}
 		off = core->offset;
-		for (i = 0; i < 10; i++) {
-			total[i] = 0;
-		}
 		r_list_free (r_core_get_boundaries (core, "file", &from, &to));
 		piece = R_MAX ((to - from) / w, 1);
 		as = r_core_anal_get_stats (core, from, to, piece);
@@ -3208,11 +3205,11 @@ static int cmd_print(void *data, const char *input) {
 				len++;
 				break;
 			case 'h':
-				total[0] += as->block[p].flags;
-				total[1] += as->block[p].functions;
-				total[2] += as->block[p].comments;
-				total[4] += as->block[p].symbols;
-				total[5] += as->block[p].strings;
+				total.flags += as->block[p].flags;
+				total.functions += as->block[p].functions;
+				total.comments += as->block[p].comments;
+				total.symbols += as->block[p].symbols;
+				total.strings += as->block[p].strings;
 				if ((as->block[p].flags)
 				|| (as->block[p].functions)
 				|| (as->block[p].comments)
@@ -3267,7 +3264,7 @@ static int cmd_print(void *data, const char *input) {
 			// r_cons_printf ("  total    | flags funcs cmts syms str  |\n");
 			r_cons_printf ("|-------------)----------------------------|\n");
 			r_cons_printf ("|    total    | %4d %4d %4d %4d %4d   |\n",
-				total[0], total[1], total[2], total[3], total[4], total[5]);
+				total.flags, total.functions, total.comments, total.symbols, total.strings);
 			r_cons_printf ("`-------------'----------------------------'\n");
 			break;
 		default:
