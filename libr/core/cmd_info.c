@@ -253,7 +253,7 @@ static int cmd_info(void *data, const char *input) {
 	int is_array = 0;
 	Sdb *db;
 
-	for (i = 0; input[i] && i < 2; i++) {
+	for (i = 0; input[i]; i++) {
 		switch (input[i]) {
 		case '*': mode = R_CORE_BIN_RADARE; break;
 		case 'j': mode = R_CORE_BIN_JSON; break;
