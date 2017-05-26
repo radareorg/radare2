@@ -3008,7 +3008,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	RCoreAnalStats *as;
-	RCoreAnalStatsItem total = { 0, 0, 0, 0, 0, 0, 0 };
+	RCoreAnalStatsItem total = {0};
 	int mode, w, p, i, l, len, ret;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
