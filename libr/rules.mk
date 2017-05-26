@@ -20,6 +20,7 @@ endif
 endif
 
 ALL?=
+CFLAGS+=-I$(LIBR)
 CFLAGS+=-I$(LIBR)/include
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
