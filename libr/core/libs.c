@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_core.h"
-#include "../config.h"
+#include "config.h"
 
 #define CB(x, y)\
 	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\

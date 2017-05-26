@@ -4,16 +4,14 @@
 #include <r_util.h>
 #include <r_list.h>
 #include <r_io.h>
-#include "../config.h"
 
 #ifdef IFDBG
 #undef IFDBG
 #endif
 
 #define DO_THE_DBG 0
-#define IFDBG  if(DO_THE_DBG)
-#define IFINT  if(0)
-
+#define IFDBG if(DO_THE_DBG)
+#define IFINT if(0)
 
 static void kv_anal_bb_free(HtKv *kv) {
 	if (kv) {
@@ -53,13 +51,14 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 	}
 	if (!r_anal_state_search_bb (state, bb->addr) && state->current_fcn) {
 		r_list_append (state->current_fcn->bbs, bb);
-        state->bytes_consumed += state->current_bb->op_sz;
+		state->bytes_consumed += state->current_bb->op_sz;
 		const char *key = sdb_fmt (0, "0x%08"PFMT64x, bb->addr);
 		if (!ht_insert (state->ht, key, bb)) {
 			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
 		}
 	}
 }
+
 R_API RAnalBlock * r_anal_state_search_bb(RAnalState* state, ut64 addr) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1

@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #undef eprintf
-#define eprintf(x,y...) fprintf(stderr,x,##y)
+#define eprintf(...) fprintf(stderr,__VA_ARGS__)
 
 #ifndef SDB_API
 #if defined(__GNUC__) && __GNUC__ >= 4

@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2016 pancake */
+/* radare - LGPL - Copyright 2009-2017 pancake */
 
 #include <r_debug.h>
-#include "../config.h"
+#include <config.h>
 
 static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS

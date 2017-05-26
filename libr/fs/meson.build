@@ -89,8 +89,9 @@ r_fs = shared_library('r_fs', files,
   include_directories: include_directories([
     '../include',
     '../../shlr/grub/include',
-	platform_librinc
+    platform_librinc,
   ]),
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, grub],
   install: true
 )

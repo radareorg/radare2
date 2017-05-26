@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2009-2016 - pancake */
+/* radare2 - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
-#include "../config.h"
+#include <config.h>
 #include <r_util.h>
 #if __UNIX__
 #include <signal.h>

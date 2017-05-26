@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 /* covardly copied from r_cmd */
 
-#include "../config.h"
+#include <config.h>
 #include <r_core.h>
 #include <r_cmd.h>
 #include <r_list.h>

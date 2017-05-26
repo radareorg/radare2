@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_crypto.h"
-#include "../config.h"
+#include "config.h"
 
 R_LIB_VERSION (r_crypto);
 

@@ -19,7 +19,6 @@
 #ifndef	GRUB_I18N_H
 #define	GRUB_I18N_H	1
 
-#include <config.h>
 #include <grub/symbol.h>
 
 extern const char *(*EXPORT_VAR(grub_gettext)) (const char *s);

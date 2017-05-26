@@ -19,6 +19,7 @@ r_egg = shared_library('r_egg', files,
   '../include',
   platform_librinc
   ]),
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_asm],
   objects: [
     r_sdb.extract_all_objects(),

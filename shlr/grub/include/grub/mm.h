@@ -22,7 +22,6 @@
 
 #include <grub/types.h>
 #include <grub/symbol.h>
-#include <config.h>
 
 #ifndef NULL
 # define NULL	((void *) 0)

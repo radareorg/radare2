@@ -1,10 +1,10 @@
-/* radare2 - LGPL - Copyright 2009-2016 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
 #include <r_types.h>
 #include <r_parse.h>
-#include "../config.h"
+#include <config.h>
 
 R_LIB_VERSION (r_parse);
 

@@ -4,7 +4,6 @@ include $(LTOP)/config.mk
 NAME=r_magic
 DEPS=r_util
 CFLAGS+=-I.
-CFLAGS+=-DHAVE_CONFIG_H
 ifeq (${USE_LIB_MAGIC},1)
 LDFLAGS+=-lmagic
 endif

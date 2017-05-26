@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2017 - pancake */
 
 #include <r_egg.h>
-#include "../config.h"
+#include <config.h>
 
 R_LIB_VERSION (r_egg);
 

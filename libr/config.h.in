@@ -1,0 +1,33 @@
+#ifndef _INCLUDE_CONFIG_H_
+#define _INCLUDE_CONFIG_H_
+
+// TODO: hardcoded
+#ifndef R_VERSION_H
+#define R_VERSION_H 1
+#define R2_VERSION_COMMIT 15085
+#define R2_GITTAP "1.4.0-312-g06aae3080"
+#define R2_GITTIP "06aae3080e9b85d1ad804a66dc9face087c25b7e"
+#define R2_BIRTH "2017-05-25__16:15:31"
+#endif
+
+#define R_DEBUG 0
+#define R_RTDEBUG 1
+
+/* inlined APIs */
+#define R_INLINE 0
+#define R2_LOADLIBS 1
+
+#define R_EGG_STATIC_PLUGINS @plugins_egg@
+#define R_BIN_STATIC_PLUGINS @plugins_bin@
+#define R_FS_STATIC_PLUGINS @plugins_fs@
+#define R_IO_STATIC_PLUGINS @plugins_io@
+#define R_DEBUG_STATIC_PLUGINS @plugins_debug@
+#define R_BP_STATIC_PLUGINS @plugins_bp@
+#define R_ASM_STATIC_PLUGINS @plugins_asm@
+#define R_ANAL_STATIC_PLUGINS @plugins_anal@
+#define R_CORE_STATIC_PLUGINS @plugins_core@
+#define R_LANG_STATIC_PLUGINS @plugins_lang@
+#define R_PARSE_STATIC_PLUGINS @plugins_parse@
+#define R_CRYPTO_STATIC_PLUGINS @plugins_crypto@
+
+#endif

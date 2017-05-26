@@ -243,7 +243,7 @@ r_asm = shared_library('r_asm', files,
     'arch/8051',
 	platform_librinc
   ]),
-  c_args: ['-DCORELIB'],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_syscall, r_parse, r_lang, r_flag,r_socket],
   objects: [
     capstone.extract_all_objects(),

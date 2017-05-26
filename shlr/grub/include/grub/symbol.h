@@ -19,8 +19,6 @@
 #ifndef GRUB_SYMBOL_HEADER
 #define GRUB_SYMBOL_HEADER	1
 
-#include <config.h>
-
 /* Apple assembler requires local labels to start with a capital L */
 #define LOCAL(sym)	L_ ## sym
 

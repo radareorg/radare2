@@ -214,7 +214,7 @@ SDB_API const char *sdb_const_anext(const char *str, const char **next) {
 }
 
 SDB_API ut64 sdb_now () {
-#if USE_MONOTINIC_CLOCK
+#if USE_MONOTONIC_CLOCK
 	struct timespec ts;
 	if (!clock_gettime (CLOCK_MONOTONIC, &ts)) {
 		return ts.tv_sec;

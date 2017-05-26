@@ -58,7 +58,6 @@
   operation.
  */
 
-#include <config.h>
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/err.h>

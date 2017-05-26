@@ -20,7 +20,6 @@
 /* Force native word size */
 #define GRUB_TARGET_WORDSIZE (8 * GRUB_CPU_SIZEOF_VOID_P)
 
-#include <config.h>
 #include <grub/dl.h>
 //#include <grub/obj.h>
 #include <grub/misc.h>

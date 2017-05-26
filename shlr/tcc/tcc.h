@@ -25,7 +25,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include "config.h"
+#include "tcc_config.h"
 
 #ifdef CONFIG_TCCBOOT
 #include "tccboot.h"

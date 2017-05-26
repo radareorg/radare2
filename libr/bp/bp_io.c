@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 pancake */
 
 #include <r_bp.h>
-#include "../config.h"
+#include <config.h>
 
 R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (set) {

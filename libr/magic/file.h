@@ -34,9 +34,7 @@
 #ifndef __file_h__
 #define __file_h__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "mconfig.h"
 #include <r_magic.h>
 
 #include <stdio.h>	/* Include that here, to make sure __P gets defined */

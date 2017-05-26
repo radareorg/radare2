@@ -63,7 +63,7 @@ r_debug = shared_library('r_debug', files,
   '../bin/format/elf',
   platform_librinc
   ]),
-  c_args: ['-DCORELIB'],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search, r_cons, r_lang],
   objects: [
     r_sdb.extract_all_objects(),

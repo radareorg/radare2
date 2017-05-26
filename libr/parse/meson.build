@@ -25,11 +25,12 @@ include_directories: include_directories(['../include', '../../shlr/tcc']),
 
 r_parse = shared_library('r_parse', files,
   include_directories: include_directories([
+  '.',
   '../include',
   '../../shlr/tcc',
   platform_librinc
   ]),
-  c_args: ['-DCORELIB'],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_flag, r_syscall, r_reg, tcc],
   install: true
 )

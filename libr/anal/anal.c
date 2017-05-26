@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_list.h>
 #include <r_io.h>
-#include "../config.h"
+#include <config.h>
 
 R_LIB_VERSION(r_anal);
 

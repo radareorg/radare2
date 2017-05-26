@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 #include <spp/spp.h>
-#include "../config.h"
+#include <config.h>
 
 R_LIB_VERSION (r_asm);
 

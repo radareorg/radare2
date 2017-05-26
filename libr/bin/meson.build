@@ -109,9 +109,10 @@ r_bin = shared_library('r_bin', files,
   '../include',
   'mangling',
   'format',
+  '.',
   platform_librinc
   ]),
-  c_args: ['-DCORELIB'],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_io, r_socket, r_magic],
   objects: [
     r_sdb.extract_all_objects()

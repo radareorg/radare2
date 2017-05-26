@@ -5,7 +5,7 @@
 // TODO: use RList here
 
 #include "r_io.h"
-#include "../config.h"
+#include "config.h"
 #include <stdio.h>
 
 static RIOPlugin *io_static_plugins[] = {

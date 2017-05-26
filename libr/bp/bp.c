@@ -1,7 +1,7 @@
-/* radare2 - LGPL - Copyright 2009-2015 - pancake */
+/* radare2 - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_bp.h>
-#include "../config.h"
+#include <config.h>
 
 R_LIB_VERSION (r_bp);
 
@@ -19,10 +19,12 @@ static void r_bp_item_free (RBreakpointItem *b) {
 }
 
 R_API RBreakpoint *r_bp_new() {
-	RBreakpoint *bp = R_NEW0 (RBreakpoint);
-	RBreakpointPlugin *static_plugin;
 	int i;
-	if (!bp) return NULL;
+	RBreakpointPlugin *static_plugin;
+	RBreakpoint *bp = R_NEW0 (RBreakpoint);
+	if (!bp) {
+		return NULL;
+	}
 	bp->bps_idx_count = 16;
 	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
 	bp->stepcont = R_BP_CONT_NORMAL;
@@ -58,8 +60,9 @@ repeat:
 		for (i=0; i< bp->cur->nbps; i++) {
 			b = &bp->cur->bps[i];
 			if (bp->cur->bps[i].bits) {
-				if (bp->bits != bp->cur->bps[i].bits)
+				if (bp->bits != bp->cur->bps[i].bits) {
 					continue;
+				}
 			}
 			if (bp->cur->bps[i].length == len && bp->cur->bps[i].endian == endian) {
 				memcpy (buf, b->bytes, b->length);
