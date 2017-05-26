@@ -212,6 +212,7 @@ io = [
 lang = [
 	'vala'
 ]
+
 parse = [
 	'6502_pseudo',
 	'arm_pseudo',
@@ -221,5 +222,5 @@ parse = [
 	'mips_pseudo',
 	'mreplace',
 	'ppc_pseudo',
-	'x86_pseudo',
+	'x86_pseudo'
 ]
