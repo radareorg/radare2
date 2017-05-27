@@ -2419,7 +2419,9 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 						ds_comment (ds, true, "; %s+0x%x%s", f->name, delta, nl);
 					} else if (delta < 0) {
 						ds_comment (ds, true, "; %s-0x%x%s", f->name, -delta, nl);
-					} else {
+					} else if (ds->show_noisy || !ds->show_calls
+						   || (!r_anal_type_func_exist (core->anal, f->name)
+						       && !r_anal_type_func_guess (core->anal, f->name))) {
 						ds_comment (ds, true, "; %s%s", f->name, nl);
 					}
 				}
