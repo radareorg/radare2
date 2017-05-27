@@ -1220,8 +1220,12 @@ static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc
 			*q++ = 'r';
 			break;
 		case '\\':
-			*q++ = '\\';
-			*q++ = '\\';
+			if (p[1] == 'u') {
+				*q++ = '\\';
+			} else {
+				*q++ = '\\';
+				*q++ = '\\';
+			}
 			break;
 		case '\t':
 			*q++ = '\\';
