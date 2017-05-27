@@ -82,7 +82,6 @@ static int xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 	}
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, thread->count);
-
 #elif __arm || __arm64 || __aarch64
 #if defined(ARM_DEBUG_STATE32) && (defined(__arm64__) || defined(__aarch64__))
 	thread->count  = ARM_DEBUG_STATE32_COUNT;

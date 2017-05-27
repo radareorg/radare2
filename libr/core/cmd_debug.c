@@ -1739,7 +1739,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					  n = (char)r_num_math (core->num, ARG(0));
 					  off = r_num_math (core->num, ARG(1));
 					  len = (int)r_num_math (core->num, ARG(2));
-					  rwx = (char)r_str_rwx (ARG(3));
+					  rwx = (char)r_str_rwx (ARG (3));
 					  if (len == -1) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 						  r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
