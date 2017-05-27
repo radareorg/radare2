@@ -2414,6 +2414,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			} else {
 				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
+					char *guess = NULL;
 					ALIGN;
 					if (delta > 0) {
 						ds_comment (ds, true, "; %s+0x%x%s", f->name, delta, nl);
@@ -2421,8 +2422,11 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 						ds_comment (ds, true, "; %s-0x%x%s", f->name, -delta, nl);
 					} else if (ds->show_noisy || !ds->show_calls
 						   || (!r_anal_type_func_exist (core->anal, f->name)
-						       && !r_anal_type_func_guess (core->anal, f->name))) {
+						       && !(guess = r_anal_type_func_guess (core->anal, f->name)))) {
 						ds_comment (ds, true, "; %s%s", f->name, nl);
+					}
+					if (guess) {
+						free (guess);
 					}
 				}
 			}
