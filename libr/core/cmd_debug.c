@@ -1724,7 +1724,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		case '-':
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-			r_debug_drx_unset (core->dbg, atoi (str+2));
+			r_debug_drx_unset (core->dbg, atoi (str + 2));
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			break;
 		case ' ': {
@@ -1740,7 +1740,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					  off = r_num_math (core->num, ARG(1));
 					  len = (int)r_num_math (core->num, ARG(2));
 					  rwx = (char)r_str_rwx (ARG(3));
-					  if (len== -1) {
+					  if (len == -1) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 						  r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
@@ -1749,7 +1749,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						  r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  }
-				  } else eprintf ("|Usage: drx N [address] [length] [rwx]\n");
+				  } else {
+					eprintf ("|Usage: drx N [address] [length] [rwx]\n");
+				  }
 				  free (s);
 			  } break;
 		case '?':

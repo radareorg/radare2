@@ -746,7 +746,6 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #elif __linux__
 		return linux_reg_write (dbg, type, buf, size);
 #elif __APPLE__
-		if (1) return false; //disable until fixed ?? know why this
 		return xnu_reg_write (dbg, type, buf, size);
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
@@ -1195,7 +1194,6 @@ static int drx_del (RDebug *dbg, ut64 addr, int rwx) {
 static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
 #if __i386__ || __x86_64__
 	drxt regs[8] = {0};
-
 	// sync drx regs
 #define R dbg->reg
 	regs[0] = r_reg_getv (R, "dr0");
@@ -1214,7 +1212,7 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 		drx_list ((drxt*)&regs);
 		return false;
 	}
-	if (sz<0) { // remove
+	if (sz < 0) { // remove
 		drx_set (regs, n, addr, -1, 0, 0);
 	} else {
 		drx_set (regs, n, addr, sz, rwx, g);
@@ -1225,6 +1223,7 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	r_reg_setv (R, "dr3", regs[3]);
 	r_reg_setv (R, "dr6", regs[6]);
 	r_reg_setv (R, "dr7", regs[7]);
+
 	return true;
 #else
 	eprintf ("drx: Unsupported platform\n");
@@ -1239,24 +1238,23 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
  * we let the caller handle the work.
  */
 static int r_debug_native_bp (RBreakpointItem *bp, int set, void *user) {
-	if (!bp) return false;
 #if __i386__ || __x86_64__
 	RDebug *dbg = user;
-
-	if (!bp->hw) return false;
-
-	return set?
-		drx_add (dbg, bp->addr, bp->rwx):
-		drx_del (dbg, bp->addr, bp->rwx);
+	if (bp && bp->hw) {
+		return set
+		? drx_add (dbg, bp->addr, bp->rwx)
+		: drx_del (dbg, bp->addr, bp->rwx);
+	}
 #endif
 	return false;
 }
 
 #if __KFBSD__
+
 #include <sys/un.h>
 #include <arpa/inet.h>
-static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int buflen) {
 
+static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int buflen) {
 	char buffer2[INET6_ADDRSTRLEN];
 	struct sockaddr_in6 *sin6;
 	struct sockaddr_in *sin;
@@ -1267,7 +1265,7 @@ static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int bufle
 	case AF_LOCAL:
 		sun = (struct sockaddr_un *)ss;
 		strncpy (buffer, (sun && *sun->sun_path)?
-			sun->sun_path: "-", buflen-1);
+			sun->sun_path: "-", buflen - 1);
 		break;
 	case AF_INET:
 		sin = (struct sockaddr_in *)ss;
@@ -1277,10 +1275,12 @@ static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int bufle
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)ss;
 		if (inet_ntop (AF_INET6, &sin6->sin6_addr, buffer2,
-				sizeof (buffer2)) != NULL)
+				sizeof (buffer2)) != NULL) {
 			snprintf (buffer, buflen, "%s.%d", buffer2,
 				ntohs (sin6->sin6_port));
-		else strcpy (buffer, "-");
+		} else {
+			strcpy (buffer, "-");
+		}
 		break;
 	default:
 		*buffer = 0;
@@ -1342,8 +1342,8 @@ static RList *win_desc_list (int pid) {
 	NTSTATUS status;
 	ULONG handleInfoSize = 0x10000;
 	LPVOID buff;
-	if (!(processHandle=w32_openprocess(0x0040,FALSE,pid))) {
-		eprintf("win_desc_list: Error opening process.\n");
+	if (!(processHandle = w32_openprocess (0x0040, FALSE, pid))) {
+		eprintf ("win_desc_list: Error opening process.\n");
 		return NULL;
 	}
 	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc(handleInfoSize);
@@ -1516,10 +1516,10 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 #elif __APPLE__
 	return xnu_map_protect (dbg, addr, size, perms);
 #elif __linux__
-    // mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
+	// mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
 	return false;
 #else
-    // mprotect not implemented for this platform
+	// mprotect not implemented for this platform
 	return false;
 #endif
 }
@@ -1637,6 +1637,5 @@ RLibStruct radare_plugin = {
 RDebugPlugin r_debug_plugin_native = {
 	NULL // .name = "native",
 };
-
 
 #endif // DEBUGGER

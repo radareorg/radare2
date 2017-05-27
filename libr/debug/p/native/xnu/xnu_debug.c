@@ -59,7 +59,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 		return NULL;
 	}
 	if (!xnu_update_thread_list (dbg)) {
-		eprintf ("Failed to update thread_list xnu_reg_write\n");
+		eprintf ("Failed to update thread_list xnu_udpate_thread_list\n");
 		return NULL;
 	}
 	//TODO get the current thread
