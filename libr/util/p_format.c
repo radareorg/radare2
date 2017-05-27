@@ -1097,6 +1097,9 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 
 static void r_print_format_register (const RPrint* p, int mode,
 		const char *name, const char* setval) {
+	if (!p || !p->get_register || !p->reg) {
+		return;
+	}
 	RRegItem *ri = p->get_register (p->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		if (MUSTSET) {
