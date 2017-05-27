@@ -728,7 +728,7 @@ aarch64_ext_limm (const aarch64_operand *self ATTRIBUTE_UNUSED,
     }
   else
     {
-      if (S >= 0x00 && S <= 0x1f) { simd_size = 32; }
+      if (S <= 0x1f) { simd_size = 32; }
       else if (S >= 0x20 && S <= 0x2f) { simd_size = 16; S &= 0xf; }
       else if (S >= 0x30 && S <= 0x37) { simd_size = 8; S &= 0x7; }
       else if (S >= 0x38 && S <= 0x3b) { simd_size = 4; S &= 0x3; }
