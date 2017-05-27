@@ -834,13 +834,15 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		}
 	}
 	// if resolution fails... just return as invalid address
-	if (offset == UT64_MAX || !io->desc) {
+	if (offset == UT64_MAX) {
 		return UT64_MAX;
 	}
-	if (io->plugin && io->plugin->name && io->plugin->lseek) {
-		ret = io->plugin->lseek (io, io->desc, offset, whence);
-	} else {
-		ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
+	if (io->desc) {
+		if (io->plugin && io->plugin->name && io->plugin->lseek) {
+			ret = io->plugin->lseek (io, io->desc, offset, whence);
+		} else {
+			ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
+		}
 	}
 	if (whence == R_IO_SEEK_SET) {
 		io->off = offset;

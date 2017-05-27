@@ -568,7 +568,6 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// Restore original desc
 		r_io_use_desc (r->io, desc);
 	}
-
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
