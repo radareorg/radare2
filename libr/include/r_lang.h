@@ -25,6 +25,7 @@ typedef struct r_lang_t {
 
 typedef struct r_lang_plugin_t {
 	const char *name;
+	const char *alias;
 	const char *desc;
 	const char *license;
 	const char **help;
