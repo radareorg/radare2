@@ -55,7 +55,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 static void recursive_help(RCore *core, const char *cmd) {
 	char *nl, *line;
 	if (strchr (cmd, '[')) {
-		eprintf ("Skip ((%s))\n", cmd);
+		// eprintf ("Skip ((%s))\n", cmd);
 		return;
 	}
 	char *msg = r_core_cmd_str (core, cmd);
