@@ -3654,6 +3654,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						}
 					}
 				}
+				add_string_ref (core, op.ptr);
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 				/* TODO: test if this is valid for other archs too */
@@ -3664,6 +3665,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 						}
 					}
+					add_string_ref (core, dst);
 				} else if ((core->anal->bits == 32 && core->anal->cur && !strcmp (core->anal->cur->arch, "mips"))) {
 					ut64 dst = ESIL->cur;
 					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
