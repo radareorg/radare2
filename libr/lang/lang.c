@@ -174,8 +174,9 @@ R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
 		if (!strcasecmp (h->name, name)) {
 			return h;
 		}
-		if (h->trivial_name && !strcasecmp(h->trivial_name, name))
+		if (h->alias && !strcasecmp (h->alias, name)) {
 			return h;
+		}
 	}
 	return NULL;
 }
