@@ -1928,14 +1928,13 @@ char* Elf_(r_bin_elf_get_file_type)(ELFOBJ *bin) {
 	case ET_DYN:  return strdup ("DYN (Shared object file)");
 	case ET_CORE: return strdup ("CORE (Core file)");
 	}
-
 	if ((e_type >= ET_LOPROC) && (e_type <= ET_HIPROC)) {
 		return r_str_newf ("Processor Specific: %x", e_type);
-	} else if ((e_type >= ET_LOOS) && (e_type <= ET_HIOS)) {
-		return r_str_newf ("OS Specific: %x", e_type);
-	} else {
-		return r_str_newf ("<unknown>: %x", e_type);
 	}
+	if ((e_type >= ET_LOOS) && (e_type <= ET_HIOS)) {
+		return r_str_newf ("OS Specific: %x", e_type);
+	}
+	return r_str_newf ("<unknown>: %x", e_type);
 }
 
 char* Elf_(r_bin_elf_get_elf_class)(ELFOBJ *bin) {

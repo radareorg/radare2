@@ -2318,15 +2318,15 @@ static int bin_classes(RCore *r, int mode) {
 				c->addr, at_min, at_max, c->name, c->super ? " " : "",
 				c->super ? c->super : "");
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("f class.%s = 0x%"PFMT64x"\n",
+			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n",
 				name, at_min);
 			if (c->super) {
-				r_cons_printf ("f super.%s.%s = %d\n",
+				r_cons_printf ("\"f super.%s.%s = %d\"\n",
 					c->name, c->super, c->index);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym, mode);
-				r_cons_printf ("f method%s.%s.%s = 0x%"PFMT64x"\n", mflags, c->name, sym->name, sym->vaddr);
+				r_cons_printf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
 				R_FREE (mflags);
 			}
 		} else if (IS_MODE_JSON (mode)) {

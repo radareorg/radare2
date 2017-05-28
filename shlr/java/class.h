@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2007-2014 - pancake
+/* radare - Apache 2.0 - Copyright 2007-2017 - pancake
    class.h rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 

@@ -211,7 +211,6 @@ static RList *lines(RBinFile *arch) {
 	char *file = arch->file? strdup (arch->file): strdup ("");
 	RList *list = r_list_newf (free);
 	file = r_str_replace (file, ".class", ".java", 0);
-
 	/*
 	   int i;
 	   RBinJavaObj *b = arch->o->bin_obj;
@@ -268,7 +267,7 @@ RBinPlugin r_bin_plugin_java = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_java,
 	.version = R2_VERSION
