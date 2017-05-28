@@ -519,18 +519,20 @@ R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
 	return 1;
 }
 
-R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
+R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
 	RBinFile *binfile = NULL;
-	RIODesc *desc = cf? cf->desc: NULL;
 	RBinPlugin *plugin = NULL;
 	int is_io_load;
+	if (!cf) {
+		return false;
+	}
 	// NULL deref guard
-	if (!desc) {
+	if (!cf->desc) {
 		is_io_load = false;
 	} else {
-		is_io_load = desc && desc->plugin;
+		is_io_load = cf->desc && cf->desc->plugin;
 	}
 
 	if (cf) {
@@ -557,19 +559,18 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
-		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
+		if ((cf->desc->plugin && cf->desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
 			ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 			r_core_file_do_load_for_io_plugin (r, baddr, laddr);
 		}
 		// Restore original desc
-		r_io_use_desc (r->io, desc);
+		r_io_use_desc (r->io, cf->desc);
 	}
-	if (cf && binfile && desc) {
-		binfile->fd = desc->fd;
+	if (cf && binfile && cf->desc) {
+		binfile->fd = cf->desc->fd;
 	}
 	binfile = r_bin_cur (r->bin);
 	if (r->bin->cur && r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
