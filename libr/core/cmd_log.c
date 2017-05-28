@@ -107,7 +107,6 @@ static int cmd_log(void *data, const char *input) {
 			"Tj", "", "List in json format",
 			"Tm", " [idx]", "Display log messages without index",
 			"Ts", "", "List files in current directory (see pwd, cd)",
-			"Tp", "[?] [-plug]", "List, load, unload plugins",
 			"TT", "", "Enter into the text log chat console",
 			NULL
 		};
@@ -119,30 +118,6 @@ static int cmd_log(void *data, const char *input) {
 			textlog_chat (core);
 		} else {
 			eprintf ("Only available when the screen is interactive\n");
-		}
-		break;
-	case 'p':
-		switch (input[1]) {
-		case 0:
-			r_lib_list (core->lib);
-			break;
-		case '-':
-			r_lib_close (core->lib, input + 2);
-			break;
-		case ' ':
-			r_lib_open (core->lib, input + 2);
-			break;
-		case '?': {
-			const char *help_msg[] = {
-				"Usage:", "Tp", "[-name][ file]",
-				"Tp", "", "List all plugins loaded by RCore.lib",
-				"Tp-", "duk", "Unload plugin matching in filename",
-				"Tp", " blah."R_LIB_EXT, "Load plugin file",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
-			  break;
 		}
 		break;
 	case ' ':
@@ -163,6 +138,32 @@ static int cmd_log(void *data, const char *input) {
 	case '*':
 	case '\0':
 		r_core_log_list (core, n, n2, *input);
+		break;
+	}
+	return 0;
+}
+
+static int cmd_plugins(void *data, const char *input) {
+	RCore *core = (RCore *) data;
+	const char *help_msg[] = {
+		"Usage:", "L", "[-name][ file] # see oL, iL, dL, ...",
+		"L", "", "List all plugins loaded by RCore.lib",
+		"L-", "duk", "Unload plugin matching in filename",
+		"L", " blah."R_LIB_EXT, "Load plugin file",
+		NULL
+	};
+	switch (input[0]) {
+	case 0:
+		r_lib_list (core->lib);
+		break;
+	case '-':
+		r_lib_close (core->lib, input + 2);
+		break;
+	case ' ':
+		r_lib_open (core->lib, input + 2);
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg);
 		break;
 	}
 	return 0;

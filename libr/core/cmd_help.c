@@ -782,6 +782,7 @@ static int cmd_help(void *data, const char *input) {
 		"g","[?] [arg]", "Generate shellcodes with r_egg",
 		"i","[?] [file]", "Get info about opened file from r_bin",
 		"k","[?] [sdb-query]", "Run sdb-query. see k? for help, 'k *', 'k **' ...",
+		"L","[?] [-] [plugin]", "list, unload load r2 plugins",
 		"m","[?]", "Mountpoints commands",
 		"o","[?] [file] ([offset])", "Open file at optional address",
 		"p","[?] [len]", "Print current block with format and length",

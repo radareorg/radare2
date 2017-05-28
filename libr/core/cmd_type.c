@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2017 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 #include <string.h>
 
 #include "r_anal.h"
@@ -38,7 +38,7 @@ static void show_help(RCore *core) {
 static void showFormat(RCore *core, const char *name) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
-		eprintf ("IS ENUM! \n");
+		eprintf ("IS ENUM\n");
 	} else {
 		char *fmt = r_anal_type_format (core->anal, name);
 		if (fmt) {
