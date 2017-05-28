@@ -2638,7 +2638,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 			/* find match in phdr */
 			p = phdr_symbols;
 			while (!p->last) {
-				if (d->offset == p->offset) {
+				if (p->offset && d->offset == p->offset) {
 					p->in_shdr = true;
 					if (*p->name && strcmp (d->name, p->name)) {
 						strcpy (d->name, p->name);
