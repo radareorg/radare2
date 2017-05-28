@@ -14,10 +14,10 @@ PWD=$(shell pwd)
 LIBS0=util hash
 LIBS1=socket reg cons magic bp search config
 LIBS2=syscall lang io crypto flag
-LIBS3=fs anal bin
-LIBS4=parse
-LIBS5=asm debug
-LIBS6=egg
+LIBS3=fs anal bin parse
+LIBS4=asm
+LIBS5=egg
+LIBS6=debug
 #LIBS6+=print
 LIBS7=core
 

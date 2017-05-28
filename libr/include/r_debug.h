@@ -7,6 +7,7 @@
 #include <r_hash.h>
 #include <r_util.h>
 #include <r_reg.h>
+#include <r_egg.h>
 #include <r_bp.h>
 #include <r_io.h>
 #include <r_syscall.h>
@@ -277,6 +278,7 @@ typedef struct r_debug_t {
 	// internal use only
 	int _mode;
 	RNum *num;
+	REgg *egg;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {

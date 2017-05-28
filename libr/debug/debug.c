@@ -296,6 +296,8 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
 	dbg->trace_clone = 0;
+	dbg->egg = r_egg_new ();
+	r_egg_setup (dbg->egg, R_SYS_ARCH, R_SYS_BITS, R_SYS_ENDIAN, R_SYS_OS);
 	dbg->trace_aftersyscall = true;
 	dbg->follow_child = false;
 	R_FREE (dbg->btalgo);
