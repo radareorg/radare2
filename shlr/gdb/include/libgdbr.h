@@ -132,8 +132,8 @@ typedef struct libgdbr_t {
 	uint8_t architecture;
 	registers_t *registers;
 	int last_code;
-	ssize_t pid; // little endian
-	ssize_t tid; // little endian
+	int pid; // little endian
+	int tid; // little endian
 	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
 	char *exec_file_name;

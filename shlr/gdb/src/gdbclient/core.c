@@ -63,6 +63,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		//return ret;
 	}
 
+	/*
 	// Check if remote server attached to or created process
 	if (g->stub_features.multiprocess) {
 		char pid_buf[20] = { 0 };
@@ -150,18 +151,13 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
+	*/
 
 	// Set pid/thread for next operations
 	if (g->stub_features.multiprocess) {
-		char pid_buf[20] = { 0 };
-		char tid_buf[20] = { 0 };
-		pack_hex_uint64 (g->pid, pid_buf);
-		pack_hex_uint64 (g->tid, tid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%s.%s", pid_buf, tid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
 	} else {
-		char tid_buf[20] = { 0 };
-		pack_hex_uint64 (g->tid, tid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%s", tid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
 	}
 	ret = send_msg (g, tmp.buf);
 	if (ret < 0) {
