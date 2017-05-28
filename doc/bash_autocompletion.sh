@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ -z "$BASH" ]; then
+	autoload bashcompinit
+	bashcompinit
+fi
+
 _r2 () {
 	local cur
 	COMPREPLY=()
