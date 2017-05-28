@@ -91,33 +91,30 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		if (ret < 0) {
 			return ret;
 		}
-	}
-	read_packet (g);
-	ret = send_ack (g);
-	if (!*g->data || g->data[0] != 'F' || g->data[1] == '-') {
-		eprintf ("handle gF\n");
-		return 0;
-		return -1;
-	}
-	if (ret < 0) {
-		eprintf ("handle gF\n");
-		// return ret;
+		read_packet (g);
+		ret = send_ack (g);
+		if (ret < 0 || !*g->data || g->data[0] != 'F' || g->data[1] == '-') {
+			eprintf ("handle gF\n");
+			return -1;
+		}
 	}
 
 	// Get name of file being executed
-	if (g->stub_features.multiprocess) {
-		char pid_buf[20] = { 0 };
-		pack_hex_uint64 (g->pid, pid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qXfer:exec-file:read:%s:0,fff", pid_buf);
-		ret = send_msg (g, tmp.buf);
-	} else {
-		ret = send_msg (g, "qXfer:exec-file:read::0,fff");
+	if (g->stub_features.qXfer_exec_file_read) {
+		if (g->stub_features.multiprocess) {
+			char pid_buf[20] = { 0 };
+			pack_hex_uint64 (g->pid, pid_buf);
+			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qXfer:exec-file:read:%s:0,fff", pid_buf);
+			ret = send_msg (g, tmp.buf);
+		} else {
+			ret = send_msg (g, "qXfer:exec-file:read::0,fff");
+		}
+		if (ret < 0) {
+			return ret;
+		}
+		read_packet (g);
+		(void) handle_execFileRead (g);
 	}
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	(void) handle_execFileRead (g);
 
 	// Open the file
 	char *file_to_hex = calloc (2, strlen (g->exec_file_name) + 1);
@@ -190,14 +187,19 @@ int gdbr_disconnect(libgdbr_t *g) {
 bool gdbr_kill(libgdbr_t *g) {
 	char buf[20];
 	int ret;
-	char pid_buf[20] = { 0 };
 	if (!g || !g->sock || !g->pid) {
 		return false;
 	}
-	pack_hex_uint64 (g->pid, pid_buf);
-	snprintf (buf, sizeof (buf) - 1, "vKill;%s", pid_buf);
+	if (g->stub_features.multiprocess) {
+		snprintf (buf, sizeof (buf) - 1, "vKill;%x", g->pid);
+	} else {
+		snprintf (buf, sizeof (buf) - 1, "k");
+	}
 	if ((ret = send_msg (g, buf)) < 0) {
 		return false;
+	}
+	if (!g->stub_features.multiprocess) {
+		return true;
 	}
 	read_packet (g);
 	if ((ret = send_ack (g)) < 0) {
