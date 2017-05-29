@@ -4361,7 +4361,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?':
 			r_cons_printf ("|Usage: pr[glx] [size]\n"
-				"| prc: print bytes as colors in palete\n"
+				"| prc: print bytes as colors in palette\n"
 				"| prl: print raw with lines offsets\n"
 				"| prx: printable chars with real offset (hyew)\n"
 				"| prg[?]: print raw GUNZIPped block\n"
