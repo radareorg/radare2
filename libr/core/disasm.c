@@ -2937,7 +2937,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					if (p != UT64_MAX && p != UT32_MAX) {
 						if (*n > -0xfff && *n < 0xfff) {
 							ALIGN;
-							ds_comment (ds, true, "; %d%s", p, nl);
+							ds_comment (ds, true, "; %"PFMT64d"%s", p, nl);
 						}
 					}
 				} else {
