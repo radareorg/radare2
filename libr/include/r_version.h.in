@@ -1,0 +1,7 @@
+#ifndef R_VERSION_H
+#define R_VERSION_H 1
+#define R2_VERSION_COMMIT @VERSIONCOMMIT@
+#define R2_GITTAP "@GITTAP@"
+#define R2_GITTIP "@GITTIP@"
+#define R2_BIRTH "@DATE@"
+#endif

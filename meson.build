@@ -1,5 +1,10 @@
 project('radare2', 'c')
+
 version = '1.5.0-git'
+version_commit = 0
+gittap  = ''
+gittip  = ''
+r2birth = ''
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -16,19 +21,21 @@ else
   host_os = 'darwin'
 endif
 
+platform_librinc = []
+platform_binrinc = []
+
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32')] # ,cc.find_library('capstone',dirs :'d:/2017/radare/myradare2/shlr/capstone/msvc/Release')]
+  platform_deps = [cc.find_library('ws2_32')] 
   platform_librinc  = ['../include/msvc']
   platform_binrinc  = ['../../libr/include/msvc']
   host_os = 'windows'
 else
-  platform_librinc = []
-  platform_binrinc = []
+  platform_librinc = '.'
 endif
 subdir('libr/util')
 subdir('binr/rax2')
 
-platform_librinc = '.'
+
 #'/usr/include'
 
 # load plugin configuration
@@ -66,6 +73,15 @@ userconf.set('DEBUGGER', 1)
 configure_file(input : 'libr/include/r_userconf.h.in',
                output : 'r_userconf.h',
                configuration : userconf)
+
+versionconf = configuration_data()
+versionconf.set('VERSIONCOMMIT', version_commit)
+versionconf.set('GITTAP', gittap)
+versionconf.set('GITTIP', gittip)
+versionconf.set('DATE', r2birth)
+configure_file(input : 'libr/include/r_version.h.in',
+               output : 'r_version.h',
+               configuration : versionconf)
 
 subdir('libr/hash')
 subdir('libr/crypto')
