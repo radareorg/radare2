@@ -122,7 +122,8 @@ static int _server_handle_g(libgdbr_t *g, int (*cmd_cb) (void*, const char*, cha
 
 static int _server_handle_m(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
 	int ret;
-	ut64 addr, length;
+	ut64 addr;
+	int length;
 	char *buf1, *buf2, cmd[64];
 	int buf1_len, buf2_len;
 

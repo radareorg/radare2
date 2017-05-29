@@ -892,17 +892,13 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 
 static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, size_t max_len) {
 	int ret;
-
 	RList *list;
 	RListIter *iter;
-
 	RRegItem *reg_item;
 	int reg_size;
 	ut64 reg_value;
 	utX reg_value_big;
-
 	ut64 m_off;
-
 	if (!core_ptr || ! cmd) {
 		return -1;
 	}
@@ -916,13 +912,11 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 				// TODO support multiprocess
 				snprintf (out_buf, max_len - 1, "QC%x", core->dbg->tid);
 				return 0;
-
 			case 't': // dpt
 				r_core_cmd (core, cmd, 0);
 				return 0;
 			}
 			break;
-
 		case 'r': // dr
 			if (!(list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR))) {
 				return -1;
@@ -976,7 +970,7 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 						return -1;
 					}
 				}
-				ret += 2 * (reg_size / 8);
+				ret += reg_size / 4;
 				if (ret >= max_len) {
 					return -1;
 				}
@@ -984,7 +978,6 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 			return ret;
 		}
 		break;
-
 	case 'm':
 		sscanf (cmd + 1, "%"PFMT64x" %d", &m_off, &ret);
 		r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
