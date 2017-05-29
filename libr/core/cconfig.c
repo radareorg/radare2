@@ -1301,6 +1301,20 @@ static int cb_io_oxff(void *user, void *data) {
 	return true;
 }
 
+static int cb_filepath(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	char *pikaboo = strstr (node->value, "://");
+	if (pikaboo) {
+		if (pikaboo[3] == '/') {
+			free (node->value);
+			node->value = strdup (pikaboo + 3);
+			return true;
+		}
+		return false;
+	}
+	return true;
+}
+
 static int cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2443,7 +2457,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("file.md5", "", "MD5 sum of current file");
 	SETPREF ("file.info", "true", "RBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
-	SETPREF ("file.path", "", "Path of current file");
+	SETCB ("file.path", "", &cb_filepath, "Path of current file");
 	SETPREF ("file.sha1", "", "SHA1 hash of current file");
 	SETPREF ("file.type", "", "Type of current file");
 	n = NODECB ("file.loadmethod", "fail", &cb_fileloadmethod);
