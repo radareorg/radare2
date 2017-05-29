@@ -939,6 +939,13 @@ static ut64 addroflib(RCore *core, const char *libname) {
 	RDebugMap *map;
 
 	r_debug_map_sync (core->dbg);
+	// RList *list = r_debug_native_modules_get (core->dbg);
+	RList *list = r_debug_modules_list (core->dbg);
+	r_list_foreach (list, iter, map) {
+		if (strstr (map->name, libname)) {
+			return map->addr;
+		}
+	}
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if (strstr (map->name, libname)) {
 			return map->addr;
@@ -952,6 +959,12 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 	RDebugMap *map;
 
 	r_debug_map_sync (core->dbg);
+	RList *list = r_debug_modules_list (core->dbg);
+	r_list_foreach (list, iter, map) {
+		if (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) {
+			return map;
+		}
+	}
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) {
 			return map;
@@ -1142,6 +1155,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						} else {
 							cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s", mode, baddr, file);
 						}
+						// eprintf ("CMD (%s)\n", cmd);
 						res = r_sys_cmd_str (cmd, NULL, NULL);
 						r_cons_println (res);
 						free (res);

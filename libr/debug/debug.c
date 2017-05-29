@@ -230,6 +230,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 					break;
 				}
 			}
+			r_list_free (list);
 		} else {
 			//module holds the address
 			addr = (ut64)r_num_math (dbg->num, module);

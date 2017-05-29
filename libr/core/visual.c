@@ -1158,7 +1158,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		//int cols = r_config_get_i (core->config, "hex.cols") * 3.5;
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
-		p->cur += cols > 0? cols: 3;
+		p->cur += cols > 0? cols: 0;
 		return;
 	}
 	if (PIDX == 2 && core->seltab == 1) {
@@ -1176,7 +1176,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		return;
 	}
 
-	if (p->row_offsets != NULL) {
+	if (p->row_offsets) {
 		// FIXME: cache the current row
 		row = r_print_row_at_off (p, p->cur);
 		roff = r_print_rowoff (p, row);
@@ -1213,7 +1213,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
-		p->cur -= cols > 0? cols: 3;
+		p->cur -= cols > 0? cols: 0;
 		return;
 	}
 	if (PIDX == 2 && core->seltab == 1) {
