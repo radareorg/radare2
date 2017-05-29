@@ -8,7 +8,7 @@
 #include "../format/nin/nin.h"
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return R_NOTNULL;
+	return &load_bytes;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {

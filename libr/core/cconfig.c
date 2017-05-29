@@ -89,6 +89,9 @@ fail:
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
+	if (!core || !core->anal || !name) {
+		return NULL;
+	}
 	RAnal *a = core->anal;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (name, h->name)) {

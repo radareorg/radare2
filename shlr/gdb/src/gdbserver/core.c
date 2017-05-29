@@ -41,7 +41,7 @@ static int _server_handle_qC(libgdbr_t *g, char *buf, size_t max_len) {
 
 int gdbr_server_read(libgdbr_t *g, char *buf, size_t max_len) {
 	bool loop_continue;
-	int ret;
+	int ret = -1;
 	if (!g) {
 		return -1;
 	}

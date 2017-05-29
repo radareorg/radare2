@@ -105,15 +105,11 @@ static state_func const state_table[eTCStateMax] = {
 // State machine for parsing type codes functions
 ///////////////////////////////////////////////////////////////////////////////
 
-static EDemanglerErr get_type_code_string(	char *sym,
-											unsigned int *amount_of_read_chars,
-											char **str_type_code);
+static EDemanglerErr get_type_code_string(char *sym, unsigned int *amount_of_read_chars, char **str_type_code);
 static int init_type_code_str_struct(STypeCodeStr *type_coder_str);
 static void free_type_code_str_struct(STypeCodeStr *type_code_str);
 
-static void run_state(	SStateInfo *state_info,
-						STypeCodeStr *type_code_str)
-{
+static void run_state(SStateInfo *state_info, STypeCodeStr *type_code_str) {
 	state_table[state_info->state](state_info, type_code_str);
 }
 
@@ -121,7 +117,7 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 	int res = 1; // all is OK
 	int str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
-	char *dst = 0;
+	char *dst = NULL;
 
 	if (free_space > str_for_copy_len) {
 		type_code_str->type_str_len =
@@ -140,6 +136,10 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 	}
 
 	dst = type_code_str->type_str + type_code_str->curr_pos;
+	if (!dst) {
+		return 0;
+	}
+
 	if (str_for_copy) {
 		strncpy (dst, str_for_copy, str_for_copy_len);
 	} else {

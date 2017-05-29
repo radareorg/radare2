@@ -231,6 +231,9 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		rp->_args[i] = argv[i];
 	}
 	rp->_args[i] = NULL;
+	if (!argv[0]) {
+		return NULL;
+	}
 	rp->_program = strdup (argv[0]);
 	rp->_dodebug = true;
 	if (io->runprofile && *io->runprofile) {
