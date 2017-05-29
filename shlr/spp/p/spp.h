@@ -12,7 +12,7 @@ static int spp_var_set(const char *var, const char *val) {
 
 /* Should be dynamic buffer */
 static char *cmd_to_str(const char *cmd) {
-	char *out = (char *)calloc (4096, 0);
+	char *out = (char *)calloc (4096, 1);
 	int ret = 0, len = 0, outlen = 4096;
 	FILE *fd = popen (cmd, "r");
 	while (fd) {
