@@ -3565,8 +3565,14 @@ static int cmd_print(void *data, const char *input) {
 // r_cons_printf ("|Usage: pi[defj] [num]\n");
 		{
 			const char *help_msg[] = {
-				"Usage:", "pi[bdefrj] [num]", "",
+				"Usage:", "pi[abdefrj] [num]", "",
 				"pir", "", "like 'pdr' but with 'pI' output",
+				"pia", "", "like 'pda' but with 'pi' output",
+				"pij", "", "like 'pdj'",
+				"pid", "", "like 'pdi'",
+				"pie", "", "like 'pdi' but with esil",
+				"pif", "", "like 'pdf' but with 'pi' output",
+				"pib", "", "like 'pdb' but with 'pi' output",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
