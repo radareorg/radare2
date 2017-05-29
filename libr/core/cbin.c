@@ -2780,11 +2780,12 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		SdbKv *kv;
 		r_cons_printf ("fs format\n");
 		// iterate over all keys
-		SdbList *ls = sdb_foreach_list (db, true);
+		SdbList *ls = sdb_foreach_list (db, false);
 		ls_foreach (ls, iter, kv) {
 			char *k = kv->key;
 			char *v = kv->value;
 			char *dup = strdup (k);
+			//printf ("?e (%s) (%s)\n", k, v);
 
 			if ((flagname = strstr (dup, ".offset"))) {
 				*flagname = 0;
@@ -2796,6 +2797,17 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 			if ((flagname = strstr (dup, ".cparse"))) {
 				r_cons_printf ("\"td %s\"\n", v);
 			}
+			if ((flagname = strstr (dup, ".size"))) {
+				*flagname = 0;
+				flagname = dup;
+				r_cons_printf ("fl %s %s\n", flagname, v);
+			}
+			free (dup);
+		}
+		R_FREE (offset);
+		ls_foreach (ls, iter, kv) {
+			char *dup = kv->key;
+			char *v = kv->value;
 			if ((flagname = strstr (dup, ".format"))) {
 				*flagname = 0;
 				if (!offset) {
@@ -2811,15 +2823,8 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
 				}
 			}
-			if ((flagname = strstr (dup, ".size"))) {
-				*flagname = 0;
-				flagname = dup;
-				r_cons_printf ("fl %s %s\n", flagname, v);
-			}
-			free (dup);
 		}
 		free (offset);
-		ls_free (ls);
 	}
 }
 

@@ -1866,7 +1866,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			/* format chars */
 			// before to enter in the switch statement check buf boundaries due to  updateAddr
 			// might go beyond its len and it's usually called in each of the following functions
+#if 0
+// those boundaries are wrong. the fix was not correct, we need a reproducer
 			if (((i+3)<len) || (i+7)<len) {
+#endif
 				switch (tmp) {
 				case 'u':
 					i += r_print_format_uleb (p, endian, mode, setval, seeki, buf, i, size);
@@ -2094,10 +2097,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					invalid = 1;
 					break;
 				} //switch
+#if 0
 			} else {
-				eprintf ("r_print_format: Likely a heap buffer overflow\n");
+				eprintf ("r_print_format: Likely a heap buffer overflow (%s)\n", buf);
 				goto beach;
 			}
+#endif
 			if (mode & R_PRINT_DOT) {
 				p->cb_printf ("}");
 			}
@@ -2113,13 +2118,16 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			last = tmp;
 		}
 		if (otimes > 1) {
-			if (MUSTSEEJSON) p->cb_printf ("]");
-			else if (mode) p->cb_printf ("}\n");
+			if (MUSTSEEJSON) {
+				p->cb_printf ("]");
+			} else if (mode) {
+				p->cb_printf ("}\n");
+			}
 		}
 		arg = orig;
 		oldslide = 0;
 	}
-	if (mode & R_PRINT_JSON && slide==0) {
+	if (mode & R_PRINT_JSON && slide == 0) {
 		p->cb_printf("]\n");
 	}
 	if (mode & R_PRINT_DOT) {
