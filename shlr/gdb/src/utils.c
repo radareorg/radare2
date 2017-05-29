@@ -114,24 +114,6 @@ int pack_hex(char *src, ut64 len, char *dst) {
 	return (len / 2);
 }
 
-int pack_hex_uint64(ut64 src, char *dst) {
-	int len = 0;
-	int i;
-	char temp[16];
-	do {
-		temp[len++] = int2hex (src & 0x0F);
-		src >>= 4;
-	} while (src > 0);
-	if (len > 0 && temp[len - 1] == '0') {
-		len--;
-	}
-	for (i = 0; i < len; i++) {
-		dst[i] = temp[len - 1 - i];
-	}
-	dst[len] = '\0';
-	return len;
-}
-
 void hexdump(void *ptr, ut64 len, ut64 offset) {
 	unsigned char *data = (unsigned char *) ptr;
 	int x = 0;
