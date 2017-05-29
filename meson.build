@@ -25,7 +25,7 @@ platform_librinc = []
 platform_binrinc = []
 
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32')] # ,cc.find_library('capstone',dirs :'d:/2017/radare/myradare2/shlr/capstone/msvc/Release')]
+  platform_deps = [cc.find_library('ws2_32')] 
   platform_librinc  = ['../include/msvc']
   platform_binrinc  = ['../../libr/include/msvc']
   host_os = 'windows'
