@@ -301,6 +301,9 @@ purge-dev:
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 	rm -f "${DESTDIR}${LIBDIR}/radare2/${VERSION}/-"*
 
+# required for EXT_SO
+include libr/config.mk
+
 strip:
 	-for FILE in ${R2BINS} ; do ${STRIP} -s "${DESTDIR}${BINDIR}/$$FILE" 2> /dev/null ; done
 	-for FILE in "${DESTDIR}${LIBDIR}/libr_"*".${EXT_SO}" "${DESTDIR}${LIBDIR}/libr2.${EXT_SO}" ; do \
@@ -420,24 +423,24 @@ meson-symstall:
 	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2
 	ln -fs $(PWD)/build/binr/ragg2/ragg2 ${B}/ragg2
 	cd $(B) && ln -fs radare2 r2
-	ln -fs $(PWD)/build/libr/util/libr_util.$(SO_EXT) ${L}/libr_util.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/bp/libr_bp.$(SO_EXT) ${L}/libr_bp.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/syscall/libr_syscall.$(SO_EXT) ${L}/libr_syscall.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/cons/libr_cons.$(SO_EXT) ${L}/libr_cons.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/search/libr_search.$(SO_EXT) ${L}/libr_search.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/magic/libr_magic.$(SO_EXT) ${L}/libr_magic.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/flag/libr_flag.$(SO_EXT) ${L}/libr_flag.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/reg/libr_reg.$(SO_EXT) ${L}/libr_reg.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/bin/libr_bin.$(SO_EXT) ${L}/libr_bin.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/config/libr_config.$(SO_EXT) ${L}/libr_config.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/parse/libr_parse.$(SO_EXT) ${L}/libr_parse.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/lang/libr_lang.$(SO_EXT) ${L}/libr_lang.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/asm/libr_asm.$(SO_EXT) ${L}/libr_asm.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/anal/libr_anal.$(SO_EXT) ${L}/libr_anal.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/egg/libr_egg.$(SO_EXT) ${L}/libr_egg.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/fs/libr_fs.$(SO_EXT) ${L}/libr_fs.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/debug/libr_debug.$(SO_EXT) ${L}/libr_debug.$(SO_EXT)
-	ln -fs $(PWD)/build/libr/core/libr_core.$(SO_EXT) ${L}/libr_core.$(SO_EXT)
+	ln -fs $(PWD)/build/libr/util/libr_util.$(EXT_SO) ${L}/libr_util.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/bp/libr_bp.$(EXT_SO) ${L}/libr_bp.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/syscall/libr_syscall.$(EXT_SO) ${L}/libr_syscall.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/cons/libr_cons.$(EXT_SO) ${L}/libr_cons.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/search/libr_search.$(EXT_SO) ${L}/libr_search.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/magic/libr_magic.$(EXT_SO) ${L}/libr_magic.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/flag/libr_flag.$(EXT_SO) ${L}/libr_flag.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/reg/libr_reg.$(EXT_SO) ${L}/libr_reg.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/bin/libr_bin.$(EXT_SO) ${L}/libr_bin.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/config/libr_config.$(EXT_SO) ${L}/libr_config.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/parse/libr_parse.$(EXT_SO) ${L}/libr_parse.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/lang/libr_lang.$(EXT_SO) ${L}/libr_lang.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/asm/libr_asm.$(EXT_SO) ${L}/libr_asm.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/anal/libr_anal.$(EXT_SO) ${L}/libr_anal.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/egg/libr_egg.$(EXT_SO) ${L}/libr_egg.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/fs/libr_fs.$(EXT_SO) ${L}/libr_fs.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/debug/libr_debug.$(EXT_SO) ${L}/libr_debug.$(EXT_SO)
+	ln -fs $(PWD)/build/libr/core/libr_core.$(EXT_SO) ${L}/libr_core.$(EXT_SO)
 	# TODO: missing libr/*/d .. no sdb binary is compiled to precompile those files
 
 meson-uninstall:

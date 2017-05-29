@@ -5,6 +5,7 @@ version_commit = 0
 gittap  = ''
 gittip  = ''
 r2birth = ''
+prefix = '/usr/local'
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -60,10 +61,10 @@ configure_file(input : 'libr/config.h.in',
                configuration : conf_data)
 
 userconf = configuration_data()
-userconf.set('PREFIX', '/usr')
-userconf.set('LIBDIR', '/usr/lib')
-userconf.set('INCLUDEDIR', '/usr/include')
-userconf.set('DATADIR', '/usr/share')
+userconf.set('PREFIX', prefix)
+userconf.set('LIBDIR', prefix + '/lib')
+userconf.set('INCLUDEDIR', prefix + '/include')
+userconf.set('DATADIR', prefix + '/share')
 userconf.set('HAVE_LIB_MAGIC', 0)
 userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
