@@ -1726,6 +1726,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	char *line, *s, *str, *string2 = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool is_free_pending = false;
+	bool show_comments = r_config_get_i (core->config, "asm.comments");
 
 	r_config_set_i (core->config, "scr.color", 0);
 	if (!strncmp (input, "dsf", 3)) {
@@ -1843,6 +1844,16 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		}
 		if (addr != UT64_MAX) {
 			const char *str = NULL;
+			RConsPalette *pal = &core->cons->pal;
+			if (show_comments) {
+				char *comment = r_core_anal_get_comments (core, addr);
+				if (comment) {
+					r_cons_printf ("%s0x%08"PFMT64x, use_color? pal->offset: "", addr);
+					r_cons_printf (" %s%s\n", use_color? pal->comment: "", comment);
+					R_FREE (comment);
+				}
+			}
+
 			if (fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
