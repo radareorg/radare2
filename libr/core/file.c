@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -535,7 +535,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		is_io_load = cf->desc && cf->desc->plugin;
 	}
 
-	if (cf) {
+	if (cf && cf->desc) {
 		if (!filenameuri || !*filenameuri) {
 			filenameuri = cf->desc->name;
 		} else if (cf->desc->name && strcmp (filenameuri, cf->desc->name)) {

@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2015 - pancake and dso
+/* Apache 2.0 - Copyright 2007-2017 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 #include <stdio.h>
