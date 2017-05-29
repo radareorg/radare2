@@ -59,7 +59,7 @@ cache:
 # Build scripts
 build_script:
   - cmd: if %builder% == msvc ( sys\msvc.bat && make windist WINBITS=%builder% )
-  - cmd: if %builder% == msvc_meson ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%\Scripts;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && cd shlr && where meson && runmeson.bat && ninja.exe -C build install && echo %ARTIFACT_ZIP% && zip -r %ARTIFACT_ZIP% C:\bin C:\lib )
+  - cmd: if %builder% == msvc_meson ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%\Scripts;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && runmeson.bat && ninja.exe -C build install && echo %ARTIFACT_ZIP% && zip -r %ARTIFACT_ZIP% %APPVEYOR_BUILD_FOLDER%\bin %APPVEYOR_BUILD_FOLDER%\lib )
   - cmd: if %builder% == mingw32 ( sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
   - cmd: if %builder% == msys2 ( set && set PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;"%PATH%" && echo "%PATH%" && sh.exe -c "export PATH=${PATH}:/mingw64/bin; ./configure --build=i686-unknown-windows-gnu ; mingw32-make -j1 ; mingw32-make windist WINBITS=%builder%" )
   - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
