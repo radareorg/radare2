@@ -32,11 +32,14 @@ static ut32 colormap[256] = {
 
 // colordump
 static void cmd_prc (RCore *core, int len) {
+	bool square = true; //false;
 	int i, j;
-	int cols = core->print->cols * 3.5;
+	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
+	bool show_cursor = core->print->cur_enabled;
 	if (cols < 1) {
 		cols = 1;
 	}
+	cols /= 2;
 	for (i = 0; i < len; i += cols) {
 		r_print_addr (core->print, core->offset + i);
 		for (j = i; j < i + cols; j ++) {
@@ -44,7 +47,17 @@ static void cmd_prc (RCore *core, int len) {
 			if (j < len) {
 				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[*p]);
 				char *color = r_cons_pal_parse (str);
-				r_cons_printf ("%s ", color);
+				char ch = ' ';
+				if (show_cursor) {
+					if (core->print->cur == j) {
+						ch = '_';
+					}
+				}
+				if (square) {
+					r_cons_printf ("%s%c%c", color, ch, ch);
+				} else {
+					r_cons_printf ("%s%c", color, ch);
+				}
 				free (str);
 			} else {
 				break;
@@ -1431,7 +1444,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	}
 	if (show_offset) {
 		char offstr[128];
-		snprintf (offstr, sizeof(offstr),
+		snprintf (offstr, sizeof (offstr),
 			"0x%08"PFMT64x "  ", core->offset);
 		if (strlen (offstr) > 12) {
 			cols -= ((strlen (offstr) - 12) * 2);

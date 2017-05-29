@@ -1186,7 +1186,10 @@ static int cb_cmddepth(void *user, void *data) {
 
 static int cb_hexcols(void *user, void *data) {
 	RCore *core = (RCore *)user;
-	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
+	int c = R_MIN (1024, R_MAX (((RConfigNode*)data)->i_value, 0));
+	if (c < 0) {
+		c = 0;
+	}
 	core->print->cols = c & ~1;
 	core->dbg->regcols = c/4;
 	return true;
@@ -2259,6 +2262,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
 	SETICB ("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
+	SETI ("hex.pcols", 40, "Number of pixel columns for prc");
 	SETI ("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETPREF ("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB ("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");

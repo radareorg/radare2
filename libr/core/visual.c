@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-#define NPF 8
+#define NPF 9
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
@@ -13,13 +13,13 @@ static void visual_refresh(RCore *core);
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
 	"pxw 64@r:SP;dr=;pd $r",
-	"pxw", "pxx", "pxA", "pss", "pxa"
+	"pxw", "pxx", "pxA", "pss", "prc", "pxa"
 };
 
 static const char *printfmtColumns[] = {
 	"pCx", "pCd $r-1",
 	"pCD",
-	"pCw", "pCc", "pCA", "pss", "pCa"
+	"pCw", "pCc", "pCA", "pss", "prc", "pCa"
 };
 
 static const char **printfmt = printfmtSingle;
@@ -1154,6 +1154,13 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	RAsmOp op;
 
 	cursor_ocur (core, use_ocur);
+	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
+		//int cols = r_config_get_i (core->config, "hex.cols") * 3.5;
+		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
+		cols /= 2;
+		p->cur += cols > 0? cols: 3;
+		return;
+	}
 	if (PIDX == 2 && core->seltab == 1) {
 		const int cols = core->dbg->regcols;
 		p->cur += cols > 0? cols: 3;
@@ -1203,6 +1210,12 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	ut32 roff, prev_roff;
 	int row;
 
+	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
+		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
+		cols /= 2;
+		p->cur -= cols > 0? cols: 3;
+		return;
+	}
 	if (PIDX == 2 && core->seltab == 1) {
 		const int cols = core->dbg->regcols;
 		p->cur -= cols > 0? cols: 4;
@@ -2051,7 +2064,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (cmtcol > 2) {
 					r_config_set_i (core->config, "asm.cmtcol", cmtcol - 2);
 				}
-			} else {
+			}
+			{
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				if (scrcols > 2) {
 					r_config_set_i (core->config, "hex.cols", scrcols - 2);
@@ -2062,7 +2076,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 				r_config_set_i (core->config, "asm.cmtcol", cmtcol + 2);
-			} else {
+			}
+			{
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				r_config_set_i (core->config, "hex.cols", scrcols + 2);
 			}
@@ -2432,9 +2447,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize) {
 		switch (core->printidx) {
+		case 7: // prc
+			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
+			break;
 		case 0: // x"
-		case 6: // pxa
-			r_core_block_size (core, core->cons->rows * hexcols);
+		case 8: // pxa
+			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
 			break;
 		case 3: // XXX pw
 			r_core_block_size (core, core->cons->rows * hexcols);
