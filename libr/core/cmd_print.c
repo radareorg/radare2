@@ -3566,6 +3566,11 @@ static int cmd_print(void *data, const char *input) {
 		{
 			const char *help_msg[] = {
 				"Usage:", "pi[bdefrj] [num]", "",
+				"pib", "", "print instructions of basic block",
+				"pid", "", "alias for pdi"
+				"pif", "", "print instructions of function"
+				"pij", "", "print N instructions in JSON"
+				"pie", "", "print offset + esil expression",
 				"pir", "", "like 'pdr' but with 'pI' output",
 				NULL
 			};
