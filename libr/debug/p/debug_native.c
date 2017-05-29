@@ -1516,7 +1516,36 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 #elif __APPLE__
 	return xnu_map_protect (dbg, addr, size, perms);
 #elif __linux__
-	// mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
+	RBuffer *buf = NULL;
+	char code[1024];
+	int num;
+
+	num = r_syscall_get_num (dbg->anal->syscall, "mprotect");
+	snprintf (code, sizeof (code),
+		"sc@syscall(%d);\n"
+		"main@global(0) { sc(%p,%d,%d);\n"
+		":int3\n"
+		"}\n", num, (void*)addr, size, perms);
+
+	r_egg_reset (dbg->egg);
+	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	r_egg_load (dbg->egg, code, 0);
+	if (!r_egg_compile (dbg->egg)) {
+		eprintf ("Cannot compile.\n");
+		return false;
+	}
+	if (!r_egg_assemble (dbg->egg)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		return false;
+	}
+	buf = r_egg_get_bin (dbg->egg);
+	if (buf) {
+		r_reg_arena_push (dbg->reg);
+		r_debug_execute (dbg, buf->buf, buf->length , 1);
+		r_reg_arena_pop (dbg->reg);
+		return true;
+	}
+
 	return false;
 #else
 	// mprotect not implemented for this platform
