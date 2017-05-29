@@ -1,7 +1,7 @@
 #ifndef SDB_H
 #define SDB_H
 
-#ifndef O_BINARY
+#if !defined(O_BINARY) && !defined(_MSC_VER)
 #define O_BINARY 0
 #endif
 
@@ -36,8 +36,10 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
+#ifndef _MSC_VER
 extern __attribute__((dllimport)) void *__cdecl _aligned_malloc(size_t, size_t);
 extern char *strdup (const char *);
+#endif
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
 //#define SDB_MODE 0

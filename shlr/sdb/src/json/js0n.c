@@ -5,6 +5,12 @@
 
 #include "rangstr.h"
 
+#ifdef _MSC_VER
+int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+#pragma message("json/js0n.c: Unimplemented for this platform.")
+	return 0;
+}
+#else
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #pragma GCC diagnostic push
 #endif
@@ -145,3 +151,4 @@ l_utf_continue:
 		go = gostring;
 	goto l_loop;
 }
+#endif
