@@ -73,6 +73,7 @@ typedef struct r_cons_grep_t {
 	int neg;
 	int begin;
 	int end;
+	int icase;
 } RConsGrep;
 
 #if ENUM_FOR_PAL

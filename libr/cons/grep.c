@@ -23,6 +23,7 @@ R_API void r_cons_grep_help() {
 		"| modifiers:\n"
 		"|   &        all words must match to grep the line\n"
 		"|   $[n]     sort numerically / alphabetically the Nth column\n"
+		"|   +        case insensitive grep (grep -i)\n"
 		"|   ^        words must be placed at the beginning of line\n"
 		"|   !        negate grep\n"
 		"|   ?        count number of matching lines\n"
@@ -65,6 +66,7 @@ R_API void r_cons_grep(const char *str) {
 	sorted_column = 0;
 	cons->grep.sort = -1;
 	cons->grep.line = -1;
+	bool first = true;
 	while (*str) {
 		switch (*str) {
 		case '.':
@@ -120,6 +122,12 @@ R_API void r_cons_grep(const char *str) {
 			str++;
 			cons->grep.amp = 1;
 			break;
+		case '+':
+			if (first) {
+				str++;
+				cons->grep.icase = 1;
+			}
+			break;
 		case '^':
 			str++;
 			cons->grep.begin = 1;
@@ -142,6 +150,7 @@ R_API void r_cons_grep(const char *str) {
 		default:
 			goto while_end;
 		}
+		first = false;
 	}
 while_end:
 
@@ -516,7 +525,14 @@ R_API int r_cons_grep_line(char *buf, int len) {
 
 	if (cons->grep.nstrings > 0) {
 		int ampfail = cons->grep.amp;
+		if (cons->grep.icase) {
+			r_str_case (in, false);
+		}
 		for (i = 0; i < cons->grep.nstrings; i++) {
+			char *str = cons->grep.strings[i];
+			if (cons->grep.icase) {
+				r_str_case (str, false);
+			}
 			char *p = strstr (in, cons->grep.strings[i]);
 			if (!p) {
 				ampfail = 0;
