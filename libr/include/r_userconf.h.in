@@ -1,0 +1,33 @@
+#ifndef R2_CONFIGURE_H
+#define R2_CONFIGURE_H
+
+#include "r_version.h"
+
+#define DEBUGGER @DEBUGGER@
+
+#if __WINDOWS__ || __CYGWIN__ || MINGW32
+#define R2_PREFIX "."
+#define R2_LIBDIR "./lib"
+#define R2_INCDIR "./include/libr"
+#define R2_DATDIR "./share"
+#else
+#define R2_PREFIX "@PREFIX@"
+#define R2_LIBDIR "@LIBDIR@"
+#define R2_INCDIR "@INCLUDEDIR@/libr"
+#define R2_DATDIR "@DATADIR@"
+#endif
+
+#define R2_VERSION "@VERSION@"
+#define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
+#define USE_LIB_MAGIC @USE_LIB_MAGIC@
+#ifndef HAVE_LIB_SSL
+#define HAVE_LIB_SSL @HAVE_OPENSSL@
+#endif
+
+#define HAVE_FORK @HAVE_FORK@
+
+#define WITH_GPL @WITH_GPL@
+
+#define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
+
+#endif

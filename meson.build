@@ -52,6 +52,21 @@ configure_file(input : 'libr/config.h.in',
                output : 'config.h',
                configuration : conf_data)
 
+userconf = configuration_data()
+userconf.set('PREFIX', '/usr')
+userconf.set('LIBDIR', '/usr/lib')
+userconf.set('INCLUDEDIR', '/usr/include')
+userconf.set('DATADIR', '/usr/share')
+userconf.set('HAVE_LIB_MAGIC', 0)
+userconf.set('USE_LIB_MAGIC', 0)
+userconf.set('HAVE_OPENSSL', 0)
+userconf.set('HAVE_FORK', 1)
+userconf.set('WITH_GPL', 1)
+userconf.set('DEBUGGER', 1)
+configure_file(input : 'libr/include/r_userconf.h.in',
+               output : 'r_userconf.h',
+               configuration : userconf)
+
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')
