@@ -5,9 +5,6 @@
 
 #include <string.h>
 #include "types.h"
-#ifdef _MSC_VER
-typedef ssize_t int;
-#endif
 
 #define KVLSZ 4
 #define CDB_MAX_KEY 0xff
