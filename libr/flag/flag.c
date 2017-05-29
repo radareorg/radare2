@@ -44,7 +44,6 @@ static void item_list_kv_free(HtKv *kv) {
 	free (kv);
 }
 
-
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag*)user;
 	RFlagItem *item;
@@ -504,21 +503,22 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 /* change the name of a flag item, if the new name is available.
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
-	RFlagItem *p;
 	if (!f || !item || !name || !*name) {
 		return false;
 	}
-	p = ht_find (f->ht_name, name, NULL);
-	if (p) {
-		return false;
-	}
-	
+#if 0
+	ut64 off = item->offset;
+	int size = item->size;
 	r_flag_unset (f, item);
+	r_flag_set (f, name, off, size);
+	return true;
+#else
+	ht_delete (f->ht_name, name);
 	if (!set_name (item, name)) {
 		return false;
 	}
 	ht_insert (f->ht_name, item->name, item);
-	r_list_append (f->flags, item);
+#endif
 	return true;
 }
 
