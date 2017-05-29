@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #undef eprintf
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)

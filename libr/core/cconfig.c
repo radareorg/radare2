@@ -1305,7 +1305,9 @@ static int cb_io_oxff(void *user, void *data) {
 }
 
 static int cb_filepath(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	r_config_set (core->config, "file.lastpath", node->value);
 	char *pikaboo = strstr (node->value, "://");
 	if (pikaboo) {
 		if (pikaboo[3] == '/') {
@@ -2462,6 +2464,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("file.info", "true", "RBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETCB ("file.path", "", &cb_filepath, "Path of current file");
+	SETPREF ("file.lastpath", "", "Path of current file");
 	SETPREF ("file.sha1", "", "SHA1 hash of current file");
 	SETPREF ("file.type", "", "Type of current file");
 	n = NODECB ("file.loadmethod", "fail", &cb_fileloadmethod);

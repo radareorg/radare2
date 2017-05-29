@@ -1,7 +1,7 @@
 #ifndef SDB_H
 #define SDB_H
 
-#if !defined(O_BINARY) && !defined(_MSC_VER)
+#ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
@@ -39,6 +39,11 @@ extern "C" {
 #ifndef _MSC_VER
 extern __attribute__((dllimport)) void *__cdecl _aligned_malloc(size_t, size_t);
 extern char *strdup (const char *);
+#else
+#include <process.h>
+#include <windows.h>
+#include <malloc.h> // for _aligned_malloc
+#define ftruncate _chsize
 #endif
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)

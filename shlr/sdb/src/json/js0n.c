@@ -6,9 +6,9 @@
 #include "rangstr.h"
 
 #ifdef _MSC_VER
+#pragma message ("TODO: json not implemented for this platform")
 int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
-#pragma message("json/js0n.c: Unimplemented for this platform.")
-	return 0;
+	return 1;
 }
 #else
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
