@@ -2097,6 +2097,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	RCore *core = ds->core;
 	RAnalValue *src;
+	char *nl = ds->show_comment_right ? "" : "\n";
 
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
@@ -2144,8 +2145,9 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				if (ds->show_leahints) {
 					char s[64];
 					r_str_ncpy (s, (const char *)b, sizeof (s));
-					r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
-							dst->reg->name, ptr, off, item?item->name: s);
+					ALIGN;
+					ds_comment (ds, true, "; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"%s",
+					            dst->reg->name, ptr, off, item?item->name: s, nl);
 				}
 			}
 		}
@@ -3716,7 +3718,6 @@ toro:
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
 			ds->at -= skip_bytes;
 		}
-		ds_instruction_mov_lea (ds, idx);
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
@@ -3724,6 +3725,7 @@ toro:
 		ds_show_xrefs (ds);
 
 		if (ds->show_comments && !ds->show_comment_right) {
+			ds_instruction_mov_lea (ds, idx);
 			ds_show_refs (ds);
 			ds_build_op_str (ds);
 			ds_print_ptr (ds, len + 256, idx);
@@ -3775,6 +3777,7 @@ toro:
 
 			ds_cdiv_optimization (ds);
 			if (ds->show_comments && ds->show_comment_right) {
+				ds_instruction_mov_lea (ds, idx);
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_fcn_name (ds);
 				ds_print_color_reset (ds);
