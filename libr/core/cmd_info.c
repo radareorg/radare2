@@ -253,8 +253,10 @@ static int cmd_info(void *data, const char *input) {
 	int is_array = 0;
 	Sdb *db;
 
-	for (i = 0; input[i]; i++) {
-		switch (input[i]) {
+	for (i = 0; input[i] && input[i] != ' '; i++)
+		;
+	if (i > 0) {
+		switch (input[i - 1]) {
 		case '*': mode = R_CORE_BIN_RADARE; break;
 		case 'j': mode = R_CORE_BIN_JSON; break;
 		case 'q': mode = R_CORE_BIN_SIMPLE; break;
@@ -591,9 +593,9 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a':
 			switch (mode) {
-			case R_CORE_BIN_RADARE: cmd_info (core, "i*IiecsSmz"); break;
-			case R_CORE_BIN_JSON: cmd_info (core, "ijIiecsSmz"); break;
-			case R_CORE_BIN_SIMPLE: cmd_info (core, "iqIiecsSmz"); break;
+			case R_CORE_BIN_RADARE: cmd_info (core, "iIiecsSmz*"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "iIiecsSmzj"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "iIiecsSmzq"); break;
 			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
