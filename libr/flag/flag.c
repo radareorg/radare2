@@ -512,11 +512,13 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	if (p) {
 		return false;
 	}
+	
+	r_flag_unset (f, item);
 	if (!set_name (item, name)) {
 		return false;
 	}
-	ht_delete (f->ht_name, name);
 	ht_insert (f->ht_name, item->name, item);
+	r_list_append (f->flags, item);
 	return true;
 }
 
