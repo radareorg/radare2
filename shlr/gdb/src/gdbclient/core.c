@@ -183,10 +183,13 @@ int gdbr_disconnect(libgdbr_t *g) {
 bool gdbr_kill(libgdbr_t *g) {
 	char buf[20];
 	int ret;
-	if (!g || !g->sock || !g->pid) {
+	if (!g || !g->sock) {
 		return false;
 	}
 	if (g->stub_features.multiprocess) {
+		if (!g->pid) {
+			return false;
+		}
 		snprintf (buf, sizeof (buf) - 1, "vKill;%x", g->pid);
 	} else {
 		snprintf (buf, sizeof (buf) - 1, "k");
