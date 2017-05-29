@@ -108,6 +108,7 @@ typedef struct r_disam_options_t {
 	bool show_stackptr;
 	bool show_xrefs;
 	bool show_cmtrefs;
+	const char *show_cmtoff;
 	bool show_functions;
 	bool show_fcncalls;
 	bool show_hints;
@@ -481,6 +482,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmtrefs");
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmtfold");
+	ds->show_cmtoff = r_config_get (core->config, "asm.cmtoff");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
@@ -2758,7 +2760,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				refaddr_printed = true;
 			}
 		}
-		if (!refaddr_printed) {
+		if (!strcmp (ds->show_cmtoff, "true")) {
+			ALIGN;
+			ds_comment (ds, true, "; 0x%" PFMT64x "%s", refaddr, nl);
+			refaddr_printed = true;
+		} else if (!refaddr_printed && strcmp (ds->show_cmtoff, "false")) {
 			char addrstr[sizeof (refaddr) * 2 + 3];
 			snprintf (addrstr, sizeof (addrstr), "0x%" PFMT64x, refaddr);
 			if (!ds->opstr || !strstr (ds->opstr, addrstr)) {
