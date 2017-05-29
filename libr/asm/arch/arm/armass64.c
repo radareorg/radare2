@@ -526,7 +526,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			break;
 		}
 		//printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
-		if (x == '\0') {
+		if (x[0] == '\0') {
 			free (t);
 			return true;
 		}
