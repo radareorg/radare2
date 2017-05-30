@@ -72,6 +72,7 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 
 RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 	char* str;
+	RASN1String *ret;
 	if (!buffer || length != 13 || buffer[12] != 'Z') {
 		return NULL;
 	}
@@ -105,7 +106,9 @@ RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 	str[22] = 'T';
 	str[23] = '\0';
 
-	return r_asn1_create_string (str, true, 24);
+	ret = r_asn1_create_string (str, true, 24);
+	free (str);
+	return ret;
 }
 
 RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
