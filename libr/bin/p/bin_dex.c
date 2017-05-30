@@ -37,8 +37,9 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	ut8 buf[6];
 	ut64 len;
 	int uleblen;
-	if (!bin || idx < 0 || idx >= bin->header.strings_size ||
-		!bin->strings) {
+	// null terminate the buf wtf
+	bin->b->buf[bin->b->length - 1] = 0;
+	if (!bin || idx < 0 || idx >= bin->header.strings_size || !bin->strings) {
 		return "";
 	}
 	if (bin->strings[idx] >= bin->size) {
@@ -54,9 +55,21 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (!len || len >= bin->size) {
 		return "";
 	}
-	char* ptr = (char*) r_buf_get_at(bin->b, bin->strings[idx] + uleblen, NULL);
+	char* ptr = (char*) r_buf_get_at (bin->b, bin->strings[idx] + uleblen, NULL);
 	if (!ptr) {
 		return "";
+	}
+	// WIP: filter invalid method names
+	int i;
+	char *str = ptr;
+	for (i = 0; str[i]; i++) {
+		if (i > 200) {
+			str[i] = 0;
+			break;
+		}
+		if (!IS_PRINTABLE (str[i])) {
+			str[i] = '_';
+		}
 	}
 	return ptr;
 }
@@ -339,8 +352,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		return;
 	}
 
-	struct dex_debug_local_t *debug_locals = calloc(sizeof (struct dex_debug_local_t),regsz+1);
-	memset (debug_locals, 0, sizeof (struct dex_debug_local_t) * regsz);
+	struct dex_debug_local_t *debug_locals = calloc (sizeof (struct dex_debug_local_t), regsz + 1);
 	if (!(MA & 0x0008)) {
 		debug_locals[argReg].name = "this";
 		debug_locals[argReg].descriptor = r_str_newf("%s;", class_name);
@@ -1628,11 +1640,10 @@ static RList* imports(RBinFile *arch) {
 }
 
 static RList *methods(RBinFile *arch) {
-	RBinDexObj *bin;
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinDexObj*) arch->o->bin_obj;
+	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	if (!bin->methods_list) {
 		dex_loadcode (arch, bin);
 	}
