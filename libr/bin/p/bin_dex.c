@@ -63,7 +63,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	int i;
 	char *str = ptr;
 	for (i = 0; str[i]; i++) {
-		if (i > 200) {
+		if (i > 100) {
 			str[i] = 0;
 			break;
 		}
