@@ -1923,6 +1923,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	int i = 0;
 	int fd = -1;
 	sections = r_bin_get_sections (r->bin);
+	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
@@ -1967,7 +1968,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 						loaded = 1;
 					}
 				}
-				if (!loaded) {
+				if (!loaded && !inDebugger) {
 					r_core_cmdf (r, "on malloc://%d 0x%"PFMT64x" # bss\n",
 						section->vsize, addr);
 				}
@@ -2079,9 +2080,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				addr);
 			free (hashstr);
 		} else if (IS_MODE_RAD (mode)) {
-			if (!strcmp (section->name, ".bss")) {
+			if (!strcmp (section->name, ".bss") && !inDebugger) {
+#if LOAD_BSS_MALLOC
 				r_cons_printf ("on malloc://%d 0x%"PFMT64x" # bss\n",
 						section->vsize, addr);
+#endif
 			}
 			if (r->bin->prefix) {
 				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s.%s %d\n",
