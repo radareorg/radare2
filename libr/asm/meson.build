@@ -1,89 +1,3 @@
-spp_files=[
-  '../../shlr/spp/spp.c'
-]
-
-spp = static_library('spp', spp_files,
-  include_directories: include_directories([
-    '../../shlr/spp/',
-	'../../libr/include',
-	platform_librinc
-  ]),
-  c_args: ['-DHAVE_R_UTIL']
-  )
-
-cs_files=[
-'../../shlr/capstone//arch/AArch64/AArch64BaseInfo.c',
-'../../shlr/capstone//arch/AArch64/AArch64Disassembler.c',
-'../../shlr/capstone//arch/AArch64/AArch64InstPrinter.c',
-'../../shlr/capstone//arch/AArch64/AArch64Mapping.c',
-'../../shlr/capstone//arch/AArch64/AArch64Module.c',
-'../../shlr/capstone//arch/ARM/ARMDisassembler.c',
-'../../shlr/capstone//arch/ARM/ARMInstPrinter.c',
-'../../shlr/capstone//arch/ARM/ARMMapping.c',
-'../../shlr/capstone//arch/ARM/ARMModule.c',
-'../../shlr/capstone//arch/M68K/M68KDisassembler.c',
-'../../shlr/capstone//arch/M68K/M68KInstPrinter.c',
-'../../shlr/capstone//arch/M68K/M68KModule.c',
-'../../shlr/capstone//arch/Mips/MipsDisassembler.c',
-'../../shlr/capstone//arch/Mips/MipsInstPrinter.c',
-'../../shlr/capstone//arch/Mips/MipsMapping.c',
-'../../shlr/capstone//arch/Mips/MipsModule.c',
-'../../shlr/capstone//arch/PowerPC/PPCDisassembler.c',
-'../../shlr/capstone//arch/PowerPC/PPCInstPrinter.c',
-'../../shlr/capstone//arch/PowerPC/PPCMapping.c',
-'../../shlr/capstone//arch/PowerPC/PPCModule.c',
-'../../shlr/capstone//arch/Sparc/SparcDisassembler.c',
-'../../shlr/capstone//arch/Sparc/SparcInstPrinter.c',
-'../../shlr/capstone//arch/Sparc/SparcMapping.c',
-'../../shlr/capstone//arch/Sparc/SparcModule.c',
-'../../shlr/capstone//arch/SystemZ/SystemZDisassembler.c',
-'../../shlr/capstone//arch/SystemZ/SystemZInstPrinter.c',
-'../../shlr/capstone//arch/SystemZ/SystemZMapping.c',
-'../../shlr/capstone//arch/SystemZ/SystemZMCTargetDesc.c',
-'../../shlr/capstone//arch/SystemZ/SystemZModule.c',
-'../../shlr/capstone//arch/TMS320C64x/TMS320C64xDisassembler.c',
-'../../shlr/capstone//arch/TMS320C64x/TMS320C64xInstPrinter.c',
-'../../shlr/capstone//arch/TMS320C64x/TMS320C64xMapping.c',
-'../../shlr/capstone//arch/TMS320C64x/TMS320C64xModule.c',
-'../../shlr/capstone//arch/X86/X86ATTInstPrinter.c',
-'../../shlr/capstone//arch/X86/X86Disassembler.c',
-'../../shlr/capstone//arch/X86/X86DisassemblerDecoder.c',
-'../../shlr/capstone//arch/X86/X86IntelInstPrinter.c',
-'../../shlr/capstone//arch/X86/X86Mapping.c',
-'../../shlr/capstone//arch/X86/X86Module.c',
-'../../shlr/capstone//arch/XCore/XCoreDisassembler.c',
-'../../shlr/capstone//arch/XCore/XCoreInstPrinter.c',
-'../../shlr/capstone//arch/XCore/XCoreMapping.c',
-'../../shlr/capstone//arch/XCore/XCoreModule.c',
-'../../shlr/capstone//cs.c',
-'../../shlr/capstone//MCInst.c',
-'../../shlr/capstone//MCInstrDesc.c',
-'../../shlr/capstone//MCRegisterInfo.c',
-'../../shlr/capstone//SStream.c',
-'../../shlr/capstone//utils.c',
-]
-
-capstone = static_library('capstone', cs_files,
-  c_args: [
-    '-DCAPSTONE_X86_ATT_DISABLE_NO',
-    '-DCAPSTONE_X86_REDUCE_NO',
-    '-DCAPSTONE_USE_SYS_DYN_MEM',
-    '-DCAPSTONE_DIET_NO',
-    '-DCAPSTONE_HAS_ARM',
-    '-DCAPSTONE_HAS_ARM64',
-    '-DCAPSTONE_HAS_M68K',
-    '-DCAPSTONE_HAS_MIPS',
-    '-DCAPSTONE_HAS_POWERPC',
-    '-DCAPSTONE_HAS_SPARC',
-    '-DCAPSTONE_HAS_SYSZ',
-    '-DCAPSTONE_HAS_X86',
-    '-DCAPSTONE_HAS_XCORE',
-    '-DCAPSTONE_HAS_TMS320C64X',
-  ],
-  include_directories: include_directories([
-    '../../shlr/capstone/include'
-  ]))
-
 files=[
 'asm.c',
 'code.c',
@@ -246,9 +160,9 @@ r_asm = shared_library('r_asm', files,
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_syscall, r_parse, r_lang, r_flag,r_socket],
   objects: [
-    capstone.extract_all_objects(),
-	r_sdb.extract_all_objects(),
-	spp.extract_all_objects(),
+    libr2capstone.extract_all_objects(),
+	libr2sdb.extract_all_objects(),
+	libr2spp.extract_all_objects(),
   ],
   install: true
 )

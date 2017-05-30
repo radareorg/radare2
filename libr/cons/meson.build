@@ -25,7 +25,7 @@ r_cons = shared_library('r_cons', files,
   ),
   link_with: [r_util],
   objects: [
-    r_sdb.extract_all_objects()
+    libr2sdb.extract_all_objects()
   ],
   install: true
 )

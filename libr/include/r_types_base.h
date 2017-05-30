@@ -131,6 +131,8 @@ typedef struct _utX{
 #endif
 #ifdef _MSC_VER
 #define R_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#undef INFINITY
+#undef NAN
 #elif defined(__GNUC__)
 #define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif

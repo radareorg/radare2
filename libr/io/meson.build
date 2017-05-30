@@ -30,11 +30,16 @@ files=[
 'p/io_shm.c',
 'p/io_sparse.c',
 'p/io_tcp.c',
-#'p/io_w32.c',
-#'p/io_w32dbg.c',
 #'p/io_windbg.c',
+#'p/io_gdb.c',
 #'p/io_zip.c',
 ]
+
+#'p/io_bochs.c',
+#'p/io_qnx.c',
+#'p/io_windbg.c',
+#'p/io_gdb.c',
+#'p/io_zip.c',
 
 if host_os == 'linux'
 files += [
@@ -45,6 +50,8 @@ endif
 if host_os == 'windows'
 files += [
   'p/io_r2k_windows.c',
+  'p/io_w32.c',
+  'p/io_w32dbg.c',
 ]
 endif
 

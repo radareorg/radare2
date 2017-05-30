@@ -24,18 +24,22 @@ endif
 
 platform_librinc = []
 platform_binrinc = []
+platform_shlrinc = []
 
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')] 
   platform_librinc  = ['../include/msvc']
   platform_binrinc  = ['../../libr/include/msvc']
+  platform_shlrinc  = ['../libr/include/msvc']
   host_os = 'windows'
 else
   platform_librinc = '.'
 endif
+
+subdir('shlr/')
+
 subdir('libr/util')
 subdir('binr/rax2')
-
 
 #'/usr/include'
 
@@ -83,7 +87,7 @@ versionconf.set('DATE', r2birth)
 configure_file(input : 'libr/include/r_version.h.in',
                output : 'r_version.h',
                configuration : versionconf)
-
+		   
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')

@@ -13,7 +13,7 @@ r_flag = shared_library('r_flag', files,
   ]),
   link_with: [r_util],
   objects: [
-    r_sdb.extract_all_objects()
+    libr2sdb.extract_all_objects()
   ],  
   install: true
 )

@@ -208,6 +208,12 @@ io = [
 	'sparse',
 	'tcp'
 ]
+if host_os == 'windows'
+io += [
+	'w32dbg',
+	'w32',
+]
+endif
 
 lang = [
 	'vala'

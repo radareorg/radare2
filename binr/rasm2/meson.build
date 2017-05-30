@@ -5,6 +5,6 @@ executable('rasm2', 'rasm2.c',
 	platform_binrinc
 	
   ]),
-  link_with: [r_util, r_asm, r_anal],
+  link_with: [r_util, r_asm, r_anal, r_syscall],
   install: true
 )
