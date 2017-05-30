@@ -112,6 +112,7 @@ typedef struct r_asm_t {
 	int invhex; // invalid instructions displayed in hex
 	int pcalign;
 	int dataalign;
+	SdbHash *flags;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);

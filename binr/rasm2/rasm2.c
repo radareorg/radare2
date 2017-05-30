@@ -326,6 +326,11 @@ static void print_buf(char *str) {
 	} else printf ("%s\n", str);
 }
 
+static bool print_label(void *user, const char *k, void *v) {
+	printf ("f label.%s = %s\n", k, v);
+	return true;
+}
+
 static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp) {
 	RAsmCode *acode;
 	int i, j, ret = 0;
@@ -376,6 +381,26 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 
 static int __lib_anal_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
+}
+
+static int print_assembly_output(const char *buf, ut64 offset, ut64 len, int bits,
+                                 int bin, bool use_spp, bool rad, char *arch) {
+	int ret = 0;
+	if (rad) {
+		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+		printf ("e asm.bits=%d\n", bits);
+		if (offset) {
+			printf ("s 0x%"PFMT64x"\n", offset);
+		}
+		printf ("wx ");
+	}
+	ret = rasm_asm ((char *)buf, offset, len, a->bits, bin, use_spp);
+	if (rad) {
+		printf ("f entry = $$\n");
+		printf ("f label.main = $$ + 1\n");
+		ht_foreach (a->flags, print_label, NULL);
+	}
+	return ret;
 }
 
 int main (int argc, char *argv[]) {
@@ -632,7 +657,8 @@ int main (int argc, char *argv[]) {
 			} else if (analinfo) {
 				ret = show_analinfo ((const char *)buf, offset);
 			} else {
-				ret = rasm_asm ((char *)buf, offset, len, a->bits, bin, use_spp);
+				ret = print_assembly_output ((char *)buf, offset, len,
+								a->bits, bin, use_spp, rad, arch);
 			}
 		} else {
 			content = r_file_slurp (file, &length);
@@ -653,7 +679,8 @@ int main (int argc, char *argv[]) {
 				} else if (analinfo) {
 					ret = show_analinfo ((const char *)buf, offset);
 				} else {
-					ret = rasm_asm (content, offset, length, a->bits, bin, use_spp);
+					ret = print_assembly_output (content, offset, length,
+									a->bits, bin, use_spp, rad, arch);
 				}
 				ret = !ret;
 				free (content);
@@ -726,12 +753,8 @@ int main (int argc, char *argv[]) {
 		} else if (analinfo) {
 			ret = show_analinfo ((const char *)argv[optind], offset);
 		} else {
-			if (rad) {
-				printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
-				printf ("e asm.bits=%d\n", bits);
-				printf ("wx ");
-			}
-			ret = rasm_asm (argv[optind], offset, len, a->bits, bin, use_spp);
+			ret = print_assembly_output (argv[optind], offset, len, a->bits,
+							bin, use_spp, rad, arch);
 		}
 		if (!ret) {
 			eprintf ("invalid\n");
