@@ -24,9 +24,9 @@ gdb_files=[
 
 libr2gdb = static_library('libr2gdb', gdb_files,
   include_directories: include_directories([
-  'gdb/include',
-  'gdb/include/gdbclient',
-  'gdb/include/gdbserver ',
+  './gdb/include',
+  './gdb/include/gdbclient',
+  './gdb/include/gdbserver',
   '../libr/include',
   platform_shlrinc
   ]))
