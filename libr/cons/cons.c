@@ -800,6 +800,7 @@ club:
 			}
 		}
 		I.buffer_len += written;
+		I.buffer[I.buffer_len] = 0;
 	} else {
 		r_cons_strcat (format);
 	}
@@ -843,7 +844,7 @@ R_API int r_cons_memcat(const char *str, int len) {
 	if (I.flush) {
 		r_cons_flush ();
 	}
-	if (I.break_word && str) {
+	if (I.break_word && str && len > 0) {
 		if (r_mem_mem ((const ut8*)str, len, (const ut8*)I.break_word, I.break_word_len)) {
 			I.breaked = true;
 		}
