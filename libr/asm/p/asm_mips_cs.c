@@ -26,7 +26,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 //		} else if (!strcmp (a->cpu, "gp64")) {
 //			a->bits = 64;
 		} else if (!strcmp (a->cpu, "64v2")) {
-			mode |= CS_MODE_MIPS32;
+			mode |= CS_MODE_MIPS32 | CS_MODE_MIPS64;
 		}
 	}
 	mode |= (a->bits == 64)? CS_MODE_MIPS64 : CS_MODE_MIPS32;
