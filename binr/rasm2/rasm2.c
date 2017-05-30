@@ -327,7 +327,7 @@ static void print_buf(char *str) {
 }
 
 static bool print_label(void *user, const char *k, void *v) {
-	printf ("f label.%s = %s\n", k, v);
+	printf ("f label.%s = %s\n", k, (const char *)v);
 	return true;
 }
 

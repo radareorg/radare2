@@ -25,13 +25,13 @@ typedef struct registers_t {
 /*!
  * Existing register sets
  */
-extern registers_t x86_64[];
-extern registers_t x86_32[];
-extern registers_t arm32[];
-extern registers_t aarch64[];
-extern registers_t lm32[];
-extern registers_t mips[];
-extern registers_t avr[];
+extern registers_t gdb_regs_x86_64[];
+extern registers_t gdb_regs_x86_32[];
+extern registers_t gdb_regs_arm32[];
+extern registers_t gdb_regs_aarch64[];
+extern registers_t gdb_regs_lm32[];
+extern registers_t gdb_regs_mips[];
+extern registers_t gdb_regs_avr[];
 
 
 #endif

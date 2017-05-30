@@ -43,25 +43,25 @@ int gdbr_set_architecture(libgdbr_t *g, uint8_t architecture) {
 	g->architecture = architecture;
 	switch (architecture) {
 	case ARCH_X86_32:
-		g->registers = x86_32;
+		g->registers = gdb_regs_x86_32;
 		break;
 	case ARCH_X86_64:
-		g->registers = x86_64;
+		g->registers = gdb_regs_x86_64;
 		break;
 	case ARCH_ARM_32:
-		g->registers = arm32;
+		g->registers = gdb_regs_arm32;
 		break;
 	case ARCH_ARM_64:
-		g->registers = aarch64;
+		g->registers = gdb_regs_aarch64;
 		break;
 	case ARCH_MIPS:
-		g->registers = mips;
+		g->registers = gdb_regs_mips;
 		break;
 	case ARCH_AVR:
-		g->registers = avr;
+		g->registers = gdb_regs_avr;
 		break;
 	case ARCH_LM32:
-		g->registers = lm32;
+		g->registers = gdb_regs_lm32;
 		break;
 	default:
 		eprintf ("Error unknown architecture set\n");
