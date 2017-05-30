@@ -616,8 +616,13 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 
 static void flag_free_kv(HtKv *kv) {
 	free (kv->key);
-	//we do not free kv->value since there is a reference in other list
+	free (kv->value);
 	free (kv);
+}
+
+static char* dup_val(void *v) {
+	char *str = strdup ((char *)v);
+	return str;
 }
 
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
@@ -630,7 +635,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
-	if (!(a->flags = ht_new (NULL, flag_free_kv, NULL))) {
+	if (!(a->flags = ht_new (dup_val, flag_free_kv, NULL))) {
 		return NULL;
 	}
 	if (!(acode = r_asm_code_new ())) {
@@ -769,7 +774,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
-						ht_insert (a->flags, ptr_start, off);
+
+						ht_insert (a->flags, ptr_start, food);
 						// TODO: warning when redefined
 						r_asm_code_set_equ (acode, ptr_start, food);
 					}
