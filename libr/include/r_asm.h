@@ -138,7 +138,6 @@ typedef struct r_asm_plugin_t {
 	const char *features;
 } RAsmPlugin;
 
-
 #ifdef R_API
 /* asm.c */
 R_API RAsm *r_asm_new(void);
