@@ -22,24 +22,14 @@ else
   host_os = 'darwin'
 endif
 
-platform_librinc = []
-platform_binrinc = []
-platform_shlrinc = []
-
+platform_inc = include_directories(['.','../libr/include'])
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')] 
-  platform_librinc  = ['../include/msvc']
-  platform_binrinc  = ['../../libr/include/msvc']
-  platform_shlrinc  = ['../libr/include/msvc']
+  platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
-else
-  platform_librinc = '.'
+#else
+#  platform_librinc = '.'
 endif
-
-subdir('shlr/')
-
-subdir('libr/util')
-subdir('binr/rax2')
 
 #'/usr/include'
 
@@ -88,39 +78,44 @@ configure_file(input : 'libr/include/r_version.h.in',
                output : 'r_version.h',
                configuration : versionconf)
 		   
-subdir('libr/hash')
-subdir('libr/crypto')
-subdir('libr/socket')
-subdir('libr/io')
-subdir('binr/rahash2')
-subdir('binr/rarun2')
+subdir('shlr/')
+# subdir('libr/util')
+# subdir('binr/rax2')
 
-subdir('libr/bp')
-subdir('libr/syscall')
-subdir('libr/cons')
-subdir('libr/search')
-subdir('libr/magic')
+		   
+# subdir('libr/hash')
+# subdir('libr/crypto')
+# subdir('libr/socket')
+# subdir('libr/io')
+# subdir('binr/rahash2')
+# subdir('binr/rarun2')
 
-subdir('libr/flag')
-subdir('libr/reg')
+# subdir('libr/bp')
+# subdir('libr/syscall')
+# subdir('libr/cons')
+# subdir('libr/search')
+# subdir('libr/magic')
 
-subdir('libr/bin')
-subdir('libr/config')
+# subdir('libr/flag')
+# subdir('libr/reg')
 
-subdir('libr/parse')
-subdir('libr/lang')
+# subdir('libr/bin')
+# subdir('libr/config')
 
-subdir('libr/asm')
-subdir('libr/anal')
-subdir('binr/rasm2')
-subdir('libr/egg')
+# subdir('libr/parse')
+# subdir('libr/lang')
 
-subdir('libr/fs')
+# subdir('libr/asm')
+# subdir('libr/anal')
+# subdir('binr/rasm2')
+# subdir('libr/egg')
 
-subdir('libr/debug')
+# subdir('libr/fs')
 
-subdir('libr/core')
+# subdir('libr/debug')
 
-subdir('binr/rabin2')
-subdir('binr/radare2')
-subdir('binr/ragg2')
+# subdir('libr/core')
+
+# subdir('binr/rabin2')
+# subdir('binr/radare2')
+# subdir('binr/ragg2')
