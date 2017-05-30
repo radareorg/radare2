@@ -93,9 +93,9 @@ r_anal = shared_library('r_anal', files,
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_reg, r_syscall, r_search, r_cons],
   objects: [
-    capstone.extract_all_objects(),
-	r_sdb.extract_all_objects(),
-	spp.extract_all_objects(),
+    libr2capstone.extract_all_objects(),
+	libr2sdb.extract_all_objects(),
+	libr2spp.extract_all_objects(),
   ],
   install: true
 )

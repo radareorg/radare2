@@ -10,7 +10,7 @@ r_syscall = shared_library('r_syscall', files,
   ),
   link_with: [r_util],
   objects: [
-    r_sdb.extract_all_objects()
+    libr2sdb.extract_all_objects()
   ],
   install: true
 )
