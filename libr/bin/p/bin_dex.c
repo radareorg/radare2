@@ -59,17 +59,9 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (!ptr) {
 		return "";
 	}
-	// WIP: filter invalid method names
-	int i;
-	char *str = ptr;
-	for (i = 0; str[i]; i++) {
-		if (i > 100) {
-			str[i] = 0;
-			break;
-		}
-		if (!IS_PRINTABLE (str[i])) {
-			str[i] = '_';
-		}
+	if (len != strlen (ptr)) {
+		eprintf ("WARNING: Invalid string for index %d\n", idx);
+		return "";
 	}
 	return ptr;
 }
