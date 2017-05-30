@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include <r_flag.h>
 #include <r_util.h>
@@ -513,7 +513,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_flag_set (f, name, off, size);
 	return true;
 #else
-	ht_delete (f->ht_name, name);
+	ht_delete (f->ht_name, item->name);
 	if (!set_name (item, name)) {
 		return false;
 	}
