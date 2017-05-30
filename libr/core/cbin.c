@@ -448,6 +448,9 @@ static bool bin_strings(RCore *r, int mode, int va) {
 	}
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
+			if (IS_MODE_JSON (mode)) {
+				r_cons_print("[]");
+			}
 			return false;
 		}
 	}
@@ -2264,6 +2267,9 @@ static int bin_classes(RCore *r, int mode) {
 	char *name;
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) {
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print("[]");
+		}
 		return false;
 	}
 	// XXX: support for classes is broken and needs more love
@@ -2472,6 +2478,9 @@ static int bin_mem(RCore *r, int mode) {
 		}
 	}
 	if (!(mem = r_bin_get_mem (r->bin))) {
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print("[]");
+		}
 		return false;
 	}
 	if (IS_MODE_JSON (mode)) {
