@@ -81,15 +81,15 @@ files=[
 ]
 
 r_anal = shared_library('r_anal', files,
-  include_directories: include_directories(['../include', '../asm/arch/8051',
+  include_directories: [platform_inc, include_directories([
+    'arch/gb',
+	'../asm/arch/8051',
     '../asm/arch/cr16',
     '../asm/arch/include/',
-    'arch/gb',
-    '.',
     '../../shlr/capstone/include',
     '../../shlr',
-	platform_librinc
-  ]),
+
+  ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_reg, r_syscall, r_search, r_cons],
   objects: [

@@ -8,10 +8,10 @@ files=[
 'section.c',
 'undo.c',
 'p/io_bfdbg.c',
-#'p/io_bochs.c',
+'p/io_bochs.c',
 'p/io_debug.c',
 'p/io_default.c',
-#'p/io_gdb.c',
+'p/io_gdb.c',
 'p/io_gzip.c',
 'p/io_http.c',
 'p/io_ihex.c',
@@ -21,7 +21,7 @@ files=[
 'p/io_null.c',
 'p/io_procpid.c',
 'p/io_ptrace.c',
-#'p/io_qnx.c',
+'p/io_qnx.c',
 'p/io_r2k.c',
 'p/io_r2pipe.c',
 'p/io_r2web.c',
@@ -30,16 +30,9 @@ files=[
 'p/io_shm.c',
 'p/io_sparse.c',
 'p/io_tcp.c',
-#'p/io_windbg.c',
-#'p/io_gdb.c',
-#'p/io_zip.c',
+'p/io_windbg.c',
+'p/io_zip.c',
 ]
-
-#'p/io_bochs.c',
-#'p/io_qnx.c',
-#'p/io_windbg.c',
-#'p/io_gdb.c',
-#'p/io_zip.c',
 
 if host_os == 'linux'
 files += [
@@ -56,12 +49,14 @@ files += [
 endif
 
 r_io = shared_library('r_io', files,
-  include_directories: include_directories([
-    '../include',
-    platform_librinc
-  ]
-  ),
-  link_with: [r_util, r_socket],
+  include_directories: [platform_inc, include_directories([
+    '../../shlr/bochs/include',
+	'../../shlr/gdb/include',
+	'../../shlr/qnx/include',
+	'../../shlr/wind',
+	'../../shlr/zip/include']
+  )],
+  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2wind, libr2gdb, libr2zip],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   install: true
 )

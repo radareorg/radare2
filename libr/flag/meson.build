@@ -7,10 +7,7 @@ files=[
 ]
 
 r_flag = shared_library('r_flag', files,
-  include_directories: include_directories([
-  '../include',
-  platform_librinc
-  ]),
+  include_directories: [platform_inc],
   link_with: [r_util],
   objects: [
     libr2sdb.extract_all_objects()

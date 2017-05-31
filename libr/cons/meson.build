@@ -19,10 +19,7 @@ files=[
 ]
 
 r_cons = shared_library('r_cons', files,
-  include_directories: include_directories([
-  '../include'],
-  platform_librinc
-  ),
+  include_directories: [platform_inc],
   link_with: [r_util],
   objects: [
     libr2sdb.extract_all_objects()

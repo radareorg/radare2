@@ -19,11 +19,7 @@ files=[
 ]
 
 r_crypto = shared_library('r_crypto', files,
-	include_directories: include_directories([
-		'../include',
-		'.',
-		platform_librinc
-	]),
+	include_directories: [platform_inc],
 	link_with: [r_util],
 	c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
 	install: true

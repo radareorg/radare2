@@ -15,10 +15,7 @@ files=[
 ]
 
 r_egg = shared_library('r_egg', files,
-  include_directories: include_directories([
-  '../include',
-  platform_librinc
-  ]),
+  include_directories: [platform_inc],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_asm, r_syscall],
   objects: [

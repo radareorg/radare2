@@ -23,7 +23,7 @@ files=[
 'p/bin_elf.c',
 'p/bin_elf64.c',
 'p/bin_fs.c',
-#'p/bin_java.c',
+'p/bin_java.c',
 'p/bin_mach0.c',
 'p/bin_mach064.c',
 'p/bin_mbn.c',
@@ -105,15 +105,12 @@ files=[
 ]
 
 r_bin = shared_library('r_bin', files,
-  include_directories: include_directories([
-  '../include',
-  'mangling',
-  'format',
-  '.',
-  platform_librinc
-  ]),
+  include_directories: [platform_inc, include_directories([
+    'mangling',
+    'format'
+  ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  link_with: [r_util, r_io, r_socket, r_magic],
+  link_with: [r_util, r_io, r_socket, r_magic, libr2java],
   objects: [
     libr2sdb.extract_all_objects()
   ],
