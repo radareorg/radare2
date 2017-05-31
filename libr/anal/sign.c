@@ -74,7 +74,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	n = r_str_split (k2, '|');
 	if (n != 3) {
 		retval = false;
-		goto zilla;
+		goto out;
 	}
 
 	// space (1)
@@ -87,7 +87,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	n = r_str_split (v2, '|');
 	if (n != 6) {
 		retval = false;
-		goto zilla;
+		goto out;
 	}
 
 	// pattern size (0)
@@ -95,7 +95,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	if (size > 0) {
 		it->bytes = R_NEW0 (RSignBytes);
 		if (!it->bytes) {
-			goto zilla;
+			goto out;
 		}
 		it->bytes->size = size;
 
@@ -103,7 +103,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 		token = r_str_word_get0 (v2, 1);
 		if (strlen (token) != 2 * it->bytes->size) {
 			retval = false;
-			goto zilla;
+			goto out;
 		}
 		it->bytes->bytes = malloc (it->bytes->size);
 		if (!it->bytes->bytes) {
@@ -114,7 +114,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 		token = r_str_word_get0 (v2, 2);
 		if (strlen (token) != 2 * it->bytes->size) {
 			retval = false;
-			goto zilla;
+			goto out;
 		}
 		it->bytes->mask = malloc (it->bytes->size);
 		r_hex_str2bin (token, it->bytes->mask);
@@ -143,7 +143,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 			r_list_append (it->refs, r_str_newf (r_str_word_get0 (refs, i)));
 		}
 	}
-zilla:
+out:
 	free (k2);
 	free (v2);
 	free (refs);
@@ -277,14 +277,14 @@ static bool addItem(RAnal *a, RSignItem *it) {
 		if (!deserialize (a, curit, key, curval)) {
 			eprintf ("error: cannot deserialize zign\n");
 			retval = false;
-			goto zilla;
+			goto out;
 		}
 		mergeItem (curit, it);
 		serialize (a, curit, key, val);
 	}
 	sdb_set (a->sdb_zigns, key, val, 0);
 
-zilla:
+out:
 	free (curit);
 
 	return retval;
@@ -586,11 +586,11 @@ static int listCB(void *user, const char *k, const char *v) {
 
 	if (!deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
-		goto zilla;
+		goto out;
 	}
 
 	if (a->zign_spaces.space_idx != it->space && a->zign_spaces.space_idx != -1) {
-		goto zilla;
+		goto out;
 	}
 
 	// Start item
@@ -655,7 +655,7 @@ static int listCB(void *user, const char *k, const char *v) {
 
 	ctx->idx++;
 
-zilla:
+out:
 	r_sign_item_free (it);
 
 	return 1;
@@ -691,14 +691,14 @@ static int countForCB(void *user, const char *k, const char *v) {
 
 	if (!deserialize (ctx->anal, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
-		goto zilla;
+		goto out;
 	}
 
 	if (it->space == ctx->idx) {
 		ctx->count++;
 	}
 
-zilla:
+out:
 	r_sign_item_free (it);
 
 	return 1;
@@ -731,11 +731,11 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 
 	if (!deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
-		goto zilla;
+		goto out;
 	}
 
 	if (it->space != ctx->idx) {
-		goto zilla;
+		goto out;
 	}
 
 	if (it->space != -1) {
@@ -745,7 +745,7 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 		sdb_set (db, nk, nv, 0);
 	}
 
-zilla:
+out:
 	r_sign_item_free (it);
 
 	return 1;
@@ -812,18 +812,18 @@ static int foreachCB(void *user, const char *k, const char *v) {
 
 	if (!deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
-		goto zilla;
+		goto out;
 	}
 
 	if (a->zign_spaces.space_idx != it->space && a->zign_spaces.space_idx != -1) {
-		goto zilla;
+		goto out;
 	}
 
 	if (ctx->cb) {
 		retval = ctx->cb (it, ctx->user);
 	}
 
-zilla:
+out:
 	r_sign_item_free (it);
 
 	return retval;
@@ -1034,22 +1034,22 @@ static int refsMatchCB(RSignItem *it, void *user) {
 		if (!ref_a || !ref_b) {
 			if (ref_a != ref_b) {
 				retval = 1;
-				goto zilla;
+				goto out;
 			}
 			break;
 		}
 		if (strcmp (ref_a, ref_b)) {
 			retval = 1;
-			goto zilla;
+			goto out;
 		}
 	}
 
 	if (ctx->cb) {
 		retval = ctx->cb (it, ctx->fcn, ctx->user);
-		goto zilla;
+		goto out;
 	}
 
-zilla:
+out:
 	r_list_free (refs);
 
 	return retval;
@@ -1141,12 +1141,12 @@ static int loadCB(void *user, const char *k, const char *v) {
 
 	if (!deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
-		goto zilla;
+		goto out;
 	}
 
 	serialize (a, it, nk, nv);
 	sdb_set (a->sdb_zigns, nk, nv, 0);
-zilla:
+out:
 	r_sign_item_free (it);
 	return 1;
 }
@@ -1159,8 +1159,11 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		}
 		free (abs);
 	}
+
 	if (a->zign_path) {
-		abs = r_str_newf ("%s%s%s", a->zign_path, R_SYS_DIR, file);
+		char *path = r_str_newf ("%s%s%s", a->zign_path, R_SYS_DIR, file); 
+		abs = r_file_abspath (path);
+		free (path);
 		if (r_file_is_regular (abs)) {
 			return abs;
 		}
@@ -1174,12 +1177,14 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		}
 		free (abs);
 	}
+
 	const char *pfx = R2_PREFIX "/share/radare2/" R2_VERSION "/zigns";
 	abs = r_str_newf ("%s%s%s", pfx, R_SYS_DIR, file);
 	if (r_file_is_regular (abs)) {
 		return abs;
 	}
 	free (abs);
+
 	return NULL;
 }
 

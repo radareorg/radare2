@@ -23,11 +23,11 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	bool retval = false;
 	if (r_io_read_at (core->io, fcn->addr, buf, len) != len) {
 		eprintf ("error: cannot read at 0x%08"PFMT64x"\n", fcn->addr);
-		goto exit_function;
+		goto out;
 	}
 	retval = r_sign_add_anal (core->anal, name, len, buf, fcn->addr);
 
-exit_function:
+out:
 	free (buf);
 
 	return retval;
@@ -119,7 +119,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 	if (nargs != 1) {
 		eprintf ("error: invalid syntax\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
 	hexbytes = r_str_word_get0 (args0, 0);
@@ -131,7 +131,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 	if (size <= 0) {
 		eprintf ("error: cannot parse hexpairs\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
 	switch (type) {
@@ -143,7 +143,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 		break;
 	}
 
-exit_function:
+out:
 	free (bytes);
 	free (mask);
 
@@ -217,7 +217,7 @@ static int cmdAdd(void *data, const char *input) {
 			if (n < 3) {
 				eprintf ("usage: za zigname type params\n");
 				retval = false;
-				goto exit_case_manual;
+				goto out_case_manual;
 			}
 
 			zigname = r_str_word_get0 (args, 0);
@@ -226,10 +226,10 @@ static int cmdAdd(void *data, const char *input) {
 
 			if (!addZign (core, zigname, type, args0, n - 2)) {
 				retval = false;
-				goto exit_case_manual;
+				goto out_case_manual;
 			}
 
-exit_case_manual:
+out_case_manual:
 			free (args);
 			return retval;
 		}
@@ -249,7 +249,7 @@ exit_case_manual:
 			if (n > 2) {
 				eprintf ("usage: zaf [fcnname] [zigname]\n");
 				retval = false;
-				goto exit_case_fcn;
+				goto out_case_fcn;
 			}
 
 			switch (n) {
@@ -272,7 +272,7 @@ exit_case_manual:
 			}
 			r_cons_break_pop ();
 
-exit_case_fcn:
+out_case_fcn:
 			free (args);
 			return retval;
 		}
@@ -343,45 +343,47 @@ static bool loadGzSdb(RAnal *a, const char *filename) {
 	char *tmpfile = NULL;
 	bool retval = true;
 
-	if (!r_file_exists (filename)) {
+	char *path = r_sign_path (a, filename);
+	if (!r_file_exists (path)) {
 		eprintf ("error: file %s does not exist\n", filename);
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
-	if (!(buf = r_file_gzslurp (filename, &size, 0))) {
+	if (!(buf = r_file_gzslurp (path, &size, 0))) {
 		eprintf ("error: cannot decompress file\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
 	if (!(tmpfile = r_file_temp ("r2zign"))) {
 		eprintf ("error: cannot create temp file\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
 	if (!r_file_dump (tmpfile, buf, size, 0)) {
 		eprintf ("error: cannot dump file\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
 	if (!r_sign_load (a, tmpfile)) {
 		eprintf ("error: cannot load file\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
 	if (!r_file_rm (tmpfile)) {
 		eprintf ("error: cannot delete temp file\n");
 		retval = false;
-		goto exit_function;
+		goto out;
 	}
 
-exit_function:
+out:
 	free (buf);
 	free (tmpfile);
+	free (path);
 
 	return retval;
 }
@@ -411,7 +413,7 @@ static int cmdOpen(void *data, const char *input) {
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "zo[zs] filename ", "# Manage zignature files (see dir.zignatures)",
+				"Usage:", "zo[zs] filename ", "# Manage zignature files (see dir.zigns)",
 				"zo ", "filename", "load zinatures from sdb file",
 				"zoz ", "filename", "load zinatures from gzipped sdb file",
 				"zos ", "filename", "save zignatures to sdb file (merge if file exists)",
