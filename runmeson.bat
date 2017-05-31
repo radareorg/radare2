@@ -1,15 +1,22 @@
 @ECHO OFF
-ECHO [ R2 MESON NINJA BUILD ]
 IF EXIST shlr\capstone GOTO START
+ECHO [ R2 MESON CLONING CAPSTONE ]
 git clone -b next --depth 10 http://github.com/aquynh/capstone.git shlr\capstone
 :START
-COPY libr\config.mk.meson libr\config.mk
-COPY libr\config.h.meson libr\config.h
+IF "%1"=="-p" GOTO BUILDPROJECT
+IF "%1"=="-r" GOTO REBUILD
 IF EXIST build GOTO BUILD
-meson --prefix=%CD% build
+python meson.py --prefix=%CD% build
 :BUILD
-copy build\config.h libr\include\config.h
-copy build\r_version.h libr\include\r_version.h
-copy build\r_userconf.h libr\include\r_userconf.h
+ECHO [ R2 MESON NINJA BUILD ]
 copy shlr\spp\config.def.h shlr\spp\config.h
 ninja -C build
+GOTO EXIT
+:BUILDPROJECT
+ECHO [ R2 MESON BUILDING VS2015 SLN]
+IF EXIST build rd /s /q build
+python meson.py --prefix=%CD% build --backend=vs2015
+GOTO EXIT
+:REBUILD
+python.exe meson.py --internal regenerate %CD% "%CD%\build" --backend ninja
+:EXIT

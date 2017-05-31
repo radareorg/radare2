@@ -3,11 +3,11 @@ bochs_files=[
 ]
 
 libr2bochs = static_library('libr2bochs', bochs_files,
-  include_directories: include_directories([
-  'bochs/include',
-  '../libr/include',
-  platform_shlrinc
-  ]))
+  include_directories: [platform_inc, include_directories([
+    'bochs/include'
+  ])]
+)
+  
 
 gdb_files=[
 'gdb/src/arch.c',
@@ -23,13 +23,12 @@ gdb_files=[
 ]
 
 libr2gdb = static_library('libr2gdb', gdb_files,
-  include_directories: include_directories([
-  './gdb/include',
-  './gdb/include/gdbclient',
-  './gdb/include/gdbserver',
-  '../libr/include',
-  platform_shlrinc
-  ]))
+  include_directories: [platform_inc, include_directories([
+    './gdb/include',
+    './gdb/include/gdbclient',
+    './gdb/include/gdbserver'
+  ])]
+)
 
 java_files=[
 'java/class.c',
@@ -40,11 +39,10 @@ java_files=[
 ]
 
 libr2java = static_library('libr2java', java_files,
-  include_directories: include_directories([
-  'java',
-  '../libr/include',
-  platform_shlrinc
-  ]))
+  include_directories: [platform_inc, include_directories([
+    'java'
+  ])]
+)
 
 qnx_files=[
 'qnx/src/core.c',
@@ -55,11 +53,10 @@ qnx_files=[
 ]
 
 libr2qnx = static_library('libr2qnx', qnx_files,
-  include_directories: include_directories([
-  'qnx/include',
-  '../libr/include',
-  platform_shlrinc
-  ]))
+  include_directories: [platform_inc, include_directories([
+    'qnx/include'
+  ])]
+)
 
 tcc_files=[
 'tcc/libtcc.c',
@@ -68,25 +65,21 @@ tcc_files=[
 ]  
 
 libr2tcc = static_library('libr2tcc', tcc_files,
-  include_directories: include_directories([
-  'tcc',
-  '../libr/include',
-  platform_shlrinc
-  ]))
+  include_directories: [platform_inc, include_directories([
+    'tcc'
+  ])]
+)
   
 spp_files=[
   'spp/spp.c'
 ]
 
 libr2spp = static_library('libr2spp', spp_files,
-  include_directories: include_directories([
-    'spp/',
-	'../libr/include',
-	platform_shlrinc
-  ]),
+  include_directories: [platform_inc, include_directories([
+    'spp/'
+  ])],
   c_args: ['-DHAVE_R_UTIL']
-  )  
-  
+)
   
 sdb_files=[
 'sdb/src/array.c',
@@ -112,12 +105,11 @@ sdb_files=[
 ]
 
 libr2sdb = static_library('libr2sdb', sdb_files,
-  include_directories: include_directories([
-  'sdb/src',
-  '../libr/include/sdb',
-  platform_shlrinc
-  ]))
-
+  include_directories: [platform_inc, include_directories([
+    'sdb/src',
+    '../libr/include/sdb'
+  ])]
+)
 
 zlib_files=[
 'zip/zip/zip_add.c',
@@ -219,15 +211,12 @@ zlib_files=[
 'zip/zlib/zutil.c'
 ]
 
-
 libr2zip = static_library('libr2zip', zlib_files,
-  include_directories: include_directories([
-  'zip/include',
-  '../libr/include',
-  platform_shlrinc
-  ]))  
-  
-  
+  include_directories: [platform_inc, include_directories([
+    'zip/include'
+  ])]
+)
+
 cs_files=[
 'capstone/arch/AArch64/AArch64BaseInfo.c',
 'capstone/arch/AArch64/AArch64Disassembler.c',
@@ -299,7 +288,8 @@ libr2capstone = static_library('libr2capstone', cs_files,
   ],
   include_directories: include_directories([
     'capstone/include'
-  ]))
+  ])
+)
   
 grub_files=[
 'grub/fs/affs.c',
@@ -355,12 +345,36 @@ grub_files=[
 ]
 
 libr2grub = static_library('libr2grub', grub_files,
-  include_directories: include_directories([
+  include_directories: [platform_inc, include_directories([
     'grub',
-    'grub/include',
-    '../libr/include',
-	platform_shlrinc
-  ])
+    'grub/include'
+  ])]
 )
-  
-  
+
+wind_files=[
+'wind/iob_pipe.c',
+'wind/kd.c',
+'wind/transport.c',
+'wind/wind.c',
+]
+
+libr2wind = static_library('libr2wind', wind_files,
+  include_directories: [platform_inc, include_directories([
+    'wind'
+  ])]
+)
+
+udis86_files=[
+'udis86/decode.c',
+'udis86/itab.c',
+'udis86/syn.c',
+'udis86/syn-att.c',
+'udis86/syn-intel.c',
+'udis86/udis86.c',
+]
+
+libr2udis86 = static_library('libr2udis86', udis86_files,
+  include_directories: [platform_inc, include_directories([
+    'udis86'
+  ])]
+)

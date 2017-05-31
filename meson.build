@@ -22,26 +22,12 @@ else
   host_os = 'darwin'
 endif
 
-platform_librinc = []
-platform_binrinc = []
-platform_shlrinc = []
-
+platform_inc = include_directories(['.','../libr/include'])
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32')] 
-  platform_librinc  = ['../include/msvc']
-  platform_binrinc  = ['../../libr/include/msvc']
-  platform_shlrinc  = ['../libr/include/msvc']
+  #platform_deps = [cc.find_library('ws2_32')]
+  platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
-else
-  platform_librinc = '.'
 endif
-
-subdir('shlr/')
-
-subdir('libr/util')
-subdir('binr/rax2')
-
-#'/usr/include'
 
 # load plugin configuration
 subdir('libr')
@@ -87,6 +73,11 @@ versionconf.set('DATE', r2birth)
 configure_file(input : 'libr/include/r_version.h.in',
                output : 'r_version.h',
                configuration : versionconf)
+		   
+subdir('shlr/')
+subdir('libr/util')
+subdir('binr/rax2')
+
 		   
 subdir('libr/hash')
 subdir('libr/crypto')

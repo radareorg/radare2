@@ -8,10 +8,7 @@ files=[
 ]
 
 r_reg = shared_library('r_reg', files,
-  include_directories: include_directories([
-  '../include',
-  platform_librinc
-  ]),
+  include_directories: [platform_inc],
   link_with: [r_util],
   install: true
 )
