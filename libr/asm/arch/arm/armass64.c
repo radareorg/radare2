@@ -525,8 +525,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				imm_count++;
 			break;
 		}
-		//printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
-		if (x[0] == '\0') {
+		if (x && x[0] == '\0') {
 			free (t);
 			return true;
 		}
@@ -534,7 +533,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 		operand ++;
 		if (operand > MAX_OPERANDS) {
 			free (t);
-			return false;	
+			return false;
 		}
 	}
 	free (t);
