@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=1.4.0
+PREVIOUS_RELEASE=1.5.0
 
 MESON?=meson
 R2R=radare2-regressions
