@@ -101,6 +101,7 @@ typedef long long int int64_t;
 #endif
 #endif
 
+// TODO: Make it dependable from the r2 asm/anal settings
 #define LDOUBLE_SIZE 12
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN 8
@@ -174,6 +175,12 @@ typedef uint64_t addr_t;
 #endif
 
 /* -------------------------------------------- */
+
+// TODO: Read this from the configuration variables in r2
+
+#define STACK_NEW0(type, arg) \
+	type arg; \
+	ZERO_FILL(arg)
 
 #define INCLUDE_STACK_SIZE  32
 #define IFDEF_STACK_SIZE    64
@@ -422,6 +429,10 @@ struct TCCState {
     int output_type;
     /* output format, see TCC_OUTPUT_FORMAT_xxx */
     int output_format;
+	/* Target system */
+	char *arch;
+	int bits;
+	char *os;
 
     /* C language options */
     int char_is_unsigned;
@@ -447,9 +458,7 @@ struct TCCState {
     char *init_symbol; /* symbols to call at load-time (not used currently) */
     char *fini_symbol; /* symbols to call at unload-time (not used currently) */
 
-#ifdef TCC_TARGET_I386
     int seg_size; /* 32. Can be 16 with i386 assembler (.code16) */
-#endif
 
     /* include paths */
     char **include_paths;

@@ -396,7 +396,7 @@ static int cmd_type(void *data, const char *input) {
 					char *out, *tmp;
 					tmp = r_core_editor (core, NULL, "");
 					if (tmp) {
-						out = r_parse_c_string (tmp);
+						out = r_parse_c_string (core->anal, tmp);
 						if (out) {
 							//		r_cons_strcat (out);
 							save_parsed_type (core, out);
@@ -405,7 +405,7 @@ static int cmd_type(void *data, const char *input) {
 						free (tmp);
 					}
 				} else {
-					char *out = r_parse_c_file (filename);
+					char *out = r_parse_c_file (core->anal, filename);
 					if (out) {
 						//r_cons_strcat (out);
 						save_parsed_type (core, out);
@@ -444,7 +444,7 @@ static int cmd_type(void *data, const char *input) {
 			snprintf (tmp, sizeof (tmp) - 1, "%s;", input + 2);
 			//const char *string = input + 2;
 			//r_anal_str_to_type (core->anal, string);
-			char *out = r_parse_c_string (tmp);
+			char *out = r_parse_c_string (core->anal, tmp);
 			if (out) {
 				//r_cons_strcat (out);
 				save_parsed_type (core, out);

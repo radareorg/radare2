@@ -124,13 +124,13 @@
      DEF(TOK_builtin_types_compatible_p, "__builtin_types_compatible_p")
      DEF(TOK_builtin_constant_p, "__builtin_constant_p")
      DEF(TOK_builtin_frame_address, "__builtin_frame_address")
-#ifdef TCC_TARGET_X86_64
-#ifdef TCC_TARGET_PE
+//#ifdef TCC_TARGET_X86_64
+//#ifdef TCC_TARGET_PE
      DEF(TOK_builtin_va_start, "__builtin_va_start")
-#else
+//#else
      DEF(TOK_builtin_va_arg_types, "__builtin_va_arg_types")
-#endif
-#endif
+//#endif
+//#endif
      DEF(TOK_REGPARM1, "regparm")
      DEF(TOK_REGPARM2, "__regparm__")
 
