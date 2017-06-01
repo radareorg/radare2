@@ -521,8 +521,10 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	p->interrupt = 0;
 	int col = 0;
 	i = 0;
-	while (buf[i] == '\0' && i < 3 && i < len) {
-		i++;
+	if (!urlencode && !wrap) {
+		while (buf[i] == '\0' && i < 3 && i < len) {
+			i++;
+		}
 	}
 	for (; !p->interrupt && i < len; i++) {
 		if (wide32) {
