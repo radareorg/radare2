@@ -94,7 +94,7 @@ static void r_debug_session_set_registers (RDebug *dbg, RDebugSession *session) 
 			memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
 		}
 	}
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);	
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 }
 
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
@@ -139,9 +139,8 @@ R_API RDebugSession *r_debug_session_get(RDebug *dbg, ut64 addr) {
 	RDebugSession *session;
 	RListIter *iter;
 	r_list_foreach_prev (dbg->sessions, iter, session) {
-		if (session->key.addr != addr) {
-			/* Sessions are saved along program flow. So key must be compared by "!=" not "<". *
-			         ex. Some operations like, jmp, can go back to former address in normal program flow. */
+		if (session->key.addr < addr) {
+			/* FIXME: Sessions must be saved along program flow. */
 			return session;
 		}
 	}
