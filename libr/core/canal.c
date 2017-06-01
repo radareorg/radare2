@@ -2212,7 +2212,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 	}
 
-	free (fcns);
+	r_list_free (fcns);
 	return 0;
 }
 
