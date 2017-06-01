@@ -1161,7 +1161,7 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 	}
 
 	if (a->zign_path) {
-		char *path = r_str_newf ("%s%s%s", a->zign_path, R_SYS_DIR, file); 
+		char *path = r_str_newf ("%s%s%s", a->zign_path, R_SYS_DIR, file);
 		abs = r_file_abspath (path);
 		free (path);
 		if (r_file_is_regular (abs)) {
