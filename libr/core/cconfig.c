@@ -1314,8 +1314,9 @@ static int cb_filepath(void *user, void *data) {
 	char *pikaboo = strstr (node->value, "://");
 	if (pikaboo) {
 		if (pikaboo[3] == '/') {
-			free (node->value);
+			char *ovalue = node->value;
 			node->value = strdup (pikaboo + 3);
+			free (node->value);
 			return true;
 		}
 		return false;
