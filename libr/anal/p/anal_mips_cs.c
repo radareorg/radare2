@@ -192,6 +192,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_BREAK:
 		r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
 		break;
+	case MIPS_INS_SD:
+		r_strbuf_appendf (&op->esil, "%s,%s,=[8]",
+			ARG (0), ARG (1));
+		break;
 	case MIPS_INS_SW:
 	case MIPS_INS_SWL:
 	case MIPS_INS_SWR:
@@ -419,6 +423,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case MIPS_INS_LI:
+	case MIPS_INS_LDI:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LUI:
@@ -436,13 +441,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_LWR:
 	case MIPS_INS_LWU:
 	case MIPS_INS_LL:
-	case MIPS_INS_LLD:
-	case MIPS_INS_LD:
-	case MIPS_INS_LDI:
+		ESIL_LOAD ("4");
+		break;
+
 	case MIPS_INS_LDL:
 	case MIPS_INS_LDC1:
 	case MIPS_INS_LDC2:
-		ESIL_LOAD ("4");
+	case MIPS_INS_LLD:
+	case MIPS_INS_LD:
+		ESIL_LOAD ("8");
 		break;
 
 	case MIPS_INS_LWX:
@@ -580,7 +587,18 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	cs_insn* insn;
 	int mode = anal->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
-	mode |= (anal->bits==64)? CS_MODE_64: CS_MODE_32;
+	if (anal->cpu && *anal->cpu) {
+		if (!strcmp (anal->cpu, "micro")) {
+			mode |= CS_MODE_MICRO;
+		} else if (!strcmp (anal->cpu, "r6")) {
+			mode |= CS_MODE_MIPS32R6;
+		} else if (!strcmp (anal->cpu, "v3")) {
+			mode |= CS_MODE_MIPS3;
+		} else if (!strcmp (anal->cpu, "v2")) {
+			mode |= CS_MODE_MIPS2;
+		}
+	}
+	mode |= (anal->bits==64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
 	if (mode != omode || anal->bits != obits) {
 		cs_close (&hndl);
 		hndl = 0;
@@ -646,7 +664,10 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		}
 		// TODO: fill
 		break;
+	case MIPS_INS_SD:
 	case MIPS_INS_SW:
+	case MIPS_INS_SB:
+	case MIPS_INS_SH:
 	case MIPS_INS_SWC1:
 	case MIPS_INS_SWC2:
 	case MIPS_INS_SWL:
