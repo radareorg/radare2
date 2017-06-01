@@ -2156,37 +2156,34 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	if (!core || !core->anal) {
 		return 0;
 	}
-	fcns = core->anal->fcns;
-	if (r_list_empty (fcns)) {
+
+	if (r_list_empty (core->anal->fcns)) {
 		return 0;
 	}
 
-	r_list_sort (fcns, &cmpfcn);
 	fcnlist_gather_metadata (core->anal, fcns);
 
-	if (input) {// input points to a filter argument
-		const char *name = input;
-		ut64 addr;
-		addr = core->offset;
-		if (*input) {
-			name = input + 1;
-			addr = r_num_math (core->num, name);
-		}
+	const char *name = input;
+	ut64 addr;
+	addr = core->offset;
+	if (input && *input) {
+		name = input + 1;
+		addr = r_num_math (core->num, name);
+	}
 
-		fcns = r_list_new ();
-		if (!fcns) {
-			return -1;
-		}
-		RListIter *iter;
-		RAnalFunction *fcn;
-		r_list_foreach (core->anal->fcns, iter, fcn) {
-			if (r_anal_fcn_in (fcn, addr) || (!strcmp (name, fcn->name))) {
-				r_list_append (fcns, fcn);
-			}
+	fcns = r_list_new ();
+	if (!fcns) {
+		return -1;
+	}
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (!input || r_anal_fcn_in (fcn, addr) || (!strcmp (name, fcn->name))) {
+			r_list_append (fcns, fcn);
 		}
 	}
 
-	r_list_sort (core->anal->fcns, &cmpfcn);
+	r_list_sort (fcns, &cmpfcn);
 	switch (*rad) {
 	case 's':
 		r_core_anal_fcn_list_size (core);
@@ -2214,11 +2211,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		fcn_list_default (core, fcns, false);
 		break;
 	}
-	//make sure you don't free core->anal->fcns
-	if (input && core->anal->fcns != fcns) {
-		// The list does not own the its members, so don't purge.
-		free (fcns);
-	}
+
+	r_list_free (fcns);
 	return 0;
 }
 
