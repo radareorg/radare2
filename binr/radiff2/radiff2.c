@@ -190,7 +190,8 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	case 0:
 	default:
 		if (disasm) {
-			printf ("--- 0x%08"PFMT64x "\n", op->a_off);
+			int i;
+			printf ("--- 0x%08"PFMT64x "  ", op->a_off);
 			if (!core) {
 				core = opencore (file);
 				if (arch) {
@@ -200,9 +201,22 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					r_config_set_i (core->config, "asm.bits", bits);
 				}
 			}
+			for (i = 0; i < op->a_len; i++) {
+				printf ("%02x", op->a_buf[i]);
+			}
+			printf ("\n");
 			if (core) {
-				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, op->a_len);
-				printf ("%s\n", ac->buf_asm);
+				int len = R_MAX (4, op->a_len);
+				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, len);
+				if (quiet) {
+					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "- ");
+					printf ("%s\n", bufasm);
+					free (bufasm);
+				} else {
+					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_RED"- ");
+					printf ("%s"Color_RESET, bufasm);
+					free (bufasm);
+				}
 				// r_asm_code_free (ac);
 			}
 		} else {
@@ -212,13 +226,27 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			}
 		}
 		if (disasm) {
-			printf ("+++ 0x%08"PFMT64x "\n", op->b_off);
+			int i;
+			printf ("+++ 0x%08"PFMT64x "  ", op->b_off);
 			if (!core) {
 				core = opencore (NULL);
 			}
+			for (i = 0; i < op->b_len; i++) {
+				printf ("%02x", op->b_buf[i]);
+			}
+			printf ("\n");
 			if (core) {
-				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, op->b_len);
-				printf ("%s\n", ac->buf_asm);
+				int len = R_MAX(4, op->b_len);
+				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, len);
+				if (quiet) {
+					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "+ ");
+					printf ("%s\n", bufasm);
+					free (bufasm);
+				} else {
+					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_GREEN"+ ");
+					printf ("%s\n"Color_RESET, bufasm);
+					free (bufasm);
+				}
 				// r_asm_code_free (ac);
 			}
 		} else {
