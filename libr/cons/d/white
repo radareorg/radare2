@@ -36,7 +36,7 @@ ec graph.box2 green
 ec graph.box3 red
 ec graph.box4 blue
 ec graph.true green
-ec graph.false blue
-ec graph.trufae green
+ec graph.false red
+ec graph.trufae blue
 ec graph.current rgb:0ff
 ec graph.traced red
