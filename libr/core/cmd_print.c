@@ -34,6 +34,7 @@ static ut32 colormap[256] = {
 static void cmd_prc (RCore *core, int len) {
 	bool square = true; //false;
 	int i, j;
+	char ch, *color;
 	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_cursor = core->print->cur_enabled;
@@ -45,27 +46,27 @@ static void cmd_prc (RCore *core, int len) {
 		r_print_addr (core->print, core->offset + i);
 		for (j = i; j < i + cols; j ++) {
 			ut8 *p = (ut8 *) core->block + j;
-			if (j < len) {
-				char ch, *color;
-				if (show_color) {
-					char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[*p]);
-					color = r_cons_pal_parse (str);
-					free (str);
-				} else {
-					color = strdup ("");
-				}
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				}
-				if (square) {
-					r_cons_printf ("%s%c%c", color, ch, ch);
-				} else {
-					r_cons_printf ("%s%c", color, ch);
-				}
-				free (color);
-			} else {
+			if (j >= len) {
 				break;
 			}
+			if (show_color) {
+				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[*p]);
+				color = r_cons_pal_parse (str);
+				free (str);
+			} else {
+				color = strdup ("");
+			}
+			if (show_cursor && core->print->cur == j) {
+				ch = '_';
+			} else {
+				ch = ' ';
+			}
+			if (square) {
+				r_cons_printf ("%s%c%c", color, ch, ch);
+			} else {
+				r_cons_printf ("%s%c", color, ch);
+			}
+			free (color);
 		}
 		r_cons_printf (Color_RESET);
 		r_cons_newline ();

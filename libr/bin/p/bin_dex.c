@@ -38,7 +38,6 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	ut64 len;
 	int uleblen;
 	// null terminate the buf wtf
-	bin->b->buf[bin->b->length - 1] = 0;
 	if (!bin || idx < 0 || idx >= bin->header.strings_size || !bin->strings) {
 		return "";
 	}
@@ -48,6 +47,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
 		return "";
 	}
+	bin->b->buf[bin->b->length - 1] = 0;
 	uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
 	if (!uleblen || uleblen >= bin->size) {
 		return "";
