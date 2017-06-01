@@ -19,10 +19,10 @@ R_API void r_debug_session_list(RDebug *dbg) {
 
 	r_list_foreach (dbg->sessions, iterse, session) {
 		count = 0;
-		dbg->cb_printf ("session:%2d\tat:0x%08"PFMT64x "\n", session->key.id, session->key.addr);
+		dbg->cb_printf ("session:%2d   at:0x%08"PFMT64x "\n", session->key.id, session->key.addr);
 		r_list_foreach (session->memlist, itersn, diff) {
 			snap = diff->base;
-			dbg->cb_printf ("\t- %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d ",
+			dbg->cb_printf ("  - %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d ",
 				count, snap->addr, snap->addr_end, snap->size);
 			dbg->cb_printf ("(pages: ");
 			r_list_foreach (diff->pages, iterpg, page) {
