@@ -2700,7 +2700,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					if (str[1] && r_str_is_printable_incl_newlines (str + 1)) {
 						str[0] = '"';
 						flag = str;
-						strcpy (str + strlen (str), "\"");
+						int str_len = strlen (str);
+						if (str_len + 3 < sizeof (str)) {
+							str_len = sizeof (str) - 4;
+						}
+						strcpy (str + str_len, "\"");
 						//Filter out remaining non printable characters, e.g. \n \r
 						r_str_filter ((char*)flag, 0);
 						string_found = true;

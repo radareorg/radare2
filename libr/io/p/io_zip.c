@@ -386,16 +386,18 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 						char *bin_name = strstr (name, ".app/");
 						if (bin_name) {
 							const char *slash = r_str_rchr (name, bin_name, '/');
-							bin_name = r_str_ndup (slash + 1, (bin_name - slash) -1);
-							char *chkstr = r_str_newf ("Payload/%s.app/%s", bin_name);
-							if (!strcmp (name, chkstr)) {
-								zip_filename = r_str_newf ("//%s", chkstr);
+							if (slash) {
+								bin_name = r_str_ndup (slash + 1, (bin_name - slash) -1);
+								char *chkstr = r_str_newf ("Payload/%s.app/%s", bin_name);
+								if (!strcmp (name, chkstr)) {
+									zip_filename = r_str_newf ("//%s", chkstr);
+									free (chkstr);
+									free (bin_name);
+									break;
+								}
 								free (chkstr);
 								free (bin_name);
-								break;
 							}
-							free (chkstr);
-							free (bin_name);
 						}
 					}
 				}
