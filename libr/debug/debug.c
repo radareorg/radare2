@@ -912,7 +912,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	ut64 pc, end;
 	ut8 buf[32];
 	RAnalOp op;
-	RDebugSession *before, *latest;
+	RDebugSession *before;
 	if (r_debug_is_dead (dbg)) {
 		return 0;
 	}
@@ -927,7 +927,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	}
 	eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 	/* Save current session. It is marked as a finish point of reverse execution */
-	latest = r_debug_session_add (dbg);
+	r_debug_session_add (dbg);
 
 	if (!r_list_length (before->memlist)) {
 		/* Diff list is empty. (i.e. Before session is base snapshot) *
