@@ -514,13 +514,17 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
 	int i;
 	bool wide = (options & R_PRINT_STRING_WIDE);
-	bool wide32 = (options & R_PRINT_STRING_32WIDE);
+	bool wide32 = (options & R_PRINT_STRING_WIDE32);
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	p->interrupt = 0;
 	int col = 0;
-	for (i = 0; !p->interrupt && i < len; i++) {
+	i = 0;
+	while (buf[i] == '\0' && i < 3 && i < len) {
+		i++;
+	}
+	for (; !p->interrupt && i < len; i++) {
 		if (wide32) {
 			int j = i;
 			while (buf[j] == '\0' && j < (i + 3)) {

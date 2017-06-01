@@ -4249,7 +4249,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'W': // "psw"
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block, len,
-					R_PRINT_STRING_32WIDE | R_PRINT_STRING_ZEROEND);
+					R_PRINT_STRING_WIDE32 | R_PRINT_STRING_ZEROEND);
 			}
 			break;
 		case ' ':
