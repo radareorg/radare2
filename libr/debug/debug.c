@@ -608,8 +608,8 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 
 		bool libs_bp = (dbg->glob_libs || dbg->glob_unlibs) ? true : false;
 		/* if the underlying stop reason is a breakpoint, call the handlers */
-		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP || 
-			(libs_bp && 
+		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP ||
+			(libs_bp &&
 			((reason == R_DEBUG_REASON_NEW_LIB) || (reason == R_DEBUG_REASON_EXIT_LIB)))) {
 			RRegItem *pc_ri;
 			RBreakpointItem *b = NULL;
@@ -912,7 +912,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	ut64 pc, end;
 	ut8 buf[32];
 	RAnalOp op;
-	RDebugSession *before;
+	RDebugSession *before, *latest;
 	if (r_debug_is_dead (dbg)) {
 		return 0;
 	}
@@ -925,10 +925,19 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	if (!before) {
 		return 0;
 	}
-	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
-	r_debug_session_set (dbg, before);
+	eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
+	/* Save current session. It is marked as a finish point of reverse execution */
+	latest = r_debug_session_add (dbg);
+
+	if (!r_list_length (before->memlist)) {
+		/* Diff list is empty. (i.e. Before session is base snapshot) *
+			 So set base memory snapshot */
+		r_debug_session_set_base (dbg, before);
+	} else {
+		r_debug_session_set (dbg, before);
+	}
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	//eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
+	eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
 
 	for (;;) {
 		if (r_debug_is_dead (dbg))

@@ -39,7 +39,7 @@ R_API void r_debug_session_list(RDebug *dbg) {
 	}
 }
 
-R_API bool r_debug_session_add(RDebug *dbg) {
+R_API RDebugSession *r_debug_session_add(RDebug *dbg) {
 	RDebugSession *session;
 	RDebugSnapDiff *diff;
 	RListIter *iter;
@@ -48,7 +48,7 @@ R_API bool r_debug_session_add(RDebug *dbg) {
 	int i, perms = R_IO_RW;
 	session = R_NEW0 (RDebugSession);
 	if (!session) {
-		return false;
+		return NULL;
 	}
 
 	addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
@@ -78,13 +78,12 @@ R_API bool r_debug_session_add(RDebug *dbg) {
 	}
 
 	r_list_append (dbg->sessions, session);
-	return true;
+	return session;
 }
 
-R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
-	RDebugSnapDiff *diff;
+static void r_debug_session_set_registers (RDebug *dbg, RDebugSession *session) {
 	RRegArena *arena;
-	RListIter *iter, *iterr;
+	RListIter *iterr;
 	int i;
 	/* Restore all regsiter values from the stack area pointed by session */
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
@@ -95,10 +94,26 @@ R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
 			memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
 		}
 	}
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);	
+}
+
+R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
+	RListIter *iter;
+	RDebugSnapDiff *diff;
+	r_debug_session_set_registers (dbg, session);
 	/* Restore all memory values from memory (diff) snapshots */
 	r_list_foreach (session->memlist, iter, diff) {
 		r_debug_diff_set (dbg, diff);
+	}
+}
+
+R_API void r_debug_session_set_base(RDebug *dbg, RDebugSession *before) {
+	RListIter *iter;
+	RDebugSnap *snap;
+	r_debug_session_set_registers (dbg, before);
+	/* Restore all memory values from base memory snapshots */
+	r_list_foreach (dbg->snaps, iter, snap) {
+		r_debug_diff_set_base (dbg, snap);
 	}
 }
 

@@ -118,13 +118,12 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 	for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 		page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 		prev_page = diff->last_changes[page_off];
-		/* Apply only latest pages, that's been changed after prev_pages */
+		/* Role back only latest page, that's been changed after prev_page */
 		if ((last_page = latest->last_changes[page_off]) && !prev_page) {
 			ut64 off = last_page->page_off * SNAP_PAGE_SIZE;
-			ut64 addr = snap->addr + off;
 			/* Copy a page data of base snap to current addr. (i.e. role back) */
 			dbg->iob.write_at (dbg->iob.io, addr, snap->data + off, SNAP_PAGE_SIZE);
-			// eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
 		}
 	}
 
@@ -133,7 +132,29 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 		page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 		if ((prev_page = diff->last_changes[page_off])) {
 			r_page_data_set (dbg, prev_page);
-			// eprintf ("Update 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			eprintf ("Update 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+		}
+	}
+}
+
+/* Role back to base snapshot */
+R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
+	RPageData *last_page;
+	RDebugSnapDiff *latest;
+	eprintf ("Role back to base [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", base->addr, base->addr_end);
+	ut64 addr;
+	ut32 page_off;
+	if (!r_list_length (base->history)) {
+		return;
+	}
+ 	latest = (RDebugSnapDiff *) r_list_tail (base->history)->data;
+	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
+		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
+		if ((last_page = latest->last_changes[page_off])) {
+			ut64 off = last_page->page_off * SNAP_PAGE_SIZE;
+			/* Copy a page data of base snap to current addr. (i.e. role back) */
+			dbg->iob.write_at (dbg->iob.io, addr, base->data + off, SNAP_PAGE_SIZE);
+			eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
 		}
 	}
 }
