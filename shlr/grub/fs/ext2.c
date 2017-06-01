@@ -520,10 +520,11 @@ grub_ext2_read_inode (struct grub_ext2_data *data,
 
   /* It is easier to calculate if the first inode is 0.  */
   ino--;
-
-  grub_ext2_blockgroup (data,
-                        ino / grub_le_to_cpu32 (sblock->inodes_per_group),
-			&blkgrp);
+  int div = grub_le_to_cpu32 (sblock->inodes_per_group);
+  if (div < 1) {
+    div = 1;
+  }
+  grub_ext2_blockgroup (data, ino / div, &blkgrp);
   if (grub_errno)
     return grub_errno;
 
