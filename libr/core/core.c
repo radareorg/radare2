@@ -638,10 +638,107 @@ static int getsdelta(const char *data) {
 	return 0;
 }
 
+// XXX: SO MANY MEMORY LEAKS HERE
+static int autocompleteOpenfile(RLine *line, const char **paths, int line_delta) {
+	RList *list;
+	RListIter *iter;
+	char *str;
+	int n = 0, i = 0, isroot = 0, iscwd = 0, pfree = 0;
+
+	int sdelta = getsdelta (line->buffer.data + line_delta) + line_delta;
+	char *path = sdelta > 0 ? strdup (line->buffer.data + sdelta): r_sys_getdir ();
+
+	char *p = (char *)r_str_lchr (path, '/');
+	if (p) {
+		if (p == path) { // ^/
+			isroot = 1;
+			*p = 0;
+			p++;
+		} else if (p==path + 1) { // ^./
+			*p = 0;
+			iscwd = 1;
+			p++;
+		} else { // *
+			*p = 0;
+			p++;
+		}
+	} else {
+		iscwd = 1;
+		pfree = 1;
+		p = strdup (path);
+		free (path);
+		path = strdup (".");
+	}
+	if (pfree) {
+		if (p) {
+			if (*p) {
+				n = strlen (p);
+			} else {
+				free (p);
+				p = strdup ("");
+			}
+		}
+	} else {
+		if (p) { if (*p) n = strlen (p); else p = ""; }
+	}
+	if (iscwd) {
+		list = r_sys_dir ("./");
+	} else if (isroot) {
+		const char *lastslash = r_str_lchr (path, '/');
+		if (lastslash && lastslash[1]) {
+			list = r_sys_dir (path);
+		} else {
+			list = r_sys_dir ("/");
+		}
+	} else {
+		if (*path=='~') { // if implicit home
+			char *lala = r_str_home (path + 1);
+			free (path);
+			path = lala;
+		} else if (*path!='.' && *path!='/') { // ifnot@home
+			char *o = malloc (strlen (path) + 4);
+			memcpy (o, "./", 2);
+			p = o+2;
+			n = strlen (path);
+			memcpy (o + 2, path, strlen (path) + 1);
+			free (path);
+			path = o;
+		}
+		list = p? r_sys_dir (path): NULL;
+	}
+	if (list) {
+		//	bool isroot = !strcmp (path, "/");
+		r_list_foreach (list, iter, str) {
+			if (*str == '.') { // also list hidden files
+				continue;
+			}
+			if (!p || !*p || !strncmp (str, p, n)) {
+				tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
+				if (i == TMP_ARGV_SZ - 1) {
+					i--;
+					break;
+				}
+			}
+		}
+		r_list_purge (list);
+		free (list);
+	} else {
+		eprintf ("\nInvalid directory (%s)\n", path);
+	}
+	tmp_argv[i] = NULL;
+	line->completion.argc = i;
+	line->completion.argv = tmp_argv;
+
+	free (path);
+	if (pfree)
+		free (p);
+
+	return i;
+}
+
 #define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
 
 static int autocomplete(RLine *line) {
-	int pfree = 0;
 	RCore *core = line->user;
 	RListIter *iter;
 	RFlagItem *flag;
@@ -665,85 +762,89 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
-			int j = 0;
-			int chr = 7;
 			if (strchr (line->buffer.data + 7, ' ')) {
-				goto openfile;
+				autocompleteOpenfile (line, NULL, 7);
+			} else {
+				int chr = 7;
+				int j = 0;
+
+				tmp_argv_heap = false;
+				ADDARG ("node");
+				ADDARG ("vala");
+				ADDARG ("ruby");
+				ADDARG ("newlisp");
+				ADDARG ("perl");
+				ADDARG ("python");
+				tmp_argv[j] = NULL;
+				line->completion.argc = j;
+				line->completion.argv = tmp_argv;
 			}
-			tmp_argv_heap = false;
-			ADDARG ("node");
-			ADDARG ("vala");
-			ADDARG ("ruby");
-			ADDARG ("newlisp");
-			ADDARG ("perl");
-			ADDARG ("python");
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "ec ", 3)) {
-			int j = 0;
 			if (strchr (line->buffer.data + 3, ' ')) {
-				goto openfile;
+				autocompleteOpenfile (line, NULL, 3);
+			} else {
+				int chr = 3;
+				int j = 0;
+
+				tmp_argv_heap = false;
+				ADDARG("comment")
+				ADDARG("args")
+				ADDARG("fname")
+				ADDARG("floc")
+				ADDARG("fline")
+				ADDARG("flag")
+				ADDARG("label")
+				ADDARG("help")
+				ADDARG("flow")
+				ADDARG("prompt")
+				ADDARG("offset")
+				ADDARG("input")
+				ADDARG("invalid")
+				ADDARG("other")
+				ADDARG("b0x00")
+				ADDARG("b0x7f")
+				ADDARG("b0xff")
+				ADDARG("math")
+				ADDARG("bin")
+				ADDARG("btext")
+				ADDARG("push")
+				ADDARG("pop")
+				ADDARG("crypto")
+				ADDARG("jmp")
+				ADDARG("cjmp")
+				ADDARG("call")
+				ADDARG("nop")
+				ADDARG("ret")
+				ADDARG("trap")
+				ADDARG("swi")
+				ADDARG("cmp")
+				ADDARG("reg")
+				ADDARG("creg")
+				ADDARG("num")
+				ADDARG("mov")
+				ADDARG("ai.read")
+				ADDARG("ai.write")
+				ADDARG("ai.exec")
+				ADDARG("ai.seq")
+				ADDARG("ai.ascii")
+				ADDARG("graph.box")
+				ADDARG("graph.box2")
+				ADDARG("graph.box3")
+				ADDARG("graph.box4")
+				ADDARG("graph.true")
+				ADDARG("graph.false")
+				ADDARG("graph.trufae")
+				ADDARG("graph.current")
+				ADDARG("graph.traced")
+				ADDARG("gui.cflow")
+				ADDARG("gui.dataoffset")
+				ADDARG("gui.background")
+				ADDARG("gui.alt_background")
+				ADDARG("gui.border")
+				tmp_argv[j] = NULL;
+				line->completion.argc = j;
+				line->completion.argv = tmp_argv;
 			}
-			int chr = 3;
-			tmp_argv_heap = false;
-			ADDARG("comment")
-			ADDARG("args")
-			ADDARG("fname")
-			ADDARG("floc")
-			ADDARG("fline")
-			ADDARG("flag")
-			ADDARG("label")
-			ADDARG("help")
-			ADDARG("flow")
-			ADDARG("prompt")
-			ADDARG("offset")
-			ADDARG("input")
-			ADDARG("invalid")
-			ADDARG("other")
-			ADDARG("b0x00")
-			ADDARG("b0x7f")
-			ADDARG("b0xff")
-			ADDARG("math")
-			ADDARG("bin")
-			ADDARG("btext")
-			ADDARG("push")
-			ADDARG("pop")
-			ADDARG("crypto")
-			ADDARG("jmp")
-			ADDARG("cjmp")
-			ADDARG("call")
-			ADDARG("nop")
-			ADDARG("ret")
-			ADDARG("trap")
-			ADDARG("swi")
-			ADDARG("cmp")
-			ADDARG("reg")
-			ADDARG("creg")
-			ADDARG("num")
-			ADDARG("mov")
-			ADDARG("ai.read")
-			ADDARG("ai.write")
-			ADDARG("ai.exec")
-			ADDARG("ai.seq")
-			ADDARG("ai.ascii")
-			ADDARG("graph.box")
-			ADDARG("graph.box2")
-			ADDARG("graph.box3")
-			ADDARG("graph.box4")
-			ADDARG("graph.true")
-			ADDARG("graph.false")
-			ADDARG("graph.trufae")
-			ADDARG("graph.current")
-			ADDARG("graph.traced")
-			ADDARG("gui.cflow")
-			ADDARG("gui.dataoffset")
-			ADDARG("gui.background")
-			ADDARG("gui.alt_background")
-			ADDARG("gui.border")
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "pf.", 3))
 		||  (!strncmp (line->buffer.data, "pf*.", 4))
 		||  (!strncmp (line->buffer.data, "pfd.", 4))
@@ -831,134 +932,39 @@ static int autocomplete(RLine *line) {
 			ls_free (l);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if ((!strncmp (line->buffer.data, "o ", 2)) ||
-		     !strncmp (line->buffer.data, "o+ ", 3) ||
-		     !strncmp (line->buffer.data, "oc ", 3) ||
-		     !strncmp (line->buffer.data, "r2 ", 3) ||
-		     !strncmp (line->buffer.data, "cd ", 3) ||
-		     !strncmp (line->buffer.data, "zo ", 3) ||
-		     !strncmp (line->buffer.data, "zoz ", 4) ||
-		     !strncmp (line->buffer.data, "zos ", 4) ||
-		     !strncmp (line->buffer.data, "zfd ", 4) ||
-		     !strncmp (line->buffer.data, "zfs ", 4) ||
-		     !strncmp (line->buffer.data, "zfz ", 4) ||
-		     !strncmp (line->buffer.data, "on ", 3) ||
-		     !strncmp (line->buffer.data, "op ", 3) ||
-		     !strncmp (line->buffer.data, ". ", 2) ||
-		     !strncmp (line->buffer.data, "wf ", 3) ||
-		     !strncmp (line->buffer.data, "rm ", 3) ||
-		     !strncmp (line->buffer.data, "ls ", 3) ||
-		     !strncmp (line->buffer.data, "ls -l ", 5) ||
-		     !strncmp (line->buffer.data, "wF ", 3) ||
-		     !strncmp (line->buffer.data, "cat ", 4) ||
-		     !strncmp (line->buffer.data, "less ", 5) ||
-		     !strncmp (line->buffer.data, "wta ", 4) ||
-		     !strncmp (line->buffer.data, "wtf ", 4) ||
-		     !strncmp (line->buffer.data, "wxf ", 4) ||
-		     !strncmp (line->buffer.data, "wp ", 3) ||
-		     !strncmp (line->buffer.data, "Sd ", 3) ||
-		     !strncmp (line->buffer.data, "Sl ", 3) ||
-		     !strncmp (line->buffer.data, "to ", 3) ||
-		     !strncmp (line->buffer.data, "pm ", 3) ||
-		     !strncmp (line->buffer.data, "dml ", 4) ||
-		     !strncmp (line->buffer.data, "/m ", 3)) {
-			// XXX: SO MANY MEMORY LEAKS HERE
-			char *str, *p, *path;
-			int n = 0, i = 0, isroot = 0, iscwd = 0;
-			RList *list;
-			int sdelta;
-openfile:
-			if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
-				sdelta = getsdelta (line->buffer.data + 7) + 7;
-			} else {
-				sdelta = getsdelta (line->buffer.data);
-			}
-			path = sdelta > 0 ? strdup (line->buffer.data + sdelta):
-				r_sys_getdir ();
-			p = (char *)r_str_lchr (path, '/');
-			if (p) {
-				if (p == path) { // ^/
-					isroot = 1;
-					*p = 0;
-					p++;
-				} else if (p==path + 1) { // ^./
-					*p = 0;
-					iscwd = 1;
-					p++;
-				} else { // *
-					*p = 0;
-					p++;
-				}
-			} else {
-				iscwd = 1;
-				pfree = 1;
-				p = strdup (path);
-				free (path);
-				path = strdup (".");
-			}
-			if (pfree) {
-				if (p) {
-					if (*p) {
-						n = strlen (p);
-					} else {
-						free (p);
-						p = strdup ("");
-					}
-				}
-			} else {
-				if (p) { if (*p) n = strlen (p); else p = ""; }
-			}
-			if (iscwd) {
-				list = r_sys_dir ("./");
-			} else if (isroot) {
-				const char *lastslash = r_str_lchr (path, '/');
-				if (lastslash && lastslash[1]) {
-					list = r_sys_dir (path);
-				} else {
-					list = r_sys_dir ("/");
-				}
-			} else {
-				if (*path=='~') { // if implicit home
-					char *lala = r_str_home (path + 1);
-					free (path);
-					path = lala;
-				} else if (*path!='.' && *path!='/') { // ifnot@home
-					char *o = malloc (strlen (path) + 4);
-					memcpy (o, "./", 2);
-					p = o+2;
-					n = strlen (path);
-					memcpy (o + 2, path, strlen (path) + 1);
-					free (path);
-					path = o;
-				}
-				list = p? r_sys_dir (path): NULL;
-			}
-			i = 0;
-			if (list) {
-			//	bool isroot = !strcmp (path, "/");
-				r_list_foreach (list, iter, str) {
-					if (*str == '.') { // also list hidden files
-						continue;
-					}
-					if (!p || !*p || !strncmp (str, p, n)) {
-						tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
-						if (i == TMP_ARGV_SZ - 1) {
-							i--;
-							break;
-						}
-					}
-				}
-				r_list_purge (list);
-				free (list);
-			} else {
-				eprintf ("\nInvalid directory (%s)\n", path);
-			}
-			tmp_argv[i] = NULL;
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
-			free (path);
-			if (pfree)
-				free (p);
+		} else if (!strncmp (line->buffer.data, "o ", 2)
+		|| !strncmp (line->buffer.data, "o+ ", 3)
+		|| !strncmp (line->buffer.data, "oc ", 3)
+		|| !strncmp (line->buffer.data, "r2 ", 3)
+		|| !strncmp (line->buffer.data, "cd ", 3)
+		|| !strncmp (line->buffer.data, "zos ", 4)
+		|| !strncmp (line->buffer.data, "zfd ", 4)
+		|| !strncmp (line->buffer.data, "zfs ", 4)
+		|| !strncmp (line->buffer.data, "zfz ", 4)
+		|| !strncmp (line->buffer.data, "on ", 3)
+		|| !strncmp (line->buffer.data, "op ", 3)
+		|| !strncmp (line->buffer.data, ". ", 2)
+		|| !strncmp (line->buffer.data, "wf ", 3)
+		|| !strncmp (line->buffer.data, "rm ", 3)
+		|| !strncmp (line->buffer.data, "ls ", 3)
+		|| !strncmp (line->buffer.data, "ls -l ", 5)
+		|| !strncmp (line->buffer.data, "wF ", 3)
+		|| !strncmp (line->buffer.data, "cat ", 4)
+		|| !strncmp (line->buffer.data, "less ", 5)
+		|| !strncmp (line->buffer.data, "wta ", 4)
+		|| !strncmp (line->buffer.data, "wtf ", 4)
+		|| !strncmp (line->buffer.data, "wxf ", 4)
+		|| !strncmp (line->buffer.data, "wp ", 3)
+		|| !strncmp (line->buffer.data, "Sd ", 3)
+		|| !strncmp (line->buffer.data, "Sl ", 3)
+		|| !strncmp (line->buffer.data, "to ", 3)
+		|| !strncmp (line->buffer.data, "pm ", 3)
+		|| !strncmp (line->buffer.data, "dml ", 4)
+		|| !strncmp (line->buffer.data, "/m ", 3)) {
+			autocompleteOpenfile (line, NULL, 0);
+		} else if (!strncmp (line->buffer.data, "zo ", 3)
+		|| !strncmp (line->buffer.data, "zoz ", 4)) {
+			autocompleteOpenfile (line, NULL, 0);
 		} else if ((!strncmp (line->buffer.data, ".(", 2))  ||
 		   (!strncmp (line->buffer.data, "(-", 2))) {
 			const char *str = line->buffer.data;
