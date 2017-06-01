@@ -522,7 +522,7 @@ grub_ext2_read_inode (struct grub_ext2_data *data,
   ino--;
   int div = grub_le_to_cpu32 (sblock->inodes_per_group);
   if (div < 1) {
-    div = 1;
+    return grub_errno = GRUB_ERR_BAD_FS;
   }
   grub_ext2_blockgroup (data, ino / div, &blkgrp);
   if (grub_errno)
