@@ -4081,7 +4081,8 @@ static int cmd_print(void *data, const char *input) {
 				"psz", "", "print zero terminated string",
 				"psp", "", "print pascal string",
 				"psu", "", "print utf16 unicode (json)",
-				"psw", "", "print wide string",
+				"psw", "", "print 16bit wide string",
+				"psW", "", "print 32bit wide string",
 				"psj", "", "print string in JSON format",
 				NULL
 			};
@@ -4243,6 +4244,12 @@ static int cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block, len,
 					R_PRINT_STRING_WIDE | R_PRINT_STRING_ZEROEND);
+			}
+			break;
+		case 'W': // "psw"
+			if (l > 0) {
+				r_print_string (core->print, core->offset, core->block, len,
+					R_PRINT_STRING_32WIDE | R_PRINT_STRING_ZEROEND);
 			}
 			break;
 		case ' ':
