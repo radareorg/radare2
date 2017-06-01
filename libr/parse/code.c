@@ -2,6 +2,7 @@
 
 #include "r_util.h"
 #include "r_types.h"
+#include "r_parse.h"
 #include "libr_tcc.h"
 
 /* parse C code and return it in key-value form */
@@ -21,10 +22,18 @@ static void appendstring(const char *msg, char **s) {
 	}
 }
 
-R_API char *r_parse_c_file(const char *path) {
+static int typeload(void *p, const char *k, const char *v) {
+	CType *ctype = (CType*)malloc(sizeof(CType));
+	r_cons_printf ("tk %s=%s\n", k, v);
+	//tcc_sym_push(typename, typesize, 0);
+}
+
+R_API char *r_parse_c_file(RAnal *anal, const char *path, const char* arch, int bits, const char* os) {
 	char *str = NULL;
-	TCCState *T = tcc_new ();
+	TCCState *T = tcc_new (arch, bits, os);
+	if (!T) return NULL;
 	tcc_set_callback (T, &appendstring, &str);
+	sdb_foreach (anal->sdb_types, typeload, NULL);
 	if (tcc_add_file (T, path) == -1) {
 		free (str);
 		str = NULL;
@@ -33,9 +42,10 @@ R_API char *r_parse_c_file(const char *path) {
 	return str;
 }
 
-R_API char *r_parse_c_string(const char *code) {
+R_API char *r_parse_c_string(RAnal *anal, const char *code, const char *arch, int bits, const char* os) {
 	char *str = NULL;
-	TCCState *T = tcc_new ();
+	TCCState *T = tcc_new (arch, bits, os);
+	if (!T) return NULL;
 	tcc_set_callback (T, &appendstring, &str);
 	tcc_compile_string (T, code);
 	tcc_delete (T);
