@@ -1,0 +1,218 @@
+From 711a9ee48751fcdd2826591df043e6867f425f0c Mon Sep 17 00:00:00 2001
+From: mrmacete <mrmacete@protonmail.ch>
+Date: Wed, 31 May 2017 09:27:08 +0200
+Subject: [PATCH] Add CS_MODE_MIPS2 to opt-in for COP3 instructions
+
+---
+ arch/Mips/MipsDisassembler.c         |  2 +-
+ arch/Mips/MipsModule.c               |  3 ++-
+ bindings/java/capstone/Capstone.java |  1 +
+ bindings/ocaml/capstone.ml           |  1 +
+ bindings/ocaml/ocaml.c               | 22 ++++++++++++++--------
+ bindings/python/capstone/__init__.py |  2 ++
+ include/capstone/capstone.h          |  1 +
+ tests/test_mips.c                    | 23 +++++++++++++++++++----
+ 8 files changed, 41 insertions(+), 14 deletions(-)
+
+diff --git a/arch/Mips/MipsDisassembler.c b/arch/Mips/MipsDisassembler.c
+index 846115f..dfc07ee 100644
+--- a/arch/Mips/MipsDisassembler.c
++++ b/arch/Mips/MipsDisassembler.c
+@@ -451,7 +451,7 @@ static DecodeStatus MipsDisassembler_getInstruction(int mode, MCInst *instr,
+ 
+ 	readInstruction32((unsigned char*)code, &Insn, isBigEndian, false);
+ 
+-	if (((mode & CS_MODE_MIPS32) == 0) && ((mode & CS_MODE_MIPS3) == 0)) {
++	if ((mode & CS_MODE_MIPS2) && ((mode & CS_MODE_MIPS3) == 0)) {
+ 		// DEBUG(dbgs() << "Trying COP3_ table (32-bit opcodes):\n");
+ 		Result = decodeInstruction(DecoderTableCOP3_32, instr, Insn, Address, MRI, mode);
+ 		if (Result != MCDisassembler_Fail) {
+diff --git a/arch/Mips/MipsModule.c b/arch/Mips/MipsModule.c
+index 0b4a60f..b74c270 100644
+--- a/arch/Mips/MipsModule.c
++++ b/arch/Mips/MipsModule.c
+@@ -15,7 +15,8 @@ static cs_err init(cs_struct *ud)
+ 
+ 	// verify if requested mode is valid
+ 	if (ud->mode & ~(CS_MODE_LITTLE_ENDIAN | CS_MODE_32 | CS_MODE_64 |
+-				CS_MODE_MICRO | CS_MODE_MIPS32R6 | CS_MODE_BIG_ENDIAN))
++				CS_MODE_MICRO | CS_MODE_MIPS32R6 | CS_MODE_BIG_ENDIAN |
++                CS_MODE_MIPS2 | CS_MODE_MIPS3))
+ 		return CS_ERR_MODE;
+ 
+ 	mri = cs_mem_malloc(sizeof(*mri));
+diff --git a/bindings/java/capstone/Capstone.java b/bindings/java/capstone/Capstone.java
+index 2d49f91..19fbd8a 100644
+--- a/bindings/java/capstone/Capstone.java
++++ b/bindings/java/capstone/Capstone.java
+@@ -336,6 +336,7 @@ public class Capstone {
+   public static final int CS_MODE_MICRO = 1 << 4;	  // MicroMips mode (Mips arch)
+   public static final int CS_MODE_MIPS3 = 1 << 5;     // Mips III ISA
+   public static final int CS_MODE_MIPS32R6 = 1 << 6;  // Mips32r6 ISA
++  public static final int CS_MODE_MIPS2 = 1 << 7;  // Mips II ISA
+   public static final int CS_MODE_BIG_ENDIAN = 1 << 31; // big-endian mode
+   public static final int CS_MODE_V9 = 1 << 4;	      // SparcV9 mode (Sparc arch)
+   public static final int CS_MODE_MIPS32 = CS_MODE_32; // Mips32 ISA
+diff --git a/bindings/ocaml/capstone.ml b/bindings/ocaml/capstone.ml
+index 6da4cba..a81b90d 100644
+--- a/bindings/ocaml/capstone.ml
++++ b/bindings/ocaml/capstone.ml
+@@ -35,6 +35,7 @@ type mode =
+   |	CS_MODE_MICRO		(* MicroMips mode (MIPS architecture) *)
+   |	CS_MODE_MIPS3		(* Mips3 mode (MIPS architecture) *)
+   |	CS_MODE_MIPS32R6	(* Mips32-R6 mode (MIPS architecture) *)
++  |	CS_MODE_MIPS2	    (* Mips2 mode (MIPS architecture) *)
+   |	CS_MODE_V9			(* SparcV9 mode (Sparc architecture) *)
+   |	CS_MODE_BIG_ENDIAN	(* big-endian mode *)
+   |	CS_MODE_MIPS32		(* Mips32 mode (for Mips) *)
+diff --git a/bindings/ocaml/ocaml.c b/bindings/ocaml/ocaml.c
+index 038daf8..4e26441 100644
+--- a/bindings/ocaml/ocaml.c
++++ b/bindings/ocaml/ocaml.c
+@@ -700,18 +700,21 @@ CAMLprim value ocaml_cs_disasm(value _arch, value _mode, value _code, value _add
+ 				mode |= CS_MODE_MIPS32R6;
+ 				break;
+ 			case 11:
+-				mode |= CS_MODE_V9;
++				mode |= CS_MODE_MIPS2;
+ 				break;
+ 			case 12:
+-				mode |= CS_MODE_BIG_ENDIAN;
++				mode |= CS_MODE_V9;
+ 				break;
+ 			case 13:
+-				mode |= CS_MODE_MIPS32;
++				mode |= CS_MODE_BIG_ENDIAN;
+ 				break;
+ 			case 14:
+-				mode |= CS_MODE_MIPS64;
++				mode |= CS_MODE_MIPS32;
+ 				break;
+ 			case 15:
++				mode |= CS_MODE_MIPS64;
++				break;
++			case 16:
+ 				mode |= CS_MODE_QPX;
+ 				break;
+ 			default:
+@@ -831,18 +834,21 @@ CAMLprim value ocaml_open(value _arch, value _mode)
+ 				mode |= CS_MODE_MIPS32R6;
+ 				break;
+ 			case 11:
+-				mode |= CS_MODE_V9;
++				mode |= CS_MODE_MIPS2;
+ 				break;
+ 			case 12:
+-				mode |= CS_MODE_BIG_ENDIAN;
++				mode |= CS_MODE_V9;
+ 				break;
+ 			case 13:
+-				mode |= CS_MODE_MIPS32;
++				mode |= CS_MODE_BIG_ENDIAN;
+ 				break;
+ 			case 14:
+-				mode |= CS_MODE_MIPS64;
++				mode |= CS_MODE_MIPS32;
+ 				break;
+ 			case 15:
++				mode |= CS_MODE_MIPS64;
++				break;
++			case 16:
+ 				mode |= CS_MODE_QPX;
+ 				break;
+ 			default:
+diff --git a/bindings/python/capstone/__init__.py b/bindings/python/capstone/__init__.py
+index 592b0ea..a7c1453 100644
+--- a/bindings/python/capstone/__init__.py
++++ b/bindings/python/capstone/__init__.py
+@@ -46,6 +46,7 @@ __all__ = [
+     'CS_MODE_MICRO',
+     'CS_MODE_MIPS3',
+     'CS_MODE_MIPS32R6',
++    'CS_MODE_MIPS2',
+     'CS_MODE_V8',
+     'CS_MODE_V9',
+     'CS_MODE_QPX',
+@@ -151,6 +152,7 @@ CS_MODE_V8 = (1 << 6)          # ARMv8 A32 encodings for ARM
+ CS_MODE_MICRO = (1 << 4)       # MicroMips mode (MIPS architecture)
+ CS_MODE_MIPS3 = (1 << 5)       # Mips III ISA
+ CS_MODE_MIPS32R6 = (1 << 6)    # Mips32r6 ISA
++CS_MODE_MIPS2 = (1 << 7)       # Mips II ISA
+ CS_MODE_V9 = (1 << 4)          # Sparc V9 mode (for Sparc)
+ CS_MODE_QPX = (1 << 4)         # Quad Processing eXtensions mode (PPC)
+ CS_MODE_M68K_000 = (1 << 1)    # M68K 68000 mode
+diff --git a/include/capstone/capstone.h b/include/capstone/capstone.h
+index fc06307..e6a90b5 100644
+--- a/include/capstone/capstone.h
++++ b/include/capstone/capstone.h
+@@ -109,6 +109,7 @@ typedef enum cs_mode {
+ 	CS_MODE_MICRO = 1 << 4, // MicroMips mode (MIPS)
+ 	CS_MODE_MIPS3 = 1 << 5, // Mips III ISA
+ 	CS_MODE_MIPS32R6 = 1 << 6, // Mips32r6 ISA
++	CS_MODE_MIPS2 = 1 << 7, // Mips II ISA
+ 	CS_MODE_V9 = 1 << 4, // SparcV9 mode (Sparc)
+ 	CS_MODE_QPX = 1 << 4, // Quad Processing eXtensions mode (PPC)
+ 	CS_MODE_M68K_000 = 1 << 1, // M68K 68000 mode
+diff --git a/tests/test_mips.c b/tests/test_mips.c
+index 9e2927c..2a7948b 100644
+--- a/tests/test_mips.c
++++ b/tests/test_mips.c
+@@ -82,36 +82,51 @@ static void test()
+ #define MIPS_CODE2 "\x56\x34\x21\x34\xc2\x17\x01\x00"
+ #define MIPS_32R6M "\x00\x07\x00\x07\x00\x11\x93\x7c\x01\x8c\x8b\x7c\x00\xc7\x48\xd0"
+ #define MIPS_32R6 "\xec\x80\x00\x19\x7c\x43\x22\xa0"
++#define MIPS_64SD "\x70\x00\xb2\xff"
+ 
+ 	struct platform platforms[] = {
+ 		{
+ 			CS_ARCH_MIPS,
+-			(cs_mode)(CS_MODE_MIPS32 + CS_MODE_BIG_ENDIAN),
++			(cs_mode)(CS_MODE_MIPS32 | CS_MODE_BIG_ENDIAN),
+ 			(unsigned char *)MIPS_CODE,
+ 			sizeof(MIPS_CODE) - 1,
+ 			"MIPS-32 (Big-endian)"
+ 		},
+ 		{
+ 			CS_ARCH_MIPS,
+-			(cs_mode)(CS_MODE_MIPS64 + CS_MODE_LITTLE_ENDIAN),
++			(cs_mode)(CS_MODE_MIPS64 | CS_MODE_LITTLE_ENDIAN),
+ 			(unsigned char *)MIPS_CODE2,
+ 			sizeof(MIPS_CODE2) - 1,
+ 			"MIPS-64-EL (Little-endian)"
+ 		},
+ 		{
+ 			CS_ARCH_MIPS,
+-			(cs_mode)(CS_MODE_MIPS32R6 + CS_MODE_MICRO + CS_MODE_BIG_ENDIAN),
++			(cs_mode)(CS_MODE_MIPS32R6 | CS_MODE_MICRO + CS_MODE_BIG_ENDIAN),
+ 			(unsigned char*)MIPS_32R6M,
+ 			sizeof(MIPS_32R6M) - 1,
+ 			"MIPS-32R6 | Micro (Big-endian)"
+ 		},
+ 		{
+ 			CS_ARCH_MIPS,
+-			(cs_mode)(CS_MODE_MIPS32R6 + CS_MODE_BIG_ENDIAN),
++			(cs_mode)(CS_MODE_MIPS32R6 | CS_MODE_BIG_ENDIAN),
+ 			(unsigned char*)MIPS_32R6,
+ 			sizeof(MIPS_32R6) - 1,
+ 			"MIPS-32R6 (Big-endian)"
+ 		},
++		{
++			CS_ARCH_MIPS,
++			(cs_mode)(CS_MODE_MIPS64 | CS_MODE_MIPS2 | CS_MODE_LITTLE_ENDIAN),
++			(unsigned char *)MIPS_64SD,
++			sizeof(MIPS_64SD) - 1,
++			"MIPS-64-EL + Mips II (Little-endian)"
++		},
++		{
++			CS_ARCH_MIPS,
++			(cs_mode)(CS_MODE_MIPS64 | CS_MODE_LITTLE_ENDIAN),
++			(unsigned char *)MIPS_64SD,
++			sizeof(MIPS_64SD) - 1,
++			"MIPS-64-EL (Little-endian)"
++		},
+ 	};
+ 
+ 	uint64_t address = 0x1000;
+-- 
+2.10.1
+
