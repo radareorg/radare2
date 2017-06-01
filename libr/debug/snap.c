@@ -123,7 +123,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 			ut64 off = last_page->page_off * SNAP_PAGE_SIZE;
 			/* Copy a page data of base snap to current addr. (i.e. role back) */
 			dbg->iob.write_at (dbg->iob.io, addr, snap->data + off, SNAP_PAGE_SIZE);
-			eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			eprintf ("Role back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 
@@ -132,7 +132,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 		page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 		if ((prev_page = diff->last_changes[page_off])) {
 			r_page_data_set (dbg, prev_page);
-			eprintf ("Update 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			eprintf ("Update 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 }
@@ -147,14 +147,14 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 	if (!r_list_length (base->history)) {
 		return;
 	}
- 	latest = (RDebugSnapDiff *) r_list_tail (base->history)->data;
+	latest = (RDebugSnapDiff *) r_list_tail (base->history)->data;
 	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
 		if ((last_page = latest->last_changes[page_off])) {
 			ut64 off = last_page->page_off * SNAP_PAGE_SIZE;
 			/* Copy a page data of base snap to current addr. (i.e. role back) */
 			dbg->iob.write_at (dbg->iob.io, addr, base->data + off, SNAP_PAGE_SIZE);
-			eprintf ("Role back 0x%08"PFMT64x"(page: %d)\n", addr, page_off);
+			eprintf ("Role back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 }
@@ -183,11 +183,11 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 
 /* XXX: Just for debugging. Duplicate soon */
 /* static void print_hash(ut8 *hash, int digest_size) {
-	int i = 0;
-	for (i = 0; i < digest_size; i++) {
-		eprintf ("%02"PFMT32x, hash[i]);
-	}
-	eprintf ("\n");
+        int i = 0;
+        for (i = 0; i < digest_size; i++) {
+                eprintf ("%02"PFMT32x, hash[i]);
+        }
+        eprintf ("\n");
 } */
 
 R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {

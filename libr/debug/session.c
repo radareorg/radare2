@@ -81,7 +81,7 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg) {
 	return session;
 }
 
-static void r_debug_session_set_registers (RDebug *dbg, RDebugSession *session) {
+static void r_debug_session_set_registers(RDebug *dbg, RDebugSession *session) {
 	RRegArena *arena;
 	RListIter *iterr;
 	int i;
