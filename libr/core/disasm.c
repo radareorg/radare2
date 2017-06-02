@@ -2701,7 +2701,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						str[0] = '"';
 						flag = str;
 						int str_len = strlen (str);
-						if (str_len + 3 < sizeof (str)) {
+						if (str_len + 3 > sizeof (str)) {
 							str_len = sizeof (str) - 4;
 						}
 						strcpy (str + str_len, "\"");
