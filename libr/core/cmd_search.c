@@ -326,6 +326,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (json)? 3: 1;
 		const char *type = "hexpair";
+		bool escaped = false;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 		{
@@ -343,7 +344,12 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			}
 			free (buf);
 			if (json) {
-				s = r_str_newf ("%s%s%s", pre, wrd, pos);
+				char *pre_esc = r_str_escape (pre);
+				char *pos_esc = r_str_escape (pos);
+				s = r_str_newf ("%s%s%s", pre_esc, wrd, pos_esc);
+				escaped = true;
+				free (pre_esc);
+				free (pos_esc);
 #if 0
 				char *msg = r_str_newf ("%s%s%s", pre, wrd, pos);
 				s = r_base64_encode_dyn (msg, -1);
@@ -394,10 +400,12 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (!first_hit) {
 				r_cons_printf (",");
 			}
-			char *es = r_str_escape (s);
+			char *es = escaped ? s : r_str_escape (s);
 			r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
 				base_addr + addr, kw->kwidx, type, es);
-			free (es);
+			if (!escaped) {
+				free (es);
+			}
 		} else {
 			r_cons_printf ("0x%08"PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
