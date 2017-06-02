@@ -8,6 +8,7 @@
 #include <btree.h>
 #include <r_regex.h>
 #include <r_list.h> // radare linked list
+#include <r_skiplist.h> // skiplist
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <r_th.h>
 #if !__WINDOWS__
