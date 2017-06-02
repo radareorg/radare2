@@ -1191,8 +1191,42 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
+static void prepare_intgrep(char *cmd, const char *quotestr)
+{
+	char *ptr;
+	int len = strlen (cmd);
+
+	//  search and modify '~str~?' into '~?str'
+	if (len > 4 && r_str_endswith (cmd, "~?") && cmd[len - 3] != '\\') {
+		// try to find second '~' occurence
+		cmd[len - 2] = '\0';
+		ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
+		if (ptr && ptr > cmd && *(ptr - 1) != '\\') {
+			memmove (ptr + 2, ptr + 1, strlen (ptr + 1));
+			ptr[1] = '?';
+		} else {
+			// second '~' is not finded, restore original '~'
+			cmd[len - 2] = '~';
+		}
+	}
+
+	/* grep the content */
+	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
+	if (ptr && ptr > cmd) {
+		char *escape = ptr - 1;
+		if (*escape == '\\') {
+			memmove (escape, ptr, strlen (escape));
+			return;
+		}
+	}
+	if (ptr) {
+		*ptr++ = '\0';
+		cmd = r_str_chop (cmd);
+		r_cons_grep (ptr);
+	}
+}
+
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-	char *_ptr;
 #if __UNIX__ || __CYGWIN__
 	int stdout_fd, fds[2];
 	int child;
@@ -1211,11 +1245,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_config_set_i (core->config, "scr.color", 0);
 	}
 	if (*shell_cmd=='!') {
-		_ptr = (char *)r_str_lastbut (shell_cmd, '~', "\"");
-		if (_ptr) {
-			*_ptr = '\0';
-			_ptr++;
-		}
+		prepare_intgrep (shell_cmd, "\"");
 		olen = 0;
 		out = NULL;
 		// TODO: implement foo
@@ -1223,9 +1253,6 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_sys_cmd_str_full (shell_cmd + 1, str, &out, &olen, NULL);
 		free (str);
 		r_cons_memcat (out, olen);
-		if (_ptr) {
-			r_cons_grep (_ptr);
-		}
 		free (out);
 		ret = 0;
 	}
@@ -1657,10 +1684,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				r_cons_break_push (NULL, NULL);
 				recursive_help (core, cmd);
 				r_cons_break_pop ();
-				//grep the content
-				if (ptr[2] == '~') {
-					r_cons_grep (ptr + 3);
-				}
+				prepare_intgrep (ptr + 2, "`");
 				if (scr_html != -1) {
 					r_config_set_i (core->config, "scr.html", scr_html);
 				}
@@ -1862,23 +1886,12 @@ next2:
 	// TODO must honor " and `
 	core->fixedblock = false;
 
-	/* grep the content */
-	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
-	if (ptr && ptr>cmd) {
-		char *escape = ptr - 1;
-		if (*escape == '\\') {
-			memmove (escape, ptr, strlen (escape));
-			ptr = NULL;
-		}
-	} else if (ptr == cmd && *ptr && ptr[1] == '?') {
+	if (r_str_endswith (cmd, "~?") && cmd[2] == '\0') {
 		r_cons_grep_help ();
-		return  true;
+		return true;
 	}
-	if (ptr && *cmd != '.') {
-		*ptr = '\0';
-		ptr++;
-		cmd = r_str_chop (cmd);
-		r_cons_grep (ptr);
+	if (*cmd != '.') {
+		prepare_intgrep (cmd, quotestr);
 	}
 
 	/* temporary seek commands */
