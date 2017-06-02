@@ -134,7 +134,7 @@ typedef struct r_disam_options_t {
 	bool show_varsum;
 	int midflags;
 	bool midcursor;
-	bool show_noisy_comments;
+	bool show_noisy;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -496,7 +496,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
-	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");
+	ds->show_noisy = r_config_get_i (core->config, "asm.noisy");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -2418,13 +2418,19 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			} else {
 				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
+					char *guess = NULL;
 					ALIGN;
 					if (delta > 0) {
 						ds_comment (ds, true, "; %s+0x%x%s", f->name, delta, nl);
 					} else if (delta < 0) {
 						ds_comment (ds, true, "; %s-0x%x%s", f->name, -delta, nl);
-					} else {
+					} else if (ds->show_noisy || !ds->show_calls
+						   || (!r_anal_type_func_exist (core->anal, f->name)
+						       && !(guess = r_anal_type_func_guess (core->anal, f->name)))) {
 						ds_comment (ds, true, "; %s%s", f->name, nl);
+					}
+					if (guess) {
+						free (guess);
 					}
 				}
 			}
@@ -2613,7 +2619,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 }
 
 static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
-	if (ds->show_noisy_comments || strncmp (name, "str.", 4)) {
+	if (ds->show_noisy || strncmp (name, "str.", 4)) {
 		return false;
 	}
 	ut64 refaddr = ds->analop.ptr;

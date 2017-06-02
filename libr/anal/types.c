@@ -299,14 +299,11 @@ R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i
 
 #define MIN_MATCH_LEN 4
 
-// TODO: Future optimizations
-// - symbol names are long and noisy, reduce searchspace for match here
-//   by preprocessing to delete noise, as much as we can.
-// - We ignore all func.*, but thats maybe most of sdb entries
-//   could maybe eliminate this work (strcmp).
 R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
-	int j = 0, offset = 0, n;
+	int offset = 0;
 	char *str = func_name;
+	const char *last_dot;
+	char *last_underline;
 
 	if (!func_name) {
 		return NULL;
@@ -323,24 +320,51 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 			return NULL;
 		}
 	}
-	// strip r2 prefixes (sym, sym.imp, etc')
-	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') {
-		offset+=4;
+
+	// strip r2 prefixes (sym, sym.imp etc)
+	last_dot = r_str_lchr (str, '.');
+	if (last_dot) {
+		offset += last_dot - str + 1;
 	}
+
+	// sub. and sym.: strip dll_ prefix
+	if ((!strncmp (str, "sub.", 4) || !strncmp (str, "sym.", 4))
+	    && !strncmp (&str[offset], "dll_", 4)) {
+		offset += 4;
+	}
+
+	// sym.: strip underscore prefix
+	if (!strncmp (str, "sym._", 5)) {
+		offset += 1;
+	}
+
 	slen -= offset;
 	str = strdup (&func_name[offset]);
-	for (n = slen; n >= MIN_MATCH_LEN; --n) {
-		for (j = 0; j < slen - (n - 1); ++j) {
-			char saved = str[j + n];
-			str[j + n] = 0;
-			if (sdb_exists (anal->sdb_types, &str[j])) {
-				const char *res = sdb_const_get (anal->sdb_types, &str[j], 0);
-				bool is_func = res && !strcmp ("func", res);
-				if (is_func) {
-					return strdup (&str[j]);
-				}
+	if (!str) {
+		return NULL;
+	}
+
+	// strip index suffix
+	last_underline = (char *) r_str_lchr (str, '_');
+	if (last_underline) {
+		bool has_index_suffix = true;
+		const char *suffix_char = last_underline + 1;
+		for(; *suffix_char; suffix_char++) {
+			if (!IS_DIGIT (*suffix_char)) {
+				has_index_suffix = false;
+				break;
 			}
-			str[j + n] = saved;
+		}
+		if (has_index_suffix) {
+			*last_underline = 0;
+			slen = strlen (str);
+		}
+	}
+
+	if (slen >= MIN_MATCH_LEN && sdb_exists (anal->sdb_types, str)) {
+		const char *res = sdb_const_get (anal->sdb_types, str, 0);
+		if (res) {
+			return str;
 		}
 	}
 	return NULL;
