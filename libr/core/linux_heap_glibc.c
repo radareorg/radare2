@@ -759,18 +759,37 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	int w, h;
 	GHT top_size = GHT_MAX;
 
-	if (!core || !core->dbg || !core->dbg->maps) {
+	if (!core || !core->dbg || !core->config || !core->dbg->maps) {
 		return;
 	}
+	RConfigHold *hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return;
+	}
+
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
+	if (!can) {
+		r_config_hold_free (hc);
+	}
+	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
+	core->cons->use_utf8 = r_config_get_i (core->config, "scr.utf8");
 	RAGraph *g = r_agraph_new (can);
+	if (!g) {
+		r_cons_canvas_free (can);
+		r_config_restore (hc);
+		r_config_hold_free (hc);
+		return;
+	}
+	g->layout = r_config_get_i (core->config, "graph.layout");
 	RANode *top = R_EMPTY, *chunk_node = R_EMPTY, *prev_node = R_EMPTY;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk)), *prev_c = R_NEW0 (GH(RHeapChunk));
 
 	if (!cnk || !prev_c) {
-		free (can);
+		r_cons_canvas_free (can);
+		r_config_restore (hc);
+		r_config_hold_free (hc);
 		free (cnk);
 		free (prev_c);
 		free (g);
@@ -788,7 +807,9 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	*initial_brk = (brk_start >> 12) << 12;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No Heap section\n");
-		free (can);
+		r_cons_canvas_free (can);
+		r_config_restore (hc);
+		r_config_hold_free (hc);
 		free (cnk);
 		free (prev_c);
 		free (g);
@@ -834,9 +855,11 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 		free (node_title);
 	}
 	r_agraph_print (g);
+	r_cons_canvas_free (can);
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 	free (cnk);
 	free (g);
-	free (can);
 	free (prev_c);
 	free (top_data);
 	free (top_title);
