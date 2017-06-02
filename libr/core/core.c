@@ -628,33 +628,20 @@ static const char *radare_argv[] = {
 	NULL
 };
 
-static int getsdelta(const char *data) {
-	int i;
-	for (i = 1; data[i]; i++) {
-		if (data[i] == ' ') {
-			return i + 1;
-		}
-	}
-	return 0;
-}
-
 // XXX: SO MANY MEMORY LEAKS HERE
-static int autocompleteOpenfile(RLine *line, const char **paths, int line_delta) {
+static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) {
 	RList *list;
 	RListIter *iter;
 	char *str;
-	int n = 0, i = 0, isroot = 0, iscwd = 0, pfree = 0;
-
-	int sdelta = getsdelta (line->buffer.data + line_delta) + line_delta;
-	char *path = sdelta > 0 ? strdup (line->buffer.data + sdelta): r_sys_getdir ();
-
-	char *p = (char *)r_str_lchr (path, '/');
+	int n = 0, isroot = 0, iscwd = 0, pfree = 0, i = argv_idx;
+	char *lpath = strdup (path);
+	char *p = (char *)r_str_lchr (lpath, '/');
 	if (p) {
-		if (p == path) { // ^/
+		if (p == lpath) { // ^/
 			isroot = 1;
 			*p = 0;
 			p++;
-		} else if (p==path + 1) { // ^./
+		} else if (p==lpath + 1) { // ^./
 			*p = 0;
 			iscwd = 1;
 			p++;
@@ -665,9 +652,9 @@ static int autocompleteOpenfile(RLine *line, const char **paths, int line_delta)
 	} else {
 		iscwd = 1;
 		pfree = 1;
-		p = strdup (path);
-		free (path);
-		path = strdup (".");
+		p = strdup (lpath);
+		free (lpath);
+		lpath = strdup (".");
 	}
 	if (pfree) {
 		if (p) {
@@ -684,36 +671,36 @@ static int autocompleteOpenfile(RLine *line, const char **paths, int line_delta)
 	if (iscwd) {
 		list = r_sys_dir ("./");
 	} else if (isroot) {
-		const char *lastslash = r_str_lchr (path, '/');
+		const char *lastslash = r_str_lchr (lpath, '/');
 		if (lastslash && lastslash[1]) {
-			list = r_sys_dir (path);
+			list = r_sys_dir (lpath);
 		} else {
 			list = r_sys_dir ("/");
 		}
 	} else {
-		if (*path=='~') { // if implicit home
-			char *lala = r_str_home (path + 1);
-			free (path);
-			path = lala;
-		} else if (*path!='.' && *path!='/') { // ifnot@home
-			char *o = malloc (strlen (path) + 4);
+		if (*lpath=='~') { // if implicit home
+			char *lala = r_str_home (lpath + 1);
+			free (lpath);
+			lpath = lala;
+		} else if (*lpath!='.' && *lpath!='/') { // ifnot@home
+			char *o = malloc (strlen (lpath) + 4);
 			memcpy (o, "./", 2);
 			p = o+2;
-			n = strlen (path);
-			memcpy (o + 2, path, strlen (path) + 1);
-			free (path);
-			path = o;
+			n = strlen (lpath);
+			memcpy (o + 2, lpath, strlen (lpath) + 1);
+			free (lpath);
+			lpath = o;
 		}
-		list = p? r_sys_dir (path): NULL;
+		list = p? r_sys_dir (lpath): NULL;
 	}
 	if (list) {
-		//	bool isroot = !strcmp (path, "/");
+		//	bool isroot = !strcmp (lpath, "/");
 		r_list_foreach (list, iter, str) {
 			if (*str == '.') { // also list hidden files
 				continue;
 			}
 			if (!p || !*p || !strncmp (str, p, n)) {
-				tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
+				tmp_argv[i++] = r_str_newf ("%s/%s", lpath, str);
 				if (i == TMP_ARGV_SZ - 1) {
 					i--;
 					break;
@@ -722,18 +709,54 @@ static int autocompleteOpenfile(RLine *line, const char **paths, int line_delta)
 		}
 		r_list_purge (list);
 		free (list);
-	} else {
-		eprintf ("\nInvalid directory (%s)\n", path);
 	}
 	tmp_argv[i] = NULL;
 	line->completion.argc = i;
 	line->completion.argv = tmp_argv;
 
-	free (path);
+	free (lpath);
 	if (pfree)
 		free (p);
 
 	return i;
+}
+
+static void autocompleteFilename(RLine *line, char **paths, int narg) {
+	char *args = NULL, *input = NULL;
+	int n = 0, i = 0;
+
+	args = r_str_new (line->buffer.data);
+	if (!args) {
+		goto out;
+	}
+
+	n = r_str_word_set0 (args);
+	if (n < narg) {
+		input = r_sys_getdir ();
+	} else {
+		input = strdup (r_str_word_get0 (args, narg));
+	}
+	if (!input) {
+		goto out;
+	}
+
+	int argv_idx = autocompleteProcessPath (line, r_str_trim_const (input), 0);
+
+	if (input[0] == '/' || input[0] == '.' || !paths) {
+		goto out;
+	}
+
+	for (i = 0; paths[i]; i ++) {
+		char *buf = r_str_newf ("%s%s%s", paths[i], R_SYS_DIR, input);
+		if (!buf) {
+			break;
+		}
+		argv_idx += autocompleteProcessPath (line, buf, argv_idx);
+	}
+
+out:
+	free (args);
+	free (input);
 }
 
 #define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
@@ -763,7 +786,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
 			if (strchr (line->buffer.data + 7, ' ')) {
-				autocompleteOpenfile (line, NULL, 7);
+				autocompleteFilename (line, NULL, 2);
 			} else {
 				int chr = 7;
 				int j = 0;
@@ -781,7 +804,7 @@ static int autocomplete(RLine *line) {
 			}
 		} else if (!strncmp (line->buffer.data, "ec ", 3)) {
 			if (strchr (line->buffer.data + 3, ' ')) {
-				autocompleteOpenfile (line, NULL, 3);
+				autocompleteFilename (line, NULL, 2);
 			} else {
 				int chr = 3;
 				int j = 0;
@@ -961,10 +984,13 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "pm ", 3)
 		|| !strncmp (line->buffer.data, "dml ", 4)
 		|| !strncmp (line->buffer.data, "/m ", 3)) {
-			autocompleteOpenfile (line, NULL, 0);
+			autocompleteFilename (line, NULL, 1);
 		} else if (!strncmp (line->buffer.data, "zo ", 3)
 		|| !strncmp (line->buffer.data, "zoz ", 4)) {
-			autocompleteOpenfile (line, NULL, 0);
+			char *zignpath = r_file_abspath (core->anal->zign_path);
+			char *paths[2] = { zignpath, NULL };
+			autocompleteFilename (line, paths, 1);
+			free (zignpath);
 		} else if ((!strncmp (line->buffer.data, ".(", 2))  ||
 		   (!strncmp (line->buffer.data, "(-", 2))) {
 			const char *str = line->buffer.data;
