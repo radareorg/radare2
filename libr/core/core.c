@@ -732,26 +732,28 @@ static void autocompleteFilename(RLine *line, char **paths, int narg) {
 
 	n = r_str_word_set0 (args);
 	if (n < narg) {
-		input = r_sys_getdir ();
-	} else {
-		input = strdup (r_str_word_get0 (args, narg));
-	}
-	if (!input) {
 		goto out;
 	}
 
-	int argv_idx = autocompleteProcessPath (line, r_str_trim_const (input), 0);
+	input = strdup (r_str_word_get0 (args, narg));
+	if (!input) {
+		goto out;
+	}
+	const char *tinput = r_str_trim_const (input);
+
+	int argv_idx = autocompleteProcessPath (line, tinput, 0);
 
 	if (input[0] == '/' || input[0] == '.' || !paths) {
 		goto out;
 	}
 
 	for (i = 0; paths[i]; i ++) {
-		char *buf = r_str_newf ("%s%s%s", paths[i], R_SYS_DIR, input);
+		char *buf = r_str_newf ("%s%s%s", paths[i], R_SYS_DIR, tinput);
 		if (!buf) {
 			break;
 		}
 		argv_idx += autocompleteProcessPath (line, buf, argv_idx);
+		free (buf);
 	}
 
 out:
@@ -987,7 +989,10 @@ static int autocomplete(RLine *line) {
 			autocompleteFilename (line, NULL, 1);
 		} else if (!strncmp (line->buffer.data, "zo ", 3)
 		|| !strncmp (line->buffer.data, "zoz ", 4)) {
-			char *zignpath = r_file_abspath (core->anal->zign_path);
+			char *zignpath = NULL;
+			if (core->anal->zign_path && core->anal->zign_path[0]) {
+				zignpath = r_file_abspath (core->anal->zign_path);
+			}
 			char *paths[2] = { zignpath, NULL };
 			autocompleteFilename (line, paths, 1);
 			free (zignpath);
