@@ -179,8 +179,8 @@ R2PM_Search() {
 
 R2PM_TGZ() {
 	URL="$1"
+	TARBALL="`basename $1`"
 	if [ -z "$2" ]; then
-		TARBALL="`basename $1`"
 		DIR="`echo ${TARBALL} | awk -F .t '{print $1}'`"
 	else
 		DIR="$2"
