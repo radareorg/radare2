@@ -2740,7 +2740,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 	if (!cstr || *cstr == '|') {
 		// raw comment syntax
-		return false;
+		goto beach; // false;
 	}
 	if (!strncmp (cstr, "/*", 2)) {
 		if (r_sandbox_enable (0)) {
@@ -2793,6 +2793,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		}
 		rcmd = ptr + 1;
 	}
+	r_th_lock_leave (core->lock);
+	/* run pending analysis commands */
 	if (core->anal->cmdtail) {
 		char *res = core->anal->cmdtail;
 		core->anal->cmdtail = NULL;
