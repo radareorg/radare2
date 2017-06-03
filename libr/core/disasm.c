@@ -64,6 +64,7 @@ typedef struct r_disam_options_t {
 	RCore *core;
 	char str[1024], strsub[1024];
 	int offless;
+	bool immstr;
 	bool use_esil;
 	bool show_color;
 	bool show_color_bytes;
@@ -431,6 +432,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
+	ds->immstr = r_config_get_i (core->config, "asm.immstr");
 	ds->offless = r_config_get_i (core->config, "asm.offless");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
@@ -2787,12 +2789,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
+
 	ds->chref = 0;
-	if (((char)v > 0) && v >= '!' && v <= '~') {
-		char ch = v;
-		ds->chref = ch;
+	if ((char)v > 0 && (char)v >= '!' && (char)v <= '~') {
+		ds->chref = (char)v;
 		ALIGN;
-		ds_comment (ds, true, "; '%c'%s", ch, nl);
+		if (!ds->immstr) {
+			ds_comment (ds, true, "; '%c'%s", (char)v, nl);
+		} else {
+			char *str = r_str_from_ut64 (r_read_ble64(&v, core->print->big_endian));
+			ds_comment (ds, true, "; '%s'%s", str, nl);
+			free (str);
+		}
 	}
 	RList *list = NULL;
 	RListIter *iter;

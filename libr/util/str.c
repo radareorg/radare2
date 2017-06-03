@@ -3073,3 +3073,16 @@ R_API wchar_t* r_str_mb_to_wc(const char *buf) {
 	}
 	return r_str_mb_to_wc_l (buf, strlen (buf));
 }
+
+R_API char *r_str_from_ut64(ut64 val) {
+	int i = 0;
+	char *v = (char *)&val;
+	char *str = (char *)calloc(1, 65);
+	if (!str) {
+		return NULL;
+	}
+	while (i < 64 && *v && *v >= '!' && *v <= '~') {
+		str[i++] = *v++;
+	}
+	return str;
+}
