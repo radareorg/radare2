@@ -628,95 +628,71 @@ static const char *radare_argv[] = {
 	NULL
 };
 
-// XXX: SO MANY MEMORY LEAKS HERE
 static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) {
+	char *lpath = NULL, *dirname = NULL , *basename = NULL, *filename = NULL, *p = NULL;
+	int n = 0, i = argv_idx;
 	RList *list;
 	RListIter *iter;
-	char *str;
-	int n = 0, isroot = 0, iscwd = 0, pfree = 0, i = argv_idx;
-	char *lpath = strdup (path);
-	char *p = (char *)r_str_lchr (lpath, '/');
+
+	if (!path) {
+		goto out;
+	}
+
+	lpath = strdup (path);
+	p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
-		if (p == lpath) { // ^/
-			isroot = 1;
-			*p = 0;
-			p++;
-		} else if (p==lpath + 1) { // ^./
-			*p = 0;
-			iscwd = 1;
-			p++;
-		} else { // *
-			*p = 0;
-			p++;
-		}
-	} else {
-		iscwd = 1;
-		pfree = 1;
-		p = strdup (lpath);
-		free (lpath);
-		lpath = strdup (".");
-	}
-	if (pfree) {
-		if (p) {
-			if (*p) {
-				n = strlen (p);
-			} else {
-				free (p);
-				p = strdup ("");
+		*p = 0;
+		if (p == lpath) { // /xxx
+			dirname = strdup ("/");
+		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
+			dirname = r_str_home (lpath + 2);
+		} else if (lpath[0] == '~') { // ~/xxx
+			char *home;
+			if (!(home = r_str_home (NULL))) {
+				goto out;
 			}
+			dirname = r_str_newf ("%s%s", home, R_SYS_DIR);
+			free (home);
+		} else if (lpath[0] == '.' || lpath[0] == '/' ) { // ./xxx/yyy || /xxx/yyy
+			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
+		} else { // xxx/yyy
+			dirname = r_str_newf (".%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
 		}
-	} else {
-		if (p) { if (*p) n = strlen (p); else p = ""; }
+		basename = strdup (p + 1);
+	} else { // xxx
+		dirname = r_str_newf (".%s", R_SYS_DIR);
+		basename = strdup (lpath);
 	}
-	if (iscwd) {
-		list = r_sys_dir ("./");
-	} else if (isroot) {
-		const char *lastslash = r_str_lchr (lpath, '/');
-		if (lastslash && lastslash[1]) {
-			list = r_sys_dir (lpath);
-		} else {
-			list = r_sys_dir ("/");
-		}
-	} else {
-		if (*lpath=='~') { // if implicit home
-			char *lala = r_str_home (lpath + 1);
-			free (lpath);
-			lpath = lala;
-		} else if (*lpath!='.' && *lpath!='/') { // ifnot@home
-			char *o = malloc (strlen (lpath) + 4);
-			memcpy (o, "./", 2);
-			p = o+2;
-			n = strlen (lpath);
-			memcpy (o + 2, lpath, strlen (lpath) + 1);
-			free (lpath);
-			lpath = o;
-		}
-		list = p? r_sys_dir (lpath): NULL;
+
+	if (!dirname || !basename) {
+		goto out;
 	}
+
+	list= r_sys_dir (dirname);
+	n = strlen (basename);
 	if (list) {
-		//	bool isroot = !strcmp (lpath, "/");
-		r_list_foreach (list, iter, str) {
-			if (*str == '.') { // also list hidden files
+		r_list_foreach (list, iter, filename) {
+			if (*filename == '.') {
 				continue;
 			}
-			if (!p || !*p || !strncmp (str, p, n)) {
-				tmp_argv[i++] = r_str_newf ("%s/%s", lpath, str);
+			if (!basename || !basename[0] || !strncmp (filename, basename, n)) {
+				tmp_argv[i++] = r_str_newf ("%s%s", dirname, filename);
 				if (i == TMP_ARGV_SZ - 1) {
 					i--;
 					break;
 				}
 			}
 		}
-		r_list_purge (list);
-		free (list);
+		r_list_free (list);
 	}
 	tmp_argv[i] = NULL;
 	line->completion.argc = i;
 	line->completion.argv = tmp_argv;
 
+out:
 	free (lpath);
-	if (pfree)
-		free (p);
+	free (dirname);
+	free (basename);
 
 	return i;
 }
