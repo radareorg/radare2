@@ -40,7 +40,7 @@ environment:
     #  CYG_CACHE: 'C:\cygwin\var\cache\setup'
     #  CYG_BASH: 'C:\cygwin\bin\bash'
     #  ZIP_ROOT: '%APPVEYOR_BUILD_FOLDER%\zip'
-  ARTIFACT_ZIP: 'radare2-%builder%-%APPVEYOR_BUILD_VERSION%.zip'
+  ARTIFACT_ZIP: 'radare2-git.zip'
 
 # Init
 init:
