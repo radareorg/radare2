@@ -629,7 +629,8 @@ static const char *radare_argv[] = {
 };
 
 static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) {
-	char *lpath = NULL, *dirname = NULL , *basename = NULL, *filename = NULL, *p = NULL;
+	char *lpath = NULL, *dirname = NULL , *basename = NULL;
+	char *home, *filename = NULL, *p = NULL;
 	int n = 0, i = argv_idx;
 	RList *list;
 	RListIter *iter;
@@ -647,7 +648,6 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = r_str_home (lpath + 2);
 		} else if (lpath[0] == '~') { // ~/xxx
-			char *home;
 			if (!(home = r_str_home (NULL))) {
 				goto out;
 			}
