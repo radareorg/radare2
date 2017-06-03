@@ -2,6 +2,10 @@
 IF EXIST shlr\capstone GOTO START
 ECHO [ R2 MESON CLONING CAPSTONE ]
 git clone -b next --depth 10 http://github.com/aquynh/capstone.git shlr\capstone
+cd shlr\capstone
+rem FOR /r %%p IN (..\capstone-patches\*) DO git apply %%p
+git apply ..\capstone-patches\add-mips2.patch
+cd ..\..
 :START
 IF "%1"=="-p" GOTO BUILDPROJECT
 IF "%1"=="-r" GOTO REBUILD
