@@ -1048,7 +1048,7 @@ repeat:
 	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
 		ch = '0';
 	}
-	if (IS_DIGIT (ch) && (ch - 0x30) < count) {
+	if (IS_DIGIT (ch) && (ch - 0x30) < count && (ch > 0x30)) {
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		r_core_seek (core, references[ch - 0x30], false);
 		ret = 1;
