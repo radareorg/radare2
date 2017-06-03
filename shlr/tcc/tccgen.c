@@ -1868,7 +1868,6 @@ ST_FUNC void unary(void)
         if (!(!strncmp(tcc_state->arch, "x86", 3) && tcc_state->bits == 64 &&
 			!strncmp(tcc_state->os, "windows", 7))) {
             CType type;
-            int bt;
             next();
             skip('(');
             parse_type(&type);
