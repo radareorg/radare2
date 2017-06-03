@@ -721,7 +721,7 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 	return i;
 }
 
-static void autocompleteFilename(RLine *line, char **paths, int narg) {
+static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
 	char *args = NULL, *input = NULL;
 	int n = 0, i = 0;
 
@@ -743,12 +743,12 @@ static void autocompleteFilename(RLine *line, char **paths, int narg) {
 
 	int argv_idx = autocompleteProcessPath (line, tinput, 0);
 
-	if (input[0] == '/' || input[0] == '.' || !paths) {
+	if (input[0] == '/' || input[0] == '.' || !extra_paths) {
 		goto out;
 	}
 
-	for (i = 0; paths[i]; i ++) {
-		char *buf = r_str_newf ("%s%s%s", paths[i], R_SYS_DIR, tinput);
+	for (i = 0; extra_paths[i]; i ++) {
+		char *buf = r_str_newf ("%s%s%s", extra_paths[i], R_SYS_DIR, tinput);
 		if (!buf) {
 			break;
 		}
@@ -992,10 +992,12 @@ static int autocomplete(RLine *line) {
 			char *zignpath = NULL;
 			if (core->anal->zign_path && core->anal->zign_path[0]) {
 				zignpath = r_file_abspath (core->anal->zign_path);
+				char *paths[2] = { zignpath, NULL };
+				autocompleteFilename (line, paths, 1);
+				free (zignpath);
+			} else {
+				autocompleteFilename (line, NULL, 1);
 			}
-			char *paths[2] = { zignpath, NULL };
-			autocompleteFilename (line, paths, 1);
-			free (zignpath);
 		} else if ((!strncmp (line->buffer.data, ".(", 2))  ||
 		   (!strncmp (line->buffer.data, "(-", 2))) {
 			const char *str = line->buffer.data;
