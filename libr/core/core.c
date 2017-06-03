@@ -630,7 +630,7 @@ static const char *radare_argv[] = {
 
 static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
-	char *home, *filename = NULL, *p = NULL;
+	char *home = NULL, *filename = NULL, *p = NULL;
 	int n = 0, i = argv_idx;
 	RList *list;
 	RListIter *iter;
@@ -639,12 +639,12 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 		goto out;
 	}
 
-	lpath = strdup (path);
+	lpath = r_str_new (path);
 	p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
-			dirname = strdup ("/");
+			dirname = r_str_new ("/");
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = r_str_home (lpath + 2);
 		} else if (lpath[0] == '~') { // ~/xxx
@@ -658,10 +658,10 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 		} else { // xxx/yyy
 			dirname = r_str_newf (".%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
 		}
-		basename = strdup (p + 1);
+		basename = r_str_new (p + 1);
 	} else { // xxx
 		dirname = r_str_newf (".%s", R_SYS_DIR);
-		basename = strdup (lpath);
+		basename = r_str_new (lpath);
 	}
 
 	if (!dirname || !basename) {
@@ -675,7 +675,7 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 			if (*filename == '.') {
 				continue;
 			}
-			if (!basename || !basename[0] || !strncmp (filename, basename, n)) {
+			if (!basename[0] || !strncmp (filename, basename, n)) {
 				tmp_argv[i++] = r_str_newf ("%s%s", dirname, filename);
 				if (i == TMP_ARGV_SZ - 1) {
 					i--;
@@ -711,7 +711,7 @@ static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
 		goto out;
 	}
 
-	input = strdup (r_str_word_get0 (args, narg));
+	input = r_str_new (r_str_word_get0 (args, narg));
 	if (!input) {
 		goto out;
 	}
@@ -965,9 +965,8 @@ static int autocomplete(RLine *line) {
 			autocompleteFilename (line, NULL, 1);
 		} else if (!strncmp (line->buffer.data, "zo ", 3)
 		|| !strncmp (line->buffer.data, "zoz ", 4)) {
-			char *zignpath = NULL;
 			if (core->anal->zign_path && core->anal->zign_path[0]) {
-				zignpath = r_file_abspath (core->anal->zign_path);
+				char *zignpath = r_file_abspath (core->anal->zign_path);
 				char *paths[2] = { zignpath, NULL };
 				autocompleteFilename (line, paths, 1);
 				free (zignpath);
