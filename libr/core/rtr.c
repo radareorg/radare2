@@ -941,8 +941,7 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 				case 'r': // dptr -> return current tid as int
 					return core->dbg->tid;
 				default:
-					r_core_cmd (core, cmd, 0);
-					return 0;
+					return r_core_cmd (core, cmd, 0);
 				}
 			}
 			break;
@@ -1005,6 +1004,8 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 				}
 			}
 			return ret;
+		default:
+			return r_core_cmd (core, cmd, 0);
 		}
 		break;
 	case 'm':

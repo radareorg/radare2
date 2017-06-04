@@ -36,6 +36,42 @@ static int _server_handle_qTStatus(libgdbr_t *g) {
 	return send_msg (g, message);
 }
 
+static int _server_handle_s(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	char message[64];
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	if (g->data_len > 1) {
+		// We don't handle s[addr] packet
+		return send_msg (g, "E01");
+	}
+	if (cmd_cb (core_ptr, "ds", NULL, 0) < 0) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	// TODO This packet should specify why we stopped. Right now only for trap
+	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (core_ptr, "dptr", NULL, 0));
+	return send_msg (g, message);
+}
+
+static int _server_handle_c(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	char message[64];
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	if (g->data_len > 1) {
+		// We don't handle s[addr] packet
+		return send_msg (g, "E01");
+	}
+	if (cmd_cb (core_ptr, "dc", NULL, 0) < 0) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	// TODO This packet should specify why we stopped. Right now only for trap
+	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (core_ptr, "dptr", NULL, 0));
+	return send_msg (g, message);
+}
+
 static int _server_handle_ques(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
 	// TODO This packet should specify why we stopped. Right now only for trap
 	char message[64];
@@ -77,6 +113,75 @@ static int _server_handle_vKill(libgdbr_t *g, int (*cmd_cb) (void*, const char*,
 	// TODO handle killing of pid
 	send_msg (g, "OK");
 	return -1;
+}
+
+static int _server_handle_z(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	char set; // Z = set, z = remove
+	int type;
+	ut64 addr;
+	char cmd[64];
+	sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr);
+	if (type != 0) {
+		// TODO handle hw breakpoints and watchpoints
+		return send_msg (g, "E01");
+	}
+	switch (set) {
+	case 'Z':
+		// Set
+		snprintf (cmd, sizeof (cmd) - 1, "db 0x%"PFMT64x, addr);
+		break;
+	case 'z':
+		// Remove
+		snprintf (cmd, sizeof (cmd) - 1, "db- 0x%"PFMT64x, addr);
+		break;
+	default:
+		return send_msg (g, "E01");
+	}
+	if (cmd_cb (core_ptr, cmd, NULL, 0) < 0) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	return send_msg (g, "OK");
+}
+
+static int _server_handle_vCont(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	char *action = NULL;
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	g->data[g->data_len] = '\0';
+	if (g->data[5] == '?') {
+		// Query about everything we support
+		return send_msg (g, "vCont;c;s");
+	}
+	if (!(action = strtok (g->data, ";"))) {
+		return send_msg (g, "E01");
+	}
+	while (action = strtok (NULL, ";")) {
+		eprintf ("action: %s\n", action);
+		switch (action[0]) {
+		case 's':
+			// TODO handle thread selections
+			if (cmd_cb (core_ptr, "ds", NULL, 0) < 0) {
+				send_msg (g, "E01");
+				return -1;
+			}
+			return send_msg (g, "OK");
+		case 'c':
+			// TODO handle thread selections
+			if (cmd_cb (core_ptr, "dc", NULL, 0) < 0) {
+				send_msg (g, "E01");
+				return -1;
+			}
+			return send_msg (g, "OK");
+		default:
+			// TODO support others
+			return send_msg (g, "E01");
+		}
+	}
 }
 
 static int _server_handle_qAttached(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
@@ -329,6 +434,30 @@ int gdbr_server_serve(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, si
 		}
 		if (r_str_startswith (g->data, "g") && g->data_len == 1) {
 			if ((ret = _server_handle_g (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "vCont")) {
+			if ((ret = _server_handle_vCont (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (g->data[0] == 'z' || g->data[0] == 'Z') {
+			if ((ret = _server_handle_z (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (g->data[0] == 's') {
+			if ((ret = _server_handle_s (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (g->data[0] == 'c') {
+			if ((ret = _server_handle_c (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
