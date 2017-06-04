@@ -247,7 +247,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 	return true;
 }
 
-static int step_until_inst(RCore *core, const char *instr) {
+static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	RAsmOp asmop;
 	ut8 buf[32];
 	ut64 pc;
@@ -276,9 +276,16 @@ static int step_until_inst(RCore *core, const char *instr) {
 		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
 		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.buf_asm);
 		if (ret > 0) {
-			if (strstr (asmop.buf_asm, instr)) {
-				eprintf ("Stop.\n");
-				break;
+			if (regex) {
+				if (r_regex_match (instr, "e", asmop.buf_asm)) {
+					eprintf ("Stop.\n");
+					break;
+				}
+			} else {
+				if (strstr (asmop.buf_asm, instr)) {
+					eprintf ("Stop.\n");
+					break;
+				}
 			}
 		}
 	}
@@ -3410,7 +3417,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		"dsp", "", "Step into program (skip libs)",
 		"dss", " <num>", "Skip <num> step instructions",
 		"dsu", "[?]<address>", "Step until address",
-		"dsui", " <instr>", "Step until an instruction that matches `instr`",
+		"dsui", "[r] <instr>", "Step until an instruction that matches `instr`, use dsuir for regex match",
 		"dsue", " <esil>", "Step until esil expression matches",
 		"dsuf", " <flag>", "Step until pc == flag matching name",
 		NULL
@@ -3464,7 +3471,12 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			step_until_flag (core, input + 3);
 			break;
 		case 'i':
-			step_until_inst (core, input + 3);
+			if (input[3] == 'r') {
+				step_until_inst (core, input + 4, true);
+			}
+			else {
+				step_until_inst (core, input + 3, false);
+			}
 			break;
 		case 'e':
 			step_until_esil (core, input + 3);
