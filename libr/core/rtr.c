@@ -899,6 +899,7 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 	ut64 reg_value;
 	utX reg_value_big;
 	ut64 m_off;
+	RDebugPid *dbgpid;
 	if (!core_ptr || ! cmd) {
 		return -1;
 	}
@@ -912,9 +913,37 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 				// TODO support multiprocess
 				snprintf (out_buf, max_len - 1, "QC%x", core->dbg->tid);
 				return 0;
-			case 't': // dpt
-				r_core_cmd (core, cmd, 0);
-				return 0;
+			case 't':
+				switch (cmd[3]) {
+				case '\0': // dpt
+					if (!core->dbg->h->threads) {
+						return -1;
+					}
+					if (!(list = core->dbg->h->threads(core->dbg, core->dbg->pid))) {
+						return -1;
+					}
+					memset (out_buf, 0, max_len);
+					out_buf[0] = 'm';
+					ret = 1;
+					r_list_foreach (list, iter, dbgpid) {
+						// Max length of a hex pid = 8?
+						if (ret >= max_len - 9) {
+							break;
+						}
+						snprintf (out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
+						ret = strlen (out_buf);
+					}
+					if (ret > 1) {
+						ret--;
+						out_buf[ret] = '\0';
+					}
+					return 0;
+				case 'r': // dptr -> return current tid as int
+					return core->dbg->tid;
+				default:
+					r_core_cmd (core, cmd, 0);
+					return 0;
+				}
 			}
 			break;
 		case 'r': // dr

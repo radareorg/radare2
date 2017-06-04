@@ -1,6 +1,8 @@
-// Notes:
-// - This conversation (https://www.sourceware.org/ml/gdb/2009-02/msg00100.html) suggests that GDB clients usually ignore error codes
-// - Useful resource, though not to be blindly trusted - http://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
+// Notes and useful links:
+// This conversation (https://www.sourceware.org/ml/gdb/2009-02/msg00100.html) suggests GDB clients usually ignore error codes
+// Useful, but not to be blindly trusted - http://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
+// https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt
+// http://www.cygwin.com/ml/gdb/2008-05/msg00166.html
 
 #include "gdbserver/core.h"
 #include "gdbr_common.h"
@@ -26,11 +28,21 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 
 static int _server_handle_qTStatus(libgdbr_t *g) {
 	int ret;
-	// Trace is not running, and was never run
-	const char *message = "T0;tnotrun:0";
+	// TODO Handle proper reporting of trace status
+	const char *message = "";
 	if ((ret = send_ack (g)) < 0) {
 		return -1;
 	}
+	return send_msg (g, message);
+}
+
+static int _server_handle_ques(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	// TODO This packet should specify why we stopped. Right now only for trap
+	char message[64];
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (core_ptr, "dptr", NULL, 0));
 	return send_msg (g, message);
 }
 
@@ -76,6 +88,9 @@ static int _server_handle_qAttached(libgdbr_t *g, int (*cmd_cb) (void*, const ch
 	return send_msg (g, "0");
 }
 
+// TODO, proper handling of Hg and Hc (right now handled identically)
+
+// Set thread for all operations other than "step" and "continue"
 static int _server_handle_Hg(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
 	// We don't yet support multiprocess. Client is not supposed to send Hgp. If we receive it anyway,
 	// send error
@@ -87,6 +102,10 @@ static int _server_handle_Hg(libgdbr_t *g, int (*cmd_cb) (void*, const char*, ch
 	if (g->data_len <= 2 || isalpha (g->data[2])) {
 		return send_msg (g, "E01");
 	}
+	// Hg-1 = "all threads", Hg0 = "pick any thread"
+	if (g->data[2] == '0' || !strncmp (g->data + 2, "-1", 2)) {
+		return send_msg (g, "OK");
+	}
 	sscanf (g->data + 2, "%x", &tid);
 	snprintf (cmd, sizeof (cmd) - 1, "dpt=%d", tid);
 	// Set thread for future operations
@@ -95,6 +114,58 @@ static int _server_handle_Hg(libgdbr_t *g, int (*cmd_cb) (void*, const char*, ch
 		return -1;
 	}
 	return send_msg (g, "OK");
+}
+
+// Set thread for "step" and "continue"
+static int _server_handle_Hc(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	// Usually this is only sent with Hc-1. Still. Set the threads for next operations
+	char cmd[32];
+	int tid;
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	if (g->data_len <= 2 || isalpha (g->data[2])) {
+		return send_msg (g, "E01");
+	}
+	// Hc-1 = "all threads", Hc0 = "pick any thread"
+	if (g->data[2] == '0' || !strncmp (g->data + 2, "-1", 2)) {
+		return send_msg (g, "OK");
+	}
+	sscanf (g->data + 2, "%x", &tid);
+	snprintf (cmd, sizeof (cmd) - 1, "dpt=%d", tid);
+	// Set thread for future operations
+	if (cmd_cb (core_ptr, cmd, NULL, 0) < 0) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	return send_msg (g, "OK");
+}
+
+static int _server_handle_qfThreadInfo(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	char *buf;
+	int ret;
+	size_t buf_len = 80;
+	if ((ret = send_ack (g)) < 0) {
+		return -1;
+	}
+	if (!(buf = malloc (buf_len))) {
+		return -1;
+	}
+	if ((ret = cmd_cb (core_ptr, "dpt", buf, buf_len)) < 0) {
+		free (buf);
+		return -1;
+	}
+	ret = send_msg (g, buf);
+	free (buf);
+	return ret;
+}
+
+static int _server_handle_qsThreadInfo(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	// TODO handle overflow from qfThreadInfo. Otherwise this won't work with programs with many threads
+	if (send_ack (g) < 0 || send_msg (g, "l") < 0) {
+		return -1;
+	}
+	return 0;
 }
 
 static int _server_handle_g(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
@@ -159,6 +230,21 @@ static int _server_handle_m(libgdbr_t *g, int (*cmd_cb) (void*, const char*, cha
 	return ret;
 }
 
+static int _server_handle_vMustReplyEmpty(libgdbr_t *g) {
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	return send_msg (g, "");
+}
+
+static int _server_handle_qTfV(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	// TODO
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	return send_msg (g, "");
+}
+
 int gdbr_server_serve(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
 	int ret;
 	if (!g) {
@@ -166,6 +252,9 @@ int gdbr_server_serve(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, si
 	}
 	while (1) {
 		read_packet (g);
+		if (g->data_len == 0) {
+			continue;
+		}
 		if (r_str_startswith (g->data, "k")) {
 			return _server_handle_k (g, cmd_cb, core_ptr);
 		}
@@ -196,8 +285,44 @@ int gdbr_server_serve(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, si
 			}
 			continue;
 		}
+		if (r_str_startswith (g->data, "vMustReplyEmpty")) {
+			if ((ret = _server_handle_vMustReplyEmpty (g)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "qTfV")) {
+			if ((ret = _server_handle_qTfV (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "qfThreadInfo")) {
+			if ((ret = _server_handle_qfThreadInfo (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "qsThreadInfo")) {
+			if ((ret = _server_handle_qsThreadInfo (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
 		if (r_str_startswith (g->data, "Hg")) {
 			if ((ret = _server_handle_Hg (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "Hc")) {
+			if ((ret = _server_handle_Hc (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "?")) {
+			if ((ret = _server_handle_ques (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
@@ -213,6 +338,12 @@ int gdbr_server_serve(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, si
 				return ret;
 			}
 			continue;
+		}
+		// Unrecognized packet
+		if (send_ack (g) < 0 || send_msg (g, "") < 0) {
+			g->data[g->data_len] = '\0';
+			eprintf ("Unknown packet: %s\n", g->data);
+			return -1;
 		}
 	};
 	return ret;
