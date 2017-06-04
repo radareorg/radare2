@@ -2607,8 +2607,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 					name_paddr = bin_pe_rva_to_paddr (bin, name_vaddr);
 					if (r_buf_read_at (bin->b, name_paddr, (ut8*) function_name, PE_NAME_LENGTH) < 1) {
 						bprintf ("Warning: read (function name)\n");
-						free (exports);
-						return NULL;
+						exports[i].last = 1;
+						return exports;
 					}
 				} else { // No name export, get the ordinal
 					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + 1);
@@ -2621,9 +2621,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
 				// if forwarder, the VA point to Forwarded name
 				if (r_buf_read_at (bin->b, bin_pe_rva_to_paddr (bin, function_rva), (ut8*) forwarder_name, PE_NAME_LENGTH) < 1) {
-					bprintf ("Warning: read (magic)\n");
-					free (exports);
-					return NULL;
+					exports[i].last = 1;
+					return exports;
 				}
 			} else { // no forwarder export
 				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
@@ -2828,20 +2827,18 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			dll_name_offset = curr_import_dir->Name;
 			paddr = bin_pe_rva_to_paddr (bin, dll_name_offset);
 			if (paddr > bin->size) {
-				return NULL;
+				goto beach;
 			}
 			if (paddr + PE_NAME_LENGTH > bin->size) {
 				rr = r_buf_read_at (bin->b, paddr, (ut8*) dll_name, bin->size - paddr);
 				if (rr != bin->size - paddr) {
-					bprintf ("Warning: read (magic)\n");
-					return NULL;
+					goto beach;
 				}
 				dll_name[bin->size - paddr] = '\0';
 			}else {
 				rr = r_buf_read_at (bin->b, paddr, (ut8*) dll_name, PE_NAME_LENGTH);
 				if (rr != PE_NAME_LENGTH) {
-					bprintf ("Warning: read (magic)\n");
-					return NULL;
+					goto beach;
 				}
 				dll_name[PE_NAME_LENGTH] = '\0';
 			}
@@ -2856,7 +2853,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	off = bin->delay_import_directory_offset;
 	if (off < bin->size && off > 0) {
 		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
-			return NULL;
+			goto beach;
 		}
 		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(bin->b->buf + off);
 		if (!curr_delay_import_dir->Attributes) {
@@ -2870,12 +2867,11 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
 			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
-				return NULL;
+				goto beach;
 			}
 			int rr = r_buf_read_at (bin->b, dll_name_offset, (ut8*) dll_name, PE_NAME_LENGTH);
 			if (rr < 5) {
-				bprintf ("Warning: read (magic)\n");
-				return NULL;
+				goto beach;
 			}
 
 			dll_name[PE_NAME_LENGTH] = '\0';
@@ -2884,13 +2880,12 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 				break;
 			}
 			if ((char*) (curr_delay_import_dir + 2) > (char*) (bin->b->buf + bin->size)) {
-				bprintf ("Warning: malformed pe\n");
-				return NULL;
+				goto beach;
 			}
 			curr_delay_import_dir++;
 		}
 	}
-
+beach:
 	if (nimp) {
 		imps = realloc (imports, (nimp + 1) * sizeof(struct r_bin_pe_import_t));
 		if (!imps) {

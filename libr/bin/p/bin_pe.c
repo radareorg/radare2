@@ -218,10 +218,9 @@ static RList* symbols(RBinFile *arch) {
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
 		    if (!(ptr = R_NEW0 (RBinSymbol))) {

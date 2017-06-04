@@ -3269,7 +3269,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, -1);
 		if (s) {
-			r_cons_printf ("; "); // XXX this should be shown in ds_comment_esil, for some reason it doesnt
+			// XXX this should be shown in ds_comment_esil, for some reason it doesnt
+			r_cons_printf ("; "); 
 			ds_comment_esil (ds, true, "; %s", s);
 			free (s);
 		}
