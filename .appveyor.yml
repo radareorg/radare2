@@ -1,5 +1,5 @@
 # Version format
-version: 1.5.0.{build}-git
+version: unknown-{build}-git
 
 # Skip Github tags
 skip_tags: true
@@ -26,11 +26,9 @@ environment:
       PYTHON: 'C:\\Python36-x64'
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
-      DIST_FOLDER: dist
     # MINGW32 Variables
     - builder: mingw32
       EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
-      DIST_FOLDER: radare2-%builder%-1.6.0-git
     # MSYS2 Variables
     #- builder: msys2
     #  MSYS2_DIR: msys64
@@ -42,15 +40,20 @@ environment:
     #  CYG_CACHE: 'C:\cygwin\var\cache\setup'
     #  CYG_BASH: 'C:\cygwin\bin\bash'
     #  ZIP_ROOT: '%APPVEYOR_BUILD_FOLDER%\zip'
-  ARTIFACT_ZIP: 'radare2-%builder%-%APPVEYOR_BUILD_VERSION%.zip'
 
 # Init
 init:
+  # Build dependant custom commands
   - cmd: "%init_command%"
 
 # Required softwares for building
 install:
-  # TODO Add ninja and meson to cached folder (and capstone)
+  # Update environment variables
+  - ps: $env:r2_version = (Get-Content -Raw -Path package.json | ConvertFrom-Json).version
+  - ps: Update-AppveyorBuild -Version "$env:r2_version-$env:APPVEYOR_BUILD_NUMBER"
+  - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:r2_version"
+  - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
+  # Download required packages
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson && COPY %PYTHON%\Scripts\meson.py meson.py )
   - cmd: if defined NINJA_URL ( powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
 
