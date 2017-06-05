@@ -3807,7 +3807,7 @@ static int cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid (core, input);
 		break;
-	case 'h': // "dh"
+	case 'L': // "dL"
 		if (input[1]=='q') {
 			r_debug_plugin_list (core->dbg, 'q');
 		} else if (input[1]==' ') {
@@ -4073,10 +4073,10 @@ static int cmd_debug(void *data, const char *input) {
 				"dd", "[?]", "File descriptors (!fd in r1)",
 				"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
 				"dg", " <file>", "Generate a core-file (WIP)",
-				"dh", " [handler]", "List or set debugger handler",
 				"dH", " [handler]", "Transplant process to a new handler",
 				"di", "[?]", "Show debugger backend information (See dh)",
 				"dk", "[?]", "List, send, get, set, signal handlers of child",
+				"dL", " [handler]", "List or set debugger handler",
 				"dm", "[?]", "Show memory maps",
 				"do", "[?]", "Open process (reload, alias for 'oo')",
 				"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",

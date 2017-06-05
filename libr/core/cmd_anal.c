@@ -5360,7 +5360,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_clear_line (1);
 			if (*input == 'a') { // "aaa"
 				if (dh_orig && strcmp (dh_orig, "esil")) {
-					r_core_cmd0 (core, "dh esil");
+					r_core_cmd0 (core, "dL esil");
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (should_aav (core)) {
@@ -5417,7 +5417,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				rowlog_done (core);
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
-					r_core_cmdf (core, "dh %s;dpa", dh_orig);
+					r_core_cmdf (core, "dL %s;dpa", dh_orig);
 				}
 			}
 			r_core_seek (core, curseek, 1);
