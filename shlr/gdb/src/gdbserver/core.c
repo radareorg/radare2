@@ -182,6 +182,7 @@ static int _server_handle_vCont(libgdbr_t *g, int (*cmd_cb) (void*, const char*,
 			return send_msg (g, "E01");
 		}
 	}
+	return -1;
 }
 
 static int _server_handle_qAttached(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {

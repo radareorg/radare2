@@ -287,6 +287,10 @@ grub_fshelp_read_file (grub_disk_t disk, grub_fshelp_node_t node,
   if (pos + len > filesize)
     len = filesize - pos;
 
+  if (len < 1 || len == 0xffffffff) {
+    return -1;
+  }
+
   blockcnt = ((len + pos) + blocksize - 1) >>
     (log2blocksize + GRUB_DISK_SECTOR_BITS);
 

@@ -55,6 +55,11 @@ RebuildSdb() {
 	Rebuild libr/util
 }
 
+RebuildFs() {
+	Rebuild shlr/grub
+	Rebuild libr/fs
+}
+
 RebuildBin() {
 	Rebuild libr/bin
 	Rebuild libr/core
@@ -67,6 +72,7 @@ RebuildGdb() {
 }
 
 case "$1" in
+fs)     RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;
