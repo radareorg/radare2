@@ -42,7 +42,7 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 		if (sb.cert_sz >= 0xf0000) return false;
 		if (sb.sign_va < sb.vaddr) return false;
 		if (sb.sign_sz >= 0xf0000) return false;
-		if (sb.load_index < 0x10 || sb.load_index > 0x40) return false; // should be 0x19 ?
+		if (sb.load_index < 1 || sb.load_index > 0x40) return false; // should be 0x19 ?
 #if 0
 		eprintf ("V=%d\n", sb.version);
 		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
