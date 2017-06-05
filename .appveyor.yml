@@ -1,5 +1,5 @@
 # Version format
-version: 1.5.0.{build}-git
+version: unknown-{build}-git
 
 # Skip Github tags
 skip_tags: true
@@ -19,10 +19,10 @@ branches:
 environment:
   matrix:
     # TODO Add missing build platforms
-    # MSVC Variables
-    #- builder: msvc
-    # MESON Variables
-    - builder: msvc_meson
+    # MSVC CCCL 64
+    # - builder: msvc_cccl_64
+    # MSVC NINJA 64
+    - builder: msvc_ninja_64
       PYTHON: 'C:\\Python36-x64'
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
@@ -40,16 +40,22 @@ environment:
     #  CYG_CACHE: 'C:\cygwin\var\cache\setup'
     #  CYG_BASH: 'C:\cygwin\bin\bash'
     #  ZIP_ROOT: '%APPVEYOR_BUILD_FOLDER%\zip'
-  ARTIFACT_ZIP: 'radare2-%builder%-%APPVEYOR_BUILD_VERSION%.zip'
 
 # Init
 init:
+  # Build dependant custom commands
   - cmd: "%init_command%"
 
 # Required softwares for building
 install:
-  # TODO Add ninja and meson to cached folder (and capstone)
-  - cmd: if %builder% == msvc_meson ( %PYTHON%\python.exe -m pip install meson && COPY %PYTHON%\Scripts\meson.py meson.py && powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
+  # Update environment variables
+  - ps: $env:r2_version = (Get-Content -Raw -Path package.json | ConvertFrom-Json).version
+  - ps: Update-AppveyorBuild -Version "$env:r2_version-$env:APPVEYOR_BUILD_NUMBER"
+  - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:r2_version"
+  - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
+  # Download required packages
+  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson && COPY %PYTHON%\Scripts\meson.py meson.py )
+  - cmd: if defined NINJA_URL ( powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
 
 # Cached folders
 cache:
@@ -58,18 +64,30 @@ cache:
 
 # Build scripts
 build_script:
-  - cmd: if %builder% == msvc ( sys\msvc.bat && make windist WINBITS=%builder% )
-  - cmd: if %builder% == msvc_meson ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && runmeson.bat && ninja.exe -C build install && echo %ARTIFACT_ZIP% && zip -r %ARTIFACT_ZIP% %APPVEYOR_BUILD_FOLDER%\bin %APPVEYOR_BUILD_FOLDER%\lib )
+  - set
+  - if %builder% == msvc_cccl_64 ( sys\msvc.bat && make windist WINBITS=%builder% )
+
+  - cmd: if %builder% == msvc_ninja_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && runmeson.bat && ninja.exe -C build install && echo %ARTIFACT_ZIP% && mkdir %DIST_FOLDER% && move bin %DIST_FOLDER%/bin && move lib %DIST_FOLDER%/lib && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+
   - cmd: if %builder% == mingw32 ( sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
+
   - cmd: if %builder% == msys2 ( set && set PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;"%PATH%" && echo "%PATH%" && sh.exe -c "export PATH=${PATH}:/mingw64/bin; ./configure --build=i686-unknown-windows-gnu ; mingw32-make -j1 ; mingw32-make windist WINBITS=%builder%" )
+
   - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
+
+# TODO Add testing
+after_test:
+  - git clone https://github.com/radare/radare2-win-installer
+  - set PATH=%PATH%;"C:\\Program Files (x86)\\Inno Setup 5"
+  - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico
 
 # Artifacts
 artifacts:
-- path: "%ARTIFACT_ZIP%"
-
-# Disable test
-test: off
+  # Binaries
+  - path: "%ARTIFACT_ZIP%"
+  # Inno Setup files
+  - path: radare2-win-installer\Output\*
 
 # Disable deployment
 deploy: off
+
