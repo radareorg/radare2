@@ -2849,14 +2849,16 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
 				: Elf_(r_bin_elf_get_phdr_imports) (bin);
 	}
+
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
-	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
+
+	nsym = Elf_(fix_symbols) (bin, ret_ctr, R_BIN_ELF_IMPORTS, &ret);
 	if (nsym == -1) {
 		goto beach;
 	}
 	aux = ret;
-	while (!aux->last) {
+	while (aux && !aux->last) {
 		if ((int)aux->ordinal > max) {
 			max = aux->ordinal;
 		}
