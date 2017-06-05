@@ -3674,10 +3674,12 @@ toro:
 				continue;
 			}
 		} else {
-			ret = ds_disassemble (ds, buf + idx, len - idx);
-			if (ret == -31337) {
-				inc = ds->oplen;
-				continue;
+			if (idx >= 0) {
+				ret = ds_disassemble (ds, buf + idx, len - idx);
+				if (ret == -31337) {
+					inc = ds->oplen;
+					continue;
+				}
 			}
 		}
 		if (ds->retry) {

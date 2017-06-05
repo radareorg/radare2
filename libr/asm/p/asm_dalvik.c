@@ -10,7 +10,7 @@
 #include <dalvik/opcode.h>
 
 static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int vA, vB, vC, payload = 0, i = (int) buf[0];
+	int vA, vB, vC, payload = 0, i = (int) buf? buf[0]: 0;
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
