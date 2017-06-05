@@ -27,7 +27,6 @@ static int typeload(void *p, const char *k, const char *v) {
 		return -1;
 	}
 	int btype = 0;
-	CType *ctype = R_NEW0(CType);
 	RAnal *anal = (RAnal*)p;
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support

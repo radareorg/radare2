@@ -771,6 +771,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	if (!can) {
 		r_config_hold_free (hc);
+		return;
 	}
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
