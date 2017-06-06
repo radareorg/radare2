@@ -706,6 +706,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (inc < 1) {
 		inc = 1;
 	}
+	if (zoomsz < 1) {
+		zoomsz = 1;
+	}
 	switch (base) {
 	case -10:
 		fmt = "0x%08x ";
