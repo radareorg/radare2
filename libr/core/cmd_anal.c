@@ -8,8 +8,6 @@
 
 #define ESIL_STACK_NAME "esil.ram"
 
-R_API bool core_anal_bbs(RCore *core, ut64 len);
-
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
 
@@ -3654,12 +3652,12 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		}
 		min = s->vaddr;
 		max = s->vaddr + s->vsize;
-		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
+		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
 	}
 	if (r_list_empty (core->io->sections)) {
 		min = core->offset;
 		max = 0xffff + min;
-		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
+		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
 	}
 }
 
@@ -5651,8 +5649,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'b':
 		if (input[1] == 'b') {
-			ut64 len = r_num_math (core->num, input + 2);
-			core_anal_bbs (core, len);
+			core_anal_bbs (core, input + 2);
 		} else if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);
 			int len = r_hex_str2bin (input + 2, buf);
