@@ -664,8 +664,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 }
 
-// XXX: step is broken
-R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
+R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback) printf;
 	int i, j, k, inc = 16;
 	int sparse_char = 0;
@@ -847,7 +846,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		if (use_offset) {
-			r_print_addr (p, addr + j);
+			r_print_addr (p, addr + j * zoomsz);
 		}
 		if (use_hexa) {
 			if (!compact) {
@@ -1250,12 +1249,11 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 
 R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;
-	ut8 *bufz, *bufz2;
+	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
 	ut64 size = (to - from);
 	size = len? size / len: 0;
 
-	bufz = bufz2 = NULL;
 	if (maxlen < 2) {
 		maxlen = 1024 * 1024;
 	}
@@ -1301,7 +1299,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 		p->zoom->size = size;
 	}
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
-	r_print_hexdump (p, from, bufz, len, 16, size);
+	r_print_hexdump (p, from, bufz, len, 16, 1, size);
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 

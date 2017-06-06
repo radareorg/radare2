@@ -1669,22 +1669,22 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				switch (str[1]) {
 				case '1':
-					r_print_hexdump (core->print, 0LL, buf, len, 8, 1);
+					r_print_hexdump (core->print, 0LL, buf, len, 8, 1, 1);
 					break;
 				case '2':
-					r_print_hexdump (core->print, 0LL, buf, len, 16, 2);
+					r_print_hexdump (core->print, 0LL, buf, len, 16, 2, 1);
 					break;
 				case '4':
-					r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+					r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
 					break;
 				case '8':
-					r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
+					r_print_hexdump (core->print, 0LL, buf, len, 64, 8, 1);
 					break;
 				default:
 					if (core->assembler->bits == 64) {
-						r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
+						r_print_hexdump (core->print, 0LL, buf, len, 64, 8, 1);
 					} else {
-						r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+						r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
 					}
 					break;
 				}

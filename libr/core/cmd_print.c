@@ -3853,7 +3853,7 @@ static int cmd_print(void *data, const char *input) {
 								break;
 							}
 							cont_size = tmp_get_contsize (tmp_func);
-							loc_buf = calloc (cont_size, 1);;
+							loc_buf = calloc (cont_size, 1);
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
 							if (!first) {
 								r_cons_print (",");
@@ -3872,7 +3872,7 @@ static int cmd_print(void *data, const char *input) {
 						free (func_buf);
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							cont_size = tmp_get_contsize (tmp_func);
-							loc_buf = calloc (cont_size, 1);;
+							loc_buf = calloc (cont_size, 1);
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
 							if (!first) {
 								r_cons_print (",");
@@ -4172,7 +4172,7 @@ static int cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
 				char *s = malloc (core->blocksize + 1);
-				int i, j, hasnl = 0;;
+				int i, j, hasnl = 0;
 				if (s) {
 					memset (s, 0, core->blocksize);
 					if (!quiet) {
@@ -4546,7 +4546,7 @@ static int cmd_print(void *data, const char *input) {
 			if (l != 0) {
 				core->print->flags |= R_PRINT_FLAGS_NONHEX;
 				r_print_hexdump (core->print, core->offset,
-					core->block, len, 8, 1);
+					core->block, len, 8, 1, 1);
 				core->print->flags &= ~R_PRINT_FLAGS_NONHEX;
 			}
 			break;
@@ -4556,7 +4556,7 @@ static int cmd_print(void *data, const char *input) {
 				if (buf) {
 					r_io_read_at (core->io, core->offset, buf, len * 4);
 					core->print->flags |= R_PRINT_FLAGS_NONHEX;
-					r_print_hexdump (core->print, core->offset, buf, len * 4, 8, 1);
+					r_print_hexdump (core->print, core->offset, buf, len * 4, 8, 1, 1);
 					core->print->flags &= ~R_PRINT_FLAGS_NONHEX;
 					free (buf);
 				}
@@ -4625,7 +4625,7 @@ static int cmd_print(void *data, const char *input) {
 						len = core->blocksize;
 					}
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, 16, 1);
+						core->block, len, 16, 1, 1);
 				} else {
 					r_core_print_cmp (core, from, to);
 				}
@@ -4641,7 +4641,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'o': // "pxo"
 			if (l != 0) {
 				r_print_hexdump (core->print, core->offset,
-					core->block, len, 8, 1);
+					core->block, len, 8, 1, 1);
 			}
 			break;
 		case 't': // "pxt"
@@ -4662,22 +4662,22 @@ static int cmd_print(void *data, const char *input) {
 				case '1':
 					// 1 byte signed words (byte)
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, -1, 4);
+						core->block, len, -1, 4, 1);
 					break;
 				case '2':
 					// 2 byte signed words (short)
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, -10, 2);
+						core->block, len, -10, 2, 1);
 					break;
 				case '8':
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, -8, 4);
+						core->block, len, -8, 4, 1);
 					break;
 				case '4':
 				default:
 					// 4 byte signed words
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, 10, 4);
+						core->block, len, 10, 4, 1);
 				}
 			}
 			break;
@@ -4686,7 +4686,7 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') {
 					r_print_jsondump (core->print, core->block, len, 32);
 				} else {
-					r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
+					r_print_hexdump (core->print, core->offset, core->block, len, 32, 4, 1);
 				}
 			}
 			break;
@@ -4775,7 +4775,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_break_push (NULL, NULL);
 					r_print_hexdump (core->print, core->offset,
 						core->block, len,
-						bitsize, bitsize / 8);
+						bitsize, bitsize / 8, 1);
 					r_cons_break_pop ();
 					core->print->flags &= ~R_PRINT_FLAGS_REFS;
 					core->print->cols = ocols;
@@ -4788,7 +4788,7 @@ static int cmd_print(void *data, const char *input) {
 					r_print_jsondump (core->print, core->block, len, 16);
 				} else {
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, 32, 2);
+						core->block, len, 32, 2, 1);
 				}
 			}
 			break;
@@ -4834,7 +4834,7 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') {
 					r_print_jsondump (core->print, core->block, len, 64);
 				} else {
-					r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
+					r_print_hexdump (core->print, core->offset, core->block, len, 64, 8, 1);
 				}
 			}
 			break;
@@ -4879,7 +4879,7 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pxs"
 			if (l) {
 				core->print->flags |= R_PRINT_FLAGS_SPARSE;
-				r_print_hexdump (core->print, core->offset, core->block, len, 16, 1);
+				r_print_hexdump (core->print, core->offset, core->block, len, 16, 1, 1);
 				core->print->flags &= (((ut32) - 1) & (~R_PRINT_FLAGS_SPARSE));
 			}
 			break;
@@ -4987,7 +4987,7 @@ static int cmd_print(void *data, const char *input) {
 						len = core->blocksize;
 					}
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, 16, 1);
+						core->block, len, 16, 1, 1);
 				} else {
 					r_core_print_cmp (core, from, to);
 				}
@@ -5210,36 +5210,32 @@ static int cmd_print(void *data, const char *input) {
 			};
 			r_core_cmd_help (core, help_msg);
 		} else {
-			char *oldzoom = NULL;
+			ut64 from = r_config_get_i (core->config, "zoom.from");
+			ut64 to = r_config_get_i (core->config, "zoom.to");
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
-			ut64 from, to;
 			int oldva = core->io->va;
-			int do_zoom = 1;
+			char *oldmode = NULL;
+			bool do_zoom = true;
 
 			core->io->va = 0;
-			from = 0;
-			to = r_io_size (core->io);
-			from = r_config_get_i (core->config, "zoom.from");
-			to = r_config_get_i (core->config, "zoom.to");
+
 			if (input[1] && input[1] != ' ') {
-				oldzoom = strdup (r_config_get (core->config, "zoom.byte"));
+				oldmode = strdup (r_config_get (core->config, "zoom.byte"));
 				if (!r_config_set (core->config, "zoom.byte", input + 1)) {
 					eprintf ("Invalid zoom.byte mode (%s)\n", input + 1);
-					R_FREE (oldzoom);
-					do_zoom = 0;
+					do_zoom = false;
 				}
 			}
 			if (do_zoom && l > 0) {
 				r_print_zoom (core->print, core, printzoomcallback,
-					from, to, core->blocksize, (int) maxsize);
+					from, to, l, (int) maxsize);
 			}
-			if (oldzoom) {
-				r_config_set (core->config, "zoom.byte", oldzoom);
-				R_FREE (oldzoom);
+
+			if (oldmode) {
+				r_config_set (core->config, "zoom.byte", oldmode);
 			}
-			if (oldva) {
-				core->io->va = oldva;
-			}
+			core->io->va = oldva;
+			R_FREE (oldmode);
 		}
 		break;
 	default: {
