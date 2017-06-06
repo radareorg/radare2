@@ -2148,7 +2148,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
-		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
 		free (buf);
 		} break;
 	case 'c':

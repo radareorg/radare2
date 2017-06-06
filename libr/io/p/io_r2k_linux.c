@@ -486,7 +486,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (databuf) {
 				ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
 				if (ret > 0) {
-					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1);
+					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1, 1);
 				}
 			} else {
 				io->cb_printf ("Failed to allocate buffer\n");

@@ -383,7 +383,7 @@ void GH(print_heap_chunk)(RCore *core) {
 	if (data) {
 		r_core_read_at (core, chunk + SZ * 2, (ut8 *)data, size);
 		PRINT_GA ("chunk data = \n");
-		r_print_hexdump (core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ);
+		r_print_hexdump (core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ, 1);
 		free (data);
 	}
 	free (cnk);
