@@ -1806,6 +1806,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		const char *label = NULL;
 		RFlagItem *fi;
 		int delta = -1;
+		bool show_trace = false;
 		if (ds->show_reloff) {
 			RAnalFunction *f = r_anal_get_fcn_at (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (!f) {
@@ -1842,7 +1843,12 @@ static void ds_print_offset(RDisasmState *ds) {
 				delta = 0;
 			}
 		}
-		r_print_offset (core->print, at, (at == ds->dest),
+		if (ds->show_trace) {
+			RDebugTracepoint *tp = NULL;
+			tp = r_debug_trace_get (ds->core->dbg, ds->at);
+			show_trace = (tp?!!tp->count:false);
+		}
+		r_print_offset (core->print, at, (at == ds->dest) || show_trace,
 				ds->show_offseg, ds->show_offdec, delta, label);
 	}
 	if (ds->atabsoff > 0) {
