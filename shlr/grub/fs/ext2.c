@@ -690,13 +690,13 @@ break;
 			       fpos + sizeof (struct ext2_dirent),
 			       dirent.namelen, filename);
 	  if (grub_errno) {
-            free (filename);
+            grub_free (filename);
 	    return 0;
 	  }
 
 	  fdiro = grub_malloc (sizeof (struct grub_fshelp_node));
 	  if (! fdiro) {
-            free (filename);
+            grub_free (filename);
 	    return 0;
           }
 
@@ -724,7 +724,7 @@ break;
                                     grub_le_to_cpu32 (dirent.inode),
 				    &fdiro->inode);
 	      if (grub_errno) {
-                  free (filename);
+                  grub_free (filename);
 		  grub_free (fdiro);
 		  return 0;
 		}
@@ -743,10 +743,10 @@ break;
 	    }
 
 	  if (hook (filename, type, fdiro, closure)) {
-            free (filename);
+            grub_free (filename);
 	    return 1;
           }
-          free (filename);
+          grub_free (filename);
 	}
 
       fpos += grub_le_to_cpu16 (dirent.direntlen);
