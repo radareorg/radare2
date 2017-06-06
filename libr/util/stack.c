@@ -74,7 +74,7 @@ R_API unsigned int r_stack_size(RStack *s) {
 
 R_API void *r_stack_peek(RStack *s) {
 	void *res;
-	if (s->top != -1) {
+	if (!r_stack_is_empty (s)) {
 		res = s->elems[s->top];
 		return res;
 	}
