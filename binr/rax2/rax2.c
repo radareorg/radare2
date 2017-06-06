@@ -94,6 +94,7 @@ static int help() {
 		"  -B    str -> bin        ;  rax2 -B hello\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -D    base64 decode     ;\n"
 		"  -E    base64 encode     ;\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
