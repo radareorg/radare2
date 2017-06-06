@@ -825,7 +825,7 @@ repeat:
 						}
 					}
 				} else {
-					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
+					RFlagItem *fi = anal->flb.get_at (anal->flb.f, fcn->addr? fcn->addr: addr, false);
 					if (fi) {
 						break;
 					}
