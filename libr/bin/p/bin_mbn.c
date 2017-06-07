@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2016 - pancake */
+/* radare2 - LGPL - Copyright 2015-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -176,7 +176,7 @@ static ut64 size(RBinFile *arch) {
 	return sizeof (SBLHDR) + sb.psize;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mbn = {
+RBinPlugin r_bin_plugin_mbn = {
 	.name = "mbn",
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
@@ -193,7 +193,7 @@ struct r_bin_plugin_t r_bin_plugin_mbn = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mbn,
 	.version = R2_VERSION

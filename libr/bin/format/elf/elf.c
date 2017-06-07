@@ -1799,6 +1799,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");
+	case EM_HEXAGON:
+		return strdup ("hexagon");
 	case EM_BLACKFIN:
 		return strdup ("blackfin");
 	case EM_SPARC:
