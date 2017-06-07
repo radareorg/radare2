@@ -631,12 +631,13 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
+			if (bp) {
+				*bp = b;
+			}
+
 			/* if we hit a tracing breakpoint, we need to continue in
 			 * whatever mode the user desired. */
 			if (dbg->corebind.core && b && b->cond) {
-				if (bp) {
-					*bp = b;
-				}
 				reason = R_DEBUG_REASON_COND;
 			}
 			if (b && b->trace) {
@@ -995,6 +996,10 @@ repeat:
 					goto repeat;
 				}
 			}
+		}
+
+		if (reason == R_DEBUG_REASON_BREAKPOINT && bp && !bp->enabled) {
+			goto repeat;
 		}
 
 #if __linux__
