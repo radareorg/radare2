@@ -39,19 +39,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
-	// Check if trace is already running
-	ret = send_msg (g, "qTStatus");
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = handle_qStatus (g);
-	if (ret < 0) {
-		// qTStatus unsupported for this gdbserver
-		// return ret;
-	}
-
 	// Query the thread / process id
+	g->stub_features.qC = true;
+	g->pid = g->tid = 0;
 	ret = send_msg (g, "qC");
 	if (ret < 0) {
 		return ret;
@@ -59,101 +49,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = handle_qC (g);
 	if (ret < 0) {
-		// qC unsupported
-		//return ret;
+		g->stub_features.qC = false;
 	}
-
-	/*
-	// Check if remote server attached to or created process
-	if (g->stub_features.multiprocess) {
-		char pid_buf[20] = { 0 };
-		pack_hex_uint64 (g->pid, pid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qAttached:%s", pid_buf);
-		ret = send_msg (g, tmp.buf);
-	} else {
-		ret = send_msg (g, "qAttached");
-	}
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	g->attached = (g->data[0] == '1');
-	ret = send_ack (g);
-	if (ret < 0) {
-		return ret;
-	}
-
-	// Set the filesystem to use to be the fs visible to current process
-	if (g->stub_features.multiprocess) {
-		char pid_buf[20] = { 0 };
-		pack_hex_uint64 (g->pid, pid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf), "vFile:setfs:%s", pid_buf);
-		ret = send_msg (g, tmp.buf);
-		if (ret < 0) {
-			return ret;
-		}
-		read_packet (g);
-		ret = send_ack (g);
-		if (ret < 0 || !*g->data || g->data[0] != 'F' || g->data[1] == '-') {
-			eprintf ("handle gF\n");
-			return -1;
-		}
-	}
-
-	// Get name of file being executed
-	if (g->stub_features.qXfer_exec_file_read) {
-		if (g->stub_features.multiprocess) {
-			char pid_buf[20] = { 0 };
-			pack_hex_uint64 (g->pid, pid_buf);
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qXfer:exec-file:read:%s:0,fff", pid_buf);
-			ret = send_msg (g, tmp.buf);
-		} else {
-			ret = send_msg (g, "qXfer:exec-file:read::0,fff");
-		}
-		if (ret < 0) {
-			return ret;
-		}
-		read_packet (g);
-		(void) handle_execFileRead (g);
-	}
-
-	// Open the file
-	char *file_to_hex = calloc (2, strlen (g->exec_file_name) + 1);
-	if (!file_to_hex) {
-		return -1;
-	}
-	pack_hex (g->exec_file_name, strlen (g->exec_file_name), file_to_hex);
-	r_strbuf_setf (&tmp, "vFile:open:%s,0,0", file_to_hex);
-	free (file_to_hex);
-	if (tmp.ptr) {
-		ret = send_msg (g, tmp.ptr);
-	} else {
-		ret = send_msg (g, tmp.buf);
-	}
-	r_strbuf_fini (&tmp);
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = handle_fOpen (g);
-	if (ret < 0) {
-		return ret;
-	}
-
-	// Get fstat data for file
-	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "vFile:fstat:%"PFMT32x, g->exec_fd);
-	ret = send_msg (g, tmp.buf);
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = handle_fstat (g);
-	if (ret < 0) {
-		return ret;
-	}
-	*/
-
-	// Set pid/thread for next operations
+	// Set pid/thread for operations other than "step" and "continue"
 	if (g->stub_features.multiprocess) {
 		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
 	} else {
@@ -166,7 +64,18 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = send_ack (g);
 	if (strncmp (g->data, "OK", 2)) {
-		ret = -1;
+		// return -1;
+	}
+	// Set thread for "step" and "continue" operations
+	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hc-1");
+	ret = send_msg (g, tmp.buf);
+	if (ret < 0) {
+		return ret;
+	}
+	read_packet (g);
+	ret = send_ack (g);
+	if (strncmp (g->data, "OK", 2)) {
+		// return -1;
 	}
 	return ret;
 }

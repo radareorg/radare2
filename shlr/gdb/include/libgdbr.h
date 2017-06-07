@@ -89,6 +89,8 @@ typedef struct libgdbr_stub_features_t {
 	bool EnableDisableTracepoints;
 	bool tracenz;
 	bool BreakpointCommands;
+	// Cannot be determined with qSupported, found out on query
+	bool qC;
 } libgdbr_stub_features_t;
 
 /*!
