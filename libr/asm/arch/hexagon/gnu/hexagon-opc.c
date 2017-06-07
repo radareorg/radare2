@@ -1774,7 +1774,7 @@ hexagon_encode_operand
       if (errmsg)
         {
           sprintf (buf, "did not encode expected number of bits: %d != %d\n"
-                   "\tenc = %s\n\toperand = %s",
+                   "enc = %s\n  operand = %s",
                    num_bits, operand->bits, opcode->enc, operand->fmt);
           *errmsg = buf;
         }

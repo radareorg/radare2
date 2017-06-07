@@ -92,10 +92,10 @@ print_insn_hexagon = hexagon_get_disassembler_from_mach(0,0);
 RAsmPlugin r_asm_plugin_hexagon_gnu = {
 	.name = "hexagon",
 	.arch = "hexagon",
-	.bits = 32|64,
+	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.license = "GPL3",
-	.desc = "Scalable Processor Architecture",
+	.desc = "Qualcomm DSPv5",
 	.disassemble = &disassemble,
 };
 
