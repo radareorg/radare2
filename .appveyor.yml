@@ -1,5 +1,5 @@
 # Version format
-version: unknown-{build}-git
+version: git-{build}
 
 # Skip Github tags
 skip_tags: true
@@ -50,7 +50,7 @@ init:
 install:
   # Update environment variables
   - ps: $env:r2_version = (Get-Content -Raw -Path package.json | ConvertFrom-Json).version
-  - ps: Update-AppveyorBuild -Version "$env:r2_version-$env:APPVEYOR_BUILD_NUMBER"
+  # - ps: Update-AppveyorBuild -Version "$env:r2_version-$env:APPVEYOR_BUILD_NUMBER"
   - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:r2_version"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
