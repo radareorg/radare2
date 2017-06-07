@@ -2161,7 +2161,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 
-	fcnlist_gather_metadata (core->anal, fcns);
+	fcnlist_gather_metadata (core->anal, core->anal->fcns);
 
 	const char *name = input;
 	ut64 addr;
