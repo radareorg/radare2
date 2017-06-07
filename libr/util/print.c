@@ -1523,12 +1523,36 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 #define COLORIZE_BUFSIZE 1024
 static char o[COLORIZE_BUFSIZE];
 
+static bool issymbol(char c) {
+	switch (c) {
+		case '+':
+		case '-':
+		/* case '/': not good for dalvik */
+		case '>':
+		case '<':
+		case '(':
+		case ')':
+		case '*':
+		case '%':
+		case ']':
+		case '[':
+		case ',':
+		case ' ':
+		case '{':
+		case '}':
+			return true;
+		default:
+			return false;
+	}
+}
+
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	ut32 c_reset = strlen (Color_RESET);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	int is_num;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
+	char previous = '\0';
 
 	if (!p || !*p) {
 		return NULL;
@@ -1544,6 +1568,11 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
+		if ((p[i] == '0' && p[i+1] == 'x')|| (isdigit (p[i]) && issymbol (previous))) {
+			strcpy (o + j, num);
+			j += strlen (num);
+		}
+		previous = p[i];
 		if (j + 100 >= COLORIZE_BUFSIZE) {
 			eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 			return strdup (p);
@@ -1590,23 +1619,15 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				}
 				strcpy (o + j, Color_RESET);
 				j += strlen (Color_RESET);
-				o[j++] = p[i];
-				if (p[i] == '$' || ((p[i] > '0') && (p[i] < '9'))) {
-					ut32 num_len = strlen (num);
-					if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
-						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-						return strdup (p);
-					}
-					strcpy (o + j, num);
-					j += strlen (num) - 1;
-				} else {
+				o[j] = p[i];
+				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
 					ut32 reg_len = strlen (reg);
 					if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}
-					strcpy (o + j, reg);
-					j += strlen (reg) - 1;
+					strcpy (o + j + 1, reg);
+					j += strlen (reg);
 				}
 				continue;
 			}
@@ -1640,17 +1661,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			if (!p[k]) {
 				is_mod = 1;
 			}
-			if (!is_jmp && is_mod) {
-				if (is_num) {
-					ut32 num_len = strlen (num);
-					if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
-						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-						return strdup (p);
-					}
-					strcpy (o + j, num);
-					j += strlen (num);
-					break;
-				}
+			if (is_mod) {
 				// COLOR FOR REGISTER
 				ut32 reg_len = strlen (reg);
 				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
@@ -1663,13 +1674,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			}
 			break;
 		case '0': /* address */
-			if (!is_jmp && p[i + 1] == 'x') {
-				ut32 num_len = strlen (num);
-				/* if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100); */
-				if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-					return strdup (p);
-				}
+			if (p[i + 1] == 'x') {
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
 					RIOSection *s = print->iob.section_vget (print->iob.io, r_num_get (NULL, p + i));
 					if (s) {
@@ -1683,8 +1688,6 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 						j++;
 					}
 				}
-				strcpy (o + j, num);
-				j += strlen (num);
 			}
 			break;
 		}
