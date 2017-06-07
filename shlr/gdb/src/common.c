@@ -116,20 +116,15 @@ int send_ack(libgdbr_t *g) {
 }
 
 int send_msg(libgdbr_t *g, const char *msg) {
-	uint8_t checksum;
 	int ret;
-
 	if (!g || !msg) {
 		return -1;
 	}
-	checksum = cmd_checksum (msg);
-	ret = snprintf (g->send_buff, g->send_max,
-		"$%s#%.2x", msg, checksum);
-	if (ret >= 0) {
-		g->send_len = ret;
-		ret = send_packet (g);
-		g->send_len = ret;
-		return ret;
+	ret = pack (g, msg);
+	if (ret < 0) {
+		return -1;
 	}
-	return -1;
+	ret = send_packet (g);
+	g->send_len = ret;
+	return ret;
 }

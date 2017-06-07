@@ -5,11 +5,12 @@
 
 #include <stdio.h>
 
-int gdbr_init(libgdbr_t *g) {
+int gdbr_init(libgdbr_t *g, bool is_server) {
 	if (!g) {
 		return -1;
 	}
 	memset (g, 0, sizeof (libgdbr_t));
+	g->is_server = is_server;
 	g->send_max = 2500;
 	g->send_buff = (char *) calloc (g->send_max, 1);
 	if (!g->send_buff) {

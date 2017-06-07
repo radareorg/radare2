@@ -106,7 +106,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	riog = R_NEW0 (RIOGdb);
-	gdbr_init (&riog->desc);
+	gdbr_init (&riog->desc, false);
 	int i_port = atoi(port);
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;

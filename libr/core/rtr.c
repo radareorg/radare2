@@ -1074,7 +1074,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
 		return -1;
 	}
-	gdbr_init (g);
+	gdbr_init (g, true);
 	core->gdbserver_up = 1;
 	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
 

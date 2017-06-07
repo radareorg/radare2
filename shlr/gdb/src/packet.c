@@ -158,3 +158,61 @@ int send_packet(libgdbr_t *g) {
 	}
 	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }
+
+int pack(libgdbr_t *g, const char *msg) {
+	int run_len;
+	size_t msg_len;
+	const char *src;
+	char prev;
+	if (!g || !msg) {
+		return -1;
+	}
+	msg_len = strlen (msg);
+	if (msg_len > g->send_max + 5) {
+		eprintf ("%s: message too long: %s", __func__, msg);
+		return -1;
+	}
+	g->send_buff[0] = '$';
+	g->send_len = 1;
+	src = msg;
+	while (*src) {
+		if (*src == '#' || *src == '$' || *src == '}') {
+			msg_len += 1;
+			if (msg_len > g->send_max + 5) {
+				eprintf ("%s: message too long: %s", __func__, msg);
+				return -1;
+			}
+			g->send_buff[g->send_len++] = '}';
+			g->send_buff[g->send_len++] = *src++ ^ 0x20;
+			continue;
+		}
+		g->send_buff[g->send_len++] = *src++;
+		if (!g->is_server) {
+			continue;
+		}
+		prev = *(src - 1);
+		run_len = 0;
+		while (src[run_len] == prev) {
+			run_len++;
+		}
+		if (run_len < 3) {                    // 3 specified in RSP documentation
+			while (run_len--) {
+				g->send_buff[g->send_len++] = *src++;
+			}
+			continue;
+		}
+		run_len += 29;                        // Encode as printable character
+		if (run_len == 35 || run_len == 36) { // Cannot use '$' or '#'
+			run_len = 34;
+		} else if (run_len > 126) {           // Max printable ascii value
+			run_len = 126;
+		}
+		g->send_buff[g->send_len++] = '*';
+		g->send_buff[g->send_len++] = run_len;
+		src += run_len - 29;
+	}
+	g->send_buff[g->send_len] = '\0';
+	snprintf (g->send_buff + g->send_len, 4, "#%.2x", cmd_checksum(g->send_buff + 1));
+	g->send_len += 3;
+	return g->send_len;
+}
