@@ -27,7 +27,7 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
-	size_max = desc->read_max;
+	size_max = 500;
 	packets = sz / size_max;
 	last = sz % size_max;
 	for (x = 0; x < packets; x++) {

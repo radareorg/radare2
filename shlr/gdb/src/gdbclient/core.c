@@ -19,6 +19,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!g || !host) {
 		return -1;
 	}
+	// Initial max_packet_size for remote target (minimum so far for AVR = 16)
+	g->stub_features.pkt_sz = 64;
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
 	if (!ret) {
 		return -1;
@@ -136,7 +138,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 }
 
 int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
-	char command[255] = {0};
+	char command[64] = {0};
 	int ret;
 	if (!g) {
 		return -1;
@@ -158,7 +160,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
-	char command[255] = {0};
+	char command[64] = {0};
 	int ret = 0;
 	int command_len;
 	char *tmp;

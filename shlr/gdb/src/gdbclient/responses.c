@@ -34,6 +34,11 @@ int handle_P(libgdbr_t *g) {
 }
 
 int handle_m(libgdbr_t *g) {
+	if (g->data_len == 3 && g->data[0] == 'E') {
+		// TODO: figure out if this is a problem
+		send_ack (g);
+		return -1;
+	}
 	int len = strlen (g->data);
 	g->data_len = strlen (g->data) / 2;
 	unpack_hex (g->data, len, g->data);

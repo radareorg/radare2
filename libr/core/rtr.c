@@ -1010,8 +1010,7 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 		break;
 	case 'm':
 		sscanf (cmd + 1, "%"PFMT64x" %d", &m_off, &ret);
-		r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
-		return ret;
+		return r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
 	}
 	return -1;
 }
