@@ -2620,10 +2620,15 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 		delta = (st32 *) (buf + i);
 		addr = offset + *delta;
 		if (!r_io_is_valid_offset (core->io, addr, 0)) {
-			break;
+			//let check for jmptbl which are not relative addresses
+			//jmp dword [eax*4 + jmptbl.0x66204a6d]
+			if (!r_io_is_valid_offset (core->io, *delta, 0)) {
+				break;
+			}
+			addr = *delta;
 		}
 		if (mode == '*') {
-			r_cons_printf ("af case.%d.0x%"PFMT64x " 0x%08"PFMT64x "\n", i, offset, addr);
+			r_cons_printf ("af case.%d.0x%"PFMT64x " 0x%08"PFMT64x "\n", n, offset, addr);
 			r_cons_printf ("ax 0x%"PFMT64x " 0x%08"PFMT64x "\n", offset, addr);
 			r_cons_printf ("ax 0x%"PFMT64x " 0x%08"PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
 			r_cons_printf ("aho case 0x%"PFMT64x " 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
@@ -3109,6 +3114,10 @@ static int cmd_print(void *data, const char *input) {
 					if (l > tbs) {
 						if (input[0] == 'x' && input[1] == 'l') {
 							l *= core->print->cols;
+						}
+						//workaround to fix pxt. with huge va
+						if (input[0] == 'x' && input[1] == 't') {
+							l = core->blocksize;
 						}
 						if (!r_core_block_size (core, l)) {
 							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",

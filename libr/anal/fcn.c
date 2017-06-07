@@ -1052,6 +1052,8 @@ repeat:
 				}
 				if (op.ptr != UT64_MAX) {       // direct jump
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, op.ptr, ret);
+					anal->cmdtail = r_str_appendf (anal->cmdtail, "pxt. 0x%08" PFMT64x
+						" @ 0x%08" PFMT64x "\n", op.addr, op.ptr);
 
 				} else {        // indirect jump: table pointer is unknown
 					if (op.src[0] && op.src[0]->reg) {
