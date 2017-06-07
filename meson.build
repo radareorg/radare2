@@ -1,10 +1,10 @@
 project('radare2', 'c')
 
 version = '1.5.0-git'
-version_commit = 0
-gittap  = ''
-gittip  = ''
-r2birth = ''
+version_commit = run_command('git', 'rev-list', '--all', '--count')
+gittap  = run_command('git', 'describe', '--tags', '--match', '"[0-9]*"')
+gittip  = run_command('git', 'rev-parse', 'HEAD')
+r2birth = run_command('date', '/T')
 prefix = '/usr/local'
 
 # system dependencies
