@@ -160,7 +160,7 @@ static int _server_handle_vCont(libgdbr_t *g, int (*cmd_cb) (void*, const char*,
 	if (!(action = strtok (g->data, ";"))) {
 		return send_msg (g, "E01");
 	}
-	while (action = strtok (NULL, ";")) {
+	while ((action = strtok (NULL, ";")) != 0) {
 		eprintf ("action: %s\n", action);
 		switch (action[0]) {
 		case 's':
