@@ -19,25 +19,17 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "gdb://", 6));
 }
 
-/* hacky cache to speedup gdb io a bit */
-/* reading in a different place clears the previous cache */
-static ut64 c_addr = UT64_MAX;
-static ut32 c_size = UT32_MAX;
-static ut8 *c_buff = NULL;
-#define SILLY_CACHE 0
-
 static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
-	ut32 size_max = 500;
-	ut32 packets = sz / size_max;
-	ut32 last = sz % size_max;
+	ut32 size_max;
+	ut32 packets;
+	ut32 last;
 	ut32 x;
-	if (c_buff && addr != UT64_MAX && addr == c_addr) {
-		memcpy (buf, c_buff, sz);
-		return sz;
-	}
-	if (sz < 1 || addr >= UT64_MAX) {
+	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
+	size_max = desc->read_max;
+	packets = sz / size_max;
+	last = sz % size_max;
 	for (x = 0; x < packets; x++) {
 		gdbr_read_memory (desc, addr + (x * size_max), size_max);
 		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), R_MIN (sz, size_max));
@@ -46,27 +38,19 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 		gdbr_read_memory (desc, addr + x * size_max, last);
 		memcpy ((buf + x * size_max), desc->data + (x * size_max), last);
 	}
-	c_addr = addr;
-	c_size = sz;
-#if SILLY_CACHE
-	free (c_buff);
-	c_buff = r_mem_dup (buf, sz);
-#endif
 	return sz;
 }
 
 static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
-	ut32 x, size_max = 500;
-	ut32 packets = sz / size_max;
-	ut32 last = sz % size_max;
-
-	if (sz < 1 || addr >= UT64_MAX) {
+	ut32 x, size_max;
+	ut32 packets;
+	ut32 last;
+	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
-	if (c_addr != UT64_MAX && addr >= c_addr && c_addr + sz < (c_addr + c_size)) {
-		R_FREE (c_buff);
-		c_addr = UT64_MAX;
-	}
+	size_max = desc->read_max;
+	packets = sz / size_max;
+	last = sz % size_max;
 	for (x = 0; x < packets; x++) {
 		gdbr_write_memory (desc, addr + x * size_max,
 			(const uint8_t*)(buf + x * size_max), size_max);
@@ -75,7 +59,6 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 		gdbr_write_memory (desc, addr + x * size_max,
 			(buf + x * size_max), last);
 	}
-
 	return sz;
 }
 
