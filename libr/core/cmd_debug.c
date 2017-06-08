@@ -3621,7 +3621,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_session_list (core->dbg);
 				break;
 			case '+':
-				r_debug_session_add (core->dbg);
+				r_debug_session_add (core->dbg, NULL);
 				break;
 			case 'A': // for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));

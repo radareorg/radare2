@@ -34,19 +34,30 @@ R_API void r_debug_session_list(RDebug *dbg) {
 	}
 }
 
-R_API RDebugSession *r_debug_session_add(RDebug *dbg) {
+R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
 	RDebugSession *session;
 	RDebugSnapDiff *diff;
 	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr;
 	int i, perms = R_IO_RW;
+
+	addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	/* Session has already existed at this addr? */
+	r_list_foreach (dbg->sessions, iter, session) {
+		if (session->key.addr == addr) {
+			if (tail) {
+				*tail = iter;
+			}
+			return session;
+		}
+	}
+
 	session = R_NEW0 (RDebugSession);
 	if (!session) {
 		return NULL;
 	}
 
-	addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	session->key = (RDebugKey) {
 		addr, r_debug_session_lastid (dbg)
 	};
@@ -73,6 +84,9 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg) {
 	}
 
 	r_list_append (dbg->sessions, session);
+	if (tail) {
+		*tail = dbg->sessions->tail;
+	}
 	return session;
 }
 
@@ -130,14 +144,17 @@ R_API bool r_debug_session_set_idx(RDebug *dbg, int idx) {
 	return false;
 }
 
-R_API RDebugSession *r_debug_session_get(RDebug *dbg, ut64 addr) {
+/* Get most recent used session at the time */
+R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail) {
 	RDebugSession *session;
-	RListIter *iter;
-	r_list_foreach_prev (dbg->sessions, iter, session) {
-		if (session->key.addr < addr) {
-			/* FIXME: Sessions must be saved along program flow. */
-			return session;
-		}
+	RListIter *prev;
+	if (!tail) {
+		return NULL;
 	}
-	return NULL;
+	prev = tail->p;
+	if (!prev) {
+		return NULL;
+	}
+	session = (RDebugSession *)prev->data;
+	return session;
 }
