@@ -3220,6 +3220,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
+	int (*hook_mem_write)(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = p2v (ds, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
@@ -3242,6 +3243,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
 	esil->cb.user = ds;
 	esil->cb.hook_reg_write = myregwrite;
+	hook_mem_write = esil->cb.hook_mem_write;
 	if (ds->show_emu_write) {
 		esil->cb.hook_mem_write = mymemwrite0;
 	} else {
@@ -3253,6 +3255,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_anal_esil_stack_free (esil);
 	hc = r_config_hold_new (core->config);
 	if (!hc) {
+		if (esil) {
+			esil->cb.hook_mem_write = hook_mem_write;
+		}
 		return;
 	}
 	r_config_save_num (hc, "io.cache", NULL);
@@ -3430,6 +3435,9 @@ callfallback:
 		break;
 	}
 beach:
+	if (esil) {
+		esil->cb.hook_mem_write = hook_mem_write;
+	}
 	r_config_restore (hc);
 	r_config_hold_free (hc);
 }
