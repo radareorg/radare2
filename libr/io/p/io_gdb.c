@@ -24,21 +24,32 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 	ut32 packets;
 	ut32 last;
 	ut32 x;
+	int ret = 0;
 	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
-	size_max = 500;
+	size_max = desc->data_max / 2;
 	packets = sz / size_max;
 	last = sz % size_max;
 	for (x = 0; x < packets; x++) {
-		gdbr_read_memory (desc, addr + (x * size_max), size_max);
+		if (gdbr_read_memory (desc, addr + (x * size_max), size_max) < 0) {
+			eprintf ("%s: Error reading gdbserver memory (%d bytes at 0x%"PFMT64x")\n",
+				 __func__, size_max, addr + (x * size_max));
+			return ret;
+		}
 		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), R_MIN (sz, size_max));
+		ret += desc->data_len;
 	}
 	if (last) {
-		gdbr_read_memory (desc, addr + x * size_max, last);
+		if (gdbr_read_memory (desc, addr + x * size_max, last) < 0) {
+			eprintf ("%s: Error reading gdbserver memory (%d bytes at 0x%"PFMT64x")\n",
+				 __func__, last, addr + (x * size_max));
+			return ret;
+		}
 		memcpy ((buf + x * size_max), desc->data + (x * size_max), last);
+		ret += desc->data_len;
 	}
-	return sz;
+	return ret;
 }
 
 static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {

@@ -19,7 +19,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!g || !host) {
 		return -1;
 	}
-	// Initial max_packet_size for remote target (minimum so far for AVR = 16)
+	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
 	g->stub_features.pkt_sz = 64;
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
 	if (!ret) {
@@ -140,23 +140,74 @@ int gdbr_read_registers(libgdbr_t *g) {
 int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 	char command[64] = {0};
 	int ret;
+	ut64 num_pkts, last, data_sz, ret_len;
+	int pkt;
 	if (!g) {
 		return -1;
 	}
-	ret = snprintf (command, sizeof (command),
-		"%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM, address, len);
-	if (ret < 0) {
-		return ret;
+	if (len > g->data_max) {
+		eprintf ("%s: Requested read too long: (%d bytes)\n", __func__, (unsigned) len);
+		return -1;
 	}
-	ret = send_msg (g, command);
-	if (ret < 0) {
-		return ret;
+	data_sz = g->stub_features.pkt_sz / 2;
+	num_pkts = len / data_sz;
+	last = len % data_sz;
+	ret_len = 0;
+	ret = 0;
+	if (last) {
+		if ((ret = snprintf (command, sizeof (command) - 1,
+				     "%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM,
+				     address + (num_pkts * data_sz),
+				     last)) < 0) {
+			return -1;
+		}
+		if (ret > data_sz) {
+			eprintf ("%s: Target packet size too small (%d bytes)\n",
+				 __func__, g->stub_features.pkt_sz);
+			return -1;
+		}
+		if ((ret = send_msg (g, command)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_m (g)) < 0) {
+			return -1;
+		}
+		if (num_pkts) {
+			memmove (g->data + (num_pkts * data_sz), g->data, g->data_len);
+		}
+		ret_len += g->data_len;
 	}
-
-	if (read_packet (g) >= 0) {
-		return handle_m (g);
-	}
-	return -1;
+	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
+		if ((ret = snprintf (command, sizeof (command) - 1,
+				     "%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM,
+				     address + (pkt * data_sz),
+				     data_sz)) < 0) {
+			return -1;
+		}
+		if (ret > data_sz) {
+			eprintf ("%s: Target packet size too small (%d bytes)\n",
+				 __func__, g->stub_features.pkt_sz);
+			return -1;
+		}
+		if ((ret = send_msg (g, command)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_m (g)) < 0) {
+			return -1;
+		}
+		if (pkt) {
+			memmove (g->data + (pkt * data_sz), g->data, g->data_len);
+		}
+		ret_len += g->data_len;
+        }
+	g->data_len = ret_len;
+	return ret;
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
