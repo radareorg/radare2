@@ -209,6 +209,7 @@ int pack(libgdbr_t *g, const char *msg) {
 		}
 		g->send_buff[g->send_len++] = '*';
 		g->send_buff[g->send_len++] = run_len;
+		msg_len -= run_len - 27;              // 2 chars to encode run length
 		src += run_len - 29;
 	}
 	g->send_buff[g->send_len] = '\0';
