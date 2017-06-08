@@ -1,10 +1,31 @@
 project('radare2', 'c')
 
-version = '1.5.0-git'
+version = '1.6.0-git'
 version_commit = run_command('git', 'rev-list', '--all', '--count')
+if version_commit.returncode() != 0
+  version_commit = 0
+else
+  version_commit = version_commit.stdout().strip()
+endif
 gittap  = run_command('git', 'describe', '--tags', '--match', '"[0-9]*"')
+if gittap.returncode() != 0
+  gittap = ''
+else
+  gittap = gittap.stdout().strip()
+endif
 gittip  = run_command('git', 'rev-parse', 'HEAD')
-r2birth = run_command('date', '/T')
+if gittip.returncode() != 0
+  gittip = 'unknown'
+else
+  gittip = gittip.stdout().strip()
+endif
+
+r2birth = run_command('date', '/t')
+if r2birth.returncode() != 0
+  r2birth = ''
+else
+  r2birth = r2birth.stdout().strip()
+endif
 prefix = '/usr/local'
 
 # system dependencies
