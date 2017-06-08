@@ -19,8 +19,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!g || !host) {
 		return -1;
 	}
-	// Initial max_packet_size for remote target (minimum so far for AVR = 8)
-	g->stub_features.pkt_sz = 8;
+	// Initial max_packet_size for remote target (minimum so far for AVR = 16)
+	g->stub_features.pkt_sz = 16;
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
 	if (!ret) {
 		return -1;
