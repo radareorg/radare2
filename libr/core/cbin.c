@@ -2338,8 +2338,11 @@ static int bin_classes(RCore *r, int mode) {
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym, mode);
-				r_cons_printf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
+				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
+				r_str_replace_char (cmd, '\n', 0);
+				r_cons_printf ("%s\n", cmd);
 				R_FREE (mflags);
+				free (cmd);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			if (c->super) {
