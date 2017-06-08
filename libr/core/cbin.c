@@ -96,7 +96,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 	RBinInfo *info = binobj ? binobj->info: NULL;
 	if (info) {
 		int va = info->has_va;
-		char * arch = strdup(info->arch);
+		char * arch = strdup (info->arch? info->arch: R_SYS_ARCH);
 		char * cpu = info->cpu? strdup(info->cpu): NULL;
 		ut16 bits = info->bits;
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
