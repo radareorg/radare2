@@ -201,31 +201,55 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
-	char command[64] = {0};
 	int ret = 0;
-	int command_len;
+	int command_len, pkt, max_cmd_len = 64;
+	ut64 num_pkts, last, data_sz;
 	char *tmp;
 	if (!g || !data) {
 		return -1;
 	}
-	command_len = snprintf (command, sizeof (command) - 1,
-		"%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM, address, len);
-	tmp = calloc (command_len + (len * 2), sizeof (char));
-	if (!tmp) {
+	data_sz = g->stub_features.pkt_sz / 2;
+	num_pkts = len / data_sz;
+	last = len % data_sz;
+	if (!(tmp = calloc (max_cmd_len + g->stub_features.pkt_sz, sizeof (char)))) {
 		return -1;
 	}
-	memcpy (tmp, command, command_len);
-	pack_hex ((char *) data, len, (tmp + command_len));
-	ret = send_msg (g, tmp);
+	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
+		if ((command_len = snprintf (tmp, max_cmd_len,
+					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
+					     address + (pkt * data_sz), data_sz)) < 0) {
+			return -1;
+		}
+		pack_hex ((char *) data + (pkt * data_sz), data_sz, (tmp + command_len));
+		if ((ret = send_msg (g, tmp)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_M (g)) < 0) {
+			return -1;
+		}
+        }
+	if (last) {
+		if ((command_len = snprintf (tmp, max_cmd_len,
+					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
+					     address + (num_pkts * data_sz), last)) < 0) {
+			return -1;
+		}
+		pack_hex ((char *) data + (num_pkts * data_sz), last, (tmp + command_len));
+		if ((ret = send_msg (g, tmp)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_M (g)) < 0) {
+			return -1;
+		}
+	}
 	free (tmp);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (read_packet (g) >= 0) {
-		return handle_M (g);
-	}
-	return -1;
+	return 0;
 }
 
 int gdbr_step(libgdbr_t *g, int thread_id) {
