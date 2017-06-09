@@ -33,7 +33,7 @@ static int typeload(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "struct", 6) && strncmp(k, "struct.", 7)) {
 		// structure
 		btype = VT_STRUCT;
-		const char *typename = k;
+		char *typename = k;
 		int typesize = 0;
 		// TODO: Add typesize here
 		char* query = sdb_fmt (-1, "struct.%s", k);
