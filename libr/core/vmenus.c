@@ -130,7 +130,7 @@ static void showreg(RAnalEsil *esil, const char *rn, const char *desc) {
 	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
 }
 
-bool visual_esil(RCore *core) {
+R_API bool r_core_visual_esil(RCore *core) {
 	const int nbits = sizeof (ut64) * 8;
 	int analopType;
 	char *word = NULL;

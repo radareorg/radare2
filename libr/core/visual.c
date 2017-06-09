@@ -6,7 +6,6 @@ static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
-static bool visual_esil(RCore *core);
 
 #define KEY_ALTQ 0xc5
 
@@ -1673,7 +1672,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'd':
 			if (r_config_get_i (core->config, "asm.esil")) {
-				visual_esil (core);
+				r_core_visual_esil (core);
 			} else {
 				int wheel = r_config_get_i (core->config, "scr.wheel");
 				if (wheel) {
