@@ -859,7 +859,10 @@ R_API const char *r_str_get2(const char *str) {
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {
-	char *out = malloc (len+1);
+	if (len < 0) {
+		return NULL;
+	}
+	char *out = malloc (len + 1);
 	if (!out) {
 		return NULL;
 	}

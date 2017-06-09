@@ -6,6 +6,8 @@ static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
+static bool visual_esil(RCore *core);
+
 #define KEY_ALTQ 0xc5
 
 static const char *printfmtSingle[] = {
@@ -1670,17 +1672,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_config_set_i (core->config, "scr.color", color);
 			break;
 		case 'd':
-		{
-			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel) {
-				r_cons_enable_mouse (false);
+			if (r_config_get_i (core->config, "asm.esil")) {
+				visual_esil (core);
+			} else {
+				int wheel = r_config_get_i (core->config, "scr.wheel");
+				if (wheel) {
+					r_cons_enable_mouse (false);
+				}
+				r_core_visual_define (core, arg + 1);
+				if (wheel) {
+					r_cons_enable_mouse (true);
+				}
 			}
-			r_core_visual_define (core, arg + 1);
-			if (wheel) {
-				r_cons_enable_mouse (true);
-			}
-		}
-		break;
+			break;
 		case 'D':
 			setdiff (core);
 			break;

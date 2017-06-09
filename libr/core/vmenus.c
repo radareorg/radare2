@@ -106,6 +106,171 @@ static int rotate_nibble (const ut8 b, int dir) {
 	return (b >> 1) | (lower << 7);
 }
 
+static int wordpos(const char *esil, int n) {
+	const char *w = esil;
+	if (n < 1) {
+		n = 0;
+	}
+	while (w && n--) {
+		const char *nw = strchr (w + 1, ',');
+		if (!nw) {
+			return strlen (esil);
+		}
+		w = nw;
+	}
+	if (!w && n > 0) {
+		return strlen (esil);
+	}
+	return (size_t)(w - esil);
+}
+
+static void showreg(RAnalEsil *esil, const char *rn, const char *desc) {
+	ut64 nm = 0;
+	int sz = 0;
+	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
+}
+
+bool visual_esil(RCore *core) {
+	const int nbits = sizeof (ut64) * 8;
+	int analopType;
+	char *word = NULL;
+	int x = 0;
+	RAnalEsil *esil;
+	RAsmOp asmop;
+	RAnalOp analop;
+	ut8 buf[sizeof (ut64)];
+
+	if (core->blocksize < sizeof (ut64)) {
+		return false;
+	}
+	memcpy (buf, core->block, sizeof (ut64));
+	esil = r_anal_esil_new (20, 0);
+	esil->anal = core->anal;
+	r_anal_esil_set_pc (esil, core->offset);
+	for (;;) {
+		r_cons_clear00 ();
+		// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+		(void) r_asm_disassemble (core->assembler, &asmop, buf, sizeof (ut64));
+		analop.type = -1;
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64));
+		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
+		r_cons_printf ("r2's esil debugger:\n\n");
+		r_cons_printf ("pos: %d\n", x);
+		{
+			char *res = r_print_hexpair (core->print, asmop.buf_hex, -1);
+			r_cons_printf ("hex: %s\n"Color_RESET, res);
+			free (res);
+		}
+		{
+			char *op = colorize_asm_string (core, asmop.buf_asm, analopType);
+			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
+			free (op);
+		}
+		{
+			const char *expr = r_strbuf_get (&analop.esil);
+			r_cons_printf (Color_RESET"esil: %s\n"Color_RESET, expr);
+			int wp = wordpos (expr, x);
+			char *pas = strdup (r_str_pad (' ', wp ? wp + 1: 0));
+			int wp2 = wordpos (expr, x + 1);
+			free (word);
+			word = r_str_ndup (expr + (wp?(wp+1):0), (wp2 - wp) - (wp?1:0));
+			if (wp == wp2) {
+				x --;
+				eprintf ("Done\n");
+				x = 0;
+				r_sys_sleep (1);
+				continue;
+			}
+			const char *pad = r_str_pad ('-', wp2 - ((wp > 0)? wp + 1: 0));
+			r_cons_printf (Color_RESET"      %s%s\n"Color_RESET, pas, pad);
+			free (pas);
+			// free (pad);
+		}
+		r_cons_printf ("esil regs:\n");
+		showreg (esil, "$$", "address");
+		showreg (esil, "$z", "zero");
+		showreg (esil, "$b", "borrow");
+		showreg (esil, "$c", "carry");
+		showreg (esil, "$o", "overflow");
+		showreg (esil, "$p", "parity");
+		showreg (esil, "$r", "regsize");
+		showreg (esil, "$s", "sign");
+		showreg (esil, "$d", "delay");
+		showreg (esil, "$j", "jump");
+
+		r_cons_printf ("regs:\n");
+		{
+			char *r = r_core_cmd_str (core, "dr=");
+			r_cons_printf ("%s", r);
+			free (r);
+		}
+		r_cons_printf ("esil stack:\n");
+		r_anal_esil_dumpstack (esil);
+		r_anal_op_fini (&analop);
+		r_cons_newline ();
+		r_cons_visual_flush ();
+
+		int ch = r_cons_readchar ();
+		if (ch == -1 || ch == 4) {
+			break;
+		}
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'Q':
+		case 'q':
+			goto beach;
+		case 's':
+			eprintf ("step ((%s))\n", word);
+			r_sys_usleep (500);
+			x = R_MIN (x + 1, nbits - 1);
+			r_anal_esil_runword (esil, word);
+			break;
+		case 'S':
+			eprintf ("esil step over :D\n");
+			r_sys_usleep (500);
+			break;
+		case 'r':
+		case 'h':
+			x = 0; //R_MAX (x - 1, 0);
+			break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"Vd1?: Visual Bit Editor Help:\n\n"
+			" q     - quit the bit editor\n"
+			" h/r   - reset / go back (reinitialize esil state)\n"
+			" s     - esil step in\n"
+			" j/k   - toggle bit value (same as space key)\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
+			break;
+		case ':': // TODO: move this into a separate helper function
+			{
+			char cmd[1024];
+			r_cons_show_cursor (true);
+			r_cons_set_raw (0);
+			cmd[0]='\0';
+			r_line_set_prompt (":> ");
+			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+				cmd[0] = '\0';
+			}
+			r_core_cmd (core, cmd, 1);
+			r_cons_set_raw (1);
+			r_cons_show_cursor (false);
+			if (cmd[0]) {
+				r_cons_any_key (NULL);
+			}
+			r_cons_clear ();
+			}
+			break;
+		}
+	}
+beach:
+	r_anal_esil_free (esil);
+	return true;
+}
+
 static bool edit_bits (RCore *core) {
 	const int nbits = sizeof (ut64) * 8;
 	bool colorBits = false;
