@@ -48,6 +48,8 @@ if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
   platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
+  # Add /MT to include windows specific dependencies
+  add_global_link_arguments('/MT', language: 'c')
 endif
 
 # load plugin configuration

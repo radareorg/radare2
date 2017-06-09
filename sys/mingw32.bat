@@ -47,7 +47,7 @@ set EXPAND_PATH=export PATH="${MINGW_BIN_PATH}:${MINGW_MSYS_PATH}:${GIT_BIN_PATH
 sh.exe -c "%EXPAND_PATH% ; gcc -v"
 sh.exe -c "uname | tr 'A-Z' 'a-z'"
 sh.exe -c "echo CC=${CC}"
-sh.exe -c "sed -i '/xtensa/d' plugins.def.cfg"
+rem sh.exe -c "sed -i '/xtensa/d' plugins.def.cfg"
 sh.exe -c "%EXPAND_PATH% ; ./configure --with-ostype=mingw32 --build=i686-unknown-windows-gnu && make -j1 CC='gcc -static-libgcc'"
 
 if NOT "%APPVEYOR%" == "True" (
