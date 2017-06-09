@@ -191,10 +191,12 @@ WindCtx *wind_ctx_new (void *io_ptr) {
 }
 
 void wind_ctx_free (WindCtx *ctx) {
-	if (!ctx) return;
-	r_list_free(ctx->plist_cache);
-	iob_close(ctx->io_ptr);
-	free(ctx);
+	if (!ctx) {
+		return;
+	}
+	r_list_free (ctx->plist_cache);
+	iob_close (ctx->io_ptr);
+	free (ctx);
 }
 
 #define PKT_REQ(p) ( (kd_req_t *)(((kd_packet_t *)p)->data) )
@@ -246,7 +248,7 @@ int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 	do {
 		free(pkt);
 		// Try to read a whole packet
-		ret = kd_read_packet(ctx->io_ptr, &pkt);
+		ret = kd_read_packet (ctx->io_ptr, &pkt);
 		// eprintf("kd_read_packet() = %i\n", ret);
 		if (ret != KD_E_OK)
 			break;

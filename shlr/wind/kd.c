@@ -85,19 +85,22 @@ int kd_read_packet (void *fp, kd_packet_t **p) {
 		return KD_E_IOERR;
 
 	if (!kd_packet_is_valid(&pkt)) {
-		printf("invalid leader %08x\n", pkt.leader);
+		eprintf ("invalid leader %08x\n", pkt.leader);
 		return KD_E_MALFORMED;
 	}
 
-	buf = malloc(sizeof(kd_packet_t) + pkt.length);
+	buf = malloc (sizeof (kd_packet_t) + pkt.length);
+	if (!buf) {
+		return KD_E_IOERR;
+	}
 	memcpy(buf, &pkt, sizeof(kd_packet_t));
 
 	if (pkt.length)
 		iob_read(fp, (uint8_t *)buf + sizeof(kd_packet_t), pkt.length);
 
 	if (pkt.checksum != kd_data_checksum(buf + sizeof(kd_packet_t), pkt.length)) {
-		printf("Checksum mismatch!\n");
-		free(buf);
+		eprintf ("Checksum mismatch!\n");
+		free (buf);
 		return KD_E_MALFORMED;
 	}
 
