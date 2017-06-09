@@ -51,7 +51,7 @@ R_API void r_anal_pin_unset (RAnal *a, ut64 addr) {
 
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	char buf[64];
-	const char *name, *key = sdb_itoa (addr, buf, 16);
+	const char /**name,*/ *key = sdb_itoa (addr, buf, 16);
 	if (key) {
 		return sdb_const_get (DB, key, NULL);
 #if 0
