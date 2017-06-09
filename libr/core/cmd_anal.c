@@ -2384,10 +2384,6 @@ repeat:
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
 	}
-	if (r_anal_pin_call (core->anal, addr)) {
-		eprintf ("esil pin called\n");
-		goto out_return_one;
-	}
 	if (esil->exectrap) {
 		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
@@ -2396,11 +2392,20 @@ repeat:
 			goto out_return_one;
 		}
 	}
+	r_asm_set_pc (core->assembler, addr);
+	// run esil pin command here
+	const char *pincmd = r_anal_pin_call (core->anal, addr);
+	if (pincmd) {
+		r_core_cmd0 (core, pincmd);
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
+		if (addr != pc) {
+			goto out_return_one;
+		}
+	}
 	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
 	if (rc != sizeof (code)) {
 		eprintf ("read error\n");
 	}
-	r_asm_set_pc (core->assembler, addr);
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	// update the esil pointer because RAnal.op() can change it
