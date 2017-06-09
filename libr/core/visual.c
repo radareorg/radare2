@@ -2,12 +2,10 @@
 
 #include <r_core.h>
 
-#define NPF 9
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
-#define PIDX (R_ABS (core->printidx % NPF))
 #define KEY_ALTQ 0xc5
 
 static const char *printfmtSingle[] = {
@@ -1166,7 +1164,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		p->cur += cols > 0? cols: 3;
 		return;
 	}
-	if (core->seltab == 0 && core->printidx == 2) {
+	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
@@ -1223,7 +1221,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	}
 	cursor_ocur (core, use_ocur);
 
-	if (core->seltab == 0 && core->printidx == 2) {
+	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
@@ -1546,7 +1544,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case 9: // tab
 			core->curtab = 0;
-			if (core->printidx == 2) {
+			if (core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 				core->print->cur = 0;
 				core->seltab++;
 				if (core->seltab > 2) {
@@ -2059,13 +2057,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '[':
-			if (core->print->cur_enabled) {
+			// comments column
+			if (core->print->cur_enabled &&
+				(core->printidx == R_CORE_VISUAL_MODE_PD ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 2))) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 				if (cmtcol > 2) {
 					r_config_set_i (core->config, "asm.cmtcol", cmtcol - 2);
 				}
 			}
-			{
+			// hex column
+			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				if (scrcols > 2) {
 					r_config_set_i (core->config, "hex.cols", scrcols - 2);
@@ -2073,11 +2076,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case ']':
-			if (core->print->cur_enabled) {
+			// comments column
+			if (core->print->cur_enabled &&
+				(core->printidx == R_CORE_VISUAL_MODE_PD ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 2))) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 				r_config_set_i (core->config, "asm.cmtcol", cmtcol + 2);
 			}
-			{
+			// hex column
+			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				r_config_set_i (core->config, "hex.cols", scrcols + 2);
 			}
@@ -2172,7 +2180,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == 2) {
+				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 					int w = r_config_get_i (core->config, "hex.cols");
 					r_config_set_i (core->config, "stack.size",
 						r_config_get_i (core->config, "stack.size") - w);
@@ -2196,7 +2204,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == 2) {
+				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 					int w = r_config_get_i (core->config, "hex.cols");
 					r_config_set_i (core->config, "stack.size",
 						r_config_get_i (core->config, "stack.size") + w);
@@ -2447,21 +2455,21 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize) {
 		switch (core->printidx) {
-		case 7: // prc
+		case R_CORE_VISUAL_MODE_PRC: // prc
 			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
 			break;
-		case 0: // x"
-		case 8: // pxa
+		case R_CORE_VISUAL_MODE_PX: // x
+		case R_CORE_VISUAL_MODE_PXa: // pxa
 			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
 			break;
-		case 3: // XXX pw
+		case R_CORE_VISUAL_MODE_PW: // XXX pw
 			r_core_block_size (core, core->cons->rows * hexcols);
 			break;
-		case 4: // XXX pc
+		case R_CORE_VISUAL_MODE_PC: // XXX pc
 			r_core_block_size (core, core->cons->rows * hexcols * 4);
 			break;
-		case 1: // pd
-		case 2: // pd+dbg
+		case R_CORE_VISUAL_MODE_PD: // pd
+		case R_CORE_VISUAL_MODE_PDDBG: // pd+dbg
 		{
 			int bsize = core->cons->rows * 5;
 
@@ -2476,7 +2484,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			r_core_block_size (core, bsize);
 			break;
 		}
-		case 5: // pxA
+		case R_CORE_VISUAL_MODE_PXA: // pxA
 			r_core_block_size (core, hexcols * core->cons->rows * 8);
 			break;
 		}
@@ -2757,7 +2765,7 @@ dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 
-		if (printfmt == printfmtSingle && core->printidx == 2) {
+		if (printfmt == printfmtSingle && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 			static char debugstr[512];
 			const int ref = r_config_get_i (core->config, "dbg.slow");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
