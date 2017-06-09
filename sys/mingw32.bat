@@ -22,7 +22,7 @@ set "GIT_BIN_PATH=%GIT_PATH%\bin"
 
 rem -----------------------------------------------------------------------------------
 
-SET PATH=%MINGW_BIN_PATH%;%GIT_BIN_PATH%;%PATH%
+SET PATH=%MINGW_BIN_PATH%;%MINGW_MSYS_PATH%;%GIT_BIN_PATH%;%PATH%
 
 echo Using PATH = %PATH% ...
 
