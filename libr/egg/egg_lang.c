@@ -49,6 +49,7 @@ static struct {
 enum {
     NORMAL = 0,
     ALIAS,
+    INCLUDE,
     DATA,
     INLINE,
     NAKED,
@@ -257,6 +258,11 @@ static void rcc_element(REgg *egg, char *str) {
         case SYSCALL:
             if (nsyscalls > 255){
                 eprintf ("global-buffer-overflow in syscalls\n");
+                break;
+            }
+//fixed by izhuer
+            if (dstvar == NULL || str == NULL){
+                eprintf ("does not set name or arg for syscall\n");
                 break;
             }
             //XXX the mem for name and arg are not freed - MEMLEAK
@@ -475,6 +481,7 @@ static void rcc_fun(REgg *egg, const char *str) {
                 }
             } else
             if (strstr (ptr, "include")) {
+                mode = INCLUDE;
                 free (includefile);
                 includefile = strdup (skipspaces (str));
                 slurp = 0;
