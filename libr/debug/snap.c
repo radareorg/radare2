@@ -86,15 +86,20 @@ R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
 	}
 }
 
-R_API RDebugSnap *r_debug_snap_get(RDebug *dbg, ut64 addr) {
+static RDebugSnap *r_debug_snap_get_map(RDebug *dbg, RDebugMap *map) {
 	RListIter *iter;
 	RDebugSnap *snap;
 	r_list_foreach (dbg->snaps, iter, snap) {
-		if (R_BETWEEN (snap->addr, addr, snap->addr_end - 1)) {
+		if (snap->addr <= map->addr && map->addr_end <= snap->addr_end) {
 			return snap;
 		}
 	}
 	return NULL;
+}
+
+R_API RDebugSnap *r_debug_snap_get(RDebug *dbg, ut64 addr) {
+	RDebugMap *map = r_debug_map_get (dbg, addr);
+	return r_debug_snap_get_map (dbg, map);
 }
 
 static void r_page_data_set(RDebug *dbg, RPageData *page) {
@@ -201,7 +206,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	ut32 page_num = map->size / SNAP_PAGE_SIZE;
 	int digest_size;
 	/* Get an existing snapshot entry */
-	RDebugSnap *snap = r_debug_snap_get (dbg, map->addr);
+	RDebugSnap *snap = r_debug_snap_get_map (dbg, map);
 	if (!snap) {
 		/* Create a new one */
 		if (!(snap = r_debug_snap_new ())) {
@@ -213,6 +218,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		snap->size = map->size;
 		snap->page_num = page_num;
 		snap->data = malloc (map->size);
+		snap->perm = map->perm;
 		if (!snap->data) {
 			goto error;
 		}
