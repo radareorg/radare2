@@ -154,10 +154,8 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
 	if (!esil) {
 		return false;
 	}
-	if (esil->cmd) {
-		if (esil->cmd (esil, esil->cmd_intr, interrupt, 0)) {
-			return true;
-		}
+	if (esil->cmd && esil->cmd (esil, esil->cmd_intr, interrupt, 0)) {
+		return true;
 	}
 	if (esil->anal) {
 		RAnalPlugin *ap = esil->anal->cur;
@@ -204,6 +202,10 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
 		esil->anal->cur->esil_fini (esil);
 	}
+	free (esil->cmd_intr);
+	free (esil->cmd_trap);
+	free (esil->cmd_mdev);
+	free (esil->cmd_todo);
 	free (esil);
 }
 
@@ -2642,6 +2644,11 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 		return 0;
 	}
 	esil->trap = 0;
+	if (esil->cmd && esil->cmd_todo) {
+		if (!strncmp (str, "TODO", 4)) {
+			esil->cmd (esil, esil->cmd_todo, esil->pc, 0);
+		}
+	}
 loop:
 	esil->repeat = 0;
 	esil->skip = 0;

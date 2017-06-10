@@ -2410,7 +2410,10 @@ repeat:
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
-	if (op.size < 1) {
+	if (op.size < 1 || ret < 0) {
+		if (esil->cmd && esil->cmd_todo) {
+			esil->cmd (esil, esil->cmd_todo, addr, 0);
+		}
 		op.size = 1; // avoid inverted stepping
 	}
 	{
