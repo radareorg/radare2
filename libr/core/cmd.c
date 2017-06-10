@@ -1191,41 +1191,6 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
-static void prepare_intgrep(char *cmd, const char *quotestr)
-{
-	char *ptr;
-	int len = strlen (cmd);
-
-	//  search and modify '~str~?' into '~?str'
-	if (len > 4 && r_str_endswith (cmd, "~?") && cmd[len - 3] != '\\') {
-		// try to find second '~' occurence
-		cmd[len - 2] = '\0';
-		ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
-		if (ptr && ptr > cmd && *(ptr - 1) != '\\') {
-			memmove (ptr + 2, ptr + 1, strlen (ptr + 1));
-			ptr[1] = '?';
-		} else {
-			// second '~' is not finded, restore original '~'
-			cmd[len - 2] = '~';
-		}
-	}
-
-	/* grep the content */
-	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
-	if (ptr && ptr > cmd) {
-		char *escape = ptr - 1;
-		if (*escape == '\\') {
-			memmove (escape, ptr, strlen (escape));
-			return;
-		}
-	}
-	if (ptr) {
-		*ptr++ = '\0';
-		cmd = r_str_chop (cmd);
-		r_cons_grep (ptr);
-	}
-}
-
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if __UNIX__ || __CYGWIN__
 	int stdout_fd, fds[2];
@@ -1245,7 +1210,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_config_set_i (core->config, "scr.color", 0);
 	}
 	if (*shell_cmd=='!') {
-		prepare_intgrep (shell_cmd, "\"");
+		r_cons_grep_parsecmd (shell_cmd, "\"");
 		olen = 0;
 		out = NULL;
 		// TODO: implement foo
@@ -1684,7 +1649,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				r_cons_break_push (NULL, NULL);
 				recursive_help (core, cmd);
 				r_cons_break_pop ();
-				prepare_intgrep (ptr + 2, "`");
+				r_cons_grep_parsecmd (ptr + 2, "`");
 				if (scr_html != -1) {
 					r_config_set_i (core->config, "scr.html", scr_html);
 				}
@@ -1891,7 +1856,7 @@ next2:
 		return true;
 	}
 	if (*cmd != '.') {
-		prepare_intgrep (cmd, quotestr);
+		r_cons_grep_parsecmd (cmd, quotestr);
 	}
 
 	/* temporary seek commands */
