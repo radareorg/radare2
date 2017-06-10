@@ -16,6 +16,7 @@ static ut64 flags = 0;
 static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
+char endline[2]="\n";
 
 static int format_output(char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -29,7 +30,7 @@ static int format_output(char mode, const char *s) {
 	}
 	switch (mode) {
 	case 'I':
-		printf ("%" PFMT64d "\n", n);
+		printf ("%" PFMT64d "%s", n,endline);
 		break;
 	case '0': {
 		int len = strlen (s);
@@ -37,31 +38,31 @@ static int format_output(char mode, const char *s) {
 			R_STATIC_ASSERT (sizeof (float) == 4)
 			float f = (float) num->fvalue;
 			ut8 *p = (ut8 *) &f;
-			printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
+			printf ("Fx%02x%02x%02x%02x%s", p[3], p[2], p[1], p[0],endline);
 		} else {
-			printf ("0x%" PFMT64x "\n", n);
+			printf ("0x%" PFMT64x "%s", n,endline);
 		}
 	} break;
 	case 'F': {
 		float *f = (float *) &n;
-		printf ("%ff\n", *f);
+		printf ("%ff%s", *f,endline);
 	} break;
-	case 'f': printf ("%.01lf\n", num->fvalue); break;
-	case 'O': printf ("0%" PFMT64o "\n", n); break;
+	case 'f': printf ("%.01lf%s", num->fvalue,endline); break;
+	case 'O': printf ("0%" PFMT64o "%s", n,endline); break;
 	case 'B':
 		if (n) {
 			r_num_to_bits (strbits, n);
-			printf ("%sb\n", strbits);
+			printf ("%sb%s", strbits,endline);
 		} else {
-			printf ("0b\n");
+			printf ("0b%s",endline);
 		}
 		break;
 	case 'T':
 		if (n) {
 			r_num_to_trits (strbits, n);
-			printf ("%st\n", strbits);
+			printf ("%st%s", strbits,endline);
 		} else {
-			printf ("0t\n");
+			printf ("0t%s",endline);
 		}
 		break;
 	default:
@@ -90,12 +91,13 @@ static int help() {
 		"  hex   ->  ternary       ;  rax2 Tx23\n"
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
+		"  -!    print without nl  ;  rax2 -! -E salam\n"
 		"  -b    bin -> str        ;  rax2 -b 01000101 01110110\n"
 		"  -B    str -> bin        ;  rax2 -B hello\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
-		"  -D    base64 decode     ;\n"
-		"  -E    base64 encode     ;\n"
+		"  -D    base64 decode     ;  rax2 -D cmFkYXJl\n"
+		"  -E    base64 encode     ;  rax2 -E radare\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
 		"  -h    help              ;  rax2 -h\n"
@@ -158,6 +160,7 @@ static int rax(char *str, int len, int last) {
 			case 'N': flags ^= 1 << 15; break;
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
+			case '!': flags ^= 1 << 19; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -188,7 +191,9 @@ static int rax(char *str, int len, int last) {
 		}
 	}
 dotherax:
-
+	if (flags & (1 << 19)) { // -s
+		endline[0]='\0';
+	}
 	if (flags & 1) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = malloc (n);
@@ -210,7 +215,7 @@ dotherax:
 		for (i = 0; i < len; i++) {
 			printf ("%02x", (ut8) str[i]);
 		}
-		printf ("\n");
+		printf ("%s",endline);
 		return true;
 	} else if (flags & (1 << 3)) { // -b
 		int i, len;
@@ -222,7 +227,7 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
-		printf ("0x%x\n", h);
+		printf ("0x%x%s", h,endline);
 		return true;
 	} else if (flags & (1 << 5)) { // -k
 		out_mode = 'I';
@@ -242,11 +247,11 @@ dotherax:
 		if (n < 1 || !memcmp (str, "0x", 2)) {
 			ut64 q = r_num_math (num, str);
 			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
-			printf ("%s\n", s);
+			printf ("%s%s", s,endline);
 			free (s);
 		} else {
 			s = r_print_randomart ((ut8 *) buf, n, *m);
-			printf ("%s\n", s);
+			printf ("%s%s", s,endline);
 			free (s);
 		}
 		free (m);
@@ -260,9 +265,9 @@ dotherax:
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
 				printf ("%02x%02x%02x%02x"
-					"%02x%02x%02x%02x\n",
+					"%02x%02x%02x%02x%s",
 					np[0], np[1], np[2], np[3],
-					np[4], np[5], np[6], np[7]);
+					np[4], np[5], np[6], np[7],endline);
 			}
 		} else {
 			/* is 32 bit value */
@@ -271,8 +276,8 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				printf ("%02x%02x%02x%02x\n",
-					np[0], np[1], np[2], np[3]);
+				printf ("%02x%02x%02x%02x%s",
+					np[0], np[1], np[2], np[3],endline);
 			}
 		}
 		fflush (stdout);
@@ -304,7 +309,7 @@ dotherax:
 		} else if (n >> 7) {
 			n = (st64) (st8) n;
 		}
-		printf ("%" PFMT64d "\n", n);
+		printf ("%" PFMT64d "%s", n,endline);
 		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 15)) { // -N
@@ -316,9 +321,9 @@ dotherax:
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
 				printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
-					"\\x%02x\\x%02x\\x%02x\\x%02x\n",
+					"\\x%02x\\x%02x\\x%02x\\x%02x%s",
 					np[0], np[1], np[2], np[3],
-					np[4], np[5], np[6], np[7]);
+					np[4], np[5], np[6], np[7],endline);
 			}
 		} else {
 			/* is 32 bit value */
@@ -327,8 +332,8 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				printf ("\\x%02x\\x%02x\\x%02x\\x%02x\n",
-					np[0], np[1], np[2], np[3]);
+				printf ("\\x%02x\\x%02x\\x%02x\\x%02x%s",
+					np[0], np[1], np[2], np[3],endline);
 			}
 		}
 		fflush (stdout);
@@ -336,7 +341,7 @@ dotherax:
 	} else if (flags & (1 << 10)) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
-		printf ("%s\n", buf);
+		printf ("%s%s", buf,endline);
 		return true;
 	} else if (flags & (1 << 11)) { // -t
 		ut32 n = r_num_math (num, str);
@@ -349,7 +354,7 @@ dotherax:
 		char *out = calloc (sizeof (char), ((len + 1) * 4) / 3);
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out,endline);
 			fflush (stdout);
 			free (out);
 		}
@@ -360,7 +365,7 @@ dotherax:
 		ut8 *out = calloc (sizeof (ut8), ((len + 2) / 3) * 4);
 		if (out) {
 			r_base64_decode (out, str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out,endline);
 			fflush (stdout);
 			free (out);
 		}
@@ -370,7 +375,7 @@ dotherax:
 		if (str) {
 			char *res = r_hex_from_c (str);
 			if (res) {
-				printf ("%s\n", res);
+				printf ("%s%s", res,endline);
 				fflush (stdout);
 				free (res);
 			} else {
@@ -415,8 +420,8 @@ dotherax:
 		}
 		/* binary and floating point */
 		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
-		eprintf ("%s %.01lf %ff %lf\n",
-			out, num->fvalue, f, d);
+		eprintf ("%s %.01lf %ff %lf%s",
+			out, num->fvalue, f, d,endline);
 
 		return true;
 	}
@@ -448,7 +453,7 @@ dotherax:
 	} else if (str[strlen (str) - 1] == 'f') {
 		ut8 *p = (ut8 *) &f;
 		sscanf (str, "%f", &f);
-		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
+		printf ("Fx%02x%02x%02x%02x%s", p[3], p[2], p[1], p[0],endline);
 		return true;
 	}
 	while ((p = strchr (str, ' '))) {
