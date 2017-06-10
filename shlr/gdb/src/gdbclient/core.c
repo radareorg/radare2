@@ -212,6 +212,8 @@ bool gdbr_kill(libgdbr_t *g) {
 
 int gdbr_read_registers(libgdbr_t *g) {
 	int ret = -1;
+// simulavr fails to retrieve registers
+return -1;
 	if (!g) {
 		return -1;
 	}

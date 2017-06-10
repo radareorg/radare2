@@ -26,8 +26,10 @@ static ut32 c_size = UT32_MAX;
 static ut8 *c_buff = NULL;
 #define SILLY_CACHE 0
 
-static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
-	ut32 size_max = 500;
+static int __debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
+	// 8 is required for AVR only, the other platforms can specify different limits here
+	// original it was 500, that was seeming to be a good balance
+	ut32 size_max = R_MIN (8, sz);
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
 	ut32 x;
@@ -40,11 +42,11 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 	}
 	for (x = 0; x < packets; x++) {
 		gdbr_read_memory (desc, addr + (x * size_max), size_max);
-		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), R_MIN (sz, size_max));
+		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), size_max);
 	}
 	if (last) {
-		gdbr_read_memory (desc, addr + x * size_max, last);
-		memcpy ((buf + x * size_max), desc->data + (x * size_max), last);
+		gdbr_read_memory (desc, addr + (x * size_max), last);
+		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), last);
 	}
 	c_addr = addr;
 	c_size = sz;
@@ -55,7 +57,15 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
-static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
+	int i, maxsz = R_MIN(8, sz);
+	for (i = 0; i< sz ; i+=maxsz) {
+		__debug_gdb_read_at (buf + i, maxsz, addr + i);
+	}
+	return sz;
+}
+
+static int __debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 	ut32 x, size_max = 500;
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
@@ -76,6 +86,14 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 			(buf + x * size_max), last);
 	}
 
+	return sz;
+}
+
+static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
+	int i, maxsz = R_MIN (8, sz);
+	for (i = 0; i< sz ; i+=maxsz) {
+		__debug_gdb_write_at (buf + i, maxsz, addr + i);
+	}
 	return sz;
 }
 
