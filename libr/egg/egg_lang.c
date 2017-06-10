@@ -769,6 +769,7 @@ static void rcc_next(REgg *egg) {
         path = find_include (elem, includefile);
 //edited by izhuer
 eprintf("Including file: %s\n", path);
+eprintf("Including file with elem: %s\n", elem);
         if (!path) {
             eprintf ("Cannot find include file '%s'\n", elem);
             return;
@@ -978,9 +979,11 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 //edited by izhuer
 eprintf ("----------------------------\n");
 eprintf ("CH  %c\n", c);
+eprintf ("OC  %c\n", oc);
 eprintf ("elem  %*s\n", elem_n, elem);
 eprintf ("elem_n  %d\n", elem_n);
 eprintf ("mode  %d\n", mode);
+eprintf ("skipline  %d\n", skipline);
 eprintf ("----------------------------\n\n");
     /* comments */
     if (skipline) {
@@ -1112,9 +1115,7 @@ eprintf ("----------------------------\n\n");
             elem_n = 0;
         }
     }
-//edited by izhuer
-    //if (c!='\t' && c!=' ')
-    if (!is_space(c))
+    if (c!='\t' && c!=' ')
         oc = c;
     return 0;
 }
