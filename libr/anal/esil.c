@@ -2646,7 +2646,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	esil->trap = 0;
 	if (esil->cmd && esil->cmd_todo) {
 		if (!strncmp (str, "TODO", 4)) {
-			esil->cmd (esil, esil->cmd_todo, esil->pc, 0);
+			esil->cmd (esil, esil->cmd_todo, esil->address, 0);
 		}
 	}
 loop:
