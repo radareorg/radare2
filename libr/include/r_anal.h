@@ -1018,6 +1018,7 @@ typedef struct r_anal_esil_t {
 	char *cmd_trap; // r2 (external) command to run when a trap occurs
 	char *cmd_mdev; // r2 (external) command to run when an memory mapped device address is used
 	char *cmd_todo; // r2 (external) command to run when esil expr contains TODO
+	char *cmd_ioer; // r2 (external) command to run when esil fails to IO
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;

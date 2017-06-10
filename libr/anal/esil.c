@@ -206,6 +206,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	free (esil->cmd_trap);
 	free (esil->cmd_mdev);
 	free (esil->cmd_todo);
+	free (esil->cmd_ioer);
 	free (esil);
 }
 
@@ -283,6 +284,9 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
+		}
+		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
+			esil->cmd (esil, esil->cmd_ioer, esil->address, 0);
 		}
 	}
 	return ret;

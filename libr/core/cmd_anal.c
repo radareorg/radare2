@@ -2254,6 +2254,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case '-':
 	case '*':
+	case 'R':
 	case 'j':
 	case '\0':
 		__anal_reg_list (core, type, size, str[0]);
@@ -2389,6 +2390,7 @@ repeat:
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
+// RUN cmd.esil.trap here
 			goto out_return_one;
 		}
 	}
@@ -2408,6 +2410,9 @@ repeat:
 	}
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+	if (ret < 0) {
+		eprintf ("anal error\n");
+	}
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
 	if (op.size < 1 || ret < 0) {

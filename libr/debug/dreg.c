@@ -194,10 +194,12 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case '-':
 				dbg->cb_printf ("f-%s\n", item->name);
 				break;
+			case 'R':
+				dbg->cb_printf ("aer %s = 0x%s\n", item->name, strvalue);
+				break;
 			case 1:
 			case '*':
-				dbg->cb_printf ("f %s 1 0x%s\n",
-					item->name, strvalue);
+				dbg->cb_printf ("f %s 1 0x%s\n", item->name, strvalue);
 				break;
 			case 'd':
 			case 2:
