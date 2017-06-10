@@ -220,28 +220,32 @@ static void rcc_pusharg(REgg *egg, char *str) {
 
 static void rcc_element(REgg *egg, char *str) {
     REggEmit *e = egg->remit;
-    char *p = strrchr (str, ',');
+    char *p = str + strlen(str);
+    int inside = 0;
     int num, num2;
 
+//fixed by izhuer
     if (CTX) {
-        nargs = 0;
-        if (mode == GOTO)
-            mode = NORMAL; // XXX
-        while (p) {
-            *p = '\0';
-            p = (char *)skipspaces (p+1);
-            rcc_pusharg (egg, p);
-            p = strrchr (str, ',');
-        }
-        if (callname)
-            rcc_pusharg (egg, str);
-        else
-        if (mode == NORMAL) {
-            if (!atoi (str)) {
-                if (!dstvar) /* return string */
-                    dstvar = strdup (".fix0");
-                rcc_pushstr (egg, str, 1);
+        if (slurp == '"') {
+            if (mode == NORMAL) {
+                if (!dstvar)
+                    dstvar = strdup(".fix0");
+                rcc_pushstr(egg, str, 1);
             }
+        } else {
+            nargs = 0;
+            if (mode == GOTO)
+                mode = NORMAL; // XXX
+            while (p-- != str) {
+                if (*p == '"')
+                    inside ^= 1;
+                else if (*p == ',' && !inside){
+                    *p = '\0';
+                    p = (char *)skipspaces (p+1);
+                    rcc_pusharg (egg, p);
+                }
+            }
+            rcc_pusharg (egg, str);
         }
     } else {
         switch (mode) {
@@ -329,6 +333,10 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 
         len = strlen (str);
         j = (len-len%e->size)+e->size;
+//edited by izhuer
+eprintf("Getting into rcc_pushstr with str: %s\n", str);
+eprintf("Getting into rcc_pushstr with len: %lu\n", strlen(str));
+eprintf("Getting into rcc_pushstr with j: %d\n", j);
         e->set_string (egg, dstvar, str, j);
         free (dstvar);
         dstvar = NULL;
@@ -1025,12 +1033,12 @@ eprintf ("----------------------------\n\n");
                 "%s:%d Nesting of expressions not yet supported\n",
                 file, line));
         if (c == slurp && oc != '\\') {  // close slurp
-            slurp = 0;
             elem[elem_n] = '\0';
             if (elem_n > 0)
                 rcc_element (egg, elem);
             else e->frame (egg, 0);
             elem_n = 0;
+            slurp = 0;
         } else elem[elem_n++] = c;
         elem[elem_n] = '\0';
     } else {
