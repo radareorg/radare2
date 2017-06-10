@@ -85,6 +85,7 @@ static char *ctxpush[32];
 static char *file = "stdin";
 static char *dstvar = NULL;
 static char *dstval = NULL;
+static char *includedir = NULL;
 static int ndstval = 0;
 static int skipline = 0; // BOOL
 static int quoteline = 0;
@@ -96,7 +97,9 @@ static int mode = NORMAL;
 
 static char *find_include(const char *prefix, const char *file) {
     char *pfx = NULL, *ret = NULL, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
-    //eprintf ("find_include (%s,%s)\n", prefix, file);
+//edited by izhuer
+eprintf ("find_include (%s,%s)\n", prefix, file);
+eprintf ("R_EGG_INCDIR_ENV: %s\n", env);
     if (!prefix) prefix = "";
     if (*prefix=='$') {
         char *out = r_sys_getenv (prefix+1);
@@ -135,6 +138,8 @@ static char *find_include(const char *prefix, const char *file) {
         }
         free (env);
     } else ret = r_str_appendf (NULL, "%s/%s", pfx, file);
+//edited by izhuer
+eprintf ("find_include (%s,%s)\n", pfx, file);
     free (pfx);
     return ret;
 }
@@ -249,6 +254,8 @@ static void rcc_element(REgg *egg, char *str) {
             rcc_pusharg (egg, str);
         }
     } else {
+//fixed by izhuer
+eprintf("Getting into rcc_element with str: %s\n", str);
         switch (mode) {
         case ALIAS:
             e->equ (egg, dstvar, str);
@@ -274,6 +281,12 @@ static void rcc_element(REgg *egg, char *str) {
         case GOTO:
             elem[elem_n] = 0;
             e->jmp (egg, elem, 0);
+            break;
+        case INCLUDE:
+            if (str != NULL)
+                includedir = strdup(str);
+            else
+                includedir = NULL;
             break;
         default:
             p = strchr (str, ',');
@@ -484,6 +497,8 @@ static void rcc_fun(REgg *egg, const char *str) {
                 mode = INCLUDE;
                 free (includefile);
                 includefile = strdup (skipspaces (str));
+//edited by izhuer
+eprintf("Getting into rcc_fun with includefile: %s\n", includefile);
                 slurp = 0;
             } else
             if (strstr (ptr, "alias")) {
@@ -769,11 +784,12 @@ static void rcc_next(REgg *egg) {
         R_FREE (setenviron);
         return;
     }
+//edited by izhuer
+eprintf("Getting into rcc_next with includefile: %s\n", includefile);
     if (includefile) {
         char *p, *q, *path;
-        // TODO: add support for directories
         elem[elem_n-1] = 0;
-        path = find_include (elem, includefile);
+        path = find_include (includedir, includefile);
 //edited by izhuer
 eprintf("Including file: %s\n", path);
 eprintf("Including file with elem: %s\n", elem);
@@ -991,6 +1007,7 @@ eprintf ("elem  %*s\n", elem_n, elem);
 eprintf ("elem_n  %d\n", elem_n);
 eprintf ("mode  %d\n", mode);
 eprintf ("skipline  %d\n", skipline);
+eprintf ("slurp  %c\n", slurp);
 eprintf ("----------------------------\n\n");
     /* comments */
     if (skipline) {
