@@ -34,9 +34,10 @@ static ut32 colormap[256] = {
 static void cmd_prc (RCore *core, int len) {
 	bool square = true; //false;
 	int i, j;
-	char ch, *color;
+	char ch, ch2, *color;
 	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
 	bool show_color = r_config_get_i (core->config, "scr.color");
+	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
 	if (cols < 1) {
 		cols = 1;
@@ -62,7 +63,18 @@ static void cmd_prc (RCore *core, int len) {
 				ch = ' ';
 			}
 			if (square) {
-				r_cons_printf ("%s%c%c", color, ch, ch);
+				if (show_flags) {
+					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
+					if (fi) {
+						ch = fi->name[0];
+						ch2 = fi->name[1];
+					} else {
+						ch2 = ch;
+					}
+				} else {
+					ch2 = ch;
+				}
+				r_cons_printf ("%s%c%c", color, ch, ch2);
 			} else {
 				r_cons_printf ("%s%c", color, ch);
 			}
