@@ -1126,6 +1126,7 @@ static int cb_cmd_esil_todo(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->cmd_todo);
 		core->anal->esil->cmd_todo = node->value;
 	}
 	return true;
@@ -1136,7 +1137,8 @@ static int cb_cmd_esil_intr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_intr = node->value;
+		free (core->anal->esil->cmd_intr);
+		core->anal->esil->cmd_intr = strdup (node->value);
 	}
 	return true;
 }
@@ -1145,7 +1147,9 @@ static int cb_mdevrange(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->mdev_range = node->value;
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->mdev_range);
+		core->anal->esil->mdev_range = strdup (node->value);
 	}
 	return true;
 }
@@ -1155,7 +1159,8 @@ static int cb_cmd_esil_mdev(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_mdev = node->value;
+		free (core->anal->esil->cmd_mdev);
+		core->anal->esil->cmd_mdev = strdup (node->value);
 	}
 	return true;
 }
