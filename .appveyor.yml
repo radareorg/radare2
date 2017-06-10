@@ -69,7 +69,7 @@ build_script:
 
   - cmd: if %builder% == msvc_ninja_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && meson.bat && sys\meson_install.bat %DIST_FOLDER% && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == mingw32 ( sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
+  - cmd: if %builder% == mingw32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PATH%" && sh -c "gcc -E -dM - <<<''" && sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
 
   - cmd: if %builder% == msys2 ( set PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;"%PATH%" && echo "%PATH%" && sh.exe -c "export PATH=${PATH}:/mingw64/bin; ./configure --build=i686-unknown-windows-gnu ; mingw32-make -j1 ; mingw32-make windist WINBITS=%builder%" )
 
