@@ -181,6 +181,7 @@ typedef struct r_debug_snap_t {
 	RHash *hash_ctx;
 	ut8 **hashes; // Hash of each pages
 	RList *history; // <RDebugSnapDiff*>
+	int perm;
 	char *comment;
 } RDebugSnap;
 

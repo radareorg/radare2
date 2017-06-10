@@ -922,8 +922,12 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	if (r_debug_is_dead (dbg)) {
 		return 0;
 	}
-	if (!dbg->anal || !dbg->reg)
+	if (!dbg->anal || !dbg->reg) {
 		return 0;
+	}
+	if (r_list_empty (dbg->sessions)) {
+		return 0;
+	}
 
 	end = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 
@@ -953,7 +957,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		r_io_read_at (dbg->iob.io, pc, buf, sizeof (buf));
 		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-		//eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
+		eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
 		if (pc + op.size == end)
 			return 1;
 		if (!r_debug_step (dbg, 1))
