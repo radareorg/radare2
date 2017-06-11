@@ -19,6 +19,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!g || !host) {
 		return -1;
 	}
+	// Initial max_packet_size for remote target (minimum so far for AVR = 16)
+	g->stub_features.pkt_sz = 16;
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
 	if (!ret) {
 		return -1;
@@ -39,19 +41,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
-	// Check if trace is already running
-	ret = send_msg (g, "qTStatus");
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = handle_qStatus (g);
-	if (ret < 0) {
-		// qTStatus unsupported for this gdbserver
-		// return ret;
-	}
-
 	// Query the thread / process id
+	g->stub_features.qC = true;
+	g->pid = g->tid = 0;
 	ret = send_msg (g, "qC");
 	if (ret < 0) {
 		return ret;
@@ -59,101 +51,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = handle_qC (g);
 	if (ret < 0) {
-		// qC unsupported
-		//return ret;
+		g->stub_features.qC = false;
 	}
-
-	/*
-	// Check if remote server attached to or created process
-	if (g->stub_features.multiprocess) {
-		char pid_buf[20] = { 0 };
-		pack_hex_uint64 (g->pid, pid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qAttached:%s", pid_buf);
-		ret = send_msg (g, tmp.buf);
-	} else {
-		ret = send_msg (g, "qAttached");
-	}
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	g->attached = (g->data[0] == '1');
-	ret = send_ack (g);
-	if (ret < 0) {
-		return ret;
-	}
-
-	// Set the filesystem to use to be the fs visible to current process
-	if (g->stub_features.multiprocess) {
-		char pid_buf[20] = { 0 };
-		pack_hex_uint64 (g->pid, pid_buf);
-		snprintf (tmp.buf, sizeof (tmp.buf), "vFile:setfs:%s", pid_buf);
-		ret = send_msg (g, tmp.buf);
-		if (ret < 0) {
-			return ret;
-		}
-		read_packet (g);
-		ret = send_ack (g);
-		if (ret < 0 || !*g->data || g->data[0] != 'F' || g->data[1] == '-') {
-			eprintf ("handle gF\n");
-			return -1;
-		}
-	}
-
-	// Get name of file being executed
-	if (g->stub_features.qXfer_exec_file_read) {
-		if (g->stub_features.multiprocess) {
-			char pid_buf[20] = { 0 };
-			pack_hex_uint64 (g->pid, pid_buf);
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qXfer:exec-file:read:%s:0,fff", pid_buf);
-			ret = send_msg (g, tmp.buf);
-		} else {
-			ret = send_msg (g, "qXfer:exec-file:read::0,fff");
-		}
-		if (ret < 0) {
-			return ret;
-		}
-		read_packet (g);
-		(void) handle_execFileRead (g);
-	}
-
-	// Open the file
-	char *file_to_hex = calloc (2, strlen (g->exec_file_name) + 1);
-	if (!file_to_hex) {
-		return -1;
-	}
-	pack_hex (g->exec_file_name, strlen (g->exec_file_name), file_to_hex);
-	r_strbuf_setf (&tmp, "vFile:open:%s,0,0", file_to_hex);
-	free (file_to_hex);
-	if (tmp.ptr) {
-		ret = send_msg (g, tmp.ptr);
-	} else {
-		ret = send_msg (g, tmp.buf);
-	}
-	r_strbuf_fini (&tmp);
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = handle_fOpen (g);
-	if (ret < 0) {
-		return ret;
-	}
-
-	// Get fstat data for file
-	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "vFile:fstat:%"PFMT32x, g->exec_fd);
-	ret = send_msg (g, tmp.buf);
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = handle_fstat (g);
-	if (ret < 0) {
-		return ret;
-	}
-	*/
-
-	// Set pid/thread for next operations
+	// Set pid/thread for operations other than "step" and "continue"
 	if (g->stub_features.multiprocess) {
 		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
 	} else {
@@ -166,7 +66,18 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g);
 	ret = send_ack (g);
 	if (strncmp (g->data, "OK", 2)) {
-		ret = -1;
+		// return -1;
+	}
+	// Set thread for "step" and "continue" operations
+	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hc-1");
+	ret = send_msg (g, tmp.buf);
+	if (ret < 0) {
+		return ret;
+	}
+	read_packet (g);
+	ret = send_ack (g);
+	if (strncmp (g->data, "OK", 2)) {
+		// return -1;
 	}
 	return ret;
 }
@@ -227,53 +138,118 @@ int gdbr_read_registers(libgdbr_t *g) {
 }
 
 int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
-	char command[255] = {0};
+	char command[64] = {0};
 	int ret;
+	ut64 num_pkts, last, data_sz, ret_len;
+	int pkt;
 	if (!g) {
 		return -1;
 	}
-	ret = snprintf (command, sizeof (command),
-		"%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM, address, len);
-	if (ret < 0) {
-		return ret;
+	if (len > g->data_max) {
+		eprintf ("%s: Requested read too long: (%d bytes)\n", __func__, (unsigned) len);
+		return -1;
 	}
-	ret = send_msg (g, command);
-	if (ret < 0) {
-		return ret;
+	data_sz = g->stub_features.pkt_sz / 2;
+	num_pkts = len / data_sz;
+	last = len % data_sz;
+	ret_len = 0;
+	ret = 0;
+	if (last) {
+		if ((ret = snprintf (command, sizeof (command) - 1,
+				     "%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM,
+				     address + (num_pkts * data_sz),
+				     last)) < 0) {
+			return -1;
+		}
+		if ((ret = send_msg (g, command)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_m (g)) < 0) {
+			return -1;
+		}
+		if (num_pkts) {
+			memmove (g->data + (num_pkts * data_sz), g->data, g->data_len);
+		}
+		ret_len += g->data_len;
 	}
-
-	if (read_packet (g) >= 0) {
-		return handle_m (g);
-	}
-	return -1;
+	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
+		if ((ret = snprintf (command, sizeof (command) - 1,
+				     "%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM,
+				     address + (pkt * data_sz),
+				     data_sz)) < 0) {
+			return -1;
+		}
+		if ((ret = send_msg (g, command)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_m (g)) < 0) {
+			return -1;
+		}
+		if (pkt) {
+			memmove (g->data + (pkt * data_sz), g->data, g->data_len);
+		}
+		ret_len += g->data_len;
+        }
+	g->data_len = ret_len;
+	return ret;
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
-	char command[255] = {0};
 	int ret = 0;
-	int command_len;
+	int command_len, pkt, max_cmd_len = 64;
+	ut64 num_pkts, last, data_sz;
 	char *tmp;
 	if (!g || !data) {
 		return -1;
 	}
-	command_len = snprintf (command, sizeof (command) - 1,
-		"%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM, address, len);
-	tmp = calloc (command_len + (len * 2), sizeof (char));
-	if (!tmp) {
+	data_sz = g->stub_features.pkt_sz / 2;
+	num_pkts = len / data_sz;
+	last = len % data_sz;
+	if (!(tmp = calloc (max_cmd_len + g->stub_features.pkt_sz, sizeof (char)))) {
 		return -1;
 	}
-	memcpy (tmp, command, command_len);
-	pack_hex ((char *) data, len, (tmp + command_len));
-	ret = send_msg (g, tmp);
+	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
+		if ((command_len = snprintf (tmp, max_cmd_len,
+					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
+					     address + (pkt * data_sz), data_sz)) < 0) {
+			return -1;
+		}
+		pack_hex ((char *) data + (pkt * data_sz), data_sz, (tmp + command_len));
+		if ((ret = send_msg (g, tmp)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_M (g)) < 0) {
+			return -1;
+		}
+        }
+	if (last) {
+		if ((command_len = snprintf (tmp, max_cmd_len,
+					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
+					     address + (num_pkts * data_sz), last)) < 0) {
+			return -1;
+		}
+		pack_hex ((char *) data + (num_pkts * data_sz), last, (tmp + command_len));
+		if ((ret = send_msg (g, tmp)) < 0) {
+			return -1;
+		}
+		if ((ret = read_packet (g)) < 0) {
+			return -1;
+		}
+		if ((ret = handle_M (g)) < 0) {
+			return -1;
+		}
+	}
 	free (tmp);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (read_packet (g) >= 0) {
-		return handle_M (g);
-	}
-	return -1;
+	return 0;
 }
 
 int gdbr_step(libgdbr_t *g, int thread_id) {

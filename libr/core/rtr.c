@@ -1010,8 +1010,7 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 		break;
 	case 'm':
 		sscanf (cmd + 1, "%"PFMT64x" %d", &m_off, &ret);
-		r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
-		return ret;
+		return r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
 	}
 	return -1;
 }
@@ -1074,7 +1073,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
 		return -1;
 	}
-	gdbr_init (g);
+	gdbr_init (g, true);
 	core->gdbserver_up = 1;
 	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
 

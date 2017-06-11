@@ -89,6 +89,8 @@ typedef struct libgdbr_stub_features_t {
 	bool EnableDisableTracepoints;
 	bool tracenz;
 	bool BreakpointCommands;
+	// Cannot be determined with qSupported, found out on query
+	bool qC;
 } libgdbr_stub_features_t;
 
 /*!
@@ -139,13 +141,15 @@ typedef struct libgdbr_t {
 	char *exec_file_name;
 	int exec_fd;
 	uint64_t exec_file_sz;
+
+	bool is_server;
 } libgdbr_t;
 
 /*!
  * \brief Function initializes the libgdbr lib
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_init(libgdbr_t *g);
+int gdbr_init(libgdbr_t *g, bool is_server);
 
 /*!
  * \brief Function initializes the architecture of the gdbsession
