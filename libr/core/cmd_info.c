@@ -278,7 +278,6 @@ static int cmd_info(void *data, const char *input) {
 	if (!strcmp (input, "*")) {
 		input = "I*";
 	}
-	RBinObject *obj = r_bin_cur_object (core->bin);
 	while (*input) {
 		switch (*input) {
 		case 'b': // "ib"

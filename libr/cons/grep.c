@@ -279,24 +279,19 @@ while_end:
 // Finds and returns next intgerp expression,
 // unescapes escaped twiddles
 static char *find_next_intgrep(char *cmd, const char *quotes) {
-	const char *p;
-
+	char *p;
 	do {
-		p = r_str_firstbut (cmd, '~', quotes);
-		if (p == NULL) {
-			return NULL;
+		p = (char *)r_str_firstbut (cmd, '~', quotes);
+		if (!p) {
+			break;
 		}
-
 		if (p == cmd || *(p - 1) != '\\') {
 			return (char*)p;
-		} else {
-			//twiddle unescape
-			memmove (p - 1, p, strlen(p) + 1);
 		}
-
+		//twiddle unescape
+		memmove (p - 1, p, strlen(p) + 1);
 		cmd = p + 1;
 	} while (*cmd);
-
 	return NULL;
 }
 
@@ -329,7 +324,7 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 
 	i = 0;
 	// parse words between '~'
-	while (p2 = find_next_intgrep (p1 + 1, quotes)) {
+	while ((p2 = find_next_intgrep (p1 + 1, quotes))) {
 		ns = r_str_append (ns, strsep);
 		ns = r_str_appendlen (ns, p1 + 1, (int)(p2 - p1 - 1));
 		p1 = p2;
