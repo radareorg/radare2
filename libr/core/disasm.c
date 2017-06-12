@@ -251,6 +251,7 @@ static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
+static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string_found);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 	if (ds->core->io->pava) {
@@ -2618,6 +2619,45 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
+static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string_found) {
+	const char *nl = ds->show_comment_right ? "" : "\n";
+	if (strlen (str) == 1) {
+		// could be a wide string
+		int i = 0;
+		ALIGN;
+		ds_comment (ds, true, "; \"");
+		for (i = 0; i < len; i+=2) {
+			if (!str[i]) {
+				break;
+			}
+			if (!str[i+1]) {
+				if (IS_PRINTABLE (str[i])
+				    && str[i] != '"' && str[i] != '\\') {
+					ds_comment (ds, false, "%c", str[i]);
+				} else {
+					char *escchar = r_str_escape_all (&str[i]);
+					if (escchar) {
+						ds_comment (ds, false, "%s", escchar);
+						free (escchar);
+					}
+				}
+			} else {
+				ds_comment (ds, false, "\\u%02x%02x", str[i+1], str[i]);
+			}
+		}
+		ds_comment (ds, false, "\"%s", nl);
+	} else {
+		if (!string_found) {
+			char *escstr = r_str_escape_all (str);
+			if (escstr) {
+				ALIGN;
+				ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
+				free (escstr);
+			}
+		}
+	}
+}
+
 static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 	if (ds->show_noisy_comments || strncmp (name, "str.", 4)) {
 		return false;
@@ -2817,39 +2857,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			}
 			if (*msg) {
-				if (strlen (msg) == 1) {
-					//could be a wide string
-					int i = 0;
-					ALIGN;
-					ds_comment (ds, true, "; \"");
-					for (i = 0; i < len; i+=2) {
-						if (!msg[i]) {
-							break;
-						}
-						if (!msg[i+1]) {
-							if (IS_PRINTABLE (msg[i])
-							    && msg[i] != '"' && msg[i] != '\\') {
-								ds_comment (ds, false, "%c", msg[i]);
-							} else {
-								char *escchar = r_str_escape_all (&msg[i]);
-								if (escchar) {
-									ds_comment (ds, false, "%s", escchar);
-									free (escchar);
-								}
-							}
-						} else {
-							ds_comment (ds, false, "\\u%02x%02x", msg[i+1], msg[i]);
-						}
-					}
-					ds_comment (ds, false, "\"%s", nl);
-				} else {
-					char *escstr = r_str_escape_all (msg);
-					if (escstr) {
-						ALIGN;
-						ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-						free (escstr);
-					}
-				}
+				ds_print_str (ds, msg, len, false);
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 				ALIGN;
 				ds_comment (ds, true, "; %s%s", f->name, nl);
@@ -2909,33 +2917,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
-					r_str_filter (msg, 0);
 					if (*msg) {
-						int i;
-						if (strlen (msg) == 1) {
-							ALIGN;
-							ds_comment (ds, true, "; \"");
-							for (i = 0; i < len; i++) {
-								if (!msg[i]) {
-									break;
-								}
-								if (IS_PRINTABLE (msg[i])) {
-									ds_comment (ds, false, "%c", msg[i]);
-								} else {
-									ds_comment (ds, false, "\\x%02x", msg[i]);
-								}
-								if (!msg[i+1]) {
-									//wide string?
-									i++;
-								}
-							}
-							ds_comment (ds, false, "\"%s", nl);
-						} else {
-							if (!string_found) {
-								ALIGN;
-								ds_comment (ds, true, "; \"%s\"%s", msg, nl);
-							}
-						}
+						ds_print_str (ds, msg, len, string_found);
 					}
 				} else if (!strcmp (kind, "invalid")) {
 					int *n = (int*)&refaddr;
