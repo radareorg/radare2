@@ -676,7 +676,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 							r_core_cmd0 (core, cmd + 1);
 							out = NULL;
 						} else {
-							// eprintf ("CMD (%s)\n", cmd);
 							out = r_core_cmd_str_pipe (core, cmd);
 						}
 						if (out) {
@@ -1613,8 +1612,9 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	ut8 buf[1024];
 
 	for (; retries > 0; r_sys_usleep (10 * 1000)) {
-		if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout))
+		if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout)) {
 			break;
+		}
 		retries--;
 	}
 	if (retries > 0) {

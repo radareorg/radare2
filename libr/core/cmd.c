@@ -2937,6 +2937,29 @@ R_API int r_core_flush(void *user, const char *cmd) {
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	char *s, *tmp = NULL;
 	if (r_sandbox_enable (0)) {
+		char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
+		if (p) {
+			// This code works but its pretty ugly as its a workaround to
+			// make the webserver work as expected, this was broken some
+			// weeks. let's use this hackaround for now
+			char *c = strdup (cmd);
+			c[p - cmd] = 0;
+			if (!strcmp (p + 1, "H")) {
+				int sh = r_config_get_i (core->config, "scr.html");
+				r_config_set_i (core->config, "scr.html", 1);
+				char *ret = r_core_cmd_str (core, c);
+				r_config_set_i (core->config, "scr.html", sh);
+				free (c);
+				return ret;
+			} else {
+				int sh = r_config_get_i (core->config, "scr.color");
+				r_config_set_i (core->config, "scr.color", 0);
+				char *ret = r_core_cmd_str (core, c);
+				r_config_set_i (core->config, "scr.color", sh);
+				free (c);
+				return ret;
+			}
+		}
 		return r_core_cmd_str (core, cmd);
 	}
 	r_cons_reset ();
