@@ -395,7 +395,12 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			}
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0); break;
-		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0); break;
+		case 'l': 
+			  {
+				  RBinObject *obj = r_bin_cur_object (core->bin);
+				  RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0); 
+			  }
+			  break;
 		case 'L':
 		{
 			char *ptr = strchr (input, ' ');
@@ -444,7 +449,12 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
 		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1); break;
-		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS, NULL, obj? r_list_length (obj->imports): 0); break;
+		case 'i': {
+				  RBinObject *obj = r_bin_cur_object (core->bin);
+				  RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
+						  obj? r_list_length (obj->imports): 0);
+			  }
+			  break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
 		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0); break;
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0); break;

@@ -1443,7 +1443,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			if (haveQuote) {
 			//	*cmd = 0;
 				cmd++;
-				p = find_eoq (cmd + 1);
+				p = cmd[0] ? find_eoq (cmd + 1) : NULL;
 				if (!p || !*p) {
 					eprintf ("Missing \" in (%s).", cmd);
 					return false;
