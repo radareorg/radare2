@@ -1304,10 +1304,12 @@ static int cb_iova(void *user, void *data) {
 		if (r_io_desc_get (core->io, core->io->raised)) {
 			r_core_block_read (core);
 		}
+#if 0
 		/* reload symbol information */
 		if (r_list_length (r_bin_get_sections (core->bin)) > 0) {
 			r_core_cmd0 (core, ".ia*");
 		}
+#endif
 	}
 	return true;
 }

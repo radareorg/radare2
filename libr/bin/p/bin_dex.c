@@ -752,7 +752,7 @@ static RBinInfo *info(RBinFile *arch) {
 	h->addr = 12;
 	h->from = 12;
 	h->to = arch->buf->length-32;
-	memcpy (h->buf, arch->buf->buf+12, 20);
+	memcpy (h->buf, arch->buf->buf + 12, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
