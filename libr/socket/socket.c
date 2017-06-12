@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2015 - pancake */
+/* radare - LGPL - Copyright 2006-2017 - pancake */
 
 /* must be included first because of winsock2.h and windows.h */
 #include <r_socket.h>

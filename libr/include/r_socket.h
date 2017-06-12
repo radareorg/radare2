@@ -79,6 +79,7 @@ typedef struct r_socket_t {
 R_API RSocket *r_socket_new_from_fd (int fd);
 R_API RSocket *r_socket_new (int is_ssl);
 R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
+R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
 #define r_socket_connect_tcp(a,b,c,d) r_socket_connect(a,b,c,R_SOCKET_PROTO_TCP,d)
 #define r_socket_connect_udp(a,b,c,d) r_socket_connect(a,b,c,R_SOCKET_PROTO_UDP,d)
 #if __UNIX__
