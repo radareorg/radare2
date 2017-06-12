@@ -209,6 +209,9 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 		return -1;
 	}
 	data_sz = g->stub_features.pkt_sz / 2;
+	if (data_sz < 1) {
+		return -1;
+	}
 	num_pkts = len / data_sz;
 	last = len % data_sz;
 	if (!(tmp = calloc (max_cmd_len + g->stub_features.pkt_sz, sizeof (char)))) {
@@ -218,38 +221,41 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 		if ((command_len = snprintf (tmp, max_cmd_len,
 					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
 					     address + (pkt * data_sz), data_sz)) < 0) {
-			return -1;
+			goto fail;
 		}
 		pack_hex ((char *) data + (pkt * data_sz), data_sz, (tmp + command_len));
 		if ((ret = send_msg (g, tmp)) < 0) {
-			return -1;
+			goto fail;
 		}
 		if ((ret = read_packet (g)) < 0) {
-			return -1;
+			goto fail;
 		}
 		if ((ret = handle_M (g)) < 0) {
-			return -1;
+			goto fail;
 		}
         }
 	if (last) {
 		if ((command_len = snprintf (tmp, max_cmd_len,
 					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
 					     address + (num_pkts * data_sz), last)) < 0) {
-			return -1;
+			goto fail;
 		}
 		pack_hex ((char *) data + (num_pkts * data_sz), last, (tmp + command_len));
 		if ((ret = send_msg (g, tmp)) < 0) {
-			return -1;
+			goto fail;
 		}
 		if ((ret = read_packet (g)) < 0) {
-			return -1;
+			goto fail;
 		}
 		if ((ret = handle_M (g)) < 0) {
-			return -1;
+			goto fail;
 		}
 	}
 	free (tmp);
 	return 0;
+fail:
+	free (tmp);
+	return -1;
 }
 
 int gdbr_step(libgdbr_t *g, int thread_id) {

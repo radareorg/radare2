@@ -86,8 +86,6 @@ static void parse_grep_expression(const char *str) {
 				if (!strncmp (str, "{}..", 4)) {
 					cons->grep.less = 1;
 				}
-				str++;
-				return;
 			} else {
 				char *jsonPath = strdup (str + 1);
 				char *jsonPathEnd = strchr (jsonPath, '}');

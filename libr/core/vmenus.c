@@ -175,10 +175,11 @@ R_API bool r_core_visual_esil(RCore *core) {
 			free (word);
 			word = r_str_ndup (expr + (wp?(wp+1):0), (wp2 - wp) - (wp?1:0));
 			if (wp == wp2) {
-				x --;
+				// x --;
 				eprintf ("Done\n");
 				x = 0;
 				r_sys_sleep (1);
+				free (pas);
 				continue;
 			}
 			const char *pad = r_str_pad ('-', wp2 - ((wp > 0)? wp + 1: 0));
@@ -268,6 +269,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 	}
 beach:
 	r_anal_esil_free (esil);
+	free (word);
 	return true;
 }
 

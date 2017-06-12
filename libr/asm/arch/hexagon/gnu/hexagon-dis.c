@@ -79,18 +79,21 @@ hexagon_decode_inst(
   int bytes;
   char *str;
 
+#if 0
   /* Decide if we have a 16-bit instruction */
+  // Nope comment you are drunk.
   status = (*info->read_memory_func)(address, buffer, 2, info);
   if (status != 0) {
     (*info->memory_error_func)(status, address, info);
     return -1;
   }
   if (info->endian == BFD_ENDIAN_LITTLE) {
-    insn = bfd_getl16(buffer);
+    insn = bfd_getl16 (buffer);
   }
   else {
-    insn = bfd_getb16(buffer);
+    insn = bfd_getb16 (buffer);
   }
+#endif
 
   status = (*info->read_memory_func)(address, buffer, 4, info);
   if (status != 0) {

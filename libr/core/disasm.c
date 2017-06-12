@@ -3255,7 +3255,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_anal_esil_stack_free (esil);
 	hc = r_config_hold_new (core->config);
 	if (!hc) {
-		if (esil) {
+		if (hook_mem_write) {
 			esil->cb.hook_mem_write = hook_mem_write;
 		}
 		return;

@@ -1413,10 +1413,10 @@ return HEXAGON_MACH_V5;
   // RK: Handle cases when bfd_mach is not correctly set
   if (bfd_mach < bfd_mach_hexagon_v2 || bfd_mach > bfd_mach_hexagon_v5)
     return HEXAGON_CPU_TYPE_UNINIT;
-#endif
 
   return (mach_type_map [bfd_mach - bfd_mach_hexagon_v2]
           | (big_p? HEXAGON_MACH_BIG: 0));
+#endif
 }
 
 /* Initialize any tables that need it.
@@ -2738,11 +2738,15 @@ hexagon_extract_operand
                    operand->enc_letter, enc, bits_found, operand->bits);
           *errmsg = xx;
         }
-    return FALSE;
-  }
+      return FALSE;
+    }
 
   if (operand->flags & HEXAGON_OPERAND_IS_SIGNED)
     {
+      if (bits_found > 31) {
+        // invalid bitshift
+        return FALSE;
+      }
       /* Might need to sign extend */
       if (value & (1 << (bits_found - 1)))
         {

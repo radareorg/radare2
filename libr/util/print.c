@@ -1525,24 +1525,24 @@ static char o[COLORIZE_BUFSIZE];
 
 static bool issymbol(char c) {
 	switch (c) {
-		case '+':
-		case '-':
-		/* case '/': not good for dalvik */
-		case '>':
-		case '<':
-		case '(':
-		case ')':
-		case '*':
-		case '%':
-		case ']':
-		case '[':
-		case ',':
-		case ' ':
-		case '{':
-		case '}':
-			return true;
-		default:
-			return false;
+	case '+':
+	case '-':
+	/* case '/': not good for dalvik */
+	case '>':
+	case '<':
+	case '(':
+	case ')':
+	case '*':
+	case '%':
+	case ']':
+	case '[':
+	case ',':
+	case ' ':
+	case '{':
+	case '}':
+		return true;
+	default:
+		return false;
 	}
 }
 
@@ -1568,9 +1568,14 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
-		if ((p[i] == '0' && p[i+1] == 'x')|| (isdigit (p[i]) && issymbol (previous))) {
-			strcpy (o + j, num);
-			j += strlen (num);
+		if ((p[i] == '0' && p[i+1] == 'x') || (isdigit (p[i]) && issymbol (previous))) {
+			int nlen = strlen (num);
+			if (nlen + j >= sizeof (o)) {
+				eprintf ("Colorize buffer is too small\n");
+				break;
+			}
+			memcpy (o + j, num, nlen + 1);
+			j += nlen;
 		}
 		previous = p[i];
 		if (j + 100 >= COLORIZE_BUFSIZE) {
