@@ -72,7 +72,7 @@ RebuildGdb() {
 }
 
 case "$1" in
-fs)     RebuildFs; ;;
+grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;

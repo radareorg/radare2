@@ -35,8 +35,9 @@ static int cmd_mount(void *data, const char *_input) {
 	switch (*input) {
 	case ' ':
 		input++;
-		if (input[0]==' ')
+		if (input[0]==' ') {
 			input++;
+		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
@@ -46,13 +47,15 @@ static int cmd_mount(void *data, const char *_input) {
 				*ptr2 = 0;
 				off = r_num_math (core->num, ptr2+1);
 			}
-			if (!r_fs_mount (core->fs, ptr, input, off))
+			if (!r_fs_mount (core->fs, ptr, input, off)) {
 				eprintf ("Cannot mount %s\n", input);
+			}
 		} else {
-			if (!(ptr = r_fs_name (core->fs, core->offset)))
+			if (!(ptr = r_fs_name (core->fs, core->offset))) {
 				eprintf ("Unknown filesystem type\n");
-			else if (!r_fs_mount (core->fs, ptr, input, core->offset))
+			} else if (!r_fs_mount (core->fs, ptr, input, core->offset)) {
 				eprintf ("Cannot mount %s\n", input);
+			}
 			free (ptr);
 		}
 		break;

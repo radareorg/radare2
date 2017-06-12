@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2017 pancake<nopcode.org> */
 
 #include <r_io.h>
 #include <r_fs.h>
@@ -17,20 +17,20 @@ static void* empty (int sz) {
 }
 
 static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, char *buf) {
-	if (disk != NULL) {
-		const int blocksize = 512; // unhardcode 512
-		int ret;
-		RIOBind *iob = disk->data;
-		if (bio) iob = bio;
-		//printf ("io %p\n", file->root->iob.io);
-		ret = iob->read_at (iob->io, delta+(blocksize*sector),
-			(ut8*)buf, size*blocksize);
-		if (ret == -1)
-			return 1;
-		//printf ("DISK PTR = %p\n", disk->data);
-		//printf ("\nBUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
-	} else eprintf ("oops. no disk\n");
-	return 0; // 0 is ok
+	if (!disk) {
+		eprintf ("oops. no disk\n");
+		return 1;
+	}
+	const int blocksize = 512; // TODO unhardcode 512
+	RIOBind *iob = disk->data;
+	if (bio) {
+		iob = bio;
+	}
+	//printf ("io %p\n", file->root->iob.io);
+	if (iob->read_at (iob->io, delta+(blocksize*sector), (ut8*)buf, size*blocksize) == -1) {
+		return 1;
+	}
+	return 0;
 }
 
 GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {
@@ -58,8 +58,9 @@ grub_disk_t grubfs_disk (void *data) {
 
 void grubfs_free (GrubFS *gf) {
 	if (gf) {
-		if (gf->file && gf->file->device)
+		if (gf->file && gf->file->device) {
 			free (gf->file->device->disk);
+		}
 		//free (gf->file->device);
 		free (gf->file);
 		free (gf);
