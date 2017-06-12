@@ -17,7 +17,7 @@ static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
 
-static int format_output(char mode, const char *s, char newline) {
+static int format_output(char mode, const char *s, char * newline) {
 	ut64 n = r_num_math (num, s);
 	char strbits[65];
 	if (force_mode) {
@@ -29,7 +29,7 @@ static int format_output(char mode, const char *s, char newline) {
 	}
 	switch (mode) {
 	case 'I':
-		printf ("%" PFMT64d "%c", n, newline);
+		printf ("%" PFMT64d "%s", n, newline);
 		break;
 	case '0': {
 		int len = strlen (s);
@@ -37,31 +37,31 @@ static int format_output(char mode, const char *s, char newline) {
 			R_STATIC_ASSERT (sizeof (float) == 4)
 			float f = (float) num->fvalue;
 			ut8 *p = (ut8 *) &f;
-			printf ("Fx%02x%02x%02x%02x%c", p[3], p[2], p[1], p[0], newline);
+			printf ("Fx%02x%02x%02x%02x%s", p[3], p[2], p[1], p[0], newline);
 		} else {
-			printf ("0x%" PFMT64x "%c", n, newline);
+			printf ("0x%" PFMT64x "%s", n, newline);
 		}
 	} break;
 	case 'F': {
 		float *f = (float *) &n;
-		printf ("%ff%c", *f, newline);
+		printf ("%ff%s", *f, newline);
 	} break;
-	case 'f': printf ("%.01lf%c", num->fvalue, newline); break;
-	case 'O': printf ("0%" PFMT64o "%c", n, newline); break;
+	case 'f': printf ("%.01lf%s", num->fvalue, newline); break;
+	case 'O': printf ("0%" PFMT64o "%s", n, newline); break;
 	case 'B':
 		if (n) {
 			r_num_to_bits (strbits, n);
-			printf ("%sb%c", strbits, newline);
+			printf ("%sb%s", strbits, newline);
 		} else {
-			printf ("0b%c", newline);
+			printf ("0b%s", newline);
 		}
 		break;
 	case 'T':
 		if (n) {
 			r_num_to_trits (strbits, n);
-			printf ("%st%c", strbits, newline);
+			printf ("%st%s", strbits, newline);
 		} else {
-			printf ("0t%c", newline);
+			printf ("0t%s", newline);
 		}
 		break;
 	default:
@@ -118,7 +118,8 @@ static int help() {
 static int rax(char *str, int len, int last) {
 	float f;
 	ut8 *buf;
-	char *p, newline = '\n', out_mode = (flags & 128)? 'I': '0';
+	char *p, out_mode = (flags & 128)? 'I': '0';
+	char newline[2] = "\n\0";
 	int i;
 	if (!(flags & 4) || !len) {
 		len = strlen (str);
@@ -191,7 +192,7 @@ static int rax(char *str, int len, int last) {
 	}
 dotherax:
 	if (flags & (1 << 19)) { // -l
-		newline = '\0';
+		newline[0] = '\0';
 	}
 	if (flags & 1) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
@@ -214,7 +215,7 @@ dotherax:
 		for (i = 0; i < len; i++) {
 			printf ("%02x", (ut8) str[i]);
 		}
-		printf ("%c", newline);
+		printf ("%s", newline);
 		return true;
 	} else if (flags & (1 << 3)) { // -b
 		int i, len;
@@ -226,7 +227,7 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
-		printf ("0x%x%c", h, newline);
+		printf ("0x%x%s", h, newline);
 		return true;
 	} else if (flags & (1 << 5)) { // -k
 		out_mode = 'I';
@@ -246,11 +247,11 @@ dotherax:
 		if (n < 1 || !memcmp (str, "0x", 2)) {
 			ut64 q = r_num_math (num, str);
 			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
-			printf ("%s%c", s, newline);
+			printf ("%s%s", s, newline);
 			free (s);
 		} else {
 			s = r_print_randomart ((ut8 *) buf, n, *m);
-			printf ("%s%c", s, newline);
+			printf ("%s%s", s, newline);
 			free (s);
 		}
 		free (m);
@@ -264,7 +265,7 @@ dotherax:
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
 				printf ("%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%c",
+					"%02x%02x%02x%02x%s",
 					np[0], np[1], np[2], np[3],
 					np[4], np[5], np[6], np[7], newline);
 			}
@@ -275,7 +276,7 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				printf ("%02x%02x%02x%02x%c",
+				printf ("%02x%02x%02x%02x%s",
 					np[0], np[1], np[2], np[3], newline);
 			}
 		}
@@ -308,7 +309,7 @@ dotherax:
 		} else if (n >> 7) {
 			n = (st64) (st8) n;
 		}
-		printf ("%" PFMT64d "%c", n, newline);
+		printf ("%" PFMT64d "%s", n, newline);
 		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 15)) { // -N
@@ -320,7 +321,7 @@ dotherax:
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
 				printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
-					"\\x%02x\\x%02x\\x%02x\\x%02x%c",
+					"\\x%02x\\x%02x\\x%02x\\x%02x%s",
 					np[0], np[1], np[2], np[3],
 					np[4], np[5], np[6], np[7], newline);
 			}
@@ -331,7 +332,7 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				printf ("\\x%02x\\x%02x\\x%02x\\x%02x%c",
+				printf ("\\x%02x\\x%02x\\x%02x\\x%02x%s",
 					np[0], np[1], np[2], np[3], newline);
 			}
 		}
@@ -340,7 +341,7 @@ dotherax:
 	} else if (flags & (1 << 10)) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
-		printf ("%s%c", buf, newline);
+		printf ("%s%s", buf, newline);
 		return true;
 	} else if (flags & (1 << 11)) { // -t
 		ut32 n = r_num_math (num, str);
@@ -353,7 +354,7 @@ dotherax:
 		char *out = calloc (sizeof (char), ((len + 1) * 4) / 3);
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, len);
-			printf ("%s%c", out, newline);
+			printf ("%s%s", out, newline);
 			fflush (stdout);
 			free (out);
 		}
@@ -364,7 +365,7 @@ dotherax:
 		ut8 *out = calloc (sizeof (ut8), ((len + 2) / 3) * 4);
 		if (out) {
 			r_base64_decode (out, str, len);
-			printf ("%s%c", out, newline);
+			printf ("%s%s", out, newline);
 			fflush (stdout);
 			free (out);
 		}
@@ -374,7 +375,7 @@ dotherax:
 		if (str) {
 			char *res = r_hex_from_c (str);
 			if (res) {
-				printf ("%s%c", res, newline);
+				printf ("%s%s", res, newline);
 				fflush (stdout);
 				free (res);
 			} else {
@@ -419,7 +420,7 @@ dotherax:
 		}
 		/* binary and floating point */
 		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
-		eprintf ("%s %.01lf %ff %lf%c",
+		eprintf ("%s %.01lf %ff %lf%s",
 			out, num->fvalue, f, d, newline);
 
 		return true;
@@ -452,7 +453,7 @@ dotherax:
 	} else if (str[strlen (str) - 1] == 'f') {
 		ut8 *p = (ut8 *) &f;
 		sscanf (str, "%f", &f);
-		printf ("Fx%02x%02x%02x%02x%c", p[3], p[2], p[1], p[0], newline);
+		printf ("Fx%02x%02x%02x%02x%s", p[3], p[2], p[1], p[0], newline);
 		return true;
 	}
 	while ((p = strchr (str, ' '))) {
