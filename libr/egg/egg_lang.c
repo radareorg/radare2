@@ -1216,6 +1216,7 @@ eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[
             }
             rcc_context (egg, -1);
             if (CTX== 0) {
+                r_egg_printf(egg, "\n");
                 snprintf(str, 64, "__end_%d", nfunctions);
                 e->jmp(egg, str, 0);
                 for (int i = 0; i < 32; i++) {
@@ -1227,7 +1228,7 @@ eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[
                         }
                     }
                 }
-                r_egg_printf(egg, "  __end:\n", nfunctions);
+                r_egg_printf(egg, "  __end_%d:\n\n", nfunctions);
                 nbrackets = 0;
                 nfunctions++;
             }
