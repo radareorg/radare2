@@ -46,6 +46,11 @@ static struct {
     //int sysnum; /* TODO: NOT YET USED */
 } syscalls[256];
 
+static struct {
+    char *name;
+    char *content;
+} aliases[256];
+
 enum {
     NORMAL = 0,
     ALIAS,
@@ -61,6 +66,7 @@ enum {
 
 // XXX : globals are ugly
 static int pushargs = 0;
+static int nalias = 0;
 static int nsyscalls = 0;
 static char *syscallbody = NULL;
 static char *includefile = NULL;
@@ -211,6 +217,23 @@ static char *get_end_frame_label(REgg *egg) {
 }
 #endif
 
+static const char * find_alias(const char *str) {
+//edited by izhuer
+eprintf("Getting into find_alias with str: %s\n", str);
+    // do not forget to free return strings to avoid memory leak
+    char *p = (char *)str;
+    if (*str == '"')
+        return strdup(str);
+        // strings could not means aliases
+    while ( *p && ! is_space(*p)) p++;
+    *p = '\x00';
+    for (int i = 0; i < nalias; i++)
+        if (! strcmp(str, aliases[i].name))
+            return strdup(aliases[i].content);
+    return NULL;
+    // only strings or alias could return valuable data 
+}
+
 static void rcc_pusharg(REgg *egg, char *str) {
     REggEmit *e = egg->remit;
     char buf[64], *p = r_egg_mkvar (egg, buf, str, 0);
@@ -226,9 +249,10 @@ static void rcc_pusharg(REgg *egg, char *str) {
 
 static void rcc_element(REgg *egg, char *str) {
     REggEmit *e = egg->remit;
-    char *p = str + strlen(str);
+    char *ptr, *p = str + strlen(str);
     int inside = 0;
     int num, num2;
+    int i;
 
 //fixed by izhuer
     if (CTX) {
@@ -259,11 +283,29 @@ eprintf("Getting into rcc_element with str: %s\n", str);
         switch (mode) {
         case ALIAS:
             e->equ (egg, dstvar, str);
+            if (nalias > 255) {
+                eprintf("global-buffer-overflow in aliases\n");
+                break;
+            }
+            if (dstvar == NULL || str == NULL){
+                eprintf ("does not set name or content for alias\n");
+                break;
+            }
+            for (i = 0; i < nalias; i++)
+                if (! strcmp(dstvar, aliases[i].name)) {
+                    R_FREE (aliases[i].name);
+                    R_FREE (aliases[i].content);
+                    break;
+                }
+            aliases[i].name = strdup(dstvar);
+            aliases[i].content = strdup(str);
+            nalias = (i == nalias) ? nalias + 1 : nalias;
+            //allow alias overwrite
             R_FREE (dstvar);
             mode = NORMAL;
             break;
         case SYSCALL:
-            if (nsyscalls > 255){
+            if (nsyscalls > 255) {
                 eprintf ("global-buffer-overflow in syscalls\n");
                 break;
             }
@@ -283,10 +325,25 @@ eprintf("Getting into rcc_element with str: %s\n", str);
             e->jmp (egg, elem, 0);
             break;
         case INCLUDE:
-            if (str != NULL)
-                includedir = strdup(str);
-            else
+            str = ptr = (char *)find_alias(skipspaces(str));
+//edited by izhuer
+eprintf("Getting out of find_alias with return value: %s\n", ptr);
+            if (ptr != NULL){
+                if (strchr(ptr, '"')){
+                    ptr = strchr(ptr, '"') + 1;
+                    if ((p = strchr(ptr, '"')))
+                        *p = '\x00';
+                    else eprintf("loss back quote in include directory\n");
+                    includedir = strdup(ptr);
+                } else {
+                    eprintf("wrong include syntax\n");
+                    //for must use string to symbolize directory
+                    includedir = NULL;
+                }
+            } else
                 includedir = NULL;
+            R_FREE (str);
+            eprintf("Test: ptr: %s\n", ptr);
             break;
         default:
             p = strchr (str, ',');
@@ -450,6 +507,7 @@ static void rcc_fun(REgg *egg, const char *str) {
     char *ptr, *ptr2;
     REggEmit *e = egg->remit;
     str = skipspaces (str);
+eprintf("Getting into rcc_fun with str: %s\n", str);
     if (CTX) {
         ptr = strchr (str, '=');
         if (ptr) {
@@ -499,11 +557,15 @@ static void rcc_fun(REgg *egg, const char *str) {
                 includefile = strdup (skipspaces (str));
 //edited by izhuer
 eprintf("Getting into rcc_fun with includefile: %s\n", includefile);
-                slurp = 0;
+                //slurp = 0;
+                //try to deal with alias
             } else
             if (strstr (ptr, "alias")) {
                 mode = ALIAS;
-                dstvar = strdup (skipspaces (str));
+                ptr2 = dstvar = strdup (skipspaces (str));
+                while ( *ptr2 && ! is_space(*ptr2)) ptr2++;
+                *ptr2 = '\x00';
+                //for aliases must be valid and accurate strings
             } else
             if (strstr (ptr, "data")) {
                 mode = DATA;
@@ -532,6 +594,7 @@ eprintf("Getting into rcc_fun with includefile: %s\n", includefile);
                 r_egg_printf (egg, "%s:\n", str);
             }
         } else {
+eprintf("Getting into rcc_fun with str: %s\n", str);
             //e->jmp (egg, ctxpush[context], 0);
             if (CTX>0) {
                 // WTF?
