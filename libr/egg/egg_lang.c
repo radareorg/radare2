@@ -70,6 +70,7 @@ enum {
 static int pushargs = 0;
 static int nalias = 0;
 static int nsyscalls = 0;
+static char *conditionstr = NULL;
 static char *syscallbody = NULL;
 static char *includefile = NULL;
 static char *setenviron = NULL;
@@ -256,8 +257,9 @@ static void rcc_element(REgg *egg, char *str) {
     int num, num2;
     int i;
 
-//fixed by izhuer
     if (CTX) {
+//fixed by izhuer
+eprintf("Getting into rcc_element with str: %s\n", str);
         if (slurp == '"') {
             if (mode == NORMAL) {
                 if (!dstvar)
@@ -265,6 +267,9 @@ static void rcc_element(REgg *egg, char *str) {
                 rcc_pushstr(egg, str, 1);
             }
         } else {
+            if (strstr(callname, "while") || strstr(callname, "if")) {
+                conditionstr = strdup(str); 
+            }
             nargs = 0;
             if (mode == GOTO)
                 mode = NORMAL; // XXX
@@ -671,7 +676,8 @@ eprintf("Getting into rcc_context with callname: %s\n", callname);
         /* conditional block */
 //eprintf ("Callname is (%s)\n", callname);
         const char *elm = skipspaces (elem);
-        const char *cn = callname;
+        //const char *cn = callname;
+        //seems cn is useless in nowdays content
 //if (nested[context-1])
 #if 0
 if (delta<0 && context>0) {
@@ -693,17 +699,17 @@ emit->while_end (egg, get_frame_label (context-1));
 //eprintf ("ELEM (%s)\n", elm);
 //eprintf ("END BLOCK %d, (%s)\n", context, nested[context-1]);
 //eprintf ("CN = (%s) %d (%s) delta=%d\n", cn, context, nested[context-1], delta);
-        if (cn) {
+        if (callname) {
         //if (callname) { // handle 'foo() {'
             /* TODO: this must be an array */
             char *b, *g, *e, *n;
-            emit->comment (egg, "cond frame %s (%s)", cn, elm);
+            emit->comment (egg, "cond frame %s (%s)", callname, elm);
             /* TODO: simplify with a single for */
-            b = strchr (elem, '<'); /* below */
-            g = strchr (elem, '>'); /* greater */
-            e = strchr (elem, '='); /* equal */
-            n = strchr (elem, '!'); /* negate */
-            if (!strcmp (cn, "while")) {
+            b = strchr (conditionstr, '<'); /* below */
+            g = strchr (conditionstr, '>'); /* greater */
+            e = strchr (conditionstr, '='); /* equal */
+            n = strchr (conditionstr, '!'); /* negate */
+            if (!strcmp (callname, "while")) {
                 char lab[128];
                 sprintf (lab, "__begin_%d_%d_%d", nfunctions,
                     CTX-1, nestedi[CTX-1]-1);
@@ -719,7 +725,7 @@ emit->while_end (egg, get_frame_label (context-1));
                 }
                 rcc_set_callname ("if"); // append 'if' body
             }
-            if (!strcmp (cn, "if")) {
+            if (!strcmp (callname, "if")) {
                 //emit->branch (egg, b, g, e, n, varsize, get_end_frame_label (egg));
                 // HACK HACK :D
                 //sprintf (str, "__end_%d_%d_%d", nfunctions,
@@ -728,11 +734,15 @@ emit->while_end (egg, get_frame_label (context-1));
                 //where give nestede value
                 sprintf (str, "__end_%d_%d_%d", nfunctions,
                     CTX-1, nestedi[CTX-1]-1);
+//edited by izhuer
+eprintf("Getting into if syntax with elem: %s\n", elem);
                 emit->branch (egg, b, g, e, n, varsize, str);
                 if (CTX>0) {
                     /* XXX .. */
                 }
                 rcc_reset_callname ();
+                R_FREE (conditionstr);
+                conditionstr = NULL;
             } //else eprintf ("Unknown statement (%s)(%s)\n", cn, elem);
         } // handle '{ ..'
     }
