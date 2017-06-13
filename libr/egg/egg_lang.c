@@ -1154,6 +1154,8 @@ eprintf ("----------------------------\n\n");
             break;
         case '}':
             endframe = nested[CTX-1];
+//edited by izhuer
+eprintf("Before rcc_context with callname: %s\n", callname);
             if (endframe) {
                 // XXX: use endframe[context]
                 r_egg_printf (egg, "%s\n", endframe);
