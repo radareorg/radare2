@@ -1367,3 +1367,54 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 	}
 	return false;
 }
+
+R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
+	char *abspath;
+	RListIter *iter;
+	RDebugMap *map;
+	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
+		return 0LL;
+	}
+#if __WINDOWS__
+	typedef struct {
+		int pid;
+		int tid;
+		PROCESS_INFORMATION pi;
+	} RIOW32Dbg;
+	RIODesc *d = dbg->iob.io->desc;
+	if (!strcmp ("w32dbg", d->plugin->name)) {
+		RIOW32Dbg *g = d->data;
+		d->fd = g->pid;
+		r_debug_attach (dbg, g->pid);
+	}
+	return dbf->iob.io->winbase;
+#else
+	int pid = dbg->iob.io->desc->fd;
+	if (r_debug_attach (dbg, pid) == -1) {
+		return 0LL;
+	}
+	r_debug_select (dbg, pid, pid);
+#endif
+	r_debug_map_sync (dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) {
+		abspath = strdup (file);
+	}
+	if (abspath) {
+		r_list_foreach (dbg->maps, iter, map) {
+			if (!strcmp (abspath, map->name)) {
+				free (abspath);
+				return map->addr;
+			}
+		}
+		free (abspath);
+	}
+	// fallback resolution (osx/w32?)
+	// we asume maps to be loaded in order, so lower addresses come first
+	r_list_foreach (dbg->maps, iter, map) {
+		if (map->perm == 5) { // r-x
+			return map->addr;
+		}
+	}
+	return 0LL;
+}
