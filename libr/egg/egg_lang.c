@@ -4,7 +4,9 @@
 
 #define CTX egg->context
 char *nested[32] = {0};
-char *nestede[32] = {0};
+//char *nestede[32] = {0};
+//seems nestede are not used any more
+//(only one place that gives nestede[] value, where could be replaced)
 int nestedi[32] = {0};
 
 static inline int is_var(char *x) {
@@ -624,15 +626,15 @@ static void shownested() {
 #endif
 
 static void set_nested(REgg *egg, const char *s) {
-    int c = CTX-1;
     int i=0;
     if (CTX<1)
         return;
-    free (nested[c]);
-    nested[c] = strdup (s);
-    nestedi[c]++;
+    free (nested[CTX]);
+    nested[CTX] = strdup (s);
+    //nestedi[c]++;
+    //seems not need to increase nestedi[c]
     /** clear inner levels **/
-    for (i=0; i<10; i++) {
+    for (i=1; i<10; i++) {
         //nestedi[context+i] = 0;
         free (nested[CTX+i]);
         nested[CTX+i] = NULL;
@@ -704,7 +706,9 @@ emit->while_end (egg, get_frame_label (context-1));
             if (!strcmp (cn, "while")) {
                 char lab[128];
                 sprintf (lab, "__begin_%d_%d_%d", nfunctions,
-                    CTX-1, nestedi[CTX-1]);
+                    CTX-1, nestedi[CTX-1]-1);
+                // the nestedi[CTX-1] has increased
+                // so we should decrease it in label
                 emit->get_while_end (egg, str, ctxpush[CTX-1], lab); //get_frame_label (2));
 //get_frame_label (2));
 //eprintf ("------ (%s)\n", ctxpush[context-1]);
@@ -718,11 +722,12 @@ emit->while_end (egg, get_frame_label (context-1));
             if (!strcmp (cn, "if")) {
                 //emit->branch (egg, b, g, e, n, varsize, get_end_frame_label (egg));
                 // HACK HACK :D
+                //sprintf (str, "__end_%d_%d_%d", nfunctions,
+                //    CTX-1, nestedi[CTX-1]);
+                //nestede[CTX-1] = strdup (str);
+                //where give nestede value
                 sprintf (str, "__end_%d_%d_%d", nfunctions,
-                    CTX-1, nestedi[CTX-1]);
-                nestede[CTX-1] = strdup (str);
-                sprintf (str, "__end_%d_%d_%d", nfunctions,
-                    CTX, nestedi[CTX-1]);
+                    CTX-1, nestedi[CTX-1]-1);
                 emit->branch (egg, b, g, e, n, varsize, str);
                 if (CTX>0) {
                     /* XXX .. */
@@ -1153,23 +1158,27 @@ eprintf ("----------------------------\n\n");
             rcc_context (egg, 1);
             break;
         case '}':
-            endframe = nested[CTX-1];
+            endframe = nested[CTX];
 //edited by izhuer
 eprintf("Before rcc_context with callname: %s\n", callname);
+eprintf("Before rcc_context with endframe: %s\n", endframe);
+eprintf("Before rcc_context with CTX: %d\n", CTX);
             if (endframe) {
                 // XXX: use endframe[context]
                 r_egg_printf (egg, "%s\n", endframe);
+                R_FREE (nested[CTX]);
+                nested[CTX] = NULL;
             //    R_FREE (endframe);
             }
-            if (CTX>0) {
-                if (nestede[CTX]) {
-                    r_egg_printf (egg, "%s:\n", nestede[CTX]);
-                    //nestede[CTX] = NULL;
-                } else {
-                    r_egg_printf (egg, "  __end_%d_%d_%d:\n",
-                        nfunctions, CTX, nestedi[CTX-1]);
+            if (CTX>1) {
+                //if (nestede[CTX]) {
+                //    r_egg_printf (egg, "%s:\n", nestede[CTX]);
+                //    //nestede[CTX] = NULL;
+                //} else {
+                r_egg_printf (egg, "  __end_%d_%d_%d:\n",
+                        nfunctions, CTX-1, nestedi[CTX-1]-1);
                     //get_end_frame_label (egg));
-                }
+                //}
                 nbrackets++;
             }
             rcc_context (egg, -1);
