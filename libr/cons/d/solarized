@@ -11,6 +11,7 @@ ec comment rgb:28d
 ec ret rgb:899
 ec fline rgb:b80
 ec flow rgb:3a9
+ec flow2 rgb:577
 ec fname rgb:d33
 ec label rgb:77c
 ec math rgb:28d

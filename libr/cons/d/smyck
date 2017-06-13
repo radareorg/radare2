@@ -14,6 +14,7 @@ ec ret rgb:d66
 ec num rgb:bb5
 ec fline rgb:2bc
 ec flow rgb:888
+ec flow2 rgb:ddd
 ec fname rgb:9df
 ec label rgb:9df
 ec math rgb:ddd

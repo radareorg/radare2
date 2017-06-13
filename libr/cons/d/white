@@ -28,6 +28,7 @@ ec b0x00 rgb:777
 ec btext black
 ec offset black
 ec flow green
+ec flow2 green
 ec mov black
 ec invalid red
 ec graph.box blue

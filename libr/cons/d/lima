@@ -8,6 +8,7 @@ ec flag rgb:af2
 ec fname rgb:af2
 ec label rgb:af2
 ec flow rgb:af2 rgb:222
+ec flow2 rgb:af2 rgb:222
 ec prompt rgb:090
 ec offset rgb:ef0
 ec input rgb:7d5

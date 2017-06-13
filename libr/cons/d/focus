@@ -25,6 +25,7 @@ ec num rgb:888
 ec reg rgb:6f0 rgb:000
 ec fline rgb:fc0
 ec flow rgb:ff3
+ec flow2 rgb:fff
 ec mov rgb:888
 ec swi rgb:000 rgb:fff
 ec floc rgb:af2

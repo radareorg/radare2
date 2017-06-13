@@ -9,6 +9,7 @@ ec flag `k one`
 ec offset `k two`
 ec comment red
 ec flow green
+ec flow2 green
 ec b0x00 white
 ec b0xff red
 ec bin cyan
