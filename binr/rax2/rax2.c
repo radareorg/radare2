@@ -90,7 +90,6 @@ static int help() {
 		"  hex   ->  ternary       ;  rax2 Tx23\n"
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
-		"  -l    print without nl  ;  rax2 -l -E salam\n"
 		"  -b    bin -> str        ;  rax2 -b 01000101 01110110\n"
 		"  -B    str -> bin        ;  rax2 -B hello\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
@@ -102,6 +101,7 @@ static int help() {
 		"  -h    help              ;  rax2 -h\n"
 		"  -k    keep base         ;  rax2 -k 33+3 -> 36\n"
 		"  -K    randomart         ;  rax2 -K 0x34 1020304050\n"
+		"  -l    print without nl  ;  rax2 -l -E salam\n"
 		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r    r2 style output   ;  rax2 -r 0x1234\n"
@@ -191,9 +191,6 @@ static int rax(char *str, int len, int last) {
 		}
 	}
 dotherax:
-	if (flags & (1 << 19)) { // -l
-		newline[0] = '\0';
-	}
 	if (flags & 1) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = malloc (n);
@@ -203,9 +200,10 @@ dotherax:
 			if (n > 0) {
 				fwrite (buf, n, 1, stdout);
 			}
-#if __EMSCRIPTEN__
-			puts ("");
-#endif
+			printf("%s", newline);
+//#if __EMSCRIPTEN__
+//			puts ("");
+//#endif
 			fflush (stdout);
 			free (buf);
 		}
@@ -425,7 +423,10 @@ dotherax:
 
 		return true;
 	}
-
+	if (flags & (1 << 19)) { // -l
+		newline[0] = '\0';
+		return true;
+	}
 	if (str[0] == '0' && str[1] == 'x') {
 		out_mode = (flags & 32)? '0': 'I';
 	} else if (str[0] == 'b') {
