@@ -3,7 +3,8 @@
 #include <r_egg.h>
 
 #define CTX egg->context
-char *nested[32] = {0};
+char *nested[32] = {NULL};
+char *nested_callname[32] = {NULL};
 //char *nestede[32] = {0};
 //seems nestede are not used any more
 //(only one place that gives nestede[] value, where could be replaced)
@@ -350,7 +351,6 @@ eprintf("Getting out of find_alias with return value: %s\n", ptr);
             } else
                 includedir = NULL;
             R_FREE (str);
-            eprintf("Test: ptr: %s\n", ptr);
             break;
         default:
             p = strchr (str, ',');
@@ -657,7 +657,12 @@ eprintf("Getting into rcc_context with callname: %s\n", callname);
     if (CTX>31 || CTX <0)
         return;
 
-    nestedi[CTX]++;
+    if (delta > 0) {
+        nestedi[CTX]++;
+        R_FREE (nested_callname[CTX]);
+        if (callname != NULL)
+            nested_callname[CTX] = strdup(callname);
+    }
     if (callname && CTX>0) {// && delta>0) {
     //    set_nested (callname);
 //eprintf (" - - - - - - -  set nested d=%d c=%d (%s)\n", delta, context-1, callname);
@@ -724,6 +729,8 @@ emit->while_end (egg, get_frame_label (context-1));
                     set_nested (egg, str);
                 }
                 rcc_set_callname ("if"); // append 'if' body
+                R_FREE (nested_callname[CTX-1]);
+                nested_callname[CTX] = strdup("if");
             }
             if (!strcmp (callname, "if")) {
                 //emit->branch (egg, b, g, e, n, varsize, get_end_frame_label (egg));
@@ -742,7 +749,6 @@ eprintf("Getting into if syntax with elem: %s\n", elem);
                 }
                 rcc_reset_callname ();
                 R_FREE (conditionstr);
-                conditionstr = NULL;
             } //else eprintf ("Unknown statement (%s)(%s)\n", cn, elem);
         } // handle '{ ..'
     }
@@ -1161,8 +1167,15 @@ eprintf ("----------------------------\n\n");
             break;
         case '{':
             if (CTX>0) {
+                /*
+                if (nested_callname[CTX] && strstr(nested_callname[CTX], "if")
+                    && strstr(elem, "else")){
+                        r_egg_printf (egg, "  jmp __end_%d_%d_%d\n",
+                            nfunctions, CTX, nestedi[CTX]+1); 
+                        R_FREE (nested_callname[CTX]);
+                    } */
             //    r_egg_printf (egg, " %s:\n", get_frame_label (0));
-                r_egg_printf (egg, " __begin_%d_%d_%d:\n",
+                r_egg_printf (egg, "  __begin_%d_%d_%d:\n",
                     nfunctions, CTX, nestedi[CTX]); //%s:\n", get_frame_label (0));
             }
             rcc_context (egg, 1);
@@ -1173,11 +1186,12 @@ eprintf ("----------------------------\n\n");
 eprintf("Before rcc_context with callname: %s\n", callname);
 eprintf("Before rcc_context with endframe: %s\n", endframe);
 eprintf("Before rcc_context with CTX: %d\n", CTX);
+if (CTX>1)
+eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[CTX-1]);
             if (endframe) {
                 // XXX: use endframe[context]
                 r_egg_printf (egg, "%s\n", endframe);
                 R_FREE (nested[CTX]);
-                nested[CTX] = NULL;
             //    R_FREE (endframe);
             }
             if (CTX>1) {
