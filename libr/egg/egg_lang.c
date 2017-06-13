@@ -96,6 +96,8 @@ static char *file = "stdin";
 static char *dstvar = NULL;
 static char *dstval = NULL;
 static char *includedir = NULL;
+static char *ifelse_table[32][32] = {{NULL}};
+//used to solve if-else problem in a not so ugly way
 static int ndstval = 0;
 static int skipline = 0; // BOOL
 static int quoteline = 0;
@@ -729,8 +731,6 @@ emit->while_end (egg, get_frame_label (context-1));
                     set_nested (egg, str);
                 }
                 rcc_set_callname ("if"); // append 'if' body
-                R_FREE (nested_callname[CTX-1]);
-                nested_callname[CTX] = strdup("if");
             }
             if (!strcmp (callname, "if")) {
                 //emit->branch (egg, b, g, e, n, varsize, get_end_frame_label (egg));
@@ -1167,14 +1167,16 @@ eprintf ("----------------------------\n\n");
             break;
         case '{':
             if (CTX>0) {
-                /*
-                if (nested_callname[CTX] && strstr(nested_callname[CTX], "if")
-                    && strstr(elem, "else")){
-                        r_egg_printf (egg, "  jmp __end_%d_%d_%d\n",
-                            nfunctions, CTX, nestedi[CTX]+1); 
-                        R_FREE (nested_callname[CTX]);
-                    } */
             //    r_egg_printf (egg, " %s:\n", get_frame_label (0));
+                if (nested_callname[CTX] && strstr(nested_callname[CTX], "if") &&
+                    strstr(elem, "else")) {
+                    *elem = '\x00';
+                    elem_n = 0;
+                    R_FREE (ifelse_table[CTX][nestedi[CTX]-1])
+                    snprintf (str, 64, "  __end_%d_%d_%d:\n",
+                        nfunctions, CTX, nestedi[CTX]); 
+                    ifelse_table[CTX][nestedi[CTX]-1] = strdup(str);
+                }
                 r_egg_printf (egg, "  __begin_%d_%d_%d:\n",
                     nfunctions, CTX, nestedi[CTX]); //%s:\n", get_frame_label (0));
             }
@@ -1184,17 +1186,24 @@ eprintf ("----------------------------\n\n");
             endframe = nested[CTX];
 //edited by izhuer
 eprintf("Before rcc_context with callname: %s\n", callname);
-eprintf("Before rcc_context with endframe: %s\n", endframe);
+eprintf("Before rcc_context with endframe: %s|\n", endframe);
 eprintf("Before rcc_context with CTX: %d\n", CTX);
 if (CTX>1)
 eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[CTX-1]);
             if (endframe) {
                 // XXX: use endframe[context]
-                r_egg_printf (egg, "%s\n", endframe);
+                r_egg_printf (egg, "%s", endframe);
                 R_FREE (nested[CTX]);
             //    R_FREE (endframe);
             }
             if (CTX>1) {
+                if (nested_callname[CTX-1] && strstr(nested_callname[CTX-1], "if")) {
+                    snprintf(str, 64, "__ifelse_%d_%d", CTX-1, nestedi[CTX-1]-1);
+                    e->jmp(egg, str, 0);       
+                    snprintf(str, 64, "__end_%d_%d_%d",
+                        nfunctions, CTX-1, nestedi[CTX-1]-1);
+                    ifelse_table[CTX-1][nestedi[CTX-1]-1] = strdup(str);
+                }
                 //if (nestede[CTX]) {
                 //    r_egg_printf (egg, "%s:\n", nestede[CTX]);
                 //    //nestede[CTX] = NULL;
@@ -1207,6 +1216,18 @@ eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[
             }
             rcc_context (egg, -1);
             if (CTX== 0) {
+                snprintf(str, 64, "__end_%d", nfunctions);
+                e->jmp(egg, str, 0);
+                for (int i = 0; i < 32; i++) {
+                    for (int j = 0; j < nestedi[i]; j++){
+                        if (ifelse_table[i][j] != NULL){
+                            r_egg_printf(egg, "  __ifelse_%d_%d:\n", i, j);
+                            e->jmp(egg, ifelse_table[i][j], 0);
+                            R_FREE (ifelse_table[i][j]);
+                        }
+                    }
+                }
+                r_egg_printf(egg, "  __end:\n", nfunctions);
                 nbrackets = 0;
                 nfunctions++;
             }
