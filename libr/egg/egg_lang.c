@@ -1173,7 +1173,7 @@ eprintf ("----------------------------\n\n");
                     *elem = '\x00';
                     elem_n = 0;
                     R_FREE (ifelse_table[CTX][nestedi[CTX]-1])
-                    snprintf (str, 64, "  __end_%d_%d_%d:\n",
+                    snprintf (str, 64, "  __end_%d_%d_%d:",
                         nfunctions, CTX, nestedi[CTX]); 
                     ifelse_table[CTX][nestedi[CTX]-1] = strdup(str);
                 }
