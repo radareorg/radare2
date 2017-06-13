@@ -428,6 +428,8 @@ R_API bool r_debug_use(RDebug *dbg, const char *str);
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
 R_API void r_debug_info_free (RDebugInfo *rdi);
 
+R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file);
+
 /* send signals */
 R_API void r_debug_signal_init(RDebug *dbg);
 R_API int r_debug_signal_send(RDebug *dbg, int num);
