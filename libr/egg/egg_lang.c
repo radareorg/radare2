@@ -798,7 +798,8 @@ eprintf("Including file with elem: %s\n", elem);
             return;
         }
         free (includefile);
-        includefile = NULL;
+        free (includedir);
+        includefile = includedir = NULL;
         rcc_reset_callname ();
         p = q = r_file_slurp (path, NULL);
         if (p) {
