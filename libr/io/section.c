@@ -55,7 +55,7 @@ R_API RIOSection *r_io_section_add (RIO *io, ut64 offset, ut64 vaddr, ut64 size,
 				    ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
-	if (!size || size == UT64_MAX ||
+	if (size == UT64_MAX ||
 	    size == UT32_MAX) {  // hacky things which might give bad output in
 				 // case size == UT32_MAX for 64bit elf. Check
 				 // on basis of size, offset and file size would
