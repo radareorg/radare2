@@ -75,7 +75,7 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOGdb *riog;
-	char host[128], *port, *p;
+	char host[128], *port, *pid;
 
 	if (!__plugin_open (io, file, 0))
 		return NULL;
@@ -87,13 +87,17 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	host [sizeof (host)-1] = '\0';
 	port = strchr (host , ':');
 	if (!port) {
-		eprintf ("Port not specified. Please use gdb://[host]:[port]\n");
+		eprintf ("Port not specified. Please use gdb://host:port[/port]\n");
 		return NULL;
 	}
 	*port = '\0';
 	port++;
-	p = strchr (port, '/');
-	if (p) *p = 0;
+
+	pid = strchr (port, '/');
+	if (pid) {
+		*pid = 0;
+		pid++;
+	}
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: Cannot use network\n");
@@ -102,8 +106,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	riog = R_NEW0 (RIOGdb);
 	gdbr_init (&riog->desc, false);
 	int i_port = atoi(port);
+	int i_pid = -1;
+	if (pid)
+		i_pid = atoi(pid);
+
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
+		desc->pid = i_pid;
+		if (pid) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
+			int ret = gdbr_attach (desc, i_pid);
+			if (ret < 0)
+				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
+		}
 		riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
 		return riogdb;
 	}

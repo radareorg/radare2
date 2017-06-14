@@ -83,6 +83,8 @@ typedef struct libgdbr_stub_features_t {
 	bool BreakpointCommands;
 	// Cannot be determined with qSupported, found out on query
 	bool qC;
+
+	bool extended_mode;
 } libgdbr_stub_features_t;
 
 /*!
