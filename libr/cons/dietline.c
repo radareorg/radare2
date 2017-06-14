@@ -80,7 +80,7 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 		}
 		s[len] = r_cons_controlz (s[len]);
 		if (!s[len]) {
-			return 1;	// ^z
+			return 1; // ^z
 		}
 		if (s[len] < 28) {
 			return s[0]? 1: 0;
@@ -100,8 +100,9 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	return len;
 }
 #endif
+
 #if __WINDOWS__ && !__CYGWIN__
-static int r_line_readchar_win(int *vch) {	// this function handle the input in console mode
+static int r_line_readchar_win(int *vch) { // this function handle the input in console mode
 	INPUT_RECORD irInBuf[128];
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
@@ -351,6 +352,9 @@ R_API int r_line_hist_load(const char *file) {
 R_API int r_line_hist_save(const char *file) {
 	FILE *fd;
 	int i, ret = false;
+	if (!file || !*file) {
+		return false;
+	}
 	char *p, *path = r_str_home (file);
 	if (path != NULL) {
 		p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs

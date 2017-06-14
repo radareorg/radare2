@@ -184,6 +184,8 @@ R_API void r_core_sysenv_help(const RCore *core) {
 		"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
 		".!", "rabin2 -rpsei ${FILE}", "run each output line as a r2 cmd",
 		"!", "echo $SIZE", "display file size",
+		"!-", "", "clear history in current session",
+		"!-*", "", "clear and save empty history log",
 		"!=!", "", "enable remotecmd mode",
 		"=!=", "", "disable remotecmd mode",
 		"\nEnvironment:", "", "",
