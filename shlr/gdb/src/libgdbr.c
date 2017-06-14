@@ -37,35 +37,34 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	return 0;
 }
 
-int gdbr_set_architecture(libgdbr_t *g, uint8_t architecture) {
+int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits) {
 	if (!g) {
 		return -1;
 	}
-	g->architecture = architecture;
-	switch (architecture) {
-	case ARCH_X86_32:
-		g->registers = gdb_regs_x86_32;
-		break;
-	case ARCH_X86_64:
-		g->registers = gdb_regs_x86_64;
-		break;
-	case ARCH_ARM_32:
-		g->registers = gdb_regs_arm32;
-		break;
-	case ARCH_ARM_64:
-		g->registers = gdb_regs_aarch64;
-		break;
-	case ARCH_MIPS:
+	if (!strcmp (arch, "mips")) {
 		g->registers = gdb_regs_mips;
-		break;
-	case ARCH_AVR:
-		g->registers = gdb_regs_avr;
-		break;
-	case ARCH_LM32:
+	} else if (!strcmp (arch, "lm32")) {
 		g->registers = gdb_regs_lm32;
-		break;
-	default:
-		eprintf ("Error unknown architecture set\n");
+	} else if (!strcmp (arch, "avr")) {
+		g->registers = gdb_regs_avr;
+	} else if (!strcmp (arch, "x86")) {
+		if (bits == 32) {
+			g->registers = gdb_regs_x86_32;
+		} else if (bits == 64) {
+			g->registers = gdb_regs_x86_64;
+		} else {
+			eprintf ("%s: unsupported x86 bits: %d\n", __func__, bits);
+			return -1;
+		}
+	} else if (!strcmp (arch, "arm")) {
+		if (bits == 32) {
+			g->registers = gdb_regs_arm32;
+		} else if (bits == 64) {
+			g->registers = gdb_regs_aarch64;
+		} else {
+			eprintf ("%s: unsupported arm bits: %d\n", __func__, bits);
+			return -1;
+		}
 	}
 	return 0;
 }

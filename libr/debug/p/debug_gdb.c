@@ -153,13 +153,13 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			support_hw_bp = UNKNOWN;
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->bits;
-			if (( desc = &g->desc ))
+			desc = &g->desc;
 			switch (arch) {
 			case R_SYS_ARCH_X86:
 				if (bits == 16 || bits == 32) {
-					gdbr_set_architecture (&g->desc, X86_32);
+					gdbr_set_architecture (desc, "x86", 32);
 				} else if (bits == 64) {
-					gdbr_set_architecture (&g->desc, X86_64);
+					gdbr_set_architecture (desc, "x86", 64);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
@@ -170,9 +170,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			case R_SYS_ARCH_ARM:
 				if (bits == 16 || bits == 32) {
-					gdbr_set_architecture (&g->desc, ARM_32);
+					gdbr_set_architecture (desc, "arm", 32);
 				} else if (bits == 64) {
-					gdbr_set_architecture (&g->desc, ARM_64);
+					gdbr_set_architecture (desc, "arm", 64);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
@@ -180,7 +180,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			case R_SYS_ARCH_LM32:
 				if (bits == 32) {
-					gdbr_set_architecture(&g->desc, LM32);
+					gdbr_set_architecture(desc, "lm32", 32);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
@@ -188,20 +188,14 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			case R_SYS_ARCH_MIPS:
 				if (bits == 32 || bits == 64) {
-					gdbr_set_architecture (&g->desc, MIPS);
+					gdbr_set_architecture (desc, "mips", bits);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
 			case R_SYS_ARCH_AVR:
-				if (bits == 16) {
-					gdbr_set_architecture (&g->desc, AVR);
-				} else {
-					gdbr_set_architecture (&g->desc, AVR);
-					//eprintf ("Not supported register profile\n");
-					//return false;
-				}
+				gdbr_set_architecture (desc, "avr", 16);
 				break;
 			}
 		} else {
