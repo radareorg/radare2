@@ -2221,7 +2221,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	char *nstr, *str = NULL, pad[64];
 	char *flagstr = NULL;
 	int oldFlags = core->print->flags;
-	char extra[64];
+	char extra[128];
 	int j, k;
 
 	if (!ds->show_bytes || ds->nb < 1) {
