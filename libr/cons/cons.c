@@ -464,8 +464,10 @@ R_API void r_cons_clear_line(int std_err) {
 	} else {
 		char white[1024];
 		memset (&white, ' ', sizeof (white));
-		if (I.columns < sizeof (white)) {
+		if (I.columns > 0 && I.columns < sizeof(white)) {
 			white[I.columns - 1] = 0;
+		} else if (I.columns == 0) {
+			white[0] = 0;
 		} else {
 			white[sizeof (white) - 1] = 0; // HACK
 		}
