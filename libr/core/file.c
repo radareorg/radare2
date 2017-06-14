@@ -521,6 +521,27 @@ R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
 	return 1;
 }
 
+static void load_scripts_for(RCore *core, const char *name) {
+	// TODO: 
+	char *file;
+	RListIter *iter;
+	char *hdir = r_str_newf (R2_HOMEDIR "/rc.d/bin-%s", name);
+	char *path = r_str_home (hdir);
+	RList *files = r_sys_dir (path);
+	if (!r_list_empty (files)) {
+		eprintf ("[binrc] path: %s\n", path);
+	}
+	r_list_foreach (files, iter, file) {
+		if (*file && *file != '.') {
+			eprintf ("[binrc] loading %s\n", file);
+			r_core_cmdf (core, ". %s/%s", path, file);
+		}
+	}
+	r_list_free (files);
+	free (path);
+	free (hdir);
+}
+
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
@@ -583,6 +604,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && plugin->name) {
+		load_scripts_for (r, plugin->name);
+	}
+
 	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
 		// set use of raw strings
 		//r_config_set (r->config, "bin.rawstr", "true");

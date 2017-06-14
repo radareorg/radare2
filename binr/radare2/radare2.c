@@ -137,6 +137,7 @@ static int main_help(int line) {
 		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
 		" file     ${filename}.r2\n"
 		"Plugins:\n"
+		" binrc    ~/.config/radare2/rc.d/bin-<format>/ (elf, elf64, mach0, ..)\n"
 		" plugins  "R2_PREFIX"/lib/radare2/last\n"
 		" USER_PLUGINS ~/.config/radare2/plugins\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
