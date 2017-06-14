@@ -36,6 +36,20 @@ static int _server_handle_qTStatus(libgdbr_t *g) {
 	return send_msg (g, message);
 }
 
+static int _server_handle_qOffsets(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
+	char buf[64], *ptr;
+	ptr = buf + sprintf (buf, "TextSeg=");
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	if (cmd_cb (core_ptr, "dm", ptr, sizeof (buf) - (ptr - buf) - 1) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
+	eprintf ("buf: %s\n", buf);
+	return send_msg (g, buf);
+}
+
 static int _server_handle_s(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, size_t), void *core_ptr) {
 	char message[64];
 	if (send_ack (g) < 0) {
@@ -441,6 +455,12 @@ int gdbr_server_serve(libgdbr_t *g, int (*cmd_cb) (void*, const char*, char*, si
 		}
 		if (r_str_startswith (g->data, "vCont")) {
 			if ((ret = _server_handle_vCont (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "qOffsets")) {
+			if ((ret = _server_handle_qOffsets (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;

@@ -906,6 +906,11 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 	switch (cmd[0]) {
 	case 'd':
 		switch (cmd[1]) {
+		case 'm': // dm
+			if (snprintf (out_buf, max_len - 1, "%"PFMT64x, r_debug_get_baddr (core->dbg, NULL)) < 0) {
+				return -1;
+			}
+			return 0;
 		case 'p': // dp
 			switch (cmd[2]) {
 			case '\0': // dp
@@ -1019,7 +1024,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	RSocket *sock;
 	int p, ret;
 	char port[10];
-	const char *file = NULL;
+	char *file = NULL, *args = NULL;
 	libgdbr_t *g;
 	RCoreFile *cf;
 
@@ -1043,7 +1048,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			eprintf ("gdbserver: File not specified\n");
 			return -1;
 		}
-		while (*file && isspace (*file)) {
+		while (isspace (*file)) {
 			file++;
 		}
 		if (!*file) {
@@ -1051,12 +1056,21 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			return -1;
 		}
 	}
+	args = strchr (file, ' ');
+	if (args) {
+		*args++ = '\0';
+		while (isspace (*args)) {
+			args++;
+		}
+	} else {
+		args = "";
+	}
 
 	if (!(cf = r_core_file_open (core, file, R_IO_READ, 0))) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}
-	r_core_file_reopen_debug (core, "");
+	r_core_file_reopen_debug (core, args);
 
 	if (!(sock = r_socket_new (false))) {
 		eprintf ("gdbserver: Could not open socket for listening\n");
