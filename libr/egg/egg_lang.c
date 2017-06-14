@@ -245,12 +245,13 @@ static char *get_end_frame_label(REgg *egg) {
 static const char * find_alias(const char *str) {
     // do not forget to free return strings to avoid memory leak
     char *p = (char *)str;
+    int i;
     if (*str == '"')
         return strdup(str);
         // strings could not means aliases
     while ( *p && ! is_space(*p)) p++;
     *p = '\x00';
-    for (int i = 0; i < nalias; i++)
+    for (i = 0; i < nalias; i++)
         if (! strcmp(str, aliases[i].name))
             return strdup(aliases[i].content);
     return NULL;
@@ -1163,6 +1164,7 @@ eprintf("Getting into e->mathop with p: %s\n", p);
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
     REggEmit *e = egg->remit;
     char *ptr, str[64], *tmp_ptr = NULL;
+    int i, j;
     if (c=='\n') {
         line++;
         elem_n = 0;
@@ -1289,8 +1291,8 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
                 //snprintf(str, 64, "__end_%d", nfunctions);
                 //e->jmp(egg, str, 0);
                 //edit this unnessary jmp to bypass tests 
-                for (int i = 0; i < 32; i++) {
-                    for (int j = 0; j < nestedi[i]; j++){
+                for (i = 0; i < 32; i++) {
+                    for (j = 0; j < nestedi[i]; j++){
                         if (ifelse_table[i][j] != NULL){
                             r_egg_printf(egg, "  __ifelse_%d_%d:\n", i, j);
                             e->jmp(egg, ifelse_table[i][j], 0);
