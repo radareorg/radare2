@@ -34,7 +34,7 @@ files=[
 #'p/anal_h8300.c',
 'p/anal_i4004.c',
 'p/anal_i8080.c',
-'p/anal_java.c',
+#'p/anal_java.c',
 'p/anal_m68k_cs.c',
 'p/anal_malbolge.c',
 'p/anal_mips_cs.c',
