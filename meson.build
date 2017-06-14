@@ -22,10 +22,10 @@ else
   host_os = 'darwin'
 endif
 
-platform_inc = include_directories(['.','libr/include'])
+platform_inc = include_directories(['.','../libr/include'])
 if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
-  platform_inc  = include_directories(['.','libr/include','libr/include/msvc'])
+  platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
 endif
 
