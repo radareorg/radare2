@@ -19,6 +19,9 @@
 extern char hex2char(char *hex);
 
 static int set_interface_attribs (int fd, int speed, int parity) {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#pragma message("gdbclient/core.c: set_interface_attribs not implemented")
+#else
 	struct termios tty;
 	memset (&tty, 0, sizeof tty);
 	if (tcgetattr (fd, &tty) != 0) {
@@ -50,6 +53,7 @@ static int set_interface_attribs (int fd, int speed, int parity) {
 	if (tcsetattr (fd, TCSANOW, &tty) != 0) {
 		return -1;
 	}
+#endif
 	return 0;
 }
 

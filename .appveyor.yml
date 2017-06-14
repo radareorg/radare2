@@ -58,9 +58,10 @@ install:
   - cmd: if defined NINJA_URL ( powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
 
 # Cached folders
-cache:
-- "%CYG_CACHE%"
-- "%ZIP_ROOT%"
+# TODO For faster building
+# cache:
+# - "%CYG_CACHE%"
+# - "%ZIP_ROOT%"
 
 # Build scripts
 build_script:

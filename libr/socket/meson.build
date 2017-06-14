@@ -6,6 +6,7 @@ files=[
 'rap_server.c',
 'run.c',
 'socket.c',
+'serial.c',
 ]
 
 r_socket = shared_library('r_socket', files,

@@ -23,7 +23,7 @@ files=[
 'p/bin_elf.c',
 'p/bin_elf64.c',
 'p/bin_fs.c',
-'p/bin_java.c',
+#'p/bin_java.c',
 'p/bin_mach0.c',
 'p/bin_mach064.c',
 'p/bin_mbn.c',
@@ -110,7 +110,7 @@ r_bin = shared_library('r_bin', files,
     'format'
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  link_with: [r_util, r_io, r_socket, r_magic, libr2java],
+  link_with: [r_util, r_io, r_socket, r_magic],
   objects: [
     libr2sdb.extract_all_objects()
   ],
