@@ -24,6 +24,28 @@ static const char *skipspaces(const char *s) {
     return s;
 }
 
+static inline int is_op(char x) {
+    switch (x) {
+        case '-':
+        case '+':
+            return 1;
+        case '*':
+        case '/':
+            return 2;
+        case '^':
+        case '|':
+        case '&':
+            return 3;
+        default:
+            return 0;
+    }
+}
+
+static inline int get_op(char **pos){
+    while (**pos && !(is_op(**pos) && !is_var(*pos))) (*pos)++;
+    return ((**pos) ? ((is_op(**pos)) + 1) : 0);
+}    
+
 /* chop word by space/tab/.. */
 /* NOTE: ensure string does not starts with spaces */
 static char *trim(char *s) {
@@ -75,6 +97,8 @@ static char *conditionstr = NULL;
 static char *syscallbody = NULL;
 static char *includefile = NULL;
 static char *setenviron = NULL;
+static char *mathline = NULL;
+//used for confusing mathop
 static int commentmode = 0;
 static int varsize = 'l';
 static int varxs = 0;
@@ -240,6 +264,82 @@ eprintf("Getting into find_alias with str: %s\n", str);
     // only strings or alias could return valuable data 
 }
 
+static void rcc_internal_mathop(REgg *egg, char *ptr, char *ep, char op) {
+    char *p, *q, *oldp; //avoid mem leak
+    char type = ' ';
+    char buf[64]; // may cause stack overflow 
+    oldp = p = q = strdup(ptr);
+    if (get_op(&q)) *q = '\x00';
+    REggEmit *e = egg->remit;
+    while (*p && is_space(*p)) p++;
+    if (is_var(p)) {
+        p = r_egg_mkvar(egg, buf, p, 0);
+        if (varxs == '*') {
+            e->load(egg, p, varsize);
+            R_FREE (oldp);
+            oldp = p = strdup(e->regs(egg, 0));
+            //XXX: which will go wrong in arm 
+            //     for reg used in emit.load in arm is r7 not r0
+        }
+        else if (varxs == '&') {
+            e->load_ptr(egg, p);
+            R_FREE (oldp);
+            oldp = p = strdup(e->regs(egg, 0));
+        }
+        type = ' ';
+    } else type = '$';
+    if (*p)
+        e->mathop (egg, op, varsize, type, p, ep);
+    R_FREE (oldp);
+    R_FREE (ep);
+}
+
+/*
+ * level 2: + -
+ * level 3: * /
+ * level 4: ^ $ |
+ */
+static void rcc_mathop(REgg *egg, char **pos, int level) {
+    REggEmit *e = egg->remit;
+    int op_ret = level;
+    char op, *next_pos, *p;
+
+    while (**pos && is_space(**pos)) (*pos)++;
+    next_pos = *pos + 1;
+
+    do {
+        op = (is_op(**pos) && !(is_var(*pos))) ? **pos : '=';
+        p = (is_op(**pos) && !(is_var(*pos))) ? *pos+1 : *pos;
+        op_ret = get_op(&next_pos);
+        if (op_ret > level) {
+            (*pos)++;
+            rcc_mathop(egg, pos, op_ret); 
+            rcc_internal_mathop(egg, strdup(e->regs(egg, op_ret-1))
+                                , strdup(e->regs(egg, level-1)), op);
+            next_pos = *pos + 1;
+        } else {
+            rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)), op);
+            *pos = next_pos;
+            next_pos++;
+        }
+    } while (**pos && op_ret >= level);
+
+/* following code block sould not handle '-' and '/' well 
+    if (op_ret < level) {
+        rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)) ,'=');
+        return;
+    } 
+    op = *pos, *pos = '\x00', (*pos)++;
+    rcc_mathop(egg, pos, op_ret);
+    if (op_ret > level) {
+        rcc_internal_mathop(egg, p, strdup(e->regs(egg, op_ret-1)), op);
+        rcc_internal_mathop(egg, (char *)e->regs(egg, op_ret-1)
+                            , strdup(e->regs(egg, level-1)), '=');
+    }
+    else rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)), op);
+*/
+}
+
 static void rcc_pusharg(REgg *egg, char *str) {
     REggEmit *e = egg->remit;
     char buf[64], *p = r_egg_mkvar (egg, buf, str, 0);
@@ -309,7 +409,7 @@ eprintf("Getting into rcc_element with str: %s\n", str);
                 }
             aliases[i].name = strdup(dstvar);
             aliases[i].content = strdup(str);
-            nalias = (i == nalias) ? nalias + 1 : nalias;
+            nalias = (i == nalias) ? (nalias + 1) : nalias;
             //allow alias overwrite
             R_FREE (dstvar);
             mode = NORMAL;
@@ -1030,12 +1130,33 @@ eprintf("Getting into rcc_next with callname: %s\n", callname);
         rcc_reset_callname ();
     } else { // handle mathop
         int vs = 'l';
-        char type, *eq, *ptr = elem;
+        char type, *eq, *ptr = elem, *tmp;
         elem[elem_n] = '\0';
         ptr = (char*)skipspaces (ptr);
         if (*ptr) {
             eq = strchr (ptr, '=');
             if (eq) {
+                char *p = (char *)skipspaces(ptr);
+                vs = varsize;
+                *buf = *eq = '\x00';
+                e->mathop (egg, '=', vs, '$', "0", e->regs(egg, 1)); 
+                // avoid situation that mathline starts with a single '-'  
+                mathline = strdup((char *)skipspaces(eq+1));
+                tmp = mathline;
+                rcc_mathop(egg, &tmp, 2);
+                R_FREE (mathline);
+                tmp = NULL;
+                // following code block is too ugly, oh no
+                p = r_egg_mkvar (egg, buf, ptr, 0);
+                if (is_var(p)) {
+                    p = r_egg_mkvar(egg, buf, p, 0);
+                    if (varxs == '*' || varxs == '&')
+                        eprintf("not support for *ptr in dstvar\n");
+                    // XXX: Not support for pointer
+                    type = ' ';
+                } else type = '$';
+                e->mathop (egg, '=', vs, type, e->regs(egg, 1), p);
+            /*
                 char str2[64], *p, ch = *(eq-1);
                 *eq = '\0';
                 eq = (char*) skipspaces (eq+1);
@@ -1046,7 +1167,7 @@ eprintf("Getting into rcc_next with callname: %s\n", callname);
                     if (varxs=='*')
                         e->load (egg, eq, varsize);
                     else
-                    /* XXX this is a hack .. must be integrated with pusharg */
+                    // XXX this is a hack .. must be integrated with pusharg 
                     if (varxs=='&')
                         e->load_ptr (egg, eq);
                     if (eq) {
@@ -1064,6 +1185,7 @@ eprintf("Getting into e->mathop with eq: %s\n", eq);
 eprintf("Getting into e->mathop with p: %s\n", p);
                 e->mathop (egg, ch, vs, type, eq, p);
                 free(p);
+            */
             } else {
                 if (!strcmp (ptr, "break")) { // handle 'break;'
                     e->trap (egg);
@@ -1212,6 +1334,8 @@ eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[
                         nfunctions, CTX-1, nestedi[CTX-1]-1);
                     //get_end_frame_label (egg));
                 //}
+            }
+            if (CTX>0) {
                 nbrackets++;
             }
             rcc_context (egg, -1);
