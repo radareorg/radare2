@@ -133,9 +133,6 @@ static int mode = NORMAL;
 
 static char *find_include(const char *prefix, const char *file) {
     char *pfx = NULL, *ret = NULL, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
-//edited by izhuer
-eprintf ("find_include (%s,%s)\n", prefix, file);
-eprintf ("R_EGG_INCDIR_ENV: %s\n", env);
     if (!prefix) prefix = "";
     if (*prefix=='$') {
         char *out = r_sys_getenv (prefix+1);
@@ -174,8 +171,6 @@ eprintf ("R_EGG_INCDIR_ENV: %s\n", env);
         }
         free (env);
     } else ret = r_str_appendf (NULL, "%s/%s", pfx, file);
-//edited by izhuer
-eprintf ("find_include (%s,%s)\n", pfx, file);
     free (pfx);
     return ret;
 }
@@ -248,8 +243,6 @@ static char *get_end_frame_label(REgg *egg) {
 #endif
 
 static const char * find_alias(const char *str) {
-//edited by izhuer
-eprintf("Getting into find_alias with str: %s\n", str);
     // do not forget to free return strings to avoid memory leak
     char *p = (char *)str;
     if (*str == '"')
@@ -361,8 +354,6 @@ static void rcc_element(REgg *egg, char *str) {
     int i;
 
     if (CTX) {
-//fixed by izhuer
-eprintf("Getting into rcc_element with str: %s\n", str);
         if (slurp == '"') {
             if (mode == NORMAL) {
                 if (!dstvar)
@@ -388,8 +379,6 @@ eprintf("Getting into rcc_element with str: %s\n", str);
             rcc_pusharg (egg, str);
         }
     } else {
-//fixed by izhuer
-eprintf("Getting into rcc_element with str: %s\n", str);
         switch (mode) {
         case ALIAS:
             e->equ (egg, dstvar, str);
@@ -419,7 +408,6 @@ eprintf("Getting into rcc_element with str: %s\n", str);
                 eprintf ("global-buffer-overflow in syscalls\n");
                 break;
             }
-//fixed by izhuer
             if (dstvar == NULL || str == NULL){
                 eprintf ("does not set name or arg for syscall\n");
                 break;
@@ -436,8 +424,6 @@ eprintf("Getting into rcc_element with str: %s\n", str);
             break;
         case INCLUDE:
             str = ptr = (char *)find_alias(skipspaces(str));
-//edited by izhuer
-eprintf("Getting out of find_alias with return value: %s\n", ptr);
             if (ptr != NULL){
                 if (strchr(ptr, '"')){
                     ptr = strchr(ptr, '"') + 1;
@@ -518,10 +504,6 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 
         len = strlen (str);
         j = (len-len%e->size)+e->size;
-//edited by izhuer
-eprintf("Getting into rcc_pushstr with str: %s\n", str);
-eprintf("Getting into rcc_pushstr with len: %lu\n", strlen(str));
-eprintf("Getting into rcc_pushstr with j: %d\n", j);
         e->set_string (egg, dstvar, str, j);
         free (dstvar);
         dstvar = NULL;
@@ -531,9 +513,6 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
     int i, idx, len, qi;
     char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
 
-//edited by izhuer
-eprintf("Getting into r_egg_mkvar with _str: %s\n", _str);
-eprintf("Getting into r_egg_mkvar with delta: %d\n", delta);
     delta += stackfixed; // XXX can be problematic
     if (!_str)
         return NULL; /* fix segfault, but not badparsing */
@@ -616,7 +595,6 @@ static void rcc_fun(REgg *egg, const char *str) {
     char *ptr, *ptr2;
     REggEmit *e = egg->remit;
     str = skipspaces (str);
-eprintf("Getting into rcc_fun with str: %s\n", str);
     if (CTX) {
         ptr = strchr (str, '=');
         if (ptr) {
@@ -664,8 +642,6 @@ eprintf("Getting into rcc_fun with str: %s\n", str);
                 mode = INCLUDE;
                 free (includefile);
                 includefile = strdup (skipspaces (str));
-//edited by izhuer
-eprintf("Getting into rcc_fun with includefile: %s\n", includefile);
                 //slurp = 0;
                 //try to deal with alias
             } else
@@ -703,7 +679,6 @@ eprintf("Getting into rcc_fun with includefile: %s\n", includefile);
                 r_egg_printf (egg, "%s:\n", str);
             }
         } else {
-eprintf("Getting into rcc_fun with str: %s\n", str);
             //e->jmp (egg, ctxpush[context], 0);
             if (CTX>0) {
                 // WTF?
@@ -751,10 +726,6 @@ static void set_nested(REgg *egg, const char *s) {
 static void rcc_context(REgg *egg, int delta) {
     REggEmit *emit = egg->remit;
     char str[64];
-
-//edited by izhuer
-eprintf("Getting into rcc_context with delta: %d\n", delta);
-eprintf("Getting into rcc_context with callname: %s\n", callname);
 
     if (CTX>31 || CTX <0)
         return;
@@ -841,8 +812,6 @@ emit->while_end (egg, get_frame_label (context-1));
                 //where give nestede value
                 sprintf (str, "__end_%d_%d_%d", nfunctions,
                     CTX-1, nestedi[CTX-1]-1);
-//edited by izhuer
-eprintf("Getting into if syntax with elem: %s\n", elem);
                 emit->branch (egg, b, g, e, n, varsize, str);
                 if (CTX>0) {
                     /* XXX .. */
@@ -968,15 +937,10 @@ static void rcc_next(REgg *egg) {
         R_FREE (setenviron);
         return;
     }
-//edited by izhuer
-eprintf("Getting into rcc_next with includefile: %s\n", includefile);
     if (includefile) {
         char *p, *q, *path;
         elem[elem_n-1] = 0;
         path = find_include (includedir, includefile);
-//edited by izhuer
-eprintf("Including file: %s\n", path);
-eprintf("Including file with elem: %s\n", elem);
         if (!path) {
             eprintf ("Cannot find include file '%s'\n", elem);
             return;
@@ -1003,8 +967,6 @@ eprintf("Including file with elem: %s\n", elem);
     }
     docall = 1;
     if (callname) {
-//edited by izhuer
-eprintf("Getting into rcc_next with callname: %s\n", callname);
         if (!strcmp (callname, "goto")) {
             if (nargs != 1) {
                 eprintf ("Invalid number of arguments for goto()\n");
@@ -1177,7 +1139,6 @@ eprintf("Getting into rcc_next with callname: %s\n", callname);
                     type = ' ';
                 } else type = '$';
                 vs = 'l'; // XXX: add support for != 'l' size
-//edited by izhuer
 eprintf("Getting into e->mathop with ch: %c\n", ch);
 eprintf("Getting into e->mathop with vs: %c\n", vs);
 eprintf("Getting into e->mathop with type: %c\n", type);
@@ -1206,16 +1167,6 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
         line++;
         elem_n = 0;
     }
-//edited by izhuer
-eprintf ("----------------------------\n");
-eprintf ("CH  %c\n", c);
-eprintf ("OC  %c\n", oc);
-eprintf ("elem  %*s\n", elem_n, elem);
-eprintf ("elem_n  %d\n", elem_n);
-eprintf ("mode  %d\n", mode);
-eprintf ("skipline  %d\n", skipline);
-eprintf ("slurp  %c\n", slurp);
-eprintf ("----------------------------\n\n");
     /* comments */
     if (skipline) {
         if (c != '\n') {
@@ -1306,12 +1257,6 @@ eprintf ("----------------------------\n\n");
             break;
         case '}':
             endframe = nested[CTX];
-//edited by izhuer
-eprintf("Before rcc_context with callname: %s\n", callname);
-eprintf("Before rcc_context with endframe: %s|\n", endframe);
-eprintf("Before rcc_context with CTX: %d\n", CTX);
-if (CTX>1)
-eprintf("Before rcc_context with nested_callname[CTX-1]: %s\n", nested_callname[CTX-1]);
             if (endframe) {
                 // XXX: use endframe[context]
                 r_egg_printf (egg, "%s", endframe);
