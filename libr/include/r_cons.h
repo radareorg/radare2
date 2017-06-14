@@ -190,6 +190,7 @@ typedef struct r_cons_palette_t {
 	char *gui_background;
 	char *gui_alt_background;
 	char *gui_border;
+	char *highlight;
 
 	/* graph colors */
 	char *graph_box;
@@ -376,6 +377,8 @@ typedef struct r_cons_t {
 #define Color_INVERT_RESET "\x1b[27m"
 /* plain colors */
 #define Color_RESET      "\x1b[0m"
+#define Color_NOBGRESET  "\x1b[22;24;25;27;28;39m"
+#define Color_BGRESET    "\x1b[49m"
 #define Color_BLACK      "\x1b[30m"
 #define Color_BGBLACK    "\x1b[40m"
 #define Color_RED        "\x1b[31m"

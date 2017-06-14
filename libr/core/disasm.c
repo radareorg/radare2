@@ -676,6 +676,12 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num);
 }
 
+static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
+	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
+	char * asm_str = r_str_highlight (source, word, color);
+	ds->opstr = asm_str? asm_str:source;
+}
+
 static void ds_build_op_str(RDisasmState *ds) {
 	RCore *core = ds->core;
 	if (!ds->opstr) {
@@ -748,6 +754,19 @@ static void ds_build_op_str(RDisasmState *ds) {
 		} else {
 			free (ds->opstr);
 			ds->opstr = strdup (asm_str? asm_str: "");
+		}
+	}
+	if (ds->show_color) {
+		int i = 0;
+		char *word = NULL;
+		char *bgcolor = NULL;
+		char *wcdata = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
+		int argc = 0;
+		char **wc_array = r_str_argv (wcdata, &argc);
+		for (i = 0; i < argc; i++) {
+			bgcolor = strchr (wc_array[i], '\x1b');
+			word = r_str_newlen (wc_array[i], bgcolor - wc_array[i]);
+			ds_highlight_word (ds, word, bgcolor);
 		}
 	}
 	if (ds->use_esil) {
