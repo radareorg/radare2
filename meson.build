@@ -20,7 +20,7 @@ else
   gittip = gittip.stdout().strip()
 endif
 
-r2birth = run_command('date', '/t')
+r2birth = run_command('cmd', '/c', 'date /t')
 if r2birth.returncode() != 0
   r2birth = ''
 else
