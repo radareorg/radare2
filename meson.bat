@@ -9,6 +9,7 @@ cd ..\..
 
 :START
 IF "%1"=="-p" GOTO BUILDPROJECT
+IF "%1"=="-p2" GOTO BUILDPROJECT2
 IF "%1"=="-r" GOTO REBUILD
 IF EXIST build GOTO BUILD
 python meson.py --prefix=%CD% build
@@ -23,6 +24,12 @@ exit /b %errorlevel%
 ECHO [ R2 MESON BUILDING VS2015 SLN]
 IF EXIST build rd /s /q build
 python meson.py --prefix=%CD% build --backend=vs2015
+GOTO EXIT
+
+:BUILDPROJECT2
+ECHO [ R2 MESON BUILDING VS2017 SLN]
+IF EXIST build rd /s /q build
+python meson.py --prefix=%CD% build --backend=vs2017
 GOTO EXIT
 
 :REBUILD
