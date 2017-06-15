@@ -417,7 +417,7 @@ static void rcc_element(REgg *egg, char *str) {
 				eprintf ("global-buffer-overflow in aliases\n");
 				break;
 			}
-			if (dstvar == NULL || str == NULL) {
+			if (!dstvar || !str) {
 				eprintf ("does not set name or content for alias\n");
 				break;
 			}
@@ -440,7 +440,7 @@ static void rcc_element(REgg *egg, char *str) {
 				eprintf ("global-buffer-overflow in syscalls\n");
 				break;
 			}
-			if (dstvar == NULL || str == NULL) {
+			if (!dstvar || !str) {
 				eprintf ("does not set name or arg for syscall\n");
 				break;
 			}
@@ -456,7 +456,7 @@ static void rcc_element(REgg *egg, char *str) {
 			break;
 		case INCLUDE:
 			str = ptr = (char *) find_alias (skipspaces (str));
-			if (ptr != NULL) {
+			if (ptr) {
 				if (strchr (ptr, '"')) {
 					ptr = strchr (ptr, '"') + 1;
 					if ((p = strchr (ptr, '"'))) {
@@ -778,7 +778,7 @@ static void rcc_context(REgg *egg, int delta) {
 	if (delta > 0) {
 		nestedi[CTX]++;
 		R_FREE (nested_callname[CTX]);
-		if (callname != NULL) {
+		if (callname) {
 			nested_callname[CTX] = strdup (callname);
 		}
 	}
@@ -903,7 +903,7 @@ static int parsedatachar(REgg *egg, char c) {
 			slurp = 0;
 			mode = NORMAL;
 			/* register */
-			if (dstval != NULL && dstvar != NULL) {
+			if (dstval && dstvar) {
 				dstval[ndstval] = '\0';
 				egg->remit->comment (egg, "data (%s)(%s)size=(%d)\n",
 					dstvar, dstval, stackframe);
@@ -959,7 +959,7 @@ static int parseinlinechar(REgg *egg, char c) {
 				dstval = NULL;
 				return 1;
 			} else /* register */
-			if (dstval != NULL && dstvar != NULL) {
+			if (dstval && dstvar) {
 				dstval[ndstval] = '\0';
 				// printf(" /* END OF INLINE (%s)(%s) */\n", dstvar, dstval);
 				inlines[ninlines].name = strdup (skipspaces (dstvar));
@@ -1377,7 +1377,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				// edit this unnessary jmp to bypass tests
 				for (i = 0; i < 32; i++) {
 					for (j = 0; j < nestedi[i]; j++) {
-						if (ifelse_table[i][j] != NULL) {
+						if (ifelse_table[i][j]) {
 							r_egg_printf (egg, "  __ifelse_%d_%d:\n", i, j);
 							e->jmp (egg, ifelse_table[i][j], 0);
 							R_FREE (ifelse_table[i][j]);
