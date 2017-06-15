@@ -241,7 +241,7 @@ static char *get_frame_label(int type) {
 #if 1
 	if (type == 1) {
 		nb--;
-	} else if (type == 2)   {
+	} else if (type == 2) {
 		ct--;
 	}
 #endif
@@ -297,7 +297,7 @@ static void rcc_internal_mathop(REgg *egg, char *ptr, char *ep, char op) {
 			oldp = p = strdup (e->regs (egg, 0));
 			// XXX: which will go wrong in arm
 			// for reg used in emit.load in arm is r7 not r0
-		} else if (varxs == '&')   {
+		} else if (varxs == '&') {
 			e->load_ptr (egg, p);
 			R_FREE (oldp);
 			oldp = p = strdup (e->regs (egg, 0));
@@ -579,13 +579,13 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		idx = atoi (str + 4) + delta + e->size;
 		if (!strncmp (str + 1, "ret", 3)) {
 			strcpy (out, e->retvar);
-		} else if (!strncmp (str + 1, "fix", 3))          {
+		} else if (!strncmp (str + 1, "fix", 3)) {
 			e->get_var (egg, 0, out, idx - stackfixed);
 			// sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ-stackfixed));
-		} else if (!strncmp (str + 1, "var", 3))          {
+		} else if (!strncmp (str + 1, "var", 3)) {
 			e->get_var (egg, 0, out, idx);
 			// sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ));
-		} else if (!strncmp (str + 1, "arg", 3))          {
+		} else if (!strncmp (str + 1, "arg", 3)) {
 			if (str[4]) {
 				if (stackframe == 0) {
 					e->get_var (egg, 1, out, 4);	// idx-4);
@@ -606,7 +606,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 					eprintf ("NO CALLNAME '%s'\n", callname);
 				}
 			}
-		} else if (!strncmp (str + 1, "reg", 3))          {
+		} else if (!strncmp (str + 1, "reg", 3)) {
 			// XXX: can overflow if out is small
 			if (attsyntax) {
 				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str + 4)));
@@ -669,9 +669,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 				free (setenviron);
 				setenviron = strdup (skipspaces (str));
 				slurp = 0;
-			} else if (strstr (ptr, "fastcall"))        {
+			} else if (strstr (ptr, "fastcall")) {
 				/* TODO : not yet implemented */
-			} else if (strstr (ptr, "syscall"))        {
+			} else if (strstr (ptr, "syscall")) {
 				if (*str) {
 					mode = SYSCALL;
 					dstvar = strdup (skipspaces (str));
@@ -684,31 +684,31 @@ static void rcc_fun(REgg *egg, const char *str) {
 					ndstval = 0;
 					*syscallbody = '\0';
 				}
-			} else if (strstr (ptr, "include"))        {
+			} else if (strstr (ptr, "include")) {
 				mode = INCLUDE;
 				free (includefile);
 				includefile = strdup (skipspaces (str));
 				// slurp = 0;
 				// try to deal with alias
-			} else if (strstr (ptr, "alias"))        {
+			} else if (strstr (ptr, "alias")) {
 				mode = ALIAS;
 				ptr2 = dstvar = strdup (skipspaces (str));
 				while (*ptr2 && !is_space (*ptr2)) ptr2++;
 				*ptr2 = '\x00';
 				// for aliases must be valid and accurate strings
-			} else if (strstr (ptr, "data"))        {
+			} else if (strstr (ptr, "data")) {
 				mode = DATA;
 				ndstval = 0;
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
-			} else if (strstr (ptr, "naked"))        {
+			} else if (strstr (ptr, "naked")) {
 				mode = NAKED;
 				free (dstvar);
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 				ndstval = 0;
 				r_egg_printf (egg, "%s:\n", str);
-			} else if (strstr (ptr, "inline"))        {
+			} else if (strstr (ptr, "inline")) {
 				mode = INLINE;
 				free (dstvar);
 				dstvar = strdup (skipspaces (str));
@@ -858,8 +858,7 @@ static void rcc_context(REgg *egg, int delta) {
 				// CTX-1, nestedi[CTX-1]);
 				// nestede[CTX-1] = strdup (str);
 				// where give nestede value
-				sprintf (str, "__end_%d_%d_%d", nfunctions,
-					CTX - 1, nestedi[CTX - 1] - 1);
+				sprintf (str, "__end_%d_%d_%d", nfunctions, CTX - 1, nestedi[CTX - 1] - 1);
 				emit->branch (egg, b, g, e, n, varsize, str);
 				if (CTX > 0) {
 					/* XXX .. */
@@ -944,7 +943,7 @@ static int parseinlinechar(REgg *egg, char c) {
 		if (inlinectr == 1) {
 			return 0;
 		}
-	} else if (inlinectr == 0)        {
+	} else if (inlinectr == 0) {
 		return 0;
 	}
 
@@ -958,7 +957,7 @@ static int parseinlinechar(REgg *egg, char c) {
 			if (!dstvar && dstval == syscallbody) {
 				dstval = NULL;
 				return 1;
-			} else /* register */
+			} else	/* register */
 			if (dstval && dstvar) {
 				dstval[ndstval] = '\0';
 				// printf(" /* END OF INLINE (%s)(%s) */\n", dstvar, dstval);
@@ -1332,9 +1331,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					*elem = '\x00';
 					elem_n = 0;
 					R_FREE (ifelse_table[CTX][nestedi[CTX] - 1])
-					snprintf (str, 64, "  __end_%d_%d_%d:",
-						nfunctions, CTX, nestedi[CTX]);
-					ifelse_table[CTX][nestedi[CTX] - 1] = strdup (str);
+					ifelse_table[CTX][nestedi[CTX] - 1] =
+						r_str_newf ("  __end_%d_%d_%d:",
+							nfunctions, CTX, nestedi[CTX]);
 				}
 				r_egg_printf (egg, "  __begin_%d_%d_%d:\n",
 					nfunctions, CTX, nestedi[CTX]);	// %s:\n", get_frame_label (0));
@@ -1351,11 +1350,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			}
 			if (CTX > 1) {
 				if (nested_callname[CTX - 1] && strstr (nested_callname[CTX - 1], "if")) {
-					snprintf (str, 64, "__ifelse_%d_%d", CTX - 1, nestedi[CTX - 1] - 1);
-					e->jmp (egg, str, 0);
-					snprintf (str, 64, "__end_%d_%d_%d",
-						nfunctions, CTX - 1, nestedi[CTX - 1] - 1);
-					ifelse_table[CTX - 1][nestedi[CTX - 1] - 1] = strdup (str);
+					tmp_ptr = r_str_newf ("__ifelse_%d_%d", CTX - 1, nestedi[CTX - 1] - 1);
+					e->jmp (egg, tmp_ptr, 0);
+					R_FREE (tmp_ptr);	// mem leak
+					ifelse_table[CTX - 1][nestedi[CTX - 1] - 1] =
+						r_str_newf (str, 64, "__end_%d_%d_%d",
+							nfunctions, CTX - 1, nestedi[CTX - 1] - 1);
 				}
 				// if (nestede[CTX]) {
 				// r_egg_printf (egg, "%s:\n", nestede[CTX]);
