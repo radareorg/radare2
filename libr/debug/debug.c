@@ -1387,7 +1387,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		d->fd = g->pid;
 		r_debug_attach (dbg, g->pid);
 	}
-	return dbf->iob.io->winbase;
+	return dbg->iob.io->winbase;
 #else
 	int pid = dbg->iob.io->desc->fd;
 	if (r_debug_attach (dbg, pid) == -1) {
