@@ -213,7 +213,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		*b = '\0';
 		op = e? "bge": "bgt";
 		arg = b + 1;
-	} else if (g)        {
+	} else if (g) {
 		*g = '\0';
 		op = e? "ble": "blt";
 		arg = g + 1;
