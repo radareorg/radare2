@@ -87,16 +87,13 @@ static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const cha
 }
 
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
-	bool oecho = core->cons->echo;
 	const char *cmdbp = r_config_get (core->config, "cmd.bp");
-	core->cons->echo = true;
 	if (cmdbp && *cmdbp) {
 		r_core_cmd0 (core, cmdbp);
 	}
 	if (bpi->data && bpi->data[0]) {
 		r_core_cmd0 (core, bpi->data);
 	}
-	core->cons->echo = oecho;
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
