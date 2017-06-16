@@ -551,7 +551,8 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 		return 0;
 	}
 	if (!val) {
-		val = "";
+		val = (char*) malloc (1);
+		*val = '\0';
 	}
 	// XXX strlen computed twice.. because of check_*()
 	klen = strlen (key);

@@ -955,6 +955,11 @@ R_API int r_cons_get_size(int *rows) {
 	GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) - 1;
 	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top; // last row empty
+ 	if (I.columns == -1 && I.rows == 0) {
+		// Stdout is probably redirected so we set default values
+		I.columns = 80;
+		I.rows = 23;
+	}
 #elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;
