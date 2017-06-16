@@ -3418,7 +3418,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 
 	// Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
 	idx = 0;
-	R_FREE (op.mnemonic);
+	r_anal_op_fini (&op);
 	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
 		free (buf);
 		return;
@@ -3462,7 +3462,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	free (tmp_esil_str);
 
 	cur = addr + idx;
-	R_FREE (op.mnemonic);
+	r_anal_op_fini (&op);
 	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
 		free (buf);
 		return;
@@ -3594,7 +3594,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}
-		R_FREE (op.mnemonic);
+		r_anal_op_fini (&op);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i)) {
 			i += minopsize - 1;
 		}
@@ -3768,7 +3768,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 	}
 	free (buf);
-	free (op.mnemonic);
+	r_anal_op_fini (&op);
 	r_cons_break_pop ();
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
