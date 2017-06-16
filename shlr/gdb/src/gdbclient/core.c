@@ -11,7 +11,7 @@
 
 #if __UNIX__
 #include <errno.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <string.h>
 #include <termios.h>
 #endif
@@ -206,7 +206,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 	ret = 0;
 	if (last) {
 		if ((ret = snprintf (command, sizeof (command) - 1,
-				     "%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM,
+				     "%s%016"PFMT64x ",%"PFMT64x, CMD_READMEM,
 				     address + (num_pkts * data_sz),
 				     last)) < 0) {
 			return -1;
@@ -227,7 +227,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 	}
 	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
 		if ((ret = snprintf (command, sizeof (command) - 1,
-				     "%s%016"PFMT64x ",%"PFMT64d, CMD_READMEM,
+				     "%s%016"PFMT64x ",%"PFMT64x, CMD_READMEM,
 				     address + (pkt * data_sz),
 				     data_sz)) < 0) {
 			return -1;
@@ -269,7 +269,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	}
 	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
 		if ((command_len = snprintf (tmp, max_cmd_len,
-					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
+					     "%s%016"PFMT64x ",%"PFMT64x ":", CMD_WRITEMEM,
 					     address + (pkt * data_sz), data_sz)) < 0) {
 			goto fail;
 		}
@@ -286,7 +286,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
         }
 	if (last) {
 		if ((command_len = snprintf (tmp, max_cmd_len,
-					     "%s%016"PFMT64x ",%"PFMT64d ":", CMD_WRITEMEM,
+					     "%s%016"PFMT64x ",%"PFMT64x ":", CMD_WRITEMEM,
 					     address + (num_pkts * data_sz), last)) < 0) {
 			goto fail;
 		}
