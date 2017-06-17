@@ -234,14 +234,12 @@ R2PM_SVN() {
 		DIR="$2"
 	fi
 	cd "${R2PM_GITDIR}" || exit 1
-	if [ ${IS_LOCAL} = 0 ]; then
-		if [ -d "${DIR}" ]; then
-			cd "${DIR}"
-			svn up
-		else
-			svn co "${URL}" "${DIR}"
-			cd "${DIR}" || R2PM_FAIL "Oops"
-		fi
+	if [ -d "${DIR}" ]; then
+		cd "${DIR}"
+		svn up
+	else
+		svn co "${URL}" "${DIR}"
+		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
 }
 
