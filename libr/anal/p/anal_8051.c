@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include <8051_disas.h>
+//#include <8051_disas.h>
 
 #define IRAM 0x10000
 
@@ -493,6 +493,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	char *tmp =  NULL;
 	char buf_asm[64];
 	op->delay = 0;
+/*
 	r_8051_op o = r_8051_decode (buf, len);
 	memset (buf_asm, 0, sizeof (buf_asm));
 	if (!o.name) {
@@ -511,6 +512,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		free (tmp);
 	}
+*/
 	if (!strncmp (buf_asm, "push", 4)) {
 		op->type = R_ANAL_OP_TYPE_UPUSH;
 		op->ptr = 0;
@@ -539,18 +541,18 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (*buf_asm && !strncmp (buf_asm+1, "call", 4)) {
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = o.addr;
-		op->fail = addr + o.length;
+//		op->jump = o.addr;
+//		op->fail = addr + o.length;
 	} else {
 		/* CJNE, DJNZ, JC, JNC, JZ, JB, JNB, LJMP, SJMP */
 		if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j')) {
 			op->type = R_ANAL_OP_TYPE_JMP;
-			if (o.operand == OFFSET) {
-				op->jump = o.addr + addr + o.length;
-			} else {
-				op->jump = o.addr;
-			}
-			op->fail = addr + o.length;
+//			if (o.operand == OFFSET) {
+//				op->jump = o.addr + addr + o.length;
+//			} else {
+//				op->jump = o.addr;
+//			}
+//			op->fail = addr + o.length;
 		}
 	}
 	if (anal->decode) {
@@ -558,7 +560,8 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (anal, op, addr, copy, buf_asm);
 	}
-	return op->size = o.length;
+//	op->size = o.length;
+	return op->size;
 }
 
 RAnalPlugin r_anal_plugin_8051 = {
