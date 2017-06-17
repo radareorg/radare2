@@ -206,9 +206,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_gdb_detach(RDebug *dbg, int pid) {
-	gdbr_disconnect (desc);
-	free (reg_buf);
-	return true;
+	return gdbr_detach_pid (desc, pid);
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {

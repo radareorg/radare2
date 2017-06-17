@@ -139,6 +139,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
 	}
+
+	gdbr_check_extended_mode (g);
+
 	return ret;
 }
 
@@ -151,26 +154,170 @@ int gdbr_disconnect(libgdbr_t *g) {
 	return 0;
 }
 
-bool gdbr_kill(libgdbr_t *g) {
-	char buf[20];
+
+int gdbr_check_extended_mode(libgdbr_t *g) {
 	int ret;
+
+	// Activate extended mode if possible.
+	ret = send_msg (g, "!");
+	if (ret < 0) {
+		g->stub_features.extended_mode = false;
+		return ret;
+	}
+	read_packet (g);
+	ret = send_ack (g);
+	if (strncmp (g->data, "OK", 2)) {
+		g->stub_features.extended_mode = false;
+		return -1;
+	}
+
+	g->stub_features.extended_mode = true;
+	return 0;
+}
+
+
+int gdbr_attach(libgdbr_t *g, int pid) {
+	int ret;
+	char *cmd;
+	size_t buffer_size;
+
+	if (!g || !g->sock || !g->stub_features.multiprocess) {
+		return -1;
+	}
+
+	if (!g->stub_features.extended_mode) {
+		// vAttach needs extended mode to do anything.
+		return -2;
+	}
+
+	buffer_size = strlen (CMD_ATTACH) + (sizeof (int) * 2) + 1;
+	cmd = calloc (buffer_size, sizeof (char));
+	if (!cmd) {
+		return -1;
+	}
+
+	ret = snprintf (cmd, buffer_size, "%s%x", CMD_ATTACH, pid);
+	if (ret < 0) {
+		free(cmd);
+		return ret;
+	}
+
+	ret = send_msg (g, cmd);
+	free(cmd);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (read_packet (g) >= 0) {
+		return handle_attach (g);
+	}
+	return -1;
+}
+
+int gdbr_detach(libgdbr_t *g) {
+	int ret;
+
 	if (!g || !g->sock) {
+		return -1;
+	}
+
+	if (g->stub_features.multiprocess) {
+		if (!g->pid) {
+			return -1;
+		}
+		return gdbr_detach_pid (g, g->pid);
+	}
+
+	ret = send_msg (g, "D");
+	if (ret < 0) {
+		return -1;
+	}
+	return 0;
+}
+
+int gdbr_detach_pid(libgdbr_t *g, int pid) {
+	char *cmd;
+	int ret;
+	size_t buffer_size;
+
+	if (!g || !g->sock || !g->stub_features.multiprocess) {
+		return -1;
+	}
+
+	buffer_size = strlen (CMD_DETACH_MP) + (sizeof (pid) * 2) + 1;
+	cmd = calloc(buffer_size, sizeof (char));
+	if (!cmd) {
+		return -1;
+	}
+
+	if ((snprintf (cmd, buffer_size, "%s%x", CMD_DETACH_MP, g->pid)) < 0) {
+		free(cmd);
+		return -1;
+	}
+
+	ret = send_msg (g, cmd);
+	free(cmd);
+	if (ret < 0) {
+		return ret;
+	}
+
+	read_packet (g);
+	if ((ret = send_ack (g)) < 0) {
+		return ret;
+	}
+
+	if (strncmp (g->data, "OK", 2)) {
+		return -1;
+	}
+	return 0;
+}
+
+bool gdbr_kill(libgdbr_t *g) {
+	int ret;
+
+	if (!g || g->sock) {
 		return false;
 	}
+
 	if (g->stub_features.multiprocess) {
 		if (!g->pid) {
 			return false;
 		}
-		snprintf (buf, sizeof (buf) - 1, "vKill;%x", g->pid);
-	} else {
-		snprintf (buf, sizeof (buf) - 1, "k");
+		return gdbr_kill_pid (g, g->pid);
 	}
-	if ((ret = send_msg (g, buf)) < 0) {
+
+	ret = send_msg (g, "k");
+	if (ret < 0) {
 		return false;
 	}
-	if (!g->stub_features.multiprocess) {
-		return true;
+	return true;
+}
+
+bool gdbr_kill_pid(libgdbr_t *g, int pid) {
+	char *cmd;
+	int ret;
+	size_t buffer_size;
+
+	if (!g || !g->sock || !g->stub_features.multiprocess) {
+		return false;
 	}
+
+	buffer_size = strlen(CMD_KILL_MP) + (sizeof(pid) * 2) + 1;
+	cmd = calloc(buffer_size, sizeof (char));
+	if (!cmd) {
+		return false;
+	}
+
+	if ((snprintf (cmd, buffer_size, "%s%x", CMD_KILL_MP, g->pid)) < 0) {
+		free(cmd);
+		return false;
+	}
+	ret = send_msg (g, cmd);
+	free(cmd);
+	if (ret < 0) {
+		return false;
+	}
+
 	read_packet (g);
 	if ((ret = send_ack (g)) < 0) {
 		return false;

@@ -170,3 +170,11 @@ int handle_setbp(libgdbr_t *g) {
 int handle_removebp(libgdbr_t *g) {
 	return send_ack (g);
 }
+
+int handle_attach(libgdbr_t *g) {
+	if (g->data_len == 3 && g->data[0] == 'E') {
+		send_ack (g);
+		return -1;
+	}
+	return send_ack (g);
+}
