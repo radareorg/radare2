@@ -133,6 +133,7 @@ typedef struct libgdbr_t {
 	int exec_fd;
 	uint64_t exec_file_sz;
 
+	bool no_ack;
 	bool is_server;
 } libgdbr_t;
 

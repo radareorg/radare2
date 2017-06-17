@@ -108,6 +108,9 @@ int handle_qSupported(libgdbr_t *g) {
 
 int send_ack(libgdbr_t *g) {
 	if (g) {
+		if (g->no_ack) {
+			return 0;
+		}
 		g->send_buff[0] = '+';
 		g->send_len = 1;
 		send_packet (g);
