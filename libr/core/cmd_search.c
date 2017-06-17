@@ -2391,6 +2391,9 @@ reread:
 		goto beach;
 	case 'r': // "/r" and "/re"
 		switch (input[1]) {
+		case 'a': // "/ra"
+			r_core_anal_search (core, param.from, param.to, UT64_MAX);
+			break;
 		case 'e': // "/re"
 			if (input[2] == '?') {
 				eprintf ("Usage: /re $$ - to find references to current address\n");
@@ -2423,6 +2426,9 @@ reread:
 			break;
 		case '?':
 			eprintf ("Usage /r[e] [address] - search references to this specific address\n");
+			eprintf (" /r [addr]  - search references to this specific address\n");
+			eprintf (" /re [addr] - search references using esil\n");
+			eprintf (" /ra        - search all references\n");
 			break;
 		}
 		break;

@@ -2414,11 +2414,11 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	if (!ptr) {
 		return false;
 	}
-	if (ptr == ref) {
+	if (ref == UT64_MAX || ptr == ref) {
 		if (code) {
-			r_anal_ref_add (core->anal, ref, at, type? type: 'c');
+			r_anal_ref_add (core->anal, ptr, at, type? type: 'c');
 		} else {
-			r_anal_ref_add (core->anal, ref, at, 'd');
+			r_anal_ref_add (core->anal, ptr, at, 'd');
 		}
 		return true;
 	}
@@ -2435,6 +2435,9 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 #define OPSZ 8
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
+	if (!buf) {
+		return -1;
+	}
 	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
 	int ret, i, count = 0;
 	RAnalOp op = R_EMPTY;
@@ -2444,9 +2447,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	if (!buf) {
-		return -1;
-	}
 	r_io_use_desc (core->io, core->file->desc);
 	if (!ref) {
 		eprintf ("Null reference search is not supported\n");
@@ -3518,6 +3518,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			if (!refptr) {
 				ntarget = refptr = addr;
 			}
+		} else {
+			ntarget = UT64_MAX;
+			refptr = 0LL;
 		}
 	} else {
 		ntarget = UT64_MAX;
