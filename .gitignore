@@ -89,4 +89,4 @@ radare2-*.zip
 bin/
 meson.py
 ninja.exe
-
+.DS_Store
