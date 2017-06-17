@@ -4004,6 +4004,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		"axC", " addr [at]", "add code call ref",
 		"axg", " addr", "show xrefs graph to reach current function",
 		"axd", " addr [at]", "add data ref",
+		"axq", "", "list refs in quiet/human-readable format",
 		"axj", "", "list refs in json format",
 		"axF", " [flg-glob]", "find data/code references of flags",
 		"axt", " [addr]", "find data/code references to this address",
@@ -4067,6 +4068,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		break;
 	case '\0': // "ax"
 	case 'j': // "axj"
+	case 'q': // "axq"
 	case '*': // "ax*"
 		r_core_anal_ref_list (core, input[0]);
 		break;
