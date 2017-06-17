@@ -376,6 +376,9 @@ static void rcc_pusharg(REgg *egg, char *str) {
 }
 
 static void rcc_element(REgg *egg, char *str) {
+	if (!egg || !str) {
+		return;
+	}
 	REggEmit *e = egg->remit;
 	char *ptr, *p = str + strlen (str);
 	int inside = 0;
@@ -412,13 +415,13 @@ static void rcc_element(REgg *egg, char *str) {
 	} else {
 		switch (mode) {
 		case ALIAS:
+			if (!dstvar) {
+				eprintf ("does not set name or content for alias\n");
+				break;
+			}
 			e->equ (egg, dstvar, str);
 			if (nalias > 255) {
 				eprintf ("global-buffer-overflow in aliases\n");
-				break;
-			}
-			if (!dstvar || !str) {
-				eprintf ("does not set name or content for alias\n");
 				break;
 			}
 			for (i = 0; i < nalias; i++) {
@@ -436,12 +439,12 @@ static void rcc_element(REgg *egg, char *str) {
 			mode = NORMAL;
 			break;
 		case SYSCALL:
-			if (nsyscalls > 255) {
-				eprintf ("global-buffer-overflow in syscalls\n");
+			if (!dstvar) {
+				eprintf ("does not set name or arg for syscall\n");
 				break;
 			}
-			if (!dstvar || !str) {
-				eprintf ("does not set name or arg for syscall\n");
+			if (nsyscalls > 255) {
+				eprintf ("global-buffer-overflow in syscalls\n");
 				break;
 			}
 			// XXX the mem for name and arg are not freed - MEMLEAK
@@ -1189,6 +1192,7 @@ static void rcc_next(REgg *egg) {
 					type = '$';
 				}
 				e->mathop (egg, '=', vs, type, e->regs (egg, 1), p);
+				free (p);
 				/*
 				    char str2[64], *p, ch = *(eq-1);
 				    *eq = '\0';

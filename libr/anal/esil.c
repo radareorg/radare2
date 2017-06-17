@@ -2719,8 +2719,7 @@ repeat:
 }
 
 R_API int r_anal_esil_runword(RAnalEsil *esil, const char *word) {
-	char *ostr = word;
-	char *str = NULL;
+	const char *str = NULL;
 	runword (esil, word);
 	if (*word) {
 		if (!runword (esil, word)) {

@@ -995,6 +995,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd, char
 								  "%016"PFMT64x"%04x", r_swap_ut64 (val_big.v80.Low),
 								  r_swap_ut16 (val_big.v80.High));
 						}
+						break;
 					case 12:
 						if (be) {
 							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
@@ -1005,6 +1006,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd, char
 								  "%016"PFMT64x"%08"PFMT32x, r_swap_ut64 (val_big.v96.Low),
 								  r_swap_ut32 (val_big.v96.High));
 						}
+						break;
 					case 16:
 						if (be) {
 							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
@@ -1015,8 +1017,10 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd, char
 								  "%016"PFMT64x"%016"PFMT64x, r_swap_ut64 (val_big.v128.Low),
 								  r_swap_ut64 (val_big.v128.High));
 						}
+						break;
 					default:
 						eprintf ("%s: big registers not yet supported\n", __func__);
+						break;
 					}
 				}
 				ret += gdb_reg->size * 2;
@@ -1072,11 +1076,15 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			return -1;
 		}
 	}
-	args = strchr (file, ' ');
-	if (args) {
-		*args++ = '\0';
-		while (isspace (*args)) {
-			args++;
+	if (file) {
+		args = strchr (file, ' ');
+		if (args) {
+			*args++ = '\0';
+			while (isspace (*args)) {
+				args++;
+			}
+		} else {
+			args = "";
 		}
 	} else {
 		args = "";
