@@ -22,6 +22,7 @@
 #include <grub/misc.h>
 #include <grub/disk.h>
 #include <grub/fshelp.h>
+#include <stdlib.h>
 
 GRUB_EXPORT(grub_fshelp_view);
 GRUB_EXPORT(grub_fshelp_find_file);
