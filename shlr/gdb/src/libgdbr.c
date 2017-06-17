@@ -10,6 +10,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 		return -1;
 	}
 	memset (g, 0, sizeof (libgdbr_t));
+	g->no_ack = false;
 	g->is_server = is_server;
 	g->send_max = 2500;
 	g->send_buff = (char *) calloc (g->send_max, 1);

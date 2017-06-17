@@ -91,6 +91,16 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
+	// If no-ack supported, enable no-ack mode (should speed up things)
+	if (g->stub_features.QStartNoAckMode) {
+		if (send_msg (g, "QStartNoAckMode") < 0) {
+			return -1;
+		}
+		read_packet (g);
+		if (!strncmp (g->data, "OK", 2)) {
+			g->no_ack = true;
+		}
+	}
 	// Query the thread / process id
 	g->stub_features.qC = true;
 	g->pid = g->tid = 0;

@@ -17,7 +17,7 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	if (!(buf = malloc (128))) {
 		return -1;
 	}
-	snprintf (buf, 127, "PacketSize=%x", (ut32) (g->read_max - 1));
+	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+", (ut32) (g->read_max - 1));
 	if ((ret = handle_qSupported (g)) < 0) {
 		return -1;
 	}
@@ -486,6 +486,13 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			if ((ret = _server_handle_m (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "QStartNoAckMode")) {
+			if (send_ack (g) < 0 || send_msg (g, "OK") < 0) {
+				return -1;
+			}
+			g->no_ack = true;
 			continue;
 		}
 		// Unrecognized packet
