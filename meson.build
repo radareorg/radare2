@@ -94,12 +94,12 @@ versionconf.set('DATE', r2birth)
 configure_file(input : 'libr/include/r_version.h.in',
                output : 'r_version.h',
                configuration : versionconf)
-		   
+
 subdir('shlr/')
 subdir('libr/util')
 subdir('binr/rax2')
 
-		   
+
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')
