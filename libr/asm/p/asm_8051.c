@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2017 - pancake, astuder */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,7 +12,9 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = _8051_disas (a->pc, op, buf, len);
-	if (dlen < 0) dlen = 0;
+	if (dlen < 0) {
+		dlen = 0;
+	}
 	op->size = dlen;
 	return dlen;
 }

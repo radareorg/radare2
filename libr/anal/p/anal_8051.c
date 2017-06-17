@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake, dkreuter  */
+/* radare - LGPL - Copyright 2013-2017 - pancake, dkreuter, astuder  */
 
 #include <string.h>
 #include <r_types.h>
@@ -489,18 +489,18 @@ static int set_reg_profile(RAnal *anal) {
 static inline ut16 arg_offset (ut16 pc, ut8 offset) {
 	if (offset < 0x80) {
 		return pc + offset;
-	} else {
-		offset = 0 - offset;
-		return pc - offset;
 	}
+	offset = 0 - offset;
+	return pc - offset;
 }
 
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->delay = 0;
 
 	int i = 0;
-	while (_8051_ops[i].string != NULL && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))
+	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
 		i++;
+	}
 
 	op->size = _8051_ops[i].len;
 
@@ -561,23 +561,23 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_CALL:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		if (_8051_ops[i].arg1 == A_ADDR11) {
-			op->jump = ((buf[0]&0xe0)<<3) + buf[1];
+			op->jump = ((buf[0] & 0xe0) << 3) + buf[1];
 			op->fail = addr + op->size;
 		} else if (_8051_ops[i].arg1 == A_ADDR16) {
-			op->jump = 0x100*buf[1] + buf[2];
+			op->jump = 0x100 * buf[1] + buf[2];
 			op->fail = addr + op->size;
 		}
 		break;
 	case OP_JMP:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (_8051_ops[i].arg1 == A_ADDR11) {
-			op->jump = ((buf[0]&0xe0)<<3) + buf[1];
+			op->jump = ((buf[0] & 0xe0) << 3) + buf[1];
 			op->fail = addr + op->size;
 		} else if (_8051_ops[i].arg1 == A_ADDR16) {
-			op->jump = 0x100*buf[1] + buf[2];
+			op->jump = 0x100 * buf[1] + buf[2];
 			op->fail = addr + op->size;
 		} else if (_8051_ops[i].arg1 == A_OFFSET) {
-			op->jump = arg_offset(addr+op->size, buf[1]);
+			op->jump = arg_offset (addr + op->size, buf[1]);
 			op->fail = addr + op->size;
 		}
 		break;
@@ -592,10 +592,10 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JNB:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (op->size == 2) {
-			op->jump = arg_offset(addr+2, buf[1]);
+			op->jump = arg_offset (addr + 2, buf[1]);
 			op->fail = addr + 2;
 		} else if (op->size == 3) {
-			op->jump = arg_offset(addr+3, buf[2]);
+			op->jump = arg_offset (addr + 3, buf[2]);
 			op->fail = addr + 3;
 		}
 		break;
