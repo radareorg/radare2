@@ -2625,7 +2625,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string
 		// could be a wide string
 		int i = 0;
 		ALIGN;
-		ds_comment (ds, true, "; \"");
+		ds_comment (ds, true, "; u\"");
 		for (i = 0; i < len; i+=2) {
 			if (!str[i]) {
 				break;
