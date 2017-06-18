@@ -95,6 +95,7 @@ int handle_qC(libgdbr_t *g) {
 		} else {
 			t1++;
 			g->pid = (int) strtol (t1, NULL, 16);
+			eprintf ("g->pid: %x\n", g->pid);
 			t2++;
 		}
 	}

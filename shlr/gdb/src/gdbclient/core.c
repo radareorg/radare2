@@ -139,9 +139,6 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
 	}
-
-	gdbr_check_extended_mode (g);
-
 	return ret;
 }
 
@@ -161,17 +158,17 @@ int gdbr_check_extended_mode(libgdbr_t *g) {
 	// Activate extended mode if possible.
 	ret = send_msg (g, "!");
 	if (ret < 0) {
-		g->stub_features.extended_mode = false;
+		g->stub_features.extended_mode = 0;
 		return ret;
 	}
 	read_packet (g);
 	ret = send_ack (g);
 	if (strncmp (g->data, "OK", 2)) {
-		g->stub_features.extended_mode = false;
+		g->stub_features.extended_mode = 0;
 		return -1;
 	}
 
-	g->stub_features.extended_mode = true;
+	g->stub_features.extended_mode = 1;
 	return 0;
 }
 
@@ -182,6 +179,10 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 
 	if (!g || !g->sock) {
 		return -1;
+	}
+
+	if (g->stub_features.extended_mode == -1) {
+		gdbr_check_extended_mode (g);
 	}
 
 	if (!g->stub_features.extended_mode) {
@@ -221,7 +222,7 @@ int gdbr_detach(libgdbr_t *g) {
 	}
 
 	if (g->stub_features.multiprocess) {
-		if (!g->pid) {
+		if (g->pid <= 0) {
 			return -1;
 		}
 		return gdbr_detach_pid (g, g->pid);
@@ -274,12 +275,12 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 bool gdbr_kill(libgdbr_t *g) {
 	int ret;
 
-	if (!g || g->sock) {
+	if (!g || !g->sock) {
 		return false;
 	}
 
 	if (g->stub_features.multiprocess) {
-		if (!g->pid) {
+		if (g->pid <= 0) {
 			return false;
 		}
 		return gdbr_kill_pid (g, g->pid);

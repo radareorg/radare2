@@ -84,7 +84,7 @@ typedef struct libgdbr_stub_features_t {
 	// Cannot be determined with qSupported, found out on query
 	bool qC;
 
-	bool extended_mode;
+	int extended_mode;
 } libgdbr_stub_features_t;
 
 /*!
