@@ -86,7 +86,7 @@ int gdbr_remove_hwbp(libgdbr_t *g, ut64 address);
  * File read from remote target (only one file open at a time for now)
  */
 int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode);
-int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 off, ut64 sz);
+int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len);
 int gdbr_close_file(libgdbr_t *g);
 
 #endif  // CLIENT_COMMANDS_H

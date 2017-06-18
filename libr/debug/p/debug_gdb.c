@@ -92,22 +92,27 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	// Get file from GDB
 	char path[128];
 	ut8 *buf;
-	int ret, buflen;
+	int ret;
+	// TODO don't hardcode buffer size, get from remote target
+	// (I think gdb doesn't do that, it just keeps reading till EOF)
+	// fstat info can get file size, but it doesn't work for /proc/pid/maps
+	ut64 buflen = 16384;
 	// If /proc/%d/maps is not valid for gdbserver, we return NULL, as of now
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
 	if (gdbr_open_file (desc, path, O_RDONLY, S_IRUSR | S_IWUSR | S_IXUSR) < 0) {
-		eprintf ("Error opening file");
+		eprintf ("%s: Error opening file: %s\n", __func__, path);
 		return NULL;
 	}
-	if (!(buf = malloc (4096))) {
+	if (!(buf = malloc (buflen))) {
+		gdbr_close_file (desc);
 		return NULL;
 	}
-	if ((buflen = gdbr_read_file (desc, buf, 0, 4095)) < 0) {
+	if ((ret = gdbr_read_file (desc, buf, buflen - 1)) <= 0) {
 		gdbr_close_file (desc);
 		free (buf);
 		return NULL;
 	}
-	buf[buflen] = '\0';
+	buf[ret] = '\0';
 
 	// Get map list
 	int unk = 0, perm, i;
@@ -142,7 +147,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n", __func__, path, buf);
 			gdbr_close_file (desc);
 			free (buf);
 			r_list_free (retlist);

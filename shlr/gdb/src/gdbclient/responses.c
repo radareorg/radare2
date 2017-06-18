@@ -95,7 +95,6 @@ int handle_qC(libgdbr_t *g) {
 		} else {
 			t1++;
 			g->pid = (int) strtol (t1, NULL, 16);
-			eprintf ("g->pid: %x\n", g->pid);
 			t2++;
 		}
 	}
@@ -124,37 +123,6 @@ int handle_fOpen(libgdbr_t *g) {
 		return -1;
 	}
 	g->exec_fd = strtol (g->data + 1, NULL, 16);
-	return send_ack (g);
-}
-
-int handle_fstat(libgdbr_t *g) {
-	// no data just mean this is not supported by gdb
-	if (!*g->data) {
-        send_ack (g);
-        return 0;
-    }
-
-    if (g->data[0] != 'F' || g->data[1] == '-') {
-		send_ack (g);
-		return -1;
-	}
-	int size = strtol (g->data + 1, NULL, 16);
-	if (size < sizeof (libgdbr_fstat_t)) {
-		send_ack (g);
-		return -1;
-	}
-	char *ptr = strchr (g->data, ';');
-	if (!ptr) {
-		send_ack (g);
-		return -1;
-	}
-        libgdbr_fstat_t *fstat = (libgdbr_fstat_t*) (ptr + 1);
-        g->exec_file_sz = 0;
-        unsigned char *c = &fstat->size;
-        for (int i = 0; i < 8; i++) {
-                g->exec_file_sz <<= 4;
-                g->exec_file_sz |= *c;
-        }
 	return send_ack (g);
 }
  */
@@ -187,38 +155,43 @@ int handle_vFile_open(libgdbr_t *g) {
 		return -1;
 	}
 	g->data[g->data_len] = '\0';
-	if (sscanf (g->data, "F%x", &g->remote_file_fd) != 1 || g->remote_file_fd <= 0) {
+	if ((g->remote_file_fd = strtol (g->data + 1, NULL, 16)) <= 0) {
 		send_ack (g);
 		return -1;
 	}
 	return send_ack (g);
 }
 
-int handle_vFile_pread(libgdbr_t *g, ut8 *buf, ut64 offset, int *len) {
+int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
 	send_ack (g);
 	char *ptr;
-	if (g->data_len < 3 || g->data[0] != 'F' || !len) {
+	int len;
+	if (g->data_len < 3 || g->data[0] != 'F') {
 		return -1;
 	}
 	// F-1 is an error, yes, but it probably should not be fatal, since it might
 	// mean we're reading beyond file end. So this is handled in gdbr_read_file
 	if (g->data[1] == '-') {
-		return 1;
+		return 0;
 	}
 	if (!isxdigit (g->data[1])) {
 		return -1;
 	}
-	if (sscanf (g->data, "F%x;", len) != 1) {
+	if (sscanf (g->data, "F%x;", &len) != 1) {
 		return -1;
+	}
+	// Again, this is probably the end of file
+	if (len == 0) {
+		return 0;
 	}
 	if (!(ptr = strchr (g->data, ';')) || ptr >= g->data + g->data_len) {
 		return -1;
 	}
 	ptr++;
-	if (*len > 0) {
-		memcpy (buf + offset, ptr, *len);
+	if (len > 0) {
+		memcpy (buf, ptr, len);
 	}
-	return 0;
+	return len;
 }
 
 int handle_vFile_close(libgdbr_t *g) {
