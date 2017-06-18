@@ -372,12 +372,11 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 	for (;;) {
 		kr = mach_msg (
 			&msg.hdr,
-			MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0,
-			sizeof (exc_msg), ex.exception_port, 10, MACH_PORT_NULL);
+			MACH_RCV_MSG | MACH_RCV_INTERRUPT, 0,
+			sizeof (exc_msg), ex.exception_port,
+			MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		if (kr == MACH_RCV_INTERRUPTED ) {
 			eprintf ("message interrupted\n");
-			break;
-		} else if (kr == MACH_RCV_TIMED_OUT) {
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
 			eprintf ("message didn't succeded\n");
