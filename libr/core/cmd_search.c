@@ -1056,7 +1056,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num);
+					core->cons->pal.reg, core->cons->pal.num, false);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
 			} else {
@@ -1093,7 +1093,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num);
+					core->cons->pal.reg, core->cons->pal.num, false);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s ; %s\n",

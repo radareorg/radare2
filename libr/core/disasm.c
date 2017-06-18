@@ -642,6 +642,8 @@ static void ds_set_pre(RDisasmState *ds, const char * str) {
 static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	char *spacer = NULL;
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
+	char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
+	bool partial_reset = hlstr ? (*hlstr?true:false):false;
 
 	if (!ds->show_color || !ds->colorop) {
 		return strdup (source);
@@ -656,9 +658,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
-		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num);
+		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num, partial_reset);
 		free (s1);
-		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num);
+		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num, partial_reset);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -673,7 +675,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		free (scol2);
 		return source;
 	}
-	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num);
+	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
 }
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
@@ -4391,7 +4393,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					RAnalOp aop;
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i);
 					buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					r_cons_printf ("%s%s\n",
 							r_print_color_op_type (core->print, aop.type),
 							buf_asm);
@@ -4856,7 +4858,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 					};
 					r_anal_op (core->anal, &aop, core->offset + i,
 						core->block + i, core->blocksize - i);
-					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num);
+					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),
 						asm_str);
