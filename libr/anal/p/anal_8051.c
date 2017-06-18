@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake, dkreuter  */
+/* radare - LGPL - Copyright 2013-2017 - pancake, dkreuter, astuder  */
 
 #include <string.h>
 #include <r_types.h>
@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include <8051_disas.h>
+#include <8051_ops.h>
 
 #define IRAM 0x10000
 
@@ -139,7 +139,7 @@ static RI8015Reg registers[] = {
 #define OP_GROUP_UNARY_4(base, op) TEMPLATE_4(base, OP_GROUP_UNARY_4_FMT, A, op, XXX)
 #define OP_GROUP_UNARY_4_FMT(databyte, lhs, op, xxx) XI(lhs, op)
 
-static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const char *buf_asm) {
+static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
@@ -486,79 +486,134 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-
-// TODO: Cleanup the code, remove unneeded data copies
+static inline ut16 arg_offset (ut16 pc, ut8 offset) {
+	if (offset < 0x80) {
+		return pc + offset;
+	}
+	offset = 0 - offset;
+	return pc - offset;
+}
 
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	char *tmp =  NULL;
-	char buf_asm[64];
 	op->delay = 0;
-	r_8051_op o = r_8051_decode (buf, len);
-	memset (buf_asm, 0, sizeof (buf_asm));
-	if (!o.name) {
-		// invalid instruction
-		return 0;
+
+	int i = 0;
+	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
+		i++;
 	}
-	tmp = r_8051_disasm (o, addr, buf_asm, sizeof (buf_asm));
-	if (tmp) {
-		if (strlen (tmp) < sizeof (buf_asm)) {
-			strncpy (buf_asm, tmp, strlen (tmp));
-		} else {
-			eprintf ("8051 analysis: too big opcode!\n");
-			free (tmp);
-			op->size = -1;
-			return -1;
-		}
-		free (tmp);
-	}
-	if (!strncmp (buf_asm, "push", 4)) {
-		op->type = R_ANAL_OP_TYPE_UPUSH;
+
+	op->size = _8051_ops[i].len;
+
+	switch(_8051_ops[i].instr) {
+	case OP_PUSH:
+		op->type = R_ANAL_OP_TYPE_PUSH;
 		op->ptr = 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 1;
-	} else if (!strncmp (buf_asm, "pop", 3)) {
+		break;
+	case OP_POP:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->ptr = 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -1;
-	} else if (!strncmp (buf_asm, "ret", 3)) {
+		break;
+	case OP_RET:
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -2;
-	} else if (!strncmp (buf_asm, "nop", 3)) {
+		break;
+	case OP_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
-	} else if (!strncmp (buf_asm, "inv", 3)) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-	} else if ((!strncmp (buf_asm, "inc", 3)) ||
-		(!strncmp (buf_asm, "add", 3))) {
+		break;
+	case OP_INC:
+	case OP_ADD:
+	case OP_ADDC:
 		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if ((!strncmp (buf_asm, "dec", 3)) ||
-		(!strncmp (buf_asm, "sub", 3))) {
+		break;
+	case OP_DEC:
+	case OP_SUBB:
 		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (!strncmp (buf_asm, "mov", 3)) {
+		break;
+	case OP_ANL:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case OP_ORL:
+		op->type = R_ANAL_OP_TYPE_OR;
+		break;
+	case OP_XRL:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case OP_CPL:
+		op->type = R_ANAL_OP_TYPE_CPL;
+		break;
+	case OP_XCH:
+		op->type = R_ANAL_OP_TYPE_XCHG;
+		break;
+	case OP_MOV:
 		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (*buf_asm && !strncmp (buf_asm+1, "call", 4)) {
+		break;
+	case OP_MUL:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		break;
+	case OP_DIV:
+		op->type = R_ANAL_OP_TYPE_DIV;
+		break;
+	case OP_CALL:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = o.addr;
-		op->fail = addr + o.length;
-	} else {
-		/* CJNE, DJNZ, JC, JNC, JZ, JB, JNB, LJMP, SJMP */
-		if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j')) {
-			op->type = R_ANAL_OP_TYPE_JMP;
-			if (o.operand == OFFSET) {
-				op->jump = o.addr + addr + o.length;
-			} else {
-				op->jump = o.addr;
-			}
-			op->fail = addr + o.length;
+		if (_8051_ops[i].arg1 == A_ADDR11) {
+			op->jump = ((buf[0] & 0xe0) << 3) + buf[1];
+			op->fail = addr + op->size;
+		} else if (_8051_ops[i].arg1 == A_ADDR16) {
+			op->jump = 0x100 * buf[1] + buf[2];
+			op->fail = addr + op->size;
 		}
+		break;
+	case OP_JMP:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		if (_8051_ops[i].arg1 == A_ADDR11) {
+			op->jump = ((buf[0] & 0xe0) << 3) + buf[1];
+			op->fail = addr + op->size;
+		} else if (_8051_ops[i].arg1 == A_ADDR16) {
+			op->jump = 0x100 * buf[1] + buf[2];
+			op->fail = addr + op->size;
+		} else if (_8051_ops[i].arg1 == A_OFFSET) {
+			op->jump = arg_offset (addr + op->size, buf[1]);
+			op->fail = addr + op->size;
+		}
+		break;
+	case OP_CJNE:
+	case OP_DJNZ:
+	case OP_JC:
+	case OP_JNC:
+	case OP_JZ:
+	case OP_JNZ:
+	case OP_JB:
+	case OP_JBC:
+	case OP_JNB:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		if (op->size == 2) {
+			op->jump = arg_offset (addr + 2, buf[1]);
+			op->fail = addr + 2;
+		} else if (op->size == 3) {
+			op->jump = arg_offset (addr + 3, buf[2]);
+			op->fail = addr + 3;
+		}
+		break;
+	case OP_INVALID:
+		op->type = R_ANAL_OP_TYPE_ILL;
+		break;
+	default:
+		op->type = R_ANAL_OP_TYPE_UNK;
+		break;
 	}
+
 	if (anal->decode) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
-		analop_esil (anal, op, addr, copy, buf_asm);
+		analop_esil (anal, op, addr, copy);
 	}
-	return op->size = o.length;
+
+	return op->size;
 }
 
 RAnalPlugin r_anal_plugin_8051 = {
