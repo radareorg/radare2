@@ -1254,14 +1254,19 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							do {
 								I.buffer.index--;
 								s = I.buffer.data + I.buffer.index;
-								memmove (I.buffer.data + idx, I.buffer.data + idx + 1, I.buffer.length - idx);
+								memmove (I.buffer.data + idx,
+										I.buffer.data + idx + 1,
+										I.buffer.length - idx);
 								--idx;
 								++cnt;
 							} while ((*s & 0xc0) == 0x80);
 						}
 #else
 						++cnt;
-						memmove (I.buffer.data + idx, I.buffer.data + idx + 1, I.buffer.length - idx);
+						memmove (I.buffer.data + idx,
+								I.buffer.data + idx + 1,
+								I.buffer.length - idx);
+						--idx;
 #endif
 						stop = (is_stop_char (*s));
 						if (is_stopper) {
