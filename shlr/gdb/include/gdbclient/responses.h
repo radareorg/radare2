@@ -29,5 +29,8 @@ int handle_qSupported(libgdbr_t* g);
 int handle_setbp(libgdbr_t* g);
 int handle_removebp(libgdbr_t* g);
 int handle_attach(libgdbr_t* g);
+int handle_vFile_open(libgdbr_t *g);
+int handle_vFile_pread(libgdbr_t *g, ut8 *buf, ut64 offset, int *len);
+int handle_vFile_close(libgdbr_t *g);
 
 #endif  // RESPONSES_H

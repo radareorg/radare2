@@ -90,7 +90,7 @@ char hex2char(char *hex) {
 	return (char) result;
 }
 
-int unpack_hex(char *src, ut64 len, char *dst) {
+int unpack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
 		int val = hex2int (src[(i * 2)]);
@@ -102,7 +102,7 @@ int unpack_hex(char *src, ut64 len, char *dst) {
 	return len;
 }
 
-int pack_hex(char *src, ut64 len, char *dst) {
+int pack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	int x = 0;
 	while (i < (len * 2)) {

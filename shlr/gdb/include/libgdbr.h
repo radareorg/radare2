@@ -131,9 +131,8 @@ typedef struct libgdbr_t {
 	int tid; // little endian
 	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
-	char *exec_file_name;
-	int exec_fd;
-	uint64_t exec_file_sz;
+
+	int remote_file_fd; // For remote file I/O
 
 	bool no_ack;
 	bool is_server;

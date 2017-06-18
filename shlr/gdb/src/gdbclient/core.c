@@ -765,3 +765,122 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
 	}
 	return 0;
 }
+
+int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
+	if (!g || !filename || !*filename) {
+		return -1;
+	}
+	if (g->remote_file_fd >= 0) {
+		eprintf ("%s: Remote file already open\n", __func__);
+		return -1;
+	}
+	char *buf;
+	size_t buf_len = (strlen (filename) * 2) + strlen ("vFile:open:") + 30;
+	if (!(buf = calloc (buf_len, sizeof (char)))) {
+		return -1;
+	}
+	strcpy (buf, "vFile:open:");
+	pack_hex (filename, strlen (filename), buf + strlen (buf));
+	snprintf (buf + strlen (buf), buf_len - strlen (buf) - 1, ",%x,%x", flags, mode);
+	if (send_msg (g, buf) < 0) {
+		free (buf);
+		return -1;
+	}
+	read_packet (g);
+	if (handle_vFile_open (g) < 0) {
+		free (buf);
+		return -1;
+	}
+	return 0;
+}
+
+int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 off, ut64 len) {
+	int ret, pkt, ret1;
+	bool is_valid_read;
+	char command[64];
+	ut64 num_pkts, last, data_sz;
+	if (!g || !buf || !len) {
+		return -1;
+	}
+	if (len >= INT32_MAX) {
+		eprintf ("%s: Too big a file read requested: %"PFMT64d, __func__, len);
+		return -1;
+	}
+	if (g->remote_file_fd < 0) {
+		eprintf ("%s: No remote file opened\n", __func__);
+		return -1;
+	}
+	is_valid_read = false;
+	data_sz = g->stub_features.pkt_sz / 2;
+	num_pkts = len / data_sz;
+	last = len % data_sz;
+	ret = 0;
+	if (last) {
+		if ((ret = snprintf (command, sizeof (command) - 1,
+				     "vFile:pread:%x,%"PFMT64x",%"PFMT64x,
+				     g->remote_file_fd, last,
+				     off + (num_pkts * data_sz))) < 0) {
+			return -1;
+		}
+		if (send_msg (g, command) < 0) {
+			return -1;
+		}
+		if (read_packet (g) < 0) {
+			return -1;
+		}
+		if (send_ack (g) < 0) {
+			return -1;
+		}
+		if ((ret1 = handle_vFile_pread (g, buf, (num_pkts * data_sz), &ret)) < 0) {
+			return -1;
+		}
+		if (ret1 == 0) { // handle_vFile_pread returns 0 on valid read
+			is_valid_read = true;
+		}
+	}
+	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
+		if ((ret = snprintf (command, sizeof (command) - 1,
+				     "vFile:pread:%x,%"PFMT64x",%"PFMT64x,
+				     g->remote_file_fd, data_sz,
+				     off + (pkt * data_sz))) < 0) {
+			return -1;
+		}
+		if (send_msg (g, command) < 0) {
+			return -1;
+		}
+		if (read_packet (g) < 0) {
+			return -1;
+		}
+		if ((ret1 = handle_vFile_pread (g, buf, (pkt * data_sz), &ret)) < 0) {
+			return -1;
+		}
+		if (is_valid_read && ret1 != 0) { // Ref: handle_vFile_pread
+			return -1;
+		}
+		if (ret1 == 0) {
+			is_valid_read = true;
+		}
+        }
+	return ret;
+}
+
+int gdbr_close_file(libgdbr_t *g) {
+	if (!g) {
+		return -1;
+	}
+	if (g->remote_file_fd < 0) {
+		eprintf ("%s: No remote file opened\n", __func__);
+		return -1;
+	}
+	char buf[64];
+	snprintf (buf, sizeof (buf) - 1, "vFile:close:%x", g->remote_file_fd);
+	if (send_msg (g, buf) < 0) {
+		return -1;
+	}
+	read_packet (g);
+	if (handle_vFile_close (g) < 0) {
+		return -1;
+	}
+	g->remote_file_fd = -1;
+	return 0;
+}
