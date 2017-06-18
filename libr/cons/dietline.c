@@ -46,7 +46,7 @@ static inline int is_valid_char(unsigned char ch) {
 
 static bool is_stop_char(char ch) {
 	switch(ch) {
-	case '0': // null
+	case '\x00': // null
 	case ';':
 	case ' ':
 		return true;
