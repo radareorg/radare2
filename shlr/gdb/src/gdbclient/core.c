@@ -175,13 +175,12 @@ int gdbr_check_extended_mode(libgdbr_t *g) {
 	return 0;
 }
 
-
 int gdbr_attach(libgdbr_t *g, int pid) {
 	int ret;
 	char *cmd;
 	size_t buffer_size;
 
-	if (!g || !g->sock || !g->stub_features.multiprocess) {
+	if (!g || !g->sock) {
 		return -1;
 	}
 
@@ -198,7 +197,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 
 	ret = snprintf (cmd, buffer_size, "%s%x", CMD_ATTACH, pid);
 	if (ret < 0) {
-		free(cmd);
+		free (cmd);
 		return ret;
 	}
 
@@ -245,7 +244,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 	}
 
 	buffer_size = strlen (CMD_DETACH_MP) + (sizeof (pid) * 2) + 1;
-	cmd = calloc(buffer_size, sizeof (char));
+	cmd = calloc (buffer_size, sizeof (char));
 	if (!cmd) {
 		return -1;
 	}
@@ -302,8 +301,8 @@ bool gdbr_kill_pid(libgdbr_t *g, int pid) {
 		return false;
 	}
 
-	buffer_size = strlen(CMD_KILL_MP) + (sizeof(pid) * 2) + 1;
-	cmd = calloc(buffer_size, sizeof (char));
+	buffer_size = strlen (CMD_KILL_MP) + (sizeof (pid) * 2) + 1;
+	cmd = calloc (buffer_size, sizeof (char));
 	if (!cmd) {
 		return false;
 	}
