@@ -349,7 +349,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'j':
 		{
-			RList /*<intptr_t>*/ *addrs = r_list_new ();
+			RList /*<uintptr_t>*/ *addrs = r_list_new ();
 			RList /*<char *>*/ *names = r_list_newf (free);
 			RList *list = r_io_sundo_list (core->io, '!');
 			ut64 lsz = 0;
