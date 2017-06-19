@@ -347,9 +347,58 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		r_core_seek_base (core, input);
 		break;
+	case 'j':
+		{
+			RList /*<intptr_t>*/ *addrs = r_list_new ();
+			RList /*<intptr_t>*/ *names = r_list_newf (free);
+			RList *list = r_io_sundo_list (core->io, '!');
+			uint64_t lsz = 0;
+			uint64_t i;
+			RListIter *iter;
+			RIOUndos *undo;
+			if (list) {
+				r_list_foreach (list, iter, undo) {
+					char *name = NULL;
+
+					core->flags->space_strict = true;
+					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
+					core->flags->space_strict = false;
+					if (f) {
+						if (f->offset != undo->off) {
+							name = r_str_newf ("%s + %d\n", f->name,
+									(int)(undo->off- f->offset));
+						} else {
+							name = strdup (f->name);
+						}
+					}
+					if (!name) {
+						name = strdup ("");
+					}
+					r_list_append (addrs, (void *)undo->off);
+					r_list_append (names, strdup (name));
+					++lsz;
+					free (name);
+				}
+				r_list_free (list);
+			}
+			r_cons_printf ("[");
+			for (i = 0; i < lsz; ++i) {
+				uintptr_t addr = (uintptr_t)r_list_get_n (addrs, i);
+				char *name = r_list_get_n (names, i);
+				// XXX(should the "name" field be optional? That might make
+				// a bit more sense.
+				r_cons_printf ("{\"offset\":%zu,\"symbol\":\"%s\"}", addr, name);
+				if (i != lsz - 1) {
+					r_cons_printf (",");
+				}
+			}
+			r_cons_printf ("]\n");
+			r_list_free (addrs);
+			r_list_free (names);
+		}
+		break;
 	case '*':
 	case '=':
-	case 'j':
 	case '!':
 		{
 			RList *list = r_io_sundo_list (core->io, input[0]);
