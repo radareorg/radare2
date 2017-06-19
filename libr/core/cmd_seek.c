@@ -352,8 +352,8 @@ static int cmd_seek(void *data, const char *input) {
 			RList /*<intptr_t>*/ *addrs = r_list_new ();
 			RList /*<char *>*/ *names = r_list_newf (free);
 			RList *list = r_io_sundo_list (core->io, '!');
-			uint64_t lsz = 0;
-			uint64_t i;
+			ut64 lsz = 0;
+			ut64 i;
 			RListIter *iter;
 			RIOUndos *undo;
 			if (list) {
@@ -387,7 +387,7 @@ static int cmd_seek(void *data, const char *input) {
 				char *name = r_list_get_n (names, i);
 				// XXX(should the "name" field be optional? That might make
 				// a bit more sense.
-				r_cons_printf ("{\"offset\":%zu,\"symbol\":\"%s\"}", addr, name);
+				r_cons_printf ("{\"offset\":%"PFMT64d",\"symbol\":\"%s\"}", addr, name);
 				if (i != lsz - 1) {
 					r_cons_printf (",");
 				}
