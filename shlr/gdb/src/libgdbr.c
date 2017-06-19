@@ -11,6 +11,8 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	}
 	memset (g, 0, sizeof (libgdbr_t));
 	g->no_ack = false;
+	g->stub_features.extended_mode = -1;
+	g->remote_file_fd = -1;
 	g->is_server = is_server;
 	g->send_max = 2500;
 	g->send_buff = (char *) calloc (g->send_max, 1);
@@ -78,6 +80,5 @@ int gdbr_cleanup(libgdbr_t *g) {
 	free (g->send_buff);
 	g->send_len = 0;
 	free (g->read_buff);
-	free (g->exec_file_name);
 	return 0;
 }

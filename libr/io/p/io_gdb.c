@@ -113,8 +113,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
-		desc->pid = i_pid;
 		if (pid) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
+			desc->pid = i_pid;
 			int ret = gdbr_attach (desc, i_pid);
 			if (ret < 0) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);

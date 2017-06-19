@@ -42,6 +42,7 @@ static bool append(libgdbr_t *g, const char ch) {
 static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 	int i = 0;
 	int j = 0;
+	bool first = true;
 	g->read_buff[len] = '\0';
 	for (i = 0; i < len; i++) {
 		char cur = g->read_buff[i];
@@ -101,7 +102,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			ctx->flags |= ESC;
 			break;
 		case '*':
-			if (!ctx->last) {
+			if (first) {
 				eprintf ("%s: Invalid repeat\n", __func__);
 				return -1;
 			}
@@ -115,6 +116,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			}
 			/* Fall-through */
 		default:
+			first = false;
 			if (!append (g, cur)) {
 				return -1;
 			}
