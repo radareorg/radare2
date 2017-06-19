@@ -1533,7 +1533,12 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 static void r_core_setenv (RCore *core) {
 	char *e = r_sys_getenv ("PATH");
 	char *h = r_str_home (".config/radare2/prefix/bin");
-	char *n = r_str_newf ("%s:%s", h, e);
+#if __WINDOWS__ && !__CYGWIN__
+	char sep = ';';
+#else
+	char sep = ':';
+#endif
+	char *n = r_str_newf ("%s%c%s", h, sep, e);
 	r_sys_setenv ("PATH", n);
 	free (n);
 	free (h);
