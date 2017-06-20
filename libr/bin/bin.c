@@ -226,13 +226,15 @@ R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
 	return false;
 }
 
+// maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 
 static int string_scan_range(RList *list, const ut8 *buf, int min,
 			      const ut64 from, const ut64 to, int type) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
-	ut64 needle = from, str_start;
-	int count = 0, i, rc, runes, str_type = R_STRING_TYPE_DETECT;
+	ut64 str_start, needle = from;
+	int count = 0, i, rc, runes;
+	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
@@ -247,12 +249,10 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 			continue;
 		}
 
-		str_type = type;
-
-		if (str_type == R_STRING_TYPE_DETECT) {
+		if (type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc;
-			if ((to - needle) > 2) {
-				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3];
+			if ((to - needle) > 4) {
+				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3] && !w[4];
 				if (is_wide32) {
 					str_type = R_STRING_TYPE_WIDE32;
 				} else {
@@ -262,7 +262,10 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 			} else {
 				str_type = R_STRING_TYPE_ASCII;
 			}
+		} else {
+			str_type = type;
 		}
+
 
 		runes = 0;
 		str_start = needle;
@@ -349,6 +352,25 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				new->length = runes;
 				new->size = needle - str_start;
 				new->ordinal = count++;
+				// TODO: move into adjust_offset
+				switch (str_type) {
+				case R_STRING_TYPE_WIDE:
+					{
+						const ut8 *p = buf  + str_start - 2;
+						if (p[0] == 0xff && p[1] == 0xfe) {
+							str_start -= 2; // \xff\xfe
+						}
+					}
+					break;
+				case R_STRING_TYPE_WIDE32:
+					{
+						const ut8 *p = buf  + str_start - 4;
+						if (p[0] == 0xff && p[1] == 0xfe) {
+							str_start -= 4; // \xff\xfe\x00\x00
+						}
+					}
+					break;
+				}
 				new->paddr = new->vaddr = str_start;
 				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);

@@ -810,7 +810,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ("|");
 			}
 			/* print comment header*/
-			if (p->use_comments && !compact) {
+			if (p && p->use_comments && !compact) {
 				if (col != 2) {
 					printfmt (" ");
 				}
@@ -983,7 +983,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
-		if (p->use_comments) {
+		if (p && p->use_comments) {
 			for (; j < i + inc; j++) {
 				printfmt (" ");
 			}
