@@ -1336,7 +1336,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					elem_n = 0;
 					R_FREE (ifelse_table[CTX][nestedi[CTX] - 1])
 					ifelse_table[CTX][nestedi[CTX] - 1] =
-						r_str_newf ("  __end_%d_%d_%d:",
+						r_str_newf ("  __end_%d_%d_%d",
 							nfunctions, CTX, nestedi[CTX]);
 				}
 				r_egg_printf (egg, "  __begin_%d_%d_%d:\n",
