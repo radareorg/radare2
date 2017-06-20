@@ -30,19 +30,19 @@ libr2gdb = static_library('libr2gdb', gdb_files,
   ])]
 )
 
-#java_files=[
-#'java/class.c',
-#'java/code.c',
-#'java/dsojson.c',
-#'java/ops.c',
-##'java/main.c',
-#]
-#
-#libr2java = static_library('libr2java', java_files,
-#  include_directories: [platform_inc, include_directories([
-#    'java'
-#  ])]
-#)
+java_files=[
+'java/class.c',
+'java/code.c',
+'java/dsojson.c',
+'java/ops.c',
+#'java/main.c',
+]
+
+libr2java = static_library('libr2java', java_files,
+  include_directories: [platform_inc, include_directories([
+    'java'
+  ])]
+)
 
 qnx_files=[
 'qnx/src/core.c',
