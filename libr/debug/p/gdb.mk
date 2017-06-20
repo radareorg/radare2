@@ -1,6 +1,3 @@
-#include ../../config.mk
-#BINDEPS=r_reg r_bp r_util r_io r_anal
-
 CFLAGS+=-I$(SHLR)/gdb/include/
 LIB_PATH=$(SHRL)/gdb/
 
@@ -33,5 +30,5 @@ TARGET_GDB=debug_gdb.${EXT_SO}
 ALL_TARGETS+=${TARGET_GDB}
 
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC_LIB} $(call libname,debug_gdb) ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} \
+	${CC} $(call libname,debug_gdb) ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} \
 		-L.. -lr_debug

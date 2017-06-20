@@ -47,7 +47,7 @@ plugins:
 	$(MAKE) -C p all
 
 ios:
-	cd ../.. ; sys/rebuild.sh iosdbg
+	cd ../.. && sys/rebuild.sh iosdbg
 
 include ../rules.mk
 
