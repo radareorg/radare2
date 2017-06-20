@@ -383,7 +383,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			r_cons_printf ("[");
 			for (i = 0; i < lsz; ++i) {
-				ut64 addr = (ut64)r_list_get_n (addrs, i);
+				ut64 addr = (ut64)(uintptr_t)r_list_get_n (addrs, i);
 				const char *name = r_list_get_n (names, i);
 				// XXX(should the "name" field be optional? That might make
 				// a bit more sense.
