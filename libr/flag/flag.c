@@ -374,6 +374,20 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	RFlagItem *item, *nice = NULL;
 	RListIter *iter;
+	const RList* flags = r_flag_get_list (f, off);
+	if (flags) {
+		r_list_foreach (flags, iter, item) {
+			if (nice) {
+				char *n = item->name;
+				if (strncmp (n, "sym.func.", 9) && strncmp (n, "func", 4) && strncmp (n, "fcn.0", 5)) {
+					nice = item;
+				}
+			} else {
+				nice = item;
+			}
+		}
+		return nice;
+	}
 
 	r_list_foreach (f->flags, iter, item) {
 		if (f->space_strict && IS_IN_SPACE (f, item)) {
