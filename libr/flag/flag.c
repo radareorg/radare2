@@ -377,6 +377,9 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	const RList* flags = r_flag_get_list (f, off);
 	if (flags) {
 		r_list_foreach (flags, iter, item) {
+			if (f->space_idx != -1 && item->space != f->space_idx) {
+				continue;
+			}
 			if (nice) {
 				char *n = nice->name;
 				if (!strncmp (n, "sym.func.", 9) || !strncmp (n, "func.", 5) || !strncmp (n, "fcn.0", 5)) {
