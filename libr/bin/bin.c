@@ -183,6 +183,7 @@ R_API const char *r_bin_string_type (int type) {
 	case 'a': return "ascii";
 	case 'u': return "utf8";
 	case 'w': return "wide";
+	case 'W': return "wide32";
 	case 'b': return "base64";
 	}
 	return "ascii"; // XXX
@@ -251,8 +252,13 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 		if (str_type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc;
 			if ((to - needle) > 2) {
-				bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
-				str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
+				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3];
+				if (is_wide32) {
+					str_type = R_STRING_TYPE_WIDE32;
+				} else {
+					bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
+					str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
+				}
 			} else {
 				str_type = R_STRING_TYPE_ASCII;
 			}
@@ -265,7 +271,14 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 		for (rc = i = 0; i < sizeof (tmp) - 3 && needle < to; i += rc) {
 			RRune r = {0};
 
-			if (str_type == R_STRING_TYPE_WIDE) {
+			if (str_type == R_STRING_TYPE_WIDE32) {
+				if (needle + 3 < to) {
+					r = buf[needle + 3] << 8 | buf[needle];
+					rc = 4;
+				} else {
+					break;
+				}
+			} else if (str_type == R_STRING_TYPE_WIDE) {
 				if (needle + 1 < to) {
 					r = buf[needle + 1] << 8 | buf[needle];
 					rc = 2;
@@ -288,6 +301,11 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 			needle += rc;
 
 			if (r_isprint (r)) {
+				if (str_type == R_STRING_TYPE_WIDE32) {
+					if (r == 0xff) {
+						r = 0;
+					}
+				}
 				rc = r_utf8_encode (&tmp[i], r);
 				runes++;
 				/* Print the escape code */
@@ -324,6 +342,9 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 			}
 			if (list) {
 				RBinString *new = R_NEW0 (RBinString);
+				if (!new) {
+					break;
+				}
 				new->type = str_type;
 				new->length = runes;
 				new->size = needle - str_start;

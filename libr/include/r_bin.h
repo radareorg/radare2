@@ -115,7 +115,8 @@ enum {
 	R_STRING_TYPE_DETECT = '?',
 	R_STRING_TYPE_ASCII = 'a',
 	R_STRING_TYPE_UTF8 = 'u',
-	R_STRING_TYPE_WIDE = 'w',
+	R_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
+	R_STRING_TYPE_WIDE32 = 'W', // utf32
 	R_STRING_TYPE_BASE64 = 'b',
 };
 
