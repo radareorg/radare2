@@ -347,9 +347,9 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		r_core_seek_base (core, input);
 		break;
-	case 'j':
+	case 'j':  // sj
 		{
-			RList /*<uintptr_t>*/ *addrs = r_list_new ();
+			RList /*<ut64>*/ *addrs = r_list_new ();
 			RList /*<char *>*/ *names = r_list_newf (free);
 			RList *list = r_io_sundo_list (core->io, '!');
 			ut64 lsz = 0;
@@ -376,15 +376,15 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					r_list_append (addrs, (void *)undo->off);
 					r_list_append (names, strdup (name));
-					++lsz;
+					lsz++;
 					free (name);
 				}
 				r_list_free (list);
 			}
 			r_cons_printf ("[");
 			for (i = 0; i < lsz; ++i) {
-				uintptr_t addr = (uintptr_t)r_list_get_n (addrs, i);
-				char *name = r_list_get_n (names, i);
+				ut64 addr = (ut64)r_list_get_n (addrs, i);
+				const char *name = r_list_get_n (names, i);
 				// XXX(should the "name" field be optional? That might make
 				// a bit more sense.
 				r_cons_printf ("{\"offset\":%"PFMT64d",\"symbol\":\"%s\"}", addr, name);
