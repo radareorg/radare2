@@ -2659,3 +2659,130 @@ R_API const char *r_str_last(const char *str, const char *ch) {
 	} while (true);
 	return end;
 }
+
+// copies the WHOLE string but check n against non color code chars only.
+static int strncpy_with_color_codes(char *s1, char *s2, int n) {
+	int i = 0, j = 0;
+	int count = 0;
+	while (s2[j] && count < n) {
+		// detect (consecutive) color codes
+		while (s2[j] == 0x1b) {
+			// copy till 'm'
+			while (s2[j] && s2[j] != 'm') {
+				s1[i++] = s2[j++];
+			}
+			// copy 'm'
+			if (s2[j]) {
+				s1[i++] = s2[j++];
+			}
+		}
+		if (s2[j]) {
+			s1[i++] = s2[j++];
+			count += 1;
+		}
+	}
+	return i;
+}
+
+static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
+	int i = 0, j = 0;
+	int count = 0;
+	for (i = 0, j = 0; s1[i]  && s2[j] && count < n; i++, j++, count++) {
+		while (s1[i] == 0x1b) {
+			while (s1[i] && s1[i] != 'm') { 
+				i++;
+			}
+			if (s1[i]) {
+				i++;
+			}
+		}
+		while (s2[j] == 0x1b) {
+			while (s2[j] && s2[j] != 'm') {
+				j++;
+			}
+			if (s2[j]) {
+				j++;
+			}
+		}
+		if (s1[i] != s2[j]) {
+			return -1;
+		}
+	}
+
+	if (count < n && s1[i] != s2[j]) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static char *strchr_skip_color_codes(const char *s, int c) {
+	int i = 0;
+	for (i = 0; s[i]; i++) {
+		while (s[i] == 0x1b) {
+			while (s[i] && s[i] != 'm') {
+				i++;
+			}
+			if (s[i]) {
+				i++;
+			}
+		}
+		if (s[i] == (char)c) {
+			return (char*)s + i;
+		}
+	}
+	return NULL;
+}
+
+// Global buffer to speed up colorizing performance
+#define COLORIZE_BUFSIZE 1024
+static char o[COLORIZE_BUFSIZE];
+R_API char* r_str_highlight(char *str, const char *word, const char *color) {
+	ut32 i = 0, j = 0, to_copy;
+	char *start = str;
+	ut32 l_str = strlen (str);
+	ut32 l_reset = strlen (Color_BGRESET);
+	ut32 l_color = color?strlen (color):0;
+	ut32 l_word = word?strlen (word):0;
+	if (!str || !*str) {
+		return NULL;
+	}
+	if (!color) {
+		return strdup (str);
+	}
+	memset (o, 0, COLORIZE_BUFSIZE);
+	if (!word ||!*word) {
+		strcpy (o, color);
+		j += l_color;
+		strcpy (o + j, str);
+		j += strlen (str);
+		strcpy (o + j, Color_BGRESET);
+		return strdup (o);
+	}
+	while (start && (start < str + l_str)) {
+		int copied = 0;
+		// find first letter
+		start = strchr_skip_color_codes (str + i, *word);
+		if (start) {
+			to_copy = start - (str + i);
+			strncpy (o + j, str + i, to_copy);
+			i += to_copy;
+			j += to_copy;
+			if (!strncmp_skip_color_codes (start, word, l_word)) {
+				strcpy (o + j, color);
+				j += l_color;
+				copied = strncpy_with_color_codes (o + j, str + i, l_word);
+				i += copied;
+				j += copied;
+				strcpy (o + j, Color_BGRESET);
+				j += l_reset;
+			} else {
+				o[j++] = str[i++];
+			}
+		} else {
+			strcpy (o + j, str + i);
+			break;
+		}
+	}
+	return strdup (o);
+}

@@ -2755,7 +2755,7 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				char *asm_str = asmop.buf_asm;
 				char *color_reg = P(reg): Color_YELLOW;
 				char *color_num = P(num): Color_CYAN;
-				asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num);
+				asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false);
 				char *hexstr = r_print_hexpair (core->print, asmop.buf_hex, -1);
 				const char *pad = r_str_pad (' ', 20 - strlen (asmop.buf_hex));
 				r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);

@@ -1546,9 +1546,10 @@ static bool issymbol(char c) {
 	}
 }
 
-R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num) {
+R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
-	ut32 c_reset = strlen (Color_RESET);
+	char *reset = partial_reset ? Color_NOBGRESET:Color_RESET;
+	ut32 c_reset = strlen (reset);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	int is_num;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
@@ -1622,8 +1623,8 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
-				strcpy (o + j, Color_RESET);
-				j += strlen (Color_RESET);
+				strcpy (o + j, reset);
+				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
 					ut32 reg_len = strlen (reg);
@@ -1706,7 +1707,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		opcode_sz += 21;
 		/* free (t_o); */
 	}
-	strcpy (o + j, Color_RESET);
+	strcpy (o + j, reset);
 	//strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
 	return strdup (o);
 }

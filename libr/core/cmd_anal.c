@@ -4147,7 +4147,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					} else {
 						buf_asm = r_str_new (str);
 					}
@@ -4230,7 +4230,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					} else {
 						buf_asm = r_str_new (str);
 					}

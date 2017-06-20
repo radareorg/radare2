@@ -322,6 +322,7 @@ enum {
 	R_META_TYPE_HIDE = 'h',
 	R_META_TYPE_COMMENT = 'C',
 	R_META_TYPE_RUN = 'r',
+	R_META_TYPE_HIGHLIGHT = 'H',
 };
 
 // anal
