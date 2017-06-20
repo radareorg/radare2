@@ -46,7 +46,7 @@ R_LIB_VERSION_HEADER(r_debug);
 #endif
 
 #define SNAP_PAGE_SIZE 4096
-
+#define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
 /*
  * states that a process can be in
  */

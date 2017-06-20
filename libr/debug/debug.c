@@ -913,7 +913,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 }
 
 R_API int r_debug_step_back(RDebug *dbg) {
-	ut64 pc, end;
+	ut64 pc, end, cnt = 0;
 	ut8 buf[32];
 	RAnalOp op;
 	RDebugSession *before;
@@ -957,11 +957,17 @@ R_API int r_debug_step_back(RDebug *dbg) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		r_io_read_at (dbg->iob.io, pc, buf, sizeof (buf));
 		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-		eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
+		//eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
+		if (cnt > CHECK_POINT_LIMIT) {
+			//eprintf ("Hit count limit %lld\n", cnt);
+			r_debug_session_add (dbg, NULL);
+			cnt = 0;
+		}
 		if (pc + op.size == end)
 			return 1;
 		if (!r_debug_step (dbg, 1))
 			break;
+		cnt++;
 	}
 	return 0;
 }
