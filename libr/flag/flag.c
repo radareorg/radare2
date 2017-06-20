@@ -376,10 +376,11 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	RListIter *iter;
 	const RList* flags = r_flag_get_list (f, off);
 	if (flags) {
+		r_list_reverse ((RList *)flags);
 		r_list_foreach (flags, iter, item) {
 			if (nice) {
-				char *n = item->name;
-				if (strncmp (n, "sym.func.", 9) && strncmp (n, "func", 4) && strncmp (n, "fcn.0", 5)) {
+				char *n = nice->name;
+				if (!strncmp (n, "sym.func.", 9) || strncmp (n, "func.", 5) || strncmp (n, "fcn.0", 5)) {
 					nice = item;
 				}
 			} else {
@@ -394,6 +395,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 			continue;
 		}
 		if (item->offset == off) {
+			eprintf ("XXX Should never happend\n");
 			return evalFlag (f, item);
 		}
 		if (closest && off > item->offset) {
