@@ -76,11 +76,30 @@ build_script:
 
   - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
 
-# TODO Add testing
-after_test:
+after_build:
   - git clone https://github.com/radare/radare2-win-installer
   - set PATH=%PATH%;"C:\\Program Files (x86)\\Inno Setup 5"
   - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico
+
+before_test:
+  - git clone https://github.com/radare/radare2-regressions
+  - cd radare2-regressions
+  # Reset PATH variable
+  # - set "PATH=%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;"
+  # - set "PATH=C:\Program Files\Git\cmd;%PATH%"
+  - set "PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\;C:\mingw\bin;C:\mingw\msys\1.0\bin;%PATH%"
+  - echo "AVAILABLE EXEs"
+  - dir %APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%
+  # - sh -c "env"
+  # /!\ TODO /!\ Remove exit 0
+  - echo "RADARE2 PATH:"
+  - radare2 - -q -c "!echo '%PATH%'"
+  - radare2 - -q -c "env PATH"
+  - radare2 - -q -c "!rabin2"
+  - radare2 - -q -c "!rahash2"
+  # - sh -c "export PATH=\"$PATH:/c/projects/radare2-shvdd/${DIST_FOLDER}:/c/mingw/bin:/c/mingw/msys/1.0/bin\"; set; which radare2; which make; export NOOK=1; VERBOSE=1 make -k all; make unit_tests; exit 0"
+  - sh -c "which radare2; which rahash2; which make; export NOOK=1; VERBOSE=1 make -k all; make unit_tests; exit 0"
+  - cd ..
 
 # Artifacts
 artifacts:
