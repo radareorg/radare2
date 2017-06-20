@@ -2432,8 +2432,38 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
 }
 
+enum {
+	R2_ARCH_ARM64
+};
+
+static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int len, int arch) {
+	switch (arch) {
+	case R2_ARCH_ARM64:
+		aop->size = 4;
+		if (buf[3] == 0x94) {
+			if (!r_anal_op (core->anal, aop, addr, buf, len)) {
+				// shouldnt happen!
+				return false;
+			}
+			return true;
+		}
+		return false;
+	default:
+		aop->size = 1;
+		if (!r_anal_op (core->anal, aop, addr, buf, len)) {
+			switch (aop->type) {
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_CCALL:
+				return true;
+			}
+			return false;
+		}
+	}
+	return false;
+}
+
 #define OPSZ 8
-R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
+R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return -1;
@@ -2443,6 +2473,13 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	RAnalOp op = R_EMPTY;
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
+	int arch = -1;
+	if (core->assembler->bits == 64) {
+		// speedup search
+		if (!strncmp (core->assembler->cur->name, "arm", 3)) {
+			arch = R2_ARCH_ARM64;
+		}
+	}
 	// TODO: get current section range here or gtfo
 	// ???
 	// XXX must read bytes correctly
@@ -2482,10 +2519,17 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				r_anal_op_fini (&op);
-				if (!r_anal_op (core->anal, &op, at + i,
-						buf + i, core->blocksize - i)) {
-					continue;
+				if (mode == 'c') {
+					if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
+						i += op.size;
+						r_anal_op_fini (&op);
+						continue;
+					}
+				} else {
+					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i)) {
+						r_anal_op_fini (&op);
+						continue;
+					}
 				}
 				switch (op.type) {
 				case R_ANAL_OP_TYPE_JMP:
@@ -2534,6 +2578,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					break;
 				}
 				i += op.size - 1;
+				r_anal_op_fini (&op);
 			}
 			if (bckwrds) {
 				if (!do_bckwrd_srch) {

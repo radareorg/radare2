@@ -2391,8 +2391,11 @@ reread:
 		goto beach;
 	case 'r': // "/r" and "/re"
 		switch (input[1]) {
+		case 'c': // "/rc"
+			r_core_anal_search (core, param.from, param.to, UT64_MAX, 'c');
+			break;
 		case 'a': // "/ra"
-			r_core_anal_search (core, param.from, param.to, UT64_MAX);
+			r_core_anal_search (core, param.from, param.to, UT64_MAX, 0);
 			break;
 		case 'e': // "/re"
 			if (input[2] == '?') {
@@ -2416,19 +2419,20 @@ reread:
 		case 0: // "/r"
 			if (input[param_offset - 1] == ' ') {
 				r_core_anal_search (core, param.from, param.to,
-					r_num_math (core->num, input + 2));
+					r_num_math (core->num, input + 2), 0);
 				r_core_cmdf (core, "axt @ 0x%"PFMT64x "\n", r_num_math (core->num, input + 2));
 			} else {
 				r_core_anal_search (core, param.from, param.to,
-					core->offset);
+					core->offset, 0);
 				r_core_cmdf (core, "axt @ 0x%"PFMT64x "\n", core->offset);
 			}
 			break;
 		case '?':
-			eprintf ("Usage /r[e] [address] - search references to this specific address\n");
-			eprintf (" /r [addr]  - search references to this specific address\n");
-			eprintf (" /re [addr] - search references using esil\n");
-			eprintf (" /ra        - search all references\n");
+			eprintf ("Usage /r[e] [address] - search references to this specific address\n"
+			" /r [addr]  - search references to this specific address\n"
+			" /re [addr] - search references using esil\n"
+			" /rc        - search for call references\n"
+			" /ra        - search all references\n");
 			break;
 		}
 		break;
