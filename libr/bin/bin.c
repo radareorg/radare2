@@ -251,8 +251,8 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 
 		if (type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc;
-			if ((to - needle) > 2) {
-				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3];
+			if ((to - needle) > 4) {
+				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3] && !w[4];
 				if (is_wide32) {
 					str_type = R_STRING_TYPE_WIDE32;
 				} else {
