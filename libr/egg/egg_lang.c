@@ -1358,7 +1358,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					e->jmp (egg, tmp_ptr, 0);
 					R_FREE (tmp_ptr);	// mem leak
 					ifelse_table[CTX - 1][nestedi[CTX - 1] - 1] =
-						r_str_newf (str, 64, "__end_%d_%d_%d",
+						r_str_newf ("__end_%d_%d_%d",
 							nfunctions, CTX - 1, nestedi[CTX - 1] - 1);
 				}
 				// if (nestede[CTX]) {
