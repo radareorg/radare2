@@ -61,7 +61,7 @@ static inline bool is_word_break_char(char ch) {
 static inline void unix_word_rubout() {
 	int i;
 	if (I.buffer.index > 0) {
-		for (i = I.buffer.index - 1; i > 0 && is_word_break_char(I.buffer.data[i]); i--) {
+		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
 			/*nothing to see here*/
 		}
 		for (; i && !is_word_break_char (I.buffer.data[i]); i--) {
