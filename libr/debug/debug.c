@@ -934,14 +934,14 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	/* Save current session. It is marked as a finish point of reverse execution */
 	r_debug_session_add (dbg, &tail);
 
-	/* Get pverious state */
+	/* Get previous state */
 	before = r_debug_session_get (dbg, tail);
 	if (!before) {
 		return 0;
 	}
 	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
-	/* rollback to previous state */
+	/* Rollback to previous state */
 	r_debug_session_set (dbg, before);
 
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
