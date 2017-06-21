@@ -17,6 +17,7 @@
 #endif
 
 static char *r_line_nullstr = "";
+static const char dl_basic_word_break_characters[] =  " \t\n\"\\'`@$><=;|&{(";
 
 #define ONLY_VALID_CHARS 1
 
@@ -43,6 +44,48 @@ static inline int is_valid_char(unsigned char ch) {
 	return false;
 }
 #endif
+
+static inline bool is_word_break_char(char ch) {
+	int i;
+	int len =
+		sizeof (dl_basic_word_break_characters) /
+		sizeof (dl_basic_word_break_characters[0]);
+	for (i = 0; i < len; ++i) {
+		if (ch == dl_basic_word_break_characters[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void unix_word_rubout() {
+	int i;
+	if (I.buffer.index > 0) {
+		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
+			/*nothing to see here*/
+		}
+		for (; i && !is_word_break_char (I.buffer.data[i]); i--) {
+			/*nothing to see here*/
+		}
+		if (!i) {
+			for (; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
+				/*nothing to see here*/
+			}
+		}
+		if (i > 0) {
+			i++;
+		} else if (i < 0) {
+			i = 0;
+		}
+		if (I.buffer.index > I.buffer.length) {
+			I.buffer.length = I.buffer.index;
+		}
+		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
+				I.buffer.length - I.buffer.index + 1);
+		I.buffer.length = strlen (I.buffer.data);
+		I.buffer.index = i;
+	}
+}
 
 static int inithist() {
 	ZERO_FILL (I.history);
@@ -762,31 +805,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 23:// ^W ^w
-			if (I.buffer.index > 0) {
-				for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
-					/*nothing to see here*/
-				}
-				for (; i && I.buffer.data[i] != ' '; i--) {
-					/*nothing to see here*/
-				}
-				if (!i) {
-					for (; i > 0 && I.buffer.data[i] == ' '; i--) {
-						/*nothing to see here*/
-					}
-				}
-				if (i > 0) {
-					i++;
-				} else if (i < 0) {
-					i = 0;
-				}
-				if (I.buffer.index > I.buffer.length) {
-					I.buffer.length = I.buffer.index;
-				}
-				memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
-					I.buffer.length - I.buffer.index + 1);
-				I.buffer.length = strlen (I.buffer.data);
-				I.buffer.index = i;
-			}
+			unix_word_rubout ();
 			break;
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
@@ -1222,6 +1241,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 27:// esc-5b-41-00-00
 			buf[0] = r_line_readchar ();
 			switch (buf[0]) {
+			case 127: // alt+bkspace
+				unix_word_rubout ();
+				break;
 			case -1:
 				r_cons_break_pop ();
 				return NULL;
