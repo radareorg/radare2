@@ -376,6 +376,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					ut64 *val = malloc (sizeof (ut64));
 					if (!val) {
+						free (name);
 						break;
 					}
 					*val = undo->off;
