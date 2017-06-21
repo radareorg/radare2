@@ -65,7 +65,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 	ut8 *buf;
 	int bs = core->blocksize,check_time=1;
 	FILE *fd;
-	time_t start,poll,elapse;
+	time_t start,elapse;
 
 	start = time (NULL);
 	if (append) {
