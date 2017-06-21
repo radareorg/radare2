@@ -494,6 +494,11 @@ static inline ut16 arg_offset (ut16 pc, ut8 offset) {
 	return pc - offset;
 }
 
+static inline ut16 arg_addr11 (ut16 pc, const ut8 *buf) {
+	// ADDR11 is replacing lower 11 bit of (pre-incremented) PC
+	return (pc & 0xf800) + ((buf[0] & 0xe0) << 3) + buf[1];
+}
+
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->delay = 0;
 
@@ -561,7 +566,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_CALL:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		if (_8051_ops[i].arg1 == A_ADDR11) {
-			op->jump = ((buf[0] & 0xe0) << 3) + buf[1];
+			op->jump = arg_addr11 (addr + op->size, buf);
 			op->fail = addr + op->size;
 		} else if (_8051_ops[i].arg1 == A_ADDR16) {
 			op->jump = 0x100 * buf[1] + buf[2];
@@ -571,7 +576,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JMP:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (_8051_ops[i].arg1 == A_ADDR11) {
-			op->jump = ((buf[0] & 0xe0) << 3) + buf[1];
+			op->jump = arg_addr11 (addr + op->size, buf);
 			op->fail = addr + op->size;
 		} else if (_8051_ops[i].arg1 == A_ADDR16) {
 			op->jump = 0x100 * buf[1] + buf[2];
