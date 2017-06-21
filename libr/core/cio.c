@@ -90,7 +90,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < size; i += bs) {
 		if (check_time) {
-		elapse = time(NULL) - start;
+		elapse = time (NULL) - start;
 		if (elapse > 3) {
 			eprintf("This is taking more than 3 seconds\n");
 			check_time = 0;
