@@ -44,6 +44,17 @@ static inline int is_valid_char(unsigned char ch) {
 }
 #endif
 
+static bool is_stop_char(char ch) {
+	switch(ch) {
+	case '\x00': // null
+	case ';':
+	case ' ':
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int inithist() {
 	ZERO_FILL (I.history);
 	if ((I.history.size + 1024) * sizeof (char *) < I.history.size) {
@@ -1222,6 +1233,50 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 27:// esc-5b-41-00-00
 			buf[0] = r_line_readchar ();
 			switch (buf[0]) {
+			case 127: // alt + backspace
+				{
+				int cnt = 0;
+				int idx = I.buffer.index;
+				char *s, *s2;
+				bool is_stopper = false;
+				s = I.buffer.data + I.buffer.index;
+				if (idx > 0) {
+					s2 = I.buffer.data + (I.buffer.index - 1);
+					if ((*s2 == *s || *s == '\x00') && is_stop_char (*s2)) {
+						is_stopper = true;
+					}
+				}
+				bool stop = false;
+				if (idx != 0) {
+					do {
+#if USE_UTF8
+						if (I.buffer.index > 0) {
+							do {
+								I.buffer.index--;
+								s = I.buffer.data + I.buffer.index;
+								memmove (I.buffer.data + idx,
+										I.buffer.data + idx + 1,
+										I.buffer.length - idx);
+								--idx;
+								++cnt;
+							} while ((*s & 0xc0) == 0x80);
+						}
+#else
+						++cnt;
+						memmove (I.buffer.data + idx,
+								I.buffer.data + idx + 1,
+								I.buffer.length - idx);
+						--idx;
+#endif
+						stop = (is_stop_char (*s));
+						if (is_stopper) {
+							stop = !stop;
+						}
+					} while (!stop && idx > 0 && I.buffer.length >= 0);
+					I.buffer.length -= cnt;
+				}
+				break;
+				}
 			case -1:
 				r_cons_break_pop ();
 				return NULL;
