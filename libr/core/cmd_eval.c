@@ -368,7 +368,7 @@ static int cmd_eval(void *data, const char *input) {
 				return true;
 			}
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?:r_cons_pal_get ("highlight"));
+			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_pal_get ("highlight"));
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			R_FREE (word);
 			r_str_argv_free (argv);
