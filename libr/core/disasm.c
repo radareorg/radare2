@@ -2706,7 +2706,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 v = ds->analop.val;
 	ut64 refaddr = p;
 	RFlagItem *f;
-	bool is_lea_str = false;
 	char *nl = ds->show_comment_right? "" : "\n";
 	bool string_found = false;
 	if (!ds->show_comments || !ds->show_slow) {
@@ -2725,7 +2724,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (ref->type == R_ANAL_REF_TYPE_STRING || ref->type == R_ANAL_REF_TYPE_DATA) {
 			if ((f = r_flag_get_i (core->flags, ref->addr))) {
 				refaddr = ref->addr;
-				is_lea_str = ref->type == 's';
 				break;
 			}
 		}
@@ -2755,34 +2753,15 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-				const char *flag = "";
 				char str[128];
 				f = r_flag_get_i (core->flags, refaddr);
-				if (f) {
-					flag = f->name;
-				} else if (ds->show_slow) {
-					(void)r_io_read_at (ds->core->io, ds->analop.ptr,
-								(ut8 *)str + 1, sizeof (str) - 1);
+				if (!f && ds->show_slow) {
+					r_io_read_at (ds->core->io, ds->analop.ptr,
+						      (ut8*)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
-					if (str[1] && r_str_is_printable_incl_newlines (str + 1)) {
-						str[0] = '"';
-						flag = str;
-						int str_len = strlen (str);
-						if (str_len + 3 > sizeof (str)) {
-							str_len = sizeof (str) - 4;
-						}
-						strcpy (str + str_len, "\"");
-						//Filter out remaining non printable characters, e.g. \n \r
-						r_str_filter ((char*)flag, 0);
+					if (str[0] && r_str_is_printable_incl_newlines (str)) {
+						ds_print_str (ds, str, sizeof (str), false);
 						string_found = true;
-					}
-				}
-				if (!is_lea_str) {
-					if (!flag_printed && *flag && !is_filtered_flag (ds, flag)
-					    && (!ds->opstr || !strstr (ds->opstr, flag))) {
-						ALIGN;
-						ds_comment (ds, true, "; %s%s", flag, nl);
-						flag_printed = true;
 					}
 				}
 			} else {
