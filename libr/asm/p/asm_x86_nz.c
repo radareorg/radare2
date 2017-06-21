@@ -1089,6 +1089,9 @@ static int oplea(RAsm *a, ut8 *data, const Opcode op){
 	int rm = 0;
 	if (op.operands[0].type & OT_REGALL &&
 	    op.operands[1].type & OT_MEMORY) {
+		if (a->bits == 64) {
+			data[l++] = 0x48;
+		}
 		data[l++] = 0x8d;
 		if (op.operands[1].regs[0] == X86R_UNDEFINED) {
 			int high = 0xff00 & op.operands[1].offset;
