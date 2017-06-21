@@ -15,6 +15,11 @@ static inline ut16 arg_offset (ut16 pc, ut8 offset) {
 	return pc - offset;
 }
 
+static inline ut16 arg_addr11 (ut16 pc, const ut8 *buf) {
+	// ADDR11 is replacing lower 11 bit of (pre-incremented) PC
+	return (pc & 0xf800) + ((buf[0] & 0xe0) << 3) + buf[1];
+}
+
 int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
@@ -43,7 +48,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 				if (arg1 == A_OFFSET) {
 					sprintf (op->buf_asm, name, arg_offset (pc + 2, buf[1]));
 				} else if (arg1 == A_ADDR11) {
-					sprintf (op->buf_asm, name, ((buf[0] & 0xe0) << 3) + buf[1]);
+					sprintf (op->buf_asm, name, arg_addr11 (pc + 2, buf));
 				} else if ((arg1 == A_RI) || (arg1 == A_RN)) {
 					// op @Ri, arg; op Rn, arg
 					if (arg2 == A_OFFSET) {
@@ -80,8 +85,11 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 				} else if (arg3 == A_OFFSET) {
 					// @Ri/Rn, direct, offset
 					sprintf (op->buf_asm, name, buf[0] & mask, buf[1], arg_offset (pc + 3, buf[2]));
+				} else if (arg1 == A_DIRECT && arg2 == A_DIRECT) {
+					// op direct, direct has src and dest swapped
+					sprintf (op->buf_asm, name, buf[2], buf[1]);
 				} else {
-					// direct, immediate; direct, direct; immediate, immediate
+					// direct, immediate
 					sprintf (op->buf_asm, name, buf[1], buf[2]);
 				}
 			} else {
