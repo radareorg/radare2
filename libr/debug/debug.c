@@ -913,7 +913,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 }
 
 R_API int r_debug_step_back(RDebug *dbg) {
-	ut64 pc, end, cnt = 0;
+	ut64 pc, prev = 0, end, cnt = 0;
 	ut8 buf[32];
 	RAnalOp op;
 	RDebugSession *before;
@@ -934,41 +934,51 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	/* Save current session. It is marked as a finish point of reverse execution */
 	r_debug_session_add (dbg, &tail);
 
-	/* rollback to previous state */
+	/* Get pverious state */
 	before = r_debug_session_get (dbg, tail);
 	if (!before) {
 		return 0;
 	}
-	eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
+	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
-	if (!r_list_length (before->memlist)) {
-		/* Diff list is empty. (i.e. Before session is base snapshot) *
-			 So set base memory snapshot */
-		r_debug_session_set_base (dbg, before);
-	} else {
-		r_debug_session_set (dbg, before);
-	}
+	/* rollback to previous state */
+	r_debug_session_set (dbg, before);
+
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
 
+	/* Get the previous operation address.
+	 * XXX: too slow... */
 	for (;;) {
-		if (r_debug_is_dead (dbg))
-			break;
+		if (r_debug_is_dead (dbg)) {
+			goto fail;
+		}
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		r_io_read_at (dbg->iob.io, pc, buf, sizeof (buf));
-		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-		//eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
+		if (pc == end) {
+			/* Reached the target address */
+			break;
+		}
+		prev = pc;
+		//eprintf ("executing 0x%08"PFMT64x"\n", pc);
 		if (cnt > CHECK_POINT_LIMIT) {
 			//eprintf ("Hit count limit %lld\n", cnt);
 			r_debug_session_add (dbg, NULL);
 			cnt = 0;
 		}
-		if (pc + op.size == end)
-			return 1;
-		if (!r_debug_step (dbg, 1))
-			break;
+		if (!r_debug_step (dbg, 1)) {
+			goto fail;
+		}
 		cnt++;
 	}
+
+	/* Finally, run to the desired point */
+	r_debug_session_set (dbg, before);
+	if (prev) {
+		eprintf ("continue until 0x%08"PFMT64x"\n", prev);
+		r_debug_continue_until_nonblock (dbg, prev);
+	}
+	return 1;
+fail:
 	return 0;
 }
 
@@ -1164,7 +1174,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	return n;
 }
 
-R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
+static int r_debug_continue_until_internal(RDebug *dbg, ut64 addr, bool block) {
 	int has_bp;
 	ut64 pc;
 
@@ -1183,7 +1193,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		if (pc == addr)
 			break;
-		if (r_bp_get_at (dbg->bp, pc))
+		if (block && r_bp_get_at (dbg->bp, pc))
 			break;
 		r_debug_continue (dbg);
 	}
@@ -1192,6 +1202,14 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		r_bp_del (dbg->bp, addr);
 	}
 	return true;
+}
+
+R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
+	return r_debug_continue_until_internal (dbg, addr, true);
+}
+
+R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
+	return r_debug_continue_until_internal (dbg, addr, false);
 }
 
 static int show_syscall(RDebug *dbg, const char *sysreg) {

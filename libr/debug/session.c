@@ -106,7 +106,7 @@ static void r_debug_session_set_registers(RDebug *dbg, RDebugSession *session) {
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 }
 
-R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
+static void r_debug_session_set_diff(RDebug *dbg, RDebugSession *session) {
 	RListIter *iter;
 	RDebugSnapDiff *diff;
 	r_debug_session_set_registers (dbg, session);
@@ -116,13 +116,23 @@ R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session) {
 	}
 }
 
-R_API void r_debug_session_set_base(RDebug *dbg, RDebugSession *before) {
+static void r_debug_session_set_base(RDebug *dbg, RDebugSession *before) {
 	RListIter *iter;
 	RDebugSnap *snap;
 	r_debug_session_set_registers (dbg, before);
 	/* Restore all memory values from base memory snapshots */
 	r_list_foreach (dbg->snaps, iter, snap) {
 		r_debug_diff_set_base (dbg, snap);
+	}
+}
+
+R_API void r_debug_session_set(RDebug *dbg, RDebugSession *before) {
+	if (!r_list_length (before->memlist)) {
+		/* Diff list is empty. (i.e. Before session is base snapshot) *
+		         So set base memory snapshot */
+		r_debug_session_set_base (dbg, before);
+	} else {
+		r_debug_session_set_diff (dbg, before);
 	}
 }
 
@@ -155,6 +165,6 @@ R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail) {
 	if (!prev) {
 		return NULL;
 	}
-	session = (RDebugSession *)prev->data;
+	session = (RDebugSession *) prev->data;
 	return session;
 }
