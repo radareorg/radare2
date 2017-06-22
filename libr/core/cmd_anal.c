@@ -3716,7 +3716,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				}
 #else
 				// add xref here
-				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, op.jump, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
