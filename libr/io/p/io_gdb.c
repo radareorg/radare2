@@ -120,8 +120,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
 				return NULL;
 			}
+		} else if ((pid = desc->pid) <= 0) {
+			pid = -1;
 		}
-		riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
+		riogdb = r_io_desc_new (&r_io_plugin_gdb, pid, file, rw, mode, riog);
 		return riogdb;
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");

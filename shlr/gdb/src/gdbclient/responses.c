@@ -96,9 +96,11 @@ int handle_qC(libgdbr_t *g) {
 			t1++;
 			g->pid = (int) strtol (t1, NULL, 16);
 			t2++;
+			g->tid = (int) strtol (t2, NULL, 16);
+			return send_ack (g);
 		}
 	}
-	g->tid = (int) strtol (t2, NULL, 16);
+	g->pid = g->tid = (int) strtol (t2, NULL, 16);
 	return send_ack (g);
 }
 
