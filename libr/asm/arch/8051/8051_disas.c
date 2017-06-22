@@ -20,6 +20,15 @@ static inline ut16 arg_addr11 (ut16 pc, const ut8 *buf) {
 	return (pc & 0xf800) + ((buf[0] & 0xe0) << 3) + buf[1];
 }
 
+static inline ut8 arg_bit (ut8 bit_addr) {
+	if (bit_addr < 0x80) {
+		// bit addresses 0x00-0x7f are mapped to bits at 0x20-0x2f
+		return (bit_addr >> 3) + 0x20;
+	}
+	// bit addresses > 0x80-0xff are mapped to bits at 0x80, 0x88, 0x98, ...
+	return bit_addr & 0xf8;
+}
+
 int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
@@ -59,6 +68,9 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 				} else if ((arg2 == A_RI) || (arg2 == A_RN)) {
 					// op arg, @Ri; op arg, Rn
 					sprintf (op->buf_asm, name, buf[1], buf[0] & mask);
+				} else if (arg1 == A_BIT) {
+					// bit addressing mode
+					sprintf (op->buf_asm, name, arg_bit (buf[1]), buf[1] & 0x07);
 				} else {
 					// direct, immediate, bit
 					sprintf (op->buf_asm, name, buf[1]);
@@ -78,9 +90,12 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 					if (mask != A_NONE) {
 						// @Ri, immediate, offset; Rn, immediate, offset
 						sprintf (op->buf_asm, name, buf[0] & mask, buf[1], arg_offset (pc + 3, buf[1]));
+					} else if (arg1 == A_BIT) {
+						// bit, offset
+						sprintf (op->buf_asm, name, arg_bit (buf[1]), buf[1] & 0x07, arg_offset (pc + 3, buf[2]));
 					} else {
-						// bit, offset; direct, offset; a, immediate, offset
-						sprintf (op->buf_asm, name, buf[1], arg_offset (pc+3, buf[2]));
+						// direct, offset; a, immediate, offset
+						sprintf (op->buf_asm, name, buf[1], arg_offset (pc + 3, buf[2]));
 					}
 				} else if (arg3 == A_OFFSET) {
 					// @Ri/Rn, direct, offset
