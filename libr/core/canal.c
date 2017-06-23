@@ -1585,10 +1585,10 @@ repeat:
 							gv_grph = "bgcolor=white";
 						}
 						if (!gv_spline || !*gv_spline) {
-							gv_spline = "";
+							gv_spline = "splines=\"ortho\"";
 						}
 						r_cons_printf ("digraph code {\n"
-								"\tgraph [%s fontname=\"%s\" splines=\"%s\"];\n"
+								"\tgraph [%s fontname=\"%s\" %s];\n"
 								"\tnode [%s];\n"
 								"\tedge [%s];\n", gv_grph, font, gv_spline,
 								gv_node, gv_edge);
@@ -2374,10 +2374,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			gv_node = "fillcolor=gray style=filled shape=box";
 		}
 		if (!gv_spline || !*gv_spline) {
-			gv_spline = "";
+			gv_spline = "splines=\"ortho\"";
 		}
 		r_cons_printf ("digraph code {\n"
-			"\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" splines=\"%s\"];\n"
+			"\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" %s];\n"
 			"\tnode [%s];\n"
 			"\tedge [%s];\n", font, gv_spline, gv_node, gv_edge);
 	}

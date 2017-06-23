@@ -2370,7 +2370,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.title", "", "Title of the graph");
 	SETPREF ("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF ("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
-	SETPREF ("graph.gv.spline", "ortho", "Graphviz spline style. (splines=\"spline\")");
+	SETPREF ("graph.gv.spline", "", "Graphviz spline style. (splines=\"ortho\")");
 	SETPREF ("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");
