@@ -818,7 +818,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 
 static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	int ret;
-	if (!bp) return false;
+	if (!bp) {
+		return false;
+	}
 	// TODO handle rwx and conditions
 	if (set)
 		ret = bp->hw?
