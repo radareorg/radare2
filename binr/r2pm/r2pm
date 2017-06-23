@@ -1,6 +1,7 @@
 #!/bin/sh
 # r2pm
-
+chdir() { cd "${1}" || exit 1; }
+mkdir() { mkdir "${@}" || exit 1; }
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
 [ -z "${WGET}" ] && WGET=wget
@@ -93,21 +94,21 @@ case "$1" in
 init|up|update)
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
-	cd "${R2PM_GITDIR}"
+	chdir "${R2PM_GITDIR}"
 	if [ -d radare2-pm ]; then
-		cd radare2-pm
+		chdir radare2-pm
 		git reset --hard @^^
 		git pull
 	else
 		echo git clone https://github.com/radare/radare2-pm
 		git clone --depth=3 --recursive https://github.com/radare/radare2-pm
-		cd radare2-pm
+		chdir radare2-pm
 		pwd
 	fi
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
 		if [ -d "$a" ]; then
 			echo "Updating $a ..."
-			( cd $a ; git pull )
+			( chdir $a ; git pull )
 		fi
 	done
 
@@ -155,7 +156,7 @@ R2PM_SUDO() {
 }
 
 R2PM_List() {
-	cd "${R2PM_USRDIR}/pkg"
+	chdir "${R2PM_USRDIR}/pkg"
 	if [ -n "$1" ]; then
 		ls | grep -i "$1"
 	else
@@ -167,7 +168,7 @@ R2PM_Search() {
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
 		[ -d "$a" ] || continue
 (
-		cd "${a}"
+		chdir "${a}"
 		if [ -n "$1" ]; then
 			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | grep -i "$1"
 		else
@@ -188,7 +189,7 @@ R2PM_TGZ() {
 	if [ -n "$3" ]; then
 		TARBALL="$3"
 	fi
-	cd "${R2PM_GITDIR}"
+	chdir "${R2PM_GITDIR}"
 	${WGET} -O ${TARBALL} -c "${URL}"
 	if [ -d "${DIR}" ]; then
 		echo "Already uncompressed."
@@ -206,7 +207,7 @@ R2PM_TGZ() {
 			exit 1
 		fi
 	fi
-	cd "${DIR}" || R2PM_FAIL "Oops"
+	chdir "${DIR}" || R2PM_FAIL "Oops"
 }
 
 R2PM_GIT() {
@@ -216,13 +217,13 @@ R2PM_GIT() {
 	else
 		DIR="$2"
 	fi
-	cd "${R2PM_GITDIR}"
+	chdir "${R2PM_GITDIR}"
 	if [ -d "${DIR}" ]; then
-		cd "${DIR}"
+		chdir "${DIR}"
 		git pull
 	else
 		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
-		cd "${DIR}" || R2PM_FAIL "Oops"
+		chdir "${DIR}" || R2PM_FAIL "Oops"
 	fi
 }
 
@@ -233,13 +234,13 @@ R2PM_SVN() {
 	else
 		DIR="$2"
 	fi
-	cd "${R2PM_GITDIR}" || exit 1
+	chdir "${R2PM_GITDIR}" || exit 1
 	if [ -d "${DIR}" ]; then
-		cd "${DIR}"
+		chdir "${DIR}"
 		svn up
 	else
 		svn co "${URL}" "${DIR}"
-		cd "${DIR}" || R2PM_FAIL "Oops"
+		chdir "${DIR}" || R2PM_FAIL "Oops"
 	fi
 }
 
@@ -257,10 +258,10 @@ R2PM_BEGIN() {
 R2PM_Info() {
 	if [ -n "${R2PM_DBDIR}" -a -d "${R2PM_DBDIR}" ]; then
 		echo "# Repository Database:"
-		cd "${R2PM_DBDIR}"
+		chdir "${R2PM_DBDIR}"
 		printf "# $(ls |wc -l) Packages" >&2
 	fi
-	cd "${R2PM_USRDIR}/pkg"
+	chdir "${R2PM_USRDIR}/pkg"
 	echo "# Installed:"
 	printf "# %s Packages\n#  " "$(ls | wc -l)" >&2
 	du -hs "${HOME}/.config/radare2" >&2
@@ -436,13 +437,13 @@ what|-w)
 	if [ -n "$2" ]; then
 		exec cat "${R2PM_USRDIR}/pkg/$2" 2> /dev/null
 	else
-		cd "${R2PM_USRDIR}/pkg/" 2> /dev/null
+		chdir "${R2PM_USRDIR}/pkg/" 2> /dev/null
 		ls
 	fi
 	;;
-cd)
+chdir)
 	if [ -n "$2" ]; then
-		cd "${R2PM_GITDIR}/$2"
+		chdir "${R2PM_GITDIR}/$2"
 		export R2PM_LEVEL=$((${R2PM_LEVEL}+1))
 		echo "Entering into ${SHELL} level ${R2PM_LEVEL}."
 		PS1="r2pm:${R2PM_LEVEL}:\W\$ " ${SHELL}
@@ -470,10 +471,10 @@ ls)
 			" $ r2pm -a - bar                       # delete 'foo' repo"
 		exit 1
 	fi
-	cd "${R2PM_DBDIR}"
-	cd ..
+	chdir "${R2PM_DBDIR}"
+	chdir ..
 	mkdir -p db2
-	cd db2
+	chdir db2
 	URL="$2"
 	NAME="$3"
 	if [ -n "$URL" -a -z "$NAME" ]; then
@@ -491,7 +492,7 @@ ls)
 		else
 			echo "Registering this db repository"
 			if [ -d "$URL" ]; then
-				cd "$URL"
+				chdir "$URL"
 				git pull
 			else
 				git clone --recursive --depth=2 "$URL" "$NAME"
@@ -505,7 +506,7 @@ ls)
 	else
 		ls
 	fi
-	cd "$WRKDIR"
+	chdir "$WRKDIR"
 	;;
 -H)
 	if [ -z "$2" ]; then
