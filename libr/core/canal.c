@@ -1181,9 +1181,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	fcn->name, bbi->addr,
 					//	bbi->traced?"yellow":"lightgray", str);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
-						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\", color=\"%s\", label=\"%s\",fontname=\"%s\"]\n",
+						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
+						"color=\"%s\", fontname=\"%s\", label=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
-						current? "palegreen": "white", label_color, str, font);
+						current? "palegreen": "white", label_color, font, str);
 				}
 			}
 			free (str);
