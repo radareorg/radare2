@@ -1182,7 +1182,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	bbi->traced?"yellow":"lightgray", str);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
 						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
-						"color=\"%s\", fontname=\"%s\", label=\"%s\"]\n",
+						"color=\"%s\", fontname=\"%s\","
+						"label=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
 						current? "palegreen": "white", label_color, font, str);
 				}
@@ -1573,6 +1574,7 @@ repeat:
 						const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
 						const char * gv_node = r_config_get (core->config, "graph.gv.node");
 						const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
+						const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 						if (!gv_edge || !*gv_edge) {
 							gv_edge = "arrowhead=\"vee\"";
 						}
@@ -1582,10 +1584,14 @@ repeat:
 						if (!gv_grph || !*gv_grph) {
 							gv_grph = "bgcolor=white";
 						}
+						if (!gv_spline || !*gv_spline) {
+							gv_spline = "";
+						}
 						r_cons_printf ("digraph code {\n"
-								"\tgraph [%s fontname=\"%s\"];\n"
+								"\tgraph [%s fontname=\"%s\" splines=\"%s\"];\n"
 								"\tnode [%s];\n"
-								"\tedge [%s];\n", gv_grph, font, gv_node, gv_edge);
+								"\tedge [%s];\n", gv_grph, font, gv_spline,
+								gv_node, gv_edge);
 					}
 				}
 				showhdr = 1;
@@ -2360,16 +2366,20 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (!is_html && !is_json && !is_keva) {
 		const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
 		const char * gv_node = r_config_get (core->config, "graph.gv.node");
+		const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 		if (!gv_edge || !*gv_edge) {
 			gv_edge = "arrowhead=\"vee\"";
 		}
 		if (!gv_node || !*gv_node) {
 			gv_node = "fillcolor=gray style=filled shape=box";
 		}
+		if (!gv_spline || !*gv_spline) {
+			gv_spline = "";
+		}
 		r_cons_printf ("digraph code {\n"
-			"\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\"];\n"
+			"\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" splines=\"%s\"];\n"
 			"\tnode [%s];\n"
-			"\tedge [%s];\n", font, gv_node, gv_edge);
+			"\tedge [%s];\n", font, gv_spline, gv_node, gv_edge);
 	}
 	if (is_json) {
 		r_cons_printf ("[");
