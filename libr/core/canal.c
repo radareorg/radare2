@@ -975,6 +975,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	char *pal_curr = palColorFor ("graph.current");
 	char *pal_traced = palColorFor ("graph.traced");
 	char *pal_box4 = palColorFor ("graph.box4");
+	const char *font = r_config_get (core->config, "graph.font");
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 
 	if (is_keva) {
@@ -1180,9 +1181,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	fcn->name, bbi->addr,
 					//	bbi->traced?"yellow":"lightgray", str);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
-						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\", color=\"%s\", label=\"%s\"]\n",
+						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\", color=\"%s\", label=\"%s\",fontname=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
-						current? "yellow": "lightgray", label_color, str);
+						current? "palegreen": "white", label_color, str, font);
 				}
 			}
 			free (str);
@@ -2330,9 +2331,9 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 	const char *font = r_config_get (core->config, "graph.font");
-        int is_html = r_cons_singleton ()->is_html;
-        int is_json = opts & R_CORE_ANAL_JSON;
-        int is_keva = opts & R_CORE_ANAL_KEYVALUE;
+	int is_html = r_cons_singleton ()->is_html;
+	int is_json = opts & R_CORE_ANAL_JSON;
+	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	RConfigHold *hc;
 	RAnalFunction *fcni;
 	RListIter *iter;
@@ -2365,7 +2366,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			gv_node = "fillcolor=gray style=filled shape=box";
 		}
 		r_cons_printf ("digraph code {\n"
-			"\tgraph [bgcolor=white fontsize=8 fontname=\"%s\"];\n"
+			"\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\"];\n"
 			"\tnode [%s];\n"
 			"\tedge [%s];\n", font, gv_node, gv_edge);
 	}
