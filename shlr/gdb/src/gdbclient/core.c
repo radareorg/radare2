@@ -57,6 +57,12 @@ static int set_interface_attribs (int fd, int speed, int parity) {
 	return 0;
 }
 
+static struct {
+	ut8  *buf;
+	ut64 buflen, maxlen;
+	bool valid, init;
+} reg_cache;
+
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+";
 	RStrBuf tmp;
@@ -139,6 +145,14 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
 	}
+	// Initialize reg cache
+	reg_cache.maxlen = g->data_max;
+	reg_cache.buflen = 0;
+	reg_cache.valid = false;
+	reg_cache.init = false;
+	if ((reg_cache.buf = malloc (reg_cache.maxlen))) {
+		reg_cache.init = true;
+	}
 	return ret;
 }
 
@@ -147,6 +161,8 @@ int gdbr_disconnect(libgdbr_t *g) {
 	if (!g || !r_socket_close (g->sock)) {
 		return -1;
 	}
+	reg_cache.valid = false;
+	free (reg_cache.buf);
 	g->connected = 0;
 	return 0;
 }
@@ -154,7 +170,7 @@ int gdbr_disconnect(libgdbr_t *g) {
 
 int gdbr_check_extended_mode(libgdbr_t *g) {
 	int ret;
-
+	reg_cache.valid = false;
 	// Activate extended mode if possible.
 	ret = send_msg (g, "!");
 	if (ret < 0) {
@@ -180,6 +196,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 	if (!g || !g->sock) {
 		return -1;
 	}
+	reg_cache.valid = false;
 
 	if (g->stub_features.extended_mode == -1) {
 		gdbr_check_extended_mode (g);
@@ -220,6 +237,7 @@ int gdbr_detach(libgdbr_t *g) {
 	if (!g || !g->sock) {
 		return -1;
 	}
+	reg_cache.valid = false;
 
 	if (g->stub_features.multiprocess) {
 		if (g->pid <= 0) {
@@ -243,6 +261,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 	if (!g || !g->sock || !g->stub_features.multiprocess) {
 		return -1;
 	}
+	reg_cache.valid = false;
 
 	buffer_size = strlen (CMD_DETACH_MP) + (sizeof (pid) * 2) + 1;
 	cmd = calloc (buffer_size, sizeof (char));
@@ -278,6 +297,7 @@ bool gdbr_kill(libgdbr_t *g) {
 	if (!g || !g->sock) {
 		return false;
 	}
+	reg_cache.valid = false;
 
 	if (g->stub_features.multiprocess) {
 		if (g->pid <= 0) {
@@ -301,6 +321,7 @@ bool gdbr_kill_pid(libgdbr_t *g, int pid) {
 	if (!g || !g->sock || !g->stub_features.multiprocess) {
 		return false;
 	}
+	reg_cache.valid = false;
 
 	buffer_size = strlen (CMD_KILL_MP) + (sizeof (pid) * 2) + 1;
 	cmd = calloc (buffer_size, sizeof (char));
@@ -333,15 +354,25 @@ int gdbr_read_registers(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
+	if (reg_cache.init && reg_cache.valid) {
+		g->data_len = reg_cache.buflen;
+		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
+		return 0;
+	}
 	ret = send_msg (g, CMD_READREGS);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (read_packet (g) >= 0) {
-		return handle_g (g);
+	if (read_packet (g) < 0 || handle_g (g) < 0) {
+		return -1;
 	}
-	return -1;
+	if (reg_cache.init) {
+		reg_cache.buflen = g->data_len;
+		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
+		reg_cache.valid = true;
+	}
+	return 0;
 }
 
 int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
@@ -501,6 +532,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 	if (!g) {
 		return -1;
 	}
+	reg_cache.valid = false;
 	uint64_t buffer_size = g->data_len * 2 + 8;
 	char *command = calloc (buffer_size, sizeof (char));
 	if (!command) {
@@ -524,6 +556,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	if (!g) {
 		return -1;
 	}
+	reg_cache.valid = false;
 	ret = snprintf (command, 255, "%s%d=", CMD_WRITEREG, index);
 	memcpy (command + ret, value, len);
 	pack_hex (value, len, (command + ret));
@@ -544,6 +577,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 	if (!g) {
 		return -1;
 	}
+	reg_cache.valid = false;
 	while (g->registers[i].size > 0) {
 		if (!strcmp (g->registers[i].name, name)) {
 			break;
@@ -578,6 +612,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		return -1;
 	}
 	gdbr_read_registers (g);
+	reg_cache.valid = false;
 	len = strlen (registers);
 	buff = calloc (len, sizeof (char));
 	if (!buff) {
@@ -668,19 +703,21 @@ int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
 	if (ret < 0) {
 		return ret;
 	}
+	reg_cache.valid = false;
 	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
-	if (read_packet (g) >= 0) {
-		return handle_cont (g);
+	if (read_packet (g) < 0 && read_packet (g) < 0) {
+		// First read for Qemu might fail, hence second read
+		return -1;
 	}
-	return 0;
+	return handle_cont (g);
 }
 
 int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type) {
 	char tmp[255] = {0};
-	int ret = 0;
+	int ret = -1;
 	if (!g) {
 		return -1;
 	}
@@ -734,7 +771,7 @@ int gdbr_remove_hwbp(libgdbr_t *g, ut64 address) {
 
 int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
 	char tmp[255] = {0};
-	int ret = 0;
+	int ret = -1;
 	if (!g) {
 		return -1;
 	}
