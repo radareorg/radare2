@@ -1576,7 +1576,7 @@ repeat:
 						const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
 						const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 						if (!gv_edge || !*gv_edge) {
-							gv_edge = "arrowhead=\"vee\"";
+							gv_edge = "arrowhead=\"normal\"";
 						}
 						if (!gv_node || !*gv_node) {
 							gv_node = "fillcolor=gray style=filled shape=box";
@@ -2368,7 +2368,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		const char * gv_node = r_config_get (core->config, "graph.gv.node");
 		const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 		if (!gv_edge || !*gv_edge) {
-			gv_edge = "arrowhead=\"vee\"";
+			gv_edge = "arrowhead=\"normal\"";
 		}
 		if (!gv_node || !*gv_node) {
 			gv_node = "fillcolor=gray style=filled shape=box";
