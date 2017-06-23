@@ -76,6 +76,8 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOGdb *riog;
 	char host[128], *port, *pid;
+	int i_port = -1;
+	bool isdev = false;
 
 	if (!__plugin_open (io, file, 0))
 		return NULL;
@@ -85,31 +87,52 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	strncpy (host, file+6, sizeof (host)-1);
 	host [sizeof (host)-1] = '\0';
-	port = strchr (host , ':');
-	if (!port) {
-		eprintf ("Port not specified. Please use gdb://host:port[/port]\n");
-		return NULL;
+	if (host[0] == '/') {
+		isdev = true;
 	}
-	*port = '\0';
-	port++;
 
-	pid = strchr (port, '/');
+	if (isdev) {
+		port = strchr (host, '@');
+		if (port) {
+			*port = '\0';
+			port++;
+
+			pid = strchr (port, ':');
+		} else {
+			pid = strchr (host, ':');
+		}
+	} else {
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox: Cannot use network\n");
+			return NULL;
+		}
+
+		port = strchr (host , ':');
+		if (!port) {
+			eprintf ("Invalid debugger URI. Port missing?\nPlease use either\n"
+				" - gdb://host:port[/pid] for a network gdbserver.\n"
+				" - gdb:///dev/DEVICENAME[@speed][:pid] for a serial gdbserver.\n");
+			return NULL;
+		}
+		*port = '\0';
+		port++;
+
+		pid = strchr (port, '/');
+	}
+
+	int i_pid = -1;
 	if (pid) {
 		*pid = 0;
 		pid++;
-	}
-
-	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: Cannot use network\n");
-		return NULL;
-	}
-	riog = R_NEW0 (RIOGdb);
-	gdbr_init (&riog->desc, false);
-	int i_port = atoi(port);
-	int i_pid = -1;
-	if (pid) {
 		i_pid = atoi (pid);
 	}
+
+	if (port) {
+		i_port = atoi (port);
+	}
+
+	riog = R_NEW0 (RIOGdb);
+	gdbr_init (&riog->desc, false);
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
