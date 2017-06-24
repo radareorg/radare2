@@ -111,8 +111,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				d = 0;
-				ch = ops[i].str[j];
 				j = 0;
+				ch = ops[i].str[j];
 				for (j = 0, k = 0; ch != '\0'; j++, k++) {
 					ch = ops[i].str[j];
 					if (ch == '#') {
