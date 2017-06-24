@@ -2737,6 +2737,7 @@ static char *strchr_skip_color_codes(const char *s, int c) {
 // Global buffer to speed up colorizing performance
 #define COLORIZE_BUFSIZE 1024
 static char o[COLORIZE_BUFSIZE];
+
 R_API char* r_str_highlight(char *str, const char *word, const char *color) {
 	ut32 i = 0, j = 0, to_copy;
 	char *start = str;
