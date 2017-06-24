@@ -53,7 +53,6 @@ R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, in
 	(void)set_interface_attribs (fd, speed, parity);
 	sock->fd = fd;
 	return fd;
-	return -1;
 }
 
 #else // __UNIX__
