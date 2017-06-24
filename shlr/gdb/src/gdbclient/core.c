@@ -792,6 +792,7 @@ int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
 		free (buf);
 		return -1;
 	}
+	free (buf);
 	return 0;
 }
 
@@ -815,8 +816,8 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	while (ret < max_len) {
 		if ((ret1 = snprintf (command, sizeof (command) - 1,
 				      "vFile:pread:%x,%"PFMT64x",%"PFMT64x,
-				      g->remote_file_fd, R_MIN(data_sz, max_len - ret),
-				      ret)) < 0) {
+				      (int)g->remote_file_fd, (ut64)R_MIN(data_sz, max_len - ret),
+				      (ut64)ret)) < 0) {
 			return -1;
 		}
 		if (send_msg (g, command) < 0) {
