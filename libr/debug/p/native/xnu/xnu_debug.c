@@ -173,6 +173,7 @@ int xnu_attach(RDebug *dbg, int pid) {
 		eprintf ("error setting up exception thread\n");
 		return -1;
 	}
+	xnu_stop (dbg, pid);
 	return pid;
 #endif
 }
