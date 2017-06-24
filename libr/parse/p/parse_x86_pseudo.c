@@ -115,12 +115,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				for (j = k = 0; ch != '\0'; j++, k++) {
 					if (ch == '#') {
 						idx = ops[i].args[d];
-						if (idx <= 0 || d >= MAXPSEUDOOPS) {
+						d++;
+						if (idx <= 0 || d > MAXPSEUDOOPS) {
 							// XXX Shouldn't ever happen...
 							continue;
 						}
 						const char *w = argv[idx];
-						d++;
 						if (w != NULL) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
