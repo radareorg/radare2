@@ -198,6 +198,47 @@ int xnu_detach(RDebug *dbg, int pid) {
 #endif
 }
 
+static int task_suspend_count(task_t task) {
+	kern_return_t kr;
+	struct task_basic_info info;
+	mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
+	kr = task_info (task, TASK_BASIC_INFO, (task_info_t) &info, &count);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("failed to get task info\n");
+		return -1;
+	}
+	return info.suspend_count;
+}
+
+int xnu_stop(RDebug *dbg, int pid) {
+#if XNU_USE_PTRACE
+	eprintf ("xnu_stop: not implemented\n");
+	return false;
+#else
+	kern_return_t kr;
+	task_t task;
+	int suspend_count;
+
+	task = pid_to_task (pid);
+	if (!task) return false;
+
+	suspend_count = task_suspend_count (task);
+	if (suspend_count == -1) return false;
+	if (suspend_count == 1) return true;  // Hopefully _we_ suspended it.
+	if (suspend_count > 1) return false;  // This is unexpected.
+
+	kr = task_suspend (task);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("failed to suspend task\n");
+		return false;
+	}
+
+	suspend_count = task_suspend_count (task);
+	if (suspend_count != 1) return false;  // This is unexpected.
+	return true;
+#endif
+}
+
 int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if XNU_USE_PTRACE
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);

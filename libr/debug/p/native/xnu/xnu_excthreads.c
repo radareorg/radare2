@@ -364,8 +364,8 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			MACH_RCV_MSG | MACH_RCV_INTERRUPT, 0,
 			sizeof (exc_msg), ex.exception_port,
 			MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
-		if (kr == MACH_RCV_INTERRUPTED ) {
-			eprintf ("message interrupted\n");
+		if (kr == MACH_RCV_INTERRUPTED) {
+			reason = R_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
 			eprintf ("message didn't succeded\n");
@@ -416,7 +416,6 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	return false;
 #else
 	kern_return_t kr;
-	bool ret;
 	mach_port_t exception_port = MACH_PORT_NULL;
 	mach_port_t req_port;
         // Got the mach port for the current process

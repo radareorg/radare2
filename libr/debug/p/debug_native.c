@@ -355,8 +355,24 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 
 #if __APPLE__
-	// eprintf ("No waitpid here :D\n");
-	reason = xnu_wait (dbg, pid);
+	r_cons_break_push (NULL, NULL);
+	do {
+		reason = xnu_wait (dbg, pid);
+		if (reason == R_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
+			if (r_cons_is_breaked ()) {
+				// Perhaps check the inferior is still alive,
+				// otherwise xnu_stop will fail.
+				reason = xnu_stop (dbg, pid)
+					? R_DEBUG_REASON_USERSUSP
+					: R_DEBUG_REASON_UNKNOWN;
+			} else {
+				// Weird; we'll retry the wait.
+				continue;
+			}
+		}
+		break;
+	} while (true);
+	r_cons_break_pop ();
 	status = reason? 1: 0;
 #else
 #if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
