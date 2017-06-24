@@ -529,7 +529,7 @@ static int cb_asmbits(void *user, void *data) {
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 #if __WINDOWS__
-#if !defined(__MINGW64__) & !defined(_WIN64)
+#if !defined(__MINGW64__) && !defined(_WIN64)
 				core->dbg->bits = R_SYS_BITS_32;
 #else
 				core->dbg->bits = R_SYS_BITS_64;
