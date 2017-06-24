@@ -221,12 +221,22 @@ int xnu_stop(RDebug *dbg, int pid) {
 	int suspend_count;
 
 	task = pid_to_task (pid);
-	if (!task) return false;
+	if (!task) {
+		return false;
+	}
 
 	suspend_count = task_suspend_count (task);
-	if (suspend_count == -1) return false;
-	if (suspend_count == 1) return true;  // Hopefully _we_ suspended it.
-	if (suspend_count > 1) return false;  // This is unexpected.
+	if (suspend_count == -1) {
+		return false;
+	}
+	if (suspend_count == 1) {
+		// Hopefully _we_ suspended it.
+		return true;
+	}
+	if (suspend_count > 1) {
+		// This is unexpected.
+		return false;
+	}
 
 	kr = task_suspend (task);
 	if (kr != KERN_SUCCESS) {
@@ -235,7 +245,10 @@ int xnu_stop(RDebug *dbg, int pid) {
 	}
 
 	suspend_count = task_suspend_count (task);
-	if (suspend_count != 1) return false;  // This is unexpected.
+	if (suspend_count != 1) {
+		// This is unexpected.
+		return false;
+	}
 	return true;
 #endif
 }
