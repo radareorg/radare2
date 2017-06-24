@@ -16,7 +16,7 @@
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
 static int replace(int argc, const char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
-	int i,j,k,d,idx;
+	int i, j, k, d;
 	char ch;
 	struct {
 		char *op;
@@ -112,9 +112,11 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			if (newstr != NULL) {
 				d = 0;
 				ch = ops[i].str[j];
-				for (j = k = 0; ch != '\0'; j++, k++) {
+				j = 0;
+				for (j = 0, k = 0; ch != '\0'; j++, k++) {
+					ch = ops[i].str[j];
 					if (ch == '#') {
-						idx = ops[i].args[d];
+						int idx = ops[i].args[d];
 						d++;
 						if (idx <= 0 || d > MAXPSEUDOOPS) {
 							// XXX Shouldn't ever happen...
@@ -129,7 +131,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						newstr[k] = ch;
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
