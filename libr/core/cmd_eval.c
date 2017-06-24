@@ -342,36 +342,39 @@ static int cmd_eval(void *data, const char *input) {
 				if (argc) {
 					char *dup = r_str_newf ("bgonly %s", argv[0]);
 					color_code = r_cons_pal_parse (dup);
-					R_FREE(dup);
+					R_FREE (dup);
 				}
 				break;
 			case 'w': // "ecHw"
 				if (!argc) {
 					eprintf ("Usage: echw word [color]\n");
+					r_str_argv_free (argv);
 					return true;
 				}
-				word = strdup(argv[0]);
+				word = strdup (argv[0]);
 				if (argc > 1) {
-					char *dup = NULL;
-					dup = r_str_newf ("bgonly %s", argv[1]);
+					char *dup = r_str_newf ("bgonly %s", argv[1]);
 					color_code = r_cons_pal_parse (dup);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[1]);
 						r_str_argv_free (argv);
+						free (dup);
+						free (word);
 						return true;
 					}
-					R_FREE(dup);
+					R_FREE (dup);
 				}
 				break;
 			default:
 				eprintf ("See ecH?\n");
+				r_str_argv_free (argv);
 				return true;
 			}
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
 			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_pal_get ("highlight"));
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
-			R_FREE (word);
 			r_str_argv_free (argv);
+			R_FREE (word);
 			R_FREE (dup);
 			break;
 		}
