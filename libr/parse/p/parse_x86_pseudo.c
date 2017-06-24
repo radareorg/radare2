@@ -15,12 +15,13 @@
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
 static int replace(int argc, const char *argv[], char *newstr) {
-	const int kMaxOps = 10;
-	int i,j,k,d;
+#define MAXPSEUDOOPS 10
+	int i,j,k,d,idx;
+	char ch;
 	struct {
 		char *op;
 		char *str;
-		int args[kMaxOps];  // XXX can't use flex arrays, all unused will be 0
+		int args[MAXPSEUDOOPS];  // XXX can't use flex arrays, all unused will be 0
 	} ops[] = {
 		{ "adc",  "# += #", {1, 2}},
 		{ "add",  "# += #", {1, 2}},
@@ -110,20 +111,22 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				d = 0;
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j] == '#') {
-						if (ops[i].args[d] <= 0 || d >= kMaxOps) {
+				ch = ops[i].str[j];
+				for (j = k = 0; ch != '\0'; j++, k++) {
+					if (ch == '#') {
+						idx = ops[i].args[d];
+						if (idx <= 0 || d >= MAXPSEUDOOPS) {
 							// XXX Shouldn't ever happen...
 							continue;
 						}
-						const char *w = argv[ops[i].args[d]];
+						const char *w = argv[idx];
 						d++;
 						if (w != NULL) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
 					} else {
-						newstr[k] = ops[i].str[j];
+						newstr[k] = ch;
 					}
 				}
 				newstr[k]='\0';
@@ -141,6 +144,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		}
 	}
 	return false;
+#undef MAXPSEUDOOPS
 }
 
 static int parse(RParse *p, const char *data, char *str) {
