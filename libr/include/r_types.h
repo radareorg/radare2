@@ -82,8 +82,6 @@
 #endif
 
 #ifdef _MSC_VER
-  /* Useful for windows _CONTEXT structure declaration */
-  #define _X86_
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
   #define __WINDOWS__ 1
