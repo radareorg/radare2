@@ -116,9 +116,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				for (j = 0, k = 0; ch != '\0'; j++, k++) {
 					ch = ops[i].str[j];
 					if (ch == '#') {
+						if (d >= MAXPSEUDOOPS) {
+							// XXX Shouldn't ever happen...
+							continue;
+						}
 						int idx = ops[i].args[d];
 						d++;
-						if (idx <= 0 || d > MAXPSEUDOOPS) {
+						if (idx <= 0) {
 							// XXX Shouldn't ever happen...
 							continue;
 						}
