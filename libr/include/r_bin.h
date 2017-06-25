@@ -472,6 +472,7 @@ typedef struct r_bin_field_t {
 	char *name;
 	char *comment;
 	char *format;
+	ut64 flags;
 } RBinField;
 
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format);
