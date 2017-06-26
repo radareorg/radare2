@@ -63,8 +63,11 @@ R_API int r_core_seek_base (RCore *core, const char *hex) {
 R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
 	ut64 i;
 	ut8 *buf;
-	int bs = core->blocksize;
+	int bs = core->blocksize,check_time=1;
 	FILE *fd;
+	time_t start,elapse;
+
+	start = time (NULL);
 	if (append) {
 		fd = r_sandbox_fopen (file, "ab");
 	} else {
@@ -86,6 +89,13 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 	}
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < size; i += bs) {
+		if (check_time) {
+		elapse = time (NULL) - start;
+		if (elapse > 3) {
+			eprintf("This is taking more than 3 seconds\n");
+			check_time = 0;
+			}
+		}
 		if (r_cons_is_breaked ()) {
 			break;
 		}
