@@ -894,3 +894,7 @@ int gdbr_close_file(libgdbr_t *g) {
 	g->remote_file_fd = -1;
 	return 0;
 }
+
+void gdbr_invalidate_reg_cache() {
+	reg_cache.valid = false;
+}
