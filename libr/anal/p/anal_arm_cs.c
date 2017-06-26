@@ -1116,7 +1116,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			// "stp x2, x3, [x8, 0x20]
 			// "32,x8,+=,x2,x8,=[],x3,x8,8,+,=[]",
 			r_strbuf_setf(&op->esil,
-					"%d,%s,%c=,%s,%s,=[],%s,%s,8,+,=[]",
+					"%"PFMT64d",%s,%c=,%s,%s,=[],%s,%s,8,+,=[]",
 					abs, MEMBASE64(2), sign,
 					REG64(0), MEMBASE64(2),
 					REG64(1), MEMBASE64(2));
@@ -1153,7 +1153,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			// "ldp x0, x1, [x8, -0x10]!"
 			// 16,x8,-=,x0,x8,[],x1,x8,8,+,[]
 			r_strbuf_setf (&op->esil,
-					"%d,%s,%c=,%s,%s,[],%s,%s,8,+,[]",
+					"%"PFMT64d",%s,%c=,%s,%s,[],%s,%s,8,+,[]",
 					abs, MEMBASE64(2), sign,
 					REG64(0), MEMBASE64(2),
 					REG64(1), MEMBASE64(2));
