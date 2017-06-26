@@ -18,9 +18,18 @@ files=[
 	'p/crypto_xor.c',
 ]
 
-r_crypto = shared_library('r_crypto', files,
-	include_directories: [platform_inc],
-	link_with: [r_util],
-	c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	install: true
-)
+if buildstatic == true
+	r_crypto = static_library('r_crypto', files,
+		include_directories: [platform_inc],
+		link_with: [r_util],
+		c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+		install: true
+	)
+else
+	r_crypto = shared_library('r_crypto', files,
+		include_directories: [platform_inc],
+		link_with: [r_util],
+		c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+		install: true
+	)
+endif

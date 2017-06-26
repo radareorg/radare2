@@ -15,10 +15,18 @@ files=[
 'xxhash.c'
 ]
 
-r_hash = shared_library('r_hash', files,
-  include_directories: [platform_inc],
-  dependencies: [mth],
-  link_with: [r_util],
-  install: true
-)
-
+if buildstatic == true
+	r_hash = static_library('r_hash', files,
+	  include_directories: [platform_inc],
+	  dependencies: [mth],
+	  link_with: [r_util],
+	  install: true
+	)
+else
+	r_hash = shared_library('r_hash', files,
+	  include_directories: [platform_inc],
+	  dependencies: [mth],
+	  link_with: [r_util],
+	  install: true
+	)
+endif

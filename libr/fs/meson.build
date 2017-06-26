@@ -24,12 +24,22 @@ files=[
 'p/part_dos.c'
 ]
 
-r_fs = shared_library('r_fs', files,
-  include_directories: [platform_inc, include_directories([
-    '../../shlr/grub/include'
-  ])],
-  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  link_with: [r_util, libr2grub],
-  install: true
-)
-
+if buildstatic == true
+	r_fs = static_library('r_fs', files,
+	  include_directories: [platform_inc, include_directories([
+		'../../shlr/grub/include'
+	  ])],
+	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+	  link_with: [r_util, libr2grub],
+	  install: true
+	)
+else
+	r_fs = shared_library('r_fs', files,
+	  include_directories: [platform_inc, include_directories([
+		'../../shlr/grub/include'
+	  ])],
+	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+	  link_with: [r_util, libr2grub],
+	  install: true
+	)
+endif

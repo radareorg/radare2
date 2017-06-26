@@ -18,12 +18,22 @@ files=[
 'utf8.c'
 ]
 
-r_cons = shared_library('r_cons', files,
-  include_directories: [platform_inc],
-  link_with: [r_util],
-  objects: [
-    libr2sdb.extract_all_objects()
-  ],
-  install: true
-)
-
+if buildstatic == true
+	r_cons = static_library('r_cons', files,
+	  include_directories: [platform_inc],
+	  link_with: [r_util],
+	  objects: [
+		libr2sdb.extract_all_objects()
+	  ],
+	  install: true
+	)
+else
+	r_cons = shared_library('r_cons', files,
+	  include_directories: [platform_inc],
+	  link_with: [r_util],
+	  objects: [
+		libr2sdb.extract_all_objects()
+	  ],
+	  install: true
+	)
+endif

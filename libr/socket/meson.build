@@ -9,10 +9,20 @@ files=[
 'serial.c',
 ]
 
-r_socket = shared_library('r_socket', files,
-  include_directories: [platform_inc],
-  dependencies: [utl],
-  link_with: [r_util],
-  c_args : '-DCORELIB=1',
-  install: true
-)
+if buildstatic == true
+	r_socket = static_library('r_socket', files,
+	  include_directories: [platform_inc],
+	  dependencies: [utl],
+	  link_with: [r_util],
+	  c_args : '-DCORELIB=1',
+	  install: true
+	)
+else
+	r_socket = shared_library('r_socket', files,
+	  include_directories: [platform_inc],
+	  dependencies: [utl],
+	  link_with: [r_util],
+	  c_args : '-DCORELIB=1',
+	  install: true
+	)
+endif

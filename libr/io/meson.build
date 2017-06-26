@@ -48,15 +48,30 @@ files += [
 ]
 endif
 
-r_io = shared_library('r_io', files,
-  include_directories: [platform_inc, include_directories([
-    '../../shlr/bochs/include',
-	'../../shlr/gdb/include',
-	'../../shlr/qnx/include',
-	'../../shlr/wind',
-	'../../shlr/zip/include']
-  )],
-  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2wind, libr2gdb, libr2zip],
-  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  install: true
-)
+if buildstatic == true
+	r_io = static_library('r_io', files,
+	  include_directories: [platform_inc, include_directories([
+		'../../shlr/bochs/include',
+		'../../shlr/gdb/include',
+		'../../shlr/qnx/include',
+		'../../shlr/wind',
+		'../../shlr/zip/include']
+	  )],
+	  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2wind, libr2gdb, libr2zip],
+	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+	  install: true
+	)
+else
+	r_io = shared_library('r_io', files,
+	  include_directories: [platform_inc, include_directories([
+		'../../shlr/bochs/include',
+		'../../shlr/gdb/include',
+		'../../shlr/qnx/include',
+		'../../shlr/wind',
+		'../../shlr/zip/include']
+	  )],
+	  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2wind, libr2gdb, libr2zip],
+	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+	  install: true
+	)
+endif

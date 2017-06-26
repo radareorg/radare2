@@ -36,6 +36,8 @@ pth = cc.find_library('pthread', required: false)
 utl = cc.find_library('util', required: false)
 mth = cc.find_library('m', required: false)
 
+buildstatic = false
+
 # detect OS
 if cc.get_define('__linux__') == '1'
   host_os = 'linux'
@@ -48,8 +50,7 @@ if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
   platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
-  if get_option('buildtype') == 'release'
-    # Add /MT flag to add necessary runtimes into libraries/executables.
+  if buildstatic == true
     add_global_arguments('/MT', language: 'c')
   endif
 endif
