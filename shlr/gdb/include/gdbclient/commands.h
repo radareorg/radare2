@@ -20,6 +20,11 @@ int gdbr_connect(libgdbr_t *g, const char *server, int port);
 int gdbr_disconnect(libgdbr_t *g);
 
 /*!
+ * \brief invalidates the reg cache
+ */
+void gdbr_invalidate_reg_cache();
+
+/*!
  * \brief checks for extended mode availability
  * \returns a failure code (currently -1) or 0 if call successfully
  */

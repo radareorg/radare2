@@ -195,8 +195,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
         /* XXX ugly hack for testing purposes */
         if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
                 eprintf ("Usage: =!cmd args\n"
-                        " =!pid      - show targeted pid\n"
-                        " =!pkt s    - send packet 's'\n");
+                         " =!pid      - show targeted pid\n"
+                         " =!pkt s    - send packet 's'\n"
+                         " =!inv.reg  - invalidate reg cache\n");
 	} else if (!strncmp (cmd, "pkt ", 4)) {
 		if (send_msg (desc, cmd + 4) == -1) {
 			return false;
@@ -204,11 +205,13 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int r = read_packet (desc);
 		eprintf ("r = %d\n", r);
 	} else if (!strncmp (cmd, "pid", 3)) {
-		int pid = 1234;
+		int pid = desc ? desc->pid : -1;
 		if (!cmd[3]) {
 			io->cb_printf ("%d\n", pid);
 		}
 		return pid;
+	} else if (!strncmp (cmd, "inv.reg", 7)) {
+		gdbr_invalidate_reg_cache ();
 	} else {
 		eprintf ("Try: '=!?'\n");
 	}
