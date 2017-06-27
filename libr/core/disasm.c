@@ -2753,7 +2753,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-				char str[128];
+				char str[128] = {0};
 				f = r_flag_get_i (core->flags, refaddr);
 				if (!f && ds->show_slow) {
 					r_io_read_at (ds->core->io, ds->analop.ptr,
