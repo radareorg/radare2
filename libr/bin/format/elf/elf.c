@@ -1415,13 +1415,18 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 				haveBindNow = true;
 				break;
 			case DT_FLAGS:
-				i++;
-				switch (bin->dyn_buf[i].d_tag) {
-				case DT_FLAGS_1:// 0x6ffffffb:
-					switch (bin->dyn_buf[i].d_un.d_val) {
-					case DF_1_NOW:
-						haveBindNow = true;
+				for (i++; i < bin->dyn_entries ; i++) {
+					ut32 dTag = bin->dyn_buf[i].d_tag;
+					if (!dTag) {
 						break;
+					}
+					switch (dTag) {
+					case DT_FLAGS_1:
+						switch (bin->dyn_buf[i].d_un.d_val) {
+						case DF_1_NOW:
+							haveBindNow = true;
+							break;
+						}
 					}
 				}
 				break;
