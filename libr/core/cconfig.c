@@ -284,6 +284,13 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmminvalsub(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->parser->minval = node->i_value;
+	return true;
+}
+
 static int cb_asmsecsub(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2024,6 +2031,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.linesright", "false", "Show lines before opcode instead of offset");
 	SETPREF ("asm.lineswide", "false", "Put a space between lines");
 	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
+	SETICB ("asm.minvalsub", 0x100, &cb_asmminvalsub, "Minimum value to substitute in instructions (asm.varsub)");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
