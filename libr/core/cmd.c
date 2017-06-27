@@ -1600,10 +1600,15 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					eprintf (" pd|?   - show this help\n");
 					eprintf (" pd|    - disable scr.html and scr.color\n");
 					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
+					eprintf (" pi 1|T - use scr.tts to speak out the stdout\n");
 					return ret;
 				} else if (!strcmp (ptr + 1, "H")) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
 					r_config_set_i (core->config, "scr.html", true);
+				} else if (!strcmp (ptr + 1, "T")) { // "|T"
+					scr_color = r_config_get_i (core->config, "scr.color");
+					r_config_set_i (core->config, "scr.color", false);
+					core->cons->use_tts = true;
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
 					if (*cmd) {
@@ -1797,9 +1802,10 @@ next:
 		if (scr_html != -1) {
 			r_config_set_i (core->config, "scr.html", scr_html);
 		}
-			if (scr_color != -1) {
-				r_config_set_i (core->config, "scr.color", scr_color);
-			}
+		if (scr_color != -1) {
+			r_config_set_i (core->config, "scr.color", scr_color);
+		}
+		core->cons->use_tts = false;
 		return ret;
 	}
 next2:
