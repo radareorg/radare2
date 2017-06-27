@@ -561,6 +561,9 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 	klen = strlen (key);
 	vlen = strlen (val);
 	if (klen >= SDB_KSZ || vlen >= SDB_VSZ) {
+		if (owned) {
+			free (val);
+		}
 		return 0;
 	}
 	if (s->journal != -1) {
@@ -571,6 +574,9 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 	if (found && kv->value) {
 		if (cdb_findnext (&s->db, sdb_hash (key), key, klen)) {
 			if (cas && kv->cas != cas) {
+				if (owned) {
+					free (val);
+				}
 				return 0;
 			}
 			if (vlen == kv->value_len && !strcmp (kv->value, val)) {
