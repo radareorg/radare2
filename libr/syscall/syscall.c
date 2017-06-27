@@ -1,4 +1,4 @@
-/* radare - Copyright 2008-2016 - LGPL -- pancake */
+/* radare - Copyright 2008-2017 - LGPL -- pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -26,13 +26,12 @@ R_API RSyscall* r_syscall_new() {
 R_API void r_syscall_free(RSyscall *s) {
 	sdb_free (s->db);
 	free (s->os);
-	memset (s, 0, sizeof (RSyscall));
 	free (s);
 }
 
 /* return fastcall register argument 'idx' for a syscall with 'num' args */
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
-	if (num < 0 || num >= R_SYSCALL_ARGS || idx<0 || idx>=R_SYSCALL_ARGS) {
+	if (num < 0 || num >= R_SYSCALL_ARGS || idx < 0 || idx >= R_SYSCALL_ARGS) {
 		return NULL;
 	}
 	return s->regs[num].arg[idx];

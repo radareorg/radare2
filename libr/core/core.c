@@ -1577,6 +1577,7 @@ R_API bool r_core_init(RCore *core) {
 	core->http_up = false;
 	core->print = r_print_new ();
 	core->print->user = core;
+	core->print->num = core->num;
 	core->print->get_enumname = getenumname;
 	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;

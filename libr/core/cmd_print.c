@@ -2260,17 +2260,17 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	if (input[0]) {
 		char *spc = strchr (input, ' ');
 		if (spc) {
-			nblocks = r_num_get (core->num, spc + 1);
+			nblocks = r_num_math (core->num, spc + 1);
 			if (nblocks < 1) {
 				nblocks = core->blocksize;
 				return;
 			}
 			spc = strchr (spc + 1, ' ');
 			if (spc) {
-				totalsize = r_num_get (core->num, spc + 1);
+				totalsize = r_num_math (core->num, spc + 1);
 				spc = strchr (spc + 1, ' ');
 				if (spc) {
-					skipblocks = r_num_get (core->num, spc + 1);
+					skipblocks = r_num_math (core->num, spc + 1);
 				}
 			}
 		}
@@ -2583,10 +2583,19 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		case 'q':
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = core->offset + (blocksize * i);
+				if (core->print->cur_enabled) {
+					if (i == core->print->cur) {
+						r_cons_printf ("> ");
+						core->num->value = off;
+					} else {
+						r_cons_printf ("  ");
+					}
+				}
 				r_cons_printf ("0x%08"PFMT64x " %d %d\n", off, i, ptr[i]);
 			}
 			break;
 		default:
+			core->print->num = core->num;
 			r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
 			break;
 		}

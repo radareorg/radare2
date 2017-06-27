@@ -1622,9 +1622,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("cmd.cprompt> ");
 			I->line->contents = strdup (cmd);
 			buf = r_line_readline ();
-//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
-			I->line->contents = NULL;
-			(void)r_config_set (core->config, "cmd.cprompt", buf);
+			if (!strcmp (buf, "|")) {
+				R_FREE (I->line->contents);
+				core->print->cur_enabled = true;
+				core->print->cur = 0;
+				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
+			} else {
+				//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
+				R_FREE (I->line->contents);
+				(void)r_config_set (core->config, "cmd.cprompt", buf);
+			}
 		}
 		break;
 		case '!':
@@ -2647,7 +2654,7 @@ static int visual_responsive(RCore *core) {
 }
 
 static void visual_refresh(RCore *core) {
-	int w;
+	static ut64 oseek = UT64_MAX;
 	const char *vi, *vcmd;
 	if (!core) {
 		return;
@@ -2655,7 +2662,7 @@ static void visual_refresh(RCore *core) {
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
 
-	w = visual_responsive (core);
+	int w = visual_responsive (core);
 
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
@@ -2678,9 +2685,18 @@ static void visual_refresh(RCore *core) {
 				// do not show column contents
 			} else {
 				r_cons_printf ("[cmd.cprompt=%s]\n", vi);
+				if (oseek != UT64_MAX) {
+					r_core_seek (core, oseek, 1);
+				}
 				r_core_cmd0 (core, vi);
 				r_cons_column (nw);
 				r_cons_flush ();
+				if (!strncmp (vi, "p=", 2) && core->print->cur_enabled) {
+					oseek = core->offset;
+					r_core_seek (core, core->num->value, 1);
+				} else {
+					oseek = UT64_MAX;
+				}
 			}
 		}
 		r_cons_gotoxy (0, 0);
@@ -2696,6 +2712,8 @@ static void visual_refresh(RCore *core) {
 		}
 		r_core_visual_title (core, color);
 	}
+	bool ce = core->print->cur_enabled;
+	core->print->cur_enabled = false;
 
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
@@ -2707,10 +2725,13 @@ static void visual_refresh(RCore *core) {
 		core->print->screen_bounds = 1LL;
 		r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
 	}
+	core->print->cur_enabled = ce;
+#if 0
 	if (core->print->screen_bounds != 1LL) {
 		r_cons_printf ("[0x%08"PFMT64x "..0x%08"PFMT64x "]\n",
 			core->offset, core->print->screen_bounds);
 	}
+#endif
 	blocksize = core->num->value? core->num->value: core->blocksize;
 
 	/* this is why there's flickering */
