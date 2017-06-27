@@ -5309,7 +5309,6 @@ static int lenof(ut64 off, int two) {
 	} else {
 		snprintf (buf, sizeof (buf), "0x%08"PFMT64x, off);
 	}
-
 	return strlen (buf);
 }
 

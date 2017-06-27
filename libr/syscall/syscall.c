@@ -87,7 +87,7 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bi
 	file = sdb_fmt (0, "%s/%s-%s-%d.sdb",
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {
-		eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
+		// eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return false;
 	}
 
