@@ -157,14 +157,9 @@ R_API bool r_debug_session_set_idx(RDebug *dbg, int idx) {
 /* Get most recent used session at the time */
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail) {
 	RDebugSession *session;
-	RListIter *prev;
 	if (!tail) {
 		return NULL;
 	}
-	prev = tail->p;
-	if (!prev) {
-		return NULL;
-	}
-	session = (RDebugSession *) prev->data;
+	session = (RDebugSession *) tail->data;
 	return session;
 }

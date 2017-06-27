@@ -932,11 +932,8 @@ R_API int r_debug_step_back(RDebug *dbg) {
 
 	end = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 
-	/* Save current session. It is marked as a finish point of reverse execution */
-	r_debug_session_add (dbg, &tail);
-
 	/* Get previous state */
-	before = r_debug_session_get (dbg, tail);
+	before = r_debug_session_get (dbg, dbg->sessions->tail);
 	if (!before) {
 		return 0;
 	}
@@ -946,7 +943,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	r_debug_session_set (dbg, before);
 
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
+	//eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
 
 	/* Get the previous operation address.
 	 * XXX: too slow... */
