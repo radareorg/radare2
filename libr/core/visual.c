@@ -2677,7 +2677,6 @@ static void visual_refresh(RCore *core) {
 		// XXX: slow
 		core->cons->blankline = false;
 		r_cons_clear00 ();
-		r_cons_flush ();
 		{
 			int hc = r_config_get_i (core->config, "hex.cols");
 			int nw = 12 + 4 + hc + (hc * 3);
