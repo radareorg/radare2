@@ -983,7 +983,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 				}
 			}
 
-			mflags = r_core_bin_method_flags_str (m, 0);
+			mflags = r_core_bin_method_flags_str (m->method_flags, 0);
 
 			if (show_color) {
 				if (i == idx) {
