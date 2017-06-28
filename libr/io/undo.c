@@ -112,23 +112,23 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 
 	idx = io->undo.idx;
 	start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
-	end   = (idx + redos + 1) % R_IO_UNDOS;
+	end = (idx + redos + 1) % R_IO_UNDOS;
 
 	j = 0;
 	switch (mode) {
 	case 'j':
 		io->cb_printf ("[");
 		break;
-	}
-	if (!mode) {
+	case 0:
 		list = r_list_newf (free);
+		break;
 	}
 	const char *comma = "";
 	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
 		int idx = (j< undos)? undos - j - 1: j - undos - 1;
 		RIOUndos *undo = &io->undo.seek[i];
 		ut64 addr = undo->off;
-		ut64 notLast = j+1<undos && (i != end - 1);
+		ut64 notLast = (j + 1 < undos) && (i != end - 1);
 		switch (mode) {
 		case '=':
 			if (j < undos) {
@@ -153,9 +153,12 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 		case 0:
 			if (list) {
 				RIOUndos  *u = R_NEW0 (RIOUndos);
-				memcpy (u, undo, sizeof (RIOUndos));
-				r_list_append (list, u);
+				if (u) {
+					memcpy (u, undo, sizeof (RIOUndos));
+					r_list_append (list, u);
+				}
 			}
+			break;
 		}
 		j++;
 	}

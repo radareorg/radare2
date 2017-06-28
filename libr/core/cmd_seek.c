@@ -407,10 +407,14 @@ static int cmd_seek(void *data, const char *input) {
 	case '=':
 	case '!':
 		{
-			RList *list = r_io_sundo_list (core->io, input[0]);
-			RListIter *iter;
-			RIOUndos *undo;
+			char mode = input[0];
+			if (input[1] == '=') {
+				mode = 0;
+			}
+			RList *list = r_io_sundo_list (core->io, mode);
 			if (list) {
+				RListIter *iter;
+				RIOUndos *undo;
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
@@ -420,18 +424,25 @@ static int cmd_seek(void *data, const char *input) {
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s + %d\n", f->name,
-									(int)(undo->off- f->offset));
+									(int)(undo->off - f->offset));
 						} else {
 							name = strdup (f->name);
 						}
 					}
-					if (!name) {
-						name = strdup ("");
+					if (mode) {
+						r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name? name: "");
+					} else {
+						if (!name) {
+							name = r_str_newf ("0x%"PFMT64x, undo->off);
+						}
+						r_cons_printf ("%s%s", name, iter->n? " > ":"");
 					}
-					r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name);
 					free (name);
 				}
 				r_list_free (list);
+				if (!mode) {
+					r_cons_newline ();
+				}
 			}
 		}
 		break;
@@ -639,7 +650,7 @@ static int cmd_seek(void *data, const char *input) {
 			"s+", "", "Redo seek",
 			"s+", " n", "Seek n bytes forward",
 			"s++", "", "Seek blocksize bytes forward",
-			"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names)",
+			"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names, s==)",
 			"s/", " DATA", "Search for next occurrence of 'DATA'",
 			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
 			"s.", "hexoff", "Seek honoring a base from core->offset",
