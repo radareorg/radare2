@@ -5,6 +5,12 @@
 
 typedef int (*RStrRangeCallback) (void *, int);
 
+typedef enum {
+	R_STR_1B_IGNORE,
+	R_STR_1B_ESC_X,
+	R_STR_1B_ESC_E
+} RStr1bMode;
+
 static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {
 		if (*s==ch)
@@ -101,7 +107,7 @@ R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_unescape(char *buf);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);
-R_API char *r_str_escape_all(const char *buf);
+R_API char *r_str_escape_all(const char *buf, RStr1bMode mode_1b);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode(const char *buf);
 R_API char *r_str_utf16_decode(const ut8 *s, int len);
