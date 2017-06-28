@@ -1212,7 +1212,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
-		p->cur -= cols > 0? cols: 0;
+		p->cur -= R_MAX (cols, 0);
 		return;
 	}
 	if (PIDX == 2 && core->seltab == 1) {
@@ -1259,7 +1259,15 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		} else {
 			prev_sz = roff - prev_roff;
 		}
-		p->cur = prev_roff + R_MIN (delta, prev_sz - 1);
+		int res = R_MIN (delta, prev_sz - 1);
+		ut64 cur = prev_roff + res;
+		if (cur == p->cur) {
+			if (p->cur > 0) {
+				p->cur--;
+			}
+		} else {
+			p->cur = prev_roff + delta; //res;
+		}
 	} else {
 		p->cur -= p->cols;
 	}
@@ -2673,6 +2681,7 @@ static void visual_refresh(RCore *core) {
 	r_cons_print_clear ();
 
 	vi = r_config_get (core->config, "cmd.cprompt");
+	bool ce = core->print->cur_enabled;
 	if (vi && *vi) {
 		// XXX: slow
 		core->cons->blankline = false;
@@ -2692,6 +2701,7 @@ static void visual_refresh(RCore *core) {
 				r_cons_flush ();
 				if (!strncmp (vi, "p=", 2) && core->print->cur_enabled) {
 					oseek = core->offset;
+					core->print->cur_enabled = false;
 					r_core_seek (core, core->num->value, 1);
 				} else {
 					oseek = UT64_MAX;
@@ -2711,8 +2721,6 @@ static void visual_refresh(RCore *core) {
 		}
 		r_core_visual_title (core, color);
 	}
-	bool ce = core->print->cur_enabled;
-	core->print->cur_enabled = false;
 
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
