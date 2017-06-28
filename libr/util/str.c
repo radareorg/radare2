@@ -1198,7 +1198,7 @@ R_API void r_str_sanitize(char *c) {
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc_seq) {
+static char *r_str_escape_(const char *buf, int dot_nl, RStr1bMode mode_1b) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1247,7 +1247,7 @@ static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc
 			*q++ = 'b';
 			break;
 		case 0x1b: // ESC
-			if (ign_esc_seq) {
+			if (mode_1b == R_STR_1B_IGNORE) {
 				p++;
 				/* Parse the ANSI code (only the graphic mode
 				 * set ones are supported) */
@@ -1262,7 +1262,12 @@ static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc
 					}
 				}
 				break;
+			} else if (mode_1b == R_STR_1B_ESC_E) {
+				*q++ = '\\';
+				*q++ = 'e';
+				break;
 			}
+			/* fallthrough if mode_1b == R_STR_1B_ESC_X */
 		default:
 			/* Outside the ASCII printable range */
 			if (!IS_PRINTABLE (*p)) {
@@ -1282,15 +1287,15 @@ out:
 }
 
 R_API char *r_str_escape(const char *buf) {
-	return r_str_escape_ (buf, false, true);
+	return r_str_escape_ (buf, false, R_STR_1B_IGNORE);
 }
 
-R_API char *r_str_escape_all(const char *buf) {
-	return r_str_escape_ (buf, false, false);
+R_API char *r_str_escape_all(const char *buf, RStr1bMode mode_1b) {
+	return r_str_escape_ (buf, false, mode_1b);
 }
 
 R_API char *r_str_escape_dot(const char *buf) {
-	return r_str_escape_ (buf, true, true);
+	return r_str_escape_ (buf, true, R_STR_1B_IGNORE);
 }
 
 /* ansi helpers */

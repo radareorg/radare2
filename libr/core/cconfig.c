@@ -2098,6 +2098,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmtpatch", "false", "Show patch comments in disasm");
 	SETPREF ("asm.cmtoff", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
+	SETPREF ("asm.esc_e", "true", "Show 0x1b as \e instead of \x1b");
 	SETCB ("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.strfilter", "", &cb_strfilter);

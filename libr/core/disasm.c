@@ -113,6 +113,7 @@ typedef struct r_disam_options_t {
 	bool show_fcncalls;
 	bool show_hints;
 	bool show_marks;
+	RStr1bMode mode_1b;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -487,6 +488,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
+	ds->mode_1b = r_config_get_i (core->config, "asm.esc_e") ? R_STR_1B_ESC_E : R_STR_1B_ESC_X;
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
@@ -2656,7 +2658,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string
 				    && str[i] != '"' && str[i] != '\\') {
 					ds_comment (ds, false, "%c", str[i]);
 				} else {
-					char *escchar = r_str_escape_all (&str[i]);
+					char *escchar = r_str_escape_all (&str[i], ds->mode_1b);
 					if (escchar) {
 						ds_comment (ds, false, "%s", escchar);
 						free (escchar);
@@ -2669,7 +2671,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string
 		ds_comment (ds, false, "\"%s", nl);
 	} else {
 		if (!string_found) {
-			char *escstr = r_str_escape_all (str);
+			char *escstr = r_str_escape_all (str, ds->mode_1b);
 			if (escstr) {
 				ALIGN;
 				ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
