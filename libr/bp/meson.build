@@ -12,18 +12,9 @@ files=[
 	'p/bp_x86.c'
 ]
 
-if buildstatic == true
-	r_bp = static_library('r_bp', files,
-		include_directories: [platform_inc],
-		c_args: ['-DCORELIB'],
-		link_with: [r_util],
-		install: true
-	)
-else
-	r_bp = shared_library('r_bp', files,
-		include_directories: [platform_inc],
-		c_args: ['-DCORELIB'],
-		link_with: [r_util],
-		install: true
-	)
-endif
+r_bp = library('r_bp', files,
+	include_directories: [platform_inc],
+	c_args: ['-DCORELIB'],
+	link_with: [r_util],
+	install: true
+)

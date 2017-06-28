@@ -36,8 +36,6 @@ pth = cc.find_library('pthread', required: false)
 utl = cc.find_library('util', required: false)
 mth = cc.find_library('m', required: false)
 
-buildstatic = false
-
 # detect OS
 if cc.get_define('__linux__') == '1'
   host_os = 'linux'
@@ -50,8 +48,11 @@ if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
   platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
-  if buildstatic == true
-    add_global_arguments('/MT', language: 'c')
+  if get_option('default_library') == 'static'
+	add_global_arguments('/MT', language: 'c')
+	message(' ------ WINDOWS VERSION: BUILD STATIC ------')
+  else
+	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
   endif
 endif
 

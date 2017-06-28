@@ -13,24 +13,12 @@ files=[
 #'p/egg_shya.c',
 'p/egg_xor.c'
 ]
-if buildstatic == true
-	r_egg = static_library('r_egg', files,
-	  include_directories: [platform_inc],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_asm, r_syscall],
-	  objects: [
-		libr2sdb.extract_all_objects(),
-	  ],
-	  install: true
-	)
-else
-	r_egg = shared_library('r_egg', files,
-	  include_directories: [platform_inc],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_asm, r_syscall],
-	  objects: [
-		libr2sdb.extract_all_objects(),
-	  ],
-	  install: true
-	)
-endif
+r_egg = library('r_egg', files,
+  include_directories: [platform_inc],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+  link_with: [r_util, r_asm, r_syscall],
+  objects: [
+	libr2sdb.extract_all_objects(),
+  ],
+  install: true
+)

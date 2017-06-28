@@ -10,16 +10,8 @@ files=[
 'xrefs.c',
 ]
 
-if buildstatic == true
-	r_search = static_library('r_search', files,
-	  include_directories: [platform_inc],
-	  link_with: [r_util],
-	  install: true
-	)
-else
-	r_search = shared_library('r_search', files,
-	  include_directories: [platform_inc],
-	  link_with: [r_util],
-	  install: true
-	)
-endif
+r_search = library('r_search', files,
+  include_directories: [platform_inc],
+  link_with: [r_util],
+  install: true
+)

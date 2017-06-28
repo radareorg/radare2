@@ -140,54 +140,27 @@ files=[
 #'arch//z80/z80asm.c',
 ]
 
-if buildstatic == true
-	r_asm = static_library('r_asm', files,
-	  include_directories: [platform_inc, include_directories([
-		'arch/include',
-		'../../shlr/capstone/include',
-		'../../shlr',
-		'arch',
-		'arch/h8300',
-		'arch/msp430',
-		'arch/rsp',
-		'arch/v850',
-		'arch/propeller',
-		'arch/ebc',
-		'arch/cr16',
-		'arch/8051',
-	  ])],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_syscall, r_parse, r_lang, r_flag, r_socket, libr2java, libr2udis86],
-	  objects: [
-		libr2capstone.extract_all_objects(),
-		libr2sdb.extract_all_objects(),
-		libr2spp.extract_all_objects(),
-	  ],
-	  install: true
-	)
-else
-	r_asm = shared_library('r_asm', files,
-	  include_directories: [platform_inc, include_directories([
-		'arch/include',
-		'../../shlr/capstone/include',
-		'../../shlr',
-		'arch',
-		'arch/h8300',
-		'arch/msp430',
-		'arch/rsp',
-		'arch/v850',
-		'arch/propeller',
-		'arch/ebc',
-		'arch/cr16',
-		'arch/8051',
-	  ])],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_syscall, r_parse, r_lang, r_flag, r_socket, libr2java, libr2udis86],
-	  objects: [
-		libr2capstone.extract_all_objects(),
-		libr2sdb.extract_all_objects(),
-		libr2spp.extract_all_objects(),
-	  ],
-	  install: true
-	)
-endif
+r_asm = library('r_asm', files,
+  include_directories: [platform_inc, include_directories([
+	'arch/include',
+	'../../shlr/capstone/include',
+	'../../shlr',
+	'arch',
+	'arch/h8300',
+	'arch/msp430',
+	'arch/rsp',
+	'arch/v850',
+	'arch/propeller',
+	'arch/ebc',
+	'arch/cr16',
+	'arch/8051',
+  ])],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+  link_with: [r_util, r_syscall, r_parse, r_lang, r_flag, r_socket, libr2java, libr2udis86],
+  objects: [
+	libr2capstone.extract_all_objects(),
+	libr2sdb.extract_all_objects(),
+	libr2spp.extract_all_objects(),
+  ],
+  install: true
+)

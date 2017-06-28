@@ -79,44 +79,22 @@ files=[
 'var.c',
 'xrefs.c',
 ]
-if buildstatic == true
-	r_anal = static_library('r_anal', files,
-	  include_directories: [platform_inc, include_directories([
-		'arch/gb',
-		'../asm/arch/8051',
-		'../asm/arch/cr16',
-		'../asm/arch/include/',
-		'../../shlr/capstone/include',
-		'../../shlr',
+r_anal = library('r_anal', files,
+  include_directories: [platform_inc, include_directories([
+	'arch/gb',
+	'../asm/arch/8051',
+	'../asm/arch/cr16',
+	'../asm/arch/include/',
+	'../../shlr/capstone/include',
+	'../../shlr',
 
-	  ])],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_reg, r_syscall, r_search, r_cons, libr2udis86],
-	  objects: [
-		libr2capstone.extract_all_objects(),
-		libr2sdb.extract_all_objects(),
-		libr2spp.extract_all_objects(),
-	  ],
-	  install: true
-	)
-else
-	r_anal = shared_library('r_anal', files,
-	  include_directories: [platform_inc, include_directories([
-		'arch/gb',
-		'../asm/arch/8051',
-		'../asm/arch/cr16',
-		'../asm/arch/include/',
-		'../../shlr/capstone/include',
-		'../../shlr',
-
-	  ])],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_reg, r_syscall, r_search, r_cons, libr2udis86],
-	  objects: [
-		libr2capstone.extract_all_objects(),
-		libr2sdb.extract_all_objects(),
-		libr2spp.extract_all_objects(),
-	  ],
-	  install: true
-	)
-endif
+  ])],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+  link_with: [r_util, r_reg, r_syscall, r_search, r_cons, libr2udis86],
+  objects: [
+	libr2capstone.extract_all_objects(),
+	libr2sdb.extract_all_objects(),
+	libr2spp.extract_all_objects(),
+  ],
+  install: true
+)

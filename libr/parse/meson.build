@@ -15,22 +15,11 @@ files=[
 'p/parse_mreplace/mmemory.c'
 ]
 
-if buildstatic == true
-	r_parse = static_library('r_parse', files,
-	  include_directories: [platform_inc, include_directories([
-		'../../shlr/tcc',
-	  ])],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_flag, r_syscall, r_reg, libr2tcc, libr2sdb],
-	  install: true
-	)
-else
-	r_parse = shared_library('r_parse', files,
-	  include_directories: [platform_inc, include_directories([
-		'../../shlr/tcc',
-	  ])],
-	  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-	  link_with: [r_util, r_flag, r_syscall, r_reg, libr2tcc, libr2sdb],
-	  install: true
-	)
-endif
+r_parse = library('r_parse', files,
+  include_directories: [platform_inc, include_directories([
+	'../../shlr/tcc',
+  ])],
+  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
+  link_with: [r_util, r_flag, r_syscall, r_reg, libr2tcc, libr2sdb],
+  install: true
+)
