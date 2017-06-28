@@ -26,6 +26,7 @@
      &r_anal_plugin_pic18c, \
      &r_anal_plugin_ppc_cs, \
      &r_anal_plugin_ppc_gnu, \
+     &r_anal_plugin_ppc_vle, \
      &r_anal_plugin_riscv, \
      &r_anal_plugin_sh, \
      &r_anal_plugin_snes, \
@@ -66,6 +67,7 @@
      &r_asm_plugin_pic18c, \
      &r_asm_plugin_ppc_cs, \
      &r_asm_plugin_ppc_gnu, \
+     &r_asm_plugin_ppc_vle, \
      &r_asm_plugin_riscv, \
      &r_asm_plugin_sh, \
      &r_asm_plugin_snes, \
