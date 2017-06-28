@@ -185,7 +185,7 @@ const se_vle_t se_ops[] = {
 	{ "se_andc"   , 0x4500, 0x45FF, 2,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {{0x00F0,  4,  0,  0, 1, TYPE_REG}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_b"      , 0xE800, 0xE8FF, 1,   R_ANAL_OP_TYPE_JMP, R_ANAL_COND_AL, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_bl"     , 0xE900, 0xE9FF, 1,  R_ANAL_OP_TYPE_CALL, R_ANAL_COND_AL, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
-	// CR0
+	// cr0
 	{ "se_bge"    , 0xE000, 0xE0FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_GE, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_ble"    , 0xE000, 0xE1FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_LE, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_bne"    , 0xE000, 0xE2FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_NE, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
@@ -194,8 +194,8 @@ const se_vle_t se_ops[] = {
 	{ "se_bgt"    , 0xE000, 0xE5FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_GT, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_beq"    , 0xE000, 0xE6FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_EQ, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_bso"    , 0xE000, 0xE7FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_VS, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
-	{ "se_bc"     , 0xE000, 0xE7FF, 2,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_VS, {{0x0700,  8,  0, 32, 0, TYPE_IMM}, {0x00FF,  0,  1,  0,  1, TYPE_IMM}, {0}, {0}, {0}}},
-	{ "se_bclri"  , 0x6000, 0x61FF, 2,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
+	{ "se_bc"     , 0xE000, 0xE7FF, 2,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_VS, {{0x0700,  8,  0, 32, 0, TYPE_JMP}, {0x00FF,  0,  1,  0,  1, TYPE_IMM}, {0}, {0}, {0}}},
+	{ "se_bclri"  , 0x6000, 0x61FF, 2,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_JMP}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_bgeni"  , 0x6300, 0x63FF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_bmaski" , 0x2C00, 0x2DFF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_bseti"  , 0x6400, 0x65FF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
