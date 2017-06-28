@@ -1,6 +1,11 @@
 project('radare2', 'c')
 
-version = '1.6.0-git'
+version = run_command('python', 'sys/version.py')
+if version.returncode() != 0
+  version = 'unknown-error'
+else
+  version = version.stdout().strip()
+endif
 version_commit = run_command('git', 'rev-list', '--all', '--count')
 if version_commit.returncode() != 0
   version_commit = 0
@@ -92,6 +97,7 @@ configure_file(input : 'libr/include/r_userconf.h.in',
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
+versionconf.set('R2_VERSION', version)
 versionconf.set('GITTAP', gittap)
 versionconf.set('GITTIP', gittip)
 versionconf.set('DATE', r2birth)
