@@ -7,9 +7,8 @@ files=[
 'value.c',
 ]
 
-r_reg = shared_library('r_reg', files,
+r_reg = library('r_reg', files,
   include_directories: [platform_inc],
   link_with: [r_util],
   install: true
 )
-

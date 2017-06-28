@@ -48,9 +48,9 @@ files += [
 ]
 endif
 
-r_io = shared_library('r_io', files,
+r_io = library('r_io', files,
   include_directories: [platform_inc, include_directories([
-    '../../shlr/bochs/include',
+	'../../shlr/bochs/include',
 	'../../shlr/gdb/include',
 	'../../shlr/qnx/include',
 	'../../shlr/wind',

@@ -48,9 +48,11 @@ if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
   platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
-  if get_option('buildtype') == 'release'
-    # Add /MT flag to add necessary runtimes into libraries/executables.
-    add_global_arguments('/MT', language: 'c')
+  if get_option('default_library') == 'static'
+	add_global_arguments('/MT', language: 'c')
+	message(' ------ WINDOWS VERSION: BUILD STATIC ------')
+  else
+	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
   endif
 endif
 

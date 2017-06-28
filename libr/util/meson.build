@@ -73,15 +73,15 @@ files=[
 ]
 
 incdir = '../include'
-r_util = shared_library('r_util', files,
+
+r_util = library('r_util', files,
   include_directories: [platform_inc, include_directories([
 	'../../shlr/zip/include']
   )],
   dependencies: [ldl, pth, utl],
   objects: [
-    libr2sdb.extract_all_objects(),
+	libr2sdb.extract_all_objects(),
 	libr2zip.extract_all_objects()
   ],
   install: true
 )
-

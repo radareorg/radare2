@@ -9,7 +9,7 @@ files=[
 'serial.c',
 ]
 
-r_socket = shared_library('r_socket', files,
+r_socket = library('r_socket', files,
   include_directories: [platform_inc],
   dependencies: [utl],
   link_with: [r_util],

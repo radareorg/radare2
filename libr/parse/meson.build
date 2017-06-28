@@ -15,12 +15,11 @@ files=[
 'p/parse_mreplace/mmemory.c'
 ]
 
-r_parse = shared_library('r_parse', files,
+r_parse = library('r_parse', files,
   include_directories: [platform_inc, include_directories([
-    '../../shlr/tcc',
+	'../../shlr/tcc',
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_flag, r_syscall, r_reg, libr2tcc, libr2sdb],
   install: true
 )
-
