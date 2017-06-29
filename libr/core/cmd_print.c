@@ -1353,7 +1353,24 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 		r_core_cmd0 (core, cmd);
 		break;
 	case 'x':
-		r_core_cmdf (core, "px %d @ 0x%"PFMT64x, count, addr);
+		switch (size) {
+		default:
+		case 1:
+			r_core_cmdf (core, "px %d @ 0x%"PFMT64x, count, addr);
+			break;
+		case 2:
+			r_core_cmdf (core, "px%c %d @ 0x%"PFMT64x,
+				'h', count * 2, addr);
+			break;
+		case 4:
+			r_core_cmdf (core, "px%c %d @ 0x%"PFMT64x,
+				'w', count * 4, addr);
+			break;
+		case 8:
+			r_core_cmdf (core, "px%c %d @ 0x%"PFMT64x,
+				'q', count * 8, addr);
+			break;
+		}
 		break;
 	case 'a':
 	case 'd':
