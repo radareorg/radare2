@@ -4,6 +4,7 @@ SET BACKEND=ninja
 SET REGEN=
 SET RELEASE=
 SET BUILDDIR=build
+SET DEFAULT_LIBRARY=--default-library static
 
 :PARSEARGS
 IF NOT "%1"=="" (
@@ -37,7 +38,7 @@ IF "%REGEN%"=="1" GOTO REBUILD
 IF NOT "%BACKEND%"=="ninja" GOTO BUILDPROJECT
 
 IF EXIST %BUILDDIR% GOTO BUILD
-python meson.py --prefix=%CD% %BUILDDIR% %RELEASE%
+python meson.py --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY%
 
 :BUILD
 ECHO [ R2 MESON NINJA BUILD ]
@@ -48,10 +49,10 @@ exit /b %errorlevel%
 :BUILDPROJECT
 ECHO [ R2 MESON BUILDING %BACKEND% SLN]
 IF EXIST %BUILDDIR% rd /s /q %BUILDDIR%
-python meson.py --prefix=%CD% %BUILDDIR% --backend=%BACKEND% %RELEASE%
+python meson.py --prefix=%CD% %BUILDDIR% --backend=%BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 GOTO EXIT
 
 :REBUILD
-python.exe meson.py --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE%
+python.exe meson.py --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 
 :EXIT
