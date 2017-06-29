@@ -53,24 +53,26 @@ static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	g->data[g->data_len] = '\0';
 	char *memstr, *buf;
-	ut64 memlen, addr;
+	ut64 memlen, memlen2, addr;
+	g->data[g->data_len] = '\0';
 	if (sscanf (g->data + 1, "%"PFMT64x",%"PFMT64x, &addr, &memlen) != 2) {
 		return send_msg (g, "E01");
 	}
+	memlen2 = memlen * 2;
 	if (!(memstr = strchr (g->data, ':')) || !*(++memstr)) {
 		return send_msg (g, "E01");
 	}
-	if (memlen * 2 != strlen (memstr)) {
+	if (memlen2 != strlen (memstr)) {
 		return send_msg (g, "E01");
 	}
-	if (!(buf = malloc (memlen * 2 + 64))) {
+	if (!(buf = malloc (memlen2 + 64))) {
 		return send_msg (g, "E01");
 	}
-	snprintf (buf, memlen * 2 + 63, "wx 0x%s @ 0x%"PFMT64x, memstr, addr);
+	snprintf (buf, memlen2 + 63, "wx 0x%s @ 0x%"PFMT64x, memstr, addr);
+	buf[memlen2 + 63] = '\0';
 	eprintf ("buf: %s\n", buf);
-	if (cmd_cb (g, core_ptr, buf, NULL, NULL) < 0) {
+	if (cmd_cb (g, core_ptr, buf, NULL, 0) < 0) {
 		free (buf);
 		return send_msg (g, "E01");
 	}
