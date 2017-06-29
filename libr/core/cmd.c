@@ -2730,7 +2730,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		}
 	}
 
-	if (!cstr || *cstr == '|') {
+	if (!cstr || (*cstr == '|' && cstr[1] != '?')) {
 		// raw comment syntax
 		goto beach; // false;
 	}
