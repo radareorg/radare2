@@ -8,8 +8,8 @@ ninja.exe -C build install
 
 ECHO [ R2 WINDIST FOLDER CREATION ]
 MKDIR %DIST%
-MOVE bin\* %DIST%\
-MOVE lib\* %DIST%\
+MOVE bin\*.exe %DIST%\
+MOVE lib\*.dll %DIST%\
 XCOPY /S /I shlr\www %DIST%\www
 MKDIR %DIST%\share\radare2\%VERSION%\magic
 XCOPY /S libr\magic\d\default\* %DIST%\share\radare2\%VERSION%\magic\
