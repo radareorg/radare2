@@ -54,19 +54,12 @@ init:
 # Required softwares for building
 install:
   # Update environment variables
-  - ps: $env:r2_version = (Get-Content -Raw -Path package.json | ConvertFrom-Json).version
-  # - ps: Update-AppveyorBuild -Version "$env:r2_version-$env:APPVEYOR_BUILD_NUMBER"
-  - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:r2_version"
+  - ps: $env:R2_VERSION = ( python sys\\version.py )
+  - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:R2_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson && COPY %PYTHON%\Scripts\meson.py meson.py )
   - cmd: if defined NINJA_URL ( powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
-
-# Cached folders
-# TODO For faster building
-# cache:
-# - "%CYG_CACHE%"
-# - "%ZIP_ROOT%"
 
 # Build scripts
 build_script:
@@ -83,11 +76,10 @@ build_script:
 
   - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
 
-# TODO Add testing
 after_test:
   - git clone https://github.com/radare/radare2-win-installer
   - set PATH=%PATH%;"C:\\Program Files (x86)\\Inno Setup 5"
-  - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico
+  - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
 
 # Artifacts
 artifacts:

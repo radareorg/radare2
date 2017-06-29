@@ -1,10 +1,31 @@
 @echo off
-IF "%R2_VERSION%"=="" ( ECHO %%R2_VERSION%% not set. && GOTO EXIT )
-IF "%1"=="" ( ECHO Please set dist folder name. && GOTO EXIT )
+IF "%R2_VERSION%"=="" (
+    SETLOCAL EnableDelayedExpansion
+    ECHO %%R2_VERSION%% not set, trying to set automatically
+    FOR /F "tokens=* USEBACKQ" %%F IN (`python sys\\version.py`) DO (
+        SET VER=%%F
+    )
+    IF "!VER!"=="" (
+        ECHO Failure
+        GOTO EXIT
+    )
+    SET R2_VER=!VER!
+) ELSE (
+    GOTO CHECK
+)
+ENDLOCAL & ( SET R2_VERSION=%R2_VER% )
+
+:CHECK
+ECHO Using version %R2_VERSION%
+IF "%1"=="" ( ECHO Please call this script with the dist folder name. && GOTO EXIT )
 SET DIST="%1"
 
 ECHO [ R2 MESON NINJA INSTALL ]
 ninja.exe -C build install
+
+ECHO [ R2 SDB GENERATION ]
+ECHO TODO
+
 
 ECHO [ R2 WINDIST FOLDER CREATION ]
 MKDIR %DIST%
