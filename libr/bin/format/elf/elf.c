@@ -1422,8 +1422,7 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 					}
 					switch (dTag) {
 					case DT_FLAGS_1:
-						switch (bin->dyn_buf[i].d_un.d_val) {
-						case DF_1_NOW:
+						if (bin->dyn_buf[i].d_un.d_val & DF_1_NOW) {
 							haveBindNow = true;
 							break;
 						}
