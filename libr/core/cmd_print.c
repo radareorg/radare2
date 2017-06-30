@@ -1787,11 +1787,34 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			addr = r_num_get (NULL, ox);
 		}
 		if (qo) {
-			char *qoe = strchr (qo + 1, '"');
+			char *qoe = strrchr (qo + 1, '"');
 			if (qoe) {
-				int len = qoe - qo - 1;
-				if (len > 2) {
-					string = r_str_ndup (qo, len + 2);
+				int raw_len = qoe - qo - 1;
+				int actual_len = 0;
+				char *ptr = qo + 1;
+				for(; ptr < qoe; ptr++) {
+					if (*ptr == '\\' && ptr + 1 < qoe) {
+						int body_idx = 0;
+						switch (*(ptr + 1)) {
+						case 'x':
+							for (; body_idx < 3 && ptr < qoe; body_idx++) {
+								ptr++;
+							}
+							break;
+						case 'u':
+							for (; body_idx < 5 && ptr < qoe; body_idx++) {
+								ptr++;
+							}
+							break;
+						default:
+							ptr++;
+							break;
+						}
+					}
+					actual_len++;
+				}
+				if (actual_len > 2) {
+					string = r_str_ndup (qo, raw_len + 2);
 				}
 				linecolor = R_CONS_COLOR (comment);
 			}

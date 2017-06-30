@@ -251,7 +251,7 @@ static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
-static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string_found);
+static void ds_print_str(RDisasmState *ds, const char *str, int len);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 	if (ds->core->io->pava) {
@@ -2640,7 +2640,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
-static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string_found) {
+static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
 	if (strlen (str) == 1) {
 		// could be a wide string
@@ -2668,13 +2668,11 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, bool string
 		}
 		ds_comment (ds, false, "\"%s", nl);
 	} else {
-		if (!string_found) {
-			char *escstr = r_str_escape_all (str);
-			if (escstr) {
-				ALIGN;
-				ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-				free (escstr);
-			}
+		char *escstr = r_str_escape_all (str);
+		if (escstr) {
+			ALIGN;
+			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
+			free (escstr);
 		}
 	}
 }
@@ -2707,7 +2705,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 refaddr = p;
 	RFlagItem *f;
 	char *nl = ds->show_comment_right? "" : "\n";
-	bool string_found = false;
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
@@ -2730,6 +2727,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 	bool flag_printed = false;
 	bool refaddr_printed = false;
+	bool string_printed = false;
 	if (p == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p) > 0 || ((st64)refaddr) > 0) {
@@ -2759,9 +2757,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					r_io_read_at (ds->core->io, ds->analop.ptr,
 						      (ut8*)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
-					if (str[0] && r_str_is_printable_incl_newlines (str)) {
-						ds_print_str (ds, str, sizeof (str), false);
-						string_found = true;
+					if (!string_printed && str[0] && r_str_is_printable_incl_newlines (str)) {
+						ds_print_str (ds, str, sizeof (str));
+						string_printed = true;
 					}
 				}
 			} else {
@@ -2857,7 +2855,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			}
 			if (*msg) {
-				ds_print_str (ds, msg, len, false);
+				if (!string_printed) {
+					ds_print_str (ds, msg, len);
+					string_printed = true;
+				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 				ALIGN;
 				ds_comment (ds, true, "; %s%s", f->name, nl);
@@ -2884,31 +2885,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				} else {
 					if (r_core_anal_address (core, refaddr) & R_ANAL_ADDR_TYPE_ASCII) {
-						int i = 0;
-						r_str_filter (msg, 0);
-						if (*msg) {
-							if (strlen (msg) == 1) {
-								//handle wide string if that is the case
-								ALIGN;
-								ds_comment (ds, true, "; \"");
-								for (i = 0; i < len; i++) {
-									if (!msg[i]) {
-										break;
-									}
-									if (IS_PRINTABLE (msg[i])) {
-										ds_comment (ds, false, "%c", msg[i]);
-									} else {
-										ds_comment (ds, false, "\\x%02x", msg[i]);
-									}
-									if (!msg[i+1]) {
-										i++;
-									}
-								}
-								ds_comment (ds, false, "\" 0x%08"PFMT64x"%s ", refaddr, nl);
-							} else {
-								ALIGN;
-								ds_comment (ds, true, "; \"%s\" 0x%08"PFMT64x" %s", msg, refaddr, nl);
-							}
+						if (!string_printed && *msg) {
+							ds_print_str (ds, msg, len);
+							string_printed = true;
 						}
 					}
 				}
@@ -2917,8 +2896,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
-					if (*msg) {
-						ds_print_str (ds, msg, len, string_found);
+					if (!string_printed && *msg) {
+						ds_print_str (ds, msg, len);
+						string_printed = true;
 					}
 				} else if (!strcmp (kind, "invalid")) {
 					int *n = (int*)&refaddr;
