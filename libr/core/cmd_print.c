@@ -217,11 +217,8 @@ static void cmd_pCD(RCore *core, const char *input) {
 			break;
 		case 1:
 			(void) r_cons_canvas_gotoxy (c, 28, 0);
-			if (core->assembler->bits == 64) {
-				cmd = r_str_newf ("pxq 128@r:SP;pd@r:PC");
-			} else {
-				cmd = r_str_newf ("pxw 128@r:SP;pd@r:PC");
-			}
+			// cmd = r_str_newf ("pxw 128@r:SP;pd@r:PC");
+			cmd = r_str_newf ("pxq 128@r:SP;pd@ 0x%"PFMT64x, osek);
 			break;
 		}
 		char *dis = r_core_cmd_str (core, cmd);
