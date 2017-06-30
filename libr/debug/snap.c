@@ -127,16 +127,16 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 
 	eprintf ("Apply diff [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", snap->addr, snap->addr_end);
 
-	/* Role back page datas that's been changed **after** specified SnapDiff 'diff' */
+	/* Roll back page datas that's been changed **after** specified SnapDiff 'diff' */
 	for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 		page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 		prev_page = diff->last_changes[page_off];
-		/* Role back only latest page, that's been changed after prev_page */
+		/* Roll back only latest page, that's been changed after prev_page */
 		if ((last_page = latest->last_changes[page_off]) && !prev_page) {
 			ut64 off = (ut64) last_page->page_off * SNAP_PAGE_SIZE;
 			/* Copy a page data of base snap to current addr. (i.e. role back) */
 			dbg->iob.write_at (dbg->iob.io, addr, snap->data + off, SNAP_PAGE_SIZE);
-			eprintf ("Role back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
+			eprintf ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 
@@ -152,7 +152,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 	r_debug_diff_free (latest);
 }
 
-/* Role back to base snapshot */
+/* Roll back to base snapshot */
 R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 	RPageData *last_page;
 	RDebugMap *cur_map = r_debug_map_get (dbg, base->addr + 1);
@@ -166,7 +166,7 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 		return;
 	}
 
-	eprintf ("Role back to base [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", cur_map->addr, cur_map->addr_end);
+	eprintf ("Roll back to base [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", cur_map->addr, cur_map->addr_end);
 
 	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
@@ -174,7 +174,7 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 			ut64 off = (ut64) last_page->page_off * SNAP_PAGE_SIZE;
 			/* Copy a page data of base snap to current addr. (i.e. role back) */
 			dbg->iob.write_at (dbg->iob.io, addr, base->data + off, SNAP_PAGE_SIZE);
-			eprintf ("Role back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
+			eprintf ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 
