@@ -1465,7 +1465,7 @@ static bool insert_mode_enabled(RCore *core) {
 }
 
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
-	int ch = arg[0];
+	ut8 ch = arg[0];
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
