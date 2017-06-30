@@ -134,7 +134,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 		/* Roll back only latest page, that's been changed after prev_page */
 		if ((last_page = latest->last_changes[page_off]) && !prev_page) {
 			ut64 off = (ut64) last_page->page_off * SNAP_PAGE_SIZE;
-			/* Copy a page data of base snap to current addr. (i.e. role back) */
+			/* Copy a page data of base snap to current addr. (i.e. roll back) */
 			dbg->iob.write_at (dbg->iob.io, addr, snap->data + off, SNAP_PAGE_SIZE);
 			eprintf ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
@@ -172,7 +172,7 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
 		if ((last_page = latest->last_changes[page_off])) {
 			ut64 off = (ut64) last_page->page_off * SNAP_PAGE_SIZE;
-			/* Copy a page data of base snap to current addr. (i.e. role back) */
+			/* Copy a page data of base snap to current addr. (i.e. roll back) */
 			dbg->iob.write_at (dbg->iob.io, addr, base->data + off, SNAP_PAGE_SIZE);
 			eprintf ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
