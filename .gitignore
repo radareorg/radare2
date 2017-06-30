@@ -90,3 +90,6 @@ bin/
 meson.py
 ninja.exe
 .DS_Store
+infer_out
+infer-out/
+cscope.out
