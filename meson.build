@@ -1,10 +1,36 @@
 project('radare2', 'c')
 
-version = '1.5.0-git'
-version_commit = 0
-gittap  = ''
-gittip  = ''
-r2birth = ''
+version = run_command('python', 'sys/version.py')
+if version.returncode() != 0
+  version = 'unknown-error'
+else
+  version = version.stdout().strip()
+endif
+version_commit = run_command('git', 'rev-list', '--all', '--count')
+if version_commit.returncode() != 0
+  version_commit = 0
+else
+  version_commit = version_commit.stdout().strip()
+endif
+gittap  = run_command('git', 'describe', '--tags', '--match', '"[0-9]*"')
+if gittap.returncode() != 0
+  gittap = ''
+else
+  gittap = gittap.stdout().strip()
+endif
+gittip  = run_command('git', 'rev-parse', 'HEAD')
+if gittip.returncode() != 0
+  gittip = 'unknown'
+else
+  gittip = gittip.stdout().strip()
+endif
+
+r2birth = run_command('cmd', '/c', 'date /t')
+if r2birth.returncode() != 0
+  r2birth = ''
+else
+  r2birth = r2birth.stdout().strip()
+endif
 prefix = '/usr/local'
 
 # system dependencies
@@ -27,6 +53,12 @@ if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
   platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
+  if get_option('default_library') == 'static'
+	add_global_arguments('/MT', language: 'c')
+	message(' ------ WINDOWS VERSION: BUILD STATIC ------')
+  else
+	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
+  endif
 endif
 
 # load plugin configuration
@@ -67,18 +99,19 @@ configure_file(input : 'libr/include/r_userconf.h.in',
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
+versionconf.set('R2_VERSION', version)
 versionconf.set('GITTAP', gittap)
 versionconf.set('GITTIP', gittip)
 versionconf.set('DATE', r2birth)
 configure_file(input : 'libr/include/r_version.h.in',
                output : 'r_version.h',
                configuration : versionconf)
-		   
+
 subdir('shlr/')
 subdir('libr/util')
 subdir('binr/rax2')
 
-		   
+
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')

@@ -25,6 +25,7 @@ R_API int r_str_write(int fd, const char *b);
 R_API void r_str_ncpy(char *dst, const char *src, int n);
 R_API void r_str_sanitize(char *c);
 R_API const char *r_str_casestr(const char *a, const char *b);
+R_API const char *r_str_firstbut(const char *s, char ch, const char *but);
 R_API const char *r_str_lastbut(const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API int *r_str_split_lines(char *str, int *count);
@@ -129,5 +130,6 @@ R_API bool r_str_startswith(const char *str, const char *needle);
 R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber (const char *str);
 R_API const char *r_str_last (const char *in, const char *ch);
+R_API char* r_str_highlight(char *str, const char *word, const char *color);
 
 #endif //  R_STR_H

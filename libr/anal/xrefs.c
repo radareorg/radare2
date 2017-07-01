@@ -188,6 +188,36 @@ static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 	return 1;
 }
 
+static int xrefs_list_cb_quiet(RAnal *anal, const char *k, const char *v) {
+	ut64 dst, src = r_num_get (NULL, v);
+	if (!strncmp (k, "ref.", 4)) {
+		const char *p = r_str_rchr (k, NULL, '.');
+		if (p) {
+			dst = r_num_get (NULL, p + 1);
+			char * type = strchr (k, '.');
+			if (type) {
+				type ++;
+				type = strdup (type);
+				char *t = strchr (type, '.');
+				if (t) {
+					*t = ' ';
+				}
+				t = (char *)r_str_rchr (type, NULL, '.');
+				if (t) {
+					t = (char *)r_str_rchr (t, NULL, '.');
+					if (t) {
+						*t = 0;
+						anal->cb_printf ("0x%"PFMT64x" -> 0x%"PFMT64x"  %s\n", src, dst, type);
+					}
+				}
+				free (type);
+			}
+
+		}
+	}
+	return 1;
+}
+
 static bool xrefs_list_cb_json(RAnal *anal, bool is_first, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
 	if (strlen (k) > 8) {
@@ -216,6 +246,9 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	case 1:
 	case '*':
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_rad, anal);
+		break;
+	case 'q':
+		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_quiet, anal);
 		break;
 	case 'j':
 		{

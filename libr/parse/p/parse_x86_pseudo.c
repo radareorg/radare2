@@ -15,86 +15,89 @@
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
 static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+#define MAXPSEUDOOPS 10
+	int i, j, k, d;
+	char ch;
 	struct {
 		char *op;
 		char *str;
+		int args[MAXPSEUDOOPS];  // XXX can't use flex arrays, all unused will be 0
 	} ops[] = {
-		{ "adc",  "1 += 2"},
-		{ "add",  "1 += 2"},
-		{ "and",  "1 &= 2"},
-		{ "call", "1 ()"},
-		{ "cmove", "if (!var) 1 = 2"},
-		{ "cmovl","if (var < 0) 1 = 2"},
-		{ "cmp", "var = 1 - 2"},
-		{ "cmpsq", "var = 1 - 2"},
-		{ "cmpsb", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!var) break; }"},
-		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }"},
-		{ "dec",  "1--"},
-		{ "div",  "1 /= 2"},
-		{ "fabs",  "abs(1)"},
-		{ "fadd",  "1 = 1 + 2"},
-		{ "fcomp",  "var = 1 - 2"},
-		{ "fcos",  "1 = cos(1)"},
-		{ "fdiv",  "1 = 1 / 2"},
-		{ "fiadd",  "1 = 1 / 2"},
-		{ "ficom",  "var = 1 - 2"},
-		{ "fidiv",  "1 = 1 / 2"},
-		{ "fidiv",  "1 = 1 * 2"},
-		{ "fisub",  "1 = 1 - 2"},
-		{ "fnul",  "1 = 1 * 2"},
-		{ "fnop",  " "},
-		{ "frndint",  "1 = (int) 1"},
-		{ "fsin",  "1 = sin(1)"},
-		{ "fsqrt",  "1 = sqrt(1)"},
-		{ "fsub",  "1 = 1 - 2"},
-		{ "fxch",  "1,2 = 2,1"},
-		{ "idiv",  "1 /= 2"},
-		{ "imul",  "1 *= 2"},
-		{ "in",   "1 = io[2]"},
-		{ "inc",  "1++"},
-		{ "ja", "if (((unsigned) var) > 0) goto 1"},
-		{ "jb", "if (((unsigned) var) < 0) goto 1"},
-		{ "jbe", "if (((unsigned) var) <= 0) goto 1"},
-		{ "je", "if (!var) goto 1"},
-		{ "jg", "if (var > 0) goto 1"},
-		{ "jge", "if (var >= 0) goto 1"},
-		{ "jle", "if (var <= 0) goto 1"},
-		{ "jmp",  "goto 1"},
-		{ "jne", "if (var) goto 1"},
-		{ "lea",  "1 = 2"},
-		{ "mov",  "1 = 2"},
-		{ "movsd",  "1 = 2"},
-		{ "movsx","1 = 2"},
-		{ "movsxd","1 = 2"},
-		{ "movzx", "1 = 2"},
-		{ "movntdq", "1 = 2"},
-		{ "movnti", "1 = 2"},
-		{ "movntpd", "1 = 2"},
-		{ "mul",  "1 *= 2"},
-		{ "neg",  "1 ~= 1"},
-		{ "nop",  ""},
-		{ "not",  "1 = !1"},
-		{ "or",   "1 |= 2"},
-		{ "out",  "io[1] = 2"},
-		{ "pop",  "pop 1"},
-		{ "push", "push 1"},
-		{ "sal",  "1 <<= 2"},
-		{ "sar",  "1 >>= 2"},
-		{ "sete",  "1 = e"},
-		{ "setne",  "1 = ne"},
-		{ "shl",  "1 <<<= 2"},
-		{ "shld",  "1 <<<= 2"},
-		{ "sbb",  "1 = 1 - 2"},
-		{ "shr",  "1 >>>= 2"},
-		{ "shlr",  "1 >>>= 2"},
-		//{ "strd",  "1 = 2 - 3"},
-		{ "sub",  "1 -= 2"},
-		{ "swap", "var = 1; 1 = 2; 2 = var"},
-		{ "test", "var = 1 & 2"},
-		{ "xchg",  "1,2 = 2,1"},
-		{ "xadd",  "1,2 = 2,1+2"},
-		{ "xor",  "1 ^= 2"},
+		{ "adc",  "# += #", {1, 2}},
+		{ "add",  "# += #", {1, 2}},
+		{ "and",  "# &= #", {1, 2}},
+		{ "call", "# ()", {1}},
+		{ "cmove", "if (!var) # = #", {1, 2}},
+		{ "cmovl","if (var < 0) # = #", {1, 2}},
+		{ "cmp", "var = # - #", {1, 2}},
+		{ "cmpsq", "var = # - #", {1, 2}},
+		{ "cmpsb", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!var) break; }", {0}},
+		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
+		{ "dec",  "#--", {1}},
+		{ "div",  "# /= #", {1, 2}},
+		{ "fabs",  "abs(#)", {1}},
+		{ "fadd",  "# = # + #", {1, 1, 2}},
+		{ "fcomp",  "var = # - #", {1, 2}},
+		{ "fcos",  "# = cos(#)", {1, 1}},
+		{ "fdiv",  "# = # / #", {1, 1, 2}},
+		{ "fiadd",  "# = # / #", {1, 1, 2}},
+		{ "ficom",  "var = # - #", {1, 2}},
+		{ "fidiv",  "# = # / #", {1, 1, 2}},
+		{ "fidiv",  "# = # * #", {1, 1, 2}},
+		{ "fisub",  "# = # - #", {1, 1, 2}},
+		{ "fnul",  "# = # * #", {1, 1, 2}},
+		{ "fnop",  " ", {0}},
+		{ "frndint",  "# = (int) #", {1, 1}},
+		{ "fsin",  "# = sin(#)", {1, 1}},
+		{ "fsqrt",  "# = sqrt(#)", {1, 1}},
+		{ "fsub",  "# = # - #", {1, 1, 2}},
+		{ "fxch",  "#,# = #,#", {1, 2, 2, 1}},
+		{ "idiv",  "# /= #", {1, 2}},
+		{ "imul",  "# *= #", {1, 2}},
+		{ "in",   "# = io[#]", {1, 2}},
+		{ "inc",  "#++", {1}},
+		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
+		{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
+		{ "jbe", "if (((unsigned) var) <= 0) goto #", {1}},
+		{ "je", "if (!var) goto #", {1}},
+		{ "jg", "if (var > 0) goto #", {1}},
+		{ "jge", "if (var >= 0) goto #", {1}},
+		{ "jle", "if (var <= 0) goto #", {1}},
+		{ "jmp",  "goto #", {1}},
+		{ "jne", "if (var) goto #", {1}},
+		{ "lea",  "# = #", {1, 2}},
+		{ "mov",  "# = #", {1, 2}},
+		{ "movsd",  "# = #", {1, 2}},
+		{ "movsx","# = #", {1, 2}},
+		{ "movsxd","# = #", {1, 2}},
+		{ "movzx", "# = #", {1, 2}},
+		{ "movntdq", "# = #", {1, 2}},
+		{ "movnti", "# = #", {1, 2}},
+		{ "movntpd", "# = #", {1, 2}},
+		{ "mul",  "# *= #", {1, 2}},
+		{ "neg",  "# ~= #", {1, 1}},
+		{ "nop",  "", {0}},
+		{ "not",  "# = !#", {1, 1}},
+		{ "or",   "# |= #", {1, 2}},
+		{ "out",  "io[#] = #", {1, 2}},
+		{ "pop",  "pop #", {1}},
+		{ "push", "push #", {1}},
+		{ "sal",  "# <<= #", {1, 2}},
+		{ "sar",  "# >>= #", {1, 2}},
+		{ "sete",  "# = e", {1}},
+		{ "setne",  "# = ne", {1}},
+		{ "shl",  "# <<<= #", {1, 2}},
+		{ "shld",  "# <<<= #", {1, 2}},
+		{ "sbb",  "# = # - #", {1, 1, 2}},
+		{ "shr",  "# >>>= #", {1, 2}},
+		{ "shlr",  "# >>>= #", {1, 2}},
+		//{ "strd",  "# = # - #", {1, 2, 3}},
+		{ "sub",  "# -= #", {1, 2}},
+		{ "swap", "var = #; # = #; # = var", {1, 1, 2, 2}},
+		{ "test", "var = # & #", {1, 2}},
+		{ "xchg",  "#,# = #,#", {1, 2, 2, 1}},
+		{ "xadd",  "#,# = #,#+#", {1, 2, 2, 1, 2}},
+		{ "xor",  "# ^= #", {1, 2}},
 		{ NULL }
 	};
 
@@ -107,18 +110,32 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	for (i = 0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j] > '0' && ops[i].str[j] <= '9') {
-						const char *w = argv[ops[i].str[j] - '0'];
+				d = 0;
+				j = 0;
+				ch = ops[i].str[j];
+				for (j = 0, k = 0; ch != '\0'; j++, k++) {
+					ch = ops[i].str[j];
+					if (ch == '#') {
+						if (d >= MAXPSEUDOOPS) {
+							// XXX Shouldn't ever happen...
+							continue;
+						}
+						int idx = ops[i].args[d];
+						d++;
+						if (idx <= 0) {
+							// XXX Shouldn't ever happen...
+							continue;
+						}
+						const char *w = argv[idx];
 						if (w != NULL) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
 					} else {
-						newstr[k] = ops[i].str[j];
+						newstr[k] = ch;
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
@@ -133,6 +150,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		}
 	}
 	return false;
+#undef MAXPSEUDOOPS
 }
 
 static int parse(RParse *p, const char *data, char *str) {

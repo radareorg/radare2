@@ -13,15 +13,14 @@ enum {
 };
 
 struct parse_ctx {
-	unsigned long flags;
-	unsigned char last;
-	unsigned char sum;
-	int chksum_nibble;
+	ut32 flags;
+	ut8  last;
+	ut8  sum;
+	int  chksum_nibble;
 };
 
 static bool append(libgdbr_t *g, const char ch) {
 	char *ptr;
-
 	if (g->data_len == g->data_max - 1) {
 		int newsize = g->data_max * 2;
 		if (newsize < 1) {
@@ -36,7 +35,6 @@ static bool append(libgdbr_t *g, const char ch) {
 		g->data = ptr;
 		g->data_max = newsize;
 	}
-
 	g->data[g->data_len++] = ch;
 	return true;
 }
@@ -44,89 +42,72 @@ static bool append(libgdbr_t *g, const char ch) {
 static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 	int i = 0;
 	int j = 0;
-
+	bool first = true;
+	g->read_buff[len] = '\0';
 	for (i = 0; i < len; i++) {
 		char cur = g->read_buff[i];
-
 		if (ctx->flags & CHKSUM) {
 			ctx->sum -= hex2int (cur) << (ctx->chksum_nibble * 4);
-
 			if (!--ctx->chksum_nibble) {
 				continue;
 			}
-
 			if (i != len - 1) {
-				eprintf ("%s: Packet too long\n", __func__);
-				return -1;
+				eprintf ("%s: Garbage at end of packet: %s\n",
+					 __func__, g->read_buff + i + 1);
 			}
-
 			if (ctx->sum != '#') {
 				eprintf ("%s: Invalid checksum\n", __func__);
 				return -1;
 			}
-
 			return 0;
 		}
-
 		ctx->sum += cur;
-
 		if (ctx->flags & ESC) {
 			if (!append (g, cur ^ 0x20)) {
 				return -1;
 			}
-
 			ctx->flags &= ~ESC;
 			continue;
 		}
-
 		if (ctx->flags & DUP) {
 			if (cur < 32 || cur > 126) {
-				eprintf ("%s: Invalid repeat count\n",
-					 __func__);
+				eprintf ("%s: Invalid repeat count: %d\n",
+					 __func__, cur);
 				return -1;
 			}
-
 			for (j = cur - 29; j > 0; j--) {
 				if (!append (g, ctx->last)) {
 					return -1;
 				}
 			}
-
 			ctx->last = 0;
 			ctx->flags &= ~DUP;
 			continue;
 		}
-
 		switch (cur) {
 		case '$':
 			if (ctx->flags & HEADER) {
 				eprintf ("%s: More than one $\n", __func__);
 				return -1;
 			}
-
 			ctx->flags |= HEADER;
 			/* Disregard any characters preceding $ */
 			ctx->sum = 0;
 			break;
-
 		case '#':
 			ctx->flags |= CHKSUM;
 			ctx->chksum_nibble = 1;
 			break;
-
 		case '}':
 			ctx->flags |= ESC;
 			break;
-
 		case '*':
-			if (!ctx->last) {
+			if (first) {
 				eprintf ("%s: Invalid repeat\n", __func__);
 				return -1;
 			}
-
 			ctx->flags |= DUP;
 			break;
-
 		case '+':
 		case '-':
 			if (!(ctx->flags & HEADER)) {
@@ -135,27 +116,26 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			}
 			/* Fall-through */
 		default:
+			first = false;
 			if (!append (g, cur)) {
 				return -1;
 			}
 			ctx->last = cur;
 		}
 	}
-
 	return 1;
 }
 
 int read_packet(libgdbr_t *g) {
 	struct parse_ctx ctx = { 0 };
 	int ret;
-
 	if (!g) {
 		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
 	}
 	g->data_len = 0;
 	while (r_socket_ready (g->sock, 0, READ_TIMEOUT) > 0) {
-		int sz = r_socket_read (g->sock, (void *)g->read_buff, g->read_max);
+		int sz = r_socket_read (g->sock, (void *)g->read_buff, g->read_max - 1);
 		if (sz <= 0) {
 			eprintf ("%s: read failed\n", __func__);
 			return -1;
@@ -179,4 +159,63 @@ int send_packet(libgdbr_t *g) {
 		return -1;
 	}
 	return r_socket_write (g->sock, g->send_buff, g->send_len);
+}
+
+int pack(libgdbr_t *g, const char *msg) {
+	int run_len;
+	size_t msg_len;
+	const char *src;
+	char prev;
+	if (!g || !msg) {
+		return -1;
+	}
+	msg_len = strlen (msg);
+	if (msg_len > g->send_max + 5) {
+		eprintf ("%s: message too long: %s", __func__, msg);
+		return -1;
+	}
+	g->send_buff[0] = '$';
+	g->send_len = 1;
+	src = msg;
+	while (*src) {
+		if (*src == '#' || *src == '$' || *src == '}') {
+			msg_len += 1;
+			if (msg_len > g->send_max + 5) {
+				eprintf ("%s: message too long: %s", __func__, msg);
+				return -1;
+			}
+			g->send_buff[g->send_len++] = '}';
+			g->send_buff[g->send_len++] = *src++ ^ 0x20;
+			continue;
+		}
+		g->send_buff[g->send_len++] = *src++;
+		if (!g->is_server) {
+			continue;
+		}
+		prev = *(src - 1);
+		run_len = 0;
+		while (src[run_len] == prev) {
+			run_len++;
+		}
+		if (run_len < 3) {                    // 3 specified in RSP documentation
+			while (run_len--) {
+				g->send_buff[g->send_len++] = *src++;
+			}
+			continue;
+		}
+		run_len += 29;                        // Encode as printable character
+		if (run_len == 35 || run_len == 36) { // Cannot use '$' or '#'
+			run_len = 34;
+		} else if (run_len > 126) {           // Max printable ascii value
+			run_len = 126;
+		}
+		g->send_buff[g->send_len++] = '*';
+		g->send_buff[g->send_len++] = run_len;
+		msg_len -= run_len - 27;              // 2 chars to encode run length
+		src += run_len - 29;
+	}
+	g->send_buff[g->send_len] = '\0';
+	snprintf (g->send_buff + g->send_len, 4, "#%.2x", cmd_checksum(g->send_buff + 1));
+	g->send_len += 3;
+	return g->send_len;
 }

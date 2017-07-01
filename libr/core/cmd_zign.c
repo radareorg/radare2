@@ -829,7 +829,7 @@ static int cmd_zign(void *data, const char *input) {
 		{
 			const char* help_msg[] = {
 				"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
-				"z", "", "show zignagures",
+				"z", "", "show zignatures",
 				"z*", "", "show zignatures in radare format",
 				"zj", "", "show zignatures in json format",
 				"z-", "zignature", "delete zignature",

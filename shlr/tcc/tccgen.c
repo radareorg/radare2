@@ -204,10 +204,14 @@ int tcc_sym_push(char* typename, int typesize, int meta)
 	CType *new_type;
 
 	new_type = (CType*)malloc(sizeof(CType));
+if (!new_type) {
+return 0;
+}
 	new_type->ref = sym_malloc();
 	new_type->t = meta;
 
 	sym_push(0, new_type, 0, 0);
+return 1;
 }
 
 void dump_type(CType *type, int depth)
@@ -1485,7 +1489,11 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
     int qualifiers, storage;
 	CType *type1 = R_NEW0(CType);
 	CType *type2 = R_NEW0(CType);
-	if (!type1 || !type2) return;
+	if (!type1 || !type2) {
+free (type1);
+free (type2);
+return;
+}
 
     while (tok == '*') {
         qualifiers = 0;
@@ -1868,7 +1876,6 @@ ST_FUNC void unary(void)
         if (!(!strncmp(tcc_state->arch, "x86", 3) && tcc_state->bits == 64 &&
 			!strncmp(tcc_state->os, "windows", 7))) {
             CType type;
-            int bt;
             next();
             skip('(');
             parse_type(&type);

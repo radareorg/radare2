@@ -29,8 +29,8 @@ static void pin_write(RAnal *a) {
 R_API void r_anal_pin_init(RAnal *a) {
 	sdb_free (DB);
 	DB = sdb_new0();
-	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
-	sdb_ptr_set (DB, "write", pin_write, 0);
+//	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
+//	sdb_ptr_set (DB, "write", pin_write, 0);
 }
 
 R_API void r_anal_pin_fini(RAnal *a) {
@@ -49,11 +49,13 @@ R_API void r_anal_pin_unset (RAnal *a, ut64 addr) {
 	sdb_unset (DB, key, 0);
 }
 
-R_API int r_anal_pin_call(RAnal *a, ut64 addr) {
+R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	char buf[64];
-	const char *name, *key = sdb_itoa (addr, buf, 16);
+	const char *key = sdb_itoa (addr, buf, 16);
 	if (key) {
-		name = sdb_const_get (DB, key, NULL);
+		return sdb_const_get (DB, key, NULL);
+#if 0
+		const char *name;
 		if (name) {
 			RAnalEsilPin fcnptr = (RAnalEsilPin)
 				sdb_ptr_get (DB, name, NULL);
@@ -62,13 +64,14 @@ R_API int r_anal_pin_call(RAnal *a, ut64 addr) {
 				return true;
 			}
 		}
+#endif
 	}
-	return false;
+	return NULL;
 }
 
 static int cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
-	if (!strncmp (k, "0x", 2)) {
+	if (*k == '0') {
 		// bind
 		a->cb_printf ("%s = %s\n", k, v);
 	} else {

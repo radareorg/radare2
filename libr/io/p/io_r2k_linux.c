@@ -486,7 +486,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (databuf) {
 				ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
 				if (ret > 0) {
-					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1);
+					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1, 1);
 				}
 			} else {
 				io->cb_printf ("Failed to allocate buffer\n");
@@ -708,7 +708,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				int j = 0;
 				for (i = 0; i < buffsize;) {
 					nextstart = 0;
-					if (i + 7 < buffsize) {
+					if (i + 7 <= buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
 					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1] &&

@@ -8,8 +8,6 @@
 
 #define ESIL_STACK_NAME "esil.ram"
 
-R_API bool core_anal_bbs(RCore *core, ut64 len);
-
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
 
@@ -2148,7 +2146,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
-		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
 		free (buf);
 		} break;
 	case 'c':
@@ -2256,6 +2254,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case '-':
 	case '*':
+	case 'R':
 	case 'j':
 	case '\0':
 		__anal_reg_list (core, type, size, str[0]);
@@ -2386,15 +2385,22 @@ repeat:
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
 	}
-	if (r_anal_pin_call (core->anal, addr)) {
-		eprintf ("esil pin called\n");
-		goto out_return_one;
-	}
 	if (esil->exectrap) {
 		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
+// RUN cmd.esil.trap here
+			goto out_return_one;
+		}
+	}
+	r_asm_set_pc (core->assembler, addr);
+	// run esil pin command here
+	const char *pincmd = r_anal_pin_call (core->anal, addr);
+	if (pincmd) {
+		r_core_cmd0 (core, pincmd);
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
+		if (addr != pc) {
 			goto out_return_one;
 		}
 	}
@@ -2402,12 +2408,17 @@ repeat:
 	if (rc != sizeof (code)) {
 		eprintf ("read error\n");
 	}
-	r_asm_set_pc (core->assembler, addr);
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+	if (ret < 0) {
+		eprintf ("anal error\n");
+	}
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
-	if (op.size < 1) {
+	if (op.size < 1 || ret < 0) {
+		if (esil->cmd && esil->cmd_todo) {
+			esil->cmd (esil, esil->cmd_todo, addr, 0);
+		}
 		op.size = 1; // avoid inverted stepping
 	}
 	{
@@ -3444,7 +3455,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			"ae", " [expr]", "evaluate ESIL expression",
 			"aex", " [hex]", "evaluate opcode expression",
 			"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
-			"aep", "[?] [addr]", "change esil PC to this address",
+			"aepc", " [addr]", "change esil PC to this address",
+			"aep", "[?] [addr]", "manage esil pin hooks",
 			"aef", " [addr]", "emulate function",
 			"aek", " [query]", "perform sdb query on ESIL.info",
 			"aek-", "", "resets the ESIL.info sdb instance",
@@ -3654,12 +3666,12 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		}
 		min = s->vaddr;
 		max = s->vaddr + s->vsize;
-		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
+		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
 	}
 	if (r_list_empty (core->io->sections)) {
 		min = core->offset;
 		max = 0xffff + min;
-		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
+		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
 	}
 }
 
@@ -3704,7 +3716,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				}
 #else
 				// add xref here
-				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, op.jump, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
@@ -3992,6 +4004,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		"axC", " addr [at]", "add code call ref",
 		"axg", " addr", "show xrefs graph to reach current function",
 		"axd", " addr [at]", "add data ref",
+		"axq", "", "list refs in quiet/human-readable format",
 		"axj", "", "list refs in json format",
 		"axF", " [flg-glob]", "find data/code references of flags",
 		"axt", " [addr]", "find data/code references to this address",
@@ -4055,6 +4068,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		break;
 	case '\0': // "ax"
 	case 'j': // "axj"
+	case 'q': // "axq"
 	case '*': // "ax*"
 		r_core_anal_ref_list (core, input[0]);
 		break;
@@ -4133,7 +4147,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					} else {
 						buf_asm = r_str_new (str);
 					}
@@ -4216,7 +4230,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					} else {
 						buf_asm = r_str_new (str);
 					}
@@ -5360,7 +5374,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_clear_line (1);
 			if (*input == 'a') { // "aaa"
 				if (dh_orig && strcmp (dh_orig, "esil")) {
-					r_core_cmd0 (core, "dh esil");
+					r_core_cmd0 (core, "dL esil");
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (should_aav (core)) {
@@ -5417,7 +5431,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				rowlog_done (core);
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
-					r_core_cmdf (core, "dh %s;dpa", dh_orig);
+					r_core_cmdf (core, "dL %s;dpa", dh_orig);
 				}
 			}
 			r_core_seek (core, curseek, 1);
@@ -5651,8 +5665,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'b':
 		if (input[1] == 'b') {
-			ut64 len = r_num_math (core->num, input + 2);
-			core_anal_bbs (core, len);
+			core_anal_bbs (core, input + 2);
 		} else if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);
 			int len = r_hex_str2bin (input + 2, buf);

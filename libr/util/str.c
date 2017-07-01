@@ -588,7 +588,7 @@ R_API char *r_str_ichr(char *str, char chr) {
 R_API const char *r_str_lchr(const char *str, char chr) {
 	if (str) {
 		int len = strlen (str);
-		for (;len >= 0; len--) {
+		for (; len >= 0; len--) {
 			if (str[len] == chr) {
 				return str + len;
 			}
@@ -859,7 +859,10 @@ R_API const char *r_str_get2(const char *str) {
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {
-	char *out = malloc (len+1);
+	if (len < 0) {
+		return NULL;
+	}
+	char *out = malloc (len + 1);
 	if (!out) {
 		return NULL;
 	}
@@ -1803,11 +1806,38 @@ R_API void r_str_argv_free(char **argv) {
 	free (argv);
 }
 
+R_API const char *r_str_firstbut (const char *s, char ch, const char *but) {
+	int idx, _b = 0;
+	ut8 *b = (ut8*)&_b;
+	const char *isbut, *p;
+	const int bsz = sizeof (_b) * 8;
+	if (!but) {
+		return strchr (s, ch);
+	}
+	if (strlen (but) >= bsz) {
+		eprintf ("r_str_firstbut: but string too long\n");
+		return NULL;
+	}
+	for (p = s; *p; p++) {
+		isbut = strchr (but, *p);
+		if (isbut) {
+			idx = (int)(size_t)(isbut - but);
+			_b = R_BIT_SWAP(b, idx);
+			continue;
+		}
+		if (*p == ch && !_b) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	int idx, _b = 0;
 	ut8 *b = (ut8*)&_b;
 	const char *isbut, *p, *lp = NULL;
-	const int bsz = sizeof (_b);
+	const int bsz = sizeof (_b) * 8;
 	if (!but) {
 		return r_str_lchr (s, ch);
 	}
@@ -1819,9 +1849,7 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int)(size_t)(isbut - but);
-			_b = R_BIT_CHK (b, idx)?
-				R_BIT_UNSET (b, idx):
-				R_BIT_SET (b, idx);
+			_b = R_BIT_SWAP(b, idx);
 			continue;
 		}
 		if (*p == ch && !_b) {
@@ -2626,4 +2654,145 @@ R_API const char *r_str_last(const char *str, const char *ch) {
 		str = ptr + 1;
 	} while (true);
 	return end;
+}
+
+// copies the WHOLE string but check n against non color code chars only.
+static int strncpy_with_color_codes(char *s1, char *s2, int n) {
+	int i = 0, j = 0;
+	int count = 0;
+	while (s2[j] && count < n) {
+		// detect (consecutive) color codes
+		while (s2[j] == 0x1b) {
+			// copy till 'm'
+			while (s2[j] && s2[j] != 'm') {
+				s1[i++] = s2[j++];
+			}
+			// copy 'm'
+			if (s2[j]) {
+				s1[i++] = s2[j++];
+			}
+		}
+		if (s2[j]) {
+			s1[i++] = s2[j++];
+			count++;
+		}
+	}
+	return i;
+}
+
+static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
+	int i = 0, j = 0;
+	int count = 0;
+	for (i = 0, j = 0; s1[i]  && s2[j] && count < n; i++, j++, count++) {
+		while (s1[i] == 0x1b) {
+			while (s1[i] && s1[i] != 'm') { 
+				i++;
+			}
+			if (s1[i]) {
+				i++;
+			}
+		}
+		while (s2[j] == 0x1b) {
+			while (s2[j] && s2[j] != 'm') {
+				j++;
+			}
+			if (s2[j]) {
+				j++;
+			}
+		}
+		if (s1[i] != s2[j]) {
+			return -1;
+		}
+	}
+
+	if (count < n && s1[i] != s2[j]) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static char *strchr_skip_color_codes(const char *s, int c) {
+	int i = 0;
+	for (i = 0; s[i]; i++) {
+		while (s[i] == 0x1b) {
+			while (s[i] && s[i] != 'm') {
+				i++;
+			}
+			if (s[i]) {
+				i++;
+			}
+		}
+		if (s[i] == (char)c) {
+			return (char*)s + i;
+		}
+	}
+	return NULL;
+}
+
+// Global buffer to speed up colorizing performance
+
+R_API char* r_str_highlight(char *str, const char *word, const char *color) {
+	if (!str || !*str) {
+		return NULL;
+	}
+	ut32 i = 0, j = 0, to_copy;
+	char *start = str;
+	ut32 l_str = strlen (str);
+	ut32 l_reset = strlen (Color_BGRESET);
+	ut32 l_color = color? strlen (color): 0;
+	if (!color) {
+		return strdup (str);
+	}
+	if (!word || !*word) {
+		return r_str_newf ("%s%s%s", color, str, Color_BGRESET);
+	}
+	ut32 l_word = strlen (word);
+	// XXX dont use static buffers
+	char o[1024] = {0};
+	while (start && (start < str + l_str)) {
+		int copied = 0;
+		// find first letter
+		start = strchr_skip_color_codes (str + i, *word);
+		if (start) {
+			to_copy = start - (str + i);
+			if (to_copy + j + 1 > sizeof (o)) {
+				// XXX. no limits
+				break;
+			}
+			strncpy (o + j, str + i, to_copy);
+			i += to_copy;
+			j += to_copy;
+			if (!strncmp_skip_color_codes (start, word, l_word)) {
+				if (j + strlen (color) >= sizeof (o)) {
+					// XXX. no limits
+					break;
+				}
+				strcpy (o + j, color);
+				j += l_color;
+				if (j + l_word >= sizeof (o)) {
+					// XXX. no limits
+					break;
+				}
+				copied = strncpy_with_color_codes (o + j, str + i, l_word);
+				i += copied;
+				j += copied;
+				if (j + strlen (Color_BGRESET) >= sizeof (o)) {
+					// XXX. no limits
+					break;
+				}
+				strcpy (o + j, Color_BGRESET);
+				j += l_reset;
+			} else {
+				o[j++] = str[i++];
+			}
+		} else {
+			if (j + strlen (str + i) >= sizeof (o)) {
+				break;
+			}
+			strcpy (o + j, str + i);
+			break;
+		}
+	}
+	return strdup (o);
 }

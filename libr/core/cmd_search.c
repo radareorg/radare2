@@ -1056,7 +1056,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num);
+					core->cons->pal.reg, core->cons->pal.num, false);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
 			} else {
@@ -1093,7 +1093,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num);
+					core->cons->pal.reg, core->cons->pal.num, false);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s ; %s\n",
@@ -2391,6 +2391,12 @@ reread:
 		goto beach;
 	case 'r': // "/r" and "/re"
 		switch (input[1]) {
+		case 'c': // "/rc"
+			r_core_anal_search (core, param.from, param.to, UT64_MAX, 'c');
+			break;
+		case 'a': // "/ra"
+			r_core_anal_search (core, param.from, param.to, UT64_MAX, 0);
+			break;
 		case 'e': // "/re"
 			if (input[2] == '?') {
 				eprintf ("Usage: /re $$ - to find references to current address\n");
@@ -2413,16 +2419,20 @@ reread:
 		case 0: // "/r"
 			if (input[param_offset - 1] == ' ') {
 				r_core_anal_search (core, param.from, param.to,
-					r_num_math (core->num, input + 2));
+					r_num_math (core->num, input + 2), 0);
 				r_core_cmdf (core, "axt @ 0x%"PFMT64x "\n", r_num_math (core->num, input + 2));
 			} else {
 				r_core_anal_search (core, param.from, param.to,
-					core->offset);
+					core->offset, 0);
 				r_core_cmdf (core, "axt @ 0x%"PFMT64x "\n", core->offset);
 			}
 			break;
 		case '?':
-			eprintf ("Usage /r[e] [address] - search references to this specific address\n");
+			eprintf ("Usage /r[e] [address] - search references to this specific address\n"
+			" /r [addr]  - search references to this specific address\n"
+			" /re [addr] - search references using esil\n"
+			" /rc        - search for call references\n"
+			" /ra        - search all references\n");
 			break;
 		}
 		break;

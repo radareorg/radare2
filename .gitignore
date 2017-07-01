@@ -85,3 +85,11 @@ tags
 .kdev4/*
 *.kdev4
 radare2-*.zip
+# Ignore meson related files
+bin/
+meson.py
+ninja.exe
+.DS_Store
+infer_out
+infer-out/
+cscope.out

@@ -18,7 +18,7 @@ files=[
 	'p/crypto_xor.c',
 ]
 
-r_crypto = shared_library('r_crypto', files,
+r_crypto = library('r_crypto', files,
 	include_directories: [platform_inc],
 	link_with: [r_util],
 	c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],

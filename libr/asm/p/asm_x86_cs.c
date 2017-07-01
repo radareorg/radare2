@@ -56,6 +56,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
+	// always unsigned immediates (kernel addresses)
+	// maybe r2 should have an option for this too?
+#if CS_API_MAJOR >= 4
+	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
+#endif
 	if (a->syntax == R_ASM_SYNTAX_MASM) {
 #if CS_API_MAJOR >= 4
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);

@@ -104,15 +104,15 @@ files=[
 'pdb/tpi.c'
 ]
 
-r_bin = shared_library('r_bin', files,
+r_bin = library('r_bin', files,
   include_directories: [platform_inc, include_directories([
-    'mangling',
-    'format'
+	'mangling',
+	'format'
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_io, r_socket, r_magic, libr2java],
   objects: [
-    libr2sdb.extract_all_objects()
+	libr2sdb.extract_all_objects()
   ],
   install: true
 )

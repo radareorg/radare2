@@ -51,7 +51,7 @@ R_API void r_cons_grep_help() {
 
 #define R_CONS_GREP_BUFSIZE 4096
 
-R_API void r_cons_grep(const char *str) {
+static void parse_grep_expression(const char *str) {
 	static char buf[R_CONS_GREP_BUFSIZE];
 	int wlen, len, is_range, num_is_parsed, fail = 0;
 	char *ptr, *optr, *ptr2, *ptr3;
@@ -86,8 +86,6 @@ R_API void r_cons_grep(const char *str) {
 				if (!strncmp (str, "{}..", 4)) {
 					cons->grep.less = 1;
 				}
-				str++;
-				return;
 			} else {
 				char *jsonPath = strdup (str + 1);
 				char *jsonPathEnd = strchr (jsonPath, '}');
@@ -275,6 +273,87 @@ while_end:
 		cons->grep.str = strdup (ptr);
 		cons->grep.nstrings++;
 		cons->grep.strings[0][0] = 0;
+	}
+}
+
+// Finds and returns next intgerp expression,
+// unescapes escaped twiddles
+static char *find_next_intgrep(char *cmd, const char *quotes) {
+	char *p;
+	do {
+		p = (char *)r_str_firstbut (cmd, '~', quotes);
+		if (!p) {
+			break;
+		}
+		if (p == cmd || *(p - 1) != '\\') {
+			return (char*)p;
+		}
+		//twiddle unescape
+		memmove (p - 1, p, strlen(p) + 1);
+		cmd = p + 1;
+	} while (*cmd);
+	return NULL;
+}
+
+/*
+ * Removes grep part from *cmd* and returns newly allocated string
+ * with reshaped grep expression.
+ *
+ * Function converts multiple twiddle expressions into internal representation.
+ * For example:
+ * converts "~str1~str2~str3~?" into "?&str1,str2,str3"
+ */
+static char *preprocess_filter_expr(char *cmd, const char *quotes) {
+	char *p1, *p2, *ns = NULL;
+	const char *strsep = "&";
+	int len;
+	int i;
+
+	p1 = find_next_intgrep (cmd, quotes);
+	if (!p1) {
+		return NULL;
+	}
+
+	len = strlen (p1);
+	if (len > 4 && r_str_endswith (p1, "~?") && p1[len - 3] != '\\') {
+		p1[len - 2] = '\0';
+		ns = r_str_append (ns, "?");
+	}
+
+	*p1 = '\0'; // remove grep part from cmd
+
+	i = 0;
+	// parse words between '~'
+	while ((p2 = find_next_intgrep (p1 + 1, quotes))) {
+		ns = r_str_append (ns, strsep);
+		ns = r_str_appendlen (ns, p1 + 1, (int)(p2 - p1 - 1));
+		p1 = p2;
+		strsep = ",";
+		i++;
+	}
+
+	if (i > 0) {
+		ns = r_str_append (ns, ",");
+	}
+
+	ns = r_str_append (ns, p1 + 1);
+
+	return ns;
+}
+
+R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
+	char *ptr;
+
+	if (!cmd) {
+		return;
+	}
+
+	ptr = preprocess_filter_expr (cmd, quotestr);
+
+	if (ptr) {
+		r_str_chop (cmd);
+		parse_grep_expression (ptr);
+		free (ptr);
 	}
 }
 

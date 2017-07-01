@@ -546,30 +546,45 @@ static int cmd_help(void *data, const char *input) {
 		r_core_clippy (r_str_chop_ro (input + 1));
 		break;
 	case 'e': // echo
-		{
-		if (input[1] == 's') { // say
+		switch (input[1]) {
+		case 's': {
 			char *msg = strdup (input + 2);
 			msg = r_str_chop (msg);
 			char *p = strchr (msg, '&');
 			if (p) *p = 0;
 			r_sys_tts (msg, p != NULL);
 			free (msg);
-		} else
-		if (input[1] == 'n') { // mimic echo -n
-			const char *msg = r_str_chop_ro (input+2);
+			}
+			break;
+		case 'c': { // column
+			r_cons_column (r_num_math (core->num, input + 2));
+			}
+			break;
+		case 'g': { // gotoxy
+			int x = atoi (input + 2);
+			char *arg = strchr (input + 2, ' ');
+			int y = arg? atoi (arg + 1): 0;
+			r_cons_gotoxy (x, y);
+			}
+			break;
+		case 'n': { // echo -n
+			const char *msg = r_str_chop_ro (input + 2);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
 			r_cons_print (newmsg);
 			free (newmsg);
-		} else {
+			}
+			break;
+		default: {
 			const char *msg = r_str_chop_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
 			r_cons_println (newmsg);
 			free (newmsg);
-		}
+			}
+			break;
 		}
 		break;
 	case 's': // sequence from to step
@@ -724,7 +739,7 @@ static int cmd_help(void *data, const char *input) {
 			"?b", " [num]", "show binary value of number",
 			"?b64[-]", " [str]", "encode/decode in base64",
 			"?d[.]", " opcode", "describe opcode for asm.arch",
-			"?e[n]", " string", "echo string, optionally without trailing newline",
+			"?e[ngc]", " string", "echo string, optionally without trailing newline (nonl, gotoxy, column)",
 			"?f", " [num] [str]", "map each bit of the number as flag string index",
 			"?h", " [str]", "calculate hash for given string",
 			"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",

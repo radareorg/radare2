@@ -19,8 +19,10 @@
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
 
-#define R_ELF_FULL_RELRO 2 
+#define R_ELF_NO_RELRO 0
 #define R_ELF_PART_RELRO 1
+#define R_ELF_FULL_RELRO 2
+
 #define bprintf if(bin->verbose)eprintf
 
 #define READ8(x, i) r_read_ble8(x + i); i += 1;
@@ -463,13 +465,13 @@ static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	r = Elf_(r_bin_elf_has_relro)(bin);
 	switch (r) {
 	case R_ELF_FULL_RELRO:
-		sdb_set (bin->kv, "elf.relro", "full relro", 0);
+		sdb_set (bin->kv, "elf.relro", "full", 0);
 		break;
 	case R_ELF_PART_RELRO:
-		sdb_set (bin->kv, "elf.relro", "partial relro", 0);
+		sdb_set (bin->kv, "elf.relro", "partial", 0);
 		break;
 	default:
-		sdb_set (bin->kv, "elf.relro", "no relro", 0);
+		sdb_set (bin->kv, "elf.relro", "no", 0);
 		break;
 	}
 	sdb_num_set (bin->kv, "elf_strtab.offset", strtabaddr, 0);
@@ -1392,30 +1394,59 @@ out:
 
 int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
 	int i;
-	if (bin && bin->phdr)
-		for (i = 0; i < bin->ehdr.e_phnum; i++)
-			if (bin->phdr[i].p_type == PT_GNU_STACK)
+	if (bin && bin->phdr) {
+		for (i = 0; i < bin->ehdr.e_phnum; i++) {
+			if (bin->phdr[i].p_type == PT_GNU_STACK) {
 				return (!(bin->phdr[i].p_flags & 1))? 1: 0;
+			}
+		}
+	}
 	return 0;
 }
 
 int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 	int i;
+	bool haveBindNow = false;
+	bool haveGnuRelro = false;
 	if (bin && bin->dyn_buf) {
 		for (i = 0; i < bin->dyn_entries; i++) {
-			if (bin->dyn_buf[i].d_tag == DT_BIND_NOW) {
-				return 2;
+			switch (bin->dyn_buf[i].d_tag) {
+			case DT_BIND_NOW:
+				haveBindNow = true;
+				break;
+			case DT_FLAGS:
+				for (i++; i < bin->dyn_entries ; i++) {
+					ut32 dTag = bin->dyn_buf[i].d_tag;
+					if (!dTag) {
+						break;
+					}
+					switch (dTag) {
+					case DT_FLAGS_1:
+						if (bin->dyn_buf[i].d_un.d_val & DF_1_NOW) {
+							haveBindNow = true;
+							break;
+						}
+					}
+				}
+				break;
 			}
 		}
 	}
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
-				return 1;
+				haveGnuRelro = true;
+				break;
 			}
 		}
 	}
-	return 0;
+	if (haveGnuRelro) {
+		if (haveBindNow) {
+			return R_ELF_FULL_RELRO;
+		}
+		return R_ELF_PART_RELRO;
+	}
+	return R_ELF_NO_RELRO;
 }
 
 /*
@@ -1799,6 +1830,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");
+	case EM_HEXAGON:
+		return strdup ("hexagon");
 	case EM_BLACKFIN:
 		return strdup ("blackfin");
 	case EM_SPARC:

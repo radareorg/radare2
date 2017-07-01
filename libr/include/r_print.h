@@ -114,7 +114,7 @@ R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height);
 R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
-R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step);
+R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
@@ -161,7 +161,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
 R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
-R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num);
+R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset);
 R_API const char * r_print_color_op_type(RPrint *p, ut64 anal_type);
 R_API void r_print_set_interrupted(int i);
 R_API void r_print_init_rowoffsets(RPrint *p);

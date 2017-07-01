@@ -8,11 +8,11 @@ ec push black
 ec pop black
 ec cmp black
 ec nop blue
-ec jmp magenta
-ec cjmp magenta
+ec jmp green
+ec cjmp green
 ec call rgb:000 rgb:ff0
 ec input black
-ec fline red
+ec fline green
 ec prompt black
 ec flag blue
 ec fname blue
@@ -20,15 +20,15 @@ ec comment magenta
 ec reg blue
 ec creg blue
 ec trap red
-ec swi red
+ec swi green
 ec num blue
 ec b0x7f gray
 ec b0xff red
 ec b0x00 rgb:777
 ec btext black
 ec offset black
-ec flow magenta
-ec fline green
+ec flow green
+ec flow2 green
 ec mov black
 ec invalid red
 ec graph.box blue

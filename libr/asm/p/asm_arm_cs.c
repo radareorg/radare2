@@ -95,7 +95,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_free (insn, n);
 	beach:
-	//cs_close (&cd);
+	cs_close (&cd);
 	if (op) {
 		if (!op->buf_asm[0]) {
 			strcpy (op->buf_asm, "invalid");

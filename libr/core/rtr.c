@@ -676,7 +676,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 							r_core_cmd0 (core, cmd + 1);
 							out = NULL;
 						} else {
-							// eprintf ("CMD (%s)\n", cmd);
 							out = r_core_cmd_str_pipe (core, cmd);
 						}
 						if (out) {
@@ -890,15 +889,15 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	return ret;
 }
 
-static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, size_t max_len) {
+static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd, char *out_buf, size_t max_len) {
 	int ret;
 	RList *list;
 	RListIter *iter;
-	RRegItem *reg_item;
-	int reg_size;
-	ut64 reg_value;
-	utX reg_value_big;
-	ut64 m_off;
+	gdb_reg_t *gdb_reg;
+	utX val_big;
+	ut64 m_off, reg_val;
+	bool be;
+	RDebugPid *dbgpid;
 	if (!core_ptr || ! cmd) {
 		return -1;
 	}
@@ -906,82 +905,138 @@ static int r_core_rtr_gdb_cb(void *core_ptr, const char *cmd, char *out_buf, siz
 	switch (cmd[0]) {
 	case 'd':
 		switch (cmd[1]) {
+		case 'm': // dm
+			if (snprintf (out_buf, max_len - 1, "%"PFMT64x, r_debug_get_baddr (core->dbg, NULL)) < 0) {
+				return -1;
+			}
+			return 0;
 		case 'p': // dp
 			switch (cmd[2]) {
 			case '\0': // dp
 				// TODO support multiprocess
 				snprintf (out_buf, max_len - 1, "QC%x", core->dbg->tid);
 				return 0;
-			case 't': // dpt
-				r_core_cmd (core, cmd, 0);
-				return 0;
+			case 't':
+				switch (cmd[3]) {
+				case '\0': // dpt
+					if (!core->dbg->h->threads) {
+						return -1;
+					}
+					if (!(list = core->dbg->h->threads(core->dbg, core->dbg->pid))) {
+						return -1;
+					}
+					memset (out_buf, 0, max_len);
+					out_buf[0] = 'm';
+					ret = 1;
+					r_list_foreach (list, iter, dbgpid) {
+						// Max length of a hex pid = 8?
+						if (ret >= max_len - 9) {
+							break;
+						}
+						snprintf (out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
+						ret = strlen (out_buf);
+					}
+					if (ret > 1) {
+						ret--;
+						out_buf[ret] = '\0';
+					}
+					return 0;
+				case 'r': // dptr -> return current tid as int
+					return core->dbg->tid;
+				default:
+					return r_core_cmd (core, cmd, 0);
+				}
 			}
 			break;
 		case 'r': // dr
-			if (!(list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR))) {
-				return -1;
-			}
+			be = r_config_get_i (core->config, "cfg.bigendian");
 			ret = 0;
-			if ((reg_size = r_config_get_i (core->config, "asm.bits")) == 0) {
+			if (!(gdb_reg = g->registers)) {
 				return -1;
 			}
-			r_list_foreach (list, iter, reg_item) {
-				// TODO thumb (ref. - dreg.c:140)
-				if (reg_item->size != reg_size) {
-					continue;
-				}
-				if (reg_size < 80) {
-					reg_value = r_reg_get_value (core->dbg->reg, reg_item);
-					if (!(r_config_get_i (core->config, "cfg.bigendian"))) {
-						reg_value = r_swap_ut64 (reg_value);
-					}
-					snprintf (out_buf + ret, max_len - ret - 1, "%016"PFMT64x, reg_value);
-				} else {
-					reg_value = r_reg_get_value_big (core->dbg->reg, reg_item, &reg_value_big);
-					switch (reg_size) {
-					case 80:
-						if (!(r_config_get_i (core->config, "cfg.bigendian"))) {
-							snprintf (out_buf + ret, max_len - ret - 1, "%016"PFMT64x"%04x",
-								  r_swap_ut64 (reg_value_big.v80.Low), r_swap_ut16 (reg_value_big.v80.High));
-							break;
-						}
-						snprintf (out_buf + ret, max_len - ret - 1, "%04x%016"PFMT64x,
-							  reg_value_big.v80.High, reg_value_big.v80.Low);
-						break;
-					case 96:
-						if (!(r_config_get_i (core->config, "cfg.bigendian"))) {
-							snprintf (out_buf + ret, max_len - ret - 1, "%016"PFMT64x"%08x",
-								  r_swap_ut64 (reg_value_big.v80.Low), r_swap_ut32 (reg_value_big.v80.High));
-							break;
-						}
-						snprintf (out_buf + ret, max_len - ret - 1, "%08x%016"PFMT64x,
-							  reg_value_big.v96.High, reg_value_big.v96.Low);
-						break;
-					case 128:
-						if (!(r_config_get_i (core->config, "cfg.bigendian"))) {
-							snprintf (out_buf + ret, max_len - ret - 1, "%016"PFMT64x"%016"PFMT64x,
-								  r_swap_ut64 (reg_value_big.v80.Low), r_swap_ut64 (reg_value_big.v80.High));
-							break;
-						}
-						snprintf (out_buf + ret, max_len - ret - 1, "%016"PFMT64x"%016"PFMT64x,
-							  reg_value_big.v128.High, reg_value_big.v128.Low);
-						break;
-					default:
-						return -1;
-					}
-				}
-				ret += reg_size / 4;
-				if (ret >= max_len) {
+			while (*gdb_reg->name) {
+				if (ret + gdb_reg->size * 2 >= max_len - 1) {
 					return -1;
 				}
+				if (gdb_reg->size <= 8) {
+					reg_val = r_reg_getv (core->dbg->reg, gdb_reg->name);
+					if (!be) {
+						switch (gdb_reg->size) {
+						case 2:
+							reg_val = r_swap_ut16 (reg_val) & 0xFFFF;
+							break;
+						case 4:
+							reg_val = r_swap_ut32 (reg_val) & 0xFFFFFFFF;
+							break;
+						case 8:
+							reg_val = r_swap_ut64 (reg_val);
+							break;
+						default:
+							eprintf ("%s: Unsupported reg size: %d\n", __func__,
+								 (int) gdb_reg->size);
+						}
+					}
+					snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+						  gdb_reg->size == 2 ? "%04"PFMT64x
+						  : gdb_reg->size == 4 ? "%08"PFMT64x
+						  : "%016"PFMT64x, reg_val);
+				} else {
+					r_reg_get_value_big (core->dbg->reg,
+							     r_reg_get (core->dbg->reg, gdb_reg->name, -1),
+							     &val_big);
+					switch (gdb_reg->size) {
+					case 10:
+						if (be) {
+							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+								  "%04x%016"PFMT64x, val_big.v80.High,
+								  val_big.v80.Low);
+						} else {
+							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+								  "%016"PFMT64x"%04x", r_swap_ut64 (val_big.v80.Low),
+								  r_swap_ut16 (val_big.v80.High));
+						}
+						break;
+					case 12:
+						if (be) {
+							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+								  "%08"PFMT32x"%016"PFMT64x, val_big.v96.High,
+								  val_big.v96.Low);
+						} else {
+							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+								  "%016"PFMT64x"%08"PFMT32x, r_swap_ut64 (val_big.v96.Low),
+								  r_swap_ut32 (val_big.v96.High));
+						}
+						break;
+					case 16:
+						if (be) {
+							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+								  "%016"PFMT64x"%016"PFMT64x, val_big.v128.High,
+								  val_big.v128.Low);
+						} else {
+							snprintf (out_buf + ret, gdb_reg->size * 2 + 1,
+								  "%016"PFMT64x"%016"PFMT64x, r_swap_ut64 (val_big.v128.Low),
+								  r_swap_ut64 (val_big.v128.High));
+						}
+						break;
+					default:
+						eprintf ("%s: big registers not yet supported\n", __func__);
+						break;
+					}
+				}
+				ret += gdb_reg->size * 2;
+				gdb_reg++;
 			}
+			out_buf[ret] = '\0';
 			return ret;
+		default:
+			return r_core_cmd (core, cmd, 0);
 		}
 		break;
 	case 'm':
-		sscanf (cmd + 1, "%"PFMT64x" %d", &m_off, &ret);
-		r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
-		return ret;
+		sscanf (cmd + 1, "%"PFMT64x",%x", &m_off, &ret);
+		return r_io_read_at (core->io, m_off, (ut8*) out_buf, ret);
+	default:
+		return r_core_cmd (core, cmd, 0);
 	}
 	return -1;
 }
@@ -991,7 +1046,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	RSocket *sock;
 	int p, ret;
 	char port[10];
-	const char *file = NULL;
+	char *file = NULL, *args = NULL;
 	libgdbr_t *g;
 	RCoreFile *cf;
 
@@ -1015,7 +1070,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			eprintf ("gdbserver: File not specified\n");
 			return -1;
 		}
-		while (*file && isspace (*file)) {
+		while (isspace (*file)) {
 			file++;
 		}
 		if (!*file) {
@@ -1023,12 +1078,25 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 			return -1;
 		}
 	}
+	if (file) {
+		args = strchr (file, ' ');
+		if (args) {
+			*args++ = '\0';
+			while (isspace (*args)) {
+				args++;
+			}
+		} else {
+			args = "";
+		}
+	} else {
+		args = "";
+	}
 
 	if (!(cf = r_core_file_open (core, file, R_IO_READ, 0))) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}
-	r_core_file_reopen_debug (core, "");
+	r_core_file_reopen_debug (core, args);
 
 	if (!(sock = r_socket_new (false))) {
 		eprintf ("gdbserver: Could not open socket for listening\n");
@@ -1044,7 +1112,8 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
 		return -1;
 	}
-	gdbr_init (g);
+	gdbr_init (g, true);
+	gdbr_set_architecture (g, r_config_get (core->config, "asm.arch"), r_config_get_i (core->config, "asm.bits"));
 	core->gdbserver_up = 1;
 	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
 
@@ -1584,8 +1653,9 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	ut8 buf[1024];
 
 	for (; retries > 0; r_sys_usleep (10 * 1000)) {
-		if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout))
+		if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout)) {
 			break;
+		}
 		retries--;
 	}
 	if (retries > 0) {

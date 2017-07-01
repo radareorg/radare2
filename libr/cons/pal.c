@@ -64,6 +64,7 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.gui_background = Color_BLACK;
 	cons->pal.gui_alt_background = Color_WHITE;
 	cons->pal.gui_border = Color_BLACK;
+	cons->pal.highlight = Color_BGRED;
 
 	cons->pal.graph_box = Color_RESET;
 	cons->pal.graph_box2 = Color_BLUE;
@@ -276,6 +277,7 @@ static struct {
 	{ "gui.background", r_offsetof (RConsPalette, gui_background) },
 	{ "gui.alt_background", r_offsetof (RConsPalette, gui_alt_background) },
 	{ "gui.border", r_offsetof (RConsPalette, gui_border) },
+	{ "highlight", r_offsetof (RConsPalette, highlight) },
 	{ NULL, 0 }
 };
 

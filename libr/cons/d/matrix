@@ -13,6 +13,7 @@ ec comment rgb:060
 ec ret rgb:0b0
 ec fline rgb:0a0
 ec flow bgreen
+ec flow2 green
 ec fname rgb:0b0
 ec label rgb:0f0
 ec math rgb:040

@@ -595,7 +595,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		} else if (!strcmp (anal->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
 		} else if (!strcmp (anal->cpu, "v2")) {
+#if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
+#endif
 		}
 	}
 	mode |= (anal->bits==64)? CS_MODE_MIPS64: CS_MODE_MIPS32;

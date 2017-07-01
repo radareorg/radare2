@@ -10,7 +10,7 @@ files=[
 'xrefs.c',
 ]
 
-r_search = shared_library('r_search', files,
+r_search = library('r_search', files,
   include_directories: [platform_inc],
   link_with: [r_util],
   install: true

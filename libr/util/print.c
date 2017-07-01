@@ -664,8 +664,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 }
 
-// XXX: step is broken
-R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
+R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback) printf;
 	int i, j, k, inc = 16;
 	int sparse_char = 0;
@@ -706,6 +705,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	if (inc < 1) {
 		inc = 1;
+	}
+	if (zoomsz < 1) {
+		zoomsz = 1;
 	}
 	switch (base) {
 	case -10:
@@ -808,7 +810,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ("|");
 			}
 			/* print comment header*/
-			if (p->use_comments && !compact) {
+			if (p && p->use_comments && !compact) {
 				if (col != 2) {
 					printfmt (" ");
 				}
@@ -847,7 +849,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		if (use_offset) {
-			r_print_addr (p, addr + j);
+			r_print_addr (p, addr + j * zoomsz);
 		}
 		if (use_hexa) {
 			if (!compact) {
@@ -981,7 +983,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
-		if (p->use_comments) {
+		if (p && p->use_comments) {
 			for (; j < i + inc; j++) {
 				printfmt (" ");
 			}
@@ -1250,12 +1252,11 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 
 R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;
-	ut8 *bufz, *bufz2;
+	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
 	ut64 size = (to - from);
 	size = len? size / len: 0;
 
-	bufz = bufz2 = NULL;
 	if (maxlen < 2) {
 		maxlen = 1024 * 1024;
 	}
@@ -1301,7 +1302,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 		p->zoom->size = size;
 	}
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
-	r_print_hexdump (p, from, bufz, len, 16, size);
+	r_print_hexdump (p, from, bufz, len, 16, 1, size);
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 
@@ -1332,7 +1333,19 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		ut8 next = (i + 1 < size)? arr[i + 1]: 0;
 		int base = 0;
 		if (addr != UT64_MAX && step > 0) {
-			p->cb_printf ("0x%08" PFMT64x " ", addr + (i * step));
+			ut64 at = addr + (i * step);
+			if (p->cur_enabled) {
+				if (i == p->cur) {
+					p->cb_printf (Color_INVERT"> 0x%08" PFMT64x " "Color_RESET, at);
+					if (p->num) {
+						p->num->value = at;
+					}
+				} else {
+					p->cb_printf ("  0x%08" PFMT64x " ", at);
+				}
+			} else {
+				p->cb_printf ("0x%08" PFMT64x " ", at);
+			}
 			p->cb_printf ("%02x %04x |", i, arr[i]);
 		} else {
 			p->cb_printf ("|");
@@ -1522,12 +1535,37 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 #define COLORIZE_BUFSIZE 1024
 static char o[COLORIZE_BUFSIZE];
 
-R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num) {
+static bool issymbol(char c) {
+	switch (c) {
+	case '+':
+	case '-':
+	/* case '/': not good for dalvik */
+	case '>':
+	case '<':
+	case '(':
+	case ')':
+	case '*':
+	case '%':
+	case ']':
+	case '[':
+	case ',':
+	case ' ':
+	case '{':
+	case '}':
+		return true;
+	default:
+		return false;
+	}
+}
+
+R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
-	ut32 c_reset = strlen (Color_RESET);
+	char *reset = partial_reset ? Color_NOBGRESET:Color_RESET;
+	ut32 c_reset = strlen (reset);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	int is_num;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
+	char previous = '\0';
 
 	if (!p || !*p) {
 		return NULL;
@@ -1543,6 +1581,16 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
+		if ((p[i] == '0' && p[i+1] == 'x') || (isdigit (p[i]) && issymbol (previous))) {
+			int nlen = strlen (num);
+			if (nlen + j >= sizeof (o)) {
+				eprintf ("Colorize buffer is too small\n");
+				break;
+			}
+			memcpy (o + j, num, nlen + 1);
+			j += nlen;
+		}
+		previous = p[i];
 		if (j + 100 >= COLORIZE_BUFSIZE) {
 			eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 			return strdup (p);
@@ -1587,25 +1635,17 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
-				strcpy (o + j, Color_RESET);
-				j += strlen (Color_RESET);
-				o[j++] = p[i];
-				if (p[i] == '$' || ((p[i] > '0') && (p[i] < '9'))) {
-					ut32 num_len = strlen (num);
-					if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
-						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-						return strdup (p);
-					}
-					strcpy (o + j, num);
-					j += strlen (num) - 1;
-				} else {
+				strcpy (o + j, reset);
+				j += strlen (reset);
+				o[j] = p[i];
+				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
 					ut32 reg_len = strlen (reg);
 					if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}
-					strcpy (o + j, reg);
-					j += strlen (reg) - 1;
+					strcpy (o + j + 1, reg);
+					j += strlen (reg);
 				}
 				continue;
 			}
@@ -1639,17 +1679,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			if (!p[k]) {
 				is_mod = 1;
 			}
-			if (!is_jmp && is_mod) {
-				if (is_num) {
-					ut32 num_len = strlen (num);
-					if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
-						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-						return strdup (p);
-					}
-					strcpy (o + j, num);
-					j += strlen (num);
-					break;
-				}
+			if (is_mod) {
 				// COLOR FOR REGISTER
 				ut32 reg_len = strlen (reg);
 				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
@@ -1662,13 +1692,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			}
 			break;
 		case '0': /* address */
-			if (!is_jmp && p[i + 1] == 'x') {
-				ut32 num_len = strlen (num);
-				/* if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100); */
-				if (num_len + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-					return strdup (p);
-				}
+			if (p[i + 1] == 'x') {
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
 					RIOSection *s = print->iob.section_vget (print->iob.io, r_num_get (NULL, p + i));
 					if (s) {
@@ -1682,8 +1706,6 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 						j++;
 					}
 				}
-				strcpy (o + j, num);
-				j += strlen (num);
 			}
 			break;
 		}
@@ -1697,7 +1719,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		opcode_sz += 21;
 		/* free (t_o); */
 	}
-	strcpy (o + j, Color_RESET);
+	strcpy (o + j, reset);
 	//strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
 	return strdup (o);
 }

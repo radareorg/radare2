@@ -24,4 +24,4 @@ TARGET_WIND=debug_wind.${EXT_SO}
 ALL_TARGETS+=${TARGET_WIND}
 
 ${TARGET_WIND}: ${OBJ_WIND}
-	${CC_LIB} $(call libname,debug_wind) ${OBJ_WIND} ${CFLAGS} ${LDFLAGS}
+	${CC} $(call libname,debug_wind) ${OBJ_WIND} ${CFLAGS} ${LDFLAGS}

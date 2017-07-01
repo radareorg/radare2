@@ -21,6 +21,7 @@ ec num rgb:f03
 ec reg rgb:6f0
 ec fline rgb:fc0
 ec flow rgb:0f0
+ec flow2 rgb:0f0
 ec args yellow
 ec floc rgb:fc0
 ec flag rgb:0cf

@@ -322,6 +322,7 @@ enum {
 	R_META_TYPE_HIDE = 'h',
 	R_META_TYPE_COMMENT = 'C',
 	R_META_TYPE_RUN = 'r',
+	R_META_TYPE_HIGHLIGHT = 'H',
 };
 
 // anal
@@ -1015,8 +1016,10 @@ typedef struct r_anal_esil_t {
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
-	char *cmd_trap; // r2 (external) command to run when an interrupt occurs
-	char *cmd_mdev; // r2 (external) command to run when an interrupt occurs
+	char *cmd_trap; // r2 (external) command to run when a trap occurs
+	char *cmd_mdev; // r2 (external) command to run when an memory mapped device address is used
+	char *cmd_todo; // r2 (external) command to run when esil expr contains TODO
+	char *cmd_ioer; // r2 (external) command to run when esil fails to IO
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
@@ -1242,6 +1245,7 @@ R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
 R_API bool r_anal_esil_set_pc (RAnalEsil *esil, ut64 addr);
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull);
 R_API void r_anal_esil_free (RAnalEsil *esil);
+R_API int r_anal_esil_runword (RAnalEsil *esil, const char *word);
 R_API int r_anal_esil_parse (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil);
 R_API int r_anal_esil_mem_read (RAnalEsil *esil, ut64 addr, ut8 *buf, int len);
@@ -1267,7 +1271,7 @@ R_API void r_anal_pin_init(RAnal *a);
 R_API void r_anal_pin_fini(RAnal *a);
 R_API void r_anal_pin (RAnal *a, ut64 addr, const char *name);
 R_API void r_anal_pin_unset (RAnal *a, ut64 addr);
-R_API int r_anal_pin_call(RAnal *a, ut64 addr);
+R_API const char *r_anal_pin_call(RAnal *a, ut64 addr);
 R_API void r_anal_pin_list(RAnal *a);
 
 /* fcn.c */

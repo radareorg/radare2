@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -44,7 +44,7 @@ RAsmPlugin r_asm_plugin_java = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_java,
 	.version = R2_VERSION

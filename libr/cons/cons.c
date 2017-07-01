@@ -464,8 +464,10 @@ R_API void r_cons_clear_line(int std_err) {
 	} else {
 		char white[1024];
 		memset (&white, ' ', sizeof (white));
-		if (I.columns < sizeof (white)) {
+		if (I.columns > 0 && I.columns < sizeof(white)) {
 			white[I.columns - 1] = 0;
+		} else if (I.columns == 0) {
+			white[0] = 0;
 		} else {
 			white[sizeof (white) - 1] = 0; // HACK
 		}
@@ -779,25 +781,25 @@ R_API void r_cons_visual_write (char *buffer) {
 
 R_API void r_cons_printf_list(const char *format, va_list ap) {
 	size_t size, written;
-	va_list ap2;
+	va_list ap2, ap3;
 
 	va_copy (ap2, ap);
+	va_copy (ap3, ap);
 	if (I.null || !format) {
 		va_end (ap2);
+		va_end (ap3);
 		return;
 	}
 	if (strchr (format, '%')) {
 		palloc (MOAR + strlen (format) * 20);
 club:
 		size = I.buffer_sz - I.buffer_len - 1; /* remaining space in I.buffer */
-		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap);
+		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap3);
 		if (written >= size) { /* not all bytes were written */
 			palloc (written);
-			written = vsnprintf (I.buffer + I.buffer_len, written, format, ap2);
-			if (written >= size) {
-				palloc (written);
-				goto club;
-			}
+			va_end (ap3);
+			va_copy (ap3, ap2);
+			goto club;
 		}
 		I.buffer_len += written;
 		I.buffer[I.buffer_len] = 0;
@@ -805,6 +807,7 @@ club:
 		r_cons_strcat (format);
 	}
 	va_end (ap2);
+	va_end (ap3);
 }
 
 R_API void r_cons_printf(const char *format, ...) {
@@ -952,6 +955,11 @@ R_API int r_cons_get_size(int *rows) {
 	GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) - 1;
 	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top; // last row empty
+ 	if (I.columns == -1 && I.rows == 0) {
+		// Stdout is probably redirected so we set default values
+		I.columns = 80;
+		I.rows = 23;
+	}
 #elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;

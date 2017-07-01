@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 
 #include "r_util.h"
 #include "r_types.h"
@@ -27,20 +27,18 @@ static int typeload(void *p, const char *k, const char *v) {
 		return -1;
 	}
 	int btype = 0;
-	CType *ctype = R_NEW0(CType);
 	RAnal *anal = (RAnal*)p;
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp(k, "struct.", 7)) {
 		// structure
 		btype = VT_STRUCT;
-		char *typename = k;
+		const char *typename = k;
 		int typesize = 0;
 		// TODO: Add typesize here
 		char* query = sdb_fmt (-1, "struct.%s", k);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
-		int ret = 0;
 		if (members) {
 			do {
 				char *name = sdb_anext (ptr, &next);

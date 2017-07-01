@@ -20,11 +20,38 @@ int gdbr_connect(libgdbr_t *g, const char *server, int port);
 int gdbr_disconnect(libgdbr_t *g);
 
 /*!
+ * \brief invalidates the reg cache
+ */
+void gdbr_invalidate_reg_cache();
+
+/*!
+ * \brief checks for extended mode availability
+ * \returns a failure code (currently -1) or 0 if call successfully
+ */
+int gdbr_check_extended_mode(libgdbr_t *g);
+
+/*!
+ * \brief attaches to a process
+ * \param pid of the process to attach to
+ * \returns a failure code (currently -1) or 0 if call successfully
+ */
+int gdbr_attach(libgdbr_t *g, int pid);
+
+/*!
+ * \brief detaches from a process
+ * \param pid of the process to detach from (only the multiprocess/pid variant)
+ * \returns a failure code (currently -1) or 0 if call successfully
+ */
+int gdbr_detach(libgdbr_t *g);
+int gdbr_detach_pid(libgdbr_t *g, int pid);
+
+/*!
  * \brief kills the process the remote gdbserver is debugging (TODO: handle pid)
+ * \param pid of the process to detach from (only the multiprocess/pid variant)
  * \retuns a failure code (currently -1) or 0 if call successfully
  */
 bool gdbr_kill(libgdbr_t *g);
-
+bool gdbr_kill_pid(libgdbr_t *g, int pid);
 
 // Commands
 int gdbr_continue(libgdbr_t *g, int thread_id);
@@ -60,5 +87,11 @@ int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions);
 int gdbr_remove_bp(libgdbr_t *g, ut64 address);
 int gdbr_remove_hwbp(libgdbr_t *g, ut64 address);
 
+/*!
+ * File read from remote target (only one file open at a time for now)
+ */
+int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode);
+int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len);
+int gdbr_close_file(libgdbr_t *g);
 
 #endif  // CLIENT_COMMANDS_H

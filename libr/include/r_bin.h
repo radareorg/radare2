@@ -115,7 +115,8 @@ enum {
 	R_STRING_TYPE_DETECT = '?',
 	R_STRING_TYPE_ASCII = 'a',
 	R_STRING_TYPE_UTF8 = 'u',
-	R_STRING_TYPE_WIDE = 'w',
+	R_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
+	R_STRING_TYPE_WIDE32 = 'W', // utf32
 	R_STRING_TYPE_BASE64 = 'b',
 };
 
@@ -471,6 +472,7 @@ typedef struct r_bin_field_t {
 	char *name;
 	char *comment;
 	char *format;
+	ut64 flags;
 } RBinField;
 
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format);

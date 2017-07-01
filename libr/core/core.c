@@ -87,16 +87,23 @@ static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const cha
 }
 
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
-	bool oecho = core->cons->echo;
 	const char *cmdbp = r_config_get (core->config, "cmd.bp");
-	core->cons->echo = true;
-	if (cmdbp && *cmdbp) {
+	const bool cmdbp_exists = (cmdbp && *cmdbp);
+	const bool bpcmd_exists = (bpi->data && bpi->data[0]);
+	const bool may_output = (cmdbp_exists || bpcmd_exists);
+	if (may_output) {
+		r_cons_push ();
+	}
+	if (cmdbp_exists) {
 		r_core_cmd0 (core, cmdbp);
 	}
-	if (bpi->data && bpi->data[0]) {
+	if (bpcmd_exists) {
 		r_core_cmd0 (core, bpi->data);
 	}
-	core->cons->echo = oecho;
+	if (may_output) {
+		r_cons_flush ();
+		r_cons_pop ();
+	}
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
@@ -628,20 +635,118 @@ static const char *radare_argv[] = {
 	NULL
 };
 
-static int getsdelta(const char *data) {
-	int i;
-	for (i = 1; data[i]; i++) {
-		if (data[i] == ' ') {
-			return i + 1;
-		}
+static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) {
+	char *lpath = NULL, *dirname = NULL , *basename = NULL;
+	char *home = NULL, *filename = NULL, *p = NULL;
+	int n = 0, i = argv_idx;
+	RList *list;
+	RListIter *iter;
+
+	if (!path) {
+		goto out;
 	}
-	return 0;
+
+	lpath = r_str_new (path);
+	p = (char *)r_str_last (lpath, R_SYS_DIR);
+	if (p) {
+		*p = 0;
+		if (p == lpath) { // /xxx
+			dirname = r_str_new ("/");
+		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
+			dirname = r_str_home (lpath + 2);
+		} else if (lpath[0] == '~') { // ~/xxx
+			if (!(home = r_str_home (NULL))) {
+				goto out;
+			}
+			dirname = r_str_newf ("%s%s", home, R_SYS_DIR);
+			free (home);
+		} else if (lpath[0] == '.' || lpath[0] == '/' ) { // ./xxx/yyy || /xxx/yyy
+			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
+		} else { // xxx/yyy
+			dirname = r_str_newf (".%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
+		}
+		basename = r_str_new (p + 1);
+	} else { // xxx
+		dirname = r_str_newf (".%s", R_SYS_DIR);
+		basename = r_str_new (lpath);
+	}
+
+	if (!dirname || !basename) {
+		goto out;
+	}
+
+	list= r_sys_dir (dirname);
+	n = strlen (basename);
+	if (list) {
+		r_list_foreach (list, iter, filename) {
+			if (*filename == '.') {
+				continue;
+			}
+			if (!basename[0] || !strncmp (filename, basename, n)) {
+				tmp_argv[i++] = r_str_newf ("%s%s", dirname, filename);
+				if (i == TMP_ARGV_SZ - 1) {
+					i--;
+					break;
+				}
+			}
+		}
+		r_list_free (list);
+	}
+	tmp_argv[i] = NULL;
+	line->completion.argc = i;
+	line->completion.argv = tmp_argv;
+
+out:
+	free (lpath);
+	free (dirname);
+	free (basename);
+
+	return i;
+}
+
+static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
+	char *args = NULL, *input = NULL;
+	int n = 0, i = 0;
+
+	args = r_str_new (line->buffer.data);
+	if (!args) {
+		goto out;
+	}
+
+	n = r_str_word_set0 (args);
+	if (n < narg) {
+		goto out;
+	}
+
+	input = r_str_new (r_str_word_get0 (args, narg));
+	if (!input) {
+		goto out;
+	}
+	const char *tinput = r_str_trim_const (input);
+
+	int argv_idx = autocompleteProcessPath (line, tinput, 0);
+
+	if (input[0] == '/' || input[0] == '.' || !extra_paths) {
+		goto out;
+	}
+
+	for (i = 0; extra_paths[i]; i ++) {
+		char *buf = r_str_newf ("%s%s%s", extra_paths[i], R_SYS_DIR, tinput);
+		if (!buf) {
+			break;
+		}
+		argv_idx += autocompleteProcessPath (line, buf, argv_idx);
+		free (buf);
+	}
+
+out:
+	free (args);
+	free (input);
 }
 
 #define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
 
 static int autocomplete(RLine *line) {
-	int pfree = 0;
 	RCore *core = line->user;
 	RListIter *iter;
 	RFlagItem *flag;
@@ -665,85 +770,89 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
-			int j = 0;
-			int chr = 7;
 			if (strchr (line->buffer.data + 7, ' ')) {
-				goto openfile;
+				autocompleteFilename (line, NULL, 2);
+			} else {
+				int chr = 7;
+				int j = 0;
+
+				tmp_argv_heap = false;
+				ADDARG ("node");
+				ADDARG ("vala");
+				ADDARG ("ruby");
+				ADDARG ("newlisp");
+				ADDARG ("perl");
+				ADDARG ("python");
+				tmp_argv[j] = NULL;
+				line->completion.argc = j;
+				line->completion.argv = tmp_argv;
 			}
-			tmp_argv_heap = false;
-			ADDARG ("node");
-			ADDARG ("vala");
-			ADDARG ("ruby");
-			ADDARG ("newlisp");
-			ADDARG ("perl");
-			ADDARG ("python");
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "ec ", 3)) {
-			int j = 0;
 			if (strchr (line->buffer.data + 3, ' ')) {
-				goto openfile;
+				autocompleteFilename (line, NULL, 2);
+			} else {
+				int chr = 3;
+				int j = 0;
+
+				tmp_argv_heap = false;
+				ADDARG("comment")
+				ADDARG("args")
+				ADDARG("fname")
+				ADDARG("floc")
+				ADDARG("fline")
+				ADDARG("flag")
+				ADDARG("label")
+				ADDARG("help")
+				ADDARG("flow")
+				ADDARG("prompt")
+				ADDARG("offset")
+				ADDARG("input")
+				ADDARG("invalid")
+				ADDARG("other")
+				ADDARG("b0x00")
+				ADDARG("b0x7f")
+				ADDARG("b0xff")
+				ADDARG("math")
+				ADDARG("bin")
+				ADDARG("btext")
+				ADDARG("push")
+				ADDARG("pop")
+				ADDARG("crypto")
+				ADDARG("jmp")
+				ADDARG("cjmp")
+				ADDARG("call")
+				ADDARG("nop")
+				ADDARG("ret")
+				ADDARG("trap")
+				ADDARG("swi")
+				ADDARG("cmp")
+				ADDARG("reg")
+				ADDARG("creg")
+				ADDARG("num")
+				ADDARG("mov")
+				ADDARG("ai.read")
+				ADDARG("ai.write")
+				ADDARG("ai.exec")
+				ADDARG("ai.seq")
+				ADDARG("ai.ascii")
+				ADDARG("graph.box")
+				ADDARG("graph.box2")
+				ADDARG("graph.box3")
+				ADDARG("graph.box4")
+				ADDARG("graph.true")
+				ADDARG("graph.false")
+				ADDARG("graph.trufae")
+				ADDARG("graph.current")
+				ADDARG("graph.traced")
+				ADDARG("gui.cflow")
+				ADDARG("gui.dataoffset")
+				ADDARG("gui.background")
+				ADDARG("gui.alt_background")
+				ADDARG("gui.border")
+				tmp_argv[j] = NULL;
+				line->completion.argc = j;
+				line->completion.argv = tmp_argv;
 			}
-			int chr = 3;
-			tmp_argv_heap = false;
-			ADDARG("comment")
-			ADDARG("args")
-			ADDARG("fname")
-			ADDARG("floc")
-			ADDARG("fline")
-			ADDARG("flag")
-			ADDARG("label")
-			ADDARG("help")
-			ADDARG("flow")
-			ADDARG("prompt")
-			ADDARG("offset")
-			ADDARG("input")
-			ADDARG("invalid")
-			ADDARG("other")
-			ADDARG("b0x00")
-			ADDARG("b0x7f")
-			ADDARG("b0xff")
-			ADDARG("math")
-			ADDARG("bin")
-			ADDARG("btext")
-			ADDARG("push")
-			ADDARG("pop")
-			ADDARG("crypto")
-			ADDARG("jmp")
-			ADDARG("cjmp")
-			ADDARG("call")
-			ADDARG("nop")
-			ADDARG("ret")
-			ADDARG("trap")
-			ADDARG("swi")
-			ADDARG("cmp")
-			ADDARG("reg")
-			ADDARG("creg")
-			ADDARG("num")
-			ADDARG("mov")
-			ADDARG("ai.read")
-			ADDARG("ai.write")
-			ADDARG("ai.exec")
-			ADDARG("ai.seq")
-			ADDARG("ai.ascii")
-			ADDARG("graph.box")
-			ADDARG("graph.box2")
-			ADDARG("graph.box3")
-			ADDARG("graph.box4")
-			ADDARG("graph.true")
-			ADDARG("graph.false")
-			ADDARG("graph.trufae")
-			ADDARG("graph.current")
-			ADDARG("graph.traced")
-			ADDARG("gui.cflow")
-			ADDARG("gui.dataoffset")
-			ADDARG("gui.background")
-			ADDARG("gui.alt_background")
-			ADDARG("gui.border")
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "pf.", 3))
 		||  (!strncmp (line->buffer.data, "pf*.", 4))
 		||  (!strncmp (line->buffer.data, "pfd.", 4))
@@ -831,134 +940,46 @@ static int autocomplete(RLine *line) {
 			ls_free (l);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if ((!strncmp (line->buffer.data, "o ", 2)) ||
-		     !strncmp (line->buffer.data, "o+ ", 3) ||
-		     !strncmp (line->buffer.data, "oc ", 3) ||
-		     !strncmp (line->buffer.data, "r2 ", 3) ||
-		     !strncmp (line->buffer.data, "cd ", 3) ||
-		     !strncmp (line->buffer.data, "zo ", 3) ||
-		     !strncmp (line->buffer.data, "zoz ", 4) ||
-		     !strncmp (line->buffer.data, "zos ", 4) ||
-		     !strncmp (line->buffer.data, "zfd ", 4) ||
-		     !strncmp (line->buffer.data, "zfs ", 4) ||
-		     !strncmp (line->buffer.data, "zfz ", 4) ||
-		     !strncmp (line->buffer.data, "on ", 3) ||
-		     !strncmp (line->buffer.data, "op ", 3) ||
-		     !strncmp (line->buffer.data, ". ", 2) ||
-		     !strncmp (line->buffer.data, "wf ", 3) ||
-		     !strncmp (line->buffer.data, "rm ", 3) ||
-		     !strncmp (line->buffer.data, "ls ", 3) ||
-		     !strncmp (line->buffer.data, "ls -l ", 5) ||
-		     !strncmp (line->buffer.data, "wF ", 3) ||
-		     !strncmp (line->buffer.data, "cat ", 4) ||
-		     !strncmp (line->buffer.data, "less ", 5) ||
-		     !strncmp (line->buffer.data, "wta ", 4) ||
-		     !strncmp (line->buffer.data, "wtf ", 4) ||
-		     !strncmp (line->buffer.data, "wxf ", 4) ||
-		     !strncmp (line->buffer.data, "wp ", 3) ||
-		     !strncmp (line->buffer.data, "Sd ", 3) ||
-		     !strncmp (line->buffer.data, "Sl ", 3) ||
-		     !strncmp (line->buffer.data, "to ", 3) ||
-		     !strncmp (line->buffer.data, "pm ", 3) ||
-		     !strncmp (line->buffer.data, "dml ", 4) ||
-		     !strncmp (line->buffer.data, "/m ", 3)) {
-			// XXX: SO MANY MEMORY LEAKS HERE
-			char *str, *p, *path;
-			int n = 0, i = 0, isroot = 0, iscwd = 0;
-			RList *list;
-			int sdelta;
-openfile:
-			if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
-				sdelta = getsdelta (line->buffer.data + 7) + 7;
+		} else if (!strncmp (line->buffer.data, "o ", 2)
+		|| !strncmp (line->buffer.data, "o+ ", 3)
+		|| !strncmp (line->buffer.data, "oc ", 3)
+		|| !strncmp (line->buffer.data, "r2 ", 3)
+		|| !strncmp (line->buffer.data, "cd ", 3)
+		|| !strncmp (line->buffer.data, "zos ", 4)
+		|| !strncmp (line->buffer.data, "zfd ", 4)
+		|| !strncmp (line->buffer.data, "zfs ", 4)
+		|| !strncmp (line->buffer.data, "zfz ", 4)
+		|| !strncmp (line->buffer.data, "on ", 3)
+		|| !strncmp (line->buffer.data, "op ", 3)
+		|| !strncmp (line->buffer.data, ". ", 2)
+		|| !strncmp (line->buffer.data, "wf ", 3)
+		|| !strncmp (line->buffer.data, "rm ", 3)
+		|| !strncmp (line->buffer.data, "ls ", 3)
+		|| !strncmp (line->buffer.data, "ls -l ", 5)
+		|| !strncmp (line->buffer.data, "wF ", 3)
+		|| !strncmp (line->buffer.data, "cat ", 4)
+		|| !strncmp (line->buffer.data, "less ", 5)
+		|| !strncmp (line->buffer.data, "wta ", 4)
+		|| !strncmp (line->buffer.data, "wtf ", 4)
+		|| !strncmp (line->buffer.data, "wxf ", 4)
+		|| !strncmp (line->buffer.data, "wp ", 3)
+		|| !strncmp (line->buffer.data, "Sd ", 3)
+		|| !strncmp (line->buffer.data, "Sl ", 3)
+		|| !strncmp (line->buffer.data, "to ", 3)
+		|| !strncmp (line->buffer.data, "pm ", 3)
+		|| !strncmp (line->buffer.data, "dml ", 4)
+		|| !strncmp (line->buffer.data, "/m ", 3)) {
+			autocompleteFilename (line, NULL, 1);
+		} else if (!strncmp (line->buffer.data, "zo ", 3)
+		|| !strncmp (line->buffer.data, "zoz ", 4)) {
+			if (core->anal->zign_path && core->anal->zign_path[0]) {
+				char *zignpath = r_file_abspath (core->anal->zign_path);
+				char *paths[2] = { zignpath, NULL };
+				autocompleteFilename (line, paths, 1);
+				free (zignpath);
 			} else {
-				sdelta = getsdelta (line->buffer.data);
+				autocompleteFilename (line, NULL, 1);
 			}
-			path = sdelta > 0 ? strdup (line->buffer.data + sdelta):
-				r_sys_getdir ();
-			p = (char *)r_str_lchr (path, '/');
-			if (p) {
-				if (p == path) { // ^/
-					isroot = 1;
-					*p = 0;
-					p++;
-				} else if (p==path + 1) { // ^./
-					*p = 0;
-					iscwd = 1;
-					p++;
-				} else { // *
-					*p = 0;
-					p++;
-				}
-			} else {
-				iscwd = 1;
-				pfree = 1;
-				p = strdup (path);
-				free (path);
-				path = strdup (".");
-			}
-			if (pfree) {
-				if (p) {
-					if (*p) {
-						n = strlen (p);
-					} else {
-						free (p);
-						p = strdup ("");
-					}
-				}
-			} else {
-				if (p) { if (*p) n = strlen (p); else p = ""; }
-			}
-			if (iscwd) {
-				list = r_sys_dir ("./");
-			} else if (isroot) {
-				const char *lastslash = r_str_lchr (path, '/');
-				if (lastslash && lastslash[1]) {
-					list = r_sys_dir (path);
-				} else {
-					list = r_sys_dir ("/");
-				}
-			} else {
-				if (*path=='~') { // if implicit home
-					char *lala = r_str_home (path + 1);
-					free (path);
-					path = lala;
-				} else if (*path!='.' && *path!='/') { // ifnot@home
-					char *o = malloc (strlen (path) + 4);
-					memcpy (o, "./", 2);
-					p = o+2;
-					n = strlen (path);
-					memcpy (o + 2, path, strlen (path) + 1);
-					free (path);
-					path = o;
-				}
-				list = p? r_sys_dir (path): NULL;
-			}
-			i = 0;
-			if (list) {
-			//	bool isroot = !strcmp (path, "/");
-				r_list_foreach (list, iter, str) {
-					if (*str == '.') { // also list hidden files
-						continue;
-					}
-					if (!p || !*p || !strncmp (str, p, n)) {
-						tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
-						if (i == TMP_ARGV_SZ - 1) {
-							i--;
-							break;
-						}
-					}
-				}
-				r_list_purge (list);
-				free (list);
-			} else {
-				eprintf ("\nInvalid directory (%s)\n", path);
-			}
-			tmp_argv[i] = NULL;
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
-			free (path);
-			if (pfree)
-				free (p);
 		} else if ((!strncmp (line->buffer.data, ".(", 2))  ||
 		   (!strncmp (line->buffer.data, "(-", 2))) {
 			const char *str = line->buffer.data;
@@ -1511,8 +1532,12 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 
 static void r_core_setenv (RCore *core) {
 	char *e = r_sys_getenv ("PATH");
-	char *h = r_str_home (".config/radare2/prefix/bin");
-	char *n = r_str_newf ("%s:%s", h, e);
+#if __WINDOWS__ && !__CYGWIN__
+	char *h = r_str_home(".config\\radare2\\prefix\\bin;");
+#else
+	char *h = r_str_home(".config/radare2/prefix/bin:");
+#endif
+	char *n = r_str_newf ("%s%s", h, e);
 	r_sys_setenv ("PATH", n);
 	free (n);
 	free (h);
@@ -1552,6 +1577,7 @@ R_API bool r_core_init(RCore *core) {
 	core->http_up = false;
 	core->print = r_print_new ();
 	core->print->user = core;
+	core->print->num = core->num;
 	core->print->get_enumname = getenumname;
 	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;
@@ -1919,6 +1945,11 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
+	if (r->cons && r->cons->use_tts) {
+		const char *buf = r_cons_get_buffer();
+		r_sys_tts (buf, true);
+		r->cons->use_tts = false;
+	}
 	r_cons_flush ();
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		r_cons_zero ();

@@ -168,7 +168,7 @@ static void init_file_tables(void) {
 	}
 	done++;
 	for (p = type_tbl; p->len; p++) {
-		if (p->type > FILE_NAMES_SIZE) {
+		if (p->type >= FILE_NAMES_SIZE) {
 			continue;
 		}
 		magic_file_names[p->type] = p->name;

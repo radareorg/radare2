@@ -179,8 +179,8 @@ R2PM_Search() {
 
 R2PM_TGZ() {
 	URL="$1"
+	TARBALL="`basename $1`"
 	if [ -z "$2" ]; then
-		TARBALL="`basename $1`"
 		DIR="`echo ${TARBALL} | awk -F .t '{print $1}'`"
 	else
 		DIR="$2"
@@ -222,6 +222,23 @@ R2PM_GIT() {
 		git pull
 	else
 		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
+		cd "${DIR}" || R2PM_FAIL "Oops"
+	fi
+}
+
+R2PM_SVN() {
+	URL="$1"
+	if [ -z "$2" ]; then
+		DIR="${NAME}"
+	else
+		DIR="$2"
+	fi
+	cd "${R2PM_GITDIR}" || exit 1
+	if [ -d "${DIR}" ]; then
+		cd "${DIR}"
+		svn up
+	else
+		svn co "${URL}" "${DIR}"
 		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
 }

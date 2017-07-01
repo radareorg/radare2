@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2016 - pancake */
+/* radare2 - LGPL - Copyright 2015-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -42,7 +42,7 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 		if (sb.cert_sz >= 0xf0000) return false;
 		if (sb.sign_va < sb.vaddr) return false;
 		if (sb.sign_sz >= 0xf0000) return false;
-		if (sb.load_index < 0x10 || sb.load_index > 0x40) return false; // should be 0x19 ?
+		if (sb.load_index < 1 || sb.load_index > 0x40) return false; // should be 0x19 ?
 #if 0
 		eprintf ("V=%d\n", sb.version);
 		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
@@ -176,7 +176,7 @@ static ut64 size(RBinFile *arch) {
 	return sizeof (SBLHDR) + sb.psize;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mbn = {
+RBinPlugin r_bin_plugin_mbn = {
 	.name = "mbn",
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
@@ -193,7 +193,7 @@ struct r_bin_plugin_t r_bin_plugin_mbn = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mbn,
 	.version = R2_VERSION

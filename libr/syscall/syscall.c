@@ -1,4 +1,4 @@
-/* radare - Copyright 2008-2016 - LGPL -- pancake */
+/* radare - Copyright 2008-2017 - LGPL -- pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -18,6 +18,7 @@ R_API RSyscall* r_syscall_new() {
 		rs->sysport = sysport_x86;
 		rs->cb_printf = (PrintfCallback)printf;
 		rs->regs = fastcall_x86_32;
+		rs->db = sdb_new0 ();
 	}
 	return rs;
 }
@@ -25,19 +26,18 @@ R_API RSyscall* r_syscall_new() {
 R_API void r_syscall_free(RSyscall *s) {
 	sdb_free (s->db);
 	free (s->os);
-	memset (s, 0, sizeof (RSyscall));
 	free (s);
 }
 
 /* return fastcall register argument 'idx' for a syscall with 'num' args */
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
-	if (num < 0 || num >= R_SYSCALL_ARGS || idx<0 || idx>=R_SYSCALL_ARGS) {
+	if (num < 0 || num >= R_SYSCALL_ARGS || idx < 0 || idx >= R_SYSCALL_ARGS) {
 		return NULL;
 	}
 	return s->regs[num].arg[idx];
 }
 
-R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bits) {
+R_API bool r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bits) {
 	const char *file;
 	if (!os || !*os) {
 		os = R_SYS_OS;
@@ -86,27 +86,21 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 	file = sdb_fmt (0, "%s/%s-%s-%d.sdb",
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {
-		//eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
+		// eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return false;
 	}
 
 	//eprintf ("DBG098: syscall->db must be reindexed for k\n");
-#if 0
-	// TODO: use sdb_reset (s->db);
-	/// XXX: memoization doesnt seems to work because RSyscall is recreated instead of configured :(
 	sdb_close (s->db);
 	sdb_reset (s->db);
 	sdb_open (s->db, file);
-#else
-	sdb_close (s->db);
-	sdb_free (s->db);
-	s->db = sdb_new (0, file, 0);
-	// XXX r2 - loads this database 11 times. srsly wtf
-#endif
+//	s->db = sdb_new (0, file, 0);
+#if 1
 	if (s->fd) {
 		fclose (s->fd);
 	}
 	s->fd = NULL;
+#endif
 	return true;
 }
 

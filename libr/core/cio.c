@@ -16,7 +16,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	}
 
 	r_config_set (r->config, "io.ff", "true");
-	r_core_cmdf (r, "dh %s", debugbackend);
+	r_core_cmdf (r, "dL %s", debugbackend);
 	if (!is_gdb) {
 		pid = *p; // 1st element in debugger's struct must be int
 		r_core_cmdf (r, "dp=%d", pid);

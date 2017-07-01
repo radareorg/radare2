@@ -42,6 +42,7 @@
 #define FILETYPE_INO_DIRECTORY	0040000
 #define FILETYPE_INO_SYMLINK	0120000
 
+#include <stdlib.h>
 #include <grub/err.h>
 #include <grub/file.h>
 #include <grub/mm.h>
@@ -367,8 +368,9 @@ grub_ext4_find_leaf (struct grub_ext2_data *data, char *buf,
       block = (block << 32) + grub_le_to_cpu32 (index[i].leaf);
       if (grub_disk_read (data->disk,
                           block << LOG2_EXT2_BLOCK_SIZE (data),
-                          0, EXT2_BLOCK_SIZE(data), buf))
+                          0, EXT2_BLOCK_SIZE(data), buf)) {
         return 0;
+      }
 
       ext_block = (struct grub_ext4_extent_header *) buf;
     }
@@ -385,11 +387,10 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
 
   if (grub_le_to_cpu32(inode->flags) & EXT4_EXTENTS_FLAG)
     {
-#ifndef _MSC_VER
-	  char buf[EXT2_BLOCK_SIZE (data)];
-#else
-	  char * buf = grub_malloc (EXT2_BLOCK_SIZE(data));
-#endif
+	  char * buf = grub_malloc (EXT2_BLOCK_SIZE (data));
+          if (!buf) {
+              return -1;
+          }
       struct grub_ext4_extent_header *leaf;
       struct grub_ext4_extent *ext;
       int i;
@@ -400,6 +401,7 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       if (! leaf)
         {
           grub_error (GRUB_ERR_BAD_FS, "invalid extent");
+	  free (buf);
           return -1;
         }
 
@@ -413,14 +415,16 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       if (--i >= 0)
         {
           fileblock -= grub_le_to_cpu32 (ext[i].block);
-          if (fileblock >= grub_le_to_cpu16 (ext[i].len))
+          if (fileblock >= grub_le_to_cpu16 (ext[i].len)) {
+  	    free (buf);
             return 0;
-          else
+          } else
             {
               grub_disk_addr_t start;
 
               start = grub_le_to_cpu16 (ext[i].start_hi);
               start = (start << 32) + grub_le_to_cpu32 (ext[i].start);
+  	    free (buf);
 
               return fileblock + start;
             }
@@ -428,27 +432,31 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       else
         {
           grub_error (GRUB_ERR_BAD_FS, "something wrong with extent");
+  	    free (buf);
           return -1;
         }
+free (buf);
     }
   /* Direct blocks.  */
-  if (fileblock < INDIRECT_BLOCKS)
+  if (fileblock < INDIRECT_BLOCKS) {
     blknr = grub_le_to_cpu32 (inode->blocks.dir_blocks[fileblock]);
   /* Indirect.  */
-  else if (fileblock < INDIRECT_BLOCKS + blksz / 4)
+  } else if (fileblock < INDIRECT_BLOCKS + blksz / 4)
     {
       grub_uint32_t *indir;
 
       indir = grub_malloc (blksz);
-      if (! indir)
+      if (! indir) {
 	return grub_errno;
+}
 
       if (grub_disk_read (data->disk,
 			  ((grub_disk_addr_t)
 			   grub_le_to_cpu32 (inode->blocks.indir_block))
 			  << log2_blksz,
-			  0, blksz, indir))
+			  0, blksz, indir)) {
 	return grub_errno;
+}
 
       blknr = grub_le_to_cpu32 (indir[fileblock - INDIRECT_BLOCKS]);
       grub_free (indir);
@@ -463,22 +471,25 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       grub_uint32_t *indir;
 
       indir = grub_malloc (blksz);
-      if (! indir)
+      if (! indir) {
 	return grub_errno;
+}
 
       if (grub_disk_read (data->disk,
 			  ((grub_disk_addr_t)
 			   grub_le_to_cpu32 (inode->blocks.double_indir_block))
 			  << log2_blksz,
-			  0, blksz, indir))
+			  0, blksz, indir)) {
 	return grub_errno;
+}
 
       if (grub_disk_read (data->disk,
 			  ((grub_disk_addr_t)
 			   grub_le_to_cpu32 (indir[rblock / perblock]))
 			  << log2_blksz,
-			  0, blksz, indir))
+			  0, blksz, indir)) {
 	return grub_errno;
+}
 
       blknr = grub_le_to_cpu32 (indir[rblock % perblock]);
             grub_free (indir);
@@ -679,23 +690,26 @@ grub_ext2_iterate_dir (grub_fshelp_node_t dir,
 
       if (dirent.namelen != 0)
 	{
-#ifndef _MSC_VER
-	  char filename[dirent.namelen + 1]; 
-#else
 	  char * filename = grub_malloc (dirent.namelen + 1);
-#endif
 	  struct grub_fshelp_node *fdiro;
 	  enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
 
+if (!filename) {
+break;
+}
 	  grub_ext2_read_file (diro, 0, 0, 0,
 			       fpos + sizeof (struct ext2_dirent),
 			       dirent.namelen, filename);
-	  if (grub_errno)
+	  if (grub_errno) {
+            grub_free (filename);
 	    return 0;
+	  }
 
 	  fdiro = grub_malloc (sizeof (struct grub_fshelp_node));
-	  if (! fdiro)
+	  if (! fdiro) {
+            grub_free (filename);
 	    return 0;
+          }
 
 	  fdiro->data = diro->data;
 	  fdiro->ino = grub_le_to_cpu32 (dirent.inode);
@@ -720,8 +734,8 @@ grub_ext2_iterate_dir (grub_fshelp_node_t dir,
 	      grub_ext2_read_inode (diro->data,
                                     grub_le_to_cpu32 (dirent.inode),
 				    &fdiro->inode);
-	      if (grub_errno)
-		{
+	      if (grub_errno) {
+                  grub_free (filename);
 		  grub_free (fdiro);
 		  return 0;
 		}
@@ -739,8 +753,11 @@ grub_ext2_iterate_dir (grub_fshelp_node_t dir,
 		type = GRUB_FSHELP_REG;
 	    }
 
-	  if (hook (filename, type, fdiro, closure))
+	  if (hook (filename, type, fdiro, closure)) {
+            grub_free (filename);
 	    return 1;
+          }
+          grub_free (filename);
 	}
 
       fpos += grub_le_to_cpu16 (dirent.direntlen);

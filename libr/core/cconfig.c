@@ -284,6 +284,13 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmminvalsub(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->parser->minval = node->i_value;
+	return true;
+}
+
 static int cb_asmsecsub(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -529,7 +536,7 @@ static int cb_asmbits(void *user, void *data) {
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 #if __WINDOWS__
-#if !defined(__MINGW64__)
+#if !defined(__MINGW64__) && !defined(_WIN64)
 				core->dbg->bits = R_SYS_BITS_32;
 #else
 				core->dbg->bits = R_SYS_BITS_64;
@@ -1121,12 +1128,35 @@ R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	return false;
 }
 
+static int cb_cmd_esil_ioer(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->cmd_ioer);
+		core->anal->esil->cmd_ioer = strdup (node->value);
+	}
+	return true;
+}
+
+static int cb_cmd_esil_todo(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->cmd_todo);
+		core->anal->esil->cmd_todo = strdup (node->value);
+	}
+	return true;
+}
+
 static int cb_cmd_esil_intr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_intr = node->value;
+		free (core->anal->esil->cmd_intr);
+		core->anal->esil->cmd_intr = strdup (node->value);
 	}
 	return true;
 }
@@ -1135,7 +1165,9 @@ static int cb_mdevrange(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->mdev_range = node->value;
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->mdev_range);
+		core->anal->esil->mdev_range = strdup (node->value);
 	}
 	return true;
 }
@@ -1145,7 +1177,8 @@ static int cb_cmd_esil_mdev(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_mdev = node->value;
+		free (core->anal->esil->cmd_mdev);
+		core->anal->esil->cmd_mdev = strdup (node->value);
 	}
 	return true;
 }
@@ -1155,7 +1188,7 @@ static int cb_cmd_esil_trap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_trap = node->value;
+		core->anal->esil->cmd_trap = strdup (node->value);
 	}
 	return true;
 }
@@ -1278,10 +1311,12 @@ static int cb_iova(void *user, void *data) {
 		if (r_io_desc_get (core->io, core->io->raised)) {
 			r_core_block_read (core);
 		}
+#if 0
 		/* reload symbol information */
 		if (r_list_length (r_bin_get_sections (core->bin)) > 0) {
 			r_core_cmd0 (core, ".ia*");
 		}
+#endif
 	}
 	return true;
 }
@@ -1996,6 +2031,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.linesright", "false", "Show lines before opcode instead of offset");
 	SETPREF ("asm.lineswide", "false", "Put a space between lines");
 	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
+	SETICB ("asm.minvalsub", 0x100, &cb_asmminvalsub, "Minimum value to substitute in instructions (asm.varsub)");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
@@ -2256,6 +2292,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
 	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
+	SETCB ("cmd.esil.todo", "", &cb_cmd_esil_todo, "Command to run when the esil instruction contains TODO");
+	SETCB ("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "Command to run when esil fails to IO (invalid read/write)");
 
 	/* filesystem */
 	n = NODECB ("fs.view", "normal", &cb_fsview);
@@ -2340,6 +2378,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.title", "", "Title of the graph");
 	SETPREF ("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF ("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
+	SETPREF ("graph.gv.spline", "", "Graphviz spline style. (splines=\"ortho\")");
 	SETPREF ("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");

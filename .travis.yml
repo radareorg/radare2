@@ -5,6 +5,7 @@ os:
   - osx
 
 language: c
+dist: trusty
 
 compiler:
   - gcc

@@ -46,7 +46,7 @@ R_LIB_VERSION_HEADER(r_debug);
 #endif
 
 #define SNAP_PAGE_SIZE 4096
-
+#define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
 /*
  * states that a process can be in
  */
@@ -108,6 +108,7 @@ typedef enum {
 	R_DEBUG_REASON_SWI,
 	R_DEBUG_REASON_INT,
 	R_DEBUG_REASON_FPU,
+	R_DEBUG_REASON_USERSUSP,
 } RDebugReasonType;
 
 
@@ -181,6 +182,7 @@ typedef struct r_debug_snap_t {
 	RHash *hash_ctx;
 	ut8 **hashes; // Hash of each pages
 	RList *history; // <RDebugSnapDiff*>
+	int perm;
 	char *comment;
 } RDebugSnap;
 
@@ -400,6 +402,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
 R_API int r_debug_step(RDebug *dbg, int steps);
 R_API int r_debug_step_over(RDebug *dbg, int steps);
 R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);
+R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr);
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
 R_API int r_debug_continue_until_nontraced(RDebug *dbg);
 R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
@@ -426,6 +429,8 @@ R_API bool r_debug_use(RDebug *dbg, const char *str);
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
 R_API void r_debug_info_free (RDebugInfo *rdi);
+
+R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file);
 
 /* send signals */
 R_API void r_debug_signal_init(RDebug *dbg);
@@ -527,21 +532,21 @@ R_API int r_debug_esil_watch_empty(RDebug *dbg);
 R_API void r_debug_esil_prestep (RDebug *d, int p);
 
 /* snap */
-R_API RDebugSnap* r_debug_snap_new(void);
+R_API RDebugSnap *r_debug_snap_new(void);
 R_API void r_debug_snap_free(void *snap);
 R_API int r_debug_snap_delete(RDebug *dbg, int idx);
 R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment(RDebug *dbg, int idx, const char *msg);
-R_API RDebugSnapDiff* r_debug_snap_map(RDebug *dbg, RDebugMap *map);
+R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
-R_API RDebugSnap* r_debug_snap_get(RDebug *dbg, ut64 addr);
+R_API RDebugSnap *r_debug_snap_get(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_set_idx(RDebug *dbg, int idx);
 R_API int r_debug_snap_set(RDebug *dbg, RDebugSnap *snap);
 
 /* snap diff */
 R_API void r_debug_diff_free(void *p);
-R_API RDebugSnapDiff* r_debug_diff_add(RDebug *dbg, RDebugSnap *base);
+R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base);
 R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff);
 R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base);
 
@@ -551,11 +556,10 @@ R_API void r_page_data_free(void *p);
 /* debug session */
 R_API void r_debug_session_free(void *p) ;
 R_API void r_debug_session_list(RDebug *dbg);
-R_API RDebugSession *r_debug_session_add(RDebug *dbg);
+R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session);
-R_API void r_debug_session_set_base(RDebug *dbg, RDebugSession *before);
 R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
-R_API RDebugSession* r_debug_session_get(RDebug *dbg, ut64 addr);
+R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
 R_API int r_debug_step_back(RDebug *dbg);
 
 /* plugin pointers */

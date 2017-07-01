@@ -26,6 +26,7 @@ R_API RParse *r_parse_new() {
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
 	p->relsub = false;
+	p->minval = 0x100;
 	p->localvar_only = false;
 	for (i = 0; parse_static_plugins[i]; i++) {
 		r_parse_add (p, parse_static_plugins[i]);
@@ -212,7 +213,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
 		}
 		off = r_num_math (NULL, ptr);
-		if (off > 0xff) {
+		if (off >= p->minval) {
 			fcn = p->analb.get_fcn_in (p->anal, off, 0);
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;

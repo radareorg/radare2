@@ -181,16 +181,6 @@ static BOOL (WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = N
 static BOOL (WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
 static PVOID(WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD) = NULL;
 static BOOL (WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NULL;
-/*#if __MINGW64__
-#define CONTEXT_XSTATE                      (0x00100040)
-#define XSTATE_AVX                          (2)
-#define XSTATE_MASK_AVX                     (4)
-#else
-#define CONTEXT_XSTATE                      (0x00010040)
-#define XSTATE_AVX                          (2)
-#define XSTATE_MASK_AVX                     (4)
-#endif
-*/
 
 #ifndef XSTATE_GSSE
 #define XSTATE_GSSE 2
@@ -429,7 +419,7 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 		eprintf ("(%d) Fatal exception in thread %d\n",
 			(int)de->dwProcessId, (int)de->dwThreadId);
 		break;
-#if __MINGW64__
+#if __MINGW64__ || _WIN64
 	/* STATUS_WX86_BREAKPOINT */
 	case 0x4000001f:
 		eprintf ("(%d) WOW64 loaded.\n", (int)de->dwProcessId);
@@ -735,7 +725,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
-#if __MINGW64__
+#if __MINGW64__ || _WIN64
 			case 0x4000001f:
 #endif
 			case EXCEPTION_BREAKPOINT:
@@ -1025,7 +1015,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	ut64 mm[8];
 	ut16 top = 0;
 	int x = 0, nxmm = 0,nymm = 0;
-#if __MINGW64__
+#if __MINGW64__ || _WIN64
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
 	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);

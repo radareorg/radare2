@@ -2653,7 +2653,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		const char *cmdv;
 		cmdv = r_config_get (core->config, "cmd.gprompt");
 		if (cmdv && *cmdv) {
-			r_cons_gotoxy (0, 1);
+			r_cons_gotoxy (0, 0);
+			r_cons_fill_line ();
+			r_cons_gotoxy (0, 0);
 			r_core_cmd0 (core, cmdv);
 		}
 		r_cons_flush ();

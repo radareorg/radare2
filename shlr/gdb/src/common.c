@@ -12,7 +12,8 @@ int handle_qSupported(libgdbr_t *g) {
 	tok = strtok (g->data, ";");
 	while (tok) {
 		if (r_str_startswith (tok, "PacketSize=")) {
-			g->stub_features.pkt_sz = strtoul (tok + strlen ("PacketSize="), NULL, 16);
+			// Largest packet size we support is 2048
+			g->stub_features.pkt_sz = R_MIN (strtoul (tok + strlen ("PacketSize="), NULL, 16), 2048);
 		} else if (r_str_startswith (tok, "qXfer:")) {
 			if (!tok[6]) {
 				tok = strtok (NULL, ";");
@@ -107,6 +108,9 @@ int handle_qSupported(libgdbr_t *g) {
 
 int send_ack(libgdbr_t *g) {
 	if (g) {
+		if (g->no_ack) {
+			return 0;
+		}
 		g->send_buff[0] = '+';
 		g->send_len = 1;
 		send_packet (g);
@@ -116,20 +120,15 @@ int send_ack(libgdbr_t *g) {
 }
 
 int send_msg(libgdbr_t *g, const char *msg) {
-	uint8_t checksum;
 	int ret;
-
 	if (!g || !msg) {
 		return -1;
 	}
-	checksum = cmd_checksum (msg);
-	ret = snprintf (g->send_buff, g->send_max,
-		"$%s#%.2x", msg, checksum);
-	if (ret >= 0) {
-		g->send_len = ret;
-		ret = send_packet (g);
-		g->send_len = ret;
-		return ret;
+	ret = pack (g, msg);
+	if (ret < 0) {
+		return -1;
 	}
-	return -1;
+	ret = send_packet (g);
+	g->send_len = ret;
+	return ret;
 }

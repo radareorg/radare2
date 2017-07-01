@@ -383,7 +383,7 @@ void GH(print_heap_chunk)(RCore *core) {
 	if (data) {
 		r_core_read_at (core, chunk + SZ * 2, (ut8 *)data, size);
 		PRINT_GA ("chunk data = \n");
-		r_print_hexdump (core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ);
+		r_print_hexdump (core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ, 1);
 		free (data);
 	}
 	free (cnk);
@@ -771,6 +771,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	if (!can) {
 		r_config_hold_free (hc);
+		return;
 	}
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");

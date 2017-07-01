@@ -12,6 +12,7 @@ ec cmp rgb:666
 ec fline rgb:366
 ec flag rgb:99a
 ec flow rgb:bbb
+ec flow2 rgb:99a
 ec jmp rgb:368
 ec fname rgb:99a
 ec label rgb:99a

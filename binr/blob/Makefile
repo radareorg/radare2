@@ -45,7 +45,6 @@ LDFLAGS+=../../libr/bp/libr_bp.a
 LDFLAGS+=../../libr/hash/libr_hash.a
 LDFLAGS+=../../libr/bin/libr_bin.a
 LDFLAGS+=../../libr/util/libr_util.a
-LDFLAGS+=../../libr/socket/libr_socket.a
 # extra libs #
 LDFLAGS+=../../shlr/grub/libgrubfs.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
@@ -54,6 +53,7 @@ LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/wind/libr_wind.a
 LDFLAGS+=../../shlr/java/libr_java.a
 LDFLAGS+=-lm
+LDFLAGS+=../../libr/socket/libr_socket.a
 else
 LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bp -lr_bp

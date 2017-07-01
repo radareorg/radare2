@@ -242,6 +242,7 @@ static int cmd_eval(void *data, const char *input) {
 			"eco"," dark|white","load white color scheme template",
 			"ecp","","load previous color theme",
 			"ecn","","load next color theme",
+			"ecH","[?]","highlight word or instruction",
 			"ec"," prompt red","change color of prompt",
 			"ec"," prompt red blue","change color and background of prompt",
 			""," ","",
@@ -316,6 +317,67 @@ static int cmd_eval(void *data, const char *input) {
 		case 'p': // "ecp"
 			nextpal (core, 'p');
 			break;
+		case 'H': { // "ecH"
+			char *color_code = NULL;
+			char *word = NULL;
+			int argc = 0;
+			char** argv = r_str_argv (input + 4, &argc);
+			switch (input[2]) {
+			case '?': {
+				const char *helpmsg[] = {
+					"Usage ecH[iw-?]","","",
+					"ecHi","[color]","highlight current instruction with 'color' background",
+					"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
+					"ecH-","","remove all highlights on current instruction",
+					NULL
+				};
+				r_core_cmd_help (core, helpmsg);
+				}
+				break;
+			case '-':
+				r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
+				return false;
+			case '\0':
+			case 'i': // "ecHi
+				if (argc) {
+					char *dup = r_str_newf ("bgonly %s", argv[0]);
+					color_code = r_cons_pal_parse (dup);
+					R_FREE (dup);
+				}
+				break;
+			case 'w': // "ecHw"
+				if (!argc) {
+					eprintf ("Usage: echw word [color]\n");
+					r_str_argv_free (argv);
+					return true;
+				}
+				word = strdup (argv[0]);
+				if (argc > 1) {
+					char *dup = r_str_newf ("bgonly %s", argv[1]);
+					color_code = r_cons_pal_parse (dup);
+					if (!color_code) {
+						eprintf ("Unknown color %s\n", argv[1]);
+						r_str_argv_free (argv);
+						free (dup);
+						free (word);
+						return true;
+					}
+					R_FREE (dup);
+				}
+				break;
+			default:
+				eprintf ("See ecH?\n");
+				r_str_argv_free (argv);
+				return true;
+			}
+			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
+			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_pal_get ("highlight"));
+			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
+			r_str_argv_free (argv);
+			R_FREE (word);
+			R_FREE (dup);
+			break;
+		}
 		default: {
 			char *p = strdup (input + 2);
 			char *q = strchr (p, '=');

@@ -257,7 +257,7 @@ R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
 		if (pos < ybl) {
 			r_print_hexdump (core->print, pos,
 				core->yank_buf->buf + pos,
-				ybl - pos, 16, 1);
+				ybl - pos, 16, 1, 1);
 			res = true;
 		} else {
 			eprintf ("Position exceeds buffer length.\n");

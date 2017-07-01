@@ -555,6 +555,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_INT: return "interrupt";
 	case R_DEBUG_REASON_FPU: return "fpu";
 	case R_DEBUG_REASON_STEP: return "step";
+	case R_DEBUG_REASON_USERSUSP: return "suspended-by-user";
 	}
 	return "unhandled";
 }
@@ -631,12 +632,13 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
+			if (bp) {
+				*bp = b;
+			}
+
 			/* if we hit a tracing breakpoint, we need to continue in
 			 * whatever mode the user desired. */
 			if (dbg->corebind.core && b && b->cond) {
-				if (bp) {
-					*bp = b;
-				}
 				reason = R_DEBUG_REASON_COND;
 			}
 			if (b && b->trace) {
@@ -912,48 +914,69 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 }
 
 R_API int r_debug_step_back(RDebug *dbg) {
-	ut64 pc, end;
+	ut64 pc, prev = 0, end, cnt = 0;
 	ut8 buf[32];
 	RAnalOp op;
 	RDebugSession *before;
+	RListIter *tail;
+
 	if (r_debug_is_dead (dbg)) {
 		return 0;
 	}
-	if (!dbg->anal || !dbg->reg)
+	if (!dbg->anal || !dbg->reg) {
 		return 0;
+	}
+	if (r_list_empty (dbg->sessions)) {
+		return 0;
+	}
 
 	end = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	/* rollback to previous state */
-	before = r_debug_session_get (dbg, end);
+
+	/* Get previous state */
+	before = r_debug_session_get (dbg, dbg->sessions->tail);
 	if (!before) {
 		return 0;
 	}
-	eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
-	/* Save current session. It is marked as a finish point of reverse execution */
-	r_debug_session_add (dbg);
+	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
-	if (!r_list_length (before->memlist)) {
-		/* Diff list is empty. (i.e. Before session is base snapshot) *
-			 So set base memory snapshot */
-		r_debug_session_set_base (dbg, before);
-	} else {
-		r_debug_session_set (dbg, before);
-	}
+	/* Rollback to previous state */
+	r_debug_session_set (dbg, before);
+
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
+	//eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
 
+	/* Get the previous operation address.
+	 * XXX: too slow... */
 	for (;;) {
-		if (r_debug_is_dead (dbg))
-			break;
+		if (r_debug_is_dead (dbg)) {
+			goto fail;
+		}
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		r_io_read_at (dbg->iob.io, pc, buf, sizeof (buf));
-		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-		//eprintf ("executing [0x%08"PFMT64x",0x%08"PFMT64x"]\n", pc, pc + op.size);
-		if (pc + op.size == end)
-			return 1;
-		if (!r_debug_step (dbg, 1))
+		if (pc == end) {
+			/* Reached the target address */
 			break;
+		}
+		prev = pc;
+		//eprintf ("executing 0x%08"PFMT64x"\n", pc);
+		if (cnt > CHECK_POINT_LIMIT) {
+			//eprintf ("Hit count limit %lld\n", cnt);
+			r_debug_session_add (dbg, NULL);
+			cnt = 0;
+		}
+		if (!r_debug_step (dbg, 1)) {
+			goto fail;
+		}
+		cnt++;
 	}
+
+	/* Finally, run to the desired point */
+	r_debug_session_set (dbg, before);
+	if (prev) {
+		eprintf ("continue until 0x%08"PFMT64x"\n", prev);
+		r_debug_continue_until_nonblock (dbg, prev);
+	}
+	return 1;
+fail:
 	return 0;
 }
 
@@ -995,6 +1018,10 @@ repeat:
 					goto repeat;
 				}
 			}
+		}
+
+		if (reason == R_DEBUG_REASON_BREAKPOINT && bp && !bp->enabled) {
+			goto repeat;
 		}
 
 #if __linux__
@@ -1145,7 +1172,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	return n;
 }
 
-R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
+static int r_debug_continue_until_internal(RDebug *dbg, ut64 addr, bool block) {
 	int has_bp;
 	ut64 pc;
 
@@ -1164,7 +1191,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		if (pc == addr)
 			break;
-		if (r_bp_get_at (dbg->bp, pc))
+		if (block && r_bp_get_at (dbg->bp, pc))
 			break;
 		r_debug_continue (dbg);
 	}
@@ -1173,6 +1200,14 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		r_bp_del (dbg->bp, addr);
 	}
 	return true;
+}
+
+R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
+	return r_debug_continue_until_internal (dbg, addr, true);
+}
+
+R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
+	return r_debug_continue_until_internal (dbg, addr, false);
 }
 
 static int show_syscall(RDebug *dbg, const char *sysreg) {
@@ -1353,4 +1388,55 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 		return dbg->h->drx (dbg, idx, 0, -1, 0, 0);
 	}
 	return false;
+}
+
+R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
+	char *abspath;
+	RListIter *iter;
+	RDebugMap *map;
+	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
+		return 0LL;
+	}
+#if __WINDOWS__
+	typedef struct {
+		int pid;
+		int tid;
+		PROCESS_INFORMATION pi;
+	} RIOW32Dbg;
+	RIODesc *d = dbg->iob.io->desc;
+	if (!strcmp ("w32dbg", d->plugin->name)) {
+		RIOW32Dbg *g = d->data;
+		d->fd = g->pid;
+		r_debug_attach (dbg, g->pid);
+	}
+	return dbg->iob.io->winbase;
+#else
+	int pid = dbg->iob.io->desc->fd;
+	if (r_debug_attach (dbg, pid) == -1) {
+		return 0LL;
+	}
+	r_debug_select (dbg, pid, pid);
+#endif
+	r_debug_map_sync (dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) {
+		abspath = strdup (file);
+	}
+	if (abspath) {
+		r_list_foreach (dbg->maps, iter, map) {
+			if (!strcmp (abspath, map->name)) {
+				free (abspath);
+				return map->addr;
+			}
+		}
+		free (abspath);
+	}
+	// fallback resolution (osx/w32?)
+	// we asume maps to be loaded in order, so lower addresses come first
+	r_list_foreach (dbg->maps, iter, map) {
+		if (map->perm == 5) { // r-x
+			return map->addr;
+		}
+	}
+	return 0LL;
 }

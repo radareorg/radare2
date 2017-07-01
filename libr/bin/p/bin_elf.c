@@ -768,15 +768,15 @@ static RList* patch_relocs(RBin *b) {
 	return ret;
 }
 
-static int has_canary(RBinFile *arch) {
-	int ret = 0;
+static bool has_canary(RBinFile *arch) {
+	bool ret = false;
 	RList* imports_list = imports (arch);
 	RListIter *iter;
 	RBinImport *import;
 	if (imports_list) {
 		r_list_foreach (imports_list, iter, import) {
 			if (!strcmp (import->name, "__stack_chk_fail") ) {
-				ret = 1;
+				ret = true;
 				break;
 			}
 		}

@@ -26,7 +26,7 @@ CFLAGS="-FS"
 INC_DIR=$(cygpath -aw $(pwd)/libr/include/msvc)
 CFLAGS="${CFLAGS} -I\"${INC_DIR}\""
 
-export CCCL_OPTIONS="--cccl-verbose"
+# export CCCL_OPTIONS="--cccl-verbose"
 export CFLAGS="${CFLAGS}"
 export LDFLAGS="${LDFLAGS}"
 export HOST_CFLAGS="${CFLAGS}"

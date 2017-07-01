@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2017 - pancake, astuder */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -11,28 +11,12 @@
 #include <8051_disas.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	char *tmp = NULL;
-
-	r_8051_op o = r_8051_decode (buf, len);
-	memset(op->buf_asm, 0, sizeof (op->buf_asm));
-	if (!o.name) return 0; // invalid instruction
-	tmp = r_8051_disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
-	if (tmp) {
-		if (strlen(tmp) < sizeof (op->buf_asm)) {
-			strncpy (op->buf_asm, tmp, strlen (tmp));
-		} else {
-			eprintf ("8051 disassemble: too big opcode!\n");
-			free (tmp);
-			op->size = -1;
-			return -1;
-		}
-		free (tmp);
+	int dlen = _8051_disas (a->pc, op, buf, len);
+	if (dlen < 0) {
+		dlen = 0;
 	}
-	if (!*op->buf_asm) {
-		op->size = 1;
-		return -1;
-	}
-	return (op->size = o.length);
+	op->size = dlen;
+	return dlen;
 }
 
 RAsmPlugin r_asm_plugin_8051 = {
@@ -42,12 +26,11 @@ RAsmPlugin r_asm_plugin_8051 = {
 	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "8051 Intel CPU",
 	.disassemble = &disassemble,
-	.assemble = NULL,
 	.license = "PD"
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_8051,
 	.version = R2_VERSION

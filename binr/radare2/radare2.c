@@ -3,7 +3,7 @@
 #define USE_THREADS 1
 #define UNCOLORIZE_NONTTY 0
 #ifdef _MSC_VER
-#ifndef WIN32_LEAN_AND_MEAN 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #endif
@@ -79,59 +79,6 @@ static int verify_version(int show) {
 	return ret;
 }
 
-// we should probably move this functionality into the r_debug API
-// r_debug_get_baddr
-static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
-	char *abspath;
-	RListIter *iter;
-	RDebugMap *map;
-	if (!r || !r->io || !r->io->desc) {
-		return 0LL;
-	}
-#if __WINDOWS__
-	typedef struct {
-		int pid;
-		int tid;
-		PROCESS_INFORMATION pi;
-	} RIOW32Dbg;
-	RIODesc *d = r->io->desc;
-	if (!strcmp ("w32dbg", d->plugin->name)) {
-		RIOW32Dbg *g = d->data;
-		r->io->desc->fd = g->pid;
-		r_debug_attach (r->dbg, g->pid);
-	}
-	return r->io->winbase;
-#else
-	int pid = r->io->desc->fd;
-	if (r_debug_attach (r->dbg, pid) == -1) {
-		return 0LL;
-	}
-	r_debug_select (r->dbg, pid, pid);
-#endif
-	r_debug_map_sync (r->dbg);
-	abspath = r_file_abspath (file);
-	if (!abspath) {
-		abspath = strdup (file);
-	}
-	if (abspath) {
-		r_list_foreach (r->dbg->maps, iter, map) {
-			if (!strcmp (abspath, map->name)) {
-				free (abspath);
-				return map->addr;
-			}
-		}
-		free (abspath);
-	}
-	// fallback resolution (osx/w32?)
-	// we asume maps to be loaded in order, so lower addresses come first
-	r_list_foreach (r->dbg->maps, iter, map) {
-		if (map->perm == 5) { // r-x
-			return map->addr;
-		}
-	}
-	return 0LL;
-}
-
 static int main_help(int line) {
 	if (line < 2) {
 		printf ("Usage: r2 [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
@@ -190,6 +137,7 @@ static int main_help(int line) {
 		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
 		" file     ${filename}.r2\n"
 		"Plugins:\n"
+		" binrc    ~/.config/radare2/rc.d/bin-<format>/ (elf, elf64, mach0, ..)\n"
 		" plugins  "R2_PREFIX"/lib/radare2/last\n"
 		" USER_PLUGINS ~/.config/radare2/plugins\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
@@ -958,7 +906,7 @@ int main(int argc, char **argv, char **envp) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
 								r_core_cmdf (&r, "Sf");
-								r_core_cmdf (&r, ".!rabin2 -rk. '%s'", r.file->desc->name);
+								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", r.file->desc->name);
 							}
 						}
 					}
@@ -983,7 +931,7 @@ int main(int argc, char **argv, char **envp) {
 			}
 			/* load symbols when doing r2 -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
-			baddr = getBaddrFromDebugger (&r, pfile);
+			baddr = r_debug_get_baddr (r.dbg, pfile);
 			if (baddr != UT64_MAX && baddr != 0) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
 				va = 2;

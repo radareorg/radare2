@@ -2,12 +2,11 @@
 
 #include <r_core.h>
 
-#define NPF 9
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
-#define PIDX (R_ABS (core->printidx % NPF))
+
 #define KEY_ALTQ 0xc5
 
 static const char *printfmtSingle[] = {
@@ -1048,7 +1047,7 @@ repeat:
 	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
 		ch = '0';
 	}
-	if (IS_DIGIT (ch) && (ch - 0x30) < count) {
+	if (IS_DIGIT (ch) && (ch - 0x30) < count && (ch > 0x30)) {
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		r_core_seek (core, references[ch - 0x30], false);
 		ret = 1;
@@ -1166,7 +1165,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		p->cur += cols > 0? cols: 3;
 		return;
 	}
-	if (core->seltab == 0 && core->printidx == 2) {
+	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
@@ -1213,7 +1212,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
-		p->cur -= cols > 0? cols: 0;
+		p->cur -= R_MAX (cols, 0);
 		return;
 	}
 	if (PIDX == 2 && core->seltab == 1) {
@@ -1223,7 +1222,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	}
 	cursor_ocur (core, use_ocur);
 
-	if (core->seltab == 0 && core->printidx == 2) {
+	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
@@ -1260,7 +1259,15 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		} else {
 			prev_sz = roff - prev_roff;
 		}
-		p->cur = prev_roff + R_MIN (delta, prev_sz - 1);
+		int res = R_MIN (delta, prev_sz - 1);
+		ut64 cur = prev_roff + res;
+		if (cur == p->cur) {
+			if (p->cur > 0) {
+				p->cur--;
+			}
+		} else {
+			p->cur = prev_roff + delta; //res;
+		}
 	} else {
 		p->cur -= p->cols;
 	}
@@ -1458,7 +1465,7 @@ static bool insert_mode_enabled(RCore *core) {
 }
 
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
-	int ch = arg[0];
+	ut8 ch = arg[0];
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
@@ -1546,7 +1553,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case 9: // tab
 			core->curtab = 0;
-			if (core->printidx == 2) {
+			if (core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 				core->print->cur = 0;
 				core->seltab++;
 				if (core->seltab > 2) {
@@ -1623,9 +1630,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("cmd.cprompt> ");
 			I->line->contents = strdup (cmd);
 			buf = r_line_readline ();
-//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
-			I->line->contents = NULL;
-			(void)r_config_set (core->config, "cmd.cprompt", buf);
+			if (!strcmp (buf, "|")) {
+				R_FREE (I->line->contents);
+				core->print->cur_enabled = true;
+				core->print->cur = 0;
+				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
+			} else {
+				//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
+				R_FREE (I->line->contents);
+				(void)r_config_set (core->config, "cmd.cprompt", buf);
+			}
 		}
 		break;
 		case '!':
@@ -1672,17 +1686,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_config_set_i (core->config, "scr.color", color);
 			break;
 		case 'd':
-		{
-			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel) {
-				r_cons_enable_mouse (false);
+			if (r_config_get_i (core->config, "asm.esil")) {
+				r_core_visual_esil (core);
+			} else {
+				int wheel = r_config_get_i (core->config, "scr.wheel");
+				if (wheel) {
+					r_cons_enable_mouse (false);
+				}
+				r_core_visual_define (core, arg + 1);
+				if (wheel) {
+					r_cons_enable_mouse (true);
+				}
 			}
-			r_core_visual_define (core, arg + 1);
-			if (wheel) {
-				r_cons_enable_mouse (true);
-			}
-		}
-		break;
+			break;
 		case 'D':
 			setdiff (core);
 			break;
@@ -2059,13 +2075,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '[':
-			if (core->print->cur_enabled) {
+			// comments column
+			if (core->print->cur_enabled &&
+				(core->printidx == R_CORE_VISUAL_MODE_PD ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 2))) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 				if (cmtcol > 2) {
 					r_config_set_i (core->config, "asm.cmtcol", cmtcol - 2);
 				}
 			}
-			{
+			// hex column
+			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				if (scrcols > 2) {
 					r_config_set_i (core->config, "hex.cols", scrcols - 2);
@@ -2073,11 +2094,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case ']':
-			if (core->print->cur_enabled) {
+			// comments column
+			if (core->print->cur_enabled &&
+				(core->printidx == R_CORE_VISUAL_MODE_PD ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 2))) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 				r_config_set_i (core->config, "asm.cmtcol", cmtcol + 2);
 			}
-			{
+			// hex column
+			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
+				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				r_config_set_i (core->config, "hex.cols", scrcols + 2);
 			}
@@ -2172,7 +2198,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == 2) {
+				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 					int w = r_config_get_i (core->config, "hex.cols");
 					r_config_set_i (core->config, "stack.size",
 						r_config_get_i (core->config, "stack.size") - w);
@@ -2196,7 +2222,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == 2) {
+				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 					int w = r_config_get_i (core->config, "hex.cols");
 					r_config_set_i (core->config, "stack.size",
 						r_config_get_i (core->config, "stack.size") + w);
@@ -2447,21 +2473,21 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize) {
 		switch (core->printidx) {
-		case 7: // prc
+		case R_CORE_VISUAL_MODE_PRC: // prc
 			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
 			break;
-		case 0: // x"
-		case 8: // pxa
+		case R_CORE_VISUAL_MODE_PX: // x
+		case R_CORE_VISUAL_MODE_PXa: // pxa
 			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
 			break;
-		case 3: // XXX pw
+		case R_CORE_VISUAL_MODE_PW: // XXX pw
 			r_core_block_size (core, core->cons->rows * hexcols);
 			break;
-		case 4: // XXX pc
+		case R_CORE_VISUAL_MODE_PC: // XXX pc
 			r_core_block_size (core, core->cons->rows * hexcols * 4);
 			break;
-		case 1: // pd
-		case 2: // pd+dbg
+		case R_CORE_VISUAL_MODE_PD: // pd
+		case R_CORE_VISUAL_MODE_PDDBG: // pd+dbg
 		{
 			int bsize = core->cons->rows * 5;
 
@@ -2476,7 +2502,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			r_core_block_size (core, bsize);
 			break;
 		}
-		case 5: // pxA
+		case R_CORE_VISUAL_MODE_PXA: // pxA
 			r_core_block_size (core, hexcols * core->cons->rows * 8);
 			break;
 		}
@@ -2636,7 +2662,7 @@ static int visual_responsive(RCore *core) {
 }
 
 static void visual_refresh(RCore *core) {
-	int w;
+	static ut64 oseek = UT64_MAX;
 	const char *vi, *vcmd;
 	if (!core) {
 		return;
@@ -2644,7 +2670,7 @@ static void visual_refresh(RCore *core) {
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
 
-	w = visual_responsive (core);
+	int w = visual_responsive (core);
 
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
@@ -2655,11 +2681,11 @@ static void visual_refresh(RCore *core) {
 	r_cons_print_clear ();
 
 	vi = r_config_get (core->config, "cmd.cprompt");
+	bool ce = core->print->cur_enabled;
 	if (vi && *vi) {
 		// XXX: slow
 		core->cons->blankline = false;
 		r_cons_clear00 ();
-		r_cons_flush ();
 		{
 			int hc = r_config_get_i (core->config, "hex.cols");
 			int nw = 12 + 4 + hc + (hc * 3);
@@ -2667,9 +2693,19 @@ static void visual_refresh(RCore *core) {
 				// do not show column contents
 			} else {
 				r_cons_printf ("[cmd.cprompt=%s]\n", vi);
+				if (oseek != UT64_MAX) {
+					r_core_seek (core, oseek, 1);
+				}
 				r_core_cmd0 (core, vi);
 				r_cons_column (nw);
 				r_cons_flush ();
+				if (!strncmp (vi, "p=", 2) && core->print->cur_enabled) {
+					oseek = core->offset;
+					core->print->cur_enabled = false;
+					r_core_seek (core, core->num->value, 1);
+				} else {
+					oseek = UT64_MAX;
+				}
 			}
 		}
 		r_cons_gotoxy (0, 0);
@@ -2696,10 +2732,13 @@ static void visual_refresh(RCore *core) {
 		core->print->screen_bounds = 1LL;
 		r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
 	}
+	core->print->cur_enabled = ce;
+#if 0
 	if (core->print->screen_bounds != 1LL) {
 		r_cons_printf ("[0x%08"PFMT64x "..0x%08"PFMT64x "]\n",
 			core->offset, core->print->screen_bounds);
 	}
+#endif
 	blocksize = core->num->value? core->num->value: core->blocksize;
 
 	/* this is why there's flickering */
@@ -2757,7 +2796,7 @@ dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 
-		if (printfmt == printfmtSingle && core->printidx == 2) {
+		if (printfmt == printfmtSingle && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 			static char debugstr[512];
 			const int ref = r_config_get_i (core->config, "dbg.slow");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated

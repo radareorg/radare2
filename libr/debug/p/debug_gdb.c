@@ -84,8 +84,113 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	check_connection (dbg);
-	//TODO
-	return NULL;
+	if (desc->pid <= 0) {
+		return NULL;
+	}
+	RList *retlist = NULL;
+
+	// Get file from GDB
+	char path[128];
+	ut8 *buf;
+	int ret;
+	// TODO don't hardcode buffer size, get from remote target
+	// (I think gdb doesn't do that, it just keeps reading till EOF)
+	// fstat info can get file size, but it doesn't work for /proc/pid/maps
+	ut64 buflen = 16384;
+	// If /proc/%d/maps is not valid for gdbserver, we return NULL, as of now
+	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
+	if (gdbr_open_file (desc, path, O_RDONLY, S_IRUSR | S_IWUSR | S_IXUSR) < 0) {
+		eprintf ("%s: Error opening file: %s\n", __func__, path);
+		return NULL;
+	}
+	if (!(buf = malloc (buflen))) {
+		gdbr_close_file (desc);
+		return NULL;
+	}
+	if ((ret = gdbr_read_file (desc, buf, buflen - 1)) <= 0) {
+		gdbr_close_file (desc);
+		free (buf);
+		return NULL;
+	}
+	buf[ret] = '\0';
+
+	// Get map list
+	int unk = 0, perm, i;
+	char *ptr, *pos_1;
+	size_t line_len;
+	char name[1024], region1[100], region2[100], perms[5];
+	RDebugMap *map = NULL;
+	region1[0] = region2[0] = '0';
+	region1[1] = region2[1] = 'x';
+	if (!(ptr = strtok ((char*) buf, "\n"))) {
+		gdbr_close_file (desc);
+		free (buf);
+		return NULL;
+	}
+	if (!(retlist = r_list_new ())) {
+		gdbr_close_file (desc);
+		free (buf);
+		return NULL;
+	}
+	while (ptr) {
+		ut64 map_start, map_end, offset;
+		bool map_is_shared = false;
+		line_len = strlen (ptr);
+		// maps files should not have empty lines
+		if (line_len == 0) {
+			break;
+		}
+		// We assume Linux target, for now, so -
+		// 7ffff7dda000-7ffff7dfd000 r-xp 00000000 08:05 265428 /usr/lib/ld-2.25.so
+		ret = sscanf (ptr, "%s %s %"PFMT64x" %*s %*s %[^\n]", &region1[2],
+			      perms, &offset, name);
+		if (ret == 3) {
+			name[0] = '\0';
+		} else if (ret != 4) {
+			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n", __func__, path, buf);
+			gdbr_close_file (desc);
+			free (buf);
+			r_list_free (retlist);
+			return NULL;
+		}
+		if (!(pos_1 = strchr (&region1[2], '-'))) {
+			ptr = strtok (NULL, "\n");
+			continue;
+		}
+		strncpy (&region2[2], pos_1 + 1, sizeof (region2) - 2 - 1);
+		if (!*name) {
+			snprintf (name, sizeof (name), "unk%d", unk++);
+		}
+		perm = 0;
+		for (i = 0; perms[i] && i < 5; i++) {
+			switch (perms[i]) {
+			case 'r': perm |= R_IO_READ; break;
+			case 'w': perm |= R_IO_WRITE; break;
+			case 'x': perm |= R_IO_EXEC; break;
+			case 'p': map_is_shared = false; break;
+			case 's': map_is_shared = true; break;
+			}
+		}
+		map_start = r_num_get (NULL, region1);
+		map_end = r_num_get (NULL, region2);
+		if (map_start == map_end || map_end == 0) {
+			eprintf ("%s: ignoring invalid map size: %s - %s\n",
+				 __func__, region1, region2);
+			ptr = strtok (NULL, "\n");
+			continue;
+		}
+		if (!(map = r_debug_map_new (name, map_start, map_end, perm, 0))) {
+			break;
+		}
+		map->offset = offset;
+		map->shared = map_is_shared;
+		map->file = strdup (name);
+		r_list_append (retlist, map);
+		ptr = strtok (NULL, "\n");
+	}
+	gdbr_close_file (desc);
+	free (buf);
+	return retlist;
 }
 
 static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
@@ -153,13 +258,13 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			support_hw_bp = UNKNOWN;
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->bits;
-			if (( desc = &g->desc ))
+			desc = &g->desc;
 			switch (arch) {
 			case R_SYS_ARCH_X86:
 				if (bits == 16 || bits == 32) {
-					gdbr_set_architecture (&g->desc, X86_32);
+					gdbr_set_architecture (desc, "x86", 32);
 				} else if (bits == 64) {
-					gdbr_set_architecture (&g->desc, X86_64);
+					gdbr_set_architecture (desc, "x86", 64);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
@@ -170,9 +275,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			case R_SYS_ARCH_ARM:
 				if (bits == 16 || bits == 32) {
-					gdbr_set_architecture (&g->desc, ARM_32);
+					gdbr_set_architecture (desc, "arm", 32);
 				} else if (bits == 64) {
-					gdbr_set_architecture (&g->desc, ARM_64);
+					gdbr_set_architecture (desc, "arm", 64);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
@@ -180,7 +285,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			case R_SYS_ARCH_LM32:
 				if (bits == 32) {
-					gdbr_set_architecture(&g->desc, LM32);
+					gdbr_set_architecture(desc, "lm32", 32);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
@@ -188,20 +293,14 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			case R_SYS_ARCH_MIPS:
 				if (bits == 32 || bits == 64) {
-					gdbr_set_architecture (&g->desc, MIPS);
+					gdbr_set_architecture (desc, "mips", bits);
 				} else {
 					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
 			case R_SYS_ARCH_AVR:
-				if (bits == 16) {
-					gdbr_set_architecture (&g->desc, AVR);
-				} else {
-					gdbr_set_architecture (&g->desc, AVR);
-					//eprintf ("Not supported register profile\n");
-					//return false;
-				}
+				gdbr_set_architecture (desc, "avr", 16);
 				break;
 			}
 		} else {
@@ -212,9 +311,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_gdb_detach(RDebug *dbg, int pid) {
-	gdbr_disconnect (desc);
-	free (reg_buf);
-	return true;
+	return gdbr_detach_pid (desc, pid);
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
@@ -721,7 +818,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 
 static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	int ret;
-	if (!bp) return false;
+	if (!bp) {
+		return false;
+	}
 	// TODO handle rwx and conditions
 	if (set)
 		ret = bp->hw?

@@ -11,14 +11,6 @@ typedef unsigned int ssize_t;
 #include "r_types_base.h"
 #include "r_socket.h"
 
-#define X86_64 ARCH_X86_64
-#define X86_32 ARCH_X86_32
-#define ARM_32 ARCH_ARM_32
-#define ARM_64 ARCH_ARM_64
-#define MIPS ARCH_MIPS
-#define AVR ARCH_AVR
-#define LM32 ARCH_LM32
-
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
 #define MSG_ERROR_1 -2
@@ -89,6 +81,10 @@ typedef struct libgdbr_stub_features_t {
 	bool EnableDisableTracepoints;
 	bool tracenz;
 	bool BreakpointCommands;
+	// Cannot be determined with qSupported, found out on query
+	bool qC;
+
+	int extended_mode;
 } libgdbr_stub_features_t;
 
 /*!
@@ -129,30 +125,31 @@ typedef struct libgdbr_t {
 	char *data;
 	ssize_t data_len;
 	ssize_t data_max;
-	uint8_t architecture;
-	registers_t *registers;
+	gdb_reg_t *registers;
 	int last_code;
 	int pid; // little endian
 	int tid; // little endian
 	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
-	char *exec_file_name;
-	int exec_fd;
-	uint64_t exec_file_sz;
+
+	int remote_file_fd; // For remote file I/O
+
+	bool no_ack;
+	bool is_server;
 } libgdbr_t;
 
 /*!
  * \brief Function initializes the libgdbr lib
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_init(libgdbr_t *g);
+int gdbr_init(libgdbr_t *g, bool is_server);
 
 /*!
  * \brief Function initializes the architecture of the gdbsession
  * \param architecture defines the architecure used (registersize, and such)
  * \returns a failure code
  */
-int gdbr_set_architecture(libgdbr_t *g, uint8_t architecture);
+int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff

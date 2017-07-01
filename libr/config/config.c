@@ -388,8 +388,9 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				if (node->value == value) {
 					goto beach;
 				}
-				free (node->value);
+				char *tmp = node->value;
 				node->value = strdup (value);
+				free (tmp);
 				if (IS_DIGIT (*value)) {
 					if (strchr (value, '/')) {
 						node->i_value = r_num_get (cfg->num, value);

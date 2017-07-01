@@ -13,6 +13,10 @@
 #include "../utils.h"
 #include "../arch.h"
 
+#define CMD_ATTACH	"vAttach;"
+#define CMD_DETACH_MP	"D;"
+#define CMD_KILL_MP	"vKill;"
+
 #define CMD_READREGS	"g"
 #define CMD_WRITEREGS	"G"
 #define CMD_READREG		"p"

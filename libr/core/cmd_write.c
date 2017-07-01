@@ -743,7 +743,7 @@ static int cmd_write(void *data, const char *input) {
 						break;
 					case '\n':
 						newline = 1;
-						if (sign == -1) {
+						if (sign == ' ') {
 							offs = 0;
 							line = 0;
 							hexa = 0;

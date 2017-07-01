@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Requires GNU Make, but some distros probably don't have the gmake symlink.
+[ -z "$MAKE" ] && MAKE=make
+
 while : ; do
 	if [ -f sys/rebuild.sh ]; then
 		break
@@ -13,14 +16,14 @@ done
 
 Rebuild() {
 	cd "$1" || exit 1
-	make clean
-	make -j8 || exit 1
+	$MAKE clean
+	$MAKE -j8 || exit 1
 	cd -
 }
 
 Build() {
 	cd "$1" || exit 1
-	make -j8 || exit 1
+	$MAKE -j8 || exit 1
 	cd -
 }
 
@@ -29,7 +32,7 @@ RebuildIOSDebug() {
 	# Rebuild libr/util
 	# Rebuild libr/core
 	Rebuild binr/radare2
-	make -C binr/radare2 ios-sign
+	$MAKE -C binr/radare2 ios-sign
 	if [ -n "${IOSIP}" ]; then
 		scp binr/radare2/radare2 root@"${IOSIP}:."
 	else
@@ -55,6 +58,11 @@ RebuildSdb() {
 	Rebuild libr/util
 }
 
+RebuildFs() {
+	Rebuild shlr/grub
+	Rebuild libr/fs
+}
+
 RebuildBin() {
 	Rebuild libr/bin
 	Rebuild libr/core
@@ -67,6 +75,7 @@ RebuildGdb() {
 }
 
 case "$1" in
+grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;

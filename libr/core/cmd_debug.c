@@ -21,35 +21,6 @@ struct trace_node {
 	int refs;
 };
 
-// Get base address from a loaded file.
-static ut64 r_debug_get_baddr(RCore *r, const char *file) {
-	char *abspath;
-	RListIter *iter;
-	RDebugMap *map;
-	if (!r || !r->io || !r->io->desc) {
-		return 0LL;
-	}
-	r_debug_attach (r->dbg, r->io->desc->fd);
-	r_debug_map_sync (r->dbg);
-	abspath = r_file_abspath (file);
-	if (!abspath) abspath = strdup (file);
-	r_list_foreach (r->dbg->maps, iter, map) {
-		if (!strcmp (abspath, map->name)) {
-			free (abspath);
-			return map->addr;
-		}
-	}
-	free (abspath);
-	// fallback resolution (osx/w32?)
-	// we asume maps to be loaded in order, so lower addresses come first
-	r_list_foreach (r->dbg->maps, iter, map) {
-		if (map->perm == 5) { // r-x
-			return map->addr;
-		}
-	}
-	return 0LL;
-}
-
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
 	int i, *syscalls = NULL;
@@ -247,7 +218,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 	return true;
 }
 
-static int step_until_inst(RCore *core, const char *instr) {
+static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	RAsmOp asmop;
 	ut8 buf[32];
 	ut64 pc;
@@ -276,9 +247,16 @@ static int step_until_inst(RCore *core, const char *instr) {
 		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
 		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.buf_asm);
 		if (ret > 0) {
-			if (strstr (asmop.buf_asm, instr)) {
-				eprintf ("Stop.\n");
-				break;
+			if (regex) {
+				if (r_regex_match (instr, "e", asmop.buf_asm)) {
+					eprintf ("Stop.\n");
+					break;
+				}
+			} else {
+				if (strstr (asmop.buf_asm, instr)) {
+					eprintf ("Stop.\n");
+					break;
+				}
 			}
 		}
 	}
@@ -1662,22 +1640,22 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				switch (str[1]) {
 				case '1':
-					r_print_hexdump (core->print, 0LL, buf, len, 8, 1);
+					r_print_hexdump (core->print, 0LL, buf, len, 8, 1, 1);
 					break;
 				case '2':
-					r_print_hexdump (core->print, 0LL, buf, len, 16, 2);
+					r_print_hexdump (core->print, 0LL, buf, len, 16, 2, 1);
 					break;
 				case '4':
-					r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+					r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
 					break;
 				case '8':
-					r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
+					r_print_hexdump (core->print, 0LL, buf, len, 64, 8, 1);
 					break;
 				default:
 					if (core->assembler->bits == 64) {
-						r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
+						r_print_hexdump (core->print, 0LL, buf, len, 64, 8, 1);
 					} else {
-						r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+						r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
 					}
 					break;
 				}
@@ -3410,7 +3388,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		"dsp", "", "Step into program (skip libs)",
 		"dss", " <num>", "Skip <num> step instructions",
 		"dsu", "[?]<address>", "Step until address",
-		"dsui", " <instr>", "Step until an instruction that matches `instr`",
+		"dsui", "[r] <instr>", "Step until an instruction that matches `instr`, use dsuir for regex match",
 		"dsue", " <esil>", "Step until esil expression matches",
 		"dsuf", " <flag>", "Step until pc == flag matching name",
 		NULL
@@ -3464,7 +3442,12 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			step_until_flag (core, input + 3);
 			break;
 		case 'i':
-			step_until_inst (core, input + 3);
+			if (input[3] == 'r') {
+				step_until_inst (core, input + 4, true);
+			}
+			else {
+				step_until_inst (core, input + 3, false);
+			}
 			break;
 		case 'e':
 			step_until_esil (core, input + 3);
@@ -3609,7 +3592,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_session_list (core->dbg);
 				break;
 			case '+':
-				r_debug_session_add (core->dbg);
+				r_debug_session_add (core->dbg, NULL);
 				break;
 			case 'A': // for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));
@@ -3795,7 +3778,7 @@ static int cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid (core, input);
 		break;
-	case 'h': // "dh"
+	case 'L': // "dL"
 		if (input[1]=='q') {
 			r_debug_plugin_list (core->dbg, 'q');
 		} else if (input[1]==' ') {
@@ -3832,7 +3815,7 @@ static int cmd_debug(void *data, const char *input) {
 					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
 					P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
 					P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
-					P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
+					P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
 					P ("pid=%d\n", rdi->pid);
 					P ("tid=%d\n", rdi->tid);
 					P ("uid=%d\n", rdi->uid);
@@ -3854,7 +3837,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_printf ("f dbg.sigpid = %d\n", core->dbg->reason.tid);
 					r_cons_printf ("f dbg.inbp = %d\n", core->dbg->reason.bp_addr? 1: 0);
 					r_cons_printf ("f dbg.sigaddr = 0x%"PFMT64x"\n", core->dbg->reason.addr);
-					r_cons_printf ("f dbg.baddr = 0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
+					r_cons_printf ("f dbg.baddr = 0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
 					r_cons_printf ("f dbg.pid = %d\n", rdi->pid);
 					r_cons_printf ("f dbg.tid = %d\n", rdi->tid);
 					r_cons_printf ("f dbg.uid = %d\n", rdi->uid);
@@ -3872,7 +3855,7 @@ static int cmd_debug(void *data, const char *input) {
 					P ("\"sigpid\":%d,", core->dbg->reason.tid);
 					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
 					P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
-					P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core, NULL));
+					P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core->dbg, NULL));
 					P ("\"pid\":%d,", rdi->pid);
 					P ("\"tid\":%d,", rdi->tid);
 					P ("\"uid\":%d,", rdi->uid);
@@ -4061,10 +4044,10 @@ static int cmd_debug(void *data, const char *input) {
 				"dd", "[?]", "File descriptors (!fd in r1)",
 				"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
 				"dg", " <file>", "Generate a core-file (WIP)",
-				"dh", " [handler]", "List or set debugger handler",
 				"dH", " [handler]", "Transplant process to a new handler",
 				"di", "[?]", "Show debugger backend information (See dh)",
 				"dk", "[?]", "List, send, get, set, signal handlers of child",
+				"dL", " [handler]", "List or set debugger handler",
 				"dm", "[?]", "Show memory maps",
 				"do", "[?]", "Open process (reload, alias for 'oo')",
 				"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",

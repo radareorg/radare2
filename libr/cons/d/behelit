@@ -5,6 +5,7 @@ ec btext rgb:af87ff
 ec other rgb:4e4e4e
 ec offset rgb:4e4e4e
 ec flow rgb:5f87ff
+ec flow2 rgb:5f87ff
 ec input rgb:5fff5f
 ec prompt rgb:5f87ff
 ec args rgb:ff005f

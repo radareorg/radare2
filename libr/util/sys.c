@@ -112,7 +112,7 @@ R_API ut64 r_sys_now(void) {
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__ && !__CYGWIN__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
-	if (fd != -1) {
+	if (fd == -1) {
 		return false;
 	}
 #ifdef _MSC_VER
@@ -352,14 +352,23 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
-	static char envbuf[1024];
+	static char envbuf[4096];
+	DWORD dwRet;
+
 	if (!key) {
 		return NULL;
 	}
-	envbuf[0] = 0;
-	GetEnvironmentVariableA (key, (LPSTR)&envbuf, sizeof (envbuf));
-	// TODO: handle return value of GEV
-	return *envbuf? strdup (envbuf): NULL;
+	dwRet = GetEnvironmentVariableA (key, (LPSTR)&envbuf, sizeof (envbuf));
+	if (dwRet == 0) {
+		/* Variable not found. */
+		return NULL;
+	}
+	if (dwRet == sizeof(envbuf)) {
+		/* The contents of envbuf are undefined, so return NULL */
+		eprintf ("Buffer too small to read `%s' environment variable.\n", key);
+		return NULL;
+	}
+	return strdup (envbuf);
 #else
 	char *b;
 	if (!key) {

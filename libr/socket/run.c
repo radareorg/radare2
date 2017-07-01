@@ -449,6 +449,7 @@ R_API bool r_run_parseline (RRunProfile *p, char *b) {
 		}
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
+		size_t len;
 		FILE *fd = fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
@@ -464,8 +465,11 @@ R_API bool r_run_parseline (RRunProfile *p, char *b) {
 			}
 			p = strchr (buf, '=');
 			if (p) {
-				*p = 0;
-				r_sys_setenv (buf, p + 1);
+				*p++ = 0;
+				len = strlen(p);
+				if (p[len-1] == '\n') p[len-1] = 0;
+				if (p[len-2] == '\r') p[len-2] = 0;
+				r_sys_setenv (buf, p);
 			}
 		}
 		fclose (fd);
