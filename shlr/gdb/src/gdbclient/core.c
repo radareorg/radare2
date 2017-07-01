@@ -119,6 +119,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		g->stub_features.qC = false;
 	}
+	// Check if vCont is supported
+	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
 	if (g->stub_features.multiprocess) {
 		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
@@ -167,6 +169,48 @@ int gdbr_disconnect(libgdbr_t *g) {
 	return 0;
 }
 
+int gdbr_check_vcont(libgdbr_t *g) {
+	if (!g) {
+		return -1;
+	}
+	char *ptr = NULL;
+	if (send_msg (g, "vCont?") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return -1;
+	}
+	if (g->data_len == 0) {
+		g->stub_features.vContSupported = false;
+		return 0;
+	}
+	g->data[g->data_len] = '\0';
+	if (!(ptr = strtok (g->data + strlen ("vCont;"), ";"))) {
+		return 0;
+	}
+	while (ptr) {
+		switch (*ptr) {
+		case 's':
+			g->stub_features.vcont.s = true;
+			break;
+		case 'S':
+			g->stub_features.vcont.S = true;
+			break;
+		case 'c':
+			g->stub_features.vcont.c = true;
+			break;
+		case 'C':
+			g->stub_features.vcont.C = true;
+			break;
+		case 't':
+			g->stub_features.vcont.t = true;
+			break;
+		case 'r':
+			g->stub_features.vcont.r = true;
+			break;
+		}
+		g->stub_features.vContSupported = true;
+		ptr = strtok (NULL, ";");
+	}
+	return 0;
+}
 
 int gdbr_check_extended_mode(libgdbr_t *g) {
 	int ret;
@@ -695,10 +739,51 @@ int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
 	if (!g) {
 		return -1;
 	}
-	if (thread_id < 0) {
+	if (!g->stub_features.vContSupported) {
 		ret = snprintf (tmp, sizeof (tmp) - 1, "%s", command);
 	} else {
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%x", CMD_C, command, thread_id);
+		bool supported = false;
+		switch (*command) {
+		case 's':
+			if (g->stub_features.vcont.s) {
+				supported = true;
+			}
+			break;
+		case 'S':
+			if (g->stub_features.vcont.S) {
+				supported = true;
+			}
+			break;
+		case 'c':
+			if (g->stub_features.vcont.c) {
+				supported = true;
+			}
+			break;
+		case 'C':
+			if (g->stub_features.vcont.C) {
+				supported = true;
+			}
+			break;
+		case 't':
+			if (g->stub_features.vcont.t) {
+				supported = true;
+			}
+			break;
+		case 'r':
+			if (g->stub_features.vcont.r) {
+				supported = true;
+			}
+			break;
+		}
+		if (supported) {
+			if (thread_id < 0) {
+				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s", CMD_C, command);
+			} else {
+				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%x", CMD_C, command, thread_id);
+			}
+		} else {
+			ret = snprintf (tmp, sizeof (tmp) - 1, "%s", command);
+		}
 	}
 	if (ret < 0) {
 		return ret;
