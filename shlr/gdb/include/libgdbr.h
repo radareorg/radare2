@@ -85,6 +85,9 @@ typedef struct libgdbr_stub_features_t {
 	bool qC;
 
 	int extended_mode;
+	struct {
+		bool c, C, s, S, t, r;
+	} vcont;
 } libgdbr_stub_features_t;
 
 /*!

@@ -31,6 +31,11 @@ void gdbr_invalidate_reg_cache();
 int gdbr_check_extended_mode(libgdbr_t *g);
 
 /*!
+ * \brief checks which subcommands of the vCont packet are supported
+ */
+int gdbr_check_vcont(libgdbr_t *g);
+
+/*!
  * \brief attaches to a process
  * \param pid of the process to attach to
  * \returns a failure code (currently -1) or 0 if call successfully
