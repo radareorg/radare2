@@ -2663,7 +2663,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 					}
 				}
 			} else {
-				ds_comment (ds, false, "\\u%02x%02x", str[i+1], str[i]);
+				ds_comment (ds, false, "\\u%02x%02x", (ut8)str[i+1], (ut8)str[i]);
 			}
 		}
 		ds_comment (ds, false, "\"%s", nl);
