@@ -26,6 +26,9 @@ static char *entitlements(RBinFile *arch, bool json) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
+	if (!bin->signature) {
+		return NULL;
+	}
 	return strdup ((char*) bin->signature);
 }
 
