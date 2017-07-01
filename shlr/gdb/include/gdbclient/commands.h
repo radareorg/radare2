@@ -59,7 +59,7 @@ bool gdbr_kill(libgdbr_t *g);
 bool gdbr_kill_pid(libgdbr_t *g, int pid);
 
 // Commands
-int gdbr_continue(libgdbr_t *g, int thread_id);
+int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig);
 int gdbr_step(libgdbr_t *g, int thread_id);
 int gdbr_read_registers(libgdbr_t *g);
 

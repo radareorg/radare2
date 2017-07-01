@@ -47,7 +47,7 @@ enum Breakpoint {
  * \param command the command that will be sent (i.e. 's,S,c,C...')
  * \returns -1 if something went wrong
  */
-int send_vcont(libgdbr_t* g, const char* command, int thread_id);
+int send_vcont(libgdbr_t* g, const char* command, const char *thread_id);
 
 int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint type);
 
