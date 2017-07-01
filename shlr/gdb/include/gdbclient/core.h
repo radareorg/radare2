@@ -31,6 +31,7 @@
 #define CMD_QRCMD			"qRcmd,"
 #define CMD_C					"vCont"
 #define CMD_C_CONT		"c"
+#define CMD_C_CONT_SIG		"C"
 #define CMD_C_STEP		"s"
 
 enum Breakpoint {

@@ -345,7 +345,6 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 
 bool gdbr_kill(libgdbr_t *g) {
 	int ret;
-
 	if (!g || !g->sock) {
 		return false;
 	}
@@ -552,18 +551,22 @@ int gdbr_step(libgdbr_t *g, int tid) {
 	char thread_id[64];
 	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
 		return send_vcont (g, CMD_C_STEP, NULL);
-	} else {
-		return send_vcont (g, CMD_C_STEP, thread_id);
 	}
+	return send_vcont (g, CMD_C_STEP, thread_id);
 }
 
 int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
-	char thread_id[64];
-	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
-		return send_vcont (g, CMD_C_CONT, NULL);
+	char thread_id[64] = { 0 };
+	char command[16] = { 0 };
+	if (sig <= 0) {
+		strncpy (command, CMD_C_CONT, sizeof (command) - 1);
 	} else {
-		return send_vcont (g, CMD_C_CONT, thread_id);
+		snprintf (command, sizeof (command) - 1, "%s%02x", CMD_C_CONT_SIG, sig);
 	}
+	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
+		return send_vcont (g, command, NULL);
+	}
+	return send_vcont (g, command, thread_id);
 }
 
 int gdbr_send_command(libgdbr_t *g, char *command) {
