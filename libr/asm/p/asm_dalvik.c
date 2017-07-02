@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - earada, pancake */
+/* radare - LGPL - Copyright 2009-2017 - earada, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -470,7 +470,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_dalvik,
 	.version = R2_VERSION

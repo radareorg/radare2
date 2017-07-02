@@ -2384,6 +2384,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			showcursor (core, false);
 			break;
 		case 'b':
+			r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
+#if 0
 		{
 			ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
 			RBreakpointItem *bp = r_bp_get_at (core->dbg->bp, addr);
@@ -2393,7 +2395,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 			}
 		}
-		break;
+#endif
+			break;
 		case 'O':
 			r_core_cmd0 (core, "e!asm.esil");
 			break;

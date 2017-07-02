@@ -246,8 +246,9 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 					m_delta = addr - map->addr;
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
-				if (!(perm & R_BP_PROT_EXEC))
+				if (!(perm & R_BP_PROT_EXEC)) {
 					eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
+				}
 				break;
 			}
 		}
