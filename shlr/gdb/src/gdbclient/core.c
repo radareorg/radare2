@@ -123,9 +123,17 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
 	if (g->stub_features.multiprocess) {
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
+		if (g->tid < 0) {
+			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.-1", (ut32) g->pid);
+		} else {
+			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
+		}
 	} else {
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
+		if (g->tid < 0) {
+			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg-1");
+		} else {
+			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
+		}
 	}
 	ret = send_msg (g, tmp.buf);
 	if (ret < 0) {
@@ -337,7 +345,6 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 
 bool gdbr_kill(libgdbr_t *g) {
 	int ret;
-
 	if (!g || !g->sock) {
 		return false;
 	}
@@ -540,12 +547,26 @@ fail:
 	return -1;
 }
 
-int gdbr_step(libgdbr_t *g, int thread_id) {
+int gdbr_step(libgdbr_t *g, int tid) {
+	char thread_id[64];
+	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
+		return send_vcont (g, CMD_C_STEP, NULL);
+	}
 	return send_vcont (g, CMD_C_STEP, thread_id);
 }
 
-int gdbr_continue(libgdbr_t *g, int thread_id) {
-	return send_vcont (g, CMD_C_CONT, thread_id);
+int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
+	char thread_id[64] = { 0 };
+	char command[16] = { 0 };
+	if (sig <= 0) {
+		strncpy (command, CMD_C_CONT, sizeof (command) - 1);
+	} else {
+		snprintf (command, sizeof (command) - 1, "%s%02x", CMD_C_CONT_SIG, sig);
+	}
+	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
+		return send_vcont (g, command, NULL);
+	}
+	return send_vcont (g, command, thread_id);
 }
 
 int gdbr_send_command(libgdbr_t *g, char *command) {
@@ -733,7 +754,7 @@ int test_command(libgdbr_t *g, const char *command) {
 	return 0;
 }
 
-int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
+int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = {0};
 	int ret;
 	if (!g) {
@@ -776,10 +797,10 @@ int send_vcont(libgdbr_t *g, const char *command, int thread_id) {
 			break;
 		}
 		if (supported) {
-			if (thread_id < 0) {
+			if (!thread_id) {
 				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s", CMD_C, command);
 			} else {
-				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%x", CMD_C, command, thread_id);
+				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%s", CMD_C, command, thread_id);
 			}
 		} else {
 			ret = snprintf (tmp, sizeof (tmp) - 1, "%s", command);

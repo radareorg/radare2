@@ -134,3 +134,13 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 		eprintf ("0x%016"PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
 	}
 }
+
+int print_thread_id(char *dest, int len, int pid, int tid) {
+	if (pid < 0) {
+		return -1;
+	}
+	if (tid < 0) {
+		return snprintf (dest, len, "p%x.-1", pid);
+	}
+	return snprintf (dest, len, "p%x.%x", pid, tid);
+}
