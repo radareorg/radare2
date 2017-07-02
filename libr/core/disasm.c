@@ -4204,10 +4204,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 			free (escaped_str);
 		}
-		if (ds->use_esil) {
-			const char * esil = R_STRBUF_SAFEGET (&ds->analop.esil);
-			r_cons_printf (",\"esil\":\"%s\"", esil);
-		}
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
 		r_cons_printf (",\"family\":\"%s\"",
 				r_anal_op_family_to_string (ds->analop.family));
