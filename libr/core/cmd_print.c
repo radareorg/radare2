@@ -1794,21 +1794,22 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				char *ptr = qo + 1;
 				for(; ptr < qoe; ptr++) {
 					if (*ptr == '\\' && ptr + 1 < qoe) {
-						int body_idx = 0;
+						int i, body_len;
 						switch (*(ptr + 1)) {
 						case 'x':
-							for (; body_idx < 3 && ptr < qoe; body_idx++) {
-								ptr++;
-							}
+							body_len = 3;
 							break;
 						case 'u':
-							for (; body_idx < 5 && ptr < qoe; body_idx++) {
-								ptr++;
-							}
+							body_len = 5;
+							break;
+						case 'U':
+							body_len = 9;
 							break;
 						default:
+							body_len = 1;
+						}
+						for (i = 0; i < body_len && ptr < qoe; i++) {
 							ptr++;
-							break;
 						}
 					}
 					actual_len++;

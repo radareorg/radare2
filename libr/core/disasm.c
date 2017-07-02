@@ -113,6 +113,7 @@ typedef struct r_disam_options_t {
 	bool show_fcncalls;
 	bool show_hints;
 	bool show_marks;
+	const char *strenc;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -487,6 +488,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
+	ds->strenc = r_config_get (core->config, "asm.strenc");
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
@@ -2642,7 +2644,14 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
-	if (strlen (str) == 1) {
+	if (!strcmp (ds->strenc, "utf8")) {
+		char *escstr = r_str_escape_utf8 (str);
+		if (escstr) {
+			ALIGN;
+			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
+			free (escstr);
+		}
+	} else if (strlen (str) == 1) {
 		// could be a wide string
 		int i = 0;
 		ALIGN;

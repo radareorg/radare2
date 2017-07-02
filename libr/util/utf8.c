@@ -205,7 +205,7 @@ R_API int r_utf8_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
 		if (ch) *ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		return 3;
 	} else if (ptrlen>3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
-		if (ch) *ch = (ptr[0] & 0xf) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+		if (ch) *ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		return 4;
 	}
 	return 0;
