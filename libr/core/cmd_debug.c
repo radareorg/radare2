@@ -2530,7 +2530,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), 0);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
 		break;
 	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
