@@ -292,8 +292,8 @@ static void __generic_add_update_flags(RAnalOp *op, char t_d, ut64 v_d, char t_r
 
 	d_strbuf = r_strbuf_new (NULL);
 	rk_strbuf = r_strbuf_new (NULL);
-	r_strbuf_setf (d_strbuf,  t_d  == 'r' ? "r%d" : "%" PFMT64x, v_d);
-	r_strbuf_setf (rk_strbuf, t_rk == 'r' ? "r%d" : "%" PFMT64x, v_rk);
+	r_strbuf_setf (d_strbuf,  t_d  == 'r' ? "r%d" : "%" PFMT64d, v_d);
+	r_strbuf_setf (rk_strbuf, t_rk == 'r' ? "r%d" : "%" PFMT64d, v_rk);
 
 	d = r_strbuf_get(d_strbuf);
 	rk = r_strbuf_get(rk_strbuf);
@@ -332,8 +332,8 @@ static void __generic_sub_update_flags(RAnalOp *op, char t_d, ut64 v_d, char t_r
 
 	d_strbuf = r_strbuf_new (NULL);
 	rk_strbuf = r_strbuf_new (NULL);
-	r_strbuf_setf (d_strbuf,  t_d  == 'r' ? "r%d" : "%" PFMT64x, v_d);
-	r_strbuf_setf (rk_strbuf, t_rk == 'r' ? "r%d" : "%" PFMT64x, v_rk);
+	r_strbuf_setf (d_strbuf,  t_d  == 'r' ? "r%d" : "%" PFMT64d, v_d);
+	r_strbuf_setf (rk_strbuf, t_rk == 'r' ? "r%d" : "%" PFMT64d, v_rk);
 
 	d = r_strbuf_get(d_strbuf);
 	rk = r_strbuf_get(rk_strbuf);
@@ -574,7 +574,7 @@ INST_HANDLER (cpi) { // CPI Rd, K
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
 	ESIL_A ("%d,r%d,-,", k, d);			// Rd - k
-	__generic_sub_update_flags_rr (op, d, k, 0);	// FLAGS (carry)
+	__generic_sub_update_flags_rk (op, d, k, 0);	// FLAGS (carry)
 }
 
 INST_HANDLER (cpse) {	// CPSE Rd, Rr
