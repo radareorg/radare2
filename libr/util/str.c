@@ -1196,16 +1196,61 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
+static void r_str_byte_escape(const char *p, char **dst, int dot_nl) {
+	char *q = *dst;
+	switch (*p) {
+	case '\n':
+		*q++ = '\\';
+		*q++ = dot_nl ? 'l' : 'n';
+		break;
+	case '\r':
+		*q++ = '\\';
+		*q++ = 'r';
+		break;
+	case '\\':
+		*q++ = '\\';
+		*q++ = '\\';
+		break;
+	case '\t':
+		*q++ = '\\';
+		*q++ = 't';
+		break;
+	case '"' :
+		*q++ = '\\';
+		*q++ = '"';
+		break;
+	case '\f':
+		*q++ = '\\';
+		*q++ = 'f';
+		break;
+	case '\b':
+		*q++ = '\\';
+		*q++ = 'b';
+		break;
+	default:
+		/* Outside the ASCII printable range */
+		if (!IS_PRINTABLE (*p)) {
+			*q++ = '\\';
+			*q++ = 'x';
+			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+			*q++ = "0123456789abcdef"[*p & 0xf];
+		} else {
+			*q++ = *p;
+		}
+	}
+	*dst = q;
+}
+
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc_seq) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq) {
 	char *new_buf, *q;
 	const char *p;
 
 	if (!buf) {
 		return NULL;
 	}
-	/* Worst case scenario, we convert every byte */
+	/* Worst case scenario, we convert every byte to \xhh */
 	new_buf = malloc (1 + (strlen (buf) * 4));
 	if (!new_buf) {
 		return NULL;
@@ -1214,34 +1259,6 @@ static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc
 	q = new_buf;
 	while (*p) {
 		switch (*p) {
-		case '\n':
-			*q++ = '\\';
-			*q++ = dot_nl? 'l': 'n';
-			break;
-		case '\r':
-			*q++ = '\\';
-			*q++ = 'r';
-			break;
-		case '\\':
-			*q++ = '\\';
-			*q++ = '\\';
-			break;
-		case '\t':
-			*q++ = '\\';
-			*q++ = 't';
-			break;
-		case '"' :
-			*q++ = '\\';
-			*q++ = '"';
-			break;
-		case '\f':
-			*q++ = '\\';
-			*q++ = 'f';
-			break;
-		case '\b':
-			*q++ = '\\';
-			*q++ = 'b';
-			break;
 		case 0x1b: // ESC
 			if (ign_esc_seq) {
 				p++;
@@ -1260,15 +1277,7 @@ static char *r_str_escape_(const char *buf, const int dot_nl, const bool ign_esc
 				break;
 			}
 		default:
-			/* Outside the ASCII printable range */
-			if (!IS_PRINTABLE (*p)) {
-				*q++ = '\\';
-				*q++ = 'x';
-				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-				*q++ = "0123456789abcdef"[*p & 0xf];
-			} else {
-				*q++ = *p;
-			}
+			r_str_byte_escape (p, &q, dot_nl);
 		}
 		p++;
 	}
@@ -1287,6 +1296,43 @@ R_API char *r_str_escape_all(const char *buf) {
 
 R_API char *r_str_escape_dot(const char *buf) {
 	return r_str_escape_ (buf, true, true);
+}
+
+R_API char *r_str_escape_utf8(const char *buf) {
+	char *new_buf, *q;
+	const char *p, *end;
+	RRune ch;
+	int i, len, ch_bytes;
+
+	if (!buf) {
+		return NULL;
+	}
+	len = strlen (buf);
+	end = buf + len;
+	/* Worst case scenario, we convert every byte to \xhh */
+	new_buf = malloc (1 + (len * 4));
+	if (!new_buf) {
+		return NULL;
+	}
+	p = buf;
+	q = new_buf;
+	while (*p) {
+		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+		if (ch_bytes > 1) {
+			*q++ = '\\';
+			*q++ = ch_bytes == 4 ? 'U' : 'u';
+			for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
+				*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
+				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+			}
+			p += ch_bytes - 1;
+		} else {
+			r_str_byte_escape (p, &q, false);
+		}
+		p++;
+	}
+	*q = '\0';
+	return new_buf;
 }
 
 /* ansi helpers */

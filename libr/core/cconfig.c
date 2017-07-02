@@ -687,6 +687,16 @@ static int cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 }
 
+static int cb_asmstrenc (void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->value[0] == '?') {
+		print_node_options (node);
+		r_cons_printf ("  -- if string's 2nd byte is 0 then utf16le else latin1\n");
+		return false;
+	}
+	return true;
+}
+
 static int cb_binfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2098,6 +2108,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmtpatch", "false", "Show patch comments in disasm");
 	SETPREF ("asm.cmtoff", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
+	n = NODECB ("asm.strenc", "guess", &cb_asmstrenc);
+	SETDESC (n, "Assumed string encoding for disasm");
+	SETOPTIONS (n, "utf8", "guess", NULL);
 	SETCB ("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.strfilter", "", &cb_strfilter);
