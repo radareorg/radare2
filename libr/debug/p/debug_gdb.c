@@ -240,10 +240,21 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int r_debug_gdb_wait(RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	check_connection (dbg);
-	/* do nothing */
-	return true;
+	// TODO: We can expand on this. As of now, only shows breakpoint
+	if (gdbr_stop_reason (desc) < 0) {
+		return R_DEBUG_REASON_UNKNOWN;
+	}
+	if (desc->stop_reason.thread.present) {
+		dbg->reason.tid = desc->stop_reason.thread.tid;
+	}
+	dbg->reason.signum = desc->stop_reason.signum;
+	if (dbg->reason.signum == 5) {
+		// maybe not correct..
+		return R_DEBUG_REASON_BREAKPOINT;
+	}
+	return R_DEBUG_REASON_UNKNOWN;
 }
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {

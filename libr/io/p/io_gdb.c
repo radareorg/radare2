@@ -143,7 +143,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
 				return NULL;
 			}
-		} else if ((i_pid = desc->pid) <= 0) {
+		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
 		riogdb = r_io_desc_new (&r_io_plugin_gdb, i_pid, file, rw, mode, riog);

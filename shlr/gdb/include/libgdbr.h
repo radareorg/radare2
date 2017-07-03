@@ -111,6 +111,33 @@ typedef struct libgdbr_fstat_t {
 }) libgdbr_fstat_t;
 
 /*!
+ * Stores information from the stop-reply packet (why target stopped)
+ */
+typedef struct libgdbr_stop_reason {
+	unsigned signum;
+	int core;
+	bool syscall;
+	bool library;
+	bool swbreak;
+	bool hwbreak;
+	bool create;
+	bool vforkdone;
+	struct {
+		bool present;
+		ut64 addr;
+	} watchpoint;
+	struct {
+		bool present;
+		char *path;
+	} exec;
+	struct {
+		bool present;
+		int pid;
+		int tid;
+	} thread, fork, vfork;
+} libgdbr_stop_reason_t;
+
+/*!
  * Core "object" that saves
  * the instance of the lib
  */
@@ -139,6 +166,7 @@ typedef struct libgdbr_t {
 
 	bool no_ack;
 	bool is_server;
+	libgdbr_stop_reason_t stop_reason;
 } libgdbr_t;
 
 /*!

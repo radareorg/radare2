@@ -220,6 +220,13 @@ int gdbr_check_vcont(libgdbr_t *g) {
 	return 0;
 }
 
+int gdbr_stop_reason(libgdbr_t *g) {
+	if (!g || send_msg (g, "?") < 0 || read_packet (g) < 0) {
+		return -1;
+	}
+	return handle_stop_reason (g);
+}
+
 int gdbr_check_extended_mode(libgdbr_t *g) {
 	int ret;
 	reg_cache.valid = false;
@@ -549,7 +556,8 @@ fail:
 
 int gdbr_step(libgdbr_t *g, int tid) {
 	char thread_id[64];
-	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
+	if (write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
+			     g->stub_features.multiprocess) < 0) {
 		return send_vcont (g, CMD_C_STEP, NULL);
 	}
 	return send_vcont (g, CMD_C_STEP, thread_id);
@@ -563,7 +571,8 @@ int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	} else {
 		snprintf (command, sizeof (command) - 1, "%s%02x", CMD_C_CONT_SIG, sig);
 	}
-	if (print_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid) < 0) {
+	if (write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
+			     g->stub_features.multiprocess) < 0) {
 		return send_vcont (g, command, NULL);
 	}
 	return send_vcont (g, command, thread_id);

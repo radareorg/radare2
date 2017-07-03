@@ -1,6 +1,7 @@
 /* libgdbr - LGPL - Copyright 2014 - defragger */
 
 #include "r_types.h"
+#include "r_util.h"
 #include "utils.h"
 
 // XXX: most of those functions are already implemented in r_util. reuse!
@@ -135,12 +136,60 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 	}
 }
 
-int print_thread_id(char *dest, int len, int pid, int tid) {
-	if (pid < 0) {
+int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
+	if (!multiprocess) {
+		if (tid < 0) {
+			strncpy (dest, "-1", len);
+			return 0;
+		}
+		return snprintf (dest, len, "%x", tid);
+	}
+	if (pid <= 0) {
 		return -1;
 	}
 	if (tid < 0) {
 		return snprintf (dest, len, "p%x.-1", pid);
 	}
 	return snprintf (dest, len, "p%x.%x", pid, tid);
+}
+
+int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
+	char *ptr1;
+	if (multiprocess && *src == 'p') {
+		src++;
+		if (!(ptr1 = strchr (src, '.'))) {
+			return -1;
+		}
+		ptr1++;
+		if (r_str_startswith (src, "-1")) {
+			if (r_str_startswith (ptr1, "-1")) {
+				*pid = *tid = -1;
+				return 0;
+			}
+			return -1;
+		}
+		if (!isxdigit (*src)) {
+			return -1;
+		}
+		if (r_str_startswith (ptr1, "-1")) {
+			*pid = (int) strtol (src, NULL, 16);
+			*tid = -1;
+			return 0;
+		}
+		if (!isxdigit (*ptr1)) {
+			return -1;
+		}
+		*pid = (int) strtol (src, NULL, 16);
+		*tid = (int) strtol (ptr1, NULL, 16);
+		return 0;
+	}
+	if (r_str_startswith (src, "-1")) {
+		*tid = -1;
+		return 0;
+	}
+	if (!isxdigit (*src)) {
+		return -1;
+	}
+	*tid = (int) strtol (src, NULL, 16);
+	return 0;
 }

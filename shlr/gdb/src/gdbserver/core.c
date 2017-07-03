@@ -342,7 +342,6 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	int ret;
 	ut64 addr;
 	int length;
 	char *cmd, *buf;
