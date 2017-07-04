@@ -1,22 +1,20 @@
 #!/bin/sh
 
-[ -z "${CPU}" ] && CPU="armv7"
+[ -z "${CPU}" ] && CPU="arm64"
 # CPU=arm64
 CWD="$(dirname "$0")"
 [ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 #CC="xcrun --sdk iphoneos gcc -arch armv7 -I${CWD}/ios-include"
 CPUS=""
 CPU=`echo $CPU | sed -e 's,+, ,g'`
-EXTRA=""
+#EXTRA=""
+EXTRA="-fembed-bitcode"
 for a in `IFS=+ echo ${CPU}` ; do
-	if [ "$a" = "armv7k" ]; then
-		EXTRA="-fembed-bitcode"
-	fi
 	CPUS="-arch $a ${CPUS}"
 done
 [ -z "${SDK}" ] && SDK=iphoneos
 APPLE_SDK=`echo ${SDK} |tr a-z A-Z`
-CC="xcrun --sdk ${SDK} gcc ${CPUS} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} ${EXTRA}"
+CC="xcrun --sdk ${SDK} clang ${CPUS} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} ${EXTRA}"
 echo $CC $*
 #CC="xcrun --sdk iphoneos gcc -arch arm64"
 ${CC} $*
@@ -36,7 +34,7 @@ if [ -z "${CPU}" ]; then
 	#CPU=arm64
 fi
 if [ -z "${IOSVER}" ]; then
-	IOSVER=9.1
+	IOSVER=9.0
 fi
 
 # USE_SIMULATOR=1

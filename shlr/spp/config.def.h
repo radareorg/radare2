@@ -1,4 +1,4 @@
-#include "p/sh.h"
+/// #include "p/sh.h"
 #include "p/spp.h"
 #include "p/acr.h"
 #include "p/pod.h"
@@ -9,7 +9,7 @@ struct Proc *procs[] = {
 	&cpp_proc,
 	&pod_proc,
 	&acr_proc,
-	&sh_proc,
+///	&sh_proc,
 	NULL
 };
 

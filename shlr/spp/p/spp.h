@@ -125,17 +125,17 @@ static TAG_CALLBACK(spp_sub) {
 
 // XXX This method needs some love
 static TAG_CALLBACK(spp_trace) {
-	char b[1024];
-	if (!echo[ifl]) return 0;
-	snprintf(b, 1023, "echo '%s' >&2 ", buf);
-	system(b);
+	if (echo[ifl]) {
+		fprintf (stderr, "%s\n", buf);
+	}
 	return 0;
 }
 
 /* TODO: deprecate */
 static TAG_CALLBACK(spp_echo) {
-	if (!echo[ifl]) return 0;
-	do_printf (out, "%s", buf);
+	if (echo[ifl]) {
+		do_printf (out, "%s", buf);
+	}
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;
 }

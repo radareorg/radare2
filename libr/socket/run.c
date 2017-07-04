@@ -16,7 +16,6 @@
 #if !__POWERPC__
 #include <spawn.h>
 #endif
-#include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
 #include <mach/mach_init.h>
