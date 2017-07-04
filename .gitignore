@@ -93,3 +93,6 @@ ninja.exe
 infer_out
 infer-out/
 cscope.out
+r2-static/*
+binr/rasign2/rasign2
+binr/rasign2/rasign2.exe
