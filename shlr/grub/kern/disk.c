@@ -449,8 +449,14 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
       if (data)
 	{
 	  /* Just copy it!  */
-	  if (buf)
+	  if (buf) {
+	    if (pos + real_offset + len >= size) {
+              // prevent read overflow
+              grub_errno = GRUB_ERR_BAD_FS;
+              return grub_errno;
+	    }
 	    grub_memcpy (buf, data + pos + real_offset, len);
+          }
 	  grub_disk_cache_unlock (disk->dev->id, disk->id, start_sector);
 	}
       else
