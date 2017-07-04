@@ -81,26 +81,16 @@ int handle_qStatus(libgdbr_t *g) {
 }
 
 int handle_qC(libgdbr_t *g) {
-	char *t1, *t2;
 	// We get process and thread ID
 	if (strncmp (g->data, "QC", 2)) {
 		send_ack (g);
 		return -1;
 	}
-	t2 = g->data + 2;
-	if ((t1 = strchr (g->data, 'p'))) {
-		if (!(t2 = strchr (g->data, '.'))) {
-			send_ack (g);
-			return -1;
-		} else {
-			t1++;
-			g->pid = (int) strtol (t1, NULL, 16);
-			t2++;
-			g->tid = (int) strtol (t2, NULL, 16);
-			return send_ack (g);
-		}
+	g->data[g->data_len] = '\0';
+	if (read_thread_id (g->data + 2, &g->pid, &g->tid, g->stub_features.multiprocess) , 0) {
+		send_ack (g);
+		return -1;
 	}
-	g->pid = g->tid = (int) strtol (t2, NULL, 16);
 	return send_ack (g);
 }
 
@@ -203,4 +193,120 @@ int handle_vFile_close(libgdbr_t *g) {
 		return -1;
 	}
 	return send_ack (g);
+}
+
+int handle_stop_reason(libgdbr_t *g) {
+	send_ack (g);
+	if (g->data_len < 3 || g->data[0] != 'T') {
+		return -1;
+	}
+	char *ptr1, *ptr2;
+	g->data[g->data_len] = '\0';
+	free (g->stop_reason.exec.path);
+	memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
+	g->stop_reason.core = -1;
+	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
+		return -1;
+	}
+	for (ptr1 = strtok (g->data + 3, ";"); ptr1; ptr1 = strtok (NULL, ";")) {
+		if (r_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
+			if (!(ptr2 = strchr (ptr1, ':'))) {
+				continue;
+			}
+			ptr2++;
+			if (read_thread_id (ptr2, &g->stop_reason.thread.pid,
+					    &g->stop_reason.thread.tid,
+					    g->stub_features.multiprocess) < 0) {
+				continue;
+			}
+			g->stop_reason.thread.present = true;
+			continue;
+		}
+		if (r_str_startswith (ptr1, "core")) {
+			if (!(ptr2 = strchr (ptr1, ':'))) {
+				continue;
+			}
+			ptr2++;
+			if (!isxdigit (*ptr2)) {
+				continue;
+			}
+			g->stop_reason.core = (int) strtol (ptr2, NULL, 16);
+			continue;
+		}
+		if (g->stop_reason.signum == 5) {
+			if (r_str_startswith (ptr1, "watch")
+			    || r_str_startswith (ptr1, "rwatch")
+			    || r_str_startswith (ptr1, "awatch")) {
+				if (!(ptr2 = strchr (ptr1, ':'))) {
+					continue;
+				}
+				ptr2++;
+				if (!isxdigit (*ptr2)) {
+					continue;
+				}
+				g->stop_reason.watchpoint.addr = strtoll (ptr2, NULL, 16);
+				g->stop_reason.watchpoint.present = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "exec") && !g->stop_reason.exec.present) {
+				if (!(ptr2 = strchr (ptr1, ':'))) {
+					continue;
+				}
+				ptr2++;
+				if (!(g->stop_reason.exec.path = calloc (strlen (ptr1) / 2, 1))) {
+					continue;
+				}
+				unpack_hex (ptr2, strlen (ptr2), g->stop_reason.exec.path);
+				g->stop_reason.exec.present = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "fork") && !g->stop_reason.fork.present) {
+				if (!(ptr2 = strchr (ptr1, ':'))) {
+					continue;
+				}
+				ptr2++;
+				if (read_thread_id (ptr2, &g->stop_reason.fork.pid,
+						    &g->stop_reason.fork.tid,
+						    g->stub_features.multiprocess) < 0) {
+					continue;
+				}
+				g->stop_reason.fork.present = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "vfork") && !g->stop_reason.vfork.present) {
+				if (!(ptr2 = strchr (ptr1, ':'))) {
+					continue;
+				}
+				ptr2++;
+				if (read_thread_id (ptr2, &g->stop_reason.vfork.pid,
+						    &g->stop_reason.vfork.tid,
+						    g->stub_features.multiprocess) < 0) {
+					continue;
+				}
+				g->stop_reason.vfork.present = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "vforkdone")) {
+				g->stop_reason.vforkdone = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "library")) {
+				g->stop_reason.library = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "swbreak")) {
+				g->stop_reason.swbreak = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "hwbreak")) {
+				g->stop_reason.hwbreak = true;
+				continue;
+			}
+			if (r_str_startswith (ptr1, "create")) {
+				g->stop_reason.create = true;
+				continue;
+			}
+		}
+	}
+	return 0;
 }

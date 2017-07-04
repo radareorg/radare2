@@ -25,6 +25,11 @@ int gdbr_disconnect(libgdbr_t *g);
 void gdbr_invalidate_reg_cache();
 
 /*!
+ * \brief gets reason why remote target stopped
+ */
+int gdbr_stop_reason(libgdbr_t *g);
+
+/*!
  * \brief checks for extended mode availability
  * \returns a failure code (currently -1) or 0 if call successfully
  */

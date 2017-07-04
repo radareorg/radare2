@@ -75,21 +75,29 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 		return true;
 	}
 # else
+	int pc_off = dbg->bpsize;
 	/* see if we really have a breakpoint here... */
 	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	if (!b) { /* we don't. nothing left to do */
-		return true;
+		/* Some targets set pc to breakpoint */
+		b = r_bp_get_at (dbg->bp, pc);
+		if (!b) {
+			return true;
+		}
+		pc_off = 0;
 	}
 
 	/* set the pc value back */
-	pc -= b->size;
-	if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
-		eprintf ("failed to set PC!\n");
-		return false;
-	}
-	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
-		eprintf ("cannot set registers!\n");
-		return false;
+	if (pc_off) {
+		pc -= pc_off;
+		if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
+			eprintf ("failed to set PC!\n");
+			return false;
+		}
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
+			eprintf ("cannot set registers!\n");
+			return false;
+		}
 	}
 # endif
 

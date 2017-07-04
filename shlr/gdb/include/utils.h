@@ -14,6 +14,7 @@ int pack_hex(const char* src, ut64 len, char* dst);
 int hex2int(int ch);
 int int2hex(int i);
 void hexdump(void* ptr, ut64 len, ut64 offset);
-int print_thread_id(char *dest, int len, int pid, int tid);
+int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess);
+int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess);
 
 #endif
