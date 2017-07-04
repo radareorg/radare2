@@ -1290,12 +1290,12 @@ R_API char *r_str_escape(const char *buf) {
 	return r_str_escape_ (buf, false, true);
 }
 
-R_API char *r_str_escape_all(const char *buf) {
-	return r_str_escape_ (buf, false, false);
-}
-
 R_API char *r_str_escape_dot(const char *buf) {
 	return r_str_escape_ (buf, true, true);
+}
+
+R_API char *r_str_escape_latin1(const char *buf) {
+	return r_str_escape_ (buf, false, false);
 }
 
 R_API char *r_str_escape_utf8(const char *buf) {
