@@ -14,7 +14,7 @@ ColumnLimit: 0
 BreakBeforeBraces: Attach
 BraceWrapping: {
 	AfterClass: 'true'
-	AfterControlStatement: 'false'
+	AfterControlStatement: 'true'
 	AfterEnum : 'true'
 	AfterFunction : 'true'
 	AfterNamespace : 'true'
