@@ -2644,7 +2644,14 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
-	if (!strcmp (ds->strenc, "utf8")) {
+	if (!strcmp (ds->strenc, "latin1")) {
+		char *escstr = r_str_escape_latin1 (str);
+		if (escstr) {
+			ALIGN;
+			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
+			free (escstr);
+		}
+	} else if (!strcmp (ds->strenc, "utf8")) {
 		char *escstr = r_str_escape_utf8 (str);
 		if (escstr) {
 			ALIGN;
@@ -2665,7 +2672,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 				    && str[i] != '"' && str[i] != '\\') {
 					ds_comment (ds, false, "%c", str[i]);
 				} else {
-					char *escchar = r_str_escape_all (&str[i]);
+					char *escchar = r_str_escape_latin1 (&str[i]);
 					if (escchar) {
 						ds_comment (ds, false, "%s", escchar);
 						free (escchar);
@@ -2677,7 +2684,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		}
 		ds_comment (ds, false, "\"%s", nl);
 	} else {
-		char *escstr = r_str_escape_all (str);
+		char *escstr = r_str_escape_latin1 (str);
 		if (escstr) {
 			ALIGN;
 			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
