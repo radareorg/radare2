@@ -3,6 +3,7 @@
 
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
+#include "r_userconf.h"
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
