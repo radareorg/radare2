@@ -129,7 +129,7 @@ char *ReadFromPipe(HANDLE fh) {
 
 	str = malloc (strsz);
 	if (!str) {
-		return 0;
+		return NULL;
 	}
 	for (;;) {
 		bSuccess = ReadFile (fh, chBuf, BUFSIZE, &dwRead, NULL);
@@ -141,7 +141,7 @@ char *ReadFromPipe(HANDLE fh) {
 			strsz += 4096;
 			str = realloc (str, strsz);
 			if (!str) {
-				free(str_tmp)
+				free (str_tmp);
 				return NULL;
 			}
 		}
