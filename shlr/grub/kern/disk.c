@@ -425,8 +425,9 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 
   /* Allocate a temporary buffer.  */
   tmp_buf = grub_malloc (GRUB_DISK_SECTOR_SIZE << GRUB_DISK_CACHE_BITS);
-  if (! tmp_buf)
+  if (! tmp_buf) {
     return grub_errno;
+  }
 
   /* Until SIZE is zero...  */
   while (size)
@@ -453,7 +454,7 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 	    if (pos + real_offset + len >= size) {
               // prevent read overflow
               grub_errno = GRUB_ERR_BAD_FS;
-              return grub_errno;
+              goto finish;
 	    }
 	    grub_memcpy (buf, data + pos + real_offset, len);
           }
