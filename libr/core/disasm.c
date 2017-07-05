@@ -333,7 +333,8 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	//XXX fix this generate many dupes with section name
 	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
-	r_cons_printf ("%s%s%s%s%s%s  %s %s", nl? "\n": "", COLOR (ds, color_fline),
+	r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
+		COLOR_RESET (ds), COLOR (ds, color_fline),
 		ds->pre, sn, ds->refline, COLOR_RESET (ds),
 		up? "": "`-", COLOR (ds, pal_comment));
 }
