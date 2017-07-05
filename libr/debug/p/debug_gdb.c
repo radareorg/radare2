@@ -100,7 +100,6 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	// If /proc/%d/maps is not valid for gdbserver, we return NULL, as of now
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
 	if (gdbr_open_file (desc, path, O_RDONLY, S_IRUSR | S_IWUSR | S_IXUSR) < 0) {
-		eprintf ("%s: Error opening file: %s\n", __func__, path);
 		return NULL;
 	}
 	if (!(buf = malloc (buflen))) {
