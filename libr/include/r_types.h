@@ -256,6 +256,7 @@ R_API const char *x##_version () { return "" R2_GITTAP; }
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)
+
 static inline void *r_new_copy(int size, void *data) {
 	void *a = malloc(size);
 	if (a) {

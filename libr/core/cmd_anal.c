@@ -2822,6 +2822,34 @@ static bool contains(RList *list, const char *name) {
 }
 
 static char *oldregread = NULL;
+static RList *mymemxsr = NULL;
+static RList *mymemxsw = NULL;
+
+#define R_NEW_DUP(x) memcpy((void*)malloc(sizeof(x)), &(x), sizeof(x))
+
+static int mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	RListIter *iter;
+	ut64 *n;
+	r_list_foreach (mymemxsw, iter, n) {
+		if (addr == *n) {
+			return len;
+		}
+	}
+	r_list_push (mymemxsw, R_NEW_DUP (addr));
+	return len;
+}
+
+static int mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	RListIter *iter;
+	ut64 *n;
+	r_list_foreach (mymemxsr, iter, n) {
+		if (addr == *n) {
+			return len;
+		}
+	}
+	r_list_push (mymemxsr, R_NEW_DUP (addr));
+	return len;
+}
 
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	AeaStats *stats = esil->user;
@@ -2922,9 +2950,14 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil_init (core);
 	esil = core->anal->esil;
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
+
+	mymemxsr = r_list_new ();
+	mymemxsw = r_list_new ();
 	esil->user = &stats;
 	esil->cb.hook_reg_write = myregwrite;
 	esil->cb.hook_reg_read = myregread;
+	esil->cb.hook_mem_write = mymemwrite;
+	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
 		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr);
@@ -2942,7 +2975,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->cb.hook_reg_read = NULL;
 	esil_fini (core);
 
-	regnow = r_list_newf(free);
+	regnow = r_list_newf (free);
 	{
 		RListIter *iter;
 		char *reg;
@@ -2951,6 +2984,21 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 				r_list_push (regnow, strdup (reg));
 			}
 		}
+	}
+	{
+		RListIter *iter;
+		ut64 *n;
+		int c = 0;
+		r_cons_printf ("f-mem*\n");
+		r_list_foreach (mymemxsr, iter, n) {
+			r_cons_printf ("f mem.read.%d = 0x%08"PFMT64x"\n", c, *n);
+		}
+		c = 0;
+		r_list_foreach (mymemxsw, iter, n) {
+			r_cons_printf ("f mem.write.%d = 0x%08"PFMT64x"\n", c, *n);
+		}
+		r_list_free (mymemxsr);
+		r_list_free (mymemxsw);
 	}
 
 	/* show registers used */
@@ -2972,13 +3020,13 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		r_cons_printf ("}");
 		r_cons_newline();
 	} else {
-		r_cons_printf ("A: ");
+		r_cons_printf ("# A: ");
 		showregs (stats.regs);
-		r_cons_printf ("R: ");
+		r_cons_printf ("# R: ");
 		showregs (stats.regread);
-		r_cons_printf ("W: ");
+		r_cons_printf ("# W: ");
 		showregs (stats.regwrite);
-		r_cons_printf ("N: ");
+		r_cons_printf ("# N: ");
 		if (r_list_length (regnow)) {
 			showregs (regnow);
 		} else {
