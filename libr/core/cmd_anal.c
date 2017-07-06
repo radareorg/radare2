@@ -2891,8 +2891,8 @@ static void showregs (RList *list) {
 				r_cons_printf (" ");
 			}
 		}
-		r_cons_newline();
 	}
+	r_cons_newline();
 }
 
 static void showregs_json (RList *list) {
@@ -2985,17 +2985,17 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			}
 		}
 	}
-	{
+	if ((mode >> 5) & 1) {
 		RListIter *iter;
 		ut64 *n;
 		int c = 0;
-		r_cons_printf ("f-mem*\n");
+		r_cons_printf ("f-mem.*\n");
 		r_list_foreach (mymemxsr, iter, n) {
-			r_cons_printf ("f mem.read.%d = 0x%08"PFMT64x"\n", c, *n);
+			r_cons_printf ("f mem.read.%d = 0x%08"PFMT64x"\n", c++, *n);
 		}
 		c = 0;
 		r_list_foreach (mymemxsw, iter, n) {
-			r_cons_printf ("f mem.write.%d = 0x%08"PFMT64x"\n", c, *n);
+			r_cons_printf ("f mem.write.%d = 0x%08"PFMT64x"\n", c++, *n);
 		}
 		r_list_free (mymemxsr);
 		r_list_free (mymemxsw);
@@ -3019,19 +3019,33 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		showregs_json (regnow);
 		r_cons_printf ("}");
 		r_cons_newline();
+	} else if ((mode >> 5) & 1) {
+		// nothing
 	} else {
-		r_cons_printf ("# A: ");
+		r_cons_printf ("A: ");
 		showregs (stats.regs);
-		r_cons_printf ("# R: ");
+		r_cons_printf ("R: ");
 		showregs (stats.regread);
-		r_cons_printf ("# W: ");
+		r_cons_printf ("W: ");
 		showregs (stats.regwrite);
-		r_cons_printf ("# N: ");
+		r_cons_printf ("N: ");
 		if (r_list_length (regnow)) {
 			showregs (regnow);
 		} else {
 			r_cons_newline();
 		}
+		RListIter *iter;
+		ut64 *n;
+		int c = 0;
+		r_list_foreach (mymemxsr, iter, n) {
+			r_cons_printf ("L%d: 0x%08"PFMT64x"\n", c++, *n);
+		}
+		c = 0;
+		r_list_foreach (mymemxsw, iter, n) {
+			r_cons_printf ("L%d: 0x%08"PFMT64x"\n", c++, *n);
+		}
+		r_list_free (mymemxsr);
+		r_list_free (mymemxsw);
 	}
 	aea_stats_fini (&stats);
 	free (buf);
@@ -3043,6 +3057,7 @@ static void aea_help(RCore *core) {
 	const char *help_msg[] = {
 		"Examples:", "aea", " show regs used in a range",
 		"aea", " [ops]", "Show regs used in N instructions",
+		"aea*", " [ops]", "Create mem.* flags for memory accesses",
 		"aeaf", "", "Show regs used in current function",
 		"aear", " [ops]", "Show regs read in N instructions",
 		"aeaw", " [ops]", "Show regs written in N instructions",
@@ -3366,6 +3381,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'j') {
 			cmd_aea (core, 1 + (1<<4), core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == '*') {
+			cmd_aea (core, 1 + (1<<5), core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) {
@@ -3386,6 +3403,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1<<3, core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'j') {
 			cmd_aea (core, 1<<4, core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == '*') {
+			cmd_aea (core, 1<<5, core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) {
