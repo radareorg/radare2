@@ -90,7 +90,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	      imm = (nibs[2] << 4) | (nibs[3]);
 	      if (imm & 0x80)
 		imm |= ~0xff;
-	      imm = ((char)imm) * 2 + 4 ;
+	      imm = ((unsigned char)imm) * 2 + 4 ;
 	      goto ok;
 	    case BRANCH_12:
 	      imm = ((nibs[1]) << 8) | (nibs[2] << 4) | (nibs[3]);
@@ -158,7 +158,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	  switch (op->arg[n])
 	    {
 	    case A_IMM:
-	      fprintf_fn (stream, "0x%02X", (char)(imm));
+	      fprintf_fn (stream, "0x%02X", (unsigned char)(imm));
 	      break;
 	    case A_R0:
 	      fprintf_fn (stream, "r0");
