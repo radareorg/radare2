@@ -1425,9 +1425,11 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		return 0LL;
 	}
 	r_debug_select (dbg, pid, pid);
-#endif
 	r_debug_map_sync (dbg);
-	abspath = r_file_abspath (file);
+	abspath = r_sys_pid_to_path (pid);
+	if (!abspath) {
+		abspath = r_file_abspath (file);
+	}
 	if (!abspath) {
 		abspath = strdup (file);
 	}
@@ -1448,4 +1450,5 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		}
 	}
 	return 0LL;
+#endif
 }
