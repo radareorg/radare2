@@ -269,16 +269,23 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
 	int saved_stdin = dup (STDIN_FILENO);
+	if (saved_stdin == -1) {
+		return -1;
+	}
 	int saved_stdout = dup (STDOUT_FILENO);
+	if (saved_stdout== -1) {
+		close (saved_stdin);
+		return -1;
+	}
 	int fdm, pid = forkpty (&fdm, NULL, NULL, NULL);
-	if (in) {
-		dup2 (fdm, STDIN_FILENO);
-	}
-	if (out) {
-		dup2 (fdm, STDOUT_FILENO);
-	}
-
 	if (pid == 0) {
+		// child process
+		if (in) {
+			dup2 (fdm, STDIN_FILENO);
+		}
+		if (out) {
+			dup2 (fdm, STDOUT_FILENO);
+		}
 		// child - program to run
 
 		// necessary because otherwise you can read the same thing you
@@ -292,6 +299,10 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 		restore_saved_fd (saved_stdin, in, STDIN_FILENO);
 		restore_saved_fd (saved_stdout, out, STDOUT_FILENO);
 		exit (code);
+	} else {
+		// parent process
+		int status;
+		waitpid (pid, &status, 0);
 	}
 
 	// parent
