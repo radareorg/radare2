@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2017 - pancake, rkx1209 */
 
 #include <r_debug.h>
 
@@ -205,13 +205,15 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 }
 
 /* XXX: Just for debugging. Duplicate soon */
-/* static void print_hash(ut8 *hash, int digest_size) {
+#if 0
+static void print_hash(ut8 *hash, int digest_size) {
         int i = 0;
         for (i = 0; i < digest_size; i++) {
                 eprintf ("%02"PFMT32x, hash[i]);
         }
         eprintf ("\n");
-}*/
+}
+#endif
 
 R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {

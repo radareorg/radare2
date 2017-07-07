@@ -160,7 +160,7 @@ typedef struct r_debug_desc_t {
 struct r_debug_snap_diff_t;
 typedef struct r_page_data_t {
 	struct r_debug_snap_diff_t *diff; // Pointing SnapDiff that has this pagedata.
-	int page_off;
+	ut32 page_off;
 	ut8 *data;
 	ut8 hash[128];
 } RPageData;
@@ -188,7 +188,7 @@ typedef struct r_debug_snap_t {
 
 typedef struct r_debug_key {
 	ut64 addr;
-	int id;
+	ut32 id;
 } RDebugKey;
 
 typedef struct r_debug_session_t {
@@ -198,6 +198,35 @@ typedef struct r_debug_session_t {
 	/* XXX: DebugSession should have base snapshot of memlist. */
 	//RDebugSnap *base;
 } RDebugSession;
+
+/* Session file format */
+typedef struct r_session_header {
+	ut64 addr;
+	ut32 id;
+	ut32 difflist_len;
+} __attribute__((__packed__)) RSessionHeader;
+
+typedef struct r_diff_table {
+	ut32 diff_off;
+	ut32 diff_size;
+	ut32 base_idx;
+} __attribute__((__packed__)) RDiffTable;
+
+typedef struct r_diff_entry {
+	ut32 pages_len;
+} __attribute__((__packed__)) RDiffEntry;
+
+typedef struct r_page_entry {
+	ut32 page_num;
+	ut8 data[SNAP_PAGE_SIZE];
+	ut8 hash[128];
+} __attribute__((__packed__)) RPageEntry;
+
+typedef struct r_snap_entry {
+	ut64 addr;
+	ut32 size;
+	ut64 timestamp;
+} __attribute__((__packed__)) RSnapEntry;
 
 typedef struct r_debug_trace_t {
 	RList *traces;
@@ -560,6 +589,7 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session);
 R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
+R_API void r_debug_session_save(RDebug *dbg, const char *file);
 R_API int r_debug_step_back(RDebug *dbg);
 
 /* plugin pointers */

@@ -3594,6 +3594,13 @@ static int cmd_debug(void *data, const char *input) {
 			case '+':
 				r_debug_session_add (core->dbg, NULL);
 				break;
+			case 't':
+				if (input[1] == ' ') {
+					r_debug_session_save (core->dbg, input + 2);
+				} else {
+					r_cons_println ("Usage: dtst [file] - save trace sessions to disk");
+				}
+				break;
 			case 'A': // for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));
 				break;
@@ -3603,6 +3610,8 @@ static int cmd_debug(void *data, const char *input) {
 					"Usage:", "dts[*]", "",
 					"dts", "", "List all trace sessions",
 					"dts+", "", "Add trace session",
+					"dtsf", " [file] ", "read trace sessions from disk",
+					"dtst", " [file] ", "save trace sessions to disk",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 				}
