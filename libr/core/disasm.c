@@ -1039,10 +1039,9 @@ static void ds_atabs_option(RDisasmState *ds) {
 }
 
 static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
-	RFlagItem *fi;
 	int i;
-	ds->hasMidflag = false;
 
+	ds->hasMidflag = false;
 	if (ds->midcursor && core->print->cur != -1) {
 		ut64 cur = core->offset + core->print->cur;
 		ut64 from = ds->at;
@@ -1052,9 +1051,9 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 		}
 	}
 	for (i = 1; i < ds->oplen; i++) {
-		fi = r_flag_get_i (core->flags, ds->at + i);
-		if (fi) {
-			if (ds->midflags == 2 && ((fi->name && fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+		RFlagItem *fi = r_flag_get_i (core->flags, ds->at + i);
+		if (fi && fi->name) {
+			if (ds->midflags == 2 && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
 			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
 				i = 0;
