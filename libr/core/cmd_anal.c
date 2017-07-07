@@ -2997,8 +2997,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		r_list_foreach (mymemxsw, iter, n) {
 			r_cons_printf ("f mem.write.%d = 0x%08"PFMT64x"\n", c++, *n);
 		}
-		r_list_free (mymemxsr);
-		r_list_free (mymemxsw);
 	}
 
 	/* show registers used */
@@ -3044,9 +3042,11 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		r_list_foreach (mymemxsw, iter, n) {
 			r_cons_printf ("L%d: 0x%08"PFMT64x"\n", c++, *n);
 		}
-		r_list_free (mymemxsr);
-		r_list_free (mymemxsw);
 	}
+	r_list_free (mymemxsr);
+	r_list_free (mymemxsw);
+	mymemxsr = NULL;
+	mymemxsw = NULL;
 	aea_stats_fini (&stats);
 	free (buf);
 	R_FREE (regnow);
