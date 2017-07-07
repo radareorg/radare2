@@ -41,6 +41,13 @@ int gdbr_check_extended_mode(libgdbr_t *g);
 int gdbr_check_vcont(libgdbr_t *g);
 
 /*!
+ * \brief sends a qRcmd packet which basically passes a command to the
+ * remote target's interpreter.
+ * \returns 0 on success and -1 on failure
+ */
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd);
+
+/*!
  * \brief attaches to a process
  * \param pid of the process to attach to
  * \returns a failure code (currently -1) or 0 if call successfully

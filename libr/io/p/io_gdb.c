@@ -191,9 +191,10 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
         /* XXX ugly hack for testing purposes */
         if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
                 eprintf ("Usage: =!cmd args\n"
-                         " =!pid      - show targeted pid\n"
-                         " =!pkt s    - send packet 's'\n"
-                         " =!inv.reg  - invalidate reg cache\n");
+                         " =!pid       - show targeted pid\n"
+                         " =!pkt s     - send packet 's'\n"
+                         " =!qRcmd cmd - hex-encode cmd and pass to target interpreter\n"
+                         " =!inv.reg   - invalidate reg cache\n");
 	} else if (!strncmp (cmd, "pkt ", 4)) {
 		if (send_msg (desc, cmd + 4) == -1) {
 			return false;
@@ -206,6 +207,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			io->cb_printf ("%d\n", pid);
 		}
 		return pid;
+	} else if (!strncmp (cmd, "qRcmd ", 6)) {
+		if (gdbr_send_qRcmd (desc, cmd + 6) < 0) {
+			eprintf ("remote error\n");
+			return false;
+		}
+		return true;
 	} else if (!strncmp (cmd, "inv.reg", 7)) {
 		gdbr_invalidate_reg_cache ();
 	} else {

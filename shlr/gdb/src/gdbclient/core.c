@@ -1013,3 +1013,55 @@ int gdbr_close_file(libgdbr_t *g) {
 void gdbr_invalidate_reg_cache() {
 	reg_cache.valid = false;
 }
+
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
+	if (!g || !cmd) {
+		return -1;
+	}
+	char *buf;
+	size_t len = strlen (cmd) * 2 + 8;
+	if (!(buf = calloc (len, sizeof (char)))) {
+		return -1;
+	}
+	strncpy (buf, "qRcmd,", 6);
+	pack_hex (cmd, strlen (cmd), buf + 6);
+	if (send_msg (g, buf) < 0) {
+		free (buf);
+		return -1;
+	}
+	if (read_packet (g) < 0) {
+		free (buf);
+		return -1;
+	}
+	while (1) {
+		if (send_ack (g) < 0) {
+			free (buf);
+			return -1;
+		}
+		if (g->data_len == 0) {
+			free (buf);
+			return -1;
+		}
+		if (g->data_len == 3 && g->data[0] == 'E'
+		    && isxdigit (g->data[1]) && isxdigit (g->data[2])) {
+			free (buf);
+			return -1;
+		}
+		if (!strncmp (g->data, "OK", 2)) {
+			free (buf);
+			return 0;
+		}
+		if (g->data[0] == 'O' && g->data_len % 2 == 1) {
+			// Console output from gdbserver
+			unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
+			g->data[g->data_len - 1] = '\0';
+			eprintf ("%s", g->data + 1);
+		}
+		if (read_packet (g) < 0) {
+			free (buf);
+			return -1;
+		}
+	}
+	free (buf);
+	return -1;
+}
