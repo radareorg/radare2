@@ -206,21 +206,10 @@ typedef struct r_session_header {
 	ut32 difflist_len;
 } __attribute__((__packed__)) RSessionHeader;
 
-typedef struct r_diff_table {
-	ut64 diff_off;
-	ut32 diff_size;
-	ut32 base_idx;
-} __attribute__((__packed__)) RDiffTable;
-
 typedef struct r_diff_entry {
+	ut32 base_idx;
 	ut32 pages_len;
 } __attribute__((__packed__)) RDiffEntry;
-
-typedef struct r_page_entry {
-	ut32 page_num;
-	ut8 data[SNAP_PAGE_SIZE];
-	ut8 hash[128];
-} __attribute__((__packed__)) RPageEntry;
 
 typedef struct r_snap_entry {
 	ut64 addr;

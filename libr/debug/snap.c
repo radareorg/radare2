@@ -19,9 +19,6 @@ R_API void r_debug_snap_free(void *p) {
 	r_list_free (snap->history);
 	free (snap->data);
 	free (snap->comment);
-	for (i = 0; i < snap->page_num; i++) {
-		free (snap->hashes[i]);
-	}
 	free (snap->hashes);
 	free (snap);
 }
@@ -224,7 +221,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	ut64 addr;
 	ut64 algobit = r_hash_name_to_bits ("sha256");
 	ut32 page_num = map->size / SNAP_PAGE_SIZE;
-	int digest_size;
+	ut32 digest_size;
 	/* Get an existing snapshot entry */
 	RDebugSnap *snap = r_debug_snap_get_map (dbg, map);
 	if (!snap) {
@@ -256,7 +253,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 			ut32 page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 			digest_size = r_hash_calculate (snap->hash_ctx, algobit, &snap->data[addr - snap->addr], clust_page);
-			hash = malloc (digest_size);
+			hash = calloc (128, 1); // Fix hash size to 128 byte
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
 			// eprintf ("0x%08"PFMT64x"(page: %d)...\n",addr, page_off);

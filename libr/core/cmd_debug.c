@@ -3601,6 +3601,13 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_println ("Usage: dtst [file] - save trace sessions to disk");
 				}
 				break;
+			case 'f':
+				if (input[3] == ' ') {
+					r_debug_session_restore (core->dbg, input + 4);
+				} else {
+					r_cons_println ("Usage: dtsf [file] - read trace sessions from disk");
+				}
+				break;
 			case 'A': // for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));
 				break;
