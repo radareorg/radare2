@@ -71,6 +71,17 @@ static int format_output(char mode, const char *s) {
 	return true;
 }
 
+static void remove_seperator(char * str,int pad,char symbol,int period) {
+	int i,len=strlen(str);
+	for (i = period+pad;i < len;i+=period) {
+		if(str[i]==symbol) {
+			for(len=i;str[len];len++) {
+				str[len]=str[len+1];
+			}
+		}
+	}
+}
+
 static int help() {
 	printf (
 		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
@@ -422,6 +433,7 @@ dotherax:
 	}
 
 	if (str[0] == '0' && str[1] == 'x') {
+		remove_seperator(str,2,'_',4);
 		out_mode = (flags & 32)? '0': 'I';
 	} else if (str[0] == 'b') {
 		out_mode = 'B';
