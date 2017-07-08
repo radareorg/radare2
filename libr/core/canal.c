@@ -2422,7 +2422,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
 	ut64 dataptr;
 	int wordsize;
-// SLOW Operation try to reduce as much as possible -- eprintf ("READ %d %llx\n", wordsize, ptr);
+	// SLOW Operation try to reduce as much as possible -- eprintf ("READ %d %llx\n", wordsize, ptr);
 	if (!ptr) {
 		return false;
 	}
@@ -2452,12 +2452,17 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 	switch (arch) {
 	case R2_ARCH_ARM64:
 		aop->size = 4;
+		//addr should be aligned by 4 in aarch64
+		if (addr % 4) { 
+			char diff = addr % 4;
+			addr = addr - diff;
+			buf = buf - diff;
+		}
+		//if is not bl do not analyze
 		if (buf[3] == 0x94) {
-			if (!r_anal_op (core->anal, aop, addr, buf, len)) {
-				// shouldnt happen!
-				return false;
+			if (r_anal_op (core->anal, aop, addr, buf, len)) {
+				return true;
 			}
-			return true;
 		}
 		return false;
 	default:
@@ -2549,9 +2554,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_CALL:
 				case R_ANAL_OP_TYPE_CCALL:
 					if (op.jump != -1 &&
-						core_anal_followptr (core, 'C',
-							at + i, op.jump, ref,
-							true, 0)) {
+						core_anal_followptr (core, 'C', at + i, op.jump, ref, true, 0)) {
 						count ++;
 					}
 					break;
@@ -2562,9 +2565,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_IRJMP:
 				case R_ANAL_OP_TYPE_MJMP:
 					if (op.ptr != -1 &&
-						core_anal_followptr (core, 'c',
-							at + i, op.ptr, ref,
-							true ,1)) {
+						core_anal_followptr (core, 'c', at + i, op.ptr, ref, true ,1)) {
 						count ++;
 					}
 					break;
@@ -2574,17 +2575,13 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_IRCALL:
 				case R_ANAL_OP_TYPE_UCCALL:
 					if (op.ptr != -1 &&
-						core_anal_followptr (core, 'C',
-							at + i, op.ptr, ref,
-							true ,1)) {
+						core_anal_followptr (core, 'C', at + i, op.ptr, ref, true ,1)) {
 						count ++;
 					}
 					break;
 				default:
 					if (op.ptr != -1 &&
-						core_anal_followptr (core, 'd',
-							at + i, op.ptr, ref,
-							false, ptrdepth)) {
+						core_anal_followptr (core, 'd', at + i, op.ptr, ref, false, ptrdepth)) {
 						count ++;
 					}
 					break;
