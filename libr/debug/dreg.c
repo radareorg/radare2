@@ -136,24 +136,13 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		r_list_foreach (head, iter, item) {
 			ut64 value;
 			utX valueBig;
-#if 0
-			bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
-
-			/* the thumb flag in the cpsr register shouldnt forbid us to switch between arm or thumb */
-			/* this code must run only after a step maybe ... need some discussion, disabling for now */
-			if (is_arm && (rad == 1 || rad == '*') && item->size == 1) {
-				if (!strcmp (item->name, "tf")) {
-					bool is_thumb = r_reg_get_value (dbg->reg, item);
-					int new_bits = is_thumb? 16: 32;
-					if (dbg->anal->bits != new_bits)
-						dbg->cb_printf ("e asm.bits=%d\n", new_bits);
-				}
-				continue;
-			}
-#endif
 			if (type != -1) {
-				if (type != item->type && R_REG_TYPE_FLG != item->type) continue;
-				if (size != 0 && size != item->size) continue;
+				if (type != item->type && R_REG_TYPE_FLG != item->type) {
+					continue;
+				}
+				if (size != 0 && size != item->size) {
+					continue;
+				}
 			}
 			int regSize = item->size;
 			if (regSize < 80) {

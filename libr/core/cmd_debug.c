@@ -1885,38 +1885,46 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 't': // "drt"
+		{
+		char rad = 0;
 		switch (str[1]) {
 			case 0:
 				for (i = 0; (name = r_reg_get_type (i)); i++) {
 					r_cons_println (name);
 				}
 				break;
+			case 'j':
+			case '*':
+				rad = str[1];
+				str++;
 			case ' ':
 				{
 					int role = r_reg_get_name_idx (str+2);
 					const char *regname = r_reg_get_name (core->dbg->reg, role);
-					if (!regname)
-						regname = str+2;
+					if (!regname) {
+						regname = str + 2;
+					}
 					size = atoi (regname);
-					if (size<1) {
-						char *arg = strchr (str+2, ' ');
+					if (size < 1) {
+						char *arg = strchr (str + 2, ' ');
 						size = -1;
 						if (arg) {
 							*arg++ = 0;
 							size = atoi (arg);
 						}
-						type = r_reg_type_by_name (str+2);
-						if (size < 0)
+						type = r_reg_type_by_name (str + 2);
+						if (size < 0) {
 							size = core->dbg->bits * 8;
+						}
 						r_debug_reg_sync (core->dbg, type, false);
-						r_debug_reg_list (core->dbg, type, size,
-								strchr (str,'*')? 1: 0, use_color);
+						r_debug_reg_list (core->dbg, type, size, rad, use_color);
 					} else {
 						if (type != R_REG_TYPE_LAST) {
 							r_debug_reg_sync (core->dbg, type, false);
-							r_debug_reg_list (core->dbg, type, size,
-									strchr (str,'*')?1:0, use_color);
-						} else eprintf ("cmd_debug_reg: Unknown type\n");
+							r_debug_reg_list (core->dbg, type, size, rad, use_color);
+						} else {
+							eprintf ("cmd_debug_reg: Unknown type\n");
+						}
 					}
 				} break;
 			case '?':
@@ -1932,6 +1940,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_core_cmd_help (core, help_msg);
 				}
 				break;
+		}
 		}
 		break;
 	case 'n': // "drn"
@@ -1998,11 +2007,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->assembler->bits != reg->size)
+				if (core->assembler->bits != reg->size) {
 					pcbits = reg->size;
+				}
 			}
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, str[0], use_color);
-		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		} else {
+			eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		}
 		break;
 	case ' ':
 		arg = strchr (str + 1, '=');
@@ -3770,7 +3782,7 @@ static int cmd_debug(void *data, const char *input) {
 		if (core->io->debug || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
-			void cmd_anal_reg(RCore *core, const char *str);
+			void cmd_anal_reg (RCore *core, const char *str);
 			cmd_anal_reg (core, input + 1);
 		}
 		//r_core_cmd (core, "|reg", 0);
