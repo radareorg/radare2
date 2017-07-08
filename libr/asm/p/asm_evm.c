@@ -16,8 +16,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	// TODO
-	return -1;
+	op->size = evm_asm (buf, op->buf, sizeof (op->buf));
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_evm = {
@@ -30,7 +30,7 @@ RAsmPlugin r_asm_plugin_evm = {
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "evm",
 	.disassemble = &disassemble,
-	// .assemble = &assemble
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

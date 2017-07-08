@@ -4,7 +4,6 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
-
 typedef enum {
 	EVM_OP_STOP = 0x00,
 	EVM_OP_ADD,
@@ -153,6 +152,77 @@ typedef struct EvmOp {
 	char txt_buf[32];
 } EvmOp;
 
+typedef struct {
+	const char *txt;
+	int len;
+} EvmOpDef;
+
+
+static EvmOpDef opcodes[256] = {
+	[EVM_OP_STOP] = { "stop", 1 },
+	[EVM_OP_ADD] = { "add", 1 },
+	[EVM_OP_MUL] = { "mul", 1 },
+	[EVM_OP_SUB] = { "sub", 1 },
+	[EVM_OP_DIV] = { "div", 1 },
+	[EVM_OP_SDIV] = { "sdiv", 1 },
+	[EVM_OP_MOD] = { "mod", 1 },
+	[EVM_OP_SMOD] = { "smod", 1 },
+	[EVM_OP_ADDMOD] = { "addmod", 1 },
+	[EVM_OP_MULMOD] = { "mulmod", 1 },
+	[EVM_OP_EXP] = { "exp", 1 },
+	[EVM_OP_SIGNEXTEND] = { "signextend", 1 },
+	[EVM_OP_LT] = { "lt", 1 },
+	[EVM_OP_GT] = { "gt", 1 },
+	[EVM_OP_SLT] = { "slt", 1 },
+	[EVM_OP_SGT] = { "sgt", 1 },
+	[EVM_OP_EQ] = { "eq", 1 },
+	[EVM_OP_ISZERO] = { "iszero", 1 },
+	[EVM_OP_AND] = { "and", 1 },
+	[EVM_OP_OR] = { "or" },
+	[EVM_OP_XOR] = { "xor" },
+	[EVM_OP_NOT] = { "not" },
+	[EVM_OP_BYTE] = { "byte" },
+	[EVM_OP_SHA3] = { "sha3" },
+	[EVM_OP_ADDRESS] = { "address" },
+	[EVM_OP_BALANCE] = { "balance" },
+	[EVM_OP_ORIGIN] = { "origin" },
+	[EVM_OP_CALLER] = { "caller" },
+	[EVM_OP_CALLVALUE] = { "callvalue" },
+	[EVM_OP_CALLDATALOAD] = { "calldataload" },
+	[EVM_OP_CALLDATASIZE] = { "calldatasize" },
+	[EVM_OP_CALLDATACOPY] = { "calldatacopy" },
+	[EVM_OP_CODESIZE] = { "codesize" },
+	[EVM_OP_CODECOPY] = { "codecopy" },
+	[EVM_OP_GASPRICE] = { "gasprice" },
+	[EVM_OP_EXTCODESIZE] = { "extcodesize" },
+	[EVM_OP_EXTCODECOPY] = { "extcodecopy" },
+	[EVM_OP_BLOCKHASH] = { "blockhash" },
+	[EVM_OP_COINBASE] = { "coinbase" },
+	[EVM_OP_TIMESTAMP] = { "timestamp" },
+	[EVM_OP_NUMBER] = { "number" },
+	[EVM_OP_DIFFICULTY] = { "difficulty" },
+	[EVM_OP_GASLIMIT] = { "gaslimit", 1 },
+	[EVM_OP_POP] = { "pop", 1 },
+	[EVM_OP_MLOAD] = { "mload", 1 },
+	[EVM_OP_MSTORE] = { "mstore" },
+	[EVM_OP_MSTORE8] = { "mstore8" },
+	[EVM_OP_SLOAD] = { "sload" },
+	[EVM_OP_SSTORE] = { "sstore" },
+	[EVM_OP_JUMP] = { "jump" },
+	[EVM_OP_JUMPI] = { "jumpi" },
+	[EVM_OP_PC] = { "pc" },
+	[EVM_OP_MSIZE] = { "msize" },
+	[EVM_OP_GAS] = { "gas" },
+	[EVM_OP_JUMPDEST] = { "jumpdest" },
+	// ....
+	[EVM_OP_CREATE] = { "create", 1 },
+	[EVM_OP_CALL] = { "call", 1 },
+	[EVM_OP_CALLCODE] = { "callcode", 1 },
+	[EVM_OP_RETURN] = { "return", 1 },
+	[EVM_OP_DELEGATECALL] = { "delegatecall", 1 },
+	[EVM_OP_SELFDESTRUCT] = { "selfdestruct", 1 },
+};
+
 static void settxtf(EvmOp *op, const char *fmt, ...) {
 	if (strchr (fmt, '%')) {
 		va_list ap;
@@ -165,140 +235,34 @@ static void settxtf(EvmOp *op, const char *fmt, ...) {
 	}
 }
 
+int evm_asm (const char *str, unsigned char *buf, int buf_len) {
+	int i, len = -1;
+	for (i = 0; i< 0xff; i++) {
+		EvmOpDef *opdef = &opcodes[i];
+		if (opdef->txt) {
+			if (!strcmp (opdef->txt, str)) {
+				buf[0] = i;
+				return 1;
+			}
+		}
+	}
+	// TODO: add support for: push, swap, dup, log
+	return len;
+}
+
 int evm_dis (EvmOp *op, const unsigned char *buf, int buf_len) {
 	op->len = 1;
 	op->op = buf[0];
+	EvmOpDef *opdef = &opcodes[buf[0]];
+	if (opdef->txt) {
+		op->txt = opdef->txt;
+		op->len = opdef->len;
+		if (op->len < 1) {
+			op->len = 1;
+		}
+		return op->len;
+	}
 	switch (op->op) {
-	case EVM_OP_STOP:
-		op->txt = "stop";
-		break;
-	case EVM_OP_ADD:
-		settxtf (op, "add");
-		break;
-	case EVM_OP_MUL:
-		settxtf (op, "mul");
-		break;
-	case EVM_OP_SUB:
-		settxtf (op, "sub");
-		break;
-	case EVM_OP_DIV:
-		op->txt = "div";
-		break;
-	case EVM_OP_SDIV:
-	case EVM_OP_MOD:
-	case EVM_OP_SMOD:
-	case EVM_OP_ADDMOD:
-	case EVM_OP_MULMOD:
-	case EVM_OP_EXP:
-	case EVM_OP_SIGNEXTEND:
-	case EVM_OP_LT:
-		op->txt = "lt";
-		break;
-	case EVM_OP_GT:
-		op->txt = "gt";
-		break;
-	case EVM_OP_SLT:
-		settxtf (op, "slt");
-		break;
-	case EVM_OP_SGT:
-		settxtf (op, "sgt");
-		break;
-	case EVM_OP_EQ:
-		settxtf (op, "eq");
-		break;
-	case EVM_OP_ISZERO:
-		op->txt = "iszero";
-		break;
-	case EVM_OP_AND:
-		settxtf (op, "and");
-		break;
-	case EVM_OP_OR:
-		settxtf (op, "or");
-		break;
-	case EVM_OP_XOR:
-		settxtf (op, "xor");
-		break;
-	case EVM_OP_NOT:
-		settxtf (op, "not");
-		break;
-	case EVM_OP_BYTE:
-		settxtf (op, "byte");
-		break;
-	case EVM_OP_SHA3:
-		settxtf (op, "sha3");
-		break;
-	case EVM_OP_ADDRESS:
-		settxtf (op, "address");
-		break;
-	case EVM_OP_BALANCE:
-		settxtf (op, "balance");
-		break;
-	case EVM_OP_ORIGIN:
-		settxtf (op, "origin");
-		break;
-	case EVM_OP_CALLER:
-		settxtf (op, "caller");
-		break;
-	case EVM_OP_CALLVALUE:
-		settxtf (op, "callvalue");
-		break;
-	case EVM_OP_CALLDATALOAD:
-		settxtf (op, "calldataload");
-		break;
-	case EVM_OP_CALLDATASIZE:
-		settxtf (op, "calldatasize");
-		break;
-	case EVM_OP_CALLDATACOPY:
-	case EVM_OP_CODESIZE:
-	case EVM_OP_CODECOPY:
-	case EVM_OP_GASPRICE:
-	case EVM_OP_EXTCODESIZE:
-	case EVM_OP_EXTCODECOPY:
-
-	case EVM_OP_BLOCKHASH:
-	case EVM_OP_COINBASE:
-	case EVM_OP_TIMESTAMP:
-	case EVM_OP_NUMBER:
-	case EVM_OP_DIFFICULTY:
-	case EVM_OP_GASLIMIT:
-		op->txt = "gaslimit";
-		break;
-	case EVM_OP_POP:
-		op->txt = "pop";
-		break;
-	case EVM_OP_MLOAD:
-		op->txt = "mload";
-		break;
-	case EVM_OP_MSTORE:
-		op->txt = "mstore";
-		break;
-	case EVM_OP_MSTORE8:
-		op->txt = "mstore8";
-		break;
-	case EVM_OP_SLOAD:
-		op->txt = "sload";
-		break;
-	case EVM_OP_SSTORE:
-		op->txt = "sstore";
-		break;
-	case EVM_OP_JUMP:
-		op->txt = "jump";
-		break;
-	case EVM_OP_JUMPI:
-		op->txt = "jumpi";
-		break;
-	case EVM_OP_PC:
-		op->txt = "pc";
-		break;
-	case EVM_OP_MSIZE:
-		op->txt = "msize";
-		break;
-	case EVM_OP_GAS:
-		op->txt = "gas";
-		break;
-	case EVM_OP_JUMPDEST:
-		op->txt = "jumpdest";
-		break;
 	case EVM_OP_PUSH1:
 	case EVM_OP_PUSH2:
 	case EVM_OP_PUSH3:
@@ -358,6 +322,12 @@ int evm_dis (EvmOp *op, const unsigned char *buf, int buf_len) {
 	case EVM_OP_DUP14:
 	case EVM_OP_DUP15:
 	case EVM_OP_DUP16:
+		{
+			int dupSize = buf[0] - EVM_OP_DUP1 + 1;
+			settxtf (op, "dup%d", dupSize);
+			op->len = dupSize + 1;
+		}
+		break;
 	case EVM_OP_SWAP1:
 	case EVM_OP_SWAP2:
 	case EVM_OP_SWAP3:
@@ -374,30 +344,22 @@ int evm_dis (EvmOp *op, const unsigned char *buf, int buf_len) {
 	case EVM_OP_SWAP14:
 	case EVM_OP_SWAP15:
 	case EVM_OP_SWAP16:
-
+		{
+			int swapSize = buf[0] - EVM_OP_SWAP1 + 1;
+			settxtf (op, "swap%d", swapSize);
+			op->len = swapSize + 1;
+		}
+		break;
 	case EVM_OP_LOG0:
 	case EVM_OP_LOG1:
 	case EVM_OP_LOG2:
 	case EVM_OP_LOG3:
 	case EVM_OP_LOG4:
-
-	case EVM_OP_CREATE:
-		settxtf (op, "create");
-		break;
-	case EVM_OP_CALL:
-		settxtf (op, "call");
-		break;
-	case EVM_OP_CALLCODE:
-		settxtf (op, "callcode");
-		break;
-	case EVM_OP_RETURN:
-		settxtf (op, "return");
-		break;
-	case EVM_OP_DELEGATECALL:
-		op->txt = "delegatecall";
-		break;
-	case EVM_OP_SELFDESTRUCT:
-		settxtf (op, "selfdestruct");
+		{
+			int logSize = buf[0] - EVM_OP_LOG0;
+			settxtf (op, "log%d", logSize);
+			op->len = logSize + 1;
+		}
 		break;
 	default:
 		settxtf (op, "invalid");
@@ -409,6 +371,7 @@ int evm_dis (EvmOp *op, const unsigned char *buf, int buf_len) {
 
 typedef const unsigned char* buf_t;
 
+#if HAS_MAIN
 int main() {
 #if 0
 [1] 6060    PUSH1 0x60 
@@ -435,3 +398,4 @@ int main() {
 	}
 	return 0;
 }
+#endif

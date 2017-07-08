@@ -1,3 +1,3 @@
 all:
-	gcc evm.c
+	gcc -DHAS_MAIN=1 evm.c
 	./a.out
