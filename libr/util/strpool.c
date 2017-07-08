@@ -4,15 +4,19 @@
 
 R_API RStrpool* r_strpool_new (int sz) {
 	RStrpool *p = R_NEW (RStrpool);
-	if (!p) return NULL;
-	if (sz<1) sz = 1024;
-	p->size = sz;
-	p->len = 0;
+	if (!p) {
+		eprintf ("Malloc failed!\n");
+		return NULL;
+	}
+	if (sz < 1) sz = 1024;
 	p->str = malloc (sz);
 	if (!p->str) {
+		eprintf ("Malloc failed!\n");
 		free (p);
 		return NULL;
 	}
+	p->size = sz;
+	p->len = 0;
 	p->str[0] = 0;
 	return p;
 }
@@ -25,10 +29,10 @@ R_API char *r_strpool_empty (RStrpool *p) {
 }
 
 R_API char *r_strpool_alloc (RStrpool *p, int l) {
-	char *ret = p->str+p->len;
-	if ((p->len+l)>=p->size) {
+	char *ret = p->str + p->len;
+	if ((p->len + l) >= p->size) {
 		ut64 osize = p->size;
-		if (l>=R_STRPOOL_INC) {
+		if (l >= R_STRPOOL_INC) {
 			p->size += l + R_STRPOOL_INC;
 		} else {
 			p->size += R_STRPOOL_INC;
@@ -40,7 +44,8 @@ R_API char *r_strpool_alloc (RStrpool *p, int l) {
 		}
 		ret = realloc (p->str, p->size);
 		if (!ret) {
-			p->size = osize;
+			eprintf ("Realloc failed!\n");
+			free (p->str);
 			return NULL;
 		}
 		p->str = ret;
@@ -52,13 +57,15 @@ R_API char *r_strpool_alloc (RStrpool *p, int l) {
 
 R_API int r_strpool_memcat(RStrpool *p, const char *s, int len) {
 	char *ptr = r_strpool_alloc (p, len);
-	if (!ptr) return -1;
+	if (!ptr) {
+		return -1;
+	}
 	memcpy (ptr, s, len);
-	return (size_t)(ptr-p->str);
+	return (size_t)(ptr - p->str);
 }
 
 R_API int r_strpool_append(RStrpool *p, const char *s) {
-	int l = strlen (s)+1;
+	int l = strlen (s) + 1;
 	return r_strpool_memcat(p, s, l);
 }
 
@@ -76,19 +83,26 @@ R_API void r_strpool_free (RStrpool *p) {
 
 R_API int r_strpool_fit(RStrpool *p) {
 	char *s;
-	if (p->len == p->size)
+	if (p->len == p->size) {
 		return false;
+	}
 	s = realloc (p->str, p->len);
-	if (!s) return false;
+	if (!s)
+	{
+		eprintf ("Realloc failed!\n");
+		free (p->str);
+		return false;
+	}
 	p->str = s;
 	p->size = p->len;
 	return true;
 }
 
 R_API char *r_strpool_get(RStrpool *p, int index) {
-	if (!p || !p->str || index<0 || index>=p->len)
+	if (!p || !p->str || index<0 || index>=p->len) {
 		return NULL;
-	return p->str+index;
+	}
+	return p->str + index;
 }
 
 R_API char *r_strpool_get_i(RStrpool *p, int index) {
@@ -104,18 +118,21 @@ R_API char *r_strpool_get_i(RStrpool *p, int index) {
 }
 
 R_API int r_strpool_get_index(RStrpool *p, const char *s) {
-	int ret = (size_t)(s-p->str);
-	return ret>0? ret: 0;
+	int ret = (size_t)(s - p->str);
+	return (ret > 0) ? ret : 0;
 }
 
 R_API char *r_strpool_next(RStrpool *p, int index) {
 	char *ptr = r_strpool_get (p, index);
 	if (ptr) {
-		char *q = ptr + strlen (ptr)+1;
-		if (q>=(p->str+p->len))
+		char *q = ptr + strlen (ptr) + 1;
+		if (q >= (p->str + p->len)) {
 			return NULL;
+		}
 		ptr = q;
-		if (!*ptr) ptr = NULL;
+		if (!*ptr) {
+			ptr = NULL;
+		}
 	}
 	return ptr;
 }
