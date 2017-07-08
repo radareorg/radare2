@@ -195,30 +195,40 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                          " =!pkt s     - send packet 's'\n"
                          " =!qRcmd cmd - hex-encode cmd and pass to target interpreter\n"
                          " =!inv.reg   - invalidate reg cache\n");
-	} else if (!strncmp (cmd, "pkt ", 4)) {
+		return true;
+	}
+	if (!strncmp (cmd, "pkt ", 4)) {
 		if (send_msg (desc, cmd + 4) == -1) {
 			return false;
 		}
 		int r = read_packet (desc);
-		eprintf ("r = %d\n", r);
-	} else if (!strncmp (cmd, "pid", 3)) {
+		desc->data[desc->data_len] = '\0';
+		eprintf ("reply:\n\n%s\n", desc->data);
+		if (!desc->no_ack) {
+			eprintf ("[waiting for ack]\n");
+		}
+		return r >= 0;
+	}
+	if (!strncmp (cmd, "pid", 3)) {
 		int pid = desc ? desc->pid : -1;
 		if (!cmd[3]) {
 			io->cb_printf ("%d\n", pid);
 		}
 		return pid;
-	} else if (!strncmp (cmd, "qRcmd ", 6)) {
+	}
+	if (!strncmp (cmd, "qRcmd ", 6)) {
 		if (gdbr_send_qRcmd (desc, cmd + 6) < 0) {
 			eprintf ("remote error\n");
 			return false;
 		}
 		return true;
-	} else if (!strncmp (cmd, "inv.reg", 7)) {
-		gdbr_invalidate_reg_cache ();
-	} else {
-		eprintf ("Try: '=!?'\n");
 	}
-        return true;
+	if (!strncmp (cmd, "inv.reg", 7)) {
+		gdbr_invalidate_reg_cache ();
+		return true;
+	}
+	eprintf ("Try: '=!?'\n");
+	return true;
 }
 
 RIOPlugin r_io_plugin_gdb = {
