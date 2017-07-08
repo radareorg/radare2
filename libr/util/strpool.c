@@ -99,7 +99,7 @@ R_API int r_strpool_fit(RStrpool *p) {
 }
 
 R_API char *r_strpool_get(RStrpool *p, int index) {
-	if (!p || !p->str || index<0 || index>=p->len) {
+	if (!p || !p->str || index < 0 || index >= p->len) {
 		return NULL;
 	}
 	return p->str + index;
