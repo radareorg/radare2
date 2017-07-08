@@ -1874,6 +1874,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				const char *pc = "$$";
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
+				if (thumb) {
+					op->ptr -= 4;
+				}
 				if (ISMEM(1) && LSHIFT2(1)) {
 					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,[4],%s,=",
 						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
@@ -2402,6 +2405,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->ptr = MEMDISP(1);
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		}
