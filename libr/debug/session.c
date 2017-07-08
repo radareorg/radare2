@@ -165,7 +165,7 @@ R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail) {
 }
 
 /* XXX: bit ugly... :( )*/
-static ut32 r_snap_to_idx (RDebug *dbg, RDebugSnap *snap) {
+static ut32 r_snap_to_idx(RDebug *dbg, RDebugSnap *snap) {
 	RListIter *iter;
 	RDebugSnap *s;
 	ut32 base_idx = 0;
@@ -178,7 +178,7 @@ static ut32 r_snap_to_idx (RDebug *dbg, RDebugSnap *snap) {
 	return base_idx;
 }
 
-static RDebugSnap* r_idx_to_snap (RDebug *dbg, ut32 idx) {
+static RDebugSnap *r_idx_to_snap(RDebug *dbg, ut32 idx) {
 	RListIter *iter;
 	RDebugSnap *s;
 	ut32 base_idx = 0;
@@ -235,13 +235,13 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			RRegArena *arena = session->reg[i]->data;
 			r_file_dump (diff_file, &arena->size, sizeof (int), 1);
 			r_file_dump (diff_file, arena->bytes, arena->size, 1);
-			//eprintf ("arena[%d] size=%d\n", i, arena->size);
+			// eprintf ("arena[%d] size=%d\n", i, arena->size);
 		}
 		if (!header.difflist_len) {
 			continue;
 		}
-		//eprintf ("#### Sesssion ####\n");
-		//eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
+		// eprintf ("#### Sesssion ####\n");
+		// eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
 
 		/* Dump all diff entries */
 		r_list_foreach (session->memlist, iter2, snapdiff) {
@@ -327,8 +327,8 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_purge (reg->regset[i].pool);
 	}
-	
-	while (true){
+
+	while (true) {
 		/* Restore session header */
 		if (!fread (&header, sizeof (RSessionHeader), 1, fd)) {
 			break;
@@ -338,7 +338,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		session->key.id = header.id;
 		session->key.addr = header.addr;
 		r_list_append (dbg->sessions, session);
-		eprintf ("session: %d, 0x%"PFMT64x" diffs: %d\n", header.id, header.addr, header.difflist_len);
+		eprintf ("session: %d, 0x%"PFMT64x " diffs: %d\n", header.id, header.addr, header.difflist_len);
 		/* Restore registers */
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			/* Resotre RReagArena from raw dump*/
@@ -360,7 +360,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		/* Restore diff entries */
 		for (i = 0; i < header.difflist_len; i++) {
 			fread (&diffentry, sizeof (RDiffEntry), 1, fd);
-			//eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
+			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
 			snapdiff = R_NEW0 (RDebugSnapDiff);
 
 			/* Restore diff->base */
@@ -394,5 +394,5 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 
 	fclose (fd);
-	//#endif
+	// #endif
 }

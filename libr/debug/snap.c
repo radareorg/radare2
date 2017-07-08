@@ -204,11 +204,11 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 /* XXX: Just for debugging. Duplicate soon */
 #if 0
 static void print_hash(ut8 *hash, int digest_size) {
-        int i = 0;
-        for (i = 0; i < digest_size; i++) {
-                eprintf ("%02"PFMT32x, hash[i]);
-        }
-        eprintf ("\n");
+	int i = 0;
+	for (i = 0; i < digest_size; i++) {
+		eprintf ("%02"PFMT32x, hash[i]);
+	}
+	eprintf ("\n");
 }
 #endif
 
@@ -253,7 +253,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 			ut32 page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 			digest_size = r_hash_calculate (snap->hash_ctx, algobit, &snap->data[addr - snap->addr], clust_page);
-			hash = calloc (128, 1); // Fix hash size to 128 byte
+			hash = calloc (128, 1);	// Fix hash size to 128 byte
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
 			// eprintf ("0x%08"PFMT64x"(page: %d)...\n",addr, page_off);
@@ -385,15 +385,15 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 		}
 	}
 	if (r_list_length (new_diff->pages)) {
-		#if 0
+#if 0
 		RPageData *page;
 		RListIter *iter;
 		eprintf ("saved: 0x%08"PFMT64x "(page: ", base->addr);
 		r_list_foreach (new_diff->pages, iter, page) {
-		        eprintf ("%d ", page->page_off);
+			eprintf ("%d ", page->page_off);
 		}
 		eprintf (")\n");
-		#endif
+#endif
 		r_list_append (base->history, new_diff);
 		return new_diff;
 	} else {
