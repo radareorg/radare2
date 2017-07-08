@@ -207,7 +207,7 @@ typedef struct r_session_header {
 } __attribute__((__packed__)) RSessionHeader;
 
 typedef struct r_diff_table {
-	ut32 diff_off;
+	ut64 diff_off;
 	ut32 diff_size;
 	ut32 base_idx;
 } __attribute__((__packed__)) RDiffTable;
@@ -226,6 +226,7 @@ typedef struct r_snap_entry {
 	ut64 addr;
 	ut32 size;
 	ut64 timestamp;
+	int perm;
 } __attribute__((__packed__)) RSnapEntry;
 
 typedef struct r_debug_trace_t {

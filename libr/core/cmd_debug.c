@@ -3595,8 +3595,8 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_session_add (core->dbg, NULL);
 				break;
 			case 't':
-				if (input[1] == ' ') {
-					r_debug_session_save (core->dbg, input + 2);
+				if (input[3] == ' ') {
+					r_debug_session_save (core->dbg, input + 4);
 				} else {
 					r_cons_println ("Usage: dtst [file] - save trace sessions to disk");
 				}

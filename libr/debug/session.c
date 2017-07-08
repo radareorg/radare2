@@ -174,10 +174,24 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	RSessionHeader header;
 	RDiffTable *difftable;
 	RDiffEntry diffentry;
+	RSnapEntry snapentry;
 
 	ut32 i;
 	ut64 curp;
+
+	char *base_file = r_str_newf ("%s.dump", file);
+	char *diff_file = r_str_newf ("%s.diff", file);
+
 	/* dump all base snapshots */
+	r_list_foreach (dbg->snaps, iter, base) {
+		snapentry.addr = base->addr;
+		snapentry.size = base->size;
+		snapentry.timestamp = base->timestamp;
+		snapentry.perm = base->perm;
+		r_file_dump (base_file, &snapentry, sizeof (RSnapEntry), 1);
+		r_file_dump (base_file, base->data, base->size, 1);
+	}
+
 	/* dump all sessions */
 	r_list_foreach (dbg->sessions, iter, session) {
 		curp = 0;
@@ -185,19 +199,24 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		header.id = session->key.id;
 		header.addr = session->key.addr;
 		header.difflist_len = r_list_length (session->memlist);
-		r_file_dump (file, &header, sizeof (RSessionHeader), 1);
+		if (!header.difflist_len) {
+			continue;
+		}
+		r_file_dump (diff_file, &header, sizeof (RSessionHeader), 1);
 		curp += sizeof (RSessionHeader);
 
 		/* dump registers */
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			RRegArena *arena = session->reg[i];
-			r_file_dump (file, arena->bytes, arena->size, 1);
+			RRegArena *arena = session->reg[i]->data;
+			r_file_dump (diff_file, arena->bytes, arena->size, 1);
 			curp += arena->size;
+			//eprintf ("arena[%d] size=%d\n", i, arena->size);
 		}
+		//eprintf ("#### Sesssion ####\n");
+		//eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
 		difftable = malloc (sizeof (RDiffTable) * header.difflist_len);
 		curp += sizeof (difftable);
-
 		/* Create diff table and dump */
 		ut32 d = 0, diff_size, base_idx;
 		r_list_foreach (session->memlist, iter2, snapdiff) {
@@ -215,7 +234,8 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			difftable[d].base_idx = base_idx;
 			curp += diff_size;
 			/* Dump a diff table entry */
-			r_file_dump (file, &difftable[d], sizeof (RDiffTable), 1);
+			r_file_dump (diff_file, &difftable[d], sizeof (RDiffTable), 1);
+			//eprintf ("difftable[%d]: off: 0x%"PFMT64x", size: %d, base_idx:%d\n", d, difftable[d].diff_off, difftable[d].diff_size, difftable[d].base_idx);
 			d++;
 		}
 
@@ -223,14 +243,16 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		r_list_foreach (session->memlist, iter2, snapdiff) {
 			diffentry.pages_len = r_list_length (snapdiff->pages);
 			/* Dump diff header */
-			r_file_dump (file, &diffentry, sizeof (RDiffEntry), 1);
+			r_file_dump (diff_file, &diffentry, sizeof (RDiffEntry), 1);
 			r_list_foreach (snapdiff->pages, iter3, page) {
 				/* Dump a page entry */
-				r_file_dump (file, &page->page_off, sizeof (ut32), 1);
-				r_file_dump (file, page->data, SNAP_PAGE_SIZE, 1);
-				r_file_dump (file, page->hash, sizeof (page->hash), 1);
+				r_file_dump (diff_file, &page->page_off, sizeof (ut32), 1);
+				r_file_dump (diff_file, page->data, SNAP_PAGE_SIZE, 1);
+				r_file_dump (diff_file, page->hash, sizeof (page->hash), 1);
 			}
 		}
 		free (difftable);
 	}
+	free (base_file);
+	free (diff_file);
 }
