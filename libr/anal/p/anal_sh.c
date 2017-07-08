@@ -189,7 +189,9 @@ static ut64 disarm_12bit_offset (RAnalOp *op, unsigned int insoff) {
 	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
 	if ((off & 0x0800) == 0x0800)
+	{
 		off |= ~0xFFF;
+	}
 	return (op->addr) + (off<<1) + 4;
 }
 
@@ -201,7 +203,9 @@ static ut64 disarm_8bit_offset (ut64 pc, ut32 offs) {
         ut64 off = offs;
 	/* sign extend if higher bit is 1 (0x08) */
 	if ((off & 0x80) == 0x80)
+	{
 		off |= ~0xFF;
+	}
 	return (off<<1) + pc + 4;
 }
 
