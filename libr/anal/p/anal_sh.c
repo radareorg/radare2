@@ -189,17 +189,24 @@ static ut64 disarm_12bit_offset (RAnalOp *op, unsigned int insoff) {
 	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
 	if ((off & 0x0800) == 0x0800)
+	{
 		off |= ~0xFFF;
+	}
 	return (op->addr) + (off<<1) + 4;
 }
 
 
 /* for bt,bf sign-extended offsets : return PC+4+ (exts.b offset)<<1 */
 static ut64 disarm_8bit_offset (ut64 pc, ut32 offs) {
+        /* pc (really, op->addr) is 64 bits, so we need to sign-extend
+         * to 64 bits instead of the 32 the actual CPU does */
+        ut64 off = offs;
 	/* sign extend if higher bit is 1 (0x08) */
-	if ((offs & 0x80) == 0x80)
-		offs |= ~0xFF;
-	return (offs<<1) + pc + 4;
+	if ((off & 0x80) == 0x80)
+	{
+		off |= ~0xFF;
+	}
+	return (off<<1) + pc + 4;
 }
 
 static char *regs[]={"r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc"};
