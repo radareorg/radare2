@@ -518,8 +518,9 @@ R_API const char *r_cons_get_buffer() {
 
 R_API void r_cons_filter() {
 	/* grep */
-	if (I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.less || I.grep.json) {
+	if (I.filter || I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.less || I.grep.json) {
 		r_cons_grepbuf (I.buffer, I.buffer_len);
+		I.filter = false;
 	}
 	/* html */
 	/* TODO */

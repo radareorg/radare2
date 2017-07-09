@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -141,6 +141,7 @@ static void parse_grep_expression(const char *str) {
 				cons->grep.charCounter = true;
 				str++;
 			} else if (*str == '?') {
+				cons->filter = true;
 				r_cons_grep_help ();
 				return;
 			}
@@ -397,6 +398,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
 	bool show = false;
+	if (cons->filter) {
+		cons->buffer_len = 0;
+		R_FREE (cons->buffer);
+		return 0;
+	}
 
 	if ((!len || !buf || buf[0] == '\0') &&
 	    (cons->grep.json || cons->grep.less)) {
@@ -457,7 +463,14 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		cons->buffer[0] = 0;
 	}
 	out = tbuf = calloc (1, len);
+	if (!out) {
+		return 0;
+	}
 	tline = malloc (len);
+	if (!tline) {
+		free (out);
+		return 0;
+	}
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
 	while ((int) (size_t) (in - buf) < len) {

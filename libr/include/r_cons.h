@@ -346,6 +346,7 @@ typedef struct r_cons_t {
 	ut64 timeout;
 	bool use_color;
 	bool use_tts;
+	bool filter;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
