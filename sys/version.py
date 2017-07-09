@@ -2,6 +2,8 @@
 
 """ Portable python script to read version from configure.acr """
 
+import sys
+
 with open('configure.acr', 'r') as f:
     f.readline()
-    print(f.readline().split()[1])
+    sys.stdout.write(f.readline().split()[1])

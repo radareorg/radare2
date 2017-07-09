@@ -59,6 +59,10 @@ static QueryFullProcessImageNameA_t QueryFullProcessImageNameA;
 #endif
 
 R_LIB_VERSION(r_util);
+#ifdef _MSC_VER
+// Required for GetModuleFileNameEx linking
+#pragma comment(lib, "psapi.lib")
+#endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"x86", R_SYS_ARCH_X86},
@@ -854,7 +858,6 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 	}
-#endif
 	HANDLE handle = NULL;
 	CHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
@@ -877,6 +880,23 @@ R_API char *r_sys_pid_to_path(int pid) {
 		return strdup (filename);
 	}
 	return NULL;
+#else
+	HANDLE processHandle = NULL;
+	TCHAR filename[FILENAME_MAX];
+
+	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	if (processHandle != NULL) {
+		if (GetModuleFileNameEx (processHandle, NULL, filename, FILENAME_MAX) == 0) {
+			eprintf ("r_sys_pid_to_path: Cannot get module filename.");
+		} else {
+			return strdup (filename);
+		}
+		CloseHandle (processHandle);
+	} else {
+		eprintf ("r_sys_pid_to_path: Cannot open process.");
+	}
+	return NULL;
+#endif
 #elif __APPLE__
 #if __POWERPC__
 #warning TODO getpidproc
