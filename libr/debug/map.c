@@ -78,10 +78,11 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		}
 		break;
 	default:
-		fmtstr = dbg->bits& R_SYS_BITS_64?
-			"sys %04s 0x%016"PFMT64x" %c 0x%016"PFMT64x" %c %s %s %s%s%s\n":
-			"sys %04s 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s %s%s%s\n";
+		fmtstr = dbg->bits & R_SYS_BITS_64?
+			"%s %6s 0x%016"PFMT64x" %c 0x%016"PFMT64x" %c %s %s %s%s%s\n":
+			"%s %6s 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s %s%s%s\n";
 		r_list_foreach (dbg->maps, iter, map) {
+			const char *type = map->shared? "sys": "usr";
 			const char *flagname = dbg->corebind.getName
 				? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
 			if (!flagname || !*flagname) {
@@ -95,23 +96,24 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 			}
 			r_num_units (buf, map->size);
 			dbg->cb_printf (fmtstr,
-				buf, map->addr, (addr>=map->addr && addr<map->addr_end)?'*':'-',
+				type, buf, map->addr, (addr>=map->addr && addr<map->addr_end)?'*':'-',
 				map->addr_end, map->user?'u':'s',
 				r_str_rwx_i (map->perm),
-				map->file?map->file:"?",
 				map->name,
+				map->file?map->file:"?",
 				*flagname? " ; ": "", 
 				flagname);
 		}
 		fmtstr = dbg->bits& R_SYS_BITS_64?
-			"usr %04s 0x%016"PFMT64x" - 0x%016"PFMT64x" %c %x %s %s\n":
-			"usr %04s 0x%08"PFMT64x" - 0x%08"PFMT64x" %c %x %s %s\n";
+			"%s %04s 0x%016"PFMT64x" - 0x%016"PFMT64x" %c %x %s %s\n":
+			"%s %04s 0x%08"PFMT64x" - 0x%08"PFMT64x" %c %x %s %s\n";
 		r_list_foreach (dbg->maps_user, iter, map) {
+			const char *type = map->shared? "sys": "usr";
 			r_num_units (buf, map->size);
-			dbg->cb_printf (fmtstr, buf, map->addr, map->addr_end,
+			dbg->cb_printf (fmtstr, type, buf, map->addr, map->addr_end,
 				map->user?'u':'s', (ut32)map->perm, 
-				map->file?map->file:"?",
-				map->name);
+				map->name,
+				map->file?map->file:"?");
 		}
 		break;
 	}
@@ -181,8 +183,8 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 			}
 			count++;
 			fmtstr = bits & R_SYS_BITS_64 ?
-				"sys %6s %c %s0x%016"PFMT64x"%s |" :
-				"sys %6s %c %s0x%08"PFMT64x"%s |";
+				"map %.8s %c %s0x%016"PFMT64x"%s |" :
+				"map %.8s %c %s0x%08"PFMT64x"%s |";
 			cb_printf (fmtstr, buf,
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',

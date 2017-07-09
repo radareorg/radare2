@@ -1703,7 +1703,9 @@ static int cb_binmaxstrbuf(void *user, void *data) {
 	if (core->bin) {
 		int v = node->i_value;
 		ut64 old_v = core->bin->maxstrbuf;
-		if (v < 1) v = 4; // HACK
+		if (v < 1) {
+			v = 4; // HACK
+		}
 		core->bin->maxstrbuf = v;
 		if (v>old_v) {
 			r_core_bin_refresh_strings (core);
