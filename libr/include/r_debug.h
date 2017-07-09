@@ -203,19 +203,19 @@ typedef struct r_session_header {
 	ut64 addr;
 	ut32 id;
 	ut32 difflist_len;
-} __attribute__((__packed__)) RSessionHeader;
+} RSessionHeader;
 
 typedef struct r_diff_entry {
 	ut32 base_idx;
 	ut32 pages_len;
-} __attribute__((__packed__)) RDiffEntry;
+} RDiffEntry;
 
 typedef struct r_snap_entry {
 	ut64 addr;
 	ut32 size;
 	ut64 timestamp;
 	int perm;
-} __attribute__((__packed__)) RSnapEntry;
+} RSnapEntry;
 
 typedef struct r_debug_trace_t {
 	RList *traces;
