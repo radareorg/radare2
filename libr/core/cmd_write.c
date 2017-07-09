@@ -989,12 +989,13 @@ static int cmd_write(void *data, const char *input) {
 			bool append = false;
 			bool toend = false;
 			st64 sz = core->blocksize;
-			//use physical address   
-			ut64 poff = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+			ut64 poff = core->offset;
 			if (*str == 'f') { // "wtf"
 				str++;
 				if (*str == '!') {
 					toend = true;
+					//use physical address
+					poff = r_io_section_vaddr_to_maddr_try (core->io, poff);
 					str++;
 				}
 				if (*str) {
