@@ -163,3 +163,236 @@ R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail) {
 	session = (RDebugSession *) tail->data;
 	return session;
 }
+
+/* XXX: bit ugly... :( )*/
+static ut32 r_snap_to_idx(RDebug *dbg, RDebugSnap *snap) {
+	RListIter *iter;
+	RDebugSnap *s;
+	ut32 base_idx = 0;
+	r_list_foreach (dbg->snaps, iter, s) {
+		if (snap == s) {
+			break;
+		}
+		base_idx++;
+	}
+	return base_idx;
+}
+
+static RDebugSnap *r_idx_to_snap(RDebug *dbg, ut32 idx) {
+	RListIter *iter;
+	RDebugSnap *s;
+	ut32 base_idx = 0;
+	r_list_foreach (dbg->snaps, iter, s) {
+		if (base_idx == idx) {
+			return s;
+		}
+		base_idx++;
+	}
+	return NULL;
+}
+
+R_API void r_debug_session_save(RDebug *dbg, const char *file) {
+	RListIter *iter, *iter2, *iter3;
+	RDebugSession *session;
+	RDebugSnap *base;
+	RDebugSnapDiff *snapdiff;
+	RPageData *page;
+
+	RSessionHeader header;
+	RDiffEntry diffentry;
+	RSnapEntry snapentry;
+
+	ut32 i;
+
+	char *base_file = r_str_newf ("%s.dump", file);
+	char *diff_file = r_str_newf ("%s.session", file);
+
+	/* dump all base snapshots */
+	r_list_foreach (dbg->snaps, iter, base) {
+		snapentry.addr = base->addr;
+		snapentry.size = base->size;
+		snapentry.timestamp = base->timestamp;
+		snapentry.perm = base->perm;
+		r_file_dump (base_file, &snapentry, sizeof (RSnapEntry), 1);
+		r_file_dump (base_file, base->data, base->size, 1);
+		/* dump all hases */
+		for (i = 0; i < base->page_num; i++) {
+			r_file_dump (base_file, base->hashes[i], 128, 1);
+		}
+	}
+
+	/* dump all sessions */
+	r_list_foreach (dbg->sessions, iter, session) {
+		/* dump session header */
+		header.id = session->key.id;
+		header.addr = session->key.addr;
+		header.difflist_len = r_list_length (session->memlist);
+		r_file_dump (diff_file, &header, sizeof (RSessionHeader), 1);
+
+		/* dump registers */
+		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			RRegArena *arena = session->reg[i]->data;
+			r_file_dump (diff_file, &arena->size, sizeof (int), 1);
+			r_file_dump (diff_file, arena->bytes, arena->size, 1);
+			// eprintf ("arena[%d] size=%d\n", i, arena->size);
+		}
+		if (!header.difflist_len) {
+			continue;
+		}
+		// eprintf ("#### Sesssion ####\n");
+		// eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
+
+		/* Dump all diff entries */
+		r_list_foreach (session->memlist, iter2, snapdiff) {
+			/* Dump diff header */
+			diffentry.pages_len = r_list_length (snapdiff->pages);
+			diffentry.base_idx = r_snap_to_idx (dbg, snapdiff->base);
+			r_file_dump (diff_file, &diffentry, sizeof (RDiffEntry), 1);
+
+			/* Dump page entries */
+			r_list_foreach (snapdiff->pages, iter3, page) {
+				r_file_dump (diff_file, &page->page_off, sizeof (ut32), 1);
+				r_file_dump (diff_file, page->data, SNAP_PAGE_SIZE, 1);
+				r_file_dump (diff_file, page->hash, 128, 1);
+			}
+		}
+	}
+	free (base_file);
+	free (diff_file);
+}
+
+R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
+	RListIter *iter;
+	RDebugSession *session;
+	RDebugSnap *base;
+	RDebugSnapDiff *snapdiff;
+	RPageData *page;
+	RReg *reg = dbg->reg;
+	RRegArena *arena;
+	ut8 *arena_raw;
+
+	RSessionHeader header;
+	RDiffEntry diffentry;
+	RSnapEntry snapentry;
+
+	ut32 i;
+	FILE *fd;
+
+	char *base_file = r_str_newf ("%s.dump", file);
+	char *diff_file = r_str_newf ("%s.session", file);
+
+	fd = r_sandbox_fopen (base_file, "rb");
+	if (!fd) {
+		return;
+	}
+
+	/* Clear current sessions to be replaced */
+	r_list_purge (dbg->snaps);
+
+	/* Restore base snapshots */
+	while (true) {
+		base = r_debug_snap_new ();
+		if (!fread (&snapentry, sizeof (RSnapEntry), 1, fd)) {
+			break;
+		}
+		base->addr = snapentry.addr;
+		base->size = snapentry.size;
+		base->addr_end = base->addr + base->size;
+		base->page_num = base->size / SNAP_PAGE_SIZE;
+		base->timestamp = snapentry.timestamp;
+		base->perm = snapentry.perm;
+		base->data = malloc (base->size);
+		fread (base->data, base->size, 1, fd);
+		/* restore all hases */
+		base->hashes = R_NEWS0 (ut8 *, base->page_num);
+		for (i = 0; i < base->page_num; i++) {
+			base->hashes[i] = calloc (1, 128);
+			fread (base->hashes[i], 128, 1, fd);
+		}
+
+		r_list_append (dbg->snaps, base);
+	}
+	fclose (fd);
+	free (base_file);
+
+	/* Restore trace sessions */
+	fd = r_sandbox_fopen (diff_file, "rb");
+	if (!fd) {
+		return;
+	}
+
+	/* Clear current sessions to be replaced */
+	r_list_purge (dbg->sessions);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_list_purge (reg->regset[i].pool);
+	}
+
+	while (true) {
+		/* Restore session header */
+		if (!fread (&header, sizeof (RSessionHeader), 1, fd)) {
+			break;
+		}
+		session = R_NEW0 (RDebugSession);
+		session->memlist = r_list_newf (r_debug_diff_free);
+		session->key.id = header.id;
+		session->key.addr = header.addr;
+		r_list_append (dbg->sessions, session);
+		eprintf ("session: %d, 0x%"PFMT64x " diffs: %d\n", header.id, header.addr, header.difflist_len);
+		/* Restore registers */
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			/* Resotre RReagArena from raw dump*/
+			int arena_size;
+			fread (&arena_size, sizeof (int), 1, fd);
+			arena_raw = malloc (arena_size);
+			fread (arena_raw, arena_size, 1, fd);
+			arena = R_NEW0 (RRegArena);
+			arena->bytes = arena_raw;
+			arena->size = arena_size;
+			/* Push RRegArena to regset.pool */
+			r_list_push (reg->regset[i].pool, arena);
+			reg->regset[i].arena = arena;
+			reg->regset[i].cur = reg->regset[i].pool->tail;
+		}
+		if (!header.difflist_len) {
+			continue;
+		}
+		/* Restore diff entries */
+		for (i = 0; i < header.difflist_len; i++) {
+			fread (&diffentry, sizeof (RDiffEntry), 1, fd);
+			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
+			snapdiff = R_NEW0 (RDebugSnapDiff);
+
+			/* Restore diff->base */
+			base = r_idx_to_snap (dbg, diffentry.base_idx);
+			snapdiff->base = base;
+			snapdiff->pages = r_list_newf (r_page_data_free);
+			snapdiff->last_changes = R_NEWS0 (RPageData *, base->page_num);
+
+			if (r_list_length (base->history)) {
+				/* Inherit last changes from previous SnapDiff */
+				RDebugSnapDiff *prev_diff = (RDebugSnapDiff *) r_list_tail (base->history)->data;
+				memcpy (snapdiff->last_changes, prev_diff->last_changes, sizeof (RPageData *) * base->page_num);
+			}
+			/* Restore pages */
+			ut32 p;
+			ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, base->size);
+			for (p = 0; p < diffentry.pages_len; p++) {
+				page = R_NEW0 (RPageData);
+				page->data = malloc (clust_page);
+				fread (&page->page_off, sizeof (ut32), 1, fd);
+				fread (page->data, SNAP_PAGE_SIZE, 1, fd);
+				fread (page->hash, 128, 1, fd);
+				snapdiff->last_changes[page->page_off] = page;
+				r_list_append (snapdiff->pages, page);
+			}
+			r_list_append (base->history, snapdiff);
+			r_list_append (session->memlist, snapdiff);
+		}
+	}
+	/* After restoring all sessions, now sync register */
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
+
+	fclose (fd);
+	// #endif
+}

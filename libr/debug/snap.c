@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2017 - pancake, rkx1209 */
 
 #include <r_debug.h>
 
@@ -19,9 +19,6 @@ R_API void r_debug_snap_free(void *p) {
 	r_list_free (snap->history);
 	free (snap->data);
 	free (snap->comment);
-	for (i = 0; i < snap->page_num; i++) {
-		free (snap->hashes[i]);
-	}
 	free (snap->hashes);
 	free (snap);
 }
@@ -205,13 +202,15 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 }
 
 /* XXX: Just for debugging. Duplicate soon */
-/* static void print_hash(ut8 *hash, int digest_size) {
-        int i = 0;
-        for (i = 0; i < digest_size; i++) {
-                eprintf ("%02"PFMT32x, hash[i]);
-        }
-        eprintf ("\n");
-}*/
+#if 0
+static void print_hash(ut8 *hash, int digest_size) {
+	int i = 0;
+	for (i = 0; i < digest_size; i++) {
+		eprintf ("%02"PFMT32x, hash[i]);
+	}
+	eprintf ("\n");
+}
+#endif
 
 R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {
@@ -222,7 +221,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	ut64 addr;
 	ut64 algobit = r_hash_name_to_bits ("sha256");
 	ut32 page_num = map->size / SNAP_PAGE_SIZE;
-	int digest_size;
+	ut32 digest_size;
 	/* Get an existing snapshot entry */
 	RDebugSnap *snap = r_debug_snap_get_map (dbg, map);
 	if (!snap) {
@@ -254,7 +253,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
 			ut32 page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 			digest_size = r_hash_calculate (snap->hash_ctx, algobit, &snap->data[addr - snap->addr], clust_page);
-			hash = malloc (digest_size);
+			hash = calloc (128, 1);	// Fix hash size to 128 byte
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
 			// eprintf ("0x%08"PFMT64x"(page: %d)...\n",addr, page_off);
@@ -386,15 +385,15 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 		}
 	}
 	if (r_list_length (new_diff->pages)) {
-		#if 0
+#if 0
 		RPageData *page;
 		RListIter *iter;
 		eprintf ("saved: 0x%08"PFMT64x "(page: ", base->addr);
 		r_list_foreach (new_diff->pages, iter, page) {
-		        eprintf ("%d ", page->page_off);
+			eprintf ("%d ", page->page_off);
 		}
 		eprintf (")\n");
-		#endif
+#endif
 		r_list_append (base->history, new_diff);
 		return new_diff;
 	} else {
