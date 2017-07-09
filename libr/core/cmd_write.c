@@ -989,6 +989,8 @@ static int cmd_write(void *data, const char *input) {
 			bool append = false;
 			bool toend = false;
 			st64 sz = core->blocksize;
+			//use physical address   
+			ut64 poff = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
 			if (*str == 'f') { // "wtf"
 				str++;
 				if (*str == '!') {
@@ -1007,12 +1009,12 @@ static int cmd_write(void *data, const char *input) {
 					filename = str + 1;
 				} else {
 					const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-					snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+					snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 					filename = _fn;
 				}
 			} else if (*str != ' ') {
 				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 				filename = _fn;
 			} else {
 				filename = str + 1;
@@ -1020,27 +1022,27 @@ static int cmd_write(void *data, const char *input) {
 			tmp = *str? strchr (str + 1, ' ') : NULL;
 			if (!filename || !*filename) {
 				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 				filename = _fn;
 			}
 			if (tmp) {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->io, core->file->desc) - poff;
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					*tmp = 0;
 				}
 				if ((st64)sz < 1) {
 				} else {
-					r_core_dump (core, filename, core->offset, (ut64)sz, append);
+					r_core_dump (core, filename, poff, (ut64)sz, append);
 				}
 			} else {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->io, core->file->desc) - poff;
 					if ((st64)sz < 1) {
 						eprintf ("Invalid length %"PFMT64d"\n", sz);
 					} else {
-						r_core_dump (core, filename, core->offset, (ut64)sz, append);
+						r_core_dump (core, filename, poff, (ut64)sz, append);
 					}
 				} else {
 					if (!r_file_dump (filename, core->block, core->blocksize, append)) {
@@ -1051,7 +1053,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			}
 			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
-				sz, core->offset, filename);
+				sz, poff, filename);
 		}
 		break;
 	case 'f':
