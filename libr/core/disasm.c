@@ -4192,7 +4192,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		ds->oplen = oplen;
 		ds->at = at;
 		if (ds->midflags) {
-			int skip_bytes = handleMidFlags (core, ds, true);
+			int skip_bytes = handleMidFlags (core, ds, false);
 			if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
 				oplen = ds->oplen = ret = skip_bytes;
 			}
