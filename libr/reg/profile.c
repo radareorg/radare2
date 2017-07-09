@@ -248,3 +248,140 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	free (str);
 	return ret;
 }
+
+static int gdb_to_r2_profile(char *gdb) {
+	char *ptr = gdb, *ptr1, *gptr, *gptr1;
+	char name[16], groups[128], type[16];
+	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
+		sse = 32, vector = 64, system = 128, mmx = 256;
+	int number, rel, offset, size, type_bits, ret;
+	// Every line is -
+	// Name Number Rel Offset Size Type Groups
+
+	// Skip whitespace at beginning of line and empty lines
+	while (isspace (*ptr)) {
+		ptr++;
+	}
+	// It's possible someone includes the heading line too. Skip it
+	if (r_str_startswith (ptr, "Name")) {
+		if (!(ptr = strchr (ptr, '\n'))) {
+			return false;
+		}
+		ptr++;
+	}
+	while (1) {
+		// Skip whitespace at beginning of line and empty lines
+		while (isspace (*ptr)) {
+			ptr++;
+		}
+		if (!*ptr) {
+			break;
+		}
+		if ((ptr1 = strchr (ptr, '\n'))) {
+			*ptr1 = '\0';
+		}
+		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
+			      &offset, &size, type, groups);
+		// Groups is optional, others not
+		if (ret < 6) {
+			eprintf ("Could not parse line: %s\n", ptr);
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// If name is '', then skip
+		if (r_str_startswith (name, "''")) {
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// If size is 0, skip
+		if (size == 0) {
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// Parse group
+		gptr = groups;
+		type_bits = 0;
+		while (1) {
+			if ((gptr1 = strchr (gptr, ','))) {
+				*gptr1 = '\0';
+			}
+			if (r_str_startswith (gptr, "general")) {
+				type_bits |= gpr;
+			} else if (r_str_startswith (gptr, "all")) {
+				type_bits |= all;
+			} else if (r_str_startswith (gptr, "save")) {
+				type_bits |= save;
+			} else if (r_str_startswith (gptr, "restore")) {
+				type_bits |= restore;
+			} else if (r_str_startswith (gptr, "float")) {
+				type_bits |= float_;
+			} else if (r_str_startswith (gptr, "sse")) {
+				type_bits |= sse;
+			} else if (r_str_startswith (gptr, "mmx")) {
+				type_bits |= mmx;
+			} else if (r_str_startswith (gptr, "vector")) {
+				type_bits |= vector;
+			} else if (r_str_startswith (gptr, "system")) {
+				type_bits |= system;
+			}
+			if (!gptr1) {
+				break;
+			}
+			gptr = gptr1 + 1;
+		}
+		// If type is not defined, skip
+		if (type == 0) {
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// TODO: More mappings between gdb and r2 reg groups. For now, either fpu or gpr
+		if (!(type_bits & sse) && !(type_bits & float_)) {
+			type_bits |= gpr;
+		}
+		// Print line
+		eprintf ("%s\t%s\t.%d\t%d\t0\n",
+			 // Ref: Comment above about more register type mappings
+			 ((type_bits & mmx) || (type_bits & float_)
+			  || (type_bits & sse)) ? "fpu" : "gpr",
+			 name, size * 8, offset);
+		// Go to next line
+		if (!ptr1) {
+			return true;
+		}
+		ptr = ptr1 + 1;
+		continue;
+	}
+	return true;
+}
+
+R_API int r_reg_parse_gdb_profile(const char *profile_file) {
+	int ret;
+	char *base, *file, *str;
+	if (!(str = r_file_slurp (profile_file, NULL))) {
+		if ((base = r_sys_getenv (R_LIB_ENV))) {
+			if ((file = r_str_append (base, profile_file))) {
+				str = r_file_slurp (file, NULL);
+				free (file);
+			}
+		}
+	}
+	if (!str) {
+		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
+		return false;
+	}
+	ret = gdb_to_r2_profile (str);
+	free (str);
+	return ret;
+}
