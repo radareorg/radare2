@@ -1986,7 +1986,7 @@ R_API RList *r_bin_get_mem(RBin *bin) {
 
 R_API int r_bin_is_big_endian(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	return o? o->info->big_endian: -1;
+	return (o && o->info)? o->info->big_endian: -1;
 }
 
 R_API int r_bin_is_stripped(RBin *bin) {
