@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
-#include <stdbool.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_crypto.h"
 #include "r_config.h"
@@ -1030,20 +1028,20 @@ static int cmd_write(void *data, const char *input) {
 					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
-					if (!sz) {
-						sz = core->blocksize;
-					}
 					*tmp = 0;
 				}
-				if (sz < 1) {
-					eprintf ("Invalid length\n");
+				if ((st64)sz < 1) {
 				} else {
 					r_core_dump (core, filename, core->offset, (ut64)sz, append);
 				}
 			} else {
 				if (toend) {
 					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
-					r_core_dump (core, filename, core->offset, (ut64)sz, append);
+					if ((st64)sz < 1) {
+						eprintf ("Invalid length %"PFMT64d"\n", sz);
+					} else {
+						r_core_dump (core, filename, core->offset, (ut64)sz, append);
+					}
 				} else {
 					if (!r_file_dump (filename, core->block, core->blocksize, append)) {
 						sz = 0;
