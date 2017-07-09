@@ -330,6 +330,7 @@ R_API RCons *r_cons_new() {
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = false;
+	I.break_lines = false;
 	//I.lines = 0;
 	I.buffer = NULL;
 	I.buffer_sz = 0;
@@ -720,6 +721,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	char white[1024];
 	int cols = I.columns;
 	int alen, plen, lines = I.rows;
+	bool break_lines = I.break_lines;
 	const char *endptr;
 	char *nl, *ptr = buffer, *pptr;
 
@@ -729,6 +731,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	memset (&white, ' ', sizeof (white));
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
+		int lines_needed;
 
 		*nl = 0;
 		alen = real_strlen (ptr, len);
@@ -736,9 +739,13 @@ R_API void r_cons_visual_write (char *buffer) {
 		pptr = ptr > buffer ? ptr - 1 : ptr;
 		plen = ptr > buffer ? len : len - 1;
 
-		if (alen > cols) {
+		if (break_lines) {
+			lines_needed = alen / cols + (alen % cols == 0 ? 0 : 1);
+		}
+		if ((break_lines && lines < lines_needed && lines > 0)
+		    || (!break_lines && alen > cols)) {
 			int olen = len;
-			endptr = r_str_ansi_chrn (ptr, cols);
+			endptr = r_str_ansi_chrn (ptr, (break_lines ? cols * lines : cols) + 1);
 			endptr++;
 			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;
@@ -750,7 +757,7 @@ R_API void r_cons_visual_write (char *buffer) {
 			}
 		} else {
 			if (lines > 0) {
-				int w = cols - alen;
+				int w = cols - (alen % cols == 0 ? cols : alen % cols);
 				r_cons_write (pptr, plen);
 				if (I.blankline && w > 0) {
 					if (w > sizeof (white) - 1) {
@@ -765,7 +772,11 @@ R_API void r_cons_visual_write (char *buffer) {
 				r_cons_write (pptr, plen);
 			}
 		}
-		lines--; // do not use last line
+		if (break_lines) {
+			lines -= lines_needed;
+		} else {
+			lines--; // do not use last line
+		}
 		ptr = nl + 1;
 	}
 	/* fill the rest of screen */

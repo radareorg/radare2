@@ -299,6 +299,7 @@ typedef struct r_cons_t {
 	int fix_rows;
 	int fix_columns;
 	bool breaked;
+	bool break_lines;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
