@@ -339,7 +339,7 @@ static int gdb_to_r2_profile(char *gdb) {
 			gptr = gptr1 + 1;
 		}
 		// If type is not defined, skip
-		if (type == 0) {
+		if (!*type) {
 			if (!ptr1) {
 				return true;
 			}
