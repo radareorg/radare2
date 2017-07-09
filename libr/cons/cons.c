@@ -731,6 +731,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	memset (&white, ' ', sizeof (white));
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
+		int lines_needed;
 
 		*nl = 0;
 		alen = real_strlen (ptr, len);
@@ -738,9 +739,13 @@ R_API void r_cons_visual_write (char *buffer) {
 		pptr = ptr > buffer ? ptr - 1 : ptr;
 		plen = ptr > buffer ? len : len - 1;
 
-		if (!break_lines && alen > cols) {
+		if (break_lines) {
+			lines_needed = alen / cols + (alen % cols == 0 ? 0 : 1);
+		}
+		if ((break_lines && lines < lines_needed && lines > 0)
+		    || (!break_lines && alen > cols)) {
 			int olen = len;
-			endptr = r_str_ansi_chrn (ptr, cols + 1);
+			endptr = r_str_ansi_chrn (ptr, (break_lines ? cols * lines : cols) + 1);
 			endptr++;
 			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;
@@ -768,7 +773,7 @@ R_API void r_cons_visual_write (char *buffer) {
 			}
 		}
 		if (break_lines) {
-			lines -= alen / cols + (alen % cols == 0 ? 0 : 1);
+			lines -= lines_needed;
 		} else {
 			lines--; // do not use last line
 		}
