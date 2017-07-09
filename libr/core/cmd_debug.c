@@ -1384,6 +1384,7 @@ static void show_drpi(RCore *core) {
 }
 
 static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" and "drp"
+	const char *ptr;
 	switch (str[1]) {
 	case 'i':
 		show_drpi (core);
@@ -1396,6 +1397,14 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 		}
 		break;
 	case ' ':
+		ptr = str + 2;
+		while (isspace (*ptr)) {
+			ptr++;
+		}
+		if (r_str_startswith (ptr, "gdb ")) {
+			r_reg_parse_gdb_profile (ptr + 4);
+			break;
+		}
 		r_reg_set_profile (core->dbg->reg, str+2);
 		break;
 	case '.':
@@ -1478,6 +1487,7 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 				"Usage:", "drp", " # Register profile commands",
 				"drp", "", "Show the current register profile",
 				"drp", " [regprofile-file]", "Set the current register profile",
+				"drp", " [gdb] [regprofile-file]", "Parse gdb register profile and dump an r2 profile string",
 				"drpi", "", "Show internal representation of the register profile",
 				"drp.", "", "Show the current fake size",
 				"drpj", "", "Show the current register profile (JSON)",
@@ -1485,7 +1495,7 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 				NULL
 			};
 			if (from == 'a') {
-				help_msg[1] = help_msg[3] = help_msg[6] = from_a[0];
+				help_msg[1] = help_msg[3] = help_msg[6] = help_msg[9] = from_a[0];
 				help_msg[9] = from_a[1];
 				help_msg[12] = from_a[2];
 				help_msg[15] = from_a[3];
@@ -1878,11 +1888,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'p': // "drp"
-		if (str[1] == 'i') {
-			cmd_reg_profile (core, 'i', str);
-		} else {
-			cmd_reg_profile (core, 'd', str);
-		}
+		cmd_reg_profile (core, 'd', str);
 		break;
 	case 't': // "drt"
 		{
