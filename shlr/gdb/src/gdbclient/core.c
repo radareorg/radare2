@@ -578,30 +578,6 @@ int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	return send_vcont (g, command, thread_id);
 }
 
-int gdbr_send_command(libgdbr_t *g, char *command) {
-	int ret;
-	char *cmd;
-	if (!g || !command) {
-		return -1;
-	}
-	cmd = calloc ((strlen (command) * 2 + strlen (CMD_QRCMD) + 2), sizeof (char));
-	if (!cmd) {
-		return -1;
-	}
-	strcpy (cmd, CMD_QRCMD);
-	pack_hex (command, strlen (command), (cmd + strlen (CMD_QRCMD)));
-	ret = send_msg (g, cmd);
-	free (cmd);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (read_packet (g) >= 0) {
-		return handle_cmd (g);
-	}
-	return -1;
-}
-
 int gdbr_write_bin_registers(libgdbr_t *g){
 	if (!g) {
 		return -1;

@@ -45,12 +45,6 @@ int handle_m(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_cmd(libgdbr_t *g) {
-	unpack_hex (g->data, strlen (g->data), g->data);
-	g->data_len = strlen (g->data) / 2;
-	return send_ack (g);
-}
-
 int handle_qStatus(libgdbr_t *g) {
 	if (!g || !g->data || !*g->data) {
 		return -1;
