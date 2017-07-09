@@ -1000,7 +1000,7 @@ static int cmd_write(void *data, const char *input) {
 				} else {
 					filename = "";
 				}
-			} else if (*str=='a') { // "wta"
+			} else if (*str == 'a') { // "wta"
 				append = 1;
 				str++;
 				if (str[0] == ' ') {
@@ -1017,7 +1017,7 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				filename = str + 1;
 			}
-			tmp = strchr (str + 1, ' ');
+			tmp = *str? strchr (str + 1, ' ') : NULL;
 			if (!filename || !*filename) {
 				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
