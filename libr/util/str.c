@@ -993,6 +993,10 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	}
 	klen = strlen (key);
 	vlen = strlen (val);
+	if (klen == 1 && vlen < 2) {
+		r_str_replace_char (str, *key, *val);
+		return str;
+	}
 	if (klen == vlen && !strcmp (key, val)) {
 		return str;
 	}
