@@ -796,7 +796,7 @@ rep:
 		"fi"," [size] | [from] [to]","show flags in current block or range",
 		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
-		"fl"," ([flag]) [size]","show or set flag length (size)",
+		"fl"," (@[flag]) [size]","show or set flag length (size)",
 		"fla"," [glob]","automatically compute the size of all flags matching glob",
 		"fm"," addr","move flag at current offset to new address",
 		"fn","","list flags displaying the real name (demangled)",
