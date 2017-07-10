@@ -21,13 +21,13 @@ environment:
     # TODO Add missing build platforms
     # MSVC CCCL 64
     # - builder: msvc_cccl_64
-    # MSVC NINJA 64
-    - builder: msvc_ninja_64
+    # VS2015 64
+    - builder: vs2015_64
       PYTHON: 'C:\\Python36-x64'
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
-    # MSVC NINJA 32
-    - builder: msvc_ninja_32
+    # VS2015 32
+    - builder: vs2015_32
       PYTHON: 'C:\\Python36'
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
@@ -63,12 +63,12 @@ install:
 
 # Build scripts
 build_script:
-  - set
+  - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
   - if %builder% == msvc_cccl_64 ( sys\msvc.bat && make windist WINBITS=%builder% )
 
-  - cmd: if %builder% == msvc_ninja_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && meson.bat --release && sys\meson_install.bat %DIST_FOLDER% && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2015_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && meson.bat --release --msbuild --xp && sys\meson_install.bat --msbuild %DIST_FOLDER% && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == msvc_ninja_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86 && meson.bat --release && sys\meson_install.bat %DIST_FOLDER% && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2015_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86 && meson.bat --release --msbuild --xp && sys\meson_install.bat --msbuild %DIST_FOLDER% && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 
   - cmd: if %builder% == mingw32 ( sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
 

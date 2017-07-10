@@ -242,7 +242,7 @@ R_API char *r_stdin_slurp (int *sz) {
 		return NULL;
 	}
 	buf = malloc (BS);
-	if (!buf) {	
+	if (!buf) {
 		return NULL;
 	}
 	for (i = ret = 0; ; i += ret) {
@@ -729,7 +729,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 	m->fm = CreateFileMappingA (m->fh, NULL, PAGE_READONLY, 0, 0, NULL);
 		//m->rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
 	if (m->fm != INVALID_HANDLE_VALUE) {
-		m->buf = MapViewOfFile (m->fm, 
+		m->buf = MapViewOfFile (m->fm,
 			// m->rw?(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
 			FILE_MAP_COPY,
 			UT32_HI (m->base), UT32_LO (m->base), 0);
@@ -864,9 +864,18 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 
 R_API char *r_file_tmpdir() {
 #if __WINDOWS__
-	char *path = r_sys_getenv ("TEMP");
-	if (!path) {
-		path = strdup ("C:\\WINDOWS\\Temp\\");
+	TCHAR tmpdir[MAX_PATH];
+	char *path = NULL;
+
+	if (GetTempPath (sizeof (tmpdir), tmpdir) == 0) {
+		path = r_sys_getenv ("TEMP");
+		if (!path) {
+			path = strdup ("C:\\WINDOWS\\Temp\\");
+		}
+	} else {
+		// Windows XP sometimes returns short path name
+		GetLongPathName (tmpdir, tmpdir, sizeof (tmpdir));
+		path = strdup (tmpdir);
 	}
 #elif __ANDROID__
 	char *path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
