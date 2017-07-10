@@ -1333,9 +1333,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	const char *postfix = NULL;
 	char str[32][32];
 	int msr_flags;
-	//this should be the theory
-	//int pcdelta = (thumb ? 4 : 8);
-	int pcdelta = (op->size == 4)? 8: 4;
+	int pcdelta = (thumb ? 4 : 8);
 
 	opex (&op->opex, *handle, insn);
 
