@@ -3726,6 +3726,8 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	RIOSection *s;
 	ut64 min = UT64_MAX;
 	ut64 max = 0;
+
+	r_cons_break_push (NULL, NULL);
 	r_list_foreach (core->io->sections, iter, s) {
 		/* is executable */
 		if (!(s->flags & R_IO_EXEC)) {
@@ -3734,12 +3736,20 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		min = s->vaddr;
 		max = s->vaddr + s->vsize;
 		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
+		if (r_cons_is_breaked ()) {
+			goto ctrl_c;
+		}
 	}
 	if (r_list_empty (core->io->sections)) {
 		min = core->offset;
 		max = 0xffff + min;
 		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
+		if (r_cons_is_breaked ()) {
+			goto ctrl_c;
+		}
 	}
+ctrl_c:
+	r_cons_break_pop ();
 }
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
@@ -5731,7 +5741,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'b':
-		if (input[1] == 'b') {
+		if (input[1] == 'b') { // "abb"
 			core_anal_bbs (core, input + 2);
 		} else if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);
