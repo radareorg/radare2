@@ -27,7 +27,7 @@ static RSkipListNode *r_skiplist_node_new (void *data, int level) {
 
 static void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
 	if (node) {
-		if (list->freefn) {
+		if (list->freefn && node->data) {
 			list->freefn (node->data);
 		}
 		free (node->forward);
@@ -212,6 +212,24 @@ R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
 	return NULL;
 }
 
+R_API RSkipListNode* r_skiplist_find_geq(RSkipList* list, void* data) {
+	RSkipListNode* x = find_insertpoint (list, data, NULL, true);
+	return x != list->head ? x : NULL;
+}
+
+R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data) {
+	RSkipListNode *x = list->head;
+	int i;
+
+	for (i = list->list_level; i >= 0; i--) {
+		while (x->forward[i] != list->head 
+			&& list->compare (x->forward[i]->data, data) <= 0) {
+			x = x->forward[i];
+		}
+	}
+	return x != list->head ? x : NULL;
+}
+
 // Move all the elements of `l2` in `l1`.
 R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
 	RSkipListNode *it;
@@ -248,6 +266,17 @@ R_API void *r_skiplist_get_n(RSkipList *list, int n) {
 		++count;
 	}
 	return NULL;
+}
+
+
+R_API void* r_skiplist_get_geq(RSkipList* list, void* data) {
+	RSkipListNode *x = r_skiplist_find_geq (list, data);
+	return x ? x->data : NULL;
+}
+
+R_API void* r_skiplist_get_leq(RSkipList* list, void* data) {
+	RSkipListNode *x = r_skiplist_find_leq (list, data);
+	return x ? x->data : NULL;
 }
 
 // Return true if the list is empty
