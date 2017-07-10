@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
+#include "../../asm/arch/ppc/libvle/vle.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -35,26 +36,26 @@ static ut64 mask64(ut64 mb, ut64 me) {
 	}
 
 	if (mb < (me + 1)) {
-		for(i = mb; i <= me ; i++) {
-			mask = mask | (ut64)(1LL << (63 - i));
+		for (i = mb; i <= me; i++) {
+			mask = mask | (ut64) (1LL << (63 - i));
 		}
 	} else if (mb == (me + 1)) {
 		mask = 0xffffffffffffffffull;
 	} else if (mb > (me + 1)) {
-		ut64 lo = mask64(0, me);
-		ut64 hi = mask64(mb, 63);
+		ut64 lo = mask64 (0, me);
+		ut64 hi = mask64 (mb, 63);
 		mask = lo | hi;
 	}
 	return mask;
 }
 
-static const char* cmask64(const char *mb_c, const char *me_c){
+static const char* cmask64(const char *mb_c, const char *me_c) {
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c) mb = atol(mb_c);
-	if (me_c) me = atol(me_c);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64(mb, me));
+	if (mb_c) mb = atol (mb_c);
+	if (me_c) me = atol (me_c);
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
 	return cmask;
 }
 
@@ -66,49 +67,50 @@ static ut32 mask32(ut32 mb, ut32 me) {
 	}
 
 	if (mb < (me + 1)) {
-		for(i = mb; i <= me ; i++) {
-			mask = mask | (ut32)(1LL << (31 - i));
+		for (i = mb; i <= me; i++) {
+			mask = mask | (ut32) (1LL << (31 - i));
 		}
 	} else if (mb == (me + 1)) {
 		mask = 0xffffffffu;
 	} else if (mb > (me + 1)) {
-		ut32 lo = mask32(0, me);
-		ut32 hi = mask32(mb, 31);
+		ut32 lo = mask32 (0, me);
+		ut32 hi = mask32 (mb, 31);
 		mask = lo | hi;
 	}
 	return mask;
 }
 
-static const char* cmask32(const char *mb_c, const char *me_c){
+static const char* cmask32(const char *mb_c, const char *me_c) {
 	static char cmask[32];
 	ut32 mb = 32;
 	ut32 me = 32;
-	if (mb_c) mb += atol(mb_c);
-	if (me_c) me += atol(me_c);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, me));
+	if (mb_c) mb += atol (mb_c);
+	if (me_c) me += atol (me_c);
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
 	return cmask;
 }
 
 #if 0
-static const char* inv_mask64(const char *mb_c, const char *sh){
+
+static const char* inv_mask64(const char *mb_c, const char *sh) {
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c) mb = atol(mb_c);
+	if (mb_c) mb = atol (mb_c);
 	if (sh) {
 		me = atol (sh);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64(mb, ~me));
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, ~me));
 	return cmask;
 }
 
-static const char* inv_mask32(const char *mb_c, const char *sh){
+static const char* inv_mask32(const char *mb_c, const char *sh) {
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
-	if (mb_c) mb = atol(mb_c);
-	if (sh) me = atol(sh);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, ~me));
+	if (mb_c) mb = atol (mb_c);
+	if (sh) me = atol (sh);
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, ~me));
 	return cmask;
 }
 #endif
@@ -129,22 +131,22 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 		//strcpy (words[n], "invalid");
 		break;
 	case PPC_OP_REG:
-		snprintf (words[n], sizeof (words[n]), 
-			"%s%s", cs_reg_name (handle, op.reg), setstr);
+		snprintf (words[n], sizeof (words[n]),
+				"%s%s", cs_reg_name (handle, op.reg), setstr);
 		break;
 	case PPC_OP_IMM:
-		snprintf (words[n], sizeof (words[n]), 
-			"0x%"PFMT64x"%s", (ut64)op.imm, setstr);
+		snprintf (words[n], sizeof (words[n]),
+				"0x%"PFMT64x"%s", (ut64) op.imm, setstr);
 		break;
 	case PPC_OP_MEM:
-		snprintf (words[n], sizeof (words[n]), 
-			"%"PFMT64d",%s,+,%s",
-			(ut64)op.mem.disp,
-			cs_reg_name (handle, op.mem.base), setstr);
+		snprintf (words[n], sizeof (words[n]),
+				"%"PFMT64d",%s,+,%s",
+				(ut64) op.mem.disp,
+				cs_reg_name (handle, op.mem.base), setstr);
 		break;
 	case PPC_OP_CRX: // Condition Register field
-		snprintf (words[n], sizeof (words[n]), 
-			"%"PFMT64d"%s", (ut64)op.imm, setstr);
+		snprintf (words[n], sizeof (words[n]),
+				"%"PFMT64d"%s", (ut64) op.imm, setstr);
 		break;
 	}
 	return words[n];
@@ -185,7 +187,7 @@ static const char* getspr(struct Getarg *gop, int n) {
 	if (n < 0 || n >= 8) {
 		return NULL;
 	}
-	spr = getarg(gop, 0);
+	spr = getarg (gop, 0);
 	switch (spr) {
 	case SPR_HID0:
 		return "hid0";
@@ -200,7 +202,7 @@ static const char* getspr(struct Getarg *gop, int n) {
 	case SPR_HID6:
 		return "hid6";
 	default:
-		snprintf(cspr, sizeof(cspr), "spr_%u", spr);
+		snprintf (cspr, sizeof (cspr), "spr_%u", spr);
 		break;
 	}
 	return cspr;
@@ -232,9 +234,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			if (op->mem.base != SYSZ_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"index\":%"PFMT64d"", (st64)op->mem.index);
-			r_strbuf_appendf (buf, ",\"length\":%"PFMT64d"", (st64)op->mem.length);
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
+			r_strbuf_appendf (buf, ",\"index\":%"PFMT64d"", (st64) op->mem.index);
+			r_strbuf_appendf (buf, ",\"length\":%"PFMT64d"", (st64) op->mem.length);
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64) op->mem.disp);
 			break;
 		default:
 			r_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -253,204 +255,282 @@ static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	if (anal->bits == 32) {
 		p =
-		"=PC	pc\n"
-		"=SP	r1\n"
-		"=SR	srr1\n" // status register ??
-		"=A0	r3\n" // also for ret
-		"=A1	r4\n"
-		"=A2	r5\n"
-		"=A3	r6\n"
-		"=A4	r7\n"
-		"=A5	r8\n"
-		"=A6	r6\n"
-		"gpr	srr0   .32 0   0\n"
-		"gpr	srr1   .32 4   0\n"
-		"gpr	r0   .32 8   0\n"
-		"gpr	r1   .32 12  0\n"
-		"gpr	r2   .32 16  0\n"
-		"gpr	r3   .32 20  0\n"
-		"gpr	r4   .32 24  0\n"
-		"gpr	r5   .32 28  0\n"
-		"gpr	r6   .32 32  0\n"
-		"gpr	r7   .32 36  0\n"
-		"gpr	r8   .32 40  0\n"
-		"gpr	r9   .32 44  0\n"
-		"gpr	r10 .32 48  0\n"
-		"gpr	r11 .32 52  0\n"
-		"gpr	r12 .32 56  0\n"
-		"gpr	r13 .32 60  0\n"
-		"gpr	r14 .32 64  0\n"
-		"gpr	r15 .32 68  0\n"
-		"gpr	r16 .32 72  0\n"
-		"gpr	r17 .32 76  0\n"
-		"gpr	r18 .32 80  0\n"
-		"gpr	r19 .32 84  0\n"
-		"gpr	r20 .32 88  0\n"
-		"gpr	r21 .32 92  0\n"
-		"gpr	r22 .32 96  0\n"
-		"gpr	r23 .32 100 0\n"
-		"gpr	r24 .32 104 0\n"
-		"gpr	r25 .32 108 0\n"
-		"gpr	r26 .32 112 0\n"
-		"gpr	r27 .32 116 0\n"
-		"gpr	r28 .32 120 0\n"
-		"gpr	r29 .32 124 0\n"
-		"gpr	r30 .32 128 0\n"
-		"gpr	r31 .32 132 0\n"
-		"gpr	lr   .32 136 0\n"
-		"gpr	ctr .32 140 0\n"
-		"gpr	msr .32 144 0\n"
-		"gpr	pc   .32 148 0\n"
-		"gpr	cr  .64 152 0\n"
-		"gpr	cr0 .8  152 0\n"
-		"gpr	cr1 .8  153 0\n"
-		"gpr	cr2 .8  154 0\n"
-		"gpr	cr3 .8  155 0\n"
-		"gpr	cr4 .8  156 0\n"
-		"gpr	cr5 .8  157 0\n"
-		"gpr	cr6 .8  158 0\n"
-		"gpr	cr7 .8  159 0\n"
-		"gpr	xer .32 160 0\n"
-		"gpr	mq   .32 164 0\n"
-		"gpr	fpscr  .32 168 0\n"
-		"gpr	vrsave .32 172 0\n"
-		"gpr	pvr .32 176 0\n"
-		"gpr	dccr   .32 180 0\n"
-		"gpr	iccr   .32 184 0\n"
-		"gpr	dear   .32 188 0\n"
-		"gpr	hid0   .32 192 0\n"
-		"gpr	hid1   .32 196 0\n"
-		"gpr	hid2   .32 200 0\n"
-		"gpr	hid3   .32 204 0\n"
-		"gpr	hid4   .32 208 0\n"
-		"gpr	hid5   .32 212 0\n"
-		"gpr	hid6   .32 216 0\n"
-		"gpr	ibat0  .64 220 0\n"
-		"gpr	ibat1  .64 228 0\n"
-		"gpr	ibat2  .64 236 0\n"
-		"gpr	ibat3  .64 244 0\n"
-		"gpr	ibat0l .32 220 0\n"
-		"gpr	ibat1l .32 228 0\n"
-		"gpr	ibat2l .32 236 0\n"
-		"gpr	ibat3l .32 244 0\n"
-		"gpr	ibat0u .32 224 0\n"
-		"gpr	ibat1u .32 232 0\n"
-		"gpr	ibat2u .32 240 0\n"
-		"gpr	ibat3u .32 248 0\n"
-		"gpr	dbat0  .64 256 0\n"
-		"gpr	dbat1  .64 264 0\n"
-		"gpr	dbat2  .64 272 0\n"
-		"gpr	dbat3  .64 280 0\n"
-		"gpr	dbat0l .32 256 0\n"
-		"gpr	dbat1l .32 264 0\n"
-		"gpr	dbat2l .32 272 0\n"
-		"gpr	dbat3l .32 280 0\n"
-		"gpr	dbat0u .32 260 0\n"
-		"gpr	dbat1u .32 268 0\n"
-		"gpr	dbat2u .32 276 0\n"
-		"gpr	dbat3u .32 284 0\n"
-		"gpr	mask   .32 288 0\n";
+			"=PC	pc\n"
+			"=SP	r1\n"
+			"=SR	srr1\n" // status register ??
+			"=A0	r3\n" // also for ret
+			"=A1	r4\n"
+			"=A2	r5\n"
+			"=A3	r6\n"
+			"=A4	r7\n"
+			"=A5	r8\n"
+			"=A6	r6\n"
+			"gpr	srr0   .32 0   0\n"
+			"gpr	srr1   .32 4   0\n"
+			"gpr	r0   .32 8   0\n"
+			"gpr	r1   .32 12  0\n"
+			"gpr	r2   .32 16  0\n"
+			"gpr	r3   .32 20  0\n"
+			"gpr	r4   .32 24  0\n"
+			"gpr	r5   .32 28  0\n"
+			"gpr	r6   .32 32  0\n"
+			"gpr	r7   .32 36  0\n"
+			"gpr	r8   .32 40  0\n"
+			"gpr	r9   .32 44  0\n"
+			"gpr	r10 .32 48  0\n"
+			"gpr	r11 .32 52  0\n"
+			"gpr	r12 .32 56  0\n"
+			"gpr	r13 .32 60  0\n"
+			"gpr	r14 .32 64  0\n"
+			"gpr	r15 .32 68  0\n"
+			"gpr	r16 .32 72  0\n"
+			"gpr	r17 .32 76  0\n"
+			"gpr	r18 .32 80  0\n"
+			"gpr	r19 .32 84  0\n"
+			"gpr	r20 .32 88  0\n"
+			"gpr	r21 .32 92  0\n"
+			"gpr	r22 .32 96  0\n"
+			"gpr	r23 .32 100 0\n"
+			"gpr	r24 .32 104 0\n"
+			"gpr	r25 .32 108 0\n"
+			"gpr	r26 .32 112 0\n"
+			"gpr	r27 .32 116 0\n"
+			"gpr	r28 .32 120 0\n"
+			"gpr	r29 .32 124 0\n"
+			"gpr	r30 .32 128 0\n"
+			"gpr	r31 .32 132 0\n"
+			"gpr	lr   .32 136 0\n"
+			"gpr	ctr .32 140 0\n"
+			"gpr	msr .32 144 0\n"
+			"gpr	pc   .32 148 0\n"
+			"gpr	cr  .64 152 0\n"
+			"gpr	cr0 .8  152 0\n"
+			"gpr	cr1 .8  153 0\n"
+			"gpr	cr2 .8  154 0\n"
+			"gpr	cr3 .8  155 0\n"
+			"gpr	cr4 .8  156 0\n"
+			"gpr	cr5 .8  157 0\n"
+			"gpr	cr6 .8  158 0\n"
+			"gpr	cr7 .8  159 0\n"
+			"gpr	xer .32 160 0\n"
+			"gpr	mq   .32 164 0\n"
+			"gpr	fpscr  .32 168 0\n"
+			"gpr	vrsave .32 172 0\n"
+			"gpr	pvr .32 176 0\n"
+			"gpr	dccr   .32 180 0\n"
+			"gpr	iccr   .32 184 0\n"
+			"gpr	dear   .32 188 0\n"
+			"gpr	hid0   .32 192 0\n"
+			"gpr	hid1   .32 196 0\n"
+			"gpr	hid2   .32 200 0\n"
+			"gpr	hid3   .32 204 0\n"
+			"gpr	hid4   .32 208 0\n"
+			"gpr	hid5   .32 212 0\n"
+			"gpr	hid6   .32 216 0\n"
+			"gpr	ibat0  .64 220 0\n"
+			"gpr	ibat1  .64 228 0\n"
+			"gpr	ibat2  .64 236 0\n"
+			"gpr	ibat3  .64 244 0\n"
+			"gpr	ibat0l .32 220 0\n"
+			"gpr	ibat1l .32 228 0\n"
+			"gpr	ibat2l .32 236 0\n"
+			"gpr	ibat3l .32 244 0\n"
+			"gpr	ibat0u .32 224 0\n"
+			"gpr	ibat1u .32 232 0\n"
+			"gpr	ibat2u .32 240 0\n"
+			"gpr	ibat3u .32 248 0\n"
+			"gpr	dbat0  .64 256 0\n"
+			"gpr	dbat1  .64 264 0\n"
+			"gpr	dbat2  .64 272 0\n"
+			"gpr	dbat3  .64 280 0\n"
+			"gpr	dbat0l .32 256 0\n"
+			"gpr	dbat1l .32 264 0\n"
+			"gpr	dbat2l .32 272 0\n"
+			"gpr	dbat3l .32 280 0\n"
+			"gpr	dbat0u .32 260 0\n"
+			"gpr	dbat1u .32 268 0\n"
+			"gpr	dbat2u .32 276 0\n"
+			"gpr	dbat3u .32 284 0\n"
+			"gpr	mask   .32 288 0\n";
 	} else {
 		p =
-		"=PC	pc\n"
-		"=SP	r1\n"
-		"=SR	srr1\n" // status register ??
-		"=A0	r3\n" // also for ret
-		"=A1	r4\n"
-		"=A2	r5\n"
-		"=A3	r6\n"
-		"=A4	r7\n"
-		"=A5	r8\n"
-		"=A6	r6\n"
-		"gpr	srr0   .64 0   0\n"
-		"gpr	srr1   .64 8   0\n"
-		"gpr	r0   .64 16  0\n"
-		"gpr	r1   .64 24  0\n"
-		"gpr	r2   .64 32  0\n"
-		"gpr	r3   .64 40  0\n"
-		"gpr	r4   .64 48  0\n"
-		"gpr	r5   .64 56  0\n"
-		"gpr	r6   .64 64  0\n"
-		"gpr	r7   .64 72  0\n"
-		"gpr	r8   .64 80  0\n"
-		"gpr	r9   .64 88  0\n"
-		"gpr	r10 .64 96  0\n"
-		"gpr	r11 .64 104 0\n"
-		"gpr	r12 .64 112 0\n"
-		"gpr	r13 .64 120 0\n"
-		"gpr	r14 .64 128 0\n"
-		"gpr	r15 .64 136 0\n"
-		"gpr	r16 .64 144 0\n"
-		"gpr	r17 .64 152 0\n"
-		"gpr	r18 .64 160 0\n"
-		"gpr	r19 .64 168 0\n"
-		"gpr	r20 .64 176 0\n"
-		"gpr	r21 .64 184 0\n"
-		"gpr	r22 .64 192 0\n"
-		"gpr	r23 .64 200 0\n"
-		"gpr	r24 .64 208 0\n"
-		"gpr	r25 .64 216 0\n"
-		"gpr	r26 .64 224 0\n"
-		"gpr	r27 .64 232 0\n"
-		"gpr	r28 .64 240 0\n"
-		"gpr	r29 .64 248 0\n"
-		"gpr	r30 .64 256 0\n"
-		"gpr	r31 .64 264 0\n"
-		"gpr	lr   .64 272 0\n"
-		"gpr	ctr .64 280 0\n"
-		"gpr	msr .64 288 0\n"
-		"gpr	pc   .64 296 0\n"
-		"gpr	cr  .64 304 0\n"
-		"gpr	cr0 .8  304 0\n"
-		"gpr	cr1 .8  305 0\n"
-		"gpr	cr2 .8  306 0\n"
-		"gpr	cr3 .8  307 0\n"
-		"gpr	cr4 .8  308 0\n"
-		"gpr	cr5 .8  309 0\n"
-		"gpr	cr6 .8  310 0\n"
-		"gpr	cr7 .8  311 0\n"
-		"gpr	xer .64 312 0\n"
-		"gpr	mq   .64 320 0\n"
-		"gpr	fpscr  .64 328 0\n"
-		"gpr	vrsave .64 336 0\n"
-		"gpr	pvr .64 344 0\n"
-		"gpr	dccr   .32 352 0\n"
-		"gpr	iccr   .32 356 0\n"
-		"gpr	dear   .32 360 0\n"
-		"gpr	hid0   .64 364 0\n"
-		"gpr	hid1   .64 372 0\n"
-		"gpr	hid2   .64 380 0\n"
-		"gpr	hid3   .64 388 0\n"
-		"gpr	hid4   .64 396 0\n"
-		"gpr	hid5   .64 404 0\n"
-		"gpr	hid6   .64 412 0\n"
-		"gpr	ibat0  .64 420 0\n"
-		"gpr	ibat1  .64 428 0\n"
-		"gpr	ibat2  .64 436 0\n"
-		"gpr	ibat3  .64 444 0\n"
-		"gpr	ibat0l .32 420 0\n"
-		"gpr	ibat1l .32 428 0\n"
-		"gpr	ibat2l .32 436 0\n"
-		"gpr	ibat3l .32 444 0\n"
-		"gpr	ibat0u .32 424 0\n"
-		"gpr	ibat1u .32 432 0\n"
-		"gpr	ibat2u .32 440 0\n"
-		"gpr	ibat3u .32 448 0\n"
-		"gpr	dbat0  .64 456 0\n"
-		"gpr	dbat1  .64 464 0\n"
-		"gpr	dbat2  .64 472 0\n"
-		"gpr	dbat3  .64 480 0\n"
-		"gpr	dbat0l .32 456 0\n"
-		"gpr	dbat1l .32 464 0\n"
-		"gpr	dbat2l .32 472 0\n"
-		"gpr	dbat3l .32 480 0\n"
-		"gpr	dbat0u .32 460 0\n"
-		"gpr	dbat1u .32 468 0\n"
-		"gpr	dbat2u .32 476 0\n"
-		"gpr	dbat3u .32 484 0\n"
-		"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
+			"=PC	pc\n"
+			"=SP	r1\n"
+			"=SR	srr1\n" // status register ??
+			"=A0	r3\n" // also for ret
+			"=A1	r4\n"
+			"=A2	r5\n"
+			"=A3	r6\n"
+			"=A4	r7\n"
+			"=A5	r8\n"
+			"=A6	r6\n"
+			"gpr	srr0   .64 0   0\n"
+			"gpr	srr1   .64 8   0\n"
+			"gpr	r0   .64 16  0\n"
+			"gpr	r1   .64 24  0\n"
+			"gpr	r2   .64 32  0\n"
+			"gpr	r3   .64 40  0\n"
+			"gpr	r4   .64 48  0\n"
+			"gpr	r5   .64 56  0\n"
+			"gpr	r6   .64 64  0\n"
+			"gpr	r7   .64 72  0\n"
+			"gpr	r8   .64 80  0\n"
+			"gpr	r9   .64 88  0\n"
+			"gpr	r10 .64 96  0\n"
+			"gpr	r11 .64 104 0\n"
+			"gpr	r12 .64 112 0\n"
+			"gpr	r13 .64 120 0\n"
+			"gpr	r14 .64 128 0\n"
+			"gpr	r15 .64 136 0\n"
+			"gpr	r16 .64 144 0\n"
+			"gpr	r17 .64 152 0\n"
+			"gpr	r18 .64 160 0\n"
+			"gpr	r19 .64 168 0\n"
+			"gpr	r20 .64 176 0\n"
+			"gpr	r21 .64 184 0\n"
+			"gpr	r22 .64 192 0\n"
+			"gpr	r23 .64 200 0\n"
+			"gpr	r24 .64 208 0\n"
+			"gpr	r25 .64 216 0\n"
+			"gpr	r26 .64 224 0\n"
+			"gpr	r27 .64 232 0\n"
+			"gpr	r28 .64 240 0\n"
+			"gpr	r29 .64 248 0\n"
+			"gpr	r30 .64 256 0\n"
+			"gpr	r31 .64 264 0\n"
+			"gpr	lr   .64 272 0\n"
+			"gpr	ctr .64 280 0\n"
+			"gpr	msr .64 288 0\n"
+			"gpr	pc   .64 296 0\n"
+			"gpr	cr  .64 304 0\n"
+			"gpr	cr0 .8  304 0\n"
+			"gpr	cr1 .8  305 0\n"
+			"gpr	cr2 .8  306 0\n"
+			"gpr	cr3 .8  307 0\n"
+			"gpr	cr4 .8  308 0\n"
+			"gpr	cr5 .8  309 0\n"
+			"gpr	cr6 .8  310 0\n"
+			"gpr	cr7 .8  311 0\n"
+			"gpr	xer .64 312 0\n"
+			"gpr	mq   .64 320 0\n"
+			"gpr	fpscr  .64 328 0\n"
+			"gpr	vrsave .64 336 0\n"
+			"gpr	pvr .64 344 0\n"
+			"gpr	dccr   .32 352 0\n"
+			"gpr	iccr   .32 356 0\n"
+			"gpr	dear   .32 360 0\n"
+			"gpr	hid0   .64 364 0\n"
+			"gpr	hid1   .64 372 0\n"
+			"gpr	hid2   .64 380 0\n"
+			"gpr	hid3   .64 388 0\n"
+			"gpr	hid4   .64 396 0\n"
+			"gpr	hid5   .64 404 0\n"
+			"gpr	hid6   .64 412 0\n"
+			"gpr	ibat0  .64 420 0\n"
+			"gpr	ibat1  .64 428 0\n"
+			"gpr	ibat2  .64 436 0\n"
+			"gpr	ibat3  .64 444 0\n"
+			"gpr	ibat0l .32 420 0\n"
+			"gpr	ibat1l .32 428 0\n"
+			"gpr	ibat2l .32 436 0\n"
+			"gpr	ibat3l .32 444 0\n"
+			"gpr	ibat0u .32 424 0\n"
+			"gpr	ibat1u .32 432 0\n"
+			"gpr	ibat2u .32 440 0\n"
+			"gpr	ibat3u .32 448 0\n"
+			"gpr	dbat0  .64 456 0\n"
+			"gpr	dbat1  .64 464 0\n"
+			"gpr	dbat2  .64 472 0\n"
+			"gpr	dbat3  .64 480 0\n"
+			"gpr	dbat0l .32 456 0\n"
+			"gpr	dbat1l .32 464 0\n"
+			"gpr	dbat2l .32 472 0\n"
+			"gpr	dbat3l .32 480 0\n"
+			"gpr	dbat0u .32 460 0\n"
+			"gpr	dbat1u .32 468 0\n"
+			"gpr	dbat2u .32 476 0\n"
+			"gpr	dbat3u .32 484 0\n"
+			"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
 	}
 	return r_reg_set_profile_string (anal->reg, p);
+}
+
+static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	vle_t* instr = NULL;
+	vle_handle handle = {0};
+	op->size = 2;
+	if (len > 1 && !vle_init (&handle, buf, len) && (instr = vle_next (&handle))) {
+		op->size = instr->size;
+		op->type = instr->anal_op;
+		//op->id = instr->type;
+
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_ADD:
+			break;
+		case R_ANAL_OP_TYPE_AND:
+			break;
+		case R_ANAL_OP_TYPE_CALL:
+			op->jump = addr + instr->fields[instr->n - 1].value;
+			op->fail = addr + op->size;
+			break;
+		case R_ANAL_OP_TYPE_CCALL:
+			op->eob = true;
+			op->jump = addr + instr->fields[instr->n - 1].value;
+			op->fail = addr + op->size;
+			break;
+		case R_ANAL_OP_TYPE_CJMP:
+			op->cond = instr->cond; //R_ANAL_COND_NE;
+			op->eob = true;
+			op->jump = addr + instr->fields[instr->n - 1].value;
+			op->fail = addr + op->size;
+			break;
+		case R_ANAL_OP_TYPE_CMP:
+			break;
+		case R_ANAL_OP_TYPE_JMP:
+			op->jump = addr + instr->fields[instr->n - 1].value;
+			break;
+		case R_ANAL_OP_TYPE_LOAD:
+			break;
+		case R_ANAL_OP_TYPE_MOV:
+			break;
+		case R_ANAL_OP_TYPE_MUL:
+			break;
+		case R_ANAL_OP_TYPE_NOT:
+			break;
+		case R_ANAL_OP_TYPE_OR:
+			break;
+		case R_ANAL_OP_TYPE_RCALL:
+			op->eob = true;
+			break;
+		case R_ANAL_OP_TYPE_RET:
+			op->eob = true;
+			break;
+		case R_ANAL_OP_TYPE_RJMP:
+			break;
+		case R_ANAL_OP_TYPE_SHL:
+			break;
+		case R_ANAL_OP_TYPE_SHR:
+			break;
+		case R_ANAL_OP_TYPE_STORE:
+			break;
+		case R_ANAL_OP_TYPE_SUB:
+			break;
+		case R_ANAL_OP_TYPE_SWI:
+			break;
+		case R_ANAL_OP_TYPE_SYNC:
+			break;
+		case R_ANAL_OP_TYPE_TRAP:
+			break;
+		case R_ANAL_OP_TYPE_XOR:
+			break;
+		default:
+			eprintf ("Missing R_ANAL_OP_TYPE (0x%X)\n", op->type);
+			break;
+		}
+		vle_free (instr);
+		return op->size;
+	}
+	return -1;
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -458,8 +538,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = -1;
 	int n, ret;
 	cs_insn *insn;
-	int mode = (a->bits == 64)? CS_MODE_64: (a->bits == 32)? CS_MODE_32: 0;
+	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
 	mode |= CS_MODE_BIG_ENDIAN;
+
+	op->delay = 0;
+	op->type = R_ANAL_OP_TYPE_NULL;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->ptr = op->val = UT64_MAX;
+	if (a->cpu && strncmp (a->cpu, "vle", 3) == 0) {
+		ret = analop_vle (a, op, addr, buf, len);
+		if (ret >= 0) {
+			return op->size;
+		}
+	}
+
 	if (mode != omode) {
 		cs_close (&handle);
 		handle = 0;
@@ -472,11 +565,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		}
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = 4;
 
 	r_strbuf_init (&op->esil);
@@ -509,7 +597,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_CMPWI:
 			op->type = R_ANAL_OP_TYPE_CMP;
 			if (ARG (2)[0] == '\0') esilprintf (op, "%s,%s,-,0xff,&,cr0,=", ARG (1), ARG (0));
-			else  esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG (2), ARG (1), ARG (0));
+			else esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MFLR:
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -542,11 +630,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_EXTSB:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			if(a->bits == 64) esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			if (a->bits == 64) esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			else esilprintf (op, "%s,0x80,&,?{,0xFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			break;
 		case PPC_INS_EXTSH:
-			if(a->bits == 64) esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			if (a->bits == 64) esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			else esilprintf (op, "%s,0x8000,&,?{,0xFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			break;
 		case PPC_INS_EXTSW:
@@ -686,7 +774,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_MTSPR:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			esilprintf (op, "%s,%s,=", ARG (1), PPCSPR(0));
+			esilprintf (op, "%s,%s,=", ARG (1), PPCSPR (0));
 			break;
 		case PPC_INS_BCTR: // switch table here
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -767,7 +855,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				} else {
 					op->type = R_ANAL_OP_TYPE_CJMP;
 				}
-				op->jump = IMM(1);
+				op->jump = IMM (1);
 				op->fail = addr + op->size;
 				//op->type = R_ANAL_OP_TYPE_UJMP;
 			default:
@@ -776,23 +864,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_BDNZ:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			esilprintf (op, "ctr,?{,%s,pc,=,}", ARG (0));
 			break;
 		case PPC_INS_BDNZA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
 		case PPC_INS_BDNZL:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
 		case PPC_INS_BDNZLA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
 		case PPC_INS_BDNZLR:
@@ -806,23 +894,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_BDZ:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			esilprintf (op, "ctr,0,==,?{,%s,pc,=,}", ARG (0));
 			break;
 		case PPC_INS_BDZA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
 		case PPC_INS_BDZL:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
 		case PPC_INS_BDZLA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
 		case PPC_INS_BDZLR:
@@ -918,7 +1006,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_BL:
 		case PPC_INS_BLA:
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = IMM(0);
+			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			esilprintf (op, "pc,lr,=,%s,pc,=", ARG (0));
 			break;
@@ -945,7 +1033,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_MFSPR:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			esilprintf (op, "%s,%s,=", PPCSPR(1), ARG (0));
+			esilprintf (op, "%s,%s,=", PPCSPR (1), ARG (0));
 			break;
 		case PPC_INS_MFCTR:
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -988,7 +1076,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_MOV;
 			esilprintf (op, "%s,msr,=", ARG (0));
 			break;
-		// Data Cache Block Zero
+			// Data Cache Block Zero
 		case PPC_INS_DCBZ:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, ",=[128]"));
@@ -1015,7 +1103,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 static int archinfo(RAnal *anal, int q) {
-	return 4; /* :D */
+	return 2; /* :D */
 }
 
 RAnalPlugin r_anal_plugin_ppc_cs = {
@@ -1024,7 +1112,7 @@ RAnalPlugin r_anal_plugin_ppc_cs = {
 	.license = "BSD",
 	.esil = true,
 	.arch = "ppc",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,

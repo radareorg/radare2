@@ -106,6 +106,7 @@ files=[
 'arch//nios/gnu/nios2-opc.c',
 'arch//ppc/gnu/ppc-dis.c',
 'arch//ppc/gnu/ppc-opc.c',
+'arch//ppc/libvle/vle.c',
 'arch//propeller/propeller_disas.c',
 #'arch//riscv/riscv-opc.c',
 #'arch//riscv/riscv.c',
