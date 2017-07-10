@@ -90,7 +90,7 @@ r_anal = library('r_anal', files,
 
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  link_with: [r_util, r_reg, r_syscall, r_search, r_cons, libr2udis86],
+  link_with: [r_util, r_reg, r_syscall, r_search, r_cons, r_flag, libr2udis86],
   objects: [
 	libr2capstone.extract_all_objects(),
 	libr2sdb.extract_all_objects(),

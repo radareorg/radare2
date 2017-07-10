@@ -12,7 +12,7 @@ const char *getRealRef(RCore *core, ut64 off) {
 	RFlagItem *item = NULL;
 	RListIter *iter = NULL;
 
-	RList *list = r_flag_get_list (core->flags, off);
+	const RList *list = r_flag_get_list (core->flags, off);
 	if (!list) {
 		return NULL;
 	}
