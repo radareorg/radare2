@@ -447,7 +447,54 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0); 
 			break;
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
-		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1); break;
+		case 'd': // "id"
+			if (input[1] == 'p') { // "idp"
+				int mode = false;
+				if (input[2] == '*') { // "idp*"
+					mode = true;
+				}
+				char* filename = strchr (input, ' ');
+				if (filename) {
+					*filename++ = '\0';
+					char* args = strchr (filename, ' ');
+					if (args) {
+						*args = '\0';
+					}
+					// TODO Use R_IO api
+					int current_fd = r_core_bin_cur (core)->fd;
+					char* r = r_core_cmd_strf (core, "o %s", filename);
+					if (r == NULL) {
+						eprintf ("Error while trying to open '%s'", filename);
+						goto id_end;
+					}
+					int fd = atoi (r);
+					free (r);
+					if (fd < 0) {
+						eprintf ("Error while opening '%s'", filename);
+						goto id_end;
+					}
+					RCoreBinFilter filter = { 0 };
+					r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
+					r_core_cmdf (core, "o-%d", fd);
+					r_core_cmdf (core, "o %d", current_fd);
+				}
+			} else if (input[1] == '?') { // "id?"
+				const char *help_message[] = {
+					"Usage: id", "", "Debug information",
+					"Output mode:", "", "",
+					"'*'", "", "Output in radare commands",
+					"id", "", "Source lines",
+					"idp", " <file.pdb>", "Show pdb file information",
+					".idp*", " <file.pdb", "Load pdb file information",
+					NULL
+				};
+				r_core_cmd_help (core, help_message);
+			} else { // "id"
+				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
+			}
+			id_end:
+			input++;
+			break;
 		case 'i': {
 				  RBinObject *obj = r_bin_cur_object (core->bin);
 				  RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
@@ -622,7 +669,7 @@ static int cmd_info(void *data, const char *input) {
 				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 				"ic", "", "List classes, methods and fields",
 				"iC", "", "Show signature info (entitlements, ...)",
-				"id", "", "Debug information (source lines)",
+				"id", "[?]", "Debug information (source lines)",
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",
 				"iE", "", "Exports (global symbols)",
