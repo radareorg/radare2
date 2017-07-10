@@ -101,6 +101,7 @@ R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_unescape(char *buf);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);
+R_API char *r_str_escape_asciidot(const char *buf);
 R_API char *r_str_escape_latin1(const char *buf);
 R_API char *r_str_escape_utf8(const char *buf);
 R_API void r_str_uri_decode(char *buf);

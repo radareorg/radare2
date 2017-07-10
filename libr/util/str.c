@@ -1196,7 +1196,7 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
-static void r_str_byte_escape(const char *p, char **dst, int dot_nl) {
+static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -1230,10 +1230,14 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl) {
 	default:
 		/* Outside the ASCII printable range */
 		if (!IS_PRINTABLE (*p)) {
-			*q++ = '\\';
-			*q++ = 'x';
-			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-			*q++ = "0123456789abcdef"[*p & 0xf];
+			if (default_dot) {
+				*q++ = '.';
+			} else {
+				*q++ = '\\';
+				*q++ = 'x';
+				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+				*q++ = "0123456789abcdef"[*p & 0xf];
+			}
 		} else {
 			*q++ = *p;
 		}
@@ -1243,7 +1247,7 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl) {
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool default_dot) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1277,7 +1281,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq) {
 				break;
 			}
 		default:
-			r_str_byte_escape (p, &q, dot_nl);
+			r_str_byte_escape (p, &q, dot_nl, default_dot);
 		}
 		p++;
 	}
@@ -1287,15 +1291,19 @@ out:
 }
 
 R_API char *r_str_escape(const char *buf) {
-	return r_str_escape_ (buf, false, true);
+	return r_str_escape_ (buf, false, true, false);
 }
 
 R_API char *r_str_escape_dot(const char *buf) {
-	return r_str_escape_ (buf, true, true);
+	return r_str_escape_ (buf, true, true, false);
+}
+
+R_API char *r_str_escape_asciidot(const char *buf) {
+	return r_str_escape_ (buf, false, false, true);
 }
 
 R_API char *r_str_escape_latin1(const char *buf) {
-	return r_str_escape_ (buf, false, false);
+	return r_str_escape_ (buf, false, false, false);
 }
 
 R_API char *r_str_escape_utf8(const char *buf) {
@@ -1327,7 +1335,7 @@ R_API char *r_str_escape_utf8(const char *buf) {
 			}
 			p += ch_bytes - 1;
 		} else {
-			r_str_byte_escape (p, &q, false);
+			r_str_byte_escape (p, &q, false, false);
 		}
 		p++;
 	}
