@@ -203,7 +203,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c!=':' && c!='.' && !isalnum ((ut8)c)) {
+		if (c != '_' && c!=':' && c!='.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}
@@ -228,8 +228,11 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	char ch = 0, c = 0;
 
-	do { if (!cin_get (num, nc, &ch)) return nc->curr_tok = RNCEND;
-	} while (ch!='\n' && isspace ((unsigned char)ch));
+	do {
+		if (!cin_get (num, nc, &ch)) {
+			return nc->curr_tok = RNCEND;
+		}
+	} while (ch != '\n' && isspace ((ut8)ch));
 
 	switch (ch) {
 	case 0:

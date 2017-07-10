@@ -104,10 +104,15 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	ut64 ret = 0LL;
 	ut32 s, a;
 
-	if (!str) return 0;
-	for (; *str==' '; ) str++;
-	if (!*str) return 0;
-
+	if (!str) {
+		return 0;
+	}
+	for (; *str==' '; ) {
+		str++;
+	}
+	if (!*str) {
+		return 0;
+	}
 	/* resolve string with an external callback */
 	if (num && num->callback) {
 		ok = 0;
@@ -126,7 +131,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	len = strlen (str);
 	if (len > 3 && str[4] == ':') {
 		if (sscanf (str, "%04x", &s) == 1) {
-			if (sscanf (str+5, "%04x", &a)==1) {
+			if (sscanf (str + 5, "%04x", &a)==1) {
 				return (ut64) ((s<<4) + a);
 			}
 		}
@@ -150,16 +155,19 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
-	} else
-	if (str[0] == '0' && str[1] == 'x') {
-#if 0
-// 32bit chop
-#if __WINDOWS__ && MINGW32 && !__CYGWIN__
-		ret = _strtoui64 (str+2, NULL, 16);
-#endif
-#endif
-		ret = strtoull (str + 2, NULL, 16);
-		//sscanf (str+2, "%"PFMT64x, &ret);
+	} else if (str[0] == '0' && str[1] == 'x') {
+		const char *lodash = strchr (str + 2, '_');
+		if (lodash) {
+			// Support 0x1000_f000_4000
+			// TODO: Only take underscores separated every 4 chars starting at the end
+			char *s = strdup (str + 2);
+			r_str_replace_char (s, '_', 0);
+			ret = strtoull (s, NULL, 16);
+			free (s);
+		} else {
+			ret = strtoull (str + 2, NULL, 16);
+			// sscanf (str+2, "%"PFMT64x, &ret);
+		}
 	} else {
 		lch = str[len > 0? len - 1:0];
 		if (*str == '0' && lch != 'b' && lch != 'h') {
