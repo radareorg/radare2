@@ -12,7 +12,7 @@ const char *getRealRef(RCore *core, ut64 off) {
 	RFlagItem *item = NULL;
 	RListIter *iter = NULL;
 
-	RList *list = ht_find (core->flags->ht_off, sdb_fmt (2, "flg.%"PFMT64x, off), NULL);
+	RList *list = r_flag_get_list (core->flags, off);
 	if (!list) {
 		return NULL;
 	}
