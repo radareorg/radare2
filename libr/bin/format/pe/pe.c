@@ -2177,7 +2177,7 @@ static char* _resource_type_str(int type) {
 
 static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {
 	int index = 0;
-	int totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
+	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
 	ut64 off;
 	if (totalRes > R_PE_MAX_RESOURCES) {
@@ -2191,7 +2191,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		sdb_ht_insert (dirs, key, "1");
-		if (off > bin->size || off + sizeof(entry) > bin->size) {
+		if (off > bin->size || off + sizeof (entry) > bin->size) {
 			break;
 		}
 		if (r_buf_read_at (bin->b, off, (ut8*)&entry, sizeof(entry)) < 1) {
@@ -2202,11 +2202,12 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			//detect here malicious file trying to making us infinite loop
 			Pe_image_resource_directory identEntry;
 			off = rsrc_base + entry.u2.s.OffsetToDirectory;
-			int len = r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof(identEntry));
+			int len = r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof (identEntry));
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			_parse_resource_directory (bin, &identEntry, entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
+			_parse_resource_directory (bin, &identEntry,
+				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
 			continue;
 		}
 
@@ -2247,12 +2248,16 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 				sdb_free (sdb);
 				continue;
 			}
-			while (cur_paddr < data_paddr + data->Size && cur_paddr < bin->size) {
+			while (cur_paddr < (data_paddr + data->Size) && cur_paddr < bin->size) {
 				PE_VS_VERSIONINFO* vs_VersionInfo = Pe_r_bin_pe_parse_version_info (bin, cur_paddr);
 				if (vs_VersionInfo) {
 					snprintf (key, 30, "VS_VERSIONINFO%d", counter++);
 					sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info (vs_VersionInfo));
 				} else {
+					break;
+				}
+				if (vs_VersionInfo->wLength < 1) {
+					// Invalid version length
 					break;
 				}
 				cur_paddr += vs_VersionInfo->wLength;
@@ -2310,7 +2315,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	ut64 off = 0, rsrc_base = bin->resource_directory_offset;
 	Pe_image_resource_directory *rs_directory = bin->resource_directory;
 	ut32 curRes = 0;
-	ut32 totalRes = 0;
+	int totalRes = 0;
 	SdbHash *dirs = sdb_ht_new (); //to avoid infinite loops
 	if (!dirs) {
 		return;
