@@ -1,6 +1,6 @@
 # capstone
 
-OBJ_PPCCS=asm_ppc_cs.o
+OBJ_PPCCS=asm_ppc_cs.o ../arch/ppc/libvle/vle.o
 
 include ${CURDIR}capstone.mk
 
@@ -14,5 +14,5 @@ ALL_TARGETS+=${TARGET_PPCCS}
 ${TARGET_PPCCS}: ${OBJ_PPCCS}
 	${CC} -o ${TARGET_PPCCS} ${OBJ_PPCCS} \
 		$(call libname,asm_ppc_cs) ${LDFLAGS} ${CFLAGS} \
-		${SHARED2_PPCCS} ${CS_LDFLAGS}
+		${SHARED2_PPCCS} ${CS_LDFLAGS} 
 endif
