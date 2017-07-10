@@ -244,13 +244,15 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		args = strstr (clas, "__");
 		if (!args) {
 			free (clas);
-			free (name);
+			if (name != clas) {
+				free (name);
+			}
 			return NULL;
 		}
 		*args = 0;
+		free (name);
 		name = strdup (args + 2);
-		if (!name){
-			free (args);
+		if (!name) {
 			free (clas);
 			return NULL;
 		}
@@ -261,8 +263,11 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 				nargs++;
 			}
 		}
-		if (sym[1] == 'i') type = "public";
-		else if (sym[1] == 'c') type = "static";
+		if (sym[1] == 'i') {
+			type = "public";
+		} else if (sym[1] == 'c') {
+			type = "static";
+		}
 	}
 	if (type) {
 		if (!strcmp (type, "field")) {

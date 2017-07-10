@@ -71,12 +71,8 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 }
 
 RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
-	char* str;
+	char str[24];
 	if (!buffer || length != 13 || buffer[12] != 'Z') {
-		return NULL;
-	}
-	str = (char*) malloc (24);
-	if (!buffer || !length) {
 		return NULL;
 	}
 
@@ -105,17 +101,12 @@ RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 	str[22] = 'T';
 	str[23] = '\0';
 
-	return r_asn1_create_string (str, true, 24);
+	return r_asn1_create_string (str, true, sizeof (str));
 }
 
 RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
-
-	char* str;
+	char str[24];
 	if (!buffer || length != 15 || buffer[14] != 'Z') {
-		return NULL;
-	}
-	str = (char*) malloc (24);
-	if (!buffer || !length) {
 		return NULL;
 	}
 
@@ -144,7 +135,7 @@ RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
 	str[22] = 'T';
 	str[23] = '\0';
 
-	return r_asn1_create_string (str, true, 24);
+	return r_asn1_create_string (str, true, sizeof (str));
 }
 
 RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length) {

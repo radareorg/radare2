@@ -426,6 +426,9 @@ static bool parseOperands(char* str, ArmOp *op) {
 	char *x;
 	int imm_count = 0;
 	int mem_opt = 0;
+	if (!token) {
+		return false;
+	}
 
 	while (token[0] != '\0') {
 		op->operands[operand].type = ARM_NOTYPE;

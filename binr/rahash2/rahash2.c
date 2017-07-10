@@ -622,6 +622,9 @@ int main(int argc, char **argv) {
 			algobit = r_hash_name_to_bits (algo);
 			if (algobit == 0) {
 				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
+				if (str != hashstr) {
+					free (str);
+				}
 				return 1;
 			}
 			for (i = 1; i < R_HASH_ALL; i <<= 1) {
@@ -636,7 +639,9 @@ int main(int argc, char **argv) {
 				}
 			}
 			if (_s) {
-				free (str);
+				if (str != hashstr) {
+					free (str);
+				}
 				free (s.buf);
 			}
 			return ret;

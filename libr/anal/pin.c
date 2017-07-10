@@ -4,6 +4,7 @@
 
 typedef void (*RAnalEsilPin)(RAnal *a);
 
+#if 0
 // TODO: those hardcoded functions should go
 /* default pins from libc */
 static void pin_strlen(RAnal *a) {
@@ -21,6 +22,7 @@ static void pin_write(RAnal *a) {
 	// set a0 to the result of write;
 	eprintf ("esilpin: write\n");
 }
+#endif
 
 /* pin api */
 

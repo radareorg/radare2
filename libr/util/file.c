@@ -18,6 +18,7 @@
 #if _MSC_VER
 #include <process.h>
 #endif
+
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -183,15 +184,10 @@ R_API char *r_file_abspath(const char *file) {
 		ret = strdup (file);
 	}
 #if __UNIX__
-	{
-		char *resolved_path = calloc(4096, 1); // TODO: use MAXPATH
-		char *abspath = realpath (ret, resolved_path);
-		if (abspath) {
-			free (ret);
-			ret = abspath;
-		} else {
-			free (resolved_path);
-		}
+	char *abspath = realpath (ret, NULL);
+	if (abspath) {
+		free (ret);
+		ret = abspath;
 	}
 #endif
 	return ret;

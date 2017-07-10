@@ -1953,13 +1953,12 @@ ST_FUNC void unary(void)
                 if (s->v == tok)
                     break;
             }
-            if (!s)
+            if (!s) {
                 tcc_error("field not found: %s",  get_tok_str(tok & ~SYM_FIELD, NULL));
+	    }
             /* add field offset to pointer */
             vtop->type = char_pointer_type; /* change type to 'char *' */
-if (s) {
             vpushi(s->c);
-}
             /* change type to field type, and set to lvalue */
             vtop->type = s->type;
             vtop->type.t |= qualifiers;

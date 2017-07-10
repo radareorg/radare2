@@ -406,6 +406,10 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 		if (!*c) {
 			*c = opencore (NULL);
 		}
+		if (!*c) {
+			eprintf ("opencore failed\n");
+			return NULL;
+		}
 		io = (*c)->io;
 		d = r_io_open (io, file, 0, 0);
 		if (!d) {
