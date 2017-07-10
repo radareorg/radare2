@@ -13,7 +13,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut32 i;
 	vle_t* instr = NULL;
 	ut64 addr = a->pc;
-	if(len > 1 && !vle_init (&handle, buf, len) && (instr = vle_next (&handle))) {
+	if (len > 1 && !vle_init (&handle, buf, len) && !vle_option(&handle, VLE_INTERNAL_PPC) && (instr = vle_next (&handle))) {
 		int bufsize = R_ASM_BUFSIZE, add = 0;
 		char* str = op->buf_asm;
 		op->size = instr->size;
@@ -24,16 +24,16 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				add += snprintf (str + add, bufsize - add, " r%u", instr->fields[i].value);
 			} else if (instr->fields[i].type == TYPE_IMM) {
 				add += snprintf (str + add, bufsize - add, " 0x%x", instr->fields[i].value);
-			} else if (instr->fields[i].type == TYPE_MEM)  {
+			} else if (instr->fields[i].type == TYPE_MEM) {
 				add += snprintf (str + add, bufsize - add, " 0x%x(r%d)", instr->fields[i + 1].value, instr->fields[i].value);
 				i++;
 			} else if (instr->fields[i].type == TYPE_JMP) {
-				add += snprintf (str + add, bufsize - add, " 0x%llx", addr + instr->fields[i].value);
+				add += snprintf (str + add, bufsize - add, " 0x%" PFMT64x, addr + instr->fields[i].value);
 			} else if (instr->fields[i].type == TYPE_CR) {
 				add += snprintf (str + add, bufsize - add, " cr%u", instr->fields[i].value);
 			}
 		}
-		vle_free(instr);
+		vle_free (instr);
 	} else {
 		strcpy (op->buf_asm, "invalid");
 		op->size = 2;

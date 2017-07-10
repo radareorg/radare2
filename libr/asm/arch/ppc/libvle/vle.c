@@ -3,6 +3,8 @@
 #include "vle_internal.h"
 #include <r_anal.h>
 
+#define USE_INTERNAL_PPC(x) ((x)->options&VLE_INTERNAL_PPC)
+
 #define E_NONE  0
 #define E_X     1
 #define E_XL    2
@@ -33,6 +35,138 @@
 #define E_MASK_IA16 0x03FF07FF
 #define E_MASK_LI20 0x03FF7FFF
 #define E_MASK_M    0x03FFFFFE
+
+#define F_NONE  0
+#define F_X     1
+#define F_XO    2
+#define F_EVX   3
+#define F_CMP   4
+#define F_DCBF  5
+#define F_DCBL  6
+#define F_DCI   7
+#define F_EXT   8
+#define F_A     9
+#define F_XFX  10
+#define F_XER  11
+#define F_MFPR 12
+#define F_MTPR 13
+
+
+#define F_MASK_X     0x03FFF800
+#define F_MASK_XO    0x03FFF800
+#define F_MASK_EVX   0x03FFF800
+#define F_MASK_CMP   0x039FF800
+#define F_MASK_DCBF  0x00FFF800
+#define F_MASK_DCBL  0x01FFF800
+#define F_MASK_DCI   0x00FFF800
+#define F_MASK_EXT   0x03FF0000
+#define F_MASK_A     0x01FFFFC0
+#define F_MASK_XFX   0x03FFF800
+#define F_MASK_XER   0x03FFF800
+#define F_MASK_MFPR  0x03FFF800
+#define F_MASK_MTPR  0x03FFF800
+
+
+const ppc_t ppc_ops[] = {
+//	{ "name"       , op        , mask                    , type   ,   op_type           , R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_REG, TYPE_REG}}
+	{ "add"        , 0x7C000214, 0x7C000214 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "add."       , 0x7C000214, 0x7C000211 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addo"       , 0x7C000214, 0x7C000614 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addo."      , 0x7C000214, 0x7C000615 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addc"       , 0x7C000014, 0x7C000014 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addc."      , 0x7C000014, 0x7C000011 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addco"      , 0x7C000014, 0x7C000414 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addco."     , 0x7C000014, 0x7C000415 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "adde"       , 0x7C000114, 0x7C000114 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "adde."      , 0x7C000114, 0x7C000111 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addeo"      , 0x7C000114, 0x7C000514 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addeo."     , 0x7C000114, 0x7C000515 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addme"      , 0x7C0001D4, 0x7C0001D4 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addme."     , 0x7C0001D4, 0x7C0001D1 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addmeo"     , 0x7C0001D4, 0x7C0005D4 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addmeo."    , 0x7C0001D4, 0x7C0005D5 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addze"      , 0x7C000194, 0x7C000194 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addze."     , 0x7C000194, 0x7C000191 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addzeo"     , 0x7C000194, 0x7C000594 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "addzeo."    , 0x7C000194, 0x7C000595 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "and"        , 0x7C000038, 0x7C000038 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "and."       , 0x7C000038, 0x7C000039 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "andc"       , 0x7C000078, 0x7C000078 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "andc."      , 0x7C000078, 0x7C000079 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "brinc"      , 0x1000020F, 0x1000020F | F_MASK_EVX ,   F_EVX,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "cmp"        , 0x7C000000, 0x7C000000 | F_MASK_CMP ,   F_CMP,   R_ANAL_OP_TYPE_CMP, R_ANAL_COND_AL, {TYPE_CR, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "cmpl"       , 0x7C000040, 0x7C000040 | F_MASK_CMP ,   F_CMP,   R_ANAL_OP_TYPE_CMP, R_ANAL_COND_AL, {TYPE_CR, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "cntlzd"     , 0x7C000074, 0x7C000074 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "cntlzd."    , 0x7C000074, 0x7C000075 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "cntlzw"     , 0x7C000034, 0x7C000034 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "cntlzw."    , 0x7C000034, 0x7C000035 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "dcba"       , 0x7C0005EC, 0x7C0005EC | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbf"       , 0x7C0000AC, 0x7C0000AC | F_MASK_DCBF,  F_DCBF,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbfep"     , 0x7C0000FE, 0x7C0000FE | F_MASK_DCBF,  F_DCBF,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbi"       , 0x7C0003AC, 0x7C0003AC | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcblc"      , 0x7C00030C, 0x7C00030C | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbst"      , 0x7C00006C, 0x7C00006C | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbt"       , 0x7C00022C, 0x7C00022C | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbtep"     , 0x7C00027E, 0x7C00027E | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbtls"     , 0x7C00014C, 0x7C00014C | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbtst"     , 0x7C0001EC, 0x7C0001EC | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbtstep"   , 0x7C0001FE, 0x7C0001FE | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbtstls"   , 0x7C00010C, 0x7C00010C | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbz"       , 0x7C0007EC, 0x7C0007EC | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcbzep"     , 0x7C0007FE, 0x7C0007FE | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dci"        , 0x7C00038C, 0x7C00038C | F_MASK_DCI ,   F_DCI,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "dcread"     , 0x7C00028C, 0x7C00028C | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "dcread"     , 0x7C0003CC, 0x7C0003CC | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divw"       , 0x7C0003D6, 0x7C0003D6 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divw."      , 0x7C0003D6, 0x7C0003D7 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divwo"      , 0x7C0003D6, 0x7C0007D6 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divwo."     , 0x7C0003D6, 0x7C0007D7 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divwu"      , 0x7C000396, 0x7C000396 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divwu."     , 0x7C000396, 0x7C000397 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divwuo"     , 0x7C000396, 0x7C000796 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "divwuo."    , 0x7C000396, 0x7C000797 | F_MASK_XO  ,    F_XO,   R_ANAL_OP_TYPE_DIV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "extsb"      , 0x7C000774, 0x7C000774 | F_MASK_EXT ,   F_EXT,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "extsb."     , 0x7C000774, 0x7C000775 | F_MASK_EXT ,   F_EXT,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "extsw"      , 0x7C000734, 0x7C000734 | F_MASK_EXT ,   F_EXT,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "extsw."     , 0x7C000734, 0x7C000735 | F_MASK_EXT ,   F_EXT,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "icbi"       , 0x7C0007AC, 0x7C0007AC | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "icbiep"     , 0x7C0007BE, 0x7C0007BE | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "icblc"      , 0x7C0001CC, 0x7C0001CC | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "icbt"       , 0x7C00002C, 0x7C00002C | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "icbtls"     , 0x7C0003CC, 0x7C0003CC | F_MASK_DCBL,  F_DCBL,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "ici"        , 0x7C00078C, 0x7C00078C | F_MASK_DCI ,   F_DCI,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "icread"     , 0x7C0007CC, 0x7C0007CC | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	//apply only X instead of A for lt, gt, eq
+	{ "isellt"     , 0x7C00001E, 0x7C00001E | F_MASK_X   ,     F_A,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "iselgt"     , 0x7C00001E, 0x7C00005E | F_MASK_X   ,     F_A,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "iseleq"     , 0x7C00001E, 0x7C00009E | F_MASK_X   ,     F_A,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "isel"       , 0x7C00001E, 0x7C00001E | F_MASK_A   ,     F_A,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "lbepx"      , 0x7C0000BE, 0x7C0000BE | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "lbzux"      , 0x7C0000AE, 0x7C0000AE | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "lhaux"      , 0x7C0002EE, 0x7C0002EE | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lhax"       , 0x7C0002AE, 0x7C0002AE | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lhbrx"      , 0x7C00062C, 0x7C00062C | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lhepx"      , 0x7C00023E, 0x7C00023E | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lhzux"      , 0x7C00026E, 0x7C00026E | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lhzx"       , 0x7C00022E, 0x7C00022E | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lswi"       , 0x7C0004AA, 0x7C0004AA | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
+ 	{ "lswx"       , 0x7C00042A, 0x7C00042A | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
+ 	{ "lwarx"      , 0x7C000028, 0x7C000028 | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lwarx."     , 0x7C000029, 0x7C000029 | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lwbrx"      , 0x7C00042C, 0x7C00042C | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lwepx"      , 0x7C00003E, 0x7C00003E | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lwzux"      , 0x7C00006E, 0x7C00006E | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "lwzx"       , 0x7C00002E, 0x7C00002E | F_MASK_X   ,     F_X,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+ 	{ "mbar"       , 0x7C00002E, 0x7C00002E | F_MASK_XFX ,   F_XFX,    R_ANAL_OP_TYPE_IO, R_ANAL_COND_AL, {TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mcrxr"      , 0x7C000400, 0x7C000400 | F_MASK_XER ,   F_XER,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mfdcr"      , 0x7C000286, 0x7C000286 | F_MASK_MFPR,  F_MFPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "mfdcrux"    , 0x7C000246, 0x7C000246 | F_MASK_EXT ,   F_EXT,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "mfdcrx"     , 0x7C000206, 0x7C000206 | F_MASK_EXT ,   F_EXT,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mfmsr"      , 0x7C000400, 0x7C000400 | F_MASK_XFX ,   F_XFX,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mfspr"      , 0x7C0003A6, 0x7C000286 | F_MASK_MFPR,  F_MFPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mtspr"      , 0x7C0003A6, 0x7C000286 | F_MASK_MTPR,  F_MTPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+
+};
 
 const e_vle_t e_ops[] = {
 //	{ "name"       , op        , mask                    , type   ,   op_type           , R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_REG, TYPE_REG}}
@@ -143,8 +277,7 @@ const e_vle_t e_ops[] = {
 	{ "e_xori"     , 0x1800E000, 0x1800E000 | E_MASK_SCI8, E_SCI8I,   R_ANAL_OP_TYPE_XOR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
 	{ "e_xori."    , 0x1800E800, 0x1800E800 | E_MASK_SCI8, E_SCI8I,   R_ANAL_OP_TYPE_XOR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
 };
-// page 96
-// page 1264
+
 const se_vle_t se_ops[] = {
 //	{ "name"      , op    , mask  , n,   op_type           , {{field ,shl,shr,  +, i, TYPE_REG}, ...}
 	{ "se_illegal", 0x0000, 0x0000, 0,   R_ANAL_OP_TYPE_ILL, R_ANAL_COND_NV, {{0}, {0}, {0}, {0}, {0}}},
@@ -224,8 +357,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 	if (!v) {
 		return;
 	}
-	switch(p->type) {
-	case E_X:
+	switch (p->type) {
+		case E_X:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3E00000) >> 24;
@@ -235,8 +368,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[2].value = (data & 0xF800) >> 11;
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_XL:
+			break;
+		case E_XL:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -246,8 +379,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[2].value = (data & 0xF800) >> 11;
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_D:
+			break;
+		case E_D:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -260,8 +393,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			}
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_D8:
+			break;
+		case E_D8:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -274,9 +407,9 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			}
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_IA16:
-	case E_I16A:
+			break;
+		case E_IA16:
+		case E_I16A:
 		{
 			v->n = 2;
 			v->fields[1].value = (data & 0x3E00000) >> 10;
@@ -288,8 +421,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 				v->fields[1].value = 0xFFFF0000 | v->fields[1].value;
 			}
 		}
-		break;
-	case E_SCI8:
+			break;
+		case E_SCI8:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -298,25 +431,25 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[1].type = p->types[1];
 			ut32 ui8 = data & 0xFF;
 			ut32 scl = (data & 0x300) >> 8;
-			ut32 f   = data & 0x400;
-			switch(scl) {
-			case 0:
-				v->fields[2].value = ui8 | (f ? 0xffffff00 : 0);
-				break;
-			case 1:
-				v->fields[2].value = (ui8 << 8) | (f ? 0xffff00ff : 0);
-				break;
-			case 2:
-				v->fields[2].value = (ui8 << 16) | (f ? 0xff00ffff : 0);
-				break;
-			default:
-				v->fields[2].value = (ui8 << 24) | (f ? 0x00ffffff : 0);
-				break;
+			ut32 f = data & 0x400;
+			switch (scl) {
+				case 0:
+					v->fields[2].value = ui8 | (f ? 0xffffff00 : 0);
+					break;
+				case 1:
+					v->fields[2].value = (ui8 << 8) | (f ? 0xffff00ff : 0);
+					break;
+				case 2:
+					v->fields[2].value = (ui8 << 16) | (f ? 0xff00ffff : 0);
+					break;
+				default:
+					v->fields[2].value = (ui8 << 24) | (f ? 0x00ffffff : 0);
+					break;
 			}
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_SCI8I:
+			break;
+		case E_SCI8I:
 		{
 			v->n = 3;
 			v->fields[1].value = (data & 0x3E00000) >> 21;
@@ -325,25 +458,25 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[0].type = p->types[1];
 			ut32 ui8 = data & 0xFF;
 			ut32 scl = (data & 0x300) >> 8;
-			ut32 f   = data & 0x400;
-			switch(scl) {
-			case 0:
-				v->fields[2].value = ui8 | (f ? 0xffffff00 : 0);
-				break;
-			case 1:
-				v->fields[2].value = (ui8 << 8) | (f ? 0xffff00ff : 0);
-				break;
-			case 2:
-				v->fields[2].value = (ui8 << 16) | (f ? 0xff00ffff : 0);
-				break;
-			default:
-				v->fields[2].value = (ui8 << 24) | (f ? 0x00ffffff : 0);
-				break;
+			ut32 f = data & 0x400;
+			switch (scl) {
+				case 0:
+					v->fields[2].value = ui8 | (f ? 0xffffff00 : 0);
+					break;
+				case 1:
+					v->fields[2].value = (ui8 << 8) | (f ? 0xffff00ff : 0);
+					break;
+				case 2:
+					v->fields[2].value = (ui8 << 16) | (f ? 0xff00ffff : 0);
+					break;
+				default:
+					v->fields[2].value = (ui8 << 24) | (f ? 0x00ffffff : 0);
+					break;
 			}
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_I16L:
+			break;
+		case E_I16L:
 		{
 			v->n = 2;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -355,8 +488,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			}
 			v->fields[1].type = p->types[1];
 		}
-		break;
-	case E_I16LS:
+			break;
+		case E_I16LS:
 		{
 			v->n = 2;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -368,8 +501,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			}
 			v->fields[1].type = p->types[1];
 		}
-		break;
-	case E_BD24:
+			break;
+		case E_BD24:
 		{
 			v->n = 1;
 			v->fields[0].value = data & 0x3FFFFFE;
@@ -378,8 +511,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			}
 			v->fields[0].type = p->types[0];
 		}
-		break;
-	case E_BD15:
+			break;
+		case E_BD15:
 		{
 			v->n = 2;
 			v->fields[0].value = (data & 0xC0000) >> 18;
@@ -390,8 +523,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			}
 			v->fields[1].type = p->types[1];
 		}
-		break;
-	case E_LI20:
+			break;
+		case E_LI20:
 		{
 			v->n = 2;
 			v->fields[0].value = (data & 0x3E00000) >> 21;
@@ -404,8 +537,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 				v->fields[1].value = 0xFFF00000 | v->fields[1].value;
 			}
 		}
-		break;
-	case E_M:
+			break;
+		case E_M:
 		{
 			v->n = 5;
 			v->fields[1].value = (data & 0x3E00000) >> 21;
@@ -419,8 +552,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[4].value = (data & 0x3E) >> 1;
 			v->fields[4].type = p->types[4];
 		}
-		break;
-	case E_XCR:
+			break;
+		case E_XCR:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3000000) >> 24;
@@ -430,8 +563,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[2].value = (data & 0xF800) >> 11;
 			v->fields[2].type = p->types[2];
 		}
-		break;
-	case E_XLSP:
+			break;
+		case E_XLSP:
 		{
 			v->n = 3;
 			v->fields[0].value = (data & 0x3800000) >> 23;
@@ -439,15 +572,162 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 			v->fields[1].value = (data & 0x1C0000) >> 18;
 			v->fields[1].type = p->types[1];
 		}
-		break;
-	case E_NONE:
-	default:
-		v->n = 0;
-		break;
+			break;
+		case E_NONE:
+		default:
+			v->n = 0;
+			break;
 	}
 }
 
-static vle_t *find_e (const ut8* buffer) {
+static void set_ppc_fields(vle_t * v, const ppc_t* p, ut32 data) {
+	if (!v) {
+		return;
+	}
+	switch (p->type) {
+		case F_X:
+		case F_XO:
+		case F_EVX:
+		{
+			v->n = 0;
+			if (p->types[0] != TYPE_NONE) {
+				v->fields[0].value = (data & 0x3E00000) >> 21;
+				v->fields[0].type = p->types[0];
+				v->n++;
+			}
+			if (p->types[1] != TYPE_NONE) {
+				v->fields[1].value = (data & 0x1F0000) >> 16;
+				v->fields[1].type = p->types[1];
+				v->n++;
+			}
+			if (p->types[2] != TYPE_NONE) {
+				v->fields[2].value = (data & 0xF800) >> 11;
+				v->fields[2].type = p->types[2];
+				v->n++;
+			}
+		}
+			break;
+		case F_CMP:
+		{
+			v->n = 3;
+			v->fields[0].value = (data & 0x3800000) >> 23;
+			v->fields[0].type = p->types[0];
+			v->fields[1].value = (data & 0x1F0000) >> 16;
+			v->fields[1].type = p->types[1];
+			v->fields[2].value = (data & 0xF800) >> 11;
+			v->fields[2].type = p->types[2];
+		}
+			break;
+		case F_DCBF:
+		{
+			v->n = 3;
+			v->fields[0].value = (data & 0x0E00000) >> 21;
+			v->fields[0].type = p->types[0];
+			v->fields[1].value = (data & 0x1F0000) >> 16;
+			v->fields[1].type = p->types[1];
+			v->fields[2].value = (data & 0xF800) >> 11;
+			v->fields[2].type = p->types[2];
+		}
+			break;
+		case F_DCBL:
+		{
+			v->n = 3;
+			v->fields[0].value = (data & 0x1E00000) >> 21;
+			v->fields[0].type = p->types[0];
+			v->fields[1].value = (data & 0x1F0000) >> 16;
+			v->fields[1].type = p->types[1];
+			v->fields[2].value = (data & 0xF800) >> 11;
+			v->fields[2].type = p->types[2];
+		}
+		case F_DCI:
+		{
+			v->n = 1;
+			v->fields[0].value = (data & 0xE00000) >> 21;
+			v->fields[0].type = p->types[0];
+		}
+			break;
+		case F_EXT:
+		{
+			v->n = 2;
+			v->fields[0].value = (data & 0x3E00000) >> 21;
+			v->fields[0].type = p->types[0];
+			v->fields[1].value = (data & 0x1F0000) >> 16;
+			v->fields[1].type = p->types[1];
+		}
+			break;
+		case F_A:
+		{
+			v->n = 4;
+			v->fields[0].value = (data & 0x1E00000) >> 21;
+			v->fields[0].type = p->types[0];
+			v->fields[1].value = (data & 0x1F0000) >> 16;
+			v->fields[1].type = p->types[1];
+			v->fields[2].value = (data & 0xF800) >> 11;
+			v->fields[2].type = p->types[2];
+			v->fields[3].value = (data & 0x7C0) >> 6;
+			v->fields[3].type = p->types[3];
+		}
+			break;
+		case F_XFX:
+		{
+			v->n = 1;
+			v->fields[0].value = (data & 0x3E00000) >> 21;
+			v->fields[0].type = p->types[0];
+		}
+			break;
+		case F_XER:
+		{
+			v->n = 1;
+			v->fields[0].value = (data & 0x3800000) >> 23;
+			v->fields[0].type = p->types[0];
+		}
+			break;
+		case F_MFPR:
+		{
+			v->n = 2;
+			v->fields[0].value = (data & 0x1E00000) >> 21;
+			v->fields[0].type = p->types[0];
+			v->fields[1].value = (data & 0x1FF800) >> 11;
+			v->fields[1].type = p->types[1];
+		}
+		case F_MTPR:
+		{
+			v->n = 2;
+			//inverted
+			v->fields[1].value = (data & 0x1E00000) >> 21;
+			v->fields[1].type = p->types[1];
+			v->fields[0].value = (data & 0x1FF800) >> 11;
+			v->fields[0].type = p->types[0];
+		}
+			break;
+		case E_NONE:
+		default:
+			v->n = 0;
+			break;
+	}
+}
+
+static vle_t *find_ppc(const ut8* buffer) {
+	ut32 i;
+	ut32 data = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+	const ppc_t* p = NULL;
+	const ut32 size = sizeof (ppc_ops) / sizeof (ppc_t);
+	for (i = 0; i < size; ++i) {
+		p = &ppc_ops[i];
+		if ((p->op & data) == p->op && (p->mask & data) == data) {
+			vle_t* ret = R_NEW0 (vle_t);
+			ret->name = p->name;
+			ret->size = 4;
+			ret->n = 0;
+			ret->anal_op = p->anal_op;
+			set_ppc_fields (ret, p, data);
+			return ret;
+		}
+	}
+	return NULL;
+}
+
+static vle_t *find_e(const ut8* buffer) {
 	ut32 i;
 	ut32 data = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
 	const e_vle_t* p = NULL;
@@ -465,9 +745,9 @@ static vle_t *find_e (const ut8* buffer) {
 		}
 	}
 	return NULL;
-} 
+}
 
-static vle_t *find_se (const ut8* buffer) {
+static vle_t *find_se(const ut8* buffer) {
 	ut32 i, j, k;
 	ut16 data = (buffer[0] << 8) | buffer[1];
 	const se_vle_t* p = NULL;
@@ -511,6 +791,15 @@ int vle_init(vle_handle* handle, const ut8* buffer, const ut32 size) {
 	handle->pos = buffer;
 	handle->end = buffer + size;
 	handle->inc = 0;
+	handle->options = VLE_DEFAULTS;
+	return 0;
+}
+
+int vle_option(vle_handle* handle, ut32 option) {
+	if (!handle) {
+		return 1;
+	}
+	handle->options |= option;
 	return 0;
 }
 
@@ -521,7 +810,11 @@ vle_t* vle_next(vle_handle* handle) {
 	}
 	handle->pos += handle->inc;
 	// 'e-32' always before 'se-16'
-	if (handle->pos + 2 < handle->end) {
+
+	if (USE_INTERNAL_PPC (handle) && handle->pos + 2 < handle->end) {
+		op = find_ppc (handle->pos);
+	}
+	if (!op && handle->pos + 2 < handle->end) {
 		op = find_e (handle->pos);
 	}
 	if (!op) {
@@ -533,6 +826,25 @@ vle_t* vle_next(vle_handle* handle) {
 }
 
 void vle_free(vle_t* instr) {
-	free(instr);
+	free (instr);
 }
 
+void vle_snprint(char* str, int size, ut64 addr, vle_t* instr) {
+	ut32 i;
+	int bufsize = size, add = 0;
+	add = snprintf (str, bufsize, "%s", instr->name);
+	for (i = 0; add > 0 && i < instr->n && add < bufsize; ++i) {
+		if (instr->fields[i].type == TYPE_REG) {
+			add += snprintf (str + add, bufsize - add, " r%u", instr->fields[i].value);
+		} else if (instr->fields[i].type == TYPE_IMM) {
+			add += snprintf (str + add, bufsize - add, " 0x%x", instr->fields[i].value);
+		} else if (instr->fields[i].type == TYPE_MEM) {
+			add += snprintf (str + add, bufsize - add, " 0x%x(r%d)", instr->fields[i + 1].value, instr->fields[i].value);
+			i++;
+		} else if (instr->fields[i].type == TYPE_JMP) {
+			add += snprintf (str + add, bufsize - add, " 0x%" PFMT64x, addr + instr->fields[i].value);
+		} else if (instr->fields[i].type == TYPE_CR) {
+			add += snprintf (str + add, bufsize - add, " cr%u", instr->fields[i].value);
+		}
+	}
+}

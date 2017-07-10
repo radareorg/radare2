@@ -31,4 +31,14 @@ typedef struct {
 	field_t fields[5];
 } se_vle_t;
 
+typedef struct {
+	const char* name;
+	ut32 op;
+	ut32 mask;
+	ut16 type;
+	ut32 anal_op;
+	int cond;
+	ut16 types[5];
+} ppc_t;
+
 #endif

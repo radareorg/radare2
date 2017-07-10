@@ -18,7 +18,8 @@ static int vle_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	op->fail = UT64_MAX;
 	op->ptr = op->val = UT64_MAX;
 	op->size = 2;
-	if(len > 1 && !vle_init (&handle, buf, len) && (instr = vle_next (&handle))) {
+	if(len > 1 && !vle_init (&handle, buf, len) && !vle_option(&handle, VLE_INTERNAL_PPC) && (instr = vle_next (&handle))) {
+		
 		op->size = instr->size;
 		op->type = instr->anal_op;
 		//op->id = instr->type;
