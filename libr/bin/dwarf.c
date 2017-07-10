@@ -21,7 +21,7 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-#define READ(x,y) ((x + sizeof(y) < buf_end)? *((y*)x): 0); x += sizeof (y)
+#define READ(x,y) ((x + sizeof (y) < buf_end)? *((y*)x): 0); x += sizeof (y)
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -1163,10 +1163,13 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_block4:
 		value->encoding.block.length = READ (buf, ut32);
 		if (value->encoding.block.length > 0) {
-			value->encoding.block.data = calloc (sizeof(ut8), value->encoding.block.length);
-			for (j = 0; j < value->encoding.block.length; j++) {
-				value->encoding.block.data[j] = READ (buf, ut8);
+			ut8 *data = calloc (sizeof (ut8), value->encoding.block.length);
+			if (data) {
+				for (j = 0; j < value->encoding.block.length; j++) {
+					data[j] = READ (buf, ut8);
+				}
 			}
+			value->encoding.block.data = data
 		}
 		break;
 	case DW_FORM_data2:
