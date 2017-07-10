@@ -45,6 +45,7 @@ files=[
 'p/anal_pic18c.c',
 'p/anal_ppc_cs.c',
 'p/anal_ppc_gnu.c',
+'p/anal_ppc_vle.c',
 #'p/anal_propeller.c',
 'p/anal_riscv.c',
 #'p/anal_rsp.c',

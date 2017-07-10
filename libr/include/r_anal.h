@@ -1599,6 +1599,7 @@ extern RAnalPlugin r_anal_plugin_x86_udis;
 extern RAnalPlugin r_anal_plugin_x86_simple;
 extern RAnalPlugin r_anal_plugin_ppc_gnu;
 extern RAnalPlugin r_anal_plugin_ppc_cs;
+extern RAnalPlugin r_anal_plugin_ppc_vle;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_mips_gnu;
 extern RAnalPlugin r_anal_plugin_mips_cs;

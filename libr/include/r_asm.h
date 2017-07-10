@@ -204,6 +204,7 @@ extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_xap;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_ppc_cs;
+extern RAsmPlugin r_asm_plugin_ppc_vle;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_dalvik;
