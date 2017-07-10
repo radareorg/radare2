@@ -13,17 +13,15 @@
 const char* _hex = "0123456789abcdef";
 
 RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length) {
-	RASN1String *s;
 	if (!string || !length) {
 		return NULL;
 	}
-	s = (RASN1String*) malloc (sizeof (RASN1String));
-	if (!s) {
-		return NULL;
+	RASN1String *s = R_NEW0 (RASN1String);
+	if (s) {
+		s->allocated = allocated;
+		s->length = length;
+		s->string = strdup (string);
 	}
-	s->allocated = allocated;
-	s->length = length;
-	s->string = string;
 	return s;
 }
 
