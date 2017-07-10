@@ -1987,6 +1987,41 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 	if (bin->ehdr.e_machine == EM_ARC_A5) {
 		return 16;
 	}
+	/* Hack for Ps2 */
+	if (bin->ehdr.e_machine == EM_MIPS) {
+		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
+		if (bin->ehdr.e_type == ET_EXEC) {
+			int i;
+			bool haveInterp = false;
+			for (i = 0; i < bin->ehdr.e_phnum; i++) {
+				if (bin->phdr[i].p_type == PT_INTERP) {
+					haveInterp = true;
+				}
+			}
+			if (!haveInterp && mipsType == EF_MIPS_ARCH_3) {
+				// Playstation2 Hack
+				return 64;
+			}
+		}
+		// TODO: show this specific asm.cpu somewhere in bininfo (mips1, mips2, mips3, mips32r2, ...)
+		switch (mipsType) {
+		case EF_MIPS_ARCH_1:
+		case EF_MIPS_ARCH_2:
+		case EF_MIPS_ARCH_3:
+		case EF_MIPS_ARCH_4:
+		case EF_MIPS_ARCH_5:
+		case EF_MIPS_ARCH_32:
+			return 32;
+		case EF_MIPS_ARCH_64:
+			return 64;
+		case EF_MIPS_ARCH_32R2:
+			return 32;
+		case EF_MIPS_ARCH_64R2:
+			return 64;
+			break;
+		}
+		return 32;
+	}
 	/* Hack for Thumb */
 	if (bin->ehdr.e_machine == EM_ARM) {
 		if (bin->ehdr.e_type != ET_EXEC) {
