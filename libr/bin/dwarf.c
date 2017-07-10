@@ -1169,7 +1169,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 					data[j] = READ (buf, ut8);
 				}
 			}
-			value->encoding.block.data = data
+			value->encoding.block.data = data;
 		}
 		break;
 	case DW_FORM_data2:
