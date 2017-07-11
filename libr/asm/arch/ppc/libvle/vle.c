@@ -639,6 +639,7 @@ static void set_ppc_fields(vle_t * v, const ppc_t* p, ut32 data) {
 			v->fields[2].value = (data & 0xF800) >> 11;
 			v->fields[2].type = p->types[2];
 		}
+			break;
 		case F_DCI:
 		{
 			v->n = 1;
