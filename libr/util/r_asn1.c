@@ -69,11 +69,14 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 }
 
 RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
-	char str[24];
+	char *str;
 	if (!buffer || length != 13 || buffer[12] != 'Z') {
 		return NULL;
 	}
-
+	str = calloc (24, 1);
+	if (!str) {
+		return NULL;
+	}
 	str[0] = buffer[4];
 	str[1] = buffer[5];
 	str[2] = '/';
