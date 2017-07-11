@@ -2949,7 +2949,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 
 	esil_init (core);
 	esil = core->anal->esil;
-	
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
