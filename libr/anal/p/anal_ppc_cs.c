@@ -524,7 +524,7 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		case R_ANAL_OP_TYPE_XOR:
 			break;
 		default:
-			eprintf ("Missing R_ANAL_OP_TYPE (0x%X)\n", op->type);
+			eprintf ("Missing an R_ANAL_OP_TYPE");
 			break;
 		}
 		vle_free (instr);
