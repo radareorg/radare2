@@ -5,6 +5,7 @@
 #include "r_config.h"
 #include "r_cons.h"
 #include "r_core.h"
+#include "../bin/pdb/pdb_downloader.h"
 
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
@@ -394,10 +395,10 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			}
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0); break;
-		case 'l': 
+		case 'l':
 			  {
 				  RBinObject *obj = r_bin_cur_object (core->bin);
-				  RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0); 
+				  RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0);
 			  }
 			  break;
 		case 'L':
@@ -438,13 +439,13 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL, obj? r_list_length (obj->symbols): 0);
 				break;
 			}
-		case 'R': 
+		case 'R':
 			if  (input[1] == '*') {
 				mode = R_CORE_BIN_RADARE;
 			} else if (input[1] == 'j') {
 				mode = R_CORE_BIN_JSON;
 			}
-			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0); 
+			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
 			break;
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
 		case 'd': // "id"
@@ -452,7 +453,20 @@ static int cmd_info(void *data, const char *input) {
 				int mode = false;
 				if (input[2] == '*') { // "idp*"
 					mode = true;
+					input++;
+				} else if (input[2] == 'd') { // "idpd"
+					SPDBOptions pdbopts;
+					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
+					pdbopts.symbol_server = (char*) r_config_get (core->config, "pdb.server");
+					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
+					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);	
+					if (r > 0) {
+						eprintf ("Error while downloading pdb file\n");
+					}
+					input += 2;
+					break;
 				}
+				input++;
 				char* filename = strchr (input, ' ');
 				if (filename) {
 					*filename++ = '\0';
@@ -460,40 +474,59 @@ static int cmd_info(void *data, const char *input) {
 					if (args) {
 						*args = '\0';
 					}
-					// TODO Use R_IO api
-					int current_fd = r_core_bin_cur (core)->fd;
-					char* r = r_core_cmd_strf (core, "o %s", filename);
-					if (r == NULL) {
-						eprintf ("Error while trying to open '%s'", filename);
-						goto id_end;
+				} else {
+					/* Autodetect local file or download remote file */
+					RBinInfo *info = r_bin_get_info (core->bin);
+					if (!info || !info->debug_file_name) {
+						eprintf ("Cannot get file's debug information\n");
+						break;
 					}
-					int fd = atoi (r);
-					free (r);
-					if (fd < 0) {
-						eprintf ("Error while opening '%s'", filename);
-						goto id_end;
+					bool local_file = r_file_exists (info->debug_file_name);
+					if (local_file) {
+						filename = info->debug_file_name;
+					} else {
+						r_core_cmd0 (core, "idpd");
+						filename = (char*) r_file_basename (info->debug_file_name);
 					}
-					RCoreBinFilter filter = { 0 };
-					r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
-					r_core_cmdf (core, "o-%d", fd);
-					r_core_cmdf (core, "o %d", current_fd);
 				}
+				// TODO Use R_IO api
+				int current_fd = r_core_bin_cur (core)->fd;
+				char* r = r_core_cmd_strf (core, "o %s", filename);
+				if (!r || !*r) {
+					eprintf ("FixMe: Could not read file descriptor\n");
+					if (!r) {
+						if (!(r = strdup ("0"))) {
+							eprintf ("Error: strdup fail\n");
+							break;
+						}
+					}
+				}
+				int fd = atoi (r);
+				free (r);
+				if (fd < 0) {
+					eprintf ("Error while opening '%s'\n", filename);
+					break;
+				}
+				RCoreBinFilter filter = { 0 };
+				r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
+				r_core_cmdf (core, "o-%d", fd);
+				r_core_cmdf (core, "o %d", current_fd);
 			} else if (input[1] == '?') { // "id?"
 				const char *help_message[] = {
 					"Usage: id", "", "Debug information",
 					"Output mode:", "", "",
 					"'*'", "", "Output in radare commands",
 					"id", "", "Source lines",
-					"idp", " <file.pdb>", "Show pdb file information",
-					".idp*", " <file.pdb", "Load pdb file information",
+					"idp", " [file.pdb]", "Show pdb file information",
+					".idp*", " [file.pdb]", "Load pdb file information",
+					"idpd", "", "Download pdb file on remote server",
 					NULL
 				};
 				r_core_cmd_help (core, help_message);
+				input++;
 			} else { // "id"
 				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
 			}
-			id_end:
-			input++;
 			break;
 		case 'i': {
 				  RBinObject *obj = r_bin_cur_object (core->bin);

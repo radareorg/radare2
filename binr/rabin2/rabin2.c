@@ -1000,61 +1000,13 @@ int main(int argc, char **argv) {
 		free (arch_name);
 	}
 	if (action & R_BIN_REQ_PDB_DWNLD) {
-		int ret;
-		char *path;
-		SPDBDownloaderOpt opt;
-		SPDBDownloader pdb_downloader;
-		RBinInfo *info = r_bin_get_info (core.bin);
-		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
-		char *env_pdbextract = r_sys_getenv("PDB_EXTRACT");
-		char *env_useragent = r_sys_getenv("PDB_USER_AGENT");
-
-		if (!info || !info->debug_file_name) {
-			eprintf ("Can't find debug filename\n");
-			r_core_fini (&core);
-			return 1;
-		}
-
-		if (info->file) {
-			path = r_file_dirname (info->file);
-		} else {
-			path = strdup (".");
-		}
-
-		if (env_pdbserver && *env_pdbserver) {
-			r_config_set (core.config, "pdb.server", env_pdbserver);
-		}
-		if (env_useragent && *env_useragent) {
-			r_config_set (core.config, "pdb.useragent", env_useragent);
-		}
-		if (env_pdbextract && *env_pdbextract) {
-			r_config_set_i (core.config, "pdb.extract", !(*env_pdbextract == '0'));
-		}
-		free (env_pdbextract);
-		free (env_useragent);
-
-		opt.dbg_file = info->debug_file_name;
-		opt.guid = info->guid;
-		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
-		opt.user_agent = (char *)r_config_get (core.config, "pdb.useragent");
-		opt.path = path;
-		opt.extract = r_config_get_i(core.config, "pdb.extract");
-
-		init_pdb_downloader (&opt, &pdb_downloader);
-		ret = pdb_downloader.download (&pdb_downloader);
-		if (isradjson) {
-			printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
-				actions_done?",":"", opt.dbg_file, ret?"true":"false");
-		} else {
-			printf ("PDB \"%s\" download %s\n",
-				opt.dbg_file, ret? "success": "failed");
-		}
-		actions_done++;
-		deinit_pdb_downloader (&pdb_downloader);
-
-		free (path);
+		SPDBOptions pdbopts;
+		pdbopts.user_agent = (char*) r_config_get (core.config, "pdb.useragent");
+		pdbopts.symbol_server = (char*) r_config_get (core.config, "pdb.server");
+		pdbopts.extract = r_config_get_i (core.config, "pdb.extract");
+		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
 		r_core_fini (&core);
-		return 0;
+		return r;
 	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_PREFIX"))) {
