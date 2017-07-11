@@ -213,11 +213,11 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		snapentry.size = base->size;
 		snapentry.timestamp = base->timestamp;
 		snapentry.perm = base->perm;
-		r_file_dump (base_file, &snapentry, sizeof (RSnapEntry), 1);
-		r_file_dump (base_file, base->data, base->size, 1);
+		r_file_dump (base_file, (const ut8*)&snapentry, sizeof (RSnapEntry), 1);
+		r_file_dump (base_file, (const ut8*)base->data, base->size, 1);
 		/* dump all hases */
 		for (i = 0; i < base->page_num; i++) {
-			r_file_dump (base_file, base->hashes[i], 128, 1);
+			r_file_dump (base_file, (const ut8*)base->hashes[i], 128, 1);
 		}
 	}
 
@@ -227,14 +227,14 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		header.id = session->key.id;
 		header.addr = session->key.addr;
 		header.difflist_len = r_list_length (session->memlist);
-		r_file_dump (diff_file, &header, sizeof (RSessionHeader), 1);
+		r_file_dump (diff_file, (ut8*)&header, sizeof (RSessionHeader), 1);
 
 		/* dump registers */
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			RRegArena *arena = session->reg[i]->data;
-			r_file_dump (diff_file, &arena->size, sizeof (int), 1);
-			r_file_dump (diff_file, arena->bytes, arena->size, 1);
+			r_file_dump (diff_file, (const ut8*)&arena->size, sizeof (int), 1);
+			r_file_dump (diff_file, (const ut8*)arena->bytes, arena->size, 1);
 			// eprintf ("arena[%d] size=%d\n", i, arena->size);
 		}
 		if (!header.difflist_len) {
@@ -248,13 +248,13 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			/* Dump diff header */
 			diffentry.pages_len = r_list_length (snapdiff->pages);
 			diffentry.base_idx = r_snap_to_idx (dbg, snapdiff->base);
-			r_file_dump (diff_file, &diffentry, sizeof (RDiffEntry), 1);
+			r_file_dump (diff_file, (const ut8*)&diffentry, sizeof (RDiffEntry), 1);
 
 			/* Dump page entries */
 			r_list_foreach (snapdiff->pages, iter3, page) {
-				r_file_dump (diff_file, &page->page_off, sizeof (ut32), 1);
-				r_file_dump (diff_file, page->data, SNAP_PAGE_SIZE, 1);
-				r_file_dump (diff_file, page->hash, 128, 1);
+				r_file_dump (diff_file, (const ut8*)&page->page_off, sizeof (ut32), 1);
+				r_file_dump (diff_file, (const ut8*)page->data, SNAP_PAGE_SIZE, 1);
+				r_file_dump (diff_file, (const ut8*)page->hash, 128, 1);
 			}
 		}
 	}
@@ -263,7 +263,6 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 }
 
 R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
-	RListIter *iter;
 	RDebugSession *session;
 	RDebugSnap *base;
 	RDebugSnapDiff *snapdiff;

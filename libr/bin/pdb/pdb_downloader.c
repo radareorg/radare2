@@ -162,7 +162,7 @@ int r_bin_pdb_download(RCore* core, int isradjson, int* actions_done, SPDBOption
 			opt.dbg_file, ret ? "success" : "failed");
 	}
 	if (actions_done) {
-		*actions_done++;
+		(*actions_done)++;
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 

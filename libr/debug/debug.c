@@ -924,10 +924,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_step_back(RDebug *dbg) {
 	ut64 pc, prev = 0, end, cnt = 0;
-	ut8 buf[32];
-	RAnalOp op;
 	RDebugSession *before;
-	RListIter *tail;
 
 	if (r_debug_is_dead (dbg)) {
 		return 0;

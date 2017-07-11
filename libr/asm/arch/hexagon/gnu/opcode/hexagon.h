@@ -71,7 +71,7 @@
 #define HEXAGON_IS16INSN(num) 0	/* not yet implemented */
 
 /* Extract the low 16 bits */
-#define HEXAGON_LO16(num) ((num) & ~(-1 << 16))
+#define HEXAGON_LO16(num) ((num) & ~(-1UL << 16))
 
 /* Extract the high 16 bits */
 #define HEXAGON_HI16(num) (HEXAGON_LO16 ((num) >> 16))

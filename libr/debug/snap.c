@@ -15,7 +15,6 @@ R_API RDebugSnap *r_debug_snap_new() {
 
 R_API void r_debug_snap_free(void *p) {
 	RDebugSnap *snap = (RDebugSnap *) p;
-	ut32 i = 0;
 	r_list_free (snap->history);
 	free (snap->data);
 	free (snap->comment);
