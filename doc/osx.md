@@ -16,9 +16,7 @@ By default it is installed in /usr/local, you can specify a different prefix lik
 
 To install bindings you will need to install r2, valac, valabind and swig. The whole process can be automated by using scripts under sys/
 
-	$ sys/python-deps.sh
-	$ sys/python.sh
-
+	$ r2pm -s python
 
 Code Signing
 ------------
