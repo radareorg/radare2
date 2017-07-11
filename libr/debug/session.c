@@ -284,6 +284,8 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 
 	fd = r_sandbox_fopen (base_file, "rb");
 	if (!fd) {
+		free (base_file);
+		free (diff_file);
 		return;
 	}
 
@@ -293,7 +295,8 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	/* Restore base snapshots */
 	while (true) {
 		base = r_debug_snap_new ();
-		if (!fread (&snapentry, sizeof (RSnapEntry), 1, fd)) {
+		memset (&snapentry, 0, sizeof (RSnapEntry));
+		if (fread (&snapentry, sizeof (RSnapEntry), 1, fd) != 1) {
 			break;
 		}
 		base->addr = snapentry.addr;
@@ -302,23 +305,34 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		base->page_num = base->size / SNAP_PAGE_SIZE;
 		base->timestamp = snapentry.timestamp;
 		base->perm = snapentry.perm;
-		base->data = malloc (base->size);
-		fread (base->data, base->size, 1, fd);
+		base->data = calloc (base->size, 1);
+		if (!base->data) {
+			free (base);
+			break;
+		}
+		if (fread (base->data, base->size, 1, fd) != 1) {
+			free (base);
+			break;
+		}
 		/* restore all hases */
 		base->hashes = R_NEWS0 (ut8 *, base->page_num);
 		for (i = 0; i < base->page_num; i++) {
 			base->hashes[i] = calloc (1, 128);
-			fread (base->hashes[i], 128, 1, fd);
+			if (fread (base->hashes[i], 128, 1, fd) != 1) {
+				break;
+			}
 		}
-
 		r_list_append (dbg->snaps, base);
 	}
 	fclose (fd);
-	free (base_file);
+	R_FREE (base_file);
 
 	/* Restore trace sessions */
 	fd = r_sandbox_fopen (diff_file, "rb");
+	R_FREE (diff_file);
 	if (!fd) {
+		free (base->data);
+		free (base);
 		return;
 	}
 
@@ -330,7 +344,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 
 	while (true) {
 		/* Restore session header */
-		if (!fread (&header, sizeof (RSessionHeader), 1, fd)) {
+		if (fread (&header, sizeof (RSessionHeader), 1, fd) != 1) {
 			break;
 		}
 		session = R_NEW0 (RDebugSession);
@@ -343,9 +357,13 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			/* Resotre RReagArena from raw dump*/
 			int arena_size;
-			fread (&arena_size, sizeof (int), 1, fd);
-			arena_raw = malloc (arena_size);
-			fread (arena_raw, arena_size, 1, fd);
+			if (fread (&arena_size, sizeof (int), 1, fd) != 1) {
+				break;
+			}
+			arena_raw = calloc (arena_size, 1);
+			if (fread (arena_raw, arena_size, 1, fd) != 1) {
+				break;
+			}
 			arena = R_NEW0 (RRegArena);
 			arena->bytes = arena_raw;
 			arena->size = arena_size;
@@ -359,10 +377,12 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		}
 		/* Restore diff entries */
 		for (i = 0; i < header.difflist_len; i++) {
-			fread (&diffentry, sizeof (RDiffEntry), 1, fd);
+			(void)fread (&diffentry, sizeof (RDiffEntry), 1, fd);
 			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
 			snapdiff = R_NEW0 (RDebugSnapDiff);
-
+			if (!snapdiff) {
+				break;
+			}
 			/* Restore diff->base */
 			base = r_idx_to_snap (dbg, diffentry.base_idx);
 			snapdiff->base = base;
@@ -379,10 +399,10 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, base->size);
 			for (p = 0; p < diffentry.pages_len; p++) {
 				page = R_NEW0 (RPageData);
-				page->data = malloc (clust_page);
-				fread (&page->page_off, sizeof (ut32), 1, fd);
-				fread (page->data, SNAP_PAGE_SIZE, 1, fd);
-				fread (page->hash, 128, 1, fd);
+				page->data = calloc (1, clust_page);
+				(void)fread (&page->page_off, sizeof (ut32), 1, fd);
+				(void)fread (page->data, SNAP_PAGE_SIZE, 1, fd);
+				(void)fread (page->hash, 128, 1, fd);
 				snapdiff->last_changes[page->page_off] = page;
 				r_list_append (snapdiff->pages, page);
 			}

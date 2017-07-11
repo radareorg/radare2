@@ -1903,6 +1903,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			case '*':
 				rad = str[1];
 				str++;
+				// fallthrough
 			case ' ':
 				{
 					int role = r_reg_get_name_idx (str+2);

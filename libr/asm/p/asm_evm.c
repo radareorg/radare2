@@ -11,6 +11,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	EvmOp eop = {0};
 	evm_dis (&eop, buf, len);
 	strncpy (op->buf_asm, eop.txt, sizeof (op->buf_asm));
+	op->buf_asm[sizeof (op->buf_asm) - 1] = 0;
 	op->size = eop.len;
 	return eop.len;
 }

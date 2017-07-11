@@ -20,7 +20,7 @@ RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 leng
 	if (s) {
 		s->allocated = allocated;
 		s->length = length;
-		s->string = strdup (string);
+		s->string = string;
 	}
 	return s;
 }
@@ -103,8 +103,11 @@ RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 }
 
 RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
-	char str[24];
 	if (!buffer || length != 15 || buffer[14] != 'Z') {
+		return NULL;
+	}
+	char *str = malloc (24);
+	if (!str) {
 		return NULL;
 	}
 
