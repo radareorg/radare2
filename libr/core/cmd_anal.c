@@ -2946,6 +2946,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	}
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init (&stats);
+
 	esil_init (core);
 	esil = core->anal->esil;
 	
