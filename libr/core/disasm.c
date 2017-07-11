@@ -1465,7 +1465,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		} else {
 			ds->comment = r_str_prefix_all (ds->comment, "; ");
 			ALIGN;
-			ds_comment (ds, false, ds->comment);
+			ds_comment (ds, false, "%s", ds->comment);
 		}
 		if (ds->show_color) {
 			ds_print_color_reset (ds);
