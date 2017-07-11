@@ -573,7 +573,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				if (ok) *ok = true;
 			}
 			// check for reg alias
-			struct r_reg_item_t *r = r_reg_get (core->dbg->reg, str, -1);
+			/*struct r_reg_item_t *r = r_reg_get (core->dbg->reg, str, -1);
 			if (!r) {
 				int type = r_reg_get_name_idx (str);
 				if (type != -1) {
@@ -587,7 +587,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			} else {
 				ret = r_reg_get_value (core->dbg->reg, r);
 				if (ok) *ok = true;
-			}
+			}*/
 		}
 		break;
 	}
