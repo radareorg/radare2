@@ -2919,7 +2919,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	RAnalOp aop = R_EMPTY;
 	ut8 *buf;
 	RList* regnow;
-	RCore fakecore;
 	if (!core)
 		return false;
 	maxopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
@@ -2947,10 +2946,9 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	}
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init (&stats);
+	esil_init (core);
+	esil = core->anal->esil;
 	
-	
-	esil_init (&fakecore);
-	esil = &fakecore.anal->esil;
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
@@ -2975,7 +2973,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->nowrite = false;
 	esil->cb.hook_reg_write = NULL;
 	esil->cb.hook_reg_read = NULL;
-	//esil_fini (core);
+	esil_fini (core);
 
 	regnow = r_list_newf (free);
 	{
