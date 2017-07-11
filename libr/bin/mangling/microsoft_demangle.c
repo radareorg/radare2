@@ -118,7 +118,10 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 	int str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 	char *dst = NULL;
-
+	
+	if (str_for_copy_len > free_space) {
+		return 0;
+	}
 	if (free_space > str_for_copy_len) {
 		type_code_str->type_str_len =
 			((type_code_str->type_str_len + str_for_copy_len) << 1) + 1;
