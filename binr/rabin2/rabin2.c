@@ -25,7 +25,7 @@ static ut64 at = 0LL;
 static RLib *l;
 
 static int rabin_show_help(int v) {
-	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
 	if (v) {
@@ -71,6 +71,7 @@ static int rabin_show_help(int v) {
 		" -s              symbols\n"
 		" -S              sections\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
+		" -U              resoUrces\n"
 		" -v              display version and quit\n"
 		" -V              Show binary version information\n"
 		" -x              extract bins contained in file\n"
@@ -608,7 +609,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action & x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeElRwO:o:pPqQrvLhuxXzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
@@ -690,6 +691,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'e': set_action (R_BIN_REQ_ENTRIES); break;
 		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
+		case 'U': set_action (R_BIN_REQ_RESOURCES); break;
 		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
 		case 'M': set_action (R_BIN_REQ_MAIN); break;
 		case 'l': set_action (R_BIN_REQ_LIBS); break;
@@ -1021,6 +1023,7 @@ int main(int argc, char **argv) {
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
 	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
 	run_action ("exports", R_BIN_REQ_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
+	run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
 	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
