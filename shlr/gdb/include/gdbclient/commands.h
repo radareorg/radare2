@@ -3,6 +3,7 @@
 
 #include "../libgdbr.h"
 #include "r_types_base.h"
+#include <r_util.h>
 
 
 /*!
@@ -109,5 +110,15 @@ int gdbr_remove_hwbp(libgdbr_t *g, ut64 address);
 int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode);
 int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len);
 int gdbr_close_file(libgdbr_t *g);
+
+/*!
+ * \brief get list of threads for given pid
+ */
+RList* gdbr_threads_list(libgdbr_t *g, int pid);
+
+/*!
+ * Get absolute name of file executed to create a process
+ */
+char* gdbr_exec_file_read(libgdbr_t *g, int pid);
 
 #endif  // CLIENT_COMMANDS_H

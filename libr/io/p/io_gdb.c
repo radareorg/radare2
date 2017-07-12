@@ -191,10 +191,13 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
         /* XXX ugly hack for testing purposes */
         if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
                 eprintf ("Usage: =!cmd args\n"
-                         " =!pid       - show targeted pid\n"
-                         " =!pkt s     - send packet 's'\n"
-                         " =!qRcmd cmd - hex-encode cmd and pass to target interpreter\n"
-                         " =!inv.reg   - invalidate reg cache\n");
+                         " =!pid             - show targeted pid\n"
+                         " =!pkt s           - send packet 's'\n"
+                         " =!qRcmd cmd       - hex-encode cmd and pass to target"
+                                             " interpreter\n"
+                         " =!inv.reg         - invalidate reg cache\n"
+                         " =!exec_file [pid] - Get file which was executed for"
+                                             " current/specified pid\n");
 		return true;
 	}
 	if (!strncmp (cmd, "pkt ", 4)) {
@@ -225,6 +228,33 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strncmp (cmd, "inv.reg", 7)) {
 		gdbr_invalidate_reg_cache ();
+		return true;
+	}
+	if (r_str_startswith (cmd, "exec_file")) {
+		const char *ptr = cmd + strlen ("exec_file");
+		char *file;
+		int pid;
+		if (!isspace (*ptr)) {
+			if (!(file = gdbr_exec_file_read (desc, 0))) {
+				return false;
+			}
+		} else {
+			while (isspace (*ptr)) {
+				ptr++;
+			}
+			if (isdigit (*ptr)) {
+				pid = atoi (ptr);
+				if (!(file = gdbr_exec_file_read (desc, pid))) {
+					return false;
+				}
+			} else {
+				if (!(file = gdbr_exec_file_read (desc, 0))) {
+					return false;
+				}
+			}
+		}
+		eprintf ("%s\n", file);
+		free (file);
 		return true;
 	}
 	eprintf ("Try: '=!?'\n");

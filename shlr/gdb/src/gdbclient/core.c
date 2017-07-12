@@ -1041,3 +1041,144 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
 	free (buf);
 	return -1;
 }
+
+char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
+	if (!g) {
+		return NULL;
+	}
+	char msg[128], pidstr[16];
+	char *path = NULL;
+	ut64 len = g->stub_features.pkt_sz, off = 0;
+	memset (pidstr, 0, sizeof (pidstr));
+	if (pid > 0) {
+		snprintf (pidstr, sizeof (pidstr), "%x", pid);
+	}
+	while (1) {
+		if (snprintf (msg, sizeof (msg) - 1,
+			      "qXfer:exec-file:read:%s:%"PFMT64x",%"PFMT64x,
+			      pidstr, off, len) < 0) {
+			free (path);
+			return NULL;
+		}
+		if (send_msg (g, msg) < 0 || read_packet (g) < 0
+		    || send_ack (g) < 0 || g->data_len == 0) {
+			free (path);
+			return NULL;
+		}
+		g->data[g->data_len] = '\0';
+		if (g->data[0] == 'l') {
+			if (g->data_len == 1) {
+				return path;
+			}
+			return r_str_append (path, g->data + 1);
+		}
+		if (g->data[0] != 'm') {
+			free (path);
+			return NULL;
+		}
+		off += strlen (g->data + 1);
+		if (!(path = r_str_append (path, g->data + 1))) {
+			return NULL;
+		}
+	}
+}
+
+bool gdbr_is_thread_dead (libgdbr_t *g, int pid, int tid) {
+	if (!g) {
+		return false;
+	}
+	if (g->stub_features.multiprocess && pid <= 0) {
+		return false;
+	}
+	char msg[64] = { 0 }, thread_id[63] = { 0 };
+	if (write_thread_id (thread_id, sizeof (thread_id) - 1, pid, tid,
+			     g->stub_features.multiprocess) < 0) {
+		return false;
+	}
+	if (snprintf (msg, sizeof (msg) - 1, "T%s", thread_id) < 0) {
+		return false;
+	}
+	if (send_msg (g, msg) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return false;
+	}
+	if (g->data_len == 3 && g->data[0] == 'E') {
+		return true;
+	}
+	return false;
+}
+
+#include <r_debug.h>
+
+RList* gdbr_threads_list(libgdbr_t *g, int pid) {
+	if (!g) {
+		return NULL;
+	}
+	RList *list;
+	int tpid = -1, ttid = -1;
+	char *ptr, *ptr2, *exec_file;
+	RDebugPid *dpid;
+	if (!g->stub_features.qXfer_exec_file_read
+	    || !(exec_file = gdbr_exec_file_read (g, pid))) {
+		exec_file = "";
+	}
+	if (g->stub_features.qXfer_threads_read) {
+		// XML thread description is supported
+		// TODO: Handle this case
+	}
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g) < 0 || send_ack (g) < 0
+	    || g->data_len == 0 || g->data[0] != 'm') {
+		return NULL;
+	}
+	if (!(list = r_list_new())) {
+		return NULL;
+	}
+	while (1) {
+		g->data[g->data_len] = '\0';
+		ptr = g->data + 1;
+		while (ptr) {
+			if ((ptr2 = strchr (ptr, ','))) {
+				*ptr2 = '\0';
+				ptr2++;
+			}
+			if (read_thread_id (ptr, &tpid, &ttid,
+					    g->stub_features.multiprocess) < 0) {
+				ptr = ptr2;
+				continue;
+			}
+			if (g->stub_features.multiprocess && tpid != pid) {
+				ptr = ptr2;
+				continue;
+			}
+			if (!(dpid = R_NEW0 (RDebugPid))
+			    || !(dpid->path = strdup (exec_file))) {
+				r_list_free (list);
+				return NULL;
+			}
+			dpid->pid = ttid;
+			dpid->runnable = true;
+			// This is what linux native does as fallback, but
+			// probably not correct.
+			// TODO: Implement getting correct thread status from GDB
+			dpid->status = R_DBG_PROC_STOP;
+			r_list_append (list, dpid);
+			ptr = ptr2;
+		}
+		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g) < 0
+		    || send_ack (g) < 0 || g->data_len == 0
+		    || (g->data[0] != 'm' && g->data[0] != 'l')) {
+			r_list_free (list);
+			return NULL;
+		}
+		if (g->data[0] == 'l') {
+			break;
+		}
+	}
+	RListIter *iter;
+	// This is the all I've been able to extract from gdb so far
+	r_list_foreach (list, iter, dpid) {
+		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
+			dpid->status = R_DBG_PROC_DEAD;
+		}
+	}
+	return list;
+}
