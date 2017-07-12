@@ -56,7 +56,7 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 			break;
 		}
 
-		r_list_append(fpo_stream->fpo_data_list, fpo_data);
+		r_list_append (fpo_stream->fpo_data_list, fpo_data);
 	}
 
 	free(data);
