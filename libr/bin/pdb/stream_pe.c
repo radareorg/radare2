@@ -12,24 +12,28 @@ void parse_pe_stream(void *stream, R_STREAM_FILE *stream_file)
 	SPEStream *pe_stream = (SPEStream *) stream;
 	int sctn_header_size =0;
 
-	stream_file_get_size(stream_file, &data_size);
-	data = (char *) malloc(data_size);
-	if (!data) return;
-	stream_file_get_data(stream_file, data);
+	stream_file_get_size (stream_file, &data_size);
+	data = (char *) malloc (data_size);
+	if (!data) {
+		return;
+	}
+	stream_file_get_data (stream_file, data);
 
-	sctn_header_size = sizeof(SIMAGE_SECTION_HEADER);
+	sctn_header_size = sizeof (SIMAGE_SECTION_HEADER);
 	ptmp = data;
-	pe_stream->sections_hdrs = r_list_new();
+	pe_stream->sections_hdrs = r_list_new ();
 	while (read_bytes < data_size) {
 		sctn_header = (SIMAGE_SECTION_HEADER *) malloc (sctn_header_size);
-		if (!sctn_header) break;
-		memcpy(sctn_header, ptmp, sctn_header_size);
+		if (!sctn_header) {
+			break;
+		}
+		memcpy (sctn_header, ptmp, sctn_header_size);
 		ptmp += sctn_header_size;
-		r_list_append(pe_stream->sections_hdrs, sctn_header);
+		r_list_append (pe_stream->sections_hdrs, sctn_header);
 		read_bytes += sctn_header_size;
 	}
 
-	free(data);
+	free (data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -39,10 +43,10 @@ void free_pe_stream(void *stream)
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	RListIter *it = 0;
 
-	it = r_list_iterator(pe_stream->sections_hdrs);
-	while (r_list_iter_next(it)) {
-		sctn_header = (SIMAGE_SECTION_HEADER *) r_list_iter_get(it);
-		free(sctn_header);
+	it = r_list_iterator (pe_stream->sections_hdrs);
+	while (r_list_iter_next (it)) {
+		sctn_header = (SIMAGE_SECTION_HEADER *) r_list_iter_get (it);
+		free (sctn_header);
 	}
-	r_list_free(pe_stream->sections_hdrs);
+	r_list_free (pe_stream->sections_hdrs);
 }

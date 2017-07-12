@@ -110,8 +110,8 @@ static RList *entries(RBinFile *arch) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ptr = r_coff_get_entry(obj);
-	r_list_append(ret, ptr);
+	ptr = r_coff_get_entry (obj);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
