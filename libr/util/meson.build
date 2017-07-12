@@ -46,6 +46,7 @@ files=[
 'range.c',
 'sandbox.c',
 'signal.c',
+'skiplist.c',
 'slist.c',
 'spaces.c',
 'stack.c',
