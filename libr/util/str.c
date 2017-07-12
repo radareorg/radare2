@@ -1258,8 +1258,9 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool d
 	if (!buf) {
 		return NULL;
 	}
-	/* Worst case scenario, we convert every byte to \xhh */
-	new_buf = malloc (1 + (strlen (buf) * 4));
+	/* Worst case scenario, we convert every byte to a single-char escape
+	 * (e.g. \n) if default_dot, or \xhh if !default_dot */
+	new_buf = malloc (1 + strlen (buf) * (default_dot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
