@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 1;
-			r_list_append(keywords, optarg);
+			r_list_append (keywords, optarg);
 			break;
 		case 'b':
 			bsize = r_num_math (NULL, optarg);
