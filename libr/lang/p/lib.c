@@ -18,7 +18,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 		libpath = r_str_prefix (libpath, "./");
 	}
 	if (!r_file_exists (libpath)) {
-		if (!r_str_endswith(libpath, R_LIB_EXT)) {
+		if (!r_str_endswith (libpath, R_LIB_EXT)) {
 			libpath = r_str_appendf (libpath, ".%s", R_LIB_EXT);
 		}
 	}

@@ -201,7 +201,7 @@ static int parse(RParse *p, const char *data, char *str) {
 {
 	char *p = strdup (str);
 	p = r_str_replace (p, "+ -", "- ", 0);
-	p = r_str_replace(p, " + ]", " + 0]", 0);
+	p = r_str_replace (p, " + ]", " + 0]", 0);
 #if EXPERIMENTAL_ZERO
 	p = r_str_replace (p, "zero", "0", 0);
 	if (!memcmp (p, "0 = ", 4)) *p = 0; // nop

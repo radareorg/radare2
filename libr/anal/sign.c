@@ -889,7 +889,7 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 	}
 
 	it2 = r_sign_item_dup (it);
-	r_list_append(ss->items, it2);
+	r_list_append (ss->items, it2);
 
 	// TODO(nibble): change arg data in r_search_keyword_new to void*
 	kw = r_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *) it2);
