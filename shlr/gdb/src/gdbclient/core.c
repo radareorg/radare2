@@ -1083,6 +1083,30 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 	}
 }
 
+bool gdbr_is_thread_dead (libgdbr_t *g, int pid, int tid) {
+	if (!g) {
+		return false;
+	}
+	if (g->stub_features.multiprocess && pid <= 0) {
+		return false;
+	}
+	char msg[64] = { 0 }, thread_id[63] = { 0 };
+	if (write_thread_id (thread_id, sizeof (thread_id) - 1, pid, tid,
+			     g->stub_features.multiprocess) < 0) {
+		return false;
+	}
+	if (snprintf (msg, sizeof (msg) - 1, "T%s", thread_id) < 0) {
+		return false;
+	}
+	if (send_msg (g, msg) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return false;
+	}
+	if (g->data_len == 3 && g->data[0] == 'E') {
+		return true;
+	}
+	return false;
+}
+
 #include <r_debug.h>
 
 RList* gdbr_threads_list(libgdbr_t *g, int pid) {
@@ -1147,6 +1171,13 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 		if (g->data[0] == 'l') {
 			break;
+		}
+	}
+	RListIter *iter;
+	// This is the all I've been able to extract from gdb so far
+	r_list_foreach (list, iter, dpid) {
+		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
+			dpid->status = R_DBG_PROC_DEAD;
 		}
 	}
 	return list;
