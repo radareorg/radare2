@@ -2947,8 +2947,16 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init (&stats);
 
-	esil_init (core);
-	esil = core->anal->esil;
+	//esil_init (core);
+	//esil = core->anal->esil;
+	r_reg_arena_push (core->anal->reg);
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
+	int romem = r_config_get_i (core->config, "esil.romem");
+	int stats1 = r_config_get_i (core->config, "esil.stats");
+	int nonull = r_config_get_i (core->config, "esil.nonull");
+	esil = r_anal_esil_new (stacksize, iotrap);
+	r_anal_esil_setup (esil, core->anal, romem, stats1, nonull); // setup io
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
@@ -2973,8 +2981,9 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->nowrite = false;
 	esil->cb.hook_reg_write = NULL;
 	esil->cb.hook_reg_read = NULL;
-	esil_fini (core);
-
+	//esil_fini (core);
+	r_anal_esil_free (esil);
+	r_reg_arena_pop (core->anal->reg);
 	regnow = r_list_newf (free);
 	{
 		RListIter *iter;
