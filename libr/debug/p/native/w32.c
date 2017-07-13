@@ -256,7 +256,7 @@ static void print_lasterr (const char *caller, char *cause) {
 				NULL)) {
 		eprintf ("Format message failed with 0x%d\n", (ut32)GetLastError ());
 	} else {
-		eprintf ("Error detected in %s/%s: %s\n", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
+		eprintf ("Error detected in %s/%s: %s", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
 	}
 }
 
@@ -1111,7 +1111,7 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			size = 0;
 		}
 	} else {
-		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
+		print_lasterr ((char*) __FUNCTION__, "GetThreadContext");
 		size = 0;
 	}
 	if (showfpu) {
