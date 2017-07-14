@@ -57,6 +57,7 @@ all: plugins.cfg libr/include/r_version.h
 #.PHONY: libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
+R2_VER=$(shell grep VERSION configure.acr | head -n1 | awk '{print $$2}')
 ifndef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date +%Y-%m-%d)
 else
@@ -68,6 +69,7 @@ libr/include/r_version.h:
 	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
 	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
 	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION $(ESC)"$(R2_VER)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
