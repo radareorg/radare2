@@ -4945,14 +4945,11 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
 		"at", "", "list all traced opcode ranges",
-		"at-", "", "reset the tracing information",
 		"at*", "", "list all traced opcode offsets",
 		"at+", " [addr] [times]", "add trace for address N times",
 		"at", " [addr]", "show trace info at address",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"att", " [tag]", "select trace tag (no arg unsets)",
 		"at%", "", "TODO",
-		"ata", " 0x804020 ...", "only trace given addresses",
 		"atr", "", "show traces as range commands (ar+)",
 		"atd", "", "show disassembly trace (use .atd)",
 		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
@@ -5033,14 +5030,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
-		r_cons_printf ("Current Tag: %d", core->dbg->trace->tag);
-		break;
-	case 'a':
-		eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
-		r_debug_trace_at (core->dbg, input + 1);
-		break;
-	case 't':
-		r_debug_trace_tag (core->dbg, atoi (input + 1));
 		break;
 	case 'D':
 		// XXX: not yet tested..and rsc dwarf-traces comes from r1
@@ -5060,20 +5049,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			} else {
 				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
 			}
-		}
-		break;
-	case '-':
-		r_debug_trace_free (core->dbg->trace);
-		core->dbg->trace = r_debug_trace_new ();
-		break;
-	case ' ':
-		if ((t = r_debug_trace_get (core->dbg,
-					r_num_math (core->num, input)))) {
-			r_cons_printf ("offset = 0x%" PFMT64x "\n", t->addr);
-			r_cons_printf ("opsize = %d\n", t->size);
-			r_cons_printf ("times = %d\n", t->times);
-			r_cons_printf ("count = %d\n", t->count);
-			//TODO cons_printf("time = %d\n", t->tm);
 		}
 		break;
 	case '*':

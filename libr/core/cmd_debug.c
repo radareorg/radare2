@@ -3575,6 +3575,7 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	RDebugTracepoint *t;
 	int follow = 0;
 
 	if (r_sandbox_enable (0)) {
@@ -3588,11 +3589,46 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_println (str);
 		return 0;
 	}
+	const char * help_message[] = {
+		"Usage: dt", "", "Trace commands",
+		"dt", "", "List all traces ",
+		"dt", " [addr]", "show trace info at address",
+		"dta", " 0x804020 ...", "only trace given addresses",
+		"dtt", " [tag]", "select trace tag (no arg unsets)",
+		"dtd", "", "List all traced disassembled",
+		"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
+		"dtg", "", "Graph call/ret trace",
+		"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
+		"dtgi", "", "Interactive debug trace",
+		"dts", "[?]", "trace sessions",
+		"dt-", "", "Reset traces (instruction/calls)",
+		NULL
+	};
 
 	switch (input[0]) {
 	case 't':
 		// TODO: define ranges? to display only some traces, allow to scroll on this disasm? ~.. ?
 		switch (input[1]) {
+		case '\0': // "dt"
+			r_debug_trace_list (core->dbg, 0);
+			break;
+		case ' ': // "dt [addr]"
+			if ((t = r_debug_trace_get (core->dbg,
+					r_num_math (core->num, input)))) {
+				r_cons_printf ("offset = 0x%" PFMT64x "\n", t->addr);
+				r_cons_printf ("opsize = %d\n", t->size);
+				r_cons_printf ("times = %d\n", t->times);
+				r_cons_printf ("count = %d\n", t->count);
+				//TODO cons_printf("time = %d\n", t->tm);
+			}
+			break;
+		case 'a': // "dta"
+ 			eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
+			r_debug_trace_at (core->dbg, input + 2);
+			break;
+		case 't': // "dtt"
+			r_debug_trace_tag (core->dbg, atoi (input + 2));
+			break;
 		case 'c': // "dtc"
 			if (input[2] == '?') {
 				r_cons_println ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger");
@@ -3606,6 +3642,12 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'g': // "dtg"
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
+			break;
+		case '-': // "dt-"
+			r_tree_reset (core->dbg->tree);
+			r_debug_trace_free (core->dbg->trace);
+			r_debug_tracenodes_reset (core->dbg);
+			core->dbg->trace = r_debug_trace_new ();
 			break;
 		case 's': // "dts"
 			switch (input[2]) {
@@ -3645,31 +3687,11 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-		case '-':
-			r_tree_reset (core->dbg->tree);
-			r_debug_trace_free (core->dbg->trace);
-			r_debug_tracenodes_reset (core->dbg);
-			core->dbg->trace = r_debug_trace_new ();
-			break;
-		case '\0':
-			r_debug_trace_list (core->dbg, 0);
-			break;
 		case '?':
 		default:
 			{
-				const char * help_message[] = {
-					"Usage: dt", "", "Trace commands",
-					"dt", "", "List all traces ",
-					"dtd", "", "List all traced disassembled",
-					"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-					"dtg", "", "Graph call/ret trace",
-					"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-					"dtgi", "", "Interactive debug trace",
-					"dts", "[?]", "trace sessions",
-					"dt-", "", "Reset traces (instruction/calls)",
-					NULL
-				};
 				r_core_cmd_help (core, help_message);
+				r_cons_printf ("Current Tag: %d", core->dbg->trace->tag);
 			}
 			break;
 		}
