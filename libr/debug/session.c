@@ -284,7 +284,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		return;
 	}
 
-	fd = r_sandbox_fopen (base_file, "rb");
+	FILE *fd = r_sandbox_fopen (base_file, "rb");
 	if (!fd) {
 		free (base_file);
 		free (diff_file);
@@ -330,7 +330,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	R_FREE (base_file);
 
 	/* Restore trace sessions */
-	FILE *fd = r_sandbox_fopen (diff_file, "rb");
+	fd = r_sandbox_fopen (diff_file, "rb");
 	R_FREE (diff_file);
 	if (!fd) {
 		if (base) {
