@@ -1991,7 +1991,7 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 		return 16;
 	}
 	/* Hack for Ps2 */
-	if (bin->ehdr.e_machine == EM_MIPS) {
+	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
 		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
 		if (bin->ehdr.e_type == ET_EXEC) {
 			int i;
