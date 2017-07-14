@@ -1,15 +1,6 @@
 #ifndef _INCLUDE_CONFIG_H_
 #define _INCLUDE_CONFIG_H_
 
-// TODO: hardcoded
-#ifndef R_VERSION_H
-#define R_VERSION_H 1
-#define R2_VERSION_COMMIT 15085
-#define R2_GITTAP "1.4.0-312-g06aae3080"
-#define R2_GITTIP "06aae3080e9b85d1ad804a66dc9face087c25b7e"
-#define R2_BIRTH "2017-05-25__16:15:31"
-#endif
-
 #define R_DEBUG 0
 #define R_RTDEBUG 1
 
