@@ -263,23 +263,26 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 }
 
 R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
-	RDebugSession *session;
-	RDebugSnap *base;
+	RDebugSnap *base = NULL;
 	RDebugSnapDiff *snapdiff;
 	RPageData *page;
-	RReg *reg = dbg->reg;
-	RRegArena *arena;
-	ut8 *arena_raw;
-
 	RSessionHeader header;
 	RDiffEntry diffentry;
 	RSnapEntry snapentry;
-
 	ut32 i;
-	FILE *fd;
 
+	RReg *reg = dbg->reg;
 	char *base_file = r_str_newf ("%s.dump", file);
+	if (!base_file) {
+		free (base_file);
+		return;
+	}
 	char *diff_file = r_str_newf ("%s.session", file);
+	if (!diff_file) {
+		free (base_file);
+		free (diff_file);
+		return;
+	}
 
 	fd = r_sandbox_fopen (base_file, "rb");
 	if (!fd) {
@@ -327,11 +330,13 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	R_FREE (base_file);
 
 	/* Restore trace sessions */
-	fd = r_sandbox_fopen (diff_file, "rb");
+	FILE *fd = r_sandbox_fopen (diff_file, "rb");
 	R_FREE (diff_file);
 	if (!fd) {
-		free (base->data);
-		free (base);
+		if (base) {
+			free (base->data);
+			free (base);
+		}
 		return;
 	}
 
@@ -346,7 +351,10 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		if (fread (&header, sizeof (RSessionHeader), 1, fd) != 1) {
 			break;
 		}
-		session = R_NEW0 (RDebugSession);
+		RDebugSession *session = R_NEW0 (RDebugSession);
+		if (!session) {
+			break;
+		}
 		session->memlist = r_list_newf (r_debug_diff_free);
 		session->key.id = header.id;
 		session->key.addr = header.addr;
@@ -354,16 +362,24 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		eprintf ("session: %d, 0x%"PFMT64x " diffs: %d\n", header.id, header.addr, header.difflist_len);
 		/* Restore registers */
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			/* Resotre RReagArena from raw dump*/
+			/* Resotre RReagArena from raw dump */
 			int arena_size;
 			if (fread (&arena_size, sizeof (int), 1, fd) != 1) {
 				break;
 			}
-			arena_raw = calloc (arena_size, 1);
-			if (fread (arena_raw, arena_size, 1, fd) != 1) {
+			ut8 *arena_raw = calloc (arena_size, 1);
+			if (!arena_raw) {
 				break;
 			}
-			arena = R_NEW0 (RRegArena);
+			if (fread (arena_raw, arena_size, 1, fd) != 1) {
+				free (arena_raw);
+				break;
+			}
+			RRegArena *arena = R_NEW0 (RRegArena);
+			if (!arena) {
+				free (arena_raw);
+				break;
+			}
 			arena->bytes = arena_raw;
 			arena->size = arena_size;
 			/* Push RRegArena to regset.pool */

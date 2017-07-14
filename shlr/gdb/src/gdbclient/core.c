@@ -1149,9 +1149,9 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 				ptr = ptr2;
 				continue;
 			}
-			if (!(dpid = R_NEW0 (RDebugPid))
-			    || !(dpid->path = strdup (exec_file))) {
+			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
 				r_list_free (list);
+				free (dpid);
 				return NULL;
 			}
 			dpid->pid = ttid;
