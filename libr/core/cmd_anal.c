@@ -4106,7 +4106,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RListIter *iter;
 		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
-		char *ptr = r_str_trim_head (cp_inp); 
+		char *ptr = r_str_trim_head (cp_inp);
 		if (!strcmp (ptr, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
@@ -4955,7 +4955,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		"ata", " 0x804020 ...", "only trace given addresses",
 		"atr", "", "show traces as range commands (ar+)",
 		"atd", "", "show disassembly trace (use .atd)",
-		"atl", "", "list all traced addresses (useful for @@= `atl`)",
 		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL };
 
@@ -5042,13 +5041,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		break;
 	case 't':
 		r_debug_trace_tag (core->dbg, atoi (input + 1));
-		break;
-	case 'l':
-		r_debug_trace_list (core->dbg, 'l');
-		r_cons_newline ();
-		break;
-	case 'd':
-		r_debug_trace_list (core->dbg, 'd');
 		break;
 	case 'D':
 		// XXX: not yet tested..and rsc dwarf-traces comes from r1

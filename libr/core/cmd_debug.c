@@ -3652,7 +3652,7 @@ static int cmd_debug(void *data, const char *input) {
 			core->dbg->trace = r_debug_trace_new ();
 			break;
 		case '\0':
-			r_debug_trace_list (core->dbg, -1);
+			r_debug_trace_list (core->dbg, 0);
 			break;
 		case '?':
 		default:
