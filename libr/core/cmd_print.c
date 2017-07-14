@@ -4582,6 +4582,8 @@ static int cmd_print(void *data, const char *input) {
 				"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 				"pxw", "", "show hexadecimal words dump (32bit)",
 				"pxW", "", "same as above, but one per line",
+				"pxx", "", "show N bytes of hex-less hexdump",
+				"pxX", "", "show N words of hex-less hexdump",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
