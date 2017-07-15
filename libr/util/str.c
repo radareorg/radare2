@@ -1312,7 +1312,7 @@ R_API char *r_str_escape_latin1(const char *buf) {
 	return r_str_escape_ (buf, false, false, false);
 }
 
-static char *r_str_escape_utf(const char *buf, int len_buf, int type) {
+static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1323,13 +1323,13 @@ static char *r_str_escape_utf(const char *buf, int len_buf, int type) {
 	}
 	switch (type) {
 	case R_STRING_TYPE_WIDE:
-		if (len_buf < 0) {
+		if (buf_size < 0) {
 			return NULL;
 		}
 		/* Additional \0 automatically tacked on to "\0" */
-		end = (char *)r_mem_mem ((ut8 *)buf, len_buf, (ut8 *)"\0", 2);
+		end = (char *)r_mem_mem ((ut8 *)buf, buf_size, (ut8 *)"\0", 2);
 		if (!end) {
-			end = buf + len_buf;
+			end = buf + buf_size;
 		}
 		len = end - buf;
 		break;
@@ -1376,8 +1376,8 @@ R_API char *r_str_escape_utf8(const char *buf) {
 	return r_str_escape_utf (buf, -1, R_STRING_TYPE_UTF8);
 }
 
-R_API char *r_str_escape_utf16le(const char *buf, int buf_len) {
-	return r_str_escape_utf (buf, buf_len, R_STRING_TYPE_WIDE);
+R_API char *r_str_escape_utf16le(const char *buf, int buf_size) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE);
 }
 
 /* ansi helpers */
