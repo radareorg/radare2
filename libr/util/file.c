@@ -174,6 +174,10 @@ R_API char *r_file_abspath(const char *file) {
 		if (cwd && *file != '/')
 			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
 #elif __WINDOWS__ && !__CYGWIN__
+		// Network path
+		if (!strncmp (file, "\\\\", 2)) {
+			return strdup (file);
+		}
 		if (cwd && !strchr (file, ':')) {
 			ret = r_str_newf ("%s\\%s", cwd, file);
 		}

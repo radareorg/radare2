@@ -1050,6 +1050,9 @@ repeat:
 			reason == R_DEBUG_REASON_EXIT_TID ) {
 			goto repeat;
 		}
+		if (reason == R_DEBUG_REASON_EXIT_PID) {
+			dbg->pid = -1;
+		}
 #endif
 
 		/* if continuing killed the inferior, we won't be able to get
