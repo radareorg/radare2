@@ -14,8 +14,9 @@ R_API int r_utf16le_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	} else if (ptrlen > 1 && ptr[1]) {
 		if (ch) *ch = ptr[1] << 8 | ptr[0];
 		return 2;
-	} else {
+	} else if (ptrlen > 1) {
 		if (ch) *ch = (ut32)ptr[0];
 		return 1;
 	}
+	return 0;
 }
