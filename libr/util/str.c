@@ -1326,8 +1326,14 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 		if (buf_size < 0) {
 			return NULL;
 		}
-		/* Additional \0 automatically tacked on to "\0" */
-		end = (char *)r_mem_mem ((ut8 *)buf, buf_size, (ut8 *)"\0", 2);
+		end = NULL;
+		for (i = 0; i < buf_size; i += 2) {
+			/* Additional \0 automatically tacked on to "\0" */
+			if (!memcmp (buf + i, (ut8 *)"\0", 2)) {
+				end = buf + i;
+				break;
+			}
+		}
 		if (!end) {
 			end = buf + buf_size;
 		}
