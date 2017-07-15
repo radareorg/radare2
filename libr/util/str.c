@@ -1789,6 +1789,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 				case '"':
 				case ' ':
 				case '\\':
+					args[args_current++] = '\\';
 					args[args_current++] = c;
 					break;
 				case '\0':
