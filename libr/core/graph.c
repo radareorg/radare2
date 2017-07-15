@@ -83,6 +83,7 @@ struct layer_t {
 	int position;
 	int height;
 	int width;
+	int out_edges;
 };
 
 struct agraph_refresh_data {
@@ -1675,6 +1676,19 @@ static void set_layout(RAGraph *g) {
 		g->layers[i].width = rw;
 	}
 
+	for (i = 0; i < g->n_layers; i++) {
+		int outedge = 0;
+		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+			RANode *a = (RANode *) g->layers[i].nodes[j]->data;
+			outedge += r_list_length ((g->layers[i].nodes[j])->out_nodes);
+
+			if (a->is_dummy) {
+				a->h = g->layers[i].height;
+			}
+		}
+		g->layers[i].out_edges = outedge;
+	}
+
 	/* x-coordinate assignment: algorithm based on:
 	 * A Fast Layout Algorithm for k-Level Graphs
 	 * by C. Buchheim, M. Junger, S. Leipert */
@@ -1690,7 +1704,7 @@ static void set_layout(RAGraph *g) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
 				n->y = 1;
 				for (k = 0; k < n->layer; ++k) {
-					n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
+					n->y += g->layers[k].height + g->layers[k].out_edges + 3; //XXX: should be 4?
 				}
 				if (g->is_tiny) {
 					n->y = n->layer;
@@ -1733,16 +1747,17 @@ static void set_layout(RAGraph *g) {
 		}
 		break;
 	}
-	restore_original_edges (g);
-	remove_dummy_nodes (g);
+	//restore_original_edges (g);
+	//remove_dummy_nodes (g);
 
 	/* free all temporary structures used during layout */
-	for (i = 0; i < g->n_layers; ++i) {
+	/*for (i = 0; i < g->n_layers; ++i) {
 		free (g->layers[i].nodes);
 	}
 	free (g->layers);
 	r_list_free (g->long_edges);
 	r_list_free (g->back_edges);
+	*/
 }
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
@@ -2295,6 +2310,9 @@ static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
 }
 
 static void agraph_print_node(const RAGraph *g, RANode *n) {
+	if (n->is_dummy) {
+		return;
+	}
 	const int cur = g->curnode && get_anode (g->curnode) == n;
 	if (g->is_tiny) {
 		tiny_RANode_print (g, n, cur);
@@ -2327,6 +2345,36 @@ static int find_ascii_edge(const AEdge *a, const AEdge *b) {
 	return a->from == b->from && a->to == b->to? 0: 1;
 }
 
+//Copying some part of code from agraph_print_edges -- Need to do some fix this part
+static int get_nth (const RAGraph *g, RANode *src, RANode *dst) {
+	RListIter *itn;
+	RGraphNode *gv;
+	int cur_nth = 0;
+	int nth = 0;
+	RANode *v;
+
+	if (src->is_dummy) {
+		RANode *in = (RANode *) (((RGraphNode *)r_list_first ((src->gnode)->in_nodes))->data);
+		cur_nth = get_nth (g, in, src);
+	} else {
+		const RList *neighbours = r_graph_get_neighbours (g->graph, src->gnode);
+		const int exit_edges = r_list_length (neighbours);
+		graph_foreach_anode (neighbours, itn, gv, v) {
+			cur_nth = nth;
+			if (g->is_callgraph) {
+				cur_nth = 0;
+			} else if (exit_edges == 1) {
+				cur_nth = -1;
+			}
+			if (gv->idx == (dst->gnode)->idx) {
+				break;
+			}
+			nth++;
+		}
+	}
+	return cur_nth;
+}
+
 /* print an edge between two nodes.
  * nth: specifies if the edge is the true(1)/false(2) branch or if it's the
  *      only edge for that node(0), so that a different style will be applied
@@ -2338,6 +2386,17 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	AEdge e, *edg = NULL;
 	int is_first = true;
 	RCanvasLineStyle style;
+
+	//XXX: Assuming that dummy node only has 1 incoming edge
+	if (a->is_dummy) {
+		RList *in_nodes = (a->gnode)->in_nodes;
+		if (r_list_length (in_nodes) != 1) {
+			style.color = LINE_UNCJMP;
+		} else {
+			RANode *in = (RANode *) (((RGraphNode *)r_list_first (in_nodes))->data);
+			nth = get_nth (g, in, a);
+		}
+	}
 
 	xinc = 4 + 2 * (nth + 1);
 	x = a->x + xinc;
@@ -2352,7 +2411,7 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	case -1: style.color = LINE_UNCJMP; break;
 	default: style.color = LINE_NONE; break;
 	}
-	style.symbol = style.color;
+	style.symbol = a->is_dummy ? LINE_NOSYM : style.color;
 
 	e.from = a;
 	e.to = b;
@@ -2376,6 +2435,7 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 					xinc += 4;
 					x += 4;
 				}
+
 				r_cons_canvas_line (g->can, x, y, x2, y2, &style);
 
 				x = x2;
@@ -2386,10 +2446,12 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 		}
 		x2 = b->x + xinc;
 		y2 = b->y - 1;
+
 		if (is_first && nth == 0 && x2 > x) {
 			xinc += 4;
 			x += 4;
 		}
+
 		r_cons_canvas_line (g->can, x, y, x2, y2, &style);
 		break;
 	case 1:
@@ -2416,6 +2478,108 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 }
 
 static void agraph_print_edges(const RAGraph *g) {
+	int i, j, edge_ctr, nth;
+	RListIter *itn;
+	RCanvasLineStyle style;
+
+	for (i = 0; i < g->n_layers; i++) {
+		edge_ctr = 0;
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
+			const RGraphNode *ga = g->layers[i].nodes[j];
+			RANode *a = (RANode *) ga->data;
+			const RGraphNode *gb;
+			RANode *b;
+			const RList *neighbours = r_graph_get_neighbours (g->graph, ga);
+			int ax, ay, bx, by, xinc;
+
+			graph_foreach_anode (neighbours, itn, gb, b) {
+				AEdge e, *edg = NULL;
+				int is_first = true;
+
+				if (a->is_dummy) {
+					RANode *in = (RANode *) (((RGraphNode *)r_list_first (ga->in_nodes))->data);
+					nth = get_nth (g, in, a);
+				} else {
+					nth = get_nth (g, a, b);
+				}
+
+				switch (nth) {
+				case 0:
+					style.color = LINE_TRUE;
+					break;
+				case 1:
+					style.color = LINE_FALSE;
+					break;
+				case -1:
+					style.color = LINE_UNCJMP;
+					break;
+				default:
+					style.color = LINE_NONE;
+					break;
+				}
+				style.symbol = a->is_dummy ? LINE_NOSYM : style.color;
+
+				xinc = 4 + 2 * (nth + 1);
+
+				ax = a->is_dummy ? a->x : (a->x + xinc);
+				ay = a->y + a->h;
+
+				bx = b->is_dummy ? b->x : (b->x + xinc);
+				by = b->y - 1;
+
+				e.from = a;
+				e.to = b;
+				RListIter *it = r_list_find (g->edges, &e, (RListComparator) find_ascii_edge);
+				switch (g->layout) {
+				case 0:
+				default:
+					it = r_list_find (g->edges, &e, (RListComparator) find_ascii_edge);
+					if (it) {
+						int k, len;
+
+						edg = r_list_iter_get_data (it);
+						len = r_list_length (edg->x);
+
+						for (k = 0; k < len; ++k) {
+							bx = (int) (size_t) r_list_get_n (edg->x, k);
+							by = (int) (size_t) r_list_get_n (edg->y, k) - 1;
+
+							if (is_first && nth == 0 && bx > ax) {
+								xinc += 4;
+								ax += 4;
+							}
+
+							r_cons_canvas_line (g->can, ax, ay, bx, by, &style);
+
+							ax = bx;
+							ay = by;
+							style.symbol = LINE_NONE;
+							is_first = false;
+						}
+					}
+
+					if (a->h < g->layers[i].height) {
+						r_cons_canvas_line (g->can, ax, ay, ax, ay + g->layers[i].height - a->h, &style);
+						ay = a->y + g->layers[i].height;
+						style.symbol = LINE_NOSYM;
+					}
+					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, edge_ctr);
+					if (b->is_dummy) {
+						style.symbol = LINE_NOSYM;
+						r_cons_canvas_line (g->can, bx, by, bx, b->y + b->h, &style);
+					}
+					break;
+				case 1:
+					//TODO
+					break;
+				}
+
+				edge_ctr++;
+			}
+		}
+	}
+
+#if 0
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn, *gv;
 	RListIter *it, *itn;
@@ -2440,6 +2604,7 @@ static void agraph_print_edges(const RAGraph *g) {
 			nth++;
 		}
 	}
+#endif
 }
 
 static void agraph_toggle_callgraph(RAGraph *g) {
@@ -2621,6 +2786,8 @@ static int check_changes(RAGraph *g, int is_interactive,
 
 static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
 	int h, w = r_cons_get_size (&h);
+	int need_set_layout = g->need_set_layout;
+	int need_reload_nodes = g->need_reload_nodes;
 	int ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
 		return false;
@@ -2644,6 +2811,21 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 
 	if (!g->is_tiny) {
 		agraph_print_edges (g);
+	}
+	//agraph_print_nodes (g);
+	if (need_set_layout || need_reload_nodes || !is_interactive) {
+		//restore_original_edges (g);
+		//remove_dummy_nodes (g);
+#if 0
+		int i = 0;
+		for (i = 0; i < g->n_layers; ++i) {
+			free (g->layers[i].nodes);
+		}
+		free (g->layers);
+		r_list_free (g->long_edges);
+		r_list_free (g->back_edges);
+#endif
+		//agraph_set_layout (g, is_interactive);
 	}
 	agraph_print_nodes (g);
 

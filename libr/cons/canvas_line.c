@@ -50,6 +50,11 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 			W ("f");
 		}
 		break;
+	case LINE_NOSYM:
+		if (G (x, y)) {
+			W (useUtf8 ? RUNECODESTR_LINE_VERT : "|");
+		}
+		break;
 	case LINE_NONE:
 	default:
 		break;
@@ -221,6 +226,38 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 				draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX);
 			}
 			draw_vertical_line (c, x2, y2, diff_y);
+		}
+	}
+	c->attr = Color_RESET;
+}
+
+
+R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint) {
+	int min_x = R_MIN (x, x2);
+	int diff_x = R_ABS (x - x2);
+	int diff_y = R_ABS (y - y2);
+
+	apply_line_style (c, x, y, x2, y2, style);
+
+	if (x2 == x) {
+		draw_vertical_line (c, x, y + 1, diff_y);
+	} else if (y2 - y > 1) {
+		int h1 = 1 + bendpoint;
+		int h2 = diff_y - h1;
+		int w = diff_x == 0 ? 0 : diff_x + 1;
+		int style = min_x == x ? APEX_DOT : DOT_APEX;
+		draw_vertical_line (c, x, y + 1, h1);
+		draw_horizontal_line (c, min_x, y + bendpoint + 2, w, style);
+		draw_vertical_line (c, x2, y + h1 + 1 + 1, h2);
+	} else {
+		//TODO: currently copy-pasted
+		if (y2 == y) {
+			draw_horizontal_line (c, min_x, y, diff_x + 1, DOT_DOT);
+		} else {
+			if (x != x2) {
+				draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX);
+			}
+			draw_vertical_line (c, x2, y2, diff_y-2);
 		}
 	}
 	c->attr = Color_RESET;

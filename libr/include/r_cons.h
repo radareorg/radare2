@@ -448,6 +448,7 @@ enum {
 	LINE_TRUE,
 	LINE_FALSE,
 	LINE_UNCJMP,
+	LINE_NOSYM
 };
 
 typedef struct r_cons_canvas_line_style_t {
@@ -499,6 +500,7 @@ R_API void r_cons_canvas_line_diagonal(RConsCanvas *c, int x, int y, int x2, int
 R_API void r_cons_canvas_line_square(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace);
+R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint);
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
