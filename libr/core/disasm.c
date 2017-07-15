@@ -2676,9 +2676,10 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		// could be a wide string
 		char *escstr = r_str_escape_utf16le (str, len);
 		if (escstr) {
+			int escstr_len = strlen (escstr);
 			ALIGN;
 			ds_comment (ds, true, "; %s\"%s\"%s",
-				    strlen (escstr) == 1 || (strlen (escstr) == 2 && escstr[0] == '\\') ? "" : "u",
+				    escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u",
 				    escstr, nl);
 			free (escstr);
 		}
