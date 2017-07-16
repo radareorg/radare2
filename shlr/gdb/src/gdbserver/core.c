@@ -93,8 +93,10 @@ static int _server_handle_s(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		send_msg (g, "E01");
 		return -1;
 	}
-	// TODO This packet should specify why we stopped. Right now only for trap
-	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (g, core_ptr, "dptr", NULL, 0));
+	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
 	return send_msg (g, message);
 }
 
@@ -111,18 +113,22 @@ static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		send_msg (g, "E01");
 		return -1;
 	}
-	// TODO This packet should specify why we stopped. Right now only for trap
-	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (g, core_ptr, "dptr", NULL, 0));
+	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
 	return send_msg (g, message);
 }
 
 static int _server_handle_ques(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	// TODO This packet should specify why we stopped. Right now only for trap
-	char message[64];
+	char message[64] = { 0 };
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (g, core_ptr, "dptr", NULL, 0));
+	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
 	return send_msg (g, message);
 }
 

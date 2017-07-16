@@ -190,6 +190,6 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 	if (!isxdigit (*src)) {
 		return -1;
 	}
-	*tid = (int) strtol (src, NULL, 16);
+	*pid = *tid = (int) strtol (src, NULL, 16);
 	return 0;
 }

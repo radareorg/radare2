@@ -903,6 +903,22 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd, char
 	}
 	RCore *core = (RCore*) core_ptr;
 	switch (cmd[0]) {
+	case '?': // Stop reason
+		if (!out_buf) {
+			return -1;
+		}
+		// dbg->reason.signum and dbg->reason.tid are not correct for native
+		// debugger. This is a hack
+		switch (core->dbg->reason.type) {
+		case R_DEBUG_REASON_BREAKPOINT:
+		case R_DEBUG_REASON_STEP:
+		case R_DEBUG_REASON_TRAP:
+			return snprintf (out_buf, max_len - 1, "T05thread:%x",
+					 core->dbg->tid);
+		}
+		// Fallback for when it's fixed
+		return snprintf (out_buf, max_len - 1, "T%02xthread:%x;",
+				 core->dbg->reason.type, core->dbg->reason.tid);
 	case 'd':
 		switch (cmd[1]) {
 		case 'm': // dm
