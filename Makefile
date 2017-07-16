@@ -191,7 +191,9 @@ install-man-symlink:
 
 install-doc:
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
-	for FILE in doc/* ; do [ -f $$FILE ] && ${INSTALL_DATA} $$FILE "${DESTDIR}${DOCDIR}" ; done
+	for FILE in doc/* ; do \
+		[ -f $$FILE ] && ${INSTALL_DATA} $$FILE "${DESTDIR}${DOCDIR}" || true ; \
+	done
 
 install-doc-symlink:
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
