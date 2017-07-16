@@ -102,7 +102,7 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 			switch (mode) {
 			case 1:
 			case '*':
-				dbg->cb_printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
+				dbg->cb_printf ("dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
 				break;
 			default:
 				dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
