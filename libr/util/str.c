@@ -1335,7 +1335,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 			}
 		}
 		if (!end) {
-			end = buf + buf_size;
+			end = buf + buf_size - 1;
 		}
 		len = end - buf;
 		break;
@@ -1354,6 +1354,10 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 		switch (type) {
 		case R_STRING_TYPE_WIDE:
 			ch_bytes = r_utf16le_decode ((ut8 *)p, end - p, &ch);
+			if (ch_bytes == 0) {
+				p++;
+				continue;
+			}
 			break;
 		default:
 			ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
