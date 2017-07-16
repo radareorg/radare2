@@ -4938,23 +4938,6 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_anal_trace(RCore *core, const char *input) {
-	RDebugTracepoint *t;
-	const char *ptr;
-	ut64 addr = core->offset;
-	const char *help_msg[] = {
-		"Usage:", "at", "[*] [addr]",
-		NULL };
-
-	switch (input[0]) {
-	case '?':
-		r_core_cmd_help (core, help_msg);
-		break;
-	default:
-		r_debug_trace_list (core->dbg, 0);
-	}
-}
-
 R_API int r_core_anal_refs(RCore *core, const char *input) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 from, to;
@@ -5579,7 +5562,6 @@ static int cmd_anal(void *data, const char *input) {
 		"ap", "", "find prelude for current offset",
 		"ax", "[?]", "manage refs/xrefs (see also afx?)",
 		"as", "[?] [num]", "analyze syscall using dbg.reg",
-		"at", "[?] [.]", "analyze execution traces",
 		"av", "[?] [.]", "show vtables",
 		NULL };
 
@@ -5645,9 +5627,6 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'g':
 		cmd_anal_graph (core, input + 1);
-		break;
-	case 't':
-		cmd_anal_trace (core, input + 1);
 		break;
 	case 's': // "as"
 		cmd_anal_syscall (core, input + 1);
