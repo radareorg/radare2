@@ -4944,78 +4944,9 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
-		"ate", "[?]", "show esil trace logs (anal.trace)",
 		NULL };
 
 	switch (input[0]) {
-	case 'e': // "ate"
-		if (!core->anal->esil) {
-			int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-			int romem = r_config_get_i (core->config, "esil.romem");
-			int stats = r_config_get_i (core->config, "esil.stats");
-			int iotrap = r_config_get_i (core->config, "esil.iotrap");
-			int nonull = r_config_get_i (core->config, "esil.nonull");
-			if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-				return;
-			}
-			r_anal_esil_setup (core->anal->esil,
-					core->anal, romem, stats, nonull);
-		}
-		switch (input[1]) {
-		case 0:
-			r_anal_esil_trace_list (core->anal->esil);
-			break;
-		case 'i': {
-			RAnalOp *op;
-			ut64 addr = r_num_math (core->num, input + 2);
-			if (!addr) {
-				addr = core->offset;
-			}
-			op = r_core_anal_op (core, addr);
-			if (op) {
-				r_anal_esil_trace (core->anal->esil, op);
-			}
-			r_anal_op_free (op);
-		} break;
-		case '-':
-			if (!strcmp (input + 2, "*")) {
-				if (core->anal->esil) {
-					sdb_free (core->anal->esil->db_trace);
-					core->anal->esil->db_trace = sdb_new0 ();
-				}
-			} else {
-				eprintf ("TODO: ate- cannot delete specific logs. Use ate-*\n");
-			}
-			break;
-		case ' ': {
-			int idx = atoi (input + 2);
-			r_anal_esil_trace_show (
-				core->anal->esil, idx);
-		} break;
-		case 'k':
-			if (input[2] == ' ') {
-				char *s = sdb_querys (core->anal->esil->db_trace,
-						NULL, 0, input + 3);
-				r_cons_println (s);
-				free (s);
-			} else {
-				eprintf ("Usage: atek [query]\n");
-			}
-			break;
-		default:
-			{
-			const char *help_msg[] = {
-				"Usage:", "ate", " Show esil trace logs",
-				"ate", "", "Esil trace log for a single instruction",
-				"ate", " [idx]", "show commands for that index log",
-				"ate", "-*", "delete all esil traces",
-				"atei", "", "esil trace log single instruction",
-				"atek", " [sdb query]", "esil trace log single instruction from sdb",
-				NULL };
-			r_core_cmd_help (core, help_msg);
-		}
-		}
-		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;
