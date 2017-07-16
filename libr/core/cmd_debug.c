@@ -3668,16 +3668,14 @@ static int cmd_debug(void *data, const char *input) {
 			ptr = input + 3;
 			addr = r_num_math (core->num, ptr);
 			ptr = strchr (ptr, ' ');
-			if (ptr != NULL) {
-				RAnalOp *op = r_core_op_anal (core, addr);
-				if (op != NULL) {
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-					tp->count = atoi (ptr + 1);
-					r_anal_trace_bb (core->anal, addr);
-					r_anal_op_free (op);
-				} else {
-					eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
-				}
+			RAnalOp *op = r_core_op_anal (core, addr);
+			if (op != NULL) {
+				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+				tp->count = atoi (ptr + 1);
+				r_anal_trace_bb (core->anal, addr);
+				r_anal_op_free (op);
+			} else {
+				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
 			}
 			break;
 		case 'D': // "dtD"
@@ -3692,7 +3690,7 @@ static int cmd_debug(void *data, const char *input) {
 				int iotrap = r_config_get_i (core->config, "esil.iotrap");
 				int nonull = r_config_get_i (core->config, "esil.nonull");
 				if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-					return;
+					return 0;
 				}
 				r_anal_esil_setup (core->anal->esil,
 						core->anal, romem, stats, nonull);
@@ -3794,7 +3792,7 @@ static int cmd_debug(void *data, const char *input) {
 		default:
 			{
 				r_core_cmd_help (core, help_message);
-				r_cons_printf ("Current Tag: %d", core->dbg->trace->tag);
+				r_cons_printf ("Current Tag: %d\n", core->dbg->trace->tag);
 			}
 			break;
 		}
