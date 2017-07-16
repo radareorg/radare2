@@ -806,7 +806,8 @@ void build_command_field(ELeafType lt, char **command_field) {
 
 ///////////////////////////////////////////////////////////////////////////////
 void build_name_field(char *name, char **name_field) {
-	*name_field = name? strdup (name): NULL;
+	*name_field = name ? strdup (name) : NULL;
+	r_name_filter (*name_field, -1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -837,6 +838,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 		return 0;
 	}
 
+	r_name_filter (members_field[i], -1);
 	return 1;
 }
 
