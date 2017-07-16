@@ -112,6 +112,10 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 		case '-':
 			if (!(ctx->flags & HEADER)) {
 				/* TODO: Handle acks/nacks */
+				if (g->server_debug && !g->no_ack) {
+					eprintf ("[received '%c' (0x%x)]\n", cur,
+						 (int) cur);
+				}
 				break;
 			}
 			/* Fall-through */
@@ -147,6 +151,10 @@ int read_packet(libgdbr_t *g) {
 		}
 		if (!ret) {
 			g->data[g->data_len] = '\0';
+			if (g->server_debug) {
+				eprintf ("getpkt (\"%s\");  %s\n", g->data,
+					 g->no_ack ? "[no ack sent]" : "[sending ack]");
+			}
 			return 0;
 		}
 	}
@@ -157,6 +165,11 @@ int send_packet(libgdbr_t *g) {
 	if (!g) {
 		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
+	}
+	if (g->server_debug) {
+		g->send_buff[g->send_len] = '\0';
+		eprintf ("putpkt (\"%s\");  %s\n", g->send_buff,
+			 g->no_ack ? "[noack mode]" : "[looking for ack]");
 	}
 	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }

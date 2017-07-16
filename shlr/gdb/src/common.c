@@ -111,9 +111,12 @@ int send_ack(libgdbr_t *g) {
 		if (g->no_ack) {
 			return 0;
 		}
-		g->send_buff[0] = '+';
-		g->send_len = 1;
-		send_packet (g);
+		if (r_socket_write (g->sock, "+", 1) < 0) {
+			return -1;
+		}
+		if (g->server_debug) {
+			eprintf ("[sent ack]\n");
+		}
 		return 0;
 	}
 	return -1;
