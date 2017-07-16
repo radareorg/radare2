@@ -4944,10 +4944,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
-		"at", "", "list all traced opcode ranges",
-		"at*", "", "list all traced opcode offsets",
 		"at+", " [addr] [times]", "add trace for address N times",
-		"at", " [addr]", "show trace info at address",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
 		"at%", "", "TODO",
 		"atr", "", "show traces as range commands (ar+)",
@@ -5050,9 +5047,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
 			}
 		}
-		break;
-	case '*':
-		r_debug_trace_list (core->dbg, 1);
 		break;
 	default:
 		r_debug_trace_list (core->dbg, 0);

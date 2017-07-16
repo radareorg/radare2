@@ -3592,6 +3592,7 @@ static int cmd_debug(void *data, const char *input) {
 	const char * help_message[] = {
 		"Usage: dt", "", "Trace commands",
 		"dt", "", "List all traces ",
+		"dt*", "", "list all traced opcode offsets",
 		"dt", " [addr]", "show trace info at address",
 		"dta", " 0x804020 ...", "only trace given addresses",
 		"dtt", " [tag]", "select trace tag (no arg unsets)",
@@ -3612,9 +3613,12 @@ static int cmd_debug(void *data, const char *input) {
 		case '\0': // "dt"
 			r_debug_trace_list (core->dbg, 0);
 			break;
+		case '*': // "dt*"
+			r_debug_trace_list (core->dbg, 1);
+			break;
 		case ' ': // "dt [addr]"
 			if ((t = r_debug_trace_get (core->dbg,
-					r_num_math (core->num, input)))) {
+					r_num_math (core->num, input + 3)))) {
 				r_cons_printf ("offset = 0x%" PFMT64x "\n", t->addr);
 				r_cons_printf ("opsize = %d\n", t->size);
 				r_cons_printf ("times = %d\n", t->times);
@@ -3624,10 +3628,10 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'a': // "dta"
  			eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
-			r_debug_trace_at (core->dbg, input + 2);
+			r_debug_trace_at (core->dbg, input + 3);
 			break;
 		case 't': // "dtt"
-			r_debug_trace_tag (core->dbg, atoi (input + 2));
+			r_debug_trace_tag (core->dbg, atoi (input + 3));
 			break;
 		case 'c': // "dtc"
 			if (input[2] == '?') {
