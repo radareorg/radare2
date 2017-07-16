@@ -727,6 +727,7 @@ int main(int argc, char **argv) {
 		case 'v': return blob_version ("rabin2");
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
+			break;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX) {

@@ -10,7 +10,7 @@ _rasm2() {
   local -a options=(
   '-a+[Set architecture to assemble/disassemble (see -L)]: :->arch'
   '-A[Show Analysis information from given hexpairs]'
-  '-b+[Set cpu register size (8, 16, 32, 64) (RASM2_BITS)]:bits'
+  '-b+[Set cpu register size (8, 16, 32, 64) (RASM2_BITS)]:bits:(8 16 32 64)'
   '-c+[Select specific CPU (depends on arch)]:cpu'
   '-C[Output in C format]'
   '(-d -D)'{-d,-D}'[Disassemble from hexpair bytes (-D show hexpairs)]'
@@ -20,7 +20,7 @@ _rasm2() {
   '-F+[Specify input and/or output filters (att2intel, x86.pseudo, ...)]:in\:out'
   '(-h, -hh)'{-h,-hh}'[show help message, -hh for long]'
   '-i+[ignore/skip N bytes of the input buffer]:bytes'
-  '-k+[Select operating system (linux, windows, darwin, ..)]:kernel'
+  '-k+[Select operating system (linux, windows, darwin, ..)]: :->asm.os'
   '-l+[Input/Output length]:len'
   '-L[List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)]'
   '-o+[Set start address for code (default 0)]:offset'
@@ -37,8 +37,11 @@ _rasm2() {
 
   case $state in
     arch)
-      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -r 's/ (.*)/[\1]/')"})
+      local -a sub=(${(f)"$(rasm2 -L | cut -c 18-28 | tr -d ' ')"})
       _values 'arch' $sub && ret=0
+      ;;
+    asm.os)
+      _values 'asm.os' $(r2_qc 'e asm.os=?') && ret=0
       ;;
     syntax)
       _values 'syntax' $(rasm2 '-s?') && ret=0

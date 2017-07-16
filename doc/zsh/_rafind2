@@ -4,17 +4,17 @@ local context state state_descr line
 _rafind2() {
   local -a options=(
   '-a+[only accept aligned hits]:align'
-  '-b[set block size]:size'
+  '-b+[set block size]:size'
   '*-e+[search for regular expression string matches]:regex'
-  "-f[start searching from address 'from']:from"
+  "-f+[start searching from address 'from']:from"
   '-h[show this help]'
   '-m[magic search, file-type carver]'
-  '-M[set a binary mask to be applied on keywords]:str'
+  '-M+[set a binary mask to be applied on keywords]:str'
   '-n[do not stop on read errors]'
   '-r[print using radare commands]'
   '*-s+[search for a specific string (can be used multiple times)]:str'
   '*-S+[search for a specific wide string (can be used multiple times)]:str'
-  "-t[stop search at address 'to']:to"
+  "-t+[stop search at address 'to']:to"
   '-v[print version and exit]'
   '*-x+[search for hexpair string (909090) (can be used multiple times)]:hex'
   '-X[show hexdump of search results]'

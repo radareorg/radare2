@@ -1,0 +1,45 @@
+#compdef ragg2-cc
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_ragg2-cc() {
+  local -a options=(
+  '-a+[select architecture (x86, mips, arm)]: :->arch'
+  '-b+[register size (32, 64, ..)]:bits:(32 64)'
+  '-c[generate compiled shellcode]'
+  '-d[enable debug mode]'
+  "-k+[set kernel]: :->asm.os"
+  '-o+[set output file]: :_files'
+  '-s[generate assembly]'
+  '-v[show version]'
+  '-x[show hexpair bytes]'
+  )
+
+  _arguments -S -s : $options '1:file:_files' && ret=0
+
+  case $state in
+    arch)
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -E 's/ (.*)/[\1]/')"})
+      _values 'arch' $sub && ret=0
+      ;;
+    asm.os)
+      _values 'asm.os' $(r2_qc 'e asm.os=?') && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_ragg2-cc "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et
