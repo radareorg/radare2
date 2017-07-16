@@ -1,0 +1,41 @@
+#compdef rax2
+local context state state_descr line
+
+_rax2() {
+  local -a options=(
+  '-b[bin -> str        ;  rax2 -b 01000101 01110110]'
+  '-B[str -> bin        ;  rax2 -B hello]'
+  '-d[force integer     ;  rax2 -d 3 -> 3 instead of 0x3]'
+  '-e[swap endianness   ;  rax2 -e 0x33]'
+  '-D[base64 decode     ;]'
+  '-E[base64 encode     ;]'
+  '-f[floating point    ;  rax2 -f 6.3+2.1]'
+  '-F[stdin slurp C hex ;  rax2 -F < shellcode.c]'
+  '-h[help              ;  rax2 -h]'
+  '-k[keep base         ;  rax2 -k 33+3 -> 36]'
+  '-K[randomart         ;  rax2 -K 0x34 1020304050]'
+  '-n[binary number     ;  rax2 -n 0x1234 # 34120000]'
+  '-N[binary number     ;  rax2 -N 0x1234 # \x34\x12\x00\x00]'
+  '-r[r2 style output   ;  rax2 -r 0x1234]'
+  '-s[hexstr -> raw     ;  rax2 -s 43 4a 50]'
+  '-S[raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex]'
+  '-t[tstamp -> str     ;  rax2 -t 1234567890]'
+  '-x[hash string       ;  rax2 -x linux osx]'
+  '-u[units             ;  rax2 -u 389289238 # 317.0M]'
+  '-w[signed word       ;  rax2 -w 16 0xffff]'
+  '-v[version           ;  rax2 -v]'
+  )
+
+  _arguments -S -s : $options '*:expr'
+}
+
+_rax2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et
