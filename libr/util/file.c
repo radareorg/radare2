@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <r_lib.h>
 #if __UNIX__
 #include <sys/mman.h>
 #endif
@@ -873,8 +874,11 @@ R_API char *r_file_tmpdir() {
 			path = strdup ("C:\\WINDOWS\\Temp\\");
 		}
 	} else {
-		// Windows XP sometimes returns short path name
-		GetLongPathName (tmpdir, tmpdir, sizeof (tmpdir));
+		void (*glpn)(TCHAR *, TCHAR *, size_t) = (void*)r_lib_dl_sym (NULL, "GetLongPathName");
+		if (glpn) {
+			// Windows XP sometimes returns short path name
+			glpn (tmpdir, tmpdir, sizeof (tmpdir));
+		}
 		path = strdup (tmpdir);
 	}
 #elif __ANDROID__
