@@ -3,6 +3,7 @@
 #include "r_types.h"
 #include "r_util.h"
 #include "r_cons.h"
+#include "r_bin.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -1311,7 +1312,7 @@ R_API char *r_str_escape_latin1(const char *buf) {
 	return r_str_escape_ (buf, false, false, false);
 }
 
-R_API char *r_str_escape_utf8(const char *buf) {
+static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1320,8 +1321,28 @@ R_API char *r_str_escape_utf8(const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
-	len = strlen (buf);
-	end = buf + len;
+	switch (type) {
+	case R_STRING_TYPE_WIDE:
+		if (buf_size < 0) {
+			return NULL;
+		}
+		end = NULL;
+		for (i = 0; i < buf_size; i += 2) {
+			/* Additional \0 automatically tacked on to "\0" */
+			if (!memcmp (buf + i, (ut8 *)"\0", 2)) {
+				end = buf + i;
+				break;
+			}
+		}
+		if (!end) {
+			end = buf + buf_size - 1;
+		}
+		len = end - buf;
+		break;
+	default:
+		len = strlen (buf);
+		end = buf + len;
+	}
 	/* Worst case scenario, we convert every byte to \xhh */
 	new_buf = malloc (1 + (len * 4));
 	if (!new_buf) {
@@ -1329,8 +1350,18 @@ R_API char *r_str_escape_utf8(const char *buf) {
 	}
 	p = buf;
 	q = new_buf;
-	while (*p) {
-		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+	while (p < end) {
+		switch (type) {
+		case R_STRING_TYPE_WIDE:
+			ch_bytes = r_utf16le_decode ((ut8 *)p, end - p, &ch);
+			if (ch_bytes == 0) {
+				p++;
+				continue;
+			}
+			break;
+		default:
+			ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+		}
 		if (ch_bytes > 1) {
 			*q++ = '\\';
 			*q++ = ch_bytes == 4 ? 'U' : 'u';
@@ -1343,9 +1374,20 @@ R_API char *r_str_escape_utf8(const char *buf) {
 			r_str_byte_escape (p, &q, false, false);
 		}
 		p++;
+		if (type == R_STRING_TYPE_WIDE && ch_bytes == 1) {
+			p++;
+		}
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+R_API char *r_str_escape_utf8(const char *buf) {
+	return r_str_escape_utf (buf, -1, R_STRING_TYPE_UTF8);
+}
+
+R_API char *r_str_escape_utf16le(const char *buf, int buf_size) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE);
 }
 
 /* ansi helpers */

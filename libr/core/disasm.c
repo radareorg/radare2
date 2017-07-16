@@ -2665,31 +2665,24 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
 			free (escstr);
 		}
+	} else if (!strcmp (ds->strenc, "utf16le")) {
+		char *escstr = r_str_escape_utf16le (str, len);
+		if (escstr) {
+			ALIGN;
+			ds_comment (ds, true, "; u\"%s\"%s", escstr, nl);
+			free (escstr);
+		}
 	} else if (strlen (str) == 1) {
 		// could be a wide string
-		int i = 0;
-		ALIGN;
-		ds_comment (ds, true, "; %s\"", len > 2 && str[i+2] ? "u" : "");
-		for (i = 0; i < len; i+=2) {
-			if (!str[i]) {
-				break;
-			}
-			if (!str[i+1]) {
-				if (IS_PRINTABLE (str[i])
-				    && str[i] != '"' && str[i] != '\\') {
-					ds_comment (ds, false, "%c", str[i]);
-				} else {
-					char *escchar = r_str_escape_latin1 (&str[i]);
-					if (escchar) {
-						ds_comment (ds, false, "%s", escchar);
-						free (escchar);
-					}
-				}
-			} else {
-				ds_comment (ds, false, "\\u%02x%02x", (ut8)str[i+1], (ut8)str[i]);
-			}
+		char *escstr = r_str_escape_utf16le (str, len);
+		if (escstr) {
+			int escstr_len = strlen (escstr);
+			ALIGN;
+			ds_comment (ds, true, "; %s\"%s\"%s",
+				    escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u",
+				    escstr, nl);
+			free (escstr);
 		}
-		ds_comment (ds, false, "\"%s", nl);
 	} else {
 		char *escstr = r_str_escape_latin1 (str);
 		if (escstr) {
