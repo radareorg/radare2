@@ -3577,6 +3577,8 @@ static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RDebugTracepoint *t;
 	int follow = 0;
+	const char *ptr;
+	ut64 addr;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -3592,10 +3594,13 @@ static int cmd_debug(void *data, const char *input) {
 	const char * help_message[] = {
 		"Usage: dt", "", "Trace commands",
 		"dt", "", "List all traces ",
-		"dt*", "", "list all traced opcode offsets",
 		"dt", " [addr]", "show trace info at address",
+		"dt*", "", "list all traced opcode offsets",
+		"dt+"," [addr] [times]", "add trace for address N times",
 		"dta", " 0x804020 ...", "only trace given addresses",
+		"dt%", "", "TODO",
 		"dtt", " [tag]", "select trace tag (no arg unsets)",
+		"dtr", "", "show traces as range commands (ar+)",
 		"dtd", "", "List all traced disassembled",
 		"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
 		"dtg", "", "Graph call/ret trace",
@@ -3652,6 +3657,22 @@ static int cmd_debug(void *data, const char *input) {
 			r_debug_trace_free (core->dbg->trace);
 			r_debug_tracenodes_reset (core->dbg);
 			core->dbg->trace = r_debug_trace_new ();
+			break;
+		case '+': // "dt+"
+			ptr = input + 3;
+			addr = r_num_math (core->num, ptr);
+			ptr = strchr (ptr, ' ');
+			if (ptr != NULL) {
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op != NULL) {
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+					tp->count = atoi (ptr + 1);
+					r_anal_trace_bb (core->anal, addr);
+					r_anal_op_free (op);
+				} else {
+					eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
+				}
+			}
 			break;
 		case 's': // "dts"
 			switch (input[2]) {

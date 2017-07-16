@@ -4944,10 +4944,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
-		"at+", " [addr] [times]", "add trace for address N times",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"at%", "", "TODO",
-		"atr", "", "show traces as range commands (ar+)",
 		"atd", "", "show disassembly trace (use .atd)",
 		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL };
@@ -5031,22 +5028,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	case 'D':
 		// XXX: not yet tested..and rsc dwarf-traces comes from r1
 		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
-		break;
-	case '+': // "at+"
-		ptr = input + 2;
-		addr = r_num_math (core->num, ptr);
-		ptr = strchr (ptr, ' ');
-		if (ptr != NULL) {
-			RAnalOp *op = r_core_op_anal (core, addr);
-			if (op != NULL) {
-				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-				tp->count = atoi (ptr + 1);
-				r_anal_trace_bb (core->anal, addr);
-				r_anal_op_free (op);
-			} else {
-				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
-			}
-		}
 		break;
 	default:
 		r_debug_trace_list (core->dbg, 0);
