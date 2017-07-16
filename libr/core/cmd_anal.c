@@ -4945,7 +4945,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL };
 
 	switch (input[0]) {
@@ -5019,10 +5018,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
-		break;
-	case 'D':
-		// XXX: not yet tested..and rsc dwarf-traces comes from r1
-		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
 		break;
 	default:
 		r_debug_trace_list (core->dbg, 0);

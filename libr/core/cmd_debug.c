@@ -3608,6 +3608,7 @@ static int cmd_debug(void *data, const char *input) {
 		"dtgi", "", "Interactive debug trace",
 		"dts", "[?]", "trace sessions",
 		"dt-", "", "Reset traces (instruction/calls)",
+		"dtD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL
 	};
 
@@ -3678,6 +3679,10 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
+	case 'D': // "dtD"
+		// XXX: not yet tested..and rsc dwarf-traces comes from r1
+		r_core_cmd (core, "dt*|rsc dwarf-traces $FILE", 0);
+		break;
 		case 's': // "dts"
 			switch (input[2]) {
 			case 0:
