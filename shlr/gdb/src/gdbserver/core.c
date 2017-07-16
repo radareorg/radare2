@@ -294,7 +294,7 @@ static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *buf;
 	int ret;
-	size_t buf_len = 80;
+	size_t buf_len = g->stub_features.pkt_sz;
 	if ((ret = send_ack (g)) < 0) {
 		return -1;
 	}
@@ -518,10 +518,16 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			continue;
 		}
 		if (r_str_startswith (g->data, "QStartNoAckMode")) {
-			if (send_ack (g) < 0 || send_msg (g, "OK") < 0) {
+			if (send_ack (g) < 0) {
 				return -1;
 			}
 			g->no_ack = true;
+			if (g->server_debug) {
+				eprintf ("[noack mode enabled]\n");
+			}
+			if (send_msg (g, "OK") < 0) {
+				return -1;
+			}
 			continue;
 		}
 		// Unrecognized packet

@@ -166,6 +166,7 @@ typedef struct libgdbr_t {
 
 	bool no_ack;
 	bool is_server;
+	bool server_debug;
 	libgdbr_stop_reason_t stop_reason;
 } libgdbr_t;
 

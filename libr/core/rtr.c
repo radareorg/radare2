@@ -1045,6 +1045,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd, char
 static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	RSocket *sock;
 	int p, ret;
+	bool debug_msg = false;
 	char port[10];
 	char *file = NULL, *args = NULL;
 	libgdbr_t *g;
@@ -1052,6 +1053,10 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 
 	if (!core || !path) {
 		return -1;
+	}
+	if (*path == '!') {
+		debug_msg = true;
+		path++;
 	}
 	while (*path && isspace (*path)) {
 		path++;
@@ -1113,6 +1118,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		return -1;
 	}
 	gdbr_init (g, true);
+	g->server_debug = debug_msg;
 	gdbr_set_architecture (g, r_config_get (core->config, "asm.arch"), r_config_get_i (core->config, "asm.bits"));
 	core->gdbserver_up = 1;
 	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
@@ -1176,7 +1182,8 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
 	"\ngdbserver:", "", "",
-	"=g", " port file", "listen on 'port' for debugging 'file' using gdbserver",
+	"=g", " port file", "listen on 'port' debugging 'file' using gdbserver",
+	"=g!", " port file", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL };
 	r_core_cmd_help (core, help_msg);
 }
