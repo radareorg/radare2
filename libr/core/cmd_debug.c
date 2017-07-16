@@ -3645,7 +3645,11 @@ static int cmd_debug(void *data, const char *input) {
 				debug_trace_calls (core, input + 2);
 			}
 			break;
-		case 'd':
+		case 'r': // "dtr"
+			eprintf ("TODO\n");
+			//trace_show(-1, trace_tag_get());
+			break;
+		case 'd': // "dtd"
 			// TODO: reimplement using the api
 			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
 			break;

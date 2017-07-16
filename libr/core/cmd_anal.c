@@ -4945,15 +4945,10 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "at", "[*] [addr]",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"atd", "", "show disassembly trace (use .atd)",
 		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL };
 
 	switch (input[0]) {
-	case 'r':
-		eprintf ("TODO\n");
-		//trace_show(-1, trace_tag_get());
-		break;
 	case 'e': // "ate"
 		if (!core->anal->esil) {
 			int stacksize = r_config_get_i (core->config, "esil.stack.depth");
