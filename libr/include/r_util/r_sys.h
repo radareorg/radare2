@@ -42,6 +42,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #if __WINDOWS__
 R_API int r_sys_get_src_dir_w32(char *buf);
 R_API char *r_sys_cmd_str_w32(const char *cmd);
+R_API void print_lasterr (const char *caller, char *cause);
 #endif
 R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);

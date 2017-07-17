@@ -244,22 +244,6 @@ static bool w32dbg_SeDebugPrivilege() {
 	return ret;
 }
 
-static void print_lasterr (const char *caller, char *cause) {
-	char cbuffer[100];
-	if (!FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM |
-				FORMAT_MESSAGE_ARGUMENT_ARRAY,
-				NULL,
-				GetLastError(),
-				LANG_SYSTEM_DEFAULT,
-				(LPSTR)&cbuffer,
-				sizeof (cbuffer)-1,
-				NULL)) {
-		eprintf ("Format message failed with 0x%d\n", (ut32)GetLastError ());
-	} else {
-		eprintf ("Error detected in %s/%s: %s", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
-	}
-}
-
 static int w32_dbg_init() {
 	HANDLE lib;
 

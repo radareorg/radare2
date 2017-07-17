@@ -151,7 +151,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
         if (!CreateProcessA (argv[0], cmdline, NULL, NULL, FALSE,
 			CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 			NULL, NULL, &si, &pi)) {
-		r_sys_perror ("CreateProcess");
+		print_lasterr ((char*) __FUNCTION__, "CreateProcess");
 		return -1;
         }
 	free (cmdline);
