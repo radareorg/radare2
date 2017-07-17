@@ -183,7 +183,8 @@ R_API bool r_qrcode_text(const char *text, ut8 tempBuffer[], ut8 qrcode[], enum 
 		appendBitsToBuffer ((unsigned int) textLen, lengthBits, qrcode, &bitLen);
 		int accumData = 0;
 		int accumCount = 0;
-		for (const char *p = text; *p != '\0'; p++) {
+		const char *p;
+		for (p = text; *p != '\0'; p++) {
 			accumData = accumData * 10 + (*p - '0');
 			accumCount++;
 			if (accumCount == 3) {
@@ -259,7 +260,8 @@ R_API bool r_qrcode_bin(ut8 *dataAndTemp, int dataLen, ut8 *qrcode,
 	int bitLen = 0;
 	appendBitsToBuffer (4, 4, qrcode, &bitLen);
 	appendBitsToBuffer ((unsigned int) dataLen, (version <= 9? 8: 16), qrcode, &bitLen);
-	for (size_t i = 0; i < dataLen; i++) {
+	size_t i;
+	for (i = 0; i < dataLen; i++) {
 		appendBitsToBuffer (dataAndTemp[i], 8, qrcode, &bitLen);
 	}
 	encodeQrCodeTail (qrcode, bitLen, dataAndTemp, version, ecl, mask, boostEcl);
@@ -377,7 +379,8 @@ static void encodeQrCodeTail(ut8 dataAndQrcode[], int bitLen, ut8 tempBuffer[], 
 	}
 	appendBitsToBuffer (0, terminatorBits, dataAndQrcode, &bitLen);
 	appendBitsToBuffer (0, (8 - bitLen % 8) % 8, dataAndQrcode, &bitLen);
-	for (ut8 padByte = 0xEC; bitLen < dataCapacityBits; padByte ^= 0xEC ^ 0x11) {
+	ut8 padByte;
+	for (padByte = 0xEC; bitLen < dataCapacityBits; padByte ^= 0xEC ^ 0x11) {
 		appendBitsToBuffer (padByte, 8, dataAndQrcode, &bitLen);
 	}
 	if (bitLen % 8) {
