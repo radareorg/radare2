@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <r_anal_ex.h>
 #include "code.h"
 #include "class.h"
 
@@ -65,6 +66,16 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 	SWITCH_OP.max_val = (UINT (bytes, sz + 8));
 	sz += 12;
 	return sz;
+}
+
+static bool isRelative (ut32 type) {
+	if (type & R_ANAL_EX_CODEOP_CJMP) {
+		return true;
+	}
+	if (type & R_ANAL_EX_CODEOP_JMP) {
+		return true;
+	}
+	return false;
 }
 
 static int update_bytes_consumed (int sz) {
@@ -285,7 +296,7 @@ static int parseJavaArgs(char *str, ut64 *args, int args_sz) {
 	return nargs;
 }
 
-R_API int r_java_assemble(ut8 *bytes, const char *string) {
+R_API int r_java_assemble(ut64 addr, ut8 *bytes, const char *string) {
 	ut64 args[4] = {0};
 	int i, a, b, c, d;
 	char name[128];
@@ -309,6 +320,10 @@ R_API int r_java_assemble(ut8 *bytes, const char *string) {
 					bytes[1] = a;
 					bytes[2] = b;
 				} else {
+					if (isRelative (JAVA_OPS[i].op_type)) {
+						// relative jmp
+						a -= addr;
+					}
 					bytes[1] = (a >> 8) & 0xff;
 					bytes[2] = a & 0xff;
 				}
