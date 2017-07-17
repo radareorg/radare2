@@ -950,9 +950,11 @@ static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool b
 
 static int swap_big_regs (char *dest, ut64 sz, const char *src, int regsz) {
 	utX val;
-	char sdup[128];
-	strncpy (sdup, sizeof (sdup) - 1, src + 2);
-	sdup[127] = '\0';
+	char sdup[128] = {0};
+	if (!src || !src[0] || !src[1]) {
+		return -1;
+	}
+	strncpy (sdup, src + 2, sizeof (sdup) - 1);
 	int len = strlen (sdup);
 	memset (&val, 0, sizeof (val));
 	switch (regsz) {
