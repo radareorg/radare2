@@ -1,0 +1,64 @@
+#compdef ragg2
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_ragg2() {
+  local -a options=(
+  '-a+[select architecture (x86, mips, arm)]: :->arch'
+  '-b+[register size (32, 64, ..)]:bits:(32 64)'
+  '-B+[append some hexpair bytes]:hexpairs'
+  '-c+[set configuration options]:k=v'
+  '-C+[append contents of file]:file'
+  '-d+[patch dword (4 bytes) at given offset]:off\:dword'
+  '-D+[patch qword (8 bytes) at given offset]:off\:qword'
+  '-e+[use specific encoder. see -L]:encoder'
+  '-f+[output format (raw, pe, elf, mach0)]:format'
+  '-F[output native format (osx=mach0, linux=elf, ..)]'
+  '-h[show this help]'
+  '-i+[include shellcode plugin, uses options. see -L]:shellcode'
+  '-I+[add include path]: :_directories'
+  "-k+[operating system's kernel (linux,bsd,osx,w32)]: :->asm.os"
+  '-L[list all plugins (shellcodes and encoders)]'
+  '-n+[append 32bit number (4 bytes)]:dword'
+  '-N+[append 64bit number (8 bytes)]:dword'
+  '-o+[output file]: :_files'
+  '-O[use default output file (filename without extension or a.out)]'
+  '-p+[add padding after compilation (padding=n10s32)]:padding'
+  '-P+[prepend debruijn pattern]:size'
+  '-q+[debruijn pattern offset]:fragment'
+  '-r[show raw bytes instead of hexpairs]'
+  '-s[show assembler]'
+  '-v[show version]'
+  '-w+[patch hexpairs at given offset]:off\:hex'
+  '-x[execute]'
+  '-z[output in C string syntax]'
+  )
+
+  _arguments -S -s : $options '1:file:_files' && ret=0
+
+  case $state in
+    arch)
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -E 's/ (.*)/[\1]/')"})
+      _values 'arch' $sub && ret=0
+      ;;
+    asm.os)
+      _values 'asm.os' $(r2_qc 'e asm.os=?') && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_ragg2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

@@ -2,6 +2,10 @@
 local context state state_descr line
 local -i ret=1
 
+r2_qc() {
+  r2 -qc $1 --
+}
+
 _rahash2() {
   local -a options=(
   "-a+[comma separated list of algorithms (default is 'sha256')]: :->algo"
@@ -9,8 +13,8 @@ _rahash2() {
   '-B[show per-block hash]'
   '-c+[compare with this hash]:hash'
   '-e[swap endian (use little endian)]'
-  '-E[encrypt. Use -S to set key and -I to set IV]: :->algo_coder'
-  '-D[decrypt. Use -S to set key and -I to set IV]: :->algo_coder'
+  '-E[encrypt. Use -S to set key and -I to set IV]: :->coder'
+  '-D[decrypt. Use -S to set key and -I to set IV]: :->coder'
   '-f+[start hashing at given address]:from'
   '-i+[repeat hash N iterations]:num'
   '-I[use give initialization vector (IV) (hexa or s:string)]:iv'
@@ -27,18 +31,16 @@ _rahash2() {
 
   _arguments -S -s : $options '*:file:_files' && ret=0
 
-  if [[ -n $state ]]; then
-    local -a algo=(rc2 rc4 rc6 aes-ecb aes-cbc ror rol rot blowfish cps2 des-ecb xor)
-    local -a coder=(base64 base91 punycode)
-    case $state in
-      algo)
-        _values 'algo' $algo && ret=0
-        ;;
-      algo_coder)
-        _values 'arch' $algo $coder && ret=0
-        ;;
-    esac
-  fi
+  case $state in
+    algo)
+      _values 'algo' all $(r2_qc 'ph?') && ret=0
+      ;;
+    coder)
+      local -a crypto=(rc2 rc4 rc6 aes-ecb aes-cbc ror rol rot blowfish cps2 des-ecb xor)
+      local -a coder=(base64 base91 punycode)
+      _values 'encoder/decoder' $crypto $coder && ret=0
+      ;;
+  esac
   return ret
 }
 

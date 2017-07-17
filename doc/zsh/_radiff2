@@ -9,8 +9,9 @@ r2_qc() {
 _radiff2() {
   local -a options=(
   '-a[specify architecture plugin to use (x86, arm, ..)]: :->arch'
-  '(-A -AA)'{-A,-AA}'[run aaa or aaaa after loading each binary (see -C)]'
-  '-b[specify register size for arch (16 (thumb), 32, 64, ..)]:bits'
+  '(-A -AA)-A[run aaa after loading each binary (see -C)]'
+  '(-A -AA)-AA[run aaaa after loading each binary (see -C)]'
+  '-b+[specify register size for arch (16 (thumb), 32, 64, ..)]:bits:(8 16 32 64)'
   '-c[count of changes]'
   '(-C -g -i)-C[graphdiff code (columns: off-A, match-ratio, off-B) (see -A)]'
   '-d[use delta diffing]'
@@ -31,7 +32,7 @@ _radiff2() {
   '-t+[set threshold for code diff (default is 70%)]:0-100'
   '-x[show two column hexdump diffing]'
   '(-j -r -u -U)-u[unified output (---+++)]'
-  '(-j -r -u -U)-U[unified output using system 'diff']'
+  "(-j -r -u -U)-U[unified output using system 'diff']"
   '-v[show version information]'
   '-V[be verbose (current only for -s)]'
   '-z[diff on extracted strings]'
@@ -41,7 +42,7 @@ _radiff2() {
 
   case $state in
     arch)
-      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -r 's/ (.*)/[\1]/')"})
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -E 's/ (.*)/[\1]/')"})
       _values 'arch' $sub && ret=0
       ;;
   esac
