@@ -859,6 +859,44 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
+static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
+	RDebugInfo *rdi;
+	if (!(rdi = R_NEW0 (RDebugInfo))) {
+		return NULL;
+	}
+	RList *th_list;
+	bool list_alloc = false;
+	if (dbg->threads) {
+		th_list = dbg->threads;
+	} else {
+		th_list = r_debug_gdb_threads (dbg, dbg->pid);
+		list_alloc = true;
+	}
+	RDebugPid *th;
+	RListIter *it;
+	bool found = false;
+	r_list_foreach (th_list, it, th) {
+		if (th->pid == dbg->pid) {
+			found = true;
+			break;
+		}
+	}
+	rdi->pid = dbg->pid;
+	rdi->tid = dbg->tid;
+	rdi->exe = gdbr_exec_file_read (desc, dbg->pid);
+	rdi->status = found ? th->status : R_DBG_PROC_STOP;
+	rdi->uid = found ? th->uid : -1;
+	rdi->gid = found ? th->gid : -1;
+	if (gdbr_stop_reason (desc) >= 0) {
+		eprintf ("signal: %d\n", desc->stop_reason.signum);
+		rdi->signum = desc->stop_reason.signum;
+	}
+	if (list_alloc) {
+		r_list_free (th_list);
+	}
+	return rdi;
+}
+
 RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
@@ -878,6 +916,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.reg_write = &r_debug_gdb_reg_write,
 	.reg_profile = (void *)r_debug_gdb_reg_profile,
 	.kill = &r_debug_gdb_kill,
+	.info = &r_debug_gdb_info,
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };
