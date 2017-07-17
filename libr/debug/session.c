@@ -348,11 +348,12 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		base->perm = snapentry.perm;
 		base->data = calloc (base->size, 1);
 		if (!base->data) {
-			free (base);
+			R_FREE (base);
 			break;
 		}
 		if (fread (base->data, base->size, 1, fd) != 1) {
-			free (base);
+			free (base->data);
+			R_FREE (base);
 			break;
 		}
 		/* restore all hases */
