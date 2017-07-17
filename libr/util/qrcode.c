@@ -203,7 +203,8 @@ R_API bool r_qrcode_text(const char *text, ut8 tempBuffer[], ut8 qrcode[], enum 
 		appendBitsToBuffer ((unsigned int) textLen, lengthBits, qrcode, &bitLen);
 		int accumData = 0;
 		int accumCount = 0;
-		for (const char *p = text; *p != '\0'; p++) {
+		const char *p;
+		for (p = text; *p != '\0'; p++) {
 			accumData = accumData * 45 + (strchr (ALPHANUMERIC_CHARSET, *p) - ALPHANUMERIC_CHARSET);
 			accumCount++;
 			if (accumCount == 2) {
@@ -277,7 +278,8 @@ static int getTextProperties(const char *text, bool *isNumeric, bool *isAlphanum
 	int textLen = 0;
 	*isNumeric = true;
 	*isAlphanumeric = true;
-	for (const char *p = text; *p != '\0'; p++, textLen++) {	// Read every character
+	const char *p;
+	for (p = text; *p != '\0'; p++, textLen++) {	// Read every character
 		if (textLen >= INT16_MAX) {
 			return -1;
 		}
