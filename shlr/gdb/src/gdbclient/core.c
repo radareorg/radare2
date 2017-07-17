@@ -1154,6 +1154,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 				free (dpid);
 				return NULL;
 			}
+			dpid->uid = dpid->gid = -1; // TODO
 			dpid->pid = ttid;
 			dpid->runnable = true;
 			// This is what linux native does as fallback, but
