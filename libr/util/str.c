@@ -1323,16 +1323,14 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 	}
 	switch (type) {
 	case R_STRING_TYPE_WIDE:
+	case R_STRING_TYPE_WIDE32:
 		if (buf_size < 0) {
 			return NULL;
 		}
-		end = NULL;
-		for (i = 0; i < buf_size; i += 2) {
-			/* Additional \0 automatically tacked on to "\0" */
-			if (!memcmp (buf + i, (ut8 *)"\0", 2)) {
-				end = buf + i;
-				break;
-			}
+		if (type == R_STRING_TYPE_WIDE) {
+			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0", 2, 2);
+		} else {
+			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
 		}
 		if (!end) {
 			end = buf + buf_size - 1;
@@ -1353,7 +1351,10 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 	while (p < end) {
 		switch (type) {
 		case R_STRING_TYPE_WIDE:
-			ch_bytes = r_utf16le_decode ((ut8 *)p, end - p, &ch);
+		case R_STRING_TYPE_WIDE32:
+			ch_bytes = (type == R_STRING_TYPE_WIDE ?
+				    r_utf16le_decode ((ut8 *)p, end - p, &ch) :
+				    r_utf32le_decode ((ut8 *)p, end - p, &ch));
 			if (ch_bytes == 0) {
 				p++;
 				continue;
@@ -1361,6 +1362,9 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 			break;
 		default:
 			ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+			if (ch_bytes == 0) {
+				ch_bytes = 1;
+			}
 		}
 		if (ch_bytes > 1) {
 			*q++ = '\\';
@@ -1369,13 +1373,18 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 				*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
-			p += ch_bytes - 1;
 		} else {
 			r_str_byte_escape (p, &q, false, false);
 		}
-		p++;
-		if (type == R_STRING_TYPE_WIDE && ch_bytes == 1) {
-			p++;
+		switch (type) {
+		case R_STRING_TYPE_WIDE:
+			p += ch_bytes < 2 ? 2 : ch_bytes;
+			break;
+		case R_STRING_TYPE_WIDE32:
+			p += 4;
+			break;
+		default:
+			p += ch_bytes;
 		}
 	}
 	*q = '\0';
@@ -1388,6 +1397,10 @@ R_API char *r_str_escape_utf8(const char *buf) {
 
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size) {
 	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE);
+}
+
+R_API char *r_str_escape_utf32le(const char *buf, int buf_size) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE32);
 }
 
 /* ansi helpers */
