@@ -20,7 +20,7 @@
 #define PAIR_WIDTH 9
 
 static void pair(const char *a, const char *b, int mode, bool last) {
-	if (!b || !(*b)) {
+	if (!b || !*b) {
 		return;
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -29,9 +29,10 @@ static void pair(const char *a, const char *b, int mode, bool last) {
 	} else {
 		char ws[16];
 		int al = strlen (a);
-		al = PAIR_WIDTH - al;
-		if (al < 0) {
+		if (al > PAIR_WIDTH) {
 			al = 0;
+		} else {
+			al = PAIR_WIDTH - al;
 		}
 		memset (ws, ' ', al);
 		ws[al] = 0;
@@ -54,8 +55,10 @@ static void pair_str(const char *a, const char *b, int mode, int last) {
 		}
 		char *eb = r_str_utf16_encode (b, -1);
 		if (eb) {
-			pair (a, sdb_fmt (0, "\"%s\"", eb), mode, last);
+			char *qs = r_str_newf ("\"%s\"", eb);
+			pair (a, qs, mode, last);
 			free (eb);
+			free (qs);
 		}
 	} else {
 		pair (a, b, mode, last);
@@ -695,9 +698,7 @@ static int bin_info(RCore *r, int mode) {
 		}
 		pair_str ("compiled", compiled, mode, false);
 		pair_bool ("crypto", info->has_crypto, mode, false);
-		tmp_buf = r_str_escape (info->debug_file_name);
-		pair_str ("dbg_file", tmp_buf, mode, false);
-		free (tmp_buf);
+		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
 		pair_bool ("havecode", havecode, mode, false);
 		if (info->claimed_checksum) {
