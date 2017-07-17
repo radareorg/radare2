@@ -2672,6 +2672,13 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 			ds_comment (ds, true, "; u\"%s\"%s", escstr, nl);
 			free (escstr);
 		}
+	} else if (!strcmp (ds->strenc, "utf32le")) {
+		char *escstr = r_str_escape_utf32le (str, len);
+		if (escstr) {
+			ALIGN;
+			ds_comment (ds, true, "; U\"%s\"%s", escstr, nl);
+			free (escstr);
+		}
 	} else if (strlen (str) == 1) {
 		// could be a wide string
 		char *escstr = r_str_escape_utf16le (str, len);

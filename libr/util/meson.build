@@ -66,6 +66,7 @@ files=[
 'unum.c',
 'utf8.c',
 'utf16.c',
+'utf32.c',
 'w32-sys.c',
 'zip.c',
 'regex/regcomp.c',
