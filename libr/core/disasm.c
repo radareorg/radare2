@@ -4068,6 +4068,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	int dis_opcodes = 0;
 	//r_cons_printf ("[");
 	int limit_by = 'b';
+	char str[512];
 
 	if (nb_opcodes != 0) {
 		limit_by = 'o';
@@ -4148,6 +4149,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		bool end_nbopcodes, end_nbbytes;
 
 		at = addr + k;
+		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
@@ -4182,6 +4184,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		if (ds->pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		}
+
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list_dynamic;
@@ -4197,6 +4200,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				oplen = ds->oplen = ret = skip_bytes;
 			}
 		}
+
+		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str, 
+			sizeof (str), core->print->big_endian);
+
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		if (ds->analop.ptr != UT64_MAX) {
@@ -4216,7 +4223,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
-			char *escaped_str = r_str_escape (asmop.buf_asm);
+			char *escaped_str = r_str_utf16_encode (str, -1);
 			r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 			free (escaped_str);
 		}
@@ -4311,6 +4318,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// r_cons_printf ("]");
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
+	ds_free (ds);
 	return true;
 }
 
