@@ -262,3 +262,24 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 	}
 	c->attr = Color_RESET;
 }
+
+R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2) {
+	int min_x1 = R_MIN (x, xbendpoint);
+	int min_x2 = R_MIN (x2, xbendpoint);
+	int diff_x1 = R_ABS (x - xbendpoint);
+	int diff_x2 = R_ABS (x2 - xbendpoint);
+	int diff_y = R_ABS ((y + ybendpoint1) - (y2 - ybendpoint2));
+	int w1 = diff_x1 == 0 ? 0 : diff_x1 + 1;
+	int w2 = diff_x2 == 0 ? 0 : diff_x2 + 1;
+	int min_y = R_MIN (ybendpoint1, ybendpoint2);
+	int sty1 = min_x1 == x ? APEX_DOT : DOT_APEX;
+	int sty2 = min_x2 == x2 ? APEX_DOT : DOT_APEX;
+
+	apply_line_style (c, x, y, x2, y2, style);
+
+	draw_vertical_line (c, x, y + 1, ybendpoint1 + 1);
+	draw_horizontal_line (c, min_x1, y + ybendpoint1 + 2, w1, REV_APEX_APEX);
+	draw_vertical_line (c, xbendpoint, y2 - min_y, diff_y + 1);
+	draw_horizontal_line (c, min_x2, y2 - ybendpoint2, w2, sty2);
+	draw_vertical_line (c, x2, y2 - ybendpoint2, 1 + ybendpoint2);
+}

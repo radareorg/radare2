@@ -1661,9 +1661,11 @@ static void set_layer_vgap (RAGraph *g) {
 	const RList *outnodes;
 
 	g->layers[0].vgap = 0;
-	for (i = 0; i < g->n_layers - 1; i++) {
+	for (i = 0; i < g->n_layers; i++) {
 		vgap = 0;
-		g->layers[i+1].vgap = vgap;
+		if (i + 1 < g->n_layers) {
+			g->layers[i+1].vgap = vgap;
+		}
 		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			ga = g->layers[i].nodes[j];
 			a = (RANode *) ga->data;
@@ -1685,7 +1687,9 @@ static void set_layer_vgap (RAGraph *g) {
 				}
 			}
 		}
-		g->layers[i+1].vgap += vgap;
+		if (i + 1 < g->n_layers) {
+			g->layers[i+1].vgap += vgap;
+		}
 	}
 }
 
@@ -1743,7 +1747,7 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->edges);
 	g->edges = r_list_new ();
 
-    remove_dummy_nodes(g);
+    //remove_dummy_nodes(g); //TODO: what to do with dummy nodes? removing them is creating problem
 	remove_cycles (g);
 	assign_layers (g);
 	create_dummy_nodes (g);
@@ -2586,6 +2590,28 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	}
 }
 
+struct tmplayer {
+	int layer;
+	int edgectr;
+	int revedgectr;
+	int minx;
+	int maxx;
+};
+struct tmpbackedgeinfo {
+	int ax;
+	int ay;
+	int bx;
+	int by;
+	int edgectr;
+	int fromlayer;
+	int tolayer;
+	RCanvasLineStyle style;
+};
+
+int tmplayercmp (const void *a, const void *b) {
+	return ((struct tmplayer *)a)->layer > ((struct tmplayer *)b)->layer;
+}
+
 static void agraph_print_edges(const RAGraph *g) {
 #if 1
 	int nth;
@@ -2594,12 +2620,9 @@ static void agraph_print_edges(const RAGraph *g) {
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *ga;
 	RANode *a;
-	struct tmplayer {
-		int layer;
-		int edgectr;
-	};
 
 	RList *lyr = r_list_new ();
+	RList *bckedges = r_list_new ();
 	struct tmplayer *tl, *tm;
 
 	graph_foreach_anode (nodes, itm, ga, a) {
@@ -2612,6 +2635,12 @@ static void agraph_print_edges(const RAGraph *g) {
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer == a->layer) {
 				tm = tl;
+				if (tm->minx > a->x) {
+					tm->minx = a->x;
+				}
+				if (tm->maxx < a->x + a->w) {
+					tm->maxx = a->x + a->w;
+				}
 				break;
 			}
 		}
@@ -2620,7 +2649,11 @@ static void agraph_print_edges(const RAGraph *g) {
 			tm = calloc (1, sizeof (struct tmplayer));
 			tm->layer = a->layer;
 			tm->edgectr = 0;
-			r_list_append (lyr, tm); //or r_list_add_sorted depending on performance
+			tm->revedgectr = 0;
+			tm->minx = a->x;
+			tm->maxx = a->x + a->w;
+			//r_list_append (lyr, tm); //or r_list_add_sorted depending on performance
+			r_list_add_sorted (lyr, tm, tmplayercmp);
 		}
 
 		graph_foreach_anode (neighbours, itn, gb, b) {
@@ -2694,13 +2727,24 @@ static void agraph_print_edges(const RAGraph *g) {
 					ay = a->y + a->layer_height;
 					style.symbol = LINE_NOSYM;
 				}
-				if (by >= ay || true) { // use true while backedge is not fixed
+				if (by >= ay) { // use true while backedge is not fixed
 					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, tm->edgectr);
 				} else {
 					//print back edges
 					//idea:
 					//    have a list of x-coordinates of leftmost and rightmost node in each layer
 					//    we also would need to store the y-axis value that is used in backedges
+					//r_cons_canvas_line_back_edge (g->can, ax, ay, bx, by, &style, tm->edgectr,ax - 40, 1);
+					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
+					tmp->ax = ax;
+					tmp->bx = bx;
+					tmp->ay = ay;
+					tmp->by = by;
+					tmp->edgectr = tm->edgectr;
+					tmp->fromlayer = a->layer;
+					tmp->tolayer = b->layer;
+					tmp->style = style;
+					r_list_append (bckedges, tmp);
 				}
 				if (b->is_dummy) {
 					style.symbol = LINE_NOSYM;
@@ -2718,7 +2762,59 @@ static void agraph_print_edges(const RAGraph *g) {
 		}
 	}
 
+	struct tmpbackedgeinfo *temp;
+	r_list_foreach (bckedges, itm, temp) {
+		int leftlen, rightlen;
+		int minx, maxx;
+		struct tmplayer *tf, *tt;
+		tl = r_list_get_n (lyr, temp->fromlayer);
+		tm = r_list_get_n (lyr, temp->tolayer);
+
+		r_list_foreach (lyr, ito, tl) {
+			if (tl->layer <= temp->tolayer) {
+				tt = tl;
+				minx = tl->minx;
+				maxx = tl->maxx;
+				continue;
+			}
+
+			minx = minx < tl->minx ? minx : tl->minx;
+			maxx = maxx > tl->maxx ? maxx : tl->maxx;
+
+			if (tl->layer >= temp->fromlayer) {
+				tf = tl;
+				break;
+			}
+		}
+
+		leftlen = (minx + temp->ax) + (minx + temp->bx);
+		rightlen = (maxx + temp->ax) + (maxx + temp->bx);
+		tt->revedgectr += 1;
+		if (rightlen < leftlen) {
+			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr);
+		} else {
+			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr);
+		}
+
+		r_list_foreach (lyr, ito, tl) {
+			if (tl->layer < temp->tolayer) {
+				continue;
+			}
+
+			if (rightlen < leftlen) {
+				tl->maxx = maxx + 1;
+			} else {
+				tl->minx = minx - 1;
+			}
+
+			if (tl->layer >= temp->fromlayer) {
+				break;
+			}
+		}
+	}
+
 	r_list_free (lyr);
+	r_list_free (bckedges);
 #endif
 #if 0
 	const RList *nodes = r_graph_get_nodes (g->graph);
@@ -2845,13 +2941,21 @@ static void agraph_follow_false(RAGraph *g) {
 
 /* seek the next node in visual order */
 static void agraph_next_node(RAGraph *g) {
-	r_agraph_set_curnode (g, get_anode (find_near_of (g, g->curnode, true)));
+	RANode *a = get_anode (find_near_of (g, g->curnode, true));
+	while (a->is_dummy) {
+		a = get_anode (find_near_of (g, a->gnode, true));
+	}
+	r_agraph_set_curnode (g, a);
 	agraph_update_seek (g, get_anode (g->curnode), false);
 }
 
 /* seek the previous node in visual order */
 static void agraph_prev_node(RAGraph *g) {
-	r_agraph_set_curnode (g, get_anode (find_near_of (g, g->curnode, false)));
+	RANode *a = get_anode (find_near_of (g, g->curnode, false));
+	while (a->is_dummy) {
+		a = get_anode (find_near_of (g, a->gnode, false));
+	}
+	r_agraph_set_curnode (g, a);
 	agraph_update_seek (g, get_anode (g->curnode), false);
 }
 
