@@ -4105,7 +4105,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RListIter *iter;
 		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
-		char *ptr = r_str_trim_head (cp_inp); 
+		char *ptr = r_str_trim_head (cp_inp);
 		if (!strcmp (ptr, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
@@ -4937,160 +4937,6 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_anal_trace(RCore *core, const char *input) {
-	RDebugTracepoint *t;
-	const char *ptr;
-	ut64 addr = core->offset;
-	const char *help_msg[] = {
-		"Usage:", "at", "[*] [addr]",
-		"at", "", "list all traced opcode ranges",
-		"at-", "", "reset the tracing information",
-		"at*", "", "list all traced opcode offsets",
-		"at+", " [addr] [times]", "add trace for address N times",
-		"at", " [addr]", "show trace info at address",
-		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"att", " [tag]", "select trace tag (no arg unsets)",
-		"at%", "", "TODO",
-		"ata", " 0x804020 ...", "only trace given addresses",
-		"atr", "", "show traces as range commands (ar+)",
-		"atd", "", "show disassembly trace (use .atd)",
-		"atl", "", "list all traced addresses (useful for @@= `atl`)",
-		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
-		NULL };
-
-	switch (input[0]) {
-	case 'r':
-		eprintf ("TODO\n");
-		//trace_show(-1, trace_tag_get());
-		break;
-	case 'e': // "ate"
-		if (!core->anal->esil) {
-			int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-			int romem = r_config_get_i (core->config, "esil.romem");
-			int stats = r_config_get_i (core->config, "esil.stats");
-			int iotrap = r_config_get_i (core->config, "esil.iotrap");
-			int nonull = r_config_get_i (core->config, "esil.nonull");
-			if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-				return;
-			}
-			r_anal_esil_setup (core->anal->esil,
-					core->anal, romem, stats, nonull);
-		}
-		switch (input[1]) {
-		case 0:
-			r_anal_esil_trace_list (core->anal->esil);
-			break;
-		case 'i': {
-			RAnalOp *op;
-			ut64 addr = r_num_math (core->num, input + 2);
-			if (!addr) {
-				addr = core->offset;
-			}
-			op = r_core_anal_op (core, addr);
-			if (op) {
-				r_anal_esil_trace (core->anal->esil, op);
-			}
-			r_anal_op_free (op);
-		} break;
-		case '-':
-			if (!strcmp (input + 2, "*")) {
-				if (core->anal->esil) {
-					sdb_free (core->anal->esil->db_trace);
-					core->anal->esil->db_trace = sdb_new0 ();
-				}
-			} else {
-				eprintf ("TODO: ate- cannot delete specific logs. Use ate-*\n");
-			}
-			break;
-		case ' ': {
-			int idx = atoi (input + 2);
-			r_anal_esil_trace_show (
-				core->anal->esil, idx);
-		} break;
-		case 'k':
-			if (input[2] == ' ') {
-				char *s = sdb_querys (core->anal->esil->db_trace,
-						NULL, 0, input + 3);
-				r_cons_println (s);
-				free (s);
-			} else {
-				eprintf ("Usage: atek [query]\n");
-			}
-			break;
-		default:
-			{
-			const char *help_msg[] = {
-				"Usage:", "ate", " Show esil trace logs",
-				"ate", "", "Esil trace log for a single instruction",
-				"ate", " [idx]", "show commands for that index log",
-				"ate", "-*", "delete all esil traces",
-				"atei", "", "esil trace log single instruction",
-				"atek", " [sdb query]", "esil trace log single instruction from sdb",
-				NULL };
-			r_core_cmd_help (core, help_msg);
-		}
-		}
-		break;
-	case '?':
-		r_core_cmd_help (core, help_msg);
-		r_cons_printf ("Current Tag: %d", core->dbg->trace->tag);
-		break;
-	case 'a':
-		eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
-		r_debug_trace_at (core->dbg, input + 1);
-		break;
-	case 't':
-		r_debug_trace_tag (core->dbg, atoi (input + 1));
-		break;
-	case 'l':
-		r_debug_trace_list (core->dbg, 'l');
-		r_cons_newline ();
-		break;
-	case 'd':
-		r_debug_trace_list (core->dbg, 'd');
-		break;
-	case 'D':
-		// XXX: not yet tested..and rsc dwarf-traces comes from r1
-		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
-		break;
-	case '+': // "at+"
-		ptr = input + 2;
-		addr = r_num_math (core->num, ptr);
-		ptr = strchr (ptr, ' ');
-		if (ptr != NULL) {
-			RAnalOp *op = r_core_op_anal (core, addr);
-			if (op != NULL) {
-				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-				tp->count = atoi (ptr + 1);
-				r_anal_trace_bb (core->anal, addr);
-				r_anal_op_free (op);
-			} else {
-				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
-			}
-		}
-		break;
-	case '-':
-		r_debug_trace_free (core->dbg->trace);
-		core->dbg->trace = r_debug_trace_new ();
-		break;
-	case ' ':
-		if ((t = r_debug_trace_get (core->dbg,
-					r_num_math (core->num, input)))) {
-			r_cons_printf ("offset = 0x%" PFMT64x "\n", t->addr);
-			r_cons_printf ("opsize = %d\n", t->size);
-			r_cons_printf ("times = %d\n", t->times);
-			r_cons_printf ("count = %d\n", t->count);
-			//TODO cons_printf("time = %d\n", t->tm);
-		}
-		break;
-	case '*':
-		r_debug_trace_list (core->dbg, 1);
-		break;
-	default:
-		r_debug_trace_list (core->dbg, 0);
-	}
-}
-
 R_API int r_core_anal_refs(RCore *core, const char *input) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 from, to;
@@ -5715,7 +5561,6 @@ static int cmd_anal(void *data, const char *input) {
 		"ap", "", "find prelude for current offset",
 		"ax", "[?]", "manage refs/xrefs (see also afx?)",
 		"as", "[?] [num]", "analyze syscall using dbg.reg",
-		"at", "[?] [.]", "analyze execution traces",
 		"av", "[?] [.]", "show vtables",
 		NULL };
 
@@ -5781,9 +5626,6 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'g':
 		cmd_anal_graph (core, input + 1);
-		break;
-	case 't':
-		cmd_anal_trace (core, input + 1);
 		break;
 	case 's': // "as"
 		cmd_anal_syscall (core, input + 1);

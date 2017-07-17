@@ -3586,7 +3586,10 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	RDebugTracepoint *t;
 	int follow = 0;
+	const char *ptr;
+	ut64 addr;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -3599,11 +3602,55 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_println (str);
 		return 0;
 	}
+	const char * help_message[] = {
+		"Usage: dt", "", "Trace commands",
+		"dt", "", "List all traces ",
+		"dt", " [addr]", "show trace info at address",
+		"dt*", "", "list all traced opcode offsets",
+		"dt+"," [addr] [times]", "add trace for address N times",
+		"dta", " 0x804020 ...", "only trace given addresses",
+		"dt%", "", "TODO",
+		"dtt", " [tag]", "select trace tag (no arg unsets)",
+		"dtr", "", "show traces as range commands (ar+)",
+		"dtd", "", "List all traced disassembled",
+		"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
+		"dtg", "", "Graph call/ret trace",
+		"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
+		"dtgi", "", "Interactive debug trace",
+		"dte", "[?]", "show esil trace logs (anal.trace)",
+		"dts", "[?]", "trace sessions",
+		"dt-", "", "Reset traces (instruction/calls)",
+		"dtD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
+		NULL
+	};
 
 	switch (input[0]) {
 	case 't':
 		// TODO: define ranges? to display only some traces, allow to scroll on this disasm? ~.. ?
 		switch (input[1]) {
+		case '\0': // "dt"
+			r_debug_trace_list (core->dbg, 0);
+			break;
+		case '*': // "dt*"
+			r_debug_trace_list (core->dbg, 1);
+			break;
+		case ' ': // "dt [addr]"
+			if ((t = r_debug_trace_get (core->dbg,
+					r_num_math (core->num, input + 3)))) {
+				r_cons_printf ("offset = 0x%" PFMT64x "\n", t->addr);
+				r_cons_printf ("opsize = %d\n", t->size);
+				r_cons_printf ("times = %d\n", t->times);
+				r_cons_printf ("count = %d\n", t->count);
+				//TODO cons_printf("time = %d\n", t->tm);
+			}
+			break;
+		case 'a': // "dta"
+ 			eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
+			r_debug_trace_at (core->dbg, input + 3);
+			break;
+		case 't': // "dtt"
+			r_debug_trace_tag (core->dbg, atoi (input + 3));
+			break;
 		case 'c': // "dtc"
 			if (input[2] == '?') {
 				r_cons_println ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger");
@@ -3611,12 +3658,108 @@ static int cmd_debug(void *data, const char *input) {
 				debug_trace_calls (core, input + 2);
 			}
 			break;
-		case 'd':
+		case 'r': // "dtr"
+			eprintf ("TODO\n");
+			//trace_show(-1, trace_tag_get());
+			break;
+		case 'd': // "dtd"
 			// TODO: reimplement using the api
 			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
 			break;
 		case 'g': // "dtg"
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
+			break;
+		case '-': // "dt-"
+			r_tree_reset (core->dbg->tree);
+			r_debug_trace_free (core->dbg->trace);
+			r_debug_tracenodes_reset (core->dbg);
+			core->dbg->trace = r_debug_trace_new ();
+			break;
+		case '+': // "dt+"
+			ptr = input + 3;
+			addr = r_num_math (core->num, ptr);
+			ptr = strchr (ptr, ' ');
+			RAnalOp *op = r_core_op_anal (core, addr);
+			if (op != NULL) {
+				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+				tp->count = atoi (ptr + 1);
+				r_anal_trace_bb (core->anal, addr);
+				r_anal_op_free (op);
+			} else {
+				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
+			}
+			break;
+		case 'D': // "dtD"
+			// XXX: not yet tested..and rsc dwarf-traces comes from r1
+			r_core_cmd (core, "dt*|rsc dwarf-traces $FILE", 0);
+			break;
+		case 'e': // "dte"
+			if (!core->anal->esil) {
+				int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+				int romem = r_config_get_i (core->config, "esil.romem");
+				int stats = r_config_get_i (core->config, "esil.stats");
+				int iotrap = r_config_get_i (core->config, "esil.iotrap");
+				int nonull = r_config_get_i (core->config, "esil.nonull");
+				if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
+					return 0;
+				}
+				r_anal_esil_setup (core->anal->esil,
+						core->anal, romem, stats, nonull);
+			}
+			switch (input[2]) {
+			case 0:
+				r_anal_esil_trace_list (core->anal->esil);
+				break;
+			case 'i': {
+				RAnalOp *op;
+				ut64 addr = r_num_math (core->num, input + 3);
+				if (!addr) {
+					addr = core->offset;
+				}
+				op = r_core_anal_op (core, addr);
+				if (op) {
+					r_anal_esil_trace (core->anal->esil, op);
+				}
+				r_anal_op_free (op);
+			} break;
+			case '-':
+				if (!strcmp (input + 3, "*")) {
+					if (core->anal->esil) {
+						sdb_free (core->anal->esil->db_trace);
+						core->anal->esil->db_trace = sdb_new0 ();
+					}
+				} else {
+					eprintf ("TODO: dte- cannot delete specific logs. Use dte-*\n");
+				}
+				break;
+			case ' ': {
+				int idx = atoi (input + 3);
+				r_anal_esil_trace_show (
+					core->anal->esil, idx);
+			} break;
+			case 'k':
+				if (input[3] == ' ') {
+					char *s = sdb_querys (core->anal->esil->db_trace,
+							NULL, 0, input + 4);
+					r_cons_println (s);
+					free (s);
+				} else {
+					eprintf ("Usage: dtek [query]\n");
+				}
+				break;
+			default:
+				{
+				const char *help_msg[] = {
+					"Usage:", "dte", " Show esil trace logs",
+					"dte", "", "Esil trace log for a single instruction",
+					"dte", " [idx]", "show commands for that index log",
+					"dte", "-*", "delete all esil traces",
+					"dtei", "", "esil trace log single instruction",
+					"dtek", " [sdb query]", "esil trace log single instruction from sdb",
+					NULL };
+				r_core_cmd_help (core, help_msg);
+				}
+			}
 			break;
 		case 's': // "dts"
 			switch (input[2]) {
@@ -3656,31 +3799,11 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-		case '-':
-			r_tree_reset (core->dbg->tree);
-			r_debug_trace_free (core->dbg->trace);
-			r_debug_tracenodes_reset (core->dbg);
-			core->dbg->trace = r_debug_trace_new ();
-			break;
-		case '\0':
-			r_debug_trace_list (core->dbg, -1);
-			break;
 		case '?':
 		default:
 			{
-				const char * help_message[] = {
-					"Usage: dt", "", "Trace commands",
-					"dt", "", "List all traces ",
-					"dtd", "", "List all traced disassembled",
-					"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-					"dtg", "", "Graph call/ret trace",
-					"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-					"dtgi", "", "Interactive debug trace",
-					"dts", "[?]", "trace sessions",
-					"dt-", "", "Reset traces (instruction/calls)",
-					NULL
-				};
 				r_core_cmd_help (core, help_message);
+				r_cons_printf ("Current Tag: %d\n", core->dbg->trace->tag);
 			}
 			break;
 		}
