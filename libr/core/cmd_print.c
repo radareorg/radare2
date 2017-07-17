@@ -5251,6 +5251,27 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		break;
+	case 'q': // "pq"
+		if (input[1] == '?') {
+			eprintf ("Usage: pq[z] [len]\n");
+			break;
+		}
+		if (input[1] == 'z') {
+			len = r_str_nlen ((const char*)core->block, core->blocksize);
+		} else {
+			if (len < 1) {
+				len = 0;
+			}
+			if (len > core->blocksize) {
+				len = core->blocksize;
+			}
+		}
+		char *res = r_qrcode_gen (core->block, len);
+		if (res) {
+			r_cons_printf ("%s\n", res);
+			free (res);
+		}
+		break;
 	case 'z': // "pz"
 		if (input[1] == '?') {
 			const char *help_msg[] = {
@@ -5319,6 +5340,7 @@ static int cmd_print(void *data, const char *input) {
 			"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 			"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 			"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
+			"pq", "[z] [len]", "print QR code with the first Nbytes of the current block",
 			"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 			"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 			"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",

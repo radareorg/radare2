@@ -134,5 +134,6 @@ R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber (const char *str);
 R_API const char *r_str_last (const char *in, const char *ch);
 R_API char* r_str_highlight(char *str, const char *word, const char *color);
+R_API char *r_qrcode_gen(const ut8* text, int len);
 
 #endif //  R_STR_H
