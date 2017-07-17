@@ -3615,6 +3615,13 @@ static int cmd_debug(void *data, const char *input) {
 			case '+':
 				r_debug_session_add (core->dbg, NULL);
 				break;
+			case '-':
+				if (input[3] == ' ') {
+					r_debug_session_delete (core->dbg, r_num_math (core->num, input + 3));
+				} else {
+					r_cons_println ("Usage: dts- [id] - Delete trace session");
+				}
+				break;
 			case 't':
 				if (input[3] == ' ') {
 					r_debug_session_save (core->dbg, input + 4);
@@ -3629,6 +3636,13 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_println ("Usage: dtsf [file] - read trace sessions from disk");
 				}
 				break;
+			case 'C':
+				if (input[3] == ' ') {
+					r_debug_session_comment (core->dbg, atoi (input + 3), strchr (input + 4, ' '));
+				} else {
+					r_cons_println ("Usage: dtsC id comment - add comment for given trace session");
+				}
+				break;
 			case 'A': // for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));
 				break;
@@ -3638,8 +3652,10 @@ static int cmd_debug(void *data, const char *input) {
 					"Usage:", "dts[*]", "",
 					"dts", "", "List all trace sessions",
 					"dts+", "", "Add trace session",
+					"dts-", "id", "Delete trace session",
 					"dtsf", " [file] ", "read trace sessions from disk",
 					"dtst", " [file] ", "save trace sessions to disk",
+					"dtsC", " id comment", "add comment for given trace session",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 				}

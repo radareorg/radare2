@@ -1,8 +1,9 @@
 /* radare - LGPL - Copyright 2017 - rkx1209 */
 #include <r_debug.h>
 
-R_API void r_debug_session_free(void *p) {
-	free (p);
+R_API void r_debug_session_free(RDebugSession *session) {
+	free (session->comment);
+	free (session);
 }
 
 static int r_debug_session_lastid(RDebug *dbg) {
@@ -19,7 +20,7 @@ R_API void r_debug_session_list(RDebug *dbg) {
 
 	r_list_foreach (dbg->sessions, iterse, session) {
 		count = 0;
-		dbg->cb_printf ("session:%2d   at:0x%08"PFMT64x "\n", session->key.id, session->key.addr);
+		dbg->cb_printf ("session:%2d   at:0x%08"PFMT64x "   \"%s\"\n", session->key.id, session->key.addr, session->comment);
 		r_list_foreach (session->memlist, itersn, diff) {
 			snap = diff->base;
 			dbg->cb_printf ("  - %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d ",
@@ -61,6 +62,7 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
 	session->key = (RDebugKey) {
 		addr, r_debug_session_lastid (dbg)
 	};
+	session->comment = r_str_new ("");
 
 	/* save current registers */
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
@@ -88,6 +90,43 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
 		*tail = dbg->sessions->tail;
 	}
 	return session;
+}
+
+R_API bool r_debug_session_delete(RDebug *dbg, int idx) {
+	RListIter *iter;
+	RDebugSession *session;
+	if (idx == -1) {
+		r_list_free (dbg->sessions);
+		dbg->sessions = r_list_newf (r_debug_session_free);
+		return true;
+	}
+	r_list_foreach (dbg->sessions, iter, session) {
+		if (session->key.id == idx) {
+			r_list_delete (dbg->sessions, iter);
+			return true;
+		}
+	}
+	return false;
+}
+
+R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg) {
+	RDebugSession *session;
+	RListIter *iter;
+	ut32 count = 0;
+	if (!dbg || idx < 0 || !msg || !*msg) {
+		return false;
+	}
+	r_list_foreach (dbg->sessions, iter, session) {
+		if (count == idx) {
+			if (session->comment) {
+				free (session->comment);
+			}
+			session->comment = strdup (r_str_trim_const (msg));
+			break;
+		}
+		count++;
+	}
+	return true;
 }
 
 static void r_debug_session_set_registers(RDebug *dbg, RDebugSession *session) {
@@ -213,11 +252,11 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		snapentry.size = base->size;
 		snapentry.timestamp = base->timestamp;
 		snapentry.perm = base->perm;
-		r_file_dump (base_file, (const ut8*)&snapentry, sizeof (RSnapEntry), 1);
-		r_file_dump (base_file, (const ut8*)base->data, base->size, 1);
+		r_file_dump (base_file, (const ut8 *) &snapentry, sizeof (RSnapEntry), 1);
+		r_file_dump (base_file, (const ut8 *) base->data, base->size, 1);
 		/* dump all hases */
 		for (i = 0; i < base->page_num; i++) {
-			r_file_dump (base_file, (const ut8*)base->hashes[i], 128, 1);
+			r_file_dump (base_file, (const ut8 *) base->hashes[i], 128, 1);
 		}
 	}
 
@@ -227,14 +266,14 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		header.id = session->key.id;
 		header.addr = session->key.addr;
 		header.difflist_len = r_list_length (session->memlist);
-		r_file_dump (diff_file, (ut8*)&header, sizeof (RSessionHeader), 1);
+		r_file_dump (diff_file, (ut8 *) &header, sizeof (RSessionHeader), 1);
 
 		/* dump registers */
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			RRegArena *arena = session->reg[i]->data;
-			r_file_dump (diff_file, (const ut8*)&arena->size, sizeof (int), 1);
-			r_file_dump (diff_file, (const ut8*)arena->bytes, arena->size, 1);
+			r_file_dump (diff_file, (const ut8 *) &arena->size, sizeof (int), 1);
+			r_file_dump (diff_file, (const ut8 *) arena->bytes, arena->size, 1);
 			// eprintf ("arena[%d] size=%d\n", i, arena->size);
 		}
 		if (!header.difflist_len) {
@@ -248,13 +287,13 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			/* Dump diff header */
 			diffentry.pages_len = r_list_length (snapdiff->pages);
 			diffentry.base_idx = r_snap_to_idx (dbg, snapdiff->base);
-			r_file_dump (diff_file, (const ut8*)&diffentry, sizeof (RDiffEntry), 1);
+			r_file_dump (diff_file, (const ut8 *) &diffentry, sizeof (RDiffEntry), 1);
 
 			/* Dump page entries */
 			r_list_foreach (snapdiff->pages, iter3, page) {
-				r_file_dump (diff_file, (const ut8*)&page->page_off, sizeof (ut32), 1);
-				r_file_dump (diff_file, (const ut8*)page->data, SNAP_PAGE_SIZE, 1);
-				r_file_dump (diff_file, (const ut8*)page->hash, 128, 1);
+				r_file_dump (diff_file, (const ut8 *) &page->page_off, sizeof (ut32), 1);
+				r_file_dump (diff_file, (const ut8 *) page->data, SNAP_PAGE_SIZE, 1);
+				r_file_dump (diff_file, (const ut8 *) page->hash, 128, 1);
 			}
 		}
 	}
@@ -392,7 +431,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		}
 		/* Restore diff entries */
 		for (i = 0; i < header.difflist_len; i++) {
-			(void)fread (&diffentry, sizeof (RDiffEntry), 1, fd);
+			(void) fread (&diffentry, sizeof (RDiffEntry), 1, fd);
 			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
 			snapdiff = R_NEW0 (RDebugSnapDiff);
 			if (!snapdiff) {
@@ -415,9 +454,9 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			for (p = 0; p < diffentry.pages_len; p++) {
 				page = R_NEW0 (RPageData);
 				page->data = calloc (1, clust_page);
-				(void)fread (&page->page_off, sizeof (ut32), 1, fd);
-				(void)fread (page->data, SNAP_PAGE_SIZE, 1, fd);
-				(void)fread (page->hash, 128, 1, fd);
+				(void) fread (&page->page_off, sizeof (ut32), 1, fd);
+				(void) fread (page->data, SNAP_PAGE_SIZE, 1, fd);
+				(void) fread (page->hash, 128, 1, fd);
 				snapdiff->last_changes[page->page_off] = page;
 				r_list_append (snapdiff->pages, page);
 			}
