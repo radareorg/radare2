@@ -429,7 +429,7 @@ Basic block graphs
 ```
 af: Load function metadata
 ag $$ > a.dot: Dump basic block graph to file
-ag $$ | xdot: Show current function basic block graph
+ag $$ | xdot -: Show current function basic block graph
 ```
 Call graphs
 
