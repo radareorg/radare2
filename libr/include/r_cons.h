@@ -715,6 +715,7 @@ typedef struct r_ascii_node_t {
 	int h;
 
 	int layer;
+	int layer_height;
 	int pos_in_layer;
 	int is_dummy;
 	int is_reversed;
