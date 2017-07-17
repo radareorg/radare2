@@ -1903,6 +1903,17 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			case '*':
 				rad = str[1];
 				str++;
+				if (rad == 'j' && !str[1]) {
+					r_cons_print("[");
+					for (i = 0; (name = r_reg_get_type (i)); i++) {
+						if (i) {
+							r_cons_print (",");
+						}
+						r_cons_printf ("\"%s\"", name);
+					}
+					r_cons_println ("]");
+					break;
+				}
 				// fallthrough
 			case ' ':
 				{
