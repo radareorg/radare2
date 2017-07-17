@@ -814,7 +814,6 @@ static int bb_cmp(const void *a, const void *b) {
 
 static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
-	RAnalFunction *fcn;
 	RListIter *iter;
 	RAnalBlock *b;
 	int mode = 0;
@@ -841,7 +840,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (one) {
 		bbaddr = addr;
 	}
-	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
 		return false;
 	}
@@ -1591,7 +1590,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'q':
 		case 'r':
 		case '*':
-		case 'j':
+		case 'j': // "afbj"
 			anal_fcn_list_bb (core, input + 2, false);
 			break;
 		case '.':
@@ -3585,8 +3584,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		};
 		r_core_cmd_help (core, help_msg);
 	} break;
-	case 'j':
-	case 'e':
+	case 'j': // "aoj"
+	case 'e': // "aoe"
 	case 'r': {
 		int count = 1;
 		if (input[1] && input[2]) {
