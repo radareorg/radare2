@@ -2551,6 +2551,10 @@ reread:
 	break;
 	case 'v': // "/v"
 		if (input[1]) {
+			if (input[1] == '?') {
+				r_cons_print ("Usage: /v[1|2|4|8] [value]\n");
+				break;
+			}
 			if (input[2] == 'j') {
 				json = true;
 				param_offset++;
