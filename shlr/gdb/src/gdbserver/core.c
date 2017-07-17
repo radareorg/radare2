@@ -19,6 +19,7 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	}
 	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+", (ut32) (g->read_max - 1));
 	if ((ret = handle_qSupported (g)) < 0) {
+		free (buf);
 		return -1;
 	}
 	ret = send_msg (g, buf);
