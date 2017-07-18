@@ -300,8 +300,30 @@ static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
+static ut64 bbJump(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+			return bb->jump;
+		}
+	}
+	return UT64_MAX;
+}
+
+static ut64 bbFail(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+			return bb->fail;
 		}
 	}
 	return UT64_MAX;
@@ -311,7 +333,7 @@ static ut64 bbSize(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->size;
 		}
 	}
@@ -539,6 +561,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				switch (str[2]) {
+				case 'j': return bbJump (fcn, core->offset); // jump
+				case 'f': return bbFail (fcn, core->offset); // fail
 				case 'B': return fcn->addr; // begin
 				case 'E': return fcn->addr + fcn->_size; // end
 				case 'S': return r_anal_fcn_size (fcn);

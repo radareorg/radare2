@@ -435,6 +435,8 @@ static int cmd_help(void *data, const char *input) {
 			"$Fs", "", "size of the current basic block",
 			"$FE", "", "end of function",
 			"$FS", "", "function size",
+			"$Fj", "", "function jump destination",
+			"$Ff", "", "function false destination",
 			"$FI", "", "function instructions",
 			"$c,$r", "", "get width and height of terminal",
 			"$Cn", "", "get nth call of function",
