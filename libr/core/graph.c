@@ -2648,6 +2648,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 
 	r_cons_canvas_print_region (g->can);
+	r_cons_strcat (Color_RESET);
 
 	if (is_interactive) {
 		const char *cmdv;
