@@ -517,7 +517,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			*to = r_io_size (core->io);
 		}
 	} else if (!strcmp (mode, "file")) {
-		if (core->io->va) {
+		//if (core->io->va) {
 			RListIter *iter;
 			RIOSection *s;
 			*from = *to = 0;
@@ -537,7 +537,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					*to = s->vaddr + s->vsize;
 				}
 			}
-		}
+		//}
 		if (!*to || *to == UT64_MAX || *to == UT32_MAX) {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
 			*from = core->offset;
@@ -610,7 +610,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			*from = core->offset;
 			*to = r_io_size (core->io);
 		}
-	} else if (!strncmp (mode, "io.sections", sizeof("io.sections") - 1)) {
+	} else if (!strncmp (mode, "io.sections", sizeof ("io.sections") - 1)) {
 		if (core->io->va) {
 			int mask = 0;
 			RIOMap *map;

@@ -800,7 +800,9 @@ static RBinInfo* info(RBinFile *arch) {
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->o->bin_obj))) {
 		ret->rpath = strdup (str);
 		free (str);
-	} else ret->rpath = strdup ("NONE");
+	} else {
+		ret->rpath = strdup ("NONE");
+	}
 	if (!(str = Elf_(r_bin_elf_get_file_type) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
