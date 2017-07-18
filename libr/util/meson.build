@@ -38,6 +38,7 @@ files=[
 'print.c',
 'prof.c',
 'punycode.c',
+'qrcode.c',
 'queue.c',
 'r_asn1.c',
 'r_pkcs7.c',
