@@ -2860,12 +2860,15 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 }
 
 R_API int r_core_cmd_file(RCore *core, const char *file) {
-	char *data, *odata;
-	data = r_file_abspath (file);
-	if (!data) return false;
-	odata = r_file_slurp (data, NULL);
+	char *data = r_file_abspath (file);
+	if (!data) {
+		return false;
+	}
+	char *odata = r_file_slurp (data, NULL);
 	free (data);
-	if (!odata) return false;
+	if (!odata) {
+		return false;
+	}
 	if (!r_core_cmd_lines (core, odata)) {
 		eprintf ("Failed to run script '%s'\n", file);
 		free (odata);
@@ -3036,13 +3039,14 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 
 R_API void r_core_cmd_repeat(RCore *core, int next) {
 	// Fix for backtickbug px`~`
-	if (core->cmd_depth + 1 < R_CORE_CMD_DEPTH)
+	if (!core->lastcmd || core->cmd_depth + 1 < R_CORE_CMD_DEPTH) {
 		return;
-	if (core->lastcmd)
+	}
 	switch (*core->lastcmd) {
 	case '.':
-		if (core->lastcmd[1] == '(') // macro call
+		if (core->lastcmd[1] == '(') { // macro call
 			r_core_cmd0 (core, core->lastcmd);
+		}
 		break;
 	case 'd': // debug
 		r_core_cmd0 (core, core->lastcmd);

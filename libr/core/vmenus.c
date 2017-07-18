@@ -2704,9 +2704,6 @@ repeat:
 	case 'x':
 		r_core_cmd0 (core, "./r");
 		break;
-	case 'B':
-		define_data_ntimes (core, off, rep, R_WORD_DATA);
-		break;
 	case 'i':
 		{
 			char str[128];
@@ -2718,7 +2715,28 @@ repeat:
 		}
 		break;
 	case 'b':
+		if (plen != core->blocksize) {
+			rep = plen / 2;
+		}
 		define_data_ntimes (core, off, rep, R_BYTE_DATA);
+		break;
+	case 'B':
+		if (plen != core->blocksize) {
+			rep = plen;
+		}
+		define_data_ntimes (core, off, rep, R_WORD_DATA);
+		break;
+	case 'w':
+		if (plen != core->blocksize) {
+			rep = plen / 4;
+		}
+		define_data_ntimes (core, off, rep, R_DWORD_DATA);
+		break;
+	case 'W':
+		if (plen != core->blocksize) {
+			rep = plen / 8;
+		}
+		define_data_ntimes (core, off, rep, R_QWORD_DATA);
 		break;
 	case 'm':
 		{
@@ -2850,12 +2868,6 @@ repeat:
 				r_cons_any_key (NULL);
 			}
 		}
-		break;
-	case 'w':
-		define_data_ntimes (core, off, rep, R_DWORD_DATA);
-		break;
-	case 'W':
-		define_data_ntimes (core, off, rep, R_QWORD_DATA);
 		break;
 	case 'e':
 		// set function size
