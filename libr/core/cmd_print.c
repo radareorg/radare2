@@ -2349,93 +2349,93 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	case '=': // "p=="
 		switch (submode) {
-	case '?':
-		r_core_cmd_help (core, help_msg);
-		break;
-	case '0': // 0x00 bytes
-	case 'f': // 0xff bytes
-	case 'F': // 0xff bytes
-	case 'p': // printable chars
-	case 'z': // zero terminated strings
-	{
-		ut8 *p;
-		int i, j, k;
-		ptr = calloc (1, nblocks);
-		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
-			goto beach;
-		}
-		p = calloc (1, blocksize);
-		if (!p) {
-			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
-			goto beach;
-		}
-		int len = 0;
-		for (i = 0; i < nblocks; i++) {
-			ut64 off = (i + skipblocks) * blocksize;
-			r_core_read_at (core, off, p, blocksize);
-			for (j = k = 0; j < blocksize; j++) {
-				switch (submode) {
-				case '0':
-					if (!p[j]) {
-						k++;
-					}
-					break;
-				case 'f':
-					if (p[j] == 0xff) {
-						k++;
-					}
-					break;
-				case 'z':
-					if ((IS_PRINTABLE (p[j]))) {
-						if (p[j + 1] == 0) {
-							k++;
-							j++;
-						}
-						if (len++ > 8) {
-							k++;
-						}
-					} else {
-						len = 0;
-					}
-					break;
-				case 'p':
-					if ((IS_PRINTABLE (p[j]))) {
-						k++;
-					}
-					break;
+		case '?':
+			r_core_cmd_help (core, help_msg);
+			break;
+		case '0': // 0x00 bytes
+		case 'f': // 0xff bytes
+		case 'F': // 0xff bytes
+		case 'p': // printable chars
+		case 'z': // zero terminated strings
+			{
+				ut8 *p;
+				int i, j, k;
+				ptr = calloc (1, nblocks);
+				if (!ptr) {
+					eprintf ("Error: failed to malloc memory");
+					goto beach;
 				}
+				p = calloc (1, blocksize);
+				if (!p) {
+					R_FREE (ptr);
+					eprintf ("Error: failed to malloc memory");
+					goto beach;
+				}
+				int len = 0;
+				for (i = 0; i < nblocks; i++) {
+					ut64 off = (i + skipblocks) * blocksize;
+					r_core_read_at (core, off, p, blocksize);
+					for (j = k = 0; j < blocksize; j++) {
+						switch (submode) {
+						case '0':
+							if (!p[j]) {
+								k++;
+							}
+							break;
+						case 'f':
+							if (p[j] == 0xff) {
+								k++;
+							}
+							break;
+						case 'z':
+							if ((IS_PRINTABLE (p[j]))) {
+								if (p[j + 1] == 0) {
+									k++;
+									j++;
+								}
+								if (len++ > 8) {
+									k++;
+								}
+							} else {
+								len = 0;
+							}
+							break;
+						case 'p':
+							if ((IS_PRINTABLE (p[j]))) {
+								k++;
+							}
+							break;
+						}
+					}
+					ptr[i] = 256 * k / blocksize;
+				}
+				r_print_columns (core->print, ptr, nblocks, 14);
+				free (p);
 			}
-			ptr[i] = 256 * k / blocksize;
-		}
-		r_print_columns (core->print, ptr, nblocks, 14);
-		free (p);
-	}
-	break;
-		case 'e':
-	{
-		ut8 *p;
-		int i = 0;
-		ptr = calloc (1, nblocks);
-		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
-			goto beach;
-		}
-		p = malloc (blocksize);
-		if (!p) {
-			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
-			goto beach;
-		}
-		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (i + skipblocks) * blocksize;
-			r_core_read_at (core, off, p, blocksize);
-			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
-		}
-		free (p);
+			break;
+		case 'e': // "p=e"
+		{
+			ut8 *p;
+			int i = 0;
+			ptr = calloc (1, nblocks);
+			if (!ptr) {
+				eprintf ("Error: failed to malloc memory");
+				goto beach;
+			}
+			p = malloc (blocksize);
+			if (!p) {
+				R_FREE (ptr);
+				eprintf ("Error: failed to malloc memory");
+				goto beach;
+			}
+			for (i = 0; i < nblocks; i++) {
+				ut64 off = core->offset + (i + skipblocks) * blocksize;
+				r_core_read_at (core, off, p, blocksize);
+				ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
+			}
+			free (p);
 			r_print_columns (core->print, ptr, nblocks, 14); //core->block, core->blocksize, 10);
-	}
+		}
 			break;
 		default:
 			r_print_columns (core->print, core->block, core->blocksize, 14);
@@ -2526,7 +2526,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = core->offset + (i + skipblocks) * blocksize;
 			r_core_read_at (core, off, p, blocksize);
-			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
+			ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 		}
 		free (p);
 		print_bars = true;
@@ -3090,7 +3090,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 			p->cb_printf ("\" %s bin\n", (i <= trunksize)? ">": ">>");
 		}
 	} break;
-	case 'J': {
+	case 'J': { // "pcJ"
 		char *out = malloc (len * 3);
 		p->cb_printf ("var buffer = new Buffer(\"");
 		out[0] = 0;
@@ -3099,7 +3099,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		p->cb_printf ("\", 'base64');\n");
 		free (out);
 	} break;
-	case 'j':
+	case 'j': // "pcj"
 		p->cb_printf ("[");
 		for (i = 0; !p->interrupt && i < len; i++) {
 			r_print_cursor (p, i, 1);
@@ -3109,7 +3109,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		p->cb_printf ("]\n");
 		break;
 	case 'P':
-	case 'p': // pcp"
+	case 'p': // "pcp" "pcP"
 		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", *[", len);
 		for (i = 0; !p->interrupt && i < len; i++) {
 			if (!(i % w)) {
@@ -3121,13 +3121,13 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		}
 		p->cb_printf ("\n");
 		break;
-	case 'h':
+	case 'h': // "pch"
 		print_c_code (p, addr, buf, len, 2, p->cols / 2); // 9
 		break;
-	case 'w':
+	case 'w': // "pcw"
 		print_c_code (p, addr, buf, len, 4, p->cols / 3); // 6);
 		break;
-	case 'd':
+	case 'd': // "pcd"
 		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
 		break;
 	default:
@@ -3270,23 +3270,23 @@ static int cmd_print(void *data, const char *input) {
 		switch (mode) {
 		case '?': {
 			const char *help_msg[] = {
-				"Usage:", "p%%[jh] [pieces]", "bar|json|histogram blocks",
+				"Usage:", "p-[hj] [pieces]", "bar|json|histogram blocks",
 				"p-", "", "show ascii-art bar of metadata in file boundaries",
-				"p-j", "", "show json format",
 				"p-h", "", "show histogram analysis of metadata per block",
+				"p-j", "", "show json format",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
 		}
 			return 0;
-		case 'j': // p-j
+		case 'j': // "p-j"
 			r_cons_printf (
 				"\"from\":%"PFMT64d ","
 				"\"to\":%"PFMT64d ","
 				"\"blocksize\":%d,"
 				"\"blocks\":[", from, to, piece);
 			break;
-		case 'h': // p-h
+		case 'h': // "p-h"
 			r_cons_printf (".-------------.----------------------------.\n");
 			r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
 			r_cons_printf ("|-------------)----------------------------|\n");
@@ -3407,7 +3407,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		r_core_anal_stats_free (as);
 		break;
-	case '=': // p=
+	case '=': // "p="
 		cmd_print_bars (core, input);
 		break;
 	case 'A': // "pA"
@@ -3641,11 +3641,12 @@ static int cmd_print(void *data, const char *input) {
 		{
 			const char *help_msg[] = {
 				"Usage:", "pi[bdefrj] [num]", "",
+				"pia", "", "print all possible opcodes (byte per byte)",
 				"pib", "", "print instructions of basic block",
-				"pid", "", "alias for pdi"
-				"pif", "", "print instructions of function"
-				"pij", "", "print N instructions in JSON"
+				"pid", "", "alias for pdi",
 				"pie", "", "print offset + esil expression",
+				"pif", "", "print instructions of function",
+				"pij", "", "print N instructions in JSON",
 				"pir", "", "like 'pdr' but with 'pI' output",
 				NULL
 			};
@@ -3668,7 +3669,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_disasm_pdi (core, l, 0, 0);
 			}
 			break;
-		case 'e':
+		case 'e': // "pie"
 			if (l != 0) {
 				r_core_disasm_pdi (core, l, 0, 'e');
 			}
@@ -3690,7 +3691,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'r': // pir
+		case 'r': // "pir"
 		{
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
@@ -3702,7 +3703,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
-		case 'b': //pib
+		case 'b': // "pib"
 		{
 			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 			if (b) {
@@ -4029,12 +4030,13 @@ static int cmd_print(void *data, const char *input) {
 				"pdb", "", "disassemble basic block",
 				"pdc", "", "pseudo disassembler output in C-like syntax",
 				"pdC", "", "show comments found in N instructions",
-				"pdk", "", "disassemble all methods of a class",
-				"pdj", "", "disassemble to json",
-				"pdr", "", "recursive disassemble across the function graph",
 				"pdf", "", "disassemble function",
 				"pdi", "", "like 'pi', with offset and bytes",
+				"pdj", "", "disassemble to json",
+				"pdk", "", "disassemble all methods of a class",
 				"pdl", "", "show instruction sizes",
+				"pdr", "", "recursive disassemble across the function graph",
+				"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 				// "pds", "", "disassemble with back sweep (greedy disassembly backwards)",
 				"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 				"pdt", "", "disassemble the debugger traces (see atd)",
@@ -4134,16 +4136,16 @@ static int cmd_print(void *data, const char *input) {
 			const char *help_msg[] = {
 				"Usage:", "ps[zpw] [N]", "Print String",
 				"ps", "", "print string",
-				"pss", "", "print string in screen (wrap width)",
-				"psi", "", "print string inside curseek",
 				"psb", "", "print strings in current block",
-				"psx", "", "show string with escaped chars",
-				"psz", "", "print zero terminated string",
+				"psi", "", "print string inside curseek",
+				"psj", "", "print string in JSON format",
 				"psp", "", "print pascal string",
+				"pss", "", "print string in screen (wrap width)",
 				"psu", "", "print utf16 unicode (json)",
 				"psw", "", "print 16bit wide string",
 				"psW", "", "print 32bit wide string",
-				"psj", "", "print string in JSON format",
+				"psx", "", "show string with escaped chars",
+				"psz", "", "print zero terminated string",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -4189,7 +4191,7 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
-		case 'i': // psi
+		case 'i': // "psi"
 			if (l > 0) {
 				ut8 *buf = malloc (1024);
 				int delta = 512;
@@ -4312,10 +4314,10 @@ static int cmd_print(void *data, const char *input) {
 					R_PRINT_STRING_WIDE32 | R_PRINT_STRING_ZEROEND);
 			}
 			break;
-		case ' ':
+		case ' ': // "ps"
 			r_print_string (core->print, core->offset, core->block, l, 0);
 			break;
-		case 'u':
+		case 'u': // "psu"
 			if (l > 0) {
 				char *str = r_str_utf16_encode (
 					(const char *) core->block, len);
@@ -4457,7 +4459,7 @@ static int cmd_print(void *data, const char *input) {
 					"| prgi: show consumed bytes when inflating\n"
 					"| prgo: show output bytes after inflating\n");
 				break;
-			case 'i':
+			case 'i': // "prgi"
 			{
 				int sz, outlen = 0;
 				int inConsumed = 0;
@@ -4469,7 +4471,7 @@ static int cmd_print(void *data, const char *input) {
 				free (out);
 			}
 			break;
-			case 'o':
+			case 'o': // "prgo"
 			{
 				int sz, outlen = 0;
 				ut8 *in, *out;
@@ -4551,10 +4553,10 @@ static int cmd_print(void *data, const char *input) {
 	}
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
-		case 'j':
+		case 'j': // "pxj"
 			r_print_jsondump (core->print, core->block, core->blocksize, 8);
 			break;
-		case '/':
+		case '/': // "px/"
 			r_core_print_examine (core, input + 2);
 			break;
 		case '?': {
@@ -4675,7 +4677,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'c':
+		case 'c': // "pxc"
 			// LOL? :D
 			core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
 			if (l) {
@@ -4843,7 +4845,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'h': // pxh
+		case 'h': // "pxh"
 			if (l) {
 				if (input[2] == 'j') {
 					r_print_jsondump (core->print, core->block, len, 16);
@@ -4853,7 +4855,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'H':
+		case 'H': // "pxH"
 			if (l != 0) {
 				len = len - (len % 2);
 				for (i = 0; i < len; i += 2) {
@@ -5036,9 +5038,9 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'l':
+		case 'l': // "pxl"
 			len = core->print->cols * len;
-		/* faltrhou */
+			/* fallthrough */
 		default:
 			if (l) {
 				ut64 from = r_config_get_i (core->config, "diff.from");
@@ -5068,7 +5070,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
-	case '6':
+	case '6': // "p6"
 		if (l) {
 			int malen = (core->blocksize * 4) + 1;
 			ut8 *buf = malloc (malen);
@@ -5077,7 +5079,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			memset (buf, 0, malen);
 			switch (input[1]) {
-			case 'd':
+			case 'd': // "p6d"
 				if (input[2] == '?') {
 					r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
 				} else if (r_base64_decode (buf, (const char *) core->block, len)) {
@@ -5086,7 +5088,7 @@ static int cmd_print(void *data, const char *input) {
 					eprintf ("r_base64_decode: invalid stream\n");
 				}
 				break;
-			case 'e':
+			case 'e': // "p6e"
 				if (input[2] == '?') {
 					r_cons_printf ("|Usage: p6e [len]    base 64 encode\n");
 					break;
@@ -5111,9 +5113,9 @@ static int cmd_print(void *data, const char *input) {
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
-			if (input[1] == 'j') {
+			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
-			} else if (input[1] == 'f') {
+			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $F @ $B");
 			} else {
 				r_print_bytes (core->print, core->block, len, "%02x");
@@ -5201,7 +5203,7 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_unix (core->print, core->block + l, sizeof (ut32));
 			}
 			break;
-		case 'h':
+		case 'h': // "pth"
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
 			if (len < sizeof (ut32)) {
 				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
@@ -5213,7 +5215,7 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_hfs (core->print, core->block + l, sizeof (ut32));
 			}
 			break;
-		case 'd':
+		case 'd': // "ptd"
 			// len must be multiple of 4 since r_print_date_dos read buf+3
 			// if block size is 1 or 5 for example it reads beyond the buffer
 			if (len < sizeof (ut32)) {
@@ -5226,7 +5228,7 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_dos (core->print, core->block + l, sizeof (ut32));
 			}
 			break;
-		case 'n':
+		case 'n': // "ptn"
 			if (len < sizeof (ut64)) {
 				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut64));
 			}
@@ -5256,7 +5258,7 @@ static int cmd_print(void *data, const char *input) {
 			eprintf ("Usage: pq[z] [len]\n");
 			break;
 		}
-		if (input[1] == 'z') {
+		if (input[1] == 'z') { // "pqz"
 			len = r_str_nlen ((const char*)core->block, core->blocksize);
 		} else {
 			if (len < 1) {
