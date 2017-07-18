@@ -96,8 +96,10 @@ err_enable:
 }
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-	PROCESS_INFORMATION pi;
+	PROCESS_INFORMATION pi = { 0 };
 	STARTUPINFOA si = { sizeof (si) };
+	si.wShowWindow = SW_SHOW;
+	si.dwFlags = STARTF_USESHOWWINDOW;
 	DEBUG_EVENT de;
 	int pid, tid;
 	HANDLE th = INVALID_HANDLE_VALUE;

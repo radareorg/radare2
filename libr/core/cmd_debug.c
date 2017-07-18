@@ -826,6 +826,72 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_debug_lib (RCore *core, const char *input) {
+	int pid, sig;
+	RDebug* dbg = core->dbg;
+	const char *ptr, *help_msg[] = {
+		"Usage:", "dl", " # Debug library commands",
+		"dl", " <lib> <function> <args...>", "Call a library function",
+		NULL };
+	switch (input[1]) {
+	case ' ':
+		// TODO Parse args
+		if (!dbg || dbg->pid == -1) {
+			// TODO Stupid if doo is called after
+			eprintf ("Debugger not enabled.\n");
+			break;
+		}
+		if (!core->anal || !core->anal->cur) {
+			eprintf ("Error while retrieving architecture.\n");
+			break;
+		}
+		RAnal *anal = core->anal;
+		// TODO Arch independant ?
+		if (strcmp (anal->cur->arch, "x86") == 0 && anal->bits == 64) {
+			/* Restart LoadLibrary with specified arguments */
+			// TODO Hardcoded ....
+			ut64 end = r_num_math (core->num, "main") + 0x66;
+			// TODO Use arguments from dl
+			r_core_cmd0 (core, "doo C:\\Windows\\System32\\user32.dll func args");
+			r_debug_continue (dbg);
+			r_debug_continue_until (dbg, end);
+			ut64 pc = r_debug_reg_get (dbg, "PC");
+			if (pc != end) {
+				eprintf ("Unexpected behaviour.\n");
+				break;
+			}
+			r_core_cmd0 (core, ".dmi* user32.dll");
+			// TODO Use arguments from dl
+			ut64 addr = r_num_math (core->num, "sym.USER32.dll_MessageBoxA");
+			if (addr == 0) {
+				eprintf ("Cannot find the function you asked for.\n");
+				break;
+			}
+			/* Push current address */
+			ut64 sp = r_debug_reg_get (dbg, "SP");
+			r_debug_reg_set (dbg, "SP", sp - 8);
+			r_core_cmdf (core, "wv 0x%08"PFMT64x" @ SP", end);
+
+			/* Set PC */
+			r_debug_reg_set (dbg, "PC", addr);
+			r_core_seek (core, addr, 0);
+			/* Todo parse arguments etc. */
+			r_debug_reg_set (dbg, "rdi", 0);
+			r_debug_reg_set (dbg, "rsi", 0);
+			r_debug_reg_set (dbg, "rdx", 0);
+			ut64 string = r_num_math (core->num, "str.terminate");
+			r_debug_reg_set (dbg, "r8", string);
+		} else {
+			eprintf ("Not implemented for this architecture.\n");
+		}
+		break;
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg);
+		break;
+	}
+}
+
 static void cmd_debug_backtrace(RCore *core, const char *input) {
 	RAnalOp analop;
 	ut64 addr, len = r_num_math (core->num, input);
@@ -4070,6 +4136,9 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'p': // "dp"
 		cmd_debug_pid (core, input);
+		break;
+	case 'l': // "dl"
+		cmd_debug_lib (core, input);
 		break;
 	case 'L': // "dL"
 		if (input[1]=='q') {
