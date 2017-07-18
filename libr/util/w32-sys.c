@@ -151,20 +151,4 @@ char *ReadFromPipe(HANDLE fh) {
 	str[strl] = 0;
 	return str;
 }
-
-R_API void print_lasterr (const char *caller, char *cause) {
-	LPSTR cbuffer = NULL;
-	if (!FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		GetLastError (),
-		LANG_SYSTEM_DEFAULT,
-		(LPSTR)&cbuffer,
-		0,
-		NULL)) {
-		eprintf ("Format message failed with 0x%d\n", (ut32)GetLastError ());
-	} else {
-		eprintf ("Error detected in %s/%s: %s", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
-		LocalFree (cbuffer);
-	}
-}
 #endif

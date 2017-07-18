@@ -303,9 +303,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define perror(x) _perror(x,__FILE__,__LINE__,__func__)
 #define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__func__)
 #else
-
-#define r_sys_perror(x) perror(x);
-
+#define r_sys_perror(x) r_sys_perror_str(x);
 #endif
 
 #if __UNIX__
