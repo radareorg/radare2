@@ -640,7 +640,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '?': {
 		const char *help_message[] = {
-			"Usage: s", "", " # Seek commands",
+			"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 			"s", "", "Print current address",
 			"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
 			"s", " addr", "Seek to address",
