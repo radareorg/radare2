@@ -678,25 +678,46 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *mai
 }
 
 static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_state, GHT m_state) {
+	int w, h;
+	GHT top_size = GHT_MAX;
+
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
 
-	int w, h;
-	GHT top_size = GHT_MAX;
+	RConfigHold *hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return;
+	}
+
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
+	if (!can) {
+		r_config_hold_free (hc);
+		return;
+	}
+	can->linemode = r_config_get_i (core->config, "graph.linemode");
+	can->color = r_config_get_i (core->config, "scr.color");
+	core->cons->use_utf8 = r_config_get_i (core->config, "scr.utf8");
 	RAGraph *g = r_agraph_new (can);
+	if (!g) {
+		r_cons_canvas_free (can);
+		r_config_restore (hc);
+		r_config_hold_free (hc);
+		return;
+	}
+	g->layout = r_config_get_i (core->config, "graph.layout");
 	RANode *top = R_EMPTY, *chunk_node = R_EMPTY, *prev_node = R_EMPTY;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk)),*prev_c = R_NEW0 (GH(RHeapChunk));
-	if (!cnk || !prev_c || !g || !can) {
+	if (!cnk || !prev_c) {
 		free (cnk);
 		free (prev_c);
 		r_cons_canvas_free (can);
 		r_agraph_free (g);
+		r_config_restore (hc);
+		r_config_hold_free (hc);
 		return;
 	}
-	can->color = r_config_get_i (core->config, "scr.color");
 
 	GHT next_chunk_ref, prev_chunk_ref, size_tmp;
 	char *top_title, *top_data, *node_title, *node_data;
@@ -747,9 +768,11 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 		free (node_title);
 	}
 	r_agraph_print (g);
+	r_cons_canvas_free (can);
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 	free (g);
 	free (cnk);
-	free (can);
 	free (prev_c);
 	free (top_data);
 	free (top_title);
@@ -762,6 +785,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	if (!core || !core->dbg || !core->config || !core->dbg->maps) {
 		return;
 	}
+
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return;
