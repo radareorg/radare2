@@ -874,7 +874,7 @@ R_API char *r_file_tmpdir() {
 			path = strdup ("C:\\WINDOWS\\Temp\\");
 		}
 	} else {
-		void (*glpn)(TCHAR *, TCHAR *, size_t) = (void*)r_lib_dl_sym (NULL, "GetLongPathName");
+		void (*glpn)(TCHAR *, TCHAR *, size_t) = (void*)r_lib_dl_sym (GetModuleHandle (TEXT ("kernel32.dll")), "GetLongPathNameW");
 		if (glpn) {
 			// Windows XP sometimes returns short path name
 			glpn (tmpdir, tmpdir, sizeof (tmpdir));
