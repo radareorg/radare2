@@ -227,5 +227,6 @@ parse = [
 	'mips_pseudo',
 	'mreplace',
 	'ppc_pseudo',
+	'sh_pseudo',
 	'x86_pseudo',
 ]

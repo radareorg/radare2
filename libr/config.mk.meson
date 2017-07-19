@@ -21,7 +21,7 @@ STATIC_EGG_PLUGINS= p/exec.mk p/xor.mk
 STATIC_FS_PLUGINS= p/ext2.mk p/fat.mk p/fb.mk p/hfs.mk p/hfsplus.mk p/iso9660.mk p/jfs.mk p/minix.mk p/ntfs.mk p/posix.mk p/reiserfs.mk p/sfs.mk p/tar.mk p/udf.mk p/ufs.mk p/xfs.mk 
 STATIC_IO_PLUGINS= p/bfdbg.mk p/debug.mk p/default.mk p/gzip.mk p/http.mk p/ihex.mk p/mach.mk p/malloc.mk p/mmap.mk p/null.mk p/procpid.mk p/ptrace.mk p/r2k.mk p/r2pipe.mk p/r2web.mk p/rap.mk p/self.mk p/shm.mk p/sparse.mk p/tcp.mk 
 STATIC_LANG_PLUGINS= p/vala.mk 
-STATIC_PARSE_PLUGINS= p/6502_pseudo.mk p/arm_pseudo.mk p/att2intel.mk p/dalvik_pseudo.mk p/m68k_pseudo.mk p/mips_pseudo.mk p/mreplace.mk p/ppc_pseudo.mk p/x86_pseudo.mk 
+STATIC_PARSE_PLUGINS= p/6502_pseudo.mk p/arm_pseudo.mk p/att2intel.mk p/dalvik_pseudo.mk p/m68k_pseudo.mk p/mips_pseudo.mk p/mreplace.mk p/ppc_pseudo.mk p/x86_pseudo.mk p/sh_pseudo.mk 
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
