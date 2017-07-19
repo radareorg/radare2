@@ -558,17 +558,17 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dms", " # Memory map snapshots",
 		"dms", "", "List memory snapshots",
-		"dmsj", "", "list snapshots in JSON",
-		"dms*", "", "list snapshots in r2 commands",
-		"dms", " addr", "take snapshot with given id of map at address",
-		"dms", "-id", "delete memory snapshot",
-		"dmsA", " id", "apply memory snapshot",
-		"dmsC", " id comment", "add comment for given snapshot",
-		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
-		"dmsw", "", "snapshot of the writable maps",
-		"dmsa", "", "full snapshot of all `dm` maps",
-		"dmsf", " [file] @ addr", "read snapshot from disk",
-		"dmst", " [file] @ addr", "dump snapshot to disk",
+		"dmsj", "", "List snapshots in JSON",
+		"dms*", "", "List snapshots in r2 commands",
+		"dms", " addr", "Take snapshot with given id of map at address",
+		"dms", "-id", "Delete memory snapshot",
+		"dmsA", " id", "Apply memory snapshot",
+		"dmsC", " id comment", "Add comment for given snapshot",
+		"dmsd", " id", "Hexdiff given snapshot. See `ccc`.",
+		"dmsw", "", "Snapshot of the writable maps",
+		"dmsa", "", "Full snapshot of all `dm` maps",
+		"dmsf", " [file] @ addr", "Read snapshot from disk",
+		"dmst", " [file] @ addr", "Dump snapshot to disk",
 		// TODO: dmsj - for json
 		NULL
 	};
@@ -970,8 +970,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
 		"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
 		"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
-		"dms", "[?] <id> <mapaddr>", "take memory snapshot",
-		"dms-", " <id> <mapaddr>", "restore memory snapshot",
+		"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
+		"dms-", " <id> <mapaddr>", "Restore memory snapshot",
 		"dmh", "", "Show map of heap",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
@@ -1581,9 +1581,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drx", "[?]", "Show all debug registers",
 				"drx", " idx addr len rwx", "Modify hardware breakpoint",
 				"drx-", "number", "Clear hardware breakpoint",
-				"drf","","show fpu registers (80 bit long double)",
-				"drm","","show multimedia packed registers",
-				"drm"," mmx0 0 32 = 12","set the first 32 bit word of the mmx reg to 12",
+				"drf","","Show fpu registers (80 bit long double)",
+				"drm","","Show multimedia packed registers",
+				"drm"," mmx0 0 32 = 12","Set the first 32 bit word of the mmx reg to 12",
 				"drw"," <hexnum>", "Set contents of the register arena",
 				".dr", "*", "Include common register values in flags",
 				".dr", "-", "Unflag all registers",
@@ -3004,12 +3004,12 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		{
 			const char *help_msg[] = {
 				"Usage:", "de", "[-sc] [rwx] [rm] [expr]",
-				"de", "", "list esil watchpoints",
-				"de-*", "", "delete all esil watchpoints",
-				"de", " [rwx] [rm] [addr|reg|from..to]", "stop on condition",
-				"dec", "", "continue execution until matching expression",
-				"des", "[?] [N]", "step-in N instructions with esildebug",
-				"desu", " [addr]", "esildebug until specific address",
+				"de", "", "List esil watchpoints",
+				"de-*", "", "Delete all esil watchpoints",
+				"de", " [rwx] [rm] [addr|reg|from..to]", "Stop on condition",
+				"dec", "", "Continue execution until matching expression",
+				"des", "[?] [N]", "Step-in N instructions with esildebug",
+				"desu", " [addr]", "Esildebug until specific address",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -3343,7 +3343,7 @@ beach:
 					"Usage:", "dcs", " Continue until syscall",
 					"dcs", "", "Continue until next syscall",
 					"dcs [str]", "", "Continue until next call to the 'str' syscall",
-					"dcs", "*", "trace all syscalls, a la strace",
+					"dcs", "*", "Trace all syscalls, a la strace",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -3605,22 +3605,22 @@ static int cmd_debug(void *data, const char *input) {
 	const char * help_message[] = {
 		"Usage: dt", "", "Trace commands",
 		"dt", "", "List all traces ",
-		"dt", " [addr]", "show trace info at address",
-		"dt*", "", "list all traced opcode offsets",
-		"dt+"," [addr] [times]", "add trace for address N times",
-		"dta", " 0x804020 ...", "only trace given addresses",
+		"dt", " [addr]", "Show trace info at address",
+		"dt*", "", "List all traced opcode offsets",
+		"dt+"," [addr] [times]", "Add trace for address N times",
+		"dta", " 0x804020 ...", "Only trace given addresses",
 		"dt%", "", "TODO",
-		"dtt", " [tag]", "select trace tag (no arg unsets)",
-		"dtr", "", "show traces as range commands (ar+)",
+		"dtt", " [tag]", "Select trace tag (no arg unsets)",
+		"dtr", "", "Show traces as range commands (ar+)",
 		"dtd", "", "List all traced disassembled",
 		"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
 		"dtg", "", "Graph call/ret trace",
 		"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
 		"dtgi", "", "Interactive debug trace",
-		"dte", "[?]", "show esil trace logs (anal.trace)",
-		"dts", "[?]", "trace sessions",
+		"dte", "[?]", "Show esil trace logs (anal.trace)",
+		"dts", "[?]", "Trace sessions",
 		"dt-", "", "Reset traces (instruction/calls)",
-		"dtD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
+		"dtD", "", "Show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL
 	};
 
@@ -3752,10 +3752,10 @@ static int cmd_debug(void *data, const char *input) {
 				const char *help_msg[] = {
 					"Usage:", "dte", " Show esil trace logs",
 					"dte", "", "Esil trace log for a single instruction",
-					"dte", " [idx]", "show commands for that index log",
-					"dte", "-*", "delete all esil traces",
-					"dtei", "", "esil trace log single instruction",
-					"dtek", " [sdb query]", "esil trace log single instruction from sdb",
+					"dte", " [idx]", "Show commands for that index log",
+					"dte", "-*", "Delete all esil traces",
+					"dtei", "", "Esil trace log single instruction",
+					"dtek", " [sdb query]", "Esil trace log single instruction from sdb",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 				}
@@ -3807,9 +3807,9 @@ static int cmd_debug(void *data, const char *input) {
 					"dts", "", "List all trace sessions",
 					"dts+", "", "Add trace session",
 					"dts-", "id", "Delete trace session",
-					"dtsf", " [file] ", "read trace sessions from disk",
-					"dtst", " [file] ", "save trace sessions to disk",
-					"dtsC", " id comment", "add comment for given trace session",
+					"dtsf", " [file] ", "Read trace sessions from disk",
+					"dtst", " [file] ", "Save trace sessions to disk",
+					"dtsC", " id comment", "Add comment for given trace session",
 					NULL };
 				r_core_cmd_help (core, help_msg);
 				}
@@ -3922,10 +3922,10 @@ static int cmd_debug(void *data, const char *input) {
 					"dd", " <file>", "Open and map that file into the UI",
 					"dd-", "<fd>", "Close stdout fd",
 					"dd*", "", "List file descriptors (in radare commands)",
-					"dds", " <fd> <off>", "seek given fd)",
-					"ddd", " <fd1> <fd2>", "dup2 from fd1 to fd2",
-					"ddr", " <fd> <size>", "read N bytes from fd",
-					"ddw", " <fd> <hexpairs>", "write N bytes to fd",
+					"dds", " <fd> <off>", "Seek given fd)",
+					"ddd", " <fd1> <fd2>", "Dup2 from fd1 to fd2",
+					"ddr", " <fd> <size>", "Read N bytes from fd",
+					"ddw", " <fd> <hexpairs>", "Write N bytes to fd",
 					NULL
 				};
 				r_core_cmd_help (core, help_message);
@@ -4145,7 +4145,7 @@ static int cmd_debug(void *data, const char *input) {
 						"Usage: dx", "", " # Code injection commands",
 						"dx", " <opcode>...", "Inject opcodes",
 						"dxa", " nop", "Assemble code and inject",
-						"dxe", " egg-expr", "compile egg expression and inject it",
+						"dxe", " egg-expr", "Compile egg expression and inject it",
 						"dxr", " <opcode>...", "Inject opcodes and restore state",
 						"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
 						"\nExamples:", "", "",
