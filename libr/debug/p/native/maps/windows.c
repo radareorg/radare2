@@ -9,7 +9,7 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 
 	hModuleSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, pid );
 	if (!hModuleSnap) {
-		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
+		r_sys_perror ("w32_dbg_modules/CreateToolhelp32Snapshot");
 		CloseHandle (hModuleSnap);
 		return NULL;
 	}
@@ -53,7 +53,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 
 	hModuleSnap = CreateToolhelp32Snapshot (TH32CS_SNAPMODULE, pid);
 	if(!hModuleSnap ) {
-		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
+		r_sys_perror ("w32_dbg_maps/CreateToolhelp32Snapshot");
 		CloseHandle( hModuleSnap );
 		return NULL;
 	}

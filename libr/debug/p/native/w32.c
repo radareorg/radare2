@@ -244,22 +244,6 @@ static bool w32dbg_SeDebugPrivilege() {
 	return ret;
 }
 
-static void print_lasterr (const char *caller, char *cause) {
-	char cbuffer[100];
-	if (!FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM |
-				FORMAT_MESSAGE_ARGUMENT_ARRAY,
-				NULL,
-				GetLastError(),
-				LANG_SYSTEM_DEFAULT,
-				(LPSTR)&cbuffer,
-				sizeof (cbuffer)-1,
-				NULL)) {
-		eprintf ("Format message failed with 0x%d\n", (ut32)GetLastError ());
-	} else {
-		eprintf ("Error detected in %s/%s: %s", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
-	}
-}
-
 static int w32_dbg_init() {
 	HANDLE lib;
 
@@ -333,7 +317,7 @@ static int w32_dbg_init() {
 static HANDLE w32_open_process (DWORD access, BOOL inherit, DWORD pid) {
 	HANDLE h = w32_openprocess(access, inherit, pid);
 	if (h == INVALID_HANDLE_VALUE) {
-		print_lasterr((char *)__FUNCTION__, "OpenProcess");
+		r_sys_perror ("w32_open_process/OpenProcess");
 	}
 	return h;
 }
@@ -390,7 +374,7 @@ static int w32_first_thread(int pid) {
 		if (te32.th32OwnerProcessID == pid) {
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
-				print_lasterr ((char *)__FUNCTION__, "OpenThread");
+				r_sys_perror ("w32_first_thread/OpenThread");
 				goto err_load_th;
 			}
 			CloseHandle (th);
@@ -643,7 +627,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		}
 		memset (&de, 0, sizeof (DEBUG_EVENT));
 		if (WaitForDebugEvent (&de, INFINITE) == 0) {
-			print_lasterr ((char *)__FUNCTION__, "WaitForDebugEvent");
+			r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
 			return -1;
 		}
 		code = de.dwDebugEventCode;
@@ -772,7 +756,7 @@ static inline int CheckValidPE(unsigned char * PeHeader) {
 static HANDLE w32_open_thread (int pid, int tid) {
 	HANDLE thread = w32_openthread (THREAD_ALL_ACCESS, 0, tid);
 	if (thread == INVALID_HANDLE_VALUE) {
-		print_lasterr((char *)__FUNCTION__, "OpenThread");
+		r_sys_perror ("w32_open_thread/OpenThread");
 	}
 	return thread;
 }
@@ -809,7 +793,7 @@ RList *w32_thread_list (int pid, RList *list) {
 #endif
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
-				print_lasterr((char *)__FUNCTION__, "OpenThread");
+				r_sys_perror ("w32_thread_list/OpenThread");
                                 goto err_load_th;
 			}
 			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 0, 's', 0));
@@ -851,11 +835,11 @@ RList *w32_pids (int pid, RList *list) {
 
 	process_snapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (process_snapshot == INVALID_HANDLE_VALUE) {
-		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
+		r_sys_perror ("w32_pids/CreateToolhelp32Snapshot");
 		return list;
 	}
 	if (!Process32First (process_snapshot, &pe)) {
-		print_lasterr ((char *)__FUNCTION__, "Process32First");
+		r_sys_perror ("w32_pids/Process32First");
 		CloseHandle (process_snapshot);
 		return list;
 	}
@@ -886,7 +870,7 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 		w32_detach (pid); //DebugActiveProcessStop (pid);
 	}
 	if (TerminateProcess (process, 1) == 0) {
-		print_lasterr ((char *)__FUNCTION__, "TerminateProcess");
+		r_sys_perror ("w32_terminate_process/TerminateProcess");
 		CloseHandle (process);
 		return false;
 
@@ -895,7 +879,7 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	/* wait up to one second to give the process some time to exit */
 	ret_wait = WaitForSingleObject (process, 1000);
 	if (ret_wait == WAIT_FAILED) {
-		print_lasterr ((char *)__FUNCTION__, "WaitForSingleObject");
+		r_sys_perror ("w32_terminate_process/WaitForSingleObject");
 		CloseHandle (process);
 		return false;
 	}
@@ -918,7 +902,7 @@ void w32_break_process (void *d) {
 	}
 	lib = LoadLibraryA ("kernel32.dll");
 	if (!lib) {
-		print_lasterr ((char *)__FUNCTION__, "LoadLibrary");
+		r_sys_perror ("w32_break_process/LoadLibrary");
 		CloseHandle (process);
 		return;
 	}
@@ -929,7 +913,7 @@ void w32_break_process (void *d) {
 	}
 	if (process != INVALID_HANDLE_VALUE && w32_dbgbreak != NULL) {
 		if (!w32_dbgbreak (process)) {
-			print_lasterr ((char *)__FUNCTION__, "DebugBreakProcess");
+			r_sys_perror ("w32_break_process/DebugBreakProcess");
 		}
 	}
 	CloseHandle (process);
@@ -1111,7 +1095,7 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			size = 0;
 		}
 	} else {
-		print_lasterr ((char*)__FUNCTION__, "GetThreadContext");
+		r_sys_perror ("w32_reg_read/GetThreadContext");
 		size = 0;
 	}
 	if (showfpu) {
