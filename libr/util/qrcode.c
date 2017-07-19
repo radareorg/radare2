@@ -993,7 +993,7 @@ static void setModuleBounded(ut8 qrcode[], int x, int y, bool isBlack) {
 
 /////////////////////////////////////
 
-R_API char *r_qrcode_gen(const ut8 *text, int len) {
+R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8) {
 	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX] = {
 		0
 	};
@@ -1028,9 +1028,12 @@ R_API char *r_qrcode_gen(const ut8 *text, int len) {
 	int x, y;
 	for (y = -border; y < size + border; y++) {
 		for (x = -border; x < size + border; x++) {
-			const char *pixel = qrcodegen_getModule (qrcode, x, y)? "##": "  ";
-			memcpy (p, pixel, 2);
-			p += 2;
+			bool fill = qrcodegen_getModule (qrcode, x, y);
+			const char *pixel = utf8
+				? (fill? "██": "  ")
+				: (fill? "##": "  ");
+			memcpy (p, pixel, strlen (pixel));
+			p += strlen (pixel);
 		}
 		*p++ = '\n';
 	}

@@ -5268,7 +5268,7 @@ static int cmd_print(void *data, const char *input) {
 				len = core->blocksize;
 			}
 		}
-		char *res = r_qrcode_gen (core->block, len);
+		char *res = r_qrcode_gen (core->block, len, r_config_get_i (core->config, "scr.utf8"));
 		if (res) {
 			r_cons_printf ("%s\n", res);
 			free (res);
