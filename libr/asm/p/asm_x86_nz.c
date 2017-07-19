@@ -138,20 +138,20 @@ static int is_al_reg(const Operand *op) {
 	return 0;
 }
 
-static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op) {
+static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 	int l = 0;
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
 
 	data[l++] = 0x66;
 	if (immediate < 128) {
 		data[l++] = 0x83;
-		data[l++] = op->operands[0].reg | 0xf0;
+		data[l++] = op->operands[0].reg | (0xc0 + op1 + op->operands[0].reg);
 	} else {
 		if (op->operands[0].reg == X86R_AX) {
-			data[l++] = 0x35;
+			data[l++] = 0x05 + op1;
 		} else {
 			data[l++] = 0x81;
-			data[l++] = 0xf0 | op->operands[0].reg;
+			data[l++] = (0xc0 + op1) | op->operands[0].reg;
 		}
 	}
 	data[l++] = immediate;
@@ -231,7 +231,6 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
-		printf("Here?\n");
 		mod_byte = 3;
 		data[l++] = mod_byte << 6 | modrm << 3 | op->operands[0].reg;
 	}
@@ -436,49 +435,79 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 }
 
 static int opadc(RAsm *a, ut8 *data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x10);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x10);
 }
 
 static int opadd(RAsm *a, ut8 *data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x00);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x00);
 }
 
 static int opand(RAsm *a, ut8 *data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x20);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x20);
 }
 
 static int opcmp(RAsm *a, ut8 *data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x38);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x38);
 }
 
 static int opsub(RAsm *a, ut8 *data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x28);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x28);
 }
 
 static int opor(RAsm *a, ut8 * data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x08);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x08);
 }
@@ -488,8 +517,9 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 		return -1;
 	}
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & (OT_GPREG | OT_WORD)) {
-			return process_16bit_group_1 (a, data, op);
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x30);
 		}
 		if (!is_al_reg (&op->operands[0])) {
 			return process_group_1 (a, data, op);
@@ -499,9 +529,14 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 }
 
 static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & OT_GPREG &&
+		    op->operands[0].type & OT_WORD) {
+			return process_16bit_group_1 (a, data, op, 0x18);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x18);
 }
