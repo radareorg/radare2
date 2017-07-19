@@ -132,10 +132,34 @@ static int is_al_reg(const Operand *op) {
 	if (op->type & OT_MEMORY) {
 		return 0;
 	}
-	if (op->reg == X86R_AL && op->type & OT_BYTE) {
+	if (op->reg == X86R_AX && op->type & OT_BYTE) {
 		return 1;
 	}
 	return 0;
+}
+
+static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	int immediate = op->operands[1].immediate * op->operands[1].sign;
+
+	data[l++] = 0x66;
+	if (immediate < 128) {
+		data[l++] = 0x83;
+		data[l++] = op->operands[0].reg | 0xf0;
+	} else {
+		if (op->operands[0].reg == X86R_AX) {
+			data[l++] = 0x35;
+		} else {
+			data[l++] = 0x81;
+			data[l++] = 0xf0 | op->operands[0].reg;
+		}
+	}
+	data[l++] = immediate;
+	if (immediate > 127) {
+		data[l++] = immediate >> 8;
+	}
+
+	return l;
 }
 
 static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
@@ -207,6 +231,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
+		printf("Here?\n");
 		mod_byte = 3;
 		data[l++] = mod_byte << 6 | modrm << 3 | op->operands[0].reg;
 	}
@@ -462,9 +487,13 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 	if (op->operands_count < 2) {
 		return -1;
 	}
-	if (op->operands[1].type & OT_CONSTANT &&
-	    !is_al_reg (&op->operands[0])) {
-		return process_group_1 (a, data, op);
+	if (op->operands[1].type & OT_CONSTANT) {
+		if (op->operands[0].type & (OT_GPREG | OT_WORD)) {
+			return process_16bit_group_1 (a, data, op);
+		}
+		if (!is_al_reg (&op->operands[0])) {
+			return process_group_1 (a, data, op);
+		}
 	}
 	return process_1byte_op (a, data, op, 0x30);
 }
