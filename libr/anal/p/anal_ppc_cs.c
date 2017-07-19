@@ -535,11 +535,11 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
-	static int omode = -1;
+	static int omode = -1, obits = -1;
 	int n, ret;
 	cs_insn *insn;
 	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
-	mode |= CS_MODE_BIG_ENDIAN;
+	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_NULL;
@@ -547,16 +547,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->fail = UT64_MAX;
 	op->ptr = op->val = UT64_MAX;
 	if (a->cpu && strncmp (a->cpu, "vle", 3) == 0) {
+		// vle is big-endian only
+		if (!a->big_endian) {
+			return -1;
+		}
 		ret = analop_vle (a, op, addr, buf, len);
 		if (ret >= 0) {
 			return op->size;
 		}
 	}
 
-	if (mode != omode) {
+	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
 		handle = 0;
 		omode = mode;
+		obits = a->bits;
 	}
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_PPC, mode, &handle);

@@ -34,32 +34,37 @@ static int decompile_vle(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static int omode = 0;
+	static int omode = -1, obits = -1;
 	int n, ret;
 	ut64 off = a->pc;
 	cs_insn* insn;
-
-	int mode = (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
+	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	if (a->cpu && strncmp (a->cpu, "vle", 3) == 0) {
-		// vle is BE only
-		mode = CS_MODE_BIG_ENDIAN;
+		// vle is big-endian only
+		if (!a->big_endian) {
+			return -1;
+		}
 		ret = decompile_vle (a, op, buf, len);
 		if (ret >= 0) {
 			return op->size;
 		}
 	}
-	if (handle && mode != omode) {
+	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
 		handle = 0;
+		omode = mode;
+		obits = a->bits;
 	}
-	op->size = 4;
-	omode = mode;
-	op->buf_asm[0] = 0;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_PPC, mode, &handle);
-		if (ret) return 0;
+		if (ret != CS_ERR_OK) {
+			return -1;
+		}
 	}
+	op->size = 4;
+	op->buf_asm[0] = 0;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
 
 	n = cs_disasm (handle, (const ut8*) buf, len, off, 1, &insn);
