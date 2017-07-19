@@ -2604,6 +2604,9 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		} else {
 			continue;
 		}
+		if (ELF_ST_TYPE (sym[i].st_info) == STT_NOTYPE) {
+			continue;
+		}
 		tmp_offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 		if (tmp_offset > bin->size) {
 			goto done;
@@ -2865,6 +2868,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				goto beach;
 			}
 			for (k = 1, ret_ctr = 0; k < nsym; k++) {
+				if (ELF_ST_TYPE (sym[k].st_info) == STT_NOTYPE) {
+					continue;
+				}
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
@@ -2957,7 +2963,6 @@ RBinElfSymbol *Elf_(r_bin_elf_get_symbols)(ELFOBJ *bin) {
 	}
 	return bin->g_symbols;
 }
-
 
 RBinElfSymbol *Elf_(r_bin_elf_get_imports)(ELFOBJ *bin) {
 	if (!bin->g_imports) {
