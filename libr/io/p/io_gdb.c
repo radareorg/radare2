@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <r_socket.h>
 #include <r_util.h>
+#include <ctype.h>
 #define IRAPI static inline
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
@@ -196,8 +197,25 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                          " =!qRcmd cmd       - hex-encode cmd and pass to target"
                                              " interpreter\n"
                          " =!inv.reg         - invalidate reg cache\n"
-                         " =!exec_file [pid] - Get file which was executed for"
+                         " =!pktsz           - get max packet size used\n"
+                         " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+                         " =!exec_file [pid] - get file which was executed for"
                                              " current/specified pid\n");
+		return true;
+	}
+	if (!strncmp (cmd, "pktsz", 5)) {
+		const char *ptr = r_str_chop_ro (cmd + 5);
+		if (!isdigit (*ptr)) {
+			eprintf ("packet size: %u bytes\n",
+				 desc->stub_features.pkt_sz);
+			return true;
+		}
+		ut32 pktsz;
+		if (!(pktsz = (ut32) strtoul (ptr, NULL, 10))) {
+			// pktsz = 0 doesn't make sense
+			return false;
+		}
+		desc->stub_features.pkt_sz = pktsz;
 		return true;
 	}
 	if (!strncmp (cmd, "pkt ", 4)) {
