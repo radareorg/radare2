@@ -442,7 +442,7 @@ static void appendBitsToBuffer(unsigned int val, int numBits, ut8 buffer[], int 
 // and will be clobbered by this function. The final answer is stored in result[0 : rawCodewords].
 static void appendErrorCorrection(ut8 data[], int version, enum qrcodegen_Ecc ecl, ut8 result[]) {
 	// Calculate parameter numbers
-	if ((int) ecl < 0 || (int) ecl > 4 || version < qrcodegen_VERSION_MIN || version > qrcodegen_VERSION_MAX) {
+	if ((int) ecl < qrcodegen_Ecc_LOW || (int) ecl > qrcodegen_Ecc_HIGH || version < qrcodegen_VERSION_MIN || version > qrcodegen_VERSION_MAX) {
 		return;
 	}
 	int numBlocks = NUM_ERROR_CORRECTION_BLOCKS[(int) ecl][version];
@@ -1008,17 +1008,20 @@ R_API char *r_qrcode_gen(const ut8 *text, int len) {
 		qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX,
 		qrcodegen_Mask_AUTO, true);
 	if (!ok) {
+		free (buf);
 		return NULL;
 	}
 
 	int size = qrcodegen_getSize (qrcode);
 	if (size < 1) {
+		free (buf);
 		return NULL;
 	}
 	int border = 1;
 	int total = (size + 1024) * 128;
 	char *res = calloc (total, 32);
 	if (!res) {
+		free (buf);
 		return NULL;
 	}
 	char *p = res;
@@ -1035,5 +1038,6 @@ R_API char *r_qrcode_gen(const ut8 *text, int len) {
 		p--;
 	}
 	*p = 0;
+	free (buf);
 	return res;
 }
