@@ -120,7 +120,6 @@ typedef enum {
 	R_BIN_JAVA_REF_INVOKEINTERFACE = 9
 } R_BIN_JAVA_REF_TYPE;
 
-
 typedef enum {
 	R_BIN_JAVA_CP_NULL = 0,
 	R_BIN_JAVA_CP_UTF8 = 1,
@@ -153,7 +152,6 @@ typedef enum {
 	R_BIN_JAVA_STACK_FRAME_FULL_FRAME,
 	R_BIN_JAVA_STACK_FRAME_RESERVED
 } R_BIN_JAVA_STACK_FRAME_TYPE;
-
 
 typedef enum {
 	R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR = 0,
@@ -704,6 +702,7 @@ typedef struct r_bin_java_lines_t {
 typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	RBinJavaClass2 cf2;
+	const char *lang;
 
 	ut64 cp_offset, fields_offset, interfaces_offset;
 	ut64 classes_offset, methods_offset, attrs_offset;

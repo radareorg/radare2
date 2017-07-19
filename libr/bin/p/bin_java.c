@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -163,11 +163,13 @@ static RList *strings(RBinFile *arch) {
 }
 
 static RBinInfo *info(RBinFile *arch) {
+	RBinJavaObj *jo = arch->o->bin_obj;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 	ret->lang = "java";
+	ret->lang = (jo && jo->lang) ? jo->lang : "java";
 	ret->file = strdup (arch->file);
 	ret->type = strdup ("JAVA CLASS");
 	ret->bclass = r_bin_java_get_version (arch->o->bin_obj);
