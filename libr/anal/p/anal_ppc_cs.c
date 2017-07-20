@@ -687,7 +687,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
 			break;
 		case PPC_INS_LBZ:
+#if CS_API_MAJOR >= 4
 		case PPC_INS_LBZCIX:
+#endif
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 		case PPC_INS_LBZX:
@@ -696,7 +698,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_LD:
 		case PPC_INS_LDARX:
+#if CS_API_MAJOR >= 4
 		case PPC_INS_LDCIX:
+#endif
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 		case PPC_INS_LDX:
@@ -736,7 +740,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_LWAUX:
 		case PPC_INS_LWAX:
 		case PPC_INS_LWZ:
+#if CS_API_MAJOR >= 4
 		case PPC_INS_LWZCIX:
+#endif
 		case PPC_INS_LWZU:
 		case PPC_INS_LWZUX:
 		case PPC_INS_LWZX:
