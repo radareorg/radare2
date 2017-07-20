@@ -123,11 +123,14 @@ R_API bool r_file_exists(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
+#if 0
+	// TODO: file_exists doesnt uses the sandbox or many things may fail
 	if (strncmp (str, "/usr/bin", 8)) {
 		if (str && !r_sandbox_check_path (str)) {
 			return false;
 		}
 	}
+#endif
 #ifdef _MSC_VER
 	WIN32_FIND_DATAA FindFileData;
 	HANDLE handle = FindFirstFileA (str, &FindFileData);
