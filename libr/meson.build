@@ -228,5 +228,6 @@ parse = [
 	'mreplace',
 	'ppc_pseudo',
 	'sh_pseudo',
+	'avr_pseudo',
 	'x86_pseudo',
 ]

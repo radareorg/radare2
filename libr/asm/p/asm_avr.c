@@ -423,8 +423,8 @@ RAsmPlugin r_asm_plugin_avr = {
 		"ATmega168,"
 		"ATmega328p,"
 		"ATmega32u4,"
-	        "ATmega1280,"
-	        "ATmega2560,"
+		"ATmega1280,"
+		"ATmega2560,"
 		"ATmega48"
 };
 
