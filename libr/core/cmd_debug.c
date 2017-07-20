@@ -3645,7 +3645,6 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'a': // "dta"
- 			eprintf ("NOTE: Ensure given addresses are in 0x%%08" PFMT64x " format\n");
 			r_debug_trace_at (core->dbg, input + 3);
 			break;
 		case 't': // "dtt"
