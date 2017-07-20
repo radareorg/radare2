@@ -54,4 +54,4 @@ extern int read_pseudo_file(struct pseudo **, char *);
 extern struct pseudo *pseudo_subdir(char *, struct pseudo *);
 extern struct pseudo_entry *pseudo_readdir(struct pseudo *);
 extern struct pseudo_dev *get_pseudo_file(int);
-extern void delete_pseudo_files();
+extern void delete_pseudo_files(void);

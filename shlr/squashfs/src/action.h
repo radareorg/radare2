@@ -246,7 +246,7 @@ struct empty_data {
  * External function definitions
  */
 extern int parse_action(char *);
-extern void dump_actions();
+extern void dump_actions(void);
 extern void *eval_frag_actions(struct dir_ent *);
 extern void *get_frag_action(void *);
 extern int eval_exclude_actions(char *, char *, struct stat *, int);

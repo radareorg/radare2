@@ -17,6 +17,6 @@ R_API void arm_set_thumb(struct winedbg_arm_insn *arminsn, int thumb);
 R_API char* winedbg_arm_insn_asm(struct winedbg_arm_insn *arminsn);
 R_API char* winedbg_arm_insn_hex(struct winedbg_arm_insn *arminsn);
 R_API void* arm_free(struct winedbg_arm_insn *arminsn);
-R_API struct winedbg_arm_insn* arm_new();
+R_API struct winedbg_arm_insn* arm_new(void);
 
 #endif
