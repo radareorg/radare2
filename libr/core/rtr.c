@@ -1022,12 +1022,15 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		case R_DEBUG_REASON_BREAKPOINT:
 		case R_DEBUG_REASON_STEP:
 		case R_DEBUG_REASON_TRAP:
-			return snprintf (out_buf, max_len - 1, "T05thread:%x",
+		default: // remove when possible
+			return snprintf (out_buf, max_len - 1, "T05thread:%x;",
 					 core->dbg->tid);
 		}
 		// Fallback for when it's fixed
+		/*
 		return snprintf (out_buf, max_len - 1, "T%02xthread:%x;",
 				 core->dbg->reason.type, core->dbg->reason.tid);
+		*/
 	case 'd':
 		switch (cmd[1]) {
 		case 'm': // dm
@@ -1156,6 +1159,30 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			return ret;
 		default:
 			return r_core_cmd (core, cmd, 0);
+		}
+		break;
+	case 'i':
+		switch (cmd[1]) {
+		case 'f':
+		{
+			ut64 off, len, sz, namelen;
+			if (sscanf (cmd + 2, "%"PFMT64x",%"PFMT64x, &off, &len) != 2) {
+				strcpy (out_buf, "E00");
+				return 0;
+			}
+			namelen = strlen (core->file->desc->name);
+			if (off >= namelen) {
+				out_buf[0] = 'l';
+				return 0;
+			}
+			sz = R_MIN (max_len, len + 2);
+			len = snprintf (out_buf, sz, "l%s", core->file->desc->name + off);
+			if (len >= sz) {
+				// There's more left
+				out_buf[0] = 'm';
+			}
+			return 0;
+		}
 		}
 		break;
 	case 'm':
