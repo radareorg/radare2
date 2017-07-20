@@ -23,7 +23,7 @@ int gdbr_disconnect(libgdbr_t *g);
 /*!
  * \brief invalidates the reg cache
  */
-void gdbr_invalidate_reg_cache();
+void gdbr_invalidate_reg_cache(void);
 
 /*!
  * \brief gets reason why remote target stopped
