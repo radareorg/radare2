@@ -3215,6 +3215,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dc", " <pid>", "Continue execution of pid",
 		"dc", "[-pid]", "Stop execution of pid",
 		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
+		"dcb", "", "Continue back until breakpoint",
 		"dcc", "", "Continue until call (use step into)",
 		"dccu", "", "Continue until unknown call (call reg)",
 #if __WINDOWS__ && !__CYGWIN__
@@ -3282,6 +3283,13 @@ beach:
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
 		break;
+	case 'b': // "dcb"
+		{
+			if (!r_debug_continue_back (core->dbg)) {
+				eprintf ("cannot continue back\n");
+			}
+			break;
+		}
 #if __WINDOWS__ && !__CYGWIN__
 	case 'e': // "dce"
 		r_reg_arena_swap (core->dbg->reg, true);
