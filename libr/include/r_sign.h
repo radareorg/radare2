@@ -69,7 +69,7 @@ R_API void r_sign_list(RAnal *a, int format);
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 
-R_API RSignSearch *r_sign_search_new();
+R_API RSignSearch *r_sign_search_new(void);
 R_API void r_sign_search_free(RSignSearch *ss);
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user);
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
@@ -81,7 +81,7 @@ R_API bool r_sign_load(RAnal *a, const char *file);
 R_API char *r_sign_path(RAnal *a, const char *file);
 R_API bool r_sign_save(RAnal *a, const char *file);
 
-R_API RSignItem *r_sign_item_new();
+R_API RSignItem *r_sign_item_new(void);
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 
