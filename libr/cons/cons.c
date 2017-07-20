@@ -531,6 +531,7 @@ R_API void r_cons_filter() {
 		free (input);
 		I.buffer = res;
 		I.buffer_len = newlen;
+		I.buffer_sz = newlen;
 	}
 	/* TODO */
 }

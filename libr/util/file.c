@@ -851,18 +851,17 @@ R_API char *r_file_temp (const char *prefix) {
 R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
-	char name[1024];
+	char name[1024] = {0};
 #if __WINDOWS__
 	h = -1;
 	if (GetTempFileNameA (path, prefix, 0, name)) {
 		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	}
 #else
-	mode_t mask;
-	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	mask = umask(S_IWGRP | S_IWOTH);
+	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX", path, prefix);
+	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	h = mkstemp (name);
-	umask(mask);
+	umask (mask);
 #endif
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
