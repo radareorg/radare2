@@ -12,7 +12,7 @@ static const char* types[R_REG_TYPE_LAST + 1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
 };
 
-// Take the 32bits name of a regester, and return the 64 bit name of it.
+// Take the 32bits name of a register, and return the 64 bit name of it.
 // If there is no equivalent 64 bit register return NULL.
 R_API const char* r_reg_32_to_64(RReg* reg, const char* rreg32) {
 	// OMG this is shit...
