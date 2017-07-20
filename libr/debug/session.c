@@ -133,7 +133,7 @@ static void r_debug_session_set_registers(RDebug *dbg, RDebugSession *session) {
 	RRegArena *arena;
 	RListIter *iterr;
 	int i;
-	/* Restore all regsiter values from the stack area pointed by session */
+	/* Restore all register values from the stack area pointed by session */
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		iterr = session->reg[i];
