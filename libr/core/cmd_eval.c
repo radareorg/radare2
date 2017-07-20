@@ -8,9 +8,14 @@ static char *curtheme = NULL;
 static bool getNext = false;
 
 static bool load_theme(RCore *core, const char *path) {
+	if (!r_file_exists (path)) {
+		return false;
+	}
 	core->cmdfilter = "ec ";
 	bool res = r_core_cmd_file (core, path);
-	r_cons_pal_update_event ();
+	if (res) {
+		r_cons_pal_update_event ();
+	}
 	core->cmdfilter = NULL;
 	return res;
 }
@@ -272,7 +277,9 @@ static int cmd_eval(void *data, const char *input) {
 						if (load_theme (core, input + 3)) {
 							curtheme = r_str_dup (curtheme, input + 3);
 						} else {
-							eprintf ("eco: cannot open colorscheme profile (%s)\n", path);
+							char *absfile = r_file_abspath (input + 3);
+							eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+							free (absfile);
 							failed = true;
 						}
 					}
@@ -381,22 +388,25 @@ static int cmd_eval(void *data, const char *input) {
 		default: {
 			char *p = strdup (input + 2);
 			char *q = strchr (p, '=');
-			if (!q) q = strchr (p, ' ');
+			if (!q) {
+				q = strchr (p, ' ');
+			}
 			if (q) {
 				// set
 				*q++ = 0;
 				r_cons_pal_set (p, q);
 			} else {
 				const char *k = r_cons_pal_get (p);
-				if (k)
+				if (k) {
 					eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, k);
+				}
 			}
 			free (p);
 		}
 		}
 		break;
 	case 'e':
-		if (input[1]==' ') {
+		if (input[1] == ' ') {
 			char *p;
 			const char *val, *input2 = strchr (input+2, ' ');
 			if (input2) input2++; else input2 = input+2;
@@ -406,7 +416,9 @@ static int cmd_eval(void *data, const char *input) {
 				r_str_replace_char (p, '\n', ';');
 				r_config_set (core->config, input2, p);
 			}
-		} else eprintf ("Usage: ee varname\n");
+		} else {
+			eprintf ("Usage: ee varname\n");
+		}
 		break;
 	case '!':
 		input = r_str_chop_ro (input+1);

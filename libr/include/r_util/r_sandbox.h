@@ -23,6 +23,6 @@ R_API bool r_sandbox_creat(const char *path, int mode);
 R_API int r_sandbox_open(const char *path, int mode, int perm);
 R_API FILE *r_sandbox_fopen(const char *path, const char *mode);
 R_API int r_sandbox_chdir(const char *path);
-R_API int r_sandbox_check_path(const char *path);
+R_API bool r_sandbox_check_path(const char *path);
 R_API int r_sandbox_kill(int pid, int sig);
 #endif //  R_SANDBOX_H
