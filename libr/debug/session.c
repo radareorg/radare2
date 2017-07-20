@@ -297,6 +297,7 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			}
 		}
 	}
+	eprintf ("Session saved in %s and dump in %s\n", diff_file, base_file);
 	free (base_file);
 	free (diff_file);
 }
