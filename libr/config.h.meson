@@ -234,6 +234,7 @@
      &r_parse_plugin_mreplace, \
      &r_parse_plugin_ppc_pseudo, \
      &r_parse_plugin_sh_pseudo, \
+     &r_parse_plugin_avr_pseudo, \
      &r_parse_plugin_x86_pseudo, \
      0
 
