@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2016 - pancake, nibble */
+/* radare - Copyright 2009-2017 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -532,6 +532,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
 		r_config_set (newcfg, "scr.color", r_config_get (newcfg, "scr.color"));
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
+
 
 		if (!rs) {
 			r_sys_usleep (100);

@@ -2962,12 +2962,11 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 			char *c = strdup (cmd);
 			c[p - cmd] = 0;
 			if (!strcmp (p + 1, "H")) {
-				int sh = r_config_get_i (core->config, "scr.html");
-				r_config_set_i (core->config, "scr.html", 1);
-				char *ret = r_core_cmd_str (core, c);
-				r_config_set_i (core->config, "scr.html", sh);
+				char *res = r_core_cmd_str (core, c);
 				free (c);
-				return ret;
+				char *hres = r_cons_html_filter (res, NULL);
+				free (res);
+				return hres;
 			} else {
 				int sh = r_config_get_i (core->config, "scr.color");
 				r_config_set_i (core->config, "scr.color", 0);

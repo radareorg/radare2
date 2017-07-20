@@ -753,8 +753,9 @@ static const char *gethtmlcolor(const char ptrch, const char *def) {
 	return def;
 }
 
-// XXX: rename char *r_cons_filter_html(const char *ptr)
-R_API int r_cons_html_print(const char *ptr) {
+// TODO: move into r_util/str
+R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
+	RStrBuf *res = r_strbuf_new ("");
 	const char *str = ptr;
 	int esc = 0;
 	int len = 0;
@@ -768,54 +769,39 @@ R_API int r_cons_html_print(const char *ptr) {
 	for (; ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == '\n') {
 			tmp = (int) (size_t) (ptr - str);
-			if (write (1, str, tmp) != tmp) {
-				eprintf ("r_cons_html_print: write: error\n");
-			}
-			printf ("<br />");
+			r_strbuf_append_n (res, str, tmp);
+			r_strbuf_append (res, "<br />");
 			if (!ptr[1]) {
 				// write new line if it's the end of the output
-				printf ("\n");
+				r_strbuf_append (res, "\n");
 			}
 			str = ptr + 1;
-			fflush (stdout);
 			continue;
 		} else if (ptr[0] == '<') {
 			tmp = (int) (size_t) (ptr - str);
-			if (write (1, str, tmp) != tmp) {
-				eprintf ("r_cons_html_print: write: error\n");
-			}
-			printf ("&lt;");
-			fflush (stdout);
+			r_strbuf_append_n (res, str, tmp);
+			r_strbuf_append (res, "&lt;");
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == '>') {
 			tmp = (int) (size_t) (ptr - str);
-			if (write (1, str, tmp) != tmp) {
-				eprintf ("r_cons_html_print: write: error\n");
-			}
-			printf ("&gt;");
-			fflush (stdout);
+			r_strbuf_append_n (res, str, tmp);
+			r_strbuf_append (res, "&gt;");
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == ' ') {
 			tmp = (int) (size_t) (ptr - str);
-			if (write (1, str, tmp) != tmp) {
-				eprintf ("r_cons_html_print: write: error\n");
-			}
-			printf ("&nbsp;");
-			fflush (stdout);
+			r_strbuf_append_n (res, str, tmp);
+			r_strbuf_append (res, "&nbsp;");
 			str = ptr + 1;
 			continue;
 		}
 		if (ptr[0] == 0x1b) {
 			esc = 1;
 			tmp = (int) (size_t) (ptr - str);
-			if (write (1, str, tmp) != tmp) {
-				eprintf ("r_cons_html_print: write: error\n");
-			}
+			r_strbuf_append_n (res, str, tmp);
 			if (tag_font) {
-				printf ("</font>");
-				fflush (stdout);
+				r_strbuf_append (res, "</font>");
 				tag_font = false;
 			}
 			str = ptr + 1;
@@ -834,29 +820,27 @@ R_API int r_cons_html_print(const char *ptr) {
 		} else if (esc == 2) {
 			// TODO: use dword comparison here
 			if (ptr[0] == '2' && ptr[1] == 'J') {
-				printf ("<hr />\n");
-				fflush (stdout);
+				r_strbuf_append (res, "<hr />");
 				ptr++;
 				esc = 0;
 				str = ptr;
 				continue;
 			} else if (!strncmp (ptr, "48;5;", 5)) {
 				char *end = strchr (ptr, 'm');
-				printf ("<font style='background-color:%s'>", gethtmlrgb (ptr));
-				fflush (stdout);
+				r_strbuf_appendf (res, "<font style='background-color:%s'>", gethtmlrgb (ptr));
 				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (!strncmp (ptr, "38;5;", 5)) {
 				char *end = strchr (ptr, 'm');
-				printf ("<font color='%s'>", gethtmlrgb (ptr));
-				fflush (stdout);
+				r_strbuf_appendf (res, "<font color='%s'>", gethtmlrgb (ptr));
 				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (ptr[0] == '0' && ptr[1] == ';' && ptr[2] == '0') {
+				// wtf ?
 				r_cons_gotoxy (0, 0);
 				ptr += 4;
 				esc = 0;
@@ -874,17 +858,15 @@ R_API int r_cons_html_print(const char *ptr) {
 				continue;
 				// reset color
 			} else if (ptr[0] == '3' && ptr[2] == 'm') {
-				printf ("<font color='%s'>", gethtmlcolor (ptr[1], inv? "#fff": "#000"));
-				fflush (stdout);
+				r_strbuf_appendf (res, "<font color='%s'>", gethtmlcolor (ptr[1], inv? "#fff": "#000"));
 				tag_font = true;
 				ptr = ptr + 1;
 				str = ptr + 2;
 				esc = 0;
 				continue;
 			} else if (ptr[0] == '4' && ptr[2] == 'm') {
-				printf ("<font style='background-color:%s'>",
+				r_strbuf_appendf (res, "<font style='background-color:%s'>",
 					gethtmlcolor (ptr[1], inv? "#000": "#fff"));
-				fflush (stdout);
 				tag_font = true;
 				ptr = ptr + 1;
 				str = ptr + 2;
@@ -895,10 +877,21 @@ R_API int r_cons_html_print(const char *ptr) {
 		len++;
 	}
 	if (tag_font) {
-		printf ("</font>");
-		fflush (stdout);
+		r_strbuf_append (res, "</font>");
 		tag_font = false;
 	}
-	write (1, str, ptr - str);
-	return len;
+	r_strbuf_append_n (res, str, ptr - str);
+	if (newlen) {
+		*newlen = res->len;
+	}
+	return r_strbuf_drain (res);
+}
+
+R_API int r_cons_html_print(const char *ptr) {
+	char *res = r_cons_html_filter (ptr, NULL);
+	int res_len = strlen (res);
+	printf ("%s", res);
+	fflush (stdout);
+	free (res);
+	return res_len;
 }

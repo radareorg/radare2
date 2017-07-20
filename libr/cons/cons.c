@@ -523,6 +523,15 @@ R_API void r_cons_filter() {
 		I.filter = false;
 	}
 	/* html */
+	if (I.is_html) {
+		int newlen = 0;
+		char *input = r_str_ndup (I.buffer, I.buffer_len);
+		char *res = r_cons_html_filter (input, &newlen);
+		free (I.buffer);
+		free (input);
+		I.buffer = res;
+		I.buffer_len = newlen;
+	}
 	/* TODO */
 }
 
