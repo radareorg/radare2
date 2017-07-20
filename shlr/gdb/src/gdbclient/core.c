@@ -71,8 +71,15 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!g || !host) {
 		return -1;
 	}
-	// Initial max_packet_size for remote target (minimum so far for AVR = 16)
-	g->stub_features.pkt_sz = 16;
+	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
+	g->stub_features.pkt_sz = 64;
+	char *env_pktsz_str;
+	ut32 env_pktsz;
+	if ((env_pktsz_str = getenv ("R2_GDB_PKTSZ"))) {
+		if ((env_pktsz = (ut32) strtoul (env_pktsz_str, NULL, 10))) {
+			g->stub_features.pkt_sz = env_pktsz;
+		}
+	}
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
 	if (!ret) {
 		return -1;
@@ -96,6 +103,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	ret = handle_qSupported (g);
 	if (ret < 0) {
 		return ret;
+	}
+	if (env_pktsz > 0) {
+		g->stub_features.pkt_sz = R_MIN (env_pktsz, g->stub_features.pkt_sz);
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
