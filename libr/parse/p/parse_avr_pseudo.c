@@ -137,8 +137,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf, *ptr, *optr, *par;
 
 	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1)))
+	if (!(buf = malloc (len + 1))) {
 		return false;
+	}
 	memcpy (buf, data, len + 1);
 
 	r_str_chop (buf);
