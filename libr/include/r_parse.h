@@ -70,6 +70,7 @@ extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
 extern struct r_parse_plugin_t r_parse_plugin_ppc_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_sh_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_6502_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_m68k_pseudo;
 #endif

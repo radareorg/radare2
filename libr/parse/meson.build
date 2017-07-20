@@ -11,6 +11,7 @@ files=[
 'p/parse_ppc_pseudo.c',
 'p/parse_x86_pseudo.c',
 'p/parse_z80_pseudo.c',
+'p/parse_sh_pseudo.c',
 'p/parse_mreplace/mreplace.c',
 'p/parse_mreplace/mmemory.c'
 ]
