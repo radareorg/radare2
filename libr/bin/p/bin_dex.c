@@ -1610,9 +1610,11 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				continue;
 			}
 
-			char *class_name = strdup (getstr (
-				bin, bin->types[bin->methods[i].class_id]
-						.descriptor_id));
+			const char *className = getstr (bin, bin->types[bin->methods[i].class_id].descriptor_id);
+			if (!className) {
+				continue;
+			}
+			char *class_name = strdup (className);
 			if (!class_name) {
 				free (class_name);
 				continue;
