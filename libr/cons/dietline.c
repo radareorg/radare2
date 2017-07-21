@@ -112,34 +112,38 @@ R_API int r_line_dietline_init() {
 
 #if USE_UTF8
 /* read utf8 char into 's', return the length in bytes */
-static int r_line_readchar_utf8(unsigned char *s, int slen) {
+static int r_line_readchar_utf8(ut8 *s, int slen) {
 	// TODO: add support for w32
-	int ret, len;
-	for (len = 0; len + 2 < slen; len++) {
-		s[len] = 0;
-		ret = read (0, s + len, 1);
-		if (ret != 1) {
-			return 0;
+	ssize_t len, t, i;
+	if (slen < 1) {
+		return 0;
+	}
+	if ((t = read (0, s, 1)) != 1) {
+		return t;
+	}
+	s[0] = r_cons_controlz (s[0]);
+	if (s[0] < 0x80) {
+		len = 1;
+	} else if ((s[0] & 0xe0) == 0xc0) {
+		len = 2;
+	} else if ((s[0] & 0xf0) == 0xe0) {
+		len = 3;
+	} else if ((s[0] & 0xf8) == 0xf0) {
+		len = 4;
+	} else {
+		return -1;
+	}
+	if (slen < len) {
+		return -1;
+	}
+	for (i = 1; i < len; i++) {
+		if ((t = read (0, s + i, 1)) != 1) {
+			return t;
 		}
-		s[len] = r_cons_controlz (s[len]);
-		if (!s[len]) {
-			return 1; // ^z
-		}
-		if (s[len] < 28) {
-			return s[0]? 1: 0;
-		}
-		if (is_valid_char (s[len])) {
-			return s[0]? 1: 0;
-		}
-		if ((s[len] & 0xc0) != 0x80) {
-			continue;
-		}
-		if (len > 0) {
-			break;
+		if ((s[i] & 0xc0) != 0x80) {
+			return -1;
 		}
 	}
-	len++;
-	s[len] = 0;
 	return len;
 }
 #endif
