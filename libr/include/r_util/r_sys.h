@@ -13,7 +13,7 @@ R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
 R_API ut64 r_sys_now(void);
 R_API int r_sys_fork(void);
-R_API int r_sys_stop(void);
+R_API bool r_sys_stop(void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
 R_API int r_sys_getpid(void);
