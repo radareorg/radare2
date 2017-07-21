@@ -1083,7 +1083,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 				name = cmd + 3;
 				// Temporarily using new_cmd to store reg name
 				if ((val_ptr = strchr (name, '='))) {
-					strncpy (new_cmd, name, R_MIN (val_ptr - name, sizeof (new_cmd)));
+					strncpy (new_cmd, name, R_MIN (val_ptr - name, sizeof (new_cmd) - 1));
 				} else {
 					strncpy (new_cmd, name, sizeof (new_cmd) - 1);
 				}

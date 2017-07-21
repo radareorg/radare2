@@ -168,7 +168,6 @@ static RBinInfo *info(RBinFile *arch) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->lang = "java";
 	ret->lang = (jo && jo->lang) ? jo->lang : "java";
 	ret->file = strdup (arch->file);
 	ret->type = strdup ("JAVA CLASS");
