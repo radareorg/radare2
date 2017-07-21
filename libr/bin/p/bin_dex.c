@@ -40,29 +40,29 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	int uleblen;
 	// null terminate the buf wtf
 	if (!bin || idx < 0 || idx >= bin->header.strings_size || !bin->strings) {
-		return "";
+		return NULL;
 	}
 	if (bin->strings[idx] >= bin->size) {
-		return "";
+		return NULL;
 	}
 	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
-		return "";
+		return NULL;
 	}
 	bin->b->buf[bin->b->length - 1] = 0;
 	uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
 	if (!uleblen || uleblen >= bin->size) {
-		return "";
+		return NULL;
 	}
 	if (!len || len >= bin->size) {
-		return "";
+		return NULL;
 	}
 	char* ptr = (char*) r_buf_get_at (bin->b, bin->strings[idx] + uleblen, NULL);
 	if (!ptr) {
-		return "";
+		return NULL;
 	}
 	if (len != strlen (ptr)) {
 		eprintf ("WARNING: Invalid string for index %d\n", idx);
-		return "";
+		return NULL;
 	}
 	return ptr;
 }
@@ -920,7 +920,7 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	}
 	char *name = dex_method_name (bin, method_idx);
 	char *class_name = strdup (dex_class_name_byid (bin, cid));
-	class_name = r_str_replace (class_name, ";", "", 0); //TODO: move to func
+	r_str_replace_char (class_name, ';', 0);
 	char *signature = dex_method_signature (bin, method_idx);
 	char *flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
 	free (class_name);
@@ -1000,7 +1000,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 			sym->type = r_str_const ("FIELD");
 		}
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
-		//sym->name = r_str_replace (sym->name, ";", "", 0);
+		r_str_replace_char (sym->name, ';', 0);
 		sym->paddr = sym->vaddr = total;
 		sym->ordinal = (*sym_count)++;
 
@@ -1617,7 +1617,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				free (class_name);
 				continue;
 			}
-			class_name = r_str_replace (class_name, ";", "", 0);
+			r_str_replace_char (class_name, ';', 0);
 			char *method_name = dex_method_name (bin, i);
 			char *signature = dex_method_signature (bin, i);
 			if (method_name && *method_name) {
