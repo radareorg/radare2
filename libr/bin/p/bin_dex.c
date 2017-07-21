@@ -594,7 +594,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 #if 1
 	r_list_foreach (debug_positions, iter1, pos) {
 		const char *line = getstr (bin, pos->source_file_idx);
-#if 0
+#if 1
 		char offset[64] = {0};
 		if (!line || !*line) {
 			continue;
@@ -655,6 +655,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	}
 
 	for (reg = 0; reg < regsz; reg++) {
+		if (!debug_locals[reg].name) {
+			continue;
+		}
 		if (debug_locals[reg].live) {
 			if (debug_locals[reg].signature) {
 				rbin->cb_printf (
