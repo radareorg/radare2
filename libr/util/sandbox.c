@@ -275,10 +275,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (enabled) return -1;
 #if __UNIX__
-	if (pid > 0) {
-		return kill (pid, sig);
-	}
-	// eprintf ("r_sandbox_kill: Better not to kill pids <= 0.\n");
+	return kill (pid, sig);
 #endif
 	return -1;
 }
@@ -313,14 +310,13 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	return opendir (path);
 }
 #endif
-R_API int r_sys_stop () {
-	int pid;
+R_API bool r_sys_stop () {
 	if (enabled) {
 		return false;
 	}
-	pid = r_sys_getpid ();
-#ifndef SIGSTOP
-#define SIGSTOP 19
+#if __UNIX__
+	return !r_sandbox_kill (0, SIGTSTP);
+#else
+	return false;
 #endif
-	return (!r_sandbox_kill (pid, SIGSTOP));
 }
