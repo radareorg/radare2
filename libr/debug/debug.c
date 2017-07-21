@@ -371,6 +371,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		free (dbg->btalgo);
 		r_debug_trace_free (dbg->trace);
 		dbg->trace = NULL;
+		r_egg_free (dbg->egg);
 		free (dbg->arch);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);

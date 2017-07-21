@@ -1066,7 +1066,6 @@ int main(int argc, char **argv, char **envp) {
 			r_config_eval (r.config, cmdn);
 			r_cons_flush ();
 		}
-		r_list_free (evals);
 
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
@@ -1120,6 +1119,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
+	r_list_free (evals);
 	r_list_free (files);
 	if (ret) {
 		ret = 0;

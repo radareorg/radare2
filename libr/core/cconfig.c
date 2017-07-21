@@ -17,7 +17,7 @@ static void set_options(RConfigNode *node, ...) {
 	va_start (argp, node);
 	option = va_arg (argp, char *);
 	while (option) {
-		r_list_append (node->options, strdup (option));
+		r_list_append (node->options, option);
 		option = va_arg (argp, char *);
 	}
 	va_end (argp);
