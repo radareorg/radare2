@@ -1060,7 +1060,7 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 	char *path = NULL;
 	ut64 len = g->stub_features.pkt_sz, off = 0;
 	memset (pidstr, 0, sizeof (pidstr));
-	if (pid > 0) {
+	if (g->stub_features.multiprocess && pid > 0) {
 		snprintf (pidstr, sizeof (pidstr), "%x", pid);
 	}
 	while (1) {

@@ -17,7 +17,8 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	if (!(buf = malloc (128))) {
 		return -1;
 	}
-	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+", (ut32) (g->read_max - 1));
+	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+",
+		  (ut32) (g->read_max - 1));
 	if ((ret = handle_qSupported (g)) < 0) {
 		free (buf);
 		return -1;
@@ -48,6 +49,39 @@ static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void
 		return -1;
 	}
 	return send_msg (g, buf);
+}
+
+static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
+					 void *core_ptr) {
+	char *buf, *ptr, cmd[64] = { 0 };
+	size_t buflen = 512;
+	int ret;
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	ptr = g->data + strlen ("qXfer:exec-file:read:");
+	if (*ptr != ':') {
+		int pid;
+		if ((pid = (int) strtol (ptr, NULL, 16)) <= 0 || pid != g->pid) {
+			return send_msg (g, "E00");
+		}
+	}
+	if (!(ptr = strchr (ptr, ':'))) {
+		return send_msg (g, "E00");
+	}
+	ptr++;
+	snprintf (cmd, sizeof (cmd) - 1, "if%s", ptr);
+	if (!(buf = malloc (buflen))) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	if (cb (g, core_ptr, cmd, buf, buflen) < 0) {
+		free (buf);
+		return send_msg (g, "E01");
+	}
+	ret = send_msg (g, buf);
+	free (buf);
+	return ret;
 }
 
 static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
@@ -595,6 +629,12 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 		}
 		if (r_str_startswith (g->data, "p")) {
 			if ((ret = _server_handle_p (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "qXfer:exec-file:read:")) {
+			if ((ret = _server_handle_exec_file_read (g, cmd_cb, core_ptr)) < 0 ) {
 				return ret;
 			}
 			continue;
