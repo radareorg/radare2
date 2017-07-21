@@ -793,6 +793,9 @@ static int bin_dwarf(RCore *core, int mode) {
 	RBinDwarfRow *row;
 	RListIter *iter;
 	RList *list = NULL;
+	if (!r_config_get_i (core->config, "bin.dbginfo")) {
+		return false;
+	}
 	RBinFile *binfile = r_core_bin_cur (core);
 	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
 	if (!binfile) {
@@ -802,15 +805,13 @@ static int bin_dwarf(RCore *core, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		if (r_config_get_i (core->config, "bin.dbginfo")) {
-			RBinDwarfDebugAbbrev *da = NULL;
-			da = r_bin_dwarf_parse_abbrev (core->bin, mode);
-			r_bin_dwarf_parse_info (da, core->bin, mode);
-			r_bin_dwarf_parse_aranges (core->bin, mode);
-			list = r_bin_dwarf_parse_line (core->bin, mode);
-			r_bin_dwarf_free_debug_abbrev (da);
-			free (da);
-		}
+		RBinDwarfDebugAbbrev *da = NULL;
+		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+		r_bin_dwarf_parse_info (da, core->bin, mode);
+		r_bin_dwarf_parse_aranges (core->bin, mode);
+		list = r_bin_dwarf_parse_line (core->bin, mode);
+		r_bin_dwarf_free_debug_abbrev (da);
+		free (da);
 	}
 	if (!list) {
 		return false;
@@ -921,7 +922,8 @@ static int bin_dwarf(RCore *core, int mode) {
 	r_cons_break_pop ();
 	R_FREE (lastFileContents);
 	R_FREE (lastFileContents2);
-	r_list_free (list);
+	// this list is owned by rbin, not us, we shouldnt free it
+	// r_list_free (list);
 	free (lastFileLines);
 	return true;
 }

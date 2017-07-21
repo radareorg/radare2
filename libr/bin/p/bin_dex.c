@@ -591,11 +591,15 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	RListIter *iter1;
 	struct dex_debug_position_t *pos;
 // Loading the debug info takes too much time and nobody uses this afaik
-#if 0
+#if 1
 	r_list_foreach (debug_positions, iter1, pos) {
+		const char *line = getstr (bin, pos->source_file_idx);
 #if 0
 		char offset[64] = {0};
-		char *fileline = r_str_newf ("%s|%"PFMT64d, getstr (bin, pos->source_file_idx), pos->line);
+		if (!line || !*line) {
+			continue;
+		}
+		char *fileline = r_str_newf ("%s|%"PFMT64d, line, pos->line);
 		char *offset_ptr = sdb_itoa (pos->address + paddr, offset, 16);
 		sdb_set (binfile->sdb_addrinfo, offset_ptr, fileline, 0);
 		sdb_set (binfile->sdb_addrinfo, fileline, offset_ptr, 0);
@@ -605,10 +609,12 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		if (!rbindwardrow) {
 			return;
 		}
-		rbindwardrow->file = strdup (getstr (bin, pos->source_file_idx));
-		rbindwardrow->address = pos->address;
-		rbindwardrow->line = pos->line;
-		r_list_append (dex->lines_list, rbindwardrow);
+		if (line) {
+			rbindwardrow->file = strdup (line);
+			rbindwardrow->address = pos->address;
+			rbindwardrow->line = pos->line;
+			r_list_append (dex->lines_list, rbindwardrow);
+		}
 	}
 #endif
 
@@ -1546,7 +1552,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	}
 	bin->lines_list = r_list_newf ((RListFree)free);
 	if (!bin->lines_list) {
-		r_list_free (bin->lines_list);
 		return false;
 	}
 	bin->classes_list = r_list_newf ((RListFree)r_bin_class_free);
@@ -1928,7 +1933,10 @@ static ut64 size(RBinFile *arch) {
 
 static RList *lines(RBinFile *arch) {
 	struct r_bin_dex_obj_t *dex = arch->o->bin_obj;
-	return r_list_clone (dex->lines_list);
+	/// XXX this is called more than once 
+	// r_sys_backtrace();
+	return dex->lines_list;
+	// return r_list_clone (dex->lines_list);
 }
 
 RBinPlugin r_bin_plugin_dex = {
