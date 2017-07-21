@@ -209,8 +209,11 @@ static RBinAddr *binsym(RBinFile *arch, int sym) {
 }
 
 static RList *lines(RBinFile *arch) {
+	return NULL;
+#if 0
 	char *file = arch->file? strdup (arch->file): strdup ("");
 	RList *list = r_list_newf (free);
+	// XXX the owner of this list should be the plugin, so we are leaking here
 	file = r_str_replace (file, ".class", ".java", 0);
 	/*
 	   int i;
@@ -222,6 +225,7 @@ static RList *lines(RBinFile *arch) {
 	   }*/
 	free (file);
 	return list;
+#endif
 }
 
 static RList *sections(RBinFile *arch) {
