@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
-#include <string.h>
 
+#include <string.h>
 #include "r_anal.h"
 #include "r_cons.h"
 #include "r_core.h"
@@ -16,6 +16,7 @@ static void show_help(RCore *core) {
 		"t-*", "", "Remove all types",
 		//"t-!", "",          "Use to open $EDITOR",
 		"tb", " <enum> <value>", "Show matching enum bitfield for given number",
+		"tc", " ([cctype])", "calling conventions listing and manipulations",
 		"te", "[?]", "List all loaded enums",
 		"te", " <enum> <value>", "Show name for given enum number",
 		"td", "[?] <string>", "Load types from string",
@@ -130,18 +131,21 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 //look at the next couple of functions
 //can be optimized into one right ... you see it you do it :P
 static int stdprintifstruct (void *p, const char *k, const char *v) {
-	if (!strncmp (v, "struct", strlen ("struct") + 1))
+	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
 		r_cons_println (k);
+	}
 	return 1;
 }
 static int stdprintiffunc (void *p, const char *k, const char *v) {
-	if (!strncmp (v, "func", strlen ("func") + 1))
+	if (!strncmp (v, "func", strlen ("func") + 1)) {
 		r_cons_println (k);
+	}
 	return 1;
 }
 static int stdprintifunion (void *p, const char *k, const char *v) {
-	if (!strncmp (v, "union", strlen ("union") + 1))
+	if (!strncmp (v, "union", strlen ("union") + 1)) {
 		r_cons_println (k);
+	}
 	return 1;
 }
 
@@ -154,8 +158,9 @@ static int sdbdeletelink (void *p, const char *k, const char *v) {
 }
 
 static int linklist (void *p, const char *k, const char *v) {
-	if (!strncmp (k, "link.", strlen ("link.")))
+	if (!strncmp (k, "link.", strlen ("link."))) {
 		r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
+	}
 	return 1;
 }
 static int linklist_readable (void *p, const char *k, const char *v) {
@@ -280,6 +285,64 @@ static int cmd_type(void *data, const char *input) {
 			: sdb_querys (core->anal->sdb_types, NULL, -1, "*");
 		if (res) {
 			r_cons_print (res);
+		}
+		break;
+	case 'c': // "tc"
+		switch (input[1]) {
+		case ' ':
+			r_core_cmdf (core, "k anal/cc/*~cc.%s.", input + 2);
+			break;
+		case '=':
+			if (input[2]) {
+				r_core_cmdf (core, "k anal/cc/default.cc=%s", input + 2);
+			} else {
+				r_core_cmd0 (core, "k anal/cc/default.cc");
+			}
+			break;
+		case 'r':
+			{ /* very slow, but im tired of waiting for having this, so this is the quickest implementation */
+				int i;
+				char *cc = r_str_chop (r_core_cmd_str (core, "k anal/cc/default.cc"));
+				for (i = 0; i < 8; i++) {
+					char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
+					r_str_clean (res);
+					if (*res) {
+						char *row = r_str_chop (r_core_cmd_strf (core, "drr~%s 0x", res));
+						r_cons_printf ("arg[%d] %s\n", i, row);
+						free (row);
+					}
+					free (res);
+				}
+				free (cc);
+			}
+			break;
+		case 'j':
+			// TODO: json output here
+			break;
+		case 'l':
+		case 'k':
+			r_core_cmd0 (core, "k anal/cc/*");
+			break;
+		case 0:
+			r_core_cmd0 (core, "k anal/cc/*~=cc[0]");
+			break;
+		default:
+			{
+			const char *help_message[] = {
+				"USAGE tc[...]", " [cctype]", "",
+				"tc", "", "List all loaded structs",
+				"tc", " [cctype]", "Show convention rules for this type",
+				"tc=", "([cctype])", "Select (or show) default calling convention",
+				"tc-", "[cctype]", "TODO: remove given calling convention",
+				"tc+", "[cctype] ...", "TODO: define new calling convention",
+				"tcl", "", "List all the calling conventions",
+				"tcr", "", "Register telescoping using the calling conventions order",
+				"tcj", "", "json output (TODO)",
+				"tc?", "", "show this help",
+				NULL };
+			r_core_cmd_help (core, help_message);
+			}
+			break;
 		}
 		break;
 	case 's': // "ts"
