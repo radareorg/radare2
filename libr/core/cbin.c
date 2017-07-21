@@ -1423,9 +1423,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 /* imp. is a prefix that can be rewritten by the symbol table */
 static ut64 impaddr(RBin *bin, int va, const char *name) {
-	char *impname;
 	RList *symbols;
-	RBinSymbol *s;
 
 	if (!name || !*name) {
 		return false;
@@ -1433,8 +1431,8 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	impname = sdb_fmt (2, "imp.%s", name);
-	s = get_symbol (bin, symbols, impname, 0LL);
+	char *impname = sdb_fmt (2, "imp.%s", name);
+	RBinSymbol *s = get_symbol (bin, symbols, impname, 0LL);
 	if (s) {
 		if (va) {
 			return r_bin_get_vaddr (bin, s->paddr, s->vaddr);
@@ -1448,11 +1446,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinImport *import;
 	RListIter *iter;
-	RList *imports;
 	char *str;
 	int i = 0;
 
-	imports = r_bin_get_imports (r->bin);
+	RList *imports = r_bin_get_imports (r->bin);
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
 	} else if (IS_MODE_RAD (mode)) {
@@ -1628,8 +1625,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	RList *symbols;
 	const char *lang;
 	bool firstexp = true;
-	int i = 0, is_arm, lastfs = 's',
-	    bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	int i = 0, is_arm, lastfs = 's';
+	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		return 0;
 	}
@@ -2893,11 +2890,11 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
 	}
-	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name);
+ 	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name); // 6s
 	if ((action & R_CORE_BIN_ACC_EXPORTS)) ret &= bin_exports (core, mode, loadaddr, va, at, name);
-	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name);
+	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name); // 6s
 	if ((action & R_CORE_BIN_ACC_LIBS)) ret &= bin_libs (core, mode);
-	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode);
+	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode); // 3s
 	if ((action & R_CORE_BIN_ACC_SIZE)) ret &= bin_size (core, mode);
 	if ((action & R_CORE_BIN_ACC_MEM)) ret &= bin_mem (core, mode);
 	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) ret &= bin_versioninfo (core, mode);

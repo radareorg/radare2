@@ -1376,6 +1376,10 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	if (!class_name || !*class_name) {
 		return;
 	}
+	const char *superClass = dex_class_super_name (bin, c);
+	if (!superClass) {
+		return;
+	}
 	class_name = strdup (class_name);
 	r_str_replace_char (class_name, ';', 0);
 
@@ -1391,7 +1395,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	cls->index = class_index;
 	cls->addr = bin->header.class_offset + class_index * DEX_CLASS_SIZE;
 	cls->methods = r_list_new ();
-	cls->super = strdup (dex_class_super_name (bin, c));
+	cls->super = strdup (superClass);
 	if (!cls->methods) {
 		free (cls);
 		free (class_name);
