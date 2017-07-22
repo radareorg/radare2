@@ -27,9 +27,9 @@ R_API RStack *r_stack_newf(ut32 n, RStackFree f) {
 
 R_API void r_stack_free(RStack *s) {
 	if (s) {
-		if (s->free && s->top > 0) {
-			int i = 0;
-			for (i = 0; i < s->top; i++) {
+		if (s->free) {
+			int i;
+			for (i = 0; i <= s->top; i++) {
 				s->free (s->elems[i]);
 			}
 		}
