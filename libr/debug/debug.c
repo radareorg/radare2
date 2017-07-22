@@ -1224,10 +1224,13 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	RBreakpointItem *prev = NULL;
 	int has_bp;
 	ut64 pc, end_addr;
-
-	if (r_debug_is_dead (dbg))
+	if (!dbg) {
 		return false;
+	}
 	if (!dbg->anal || !dbg->reg) {
+		return false;
+	}
+	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
 	if (r_list_empty (dbg->sessions)) {
@@ -1246,16 +1249,19 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	/* ### Get previous breakpoint ### */
 	// Firstly set the breakpoint at end address
 	has_bp = r_bp_get_in (dbg->bp, end_addr, R_BP_PROT_EXEC) != NULL;
-	if (!has_bp)
+	if (!has_bp) {
 		r_bp_add_sw (dbg->bp, end_addr, dbg->bpsize, R_BP_PROT_EXEC);
+	}
 
 	// Continue until end_addr
 	for (;;) {
-		if (r_debug_is_dead (dbg))
+		if (r_debug_is_dead (dbg)) {
 			break;
+		}
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		if (pc == end_addr)
+		if (pc == end_addr) {
 			break;
+		}
 		prev = r_bp_get_at (dbg->bp, pc);
 		r_debug_continue (dbg);
 	}
@@ -1273,8 +1279,9 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	/* Rollback to previous state again */
 	r_debug_session_set (dbg, before);
 	for (;;) {
-		if (r_debug_is_dead (dbg))
+		if (r_debug_is_dead (dbg)) {
 			break;
+		}
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		if (prev == r_bp_get_at (dbg->bp, pc)) {
 			break;
