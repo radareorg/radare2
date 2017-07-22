@@ -197,6 +197,8 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	esil->interrupts = NULL;
 	sdb_free (esil->stats);
 	esil->stats = NULL;
+	sdb_free (esil->db_trace);
+	esil->db_trace = NULL;
 	r_anal_esil_stack_free (esil);
 	free (esil->stack);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {

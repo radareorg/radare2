@@ -246,6 +246,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			RAnalOp *op = r_core_anal_op (core, addr);
 			int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
 			if (loop_count > LOOP_MAX || !op || op->type == R_ANAL_OP_TYPE_RET || addr >= bb->addr + bb->size || addr < bb->addr) {
+				r_anal_op_free (op);
 				break;
 			}
 			sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
