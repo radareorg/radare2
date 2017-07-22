@@ -2646,14 +2646,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
-	if (!strcmp (ds->strenc, "asciidot")) {
-		char *escstr = r_str_escape_asciidot (str);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
-	} else if (!strcmp (ds->strenc, "latin1")) {
+	if (!strcmp (ds->strenc, "latin1")) {
 		char *escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 		if (escstr) {
 			ALIGN;

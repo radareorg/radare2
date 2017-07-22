@@ -1304,10 +1304,6 @@ R_API char *r_str_escape_dot(const char *buf) {
 	return r_str_escape_ (buf, true, true, false);
 }
 
-R_API char *r_str_escape_asciidot(const char *buf) {
-	return r_str_escape_ (buf, false, false, true);
-}
-
 R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot) {
 	return r_str_escape_ (buf, false, false, show_asciidot);
 }
