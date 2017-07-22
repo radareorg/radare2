@@ -113,6 +113,7 @@ typedef struct r_disam_options_t {
 	bool show_fcncalls;
 	bool show_hints;
 	bool show_marks;
+	bool show_asciidot;
 	const char *strenc;
 	int cursor;
 	int show_comment_right_default;
@@ -489,6 +490,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
+	ds->show_asciidot = r_config_get_i (core->config, "asm.asciidot");
 	ds->strenc = r_config_get (core->config, "asm.strenc");
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
@@ -2652,28 +2654,28 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 			free (escstr);
 		}
 	} else if (!strcmp (ds->strenc, "latin1")) {
-		char *escstr = r_str_escape_latin1 (str);
+		char *escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 		if (escstr) {
 			ALIGN;
 			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
 			free (escstr);
 		}
 	} else if (!strcmp (ds->strenc, "utf8")) {
-		char *escstr = r_str_escape_utf8 (str);
+		char *escstr = r_str_escape_utf8 (str, ds->show_asciidot);
 		if (escstr) {
 			ALIGN;
 			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
 			free (escstr);
 		}
 	} else if (!strcmp (ds->strenc, "utf16le")) {
-		char *escstr = r_str_escape_utf16le (str, len);
+		char *escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 		if (escstr) {
 			ALIGN;
 			ds_comment (ds, true, "; u\"%s\"%s", escstr, nl);
 			free (escstr);
 		}
 	} else if (!strcmp (ds->strenc, "utf32le")) {
-		char *escstr = r_str_escape_utf32le (str, len);
+		char *escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
 		if (escstr) {
 			ALIGN;
 			ds_comment (ds, true, "; U\"%s\"%s", escstr, nl);
@@ -2681,7 +2683,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		}
 	} else if (strlen (str) == 1) {
 		// could be a wide string
-		char *escstr = r_str_escape_utf16le (str, len);
+		char *escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 		if (escstr) {
 			int escstr_len = strlen (escstr);
 			ALIGN;
@@ -2691,7 +2693,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 			free (escstr);
 		}
 	} else {
-		char *escstr = r_str_escape_latin1 (str);
+		char *escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 		if (escstr) {
 			ALIGN;
 			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);

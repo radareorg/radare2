@@ -2116,6 +2116,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmtpatch", "false", "Show patch comments in disasm");
 	SETPREF ("asm.cmtoff", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
+	SETPREF ("asm.asciidot", "false", "Enable a char filter for string comments that passes through chars in the "
+		 "range 0x20-0x7e and turns the rest into dots (except some control chars)");
 	n = NODECB ("asm.strenc", "guess", &cb_asmstrenc);
 	SETDESC (n, "Assumed string encoding for disasm");
 	SETOPTIONS (n, "asciidot", "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);

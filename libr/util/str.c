@@ -1252,7 +1252,7 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool default_dot) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1260,8 +1260,8 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool d
 		return NULL;
 	}
 	/* Worst case scenario, we convert every byte to a single-char escape
-	 * (e.g. \n) if default_dot, or \xhh if !default_dot */
-	new_buf = malloc (1 + strlen (buf) * (default_dot ? 2 : 4));
+	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
+	new_buf = malloc (1 + strlen (buf) * (show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
@@ -1287,7 +1287,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool d
 				break;
 			}
 		default:
-			r_str_byte_escape (p, &q, dot_nl, default_dot);
+			r_str_byte_escape (p, &q, dot_nl, show_asciidot);
 		}
 		p++;
 	}
@@ -1308,11 +1308,11 @@ R_API char *r_str_escape_asciidot(const char *buf) {
 	return r_str_escape_ (buf, false, false, true);
 }
 
-R_API char *r_str_escape_latin1(const char *buf) {
-	return r_str_escape_ (buf, false, false, false);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot) {
+	return r_str_escape_ (buf, false, false, show_asciidot);
 }
 
-static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
+static char *r_str_escape_utf(const char *buf, int buf_size, int type, bool show_asciidot) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1366,7 +1366,9 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 				ch_bytes = 1;
 			}
 		}
-		if (ch_bytes > 1) {
+		if (show_asciidot && !IS_PRINTABLE(ch)) {
+			*q++ = '.';
+		} else if (ch_bytes > 1) {
 			*q++ = '\\';
 			*q++ = ch_bytes == 4 ? 'U' : 'u';
 			for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
@@ -1391,16 +1393,16 @@ static char *r_str_escape_utf(const char *buf, int buf_size, int type) {
 	return new_buf;
 }
 
-R_API char *r_str_escape_utf8(const char *buf) {
-	return r_str_escape_utf (buf, -1, R_STRING_TYPE_UTF8);
+R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot) {
+	return r_str_escape_utf (buf, -1, R_STRING_TYPE_UTF8, show_asciidot);
 }
 
-R_API char *r_str_escape_utf16le(const char *buf, int buf_size) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE);
+R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE, show_asciidot);
 }
 
-R_API char *r_str_escape_utf32le(const char *buf, int buf_size) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE32);
+R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_TYPE_WIDE32, show_asciidot);
 }
 
 /* ansi helpers */
