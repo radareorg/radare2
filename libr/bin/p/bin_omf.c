@@ -136,6 +136,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->arch = strdup ("x86");
 	ret->big_endian = false;
 	ret->has_va = true;
+	ret->has_lit = true;
 	ret->bits = r_bin_omf_get_bits (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_nx = false;

@@ -269,6 +269,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->big_endian = obj->endian;
 	ret->has_va = false;
 	ret->dbg_info = 0;
+	ret->has_lit = true;
 
 	if (r_coff_is_stripped (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;

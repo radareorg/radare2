@@ -481,6 +481,7 @@ static RBinInfo *info(RBinFile *arch) {
 	}
 	ret->bits = 64;
 	ret->has_va = true;
+	ret->has_lit = true;
 	ret->big_endian = false;
 	ret->dbg_info = 0;
 	ret->dbg_info = 0;

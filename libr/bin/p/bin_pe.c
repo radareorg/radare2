@@ -450,7 +450,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->machine = PE_(r_bin_pe_get_machine) (arch->o->bin_obj);
 	ret->subsystem = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj);
 	if (is_dot_net (arch)) {
-		ret->lang = "msil";
+		ret->lang = "cil";
 	}
 	if (is_vb6 (arch)) {
 		ret->lang = "vb";
@@ -466,6 +466,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
+	ret->has_lit = true;
 	ret->has_canary = has_canary (arch);
 	ret->has_nx = haschr (arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);

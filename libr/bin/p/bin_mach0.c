@@ -439,6 +439,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->subsystem = strdup ("darwin");
 	ret->arch = MACH0_(get_cputype) (arch->o->bin_obj);
 	ret->machine = MACH0_(get_cpusubtype) (arch->o->bin_obj);
+	ret->has_lit = true;
 	ret->type = MACH0_(get_filetype) (arch->o->bin_obj);
 	ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	ret->bits = 32;

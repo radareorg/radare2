@@ -1366,7 +1366,7 @@ static RList *osymbols = NULL;
 static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	RBinSymbol *symbol, *res = NULL;
 	RListIter *iter;
-	if (mydb && symbols != osymbols) {
+	if (mydb && symbols && symbols != osymbols) {
 		sdb_free (mydb);
 		mydb = NULL;
 		osymbols = symbols;
@@ -1400,6 +1400,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 				}
 			}
 		}
+		osymbols = symbols;
 	}
 	return res;
 }
@@ -1445,9 +1446,11 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 }
 
 static int bin_imports(RCore *r, int mode, int va, const char *name) {
+	RBinInfo *info = r_bin_get_info (r->bin);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinImport *import;
 	RListIter *iter;
+	bool lit = info ? info->has_lit: false;
 	char *str;
 	int i = 0;
 
@@ -1460,13 +1463,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("[Imports]");
 	}
 	r_list_foreach (imports, iter, import) {
-		char *symname;
-		ut64 addr;
 		if (name && strcmp (import->name, name)) {
 			continue;
 		}
-		symname = strdup (import->name);
-		addr = impaddr (r->bin, va, symname);
+		char *symname = strdup (import->name);
+		ut64 addr = lit ? impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr);
 			if (dname) {
@@ -1476,8 +1477,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 		}
 		if (r->bin->prefix) {
-			char *prname;
-			prname = r_str_newf ("%s.%s", r->bin->prefix, symname);
+			char *prname = r_str_newf ("%s.%s", r->bin->prefix, symname);
 			free (symname);
 			symname = prname;
 		}
@@ -1529,6 +1529,8 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_printf ("\n%i imports\n", i);
 	}
 #if MYDB
+	// NOTE: if we comment out this, it will leak.. but it will be faster
+	// because it will keep the cache across multiple RBin calls
 	osymbols = NULL;
 	sdb_free (mydb);
 	mydb = NULL;

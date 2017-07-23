@@ -809,6 +809,7 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 	ret->type = str;
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
+	ret->has_lit = true;
 	ret->has_canary = has_canary (arch);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (arch->o->bin_obj))) {
 		free (ret);
