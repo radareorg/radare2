@@ -35,6 +35,7 @@ typedef struct r_lib_plugin_t {
 	void *dl_handler; // DL HANDLER
 	char *author;
 	char *version;
+	void (*free)(void *data);
 } RLibPlugin;
 
 /* store list of initialized plugin handlers */
@@ -52,6 +53,7 @@ typedef struct r_lib_struct_t {
 	int type;
 	void *data; /* pointer to data handled by plugin handler */
 	const char *version; /* r2 version */
+	void (*free)(void *data);
 } RLibStruct;
 
 // order matters because of libr/util/lib.c

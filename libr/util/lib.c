@@ -177,9 +177,11 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	r_list_foreach_safe (lib->plugins, iter, iter_tmp, p) {
 		if ((file==NULL || (!strcmp (file, p->file)))) {
 			int ret = 0;
-			if (p->handler && p->handler->constructor) {
-				ret = p->handler->destructor (p,
-					p->handler->user, p->data);
+			if (p->handler && p->handler->destructor) {
+				ret = p->handler->destructor (p, p->handler->user, p->data);
+			}
+			if (p->free) {
+				p->free (p->data);
 			}
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
@@ -195,7 +197,7 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	r_list_foreach (lib->plugins, iter, p) {
 		if (strstr (p->file, file)) {
 			int ret = 0;
-			if (p->handler && p->handler->constructor) {
+			if (p->handler && p->handler->destructor) {
 				ret = p->handler->destructor (p,
 					p->handler->user, p->data);
 			}
@@ -300,6 +302,7 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 	p->file = strdup (file);
 	p->dl_handler = handler;
 	p->handler = r_lib_get_handler (lib, p->type);
+	p->free = stru->free;
 
 	ret = r_lib_run_handler (lib, p, stru);
 	if (ret == R_FAIL) {
@@ -338,7 +341,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	if (!wcpath) {
 		return false;	
 	}
-	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);	
+	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);
 	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
 		IFDBG eprintf ("Cannot open directory %ls\n", wcpath);
