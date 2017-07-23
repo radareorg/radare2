@@ -208,7 +208,7 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 		return NULL;
 	}
 	params_off = bin->protos[proto_id].parameters_off;
-	if (params_off  >= bin->size) {
+	if (params_off >= bin->size) {
 		return NULL;
 	}
 	type_id = bin->protos[proto_id].return_type_id;
@@ -1042,11 +1042,12 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 // TODO: refactor this method
 // XXX it needs a lot of love!!!
 static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
-					  RBinDexClass *c, RBinClass *cls,
-					  const ut8 *p, const ut8 *p_end,
-					  int *sym_count, ut64 DM, int *methods,
-					  bool is_direct) {
+		RBinDexClass *c, RBinClass *cls,
+		const ut8 *p, const ut8 *p_end,
+		int *sym_count, ut64 DM, int *methods,
+		bool is_direct) {
 	struct r_bin_t *rbin = binfile->rbin;
+	bool bin_dbginfo = rbin->want_dbginfo;
 	int i, left;
 	ut64 omi = 0;
 	bool catchAll;
@@ -1303,8 +1304,10 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			}
 			if (MC > 0 && debug_info_off > 0 && bin->header.data_offset < debug_info_off &&
 				debug_info_off < bin->header.data_offset + bin->header.data_size) {
-				dex_parse_debug_item (binfile, bin, c, MI, MA, sym->paddr, ins_size,
-					insns_size, cls->name, regsz, debug_info_off);
+				if (bin_dbginfo) {
+					dex_parse_debug_item (binfile, bin, c, MI, MA, sym->paddr, ins_size,
+							insns_size, cls->name, regsz, debug_info_off);
+				}
 			} else if (MC > 0) {
 				if (dexdump) {
 					rbin->cb_printf ("      positions     :\n");

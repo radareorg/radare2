@@ -1672,6 +1672,16 @@ static int cb_binstrings(void *user, void *data) {
 	return true;
 }
 
+static int cb_bindbginfo(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (!core || !core->bin) {
+		return false;
+	}
+	core->bin->want_dbginfo = node->i_value;
+	return true;
+}
+
 static int cb_binprefix(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2133,7 +2143,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* bin */
 	SETI ("bin.baddr", -1, "Base address of the binary");
 	SETI ("bin.laddr", 0, "Base address for loading library ('*.so')");
-	SETPREF ("bin.dbginfo", "true", "Load debug information at startup if available");
+	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
 	SETPREF ("bin.relocs", "true", "Load relocs information at startup if available");
 	SETICB ("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");

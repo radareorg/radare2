@@ -267,6 +267,7 @@ typedef struct r_bin_t {
 	RIOBind iob;
 	char *force;
 	int is_debugger;
+	bool want_dbginfo;
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings

@@ -755,16 +755,18 @@ static const char *gethtmlcolor(const char ptrch, const char *def) {
 
 // TODO: move into r_util/str
 R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
-	RStrBuf *res = r_strbuf_new ("");
 	const char *str = ptr;
 	int esc = 0;
 	int len = 0;
 	int inv = 0;
 	int tmp;
 	bool tag_font = false;
-
 	if (!ptr) {
-		return 0;
+		return NULL;
+	}
+	RStrBuf *res = r_strbuf_new ("");
+	if (!res) {
+		return NULL;
 	}
 	for (; ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == '\n') {
