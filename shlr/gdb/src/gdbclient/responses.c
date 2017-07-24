@@ -189,9 +189,83 @@ int handle_vFile_close(libgdbr_t *g) {
 	return send_ack (g);
 }
 
+#include <r_debug.h>
+#include <gdbclient/commands.h>
+
+static int stop_reason_exit(libgdbr_t *g) {
+	int status = 0, pid = g->pid;
+	if (g->stub_features.multiprocess && g->data_len > 3) {
+		if (sscanf (g->data + 1, "%x;process:%x", &status, &pid) != 2) {
+			eprintf ("Message from remote: %s\n", g->data);
+			return -1;
+		}
+		eprintf ("Process %d exited with status %d\n", pid, status);
+		g->stop_reason.reason = R_DEBUG_REASON_EXIT_PID;
+		g->stop_reason.thread.pid = pid;
+		g->stop_reason.thread.tid = pid;
+		return 0;
+	}
+	if (!isxdigit (g->data[1])) {
+		eprintf ("Message from remote: %s\n", g->data);
+		return -1;
+	}
+	status = (int) strtol (g->data + 1, NULL, 16);
+	eprintf ("Process %d exited with status %d\n", g->pid, status);
+	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
+	g->stop_reason.thread.pid = pid;
+	g->stop_reason.thread.tid = pid;
+	// Just to be sure, disconnect
+	return gdbr_disconnect (g);
+}
+
+static int stop_reason_terminated(libgdbr_t *g) {
+	int signal = 0, pid = g->pid;
+	if (g->stub_features.multiprocess && g->data_len > 3) {
+		if (sscanf (g->data + 1, "%x;process:%x", &signal, &pid) != 2) {
+			eprintf ("Message from remote: %s\n", g->data);
+			return -1;
+		}
+		eprintf ("Process %d terminated with signal %d\n", pid, signal);
+		g->stop_reason.reason = R_DEBUG_REASON_EXIT_PID;
+		g->stop_reason.thread.pid = pid;
+		g->stop_reason.thread.tid = pid;
+		g->stop_reason.signum = signal;
+		return 0;
+	}
+	if (!isxdigit (g->data[1])) {
+		eprintf ("Message from remote: %s\n", g->data);
+		return -1;
+	}
+	signal = (int) strtol (g->data + 1, NULL, 16);
+	eprintf ("Process %d terminated with signal %d\n", g->pid, signal);
+	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
+	g->stop_reason.thread.pid = pid;
+	g->stop_reason.thread.tid = pid;
+	g->stop_reason.signum = signal;
+	// Just to be sure, disconnect
+	return gdbr_disconnect (g);
+}
+
 int handle_stop_reason(libgdbr_t *g) {
 	send_ack (g);
-	if (g->data_len < 3 || g->data[0] != 'T') {
+	if (g->data_len < 3) {
+		return -1;
+	}
+	switch (g->data[0]) {
+	case 'O':
+		unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
+		//g->data[g->data_len - 1] = '\0';
+		eprintf ("%s", g->data + 1);
+		if (send_ack (g) < 0) {
+			return -1;
+		}
+		return handle_stop_reason (g); // Wait for next stop message
+	case 'W':
+		return stop_reason_exit (g);
+	case 'X':
+		return stop_reason_terminated (g);
+	}
+	if (g->data[0] != 'T') {
 		return -1;
 	}
 	char *ptr1, *ptr2;
@@ -202,6 +276,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
 		return -1;
 	}
+	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
 	for (ptr1 = strtok (g->data + 3, ";"); ptr1; ptr1 = strtok (NULL, ";")) {
 		if (r_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
 			if (!(ptr2 = strchr (ptr1, ':'))) {
@@ -301,6 +376,9 @@ int handle_stop_reason(libgdbr_t *g) {
 				continue;
 			}
 		}
+	}
+	if (g->stop_reason.signum == 5) {
+		g->stop_reason.reason = R_DEBUG_REASON_BREAKPOINT;
 	}
 	return 0;
 }
