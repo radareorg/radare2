@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2014 - inisider */
 
 #include <r_pdb.h>
+#include <r_bin.h>
 #include <string.h>
 
 #include "types.h"
@@ -1055,6 +1056,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	SGlobal *gdata = 0;
 	RListIter *it = 0;
 	RList *l = 0;
+	char *name;
 	int is_first = 1;
 
 	l = pdb->pdb_streams2;
@@ -1101,7 +1103,13 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		gdata = (SGlobal *) r_list_iter_get (it);
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
-			char *name = r_name_filter2 (gdata->name.name);
+			name = r_bin_demangle_msvc (gdata->name.name);
+			name = (name) ? name : strdup (gdata->name.name);
+			if (name && format != 'd') {
+				char* _name = name;
+				name = r_name_filter2 (_name);
+				free (_name);
+			}
 			switch (format) {
 			case 2:
 			case 'j': // JSON
@@ -1128,10 +1136,9 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 				pdb->cb_printf ("0x%08"PFMT64x"  %d  %s  %s\n",
 					(ut64) (img_base + omap_remap((omap) ? (omap->stream) : 0,
 						gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, sctn_header->name, gdata->name.name);
+					gdata->symtype, sctn_header->name, name);
 				break;
 			}
-			// TODO: implement MSVC C++ name demangle
 			free (name);
 		} else {
 			eprintf ("Skipping %s, segment %d does not exist\n",
