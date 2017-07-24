@@ -2336,7 +2336,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr)
 	// Stepping
 	int ret;
 	ut8 code[256];
-	RAnalOp op;
+	RAnalOp op = {0};
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (!esil) {
@@ -2514,9 +2514,11 @@ repeat:
 		}
 	}
 out_return_one:
+	r_anal_op_fini (&op);
 	r_cons_break_pop ();
 	return 1;
 out_return_zero:
+	r_anal_op_fini (&op);
 	r_cons_break_pop ();
 	return 0;
 }

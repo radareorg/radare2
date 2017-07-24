@@ -1050,7 +1050,7 @@ static int elf_init(ELFOBJ *bin) {
 	bin->strtab_section = NULL;
 	bin->dyn_buf = NULL;
 	bin->dynstr = NULL;
-	memset (bin->version_info, 0, DT_VERSIONTAGNUM);
+	ZERO_FILL (bin->version_info);
 
 	bin->g_sections = NULL;
 	bin->g_symbols = NULL;
