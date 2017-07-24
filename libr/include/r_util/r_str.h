@@ -3,6 +3,14 @@
 
 #include "r_str_util.h"
 
+typedef enum {
+	R_STRING_ENC_LATIN1,
+	R_STRING_ENC_UTF8,
+	R_STRING_ENC_UTF16LE,
+	R_STRING_ENC_UTF32LE,
+	R_STRING_ENC_GUESS,
+} RStrEnc;
+
 typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
