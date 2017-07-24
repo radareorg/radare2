@@ -114,7 +114,7 @@ typedef struct r_disam_options_t {
 	bool show_hints;
 	bool show_marks;
 	bool show_asciidot;
-	const char *strenc;
+	RStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -491,7 +491,18 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = r_config_get_i (core->config, "asm.asciidot");
-	ds->strenc = r_config_get (core->config, "asm.strenc");
+	const char *strenc_str = r_config_get (core->config, "asm.strenc");
+	if (!strcmp (strenc_str, "latin1")) {
+		ds->strenc = R_STRING_ENC_LATIN1;
+	} else if (!strcmp (strenc_str, "utf8")) {
+		ds->strenc = R_STRING_ENC_UTF8;
+	} else if (!strcmp (strenc_str, "utf16le")) {
+		ds->strenc = R_STRING_ENC_UTF16LE;
+	} else if (!strcmp (strenc_str, "utf32le")) {
+		ds->strenc = R_STRING_ENC_UTF32LE;
+	} else {
+		ds->strenc = R_STRING_ENC_GUESS;
+	}
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
@@ -2648,25 +2659,32 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
 	char *escstr;
 	const char *prefix = "";
-	if (!strcmp (ds->strenc, "latin1")) {
+	switch (ds->strenc) {
+	case R_STRING_ENC_LATIN1:
 		escstr = r_str_escape_latin1 (str, ds->show_asciidot);
-	} else if (!strcmp (ds->strenc, "utf8")) {
+		break;
+	case R_STRING_ENC_UTF8:
 		escstr = r_str_escape_utf8 (str, ds->show_asciidot);
-	} else if (!strcmp (ds->strenc, "utf16le")) {
+		break;
+	case R_STRING_ENC_UTF16LE:
 		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 		prefix = "u";
-	} else if (!strcmp (ds->strenc, "utf32le")) {
+		break;
+	case R_STRING_ENC_UTF32LE:
 		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
 		prefix = "U";
-	} else if (strlen (str) == 1) {
-		// could be a wide string
-		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
-		if (escstr) {
-			int escstr_len = strlen (escstr);
-			prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
+		break;
+	default:
+		if (strlen (str) == 1) {
+			// could be a wide string
+			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+			if (escstr) {
+				int escstr_len = strlen (escstr);
+				prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
+			}
+		} else {
+			escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 		}
-	} else {
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 	}
 	if (escstr) {
 		ALIGN;
