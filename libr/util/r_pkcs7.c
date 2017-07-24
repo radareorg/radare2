@@ -181,11 +181,17 @@ bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object) {
 		shift++;
 	}
 	if (shift < object->list.length) {
-		si->encryptedDigest = r_asn1_create_binary (object->list.objects[shift]->sector, object->list.objects[shift]->length);
-		shift++;
+		RASN1Object *obj1 = object->list.objects[shift];
+		if (obj1) {
+			si->encryptedDigest = r_asn1_create_binary (obj1->sector, obj1->length);
+			shift++;
+		}
 	}
-	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
-		r_pkcs7_parse_attributes (&si->unauthenticatedAttributes, elems[shift]);
+	if (shift < object->list.length) {
+		RASN1Object *elem = elems[shift];
+		if (elem && elem->klass == CLASS_CONTEXT && elem->tag == 1) {
+			r_pkcs7_parse_attributes (&si->unauthenticatedAttributes, elems[shift]);
+		}
 	}
 	return true;
 }
