@@ -759,6 +759,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("DEX CLASS");
 	ret->has_va = false;
+	ret->has_lit = true;
 	ret->bclass = r_bin_dex_get_version (arch->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
