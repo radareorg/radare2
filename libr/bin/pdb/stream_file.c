@@ -64,7 +64,7 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res)
 	if (size == -1) {
 		pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
-		(void)off_end; // hack for remove unused warning
+		(void)off_end; // hack to remove unused warning
 		tmp = pdata;
 		stream_file_read_pages(stream_file, 0, stream_file->pages_amount, tmp);
 		stream_file->pos = stream_file->end;
@@ -73,7 +73,7 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res)
 	} else {
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
-		(void)off_end; // hack for remove unused warning
+		(void)off_end; // hack to remove unused warning
 		pdata = (char *) calloc(stream_file->page_size * (pn_end + 1 - pn_start), 1);
 		if (!pdata)
 			return;
