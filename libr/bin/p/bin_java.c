@@ -173,6 +173,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->type = strdup ("JAVA CLASS");
 	ret->bclass = r_bin_java_get_version (arch->o->bin_obj);
 	ret->has_va = 0;
+	ret->has_lit = true;
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("any");
