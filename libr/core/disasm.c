@@ -2646,52 +2646,32 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
+	char *escstr;
+	const char *prefix = "";
 	if (!strcmp (ds->strenc, "latin1")) {
-		char *escstr = r_str_escape_latin1 (str, ds->show_asciidot);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 	} else if (!strcmp (ds->strenc, "utf8")) {
-		char *escstr = r_str_escape_utf8 (str, ds->show_asciidot);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
+		escstr = r_str_escape_utf8 (str, ds->show_asciidot);
 	} else if (!strcmp (ds->strenc, "utf16le")) {
-		char *escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; u\"%s\"%s", escstr, nl);
-			free (escstr);
-		}
+		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+		prefix = "u";
 	} else if (!strcmp (ds->strenc, "utf32le")) {
-		char *escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; U\"%s\"%s", escstr, nl);
-			free (escstr);
-		}
+		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+		prefix = "U";
 	} else if (strlen (str) == 1) {
 		// could be a wide string
-		char *escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 		if (escstr) {
 			int escstr_len = strlen (escstr);
-			ALIGN;
-			ds_comment (ds, true, "; %s\"%s\"%s",
-				    escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u",
-				    escstr, nl);
-			free (escstr);
+			prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
 		}
 	} else {
-		char *escstr = r_str_escape_latin1 (str, ds->show_asciidot);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+	}
+	if (escstr) {
+		ALIGN;
+		ds_comment (ds, true, "; %s\"%s\"%s", prefix, escstr, nl);
+		free (escstr);
 	}
 }
 
