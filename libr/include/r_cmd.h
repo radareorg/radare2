@@ -76,6 +76,14 @@ typedef struct r_cmd_t {
 	RCmdAlias aliases;
 } RCmd;
 
+// TODO WIP
+typedef struct r_cmd_descriptor_t {
+	const char *name;
+	const char **help_msg;
+	const char **help_detail;
+	struct r_cmd_descriptor_t *sub[127];
+} RCmdDescriptor;
+
 typedef struct r_core_plugin_t {
 	const char *name;
 	const char *desc;

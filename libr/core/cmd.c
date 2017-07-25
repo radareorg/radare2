@@ -18,6 +18,7 @@
 #include <r_core.h>
 #include <r_anal.h>
 #include <r_cons.h>
+#include <r_cmd.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -25,6 +26,28 @@
 #if __UNIX__
 #include <sys/utsname.h>
 #endif
+
+#define MAX_NUM_CMD_DESCRIPTORS 200
+RCmdDescriptor cmd_descriptors[MAX_NUM_CMD_DESCRIPTORS];
+int cmd_descriptors_len = 0;
+
+#define REGISTER_CMD_DESCRIPTOR(name)																		\
+	if (cmd_descriptors_len >= R_ARRAY_SIZE (cmd_descriptors)) { 					\
+		eprintf ("Please increase MAX_NUM_CMD_DESCRIPTORS in libr/core/cmd.c\n"); \
+		exit(1);																														\
+	}																																			\
+	cmd_descriptors_len++
+
+#define DEFINE_CMD_DESCRIPTOR(name_)																	\
+	REGISTER_CMD_DESCRIPTOR(name_);																			\
+	cmd_descriptors[cmd_descriptors_len-1].name = #name_;								\
+	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_;
+
+#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(name_)												\
+	REGISTER_CMD_DESCRIPTOR(name_);																				\
+	cmd_descriptors[cmd_descriptors_len-1].name = #name_;									\
+	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_;		\
+	cmd_descriptors[cmd_descriptors_len-1].help_detail = help_detail_##name_;
 
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
@@ -3076,6 +3099,30 @@ static int cmd_ox(void *data, const char *input) {
 	return r_core_cmdf ((RCore*)data, "s 0%s", input);
 }
 
+static int compare_cmd_descriptor_name(const void *a, const void *b) {
+	return strcmp(((RCmdDescriptor *)a)->name, ((RCmdDescriptor *)b)->name);
+}
+
+static void cmd_descriptor_init(RCore *core) {
+	qsort (cmd_descriptors, cmd_descriptors_len, sizeof (RCmdDescriptor), compare_cmd_descriptor_name);
+	int i, n_cmd_descriptors = cmd_descriptors_len;
+	for (i = 0; i < n_cmd_descriptors; i++) {
+		const char *p;
+		RCmdDescriptor *x = &core->cmd_descriptor;
+		for (p = cmd_descriptors[i].name; *p; p++) {
+			if (!x->sub[*p]) {
+				if (cmd_descriptors_len >= MAX_NUM_CMD_DESCRIPTORS) {
+					eprintf ("Please increase MAX_NUM_CMD_DESCRIPTORS in libr/core/cmd.c\n");
+					exit(1);
+				}
+				x->sub[*p] = &cmd_descriptors[cmd_descriptors_len++];
+			}
+			x = x->sub[*p];
+		}
+		*x = cmd_descriptors[i];
+	}
+}
+
 R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd = r_cmd_new ();
 	core->rcmd->macro.user = core;
@@ -3088,6 +3135,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
 	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
 	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
+	cmd_anal_init();
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
@@ -3128,4 +3176,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 	r_cmd_add (core->rcmd, "Q",        "alias for q!", &cmd_Quit);
 	r_cmd_add (core->rcmd, "L",        "manage dynamically loaded plugins", &cmd_plugins);
+
+	cmd_descriptor_init (core);
 }
