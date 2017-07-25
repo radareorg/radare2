@@ -805,6 +805,11 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					if (!strcmp (debugbackend, "gdb") && fh && fh->desc
+					    && fh->desc->name && !r_str_startswith (fh->desc->name, "gdb://")) {
+						ut64 addr = r_debug_get_baddr (r.dbg, fh->desc->name);
+						r_core_bin_load (&r, fh->desc->name, addr);
+					}
 /*
 					if (fh) {
 						r_core_bin_load (&r, pfile);
