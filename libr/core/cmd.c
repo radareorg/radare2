@@ -49,6 +49,11 @@ int cmd_descriptors_len = 0;
 	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_;		\
 	cmd_descriptors[cmd_descriptors_len-1].help_detail = help_detail_##name_;
 
+#define DEFINE_CMD_DESCRIPTOR_SPECIAL(cmd, name_)                          \
+	REGISTER_CMD_DESCRIPTOR(name_);                                     \
+	cmd_descriptors[cmd_descriptors_len-1].name = #cmd;                 \
+	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_; \
+
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"
@@ -3151,6 +3156,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
 	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
 	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
+	cmd_print_init();
 	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
 	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
 	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
