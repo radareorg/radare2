@@ -3151,6 +3151,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "Text",     "Text log utility", &cmd_log);
 	r_cmd_add (core->rcmd, "t",        "type information (cparse)", &cmd_type);
 	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
+	cmd_zign_init ();
 	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
 	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
