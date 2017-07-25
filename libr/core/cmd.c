@@ -3139,6 +3139,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "0x",       "alias for px", &cmd_ox);
 	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
 	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
+	cmd_mount_init ();
 	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
 	cmd_anal_init();
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);

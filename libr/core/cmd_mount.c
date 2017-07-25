@@ -1,5 +1,29 @@
 /* radare - LGPL - Copyright 2009-2017 // pancake */
 
+static const char *help_msg_m[] = {
+	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
+	"m", "", "List all mountpoints in human readable format",
+	"m*", "", "Same as above, but in r2 commands",
+	"ml", "", "List filesystem plugins",
+	"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
+	"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
+	"m-/", "", "Umount given path (/)",
+	"md", " /", "List directory contents for path",
+	"mf", "[?] [o|n]", "Search files for given filename or for offset",
+	"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
+	"mo", " /foo", "Get offset and size of given file",
+	"mp", "", "List all supported partition types",
+	"mp", " msdos 0", "Show partitions in msdos format at offset 0",
+	"ms", " /mnt", "Open filesystem prompt at /mnt",
+	"my", "", "Yank contents of file into clipboard",
+	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
+	NULL
+};
+
+static void cmd_mount_init(void) {
+	DEFINE_CMD_DESCRIPTOR (m);
+}
+
 static int cmd_mkdir(void *data, const char *input) {
 	char *res = r_syscmd_mkdir (input);
 	if (res) {
@@ -197,31 +221,10 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'y':
 		eprintf ("TODO\n");
 		break;
-	case '?': {
-		const char* help_msg[] = {
-			"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
-			"m", "", "List all mountpoints in human readable format",
-			"m*", "", "Same as above, but in r2 commands",
-			"ml", "", "List filesystem plugins",
-			"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
-			"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
-			"m-/", "", "Umount given path (/)",
-			"my", "", "Yank contents of file into clipboard",
-			"mo", " /foo", "Get offset and size of given file",
-			"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
-			"mf", "[?] [o|n]", "Search files for given filename or for offset",
-			"md", " /", "List directory contents for path",
-			"mp", "", "List all supported partition types",
-			"mp", " msdos 0", "Show partitions in msdos format at offset 0",
-			"ms", " /mnt", "Open filesystem prompt at /mnt",
-			//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
-			NULL};
-		r_core_cmd_help (core, help_msg);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg_m);
 		break;
 	}
 	free (oinput);
 	return 0;
 }
-
-
