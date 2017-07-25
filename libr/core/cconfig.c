@@ -360,7 +360,7 @@ static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	const char *asmos = NULL; 
+	const char *asmos = NULL;
 	int bits = R_SYS_BITS;
 	if (!*node->value || !core || !core->assembler) {
 		return false;
@@ -2265,6 +2265,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETPREF ("dbg.trace.libs", "true", "Trace library code too");
 	SETPREF ("dbg.exitkills", "true", "Kill process on exit");
+	SETPREF ("dbg.exe.path", NULL, "Path to binary being debugged");
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);

@@ -23,6 +23,19 @@ static bool threaded = false;
 static bool haveRarunProfile = false;
 static struct r_core_t r;
 
+static bool is_valid_gdb_file(RCoreFile *fh) {
+	return fh && fh->desc && fh->desc->name && strncmp (fh->desc->name, "gdb://", 6);
+}
+
+static char* get_file_in_cur_dir(const char *filepath) {
+	filepath = r_file_basename (filepath);
+	if (r_file_exists (filepath)
+	    && !r_file_is_directory (filepath)) {
+		return r_file_abspath (filepath);
+	}
+	return NULL;
+}
+
 static int verify_version(int show) {
 	int i, ret;
 	typedef const char* (*vc)();
@@ -805,10 +818,33 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if (!strcmp (debugbackend, "gdb") && fh && fh->desc
-					    && fh->desc->name && !r_str_startswith (fh->desc->name, "gdb://")) {
-						ut64 addr = r_debug_get_baddr (r.dbg, fh->desc->name);
-						r_core_bin_load (&r, fh->desc->name, addr);
+					if (!strcmp (debugbackend, "gdb")) {
+						const char *filepath;
+						ut64 addr;
+						filepath  = r_config_get (r.config, "dbg.exe.path");
+						if (filepath && r_file_exists (filepath)
+						    && !r_file_is_directory (filepath)) {
+							char *newpath = r_file_abspath (filepath);
+							if (newpath) {
+								free (fh->desc->name);
+								fh->desc->name = newpath;
+								addr = r_debug_get_baddr (r.dbg, newpath);
+								r_core_bin_load (&r, NULL, addr);
+							}
+						} else if (is_valid_gdb_file (fh)) {
+							filepath = fh->desc->name;
+							if (r_file_exists (filepath)
+							    && !r_file_is_directory (filepath)) {
+								addr = r_debug_get_baddr (r.dbg, filepath);
+								r_core_bin_load (&r, filepath, addr);
+							} else if ((filepath = get_file_in_cur_dir (filepath))) {
+								// Present in local directory
+								free (fh->desc->name);
+								fh->desc->name = (char*) filepath;
+								addr = r_debug_get_baddr (r.dbg, filepath);
+								r_core_bin_load (&r, NULL, addr);
+							}
+						}
 					}
 /*
 					if (fh) {

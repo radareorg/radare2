@@ -149,7 +149,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			file = name;
 		}
 		riogdb = r_io_desc_new (&r_io_plugin_gdb, i_pid, file, rw, mode, riog);
-		free(name);
+		free (name);
 		return riogdb;
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
