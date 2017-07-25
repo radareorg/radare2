@@ -1211,26 +1211,39 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else {
-			int i, j;
+			int i, j, cmd_comphint = r_config_get_i (core->config, "cmd.comphint");
+			if (cmd_comphint) {
+				RCmdDescriptor *desc = &core->cmd_descriptor;
+				for (i = 0; i < line->buffer.index && desc; i++) {
+					ut8 c = line->buffer.data[i];
+					desc = c < R_ARRAY_SIZE(desc->sub) ? desc->sub[c] : NULL;
+				}
+				if (desc && desc->help_msg) {
+					r_core_cmd_help (core, desc->help_msg);
+					r_cons_flush ();
+					return true;
+				}
+				// fallback to old command completion
+			}
 			for (i = j = 0; i < CMDS && radare_argv[i]; i++)
 				if (!strncmp (radare_argv[i], line->buffer.data,
-						line->buffer.index))
+											line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
 		}
 	} else {
-		int i, j;
-		for (i=j=0; i<CMDS && radare_argv[i]; i++) {
-			if (!strncmp (radare_argv[i], line->buffer.data,
-					line->buffer.index)) {
-				tmp_argv[j++] = radare_argv[i];
+			int i, j;
+			for (i=j=0; i<CMDS && radare_argv[i]; i++) {
+				if (!strncmp (radare_argv[i], line->buffer.data,
+											line->buffer.index)) {
+					tmp_argv[j++] = radare_argv[i];
+				}
 			}
-		}
-		tmp_argv[j] = NULL;
-		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
 	}
 	return true;
 }

@@ -2319,6 +2319,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.fcn.new", "", "Run when new function is analyzed");
 	SETPREF ("cmd.fcn.delete", "", "Run when a function is deleted");
 	SETPREF ("cmd.fcn.rename", "", "Run when a function is renamed");
+	SETPREF ("cmd.comphint", "false", "Show descriptions in command completion");
 	SETPREF ("cmd.visual", "", "Replace current print mode");
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
 

@@ -101,7 +101,7 @@ static const char *help_msg_ae[] = {
 	NULL
 };
 
-static const char *help_msg_ae_detail[] = {
+static const char *help_detail_ae[] = {
 	"Examples:", "ESIL", " examples and documentation",
 	"+", "=", "A+=B => B,A,+=",
 	"+", "", "A=A+B => B,A,+,A,=",
@@ -272,24 +272,17 @@ static const char *help_msg_aft[] = {
 	NULL
 };
 
-static const char *help_msg_afx[] = {
-	"Usage:", "afx[-cCd?] [src] [dst]", "# manage function references (see also ar?)",
-	"afxc", " sym.main+0x38 sym.printf", "add code ref",
-	"afxC", " sym.main sym.puts", "add call ref",
-	"afxd", " sym.main str.helloworld", "add data ref",
-	"afx-", " sym.main str.helloworld", "remove reference",
-	NULL
-};
-
-static const char *help_msg_afvs[] = {
-	"Usage:", "afvs", " [idx] [type] [name]",
-	"afvs", "", "list stack based arguments and locals",
-	"afvs*", "", "same as afvs but in r2 commands",
-	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
-	"afvsj", "", "return list of stack based arguments and locals in JSON format",
-	"afvs-", " [name]", "delete stack based argument or locals with the given name",
-	"afvsg", " [idx] [addr]", "define var get reference",
-	"afvss", " [idx] [addr]", "define var set reference",
+static const char *help_msg_afv[] = {
+	"Usage:", "afv","[rbs]",
+	"afvr", "[?]", "manipulate register based arguments",
+	"afvb", "[?]", "manipulate bp based arguments/locals",
+	"afvs", "[?]", "manipulate sp based arguments/locals",
+	"afvR", " [varname]", "list addresses where vars are accessed",
+	"afvW", " [varname]", "list addresses where vars are accessed",
+	"afva", "", "analyze function arguments/locals",
+	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
+	"afvn", " [old_name] [new_name]", "rename argument/local",
+	"afvt", " [name] [new_type]", "change type for given argument/local",
 	NULL
 };
 
@@ -317,17 +310,24 @@ static const char *help_msg_afvr[] = {
 	NULL
 };
 
-static const char *help_msg_afv[] = {
-	"Usage:", "afv","[rbs]",
-	"afvr", "[?]", "manipulate register based arguments",
-	"afvb", "[?]", "manipulate bp based arguments/locals",
-	"afvs", "[?]", "manipulate sp based arguments/locals",
-	"afvR", " [varname]", "list addresses where vars are accessed",
-	"afvW", " [varname]", "list addresses where vars are accessed",
-	"afva", "", "analyze function arguments/locals",
-	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-	"afvn", " [old_name] [new_name]", "rename argument/local",
-	"afvt", " [name] [new_type]", "change type for given argument/local",
+static const char *help_msg_afvs[] = {
+	"Usage:", "afvs", " [idx] [type] [name]",
+	"afvs", "", "list stack based arguments and locals",
+	"afvs*", "", "same as afvs but in r2 commands",
+	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
+	"afvsj", "", "return list of stack based arguments and locals in JSON format",
+	"afvs-", " [name]", "delete stack based argument or locals with the given name",
+	"afvsg", " [idx] [addr]", "define var get reference",
+	"afvss", " [idx] [addr]", "define var set reference",
+	NULL
+};
+
+static const char *help_msg_afx[] = {
+	"Usage:", "afx[-cCd?] [src] [dst]", "# manage function references (see also ar?)",
+	"afxc", " sym.main+0x38 sym.printf", "add code ref",
+	"afxC", " sym.main sym.puts", "add call ref",
+	"afxd", " sym.main str.helloworld", "add data ref",
+	"afx-", " sym.main str.helloworld", "remove reference",
 	NULL
 };
 
@@ -492,6 +492,39 @@ static const char *help_msg_ax[] = {
 	"ax*", "", "output radare commands",
 	NULL
 };
+
+static void cmd_anal_init(void) {
+	DEFINE_CMD_DESCRIPTOR(a);
+	DEFINE_CMD_DESCRIPTOR(aa);
+	DEFINE_CMD_DESCRIPTOR(aar);
+	DEFINE_CMD_DESCRIPTOR(ad);
+	DEFINE_CMD_DESCRIPTOR(ae);
+	DEFINE_CMD_DESCRIPTOR(aea);
+	DEFINE_CMD_DESCRIPTOR(aec);
+	DEFINE_CMD_DESCRIPTOR(aep);
+	DEFINE_CMD_DESCRIPTOR(af);
+	DEFINE_CMD_DESCRIPTOR(afb);
+	DEFINE_CMD_DESCRIPTOR(afl);
+	DEFINE_CMD_DESCRIPTOR(afll);
+	DEFINE_CMD_DESCRIPTOR(afn);
+	DEFINE_CMD_DESCRIPTOR(aft);
+	DEFINE_CMD_DESCRIPTOR(afv);
+	DEFINE_CMD_DESCRIPTOR(afvb);
+	DEFINE_CMD_DESCRIPTOR(afvr);
+	DEFINE_CMD_DESCRIPTOR(afvs);
+	DEFINE_CMD_DESCRIPTOR(afx);
+	DEFINE_CMD_DESCRIPTOR(ag);
+	DEFINE_CMD_DESCRIPTOR(age);
+	DEFINE_CMD_DESCRIPTOR(agg);
+	DEFINE_CMD_DESCRIPTOR(agn);
+	DEFINE_CMD_DESCRIPTOR(ah);
+	DEFINE_CMD_DESCRIPTOR(ao);
+	DEFINE_CMD_DESCRIPTOR(ar);
+	DEFINE_CMD_DESCRIPTOR(ara);
+	DEFINE_CMD_DESCRIPTOR(arw);
+	DEFINE_CMD_DESCRIPTOR(as);
+	DEFINE_CMD_DESCRIPTOR(ax);
+}
 
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
@@ -3738,7 +3771,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case '?':
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_ae_detail);
+			r_core_cmd_help (core, help_detail_ae);
 			break;
 		}
 		/* fallthrough */
