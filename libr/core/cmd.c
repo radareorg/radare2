@@ -3155,6 +3155,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
 	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
 	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
+	cmd_eval_init ();
 	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
 	cmd_print_init();
 	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
