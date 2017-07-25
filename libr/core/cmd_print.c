@@ -11,8 +11,349 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
+static const char *help_msg_amper[] = {
+	"Usage:", "&[-|<cmd>]", "Manage tasks",
+	"&", "", "list all running threads",
+	"&=", "", "show output of all tasks",
+	"&=", " 3", "show output of task 3",
+	"&j", "", "list all running threads (in JSON)",
+	"&?", "", "show this help",
+	"&+", " aa", "push to the task list",
+	"&-", " 1", "delete task #1",
+	"&", "-*", "delete all threads",
+	"&", " aa", "run analysis in background",
+	"&", " &&", "run all tasks in background",
+	"&&", "", "run all pendings tasks (and join threads)",
+	"&&&", "", "run all pendings tasks until ^C",
+	"", "", "TODO: last command should honor asm.bits",
+	"", "", "WARN: this feature is very experimental. Use it with caution",
+	NULL
+};
+
+static const char *help_msg_at[] = {
+	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
+	"0", "", "alias for 's 0'",
+	"0x", "addr", "alias for 's 0x..'",
+	"#", "cmd", "if # is a number repeat the command # times",
+	"/*", "", "start multiline comment",
+	"*/", "", "end multiline comment",
+	".", "cmd", "execute output of command as r2 script",
+	".:", "8080", "wait for commands on port 8080",
+	".!", "rabin2 -re $FILE", "run command output as r2 script",
+	"*", "", "output of command in r2 script format (CC*)",
+	"j", "", "output of command in JSON format (pdj)",
+	"~", "?", "count number of lines (like wc -l)",
+	"~", "??", "show internal grep help",
+	"~", "..", "internal less",
+	"~", "{}", "json indent",
+	"~", "{}..", "json indent and less",
+	"~", "word", "grep for lines matching word",
+	"~", "!word", "grep for lines NOT matching word",
+	"~", "word[2]", "grep 3rd column of lines matching word",
+	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
+	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
+	"@", " addr[!blocksize]", "temporary set a new blocksize",
+	"@a:", "arch[:bits]", "temporary set arch and bits",
+	"@b:", "bits", "temporary set asm.bits",
+	"@e:", "k=v,k=v", "temporary change eval vars",
+	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
+	"@i:", "nth.op", "temporary seek to the Nth relative instruction",
+	"@f:", "file", "temporary replace block with file contents",
+	"@o:", "fd", "temporary switch to another fd",
+	"@s:", "string", "same as above but from a string",
+	"@x:", "909192", "from hex pairs string",
+	"@..", "from to", "temporary set from and to for commands supporting ranges",
+	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
+	"@@", " hit*", "run the command on every flag matching 'hit*'",
+	"@@?", "[ktfb..]", "show help for the iterator operator",
+	"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
+	">", "file", "pipe output of command to file",
+	">>", "file", "append to file",
+	"H>", "file", "pipe output of command to file in HTML",
+	"H>>", "file", "append to file with the output of command in HTML",
+	"`", "pdi~push:0[0]`", "replace output of command inside the line",
+	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
+	NULL
+};
+
+static const char *help_msg_at_at[] = {
+	"@@", "", " # foreach iterator command:",
+	"Repeat a command over a list of offsets", "", "",
+	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
+	"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
+	"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
+	"x", " @@=off1 off2 ..", "manual list of offsets",
+	"x", " @@/x 9090", "temporary set cmd.hit to run a command on each search result",
+	"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
+	"x", " @@t", "\"\" on all threads (see dp)",
+	"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
+	"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
+	"x", " @@f", "\"\" on all functions (see aflq)",
+	"x", " @@f:write", "\"\" on all functions matching write in the name",
+	"x", " @@c:cmd", "the same as @@=`` without the backticks",
+	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL
+};
+
+static const char *help_msg_p[] = {
+	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
+	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
+	"p=", "[?][bep] [blks] [len] [blk]", "show entropy/printable chars/chars bars",
+	"p2", " [len]", "8x8 2bpp-tiles",
+	"p3", " [file]", "print stereogram (3D)",
+	"p6", "[de] [len]", "base64 decode/encode",
+	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
+	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hexpairs",
+	"pA", "[n_ops]", "show n_ops address and type",
+	"p", "[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
+	"pb", "[?] [n]", "bitstream of N bits",
+	"pB", "[?] [n]", "bitstream of N bytes",
+	"pc", "[?][p] [len]", "output C (or python) format",
+	"pC", "[d] [rows]", "print disassembly in columns (see hex.cols and pdi)",
+	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
+	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
+	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
+	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
+	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
+	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
+	"pq", "[z] [len]", "print QR code with the first Nbytes of the current block",
+	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
+	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
+	"pt", "[?][dn] [len]", "print different timestamps",
+	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
+	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
+	"pwd", "", "display current working directory",
+	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+	"pz", "[?] [len]", "print zoom view (see pz? for help)",
+	NULL
+};
+
+static const char *help_msg_p_equal[] = {
+	"Usage:", "p=[=bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
+	"p=", "", "print bytes of current block in bars",
+	"p==", "[..]", "same subcommands as p=, but using flame column graph instead of rows",
+	"p=", "b", "same as above",
+	"p=", "c", "print number of calls per block",
+	"p=", "d", "print different bytes from block",
+	"p=", "e", "print entropy for each filesize/blocksize",
+	"p=", "F", "print number of 0xFF bytes for each filesize/blocksize",
+	"p=", "i", "print number of invalid instructions per block",
+	"p=", "j", "print number of jumps and conditional jumps in block",
+	"p=", "m", "print number of flags and marks in block",
+	"p=", "p", "print number of printable bytes for each filesize/blocksize",
+	"p=", "s", "print number of syscall and priviledged instructions",
+	"p=", "z", "print number of chars in strings in block",
+	"p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
+	NULL
+};
+
+static const char *help_msg_p_minus[] = {
+	"Usage:", "p-[hj] [pieces]", "bar|json|histogram blocks",
+	"p-", "", "show ascii-art bar of metadata in file boundaries",
+	"p-h", "", "show histogram analysis of metadata per block",
+	"p-j", "", "show json format",
+	NULL
+};
+
+static const char *help_msg_pd[] = {
+	"Usage:", "p[dD][ajbrfils] [sz] [arch] [bits]", " # Print Disassembly",
+	"NOTE: ", "len", "parameter can be negative",
+	"NOTE: ", "", "Pressing ENTER on empty command will repeat last pd command and also seek to end of disassembled range.",
+	"pd", " N", "disassemble N instructions",
+	"pd", " -N", "disassemble N instructions backward",
+	"pD", " N", "disassemble N bytes",
+	"pda", "", "disassemble all possible opcodes (byte per byte)",
+	"pdb", "", "disassemble basic block",
+	"pdc", "", "pseudo disassembler output in C-like syntax",
+	"pdC", "", "show comments found in N instructions",
+	"pdf", "", "disassemble function",
+	"pdi", "", "like 'pi', with offset and bytes",
+	"pdj", "", "disassemble to json",
+	"pdk", "", "disassemble all methods of a class",
+	"pdl", "", "show instruction sizes",
+	"pdr", "", "recursive disassemble across the function graph",
+	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
+	// "pds", "", "disassemble with back sweep (greedy disassembly backwards)",
+	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
+	"pdt", "", "disassemble the debugger traces (see atd)",
+	NULL
+};
+
+static const char *help_msg_pf[] = {
+	"pf:", PF_USAGE_STR, "",
+	"Commands:", "", "",
+	"pf", "?", "Show this help",
+	"pf", "??", "Format characters",
+	"pf", "???", "pf usage examples",
+	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
+	"pf.", "fmt_name", "Show data using named format",
+	"pf.", "fmt_name.field_name", "Show specific data field using named format",
+	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
+	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
+	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
+	"pf.", "name [0|cnt]fmt", "Define a new named format",
+	"pf.", "", "List all format definitions",
+	"pf?", "fmt_name", "Show the definition of a named format",
+	"pfo", "", "List all format definition files (fdf)",
+	"pfo", " fdf_name", "Load a Format Definition File (fdf)",
+	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
+	"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
+	"pfs", " fmt_name|fmt", "Print the size of (named) format in bytes",
+	NULL
+};
+
+static const char *help_detail_pf[] = {
+	"pf:", PF_USAGE_STR, "",
+	"Format:", "", "",
+	" ", "b", "byte (unsigned)",
+	" ", "B", "resolve enum bitfield (see t?)",
+	" ", "c", "char (signed byte)",
+	" ", "d", "0x%%08x hexadecimal value (4 bytes) (see %%i and %%x)",
+	" ", "D", "disassemble one opcode",
+	" ", "e", "temporally swap endian",
+	" ", "E", "resolve enum name (see t?)",
+	" ", "f", "float value (4 bytes)",
+	" ", "i", "%%i signed integer value (4 bytes) (see %%d and %%x)",
+	" ", "n", "next char specifies size of signed value (1, 2, 4 or 8 byte(s))",
+	" ", "N", "next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))",
+	" ", "o", "0x%%08o octal value (4 byte)",
+	" ", "p", "pointer reference (2, 4 or 8 bytes)",
+	" ", "q", "quadword (8 bytes)",
+	" ", "r", "CPU register `pf r (eax)plop`",
+	" ", "s", "32bit pointer to string (4 bytes)",
+	" ", "S", "64bit pointer to string (8 bytes)",
+	" ", "t", "UNIX timestamp (4 bytes)",
+	" ", "T", "show Ten first bytes of buffer",
+	" ", "u", "uleb128 (variable length)",
+	" ", "w", "word (2 bytes unsigned short in hex)",
+	" ", "x", "0x%%08x hex value and flag (fd @ addr) (see %%d and %%i)",
+	" ", "X", "show formatted hexpairs",
+	" ", "z", "\\0 terminated string",
+	" ", "Z", "\\0 terminated wide string",
+	" ", "?", "data structure `pf ? (struct_name)example_name`",
+	" ", "*", "next char is pointer (honors asm.bits)",
+	" ", "+", "toggle show flags for each offset",
+	" ", ":", "skip 4 bytes",
+	" ", ".", "skip 1 byte",
+	NULL
+};
+
+static const char *help_detail2_pf[] = {
+	"pf:", PF_USAGE_STR, "",
+	"Examples:", "", "",
+	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
+	"pf", " B (BitFldType)arg_name`", "bitfield type",
+	"pf", " E (EnumType)arg_name`", "enum type",
+	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
+	"pf", " obj=xxdz prev next size name", "Same as above",
+	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
+	"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
+	"pf.", "plop ? (troll)mystruct", "Use structure troll previously defined",
+	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
+	"pf", " {integer}? (bifc)", "Print integer times the following format (bifc)",
+	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
+	"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structres",
+	"pf", "n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
+	NULL
+};
+
+static const char *help_msg_pi[] = {
+	"Usage:", "pi[bdefrj] [num]", "",
+	"pia", "", "print all possible opcodes (byte per byte)",
+	"pib", "", "print instructions of basic block",
+	"pid", "", "alias for pdi",
+	"pie", "", "print offset + esil expression",
+	"pif", "", "print instructions of function",
+	"pij", "", "print N instructions in JSON",
+	"pir", "", "like 'pdr' but with 'pI' output",
+	NULL
+};
+
+static const char *help_msg_ps[] = {
+	"Usage:", "ps[zpw] [N]", "Print String",
+	"ps", "", "print string",
+	"psb", "", "print strings in current block",
+	"psi", "", "print string inside curseek",
+	"psj", "", "print string in JSON format",
+	"psp", "", "print pascal string",
+	"pss", "", "print string in screen (wrap width)",
+	"psu", "", "print utf16 unicode (json)",
+	"psw", "", "print 16bit wide string",
+	"psW", "", "print 32bit wide string",
+	"psx", "", "show string with escaped chars",
+	"psz", "", "print zero terminated string",
+	NULL
+};
+
+static const char *help_msg_pt[] = {
+	"Usage: pt", "[dn]", "print timestamps",
+	"pt", "", "print UNIX time (32 bit `cfg.bigendian`)  Since January 1, 1970",
+	"ptd", "", "print DOS time (32 bit `cfg.bigendian`)   Since January 1, 1980",
+	"pth", "", "print HFS time (32 bit `cfg.bigendian`)   Since January 1, 1904",
+	"ptn", "", "print NTFS time (64 bit `cfg.bigendian`)  Since January 1, 1601",
+	NULL
+};
+
+static const char *help_msg_pv[] = {
+	"Usage: pv[j][1,2,4,8,z]", "", "",
+	"pv", "", "print bytes based on asm.bits",
+	"pv1", "", "print 1 byte in memory",
+	"pv2", "", "print 2 bytes in memory",
+	"pv4", "", "print 4 bytes in memory",
+	"pv8", "", "print 8 bytes in memory",
+	"pvz", "", "print value as string (alias for ps)",
+	NULL
+};
+
+static const char *help_msg_px[] = {
+	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
+	"px", "", "show hexdump",
+	"px/", "", "same as x/ in gdb (help x)",
+	"px0", "", "8bit hexpair list of bytes until zero byte",
+	"pxa", "", "show annotated hexdump",
+	"pxA", "", "show op analysis color map",
+	"pxb", "", "dump bits in hexdump form",
+	"pxc", "", "show hexdump with comments",
+	"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
+	"pxe", "", "emoji hexdump! :)",
+	"pxf", "", "show hexdump of current function",
+	"pxh", "", "show hexadecimal half-words dump (16bit)",
+	"pxH", "", "same as above, but one per line",
+	"pxi", "", "HexII compact binary representation",
+	"pxl", "", "display N lines (rows) of hexdump",
+	"pxo", "", "show octal dump",
+	"pxq", "", "show hexadecimal quad-words dump (64bit)",
+	"pxQ", "", "same as above, but one per line",
+	"pxr", "[j]", "show words with references to flags and code",
+	"pxs", "", "show hexadecimal in sparse mode",
+	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
+	"pxw", "", "show hexadecimal words dump (32bit)",
+	"pxW", "", "same as above, but one per line",
+	"pxx", "", "show N bytes of hex-less hexdump",
+	"pxX", "", "show N words of hex-less hexdump",
+	NULL
+};
+
+const char *help_msg_pz[] = {
+	"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
+	"e ", "zoom.maxsz", "max size of block",
+	"e ", "zoom.from", "start address",
+	"e ", "zoom.to", "end address",
+	"e ", "zoom.byte", "specify how to calculate each byte",
+	"pzp", "", "number of printable chars",
+	"pzf", "", "count of flags in block",
+	"pzs", "", "strings in range",
+	"pz0", "", "number of bytes with value '0'",
+	"pzF", "", "number of bytes with value 0xFF",
+	"pze", "", "calculate entropy and expand to 0-255 range",
+	"pzh", "", "head (first byte value); This is the default mode",
+	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
+	NULL
+};
+
 static ut32 colormap[256] = {
-  0x000000, 0x560000, 0x640000, 0x750000, 0x870000, 0x9b0000, 0xb00000, 0xc60000, 0xdd0000, 0xf50000, 0xff0f0f, 0xff2828, 0xff4343, 0xff5e5e, 0xff7979, 0xfe9595,
+	0x000000, 0x560000, 0x640000, 0x750000, 0x870000, 0x9b0000, 0xb00000, 0xc60000, 0xdd0000, 0xf50000, 0xff0f0f, 0xff2828, 0xff4343, 0xff5e5e, 0xff7979, 0xfe9595,
   0x4c1600, 0x561900, 0x641e00, 0x752300, 0x872800, 0x9b2e00, 0xb03400, 0xc63b00, 0xdd4200, 0xf54900, 0xff570f, 0xff6928, 0xff7b43, 0xff8e5e, 0xffa179, 0xfeb595,
   0x4c3900, 0x564000, 0x644b00, 0x755700, 0x876500, 0x9b7400, 0xb08400, 0xc69400, 0xdda600, 0xf5b800, 0xffc30f, 0xffc928, 0xffd043, 0xffd65e, 0xffdd79, 0xfee495,
   0x4c4c00, 0x565600, 0x646400, 0x757500, 0x878700, 0x9b9b00, 0xb0b000, 0xc6c600, 0xdddd00, 0xf5f500, 0xffff0f, 0xffff28, 0xffff43, 0xffff5e, 0xffff79, 0xfffe95,
@@ -29,6 +370,23 @@ static ut32 colormap[256] = {
   0x4c004c, 0x560056, 0x640064, 0x750075, 0x870087, 0x9b009b, 0xb000b0, 0xc600c6, 0xdd00dd, 0xf500f5, 0xfe0fff, 0xfe28ff, 0xfe43ff, 0xfe5eff, 0xfe79ff, 0xfe95fe,
   0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
+
+static void cmd_print_init(void) {
+	DEFINE_CMD_DESCRIPTOR_SPECIAL(&, amper);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL(@, at);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL(@@, at_at);
+	DEFINE_CMD_DESCRIPTOR(p);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL(p=, p_equal);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL(p-, p_minus);
+	DEFINE_CMD_DESCRIPTOR(pd);
+	DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(pf);  // TODO ?? => detail ; ??? => detail2
+	DEFINE_CMD_DESCRIPTOR(pi);
+	DEFINE_CMD_DESCRIPTOR(ps);
+	DEFINE_CMD_DESCRIPTOR(pt);
+	DEFINE_CMD_DESCRIPTOR(pv);
+	DEFINE_CMD_DESCRIPTOR(px);
+	DEFINE_CMD_DESCRIPTOR(pz);
+}
 
 // colordump
 static void cmd_prc (RCore *core, int len) {
@@ -560,185 +918,24 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char **hex, 
 }
 
 static void helpCmdTasks(RCore *core) {
-	const char *help_msg[] = {
-		"Usage:", "&[-|<cmd>]", "Manage tasks",
-		"&", "", "list all running threads",
-		"&=", "", "show output of all tasks",
-		"&=", " 3", "show output of task 3",
-		"&j", "", "list all running threads (in JSON)",
-		"&?", "", "show this help",
-		"&+", " aa", "push to the task list",
-		"&-", " 1", "delete task #1",
-		"&", "-*", "delete all threads",
-		"&", " aa", "run analysis in background",
-		"&", " &&", "run all tasks in background",
-		"&&", "", "run all pendings tasks (and join threads)",
-		"&&&", "", "run all pendings tasks until ^C",
-		"", "", "TODO: last command should honor asm.bits",
-		"", "", "WARN: this feature is very experimental. Use it with caution",
-		NULL
-	};
 	// TODO: integrate with =h& and bg anal/string/searchs/..
-	r_core_cmd_help (core, help_msg);
+	r_core_cmd_help (core, help_msg_amper);
 }
 
 static void helpCmdForeach(RCore *core) {
-	const char *help_msg[] = {
-		"@@", "", " # foreach iterator command:",
-		"Repeat a command over a list of offsets", "", "",
-		"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
-		"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
-		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
-		"x", " @@=off1 off2 ..", "manual list of offsets",
-		"x", " @@/x 9090", "temporary set cmd.hit to run a command on each search result",
-		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
-		"x", " @@t", "\"\" on all threads (see dp)",
-		"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
-		"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
-		"x", " @@f", "\"\" on all functions (see aflq)",
-		"x", " @@f:write", "\"\" on all functions matching write in the name",
-		"x", " @@c:cmd", "the same as @@=`` without the backticks",
-		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
-		// TODO: Add @@k sdb-query-expression-here
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
+	r_core_cmd_help (core, help_msg_at_at);
 }
 
 static void helpCmdAt(RCore *core) {
-	const char *help_msg[] = {
-		"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
-		"0", "", "alias for 's 0'",
-		"0x", "addr", "alias for 's 0x..'",
-		"#", "cmd", "if # is a number repeat the command # times",
-		"/*", "", "start multiline comment",
-		"*/", "", "end multiline comment",
-		".", "cmd", "execute output of command as r2 script",
-		".:", "8080", "wait for commands on port 8080",
-		".!", "rabin2 -re $FILE", "run command output as r2 script",
-		"*", "", "output of command in r2 script format (CC*)",
-		"j", "", "output of command in JSON format (pdj)",
-		"~", "?", "count number of lines (like wc -l)",
-		"~", "??", "show internal grep help",
-		"~", "..", "internal less",
-		"~", "{}", "json indent",
-		"~", "{}..", "json indent and less",
-		"~", "word", "grep for lines matching word",
-		"~", "!word", "grep for lines NOT matching word",
-		"~", "word[2]", "grep 3rd column of lines matching word",
-		"~", "word:3[0]", "grep 1st column from the 4th line matching word",
-		"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-		"@", " addr[!blocksize]", "temporary set a new blocksize",
-		"@a:", "arch[:bits]", "temporary set arch and bits",
-		"@b:", "bits", "temporary set asm.bits",
-		"@e:", "k=v,k=v", "temporary change eval vars",
-		"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
-		"@i:", "nth.op", "temporary seek to the Nth relative instruction",
-		"@f:", "file", "temporary replace block with file contents",
-		"@o:", "fd", "temporary switch to another fd",
-		"@s:", "string", "same as above but from a string",
-		"@x:", "909192", "from hex pairs string",
-		"@..", "from to", "temporary set from and to for commands supporting ranges",
-		"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
-		"@@", " hit*", "run the command on every flag matching 'hit*'",
-		"@@?", "[ktfb..]", "show help for the iterator operator",
-		"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
-		">", "file", "pipe output of command to file",
-		">>", "file", "append to file",
-		"H>", "file", "pipe output of command to file in HTML",
-		"H>>", "file", "append to file with the output of command in HTML",
-		"`", "pdi~push:0[0]`", "replace output of command inside the line",
-		"|", "cmd", "pipe output to command (pd|less) (.dr*)",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
-}
-
-static void print_format_help(RCore *core) {
-	const char *help_msg[] = {
-		"pf:", PF_USAGE_STR, "",
-		"Commands:", "", "",
-		"pf", "?", "Show this help",
-		"pf", "??", "Format characters",
-		"pf", "???", "pf usage examples",
-		"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
-		"pf.", "fmt_name", "Show data using named format",
-		"pf.", "fmt_name.field_name", "Show specific data field using named format",
-		"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
-		"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
-		"pfd.", "fmt_name", "Show data using named format as graphviz commands",
-		"pf.", "name [0|cnt]fmt", "Define a new named format",
-		"pf.", "", "List all format definitions",
-		"pf?", "fmt_name", "Show the definition of a named format",
-		"pfo", "", "List all format definition files (fdf)",
-		"pfo", " fdf_name", "Load a Format Definition File (fdf)",
-		"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
-		"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
-		"pfs", " fmt_name|fmt", "Print the size of (named) format in bytes",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
+	r_core_cmd_help (core, help_msg_at);
 }
 
 static void print_format_help_help(RCore *core) {
-	const char *help_msg[] = {
-		"pf:", PF_USAGE_STR, "",
-		"Format:", "", "",
-		" ", "b", "byte (unsigned)",
-		" ", "B", "resolve enum bitfield (see t?)",
-		" ", "c", "char (signed byte)",
-		" ", "d", "0x%%08x hexadecimal value (4 bytes) (see %%i and %%x)",
-		" ", "D", "disassemble one opcode",
-		" ", "e", "temporally swap endian",
-		" ", "E", "resolve enum name (see t?)",
-		" ", "f", "float value (4 bytes)",
-		" ", "i", "%%i signed integer value (4 bytes) (see %%d and %%x)",
-		" ", "n", "next char specifies size of signed value (1, 2, 4 or 8 byte(s))",
-		" ", "N", "next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))",
-		" ", "o", "0x%%08o octal value (4 byte)",
-		" ", "p", "pointer reference (2, 4 or 8 bytes)",
-		" ", "q", "quadword (8 bytes)",
-		" ", "r", "CPU register `pf r (eax)plop`",
-		" ", "s", "32bit pointer to string (4 bytes)",
-		" ", "S", "64bit pointer to string (8 bytes)",
-		" ", "t", "UNIX timestamp (4 bytes)",
-		" ", "T", "show Ten first bytes of buffer",
-		" ", "u", "uleb128 (variable length)",
-		" ", "w", "word (2 bytes unsigned short in hex)",
-		" ", "x", "0x%%08x hex value and flag (fd @ addr) (see %%d and %%i)",
-		" ", "X", "show formatted hexpairs",
-		" ", "z", "\\0 terminated string",
-		" ", "Z", "\\0 terminated wide string",
-		" ", "?", "data structure `pf ? (struct_name)example_name`",
-		" ", "*", "next char is pointer (honors asm.bits)",
-		" ", "+", "toggle show flags for each offset",
-		" ", ":", "skip 4 bytes",
-		" ", ".", "skip 1 byte",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
+	r_core_cmd_help (core, help_detail_pf);
 }
 
 static void print_format_help_help_help(RCore *core) {
-	const char *help_msg[] = {
-		"pf:", PF_USAGE_STR, "",
-		"Examples:", "", "",
-		"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
-		"pf", " B (BitFldType)arg_name`", "bitfield type",
-		"pf", " E (EnumType)arg_name`", "enum type",
-		"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
-		"pf", " obj=xxdz prev next size name", "Same as above",
-		"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
-		"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
-		"pf.", "plop ? (troll)mystruct", "Use structure troll previously defined",
-		"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
-		"pf", " {integer}? (bifc)", "Print integer times the following format (bifc)",
-		"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
-		"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structres",
-		"pf", "n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
+	r_core_cmd_help (core, help_detail2_pf);
 }
 
 static void print_format_help_help_help_help(RCore *core) {
@@ -805,7 +1002,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 					if (_input && *_input == '?') {
 						print_format_help_help_help_help (core);
 					} else {
-						print_format_help_help_help (core);
+						r_core_cmd_help (core, help_detail2_pf);
 					}
 				} else {
 					print_format_help_help (core);
@@ -820,7 +1017,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				}
 			}
 		} else {
-			print_format_help (core);
+			r_core_cmd_help (core, help_msg_pf);
 		}
 		return;
 	}
@@ -2060,16 +2257,6 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	int i, n = core->assembler->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
-	const char *help_msg[] = {
-		"Usage: pv[j][1,2,4,8,z]", "", "",
-		"pv", "", "print bytes based on asm.bits",
-		"pv1", "", "print 1 byte in memory",
-		"pv2", "", "print 2 bytes in memory",
-		"pv4", "", "print 4 bytes in memory",
-		"pv8", "", "print 8 bytes in memory",
-		"pvz", "", "print value as string (alias for ps)",
-		NULL
-	};
 	switch (input[0]) {
 	case '1':
 		n = 1;
@@ -2135,7 +2322,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	}
 	break;
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_pv);
 		break;
 	default:
 	{
@@ -2266,24 +2453,6 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 }
 
 static void cmd_print_bars(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "p=[=bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
-		"p=", "", "print bytes of current block in bars",
-		"p==", "[..]", "same subcommands as p=, but using flame column graph instead of rows",
-		"p=", "b", "same as above",
-		"p=", "c", "print number of calls per block",
-		"p=", "d", "print different bytes from block",
-		"p=", "e", "print entropy for each filesize/blocksize",
-		"p=", "F", "print number of 0xFF bytes for each filesize/blocksize",
-		"p=", "i", "print number of invalid instructions per block",
-		"p=", "j", "print number of jumps and conditional jumps in block",
-		"p=", "m", "print number of flags and marks in block",
-		"p=", "p", "print number of printable bytes for each filesize/blocksize",
-		"p=", "s", "print number of syscall and priviledged instructions",
-		"p=", "z", "print number of chars in strings in block",
-		"p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
-		NULL
-	};
 	bool print_bars = false;
 	ut8 *ptr = core->block;
 	// p=e [nblocks] [totalsize] [skip]
@@ -2345,12 +2514,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 
 	switch (mode) {
 	case '?': // bars
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_p_equal);
 		break;
 	case '=': // "p=="
 		switch (submode) {
 		case '?':
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_p_equal);
 			break;
 		case '0': // 0x00 bytes
 		case 'f': // 0xff bytes
@@ -3268,16 +3437,8 @@ static int cmd_print(void *data, const char *input) {
 		}
 		// eprintf ("RANGE = %llx %llx\n", from, to);
 		switch (mode) {
-		case '?': {
-			const char *help_msg[] = {
-				"Usage:", "p-[hj] [pieces]", "bar|json|histogram blocks",
-				"p-", "", "show ascii-art bar of metadata in file boundaries",
-				"p-h", "", "show histogram analysis of metadata per block",
-				"p-j", "", "show json format",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		case '?':
+			r_core_cmd_help (core, help_msg_p_minus);
 			return 0;
 		case 'j': // "p-j"
 			r_cons_printf (
@@ -3638,20 +3799,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':
 // r_cons_printf ("|Usage: pi[defj] [num]\n");
-		{
-			const char *help_msg[] = {
-				"Usage:", "pi[bdefrj] [num]", "",
-				"pia", "", "print all possible opcodes (byte per byte)",
-				"pib", "", "print instructions of basic block",
-				"pid", "", "alias for pdi",
-				"pie", "", "print offset + esil expression",
-				"pif", "", "print instructions of function",
-				"pij", "", "print N instructions in JSON",
-				"pir", "", "like 'pdr' but with 'pI' output",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+			r_core_cmd_help (core, help_msg_pi);
 		break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
@@ -4019,30 +4167,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?': // "pd?"
 			processed_cmd = true;
-			const char *help_msg[] = {
-				"Usage:", "p[dD][ajbrfils] [sz] [arch] [bits]", " # Print Disassembly",
-				"NOTE: ", "len", "parameter can be negative",
-				"NOTE: ", "", "Pressing ENTER on empty command will repeat last pd command and also seek to end of disassembled range.",
-				"pd", " N", "disassemble N instructions",
-				"pd", " -N", "disassemble N instructions backward",
-				"pD", " N", "disassemble N bytes",
-				"pda", "", "disassemble all possible opcodes (byte per byte)",
-				"pdb", "", "disassemble basic block",
-				"pdc", "", "pseudo disassembler output in C-like syntax",
-				"pdC", "", "show comments found in N instructions",
-				"pdf", "", "disassemble function",
-				"pdi", "", "like 'pi', with offset and bytes",
-				"pdj", "", "disassemble to json",
-				"pdk", "", "disassemble all methods of a class",
-				"pdl", "", "show instruction sizes",
-				"pdr", "", "recursive disassemble across the function graph",
-				"pdR", "", "recursive disassemble block size bytes without analyzing functions",
-				// "pds", "", "disassemble with back sweep (greedy disassembly backwards)",
-				"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
-				"pdt", "", "disassemble the debugger traces (see atd)",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_pd);
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
@@ -4132,24 +4257,8 @@ static int cmd_print(void *data, const char *input) {
 	break;
 	case 's': // "ps"
 		switch (input[1]) {
-		case '?': {
-			const char *help_msg[] = {
-				"Usage:", "ps[zpw] [N]", "Print String",
-				"ps", "", "print string",
-				"psb", "", "print strings in current block",
-				"psi", "", "print string inside curseek",
-				"psj", "", "print string in JSON format",
-				"psp", "", "print pascal string",
-				"pss", "", "print string in screen (wrap width)",
-				"psu", "", "print utf16 unicode (json)",
-				"psw", "", "print 16bit wide string",
-				"psW", "", "print 32bit wide string",
-				"psx", "", "show string with escaped chars",
-				"psz", "", "print zero terminated string",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		case '?':
+			r_core_cmd_help (core, help_msg_ps);
 			break;
 		case 'j': // "psj"
 			if (l > 0) {
@@ -4559,37 +4668,8 @@ static int cmd_print(void *data, const char *input) {
 		case '/': // "px/"
 			r_core_print_examine (core, input + 2);
 			break;
-		case '?': {
-			const char *help_msg[] = {
-				"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
-				"px", "", "show hexdump",
-				"px/", "", "same as x/ in gdb (help x)",
-				"px0", "", "8bit hexpair list of bytes until zero byte",
-				"pxa", "", "show annotated hexdump",
-				"pxA", "", "show op analysis color map",
-				"pxb", "", "dump bits in hexdump form",
-				"pxc", "", "show hexdump with comments",
-				"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
-				"pxe", "", "emoji hexdump! :)",
-				"pxi", "", "HexII compact binary representation",
-				"pxf", "", "show hexdump of current function",
-				"pxh", "", "show hexadecimal half-words dump (16bit)",
-				"pxH", "", "same as above, but one per line",
-				"pxl", "", "display N lines (rows) of hexdump",
-				"pxo", "", "show octal dump",
-				"pxq", "", "show hexadecimal quad-words dump (64bit)",
-				"pxQ", "", "same as above, but one per line",
-				"pxr", "[j]", "show words with references to flags and code",
-				"pxs", "", "show hexadecimal in sparse mode",
-				"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
-				"pxw", "", "show hexadecimal words dump (32bit)",
-				"pxW", "", "same as above, but one per line",
-				"pxx", "", "show N bytes of hex-less hexdump",
-				"pxX", "", "show N words of hex-less hexdump",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		case '?':
+			r_core_cmd_help (core, help_msg_px);
 			break;
 		case '0': // "px0"
 			if (l) {
@@ -5239,17 +5319,8 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_w32 (core->print, core->block + l, sizeof (ut64));
 			}
 			break;
-		case '?': {
-			const char *help_msg[] = {
-				"Usage: pt", "[dn]", "print timestamps",
-				"pt", "", "print UNIX time (32 bit `cfg.bigendian`)  Since January 1, 1970",
-				"ptd", "", "print DOS time (32 bit `cfg.bigendian`)   Since January 1, 1980",
-				"pth", "", "print HFS time (32 bit `cfg.bigendian`)   Since January 1, 1904",
-				"ptn", "", "print NTFS time (64 bit `cfg.bigendian`)  Since January 1, 1601",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		case '?':
+			r_core_cmd_help (core, help_msg_pt);
 			break;
 		}
 		break;
@@ -5276,23 +5347,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'z': // "pz"
 		if (input[1] == '?') {
-			const char *help_msg[] = {
-				"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
-				"e ", "zoom.maxsz", "max size of block",
-				"e ", "zoom.from", "start address",
-				"e ", "zoom.to", "end address",
-				"e ", "zoom.byte", "specify how to calculate each byte",
-				"pzp", "", "number of printable chars",
-				"pzf", "", "count of flags in block",
-				"pzs", "", "strings in range",
-				"pz0", "", "number of bytes with value '0'",
-				"pzF", "", "number of bytes with value 0xFF",
-				"pze", "", "calculate entropy and expand to 0-255 range",
-				"pzh", "", "head (first byte value); This is the default mode",
-				// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_pz);
 		} else {
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
@@ -5322,41 +5377,8 @@ static int cmd_print(void *data, const char *input) {
 			R_FREE (oldmode);
 		}
 		break;
-	default: {
-		const char *help_msg[] = {
-			"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
-			"p=", "[?][bep] [blks] [len] [blk]", "show entropy/printable chars/chars bars",
-			"p2", " [len]", "8x8 2bpp-tiles",
-			"p3", " [file]", "print stereogram (3D)",
-			"p6", "[de] [len]", "base64 decode/encode",
-			"p8", "[?][j] [len]", "8bit hexpair list of bytes",
-			"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hexpairs",
-			"pA", "[n_ops]", "show n_ops address and type",
-			"p", "[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
-			"pb", "[?] [n]", "bitstream of N bits",
-			"pB", "[?] [n]", "bitstream of N bytes",
-			"pc", "[?][p] [len]", "output C (or python) format",
-			"pC", "[d] [rows]", "print disassembly in columns (see hex.cols and pdi)",
-			"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
-			"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
-			"ph", "[?][=|hash] ([len])", "calculate hash for a block",
-			"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
-			"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
-			"pq", "[z] [len]", "print QR code with the first Nbytes of the current block",
-			"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
-			"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
-			"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
-			"pt", "[?][dn] [len]", "print different timestamps",
-			"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
-			"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
-			"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
-			"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
-			"pz", "[?] [len]", "print zoom view (see pz? for help)",
-			"pwd", "", "display current working directory",
-			NULL
-		};
-		r_core_cmd_help (core, help_msg);
-	}
+	default:
+		r_core_cmd_help (core, help_msg_p);
 		break;
 	}
 beach:
