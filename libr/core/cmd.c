@@ -3159,6 +3159,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	cmd_print_init();
 	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
 	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
+	cmd_meta_init ();
 	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
 	r_cmd_add (core->rcmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
