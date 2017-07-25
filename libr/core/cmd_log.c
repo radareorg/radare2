@@ -5,6 +5,38 @@
 #include "r_cons.h"
 #include "r_core.h"
 
+// TODO #7967 help refactor: move to another place
+static const char *help_msg_L[] = {
+	"Usage:", "L", "[-name][ file] # see oL, iL, dL, ...",
+	"L", "", "List all plugins loaded by RCore.lib",
+	"L-", "duk", "Unload plugin matching in filename",
+	"L", " blah."R_LIB_EXT, "Load plugin file",
+	NULL
+};
+
+static const char *help_msg_T[] = {
+	"Usage:", "T", "[-][ num|msg]",
+	"T", "", "List all Text log messages",
+	"T", " message", "Add new log message",
+	"T", " 123", "List log from 123",
+	"T", " 10 3", "List 3 log messages starting from 10",
+	"T*", "", "List in radare commands",
+	"T-", "", "Delete all logs",
+	"T-", " 123", "Delete logs before 123",
+	"Tl", "", "Get last log message id",
+	"Tj", "", "List in json format",
+	"Tm", " [idx]", "Display log messages without index",
+	"Ts", "", "List files in current directory (see pwd, cd)",
+	"TT", "", "Enter into the text log chat console",
+	NULL
+};
+
+// TODO #7967 help refactor: move L to another place
+static void cmd_log_init(void) {
+	DEFINE_CMD_DESCRIPTOR (L);
+	DEFINE_CMD_DESCRIPTOR (T);
+}
+
 static int textlog_chat(RCore *core) {
 	char prompt[64];
 	char buf[1024];
@@ -93,26 +125,9 @@ static int cmd_log(void *data, const char *input) {
 	case '-':
 		r_core_log_del (core, n);
 		break;
-	case '?': {
-		const char *help_msg[] = {
-			"Usage:", "T", "[-][ num|msg]",
-			"T", "", "List all Text log messages",
-			"T", " message", "Add new log message",
-			"T", " 123", "List log from 123",
-			"T", " 10 3", "List 3 log messages starting from 10",
-			"T*", "", "List in radare commands",
-			"T-", "", "Delete all logs",
-			"T-", " 123", "Delete logs before 123",
-			"Tl", "", "Get last log message id",
-			"Tj", "", "List in json format",
-			"Tm", " [idx]", "Display log messages without index",
-			"Ts", "", "List files in current directory (see pwd, cd)",
-			"TT", "", "Enter into the text log chat console",
-			NULL
-		};
-		r_core_cmd_help (core, help_msg);
-	}
-		  break;
+	case '?':
+		r_core_cmd_help (core, help_msg_T);
+		break;
 	case 'T':
 		if (r_config_get_i (core->config, "scr.interactive")) {
 			textlog_chat (core);
@@ -145,13 +160,6 @@ static int cmd_log(void *data, const char *input) {
 
 static int cmd_plugins(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	const char *help_msg[] = {
-		"Usage:", "L", "[-name][ file] # see oL, iL, dL, ...",
-		"L", "", "List all plugins loaded by RCore.lib",
-		"L-", "duk", "Unload plugin matching in filename",
-		"L", " blah."R_LIB_EXT, "Load plugin file",
-		NULL
-	};
 	switch (input[0]) {
 	case 0:
 		r_lib_list (core->lib);
@@ -163,7 +171,7 @@ static int cmd_plugins(void *data, const char *input) {
 		r_lib_open (core->lib, input + 2);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_L);
 		break;
 	}
 	return 0;
