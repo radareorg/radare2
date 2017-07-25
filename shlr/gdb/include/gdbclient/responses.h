@@ -31,4 +31,7 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf);
 int handle_vFile_close(libgdbr_t *g);
 int handle_stop_reason(libgdbr_t *g);
 
+// LLDB
+int handle_lldb_read_reg(libgdbr_t *g);
+
 #endif  // RESPONSES_H

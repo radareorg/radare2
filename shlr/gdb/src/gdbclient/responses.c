@@ -382,3 +382,48 @@ int handle_stop_reason(libgdbr_t *g) {
 	}
 	return 0;
 }
+
+int handle_lldb_read_reg(libgdbr_t *g) {
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	char *ptr, *ptr2, *buf;
+	size_t regnum, tot_regs, buflen = 0;
+
+	// Get maximum register number
+	for (regnum = 0; *g->registers[regnum].name; regnum++) {
+		if (g->registers[regnum].offset + g->registers[regnum].size > buflen) {
+			buflen = g->registers[regnum].offset + g->registers[regnum].size;
+		}
+	}
+	tot_regs = regnum;
+
+	// We're not using the receive buffer till next packet anyway. Better use it
+	buf = g->read_buff;
+	memset (buf, 0, buflen);
+
+	if (!(ptr = strtok (g->data, ";"))) {
+		return -1;
+	}
+	while (ptr) {
+		if (!isxdigit (*ptr)) {
+			// This is not a reg value. Skip
+			ptr = strtok (NULL, ";");
+			continue;
+		}
+		// Get register number
+		regnum = (int) strtoul (ptr, NULL, 16);
+		if (regnum >= tot_regs || !(ptr2 = strchr (ptr, ':'))) {
+			ptr = strtok (NULL, ";");
+			continue;
+		}
+		ptr2++;
+		// Write to offset
+		unpack_hex (ptr2, strlen (ptr2), buf + g->registers[regnum].offset);
+		ptr = strtok (NULL, ";");
+		continue;
+	}
+	memcpy (g->data, buf, buflen);
+	g->data_len = buflen;
+	return 0;
+}

@@ -63,6 +63,21 @@ static struct {
 	bool valid, init;
 } reg_cache;
 
+static void reg_cache_init(libgdbr_t *g) {
+	reg_cache.maxlen = g->data_max;
+	reg_cache.buflen = 0;
+	reg_cache.valid = false;
+	reg_cache.init = false;
+	if ((reg_cache.buf = malloc (reg_cache.maxlen))) {
+		reg_cache.init = true;
+	}
+}
+
+static int gdbr_connect_lldb(libgdbr_t *g) {
+	reg_cache_init (g);
+	return 0;
+}
+
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+";
 	RStrBuf tmp;
@@ -92,6 +107,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!ret) {
 		return -1;
 	}
+	if (send_ack (g) < 0) {
+		return -1;
+	}
 	read_packet (g);
 	g->connected = 1;
 	// TODO add config possibility here
@@ -114,8 +132,13 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 		read_packet (g);
 		if (!strncmp (g->data, "OK", 2)) {
+			// Just in case, send ack
+			send_ack (g);
 			g->no_ack = true;
 		}
+	}
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		return gdbr_connect_lldb (g);
 	}
 	// Query the thread / process id
 	g->stub_features.qC = true;
@@ -165,14 +188,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
 	}
-	// Initialize reg cache
-	reg_cache.maxlen = g->data_max;
-	reg_cache.buflen = 0;
-	reg_cache.valid = false;
-	reg_cache.init = false;
-	if ((reg_cache.buf = malloc (reg_cache.maxlen))) {
-		reg_cache.init = true;
-	}
+	reg_cache_init (g);
 	return ret;
 }
 
@@ -417,6 +433,24 @@ bool gdbr_kill_pid(libgdbr_t *g, int pid) {
 	return true;
 }
 
+static int gdbr_read_registers_lldb(libgdbr_t *g) {
+	// Send the stop reply query packet and get register info
+	// (this is what lldb does)
+	int ret;
+	if (send_msg (g, "?") < 0 || read_packet (g) < 0) {
+		return -1;
+	}
+	if ((ret = handle_lldb_read_reg (g)) < 0) {
+		return ret;
+	}
+	if (reg_cache.init) {
+		reg_cache.buflen = g->data_len;
+		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
+		reg_cache.valid = true;
+	}
+	return 0;
+}
+
 int gdbr_read_registers(libgdbr_t *g) {
 	int ret = -1;
 	if (!g) {
@@ -426,6 +460,9 @@ int gdbr_read_registers(libgdbr_t *g) {
 		g->data_len = reg_cache.buflen;
 		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
 		return 0;
+	}
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		return gdbr_read_registers_lldb (g);
 	}
 	ret = send_msg (g, CMD_READREGS);
 	if (ret < 0) {
