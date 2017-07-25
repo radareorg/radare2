@@ -3112,9 +3112,9 @@ static void cmd_descriptor_init(RCore *core) {
 	qsort (cmd_descriptors, cmd_descriptors_len, sizeof (RCmdDescriptor), compare_cmd_descriptor_name);
 	int i, n_cmd_descriptors = cmd_descriptors_len;
 	for (i = 0; i < n_cmd_descriptors; i++) {
-		const char *p;
+		const ut8 *p;
 		RCmdDescriptor *x = &core->cmd_descriptor;
-		for (p = cmd_descriptors[i].name; *p; p++) {
+		for (p = (const ut8*)cmd_descriptors[i].name; *p; p++) {
 			if (!x->sub[*p]) {
 				if (cmd_descriptors_len >= MAX_NUM_CMD_DESCRIPTORS) {
 					eprintf ("Please increase MAX_NUM_CMD_DESCRIPTORS in libr/core/cmd.c\n");
