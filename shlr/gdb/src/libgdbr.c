@@ -37,6 +37,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 		R_FREE (g->read_buff);
 		return -1;
 	}
+	g->remote_type = GDB_REMOTE_TYPE_GDB;
 	return 0;
 }
 
