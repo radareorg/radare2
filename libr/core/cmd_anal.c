@@ -5438,7 +5438,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
 				} else {
-					rowlog (core, "[*] Use -AA or aaaa to perform additional experimental analysis.\n");
+					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
+					rowlog_done (core);
 				}
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
