@@ -786,10 +786,10 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	buf = bin->b->buf;
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
 	for (i = 0; i < bin->size / 4; i++) {
-		cur = (buf[i * 4] << 0) |
-		(buf[i * 4 + 1] << 8) |
-		(buf[i * 4 + 2] << 16) |
-		(buf[i * 4 + 3] << 24);
+		cur = ((ut32)buf[i * 4] << 0) |
+		((ut32)buf[i * 4 + 1] << 8) |
+		((ut32)buf[i * 4 + 2] << 16) |
+		((ut32)buf[i * 4 + 3] << 24);
 
 		// skip the checksum bytes
 		if (i * 4 == checksum_offset) {

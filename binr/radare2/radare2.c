@@ -427,6 +427,15 @@ int main(int argc, char **argv, char **envp) {
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
 	RList *prefiles = r_list_new ();
+
+#define LISTS_FREE() \
+		{ \
+			r_list_free (cmds); \
+			r_list_free (evals); \
+			r_list_free (files); \
+			r_list_free (prefiles); \
+		}
+
 	int va = 1; // set va = 0 to load physical offsets from rbin
 	bool noStderr = false;
 
@@ -436,16 +445,14 @@ int main(int argc, char **argv, char **envp) {
 		r_sys_crash_handler ("gdb --pid %d");
 	}
 	if (argc < 2) {
-		r_list_free (cmds);
-		r_list_free (evals);
-		r_list_free (files);
-		r_list_free (prefiles);
+		LISTS_FREE ();
 		return main_help (1);
 	}
 	r_core_init (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
 		r_cons_flush ();
+		LISTS_FREE ();
 		return 0;
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
@@ -461,6 +468,7 @@ int main(int argc, char **argv, char **envp) {
 	// -H option without argument
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		main_print_var (NULL);
+		LISTS_FREE ();
 		return 0;
 	}
 
@@ -516,6 +524,7 @@ int main(int argc, char **argv, char **envp) {
 			if (!strcmp (optarg, "?")) {
 				r_debug_plugin_list (r.dbg, 'q');
 				r_cons_flush();
+				LISTS_FREE ();
 				return 0;
 			}
 			break;
@@ -538,6 +547,7 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'H':
 			main_print_var (optarg);
+			LISTS_FREE ();
 			return 0;
 		case 'i':
 			r_list_append (files, optarg);
@@ -573,6 +583,7 @@ int main(int argc, char **argv, char **envp) {
 			if (!strcmp (optarg, "?")) {
 				r_core_project_list (&r, 0);
 				r_cons_flush ();
+				LISTS_FREE ();
 				return 0;
 			}
 			r_config_set (r.config, "prj.name", optarg);
@@ -608,9 +619,11 @@ int main(int argc, char **argv, char **envp) {
 		case 'v':
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
+				LISTS_FREE ();
 				return 0;
 			} else {
 				verify_version (0);
+				LISTS_FREE ();
 				return blob_version ("radare2");
 			}
 		case 'V':
@@ -666,16 +679,12 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_io_plugin_list (r.io);
 		r_cons_flush ();
-		r_list_free (evals);
-		r_list_free (files);
-		r_list_free (cmds);
+		LISTS_FREE ();
 		return 0;
 	}
 
 	if (help > 0) {
-		r_list_free (evals);
-		r_list_free (files);
-		r_list_free (cmds);
+		LISTS_FREE ();
 		return main_help (help > 1? 2: 0);
 	}
 	if (customRarunProfile) {
