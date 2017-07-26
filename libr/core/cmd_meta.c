@@ -8,6 +8,103 @@
 #include "r_types.h"
 #include "sdb/sdb.h"
 
+static const char *help_msg_C[] = {
+	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
+	"C*", "", "list meta info in r2 commands",
+	"C-", " [len] [[@]addr]", "delete metadata at given address range",
+	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
+	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
+	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
+	"CC.", "[addr]", "show comment in current address",
+	"CC!", " [@addr]", "edit comment with $EDITOR",
+	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
+	"CCu", " [comment-text] [@addr]", "add unique comment",
+	"Cv", "[bsr][?]", "add comments to args",
+	"Cs", "[?] [-] [size] [@addr]", "add string",
+	"Cz", "[@addr]", "add zero-terminated string",
+	"Ch", "[-] [size] [@addr]", "hide data",
+	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
+	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
+	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
+	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
+	NULL
+};
+
+static const char *help_msg_CC[] = {
+	"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
+	"CC", "", "list all comments in human friendly form",
+	"CC*", "", "list all comments in r2 commands",
+	"CC.", "", "show comment at current offset",
+	"CC,", " [file]", "show or set comment file",
+	"CC", " [text]", "append comment at current address",
+	"CCf", "", "list comments in function",
+	"CC+", " [text]", "append comment at current address",
+	"CC!", "", "edit comment using cfg.editor (vim, ..)",
+	"CC-", " @ cmt_addr", "remove comment at given address",
+	"CCu", " good boy @ addr", "add good boy comment at given address",
+	"CCu", " base64:AA== @ addr", "add comment in base64",
+	NULL
+};
+
+static const char *help_msg_CS[] = {
+	"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
+	"CS","","display metaspaces",
+	"CS"," *","select all metaspaces",
+	"CS"," metaspace","select metaspace or create if it doesn't exist",
+	"CS","-metaspace","remove metaspace",
+	"CS","-*","remove all metaspaces",
+	"CS","+foo","push previous metaspace and set",
+	"CS","-","pop to the previous metaspace",
+	//	"CSm"," [addr]","move metas at given address to the current metaspace",
+	"CSr"," newname","rename selected metaspace",
+	NULL
+};
+
+static const char *help_msg_Cvb[] = {
+	"Usage:", "Cvb", "[name] [comment]",
+	"Cvb?", "", "show this help",
+	"Cvb", "", "list all base pointer args/vars comments in human friendly format",
+	"Cvb*", "", "list all base pointer args/vars comments in r2 format",
+	"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
+	"Cvb", " [name]", "Show comments for var/arg at current offset for base pointer",
+	"Cvb", " [name] [comment]", "add/append comment for the variable with the current name",
+	"Cvb!", "[name]", "edit comment using cfg editor",
+	NULL
+};
+
+static const char *help_msg_Cvr[] = {
+	"Usage:", "Cvr", "[name] [comment]",
+	"Cvr?", "", "show this help",
+	"Cvr", "", "list all register based args comments in human friendly format",
+	"Cvr*", "", "list all register based args comments in r2 format",
+	"Cvr-", "[name]", "delete comments for register based arg for that name",
+	"Cvr", "[name]", "Show comments for register based arg for that name",
+	"Cvr", "[name] [comment]", "add/append comment for the variable",
+	"Cvr!", "[name]", "edit comment using cfg editor",
+	NULL
+};
+
+static const char *help_msg_Cvs[] = {
+	"Usage:", "Cvs", "[name] [comment]",
+	"Cvs?", "", "show this help",
+	"Cvs", "", "list all stack based args/vars comments in human friendly format",
+	"Cvs*", "", "list all stack based args/vars comments in r2 format",
+	"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
+	"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
+	"Cvs", "[name] [comment]", "add/append comment for the variable",
+	"Cvs!", "[name]", "edit comment using cfg editor",
+	NULL
+};
+
+static void cmd_meta_init(void) {
+	DEFINE_CMD_DESCRIPTOR (C);
+	DEFINE_CMD_DESCRIPTOR (CC);
+	DEFINE_CMD_DESCRIPTOR (CS);
+	DEFINE_CMD_DESCRIPTOR (Cvb);
+	DEFINE_CMD_DESCRIPTOR (Cvr);
+	DEFINE_CMD_DESCRIPTOR (Cvs);
+}
+
 static int remove_meta_offset(RCore *core, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
@@ -204,24 +301,9 @@ error:
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
-	case '?': {
-		const char* help_msg[] = {
-			"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
-			"CC", "", "list all comments in human friendly form",
-			"CC*", "", "list all comments in r2 commands",
-			"CC.", "", "show comment at current offset",
-			"CC,", " [file]", "show or set comment file",
-			"CC", " [text]", "append comment at current address",
-			"CCf", "", "list comments in function",
-			"CC+", " [text]", "append comment at current address",
-			"CC!", "", "edit comment using cfg.editor (vim, ..)",
-			"CC-", " @ cmt_addr", "remove comment at given address",
-			"CCu", " good boy @ addr", "add good boy comment at given address",
-			"CCu", " base64:AA== @ addr", "add comment in base64",
-			NULL
-		};
-		r_core_cmd_help (core, help_msg);
-		} break;
+	case '?':
+		r_core_cmd_help (core, help_msg_CC);
+		break;
 	case ',': // "CC,"
 		if (input[2]=='?') {
 			eprintf ("Usage: CC, [file]\n");
@@ -580,49 +662,15 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 }
 
 void r_comment_var_help(RCore *core, char type) {
-	const char *help_bp[] = {
-		"Usage:", "Cvb", "[name] [comment]",
-		"Cvb?", "", "show this help",
-		"Cvb", "", "list all base pointer args/vars comments in human friendly format",
-		"Cvb*", "", "list all base pointer args/vars comments in r2 format",
-		"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
-		"Cvb", " [name]", "Show comments for var/arg at current offset for base pointer",
-		"Cvb", " [name] [comment]", "add/append comment for the variable with the current name",
-		"Cvb!", "[name]", "edit comment using cfg editor",
-		NULL
-	};
-	const char *help_sp[] = {
-		"Usage:", "Cvs", "[name] [comment]",
-		"Cvs?", "", "show this help",
-		"Cvs", "", "list all stack based args/vars comments in human friendly format",
-		"Cvs*", "", "list all stack based args/vars comments in r2 format",
-		"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
-		"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
-		"Cvs", "[name] [comment]", "add/append comment for the variable",
-		"Cvs!", "[name]", "edit comment using cfg editor",
-		NULL
-	};
-	const char *help_reg[] = {
-		"Usage:", "Cvr", "[name] [comment]",
-		"Cvr?", "", "show this help",
-		"Cvr", "", "list all register based args comments in human friendly format",
-		"Cvr*", "", "list all register based args comments in r2 format",
-		"Cvr-", "[name]", "delete comments for register based arg for that name",
-		"Cvr", "[name]", "Show comments for register based arg for that name",
-		"Cvr", "[name] [comment]", "add/append comment for the variable",
-		"Cvr!", "[name]", "edit comment using cfg editor",
-		NULL
-	};
-
 	switch (type) {
 	case 'b':
-		r_core_cmd_help (core, help_bp);
+		r_core_cmd_help (core, help_msg_Cvb);
 		break;
 	case 's':
-		r_core_cmd_help (core, help_sp);
+		r_core_cmd_help (core, help_msg_Cvs);
 		break;
 	case 'r':
-		r_core_cmd_help (core, help_reg);
+		r_core_cmd_help (core, help_msg_Cvr);
 		break;
 	case '?':
 		r_cons_printf("See Cvb?, Cvs? and Cvr?\n");
@@ -791,29 +839,8 @@ static int cmd_meta(void *data, const char *input) {
 		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
 	case '\0':
-	case '?':{
-			const char* help_msg[] = {
-				"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
-				"C*", "", "list meta info in r2 commands",
-				"C-", " [len] [[@]addr]", "delete metadata at given address range",
-				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
-				"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
-				"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
-				"CC.", "[addr]", "show comment in current address",
-				"CC!", " [@addr]", "edit comment with $EDITOR",
-				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
-				"CCu", " [comment-text] [@addr]", "add unique comment",
-				"Cv", "[bsr][?]", "add comments to args",
-				"Cs", "[?] [-] [size] [@addr]", "add string",
-				"Cz", "[@addr]", "add zero-terminated string",
-				"Ch", "[-] [size] [@addr]", "hide data",
-				"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
-				"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
-				"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
-				"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-			}
+	case '?':
+		r_core_cmd_help (core, help_msg_C);
 		break;
 	case 'F': // "CF"
 		f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -829,21 +856,7 @@ static int cmd_meta(void *data, const char *input) {
 		/** copypasta from `fs`.. this must be refactorized to be shared */
 		switch (input[1]) {
 		case '?':
-			{
-				const char *help_msg[] = {
-					"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
-					"CS","","display metaspaces",
-					"CS"," *","select all metaspaces",
-					"CS"," metaspace","select metaspace or create if it doesn't exist",
-					"CS","-metaspace","remove metaspace",
-					"CS","-*","remove all metaspaces",
-					"CS","+foo","push previous metaspace and set",
-					"CS","-","pop to the previous metaspace",
-					//	"CSm"," [addr]","move metas at given address to the current metaspace",
-					"CSr"," newname","rename selected metaspace",
-					NULL};
-				r_core_cmd_help (core, help_msg);
-			}
+			r_core_cmd_help (core, help_msg_CS);
 			break;
 		case '+':
 			r_space_push (ms, input + 2);
