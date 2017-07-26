@@ -7,6 +7,60 @@
 #include "r_core.h"
 #include "../bin/pdb/pdb_downloader.h"
 
+static const char *help_msg_i[] = {
+	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
+	"Output mode:", "", "",
+	"'*'", "", "Output in radare commands",
+	"'j'", "", "Output in json",
+	"'q'", "", "Simple quiet output",
+	"Actions:", "", "",
+	"i|ij", "", "Show info of current file (in JSON)",
+	"iA", "", "List archs",
+	"ia", "", "Show all info (imports, exports, sections..)",
+	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
+	"ic", "", "List classes, methods and fields",
+	"iC", "", "Show signature info (entitlements, ...)",
+	"id", "[?]", "Debug information (source lines)",
+	"iD", " lang sym", "demangle symbolname for given language",
+	"ie", "", "Entrypoint",
+	"iE", "", "Exports (global symbols)",
+	"ih", "", "Headers (alias for iH)",
+	"iHH", "", "Verbose Headers in raw text",
+	"ii", "", "Imports",
+	"iI", "", "Binary info",
+	"ik", " [query]", "Key-value database from RBinObject",
+	"il", "", "Libraries",
+	"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
+	"im", "", "Show info about predefined memory allocation",
+	"iM", "", "Show main address",
+	"io", " [file]", "Load info from file (or last opened) use bin.baddr",
+	"ir", "", "Relocs",
+	"iR", "", "Resources",
+	"is", "", "Symbols",
+	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
+	"iV", "", "Display file version info",
+	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
+	"izz", "", "Search for Strings in the whole binary",
+	"iZ", "", "Guess size of binary program",
+	NULL
+};
+
+static const char *help_msg_id[] = {
+	"Usage: id", "", "Debug information",
+	"Output mode:", "", "",
+	"'*'", "", "Output in radare commands",
+	"id", "", "Source lines",
+	"idp", " [file.pdb]", "Show pdb file information",
+	".idp*", " [file.pdb]", "Load pdb file information",
+	"idpd", "", "Download pdb file on remote server",
+	NULL
+};
+
+static void cmd_info_init(void) {
+	DEFINE_CMD_DESCRIPTOR (i);
+	DEFINE_CMD_DESCRIPTOR (id);
+}
+
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
 static void pair(const char *a, const char *b) {
@@ -512,17 +566,7 @@ static int cmd_info(void *data, const char *input) {
 				r_core_cmdf (core, "o-%d", fd);
 				r_core_cmdf (core, "o %d", current_fd);
 			} else if (input[1] == '?') { // "id?"
-				const char *help_message[] = {
-					"Usage: id", "", "Debug information",
-					"Output mode:", "", "",
-					"'*'", "", "Output in radare commands",
-					"id", "", "Source lines",
-					"idp", " [file.pdb]", "Show pdb file information",
-					".idp*", " [file.pdb]", "Load pdb file information",
-					"idpd", "", "Download pdb file on remote server",
-					NULL
-				};
-				r_core_cmd_help (core, help_message);
+				r_core_cmd_help (core, help_msg_id);
 				input++;
 			} else { // "id"
 				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
@@ -688,46 +732,8 @@ static int cmd_info(void *data, const char *input) {
 			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
-		case '?': {
-			const char *help_message[] = {
-				"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
-				"Output mode:", "", "",
-				"'*'", "", "Output in radare commands",
-				"'j'", "", "Output in json",
-				"'q'", "", "Simple quiet output",
-				"Actions:", "", "",
-				"i|ij", "", "Show info of current file (in JSON)",
-				"iA", "", "List archs",
-				"ia", "", "Show all info (imports, exports, sections..)",
-				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
-				"ic", "", "List classes, methods and fields",
-				"iC", "", "Show signature info (entitlements, ...)",
-				"id", "[?]", "Debug information (source lines)",
-				"iD", " lang sym", "demangle symbolname for given language",
-				"ie", "", "Entrypoint",
-				"iE", "", "Exports (global symbols)",
-				"ih", "", "Headers (alias for iH)",
-				"iHH", "", "Verbose Headers in raw text",
-				"ii", "", "Imports",
-				"iI", "", "Binary info",
-				"ik", " [query]", "Key-value database from RBinObject",
-				"il", "", "Libraries",
-				"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
-				"im", "", "Show info about predefined memory allocation",
-				"iM", "", "Show main address",
-				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
-				"ir", "", "Relocs",
-				"iR", "", "Resources",
-				"is", "", "Symbols",
-				"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
-				"iV", "", "Display file version info",
-				"iz|izj", "", "Strings in data sections (in JSON/Base64)",
-				"izz", "", "Search for Strings in the whole binary",
-				"iZ", "", "Guess size of binary program",
-				NULL
-			};
-			r_core_cmd_help (core, help_message);
-		}
+		case '?':
+			r_core_cmd_help (core, help_msg_i);
 			goto done;
 		case '*':
 			mode = R_CORE_BIN_RADARE;
