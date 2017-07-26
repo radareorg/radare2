@@ -3167,6 +3167,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
 	cmd_meta_init ();
 	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
+	cmd_project_init ();
 	r_cmd_add (core->rcmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
