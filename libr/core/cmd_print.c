@@ -930,14 +930,6 @@ static void helpCmdAt(RCore *core) {
 	r_core_cmd_help (core, help_msg_at);
 }
 
-static void print_format_help_help(RCore *core) {
-	r_core_cmd_help (core, help_detail_pf);
-}
-
-static void print_format_help_help_help(RCore *core) {
-	r_core_cmd_help (core, help_detail2_pf);
-}
-
 static void print_format_help_help_help_help(RCore *core) {
 	const char *help_msg[] = {
 		"    STAHP IT!!!", "", "",
@@ -1005,7 +997,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 						r_core_cmd_help (core, help_detail2_pf);
 					}
 				} else {
-					print_format_help_help (core);
+					r_core_cmd_help (core, help_detail_pf);
 				}
 			} else {
 				SdbListIter *iter;

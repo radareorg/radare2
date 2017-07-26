@@ -2353,10 +2353,6 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 	core->dbg->reg = hack;
 }
 
-static void ar_show_help(RCore *core) {
-	r_core_cmd_help (core, help_msg_ar);
-}
-
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;

@@ -1211,8 +1211,8 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else {
-			int i, j, cmd_comphint = r_config_get_i (core->config, "cmd.comphint");
-			if (cmd_comphint) {
+			int i, j, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
+			if (cfg_newtab) {
 				RCmdDescriptor *desc = &core->cmd_descriptor;
 				for (i = 0; i < line->buffer.index && desc; i++) {
 					ut8 c = line->buffer.data[i];

@@ -2169,6 +2169,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
 	SETCB ("cfg.log", "false", &cb_cfglog, "Log changes using the T api needed for realtime syncing");
+	SETPREF ("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__ && !__CYGWIN__
@@ -2320,7 +2321,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.fcn.new", "", "Run when new function is analyzed");
 	SETPREF ("cmd.fcn.delete", "", "Run when a function is deleted");
 	SETPREF ("cmd.fcn.rename", "", "Run when a function is renamed");
-	SETPREF ("cmd.comphint", "false", "Show descriptions in command completion");
 	SETPREF ("cmd.visual", "", "Replace current print mode");
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
 
