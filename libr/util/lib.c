@@ -155,9 +155,10 @@ R_API int r_lib_dl_check_filename(const char *file) {
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
 	if (h && h->constructor) {
-		IFDBG eprintf ("PLUGIN HANDLER %p %p\n", h, h->constructor);
+		IFDBG eprintf ("PLUGIN OK %p fcn %p\n", h, h->constructor);
 		return h->constructor (plugin, h->user, symbol->data);
-	} else IFDBG eprintf ("Cannot find plugin constructor\n");
+	}
+	IFDBG eprintf ("Cannot find plugin constructor\n");
 	return R_FAIL;
 }
 
@@ -369,8 +370,12 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		return false;
 	}
 	while ((de = (struct dirent *)readdir (dh))) {
+		if (de->d_name[0] == '.') {
+			continue;
+		}
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
 		if (r_lib_dl_check_filename (file)) {
+			IFDBG eprintf ("Loading %s\n", file);
 			r_lib_open (lib, file);
 		} else {
 			IFDBG eprintf ("Cannot open %s\n", file);

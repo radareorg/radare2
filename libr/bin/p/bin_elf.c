@@ -40,7 +40,7 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	struct Elf_(r_bin_elf_obj_t) *res;
 	char *elf_type;
 	RBuffer *tbuf;
@@ -71,7 +71,6 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return res;
 }
 
-/* TODO: must return bool */
 static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;

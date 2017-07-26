@@ -27,7 +27,7 @@
 #include <sys/utsname.h>
 #endif
 
-#define MAX_NUM_CMD_DESCRIPTORS 200
+#define MAX_NUM_CMD_DESCRIPTORS 1024
 RCmdDescriptor cmd_descriptors[MAX_NUM_CMD_DESCRIPTORS];
 int cmd_descriptors_len = 0;
 
@@ -3107,10 +3107,13 @@ static int cmd_ox(void *data, const char *input) {
 }
 
 static int compare_cmd_descriptor_name(const void *a, const void *b) {
-	return strcmp(((RCmdDescriptor *)a)->name, ((RCmdDescriptor *)b)->name);
+	return strcmp (((RCmdDescriptor *)a)->name, ((RCmdDescriptor *)b)->name);
 }
 
 static void cmd_descriptor_init(RCore *core) {
+#if 0
+	// All this code is crap, buggy, slow and incomplete, also is making r2 crash
+	// commenting out for now
 	qsort (cmd_descriptors, cmd_descriptors_len, sizeof (RCmdDescriptor), compare_cmd_descriptor_name);
 	int i, n_cmd_descriptors = cmd_descriptors_len;
 	for (i = 0; i < n_cmd_descriptors; i++) {
@@ -3128,6 +3131,7 @@ static void cmd_descriptor_init(RCore *core) {
 		}
 		*x = cmd_descriptors[i];
 	}
+#endif
 }
 
 R_API void r_core_cmd_init(RCore *core) {
