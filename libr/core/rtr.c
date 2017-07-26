@@ -1211,39 +1211,27 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		debug_msg = true;
 		path++;
 	}
-	while (*path && isspace (*path)) {
-		path++;
-	}
-	if (!*path) {
+	if (!(path = r_str_chop_ro (path)) || !*path) {
 		eprintf ("gdbserver: Port not specified\n");
 		return -1;
 	}
-	if (path && (p = atoi (path))) {
-		if (p < 0 || p > 65535) {
-			eprintf ("gdbserver: Invalid port: %s\n", port);
-			return -1;
-		}
-		snprintf (port, sizeof (port) - 1, "%d", p);
-		if (!(file = strchr (path, ' '))) {
-			eprintf ("gdbserver: File not specified\n");
-			return -1;
-		}
-		while (isspace (*file)) {
-			file++;
-		}
-		if (!*file) {
-			eprintf ("gdbserver: File not specified\n");
-			return -1;
-		}
+	if (!(p = atoi (path)) || p < 0 || p > 65535) {
+		eprintf ("gdbserver: Invalid port: %s\n", port);
+		return -1;
 	}
-	if (file) {
-		args = strchr (file, ' ');
-		if (args) {
-			*args++ = '\0';
-			while (isspace (*args)) {
-				args++;
-			}
-		} else {
+	snprintf (port, sizeof (port) - 1, "%d", p);
+	if (!(file = strchr (path, ' '))) {
+		eprintf ("gdbserver: File not specified\n");
+		return -1;
+	}
+	if (!(file = r_str_chop_ro (file)) || !*file) {
+		eprintf ("gdbserver: File not specified\n");
+		return -1;
+	}
+	args = strchr (file, ' ');
+	if (args) {
+		*args++ = '\0';
+		if (!(args = r_str_chop_ro (args))) {
 			args = "";
 		}
 	} else {

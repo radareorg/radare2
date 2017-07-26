@@ -1046,7 +1046,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
 	if (!(buf = calloc (len, sizeof (char)))) {
 		return -1;
 	}
-	strncpy (buf, "qRcmd,", 6);
+	strcpy (buf, "qRcmd,");
 	pack_hex (cmd, strlen (cmd), buf + 6);
 	if (send_msg (g, buf) < 0) {
 		free (buf);
