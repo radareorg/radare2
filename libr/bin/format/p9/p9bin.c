@@ -4,7 +4,7 @@
 #include <r_asm.h>
 
 int r_bin_p9_get_arch(const ut8 *b, int *bits, int *big_endian) {
-	unsigned int a = b[0]<<24 | b[1]<<16 | b[2]<<8 | b[3];
+	st32 a = (st32) r_read_be32 (b);
 	if (bits) *bits = 32;
 	if (big_endian) *big_endian = 0;
 	switch (a) {

@@ -661,8 +661,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_BELONG:
 	case FILE_BEDATE:
 	case FILE_BELDATE:
-		p->l = (st32)
-		    ((p->hl[0]<<24)|(p->hl[1]<<16)|(p->hl[2]<<8)|(p->hl[3]));
+		p->l = (st32) r_read_be32 (p->hl);
 		cvt_32(p, m);
 		return 1;
 	case FILE_BEQUAD:
@@ -682,8 +681,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_LELONG:
 	case FILE_LEDATE:
 	case FILE_LELDATE:
-		p->l = (st32)
-		    ((p->hl[3]<<24)|(p->hl[2]<<16)|(p->hl[1]<<8)|(p->hl[0]));
+		p->l = (st32) r_read_le32 (p->hl);
 		cvt_32(p, m);
 		return 1;
 	case FILE_LEQUAD:
