@@ -990,8 +990,11 @@ static int esil_lsl(RAnalEsil *esil) {
 			if (num2 > sizeof (ut64) * 8) {
 				ERR ("esil_lsl: shift is too big");
 			} else {
-				ut64 res = num << num2;
-				r_anal_esil_pushnum (esil, res);
+				if (num2 > 63) {
+					r_anal_esil_pushnum (esil, 0);
+				} else {
+					r_anal_esil_pushnum (esil, num << num2);
+				}
 				ret = 1;
 			}
 		} else {
@@ -1014,7 +1017,11 @@ static int esil_lsleq(RAnalEsil *esil) {
 				ERR ("esil_lsleq: shift is too big");
 			} else {
 				esil->old = num;
-				num <<= num2;
+				if (num2 > 63) {
+					num = 0;
+				} else {
+					num <<= num2;
+				}
 				esil->cur = num;
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				r_anal_esil_reg_write (esil, dst, num);
