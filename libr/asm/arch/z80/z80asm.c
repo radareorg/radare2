@@ -250,7 +250,7 @@ static void readlabel(const char **p, int store) {
 	buf->ref = NULL;
 	if (buf->prev) {
 		buf->prev->next = buf;
-	} 
+	}
 	if (buf->next) {
 		buf->next->prev = buf;
 	}

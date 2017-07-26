@@ -708,7 +708,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				int j = 0;
 				for (i = 0; i < buffsize;) {
 					nextstart = 0;
-					if (i + 7 <= buffsize) {
+					if (i + 7 < buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
 					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1] &&

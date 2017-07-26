@@ -2356,6 +2356,7 @@ reaccept:
 			}
 		}
 		eprintf ("client: disconnected\n");
+		r_socket_free (c);
 	}
 out_of_function:
 	r_cons_break_pop ();

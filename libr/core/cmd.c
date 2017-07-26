@@ -3011,7 +3011,9 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	if (r_file_mkstemp ("cmd", &tmp) != -1) {
 		int pipefd = r_cons_pipe_open (tmp, 1, 0);
 		if (pipefd == -1) {
+			r_file_rm (tmp);
 			r_sandbox_disable (0);
+			free (tmp);
 			return r_core_cmd_str (core, cmd);
 		}
 		char *_cmd = strdup (cmd);

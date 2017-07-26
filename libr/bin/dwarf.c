@@ -1590,6 +1590,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 				if (!file) {
 					free (buf);
 					ls_free (ls);
+					r_list_free (list);
 					return NULL;
 				}
 				char *tok = strchr (file, '|');

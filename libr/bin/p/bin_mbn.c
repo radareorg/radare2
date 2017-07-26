@@ -86,8 +86,9 @@ static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = 40 + sb.code_pa;
@@ -102,15 +103,20 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	int rc;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	rc = r_buf_fread_at (arch->buf, 0, (ut8*)&sb, "10i", 1);
-	if (!rc) return false;
+	if (!rc) {
+		r_list_free (ret);
+		return false;
+	}
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
 	ptr->size = sb.psize;
 	ptr->vsize = sb.psize;
@@ -121,8 +127,9 @@ static RList* sections(RBinFile *arch) {
 	ptr->has_strings = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strncpy (ptr->name, "sign", R_BIN_SIZEOF_STRINGS);
 	ptr->size = sb.sign_sz;
 	ptr->vsize = sb.sign_sz;
@@ -134,8 +141,9 @@ static RList* sections(RBinFile *arch) {
 	r_list_append (ret, ptr);
 
 	if (sb.cert_sz && sb.cert_va > sb.vaddr) {
-		if (!(ptr = R_NEW0 (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
+		}
 		strncpy (ptr->name, "cert", R_BIN_SIZEOF_STRINGS);
 		ptr->size = sb.cert_sz;
 		ptr->vsize = sb.cert_sz;
@@ -152,8 +160,9 @@ static RList* sections(RBinFile *arch) {
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	const int bits = 16;
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
+	}
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("bootloader");
 	ret->rclass = strdup ("mbn");

@@ -1885,6 +1885,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 			free (str);
 		}
 		r_socket_close (ch);
+		r_socket_free (ch);
 		ch = NULL;
 	}
 	r_cons_break_pop ();
