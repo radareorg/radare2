@@ -64,7 +64,7 @@ endif
 platform_inc = include_directories(['.','../libr/include'])
 if host_machine.system() == 'windows'
   #platform_deps = [cc.find_library('ws2_32')]
-  platform_inc  = include_directories(['.','../libr/include','../libr/include/msvc'])
+  platform_inc = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
   if get_option('default_library') == 'static'
 	add_global_arguments('/MT', language: 'c')
@@ -119,6 +119,17 @@ configure_file(input : 'libr/include/r_version.h.in',
                output : 'r_version.h',
                configuration : versionconf)
 
+# Copy missing header
+run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
+
+message(' --- Building sdb and generating files --- ')
+r = run_command('python', 'sys/meson_sdb.py')
+if r.returncode() != 0
+  error('Failed.')
+  error(r.stderr())
+endif
+
+message(' --- Building radare2 --- ')
 subdir('shlr/')
 subdir('libr/util')
 subdir('binr/rax2')

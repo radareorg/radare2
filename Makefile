@@ -245,16 +245,17 @@ install-pkgconfig-symlink:
 	cd pkgcfg ; for FILE in *.pc ; do \
 		ln -fs "$${PWD}/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
 
-
-symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www
-	cd libr && ${MAKE} install-symlink
-	cd binr && ${MAKE} install-symlink
-	cd shlr && ${MAKE} install-symlink
+symstall-sdb:
 	for DIR in ${DATADIRS} ; do (\
 		cd "$$DIR" ; \
 		echo "$$DIR" ; \
 		${MAKE} install-symlink ); \
 	done
+
+symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www symstall-sdb
+	cd libr && ${MAKE} install-symlink
+	cd binr && ${MAKE} install-symlink
+	cd shlr && ${MAKE} install-symlink
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
 	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
@@ -397,16 +398,11 @@ pie:
 build:
 	$(MESON) --prefix="${PREFIX}" build
 
-meson-windows:
-	cp -f libr/config.mk.meson libr/config.mk
-	cp -f libr/config.h.meson libr/config.h
-
 meson-config meson-cfg meson-conf:
 	# TODO: this is wrong for each platform different plugins must be compiled
 	#cp -f plugins.meson.cfg plugins.cfg
 	#./configure --prefix="${PREFIX}"
-	$(MAKE) libr/include/r_version.h
-	cp -f shlr/spp/config.def.h shlr/spp/config.h
+	echo TODO
 
 meson: build
 	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
@@ -418,7 +414,7 @@ meson-install:
 B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 
-meson-symstall:
+meson-symstall: symstall-sdb
 	ln -fs $(PWD)/binr/r2pm/r2pm  ${B}/r2pm
 	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
 	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2
@@ -446,7 +442,6 @@ meson-symstall:
 	ln -fs $(PWD)/build/libr/fs/libr_fs.$(EXT_SO) ${L}/libr_fs.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/debug/libr_debug.$(EXT_SO) ${L}/libr_debug.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/core/libr_core.$(EXT_SO) ${L}/libr_core.$(EXT_SO)
-	# TODO: missing libr/*/d .. no sdb binary is compiled to precompile those files
 
 meson-uninstall:
 	$(MAKE) uninstall

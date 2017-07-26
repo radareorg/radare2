@@ -1,7 +1,7 @@
 ```
     ____  ___  ___  ___ ____  ___    ____
    |  _ \/   \|   \/   \  _ \/ _ \  |__  \
-   |    (  V  | |  ) V  |   (   _/   / __/ 
+   |    (  V  | |  ) V  |   (   _/   / __/
    |__\__|_|__|___/__|__|_\__|___|  |____|
 
                 www.radare.org
@@ -35,7 +35,7 @@ code, debugging programs, attaching to remote gdb servers, ..
 
    * **File Formats:**
 	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator, 
+   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator,
    Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 
    * **Operating Systems:**
@@ -72,6 +72,10 @@ using root privileges and sudo, simply run:
 The sys/install.sh method uses acr+make to build r2 from sources, which is the default
 and recommended way, but there's also a work-in-progress support for Meson.
 
+Run first the configuration process:
+
+	$ ./configure
+
 You can install last version of meson and ninja using r2pm:
 
 	$ r2pm -i meson
@@ -106,7 +110,7 @@ version or remove all previous installations:
 
 # Package manager
 
-Radare2 has its own package manager - r2pm. It's packages 
+Radare2 has its own package manager - r2pm. It's packages
 repository is on [GitHub too](https://github.com/radare/radare2-pm).
 To start to use it for the first time you need to initialize packages:
 
