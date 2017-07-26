@@ -64,13 +64,11 @@ python meson.py --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %
 :BUILD
 IF "%BUILD%"=="msbuild" GOTO MSBUILD
 ECHO [ R2 MESON NINJA BUILD ]
-copy shlr\spp\config.def.h shlr\spp\config.h
 ninja -C %BUILDDIR%
 exit /b %errorlevel%
 
 :MSBUILD
 ECHO [ R2 MESON MSBUILD ]
-copy shlr\spp\config.def.h shlr\spp\config.h
 IF "%XP%"=="1" (
 	python sys\meson_extra.py
 )
