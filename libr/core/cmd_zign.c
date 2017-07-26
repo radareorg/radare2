@@ -7,6 +7,67 @@
 #include <r_cons.h>
 #include <r_util.h>
 
+static const char *help_msg_z[] = {
+	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
+	"z", "", "show zignatures",
+	"z*", "", "show zignatures in radare format",
+	"zj", "", "show zignatures in json format",
+	"z-", "zignature", "delete zignature",
+	"z-", "*", "delete all zignatures",
+	"za", "[?]", "add zignature",
+	"zo", "[?]", "manage zignature files",
+	"zf", "[?]", "manage FLIRT signatures",
+	"z/", "[?]", "search zignatures",
+	"zc", "", "check zignatures at address",
+	"zs", "[?]", "manage zignspaces",
+	NULL
+};
+
+static const char *help_msg_z_slash[] = {
+	"Usage:", "z/[*] ", "# Search signatures (see 'e?search' for options)",
+	"z/ ", "", "search zignatures on range and flag matches",
+	"z/* ", "", "search zignatures on range and output radare commands",
+	NULL
+};
+
+static const char *help_msg_za[] = {
+	"Usage:", "za[fF?] [args] ", "# Add zignature",
+	"za ", "zigname type params", "add zignature",
+	"zaf ", "[fcnname] [zigname]", "create zignature for function",
+	"zaF ", "", "generate zignatures for all functions",
+	"za?? ", "", "show extended help",
+	NULL
+};
+
+static const char *help_msg_zf[] = {
+	"Usage:", "zf[dsz] filename ", "# Manage FLIRT signatures",
+	"zfd ", "filename", "open FLIRT file and dump",
+	"zfs ", "filename", "open FLIRT file and scan",
+	"zfz ", "filename", "open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)",
+	NULL
+};
+
+static const char *help_msg_zo[] = {
+	"Usage:", "zo[zs] filename ", "# Manage zignature files (see dir.zigns)",
+	"zo ", "filename", "load zinatures from sdb file",
+	"zoz ", "filename", "load zinatures from gzipped sdb file",
+	"zos ", "filename", "save zignatures to sdb file (merge if file exists)",
+	NULL
+};
+
+static const char *help_msg_zs[] = {
+	"Usage:", "zs[+-*] [namespace] ", "# Manage zignspaces",
+	"zs", "", "display zignspaces",
+	"zs ", "zignspace", "select zignspace",
+	"zs ", "*", "select all zignspaces",
+	"zs-", "zignspace", "delete zignspace",
+	"zs-", "*", "delete all zignspaces",
+	"zs+", "zignspace", "push previous zignspace and set",
+	"zs-", "", "pop to the previous zignspace",
+	"zsr ", "newname", "rename selected zignspace",
+	NULL
+};
+
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	if (!core || !fcn || !name) {
 		return false;
@@ -297,6 +358,7 @@ out_case_fcn:
 		break;
 	case '?':
 		if (input[1] == '?') {
+			// TODO #7967 help refactor: move to detail
 			r_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
 				"Zignature types:\n"
 				"  b: bytes pattern\n"
@@ -319,14 +381,7 @@ out_case_fcn:
 				"  za foo o 0x08048123\n"
 				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n");
 		} else {
-			const char *help_msg[] = {
-				"Usage:", "za[fF?] [args] ", "# Add zignature",
-				"za ", "zigname type params", "add zignature",
-				"zaf ", "[fcnname] [zigname]", "create zignature for function",
-				"zaF ", "", "generate zignatures for all functions",
-				"za?? ", "", "show extended help",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_za);
 		}
 		break;
 	default:
@@ -411,16 +466,7 @@ static int cmdOpen(void *data, const char *input) {
 		eprintf ("usage: zoz filename\n");
 		return false;
 	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "zo[zs] filename ", "# Manage zignature files (see dir.zigns)",
-				"zo ", "filename", "load zinatures from sdb file",
-				"zoz ", "filename", "load zinatures from gzipped sdb file",
-				"zos ", "filename", "save zignatures to sdb file (merge if file exists)",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg_zo);
 		break;
 	default:
 		eprintf ("usage: zo[zs] filename\n");
@@ -471,20 +517,7 @@ static int cmdSpace(void *data, const char *input) {
 		r_space_set (zs, input + 1);
 		break;
 	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "zs[+-*] [namespace] ", "# Manage zignspaces",
-				"zs", "", "display zignspaces",
-				"zs ", "zignspace", "select zignspace",
-				"zs ", "*", "select all zignspaces",
-				"zs-", "zignspace", "delete zignspace",
-				"zs-", "*", "delete all zignspaces",
-				"zs+", "zignspace", "push previous zignspace and set",
-				"zs-", "", "pop to the previous zignspace",
-				"zsr ", "newname", "rename selected zignspace",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg_zs);
 		break;
 	default:
 		eprintf ("usage: zs[+-*] [namespace]\n");
@@ -518,15 +551,7 @@ static int cmdFlirt(void *data, const char *input) {
 		// TODO
 		break;
 	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "zf[dsz] filename ", "# Manage FLIRT signatures",
-				"zfd ", "filename", "open FLIRT file and dump",
-				"zfs ", "filename", "open FLIRT file and scan",
-				"zfz ", "filename", "open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg_zf);
 		break;
 	default:
 		eprintf ("usage: zf[dsz] filename\n");
@@ -541,6 +566,15 @@ struct ctxSearchCB {
 	int count;
 	const char *prefix;
 };
+
+static void cmd_zign_init(void) {
+	DEFINE_CMD_DESCRIPTOR (z);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (z/, z_slash);
+	DEFINE_CMD_DESCRIPTOR (za);
+	DEFINE_CMD_DESCRIPTOR (zf);
+	DEFINE_CMD_DESCRIPTOR (zo);
+	DEFINE_CMD_DESCRIPTOR (zs);
+}
 
 static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
@@ -700,14 +734,7 @@ static int cmdSearch(void *data, const char *input) {
 	case '*':
 		return search (core, input[0] == '*');
 	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "z/[*] ", "# Search signatures (see 'e?search' for options)",
-				"z/ ", "", "search zignatures on range and flag matches",
-				"z/* ", "", "search zignatures on range and output radare commands",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg_z_slash);
 		break;
 	default:
 		eprintf ("usage: z/[*]\n");
@@ -826,24 +853,7 @@ static int cmd_zign(void *data, const char *input) {
 	case 's':
 		return cmdSpace (data, input + 1);
 	case '?':
-		{
-			const char* help_msg[] = {
-				"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
-				"z", "", "show zignatures",
-				"z*", "", "show zignatures in radare format",
-				"zj", "", "show zignatures in json format",
-				"z-", "zignature", "delete zignature",
-				"z-", "*", "delete all zignatures",
-				"za", "[?]", "add zignature",
-				"zo", "[?]", "manage zignature files",
-				"zf", "[?]", "manage FLIRT signatures",
-				"z/", "[?]", "search zignatures",
-				"zc", "", "check zignatures at address",
-				"zs", "[?]", "manage zignspaces",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg_z);
 		break;
 	default:
 		eprintf ("usage: z[*j-aof/cs] [args]\n");
