@@ -131,6 +131,7 @@ typedef struct libgdbr_stop_reason {
 	bool hwbreak;
 	bool create;
 	bool vforkdone;
+	bool is_valid;
 	struct {
 		bool present;
 		ut64 addr;
