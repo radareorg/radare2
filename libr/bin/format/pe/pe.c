@@ -195,7 +195,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 	//FF 15 C8 63 41 00                          call    ds : __imp____set_app_type
 	//E8 B8 FE FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x55 && b[1] == 0x89 && b[3] == 0x83 && b[6] == 0xc7 && b[13] == 0xff && b[19] == 0xe8) {
-		const st32 jmp_dst = b[20] | (b[21] << 8) | (b[22] << 16) | (b[23] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[20]);
 		entry->paddr += (5 + 19 + jmp_dst);
 		entry->vaddr += (5 + 19 + jmp_dst);
 		sw = 1;
@@ -205,7 +205,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 	//FF 15 F8 60 40 00                          call    ds : __imp____set_app_type
 	//E8 6B FD FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[10] == 0xff && b[16] == 0xe8) {
-		const st32 jmp_dst = b[17] | (b[18] << 8) | (b[19] << 16) | (b[20] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[17]);
 		entry->paddr += (5 + 16 + jmp_dst);
 		entry->vaddr += (5 + 16 + jmp_dst);
 		sw = 1;
@@ -216,7 +216,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 	//F2 83 C4 0C                                            add     esp, 0Ch
 	//F5 E9 86 FC FF FF                                      jmp     ___tmainCRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[13] == 0xe8 && b[18] == 0x83 && b[21] == 0xe9) {
-		const st32 jmp_dst = b[22] | (b[23] << 8) | (b[24] << 16) | (b[25] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[22]);
 		entry->paddr += (5 + 21 + jmp_dst);
 		entry->vaddr += (5 + 21 + jmp_dst);
 		sw = 1;
@@ -231,7 +231,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 			// ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
 			for (n = 0; n < sizeof (b) - 12; n++) {
 				if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
-					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
+					const st32 call_dst = (st32) r_read_le32 (&b[n + 9]);
 					entry->paddr += (n + 5 + 8 + call_dst);
 					entry->vaddr += (n + 5 + 8 + call_dst);
 					return entry;
@@ -265,7 +265,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 	   write down. */
 	// this is dirty only a single byte check, can return false positives
 	if (b[367] == 0xe8) {
-		const st32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[368]);
 		entry->paddr += 367 + 5 + jmp_dst;
 		entry->vaddr += 367 + 5 + jmp_dst;
 		free (b);
@@ -277,7 +277,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 		if (!memcmp (b + i, "\xff\x15", 2)) {
 			if (b[i+6] == 0x50) {
 				if (b[i+7] == 0xe8) {
-					const st32 call_dst = b[i + 8] | (b[i + 9] << 8) | (b[i + 10] << 16) | (b[i + 11] << 24);
+					const st32 call_dst = (st32) r_read_le32 (&b[i + 8]);
 					entry->paddr = entry->vaddr - entry->paddr;
 					entry->vaddr += (i + 7 + 5 + (long)call_dst);
 					entry->paddr += entry->vaddr;
@@ -786,10 +786,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	buf = bin->b->buf;
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
 	for (i = 0; i < bin->size / 4; i++) {
-		cur = ((ut32)buf[i * 4] << 0) |
-		((ut32)buf[i * 4 + 1] << 8) |
-		((ut32)buf[i * 4 + 2] << 16) |
-		((ut32)buf[i * 4 + 3] << 24);
+		cur = r_read_le32 (&buf[i * 4]);
 
 		// skip the checksum bytes
 		if (i * 4 == checksum_offset) {
@@ -1398,7 +1395,7 @@ static Var* Pe_r_bin_pe_parse_var(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* cur
 		free_Var (var);
 		return NULL;
 	}
-	
+
 	var->szKey = (ut16*) malloc (UT16_ALIGN (TRANSLATION_UTF_16_LEN));  //L"Translation"
 	if (!var->szKey) {
 		bprintf ("Warning: malloc (Var szKey)\n");
@@ -2056,94 +2053,94 @@ static char* _resource_lang_str(int id) {
 	case 0x36: return "LANG_AFRIKAANS";
 	case 0x1c: return "LANG_ALBANIAN ";
 	case 0x01: return "LANG_ARABIC";
-	case 0x2b: return "LANG_ARMENIAN"; 
-	case 0x4d: return "LANG_ASSAMESE"; 
-	case 0x2c: return "LANG_AZERI"; 
-	case 0x2d: return "LANG_BASQUE"; 
-	case 0x23: return "LANG_BELARUSIAN"; 
-	case 0x45: return "LANG_BENGALI"; 
-	case 0x02: return "LANG_BULGARIAN"; 
-	case 0x03: return "LANG_CATALAN"; 
-	case 0x04: return "LANG_CHINESE"; 
-	case 0x1a: return "LANG_CROATIAN"; 
-	case 0x05: return "LANG_CZECH"; 
-	case 0x06: return "LANG_DANISH"; 
-	case 0x65: return "LANG_DIVEHI"; 
-	case 0x13: return "LANG_DUTCH"; 
-	case 0x09: return "LANG_ENGLISH"; 
-	case 0x25: return "LANG_ESTONIAN"; 
-	case 0x38: return "LANG_FAEROESE"; 
-	case 0x29: return "LANG_FARSI"; 
-	case 0x0b: return "LANG_FINNISH"; 
-	case 0x0c: return "LANG_FRENCH"; 
-	case 0x56: return "LANG_GALICIAN"; 
-	case 0x37: return "LANG_GEORGIAN"; 
-	case 0x07: return "LANG_GERMAN"; 
-	case 0x08: return "LANG_GREEK"; 
-	case 0x47: return "LANG_GUJARATI"; 
-	case 0x0d: return "LANG_HEBREW"; 
-	case 0x39: return "LANG_HINDI"; 
-	case 0x0e: return "LANG_HUNGARIAN"; 
-	case 0x0f: return "LANG_ICELANDIC"; 
-	case 0x21: return "LANG_INDONESIAN"; 
-	case 0x10: return "LANG_ITALIAN"; 
-	case 0x11: return "LANG_JAPANESE"; 
-	case 0x4b: return "LANG_KANNADA"; 
-	case 0x60: return "LANG_KASHMIRI"; 
-	case 0x3f: return "LANG_KAZAK"; 
-	case 0x57: return "LANG_KONKANI"; 
-	case 0x12: return "LANG_KOREAN"; 
-	case 0x40: return "LANG_KYRGYZ"; 
-	case 0x26: return "LANG_LATVIAN"; 
-	case 0x27: return "LANG_LITHUANIAN"; 
-	case 0x2f: return "LANG_MACEDONIAN"; 
-	case 0x3e: return "LANG_MALAY"; 
-	case 0x4c: return "LANG_MALAYALAM"; 
-	case 0x58: return "LANG_MANIPURI"; 
-	case 0x4e: return "LANG_MARATHI"; 
-	case 0x50: return "LANG_MONGOLIAN"; 
-	case 0x61: return "LANG_NEPALI"; 
-	case 0x14: return "LANG_NORWEGIAN"; 
-	case 0x48: return "LANG_ORIYA"; 
-	case 0x15: return "LANG_POLISH"; 
-	case 0x16: return "LANG_PORTUGUESE"; 
-	case 0x46: return "LANG_PUNJABI"; 
-	case 0x18: return "LANG_ROMANIAN"; 
-	case 0x19: return "LANG_RUSSIAN"; 
-	case 0x4f: return "LANG_SANSKRIT"; 
-	case 0x59: return "LANG_SINDHI"; 
-	case 0x1b: return "LANG_SLOVAK"; 
-	case 0x24: return "LANG_SLOVENIAN"; 
-	case 0x0a: return "LANG_SPANISH "; 
-	case 0x41: return "LANG_SWAHILI"; 
-	case 0x1d: return "LANG_SWEDISH"; 
-	case 0x5a: return "LANG_SYRIAC"; 
-	case 0x49: return "LANG_TAMIL"; 
-	case 0x44: return "LANG_TATAR"; 
-	case 0x4a: return "LANG_TELUGU"; 
-	case 0x1e: return "LANG_THAI"; 
-	case 0x1f: return "LANG_TURKISH"; 
-	case 0x22: return "LANG_UKRAINIAN"; 
-	case 0x20: return "LANG_URDU"; 
-	case 0x43: return "LANG_UZBEK"; 
-	case 0x2a: return "LANG_VIETNAMESE"; 
-	case 0x3c: return "LANG_GAELIC"; 
-	case 0x3a: return "LANG_MALTESE"; 
-	case 0x28: return "LANG_MAORI"; 
-	case 0x17: return "LANG_RHAETO_ROMANCE"; 
-	case 0x3b: return "LANG_SAAMI"; 
-	case 0x2e: return "LANG_SORBIAN"; 
-	case 0x30: return "LANG_SUTU"; 
-	case 0x31: return "LANG_TSONGA"; 
-	case 0x32: return "LANG_TSWANA"; 
-	case 0x33: return "LANG_VENDA"; 
-	case 0x34: return "LANG_XHOSA"; 
-	case 0x35: return "LANG_ZULU"; 
-	case 0x8f: return "LANG_ESPERANTO"; 
-	case 0x90: return "LANG_WALON"; 
-	case 0x91: return "LANG_CORNISH"; 
-	case 0x92: return "LANG_WELSH"; 
-	case 0x93: return "LANG_BRETON"; 
+	case 0x2b: return "LANG_ARMENIAN";
+	case 0x4d: return "LANG_ASSAMESE";
+	case 0x2c: return "LANG_AZERI";
+	case 0x2d: return "LANG_BASQUE";
+	case 0x23: return "LANG_BELARUSIAN";
+	case 0x45: return "LANG_BENGALI";
+	case 0x02: return "LANG_BULGARIAN";
+	case 0x03: return "LANG_CATALAN";
+	case 0x04: return "LANG_CHINESE";
+	case 0x1a: return "LANG_CROATIAN";
+	case 0x05: return "LANG_CZECH";
+	case 0x06: return "LANG_DANISH";
+	case 0x65: return "LANG_DIVEHI";
+	case 0x13: return "LANG_DUTCH";
+	case 0x09: return "LANG_ENGLISH";
+	case 0x25: return "LANG_ESTONIAN";
+	case 0x38: return "LANG_FAEROESE";
+	case 0x29: return "LANG_FARSI";
+	case 0x0b: return "LANG_FINNISH";
+	case 0x0c: return "LANG_FRENCH";
+	case 0x56: return "LANG_GALICIAN";
+	case 0x37: return "LANG_GEORGIAN";
+	case 0x07: return "LANG_GERMAN";
+	case 0x08: return "LANG_GREEK";
+	case 0x47: return "LANG_GUJARATI";
+	case 0x0d: return "LANG_HEBREW";
+	case 0x39: return "LANG_HINDI";
+	case 0x0e: return "LANG_HUNGARIAN";
+	case 0x0f: return "LANG_ICELANDIC";
+	case 0x21: return "LANG_INDONESIAN";
+	case 0x10: return "LANG_ITALIAN";
+	case 0x11: return "LANG_JAPANESE";
+	case 0x4b: return "LANG_KANNADA";
+	case 0x60: return "LANG_KASHMIRI";
+	case 0x3f: return "LANG_KAZAK";
+	case 0x57: return "LANG_KONKANI";
+	case 0x12: return "LANG_KOREAN";
+	case 0x40: return "LANG_KYRGYZ";
+	case 0x26: return "LANG_LATVIAN";
+	case 0x27: return "LANG_LITHUANIAN";
+	case 0x2f: return "LANG_MACEDONIAN";
+	case 0x3e: return "LANG_MALAY";
+	case 0x4c: return "LANG_MALAYALAM";
+	case 0x58: return "LANG_MANIPURI";
+	case 0x4e: return "LANG_MARATHI";
+	case 0x50: return "LANG_MONGOLIAN";
+	case 0x61: return "LANG_NEPALI";
+	case 0x14: return "LANG_NORWEGIAN";
+	case 0x48: return "LANG_ORIYA";
+	case 0x15: return "LANG_POLISH";
+	case 0x16: return "LANG_PORTUGUESE";
+	case 0x46: return "LANG_PUNJABI";
+	case 0x18: return "LANG_ROMANIAN";
+	case 0x19: return "LANG_RUSSIAN";
+	case 0x4f: return "LANG_SANSKRIT";
+	case 0x59: return "LANG_SINDHI";
+	case 0x1b: return "LANG_SLOVAK";
+	case 0x24: return "LANG_SLOVENIAN";
+	case 0x0a: return "LANG_SPANISH ";
+	case 0x41: return "LANG_SWAHILI";
+	case 0x1d: return "LANG_SWEDISH";
+	case 0x5a: return "LANG_SYRIAC";
+	case 0x49: return "LANG_TAMIL";
+	case 0x44: return "LANG_TATAR";
+	case 0x4a: return "LANG_TELUGU";
+	case 0x1e: return "LANG_THAI";
+	case 0x1f: return "LANG_TURKISH";
+	case 0x22: return "LANG_UKRAINIAN";
+	case 0x20: return "LANG_URDU";
+	case 0x43: return "LANG_UZBEK";
+	case 0x2a: return "LANG_VIETNAMESE";
+	case 0x3c: return "LANG_GAELIC";
+	case 0x3a: return "LANG_MALTESE";
+	case 0x28: return "LANG_MAORI";
+	case 0x17: return "LANG_RHAETO_ROMANCE";
+	case 0x3b: return "LANG_SAAMI";
+	case 0x2e: return "LANG_SORBIAN";
+	case 0x30: return "LANG_SUTU";
+	case 0x31: return "LANG_TSONGA";
+	case 0x32: return "LANG_TSWANA";
+	case 0x33: return "LANG_VENDA";
+	case 0x34: return "LANG_XHOSA";
+	case 0x35: return "LANG_ZULU";
+	case 0x8f: return "LANG_ESPERANTO";
+	case 0x90: return "LANG_WALON";
+	case 0x91: return "LANG_CORNISH";
+	case 0x92: return "LANG_WELSH";
+	case 0x93: return "LANG_BRETON";
 	default: return "UNKNOWN";
 	}
 }
@@ -2271,7 +2268,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			free (data);
 			break;
 		}
-		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp); 	
+		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
 		rs->type = strdup (_resource_type_str (type));
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;

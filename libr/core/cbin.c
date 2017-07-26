@@ -3089,7 +3089,7 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 		}
 
 		for (i = 0; i != 64; i++) {
-			ut64 flag = flags & (1L << i);
+			ut64 flag = flags & (1UL << i);
 			if (flag) {
 				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
 				if (flag_string) {

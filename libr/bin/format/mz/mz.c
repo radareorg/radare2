@@ -37,10 +37,10 @@ int cmp_segs(const void *a, const void *b) {
 // This function reads from the file buffer,
 // thus using endian-agnostic functions
 void trv_segs (const void *seg, const void *segs) {
-	const ut16 * const mseg = (const ut16 * const)seg;
+	const ut8 * const mseg = (const ut8 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg && msegs && *msegs) {
-		**msegs = *mseg;
+		r_write_le16(*msegs, r_read_le16(mseg));
 		*msegs = *msegs + 1;
 	}
 }
