@@ -4,8 +4,33 @@
 #include <stdbool.h>
 #include "r_core.h"
 
+static const char *help_msg_e[] = {
+	"Usage:", "e [var[=value]]", "Evaluable vars",
+	"e","?asm.bytes", "show description",
+	"e", "??", "list config vars with description",
+	"e", " a", "get value of var 'a'",
+	"e", " a=b", "set var 'a' the 'b' value",
+	"e var=?", "", "print all valid values of var",
+	"e-", "", "reset config vars",
+	"e*", "", "dump config vars in r commands",
+	"e!", "a", "invert the boolean value of 'a' var",
+	"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
+	"ee", "var", "open editor to change the value of var",
+	"ej", "", "list config vars in JSON",
+	"env", " [k[=v]]", "get/set environment variable",
+	"er", " [key]", "set config key as readonly. no way back",
+	"et", " [key]", "show type of given config variable",
+	"ev", " [key]", "list config vars in verbose format",
+	"evj", " [key]", "list config vars in verbose format in JSON",
+	NULL
+};
+
 static char *curtheme = NULL;
 static bool getNext = false;
+
+static void cmd_eval_init(void) {
+	DEFINE_CMD_DESCRIPTOR (e);
+}
 
 static bool load_theme(RCore *core, const char *path) {
 	if (!r_file_exists (path)) {
@@ -434,28 +459,8 @@ static int cmd_eval(void *data, const char *input) {
 		switch (input[1]) {
 		case '?': r_config_list (core->config, input+2, 2); break;
 		default: r_config_list (core->config, input+1, 2); break;
-		case 0:{
-			const char* help_msg[] = {
-			"Usage:", "e [var[=value]]", "Evaluable vars",
-			"e","?asm.bytes", "show description",
-			"e", "??", "list config vars with description",
-			"ej", "", "list config vars in JSON",
-			"e-", "", "reset config vars",
-			"e*", "", "dump config vars in r commands",
-			"e!", "a", "invert the boolean value of 'a' var",
-			"ee", "var", "open editor to change the value of var",
-			"er", " [key]", "set config key as readonly. no way back",
-			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
-			"et", " [key]", "show type of given config variable",
-			"ev", " [key]", "list config vars in verbose format",
-			"evj", " [key]", "list config vars in verbose format in JSON",
-			"e", " a", "get value of var 'a'",
-			"e", " a=b", "set var 'a' the 'b' value",
-			"e var=?", "", "print all valid values of var",
-			"env", " [k[=v]]", "get/set environment variable",
-			NULL};
-			r_core_cmd_help (core, help_msg);
-			}
+		case 0:
+			r_core_cmd_help (core, help_msg_e);
 		}
 		break;
 	case 'r':
