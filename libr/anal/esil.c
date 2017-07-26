@@ -197,6 +197,8 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	esil->interrupts = NULL;
 	sdb_free (esil->stats);
 	esil->stats = NULL;
+	sdb_free (esil->db_trace);
+	esil->db_trace = NULL;
 	r_anal_esil_stack_free (esil);
 	free (esil->stack);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
@@ -985,9 +987,16 @@ static int esil_lsl(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			ut64 res = num << num2;
-			r_anal_esil_pushnum (esil, res);
-			ret = 1;
+			if (num2 > sizeof (ut64) * 8) {
+				ERR ("esil_lsl: shift is too big");
+			} else {
+				if (num2 > 63) {
+					r_anal_esil_pushnum (esil, 0);
+				} else {
+					r_anal_esil_pushnum (esil, num << num2);
+				}
+				ret = 1;
+			}
 		} else {
 			ERR ("esil_lsl: empty stack");
 		}
@@ -1004,12 +1013,20 @@ static int esil_lsleq(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			esil->old = num;
-			num <<= num2;
-			esil->cur = num;
-			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			r_anal_esil_reg_write (esil, dst, num);
-			ret = 1;
+			if (num2 > sizeof (ut64) * 8) {
+				ERR ("esil_lsleq: shift is too big");
+			} else {
+				esil->old = num;
+				if (num2 > 63) {
+					num = 0;
+				} else {
+					num <<= num2;
+				}
+				esil->cur = num;
+				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+				r_anal_esil_reg_write (esil, dst, num);
+				ret = 1;
+			}
 		} else {
 			ERR ("esil_lsleq: empty stack");
 		}

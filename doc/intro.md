@@ -246,7 +246,7 @@ Flags are labels for offsets. They can be grouped in namespaces as `sym` for sym
 f: List flags
 f label @ offset: Define a flag `label` at offset
 	f str.pass_len @ 0x804999c
-f -label: Removes flag
+f-label: Removes flag
 fr: Rename flag
 fd: Returns position from nearest flag (looking backwards). Eg => entry+21
 fs: Show all flag spaces
@@ -429,7 +429,7 @@ Basic block graphs
 ```
 af: Load function metadata
 ag $$ > a.dot: Dump basic block graph to file
-ag $$ | xdot: Show current function basic block graph
+ag $$ | xdot -: Show current function basic block graph
 ```
 Call graphs
 

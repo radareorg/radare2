@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <r_socket.h>
 #include <r_util.h>
+#include <ctype.h>
 #define IRAPI static inline
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
@@ -142,7 +143,13 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
+		// Get name
+		char *name = gdbr_exec_file_read (desc, i_pid);
+		if (name) {
+			file = name;
+		}
 		riogdb = r_io_desc_new (&r_io_plugin_gdb, i_pid, file, rw, mode, riog);
+		free (name);
 		return riogdb;
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
@@ -191,10 +198,30 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
         /* XXX ugly hack for testing purposes */
         if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
                 eprintf ("Usage: =!cmd args\n"
-                         " =!pid       - show targeted pid\n"
-                         " =!pkt s     - send packet 's'\n"
-                         " =!qRcmd cmd - hex-encode cmd and pass to target interpreter\n"
-                         " =!inv.reg   - invalidate reg cache\n");
+                         " =!pid             - show targeted pid\n"
+                         " =!pkt s           - send packet 's'\n"
+                         " =!qRcmd cmd       - hex-encode cmd and pass to target"
+                                             " interpreter\n"
+                         " =!inv.reg         - invalidate reg cache\n"
+                         " =!pktsz           - get max packet size used\n"
+                         " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+                         " =!exec_file [pid] - get file which was executed for"
+                                             " current/specified pid\n");
+		return true;
+	}
+	if (!strncmp (cmd, "pktsz", 5)) {
+		const char *ptr = r_str_chop_ro (cmd + 5);
+		if (!isdigit (*ptr)) {
+			eprintf ("packet size: %u bytes\n",
+				 desc->stub_features.pkt_sz);
+			return true;
+		}
+		ut32 pktsz;
+		if (!(pktsz = (ut32) strtoul (ptr, NULL, 10))) {
+			// pktsz = 0 doesn't make sense
+			return false;
+		}
+		desc->stub_features.pkt_sz = pktsz;
 		return true;
 	}
 	if (!strncmp (cmd, "pkt ", 4)) {
@@ -225,6 +252,33 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strncmp (cmd, "inv.reg", 7)) {
 		gdbr_invalidate_reg_cache ();
+		return true;
+	}
+	if (r_str_startswith (cmd, "exec_file")) {
+		const char *ptr = cmd + strlen ("exec_file");
+		char *file;
+		int pid;
+		if (!isspace (*ptr)) {
+			if (!(file = gdbr_exec_file_read (desc, 0))) {
+				return false;
+			}
+		} else {
+			while (isspace (*ptr)) {
+				ptr++;
+			}
+			if (isdigit (*ptr)) {
+				pid = atoi (ptr);
+				if (!(file = gdbr_exec_file_read (desc, pid))) {
+					return false;
+				}
+			} else {
+				if (!(file = gdbr_exec_file_read (desc, 0))) {
+					return false;
+				}
+			}
+		}
+		eprintf ("%s\n", file);
+		free (file);
 		return true;
 	}
 	eprintf ("Try: '=!?'\n");

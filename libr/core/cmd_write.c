@@ -6,6 +6,162 @@
 #include "r_core.h"
 #include "r_io.h"
 
+static const char *help_msg_w[] = {
+	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
+	"w","[1248][+-][n]","increment/decrement byte,word..",
+	"w"," foobar","write string 'foobar'",
+	"w0"," [len]","write 'len' bytes with value 0x00",
+	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
+	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
+	"waf"," file","assemble file and write bytes",
+	"wao","[?] op","modify opcode (change conditional of jump. nop, etc)",
+	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
+	"wb"," 010203","fill current block with cyclic hexpairs",
+	"wB","[-]0xVALUE","set or unset bits with given value",
+	"wc","","list all write changes",
+	"wc","[?][ir*?]","write cache undo/commit/reset/list (io.cache)",
+	"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
+	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
+	"wf"," -|file","write contents of file at current offset",
+	"wh"," r2","whereis/which shell command",
+	"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
+	"wo","[?] hex","write in block with operation. 'wo?' fmi",
+	"wp","[?] -|file","apply radare patch file. See wp? fmi",
+	"wr"," 10","write 10 random bytes",
+	"ws"," pstring","write 1 byte for length and then the string",
+	"wt[f]","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
+	"wts"," host:port [sz]", "send data to remote host:port via tcp://",
+	"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
+	"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
+	"wv","[?] eip+34","write 32-64 bit value",
+	"wz"," string","write zero terminated string (like w + \\x00)",
+	NULL
+};
+
+static const char *help_msg_wa[] = {
+	"Usage:", "wa[of*] [arg]", "",
+	"wa", " nop", "write nopcode using asm.arch and asm.bits",
+	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
+	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
+	"waf", "foo.asm" , "assemble file and write bytes",
+	"wao?", "", "show help for assembler operation on current opcode (hack)",
+	NULL
+};
+
+static const char *help_msg_wA[] = {
+	"Usage:", " wA", "[type] [value]",
+	"Types", "", "",
+	"r", "", "raw write value",
+	"v", "", "set value (taking care of current address)",
+	"d", "", "destination register",
+	"0", "", "1st src register",
+	"1", "", "2nd src register",
+	"Example:",  "wA r 0", "# e800000000",
+	NULL
+};
+
+static const char *help_msg_wc[] = {
+	"Usage:", "wc[ir+-*?]","  # NOTE: Uses io.cache=true",
+	"wc","","list all write changes",
+	"wc-"," [from] [to]","remove write op at curseek or given addr",
+	"wc+"," [addr]","commit change from cache to io",
+	"wc*","","\"\" in radare commands",
+	"wcr","","reset all write changes in cache",
+	"wci","","commit write cache",
+	NULL
+};
+
+static const char *help_msg_we[] = {
+	"Usage", "", "write extend",
+	"wen", " <num>", "insert num null bytes at current offset",
+	"weN", " <addr> <len>", "insert bytes at address",
+	"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
+	"wex", " <hex_bytes>", "insert bytes at current offset",
+	"weX", " <addr> <hex_bytes>", "insert bytes at address",
+	NULL
+};
+
+static const char *help_msg_wo[] = {
+	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
+	"wo[24aAdlmorwx]","", "without hexpair values, clipboard is used",
+	"wo2"," [val]","2=  2 byte endian swap",
+	"wo4"," [val]", "4=  4 byte endian swap",
+	"woa"," [val]", "+=  addition (f.ex: woa 0102)",
+	"woA"," [val]","&=  and",
+	"wod"," [val]", "/=  divide",
+	"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
+	"woe"," [from to] [step] [wsz=1]","..  create sequence",
+	"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"wol"," [val]","<<= shift left",
+	"wom"," [val]", "*=  multiply",
+	"woo"," [val]","|=  or",
+	"wop[DO]"," [arg]","De Bruijn Patterns",
+	"wor"," [val]", ">>= shift right",
+	"woR","","random bytes (alias for 'wr $b')",
+	"wos"," [val]", "-=  substraction",
+	"wow"," [val]", "==  write looped value (alias for 'wb')",
+	"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+	NULL
+};
+
+static const char *help_msg_wop[] = {
+	"Usage:","wop[DO]"," len @ addr | value",
+	"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
+	"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
+	NULL
+};
+
+// TODO
+static const char *help_msg_wp[] = {
+	"Usage:", "wp", "[-|r2patch-file]",
+	"^#", "", "comments",
+	".", "", "execute command",
+	"!", "", "execute command",
+	"", "", "OFFSET { code block }",
+	"", "", "OFFSET \"string\"",
+	"", "", "OFFSET 01020304",
+	"", "", "OFFSET : assembly",
+	"", "", "+ {code}|\"str\"|0210|: asm",
+};
+
+static const char *help_msg_wt[] = {
+	"Usage:", "wt[a] file [size]", " Write 'size' bytes in current block to 'file'",
+	"wta", " [filename]", "append to 'filename'",
+	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
+	"wtf!", " [filename]", "write to file from current address to eof",
+	NULL
+};
+
+static const char *help_msg_wv[] = {
+	"Usage:", "wv[size] [value]", "write value of given size",
+	"wv", " 0x834002", "write dword with this value",
+	"wv1", " 234", "write one byte with this value",
+	"Supported sizes are:", "1, 2, 4, 8", "",
+	NULL
+};
+
+static const char *help_msg_wx[] = {
+	"Usage:", "wx[f] [arg]", "",
+	"wx", " 9090", "write two intel nops",
+	"wxf", " -|file", "write contents of hexpairs file here",
+	"wxs", " 9090", "write hexpairs and seek at the end",
+	NULL
+};
+
+static void cmd_write_init(void) {
+	DEFINE_CMD_DESCRIPTOR (w);
+	DEFINE_CMD_DESCRIPTOR (wa);
+	DEFINE_CMD_DESCRIPTOR (wA);
+	DEFINE_CMD_DESCRIPTOR (wc);
+	DEFINE_CMD_DESCRIPTOR (we);
+	DEFINE_CMD_DESCRIPTOR (wo);
+	DEFINE_CMD_DESCRIPTOR (wop);
+	DEFINE_CMD_DESCRIPTOR (wp);
+	DEFINE_CMD_DESCRIPTOR (wt);
+	DEFINE_CMD_DESCRIPTOR (wv);
+	DEFINE_CMD_DESCRIPTOR (wx);
+}
+
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	ut8 *buf = malloc (strlen (pairs) + 1);
 	int len = r_hex_str2bin (pairs, buf);
@@ -116,28 +272,6 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 static void cmd_write_op (RCore *core, const char *input) {
 	ut8 *buf;
 	int len;
-	const char* help_msg[] = {
-		"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-		"wo[aAdlmorwx24]","", "without hexpair values, clipboard is used",
-		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-		"woA"," [val]","&=  and",
-		"wod"," [val]", "/=  divide",
-		"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-		"woe"," [from to] [step] [wsz=1]","..  create sequence",
-		"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-		"wol"," [val]","<<= shift left",
-		"wom"," [val]", "*=  multiply",
-		"woo"," [val]","|=  or",
-		"wop[DO]"," [arg]","De Bruijn Patterns",
-		"wor"," [val]", ">>= shift right",
-		"woR","","random bytes (alias for 'wr $b')",
-		"wos"," [val]", "-=  substraction",
-		"wow"," [val]", "==  write looped value (alias for 'wb')",
-		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
-		"wo2"," [val]","2=  2 byte endian swap",
-		"wo4"," [val]", "4=  4 byte endian swap",
-		NULL
-	};
 	if (!input[0])
 		return;
 	switch (input[1]) {
@@ -261,22 +395,14 @@ static void cmd_write_op (RCore *core, const char *input) {
 		case '\0':
 		case '?':
 		default:
-			{
-				const char* wop_help_msg[] = {
-					"Usage:","wop[DO]"," len @ addr | value",
-					"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
-					"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
-					NULL
-				};
-				r_core_cmd_help (core, wop_help_msg);
-				break;
-			}
+			r_core_cmd_help (core, help_msg_wop);
+			break;
 		}
 		break;
 	case '\0':
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_wo);
 		break;
 	}
 }
@@ -295,16 +421,8 @@ static void cmd_write_value (RCore *core, const char *input) {
 	if (input[0])
 	switch (input[1]) {
 	case '?':
-	{
-		const char* help_msg[] = {
-			"Usage:", "wv[size] [value]", "write value of given size",
-			"wv1", " 234", "write one byte with this value",
-			"wv", " 0x834002", "write dword with this value",
-			"Supported sizes are:", "1, 2, 4, 8", "",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_wv);
 		return;
-	}
 	case '1': type = 1; break;
 	case '2': type = 2; break;
 	case '4': type = 4; break;
@@ -402,37 +520,6 @@ static int cmd_write(void *data, const char *input) {
 	ut64 off;
 	ut8 *buf;
 	st64 num = 0;
-	const char* help_msg[] = {
-		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
-		"w","[1248][+-][n]","increment/decrement byte,word..",
-		"w"," foobar","write string 'foobar'",
-		"w0"," [len]","write 'len' bytes with value 0x00",
-		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
-		"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
-		"waf"," file","assemble file and write bytes",
-		"wao","[?] op","modify opcode (change conditional of jump. nop, etc)",
-		"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
-		"wb"," 010203","fill current block with cyclic hexpairs",
-		"wB","[-]0xVALUE","set or unset bits with given value",
-		"wc","","list all write changes",
-		"wc","[?][ir*?]","write cache undo/commit/reset/list (io.cache)",
-		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
-		"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
-		"wf"," -|file","write contents of file at current offset",
-		"wh"," r2","whereis/which shell command",
-		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
-		"wo","[?] hex","write in block with operation. 'wo?' fmi",
-		"wp","[?] -|file","apply radare patch file. See wp? fmi",
-		"wr"," 10","write 10 random bytes",
-		"ws"," pstring","write 1 byte for length and then the string",
-		"wt[f]","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
-		"wts"," host:port [sz]", "send data to remote host:port via tcp://",
-		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-		"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
-		"wv","[?] eip+34","write 32-64 bit value",
-		"wz"," string","write zero terminated string (like w + \\x00)",
-		NULL
-	};
 
 	if (!input) {
 		return 0;
@@ -668,17 +755,8 @@ static int cmd_write(void *data, const char *input) {
 			cmd_suc = false;
 		}
 
-
 		if (cmd_suc == false) {
-			const char* help_msg[] = {
-			"Usage", "", "write extend",
-			"wen", " <num>", "insert num null bytes at current offset",
-			"wex", " <hex_bytes>", "insert bytes at current offset",
-			"weN", " <addr> <len>", "insert bytes at address",
-			"weX", " <addr> <hex_bytes>", "insert bytes at address",
-			"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_we);
 		}
 		}
 		break;
@@ -697,15 +775,7 @@ static int cmd_write(void *data, const char *input) {
 					free (data);
 				}
 			} else {
-				r_cons_printf ("Usage: wp [-|r2patch-file]\n"
-					" ^# -> comments\n"
-					" . -> execute command\n"
-					" ! -> execute command\n"
-					" OFFSET { code block }\n"
-					" OFFSET \"string\"\n"
-					" OFFSET 01020304\n"
-					" OFFSET : assembly\n"
-					" + {code}|\"str\"|0210|: asm\n");
+				r_core_cmd_help (core, help_msg_wp);
 			}
 		}
 		break;
@@ -795,20 +865,8 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '?':
 		default:
-			{
-			const char* help_msg[] = {
-				"Usage:", " wA", "[type] [value]",
-				"Types", "", "",
-				"r", "", "raw write value",
-				"v", "", "set value (taking care of current address)",
-				"d", "", "destination register",
-				"0", "", "1st src register",
-				"1", "", "2nd src register",
-				"Example:",  "wA r 0", "# e800000000",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wA);
 			break;
-			}
 		}
 		break;
 	case 'c':
@@ -877,19 +935,7 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core);
 			break;
 		case '?':
-			{
-				const char* help_msg[] = {
-					"Usage:", "wc[ir+-*?]","  # NOTE: Uses io.cache=true",
-					"wc","","list all write changes",
-					"wc-"," [from] [to]","remove write op at curseek or given addr",
-					"wc+"," [addr]","commit change from cache to io",
-					"wc*","","\"\" in radare commands",
-					"wcr","","reset all write changes in cache",
-					"wci","","commit write cache",
-					NULL
-				};
-				r_core_cmd_help (core, help_msg);
-			}
+			r_core_cmd_help (core, help_msg_wc);
 			break;
 		case '*':
 			r_io_cache_list (core->io, 1);
@@ -976,13 +1022,7 @@ static int cmd_write(void *data, const char *input) {
 				eprintf ("Usage wts host:port [sz]\n");
 			}
 		} else if (*str == '?' || *str == '\0') {
-			const char* help_msg[] = {
-				"Usage:", "wt[a] file [size]", " Write 'size' bytes in current blok to 'file'",
-				"wta", " [filename]", "append to 'filename'",
-				"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
-				"wtf!", " [filename]", "write to file from current address to eof",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wt);
 			free (ostr);
 			return 0;
 		} else {
@@ -1132,16 +1172,8 @@ static int cmd_write(void *data, const char *input) {
 			cmd_write_hexpair (core, input + 1);
 			break;
 		default:
-			{
-			const char* help_msg[] = {
-				"Usage:", "wx[f] [arg]", "",
-				"wx", " 9090", "write two intel nops",
-				"wxf", " -|file", "write contents of hexpairs file here",
-				"wxs", " 9090", "write hexpairs and seek at the end",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wx);
 			break;
-			}
 		}
 		break;
 	case 'a': // "wa"
@@ -1170,7 +1202,7 @@ static int cmd_write(void *data, const char *input) {
 				r_asm_code_free (acode);
 			}
 			} break;
-		case 'f': // "wof"
+		case 'f': // "waf"
 			if ((input[2]==' '||input[2]=='*')) {
 				const char *file = input[2]=='*'? input+4: input+3;
 				RAsmCode *acode;
@@ -1191,18 +1223,8 @@ static int cmd_write(void *data, const char *input) {
 			} else eprintf ("Wrong argument\n");
 			break;
 		default:
-			{
-			const char* help_msg[] = {
-				"Usage:", "wa[of*] [arg]", "",
-				"wa", " nop", "write nopcode using asm.arch and asm.bits",
-				"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
-				"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
-				"waf", "foo.asm" , "assemble file and write bytes",
-				"wao?", "", "show help for assembler operation on current opcode (hack)",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wa);
 			break;
-			}
 		}
 		break;
 	case 'b': // "wb"
@@ -1292,11 +1314,10 @@ static int cmd_write(void *data, const char *input) {
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core);
 		} else {
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_w);
 		}
 		break;
 	}
 	R_FREE (ostr);
 	return 0;
 }
-

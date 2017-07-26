@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -163,15 +163,17 @@ static RList *strings(RBinFile *arch) {
 }
 
 static RBinInfo *info(RBinFile *arch) {
+	RBinJavaObj *jo = arch->o->bin_obj;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->lang = "java";
+	ret->lang = (jo && jo->lang) ? jo->lang : "java";
 	ret->file = strdup (arch->file);
 	ret->type = strdup ("JAVA CLASS");
 	ret->bclass = r_bin_java_get_version (arch->o->bin_obj);
 	ret->has_va = 0;
+	// ret->has_lit = true;
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("any");
@@ -208,8 +210,11 @@ static RBinAddr *binsym(RBinFile *arch, int sym) {
 }
 
 static RList *lines(RBinFile *arch) {
+	return NULL;
+#if 0
 	char *file = arch->file? strdup (arch->file): strdup ("");
 	RList *list = r_list_newf (free);
+	// XXX the owner of this list should be the plugin, so we are leaking here
 	file = r_str_replace (file, ".class", ".java", 0);
 	/*
 	   int i;
@@ -221,6 +226,7 @@ static RList *lines(RBinFile *arch) {
 	   }*/
 	free (file);
 	return list;
+#endif
 }
 
 static RList *sections(RBinFile *arch) {

@@ -76,12 +76,12 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-mXnzZhv] [-a align] [-b sz] [-f/t from/to] [-[m|s|S|e] str] [-x hex] file ..\n", argv0);
+	printf ("Usage: %s [-mXnzZhv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -a [align] only accept aligned hits\n"
 	" -b [size]  set block size\n"
-	" -e [regex] search for regular expression string matches\n"
+	" -e [regex] search for regex matches (can be used multiple times)\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -h         show this help\n"
 	" -m         magic search, file-type carver\n"
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 1;
-			r_list_append(keywords, optarg);
+			r_list_append (keywords, optarg);
 			break;
 		case 'b':
 			bsize = r_num_math (NULL, optarg);

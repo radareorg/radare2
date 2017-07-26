@@ -71,7 +71,13 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 	int l = strlen (s);
-	if (l<1) return false;
+	return r_strbuf_append_n (sb, s, l);
+}
+
+R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
+	if (l < 1) {
+		return false;
+	}
 	if ((sb->len + l + 1) < sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l + 1);
 		R_FREE (sb->ptr);

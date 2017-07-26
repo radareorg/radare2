@@ -66,12 +66,12 @@ R_API int r_strpool_memcat(RStrpool *p, const char *s, int len) {
 
 R_API int r_strpool_append(RStrpool *p, const char *s) {
 	int l = strlen (s) + 1;
-	return r_strpool_memcat(p, s, l);
+	return r_strpool_memcat (p, s, l);
 }
 
 R_API int r_strpool_ansi_chop(RStrpool *p, int n){
 	/* p->str need not be a c-string */
-	int i = r_str_ansi_chop(p->str, p->len, n);
+	int i = r_str_ansi_chop (p->str, p->len, n);
 	p->len = i;
 	return i;
 }

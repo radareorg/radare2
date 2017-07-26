@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_list.h>
+#include <r_skiplist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,11 @@ typedef struct r_flag_zone_item_t {
 
 /* flag.c */
 
+typedef struct r_flags_at_offset_t {
+	ut64 off;
+	RList *flags;   /* list of RFlagItem at offset */
+} RFlagsAtOffset;
+
 typedef struct r_flag_item_t {
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real name, without any escaping */
@@ -48,7 +54,7 @@ typedef struct r_flag_t {
 	bool space_strict; /* when true returned flag items must belong to the selected space */
 	char *spaces[R_FLAG_SPACES_MAX]; /* array of flag spaces */
 	RNum *num;
-	SdbHash *ht_off; /* hashmap key=item name, value=RList of items */
+	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
 	SdbHash *ht_name; /* hashmap key=item name, value=RList of items */
 	RList *flags;   /* list of RFlagItem contained in the flag */
 	RList *spacestack;

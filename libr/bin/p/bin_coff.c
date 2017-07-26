@@ -110,8 +110,8 @@ static RList *entries(RBinFile *arch) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ptr = r_coff_get_entry(obj);
-	r_list_append(ret, ptr);
+	ptr = r_coff_get_entry (obj);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -184,6 +184,8 @@ static RList *symbols(RBinFile *arch) {
 			}
 			if (_fill_bin_symbol (obj, i, &ptr)) {
 				r_list_append (ret, ptr);
+			} else {
+				free (ptr);
 			}
 			i += obj->symbols[i].n_numaux;
 		}
@@ -269,6 +271,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->big_endian = obj->endian;
 	ret->has_va = false;
 	ret->dbg_info = 0;
+	ret->has_lit = true;
 
 	if (r_coff_is_stripped (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;

@@ -20,7 +20,7 @@
 #define PAIR_WIDTH 9
 
 static void pair(const char *a, const char *b, int mode, bool last) {
-	if (!b || !(*b)) {
+	if (!b || !*b) {
 		return;
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -29,9 +29,10 @@ static void pair(const char *a, const char *b, int mode, bool last) {
 	} else {
 		char ws[16];
 		int al = strlen (a);
-		al = PAIR_WIDTH - al;
-		if (al < 0) {
+		if (al > PAIR_WIDTH) {
 			al = 0;
+		} else {
+			al = PAIR_WIDTH - al;
 		}
 		memset (ws, ' ', al);
 		ws[al] = 0;
@@ -54,8 +55,10 @@ static void pair_str(const char *a, const char *b, int mode, int last) {
 		}
 		char *eb = r_str_utf16_encode (b, -1);
 		if (eb) {
-			pair (a, sdb_fmt (0, "\"%s\"", eb), mode, last);
+			char *qs = r_str_newf ("\"%s\"", eb);
+			pair (a, qs, mode, last);
 			free (eb);
+			free (qs);
 		}
 	} else {
 		pair (a, b, mode, last);
@@ -695,9 +698,7 @@ static int bin_info(RCore *r, int mode) {
 		}
 		pair_str ("compiled", compiled, mode, false);
 		pair_bool ("crypto", info->has_crypto, mode, false);
-		tmp_buf = r_str_escape (info->debug_file_name);
-		pair_str ("dbg_file", tmp_buf, mode, false);
-		free (tmp_buf);
+		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
 		pair_bool ("havecode", havecode, mode, false);
 		if (info->claimed_checksum) {
@@ -792,6 +793,9 @@ static int bin_dwarf(RCore *core, int mode) {
 	RBinDwarfRow *row;
 	RListIter *iter;
 	RList *list = NULL;
+	if (!r_config_get_i (core->config, "bin.dbginfo")) {
+		return false;
+	}
 	RBinFile *binfile = r_core_bin_cur (core);
 	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
 	if (!binfile) {
@@ -801,15 +805,13 @@ static int bin_dwarf(RCore *core, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		if (r_config_get_i (core->config, "bin.dbginfo")) {
-			RBinDwarfDebugAbbrev *da = NULL;
-			da = r_bin_dwarf_parse_abbrev (core->bin, mode);
-			r_bin_dwarf_parse_info (da, core->bin, mode);
-			r_bin_dwarf_parse_aranges (core->bin, mode);
-			list = r_bin_dwarf_parse_line (core->bin, mode);
-			r_bin_dwarf_free_debug_abbrev (da);
-			free (da);
-		}
+		RBinDwarfDebugAbbrev *da = NULL;
+		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+		r_bin_dwarf_parse_info (da, core->bin, mode);
+		r_bin_dwarf_parse_aranges (core->bin, mode);
+		list = r_bin_dwarf_parse_line (core->bin, mode);
+		r_bin_dwarf_free_debug_abbrev (da);
+		free (da);
 	}
 	if (!list) {
 		return false;
@@ -920,7 +922,8 @@ static int bin_dwarf(RCore *core, int mode) {
 	r_cons_break_pop ();
 	R_FREE (lastFileContents);
 	R_FREE (lastFileContents2);
-	r_list_free (list);
+	// this list is owned by rbin, not us, we shouldnt free it
+	// r_list_free (list);
 	free (lastFileLines);
 	return true;
 }
@@ -1363,7 +1366,7 @@ static RList *osymbols = NULL;
 static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	RBinSymbol *symbol, *res = NULL;
 	RListIter *iter;
-	if (mydb && symbols != osymbols) {
+	if (mydb && symbols && symbols != osymbols) {
 		sdb_free (mydb);
 		mydb = NULL;
 		osymbols = symbols;
@@ -1397,6 +1400,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 				}
 			}
 		}
+		osymbols = symbols;
 	}
 	return res;
 }
@@ -1422,9 +1426,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 /* imp. is a prefix that can be rewritten by the symbol table */
 static ut64 impaddr(RBin *bin, int va, const char *name) {
-	char *impname;
 	RList *symbols;
-	RBinSymbol *s;
 
 	if (!name || !*name) {
 		return false;
@@ -1432,8 +1434,8 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	impname = sdb_fmt (2, "imp.%s", name);
-	s = get_symbol (bin, symbols, impname, 0LL);
+	char *impname = sdb_fmt (2, "imp.%s", name);
+	RBinSymbol *s = get_symbol (bin, symbols, impname, 0LL);
 	if (s) {
 		if (va) {
 			return r_bin_get_vaddr (bin, s->paddr, s->vaddr);
@@ -1444,14 +1446,15 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 }
 
 static int bin_imports(RCore *r, int mode, int va, const char *name) {
+	RBinInfo *info = r_bin_get_info (r->bin);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinImport *import;
 	RListIter *iter;
-	RList *imports;
+	bool lit = info ? info->has_lit: false;
 	char *str;
 	int i = 0;
 
-	imports = r_bin_get_imports (r->bin);
+	RList *imports = r_bin_get_imports (r->bin);
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
 	} else if (IS_MODE_RAD (mode)) {
@@ -1460,13 +1463,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("[Imports]");
 	}
 	r_list_foreach (imports, iter, import) {
-		char *symname;
-		ut64 addr;
 		if (name && strcmp (import->name, name)) {
 			continue;
 		}
-		symname = strdup (import->name);
-		addr = impaddr (r->bin, va, symname);
+		char *symname = strdup (import->name);
+		ut64 addr = lit ? impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr);
 			if (dname) {
@@ -1476,8 +1477,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 		}
 		if (r->bin->prefix) {
-			char *prname;
-			prname = r_str_newf ("%s.%s", r->bin->prefix, symname);
+			char *prname = r_str_newf ("%s.%s", r->bin->prefix, symname);
 			free (symname);
 			symname = prname;
 		}
@@ -1529,6 +1529,8 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_printf ("\n%i imports\n", i);
 	}
 #if MYDB
+	// NOTE: if we comment out this, it will leak.. but it will be faster
+	// because it will keep the cache across multiple RBin calls
 	osymbols = NULL;
 	sdb_free (mydb);
 	mydb = NULL;
@@ -1627,8 +1629,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	RList *symbols;
 	const char *lang;
 	bool firstexp = true;
-	int i = 0, is_arm, lastfs = 's',
-	    bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	int i = 0, is_arm, lastfs = 's';
+	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		return 0;
 	}
@@ -2892,11 +2894,11 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
 	}
-	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name);
+ 	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name); // 6s
 	if ((action & R_CORE_BIN_ACC_EXPORTS)) ret &= bin_exports (core, mode, loadaddr, va, at, name);
-	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name);
+	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name); // 6s
 	if ((action & R_CORE_BIN_ACC_LIBS)) ret &= bin_libs (core, mode);
-	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode);
+	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode); // 3s
 	if ((action & R_CORE_BIN_ACC_SIZE)) ret &= bin_size (core, mode);
 	if ((action & R_CORE_BIN_ACC_MEM)) ret &= bin_mem (core, mode);
 	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) ret &= bin_versioninfo (core, mode);
@@ -3087,7 +3089,7 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 		}
 
 		for (i = 0; i != 64; i++) {
-			ut64 flag = flags & (1L << i);
+			ut64 flag = flags & (1UL << i);
 			if (flag) {
 				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
 				if (flag_string) {

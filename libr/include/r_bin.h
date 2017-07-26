@@ -174,6 +174,7 @@ typedef struct r_bin_info_t {
 	int has_crypto;
 	int has_nx;
 	int big_endian;
+	bool has_lit;
 	char *actual_checksum;
 	char *claimed_checksum;
 	int pe_overlay;
@@ -266,6 +267,7 @@ typedef struct r_bin_t {
 	RIOBind iob;
 	char *force;
 	int is_debugger;
+	bool want_dbginfo;
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings

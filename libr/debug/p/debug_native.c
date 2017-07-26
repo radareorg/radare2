@@ -236,7 +236,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
 	if (ContinueDebugEvent (pid, tid, continue_status) == 0) {
-		print_lasterr ((char *)__FUNCTION__, "ContinueDebugEvent");
+		r_sys_perror ("r_debug_native_continue/ContinueDebugEvent");
 		eprintf ("debug_contp: error\n");
 		return false;
 	}
@@ -1058,7 +1058,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			snprintf (name, sizeof (name), "unk%d", unk++);
 		}
 		perm = 0;
-		for (i = 0; perms[i] && i < 5; i++) {
+		for (i = 0; i < 5 && perms[i]; i++) {
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;

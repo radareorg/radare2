@@ -23,20 +23,24 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	return -1;
 }
 
+// This function reads from the file buffer,
+// thus using endian-agnostic functions
 int cmp_segs(const void *a, const void *b) {
 	const ut16 * const ma = (const ut16 * const)a;
 	const ut16 * const mb = (const ut16 * const)b;
 	if (!ma || !mb) {
 		return 0;
 	}
-	return (int)(*ma-*mb);
+	return (int)(r_read_le16 (ma) - r_read_le16 (mb));
 }
 
+// This function reads from the file buffer,
+// thus using endian-agnostic functions
 void trv_segs (const void *seg, const void *segs) {
-	const ut16 * const mseg = (const ut16 * const)seg;
+	const ut8 * const mseg = (const ut8 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg && msegs && *msegs) {
-		**msegs = *mseg;
+		r_write_le16(*msegs, r_read_le16(mseg));
 		*msegs = *msegs + 1;
 	}
 }
@@ -82,9 +86,9 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	for (i = 0; i < num_relocs; i++) {
 		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
 		if ((paddr + 2) < bin->dos_file_size) {
-			curr_seg = (ut16 *) (bin->b->buf + paddr);
+			curr_seg = (ut16 *)(bin->b->buf + paddr);
 			/* Add segment only if it's located inside dos executable data */
-			if (*curr_seg <= last_parag) {
+			if (r_read_le16 (curr_seg) <= last_parag) {
 				btree_add (&tree, curr_seg, cmp_segs);
 			}
 		}

@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <r_lib.h>
 #if __UNIX__
 #include <sys/mman.h>
 #endif
@@ -122,6 +123,14 @@ R_API bool r_file_exists(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
+#if 0
+	// TODO: file_exists doesnt uses the sandbox or many things may fail
+	if (strncmp (str, "/usr/bin", 8)) {
+		if (str && !r_sandbox_check_path (str)) {
+			return false;
+		}
+	}
+#endif
 #ifdef _MSC_VER
 	WIN32_FIND_DATAA FindFileData;
 	HANDLE handle = FindFirstFileA (str, &FindFileData);
@@ -174,6 +183,10 @@ R_API char *r_file_abspath(const char *file) {
 		if (cwd && *file != '/')
 			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
 #elif __WINDOWS__ && !__CYGWIN__
+		// Network path
+		if (!strncmp (file, "\\\\", 2)) {
+			return strdup (file);
+		}
 		if (cwd && !strchr (file, ':')) {
 			ret = r_str_newf ("%s\\%s", cwd, file);
 		}
@@ -239,6 +252,7 @@ R_API char *r_stdin_slurp (int *sz) {
 	}
 	buf = malloc (BS);
 	if (!buf) {
+		close (newfd);
 		return NULL;
 	}
 	for (i = ret = 0; ; i += ret) {
@@ -838,18 +852,17 @@ R_API char *r_file_temp (const char *prefix) {
 R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
-	char name[1024];
+	char name[1024] = {0};
 #if __WINDOWS__
 	h = -1;
 	if (GetTempFileNameA (path, prefix, 0, name)) {
 		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	}
 #else
-	mode_t mask;
-	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	mask = umask(S_IWGRP | S_IWOTH);
+	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX", path, prefix);
+	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	h = mkstemp (name);
-	umask(mask);
+	umask (mask);
 #endif
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
@@ -869,8 +882,11 @@ R_API char *r_file_tmpdir() {
 			path = strdup ("C:\\WINDOWS\\Temp\\");
 		}
 	} else {
-		// Windows XP sometimes returns short path name
-		GetLongPathName (tmpdir, tmpdir, sizeof (tmpdir));
+		void (*glpn)(TCHAR *, TCHAR *, size_t) = (void*)r_lib_dl_sym (GetModuleHandle (TEXT ("kernel32.dll")), "GetLongPathNameW");
+		if (glpn) {
+			// Windows XP sometimes returns short path name
+			glpn (tmpdir, tmpdir, sizeof (tmpdir));
+		}
 		path = strdup (tmpdir);
 	}
 #elif __ANDROID__

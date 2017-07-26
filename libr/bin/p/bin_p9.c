@@ -180,7 +180,6 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 

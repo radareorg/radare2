@@ -17,8 +17,10 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	if (!(buf = malloc (128))) {
 		return -1;
 	}
-	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+", (ut32) (g->read_max - 1));
+	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+",
+		  (ut32) (g->read_max - 1));
 	if ((ret = handle_qSupported (g)) < 0) {
+		free (buf);
 		return -1;
 	}
 	ret = send_msg (g, buf);
@@ -47,6 +49,39 @@ static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void
 		return -1;
 	}
 	return send_msg (g, buf);
+}
+
+static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
+					 void *core_ptr) {
+	char *buf, *ptr, cmd[64] = { 0 };
+	size_t buflen = 512;
+	int ret;
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	ptr = g->data + strlen ("qXfer:exec-file:read:");
+	if (*ptr != ':') {
+		int pid;
+		if ((pid = (int) strtol (ptr, NULL, 16)) <= 0 || pid != g->pid) {
+			return send_msg (g, "E00");
+		}
+	}
+	if (!(ptr = strchr (ptr, ':'))) {
+		return send_msg (g, "E00");
+	}
+	ptr++;
+	snprintf (cmd, sizeof (cmd) - 1, "if%s", ptr);
+	if (!(buf = malloc (buflen))) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	if (cb (g, core_ptr, cmd, buf, buflen) < 0) {
+		free (buf);
+		return send_msg (g, "E01");
+	}
+	ret = send_msg (g, buf);
+	free (buf);
+	return ret;
 }
 
 static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
@@ -93,8 +128,10 @@ static int _server_handle_s(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		send_msg (g, "E01");
 		return -1;
 	}
-	// TODO This packet should specify why we stopped. Right now only for trap
-	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (g, core_ptr, "dptr", NULL, 0));
+	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
 	return send_msg (g, message);
 }
 
@@ -111,18 +148,22 @@ static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		send_msg (g, "E01");
 		return -1;
 	}
-	// TODO This packet should specify why we stopped. Right now only for trap
-	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (g, core_ptr, "dptr", NULL, 0));
+	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
 	return send_msg (g, message);
 }
 
 static int _server_handle_ques(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	// TODO This packet should specify why we stopped. Right now only for trap
-	char message[64];
+	char message[64] = { 0 };
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	snprintf (message, sizeof (message) - 1, "T05thread:%x;", cmd_cb (g, core_ptr, "dptr", NULL, 0));
+	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
+		send_msg (g, "");
+		return -1;
+	}
 	return send_msg (g, message);
 }
 
@@ -294,7 +335,7 @@ static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *buf;
 	int ret;
-	size_t buf_len = 80;
+	size_t buf_len = g->stub_features.pkt_sz;
 	if ((ret = send_ack (g)) < 0) {
 		return -1;
 	}
@@ -370,6 +411,69 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	free (buf);
 	g->data[length * 2] = '\0';
 	return send_msg (g, g->data);
+}
+
+// Read register number
+static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+	char message[128] = { 0 }, cmd[128] = { 0 };
+	int regnum, i;
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	if (!isxdigit (g->data[1])) {
+		return send_msg (g, "E01");
+	}
+	regnum = strtol (g->data + 1, NULL, 16);
+	// We need to do this because length of register set is not known
+	for (i = 0; i < regnum; i++) {
+		if (!*g->registers[i].name) {
+			return send_msg (g, "E01");
+		}
+	}
+	if (snprintf (cmd, sizeof (cmd) - 1, "dr %s", g->registers[regnum].name) < 0) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	if (cmd_cb (g, core_ptr, cmd, message, sizeof (message)) < 0) {
+		send_msg (g, "E01");
+		return -1;
+	}
+	return send_msg (g, message);
+}
+
+// Write register number
+static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+	char *ptr, *cmd;
+	int regnum, len, i;
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	if (!isxdigit (g->data[1]) || !(ptr = strchr (g->data, '='))) {
+		return send_msg (g, "E01");
+	}
+	ptr++;
+	if (!isxdigit (*ptr)) {
+		return send_msg (g, "E01");
+	}
+	regnum = strtol (g->data + 1, NULL, 16);
+	// We need to do this because length of register set is not known
+	for (i = 0; i < regnum; i++) {
+		if (!*g->registers[i].name) {
+			return send_msg (g, "E01");
+		}
+	}
+	len = strlen (g->registers[regnum].name) + strlen (ptr) + 10;
+	if (!(cmd = calloc (len, sizeof (char)))) {
+		return send_msg (g, "E01");
+	}
+	snprintf (cmd, len - 1, "dr %s=0x%s", g->registers[regnum].name, ptr);
+	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
+		free (cmd);
+		send_msg (g, "E01");
+		return -1;
+	}
+	free (cmd);
+	return send_msg (g, "OK");
 }
 
 static int _server_handle_vMustReplyEmpty(libgdbr_t *g) {
@@ -517,11 +621,35 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			}
 			continue;
 		}
+		if (r_str_startswith (g->data, "P")) {
+			if ((ret = _server_handle_P (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "p")) {
+			if ((ret = _server_handle_p (g, cmd_cb, core_ptr)) < 0) {
+				return ret;
+			}
+			continue;
+		}
+		if (r_str_startswith (g->data, "qXfer:exec-file:read:")) {
+			if ((ret = _server_handle_exec_file_read (g, cmd_cb, core_ptr)) < 0 ) {
+				return ret;
+			}
+			continue;
+		}
 		if (r_str_startswith (g->data, "QStartNoAckMode")) {
-			if (send_ack (g) < 0 || send_msg (g, "OK") < 0) {
+			if (send_ack (g) < 0) {
 				return -1;
 			}
 			g->no_ack = true;
+			if (g->server_debug) {
+				eprintf ("[noack mode enabled]\n");
+			}
+			if (send_msg (g, "OK") < 0) {
+				return -1;
+			}
 			continue;
 		}
 		// Unrecognized packet

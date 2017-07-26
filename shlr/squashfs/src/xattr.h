@@ -66,9 +66,9 @@ extern int generate_xattrs(int, struct xattr_list *);
 #ifdef XATTR_SUPPORT
 extern int get_xattrs(int, struct squashfs_super_block *);
 extern int read_xattrs(void *);
-extern long long write_xattrs();
-extern int save_xattrs();
-extern void restore_xattrs();
+extern long long write_xattrs(void);
+extern int save_xattrs(void);
+extern void restore_xattrs(void);
 extern unsigned int xattr_bytes, total_xattr_bytes;
 extern void write_xattr(char *, unsigned int);
 extern int read_xattrs_from_disk(int, struct squashfs_super_block *);

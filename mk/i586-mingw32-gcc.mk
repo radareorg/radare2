@@ -5,7 +5,8 @@ RANLIB=i586-mingw32-ranlib
 ONELIB=0
 OSTYPE=windows
 LINK=
-CC_AR=i586-mingw32-ar -r ${LIBAR}
+AR=i586-mingw32-ar
+CC_AR=$(AR) -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

@@ -113,7 +113,8 @@ typedef struct r_disam_options_t {
 	bool show_fcncalls;
 	bool show_hints;
 	bool show_marks;
-	const char *strenc;
+	bool show_asciidot;
+	RStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -489,7 +490,19 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
-	ds->strenc = r_config_get (core->config, "asm.strenc");
+	ds->show_asciidot = r_config_get_i (core->config, "asm.asciidot");
+	const char *strenc_str = r_config_get (core->config, "asm.strenc");
+	if (!strcmp (strenc_str, "latin1")) {
+		ds->strenc = R_STRING_ENC_LATIN1;
+	} else if (!strcmp (strenc_str, "utf8")) {
+		ds->strenc = R_STRING_ENC_UTF8;
+	} else if (!strcmp (strenc_str, "utf16le")) {
+		ds->strenc = R_STRING_ENC_UTF16LE;
+	} else if (!strcmp (strenc_str, "utf32le")) {
+		ds->strenc = R_STRING_ENC_UTF32LE;
+	} else {
+		ds->strenc = R_STRING_ENC_GUESS;
+	}
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
@@ -2644,59 +2657,39 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
-	if (!strcmp (ds->strenc, "asciidot")) {
-		char *escstr = r_str_escape_asciidot (str);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
+	char *escstr;
+	const char *prefix = "";
+	switch (ds->strenc) {
+	case R_STRING_ENC_LATIN1:
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+		break;
+	case R_STRING_ENC_UTF8:
+		escstr = r_str_escape_utf8 (str, ds->show_asciidot);
+		break;
+	case R_STRING_ENC_UTF16LE:
+		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+		prefix = "u";
+		break;
+	case R_STRING_ENC_UTF32LE:
+		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+		prefix = "U";
+		break;
+	default:
+		if (strlen (str) == 1) {
+			// could be a wide string
+			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+			if (escstr) {
+				int escstr_len = strlen (escstr);
+				prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
+			}
+		} else {
+			escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 		}
-	} else if (!strcmp (ds->strenc, "latin1")) {
-		char *escstr = r_str_escape_latin1 (str);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
-	} else if (!strcmp (ds->strenc, "utf8")) {
-		char *escstr = r_str_escape_utf8 (str);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
-	} else if (strlen (str) == 1) {
-		// could be a wide string
-		int i = 0;
+	}
+	if (escstr) {
 		ALIGN;
-		ds_comment (ds, true, "; %s\"", len > 2 && str[i+2] ? "u" : "");
-		for (i = 0; i < len; i+=2) {
-			if (!str[i]) {
-				break;
-			}
-			if (!str[i+1]) {
-				if (IS_PRINTABLE (str[i])
-				    && str[i] != '"' && str[i] != '\\') {
-					ds_comment (ds, false, "%c", str[i]);
-				} else {
-					char *escchar = r_str_escape_latin1 (&str[i]);
-					if (escchar) {
-						ds_comment (ds, false, "%s", escchar);
-						free (escchar);
-					}
-				}
-			} else {
-				ds_comment (ds, false, "\\u%02x%02x", (ut8)str[i+1], (ut8)str[i]);
-			}
-		}
-		ds_comment (ds, false, "\"%s", nl);
-	} else {
-		char *escstr = r_str_escape_latin1 (str);
-		if (escstr) {
-			ALIGN;
-			ds_comment (ds, true, "; \"%s\"%s", escstr, nl);
-			free (escstr);
-		}
+		ds_comment (ds, true, "; %s\"%s\"%s", prefix, escstr, nl);
+		free (escstr);
 	}
 }
 
@@ -4075,6 +4068,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	int dis_opcodes = 0;
 	//r_cons_printf ("[");
 	int limit_by = 'b';
+	char str[512];
 
 	if (nb_opcodes != 0) {
 		limit_by = 'o';
@@ -4155,6 +4149,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		bool end_nbopcodes, end_nbbytes;
 
 		at = addr + k;
+		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
@@ -4189,6 +4184,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		if (ds->pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		}
+
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list_dynamic;
@@ -4204,6 +4200,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				oplen = ds->oplen = ret = skip_bytes;
 			}
 		}
+
+		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str, 
+			sizeof (str), core->print->big_endian);
+
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		if (ds->analop.ptr != UT64_MAX) {
@@ -4223,7 +4223,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
-			char *escaped_str = r_str_escape (asmop.buf_asm);
+			char *escaped_str = r_str_utf16_encode (str, -1);
 			r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 			free (escaped_str);
 		}
@@ -4318,6 +4318,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// r_cons_printf ("]");
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
+	ds_free (ds);
 	return true;
 }
 

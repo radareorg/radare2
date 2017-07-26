@@ -93,9 +93,20 @@ int handle_qSupported(libgdbr_t *g) {
 				g->stub_features.QTBuffer_size = (tok[strlen ("QTBuffer:size")] == '+');
 			} else if (r_str_startswith (tok, "QThreadEvents")) {
 				g->stub_features.QThreadEvents = (tok[strlen ("QThreadEvents")] == '+');
+			} else if (r_str_startswith (tok, "QThreadSuffixSupported")) {
+				g->remote_type = GDB_REMOTE_TYPE_LLDB;
+				g->stub_features.lldb.QThreadSuffixSupported
+					= (tok[strlen ("QThreadSuffixSupported")] == '+');
+			} else if (r_str_startswith (tok, "QListThreadsInStopReply")) {
+				g->remote_type = GDB_REMOTE_TYPE_LLDB;
+				g->stub_features.lldb.QListThreadsInStopReply
+					= (tok[strlen ("QListThreadsInStopReply")] == '+');
 			}
 		} else if (r_str_startswith (tok, "multiprocess")) {
 			g->stub_features.multiprocess = (tok[strlen ("multiprocess")] == '+');
+		} else if (r_str_startswith (tok, "qEcho")) {
+			g->remote_type = GDB_REMOTE_TYPE_LLDB;
+			g->stub_features.lldb.qEcho = (tok[strlen ("qEcho")] == '+');
 		}
 		// TODO
 		tok = strtok (NULL, ";");
@@ -111,9 +122,12 @@ int send_ack(libgdbr_t *g) {
 		if (g->no_ack) {
 			return 0;
 		}
-		g->send_buff[0] = '+';
-		g->send_len = 1;
-		send_packet (g);
+		if (r_socket_write (g->sock, "+", 1) < 0) {
+			return -1;
+		}
+		if (g->server_debug) {
+			eprintf ("[sent ack]\n");
+		}
 		return 0;
 	}
 	return -1;

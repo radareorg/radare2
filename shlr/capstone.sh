@@ -8,7 +8,7 @@ if [ -d capstone -a ! -d capstone/.git ]; then
 	echo "[capstone] release with no git?"
 	cd capstone
 	for PATCH in ../capstone-patches/* ; do
-		patch -Rp1 < $PATCH
+		yes n | patch -Rp1 < $PATCH
 	done
 else 
 	if [ ! -d capstone ]; then 

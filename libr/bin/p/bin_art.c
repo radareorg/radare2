@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -105,9 +105,7 @@ static RBinInfo *info(RBinFile *arch) {
 	if (!ret) {
 		return NULL;
 	}
-
 	// art_header_load (&art, arch->buf);
-
 	ao = arch->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = arch->file? strdup (arch->file): NULL;
@@ -123,6 +121,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->machine = strdup ("arm");
 	ret->arch = strdup ("arm");
 	ret->has_va = 1;
+	ret->has_lit = true;
 	ret->has_pi = ao->art.compile_pic;
 	ret->bits = 16; // 32? 64?
 	ret->big_endian = 0;
@@ -215,7 +214,7 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_art = {
+RBinPlugin r_bin_plugin_art = {
 	.name = "art",
 	.desc = "Android Runtime",
 	.license = "LGPL3",
@@ -232,7 +231,7 @@ struct r_bin_plugin_t r_bin_plugin_art = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_art,
 	.version = R2_VERSION

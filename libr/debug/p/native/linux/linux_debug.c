@@ -260,7 +260,7 @@ static int stop_process (int pid) {
 	ret = waitpid (pid, &status, __WALL);
 	return ret == pid;
 }
-				
+
 void linux_attach_new_process (RDebug *dbg) {
 	(void)detach_procs_and_threads (dbg);
 
@@ -472,10 +472,12 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 	}
 
 	RList *th_list;
+	bool list_alloc = false;
 	if (dbg->threads) {
 		th_list = dbg->threads;
 	} else {
 		th_list = r_list_new ();
+		list_alloc = true;
 		if (th_list) {
 			th_list = linux_thread_list (dbg->pid, th_list);
 		}
@@ -502,6 +504,9 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 				"/proc/%d/stack", rdi->pid);
 	rdi->kernel_stack = r_file_slurp (proc_buff, NULL);
 	rdi->status = found ? th->status : R_DBG_PROC_STOP;
+	if (list_alloc) {
+		r_list_free (th_list);
+	}
 	return rdi;
 }
 
@@ -533,7 +538,7 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 			pid_info->status = R_DBG_PROC_SLEEP;
 			break;
 		}
-	}					
+	}
 	ptr = strstr (info, "Uid:");
 	if (ptr) {
 		pid_info->uid = atoi (ptr + 5);
@@ -548,7 +553,7 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	pid_info->pc = 0;
 	return pid_info;
 }
-	
+
 RList *linux_thread_list(int pid, RList *list) {
 	int i, thid = 0;
 	char *ptr, buf[1024];

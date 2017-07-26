@@ -300,8 +300,30 @@ static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
+static ut64 bbJump(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+			return bb->jump;
+		}
+	}
+	return UT64_MAX;
+}
+
+static ut64 bbFail(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+			return bb->fail;
 		}
 	}
 	return UT64_MAX;
@@ -311,7 +333,7 @@ static ut64 bbSize(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->size;
 		}
 	}
@@ -539,6 +561,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				switch (str[2]) {
+				case 'j': return bbJump (fcn, core->offset); // jump
+				case 'f': return bbFail (fcn, core->offset); // fail
 				case 'B': return fcn->addr; // begin
 				case 'E': return fcn->addr + fcn->_size; // end
 				case 'S': return r_anal_fcn_size (fcn);
@@ -571,6 +595,27 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if ((flag = r_flag_get (core->flags, str))) {
 				ret = flag->offset;
 				if (ok) *ok = true;
+				return ret;
+			}
+
+			// check for reg alias
+			struct r_reg_item_t *r = r_reg_get (core->dbg->reg, str, -1);
+			if (!r) {
+				int type = r_reg_get_name_idx (str);
+				if (type != -1) {
+					const char *alias = r_reg_get_name (core->dbg->reg, type);
+					r = r_reg_get (core->dbg->reg, alias, -1);
+					if (r) {
+						if (ok) *ok = true;
+						ret = r_reg_get_value (core->dbg->reg, r);
+						return ret;
+					}
+				}
+			}
+			else {
+				if (ok) *ok = true;
+				ret = r_reg_get_value (core->dbg->reg, r);
+				return ret;
 			}
 		}
 		break;
@@ -1166,26 +1211,39 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else {
-			int i, j;
+			int i, j, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
+			if (cfg_newtab) {
+				RCmdDescriptor *desc = &core->cmd_descriptor;
+				for (i = 0; i < line->buffer.index && desc; i++) {
+					ut8 c = line->buffer.data[i];
+					desc = c < R_ARRAY_SIZE(desc->sub) ? desc->sub[c] : NULL;
+				}
+				if (desc && desc->help_msg) {
+					r_core_cmd_help (core, desc->help_msg);
+					r_cons_flush ();
+					return true;
+				}
+				// fallback to old command completion
+			}
 			for (i = j = 0; i < CMDS && radare_argv[i]; i++)
 				if (!strncmp (radare_argv[i], line->buffer.data,
-						line->buffer.index))
+											line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
 		}
 	} else {
-		int i, j;
-		for (i=j=0; i<CMDS && radare_argv[i]; i++) {
-			if (!strncmp (radare_argv[i], line->buffer.data,
-					line->buffer.index)) {
-				tmp_argv[j++] = radare_argv[i];
+			int i, j;
+			for (i=j=0; i<CMDS && radare_argv[i]; i++) {
+				if (!strncmp (radare_argv[i], line->buffer.data,
+											line->buffer.index)) {
+					tmp_argv[j++] = radare_argv[i];
+				}
 			}
-		}
-		tmp_argv[j] = NULL;
-		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
 	}
 	return true;
 }
@@ -1533,9 +1591,9 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 static void r_core_setenv (RCore *core) {
 	char *e = r_sys_getenv ("PATH");
 #if __WINDOWS__ && !__CYGWIN__
-	char *h = r_str_home(".config\\radare2\\prefix\\bin;");
+	char *h = r_str_home (".config\\radare2\\prefix\\bin;");
 #else
-	char *h = r_str_home(".config/radare2/prefix/bin:");
+	char *h = r_str_home (".config/radare2/prefix/bin:");
 #endif
 	char *n = r_str_newf ("%s%s", h, e);
 	r_sys_setenv ("PATH", n);
@@ -2298,6 +2356,7 @@ reaccept:
 			}
 		}
 		eprintf ("client: disconnected\n");
+		r_socket_free (c);
 	}
 out_of_function:
 	r_cons_break_pop ();

@@ -3,6 +3,14 @@
 
 #include "r_str_util.h"
 
+typedef enum {
+	R_STRING_ENC_LATIN1,
+	R_STRING_ENC_UTF8,
+	R_STRING_ENC_UTF16LE,
+	R_STRING_ENC_UTF32LE,
+	R_STRING_ENC_GUESS,
+} RStrEnc;
+
 typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
@@ -101,9 +109,10 @@ R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_unescape(char *buf);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);
-R_API char *r_str_escape_asciidot(const char *buf);
-R_API char *r_str_escape_latin1(const char *buf);
-R_API char *r_str_escape_utf8(const char *buf);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot);
+R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot);
+R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot);
+R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode(const char *buf);
 R_API char *r_str_utf16_decode(const ut8 *s, int len);
@@ -133,5 +142,6 @@ R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber (const char *str);
 R_API const char *r_str_last (const char *in, const char *ch);
 R_API char* r_str_highlight(char *str, const char *word, const char *color);
+R_API char *r_qrcode_gen(const ut8* text, int len, bool utf8);
 
 #endif //  R_STR_H

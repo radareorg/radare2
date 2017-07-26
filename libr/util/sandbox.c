@@ -28,24 +28,24 @@ static bool inHomeWww(const char *path) {
  * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
  * path are ok.
  */
-R_API int r_sandbox_check_path (const char *path) {
+R_API bool r_sandbox_check_path (const char *path) {
 	size_t root_len;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
 
 	if (!path) {
-		return 0;
+		return false;
 	}
 	root_len = strlen (R2_LIBDIR"/radare2");
 	if (!strncmp (path, R2_LIBDIR"/radare2", root_len)) {
-		return 1;
+		return true;
 	}
 	root_len = strlen (R2_DATDIR"/radare2");
 	if (!strncmp (path, R2_DATDIR"/radare2", root_len)) {
-		return 1;
+		return true;
 	}
 	if (inHomeWww (path)) {
-		return 1;
+		return true;
 	}
 	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
 	root_len = strlen (R2_WWWROOT);
@@ -59,7 +59,7 @@ R_API int r_sandbox_check_path (const char *path) {
 
 	// ./ path is not allowed
         if (path[0]=='.' && path[1]=='/') {
-		return 0;
+		return false;
 	}
 	// Properly check for directrory traversal using "..". First, does it start with a .. part?
         if (path[0]=='.' && path[1]=='.' && (path[2]=='\0' || path[2]=='/')) return 0;
@@ -67,12 +67,12 @@ R_API int r_sandbox_check_path (const char *path) {
 	// Or does it have .. in some other position?
 	for (p = strstr (path, "/.."); p; p = strstr(p, "/..")) {
 		if (p[3] == '\0' || p[3] == '/') {
-			return 0;
+			return false;
 		}
 	}
 	// Absolute paths are forbidden.
 	if (*path == '/') {
-		return 0;
+		return false;
 	}
 #if __UNIX__
 	char ch;
@@ -275,10 +275,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (enabled) return -1;
 #if __UNIX__
-	if (pid > 0) {
-		return kill (pid, sig);
-	}
-	// eprintf ("r_sandbox_kill: Better not to kill pids <= 0.\n");
+	return kill (pid, sig);
 #endif
 	return -1;
 }
@@ -313,14 +310,13 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	return opendir (path);
 }
 #endif
-R_API int r_sys_stop () {
-	int pid;
+R_API bool r_sys_stop () {
 	if (enabled) {
 		return false;
 	}
-	pid = r_sys_getpid ();
-#ifndef SIGSTOP
-#define SIGSTOP 19
+#if __UNIX__
+	return !r_sandbox_kill (0, SIGTSTP);
+#else
+	return false;
 #endif
-	return (!r_sandbox_kill (pid, SIGSTOP));
 }

@@ -129,12 +129,12 @@ typedef struct squashfs_operations {
 		unsigned int offset, struct inode **i);
 	void (*read_fragment)(unsigned int fragment, long long *start_block,
 		int *size);
-	int (*read_fragment_table)();
+	int (*read_fragment_table)(void);
 	void (*read_block_list)(unsigned int *block_list, char *block_ptr,
 		int blocks);
 	struct inode *(*read_inode)(unsigned int start_block,
 		unsigned int offset);
-	int (*read_uids_guids)();
+	int (*read_uids_guids)(void);
 } squashfs_operations;
 
 struct test {
@@ -269,29 +269,29 @@ extern int read_block(int, long long, long long *, void *);
 
 /* unsquash-1.c */
 extern void read_block_list_1(unsigned int *, char *, int);
-extern int read_fragment_table_1();
+extern int read_fragment_table_1(void);
 extern struct inode *read_inode_1(unsigned int, unsigned int);
 extern struct dir *squashfs_opendir_1(unsigned int, unsigned int,
 	struct inode **);
-extern int read_uids_guids_1();
+extern int read_uids_guids_1(void);
 
 /* unsquash-2.c */
 extern void read_block_list_2(unsigned int *, char *, int);
-extern int read_fragment_table_2();
+extern int read_fragment_table_2(void);
 extern void read_fragment_2(unsigned int, long long *, int *);
 extern struct inode *read_inode_2(unsigned int, unsigned int);
 
 /* unsquash-3.c */
-extern int read_fragment_table_3();
+extern int read_fragment_table_3(void);
 extern void read_fragment_3(unsigned int, long long *, int *);
 extern struct inode *read_inode_3(unsigned int, unsigned int);
 extern struct dir *squashfs_opendir_3(unsigned int, unsigned int,
 	struct inode **);
 
 /* unsquash-4.c */
-extern int read_fragment_table_4();
+extern int read_fragment_table_4(void);
 extern void read_fragment_4(unsigned int, long long *, int *);
 extern struct inode *read_inode_4(unsigned int, unsigned int);
 extern struct dir *squashfs_opendir_4(unsigned int, unsigned int,
 	struct inode **);
-extern int read_uids_guids_4();
+extern int read_uids_guids_4(void);

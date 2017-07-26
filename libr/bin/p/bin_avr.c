@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2017 - pancake */
 
 #include <r_bin.h>
 
@@ -84,6 +84,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->machine = strdup ("ATmel");
 	ret->os = strdup ("avr");
 	ret->has_va = 0; // 1;
+	ret->has_lit = false;
 	ret->arch = strdup ("avr");
 	ret->bits = 8;
 	// bs = (const char*)arch->buf->buf;

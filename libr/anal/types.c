@@ -337,11 +337,14 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 				const char *res = sdb_const_get (anal->sdb_types, &str[j], 0);
 				bool is_func = res && !strcmp ("func", res);
 				if (is_func) {
-					return strdup (&str[j]);
+					char *ret = strdup (&str[j]);
+					free (str);
+					return ret;
 				}
 			}
 			str[j + n] = saved;
 		}
 	}
+	free (str);
 	return NULL;
 }

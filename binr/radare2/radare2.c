@@ -23,6 +23,19 @@ static bool threaded = false;
 static bool haveRarunProfile = false;
 static struct r_core_t r;
 
+static bool is_valid_gdb_file(RCoreFile *fh) {
+	return fh && fh->desc && fh->desc->name && strncmp (fh->desc->name, "gdb://", 6);
+}
+
+static char* get_file_in_cur_dir(const char *filepath) {
+	filepath = r_file_basename (filepath);
+	if (r_file_exists (filepath)
+	    && !r_file_is_directory (filepath)) {
+		return r_file_abspath (filepath);
+	}
+	return NULL;
+}
+
 static int verify_version(int show) {
 	int i, ret;
 	typedef const char* (*vc)();
@@ -91,6 +104,7 @@ static int main_help(int line) {
 		" =            read file from stdin (use -i and -c to run cmds)\n"
 		" -=           perform !=! command to run all commands remotely\n"
 		" -0           print \\x00 after init and every command\n"
+		" -2           close stderr file descriptor (silent warning messages)\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aaa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
@@ -106,15 +120,15 @@ static int main_help(int line) {
 		" -H ([var])   display variable\n"
 		" -i [file]    run script file\n"
 		" -I [file]    run script file before the file is opened\n"
-		" -k [k=v]     perform sdb query into core->sdb\n"
+		" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
 		" -m [addr]    map file at given address (loadaddr)\n"
 		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
-		" -o [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
+		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -R [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
@@ -413,6 +427,15 @@ int main(int argc, char **argv, char **envp) {
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
 	RList *prefiles = r_list_new ();
+
+#define LISTS_FREE() \
+		{ \
+			r_list_free (cmds); \
+			r_list_free (evals); \
+			r_list_free (files); \
+			r_list_free (prefiles); \
+		}
+
 	int va = 1; // set va = 0 to load physical offsets from rbin
 	bool noStderr = false;
 
@@ -422,16 +445,14 @@ int main(int argc, char **argv, char **envp) {
 		r_sys_crash_handler ("gdb --pid %d");
 	}
 	if (argc < 2) {
-		r_list_free (cmds);
-		r_list_free (evals);
-		r_list_free (files);
-		r_list_free (prefiles);
+		LISTS_FREE ();
 		return main_help (1);
 	}
 	r_core_init (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
 		r_cons_flush ();
+		LISTS_FREE ();
 		return 0;
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
@@ -447,6 +468,7 @@ int main(int argc, char **argv, char **envp) {
 	// -H option without argument
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		main_print_var (NULL);
+		LISTS_FREE ();
 		return 0;
 	}
 
@@ -502,6 +524,7 @@ int main(int argc, char **argv, char **envp) {
 			if (!strcmp (optarg, "?")) {
 				r_debug_plugin_list (r.dbg, 'q');
 				r_cons_flush();
+				LISTS_FREE ();
 				return 0;
 			}
 			break;
@@ -524,6 +547,7 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'H':
 			main_print_var (optarg);
+			LISTS_FREE ();
 			return 0;
 		case 'i':
 			r_list_append (files, optarg);
@@ -559,6 +583,7 @@ int main(int argc, char **argv, char **envp) {
 			if (!strcmp (optarg, "?")) {
 				r_core_project_list (&r, 0);
 				r_cons_flush ();
+				LISTS_FREE ();
 				return 0;
 			}
 			r_config_set (r.config, "prj.name", optarg);
@@ -594,9 +619,11 @@ int main(int argc, char **argv, char **envp) {
 		case 'v':
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
+				LISTS_FREE ();
 				return 0;
 			} else {
 				verify_version (0);
+				LISTS_FREE ();
 				return blob_version ("radare2");
 			}
 		case 'V':
@@ -652,16 +679,12 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_io_plugin_list (r.io);
 		r_cons_flush ();
-		r_list_free (evals);
-		r_list_free (files);
-		r_list_free (cmds);
+		LISTS_FREE ();
 		return 0;
 	}
 
 	if (help > 0) {
-		r_list_free (evals);
-		r_list_free (files);
-		r_list_free (cmds);
+		LISTS_FREE ();
 		return main_help (help > 1? 2: 0);
 	}
 	if (customRarunProfile) {
@@ -804,6 +827,34 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					if (!strcmp (debugbackend, "gdb")) {
+						const char *filepath;
+						ut64 addr;
+						filepath  = r_config_get (r.config, "dbg.exe.path");
+						if (filepath && r_file_exists (filepath)
+						    && !r_file_is_directory (filepath)) {
+							char *newpath = r_file_abspath (filepath);
+							if (newpath) {
+								free (fh->desc->name);
+								fh->desc->name = newpath;
+								addr = r_debug_get_baddr (r.dbg, newpath);
+								r_core_bin_load (&r, NULL, addr);
+							}
+						} else if (is_valid_gdb_file (fh)) {
+							filepath = fh->desc->name;
+							if (r_file_exists (filepath)
+							    && !r_file_is_directory (filepath)) {
+								addr = r_debug_get_baddr (r.dbg, filepath);
+								r_core_bin_load (&r, filepath, addr);
+							} else if ((filepath = get_file_in_cur_dir (filepath))) {
+								// Present in local directory
+								free (fh->desc->name);
+								fh->desc->name = (char*) filepath;
+								addr = r_debug_get_baddr (r.dbg, filepath);
+								r_core_bin_load (&r, NULL, addr);
+							}
+						}
+					}
 /*
 					if (fh) {
 						r_core_bin_load (&r, pfile);
@@ -1065,7 +1116,6 @@ int main(int argc, char **argv, char **envp) {
 			r_config_eval (r.config, cmdn);
 			r_cons_flush ();
 		}
-		r_list_free (evals);
 
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
@@ -1119,6 +1169,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
+	r_list_free (evals);
 	r_list_free (files);
 	if (ret) {
 		ret = 0;

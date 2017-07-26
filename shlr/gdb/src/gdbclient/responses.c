@@ -113,11 +113,6 @@ int handle_fOpen(libgdbr_t *g) {
 }
  */
 
-int handle_cont(libgdbr_t *g) {
-	// Possible answers here 'S,T,W,X,O,F'
-	return send_ack (g);
-}
-
 int handle_setbp(libgdbr_t *g) {
 	return send_ack (g);
 }
@@ -189,9 +184,85 @@ int handle_vFile_close(libgdbr_t *g) {
 	return send_ack (g);
 }
 
+#include <r_debug.h>
+#include <gdbclient/commands.h>
+
+static int stop_reason_exit(libgdbr_t *g) {
+	int status = 0, pid = g->pid;
+	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
+	if (g->stub_features.multiprocess && g->data_len > 3) {
+		if (sscanf (g->data + 1, "%x;process:%x", &status, &pid) != 2) {
+			eprintf ("Message from remote: %s\n", g->data);
+			return -1;
+		}
+		eprintf ("Process %d exited with status %d\n", pid, status);
+		g->stop_reason.thread.pid = pid;
+		g->stop_reason.thread.tid = pid;
+		g->stop_reason.is_valid = true;
+		return 0;
+	}
+	if (!isxdigit (g->data[1])) {
+		eprintf ("Message from remote: %s\n", g->data);
+		return -1;
+	}
+	status = (int) strtol (g->data + 1, NULL, 16);
+	eprintf ("Process %d exited with status %d\n", g->pid, status);
+	g->stop_reason.thread.pid = pid;
+	g->stop_reason.thread.tid = pid;
+	g->stop_reason.is_valid = true;
+	// Just to be sure, disconnect
+	return gdbr_disconnect (g);
+}
+
+static int stop_reason_terminated(libgdbr_t *g) {
+	int signal = 0, pid = g->pid;
+	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
+	if (g->stub_features.multiprocess && g->data_len > 3) {
+		if (sscanf (g->data + 1, "%x;process:%x", &signal, &pid) != 2) {
+			eprintf ("Message from remote: %s\n", g->data);
+			return -1;
+		}
+		eprintf ("Process %d terminated with signal %d\n", pid, signal);
+		g->stop_reason.thread.pid = pid;
+		g->stop_reason.thread.tid = pid;
+		g->stop_reason.signum = signal;
+		g->stop_reason.is_valid = true;
+		return 0;
+	}
+	if (!isxdigit (g->data[1])) {
+		eprintf ("Message from remote: %s\n", g->data);
+		return -1;
+	}
+	signal = (int) strtol (g->data + 1, NULL, 16);
+	eprintf ("Process %d terminated with signal %d\n", g->pid, signal);
+	g->stop_reason.thread.pid = pid;
+	g->stop_reason.thread.tid = pid;
+	g->stop_reason.signum = signal;
+	g->stop_reason.is_valid = true;
+	// Just to be sure, disconnect
+	return gdbr_disconnect (g);
+}
+
 int handle_stop_reason(libgdbr_t *g) {
 	send_ack (g);
-	if (g->data_len < 3 || g->data[0] != 'T') {
+	if (g->data_len < 3) {
+		return -1;
+	}
+	switch (g->data[0]) {
+	case 'O':
+		unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
+		//g->data[g->data_len - 1] = '\0';
+		eprintf ("%s", g->data + 1);
+		if (send_ack (g) < 0) {
+			return -1;
+		}
+		return handle_stop_reason (g); // Wait for next stop message
+	case 'W':
+		return stop_reason_exit (g);
+	case 'X':
+		return stop_reason_terminated (g);
+	}
+	if (g->data[0] != 'T') {
 		return -1;
 	}
 	char *ptr1, *ptr2;
@@ -202,6 +273,8 @@ int handle_stop_reason(libgdbr_t *g) {
 	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
 		return -1;
 	}
+	g->stop_reason.is_valid = true;
+	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
 	for (ptr1 = strtok (g->data + 3, ";"); ptr1; ptr1 = strtok (NULL, ";")) {
 		if (r_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
 			if (!(ptr2 = strchr (ptr1, ':'))) {
@@ -302,5 +375,64 @@ int handle_stop_reason(libgdbr_t *g) {
 			}
 		}
 	}
+	if (g->stop_reason.signum == 5) {
+		g->stop_reason.reason = R_DEBUG_REASON_BREAKPOINT;
+	}
+	return 0;
+}
+
+int handle_cont(libgdbr_t *g) {
+	// Possible answers here 'S,T,W,X,O,F'
+	switch (g->data[0]) {
+	case 'X':
+		return stop_reason_terminated (g);
+	case 'W':
+		return stop_reason_exit (g);
+	}
+	return send_ack (g);
+}
+
+int handle_lldb_read_reg(libgdbr_t *g) {
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	char *ptr, *ptr2, *buf;
+	size_t regnum, tot_regs, buflen = 0;
+
+	// Get maximum register number
+	for (regnum = 0; *g->registers[regnum].name; regnum++) {
+		if (g->registers[regnum].offset + g->registers[regnum].size > buflen) {
+			buflen = g->registers[regnum].offset + g->registers[regnum].size;
+		}
+	}
+	tot_regs = regnum;
+
+	// We're not using the receive buffer till next packet anyway. Better use it
+	buf = g->read_buff;
+	memset (buf, 0, buflen);
+
+	if (!(ptr = strtok (g->data, ";"))) {
+		return -1;
+	}
+	while (ptr) {
+		if (!isxdigit (*ptr)) {
+			// This is not a reg value. Skip
+			ptr = strtok (NULL, ";");
+			continue;
+		}
+		// Get register number
+		regnum = (int) strtoul (ptr, NULL, 16);
+		if (regnum >= tot_regs || !(ptr2 = strchr (ptr, ':'))) {
+			ptr = strtok (NULL, ";");
+			continue;
+		}
+		ptr2++;
+		// Write to offset
+		unpack_hex (ptr2, strlen (ptr2), buf + g->registers[regnum].offset);
+		ptr = strtok (NULL, ";");
+		continue;
+	}
+	memcpy (g->data, buf, buflen);
+	g->data_len = buflen;
 	return 0;
 }

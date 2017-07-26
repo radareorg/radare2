@@ -148,26 +148,26 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	cmdline[cmd_i] = '\0';
 
-        if (!CreateProcessA (argv[0], cmdline, NULL, NULL, FALSE,
-			CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
-			NULL, NULL, &si, &pi)) {
-		r_sys_perror ("CreateProcess");
+	if (!CreateProcessA (argv[0], cmdline, NULL, NULL, FALSE,
+						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
+						 NULL, NULL, &si, &pi)) {
+		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		return -1;
-        }
+	}
 	free (cmdline);
 	r_str_argv_free (argv);
-        /* get process id and thread id */
-        pid = pi.dwProcessId;
-        tid = pi.dwThreadId;
+	/* get process id and thread id */
+	pid = pi.dwProcessId;
+	tid = pi.dwThreadId;
 
-        /* catch create process event */
-        if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
+	/* catch create process event */
+	if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
 
-        /* check if is a create process debug event */
-        if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
+	/* check if is a create process debug event */
+	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
 		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
 		goto err_fork;
-        }
+	}
 
 	if (th != INVALID_HANDLE_VALUE) {
 		CloseHandle (th);
@@ -551,18 +551,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-        .desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
+	.desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
 	.license = "LGPL3",
 	.author = "pancake",
 	.version = "0.2.0",
-        .open = __open,
-        .check = __plugin_open,
+	.open = __open,
+	.check = __plugin_open,
 	.isdbg = true,
 };
 #else
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-        .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
+	.desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
 

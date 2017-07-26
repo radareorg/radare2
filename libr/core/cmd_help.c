@@ -435,6 +435,8 @@ static int cmd_help(void *data, const char *input) {
 			"$Fs", "", "size of the current basic block",
 			"$FE", "", "end of function",
 			"$FS", "", "function size",
+			"$Fj", "", "function jump destination",
+			"$Ff", "", "function false destination",
 			"$FI", "", "function instructions",
 			"$c,$r", "", "get width and height of terminal",
 			"$Cn", "", "get nth call of function",
@@ -464,7 +466,7 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			int i = 0;
 			const char *vars[] = {
-				"$$", "$?", "$b", "$B", "$F", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
+				"$$", "$?", "$b", "$B", "$F", "$Fj", "$Ff", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
 				"$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
 				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
 			};
@@ -723,13 +725,13 @@ static int cmd_help(void *data, const char *input) {
 			"?", " eip-0x804800", "show hex and dec result for this math expr",
 			"?:", "", "list core cmd plugins",
 			"?*", " [cmd]?*", "Recursive help for the given cmd",
-			"?!", " [cmd]", "? != 0",
-			"?+", " [cmd]", "? > 0",
-			"?-", " [cmd]", "? < 0",
+			"?!", " [cmd]", "run cmd if $? == 0",
+			"?+", " [cmd]", "run cmd if $? > 0",
+			"?-", " [cmd]", "run cmd if $? < 0",
 			"?=", " eip-0x804800", "hex and dec result for this math expr",
 			"?$", "", "show value all the variables ($)",
 			"??", "", "show value of operation",
-			"??", " [cmd]", "? == 0 run command when math matches",
+			"??", " [cmd]", "run cmd if $? != 0",
 			"?B", " [elem]", "show range boundaries like 'e?search.in",
 			"?P", " paddr", "get virtual address for given physical one",
 			"?S", " addr", "return section name of given address",

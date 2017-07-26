@@ -196,6 +196,7 @@ typedef struct r_debug_session_t {
 	RList *memlist; // <RDebugSnapDiff*>
 	/* XXX: DebugSession should have base snapshot of memlist. */
 	//RDebugSnap *base;
+	char *comment;
 } RDebugSession;
 
 /* Session file format */
@@ -572,15 +573,18 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base);
 R_API void r_page_data_free(void *p);
 
 /* debug session */
-R_API void r_debug_session_free(void *p) ;
+R_API void r_debug_session_free(RDebugSession *p) ;
 R_API void r_debug_session_list(RDebug *dbg);
 R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
+R_API bool r_debug_session_delete(RDebug *dbg, int idx);
+R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg);
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session);
 R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
 R_API void r_debug_session_save(RDebug *dbg, const char *file);
 R_API int r_debug_step_back(RDebug *dbg);
+R_API bool r_debug_continue_back(RDebug *dbg);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

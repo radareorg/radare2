@@ -523,6 +523,16 @@ R_API void r_cons_filter() {
 		I.filter = false;
 	}
 	/* html */
+	if (I.is_html) {
+		int newlen = 0;
+		char *input = r_str_ndup (I.buffer, I.buffer_len);
+		char *res = r_cons_html_filter (input, &newlen);
+		free (I.buffer);
+		free (input);
+		I.buffer = res;
+		I.buffer_len = newlen;
+		I.buffer_sz = newlen;
+	}
 	/* TODO */
 }
 
@@ -636,35 +646,31 @@ R_API void r_cons_flush() {
 	}
 	r_cons_highlight (I.highlight);
 	// is_html must be a filter, not a write endpoint
-	if (I.is_html) {
-		r_cons_html_print (I.buffer);
-	} else {
-		if (I.is_interactive && !r_sandbox_enable (false)) {
-			if (I.linesleep > 0 && I.linesleep < 1000) {
-				int i = 0;
-				int pagesize = R_MAX (1, I.pagesize);
-				char *ptr = I.buffer;
-				char *nl = strchr (ptr, '\n');
-				int len = I.buffer_len;
-				I.buffer[I.buffer_len] = 0;
-				r_cons_break_push (NULL, NULL);
-				while (nl && !r_cons_is_breaked ()) {
-					r_cons_write (ptr, nl - ptr + 1);
-					if (!(i % pagesize)) {
-						r_sys_usleep (I.linesleep * 1000);
-					}
-					ptr = nl + 1;
-					nl = strchr (ptr, '\n');
-					i++;
+	if (I.is_interactive && !r_sandbox_enable (false)) {
+		if (I.linesleep > 0 && I.linesleep < 1000) {
+			int i = 0;
+			int pagesize = R_MAX (1, I.pagesize);
+			char *ptr = I.buffer;
+			char *nl = strchr (ptr, '\n');
+			int len = I.buffer_len;
+			I.buffer[I.buffer_len] = 0;
+			r_cons_break_push (NULL, NULL);
+			while (nl && !r_cons_is_breaked ()) {
+				r_cons_write (ptr, nl - ptr + 1);
+				if (!(i % pagesize)) {
+					r_sys_usleep (I.linesleep * 1000);
 				}
-				r_cons_write (ptr, I.buffer + len - ptr);
-				r_cons_break_pop ();
-			} else {
-				r_cons_write (I.buffer, I.buffer_len);
+				ptr = nl + 1;
+				nl = strchr (ptr, '\n');
+				i++;
 			}
+			r_cons_write (ptr, I.buffer + len - ptr);
+			r_cons_break_pop ();
 		} else {
 			r_cons_write (I.buffer, I.buffer_len);
 		}
+	} else {
+		r_cons_write (I.buffer, I.buffer_len);
 	}
 
 	r_cons_reset ();

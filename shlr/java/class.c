@@ -3016,11 +3016,15 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 			r_list_append (symbols, (void *) sym);
 		}
 	}
+	bin->lang = "java";
 	imports = r_bin_java_get_imports (bin);
 	r_list_foreach (imports, iter, imp) {
 		sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
 			break;
+		}
+		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
+			bin->lang = "kotlin";
 		}
 		sym->name = strdup (sdb_fmt (0, "imp.%s", imp->name));
 		if (!sym->name) {

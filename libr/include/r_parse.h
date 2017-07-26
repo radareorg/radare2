@@ -62,16 +62,18 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path);
 R_API int r_parse_is_c_file (const char *file);
 
 /* plugin pointers */
-extern struct r_parse_plugin_t r_parse_plugin_dummy;
-extern struct r_parse_plugin_t r_parse_plugin_att2intel;
-extern struct r_parse_plugin_t r_parse_plugin_x86_pseudo;
-extern struct r_parse_plugin_t r_parse_plugin_arm_pseudo;
-extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
-extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
-extern struct r_parse_plugin_t r_parse_plugin_mreplace;
-extern struct r_parse_plugin_t r_parse_plugin_ppc_pseudo;
-extern struct r_parse_plugin_t r_parse_plugin_6502_pseudo;
-extern struct r_parse_plugin_t r_parse_plugin_m68k_pseudo;
+extern RParsePlugin r_parse_plugin_dummy;
+extern RParsePlugin r_parse_plugin_att2intel;
+extern RParsePlugin r_parse_plugin_x86_pseudo;
+extern RParsePlugin r_parse_plugin_arm_pseudo;
+extern RParsePlugin r_parse_plugin_mips_pseudo;
+extern RParsePlugin r_parse_plugin_dalvik_pseudo;
+extern RParsePlugin r_parse_plugin_mreplace;
+extern RParsePlugin r_parse_plugin_ppc_pseudo;
+extern RParsePlugin r_parse_plugin_sh_pseudo;
+extern RParsePlugin r_parse_plugin_avr_pseudo;
+extern RParsePlugin r_parse_plugin_6502_pseudo;
+extern RParsePlugin r_parse_plugin_m68k_pseudo;
 #endif
 
 #ifdef __cplusplus

@@ -17,7 +17,6 @@
 #define R2_DATDIR "@DATADIR@"
 #endif
 
-#define R2_VERSION "@VERSION@"
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@
 #ifndef HAVE_LIB_SSL

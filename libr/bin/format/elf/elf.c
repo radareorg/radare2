@@ -1050,7 +1050,7 @@ static int elf_init(ELFOBJ *bin) {
 	bin->strtab_section = NULL;
 	bin->dyn_buf = NULL;
 	bin->dynstr = NULL;
-	memset (bin->version_info, 0, DT_VERSIONTAGNUM);
+	ZERO_FILL (bin->version_info);
 
 	bin->g_sections = NULL;
 	bin->g_symbols = NULL;
@@ -1584,7 +1584,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	ut8 buf[512];
 	if (!bin) {
 		return 0LL;
-	}	
+	}
 	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) {
 		return 0;
 	}
@@ -1594,9 +1594,8 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 	// ARM64
 	if (buf[0x18+3] == 0x58 && buf[0x2f] == 0x00) {
-#define BUF_U32(i) ((ut32)(buf[i+0]+(buf[i+1]<<8)+(buf[i+2]<<16)+(buf[i+3]<<24)))
 		ut32 entry_vaddr = Elf_(r_bin_elf_p2v) (bin, entry);
-		ut32 main_addr = BUF_U32(0x30);
+		ut32 main_addr = r_read_le32 (&buf[0x30]);
 		if ((main_addr >> 16) == (entry_vaddr >> 16)) {
 			return Elf_(r_bin_elf_v2p) (bin, main_addr);
 		}
@@ -1645,27 +1644,21 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		{
 			const ut64 gp = got_offset + 0x7ff0;
 			unsigned i;
-			#define BUF_U32(i) ((ut32)(buf[i+0]+(buf[i+1]<<8)+(buf[i+2]<<16)+(buf[i+3]<<24)))
-
 			for (i = 0; i < sizeof(buf) / sizeof(buf[0]); i += 4) {
-				const ut32 instr = BUF_U32(i);
+				const ut32 instr = r_read_le32 (&buf[i]);
 				if ((instr & 0xffff0000) == 0x8f840000) { // lw a0, offset(gp)
 					const short delta = instr & 0x0000ffff;
 					r_buf_read_at (bin->b, /* got_entry_offset = */ gp + delta, buf, 4);
-					return Elf_(r_bin_elf_v2p) (bin, BUF_U32(0));
+					return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0]));
 				}
 			}
-
-			#undef BUF_U32
 		}
 
 		return 0;
 	}
 	// ARM
 	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
-		ut64 addr = (ut64)((int)(buf[48] +
-			(buf[48 + 1] << 8) + (buf[48 + 2] << 16) +
-			(buf[48 + 3] << 24)));
+		ut64 addr = r_read_le32 (&buf[48]);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	// X86-CGC
@@ -1707,26 +1700,22 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	// X86-NONPIE
 #if R_BIN_ELF64
 	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) { // openbsd
-		return (ut64)((int)(buf[157 + 0] + (buf[157 + 1] << 8) +
-			(buf[157 + 2] << 16) + (buf[157 + 3] << 24))) +
-			entry + 156 + 5;
+		return r_read_le32 (&buf[157]) + entry + 156 + 5;
 	}
 	if (!memcmp (buf+29, "\x48\xc7\xc7", 3)) { // linux
-		ut64 addr = (ut64)((int)(buf[29 + 3] + (buf[29 + 4] << 8) +
-			(buf[29 + 5] << 16) + (buf[29 + 6] << 24))) ;
+		ut64 addr = (ut64)r_read_le32 (&buf[29 + 3]);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 #else
 	if (buf[23] == '\x68') {
-		ut64 addr = (ut64)((int)(buf[23 + 1] + (buf[23 + 2] << 8) +
-			(buf[23 + 3] << 16) + (buf[23 + 4] << 24)));
+		ut64 addr = (ut64)r_read_le32 (&buf[23 + 1]);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 #endif
 	/* linux64 pie main -- probably buggy in some cases */
 	if (buf[29] == 0x48 && buf[30] == 0x8d) { // lea rdi, qword [rip-0x21c4]
 		ut8 *p = buf + 32;
-		st32 maindelta = p[0] | p[1]<<8 | p[2]<<16 | p[3]<<24;
+		st32 maindelta = (st32)r_read_le32 (p);
 		ut64 vmain = (ut64)(entry + 29 + maindelta) + 7;
 		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
 		if (vmain>>16 == ventry>>16) {
@@ -1858,7 +1847,10 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_VIDEOCORE3:
 	case EM_VIDEOCORE4:
 		return strdup ("vc4");
-	case EM_SH: return strdup ("sh");
+	case EM_SH:
+		return strdup ("sh");
+	case EM_V850:
+		return strdup ("v850");
 	default: return strdup ("x86");
 	}
 }
@@ -1988,7 +1980,7 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 		return 16;
 	}
 	/* Hack for Ps2 */
-	if (bin->ehdr.e_machine == EM_MIPS) {
+	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
 		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
 		if (bin->ehdr.e_type == ET_EXEC) {
 			int i;

@@ -15,6 +15,9 @@ typedef unsigned int ssize_t;
 #define MSG_NOT_SUPPORTED -1
 #define MSG_ERROR_1 -2
 
+#define GDB_REMOTE_TYPE_GDB 0
+#define GDB_REMOTE_TYPE_LLDB 1
+
 /*!
  * Structure that saves a gdb message
  */
@@ -81,9 +84,14 @@ typedef struct libgdbr_stub_features_t {
 	bool EnableDisableTracepoints;
 	bool tracenz;
 	bool BreakpointCommands;
+	// lldb-specific features
+	struct {
+		bool QThreadSuffixSupported;
+		bool QListThreadsInStopReply;
+		bool qEcho;
+	} lldb;
 	// Cannot be determined with qSupported, found out on query
 	bool qC;
-
 	int extended_mode;
 	struct {
 		bool c, C, s, S, t, r;
@@ -116,12 +124,14 @@ typedef struct libgdbr_fstat_t {
 typedef struct libgdbr_stop_reason {
 	unsigned signum;
 	int core;
+	int reason;
 	bool syscall;
 	bool library;
 	bool swbreak;
 	bool hwbreak;
 	bool create;
 	bool vforkdone;
+	bool is_valid;
 	struct {
 		bool present;
 		ut64 addr;
@@ -164,8 +174,10 @@ typedef struct libgdbr_t {
 
 	int remote_file_fd; // For remote file I/O
 
+	int remote_type;
 	bool no_ack;
 	bool is_server;
+	bool server_debug;
 	libgdbr_stop_reason_t stop_reason;
 } libgdbr_t;
 

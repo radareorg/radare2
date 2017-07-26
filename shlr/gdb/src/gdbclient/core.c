@@ -63,6 +63,21 @@ static struct {
 	bool valid, init;
 } reg_cache;
 
+static void reg_cache_init(libgdbr_t *g) {
+	reg_cache.maxlen = g->data_max;
+	reg_cache.buflen = 0;
+	reg_cache.valid = false;
+	reg_cache.init = false;
+	if ((reg_cache.buf = malloc (reg_cache.maxlen))) {
+		reg_cache.init = true;
+	}
+}
+
+static int gdbr_connect_lldb(libgdbr_t *g) {
+	reg_cache_init (g);
+	return 0;
+}
+
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+";
 	RStrBuf tmp;
@@ -71,8 +86,15 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!g || !host) {
 		return -1;
 	}
-	// Initial max_packet_size for remote target (minimum so far for AVR = 16)
-	g->stub_features.pkt_sz = 16;
+	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
+	g->stub_features.pkt_sz = 64;
+	char *env_pktsz_str;
+	ut32 env_pktsz;
+	if ((env_pktsz_str = getenv ("R2_GDB_PKTSZ"))) {
+		if ((env_pktsz = (ut32) strtoul (env_pktsz_str, NULL, 10))) {
+			g->stub_features.pkt_sz = env_pktsz;
+		}
+	}
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
 	if (!ret) {
 		return -1;
@@ -83,6 +105,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		ret = r_socket_connect_tcp (g->sock, host, tmp.buf, 200);
 	}
 	if (!ret) {
+		return -1;
+	}
+	if (send_ack (g) < 0) {
 		return -1;
 	}
 	read_packet (g);
@@ -97,6 +122,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
+	if (env_pktsz > 0) {
+		g->stub_features.pkt_sz = R_MIN (env_pktsz, g->stub_features.pkt_sz);
+	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
 		if (send_msg (g, "QStartNoAckMode") < 0) {
@@ -104,8 +132,13 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 		read_packet (g);
 		if (!strncmp (g->data, "OK", 2)) {
+			// Just in case, send ack
+			send_ack (g);
 			g->no_ack = true;
 		}
+	}
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		return gdbr_connect_lldb (g);
 	}
 	// Query the thread / process id
 	g->stub_features.qC = true;
@@ -155,14 +188,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
 	}
-	// Initialize reg cache
-	reg_cache.maxlen = g->data_max;
-	reg_cache.buflen = 0;
-	reg_cache.valid = false;
-	reg_cache.init = false;
-	if ((reg_cache.buf = malloc (reg_cache.maxlen))) {
-		reg_cache.init = true;
-	}
+	reg_cache_init (g);
 	return ret;
 }
 
@@ -407,6 +433,24 @@ bool gdbr_kill_pid(libgdbr_t *g, int pid) {
 	return true;
 }
 
+static int gdbr_read_registers_lldb(libgdbr_t *g) {
+	// Send the stop reply query packet and get register info
+	// (this is what lldb does)
+	int ret;
+	if (send_msg (g, "?") < 0 || read_packet (g) < 0) {
+		return -1;
+	}
+	if ((ret = handle_lldb_read_reg (g)) < 0) {
+		return ret;
+	}
+	if (reg_cache.init) {
+		reg_cache.buflen = g->data_len;
+		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
+		reg_cache.valid = true;
+	}
+	return 0;
+}
+
 int gdbr_read_registers(libgdbr_t *g) {
 	int ret = -1;
 	if (!g) {
@@ -416,6 +460,9 @@ int gdbr_read_registers(libgdbr_t *g) {
 		g->data_len = reg_cache.buflen;
 		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
 		return 0;
+	}
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		return gdbr_read_registers_lldb (g);
 	}
 	ret = send_msg (g, CMD_READREGS);
 	if (ret < 0) {
@@ -1040,4 +1087,146 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
 	}
 	free (buf);
 	return -1;
+}
+
+char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
+	if (!g) {
+		return NULL;
+	}
+	char msg[128], pidstr[16];
+	char *path = NULL;
+	ut64 len = g->stub_features.pkt_sz, off = 0;
+	memset (pidstr, 0, sizeof (pidstr));
+	if (g->stub_features.multiprocess && pid > 0) {
+		snprintf (pidstr, sizeof (pidstr), "%x", pid);
+	}
+	while (1) {
+		if (snprintf (msg, sizeof (msg) - 1,
+			      "qXfer:exec-file:read:%s:%"PFMT64x",%"PFMT64x,
+			      pidstr, off, len) < 0) {
+			free (path);
+			return NULL;
+		}
+		if (send_msg (g, msg) < 0 || read_packet (g) < 0
+		    || send_ack (g) < 0 || g->data_len == 0) {
+			free (path);
+			return NULL;
+		}
+		g->data[g->data_len] = '\0';
+		if (g->data[0] == 'l') {
+			if (g->data_len == 1) {
+				return path;
+			}
+			return r_str_append (path, g->data + 1);
+		}
+		if (g->data[0] != 'm') {
+			free (path);
+			return NULL;
+		}
+		off += strlen (g->data + 1);
+		if (!(path = r_str_append (path, g->data + 1))) {
+			return NULL;
+		}
+	}
+}
+
+bool gdbr_is_thread_dead (libgdbr_t *g, int pid, int tid) {
+	if (!g) {
+		return false;
+	}
+	if (g->stub_features.multiprocess && pid <= 0) {
+		return false;
+	}
+	char msg[64] = { 0 }, thread_id[63] = { 0 };
+	if (write_thread_id (thread_id, sizeof (thread_id) - 1, pid, tid,
+			     g->stub_features.multiprocess) < 0) {
+		return false;
+	}
+	if (snprintf (msg, sizeof (msg) - 1, "T%s", thread_id) < 0) {
+		return false;
+	}
+	if (send_msg (g, msg) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return false;
+	}
+	if (g->data_len == 3 && g->data[0] == 'E') {
+		return true;
+	}
+	return false;
+}
+
+#include <r_debug.h>
+
+RList* gdbr_threads_list(libgdbr_t *g, int pid) {
+	if (!g) {
+		return NULL;
+	}
+	RList *list;
+	int tpid = -1, ttid = -1;
+	char *ptr, *ptr2, *exec_file;
+	RDebugPid *dpid;
+	if (!g->stub_features.qXfer_exec_file_read
+	    || !(exec_file = gdbr_exec_file_read (g, pid))) {
+		exec_file = "";
+	}
+	if (g->stub_features.qXfer_threads_read) {
+		// XML thread description is supported
+		// TODO: Handle this case
+	}
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g) < 0 || send_ack (g) < 0
+	    || g->data_len == 0 || g->data[0] != 'm') {
+		return NULL;
+	}
+	if (!(list = r_list_new())) {
+		return NULL;
+	}
+	while (1) {
+		g->data[g->data_len] = '\0';
+		ptr = g->data + 1;
+		while (ptr) {
+			if ((ptr2 = strchr (ptr, ','))) {
+				*ptr2 = '\0';
+				ptr2++;
+			}
+			if (read_thread_id (ptr, &tpid, &ttid,
+					    g->stub_features.multiprocess) < 0) {
+				ptr = ptr2;
+				continue;
+			}
+			if (g->stub_features.multiprocess && tpid != pid) {
+				ptr = ptr2;
+				continue;
+			}
+			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
+				r_list_free (list);
+				free (dpid);
+				return NULL;
+			}
+			dpid->uid = dpid->gid = -1; // TODO
+			dpid->pid = ttid;
+			dpid->runnable = true;
+			// This is what linux native does as fallback, but
+			// probably not correct.
+			// TODO: Implement getting correct thread status from GDB
+			dpid->status = R_DBG_PROC_STOP;
+			r_list_append (list, dpid);
+			ptr = ptr2;
+		}
+		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g) < 0
+		    || send_ack (g) < 0 || g->data_len == 0
+		    || (g->data[0] != 'm' && g->data[0] != 'l')) {
+			r_list_free (list);
+			return NULL;
+		}
+		if (g->data[0] == 'l') {
+			break;
+		}
+	}
+	RListIter *iter;
+	// This is the all I've been able to extract from gdb so far
+	r_list_foreach (list, iter, dpid) {
+		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
+			dpid->status = R_DBG_PROC_DEAD;
+		}
+	}
+	return list;
 }

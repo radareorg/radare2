@@ -5,6 +5,39 @@
 #include "r_types.h"
 #include "r_io.h"
 
+static const char *help_msg_S[] = {
+	"Usage:","S[?-.*=adlr] [...]","",
+	"S","","list sections",
+	"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
+	"S.","","show current section name",
+	"S.-*","","remove all sections in current offset",
+	"S*","","list sections (in radare commands)",
+	"S-[id]","","remove section identified by id",
+	"S-.","","remove section at core->offset (can be changed with @)",
+	"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
+	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
+	"Sd[a]"," [file]","dump current (all) section to a file (see dmd)",
+	"Sf"," [baddr]","Alias for S 0 0 $s $s foo mrwx",
+	"Sj","","list sections in JSON (alias for iSj)",
+	"Sl"," [file]","load contents of file into current section (see dml)",
+	"Sr"," [name]","rename section on current seek",
+	NULL
+};
+
+static const char *help_msg_Sl[] = {
+	"Usage:", "Sl", "[file]",
+};
+
+static const char *help_msg_Sr[] = {
+	"Usage:", "Sr", "[name] ([offset])",
+};
+
+static void cmd_section_init(void) {
+	DEFINE_CMD_DESCRIPTOR (S);
+	DEFINE_CMD_DESCRIPTOR (Sl);
+	DEFINE_CMD_DESCRIPTOR (Sr);
+}
+
 static bool dumpSectionsToDisk(RCore *core) {
 	char file[512];
 	RListIter *iter;
@@ -113,27 +146,9 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	const char* help_msg[] = {
-		"Usage:","S[?-.*=adlr] [...]","",
-		"S","","list sections",
-		"S.","","show current section name",
-		"S*","","list sections (in radare commands)",
-		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
-		"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-		"Sd[a]"," [file]","dump current (all) section to a file (see dmd)",
-		"Sl"," [file]","load contents of file into current section (see dml)",
-		"Sf"," [baddr]","Alias for S 0 0 $s $s foo mrwx",
-		"Sj","","list sections in JSON (alias for iSj)",
-		"Sr"," [name]","rename section on current seek",
-		"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
-		"S-[id]","","remove section identified by id",
-		"S-.","","remove section at core->offset (can be changed with @)",
-		"S.-*","","remove all sections in current offset",
-		NULL
-	};
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_S);
 // TODO: add command to resize current section
 		break;
 	case 'f': // "Sf"
@@ -218,7 +233,7 @@ static int cmd_section(void *data, const char *input) {
 				eprintf ("No section found in  0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
-			eprintf ("Usage: Sr [name] ([offset])\n");
+			r_core_cmd_help (core, help_msg_Sr);
 		}
 		break;
 	case 'd':
@@ -251,7 +266,7 @@ static int cmd_section(void *data, const char *input) {
 		RListIter *iter;
 		RIOSection *s;
 		if (input[1] != ' ') {
-			eprintf ("Usage: Sl [file]\n");
+			r_core_cmd_help (core, help_msg_Sl);
 			return false;
 		}
 		if (core->io->va || core->io->debug) {

@@ -3,6 +3,7 @@
 #include "r_types.h"
 #include "r_util.h"
 #include "r_cons.h"
+#include "r_bin.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -1251,15 +1252,16 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool default_dot) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot) {
 	char *new_buf, *q;
 	const char *p;
 
 	if (!buf) {
 		return NULL;
 	}
-	/* Worst case scenario, we convert every byte to \xhh */
-	new_buf = malloc (1 + (strlen (buf) * 4));
+	/* Worst case scenario, we convert every byte to a single-char escape
+	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
+	new_buf = malloc (1 + strlen (buf) * (show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
@@ -1285,7 +1287,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool d
 				break;
 			}
 		default:
-			r_str_byte_escape (p, &q, dot_nl, default_dot);
+			r_str_byte_escape (p, &q, dot_nl, show_asciidot);
 		}
 		p++;
 	}
@@ -1302,15 +1304,11 @@ R_API char *r_str_escape_dot(const char *buf) {
 	return r_str_escape_ (buf, true, true, false);
 }
 
-R_API char *r_str_escape_asciidot(const char *buf) {
-	return r_str_escape_ (buf, false, false, true);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot) {
+	return r_str_escape_ (buf, false, false, show_asciidot);
 }
 
-R_API char *r_str_escape_latin1(const char *buf) {
-	return r_str_escape_ (buf, false, false, false);
-}
-
-R_API char *r_str_escape_utf8(const char *buf) {
+static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1319,8 +1317,26 @@ R_API char *r_str_escape_utf8(const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
-	len = strlen (buf);
-	end = buf + len;
+	switch (enc) {
+	case R_STRING_ENC_UTF16LE:
+	case R_STRING_ENC_UTF32LE:
+		if (buf_size < 0) {
+			return NULL;
+		}
+		if (enc == R_STRING_ENC_UTF16LE) {
+			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0", 2, 2);
+		} else {
+			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
+		}
+		if (!end) {
+			end = buf + buf_size - 1;
+		}
+		len = end - buf;
+		break;
+	default:
+		len = strlen (buf);
+		end = buf + len;
+	}
 	/* Worst case scenario, we convert every byte to \xhh */
 	new_buf = malloc (1 + (len * 4));
 	if (!new_buf) {
@@ -1328,23 +1344,61 @@ R_API char *r_str_escape_utf8(const char *buf) {
 	}
 	p = buf;
 	q = new_buf;
-	while (*p) {
-		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
-		if (ch_bytes > 1) {
+	while (p < end) {
+		switch (enc) {
+		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF32LE:
+			ch_bytes = (enc == R_STRING_ENC_UTF16LE ?
+				    r_utf16le_decode ((ut8 *)p, end - p, &ch) :
+				    r_utf32le_decode ((ut8 *)p, end - p, &ch));
+			if (ch_bytes == 0) {
+				p++;
+				continue;
+			}
+			break;
+		default:
+			ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+			if (ch_bytes == 0) {
+				ch_bytes = 1;
+			}
+		}
+		if (show_asciidot && !IS_PRINTABLE(ch)) {
+			*q++ = '.';
+		} else if (ch_bytes > 1) {
 			*q++ = '\\';
 			*q++ = ch_bytes == 4 ? 'U' : 'u';
 			for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
 				*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
-			p += ch_bytes - 1;
 		} else {
 			r_str_byte_escape (p, &q, false, false);
 		}
-		p++;
+		switch (enc) {
+		case R_STRING_ENC_UTF16LE:
+			p += ch_bytes < 2 ? 2 : ch_bytes;
+			break;
+		case R_STRING_ENC_UTF32LE:
+			p += 4;
+			break;
+		default:
+			p += ch_bytes;
+		}
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot) {
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot);
+}
+
+R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot);
+}
+
+R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot);
 }
 
 /* ansi helpers */
@@ -1788,6 +1842,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 				case '"':
 				case ' ':
 				case '\\':
+					args[args_current++] = '\\';
 					args[args_current++] = c;
 					break;
 				case '\0':

@@ -19,7 +19,7 @@ extern SdbKv* sdb_kv_new(const char *k, const char *v);
 extern ut32 sdb_hash(const char *key);
 extern void sdb_kv_free(SdbKv *kv);
 
-SdbHash* sdb_ht_new();
+SdbHash* sdb_ht_new(void);
 // Destroy a hashtable and all of its entries.
 void sdb_ht_free(SdbHash* ht);
 void sdb_ht_free_deleted(SdbHash* ht);

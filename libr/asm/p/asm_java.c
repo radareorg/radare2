@@ -29,7 +29,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	// TODO: get class info from bin if possible
-	return op->size = r_java_assemble (op->buf, buf);
+	return op->size = r_java_assemble (a->pc, op->buf, buf);
 }
 
 RAsmPlugin r_asm_plugin_java = {

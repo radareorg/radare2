@@ -32,6 +32,14 @@ static int r_debug_gdb_step(RDebug *dbg) {
 	return true;
 }
 
+static RList* r_debug_gdb_threads(RDebug *dbg, int pid) {
+	RList *list;
+	if ((list = gdbr_threads_list (desc, pid))) {
+		list->free = (RListFree) &r_debug_pid_free;
+	}
+	return list;
+}
+
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
@@ -241,19 +249,19 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	check_connection (dbg);
-	// TODO: We can expand on this. As of now, only shows breakpoint
-	if (gdbr_stop_reason (desc) < 0) {
-		return R_DEBUG_REASON_UNKNOWN;
+	if (!desc->stop_reason.is_valid) {
+		if (gdbr_stop_reason (desc) < 0) {
+			dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
+			return R_DEBUG_REASON_UNKNOWN;
+		}
 	}
+	desc->stop_reason.is_valid = false;
 	if (desc->stop_reason.thread.present) {
 		dbg->reason.tid = desc->stop_reason.thread.tid;
 	}
 	dbg->reason.signum = desc->stop_reason.signum;
-	if (dbg->reason.signum == 5) {
-		// maybe not correct..
-		return R_DEBUG_REASON_BREAKPOINT;
-	}
-	return R_DEBUG_REASON_UNKNOWN;
+	dbg->reason.type = desc->stop_reason.reason;
+	return desc->stop_reason.reason;
 }
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
@@ -851,6 +859,44 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
+static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
+	RDebugInfo *rdi;
+	if (!(rdi = R_NEW0 (RDebugInfo))) {
+		return NULL;
+	}
+	RList *th_list;
+	bool list_alloc = false;
+	if (dbg->threads) {
+		th_list = dbg->threads;
+	} else {
+		th_list = r_debug_gdb_threads (dbg, dbg->pid);
+		list_alloc = true;
+	}
+	RDebugPid *th;
+	RListIter *it;
+	bool found = false;
+	r_list_foreach (th_list, it, th) {
+		if (th->pid == dbg->pid) {
+			found = true;
+			break;
+		}
+	}
+	rdi->pid = dbg->pid;
+	rdi->tid = dbg->tid;
+	rdi->exe = gdbr_exec_file_read (desc, dbg->pid);
+	rdi->status = found ? th->status : R_DBG_PROC_STOP;
+	rdi->uid = found ? th->uid : -1;
+	rdi->gid = found ? th->gid : -1;
+	if (gdbr_stop_reason (desc) >= 0) {
+		eprintf ("signal: %d\n", desc->stop_reason.signum);
+		rdi->signum = desc->stop_reason.signum;
+	}
+	if (list_alloc) {
+		r_list_free (th_list);
+	}
+	return rdi;
+}
+
 RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
@@ -861,6 +907,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.cont = r_debug_gdb_continue,
 	.attach = &r_debug_gdb_attach,
 	.detach = &r_debug_gdb_detach,
+	.threads = &r_debug_gdb_threads,
 	.canstep = 1,
 	.wait = &r_debug_gdb_wait,
 	.map_get = r_debug_gdb_map_get,
@@ -869,6 +916,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.reg_write = &r_debug_gdb_reg_write,
 	.reg_profile = (void *)r_debug_gdb_reg_profile,
 	.kill = &r_debug_gdb_kill,
+	.info = &r_debug_gdb_info,
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };

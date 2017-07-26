@@ -210,7 +210,7 @@ typedef struct r_cons_palette_t {
 } RConsPalette;
 
 R_API const char *r_cons_rainbow_get(int idx, int last, bool bg);
-R_API void r_cons_rainbow_free();
+R_API void r_cons_rainbow_free(void);
 R_API void r_cons_rainbow_new(int sz);
 
 typedef void (*RConsEvent)(void *);
@@ -575,7 +575,7 @@ R_API int r_cons_eof(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
-R_API void r_cons_pal_update_event();
+R_API void r_cons_pal_update_event(void);
 R_API void r_cons_pal_free(void);
 R_API void r_cons_pal_init(const char *foo);
 R_API char *r_cons_pal_parse(const char *str);
@@ -592,6 +592,7 @@ R_API bool r_cons_isatty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);
+R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 
 // TODO: use gets() .. MUST BE DEPRECATED
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);

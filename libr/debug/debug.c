@@ -371,6 +371,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		free (dbg->btalgo);
 		r_debug_trace_free (dbg->trace);
 		dbg->trace = NULL;
+		r_egg_free (dbg->egg);
 		free (dbg->arch);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);
@@ -1050,6 +1051,9 @@ repeat:
 			reason == R_DEBUG_REASON_EXIT_TID ) {
 			goto repeat;
 		}
+		if (reason == R_DEBUG_REASON_EXIT_PID) {
+			dbg->pid = -1;
+		}
 #endif
 
 		/* if continuing killed the inferior, we won't be able to get
@@ -1216,6 +1220,77 @@ R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
 	return r_debug_continue_until_internal (dbg, addr, false);
 }
 
+R_API bool r_debug_continue_back(RDebug *dbg) {
+	RDebugSession *before;
+	RBreakpointItem *prev = NULL;
+	int has_bp;
+	ut64 pc, end_addr;
+	if (!dbg) {
+		return false;
+	}
+	if (!dbg->anal || !dbg->reg) {
+		return false;
+	}
+	if (r_debug_is_dead (dbg)) {
+		return false;
+	}
+	if (r_list_empty (dbg->sessions)) {
+		return false;
+	}
+
+	/* Get previous state */
+	before = r_list_head (dbg->sessions)->data; //XXX: currently use first session.
+
+	end_addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	//eprintf ("before session (%d) 0x%08"PFMT64x"=> to 0x%08"PFMT64x"\n", before->key.id, before->key.addr, end_addr);
+
+	/* Rollback to previous state */
+	r_debug_session_set (dbg, before);
+
+	/* ### Get previous breakpoint ### */
+	// Firstly set the breakpoint at end address
+	has_bp = r_bp_get_in (dbg->bp, end_addr, R_BP_PROT_EXEC) != NULL;
+	if (!has_bp) {
+		r_bp_add_sw (dbg->bp, end_addr, dbg->bpsize, R_BP_PROT_EXEC);
+	}
+
+	// Continue until end_addr
+	for (;;) {
+		if (r_debug_is_dead (dbg)) {
+			break;
+		}
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		if (pc == end_addr) {
+			break;
+		}
+		prev = r_bp_get_at (dbg->bp, pc);
+		r_debug_continue (dbg);
+	}
+	// Clean up if needed
+	if (!has_bp) {
+		r_bp_del (dbg->bp, end_addr);
+	}
+	if (!prev) {
+		return false;
+	}
+	//eprintf ("prev->addr = 0x%08"PFMT64x"\n", prev->addr);
+	/* Now we got previous breakpoint.
+	 * ### Continue until prev breakpoint ### */
+
+	/* Rollback to previous state again */
+	r_debug_session_set (dbg, before);
+	for (;;) {
+		if (r_debug_is_dead (dbg)) {
+			break;
+		}
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		if (prev == r_bp_get_at (dbg->bp, pc)) {
+			break;
+		}
+		r_debug_continue (dbg);
+	}
+	return true;
+}
 static int show_syscall(RDebug *dbg, const char *sysreg) {
 	const char *sysname;
 	char regname[8];
@@ -1358,8 +1433,8 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 	return 0;
 }
 
-R_API bool r_debug_is_dead(RDebug *dbg) {
-	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3));
+R_API bool r_debug_is_dead (RDebug *dbg) {
+	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
 	if (!is_dead && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}

@@ -4,13 +4,43 @@
 #include <stdbool.h>
 #include "r_core.h"
 
+static const char *help_msg_e[] = {
+	"Usage:", "e [var[=value]]", "Evaluable vars",
+	"e","?asm.bytes", "show description",
+	"e", "??", "list config vars with description",
+	"e", " a", "get value of var 'a'",
+	"e", " a=b", "set var 'a' the 'b' value",
+	"e var=?", "", "print all valid values of var",
+	"e-", "", "reset config vars",
+	"e*", "", "dump config vars in r commands",
+	"e!", "a", "invert the boolean value of 'a' var",
+	"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
+	"ee", "var", "open editor to change the value of var",
+	"ej", "", "list config vars in JSON",
+	"env", " [k[=v]]", "get/set environment variable",
+	"er", " [key]", "set config key as readonly. no way back",
+	"et", " [key]", "show type of given config variable",
+	"ev", " [key]", "list config vars in verbose format",
+	"evj", " [key]", "list config vars in verbose format in JSON",
+	NULL
+};
+
 static char *curtheme = NULL;
 static bool getNext = false;
 
+static void cmd_eval_init(void) {
+	DEFINE_CMD_DESCRIPTOR (e);
+}
+
 static bool load_theme(RCore *core, const char *path) {
+	if (!r_file_exists (path)) {
+		return false;
+	}
 	core->cmdfilter = "ec ";
 	bool res = r_core_cmd_file (core, path);
-	r_cons_pal_update_event ();
+	if (res) {
+		r_cons_pal_update_event ();
+	}
 	core->cmdfilter = NULL;
 	return res;
 }
@@ -272,7 +302,9 @@ static int cmd_eval(void *data, const char *input) {
 						if (load_theme (core, input + 3)) {
 							curtheme = r_str_dup (curtheme, input + 3);
 						} else {
-							eprintf ("eco: cannot open colorscheme profile (%s)\n", path);
+							char *absfile = r_file_abspath (input + 3);
+							eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+							free (absfile);
 							failed = true;
 						}
 					}
@@ -381,22 +413,25 @@ static int cmd_eval(void *data, const char *input) {
 		default: {
 			char *p = strdup (input + 2);
 			char *q = strchr (p, '=');
-			if (!q) q = strchr (p, ' ');
+			if (!q) {
+				q = strchr (p, ' ');
+			}
 			if (q) {
 				// set
 				*q++ = 0;
 				r_cons_pal_set (p, q);
 			} else {
 				const char *k = r_cons_pal_get (p);
-				if (k)
+				if (k) {
 					eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, k);
+				}
 			}
 			free (p);
 		}
 		}
 		break;
 	case 'e':
-		if (input[1]==' ') {
+		if (input[1] == ' ') {
 			char *p;
 			const char *val, *input2 = strchr (input+2, ' ');
 			if (input2) input2++; else input2 = input+2;
@@ -406,7 +441,9 @@ static int cmd_eval(void *data, const char *input) {
 				r_str_replace_char (p, '\n', ';');
 				r_config_set (core->config, input2, p);
 			}
-		} else eprintf ("Usage: ee varname\n");
+		} else {
+			eprintf ("Usage: ee varname\n");
+		}
 		break;
 	case '!':
 		input = r_str_chop_ro (input+1);
@@ -422,28 +459,8 @@ static int cmd_eval(void *data, const char *input) {
 		switch (input[1]) {
 		case '?': r_config_list (core->config, input+2, 2); break;
 		default: r_config_list (core->config, input+1, 2); break;
-		case 0:{
-			const char* help_msg[] = {
-			"Usage:", "e [var[=value]]", "Evaluable vars",
-			"e","?asm.bytes", "show description",
-			"e", "??", "list config vars with description",
-			"ej", "", "list config vars in JSON",
-			"e-", "", "reset config vars",
-			"e*", "", "dump config vars in r commands",
-			"e!", "a", "invert the boolean value of 'a' var",
-			"ee", "var", "open editor to change the value of var",
-			"er", " [key]", "set config key as readonly. no way back",
-			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
-			"et", " [key]", "show type of given config variable",
-			"ev", " [key]", "list config vars in verbose format",
-			"evj", " [key]", "list config vars in verbose format in JSON",
-			"e", " a", "get value of var 'a'",
-			"e", " a=b", "set var 'a' the 'b' value",
-			"e var=?", "", "print all valid values of var",
-			"env", " [k[=v]]", "get/set environment variable",
-			NULL};
-			r_core_cmd_help (core, help_msg);
-			}
+		case 0:
+			r_core_cmd_help (core, help_msg_e);
 		}
 		break;
 	case 'r':

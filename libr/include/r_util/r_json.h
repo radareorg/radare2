@@ -42,12 +42,12 @@ struct r_json_var {
 };
 
 R_API void r_json_var_free(RJSVar* var);
-R_API RJSVar* r_json_object_new();
+R_API RJSVar* r_json_object_new(void);
 R_API RJSVar* r_json_array_new(int len);
 R_API RJSVar* r_json_string_new(const char* name);
 R_API RJSVar* r_json_number_new(int value);
 R_API RJSVar* r_json_boolean_new(bool value);
-R_API RJSVar* r_json_null_new();
+R_API RJSVar* r_json_null_new(void);
 
 R_API void r_json_object_add(RJSVar* object, const char* name, RJSVar* value);
 R_API void r_json_array_add(RJSVar* array, RJSVar* value);

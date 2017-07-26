@@ -535,11 +535,11 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
-	static int omode = -1;
+	static int omode = -1, obits = -1;
 	int n, ret;
 	cs_insn *insn;
 	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
-	mode |= CS_MODE_BIG_ENDIAN;
+	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_NULL;
@@ -547,16 +547,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->fail = UT64_MAX;
 	op->ptr = op->val = UT64_MAX;
 	if (a->cpu && strncmp (a->cpu, "vle", 3) == 0) {
+		// vle is big-endian only
+		if (!a->big_endian) {
+			return -1;
+		}
 		ret = analop_vle (a, op, addr, buf, len);
 		if (ret >= 0) {
 			return op->size;
 		}
 	}
 
-	if (mode != omode) {
+	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
 		handle = 0;
 		omode = mode;
+		obits = a->bits;
 	}
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_PPC, mode, &handle);
@@ -659,10 +664,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_STWU:
 		case PPC_INS_STWUX:
 		case PPC_INS_STWX:
-		case PPC_INS_STWBRX:
 		case PPC_INS_STWCX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[4]"));
+			break;
+		case PPC_INS_STWBRX:
+			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case PPC_INS_STB:
 		case PPC_INS_STBU:
@@ -679,8 +686,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
 			break;
-		case PPC_INS_LA:
 		case PPC_INS_LBZ:
+#if CS_API_MAJOR >= 4
+		case PPC_INS_LBZCIX:
+#endif
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 		case PPC_INS_LBZX:
@@ -689,12 +698,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_LD:
 		case PPC_INS_LDARX:
-		case PPC_INS_LDBRX:
+#if CS_API_MAJOR >= 4
+		case PPC_INS_LDCIX:
+#endif
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 		case PPC_INS_LDX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[8]"), ARG (0));
+			break;
+		case PPC_INS_LDBRX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case PPC_INS_LFD:
 		case PPC_INS_LFDU:
@@ -713,23 +727,30 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_LHAU:
 		case PPC_INS_LHAUX:
 		case PPC_INS_LHAX:
-		case PPC_INS_LHBRX:
 		case PPC_INS_LHZ:
 		case PPC_INS_LHZU:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[2]"), ARG (0));
 			break;
+		case PPC_INS_LHBRX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case PPC_INS_LWA:
 		case PPC_INS_LWARX:
 		case PPC_INS_LWAUX:
 		case PPC_INS_LWAX:
-		case PPC_INS_LWBRX:
 		case PPC_INS_LWZ:
+#if CS_API_MAJOR >= 4
+		case PPC_INS_LWZCIX:
+#endif
 		case PPC_INS_LWZU:
 		case PPC_INS_LWZUX:
 		case PPC_INS_LWZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
+			break;
+		case PPC_INS_LWBRX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case PPC_INS_SLW:
 		case PPC_INS_SLWI:
@@ -985,23 +1006,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_NOR:
 			op->type = R_ANAL_OP_TYPE_NOR;
-			esilprintf (op, "%s,!,%s,|,%s,=", ARG (1), ARG (2), ARG (0));
+			esilprintf (op, "%s,%s,|,!,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_XOR:
 		case PPC_INS_XORI:
 			op->type = R_ANAL_OP_TYPE_XOR;
-			esilprintf (op, "%s,%s,^,%s,=", ARG (1), ARG (2), ARG (0));
+			esilprintf (op, "%s,%s,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_XORIS:
 			op->type = R_ANAL_OP_TYPE_XOR;
-			esilprintf (op, "16,%s,>>,%s,^,%s,=", ARG (1), ARG (2), ARG (0));
+			esilprintf (op, "16,%s,<<,%s,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_DIVD:
 		case PPC_INS_DIVDU:
 		case PPC_INS_DIVW:
 		case PPC_INS_DIVWU:
 			op->type = R_ANAL_OP_TYPE_DIV;
-			esilprintf (op, "%s,%s,/,%s,=", ARG (1), ARG (2), ARG (0));
+			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_BL:
 		case PPC_INS_BLA:
@@ -1016,16 +1037,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_AND:
 		case PPC_INS_NAND:
 		case PPC_INS_ANDI:
-		case PPC_INS_ANDIS:
 			op->type = R_ANAL_OP_TYPE_AND;
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
+		case PPC_INS_ANDIS:
+			op->type = R_ANAL_OP_TYPE_AND;
+			esilprintf (op, "16,%s,<<,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_OR:
-		case PPC_INS_ORC:
 		case PPC_INS_ORI:
-		case PPC_INS_ORIS:
 			op->type = R_ANAL_OP_TYPE_OR;
 			esilprintf (op, "%s,%s,|,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_ORIS:
+			op->type = R_ANAL_OP_TYPE_OR;
+			esilprintf (op, "16,%s,<<,%s,|,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MFPVR:
 			op->type = R_ANAL_OP_TYPE_MOV;
