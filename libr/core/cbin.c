@@ -2751,6 +2751,12 @@ static void bin_pe_resources(RCore *r, int mode) {
 	}
 }
 
+static void bin_no_resources(RCore *r, int mode) {
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("[]");
+	}
+}
+
 
 static int bin_resources(RCore *r, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
@@ -2759,6 +2765,8 @@ static int bin_resources(RCore *r, int mode) {
 	}
 	if (!strncmp ("pe", info->rclass, 2)) {
 		bin_pe_resources (r, mode);
+	} else {
+		bin_no_resources (r, mode);
 	}
 	return true;
 }
