@@ -3152,6 +3152,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
 	r_cmd_add (core->rcmd, "Text",     "Text log utility", &cmd_log);
+	cmd_log_init ();
 	r_cmd_add (core->rcmd, "t",        "type information (cparse)", &cmd_type);
 	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
 	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
