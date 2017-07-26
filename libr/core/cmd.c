@@ -3129,6 +3129,10 @@ static void cmd_descriptor_init(RCore *core) {
 			}
 			x = x->sub[*p];
 		}
+		if (x->name) {
+			eprintf ("Command '%s' is duplicated\n", cmd_descriptors[i].name);
+			exit(1);
+		}
 		*x = cmd_descriptors[i];
 	}
 #endif
@@ -3147,7 +3151,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
 	cmd_mount_init ();
 	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
-	cmd_anal_init();
+	cmd_anal_init ();
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
 	cmd_flag_init ();
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
@@ -3173,6 +3177,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
 	cmd_print_init();
 	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
+	cmd_write_init ();
 	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
 	cmd_meta_init ();
 	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
