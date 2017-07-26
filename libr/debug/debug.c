@@ -305,6 +305,8 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->bits = R_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
+	dbg->main_pid = -1;
+	dbg->n_threads = 0;
 	dbg->trace_clone = 0;
 	dbg->egg = r_egg_new ();
 	r_egg_setup (dbg->egg, R_SYS_ARCH, R_SYS_BITS, R_SYS_ENDIAN, R_SYS_OS);
@@ -1045,6 +1047,17 @@ repeat:
 #endif
 			goto repeat;
 		}
+
+		if (reason == R_DEBUG_REASON_NEW_TID) {
+			ret = dbg->tid;
+			if (!dbg->trace_clone) {
+				goto repeat;
+			}
+		}
+
+		if (reason == R_DEBUG_REASON_EXIT_TID) {
+			goto repeat;
+		} 
 #endif
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
