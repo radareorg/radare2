@@ -3181,6 +3181,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
+	cmd_search_init ();
 	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "u",        "uname/undo", &cmd_uname);
