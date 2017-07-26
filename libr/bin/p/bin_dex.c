@@ -399,7 +399,10 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	}
 
 	if (!p4) {
+		free (debug_positions);
+		free (params);
 		free (debug_locals);
+		free (emitted_debug_locals);
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;

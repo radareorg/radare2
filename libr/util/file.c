@@ -252,6 +252,7 @@ R_API char *r_stdin_slurp (int *sz) {
 	}
 	buf = malloc (BS);
 	if (!buf) {
+		close (newfd);
 		return NULL;
 	}
 	for (i = ret = 0; ; i += ret) {
