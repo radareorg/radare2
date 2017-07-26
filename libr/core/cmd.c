@@ -3145,6 +3145,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
 	cmd_anal_init();
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
+	cmd_flag_init ();
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
 	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
