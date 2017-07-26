@@ -28,8 +28,8 @@ static const char *help_msg_e[] = {
 static char *curtheme = NULL;
 static bool getNext = false;
 
-static void cmd_eval_init(void) {
-	DEFINE_CMD_DESCRIPTOR (e);
+static void cmd_eval_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, e);
 }
 
 static bool load_theme(RCore *core, const char *path) {

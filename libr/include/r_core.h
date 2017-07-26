@@ -135,7 +135,8 @@ typedef struct r_core_t {
 	RNum *num;
 	RLib *lib;
 	RCmd *rcmd;
-	RCmdDescriptor cmd_descriptor;
+	RCmdDescriptor root_cmd_descriptor;
+	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
 	RAsm *assembler;
 	/* ^^ */

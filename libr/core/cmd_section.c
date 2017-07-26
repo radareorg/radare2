@@ -32,10 +32,10 @@ static const char *help_msg_Sr[] = {
 	"Usage:", "Sr", "[name] ([offset])",
 };
 
-static void cmd_section_init(void) {
-	DEFINE_CMD_DESCRIPTOR (S);
-	DEFINE_CMD_DESCRIPTOR (Sl);
-	DEFINE_CMD_DESCRIPTOR (Sr);
+static void cmd_section_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, S);
+	DEFINE_CMD_DESCRIPTOR (core, Sl);
+	DEFINE_CMD_DESCRIPTOR (core, Sr);
 }
 
 static bool dumpSectionsToDisk(RCore *core) {

@@ -56,9 +56,9 @@ static const char *help_msg_id[] = {
 	NULL
 };
 
-static void cmd_info_init(void) {
-	DEFINE_CMD_DESCRIPTOR (i);
-	DEFINE_CMD_DESCRIPTOR (id);
+static void cmd_info_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, i);
+	DEFINE_CMD_DESCRIPTOR (core, id);
 }
 
 #define PAIR_WIDTH 9

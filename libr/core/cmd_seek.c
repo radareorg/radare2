@@ -59,11 +59,11 @@ static const char *help_msg_ss[] = {
 	NULL
 };
 
-static void cmd_seek_init(void) {
-	DEFINE_CMD_DESCRIPTOR (s);
-	DEFINE_CMD_DESCRIPTOR (sC);
-	DEFINE_CMD_DESCRIPTOR (sl);
-	DEFINE_CMD_DESCRIPTOR (ss);
+static void cmd_seek_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, s);
+	DEFINE_CMD_DESCRIPTOR (core, sC);
+	DEFINE_CMD_DESCRIPTOR (core, sl);
+	DEFINE_CMD_DESCRIPTOR (core, ss);
 }
 
 static void __init_seek_line(RCore *core) {

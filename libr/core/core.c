@@ -1213,7 +1213,7 @@ static int autocomplete(RLine *line) {
 		} else {
 			int i, j, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
 			if (cfg_newtab) {
-				RCmdDescriptor *desc = &core->cmd_descriptor;
+				RCmdDescriptor *desc = &core->root_cmd_descriptor;
 				for (i = 0; i < line->buffer.index && desc; i++) {
 					ut8 c = line->buffer.data[i];
 					desc = c < R_ARRAY_SIZE(desc->sub) ? desc->sub[c] : NULL;
@@ -1814,6 +1814,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_list_free (c->scriptstack);
 	r_list_free (c->tasks);
 	c->rcmd = r_cmd_free (c->rcmd);
+	r_list_free (c->cmd_descriptors);
 	c->anal = r_anal_free (c->anal);
 	c->assembler = r_asm_free (c->assembler);
 	c->print = r_print_free (c->print);
