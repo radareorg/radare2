@@ -89,16 +89,17 @@ static char readbit(const ut8 *src, int bitoffset) {
 static void writebit(ut8 *dst, int bitoffset, bool val) {
 	const int wholeBytes = bitoffset / 8;
 	const int remainingBits = bitoffset % 8;
-	if (!val) {
-		CLR_BIT (dst[wholeBytes], remainingBits);
-	} else {
+	if (val) {
 		SET_BIT (dst[wholeBytes], remainingBits);
+	} else {
+		CLR_BIT(dst[wholeBytes], remainingBits);
 	}
 }
 
 // TODO: this method is ugly as shit.
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
 	int i = 0;
+	int j = 0;
 #if 0
 	int dofb, sofb;
 	int bdoff = (doff / 8);
@@ -143,8 +144,9 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 		eprintf ("SHIT SHIT SHIT!\n");
 	}
 	for (i = 0; i < bits; ++i) {
+		j = i % 8;
 		ut8 c = readbit (src, i + soff);
-		writebit (dst, i + soff, c);
+		writebit (&dst[i / 8], j, c);
 	}
 }
 
