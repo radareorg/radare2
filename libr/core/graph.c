@@ -1770,8 +1770,11 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_config_set_i (core->config, "asm.offset", false);
 	}
+	bool html = r_config_get_i (core->config, "scr.html");
+	r_config_set_i (core->config, "scr.html", 0);
 	body = r_core_cmd_strf (core,
-		"%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+			"%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+	r_config_set_i (core->config, "scr.html", html);
 
 	// restore original options
 	core->print->cur_enabled = o_cursor;
