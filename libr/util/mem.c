@@ -139,14 +139,10 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
    src |__________|_________|
  */
 #endif
-	if (doff != 0) {
-		// We can't handle this
-		eprintf ("SHIT SHIT SHIT!\n");
-	}
 	for (i = 0; i < bits; ++i) {
-		j = i % 8;
 		ut8 c = readbit (src, i + soff);
-		writebit (&dst[i / 8], j, c);
+		writebit (&dst[0], i + doff, c);
+		c = readbit (dst, i + doff);
 	}
 }
 
