@@ -11,25 +11,47 @@ with open('Makefile', 'r') as f:
     while 'DATADIRS' not in line:
         line = f.readline()
 DATADIRS = line.split('=')[1].split()
+DATADIRS = [os.path.abspath(p) for p in DATADIRS]
+BLACKLIST = ['Makefile']
 
 MESON = 'python meson.py' if os.path.isfile('meson.py') else 'meson'
 NINJA = 'ninja'
 
-# Create sdb binary
-r = os.system('{meson} {sdbdir} {builddir}'.format(meson=MESON, sdbdir=SDBDIR, builddir=BUILDDIR))
-r = os.system('{ninja} -C {builddir}'.format(ninja=NINJA, builddir=BUILDDIR))
-if r: exit(r)
+def convert_sdb(inf, outf):
+    """ Convert inf to outf.sdb """
+    print('Converting {} to {}'.format(inf, outf))
+    os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=outf, inf=inf))
 
-# Create .sdb files
-for folder in DATADIRS:
-    for f in os.listdir(folder):
-        inf, ext = os.path.splitext(f)
-        if ext and 'txt' not in ext:
-            continue
-        while '.' in inf:
-            inf, ext = os.path.splitext(f)
-        inf = os.path.join(folder, inf)
-        outf = '.'.join([inf, 'sdb'])
-        print('Converting {} to {}'.format(inf, outf))
-        os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=outf, inf=inf))
+def get_extension(inf):
+    """ Handles files with multiple extensions e.g. .sdb.txt """
+    n = inf.split('.')
+    return inf, n[0], n[-1]
 
+def main():
+    # Create sdb binary
+    r = os.system('{meson} {sdbdir} {builddir}'.format(meson=MESON, sdbdir=SDBDIR, builddir=BUILDDIR))
+    r = os.system('{ninja} -C {builddir}'.format(ninja=NINJA, builddir=BUILDDIR))
+    if r: exit(r)
+
+    # Create .sdb files
+    i = 0
+    l = len(DATADIRS)
+    while i < l:
+        folder = DATADIRS[i]
+        print(folder)
+        for f in os.listdir(folder):
+            if f in BLACKLIST:
+                continue
+            inf, base, ext = get_extension(f)
+            inf = os.path.join(folder, inf)
+            if os.path.isdir(inf):
+                DATADIRS.append(inf)
+                l += 1
+                continue
+            outf = '.'.join([os.path.join(folder, base), 'sdb'])
+            convert_sdb(inf, outf)
+        i += 1
+    print('Done.')
+
+if __name__ == '__main__':
+    main()

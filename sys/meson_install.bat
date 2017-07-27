@@ -64,9 +64,9 @@ XCOPY /S libr\magic\d\default\* %DIST%\share\radare2\%R2_VERSION%\magic\
 MKDIR %DIST%\share\radare2\%R2_VERSION%\syscall
 XCOPY /S libr\syscall\d\*.sdb %DIST%\share\radare2\%R2_VERSION%\syscall\
 MKDIR %DIST%\share\radare2\%R2_VERSION%\fcnsign
-XCOPY /S libr\anal\d\*.sdb %DIST%\share\radare2\%R2_VERSION%\fcnsign
+XCOPY /S libr\anal\d\*.sdb %DIST%\share\radare2\%R2_VERSION%\fcnsign\
 MKDIR %DIST%\share\radare2\%R2_VERSION%\opcodes
-XCOPY /S libr\anal\d\*.sdb %DIST%\share\radare2\%R2_VERSION%\opcodes
+XCOPY /S libr\anal\d\*.sdb %DIST%\share\radare2\%R2_VERSION%\opcodes\
 MKDIR %DIST%\share\doc\radare2
 MKDIR %DIST%\include\libr\sdb
 MKDIR %DIST%\include\libr\r_util
@@ -80,7 +80,7 @@ COPY libr\bin\d\elf64 %DIST%\share\radare2\%R2_VERSION%\format\
 COPY libr\bin\d\elf_enums %DIST%\share\radare2\%R2_VERSION%\format\
 COPY libr\bin\d\pe32 %DIST%\share\radare2\%R2_VERSION%\format\
 COPY libr\bin\d\trx %DIST%\share\radare2\%R2_VERSION%\format\
-COPY libr\bin\d\dll\*.sdb %DIST%\share\radare2\%R2_VERSION%\format\dll
+COPY libr\bin\d\dll\*.sdb %DIST%\share\radare2\%R2_VERSION%\format\dll\
 MKDIR %DIST%\share\radare2\%R2_VERSION%\cons
 COPY libr\cons\d\* %DIST%\share\radare2\%R2_VERSION%\cons\
 MKDIR %DIST%\share\radare2\%R2_VERSION%\hud
