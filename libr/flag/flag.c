@@ -525,6 +525,8 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		list = r_list_new ();
 		flagsAtOffset->flags = list;
 		flagsAtOffset->off = off;
+		// CID 1378268:  Resource leaks  (RESOURCE_LEAK)
+		// Ignoring storage allocated by "r_skiplist_insert(f->by_off, flagsAtOffset)" leaks it.
 		r_skiplist_insert (f->by_off, flagsAtOffset);
 	}
 	r_list_append (list, item);

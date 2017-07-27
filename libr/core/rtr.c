@@ -1224,14 +1224,14 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		eprintf ("gdbserver: File not specified\n");
 		return -1;
 	}
-	if (!(file = r_str_chop_ro (file)) || !*file) {
+	if (!(file = (char *)r_str_chop_ro (file)) || !*file) {
 		eprintf ("gdbserver: File not specified\n");
 		return -1;
 	}
 	args = strchr (file, ' ');
 	if (args) {
 		*args++ = '\0';
-		if (!(args = r_str_chop_ro (args))) {
+		if (!(args = (char *)r_str_chop_ro (args))) {
 			args = "";
 		}
 	} else {

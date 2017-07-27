@@ -389,13 +389,13 @@ static int cmd_seek(void *data, const char *input) {
 		}
 	}
 	break;
-	case '.':
+	case '.': // "s."
 		for (input++; *input == '.'; input++) {
 			;
 		}
 		r_core_seek_base (core, input);
 		break;
-	case 'j':  // sj
+	case 'j':  // "sj"
 		{
 			RList /*<ut64 *>*/ *addrs = r_list_newf (free);
 			RList /*<char *>*/ *names = r_list_newf (free);
@@ -413,7 +413,7 @@ static int cmd_seek(void *data, const char *input) {
 					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
-							name = r_str_newf ("%s + %d\n", f->name,
+							name = r_str_newf ("%s + %d", f->name,
 									(int)(undo->off- f->offset));
 						} else {
 							name = strdup (f->name);
