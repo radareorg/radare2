@@ -11,7 +11,7 @@ typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
-/* move into struct MACH0_(obj_t) *bin */
+// OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
 static bool little_;
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
@@ -1198,7 +1198,7 @@ static int init(struct MACH0_(obj_t)* bin) {
 		ut8 byte[2];
 	} endian = { 1 };
 	little_ = endian.byte[0];
-	if (!init_hdr(bin)) {
+	if (!init_hdr (bin)) {
 		bprintf ("Warning: File is not MACH0\n");
 		return false;
 	}

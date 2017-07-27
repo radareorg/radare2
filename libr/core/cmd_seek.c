@@ -413,7 +413,7 @@ static int cmd_seek(void *data, const char *input) {
 					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
-							name = r_str_newf ("%s + %d", f->name,
+							name = r_str_newf ("%s+%d", f->name,
 									(int)(undo->off- f->offset));
 						} else {
 							name = strdup (f->name);
