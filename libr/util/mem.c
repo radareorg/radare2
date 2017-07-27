@@ -98,6 +98,7 @@ static void writebit(ut8 *dst, int bitoffset, bool val) {
 
 // TODO: this method is ugly as shit.
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
+	int i = 0;
 #if 0
 	int dofb, sofb;
 	int bdoff = (doff / 8);
@@ -141,7 +142,7 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 		// We can't handle this
 		eprintf ("SHIT SHIT SHIT!\n");
 	}
-	for (int i = 0; i < bits; ++i) {
+	for (i = 0; i < bits; ++i) {
 		ut8 c = readbit (src, i + soff);
 		writebit (dst, i + soff, c);
 	}
