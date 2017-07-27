@@ -56,7 +56,7 @@ bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki, RASN1O
 	if (object->list.objects[1]) {
 		o = object->list.objects[1];
 		spki->subjectPublicKey = r_asn1_create_binary (o->sector, o->length);
-		if (o->list.length == 1 && o->list.objects[0]->list.length == 2) {
+		if (o->list.length == 1 && o->list.objects[0] && o->list.objects[0]->list.length == 2) {
 			o = o->list.objects[0];
 			if (o->list.objects[0]) {
 				spki->subjectPublicKeyExponent = r_asn1_create_binary (o->list.objects[0]->sector, o->list.objects[0]->length);
@@ -102,8 +102,9 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
 							o->list.objects[0]->tag == TAG_OID) {
 						name->oids[i] = r_asn1_stringify_oid (o->list.objects[0]->sector, o->list.objects[0]->length);
 					}
-					if (o->list.objects[1]->klass == CLASS_UNIVERSAL) {
-						name->names[i] = r_asn1_stringify_string (o->list.objects[1]->sector, o->list.objects[1]->length);
+					RASN1Object *obj1 = o->list.objects[1];
+					if (obj1 && obj1->klass == CLASS_UNIVERSAL) {
+						name->names[i] = r_asn1_stringify_string (obj1->sector, obj1->length);
 					}
 				}
 			}

@@ -117,12 +117,13 @@ bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
 	if (!ci || !object || object->list.length < 1 || !object->list.objects[0]) {
 		return false;
 	}
-
 	ci->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (object->list.length > 1) {
-		ci->content = r_asn1_create_binary (object->list.objects[1]->sector, object->list.objects[1]->length);
+		RASN1Object *obj1 = object->list.objects[1];
+		if (obj1) {
+			ci->content = r_asn1_create_binary (obj1->sector, obj1->length);
+		}
 	}
-
 	return true;
 }
 
