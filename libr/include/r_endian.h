@@ -216,6 +216,101 @@ static inline void r_write_at_le64(void *dest, ut64 val, size_t offset) {
 	r_write_le64 (d, val);
 }
 
+/* Middle Endian functions. */
+
+static inline ut8 r_read_me8(const void *src) {
+	if (!src) {
+		return UT8_MAX;
+	}
+	return r_read_ble8 (src);
+}
+
+static inline ut8 r_read_at_me8(const void *src, size_t offset) {
+	return r_read_at_ble8 (src, offset);
+}
+
+static inline void r_write_me8(void *dest, ut8 val) {
+	r_write_ble8 (dest, val);
+}
+
+static inline void r_write_at_me8(void *dest, ut8 val, size_t offset) {
+	r_write_at_ble8 (dest, val, offset);
+}
+
+static inline ut16 r_read_me16(const void *src) {
+	if (!src) {
+		return UT16_MAX;
+	}
+	const ut8 *s = (const ut8*)src;
+	return (((ut16)s[0]) << 8) | (((ut16)s[1]) << 0);
+}
+
+static inline ut16 r_read_at_me16(const void *src, size_t offset) {
+	if (!src) {
+		return UT16_MAX;
+	}
+	const ut8 *s = (const ut8*)src + offset;
+	return r_read_me16 (s);
+}
+
+static inline void r_write_me16(void *dest, ut16 val) {
+	r_write_me8 (dest, val >> 8);
+	r_write_at_me8 (dest, val >> 0, sizeof (ut8));
+}
+
+static inline void r_write_at_me16(void *dest, ut16 val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	r_write_me16 (d, val);
+}
+
+static inline ut32 r_read_me32(const void *src) {
+	if (!src) {
+		return UT32_MAX;
+	}
+	const ut8 *s = (const ut8*)src;
+	return (((ut32)s[2]) << 24) | (((ut32)s[1]) << 16) |
+		(((ut32)s[0]) << 8) | (((ut32)s[1]) << 0);
+}
+
+static inline ut32 r_read_at_me32(const void *src, size_t offset) {
+	if (!src) {
+		return UT32_MAX;
+	}
+	const ut8 *s = (const ut8*)src + offset;
+	return r_read_me32 (s);
+}
+
+static inline void r_write_me32(void *dest, ut32 val) {
+	r_write_me16 (dest, val >> 0);
+	r_write_at_me16 (dest, val >> 16, sizeof (ut16));
+}
+
+static inline void r_write_at_me32(void *dest, ut32 val, size_t offset) {
+	ut8 *d = ((ut8*)dest) + offset;
+	r_write_me32 (d, val);
+}
+
+static inline ut64 r_read_me64(const void *src) {
+	ut64 val = ((ut64)(r_read_at_me32 (src, sizeof (ut32)))) <<  32;
+	val |= r_read_me32 (src);
+	return val;
+}
+
+static inline ut64 r_read_at_me64(const void *src, size_t offset) {
+	const ut8 *s = ((const ut8*)src) + offset;
+	return r_read_me64 (s);
+}
+
+static inline void r_write_me64(void *dest, ut64 val) {
+	r_write_me32 (dest, val >> 0);
+	r_write_at_me32 (dest, val >> 32, sizeof (ut32));
+}
+
+static inline void r_write_at_me64(void *dest, ut64 val, size_t offset) {
+	ut8 *d = (ut8*)dest + offset;
+	r_write_me64 (d, val);
+}
+
 /* Helper functions */
 
 static inline ut16 r_read_ble16(const void *src, bool big_endian) {

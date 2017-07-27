@@ -41,7 +41,7 @@ static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
 /* For (arguably valid) reasons, the ARCompact CPU uses "middle endian"
 	encoding on Little-Endian systems
  */
-static inline ut32 r_read_me32(const void *src) {
+static inline ut32 r_read_me32_arc(const void *src) {
 	const ut8 *s = src;
 	return (((ut32)s[1]) << 24) | (((ut32)s[0]) << 16) | (((ut32)s[3]) << 8) | (((ut32)s[2]) << 0);
 }
@@ -458,7 +458,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		return 0;
 	}
 	if (len < 8) {
-		//when r_read_me32/be32 oob read
+		//when r_read_me32_arc/be32 oob read
 		return 0;
 	}
 
@@ -474,8 +474,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		words[0] = r_read_be32 (&data[0]);
 		words[1] = r_read_be32 (&data[4]);
 	} else {
-		words[0] = r_read_me32 (&data[0]);
-		words[1] = r_read_me32 (&data[4]);
+		words[0] = r_read_me32_arc (&data[0]);
+		words[1] = r_read_me32_arc (&data[4]);
 	}
 
 	fields.opcode = (words[0] & 0xf8000000) >> 27;
