@@ -59,7 +59,7 @@ static const uint32_t test_values[] = { 1,2,3,4,8,34,543,2343 };
 static void set_values(Bitmap *bitmap, const uint32_t *values, int len) {
 	int i;
 	for(i=0; i < len; i++) {
-		r_bitmap_set(bitmap, values[i]);
+		r_bitmap_set (bitmap, values[i]);
 	}
 }
 

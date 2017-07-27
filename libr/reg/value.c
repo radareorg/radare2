@@ -3,6 +3,15 @@
 #include <r_reg.h>
 #include <r_util.h>
 
+typedef ut32 ut27;
+static ut27 r_read_me27(const ut8* buf, int boff) {
+        ut27 ret = 0;
+        r_mem_copybits_delta ((ut8*)&ret, 18, buf, boff, 9);
+        r_mem_copybits_delta ((ut8*)&ret, 9, buf, boff + 9, 9);
+        r_mem_copybits_delta ((ut8*)&ret, 0, buf, boff + 18, 9);
+        return ret;
+}
+
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	RRegSet *regset;
 	int off;
@@ -81,6 +90,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
 			ret = r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
+		}
+		break;
+	case 27:
+		if (off + 3 < regset->arena->size) {
+			ret = r_read_me27 (regset->arena->bytes + off, 0);
 		}
 		break;
 	case 32:
