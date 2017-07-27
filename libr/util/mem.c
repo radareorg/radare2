@@ -86,6 +86,7 @@ static char readbit(const ut8 *src, int bitoffset) {
 	return (src[wholeBytes] >> remainingBits) & 1;
 }
 
+#if 0
 static void writebit(ut8 *dst, int bitoffset, bool val) {
 	const int wholeBytes = bitoffset / 8;
 	const int remainingBits = bitoffset % 8;
@@ -93,6 +94,16 @@ static void writebit(ut8 *dst, int bitoffset, bool val) {
 		SET_BIT (dst[wholeBytes], remainingBits);
 	} else {
 		CLR_BIT(dst[wholeBytes], remainingBits);
+	}
+}
+#endif
+static void writebit (ut8 *dst, int i, bool c) {
+	int byte = i / 8;
+	int bit = i % 8;
+	if (c) {
+		R_BIT_SET (dst + byte, bit);
+	} else {
+		R_BIT_UNSET (dst + byte, bit);
 	}
 }
 
