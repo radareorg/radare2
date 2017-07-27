@@ -68,6 +68,15 @@ static const char *help_msg_zs[] = {
 	NULL
 };
 
+static void cmd_zign_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, z);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
+	DEFINE_CMD_DESCRIPTOR (core, za);
+	DEFINE_CMD_DESCRIPTOR (core, zf);
+	DEFINE_CMD_DESCRIPTOR (core, zo);
+	DEFINE_CMD_DESCRIPTOR (core, zs);
+}
+
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	if (!core || !fcn || !name) {
 		return false;
@@ -566,15 +575,6 @@ struct ctxSearchCB {
 	int count;
 	const char *prefix;
 };
-
-static void cmd_zign_init(void) {
-	DEFINE_CMD_DESCRIPTOR (z);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (z/, z_slash);
-	DEFINE_CMD_DESCRIPTOR (za);
-	DEFINE_CMD_DESCRIPTOR (zf);
-	DEFINE_CMD_DESCRIPTOR (zo);
-	DEFINE_CMD_DESCRIPTOR (zs);
-}
 
 static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");

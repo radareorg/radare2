@@ -27,32 +27,48 @@
 #include <sys/utsname.h>
 #endif
 
-#define MAX_NUM_CMD_DESCRIPTORS 1024
-RCmdDescriptor cmd_descriptors[MAX_NUM_CMD_DESCRIPTORS];
-int cmd_descriptors_len = 0;
+#define DEFINE_CMD_DESCRIPTOR(core, name_)				\
+	{																								\
+		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);	\
+		if (d) {																			\
+			d->name = #name_;														\
+			d->help_msg = help_msg_##name_;							\
+			r_list_append (core->cmd_descriptors, d);		\
+		}																							\
+	}
 
-#define REGISTER_CMD_DESCRIPTOR(name)																		\
-	if (cmd_descriptors_len >= R_ARRAY_SIZE (cmd_descriptors)) { 					\
-		eprintf ("Please increase MAX_NUM_CMD_DESCRIPTORS in libr/core/cmd.c\n"); \
-		exit(1);																														\
-	}																																			\
-	cmd_descriptors_len++
+#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(core, name_)	\
+	{																											\
+		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);				\
+		if (d) {																						\
+			d->name = #name_;																	\
+			d->help_msg = help_msg_##name_;										\
+			d->help_detail = help_detail_##name_;							\
+			r_list_append (core->cmd_descriptors, d);					\
+		}																										\
+	}
 
-#define DEFINE_CMD_DESCRIPTOR(name_)																	\
-	REGISTER_CMD_DESCRIPTOR(name_);																			\
-	cmd_descriptors[cmd_descriptors_len-1].name = #name_;								\
-	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_;
+#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2(core, name_)	\
+	{																											\
+		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);				\
+		if (d) {																						\
+			d->name = #name_;																	\
+			d->help_msg = help_msg_##name_;										\
+			d->help_detail = help_detail_##name_;							\
+			d->help_detail2 = help_detail2_##name_;						\
+			r_list_append (core->cmd_descriptors, d);					\
+		}																										\
+	}
 
-#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(name_)												\
-	REGISTER_CMD_DESCRIPTOR(name_);																				\
-	cmd_descriptors[cmd_descriptors_len-1].name = #name_;									\
-	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_;		\
-	cmd_descriptors[cmd_descriptors_len-1].help_detail = help_detail_##name_;
-
-#define DEFINE_CMD_DESCRIPTOR_SPECIAL(cmd, name_)                          \
-	REGISTER_CMD_DESCRIPTOR(name_);                                     \
-	cmd_descriptors[cmd_descriptors_len-1].name = #cmd;                 \
-	cmd_descriptors[cmd_descriptors_len-1].help_msg = help_msg_##name_; \
+#define DEFINE_CMD_DESCRIPTOR_SPECIAL(core, cmd, name_)	\
+	{																											\
+		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);				\
+		if (d) {																						\
+			d->name = #cmd;																		\
+			d->help_msg = help_msg_##name_;										\
+			r_list_append (core->cmd_descriptors, d);					\
+		}																										\
+	}
 
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
@@ -79,6 +95,103 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_search.c"
+
+static const char *help_msg_dollar[] = {
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands",
+	"$", "", "list all defined aliases",
+	"$*", "", "same as above, but using r2 commands",
+	"$", "dis='af;pdf'", "create command - analyze to show function",
+	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
+	"$", "dis=", "undefine alias",
+	"$", "dis", "execute the previously defined alias",
+	"$", "dis?", "show commands aliased by 'analyze'",
+	NULL
+};
+
+static const char *help_msg_percent[] = {
+	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
+	"%", "", "list all environment variables",
+	"%", "SHELL", "prints SHELL value",
+	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
+	NULL
+};
+
+static const char *help_msg_star[] = {
+	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
+	"*", "entry0=cc", "write trap in entrypoint",
+	"*", "entry0+10=0x804800", "write value in delta address",
+	"*", "entry0", "read byte at given address",
+	"TODO: last command should honor asm.bits", "", "",
+	NULL
+};
+
+static const char *help_msg_b[] = {
+	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
+	"b", "", "display current block size",
+	"b", " 33", "set block size to 33",
+	"b", "+3", "increase blocksize by 3",
+	"b", "-16", "decrease blocksize by 16",
+	"b", " eip+4", "numeric argument can be an expression",
+	"bf", " foo", "set block size to flag size",
+	"bm", " 1M", "set max block size",
+	NULL
+};
+
+static const char *help_msg_k[] = {
+	"Usage:", "k[s] [key[=value]]", "Sdb Query",
+	"k", " foo=bar", "set value",
+	"k", " foo", "show value",
+	"k", "", "list keys",
+	"ko", " [file.sdb] [ns]", "open file into namespace",
+	"kd", " [file.sdb] [ns]", "dump namespace to disk",
+	"ks", " [ns]", "enter the sdb query shell",
+	"k", " anal/meta/*", "ist kv from anal > meta namespaces",
+	"k", " anal/**", "list namespaces under anal",
+	"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
+	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
+	//"ks", " ha.sdb", "save keyvalue to ha.sdb",
+	NULL,
+};
+
+static const char *help_msg_r[] = {
+	"Usage:", "r[+-][ size]", "Resize file",
+	"r", "", "display file size",
+	"r", " size", "expand or truncate file to given size",
+	"r-", "num", "remove num bytes, move following data down",
+	"r+", "num", "insert num bytes, move following data up",
+	"rm" ," [file]", "remove file",
+	"r2" ," [file]", "launch r2",
+	NULL
+};
+
+static const char *help_msg_u[] = {
+	"Usage:", "u", "uname or undo write/seek",
+	"u", "", "show system uname",
+	"uw", "", "alias for wc (requires: e io.cache=true)",
+	"us", "", "alias for s- (seek history)",
+	NULL
+};
+
+static const char *help_msg_y[] = {
+	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
+	"y", "", "show yank buffer information (srcoff len bytes)",
+	"y", " 16", "copy 16 bytes into clipboard",
+	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
+	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
+	"yz", "", "copy up to blocksize zero terminated string bytes into clipboard",
+	"yz", " 16", "copy up to 16 zero terminated string bytes into clipboard",
+	"yz", " @ 0x200", "copy up to blocksize zero terminated string bytes into clipboard from 0x200",
+	"yz", " 16 @ 0x200", "copy up to 16 zero terminated string bytes into clipboard from 0x200",
+	"yp", "", "print contents of clipboard",
+	"yx", "", "print contents of clipboard in hexadecimal",
+	"ys", "", "print contents of clipboard as string",
+	"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
+	"ytf", " file", "dump the clipboard to given file",
+	"yf", " 64 0x200", "file copy 64 bytes from 0x200 from file (opens w/ io), use -1 for all bytes",
+	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
+	"yy", " 0x3344", "paste clipboard",
+	NULL
+};
 
 static void recursive_help(RCore *core, const char *cmd) {
 	char *nl, *line;
@@ -161,15 +274,9 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 }
 
 static int cmd_uname(void *data, const char *input) {
-	const char* help_msg[] = {
-		"Usage:", "u", "uname or undo write/seek",
-		"u", "", "show system uname",
-		"uw", "", "alias for wc (requires: e io.cache=true)",
-		"us", "", "alias for s- (seek history)",
-		NULL};
 	switch (input[0]) {
 	case '?':
-		r_core_cmd_help (data, help_msg);
+		r_core_cmd_help (data, help_msg_u);
 		return 1;
 	case 's':
 		r_core_cmdf (data, "s-%s", input + 1);
@@ -196,17 +303,7 @@ static int cmd_alias(void *data, const char *input) {
 	char *def, *q, *desc, *buf;
 	RCore *core = (RCore *)data;
 	if (*input == '?') {
-		const char* help_msg[] = {
-			"Usage:", "$alias[=cmd] [args...]", "Alias commands",
-			"$", "", "list all defined aliases",
-			"$*", "", "same as above, but using r2 commands",
-			"$", "dis='af;pdf'", "create command - analyze to show function",
-			"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
-			"$", "dis=", "undefine alias",
-			"$", "dis", "execute the previously defined alias",
-			"$", "dis?", "show commands aliased by 'analyze'",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_dollar);
 		return 0;
 	}
 	i = strlen (input);
@@ -438,28 +535,8 @@ static int cmd_yank(void *data, const char *input) {
 	case '\0':
 		r_core_yank_dump (core, r_num_math (core->num, ""));
 		break;
-	default:{
-		const char* help_msg[] = {
-		"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-		"y", "", "show yank buffer information (srcoff len bytes)",
-		"y", " 16", "copy 16 bytes into clipboard",
-		"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
-		"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
-		"yz", "", "copy up to blocksize zero terminated string bytes into clipboard",
-		"yz", " 16", "copy up to 16 zero terminated string bytes into clipboard",
-		"yz", " @ 0x200", "copy up to blocksize zero terminated string bytes into clipboard from 0x200",
-		"yz", " 16 @ 0x200", "copy up to 16 zero terminated string bytes into clipboard from 0x200",
-		"yp", "", "print contents of clipboard",
-		"yx", "", "print contents of clipboard in hexadecimal",
-		"ys", "", "print contents of clipboard as string",
-		"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
-		"ytf", " file", "dump the clipboard to given file",
-		"yf", " 64 0x200", "file copy 64 bytes from 0x200 from file (opens w/ io), use -1 for all bytes",
-		"yfa", " file copy", "copy all bytes from file (opens w/ io)",
-		"yy", " 0x3344", "paste clipboard",
-		NULL};
-		r_core_cmd_help (core, help_msg);
-		}
+	default:
+		r_core_cmd_help (core, help_msg_y);
 		break;
 	}
 	return true;
@@ -819,22 +896,7 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case '?': {
-			const char* help_msg[] = {
-			"Usage:", "k[s] [key[=value]]", "Sdb Query",
-			"k", " foo=bar", "set value",
-			"k", " foo", "show value",
-			"k", "", "list keys",
-			"ko", " [file.sdb] [ns]", "open file into namespace",
-			"kd", " [file.sdb] [ns]", "dump namespace to disk",
-			"ks", " [ns]", "enter the sdb query shell",
-			"k", " anal/meta/*", "ist kv from anal > meta namespaces",
-			"k", " anal/**", "list namespaces under anal",
-			"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
-			//"kl", " ha.sdb", "load keyvalue from ha.sdb",
-			//"ks", " ha.sdb", "save keyvalue to ha.sdb",
-			NULL,
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_k);
 		}
 		break;
 	}
@@ -893,20 +955,8 @@ static int cmd_bsize(void *data, const char *input) {
 	case '\0':
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
-	case '?':{
-		const char* help_msg[] = {
-			"Usage:",  "b[f] [arg]\n", "Get/Set block size",
-			"b", "", "display current block size",
-			"b", " 33", "set block size to 33",
-			"b", "+3", "increase blocksize by 3",
-			"b", "-16", "decrease blocksize by 16",
-			"b", " eip+4", "numeric argument can be an expression",
-			"bf", " foo", "set block size to flag size",
-			"bm", " 1M", "set max block size",
-			NULL
-		};
-		r_core_cmd_help (core, help_msg);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg_b);
 		break;
 	default:
 		//input = r_str_clean(input);
@@ -956,18 +1006,8 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		break;
 	default:
-	case '?':{
-		const char* help_msg[] = {
-			"Usage:", "r[+-][ size]", "Resize file",
-			"r", "", "display file size",
-			"r", " size", "expand or truncate file to given size",
-			"r-", "num", "remove num bytes, move following data down",
-			"r+", "num", "insert num bytes, move following data up",
-			"rm" ," [file]", "remove file",
-			"r2" ," [file]", "launch r2",
-			NULL};
-		r_core_cmd_help (core, help_msg);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg_r);
 		return true;
 	}
 
@@ -1111,14 +1151,7 @@ static int cmd_pointer(void *data, const char *input) {
 	char *str, *eq;
 	while (*input == ' ') input++;
 	if (!*input || *input == '?') {
-		const char* help_msg[] = {
-			"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
-			"*", "entry0=cc", "write trap in entrypoint",
-			"*", "entry0+10=0x804800", "write value in delta address",
-			"*", "entry0", "read byte at given address",
-			"TODO: last command should honor asm.bits", "", "",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_star);
 		return ret;
 	}
 	str = strdup (input);
@@ -1142,15 +1175,7 @@ static int cmd_env(void *data, const char *input) {
 	int ret = true;
 	switch (*input) {
 	case '?':
-		{
-		const char* help_msg[] = {
-			"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
-			"%", "", "list all environment variables",
-			"%", "SHELL", "prints SHELL value",
-			"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
-			NULL};
-		r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg_percent);
 		break;
 	default:
 		ret = r_core_cmdf (core, "env %s", input);
@@ -3111,31 +3136,31 @@ static int compare_cmd_descriptor_name(const void *a, const void *b) {
 }
 
 static void cmd_descriptor_init(RCore *core) {
-#if 0
-	// All this code is crap, buggy, slow and incomplete, also is making r2 crash
-	// commenting out for now
-	qsort (cmd_descriptors, cmd_descriptors_len, sizeof (RCmdDescriptor), compare_cmd_descriptor_name);
-	int i, n_cmd_descriptors = cmd_descriptors_len;
-	for (i = 0; i < n_cmd_descriptors; i++) {
-		const ut8 *p;
-		RCmdDescriptor *x = &core->cmd_descriptor;
-		for (p = (const ut8*)cmd_descriptors[i].name; *p; p++) {
+	const ut8 *p;
+	RListIter *iter;
+	RCmdDescriptor *x, *y;
+	int n = core->cmd_descriptors->length;
+	r_list_sort (core->cmd_descriptors, compare_cmd_descriptor_name);
+	r_list_foreach (core->cmd_descriptors, iter, y) {
+		if (--n < 0) {
+			break;
+		}
+		x = &core->root_cmd_descriptor;
+		for (p = (const ut8 *)y->name; *p; p++) {
 			if (!x->sub[*p]) {
-				if (cmd_descriptors_len >= MAX_NUM_CMD_DESCRIPTORS) {
-					eprintf ("Please increase MAX_NUM_CMD_DESCRIPTORS in libr/core/cmd.c\n");
-					exit(1);
+				if (p[1]) {
+					RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
+					r_list_append (core->cmd_descriptors, d);
+					x->sub[*p] = d;
+				} else {
+					x->sub[*p] = y;
 				}
-				x->sub[*p] = &cmd_descriptors[cmd_descriptors_len++];
+			} else if (!p[1]) {
+				eprintf ("Command '%s' is duplicated, please check\n", y->name);
 			}
 			x = x->sub[*p];
 		}
-		if (x->name) {
-			eprintf ("Command '%s' is duplicated\n", cmd_descriptors[i].name);
-			exit(1);
-		}
-		*x = cmd_descriptors[i];
 	}
-#endif
 }
 
 R_API void r_core_cmd_init(RCore *core) {
@@ -3146,43 +3171,30 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd->nullcallback = r_core_cmd_nullcallback;
 	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
+	core->cmd_descriptors = r_list_newf (free);
+
 	r_cmd_add (core->rcmd, "0x",       "alias for px", &cmd_ox);
 	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
 	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
-	cmd_mount_init ();
 	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
-	cmd_anal_init ();
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
-	cmd_flag_init ();
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
-	cmd_debug_init ();
 	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
 	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
-	cmd_info_init ();
 	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
-	cmd_seek_init ();
 	r_cmd_add (core->rcmd, "Text",     "Text log utility", &cmd_log);
-	cmd_log_init ();
 	r_cmd_add (core->rcmd, "t",        "type information (cparse)", &cmd_type);
-	cmd_type_init ();
 	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
-	cmd_zign_init ();
 	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
-	cmd_section_init ();
 	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
 	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
 	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
-	cmd_eval_init ();
 	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
-	cmd_print_init();
 	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
-	cmd_write_init ();
 	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
-	cmd_meta_init ();
 	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
-	cmd_project_init ();
 	r_cmd_add (core->rcmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
@@ -3199,7 +3211,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
-	cmd_search_init ();
 	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "u",        "uname/undo", &cmd_uname);
@@ -3207,5 +3218,31 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "Q",        "alias for q!", &cmd_Quit);
 	r_cmd_add (core->rcmd, "L",        "manage dynamically loaded plugins", &cmd_plugins);
 
+	cmd_search_init (core);
+	cmd_anal_init (core);
+	cmd_meta_init (core);
+	cmd_debug_init (core);
+	cmd_eval_init (core);
+	cmd_flag_init (core);
+	cmd_info_init (core);
+	cmd_log_init (core);
+	cmd_mount_init (core);
+	cmd_open_init (core);
+	cmd_print_init (core);
+	cmd_project_init (core);
+	cmd_quit_init (core);
+	cmd_seek_init (core);
+	cmd_section_init (core);
+	cmd_type_init (core);
+	cmd_write_init (core);
+	cmd_zign_init (core);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, %, percent);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
+	DEFINE_CMD_DESCRIPTOR (core, b);
+	DEFINE_CMD_DESCRIPTOR (core, k);
+	DEFINE_CMD_DESCRIPTOR (core, r);
+	DEFINE_CMD_DESCRIPTOR (core, u);
+	DEFINE_CMD_DESCRIPTOR (core, y);
 	cmd_descriptor_init (core);
 }

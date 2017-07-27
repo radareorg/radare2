@@ -148,18 +148,18 @@ static const char *help_msg_wx[] = {
 	NULL
 };
 
-static void cmd_write_init(void) {
-	DEFINE_CMD_DESCRIPTOR (w);
-	DEFINE_CMD_DESCRIPTOR (wa);
-	DEFINE_CMD_DESCRIPTOR (wA);
-	DEFINE_CMD_DESCRIPTOR (wc);
-	DEFINE_CMD_DESCRIPTOR (we);
-	DEFINE_CMD_DESCRIPTOR (wo);
-	DEFINE_CMD_DESCRIPTOR (wop);
-	DEFINE_CMD_DESCRIPTOR (wp);
-	DEFINE_CMD_DESCRIPTOR (wt);
-	DEFINE_CMD_DESCRIPTOR (wv);
-	DEFINE_CMD_DESCRIPTOR (wx);
+static void cmd_write_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, w);
+	DEFINE_CMD_DESCRIPTOR (core, wa);
+	DEFINE_CMD_DESCRIPTOR (core, wA);
+	DEFINE_CMD_DESCRIPTOR (core, wc);
+	DEFINE_CMD_DESCRIPTOR (core, we);
+	DEFINE_CMD_DESCRIPTOR (core, wo);
+	DEFINE_CMD_DESCRIPTOR (core, wop);
+	DEFINE_CMD_DESCRIPTOR (core, wp);
+	DEFINE_CMD_DESCRIPTOR (core, wt);
+	DEFINE_CMD_DESCRIPTOR (core, wv);
+	DEFINE_CMD_DESCRIPTOR (core, wx);
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {

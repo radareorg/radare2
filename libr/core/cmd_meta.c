@@ -96,13 +96,13 @@ static const char *help_msg_Cvs[] = {
 	NULL
 };
 
-static void cmd_meta_init(void) {
-	DEFINE_CMD_DESCRIPTOR (C);
-	DEFINE_CMD_DESCRIPTOR (CC);
-	DEFINE_CMD_DESCRIPTOR (CS);
-	DEFINE_CMD_DESCRIPTOR (Cvb);
-	DEFINE_CMD_DESCRIPTOR (Cvr);
-	DEFINE_CMD_DESCRIPTOR (Cvs);
+static void cmd_meta_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, C);
+	DEFINE_CMD_DESCRIPTOR (core, CC);
+	DEFINE_CMD_DESCRIPTOR (core, CS);
+	DEFINE_CMD_DESCRIPTOR (core, Cvb);
+	DEFINE_CMD_DESCRIPTOR (core, Cvr);
+	DEFINE_CMD_DESCRIPTOR (core, Cvs);
 }
 
 static int remove_meta_offset(RCore *core, ut64 offset) {

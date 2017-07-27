@@ -85,11 +85,11 @@ static const char *help_msg_fz[] = {
 	" fz*", "", "dump into r2 commands, for projects",
 };
 
-static void cmd_flag_init(void) {
-	DEFINE_CMD_DESCRIPTOR (f);
-	DEFINE_CMD_DESCRIPTOR (fc);
-	DEFINE_CMD_DESCRIPTOR (fs);
-	DEFINE_CMD_DESCRIPTOR (fz);
+static void cmd_flag_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, f);
+	DEFINE_CMD_DESCRIPTOR (core, fc);
+	DEFINE_CMD_DESCRIPTOR (core, fs);
+	DEFINE_CMD_DESCRIPTOR (core, fz);
 }
 
 static void cmd_fz(RCore *core, const char *input) {

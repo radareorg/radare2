@@ -32,9 +32,9 @@ static const char *help_msg_T[] = {
 };
 
 // TODO #7967 help refactor: move L to another place
-static void cmd_log_init(void) {
-	DEFINE_CMD_DESCRIPTOR (L);
-	DEFINE_CMD_DESCRIPTOR (T);
+static void cmd_log_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, L);
+	DEFINE_CMD_DESCRIPTOR (core, T);
 }
 
 static int textlog_chat(RCore *core) {

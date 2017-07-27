@@ -81,6 +81,7 @@ typedef struct r_cmd_descriptor_t {
 	const char *name;
 	const char **help_msg;
 	const char **help_detail;
+	const char **help_detail2;
 	struct r_cmd_descriptor_t *sub[127];
 } RCmdDescriptor;
 

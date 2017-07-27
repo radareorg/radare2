@@ -20,8 +20,8 @@ static const char *help_msg_m[] = {
 	NULL
 };
 
-static void cmd_mount_init(void) {
-	DEFINE_CMD_DESCRIPTOR (m);
+static void cmd_mount_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, m);
 }
 
 static int cmd_mkdir(void *data, const char *input) {
