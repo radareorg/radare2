@@ -968,9 +968,10 @@ typedef struct r_anal_reil {
 #define ESIL struct r_anal_esil_t
 
 typedef struct r_anal_esil_session_t {
+	ut64 key;
 	ut64 addr;
 	ut64 size;
-	ut8 *data;	
+	ut8 *data;
 	RListIter *reg[R_REG_TYPE_LAST];
 } RAnalEsilSession;
 

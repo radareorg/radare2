@@ -2864,15 +2864,15 @@ out_return_zero:
 R_API int r_core_esil_step_back(RCore *core) {
 	RAnalEsil *esil = core->anal->esil;
 	RListIter *tail;
-	RAnalEsilSession *before;
-	ut64 pc, end, prev = 0;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	ut64 prev = 0;
+	ut64 end = r_reg_getv (core->anal->reg, name);
+
 	if (!esil || !(tail = r_list_tail (esil->sessions))) {
 		return 0;
 	}
+	RAnalEsilSession *before = (RAnalEsilSession *) tail->data;
 
-	before = (RAnalEsilSession *) tail->data;
-	end = r_reg_getv (core->anal->reg, name);
 	//eprintf ("Execute until 0x%08"PFMT64x"\n", end);
 
 	r_anal_esil_session_set (esil, before);
@@ -3724,15 +3724,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		case 's': // "aets"
 			switch (input[2]) {
-				case 0:
-					r_anal_esil_session_list (esil);
-					break;
-				case '+':
-					r_anal_esil_session_add (esil);
-					break;
-				default:
-					r_core_cmd_help (core, help_msg_aets);
-					break;
+			case 0:
+				r_anal_esil_session_list (esil);
+				break;
+			case '+':
+				r_anal_esil_session_add (esil);
+				break;
+			default:
+				r_core_cmd_help (core, help_msg_aets);
+				break;
 			}
 			break;
 		default:
