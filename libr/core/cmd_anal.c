@@ -6,8 +6,6 @@
 /* hacky inclusion */
 #include "anal_vt.c"
 
-#define ESIL_STACK_NAME "esil.ram"
-
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
@@ -92,7 +90,9 @@ static const char *help_msg_ae[] = {
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
+	"aets", "[?]", "ESIL Trace session",
 	"aes", "", "perform emulated debugger step",
+	"aesb", "", "step back",
 	"aeso", " ", "step over",
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
@@ -178,6 +178,13 @@ static const char *help_msg_aep[] = {
 	"aep", "-[addr]", "remove pin",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep", "", "list pins",
+	NULL
+};
+
+static const char *help_msg_aets[] = {
+	"Usage:", "aets ", " [...]",
+	"aets", "", "List all ESIL trace sessions",
+	"aets+", "", "Add ESIL trace session",
 	NULL
 };
 
@@ -2851,6 +2858,10 @@ out_return_zero:
 	return 0;
 }
 
+R_API int r_core_esil_step_back(RCore *core) {
+	return 1;
+}
+
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	ut64 addr, type;
 	if (!addrstr || !*addrstr) {
@@ -2965,6 +2976,7 @@ static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
 }
 
 static void cmd_esil_mem(RCore *core, const char *input) {
+	RAnalEsil *esil = core->anal->esil;
 	ut64 curoff = core->offset;
 	const char *patt = "";
 	ut64 addr = 0x100000;
@@ -2991,6 +3003,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		} else {
 			cmd_esil_mem (core, "");
 		}
+		esil->stack_addr = addr;
+		esil->stack_size = size;
 		initialize_stack (core, addr, size);
 		return;
 	}
@@ -3087,6 +3101,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
 			ESIL_STACK_NAME, addr, addr, size, size);
 	}
+	esil->stack_addr = addr;
+	esil->stack_size = size;
 	initialize_stack (core, addr, size);
 //	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
 	r_core_seek (core, curoff, 0);
@@ -3463,6 +3479,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 's':
 		// "aes" "aeso" "aesu" "aesue"
 		// aes -> single step
+		// aesb -> single step back
 		// aeso -> single step over
 		// aesu -> until address
 		// aesue -> until esil expression
@@ -3483,6 +3500,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
 		} break;
+		case 'b': // "aesb"
+			r_core_esil_step_back (core);
+			r_core_cmd0 (core, ".ar*");
+			break;
 		case 'u': // "aesu"
 			if (input[2] == 'e') {
 				until_expr = input + 3;
@@ -3676,6 +3697,19 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_free (esil);
 			break;
 		}
+		case 's': // "aets"
+			switch (input[2]) {
+				case 0:
+					r_anal_esil_session_list (esil);
+					break;
+				case '+':
+					r_anal_esil_session_add (esil);
+					break;
+				default:
+					r_core_cmd_help (core, help_msg_aets);
+					break;
+			}
+			break;
 		default:
 			eprintf ("Unknown command. Use `aetr`.\n");
 			break;

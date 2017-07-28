@@ -89,6 +89,7 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 	esil->ops = sdb_new0 ();
 	esil->iotrap = iotrap;
 	esil->interrupts = sdb_new0 ();
+	esil->sessions = r_list_newf (r_anal_esil_session_free);
 	return esil;
 }
 
@@ -204,6 +205,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
 		esil->anal->cur->esil_fini (esil);
 	}
+	r_list_free (esil->sessions);
 	free (esil->cmd_intr);
 	free (esil->cmd_trap);
 	free (esil->cmd_mdev);
