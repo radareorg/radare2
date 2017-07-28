@@ -3426,7 +3426,12 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			if (!(*val & 1)) {
 				r_anal_hint_set_bits (anal, *val, 32);
 			} else {
-				r_anal_hint_set_bits (anal, *val - 1, 16);
+				ut64 snv = r_reg_getv (anal->reg, "pc");
+				if (snv != UT32_MAX && snv != UT64_MAX) {
+					if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
+						r_anal_hint_set_bits (anal, *val - 1, 16);
+					}
+				}
 			}
 		}
 			break;
