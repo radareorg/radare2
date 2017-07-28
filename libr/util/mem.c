@@ -86,17 +86,6 @@ static char readbit(const ut8 *src, int bitoffset) {
 	return (src[wholeBytes] >> remainingBits) & 1;
 }
 
-#if 0
-static void writebit(ut8 *dst, int bitoffset, bool val) {
-	const int wholeBytes = bitoffset / 8;
-	const int remainingBits = bitoffset % 8;
-	if (val) {
-		SET_BIT (dst[wholeBytes], remainingBits);
-	} else {
-		CLR_BIT(dst[wholeBytes], remainingBits);
-	}
-}
-#endif
 static void writebit (ut8 *dst, int i, bool c) {
 	int byte = i / 8;
 	int bit = i % 8;
@@ -109,47 +98,10 @@ static void writebit (ut8 *dst, int i, bool c) {
 
 // TODO: this method is ugly as shit.
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
-	int i = 0;
-	int j = 0;
-#if 0
-	int dofb, sofb;
-	int bdoff = (doff / 8);
-	int bsoff = (soff / 8);
-	int nbits = 0;
-	ut8 mask;
-	int sdelta = soff - doff;
-	/* apply delta offsets */
-	src = src + bsoff;
-	dst = dst + bdoff;
-	dofb = doff % 8;
-	sofb = soff % 8;
-	if (sofb || dofb) {
-		// TODO : this algorithm is not implemented
-		int mask = (1 << sofb);
-		int nmask = 0xff ^ mask;
-		int s = src[0] << sofb;
-		int d = dst[0] << dofb;
-		if (soff == doff && bits == 1) {
-			mask = 0xff ^ (1 << dofb);
-			dst[0] = ((src[0] & mask) | (dst[0] & mask));
-		} else {
-			printf ("TODO: Oops. not supported method of bitcopy\n");
-		}
-/*
-        1) shift algin src i dst
-        2) copy (8-dofb) bits from dst to src
-        3) dst[0] = dst[0]&^(0x1<<nbits) | (src&(1<<nbits))
- */
-		src++;
-		dst++;
+	int i;
+	if (doff < 0 || soff < 0 || !dst || !src) {
+		return;
 	}
-/*
-   doff  v
-   dst |__________|___________|
-   soff     v
-   src |__________|_________|
- */
-#endif
 	for (i = 0; i < bits; ++i) {
 		ut8 c = readbit (src, i + soff);
 		writebit (&dst[0], i + doff, c);

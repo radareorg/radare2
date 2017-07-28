@@ -368,6 +368,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	ret = op->payload = 0;
 	op->size = 4;
+	op->bitsize = 0;
 	if (len < 1) {
 		return 0;
 	}
@@ -399,7 +400,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (ret < 0) {
 		ret = 0;
 	}
-// 	oplen = r_asm_op_get_size (op);
+	oplen = r_asm_op_get_size (op);
 	if (op->bitsize > 0) {
 		oplen = op->size = op->bitsize / 8;
 		a->bitshift += op->bitsize % 8;
