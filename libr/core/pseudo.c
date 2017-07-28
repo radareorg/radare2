@@ -221,8 +221,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #define SET_INDENT(x) { memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
 		if (!bb) break;
 		r_cons_push ();
+		bool html = r_config_get_i (core->config, "scr.html");
+		r_config_set_i (core->config, "scr.html", 0);
 		char *code = r_core_cmd_str (core, sdb_fmt (0, "pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
+		r_config_set_i (core->config, "scr.html", html);
 		memset (indentstr, ' ', indent * I_TAB);
 		indentstr [(indent * I_TAB) - 2] = 0;
 		code = r_str_prefix_all (code, indentstr);
