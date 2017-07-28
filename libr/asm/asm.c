@@ -363,7 +363,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int oplen, ret;
-	if (!a || !buf) { //  || !op || !buf) {
+	if (!a || !buf || !op) {
 		return -1;
 	}
 	ret = op->payload = 0;
@@ -386,13 +386,31 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->cur && a->cur->disassemble) {
-		ret = a->cur->disassemble (a, op, buf, len);
+		// shift buf N bits
+		if (a->bitshift > 0) {
+			ut8 *tmp = calloc (len, 1);
+			r_mem_copybits_delta (tmp, 0, buf, a->bitshift, (len * 8) - a->bitshift);
+			ret = a->cur->disassemble (a, op, tmp, len);
+			free (tmp);
+		} else {
+			ret = a->cur->disassemble (a, op, buf, len);
+		}
 	}
 	if (ret < 0) {
 		ret = 0;
 	}
-	oplen = r_asm_op_get_size (op);
-	oplen = op->size;
+// 	oplen = r_asm_op_get_size (op);
+	if (op->bitsize > 0) {
+		oplen = op->size = op->bitsize / 8;
+		a->bitshift += op->bitsize % 8;
+		int count = a->bitshift / 8;
+		if (count > 0) {
+			oplen = op->size = op->size + count;
+			a->bitshift %= 8;
+		}
+	} else {
+		oplen = op->size;
+	}
 	if (oplen > len) {
 		oplen = len;
 	}
