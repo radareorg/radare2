@@ -4,6 +4,7 @@ include global.mk
 PREVIOUS_RELEASE=1.5.0
 
 MESON?=meson
+PYTHON?=python
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
@@ -405,7 +406,10 @@ meson-config meson-cfg meson-conf:
 	echo TODO
 
 meson: build
+	@echo "[ SDB Build ]"
+	$(PYTHON) sys/meson_sdb.py
 	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
+	@echo "[ Ninja Build ]"
 	ninja -C build
 
 meson-install:
