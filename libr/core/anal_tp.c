@@ -212,7 +212,7 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 		const char *esil = sdb_fmt (-1, "%d,%s,-=", offset, sp);
 		r_anal_esil_parse (core->anal->esil, esil);
 		r_anal_esil_stack_free (core->anal->esil);
-		r_core_esil_step (core, UT64_MAX, NULL);
+		r_core_esil_step (core, UT64_MAX, NULL, NULL);
 		ret = op->size;
 	}
 	r_anal_op_free (op);
@@ -265,7 +265,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				r_anal_esil_set_pc (core->anal->esil, addr);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL);
+				r_core_esil_step (core, UT64_MAX, NULL, NULL);
 				r_anal_op_free (op);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_reg_getv (core->anal->reg, pc);
