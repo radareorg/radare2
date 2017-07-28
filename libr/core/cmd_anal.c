@@ -2198,12 +2198,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'F': // "afF"
 		{
-		RAnalFunction *fcn;
-		int val = input[2] && r_num_math (core->num, input + 2);
-		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-		if (fcn) {
-			fcn->folded = input[2]? val: !fcn->folded;
-		}
+			int val = input[2] && r_num_math (core->num, input + 2);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+			if (fcn) {
+				fcn->folded = input[2]? val: !fcn->folded;
+			}
 		}
 		break;
 	case '?':
@@ -2312,7 +2311,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 	RReg *hack = core->dbg->reg;
 	int bits = (size > 0)? size: core->anal->bits;
-	;
 	const char *use_color;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	if (use_colors) {
@@ -2572,8 +2570,16 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
-	case '=': // "dr="
-		__anal_reg_list (core, type, size, 2);
+	case '=': // "dr=" // "aer="
+		{
+			if (str[1]) {
+				st64 sz = r_num_math (core->num, str + 1);
+				if (sz > 0) {
+					size = sz;
+				}
+			}
+			__anal_reg_list (core, type, size, 2);
+		}
 		break;
 	case '-':
 	case '*':
@@ -3431,7 +3437,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'r':
+	case 'r': // "aer"
 		// 'aer' is an alias for 'ar'
 		cmd_anal_reg (core, input + 1);
 		break;
@@ -3456,7 +3462,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		r_anal_esil_dumpstack (esil);
 		r_anal_esil_stack_free (esil);
 		break;
-	case 's':
+	case 's': // "aes"
 		// "aes" "aeso" "aesu" "aesue"
 		// aes -> single step
 		// aeso -> single step over
@@ -3505,7 +3511,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'c':
+	case 'c': // "aec"
 		if (input[1] == '?') { // "aec?"
 			r_core_cmd_help (core, help_msg_aec);
 		} else if (input[1] == 's') { // "aecs"
@@ -3600,7 +3606,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'k':
+	case 'k': // "aek"
 		switch (input[1]) {
 		case '\0':
 			input = "123*";
@@ -3765,7 +3771,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		free (old_arch);
 		}
 		break;
-	case '?':
+	case '?': // "ae?"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_detail_ae);
 			break;
