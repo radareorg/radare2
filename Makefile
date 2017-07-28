@@ -405,7 +405,10 @@ meson-config meson-cfg meson-conf:
 	echo TODO
 
 meson: build
+	@echo [ SDB Build ]
+	python sys/meson_sdb.py
 	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
+	@echo [ Ninja Build ]
 	ninja -C build
 
 meson-install:
