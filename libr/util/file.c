@@ -873,7 +873,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 
 R_API char *r_file_tmpdir() {
 #if __WINDOWS__
-	TCHAR tmpdir[MAX_PATH];
+	CHAR tmpdir[MAX_PATH];
 	char *path = NULL;
 
 	if (GetTempPath (sizeof (tmpdir), tmpdir) == 0) {
@@ -882,7 +882,7 @@ R_API char *r_file_tmpdir() {
 			path = strdup ("C:\\WINDOWS\\Temp\\");
 		}
 	} else {
-		void (*glpn)(TCHAR *, TCHAR *, size_t) = (void*)r_lib_dl_sym (GetModuleHandle (TEXT ("kernel32.dll")), "GetLongPathNameW");
+		DWORD (WINAPI *glpn)(LPCSTR, LPCSTR, DWORD) = r_lib_dl_sym (GetModuleHandle (TEXT ("kernel32.dll")), "GetLongPathNameA");
 		if (glpn) {
 			// Windows XP sometimes returns short path name
 			glpn (tmpdir, tmpdir, sizeof (tmpdir));
