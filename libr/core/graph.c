@@ -83,7 +83,7 @@ struct layer_t {
 	int position;
 	int height;
 	int width;
-	int vgap;
+	int gap;
 };
 
 struct agraph_refresh_data {
@@ -1504,19 +1504,19 @@ static void remove_dummy_nodes(const RAGraph *g) {
 }
 #endif
 
-static void set_layer_vgap (RAGraph *g) {
-	int vgap = 0;
+static void set_layer_gap (RAGraph *g, int vertical_layout) {
+	int gap = 0;
 	int i = 0, j = 0;
 	RListIter *itn;
 	RGraphNode *ga, *gb;
 	RANode *a, *b;
 	const RList *outnodes;
 
-	g->layers[0].vgap = 0;
+	g->layers[0].gap = 0;
 	for (i = 0; i < g->n_layers; i++) {
-		vgap = 0;
+		gap = 0;
 		if (i + 1 < g->n_layers) {
-			g->layers[i+1].vgap = vgap;
+			g->layers[i+1].gap = gap;
 		}
 		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			ga = g->layers[i].nodes[j];
@@ -1527,18 +1527,29 @@ static void set_layer_vgap (RAGraph *g) {
 				continue;
 			}
 			graph_foreach_anode (outnodes, itn, gb, b) {
-				if (b->x != a->x || b->layer <= a->layer) {
-					vgap += 1;
-					if (b->layer <= a->layer) {
-						g->layers[b->layer].vgap += 1;
+				if (vertical_layout) {
+					if ((b->x != a->x) || b->layer <= a->layer) {
+						gap += 1;
+						if (b->layer <= a->layer) {
+							g->layers[b->layer].gap += 1;
+						}
+					} else if ((!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
+						gap += 1;
 					}
-				} else if ((!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-					vgap += 1;
+				} else {
+					if ((b->y == a->y && b->h != a->h) || b->y != a->y || b->layer <= a->layer) {
+						gap += 1;
+						if (b->layer <= a->layer) {
+							g->layers[b->layer].gap += 1;
+						}
+					} else if ((!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
+						gap += 1;
+					}
 				}
 			}
 		}
 		if (i + 1 < g->n_layers) {
-			g->layers[i+1].vgap += vgap;
+			g->layers[i+1].gap += gap;
 		}
 	}
 }
@@ -1625,9 +1636,14 @@ static void set_layout(RAGraph *g) {
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
 			RANode *a = (RANode *) g->layers[i].nodes[j]->data;
 			if (a->is_dummy) {
-				a->h = g->layers[i].height;
+				if (g->layout == 0) {
+					a->h = g->layers[i].height;
+				} else {
+					a->w = g->layers[i].width;
+				}
 			}
 			a->layer_height = g->layers[i].height;
+			a->layer_width = g->layers[i].width;
 		}
 	}
 
@@ -1665,15 +1681,15 @@ static void set_layout(RAGraph *g) {
 			}
 		}
 
-		set_layer_vgap (g);
+		set_layer_gap (g, 1);
 
 		/* vertical align */
 		for (i = 0; i < g->n_layers; ++i) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->y = 1 + g->layers[0].vgap + 1;
+				n->y = 1 + g->layers[0].gap + 1;
 				for (k = 1; k <= n->layer; ++k) {
-					n->y += g->layers[k-1].height + g->layers[k].vgap + 3; //XXX: should be 4?
+					n->y += g->layers[k-1].height + g->layers[k].gap + 3; //XXX: should be 4?
 				}
 				if (g->is_tiny) {
 					n->y = n->layer;
@@ -1683,16 +1699,6 @@ static void set_layout(RAGraph *g) {
 		break;
 	/* experimental */
 	case 1: // horizontal layout
-		/* vertical align */
-		for (i = 0; i < g->n_layers; i++) {
-			for (j = 0; j < g->layers[i].n_nodes; j++) {
-				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->x = 1;
-				for (k = 0; k < n->layer; k++) {
-					n->x += g->layers[k].width + HORIZONTAL_NODE_SPACING;
-				}
-			}
-		}
 		/* finalize x coordinate */
 		for (i = 0; i < g->n_layers; i++) {
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
@@ -1702,6 +1708,19 @@ static void set_layout(RAGraph *g) {
 					RANode *m = get_anode (g->layers[i].nodes[k]);
 					n->y += m->h + VERTICAL_NODE_SPACING;
 				}
+			}
+		}
+
+		set_layer_gap (g, 0);
+		/* vertical align */
+		for (i = 0; i < g->n_layers; i++) {
+			int xval = 1 + g->layers[0].gap + 1;
+			for (k = 1; k <= i; k++) {
+				xval += g->layers[k-1].width + g->layers[k].gap + 3;
+			}
+			for (j = 0; j < g->layers[i].n_nodes; j++) {
+				RANode *n = get_anode (g->layers[i].nodes[j]);
+				n->x = xval;
 			}
 		}
 		break;
@@ -2317,7 +2336,6 @@ static int find_ascii_edge(const AEdge *a, const AEdge *b) {
 	return a->from == b->from && a->to == b->to? 0: 1;
 }
 
-//Copying some part of code from agraph_print_edges -- Need to do some fix this part
 static int get_nth (const RAGraph *g, RANode *src, RANode *dst) {
 	RListIter *itn;
 	RGraphNode *gv;
@@ -2391,11 +2409,20 @@ static void agraph_print_edges(RAGraph *g) {
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer == a->layer) {
 				tm = tl;
-				if (tm->minx > a->x) {
-					tm->minx = a->x;
-				}
-				if (tm->maxx < a->x + a->w) {
-					tm->maxx = a->x + a->w;
+				if (g->layout == 0) { //vertical layout
+					if (tm->minx > a->x) {
+						tm->minx = a->x;
+					}
+					if (tm->maxx < a->x + a->w) {
+						tm->maxx = a->x + a->w;
+					}
+				} else {
+					if (tm->minx > a->y) {
+						tm->minx = a->y;
+					}
+					if (tm->maxx < a->y + a->h) {
+						tm->maxx = a->y + a->h;
+					}
 				}
 				break;
 			}
@@ -2406,9 +2433,13 @@ static void agraph_print_edges(RAGraph *g) {
 			tm->layer = a->layer;
 			tm->edgectr = 0;
 			tm->revedgectr = 0;
-			tm->minx = a->x;
-			tm->maxx = a->x + a->w;
-			//r_list_append (lyr, tm); //or r_list_add_sorted depending on performance
+			if (g->layout == 0) { //vertical layout
+				tm->minx = a->x;
+				tm->maxx = a->x + a->w;
+			} else {
+				tm->minx = a->y;
+				tm->maxx = a->y + a->h;
+			}
 			r_list_add_sorted (lyr, tm, tmplayercmp);
 		}
 
@@ -2437,7 +2468,6 @@ static void agraph_print_edges(RAGraph *g) {
 				style.color = LINE_NONE;
 				break;
 			}
-			style.symbol = a->is_dummy ? LINE_NOSYM : style.color;
 
 			xinc = 4 + 2 * (nth + 1);
 
@@ -2453,8 +2483,8 @@ static void agraph_print_edges(RAGraph *g) {
 			switch (g->layout) {
 			case 0:
 			default:
-				it = r_list_find (g->edges, &e, (RListComparator) find_ascii_edge);
-				/*if (it) {
+				style.symbol = a->is_dummy ? LINE_NOSYM_VERT : style.color;
+				if (it) { // This might cause overlapping. Used previous code.
 					int k, len;
 
 					edg = r_list_iter_get_data (it);
@@ -2476,15 +2506,19 @@ static void agraph_print_edges(RAGraph *g) {
 						style.symbol = LINE_NONE;
 						is_first = false;
 					}
-				}*/
+				}
 
+				if (!a->is_dummy && is_first && nth == 0 && bx > ax) {
+					xinc += 4;
+					ax += 4;
+				}
 				if (a->h < a->layer_height) {
 					r_cons_canvas_line (g->can, ax, ay, ax, ay + a->layer_height - a->h, &style);
 					ay = a->y + a->layer_height;
-					style.symbol = LINE_NOSYM;
+					style.symbol = LINE_NOSYM_VERT;
 				}
 				if (by >= ay) {
-					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, tm->edgectr);
+					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, tm->edgectr, true);
 				} else {
 					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
 					tmp->ax = ax;
@@ -2498,21 +2532,24 @@ static void agraph_print_edges(RAGraph *g) {
 					r_list_append (bckedges, tmp);
 				}
 				if (b->is_dummy) {
-					style.symbol = LINE_NOSYM;
+					style.symbol = LINE_NOSYM_VERT;
 					r_cons_canvas_line (g->can, bx, by, bx, b->y + b->h, &style);
+				}
+				if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
+					tm->edgectr += 1;
 				}
 				break;
 			case 1:
-				//TODO -- using previous code -- fix it
+				style.symbol = a->is_dummy ? LINE_NOSYM_HORIZ : style.color;
 				ax = a->x + a->w;
-				ay = a->y + (a->h / 2) + nth;
-				if (it) {
+				ay = a->is_dummy ? a->y : a->y + (a->h / 2) + nth;
+				if (it) { //Used previous code. Might overlap
 					int i, len;
 					edg = r_list_iter_get_data (it);
 					len = r_list_length (edg->x);
 
 					for (i = 0; i < len; i++) {
-						// r_cons_canvas_line (g->can, x, y, x2, y2, &style);
+						//r_cons_canvas_line (g->can, ax, ay, bx, b2, &style);
 						ax = a->x + a->w;
 						ay = a->y + (a->h / 2);
 						style.symbol = LINE_NONE;
@@ -2520,14 +2557,37 @@ static void agraph_print_edges(RAGraph *g) {
 					}
 				}
 				bx = b->x - 1;
-				by = b->y + (b->h / 2);
-				r_cons_canvas_line (g->can, ax, ay, bx, by, &style);
+				by = b->is_dummy ? b->y : b->y + (b->h / 2) + nth;
+				//r_cons_canvas_line (g->can, ax, ay, bx, by, &style);
+				if (a->w < a->layer_width) {
+					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
+					ax = a->x + a->layer_width;
+					style.symbol = LINE_NOSYM_HORIZ;
+				}
+				if (bx >= ax) {
+					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, tm->edgectr, false);
+				} else {
+					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
+					tmp->ax = ax;
+					tmp->bx = bx;
+					tmp->ay = ay;
+					tmp->by = by;
+					tmp->edgectr = tm->edgectr;
+					tmp->fromlayer = a->layer;
+					tmp->tolayer = b->layer;
+					tmp->style = style;
+					r_list_append (bckedges, tmp);
+				}
+				if (b->is_dummy) {
+					style.symbol = LINE_NOSYM_HORIZ;
+					r_cons_canvas_line_square_defined (g->can, bx, by, bx + b->layer_width, by, &style, 0, false);
+				}
+				if ((b->y == a->y && b->h != a->h) || b->y != a->y || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
+					tm->edgectr += 1;
+				}
 				break;
 			}
 
-			if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-				tm->edgectr += 1;
-			}
 		}
 	}
 
@@ -2560,9 +2620,59 @@ static void agraph_print_edges(RAGraph *g) {
 			rightlen = (maxx - temp->ax) + (maxx - temp->bx);
 			tt->revedgectr += 1;
 			if (rightlen < leftlen) {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr);
+				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr, 1);
 			} else {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr);
+				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr, 1);
+			}
+
+			r_list_foreach (lyr, ito, tl) {
+				if (tl->layer < temp->tolayer) {
+					continue;
+				}
+
+				if (rightlen < leftlen) {
+					tl->maxx = maxx + 1;
+				} else {
+					tl->minx = minx - 1;
+				}
+
+				if (tl->layer >= temp->fromlayer) {
+					break;
+				}
+			}
+		}
+	} else {
+		struct tmpbackedgeinfo *temp;
+		r_list_foreach (bckedges, itm, temp) {
+			int leftlen, rightlen;
+			int minx, maxx;
+			struct tmplayer *tt;
+			tl = r_list_get_n (lyr, temp->fromlayer);
+			tm = r_list_get_n (lyr, temp->tolayer);
+
+			r_list_foreach (lyr, ito, tl) {
+				if (tl->layer <= temp->tolayer) {
+					tt = tl;
+					minx = tl->minx;
+					maxx = tl->maxx;
+					continue;
+				}
+
+				minx = minx < tl->minx ? minx : tl->minx;
+				maxx = maxx > tl->maxx ? maxx : tl->maxx;
+
+				if (tl->layer >= temp->fromlayer) {
+					break;
+				}
+			}
+
+			leftlen = (temp->ay - minx) + (temp->by - minx);
+			rightlen = (maxx - temp->ay) + (maxx - temp->by);
+			tt->revedgectr += 1;
+			if (rightlen < leftlen) {
+				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr, 0);
+			} else {
+				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr, 0);
 			}
 
 			r_list_foreach (lyr, ito, tl) {
@@ -2815,7 +2925,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 
 	if (is_interactive) {
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
-		r_cons_strcat (Color_RESET);
+		if (is_interactive) {
+			r_cons_strcat (Color_RESET);
+		}
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 0);
 			r_cons_fill_line ();
