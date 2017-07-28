@@ -931,13 +931,33 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	char *name = dex_method_name (bin, method_idx);
-	char *class_name = strdup (dex_class_name_byid (bin, cid));
-	r_str_replace_char (class_name, ';', 0);
-	char *signature = dex_method_signature (bin, method_idx);
-	char *flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
-	free (class_name);
-	free (signature);
+	const char *name = dex_method_name (bin, method_idx);
+	if (!name) {
+		return NULL;
+	}
+	const char *className = dex_class_name_byid (bin, cid);
+	char *flagname = NULL;
+	if (className) {
+		char *class_name = strdup (className);
+		r_str_replace_char (class_name, ';', 0);
+		char *signature = dex_method_signature (bin, method_idx);
+		if (signature) {
+			flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
+			free (signature);
+		} else {
+			flagname = r_str_newf ("%s.%s%s", class_name, name, "???");
+		}
+		free (class_name);
+	} else {
+		char *signature = dex_method_signature (bin, method_idx);
+		if (signature) {
+			flagname = r_str_newf ("%s.%s%s", "???", name, signature);
+			free (signature);
+		} else {
+			flagname = r_str_newf ("%s.%s%s", "???", name, "???");
+			free (signature);
+		}
+	}
 	return flagname;
 }
 
