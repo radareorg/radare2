@@ -404,6 +404,11 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 		bool rc = r_sys_arch_match (dbg->h->arch, arch);
 		if (rc) {
 			switch (bits) {
+			case 27:
+				if (dbg->h->bits == 27) {
+					dbg->bits = 27;
+				}
+				break;
 			case 32:
 				if (dbg->h->bits & R_SYS_BITS_32) {
 					dbg->bits = R_SYS_BITS_32;
@@ -443,8 +448,9 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	ut8 *backup, *orig = NULL;
 	RRegItem *ri, *risp, *ripc;
 	ut64 rsp, rpc, ra0 = 0LL;
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return false;
+	}
 	ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 	if (ripc) {
