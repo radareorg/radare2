@@ -2567,7 +2567,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
-		if (exports_sz < 0 || exports_sz > bin->size) {
+		// we cant exit with export_sz > bin->size, us r_bin_pe_export_t is 256+256+8+8+8+4 bytes is easy get over file size
+		// to avoid fuzzing we can abort on export_directory->NumberOfFunctions>0xffff
+		if (exports_sz < 0 || bin->export_directory->NumberOfFunctions + 1 > 0xffff) {
 			return NULL;
 		}
 		if (!(exports = malloc (exports_sz))) {
