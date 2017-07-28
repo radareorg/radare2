@@ -13,6 +13,7 @@ static const char *help_msg_s[] = {
 	"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
 	"s", " addr", "Seek to address",
 	"s-", "", "Undo seek",
+	"s-*", "", "Reset undo seek history",
 	"s-", " n", "Seek n bytes backward",
 	"s--", "", "Seek blocksize bytes backward",
 	"s+", "", "Redo seek",
@@ -513,13 +514,17 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '-': // "s-"
 		if (input[1] != '\0') {
-			int delta = (input[1] == '-')? -core->blocksize: -off;
-			if (!silent) {
-				r_io_sundo_push (core->io, core->offset,
-					r_print_get_cursor (core->print));
+			if (input[1] == '*') {
+				r_io_sundo_reset (core->io);
+			} else {
+				int delta = (input[1] == '-')? -core->blocksize: -off;
+				if (!silent) {
+					r_io_sundo_push (core->io, core->offset,
+						r_print_get_cursor (core->print));
+				}
+				r_core_seek_delta (core, delta);
+				r_core_block_read (core);
 			}
-			r_core_seek_delta (core, delta);
-			r_core_block_read (core);
 		} else {
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			if (undo) {
