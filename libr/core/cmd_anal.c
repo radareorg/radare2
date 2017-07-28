@@ -5454,13 +5454,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
 					r_core_anal_autoname_all_fcns (core);
+					rowlog_done (core);
 				}
 				if (input[1] == 'a') { // "aaaa"
 					rowlog (core, "Type matching analysis for all functions (afta)");
 					r_core_cmd0 (core, "afta");
 					rowlog_done (core);
 				}
-				rowlog_done (core);
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
 					r_core_cmdf (core, "dL %s;dpa", dh_orig);
