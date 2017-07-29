@@ -121,4 +121,10 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid);
  */
 char* gdbr_exec_file_read(libgdbr_t *g, int pid);
 
+/*!
+ * Get offset of lowest segment returned by 'qOffsets'
+ */
+ut64 gdbr_get_baddr(libgdbr_t *g);
+
+
 #endif  // CLIENT_COMMANDS_H

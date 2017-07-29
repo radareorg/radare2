@@ -497,7 +497,9 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 		return -1;
 	}
 	while (1) {
-		read_packet (g);
+		if (read_packet (g) < 0) {
+			continue;
+		}
 		if (g->data_len == 0) {
 			continue;
 		}
