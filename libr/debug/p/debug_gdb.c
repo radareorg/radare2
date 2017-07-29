@@ -96,6 +96,23 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		return NULL;
 	}
 	RList *retlist = NULL;
+	if (desc->get_baddr) {
+		desc->get_baddr = false;
+		ut64 baddr;
+		if ((baddr = gdbr_get_baddr (desc)) != UINT64_MAX) {
+			if (!(retlist = r_list_new ())) {
+				return NULL;
+			}
+			RDebugMap *map;
+			if (!(map = r_debug_map_new ("", baddr, baddr,
+						     R_IO_READ | R_IO_EXEC, 0))) {
+				r_list_free (retlist);
+				return NULL;
+			}
+			r_list_append (retlist, map);
+			return retlist;
+		}
+	}
 
 	// Get file from GDB
 	char path[128];
@@ -154,7 +171,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n", __func__, path, buf);
+			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n",
+				 __func__, path, buf);
 			gdbr_close_file (desc);
 			free (buf);
 			r_list_free (retlist);

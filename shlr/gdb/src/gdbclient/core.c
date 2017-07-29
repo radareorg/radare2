@@ -118,7 +118,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	read_packet (g);
+	//read_packet (g);
 	g->connected = 1;
 	// TODO add config possibility here
 	ret = send_msg (g, message);
@@ -1238,4 +1238,75 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 	}
 	return list;
+}
+
+ut64 gdbr_get_baddr(libgdbr_t *g) {
+	if (!g || send_msg (g, "qOffsets") < 0 || read_packet (g) < 0
+	    || send_ack (g) < 0 || g->data_len == 0) {
+		return UINT64_MAX;
+	}
+	ut64 off, min = UINT64_MAX;
+	char *ptr;
+	if (r_str_startswith (g->data, "TextSeg=")) {
+		ptr = g->data + strlen ("TextSeg=");
+		if (!isxdigit (*ptr)) {
+			return min;
+		}
+		off = strtoull (ptr, NULL, 16);
+		if (off < min) {
+			min = off;
+		}
+		if (!(ptr = strchr (ptr, ';'))) {
+			return min;
+		}
+		ptr++;
+		if (*ptr && r_str_startswith (ptr, "DataSeg=")) {
+			ptr += strlen ("DataSeg=");
+			if (!isxdigit (*ptr)) {
+				return min;
+			}
+			off = strtoull (ptr, NULL, 16);
+			if (off < min) {
+				min = off;
+			}
+		}
+		return min;
+	}
+	if (!r_str_startswith (g->data, "Text=")) {
+		return min;
+	}
+	ptr = g->data + strlen ("Text=");
+	if (!isxdigit (*ptr)) {
+		return min;
+	}
+	off = strtoull (ptr, NULL, 16);
+	if (off < min) {
+		min = off;
+	}
+	if (!(ptr = strchr (ptr, ';')) || !r_str_startswith (ptr + 1, "Data=")) {
+		return UINT64_MAX;
+	}
+	ptr += strlen (";Data=");
+	if (!isxdigit (*ptr)) {
+		return UINT64_MAX;
+	}
+	off = strtoull (ptr, NULL, 16);
+	if (off < min) {
+		min = off;
+	}
+	if (!(ptr = strchr (ptr, ';'))) {
+		return min;
+	}
+	ptr++;
+	if (r_str_startswith (ptr, "Bss=")) {
+		ptr += strlen ("Bss=");
+		if (!isxdigit (*ptr)) {
+			return min;
+		}
+		off = strtoull (ptr, NULL, 16);
+		if (off < min) {
+			min = off;
+		}
+	}
+	return min;
 }

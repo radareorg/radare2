@@ -1489,6 +1489,10 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
+	if (!strcmp (dbg->iob.io->plugin->name, "gdb")) {
+		// Tell gdb that we want baddr, not full mem map
+		dbg->iob.system(dbg->iob.io, "baddr");
+	}
 #if __WINDOWS__
 	typedef struct {
 		int pid;
