@@ -703,6 +703,7 @@ char* r_x509_crlentry_dump (RX509CRLEntry *crle, char* buffer, ut32 length, cons
 				pad, pad, id ? id->string : "Missing",
 				pad, pad, utc ? utc->string : "Missing");
 
+	r_asn1_free_string (id);
 	return r < 0 ? NULL : buffer + (ut32) r;
 }
 

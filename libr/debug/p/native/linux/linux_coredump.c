@@ -143,6 +143,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 
 	proc_per_thread_t *t = R_NEW0 (proc_per_thread_t);
 	if (!t) {
+		free (buff);
 		return NULL;
 	}
 	{

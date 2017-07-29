@@ -1047,6 +1047,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		if (ch==-1 || ch==4) {
+			R_FREE (grep);
 			return false;
 		}
 

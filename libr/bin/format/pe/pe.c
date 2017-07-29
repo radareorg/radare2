@@ -879,7 +879,7 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 		*size = bin->size - largest_offset - largest_size;
 		return largest_offset + largest_size;
 	}
-
+	free (sects);
 	return 0;
 }
 
@@ -1011,6 +1011,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 fail:
 	eprintf ("Warning: read (metadata header)\n");
 	free (metadata);
+	free (streams);
 	return 0;
 }
 
@@ -1523,6 +1524,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		return NULL;
 	}
 	if (begAddr > bin->size || begAddr + sizeof(string->wLength) > bin->size) {
+		free_String (string);
 		return NULL;
 	}
 	if (r_buf_read_at (bin->b, *curAddr, (ut8*) &string->wLength, sizeof(string->wLength)) != sizeof(string->wLength)) {
