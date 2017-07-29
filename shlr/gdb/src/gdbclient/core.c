@@ -75,6 +75,14 @@ static void reg_cache_init(libgdbr_t *g) {
 
 static int gdbr_connect_lldb(libgdbr_t *g) {
 	reg_cache_init (g);
+	// Check if 'g' packet is supported
+	if (send_msg (g, "g") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return -1;
+	}
+	if (g->data_len == 0 || (g->data_len == 3 && g->data[0] == 'E')) {
+		return 0;
+	}
+	g->stub_features.lldb.g = true;
 	return 0;
 }
 
@@ -461,7 +469,8 @@ int gdbr_read_registers(libgdbr_t *g) {
 		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
 		return 0;
 	}
-	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB
+	    && !g->stub_features.lldb.g) {
 		return gdbr_read_registers_lldb (g);
 	}
 	ret = send_msg (g, CMD_READREGS);

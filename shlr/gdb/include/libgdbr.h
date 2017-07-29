@@ -86,6 +86,7 @@ typedef struct libgdbr_stub_features_t {
 	bool BreakpointCommands;
 	// lldb-specific features
 	struct {
+		bool g;
 		bool QThreadSuffixSupported;
 		bool QListThreadsInStopReply;
 		bool qEcho;
