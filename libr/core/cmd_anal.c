@@ -3026,8 +3026,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		} else {
 			cmd_esil_mem (core, "");
 		}
-		esil->stack_addr = addr;
-		esil->stack_size = size;
+		if (esil) {
+			esil->stack_addr = addr;
+			esil->stack_size = size;
+		}
 		initialize_stack (core, addr, size);
 		return;
 	}
@@ -3124,8 +3126,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
 			ESIL_STACK_NAME, addr, addr, size, size);
 	}
-	esil->stack_addr = addr;
-	esil->stack_size = size;
+	if (esil) {
+		esil->stack_addr = addr;
+		esil->stack_size = size;
+	}
 	initialize_stack (core, addr, size);
 //	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
 	r_core_seek (core, curoff, 0);
