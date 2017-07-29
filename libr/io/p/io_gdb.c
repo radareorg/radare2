@@ -281,7 +281,6 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		free (file);
 		return true;
 	}
-
 	// This is internal, not available to user. Sets a flag that next call to
 	// get memmap will be for getting baddr
 	if (!strcmp (cmd, "baddr")) {
