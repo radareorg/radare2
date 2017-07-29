@@ -965,7 +965,16 @@ typedef struct r_anal_reil {
 
 // must be a char
 #define ESIL_INTERNAL_PREFIX '$'
+#define ESIL_STACK_NAME "esil.ram"
 #define ESIL struct r_anal_esil_t
+
+typedef struct r_anal_esil_session_t {
+	ut64 key;
+	ut64 addr;
+	ut64 size;
+	ut8 *data;
+	RListIter *reg[R_REG_TYPE_LAST];
+} RAnalEsilSession;
 
 typedef struct r_anal_esil_callbacks_t {
 	void *user;
@@ -998,6 +1007,8 @@ typedef struct r_anal_esil_t {
 	int verbose;
 	ut64 flags;
 	ut64 address;
+	ut64 stack_addr;
+	ut32 stack_size;
 	int delay; 		// mapped to $ds in ESIL
 	ut64 jump_target; 	// mapped to $jt in ESIL
 	int jump_target_set; 	// mapped to $js in ESIL
@@ -1024,6 +1035,7 @@ typedef struct r_anal_esil_t {
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
+	RList *sessions; // <RAnalEsilSession*>
 } RAnalEsil;
 
 #undef ESIL
@@ -1266,6 +1278,12 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
+
+/* session */
+R_API void r_anal_esil_session_list(RAnalEsil *esil);
+R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil);
+R_API void r_anal_esil_session_set(RAnalEsil *esil, RAnalEsilSession *session);
+R_API void r_anal_esil_session_free(RAnalEsilSession *session);
 
 /* pin */
 R_API void r_anal_pin_init(RAnal *a);

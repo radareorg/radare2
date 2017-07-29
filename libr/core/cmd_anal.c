@@ -6,8 +6,6 @@
 /* hacky inclusion */
 #include "anal_vt.c"
 
-#define ESIL_STACK_NAME "esil.ram"
-
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
@@ -92,7 +90,9 @@ static const char *help_msg_ae[] = {
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
+	"aets", "[?]", "ESIL Trace session",
 	"aes", "", "perform emulated debugger step",
+	"aesb", "", "step back",
 	"aeso", " ", "step over",
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
@@ -178,6 +178,13 @@ static const char *help_msg_aep[] = {
 	"aep", "-[addr]", "remove pin",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep", "", "list pins",
+	NULL
+};
+
+static const char *help_msg_aets[] = {
+	"Usage:", "aets ", " [...]",
+	"aets", "", "List all ESIL trace sessions",
+	"aets+", "", "Add ESIL trace session",
 	NULL
 };
 
@@ -2662,7 +2669,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 
 R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 
-R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
+R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
 	// Stepping
 	int ret;
 	ut8 code[256];
@@ -2713,6 +2720,9 @@ repeat:
 		esil->trap = 0;
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
+	}
+	if (prev_addr) {
+		*prev_addr = addr;
 	}
 	if (esil->exectrap) {
 		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
@@ -2853,6 +2863,30 @@ out_return_zero:
 	return 0;
 }
 
+R_API int r_core_esil_step_back(RCore *core) {
+	RAnalEsil *esil = core->anal->esil;
+	RListIter *tail;
+	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	ut64 prev = 0;
+	ut64 end = r_reg_getv (core->anal->reg, name);
+
+	if (!esil || !(tail = r_list_tail (esil->sessions))) {
+		return 0;
+	}
+	RAnalEsilSession *before = (RAnalEsilSession *) tail->data;
+
+	//eprintf ("Execute until 0x%08"PFMT64x"\n", end);
+
+	r_anal_esil_session_set (esil, before);
+
+	r_core_esil_step (core, end, NULL, &prev);
+	//eprintf ("Before 0x%08"PFMT64x"\n", prev);
+
+	r_anal_esil_session_set (esil, before);
+	r_core_esil_step (core, prev, NULL, NULL);
+	return 1;
+}
+
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	ut64 addr, type;
 	if (!addrstr || !*addrstr) {
@@ -2967,6 +3001,7 @@ static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
 }
 
 static void cmd_esil_mem(RCore *core, const char *input) {
+	RAnalEsil *esil = core->anal->esil;
 	ut64 curoff = core->offset;
 	const char *patt = "";
 	ut64 addr = 0x100000;
@@ -2992,6 +3027,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			size = fi->size;
 		} else {
 			cmd_esil_mem (core, "");
+		}
+		if (esil) {
+			esil->stack_addr = addr;
+			esil->stack_size = size;
 		}
 		initialize_stack (core, addr, size);
 		return;
@@ -3088,6 +3127,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
 			ESIL_STACK_NAME, addr, addr, size, size);
+	}
+	if (esil) {
+		esil->stack_addr = addr;
+		esil->stack_size = size;
 	}
 	initialize_stack (core, addr, size);
 //	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
@@ -3465,6 +3508,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 's': // "aes"
 		// "aes" "aeso" "aesu" "aesue"
 		// aes -> single step
+		// aesb -> single step back
 		// aeso -> single step over
 		// aesu -> until address
 		// aesue -> until esil expression
@@ -3480,18 +3524,24 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!op) {
 				break;
 			}
-			r_core_esil_step (core, UT64_MAX, NULL);
+			r_core_esil_step (core, UT64_MAX, NULL, NULL);
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
 			r_anal_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
 		} break;
+		case 'b': // "aesb"
+			if (!r_core_esil_step_back (core)) {
+				eprintf ("cannnot step back\n");
+			}
+			r_core_cmd0 (core, ".ar*");
+			break;
 		case 'u': // "aesu"
 			if (input[2] == 'e') {
 				until_expr = input + 3;
 			} else {
 				until_addr = r_num_math (core->num, input + 2);
 			}
-			r_core_esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr, NULL);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'o': // "aeso"
@@ -3501,12 +3551,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 				until_addr = op->addr + op->size;
 			}
-			r_core_esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr, NULL);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		default:
-			r_core_esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr, NULL);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		}
@@ -3531,7 +3581,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					eprintf ("trap at 0x%08" PFMT64x "\n", addr);
 					break;
 				}
-				ret = r_core_esil_step (core, UT64_MAX, NULL);
+				ret = r_core_esil_step (core, UT64_MAX, NULL, NULL);
 				r_anal_op_free (op);
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
 					break;
@@ -3556,7 +3606,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			else if (input[1] == 'u')
 				until_addr = r_num_math (core->num, input + 2);
 			else until_expr = "0";
-			r_core_esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr, NULL);
 		}
 		break;
 	case 'i': // "aei"
@@ -3678,6 +3728,19 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_free (esil);
 			break;
 		}
+		case 's': // "aets"
+			switch (input[2]) {
+			case 0:
+				r_anal_esil_session_list (esil);
+				break;
+			case '+':
+				r_anal_esil_session_add (esil);
+				break;
+			default:
+				r_core_cmd_help (core, help_msg_aets);
+				break;
+			}
+			break;
 		default:
 			eprintf ("Unknown command. Use `aetr`.\n");
 			break;
