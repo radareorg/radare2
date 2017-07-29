@@ -241,11 +241,13 @@ static int reil_eq(RAnalEsil *esil) {
 		ins->arg[1] = R_NEW0 (RAnalReilArg);
 		if (!ins->arg[1]) {
 			reil_free_inst (ins);
+			R_FREE (src);
 			return false;
 		}
 		ins->arg[2] = R_NEW0 (RAnalReilArg);
 		if (!ins->arg[2]) {
 			reil_free_inst (ins);
+			R_FREE (src);
 			return false;
 		}
 		reil_make_arg (esil, ins->arg[1], " ");
