@@ -365,7 +365,8 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 				goto out;
 			}
 		}
-		return NULL;
+		result = NULL;
+		goto out;
 	}
 out:
 	free (str);

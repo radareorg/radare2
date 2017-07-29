@@ -198,6 +198,7 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 int file_reset(RMagic *ms) {
 	if (!ms)
 		return 0;
+	free (ms->o.buf);
 	ms->o.buf = NULL;
 	ms->haderr = 0;
 	ms->error = -1;
