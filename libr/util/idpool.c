@@ -75,6 +75,7 @@ R_API RIDStorage* r_id_storage_new(ut32 start_id, ut32 last_id) {
 	if ((start_id < 16) && (pool = r_id_pool_new (start_id, last_id))) {
 		storage = R_NEW0 (RIDStorage);
 		if (!storage) {
+			r_id_pool_free (pool);
 			return NULL;
 		}
 		storage->pool = pool;

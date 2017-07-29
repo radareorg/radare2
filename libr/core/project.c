@@ -304,6 +304,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 		bol = strtok (NULL, "\n");
 	}
 	free (data);
+	free (str);
 }
 
 /*** vvv thready ***/

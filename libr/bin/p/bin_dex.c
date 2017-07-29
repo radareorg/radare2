@@ -438,6 +438,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 				r_list_free (debug_positions);
 				free (params);
 				free (debug_locals);
+				free (emitted_debug_locals);
 				return;
 			}
 			// Emit what was previously there, if anything
@@ -1245,6 +1246,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 		if (*flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
+				R_FREE (flag_name);
 				return NULL;
 			}
 			sym->name = flag_name;

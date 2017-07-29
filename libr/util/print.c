@@ -1062,6 +1062,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 		return;
 	}
 	if (!((b = M (_b, len)))) {
+		free (a);
 		return;
 	}
 	for (i = 0; i < len; i += 16) {

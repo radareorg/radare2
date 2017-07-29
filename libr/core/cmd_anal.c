@@ -4142,6 +4142,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	r_cons_break_push (NULL, NULL);
 	if (!binfile || !r_list_length (ranges)) {
+		r_list_free (ranges);
 		const char *search_in = r_config_get (core->config, "search.in");
 		ranges = r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end);
 		_anal_calls (core, addr, addr_end);
