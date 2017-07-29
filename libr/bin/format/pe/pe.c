@@ -973,11 +973,13 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	while (count < metadata->NumberOfStreams) {
 		stream = R_NEW0 (PE_(image_metadata_stream));
 		if (!stream) {
+			free (streams);
 			goto fail;
 		}
 
 		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*) stream, bin->big_endian? "2I": "2i", 1) < 1) {
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
@@ -985,12 +987,14 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 		if (!stream_name) {
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 
 		if (r_buf_size (bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
 			free (stream_name);
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		int c = bin_pe_read_metadata_string (stream_name,
@@ -998,6 +1002,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		if (c == 0) {
 			free (stream_name);
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		eprintf ("Stream name: %s %d\n", stream_name, c);
@@ -1011,7 +1016,6 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 fail:
 	eprintf ("Warning: read (metadata header)\n");
 	free (metadata);
-	free (streams);
 	return 0;
 }
 
