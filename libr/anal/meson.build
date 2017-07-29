@@ -70,6 +70,7 @@ files=[
 'pin.c',
 'ref.c',
 'reflines.c',
+'session.c',
 'sign.c',
 'state.c',
 'switch.c',
