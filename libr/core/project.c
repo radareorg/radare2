@@ -285,6 +285,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	char *str = r_core_project_notes_file (core, prjfile);
 	char *data = r_file_slurp (str, NULL);
 	if (!data) {
+		free (str);
 		return;
 	}
 	Output out;

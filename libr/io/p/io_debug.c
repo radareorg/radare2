@@ -232,6 +232,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	}
 	rp->_args[i] = NULL;
 	if (!argv[0]) {
+		r_run_free (rp);
 		return NULL;
 	}
 	rp->_program = strdup (argv[0]);
