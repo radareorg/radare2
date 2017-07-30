@@ -3609,6 +3609,7 @@ toro:
 		ds->vat = p2v (ds, ds->at);
 		if (r_cons_is_breaked ()) {
 			dorepeat = 0;
+			R_FREE (nbuf);
 			r_cons_break_pop ();
 			return 0; //break;
 		}

@@ -877,6 +877,7 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 	if ((ut64) bin->size > largest_offset + largest_size) {
 		*size = bin->size - largest_offset - largest_size;
+		free (sects);
 		return largest_offset + largest_size;
 	}
 	free (sects);
