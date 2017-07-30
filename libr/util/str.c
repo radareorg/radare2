@@ -137,10 +137,20 @@ R_API int r_str_replace_char(char *s, int a, int b) {
 	return ret;
 }
 
+R_API void r_str_reverse(char *str) {
+	int i, len = strlen (str);
+	int half = len / 2;
+	for (i = 0; i < half; i++) {
+		char ch = str[i];
+		str[i] = str[len - i - 1];
+		str[len - i - 1] = ch;
+	}
+}
+
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
 // TODO: this functions needs some stabilization
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
-	int i, j;
+	int i, j, idx;
 	if (bitz) {
 		for (i = j = 0; i<len && (!bitz||bitz[i]); i++) {
 			if (i > 0 && (i % 8) == 0) {
@@ -152,13 +162,13 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 		}
 	} else {
 		for (i = j = 0; i < len; i++) {
-			if (i > 0 && (i % 8) == 0) {
-				buf++;
-			}
-			strout[j++] = (*buf & (1 << (7 - (i % 8))))? '1' : '0';
+			idx = (i / 8);
+			int bit = i % 8;
+			strout[j++] = (buf[idx] & (1 << bit))? '1' : '0';
 		}
 	}
 	strout[j] = 0;
+	r_str_reverse (strout);
 	return j;
 }
 
@@ -1812,12 +1822,19 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 	int args_current = 0; // Current character index in  args
 	int arg_begin = 0; // Index of the first character of the current argument in args
 
-	if (!cmdline) {
+	if (!cmdline || argv_len < 1) {
 		return NULL;
 	}
 
 	argv = malloc (argv_len * sizeof (char *));
+	if (!argv) {
+		return NULL;
+	}
 	args = malloc (128 + strlen (cmdline) * sizeof (char)); // Unescaped args will be shorter, so strlen (cmdline) will be enough
+	if (!args) {
+		free (argv);
+		return NULL;
+	}
 	do {
 		// States for parsing args
 		int escaped = 0;
