@@ -168,7 +168,6 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 		}
 	}
 	strout[j] = 0;
-	r_str_reverse (strout);
 	return j;
 }
 
