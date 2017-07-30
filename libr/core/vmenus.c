@@ -3075,7 +3075,10 @@ R_API void r_core_visual_colors(RCore *core) {
 			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (%s)\n",
 			opt, k, color, atoi (cstr+7), cstr+1);
 		r_core_cmdf (core, "ec %s %s", k, color);
-		r_core_cmd0 (core, "pd $r-8");
+		char * res = r_core_cmd_str (core, "pd $r");
+		int h, w = r_cons_get_size (&h);
+		char *body = r_str_ansi_crop (res, 0, 0, w, h - 4);
+		r_cons_printf("%s", body);
 		r_cons_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
