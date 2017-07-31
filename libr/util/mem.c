@@ -79,20 +79,24 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	}
 }
 
-
 static char readbit(const ut8 *src, int bitoffset) {
 	const int wholeBytes = bitoffset / 8;
 	const int remainingBits = bitoffset % 8;
-	return (src[wholeBytes] >> remainingBits) & 1;
+	// return (src[wholeBytes] >> remainingBits) & 1;
+	return (src[wholeBytes] & 1<< remainingBits);
 }
 
 static void writebit (ut8 *dst, int i, bool c) {
 	int byte = i / 8;
-	int bit = i % 8;
+	int bit = (i % 8);
+// eprintf ("Write %d %d = %d\n", byte, bit, c);
+dst += byte;
 	if (c) {
-		R_BIT_SET (dst + byte, bit);
+		//dst[byte] |= (1 << bit);
+		R_BIT_SET (dst , bit);
 	} else {
-		R_BIT_UNSET (dst + byte, bit);
+		//dst[byte] &= (1 << bit);
+		R_BIT_UNSET (dst , bit);
 	}
 }
 
@@ -102,10 +106,10 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	if (doff < 0 || soff < 0 || !dst || !src) {
 		return;
 	}
-	for (i = 0; i < bits; ++i) {
-		ut8 c = readbit (src, i + soff);
-		writebit (&dst[0], i + doff, c);
-		c = readbit (dst, i + doff);
+	for (i = 0; i < bits; i++) {
+		bool c = readbit (src, i + soff);
+// eprintf ("%d %d\n", i, c);
+		writebit (dst, i + doff, c);
 	}
 }
 
