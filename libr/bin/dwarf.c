@@ -820,15 +820,15 @@ static int r_bin_dwarf_init_debug_info(RBinDwarfDebugInfo *inf) {
 }
 
 static int r_bin_dwarf_init_die(RBinDwarfDIE *die) {
-	if (!die) return -EINVAL;
+	if (!die) {
+		return -EINVAL;
+	}
 	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), 8);
-
 	if (!die->attr_values) {
 		return -ENOMEM;
 	}
 	die->capacity = 8;
 	die->length = 0;
-
 	return 0;
 }
 
@@ -840,11 +840,12 @@ static int r_bin_dwarf_expand_die(RBinDwarfDIE* die) {
 	if (die->capacity != die->length) {
 		return -EINVAL;
 	}
-	tmp = (RBinDwarfAttrValue*)realloc(die->attr_values,
-			die->capacity * 2 * sizeof(RBinDwarfAttrValue));
+	tmp = (RBinDwarfAttrValue*)realloc (die->attr_values,
+			die->capacity * 2 * sizeof (RBinDwarfAttrValue));
 	if (!tmp) {
 		return -ENOMEM;
 	}
+	memset ((ut8*)tmp + die->capacity, 0, die->capacity);
 	die->attr_values = tmp;
 	die->capacity *= 2;
 	return 0;
@@ -872,11 +873,11 @@ static int r_bin_dwarf_expand_cu(RBinDwarfCompUnit *cu) {
 
 	tmp = (RBinDwarfDIE*)realloc(cu->dies,
 			cu->capacity * 2 * sizeof(RBinDwarfDIE));
-
 	if (!tmp) {
 		return -ENOMEM;
 	}
 
+	memset ((ut8*)tmp + cu->capacity, 0, cu->capacity);
 	cu->dies = tmp;
 	cu->capacity *= 2;
 
@@ -902,7 +903,7 @@ static int r_bin_dwarf_init_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 static int r_bin_dwarf_expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 	RBinDwarfAttrSpec *tmp;
 
-	if (!ad || ad->capacity==0 || ad->capacity != ad->length) {
+	if (!ad || !ad->capacity || ad->capacity != ad->length) {
 		return -EINVAL;
 	}
 
@@ -913,6 +914,7 @@ static int r_bin_dwarf_expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 		return -ENOMEM;
 	}
 
+	memset ((ut8*)tmp + ad->capacity, 0, ad->capacity);
 	ad->specs = tmp;
 	ad->capacity *= 2;
 
@@ -946,6 +948,7 @@ static int r_bin_dwarf_expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	if (!tmp) {
 		return -ENOMEM;
 	}
+	memset ((ut8*)tmp + da->capacity, 0, da->capacity);
 
 	da->decls = tmp;
 	da->capacity *= 2;
@@ -994,7 +997,9 @@ R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 }
 
 static void r_bin_dwarf_free_attr_value(RBinDwarfAttrValue *val) {
-	if (!val) return;
+	if (!val) {
+		return;
+	}
 	switch (val->form) {
 	case DW_FORM_strp:
 	case DW_FORM_string:
@@ -1131,8 +1136,9 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 				fprintf (f, "(Unknown abbrev tag)\n");
 			}
 
-			if (!dies[j].abbrev_code)
+			if (!dies[j].abbrev_code) {
 				continue;
+			}
 			values = dies[j].attr_values;
 
 			for (k = 0; k < dies[j].length; k++) {
@@ -1153,22 +1159,22 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 }
 
 static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
-						RBinDwarfAttrSpec *spec, RBinDwarfAttrValue *value,
-						const RBinDwarfCompUnitHdr *hdr,
-						const ut8 *debug_str, size_t debug_str_len) {
+		RBinDwarfAttrSpec *spec, RBinDwarfAttrValue *value,
+		const RBinDwarfCompUnitHdr *hdr,
+		const ut8 *debug_str, size_t debug_str_len) {
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
-	if (value && spec) {
-		value->form = spec->attr_form;
-		value->name = spec->attr_name;
-		value->encoding.block.data = NULL;
-		value->encoding.str_struct.string = NULL;
-	}
 	if (!spec || !value || !hdr || !obuf || obuf_len < 0) {
 		return NULL;
 	}
+
+	value->form = spec->attr_form;
+	value->name = spec->attr_name;
+	value->encoding.block.data = NULL;
+	value->encoding.str_struct.string = NULL;
+	value->encoding.str_struct.offset = 0;
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:
@@ -1190,7 +1196,6 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			return NULL;
 		}
 		break;
-
 	case DW_FORM_block2:
 		value->encoding.block.length = READ (buf, ut16);
 		if (value->encoding.block.length > 0) {
@@ -1280,6 +1285,9 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = READ (buf, ut8);
 		break;
 	default:
+		eprintf ("Unknown DW_FORM 0x%02x\n", spec->attr_form);
+		value->encoding.data = NULL;
+return NULL;
 		return buf;
 	}
 	return buf;
@@ -1329,14 +1337,15 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
 				break;
 			}
+			memset (&cu->dies[cu->length].attr_values[i], 0, sizeof
+					(cu->dies[cu->length].attr_values[i]));
 			buf = r_bin_dwarf_parse_attr_value (buf, buf_end - buf,
 					&da->decls[abbr_code - 1].specs[i],
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
-				// ut64 comp_dir = (ut64)(size_t)cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
-				// sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
-				sdb_set (s, "DW_AT_comp_dir", cu->dies[cu->length].attr_values[i].encoding.str_struct.string, 0);
+				const char *name = cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
+				sdb_set (s, "DW_AT_comp_dir", name, 0);
 			}
 			cu->dies[cu->length].length++;
 		}
@@ -1351,8 +1360,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 	const ut8 *buf = obuf, *buf_end = obuf + len;
 	size_t curr_unit = 0, k, offset = 0;
 
-	RBinDwarfDebugInfo *inf = NULL, di;
-	inf = &di;
+	RBinDwarfDebugInfo di, *inf = &di;
 
 	if (!da || !s || !obuf) {
 		return false;
@@ -1366,6 +1374,8 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		r_bin_dwarf_init_comp_unit (&inf->comp_units[curr_unit]);
 
 		inf->comp_units[curr_unit].offset = buf - obuf;
+		inf->comp_units[curr_unit].hdr.pointer_size = 0;
+		inf->comp_units[curr_unit].hdr.abbrev_offset = 0;
 		inf->comp_units[curr_unit].hdr.length = READ (buf, ut32);
 		inf->comp_units[curr_unit].hdr.version = READ (buf, ut16);
 
@@ -1395,7 +1405,8 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 			}
 		}
 
-		buf = r_bin_dwarf_parse_comp_unit(s, buf, &inf->comp_units[curr_unit], da, offset, debug_str, debug_str_len);
+		buf = r_bin_dwarf_parse_comp_unit (s, buf, &inf->comp_units[curr_unit],
+			da, offset, debug_str, debug_str_len);
 
 		if (!buf) {
 			r_bin_dwarf_free_debug_info (inf);
@@ -1420,57 +1431,53 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 	ut8 has_children;
 	RBinDwarfAbbrevDecl *tmpdecl;
 
-	RBinDwarfDebugAbbrev *da = NULL;
 	// XXX - Set a suitable value here.
 	if (!obuf || len < 3) {
-		return da;
+		return NULL;
 	}
-
-	da = R_NEW0(RBinDwarfDebugAbbrev);
+	RBinDwarfDebugAbbrev *da = R_NEW0 (RBinDwarfDebugAbbrev);
 
 	r_bin_dwarf_init_debug_abbrev (da);
 
 	while (buf && buf+1 < buf_end) {
 		offset = buf - obuf;
 		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
-		if (!buf || !tmp)
+		if (!buf || !tmp) {
 			continue;
-
-		if (da->length == da->capacity)
+		}
+		if (da->length == da->capacity) {
 			r_bin_dwarf_expand_debug_abbrev(da);
-
+		}
 		tmpdecl = &da->decls[da->length];
-
-		r_bin_dwarf_init_abbrev_decl(tmpdecl);
+		r_bin_dwarf_init_abbrev_decl (tmpdecl);
 
 		tmpdecl->code = tmp;
 		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
 		tmpdecl->tag = tmp;
 
 		tmpdecl->offset = offset;
-		if (buf>=buf_end)
+		if (buf >= buf_end) {
 			break;
+		}
 		has_children = READ (buf, ut8);
 		tmpdecl->has_children = has_children;
 		do {
-			if (tmpdecl->length == tmpdecl->capacity)
-				r_bin_dwarf_expand_abbrev_decl(tmpdecl);
-
-			buf = r_uleb128 (buf, (size_t)(buf_end-buf), &spec1);
-			buf = r_uleb128 (buf, (size_t)(buf_end-buf), &spec2);
-
+			if (tmpdecl->length == tmpdecl->capacity) {
+				r_bin_dwarf_expand_abbrev_decl (tmpdecl);
+			}
+			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &spec1);
+			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &spec2);
 			tmpdecl->specs[tmpdecl->length].attr_name = spec1;
 			tmpdecl->specs[tmpdecl->length].attr_form = spec2;
-
 			tmpdecl->length++;
 		} while (spec1 && spec2);
 
 		da->length++;
 	}
 
-	if (mode == R_CORE_BIN_PRINT)
-		dump_r_bin_dwarf_debug_abbrev(stdout, da);
-
+	if (mode == R_CORE_BIN_PRINT) {
+		dump_r_bin_dwarf_debug_abbrev (stdout, da);
+	}
 	return da;
 }
 
