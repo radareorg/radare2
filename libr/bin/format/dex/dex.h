@@ -96,6 +96,7 @@ typedef struct r_bin_dex_obj_t {
 	RList *lines_list;
 	ut64 code_from;
 	ut64 code_to;
+	char *version;
 	Sdb *kv;
 } RBinDexObj;
 
