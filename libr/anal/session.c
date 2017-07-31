@@ -39,7 +39,7 @@ R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
 	session->key = r_reg_getv (esil->anal->reg, name);
 	session->addr = esil->stack_addr;
 	session->size = esil->stack_size;
-	session->data = (ut8 *) R_NEWS0 (ut8 *, session->size);
+	session->data = (ut8 *) R_NEWS0 (ut8, session->size);
 	if (!session->data) {
 		R_FREE (session);
 		return NULL;
