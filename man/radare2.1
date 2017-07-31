@@ -16,7 +16,8 @@
 .Op Fl m Ar addr
 .Op Fl p Ar project
 .Op Fl P Ar patch
-.Op Fl R Ar rarun2
+.Op Fl r Ar rarun2
+.Op Fl R Ar rr2rule
 .Op Fl s Ar addr
 .Op Fl 0AdDwntLquvVX
 .Ar -|--|=|file
@@ -83,8 +84,10 @@ Same as q, but exiting without freeing RCore, this produces leaks at exit time, 
 Set project file
 .It Fl P Ar file
 Apply rapatch file and quit (see doc/rapatch.md for more details)
-.It Fl R Ar rarun2
+.It Fl r Ar rarun2
 Specify dbg.profile rarun2 profile to use when spawning a program for debugging
+.It Fl R Ar rarun2-directive
+Specify custom rarun2 directives without having to create a rarun2 profile
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl S
@@ -103,8 +106,6 @@ Open in write mode
 Show help message
 .It Fl H
 Show files and environment help
-.It Fl X Ar rarun2-directive
-Specify custom rarun2 directives without having to create a rarun2 profile
 .El
 .Sh SHELL
 Type '?' for help

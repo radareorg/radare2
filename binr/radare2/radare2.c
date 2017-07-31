@@ -131,7 +131,8 @@ static int main_help(int line) {
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
-		" -R [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
+		" -r [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
+		" -R [rr2rule] specify custom rarun2 directive\n"
 		" -s [addr]    initial seek\n"
 		" -S           start r2 in sandbox mode\n"
 #if USE_THREADS
@@ -140,7 +141,6 @@ static int main_help(int line) {
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
-		" -X [rr2rule] specify custom rarun2 directive\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
@@ -601,9 +601,12 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "cfg.fortunes", "false");
 			quiet = true;
 			break;
-		case 'R':
+		case 'r':
 			haveRarunProfile = true;
 			r_config_set (r.config, "dbg.profile", optarg);
+			break;
+		case 'R':
+			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", optarg);
 			break;
 		case 's':
 			s_seek = optarg;
@@ -630,9 +633,6 @@ int main(int argc, char **argv, char **envp) {
 			return verify_version (1);
 		case 'w':
 			perms = R_IO_READ | R_IO_WRITE;
-			break;
-		case 'X':
-			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", optarg);
 			break;
 		default:
 			help++;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <r_egg.h>
 
@@ -311,7 +311,7 @@ static void rcc_internal_mathop(REgg *egg, char *ptr, char *ep, char op) {
 	}
 	R_FREE (oldp);
 	R_FREE (ep);
-	R_FREE (p);
+	// R_FREE (p);
 }
 
 /*
