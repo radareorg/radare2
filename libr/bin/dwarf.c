@@ -1285,10 +1285,9 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = READ (buf, ut8);
 		break;
 	default:
-		eprintf ("Unknown DW_FORM 0x%02x\n", spec->attr_form);
+		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
 		value->encoding.data = NULL;
-return NULL;
-		return buf;
+		return NULL;
 	}
 	return buf;
 }
