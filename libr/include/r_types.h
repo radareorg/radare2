@@ -511,6 +511,20 @@ enum {
 #define R_SYS_OS "unknown"
 #endif
 
+#if __GNUC__
+#  define r_sys_trap() __builtin_trap()
+#else
+#  if __i386__ || __x86_64__
+#    define r_sys_trap() __asm__ __volatile__ ("int3")
+#  elif __arm__
+#    define r_sys_trap() __asm__ __volatile__ ("bkpt")
+#  elif __arm64__
+#    define r_sys_trap() __asm__ __volatile__ ("brk #1")
+#  else
+#    define r_sys_trap() __asm__ __volatile__ (".word 0");
+#  endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif
