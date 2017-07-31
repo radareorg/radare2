@@ -532,7 +532,11 @@ static bool parseOperands(char* str, ArmOp *op) {
 			free (t);
 			return true;
 		}
+		if (!x) {
+			break;
+		}
 		token = ++x;
+
 		operand ++;
 		if (operand > MAX_OPERANDS) {
 			free (t);
