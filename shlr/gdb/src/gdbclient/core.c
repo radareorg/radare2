@@ -3,6 +3,7 @@
 #include "gdbclient/responses.h"
 #include "gdbclient/commands.h"
 #include "gdbclient/core.h"
+#include "gdbclient/xml.h"
 #include "arch.h"
 #include "libgdbr.h"
 #include "gdbr_common.h"
@@ -75,6 +76,9 @@ static void reg_cache_init(libgdbr_t *g) {
 
 static int gdbr_connect_lldb(libgdbr_t *g) {
 	reg_cache_init (g);
+	if (g->stub_features.qXfer_features_read) {
+		gdbr_read_target_xml (g);
+	}
 	// Check if 'g' packet is supported
 	if (send_msg (g, "g") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
 		return -1;
@@ -87,7 +91,7 @@ static int gdbr_connect_lldb(libgdbr_t *g) {
 }
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
-	const char *message = "qSupported:multiprocess+;qRelocInsn+";
+	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	RStrBuf tmp;
 	r_strbuf_init (&tmp);
 	int ret;
@@ -201,6 +205,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	ret = send_ack (g);
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
+	}
+	if (g->stub_features.qXfer_features_read) {
+		gdbr_read_target_xml (g);
 	}
 	reg_cache_init (g);
 	return ret;
