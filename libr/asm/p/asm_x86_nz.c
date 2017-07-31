@@ -50,6 +50,8 @@ static ut64 getnum(RAsm *a, const char *s);
 #define OT_OWORD     (16 << OPSIZE_SHIFT)
 #define OT_TBYTE     (32 << OPSIZE_SHIFT)
 
+#define ALL_SIZE     (OT_BYTE | OT_WORD | OT_DWORD | OT_QWORD | OT_OWORD)
+
 // For register operands, we mostl don't care about the size.
 // So let's just set all relevant flags.
 #define OT_FPUSIZE  (OT_DWORD | OT_QWORD | OT_TBYTE)
@@ -143,7 +145,7 @@ static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) 
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
 
 	data[l++] = 0x66;
-	if (immediate < 128) {
+	if (op->operands[1].immediate < 128) {
 		data[l++] = 0x83;
 		data[l++] = op->operands[0].reg | (0xc0 + op1 + op->operands[0].reg);
 	} else {
@@ -155,7 +157,7 @@ static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) 
 		}
 	}
 	data[l++] = immediate;
-	if (immediate > 127) {
+	if (op->operands[1].immediate > 127) {
 		data[l++] = immediate >> 8;
 	}
 
@@ -169,6 +171,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	int mem_ref = 0;
 	st32 immediate = 0;
+
 	if (!op->operands[1].is_good_flag) {
 		return -1;
 	}
@@ -196,9 +199,14 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 
 	if (op->operands[0].type & OT_DWORD ||
 		op->operands[0].type & OT_QWORD) {
-		data[l++] = (op->operands[1].immediate > 127) ? 0x81 : 0x83;
+		if (op->operands[1].immediate < 128) {
+			data[l++] = 0x83;
+		} else if (op->operands[0].reg != X86R_EAX ||
+		           op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0x81;
+		}
 	} else if (op->operands[0].type & OT_BYTE) {
-		if (immediate > 255 || immediate < -256) {
+		if (op->operands[1].immediate > 255) {
 			eprintf ("Error: Immediate exceeds bounds\n");
 			return -1;
 		}
@@ -231,8 +239,13 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
-		mod_byte = 3;
-		data[l++] = mod_byte << 6 | modrm << 3 | op->operands[0].reg;
+		if (op->operands[1].immediate > 127 && op->operands[0].reg == X86R_EAX) {
+			data[l++] = 5 | modrm << 3 | op->operands[0].reg;
+		} else {
+			mod_byte = 3;
+			data[l++] = mod_byte << 6 | modrm << 3 | op->operands[0].reg;
+		}
+
 	}
 
 	data[l++] = immediate;
@@ -316,6 +329,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 	int rex = 0;
 	int mem_ref = 0;
 	st32 offset = 0;
+	int ebp_reg = 0;
 
 	if (!op->operands[1].is_good_flag) {
 		return -1;
@@ -416,13 +430,24 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 					data[l++] = op1 + 0x1;
 				}
 			}
+
 			mod_byte = 3;
 			reg = op->operands[1].reg;
 			rm = op->operands[0].reg;
 		}
 	}
+	if (op->operands[0].regs[0] == X86R_EBP ||
+	    op->operands[1].regs[0] == X86R_EBP) {
+			reg += 8;
+			ebp_reg = 1;
+	}
 	data[l++] = mod_byte << 6 | reg << 3 | rm;
-	if (offset || mem_ref) {
+
+	if (op->operands[0].regs[0] == X86R_ESP ||
+	    op->operands[1].regs[0] == X86R_ESP) {
+			data[l++] = 0x24;
+	}
+	if (offset || mem_ref || ebp_reg) {
 	//if ((mod_byte > 0 && mod_byte < 3) || mem_ref) {
 		data[l++] = offset;
 		if (mod_byte == 2 || mem_ref) {
@@ -1216,6 +1241,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			if (a->bits == 64 && ((op->operands[0].type & OT_QWORD) | (op->operands[1].type & OT_QWORD))) {
 				data[l++] = 0x48;
 			}
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
 			if (op->operands[0].type & OT_BYTE) {
 				data[l++] = 0xb0 | op->operands[0].reg;
 				data[l++] = immediate;
@@ -1231,8 +1259,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				}
 				data[l++] = immediate;
 				data[l++] = immediate >> 8;
-				data[l++] = immediate >> 16;
-				data[l++] = immediate >> 24;
+				if (!(op->operands[0].type & OT_WORD)) {
+					data[l++] = immediate >> 16;
+					data[l++] = immediate >> 24;
+				}
 				if (a->bits == 64 && immediate > UT32_MAX) {
 					data[l++] = immediate >> 32;
 					data[l++] = immediate >> 40;
@@ -1321,6 +1351,15 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		    op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 				return -1;
 		}
+		// Check reg sizes match
+		if (op->operands[0].type & OT_REGTYPE && op->operands[1].type & OT_REGTYPE) {
+			if (!((op->operands[0].type & ALL_SIZE) &
+			(op->operands[1].type & ALL_SIZE))) {
+				printf ("ASDASDASDASD\n");
+				return -1;
+			}
+		}
+
 		if (a->bits == 64) {
 			if (op->operands[0].extended) {
 				rex = 1;
@@ -1435,9 +1474,15 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 
-		data[l++] = (op->operands[1].type & OT_BYTE ||
-					op->operands[0].type & OT_BYTE) ?
-					0x8a : 0x8b;
+		if (op->operands[0].type & OT_WORD) {
+			data[l++] = 0x66;
+			data[l++] = op->operands[1].type & OT_BYTE ? 0x8a : 0x8b;
+		} else {
+			data[l++] = (op->operands[1].type & OT_BYTE ||
+				op->operands[0].type & OT_BYTE) ?
+				0x8a : 0x8b;
+		}
+
 		if (op->operands[1].regs[0] == X86R_UNDEFINED) {
 			data[l++] = op->operands[0].reg << 3 | 0x5;
 			data[l++] = offset;
@@ -1472,21 +1517,26 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 			if (offset || op->operands[1].regs[0] == X86R_EBP) {
 				mod = 0x2;
+				if (op->operands[1].offset > 127) {
+					mod = 0x4;
+				}
 			}
 			if (a->bits == 64 && offset) {
-				if (offset < 128) {
+				if (op->operands[1].offset > 128) {
 					mod = 0x1;
 				}
 			}
-			data[l++] = mod << 6 | op->operands[0].reg << 3 | op->operands[1].regs[0];
+			data[l++] = mod << 5 | op->operands[0].reg << 3 | op->operands[1].regs[0];
 			if (op->operands[1].regs[0] == X86R_ESP) {
 				data[l++] = 0x24;
 			}
-			if (mod == 0x2) {
+			if (mod >= 0x2) {
 				data[l++] = offset;
-				data[l++] = offset >> 8;
-				data[l++] = offset >> 16;
-				data[l++] = offset >> 24;
+				if (op->operands[1].offset > 128) {
+					data[l++] = offset >> 8;
+					data[l++] = offset >> 16;
+					data[l++] = offset >> 24;
+				}
 			} else if (a->bits == 64 && offset) {
 				data[l++] = offset;
 			}
