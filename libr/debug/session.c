@@ -2,7 +2,8 @@
 
 #include <r_debug.h>
 
-R_API void r_debug_session_free(RDebugSession *session) {
+R_API void r_debug_session_free(void *p) {
+	RDebugSession *session = (RDebugSession *) p;
 	free (session->comment);
 	free (session);
 }
