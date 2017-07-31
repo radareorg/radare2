@@ -1283,7 +1283,7 @@ R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
 R_API void r_anal_esil_session_list(RAnalEsil *esil);
 R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil);
 R_API void r_anal_esil_session_set(RAnalEsil *esil, RAnalEsilSession *session);
-R_API void r_anal_esil_session_free(RAnalEsilSession *session);
+R_API void r_anal_esil_session_free(void *p);
 
 /* pin */
 R_API void r_anal_pin_init(RAnal *a);

@@ -5,7 +5,8 @@
 #include <r_util.h>
 #include <r_bind.h>
 
-R_API void r_anal_esil_session_free(RAnalEsilSession *session) {
+R_API void r_anal_esil_session_free(void *p) {
+	RAnalEsilSession *session = (RAnalEsilSession *) p;
 	free (session->data);
 	free (session);
 }
