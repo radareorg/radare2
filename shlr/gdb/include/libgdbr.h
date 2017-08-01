@@ -158,6 +158,7 @@ typedef struct libgdbr_t {
 	ssize_t send_max; // defines the maximal len for the given buffer
 	char *read_buff;
 	ssize_t read_max; // defines the maximal len for the given buffer
+	ssize_t read_len; // len of read_buff (if read_buff not fully consumed)
 
 	// is already handled (i.e. already send or ...)
 	RSocket *sock;
