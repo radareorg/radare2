@@ -1766,7 +1766,7 @@ static RList *entries(RBinFile *arch) {
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	r_list_foreach (bin->methods_list, iter, m) {
 		if (strlen (m->name) > 30 && m->bind &&
-			(!strcmp(m->bind, "LOCAL") || !strcmp(m->bind, "GLOBAL")) &&
+			(!strcmp (m->bind, "LOCAL") || !strcmp (m->bind, "GLOBAL")) &&
 		    !strcmp (m->name + strlen (m->name) - 31,
 			     ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
