@@ -193,17 +193,13 @@ static char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
 	return getstr (bin, bin->types[type_idx].descriptor_id);
 }
 
-static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
-	ut32 proto_id, params_off, type_id, list_size;
+static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
+	ut32 params_off, type_id, list_size;
 	char *r = NULL, *return_type = NULL, *signature = NULL, *buff = NULL;
 	ut8 *bufptr;
 	ut16 type_idx;
 	int pos = 0, i, size = 1;
 
-	if (method_idx < 0 || method_idx >= bin->header.method_size) {
-		return NULL;
-	}
-	proto_id = bin->methods[method_idx].proto_id;
 	if (proto_id >= bin->header.prototypes_size) {
 		return NULL;
 	}
@@ -258,6 +254,13 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 		free (signature);
 	}
 	return r;
+}
+
+static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
+	if (method_idx < 0 || method_idx >= bin->header.method_size) {
+		return NULL;
+	}
+	return dex_get_proto (bin, bin->methods[method_idx].proto_id);
 }
 
 static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
@@ -737,6 +740,10 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
 	if (!memcmp (buf, "dex\n036\0", 8)) {
+		return true;
+	}
+	// Two new opcodes: invoke-polymorphic and invoke-custom (sdk level 26+)
+	if (!memcmp (buf, "dex\n038\0", 8)) {
 		return true;
 	}
 	// M3 (Nov-Dec 07)
@@ -1571,6 +1578,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	if (!bin || bin->methods_list) {
 		return false;
 	}
+	bin->version = strdup (r_bin_dex_get_version (bin));
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
 	bin->methods_list = r_list_newf ((RListFree)free);
@@ -1758,7 +1766,7 @@ static RList *entries(RBinFile *arch) {
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	r_list_foreach (bin->methods_list, iter, m) {
 		if (strlen (m->name) > 30 && m->bind &&
-			!strcmp(m->bind, "GLOBAL") &&
+			(!strcmp(m->bind, "LOCAL") || !strcmp(m->bind, "GLOBAL")) &&
 		    !strcmp (m->name + strlen (m->name) - 31,
 			     ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
@@ -1835,6 +1843,8 @@ static char *getname(RBinFile *arch, int type, int idx) {
 		return dex_class_name_byid (dex, idx);
 	case 'f': // fields
 		return dex_field_name (dex, idx);
+	case 'p': // proto
+		return dex_get_proto (dex, idx);
 	}
 	return NULL;
 }
