@@ -35,16 +35,16 @@ static struct {
 	{ "xori", 'I', 3, 14, 0 },
 	{ "addi", 'I', 3, 8, 0 },
 	{ "addiu", 'I', 3, 9, 0 },
-	{ "bnez", 'I', 2, 5, 0 },
-	{ "bal", 'I', -1, -1, 17},
-	{ "bne", 'I', 3, 5, 0 },
-	{ "beq", 'I', 3, 4, 0 },
-	{ "bgez", 'I', -2, -1, 1 },
-	{ "bgezal", 'I', -2, -1, 17 },
-	{ "bltzal", 'I', -2, -1, 16 },
-	{ "bgtz", 'I', -2, 7, 0 },
-	{ "blez", 'I', -2, 6, 0 },
-	{ "bltz", 'I', -2, 1, 0 },
+	{ "bnez", 'B', 2, 5, 0 },
+	{ "bal", 'B', -1, -1, 17},
+	{ "bne", 'B', 3, 5, 0 },
+	{ "beq", 'B', 3, 4, 0 },
+	{ "bgez", 'B', -2, -1, 1 },
+	{ "bgezal", 'B', -2, -1, 17 },
+	{ "bltzal", 'B', -2, -1, 16 },
+	{ "bgtz", 'B', -2, 7, 0 },
+	{ "blez", 'B', -2, 6, 0 },
+	{ "bltz", 'B', -2, 1, 0 },
 	{ "syscall", 'R', 0, 12, 0 },
 	{ "break", 'R', 0, 13, 0 },
 	{ "nor", 'R', 3, 39, 0 },
@@ -93,12 +93,18 @@ static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	return 4;
 }
 
-static int mips_i(ut8 *b, int op, int rs, int rt, int imm) {
+static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
 	if (rs == -1 || rt == -1) {
 		return -1;
 	}
-	imm /= 4;
-	imm--;
+	if (is_branch) {
+		if (imm > 4) {
+			imm /= 4;
+			imm--;
+		} else {
+			imm = 0;
+		}
+	}
 	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
 	b[2] = (rs<<5) | (rt);
 	b[1] = (imm>>8) &0xff;
@@ -142,7 +148,7 @@ static int getreg(const char *p) {
 }
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
-	int i, hasp;
+	int i, hasp, is_branch;
 	char *s = strdup (str);
 	char w0[32], w1[32], w2[32], w3[32];
 	r_str_replace_char (s, ',', ' ');
@@ -188,20 +194,22 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				}
 				break;
 			case 'I':
+			case 'B':
+				is_branch = ops[i].type == 'B';
 				switch (ops[i].args) {
-				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2)); break;
-				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3)); break;
+				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2), is_branch); break;
+				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3), is_branch); break;
 				case -2:
 					if (ops[i].n > 0) {
-						return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2)); break;
+						return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2), is_branch); break;
 					} else {
-						return mips_i (out, (-1 * ops[i].n), getreg (w1), ops[i].x, getreg (w2)); break;
+						return mips_i (out, (-1 * ops[i].n), getreg (w1), ops[i].x, getreg (w2), is_branch); break;
 					}
 
 				case -1: if (ops[i].n > 0) {
-						return mips_i (out, ops[i].n, 0, 0, getreg (w1)); break;
+						return mips_i (out, ops[i].n, 0, 0, getreg (w1), is_branch); break;
 					} else {
-						return mips_i (out, (-1 * ops[i].n), 0, ops[i].x, getreg (w1)); break;
+						return mips_i (out, (-1 * ops[i].n), 0, ops[i].x, getreg (w1), is_branch); break;
 					}
 				}
 				break;
