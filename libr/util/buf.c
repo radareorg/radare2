@@ -131,6 +131,16 @@ R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 	return b;
 }
 
+R_API RBuffer *r_buf_new_empty (ut64 len) {
+	RBuffer *b = r_buf_new ();
+	b->buf = calloc (len, 1);
+	if (!b->buf) {
+		return NULL;
+	}
+	b->length = len;
+	return b;
+}
+
 R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
 	if (b && bytes && (len > 0 && len != UT64_MAX)) {
@@ -275,7 +285,8 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 	return (int)b->cur;
 }
 
-R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
+R_API bool r_buf_set_bits(RBuffer *b, ut64 at, const ut8* buf, int bitoff, int count) {
+	r_mem_copybits_delta (b->buf, at * 8, buf, bitoff, count);
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
 	return false;
@@ -585,7 +596,9 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 }
 
 R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
-	if (b->empty) return 0;
+	if (b->empty) {
+		return 0;
+	}
 	if (b->fd != -1) {
 		eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
 		return 0;
