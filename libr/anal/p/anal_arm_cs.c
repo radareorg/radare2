@@ -2849,6 +2849,9 @@ static char *get_reg_profile(RAnal *anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
+		return 4;
+	}
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
 		if (anal && anal->bits == 16) {
 			return 2;

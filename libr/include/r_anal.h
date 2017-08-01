@@ -101,6 +101,7 @@ enum {
 #define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
 #define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
 #define R_ANAL_ARCHINFO_ALIGN 2
+#define R_ANAL_ARCHINFO_DATA_ALIGN 4
 
 /* copypaste from r_asm.h */
 

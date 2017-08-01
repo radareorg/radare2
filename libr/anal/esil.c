@@ -215,17 +215,31 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 }
 
 static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
-	RRegItem *ri;
 	if (!esil || !esil->anal || !esil->anal->reg || !r) {
 		return 0;
 	}
-	ri = r_reg_get (esil->anal->reg, r, -1);
+	RRegItem *ri = r_reg_get (esil->anal->reg, r, -1);
 	return ri? ri->size: 0;
+}
+
+static bool alignCheck(RAnalEsil *esil, ut64 addr) {
+	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	if (dataAlign > 0) {
+		if (addr % dataAlign) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
+	}
+	if (alignCheck (esil, addr)) {
+		esil->trap = R_ANAL_TRAP_READ_ERR;
+		esil->trap_code = addr;
+		return false;
 	}
 	if (esil->cmd_mdev && esil->mdev_range) {
 		if (r_str_range_in (esil->mdev_range, addr)) {
@@ -241,6 +255,11 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
+	if (alignCheck (esil, addr)) {
+		esil->trap = R_ANAL_TRAP_READ_ERR;
+		esil->trap_code = addr;
+		return false;
+	}
 	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 }
 
@@ -251,6 +270,11 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	}
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
+	}
+	if (alignCheck (esil, addr)) {
+		esil->trap = R_ANAL_TRAP_READ_ERR;
+		esil->trap_code = addr;
+		return false;
 	}
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
@@ -275,6 +299,11 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
+	}
+	if (alignCheck (esil, addr)) {
+		esil->trap = R_ANAL_TRAP_READ_ERR;
+		esil->trap_code = addr;
+		return false;
 	}
 	if (esil->cmd_mdev && esil->mdev_range) {
 		if (r_str_range_in (esil->mdev_range, addr)) {
