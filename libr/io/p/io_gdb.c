@@ -200,8 +200,8 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                 eprintf ("Usage: =!cmd args\n"
                          " =!pid             - show targeted pid\n"
                          " =!pkt s           - send packet 's'\n"
-                         " =!qRcmd cmd       - hex-encode cmd and pass to target"
-                                             " interpreter\n"
+                         " =!monitor cmd     - hex-encode monitor command and pass"
+                                             " to target interpreter\n"
                          " =!inv.reg         - invalidate reg cache\n"
                          " =!pktsz           - get max packet size used\n"
                          " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
@@ -243,8 +243,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return pid;
 	}
-	if (!strncmp (cmd, "qRcmd ", 6)) {
-		if (gdbr_send_qRcmd (desc, cmd + 6) < 0) {
+	if (!strncmp (cmd, "monitor", 7)) {
+		const char *qrcmd = cmd + 8;
+		if (!isspace (cmd[8])) {
+			qrcmd = "help";
+		}
+		if (gdbr_send_qRcmd (desc, qrcmd) < 0) {
 			eprintf ("remote error\n");
 			return false;
 		}
