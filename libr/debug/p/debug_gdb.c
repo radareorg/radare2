@@ -262,7 +262,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
 	gdbr_continue (desc, pid, tid, sig);
-	return true;
+	return desc->tid;
 }
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
