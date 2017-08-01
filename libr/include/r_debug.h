@@ -251,6 +251,8 @@ typedef struct r_debug_t {
 	int forked_pid; /* last pid created by fork */
 	RList *threads; /* NOTE: list contents are platform-specific */
 
+	char *malloc;     /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
+
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
 	 */
