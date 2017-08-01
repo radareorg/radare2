@@ -21,6 +21,7 @@ struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
 static char *mask = NULL;
 static int nonstop = 0;
+static bool identify = false;
 static int mode = R_SEARCH_STRING;
 static ut64 cur = 0;
 static ut8 *buf = NULL;
@@ -84,6 +85,7 @@ static int show_help(char *argv0, int line) {
 	" -e [regex] search for regex matches (can be used multiple times)\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -h         show this help\n"
+	" -i         identify filetype (r2 -qcpm file)\n"
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
@@ -105,6 +107,13 @@ static int rafind_open(char *file) {
 	RListIter *iter;
 	bool last = false;
 	int ret;
+
+	if (identify) {
+		char *cmd = r_str_newf ("r2 -e search.show=false -e search.count=1 -nqcpm '%s'", file);
+		r_sandbox_system (cmd, 1);
+		free (cmd);
+		return 0;
+	}
 
 	io = r_io_new ();
 	fd = r_io_open_nomap (io, file, R_IO_READ, 0);
@@ -194,13 +203,16 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt (argc, argv, "a:e:b:mM:s:S:x:Xzf:t:rnhvZ")) != -1) {
+	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:rnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, optarg);
 			break;
 		case 'r':
 			rad = 1;
+			break;
+		case 'i':
+			identify = true;
 			break;
 		case 'n':
 			nonstop = 1;

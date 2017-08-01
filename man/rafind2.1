@@ -5,7 +5,7 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl zZXnrhv
+.Op Fl izZXnrhv
 .Op Fl b Ar size
 .Op Fl f Ar from
 .Op Fl t Ar to
@@ -29,6 +29,8 @@ Search for a specific wide string
 Search for a regular expression string matches
 .It Fl x Ar hex
 Search for an hexpair string
+.It Fl i
+Identify filetype (like file, uses r2 -qcpm)
 .It Fl m
 Carve for known file-types using the r_magic signatures
 .It Fl M Ar mask
