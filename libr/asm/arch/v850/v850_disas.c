@@ -1,5 +1,6 @@
 #include <r_types.h>
 #include <r_util.h>
+#include <r_endian.h>
 
 #include "v850_disas.h"
 
@@ -81,10 +82,10 @@ static const char *ext_instrs2[] = {
 static const char *conds[] = {
 	[V850_COND_V]	= "v",
 	[V850_COND_CL]	= "cl",
-	[V850_COND_Z]	= "z",
+	[V850_COND_ZE]	= "z",
 	[V850_COND_NH]	= "nh",
-	[V850_COND_SN]	= "sn",
-	[V850_COND_T]	= "t",
+	[V850_COND_N]	= "n",
+	[V850_COND_AL]	= "",
 	[V850_COND_LT]	= "lt",
 	[V850_COND_LE]	= "le",
 	[V850_COND_NV]	= "nv",
@@ -96,18 +97,6 @@ static const char *conds[] = {
 	[V850_COND_GE]	= "ge",
 	[V850_COND_GT]	= "gt",
 };
-
-static inline ut8 get_opcode(const ut16 instr) {
-	return (instr >> 5) & 0x3F;
-}
-
-static inline ut8 get_reg1(const ut16 instr) {
-	return instr & 0x1F;
-}
-
-static inline ut8 get_reg2(const ut16 instr) {
-	return instr >> 11;
-}
 
 static int decode_reg_reg(const ut16 instr, struct v850_cmd *cmd) {
 	ut8 opcode;
@@ -219,24 +208,24 @@ static int decode_load_store(const ut8 *instr, struct v850_cmd *cmd) {
 	case V850_STB:
 		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s.b", instrs[get_opcode (word1)]);
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "r%d, 0x%x[r%d]",
-			       get_reg2 (word1), word2, get_reg1 (word1));	
+			       get_reg2 (word1), word2, get_reg1 (word1));
 		break;
 	case V850_LDB:
 		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s.b", instrs[get_opcode (word1)]);
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x[r%d], r%d",
-			       get_reg1 (word1), word2, get_reg2 (word1));	
+			       get_reg1 (word1), word2, get_reg2 (word1));
 		break;
 	case V850_LDHW:
 		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s.%c",
 				instrs[get_opcode (word1)], word2 & 1 ? 'w' : 'h');
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x[r%d], r%d",
-				word2 & 0xFFFE, get_reg1 (word1), get_reg2 (word1));	
+				word2 & 0xFFFE, get_reg1 (word1), get_reg2 (word1));
 		break;
 	case V850_STHW:
 		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s.%c",
 				instrs[get_opcode (word1)], word2 & 1 ? 'w' : 'h');
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "r%d, 0x%x[r%d]",
-			       get_reg2 (word1), word2 & 0xFFFE, get_reg1 (word1));	
+			       get_reg2 (word1), word2 & 0xFFFE, get_reg1 (word1));
 		break;
 	}
 
@@ -266,9 +255,9 @@ static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
 	word2 = r_read_at_le16 (instr, 2);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
-			ext_instrs1[get_opcode (word1)]);
+			ext_instrs1[get_subopcode (word1)]);
 
-	switch (get_opcode (word1)) {
+	switch (get_subopcode (word1)) {
 	case V850_EXT_SETF:
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "%s, r%d",
 				conds[word1 & 0xF], get_reg2 (word1));
