@@ -2657,6 +2657,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
+	int str_len;
 	char *escstr;
 	const char *prefix = "";
 	switch (ds->strenc) {
@@ -2675,7 +2676,8 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		prefix = "U";
 		break;
 	default:
-		if (strlen (str) == 1) {
+		str_len = strlen (str);
+		if (str_len == 1) {
 			// could be a wide string
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 			if (escstr) {
@@ -2683,7 +2685,17 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 				prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
 			}
 		} else {
-			escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+			RStrEnc enc = R_STRING_ENC_LATIN1;
+			const char *ptr = str, *end = str + str_len;
+			for (; ptr < end; ptr++) {
+				if (r_utf8_decode ((ut8 *)ptr, end - ptr, NULL) > 1) {
+					enc = R_STRING_ENC_UTF8;
+					break;
+				}
+			}
+			escstr = (enc == R_STRING_ENC_UTF8 ?
+			          r_str_escape_utf8 (str, ds->show_asciidot) :
+			          r_str_escape_latin1 (str, ds->show_asciidot));
 		}
 	}
 	if (escstr) {
