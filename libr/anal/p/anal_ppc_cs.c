@@ -623,7 +623,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_CLRLWI:
 			op->type = R_ANAL_OP_TYPE_AND;
-			esilprintf (op, "%s,0x%"PFMT64x",&,%s,=", ARG (1), cmask32 (ARG (2), "31"), ARG (0));
+			esilprintf (op, "%s,0x%"PFMT64x",&,%s,=", ARG (1), (ut64) cmask32 (ARG (2), "31"), ARG (0));
 			break;
 		case PPC_INS_RLWINM:
 			op->type = R_ANAL_OP_TYPE_ROL;
