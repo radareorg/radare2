@@ -691,7 +691,8 @@ static int cb_asmstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
-		r_cons_printf ("  -- if string's 2nd byte is 0 then utf16le else latin1\n");
+		r_cons_printf ("  -- if string's 2nd byte is 0 then utf16le else "
+		               "if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
 	return true;
