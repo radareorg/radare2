@@ -51,14 +51,23 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			if (!--ctx->chksum_nibble) {
 				continue;
 			}
-			if (i != len - 1) {
-				eprintf ("%s: Garbage at end of packet: %s\n",
-					 __func__, g->read_buff + i + 1);
-			}
 			if (ctx->sum != '#') {
 				eprintf ("%s: Invalid checksum\n", __func__);
 				return -1;
 			}
+			if (i != len - 1) {
+				if (g->read_buff[i + 1] == '$' ||
+				    (g->read_buff[i + 1] == '+' && g->read_buff[i + 2] == '$')) {
+					// Packets clubbed together
+					g->read_len = len - i - 1;
+					memcpy (g->read_buff, g->read_buff + i + 1, g->read_len);
+					g->read_buff[g->read_len] = '\0';
+					return 0;
+				}
+				eprintf ("%s: Garbage at end of packet: %s\n",
+					 __func__, g->read_buff + i + 1);
+			}
+			g->read_len = 0;
 			return 0;
 		}
 		ctx->sum += cur;
@@ -136,6 +145,18 @@ int read_packet(libgdbr_t *g) {
 	if (!g) {
 		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
+	}
+	g->data_len = 0;
+	if (g->read_len > 0) {
+		if (unpack (g, &ctx, g->read_len) == 0) {
+			// TODO: Evaluate if partial packets are clubbed
+			g->data[g->data_len] = '\0';
+			if (g->server_debug) {
+				eprintf ("getpkt (\"%s\");  %s\n", g->data,
+					 g->no_ack ? "[no ack sent]" : "[sending ack]");
+			}
+			return 0;
+		}
 	}
 	g->data_len = 0;
 	while (r_socket_ready (g->sock, 0, READ_TIMEOUT) > 0) {
