@@ -236,7 +236,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
-	if (alignCheck (esil, addr)) {
+	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
@@ -255,7 +255,7 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
-	if (alignCheck (esil, addr)) {
+	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
@@ -271,7 +271,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
 	}
-	if (alignCheck (esil, addr)) {
+	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
@@ -300,7 +300,7 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
 	}
-	if (alignCheck (esil, addr)) {
+	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
