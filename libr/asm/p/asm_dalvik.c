@@ -467,7 +467,6 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strasm = r_str_append (strasm, str);
 
 			flag_str = R_ASM_GET_NAME (a, 'p', vH);
-			eprintf(flag_str);
 			if (flag_str) {
 				snprintf (str, sizeof (str), ", %s", flag_str);
 			} else {
