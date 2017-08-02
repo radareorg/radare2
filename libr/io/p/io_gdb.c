@@ -221,7 +221,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			// pktsz = 0 doesn't make sense
 			return false;
 		}
-		desc->stub_features.pkt_sz = pktsz;
+		desc->stub_features.pkt_sz = R_MAX (pktsz, 64); // min = 64
 		return true;
 	}
 	if (!strncmp (cmd, "pkt ", 4)) {
