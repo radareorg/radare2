@@ -1252,6 +1252,80 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
+#if __WINDOWS__ && !__CYGWIN__
+static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
+	STARTUPINFO si;
+        PROCESS_INFORMATION pi;
+	SECURITY_ATTRIBUTES sa;
+	HANDLE pipe[2];
+	int fd_out = -1, cons_out = -1;
+	char *_shell_cmd;
+
+	sa.nLength = sizeof (SECURITY_ATTRIBUTES); 
+	sa.bInheritHandle = TRUE; 
+	sa.lpSecurityDescriptor = NULL; 
+	memset (&si, 0, sizeof (si));
+	memset (&pi, 0, sizeof (pi));
+	memset (pipe, 0, sizeof (pipe));
+   	if (!CreatePipe(&pipe[0], &pipe[1], &sa, 0)) {
+		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
+		goto err_r_w32_cmd_pipe;
+	}	
+	if (!SetHandleInformation(pipe[1], HANDLE_FLAG_INHERIT, 0)) {
+		r_sys_perror ("r_w32_cmd_pipe/SetHandleInformation");
+		goto err_r_w32_cmd_pipe;
+	}
+	si.hStdError = GetStdHandle (STD_ERROR_HANDLE);
+	si.hStdOutput = GetStdHandle (STD_OUTPUT_HANDLE);
+	si.hStdInput = pipe[0];
+	si.dwFlags |= STARTF_USESTDHANDLES;
+	si.cb = sizeof (si);
+	_shell_cmd = shell_cmd;
+	while (*_shell_cmd && isspace(*_shell_cmd)) {
+		_shell_cmd++;
+	}
+	// exec windows process
+	if (!CreateProcess (NULL, _shell_cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");
+		goto err_r_w32_cmd_pipe;
+	}
+	fd_out = _open_osfhandle((intptr_t)pipe[1], _O_WRONLY|_O_TEXT);
+	if (fd_out == -1) {
+		perror("_open_osfhandle");
+		goto err_r_w32_cmd_pipe;
+	}
+	cons_out = dup(1);
+	dup2(fd_out, 1);
+	// exec radare command
+	r_core_cmd (core, radare_cmd, 0);
+	r_cons_flush ();
+	close(1);
+	close(fd_out);
+	fd_out = -1;
+	WaitForSingleObject(pi.hProcess, INFINITE);
+err_r_w32_cmd_pipe:
+	if (pi.hProcess != NULL) {
+		CloseHandle(pi.hProcess);
+	}
+	if (pi.hThread != NULL) {
+		CloseHandle(pi.hThread);
+	}
+	if (pipe[0] != NULL) {
+		CloseHandle(pipe[0]);
+	}
+	if (pipe[1] != NULL) {
+		CloseHandle(pipe[1]);
+	}
+	if (fd_out != -1) {
+		close (fd_out);
+	}
+	if (cons_out != -1) {
+		dup2 (cons_out, 1);
+		close (cons_out);
+	}
+}
+#endif
+
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if __UNIX__ || __CYGWIN__
 	int stdout_fd, fds[2];
@@ -1312,6 +1386,8 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			close (stdout_fd);
 		}
 	}
+#elif __WINDOWS__
+	r_w32_cmd_pipe (core, radare_cmd, shell_cmd);
 #else
 #ifdef _MSC_VER
 #pragma message ("r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM")
