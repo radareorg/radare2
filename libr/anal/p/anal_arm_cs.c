@@ -1302,7 +1302,7 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (rotate_imm) {
 		r_strbuf_appendf (&op->esil, "%s,", ARG(3));
 	}
-	if (strcmp(op2, "pc") == 0) {
+	if (!strcmp (op2, "pc")) {
 		r_strbuf_appendf (&op->esil, "%d,$$,+", pcdelta);
 	} else {
 		r_strbuf_appendf (&op->esil, "%s", op2);
@@ -1313,7 +1313,7 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (negate) {
 		r_strbuf_appendf (&op->esil, ",-1,^");
 	}
-	if (strcmp(op1, "pc") == 0) {
+	if (!strcmp (op1, "pc")) {
 		r_strbuf_appendf (&op->esil, ",%d,$$,+,%s,0xffffffff,&,%s,=", pcdelta, opchar, dest);
 	} else {
 		r_strbuf_appendf (&op->esil, ",%s,%s,0xffffffff,&,%s,=", op1, opchar, dest);
@@ -1447,7 +1447,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		const char *comma = "";
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
-				comma, ARG (0), (i-1)*4, REG (i));
+				comma, ARG (0), (i - 1) * 4, REG (i));
 			comma = ",";
 		}
 		}
