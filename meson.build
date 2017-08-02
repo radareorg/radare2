@@ -67,7 +67,9 @@ if host_machine.system() == 'windows'
   platform_inc = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
   if get_option('default_library') == 'static'
-	add_global_arguments('/MT', language: 'c')
+	if get_option('buildtype') == 'release'
+	  add_global_arguments('/MT', language: 'c')
+	endif
 	message(' ------ WINDOWS VERSION: BUILD STATIC ------')
   else
 	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
