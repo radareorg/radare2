@@ -23,6 +23,13 @@ typedef enum regtype_t {
 	ARM_SIMD = 16
 } RegType;
 
+typedef enum shifttype_t {
+	ARM_NO_SHIFT = -1,
+	ARM_LSL = 0,
+	ARM_LSR = 1,
+	ARM_ASR = 2
+} ShiftType;
+
 typedef struct operand_t {
 	OpType type;
 	union {
@@ -36,8 +43,8 @@ typedef struct operand_t {
 			int sign;
 		};
 		struct {
-			ut64 lsl;
-			ut64 shift;
+			ut64 shift_amount;
+			ShiftType shift;
 		};
 		struct {
 			ut32 mem_option;
@@ -60,7 +67,7 @@ static int get_mem_option(char *token) {
 	// values 4, 8, 12, are unused. XXX to adjust
 	const char *options[] = {"sy", "st", "ld", "xxx", "ish", "ishst",
 	                         "ishld", "xxx", "nsh", "nshst", "nshld",
-				 "xxx", "osh", "oshst", "oshld", NULL};
+	                         "xxx", "osh", "oshst", "oshld", NULL};
 	int i = 0;
 	while (options[i]) {
 		if (!strcasecmp (token, options[i])) {
@@ -118,7 +125,28 @@ static ut32 mov(ArmOp *op) {
 	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
 	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
 	return data;
+}
 
+static ut32 cmp(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64) {
+		k =  0x1f0000eb;
+	} else if (op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32) {
+		if (op->operands[2].shift_amount > 31) {
+			return UT32_MAX;
+		}
+		k =  0x1f00006b;
+	} else {
+		return UT32_MAX;
+	}
+
+	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29 | op->operands[1].reg << 8;
+
+	if (op->operands[2].shift != ARM_NO_SHIFT) {
+		data |= op->operands[2].shift_amount << 18 | op->operands[2].shift << 14;
+	}
+	return data;
 }
 
 static ut32 branch(ArmOp *op, ut64 addr, int k) {
@@ -390,7 +418,6 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	return data;
 }
 
-
 static ut32 adr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
 	ut64 at = 0LL;
@@ -471,6 +498,30 @@ static bool parseOperands(char* str, ArmOp *op) {
 		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
+		op->operands[operand].shift = ARM_NO_SHIFT;
+
+		while (token[0] == ' ') {
+			token ++;
+		}
+
+		if (!strncmp (token, "lsl", 3)) {
+			op->operands[operand].shift = ARM_LSL;
+		} else if (!strncmp (token, "lsr", 3)) {
+			op->operands[operand].shift = ARM_LSR;
+		} else if (!strncmp (token, "asr", 3)) {
+			op->operands[operand].shift = ARM_ASR;
+		}
+		if (op->operands[operand].shift != ARM_NO_SHIFT) {
+			op->operands_count ++;
+			op->operands[operand].shift_amount = r_num_math (NULL, token + 4);
+			if (op->operands[operand].shift_amount > 63) {
+				return false;
+			}
+			operand ++;
+			token = next;
+			continue;
+		}
+
 		switch (token[0]) {
 		case 'x':
 			x = strchr (token, ',');
@@ -481,12 +532,18 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG64;
 			op->operands[operand].reg = r_num_math (NULL, token + 1);
+			if (op->operands[operand].reg > 31) {
+				return false;
+			}
 			break;
 		case 'w':
 			op->operands_count ++;
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG32;
 			op->operands[operand].reg = r_num_math (NULL, token + 1);
+			if (op->operands[operand].reg > 31) {
+				return false;
+			}
 			break;
 		case 'v':
 			op->operands_count ++;
@@ -544,6 +601,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			break;
 		}
 		token = next;
+
 		operand ++;
 		if (operand > MAX_OPERANDS) {
 			free (t);
@@ -571,11 +629,15 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	if (!parseOpcode (str, &ops)) {
-		return -1;
+		return false;
 	}
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "mov", 3)) {
 		*op = mov (&ops);
+		return *op != -1;
+	}
+	if (!strncmp (str, "cmp", 3)) {
+		*op = cmp (&ops);
 		return *op != -1;
 	}
 	if (!strncmp (str, "sub", 3)) { // w
