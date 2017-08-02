@@ -507,6 +507,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 		eprintf ("%s: Requested read too long: (%d bytes)\n", __func__, (unsigned) len);
 		return -1;
 	}
+	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
 	data_sz = g->stub_features.pkt_sz / 2;
 	num_pkts = len / data_sz;
 	last = len % data_sz;
