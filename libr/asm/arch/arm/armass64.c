@@ -149,6 +149,21 @@ static ut32 cmp(ArmOp *op) {
 	return data;
 }
 
+static ut32 strb(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (op->operands[0].reg_type & ARM_REG64) {
+		return data;
+	}
+	if (op->operands[1].reg_type & ARM_REG32) {
+		return data;
+	}
+	k = 0x00000039;
+	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+	data |= op->operands[2].immediate << 18 | (op->operands[2].immediate & 0x7c0) << 2;
+	return data;
+}
+
 static ut32 branch(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	int n = 0;
@@ -500,7 +515,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 		op->operands[operand].reg_type = ARM_UNDEFINED;
 		op->operands[operand].shift = ARM_NO_SHIFT;
 
-		while (token[0] == ' ') {
+		while (token[0] == ' ' || token[0] == '[' || token[0] == ']') {
 			token ++;
 		}
 
@@ -563,7 +578,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands_count ++;
 				op->operands[operand].type = ARM_GPR;
 				op->operands[operand].reg_type = ARM_SP | ARM_REG64;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+				op->operands[operand].reg = 31;
 				break;
 			}
 			mem_opt = get_mem_option (token);
@@ -638,6 +653,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "cmp", 3)) {
 		*op = cmp (&ops);
+		return *op != -1;
+	}
+	if (!strncmp (str, "strb", 4)) {
+		*op = strb (&ops);
 		return *op != -1;
 	}
 	if (!strncmp (str, "sub", 3)) { // w
