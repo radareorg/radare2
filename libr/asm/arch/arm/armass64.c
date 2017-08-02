@@ -78,6 +78,101 @@ static int get_mem_option(char *token) {
 	return -1;
 }
 
+static int countLeadingZeros(ut32 x) {
+	int count = 0;
+	while (x) {
+		x >>= 1;
+		--count;
+	}
+	return count;
+}
+
+static int countTrailingZeros(ut32 x) {
+	int count = 0;
+	while (x > 0) {
+		if ((x & 1) == 1) {
+			break;
+		} else {
+			count ++;
+			x = x >> 1;
+		}
+	}
+	return count;
+}
+
+static int calcNegOffset(int n, int shift) {
+	int a = n >> shift;
+	if (a == 0) {
+		return 0xff;
+	}
+	// find first set bit then invert it and all
+	// bits below it
+	int t = 0x400;
+	while (!(t & a) && a != 0 && t != 0) {
+		t = t >> 1;
+	}
+	t = t & (t - 1);
+	a = a ^ t;
+	// If bits below 32 are set
+	if (countTrailingZeros(n) > shift) {
+		a--;
+	}
+	return 0xff & (0xff - a);
+}
+
+static int countLeadingOnes(ut32 x) {
+	return countLeadingZeros (~x);
+}
+
+static int countTrailingOnes(ut32 x) {
+	return countTrailingZeros (~x);
+}
+
+static bool isMask(ut32 value) {
+  return value && ((value + 1) & value) == 0;
+}
+
+static bool isShiftedMask (ut32 value) {
+  return value && isMask ((value - 1) | value);
+}
+
+static ut32 decodeBitMasks(ut32 imm) {
+	// get element size
+	int size = 32;
+	// determine rot to make element be 0^m 1^n
+	ut32 cto, i;
+	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+
+	if (isShiftedMask (imm)) {
+		i = countTrailingZeros (imm);
+		cto = countTrailingOnes (imm >> i);
+	} else {
+		imm |= ~mask;
+		if (!isShiftedMask (imm)) {
+			return UT32_MAX;
+		}
+
+		ut32 clo = countLeadingOnes (imm);
+		i = 64 - clo;
+		cto = clo + countTrailingOnes (imm) - (64 - size);
+	}
+
+	// Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
+	// to our target value, where I is the number of RORs to go the opposite
+	// direction
+	ut32 immr = (size - i) & (size - 1);
+	// If size has a 1 in the n'th bit, create a value that has zeroes in
+	// bits [0, n] and ones above that.
+	ut64 nimms = ~(size - 1) << 1;
+	// Or the cto value into the low bits, which must be below the Nth bit
+	// bit mentioned above.
+	nimms |= (cto - 1);
+	// Extract and toggle seventh bit to make N field.
+	ut32 n = ((nimms >> 6) & 1) ^ 1;
+	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	return encoding;
+}
+
 static ut32 mov(ArmOp *op) {
 	int k = 0;
 	ut32 data = UT32_MAX;
@@ -119,7 +214,6 @@ static ut32 mov(ArmOp *op) {
 	}
 
 	data = k;
-	//printf ("Immediate %d\n", op->operands[1].immediate);
 	data |= (op->operands[0].reg << 24); // arg(0)
 	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
 	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
@@ -194,6 +288,37 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 		data |= n << 24;
 		data |= h << 16;
 	}
+	return data;
+}
+
+static ut32 beq(ArmOp *op, ut64 addr, int k) {
+	ut32 data = UT32_MAX;
+	int n = 0;
+	int a = 0;
+	int tz = 0;
+	n = op->operands[0].immediate;
+	// I am sure there's a logical way to do negative offsets,
+	// but I was unable to find any sensible docs so I did my best
+	if (!(n & 0x3 || n > 0x7ffffff)) {
+		n -= addr;
+		data = k;
+		if (n < 0) {
+			n *= -1;
+			a = (n << 3) - 1;
+			data |= (0xff - a) << 24;
+
+			a = calcNegOffset(n, 5);
+			data |= a << 16;
+
+			a = calcNegOffset(n, 13);
+			data |= a << 8;
+		} else {
+			data |= (n & 31) << 27;
+			data |= (0xff & (n >> 5)) << 16;
+			data |= (0xff & (n >> 13)) << 8;
+		}
+	}
+
 	return data;
 }
 
@@ -272,81 +397,6 @@ static ut32 msr(ArmOp *op, int w) {
 	}
 
 	return data;
-}
-
-static int countLeadingZeros(ut32 x) {
-	int count = 0;
-	while (x) {
-		x >>= 1;
-		--count;
-	}
-	return count;
-}
-
-static int countTrailingZeros(ut32 x) {
-	int count = 0;
-	while (x > 0) {
-		if ((x & 1) == 1) {
-			break;
-		} else {
-			count ++;
-			x = x >> 1;
-		}
-	}
-	return count;
-}
-
-static int countLeadingOnes(ut32 x) {
-	return countLeadingZeros (~x);
-}
-
-static int countTrailingOnes(ut32 x) {
-	return countTrailingZeros (~x);
-}
-
-static bool isMask(ut32 value) {
-  return value && ((value + 1) & value) == 0;
-}
-
-static bool isShiftedMask (ut32 value) {
-  return value && isMask ((value - 1) | value);
-}
-
-static ut32 decodeBitMasks(ut32 imm) {
-	// get element size
-	int size = 32;
-	// determine rot to make element be 0^m 1^n
-	ut32 cto, i;
-	ut32 mask = ((ut64) - 1LL) >> (64 - size);
-
-	if (isShiftedMask (imm)) {
-		i = countTrailingZeros (imm);
-		cto = countTrailingOnes (imm >> i);
-	} else {
-		imm |= ~mask;
-		if (!isShiftedMask (imm)) {
-			return UT32_MAX;
-		}
-
-		ut32 clo = countLeadingOnes (imm);
-		i = 64 - clo;
-		cto = clo + countTrailingOnes (imm) - (64 - size);
-	}
-
-	// Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
-	// to our target value, where I is the number of RORs to go the opposite
-	// direction
-	ut32 immr = (size - i) & (size - 1);
-	// If size has a 1 in the n'th bit, create a value that has zeroes in
-	// bits [0, n] and ones above that.
-	ut64 nimms = ~(size - 1) << 1;
-	// Or the cto value into the low bits, which must be below the Nth bit
-	// bit mentioned above.
-	nimms |= (cto - 1);
-	// Extract and toggle seventh bit to make N field.
-	ut32 n = ((nimms >> 6) & 1) ^ 1;
-	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
-	return encoding;
 }
 
 static ut32 orr(ArmOp *op, int addr) {
@@ -721,6 +771,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
+		return *op != -1;
+	}
+	if (!strncmp (str, "b.eq ", 5)) {
+		*op = beq (&ops, addr, 0x00000054);
 		return *op != -1;
 	}
 	if (!strncmp (str, "bl ", 3)) {
