@@ -7,19 +7,16 @@
 static int checkPrograms () {
 #if __WINDOWS__ && !__CYGWIN__
 	char nul[] = "nul";
-	if (r_sys_cmd ("expand >nul") != 0) {
-		eprintf ("Missing expand\n");
+	if (r_sys_cmd ("expand -? >nul") != 0) {
 		return 0;
 	}
 #else
 	char nul[] = "/dev/null";
-	if (r_sys_cmd ("cabextract -v > /dev/null") != 0) {
-		eprintf ("Missing cabextract\n");
+	if (r_sys_cmd ("cabextract -v >/dev/null") != 0) {
 		return 0;
 	}
 #endif
 	if (r_sys_cmdf ("curl --version >%s", nul) != 0) {
-		eprintf ("Missing curl\n");
 		return 0;
 	}
 	return 1;
