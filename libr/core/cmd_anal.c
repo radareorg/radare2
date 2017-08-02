@@ -2169,7 +2169,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				*p = 0;
 				a = r_num_math (core->num, mi + 3);
 				b = r_num_math (core->num, p + 1);
-				fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
+				fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_anal_fcn_xref_add (core->anal, fcn, a, b, input[2]);
 				} else eprintf ("Cannot add reference to non-function\n");
