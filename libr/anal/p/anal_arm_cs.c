@@ -1302,7 +1302,7 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (rotate_imm) {
 		r_strbuf_appendf (&op->esil, "%s,", ARG(3));
 	}
-	if (strcmp(op2, "pc") == 0) {
+	if (!strcmp (op2, "pc")) {
 		r_strbuf_appendf (&op->esil, "%d,$$,+", pcdelta);
 	} else {
 		r_strbuf_appendf (&op->esil, "%s", op2);
@@ -1313,15 +1313,10 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (negate) {
 		r_strbuf_appendf (&op->esil, ",-1,^");
 	}
-	// left operand
-	if (strcmp(dest, op1) == 0) {
-		r_strbuf_appendf (&op->esil, ",%s,%s=", dest, opchar);
+	if (!strcmp (op1, "pc")) {
+		r_strbuf_appendf (&op->esil, ",%d,$$,+,%s,0xffffffff,&,%s,=", pcdelta, opchar, dest);
 	} else {
-		if (strcmp(op1, "pc") == 0) {
-			r_strbuf_appendf (&op->esil, ",%d,$$,+,%s,%s,=", pcdelta, opchar, dest);
-		} else {
-			r_strbuf_appendf (&op->esil, ",%s,%s,%s,=", op1, opchar, dest);
-		}
+		r_strbuf_appendf (&op->esil, ",%s,%s,0xffffffff,&,%s,=", op1, opchar, dest);
 	}
 }
 
@@ -1452,7 +1447,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		const char *comma = "";
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
-				comma, ARG (0), i*4, REG (i));
+				comma, ARG (0), (i - 1) * 4, REG (i));
 			comma = ",";
 		}
 		}
@@ -1854,16 +1849,16 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			if (REGBASE(1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
-				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,[4],%s,=",
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,0xffffffff,&,[4],%s,=",
 					(ut64)MEMDISP(1), pc, REG(0));
 			} else {
 				int disp = MEMDISP(1);
 				// not refptr, because we cant grab the reg value statically op->refptr = 4;
 				if (disp < 0) {
-					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0xffffffff,&,[4],%s,=",
 							(ut64)-disp, MEMBASE(1), REG(0));
 				} else {
-					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0xffffffff,&,[4],%s,=",
 							(ut64)disp, MEMBASE(1), REG(0));
 				}
 			}
@@ -1873,36 +1868,36 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,0xffffffff,&,[4],%s,=",
 						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
 				} else {
 					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,[4],%s,=",
+						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,[4],%s,=",
 							pcdelta, pc, MEMINDEX(1), REG(0));
 					} else {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,[4],%s,=",
+						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,[4],%s,=",
 							pcdelta, pc, MEMDISP(1), REG(0));
 					}
 				}
 			} else {
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[4],%s,=",
 						MEMBASE(1), LSHIFT2(1), MEMINDEX(1), REG(0));
 				} else {
 					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
+						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],%s,=",
 							MEMBASE(1), MEMINDEX(1), REG(0));
 					} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
 						// TODO: handle shift of index register value
-						r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
+						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],%s,=",
 							MEMINDEX(1), MEMBASE(1), REG(0));
 					} else {
 						int disp = MEMDISP(1);
 						if (disp < 0) {
-							r_strbuf_appendf (&op->esil, "%d,%s,-,[4],%s,=",
+							r_strbuf_appendf (&op->esil, "%d,%s,-,0xffffffff,&,[4],%s,=",
 								-disp, MEMBASE(1), REG(0));
 						} else {
-							r_strbuf_appendf (&op->esil, "%d,%s,+,[4],%s,=",
+							r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],%s,=",
 								disp, MEMBASE(1), REG(0));
 						}
 					}
@@ -1958,6 +1953,50 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",ARG (2),ARG (1),ARG (0));
 		}
 		break;
+	case ARM_INS_SMMLA:
+		r_strbuf_appendf (&op->esil, "32,%s,%s,*,>>,%s,+,0xffffffff,&,%s,=",
+			REG (1), REG(2), REG(3), REG (0));
+		break;
+	case ARM_INS_SMMLAR:
+		r_strbuf_appendf (&op->esil, "32,0x80000000,%s,%s,*,+,>>,%s,+,0xffffffff,&,%s,=",
+			REG (1), REG(2), REG(3), REG (0));
+		break;
+	case ARM_INS_UMULL:
+		r_strbuf_appendf (&op->esil, "32,%s,%s,*,DUP,0xffffffff,&,%s,=,>>,%s,=",
+			REG(2), REG(3), REG (0), REG(1));
+		break;
+	case ARM_INS_MLS:
+		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,-,0xffffffff,&,%s,=",
+			REG (1), REG(2), REG(3), REG (0));
+		break;
+	case ARM_INS_MLA:
+		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,+,0xffffffff,&,%s,=",
+			REG (1), REG(2), REG(3), REG (0));
+		break;
+	case ARM_INS_MVN:
+		r_strbuf_appendf (&op->esil, "-1,%s,^,0xffffffff,&,%s,=",
+			ARG (1), REG (0));
+		break;
+	case ARM_INS_BFI:
+	{
+		ut64 mask = bitmask_by_width[IMM (3) - 1];
+		ut64 shift = IMM (2);
+		ut64 notmask = ~(mask << shift);
+		// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
+		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,0xffffffff,&,%s,=",
+			notmask, REG (0), shift, mask, REG (1), REG (0));
+		break;
+	}
+	case ARM_INS_BFC:
+	{
+		ut64 mask = bitmask_by_width[IMM (2) - 1];
+		ut64 shift = IMM (1);
+		ut64 notmask = ~(mask << shift);
+		// notmask,dst,&,dst,=
+		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,0xffffffff,&,%s,=",
+			notmask, REG (0), REG (0));
+		break;
+	}
 	default:
 		break;
 	}
