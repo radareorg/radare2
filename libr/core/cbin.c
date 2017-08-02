@@ -700,6 +700,13 @@ static int bin_info(RCore *r, int mode) {
 		pair_bool ("crypto", info->has_crypto, mode, false);
 		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
+		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
+			tmp_buf = sdb_get (binfile->sdb, "mdmp.flags", 0);
+			if (tmp_buf) {
+				pair_str ("flags", tmp_buf, mode, false);
+				free (tmp_buf);
+			}
+		}
 		pair_bool ("havecode", havecode, mode, false);
 		if (info->claimed_checksum) {
 			/* checksum specified in header */
@@ -741,6 +748,12 @@ static int bin_info(RCore *r, int mode) {
 			pair_bool ("signed", info->signature, mode, false);
 		}
 		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
+		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
+			v = sdb_num_get (binfile->sdb, "mdmp.streams", 0);
+			if (v != -1) {
+				pair_int ("streams", v, mode, false);
+			}
+		}
 		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);
 		pair_str ("subsys", info->subsystem, mode, false);
 		pair_bool ("va", info->has_va, mode, true);
@@ -2726,10 +2739,10 @@ static void bin_pe_resources(RCore *r, int mode) {
 			const char *name = sdb_fmt (4, "resource.%d", index);
 			r_flag_set (r->flags, name, paddr, size);
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, paddr); 
+			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, paddr);
 		} else if (IS_MODE_JSON (mode)) {
-			r_cons_printf("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\"," 
-					"\"paddr\":%"PFMT32d", \"size\":%d, \"lang\":\"%s\"}", 
+			r_cons_printf("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
+					"\"paddr\":%"PFMT32d", \"size\":%d, \"lang\":\"%s\"}",
 					index? ",": "", name, index, type, paddr, size, lang);
 		} else {
 			char *humanSize = r_num_units (NULL, size);
