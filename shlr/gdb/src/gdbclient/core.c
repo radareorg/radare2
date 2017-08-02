@@ -118,7 +118,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	//read_packet (g);
+	read_packet (g);
 	g->connected = 1;
 	// TODO add config possibility here
 	ret = send_msg (g, message);
@@ -164,17 +164,23 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
 	if (g->stub_features.multiprocess) {
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.0", (ut32) g->pid);
+#if 0
 		if (g->tid < 0) {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.-1", (ut32) g->pid);
 		} else {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
 		}
+#endif
 	} else {
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg0");
+#if 0
 		if (g->tid < 0) {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg-1");
 		} else {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
 		}
+#endif
 	}
 	ret = send_msg (g, tmp.buf);
 	if (ret < 0) {
