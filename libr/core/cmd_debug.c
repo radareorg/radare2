@@ -733,6 +733,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 				eprintf ("dp %d\n", core->dbg->forked_pid);
 			} else {
 				r_debug_select (core->dbg, core->dbg->forked_pid, core->dbg->tid);
+				core->dbg->main_pid = core->dbg->forked_pid;
+				core->dbg->n_threads = 0;
 				core->dbg->forked_pid = -1;
 			}
 		} else {
@@ -798,6 +800,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case '=': // "dp="
 		r_debug_select (core->dbg,
 				(int) r_num_math (core->num, input + 2), core->dbg->tid);
+		core->dbg->main_pid = r_num_math (core->num, input + 2);
 		break;
 	case '*': // "dp*"
 		r_debug_pid_list (core->dbg, 0, 0);
@@ -3382,43 +3385,8 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	case 0: // "dc"
 		r_reg_arena_swap (core->dbg->reg, true);
 #if __linux__
-		old_pid = core->dbg->pid;
-		main_pid = core->dbg->main_pid;
-
-		RList *list = NULL;
-		if (core->dbg->threads) {
-			list = core->dbg->threads;
-		} else {
-			if (core->dbg->h && core->dbg->h->threads) {
-				list = core->dbg->h->threads (core->dbg, core->dbg->pid);
-			}
-		}
-		if (list) {
-			RDebugPid *th;
-			RListIter *it;
-			r_list_foreach (list, it, th) {
-				if (th->pid && th->pid != main_pid) {
-					eprintf ("Selecting and continuing: %d\n", th->pid);
-					r_debug_select (core->dbg, main_pid, th->pid);
-					r_debug_continue (core->dbg);
-					if (main_pid != core->dbg->main_pid) {
-						// This means that the process we were tracing has forked
-						// so we attached to it and selected it already.
-						goto beach;
-					}
-				}
-			}
-		}
-
-		eprintf ("Selecting and continuing: %d\n", main_pid);
-		r_debug_select (core->dbg, main_pid, main_pid);
+		core->dbg->continue_all_threads = true;
 		r_debug_continue (core->dbg);
-		if (main_pid == core->dbg->main_pid) {
-			// If we forked and we're tracing the child,
-			// we selected it already. We don't wanna select the old one
-			r_debug_select (core->dbg, old_pid, core->dbg->tid);
-		}
-beach:
 #else
 		r_debug_continue (core->dbg);
 #endif

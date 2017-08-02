@@ -249,6 +249,7 @@ typedef struct r_debug_t {
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
+	int n_threads;
 	RList *threads; /* NOTE: list contents are platform-specific */
 
 	/* dbg.* config options (see e?dbg)
@@ -268,6 +269,7 @@ typedef struct r_debug_t {
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */
+	bool continue_all_threads;
 
 	/* tracking debugger state */
 	int steps; /* counter of steps done */

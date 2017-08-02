@@ -99,7 +99,7 @@ static void r_debug_native_stop(RDebug *dbg);
 #if !__APPLE__
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
-	return linux_handle_signals (dbg, 0);
+	return linux_handle_signals (dbg);
 #else
 	return -1;
 #endif
@@ -265,8 +265,23 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (dbg->consbreak) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
-	int ret = ptrace (PTRACE_CONT, tid, NULL, contsig);
-	return ret >= 0 ? tid : false;
+
+	int ret = ptrace (PTRACE_CONT, pid, NULL, contsig);
+	if (dbg->continue_all_threads && dbg->n_threads) {
+		RList *list = dbg->threads;
+		RDebugPid *th;
+		RListIter *it;
+
+		if (list) {
+			r_list_foreach (list, it, th) {
+				if (th->pid && th->pid != pid) {
+					ptrace (PTRACE_CONT, tid, NULL, contsig);
+				}
+			}
+		}
+	}
+	//return ret >= 0 ? tid : false;
+	return tid;
 #endif
 }
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
@@ -377,6 +392,19 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #else
 #if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 	reason = linux_dbg_wait (dbg, dbg->tid);
+	if (reason == R_DEBUG_REASON_NEW_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r) {
+			eprintf ("(%d) Created thread %d\n", r->pid, r->tid);
+			r_debug_info_free (r);
+		}
+	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r) {
+			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
+			r_debug_info_free (r);
+		}
+	} 
 #else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
