@@ -1519,8 +1519,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				return l;
 			}
 			if (op->operands[1].regs[1] != X86R_UNDEFINED) {
-				data[l++] = op->operands[0].reg << 3 | 0x3;
-				data[l++] = op->operands[1].regs[0] << 3 | op->operands[1].regs[1];
+				data[l++] = op->operands[0].reg << 3 | 0x4;
+				data[l++] = op->operands[1].regs[1] << 3 | op->operands[1].regs[0];
 				return l;
 			}
 
