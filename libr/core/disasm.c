@@ -2677,13 +2677,10 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		break;
 	default:
 		str_len = strlen (str);
-		if (str_len == 1) {
-			// could be a wide string
+		if (str_len == 1 && len > 3 && str[2] && !str[3]) {
+			// could be a utf16le string
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
-			if (escstr) {
-				int escstr_len = strlen (escstr);
-				prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
-			}
+			prefix = "u";
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
 			const char *ptr = str, *end = str + str_len;
