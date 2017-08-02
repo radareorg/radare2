@@ -100,7 +100,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	ut32 env_pktsz;
 	if ((env_pktsz_str = getenv ("R2_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32) strtoul (env_pktsz_str, NULL, 10))) {
-			g->stub_features.pkt_sz = env_pktsz;
+			g->stub_features.pkt_sz = R_MAX (env_pktsz, 64);
 		}
 	}
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
@@ -131,7 +131,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		return ret;
 	}
 	if (env_pktsz > 0) {
-		g->stub_features.pkt_sz = R_MIN (env_pktsz, g->stub_features.pkt_sz);
+		g->stub_features.pkt_sz = R_MAX (R_MIN (env_pktsz, g->stub_features.pkt_sz), 64);
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
@@ -567,6 +567,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	if (!g || !data) {
 		return -1;
 	}
+	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
 	data_sz = g->stub_features.pkt_sz / 2;
 	if (data_sz < 1) {
 		return -1;
@@ -1002,6 +1003,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		eprintf ("%s: No remote file opened\n", __func__);
 		return -1;
 	}
+	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
 	data_sz = g->stub_features.pkt_sz / 2;
 	ret = 0;
 	while (ret < max_len) {
