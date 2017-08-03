@@ -336,11 +336,8 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			r_debug_info_free (r);
 
 			/* Check if autoload PDB is set, and load PDB information if yes */
-			bool autoload_pdb = false;
 			RCore* core = dbg->corebind.core;
-			if (core) {
-				autoload_pdb = r_config_get_i (core->config, "pdb.autoload");
-			}
+			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
 				char* o_res = dbg->corebind.cmdstrf (core, "o %s", ((PLIB_ITEM)(r->lib))->Path);
 				// File exists since we loaded it, however the "o" command fails sometimes hence the while loop

@@ -1915,6 +1915,19 @@ static int cb_linesabs(void *user, void *data) {
 	return true;
 }
 
+static int cb_malloc(void *user, void *data) {
+ 	RCore *core = (RCore*) user;
+ 	RConfigNode *node = (RConfigNode*) data;
+
+ 	if (node->value){
+ 		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
+ 			core->dbg->malloc = data;
+ 		}
+ 
+ 	}
+	return true;
+}
+
 static char *getViewerPath() {
 	int i;
 	const char *viewers[] = {
@@ -2001,6 +2014,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.bb.align", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
 	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
+
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+ 	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
+#else
+	SETCB("dbg.malloc", "jemalloc", &cb_malloc, "Choose malloc structure parser");
+#endif
 
 	SETPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");

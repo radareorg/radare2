@@ -11,6 +11,12 @@
 #include "r_heap_glibc.h"
 #endif
 
+#define HAVE_JEMALLOC 1
+#if HAVE_JEMALLOC
+#include "r_heap_jemalloc.h"
+#include "linux_heap_jemalloc.c"
+#endif
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
@@ -1008,7 +1014,6 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 #define MAX_MAP_SIZE 1024*1024*512
 static int dump_maps(RCore *core, int perm, const char *filename) {
 	RDebugMap *map;
-	char file[128];
 	RListIter *iter;
 	r_debug_map_sync (core->dbg); // update process memory maps
 	ut64 addr = core->offset;
@@ -1040,10 +1045,9 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 				continue;
 			}
 			r_io_read_at (core->io, map->addr, buf, map->size);
-			if (filename) {
-				snprintf (file, sizeof (file), "%s", filename);
-			} else snprintf (file, sizeof (file),
-					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+			char *file = filename
+			? strdup (filename)
+			: r_str_newf ("0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					map->addr, map->addr_end, r_str_rwx_i (map->perm));
 			if (!r_file_dump (file, buf, map->size, 0)) {
 				eprintf ("Cannot write '%s'\n", file);
@@ -1051,6 +1055,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 			} else {
 				eprintf ("Dumped %d bytes into %s\n", (int)map->size, file);
 			}
+			free (file);
 			free (buf);
 		}
 	}
@@ -1110,8 +1115,7 @@ show_help:
 			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
-				r_cons_printf ("0x%08"PFMT64x" %s\n",
-						map->addr, map->file);
+				r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
 				goto beach;
 			}
 			break;
@@ -1228,7 +1232,9 @@ static int str_start_with(const char *ptr, const char *str) {
 static ut64 addroflib(RCore *core, const char *libname) {
 	RListIter *iter;
 	RDebugMap *map;
-
+	if (!core || !libname) {
+		return UT64_MAX;
+	}
 	r_debug_map_sync (core->dbg);
 	// RList *list = r_debug_native_modules_get (core->dbg);
 	RList *list = r_debug_modules_list (core->dbg);
@@ -1262,6 +1268,33 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 		}
 	}
 	return NULL;
+}
+
+static int r_debug_heap(RCore *core, const char *input) {
+	const char *m = r_config_get (core->config, "dbg.malloc");
+	if (m && !strcmp ("glibc", m)) {
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+		if (core->assembler->bits == 64) {
+			cmd_dbg_map_heap_glibc_64 (core, input + 1);
+		} else {
+			cmd_dbg_map_heap_glibc_32 (core, input + 1);
+		}
+#else
+		eprintf ("glibc not supported for this platform\n");
+#endif
+#if HAVE_JEMALLOC
+	} else if (!strcmp ("jemalloc", m)) {
+		if (core->assembler->bits == 64) {
+			cmd_dbg_map_jemalloc_64 (core, input + 1);
+		} else {
+			cmd_dbg_map_jemalloc_32 (core, input + 1);
+		}
+#endif
+	} else {
+		eprintf ("MALLOC algorithm not supported\n");
+		return false;
+	}
+	return true;
 }
 
 static int cmd_debug_map(RCore *core, const char *input) {
@@ -1326,18 +1359,20 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					eprintf ("See dmp?\n");
 				}
 			}
-		} else eprintf ("See dmp?\n");
+		} else {
+			eprintf ("See dmp?\n");
+		}
 		break;
 	case 'd':
 		switch (input[1]) {
-			case 'a': return dump_maps (core, 0, NULL);
-			case 'w': return dump_maps (core, R_IO_RW, NULL);
-			case ' ': return dump_maps (core, -1, input + 2);
-			case 0: return dump_maps (core, -1, NULL);
-			case '?':
-			default:
-					eprintf ("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
-					break;
+		case 'a': return dump_maps (core, 0, NULL);
+		case 'w': return dump_maps (core, R_IO_RW, NULL);
+		case ' ': return dump_maps (core, -1, input + 2);
+		case 0: return dump_maps (core, -1, NULL);
+		case '?':
+		default:
+			eprintf ("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
+			break;
 		}
 		break;
 	case 'l':
@@ -1483,10 +1518,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			i = r_str_word_set0 (ptr);
 
 			addr = UT64_MAX;
-			libname = NULL;
 			switch (i) {
 			case 2: // get section name
 				sectname = r_str_word_get0 (ptr, 1);
+				/* fallthrou */
 			case 1: // get addr|libname
 				if (IS_DIGIT (*ptr)) {
 					const char *a0 = r_str_word_get0 (ptr, 0);
@@ -1534,9 +1569,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case ' ':
 		{
-			char *p;
 			int size;
-			p = strchr (input + 2, ' ');
+			char *p = strchr (input + 2, ' ');
 			if (p) {
 				*p++ = 0;
 				addr = r_num_math (core->num, input + 1);
@@ -1577,15 +1611,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				r_cons_get_size (NULL));
 		break;
 	case 'h': // "dmh"
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (SZ == 4) {
-			cmd_dbg_map_heap_glibc_32 (core, input + 1);
-		} else {
-			cmd_dbg_map_heap_glibc_64 (core, input + 1);
-		}
-#else
-		eprintf ("MALLOC algorithm not supported\n");
-#endif
+		(void)r_debug_heap (core, input);
 		break;
 	}
 	return true;
