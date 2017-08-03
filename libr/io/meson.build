@@ -53,10 +53,10 @@ r_io = library('r_io', files,
 	'../../shlr/bochs/include',
 	'../../shlr/gdb/include',
 	'../../shlr/qnx/include',
-	'../../shlr/wind',
+	'../../shlr/windbg',
 	'../../shlr/zip/include']
   )],
-  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2wind, libr2gdb, libr2zip],
+  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2windbg, libr2gdb, libr2zip],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   install: true
 )

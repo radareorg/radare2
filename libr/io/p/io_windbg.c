@@ -18,7 +18,7 @@
 #include <r_socket.h>
 #include <r_util.h>
 #include <transport.h>
-#include <wind.h>
+#include <windbg.h>
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "windbg://", strlen ("windbg://"));
@@ -42,7 +42,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 
-	ctx = wind_ctx_new (io_ctx);
+	ctx = windbg_ctx_new (io_ctx);
 
 	if (!ctx)
 		return NULL;
@@ -54,14 +54,14 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd)
 		return -1;
 
-	if (wind_get_target(fd->data)) {
+	if (windbg_get_target(fd->data)) {
 		ut64 va;
-		if (!wind_va_to_pa (fd->data, io->off, &va))
+		if (!windbg_va_to_pa (fd->data, io->off, &va))
 			return -1;
-		return wind_write_at_phys (fd->data, buf, va, count);
+		return windbg_write_at_phys (fd->data, buf, va, count);
 	}
 
-	return wind_write_at (fd->data, buf, io->off, count);
+	return windbg_write_at (fd->data, buf, io->off, count);
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -72,18 +72,18 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd)
 		return -1;
 
-	if (wind_get_target(fd->data)) {
+	if (windbg_get_target(fd->data)) {
 		ut64 va;
-		if (!wind_va_to_pa (fd->data, io->off, &va))
+		if (!windbg_va_to_pa (fd->data, io->off, &va))
 			return -1;
-		return wind_read_at_phys(fd->data, buf, va, count);
+		return windbg_read_at_phys(fd->data, buf, va, count);
 	}
 
-	return wind_read_at(fd->data, buf, io->off, count);
+	return windbg_read_at(fd->data, buf, io->off, count);
 }
 
 static int __close(RIODesc *fd) {
-	wind_ctx_free (fd->data);
+	windbg_ctx_free (fd->data);
 	return true;
 }
 
