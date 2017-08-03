@@ -47,24 +47,27 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	int rc;
 	bool ret;
 	char string[1024];
-	va_list ap;
+	va_list ap, ap2;
 
 	if (!sb || !fmt)
 		return false;
 	va_start (ap, fmt);
+	va_copy (ap2, ap);
 	rc = vsnprintf (string, sizeof (string), fmt, ap);
 	if (rc >= sizeof (string)) {
-		char *p = malloc (rc + 2);
+		char *p = malloc (rc + 1);
 		if (!p) {
-			va_end (ap);
-			return false;
+			ret = false;
+			goto done;
 		}
-		vsnprintf (p, rc + 1, fmt, ap);
+		vsnprintf (p, rc + 1, fmt, ap2);
 		ret = r_strbuf_set (sb, p);
 		free (p);
 	} else {
 		ret = r_strbuf_set (sb, string);
 	}
+done:
+	va_end (ap2);
 	va_end (ap);
 	return ret;
 }
@@ -78,7 +81,7 @@ R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 	if (l < 1) {
 		return false;
 	}
-	if ((sb->len + l + 1) < sizeof (sb->buf)) {
+	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l + 1);
 		R_FREE (sb->ptr);
 	} else {
