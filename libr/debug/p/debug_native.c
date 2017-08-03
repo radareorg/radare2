@@ -352,7 +352,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 				char* pdb_path = dbg->corebind.cmdstr (core, "i~pdb");
 				if (*pdb_path == 0) {
 					eprintf ("Failure...\n");
-					dbg->corebind.cmd (core, "i", 1);
+					dbg->corebind.cmd (core, "i");
 				} else {
 					pdb_path = strchr (pdb_path, ' ') + 1;
 					dbg->corebind.cmdf (core, ".idp* %s", pdb_path);
