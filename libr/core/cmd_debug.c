@@ -11,6 +11,9 @@
 #include "r_heap_glibc.h"
 #endif
 
+#include "r_heap_jemalloc.h"
+#include "linux_heap_jemalloc.c"
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
@@ -1577,16 +1580,18 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				r_cons_get_size (NULL));
 		break;
 	case 'h': // "dmh"
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (SZ == 4) {
-			cmd_dbg_map_heap_glibc_32 (core, input + 1);
-		} else {
-			cmd_dbg_map_heap_glibc_64 (core, input + 1);
-		}
-#else
-		eprintf ("MALLOC algorithm not supported\n");
-#endif
-		break;
+		{
+			const char *m = r_config_get (core->config, "dbg.malloc");	
+			if (!strcmp ("glibc", m)) {
+				(SZ == 4) ? cmd_dbg_map_heap_glibc_32 (core, input + 1):
+					    cmd_dbg_map_heap_glibc_64 (core, input + 1);
+			} else if (!strcmp ("jemalloc", m)) {
+				(SZ == 4) ? cmd_dbg_map_jemalloc_32 (core, input + 1) :
+					    cmd_dbg_map_jemalloc_64 (core, input + 1) ;
+			} else {
+				eprintf ("MALLOC algorithm not supported\n");
+			}
+ 		}
 	}
 	return true;
 }
