@@ -7,7 +7,7 @@ libr2bochs = static_library('libr2bochs', bochs_files,
     'bochs/include'
   ])]
 )
-  
+
 
 gdb_files=[
 'gdb/src/arch.c',
@@ -62,14 +62,14 @@ tcc_files=[
 'tcc/libtcc.c',
 'tcc/tccgen.c',
 'tcc/tccpp.c'
-]  
+]
 
 libr2tcc = static_library('libr2tcc', tcc_files,
   include_directories: [platform_inc, include_directories([
     'tcc'
   ])]
 )
-  
+
 spp_files=[
   'spp/spp.c'
 ]
@@ -80,7 +80,7 @@ libr2spp = static_library('libr2spp', spp_files,
   ])],
   c_args: ['-DHAVE_R_UTIL']
 )
-  
+
 sdb_files=[
 'sdb/src/array.c',
 'sdb/src/base64.c',
@@ -290,7 +290,7 @@ libr2capstone = static_library('libr2capstone', cs_files,
     'capstone/include'
   ])
 )
-  
+
 grub_files=[
 'grub/fs/affs.c',
 #'grub/fs/afs.c',
@@ -351,16 +351,16 @@ libr2grub = static_library('libr2grub', grub_files,
   ])]
 )
 
-wind_files=[
-'wind/iob_pipe.c',
-'wind/kd.c',
-'wind/transport.c',
-'wind/wind.c',
+windbg_files=[
+'windbg/iob_pipe.c',
+'windbg/kd.c',
+'windbg/transport.c',
+'windbg/windbg.c',
 ]
 
-libr2wind = static_library('libr2wind', wind_files,
+libr2windbg = static_library('libr2windbg', windbg_files,
   include_directories: [platform_inc, include_directories([
-    'wind'
+    'windbg'
   ])]
 )
 

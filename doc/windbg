@@ -20,13 +20,13 @@ Enable WinDBG support on Windows Vista and higher like this:
 
 Or like this for Windows XP:
     Open boot.ini and add /debug /debugport=COM1 /baudrate=115200:
-    
+
     [boot loader]
     timeout=30
     default=multi(0)disk(0)rdisk(0)partition(1)\WINDOWS
     [operating systems]
     multi(0)disk(0)rdisk(0)partition(1)\WINDOWS="Debugging with Cable" /fastdetect /debug /debugport=COM1 /baudrate=57600
- 
+
 
 Configure the VirtualBox Machine like this:
 
@@ -42,18 +42,18 @@ Or just spawn the VM with qemu like this:
 
     $ qemu-system-x86_64 -chardev socket,id=serial0,\
            path=/tmp/windbg.pipe,nowait,server \
-           -serial chardev:serial0 -hda Windows7-VM.vdi 
+           -serial chardev:serial0 -hda Windows7-VM.vdi
 
 
 Radare2 will use the 'windbg' io plugin to connect to a socket file
-created by virtualbox or qemu. Also, the 'wind' debugger plugin and
+created by virtualbox or qemu. Also, the 'windbg' debugger plugin and
 we should specify the x86-32 too. (32 and 64 bit debugging is supported)
 
-    $ r2 -a x86 -b 32 -D wind windbg:///tmp/windbg.pipe 
+    $ r2 -a x86 -b 32 -D windbg windbg:///tmp/windbg.pipe
 
 On Windows you should run the following line:
 
-    $ radare2 -D wind windbg://\\.\pipe\com_1
+    $ radare2 -D windbg windbg://\\.\pipe\com_1
 
 At this point, we will get stuck here:
 
@@ -76,6 +76,6 @@ In order to skip that trap we will need to change eip and run 'dc' twice:
 Now the Windows VM will be interactive again. We will need to kill r2 and
 attach again to get back to control the kernel.
 
-In addition, the `dp` command can be used to list all processes, and 
+In addition, the `dp` command can be used to list all processes, and
 `dpa` or `dp=` to attach to the process. This will display the base
 address of the process in the physical memory layout.
