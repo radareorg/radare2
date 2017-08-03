@@ -23,6 +23,9 @@ static const char *printfmtColumns[] = {
 
 static const char **printfmt = printfmtSingle;
 
+static bool splitView = false;
+static ut64 splitPtr = UT64_MAX;
+
 #undef USE_THREADS
 #define USE_THREADS 1
 
@@ -168,6 +171,7 @@ static int visual_help() {
 		" =        set cmd.vprompt (top row)\n"
 		" |        set cmd.cprompt (right column)\n"
 		" .        seek to program counter\n"
+		" \\        toggle visual split mode\n"
 		" \"        toggle the column mode (uses pC..)\n"
 		" /        in cursor mode search in current block\n"
 		" :cmd     run radare command\n"
@@ -1160,6 +1164,18 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		p->cur += cols > 0? cols: 0;
 		return;
 	}
+	if (splitView) {
+		int w = r_config_get_i (core->config, "hex.cols");
+		if (w < 1) {
+			w = 16;
+		}
+		if (core->seltab == 0) {
+			splitPtr += w;
+		} else {
+			core->offset += w;
+		}
+		return;
+	}
 	if (PIDX == 2 && core->seltab == 1) {
 		const int cols = core->dbg->regcols;
 		p->cur += cols > 0? cols: 3;
@@ -1222,6 +1238,18 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	}
 	cursor_ocur (core, use_ocur);
 
+	if (splitView) {
+		int w = r_config_get_i (core->config, "hex.cols");
+		if (w < 1) {
+			w = 16;
+		}
+		if (core->seltab == 0) {
+			splitPtr -= w;
+		} else {
+			core->offset -= w;
+		}
+		return;
+	}
 	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
@@ -1371,7 +1399,7 @@ static bool insert_mode_enabled(RCore *core) {
 	case 127:
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		return true;
-	case 9: // tab
+	case 9: // tab "tab"
 		core->print->col = core->print->col == 1? 2: 1;
 		break;
 	}
@@ -1552,24 +1580,33 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case 9: // tab
-			core->curtab = 0;
-			if (core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
+			if (splitView) {
 				core->print->cur = 0;
+				core->curtab = 0;
 				core->seltab++;
-				if (core->seltab > 2) {
+				if (core->seltab > 1) {
 					core->seltab = 0;
 				}
 			} else {
-				core->seltab = 0;
-				ut64 f = r_config_get_i (core->config, "diff.from");
-				ut64 t = r_config_get_i (core->config, "diff.to");
-				if (f == t && f == 0) {
-					core->print->col = core->print->col == 1? 2: 1;
+				core->curtab = 0;
+				if (core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
+					core->print->cur = 0;
+					core->seltab++;
+					if (core->seltab > 2) {
+						core->seltab = 0;
+					}
 				} else {
-					ut64 delta = offset - f;
-					r_core_seek (core, t + delta, 1);
-					r_config_set_i (core->config, "diff.from", t);
-					r_config_set_i (core->config, "diff.to", f);
+					core->seltab = 0;
+					ut64 f = r_config_get_i (core->config, "diff.from");
+					ut64 t = r_config_get_i (core->config, "diff.to");
+					if (f == t && f == 0) {
+						core->print->col = core->print->col == 1? 2: 1;
+					} else {
+						ut64 delta = offset - f;
+						r_core_seek (core, t + delta, 1);
+						r_config_set_i (core->config, "diff.from", t);
+						r_config_set_i (core->config, "diff.to", f);
+					}
 				}
 			}
 			break;
@@ -1669,6 +1706,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 		}
 		break;
+		case '\\':
+			if (splitPtr == UT64_MAX) {
+				splitPtr = core->offset;
+			}
+			splitView = !splitView;
+			setcursor (core, splitView);
+			break;
 		case 'c':
 			setcursor (core, !core->print->cur_enabled);
 			break;
@@ -2724,8 +2768,42 @@ static void visual_refresh(RCore *core) {
 		core->print->screen_bounds = 0;
 		r_core_cmd (core, vcmd, 0);
 	} else {
-		core->print->screen_bounds = 1LL;
-		r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
+		if (splitView) {
+			static char debugstr[512];
+			const int ref = r_config_get_i (core->config, "dbg.slow");
+			const int bytes = r_config_get_i (core->config, "stack.bytes");
+			char *pxw = NULL;
+			int h = r_num_get (core->num, "$r");
+			int size = (h * 16) / 2;
+			switch (core->printidx) {
+			case 1:
+				size = (h - 2) / 2;
+				pxw = "pd";
+				break;
+			default:
+				if (ref) {
+					pxw = "pxr";
+				} else if (bytes) {
+					pxw = "px";
+				} else {
+					switch (core->assembler->bits) {
+					case 64: pxw = "pxq"; break;
+					case 32: pxw = "pxw"; break;
+					default: pxw = "px"; break;
+					}
+				}
+			}
+			snprintf (debugstr, sizeof (debugstr),
+					"?0;%s %d @ %"PFMT64d";"
+					"?1;%s %d @ %"PFMT64d";",
+					pxw, size, splitPtr,
+					pxw, size, core->offset);
+			core->print->screen_bounds = 1LL;
+			r_core_cmd0 (core, debugstr);
+		} else {
+			core->print->screen_bounds = 1LL;
+			r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
+		}
 	}
 	core->print->cur_enabled = ce;
 #if 0
@@ -2756,6 +2834,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		input[0], 0
 	};
 
+	splitPtr = UT64_MAX;
+
 	if (r_cons_get_size (&ch) < 1 || ch < 1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
@@ -2785,19 +2865,19 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	teefile = r_cons_singleton ()->teefile;
 	r_cons_singleton ()->teefile = "";
 
+	static char debugstr[512];
 	core->print->flags |= R_PRINT_FLAGS_ADDRMOD;
 	do {
 dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
+		const int ref = r_config_get_i (core->config, "dbg.slow");
+		const int bytes = r_config_get_i (core->config, "stack.bytes");
 
 		if (printfmt == printfmtSingle && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
-			static char debugstr[512];
-			const int ref = r_config_get_i (core->config, "dbg.slow");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
 			const int size = r_config_get_i (core->config, "stack.size");
 			const int delta = r_config_get_i (core->config, "stack.delta");
-			const int bytes = r_config_get_i (core->config, "stack.bytes");
 			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
 
 			if (cmdvhex && *cmdvhex) {
