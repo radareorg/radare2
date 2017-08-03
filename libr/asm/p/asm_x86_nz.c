@@ -553,6 +553,20 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x30);
 }
 
+static int opnot(RAsm *a, ut8 * data, const Opcode *op)
+{
+	int l = 0;
+
+	if(op->operands[0].reg == X86R_UNDEFINED)  {
+		return -1;
+	}
+
+	data[l++] = 0xf7;
+	data[l++] = 0xd0 | op->operands[0].reg;
+
+	return l;
+}
+
 static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
@@ -2050,6 +2064,7 @@ LookupTable oplookup[] = {
 	{"movsx", 0, &opmovx, 0},
 	{"mwait", 0, NULL, 0x0f01c9, 3},
 	{"nop", 0, NULL, 0x90, 1},
+	{"not", 0, &opnot, 0},
 	{"or", 0, &opor, 0},
 	{"out", 0, &opout, 0},
 	{"outsb", 0, NULL, 0x6e, 1},
