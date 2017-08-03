@@ -1254,24 +1254,21 @@ static int cmd_system(void *data, const char *input) {
 
 #if __WINDOWS__ && !__CYGWIN__
 static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-	STARTUPINFO si;
-        PROCESS_INFORMATION pi;
+	STARTUPINFO si = {0};
+	PROCESS_INFORMATION pi = {0};
 	SECURITY_ATTRIBUTES sa;
-	HANDLE pipe[2];
+	HANDLE pipe[2] = {NULL, NULL};
 	int fd_out = -1, cons_out = -1;
 	char *_shell_cmd;
 
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES); 
 	sa.bInheritHandle = TRUE; 
 	sa.lpSecurityDescriptor = NULL; 
-	memset (&si, 0, sizeof (si));
-	memset (&pi, 0, sizeof (pi));
-	memset (pipe, 0, sizeof (pipe));
-   	if (!CreatePipe(&pipe[0], &pipe[1], &sa, 0)) {
+   	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
 		goto err_r_w32_cmd_pipe;
 	}	
-	if (!SetHandleInformation(pipe[1], HANDLE_FLAG_INHERIT, 0)) {
+	if (!SetHandleInformation (pipe[1], HANDLE_FLAG_INHERIT, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/SetHandleInformation");
 		goto err_r_w32_cmd_pipe;
 	}
@@ -1281,7 +1278,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	si.cb = sizeof (si);
 	_shell_cmd = shell_cmd;
-	while (*_shell_cmd && isspace(*_shell_cmd)) {
+	while (*_shell_cmd && isspace (*_shell_cmd)) {
 		_shell_cmd++;
 	}
 	// exec windows process
@@ -1289,32 +1286,32 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");
 		goto err_r_w32_cmd_pipe;
 	}
-	fd_out = _open_osfhandle((intptr_t)pipe[1], _O_WRONLY|_O_TEXT);
+	fd_out = _open_osfhandle ((intptr_t)pipe[1], _O_WRONLY|_O_TEXT);
 	if (fd_out == -1) {
-		perror("_open_osfhandle");
+		perror ("_open_osfhandle");
 		goto err_r_w32_cmd_pipe;
 	}
-	cons_out = dup(1);
-	dup2(fd_out, 1);
+	cons_out = dup (1);
+	dup2 (fd_out, 1);
 	// exec radare command
 	r_core_cmd (core, radare_cmd, 0);
 	r_cons_flush ();
-	close(1);
-	close(fd_out);
+	close (1);
+	close (fd_out);
 	fd_out = -1;
-	WaitForSingleObject(pi.hProcess, INFINITE);
+	WaitForSingleObject (pi.hProcess, INFINITE);
 err_r_w32_cmd_pipe:
-	if (pi.hProcess != NULL) {
-		CloseHandle(pi.hProcess);
+	if (pi.hProcess) {
+		CloseHandle (pi.hProcess);
 	}
-	if (pi.hThread != NULL) {
-		CloseHandle(pi.hThread);
+	if (pi.hThread) {
+		CloseHandle (pi.hThread);
 	}
-	if (pipe[0] != NULL) {
-		CloseHandle(pipe[0]);
+	if (pipe[0]) {
+		CloseHandle (pipe[0]);
 	}
-	if (pipe[1] != NULL) {
-		CloseHandle(pipe[1]);
+	if (pipe[1]) {
+		CloseHandle (pipe[1]);
 	}
 	if (fd_out != -1) {
 		close (fd_out);

@@ -890,11 +890,11 @@ R_API char *r_file_tmpdir() {
 		path = strdup (tmpdir);
 	}
 	// Windows 7, stat() function fail if tmpdir ends with '\\'
-	if (path != NULL) {
-		int path_len = strlen(path);
-		if (path_len > 0 && path[path_len - 1] == '\\') 
-			path[path_len - 1] = (char)NULL;
-
+	if (path) {
+		int path_len = strlen (path);
+		if (path_len > 0 && path[path_len - 1] == '\\') {
+			path[path_len - 1] = '\0';
+		}
 	}
 #elif __ANDROID__
 	char *path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");

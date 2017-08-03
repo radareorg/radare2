@@ -8,17 +8,17 @@ typedef struct {
 static char *get_map_type(MEMORY_BASIC_INFORMATION *mbi) {
 	char *type;
 	switch (mbi->Type) {
-		case MEM_IMAGE:
-			type = "IMAGE";
-			break;
-		case MEM_MAPPED:
-			type = "MAPPED";
-			break;
-		case MEM_PRIVATE:
-			type = "PRIVATE";
-			break;
-		default:
-			type = "UNKNOWN";
+	case MEM_IMAGE:
+		type = "IMAGE";
+		break;
+	case MEM_MAPPED:
+		type = "MAPPED";
+		break;
+	case MEM_PRIVATE:
+		type = "PRIVATE";
+		break;
+	default:
+		type = "UNKNOWN";
 	}
 	return type;
 }
@@ -26,42 +26,39 @@ static char *get_map_type(MEMORY_BASIC_INFORMATION *mbi) {
 static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, MEMORY_BASIC_INFORMATION *mbi) {
 	RDebugMap *mr;
 	int perm;
-	char *map_name, *map_type;
+	char *map_type = get_map_type (mbi);
+	char *map_name;
 
-	map_type = get_map_type (mbi);
-	map_name = (char *)malloc(strlen(name) + 
-				  strlen(map_type) +
-				  50);
-	if (map_name == NULL) {
-		perror("malloc name add_map()");
+	switch (mbi->Protect) {
+	case PAGE_EXECUTE:
+		perm = R_IO_EXEC;
+		break;
+	case PAGE_EXECUTE_READ:
+		perm = R_IO_READ | R_IO_EXEC;
+		break;
+	case PAGE_EXECUTE_READWRITE:
+		perm = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
+		break;
+	case PAGE_READONLY:
+		perm = R_IO_READ;
+		break;
+	case PAGE_READWRITE:
+		perm = R_IO_READ | R_IO_WRITE;
+		break;
+	case PAGE_WRITECOPY:
+		perm = R_IO_WRITE;
+		break;
+	case PAGE_EXECUTE_WRITECOPY:
+		perm = R_IO_EXEC;
+		break;
+	default:
+		perm = 0;
+	}
+	map_name = r_str_newf ("%-8s %s", map_type, name);
+	if (!map_name) {
+		perror ("r_str_newf");
 		goto err_add_map;
 	}
-	switch (mbi->Protect) {
-		case PAGE_EXECUTE:
-			perm = R_IO_EXEC;
-			break;
-		case PAGE_EXECUTE_READ:
-			perm = R_IO_READ | R_IO_EXEC;
-			break;
-		case PAGE_EXECUTE_READWRITE:
-			perm = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
-			break;
-		case PAGE_READONLY:
-			perm = R_IO_READ;
-			break;
-		case PAGE_READWRITE:
-			perm = R_IO_READ | R_IO_WRITE;
-			break;
-		case PAGE_WRITECOPY:
-			perm = R_IO_WRITE;
-			break;
-		case PAGE_EXECUTE_WRITECOPY:
-			perm = R_IO_EXEC;
-			break;
-		default:
-			perm = 0;
-	}
-	sprintf(map_name, "%-8s %s", map_type, name);
 	mr = r_debug_map_new (map_name,
 			     addr,
 			     addr + len, perm, mbi->Type == MEM_PRIVATE);
@@ -80,32 +77,32 @@ static RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC_INFORM
 }
 
 static RList *w32_dbg_modules(RDebug *dbg) {
-        HANDLE h_mod_snap;
         MODULEENTRY32 me32;
         RDebugMap *mr;
         int pid = dbg->pid;
         RList *list = r_list_new ();
+        HANDLE h_mod_snap = CreateToolhelp32Snapshot ( TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid );
 
-        h_mod_snap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid );
-        if (!h_mod_snap) {
-                r_sys_perror ("w32_dbg_modules/CreateToolhelp32Snapshot");
+	if (!h_mod_snap) {
+		r_sys_perror ("w32_dbg_modules/CreateToolhelp32Snapshot");
 		goto err_w32_dbg_modules;
-        }
-        me32.dwSize = sizeof (MODULEENTRY32);
-        if (!Module32First (h_mod_snap, &me32)) {
+	}
+	me32.dwSize = sizeof (MODULEENTRY32);
+	if (!Module32First (h_mod_snap, &me32)) {
 		goto err_w32_dbg_modules;
-        }
-        do {
-                ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
+	}
+	do {
+		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
                 mr = r_debug_map_new (me32.szModule, baddr, baddr + me32.modBaseSize, 0, 0);
-                if (mr != NULL) {
+                if (mr) {
                         mr->file = strdup (me32.szExePath);
-                        if (mr->file != NULL)
-                                r_list_append (list, mr);
+			if (mr->file) {
+				r_list_append (list, mr);
+			}
                 }
-        } while(Module32Next (h_mod_snap, &me32));
+        } while (Module32Next (h_mod_snap, &me32));
 err_w32_dbg_modules:
-	if (h_mod_snap != NULL) {
+	if (h_mod_snap) {
         	CloseHandle (h_mod_snap);
 	}
         return list;
@@ -123,14 +120,16 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	len = 0;
 	sect_hdr = NULL;
 	mod_inf_fill = -1;
-	ReadProcessMemory (h_proc, (LPCVOID)map->addr, (LPVOID)pe_hdr, sizeof(pe_hdr), &len);
+	ReadProcessMemory (h_proc, (LPCVOID)map->addr, (LPVOID)pe_hdr, sizeof (pe_hdr), &len);
 	if (len == sizeof (pe_hdr) && is_pe_hdr (pe_hdr)) {
 		dos_hdr = (IMAGE_DOS_HEADER *)pe_hdr;
-		if (!dos_hdr)
-			return -1;
+		if (!dos_hdr) {
+			goto err_set_mod_info;
+		}
 		nt_hdrs = (IMAGE_NT_HEADERS *)((char *)dos_hdr + dos_hdr->e_lfanew);
-		if (!nt_hdrs)
-			return -1;
+		if (!nt_hdrs) {
+			goto err_set_mod_info;
+		}
 		if (nt_hdrs->FileHeader.Machine == 0x014c) { // check for x32 pefile
 			nt_hdrs32 = (IMAGE_NT_HEADERS32 *)((char *)dos_hdr + dos_hdr->e_lfanew);
 			mod->sect_count = nt_hdrs32->FileHeader.NumberOfSections;
@@ -139,13 +138,13 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 			mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
 			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
 		}
-		if (sect_hdr != NULL) {
-			mod->sect_hdr = (IMAGE_SECTION_HEADER *) malloc (sizeof(IMAGE_SECTION_HEADER) * mod->sect_count);
+		if (sect_hdr) {
+			mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
 			if (!mod->sect_hdr) {
-				perror("malloc set_mod_inf()");
+				perror ("malloc set_mod_inf()");
 				goto err_set_mod_info;
 			}
-			memcpy (mod->sect_hdr, sect_hdr, sizeof(IMAGE_SECTION_HEADER) * mod->sect_count);
+			memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
 			mod_inf_fill = 0;
 		}
 	}
@@ -159,18 +158,16 @@ err_set_mod_info:
 }
 
 static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinModInfo *mod, SYSTEM_INFO *si, MEMORY_BASIC_INFORMATION *mbi) {
-	ut64 addr, len;
-
-	addr = (ut64)mbi->BaseAddress;
-	len = (ut64)mbi->RegionSize;
-	if (mod->map == NULL || addr < mod->map->addr || (addr + len) > mod->map->addr_end) {
+	ut64 addr = (ut64)mbi->BaseAddress;
+	ut64 len = (ut64)mbi->RegionSize;
+	if (!mod->map || addr < mod->map->addr || (addr + len) > mod->map->addr_end) {
 		RListIter *iter;
 		RDebugMap *map;
 
-		if (mod->sect_hdr != NULL) {
+		if (mod->sect_hdr) {
 			free (mod->sect_hdr);
 		}
-		memset (mod, 0, sizeof(RWinModInfo));
+		memset (mod, 0, sizeof (RWinModInfo));
 		r_list_foreach (mod_list, iter, map) {
 			if (addr >= map->addr && addr <= map->addr_end) {
 				mod->map = map;
@@ -179,21 +176,18 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 			}	
 		}
 	}
-	if (mod->map != NULL && mod->sect_hdr != NULL && mod->sect_count > 0) {
+	if (mod->map && mod->sect_hdr && mod->sect_count > 0) {
 		int sect_count;
 		int i, p_mask;
 
 		sect_count = 0;
 		p_mask = si->dwPageSize - 1;
 		for (i = 0; i < mod->sect_count; i++) {
-			IMAGE_SECTION_HEADER *sect_hdr;
-			ut64 sect_addr, sect_len;
-			int sect_found;
+			IMAGE_SECTION_HEADER *sect_hdr = &mod->sect_hdr[i];
+			ut64 sect_addr = mod->map->addr + (ut64)sect_hdr->VirtualAddress;
+		       	ut64 sect_len= (((ut64)sect_hdr->Misc.VirtualSize) + p_mask) & ~p_mask;
+			int sect_found = 0;
 
-			sect_hdr = &mod->sect_hdr[i];
-			sect_addr = mod->map->addr + (ut64)sect_hdr->VirtualAddress;
-			sect_len = (((ut64)sect_hdr->Misc.VirtualSize) + p_mask) & ~p_mask;
-			sect_found = 0;
 			/* section in memory region? */
 			if (sect_addr >= addr && (sect_addr + sect_len) <= (addr + len)) {
 				sect_found = 1;
@@ -201,15 +195,12 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 			} else if (addr >= sect_addr && (addr + len) <= (sect_addr + sect_len)) {
 				sect_found = 2;
 			}
-			if (sect_found > 0) {
-				char *map_name;
-
-				map_name = (char *)malloc(strlen(mod->map->name) + strlen((char *)sect_hdr->Name) + 50);
-				if(map_name == NULL) {
-					perror("malloc map name");
+			if (sect_found) {
+				char *map_name = r_str_newf ("%s | %s", mod->map->name, sect_hdr->Name);
+				if (!map_name) {
+					perror ("r_str_newf");
 					goto err_proc_mem_img;
 				}
-				sprintf (map_name,"%s | %s", mod->map->name, sect_hdr->Name);
 				if (sect_found == 1) {
 					add_map (map_list, map_name, sect_addr, sect_len, mbi);
 				} else {
@@ -223,69 +214,64 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 			add_map_reg (map_list, mod->map->name, mbi);
 		}
 	} else {
-		if(mod->map == NULL)
+		if (!mod->map) {
 			add_map_reg (map_list, "", mbi);
-		else
+		} else {
 			add_map_reg (map_list, mod->map->name, mbi);
+		}
 	}
-
 err_proc_mem_img:
 	;
 }
 
 static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
 	char f_name[MAX_PATH + 1];
-	DWORD len;
-
-	len = w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	DWORD len = w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
-		add_map_reg(map_list, f_name, mbi);
+		add_map_reg (map_list, f_name, mbi);
 	} else {
-		add_map_reg(map_list, "", mbi);
+		add_map_reg (map_list, "", mbi);
 	}
 }
 
 static RList *w32_dbg_maps(RDebug *dbg) {
-	SYSTEM_INFO si;
+	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h_proc;
-	RList *map_list, *mod_list;
-	RWinModInfo mod_inf;
+	RWinModInfo mod_inf = {0};
+	RList *map_list = r_list_new(), *mod_list;
 
-	map_list = r_list_new ();
-	memset(&mod_inf, 0, sizeof(mod_inf));
-	memset (&si, 0, sizeof (si));
 	GetSystemInfo (&si);
 	h_proc = w32_openprocess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
-	if (h_proc == NULL) {
+	if (!h_proc) {
 		r_sys_perror ("w32_dbg_maps/w32_openprocess");
 		goto err_w32_dbg_maps;
 	}
 	cur_addr = si.lpMinimumApplicationAddress;
 	/* get process modules list */
-	mod_list = w32_dbg_modules(dbg);
+	mod_list = w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress && 
 	       VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
 	       	if (mbi.State != MEM_FREE) {
 			switch (mbi.Type) {
-				case MEM_IMAGE:
-					proc_mem_img (h_proc, map_list, mod_list, &mod_inf, &si, &mbi);
-					break;
-				case MEM_MAPPED:
-					proc_mem_map (h_proc, map_list, &mbi);
-					break;
-				default:
-					add_map_reg(map_list, "", &mbi);
+			case MEM_IMAGE:
+				proc_mem_img (h_proc, map_list, mod_list, &mod_inf, &si, &mbi);
+				break;
+			case MEM_MAPPED:
+				proc_mem_map (h_proc, map_list, &mbi);
+				break;
+			default:
+				add_map_reg (map_list, "", &mbi);
 			}
 		}
 	   	cur_addr = (LPVOID)((ut64)mbi.BaseAddress + mbi.RegionSize);
 	}
 err_w32_dbg_maps:
-	if (mod_inf.sect_hdr != NULL) {
+	if (mod_inf.sect_hdr) {
 		free (mod_inf.sect_hdr);
 	}
-	r_list_free(mod_list);		
+	r_list_free (mod_list);		
 	return map_list;
 }
