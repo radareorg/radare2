@@ -309,9 +309,11 @@ static void rcc_internal_mathop(REgg *egg, char *ptr, char *ep, char op) {
 	if (*p) {
 		e->mathop (egg, op, varsize, type, p, ep);
 	}
+	if (p != oldp) {
+		R_FREE (p);
+	}
 	R_FREE (oldp);
 	R_FREE (ep);
-	// R_FREE (p);
 }
 
 /*

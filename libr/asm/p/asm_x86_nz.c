@@ -1701,6 +1701,15 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int oploop(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	int immediate = 0;
+	data[l++] = 0xe2;
+	st8 delta = op->operands[0].immediate - a->pc - 2;
+	data[l++] = (ut8)delta;
+	return l;
+}
+
 static int opret(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int immediate = 0;
@@ -2066,6 +2075,7 @@ LookupTable oplookup[] = {
 	{"rdtsc", 0, NULL, 0x0f31, 2},
 	{"rdtscp", 0, NULL, 0x0f01f9, 3},
 	{"ret", 0, &opret, 0},
+	{"loop", 0, &oploop, 0},
 	{"retf", 0, &opretf, 0},
 	{"retw", 0, NULL, 0x66c3, 2},
 	{"rol", 0, &process_group_2, 0},
