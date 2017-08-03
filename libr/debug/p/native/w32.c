@@ -97,14 +97,6 @@ return (0);
 1897 } CONTEXT;
 #endif
 
-//BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
-
-#ifndef _MSC_VER
-BOOL WINAPI DebugBreakProcess(
-  HANDLE Process
-  //_In_  HANDLE Process
-);
-#endif
 typedef struct _SYSTEM_HANDLE
 {
 	ULONG ProcessId;
@@ -161,8 +153,8 @@ typedef struct _OBJECT_TYPE_INFORMATION
 	ULONG NonPagedPoolUsage;
 } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
 
-static void (*gmbn)(HANDLE, HMODULE, LPCSTR, int) = NULL;
-static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
+static void (*w32_GetModuleBaseName)(HANDLE, HMODULE, LPCSTR, int) = NULL;
+static int (*w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
 static BOOL (WINAPI *w32_detach)(DWORD) = NULL;
 static HANDLE (WINAPI *w32_openthread)(DWORD, BOOL, DWORD) = NULL;
 static BOOL (WINAPI *w32_dbgbreak)(HANDLE) = NULL;
@@ -170,7 +162,7 @@ static DWORD (WINAPI *w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD (WINAPI *w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE (WINAPI *w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
 static BOOL (WINAPI *w32_queryfullprocessimagename)(HANDLE, DWORD, LPCSTR, PDWORD) = NULL;
-static DWORD (WINAPI *psapi_getmappedfilename)(HANDLE, LPVOID, LPCSTR, DWORD) = NULL;
+static DWORD (WINAPI *w32_GetMappedFileName)(HANDLE, LPVOID, LPCSTR, DWORD) = NULL;
 static NTSTATUS (WINAPI *w32_ntquerysysteminformation)(ULONG, PVOID, ULONG, PULONG) = NULL;
 static NTSTATUS (WINAPI *w32_ntqueryinformationthread)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
 static NTSTATUS (WINAPI *w32_ntduplicateobject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) = NULL;
@@ -181,6 +173,7 @@ static BOOL (WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = N
 static BOOL (WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
 static PVOID(WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD) = NULL;
 static BOOL (WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NULL;
+static DWORD (WINAPI *w32_GetModuleFileNameEx)(HANDLE, HMODULE, LPTSTR, DWORD) = NULL;
 
 #ifndef XSTATE_GSSE
 #define XSTATE_GSSE 2
@@ -284,12 +277,14 @@ static int w32_dbg_init() {
 		eprintf ("Cannot load psapi.dll. Aborting\n");
 		return false;
 	}
-	psapi_getmappedfilename = (DWORD (WINAPI *)(HANDLE, LPVOID, LPCSTR, DWORD))
+	w32_GetMappedFileName = (DWORD (WINAPI *)(HANDLE, LPVOID, LPCSTR, DWORD))
 		GetProcAddress (lib, "GetMappedFileNameA");
-	gmbn = (void (*)(HANDLE, HMODULE, LPCSTR, int))
+	w32_GetModuleBaseName = (void (*)(HANDLE, HMODULE, LPCSTR, int))
 		GetProcAddress (lib, "GetModuleBaseNameA");
-	gmi = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
+	w32_GetModuleInformation = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
 		GetProcAddress (lib, "GetModuleInformation");
+	w32_GetModuleFileNameEx = (DWORD (WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD))
+		GetProcAddress (lib, "GetModuleFileNameExA");
 
 	lib=LoadLibraryA("ntdll.dll");
 	w32_ntquerysysteminformation = (NTSTATUS  (WINAPI *)(ULONG, PVOID, ULONG, PULONG))
@@ -301,7 +296,7 @@ static int w32_dbg_init() {
 	w32_ntqueryinformationthread = (NTSTATUS  (WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress (lib, "NtQueryInformationThread");
 	if (!w32_detach || !w32_openthread || !w32_dbgbreak ||
-	    !gmbn || !gmi) {
+	    !w32_GetModuleBaseName || !w32_GetModuleInformation) {
 		// OOPS!
 		eprintf ("debug_init_calls:\n"
 			"DebugActiveProcessStop: 0x%p\n"
@@ -448,7 +443,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 		return NULL;
 	}
 
-	if (!psapi_getmappedfilename (GetCurrentProcess (),
+	if (!w32_GetMappedFileName (GetCurrentProcess (),
 		map,
 		filename,
 		MAX_PATH)) {
@@ -600,7 +595,7 @@ static void * r_debug_findthread (int pid, int tid) {
 	PTHREAD_ITEM threadPtr = NULL;
 	if (lstThread) {
 		threadPtr = (PTHREAD_ITEM)lstThread;
-		while (threadPtr->tid != NULL) {
+		while (threadPtr->tid != 0) {
 			if (threadPtr->pid == pid) {
 				if (threadPtr->tid == tid) {
 					return ((void*)threadPtr);
@@ -740,8 +735,8 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static inline int CheckValidPE(unsigned char * PeHeader) {
-	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)PeHeader;
+static inline int is_pe_hdr(unsigned char *pe_hdr) {
+	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)pe_hdr;
 	IMAGE_NT_HEADERS *nt_headers;
 
 	if (dos_header->e_magic==IMAGE_DOS_SIGNATURE) {

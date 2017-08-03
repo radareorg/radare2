@@ -873,10 +873,10 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 
 R_API char *r_file_tmpdir() {
 #if __WINDOWS__
-	CHAR tmpdir[MAX_PATH];
+	char tmpdir[MAX_PATH];
 	char *path = NULL;
 
-	if (GetTempPath (sizeof (tmpdir), tmpdir) == 0) {
+	if (GetTempPathA (sizeof (tmpdir), tmpdir) == 0) {
 		path = r_sys_getenv ("TEMP");
 		if (!path) {
 			path = strdup ("C:\\WINDOWS\\Temp\\");
@@ -888,6 +888,13 @@ R_API char *r_file_tmpdir() {
 			glpn (tmpdir, tmpdir, sizeof (tmpdir));
 		}
 		path = strdup (tmpdir);
+	}
+	// Windows 7, stat() function fail if tmpdir ends with '\\'
+	if (path) {
+		int path_len = strlen (path);
+		if (path_len > 0 && path[path_len - 1] == '\\') {
+			path[path_len - 1] = '\0';
+		}
 	}
 #elif __ANDROID__
 	char *path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
