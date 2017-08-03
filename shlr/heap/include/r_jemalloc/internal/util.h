@@ -1,6 +1,8 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
+// XXX: remove all asserts
+
 #ifdef _WIN32
 #  ifdef _WIN64
 #    define FMT64_PREFIX "ll"
@@ -106,6 +108,7 @@ void	malloc_write(const char *s);
  */
 size_t	malloc_vsnprintf(char *str, size_t size, const char *format,
     va_list ap);
+/*
 size_t	malloc_snprintf(char *str, size_t size, const char *format, ...)
     JEMALLOC_FORMAT_PRINTF(3, 4);
 void	malloc_vcprintf(void (*write_cb)(void *, const char *), void *cbopaque,
@@ -113,6 +116,7 @@ void	malloc_vcprintf(void (*write_cb)(void *, const char *), void *cbopaque,
 void malloc_cprintf(void (*write)(void *, const char *), void *cbopaque,
     const char *format, ...) JEMALLOC_FORMAT_PRINTF(3, 4);
 void	malloc_printf(const char *format, ...) JEMALLOC_FORMAT_PRINTF(1, 2);
+*/
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
@@ -249,13 +253,15 @@ lg_floor(size_t x)
 {
 	size_t ret;
 
-	assert(x != 0);
+	if (x == 0) {
+		return UINT_MAX;
+	}
 
 	asm ("bsr %1, %0"
 	    : "=r"(ret) // Outputs.
 	    : "r"(x)    // Inputs.
 	    );
-	assert(ret < UINT_MAX);
+	// assert(ret < UINT_MAX);
 	return ((unsigned)ret);
 }
 #elif (defined(_MSC_VER))

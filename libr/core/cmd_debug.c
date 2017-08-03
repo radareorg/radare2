@@ -1581,13 +1581,20 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case 'h': // "dmh"
 		{
+			int SZ = core->assembler->bits / 8;
 			const char *m = r_config_get (core->config, "dbg.malloc");	
 			if (!strcmp ("glibc", m)) {
-				(SZ == 4) ? cmd_dbg_map_heap_glibc_32 (core, input + 1):
-					    cmd_dbg_map_heap_glibc_64 (core, input + 1);
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+				(SZ == 4)
+				? cmd_dbg_map_heap_glibc_32 (core, input + 1)
+				: cmd_dbg_map_heap_glibc_64 (core, input + 1);
+#else
+				eprintf ("glibc not supported for this platform\n");
+#endif
 			} else if (!strcmp ("jemalloc", m)) {
-				(SZ == 4) ? cmd_dbg_map_jemalloc_32 (core, input + 1) :
-					    cmd_dbg_map_jemalloc_64 (core, input + 1) ;
+				(SZ == 4)
+				? cmd_dbg_map_jemalloc_32 (core, input + 1)
+				: cmd_dbg_map_jemalloc_64 (core, input + 1);
 			} else {
 				eprintf ("MALLOC algorithm not supported\n");
 			}

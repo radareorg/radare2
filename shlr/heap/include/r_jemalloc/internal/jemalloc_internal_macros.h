@@ -32,12 +32,6 @@
 #  endif
 #endif
 
-#ifdef JEMALLOC_CC_SILENCE
-#  define UNUSED JEMALLOC_ATTR(unused)
-#else
-#  define UNUSED
-#endif
-
 #define	ZU(z)	((size_t)z)
 #define	ZI(z)	((ssize_t)z)
 #define	QU(q)	((uint64_t)q)

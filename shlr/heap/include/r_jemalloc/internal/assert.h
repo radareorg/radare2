@@ -5,7 +5,7 @@
 #ifndef assert
 #define	assert(e) do {							\
 	if (unlikely(config_debug && !(e))) {				\
-		malloc_printf(						\
+		eprintf(						\
 		    "<jemalloc>: %s:%d: Failed assertion: \"%s\"\n",	\
 		    __FILE__, __LINE__, #e);				\
 		abort();						\
@@ -16,7 +16,7 @@
 #ifndef not_reached
 #define	not_reached() do {						\
 	if (config_debug) {						\
-		malloc_printf(						\
+		eprintf(						\
 		    "<jemalloc>: %s:%d: Unreachable code reached\n",	\
 		    __FILE__, __LINE__);				\
 		abort();						\
@@ -28,7 +28,7 @@
 #ifndef not_implemented
 #define	not_implemented() do {						\
 	if (config_debug) {						\
-		malloc_printf("<jemalloc>: %s:%d: Not implemented\n",	\
+		eprintf("<jemalloc>: %s:%d: Not implemented\n",	\
 		    __FILE__, __LINE__);				\
 		abort();						\
 	}								\
