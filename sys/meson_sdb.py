@@ -29,6 +29,9 @@ def get_extension(inf):
 
 def main():
     # Create sdb binary
+    if os.path.exists(BUILDDIR):
+        print('{} folder exists. Exiting.'.format(BUILDDIR))
+        return
     r = os.system('{meson} {sdbdir} {builddir}'.format(meson=MESON, sdbdir=SDBDIR, builddir=BUILDDIR))
     r = os.system('{ninja} -C {builddir}'.format(ninja=NINJA, builddir=BUILDDIR))
     if r: exit(r)

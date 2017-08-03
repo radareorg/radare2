@@ -60,7 +60,9 @@ files=[
 ]
 r_core = library('r_core', files,
   include_directories: [platform_inc, include_directories([
-	'../../shlr'
+	'../../shlr',
+	# TODO Temp
+	'../../shlr/heap/include'
   ])],
   c_args: ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_reg, r_syscall, r_search, r_cons, r_anal, r_socket, r_io, r_fs, r_lang, r_hash, r_flag, r_parse, r_egg, r_debug, r_magic, r_crypto, r_config, r_bin, r_asm, r_bp],
