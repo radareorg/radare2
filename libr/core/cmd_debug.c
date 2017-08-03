@@ -831,59 +831,59 @@ static void cmd_debug_lib (RCore *core, const char *input) {
 	RDebug* dbg = core->dbg;
 	const char *ptr, *help_msg[] = {
 		"Usage:", "dl", " # Debug library commands",
-		"dl", " <lib> <function> <args...>", "Call a library function",
+		"dl", " <lib> <function> [args...]", "Call a library function",
 		NULL };
 	switch (input[1]) {
 	case ' ':
-		// TODO Parse args
-		if (!dbg || dbg->pid == -1) {
-			// TODO Stupid if doo is called after
-			eprintf ("Debugger not enabled.\n");
+#if __WINDOWS__
+		if (!strstr (core->bin->file, "rundll")) {
+			eprintf ("You cannot use this function on such binary. Load a dll or rundll32.exe first.\n");
 			break;
 		}
-		if (!core->anal || !core->anal->cur) {
-			eprintf ("Error while retrieving architecture.\n");
+		/* Restart LoadLibrary with specified arguments */
+		int argc;
+		char** args = r_str_argv (input + 2, &argc);
+		if (argc < 2) {
+			eprintf ("Wrong usage: see dl?\n");
 			break;
 		}
-		RAnal *anal = core->anal;
-		// TODO Arch independant ?
-		if (strcmp (anal->cur->arch, "x86") == 0 && anal->bits == 64) {
-			/* Restart LoadLibrary with specified arguments */
-			// TODO Hardcoded ....
-			ut64 end = r_num_math (core->num, "main") + 0x66;
-			// TODO Use arguments from dl
-			r_core_cmd0 (core, "doo C:\\Windows\\System32\\user32.dll func args");
-			r_debug_continue (dbg);
-			r_debug_continue_until (dbg, end);
-			ut64 pc = r_debug_reg_get (dbg, "PC");
-			if (pc != end) {
-				eprintf ("Unexpected behaviour.\n");
-				break;
-			}
-			r_core_cmd0 (core, ".dmi* user32.dll");
-			// TODO Use arguments from dl
-			ut64 addr = r_num_math (core->num, "sym.USER32.dll_MessageBoxA");
-			if (addr == 0) {
-				eprintf ("Cannot find the function you asked for.\n");
-				break;
-			}
-			/* Push current address */
-			ut64 sp = r_debug_reg_get (dbg, "SP");
-			r_debug_reg_set (dbg, "SP", sp - 8);
-			r_core_cmdf (core, "wv 0x%08"PFMT64x" @ SP", end);
+		r_core_cmdf (core, "doo %s", input + 2);
 
-			/* Set PC */
-			r_debug_reg_set (dbg, "PC", addr);
-			r_core_seek (core, addr, 0);
-			/* Todo parse arguments etc. */
-			r_debug_reg_set (dbg, "rdi", 0);
-			r_debug_reg_set (dbg, "rsi", 0);
-			r_debug_reg_set (dbg, "rdx", 0);
-			ut64 string = r_num_math (core->num, "str.terminate");
-			r_debug_reg_set (dbg, "r8", string);
-		} else {
-			eprintf ("Not implemented for this architecture.\n");
+		r_debug_continue (dbg);
+		/* TODO Annoying if the user already set it no ? */
+		r_core_cmd0 (core, "e dbg.libs=*");
+		char* c = r_core_cmd_strf (core, "dm~%s", args[0]);
+		/* Imho it's pretty dirty */
+		while (c && !c[0]) {
+			int r = r_debug_continue (dbg);
+			if (!r) {
+				break;
+			}
+			free (c);
+			c = r_core_cmd_strf (core, "dm~%s", args[0]);
 		}
+		free (c);
+		r_core_cmd0 (core, "e dbg.libs=");
+		r_core_cmdf (core, ".dmi* %s", args[0]);
+		/* wtf there's a bug with dmi or something not resetting the flagspace */
+		r_core_cmd0 (core, "fs symbols");
+		char* flagname = r_core_cmd_strf (core, "f~%s", args[1]);
+		ut64 addr = r_num_math (core->num, flagname);
+		if (addr == 0) {
+			eprintf ("Cannot find the function you asked for.\n");
+			break;
+		}
+		// TODO Don't use cmdf
+		r_core_cmdf (core, "db 0x%08"PFMT64x, addr);
+		r_debug_continue (dbg);
+		ut64 pc = r_debug_reg_get (dbg, "PC");
+		if (pc == addr) {
+			r_core_seek (core, addr, 0);
+			r_core_cmdf (core, "db -0x%08"PFMT64x, addr);
+		}
+#else
+		eprintf ("Not implemented.\n");
+#endif
 		break;
 	case '?':
 	default:

@@ -523,7 +523,7 @@ R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
 }
 
 static void load_scripts_for(RCore *core, const char *name) {
-	// TODO: 
+	// TODO:
 	char *file;
 	RListIter *iter;
 	char *hdir = r_str_newf (R2_HOMEDIR "/rc.d/bin-%s", name);
@@ -787,10 +787,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 #if __WINDOWS__
 	// XXX Very very dirty
 	// Temporary hack
-	if (strstr (file, ".dll") && !strstr(file, "LoadLib") && strstr(file,"dbg://")) {
+	if (strstr (file, ".dll") && !strstr (file, "rundll32.exe") && strstr (file,"dbg://")) {
 		// TODO File name harcoded
-		//file = "dbg://C:\\Windows\\System32\\rundll32.exe";
-		file = "dbg://C:\\Users\\Xarkes\\Desktop\\LoadLib.exe";
+		file = "dbg://C:\\Windows\\System32\\rundll32.exe";
 	}
 #endif
 	fd = r_io_open_nomap (r->io, file, flags, 0644);
