@@ -14,7 +14,7 @@ typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
 typedef char *(*RCoreGetName)(void *core, ut64 off);
 typedef void (*RCoreSeekArchBits)(void *core, ut64 addr); 
-typedef void (*RCoreConfigGetI)(void *core, const char *key);
+typedef int (*RCoreConfigGetI)(void *core, const char *key);
 
 typedef struct r_core_bind_t {
 	void *core;
