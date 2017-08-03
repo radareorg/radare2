@@ -63,11 +63,10 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libncurses5:i386 \
   libstdc++6:i386 \
   sudo && \
-  curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
+  curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
   apt-get install -y nodejs python-pip && \
-  curl -sL https://www.npmjs.com/install.sh | bash - && \
   pip install r2pipe=="$R2_PIPE_PY_VERSION" && \
-  npm install -g "r2pipe@$R2_PIPE_NPM_VERSION" && \
+  npm install --unsafe-perm -g "r2pipe@$R2_PIPE_NPM_VERSION" && \
   cd /mnt && \
   git clone -b "$R2_VERSION" --depth 1 https://github.com/radare/radare2.git && \
   cd radare2 && \
