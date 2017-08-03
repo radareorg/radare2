@@ -243,18 +243,38 @@ static ut32 cmp(ArmOp *op) {
 	return data;
 }
 
-static ut32 strb(ArmOp *op) {
+static ut32 byteop(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
-	int k = 0;
+
 	if (op->operands[0].reg_type & ARM_REG64) {
 		return data;
 	}
 	if (op->operands[1].reg_type & ARM_REG32) {
 		return data;
 	}
-	k = 0x00000039;
+	int n = op->operands[2].immediate;
+	if (n > 0xfff || n < -0x100) {
+		return UT32_MAX;
+	}
+
+	if (n < 0) {
+		k--;
+	}
+
 	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
-	data |= op->operands[2].immediate << 18 | (op->operands[2].immediate & 0x7c0) << 2;
+
+	if (n < 0) {
+		n *= -1;
+		data |= ( 0xf & (0xf - (n - 1)) ) << 20;
+		if (countTrailingZeros(n) > 3) {
+			data |= (0x1f - ((n >> 4) - 1)) << 8;
+		} else {
+			data |= (0x1f - (n >> 4)) << 8;
+		}
+	} else {
+		data |= (n & 63) << 18;
+		data |= (n >> 6) << 8;
+	}
 	return data;
 }
 
@@ -706,7 +726,11 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return *op != -1;
 	}
 	if (!strncmp (str, "strb", 4)) {
-		*op = strb (&ops);
+		*op = byteop (&ops, 0x00000039);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldrb", 4)) {
+		*op = byteop (&ops, 0x00004039);
 		return *op != -1;
 	}
 	if (!strncmp (str, "sub", 3)) { // w
