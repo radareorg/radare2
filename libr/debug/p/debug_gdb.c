@@ -347,6 +347,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_gdb_detach(RDebug *dbg, int pid) {
+	if (pid <= 0 || !desc->stub_features.multiprocess) {
+		return gdbr_detach (desc);
+	}
 	return gdbr_detach_pid (desc, pid);
 }
 
