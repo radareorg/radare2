@@ -692,7 +692,7 @@ static int cb_asmstrenc (void *user, void *data) {
 	if (node->value[0] == '?') {
 		print_node_options (node);
 		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
-		               "if 2nd - 4th & 6th - 8th bytes are 0 then utf32le else "
+		               "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 		               "if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}

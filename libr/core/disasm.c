@@ -2680,10 +2680,26 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		if (str_len == 1 && len > 3 && str[2] && !str[3]) {
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 			prefix = "u";
-		} else if (str_len == 1 && len > 7 && !str[2] && !str[3]
-		           && str[4] && !str[5] && !str[6] && !str[7]) {
-			escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
-			prefix = "U";
+		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
+			RStrEnc enc = R_STRING_ENC_UTF32LE;
+			RRune ch;
+			const char *ptr, *end;
+			end = (const char *)r_mem_mem_aligned ((ut8 *)str, len, (ut8 *)"\0\0\0\0", 4, 4);
+			if (!end) {
+				end = str + len - 1;
+			}
+			for (ptr = str; ptr < end; ptr += 4) {
+				if (r_utf32le_decode ((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x10ffff) {
+					enc = R_STRING_ENC_LATIN1;
+					break;
+				}
+			}
+			if (enc == R_STRING_ENC_UTF32LE) {
+				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+				prefix = "U";
+			} else {
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
 			const char *ptr = str, *end = str + str_len;
