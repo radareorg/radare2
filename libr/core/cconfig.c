@@ -2032,6 +2032,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
+	SETI ("asm.addrbytes", 1,  "Number of bytes one vaddr unit uses");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
