@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2016, The Lemon Man, All rights reserved.
+// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
