@@ -2678,9 +2678,12 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	default:
 		str_len = strlen (str);
 		if (str_len == 1 && len > 3 && str[2] && !str[3]) {
-			// could be a utf16le string
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 			prefix = "u";
+		} else if (str_len == 1 && len > 7 && !str[2] && !str[3]
+		           && str[4] && !str[5] && !str[6] && !str[7]) {
+			escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+			prefix = "U";
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
 			const char *ptr = str, *end = str + str_len;
