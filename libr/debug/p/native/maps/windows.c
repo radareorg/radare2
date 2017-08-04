@@ -138,20 +138,19 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 			mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
 			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
 		}
-		if (sect_hdr) {
-			mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-			if (!mod->sect_hdr) {
-				perror ("malloc set_mod_inf()");
-				goto err_set_mod_info;
-			}
-			memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-			mod_inf_fill = 0;
+		mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+		if (!mod->sect_hdr) {
+			perror ("malloc set_mod_inf()");
+			goto err_set_mod_info;
 		}
+		memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+		mod_inf_fill = 0;
 	}
 err_set_mod_info:
 	if (mod_inf_fill == -1) {
 		if (mod->sect_hdr) {
 			free (mod->sect_hdr);
+			mod->sect_hdr = NULL;
 		}	
 	}
 	return mod_inf_fill;
@@ -243,9 +242,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	RList *map_list = r_list_new(), *mod_list;
 
 	GetSystemInfo (&si);
-	h_proc = w32_openprocess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
+	h_proc = w32_OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 	if (!h_proc) {
-		r_sys_perror ("w32_dbg_maps/w32_openprocess");
+		r_sys_perror ("w32_dbg_maps/w32_OpenProcess");
 		goto err_w32_dbg_maps;
 	}
 	cur_addr = si.lpMinimumApplicationAddress;

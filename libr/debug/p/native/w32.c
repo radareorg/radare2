@@ -155,12 +155,12 @@ typedef struct _OBJECT_TYPE_INFORMATION
 
 static void (*w32_GetModuleBaseName)(HANDLE, HMODULE, LPCSTR, int) = NULL;
 static int (*w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
-static BOOL (WINAPI *w32_detach)(DWORD) = NULL;
+static BOOL (WINAPI *w32_DebugActiveProcessStop)(DWORD) = NULL;
 static HANDLE (WINAPI *w32_openthread)(DWORD, BOOL, DWORD) = NULL;
-static BOOL (WINAPI *w32_dbgbreak)(HANDLE) = NULL;
+static BOOL (WINAPI *w32_DebugBreakProcess)(HANDLE) = NULL;
 static DWORD (WINAPI *w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD (WINAPI *w32_getprocessid)(HANDLE) = NULL; // XP
-static HANDLE (WINAPI *w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
+static HANDLE (WINAPI *w32_OpenProcess)(DWORD, BOOL, DWORD) = NULL;
 static BOOL (WINAPI *w32_queryfullprocessimagename)(HANDLE, DWORD, LPCSTR, PDWORD) = NULL;
 static DWORD (WINAPI *w32_GetMappedFileName)(HANDLE, LPVOID, LPCSTR, DWORD) = NULL;
 static NTSTATUS (WINAPI *w32_ntquerysysteminformation)(ULONG, PVOID, ULONG, PULONG) = NULL;
@@ -243,14 +243,14 @@ static int w32_dbg_init() {
 	/* escalate privs (required for win7/vista) */
 	w32dbg_SeDebugPrivilege ();
 	/* lookup function pointers for portability */
-	w32_detach = (BOOL (WINAPI *)(DWORD))
+	w32_DebugActiveProcessStop = (BOOL (WINAPI *)(DWORD))
 		GetProcAddress (GetModuleHandleA ("kernel32"),
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE (WINAPI *)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandleA ("kernel32"), "OpenThread");
-	w32_openprocess = (HANDLE (WINAPI *)(DWORD, BOOL, DWORD))
+	w32_OpenProcess = (HANDLE (WINAPI *)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandleA ("kernel32"), "OpenProcess");
-	w32_dbgbreak = (BOOL (WINAPI *)(HANDLE))
+	w32_DebugBreakProcess = (BOOL (WINAPI *)(HANDLE))
 		GetProcAddress (GetModuleHandleA ("kernel32"),
 				"DebugBreakProcess");
 	// only windows vista :(
@@ -295,7 +295,7 @@ static int w32_dbg_init() {
 		GetProcAddress(lib,"NtQueryObject");
 	w32_ntqueryinformationthread = (NTSTATUS  (WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress (lib, "NtQueryInformationThread");
-	if (!w32_detach || !w32_openthread || !w32_dbgbreak ||
+	if (!w32_DebugActiveProcessStop || !w32_openthread || !w32_DebugBreakProcess ||
 	    !w32_GetModuleBaseName || !w32_GetModuleInformation) {
 		// OOPS!
 		eprintf ("debug_init_calls:\n"
@@ -303,18 +303,10 @@ static int w32_dbg_init() {
 			"OpenThread: 0x%p\n"
 			"DebugBreakProcess: 0x%p\n"
 			"GetThreadId: 0x%p\n",
-			w32_detach, w32_openthread, w32_dbgbreak, w32_getthreadid);
+			w32_DebugActiveProcessStop, w32_openthread, w32_DebugBreakProcess, w32_getthreadid);
 		return false;
 	}
 	return true;
-}
-
-static HANDLE w32_open_process (DWORD access, BOOL inherit, DWORD pid) {
-	HANDLE h = w32_openprocess(access, inherit, pid);
-	if (h == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("w32_open_process/OpenProcess");
-	}
-	return h;
 }
 
 #if 0
@@ -382,6 +374,32 @@ err_load_th:
 	return pid;
 }
 
+static char *get_w32_excep_name(unsigned long code) {
+	char *desc;
+	switch (code) {
+	/* fatal exceptions */
+	case EXCEPTION_ACCESS_VIOLATION:
+		desc = "access violation";
+		break;
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+		desc = "array bounds exceeded";
+		break;
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+		desc = "illegal instruction";
+		break;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+		desc = "divide by zero";
+		break;
+	case EXCEPTION_STACK_OVERFLOW:
+		desc = "stack overflow";
+		break;
+	default:
+		desc = "unknown";
+	}
+
+	return desc;
+}
+
 static int debug_exception_event (DEBUG_EVENT *de) {
 	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
 	switch (code) {
@@ -395,8 +413,10 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
-		eprintf ("(%d) Fatal exception in thread %d\n",
-			(int)de->dwProcessId, (int)de->dwThreadId);
+		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
+			(int)de->dwProcessId, 
+			get_w32_excep_name(code),
+			(int)de->dwThreadId);
 		break;
 #if __MINGW64__ || _WIN64
 	/* STATUS_WX86_BREAKPOINT */
@@ -801,10 +821,10 @@ err_load_th:
 }
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
-	HANDLE process = w32_open_process (0x1000, //PROCESS_QUERY_LIMITED_INFORMATION,
+	HANDLE process = w32_OpenProcess (0x1000, //PROCESS_QUERY_LIMITED_INFORMATION,
 		FALSE, pe->th32ProcessID);
 
-	if (process == INVALID_HANDLE_VALUE || !w32_queryfullprocessimagename) {
+	if (!process || !w32_queryfullprocessimagename) {
 		return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 0, 's', 0);
 	}
 
@@ -854,65 +874,55 @@ RList *w32_pids (int pid, RList *list) {
 	return list;
 }
 
-int w32_terminate_process (RDebug *dbg, int pid) {
-	HANDLE process = w32_open_process(PROCESS_TERMINATE | SYNCHRONIZE , FALSE, pid);
-	if (process == INVALID_HANDLE_VALUE) {
-		return false;
+bool w32_terminate_process (RDebug *dbg, int pid) {
+	HANDLE h_proc = w32_OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE , FALSE, pid);
+	bool ret = false;
+	if (!h_proc) {
+		r_sys_perror ("w32_terminate_process/OpenProcess");
+		goto err_w32_terminate_process;
 	}
-
 	/* stop debugging if we are still attached */
-	if (w32_detach) {
-		w32_detach (pid); //DebugActiveProcessStop (pid);
+	if (w32_DebugActiveProcessStop) {
+		w32_DebugActiveProcessStop (pid); //DebugActiveProcessStop (pid);
 	}
-	if (TerminateProcess (process, 1) == 0) {
-		r_sys_perror ("w32_terminate_process/TerminateProcess");
-		CloseHandle (process);
-		return false;
+	if (TerminateProcess (h_proc, 1) == 0) {
+		r_sys_perror ("e32_terminate_process/TerminateProcess");
+		goto err_w32_terminate_process;
 
 	}
-	DWORD ret_wait;
 	/* wait up to one second to give the process some time to exit */
-	ret_wait = WaitForSingleObject (process, 1000);
+	DWORD ret_wait = WaitForSingleObject (h_proc, 1000);
 	if (ret_wait == WAIT_FAILED) {
 		r_sys_perror ("w32_terminate_process/WaitForSingleObject");
-		CloseHandle (process);
-		return false;
+		goto err_w32_terminate_process;
 	}
 	if (ret_wait == WAIT_TIMEOUT) {
 		eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
-		CloseHandle (process);
-		return false;
+		goto err_w32_terminate_process;
 	}
-
-	return true;
+	ret = true;
+err_w32_terminate_process:
+	if (h_proc) {
+		CloseHandle (h_proc);
+	}
+	return ret;
 }
 
 void w32_break_process (void *d) {
-	static HANDLE (WINAPI *w32_dbgbreak)(HANDLE) = NULL;
 	RDebug *dbg = (RDebug *)d;
-	HANDLE lib;
-	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	if (process == INVALID_HANDLE_VALUE) {
-		return;
+	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+	if (!h_proc) {
+		r_sys_perror ("w32_break_process/w32_OpenProcess");
+		goto err_w32_break_process;
 	}
-	lib = LoadLibraryA ("kernel32.dll");
-	if (!lib) {
-		r_sys_perror ("w32_break_process/LoadLibrary");
-		CloseHandle (process);
-		return;
+	if (!w32_DebugBreakProcess (h_proc)) {
+		r_sys_perror ("w32_break_process/w32_DebugBreakProcess");
+		goto err_w32_break_process;
 	}
-	if (!w32_dbgbreak) {
-		w32_dbgbreak = (HANDLE (WINAPI *)(HANDLE))
-				GetProcAddress (GetModuleHandleA ("kernel32"),
-					"DebugBreakProcess");
+err_w32_break_process:
+	if (h_proc) {
+		CloseHandle (h_proc);
 	}
-	if (process != INVALID_HANDLE_VALUE && w32_dbgbreak != NULL) {
-		if (!w32_dbgbreak (process)) {
-			r_sys_perror ("w32_break_process/DebugBreakProcess");
-		}
-	}
-	CloseHandle (process);
-	CloseHandle (lib);
 }
 
 static int GetAVX (HANDLE hThread, ut128 * xmm, ut128 * ymm) {
