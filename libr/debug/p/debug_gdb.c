@@ -354,6 +354,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	check_connection (dbg);
+	if (desc && desc->target.valid) {
+		return strdup (desc->target.regprofile);
+	}
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 16 || bits == 32) {

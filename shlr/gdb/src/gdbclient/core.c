@@ -220,6 +220,9 @@ int gdbr_disconnect(libgdbr_t *g) {
 	}
 	reg_cache.valid = false;
 	free (reg_cache.buf);
+	if (g->target.valid) {
+		free (g->target.regprofile);
+	}
 	g->connected = 0;
 	return 0;
 }
