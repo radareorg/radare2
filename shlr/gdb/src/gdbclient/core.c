@@ -337,19 +337,12 @@ int gdbr_detach(libgdbr_t *g) {
 		return -1;
 	}
 	reg_cache.valid = false;
-
-	if (g->stub_features.multiprocess) {
-		if (g->pid <= 0) {
-			return -1;
-		}
-		return gdbr_detach_pid (g, g->pid);
-	}
-
 	ret = send_msg (g, "D");
 	if (ret < 0) {
 		return -1;
 	}
-	return 0;
+	// Disconnect
+	return gdbr_disconnect (g);
 }
 
 int gdbr_detach_pid(libgdbr_t *g, int pid) {
@@ -1055,7 +1048,7 @@ void gdbr_invalidate_reg_cache() {
 	reg_cache.valid = false;
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char *fmt, ...)) {
 	if (!g || !cmd) {
 		return -1;
 	}
@@ -1096,7 +1089,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
 			// Console output from gdbserver
 			unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
 			g->data[g->data_len - 1] = '\0';
-			eprintf ("%s", g->data + 1);
+			cb_printf ("%s", g->data + 1);
 		}
 		if (read_packet (g) < 0) {
 			free (buf);
