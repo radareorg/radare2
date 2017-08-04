@@ -1034,8 +1034,9 @@ repeat:
 				}
 			}
 		}
-
-		if (reason == R_DEBUG_REASON_BREAKPOINT && bp && !bp->enabled) {
+		if (reason == R_DEBUG_REASON_BREAKPOINT &&
+		   ((bp && !bp->enabled) || (!bp && dbg->corebind.core &&
+			   		    dbg->corebind.cfggeti (dbg->corebind.core, "dbg.bpsysign")))) {
 			goto repeat;
 		}
 

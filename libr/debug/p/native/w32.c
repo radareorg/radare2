@@ -382,6 +382,32 @@ err_load_th:
 	return pid;
 }
 
+static char *get_w32_excep_name(unsigned long code) {
+	char *desc;
+	switch (code) {
+	/* fatal exceptions */
+	case EXCEPTION_ACCESS_VIOLATION:
+		desc = "access violation";
+		break;
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+		desc = "array bounds exceeded";
+		break;
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+		desc = "illegal instruction";
+		break;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+		desc = "divide by zero";
+		break;
+	case EXCEPTION_STACK_OVERFLOW:
+		desc = "stack overflow";
+		break;
+	default:
+		desc = "unknown";
+	}
+
+	return desc;
+}
+
 static int debug_exception_event (DEBUG_EVENT *de) {
 	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
 	switch (code) {
@@ -395,8 +421,10 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
-		eprintf ("(%d) Fatal exception in thread %d\n",
-			(int)de->dwProcessId, (int)de->dwThreadId);
+		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
+			(int)de->dwProcessId, 
+			get_w32_excep_name(code),
+			(int)de->dwThreadId);
 		break;
 #if __MINGW64__ || _WIN64
 	/* STATUS_WX86_BREAKPOINT */
