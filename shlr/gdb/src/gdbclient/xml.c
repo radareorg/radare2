@@ -5,7 +5,7 @@
 #include "packet.h"
 #include <r_util.h>
 
-static char* gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len);
+static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len);
 static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len);
 
 // If xml target description is supported, read it
@@ -21,22 +21,21 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 	return 0;
 }
 
-
-static char* gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
+static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	ut64 retlen = 0, retmax = 0, off = 0, len = g->stub_features.pkt_sz - 2,
-		blksz = g->data_max, subret_space = 0, subret_len = 0;
+	     blksz = g->data_max, subret_space = 0, subret_len = 0;
 	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = { 0 },
-		status, tmpchar;
+	     status, tmpchar;
 	while (1) {
 		snprintf (msg, sizeof (msg), "qXfer:features:read:%s:%"PFMT64x
-			  ",%"PFMT64x, file, off, len);
+			",%"PFMT64x, file, off, len);
 		if (send_msg (g, msg) < 0
 		    || read_packet (g) < 0 || send_ack (g) < 0) {
-			free(ret);
+			free (ret);
 			return NULL;
 		}
 		if (g->data_len == 0) {
-			free(ret);
+			free (ret);
 			return NULL;
 		}
 		if (g->data_len == 1 && g->data[0] == 'l') {
@@ -98,7 +97,7 @@ static char* gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 					retmax += subret_len + 1;
 				}
 				memmove (tmp + subret_len, tmp + subret_space,
-					 retlen - (tmp + subret_space - ret));
+					retlen - (tmp + subret_space - ret));
 				memcpy (tmp, subret, subret_len);
 				retlen += subret_len - subret_space;
 				ret[retlen] = '\0';
@@ -111,19 +110,19 @@ static char* gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 			return ret;
 		}
 		if (status != 'm') {
-			free(ret);
+			free (ret);
 			return NULL;
 		}
 	}
-	free(ret);
+	free (ret);
 	return NULL;
 }
 
 static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	char *arch, *feature, *reg, *reg_end, *regname, *reg_typ, *tmp1, *tmp2,
-		tmpchar, pc_alias[64] = { 0 }, *profile = NULL;
+	     tmpchar, pc_alias[64] = { 0 }, *profile = NULL;
 	ut64 reg_off = 0, reg_sz, reg_name_len, profile_line_len, profile_len = 0,
-		profile_max_len = 0, blk_sz = 4096;
+	     profile_max_len = 0, blk_sz = 4096;
 	bool is_pc = false;
 	// Find architecture
 	g->target.arch = R_SYS_ARCH_NONE;
@@ -237,8 +236,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			tmpchar = regname[reg_name_len];
 			regname[reg_name_len] = '\0';
 			snprintf (profile + profile_len, profile_line_len, "%s\t%s\t"
-				  ".%"PFMT64d"\t%"PFMT64d"\t0\n", reg_typ, regname,
-				  reg_sz, reg_off);
+				".%"PFMT64d "\t%"PFMT64d "\t0\n", reg_typ, regname,
+				reg_sz, reg_off);
 			reg_off += reg_sz / 8;
 			regname[reg_name_len] = tmpchar;
 			profile_len += strlen (profile + profile_len);
