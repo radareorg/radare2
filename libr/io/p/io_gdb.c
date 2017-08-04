@@ -261,7 +261,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			qrcmd = "help";
 		}
 		if (gdbr_send_qRcmd (desc, qrcmd, io->cb_printf) < 0) {
-			io->cb_printf ("remote error\n");
+			eprintf ("remote error\n");
 			return false;
 		}
 		return true;
