@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015, The Lemon Man, All rights reserved. LGPLv3
+// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -429,7 +429,7 @@ bool windbg_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa) {
 	tmp = ctx->target->dir_base_table;
 	tmp &= ~0x1f;
 
-	WIND_DBG eprintf ("cr3  : %016"PFMT64x "\n", tmp);
+	WIND_DBG eprintf ("CR3  : %016"PFMT64x "\n", tmp);
 
 	if (ctx->is_x64) {
 		// PML4 lookup

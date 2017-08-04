@@ -43,7 +43,6 @@ enum {
 #define KD_RET_OK		0x00000000
 #define KD_RET_ERR		0xC0000001
 #define KD_RET_ENOENT	0xC000000F
-#define KD_DBG_CONT		0x00010001
 
 #define KD_MACH_I386	 0x014C
 #define KD_MACH_IA64	 0x0200
