@@ -242,9 +242,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	RList *map_list = r_list_new(), *mod_list;
 
 	GetSystemInfo (&si);
-	h_proc = w32_openprocess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
+	h_proc = w32_OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 	if (!h_proc) {
-		r_sys_perror ("w32_dbg_maps/w32_openprocess");
+		r_sys_perror ("w32_dbg_maps/w32_OpenProcess");
 		goto err_w32_dbg_maps;
 	}
 	cur_addr = si.lpMinimumApplicationAddress;
