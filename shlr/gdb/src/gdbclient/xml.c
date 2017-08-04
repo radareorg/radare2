@@ -251,6 +251,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				free (profile);
 				return -1;
 			}
+			profile = tmp2;
 		}
 		strcpy (profile + profile_len, pc_alias);
 	}
