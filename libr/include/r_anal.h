@@ -591,6 +591,7 @@ typedef struct r_anal_t {
 	char *cpu;
 	char *os;
 	int bits;
+	int addrbytes;
 	int lineswidth; // wtf
 	int big_endian;
 	int split; // used only from core

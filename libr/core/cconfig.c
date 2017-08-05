@@ -639,6 +639,17 @@ static int cb_emuskip(void *user, void *data) {
 	return true;
 }
 
+static int cb_asm_addrbytes(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value < 1) {
+		eprintf ("asm.arch: asm.addrbytes should >= 1\n");
+		return false;
+	}
+	core->anal->addrbytes = core->assembler->addrbytes = node->i_value;
+	return true;
+}
+
 static int cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2032,7 +2043,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
-	SETI ("asm.addrbytes", 1,  "Number of bytes one vaddr unit uses");
+	SETICB ("asm.addrbytes", 1,  &cb_asm_addrbytes, "Number of bytes one vaddr unit uses");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);

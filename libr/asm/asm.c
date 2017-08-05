@@ -413,9 +413,6 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		oplen = op->size;
 	}
-	if (oplen > len) {
-		oplen = len;
-	}
 	if (oplen < 1) {
 		oplen = 1;
 	}
@@ -438,11 +435,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	//XXX check against R_ASM_BUFSIZE other oob write
 	memcpy (op->buf, buf, R_MIN (R_ASM_BUFSIZE - 1, oplen));
-	*op->buf_hex = 0;
-	if ((oplen * 4) >= sizeof (op->buf_hex)) {
-		oplen = (sizeof (op->buf_hex) / 4) - 1;
-	}
-	r_hex_bin2str (buf, oplen, op->buf_hex);
+	r_hex_bin2str (buf, R_MIN (a->addrbytes * oplen,
+														 (sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
 	return ret;
 }
 

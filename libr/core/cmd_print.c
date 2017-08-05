@@ -3306,6 +3306,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
+	int addrbytes = core->assembler->addrbytes;
 	mode = w = p = i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 
@@ -4210,17 +4211,17 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Block size too big\n");
 						return 1;
 					}
-					block = malloc (l);
+					block = malloc (addrbytes * l);
 					if (block) {
-						if (l > core->blocksize) {
-							r_core_read_at (core, addr, block, l); // core->blocksize);
+						if (addrbytes * l > core->blocksize) {
+							r_core_read_at (core, addr, block, addrbytes * l); // core->blocksize);
 						} else {
-							memcpy (block, core->block, l);
+							memcpy (block, core->block, addrbytes * l);
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr, block, l, l, 0, 1);
+							core, addr, block, addrbytes * l, l, 0, 1);
 					} else {
-						eprintf ("Cannot allocate %d bytes\n", l);
+						eprintf ("Cannot allocate %d bytes\n", addrbytes * l);
 					}
 				} else {
 					block = malloc (R_MAX (l * 10, bs));

@@ -56,7 +56,6 @@ typedef struct r_disam_options_t {
 	bool capitalize;
 	bool show_flgoff;
 	bool hasMidflag;
-	int addrbytes;
 	int atabs;
 	int atabsonce;
 	int atabsoff;
@@ -413,7 +412,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
-	ds->addrbytes = r_config_get_i (core->config, "asm.addrbytes");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
@@ -2143,6 +2141,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	RCore *core = ds->core;
 	RAnalValue *src;
 	char *nl = ds->show_comment_right ? "" : "\n";
+	int addrbytes = core->assembler->addrbytes;
 
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
@@ -2158,7 +2157,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 						RFlagItem *item;
 						ut8 b[8];
-						ut64 ptr = ds->addrbytes * idx + ds->addr + src->delta + ds->analop.size;
+						ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
 						ut64 off = 0LL;
 						r_core_read_at (core, ptr, b, src->memref);
 						off = r_mem_get_num (b, src->memref);
@@ -3548,6 +3547,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
+	int addrbytes = core->assembler->addrbytes;
 
 	// TODO: All those ds must be print flags
 	ds = ds_init (core);
@@ -3615,7 +3615,7 @@ toro:
 	ds->stackptr = core->anal->stackptr;
 	r_cons_break_push (NULL, NULL);
 	r_anal_build_range_on_hints (core->anal);
-	for (i = idx = ret = 0; ds->addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = p2v (ds, ds->at);
 		if (r_cons_is_breaked ()) {
@@ -3681,7 +3681,7 @@ toro:
 			}
 		} else {
 			if (idx >= 0) {
-				ret = ds_disassemble (ds, buf + ds->addrbytes * idx, len - ds->addrbytes * idx);
+				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
 				if (ret == -31337) {
 					inc = ds->oplen;
 					continue;
@@ -3702,7 +3702,7 @@ toro:
 			r_anal_op_fini (&ds->analop);
 		}
 		if (!ds->lastfail) {
-			r_anal_op (core->anal, &ds->analop, ds->at, buf + ds->addrbytes * idx, (int)(len - ds->addrbytes * idx));
+			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
 		}
 		if (ret < 1) {
 			r_strbuf_init (&ds->analop.esil);
@@ -3776,12 +3776,12 @@ toro:
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
-			ds_print_asmop_payload (ds, buf + ds->addrbytes * idx);
+			ds_print_asmop_payload (ds, buf + addrbytes * idx);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf + ds->addrbytes * idx, len - ds->addrbytes * idx + 5);
+				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx, len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
@@ -3881,7 +3881,7 @@ toro:
 	R_FREE (nbuf);
 	/* used by asm.emu */
 	r_reg_arena_pop (core->anal->reg);
-	return ds->addrbytes * idx; //-ds->lastfail;
+	return addrbytes * idx; //-ds->lastfail;
 }
 
 /* Disassemble either `nb_opcodes` instructions, or
