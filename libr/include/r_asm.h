@@ -96,6 +96,7 @@ typedef struct {
 typedef struct r_asm_t {
 	char *cpu;
 	int bits;
+	int addrbytes;
 	int big_endian;
 	int syntax;
 	ut64 pc;

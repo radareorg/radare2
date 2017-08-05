@@ -4049,13 +4049,10 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	RAnalOp op;
 	int bufi, minop = 1; // 4
 	int depth = r_config_get_i (core->config, "anal.depth");
-	ut8 *buf = calloc (1, 4096);
-	if (!buf) {
-		return;
-	}
+	int addrbytes = core->anal->addrbytes;
+	ut8 buf[4096];
 	bufi = 0;
 	if (addr_end - addr > 0xffffff) {
-		free (buf);
 		return;
 	}
 	while (addr < addr_end) {
@@ -4067,9 +4064,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 			bufi = 0;
 		}
 		if (!bufi) {
-			r_io_read_at (core->io, addr, buf, 4096);
+			r_io_read_at (core->io, addr, buf, sizeof (buf));
 		}
-		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
+		if (r_anal_op (core->anal, &op, addr, buf + bufi, sizeof (buf) - bufi)) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
 				op.size = minop;
@@ -4097,11 +4094,10 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		} else {
 			op.size = minop;
 		}
-		addr += (op.size > 0)? op.size: 1;
-		bufi += (op.size > 0)? op.size: 1;
+		addr += op.size;
+		bufi += addrbytes * op.size;
 		r_anal_op_fini (&op);
 	}
-	free (buf);
 }
 
 static void cmd_anal_calls(RCore *core, const char *input) {
@@ -5746,7 +5742,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
-	case 'F':
+	case 'F': // "aF"
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'f': // "af"
@@ -5757,25 +5753,25 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'g':
+	case 'g': // "ag"
 		cmd_anal_graph (core, input + 1);
 		break;
 	case 's': // "as"
 		cmd_anal_syscall (core, input + 1);
 		break;
-	case 'v':
+	case 'v': // "av"
 		r_anal_virtual_functions (core, input + 1);
 		break;
-	case 'x':
+	case 'x': // "ax"
 		if (!cmd_anal_refs (core, input + 1)) {
 			return false;
 		}
 		break;
-	case 'a':
+	case 'a': // "aa"
 		if (!cmd_anal_all (core, input + 1))
 			return false;
 		break;
-	case 'c':
+	case 'c': // "ac"
 		{
 		RList *hooks;
 		RListIter *iter;
