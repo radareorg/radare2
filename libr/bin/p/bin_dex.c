@@ -221,15 +221,17 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	bufptr = bin->b->buf;
 	// size of the list, in entries
 	list_size = r_read_le32 (bufptr + params_off);
-	//XXX again list_size is user controlled huge loop
+	if (list_size * sizeof (ut16) >= bin->size) {
+		return NULL;
+	}
+
 	for (i = 0; i < list_size; i++) {
 		int buff_len = 0;
 		if (params_off + 4 + (i * 2) >= bin->size) {
 			break;
 		}
 		type_idx = r_read_le16 (bufptr + params_off + 4 + (i * 2));
-		if (type_idx < 0 ||
-		    type_idx >=
+		if (type_idx >=
 			    bin->header.types_size || type_idx >= bin->size) {
 			break;
 		}
@@ -1111,6 +1113,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 		flag_name = r_str_newf ("%s.method.%s%s", cls->name, method_name, signature);
 		if (!flag_name || !*flag_name) {
 			//R_FREE (method_name);
+			R_FREE (flag_name);
 			R_FREE (signature);
 			continue;
 		}
@@ -1670,6 +1673,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			if (method_name && *method_name) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
+					free (methods);
+					free (signature);
+					free (class_name);
 					return false;
 				}
 				imp->name  = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
@@ -1680,6 +1686,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				if (!sym) {
+					free (methods);
+					free (signature);
+					free (class_name);
 					return false;
 				}
 				sym->name = r_str_newf ("imp.%s", imp->name);
@@ -1694,6 +1703,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 			}
 			free (signature);
+			free (class_name);
 		}
 		free (methods);
 	}
