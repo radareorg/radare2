@@ -357,6 +357,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	check_connection (dbg);
+	if (desc && desc->target.valid) {
+		return strdup (desc->target.regprofile);
+	}
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 16 || bits == 32) {
@@ -385,14 +388,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	52	0\n"
 				"seg	fs	.32	56	0\n"
 				"seg	gs	.32	60	0\n"
-				"gpr	st0	.80	64	0\n"
-				"gpr	st1	.80	74	0\n"
-				"gpr	st2	.80	84	0\n"
-				"gpr	st3	.80	94	0\n"
-				"gpr	st4	.80	104	0\n"
-				"gpr	st5	.80	114	0\n"
-				"gpr	st6	.80	124	0\n"
-				"gpr	st7	.80	134	0\n"
+				"fpu	st0	.80	64	0\n"
+				"fpu	st1	.80	74	0\n"
+				"fpu	st2	.80	84	0\n"
+				"fpu	st3	.80	94	0\n"
+				"fpu	st4	.80	104	0\n"
+				"fpu	st5	.80	114	0\n"
+				"fpu	st6	.80	124	0\n"
+				"fpu	st7	.80	134	0\n"
 				"gpr	fctrl	.32	144	0\n"
 				"gpr	fstat	.32	148	0\n"
 				"gpr	ftag	.32	152	0\n"
@@ -448,14 +451,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	152	0\n"
 				"seg	fs	.32	156	0\n"
 				"seg	gs	.32	160	0\n"
-				"gpr	st0	.80	164	0\n"
-				"gpr	st1	.80	174	0\n"
-				"gpr	st2	.80	184	0\n"
-				"gpr	st3	.80	194	0\n"
-				"gpr	st4	.80	204	0\n"
-				"gpr	st5	.80	214	0\n"
-				"gpr	st6	.80	224	0\n"
-				"gpr	st7	.80	234	0\n"
+				"fpu	st0	.80	164	0\n"
+				"fpu	st1	.80	174	0\n"
+				"fpu	st2	.80	184	0\n"
+				"fpu	st3	.80	194	0\n"
+				"fpu	st4	.80	204	0\n"
+				"fpu	st5	.80	214	0\n"
+				"fpu	st6	.80	224	0\n"
+				"fpu	st7	.80	234	0\n"
 				"gpr	fctrl	.32	244	0\n"
 				"gpr	fstat	.32	248	0\n"
 				"gpr	ftag	.32	252	0\n"
