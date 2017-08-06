@@ -276,7 +276,6 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 			}
 		}
 	}
-	eprintf ("0x%"PFMT64x", %s, size:%d, rw:%d\n", addr, (watch ? "w" : "b"), bpsz, rw);
 	if (watch) {
 		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
 	} else {

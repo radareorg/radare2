@@ -79,7 +79,7 @@ static const char *help_msg_db[] = {
 	//
 	"dbh", " x86", "Set/list breakpoint plugin handlers",
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
-	"dbw", " <addr>", "Add watchpoint",
+	"dbw", " <addr> <rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
@@ -2852,15 +2852,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		input++; // skip 'w'
 		watch = true;
 	case ' ': // "db"
-		for (p = input + 1; *p == ' '; p++);
+		for (p = input + 2; *p == ' '; p++);
 		if (*p == '-') {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
 		} else {
-			#define ARG(x) r_str_word_get0(input,x)
-			eprintf ("input:%s\n", input);
+			#define ARG(x) r_str_word_get0(p, x)
+			int sl = r_str_word_set0 (p);
 			addr = r_num_math (core->num, ARG(0));
 			if (watch) {
-				rw = ARG(1) == 'r' ? R_BP_PROT_READ : R_BP_PROT_WRITE;
+					if (sl == 2) {
+						rw = r_str_rwx (ARG(1));
+					}
+					else {
+						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+						break;
+					}
 			}
 			if (validAddress (core, addr)) {
 				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
