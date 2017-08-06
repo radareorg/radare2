@@ -79,6 +79,7 @@ static const char *help_msg_db[] = {
 	//
 	"dbh", " x86", "Set/list breakpoint plugin handlers",
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
+	"dbw", " <addr> <rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
@@ -2469,6 +2470,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	RDebugFrame *frame;
 	RListIter *iter;
 	const char *p;
+	bool watch = false;
+	int rw = 0;
 	RList *list;
 	ut64 addr;
 	p = strchr (input, ' ');
@@ -2482,7 +2485,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (input[2]) {
 			ut64 addr = r_num_tail (core->num, core->offset, input + 2);
 			if (validAddress (core, addr)) {
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 				if (!bpi) {
 					eprintf ("Unable to add breakpoint (%s)\n", input + 2);
 				}
@@ -2506,7 +2509,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_list_foreach (symbols, iter, symbol) {
 			if (symbol->type && !strcmp (symbol->type, "FUNC")) {
 				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
-					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, NULL, 0);
+					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
 					if (bpi) {
 						bpi->name = r_str_newf ("%s.%s", "sym", symbol->name);
 					} else {
@@ -2717,7 +2720,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 			module = strtok (string, " ");
 			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
-			bpi = r_debug_bp_add (core->dbg, 0, hwbp, module, delta);
+			bpi = r_debug_bp_add (core->dbg, 0, hwbp, false, 0, module, delta);
 			free (string);
 		}
 		break;
@@ -2789,7 +2792,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_del (core->dbg->bp, addr);
 		} else {
 			// XXX(jjd): does t his need an address validity check??
-			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
@@ -2845,14 +2848,28 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'w': // "dbw"
+		input++; // skip 'w'
+		watch = true;
 	case ' ': // "db"
-		for (p = input + 1; *p == ' '; p++);
+		for (p = input + 2; *p == ' '; p++);
 		if (*p == '-') {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
 		} else {
-			addr = r_num_math (core->num, input + 2);
+			#define ARG(x) r_str_word_get0(p, x)
+			int sl = r_str_word_set0 (p);
+			addr = r_num_math (core->num, ARG(0));
+			if (watch) {
+					if (sl == 2) {
+						rw = (strcmp (ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
+					}
+					else {
+						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+						break;
+					}
+			}
 			if (validAddress (core, addr)) {
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
 				if (bpi) {
 					free (bpi->name);
 					if (!strcmp (input + 2, "$$")) {
@@ -3133,7 +3150,7 @@ static void debug_trace_calls (RCore *core, const char *input) {
 	r_reg_arena_swap (core->dbg->reg, true);
 	if (final_addr != UT64_MAX) {
 		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
-		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, NULL, 0);
+		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, false, 0, NULL, 0);
 		if (!bp_final) {
 			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
 		}

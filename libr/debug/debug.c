@@ -217,7 +217,7 @@ static int get_bpsz_arch(RDebug *dbg) {
 }
 
 /* add a breakpoint with some typical values */
-R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
+R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta) {
 	int bpsz = get_bpsz_arch (dbg);
 	RBreakpointItem *bpi;
 	const char *module_name = module;
@@ -276,9 +276,13 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 			}
 		}
 	}
-	bpi = hw
-		? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-		: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	if (watch) {
+		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
+	} else {
+		bpi = hw
+			? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+			: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	}
 	if (bpi) {
 		if (module_name) {
 			bpi->module_name = strdup (module_name);
@@ -1057,7 +1061,7 @@ repeat:
 
 		if (reason == R_DEBUG_REASON_EXIT_TID) {
 			goto repeat;
-		} 
+		}
 #endif
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {

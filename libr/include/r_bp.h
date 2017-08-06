@@ -150,6 +150,9 @@ R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
 R_API RList *r_bp_traptrace_new(void);
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 
+/* watchpoint */
+R_API RBreakpointItem *r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int rw);
+
 /* plugin pointers */
 extern RBreakpointPlugin r_bp_plugin_x86;
 extern RBreakpointPlugin r_bp_plugin_arm;
