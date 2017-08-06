@@ -2861,7 +2861,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			addr = r_num_math (core->num, ARG(0));
 			if (watch) {
 					if (sl == 2) {
-						rw = r_str_rwx (ARG(1));
+						rw = (strcmp (ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
 					}
 					else {
 						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
