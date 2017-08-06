@@ -406,11 +406,11 @@ meson-config meson-cfg meson-conf:
 	echo TODO
 
 meson: build
+	@echo "[ Ninja Build ]"
+	ninja -C build
 	@echo "[ SDB Build ]"
 	$(PYTHON) sys/meson_sdb.py
 	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
-	@echo "[ Ninja Build ]"
-	ninja -C build
 
 meson-install:
 	cd build && DESTDIR="$(DESTDIR)" ninja install
