@@ -3913,6 +3913,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
 	int nbytes = 0;
+	int addrbytes = core->assembler->addrbytes;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
@@ -3973,8 +3974,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
 	r_anal_build_range_on_hints (core->anal);
-#define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
-	for (i = j = 0; isTheEnd; i += ret, j++) {
+#define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)
+	for (i = j = 0; isNotTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
 		ds->vat = p2v (ds, ds->at);
 		hasanal = false;
@@ -3988,7 +3989,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		// XXX copypasta from main disassembler function
 		r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->assembler, &ds->asmop,
-			core->block + i, core->blocksize - i);
+			core->block + addrbytes * i, core->blocksize - addrbytes * i);
 		ds->oplen = ret;
 		if (ds->midflags) {
 			int skip_bytes = handleMidFlags (core, ds, true);
