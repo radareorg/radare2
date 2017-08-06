@@ -9,14 +9,12 @@
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "r_heap_glibc.h"
-#endif
-
 #define HAVE_JEMALLOC 1
 #if HAVE_JEMALLOC
 #include "r_heap_jemalloc.h"
 #include "linux_heap_jemalloc.c"
 #endif
-
+#endif
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
