@@ -200,8 +200,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                 eprintf ("Usage: =!cmd args\n"
                          " =!pid             - show targeted pid\n"
                          " =!pkt s           - send packet 's'\n"
-                         " =!qRcmd cmd       - hex-encode cmd and pass to target"
-                                             " interpreter\n"
+                         " =!monitor cmd     - hex-encode monitor command and pass"
+                                             " to target interpreter\n"
+                         " =!detach [pid]    - detach from remote/detach specific pid\n"
                          " =!inv.reg         - invalidate reg cache\n"
                          " =!pktsz           - get max packet size used\n"
                          " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
@@ -212,8 +213,8 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "pktsz", 5)) {
 		const char *ptr = r_str_chop_ro (cmd + 5);
 		if (!isdigit (*ptr)) {
-			eprintf ("packet size: %u bytes\n",
-				 desc->stub_features.pkt_sz);
+			io->cb_printf ("packet size: %u bytes\n",
+				       desc->stub_features.pkt_sz);
 			return true;
 		}
 		ut32 pktsz;
@@ -221,8 +222,19 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			// pktsz = 0 doesn't make sense
 			return false;
 		}
-		desc->stub_features.pkt_sz = pktsz;
+		desc->stub_features.pkt_sz = R_MAX (pktsz, 64); // min = 64
 		return true;
+	}
+	if (!strncmp (cmd, "detach", 6)) {
+		int pid;
+		if (!isspace (cmd[6]) || !desc->stub_features.multiprocess) {
+			return gdbr_detach (desc) >= 0;
+		}
+		cmd = r_str_chop_ro (cmd + 6);
+		if (!*cmd || !(pid = strtoul (cmd, NULL, 10))) {
+			return gdbr_detach (desc) >= 0;
+		}
+		return gdbr_detach_pid (desc, pid) >= 0;
 	}
 	if (!strncmp (cmd, "pkt ", 4)) {
 		if (send_msg (desc, cmd + 4) == -1) {
@@ -230,7 +242,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		int r = read_packet (desc);
 		desc->data[desc->data_len] = '\0';
-		eprintf ("reply:\n\n%s\n", desc->data);
+		io->cb_printf ("reply:\n%s\n", desc->data);
 		if (!desc->no_ack) {
 			eprintf ("[waiting for ack]\n");
 		}
@@ -243,8 +255,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return pid;
 	}
-	if (!strncmp (cmd, "qRcmd ", 6)) {
-		if (gdbr_send_qRcmd (desc, cmd + 6) < 0) {
+	if (!strncmp (cmd, "monitor", 7)) {
+		const char *qrcmd = cmd + 8;
+		if (!isspace (cmd[8])) {
+			qrcmd = "help";
+		}
+		if (gdbr_send_qRcmd (desc, qrcmd, io->cb_printf) < 0) {
 			eprintf ("remote error\n");
 			return false;
 		}
@@ -277,8 +293,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 				}
 			}
 		}
-		eprintf ("%s\n", file);
+		io->cb_printf ("%s\n", file);
 		free (file);
+		return true;
+	}
+	// This is internal, not available to user. Sets a flag that next call to
+	// get memmap will be for getting baddr
+	if (!strcmp (cmd, "baddr")) {
+		desc->get_baddr = true;
 		return true;
 	}
 	eprintf ("Try: '=!?'\n");

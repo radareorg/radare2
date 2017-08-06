@@ -269,6 +269,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	switch (bits) {
 	case 8:
 	case 16:
+	case 27:
 	case 32:
 	case 64:
 		if (anal->bits != bits) {

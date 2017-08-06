@@ -370,7 +370,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		return false;
 	}
 	while ((de = (struct dirent *)readdir (dh))) {
-		if (de->d_name[0] == '.') {
+		if (de->d_name[0] == '.' || strstr (de->d_name, ".dSYM")) {
 			continue;
 		}
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);

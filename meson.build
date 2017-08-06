@@ -67,7 +67,9 @@ if host_machine.system() == 'windows'
   platform_inc = include_directories(['.','../libr/include','../libr/include/msvc'])
   host_os = 'windows'
   if get_option('default_library') == 'static'
-	add_global_arguments('/MT', language: 'c')
+	if get_option('buildtype') == 'release'
+	  add_global_arguments('/MT', language: 'c')
+	endif
 	message(' ------ WINDOWS VERSION: BUILD STATIC ------')
   else
 	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
@@ -122,14 +124,6 @@ configure_file(input : 'libr/include/r_version.h.in',
 # Copy missing header
 run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
 
-message(' --- Building sdb and generating files --- ')
-r = run_command('python', 'sys/meson_sdb.py')
-if r.returncode() != 0
-  error('Failed.')
-  error(r.stderr())
-endif
-
-message(' --- Building radare2 --- ')
 subdir('shlr/')
 subdir('libr/util')
 subdir('binr/rax2')

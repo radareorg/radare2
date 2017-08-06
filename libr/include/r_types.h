@@ -511,9 +511,73 @@ enum {
 #define R_SYS_OS "unknown"
 #endif
 
+#if __GNUC__
+#  define r_sys_trap() __builtin_trap()
+#else
+#  if __i386__ || __x86_64__
+#    define r_sys_trap() __asm__ __volatile__ ("int3")
+#  elif __arm__
+#    define r_sys_trap() __asm__ __volatile__ ("bkpt")
+#  elif __arm64__
+#    define r_sys_trap() __asm__ __volatile__ ("brk #1")
+#  else
+#    define r_sys_trap() __asm__ __volatile__ (".word 0");
+#  endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif
+
+static inline void r_run_call1 (void *fcn, void *arg1) {
+	((void (*)(void *))(fcn))(arg1);
+}
+
+static inline void r_run_call2 (void *fcn, void *arg1, void *arg2) {
+	((void (*)(void *, void *))(fcn))(arg1, arg2);
+}
+
+static inline void r_run_call3 (void *fcn, void *arg1, void *arg2, void *arg3) {
+	((void (*)(void *, void *, void *))(fcn))(arg1, arg2, arg3);
+}
+
+static inline void r_run_call4 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4) {
+	((void (*)(void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4);
+}
+
+static inline void r_run_call5 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5) {
+	((void (*)(void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5);
+}
+
+static inline void r_run_call6 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+	void *arg6) {
+	((void (*)(void *, void *, void *, void *, void *, void *))(fcn))
+		(arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+static inline void r_run_call7 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+	void *arg6, void *arg7) {
+	((void (*)(void *, void *, void *, void *, void *, void *, void *))(fcn))
+		(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
+static inline void r_run_call8 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+	void *arg6, void *arg7, void *arg8) {
+	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
+		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
+static inline void r_run_call9 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+	void *arg6, void *arg7, void *arg8, void *arg9) {
+	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
+		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+}
+
+static inline void r_run_call10 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+	void *arg6, void *arg7, void *arg8, void *arg9, void *arg10) {
+	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
+		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+}
 
 #endif
 
@@ -527,4 +591,3 @@ enum {
     return (type##_deinit(foo), free(foo), NULL); \
  }
 #endif
-

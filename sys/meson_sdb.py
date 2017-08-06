@@ -44,7 +44,7 @@ def main():
                 continue
             inf, base, ext = get_extension(f)
             inf = os.path.join(folder, inf)
-            if os.path.isdir(inf):
+            if os.path.isdir(inf) and not os.path.islink(inf):
                 DATADIRS.append(inf)
                 l += 1
                 continue

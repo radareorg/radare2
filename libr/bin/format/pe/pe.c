@@ -877,9 +877,10 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 	if ((ut64) bin->size > largest_offset + largest_size) {
 		*size = bin->size - largest_offset - largest_size;
+		free (sects);
 		return largest_offset + largest_size;
 	}
-
+	free (sects);
 	return 0;
 }
 
@@ -973,11 +974,13 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	while (count < metadata->NumberOfStreams) {
 		stream = R_NEW0 (PE_(image_metadata_stream));
 		if (!stream) {
+			free (streams);
 			goto fail;
 		}
 
 		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*) stream, bin->big_endian? "2I": "2i", 1) < 1) {
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
@@ -985,12 +988,14 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 		if (!stream_name) {
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 
 		if (r_buf_size (bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
 			free (stream_name);
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		int c = bin_pe_read_metadata_string (stream_name,
@@ -998,6 +1003,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		if (c == 0) {
 			free (stream_name);
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		eprintf ("Stream name: %s %d\n", stream_name, c);
@@ -1523,6 +1529,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		return NULL;
 	}
 	if (begAddr > bin->size || begAddr + sizeof(string->wLength) > bin->size) {
+		free_String (string);
 		return NULL;
 	}
 	if (r_buf_read_at (bin->b, *curAddr, (ut8*) &string->wLength, sizeof(string->wLength)) != sizeof(string->wLength)) {
@@ -2567,7 +2574,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
-		if (exports_sz < 0 || exports_sz > bin->size) {
+		// we cant exit with export_sz > bin->size, us r_bin_pe_export_t is 256+256+8+8+8+4 bytes is easy get over file size
+		// to avoid fuzzing we can abort on export_directory->NumberOfFunctions>0xffff
+		if (exports_sz < 0 || bin->export_directory->NumberOfFunctions + 1 > 0xffff) {
 			return NULL;
 		}
 		if (!(exports = malloc (exports_sz))) {

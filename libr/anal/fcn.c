@@ -351,7 +351,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 		0
 	};
 	ut64 ret = UT64_MAX;
-	for (offs = 0; offs < len; offs += oplen) {
+	for (offs = 0; offs < len; offs += anal->addrbytes * oplen) {
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
 			break;
@@ -549,6 +549,7 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	int noncode = anal->opt.noncode;
+	int addrbytes = anal->addrbytes;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
@@ -608,25 +609,26 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	bool last_is_push = false;
 	ut64 last_push_addr = UT64_MAX;
-	while (idx < len) {
-		if (anal->limit) {
-			if ((addr + idx) < anal->limit->from || (addr + idx + 1) > anal->limit->to) {
-				break;
-			}
+	if (anal->limit && addr + idx < anal->limit->from) {
+		return R_ANAL_RET_END;
+	}
+	while (addrbytes * idx < len) {
+		if (anal->limit && anal->limit->to <= addr + idx) {
+			break;
 		}
 repeat:
-		if ((len - idx) < 5) {
+		if ((len - addrbytes * idx) < 5) {
 			break;
 		}
 		r_anal_op_fini (&op);
-		if (isInvalidMemory (buf + idx, len - idx)) {
+		if (isInvalidMemory (buf + addrbytes * idx, len - addrbytes * idx)) {
 			FITFCNSZ ();
 			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
 			return R_ANAL_RET_ERROR;
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);

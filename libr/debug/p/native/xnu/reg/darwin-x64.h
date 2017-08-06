@@ -21,7 +21,7 @@ return strdup (
 "gpr	bx	.16	8	0\n"
 "gpr	bh	.8	9	0\n"
 "gpr	bl	.8	8	0\n"
-"gpr	rcx	.64	8	0\n"
+"gpr	rcx	.64	16	0\n"
 "gpr	ecx	.32	16	0\n"
 "gpr	cx	.16	16	0\n"
 "gpr	ch	.8	17	0\n"

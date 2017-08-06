@@ -360,6 +360,37 @@ static ut32 orr(ArmOp *op, int addr) {
 	return data;
 }
 
+static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
+	ut64 at = 0LL;
+	ut32 data = k;
+	if (op->operands[0].type == ARM_GPR) {
+		data += ((op->operands[0].reg & 0xff) << 24);
+	} else {
+		eprintf ("Usage: adrp x0, addr\n");
+		return UT32_MAX;
+	}
+	if (op->operands[1].type == ARM_CONSTANT) {
+		// XXX what about negative values?
+		at = op->operands[1].immediate - addr;
+		at /= 4;
+	} else {
+		eprintf ("Usage: adrp, x0, addr\n");
+		return UT32_MAX;
+	}
+	ut8 b0 = at;
+	ut8 b1 = (at >> 3) & 0xff;
+	ut8 b2 = (at >> (8 + 7)) & 0xff;
+#if 0
+	data += b0 << 29;
+	data += b1 << 16;
+	data += b2 << 24;
+#endif
+	data += b0 << 16;
+	data += b1 << 8;
+	return data;
+}
+
+
 static ut32 adr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
 	ut64 at = 0LL;
@@ -430,109 +461,89 @@ static bool parseOperands(char* str, ArmOp *op) {
 		return false;
 	}
 
-	while (token[0] != '\0') {
+	while (token) {
+		char *next = strchr (token, ',');
+		if (next) {
+			*next++ = 0;
+		}
+		while (token[0] == ' ') {
+			token++;
+		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
 		switch (token[0]) {
-			case ' ':
-				token ++;
-				continue;
-				break;
-			case 'x':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_GPR;
-				op->operands[operand].reg_type = ARM_REG64;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+		case 'x':
+			x = strchr (token, ',');
+			if (x) {
+				x[0] = '\0';
+			}
+			op->operands_count ++;
+			op->operands[operand].type = ARM_GPR;
+			op->operands[operand].reg_type = ARM_REG64;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			break;
-			case 'w':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_GPR;
-				op->operands[operand].reg_type = ARM_REG32;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+		case 'w':
+			op->operands_count ++;
+			op->operands[operand].type = ARM_GPR;
+			op->operands[operand].reg_type = ARM_REG32;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			break;
-			case 'v':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_FP;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+		case 'v':
+			op->operands_count ++;
+			op->operands[operand].type = ARM_FP;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			break;
-			case 's':
-			case 'S':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				if (token[1] == 'P' || token [1] == 'p') {
-					int i;
-					for (i = 0; msr_const[i].name; i++) {
-						if (!strncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
-							op->operands[operand].sp_val = msr_const[i].val;
-							break;
-						}
+		case 's':
+		case 'S':
+			if (token[1] == 'P' || token [1] == 'p') {
+				int i;
+				for (i = 0; msr_const[i].name; i++) {
+					if (!strncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
+						op->operands[operand].sp_val = msr_const[i].val;
+						break;
 					}
-					op->operands_count ++;
-					op->operands[operand].type = ARM_GPR;
-					op->operands[operand].reg_type = ARM_SP | ARM_REG64;
-					op->operands[operand].reg = r_num_math (NULL, token + 1);
-					break;
-				}
-				mem_opt = get_mem_option (token);
-				if (mem_opt != -1) {
-					op->operands_count ++;
-					op->operands[operand].type = ARM_MEM_OPT;
-					op->operands[operand].mem_option = mem_opt;
-				}
-			break;
-			case 'L':
-			case 'l':
-			case 'I':
-			case 'i':
-			case 'N':
-			case 'n':
-			case 'O':
-			case 'o':
-			case 'p':
-			case 'P':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				mem_opt = get_mem_option (token);
-				if (mem_opt != -1) {
-					op->operands_count ++;
-					op->operands[operand].type = ARM_MEM_OPT;
-					op->operands[operand].mem_option = mem_opt;
-				}
-			break;
-			case '-':
-				op->operands[operand].sign = -1;
-			default:
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
 				}
 				op->operands_count ++;
-				op->operands[operand].type = ARM_CONSTANT;
-				op->operands[operand].immediate = r_num_math (NULL, token);
-				imm_count++;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_SP | ARM_REG64;
+				op->operands[operand].reg = r_num_math (NULL, token + 1);
+				break;
+			}
+			mem_opt = get_mem_option (token);
+			if (mem_opt != -1) {
+				op->operands_count ++;
+				op->operands[operand].type = ARM_MEM_OPT;
+				op->operands[operand].mem_option = mem_opt;
+			}
+			break;
+		case 'L':
+		case 'l':
+		case 'I':
+		case 'i':
+		case 'N':
+		case 'n':
+		case 'O':
+		case 'o':
+		case 'p':
+		case 'P':
+			mem_opt = get_mem_option (token);
+			if (mem_opt != -1) {
+				op->operands_count ++;
+				op->operands[operand].type = ARM_MEM_OPT;
+				op->operands[operand].mem_option = mem_opt;
+			}
+			break;
+		case '-':
+			op->operands[operand].sign = -1;
+			// falthru
+		default:
+			op->operands_count ++;
+			op->operands[operand].type = ARM_CONSTANT;
+			op->operands[operand].immediate = r_num_math (NULL, token);
+			imm_count++;
 			break;
 		}
-		if (x && x[0] == '\0') {
-			free (t);
-			return true;
-		}
-		token = ++x;
+		token = next;
 		operand ++;
 		if (operand > MAX_OPERANDS) {
 			free (t);
@@ -577,6 +588,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "adr x", 5)) { // w
 		*op = adr (&ops, addr);
+		return *op != -1;
+	}
+	if (!strncmp (str, "adrp x", 6)) {
+		*op = adrp (&ops, addr, 0x000000d0);
 		return *op != -1;
 	}
 	if (!strcmp (str, "nop")) {

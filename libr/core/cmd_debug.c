@@ -11,6 +11,12 @@
 #include "r_heap_glibc.h"
 #endif
 
+#define HAVE_JEMALLOC 1
+#if HAVE_JEMALLOC
+#include "r_heap_jemalloc.h"
+#include "linux_heap_jemalloc.c"
+#endif
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
@@ -73,6 +79,7 @@ static const char *help_msg_db[] = {
 	//
 	"dbh", " x86", "Set/list breakpoint plugin handlers",
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
+	"dbw", " <addr> <rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
@@ -733,6 +740,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 				eprintf ("dp %d\n", core->dbg->forked_pid);
 			} else {
 				r_debug_select (core->dbg, core->dbg->forked_pid, core->dbg->tid);
+				core->dbg->main_pid = core->dbg->forked_pid;
+				core->dbg->n_threads = 0;
 				core->dbg->forked_pid = -1;
 			}
 		} else {
@@ -798,6 +807,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case '=': // "dp="
 		r_debug_select (core->dbg,
 				(int) r_num_math (core->num, input + 2), core->dbg->tid);
+		core->dbg->main_pid = r_num_math (core->num, input + 2);
 		break;
 	case '*': // "dp*"
 		r_debug_pid_list (core->dbg, 0, 0);
@@ -1005,7 +1015,6 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 #define MAX_MAP_SIZE 1024*1024*512
 static int dump_maps(RCore *core, int perm, const char *filename) {
 	RDebugMap *map;
-	char file[128];
 	RListIter *iter;
 	r_debug_map_sync (core->dbg); // update process memory maps
 	ut64 addr = core->offset;
@@ -1037,10 +1046,9 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 				continue;
 			}
 			r_io_read_at (core->io, map->addr, buf, map->size);
-			if (filename) {
-				snprintf (file, sizeof (file), "%s", filename);
-			} else snprintf (file, sizeof (file),
-					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+			char *file = filename
+			? strdup (filename)
+			: r_str_newf ("0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					map->addr, map->addr_end, r_str_rwx_i (map->perm));
 			if (!r_file_dump (file, buf, map->size, 0)) {
 				eprintf ("Cannot write '%s'\n", file);
@@ -1048,6 +1056,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 			} else {
 				eprintf ("Dumped %d bytes into %s\n", (int)map->size, file);
 			}
+			free (file);
 			free (buf);
 		}
 	}
@@ -1107,8 +1116,7 @@ show_help:
 			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
-				r_cons_printf ("0x%08"PFMT64x" %s\n",
-						map->addr, map->file);
+				r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
 				goto beach;
 			}
 			break;
@@ -1225,7 +1233,9 @@ static int str_start_with(const char *ptr, const char *str) {
 static ut64 addroflib(RCore *core, const char *libname) {
 	RListIter *iter;
 	RDebugMap *map;
-
+	if (!core || !libname) {
+		return UT64_MAX;
+	}
 	r_debug_map_sync (core->dbg);
 	// RList *list = r_debug_native_modules_get (core->dbg);
 	RList *list = r_debug_modules_list (core->dbg);
@@ -1259,6 +1269,33 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 		}
 	}
 	return NULL;
+}
+
+static int r_debug_heap(RCore *core, const char *input) {
+	const char *m = r_config_get (core->config, "dbg.malloc");
+	if (m && !strcmp ("glibc", m)) {
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+		if (core->assembler->bits == 64) {
+			cmd_dbg_map_heap_glibc_64 (core, input + 1);
+		} else {
+			cmd_dbg_map_heap_glibc_32 (core, input + 1);
+		}
+#else
+		eprintf ("glibc not supported for this platform\n");
+#endif
+#if HAVE_JEMALLOC
+	} else if (!strcmp ("jemalloc", m)) {
+		if (core->assembler->bits == 64) {
+			cmd_dbg_map_jemalloc_64 (core, input + 1);
+		} else {
+			cmd_dbg_map_jemalloc_32 (core, input + 1);
+		}
+#endif
+	} else {
+		eprintf ("MALLOC algorithm not supported\n");
+		return false;
+	}
+	return true;
 }
 
 static int cmd_debug_map(RCore *core, const char *input) {
@@ -1323,18 +1360,20 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					eprintf ("See dmp?\n");
 				}
 			}
-		} else eprintf ("See dmp?\n");
+		} else {
+			eprintf ("See dmp?\n");
+		}
 		break;
 	case 'd':
 		switch (input[1]) {
-			case 'a': return dump_maps (core, 0, NULL);
-			case 'w': return dump_maps (core, R_IO_RW, NULL);
-			case ' ': return dump_maps (core, -1, input + 2);
-			case 0: return dump_maps (core, -1, NULL);
-			case '?':
-			default:
-					eprintf ("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
-					break;
+		case 'a': return dump_maps (core, 0, NULL);
+		case 'w': return dump_maps (core, R_IO_RW, NULL);
+		case ' ': return dump_maps (core, -1, input + 2);
+		case 0: return dump_maps (core, -1, NULL);
+		case '?':
+		default:
+			eprintf ("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
+			break;
 		}
 		break;
 	case 'l':
@@ -1480,10 +1519,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			i = r_str_word_set0 (ptr);
 
 			addr = UT64_MAX;
-			libname = NULL;
 			switch (i) {
 			case 2: // get section name
 				sectname = r_str_word_get0 (ptr, 1);
+				/* fallthrou */
 			case 1: // get addr|libname
 				if (IS_DIGIT (*ptr)) {
 					const char *a0 = r_str_word_get0 (ptr, 0);
@@ -1531,9 +1570,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case ' ':
 		{
-			char *p;
 			int size;
-			p = strchr (input + 2, ' ');
+			char *p = strchr (input + 2, ' ');
 			if (p) {
 				*p++ = 0;
 				addr = r_num_math (core->num, input + 1);
@@ -1574,15 +1612,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				r_cons_get_size (NULL));
 		break;
 	case 'h': // "dmh"
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (SZ == 4) {
-			cmd_dbg_map_heap_glibc_32 (core, input + 1);
-		} else {
-			cmd_dbg_map_heap_glibc_64 (core, input + 1);
-		}
-#else
-		eprintf ("MALLOC algorithm not supported\n");
-#endif
+		(void)r_debug_heap (core, input);
 		break;
 	}
 	return true;
@@ -2440,6 +2470,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	RDebugFrame *frame;
 	RListIter *iter;
 	const char *p;
+	bool watch = false;
+	int rw = 0;
 	RList *list;
 	ut64 addr;
 	p = strchr (input, ' ');
@@ -2453,7 +2485,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (input[2]) {
 			ut64 addr = r_num_tail (core->num, core->offset, input + 2);
 			if (validAddress (core, addr)) {
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 				if (!bpi) {
 					eprintf ("Unable to add breakpoint (%s)\n", input + 2);
 				}
@@ -2477,7 +2509,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_list_foreach (symbols, iter, symbol) {
 			if (symbol->type && !strcmp (symbol->type, "FUNC")) {
 				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
-					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, NULL, 0);
+					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
 					if (bpi) {
 						bpi->name = r_str_newf ("%s.%s", "sym", symbol->name);
 					} else {
@@ -2688,7 +2720,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 			module = strtok (string, " ");
 			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
-			bpi = r_debug_bp_add (core->dbg, 0, hwbp, module, delta);
+			bpi = r_debug_bp_add (core->dbg, 0, hwbp, false, 0, module, delta);
 			free (string);
 		}
 		break;
@@ -2760,7 +2792,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_del (core->dbg->bp, addr);
 		} else {
 			// XXX(jjd): does t his need an address validity check??
-			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
@@ -2816,14 +2848,28 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'w': // "dbw"
+		input++; // skip 'w'
+		watch = true;
 	case ' ': // "db"
-		for (p = input + 1; *p == ' '; p++);
+		for (p = input + 2; *p == ' '; p++);
 		if (*p == '-') {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
 		} else {
-			addr = r_num_math (core->num, input + 2);
+			#define ARG(x) r_str_word_get0(p, x)
+			int sl = r_str_word_set0 (p);
+			addr = r_num_math (core->num, ARG(0));
+			if (watch) {
+					if (sl == 2) {
+						rw = (strcmp (ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
+					}
+					else {
+						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+						break;
+					}
+			}
 			if (validAddress (core, addr)) {
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
 				if (bpi) {
 					free (bpi->name);
 					if (!strcmp (input + 2, "$$")) {
@@ -3104,7 +3150,7 @@ static void debug_trace_calls (RCore *core, const char *input) {
 	r_reg_arena_swap (core->dbg->reg, true);
 	if (final_addr != UT64_MAX) {
 		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
-		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, NULL, 0);
+		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, false, 0, NULL, 0);
 		if (!bp_final) {
 			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
 		}
@@ -3382,43 +3428,8 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	case 0: // "dc"
 		r_reg_arena_swap (core->dbg->reg, true);
 #if __linux__
-		old_pid = core->dbg->pid;
-		main_pid = core->dbg->main_pid;
-
-		RList *list = NULL;
-		if (core->dbg->threads) {
-			list = core->dbg->threads;
-		} else {
-			if (core->dbg->h && core->dbg->h->threads) {
-				list = core->dbg->h->threads (core->dbg, core->dbg->pid);
-			}
-		}
-		if (list) {
-			RDebugPid *th;
-			RListIter *it;
-			r_list_foreach (list, it, th) {
-				if (th->pid && th->pid != main_pid) {
-					eprintf ("Selecting and continuing: %d\n", th->pid);
-					r_debug_select (core->dbg, main_pid, th->pid);
-					r_debug_continue (core->dbg);
-					if (main_pid != core->dbg->main_pid) {
-						// This means that the process we were tracing has forked
-						// so we attached to it and selected it already.
-						goto beach;
-					}
-				}
-			}
-		}
-
-		eprintf ("Selecting and continuing: %d\n", main_pid);
-		r_debug_select (core->dbg, main_pid, main_pid);
+		core->dbg->continue_all_threads = true;
 		r_debug_continue (core->dbg);
-		if (main_pid == core->dbg->main_pid) {
-			// If we forked and we're tracing the child,
-			// we selected it already. We don't wanna select the old one
-			r_debug_select (core->dbg, old_pid, core->dbg->tid);
-		}
-beach:
 #else
 		r_debug_continue (core->dbg);
 #endif

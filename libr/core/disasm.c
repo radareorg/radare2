@@ -2141,6 +2141,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	RCore *core = ds->core;
 	RAnalValue *src;
 	char *nl = ds->show_comment_right ? "" : "\n";
+	int addrbytes = core->assembler->addrbytes;
 
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
@@ -2156,7 +2157,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 						RFlagItem *item;
 						ut8 b[8];
-						ut64 ptr = idx + ds->addr + src->delta + ds->analop.size;
+						ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
 						ut64 off = 0LL;
 						r_core_read_at (core, ptr, b, src->memref);
 						off = r_mem_get_num (b, src->memref);
@@ -2657,6 +2658,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *nl = ds->show_comment_right ? "" : "\n";
+	int str_len;
 	char *escstr;
 	const char *prefix = "";
 	switch (ds->strenc) {
@@ -2675,15 +2677,42 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 		prefix = "U";
 		break;
 	default:
-		if (strlen (str) == 1) {
-			// could be a wide string
+		str_len = strlen (str);
+		if (str_len == 1 && len > 3 && str[2] && !str[3]) {
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
-			if (escstr) {
-				int escstr_len = strlen (escstr);
-				prefix = escstr_len == 1 || (escstr_len == 2 && escstr[0] == '\\') ? "" : "u";
+			prefix = "u";
+		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
+			RStrEnc enc = R_STRING_ENC_UTF32LE;
+			RRune ch;
+			const char *ptr, *end;
+			end = (const char *)r_mem_mem_aligned ((ut8 *)str, len, (ut8 *)"\0\0\0\0", 4, 4);
+			if (!end) {
+				end = str + len - 1;
+			}
+			for (ptr = str; ptr < end; ptr += 4) {
+				if (r_utf32le_decode ((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x10ffff) {
+					enc = R_STRING_ENC_LATIN1;
+					break;
+				}
+			}
+			if (enc == R_STRING_ENC_UTF32LE) {
+				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+				prefix = "U";
+			} else {
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot);
 			}
 		} else {
-			escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+			RStrEnc enc = R_STRING_ENC_LATIN1;
+			const char *ptr = str, *end = str + str_len;
+			for (; ptr < end; ptr++) {
+				if (r_utf8_decode ((ut8 *)ptr, end - ptr, NULL) > 1) {
+					enc = R_STRING_ENC_UTF8;
+					break;
+				}
+			}
+			escstr = (enc == R_STRING_ENC_UTF8 ?
+			          r_str_escape_utf8 (str, ds->show_asciidot) :
+			          r_str_escape_latin1 (str, ds->show_asciidot));
 		}
 	}
 	if (escstr) {
@@ -3537,6 +3566,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
+	int addrbytes = core->assembler->addrbytes;
 
 	// TODO: All those ds must be print flags
 	ds = ds_init (core);
@@ -3604,11 +3634,12 @@ toro:
 	ds->stackptr = core->anal->stackptr;
 	r_cons_break_push (NULL, NULL);
 	r_anal_build_range_on_hints (core->anal);
-	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = p2v (ds, ds->at);
 		if (r_cons_is_breaked ()) {
 			dorepeat = 0;
+			R_FREE (nbuf);
 			r_cons_break_pop ();
 			return 0; //break;
 		}
@@ -3669,7 +3700,7 @@ toro:
 			}
 		} else {
 			if (idx >= 0) {
-				ret = ds_disassemble (ds, buf + idx, len - idx);
+				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
 				if (ret == -31337) {
 					inc = ds->oplen;
 					continue;
@@ -3690,7 +3721,7 @@ toro:
 			r_anal_op_fini (&ds->analop);
 		}
 		if (!ds->lastfail) {
-			r_anal_op (core->anal, &ds->analop, ds->at, buf+idx, (int)(len - idx));
+			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
 		}
 		if (ret < 1) {
 			r_strbuf_init (&ds->analop.esil);
@@ -3764,12 +3795,12 @@ toro:
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
-			ds_print_asmop_payload (ds, buf + idx);
+			ds_print_asmop_payload (ds, buf + addrbytes * idx);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf + idx, len - idx + 5);
+				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx, len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
@@ -3869,7 +3900,7 @@ toro:
 	R_FREE (nbuf);
 	/* used by asm.emu */
 	r_reg_arena_pop (core->anal->reg);
-	return idx; //-ds->lastfail;
+	return addrbytes * idx; //-ds->lastfail;
 }
 
 /* Disassemble either `nb_opcodes` instructions, or
@@ -3882,6 +3913,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
 	int nbytes = 0;
+	int addrbytes = core->assembler->addrbytes;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
@@ -3942,8 +3974,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
 	r_anal_build_range_on_hints (core->anal);
-#define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
-	for (i = j = 0; isTheEnd; i += ret, j++) {
+#define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)
+	for (i = j = 0; isNotTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
 		ds->vat = p2v (ds, ds->at);
 		hasanal = false;
@@ -3957,7 +3989,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		// XXX copypasta from main disassembler function
 		r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->assembler, &ds->asmop,
-			core->block + i, core->blocksize - i);
+			core->block + addrbytes * i, core->blocksize - addrbytes * i);
 		ds->oplen = ret;
 		if (ds->midflags) {
 			int skip_bytes = handleMidFlags (core, ds, true);

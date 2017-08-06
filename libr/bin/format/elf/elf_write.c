@@ -88,7 +88,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 				return 0;
 			}
 
-			if (r_buf_read_at(bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
+			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
 				perror("read (rel)");
 
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
@@ -108,7 +108,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 
 	/* rewrite section headers */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!done && !strncmp(name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
+		if (!done && !strncmp (name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
 			shdrp->sh_size = rsz_size;
 			done = 1;
 		} else if (shdrp->sh_offset >= rsz_offset + rsz_osize) {
@@ -116,10 +116,10 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 			if (shdrp->sh_addr) shdrp->sh_addr += delta;
 
 		}
-		off = ehdr->e_shoff + i * sizeof(Elf_(Shdr));
+		off = ehdr->e_shoff + i * sizeof (Elf_(Shdr));
 		if (r_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1)
-			perror("write (shdr)");
-		printf("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
+			perror ("write (shdr)");
+		printf ("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
 	}
 
 	/* rewrite program headers */
@@ -135,10 +135,10 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 			if (phdrp->p_vaddr) phdrp->p_vaddr += delta;
 			if (phdrp->p_paddr) phdrp->p_paddr += delta;
 		}
-		off = ehdr->e_phoff + i * sizeof(Elf_(Phdr));
+		off = ehdr->e_phoff + i * sizeof (Elf_(Phdr));
 		if (r_buf_write_at (bin->b, off, (ut8*)phdrp, sizeof (Elf_(Phdr))) == -1)
-			perror("write (phdr)");
-		printf("-> program header (0x%08"PFMT64x")\n", (ut64) phdrp->p_offset);
+			perror ("write (phdr)");
+		printf ("-> program header (0x%08"PFMT64x")\n", (ut64) phdrp->p_offset);
 	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
@@ -159,12 +159,12 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	r_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
 	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
 
-	printf("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_osize));
+	printf ("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_osize));
 	r_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
-	printf("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
+	printf ("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
 	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
-	printf("Shifted %d bytes\n", (int)delta);
-	free(buf);
+	printf ("Shifted %d bytes\n", (int)delta);
+	free (buf);
 	bin->size = bin->b->length;
 
 	return delta;

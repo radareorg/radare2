@@ -62,10 +62,11 @@ IF EXIST %BUILDDIR% GOTO BUILD
 python meson.py --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %BACKEND%
 
 :BUILD
+CALL :SDB_BUILD
 IF "%BUILD%"=="msbuild" GOTO MSBUILD
 ECHO [ R2 MESON NINJA BUILD ]
 ninja -C %BUILDDIR%
-exit /b %errorlevel%
+EXIT /b %errorlevel%
 
 :MSBUILD
 ECHO [ R2 MESON MSBUILD ]
@@ -73,7 +74,7 @@ IF "%XP%"=="1" (
 	python sys\meson_extra.py
 )
 msbuild %BUILDDIR%\radare2.sln
-exit /b %errorlevel%
+EXIT /b %errorlevel%
 
 :BUILDPROJECT
 ECHO [ R2 MESON BUILDING %BACKEND% SLN]
@@ -85,6 +86,12 @@ IF "%XP%"=="1" (
 GOTO EXIT
 
 :REBUILD
-python.exe meson.py --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
+python meson.py --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 
 :EXIT
+EXIT /B 0
+
+:SDB_BUILD
+ECHO [ SDB BUILD AND GENERATION ]
+python sys\meson_sdb.py
+EXIT /B 0

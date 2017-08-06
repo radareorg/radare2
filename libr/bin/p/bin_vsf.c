@@ -66,7 +66,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 		}
 		if (i >= MACHINES_MAX) {
 			eprintf("Unsupported machine: %s\n", machine);
-			free(res);
+			free (res);
 			return NULL;
 		}
 		// read all VSF modules
@@ -76,6 +76,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			int read = r_buf_fread_at (arch->buf, offset, (ut8*)&module, "16ccci", 1);
 			if (read != sizeof(module)) {
 				eprintf ("Truncated Header\n");
+				free (res);
 				return NULL;
 			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
@@ -89,7 +90,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 				res->rom = &arch->buf->buf[offset + read];
 			} else if (!CMP_MODULE (VICE_MAINCPU) && module.major == 1) {
 				res->maincpu = (struct vsf_maincpu*)&arch->buf->buf[offset + read];
-			} 
+			}
 #undef CMP_MODULE
 			offset += module.length;
 		}

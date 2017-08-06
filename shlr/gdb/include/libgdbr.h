@@ -86,6 +86,7 @@ typedef struct libgdbr_stub_features_t {
 	bool BreakpointCommands;
 	// lldb-specific features
 	struct {
+		bool g;
 		bool QThreadSuffixSupported;
 		bool QListThreadsInStopReply;
 		bool qEcho;
@@ -157,6 +158,7 @@ typedef struct libgdbr_t {
 	ssize_t send_max; // defines the maximal len for the given buffer
 	char *read_buff;
 	ssize_t read_max; // defines the maximal len for the given buffer
+	ssize_t read_len; // len of read_buff (if read_buff not fully consumed)
 
 	// is already handled (i.e. already send or ...)
 	RSocket *sock;
@@ -178,7 +180,15 @@ typedef struct libgdbr_t {
 	bool no_ack;
 	bool is_server;
 	bool server_debug;
+	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
+
+	// parsed from target
+	struct {
+		char *regprofile;
+		int arch, bits;
+		bool valid;
+	} target;
 } libgdbr_t;
 
 /*!

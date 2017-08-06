@@ -27,7 +27,7 @@ LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/grub/libgrubfs.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
-LDFLAGS+=../../shlr/wind/libr_wind.a
+LDFLAGS+=../../shlr/windbg/libr_windbg.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/java/libr_java.a
 LDFLAGS+=../../libr/socket/libr_socket.a

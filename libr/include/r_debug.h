@@ -249,7 +249,10 @@ typedef struct r_debug_t {
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
+	int n_threads;
 	RList *threads; /* NOTE: list contents are platform-specific */
+
+	char *malloc;     /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
 
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
@@ -268,6 +271,7 @@ typedef struct r_debug_t {
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */
+	bool continue_all_threads;
 
 	/* tracking debugger state */
 	int steps; /* counter of steps done */
@@ -516,7 +520,7 @@ R_API ut64 r_debug_arg_get(RDebug *dbg, int fast, int num);
 R_API bool r_debug_arg_set(RDebug *dbg, int fast, int num, ut64 value);
 
 /* breakpoints (most in r_bp, this calls those) */
-R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta);
+R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);
 
 /* pid */
 R_API int r_debug_thread_list(RDebug *dbg, int pid);
@@ -573,7 +577,7 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base);
 R_API void r_page_data_free(void *p);
 
 /* debug session */
-R_API void r_debug_session_free(RDebugSession *p) ;
+R_API void r_debug_session_free(void *p);
 R_API void r_debug_session_list(RDebug *dbg);
 R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
 R_API bool r_debug_session_delete(RDebug *dbg, int idx);
@@ -593,7 +597,7 @@ extern RDebugPlugin r_debug_plugin_rap;
 extern RDebugPlugin r_debug_plugin_gdb;
 extern RDebugPlugin r_debug_plugin_bf;
 extern RDebugPlugin r_debug_plugin_io;
-extern RDebugPlugin r_debug_plugin_wind;
+extern RDebugPlugin r_debug_plugin_windbg;
 extern RDebugPlugin r_debug_plugin_bochs;
 extern RDebugPlugin r_debug_plugin_qnx;
 #endif

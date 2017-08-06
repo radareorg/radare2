@@ -3,6 +3,7 @@
 #include "gdbclient/responses.h"
 #include "gdbclient/commands.h"
 #include "gdbclient/core.h"
+#include "gdbclient/xml.h"
 #include "arch.h"
 #include "libgdbr.h"
 #include "gdbr_common.h"
@@ -75,11 +76,22 @@ static void reg_cache_init(libgdbr_t *g) {
 
 static int gdbr_connect_lldb(libgdbr_t *g) {
 	reg_cache_init (g);
+	if (g->stub_features.qXfer_features_read) {
+		gdbr_read_target_xml (g);
+	}
+	// Check if 'g' packet is supported
+	if (send_msg (g, "g") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return -1;
+	}
+	if (g->data_len == 0 || (g->data_len == 3 && g->data[0] == 'E')) {
+		return 0;
+	}
+	g->stub_features.lldb.g = true;
 	return 0;
 }
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
-	const char *message = "qSupported:multiprocess+;qRelocInsn+";
+	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	RStrBuf tmp;
 	r_strbuf_init (&tmp);
 	int ret;
@@ -92,7 +104,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	ut32 env_pktsz;
 	if ((env_pktsz_str = getenv ("R2_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32) strtoul (env_pktsz_str, NULL, 10))) {
-			g->stub_features.pkt_sz = env_pktsz;
+			g->stub_features.pkt_sz = R_MAX (env_pktsz, 64);
 		}
 	}
 	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
@@ -123,7 +135,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		return ret;
 	}
 	if (env_pktsz > 0) {
-		g->stub_features.pkt_sz = R_MIN (env_pktsz, g->stub_features.pkt_sz);
+		g->stub_features.pkt_sz = R_MAX (R_MIN (env_pktsz, g->stub_features.pkt_sz), 64);
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
@@ -156,17 +168,23 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
 	if (g->stub_features.multiprocess) {
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.0", (ut32) g->pid);
+#if 0
 		if (g->tid < 0) {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.-1", (ut32) g->pid);
 		} else {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
 		}
+#endif
 	} else {
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg0");
+#if 0
 		if (g->tid < 0) {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg-1");
 		} else {
 			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
 		}
+#endif
 	}
 	ret = send_msg (g, tmp.buf);
 	if (ret < 0) {
@@ -188,6 +206,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strncmp (g->data, "OK", 2)) {
 		// return -1;
 	}
+	if (g->stub_features.qXfer_features_read) {
+		gdbr_read_target_xml (g);
+	}
 	reg_cache_init (g);
 	return ret;
 }
@@ -199,6 +220,9 @@ int gdbr_disconnect(libgdbr_t *g) {
 	}
 	reg_cache.valid = false;
 	free (reg_cache.buf);
+	if (g->target.valid) {
+		free (g->target.regprofile);
+	}
 	g->connected = 0;
 	return 0;
 }
@@ -323,19 +347,12 @@ int gdbr_detach(libgdbr_t *g) {
 		return -1;
 	}
 	reg_cache.valid = false;
-
-	if (g->stub_features.multiprocess) {
-		if (g->pid <= 0) {
-			return -1;
-		}
-		return gdbr_detach_pid (g, g->pid);
-	}
-
 	ret = send_msg (g, "D");
 	if (ret < 0) {
 		return -1;
 	}
-	return 0;
+	// Disconnect
+	return gdbr_disconnect (g);
 }
 
 int gdbr_detach_pid(libgdbr_t *g, int pid) {
@@ -461,7 +478,8 @@ int gdbr_read_registers(libgdbr_t *g) {
 		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
 		return 0;
 	}
-	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB
+	    && !g->stub_features.lldb.g) {
 		return gdbr_read_registers_lldb (g);
 	}
 	ret = send_msg (g, CMD_READREGS);
@@ -492,6 +510,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len) {
 		eprintf ("%s: Requested read too long: (%d bytes)\n", __func__, (unsigned) len);
 		return -1;
 	}
+	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
 	data_sz = g->stub_features.pkt_sz / 2;
 	num_pkts = len / data_sz;
 	last = len % data_sz;
@@ -551,6 +570,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	if (!g || !data) {
 		return -1;
 	}
+	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
 	data_sz = g->stub_features.pkt_sz / 2;
 	if (data_sz < 1) {
 		return -1;
@@ -986,6 +1006,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		eprintf ("%s: No remote file opened\n", __func__);
 		return -1;
 	}
+	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
 	data_sz = g->stub_features.pkt_sz / 2;
 	ret = 0;
 	while (ret < max_len) {
@@ -1037,7 +1058,7 @@ void gdbr_invalidate_reg_cache() {
 	reg_cache.valid = false;
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char *fmt, ...)) {
 	if (!g || !cmd) {
 		return -1;
 	}
@@ -1078,7 +1099,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd) {
 			// Console output from gdbserver
 			unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
 			g->data[g->data_len - 1] = '\0';
-			eprintf ("%s", g->data + 1);
+			cb_printf ("%s", g->data + 1);
 		}
 		if (read_packet (g) < 0) {
 			free (buf);
@@ -1229,4 +1250,75 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 	}
 	return list;
+}
+
+ut64 gdbr_get_baddr(libgdbr_t *g) {
+	if (!g || send_msg (g, "qOffsets") < 0 || read_packet (g) < 0
+	    || send_ack (g) < 0 || g->data_len == 0) {
+		return UINT64_MAX;
+	}
+	ut64 off, min = UINT64_MAX;
+	char *ptr;
+	if (r_str_startswith (g->data, "TextSeg=")) {
+		ptr = g->data + strlen ("TextSeg=");
+		if (!isxdigit (*ptr)) {
+			return min;
+		}
+		off = strtoull (ptr, NULL, 16);
+		if (off < min) {
+			min = off;
+		}
+		if (!(ptr = strchr (ptr, ';'))) {
+			return min;
+		}
+		ptr++;
+		if (*ptr && r_str_startswith (ptr, "DataSeg=")) {
+			ptr += strlen ("DataSeg=");
+			if (!isxdigit (*ptr)) {
+				return min;
+			}
+			off = strtoull (ptr, NULL, 16);
+			if (off < min) {
+				min = off;
+			}
+		}
+		return min;
+	}
+	if (!r_str_startswith (g->data, "Text=")) {
+		return min;
+	}
+	ptr = g->data + strlen ("Text=");
+	if (!isxdigit (*ptr)) {
+		return min;
+	}
+	off = strtoull (ptr, NULL, 16);
+	if (off < min) {
+		min = off;
+	}
+	if (!(ptr = strchr (ptr, ';')) || !r_str_startswith (ptr + 1, "Data=")) {
+		return UINT64_MAX;
+	}
+	ptr += strlen (";Data=");
+	if (!isxdigit (*ptr)) {
+		return UINT64_MAX;
+	}
+	off = strtoull (ptr, NULL, 16);
+	if (off < min) {
+		min = off;
+	}
+	if (!(ptr = strchr (ptr, ';'))) {
+		return min;
+	}
+	ptr++;
+	if (r_str_startswith (ptr, "Bss=")) {
+		ptr += strlen ("Bss=");
+		if (!isxdigit (*ptr)) {
+			return min;
+		}
+		off = strtoull (ptr, NULL, 16);
+		if (off < min) {
+			min = off;
+		}
+	}
+	return min;
 }

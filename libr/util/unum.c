@@ -544,6 +544,14 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
 	return value;
 }
 
+static bool isHexDigit (const char _ch) {
+	const char ch = tolower (_ch);
+	if (IS_DIGIT(ch)) {
+		return true;
+	}
+	return (ch >= 'a' && ch <= 'f');
+}
+
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	ut64 mask = 0LL;
 	ut64 n = 0;
@@ -558,7 +566,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p+2, hex);
-		if (IS_DIGIT(hex[0])) {
+		if (isHexDigit (hex[0])) {
 			n = r_num_math (num, p);
 		} else {
 			eprintf ("Invalid argument\n");

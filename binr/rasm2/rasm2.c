@@ -91,10 +91,14 @@ static void rasm2_list(RAsm *la, const char *arch) {
 			}
 		} else {
 			bits[0] = 0;
-			if (h->bits & 8) strcat (bits, "8 ");
-			if (h->bits & 16) strcat (bits, "16 ");
-			if (h->bits & 32) strcat (bits, "32 ");
-			if (h->bits & 64) strcat (bits, "64 ");
+			if (h->bits == 27) {
+				strcat (bits, "27");
+			} else {
+				if (h->bits & 8) strcat (bits, "8 ");
+				if (h->bits & 16) strcat (bits, "16 ");
+				if (h->bits & 32) strcat (bits, "32 ");
+				if (h->bits & 64) strcat (bits, "64 ");
+			}
 			feat = "__";
 			if (h->assemble && h->disassemble) feat = "ad";
 			if (h->assemble && !h->disassemble) feat = "a_";
@@ -458,6 +462,8 @@ int main (int argc, char *argv[]) {
 		r_asm_set_bits (a, sysbits);
 		r_anal_set_bits (anal, sysbits);
 	}
+	// TODO set addrbytes
+	anal->addrbytes = a->addrbytes = 1;
 	char *r2arch = r_sys_getenv ("R2_ARCH");
 	if (r2arch) {
 		arch = r2arch;

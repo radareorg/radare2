@@ -13,7 +13,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!a || !op || !buf || len < 1) {
 		return -1;
 	}
-	int vA, vB, vC, payload = 0, i = (int) buf[0];
+	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int) buf[0];
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
@@ -359,6 +359,14 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				else {
 					snprintf (str, sizeof (str), " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
 				}
+			} else if (buf[0] == 0xfd) { // invoke-custom/range
+				flag_str = R_ASM_GET_NAME (a, 's', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				}
+				else {
+					snprintf (str, sizeof (str), " {v%i..v%i}, call_site+%i", vC, vC + vA - 1, vB);
+				}
 			} else {
 				flag_str = R_ASM_GET_NAME (a, 'm', vB);
 				if (flag_str) {
@@ -403,7 +411,14 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				} else {
 					snprintf (str, sizeof (str), ", class+%i", vB);
 				}
-			} else {
+			} else if (buf[0] == 0xfc) { // invoke-custom
+				flag_str = R_ASM_GET_NAME (a, 's', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
+				} else {
+					snprintf (str, sizeof (str), ", call_site+%i", vB);
+				}
+			} else { // invoke-kind
 				flag_str = R_ASM_GET_NAME (a, 'm', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
@@ -411,6 +426,74 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 					snprintf (str, sizeof (str), ", method+%i", vB);
 				}
 
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtop45CC:
+			vA = (buf[1] & 0xf0) >> 4;
+			vG = (buf[1] & 0x0f);
+			vB = (buf[3] << 8) | buf[2];
+			vD = (buf[4] & 0xf0) >> 4;
+			vC = (buf[4] & 0x0f);
+			vF = (buf[5] & 0xf0) >> 4;
+			vE  = (buf[5] & 0x0f);
+			vH = (buf[7] << 8) | buf[6];
+
+			switch (vA) {
+				case 1:
+					snprintf (str, sizeof (str), " {v%d}", vC);
+					break;
+				case 2:
+					snprintf (str, sizeof (str), " {v%d, v%d}", vC, vD);
+					break;
+				case 3:
+					snprintf (str, sizeof (str), " {v%d, v%d, v%d}", vC, vD, vE);
+					break;
+				case 4:
+					snprintf (str, sizeof (str), " {v%d, v%d, v%d, v%d}", vC, vD, vE, vF);
+					break;
+				case 5:
+					snprintf (str, sizeof (str), " {v%d, v%d, v%d, v%d, v%d}", vC, vD, vE, vF, vG);
+					break;
+			}
+			strasm = r_str_append (strasm, str);
+
+			flag_str = R_ASM_GET_NAME (a, 'm', vB);
+			if (flag_str) {
+				snprintf (str, sizeof (str), ", %s", flag_str);
+			} else {
+				snprintf (str, sizeof (str), ", method+%i", vB);
+			}
+			strasm = r_str_append (strasm, str);
+
+			flag_str = R_ASM_GET_NAME (a, 'p', vH);
+			if (flag_str) {
+				snprintf (str, sizeof (str), ", %s", flag_str);
+			} else {
+				snprintf (str, sizeof (str), ", proto+%i", vH);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtop4RCC:
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			vC = (buf[5] << 8) | buf[4];
+			vH = (buf[7] << 8) | buf[6];
+			flag_str = R_ASM_GET_NAME (a, 'm', vB);
+			if (flag_str) {
+				snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+			}
+			else {
+				snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
+			}
+			strasm = r_str_append (strasm, str);
+
+			flag_str = R_ASM_GET_NAME (a, 'p', vH);
+			if (flag_str) {
+				snprintf (str, sizeof (str), ", %s", flag_str);
+			}
+			else {
+				snprintf (str, sizeof (str), ", proto+%i", vH);
 			}
 			strasm = r_str_append (strasm, str);
 			break;

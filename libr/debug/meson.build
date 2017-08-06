@@ -14,7 +14,7 @@ files=[
 'p/debug_native.c',
 #'p/debug_qnx.c',
 'p/debug_rap.c',
-#'p/debug_wind.c',
+#'p/debug_windbg.c',
 #'p/native/arm.c',
 #'p/native/bt/fuzzy-all.c',
 #'p/native/bt/generic-x64.c',

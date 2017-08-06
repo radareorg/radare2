@@ -396,7 +396,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 		return false;
 	}
 
-	len = r_buf_read_at(bin->b, off, dysym, sizeof (struct dysymtab_command));
+	len = r_buf_read_at (bin->b, off, dysym, sizeof (struct dysymtab_command));
 	if (len != sizeof (struct dysymtab_command)) {
 		bprintf ("Error: read (dysymtab)\n");
 		return false;
@@ -425,7 +425,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 
 	bin->ntoc = bin->dysymtab.ntoc;
 	if (bin->ntoc > 0) {
-		if (!(bin->toc = calloc (bin->ntoc, sizeof(struct dylib_table_of_contents)))) {
+		if (!(bin->toc = calloc (bin->ntoc, sizeof (struct dylib_table_of_contents)))) {
 			perror ("calloc (toc)");
 			return false;
 		}
@@ -442,7 +442,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			return false;
 		}
 		for (i = 0; i < bin->ntoc; i++) {
-			len = r_buf_read_at(bin->b, bin->dysymtab.tocoff +
+			len = r_buf_read_at (bin->b, bin->dysymtab.tocoff +
 				i * sizeof (struct dylib_table_of_contents),
 				dytoc, sizeof (struct dylib_table_of_contents));
 			if (len != sizeof (struct dylib_table_of_contents)) {
@@ -456,7 +456,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	}
 	bin->nmodtab = bin->dysymtab.nmodtab;
 	if (bin->nmodtab > 0) {
-		if (!(bin->modtab = calloc (bin->nmodtab, sizeof(struct MACH0_(dylib_module))))) {
+		if (!(bin->modtab = calloc (bin->nmodtab, sizeof (struct MACH0_(dylib_module))))) {
 			perror ("calloc (modtab)");
 			return false;
 		}
@@ -474,7 +474,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			return false;
 		}
 		for (i = 0; i < bin->nmodtab; i++) {
-			len = r_buf_read_at(bin->b, bin->dysymtab.modtaboff +
+			len = r_buf_read_at (bin->b, bin->dysymtab.modtaboff +
 				i * sizeof (struct MACH0_(dylib_module)),
 				dymod, sizeof (struct MACH0_(dylib_module)));
 			if (len == -1) {
@@ -505,7 +505,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	}
 	bin->nindirectsyms = bin->dysymtab.nindirectsyms;
 	if (bin->nindirectsyms > 0) {
-		if (!(bin->indirectsyms = calloc (bin->nindirectsyms, sizeof(ut32)))) {
+		if (!(bin->indirectsyms = calloc (bin->nindirectsyms, sizeof (ut32)))) {
 			perror ("calloc (indirectsyms)");
 			return false;
 		}
@@ -588,7 +588,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			struct blob_t entitlements = {0}; 
 			entitlements.magic = r_read_ble32 (bin->b->buf + off, little_);
 			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, little_);
-			len = entitlements.length - sizeof(struct blob_t);
+			len = entitlements.length - sizeof (struct blob_t);
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
 				if (bin->signature) {
@@ -627,7 +627,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		goto wrong_read;
 	bin->thread.cmd = r_read_ble32 (&thc[0], bin->big_endian);
 	bin->thread.cmdsize = r_read_ble32 (&thc[4], bin->big_endian);
-	flavor = r_read_ble32 (bin->b->buf + off + sizeof(struct thread_command), bin->big_endian);
+	flavor = r_read_ble32 (bin->b->buf + off + sizeof (struct thread_command), bin->big_endian);
 	if (len == -1)
 		goto wrong_read;
 
@@ -636,7 +636,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		return false;
 
 	// TODO: use count for checks
-	count = r_read_ble32 (bin->b->buf + off + sizeof (struct thread_command) + sizeof(flavor),
+	count = r_read_ble32 (bin->b->buf + off + sizeof (struct thread_command) + sizeof (flavor),
 				bin->big_endian);
 	ptr_thread = off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (count);
 
@@ -1489,10 +1489,10 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		to = R_MIN (to , symbols_size / sizeof (struct symbol_t));
 		to = R_MIN (to, bin->nsymtab);
 #else
-		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
+		from = R_MIN (R_MAX (0, from), symbols_size/sizeof (struct symbol_t));
 		to = symbols_count; //symbols_size/sizeof(struct symbol_t);
 #endif
-		int maxsymbols = symbols_size / sizeof(struct symbol_t);
+		int maxsymbols = symbols_size / sizeof (struct symbol_t);
 		if (to > 0x500000) {
 			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
@@ -1656,7 +1656,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
 	}
-	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct import_t)))) {
+	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof (struct import_t)))) {
 		return NULL;
 	}
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
@@ -1911,7 +1911,7 @@ relocs[i++].last = 0;\
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
 			return NULL;
 		}
-		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct reloc_t)))) {
+		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof (struct reloc_t)))) {
 			return NULL;
 		}
 		for (j = 0; j < bin->dysymtab.nundefsym; j++) {
@@ -1967,7 +1967,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 	if (!bin->nlibs) {
 		return NULL;
 	}
-	if (!(libs = calloc ((bin->nlibs + 1), sizeof(struct lib_t)))) {
+	if (!(libs = calloc ((bin->nlibs + 1), sizeof (struct lib_t)))) {
 		return NULL;
 	}
 	for (i = 0; i < bin->nlibs; i++) {
@@ -2352,7 +2352,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 
 	ut64 addr = 0x20 - 4;
 	ut32 word = 0;
-	ut8 wordbuf[sizeof(word)];
+	ut8 wordbuf[sizeof (word)];
 #define READWORD() \
 		addr += 4; \
 		if (!r_buf_read_at (buf, addr, (ut8*)wordbuf, 4)) { \
@@ -2435,7 +2435,7 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 #endif
 	}
 	len = r_buf_read_at (buf, 0, machohdrbytes, sizeof (machohdrbytes));
-	if (len != sizeof(struct MACH0_(mach_header))) {
+	if (len != sizeof (struct MACH0_(mach_header))) {
 		free (macho_hdr);
 		return NULL;
 	}

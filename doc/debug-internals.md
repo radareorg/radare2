@@ -204,10 +204,10 @@ See doc/qnx
 
 See doc/rap
 
-### libr/debug/p/debug_wind.c
+### libr/debug/p/debug_windbg.c
 
 A debugger plugin that enables debugging code remotely via WinDbg protocol. WinDbg protocol
-parser is located in shlr/wind. Corresponding IO plugin located in libr/io/p/io_windbg.c
+parser is located in shlr/windbg. Corresponding IO plugin located in libr/io/p/io_windbg.c
 See doc/windbg
 
 ## Conclusion

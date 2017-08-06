@@ -319,7 +319,7 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 	return r_io_def_mmap_check_default (file);
 }
 
-// default open should permit opening 
+// default open should permit opening
 static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *iod;
 	if (!r_io_def_mmap_check_default (file) ) return NULL;

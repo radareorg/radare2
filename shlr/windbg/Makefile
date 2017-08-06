@@ -27,11 +27,11 @@ endif
 endif
 
 CFLAGS+=-I../../libr/include
-LIBAR=libr_wind.${EXT_AR}
+LIBAR=libr_windbg.${EXT_AR}
 LDFLAGS+=-L../../libr/util
 LIBS=-lr_util
 
-OFILES=transport.o kd.o wind.o iob_pipe.o
+OFILES=transport.o kd.o windbg.o iob_pipe.o
 
 all: ${LIBAR}
 

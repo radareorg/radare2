@@ -299,15 +299,28 @@ R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i
 
 #define MIN_MATCH_LEN 4
 
-// TODO: Future optimizations
-// - symbol names are long and noisy, reduce searchspace for match here
-//   by preprocessing to delete noise, as much as we can.
-// - We ignore all func.*, but thats maybe most of sdb entries
-//   could maybe eliminate this work (strcmp).
-R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
-	int j = 0, offset = 0, n;
-	char *str = func_name;
+static char *type_func_try_guess(RAnal *anal, char *name) {
+	const char *res;
+	if (r_str_nlen (name, MIN_MATCH_LEN) < MIN_MATCH_LEN) {
+		return NULL;
+	}
+	if ((res = sdb_const_get (anal->sdb_types, name, NULL))) {
+		bool is_func = res && !strcmp ("func", res);
+		if (is_func) {
+			return strdup (name);
+		}
+	}
+	return NULL;
+}
 
+// TODO:
+// - symbol names are long and noisy, some of them might not be matched due
+//   to additional information added around name
+R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
+	int offset = 0;
+	char *str = func_name;
+	char *result = NULL;
+	char *first, *last;
 	if (!func_name) {
 		return NULL;
 	}
@@ -317,34 +330,45 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 		return NULL;
 	}
 
-	if(slen > 4) { // were name-matching so ignore autonamed
+	if (slen > 4) { // were name-matching so ignore autonamed
 		if ((str[0] == 'f' && str[1] == 'c' && str[2] == 'n' && str[3] == '.') ||
-			(str[0] == 'l' && str[1] == 'o' && str[2] == 'c' && str[3] == '.') ) {
+		    (str[0] == 'l' && str[1] == 'o' && str[2] == 'c' && str[3] == '.')) {
 			return NULL;
 		}
 	}
 	// strip r2 prefixes (sym, sym.imp, etc')
-	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') {
-		offset+=4;
+	while (slen > 4 && (offset + 3 < slen) && str[offset + 3] == '.') {
+		offset += 4;
 	}
 	slen -= offset;
-	str = strdup (&func_name[offset]);
-	for (n = slen; n >= MIN_MATCH_LEN; --n) {
-		for (j = 0; j < slen - (n - 1); ++j) {
-			char saved = str[j + n];
-			str[j + n] = 0;
-			if (sdb_exists (anal->sdb_types, &str[j])) {
-				const char *res = sdb_const_get (anal->sdb_types, &str[j], 0);
-				bool is_func = res && !strcmp ("func", res);
-				if (is_func) {
-					char *ret = strdup (&str[j]);
-					free (str);
-					return ret;
-				}
-			}
-			str[j + n] = saved;
-		}
+	str += offset;
+	if ((result = type_func_try_guess (anal, str))) {
+		return result;
 	}
+	str = strdup (str);
+	// some names are in format module.dll_function_number, try to remove those
+	// also try module.dll_function and function_number
+	if ((first = strchr (str, '_'))) {
+		last = (char *)r_str_lchr (first, '_');
+		// middle + suffix or right half
+		if ((result = type_func_try_guess (anal, first + 1))) {
+			goto out;
+		}
+		last[0] = 0;
+		// prefix + middle or left
+		if ((result = type_func_try_guess (anal, str))) {
+			goto out;
+		}
+		if (last != first) {
+			// middle
+			if ((result = type_func_try_guess (anal, first + 1))) {
+				goto out;
+			}
+		}
+		result = NULL;
+		goto out;
+	}
+out:
 	free (str);
-	return NULL;
+	return result;
 }

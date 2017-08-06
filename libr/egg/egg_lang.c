@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2017 - pancake */
 
 #include <r_egg.h>
 
@@ -308,6 +308,9 @@ static void rcc_internal_mathop(REgg *egg, char *ptr, char *ep, char op) {
 	}
 	if (*p) {
 		e->mathop (egg, op, varsize, type, p, ep);
+	}
+	if (p != oldp) {
+		R_FREE (p);
 	}
 	R_FREE (oldp);
 	R_FREE (ep);
@@ -1178,7 +1181,7 @@ static void rcc_next(REgg *egg) {
 				rcc_mathop (egg, &tmp, 2);
 				R_FREE (mathline);
 				tmp = NULL;
-				// following code block is too ugly, oh no
+				// following code block is too ugly, oh noes
 				p = r_egg_mkvar (egg, buf, ptr, 0);
 				if (is_var (p)) {
 					p = r_egg_mkvar (egg, buf, p, 0);

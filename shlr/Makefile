@@ -31,7 +31,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind bochs
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
@@ -58,14 +58,14 @@ all:
 	exit 1
 endif
 
-preall: targets libwind capstone-build bochs
+preall: targets libwindbg capstone-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
-PREMODS=capstone gdb wind sdb bochs
+PREMODS=capstone gdb windbg sdb bochs
 
 clean mrproper:
 	rm -f ${SDBFILES}
@@ -139,8 +139,8 @@ I=../libr/include
 libgdbr:
 	$(MAKE) -C gdb all
 
-libwind:
-	$(MAKE) -C wind all
+libwindbg:
+	$(MAKE) -C windbg all
 
 bochs:
 	$(MAKE) -C bochs all

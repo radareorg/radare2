@@ -96,6 +96,23 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		return NULL;
 	}
 	RList *retlist = NULL;
+	if (desc->get_baddr) {
+		desc->get_baddr = false;
+		ut64 baddr;
+		if ((baddr = gdbr_get_baddr (desc)) != UINT64_MAX) {
+			if (!(retlist = r_list_new ())) {
+				return NULL;
+			}
+			RDebugMap *map;
+			if (!(map = r_debug_map_new ("", baddr, baddr,
+						     R_IO_READ | R_IO_EXEC, 0))) {
+				r_list_free (retlist);
+				return NULL;
+			}
+			r_list_append (retlist, map);
+			return retlist;
+		}
+	}
 
 	// Get file from GDB
 	char path[128];
@@ -154,7 +171,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n", __func__, path, buf);
+			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n",
+				 __func__, path, buf);
 			gdbr_close_file (desc);
 			free (buf);
 			r_list_free (retlist);
@@ -244,7 +262,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
 	gdbr_continue (desc, pid, tid, sig);
-	return true;
+	return desc->tid;
 }
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
@@ -329,6 +347,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_gdb_detach(RDebug *dbg, int pid) {
+	if (pid <= 0 || !desc->stub_features.multiprocess) {
+		return gdbr_detach (desc);
+	}
 	return gdbr_detach_pid (desc, pid);
 }
 
@@ -336,6 +357,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	check_connection (dbg);
+	if (desc && desc->target.valid) {
+		return strdup (desc->target.regprofile);
+	}
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 16 || bits == 32) {
@@ -364,14 +388,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	52	0\n"
 				"seg	fs	.32	56	0\n"
 				"seg	gs	.32	60	0\n"
-				"gpr	st0	.80	64	0\n"
-				"gpr	st1	.80	74	0\n"
-				"gpr	st2	.80	84	0\n"
-				"gpr	st3	.80	94	0\n"
-				"gpr	st4	.80	104	0\n"
-				"gpr	st5	.80	114	0\n"
-				"gpr	st6	.80	124	0\n"
-				"gpr	st7	.80	134	0\n"
+				"fpu	st0	.80	64	0\n"
+				"fpu	st1	.80	74	0\n"
+				"fpu	st2	.80	84	0\n"
+				"fpu	st3	.80	94	0\n"
+				"fpu	st4	.80	104	0\n"
+				"fpu	st5	.80	114	0\n"
+				"fpu	st6	.80	124	0\n"
+				"fpu	st7	.80	134	0\n"
 				"gpr	fctrl	.32	144	0\n"
 				"gpr	fstat	.32	148	0\n"
 				"gpr	ftag	.32	152	0\n"
@@ -427,14 +451,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	152	0\n"
 				"seg	fs	.32	156	0\n"
 				"seg	gs	.32	160	0\n"
-				"gpr	st0	.80	164	0\n"
-				"gpr	st1	.80	174	0\n"
-				"gpr	st2	.80	184	0\n"
-				"gpr	st3	.80	194	0\n"
-				"gpr	st4	.80	204	0\n"
-				"gpr	st5	.80	214	0\n"
-				"gpr	st6	.80	224	0\n"
-				"gpr	st7	.80	234	0\n"
+				"fpu	st0	.80	164	0\n"
+				"fpu	st1	.80	174	0\n"
+				"fpu	st2	.80	184	0\n"
+				"fpu	st3	.80	194	0\n"
+				"fpu	st4	.80	204	0\n"
+				"fpu	st5	.80	214	0\n"
+				"fpu	st6	.80	224	0\n"
+				"fpu	st7	.80	234	0\n"
 				"gpr	fctrl	.32	244	0\n"
 				"gpr	fstat	.32	248	0\n"
 				"gpr	ftag	.32	252	0\n"

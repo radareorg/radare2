@@ -3,6 +3,7 @@
 #include <r_userconf.h>
 #include <r_debug.h>
 #include <r_asm.h>
+#include <r_core.h>
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
@@ -99,7 +100,7 @@ static void r_debug_native_stop(RDebug *dbg);
 #if !__APPLE__
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
-	return linux_handle_signals (dbg, 0);
+	return linux_handle_signals (dbg);
 #else
 	return -1;
 #endif
@@ -265,8 +266,23 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (dbg->consbreak) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
-	int ret = ptrace (PTRACE_CONT, tid, NULL, contsig);
-	return ret >= 0 ? tid : false;
+
+	int ret = ptrace (PTRACE_CONT, pid, NULL, contsig);
+	if (dbg->continue_all_threads && dbg->n_threads) {
+		RList *list = dbg->threads;
+		RDebugPid *th;
+		RListIter *it;
+
+		if (list) {
+			r_list_foreach (list, it, th) {
+				if (th->pid && th->pid != pid) {
+					ptrace (PTRACE_CONT, tid, NULL, contsig);
+				}
+			}
+		}
+	}
+	//return ret >= 0 ? tid : false;
+	return tid;
 #endif
 }
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
@@ -301,7 +317,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 #endif
 
 /*
- * wait for an event and start trying to figure out what to do with it.
+ * Wait for an event and start trying to figure out what to do with it.
  *
  * Returns R_DEBUG_REASON_*
  */
@@ -318,11 +334,32 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 				reason = R_DEBUG_REASON_TRAP;
 			}
 			r_debug_info_free (r);
+
+			/* Check if autoload PDB is set, and load PDB information if yes */
+			RCore* core = dbg->corebind.core;
+			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
+			if (autoload_pdb) {
+				char* o_res = dbg->corebind.cmdstrf (core, "o %s", ((PLIB_ITEM)(r->lib))->Path);
+				// File exists since we loaded it, however the "o" command fails sometimes hence the while loop
+				while (*o_res == 0) {
+					o_res = dbg->corebind.cmdstrf (core, "o %s", ((PLIB_ITEM)(r->lib))->Path);
+				}
+				int fd = atoi (o_res);
+				dbg->corebind.cmdf (core, "o %d", fd);
+				char* pdb_path = dbg->corebind.cmdstr (core, "i~pdb");
+				if (*pdb_path == 0) {
+					eprintf ("Failure...\n");
+					dbg->corebind.cmd (core, "i");
+				} else {
+					pdb_path = strchr (pdb_path, ' ') + 1;
+					dbg->corebind.cmdf (core, ".idp* %s", pdb_path);
+				}
+				dbg->corebind.cmdf (core, "o-%d", fd);
+			}
 		} else {
 			eprintf ("Loading unknown library.\n");
 		}
-	}
-	else if (reason == R_DEBUG_REASON_EXIT_LIB) {
+	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
 			if (tracelib (dbg, "unload", r->lib)) {
@@ -377,6 +414,19 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #else
 #if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 	reason = linux_dbg_wait (dbg, dbg->tid);
+	if (reason == R_DEBUG_REASON_NEW_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r) {
+			eprintf ("(%d) Created thread %d\n", r->pid, r->tid);
+			r_debug_info_free (r);
+		}
+	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r) {
+			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
+			r_debug_info_free (r);
+		}
+	} 
 #else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN

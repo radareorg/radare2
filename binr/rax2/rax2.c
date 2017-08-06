@@ -16,6 +16,7 @@ static ut64 flags = 0;
 static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
+static const char *nl = "";
 
 static int format_output(char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -90,6 +91,7 @@ static int help() {
 		"  hex   ->  ternary       ;  rax2 Tx23\n"
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
+		"  -l                      ;  append newline to output (for -E/-D/-r/..\n"
 		"  -b    bin -> str        ;  rax2 -b 01000101 01110110\n"
 		"  -B    str -> bin        ;  rax2 -B hello\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
@@ -139,6 +141,7 @@ static int rax(char *str, int len, int last) {
 	if (*str == '-') {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
+			case 'l': nl = "\n"; break;
 			case 's': flags ^= 1; break;
 			case 'e': flags ^= 1 << 1; break;
 			case 'S': flags ^= 1 << 2; break;
@@ -200,6 +203,10 @@ dotherax:
 			}
 #if __EMSCRIPTEN__
 			puts ("");
+#else
+			if (nl && *nl) {
+				puts ("");
+			}
 #endif
 			fflush (stdout);
 			free (buf);
@@ -360,7 +367,7 @@ dotherax:
 		ut8 *out = calloc (sizeof (ut8), ((len + 2) / 3) * 4);
 		if (out) {
 			r_base64_decode (out, str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}

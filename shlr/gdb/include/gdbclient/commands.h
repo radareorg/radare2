@@ -46,7 +46,7 @@ int gdbr_check_vcont(libgdbr_t *g);
  * remote target's interpreter.
  * \returns 0 on success and -1 on failure
  */
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd);
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char *, ...));
 
 /*!
  * \brief attaches to a process
@@ -120,5 +120,11 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid);
  * Get absolute name of file executed to create a process
  */
 char* gdbr_exec_file_read(libgdbr_t *g, int pid);
+
+/*!
+ * Get offset of lowest segment returned by 'qOffsets'
+ */
+ut64 gdbr_get_baddr(libgdbr_t *g);
+
 
 #endif  // CLIENT_COMMANDS_H

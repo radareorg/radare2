@@ -20,57 +20,62 @@ static struct {
 	int type;
 	int args;
 	int n;
+	int x;
 } ops[] = {
-	{ "nop", 'N', 0, 0 },
-	{ "lui", 'I', 2, 15 },
-	{ "sw", 'I', 3, 43 },
-	{ "sh", 'I', 3, 41 },
-	{ "sb", 'I', 3, 40 },
-	{ "lw", 'I', 3, 35 },
-	{ "lh", 'I', 3, 33 },
-	{ "lb", 'I', 3, 32 },
-	{ "ori", 'I', 3, 13 },
-	{ "andi", 'I', 3, 12 },
-	{ "xori", 'I', 3, 14 },
-	{ "addi", 'I', 3, 8 },
-	{ "addiu", 'I', 3, 9 },
-	{ "bnez", 'I', 2, 5 },
-	{ "bne", 'I', 3, 5 },
-	{ "beq", 'I', 3, 4 },
-	{ "bgez", 'I', -2, -1 },
-	{ "bgtz", 'I', -2, 7 },
-	{ "blez", 'I', -2, 6 },
-	{ "bltz", 'I', -2, 1 },
-	{ "syscall", 'R', 0, 12 },
-	{ "break", 'R', 0, 13 },
-	{ "nor", 'R', 3, 39 },
-	{ "or", 'R', 3, 37 },
-	{ "xor", 'R', 3, 38 },
-	{ "and", 'R', 3, 36 },
-	{ "sll", 'R', -3, 0 },
-	{ "sllv", 'R', 3, 4 },
-	{ "slt", 'R', 3, 42 },
-	{ "sltu", 'R', 3, 43 },
-	{ "sra", 'R', -3, 3 },
-	{ "srl", 'R', -3, 2 },
-	{ "srlv", 'R', 3, 6 },
-	{ "srav", 'R', 3, 7 },
-	{ "add", 'R', 3, 32 },
-	{ "addu", 'R', 3, 33 },
-	{ "sub", 'R', 3, 34 },
-	{ "subu", 'R', 3, 35 },
-	{ "mult", 'R', 2, 24 },
-	{ "multu", 'R', 2, 25 },
-	{ "div", 'R', 2, 26 },
-	{ "divu", 'R', 2, 27 },
-	{ "mfhi", 'R', 1, 16 },
-	{ "mflo", 'R', 1, 18 },
-	{ "mthi", 'R', 1, 17 },
-	{ "mtlo", 'R', 1, 19 },
-	{ "jalr", 'R', -2, 9 },
-	{ "jr", 'R', 1, 8 },
-	{ "jal", 'J', 1, 3 },
-	{ "j",   'J', 1, 2 },
+	{ "nop", 'N', 0, 0, 0 },
+	{ "lui", 'I', 2, 15, 0 },
+	{ "sw", 'I', 3, 43, 0 },
+	{ "sh", 'I', 3, 41, 0 },
+	{ "sb", 'I', 3, 40, 0 },
+	{ "lw", 'I', 3, 35, 0 },
+	{ "lh", 'I', 3, 33, 0 },
+	{ "lb", 'I', 3, 32, 0 },
+	{ "ori", 'I', 3, 13, 0 },
+	{ "andi", 'I', 3, 12, 0 },
+	{ "xori", 'I', 3, 14, 0 },
+	{ "addi", 'I', 3, 8, 0 },
+	{ "addiu", 'I', 3, 9, 0 },
+	{ "bnez", 'B', 2, 5, 0 },
+	{ "bal", 'B', -1, -1, 17},
+	{ "bne", 'B', 3, 5, 0 },
+	{ "beq", 'B', 3, 4, 0 },
+	{ "bgez", 'B', -2, -1, 1 },
+	{ "bgezal", 'B', -2, -1, 17 },
+	{ "bltzal", 'B', -2, -1, 16 },
+	{ "bgtz", 'B', -2, 7, 0 },
+	{ "blez", 'B', -2, 6, 0 },
+	{ "bltz", 'B', -2, 1, 0 },
+	{ "syscall", 'R', 0, 12, 0 },
+	{ "break", 'R', 0, 13, 0 },
+	{ "nor", 'R', 3, 39, 0 },
+	{ "or", 'R', 3, 37, 0 },
+	{ "xor", 'R', 3, 38, 0 },
+	{ "and", 'R', 3, 36, 0 },
+	{ "sll", 'R', -3, 0, 0 },
+	{ "sllv", 'R', 3, 4, 0 },
+	{ "slt", 'R', 3, 42, 0 },
+	{ "sltu", 'R', 3, 43, 0 },
+	{ "sra", 'R', -3, 3, 0 },
+	{ "srl", 'R', -3, 2, 0 },
+	{ "srlv", 'R', 3, 6, 0 },
+	{ "srav", 'R', 3, 7, 0 },
+	{ "add", 'R', 3, 32, 0 },
+	{ "move", 'R', -2, 32, 0 },
+	{ "addu", 'R', 3, 33, 0 },
+	{ "sub", 'R', 3, 34, 0 },
+	{ "subu", 'R', 3, 35, 0 },
+	{ "mult", 'R', 2, 24, 0 },
+	{ "multu", 'R', 2, 25, 0 },
+	{ "div", 'R', 2, 26, 0 },
+	{ "divu", 'R', 2, 27, 0 },
+	{ "mfhi", 'R', 1, 16, 0 },
+	{ "mflo", 'R', 1, 18, 0 },
+	{ "mthi", 'R', 1, 17, 0 },
+	{ "mtlo", 'R', 1, 19, 0 },
+	{ "jalr", 'R', -2, 9, 0 },
+	{ "jr", 'R', 1, 8, 0 },
+	{ "jal", 'J', 1, 3, 0 },
+	{ "j",   'J', 1, 2, 0 },
 	{ NULL }
 };
 
@@ -88,9 +93,17 @@ static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	return 4;
 }
 
-static int mips_i(ut8 *b, int op, int rs, int rt, int imm) {
+static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
 	if (rs == -1 || rt == -1) {
 		return -1;
+	}
+	if (is_branch) {
+		if (imm > 4) {
+			imm /= 4;
+			imm--;
+		} else {
+			imm = 0;
+		}
 	}
 	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
 	b[2] = (rs<<5) | (rt);
@@ -135,7 +148,7 @@ static int getreg(const char *p) {
 }
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
-	int i, hasp;
+	int i, hasp, is_branch;
 	char *s = strdup (str);
 	char w0[32], w1[32], w2[32], w3[32];
 	r_str_replace_char (s, ',', ' ');
@@ -143,7 +156,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	r_str_replace_char (s, ')', ' ');
 	*out = 0;
 	*w0=*w1=*w2=*w3=0;
-	sscanf (s, "%31s", w0); 
+	sscanf (s, "%31s", w0);
 	if (*w0)
 	for (i=0; ops[i].name; i++) {
 		if (!strcmp (ops[i].name, w0)) {
@@ -181,14 +194,22 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				}
 				break;
 			case 'I':
+			case 'B':
+				is_branch = ops[i].type == 'B';
 				switch (ops[i].args) {
-				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2)); break;
-				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3)); break;
+				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2), is_branch); break;
+				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3), is_branch); break;
 				case -2:
 					if (ops[i].n > 0) {
-						return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2)); break;
+						return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2), is_branch); break;
 					} else {
-						return mips_i (out, (-1 * ops[i].n), getreg (w1), 1, getreg (w2)); break;
+						return mips_i (out, (-1 * ops[i].n), getreg (w1), ops[i].x, getreg (w2), is_branch); break;
+					}
+
+				case -1: if (ops[i].n > 0) {
+						return mips_i (out, ops[i].n, 0, 0, getreg (w1), is_branch); break;
+					} else {
+						return mips_i (out, (-1 * ops[i].n), 0, ops[i].x, getreg (w1), is_branch); break;
 					}
 				}
 				break;

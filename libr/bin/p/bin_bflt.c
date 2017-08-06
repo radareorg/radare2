@@ -38,6 +38,7 @@ static RList *entries(RBinFile *arch) {
 	}
 	ptr = r_bflt_get_entry (obj);
 	if (!ptr) {
+		r_list_free (ret);
 		return NULL;
 	}
 	r_list_append (ret, ptr);

@@ -639,6 +639,17 @@ static int cb_emuskip(void *user, void *data) {
 	return true;
 }
 
+static int cb_asm_addrbytes(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value < 1) {
+		eprintf ("asm.arch: asm.addrbytes should >= 1\n");
+		return false;
+	}
+	core->anal->addrbytes = core->assembler->addrbytes = node->i_value;
+	return true;
+}
+
 static int cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -691,7 +702,9 @@ static int cb_asmstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
-		r_cons_printf ("  -- if string's 2nd byte is 0 then utf16le else latin1\n");
+		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
+		               "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
+		               "if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
 	return true;
@@ -1914,6 +1927,19 @@ static int cb_linesabs(void *user, void *data) {
 	return true;
 }
 
+static int cb_malloc(void *user, void *data) {
+ 	RCore *core = (RCore*) user;
+ 	RConfigNode *node = (RConfigNode*) data;
+
+ 	if (node->value){
+ 		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
+ 			core->dbg->malloc = data;
+ 		}
+ 
+ 	}
+	return true;
+}
+
 static char *getViewerPath() {
 	int i;
 	const char *viewers[] = {
@@ -1949,6 +1975,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
 	SETI ("pdb.extract", 1, "Avoid extract of the pdb file, just download");
+	SETI ("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
 	/* anal */
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
@@ -2000,6 +2027,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+ 	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
+#else
+	SETCB("dbg.malloc", "jemalloc", &cb_malloc, "Choose malloc structure parser");
+#endif
+
 	SETPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
@@ -2011,6 +2044,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
+	SETICB ("asm.addrbytes", 1,  &cb_asm_addrbytes, "Number of bytes one vaddr unit uses");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);

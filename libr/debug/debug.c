@@ -217,7 +217,7 @@ static int get_bpsz_arch(RDebug *dbg) {
 }
 
 /* add a breakpoint with some typical values */
-R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
+R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta) {
 	int bpsz = get_bpsz_arch (dbg);
 	RBreakpointItem *bpi;
 	const char *module_name = module;
@@ -276,9 +276,13 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 			}
 		}
 	}
-	bpi = hw
-		? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-		: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	if (watch) {
+		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
+	} else {
+		bpi = hw
+			? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+			: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	}
 	if (bpi) {
 		if (module_name) {
 			bpi->module_name = strdup (module_name);
@@ -305,6 +309,8 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->bits = R_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
+	dbg->main_pid = -1;
+	dbg->n_threads = 0;
 	dbg->trace_clone = 0;
 	dbg->egg = r_egg_new ();
 	r_egg_setup (dbg->egg, R_SYS_ARCH, R_SYS_BITS, R_SYS_ENDIAN, R_SYS_OS);
@@ -404,6 +410,11 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 		bool rc = r_sys_arch_match (dbg->h->arch, arch);
 		if (rc) {
 			switch (bits) {
+			case 27:
+				if (dbg->h->bits == 27) {
+					dbg->bits = 27;
+				}
+				break;
 			case 32:
 				if (dbg->h->bits & R_SYS_BITS_32) {
 					dbg->bits = R_SYS_BITS_32;
@@ -443,8 +454,9 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	ut8 *backup, *orig = NULL;
 	RRegItem *ri, *risp, *ripc;
 	ut64 rsp, rpc, ra0 = 0LL;
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return false;
+	}
 	ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 	if (ripc) {
@@ -1039,6 +1051,17 @@ repeat:
 #endif
 			goto repeat;
 		}
+
+		if (reason == R_DEBUG_REASON_NEW_TID) {
+			ret = dbg->tid;
+			if (!dbg->trace_clone) {
+				goto repeat;
+			}
+		}
+
+		if (reason == R_DEBUG_REASON_EXIT_TID) {
+			goto repeat;
+		}
 #endif
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
@@ -1435,9 +1458,14 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 
 R_API bool r_debug_is_dead (RDebug *dbg) {
 	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
+	if (dbg->pid > 0) {
+		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
+	}
+#if 0
 	if (!is_dead && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}
+#endif
 	if (is_dead) {
 		dbg->reason.type = R_DEBUG_REASON_DEAD;
 	}
@@ -1477,6 +1505,10 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	RDebugMap *map;
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
+	}
+	if (!strcmp (dbg->iob.io->plugin->name, "gdb")) {
+		// Tell gdb that we want baddr, not full mem map
+		dbg->iob.system(dbg->iob.io, "baddr");
 	}
 #if __WINDOWS__
 	typedef struct {

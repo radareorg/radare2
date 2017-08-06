@@ -80,7 +80,6 @@ typedef ut64 mips64_regs_t [274];
 #endif
 #endif
 
-
 //API
 bool linux_set_options (RDebug *dbg, int pid);
 int linux_step (RDebug *dbg);
@@ -88,16 +87,18 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status);
 int linux_attach (RDebug *dbg, int pid);
 RDebugInfo *linux_info (RDebug *dbg, const char *arg);
 RList *linux_thread_list (int pid, RList *list);
+RDebugPid *fill_pid_info (const char *info, const char *path, int tid);
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list (int pid);
-int linux_handle_signals (RDebug *dbg, bool self_signalled);
+int linux_handle_signals (RDebug *dbg);
 int linux_dbg_wait (RDebug *dbg, int pid);
 const char *linux_reg_profile (RDebug *dbg);
-void add_and_attach_new_thread (RDebug *dbg, int tid);
-void remove_list_thread (void);
 int match_pid (const void *pid_o, const void *th_o);
-void remove_list_thread (void);
-char *read_link (int pid, const char *file);
-int attach_to_ptid (RDebug *dbg, int ptid);
-RDebugPid *fill_pid_info (const char *info, const char *path, int tid);
+static void linux_detach_all (RDebug *dbg);
+static char *read_link (int pid, const char *file);
+static int linux_attach_single_pid (RDebug *dbg, int ptid);
+static void linux_attach_all (RDebug *dbg);
+static void linux_remove_thread (RDebug *dbg, int pid);
+static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
+static int linux_stop_process(int pid);
