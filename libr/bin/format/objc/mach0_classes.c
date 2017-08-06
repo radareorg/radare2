@@ -157,6 +157,8 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	mach0_ut r;
 	ut32 offset, left, j;
 	char *name = NULL;
+	char *type = NULL;
+
 	int len;
 	bool bigendian;
 	mach0_ut ivar_offset_p, ivar_offset;
@@ -243,6 +245,8 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 			i.size = r_read_ble (&sivar[28], bigendian, 32);
 			break;
 		}
+
+
 		ivar_offset_p = get_pointer (i.offset, NULL, &left, arch);
 
 		if (ivar_offset_p > arch->size) {
@@ -286,7 +290,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 			field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
 			R_FREE (name);
 		}
-#if 0
+
 		r = get_pointer (i.type, NULL, &left, arch);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
@@ -295,16 +299,16 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 			if (r > arch->size || r + left > arch->size) return;
 
 			if (is_crypted == 1) {
-				name = strdup ("some_encrypted_data");
+				type = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left);
-				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+				type = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)type, left);
 			}
-
-			R_FREE (name);
+      field->type = strdup(type);
+			R_FREE (type);
 		}
-#endif
+
 		r_list_append (klass->fields, field);
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
@@ -465,10 +469,12 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	mach0_ut r;
 	ut32 offset, left, i;
 	char *name = NULL;
+  char *rtype = NULL;
 	int len;
 	bool bigendian;
 	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
+
 
 	RBinSymbol *method = NULL;
 	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
@@ -564,9 +570,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 			copy_sym_name_with_namespace (class_name, name, method);
 			R_FREE (name);
 		}
-#if OBJC_UNNECESSARY
-		/* @12@0:4^{   _xmlAttr=^vi*^{   _xmlNode   }^{   _xmlNode   }^{   _xmlNode   }^{   _xmlAttr   }^{   _xmlAttr   }^{   _xmlDoc   }^{   _xmlNs   }i^v   }8) */
-		/* @8@0:4 */
+
 		r = get_pointer (m.types, NULL, &left, arch);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
@@ -575,22 +579,24 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 				goto error;
 			}
 			if (bin->has_crypto) {
-				name = strdup ("some_encrypted_data");
-				left = strlen (name) + 1;
+				rtype = strdup ("some_encrypted_data");
+				left = strlen (rtype) + 1;
 			} else {
-				name = malloc (left + 1);
-				if (!name) {
+        left = 1;
+				rtype = malloc (left + 1);
+				if (!rtype) {
 					goto error;
 				}
-				if (r_buf_read_at (arch->buf, r, (ut8 *)name, left) != left) {
-					free (name);
+				if (r_buf_read_at (arch->buf, r, (ut8 *)rtype, left) != left) {
+					free (rtype);
 					goto error;
 				}
-				name[left] = 0;
+				rtype[left] = 0;
 			}
-			R_FREE (name);
+      method->rtype = strdup(rtype);
+			R_FREE (rtype);
 		}
-#endif
+
 		method->vaddr = m.imp;
 		method->type = is_static ? "FUNC" : "METH";
 		if (is_static) {
@@ -707,6 +713,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		}
 		j = 0;
 		pc.isa = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+
 		j += sizeof (mach0_ut);
 		pc.name = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
 		j += sizeof (mach0_ut);
@@ -721,7 +728,6 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		pc.optionalClassMethods = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
 		j += sizeof (mach0_ut);
 		pc.instanceProperties = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
-
 		r = get_pointer (pc.name, NULL, &left, arch);
 		if (r != 0) {
 			char *name = NULL;
@@ -966,6 +972,7 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass, bool dupe)
 	i += sizeof (mach0_ut);
 	c.data = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
 
+  eprintf("SUPERCLASS 0x%llx\n", c.superclass);
 	klass->addr = c.isa;
 	get_class_ro_t (c.data & ~0x3, arch, &is_meta_class, klass);
 

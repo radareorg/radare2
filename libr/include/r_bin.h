@@ -414,6 +414,7 @@ typedef struct r_bin_symbol_t {
 	const char *forwarder;
 	const char *bind;
 	const char *type;
+  const char *rtype;
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------
@@ -473,6 +474,7 @@ typedef struct r_bin_field_t {
 	int size;
 	ut32 visibility;
 	char *name;
+  char *type;
 	char *comment;
 	char *format;
 	ut64 flags;
