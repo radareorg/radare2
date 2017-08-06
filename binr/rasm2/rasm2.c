@@ -200,6 +200,7 @@ static int rasm_show_help(int v) {
 		printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
 			" -A           Show Analysis information from given hexpairs\n"
 			" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
+			" -B           Binary input/output (-l is mandatory for binary input)\n"
 			" -c [cpu]     Select specific CPU (depends on arch)\n"
 			" -C           Output in C format\n"
 			" -d, -D       Disassemble from hexpair bytes (-D show hexpairs)\n"
@@ -209,17 +210,18 @@ static int rasm_show_help(int v) {
 			" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
 			" -h, -hh      Show this help, -hh for long\n"
 			" -i [len]     ignore/skip N bytes of the input buffer\n"
+			" -j           output in json format\n"
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
 			" -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
 			" -o [offset]  Set start address for code (default 0)\n"
 			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
 			" -p           Run SPP over input for assembly\n"
+			" -q           quiet mode\n"
+			" -r           output in radare commands\n"
 			" -s [syntax]  Select syntax (intel, att)\n"
-			" -B           Binary input/output (-l is mandatory for binary input)\n"
 			" -v           Show version information\n"
 			" -w           What's this instruction for? describe opcode\n"
-			" -q           quiet mode\n"
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
@@ -473,7 +475,7 @@ int main (int argc, char *argv[]) {
 		bits = r_num_math (NULL, r2bits);
 		free (r2bits);
 	}
-	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:pr")) != -1) {
+	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:Lo:O:pqrs:vw")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -519,12 +521,6 @@ int main (int argc, char *argv[]) {
 		case 'j':
 			json = true;
 			break;
-		case 'r':
-			rad = true;
-			break;
-		case 'q':
-			quiet = true;
-			break;
 		case 'k':
 			kernel = optarg;
 			break;
@@ -545,14 +541,20 @@ int main (int argc, char *argv[]) {
 		case 'p':
 			use_spp = true;
 			break;
+		case 'q':
+			quiet = true;
+			break;
+		case 'r':
+			rad = true;
+			break;
 		case 's':
 			if (*optarg == '?') {
 				printf ("att\nintel\nmasm\njz\nregnum\n");
-				return false;
+				return 0;
 			} else {
 				int syntax = r_asm_syntax_from_string (optarg);
 				if (syntax == -1) {
-					return false;
+					return 1;
 				}
 				r_asm_set_syntax (a, syntax);
 			}
