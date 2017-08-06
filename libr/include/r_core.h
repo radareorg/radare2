@@ -369,6 +369,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize);
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int gv);
+R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr);
 R_API int r_core_esil_step_back(RCore *core);

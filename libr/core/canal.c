@@ -1467,6 +1467,31 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	return true;
 }
 
+R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+	if (fcn) {
+		const char *me = fcn->name;
+		RListIter *iter;
+		RAnalRef *ref;
+		r_cons_printf ("e graph.layout=1\n");
+		r_cons_printf ("ag-\n");
+		r_cons_printf ("agn %s\n", me);
+		r_list_foreach (fcn->refs, iter, ref) {
+			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+			const char *dst = item? item->name: sdb_fmt (0, "0x%08"PFMT64x, ref->addr);
+			r_cons_printf ("agn %s\n", dst);
+			r_cons_printf ("age %s %s\n", me, dst);
+		}
+		RList *list = r_anal_xrefs_get (core->anal, addr);
+		r_list_foreach (list, iter, ref) {
+			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+			const char *src = item? item->name: sdb_fmt (0, "0x%08"PFMT64x, ref->addr);
+			r_cons_printf ("agn %s\n", src);
+			r_cons_printf ("age %s %s\n", src, me);
+		}
+	}
+}
+
 #define FMT_NO 0
 #define FMT_GV 1
 #define FMT_JS 2

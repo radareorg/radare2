@@ -343,6 +343,8 @@ static const char *help_msg_ag[] = {
 	"ag", " [addr]", "output graphviz code (bb at addr and children)",
 	"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
 	"aga", " [addr]", "idem, but only addresses",
+	"agr", "[j] [addr]", "output graphviz call graph of function",
+	"agg", "", "display current graph created with agn and age (see also ag-)",
 	"agc", "[j] [addr]", "output graphviz call graph of function",
 	"agC", "[j]", "Same as agc -1. full program callgraph",
 	"agd", " [fcn name]", "output graphviz code of diffed function",
@@ -5063,6 +5065,22 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'C': // "agC"
 		r_core_anal_coderefs (core, UT64_MAX, input[1] == 'j'? 2: 1);
+		break;
+	case 'r': // "refs"
+		switch (input[1]) {
+		case '*':
+		case 'j':
+		case ' ':
+		case 0:
+			{
+				ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+				r_core_anal_codexrefs (core, addr, '*');
+			}
+			break;
+		default:
+			eprintf ("|ERROR| Usage: agr[*j]\n");
+			break;
+		}
 		break;
 	case 'c': // "agc"
 		if (input[1] == '*') {
