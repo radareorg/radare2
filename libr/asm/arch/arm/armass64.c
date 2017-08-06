@@ -466,13 +466,12 @@ static bool parseOperands(char* str, ArmOp *op) {
 		if (next) {
 			*next++ = 0;
 		}
+		while (token[0] == ' ') {
+			token++;
+		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
 		switch (token[0]) {
-		case ' ':
-			token ++;
-			continue;
-			break;
 		case 'x':
 			x = strchr (token, ',');
 			if (x) {
