@@ -324,12 +324,12 @@ repeat:
 		} else {
 			int pid = ret;
 			reason = linux_ptrace_event (dbg, pid, status);
-			
+
 			if (reason == R_DEBUG_REASON_EXIT_TID) {
 				ptrace (PTRACE_CONT, pid, NULL, 0);
 				goto repeat;
 			}
-				
+
 			if (reason != R_DEBUG_REASON_UNKNOWN) {
 				break;
 			}

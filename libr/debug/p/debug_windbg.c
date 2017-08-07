@@ -21,12 +21,11 @@
 static WindCtx *wctx = NULL;
 static bool dbreak = false;
 
-static int r_debug_windbg_step (RDebug *dbg) {
+static int r_debug_windbg_step(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_windbg_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	(void)type;
+static int r_debug_windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret = windbg_read_reg(wctx, buf, size);
 	if (!ret || size != ret) {
 		return -1;
@@ -37,8 +36,6 @@ static int r_debug_windbg_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static int r_debug_windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	(void)buf;
-	(void)size;
 	if (!dbg->reg) {
 		return false;
 	}
@@ -62,43 +59,41 @@ static void wstatic_debug_break(void *u) {
 	windbg_break_read (wctx);
 }
 
-static int r_debug_windbg_wait (RDebug *dbg, int pid) {
-#	define STATE_EXCEPTION 0x3030
+static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt;
 	kd_stc_64 *stc;
-	int ret;
 	dbreak = false;
-	r_cons_break_push (wstatic_debug_break, dbg);
+
 	for (;;) {
-		ret = windbg_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE, &pkt);
+		int ret = windbg_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
 		if (dbreak) {
 			dbreak = false;
 			windbg_break (wctx);
+			free (pkt);
 			continue;
 		}
 		if (ret != KD_E_OK || !pkt) {
+			reason = R_DEBUG_REASON_ERROR;
 			break;
 		}
-		stc = (kd_stc_64 *)pkt->data;
-		// Handle exceptions only
-		if (stc->state == STATE_EXCEPTION) {
+		stc = (kd_stc_64 *) pkt->data;
+		if (stc->state == DbgKdExceptionStateChange) {
 			windbg_set_cpu (wctx, stc->cpu);
 			dbg->reason.type = R_DEBUG_REASON_INT;
 			dbg->reason.addr = stc->pc;
 			dbg->reason.tid = stc->kthread;
 			dbg->reason.signum = stc->state;
-			free (pkt);
+			reason = R_DEBUG_REASON_INT;
 			break;
 		}
-		windbg_continue (wctx);
 		free (pkt);
 	}
-	r_cons_break_pop ();
-	// TODO : Set the faulty process as target
-	return true;
+	free (pkt);
+	return reason;
 }
 
-static int r_debug_windbg_attach (RDebug *dbg, int pid) {
+static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	RIODesc *desc = dbg->iob.io->desc;
 
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
@@ -117,29 +112,29 @@ static int r_debug_windbg_attach (RDebug *dbg, int pid) {
 	}
 
 	// Handshake
-	if (!windbg_sync(wctx)) {
-		eprintf("Could not connect to windbg\n");
-		windbg_ctx_free(wctx);
+	if (!windbg_sync (wctx)) {
+		eprintf ("Could not connect to windbg\n");
+		windbg_ctx_free (wctx);
+		return false;
+	}
+	if (!windbg_read_ver (wctx)) {
+		windbg_ctx_free (wctx);
 		return false;
 	}
 
-	if (!windbg_read_ver(wctx)) {
-		windbg_ctx_free(wctx);
-		return false;
-	}
 	// Make r_debug_is_dead happy
 	dbg->pid = 0;
 	return true;
 }
 
-static int r_debug_windbg_detach (RDebug *dbg, int pid) {
+static int r_debug_windbg_detach(RDebug *dbg, int pid) {
+	eprintf ("Detaching...\n");
 	return true;
 }
 
 static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	if (!dbg) return NULL;
-	if (dbg->arch && strcmp (dbg->arch, "x86"))
-		return NULL;
+	if (dbg->arch && strcmp (dbg->arch, "x86")) return NULL;
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
 	} else if (dbg->bits == R_SYS_BITS_64) {
@@ -148,7 +143,7 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_windbg_breakpoint (RBreakpointItem *bp, int set, void *user) {
+static int r_debug_windbg_breakpoint(RBreakpointItem *bp, int set, void *user) {
 	int *tag;
 	if (!bp) return false;
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
@@ -160,7 +155,7 @@ static int r_debug_windbg_init(RDebug *dbg) {
 	return true;
 }
 
-static RList *r_debug_windbg_pids (RDebug *dbg, int pid) {
+static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 	RListIter *it;
 	WindProc *p;
 
@@ -189,7 +184,7 @@ static RList *r_debug_windbg_pids (RDebug *dbg, int pid) {
 	return ret;
 }
 
-static int r_debug_windbg_select (int pid, int tid) {
+static int r_debug_windbg_select(int pid, int tid) {
 	ut32 old = windbg_get_target (wctx);
 	int ret = windbg_set_target (wctx, pid);
 	if (!ret) {
@@ -209,24 +204,24 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.pids = r_debug_windbg_pids,
-	.select = r_debug_windbg_select,
-	.step = r_debug_windbg_step,
-	.init = r_debug_windbg_init,
-	.cont = r_debug_windbg_continue,
+	.init = &r_debug_windbg_init,
+	.step = &r_debug_windbg_step,
+	.cont = &r_debug_windbg_continue,
 	.attach = &r_debug_windbg_attach,
 	.detach = &r_debug_windbg_detach,
+	.pids = &r_debug_windbg_pids,
 	.wait = &r_debug_windbg_wait,
+	.select = &r_debug_windbg_select,
 	.breakpoint = &r_debug_windbg_breakpoint,
 	.reg_read = &r_debug_windbg_reg_read,
 	.reg_write = &r_debug_windbg_reg_write,
-	.reg_profile = r_debug_windbg_reg_profile,
+	.reg_profile = &r_debug_windbg_reg_profile
 };
 
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_winddbg,
+	.data = &r_debug_plugin_windbg,
 	.version = R2_VERSION
 };
 #endif

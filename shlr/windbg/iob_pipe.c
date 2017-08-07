@@ -1,54 +1,51 @@
-// Copyright (c) 2014, The Lemon Man, All rights reserved. LGPLv3
-
+// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include "r_types.h"
+#include <r_types.h>
+#include "transport.h"
 
 #if __WINDOWS__ || __CYGWIN__ || MINGW32
 #include <windows.h>
-#include <fcntl.h>
-#include "transport.h"
 
-static void *iob_pipe_open (const char *path) {
+static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;
 	hPipe = CreateFileA (path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	eprintf ("iob_pipe_open: invocado %s\n", path);
 	if (hPipe != INVALID_HANDLE_VALUE) {
-		return (void *)(HANDLE)hPipe;
+		return (void *) (HANDLE) hPipe;
 	} else {
 		perror ("pipe");
 	}
 	return NULL;
 }
 
-static int iob_pipe_close (void *p) {
+static int iob_pipe_close(void *p) {
 	return CloseHandle (p);
 }
 
-static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
+static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD c = 0;
-	if (!ReadFile (p, buf, count, &c, NULL))
+	if (!ReadFile (p, buf, count, &c, NULL)) {
 		return -1;
+	}
 	return c;
 }
 
-static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
+static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD cbWrited = 0;
-	if (!WriteFile (p, buf, count, &cbWrited, NULL))
+	if (!WriteFile (p, buf, count, &cbWrited, NULL)) {
 		return -1;
+	}
 	return cbWrited;
 }
-
 #else
-
-#include <fcntl.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/un.h>
-#include "transport.h"
 
-static void *iob_pipe_open (const char *path) {
+static void *iob_pipe_open(const char *path) {
 	int sock;
 	struct sockaddr_un sa;
 
@@ -62,44 +59,52 @@ static void *iob_pipe_open (const char *path) {
 
 	sa.sun_family = AF_UNIX;
 	strncpy (sa.sun_path, path, sizeof(sa.sun_path));
-	sa.sun_path[sizeof (sa.sun_path)-1] = 0;
-	if (connect (sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
+	sa.sun_path[sizeof (sa.sun_path) - 1] = 0;
+	if (connect (sock, (struct sockaddr *) &sa, sizeof(struct sockaddr_un)) == -1) {
 		perror ("connect");
 		close (sock);
 		return 0;
 	}
-	return (void *)(size_t)sock;
+	//struct timeval tv;
+	//tv.tv_sec = 5;
+	//tv.tv_usec = 0;
+	//setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+	return (void *) (size_t) sock;
 }
 
-static int iob_pipe_close (void *p) {
-	return close ((int)(size_t)p);
+static int iob_pipe_close(void *p) {
+	return close ((int) (size_t) p);
 }
 
-static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
-	//return recv((int)(size_t)p, buf, count, 0);
+static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
 	int result;
 	fd_set readset;
-	int fd=(int)(size_t)p;
+	int fd = (int) (size_t) p;
 	for (;;) {
-		FD_ZERO(&readset);
-		FD_SET(fd, &readset);
+		FD_ZERO (&readset);
+		FD_SET (fd, &readset);
 		result = select (fd + 1, &readset, NULL, NULL, NULL);
-		if (result <1) { // pipe closed
-			if (errno == EINTR)
-				continue;
+		if (result < 1) {
+			if (errno == EINTR) continue;
 			return -1;
 		}
-		if (FD_ISSET(fd, &readset)) {
-			return  recv((int)(size_t)p, buf, count, 0);
+		if (FD_ISSET (fd, &readset)) {
+			return  recv ((int) (size_t) p, buf, count, 0);
 		}
 	}
 	return EINTR;
 }
 
-static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
-	return send((int)(size_t)p, buf, count, 0);
+static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
+	int ret = send ((int) (size_t) p, buf, count, 0);
+	if (ret < 1) {
+		r_sys_perror ("iob_pipe_write, send");
+		if (errno == EPIPE) {
+			exit (1);
+		}
+	}
+	return ret;
 }
-
 #endif
 
 io_backend_t iob_pipe = {

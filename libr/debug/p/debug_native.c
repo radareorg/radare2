@@ -426,7 +426,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
 			r_debug_info_free (r);
 		}
-	} 
+	}
 #else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN

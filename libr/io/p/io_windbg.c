@@ -42,6 +42,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("Could not open the pipe\n");
 		return NULL;
 	}
+	eprintf ("Opened pipe %s with fd %d\n", file+9, io_ctx);
 
 	ctx = windbg_ctx_new (io_ctx);
 
