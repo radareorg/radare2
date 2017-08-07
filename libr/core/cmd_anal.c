@@ -775,8 +775,10 @@ static int var_cmd(RCore *core, const char *str) {
 		v1 = r_anal_var_get_byname (core->anal, fcn, old_name);
 		if (v1) {
 			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-				v1->kind, old_name, new_name);
+					v1->kind, old_name, new_name);
 			r_anal_var_free (v1);
+		} else {
+			eprintf ("Cant find var by name\n");
 		}
 		free (ostr);
 		}
@@ -811,10 +813,12 @@ static int var_cmd(RCore *core, const char *str) {
 		*type++ = 0;
 		v1 = r_anal_var_get_byname (core->anal, fcn, p);
 		if (!v1) {
+			eprintf ("Cant find get by name %s\n", p);
 			free (ostr);
 			return false;
 		}
-		r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, p);
+		r_anal_var_retype (core->anal, fcn->addr,
+			R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, p);
 		r_anal_var_free (v1);
 		free (ostr);
 		return true;
