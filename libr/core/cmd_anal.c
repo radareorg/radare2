@@ -747,6 +747,16 @@ static int var_cmd(RCore *core, const char *str) {
 	ostr = p = strdup (str);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
+	case '-':
+		// "afv"
+		if (fcn) {
+			r_core_cmdf (core, "afvs-%s", str + 1);
+			r_core_cmdf (core, "afvb-%s", str + 1);
+			r_core_cmdf (core, "afvr-%s", str + 1);
+			return true;
+		}
+		eprintf ("Cannot find function\n");
+		return false;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
