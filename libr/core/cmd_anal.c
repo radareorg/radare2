@@ -290,6 +290,7 @@ static const char *help_msg_afv[] = {
 	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
 	"afvn", " [old_name] [new_name]", "rename argument/local",
 	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afv-", "([name])", "remove all or given var",
 	NULL
 };
 
@@ -728,9 +729,13 @@ static int var_cmd(RCore *core, const char *str) {
 	if (str[0] == 'j') {
 		// "afvj"
 		if (fcn) {
+			r_cons_printf ("{\"sp\":");
 			r_core_cmd0 (core, "afvsj");
+			r_cons_printf (",\"bp\":");
 			r_core_cmd0 (core, "afvbj");
+			r_cons_printf (",\"reg\":");
 			r_core_cmd0 (core, "afvrj");
+			r_cons_printf ("}\n");
 			return true;
 		}
 		eprintf ("Cannot find function\n");
