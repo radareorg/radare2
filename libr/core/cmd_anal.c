@@ -5014,6 +5014,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			r_agraph_set_curnode (core->graph, ran);
 			core->graph->force_update_seek = true;
 			core->graph->need_set_layout = true;
+			core->graph->layout = r_config_get_i (core->config, "graph.layout");
 			int ov = r_config_get_i (core->config, "scr.interactive");
 			core->graph->need_update_dim = true;
 			r_core_visual_graph (core, core->graph, NULL, true);
