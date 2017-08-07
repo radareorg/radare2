@@ -14,6 +14,7 @@
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
+static int buf_global_size = 0;
 static unsigned char bytes[4];
 
 static int lanai_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -31,10 +32,11 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
-	if (!buf_global)
+	if (!buf_global) {
 		return;
+	}
 	sprintf(tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat(buf_global, tmp);
+	strcat (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
@@ -56,18 +58,21 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	memcpy (tmp+glen, format, flen);
 	tmp[flen+glen] = 0;
 // XXX: overflow here?
-	vsprintf (buf_global, tmp, ap);
-	va_end (ap);
+
+	vsnprintf (buf_global, buf_global_size, tmp, ap);
 	free (tmp);
+	va_end (ap);
 	return 0;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	op->buf_asm[0]='\0';
-	if (len<4)
+	if (len < 4) {
 		return -1;
+	}
 	buf_global = op->buf_asm;
+	buf_global_size = sizeof (op->buf_asm);
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
@@ -85,9 +90,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	op->size = print_insn_lanai ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->size == -1)
+	if (op->size == -1) {
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+	}
 	return op->size;
 }
 
@@ -102,7 +107,7 @@ RAsmPlugin r_asm_plugin_lanai_gnu = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_lanai_gnu,
 	.version = R2_VERSION
