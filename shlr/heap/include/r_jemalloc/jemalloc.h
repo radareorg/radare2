@@ -55,6 +55,9 @@ extern "C" {
  * --with-jemalloc-prefix.  With default settings the je_ prefix is stripped by
  * these macro definitions.
  */
+#ifdef _MSC_VER
+#define JEMALLOC_NO_RENAME 1
+#endif
 #ifndef JEMALLOC_NO_RENAME
 #  define je_malloc_conf malloc_conf
 #  define je_malloc_message malloc_message
@@ -84,7 +87,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include <strings.h>
 
 #define	JEMALLOC_VERSION "4.5.0-0-g04380e79f1e2428bd0ad000bbc6e3d2dfc6b66a5"
 #define	JEMALLOC_VERSION_MAJOR 4

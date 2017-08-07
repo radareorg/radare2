@@ -4,8 +4,6 @@
 #include <math.h>
 #ifdef _WIN32
 #  include <windows.h>
-#  include "msvc_compat/windows_extra.h"
-
 #else
 #  include <sys/param.h>
 #  include <sys/mman.h>
@@ -46,7 +44,6 @@
 #  define offsetof(type, member)	((size_t)&(((type *)NULL)->member))
 #endif
 #include <string.h>
-#include <strings.h>
 #include <ctype.h>
 #ifdef _MSC_VER
 #  include <io.h>

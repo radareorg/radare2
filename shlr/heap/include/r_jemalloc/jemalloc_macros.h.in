@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include <strings.h>
 
 #define	JEMALLOC_VERSION "@jemalloc_version@"
 #define	JEMALLOC_VERSION_MAJOR @jemalloc_version_major@
