@@ -1533,7 +1533,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 			r_cons_newline ();
 		}
-		free (symname);
+		R_FREE (symname);
 		i++;
 	}
 	if (IS_MODE_JSON (mode)) {

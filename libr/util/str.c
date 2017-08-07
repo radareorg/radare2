@@ -822,6 +822,9 @@ R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
 // Compare two strings for the first len bytes. Returns true if they are equal.
 // NOTE: this is not useful as a comparitor, as it returns true or false.
 R_API int r_str_cmp(const char *a, const char *b, int len) {
+	if (!a || !b) {
+		return false;
+	}
 	if (a == b) {
 		return true;
 	}

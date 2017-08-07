@@ -164,10 +164,10 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState)
 	PRINT_GA ("  binmap = {");
 
 	for (i = 0; i < BINMAPSIZE; i++) {
-		PRINTF_BA ("0x%x", (ut32)main_arena->binmap[i]);
-		if (i < BINMAPSIZE - 1) {
+		if (i) {
 			PRINT_GA (",");
 		}
+		PRINTF_BA ("0x%x", (ut32)main_arena->binmap[i]);
 	}
 	PRINT_GA ("}\n");
 	PRINT_GA ("  next = ");

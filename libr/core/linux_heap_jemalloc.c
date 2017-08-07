@@ -90,25 +90,23 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, GHT *symbol) {
 			return true;
 		} 
 	}
+	free (path);
 	return false;
 }
 
 static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
+	// GHT misc, chunk, map_bias, map_misc_offset, chunksize_mask, npages;
+	GHT chunk, map_bias, map_misc_offset, chunksize_mask, npages;
 	switch (input[0]) {
-        case ' ':
-        {
-		// GHT misc, chunk, map_bias, map_misc_offset, chunksize_mask, npages;
-		GHT chunk, map_bias, map_misc_offset, chunksize_mask, npages;
+	case ' ':
 		// arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 		// arena_chunk_map_misc_t *miscelm = R_NEW0 (arena_chunk_map_misc_t);
 		// arena_chunk_map_bits_t *bits = R_NEW0 (arena_chunk_map_bits_t);
-
-		input +=1;
+		input ++;
 		chunk = strstr (input, "0x") ? (GHT)strtol (input, NULL, 0) : (GHT)strtol (input, NULL, 16);
-
-		if (GH(r_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
+		if (GH (r_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
 			r_core_read_at (core, map_misc_offset, (ut8*)&map_misc_offset, sizeof (GHT));     
-	    	} else {
+		} else {
 			eprintf ("Error resolving je_map_misc_offset\n");
 			return;
 		}
@@ -120,25 +118,22 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			return;
 		}
 
-	    	if (GH(r_resolve_jemalloc)(core, "je_chunksize_mask", &chunksize_mask)) {
+		if (GH(r_resolve_jemalloc)(core, "je_chunksize_mask", &chunksize_mask)) {
 			r_core_read_at (core, chunksize_mask, (ut8*)&chunksize_mask, sizeof (GHT));     
-	    	} else {
+		} else {
 			eprintf ("Error resolving je_chunksize_mask\n");
 			return;    
-	    	}
+		}
 
-	    	if (GH(r_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
+		if (GH(r_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
 			r_core_read_at (core, map_bias, (ut8*)&map_bias, sizeof (GHT));     
-	    	} else {
+		} else {
 			eprintf ("Error resolving je_map_bias");
-    		}
-
+		}
 		eprintf ("map_misc_offset: %"PFMTx"\n", map_misc_offset);
 		eprintf ("map_bias: %"PFMTx"\n", map_bias);
 		eprintf ("chunksize_mask: %"PFMTx"\n", chunksize_mask);
 		eprintf ("chunk_npages: %"PFMTx"\n", npages);
-
-
 #if 0
 		GHT pageind = 0;
 		for (pageind = map_bias; pageind < npages; pageind ++) {
@@ -156,10 +151,8 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 		eprintf ("offset: %"PFMT64x"\n", offset);
 		eprintf ("run @ %"PFMT64x"\n", misc + offset);
 #endif
-        }
 	break;
-    }    
-
+	}
 }
  
 static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
@@ -172,9 +165,9 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	}
 
 	switch (input[0]) {
-        case '\0':
-            eprintf ("need an arena_t to associate chunks");
-            break;
+	case '\0':
+		eprintf ("need an arena_t to associate chunks");
+		break;
         case ' ':
         	{
 			GHT arena = GHT_MAX;
@@ -186,7 +179,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			if (arena) {
 				r_core_read_at (core, arena, (ut8 *)ar, sizeof (arena_t));
 				r_core_read_at (core, (ut64)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
-				if (head->en_addr != 0) {
+				if (head->en_addr) {
 					PRINT_YA ("\t Chunk - start: ");
 					PRINTF_BA ("0x%"PFMTx, (GHT)head->en_addr); 
 					PRINT_YA (", end: ");
@@ -239,7 +232,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 						PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz); 
 						ut64 addr = (ut64) head->ql_link.qre_next;
 						r_core_read_at (core, addr, (ut8 *)node, sizeof (extent_node_t));
-						while (node && node->en_addr != head->en_addr) {
+						while (node && head && node->en_addr != head->en_addr) {
 							PRINT_YA ("\t Chunk - start: ");
 							PRINTF_BA ("0x%"PFMTx, (GHT)node->en_addr); 
 							PRINT_YA (", end: ");

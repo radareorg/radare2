@@ -1282,7 +1282,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 		eprintf ("glibc not supported for this platform\n");
 #endif
 #if HAVE_JEMALLOC
-	} else if (!strcmp ("jemalloc", m)) {
+	} else if (m && !strcmp ("jemalloc", m)) {
 		if (core->assembler->bits == 64) {
 			cmd_dbg_map_jemalloc_64 (core, input + 1);
 		} else {
@@ -2854,15 +2854,16 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (*p == '-') {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
 		} else {
-			#define ARG(x) r_str_word_get0(p, x)
-			int sl = r_str_word_set0 (p);
-			addr = r_num_math (core->num, ARG(0));
+			#define DB_ARG(x) r_str_word_get0(p, x)
+			char *str = strdup (p);
+			int sl = r_str_word_set0 (str);
+			addr = r_num_math (core->num, DB_ARG(0));
 			if (watch) {
 					if (sl == 2) {
-						rw = (strcmp (ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
-					}
-					else {
+						rw = (strcmp (DB_ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
+					} else {
 						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+						free (str);
 						break;
 					}
 			}
@@ -2871,17 +2872,16 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				if (bpi) {
 					free (bpi->name);
 					if (!strcmp (input + 2, "$$")) {
-						char *newname = NULL;
 						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
-
 						if (f) {
 							if (addr > f->offset) {
-								newname = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+								bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
 							} else {
-								newname = strdup (f->name);
+								bpi->name = strdup (f->name);
 							}
+						} else {
+							bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
 						}
-						bpi->name = newname;
 					} else {
 						bpi->name = strdup (input + 2);
 					}
@@ -2891,6 +2891,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			} else {
 				eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory. See e? dbg.bpinmaps\n", addr);
 			}
+			free (str);
 		}
 		break;
 	case 'i':
