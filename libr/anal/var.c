@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2017 - pancake, oddcoder */
 
 #include <r_anal.h>
 #include <r_util.h>

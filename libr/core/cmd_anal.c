@@ -774,28 +774,36 @@ static int var_cmd(RCore *core, const char *str) {
 		fcn_callconv (core, fcn);
 		free (p);
 		return true;
-	case 'n': { // "afvn"
-		char *old_name = r_str_trim_head (strchr (ostr, ' '));
-		if (!old_name) {
+	case 'n': 
+		if (str[1]) { // "afvn"
+			char *old_name = r_str_trim_head (strchr (ostr, ' '));
+			if (!old_name) {
+				free (ostr);
+				return false;
+			}
+			char *new_name = strchr (old_name, ' ');
+			if (!new_name) {
+				free (ostr);
+				return false;
+			}
+			*new_name++ = 0;
+			r_str_chop (new_name);
+			v1 = r_anal_var_get_byname (core->anal, fcn, old_name);
+			if (v1) {
+				r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+						v1->kind, old_name, new_name);
+				r_anal_var_free (v1);
+			} else {
+				eprintf ("Cant find var by name\n");
+			}
 			free (ostr);
-			return false;
-		}
-		char *new_name = strchr (old_name, ' ');
-		if (!new_name) {
-			free (ostr);
-			return false;
-		}
-		*new_name++ = 0;
-		r_str_chop (new_name);
-		v1 = r_anal_var_get_byname (core->anal, fcn, old_name);
-		if (v1) {
-			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-					v1->kind, old_name, new_name);
-			r_anal_var_free (v1);
 		} else {
-			eprintf ("Cant find var by name\n");
-		}
-		free (ostr);
+			RListIter *iter;
+			RAnalVar *v;
+			RList *list = r_anal_var_list (core->anal, fcn, 0);
+			r_list_foreach (list, iter, v) {
+				r_cons_printf ("%s\n", v->name);
+			}
 		}
 		return true;
 	case 'd': //afvd
