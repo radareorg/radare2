@@ -125,34 +125,6 @@ atomic_write_uint64(uint64_t *p, uint64_t x)
 	    : "memory" /* Clobbers. */
 	    );
 }
-#  elif (defined(JEMALLOC_C11ATOMICS))
-JEMALLOC_INLINE uint64_t
-atomic_add_uint64(uint64_t *p, uint64_t x)
-{
-	volatile atomic_uint_least64_t *a = (volatile atomic_uint_least64_t *)p;
-	return (atomic_fetch_add(a, x) + x);
-}
-
-JEMALLOC_INLINE uint64_t
-atomic_sub_uint64(uint64_t *p, uint64_t x)
-{
-	volatile atomic_uint_least64_t *a = (volatile atomic_uint_least64_t *)p;
-	return (atomic_fetch_sub(a, x) - x);
-}
-
-JEMALLOC_INLINE bool
-atomic_cas_uint64(uint64_t *p, uint64_t c, uint64_t s)
-{
-	volatile atomic_uint_least64_t *a = (volatile atomic_uint_least64_t *)p;
-	return (!atomic_compare_exchange_strong(a, &c, s));
-}
-
-JEMALLOC_INLINE void
-atomic_write_uint64(uint64_t *p, uint64_t x)
-{
-	volatile atomic_uint_least64_t *a = (volatile atomic_uint_least64_t *)p;
-	atomic_store(a, x);
-}
 #  elif (defined(JEMALLOC_ATOMIC9))
 JEMALLOC_INLINE uint64_t
 atomic_add_uint64(uint64_t *p, uint64_t x)
