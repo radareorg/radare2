@@ -379,7 +379,6 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 }
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
-	RList *hits = r_core_asm_hit_list_new();
 	RAsmOp op;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
