@@ -4182,7 +4182,6 @@ static int cmd_print(void *data, const char *input) {
 						r_core_read_at (core, addr - l, block, l); // core->blocksize);
 						core->num->value = r_core_print_disasm (core->print, core, addr - l, block, l, l, 0, 1);
 					} else { // pd
-						const int bs = core->blocksize;
 						int instr_len;
 						if (r_core_prevop_addr (core, core->offset, l, &start)) {
 							// We have some anal_info.
@@ -4192,12 +4191,18 @@ static int cmd_print(void *data, const char *input) {
 							r_core_asm_bwdis_len (core, &instr_len, &addr, l);
 						}
 						ut64 prevaddr = core->offset;
+						int bs = core->blocksize, bs1 = addrbytes * instr_len;
+						if (bs1 > bs) {
+							block = realloc (block, bs1);
+						}
 						r_core_seek (core, prevaddr - instr_len, true);
-						block = realloc (block, R_MAX (instr_len, bs));
 						memcpy (block, core->block, bs);
-						r_core_read_at (core, addr + bs, block + bs, instr_len - bs); // core->blocksize);
+						if (bs1 > bs) {
+							r_core_read_at (core, addr + bs / addrbytes, block + (bs - bs % addrbytes),
+															bs1 - (bs - bs % addrbytes));
+						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block, instr_len, l, 0, 1);
+							core, core->offset, block, bs1, l, 0, 1);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -4226,10 +4231,14 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Cannot allocate %d bytes\n", addrbytes * l);
 					}
 				} else {
-					block = malloc (R_MAX (l * 10, bs));
+					int bs1 = l * 16;
+					block = malloc (R_MAX (bs, bs1));
 					memcpy (block, core->block, bs);
-					r_core_read_at (core, addr + bs, block + bs, (l * 10) - bs); // core->blocksize);
-					core->num->value = r_core_print_disasm (core->print, core, addr, block, l * 10, l, 0, 0);
+					if (bs1 > bs) {
+						r_core_read_at (core, addr + bs / addrbytes, block + (bs - bs % addrbytes),
+													  bs1 - (bs - bs % addrbytes));
+					}
+					core->num->value = r_core_print_disasm (core->print, core, addr, block, bs1, l, 0, 0);
 				}
 			}
 			free (block);
