@@ -160,7 +160,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
 	}
-	fsize = r_io_size (io);
+	fsize = r_io_desc_size (io->desc);
 	if (fsize < 1) {
 		eprintf ("rahash2: Invalid file size\n");
 		return 1;
@@ -202,7 +202,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				}
 				for (j = from; j < to; j += bsize) {
 					int len = ((j + bsize) > to)? (to - j): bsize;
-					r_io_pread (io, j, buf, len);
+					r_io_pread_at (io, j, buf, len);
 					do_hash_internal (ctx, hashbit, buf, len, rad, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
@@ -253,7 +253,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				t = to;
 				for (j = f; j < t; j += bsize) {
 					int nsize = (j + bsize < fsize)? bsize: (fsize - j);
-					r_io_pread (io, j, buf, bsize);
+					r_io_pread_at (io, j, buf, bsize);
 					from = j;
 					to = j + bsize;
 					if (to > fsize) {
@@ -679,11 +679,11 @@ int main(int argc, char **argv) {
 				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					if (!r_io_open_nomap (io, uri, 0, 0)) {
+					if (!r_io_open_nomap (io, uri, R_IO_READ, 0)) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
-					r_io_pwrite (io, 0, buf, sz);
+					r_io_pwrite_at (io, 0, buf, sz);
 				}
 				free (uri);
 			} else {
@@ -691,7 +691,7 @@ int main(int argc, char **argv) {
 					eprintf ("rahash2: Cannot hash directories\n");
 					return 1;
 				}
-				if (!r_io_open_nomap (io, argv[i], 0, 0)) {
+				if (!r_io_open_nomap (io, argv[i], R_IO_READ, 0)) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 					return 1;
 				}

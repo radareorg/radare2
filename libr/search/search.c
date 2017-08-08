@@ -115,10 +115,12 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 		}
 		kw->last = addr + kw->keyword_length;
 	}
-	if (s->callback)
+	if (s->callback) {
 		return s->callback (kw, s->user, addr);
-	if (!(hit = r_mem_pool_alloc (s->pool)))
+	}
+	if (!(hit = r_mem_pool_alloc (s->pool))) {
 		return false;
+	}
 	hit->kw = kw;
 	hit->addr = addr;
 	r_list_append (s->hits, hit);

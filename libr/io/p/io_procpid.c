@@ -71,7 +71,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 					eprintf ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}
-			} else if (__waitpid(pid)) {
+			} else if (__waitpid (pid)) {
 				ret = pid;
 			} else {
 				eprintf ("Error in waitpid\n");
@@ -79,7 +79,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else {
 			ret = pid;
 		}
-		fd = ret; //TODO: use r_io_fd api
+		fd = ret; // TODO: use r_io_fd api
 		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
 		fd = r_sandbox_open (procpidpath, O_RDWR, 0);
 		if (fd != -1) {
@@ -90,7 +90,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			riop->pid = pid;
 			riop->fd = fd;
-			return r_io_desc_new (&r_io_plugin_procpid, -1, file, true, 0, riop);
+			RIODesc *d = r_io_desc_new (io, &r_io_plugin_procpid, file, true, 0, riop);
+			d->name = r_sys_pid_to_path (riop->pid);
+			return d;
 		}
 		/* kill children */
 		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);

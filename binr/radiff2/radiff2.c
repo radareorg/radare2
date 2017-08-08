@@ -429,7 +429,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 		} else {
 			eprintf ("slurp: Invalid file size\n");
 		}
-		r_io_close (io, d);
+		r_io_close (io, d->fd);
 		return data;
 	}
 	return (ut8 *) r_file_slurp (file, sz);
