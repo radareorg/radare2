@@ -3999,7 +3999,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
-			r_anal_op (core->anal, &ds->analop, ds->at, core->block + i, core->blocksize - i);
+			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i);
 			hasanal = true;
 		}
 		//r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
@@ -4676,6 +4676,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	int i = 0, j, ret, err = 0;
+	int addrbytes = core->assembler->addrbytes;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
@@ -4710,6 +4711,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				// anal ignorance.
 				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
 					nb_opcodes);
+				nb_bytes *= core->assembler->addrbytes;
 			}
 			if (nb_bytes > core->blocksize) {
 				r_core_block_size (core, nb_bytes);
@@ -4739,7 +4741,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	r_cons_break_push (NULL, NULL);
 
 	int midflags = r_config_get_i (core->config, "asm.midflags");
-	for (i = j = 0; pdi_check_end (nb_opcodes, nb_bytes, i, j); j++) {
+	for (i = j = 0; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
 		RFlagItem *item;
 		if (r_cons_is_breaked ()) {
 			err = 1;
@@ -4771,8 +4773,8 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 			}
 		}
 		r_asm_set_pc (core->assembler, core->offset + i);
-		ret = r_asm_disassemble (core->assembler, &asmop, core->block + i,
-			core->blocksize - i);
+		ret = r_asm_disassemble (core->assembler, &asmop, core->block + addrbytes * i,
+			core->blocksize - addrbytes * i);
 		if (midflags) {
 			RDisasmState ds = {
 				.oplen = ret,
@@ -4833,7 +4835,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				};
 				char *tmpopstr, *opstr = NULL;
 				r_anal_op (core->anal, &analop, core->offset + i,
-					core->block + i, core->blocksize - i);
+					core->block + addrbytes * i, core->blocksize - addrbytes * i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
 				if (fmt == 'e') { // pie
 					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
@@ -4868,7 +4870,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 						0
 					};
 					r_anal_op (core->anal, &aop, core->offset + i,
-						core->block + i, core->blocksize - i);
+						core->block + addrbytes * i, core->blocksize - addrbytes * i);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),

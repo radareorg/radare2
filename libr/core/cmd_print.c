@@ -3913,9 +3913,11 @@ static int cmd_print(void *data, const char *input) {
 			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -core->blocksize_max) {
 			bw_disassemble = true;
+			l = use_blocksize; // negative
 			use_blocksize = -use_blocksize;
+		} else {
+			l = use_blocksize;
 		}
-		l = use_blocksize;
 
 		if (!new_arch) {
 			new_arch = strdup (old_arch);
