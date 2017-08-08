@@ -581,7 +581,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	if (!(buf_asm = r_strbuf_new (NULL))) {
 		return r_asm_code_free (acode);
 	}
-	for (idx = ret = slen = 0; idx < len; idx += ret) {
+	for (idx = ret = slen = 0; idx + a->addrbytes <= len; idx += a->addrbytes * ret) {
 		r_asm_set_pc (a, pc + idx);
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {

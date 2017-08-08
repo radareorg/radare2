@@ -387,63 +387,54 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 }
 
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
-	RList *hits = r_core_asm_hit_list_new();
 	RAsmOp op;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut8 *buf;
-	ut64 instrlen = 0, at = 0;
-	ut32 idx = 0, hit_count = 0;
+	ut64 at;
+	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
+	int addrbytes = core->assembler->addrbytes;
 	RAsmCode *c;
+	RList *hits = r_core_asm_hit_list_new();
+	if (!hits) return NULL;
 
+	len = R_MIN (len - len % addrbytes, addrbytes * addr);
 	if (len < 1) {
 		r_list_free (hits);
 		return NULL;
 	}
 
 	buf = (ut8 *)malloc (len);
-	if (!hits || !buf) {
-		if (hits) {
-			r_list_free (hits);
-		}
+	if (!buf || r_io_read_at (core->io, addr - len / addrbytes, buf, len) != len) {
 		free (buf);
+		r_list_free (hits);
 		return NULL;
 	}
 
-	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
-		if (hits) {
-			r_list_free (hits);
-		}
-		free (buf);
-		return NULL;
-	}
-
-	for (idx = 1; idx < len; ++idx) {
+	for (idx = addrbytes; idx < len; idx += addrbytes) {
 		if (r_cons_singleton ()->breaked) break;
-		at = addr - idx; hit_count = 0;
 		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
-		if (strstr(c->buf_asm, "invalid") || strstr(c->buf_asm, ".byte")) {
+		if (strstr (c->buf_asm, "invalid") || strstr (c->buf_asm, ".byte")) {
 			r_asm_code_free(c);
 			continue;
 		}
 		numinstr = 0;
-		asmlen = strlen(c->buf_asm);
+		asmlen = strlen (c->buf_asm);
 		for(ii = 0; ii < asmlen; ++ii) {
 			if (c->buf_asm[ii] == '\n') ++numinstr;
 		}
 		r_asm_code_free(c);
-		if (numinstr >= n || idx > 32 * n) {
+		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
 			break;
 		}
 	}
-	at = addr - idx;
-	hit_count = 0;
+	at = addr - idx / addrbytes;
 	r_asm_set_pc (core->assembler, at);
-	at = addr-idx;
-	for ( hit_count = 0; hit_count < n; hit_count++) {
-		instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
-		add_hit_to_hits(hits, at, instrlen, true);
+	for (hit_count = 0; hit_count < n; hit_count++) {
+		int instrlen = r_asm_disassemble (core->assembler, &op,
+																			buf + len - addrbytes*(addr-at), addrbytes * (addr-at));
+		add_hit_to_hits (hits, at, instrlen, true);
 		at += instrlen;
 	}
 	free (buf);
@@ -666,6 +657,7 @@ R_API ut32 r_core_asm_bwdis_len (RCore* core, int* instr_len, ut64* start_addr, 
 	ut32 instr_run = 0;
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
+	// TODO if length of nb instructions is larger than blocksize
 	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
 	if (instr_len)
 		*instr_len = 0;
