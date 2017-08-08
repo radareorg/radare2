@@ -546,7 +546,7 @@ static int cmd_open(void *data, const char *input) {
 				int count = 0;
 				r_list_foreach (core->files, iter, f) {
 					if (count == nth) {
-						r_io_raise (core->io, num);
+						r_io_use_fd (core->io, f->desc->fd);
 						break;
 					}
 					count++;
@@ -643,8 +643,8 @@ static int cmd_open(void *data, const char *input) {
 				core->switch_file_view = 0;
 				r_list_foreach (core->files, iter, f) {
 					if (f->desc->fd == num) {
-						r_io_raise (core->io, num);
-						core->switch_file_view = 1;
+						r_io_use_fd (core->io, num);
+						//core->switch_file_view = 1;
 						// raise rbinobj too
 						int binfile_num = find_binfile_id_by_fd (core->bin, num);
 						r_core_bin_raise (core, binfile_num, -1);
