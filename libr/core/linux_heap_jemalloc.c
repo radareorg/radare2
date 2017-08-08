@@ -22,6 +22,9 @@
 #define PFMTx PFMT64x
 #endif
 
+#if __linux__
+// TODO: provide proper api in cbin to resolve symbols and load libraries from debug maps and such
+// this is, provide a programatic api for the slow dmi command
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
@@ -51,30 +54,30 @@ static int GH(je_matched)(const char *ptr, const char *str) {
         int ret = strncmp (ptr, str, strlen (str) - 1);
 	return !ret;
 }
+#endif
 
-static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, GHT *symbol) {
+static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	RListIter *iter;
 	RDebugMap *map;
 	const char *jemalloc_ver_end = NULL;
-	ut64 jemalloc_addr = UT64_MAX, vaddr = UT64_MAX;
+	ut64 jemalloc_addr = UT64_MAX;
 
 	if (!core || !core->dbg || !core->dbg->maps){
 		return false;
 	}
 	r_debug_map_sync (core->dbg);
 	r_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr (map->name, "libjemalloc.so")) {
+		if (strstr (map->name, "libjemalloc.")) {
 			jemalloc_addr = map->addr;
 			jemalloc_ver_end = map->name;
 			break;
 		}
 	}
-
 	if (!jemalloc_ver_end) {
 		eprintf ("Warning: Is jemalloc mapped in memory? (see dm command)\n");
 		return false;
 	}
-
+#if __linux__
 	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
 
 	if (!is_debug_file) {
@@ -92,10 +95,24 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, GHT *symbol) {
 	}
 	free (path);
 	return false;
+#else
+	eprintf ("[*] Resolving %s from libjemalloc.2... ", symname);
+	// this is quite sloooow, we must optimize dmi
+	char *va = r_core_cmd_strf (core, "dmi libjemalloc.2 %s$~[1]", symname, symname);
+	ut64 n = r_num_get (NULL, va);
+	if (n && n != UT64_MAX) {
+		*symbol = n;
+		eprintf ("0x%08"PFMT64x"\n", n);
+	} else {
+		eprintf ("NOT FOUND\n");
+	}
+	free (va);
+	return true;
+#endif
 }
  
 static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
-	GHT cnksz = GHT_MAX;
+	ut64 cnksz;
 
 	if (GH(r_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
 		r_core_read_at (core, cnksz, (ut8 *)&cnksz, sizeof (GHT));     
@@ -145,7 +162,8 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
         case '*':           
 		{
 			int i = 0;
-			GHT arenas = GHT_MAX, arena = GHT_MAX, sym = GHT_MAX;
+			ut64 sym;
+			GHT arenas = GHT_MAX, arena = GHT_MAX;
 			arena_t *ar = R_NEW0 (arena_t);
 			extent_node_t *node = R_NEW0 (extent_node_t);
 			extent_node_t *head = R_NEW0 (extent_node_t);
@@ -193,36 +211,55 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 }
 
 static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
-	GHT sym = GHT_MAX, arena = GHT_MAX, arenas = GHT_MAX;
+	ut64 symaddr;
+	ut64 arenas;
+	GHT arena = GHT_MAX;
 	arena_t *ar = R_NEW0 (arena_t);
+	if (!ar) {
+		return;
+	}
 	arena_stats_t *stats = R_NEW0 (arena_stats_t);
-	int i = 0 , narenas;
+	if (!stats) {
+		free (ar);
+		return;
+	}
+	int i = 0;
+	GHT narenas = 0;
 
 	switch (input[0]) {
 	case '\0':
-		if (GH(r_resolve_jemalloc)(core, "narenas_total", &sym)) {
-			r_core_read_at (core, sym, (ut8 *)&narenas, sizeof (GHT));
+		if (GH(r_resolve_jemalloc)(core, "narenas_total", &symaddr)) {
+			r_core_read_at (core, symaddr, (ut8 *)&narenas, sizeof (GHT));
 			PRINTF_GA ("narenas : %d\n", narenas);
+		}
+		if (narenas == 0) {
+			eprintf ("No arenas allocated.\n");
+			return;
+		}
+		if (narenas == GHT_MAX) {
+			eprintf ("Cannot find narenas_total\n");
+			return;
 		}
 		
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			r_core_read_at (core, arenas, (ut8 *)&arenas, sizeof (GHT));
-			PRINTF_GA ("arenas @ 0x%"PFMTx" {\n", (GHT)arenas);
-			
-        	for (;;) {
-				r_core_read_at (core, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
+			PRINTF_GA ("arenas[%d] @ 0x%"PFMTx" {\n", narenas, (GHT)arenas);
+			for (i = 0; i < narenas; i++) {
+				ut64 at = arenas + (i * sizeof (GHT));
+				r_core_read_at (core, at, (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
-					break;
+					PRINTF_YA ("  arenas[%d]: (empty)\n", i);
+					continue;
 				}
-				PRINTF_YA ("  arenas[%d]: ", i++);
-				PRINTF_BA ("@ 0x%"PFMTx"\n", (GHT)arena);
+				PRINTF_YA ("  arenas[%d]: ", i);
+				PRINTF_BA ("@ 0x%"PFMTx"\n", at);
 			}
 		}
-			PRINT_GA ("}\n");
+		PRINT_GA ("}\n");
 		break;
 	case ' ':
 		input += 1;
-		ut64 arena = strstr (input, "0x") ? (GHT)strtol (input, NULL, 0) : (GHT)strtol (input, NULL, 16);
+		arena = strstr (input, "0x") ? (GHT)strtol (input, NULL, 0) : (GHT)strtol (input, NULL, 16);
 		r_core_read_at (core, (GHT)arena, (ut8 *)ar, sizeof (arena_t));
 
     		PRINT_GA ("struct arena_s {\n");
@@ -265,7 +302,9 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 
 static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	int i = 0, j;
-	GHT arenas = GHT_MAX, arena = GHT_MAX, bin = GHT_MAX, bin_info;
+	ut64 bin_info;
+	ut64 arenas;
+	GHT arena = GHT_MAX; //, bin = GHT_MAX;
 	arena_t *ar;
 	arena_bin_info_t *b;
 	switch (input[0]) {
@@ -308,20 +347,20 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 					PRINT_YA ("       run_size : ");
 					PRINTF_BA ("0x%"PFMTx"\n", (GHT*)b->run_size);
 					PRINT_YA ("       nregs : ");
-					PRINTF_BA ("0x%"PFMTx"\n", (GHT*)b->nregs);
+					PRINTF_BA ("0x%"PFMTx"\n", (ut64)b->nregs);
 					PRINT_YA ("       bitmap_info : ");
-					PRINTF_BA ("0x%"PFMTx"\n", *(GHT*)&b->bitmap_info);
+					PRINTF_BA ("0x%"PFMTx"\n", b->bitmap_info);
 					PRINT_YA ("       reg0_offset : ");
-					PRINTF_BA ("0x%"PFMTx"\n\n", (GHT*)b->reg0_offset);
+					PRINTF_BA ("0x%"PFMTx"\n\n", b->reg0_offset);
 					
 					PRINTF_YA ("       bins[%d]->lock ", j);
-					PRINTF_BA ("= 0x%"PFMTx"\n", *(GHT *)&ar->bins[j].lock);
+					PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].lock);
 					PRINTF_YA ("       bins[%d]->runcur ", j);
-					PRINTF_BA ("@ 0x%"PFMTx"\n", *(GHT *)&ar->bins[j].runcur);	
+					PRINTF_BA ("@ 0x%"PFMTx"\n", ar->bins[j].runcur);
 					PRINTF_YA ("       bins[%d]->runs ", j);
-					PRINTF_BA ("@ 0x%"PFMTx"\n", *(GHT *)&ar->bins[j].runs);
+					PRINTF_BA ("@ 0x%"PFMTx"\n", ar->bins[j].runs);
 					PRINTF_YA ("       bins[%d]->stats ", j);
-					PRINTF_BA ("= 0x%"PFMTx"\n", *(GHT *)&ar->bins[j].stats);
+					PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].stats);
 					PRINT_YA ("    }\n");
 				}
 				PRINT_YA ("  }\n");

@@ -9,11 +9,12 @@
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "r_heap_glibc.h"
+#endif
+
 #define HAVE_JEMALLOC 1
 #if HAVE_JEMALLOC
 #include "r_heap_jemalloc.h"
 #include "linux_heap_jemalloc.c"
-#endif
 #endif
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
@@ -202,6 +203,7 @@ static const char *help_msg_dm[] = {
 	"dmi", " [addr|libname] [symname]", "List symbols of target lib",
 	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
 	"dmi.", "", "List closest symbol to the current address",
+	"dmiv", "", "Show address of given symbol for given lib",
 	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
 	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in radare commands",
 	"dmj", "", "List memmaps in JSON format",
@@ -221,6 +223,7 @@ static const char *help_msg_dmi[] = {
 	"dmi", "[libname] [symname]", "List symbols of target lib",
 	"dmi*", "", "List symbols of target lib in radare commands",
 	"dmi.", "", "List closest symbol to the current address",
+	"dmiv", "", "Show address of given symbol for given lib",
 	NULL
 };
 
@@ -1404,18 +1407,23 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'i': // "dmi"
 		switch (input[1]) {
 		case 0:
+			r_core_cmd (core, "dmm", 0);
+			break;
 		case ' ':
 		case '*':
+		case 'v': // dmiv
 			{
 				const char *libname = NULL, *symname = NULL, *mode = "", *a0;
 				ut64 baddr = 0LL;
 				char *ptr;
 				int i;
 				if (input[1]=='*') {
-					ptr = strdup (r_str_trim_head ((char*)input + 2));
 					mode = "-r ";
-				} else {
-					ptr = strdup (r_str_trim_head ((char*)input + 1));
+				}
+				ptr = strdup (r_str_trim_head ((char*)input + 2));
+				if (!ptr || !*ptr) {
+					r_core_cmd (core, "dmm", 0);
+					return;
 				}
 				i = r_str_word_set0 (ptr);
 				switch (i) {
