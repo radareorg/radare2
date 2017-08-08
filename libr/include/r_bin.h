@@ -414,7 +414,7 @@ typedef struct r_bin_symbol_t {
 	const char *forwarder;
 	const char *bind;
 	const char *type;
-  const char *rtype;
+  	const char *rtype;
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------

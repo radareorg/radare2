@@ -469,12 +469,11 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	mach0_ut r;
 	ut32 offset, left, i;
 	char *name = NULL;
-  char *rtype = NULL;
+  	char *rtype = NULL;
 	int len;
 	bool bigendian;
 	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
-
 
 	RBinSymbol *method = NULL;
 	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {

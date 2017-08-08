@@ -2283,57 +2283,57 @@ static int bin_fields(RCore *r, int mode, int va) {
 static char* get_rp (const char* rtype) {
 	char *rp = NULL;
 	switch(rtype[1]) {
-		case 'v':
-			rp = strdup("void");
-			break;
-		case 'c':
-			rp = strdup("char");
-			break;
-		case 'i':
-			rp = strdup("int");
-			break;
-		case 's':
-			rp = strdup("short");
-			break;
-		case 'l':
-			rp = strdup("long");
-			break;
-		case 'q':
-			rp = strdup("long long");
-			break;
-		case 'C':
-			rp = strdup("unsigned char");
-			break;
-		case 'I':
-			rp = strdup("unsigned int");
-			break;
-		case 'S':
-			rp = strdup("unsigned short");
-			break;
-		case 'L':
-			rp = strdup("unsigned long");
-			break;
-		case 'Q':
-			rp = strdup("unsigned long long");
-			break;
-		case 'f':
-			rp = strdup("float");
-			break;
-		case 'd':
-			rp = strdup("double");
-			break;
-		case 'D': 
-			rp = strdup("long double");
-			break;
-		case 'B':
-			rp = strdup("bool");
-			break;
-		case '#':
-			rp = strdup("Class");
-			break;
-		default:	
-			rp = strdup("unknown");
-			break;
+	case 'v':
+		rp = strdup ("void");
+		break;
+	case 'c':
+		rp = strdup ("char");
+		break;
+	case 'i':
+		rp = strdup ("int");
+		break;
+	case 's':
+		rp = strdup ("short");
+		break;
+	case 'l':
+		rp = strdup ("long");
+		break;
+	case 'q':
+		rp = strdup ("long long");
+		break;
+	case 'C':
+		rp = strdup ("unsigned char");
+		break;
+	case 'I':
+		rp = strdup ("unsigned int");
+		break;
+	case 'S':
+		rp = strdup ("unsigned short");
+		break;
+	case 'L':
+		rp = strdup ("unsigned long");
+		break;
+	case 'Q':
+		rp = strdup ("unsigned long long");
+		break;
+	case 'f':
+		rp = strdup ("float");
+		break;
+	case 'd':
+		rp = strdup ("double");
+		break;
+	case 'D': 
+		rp = strdup ("long double");
+		break;
+	case 'B':
+		rp = strdup ("bool");
+		break;
+	case '#':
+		rp = strdup ("Class");
+		break;
+	default:	
+		rp = strdup ("unknown");
+		break;
 	}	
 	return rp;
 }
@@ -2455,26 +2455,26 @@ static int bin_classes(RCore *r, int mode) {
 			char *rp = NULL;
 			if (c) {
 				//TODO -> Print Superclass
-				r_cons_printf("@interface %s :  \n{\n", c->name); 
+				r_cons_printf ("@interface %s :  \n{\n", c->name); 
 				r_list_foreach (c->fields, iter2, f) {
-					if (f->name && r_regex_match("ivar","e", f->name)) {
+					if (f->name && r_regex_match ("ivar","e", f->name)) {
 						r_cons_printf ("\t%s %s\n", f->type, f->name);
 					}
 				}
-				r_cons_printf("}\n");
+				r_cons_printf ("}\n");
 				r_list_foreach (c->methods, iter3, sym) {
 					if (sym->rtype && (strncmp(sym->rtype,"@",1) != 0)) {
-						rp = get_rp(sym->rtype);
-						r_cons_printf ("%s (%s) %s\n", strncmp(sym->type,"METH",4) == 0 ? "-": "+", rp, sym->dname? sym->dname: sym->name);
+						rp = get_rp (sym->rtype);
+						r_cons_printf ("%s (%s) %s\n", strncmp (sym->type,"METH",4) == 0 ? "-": "+", rp, sym->dname? sym->dname: sym->name);
 					}
 				}
-				r_cons_printf("@end\n");
+				r_cons_printf ("@end\n");
 			}
 		} else {
 			int m = 0;
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] (sz %"PFMT64d") class %d %s",
 				c->addr, at_min, at_max, (at_max - at_min), c->index, c->name);
-		if (c->super) {
+			if (c->super) {
 				r_cons_printf (" super: %s\n", c->super);
 			} else {
 				r_cons_newline ();
@@ -2495,7 +2495,6 @@ static int bin_classes(RCore *r, int mode) {
 
 	return true;
 }
-
 
 static int bin_size(RCore *r, int mode) {
 	ut64 size = r_bin_get_size (r->bin);
