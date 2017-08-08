@@ -185,7 +185,7 @@ while_end:
 		ptr2++;
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
-				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
+				ZERO_FILL (cons->grep.tokens);
 				cons->grep.tokens_used = 0;
 				fail = 0;
 				break;
