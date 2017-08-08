@@ -254,7 +254,17 @@ R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
 R_API ut64 r_search_map(RIO *io, ut64 off, ut64 *paddr) {
 	RIOMap *im = NULL;
 	SdbListIter *iter;
+	int fd = r_io_get_fd (io);
 	ut64 prevfrom = 0LL;
+	//honor the actual map first
+	ls_foreach (io->maps, iter, im) {
+		if (im->fd == fd) {
+			if (off >= im->from && (off < im->to || im->to == im->from)) {
+				*paddr = off - im->from + im->delta;
+				return fd;
+			}	
+		}
+	}
 	ls_foreach_prev (io->maps, iter, im) {
 		if (off >= im->from) {
 			if (prevfrom) {
