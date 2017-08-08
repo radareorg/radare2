@@ -474,7 +474,7 @@ typedef struct r_bin_field_t {
 	int size;
 	ut32 visibility;
 	char *name;
-  char *type;
+	char *type;
 	char *comment;
 	char *format;
 	ut64 flags;

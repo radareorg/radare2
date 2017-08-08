@@ -305,7 +305,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 				type = malloc (left);
 				r_buf_read_at (arch->buf, r, (ut8 *)type, left);
 			}
-      field->type = strdup(type);
+      			field->type = strdup(type);
 			R_FREE (type);
 		}
 
@@ -582,7 +582,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 				rtype = strdup ("some_encrypted_data");
 				left = strlen (rtype) + 1;
 			} else {
-        left = 1;
+        			left = 1;
 				rtype = malloc (left + 1);
 				if (!rtype) {
 					goto error;
@@ -593,7 +593,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 				}
 				rtype[left] = 0;
 			}
-      method->rtype = strdup(rtype);
+      			method->rtype = strdup(rtype);
 			R_FREE (rtype);
 		}
 
@@ -972,7 +972,6 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass, bool dupe)
 	i += sizeof (mach0_ut);
 	c.data = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
 
-  eprintf("SUPERCLASS 0x%llx\n", c.superclass);
 	klass->addr = c.isa;
 	get_class_ro_t (c.data & ~0x3, arch, &is_meta_class, klass);
 

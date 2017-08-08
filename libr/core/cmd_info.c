@@ -710,13 +710,13 @@ static int cmd_info(void *data, const char *input) {
 								}
 							}
 						} else if (input[1] == 'h' && obj) { // "ich"
-                mode = R_CORE_BIN_CLASSDUMP;
-							  RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+                					mode = R_CORE_BIN_CLASSDUMP;
+							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						} else {
-							  RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						}
 					}
-        }
+        			}
 			} else {
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				int len = obj? r_list_length (obj->classes): 0;
