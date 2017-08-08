@@ -1423,7 +1423,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				ptr = strdup (r_str_trim_head ((char*)input + 2));
 				if (!ptr || !*ptr) {
 					r_core_cmd (core, "dmm", 0);
-					return;
+					break;
 				}
 				i = r_str_word_set0 (ptr);
 				switch (i) {

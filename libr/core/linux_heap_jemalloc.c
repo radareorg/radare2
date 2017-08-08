@@ -86,7 +86,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	}
 	char *path = r_str_newf ("%s", jemalloc_ver_end);
 	if (r_file_exists (path)) {
-		vaddr = GH(je_get_va_symbol)(path, symname);
+		ut64 vaddr = GH(je_get_va_symbol)(path, symname);
 		if (jemalloc_addr != GHT_MAX && vaddr != 0) {
 			*symbol = jemalloc_addr + vaddr;
 			free (path);
