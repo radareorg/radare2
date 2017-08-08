@@ -3166,10 +3166,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_core_seek (core, curoff, 0);
 }
 
+#if 0
 static ut64 opc = UT64_MAX;
 static ut8 *regstate = NULL;
 
-#if 0
 static void esil_init (RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	int nonull = r_config_get_i (core->config, "esil.nonull");

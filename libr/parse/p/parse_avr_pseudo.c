@@ -134,7 +134,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	char w2[WSZ];
 	char w3[WSZ];
 	char w4[WSZ];
-	char *buf, *ptr, *optr, *par;
+	char *buf, *ptr, *optr;
 
 	// malloc can be slow here :?
 	if (!(buf = malloc (len + 1))) {

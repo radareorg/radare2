@@ -3418,9 +3418,6 @@ static bool cmd_dcu (RCore *core, const char *input) {
 
 static int cmd_debug_continue (RCore *core, const char *input) {
 	int pid, old_pid, signum;
-#if __linux__
-	int main_pid;
-#endif
 	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
