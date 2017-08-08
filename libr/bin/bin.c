@@ -182,7 +182,7 @@ R_API const char *r_bin_string_type (int type) {
 	switch (type) {
 	case 'a': return "ascii";
 	case 'u': return "utf8";
-	case 'w': return "wide";
+	case 'w': return "utf16le";
 	case 'W': return "wide32";
 	case 'b': return "base64";
 	}
@@ -282,11 +282,9 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 					break;
 				}
 			} else if (str_type == R_STRING_TYPE_WIDE) {
-				if (needle + 1 < to) {
-					r = buf[needle + 1] << 8 | buf[needle];
+				rc = r_utf16le_decode (buf + needle, to - needle, &r);
+				if (rc == 1) {
 					rc = 2;
-				} else {
-					break;
 				}
 			} else {
 				rc = r_utf8_decode (buf + needle, to - needle, &r);
