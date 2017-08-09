@@ -3506,17 +3506,12 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 
 	r_io_read_at (core->io, addr, buf, size + 1);
 
-	// Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
+	// TODO Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
 	idx = 0;
-	r_anal_op_fini (&op);
-	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
-		free (buf);
-		return;
-	}
-
-	if (op.size < 1 || (op.type != R_ANAL_OP_TYPE_MOV && op.type != R_ANAL_OP_TYPE_CMOV)) {
-		free (buf);
-		return;
+	if (r_anal_op (core->anal, &op, cur, buf + idx, size - idx) <= 0 ||
+			op.size <= 0 ||
+			(op.type != R_ANAL_OP_TYPE_MOV && op.type != R_ANAL_OP_TYPE_CMOV)) {
+		goto err_anal_op;
 	}
 
 	r_asm_set_pc (core->assembler, cur);
@@ -3526,21 +3521,18 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	// This is a hack, since ESIL doesn't always preserve values pushed on the stack. That probably needs to be rectified
 	spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if (!spname || !*spname) {
-	    free (buf);
-	    return;
+		goto err_anal_op;
 	}
 	tmp_esil_str_len = strlen (esilstr) + strlen (spname) + maxaddrlen;
 	tmp_esil_str = (char*) malloc (tmp_esil_str_len);
 	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	if (!tmp_esil_str) {
-		free (buf);
-		return;
+		goto err_anal_op;
 	}
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%s,[", spname);
 	if (!esilstr || !*esilstr || (strncmp ( esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
-	    free (buf);
-	    free (tmp_esil_str);
-	    return;
+		free (tmp_esil_str);
+		goto err_anal_op;
 	}
 
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%20" PFMT64u "%s", esil_cpy.old, &esilstr[strlen (spname) + 4]);
@@ -3553,27 +3545,26 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 
 	cur = addr + idx;
 	r_anal_op_fini (&op);
-	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
-		free (buf);
-		return;
-	}
-	if (op.size < 1 || (op.type != R_ANAL_OP_TYPE_RET && op.type != R_ANAL_OP_TYPE_CRET)) {
-		free (buf);
-		return;
+	if (r_anal_op (core->anal, &op, cur, buf + idx, size - idx) <= 0 ||
+			op.size <= 0 ||
+			(op.type != R_ANAL_OP_TYPE_RET && op.type != R_ANAL_OP_TYPE_CRET)) {
+		goto err_anal_op;
 	}
 	r_asm_set_pc (core->assembler, cur);
 
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
 	r_anal_esil_set_pc (&esil_cpy, cur);
 	if (!esilstr || !*esilstr) {
-		free (buf);
-		return;
+		goto err_anal_op;
 	}
 	r_anal_esil_parse (&esil_cpy, esilstr);
 	r_anal_esil_stack_free (&esil_cpy);
 
-	free (buf);
 	memcpy (esil, &esil_cpy, sizeof (esil_cpy));
+
+ err_anal_op:
+	r_anal_op_fini (&op);
+	free (buf);
 }
 
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
