@@ -1323,8 +1323,8 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
 	"\ngdbserver:", "", "",
-	"=g", " port file", "listen on 'port' debugging 'file' using gdbserver",
-	"=g!", " port file", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
+	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
+	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL };
 	r_core_cmd_help (core, help_msg);
 }
