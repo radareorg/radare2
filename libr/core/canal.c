@@ -2316,7 +2316,7 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 	//			eprintf ("Cannot get op\n");
 				break;
 			}
-			fill_args (core->anal, fcn, op);
+			r_anal_fcn_fill_args (core->anal, fcn, op);
 			int opsize = op->size;
 			r_anal_op_free (op);
 			if (opsize < 1) {

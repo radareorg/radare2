@@ -1308,7 +1308,7 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API RList *r_anal_fcn_list_new(void);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_fcn_free(void *fcn);
-R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
+R_API void r_anal_fcn_fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr,
 		ut8 *buf, ut64 len, int reftype);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
@@ -1412,7 +1412,7 @@ R_API void r_anal_var_access_free(void *access);
 R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
-R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
+R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);

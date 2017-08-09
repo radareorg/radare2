@@ -4,6 +4,9 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define VARPREFIX "local"
+#define ARGPREFIX "arg"
+
 #define USE_SDB_CACHE 0
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
@@ -264,8 +267,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		r_anal_fcn_set_size (fcn, 0);\
 		return R_ANAL_RET_ERROR; }
 
-#define VARPREFIX "local"
-#define ARGPREFIX "arg"
+// ETOOSLOW
 static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
@@ -284,8 +286,8 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			r_anal_var_free (v);
 			break;
 		}
-		free (varname);
 		r_anal_var_free (v);
+		free (varname);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
@@ -369,70 +371,69 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeachRet() goto beach;
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
+	char sigstr[16] = {0};
 	st64 ptr;
-	char *sig = r_str_newf (",%s,%s", reg, sign);
-	if (!sig || !anal) {
-		free (sig);
+	char *addr;
+	if (!anal || !fcn || !op) {
 		return;
 	}
-	op_esil = r_strbuf_get (&op->esil);
+	// snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
+	snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
+	const char *op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
-		free (sig);
 		return;
 	}
-	esil_buf = strdup (op_esil);
+	char *esil_buf = strdup (op_esil);
 	if (!esil_buf) {
-		free (sig);
-		free (op_esil);
 		return;
 	}
-	ptr_end = strstr (esil_buf, sig);
+	char *ptr_end = strstr (esil_buf, sigstr);
 	if (!ptr_end) {
-		free (sig);
 		free (esil_buf);
 		return;
 	}
+#if 1
 	*ptr_end = 0;
 	addr = ptr_end;
-	while ((addr[0] != '0' || addr[1] != 'x') &&
-	addr >= esil_buf + 1 && *addr != ',') {
+	while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
-		free (sig);
 		free (esil_buf);
 		return;
 	}
 	ptr = (st64) r_num_get (NULL, addr);
+#else
+	ptr = -op->ptr;
+	if (ptr%4) {
+		free (esil_buf);
+		return;
+	}
+#endif
 	if (*sign == '+') {
-		if (ptr < fcn->maxstack && type == 's') {
-			varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
-		} else {
-			varname = get_varname (anal, fcn, type, ARGPREFIX, R_ABS (ptr));
-		}
+		const char *pfx = (ptr < fcn->maxstack && type == 's')? VARPREFIX: ARGPREFIX;
+		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
 		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, ptr, 0, op->addr);
+		free (varname);
 	} else {
-		varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
+		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
 		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, -ptr, 1, op->addr);
-
+		free (varname);
 	}
-	free (varname);
-	free (sig);
 	free (esil_buf);
 }
 
-R_API void fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
-	if (anal && anal->reg) {
-		extract_arg (anal, fcn, op, anal->reg->name[R_REG_NAME_BP], "+", 'b');
-		extract_arg (anal, fcn, op, anal->reg->name[R_REG_NAME_BP], "-", 'b');
-		extract_arg (anal, fcn, op, anal->reg->name[R_REG_NAME_SP], "+", 's');
+R_API void r_anal_fcn_fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+	if (!anal || !fcn || !op) {
+		return;
 	}
-	extract_arg (anal, fcn, op, "bp", "+", 'b');
-	extract_arg (anal, fcn, op, "bp", "-", 'b');
-	extract_arg (anal, fcn, op, "sp", "+", 's');
+	const char *BP = anal->reg->name[R_REG_NAME_BP];
+	const char *SP =  anal->reg->name[R_REG_NAME_SP];
+	extract_arg (anal, fcn, op, BP, "+", 'b');
+	extract_arg (anal, fcn, op, BP, "-", 'b');
+	extract_arg (anal, fcn, op, SP, "+", 's');
 }
 
 static bool isInvalidMemory(const ut8 *buf, int len) {

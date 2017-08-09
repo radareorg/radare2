@@ -2820,7 +2820,7 @@ static char *get_reg_profile(RAnal *anal) {
 		p = \
 		"=PC	r15\n"
 		"=LR	r14\n"
-		"=SP	r13\n"
+		"=SP	sp\n"
 		"=BP	fp\n"
 		"=A0	r0\n"
 		"=A1	r1\n"

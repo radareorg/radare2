@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2017 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -27,10 +27,9 @@ R_API RAnalOp *r_anal_op_new () {
 
 R_API RList *r_anal_op_list_new() {
 	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
+	if (list) {
+		list->free = &r_anal_op_free;
 	}
-	list->free = &r_anal_op_free;
 	return list;
 }
 
@@ -68,19 +67,16 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
 	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
-	RAnalVar *res;
 
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) != 4) {
 		return NULL;
 	}
-	res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+	RAnalVar *res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
 	sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	return res;
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	int ret = 0;
-	RAnalVar *tmp;
 	//len will end up in memcmp so check for negative
 	if (!anal || len < 0) {
 		return -1;
@@ -101,31 +97,29 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		ret = anal->cur->op (anal, op, addr, data, len);
+		int ret = anal->cur->op (anal, op, addr, data, len);
+		if (ret < 1) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+		}
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
 		if (op->nopcode < 1) {
 			op->nopcode = 1;
 		}
 		//free the previous var in op->var
-		tmp = get_used_var (anal, op);
+		RAnalVar *tmp = get_used_var (anal, op);
 		if (tmp) {
 			r_anal_var_free (op->var);
 			op->var = tmp;
 		}
-		if (ret < 1) {
-			op->type = R_ANAL_OP_TYPE_ILL;
-		}
-	} else {
-		if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
-			op->type = R_ANAL_OP_TYPE_ILL;
-			ret = R_MIN (2, len); // HACK
-		} else {
-			op->type = R_ANAL_OP_TYPE_MOV;
-			ret = R_MIN (2, len); // HACK
-		}
+		return ret;
 	}
-	return ret;
+	if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return R_MIN (2, len); // HACK
+	}
+	op->type = R_ANAL_OP_TYPE_MOV;
+	return R_MIN (2, len); // HACK
 }
 
 R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
@@ -291,8 +285,7 @@ R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
-	char ret[128];
-	char *cstr;
+	char *cstr, ret[128];
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
@@ -337,8 +330,11 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CALL:
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
-		if (f) snprintf (ret, sizeof (ret), "%s()", f->name);
-		else  snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
+		if (f) {
+			snprintf (ret, sizeof (ret), "%s()", f->name);
+		} else {
+			snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
+		}
 		break;
 	case R_ANAL_OP_TYPE_CCALL:
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
