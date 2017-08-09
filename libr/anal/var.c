@@ -27,24 +27,41 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 		eprintf ("type:%s doesn't exist\n", type);
 		return false;
 	}
+	bool usePxr = !strcmp (type, "int"); // hacky but useful
 	switch (kind) {
 	case R_ANAL_VAR_KIND_REG:
 		i = r_reg_index_get (anal->reg, delta);
 		if (i) {
-			anal->cb_printf ("pf r (%s)\n", i->name);
+			if (usePxr) {
+				anal->cb_printf ("pxr $w @r:%s\n", i->name);
+			} else {
+				anal->cb_printf ("pf r (%s)\n", i->name);
+			}
 		} else {
 			eprintf ("register not found\n");
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV:
 		if (delta > 0) {
-			anal->cb_printf ("pf %s @%s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], delta);
+			if (usePxr) {
+				anal->cb_printf ("pxr $w @%s+0x%x\n", anal->reg->name[R_REG_NAME_BP], delta);
+			} else {
+				anal->cb_printf ("pf %s @%s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], delta);
+			}
 		} else {
-			anal->cb_printf ("pf %s @%s-0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], -delta);
+			if (usePxr) {
+				anal->cb_printf ("pxr $w @%s+0x%x\n", anal->reg->name[R_REG_NAME_BP], -delta);
+			} else {
+				anal->cb_printf ("pf %s @%s-0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], -delta);
+			}
 		}
 		break;
 	case R_ANAL_VAR_KIND_SPV:
-		anal->cb_printf ("pf %s @ %s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_SP], delta);
+		if (usePxr) {
+			anal->cb_printf ("pxr $w @%s+0x%x\n", anal->reg->name[R_REG_NAME_SP], delta);
+		} else {
+			anal->cb_printf ("pf %s @ %s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_SP], delta);
+		}
 		break;
 	}
 	free (fmt);
@@ -351,7 +368,7 @@ R_API void r_anal_var_free(RAnalVar *av) {
 #define IS_NUMBER(x) ((x) >= '0' && (x) <= '9')
 
 R_API bool r_anal_var_check_name(const char *name) {
-	return !IS_NUMBER (*name) && strtok (name, "., =/");
+	return !IS_NUMBER (*name) && strcspn (name, "., =/");
 }
 
 // afvn local_48 counter
@@ -460,8 +477,7 @@ R_API int r_anal_fcn_var_del_bydelta(RAnal *a, ut64 fna, const char kind, int sc
 }
 
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
-	// local: type = 0
-	// arg: type = 1
+	// type { local: 0, arg: 1 };
 	RList *list = r_anal_var_list (a, fcn, kind);
 	RAnalVar *var;
 	RListIter *iter;

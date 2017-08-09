@@ -806,22 +806,50 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 		}
 		return true;
-	case 'd': //afvd
-		p = r_str_chop (strchr (ostr, ' '));
-		if (!p) {
+	case 'd': // "afvd"
+		if (str[1]) {
+			p = r_str_chop (strchr (ostr, ' '));
+			if (!p) {
+				free (ostr);
+				return false;
+			}
+			v1 = r_anal_var_get_byname (core->anal, fcn, p);
+			if (!v1) {
+				free (ostr);
+				return false;
+			}
+			r_anal_var_display (core->anal, v1->delta, v1->kind, v1->type);
+			r_anal_var_free (v1);
 			free (ostr);
-			return false;
+		} else {
+			RListIter *iter;
+			RAnalVar *p;
+			RList *list = r_anal_var_list (core->anal, fcn, 0);
+			r_list_foreach (list, iter, p) {
+				char *a = r_core_cmd_strf (core, ".afvd %s", p->name);
+				if ((a && !*a) || !a) {
+					free (a);
+					a = strdup ("\n");
+				}
+				r_cons_printf ("var %s = %s", p->name, a);
+				free (a);
+			}
+			r_list_free (list);
+			// args
+			list = r_anal_var_list (core->anal, fcn, 1);
+			r_list_foreach (list, iter, p) {
+				char *a = r_core_cmd_strf (core, ".afvd %s", p->name);
+				if ((a && !*a) || !a) {
+					free (a);
+					a = strdup ("\n");
+				}
+				r_cons_printf ("arg %s = %s", p->name, a);
+				free (a);
+			}
+			r_list_free (list);
 		}
-		v1 = r_anal_var_get_byname (core->anal, fcn, p);
-		if (!v1) {
-			free (ostr);
-			return false;
-		}
-		r_anal_var_display (core->anal, v1->delta, v1->kind, v1->type);
-		r_anal_var_free (v1);
-		free (ostr);
 		return true;
-	case 't':{ //afvt:
+	case 't':{ // "afvt"
 		p = strchr (ostr, ' ');
 		if (!p++) {
 			free (ostr);
