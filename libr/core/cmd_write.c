@@ -107,6 +107,7 @@ static const char *help_msg_wo[] = {
 static const char *help_msg_wop[] = {
 	"Usage:","wop[DO]"," len @ addr | value",
 	"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
+	"wopD*"," len [@ addr]","Show wx command that creates a debruijn pattern of a specific length",
 	"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
 	NULL
 };
@@ -368,17 +369,26 @@ static void cmd_write_op (RCore *core, const char *input) {
 				if (buf) {
 					const ut8 *ptr = buf;
 					ut64 addr = core->offset;
-					while (true) {
-						int res = r_core_write_at (core, addr, ptr, len);
-						if (res < 1 || len == res) {
-							break;
+					if (input[3] == '*') {
+						int i;
+						r_cons_printf ("wx ");
+						for (i = 0; i < len; i++) {
+							r_cons_printf ("%02x", buf[i]);
 						}
-						if (res < len) {
-							ptr += res;
-							len -= res;
-							addr += res;
-						}
-					} 
+						r_cons_newline ();
+					} else {
+						while (true) {
+							int res = r_core_write_at (core, addr, ptr, len);
+							if (res < 1 || len == res) {
+								break;
+							}
+							if (res < len) {
+								ptr += res;
+								len -= res;
+								addr += res;
+							}
+						} 
+					}
 					free (buf);
 				} else {
 					eprintf ("Couldn't generate pattern of length %d\n", len);
