@@ -3835,14 +3835,16 @@ static int cmd_debug(void *data, const char *input) {
 			ptr = input + 3;
 			addr = r_num_math (core->num, ptr);
 			ptr = strchr (ptr, ' ');
-			RAnalOp *op = r_core_op_anal (core, addr);
-			if (op != NULL) {
-				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-				tp->count = atoi (ptr + 1);
-				r_anal_trace_bb (core->anal, addr);
-				r_anal_op_free (op);
-			} else {
-				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
+			if (ptr != NULL) {
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op != NULL) {
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+					tp->count = atoi (ptr + 1);
+					r_anal_trace_bb (core->anal, addr);
+					r_anal_op_free (op);
+				} else {
+					eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
+				}
 			}
 			break;
 		case 'D': // "dtD"

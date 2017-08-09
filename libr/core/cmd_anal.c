@@ -774,7 +774,7 @@ static int var_cmd(RCore *core, const char *str) {
 		fcn_callconv (core, fcn);
 		free (p);
 		return true;
-	case 'n': 
+	case 'n':
 		if (str[1]) { // "afvn"
 			char *old_name = r_str_trim_head (strchr (ostr, ' '));
 			if (!old_name) {
