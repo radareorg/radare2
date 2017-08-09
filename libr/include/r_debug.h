@@ -583,10 +583,10 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
 R_API bool r_debug_session_delete(RDebug *dbg, int idx);
 R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg);
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session);
-R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
-R_API void r_debug_session_save(RDebug *dbg, const char *file);
+R_API void r_debug_session_save(RDebug *dbg, RConfig *config, const char *file);
+R_API void r_debug_session_restore(RDebug *dbg, RConfig *config, const char *file);
 R_API int r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
 

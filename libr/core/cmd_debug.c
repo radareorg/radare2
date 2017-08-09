@@ -3924,14 +3924,14 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 't':
 				if (input[3] == ' ') {
-					r_debug_session_save (core->dbg, input + 4);
+					r_debug_session_save (core->dbg, core->config, input + 4);
 				} else {
 					r_cons_println ("Usage: dtst [file] - save trace sessions to disk");
 				}
 				break;
 			case 'f':
 				if (input[3] == ' ') {
-					r_debug_session_restore (core->dbg, input + 4);
+					r_debug_session_restore (core->dbg, core->config, input + 4);
 				} else {
 					r_cons_println ("Usage: dtsf [file] - read trace sessions from disk");
 				}

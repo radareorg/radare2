@@ -232,7 +232,7 @@ static RDebugSnap *r_idx_to_snap(RDebug *dbg, ut32 idx) {
 	return NULL;
 }
 
-R_API void r_debug_session_save(RDebug *dbg, const char *file) {
+R_API void r_debug_session_save(RDebug *dbg, RConfig *config, const char *file) {
 	RListIter *iter, *iter2, *iter3;
 	RDebugSession *session;
 	RDebugSnap *base;
@@ -244,9 +244,24 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	RSnapEntry snapentry;
 
 	ut32 i;
+	char *base_file, *diff_file;
+	const char *path = r_config_get (config, "dir.dbgsnap");
+	if (!r_file_is_directory (path)) {
+		eprintf ("%s is not correct path\n", path);		
+		return;
+	}
+	base_file = r_str_newf ("%s/%s.dump", path, file);
+	diff_file = r_str_newf ("%s/%s.session", path, file);
 
-	char *base_file = r_str_newf ("%s.dump", file);
-	char *diff_file = r_str_newf ("%s.session", file);
+	if (!base_file) {
+		free (base_file);
+		return;
+	}
+	if (!diff_file) {
+		free (base_file);
+		free (diff_file);
+		return;
+	}
 
 	/* dump all base snapshots */
 	r_list_foreach (dbg->snaps, iter, base) {
@@ -304,7 +319,7 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	free (diff_file);
 }
 
-R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
+R_API void r_debug_session_restore(RDebug *dbg, RConfig *config, const char *file) {
 	RDebugSnap *base = NULL;
 	RDebugSnapDiff *snapdiff;
 	RPageData *page;
@@ -314,12 +329,19 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	ut32 i;
 
 	RReg *reg = dbg->reg;
-	char *base_file = r_str_newf ("%s.dump", file);
+	char *base_file, *diff_file;
+	const char *path = r_config_get (config, "dir.dbgsnap");
+	if (!r_file_is_directory (path)) {
+		eprintf ("%s is not correct path\n", path);
+		return;
+	}
+	base_file = r_str_newf ("%s/%s.dump", path, file);
+	diff_file = r_str_newf ("%s/%s.session", path, file);
+
 	if (!base_file) {
 		free (base_file);
 		return;
 	}
-	char *diff_file = r_str_newf ("%s.session", file);
 	if (!diff_file) {
 		free (base_file);
 		free (diff_file);
