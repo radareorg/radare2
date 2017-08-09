@@ -2329,7 +2329,7 @@ static char* get_rp (const char* rtype) {
 		rp = strdup ("bool");
 		break;
 	case '#':
-		rp = strdup ("Class");
+		rp = strdup ("CLASS");
 		break;
 	default:	
 		rp = strdup ("unknown");
@@ -2458,14 +2458,14 @@ static int bin_classes(RCore *r, int mode) {
 				r_cons_printf ("@interface %s :  \n{\n", c->name); 
 				r_list_foreach (c->fields, iter2, f) {
 					if (f->name && r_regex_match ("ivar","e", f->name)) {
-						r_cons_printf ("\t%s %s\n", f->type, f->name);
+						r_cons_printf ("  %s %s\n", f->type, f->name);
 					}
 				}
 				r_cons_printf ("}\n");
 				r_list_foreach (c->methods, iter3, sym) {
-					if (sym->rtype && (strncmp(sym->rtype,"@",1) != 0)) {
+					if (sym->rtype && *sym->rtype != "@") {
 						rp = get_rp (sym->rtype);
-						r_cons_printf ("%s (%s) %s\n", strncmp (sym->type,"METH",4) == 0 ? "-": "+", rp, sym->dname? sym->dname: sym->name);
+						r_cons_printf ("%s (%s) %s\n", strncmp (sym->type,"METH",4) ? "+": "-", rp, sym->dname? sym->dname: sym->name);
 					}
 				}
 				r_cons_printf ("@end\n");

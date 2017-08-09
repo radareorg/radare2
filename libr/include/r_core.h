@@ -479,8 +479,8 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_BIN_ACC_LIBS	0x200
 #define R_CORE_BIN_ACC_CLASSES	0x400
 #define R_CORE_BIN_ACC_DWARF	0x800
-#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
+#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_MEM	0x4000
 #define R_CORE_BIN_ACC_EXPORTS  0x8000
 #define R_CORE_BIN_ACC_VERSIONINFO 0x10000

@@ -305,7 +305,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 				type = malloc (left);
 				r_buf_read_at (arch->buf, r, (ut8 *)type, left);
 			}
-      			field->type = strdup(type);
+      			field->type = strdup (type);
 			R_FREE (type);
 		}
 
@@ -592,7 +592,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 				}
 				rtype[left] = 0;
 			}
-      			method->rtype = strdup(rtype);
+      			method->rtype = strdup (rtype);
 			R_FREE (rtype);
 		}
 
