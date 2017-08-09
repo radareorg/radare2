@@ -183,7 +183,7 @@ R_API const char *r_bin_string_type (int type) {
 	case 'a': return "ascii";
 	case 'u': return "utf8";
 	case 'w': return "utf16le";
-	case 'W': return "wide32";
+	case 'W': return "utf32le";
 	case 'b': return "base64";
 	}
 	return "ascii"; // XXX
@@ -275,11 +275,9 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 			RRune r = {0};
 
 			if (str_type == R_STRING_TYPE_WIDE32) {
-				if (needle + 3 < to) {
-					r = buf[needle + 3] << 8 | buf[needle];
+				rc = r_utf32le_decode (buf + needle, to - needle, &r);
+				if (rc) {
 					rc = 4;
-				} else {
-					break;
 				}
 			} else if (str_type == R_STRING_TYPE_WIDE) {
 				rc = r_utf16le_decode (buf + needle, to - needle, &r);
