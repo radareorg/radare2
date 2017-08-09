@@ -285,7 +285,7 @@ static bool addItem(RAnal *a, RSignItem *it) {
 	sdb_set (a->sdb_zigns, key, val, 0);
 
 out:
-	free (curit);
+	r_sign_item_free (curit);
 
 	return retval;
 }

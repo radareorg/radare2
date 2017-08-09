@@ -83,7 +83,7 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	}
 	int maxsz = r_config_get_i (core->config, "zign.maxsz");
 	int fcnlen = r_anal_fcn_realsize (fcn);
-	int len = R_MIN (fcnlen, maxsz);
+	int len = R_MIN (core->assembler->addrbytes * fcnlen, maxsz);
 
 	ut8 *buf = malloc (len);
 	if (!buf) {
