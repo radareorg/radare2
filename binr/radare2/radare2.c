@@ -831,26 +831,33 @@ int main(int argc, char **argv, char **envp) {
 						const char *filepath;
 						ut64 addr;
 						filepath  = r_config_get (r.config, "dbg.exe.path");
+						addr = r_config_get_i (r.config, "bin.baddr");
 						if (filepath && r_file_exists (filepath)
 						    && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
 							if (newpath) {
 								free (fh->desc->name);
 								fh->desc->name = newpath;
-								addr = r_debug_get_baddr (r.dbg, newpath);
+								if (!addr) {
+									addr = r_debug_get_baddr (r.dbg, newpath);
+								}
 								r_core_bin_load (&r, NULL, addr);
 							}
 						} else if (is_valid_gdb_file (fh)) {
 							filepath = fh->desc->name;
 							if (r_file_exists (filepath)
 							    && !r_file_is_directory (filepath)) {
-								addr = r_debug_get_baddr (r.dbg, filepath);
+								if (!addr) {
+									addr = r_debug_get_baddr (r.dbg, filepath);
+								}
 								r_core_bin_load (&r, filepath, addr);
 							} else if ((filepath = get_file_in_cur_dir (filepath))) {
 								// Present in local directory
 								free (fh->desc->name);
 								fh->desc->name = (char*) filepath;
-								addr = r_debug_get_baddr (r.dbg, filepath);
+								if (!addr) {
+									addr = r_debug_get_baddr (r.dbg, filepath);
+								}
 								r_core_bin_load (&r, NULL, addr);
 							}
 						}
