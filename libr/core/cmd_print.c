@@ -3685,6 +3685,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_seek_archbits (core, core->offset);
 			// r_anal_hint_set_bits (core->anal, core->offset, oldbits);
 		}
+		free (hex);
 		free (old_arch);
 		free (new_arch);
 	}
