@@ -746,7 +746,7 @@ static int var_cmd(RCore *core, const char *str) {
 		return res;
 	}
 	if (!fcn) {
-		eprintf ("Cannot find function here\n");
+		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		return false;
 	}
 	ostr = p = strdup (str);

@@ -61,6 +61,7 @@ static const char *help_msg_db[] = {
 	"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
 	"dbtj", "", "Display backtrace in JSON",
 	"dbta", "", "Display ascii-art representation of the stack backtrace",
+	"dbtv", "", "Display backtrace with local vars if any",
 	"dbte", " <addr>", "Enable Breakpoint Trace",
 	"dbtd", " <addr>", "Disable Breakpoint Trace",
 	"dbts", " <addr>", "Swap Breakpoint Trace",
@@ -2414,6 +2415,66 @@ static int validAddress(RCore *core, ut64 addr) {
 	return core->num->value = 0;
 }
 
+static void backtrace_vars(RCore *core, RList *frames) {
+	RDebugFrame *f;
+	RListIter *iter;
+	bool mymap = false;
+	// anal vs debug ?
+	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
+	if (!sp) {
+		sp = "SP";
+	}
+	if (!bp) {
+		bp = "BP";
+	}
+	RReg *r = core->anal->reg;
+	ut64 dsp = r_reg_getv (r, sp);
+	ut64 dbp = r_reg_getv (r, bp);
+	int n = 0;
+	r_list_foreach (frames, iter, f) {
+		ut64 s = f->sp ? f->sp : dsp;
+		ut64 b = f->bp ? f->bp : dbp;
+		r_reg_setv (r, bp, s);
+		r_reg_setv (r, sp, b);
+				char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
+				RFlagItem *fi = r_flag_get_at (core->flags, f->addr, true);
+				flagdesc[0] = flagdesc2[0] = 0;
+				if (f) {
+					if (fi->offset != f->addr) {
+						int delta = (int)(f->addr - fi->offset);
+						if (delta > 0) {
+							snprintf (flagdesc, sizeof (flagdesc),
+									"%s+%d", fi->name, delta);
+						} else if (delta < 0) {
+							snprintf (flagdesc, sizeof (flagdesc),
+									"%s%d", fi->name, delta);
+						} else {
+							snprintf (flagdesc, sizeof (flagdesc),
+									"%s", fi->name);
+						}
+					} else {
+						snprintf (flagdesc, sizeof (flagdesc),
+								"%s", fi->name);
+					}
+				}
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, f->addr, 0);
+		// char *str = r_str_newf ("[frame %d]", n);
+		r_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
+				"[%s]  %s %s\n", n, f->addr, f->sp, (int)f->size,
+				fcn ? fcn->name : "??", flagdesc, flagdesc2);
+		eprintf ("afvd @ 0x%"PFMT64x"\n", f->addr);
+		r_cons_push();
+		char *res = r_core_cmd_strf (core, "afvd@0x%"PFMT64x, f->addr);
+		r_cons_pop();
+		r_cons_printf ("%s", res);
+		free (res);
+		n++;
+	}
+	r_reg_setv (r, bp, dbp);
+	r_reg_setv (r, sp, dsp);
+}
+
 static void asciiart_backtrace(RCore *core, RList *frames) {
 	// TODO: show local variables
 	// TODO: show function/flags/symbols related
@@ -2530,6 +2591,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 't': // "dbt"
 		switch (input[2]) {
+		case 'v': // "dbtv"
+			list = r_debug_frames (core->dbg, addr);
+			backtrace_vars (core, list);
+			r_list_free (list);
+			break;
 		case 'a': // "dbta"
 			list = r_debug_frames (core->dbg, addr);
 			asciiart_backtrace (core, list);
