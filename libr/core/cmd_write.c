@@ -541,7 +541,7 @@ static int cmd_write(void *data, const char *input) {
 	_fn[0] = 0;
 
 	switch (*input) {
-	case 'B':
+	case 'B': // "wB"
 		switch (input[1]) {
 		case ' ':
 			cmd_write_bits (core, 1, r_num_math (core->num, input + 2));
@@ -554,7 +554,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		break;
-	case '0':
+	case '0': // "w0"
 		{
 			ut64 len = r_num_math (core->num, input+1);
 			if (len>0) {
@@ -567,10 +567,10 @@ static int cmd_write(void *data, const char *input) {
 			}
 		}
 		break;
-	case '1':
-	case '2':
-	case '4':
-	case '8':
+	case '1': // "w1"
+	case '2': // "w2"
+	case '4': // "w4"
+	case '8': // "w8"
 		if (input[1] && input[2]) {
 			if (input[1]==input[2]) {
 				num = 1;
@@ -587,7 +587,7 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
 		}
 		break;
-	case '6':
+	case '6': // "w6"
 		{
 		int fail = 0;
 		ut8 *buf = NULL;
@@ -604,17 +604,24 @@ static int cmd_write(void *data, const char *input) {
 		str_len = strlen (str) + 1;
 		if (!fail) {
 			switch (input[1]) {
-			case 'd':
+			case 'd': // "w6d"
 				buf = malloc (str_len);
+				if (!buf) {
+					eprintf ("Error: failed to malloc memory");
+					break;
+				}
 				len = r_base64_decode (buf, str, 0);
-				if(len == 0) {
-					free(buf);
+				if (len < 0) {
+					free (buf);
 					fail = 1;
 				}
 				break;
-			case 'e':
-				{
+			case 'e': { // "w6e"
 				ut8 *bin_buf = malloc (str_len);
+				if (!bin_buf) {
+					eprintf ("Error: failed to malloc memory");
+					break;
+				}
 				const int bin_len = r_hex_str2bin (str, bin_buf);
 				if (bin_len <= 0) {
 					fail = 1;
@@ -628,7 +635,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 				free (bin_buf);
 				break;
-				}
+			}
 			default:
 				fail = 1;
 				break;
@@ -644,7 +651,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 		}
-	case 'h':
+	case 'h': // "wh"
 		{
 		char *p = strchr (input, ' ');
 		if (p) {
@@ -657,7 +664,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'e':
+	case 'e': // "we"
 		{
 		ut64 addr = 0, len = 0, b_size = 0;
 		st64 dist = 0;
@@ -666,7 +673,7 @@ static int cmd_write(void *data, const char *input) {
 		char *input_shadow = NULL, *p = NULL;
 
 		switch (input[1]) {
-		case 'n':
+		case 'n': // "wen"
 			if (input[2] == ' ') {
 				len = *input ? r_num_math (core->num, input+3) : 0;
 				if (len > 0) {
@@ -677,7 +684,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'N':
+		case 'N': // "weN"
 			if (input[2] == ' ') {
 				input += 3;
 				while (*input && *input == ' ') input++;
@@ -694,7 +701,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'x':
+		case 'x': // "wex"
 			if (input[2] == ' ') {
 				input += 2;
 				len = *input ? strlen (input) : 0;

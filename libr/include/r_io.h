@@ -332,7 +332,7 @@ R_API int r_io_close(RIO *io, RIODesc *desc);
 R_API int r_io_close_all(RIO *io);
 R_API ut64 r_io_size(RIO *io); //, int fd);
 R_API bool r_io_resize(RIO *io, ut64 newsize);
-R_API int r_io_extend(RIO *io, ut64 size);
+R_API int r_io_extend(RIO *io, ut64 extend);
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size);
 R_API int r_io_accept(RIO *io, int fd);
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
