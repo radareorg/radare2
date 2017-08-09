@@ -112,7 +112,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		}
-		op->jump = F1_RN1(word1);
+		op->jump = word1; // UT64_MAX; // this is n RJMP instruction .. F1_RN1 (word1);
 		op->fail = addr + 2;
 		r_strbuf_appendf (&op->esil, "%s,pc,=", F1_RN1(word1));
 		break;
@@ -352,7 +352,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
-static int get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
@@ -404,8 +404,7 @@ static int get_reg_profile(RAnal *anal) {
 		"flg	ov  .1 132.29 0\n"
 		"flg	s   .1 132.30 0\n"
 		"flg	z   .1 132.31 0\n";
-
-	return strdup(p);
+	return strdup (p);
 }
 
 RAnalPlugin r_anal_plugin_v850 = {
@@ -420,7 +419,7 @@ RAnalPlugin r_anal_plugin_v850 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_v850,
 	.version = R2_VERSION
