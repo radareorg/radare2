@@ -19,6 +19,7 @@ static const char *help_msg_i[] = {
 	"ia", "", "Show all info (imports, exports, sections..)",
 	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
+	"ich", "", "List classes, methods and fields in Header Format",
 	"iC", "", "Show signature info (entitlements, ...)",
 	"id", "[?]", "Debug information (source lines)",
 	"iD", " lang sym", "demangle symbolname for given language",
@@ -624,7 +625,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // for r2 `ic`
 			if (input[1] == '?') {
 				eprintf ("Usage: ic[ljq*] [class-index or name]\n");
-			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l') {
+			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'h') {
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
@@ -708,11 +709,14 @@ static int cmd_info(void *data, const char *input) {
 									r_cons_newline ();
 								}
 							}
+						} else if (input[1] == 'h' && obj) { // "ich"
+                					mode = R_CORE_BIN_CLASSDUMP;
+							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						} else {
 							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						}
 					}
-				}
+        			}
 			} else {
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				int len = obj? r_list_length (obj->classes): 0;

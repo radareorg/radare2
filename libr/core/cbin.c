@@ -9,12 +9,14 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
+
 #define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
 #define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
 #define IS_MODE_SIMPLEST(mode) (mode & R_CORE_BIN_SIMPLEST)
 #define IS_MODE_JSON(mode) (mode & R_CORE_BIN_JSON)
 #define IS_MODE_RAD(mode) (mode & R_CORE_BIN_RADARE)
 #define IS_MODE_NORMAL(mode) (!mode)
+#define IS_MODE_CLASSDUMP(mode) (mode & R_CORE_BIN_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
@@ -2278,6 +2280,64 @@ static int bin_fields(RCore *r, int mode, int va) {
 	return true;
 }
 
+static char* get_rp (const char* rtype) {
+	char *rp = NULL;
+	switch(rtype[0]) {
+	case 'v':
+		rp = strdup ("void");
+		break;
+	case 'c':
+		rp = strdup ("char");
+		break;
+	case 'i':
+		rp = strdup ("int");
+		break;
+	case 's':
+		rp = strdup ("short");
+		break;
+	case 'l':
+		rp = strdup ("long");
+		break;
+	case 'q':
+		rp = strdup ("long long");
+		break;
+	case 'C':
+		rp = strdup ("unsigned char");
+		break;
+	case 'I':
+		rp = strdup ("unsigned int");
+		break;
+	case 'S':
+		rp = strdup ("unsigned short");
+		break;
+	case 'L':
+		rp = strdup ("unsigned long");
+		break;
+	case 'Q':
+		rp = strdup ("unsigned long long");
+		break;
+	case 'f':
+		rp = strdup ("float");
+		break;
+	case 'd':
+		rp = strdup ("double");
+		break;
+	case 'D': 
+		rp = strdup ("long double");
+		break;
+	case 'B':
+		rp = strdup ("bool");
+		break;
+	case '#':
+		rp = strdup ("CLASS");
+		break;
+	default:	
+		rp = strdup ("unknown");
+		break;
+	}	
+	return rp;
+}
+
 static int bin_classes(RCore *r, int mode) {
 	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
@@ -2391,6 +2451,25 @@ static int bin_classes(RCore *r, int mode) {
 				}
 			}
 			r_cons_printf ("]}");
+		} else if (IS_MODE_CLASSDUMP (mode)) { 
+			char *rp = NULL;
+			if (c) {
+				//TODO -> Print Superclass
+				r_cons_printf ("@interface %s :  \n{\n", c->name); 
+				r_list_foreach (c->fields, iter2, f) {
+					if (f->name && r_regex_match ("ivar","e", f->name)) {
+						r_cons_printf ("  %s %s\n", f->type, f->name);
+					}
+				}
+				r_cons_printf ("}\n");
+				r_list_foreach (c->methods, iter3, sym) {
+					if (sym->rtype && sym->rtype[0] != "@") {
+						rp = get_rp (sym->rtype);
+						r_cons_printf ("%s (%s) %s\n", strncmp (sym->type,"METH",4) ? "+": "-", rp, sym->dname? sym->dname: sym->name);
+					}
+				}
+				r_cons_printf ("@end\n");
+			}
 		} else {
 			int m = 0;
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] (sz %"PFMT64d") class %d %s",

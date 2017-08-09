@@ -458,13 +458,14 @@ R_API void r_core_sysenv_help(const RCore* core);
 
 R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 /* bin.c */
-#define R_CORE_BIN_PRINT	0x000
+#define R_CORE_BIN_PRINT	0x000 
 #define R_CORE_BIN_RADARE	0x001
 #define R_CORE_BIN_SET		0x002
 #define R_CORE_BIN_SIMPLE	0x004
-#define R_CORE_BIN_JSON         0x008
-#define R_CORE_BIN_ARRAY 	0x010
-#define R_CORE_BIN_SIMPLEST 	0x020
+#define R_CORE_BIN_JSON		0x008
+#define R_CORE_BIN_ARRAY	0x010
+#define R_CORE_BIN_SIMPLEST	0x020
+#define R_CORE_BIN_CLASSDUMP	0x040
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002
@@ -478,8 +479,8 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_BIN_ACC_LIBS	0x200
 #define R_CORE_BIN_ACC_CLASSES	0x400
 #define R_CORE_BIN_ACC_DWARF	0x800
-#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
+#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_MEM	0x4000
 #define R_CORE_BIN_ACC_EXPORTS  0x8000
 #define R_CORE_BIN_ACC_VERSIONINFO 0x10000

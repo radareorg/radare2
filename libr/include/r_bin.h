@@ -61,10 +61,10 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_DLOPEN    0x200000
 #define R_BIN_REQ_EXPORTS   0x400000
 #define R_BIN_REQ_VERSIONINFO 0x800000
-#define R_BIN_REQ_PACKAGE     0x1000000
-#define R_BIN_REQ_HEADER   0x2000000
-#define R_BIN_REQ_LISTPLUGINS   0x4000000
-#define R_BIN_REQ_RESOURCES   0x8000000
+#define R_BIN_REQ_PACKAGE   0x1000000
+#define R_BIN_REQ_HEADER    0x2000000
+#define R_BIN_REQ_LISTPLUGINS 0x4000000
+#define R_BIN_REQ_RESOURCES 0x8000000
 
 /* RBinSymbol->method_flags : */
 #define R_BIN_METH_CLASS 0x0000000000000001L
@@ -414,6 +414,7 @@ typedef struct r_bin_symbol_t {
 	const char *forwarder;
 	const char *bind;
 	const char *type;
+  	const char *rtype;
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------
@@ -473,6 +474,7 @@ typedef struct r_bin_field_t {
 	int size;
 	ut32 visibility;
 	char *name;
+	char *type;
 	char *comment;
 	char *format;
 	ut64 flags;
