@@ -1378,7 +1378,6 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].type & OT_REGTYPE && op->operands[1].type & OT_REGTYPE) {
 			if (!((op->operands[0].type & ALL_SIZE) &
 			(op->operands[1].type & ALL_SIZE))) {
-				printf ("ASDASDASDASD\n");
 				return -1;
 			}
 		}
@@ -1467,6 +1466,16 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 	} else if (op->operands[1].type & OT_MEMORY) {
 		if (op->operands[0].type & OT_MEMORY) {
+			return -1;
+		}
+		if (op->operands[0].type & OT_BYTE && a->bits == 64 && op->operands[1].regs[0]) {
+			if (op->operands[1].regs[0] >= 8 &&
+			    op->operands[0].reg < 4) {
+				data[l++] = 0x41;
+				data[l++] = 0x8a;
+				data[l++] = op->operands[0].reg << 3 | (op->operands[1].regs[0] - 8);
+				return l;
+			}
 			return -1;
 		}
 		offset = op->operands[1].offset * op->operands[1].offset_sign;
