@@ -1057,6 +1057,11 @@ static Sdb *compute_pos(const RAGraph *g, int is_left, Sdb *v_nodes) {
 	return res;
 }
 
+static int free_vertical_nodes_cb(void *user UNUSED, const char *k UNUSED, const char *v) {
+	r_list_free ((RList *) (size_t) sdb_atoi (v));
+	return 1;
+}
+
 /* calculates position of all nodes, but in particular dummies nodes */
 /* computes two different placements (called "left"/"right") and set the final
  * position of each node to the average of the values in the two placements */
@@ -1089,6 +1094,7 @@ static void place_dummies(const RAGraph *g) {
 xplus_err:
 	sdb_free (xminus);
 xminus_err:
+	sdb_foreach (vertical_nodes, (SdbForeachCallback)free_vertical_nodes_cb, NULL);
 	sdb_free (vertical_nodes);
 }
 
@@ -3021,6 +3027,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 			r_io_sundo_push (core->io, core->offset, 0);
 			r_core_seek (core, addr, 0);
 		}
+		free (title);
 	}
 }
 
