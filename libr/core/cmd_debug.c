@@ -11,6 +11,7 @@
 #include "r_heap_glibc.h"
 #endif
 
+#define HAVE_JEMALLOC 1
 #if HAVE_JEMALLOC
 #include "r_heap_jemalloc.h"
 #include "linux_heap_jemalloc.c"
