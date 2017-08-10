@@ -11,19 +11,19 @@ R_API int r_utf32le_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	if (ptrlen > 3) {
 		if (ptr[3]) {
 			if (ch) {
-				*ch = ptr[3] << 24 | ptr[2] << 16 | ptr[1] << 8 | ptr[0];
+				*ch = (ut32)ptr[3] << 24 | (ut32)ptr[2] << 16 | (ut32)ptr[1] << 8 | ptr[0];
 			}
 			return 4;
 		}
 		if (ptr[2]) {
 			if (ch) {
-				*ch = ptr[2] << 16 | ptr[1] << 8 | ptr[0];
+				*ch = (ut32)ptr[2] << 16 | (ut32)ptr[1] << 8 | ptr[0];
 			}
 			return 4;
 		}
 		if (ptr[1]) {
 			if (ch) {
-				*ch = ptr[1] << 8 | ptr[0];
+				*ch = (ut32)ptr[1] << 8 | ptr[0];
 			}
 			return 2;
 		}
