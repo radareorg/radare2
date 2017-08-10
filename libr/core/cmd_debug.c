@@ -3079,18 +3079,17 @@ static void trace_traverse (RTree *t) {
 	r_tree_dfs (t, &vis);
 }
 
-static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_addr) {
-	bool shallow_trace = r_config_get_i (core->config, "dbg.trace.inrange");
+static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_addr) {
 	bool trace_libs = r_config_get_i (core->config, "dbg.trace.libs");
 	Sdb *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RDebug *dbg = core->dbg;
 	ut64 debug_to = UT64_MAX;
 	RTreeNode *cur;
+	ut64 addr = 0;
 	int n = 0;
 
 	if (!trace_libs) {
-		shallow_trace = true;
 		RList *bounds = r_core_get_boundaries (core, "dbg.program", &from, &to);
 		r_list_free (bounds);
 	}
@@ -3101,11 +3100,10 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 
 	while (true) {
 		ut8 buf[32];
-		ut64 addr;
 		RAnalOp aop;
 		int addr_in_range;
 
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked()) {
 			break;
 		}
 		if (r_debug_is_dead (dbg)) {
@@ -3121,11 +3119,15 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 			break;
 		}
 		addr = r_debug_reg_get (dbg, "PC");
+		if (addr == final_addr) {
+			//we finished the tracing so break the loop
+			break;
+		}
 		addr_in_range = addr >= from && addr < to;
 
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-		eprintf (" %d %"PFMT64x"\r", n++, addr);
+		eprintf ("%d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_ICALL:
@@ -3141,8 +3143,8 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 				r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 				called_addr = r_debug_reg_get (dbg, "PC");
 				called_in_range = called_addr >= from && called_addr < to;
-				if (!called_in_range && addr_in_range && shallow_trace) {
-					debug_to = addr;
+				if (!called_in_range && addr_in_range) {
+					debug_to = addr + aop.size;
 				}
 				if (addr_in_range) {
 					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
@@ -3156,7 +3158,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 		case R_ANAL_OP_TYPE_CALL:
 			{
 				int called_in_range = aop.jump >= from && aop.jump < to;
-				if (!called_in_range && addr_in_range && shallow_trace) {
+				if (!called_in_range && addr_in_range) {
 					debug_to = aop.addr + aop.size;
 				}
 				if (addr_in_range) {
@@ -3190,7 +3192,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 	}
 }
 
-static void debug_trace_calls (RCore *core, const char *input) {
+static void debug_trace_calls(RCore *core, const char *input) {
 	RBreakpointItem *bp_final = NULL;
 	int t = core->dbg->trace->enabled;
 	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
@@ -3201,16 +3203,16 @@ static void debug_trace_calls (RCore *core, const char *input) {
 	}
 	if (*input == ' ') {
 		ut64 first_n;
-		while (*input == ' ') input++;
+		input = r_str_trim_head (input);
 		first_n = r_num_math (core->num, input);
 		input = strchr (input, ' ');
 		if (input) {
-			while (*input == ' ') input++;
+			input = r_str_trim_head (input);
 			from = first_n;
 			to = r_num_math (core->num, input);
 			input = strchr (input, ' ');
 			if (input) {
-				while (*input == ' ') input++;
+				input = r_str_trim_head (input);
 				final_addr = r_num_math (core->num, input);
 			}
 		} else {
