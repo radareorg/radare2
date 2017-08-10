@@ -2463,7 +2463,7 @@ static int bin_classes(RCore *r, int mode) {
 				}
 				r_cons_printf ("}\n");
 				r_list_foreach (c->methods, iter3, sym) {
-					if (sym->rtype && sym->rtype[0] != "@") {
+					if (sym->rtype && sym->rtype[0] != '@') {
 						rp = get_rp (sym->rtype);
 						r_cons_printf ("%s (%s) %s\n", strncmp (sym->type,"METH",4) ? "+": "-", rp, sym->dname? sym->dname: sym->name);
 					}
