@@ -29,4 +29,6 @@
 
 #define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
 
+#define HAVE_JEMALLOC @HAVE_JEMALLOC@
+
 #endif
