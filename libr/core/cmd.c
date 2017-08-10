@@ -3297,8 +3297,8 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
 	core->cmd_descriptors = r_list_newf (free);
-
-	for (int i = 0; i < R_ARRAY_SIZE (cmds); i++) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].description, cmds[i].cb);
 		if (cmds[i].descriptor_init) {
 			cmds[i].descriptor_init (core);
