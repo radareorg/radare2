@@ -3237,6 +3237,58 @@ static void cmd_descriptor_init(RCore *core) {
 }
 
 R_API void r_core_cmd_init(RCore *core) {
+	struct {
+		const char *cmd;
+		const char *description;
+		r_cmd_callback(cb);
+		void (*descriptor_init)(RCore *core);
+	} cmds[] = {
+		{"0x",       "alias for px", cmd_ox},
+		{"x",        "alias for px", cmd_hexdump},
+		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
+		{"analysis", "analysis", cmd_anal, cmd_anal_init},
+		{"flag",     "get/set flags", cmd_flag, cmd_flag_init},
+		{"g",        "egg manipulation", cmd_egg, cmd_egg_init},
+		{"debug",    "debugger operations", cmd_debug, cmd_debug_init},
+		{"ls",       "list files and directories", cmd_ls},
+		{"info",     "get file info", cmd_info, cmd_info_init},
+		{"cmp",      "compare memory", cmd_cmp},
+		{"seek",     "seek to an offset", cmd_seek, cmd_seek_init},
+		{"Text",     "Text log utility", cmd_log, cmd_log_init},
+		{"t",        "type information (cparse)", cmd_type, cmd_type_init},
+		{"zign",     "zignatures", cmd_zign, cmd_zign_init},
+		{"Section",  "setup section io information", cmd_section, cmd_section_init},
+		{"bsize",    "change block size", cmd_bsize},
+		{"kuery",    "perform sdb query", cmd_kuery},
+		{"eval",     "evaluate configuration variable", cmd_eval, cmd_eval_init},
+		{"print",    "print current block", cmd_print, cmd_print_init},
+		{"write",    "write bytes", cmd_write, cmd_write_init},
+		{"Code",     "code metadata", cmd_meta, cmd_meta_init},
+		{"Project",  "project", cmd_project, cmd_project_init},
+		{"open",     "open or map file", cmd_open, cmd_open_init},
+		{"yank",     "yank bytes", cmd_yank},
+		{"resize",   "change file size", cmd_resize},
+		{"Visual",   "enter visual mode", cmd_visual},
+		{"visual",   "enter visual mode", cmd_visual},
+		{"*",        "pointer read/write", cmd_pointer},
+		{"&",        "threading capabilities", cmd_thread},
+		{"%",        "short version of 'env' command", cmd_env},
+		{"!",        "run system command", cmd_system},
+		{"=",        "io pipe", cmd_rap},
+		{"\\",       "alias for =!", cmd_rap_run},
+		{"#",        "calculate hash", cmd_hash},
+		{"?",        "help message", cmd_help, cmd_help_init},
+		{"$",        "alias", cmd_alias},
+		{".",        "interpret", cmd_interpret},
+		{"/",        "search kw, pattern aes", cmd_search, cmd_search_init},
+		{"-",        "open cfg.editor and run script", cmd_stdin},
+		{"(",        "macro", cmd_macro},
+		{"u",        "uname/undo", cmd_uname},
+		{"quit",     "exit program session", cmd_quit, cmd_quit_init},
+		{"Q",        "alias for q!", cmd_Quit},
+		{"L",        "manage dynamically loaded plugins", cmd_plugins},
+	};
+
 	core->rcmd = r_cmd_new ();
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
@@ -3246,69 +3298,12 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_set_data (core->rcmd, core);
 	core->cmd_descriptors = r_list_newf (free);
 
-	r_cmd_add (core->rcmd, "0x",       "alias for px", &cmd_ox);
-	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
-	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
-	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
-	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
-	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
-	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
-	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
-	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
-	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
-	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
-	r_cmd_add (core->rcmd, "Text",     "Text log utility", &cmd_log);
-	r_cmd_add (core->rcmd, "t",        "type information (cparse)", &cmd_type);
-	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
-	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
-	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
-	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
-	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
-	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
-	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
-	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
-	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
-	r_cmd_add (core->rcmd, "open",     "open or map file", &cmd_open);
-	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
-	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
-	r_cmd_add (core->rcmd, "Visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add (core->rcmd, "visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add (core->rcmd, "*",        "pointer read/write", &cmd_pointer);
-	r_cmd_add (core->rcmd, "&",        "threading capabilities", &cmd_thread);
-	r_cmd_add (core->rcmd, "%",        "short version of 'env' command", &cmd_env);
-	r_cmd_add (core->rcmd, "!",        "run system command", &cmd_system);
-	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
-	r_cmd_add (core->rcmd, "\\",       "alias for =!", &cmd_rap_run);
-	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);
-	r_cmd_add (core->rcmd, "?",        "help message", &cmd_help);
-	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
-	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
-	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
-	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
-	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
-	r_cmd_add (core->rcmd, "u",        "uname/undo", &cmd_uname);
-	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
-	r_cmd_add (core->rcmd, "Q",        "alias for q!", &cmd_Quit);
-	r_cmd_add (core->rcmd, "L",        "manage dynamically loaded plugins", &cmd_plugins);
-
-	cmd_search_init (core);
-	cmd_anal_init (core);
-	cmd_meta_init (core);
-	cmd_debug_init (core);
-	cmd_eval_init (core);
-	cmd_flag_init (core);
-	cmd_info_init (core);
-	cmd_log_init (core);
-	cmd_mount_init (core);
-	cmd_open_init (core);
-	cmd_print_init (core);
-	cmd_project_init (core);
-	cmd_quit_init (core);
-	cmd_seek_init (core);
-	cmd_section_init (core);
-	cmd_type_init (core);
-	cmd_write_init (core);
-	cmd_zign_init (core);
+	for (int i = 0; i < R_ARRAY_SIZE (cmds); i++) {
+		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].description, cmds[i].cb);
+		if (cmds[i].descriptor_init) {
+			cmds[i].descriptor_init (core);
+		}
+	}
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, %, percent);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
