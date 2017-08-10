@@ -107,6 +107,11 @@ userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
+if host_machine.system() == 'windows'
+userconf.set('HAVE_JEMALLOC', 0)
+else
+userconf.set('HAVE_JEMALLOC', 1)
+endif
 configure_file(input : 'libr/include/r_userconf.h.in',
                output : 'r_userconf.h',
                configuration : userconf)
