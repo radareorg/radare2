@@ -595,51 +595,48 @@ R_API bool r_io_resize(RIO *io, ut64 newsize) {
 	return true;
 }
 
-R_API int r_io_extend(RIO *io, ut64 size) {
-	ut64 curr_off = io->off;
-	ut64 cur_size = r_io_size (io), tmp_size = cur_size - size;
-	ut8 *buffer = NULL;
-
-	if (!size) {
+R_API int r_io_extend(RIO *io, ut64 extend) {
+	ut64 addr = io->off, size = r_io_size (io);
+	ut8 *buf;
+	if (!extend) {
 		return false;
 	}
 	if (io->plugin && io->plugin->extend) {
-		return io->plugin->extend (io, io->desc, size);
+		return io->plugin->extend (io, io->desc, extend);
 	}
-	if (!UT64_ADD_OVFCHK (size, cur_size)) {
-		if (!r_io_resize (io, size + cur_size)) {
+	if (!UT64_ADD_OVFCHK (size, extend)) {
+		if (!r_io_resize (io, size + extend)) {
 			return false;
 		}
 	} else {
 		return false;
 	}
 
-	if (cur_size < size) {
-		tmp_size = size - cur_size;
+	bool ret = true;
+	if (addr < size) {
+		buf = malloc (R_MAX (size - addr, extend));
+		if (!buf) {
+			return false;
+		}
+		// move [addr, size) to [addr+extend, size+extend)
+		if (r_io_read_at (io, addr, buf, size - addr) != size - addr ||
+				r_io_write_at (io, addr + extend, buf, size - addr) != size - addr ||
+				// zero out [addr, addr+extend)
+				(memset (buf, 0, extend),
+				 r_io_write_at (io, addr, buf, extend) != extend)) {
+			ret = false;
+		}
+	} else {
+		buf = calloc (1, extend);
+		if (!buf) {
+			return false;
+		}
+		if (r_io_write_at (io, addr, buf, extend) != extend) {
+			ret = false;
+		}
 	}
-
-	buffer = malloc (tmp_size);
-	if (!buffer) {
-		return false;
-	}
-	// shift the bytes over by size
-	(void) r_io_seek (io, curr_off, R_IO_SEEK_SET);
-	r_io_read (io, buffer, tmp_size);
-	// move/write the bytes
-	(void) r_io_seek (io, curr_off + size, R_IO_SEEK_SET);
-	r_io_write (io, buffer, tmp_size);
-	// zero out new bytes
-	if (cur_size < size) {
-		free (buffer);
-		buffer = malloc (size);
-	}
-	memset (buffer, 0, size);
-	(void) r_io_seek (io, curr_off, R_IO_SEEK_SET);
-	r_io_write (io, buffer, size);
-	// reset the cursor
-	(void) r_io_seek (io, curr_off, R_IO_SEEK_SET);
-	free (buffer);
-	return true;
+	free (buf);
+	return ret;
 }
 
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
