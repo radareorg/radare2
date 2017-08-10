@@ -120,26 +120,6 @@ static int calcNegOffset(int n, int shift) {
 	return 0xff & (0xff - a);
 }
 
-static int rol(ut32 n, int i) {
-	return ((n << i) | (n >> (32 - i))) >> 0;
-}
-
-static int ror(ut32 n, int i) {
-	return ((n >> i) | (n << (32 - i))) >> 0;
-}
-
-static int encode(int n) {
-	int i, m;
-
-	for (i = 0; i < 16; i++) {
-		m = rol(n, i * 2);
-		if (m < 256) {
-			return (i << 8) | m;
-		}
-	}
-	return -1;
-}
-
 static int countLeadingOnes(ut32 x) {
 	return countLeadingZeros (~x);
 }
@@ -469,7 +449,6 @@ static ut32 bdot(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	int n = 0;
 	int a = 0;
-	int tz = 0;
 	n = op->operands[0].immediate;
 	// I am sure there's a logical way to do negative offsets,
 	// but I was unable to find any sensible docs so I did my best
@@ -646,8 +625,9 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	}
 	ut8 b0 = at;
 	ut8 b1 = (at >> 3) & 0xff;
-	ut8 b2 = (at >> (8 + 7)) & 0xff;
+
 #if 0
+	ut8 b2 = (at >> (8 + 7)) & 0xff;
 	data += b0 << 29;
 	data += b1 << 16;
 	data += b2 << 24;
