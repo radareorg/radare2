@@ -3147,7 +3147,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 				if (!called_in_range && addr_in_range && !shallow_trace) {
 					debug_to = addr + aop.size;
 				}
-				if (addr_in_range || shallow_trace) {
+				if (addr_in_range || shallow_trace) {
 					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
 					if (debug_to != UT64_MAX) {
 						cur = cur->parent;
@@ -3162,7 +3162,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 				if (!called_in_range && addr_in_range && !shallow_trace) {
 					debug_to = aop.addr + aop.size;
 				}
-				if (addr_in_range || shallow_trace) {
+				if (addr_in_range || shallow_trace) {
 					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
 					if (debug_to != UT64_MAX) {
 						cur = cur->parent;
