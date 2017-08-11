@@ -1025,7 +1025,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	// TODO: move this to r_syscall
 	for (i = 0; i < item->args; i++) {
 		//TODO replace the hardcoded CC with the sdb ones
-		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i + 1);
+		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
 		//r_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {

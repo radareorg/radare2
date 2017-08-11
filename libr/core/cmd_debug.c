@@ -3661,13 +3661,17 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "ds"
 	case ' ':
-		r_reg_arena_swap (core->dbg->reg, true);
-		// sync registers for BSD PT_STEP/PT_CONT
-		// XXX(jjd): is this necessary?
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-		if (!r_debug_step (core->dbg, times)) {
-			eprintf ("Step failed\n");
-			core->break_loop = true;
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			r_reg_arena_swap (core->dbg->reg, true);
+			// sync registers for BSD PT_STEP/PT_CONT
+			// XXX(jjd): is this necessary?
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+			if (!r_debug_step (core->dbg, times)) {
+				eprintf ("Step failed\n");
+				core->break_loop = true;
+			}
+		} else {
+			r_core_cmdf (core, "%daes", R_MAX(1,times));
 		}
 		break;
 	case 'i': // "dsi"
