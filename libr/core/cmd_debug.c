@@ -2417,7 +2417,6 @@ static int validAddress(RCore *core, ut64 addr) {
 static void backtrace_vars(RCore *core, RList *frames) {
 	RDebugFrame *f;
 	RListIter *iter;
-	bool mymap = false;
 	// anal vs debug ?
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
@@ -2436,7 +2435,7 @@ static void backtrace_vars(RCore *core, RList *frames) {
 		ut64 b = f->bp ? f->bp : dbp;
 		r_reg_setv (r, bp, s);
 		r_reg_setv (r, sp, b);
-				char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
+				char flagdesc[1024], flagdesc2[1024];
 				RFlagItem *fi = r_flag_get_at (core->flags, f->addr, true);
 				flagdesc[0] = flagdesc2[0] = 0;
 				if (f) {
