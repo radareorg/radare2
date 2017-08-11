@@ -1023,9 +1023,15 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	}
 	res = r_str_appendf (res, "%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
+	//TODO replace the hardcoded CC with the sdb ones
 	for (i = 0; i < item->args; i++) {
-		//TODO replace the hardcoded CC with the sdb ones
-		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
+		// XXX this is a hack to make syscall args work on x86-32 and x86-64
+		// we need to shift sn first.. which is bad, but needs to be redesigned
+		int regidx = i;
+		if (core->assembler->bits == 32) {
+			regidx++;
+		}
+		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, regidx);
 		//r_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {
@@ -1036,9 +1042,8 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 				res = r_str_appendf (res, "%" PFMT64d "", arg);
 				break;
 			case 'z':
-				r_io_read_at (core->io, arg, (ut8 *)str, sizeof (str));
-				// TODO: filter zero terminated string
-				str[63] = '\0';
+				memset (str, 0, sizeof (str));
+				r_io_read_at (core->io, arg, (ut8 *)str, sizeof (str) - 1);
 				r_str_filter (str, strlen (str));
 				res = r_str_appendf (res, "\"%s\"", str);
 				break;
