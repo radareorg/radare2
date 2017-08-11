@@ -1469,7 +1469,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			return -1;
 		}
 		if (op->operands[0].type & OT_BYTE && a->bits == 64 && op->operands[1].regs[0]) {
-			if (op->operands[1].regs[0] >= 8 &&
+			if (op->operands[1].regs[0] >= X86R_R8 &&
 			    op->operands[0].reg < 4) {
 				data[l++] = 0x41;
 				data[l++] = 0x8a;
@@ -1726,7 +1726,6 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int oploop(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	int immediate = 0;
 	data[l++] = 0xe2;
 	st8 delta = op->operands[0].immediate - a->pc - 2;
 	data[l++] = (ut8)delta;
