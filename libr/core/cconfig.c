@@ -1368,10 +1368,10 @@ static int cb_io_oxff(void *user, void *data) {
 static int cb_filepath(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_config_set (core->config, "file.lastpath", node->value);
 	char *pikaboo = strstr (node->value, "://");
 	if (pikaboo) {
 		if (pikaboo[3] == '/') {
+			r_config_set (core->config, "file.lastpath", node->value);
 			char *ovalue = node->value;
 			node->value = strdup (pikaboo + 3);
 			free (ovalue);
@@ -1379,6 +1379,7 @@ static int cb_filepath(void *user, void *data) {
 		}
 		return false;
 	}
+	r_config_set (core->config, "file.lastpath", node->value);
 	return true;
 }
 
