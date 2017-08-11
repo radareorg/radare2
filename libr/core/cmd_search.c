@@ -29,7 +29,7 @@ static const char *help_msg_slash[] = {
 	"/f", " file [off] [sz]", "search contents of file with offset and size",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
-	"/o", "", "show offset of previous instruction",
+	"/o", " [n]", "show offset of n instructions backward",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/r[e]", " sym.printf", "analyze opcode reference an offset (/re for esil)",
@@ -886,40 +886,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 // XXX: deprecate and use _ok function only
 R_API RList *r_core_get_boundaries(RCore *core, const char *mode, ut64 *from, ut64 *to) {
 	return r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, from, to);
-}
-
-static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
-	ut8 i;
-	RAnalOp aop;
-
-	for (i = 0; i < 16; i++) {
-		if (r_anal_op (core->anal, &aop, addr - i, buf - i, 32 - i)) {
-			if (aop.size < 1) {
-				return UT64_MAX;
-			}
-			if (i == aop.size) {
-				switch (aop.type) {
-				case R_ANAL_OP_TYPE_ILL:
-				case R_ANAL_OP_TYPE_TRAP:
-				case R_ANAL_OP_TYPE_RET:
-				case R_ANAL_OP_TYPE_UCALL:
-				case R_ANAL_OP_TYPE_RCALL:
-				case R_ANAL_OP_TYPE_ICALL:
-				case R_ANAL_OP_TYPE_IRCALL:
-				case R_ANAL_OP_TYPE_CJMP:
-				case R_ANAL_OP_TYPE_UJMP:
-				case R_ANAL_OP_TYPE_RJMP:
-				case R_ANAL_OP_TYPE_IJMP:
-				case R_ANAL_OP_TYPE_IRJMP:
-				case R_ANAL_OP_TYPE_JMP:
-				case R_ANAL_OP_TYPE_CALL:
-					return UT64_MAX;
-				}
-				return addr - i;
-			}
-		}
-	}
-	return UT64_MAX;
 }
 
 static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
@@ -2443,17 +2409,19 @@ reread:
 			param.from = 0;
 		}
 		goto reread;
-	case 'o': // "/P"
-	{
-		// print the offset of the Previous opcode
-		ut8 buf[64];
-		ut64 off = core->offset;
-		r_core_read_at (core, off - 16, buf, 32);
-		off = findprevopsz (core, off, buf + 16);
+	case 'o': { // "/o" print the offset of the Previous opcode
+		ut64 addr, n = input[param_offset] ? r_num_math (core->num, input + param_offset) : 0;
+		if (!n) {
+			n = 1;
+		}
+		if (!r_core_prevop_addr (core, core->offset, n, &addr)) {
+			addr = UT64_MAX;
+			(void)r_core_asm_bwdis_len (core, NULL, &addr, n);
+		}
 		if (json) {
-			r_cons_printf ("[%"PFMT64u "]", off);
+			r_cons_printf ("[%"PFMT64u "]", addr);
 		} else {
-			r_cons_printf ("0x%08"PFMT64x "\n", off);
+			r_cons_printf ("0x%08"PFMT64x "\n", addr);
 		}
 	}
 	break;
