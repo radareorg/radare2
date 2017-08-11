@@ -273,7 +273,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 			strcpy (arch_regs[num_regs].name, regname);
 			arch_regs[num_regs].offset = reg_off;
-			arch_regs[num_regs].size = reg_sz;
+			arch_regs[num_regs].size = reg_sz / 8;
 			num_regs++;
 			arch_regs[num_regs].name[0] = '\0';
 			reg_off += reg_sz / 8;
