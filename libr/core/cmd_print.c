@@ -52,7 +52,7 @@ static const char *help_msg_at[] = {
 	"~", "word[2]", "grep 3rd column of lines matching word",
 	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-	"@", " addr[!blocksize]", "temporary set a new blocksize",
+	"@", " [addr]!blocksize", "temporary set a new blocksize",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
 	"@e:", "k=v,k=v", "temporary change eval vars",
@@ -920,14 +920,6 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char **hex, 
 static void helpCmdTasks(RCore *core) {
 	// TODO: integrate with =h& and bg anal/string/searchs/..
 	r_core_cmd_help (core, help_msg_amper);
-}
-
-static void helpCmdForeach(RCore *core) {
-	r_core_cmd_help (core, help_msg_at_at);
-}
-
-static void helpCmdAt(RCore *core) {
-	r_core_cmd_help (core, help_msg_at);
 }
 
 static void print_format_help_help_help_help(RCore *core) {

@@ -97,7 +97,7 @@ static const char *help_msg_question[] = {
 };
 
 static const char *help_msg_question_colon[] = {
-	"Usage:", ":[plugin] [args]", "",
+	"Usage:", "?:[plugin] [args]", "",
 	":", "", "list RCore plugins",
 	":java", "", "run java plugin",
 	NULL
@@ -559,12 +559,10 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case '@':
-		{
-		if (input[1] == '@'){
-			helpCmdForeach (core);
+		if (input[1] == '@') {
+			r_core_cmd_help (core, help_msg_at_at);
 		} else {
-			helpCmdAt (core);
-		}
+			r_core_cmd_help (core, help_msg_at);
 		}
 		break;
 	case '&':
