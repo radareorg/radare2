@@ -1223,7 +1223,7 @@ static int autocomplete(RLine *line) {
 				RCmdDescriptor *desc = &core->root_cmd_descriptor;
 				for (i = 0; i < line->buffer.index && desc; i++) {
 					ut8 c = line->buffer.data[i];
-					desc = c < R_ARRAY_SIZE(desc->sub) ? desc->sub[c] : NULL;
+					desc = c < R_ARRAY_SIZE (desc->sub) ? desc->sub[c] : NULL;
 				}
 				if (desc && desc->help_msg) {
 					r_core_cmd_help (core, desc->help_msg);
