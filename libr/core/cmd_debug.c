@@ -3081,6 +3081,7 @@ static void trace_traverse (RTree *t) {
 
 static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_addr) {
 	bool trace_libs = r_config_get_i (core->config, "dbg.trace.libs");
+	bool shallow_trace = r_config_get_i (core->config, "dbg.trace.inrange");
 	Sdb *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RDebug *dbg = core->dbg;
@@ -3143,10 +3144,10 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 				r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 				called_addr = r_debug_reg_get (dbg, "PC");
 				called_in_range = called_addr >= from && called_addr < to;
-				if (!called_in_range && addr_in_range) {
+				if (!called_in_range && addr_in_range && !shallow_trace) {
 					debug_to = addr + aop.size;
 				}
-				if (addr_in_range) {
+				if (addr_in_range || shallow_trace) {
 					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
 					if (debug_to != UT64_MAX) {
 						cur = cur->parent;
@@ -3158,10 +3159,10 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		case R_ANAL_OP_TYPE_CALL:
 			{
 				int called_in_range = aop.jump >= from && aop.jump < to;
-				if (!called_in_range && addr_in_range) {
+				if (!called_in_range && addr_in_range && !shallow_trace) {
 					debug_to = aop.addr + aop.size;
 				}
-				if (addr_in_range) {
+				if (addr_in_range || shallow_trace) {
 					cur = add_trace_tree_child (tracenodes, tr, cur, addr);
 					if (debug_to != UT64_MAX) {
 						cur = cur->parent;
