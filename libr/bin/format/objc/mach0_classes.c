@@ -295,14 +295,17 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
 			int is_crypted = bin->has_crypto;
-			if (r + left < r) return;
-			if (r > arch->size || r + left > arch->size) return;
-
+			if (r + left < r) {
+				goto error;
+			}
+			if (r > arch->size || r + left > arch->size) {
+				goto error;
+			}
 			if (is_crypted == 1) {
 				type = strdup ("some_encrypted_data");
-				left = strlen (name) + 1;
+			// 	left = strlen (name) + 1;
 			} else {
-				type = malloc (left);
+				type = calloc (1, left);
 				r_buf_read_at (arch->buf, r, (ut8 *)type, left);
 			}
       			field->type = strdup (type);
@@ -316,8 +319,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	return;
 
 error:
-	R_FREE (field);
-	return;
+	r_bin_field_free (field);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -759,7 +759,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		input++;
-		if ((*input == 'j' || *input == 'q') && !input[1]) {
+		if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
 			break;
 		}
 	}

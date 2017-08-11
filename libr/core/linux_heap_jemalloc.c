@@ -234,9 +234,11 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		}
 		if (narenas == 0) {
 			eprintf ("No arenas allocated.\n");
+			free (stats);
 			return;
 		}
 		if (narenas == GHT_MAX) {
+			free (stats);
 			eprintf ("Cannot find narenas_total\n");
 			return;
 		}
@@ -320,6 +322,8 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 		}
 		if (!GH(r_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
 			eprintf ("Error resolving je_arena_bin_info\n");
+			free (ar);
+			free (b);
 			return;    
 		}
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
@@ -328,6 +332,8 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 			for (;;) {
 				r_core_read_at (core, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
+					free (ar);
+					free (b);
 					break;
 				}
 				PRINTF_YA ("   arenas[%d]: ", i++);

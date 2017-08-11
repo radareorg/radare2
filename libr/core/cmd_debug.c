@@ -1420,9 +1420,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				if (input[1]=='*') {
 					mode = "-r ";
 				}
-				ptr = strdup (r_str_trim_head ((char*)input + 2));
+				ptr = strdup (r_str_chop_ro (input + 2));
 				if (!ptr || !*ptr) {
 					r_core_cmd (core, "dmm", 0);
+					free (ptr);
 					break;
 				}
 				i = r_str_word_set0 (ptr);
@@ -2435,27 +2436,29 @@ static void backtrace_vars(RCore *core, RList *frames) {
 		ut64 b = f->bp ? f->bp : dbp;
 		r_reg_setv (r, bp, s);
 		r_reg_setv (r, sp, b);
-				char flagdesc[1024], flagdesc2[1024];
-				RFlagItem *fi = r_flag_get_at (core->flags, f->addr, true);
-				flagdesc[0] = flagdesc2[0] = 0;
-				if (f) {
-					if (fi->offset != f->addr) {
-						int delta = (int)(f->addr - fi->offset);
-						if (delta > 0) {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s+%d", fi->name, delta);
-						} else if (delta < 0) {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s%d", fi->name, delta);
-						} else {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s", fi->name);
-						}
-					} else {
-						snprintf (flagdesc, sizeof (flagdesc),
-								"%s", fi->name);
-					}
+//////////
+		char flagdesc[1024], flagdesc2[1024];
+		RFlagItem *fi = r_flag_get_at (core->flags, f->addr, true);
+		flagdesc[0] = flagdesc2[0] = 0;
+		if (fi) {
+			if (fi->offset != f->addr) {
+				int delta = (int)(f->addr - fi->offset);
+				if (delta > 0) {
+					snprintf (flagdesc, sizeof (flagdesc),
+							"%s+%d", fi->name, delta);
+				} else if (delta < 0) {
+					snprintf (flagdesc, sizeof (flagdesc),
+							"%s%d", fi->name, delta);
+				} else {
+					snprintf (flagdesc, sizeof (flagdesc),
+							"%s", fi->name);
 				}
+			} else {
+				snprintf (flagdesc, sizeof (flagdesc),
+						"%s", fi->name);
+			}
+		}
+//////////
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, f->addr, 0);
 		// char *str = r_str_newf ("[frame %d]", n);
 		r_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
@@ -2921,6 +2924,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'w': // "dbw"
 		input++; // skip 'w'
 		watch = true;
+		// passthru
 	case ' ': // "db"
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '-') {
@@ -3202,17 +3206,16 @@ static void debug_trace_calls(RCore *core, const char *input) {
 		return;
 	}
 	if (*input == ' ') {
-		ut64 first_n;
-		input = r_str_trim_head (input);
-		first_n = r_num_math (core->num, input);
+		input = r_str_chop_ro (input);
+		ut64 first_n = r_num_math (core->num, input);
 		input = strchr (input, ' ');
 		if (input) {
-			input = r_str_trim_head (input);
+			input = r_str_chop_ro (input);
 			from = first_n;
 			to = r_num_math (core->num, input);
 			input = strchr (input, ' ');
 			if (input) {
-				input = r_str_trim_head (input);
+				input = r_str_chop_ro (input);
 				final_addr = r_num_math (core->num, input);
 			}
 		} else {
