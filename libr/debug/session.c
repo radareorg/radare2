@@ -233,10 +233,8 @@ static RDebugSnap *r_idx_to_snap(RDebug *dbg, ut32 idx) {
 }
 
 R_API void r_debug_session_path(RDebug *dbg, const char *path) {
-	if (dbg->snap_path) {
-		free (dbg->snap_path);
-	}
-	dbg->snap_path = strdup (path);
+	R_FREE (dbg->snap_path);
+	dbg->snap_path =  r_file_abspath (path);
 }
 
 R_API void r_debug_session_save(RDebug *dbg, const char *file) {
@@ -251,14 +249,13 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	RSnapEntry snapentry;
 
 	ut32 i;
-	char *base_file, *diff_file;
 	const char *path = dbg->snap_path;
 	if (!r_file_is_directory (path)) {
 		eprintf ("%s is not correct path\n", path);
 		return;
 	}
-	base_file = r_str_newf ("%s/%s.dump", path, file);
-	diff_file = r_str_newf ("%s/%s.session", path, file);
+	char *base_file = r_str_newf ("%s/%s.dump", path, file);
+	char *diff_file = r_str_newf ("%s/%s.session", path, file);
 
 	if (!base_file) {
 		free (diff_file);
@@ -336,14 +333,13 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	ut32 i;
 
 	RReg *reg = dbg->reg;
-	char *base_file, *diff_file;
 	const char *path = dbg->snap_path;
 	if (!r_file_is_directory (path)) {
 		eprintf ("%s is not correct path\n", path);
 		return;
 	}
-	base_file = r_str_newf ("%s/%s.dump", path, file);
-	diff_file = r_str_newf ("%s/%s.session", path, file);
+	char *base_file = r_str_newf ("%s/%s.dump", path, file);
+	char *diff_file = r_str_newf ("%s/%s.session", path, file);
 
 	if (!base_file) {
 		free (base_file);
