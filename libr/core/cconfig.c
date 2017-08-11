@@ -1935,8 +1935,18 @@ static int cb_malloc(void *user, void *data) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
  			core->dbg->malloc = data;
  		}
- 
+
  	}
+	return true;
+}
+
+static int cb_dbgsnap(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+
+	if (node->value){
+		r_debug_session_path (core->dbg, node->value);
+	}
 	return true;
 }
 
@@ -2242,7 +2252,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("diff.levenstein", "false", "Use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
-	SETPREF ("dir.dbgsnap", ".", "Path to session dump files");
+	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	SETPREF ("dir.magic", R_MAGIC_PATH, "Path to r_magic files");
 #if __WINDOWS__
 	SETPREF ("dir.plugins", "plugins", "Path to plugin files to be loaded at startup");
