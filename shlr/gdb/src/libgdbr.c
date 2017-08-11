@@ -46,6 +46,9 @@ int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits) {
 	if (!g) {
 		return -1;
 	}
+	if (g->target.valid && g->registers) {
+		return 0;
+	}
 	if (!strcmp (arch, "mips")) {
 		g->registers = gdb_regs_mips;
 	} else if (!strcmp (arch, "lm32")) {

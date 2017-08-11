@@ -136,6 +136,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	ut64 reg_off = 0, reg_sz, reg_name_len, profile_line_len, profile_len = 0,
 	     profile_max_len = 0, blk_sz = 4096;
 	bool is_pc = false;
+	gdb_reg_t *arch_regs = NULL;
+	ut64 num_regs = 0, max_num_regs = 0, regs_blk_sz = 8;
 	// Find architecture
 	g->target.arch = R_SYS_ARCH_NONE;
 	if ((arch = strstr (xml_data, "<architecture"))) {
@@ -165,6 +167,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		reg = feature;
 		if (!(feature = strstr (feature, "</feature>"))) {
 			free (profile);
+			free (arch_regs);
 			return -1;
 		}
 		feature += strlen ("</feature>");
@@ -173,6 +176,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			// null out end of reg description
 			if (!(reg_end = strchr (reg, '/')) || reg_end >= feature) {
 				free (profile);
+				free (arch_regs);
 				return -1;
 			}
 			tmpchar = *reg_end;
@@ -180,12 +184,14 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			// name
 			if (!(regname = strstr (reg, "name="))) {
 				free (profile);
+				free (arch_regs);
 				*reg_end = tmpchar;
 				return -1;
 			}
 			regname += 6;
 			if (!(tmp1 = strchr (regname, '"'))) {
 				free (profile);
+				free (arch_regs);
 				*reg_end = tmpchar;
 				return -1;
 			}
@@ -193,12 +199,14 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			// size
 			if (!(tmp1 = strstr (reg, "bitsize="))) {
 				free (profile);
+				free (arch_regs);
 				*reg_end = tmpchar;
 				return -1;
 			}
 			tmp1 += 9;
 			if (!isdigit (*tmp1)) {
 				free (profile);
+				free (arch_regs);
 				*reg_end = tmpchar;
 				return -1;
 			}
@@ -234,13 +242,15 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			if (profile_max_len - profile_len <= profile_line_len) {
 				if (!(tmp2 = realloc (profile, profile_max_len + blk_sz))) {
 					free (profile);
+					free (arch_regs);
 					return -1;
 				}
 				profile = tmp2;
 				profile_max_len += blk_sz;
 			}
 			// reg_size > 64 is not supported? :/
-			if (reg_sz > 64) {
+			// We don't handle register names > 31 chars. Re-evaluate?
+			if (reg_sz > 64 || reg_name_len > 31) {
 				reg_off += reg_sz / 8;
 				reg = reg_end;
 				continue;
@@ -250,6 +260,22 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			snprintf (profile + profile_len, profile_line_len, "%s\t%s\t"
 				".%"PFMT64d "\t%"PFMT64d "\t0\n", reg_typ, regname,
 				reg_sz, reg_off);
+			if (num_regs + 1 >= max_num_regs) {
+				gdb_reg_t *tmp_regs;
+				tmp_regs = realloc (arch_regs, (max_num_regs + regs_blk_sz) * sizeof (gdb_reg_t));
+				if (!tmp_regs) {
+					free (profile);
+					free (arch_regs);
+					return -1;
+				}
+				arch_regs = tmp_regs;
+				max_num_regs += regs_blk_sz;
+			}
+			strcpy (arch_regs[num_regs].name, regname);
+			arch_regs[num_regs].offset = reg_off;
+			arch_regs[num_regs].size = reg_sz;
+			num_regs++;
+			arch_regs[num_regs].name[0] = '\0';
 			reg_off += reg_sz / 8;
 			regname[reg_name_len] = tmpchar;
 			profile_len += strlen (profile + profile_len);
@@ -261,6 +287,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		if (profile_max_len - profile_len <= profile_line_len) {
 			if (!(tmp2 = realloc (profile, profile_max_len + profile_line_len + 1 - profile_len))) {
 				free (profile);
+				free (arch_regs);
 				return -1;
 			}
 			profile = tmp2;
@@ -270,5 +297,6 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	free (g->target.regprofile);
 	g->target.regprofile = profile;
 	g->target.valid = true;
+	g->registers = arch_regs;
 	return 0;
 }
