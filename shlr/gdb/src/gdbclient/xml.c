@@ -118,7 +118,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 				retmax += subret_len + 1;
 			}
 			memmove (tmp + subret_len, tmp + subret_space,
-				 retlen - (tmp + subret_space - ret));
+				retlen - (tmp + subret_space - ret));
 			memcpy (tmp, subret, subret_len);
 			retlen += subret_len - subret_space;
 			ret[retlen] = '\0';
@@ -143,7 +143,7 @@ typedef struct {
 } gdbr_flags_reg_t;
 
 // sizeof (buf) needs to be atleast flags->num_bits + 1
-static void write_flag_bits (char *buf, const gdbr_flags_reg_t *flags) {
+static void write_flag_bits(char *buf, const gdbr_flags_reg_t *flags) {
 	bool fc[26] = { false };
 	ut32 i, c;
 	memset (buf, '.', flags->num_bits);
@@ -275,7 +275,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				*tmp2 = '\0';
 				name_sz = sizeof (flags[num_flags].fields[num_fields].name);
 				strncpy (flags[num_flags].fields[num_fields].name,
-					 tmp1, name_sz - 1);
+					tmp1, name_sz - 1);
 				flags[num_flags].fields[num_fields].name[name_sz - 1] = '\0';
 				*tmp2 = tmpchar;
 				// Get offset
@@ -392,8 +392,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				write_flag_bits (flag_bits, &flags[cur_flag_num]);
 			}
 			snprintf (profile + profile_len, profile_line_len, "%s\t%s\t"
-				  ".%"PFMT64d "\t%"PFMT64d "\t0\t%s\n", reg_typ, regname,
-				  reg_sz, reg_off, flag_bits);
+				".%"PFMT64d "\t%"PFMT64d "\t0\t%s\n", reg_typ, regname,
+				reg_sz, reg_off, flag_bits);
 			profile_len += strlen (profile + profile_len);
 			if (cur_flag_num < num_flags) {
 				for (i = 0; i < flags[cur_flag_num].num_fields; i++) {
@@ -406,10 +406,10 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 						profile_max_len += blk_sz;
 					}
 					snprintf (profile + profile_len, profile_line_len,
-						  "gpr\t%s\t.%d\t.%"PFMT64d"\t0\n",
-						  flags[cur_flag_num].fields[i].name,
-						  flags[cur_flag_num].fields[i].sz,
-						  flags[cur_flag_num].fields[i].bit_num + (reg_off * 8));
+						"gpr\t%s\t.%d\t.%"PFMT64d "\t0\n",
+						flags[cur_flag_num].fields[i].name,
+						flags[cur_flag_num].fields[i].sz,
+						flags[cur_flag_num].fields[i].bit_num + (reg_off * 8));
 					profile_len += strlen (profile + profile_len);
 				}
 			}
