@@ -34,8 +34,6 @@ typedef struct r_search_keyword_t {
 	ut8 *bin_binmask;
 	ut32 keyword_length;
 	ut32 binmask_length;
-	ut32 idx[R_SEARCH_DISTANCE_MAX]; // searching purposes
-	int distance;
 	void *data;
 	int count;
 	int kwidx;
@@ -56,12 +54,14 @@ typedef struct r_search_t {
 	int n_kws;
 	int mode;
 	ut32 pattern_size;
-	ut32 string_min; /* min number of matches */
-	ut32 string_max; /* max number of matches */
-	void *user; /* user data */
+	ut32 string_min; // max length of strings for R_SEARCH_STRING
+	ut32 string_max; // min length of strings for R_SEARCH_STRING
+	void *data; // data used by search algorithm
+	void *user; // user data passed to callback
 	RSearchCallback callback;
+	ut64 nhits;
+	ut64 maxhits;
 	RList *hits;
-	int nhits;
 	RMemoryPool *pool;
 	int distance;
 	int inverse;
