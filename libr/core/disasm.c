@@ -3870,6 +3870,9 @@ toro:
 		if (len < 4) {
 			len = 4;
 		}
+		if (nbuf) {
+			free (nbuf);
+		}
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_core_read_at (core, ds->addr, buf, len)) {

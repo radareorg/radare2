@@ -1679,7 +1679,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (!r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i)) {
+		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
@@ -1873,6 +1873,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			}
 		}
 		i += opsz;
+		r_anal_op_fini (&op);
 	}
 	r_cons_printf ("  %d\n", i - oi);
 	if (bgcolor_in_heap) {

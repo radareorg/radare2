@@ -1412,12 +1412,14 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
 				    delta - i) <= 0) {
+				r_anal_op_fini (&end_gadget);
 				continue;
 			}
 			if (is_end_gadget (&end_gadget, crop)) {
 				struct endlist_pair *epair;
 				if (maxhits && r_list_length (end_list) >= maxhits) {
 					// limit number of high level rop gadget results
+					r_anal_op_fini (&end_gadget);
 					break;
 				}
 				epair = R_NEW0 (struct endlist_pair);
@@ -1432,6 +1434,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_list_append (end_list, (void *) epair);
 				}
 			}
+			r_anal_op_fini (&end_gadget);
 			if (r_cons_is_breaked ()) {
 				break;
 			}

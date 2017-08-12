@@ -363,6 +363,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		r_bp_free (dbg->bp);
 		//r_reg_free(&dbg->reg);
+		free (dbg->snap_path);
 		r_list_free (dbg->snaps);
 		r_list_free (dbg->sessions);
 		r_list_free (dbg->maps);
