@@ -4244,7 +4244,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	case 'c': // "asc"
 		if (input[1] == 'a') {
 			if (input[2] == ' ') {
-				if ((n = atoi (input + 2)) > 0) {
+				if ((n = atoi (input + 2)) >= 0) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si)
 						r_cons_printf (".equ SYS_%s %d\n", si->name, n);
@@ -4267,7 +4267,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == ' ') {
-				if ((n = atoi (input + 2)) > 0) {
+				if ((n = atoi (input + 2)) >= 0) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si)
 						r_cons_printf ("#define SYS_%s %d\n", si->name, n);
@@ -4295,7 +4295,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
-			if ((n = atoi (input + 2)) > 0) {
+			if ((n = atoi (input + 2)) >= 0) {
 				si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si)
 					r_cons_println (si->name);
