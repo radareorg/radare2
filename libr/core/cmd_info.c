@@ -94,7 +94,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	}
 	if (res) {
 		if (*res) {
-			printf ("%s\n", res);
+			r_cons_printf ("%s\n", res);
 		}
 		free (res);
 		return false;
