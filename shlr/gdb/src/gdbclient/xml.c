@@ -177,7 +177,6 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	ut64 num_flags = 0, num_fields = 0, name_sz = 0, cur_flag_num, i;
 	char *flagstr, *flagsend, *field_start, *field_end, flagtmpchar, fieldtmpchar;
 	char flag_bits[65];
-	size_t slen;
 	// Find architecture
 	g->target.arch = R_SYS_ARCH_NONE;
 	if ((arch = strstr (xml_data, "<architecture"))) {
@@ -422,11 +421,12 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				arch_regs = tmp_regs;
 				max_num_regs += regs_blk_sz;
 			}
-			slen = strlcpy (arch_regs[num_regs].name, regname,
-					sizeof (arch_regs[num_bits].name));
-			if (slen != strlen (regname)) {
-				// XXX Handle error...
+			if (reg_name_len >= sizeof (arch_regs[num_bits].name)) {
+			    eprintf ("Register name too long: %s\n", regname);
 			}
+			strncpy (arch_regs[num_regs].name, regname,
+				 sizeof (arch_regs[num_bits].name - 1));
+			arch_regs[num_regs].name[sizeof (arch_regs[num_bits].name) - 1] = '\0';
 			arch_regs[num_regs].offset = reg_off;
 			arch_regs[num_regs].size = reg_sz / 8;
 			num_regs++;
