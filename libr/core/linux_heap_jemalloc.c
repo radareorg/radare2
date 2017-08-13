@@ -14,7 +14,7 @@
 #define GH(x) x##_32
 #define GHT ut32
 #define GHT_MAX UT32_MAX
-#define PFMTx PFMT32x 
+#define PFMTx PFMT32x
 #else
 #define GH(x) x##_64
 #define GHT ut64
@@ -91,7 +91,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 			*symbol = jemalloc_addr + vaddr;
 			free (path);
 			return true;
-		} 
+		}
 	}
 	free (path);
 	return false;
@@ -110,12 +110,12 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	return true;
 #endif
 }
- 
+
 static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	ut64 cnksz;
 
 	if (GH(r_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
-		r_core_read_at (core, cnksz, (ut8 *)&cnksz, sizeof (GHT));     
+		r_core_read_at (core, cnksz, (ut8 *)&cnksz, sizeof (GHT));
 	} else {
 		eprintf ("Fail at read symbol je_chunksize\n");
 	}
@@ -137,19 +137,19 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 				r_core_read_at (core, (ut64)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 				if (head->en_addr) {
 					PRINT_YA ("   Chunk - start: ");
-					PRINTF_BA ("0x%"PFMTx, (GHT)head->en_addr); 
+					PRINTF_BA ("0x%"PFMTx, (GHT)head->en_addr);
 					PRINT_YA (", end: ");
 					PRINTF_BA ("0x%"PFMTx, (GHT)(head->en_addr + cnksz));
 					PRINT_YA (", size: ");
-					PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz); 
+					PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz);
 					r_core_read_at (core, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					while (node && node->en_addr != head->en_addr) {
 						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%"PFMTx, (GHT)node->en_addr); 
+						PRINTF_BA ("0x%"PFMTx, (GHT)node->en_addr);
 						PRINT_YA (", end: ");
 						PRINTF_BA ("0x%"PFMTx, (GHT)(node->en_addr + cnksz));
 						PRINT_YA (", size: ");
-						PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz); 
+						PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz);
 						r_core_read_at (core, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					}
 				}
@@ -158,8 +158,8 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			free (head);
 			free (node);
 		break;
-        	}            
-        case '*':           
+        	}
+        case '*':
 		{
 			int i = 0;
 			ut64 sym;
@@ -169,7 +169,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			extent_node_t *head = R_NEW0 (extent_node_t);
 			// TODO : check for null allocations here
 			input += 1;
-			
+
 			if (GH(r_resolve_jemalloc) (core, "je_arenas", &sym)) {
 				r_core_read_at (core, sym, (ut8 *)&arenas, sizeof (GHT));
 				for (;;) {
@@ -182,16 +182,16 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 					r_core_read_at (core, (ut64)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 					if (head->en_addr != 0) {
 						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%"PFMTx, (GHT)head->en_addr); 
+						PRINTF_BA ("0x%"PFMTx, (GHT)head->en_addr);
 						PRINT_YA (", end: ");
 						PRINTF_BA ("0x%"PFMTx, (GHT)(head->en_addr + cnksz));
 						PRINT_YA (", size: ");
-						PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz); 
+						PRINTF_BA ("0x%"PFMTx"\n", (GHT)cnksz);
 						ut64 addr = (ut64) head->ql_link.qre_next;
 						r_core_read_at (core, addr, (ut8 *)node, sizeof (extent_node_t));
 						while (node && head && node->en_addr != head->en_addr) {
 							PRINT_YA ("   Chunk - start: ");
-							PRINTF_BA ("0x%"PFMTx, (GHT)node->en_addr); 
+							PRINTF_BA ("0x%"PFMTx, (GHT)node->en_addr);
 							PRINT_YA (", end: ");
 							PRINTF_BA ("0x%"PFMTx, (GHT)(node->en_addr + cnksz));
 							PRINT_YA (", size: ");
@@ -242,7 +242,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 			eprintf ("Cannot find narenas_total\n");
 			return;
 		}
-		
+
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			r_core_read_at (core, arenas, (ut8 *)&arenas, sizeof (GHT));
 			PRINTF_GA ("arenas[%d] @ 0x%"PFMTx" {\n", narenas, (GHT)arenas);
@@ -271,9 +271,9 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		PRINTF_BA ("  lock = 0x%"PFMTx"\n", *(GHT *)&ar->lock);
 		PRINTF_BA ("  stats = 0x%"PFMTx"\n", *(GHT *)&ar->stats);
 		PRINTF_BA ("  tcache_ql = 0x%"PFMTx"\n", *(GHT *)&ar->tcache_ql);
-		PRINTF_BA ("  prof_accumbytes = 0x%"PFMTx"x\n", (GHT)ar->prof_accumbytes); 
-		PRINTF_BA ("  offset_state = 0x%"PFMTx"\n", (GHT)ar->offset_state); 
-		PRINTF_BA ("  dss_prec_t = 0x%"PFMTx"\n", *(GHT *)&ar->dss_prec); 
+		PRINTF_BA ("  prof_accumbytes = 0x%"PFMTx"x\n", (GHT)ar->prof_accumbytes);
+		PRINTF_BA ("  offset_state = 0x%"PFMTx"\n", (GHT)ar->offset_state);
+		PRINTF_BA ("  dss_prec_t = 0x%"PFMTx"\n", *(GHT *)&ar->dss_prec);
 		PRINTF_BA ("  achunks = 0x%"PFMTx"\n", *(GHT *)&ar->achunks);
 		PRINTF_BA ("  extent_sn_next = 0x%"PFMTx"\n", (GHT)ar->extent_sn_next);
 		PRINTF_BA ("  spare = 0x%"PFMTx"\n", *(GHT *)&ar->spare);
@@ -297,7 +297,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		PRINTF_BA ("  runs_avail = 0x%"PFMTx"\n", NPSIZES, *(GHT *)&ar->runs_avail);
 		PRINT_GA ("}\n");
 		break;
-	} 
+	}
 	free (ar);
 	free (stats);
 }
@@ -324,7 +324,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 			eprintf ("Error resolving je_arena_bin_info\n");
 			free (ar);
 			free (b);
-			return;    
+			return;
 		}
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			r_core_read_at (core, arenas, (ut8 *)&arenas, sizeof (GHT));
@@ -332,8 +332,8 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 			for (;;) {
 				r_core_read_at (core, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
-					free (ar);
-					free (b);
+					R_FREE (ar);
+					R_FREE (b);
 					break;
 				}
 				PRINTF_YA ("   arenas[%d]: ", i++);
@@ -358,7 +358,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 					PRINTF_BA ("0x%"PFMTx"\n", b->bitmap_info);
 					PRINT_YA ("       reg0_offset : ");
 					PRINTF_BA ("0x%"PFMTx"\n\n", b->reg0_offset);
-					
+
 					PRINTF_YA ("       bins[%d]->lock ", j);
 					PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].lock);
 					PRINTF_YA ("       bins[%d]->runcur ", j);
@@ -409,4 +409,4 @@ static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
 	}
 	return 0;
 }
- 
+
