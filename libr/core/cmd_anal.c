@@ -2019,6 +2019,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"Usage:", "afC[agl?]", "",
 			"afC", " convention", "Manually set calling convention for current function",
 			"afC", "", "Show Calling convention for the Current function",
+			"afCr", "[j]", "Show register usage for the current function",
 			"afCa", "", "Analyse function for finding the current calling convention",
 			"afCl", "", "List all available calling conventions",
 			"afCo", " path", "Open Calling Convention sdb profile from given path",
@@ -2043,6 +2044,42 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'a':
 			eprintf ("Todo\n");
 			break;
+		case 'r': {	// afCr
+			int i;
+			char *out, *cmd, *regname, *tmp;
+			char *json_str = r_str_new ("");
+			bool json = input[3] == 'j'? true: false;
+			for (i = 0; i <= 12; i++) {
+				if (i == 0) {
+					cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+				} else {
+					cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
+				}
+				if (i < 7) {
+					regname = r_str_new (cmd);
+				} else {
+					regname = r_str_newf ("cc.%s.float_arg%d", fcn->cc, i - 6);
+				}
+				out = sdb_querys (core->anal->sdb_cc, NULL, 0, cmd);
+				free (cmd);
+				if (out) {
+					out[strlen (out) - 1] = 0;
+					if (json) {
+						tmp = json_str;
+						json_str = r_str_newf ("%s,\"%s\":\"%s\"", json_str, regname, out);
+						free (tmp);
+					} else {
+						r_cons_printf ("%s: %s\n", regname, out);
+					}
+					free (out);
+				}
+				free (regname);
+			}
+			if (json) {
+				r_cons_printf ("{%s}\n", json_str + 1);
+				free (json_str);
+			}
+		} break;
 		case ' ': {
 			char *cc = r_str_chop (strdup (input + 3));
 			if (!r_anal_cc_exist (core->anal, cc)) {
