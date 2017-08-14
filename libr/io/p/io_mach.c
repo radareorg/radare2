@@ -473,10 +473,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 
 static int __get_pid (RIODesc *desc) {
 	RIOMach *mach = desc ? (RIOMach *) desc->data : NULL;
-	if (mach) {
-		return mach->pid;
-	}
-	return -1;
+	return mach ? mach->pid : -1;
 }
 
 // TODO: rename ptrace to io_mach .. err io.ptrace ??

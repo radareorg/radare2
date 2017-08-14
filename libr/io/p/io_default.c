@@ -3,6 +3,7 @@
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
+#include <stdio.h>
 
 typedef struct r_io_mmo_t {
 	char * filename;
@@ -202,7 +203,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			a_buf = malloc (a_count+aligned);
 			if (a_buf) {
 				int i;
-				memset (a_buf, 0xff, a_count+aligned);
+				memset (a_buf, 0xff, a_count + aligned);
 				if (lseek (mmo->fd, a_off, SEEK_SET) < 0) {
 					free (a_buf);
 					return -1;
@@ -365,6 +366,20 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	return r_io_def_mmap_truncate (mmo, size);
 }
 
+#if __UNIX__
+static bool __is_blockdevice (RIODesc *desc) {
+	RIOMMapFileObj *mmo;
+	struct stat buf;
+	if (!desc || !desc->data) {
+		return false;
+	}
+	mmo = desc->data;
+	if (fstat (mmo->fd, &buf) == -1)
+		return false;
+	return ((buf.st_mode & S_IFBLK) == S_IFBLK);
+}
+#endif
+
 struct r_io_plugin_t r_io_plugin_default = {
 	.name = "default",
 	.desc = "open local files using def_mmap://",
@@ -376,6 +391,9 @@ struct r_io_plugin_t r_io_plugin_default = {
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,
+#if __UNIX__
+	.is_blockdevice = __is_blockdevice,
+#endif
 };
 
 #ifndef CORELIB

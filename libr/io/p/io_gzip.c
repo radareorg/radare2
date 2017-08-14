@@ -117,13 +117,16 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
-		if (!mal) return NULL;
+		if (!mal) {
+			return NULL;
+		}
 		int len;
-		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
+		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);	//memleak here?
 		mal->buf = r_inflate (data, len, NULL, &mal->size);
-		if (mal->buf)
+		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_malloc,
 				pathname, rw, mode, mal);
+		}
 		free (data);
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
 			mal->size);

@@ -440,19 +440,19 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 
 //the API differs with SIOL in that returns a bool instead of amount read
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-    int ret;
-    if (!io || !buf || len < 1) {
-        return 0;
-    }
-    if (io->va) {
-        ret = r_io_vread_at (io, addr, buf, len);
-    } else {
-        ret = r_io_pread_at (io, addr, buf, len);
-    }
-    if (io->cached_read) {
-        r_io_cache_read (io, addr, buf, len);
-    }
-    return ret;
+	int ret;
+	if (!io || !buf || len < 1) {
+		return 0;
+	}
+	if (io->va) {
+		ret = r_io_vread_at (io, addr, buf, len);
+	} else {
+		ret = r_io_pread_at (io, addr, buf, len);
+	}
+	if (io->cached_read) {
+		r_io_cache_read (io, addr, buf, len);
+	}
+	return ret;
 
 }
 
@@ -694,29 +694,29 @@ R_API int r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
-    int i, ret = 0;
-    ut8 *mybuf = (ut8*)buf;
-    if (!io || !buf || len < 1) {
-        return 0;
-    }
-    if (io->write_mask_buf) {
-        mybuf = r_mem_dup ((void*)buf, len);
-        for (i = 0; i < len; i++) {
-            //this sucks
-            mybuf[i] &= io->write_mask_buf[i % io->write_mask_len];
-        }
-    }
-    if (io->cached) {
-        ret = r_io_cache_write (io, addr, mybuf, len);
-    } else if (io->va) {
-        ret = r_io_vwrite_at (io, addr, mybuf, len);
-    } else {
-        ret = r_io_pwrite_at (io, addr, mybuf, len);
-    }
-    if (buf != mybuf) {
-        free (mybuf);
-    }
-    return ret;
+	int i, ret = 0;
+	ut8 *mybuf = (ut8*)buf;
+	if (!io || !buf || len < 1) {
+		return 0;
+	}
+	if (io->write_mask_buf) {
+		mybuf = r_mem_dup ((void*)buf, len);
+		for (i = 0; i < len; i++) {
+			//this sucks
+			mybuf[i] &= io->write_mask_buf[i % io->write_mask_len];
+		}
+	}
+	if (io->cached) {
+		ret = r_io_cache_write (io, addr, mybuf, len);
+	} else if (io->va) {
+		ret = r_io_vwrite_at (io, addr, mybuf, len);
+	} else {
+		ret = r_io_pwrite_at (io, addr, mybuf, len);
+	}
+	if (buf != mybuf) {
+		free (mybuf);
+	}
+	return ret;
 }
 
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
@@ -773,28 +773,9 @@ R_API ut64 r_io_fd_size(RIO *io, int fd) {
 	return r_io_desc_size (desc);
 }
 
-R_API bool r_io_is_blockdevice(RIO *io) {
-#if __UNIX__
-	if (io && io->desc && io->desc->fd) {
-		struct stat buf;
-		if (io->desc->obsz) {
-			return 1;
-		}
-		if (fstat (io->desc->fd, &buf) == -1)
-			return 0;
-		if (io->plugin == &r_io_plugin_default) {
-			// TODO: optimal blocksize = 2048 for disk, 4096 for files
-			// usually is 128K
-			//	eprintf ("OPtimal blocksize: %d\n", buf.st_blksize);
-			if ((buf.st_mode & S_IFCHR) == S_IFCHR) {
-				io->desc->obsz = buf.st_blksize;
-				return true;
-			}
-			return ((buf.st_mode & S_IFBLK) == S_IFBLK);
-		}
-	}
-#endif
-	return false;
+R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return r_io_desc_is_blockdevice (desc);
 }
 
 R_API ut64 r_io_size(RIO *io) {
@@ -996,7 +977,7 @@ R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 	//check pointers and permissions
 	int ret;
 	if (!io || !buf || !io->desc ||
-	    (!io->p_cache && !(io->desc->flags & R_IO_WRITE)) || len < 1) {
+	   (!io->p_cache && !(io->desc->flags & R_IO_WRITE)) || len < 1) {
 		return 0;
 	}
 	if (io->p_cache) {

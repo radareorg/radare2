@@ -381,7 +381,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			free (str);
 			return NULL;
 		}
-		mal->rbuf = r_buf_new_sparse();
+		mal->rbuf = r_buf_new_sparse ();
 		if (!mal->rbuf) {
 			free (str);
 			free (mal);

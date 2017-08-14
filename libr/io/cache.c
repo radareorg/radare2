@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 // TODO: implement a more inteligent way to store cached memory
 // TODO: define limit of max mem to cache

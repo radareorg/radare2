@@ -398,10 +398,12 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	}
 
 	buf = (ut8 *)malloc (len);
-	if (!hits || !buf) {
+	if (!buf) {
 		if (hits) {
 			r_list_free (hits);
 		}
+		return NULL;
+	} else if (!hits) {
 		free (buf);
 		return NULL;
 	}
