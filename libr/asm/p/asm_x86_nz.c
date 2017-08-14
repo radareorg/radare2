@@ -109,6 +109,9 @@ typedef struct operand_t {
 			ut64 immediate;
 			bool is_good_flag;
 		};
+		struct {
+			char rep_op[20];
+		};
 	};
 } Operand;
 
@@ -139,6 +142,8 @@ static int is_al_reg(const Operand *op) {
 	}
 	return 0;
 }
+
+static int oprep(RAsm *a, ut8 *data, const Opcode *op);
 
 static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 	int l = 0;
@@ -2093,6 +2098,11 @@ LookupTable oplookup[] = {
 	{"pushfd", 0, NULL, 0x9c, 1},
 	{"rcl", 0, &process_group_2, 0},
 	{"rcr", 0, &process_group_2, 0},
+	{"rep", 0, &oprep, 0},
+	{"repe", 0, &oprep, 0},
+	{"repne", 0, &oprep, 0},
+	{"repz", 0, &oprep, 0},
+	{"repnz", 0, &oprep, 0},
 	{"rdmsr", 0, NULL, 0x0f32, 2},
 	{"rdpmc", 0, NULL, 0x0f33, 2},
 	{"rdtsc", 0, NULL, 0x0f31, 2},
@@ -2180,6 +2190,38 @@ LookupTable oplookup[] = {
 	{"test", 0, &optest, 0},
 	{"null", 0, NULL, 0, 0}
 };
+
+static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	LookupTable *lt_ptr;
+
+	if (!strcmp (op->mnemonic, "rep") ||
+	    !strcmp (op->mnemonic, "repe") ||
+	    !strcmp (op->mnemonic, "repz")) {
+		data[l++] = 0xf3;
+	} else if (!strcmp (op->mnemonic, "repne") ||
+	           !strcmp (op->mnemonic, "repnz")) {
+		data[l++] = 0xf2;
+	}
+	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
+		if (!strcasecmp (op->operands[0].rep_op, lt_ptr->mnemonic)) {
+			if (lt_ptr->opcode > 0) {
+				if (lt_ptr->only_x32 && a->bits == 64) {
+					return -1;
+				}
+				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
+				int i = 0;
+				for (; i < lt_ptr->size; i++) {
+					data[i+l] = ptr[lt_ptr->size - (i + 1)];
+				}
+				return l + lt_ptr->size;
+			} else {
+				return -1;
+			}
+		}
+	}
+	return -1;
+}
 
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
@@ -2480,6 +2522,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		nextpos = pos;
 		RFlagItem *flag;
 		op->reg = parseReg (a, str, &nextpos, &op->type);
+
 		op->extended = false;
 		if (op->reg > 7) {
 			op->extended = true;
@@ -2489,10 +2532,10 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 			parse_segment_offset (a, str, &nextpos, op, reg_index);
 			return nextpos;
 		}
-
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
 			if (!(a->num) ) {
+				strncpy (op->rep_op, str, 19);
 				return nextpos;
 			}
 			op->type = OT_CONSTANT;
@@ -2507,6 +2550,8 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 				str = ++p;
 			}
 			op->immediate = getnum (a, str);
+		} else if (op->reg < X86R_UNDEFINED) {
+			strncpy (op->rep_op, str, 19);
 		}
 	} else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
