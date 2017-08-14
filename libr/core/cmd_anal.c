@@ -2048,7 +2048,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			int i;
 			char *out, *cmd, *regname, *tmp;
 			char *subvec_str = r_str_new ("");
-			char *json_str = r_str_new ("");
+			char *json_str = NULL;
 			bool json = input[3] == 'j'? true: false;
 			for (i = 0; i <= 11; i++) {
 				if (i == 0) {
@@ -2080,7 +2080,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 				switch (i) {
 				case 0: {
-					json_str = r_str_newf (",\"ret\": %s", subvec_str + 1);
+					json_str = r_str_newf (",\"ret\":%s", subvec_str + 1);
 				} break;
 				case 6: {
 					tmp = json_str;
