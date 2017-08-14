@@ -197,8 +197,8 @@ static const char *help_msg_af[] = {
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
-	"afc[c]", " ([addr])@[addr]", "calculate the Cycles (afc) or Cyclomatic Complexity (afcc)",
-	"afC", "[?] type @[addr]", "set calling convention for function",
+	"afC[c]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
+	"afc", "[?] type @[addr]", "set calling convention for function",
 	"aft", "[?]", "type matching, type propagation",
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
@@ -1766,7 +1766,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 	return true;
 }
 
-static void afcc(RCore *core, const char *input) {
+static void afCc(RCore *core, const char *input) {
 	ut64 addr;
 	RAnalFunction *fcn;
 	if (*input == ' ') {
@@ -1993,7 +1993,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 't': // "aft"
 		type_cmd (core, input + 2);
 		break;
-	case 'c': // "afc"
+	case 'C': // "afC"
 		if (input[2] == 'c') {
 			RAnalFunction *fcn;
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
@@ -2002,26 +2002,27 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
 			}
 		} else if (input[2] == '?') {
-			eprintf ("Usage: afc[c] ([addr])\n"
-				" afc   - function cycles cost\n"
-				" afcc  - cyclomatic complexity\n");
+			eprintf ("Usage: afC[c] ([addr])\n"
+				" afC   - function cycles cost\n"
+				" afCc  - cyclomatic complexity\n");
 		} else {
-			afcc (core, input + 3);
+			afCc (core, input + 3);
 		}
 		break;
-	case 'C':{ // "afC"
+	case 'c':{ // "afc"
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn && !(input[2] == '?'|| input[2] == 'l' || input[2] == 'o')) {
 			eprintf ("Cannot find function here\n");
 			break;
 		}
-		const char *help_afC[] = {
-			"Usage:", "afC[agl?]", "",
-			"afC", " convention", "Manually set calling convention for current function",
-			"afC", "", "Show Calling convention for the Current function",
-			"afCa", "", "Analyse function for finding the current calling convention",
-			"afCl", "", "List all available calling conventions",
-			"afCo", " path", "Open Calling Convention sdb profile from given path",
+		const char *help_afc[] = {
+			"Usage:", "afc[agl?]", "",
+			"afc", " convention", "Manually set calling convention for current function",
+			"afc", "", "Show Calling convention for the Current function",
+			"afcr", "[j]", "Show register usage for the current function",
+			"afca", "", "Analyse function for finding the current calling convention",
+			"afcl", "", "List all available calling conventions",
+			"afco", " path", "Open Calling Convention sdb profile from given path",
 			NULL };
 		switch (input[2]) {
 		case 'o':{
@@ -2035,19 +2036,83 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (dbpath);
 			} break;
 		case'?':
-			r_core_cmd_help (core, help_afC);
+			r_core_cmd_help (core, help_afc);
 			break;
-		case 'l': //afCl list all function Calling conventions.
+		case 'l': //afcl list all function Calling conventions.
 			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
 			break;
 		case 'a':
 			eprintf ("Todo\n");
 			break;
+		case 'r': {	// afcr
+			int i;
+			char *out, *cmd, *regname, *tmp;
+			char *subvec_str = r_str_new ("");
+			char *json_str = r_str_new ("");
+			// if json_str initialize to NULL, it's possible for afcrj to output a (null)
+			// subvec_str and json_str should be valid until exiting this code block
+			bool json = input[3] == 'j'? true: false;
+			for (i = 0; i <= 11; i++) {
+				if (i == 0) {
+					cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+				} else {
+					cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
+				}
+				if (i < 7) {
+					regname = r_str_new (cmd);
+				} else {
+					regname = r_str_newf ("cc.%s.float_arg%d", fcn->cc, i - 6);
+				}
+				out = sdb_querys (core->anal->sdb_cc, NULL, 0, cmd);
+				free (cmd);
+				if (out) {
+					out[strlen (out) - 1] = 0;
+					if (json) {
+						tmp = subvec_str;
+						subvec_str = r_str_newf ("%s,\"%s\"", subvec_str, out);
+						free (tmp);
+					} else {
+						r_cons_printf ("%s: %s\n", regname, out);
+					}
+					free (out);
+				}
+				free (regname);
+				if (!subvec_str[0]) {
+					continue;
+				}
+				switch (i) {
+				case 0: {
+					tmp = json_str;
+					json_str = r_str_newf ("%s,\"ret\":%s", json_str, subvec_str + 1);
+					free (tmp);
+				} break;
+				case 6: {
+					tmp = json_str;
+					json_str = r_str_newf ("%s,\"args\":[%s]", json_str, subvec_str + 1);
+					free (tmp);
+				} break;
+				case 11: {
+					tmp = json_str;
+					json_str = r_str_newf ("%s,\"float_args\":[%s]", json_str, subvec_str + 1);
+					free (tmp);
+				} break;
+				default:
+					continue;
+				}
+				free (subvec_str);
+				subvec_str = r_str_new ("");
+			}
+			if (json && json_str[0]) {
+				r_cons_printf ("{%s}\n", json_str + 1);
+			}
+			free (subvec_str);
+			free (json_str);
+		} break;
 		case ' ': {
 			char *cc = r_str_chop (strdup (input + 3));
 			if (!r_anal_cc_exist (core->anal, cc)) {
 				eprintf ("Unknown calling convention '%s'\n"
-					"See afCl for available types\n", cc);
+					"See afcl for available types\n", cc);
 			} else {
 				fcn->cc = r_str_const (r_anal_cc_to_constant (core->anal, cc));
 			}
@@ -2056,7 +2121,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_cons_println (fcn->cc);
 			break;
 		default:
-			r_cons_println ("See afC?");
+			r_cons_println ("See afc?");
 		}
 		}break;
 	case 'B': // "afB" // set function bits
