@@ -769,28 +769,9 @@ R_API ut64 r_io_fd_size(RIO *io, int fd) {
 	return r_io_desc_size (desc);
 }
 
-R_API bool r_io_is_blockdevice(RIO *io) {
-#if __UNIX__
-	if (io && io->desc && io->desc->fd) {
-		struct stat buf;
-		if (io->desc->obsz) {
-			return 1;
-		}
-		if (fstat (io->desc->fd, &buf) == -1)
-			return 0;
-		if (io->plugin == &r_io_plugin_default) {
-			// TODO: optimal blocksize = 2048 for disk, 4096 for files
-			// usually is 128K
-			//	eprintf ("OPtimal blocksize: %d\n", buf.st_blksize);
-			if ((buf.st_mode & S_IFCHR) == S_IFCHR) {
-				io->desc->obsz = buf.st_blksize;
-				return true;
-			}
-			return ((buf.st_mode & S_IFBLK) == S_IFBLK);
-		}
-	}
-#endif
-	return false;
+R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return r_io_desc_is_blockdevice (desc);
 }
 
 R_API ut64 r_io_size(RIO *io) {

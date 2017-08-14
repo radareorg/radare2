@@ -117,11 +117,21 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
 		return 0LL;
 	}
+	if (r_io_desc_is_blockdevice (desc)) {
+		return UT64_MAX;
+	}
 	off = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
 	ret = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);
 	//what to do if that seek fails?
 	desc->plugin->lseek (desc->io, desc, off, R_IO_SEEK_CUR);
 	return ret;
+}
+
+R_API bool r_io_desc_is_blockdevice (RIODesc *desc) {
+	if (!desc || !desc->plugin || !desc->plugin->is_blockdevice) {
+		return false;
+	}
+	return desc->plugin->is_blockdevice (desc);
 }
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
