@@ -307,24 +307,22 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	ut64 bin_info;
 	ut64 arenas;
 	GHT arena = GHT_MAX; //, bin = GHT_MAX;
-	arena_t *ar;
+	arena_t *ar = NULL;
 	arena_bin_info_t *b;
 	switch (input[0]) {
 	case ' ':
 		ar = R_NEW0 (arena_t);
 		if (!ar) {
-			return;
+			break;
 		}
 		b = R_NEW0 (arena_bin_info_t);
 		if (!b) {
-			free (ar);
-			return;
+			break;
 		}
 		if (!GH(r_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
 			eprintf ("Error resolving je_arena_bin_info\n");
-			free (ar);
 			free (b);
-			return;
+			break;
 		}
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			r_core_read_at (core, arenas, (ut8 *)&arenas, sizeof (GHT));
@@ -332,7 +330,6 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 			for (;;) {
 				r_core_read_at (core, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
-					R_FREE (ar);
 					R_FREE (b);
 					break;
 				}
@@ -373,9 +370,9 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 			}
 		}
 		PRINT_GA ("}\n");
-		free (ar);
 		break;
 	}
+	free (ar);
 }
 
 static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
