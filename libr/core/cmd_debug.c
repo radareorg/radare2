@@ -3764,11 +3764,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				addr += aop.size;
 			}
 			r_debug_reg_set (core->dbg, "PC", addr);
-			if (bpi) r_core_cmd0 (core, delb);
+			if (bpi) {
+				r_core_cmd0 (core, delb);
+			}
 			break;
 		}
 	case 'o': // "dso"
-		{
+		if (r_config_get_i (core->config, "cfg.debug")) {
 			char delb[128] = R_EMPTY;
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
@@ -3777,8 +3779,10 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_step_over (core->dbg, times);
 			if (bpi) r_core_cmd0 (core, delb);
-			break;
+		} else {
+			r_core_cmdf (core, "aeso%s", input + 2);
 		}
+		break;
 	case 'b': // "dsb"
 		{
 			if (!r_debug_step_back (core->dbg)) {
