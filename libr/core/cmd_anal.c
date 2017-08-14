@@ -2048,7 +2048,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			int i;
 			char *out, *cmd, *regname, *tmp;
 			char *subvec_str = r_str_new ("");
-			char *json_str = NULL;
+			char *json_str = r_str_new ("");
+			// if json_str initialize to NULL, it's possible for afcrj to output a (null)
+			// subvec_str and json_str should be valid until exiting this code block
 			bool json = input[3] == 'j'? true: false;
 			for (i = 0; i <= 11; i++) {
 				if (i == 0) {
@@ -2075,12 +2077,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					free (out);
 				}
 				free (regname);
-				if (strlen (subvec_str) == 0) {
+				if (!subvec_str[0]) {
 					continue;
 				}
 				switch (i) {
 				case 0: {
-					json_str = r_str_newf (",\"ret\":%s", subvec_str + 1);
+					tmp = json_str;
+					json_str = r_str_newf ("%s,\"ret\":%s", json_str, subvec_str + 1);
+					free (tmp);
 				} break;
 				case 6: {
 					tmp = json_str;
@@ -2098,10 +2102,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (subvec_str);
 				subvec_str = r_str_new ("");
 			}
-			if (json && strlen (json_str)) {
+			if (json && json_str[0]) {
 				r_cons_printf ("{%s}\n", json_str + 1);
-				free (json_str);
 			}
+			free (subvec_str);
+			free (json_str);
 		} break;
 		case ' ': {
 			char *cc = r_str_chop (strdup (input + 3));
