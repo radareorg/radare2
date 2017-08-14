@@ -664,6 +664,10 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 	int i, ret = -1, orig_len = 0;
 	ut8 *data = NULL, *orig_bytes = NULL;
 
+	/* io->off is in maddr, but r_io_peek_at works in vaddr
+	 * FIXME: in some cases, r_io_seek sets io->off in vaddr */
+	ut64 vaddr = r_io_section_maddr_to_vaddr(io, maddr);
+
 	/* check section permissions */
 	if (io->enforce_rwx & R_IO_WRITE) {
 		if (!(r_io_section_get_rwx (io, io->off) & R_IO_WRITE)) {
@@ -679,7 +683,7 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 		goto cleanup;
 	}
 
-	orig_len = r_io_peek_at (io, io->off, orig_bytes, len);
+	orig_len = r_io_peek_at (io, vaddr, orig_bytes, len);
 
 	if (io->cached) {
 		ret = r_io_cache_write (io, io->off, buf, len);
@@ -706,7 +710,7 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			goto cleanup;
 		}
 		// memset (data, io->Oxff, len);
-		r_io_peek_at (io, io->off, data, len);
+		r_io_peek_at (io, vaddr, data, len);
 		for (i = 0; i < len; i++) {
 			data[i] = buf[i] &
 				io->write_mask_buf[i % io->write_mask_len];
