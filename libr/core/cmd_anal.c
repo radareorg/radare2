@@ -4237,6 +4237,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	RSyscallItem *si;
 	RListIter *iter;
 	RList *list;
+	RNum *num = NULL;
 	char *out;
 	int n;
 
@@ -4244,15 +4245,15 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	case 'c': // "asc"
 		if (input[1] == 'a') {
 			if (input[2] == ' ') {
-				if ((n = atoi (input + 2)) > 0) {
+				if (!isalpha (input[3]) && (n = r_num_math (num, input + 3)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si)
 						r_cons_printf (".equ SYS_%s %d\n", si->name, n);
 					else eprintf ("Unknown syscall number\n");
 				} else {
-					n = r_syscall_get_num (core->anal->syscall, input + 2);
+					n = r_syscall_get_num (core->anal->syscall, input + 3);
 					if (n != -1) {
-						r_cons_printf (".equ SYS_%s %d\n", input + 2, n);
+						r_cons_printf (".equ SYS_%s %d\n", input + 3, n);
 					} else {
 						eprintf ("Unknown syscall name\n");
 					}
@@ -4267,7 +4268,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == ' ') {
-				if ((n = atoi (input + 2)) > 0) {
+				if (!isalpha (input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si)
 						r_cons_printf ("#define SYS_%s %d\n", si->name, n);
@@ -4295,7 +4296,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
-			if ((n = atoi (input + 2)) > 0) {
+			if (!isalpha (input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
 				si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si)
 					r_cons_println (si->name);
