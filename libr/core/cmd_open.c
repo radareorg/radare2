@@ -350,17 +350,17 @@ R_API void r_core_file_reopen_in_malloc (RCore *core) {
 	RCoreFile *f;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
-		ut64 sz = r_io_desc_size (core->io, f->desc);
+		ut64 sz = r_io_desc_size (f->desc);
 		ut8 *buf = calloc (sz, 1);
 		if (!buf) {
 			eprintf ("Cannot allocate %d\n", (int)sz);
 			continue;
 		}
-		(void)r_io_pread (core->io, 0, buf, sz);
+		(void)r_io_pread_at (core->io, 0, buf, sz);
 		char *url = r_str_newf ("malloc://%d", (int)sz);
 		RIODesc *desc = r_io_open (core->io, url, R_IO_READ | R_IO_WRITE, 0);
 		if (desc) {
-			r_io_close (core->io, f->desc);
+			r_io_close (core->io, f->desc->fd);
 			f->desc = desc;
 			(void)r_io_write_at (core->io, 0, buf, sz);
 		} else {
@@ -425,6 +425,27 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 }
 
 
+static bool desc_list_cb(void *user, void *data, ut32 id) {
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)data;
+	RIOMap *map;
+	SdbListIter *iter;
+	p->cb_printf ("%2d %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
+			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
+			desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
+	if (desc->io && desc->io->va && desc->io->maps) {
+		ls_foreach_prev (desc->io->maps, iter, map) {
+			if (map->fd == desc->fd) {
+				p->cb_printf ("\t+0x%"PFMT64x" 0x%"PFMT64x
+					" - 0x%"PFMT64x" : %s : %s\n", map->delta,
+					map->from, map->to, r_str_rwx_i (map->flags), "");
+			}
+		}
+	}
+	return true;
+}
+
+
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
@@ -437,12 +458,14 @@ static int cmd_open(void *data, const char *input) {
 	RListIter *iter;
 
 	switch (*input) {
+#if 0
 	case '=':
 		r_io_desc_list_visual (core->io, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		break;
+#endif
 	case '\0':
-		r_core_file_list (core, (int)(*input));
+		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
 		break;
 	case '*':
 		if ('?' == input[1]) {
@@ -474,7 +497,7 @@ static int cmd_open(void *data, const char *input) {
 					*filename = 0;
 					addr = r_num_math (core->num, arg);
 					r_bin_load_io (core->bin, desc, addr, 0, 0);
-					r_io_close (core->io, desc);
+					r_io_close (core->io, desc->fd);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("Cannot open %s\n", filename + 1);
@@ -523,7 +546,7 @@ static int cmd_open(void *data, const char *input) {
 				int count = 0;
 				r_list_foreach (core->files, iter, f) {
 					if (count == nth) {
-						r_io_raise (core->io, num);
+						r_io_use_fd (core->io, f->desc->fd);
 						break;
 					}
 					count++;
@@ -620,8 +643,8 @@ static int cmd_open(void *data, const char *input) {
 				core->switch_file_view = 0;
 				r_list_foreach (core->files, iter, f) {
 					if (f->desc->fd == num) {
-						r_io_raise (core->io, num);
-						core->switch_file_view = 1;
+						r_io_use_fd (core->io, num);
+						//core->switch_file_view = 1;
 						// raise rbinobj too
 						int binfile_num = find_binfile_id_by_fd (core->bin, num);
 						r_core_bin_raise (core, binfile_num, -1);

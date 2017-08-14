@@ -2255,7 +2255,7 @@ R_API char *r_str_utf16_decode (const ut8 *s, int len) {
 	return result;
 }
 
-R_API char *r_str_utf16_encode (const char *s, int len) {
+R_API char *r_str_utf16_encode(const char *s, int len) {
 	int i;
 	char ch[4], *d, *od, *tmp;
 	if (!s) {

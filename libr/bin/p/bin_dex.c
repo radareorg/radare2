@@ -862,7 +862,7 @@ static RList *strings(RBinFile *arch) {
 				free (ptr->string);
 				continue;
 			}
-			ptr->vaddr = ptr->paddr = bin->strings[i];
+			ptr->vaddr = ptr->paddr = off;
 			ptr->size = len;
 			ptr->length = len;
 			ptr->ordinal = i+1;

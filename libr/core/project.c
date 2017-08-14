@@ -43,8 +43,7 @@ static char *projectScriptPath(RCore *core, const char *file) {
 		if (!is_valid_project_name (file)) {
 			return NULL;
 		}
-		prjfile = r_file_abspath (r_config_get (
-				core->config, "dir.projects"));
+		prjfile = r_file_abspath (r_config_get (core->config, "dir.projects"));
 		prjfile = r_str_append (prjfile, R_SYS_DIR);
 		prjfile = r_str_append (prjfile, file);
 		if (!r_file_exists (prjfile) || r_file_is_directory (prjfile)) {

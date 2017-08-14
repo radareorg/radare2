@@ -200,7 +200,9 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	if (b->mmap) {
 		b->buf = b->mmap->buf;
 		b->length = b->mmap->len;
-		if (b->length == 0) b->empty = 1;
+		if (!b->length) {
+			b->empty = 1;
+		}
 		return b;
 	}
 	r_buf_free (b);
