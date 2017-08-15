@@ -622,9 +622,6 @@ fail:
 
 int gdbr_step(libgdbr_t *g, int tid) {
 	char thread_id[64];
-	if (tid <= 0) {
-		tid = g->tid;
-	}
 	if (write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
 			     g->stub_features.multiprocess) < 0) {
 		return send_vcont (g, CMD_C_STEP, NULL);
@@ -635,9 +632,6 @@ int gdbr_step(libgdbr_t *g, int tid) {
 int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	char thread_id[64] = { 0 };
 	char command[16] = { 0 };
-	if (tid <= 0) {
-		tid = g->tid;
-	}
 	if (sig <= 0) {
 		strncpy (command, CMD_C_CONT, sizeof (command) - 1);
 	} else {
@@ -902,7 +896,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	signal (SIGINT, _sigint_handler);
 #endif
 
-	while ((ret = read_packet (g)) < 0) {}
+	while ((ret = read_packet (g)) < 0);
 
 	// Unset signal handler
 #if __WINDOWS__ && !__CYGWIN__

@@ -261,14 +261,17 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
-	gdbr_continue (desc, pid, tid, sig);
+	gdbr_continue (desc, pid, -1, sig); // Continue all threads
+	if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
+		if (desc->tid != desc->stop_reason.thread.tid) {
+			eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+		}
+		desc->tid = desc->stop_reason.thread.tid;
+	}
 	return desc->tid;
 }
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
-	int reason;
-	RList *threads_list;
-	RDebugPid *th;
 	check_connection (dbg);
 	if (!desc->stop_reason.is_valid) {
 		if (gdbr_stop_reason (desc) < 0) {
@@ -279,18 +282,16 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	desc->stop_reason.is_valid = false;
 	if (desc->stop_reason.thread.present) {
 		dbg->reason.tid = desc->stop_reason.thread.tid;
+		dbg->pid = desc->stop_reason.thread.pid;
+		dbg->tid = desc->stop_reason.thread.tid;
+		if (dbg->pid != desc->pid || dbg->tid != desc->tid) {
+			eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+			gdbr_select (desc, dbg->pid, dbg->tid);
+		}
 	}
 	dbg->reason.signum = desc->stop_reason.signum;
 	dbg->reason.type = desc->stop_reason.reason;
-	reason = desc->stop_reason.reason;
-	// Sync threads and switch to current thread
-	if ((threads_list = r_debug_gdb_threads (dbg, pid))) {
-		if ((th = (RDebugPid*) r_list_first (thread_list))) {
-			desc->tid = th->pid;
-		}
-		r_list_free (threads_list);
-	}
-	return reason;
+	return desc->stop_reason.reason;
 }
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
