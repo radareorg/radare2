@@ -25,14 +25,6 @@
 		vec->capacity = new_capacity; \
 	} while (0)
 
-R_API void **r_vector_append(RVector *vec, void *x) {
-	if (vec->len >= vec->capacity) {
-		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
-	}
-	vec->a[vec->len] = x;
-	return &vec->a[vec->len++];
-}
-
 R_API void r_vector_clear(RVector *vec, void (*elem_free)(void *)) {
 	if (elem_free) {
 		while (vec->len > 0) {
@@ -53,11 +45,11 @@ R_API RVector *r_vector_clone(RVector *vec) {
 		if (!vec->len) {
 			ret->a = NULL;
 		} else {
-			ret->a = malloc (sizeof(void *) * vec->len);
+			ret->a = malloc (sizeof (void *) * vec->len);
 			if (!ret->a) {
 				R_FREE (ret);
 			} else {
-				memcpy (ret->a, vec->a, sizeof(void *) * vec->len);
+				memcpy (ret->a, vec->a, sizeof (void *) * vec->len);
 			}
 		}
 	}
@@ -74,7 +66,7 @@ R_API void **r_vector_contains(RVector *vec, void *x) {
 	return NULL;
 }
 
-R_API void *r_vector_del_n(RVector *vec, int n) {
+R_API void *r_vector_delete_at(RVector *vec, int n) {
 	void *ret = vec->a[n];
 	vec->len--;
 	for (; n < vec->len; n++) {
@@ -116,6 +108,23 @@ R_API void **r_vector_insert(RVector *vec, int n, void *x) {
 	return &vec->a[n];
 }
 
+R_API void **r_vector_insert_range(RVector *vec, int n, void **first, void **last) {
+	if (last - first + vec->len > vec->capacity) {
+		RESIZE_OR_RETURN_NULL (R_MAX (NEXT_VECTOR_CAPACITY, last - first + vec->len));
+	}
+	int i;
+	for (i = vec->len; i > n; ) {
+		i--;
+		vec->a[last - first + i] = vec->a[i];
+	}
+	vec->len += last - first;
+	i = n;
+	while (first != last) {
+		vec->a[i++] = *first++;
+	}
+	return &vec->a[n];
+}
+
 R_API RVector *r_vector_new(void) {
 	return R_NEW0 (RVector);
 }
@@ -124,11 +133,19 @@ R_API void *r_vector_pop(RVector *vec) {
 	return vec->a[--vec->len];
 }
 
-R_API void *r_vector_pop_first(RVector *vec) {
-	return r_vector_del_n (vec, 0);
+R_API void *r_vector_pop_front(RVector *vec) {
+	return r_vector_delete_at (vec, 0);
 }
 
-R_API void **r_vector_prepend(RVector *vec, void *x) {
+R_API void **r_vector_push(RVector *vec, void *x) {
+	if (vec->len >= vec->capacity) {
+		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
+	}
+	vec->a[vec->len] = x;
+	return &vec->a[vec->len++];
+}
+
+R_API void **r_vector_push_front(RVector *vec, void *x) {
 	return r_vector_insert (vec, 0, x);
 }
 
@@ -151,16 +168,16 @@ static void quick_sort(void **a, int n, RVectorComparator cmp_less) {
 	if (n <= 1) return;
 	int i = rand() % n, j = 0;
 	void *t, *pivot = a[i];
-  a[i] = a[n - 1];
-  for (i = 0; i < n - 1; i++)
-    if (cmp_less (a[i], pivot)) {
-      t = a[i];
-      a[i] = a[j];
-      a[j] = t;
-      j++;
-    }
-  a[n - 1] = a[j];
-  a[j] = pivot;
+	a[i] = a[n - 1];
+	for (i = 0; i < n - 1; i++)
+		if (cmp_less (a[i], pivot)) {
+			t = a[i];
+			a[i] = a[j];
+			a[j] = t;
+			j++;
+		}
+	a[n - 1] = a[j];
+	a[j] = pivot;
 	quick_sort (a, j, cmp_less);
 	quick_sort (a + j + 1, n - j - 1, cmp_less);
 }
@@ -182,15 +199,15 @@ int main () {
 	ptrdiff_t i;
 	void **it;
 	RVector *v = r_vector_new ();
-	assert (*r_vector_append (v, (void *)1337) == (void *)1337);
+	assert (*r_vector_push (v, (void *)1337) == (void *)1337);
 	for (i = 0; i < 10; i++) {
-		r_vector_append (v, (void *)i);
+		r_vector_push (v, (void *)i);
 		assert (v->len == i + 2);
 	}
-	assert (r_vector_pop_first (v) == (void *)1337);
+	assert (r_vector_pop_front (v) == (void *)1337);
 	assert (r_vector_contains (v, (void *)9));
 
-	assert (r_vector_del_n (v, 9) == (void *)9);
+	assert (r_vector_delete_at (v, 9) == (void *)9);
 	assert (!r_vector_contains (v, (void *)9));
 
 	i = 0;
@@ -214,20 +231,20 @@ int main () {
 	r_vector_clear (&s, NULL);
 
 	r_vector_reserve (&s, 10);
-	r_vector_append (&s, (void *)-1);
+	r_vector_push (&s, (void *)-1);
 	assert (s.len == 1 && s.capacity == 10);
 	for (i = 0; i < 20; i++) {
-		r_vector_append (&s, (void *)i);
+		r_vector_push (&s, (void *)i);
 	}
 	r_vector_reserve (&s, 10);
 	r_vector_clear (&s, NULL);
 
 	{
+		void *a[] = {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
 		RVector s = {0};
 		int l;
-		for (i = 0; i < 10; i += 2) {
-			r_vector_append (&s, (void *)i);
-		}
+		r_vector_insert_range (&s, 0, a + 2, a + 5);
+		r_vector_insert_range (&s, 0, a, a + 2);
 
 #define CMP_LESS(x, y) x < y
 		r_vector_lower_bound (&s, (void *)4, l, CMP_LESS);
@@ -249,11 +266,11 @@ int main () {
 
 		r_vector_clear (&s, NULL);
 
-		r_vector_append (&s, strdup ("Charmander"));
-		r_vector_append (&s, strdup ("Squirtle"));
-		r_vector_append (&s, strdup ("Bulbasaur"));
-		r_vector_append (&s, strdup ("Meowth"));
-		r_vector_append (&s, strdup ("Caterpie"));
+		r_vector_push (&s, strdup ("Charmander"));
+		r_vector_push (&s, strdup ("Squirtle"));
+		r_vector_push (&s, strdup ("Bulbasaur"));
+		r_vector_push (&s, strdup ("Meowth"));
+		r_vector_push (&s, strdup ("Caterpie"));
 		r_vector_sort (&s, my_cmp);
 
 #define CMP_LESS(x, y) strcmp (x, y) < 0
