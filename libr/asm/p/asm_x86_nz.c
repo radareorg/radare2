@@ -71,6 +71,7 @@ static ut64 getnum(RAsm *a, const char *s);
 #define SPECIAL_MASK 0x00000007
 
 #define MAX_OPERANDS 3
+#define MAX_REPOP_LENGTH 20
 
 const ut8 SEG_REG_PREFIXES[] = {0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65};
 
@@ -110,7 +111,7 @@ typedef struct operand_t {
 			bool is_good_flag;
 		};
 		struct {
-			char rep_op[20];
+			char rep_op[MAX_REPOP_LENGTH];
 		};
 	};
 } Operand;
@@ -2392,7 +2393,7 @@ static void parse_segment_offset(RAsm *a, const char *str, size_t *pos,
 	}
 }
 // Parse operand
-static int parseOperand(RAsm *a, const char *str, Operand *op) {
+static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 	size_t pos, nextpos = 0;
 	x86newTokenType last_type;
 	int size_token = 1;
@@ -2535,7 +2536,10 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
 			if (!(a->num) ) {
-				strncpy (op->rep_op, str, 19);
+				if (isrepop) {
+					strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
+					op->rep_op[MAX_REPOP_LENGTH] = '\0';
+				}
 				return nextpos;
 			}
 			op->type = OT_CONSTANT;
@@ -2551,7 +2555,8 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 			}
 			op->immediate = getnum (a, str);
 		} else if (op->reg < X86R_UNDEFINED) {
-			strncpy (op->rep_op, str, 19);
+			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
+			op->rep_op[MAX_REPOP_LENGTH] = '\0';
 		}
 	} else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
@@ -2570,6 +2575,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 
 static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
+	bool isrepop = false;
 	if (!strncmp (op, "bnd ", 4)) {
 		out->has_bnd = true;
 		op += 4;
@@ -2593,7 +2599,10 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 		out->is_short = true;
 		args += 5;
 	}
-	parseOperand (a, args, &(out->operands[0]));
+	if (!strncmp (out->mnemonic, "rep", 3)) {
+		isrepop = true;
+	}
+	parseOperand (a, args, &(out->operands[0]), isrepop);
 	out->operands_count = 1;
 	while (out->operands_count <= MAX_OPERANDS) {
 		args = strchr (args, ',');
@@ -2601,7 +2610,7 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 			break;
 		}
 		args++;
-		parseOperand (a, args, &(out->operands[out->operands_count]));
+		parseOperand (a, args, &(out->operands[out->operands_count]), isrepop);
 		out->operands_count++;
 	}
 	return 0;
