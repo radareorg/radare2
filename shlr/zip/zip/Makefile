@@ -48,10 +48,10 @@ endif
 OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_close.o zip_delete.o zip_dir_add.o zip_dirent.o \
 	zip_discard.o zip_entry.o zip_err_str.o zip_error.o \
-	zip_error_clear.o zip_error_get.o zip_error_get_sys_type.o \
+	zip_error_get.o zip_error_get_sys_type.o \
 	zip_error_strerror.o zip_error_to_str.o zip_extra_field.o \
 	zip_extra_field_api.o zip_fclose.o zip_fdopen.o \
-	zip_file_add.o zip_file_error_clear.o zip_file_error_get.o \
+	zip_file_add.o zip_file_error_get.o \
 	zip_file_get_comment.o zip_file_get_offset.o \
 	zip_file_rename.o zip_file_replace.o zip_file_set_comment.o \
 	zip_file_strerror.o zip_filerange_crc.o zip_fopen.o \

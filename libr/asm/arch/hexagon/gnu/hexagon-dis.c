@@ -48,7 +48,7 @@ hexagon_dis_inst(
       if (!hexagon_dis_opcode(instrBuffer, insn, address, opcode, &errmsg)) {
         /* Some kind of error! */
         if (errmsg) {
-          (*info->fprintf_func) (info->stream, errmsg);
+          (*info->fprintf_func) (info->stream, "%s", errmsg);
           strcpy(instrBuffer, "");
         }
       }

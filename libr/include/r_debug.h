@@ -287,6 +287,7 @@ typedef struct r_debug_t {
 	const char *creg; // current register value
 	RBreakpoint *bp;
 	void *user; // XXX(jjd): unused?? meant for caller's use??
+	char *snap_path;
 
 	/* io */
 	PrintfCallback cb_printf;
@@ -582,11 +583,12 @@ R_API void r_debug_session_list(RDebug *dbg);
 R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
 R_API bool r_debug_session_delete(RDebug *dbg, int idx);
 R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg);
+R_API void r_debug_session_path(RDebug *dbg, const char *path);
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session);
-R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
 R_API void r_debug_session_save(RDebug *dbg, const char *file);
+R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API int r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
 

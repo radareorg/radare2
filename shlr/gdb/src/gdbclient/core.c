@@ -222,6 +222,7 @@ int gdbr_disconnect(libgdbr_t *g) {
 	free (reg_cache.buf);
 	if (g->target.valid) {
 		free (g->target.regprofile);
+		free (g->registers);
 	}
 	g->connected = 0;
 	return 0;

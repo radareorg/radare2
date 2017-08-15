@@ -56,6 +56,7 @@ endif
 r_debug = library('r_debug', files,
   include_directories: [platform_inc, include_directories([
 	'../bin/format/elf',
+	'../../shlr/windbg'
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   link_with: [r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search, r_cons, r_lang, r_egg],

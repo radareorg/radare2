@@ -3234,6 +3234,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int i, nargs;
 	ut64 at = p2v (ds, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return;
+	}
 	if (!esil) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;
@@ -3263,13 +3266,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_anal_esil_set_pc (esil, at);
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
-	hc = r_config_hold_new (core->config);
-	if (!hc) {
-		if (hook_mem_write) {
-			esil->cb.hook_mem_write = hook_mem_write;
-		}
-		return;
-	}
 	r_config_save_num (hc, "io.cache", NULL);
 	r_config_set (core->config, "io.cache", "true");
 	if (!ds->show_comments) {
@@ -3873,6 +3869,9 @@ toro:
 	retry:
 		if (len < 4) {
 			len = 4;
+		}
+		if (nbuf) {
+			free (nbuf);
 		}
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {

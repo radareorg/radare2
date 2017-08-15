@@ -78,7 +78,7 @@ typedef struct r_cmd_t {
 
 // TODO WIP
 typedef struct r_cmd_descriptor_t {
-	const char *name;
+	const char *cmd;
 	const char **help_msg;
 	const char **help_detail;
 	const char **help_detail2;

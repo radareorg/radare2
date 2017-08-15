@@ -1368,10 +1368,10 @@ static int cb_io_oxff(void *user, void *data) {
 static int cb_filepath(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_config_set (core->config, "file.lastpath", node->value);
 	char *pikaboo = strstr (node->value, "://");
 	if (pikaboo) {
 		if (pikaboo[3] == '/') {
+			r_config_set (core->config, "file.lastpath", node->value);
 			char *ovalue = node->value;
 			node->value = strdup (pikaboo + 3);
 			free (ovalue);
@@ -1379,6 +1379,7 @@ static int cb_filepath(void *user, void *data) {
 		}
 		return false;
 	}
+	r_config_set (core->config, "file.lastpath", node->value);
 	return true;
 }
 
@@ -1935,8 +1936,18 @@ static int cb_malloc(void *user, void *data) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
  			core->dbg->malloc = data;
  		}
- 
+
  	}
+	return true;
+}
+
+static int cb_dbgsnap(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+
+	if (node->value){
+		r_debug_session_path (core->dbg, node->value);
+	}
 	return true;
 }
 
@@ -2242,6 +2253,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("diff.levenstein", "false", "Use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
+	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	SETPREF ("dir.magic", R_MAGIC_PATH, "Path to r_magic files");
 #if __WINDOWS__
 	SETPREF ("dir.plugins", "plugins", "Path to plugin files to be loaded at startup");

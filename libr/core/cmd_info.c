@@ -94,7 +94,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	}
 	if (res) {
 		if (*res) {
-			printf ("%s\n", res);
+			r_cons_printf ("%s\n", res);
 		}
 		free (res);
 		return false;
@@ -759,7 +759,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		input++;
-		if ((*input == 'j' || *input == 'q') && !input[1]) {
+		if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
 			break;
 		}
 	}

@@ -186,7 +186,9 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int __close(RIODesc *fd) {
-	// TODO
+	gdbr_disconnect (desc);
+	gdbr_cleanup (desc);
+	free (desc);
 	return -1;
 }
 

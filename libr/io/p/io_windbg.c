@@ -25,9 +25,6 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	void *io_ctx;
-	WindCtx *ctx;
-
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
@@ -37,20 +34,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 
-	io_ctx = iob_open (file + 9);
+	void *io_ctx = iob_open (file + 9);
 	if (!io_ctx) {
 		eprintf ("Could not open the pipe\n");
 		return NULL;
 	}
-	eprintf ("Opened pipe %s with fd %p\n", file+9, io_ctx);
+	eprintf ("Opened pipe %s with fd %p\n", file + 9, io_ctx);
 
-	ctx = windbg_ctx_new (io_ctx);
-
+	WindCtx *ctx = windbg_ctx_new (io_ctx);
 	if (!ctx) {
 		eprintf ("Failed to initialize windbg context\n");
 		return NULL;
 	}
-
 	return r_io_desc_new (&r_io_plugin_windbg, -1, file, true, mode, ctx);
 }
 
@@ -58,7 +53,6 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd) {
 		return -1;
 	}
-
 	if (windbg_get_target (fd->data)) {
 		ut64 va;
 		if (!windbg_va_to_pa (fd->data, io->off, &va)) {
@@ -66,7 +60,6 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		}
 		return windbg_write_at_phys (fd->data, buf, va, count);
 	}
-
 	return windbg_write_at (fd->data, buf, io->off, count);
 }
 

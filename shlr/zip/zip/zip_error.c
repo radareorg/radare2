@@ -113,3 +113,24 @@ _zip_error_set_from_source(struct zip_error *err, struct zip_source *src)
     zip_source_error(src, &ze, &se);
     _zip_error_set(err, ze, se);
 }
+
+
+
+ZIP_EXTERN void
+zip_file_error_clear(struct zip_file *zf)
+{
+	if (zf) {
+		_zip_error_clear(&zf->error);
+	}
+}
+
+
+
+ZIP_EXTERN void
+zip_error_clear(struct zip *za)
+{
+    if (za == NULL)
+	return;
+
+    _zip_error_clear(&za->error);
+}

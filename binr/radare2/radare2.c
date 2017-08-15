@@ -836,8 +836,10 @@ int main(int argc, char **argv, char **envp) {
 						    && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
 							if (newpath) {
-								free (fh->desc->name);
-								fh->desc->name = newpath;
+								if (fh && fh->desc) {
+									free (fh->desc->name);
+									fh->desc->name = newpath;
+								}
 								if (!addr) {
 									addr = r_debug_get_baddr (r.dbg, newpath);
 								}
@@ -853,8 +855,10 @@ int main(int argc, char **argv, char **envp) {
 								r_core_bin_load (&r, filepath, addr);
 							} else if ((filepath = get_file_in_cur_dir (filepath))) {
 								// Present in local directory
-								free (fh->desc->name);
-								fh->desc->name = (char*) filepath;
+								if (fh && fh->desc) {
+									free (fh->desc->name);
+									fh->desc->name = (char*) filepath;
+								}
 								if (!addr) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}

@@ -87,7 +87,6 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 			reason = R_DEBUG_REASON_INT;
 			break;
 		}
-		free (pkt);
 	}
 	free (pkt);
 	return reason;

@@ -384,17 +384,11 @@ R_API char *r_sys_getenv(const char *key) {
 }
 
 R_API char *r_sys_getdir(void) {
-	char *ret;
 #if __WINDOWS__ && !__CYGWIN__
-	char *cwd = _getcwd (NULL, 0);
+	return _getcwd (NULL, 0);
 #else
-	char *cwd = getcwd (NULL, 0);
+	return getcwd (NULL, 0);
 #endif
-	ret = cwd ? strdup (cwd) : NULL; 
-	if (cwd) {
-		free (cwd);
-	}
-	return ret;
 }
 
 R_API int r_sys_chdir(const char *s) {

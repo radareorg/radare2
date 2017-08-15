@@ -67,7 +67,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, ret, len;
 	int tokcount, matchcount, count = 0;
-	int matches = 0;
+	int matches = 0, addrbytes = core->assembler->addrbytes;
 
 	if (!*input) {
 		return NULL;
@@ -89,14 +89,14 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount = 0; tokcount < (sizeof (tokens) / sizeof (char*)) - 1; tokcount++) {
+	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ";");
 		if (!tok) break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
-	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
+	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
 		matches = 0;
 		if (r_cons_is_breaked ()) {
 			break;
@@ -106,23 +106,16 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			break;
 		}
 		idx = 0, matchcount = 0;
-		while (idx < core->blocksize) {
+		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
 			r_asm_set_pc (core->assembler, addr);
-			op.buf_asm[0] = 0;
-			op.buf_hex[0] = 0;
-			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
+			if (!(len = r_asm_disassemble (core->assembler, &op, buf + addrbytes * idx,
+																		 core->blocksize - addrbytes * idx))) {
 				idx = (matchcount)? tidx + 1: idx + 1;
 				matchcount = 0;
 				continue;
 			}
-			matches = true;
-			if (!strcmp (op.buf_asm, "unaligned")) {
-				matches = false; 
-			}
-			if (!strcmp (op.buf_asm, "invalid")) {
-				matches = false;
-			}
+			matches = strcmp (op.buf_asm, "invalid") && strcmp (op.buf_asm, "unaligned");
 			if (matches && tokens[matchcount]) {
 				if (!regexp) {
 					matches = strstr(op.buf_asm, tokens[matchcount]) != NULL;
@@ -168,7 +161,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 							goto beach;
 						}
 					}
-				} else  if (!matchcount) {
+				} else if (!matchcount) {
 					tidx = idx;
 					matchcount++;
 					idx += len;
@@ -182,7 +175,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matchcount = 0;
 			}
 		}
-		at += OPSZ;
 	}
 	r_cons_break_pop ();
 	r_asm_set_pc (core->assembler, toff);

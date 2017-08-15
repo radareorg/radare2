@@ -209,7 +209,7 @@ typedef struct r_cons_palette_t {
 	int rainbow_sz; // size of rainbow
 } RConsPalette;
 
-R_API const char *r_cons_rainbow_get(int idx, int last, bool bg);
+R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(void);
 R_API void r_cons_rainbow_new(int sz);
 

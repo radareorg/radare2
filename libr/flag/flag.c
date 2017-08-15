@@ -110,7 +110,7 @@ static int set_name(RFlagItem *item, const char *name) {
 	r_str_chop (item->name);
 	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
 	free (item->realname);
-	item->realname = strdup (item->name);
+	item->realname = item->name;
 	return true;
 }
 
@@ -162,10 +162,10 @@ R_API void r_flag_item_free(RFlagItem *item) {
 		free (item->alias);
 		/* release only one of the two pointers if they are the same */
 		if (item->name != item->realname) {
-			free (item->name); 
+			free (item->name);
 		}
 		free (item->realname);
-		R_FREE (item);
+		free (item);
 	}
 }
 
@@ -176,6 +176,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	}
 	r_skiplist_free (f->by_off);
 	ht_free (f->ht_name);
+
 	r_list_free (f->flags);
 	r_list_free (f->spacestack);
 	r_num_free (f->num);
@@ -506,7 +507,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		}
 		if (!set_name (item, name)) {
 			eprintf ("Invalid flag name '%s'.\n", name);
-			free (item);
+			r_flag_item_free (item);
 			return NULL;
 		}
 		//item share ownership prone to uaf, that is why only
@@ -552,7 +553,7 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 /* add/replace/remove the realname of a flag item */
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 	if (item) {
-		if (item->realname != item->name) {
+		if (item->name != item->realname) {
 			free (item->realname);
 		}
 		item->realname = ISNULLSTR (realname) ? NULL : strdup (realname);
@@ -584,14 +585,11 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 /* unset the given flag item.
  * returns true if the item is successfully unset, false otherwise.
  *
- * NOTE: the item is not freed. */
+ * NOTE: the item is freed. */
 R_API int r_flag_unset(RFlag *f, RFlagItem *item) {
-	RListFree orig = f->flags->free;
 	remove_offsetmap (f, item);
 	ht_delete (f->ht_name, item->name);
-	f->flags->free = NULL;
 	r_list_delete_data (f->flags, item);
-	f->flags->free = orig;
 	return true;
 }
 
@@ -600,7 +598,6 @@ R_API int r_flag_unset(RFlag *f, RFlagItem *item) {
 R_API int r_flag_unset_off(RFlag *f, ut64 off) {
 	RFlagItem *item = r_flag_get_i (f, off);
 	if (item && r_flag_unset (f, item)) {
-		R_FREE (item);
 		return true;
 	}
 	return false;
@@ -618,7 +615,6 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 		if (!glob || r_str_glob (flag->name, glob)) {
 			it.n = iter->n;
 			r_flag_unset (f, flag);
-			free (flag);
 			iter = &it;
 			n++;
 		}
@@ -630,11 +626,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
  * returns true if the item is found and unset, false otherwise. */
 R_API int r_flag_unset_name(RFlag *f, const char *name) {
 	RFlagItem *item = ht_find (f->ht_name, name, NULL);
-	if (item && r_flag_unset (f, item)) {
-		R_FREE (item);
-		return true;
-	}
-	return false;
+	return item && r_flag_unset (f, item);
 }
 
 /* unset all flag items in the RFlag f */

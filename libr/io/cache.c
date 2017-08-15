@@ -171,32 +171,18 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-	int l, ret, da, db;
-	int covered = 0;
+	int l, covered = 0;
 	RListIter *iter;
 	RIOCache *c;
-	if (len < 0) {
-		return 0;
-	}
-
 	r_list_foreach (io->cache, iter, c) {
-		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-			if (ret>0) {
-				da = ret;
-				db = 0;
-				l = c->size;
-			} else if (ret<0) {
-				da = 0;
-				db = -ret;
-				l = c->size - db;
+		if (addr < c->to && c->from < addr + len) {
+			if (addr < c->from) {
+				l = R_MIN (addr + len - c->from, c->size);
+				memcpy (buf + c->from - addr, c->data, l);
 			} else {
-				da = 0;
-				db = 0;
-				l = c->size;
+				l = R_MIN (c->to - addr, len);
+				memcpy (buf, c->data + addr - c->from, l);
 			}
-			if ((l+da)>len) l = len-da;					//say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
-			if (l<1) l = 1; // XXX: fail
-			else memcpy (buf+da, c->data+db, l);
 			covered += l;
 		}
 	}

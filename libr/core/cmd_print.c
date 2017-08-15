@@ -52,7 +52,7 @@ static const char *help_msg_at[] = {
 	"~", "word[2]", "grep 3rd column of lines matching word",
 	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-	"@", " addr[!blocksize]", "temporary set a new blocksize",
+	"@", " [addr]!blocksize", "temporary set a new blocksize",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
 	"@e:", "k=v,k=v", "temporary change eval vars",
@@ -922,14 +922,6 @@ static void helpCmdTasks(RCore *core) {
 	r_core_cmd_help (core, help_msg_amper);
 }
 
-static void helpCmdForeach(RCore *core) {
-	r_core_cmd_help (core, help_msg_at_at);
-}
-
-static void helpCmdAt(RCore *core) {
-	r_core_cmd_help (core, help_msg_at);
-}
-
 static void print_format_help_help_help_help(RCore *core) {
 	const char *help_msg[] = {
 		"    STAHP IT!!!", "", "",
@@ -1217,7 +1209,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch;
-	const char *colors[10] = {NULL};
+	char *colors[10] = {NULL};
 	for (i = 0; i < 10; i++) {
 		colors[i] = r_cons_rainbow_get (i, 10, false);
 	}
@@ -1238,20 +1230,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	rows = len / nb_cols;
 
 	chars = calloc (nb_cols * 20, sizeof (char));
-	if (!chars) {
-		return;
-	}
+	if (!chars) goto err_chars;
 	note = calloc (nb_cols, sizeof (char *));
-	if (!note) {
-		free (chars);
-		return;
-	}
+	if (!note) goto err_note;
 	bytes = calloc (nb_cons_cols * 20, sizeof (char));
-	if (!bytes) {
-		free (chars);
-		free (note);
-		return;
-	}
+	if (!bytes) goto err_bytes;
 #if 1
 	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr)) - 8;
 	char addrpad[32];
@@ -1473,9 +1456,16 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		r_cons_newline ();
 		addr += nb_cols;
 	}
-	free (note);
+
 	free (bytes);
+ err_bytes:
+	free (note);
+ err_note:
 	free (chars);
+ err_chars:
+	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {
+		free (colors[i]);
+	}
 }
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
@@ -1687,7 +1677,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (!r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i)) {
+		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
@@ -1881,6 +1871,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			}
 		}
 		i += opsz;
+		r_anal_op_fini (&op);
 	}
 	r_cons_printf ("  %d\n", i - oi);
 	if (bgcolor_in_heap) {
