@@ -289,6 +289,45 @@ static const char *help_msg_dp[] = {
 	NULL
 };
 
+static const char *help_msg_dr[] = {
+	"Usage: dr", "", "Registers commands",
+	"dr", "", "Show 'gpr' registers",
+	"dr", " <register>=<val>", "Set register value",
+	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
+	"dr=", "", "Show registers in columns",
+	"dr?", "<register>", "Show value of given register",
+	"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
+	"drc", " [name]", "Related to conditional flag registers",
+	"drC", "", "Show register profile comments",
+	"drd", "", "Show only different registers",
+	"drf", "", "Show fpu registers (80 bit long double)",
+	"drl", "[j]", "List all register names",
+	"drm", "", "Show multimedia packed registers",
+	"drm", " mmx0 0 32 = 12", "Set the first 32 bit word of the mmx reg to 12",
+	"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
+	"dro", "", "Show previous (old) values of registers",
+	"drp", "", "Display current register profile",
+	"drp", "[?] <file>", "Load register metadata file",
+	"drpi", "", "Display current internal representation of the register profile",
+	"drps", "", "Fake register profile size",
+	"drr", "", "Show registers references (telescoping)",
+	// TODO: 'drs' to swap register arenas and display old register valuez
+	"drs", "[?]", "Stack register states",
+	"drt", " 16", "Show 16 bit registers",
+	"drt", " 32", "Show 32 bit registers",
+	"drt", " 80", "Show 80 bit registers (long double)",
+	"drt", " all", "Show all registers",
+	"drt", " flg", "Show flag registers",
+	"drt", "[?]", "Show all register types",
+	"drw"," <hexnum>", "Set contents of the register arena",
+	"drx", "[?]", "Show all debug registers",
+	"drx", " idx addr len rwx", "Modify hardware breakpoint",
+	"drx-", "number", "Clear hardware breakpoint",
+	".dr", "*", "Include common register values in flags",
+	".dr", "-", "Unflag all registers",
+	NULL
+};
+
 static const char *help_msg_drp[] = {
 	"Usage:", "drp", " # Register profile commands",
 	"drp", "", "Show the current register profile",
@@ -307,6 +346,55 @@ static const char *help_msg_drt[] = {
 	"drt", " [size]", "Show all regs in the profile of size",
 	"drt", " [type]", "Show all regs in the profile of this type",
 	"drt", " [type] [size]", "Same as above for type and size",
+	NULL
+};
+
+static const char *help_msg_drx[] = {
+	"Usage: drx", "", "Hardware breakpoints commands",
+	"drx", "", "List all (x86?) hardware breakpoints",
+	"drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
+	"drx-", "<number>", "Clear hardware breakpoint",
+	NULL
+};
+
+static const char *help_msg_ds[] = {
+	"Usage: ds", "", "Step commands",
+	"ds", "", "Step one instruction",
+	"ds", " <num>", "Step <num> instructions",
+	"dsb", "", "Step back one instruction",
+	"dsf", "", "Step until end of frame",
+	"dsi", " <cond>", "Continue until condition matches",
+	"dsl", "", "Step one source line",
+	"dsl", " <num>", "Step <num> source lines",
+	"dso", " <num>", "Step over <num> instructions",
+	"dsp", "", "Step into program (skip libs)",
+	"dss", " <num>", "Skip <num> step instructions",
+	"dsu", "[?]<address>", "Step until address",
+	"dsui", "[r] <instr>", "Step until an instruction that matches `instr`, use dsuir for regex match",
+	"dsue", " <esil>", "Step until esil expression matches",
+	"dsuf", " <flag>", "Step until pc == flag matching name",
+	NULL
+};
+
+static const char *help_msg_dt[] = {
+	"Usage: dt", "", "Trace commands",
+	"dt", "", "List all traces ",
+	"dt", " [addr]", "Show trace info at address",
+	"dt%", "", "TODO",
+	"dt*", "", "List all traced opcode offsets",
+	"dt+"," [addr] [times]", "Add trace for address N times",
+	"dt-", "", "Reset traces (instruction/calls)",
+	"dtD", "", "Show dwarf trace (at*|rsc dwarf-traces $FILE)",
+	"dta", " 0x804020 ...", "Only trace given addresses",
+	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
+	"dtd", "", "List all traced disassembled",
+	"dte", "[?]", "Show esil trace logs (anal.trace)",
+	"dtg", "", "Graph call/ret trace",
+	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
+	"dtgi", "", "Interactive debug trace",
+	"dtr", "", "Show traces as range commands (ar+)",
+	"dts", "[?]", "Trace sessions",
+	"dtt", " [tag]", "Select trace tag (no arg unsets)",
 	NULL
 };
 
@@ -373,10 +461,12 @@ static void cmd_debug_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, dms);
 	DEFINE_CMD_DESCRIPTOR (core, do);
 	DEFINE_CMD_DESCRIPTOR (core, dp);
-	// TODO dr
+	DEFINE_CMD_DESCRIPTOR (core, dr);
 	DEFINE_CMD_DESCRIPTOR (core, drp);
 	DEFINE_CMD_DESCRIPTOR (core, drt);
-	// TODO dt
+	DEFINE_CMD_DESCRIPTOR (core, drx);
+	DEFINE_CMD_DESCRIPTOR (core, ds);
+	DEFINE_CMD_DESCRIPTOR (core, dt);
 	DEFINE_CMD_DESCRIPTOR (core, dte);
 	DEFINE_CMD_DESCRIPTOR (core, dts);
 	DEFINE_CMD_DESCRIPTOR (core, dx);
@@ -1853,45 +1943,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			core->num->value = off;
 			//r_reg_get_value (core->dbg->reg, r));
 		} else {
-			const char * help_message[] = {
-				"Usage: dr", "", "Registers commands",
-				"dr", "", "Show 'gpr' registers",
-				"dr", " <register>=<val>", "Set register value",
-				"dr=", "", "Show registers in columns",
-				"dr?", "<register>", "Show value of given register",
-				"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
-				"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
-				"drC", "", "Show register profile comments",
-				"drc", " [name]", "Related to conditional flag registers",
-				"drd", "", "Show only different registers",
-				"drl", "[j]", "List all register names",
-				"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-				"dro", "", "Show previous (old) values of registers",
-				"drp", "[?] <file>", "Load register metadata file",
-				"drp", "", "Display current register profile",
-				"drpi", "", "Display current internal representation of the register profile",
-				"drps", "", "Fake register profile size",
-				"drr", "", "Show registers references (telescoping)",
-				"drs", "[?]", "Stack register states",
-				"drt", "[?]", "Show all register types",
-				"drt", " flg", "Show flag registers",
-				"drt", " all", "Show all registers",
-				"drt", " 16", "Show 16 bit registers",
-				"drt", " 32", "Show 32 bit registers",
-				"drt", " 80", "Show 80 bit registers (long double)",
-				"drx", "[?]", "Show all debug registers",
-				"drx", " idx addr len rwx", "Modify hardware breakpoint",
-				"drx-", "number", "Clear hardware breakpoint",
-				"drf","","Show fpu registers (80 bit long double)",
-				"drm","","Show multimedia packed registers",
-				"drm"," mmx0 0 32 = 12","Set the first 32 bit word of the mmx reg to 12",
-				"drw"," <hexnum>", "Set contents of the register arena",
-				".dr", "*", "Include common register values in flags",
-				".dr", "-", "Unflag all registers",
-				NULL
-			};
-			// TODO: 'drs' to swap register arenas and display old register valuez
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_dr);
 		}
 		break;
 	case 'l': // "drl[j]"
@@ -2059,17 +2111,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			  } break;
 		case '?':
 		default:
-			  {
-				  const char * help_message[] = {
-					  "Usage: drx", "", "Hardware breakpoints commands",
-					  "drx", "", "List all (x86?) hardware breakpoints",
-					  "drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
-					  "drx-", "<number>", "Clear hardware breakpoint",
-					  NULL
-				  };
-				  r_core_cmd_help (core, help_message);
-			  }
-			  break;
+			r_core_cmd_help (core, help_msg_drx);
+			break;
 		}
 		break;
 	case 's': // "drs"
@@ -3634,24 +3677,6 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
-	const char * help_message[] = {
-		"Usage: ds", "", "Step commands",
-		"ds", "", "Step one instruction",
-		"ds", " <num>", "Step <num> instructions",
-		"dsb", "", "Step back one instruction",
-		"dsf", "", "Step until end of frame",
-		"dsi", " <cond>", "Continue until condition matches",
-		"dsl", "", "Step one source line",
-		"dsl", " <num>", "Step <num> source lines",
-		"dso", " <num>", "Step over <num> instructions",
-		"dsp", "", "Step into program (skip libs)",
-		"dss", " <num>", "Skip <num> step instructions",
-		"dsu", "[?]<address>", "Step until address",
-		"dsui", "[r] <instr>", "Step until an instruction that matches `instr`, use dsuir for regex match",
-		"dsue", " <esil>", "Step until esil expression matches",
-		"dsuf", " <flag>", "Step until pc == flag matching name",
-		NULL
-	};
 	if (strlen (input) > 2) {
 		times = atoi (input + 2);
 	}
@@ -3796,7 +3821,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		break;
 	case '?': // "ds?"
 	default:
-		r_core_cmd_help (core, help_message);
+		r_core_cmd_help (core, help_msg_ds);
 		return 0;
 	}
 	return 1;
@@ -3837,27 +3862,6 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_println (str);
 		return 0;
 	}
-	const char * help_message[] = {
-		"Usage: dt", "", "Trace commands",
-		"dt", "", "List all traces ",
-		"dt", " [addr]", "Show trace info at address",
-		"dt*", "", "List all traced opcode offsets",
-		"dt+"," [addr] [times]", "Add trace for address N times",
-		"dta", " 0x804020 ...", "Only trace given addresses",
-		"dt%", "", "TODO",
-		"dtt", " [tag]", "Select trace tag (no arg unsets)",
-		"dtr", "", "Show traces as range commands (ar+)",
-		"dtd", "", "List all traced disassembled",
-		"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-		"dtg", "", "Graph call/ret trace",
-		"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-		"dtgi", "", "Interactive debug trace",
-		"dte", "[?]", "Show esil trace logs (anal.trace)",
-		"dts", "[?]", "Trace sessions",
-		"dt-", "", "Reset traces (instruction/calls)",
-		"dtD", "", "Show dwarf trace (at*|rsc dwarf-traces $FILE)",
-		NULL
-	};
 
 	switch (input[0]) {
 	case 't':
@@ -3947,10 +3951,10 @@ static int cmd_debug(void *data, const char *input) {
 						core->anal, romem, stats, nonull);
 			}
 			switch (input[2]) {
-			case 0:
+			case 0: // "dte"
 				r_anal_esil_trace_list (core->anal->esil);
 				break;
-			case 'i': {
+			case 'i': { // "dtei"
 				RAnalOp *op;
 				ut64 addr = r_num_math (core->num, input + 3);
 				if (!addr) {
@@ -3962,7 +3966,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				r_anal_op_free (op);
 			} break;
-			case '-':
+			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {
 					if (core->anal->esil) {
 						sdb_free (core->anal->esil->db_trace);
@@ -3972,12 +3976,12 @@ static int cmd_debug(void *data, const char *input) {
 					eprintf ("TODO: dte- cannot delete specific logs. Use dte-*\n");
 				}
 				break;
-			case ' ': {
+			case ' ': { // "dte "
 				int idx = atoi (input + 3);
 				r_anal_esil_trace_show (
 					core->anal->esil, idx);
 			} break;
-			case 'k':
+			case 'k': // "dtek"
 				if (input[3] == ' ') {
 					char *s = sdb_querys (core->anal->esil->db_trace,
 							NULL, 0, input + 4);
@@ -3993,41 +3997,41 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 's': // "dts"
 			switch (input[2]) {
-			case 0:
+			case 0: // "dts"
 				r_debug_session_list (core->dbg);
 				break;
-			case '+':
+			case '+': // "dts+"
 				r_debug_session_add (core->dbg, NULL);
 				break;
-			case '-':
+			case '-': // "dts-"
 				if (input[3] == ' ') {
 					r_debug_session_delete (core->dbg, r_num_math (core->num, input + 3));
 				} else {
 					r_cons_println ("Usage: dts- [id] - Delete trace session");
 				}
 				break;
-			case 't':
+			case 't': // "dtst"
 				if (input[3] == ' ') {
 					r_debug_session_save (core->dbg, input + 4);
 				} else {
 					r_cons_println ("Usage: dtst [file] - save trace sessions to disk");
 				}
 				break;
-			case 'f':
+			case 'f': // "dtsf"
 				if (input[3] == ' ') {
 					r_debug_session_restore (core->dbg, input + 4);
 				} else {
 					r_cons_println ("Usage: dtsf [file] - read trace sessions from disk");
 				}
 				break;
-			case 'C':
+			case 'C': // "dtsC"
 				if (input[3] == ' ') {
 					r_debug_session_comment (core->dbg, atoi (input + 3), strchr (input + 4, ' '));
 				} else {
 					r_cons_println ("Usage: dtsC id comment - add comment for given trace session");
 				}
 				break;
-			case 'A': // for debugging command (private command for developer)
+			case 'A': // "dtsA" for debugging command (private command for developer)
 				r_debug_session_set_idx (core->dbg, atoi (input + 4));
 				break;
 			default:
@@ -4037,21 +4041,21 @@ static int cmd_debug(void *data, const char *input) {
 		case '?':
 		default:
 			{
-				r_core_cmd_help (core, help_message);
+				r_core_cmd_help (core, help_msg_dt);
 				r_cons_printf ("Current Tag: %d\n", core->dbg->trace->tag);
 			}
 			break;
 		}
 		break;
-	case 'd':
+	case 'd': // "dtd"
 		switch (input[1]) {
-		case '\0':
+		case '\0': // "dtd"
 			r_debug_desc_list (core->dbg, 0);
 			break;
-		case '*':
+		case '*': // "dtd*"
 			r_debug_desc_list (core->dbg, 1);
 			break;
-		case 's':
+		case 's': // "dtds"
 			{
 				ut64 off = UT64_MAX;
 				int fd = atoi (input + 2);
