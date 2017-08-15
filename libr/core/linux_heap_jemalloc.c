@@ -137,7 +137,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 				r_core_read_at (core, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 				if (head->en_addr) {
 					PRINT_YA ("   Chunk - start: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut65)head->en_addr);
+					PRINTF_BA ("0x%08"PFMT64x, (ut64)head->en_addr);
 					PRINT_YA (", end: ");
 					PRINTF_BA ("0x%"PFMTx, (head->en_addr + cnksz));
 					PRINT_YA (", size: ");
