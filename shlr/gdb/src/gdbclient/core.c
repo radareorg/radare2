@@ -17,6 +17,10 @@
 #include <termios.h>
 #endif
 
+#if __UNIX__ || __CYGWIN__
+#include <signal.h>
+#endif
+
 extern char hex2char(char *hex);
 
 static int set_interface_attribs (int fd, int speed, int parity) {
@@ -807,6 +811,28 @@ int test_command(libgdbr_t *g, const char *command) {
 	return 0;
 }
 
+static libgdbr_t *cur_desc = NULL;
+
+
+#if __WINDOWS__ && !__CYGWIN__
+static HANDLE h;
+static BOOL __w32_signal(DWORD type) {
+	if (type == CTRL_C_EVENT) {
+		if (cur_desc) {
+			r_socket_write (cur_desc->sock, "\x03", 1);
+		}
+		return true;
+	}
+	return false;
+}
+#elif __UNIX__ || __CYGWIN__
+static void _sigint_handler(int signo) {
+	if (cur_desc) {
+		r_socket_write (cur_desc->sock, "\x03", 1);
+	}
+}
+#endif
+
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = {0};
 	int ret;
@@ -867,9 +893,29 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	if (ret < 0) {
 		return ret;
 	}
-	if (read_packet (g) < 0 && read_packet (g) < 0) {
-		// First read for Qemu might fail, hence second read
-		return -1;
+
+	// Temporarily set signal handler
+	cur_desc = g;
+#if __WINDOWS__ && !__CYGWIN__
+	// TODO
+#elif __UNIX__ || __CYGWIN__
+	signal (SIGINT, _sigint_handler);
+#endif
+
+	while ((ret = read_packet (g)) < 0) {}
+
+	// Unset signal handler
+#if __WINDOWS__ && !__CYGWIN__
+	// TODO
+#elif __UNIX__ || __CYGWIN__
+	signal (SIGINT, SIG_IGN);
+#endif
+
+	cur_desc = NULL;
+	if (ret < 0) {
+		if (read_packet (g) < 0) {
+			return -1;
+		}
 	}
 	return handle_cont (g);
 }
