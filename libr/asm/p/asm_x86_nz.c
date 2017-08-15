@@ -1071,8 +1071,9 @@ static int opint(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
+	bool is_short = op->is_short;
 	int immediate = op->operands[0].immediate * op->operands[0].sign;
-	if (op->is_short && (immediate > ST8_MAX || immediate < ST8_MIN)) {
+	if (is_short && (immediate > ST8_MAX || immediate < ST8_MIN)) {
 		return l;
 	}
 	immediate -= a->pc;
@@ -1097,8 +1098,16 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		return l;
 	}
+	if (immediate <= 0x81 && immediate > -0x7f) {
+		is_short = true;
+	}
+	if (a->bits == 16 && (immediate > 0x81 || immediate < -0x7e)) {
+		data[l++] = 0x66;
+		is_short = false;
+		immediate --;
+	}
 
-	if (!op->is_short) {data[l++] = 0x0f;}
+	if (!is_short) {data[l++] = 0x0f;}
 	if (!strcmp (op->mnemonic, "ja") ||
             !strcmp (op->mnemonic, "jnbe")) {
 		data[l++] = 0x87;
@@ -1147,13 +1156,13 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
                    !strcmp (op->mnemonic, "jz")) {
 		data[l++] = 0x88;
 	}
-	if (op->is_short) {
+	if (is_short) {
 		data[l-1] -= 0x10;
 	}
 
-	immediate -= op->is_short ? 2 : 6;
+	immediate -= is_short ? 2 : 6;
 	data[l++] = immediate;
-	if (!op->is_short) {
+	if (!is_short) {
 		data[l++] = immediate >> 8;
 		data[l++] = immediate >> 16;
 		data[l++] = immediate >> 24;
@@ -1741,6 +1750,10 @@ static int oploop(RAsm *a, ut8 *data, const Opcode *op) {
 static int opret(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int immediate = 0;
+	if (a->bits == 16) {
+		data[l++] = 0xc3;
+		return l;
+	}
 	if (op->operands[0].type == OT_UNKNOWN) {
 		data[l++] = 0xc3;
 	} else if (op->operands[0].type & (OT_CONSTANT | OT_WORD)) {
@@ -2622,44 +2635,12 @@ static ut64 getnum(RAsm *a, const char *s) {
 	return r_num_math (a->num, s);
 }
 
-static int assemble16(RAsm *a, RAsmOp *ao, const char *str) {
-	int l = 0;
-	ut8 *data = ao->buf;
-	if (!strcmp (str, "nop")) {
-		data[l++] = 0x90;
-	} else if (!strcmp (str, "ret")) {
-		data[l++] = 0xc3;
-	} else if (!strcmp (str, "int3")) {
-		data[l++] = 0xcc;
-	} else if (!strncmp (str, "xor al,", 7)) {
-		// just to make the test happy, this needs much more work
-		const char *comma = strchr (str, ',');
-		if (comma) {
-			int n = getnum (a, comma + 1);
-			data[l++] = 0x34;
-			data[l++] = n;
-		}
-	} else if (!strncmp (str, "jmp ", 4)) {
-		int n = getnum (a, str + 4);
-		if (n > 0x81) {
-			return -1;
-		}
-		data[l++] = 0xeb;
-		data[l++] = n - 2;
-
-	}
-	return l;
-}
-
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	ut8 *data = ao->buf;
 	char op[128];
 	LookupTable *lt_ptr;
 	int retval;
 
-	if (a->bits == 16) {
-		return assemble16 (a, ao, str);
-	}
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 
