@@ -68,6 +68,32 @@ R_API void **r_vector_shrink(RVector *vec);
 #define r_vector_foreach(vec, it) \
 	for (it = (vec)->a; it != (vec)->a + (vec)->len; it++)
 
+#define r_vector_lower_bound(vec, x, i, cmp_less) \
+  do { \
+    int h = (vec)->len, m; \
+    for (i = 0; i < h; ) { \
+      m = i + ((h - i) >> 1); \
+      if (cmp_less ((vec)->a[m], x)) { \
+        i = m + 1; \
+      } else { \
+        h = m; \
+      } \
+    } \
+  } while (0) \
+
+#define r_vector_upper_bound(vec, x, i, cmp_less) \
+  do { \
+    int h = (vec)->len, m; \
+    for (i = 0; i < h; ) { \
+      m = i + ((h - i) >> 1); \
+      if (!(cmp_less (x, (vec)->a[m]))) { \
+        i = m + 1; \
+      } else { \
+        h = m; \
+      } \
+    } \
+  } while (0) \
+
 #ifdef __cplusplus
 }
 #endif

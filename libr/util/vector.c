@@ -162,6 +162,7 @@ int main () {
 	}
 	assert (r_vector_pop_first (v) == (void *)1337);
 	assert (r_vector_contains (v, (void *)9));
+
 	assert (r_vector_del_n (v, 9) == (void *)9);
 	assert (!r_vector_contains (v, (void *)9));
 
@@ -193,6 +194,47 @@ int main () {
 	}
 	r_vector_reserve (&s, 10);
 	r_vector_clear (&s, NULL);
+
+	{
+		RVector s = {0};
+		int l;
+		for (i = 0; i < 10; i += 2) {
+			r_vector_append (&s, (void *)i);
+		}
+
+#define CMP_LESS(x, y) x < y
+		r_vector_lower_bound (&s, (void *)4, l, CMP_LESS);
+		assert (s.a[l] == (void *)4);
+		r_vector_lower_bound (&s, (void *)5, l, CMP_LESS);
+		assert (s.a[l] == (void *)6);
+		r_vector_lower_bound (&s, (void *)6, l, CMP_LESS);
+		assert (s.a[l] == (void *)6);
+		r_vector_lower_bound (&s, (void *)9, l, CMP_LESS);
+		assert (l == s.len);
+
+		r_vector_upper_bound (&s, (void *)4, l, CMP_LESS);
+		assert (s.a[l] == (void *)6);
+		r_vector_upper_bound (&s, (void *)5, l, CMP_LESS);
+		assert (s.a[l] == (void *)6);
+		r_vector_upper_bound (&s, (void *)6, l, CMP_LESS);
+		assert (s.a[l] == (void *)8);
+#undef CMP_LESS
+
+		r_vector_clear (&s, NULL);
+
+#define CMP_LESS(x, y) strcmp (x, y) < 0
+		r_vector_append (&s, strdup ("Bulbasaur"));
+		r_vector_append (&s, strdup ("Caterpie"));
+		r_vector_append (&s, strdup ("Charmander"));
+		r_vector_append (&s, strdup ("Meowth"));
+		r_vector_append (&s, strdup ("Squirtle"));
+
+		r_vector_lower_bound (&s, "Meow", l, CMP_LESS);
+		assert (!strcmp (s.a[l], "Meowth"));
+
+		r_vector_clear (&s, free);
+	}
+
 	return 0;
 }
 #endif
