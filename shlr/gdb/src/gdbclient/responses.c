@@ -382,14 +382,7 @@ int handle_stop_reason(libgdbr_t *g) {
 }
 
 int handle_cont(libgdbr_t *g) {
-	// Possible answers here 'S,T,W,X,O,F'
-	switch (g->data[0]) {
-	case 'X':
-		return stop_reason_terminated (g);
-	case 'W':
-		return stop_reason_exit (g);
-	}
-	return send_ack (g);
+	return handle_stop_reason (g);
 }
 
 int handle_lldb_read_reg(libgdbr_t *g) {
