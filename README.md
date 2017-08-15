@@ -135,7 +135,7 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-	$ r2pm install lang-python
+	$ r2pm install lang-python2 #lang-python3 for python3 bindings
 	$ r2pm install r2api-python
 	$ r2pm install r2pipe-python
 
