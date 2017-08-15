@@ -266,6 +266,9 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
+	int reason;
+	RList *threads_list;
+	RDebugPid *th;
 	check_connection (dbg);
 	if (!desc->stop_reason.is_valid) {
 		if (gdbr_stop_reason (desc) < 0) {
@@ -279,7 +282,15 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	}
 	dbg->reason.signum = desc->stop_reason.signum;
 	dbg->reason.type = desc->stop_reason.reason;
-	return desc->stop_reason.reason;
+	reason = desc->stop_reason.reason;
+	// Sync threads and switch to current thread
+	if ((threads_list = r_debug_gdb_threads (dbg, pid))) {
+		if ((th = (RDebugPid*) r_list_first (thread_list))) {
+			desc->tid = th->pid;
+		}
+		r_list_free (threads_list);
+	}
+	return reason;
 }
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
@@ -883,6 +894,13 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
+static int r_debug_gdb_select(int pid, int tid) {
+	if (!desc) {
+		return false;
+	}
+	return gdbr_select (desc, pid, tid) >= 0;
+}
+
 static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi;
 	if (!(rdi = R_NEW0 (RDebugInfo))) {
@@ -941,6 +959,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.reg_profile = (void *)r_debug_gdb_reg_profile,
 	.kill = &r_debug_gdb_kill,
 	.info = &r_debug_gdb_info,
+	.select = &r_debug_gdb_select,
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };
