@@ -162,7 +162,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
         case '*':
 		{
 			int i = 0;
-			GHT sym;
+			ut64 sym;
 			GHT arenas = GHT_MAX, arena = GHT_MAX;
 			arena_t *ar = R_NEW0 (arena_t);
 			extent_node_t *node = R_NEW0 (extent_node_t);
@@ -380,13 +380,13 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	free (ar);
 }
 
+#if 0
 static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 	switch (input[0]) {
 	case ' ':
 		{
 			int pageind;
-			GHT mapbits = GHT_MAX, chunk = GHT_MAX, npages = GHT_MAX, map_bias = GHT_MAX;
-			GHT map_misc_offset = GHT_MAX, chunksize_mask = GHT_MAX;
+			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;;
 			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 			
 			if (!c) {
@@ -419,55 +419,47 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			r_core_read_at (core, map_bias, (ut8*)&map_bias, sizeof (GHT));
 			r_core_read_at (core, map_misc_offset, (ut8*)&map_misc_offset, sizeof (GHT));
 
-			eprintf ("map_misc_offset %x\n", map_misc_offset);
+			eprintf ("map_misc_offset 0x%08"PFMT64x"\n", (ut64)map_misc_offset);
 
 			r_core_read_at (core, chunk, (ut8 *)c, sizeof (arena_chunk_t));
 			mapbits = *(GHT *)&c->map_bits;
-			eprintf ("map_bits: 0x%"PFMTx"\n", mapbits);
+			eprintf ("map_bits: 0x%08"PFMT64x"\n", (ut64)mapbits);
 
 			uint32_t offset = r_offsetof (arena_chunk_t, map_bits);
 
 			arena_chunk_map_bits_t *dwords = (void *)calloc (sizeof (arena_chunk_map_bits_t), npages);
-			r_core_read_at (core, chunk+offset, (ut8*)dwords, sizeof (arena_chunk_map_bits_t) * npages);
-			eprintf ("map_bits @ 0x%"PFMTx"\n", chunk+offset);
+			r_core_read_at (core, chunk + offset, (ut8*)dwords, sizeof (arena_chunk_map_bits_t) * npages);
+			eprintf ("map_bits @ 0x%08"PFMT64x"\n", (ut64)(chunk + offset));
 
-			arena_run_t *r= R_NEW0 (arena_run_t);
-
+			arena_run_t *r = R_NEW0 (arena_run_t);
 			if (!r) {
 				eprintf ("Error calling calloc\n");
 				return;
 			}
-
 			for (pageind = map_bias; pageind < npages; pageind++) {
 				arena_chunk_map_bits_t mapelm = dwords[pageind-map_bias];
-
 				if (mapelm.bits & CHUNK_MAP_ALLOCATED) {
-					uintptr_t elm =  ((arena_chunk_map_misc_t *)((uintptr_t)chunk + (uintptr_t)map_misc_offset) + pageind-map_bias);
-					eprintf ("\nelm: 0x%"PFMTx"\n", (GHT*)elm);
-
+					// ut64 elm = ((arena_chunk_map_misc_t *)((uintptr_t)chunk + (uintptr_t)map_misc_offset) + pageind-map_bias);
+					ut64 elm = chunk + map_misc_offset + pageind-map_bias;
+					eprintf ("\nelm: 0x%"PFMT64x"\n", elm);
 					arena_chunk_map_misc_t *m = R_NEW0 (arena_chunk_map_misc_t);
-					if (!m) {
-						eprintf ("Error calling calloc\n");
-						return;
+					if (m) {
+						ut64 run = elm + r_offsetof (arena_chunk_map_misc_t, run);
+						r_core_read_at (core, elm, (ut8*)m, sizeof (arena_chunk_map_misc_t));
+						eprintf ("Small run @ 0x%08"PFMT64x"\n", (ut64)elm);
+						r_core_read_at (core, run, (ut8*)r, sizeof (arena_run_t));
+						eprintf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
+						eprintf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
+						eprintf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
+						free (m);
 					}
-
-					r_core_read_at (core, elm, (ut8*)m, sizeof (arena_chunk_map_misc_t));
-
-					GHT run = *(GHT*)&m->run;
-					printf ("Small run @ 0x%"PFMTx"\n", run);
-
-					r_core_read_at (core, run, (ut8*)r, sizeof (arena_run_t));
-					eprintf ("binind: 0x%"PFMTx"\n", r->binind);
-					eprintf ("nfree: 0x%"PFMTx"\n", r->nfree);
-					eprintf ("bitmap: 0x%"PFMTx"\n\n", *(GHT*)r->bitmap);
-					free (m);
 				} else if (mapelm.bits & CHUNK_MAP_LARGE) {
-					size_t run = (arena_run_t *)((uintptr_t) chunk + (pageind << LG_PAGE));
-					printf ("Large run @ 0x%"PFMTx"\n", (size_t*)run);
+					ut64 run = (ut64) (size_t) chunk + (pageind << LG_PAGE);
+					eprintf ("Large run @ 0x%08"PFMT64x"\n", run);
 					r_core_read_at (core, run, (ut8*)r, sizeof (arena_run_t));
-					eprintf ("binind: 0x%"PFMTx"\n", r->binind);
-					eprintf ("nfree: 0x%"PFMTx"\n", r->nfree);
-					eprintf ("bitmap: 0x%"PFMTx"\n\n", *(GHT*)r->bitmap);
+					eprintf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
+					eprintf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
+					eprintf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
 				}
 			}
 			free (c);
@@ -476,6 +468,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 	break;
 	}
 }
+#endif
 
 static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
 	const char *help_msg[] = {
