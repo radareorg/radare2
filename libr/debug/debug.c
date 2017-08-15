@@ -549,6 +549,8 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	dbg->pid = pid;
 	dbg->tid = tid;
 
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+
 	return true;
 }
 

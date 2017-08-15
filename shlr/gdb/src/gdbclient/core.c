@@ -171,32 +171,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// Check if vCont is supported
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
-	if (g->stub_features.multiprocess) {
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.0", (ut32) g->pid);
-#if 0
-		if (g->tid < 0) {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.-1", (ut32) g->pid);
-		} else {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
-		}
-#endif
-	} else {
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg0");
-#if 0
-		if (g->tid < 0) {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg-1");
-		} else {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
-		}
-#endif
-	}
-	ret = send_msg (g, tmp.buf);
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = send_ack (g);
-	if (strncmp (g->data, "OK", 2)) {
+	if (gdbr_select (g, g->pid, 0) < 0) {
 		// return -1;
 	}
 	// Set thread for "step" and "continue" operations
@@ -207,7 +182,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet (g);
 	ret = send_ack (g);
-	if (strncmp (g->data, "OK", 2)) {
+	if (strcmp (g->data, "OK")) {
 		// return -1;
 	}
 	if (g->stub_features.qXfer_features_read) {
@@ -229,6 +204,25 @@ int gdbr_disconnect(libgdbr_t *g) {
 		free (g->registers);
 	}
 	g->connected = 0;
+	return 0;
+}
+
+int gdbr_select(libgdbr_t *g, int pid, int tid) {
+	char cmd[64] = { 0 };
+	reg_cache.valid = false;
+	g->pid = pid;
+	g->tid = tid;
+	strcpy (cmd, "Hg");
+	if (write_thread_id (cmd + 2, sizeof (cmd) - 3, pid, tid,
+			     g->stub_features.multiprocess) < 0) {
+		return -1;
+	}
+	if (send_msg (g, cmd) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return -1;
+	}
+	if (strcmp (g->data, "OK")) {
+		return -1;
+	}
 	return 0;
 }
 
@@ -628,6 +622,9 @@ fail:
 
 int gdbr_step(libgdbr_t *g, int tid) {
 	char thread_id[64];
+	if (tid <= 0) {
+		tid = g->tid;
+	}
 	if (write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
 			     g->stub_features.multiprocess) < 0) {
 		return send_vcont (g, CMD_C_STEP, NULL);
@@ -638,6 +635,9 @@ int gdbr_step(libgdbr_t *g, int tid) {
 int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	char thread_id[64] = { 0 };
 	char command[16] = { 0 };
+	if (tid <= 0) {
+		tid = g->tid;
+	}
 	if (sig <= 0) {
 		strncpy (command, CMD_C_CONT, sizeof (command) - 1);
 	} else {
