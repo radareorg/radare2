@@ -146,9 +146,36 @@ R_API void **r_vector_shrink(RVector *vec) {
 	return vec->a;
 }
 
+// CLRS Quicksort. It is slow, but simple.
+static void quick_sort(void **a, int n, RVectorComparator cmp_less) {
+	if (n <= 1) return;
+	int i = rand() % n, j = 0;
+	void *t, *pivot = a[i];
+  a[i] = a[n - 1];
+  for (i = 0; i < n - 1; i++)
+    if (cmp_less (a[i], pivot)) {
+      t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+      j++;
+    }
+  a[n - 1] = a[j];
+  a[j] = pivot;
+	quick_sort (a, j, cmp_less);
+	quick_sort (a + j + 1, n - j - 1, cmp_less);
+}
+
+R_API void r_vector_sort(RVector *vec, RVectorComparator cmp_less) {
+	quick_sort (vec->a, vec->len, cmp_less);
+}
+
 #if TEST
 #include <assert.h>
 #include <stddef.h>
+
+int my_cmp(const void *a, const void *b) {
+	return strcmp (a, b) < 0;
+}
 
 // TODO: move into t/vector.c
 int main () {
@@ -222,13 +249,14 @@ int main () {
 
 		r_vector_clear (&s, NULL);
 
-#define CMP_LESS(x, y) strcmp (x, y) < 0
-		r_vector_append (&s, strdup ("Bulbasaur"));
-		r_vector_append (&s, strdup ("Caterpie"));
 		r_vector_append (&s, strdup ("Charmander"));
-		r_vector_append (&s, strdup ("Meowth"));
 		r_vector_append (&s, strdup ("Squirtle"));
+		r_vector_append (&s, strdup ("Bulbasaur"));
+		r_vector_append (&s, strdup ("Meowth"));
+		r_vector_append (&s, strdup ("Caterpie"));
+		r_vector_sort (&s, my_cmp);
 
+#define CMP_LESS(x, y) strcmp (x, y) < 0
 		r_vector_lower_bound (&s, "Meow", l, CMP_LESS);
 		assert (!strcmp (s.a[l], "Meowth"));
 

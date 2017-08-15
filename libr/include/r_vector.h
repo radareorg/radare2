@@ -46,6 +46,8 @@ typedef struct r_vector_t {
   int capacity;
 } RVector;
 
+typedef int (*RVectorComparator)(const void *a, const void *b);
+
 R_API void **r_vector_append(RVector *vec, void *x);
 R_API void r_vector_clear(RVector *vec, void (*elem_free)(void *));
 R_API RVector *r_vector_clone(RVector *vec);
@@ -62,6 +64,7 @@ R_API void *r_vector_pop(RVector *vec);
 R_API void *r_vector_pop_first(RVector *vec);
 R_API void **r_vector_prepend(RVector *vec, void *x);
 R_API void **r_vector_reserve(RVector *vec, int capacity);
+R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
 /* shrink capacity to len, NB. delete operations do not shrink space */
 R_API void **r_vector_shrink(RVector *vec);
 
