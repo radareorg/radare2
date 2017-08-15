@@ -840,7 +840,7 @@ int main(int argc, char **argv, char **envp) {
 									free (fh->desc->name);
 									fh->desc->name = newpath;
 								}
-								if (!addr) {
+								if (!addr || addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, newpath);
 								}
 								r_core_bin_load (&r, NULL, addr);
@@ -849,7 +849,7 @@ int main(int argc, char **argv, char **envp) {
 							filepath = fh->desc->name;
 							if (r_file_exists (filepath)
 							    && !r_file_is_directory (filepath)) {
-								if (!addr) {
+								if (!addr || addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}
 								r_core_bin_load (&r, filepath, addr);
@@ -859,7 +859,7 @@ int main(int argc, char **argv, char **envp) {
 									free (fh->desc->name);
 									fh->desc->name = (char*) filepath;
 								}
-								if (!addr) {
+								if (!addr || addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}
 								r_core_bin_load (&r, NULL, addr);
