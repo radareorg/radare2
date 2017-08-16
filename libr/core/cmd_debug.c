@@ -927,6 +927,72 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_debug_lib (RCore *core, const char *input) {
+	int pid, sig;
+	RDebug* dbg = core->dbg;
+	const char *ptr, *help_msg[] = {
+		"Usage:", "dl", " # Debug library commands",
+		"dl", " <lib> <function> [args...]", "Call a library function",
+		NULL };
+	switch (input[1]) {
+	case ' ':
+#if __WINDOWS__
+		if (!strstr (core->bin->file, "rundll")) {
+			eprintf ("You cannot use this function on such binary. Load a dll or rundll32.exe first.\n");
+			break;
+		}
+		/* Restart LoadLibrary with specified arguments */
+		int argc;
+		char** args = r_str_argv (input + 2, &argc);
+		if (argc < 2) {
+			eprintf ("Wrong usage: see dl?\n");
+			break;
+		}
+		r_core_cmdf (core, "doo %s", input + 2);
+
+		r_debug_continue (dbg);
+		/* TODO Annoying if the user already set it no ? */
+		r_core_cmd0 (core, "e dbg.libs=*");
+		char* c = r_core_cmd_strf (core, "dm~%s", args[0]);
+		/* Imho it's pretty dirty */
+		while (c && !c[0]) {
+			int r = r_debug_continue (dbg);
+			if (!r) {
+				break;
+			}
+			free (c);
+			c = r_core_cmd_strf (core, "dm~%s", args[0]);
+		}
+		free (c);
+		r_core_cmd0 (core, "e dbg.libs=");
+		r_core_cmdf (core, ".dmi* %s", args[0]);
+		/* wtf there's a bug with dmi or something not resetting the flagspace */
+		r_core_cmd0 (core, "fs symbols");
+		char* flagname = r_core_cmd_strf (core, "f~%s", args[1]);
+		ut64 addr = r_num_math (core->num, flagname);
+		if (addr == 0) {
+			eprintf ("Cannot find the function you asked for.\n");
+			break;
+		}
+		// TODO Don't use cmdf
+		r_core_cmdf (core, "db 0x%08"PFMT64x, addr);
+		r_debug_continue (dbg);
+		ut64 pc = r_debug_reg_get (dbg, "PC");
+		if (pc == addr) {
+			r_core_seek (core, addr, 0);
+			r_core_cmdf (core, "db -0x%08"PFMT64x, addr);
+		}
+#else
+		eprintf ("Not implemented.\n");
+#endif
+		break;
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg);
+		break;
+	}
+}
+
 static void cmd_debug_backtrace(RCore *core, const char *input) {
 	RAnalOp analop;
 	ut64 addr, len = r_num_math (core->num, input);
@@ -4173,6 +4239,9 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'p': // "dp"
 		cmd_debug_pid (core, input);
+		break;
+	case 'l': // "dl"
+		cmd_debug_lib (core, input);
 		break;
 	case 'L': // "dL"
 		if (input[1]=='q') {

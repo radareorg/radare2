@@ -384,6 +384,7 @@ err_load_th:
 
 static int debug_exception_event (DEBUG_EVENT *de) {
 	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
+	ut64 addr = de->u.Exception.ExceptionRecord.ExceptionAddress;
 	switch (code) {
 	case EXCEPTION_BREAKPOINT:
 		break;
@@ -395,8 +396,8 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
-		eprintf ("(%d) Fatal exception in thread %d\n",
-			(int)de->dwProcessId, (int)de->dwThreadId);
+		eprintf ("(%d) Fatal exception in thread %d at 0x%08"PFMT64x" (code: 0x%08"PFMT32x")\n",
+			(int)de->dwProcessId, (int)de->dwThreadId, addr, code);
 		break;
 #if __MINGW64__ || _WIN64
 	/* STATUS_WX86_BREAKPOINT */

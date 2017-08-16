@@ -96,8 +96,11 @@ err_enable:
 }
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-	PROCESS_INFORMATION pi;
-	STARTUPINFOA si = { sizeof (si) };
+	PROCESS_INFORMATION pi = { 0 };
+	STARTUPINFOA si = { 0 };
+	si.cb = sizeof (si);
+	si.wShowWindow = SW_SHOW;
+	si.dwFlags = STARTF_USESHOWWINDOW;
 	DEBUG_EVENT de;
 	int pid, tid;
 	HANDLE th = INVALID_HANDLE_VALUE;
@@ -105,9 +108,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens ();
-	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
-				strdup (cmd);
-	char **argv = r_str_argv (_cmd, NULL);
+	char **argv = r_str_argv (cmd, NULL);
+	/*char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup (cmd);
 	// We need to build a command line with quoted argument and escaped quotes
 	int cmd_len = 0;
 	int i = 0;
@@ -146,15 +148,15 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		cmdline[cmd_i++] = '"';
 		i++;
 	}
-	cmdline[cmd_i] = '\0';
+	cmdline[cmd_i] = '\0';*/
 
-	if (!CreateProcessA (argv[0], cmdline, NULL, NULL, FALSE,
+	if (!CreateProcessA (argv[0], cmd, NULL, NULL, FALSE,
 						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 						 NULL, NULL, &si, &pi)) {
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		return -1;
 	}
-	free (cmdline);
+	//free (cmdline);
 	r_str_argv_free (argv);
 	/* get process id and thread id */
 	pid = pi.dwProcessId;
