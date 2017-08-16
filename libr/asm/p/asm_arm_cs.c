@@ -14,6 +14,7 @@ static csh cd = 0;
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
+	bool disp_hash = a->immdisp;
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
@@ -91,7 +92,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
-		r_str_rmch (op->buf_asm, '#');
+		if (!disp_hash) {
+			r_str_rmch (op->buf_asm, '#');
+		}
 	}
 	cs_free (insn, n);
 	beach:

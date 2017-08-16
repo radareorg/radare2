@@ -115,6 +115,7 @@ typedef struct r_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
+	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	SdbHash *flags;
 } RAsm;
 
