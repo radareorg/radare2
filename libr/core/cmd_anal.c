@@ -4660,8 +4660,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				list = fcn? fcn->refs: NULL;
 			}
 		} else {
-			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			list = fcn? fcn->refs: NULL;
+			list = r_anal_refs_get (core->anal, addr);
 		}
 
 		if (list) {
