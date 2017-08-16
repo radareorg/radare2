@@ -38,7 +38,7 @@ SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
 MODS=sdb zip udis86 java tcc
-MODS+=gdb qnx
+MODS+=gdb qnx ar
 ifneq ($(CC),cccl)
 ifeq (1,$(WITH_GPL))
 MODS+=grub
@@ -65,7 +65,7 @@ preall: targets libwindbg capstone-build bochs
 	done
 
 SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
-PREMODS=capstone gdb windbg sdb bochs
+PREMODS=capstone gdb windbg sdb bochs ar
 
 clean mrproper:
 	rm -f ${SDBFILES}
