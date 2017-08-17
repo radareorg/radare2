@@ -188,6 +188,7 @@ fs = [
 ]
 
 io = [
+	'ar',
 	'bfdbg',
 	'debug',
 	'default',

@@ -12,46 +12,54 @@ with open('Makefile', 'r') as f:
         line = f.readline()
 DATADIRS = line.split('=')[1].split()
 DATADIRS = [os.path.abspath(p) for p in DATADIRS]
-BLACKLIST = ['Makefile']
+BLACKLIST = ['Makefile', 'makefile']
+EXTENSIONS = ['txt', '']
 
 MESON = 'python meson.py' if os.path.isfile('meson.py') else 'meson'
 NINJA = 'ninja'
 
-def convert_sdb(inf, outf):
-    """ Convert inf to outf.sdb """
-    print('Converting {} to {}'.format(inf, outf))
-    os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=outf, inf=inf))
+def convert_sdb(folder, f):
+    """ Convert f to sdb format """
+    base, _ = get_base_extension(f)
+    inf = os.path.join(folder, f)
+    sdb = os.path.join(folder, base) + '.sdb'
+    print('Converting {} to {}'.format(inf, sdb))
+    os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=sdb, inf=inf))
 
-def get_extension(inf):
-    """ Handles files with multiple extensions e.g. .sdb.txt """
-    n = inf.split('.')
-    return inf, n[0], n[-1]
+def get_base_extension(f):
+    """ file.sdb.txt => file, .txt """
+    n = f.split('.')
+    if len(n) == 1: return n[0], ''
+    return n[0], n[-1]
+
+def handle_folder(folder):
+    """ Convert each suitable file inside specified folder to sdb file """
+    print('Handling {} directory...'.format(folder))
+    for f in os.listdir(folder):
+        if f in BLACKLIST:
+            continue
+        base, ext = get_base_extension(f)
+        absf = os.path.join(folder, f)
+        if os.path.isdir(absf) and not os.path.islink(absf):
+            handle_folder(absf)
+            continue
+        if ext not in EXTENSIONS:
+            continue
+        convert_sdb(folder, f)
 
 def main():
     # Create sdb binary
     r = os.system('{meson} {sdbdir} {builddir}'.format(meson=MESON, sdbdir=SDBDIR, builddir=BUILDDIR))
+    if r: exit(r)
     r = os.system('{ninja} -C {builddir}'.format(ninja=NINJA, builddir=BUILDDIR))
     if r: exit(r)
 
     # Create .sdb files
-    i = 0
-    l = len(DATADIRS)
-    while i < l:
-        folder = DATADIRS[i]
-        print(folder)
-        for f in os.listdir(folder):
-            if f in BLACKLIST:
-                continue
-            inf, base, ext = get_extension(f)
-            inf = os.path.join(folder, inf)
-            if os.path.isdir(inf) and not os.path.islink(inf):
-                DATADIRS.append(inf)
-                l += 1
-                continue
-            outf = '.'.join([os.path.join(folder, base), 'sdb'])
-            convert_sdb(inf, outf)
-        i += 1
-    print('Done.')
+    print('Generating sdb files.')
+    print('Looking up {}'.format(', '.join(DATADIRS)))
+    for folder in DATADIRS:
+        handle_folder(folder)
+    print('Done')
 
 if __name__ == '__main__':
     main()

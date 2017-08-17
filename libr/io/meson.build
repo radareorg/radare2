@@ -7,6 +7,7 @@ files=[
 'plugin.c',
 'section.c',
 'undo.c',
+'p/io_ar.c',
 'p/io_bfdbg.c',
 'p/io_bochs.c',
 'p/io_debug.c',
@@ -54,9 +55,10 @@ r_io = library('r_io', files,
 	'../../shlr/gdb/include',
 	'../../shlr/qnx/include',
 	'../../shlr/windbg',
+	'../../shlr/ar',
 	'../../shlr/zip/include']
   )],
-  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2windbg, libr2gdb, libr2zip],
+  link_with: [r_util, r_socket, libr2qnx, libr2bochs, libr2windbg, libr2gdb, libr2zip, libr2ar],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
   install: true
 )
