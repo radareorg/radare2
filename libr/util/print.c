@@ -1309,7 +1309,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	const int show_colors = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *firebow[6] = { NULL };
+	char *firebow[6];
 	int i = 0, j;
 
 	for (i = 0; i < 6; i++) {
@@ -1388,6 +1388,9 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			}
 		}
 		p->cb_printf ("\n");
+	}
+	for (i = 0; i < 6; i++) {
+		free (firebow[i]);
 	}
 }
 
