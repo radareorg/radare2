@@ -4,6 +4,7 @@
 #include "r_util.h"
 #include "r_cons.h"
 #include "r_bin.h"
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -2927,4 +2928,18 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color) {
 		}
 	}
 	return strdup (o);
+}
+
+R_API int r_str_scpy (char *dst, const char *src, int count) {
+	if (count <= 0) {
+		return -E2BIG;
+	}
+	int i = 0;
+	for (; i < count; i++) {
+		if (!(dst[i] = src[i])) {
+			return i;
+		}
+	}
+	dst[i - 1] = '\0';
+	return -E2BIG;
 }

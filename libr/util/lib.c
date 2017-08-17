@@ -131,7 +131,7 @@ R_API RLib *r_lib_new(const char *symname) {
 		}
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
-		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
+		r_str_scpy (lib->symname, symname, sizeof (lib->symname));
 	}
 	return lib;
 }
