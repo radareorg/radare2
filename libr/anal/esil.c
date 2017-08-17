@@ -1074,7 +1074,7 @@ static int esil_lsr(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			ut64 res = num >> num2;
+			ut64 res = num >> R_MIN(num2, 63);
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
@@ -1181,8 +1181,8 @@ static int esil_asr(RAnalEsil *esil) {
 				ut64 mask = (regsize - 1);
 				param_num &= mask;
 				ut64 left_bits = 0;
-				if (op_num & (1 << (regsize - 1))) {
-					left_bits = (1 << param_num) - 1;
+				if (op_num & (1UL << (regsize - 1))) {
+					left_bits = (1UL << param_num) - 1;
 					left_bits <<= regsize - param_num;
 				}
 				op_num = left_bits | (op_num >> param_num);
