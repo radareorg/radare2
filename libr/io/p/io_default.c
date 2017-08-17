@@ -203,7 +203,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			a_buf = malloc (a_count+aligned);
 			if (a_buf) {
 				int i;
-				memset (a_buf, 0xff, a_count+aligned);
+				memset (a_buf, 0xff, a_count + aligned);
 				if (lseek (mmo->fd, a_off, SEEK_SET) < 0) {
 					free (a_buf);
 					return -1;
@@ -368,7 +368,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 
 #if __UNIX__
 static bool __is_blockdevice (RIODesc *desc) {
-	RIOMapFileObj *mmo;
+	RIOMMapFileObj *mmo;
 	struct stat buf;
 	if (!desc || !desc->data) {
 		return false;

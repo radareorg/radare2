@@ -54,10 +54,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	SdbListIter *iter;
 	RIOPlugin *ret;
 	ls_foreach (io->plugins, iter, ret) {
-		if (!ret) {
-			continue;
-		}
-		if (!ret->check) {
+		if (!ret || !ret->check) {
 			continue;
 		}
 		if (ret->check (io, filename, many))

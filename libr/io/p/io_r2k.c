@@ -11,7 +11,7 @@
 #include "io_r2k_windows.h"
 #elif defined (__linux__) && !defined (__GNU__)
 #include "io_r2k_linux.h"
-struct io_r2k_linux r2k_struct;
+struct io_r2k_linux r2k_struct;		//TODO: move this into desc->data
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -65,7 +65,7 @@ static int r2k__close(RIODesc *fd) {
 	}
 #elif defined (__linux__) && !defined (__GNU__)
 	if (fd) {
-		close ((int)fd->data);
+		close ((int)(size_t)fd->data);
 	}
 #else
 	eprintf ("TODO: r2k not implemented for this plataform.\n");
@@ -109,7 +109,6 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 		//return r_io_desc_new (&r_io_plugin_r2k, -1, pathname, rw, mode, w32);
 		return r_io_desc_new (io, &r_io_plugin_r2k, pathname, rw, mode, w32);
 #elif defined (__linux__) && !defined (__GNU__)
-		RIODesc *iodesc = NULL;
 		int fd = open ("/dev/r2k", O_RDONLY);
 		if (fd == -1) {
 			io->cb_printf ("r2k__open: Error in opening /dev/r2k.");
@@ -119,10 +118,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 		r2k_struct.beid = 0;
 		r2k_struct.pid = 0;
 		r2k_struct.wp = 1;
-		//return r_io_desc_new (&r_io_plugin_r2k, fd, pathname, rw, mode, NULL);
-		iodesc = r_io_desc_new (io, &r_io_plugin_r2k, pathname, rw, mode, NULL);
-		iodesc->data = (void *)fd;
-		return iodesc;
+		return r_io_desc_new (io, &r_io_plugin_r2k, pathname, rw, mode, (void *)fd);
 #else
 		io->cb_printf ("Not supported on this platform\n");
 #endif

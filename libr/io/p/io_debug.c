@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -106,7 +106,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	setup_tokens ();
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
-	strdup (cmd);
+		strdup (cmd);
 	char **argv = r_str_argv (_cmd, NULL);
 	// We need to build a command line with quoted argument and escaped quotes
 	int cmd_len = 0;
@@ -186,14 +186,22 @@ err_fork:
 }
 #else // windows
 
-#if !__APPLE__
 static void trace_me () {
+#if __APPLE__
+	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
+#endif
+#if __APPLE__ || __BSD__
+	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
+	signal (SIGABRT, inferior_abort_handler);
+	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
+#else
 	if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
 		r_sys_perror ("ptrace-traceme");
 		exit (MAGIC_EXIT);
 	}
-}
 #endif
+}
+
 
 void handle_posix_error(int err) {
 	switch (err) {

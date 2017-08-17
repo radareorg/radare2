@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 pancake */
+/* radare - LGPL - Copyright 2010-2017 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -72,7 +72,7 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOGdb *riog;
-	char host[128], *port, *pid;
+	char host[128], *port, *pid, *name;
 	int i_port = -1;
 	bool isdev = false;
 
@@ -127,8 +127,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		i_port = atoi (port);
 	}
 
-	riog = R_NEW0 (RIOGdb);
-	if (!riog) {
+	if (!(riog = R_NEW0 (RIOGdb))) {
 		return NULL;
 	}
 	gdbr_init (&riog->desc, false);
@@ -137,18 +136,23 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		desc = &riog->desc;
 		if (pid) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
-			int ret = gdbr_attach (desc, i_pid);
-			if (ret < 0) {
+			if (gdbr_attach (desc, i_pid) < 0) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
 				return NULL;
 			}
-		} 
+		} else if ((i_pid = desc->pid) < 0) {
+			i_pid = -1;
+		}
 		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, rw, mode, riog);
-		return riogdb;
 	}
-	eprintf ("gdb.io.open: Cannot connect to host.\n");
-	free (riog);
-	return NULL;
+	// Get name
+	if (riogdb) {
+		riogdb->name = gdbr_exec_file_read (desc, i_pid);
+	} else {
+		eprintf ("gdb.io.open: Cannot connect to host.\n");
+		free (riog);
+	}
+	return riogdb;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -178,6 +182,9 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int __close(RIODesc *fd) {
+	if (fd) {
+		R_FREE (fd->name);
+	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
 	free (desc);
@@ -315,3 +322,11 @@ RIOPlugin r_io_plugin_gdb = {
 	.system = __system,
 	.isdbg = true
 };
+
+#ifndef CORELIB
+RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_IO,
+	.data = &r_io_plugin_gdb,
+	.version = R2_VERSION
+};
+#endif

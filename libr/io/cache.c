@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 // TODO: implement a more inteligent way to store cached memory
 // TODO: define limit of max mem to cache
@@ -143,38 +143,38 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-    int l, ret, da, db;
-    RListIter *iter;
-    RIOCache *c;
-    if (len < 0) {
-        return 0;
-    }
-    r_list_foreach (io->cache, iter, c) {
-        if (r_range_overlap (addr, addr + len - 1, c->from, c->to, &ret)) {
-            if (ret > 0) {
-                da = ret;
-                db = 0;
-                l = c->size;
-            } else if (ret < 0) {
-                da = 0;
-                db = -ret;
-                l = c->size - db;
-            } else {
-                da = 0;
-                db = 0;
-                l = c->size;
-            }
-            //say hello to integer overflow, but this won't happen in realistic
-            //scenarios because malloc will fail befor
-            if ((l + da) > len) {
-                l = len - da;
-            }
-            if (l < 1) {
-                l = 1; // XXX: fail
-            } else {
-                memcpy (buf + da, c->data + db, l);
-            }
-        }
-    }
-    return len;
+	int l, ret, da, db;
+	RListIter *iter;
+	RIOCache *c;
+	if (len < 0) {
+		return 0;
+	}
+	r_list_foreach (io->cache, iter, c) {
+		if (r_range_overlap (addr, addr + len - 1, c->from, c->to, &ret)) {
+			if (ret > 0) {
+				da = ret;
+				db = 0;
+				l = c->size;
+			} else if (ret < 0) {
+				da = 0;
+				db = -ret;
+				l = c->size - db;
+			} else {
+				da = 0;
+				db = 0;
+				l = c->size;
+			}
+			//say hello to integer overflow, but this won't happen in realistic
+			//scenarios because malloc will fail befor
+			if ((l + da) > len) {
+				l = len - da;
+			}
+			if (l < 1) {
+				l = 1; // XXX: fail
+			} else {
+				memcpy (buf + da, c->data + db, l);
+			}
+		}
+	}
+	return len;
 }

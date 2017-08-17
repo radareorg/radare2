@@ -436,7 +436,7 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 	if (desc->io && desc->io->va && desc->io->maps) {
 		ls_foreach_prev (desc->io->maps, iter, map) {
 			if (map->fd == desc->fd) {
-				p->cb_printf ("\t+0x%"PFMT64x" 0x%"PFMT64x
+				p->cb_printf ("  +0x%"PFMT64x" 0x%"PFMT64x
 					" - 0x%"PFMT64x" : %s : %s\n", map->delta,
 					map->from, map->to, r_str_rwx_i (map->flags), "");
 			}
