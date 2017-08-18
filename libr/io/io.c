@@ -1075,8 +1075,7 @@ R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 	if (!io_va && r_io_map_exists_for_offset (io, offset)) {
 		return true;
 	}
-	return r_io_map_exists_for_offset (io, offset) ||
-		   r_io_section_exists_for_vaddr (io, offset, hasperm);
+	return r_io_section_exists_for_vaddr (io, offset, hasperm);
 }
 
 
