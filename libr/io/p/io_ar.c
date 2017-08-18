@@ -25,7 +25,7 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 
 	RBuffer *b = ar_open_file (arname, filename);
 	if (b) {
-		res = r_io_desc_new (&r_io_plugin_ar, b->fd, filename, rw, mode, b);
+		res = r_io_desc_new (io, &r_io_plugin_ar, filename, rw, mode, b);
 	}
 	free (url);
 	return res;

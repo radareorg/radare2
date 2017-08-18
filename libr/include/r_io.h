@@ -322,7 +322,7 @@ R_API void r_io_cache_enable(RIO *io, int read, int write);
 R_API void r_io_cache_init(RIO *io);
 R_API int r_io_cache_list(RIO *io, int rad);
 R_API void r_io_cache_reset(RIO *io, int set);
-R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
+R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
 
 /* io/map.c */

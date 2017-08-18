@@ -118,28 +118,29 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	return false;
 }
 
-R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
+R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	RIOCache *ch;
 	ch = R_NEW0 (RIOCache);
 	if (!ch) {
-		return 0;
+		return false;
 	}
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;
 	ch->odata = (ut8*)calloc (1, len + 1);
 	if (!ch->odata) {
-		return 0;
+		return false;
 	}
 	ch->data = (ut8*)calloc (1, len + 1);
 	if (!ch->data) {
 		free (ch->odata);
-		return 0;
+		return false;
 	}
 	ch->written = io->cached? false: true;
 	r_io_read_at (io, addr, ch->odata, len);
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
+	return true;
 }
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {

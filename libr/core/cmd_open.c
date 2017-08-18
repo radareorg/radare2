@@ -452,7 +452,6 @@ static int cmd_open(void *data, const char *input) {
 	ut64 addr, baddr = r_config_get_i (core->config, "bin.baddr");
 	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	RCoreFile *file;
-	int num = -1;
 	int isn = 0;
 	char *ptr;
 	RListIter *iter;

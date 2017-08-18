@@ -1951,7 +1951,6 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		bufsz = core->blocksize;
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (param->boundaries, iter, map) {
-			int fd;
 			param->from = map->from;
 			param->to = map->to;
 			searchhits = 0;
