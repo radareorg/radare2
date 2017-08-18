@@ -276,6 +276,7 @@ typedef struct r_bin_t {
 	ut64 filter_rules;
 	bool demanglercmd;
 	bool verbose;
+	bool io_owned;
 } RBin;
 
 typedef struct r_bin_xtr_metadata_t {

@@ -1714,8 +1714,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
-	core->assembler->syscall = \
-		core->anal->syscall; // BIND syscall anal/asm
+	core->assembler->syscall = core->anal->syscall; // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
@@ -1739,7 +1738,7 @@ R_API bool r_core_init(RCore *core) {
 	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
 	core->graph->need_reload_nodes = false;
 	core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
-	if (sizeof(ut64) * core->asmqjmps_size < core->asmqjmps_size) {
+	if (sizeof (ut64) * core->asmqjmps_size < core->asmqjmps_size) {
 		core->asmqjmps_size = 0;
 		core->asmqjmps = NULL;
 	} else {

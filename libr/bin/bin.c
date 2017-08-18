@@ -867,20 +867,22 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr,
 	// xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
-	RIODesc *desc = NULL;
 	RIO *io = (iob && iob->get_io)? iob->get_io (iob): NULL;
 	if (!io) {
 		io = r_io_new ();
 		if (!io) {
 			return false;
 		}
+		bin->io_owned = true;
 		r_io_bind (io, &bin->iob);
 	}
 	bin->rawstr = rawstr;
-	//Use the current RIODesc otherwise r_io_map_select can swap them later on
-	desc = iob->desc_get (io, fd);
+	// Use the current RIODesc otherwise r_io_map_select can swap them later on
+	RIODesc *desc = iob->desc_get (io, fd);
 	if (!desc) {
 		r_io_free (io);
+		memset (&bin->iob, 0, sizeof (bin->iob));
+		bin->io_owned = false;
 		return false;
 	}
 	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
@@ -1611,6 +1613,9 @@ R_API void *r_bin_free(RBin *bin) {
 	if (!bin) {
 		return NULL;
 	}
+	if (bin->io_owned) {
+		r_io_free (bin->iob.io);
+	}
 	bin->file = NULL;
 	free (bin->force);
 	free (bin->srcdir);
@@ -1997,6 +2002,7 @@ R_API RBin *r_bin_new() {
 	bin->minstrlen = 0;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
+	bin->io_owned = false;
 
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	for (i = 0; bin_static_plugins[i]; i++) {
