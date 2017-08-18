@@ -856,12 +856,8 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
-#if __WINDOWS__
-			r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);		//XXX use desc-api here for pid and tid
-#else
-			r_debug_select (core->dbg, r_io_desc_get_pid (core->file->desc),
-					r_io_desc_get_tid (core->file->desc));
-#endif
+			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->file->fd),
+					r_io_fd_get_tid (core->io, core->file->fd));
 		}
 	} else {
 		if (core->dbg) {
@@ -1291,20 +1287,6 @@ static int cb_search_kwidx(void *user, void *data) {
 	return true;
 }
 
-static int cb_ioenforce(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	int perm = node->i_value;
-	core->io->enforce_rwx = 0;
-	if (perm & 1) {
-		core->io->enforce_rwx |= R_IO_READ;
-	}
-	if (perm & 2) {
-		core->io->enforce_rwx |= R_IO_WRITE;
-	}
-	return true;
-}
-
 static int cb_iobuffer(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1350,7 +1332,7 @@ static int cb_iova(void *user, void *data) {
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
 		/* ugly fix for r2 -d ... "r2 is going to die soon ..." */
-		if (r_io_desc_get (core->io, core->io->raised)) {
+		if (core->io->desc) {
 			r_core_block_read (core);
 		}
 #if 0
@@ -1360,13 +1342,6 @@ static int cb_iova(void *user, void *data) {
 		}
 #endif
 	}
-	return true;
-}
-
-static int cb_iopava(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->pava = node->i_value;
 	return true;
 }
 
@@ -2590,7 +2565,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
-	SETICB ("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB ("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
 	SETI ("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI ("io.buffer.to", 0, "Higher address of buffered cache");
@@ -2600,7 +2574,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");
-	SETCB ("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 
 	/* file */

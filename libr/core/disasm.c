@@ -256,6 +256,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_str(RDisasmState *ds, const char *str, int len);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
+#if 0
 	if (ds->core->io->pava) {
 		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
 		if (at == UT64_MAX || (!at && ds->at)) {
@@ -264,6 +265,7 @@ static ut64 p2v(RDisasmState *ds, ut64 addr) {
 			addr = at + addr;
 		}
 	}
+#endif
 	return addr;
 }
 
@@ -761,9 +763,10 @@ static void ds_build_op_str(RDisasmState *ds) {
 				}
 			}
 			if (ds->analop.refptr) {
-				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
 				if (core->parser->relsub_addr == 0) {
-					core->parser->relsub_addr = num;
+					ut64 killme;
+					r_io_read_i (core->io, ds->analop.ptr, &killme, 8, false);
+					core->parser->relsub_addr = (int)killme;
 				}
 			}
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
@@ -2844,7 +2847,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
-							RIOSection *s = core->print->iob.section_vget (core->print->iob.io, n);
+							RIOSection *s = r_io_section_vget (core->io, n);
 							if (s) {
 								refptrstr = s->name;
 							}
@@ -3882,7 +3885,7 @@ toro:
 		}
 		if (ds->lines < ds->l) {
 			//ds->addr += idx;
-			if (r_core_read_at (core, ds->addr, buf, len) != len) {
+			if (!r_core_read_at (core, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
 			goto toro;

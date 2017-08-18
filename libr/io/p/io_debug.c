@@ -64,6 +64,13 @@ static void trace_me ();
 #include <winbase.h>
 #include <psapi.h>
 
+typedef struct {
+	HANDLE hnd;
+	ut64 winbase;
+} RIOW32;
+
+static ut64 winbase;	//HACK
+
 static int setup_tokens() {
 	HANDLE tok = NULL;
 	TOKEN_PRIVILEGES tp;
@@ -170,9 +177,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		CloseHandle (th);
 	}
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
-	io->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
-	io->wintid = tid;
-	io->winpid = pid;
+	winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	return pid;
 
 err_fork:
@@ -545,7 +550,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
-			ret = _plugin->open (io, uri, rw, mode);
+			if ((ret = _plugin->open (io, uri, rw, mode))) {
+				RIOW32 *w32 = (RIOW32 *)ret->data;
+				w32->winbase = winbase;
+			}
+
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
 			_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);

@@ -11,7 +11,7 @@
 
 
 static ut64 ws_find_label(int l, RIOBind iob) {
-	RIO *io = iob.get_io (&iob);
+	RIO *io = iob.io;
 	ut64 cur = 0, size = iob.desc_size (io->desc);
 	ut8 buf[128];
 	RAsmOp aop;;

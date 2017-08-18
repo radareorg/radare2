@@ -38,7 +38,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RIODesc *yankdesc = NULL;
-	ut64 fd = core->file? core->file->desc->fd: -1, yank_file_sz = 0,
+	ut64 fd = core->file? core->file->fd: -1, yank_file_sz = 0,
 	     loadaddr = 0, addr = offset;
 	int res = false;
 
@@ -57,7 +57,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				addr += loadaddr;
 			} else if (yankdesc) {
 				eprintf ("Unable to map the opened file: %s", filename);
-				r_io_close (core->io, yankdesc->fd);
+				r_io_desc_close (yankdesc);
 				yankdesc = NULL;
 			} else {
 				eprintf ("Unable to open the file: %s", filename);
@@ -94,11 +94,11 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				PFMT64x ") > file_sz (0x%"PFMT64x ")\n", addr + len,
 				yank_file_sz );
 		}
-		r_io_close (core->io, yankdesc->fd);
+		r_io_desc_close (yankdesc);
 		free (buf);
 	}
 	if (fd != -1) {
-		r_io_raise (core->io, fd);
+		r_io_use_fd (core->io, fd);
 		core->switch_file_view = 1;
 		r_core_block_read (core);
 	}

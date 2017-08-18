@@ -864,50 +864,56 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
+	int ret;
 	if (!bin) {
 		return false;
 	}
 	// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr,
 	// xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
-	RIO *io = (iob && iob->get_io)? iob->get_io (iob): NULL;
-	if (!io) {
-		io = r_io_new ();
-		if (!io) {
+	RIODesc *desc = NULL;
+	if (!iob) {
+		return false;
+	}
+	if (!iob->io) {
+		iob->io = r_io_new ();	//wtf
+		if (!iob->io) {
 			return false;
 		}
 		bin->io_owned = true;
-		r_io_bind (io, &bin->iob);
+		r_io_bind (iob->io, &bin->iob);		//memleak?
+		iob = &bin->iob;
 	}
-	RIODesc *desc;
-	if (iob && fd == -1) {
-		desc = iob->open (io, file, R_IO_READ, 0644);
-	} else {
-		desc = iob->desc_get (io, fd);
+	if (!(desc = iob->desc_get (iob->io, fd))) {
+		desc = iob->open (iob->io, file, R_IO_READ, 0644);
 	}
 	bin->rawstr = rawstr;
 	// Use the current RIODesc otherwise r_io_map_select can swap them later on
 	if (!desc) {
-		r_io_free (io);
+		r_io_free (iob->io);
 		memset (&bin->iob, 0, sizeof (bin->iob));
 		bin->io_owned = false;
 		return false;
 	}
-	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
+	//Use the current RIODesc otherwise r_io_map_select can swap them later on
+	ret = r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
+	if (desc->fd != fd) {		//in case of open
+		iob->close (iob->io, desc->fd);
+	}
+	return ret;
 }
 
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 			 ut64 loadaddr, int xtr_idx, int fd, int rawstr,
 			 int fileoffset, const char *name) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->get_io (iob): NULL;
 	RIODesc *desc = NULL;
-	if (!io) {
+	if (!iob || !iob->io) {
 		return false;
 	}
 	desc = fd == -1 ?
-		iob->open (io, file, R_IO_READ, 0644) :
-		iob->desc_get (io, fd);
+		iob->open (iob->io, file, R_IO_READ, 0644) :
+		iob->desc_get (iob->io, fd);
 	return desc
 		? r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr,
 						  xtr_idx, fileoffset, name)
@@ -916,17 +922,13 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 
 R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->get_io (iob): NULL;
 	RList *the_obj_list;
 	int res = false;
 	RBinFile *bf = NULL;
 	ut8 *buf_bytes = NULL;
 	ut64 sz = UT64_MAX;
 
-	if (!io) {
-		return false;
-	}
-	if (!desc || !io) {
+	if (!desc || !iob || !iob->io) {
 		return false;
 	}
 	bf = r_bin_file_find_by_name (bin, desc->name);
@@ -953,33 +955,33 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		// load the bin-properly.  Many of the plugins require all
 		// content and are not
 		// stream based loaders
-		RIODesc *tdesc = iob->open (io, desc->name, desc->flags, 0);
+		RIODesc *tdesc = iob->open (iob->io, desc->name, desc->flags, 0);
 		if (!tdesc) {
 			return false;
 		}
-		iob->desc_use (io, desc->fd);
+		iob->desc_use (iob->io, desc->fd);
 		sz = iob->desc_size (tdesc);
 		if (sz == UT64_MAX) {
-			iob->close (io, tdesc->fd);
+			iob->close (iob->io, tdesc->fd);
 			return false;
 		}
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
-			iob->close (io, tdesc->fd);
+			iob->close (iob->io, tdesc->fd);
 			return false;
 		}
-		if (!iob->read_at (io, 0LL, buf_bytes, sz)) {
+		if (!iob->read_at (iob->io, 0LL, buf_bytes, sz)) {
 			free (buf_bytes);
-			iob->close (io, tdesc->fd);
+			iob->close (iob->io, tdesc->fd);
 			return false;
 		}
-		iob->close (io, tdesc->fd);
+		iob->close (iob->io, tdesc->fd);
 	} else {
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
 			return false;
 		}
-		if (!iob->read_at (io, 0LL, buf_bytes, sz)) {
+		if (!iob->read_at (iob->io, 0LL, buf_bytes, sz)) {
 			free (buf_bytes);
 			return false;
 		}
@@ -1013,7 +1015,7 @@ R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, 
 R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->get_io (iob): NULL;
+	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
 	ut8 *buf_bytes = NULL;
 	RBinXtrPlugin *xtr;
@@ -1021,11 +1023,11 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	RBinFile *binfile = NULL;
 	RIODesc *tdesc = NULL;
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
-	const bool oiova = io->va;
 
 	if (!io || !desc) {
 		return false;
 	}
+	const bool oiova = io->va;
 	if (loadaddr == UT64_MAX) {
 		loadaddr = 0;
 	}
@@ -2670,14 +2672,10 @@ R_API ut64 r_bin_get_size(RBin *bin) {
 }
 
 R_API int r_bin_file_delete_all(RBin *bin) {
-	RListIter *iter, *iter2;
-	RBinFile *bf;
 	int counter = 0;
 	if (bin) {
-		r_list_foreach_safe (bin->binfiles, iter, iter2, bf) {
-			r_list_delete (bin->binfiles, iter);
-			counter++;
-		}
+		counter = r_list_length (bin->binfiles);
+		r_list_purge (bin->binfiles);
 		bin->cur = NULL;
 	}
 	return counter;

@@ -699,13 +699,13 @@ static RList* patch_relocs(RBin *b) {
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOSection *g = NULL, *s = NULL;
-	RListIter *iter;
+	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	int i;
 	ut64 n_off, n_vaddr, vaddr, size, sym_addr = 0, offset = 0;
 	if (!b)
 		return NULL;
-	io = b->iob.get_io(&b->iob);
+	io = b->iob.io;
 	if (!io || !io->desc)
 		return NULL;
 	obj = r_bin_cur_object (b);
@@ -720,7 +720,7 @@ static RList* patch_relocs(RBin *b) {
 	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
 		return relocs (r_bin_cur (b));
 	}
-	r_list_foreach (io->sections, iter, s) {
+	ls_foreach (io->sections, iter, s) {
 		if (s->paddr > offset) {
 			offset = s->paddr;
 			g = s;

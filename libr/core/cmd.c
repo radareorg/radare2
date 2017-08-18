@@ -1016,8 +1016,8 @@ static int cmd_resize(void *data, const char *input) {
 	st64 delta = 0;
 	int grow, ret;
 
-	if (core->file && core->file->desc)
-		oldsize = r_io_desc_size (core->file->desc);
+	if (core->file)
+		oldsize = r_io_fd_size (core->io, core->file->fd);
 	else oldsize = 0;
 	switch (*input) {
 	case '2': // "r2"
@@ -1029,8 +1029,8 @@ static int cmd_resize(void *data, const char *input) {
 			r_file_rm (input + 2);
 		else eprintf ("Usage: rm [file]   # removes a file\n");
 		return true;
-	case '\0': // "r"
-		if (core->file && core->file->desc) {
+	case '\0':
+		if (core->file) {
 			if (oldsize != -1) {
 				r_cons_printf ("%"PFMT64d"\n", oldsize);
 			}
@@ -2168,8 +2168,8 @@ repeat_arroba:
 				break;
 			case 'o': // "@o:3"
 				if (ptr[1] == ':') {
-					tmpfd = core->io->raised;
-					r_io_raise (core->io, atoi (ptr + 2));
+					tmpfd = core->io->desc ? core->io->desc->fd : -1;
+					r_io_use_fd (core->io, atoi (ptr + 2));
 				}
 				break;
 			case 'a': // "@a:"
@@ -2321,7 +2321,7 @@ next_arroba:
 			tmpasm = NULL;
 		}
 		if (tmpfd != -1) {
-			r_io_raise (core->io, tmpfd);
+			r_io_use_fd (core->io, tmpfd);
 		}
 		if (tmpbits) {
 			r_config_set (core->config, "asm.bits", tmpbits);

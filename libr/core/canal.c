@@ -196,10 +196,10 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 	} else {
 		int _rwx = -1;
 		RIOSection *ios;
-		RListIter *iter;
+		SdbListIter *iter;
 		if (core->io) {
 			// sections
-			r_list_foreach (core->io->sections, iter, ios) {
+			ls_foreach (core->io->sections, iter, ios) {
 				if (addr >= ios->vaddr && addr < (ios->vaddr + ios->vsize)) {
 					// sections overlap, so we want to get the one with lower perms
 					_rwx = (_rwx != -1) ? R_MIN (_rwx, ios->flags) : ios->flags;
@@ -505,7 +505,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
-	buf = malloc (core->anal->opt.bb_max_size);
+	buflen = core->anal->opt.bb_max_size;
+	buf = calloc (1, buflen);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -515,15 +516,16 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		RAnalRef *ref;
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
-		if ((buflen = r_io_read_at (core->io, at + delta, buf, 4) != 4)) {
+		if (!r_io_read_at (core->io, at + delta, buf, buflen)) {
 			eprintf ("read errro\n");
 			goto error;
 		}
 		// real read.
 		// this is unnecessary if its contiguous
-		buflen = r_io_read_at (core->io, at+delta, buf, core->anal->opt.bb_max_size);
+		buflen = r_io_read_at (core->io, at+delta, buf, core->anal->opt.bb_max_size) ? 
+			core->anal->opt.bb_max_size : 0;
 		if (core->io->va) {
-			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_section_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
 		}
@@ -1252,7 +1254,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			}
 #endif
-			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_section_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
 				goto error;
 			}
 			buflen = core->anal->opt.bb_max_size;
@@ -1357,7 +1359,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	r_core_seek_archbits (core, at);
 
 	if (core->io->va) {
-		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
+		if (!r_io_is_valid_section_offset (core->io, at, !core->anal->opt.noncode)) {
 			return false;
 		}
 	}
@@ -2469,13 +2471,13 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 		return false;
 	}
 	wordsize = (int)(core->anal->bits / 8);
-	if ((dataptr = r_io_read_i (core->io, ptr, wordsize)) == -1) {
+	if (!r_io_read_i (core->io, ptr, &dataptr, wordsize, false)) {
 		return false;
 	}
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
 }
 
-enum {
+enum {		//WTF
 	R2_ARCH_ARM64
 };
 
@@ -2532,7 +2534,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_use_fd (core->io, core->file->fd);
 	if (!ref) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
@@ -2671,7 +2673,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_use_fd (core->io, core->file->fd);
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
@@ -2740,7 +2742,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			if (type == R_ANAL_REF_TYPE_NULL) {
 				continue;
 			}
-			if (!r_core_is_valid_offset (core, xref_to)) {
+			if (!r_io_is_valid_section_offset (core->io, xref_to, R_IO_EXEC)) {	//review me
 				continue;
 			}
 			if (cfg_debug) {
@@ -2748,9 +2750,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					continue;
 				}
 			} else if (core->io->va) {
-				RListIter *iter = NULL;
+				SdbListIter *iter = NULL;
 				RIOSection *s;
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
 						if (s->vaddr) break;
 					}
@@ -3020,8 +3022,10 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	memset (as->block, 0, as_size);
 	for (at = from; at < to; at += step) {
+		RIOSection *sec = r_io_section_get (core->io, at); 
 		piece = (at - from) / step;
-		as->block[piece].rwx = r_io_section_get_rwx (core->io, at);
+		as->block[piece].rwx = sec ? sec->flags :
+				(core->io->desc ? core->io->desc->flags: 0);
 	}
 	// iter all flags
 	r_list_foreach (core->flags->flags, iter, f) {
@@ -3334,10 +3338,10 @@ static bool myvalid(RIO *io, ut64 addr) {
 	if (addr < 0x100) {
 		return false;
 	}
-	if (addr == UT32_MAX || addr == UT64_MAX) {
+	if (addr == UT32_MAX || addr == UT64_MAX) {	//the best of the best of the best :(
 		return false;
 	}
-	if (!r_io_is_valid_offset (io, addr, 0)) {
+	if (!r_io_is_valid_real_offset (io, addr, 0)) {
 		return false;
 	}
 	return true;
@@ -3363,7 +3367,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		ut8 buf[8];
 		ut64 refptr;
 		if (len == 8) {
-			if (r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf)) != sizeof (buf)) {
+			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf))) {
 				/* invalid read */
 				refptr = UT64_MAX;
 			} else {
@@ -3371,7 +3375,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 				esilbreak_last_data = refptr;
 			}
 		} else {
-			if (r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf)) != sizeof (buf)) {
+			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf))) {
 				/* invalid read */
 				refptr = UT64_MAX;
 			} else {
@@ -3453,7 +3457,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			} else {
 				ut64 snv = r_reg_getv (anal->reg, "pc");
 				if (snv != UT32_MAX && snv != UT64_MAX) {
-					if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
+					if (r_io_is_valid_real_offset (anal->iob.io, *val, 1)) {
 						r_anal_hint_set_bits (anal, *val - 1, 16);
 					}
 				}
