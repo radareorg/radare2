@@ -985,6 +985,7 @@ R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 		return r_io_desc_cache_write (io->desc, paddr, buf, len);
 	}
 	r_io_desc_seek (io->desc, paddr, R_IO_SEEK_SET);
+	io->off = paddr;
 	ret = r_io_desc_write (io->desc, buf, len);
 	return ret < 1? 0 : ret;
 }
