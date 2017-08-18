@@ -555,7 +555,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
-			sprintf (uri, "ptrace://%d", pid);	
+			sprintf (uri, "ptrace://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			ret = _plugin->open (io, uri, rw, mode);
 #endif

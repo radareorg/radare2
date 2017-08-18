@@ -191,6 +191,14 @@ static int __close(RIODesc *fd) {
 	return -1;
 }
 
+static int __getpid(RIODesc *fd) {
+	return desc ? desc->pid : -1;
+}
+
+static int __gettid(RIODesc *fd) {
+	return desc ? desc->tid : -1;
+}
+
 int send_msg(libgdbr_t* g, const char* command);
 int read_packet(libgdbr_t* instance);
 
@@ -320,6 +328,8 @@ RIOPlugin r_io_plugin_gdb = {
 	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
+	.getpid = __getpid,
+	.gettid = __gettid,
 	.isdbg = true
 };
 
