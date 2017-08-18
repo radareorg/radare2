@@ -59,6 +59,14 @@ static const char *help_msg_aar[] = {
 	NULL
 };
 
+static const char *help_msg_ab[] = {
+	"Usage:", "ab", "",
+	"ab", " [hexpair-bytes]", "analyze N bytes",
+	"abj", " [hexpair-bytes]", "analyze N bytes (display in JSON)",
+	"abb", " [length]", "analyze N bytes and extract basic blocks",
+	NULL
+};
+
 static const char *help_msg_ad[] = {
 	"Usage:", "ad", "[kt] [...]",
 	"ad", " [N] [D]", "analyze N data words at D depth",
@@ -214,7 +222,8 @@ static const char *help_msg_af[] = {
 	"afu", " [addr]", "resize and analyze function from current address until addr",
 	"afv[bsra]", "?", "manipulate args, registers and variables in function",
 	"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
-	NULL };
+	NULL
+};
 
 static const char *help_msg_afb[] = {
 	"Usage:", "afb", " List basic blocks of given function",
@@ -227,6 +236,32 @@ static const char *help_msg_afb[] = {
 	"afbj", "", "show basic blocks information in json",
 	"afbe", "bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
+	NULL
+};
+
+static const char *help_msg_afc[] = {
+	"Usage:", "afc[agl?]", "",
+	"afc", " convention", "Manually set calling convention for current function",
+	"afc", "", "Show Calling convention for the Current function",
+	"afcr", "[j]", "Show register usage for the current function",
+	"afca", "", "Analyse function for finding the current calling convention",
+	"afcl", "", "List all available calling conventions",
+	"afco", " path", "Open Calling Convention sdb profile from given path",
+	NULL
+};
+
+static const char *help_msg_afC[] = {
+	"Usage:", "afC", " [addr]",
+	"afC", "", "function cycles cost",
+	"afCc", "", "cyclomatic complexity",
+	NULL
+};
+
+static const char *help_msg_afi[] = {
+	"Usage:", "afi[jl*]", " <addr>",
+	"afij", "", "function info in json format",
+	"afil", "", "verbose function info",
+	"afi*", "", "function, variables and arguments",
 	NULL
 };
 
@@ -331,7 +366,7 @@ static const char *help_msg_afvs[] = {
 };
 
 static const char *help_msg_afx[] = {
-	"Usage:", "afx[-cCd?] [src] [dst]", "# manage function references (see also ar?)",
+	"Usage:", "afx[-cCd?] [src] [dst]", " manage function references (see also ar?)",
 	"afxc", " sym.main+0x38 sym.printf", "add code ref",
 	"afxC", " sym.main sym.puts", "add call ref",
 	"afxd", " sym.main str.helloworld", "add data ref",
@@ -340,7 +375,7 @@ static const char *help_msg_afx[] = {
 };
 
 static const char *help_msg_ag[] = {
-	"Usage:", "ag[?f]", "Graphviz/graph code",
+	"Usage:", "ag[?f]", " Graphviz/graph code",
 	"ag", " [addr]", "output graphviz code (bb at addr and children)",
 	"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
 	"aga", " [addr]", "idem, but only addresses",
@@ -414,6 +449,19 @@ static const char *help_msg_ah[] = {
 	"ahp", " addr", "set pointer hint",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
+	NULL
+};
+
+static const char *help_msg_ahi[] = {
+	"Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
+	"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
+	"ahi", " b", "set base to binary (1)",
+	"ahi", " d", "set base to decimal (10)",
+	"ahi", " h", "set base to hexadecimal (16)",
+	"ahi", " o", "set base to octal (8)",
+	"ahi", " i", "set base to IP address (32)",
+	"ahi", " S", "set base to syscall (80)",
+	"ahi", " s", "set base to string (2)",
 	NULL
 };
 
@@ -507,6 +555,7 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, a);
 	DEFINE_CMD_DESCRIPTOR (core, aa);
 	DEFINE_CMD_DESCRIPTOR (core, aar);
+	DEFINE_CMD_DESCRIPTOR (core, ab);
 	DEFINE_CMD_DESCRIPTOR (core, ad);
 	DEFINE_CMD_DESCRIPTOR (core, ae);
 	DEFINE_CMD_DESCRIPTOR (core, aea);
@@ -514,6 +563,9 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, aep);
 	DEFINE_CMD_DESCRIPTOR (core, af);
 	DEFINE_CMD_DESCRIPTOR (core, afb);
+	DEFINE_CMD_DESCRIPTOR (core, afc);
+	DEFINE_CMD_DESCRIPTOR (core, afC);
+	DEFINE_CMD_DESCRIPTOR (core, afi);
 	DEFINE_CMD_DESCRIPTOR (core, afl);
 	DEFINE_CMD_DESCRIPTOR (core, afll);
 	DEFINE_CMD_DESCRIPTOR (core, afn);
@@ -528,6 +580,7 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, agg);
 	DEFINE_CMD_DESCRIPTOR (core, agn);
 	DEFINE_CMD_DESCRIPTOR (core, ah);
+	DEFINE_CMD_DESCRIPTOR (core, ahi);
 	DEFINE_CMD_DESCRIPTOR (core, ao);
 	DEFINE_CMD_DESCRIPTOR (core, ar);
 	DEFINE_CMD_DESCRIPTOR (core, ara);
@@ -1910,10 +1963,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afi[jl*] <addr>\n");
-			eprintf ("afij - function info in json format\n");
-			eprintf ("afil - verbose function info\n");
-			eprintf ("afi* - function, variables and arguments\n");
+			r_core_cmd_help (core, help_msg_afi);
 			break;
 		case 'l':   // "afil"
 			if (input[3] == '?') {
@@ -2002,9 +2052,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
 			}
 		} else if (input[2] == '?') {
-			eprintf ("Usage: afC[c] ([addr])\n"
-				" afC   - function cycles cost\n"
-				" afCc  - cyclomatic complexity\n");
+			r_core_cmd_help (core, help_msg_afC);
 		} else {
 			afCc (core, input + 3);
 		}
@@ -2015,15 +2063,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("Cannot find function here\n");
 			break;
 		}
-		const char *help_afc[] = {
-			"Usage:", "afc[agl?]", "",
-			"afc", " convention", "Manually set calling convention for current function",
-			"afc", "", "Show Calling convention for the Current function",
-			"afcr", "[j]", "Show register usage for the current function",
-			"afca", "", "Analyse function for finding the current calling convention",
-			"afcl", "", "List all available calling conventions",
-			"afco", " path", "Open Calling Convention sdb profile from given path",
-			NULL };
 		switch (input[2]) {
 		case 'o':{
 			char *dbpath = r_str_chop (strdup (input + 3));
@@ -2036,7 +2075,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (dbpath);
 			} break;
 		case'?':
-			r_core_cmd_help (core, help_afc);
+			r_core_cmd_help (core, help_msg_afc);
 			break;
 		case 'l': //afcl list all function Calling conventions.
 			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
@@ -2286,8 +2325,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'c': // add meta xref
 		case 'd':
 		case 's':
-		case 'C':
-			{
+		case 'C': {
 			char *p;
 			ut64 a, b;
 			RAnalFunction *fcn;
@@ -2299,8 +2337,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_anal_fcn_xref_add (core->anal, fcn, a, b, input[2]);
-				} else eprintf ("Cannot add reference to non-function\n");
-			} else eprintf ("Usage: afx[cCd?] [src] [dst]\n");
+				} else {
+					eprintf ("Cannot add reference to non-function\n");
+				}
+			} else {
+				r_core_cmd_help (core, help_msg_afx);
+			}
 			free (mi);
 			}
 			break;
@@ -4796,18 +4838,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'i': // "ahi"
 		if (input[1] == '?') {
-			const char* help_msg[] = {
-				"Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
-				"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
-				"ahi", " b", "set base to binary (1)",
-				"ahi", " d", "set base to decimal (10)",
-				"ahi", " h", "set base to hexadecimal (16)",
-				"ahi", " o", "set base to octal (8)",
-				"ahi", " i", "set base to IP address (32)",
-				"ahi", " S", "set base to syscall (80)",
-				"ahi", " s", "set base to string (2)",
-				NULL };
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_ahi);
 		} else if (input[1] == ' ') {
 		// You can either specify immbase with letters, or numbers
 			const int base =
@@ -5870,8 +5901,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			free (buf);
 		} else {
-			eprintf ("Usage:\n ab  [hexpair-bytes]\n abj [hexpair-bytes] (json)\n");
-			eprintf (" abb [length] # analyze N bytes and extract basic blocks\n");
+			r_core_cmd_help (core, help_msg_ab);
 		}
 		break;
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
