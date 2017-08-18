@@ -118,7 +118,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 		r2k_struct.beid = 0;
 		r2k_struct.pid = 0;
 		r2k_struct.wp = 1;
-		return r_io_desc_new (io, &r_io_plugin_r2k, pathname, rw, mode, (void *)fd);
+		return r_io_desc_new (io, &r_io_plugin_r2k, pathname, rw, mode, (void *)(size_t)fd);
 #else
 		io->cb_printf ("Not supported on this platform\n");
 #endif

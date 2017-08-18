@@ -5,6 +5,7 @@
 #include <r_cons.h>
 #include "ar.h"
 
+
 static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
 }

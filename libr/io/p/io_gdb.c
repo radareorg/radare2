@@ -72,7 +72,7 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOGdb *riog;
-	char host[128], *port, *pid, *name;
+	char host[128], *port, *pid;
 	int i_port = -1;
 	bool isdev = false;
 

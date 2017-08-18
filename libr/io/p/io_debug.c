@@ -50,6 +50,9 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #include <mach-o/nlist.h>
 #endif
 
+
+static void trace_me ();
+
 /*
  * Creates a new process and returns the result:
  * -1 : error
