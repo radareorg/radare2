@@ -19,6 +19,91 @@ R_LIB_VERSION (r_io);
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
+typedef int (*cbOnIterMap) (RIO *io, ut64 addr, ut8*buf, int len);
+static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
+		       int len, int match_flg, cbOnIterMap op) {
+	RIOMap* map;
+	RIODesc *desc;
+	ut64 vendaddr;
+	if (!io || !buf || len < 1) {
+		return;
+	}
+	if (!iter) {
+		// end of list
+		op (io, vaddr, buf, len);   
+		return;
+	}
+	// this block is not that much elegant
+	if (UT64_ADD_OVFCHK (len - 1, vaddr)) { 
+		// needed for edge-cases
+		int nlen;                   
+		// add a test for this block
+		vendaddr = UT64_MAX;        
+		nlen = (int) (UT64_MAX - vaddr + 1);
+		onIterMap (iter->p, io, 0LL, buf + nlen, len - nlen, match_flg, op);
+	} else {
+		vendaddr = vaddr + len - 1;
+	}
+	map = (RIOMap*) iter->data;
+	// search for next map or end of list
+	while (!r_io_map_is_in_range (map, vaddr, vendaddr)) {
+		iter = iter->p;
+		// end of list
+		if (!iter) {                      
+			// pread/pwrite
+			op (io, vaddr, buf, len); 
+			return;
+		}
+		map = (RIOMap*) iter->data;
+	}
+	if (map->from >= vaddr) {
+		onIterMap (iter->p, io, vaddr, buf, (int) (map->from - vaddr), match_flg, op);
+		buf = buf + (map->from - vaddr);
+		vaddr = map->from;
+		len = (int) (vendaddr - vaddr + 1);
+		if (vendaddr <= map->to) {
+			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
+				desc = io->desc;
+				r_io_use_fd (io, map->fd);
+				op (io, map->delta, buf, len);
+				io->desc = desc;
+			}
+		} else {
+			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
+				desc = io->desc;
+				r_io_use_fd (io, map->fd);
+				op (io, map->delta, buf, len - (int) (vendaddr - map->to));
+				io->desc = desc;
+			}
+			vaddr = map->to + 1;
+			buf = buf + (len - (int) (vendaddr - map->to));
+			len = (int) (vendaddr - map->to);
+			onIterMap (iter->p, io, vaddr, buf, len, match_flg, op);
+		}
+	} else {
+		if (vendaddr <= map->to) {
+			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
+				desc = io->desc;
+				r_io_use_fd (io, map->fd);
+				//warning: may overflow in rare usecases
+				op (io, map->delta + (vaddr - map->from), buf, len);            
+				io->desc = desc;
+			}
+		} else {
+			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
+				desc = io->desc;
+				r_io_use_fd (io, map->fd);
+				op (io, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to));
+				io->desc = desc;
+			}
+			vaddr = map->to + 1;
+			buf = buf + (len - (int) (vendaddr - map->to));
+			len = (int) (vendaddr - map->to);
+			onIterMap (iter->p, io, vaddr, buf, len, match_flg, op);
+		}
+	}
+}
+
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW0 (RIO);
 	if (!io) {
@@ -420,7 +505,6 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 		if (io->ff) {
 			memset (buf, 0xff, len);
 		}
-		return len;
 	}
 	if (!io->maps) {
 		return r_io_pread_at (io, vaddr, buf, len);
@@ -428,13 +512,31 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	if (io->debug) {
 		paddr = vaddr;
 	} else {
-		ut64 maddr = r_io_section_vaddr_to_maddr (io, vaddr);
+		ut64 maddr = UT64_MAX;
+		int count = 0;
+		//XXX UGLY hack to find mapped dir
+		//SIOL PROPERLY FIXES THIS WITH SECTION->MAP TRANSLATION
+		while (count < len) {
+			maddr = r_io_section_vaddr_to_maddr (io, vaddr + count);
+			if (maddr != UT64_MAX) {
+				break;
+			}
+			count++;
+		}
+		if (maddr == UT64_MAX) {
+			count = 0;
+			maddr = vaddr;
+		}
+		onIterMap (io->maps->tail, io, maddr, (ut8*)buf + count, len - count, 
+				R_IO_READ, (cbOnIterMap)r_io_pread_at);
+#if 0
 		paddr = r_io_map_select (io, maddr != UT64_MAX? maddr : vaddr);
 		if (paddr == UT64_MAX) {
 			paddr = vaddr;
 		}
+#endif
 	}
-	return r_io_pread_at (io, paddr, buf, len);
+	return len; 
 }
 
 //the API differs with SIOL in that returns a bool instead of amount read
@@ -684,12 +786,16 @@ R_API int r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
 		paddr = vaddr;
 	} else {
 		ut64 maddr = r_io_section_vaddr_to_maddr (io, vaddr);
+		onIterMap (io->maps->tail, io, maddr != UT64_MAX? maddr : vaddr, (ut8*)buf, len, 
+				R_IO_WRITE, (cbOnIterMap)r_io_pwrite_at);
+#if 0
 		paddr = r_io_map_select (io, maddr != UT64_MAX? maddr : vaddr);
 		if (paddr == UT64_MAX) {
 			paddr = vaddr;
 		}
+#endif
 	}
-	return r_io_pwrite_at (io, paddr, buf, len);
+	return len;
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
@@ -967,8 +1073,7 @@ R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 	if (!io_va && r_io_map_exists_for_offset (io, offset)) {
 		return true;
 	}
-	return r_io_map_exists_for_offset (io, offset) ||
-		   r_io_section_exists_for_vaddr (io, offset, hasperm);
+	return r_io_section_exists_for_vaddr (io, offset, hasperm);
 }
 
 

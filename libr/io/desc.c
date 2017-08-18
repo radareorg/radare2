@@ -122,10 +122,10 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 	if (r_io_desc_is_blockdevice (desc)) {
 		return UT64_MAX;
 	}
-	off = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
-	ret = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);
+	off = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	ret = r_io_desc_seek (desc, 0LL, R_IO_SEEK_END);
 	//what to do if that seek fails?
-	desc->plugin->lseek (desc->io, desc, off, R_IO_SEEK_SET);
+	r_io_desc_seek (desc, off, R_IO_SEEK_SET);
 	return ret;
 }
 

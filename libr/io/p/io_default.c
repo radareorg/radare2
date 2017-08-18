@@ -373,8 +373,9 @@ static bool __is_blockdevice (RIODesc *desc) {
 		return false;
 	}
 	mmo = desc->data;
-	if (fstat (mmo->fd, &buf) == -1)
+	if (fstat (mmo->fd, &buf) == -1) {
 		return false;
+	}
 	return ((buf.st_mode & S_IFBLK) == S_IFBLK);
 }
 #endif
