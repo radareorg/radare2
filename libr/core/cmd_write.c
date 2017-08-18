@@ -1091,6 +1091,8 @@ static int cmd_write(void *data, const char *input) {
 					*tmp = 0;
 				}
 				if ((st64)sz < 1) {
+					// wtf?
+					sz = 0;
 				} else {
 					r_core_dump (core, filename, poff, (ut64)sz, append);
 				}

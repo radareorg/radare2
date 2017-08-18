@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=1.5.0
+PREVIOUS_RELEASE=1.6.0
 
 MESON?=meson
 PYTHON?=python

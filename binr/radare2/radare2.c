@@ -814,7 +814,7 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "asm.bits", asmbits);
 			}
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
-			r_config_set_i (r.config, "io.va", false); // implicit?
+			r_config_set_i (r.config, "io.va", mapaddr != 0); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
 			if (optind >= argc) {
@@ -933,7 +933,7 @@ int main(int argc, char **argv, char **envp) {
 				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 				if (fh) {
 					if (!r_core_bin_load (&r, pfile, baddr)) {
-						r_config_set_i (r.config, "io.va", false);
+						r_config_set_i (r.config, "io.va", mapaddr != 0);
 					}
 				}
 			}
@@ -967,7 +967,7 @@ int main(int argc, char **argv, char **envp) {
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
 								if (!r_core_bin_load (&r, filepath, baddr)) {
-									r_config_set_i (r.config, "io.va", false);
+									r_config_set_i (r.config, "io.va", mapaddr != 0);
 								}
 							}
 						} else {
@@ -1053,9 +1053,9 @@ int main(int argc, char **argv, char **envp) {
 		} // else eprintf ("Metadata loaded from 'prj.name'\n");
 #endif
 		if (mapaddr) {
+			r_config_set (r.config, "io.va", "true");
 			r_core_seek (&r, mapaddr, 1);
 		}
-
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r.config, cmdn);
 			r_cons_flush ();
