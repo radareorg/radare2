@@ -298,7 +298,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		PRINTF_BA ("  node_cache = 0x%"PFMTx"\n", *(GHT *)&ar->node_cache);
 		PRINTF_BA ("  node_cache_mtx = 0x%"PFMTx"\n", *(GHT *)&ar->node_cache_mtx);
 		PRINTF_BA ("  chunks_hooks = 0x%"PFMTx"\n", *(GHT *)&ar->chunk_hooks);
-		PRINTF_BA ("  bins = %d 0x%"PFMTx"\n", NBINS, *(GHT *)&ar->bins);
+		PRINTF_BA ("  bins = %d 0x%"PFMTx"\n", JM_NBINS, *(GHT *)&ar->bins);
 		PRINTF_BA ("  runs_avail = %d 0x%"PFMTx"\n", NPSIZES, *(GHT *)&ar->runs_avail);
 		PRINT_GA ("}\n");
 		break;
@@ -342,7 +342,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 				PRINTF_BA ("@ 0x%"PFMTx, (GHT)arena);
 				PRINT_YA (" {\n");
 				r_core_read_at (core, arena, (ut8 *)ar, sizeof (arena_t));
-				for (j = 0; j < NBINS; j++) {
+				for (j = 0; j < JM_NBINS; j++) {
 					r_core_read_at (core, (GHT)(bin_info + j * sizeof (arena_bin_info_t)),
 						(ut8*)b, sizeof (arena_bin_info_t));
 					PRINT_YA ("    {\n");
