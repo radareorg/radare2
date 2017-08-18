@@ -227,6 +227,9 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 	RIOMap *map;
 	SdbListIter *iter;
 	ut64 end_addr = addr + size;
+	if (!flags) {
+		flags = R_IO_READ;
+	}
 	ls_foreach_prev (io->maps, iter, map) {
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000000
 		// keeping (fd, to, from) tuples as separate maps
@@ -366,4 +369,21 @@ R_API void r_io_map_list(RIO *io, int mode) {
 			}
 		}
 	}
+}
+
+
+R_API bool r_io_map_is_in_range(RIOMap* map, ut64 from, ut64 to) { //rename pls
+	if (!map || (to < from)) {
+		return false;
+	}
+	if (R_BETWEEN (map->from, from, map->to)) {
+		return true;
+	}
+	if (R_BETWEEN (map->from, to, map->to)) {
+		return true;
+	}
+	if (map->from > from && to > map->to) {
+		return true;
+	}
+	return false;
 }

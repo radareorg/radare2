@@ -318,14 +318,16 @@ static void cmd_open_map (RCore *core, const char *input) {
 					*r = 0;
 					size = r_num_math (core->num, q+1);
 					delta = r_num_math (core->num, r+1);
-				} else size = r_num_math (core->num, q+1);
-			} else size = r_io_size (core->io);
-			if ((desc = r_io_desc_get (core->io, fd))) {
-				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);	//rethink setting the flags
+				} else {
+					size = r_num_math (core->num, q+1);
+				}
 			} else {
-				eprintf ("Invalid fd\n");
+				size = r_io_size (core->io);
 			}
-		} else eprintf ("Invalid use of om . See om? for help.\n");
+			r_io_map_add (core->io, fd, 0, delta, addr, size);
+		} else {
+			eprintf ("Invalid use of om . See om? for help.");
+		}
 		free (s);
 		break;
 	case '-':
