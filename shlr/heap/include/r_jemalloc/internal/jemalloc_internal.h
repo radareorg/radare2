@@ -355,11 +355,7 @@ typedef unsigned szind_t;
 #    include <malloc.h>
 #    define alloca _alloca
 #  else
-#    ifdef JEMALLOC_HAS_ALLOCA_H
-#      include <alloca.h>
-#    else
-#      include <stdlib.h>
-#    endif
+#    include <stdlib.h>
 #  endif
 #  define VARIABLE_ARRAY(type, name, count) \
 	type *name = alloca(sizeof(type) * (count))
