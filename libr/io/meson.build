@@ -7,6 +7,8 @@ files=[
 'plugin.c',
 'section.c',
 'undo.c',
+'p_cache.c',
+'rbufplug.c',
 'p/io_ar.c',
 'p/io_bfdbg.c',
 'p/io_bochs.c',

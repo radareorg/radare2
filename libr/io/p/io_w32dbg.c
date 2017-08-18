@@ -63,7 +63,7 @@ static int __attach (RIOW32Dbg *dbg) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		char *pidpath;
-		RIODesc *ret
+		RIODesc *ret;
 		RIOW32Dbg *dbg = R_NEW0 (RIOW32Dbg);
 		if (!dbg) {
 			return NULL;
