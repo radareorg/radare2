@@ -638,6 +638,13 @@ int main(int argc, char **argv, char **envp) {
 			help++;
 		}
 	}
+#if 0
+	{
+		RBuffer *buf = r_buf_new_with_string("Hello World");
+		r_core_file_open_desc (&r, buf, 7, 0);
+		r_core_block_read (&r);
+	}
+#endif
 	if (noStderr) {
 		close (2);
 	}

@@ -369,8 +369,9 @@ R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
-	if (!io || !io->desc || !buf || io->off == UT64_MAX)
+	if (!io || !io->desc || !buf || io->off == UT64_MAX) {
 		return -1;
+	}
 	/* IGNORE check section permissions */
 	if (io->enforce_rwx & R_IO_READ) {
 		if (!(r_io_section_get_rwx (io, io->off) & R_IO_READ)) {

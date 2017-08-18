@@ -250,6 +250,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
+R_API int r_core_visual_refs(RCore *core, bool xref);
 R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
 R_API bool r_core_visual_hudstuff(RCore *core);
 R_API int r_core_visual_classes(RCore *core);
@@ -295,6 +296,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
 R_API RCoreFile *r_core_file_open(RCore *core, const char *file, int flags, ut64 loadaddr);
+R_API RCoreFile *r_core_file_open_desc(RCore *r, RBuffer *b, int flags, ut64 loadaddr);
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
 R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd);
 R_API int r_core_file_close(RCore *core, RCoreFile *fh);

@@ -135,6 +135,10 @@ R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	return b;
 }
 
+R_API RBuffer *r_buf_new_with_string (const char *msg) {
+	return r_buf_new_with_bytes ((const ut8*)msg, (ut64) strlen (msg));
+}
+
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
 	return r_buf_new_with_bytes (b->buf, b->length);
 }

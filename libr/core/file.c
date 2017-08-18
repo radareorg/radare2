@@ -761,6 +761,23 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	return top_file;
 }
 
+R_API RCoreFile *r_core_file_open_desc(RCore *r, RBuffer *b, int flags, ut64 loadaddr) {
+	RIODesc *d = r_io_open_buffer (r->io, b);
+	if (d) {
+		RCoreFile *fh = R_NEW0 (RCoreFile);
+		if (fh) {
+			fh->alive = 1;
+			fh->core = r;
+			fh->desc = d;
+			r->file = fh;
+			r->io->plugin = d->plugin;
+			r_list_append (r->files, fh);
+			return fh;
+		}
+	}
+	return NULL;
+}
+
 /* loadaddr is r2 -m (mapaddr) */
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	ut64 prev = r_sys_now ();

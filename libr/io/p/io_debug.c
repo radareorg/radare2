@@ -186,6 +186,8 @@ err_fork:
 }
 #else // windows
 
+#if 0
+// UNUSED
 static void trace_me () {
 #if __APPLE__
 	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
@@ -194,6 +196,8 @@ static void trace_me () {
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
 	signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
+		r_sys_perror ("ptrace-traceme");
+	}
 #else
 	if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
 		r_sys_perror ("ptrace-traceme");
@@ -201,7 +205,7 @@ static void trace_me () {
 	}
 #endif
 }
-
+#endif
 
 void handle_posix_error(int err) {
 	switch (err) {
@@ -429,8 +433,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			}
 			if (argv && *argv) {
 				int i;
-				for (i = 3; i < 1024; i++)
+				for (i = 3; i < 1024; i++) {
 					(void)close (i);
+				}
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");
@@ -584,6 +589,7 @@ RIOPlugin r_io_plugin_debug = {
 	.author = "pancake",
 	.version = "0.2.0",
 	.open = __open,
+	.close = __close,
 	.check = __plugin_open,
 	.isdbg = true,
 };

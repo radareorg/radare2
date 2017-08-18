@@ -28,6 +28,7 @@ typedef struct r_buf_cache_t {
 /* constructors */
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
+R_API RBuffer *r_buf_new_with_string (const char *msg);
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
 R_API RBuffer *r_buf_new_file(const char *file, bool newFile);

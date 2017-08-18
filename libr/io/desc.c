@@ -18,28 +18,27 @@ R_API bool r_io_desc_init(RIO* io) {
 
 //shall be used by plugins for creating descs
 //XXX kill mode
-R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri,
-			      int flags, int mode, void* data) {
+R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int flags, int mode, void* data) {
 	ut32 fd32 = 0;
-	RIODesc* desc;
 	// this is because emscript is a bitch
-	if (!io || !plugin || !uri || !io->files) {
+	if (!io || !plugin || !uri) {
 		return NULL;
 	}
-	if (!(desc = R_NEW0 (RIODesc))) {
-		return NULL;
+	if (io->files) {
+		if (!r_id_pool_grab_id (io->files->pool, &fd32)) {
+			return NULL;
+		}
 	}
-	if (!r_id_pool_grab_id (io->files->pool, &fd32)) {
-		free (desc);
-		return NULL;
+	RIODesc* desc = R_NEW0 (RIODesc);
+	if (desc) {
+		desc->fd = fd32;
+		desc->io = io;
+		desc->plugin = plugin;
+		desc->data = data;
+		desc->flags = flags;
+		//because the uri-arg may live on the stack
+		desc->uri = strdup (uri);
 	}
-	desc->fd = fd32;
-	desc->io = io;
-	desc->plugin = plugin;
-	desc->data = data;
-	desc->flags = flags;
-	//because the uri-arg may live on the stack
-	desc->uri = strdup (uri);
 	return desc;
 }
 
