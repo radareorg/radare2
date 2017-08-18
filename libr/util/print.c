@@ -1309,7 +1309,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	const int show_colors = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *firebow[6] = { NULL };
+	char *firebow[6];
 	int i = 0, j;
 
 	for (i = 0; i < 6; i++) {
@@ -1388,6 +1388,9 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			}
 		}
 		p->cb_printf ("\n");
+	}
+	for (i = 0; i < 6; i++) {
+		free (firebow[i]);
 	}
 }
 
@@ -1564,7 +1567,6 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	char *reset = partial_reset ? Color_NOBGRESET:Color_RESET;
 	ut32 c_reset = strlen (reset);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
-	int is_num;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
 	char previous = '\0';
 
@@ -1656,7 +1658,6 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			// find if next ',' before ' ' is found
 			is_mod = 0;
 			is_float = 0;
-			is_num = 1;
 			for (k = i + 1; p[k]; k++) {
 				if (p[k] == 'e' && p[k + 1] == '+') {
 					is_float = 1;
@@ -1668,9 +1669,6 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				if (p[k] == ',') {
 					is_mod = 1;
 					break;
-				}
-				if (!isdigit (p[k])) {
-					is_num = false;
 				}
 			}
 			if (is_float) {
