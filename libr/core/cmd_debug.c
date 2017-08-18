@@ -510,6 +510,42 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	free (syscalls);
 }
 
+static int showreg(RCore *core, const char *str) {
+	int size = 0;
+	RRegItem *r = r_reg_get (core->dbg->reg, str , -1);
+	if (r) {
+		ut64 off;
+		utX value;
+		if (r->size > 64) {
+			off = r_reg_get_value_big (core->dbg->reg, r, &value);
+			switch (r->size) {
+			case 80:
+				r_cons_printf ("0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
+				break;
+			case 96:
+				r_cons_printf ("0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
+				break;
+			case 128:
+				r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
+				break;
+			default:
+				r_cons_printf ("Error while retrieving reg '%s' of %i bits\n", str +1, r->size);
+			}
+		} else {
+			off = r_reg_get_value (core->dbg->reg, r);
+			r_cons_printf ("0x%08"PFMT64x "\n", off);
+		}
+		return r->size;
+	}
+	char *arg = strchr (str + 1, ' ');
+	if (arg && size == 0) {
+		size = atoi (arg + 1);
+	} else {
+		size = atoi (str + 1);
+	}
+	return size;
+}
+
 static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node *tn) {
 	RGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
@@ -1898,6 +1934,44 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 	}
 }
 
+
+#if 0
+static int showreg(RCore *core, const char *str, bool use_color) {
+	ut64 off;
+	utX value;
+	int err;
+	int bits = atoi (str);
+	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
+	if (bits) {
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color? Color_GREEN: NULL);
+	} else {
+		off = r_debug_reg_get_err (core->dbg, str + 1, &err, &value);
+		core->num->value = off;
+		switch (err) {
+		case 0:
+			r_cons_printf ("0x%08"PFMT64x"\n", off);
+			break;
+		case 1:
+			r_cons_printf ("Unknown register '%s'\n", str + 1);
+			break;
+		case 80:
+			r_cons_printf ("0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
+			break;
+		case 96:
+			r_cons_printf ("0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
+			break;
+		case 128:
+			r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
+			break;
+		default:
+			r_cons_printf ("Error %i while retrieving '%s' \n", err, str + 1);
+			core->num->value = 0;
+		}
+	}
+	return bits;
+}
+#endif
+
 static void cmd_debug_reg(RCore *core, const char *str) {
 	char *arg;
 	struct r_reg_item_t *r;
@@ -2003,22 +2077,22 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				switch (str[1]) {
 				case '1':
-					r_print_hexdump (core->print, 0LL, buf, len, 8, 1, 1);
+					r_print_hexdump (core->print, 0ll, buf, len, 8, 1, 1);
 					break;
 				case '2':
-					r_print_hexdump (core->print, 0LL, buf, len, 16, 2, 1);
+					r_print_hexdump (core->print, 0ll, buf, len, 16, 2, 1);
 					break;
 				case '4':
-					r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
+					r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
 					break;
 				case '8':
-					r_print_hexdump (core->print, 0LL, buf, len, 64, 8, 1);
+					r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					break;
 				default:
 					if (core->assembler->bits == 64) {
-						r_print_hexdump (core->print, 0LL, buf, len, 64, 8, 1);
+						r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					} else {
-						r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
+						r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
 					}
 					break;
 				}
@@ -2027,7 +2101,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'c': // "drc"
-		// TODO: set flag values with drc zf=1
+		// todo: set flag values with drc zf=1
 		{
 			RRegItem *r;
 			const char *name = str+1;
@@ -2042,7 +2116,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					if (rf) {
 						int o = r_reg_cond_bits (core->dbg->reg, id, rf);
 						core->num->value = o;
-						// ORLY?
+						// orly?
 						r_cons_printf ("%d\n", o);
 						free (rf);
 					} else eprintf ("unknown conditional or flag register\n");
@@ -2090,11 +2164,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 
 				  sl = r_str_word_set0 (s);
 				  if (sl == 4) {
-#define ARG(x) r_str_word_get0(s,x)
-					  n = (char)r_num_math (core->num, ARG(0));
-					  off = r_num_math (core->num, ARG(1));
-					  len = (int)r_num_math (core->num, ARG(2));
-					  rwx = (char)r_str_rwx (ARG (3));
+#define arg(x) r_str_word_get0(s,x)
+					  n = (char)r_num_math (core->num, arg(0));
+					  off = r_num_math (core->num, arg(1));
+					  len = (int)r_num_math (core->num, arg(2));
+					  rwx = (char)r_str_rwx (arg (3));
 					  if (len == -1) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 						  r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
@@ -2105,7 +2179,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  }
 				  } else {
-					eprintf ("|Usage: drx N [address] [length] [rwx]\n");
+					eprintf ("|usage: drx n [address] [length] [rwx]\n");
 				  }
 				  free (s);
 			  } break;
@@ -2133,10 +2207,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		default:
 			{
 				const char * help_message[] = {
-					"Usage: drs", "", "Register states commands",
-					"drs", "", "List register stack",
-					"drs", "+", "Push register state",
-					"drs", "-", "Pop register state",
+					"usage: drs", "", "register states commands",
+					"drs", "", "list register stack",
+					"drs", "+", "push register state",
+					"drs", "-", "pop register state",
 					NULL
 				};
 				r_core_cmd_help (core, help_message);
@@ -2146,7 +2220,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'm': // "drm"
 		if (str[1]=='?') {
-			eprintf ("Usage: drm [reg] [idx] [wordsize] [= value]\n");
+			eprintf ("usage: drm [reg] [idx] [wordsize] [= value]\n");
 		} else if (str[1]==' ') {
 			int word = 0;
 			int size = 0; // auto
@@ -2179,7 +2253,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_cons_printf ("0x%08"PFMT64x"\n", res);
 				}
 			} else {
-				eprintf ("Cannot find multimedia register '%s'\n", name);
+				eprintf ("cannot find multimedia register '%s'\n", name);
 			}
 			free (name);
 		} else {
@@ -2188,11 +2262,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		//r_debug_drx_list (core->dbg);
 		break;
 	case 'f': // "drf"
-		/* Note, that negative type forces sync to print the regs from the backend */
+		/* note, that negative type forces sync to print the regs from the backend */
 		r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, false);
 		//r_debug_drx_list (core->dbg);
 		if (str[1]=='?') {
-			eprintf ("Usage: drf [fpureg] [= value]\n");
+			eprintf ("usage: drf [fpureg] [= value]\n");
 		} else if (str[1]==' ') {
 			char *p, *name = strdup (str+2);
 			char *eq = strchr (name, '=');
@@ -2207,7 +2281,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (item) {
 				if (eq) {
 					long double val = 0.0f;
-#if __WINDOWS__
+#if __windows__
 					double dval = 0.0f;
 					sscanf (eq, "%lf", (double*)&dval);
 					val = dval;
@@ -2221,10 +2295,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, false);
 					long double res = r_reg_get_double (core->dbg->reg, item);
-					r_cons_printf ("%Lf\n", res);
+					r_cons_printf ("%lf\n", res);
 				}
 			} else {
-				eprintf ("Cannot find multimedia register '%s'\n", name);
+				eprintf ("cannot find multimedia register '%s'\n", name);
 			}
 			free (name);
 		} else {
@@ -2285,7 +2359,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							r_debug_reg_sync (core->dbg, type, false);
 							r_debug_reg_list (core->dbg, type, size, rad, use_color);
 						} else {
-							eprintf ("cmd_debug_reg: Unknown type\n");
+							eprintf ("cmd_debug_reg: unknown type\n");
 						}
 					}
 				} break;
@@ -2303,16 +2377,16 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (foo));
 			if (name && *name) {
 				r_cons_println (name);
-			} else eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+			} else eprintf ("oops. try drn [pc|sp|bp|a0|a1|a2|a3|a4|r0|r1|zf|sf|nf|of]\n");
 			free (foo);
 		}
 		break;
 	case 'd':
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // xxx detect which one is current usage
 		break;
 	case 'o':
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // xxx detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "dr="
@@ -2321,19 +2395,19 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (r_config_get_i (core->config, "cfg.debug")) {
 				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 					if (pcbits && pcbits != bits) {
-						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // xxx detect which one is current usage
 					}
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // xxx detect which one is current usage
 					if (pcbits2) {
-						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, 2, use_color); // XXX detect which one is current usage
+						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, 2, use_color); // xxx detect which one is current usage
 					}
-				} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+				} //else eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
 				if (pcbits && pcbits != bits)
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // xxx detect which one is current usage
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // xxx detect which one is current usage
 				core->dbg->reg = orig;
 			}
 		}
@@ -2366,10 +2440,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, str[0], use_color);
 		} else {
-			eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+			eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
 		}
 		break;
-	case ' ':
+	case ' ': // "dr"
 		arg = strchr (str + 1, '=');
 		if (arg) {
 			char *string;
@@ -2399,43 +2473,29 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							r_reg_get_value (core->dbg->reg, r));
 				}
 			} else {
-				eprintf ("Unknown register '%s'\n", string);
+				eprintf ("unknown register '%s'\n", string);
 			}
 			free (string);
 			// update flags here
 			r_core_cmdf (core, ".dr*%d", bits);
 			return;
+		}
+
+		int size = atoi (str + 1);
+		if (size) {
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, str[0], use_color);
 		} else {
-			ut64 off;
-			utX value;
-			int err;
-			int bits = atoi (str);
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
-			if (bits) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
-			} else {
-				off = r_debug_reg_get_err (core->dbg, str + 1, &err, &value);
-				core->num->value = off;
-				switch (err) {
-				case 0:
-					r_cons_printf ("0x%08"PFMT64x"\n", off);
-					break;
-				case 1:
-					r_cons_printf ("Unknown register '%s'\n", str + 1);
-					break;
-				case 80:
-					r_cons_printf ("0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
-					break;
-				case 96:
-					r_cons_printf ("0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
-					break;
-				case 128:
-					r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
-					break;
-				default:
-					r_cons_printf ("Error %i while retrieving '%s' \n", err, str + 1);
-					core->num->value = 0;
+			char *comma = strchr (str + 1, ',');
+			if (comma) {
+				size = 32; // non-zero
+				char *args = strdup (str + 1);
+				char argc = r_str_split (args, ',');
+				for (i = 0; i < argc; i++) {
+					showreg (core, r_str_word_get0 (args, i));
 				}
+				free (args);
+			} else {
+				size = showreg (core, str + 1);
 			}
 		}
 	}

@@ -2049,7 +2049,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			char *out, *cmd, *regname, *tmp;
 			char *subvec_str = r_str_new ("");
 			char *json_str = r_str_new ("");
-			// if json_str initialize to NULL, it's possible for afcrj to output a (null)
+			// if json_str initialize to NULL, it's possible for afcrj to output a (NULL)
 			// subvec_str and json_str should be valid until exiting this code block
 			bool json = input[3] == 'j'? true: false;
 			for (i = 0; i <= 11; i++) {
@@ -2754,42 +2754,26 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		size = atoi (str + 1);
 		if (size == 0) {
-			r = r_reg_get (core->dbg->reg, str + 1, -1);
-			if (r) {
-				ut64 off;
-				utX value;
-				if (r->size > 64) {
-					off = r_reg_get_value_big (core->dbg->reg, r, &value);
-					switch (r->size) {
-					case 80:
-						r_cons_printf ("0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
-						break;
-					case 96:
-						r_cons_printf ("0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
-						break;
-					case 128:
-						r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
-						break;
-					default:
-						r_cons_printf ("Error while retrieving reg '%s' of %i bits\n", str +1, r->size);
-					}
-				} else {
-					off = r_reg_get_value (core->dbg->reg, r);
-					r_cons_printf ("0x%08"PFMT64x "\n", off);
+			char *comma = strchr (str + 1, ',');
+			if (comma) {
+				size = 32; // non-zero
+				char *args = strdup (str + 1);
+				char argc = r_str_split (args, ',');
+				for (i = 0; i < argc; i++) {
+					showreg (core, r_str_word_get0 (args, i)); //
 				}
-				return;
+				free (args);
+			} else {
+				size = showreg (core, str + 1);
 			}
-			arg = strchr (str + 1, ' ');
-			if (arg && size == 0) {
-				*arg = '\0';
-				size = atoi (arg);
-			} else size = bits;
-			type = r_reg_type_by_name (str + 1);
-		}
-		if (type != R_REG_TYPE_LAST) {
-			__anal_reg_list (core, type, size, str[0]);
 		} else {
-			eprintf ("cmd_debug_reg: Unknown type\n");
+			char *arg = strchr (str + 1, ' ');
+			type = arg? r_reg_type_by_name (arg + 1): R_REG_TYPE_GPR;
+			if (type != R_REG_TYPE_LAST) {
+				__anal_reg_list (core, type, size, str[0]);
+			} else {
+				eprintf ("cmd_debug_reg: Unknown type\n");
+			}
 		}
 	}
 }
@@ -2823,12 +2807,12 @@ repeat:
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int exectrap = r_config_get_i (core->config, "esil.exectrap");
 		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-		int nonull = r_config_get_i (core->config, "esil.nonull");
+		int noNULL = r_config_get_i (core->config, "esil.noNULL");
 		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
 			goto out_return_zero;
 		}
 		esil = core->anal->esil;
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
 		esil->exectrap = exectrap;
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
@@ -3263,7 +3247,7 @@ static ut8 *regstate = NULL;
 
 static void esil_init (RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	int nonull = r_config_get_i (core->config, "esil.nonull");
+	int noNULL = r_config_get_i (core->config, "esil.noNULL");
 	opc = r_reg_getv (core->anal->reg, pc);
 	if (!opc || opc==UT64_MAX) {
 		opc = core->offset;
@@ -3275,7 +3259,7 @@ static void esil_init (RCore *core) {
 			R_FREE (regstate);
 			return;
 		}
-		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, nonull);
+		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, noNULL);
 	}
 	free (regstate);
 	regstate = r_reg_arena_peek (core->anal->reg);
@@ -3450,9 +3434,9 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats1 = r_config_get_i (core->config, "esil.stats");
-	int nonull = r_config_get_i (core->config, "esil.nonull");
+	int noNULL = r_config_get_i (core->config, "esil.noNULL");
 	esil = r_anal_esil_new (stacksize, iotrap);
-	r_anal_esil_setup (esil, core->anal, romem, stats1, nonull); // setup io
+	r_anal_esil_setup (esil, core->anal, romem, stats1, noNULL); // setup io
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
@@ -3565,7 +3549,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats = r_config_get_i (core->config, "esil.stats");
-	int nonull = r_config_get_i (core->config, "esil.nonull");
+	int noNULL = r_config_get_i (core->config, "esil.noNULL");
 	ut64 until_addr = UT64_MAX;
 	const char *until_expr = NULL;
 	RAnalOp *op;
@@ -3619,7 +3603,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap)))
 				return;
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
 		r_anal_esil_parse (esil, input + 1);
 		r_anal_esil_dumpstack (esil);
@@ -3760,7 +3744,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
 				return;
 			}
-			r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+			r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
 			esil->verbose = (int)r_config_get_i (core->config, "esil.verbose");
 			/* restore user settings for interrupt handling */
 			{
@@ -4049,7 +4033,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	}
 	binfile = r_core_bin_cur (core);
 	if (!binfile) {
-		eprintf ("cur binfile null\n");
+		eprintf ("cur binfile NULL\n");
 		return;
 	}
 	addr = core->offset;
@@ -5077,7 +5061,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	case 'k': // "aggk"
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
-		char *o = sdb_querys (db, "NULL", 0, "*");
+		char *o = sdb_querys (db, "null", 0, "*");
 		r_cons_print (o);
 		free (o);
 		break;
