@@ -216,7 +216,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	Sdb *sdb = NULL;
 	ut64 cur = 0;
 	ut64 start = core->offset;
-	ut64 size = r_num_math (core->num, input + 1);
+	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
 	RAnalOp *op;
 	RListIter *iter;

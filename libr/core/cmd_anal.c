@@ -1841,8 +1841,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case '+': // "af+"
-		{
+	case '+': { // "af+"
+		if (input[2] != ' ') {
+			eprintf ("Missing arguments\n");
+			return false;
+		}
 		char *ptr = strdup (input + 3);
 		const char *ptr2;
 		int n = r_str_word_set0 (ptr);
