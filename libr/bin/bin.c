@@ -876,9 +876,14 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		bin->io_owned = true;
 		r_io_bind (io, &bin->iob);
 	}
+	RIODesc *desc;
+	if (iob && fd == -1) {
+		desc = iob->open (io, file, R_IO_READ, 0644);
+	} else {
+		desc = iob->desc_get (io, fd);
+	}
 	bin->rawstr = rawstr;
 	// Use the current RIODesc otherwise r_io_map_select can swap them later on
-	RIODesc *desc = iob->desc_get (io, fd);
 	if (!desc) {
 		r_io_free (io);
 		memset (&bin->iob, 0, sizeof (bin->iob));

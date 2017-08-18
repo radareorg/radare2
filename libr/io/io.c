@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -193,16 +193,14 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
-	RIODesc* desc;
-	RIOPlugin* plugin;
 	if (!io || !io->files || !uri) {
 		return NULL;
 	}
-	plugin = r_io_plugin_resolve (io, uri, 0);
+	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);
 	if (!plugin || !plugin->open) {
 		return NULL;
 	}
-	desc = plugin->open (io, uri, flags, mode);
+	RIODesc *desc = plugin->open (io, uri, flags, mode);
 	if (!desc) {
 		return NULL;
 	}
