@@ -139,7 +139,7 @@ atomic_add_p(void **p, void *x)
 	if (sizeof (*p) == 8) {
 		return ((void *)(size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
 	}
-	return ((void *)(size_t)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
+	return ((void *)(size_t)atomic_add_uint32((uint32_t *)(size_t)p, (uint32_t)(size_t)x));
 }
 
 #if 0

@@ -1621,13 +1621,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 							}
 						}
 					}
+					if (closest_symbol) {
+						RCoreBinFilter filter;
+						filter.offset = 0LL;
+						filter.name = (char *) closest_symbol->name;
 
-					RCoreBinFilter filter;
-					filter.offset = 0LL;
-					filter.name = (char *) closest_symbol->name;
-
-					r_bin_set_baddr (core->bin, map->addr);
-					r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, false, true, &filter, NULL);
+						r_bin_set_baddr (core->bin, map->addr);
+						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, false, true, &filter, NULL);
+					}
 				}
 			}
 			break;

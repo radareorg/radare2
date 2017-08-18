@@ -477,7 +477,7 @@ struct arena_s {
 	chunk_hooks_t		chunk_hooks;
 
 	/* bins is used to store trees of free regions. */
-	arena_bin_t		bins[NBINS];
+	arena_bin_t		bins[JM_NBINS];
 
 	/*
 	 * Size-segregated address-ordered heaps of this arena's available runs,
@@ -512,7 +512,7 @@ extern const char	*purge_mode_names[];
 extern ssize_t		opt_lg_dirty_mult;
 extern ssize_t		opt_decay_time;
 
-extern arena_bin_info_t	arena_bin_info[NBINS];
+extern arena_bin_info_t	arena_bin_info[JM_NBINS];
 
 extern size_t		map_bias; /* Number of arena chunk header pages. */
 extern size_t		map_misc_offset;
@@ -865,7 +865,7 @@ arena_mapbits_binind_get(const arena_chunk_t *chunk, size_t pageind)
 
 	mapbits = arena_mapbits_get(chunk, pageind);
 	binind = (mapbits & CHUNK_MAP_BININD_MASK) >> CHUNK_MAP_BININD_SHIFT;
-	assert(binind < NBINS || binind == BININD_INVALID);
+	assert(binind < JM_NBINS || binind == BININD_INVALID);
 	return (binind);
 }
 
@@ -1109,7 +1109,7 @@ arena_ptr_small_binind_get(const void *ptr, size_t mapbits)
 		const void *rpages;
 
 		assert(binind != BININD_INVALID);
-		assert(binind < NBINS);
+		assert(binind < JM_NBINS);
 		chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
 		arena = extent_node_arena_get(&chunk->node);
 		pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
@@ -1141,7 +1141,7 @@ JEMALLOC_INLINE szind_t
 arena_bin_index(arena_t *arena, arena_bin_t *bin)
 {
 	szind_t binind = (szind_t)(bin - arena->bins);
-	assert(binind < NBINS);
+	assert(binind < JM_NBINS);
 	return (binind);
 }
 

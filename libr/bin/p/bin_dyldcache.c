@@ -23,7 +23,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return rc;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return (void *) (size_t) check_bytes (buf, sz);
 }
 

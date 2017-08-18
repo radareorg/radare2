@@ -50,7 +50,7 @@ struct ctl_arena_stats_s {
 	uint64_t		ndalloc_small;
 	uint64_t		nrequests_small;
 
-	malloc_bin_stats_t	bstats[NBINS];
+	malloc_bin_stats_t	bstats[JM_NBINS];
 	malloc_large_stats_t	*lstats;	/* nlclasses elements. */
 	malloc_huge_stats_t	*hstats;	/* nhclasses elements. */
 };

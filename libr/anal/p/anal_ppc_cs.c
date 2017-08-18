@@ -53,8 +53,12 @@ static const char* cmask64(const char *mb_c, const char *me_c) {
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c) mb = atol (mb_c);
-	if (me_c) me = atol (me_c);
+	if (mb_c) {
+		mb = atol (mb_c);
+	}
+	if (me_c) {
+		me = atol (me_c);
+	}
 	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
 	return cmask;
 }
