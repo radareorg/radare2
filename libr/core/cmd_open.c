@@ -272,6 +272,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	char *s, *p, *q;
 	ut64 cur, new;
 	RIOMap *map = NULL;
+	RIODesc *desc;
 	const char *P;
 
 	switch (input[1]) {
@@ -319,8 +320,12 @@ static void cmd_open_map (RCore *core, const char *input) {
 					delta = r_num_math (core->num, r+1);
 				} else size = r_num_math (core->num, q+1);
 			} else size = r_io_size (core->io);
-			r_io_map_add (core->io, fd, 0, delta, addr, size);
-		} else eprintf ("Invalid use of om . See om? for help.");
+			if ((desc = r_io_desc_get (core->io, fd))) {
+				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);	//rethink setting the flags
+			} else {
+				eprintf ("Invalid fd\n");
+			}
+		} else eprintf ("Invalid use of om . See om? for help.\n");
 		free (s);
 		break;
 	case '-':
