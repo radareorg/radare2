@@ -514,8 +514,22 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	if (io->debug) {
 		paddr = vaddr;
 	} else {
-		ut64 maddr = r_io_section_vaddr_to_maddr (io, vaddr);
-		onIterMap (io->maps->tail, io, maddr != UT64_MAX? maddr : vaddr, (ut8*)buf, len, 
+		ut64 maddr = UT64_MAX;
+		int count = 0;
+		//XXX UGLY hack to find mapped dir
+		//SIOL PROPERLY FIXES THIS WITH SECTION->MAP TRANSLATION
+		while (count < len) {
+			maddr = r_io_section_vaddr_to_maddr (io, vaddr + count);
+			if (maddr != UT64_MAX) {
+				break;
+			}
+			count++;
+		}
+		if (maddr == UT64_MAX) {
+			count = 0;
+			maddr = vaddr;
+		}
+		onIterMap (io->maps->tail, io, maddr, (ut8*)buf + count, len - count, 
 				R_IO_READ, (cbOnIterMap)r_io_pread_at);
 #if 0
 		paddr = r_io_map_select (io, maddr != UT64_MAX? maddr : vaddr);
@@ -774,7 +788,6 @@ R_API int r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
 		paddr = vaddr;
 	} else {
 		ut64 maddr = r_io_section_vaddr_to_maddr (io, vaddr);
-
 		onIterMap (io->maps->tail, io, maddr != UT64_MAX? maddr : vaddr, (ut8*)buf, len, 
 				R_IO_WRITE, (cbOnIterMap)r_io_pwrite_at);
 #if 0
