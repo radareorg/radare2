@@ -106,7 +106,10 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int count) {
 }
 R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
-		return (ut64) - 1;
+		return (ut64) -1;
+	}
+	if (whence == R_IO_SEEK_SET) {
+		desc->io->off = offset;
 	}
 	return desc->plugin->lseek (desc->io, desc, offset, whence);
 }

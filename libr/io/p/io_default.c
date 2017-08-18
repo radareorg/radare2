@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -118,11 +118,10 @@ static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 }
 
 RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
-	RIOMMapFileObj *mmo = NULL;
 	if (!io) {
 		return NULL;
 	}
-	mmo = R_NEW0 (RIOMMapFileObj);
+	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
 	}
