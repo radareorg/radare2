@@ -2190,6 +2190,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				if (ds->show_leahints) {
 					char s[64];
 					r_str_ncpy (s, (const char *)b, sizeof (s));
+					r_str_filter (s, -1);
 					ALIGN;
 					ds_comment (ds, true, "; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"%s",
 					            dst->reg->name, ptr, off, item?item->name: s, nl);
