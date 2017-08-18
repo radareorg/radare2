@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -797,12 +797,11 @@ R_API char *r_str_trim_head_tail(char *str) {
 	return r_str_trim_tail (r_str_trim_head (str));
 }
 
-// Copy all printable characters from src to dst, copy all printable characters
-// as '.'.
+// Secure string copy with null terminator (like strlcpy or strscpy but ours
 R_API void r_str_ncpy(char *dst, const char *src, int n) {
 	int i;
 	for (i = 0; src[i] && n > 0; i++, n--) {
-		dst[i] = IS_PRINTABLE (src[i])? src[i]: '.';
+		dst[i] = src[i];
 	}
 	dst[i] = 0;
 }

@@ -50,12 +50,6 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #include <mach-o/nlist.h>
 #endif
 
-#if __APPLE__ || __BSD__
-static void inferior_abort_handler(int pid) {
-	eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
-}
-#endif
-
 /*
  * Creates a new process and returns the result:
  * -1 : error
@@ -186,7 +180,13 @@ err_fork:
 }
 #else // windows
 
-#if 0
+#if (__APPLE__ && __POWERPC__) || !__APPLE__
+#if __APPLE__ || __BSD__
+static void inferior_abort_handler(int pid) {
+	eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
+}
+#endif
+
 // UNUSED
 static void trace_me () {
 #if __APPLE__
