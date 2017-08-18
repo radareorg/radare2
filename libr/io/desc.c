@@ -9,7 +9,7 @@ R_API bool r_io_desc_init(RIO* io) {
 		return false;
 	}
 	//fd is signed
-	io->files = r_id_storage_new (3, 0x80000000);   
+	io->files = r_id_storage_new (3, 0x80000000);
 	if (!io->files) {
 		return false;
 	}
@@ -61,7 +61,7 @@ R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
 	}
 	//just for the case when plugins cannot use r_io_desc_new
 	if (!desc->io) {
-		desc->io = io;                                          
+		desc->io = io;
 	}
 	if (!r_id_storage_set (io->files, desc, desc->fd)) {
 		eprintf ("You are using this API incorrectly\n");
@@ -92,14 +92,14 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 }
 
 R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int count) {
-	if (!desc || !desc->plugin || !desc->plugin->write || count < 0) {	
+	if (!desc || !desc->plugin || !desc->plugin->write || count < 0) {
 		return -1;
 	}
 	return desc->plugin->write (desc->io, desc, buf, count);
 }
 
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int count) {
-	if (!desc || !desc->plugin || !desc->plugin->read || count < 0) {	
+	if (!desc || !desc->plugin || !desc->plugin->read || count < 0) {
 		return -1;
 	}
 	return desc->plugin->read (desc->io, desc, buf, count);
@@ -225,4 +225,3 @@ R_API bool r_io_desc_fini(RIO* io) {
 	io->desc = NULL;
 	return true;
 }
-
