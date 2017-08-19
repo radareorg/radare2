@@ -493,10 +493,7 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	if (!io->maps || io->debug) {
 		return r_io_pread_at (io, vaddr, buf, len);
 	}
-	// normal
-	if (r_io_map_get (io, vaddr)) {
-		return 0;
-	}
+	// va
 	ut64 maddr = UT64_MAX;
 	int count = 0;
 	//XXX UGLY hack to find mapped dir
@@ -515,10 +512,10 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	onIterMap (io->maps->tail, io, maddr, (ut8*)buf + count, len - count, 
 			R_IO_READ, (cbOnIterMap)r_io_pread_at);
 #if 0
-		ut64 paddr = r_io_map_select (io, maddr != UT64_MAX? maddr : vaddr);
-		if (paddr == UT64_MAX) {
-			paddr = vaddr;
-		}
+	ut64 paddr = r_io_map_select (io, maddr != UT64_MAX? maddr : vaddr);
+	if (paddr == UT64_MAX) {
+		paddr = vaddr;
+	}
 #endif
 	return len; 
 }
