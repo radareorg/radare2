@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <r_util.h>
 #include <r_list.h>
 #include "transport.h"
 #include "windbg.h"
@@ -162,6 +163,7 @@ void windbg_ctx_free(WindCtx *ctx) {
 #define PKT_REQ(p) ((kd_req_t *) (((kd_packet_t *) p)->data))
 #define PKT_STC(p) ((kd_stc_64 *) (((kd_packet_t *) p)->data))
 
+#if 0
 static void dump_stc(kd_packet_t *p) {
 	kd_stc_64 *stc = PKT_STC (p);
 
@@ -172,12 +174,13 @@ static void dump_stc(kd_packet_t *p) {
 
 	if (stc->state == DbgKdExceptionStateChange) {
 		eprintf ("Exception\n");
-		eprintf ("\tCode   : %08x\n", stc->exception.code);
-		eprintf ("\tFlags  : %08x\n", stc->exception.flags);
-		eprintf ("\tRecord : %016"PFMT64x "\n", (ut64) stc->exception.ex_record);
-		eprintf ("\tAddr   : %016"PFMT64x "\n", (ut64) stc->exception.ex_addr);
+		eprintf (" Code   : %08x\n", stc->exception.code);
+		eprintf (" Flags  : %08x\n", stc->exception.flags);
+		eprintf (" Record : %016"PFMT64x "\n", (ut64) stc->exception.ex_record);
+		eprintf (" Addr   : %016"PFMT64x "\n", (ut64) stc->exception.ex_addr);
 	}
 }
+#endif
 
 static int do_io_reply(WindCtx *ctx, kd_packet_t *pkt) {
 	kd_ioc_t ioc = {
