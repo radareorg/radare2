@@ -1,5 +1,5 @@
 files=[
-'buffer.c',
+'iobuf.c',
 'cache.c',
 'desc.c',
 'io.c',
