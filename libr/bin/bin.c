@@ -1420,7 +1420,7 @@ static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes,
 		free((void*) bytes);
 	}
 	binfile->rbin = bin;
-	binfile->file = strdup (file);
+	binfile->file = file? strdup (file): NULL;
 	binfile->rawstr = rawstr;
 	binfile->fd = fd;
 	binfile->curxtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
