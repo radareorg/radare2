@@ -92,24 +92,33 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 }
 
 R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int count) {
-	if (!desc || !desc->plugin || !desc->plugin->write || count < 0) {
+	if (!buf || !desc || !desc->plugin || !desc->plugin->write || count < 0) {
 		return -1;
+	}
+	if (desc->io && desc->io->p_cache) {
+		return r_io_desc_cache_write (desc,
+				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, count);
 	}
 	return desc->plugin->write (desc->io, desc, buf, count);
 }
 
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int count) {
-	if (!desc || !desc->plugin || !desc->plugin->read || count < 0) {
+	ut64 seek;
+	int ret;
+	if (!buf || !desc || !desc->plugin || !desc->plugin->read || count < 0) {
 		return -1;
 	}
-	return desc->plugin->read (desc->io, desc, buf, count);
+	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	ret = desc->plugin->read (desc->io, desc, buf, count);
+	if ((ret >= 0) && desc->io && desc->io->p_cache) {
+		ret = r_io_desc_cache_read (desc, seek, buf, count);
+	}
+	return ret;
 }
+
 R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
 		return (ut64) -1;
-	}
-	if (whence == R_IO_SEEK_SET) {
-		desc->io->off = offset;
 	}
 	return desc->plugin->lseek (desc->io, desc, offset, whence);
 }
@@ -203,6 +212,20 @@ R_API int r_io_desc_get_tid(RIO* io, int fd) {
 		return -6;
 	}
 	return desc->plugin->gettid (desc);
+}
+
+R_API int r_io_desc_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
+	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
+		return r_io_desc_read (desc, buf, len);
+	}
+	return -1;
+}
+
+R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
+	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
+		return r_io_desc_write (desc, buf, len);
+	}
+	return -1;
 }
 
 static bool desc_fini_cb(void* user, void* data, ut32 id) {

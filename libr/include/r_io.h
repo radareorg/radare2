@@ -428,6 +428,8 @@ R_API bool r_io_desc_is_blockdevice (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);
 R_API int r_io_desc_get_pid (RIO *io, int fd);
 R_API int r_io_desc_get_tid (RIO *io, int fd);
+R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
+R_API int r_io_desc_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_desc_fini (RIO *io);
 R_API void r_io_desc_cache_cleanup(RIODesc *desc);
 
