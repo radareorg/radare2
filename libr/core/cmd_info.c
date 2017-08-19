@@ -731,9 +731,9 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a':
 			switch (mode) {
-			case R_CORE_BIN_RADARE: cmd_info (core, "IiecsSmz*"); break;
-			case R_CORE_BIN_JSON: cmd_info (core, "IiecsSmzj"); break;
-			case R_CORE_BIN_SIMPLE: cmd_info (core, "IiecsSmzq"); break;
+			case R_CORE_BIN_RADARE: cmd_info (core, "IieEcsSmz*"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "IieEcsSmzj"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
 			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
