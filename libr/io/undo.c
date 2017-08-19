@@ -207,14 +207,7 @@ R_API void r_io_wundo_clear(RIO *io) {
 
 // rename to r_io_undo_length ?
 R_API int r_io_wundo_size(RIO *io) {
-	RIOUndoWrite *uw;
-	RListIter *iter;
-	int i = 0;
-
-	if (io->undo.w_init)
-		r_list_foreach (io->undo.w_list, iter, uw)
-			i++;
-	return i;
+	return r_list_length (io->undo.w_list);
 }
 
 // TODO: Deprecate or so? iterators must be language-wide, but helpers are useful
