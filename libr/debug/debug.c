@@ -277,7 +277,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 		}
 	}
 	if (watch) {
-		//hw = 1;
+		hw = 1; //XXX
 		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
 	} else {
 		bpi = hw
