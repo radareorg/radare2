@@ -318,11 +318,11 @@ static int checkcmd(const char *c) {
 R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
 	struct sigaction sigact;
-	void *array[1];
 	if (!checkcmd (cmd)) {
 		return false;
 	}
 #ifdef HAVE_BACKTRACE
+	void *array[1];
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
 #endif

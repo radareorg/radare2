@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
+#include <r_util.h>
 #include "transport.h"
 
 #if __WINDOWS__ || __CYGWIN__ || MINGW32

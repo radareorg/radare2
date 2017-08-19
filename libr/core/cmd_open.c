@@ -272,7 +272,6 @@ static void cmd_open_map (RCore *core, const char *input) {
 	char *s, *p, *q;
 	ut64 cur, new;
 	RIOMap *map = NULL;
-	RIODesc *desc;
 	const char *P;
 
 	switch (input[1]) {
@@ -290,7 +289,9 @@ static void cmd_open_map (RCore *core, const char *input) {
 				ut64 diff = map->to - map->from;
 				map->from = new;
 				map->to = new+diff;
-			} else eprintf ("Cannot find any map here\n");
+			} else {
+				eprintf ("Cannot find any map here\n");
+			}
 		} else {
 			cur = core->offset;
 			new = r_num_math (core->num, input+3);
@@ -299,20 +300,25 @@ static void cmd_open_map (RCore *core, const char *input) {
 				ut64 diff = map->to - map->from;
 				map->from = new;
 				map->to = new+diff;
-			} else eprintf ("Cannot find any map here\n");
+			} else {
+				eprintf ("Cannot find any map here\n");
+			}
 		}
 		break;
 	case ' ':
 		// i need to parse delta, offset, size
-		s = strdup (input+2);
+		s = strdup (input + 2);
+		if (!s) {
+			break;
+		}
 		p = strchr (s, ' ');
 		if (p) {
 			q = strchr (p+1, ' ');
 			*p = 0;
 			fd = r_num_math (core->num, s);
-			addr = r_num_math (core->num, p+1);
+			addr = r_num_math (core->num, p + 1);
 			if (q) {
-				char *r = strchr (q+1, ' ');
+				char *r = strchr (q + 1, ' ');
 				*q = 0;
 				if (r) {
 					*r = 0;
@@ -331,12 +337,10 @@ static void cmd_open_map (RCore *core, const char *input) {
 		free (s);
 		break;
 	case '-':
-		if (atoi (input + 3)>0) {
-			r_io_map_del (core->io,
-					r_num_math (core->num, input+2));
+		if (atoi (input + 3) > 0) {
+			r_io_map_del (core->io, r_num_math (core->num, input+2));
 		} else {
-			r_io_map_del_at (core->io,
-					r_num_math (core->num, input+2));
+			r_io_map_del_at (core->io, r_num_math (core->num, input+2));
 		}
 		break;
 	case '\0':

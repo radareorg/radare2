@@ -1315,7 +1315,9 @@ static int cb_iobuffer(void *user, void *data) {
 		if (from>=to) {
 			eprintf ("ERROR: io.buffer.from >= io.buffer.to"
 					" (0x%"PFMT64x" >= 0x%"PFMT64x")\n", from, to);
-		} else r_io_buffer_load (core->io, from, (int)(to-from));
+		} else {
+			r_io_buffer_load (core->io, from, (int)(to-from));
+		}
 	} else {
 		r_io_buffer_close (core->io);
 	}

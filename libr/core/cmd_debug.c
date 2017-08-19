@@ -15,6 +15,7 @@
 #include "r_heap_jemalloc.h"
 #include "linux_heap_jemalloc.c"
 #endif
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",

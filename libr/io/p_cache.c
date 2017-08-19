@@ -97,14 +97,14 @@ R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int l
 	while (written < len) {
 		sdb_itoa (caddr, k, 10);
 		//get an existing desc-cache, if it exists
-		if (!(cache = (RIODescCache *)sdb_num_get (desc->cache, k, NULL))) {
+		if (!(cache = (RIODescCache *)(size_t)sdb_num_get (desc->cache, k, NULL))) {
 			//create new desc-cache
 			cache = R_NEW0 (RIODescCache);
 			if (!cache) {
 				return 0;
 			}
 			//feed sdb with the new desc-cache
-			sdb_num_set (desc->cache, k, (ut64)cache, 0);
+			sdb_num_set (desc->cache, k, (ut64)(size_t)cache, 0);
 		}
 		//check if the remaining data fits into the cache
 		if ((len - written) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
@@ -153,7 +153,7 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 	while (amount < len) {
 		sdb_itoa (caddr, k, 10);
 		//get an existing desc-cache, if it exists
-		if (!(cache = (RIODescCache *)sdb_num_get (desc->cache, k, NULL))) {	
+		if (!(cache = (RIODescCache *)(size_t)sdb_num_get (desc->cache, k, NULL))) {	
 			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
 		}
@@ -191,7 +191,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	if (!writes) {
 		return false;
 	}
-	dcache = (RIODescCache *)(void *)sdb_atoi (v);
+	dcache = (RIODescCache *)(size_t)sdb_atoi (v);
 	if (!dcache) {
 		return false;
 	}
@@ -273,14 +273,13 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 
 static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	RIODesc *desc = (RIODesc *)user;
-	RIODescCache *dcache;
 	ut64 blockaddr;
 	int byteaddr, i;
 	ut8 buf[R_IO_DESC_CACHE_SIZE] = {0};
 	if (!desc || !desc->io) {
 		return false;
 	}
-	dcache = (RIODescCache *)(void *)sdb_atoi (v);
+	RIODescCache *dcache = (RIODescCache *)(size_t)sdb_atoi (v);
 	if (!dcache) {
 		return false;
 	}
@@ -328,7 +327,7 @@ static int __desc_cache_cleanup_cb(void *user, const char *k, const char *v) {
 	if (!desc || !desc->cache) {
 		return false;
 	}
-	cache = (RIODescCache *) sdb_atoi (v);
+	cache = (RIODescCache *) (size_t)sdb_atoi (v);
 	blockaddr = R_IO_DESC_CACHE_SIZE * sdb_atoi (k);
 	size = r_io_desc_size (desc);
 	if (size <= blockaddr) {
@@ -352,7 +351,7 @@ R_API void r_io_desc_cache_cleanup(RIODesc *desc) {
 }
 
 static int __desc_cache_free_cb(void *user, const char* k, const char *v) {
-	RIODescCache *cache = (RIODescCache *)(void *)sdb_atoi (v);
+	RIODescCache *cache = (RIODescCache *)(size_t)sdb_atoi (v);
 	free (cache);
 	return true;
 }

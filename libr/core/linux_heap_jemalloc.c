@@ -137,15 +137,15 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 				r_core_read_at (core, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 				if (head->en_addr) {
 					PRINT_YA ("   Chunk - start: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut64)head->en_addr);
+					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
 					PRINT_YA (", end: ");
-					PRINTF_BA ("0x%"PFMTx, (head->en_addr + cnksz));
+					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)(head->en_addr + cnksz));
 					PRINT_YA (", size: ");
 					PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz); 
 					r_core_read_at (core, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					while (node && node->en_addr != head->en_addr) {
 						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%08"PFMT64x, (ut64)node->en_addr); 
+						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr); 
 						PRINT_YA (", end: ");
 						PRINTF_BA ("0x%"PFMTx, (node->en_addr + cnksz));
 						PRINT_YA (", size: ");
@@ -187,20 +187,20 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 					r_core_read_at (core, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 					if (head->en_addr != 0) {
 						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%08"PFMT64x, (ut64)head->en_addr);
+						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
 						PRINT_YA (", end: ");
 						PRINTF_BA ("0x%"PFMTx, (head->en_addr + cnksz));
 						PRINT_YA (", size: ");
 						PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz); 
-            ut64 addr = (ut64) head->ql_link.qre_next;
+						ut64 addr = (ut64) (size_t)head->ql_link.qre_next;
 						r_core_read_at (core, addr, (ut8 *)node, sizeof (extent_node_t));
 						while (node && head && node->en_addr != head->en_addr) {
 							PRINT_YA ("   Chunk - start: ");
-							PRINTF_BA ("0x%08"PFMT64x, (ut64)node->en_addr);
+							PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
 							PRINT_YA (", end: ");
-							PRINTF_BA ("0x%"PFMTx, (node->en_addr + cnksz));
+							PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(node->en_addr + cnksz));
 							PRINT_YA (", size: ");
-							PRINTF_BA ("0x%"PFMTx"\n", cnksz);
+							PRINTF_BA ("0x%"PFMT64x"\n", cnksz);
 							r_core_read_at (core, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 						}
 					}

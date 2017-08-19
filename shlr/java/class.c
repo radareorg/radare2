@@ -3367,8 +3367,6 @@ R_API RBinJavaAttrInfo *r_bin_java_unknown_attr_new(ut8 *buffer, ut64 sz, ut64 b
 }
 
 R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
-	RBinJavaExceptionEntry *exc_entry = NULL;
-	RBinJavaAttrInfo *_attr = NULL;
 	RListIter *iter, *iter_tmp;
 	ut64 size = 0;
 	if (attr) {
@@ -3385,6 +3383,7 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 		}
 		// attr->info.code_attr.exception_table_length =  R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
+		RBinJavaExceptionEntry *exc_entry;
 		r_list_foreach_safe (attr->info.code_attr.exception_table, iter, iter_tmp, exc_entry) {
 			// exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
 			size += 2;
@@ -3397,6 +3396,7 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 		}
 		// attr->info.code_attr.attributes_count = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
+		RBinJavaAttrInfo *_attr;
 		if (attr->info.code_attr.attributes_count > 0) {
 			r_list_foreach_safe (attr->info.code_attr.attributes, iter, iter_tmp, _attr) {
 				size += r_bin_java_attr_calc_size (attr);
@@ -3852,7 +3852,7 @@ R_API ut64 r_bin_java_local_variable_table_attr_calc_size(RBinJavaAttrInfo *attr
 	ut64 size = 0;
 	// ut64 offset = 0;
 	RListIter *iter;
-	RBinJavaLocalVariableAttribute *lvattr = NULL;
+	RBinJavaLocalVariableAttribute *lvattr;
 	if (!attr) {
 		return 0LL;
 	}

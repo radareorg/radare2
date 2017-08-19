@@ -11,11 +11,11 @@
    /* Disable inlining to make debugging/profiling easier. */
 #  define JEMALLOC_ALWAYS_INLINE
 #  define JEMALLOC_ALWAYS_INLINE_C static
-#  define JEMALLOC_INLINE
+#  undef JEMALLOC_INLINE
 #  define JEMALLOC_INLINE_C static
 #  define inline
 #else
-#  define JEMALLOC_ENABLE_INLINE
+// #  define JEMALLOC_ENABLE_INLINE
 #  ifdef JEMALLOC_HAVE_ATTR
 #    define JEMALLOC_ALWAYS_INLINE \
 	 static inline JEMALLOC_ATTR(unused) JEMALLOC_ATTR(always_inline)

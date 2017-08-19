@@ -137,7 +137,7 @@ JEMALLOC_INLINE void *
 atomic_add_p(void **p, void *x)
 {
 	if (sizeof (*p) == 8) {
-		return ((void *)(size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
+		return ((void *)(size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)(size_t)x));
 	}
 	return ((void *)(size_t)atomic_add_uint32((uint32_t *)(size_t)p, (uint32_t)(size_t)x));
 }
@@ -174,9 +174,9 @@ atomic_write_p(void **p, const void *x)
 {
 
 #if (LG_SIZEOF_PTR == 3)
-	atomic_write_uint64((uint64_t *)p, (uint64_t)x);
+	atomic_write_uint64((uint64_t *)p, (uint64_t)(size_t)x);
 #elif (LG_SIZEOF_PTR == 2)
-	atomic_write_uint32((uint32_t *)p, (uint32_t)x);
+	atomic_write_uint32((uint32_t *)p, (uint32_t)(size_t)x);
 #endif
 }
 
