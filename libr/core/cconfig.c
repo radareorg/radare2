@@ -857,10 +857,10 @@ static int cb_cfgdebug(void *user, void *data) {
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
 #if __WINDOWS__
-			r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
+			r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);		//XXX use desc-api here for pid and tid
 #else
-			int pid = r_io_desc_get_pid (core->io, core->file->desc->fd);
-			r_debug_select (core->dbg, pid, pid);
+			r_debug_select (core->dbg, r_io_desc_get_pid (core->file->desc),
+					r_io_desc_get_tid (core->file->desc));
 #endif
 		}
 	} else {

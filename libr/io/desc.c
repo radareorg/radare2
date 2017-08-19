@@ -72,7 +72,7 @@ R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
 	return true;
 }
 
-R_API bool r_io_desc_del(RIO* io, int fd) {
+R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and check if it belongs to the desc->io ?
 	RIODesc* desc;
 	if (!io || !io->files || !(desc = r_id_storage_get (io->files, fd))) {
 		return false;
@@ -89,6 +89,53 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 		return NULL;
 	}
 	return (RIODesc*) r_id_storage_get (io->files, fd);
+}
+
+R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
+	RIOPlugin *plugin;
+	RIODesc *desc;
+	if (!io || !io->files || !uri) {
+		return NULL;
+	}
+	plugin = r_io_plugin_resolve (io, uri, 0);
+	if (!plugin || !plugin->open || !plugin->close) {
+		return NULL;
+	}
+	desc = plugin->open (io, uri, flags, mode);
+	if (!desc) {
+		return NULL;
+	}
+	//for none static callbacks, those that cannot use r_io_desc_new
+	if (!desc->plugin) {
+		desc->plugin = plugin;
+	}
+	if (!desc->uri) {
+		desc->uri = strdup (uri);
+	}
+	if (!desc->name) {
+		desc->name = strdup (uri);
+	}
+	r_io_desc_add (io, desc);
+	return desc;
+}
+
+R_API bool r_io_desc_close(RIODesc *desc) {
+	RIO *io;
+	if (!desc || !desc->io || !desc->plugin || !desc->plugin->close) {
+		return false;
+	}
+	if (desc->plugin->close (desc)) {
+		return false;
+	}
+	io = desc->io;
+	// remove entry from idstorage and free the desc-struct
+	r_io_desc_del (io, desc->fd);
+	// remove all dead maps
+#if 0
+	r_io_map_cleanup (io);
+	r_io_section_cleanup (io);
+#endif
+	return true;
 }
 
 R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int count) {
@@ -173,13 +220,9 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	return true;
 }
 
-R_API int r_io_desc_get_pid(RIO* io, int fd) {
-	RIODesc* desc;
-	if (!io || !io->files) {
-		//-1 is reserved for plugin internal errors
-		return -2;
-	}
-	if (!(desc = r_io_desc_get (io, fd))) {
+R_API int r_io_desc_get_pid(RIODesc *desc) {
+	//-1 and -2 are reserved
+	if (!desc) {
 		return -3;
 	}
 	if (!desc->plugin) {
@@ -194,12 +237,9 @@ R_API int r_io_desc_get_pid(RIO* io, int fd) {
 	return desc->plugin->getpid (desc);
 }
 
-R_API int r_io_desc_get_tid(RIO* io, int fd) {
-	RIODesc* desc;
-	if (!io || !io->files) {
-		return -2;              //-1 is reserved for plugin internal errors
-	}
-	if (!(desc = r_io_desc_get (io, fd))) {
+R_API int r_io_desc_get_tid(RIODesc *desc) {
+	//-1 and -2 are reserved
+	if (!desc) {
 		return -3;
 	}
 	if (!desc->plugin) {

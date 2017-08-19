@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - condret, pancake, alvaro */
+
 #ifndef R2_IO_H
 #define R2_IO_H
 
@@ -416,8 +418,10 @@ R_API int r_io_wundo_set(RIO *io, int n, int set);
 //desc.c
 R_API bool r_io_desc_init (RIO *io);
 R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
-R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int count);
-R_API int r_io_desc_write(RIODesc *desc, const ut8 *buf, int count);
+R_API RIODesc *r_io_desc_open (RIO *io, const char *uri, int flags, int mode);
+R_API bool r_io_desc_close (RIODesc *desc);
+R_API int r_io_desc_read (RIODesc *desc, ut8 *buf, int count);
+R_API int r_io_desc_write (RIODesc *desc, const ut8 *buf, int count);
 R_API void r_io_desc_free (RIODesc *desc);
 R_API bool r_io_desc_add (RIO *io, RIODesc *desc);
 R_API bool r_io_desc_del (RIO *io, int fd);
@@ -425,13 +429,13 @@ R_API RIODesc *r_io_desc_get (RIO *io, int fd);
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_is_blockdevice (RIODesc *desc);
-R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);
-R_API int r_io_desc_get_pid (RIO *io, int fd);
-R_API int r_io_desc_get_tid (RIO *io, int fd);
+R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);	//this should get 2 descs
+R_API int r_io_desc_get_pid (RIODesc *desc);
+R_API int r_io_desc_get_tid (RIODesc *desc);
 R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
 R_API int r_io_desc_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_desc_fini (RIO *io);
-R_API void r_io_desc_cache_cleanup(RIODesc *desc);
+R_API void r_io_desc_cache_cleanup (RIODesc *desc);
 
 
 /* io/p_cache.c */
@@ -449,6 +453,20 @@ R_API void r_io_buffer_close(RIO* io);
 R_API int r_io_buffer_load(RIO* io, ut64 addr, int len);
 R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len);
 R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len);
+
+/* io/fd.c */
+R_API int r_io_fd_open (RIO *io, const char *uri, int flags, int mode);
+R_API bool r_io_fd_close (RIO *io, int fd);
+R_API int r_io_fd_read (RIO *io, int fd, ut8 *buf, int len);
+R_API int r_io_fd_write (RIO *io, int fd, ut8 *buf, int len);
+R_API ut64 r_io_fd_seek (RIO *io, int fd, ut64 addr, int whence);
+R_API ut64 r_io_fd_size (RIO *io, int fd);
+R_API bool r_io_fd_is_blockdevice (RIO *io, int fd);
+R_API int r_io_fd_read_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
+R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
+R_API int r_io_fd_get_pid (RIO *io, int fd);
+R_API int r_io_fd_get_tid (RIO *io, int fd);
+
 
 #define r_io_range_new()	R_NEW0(RIORange)
 #define r_io_range_free(x)	free(x)

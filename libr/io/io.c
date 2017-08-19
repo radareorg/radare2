@@ -278,32 +278,15 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
-	if (!io || !io->files || !uri) {
+	RIODesc *desc;
+	if (!io) {
 		return NULL;
 	}
-	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);
-	if (!plugin || !plugin->open) {
-		return NULL;
-	}
-	RIODesc *desc = plugin->open (io, uri, flags, mode);
-	if (!desc) {
-		return NULL;
-	}
-	//for none static callbacks, those that cannot use r_io_desc_new
-	if (!desc->plugin) {
-		desc->plugin = plugin;
-	}
-	if (!desc->uri) {
-		desc->uri = strdup (uri);
-	}
-	if (!desc->name) {
-		desc->name = strdup (uri);
-	}
-	r_io_desc_add (io, desc);
-	//set desc as current if autofd or io->desc==NULL
-	if (io->autofd || !io->desc) {
+	desc = r_io_desc_open (io, uri, flags, mode);
+	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
 	}
+	//set desc as current if autofd or io->desc==NULL
 	return desc;
 }
 
@@ -873,16 +856,6 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	return ret;
 }
 
-R_API ut64 r_io_fd_size(RIO *io, int fd) {
-	RIODesc *desc = r_io_desc_get (io, fd);
-	return r_io_desc_size (desc);
-}
-
-R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {
-	RIODesc *desc = r_io_desc_get (io, fd);
-	return r_io_desc_is_blockdevice (desc);
-}
-
 R_API ut64 r_io_size(RIO *io) {
 	return io? r_io_desc_size (io->desc): 0LL;
 }
@@ -906,22 +879,8 @@ R_API int r_io_plugin_close(RIO *io, RIODesc *desc) {
 	return -1;
 }
 
-R_API bool r_io_close(RIO *io, int fd) {
-	RIODesc* desc = r_io_desc_get (io, fd);
-	if (!desc || !desc->plugin || !desc->plugin->close) {
-		return false;
-	}
-	if (desc->plugin->close (desc)) {
-		return false;
-	}
-	// remove entry from sdb-instance and free the desc-struct
-	r_io_desc_del (io, fd);
-	// remove all dead maps
-#if 0
-	r_io_map_cleanup (io);
-	r_io_section_cleanup (io);
-#endif
-	return true;
+R_API bool r_io_close(RIO *io, int fd) {	//should close io->desc
+	return r_io_desc_close (r_io_desc_get (io, fd));
 }
 
 R_API int r_io_close_all(RIO *io) {

@@ -1512,7 +1512,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system(dbg->iob.io, "baddr");
 	}
-	int pid = r_io_desc_get_pid (dbg->iob.io, dbg->iob.io->desc->fd);
+	int pid = r_io_desc_get_pid (dbg->iob.io->desc);
 	if (r_debug_attach (dbg, pid) == -1) {
 		return 0LL;
 	}

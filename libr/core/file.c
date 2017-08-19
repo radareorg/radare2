@@ -351,11 +351,11 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		return false;
 	}
 	if (cf && desc) {
-		int newpid = r_io_desc_get_pid (r->io, desc->fd);
 #if __WINDOWS__
 		r_debug_select (r->dbg, r->dbg->pid, r->dbg->tid);
 #else
-		r_debug_select (r->dbg, newpid, newpid);
+		r_debug_select (r->dbg, r_io_desc_get_pid (desc),
+				r_io_desc_get_tid (desc));
 #endif
 	}
 #if !__linux__
