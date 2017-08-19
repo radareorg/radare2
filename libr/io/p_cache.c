@@ -188,7 +188,6 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	RIOCache *cache = NULL;
 	ut64 blockaddr;
 	int byteaddr, i;
-	bool prev_written = false;
 	if (!writes) {
 		return false;
 	}
@@ -199,7 +198,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	blockaddr = sdb_atoi (k) * R_IO_DESC_CACHE_SIZE;
 	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
-			if (!prev_written) {
+			if (!cache) {
 				cache = R_NEW0 (RIOCache);
 				if (!cache) {
 					return false;
@@ -209,13 +208,11 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 					free (cache);
 					return false;
 				}
-				prev_written = true;
 				cache->from = blockaddr + byteaddr;
 			}
 			cache->data[i] = dcache->cdata[byteaddr];
 			i++;
-		} else if (prev_written) {
-			prev_written = false;
+		} else if (cache) {
 			ut8 *data = realloc (cache->data, i);
 			if (!data) {
 				return false;
@@ -276,34 +273,31 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 
 static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	RIODesc *desc = (RIODesc *)user;
-	RIODescCache *cache;
-	ut64 blockaddr, paddr;
+	RIODescCache *dcache;
+	ut64 blockaddr;
 	int byteaddr, i;
 	ut8 buf[R_IO_DESC_CACHE_SIZE] = {0};
-	bool prev_written = false;
 	if (!desc || !desc->io) {
 		return false;
 	}
-	cache = (RIODescCache *)(void *)sdb_atoi (v);
-	if (!cache) {
+	dcache = (RIODescCache *)(void *)sdb_atoi (v);
+	if (!dcache) {
 		return false;
 	}
 	blockaddr = R_IO_DESC_CACHE_SIZE * sdb_atoi (k);
 	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
-		if (cache->cached & (0x1LL << byteaddr)) {
-			if (!prev_written) {
-				paddr = blockaddr + byteaddr;
-				prev_written = true;
-			}
-			buf[i] = cache->cdata[byteaddr];
+		if (dcache->cached & (0x1LL << byteaddr)) {
+			buf[i] = dcache->cdata[byteaddr];
 			i++;
-		} else if (prev_written) {
-			prev_written = false;
-			r_io_pwrite_at (desc->io, paddr, buf, i);
+		} else if (i) {
+			r_io_pwrite_at (desc->io, blockaddr + byteaddr - i, buf, i);
 			i = 0;
 		}
 	}
-	free (cache);
+	if (i) {
+		r_io_pwrite_at (desc->io, blockaddr + R_IO_DESC_CACHE_SIZE - i, buf, i);
+	}
+	free (dcache);
 	return true;
 }
 
