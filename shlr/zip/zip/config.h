@@ -4,12 +4,14 @@
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
 /* #undef HAVE_DECL_TZNAME */
+#if 0
 
 #ifndef ftello
 #define ftello ftell
 #endif
 #ifndef fseeko
 #define fseeko fseek
+#endif
 #endif
 
 /* Define to 1 if you have the <dlfcn.h> header file. */

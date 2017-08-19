@@ -76,6 +76,43 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_string.o zip_unchange.o zip_unchange_all.o \
 	zip_unchange_archive.o zip_unchange_data.o zip_utf-8.o
 
+OBJS+= \
+	mkstemp.o \
+	zip_buffer.o \
+	zip_file_get_external_attributes.o \
+	zip_file_set_encryption.o \
+	zip_file_set_external_attributes.o \
+	zip_file_set_mtime.o \
+	zip_fseek.o \
+	zip_ftell.o \
+	zip_hash.o \
+	zip_io_util.o \
+	zip_memdup.o \
+	zip_random_unix.o \
+	zip_source_begin_write.o \
+	zip_source_call.o \
+	zip_source_commit_write.o \
+	zip_source_is_deleted.o \
+	zip_source_remove.o \
+	zip_source_rollback_write.o \
+	zip_source_seek.o \
+	zip_source_seek_write.o \
+	zip_source_supports.o \
+	zip_source_tell.o \
+	zip_source_tell_write.o \
+	zip_source_write.o
+
+ifeq (${OSTYPE},windows)
+OBJS += \
+	zip_random_win32.o \
+	zip_source_win32a.o \
+	zip_source_win32handle.o \
+	zip_source_win32utf8.o \
+	zip_source_win32w.o \
+	zip_source_winzip_aes_decode.o \
+	zip_source_winzip_aes_encode.o
+endif
+
 #OFILES=libr_zip.$(EXT_AR) $(OBJS)
 OFILES=$(OBJS)
 

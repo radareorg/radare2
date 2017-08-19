@@ -1,6 +1,6 @@
 /*
   zip_get_encryption_implementation.c -- get encryption implementation
-  Copyright (C) 2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2016 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <libzip@nih.at>
@@ -31,16 +31,27 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include "zipint.h"
 
-
 
 zip_encryption_implementation
-_zip_get_encryption_implementation(zip_uint16_t em)
+_zip_get_encryption_implementation(zip_uint16_t em, int operation)
 {
-    if (em == ZIP_EM_TRAD_PKWARE)
+    switch (em) {
+    case ZIP_EM_TRAD_PKWARE:
+	if (operation == ZIP_CODEC_ENCODE) {
+	    return NULL;
+	}
 	return zip_source_pkware;
-    return NULL;
+
+    case ZIP_EM_AES_128:
+    case ZIP_EM_AES_192:
+    case ZIP_EM_AES_256:
+return NULL;
+	// return operation == ZIP_CODEC_DECODE ? zip_source_winzip_aes_decode : zip_source_winzip_aes_encode;
+
+    default:
+	return NULL;
+    }
 }

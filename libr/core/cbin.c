@@ -399,7 +399,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			free (str);
 			free (f_name);
 		} else {
-			int *block_list;
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
 				PFMT64x" ordinal=%03u sz=%u len=%u "
 				"section=%s type=%s string=%s",
@@ -410,22 +409,28 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list (string->string);
-				if (block_list) {
-					if (block_list[0] == 0 && block_list[1] == -1) {
-						/* Don't show block list if
-						   just Basic Latin (0x00 - 0x7F) */
-						break;
-					}
-					int *block_ptr = block_list;
-					r_cons_printf (" \x1b[36mblocks=\x1b[0m");
-					for (; *block_ptr != -1; block_ptr++) {
-						if (block_ptr != block_list) {
-							r_cons_printf (",");
+				{
+					int *block_list = r_utf_block_list ((const ut8*)string->string);
+					if (block_list) {
+						if (block_list[0] == 0 && block_list[1] == -1) {
+							/* Don't show block list if
+							   just Basic Latin (0x00 - 0x7F) */
+							break;
 						}
-						r_cons_printf ("%s", r_utf_blocks[*block_ptr].name);
+						int *block_ptr = block_list;
+						if (r_config_get_i (r->config, "scr.color")) {
+							r_cons_printf (" \033[36mblocks=\033[0m");
+						} else {
+							r_cons_printf (" mblocks=");
+						}
+						for (; *block_ptr != -1; block_ptr++) {
+							if (block_ptr != block_list) {
+								r_cons_printf (",");
+							}
+							r_cons_printf ("%s", r_utf_blocks[*block_ptr].name);
+						}
+						free (block_list);
 					}
-					free (block_list);
 				}
 			}
 			r_cons_printf ("\n");
