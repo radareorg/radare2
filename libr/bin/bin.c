@@ -784,15 +784,18 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		}
 	}
 	//if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
+	if (true) {
 		if (cp->symbols) {
 			o->symbols = cp->symbols (binfile);
 			if (o->symbols) {
 				o->symbols->free = r_bin_symbol_free;
 				REBASE_PADDR (o, o->symbols, RBinSymbol);
-				if (bin->filter)
+				if (bin->filter) {
 					r_bin_filter_symbols (o->symbols);
+				}
 			}
 		}
+	}
 	//}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) {

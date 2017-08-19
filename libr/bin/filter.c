@@ -47,11 +47,10 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 }
 
 R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
-	char *name;
 	if (!db || !sym) {
 		return;
 	}
-	name = sym->name;
+	char *name = sym->name;
 	if (!name) {
 		return;
 	}
@@ -67,21 +66,26 @@ R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
 	if (vaddr) {
 		//hashify (name, vaddr);
 	}
-    sym->dup_count = count - 1;
+	sym->dup_count = count - 1;
 }
 
 R_API void r_bin_filter_symbols(RList *list) {
+	RListIter *iter;
 	RBinSymbol *sym;
 	const int maxlen = sizeof (sym->name) - 8;
 	Sdb *db = sdb_new0 ();
-	RListIter *iter, *iter2;
+	if (!db) {
+		return;
+	}
 	if (maxlen > 0) {
-		r_list_foreach_safe (list, iter, iter2, sym) {
-			r_bin_filter_name (db, sym->vaddr, sym->name, maxlen);
+		r_list_foreach (list, iter, sym) {
+			if (sym && sym->name) {
+				r_bin_filter_name (db, sym->vaddr, sym->name, maxlen);
+			}
 		}
 	} else {
-		r_list_foreach_safe (list, iter, iter2, sym) {
-			if (sym->name) {
+		r_list_foreach (list, iter, sym) {
+			if (sym && sym->name) {
 				r_bin_filter_sym (db, sym->vaddr, sym);
 			}
 		}

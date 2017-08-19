@@ -2992,10 +2992,9 @@ R_API RList *r_bin_java_get_imports(RBinJavaObj *bin) {
 R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RList *imports, *symbols = r_list_newf (free);
-	RBinSymbol *sym;
+	RBinSymbol *sym = NULL;
 	RBinImport *imp;
 	RBinJavaField *fm_type;
-	sym = NULL;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
 		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
 		if (sym) {
@@ -3026,8 +3025,9 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
 			bin->lang = "kotlin";
 		}
-		sym->name = strdup (sdb_fmt (0, "imp.%s", imp->name));
+		sym->name = r_str_newf ("imp.%s", imp->name);
 		if (!sym->name) {
+			free (sym);
 			break;
 		}
 		sym->type = r_str_const ("import");
@@ -3039,8 +3039,6 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		r_list_append (symbols, (void *) sym);
 	}
 	r_list_free (imports);
-	free (sym->name);
-	free (sym);
 	return symbols;
 }
 
