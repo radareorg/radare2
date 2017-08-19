@@ -24,6 +24,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		       int len, int match_flg, cbOnIterMap op) {
 	RIOMap* map;
 	RIODesc *desc;
+	// TODO closed interval [vaddr, vendaddr] is used, this is cumbersome and should be refactored later
 	ut64 vendaddr;
 	if (!io || !buf || len < 1) {
 		return;
@@ -46,7 +47,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	}
 	map = (RIOMap*) iter->data;
 	// search for next map or end of list
-	while (!r_io_map_is_in_range (map, vaddr, vendaddr)) {
+	while (!(map->from <= vendaddr && vaddr < map->to)) {
 		iter = iter->p;
 		// end of list
 		if (!iter) {                      
@@ -61,7 +62,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		buf = buf + (map->from - vaddr);
 		vaddr = map->from;
 		len = (int) (vendaddr - vaddr + 1);
-		if (vendaddr <= map->to) {
+		if (vendaddr < map->to) {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
 				r_io_use_fd (io, map->fd);
@@ -72,16 +73,16 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
 				r_io_use_fd (io, map->fd);
-				op (io, map->delta, buf, len - (int) (vendaddr - map->to));
+				op (io, map->delta, buf, len - (int) (vendaddr - map->to + 1));
 				io->desc = desc;
 			}
-			vaddr = map->to + 1;
-			buf = buf + (len - (int) (vendaddr - map->to));
-			len = (int) (vendaddr - map->to);
+			vaddr = map->to;
+			buf = buf + (len - (int) (vendaddr - map->to + 1));
+			len = (int) (vendaddr - map->to + 1);
 			onIterMap (iter->p, io, vaddr, buf, len, match_flg, op);
 		}
 	} else {
-		if (vendaddr <= map->to) {
+		if (vendaddr < map->to) {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
 				r_io_use_fd (io, map->fd);
@@ -93,12 +94,12 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
 				desc = io->desc;
 				r_io_use_fd (io, map->fd);
-				op (io, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to));
+				op (io, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to + 1));
 				io->desc = desc;
 			}
-			vaddr = map->to + 1;
-			buf = buf + (len - (int) (vendaddr - map->to));
-			len = (int) (vendaddr - map->to);
+			vaddr = map->to;
+			buf = buf + (len - (int) (vendaddr - map->to + 1));
+			len = (int) (vendaddr - map->to + 1);
 			onIterMap (iter->p, io, vaddr, buf, len, match_flg, op);
 		}
 	}

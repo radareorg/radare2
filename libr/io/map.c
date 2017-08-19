@@ -370,20 +370,3 @@ R_API void r_io_map_list(RIO *io, int mode) {
 		}
 	}
 }
-
-
-R_API bool r_io_map_is_in_range(RIOMap* map, ut64 from, ut64 to) { //rename pls
-	if (!map || (to < from)) {
-		return false;
-	}
-	if (R_BETWEEN (map->from, from, map->to)) {
-		return true;
-	}
-	if (R_BETWEEN (map->from, to, map->to)) {
-		return true;
-	}
-	if (map->from > from && to > map->to) {
-		return true;
-	}
-	return false;
-}

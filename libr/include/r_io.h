@@ -355,7 +355,6 @@ R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len);
 R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz);
 R_API int r_io_map_count (RIO *io);
 R_API void r_io_map_list (RIO *io, int rad);
-R_API bool r_io_map_is_in_range(RIOMap* map, ut64 from, ut64 to);
 
 /* io/section.c */
 R_API void r_io_section_init(RIO *io);
