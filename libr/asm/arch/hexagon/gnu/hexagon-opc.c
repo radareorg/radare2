@@ -1398,6 +1398,7 @@ int
 hexagon_get_opcode_mach
 (int bfd_mach, int big_p)
 {
+#if 0
   static int mach_type_map [] =
   {
     HEXAGON_MACH_V2,
@@ -1406,6 +1407,7 @@ hexagon_get_opcode_mach
     HEXAGON_MACH_V5,
     /* Leaving space for future cores */
   };
+#endif
 // v6 not supported :(
 // XXX hardcoded to v5
 return HEXAGON_MACH_V5;
@@ -1838,8 +1840,10 @@ hexagon_reg_num
                 continue;
 
               *input = regs + len - (*name? 1: 0);
-              // unused result . thank you gnu
-              return ((int) (aliasn? *aliasn = i: i), (int) regn);
+	      if (aliasn) {
+		      *aliasn = i;
+	      }
+              return regn;
             }
         }
     }

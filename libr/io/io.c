@@ -482,13 +482,14 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	if (!io || !buf) {
 		return 0;
 	}
+	if (!io->va) {
+		return r_io_map_get (io, vaddr) != NULL;
+	}
 	if (len < 1) {
 		return 0;
 	}
-	if (!r_io_is_valid_offset (io, vaddr, 0)) {
-		if (io->ff) {
-			memset (buf, 0xff, len);
-		}
+	if (io->ff && !r_io_is_valid_offset (io, vaddr, 0)) {
+		memset (buf, 0xff, len);
 	}
 	if (!io->maps) {
 		return r_io_pread_at (io, vaddr, buf, len);
@@ -496,6 +497,9 @@ R_API int r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	if (io->debug) {
 		paddr = vaddr;
 	} else {
+		if (r_io_map_get (io, vaddr)) {
+			return 0;
+		}
 		ut64 maddr = UT64_MAX;
 		int count = 0;
 		//XXX UGLY hack to find mapped dir
@@ -997,8 +1001,10 @@ R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 		r_sys_backtrace ();
 		return false;
 	}
-	bool io_sectonly = io->sectonly;
-	bool io_va = io->va;
+	if (io->debug) {
+		// in debugger-mode we want to allow the debugger decide whats valid and whats not
+		return true;
+	}
 	if (!io->files) {
 		eprintf ("r_io_is_valid_offset: io->files is NULL\n");
 		r_sys_backtrace ();
@@ -1009,22 +1015,20 @@ R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 		r_sys_backtrace ();
 		return false;
 	}
-	if (r_list_empty (io->sections)) {
-		if ((r_io_map_exists_for_offset (io, offset))) {
-			return true;
-		}
-	}
-	if (!io_va) {
+	if (!io->va) {
 		if ((r_io_map_exists_for_offset (io, offset))) {
 			return true;
 		}
 		return (offset < r_io_size (io));
 	}
-	if (io->debug) {
-		// TODO check debug maps here
-		return true;
+	if (r_list_empty (io->sections)) {
+		if ((r_io_map_exists_for_offset (io, offset))) {
+			return true;
+		}
 	}
-	if (io_sectonly) {
+#if 0
+	// unused after removing sectonly
+	if (!io->va) {
 		if (r_list_empty (io->sections)) {
 			return true;
 		}
@@ -1033,6 +1037,7 @@ R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 	if (!io_va && r_io_map_exists_for_offset (io, offset)) {
 		return true;
 	}
+#endif
 	return r_io_section_exists_for_vaddr (io, offset, hasperm);
 }
 

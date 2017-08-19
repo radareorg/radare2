@@ -1018,6 +1018,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	RBinFile *binfile = NULL;
 	RIODesc *tdesc = NULL;
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
+	const bool oiova = io->va;
 
 	if (!io || !desc) {
 		return false;
@@ -1044,9 +1045,11 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 			//from the memory
 			if (tdesc) {
 				buf_bytes = calloc (1, sz + 1);
+				io->va = 0;
 				r_io_desc_seek (tdesc, 0, R_IO_SEEK_SET);
 				r_io_desc_read (tdesc, buf_bytes, sz);
 				iob->close (io, tdesc->fd);
+				io->va = oiova;
 				tdesc = NULL;	
 				if (!io->desc) {
 					r_io_use_fd (io, desc->fd);
@@ -1060,9 +1063,11 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
+		io->va = 0;
 		if (!iob->read_at (io, seekaddr, buf_bytes, sz)) {
 			sz = 0;
 		}
+		io->va = 1;
 	}
 
 	if (!name) {
@@ -1081,8 +1086,10 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 						if (sz != UT64_MAX) {
 							buf_bytes = calloc (1, sz + 1);
 							if (buf_bytes) {
+								io->va = 0;
 								r_io_desc_seek (tdesc, 0, R_IO_SEEK_SET);
 								r_io_desc_read (tdesc, buf_bytes, sz);
+								io->va = oiova;
 							}
 						}
 						iob->close (io, tdesc->fd);
