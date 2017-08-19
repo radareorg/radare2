@@ -201,17 +201,16 @@ ST_INLN Sym *sym_find(int v)
 // about the pushed type
 int tcc_sym_push(char* typename, int typesize, int meta)
 {
-	CType *new_type;
-
-	new_type = (CType*)malloc(sizeof(CType));
-if (!new_type) {
-return 0;
-}
+	CType *new_type = (CType*)malloc (sizeof(CType));
+	if (!new_type) {
+		return 0;
+	}
 	new_type->ref = sym_malloc();
 	new_type->t = meta;
 
 	sym_push(0, new_type, 0, 0);
-return 1;
+	free (new_type);
+	return 1;
 }
 
 void dump_type(CType *type, int depth)
@@ -1567,6 +1566,8 @@ return;
         parse_attribute(ad);
 
     if (!type1->t) {
+free (type1);
+free (type2);
         return;
     }
     /* append type at the end of type1 */

@@ -1184,7 +1184,11 @@ static void rcc_next(REgg *egg) {
 				// following code block is too ugly, oh noes
 				p = r_egg_mkvar (egg, buf, ptr, 0);
 				if (is_var (p)) {
-					p = r_egg_mkvar (egg, buf, p, 0);
+					char *q = r_egg_mkvar (egg, buf, p, 0);
+					if (q) {
+						free (p);
+						p = q;
+					}
 					if (varxs == '*' || varxs == '&') {
 						eprintf ("not support for *ptr in dstvar\n");
 					}

@@ -67,11 +67,6 @@ static void unix_word_rubout() {
 		for (; i && !is_word_break_char (I.buffer.data[i]); i--) {
 			/*nothing to see here*/
 		}
-		if (!i) {
-			for (; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
-				/*nothing to see here*/
-			}
-		}
 		if (i > 0) {
 			i++;
 		} else if (i < 0) {

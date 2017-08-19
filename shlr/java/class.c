@@ -3039,6 +3039,8 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		r_list_append (symbols, (void *) sym);
 	}
 	r_list_free (imports);
+	free (sym->name);
+	free (sym);
 	return symbols;
 }
 
