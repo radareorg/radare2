@@ -370,14 +370,39 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
+			int *block_list;
 			q = r_base64_encode_dyn (string->string, -1);
 			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
 				",\"paddr\":%"PFMT64d",\"ordinal\":%d"
 				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
-				"\"type\":\"%s\",\"string\":\"%s\"}",
+				"\"type\":\"%s\",\"string\":\"%s\"",
 				iter->p ? ",": "",
 				vaddr, paddr, string->ordinal, string->size,
 				string->length, section_name, type_string, q);
+			switch (string->type) {
+			case R_STRING_TYPE_UTF8:
+			case R_STRING_TYPE_WIDE:
+			case R_STRING_TYPE_WIDE32:
+				block_list = r_utf_block_list (string->string);
+				if (block_list) {
+					if (block_list[0] == 0 && block_list[1] == -1) {
+						/* Don't include block list if
+						   just Basic Latin (0x00 - 0x7F) */
+						break;
+					}
+					int *block_ptr = block_list;
+					r_cons_printf (",\"blocks\":[");
+					for (; *block_ptr != -1; block_ptr++) {
+						if (block_ptr != block_list) {
+							r_cons_printf (",");
+						}
+						r_cons_printf ("\"%s\"", r_utf_blocks[*block_ptr].name);
+					}
+					r_cons_printf ("]");
+					free (block_list);
+				}
+			}
+			r_cons_printf ("}");
 			free (q);
 		} else if (IS_MODE_RAD (mode)) {
 			char *f_name, *str;
