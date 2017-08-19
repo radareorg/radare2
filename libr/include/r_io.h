@@ -276,7 +276,6 @@ R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool man
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode);			//opens a file with map at 0x0
 R_API RIODesc *r_io_open_at (RIO *io, const char *file, int flags, int mode, ut64 maddr);	//opens a file with map at maddr
-R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *buf);
 R_API RIODesc *r_io_open_nomap (RIO *io, const char *file, int flags, int mode);		//opens a file without map -> only pread and pwrite can be used for access
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
 R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode);
@@ -498,6 +497,7 @@ extern RIOPlugin r_io_plugin_r2k;
 extern RIOPlugin r_io_plugin_tcp;
 extern RIOPlugin r_io_plugin_null;
 extern RIOPlugin r_io_plugin_ar;
+extern RIOPlugin r_io_plugin_rbuf;
 
 #endif
 

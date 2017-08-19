@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake */
+/* radare2 - LGPL - Copyright 2017 - pancake, condret */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -31,23 +31,36 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	return r_buf_seek (buf, offset, whence);
 }
 
+static bool __check(RIO *io, const char *pathname, bool many) {
+	return (!strncmp (pathname, "rbuf://", 7));
+}
+
+static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+	RIODesc *desc;
+	RBuffer *buf = r_buf_new ();
+	if (buf && (desc = r_io_desc_new (io, &r_io_plugin_rbuf, pathname, 7, 0, buf))) {
+		return desc;
+	}
+	r_buf_free (buf);
+	return NULL;
+}
+
 RIOPlugin r_io_plugin_rbuf = {
 	.name = "rbuf",
-	.desc = "Internal RBuffer IO plugin",
-	.license = "MIT",
+	.desc = "RBuffer IO plugin: rbuf://",
+	.license = "LGPL",
+	.open = __open,
 	.close = __close,
 	.read = __read,
 	.lseek = __lseek,
-	.write = __write
+	.write = __write,
+	.check = __check
 };
 
-R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *buf) {
-	RIODesc *desc = r_io_desc_new (io, &r_io_plugin_rbuf, "rbuf", 7, 0, buf);
-	if (desc) {
-		r_io_map_new (io, desc->fd, 7, 0, 0, r_buf_size (buf));
-		r_io_desc_add (io, desc);
-		r_io_use_desc (io, desc);
-	}
-	return desc;
-}
-
+#ifndef CORELIB
+RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_IO,
+	.data = &r_io_plugin_rbuf,
+	.version = R2_VERSION
+};
+#endif
