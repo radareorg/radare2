@@ -2551,7 +2551,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			if (!(a->num) ) {
 				if (isrepop) {
 					strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
-					op->rep_op[MAX_REPOP_LENGTH] = '\0';
+					op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
 				}
 				return nextpos;
 			}
@@ -2569,7 +2569,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			op->immediate = getnum (a, str);
 		} else if (op->reg < X86R_UNDEFINED) {
 			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
-			op->rep_op[MAX_REPOP_LENGTH] = '\0';
+			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
 		}
 	} else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
