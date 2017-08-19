@@ -75,7 +75,7 @@ extern "C" {
 #  define je_mallctlnametomib mallctlnametomib
 #  define je_mallctlbymib mallctlbymib
 #  define je_malloc_stats_print malloc_stats_print
-#  define je_malloc_usable_size malloc_usable_size
+// #  define je_malloc_usable_size malloc_usable_size
 #  define je_memalign memalign
 #  define je_valloc valloc
 #endif
