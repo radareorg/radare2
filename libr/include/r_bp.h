@@ -60,7 +60,8 @@ typedef struct r_bp_item_t {
 	char *cond; /* used for conditional breakpoints */
 } RBreakpointItem;
 
-typedef int (*RBreakpointCallback)(RBreakpointItem *bp, int set, void *user);
+typedef struct r_bp_t RBreakpoint;
+typedef int (*RBreakpointCallback)(RBreakpoint *bp, RBreakpointItem *b, bool set);
 
 typedef struct r_bp_t {
 	void *user;
@@ -75,6 +76,7 @@ typedef struct r_bp_t {
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;
+	int nhwbps;
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;

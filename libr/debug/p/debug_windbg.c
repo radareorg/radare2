@@ -142,12 +142,12 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_windbg_breakpoint(RBreakpointItem *bp, int set, void *user) {
+static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int *tag;
-	if (!bp) return false;
+	if (!b) return false;
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
-	tag = (int *)&bp->data;
-	return windbg_bkpt (wctx, bp->addr, set, bp->hw, tag);
+	tag = (int *)&b->data;
+	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 
 static int r_debug_windbg_init(RDebug *dbg) {

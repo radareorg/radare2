@@ -4,7 +4,7 @@
 
 static void r_bp_watch_add_hw(RBreakpoint *bp, RBreakpointItem *b) {
 	if (bp->breakpoint) {
-		bp->breakpoint (b, true, bp->user);
+		bp->breakpoint (bp, b, true);
 	}
 }
 
@@ -29,7 +29,6 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 		eprintf ("[TODO]: Software watchpoint is not implmented yet (use ESIL)\n");
 		/* TODO */
 	}
-	//eprintf ("watch: 0x%08"PFMT64x", rw: %d, hw: %d\n", b->addr, b->rwx, b->hw);
 	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;

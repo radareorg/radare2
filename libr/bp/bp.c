@@ -32,6 +32,7 @@ R_API RBreakpoint *r_bp_new() {
 	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
+	bp->nhwbps = 0;
 	for (i = 0; bp_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RBreakpointPlugin);
 		memcpy (static_plugin, bp_static_plugins[i],
@@ -277,7 +278,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			// TODO: add command, tracing, enable, ..
 			if (b->module_name) {
 			    	bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
-			} else { 
+			} else {
 				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
 			}
 			//b->trace? "trace": "break",
