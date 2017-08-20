@@ -280,7 +280,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 	if (rb) {
 		r_core_block_read (core);
 	}
-	return (core->offset != addr);
+	return core->offset == addr;
 }
 
 R_API int r_core_seek_delta(RCore *core, st64 addr) {
@@ -309,13 +309,12 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return ret;
 }
 
-R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	bool ret;
+R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	if (!core) {
 		return false;
 	}
-	ret = r_io_write_at (core->io, addr, buf, size);
-	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
+	int ret = r_io_write_at (core->io, addr, buf, size);
+	if (core->offset <= addr && addr < core->offset + core->blocksize) {
 		r_core_block_read (core);
 	}
 	return ret;
@@ -397,18 +396,9 @@ R_API int r_core_block_read(RCore *core) {
 	return -1;
 }
 
-R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
+R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (core) {
 		return r_io_read_at (core->io, addr, buf, size);
 	}
-	return false;
-}
-
-R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
-	if (!core) {
-		eprintf ("r_core_is_valid_offset: core is NULL\n");
-		r_sys_backtrace ();
-		return R_FAIL;
-	}
-	return r_io_is_valid_real_offset (core->io, offset, 0);
+	return -1;
 }
