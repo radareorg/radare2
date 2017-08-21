@@ -347,6 +347,12 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 		return l;
 	}
 
+	if (a->bits == 64) {
+		if (!(op->operands[0].type & op->operands[1].type)) {
+			return -1;
+		}
+	}
+
 	if (a->bits == 64 &&
 		((op->operands[0].type & OT_QWORD) |
 		 (op->operands[1].type & OT_QWORD))) {
