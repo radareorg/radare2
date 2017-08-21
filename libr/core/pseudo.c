@@ -196,6 +196,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.section", 0);
 	r_config_set_i (core->config, "asm.cmtcol", 30);
+	r_config_set_i (core->config, "io.cache", 1);
 	r_core_cmd0 (core, "aeim");
 
 	db = sdb_new0 ();
