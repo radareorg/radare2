@@ -1099,8 +1099,9 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				if (toend) {
 					sz = r_io_desc_size (core->file->desc);
-					if (sz != UT64_MAX) {
-						sz -= core->offset;
+					if (sz == -1 || sz <= core->offset) {
+						sz = 0;
+					} else {
 						r_core_dump (core, filename, core->offset, (ut64)sz, append);
 					}
 				} else {
