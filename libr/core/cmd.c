@@ -971,20 +971,20 @@ static int cmd_bsize(void *data, const char *input) {
 	RFlagItem *flag;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
-	case 'm':
+	case 'm': // "bm"
 		n = r_num_math (core->num, input + 1);
 		if (n > 1) core->blocksize_max = n;
 		else r_cons_printf ("0x%x\n", (ut32)core->blocksize_max);
 		break;
-	case '+':
+	case '+': // "b+"
 		n = r_num_math (core->num, input + 1);
 		r_core_block_size (core, core->blocksize + n);
 		break;
-	case '-':
+	case '-': // "b-"
 		n = r_num_math (core->num, input + 1);
 		r_core_block_size (core, core->blocksize - n);
 		break;
-	case 'f':
+	case 'f': // "bf"
 		if (input[1] == ' ') {
 			flag = r_flag_get (core->flags, input + 2);
 			if (flag) {
@@ -996,10 +996,10 @@ static int cmd_bsize(void *data, const char *input) {
 			eprintf ("Usage: bf [flagname]\n");
 		}
 		break;
-	case '\0':
+	case '\0': // "b"
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
-	case '?':
+	case '?': // "b?"
 		r_core_cmd_help (core, help_msg_b);
 		break;
 	default:
@@ -1020,28 +1020,28 @@ static int cmd_resize(void *data, const char *input) {
 		oldsize = r_io_desc_size (core->file->desc);
 	else oldsize = 0;
 	switch (*input) {
-	case '2':
+	case '2': // "r2"
 		// TODO: use argv[0] instead of 'radare2'
 		r_sys_cmdf ("radare%s", input);
 		return true;
-	case 'm':
+	case 'm': // "rm"
 		if (input[1] == ' ')
 			r_file_rm (input + 2);
 		else eprintf ("Usage: rm [file]   # removes a file\n");
 		return true;
-	case '\0':
+	case '\0': // "r"
 		if (core->file && core->file->desc) {
 			if (oldsize != -1) {
 				r_cons_printf ("%"PFMT64d"\n", oldsize);
 			}
 		}
 		return true;
-	case '+':
-	case '-':
+	case '+': // "r+"
+	case '-': // "r-"
 		delta = (st64)r_num_math (core->num, input);
 		newsize = oldsize + delta;
 		break;
-	case ' ':
+	case ' ': // "r "
 		newsize = r_num_math (core->num, input + 1);
 		if (newsize == 0) {
 			if (input[1] == '0')
@@ -1049,8 +1049,8 @@ static int cmd_resize(void *data, const char *input) {
 			return false;
 		}
 		break;
+	case '?': // "r?"
 	default:
-	case '?':
 		r_core_cmd_help (core, help_msg_r);
 		return true;
 	}
@@ -3292,7 +3292,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"$",        "alias", cmd_alias},
 		{"%",        "short version of 'env' command", cmd_env},
 		{"&",        "threading capabilities", cmd_thread},
-		{"(",        "macro", cmd_macro},
+		{"(",        "macro", cmd_macro, cmd_macro_init},
 		{"*",        "pointer read/write", cmd_pointer},
 		{"-",        "open cfg.editor and run script", cmd_stdin},
 		{".",        "interpret", cmd_interpret},
@@ -3303,7 +3303,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"0x",       "alias for s 0x", cmd_ox},
 		{"analysis", "analysis", cmd_anal, cmd_anal_init},
 		{"bsize",    "change block size", cmd_bsize},
-		{"cmp",      "compare memory", cmd_cmp},
+		{"cmp",      "compare memory", cmd_cmp, cmd_cmp_init},
 		{"Code",     "code metadata", cmd_meta, cmd_meta_init},
 		{"debug",    "debugger operations", cmd_debug, cmd_debug_init},
 		{"eval",     "evaluate configuration variable", cmd_eval, cmd_eval_init},

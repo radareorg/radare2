@@ -32,7 +32,7 @@ static const char *help_msg_slash[] = {
 	"/o", " [n]", "show offset of n instructions backward",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
-	"/r[e]", " sym.printf", "analyze opcode reference an offset (/re for esil)",
+	"/r[e]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
@@ -71,6 +71,15 @@ static const char *help_msg_slash_C[] = {
 	"/Ca", "", "Search for AES keys",
 	"/Cr", "", "Search for private RSA keys",
 	NULL
+};
+
+static const char *help_msg_slash_r[] = {
+	"Usage:", "/r[e] [address]", " search references to this specific address",
+	"/r", " [addr]", "search references to this specific address",
+	"/re", " [addr]", "search references using esil",
+	"/rc", "", "search for call references",
+	"/ra", "", "search all references",
+NULL
 };
 
 static const char *help_msg_slash_R[] = {
@@ -134,6 +143,7 @@ static void cmd_search_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /C, slash_C);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /r, slash_r);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /R, slash_R);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /Rk, slash_Rk);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /x, slash_x);
@@ -2473,19 +2483,15 @@ reread:
 			}
 			break;
 		case '?':
-			eprintf ("Usage /r[e] [address] - search references to this specific address\n"
-			" /r [addr]  - search references to this specific address\n"
-			" /re [addr] - search references using esil\n"
-			" /rc        - search for call references\n"
-			" /ra        - search all references\n");
 			break;
 		}
 		break;
-	case 'A':
+	case 'A': // "/A"
 		do_anal_search (core, &param, input + 1);
 		dosearch = false;
 		break;
-	case 'a': if (input[1]) {
+	case 'a': // "/a"
+		if (input[1]) {
 			char *kwd = r_core_asm_search (core, input + param_offset,
 				param.from, param.to);
 			if (kwd) {
@@ -2503,7 +2509,7 @@ reread:
 			}
 	}
 		break;
-	case 'C': {
+	case 'C': { // "/C"
 		dosearch = true;
 		param.crypto_search = true;
 		switch (input[1]) {
@@ -2563,7 +2569,7 @@ reread:
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1));
 		break;
-	case 'V':
+	case 'V': // "/V"
 		// TODO: add support for json
 	{
 		int err = 1, vsize = atoi (input + 1);
@@ -2652,7 +2658,7 @@ reread:
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
-	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
+	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
 		if (input[1]) {
 			if (input[2]) {
 				if (input[1] == 'j' || input[2] == 'j') {
@@ -2696,19 +2702,19 @@ reread:
 			}
 		}
 		break;
-	case 'i':
+	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
 			ret = false;
 			goto beach;
 		}
 		ignorecase = true;
-	case 'j':
+	case 'j': // "/j"
 		if (input[0] == 'j') {
 			json = true;
 		}
 	/* pass-thru */
-	case ' ': /* search string */
+	case ' ': // "/ " search string
 		inp = strdup (input + 1 + ignorecase + json);
 		len = r_str_unescape (inp);
 		if (!json) {
@@ -2738,7 +2744,7 @@ reread:
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
-	case 'e': /* match regexp */
+	case 'e': // "/e" match regexp
 		if (input[1]) {
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + param_offset, NULL);
@@ -2756,13 +2762,13 @@ reread:
 			eprintf ("Missing regex\n");
 		}
 		break;
-	case 'E':
+	case 'E': // "/E"
 		if (core->io && core->io->debug) {
 			r_debug_map_sync (core->dbg);
 		}
 		do_esil_search (core, &param, input);
 		goto beach;
-	case 'd': /* search delta key */
+	case 'd': // "/d" search delta key
 		if (input[1]) {
 			r_search_reset (core->search, R_SEARCH_DELTAKEY);
 			r_search_kw_add (core->search,
@@ -2773,7 +2779,7 @@ reread:
 			eprintf ("Missing delta\n");
 		}
 		break;
-	case 'h':
+	case 'h': // "/h"
 	{
 		char *p, *arg = r_str_chop (strdup (input + 1));
 		p = strchr (arg, ' ');
@@ -2845,7 +2851,7 @@ reread:
 			eprintf ("Usage: /f [file] ([offset] ([size]))\n");
 		}
 		break;
-	case 'x': /* search hex */
+	case 'x': // "/x" search hex
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_x);
 		} else {
@@ -2871,14 +2877,14 @@ reread:
 			free (p);
 		}
 		break;
-	case 'c': /* search asm */
+	case 'c': // "/c" search asm
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_c);
 		}
 		do_asm_search (core, &param, input);
 		dosearch = 0;
 		break;
-	case '+':
+	case '+': // "/+"
 		if (input[1] == ' ') {
 			// TODO: support /+j
 			char *buf = malloc (strlen (input) * 2);
@@ -2916,7 +2922,7 @@ again:
 			eprintf ("Usage: /+ [string]\n");
 		}
 		break;
-	case 'z': /* search strings of min-max range*/
+	case 'z': // "/z" search strings of min-max range
 	{
 		char *p;
 		ut32 min, max;
@@ -2948,7 +2954,7 @@ again:
 		dosearch = true;
 	}
 	break;
-	case '?':
+	case '?': // "/?"
 		r_core_cmd_help (core, help_msg_slash);
 		break;
 	default:
