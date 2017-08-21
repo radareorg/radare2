@@ -469,6 +469,8 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		//op->id = instr->type;
 
 		switch (op->type) {
+		case R_ANAL_OP_TYPE_ILL:
+			break;
 		case R_ANAL_OP_TYPE_ADD:
 			break;
 		case R_ANAL_OP_TYPE_AND:
@@ -503,6 +505,10 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 			break;
 		case R_ANAL_OP_TYPE_OR:
 			break;
+		case R_ANAL_OP_TYPE_ROR:
+			break;
+		case R_ANAL_OP_TYPE_ROL:
+			break;
 		case R_ANAL_OP_TYPE_RCALL:
 			op->eob = true;
 			break;
@@ -528,7 +534,7 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		case R_ANAL_OP_TYPE_XOR:
 			break;
 		default:
-			eprintf ("Missing an R_ANAL_OP_TYPE");
+			//eprintf ("Missing an R_ANAL_OP_TYPE (%"PFMT64u")\n", op->type);
 			break;
 		}
 		vle_free (instr);
