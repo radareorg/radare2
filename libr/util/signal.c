@@ -18,7 +18,6 @@ static struct {
 	{ "SIGWINCH", SIGWINCH },
 	{ "SIGIO", SIGIO },
 	{ "SIGPWR", SIGPWR },
-	{ "SIGSTKSZ", SIGSTKSZ },
 	{ "SIGPOLL", SIGPOLL },
 #endif
 #if !__WINDOWS__ || __CYGWIN__

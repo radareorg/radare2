@@ -47,7 +47,6 @@ static struct {
 	{ "SIGSYS", "31" },
 	{ "SIGRTMIN", "32" },
 	{ "SIGRTMAX", "NSIG" },
-	{ "SIGSTKSZ", "8192" },
 	{ NULL }
 };
 
