@@ -278,6 +278,9 @@ R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
 	}
+	if (io->ff) {
+		memset (buf, 0xff, len);
+	}
 	r_io_map_cleanup (io);
 	if (!io->maps) {
 		return !!r_io_pread_at (io, vaddr, buf, len);
