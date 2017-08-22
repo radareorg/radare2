@@ -82,8 +82,12 @@ R_API int r_io_fd_get_tid(RIO *io, int fd) {
 }
 
 R_API bool r_io_use_fd(RIO* io, int fd) {
-	if (!io || !io->desc) {
+	if (!io) {
 		return false;
+	}
+	if (!io->desc) {
+		io->desc = r_io_desc_get (io, fd);
+		return io->desc? true: false;
 	}
 	if (io->desc->fd != fd) {
 		RIODesc* desc;
