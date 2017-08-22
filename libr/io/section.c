@@ -328,8 +328,12 @@ R_API int r_io_section_set_archbits(RIO *io, ut32 id, const char *arch, int bits
 	return true;
 }
 
-R_API const char *r_io_section_get_archbits(RIO *io, ut32 id, int *bits) {
-	RIOSection *s = r_io_section_get_i (io, id);
+R_API const char *r_io_section_get_archbits(RIO *io, ut64 vaddr, int *bits) {
+	//cache section so we avoid making so many looks up
+	static RIOSection *s = NULL;
+	if (!s || (vaddr < s->vaddr) || (s->vaddr + s->vsize < vaddr)) {
+		s = r_io_section_vget (io, vaddr);
+	}
 	if (!s || !s->arch || !s->bits) {
 		return NULL;
 	}

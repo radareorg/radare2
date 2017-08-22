@@ -355,7 +355,7 @@ R_API void r_io_section_cleanup (RIO *io);
 R_API SdbList *r_io_sections_get (RIO *io, ut64 addr);
 R_API SdbList *r_io_sections_vget (RIO *io, ut64 vaddr);
 R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bits);
-R_API const char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits);
+R_API const char *r_io_section_get_archbits (RIO *io, ut64 vaddr, int *bits);
 R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch, int bits);
 R_API bool r_io_section_priorize (RIO *io, ut32 id);
 R_API bool r_io_section_priorize_bin (RIO *io, ut32 bin_id);
