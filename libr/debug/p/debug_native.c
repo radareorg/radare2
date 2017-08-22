@@ -1290,7 +1290,7 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, int set) {
+static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 #if __i386__ || __x86_64__
 	RDebug *dbg = bp->user;
 	if (b && b->hw) {

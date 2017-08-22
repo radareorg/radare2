@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014 - The Lemon Man */
+/* radare2 - LGPL - Copyright 2014-2017 - thelemon, kazarmy, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -189,6 +189,8 @@ static const struct { ut32 from, to; } nonprintable_ranges[] = {
 	{ 0xFFFFE, 0xFFFFF }, { 0x10FFFE, 0x10FFFF }, { 0x110000, 0xFFFFFFFF }
 };
 static const int nonprintable_ranges_count = sizeof (nonprintable_ranges) / sizeof (nonprintable_ranges[0]);
+
+static const int lastUtfBlock = 281;
 
 const RUtfBlock r_utf_blocks[] = {
 	{ 0x0000, 0x007F, "Basic Latin" },
@@ -473,6 +475,14 @@ const RUtfBlock r_utf_blocks[] = {
 	{ 0x100000, 0x10FFFF, "Supplementary Private Use Area-B" },
 	{ 0x110000, 0xFFFFFFFF, "No_Block" }
 };
+
+R_API const char *r_utf_block_name(int idx) {
+	if (idx < 0 || idx >= lastUtfBlock) {
+		return NULL;
+	}
+	return r_utf_blocks[idx].name;
+}
+
 #define r_utf_blocks_count (sizeof (r_utf_blocks) / sizeof (r_utf_blocks[0]))
 
 /* Convert an UTF-8 buf into a unicode RRune */
