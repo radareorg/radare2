@@ -3037,7 +3037,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (*p == '-') {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
 		} else {
-			#define DB_ARG(x) r_str_word_get0(p, x)
+			#define DB_ARG(x) r_str_word_get0(str, x)
 			char *str = strdup (p);
 			int sl = r_str_word_set0 (str);
 			addr = r_num_math (core->num, DB_ARG(0));
