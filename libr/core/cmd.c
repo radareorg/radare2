@@ -375,9 +375,8 @@ static int cmd_alias(void *data, const char *input) {
 		}
 	/* Show command for alias */
 	} else if (desc && !q) {
-		char *v;
 		*desc = 0;
-		v = r_cmd_alias_get (core->rcmd, buf, 0);
+		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			r_cons_println (v);
 			free (buf);
@@ -385,9 +384,8 @@ static int cmd_alias(void *data, const char *input) {
 		} else {
 			eprintf ("unknown key '%s'\n", buf);
 		}
-
-	/* Show aliases */
 	} else if (buf[1] == '*') {
+		/* Show aliases */
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i = 0; i < count; i++) {
@@ -400,11 +398,12 @@ static int cmd_alias(void *data, const char *input) {
 		for (i = 0; i < count; i++) {
 			r_cons_println (keys[i]);
 		}
-	/* Execute alias */
 	} else {
-		char *v;
-		if (q) *q = 0;
-		v = r_cmd_alias_get (core->rcmd, buf, 0);
+		/* Execute alias */
+		if (q) {
+			*q = 0;
+		}
+		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			if (q) {
 				char *out, *args = q + 1;
@@ -415,7 +414,9 @@ static int cmd_alias(void *data, const char *input) {
 					strcat (out, args);
 					r_core_cmd0 (core, out);
 					free (out);
-				} else eprintf ("cannot malloc\n");
+				} else {
+					eprintf ("cannot malloc\n");
+				}
 			} else {
 				r_core_cmd0 (core, v);
 			}
@@ -1657,8 +1658,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					}
 					haveQuote = q != NULL;
 					oseek = core->offset;
-					r_core_seek (core,
-						     r_num_math (core->num, p + 2), 1);
+					r_core_seek (core, r_num_math (core->num, p + 2), 1);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -1824,7 +1824,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	core->oobi = NULL;
 
 	ptr = strstr (cmd, "?*");
-	if (ptr && ptr != cmd) {
+	if (ptr) {
 		char *prech = ptr - 1;
 		if (*prech != '~') {
 			ptr[1] = 0;
@@ -2223,7 +2223,7 @@ ignore:
 		offstr = r_str_trim_head (ptr + 1);
 
 		addr = r_num_math (core->num, offstr);
-		if (isalpha ((unsigned char)ptr[1]) && !addr) {
+		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
 				eprintf ("Invalid address (%s)\n", ptr + 1);
 				goto fail;

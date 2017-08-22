@@ -4260,8 +4260,8 @@ static int cmd_print(void *data, const char *input) {
 		case 'j': // "psj"
 			if (l > 0) {
 				char *str, *type;
-				ut64 vaddr;
-				RIOSection *section;
+				ut64 vaddr = UT64_MAX;
+				RIOSection *section = NULL;
 
 				if (input[2] == ' ' && input[3]) {
 					len = r_num_math (core->num, input + 3);
