@@ -2682,7 +2682,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	while (at < to && !r_cons_is_breaked ()) {
 		int i, ret;
 		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if (ret != core->blocksize && at + ret-OPSZ < to || !ret) {
+		if ((ret != core->blocksize && at + ret-OPSZ < to) || !ret) {
 			break;
 		}
 		i = 0;
