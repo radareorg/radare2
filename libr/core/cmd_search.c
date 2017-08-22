@@ -265,9 +265,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return true;
 }
 
-R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
-                                int blen, const ut8 *mask, int mlen) {
-	int ret;
+R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
 	ut64 at;
 	ut8 *b = (ut8 *) malloc (core->blocksize);
 	if (!b) {
