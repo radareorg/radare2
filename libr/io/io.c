@@ -537,9 +537,7 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 		ret = !!r_io_pread_at (io, addr, buf, len) > 0;
 	}
 	if (io->cached_read) {
-		//ignore cache read since if there is nothing on the cache
-		//the return value is false but that is not wrong read
-		r_io_cache_read (io, addr, buf, len);
+		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
 }
@@ -555,7 +553,7 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 		mybuf = r_mem_dup ((void*)buf, len);
 		for (i = 0; i < len; i++) {
 			//this sucks
-			mybuf[i] &= io->write_mask[i % io->write_mask_len];       
+			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
 	if (io->cached) {
