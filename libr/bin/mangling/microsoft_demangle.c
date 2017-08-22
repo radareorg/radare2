@@ -1404,7 +1404,9 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 	}
 
 	// need to be free by user
-	*demangled_name = strdup (func_str.type_str);
+	if (func_str.type_str) {
+		*demangled_name = strdup (func_str.type_str);
+	}
 
 parse_microsoft_mangled_name_err:
 	R_FREE (ret_type);
