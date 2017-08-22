@@ -289,11 +289,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		if (r_cons_singleton ()->breaked) {
 			break;
 		}
-		ret = r_io_read_at (core->io, at, b, core->blocksize);
-		if (ret != core->blocksize) {
+		if (!r_io_read_at (core->io, at, b, core->blocksize)) {
 			break;
 		}
-		if (r_search_update (core->search, &at, b, ret) == -1) {
+		if (r_search_update (core->search, &at, b, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x "\n", at);
 			break;
 		}
@@ -2009,8 +2008,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				}
 				// if seek fails we shouldnt read at all
 				//(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-				ret = r_io_read_at (core->io, at, buf, bufsz);
-				if (ret < 1) {
+				if (!r_io_read_at (core->io, at, buf, bufsz)) {
 					//HACK to fix issue with .bss sections, SIOL does fix it
 					//creating a mmap 
 					at++;
