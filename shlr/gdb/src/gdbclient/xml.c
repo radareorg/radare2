@@ -425,7 +425,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			    eprintf ("Register name too long: %s\n", regname);
 			}
 			strncpy (arch_regs[num_regs].name, regname,
-				 sizeof (arch_regs[num_regs].name - 1));
+				 sizeof (arch_regs[num_regs].name) - 1);
 			arch_regs[num_regs].name[sizeof (arch_regs[num_regs].name) - 1] = '\0';
 			arch_regs[num_regs].offset = reg_off;
 			arch_regs[num_regs].size = reg_sz / 8;
