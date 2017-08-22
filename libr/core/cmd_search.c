@@ -1915,7 +1915,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
-	int ret;
 	int oldfd = (core && core->io && core->io->desc) ? core->io->desc->fd : -1;
 	int bufsz;
 
@@ -2017,9 +2016,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if (param->crypto_search) {
 					int delta = 0;
 					if (param->aes_search) {
-						delta = r_search_aes_update (core->search, at, buf, ret);
+						delta = r_search_aes_update (core->search, at, buf, bufsz);
 					} else if (param->rsa_search) {
-						delta = r_search_rsa_update (core->search, at, buf, ret);
+						delta = r_search_rsa_update (core->search, at, buf, bufsz);
 					}
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at + delta)) {
@@ -2028,7 +2027,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 						}
 						aeskw.count++;
 					}
-				} else if (r_search_update (core->search, &at, buf, ret) == -1) {
+				} else if (r_search_update (core->search, &at, buf, bufsz) == -1) {
 					// eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
