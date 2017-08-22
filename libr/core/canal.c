@@ -1107,7 +1107,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[color=\"%s\"];\n", pal_fail, bbi->addr, bbi->fail);
+					"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
 				core_anal_color_curr_node (core, bbi);
 			}
 
@@ -1130,7 +1130,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					//	"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[color2=\"%s\"];\n", pal_fail, caseop->addr, caseop->jump);
+						"[color2=\"%s\"];\n", caseop->addr, caseop->jump, pal_fail);
 					core_anal_color_curr_node (core, bbi);
 				}
 			}
