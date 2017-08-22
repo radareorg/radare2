@@ -1,7 +1,7 @@
 #ifndef R_UTF8_H
 #define R_UTF8_H
 
-R_API typedef struct { ut32 from, to; const char *name; } RUtfBlock;
+typedef struct { ut32 from, to; const char *name; } RUtfBlock;
 extern const RUtfBlock r_utf_blocks[];
 
 typedef ut32 RRune;
