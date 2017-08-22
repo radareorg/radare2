@@ -49,11 +49,11 @@ static int __read(RIO* io, RIODesc* fd, ut8* buf, int count) {
 	}
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
-		memset (buf, 0xff, ret);
+		memset (buf, 0x00, ret);
 		null->offset = null->size;
 		return ret;
 	}
-	memset (buf, 0xff, count);
+	memset (buf, 0x00, count);
 	null->offset += count;
 	return count;
 }
