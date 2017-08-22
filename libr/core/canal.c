@@ -2677,13 +2677,11 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
-		int i, ret;
+		int i = 0, ret = core->blocksize;
 		if (!r_io_read_at (core->io, at, buf, core->blocksize) || 
 			(at + core->blocksize - OPSZ < to)) {
 			break;
 		}
-		i = 0;
-		ret = core->blocksize;
 		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
