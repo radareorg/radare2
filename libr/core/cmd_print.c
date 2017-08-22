@@ -4755,7 +4755,8 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "pxc"
-			// LOL? :D
+			{
+			int ocomments = core->print->use_comments;
 			core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
 			if (l) {
 				ut64 from = r_config_get_i (core->config, "diff.from");
@@ -4770,6 +4771,8 @@ static int cmd_print(void *data, const char *input) {
 					r_core_print_cmp (core, from, to);
 				}
 				core->num->value = len;
+			}
+			core->print->use_comments = ocomments;
 			}
 			break;
 		case 'i': // "pxi"
