@@ -27,10 +27,7 @@ static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, gru
 		iob = bio;
 	}
 	//printf ("io %p\n", file->root->iob.io);
-	if (iob->read_at (iob->io, delta+(blocksize*sector), (ut8*)buf, size*blocksize) == -1) {
-		return 1;
-	}
-	return 0;
+	return !iob->read_at (iob->io, delta+(blocksize*sector), (ut8*)buf, size*blocksize);
 }
 
 GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {

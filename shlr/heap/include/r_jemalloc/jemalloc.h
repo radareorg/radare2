@@ -148,7 +148,8 @@ extern "C" {
 #elif defined(JEMALLOC_HAVE_ATTR)
 #  define JEMALLOC_ATTR(s) __attribute__((s))
 #  define JEMALLOC_ALIGNED(s) JEMALLOC_ATTR(aligned(s))
-#  ifdef JEMALLOC_HAVE_ATTR_ALLOC_SIZE
+// #  ifdef JEMALLOC_HAVE_ATTR_ALLOC_SIZE
+#  if 0
 #    define JEMALLOC_ALLOC_SIZE(s) JEMALLOC_ATTR(alloc_size(s))
 #    define JEMALLOC_ALLOC_SIZE2(s1, s2) JEMALLOC_ATTR(alloc_size(s1, s2))
 #  else

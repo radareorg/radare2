@@ -1693,7 +1693,14 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		case '0': /* address */
 			if (p[i + 1] == 'x') {
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
-					RIOSection *s = print->iob.section_vget (print->iob.io, r_num_get (NULL, p + i));
+					RIOSection *s = NULL;
+					SdbList *secs = print->iob.sections_vget (print->iob.io, r_num_get (NULL, p + i));
+					if (secs) {
+						s = (RIOSection *)ls_pop (secs);
+						secs->free = NULL;
+						ls_free (secs);
+						secs = NULL;
+					}
 					if (s) {
 						if (strlen (s->name) + j + 1 >= COLORIZE_BUFSIZE) {
 							eprintf ("stop before overflow\n");

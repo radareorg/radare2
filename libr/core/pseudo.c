@@ -174,6 +174,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.fcnlines", "asm.comments", NULL);
 	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmtcol", "asm.filter", NULL);
 	r_config_save_num (hc, "scr.color", "asm.emustr", "asm.emu", "asm.emuwrite", NULL);
+	r_config_save_num (hc, "io.cache", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		r_config_hold_free (hc);
@@ -196,6 +197,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.section", 0);
 	r_config_set_i (core->config, "asm.cmtcol", 30);
+	r_config_set_i (core->config, "io.cache", 1);
 	r_core_cmd0 (core, "aeim");
 
 	db = sdb_new0 ();

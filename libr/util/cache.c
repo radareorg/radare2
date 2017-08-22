@@ -17,7 +17,9 @@ R_API RCache *r_cache_new() {
 }
 
 R_API void r_cache_free(RCache *c) {
-	free (c->buf);
+	if (c) {
+		free (c->buf);
+	}
 	free (c);
 }
 

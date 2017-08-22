@@ -375,9 +375,8 @@ static int cmd_alias(void *data, const char *input) {
 		}
 	/* Show command for alias */
 	} else if (desc && !q) {
-		char *v;
 		*desc = 0;
-		v = r_cmd_alias_get (core->rcmd, buf, 0);
+		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			r_cons_println (v);
 			free (buf);
@@ -385,9 +384,8 @@ static int cmd_alias(void *data, const char *input) {
 		} else {
 			eprintf ("unknown key '%s'\n", buf);
 		}
-
-	/* Show aliases */
 	} else if (buf[1] == '*') {
+		/* Show aliases */
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i = 0; i < count; i++) {
@@ -400,11 +398,12 @@ static int cmd_alias(void *data, const char *input) {
 		for (i = 0; i < count; i++) {
 			r_cons_println (keys[i]);
 		}
-	/* Execute alias */
 	} else {
-		char *v;
-		if (q) *q = 0;
-		v = r_cmd_alias_get (core->rcmd, buf, 0);
+		/* Execute alias */
+		if (q) {
+			*q = 0;
+		}
+		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			if (q) {
 				char *out, *args = q + 1;
@@ -415,7 +414,9 @@ static int cmd_alias(void *data, const char *input) {
 					strcat (out, args);
 					r_core_cmd0 (core, out);
 					free (out);
-				} else eprintf ("cannot malloc\n");
+				} else {
+					eprintf ("cannot malloc\n");
+				}
 			} else {
 				r_core_cmd0 (core, v);
 			}
@@ -971,20 +972,20 @@ static int cmd_bsize(void *data, const char *input) {
 	RFlagItem *flag;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
-	case 'm':
+	case 'm': // "bm"
 		n = r_num_math (core->num, input + 1);
 		if (n > 1) core->blocksize_max = n;
 		else r_cons_printf ("0x%x\n", (ut32)core->blocksize_max);
 		break;
-	case '+':
+	case '+': // "b+"
 		n = r_num_math (core->num, input + 1);
 		r_core_block_size (core, core->blocksize + n);
 		break;
-	case '-':
+	case '-': // "b-"
 		n = r_num_math (core->num, input + 1);
 		r_core_block_size (core, core->blocksize - n);
 		break;
-	case 'f':
+	case 'f': // "bf"
 		if (input[1] == ' ') {
 			flag = r_flag_get (core->flags, input + 2);
 			if (flag) {
@@ -996,10 +997,10 @@ static int cmd_bsize(void *data, const char *input) {
 			eprintf ("Usage: bf [flagname]\n");
 		}
 		break;
-	case '\0':
+	case '\0': // "b"
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
-	case '?':
+	case '?': // "b?"
 		r_core_cmd_help (core, help_msg_b);
 		break;
 	default:
@@ -1016,32 +1017,32 @@ static int cmd_resize(void *data, const char *input) {
 	st64 delta = 0;
 	int grow, ret;
 
-	if (core->file && core->file->desc)
-		oldsize = r_io_desc_size (core->file->desc);
+	if (core->file)
+		oldsize = r_io_fd_size (core->io, core->file->fd);
 	else oldsize = 0;
 	switch (*input) {
-	case '2':
+	case '2': // "r2"
 		// TODO: use argv[0] instead of 'radare2'
 		r_sys_cmdf ("radare%s", input);
 		return true;
-	case 'm':
+	case 'm': // "rm"
 		if (input[1] == ' ')
 			r_file_rm (input + 2);
 		else eprintf ("Usage: rm [file]   # removes a file\n");
 		return true;
 	case '\0':
-		if (core->file && core->file->desc) {
+		if (core->file) {
 			if (oldsize != -1) {
 				r_cons_printf ("%"PFMT64d"\n", oldsize);
 			}
 		}
 		return true;
-	case '+':
-	case '-':
+	case '+': // "r+"
+	case '-': // "r-"
 		delta = (st64)r_num_math (core->num, input);
 		newsize = oldsize + delta;
 		break;
-	case ' ':
+	case ' ': // "r "
 		newsize = r_num_math (core->num, input + 1);
 		if (newsize == 0) {
 			if (input[1] == '0')
@@ -1049,8 +1050,8 @@ static int cmd_resize(void *data, const char *input) {
 			return false;
 		}
 		break;
+	case '?': // "r?"
 	default:
-	case '?':
 		r_core_cmd_help (core, help_msg_r);
 		return true;
 	}
@@ -1657,8 +1658,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					}
 					haveQuote = q != NULL;
 					oseek = core->offset;
-					r_core_seek (core,
-						     r_num_math (core->num, p + 2), 1);
+					r_core_seek (core, r_num_math (core->num, p + 2), 1);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -1824,7 +1824,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	core->oobi = NULL;
 
 	ptr = strstr (cmd, "?*");
-	if (ptr && ptr != cmd) {
+	if (ptr) {
 		char *prech = ptr - 1;
 		if (*prech != '~') {
 			ptr[1] = 0;
@@ -2068,8 +2068,8 @@ next2:
 		int sz, len;
 		ut8 *buf;
 
-		*ptr = '\0';
-		for (ptr++; *ptr == ' '; ptr++) {
+		*ptr++ = '\0';
+		for (; *ptr == ' '; ptr++) {
 			//nothing to see here
 		}
 		if (*ptr && ptr[1] == ':') {
@@ -2168,8 +2168,8 @@ repeat_arroba:
 				break;
 			case 'o': // "@o:3"
 				if (ptr[1] == ':') {
-					tmpfd = core->io->raised;
-					r_io_raise (core->io, atoi (ptr + 2));
+					tmpfd = core->io->desc ? core->io->desc->fd : -1;
+					r_io_use_fd (core->io, atoi (ptr + 2));
 				}
 				break;
 			case 'a': // "@a:"
@@ -2223,7 +2223,7 @@ ignore:
 		offstr = r_str_trim_head (ptr + 1);
 
 		addr = r_num_math (core->num, offstr);
-		if (isalpha ((unsigned char)ptr[1]) && !addr) {
+		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
 				eprintf ("Invalid address (%s)\n", ptr + 1);
 				goto fail;
@@ -2294,12 +2294,11 @@ next_arroba:
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else {
 				if (addr != UT64_MAX) {
-					if (!ptr[1] || r_core_seek (core, addr, 1)) {
+					if (ptr[1]) {
+						r_core_seek (core, addr, 1);
 						r_core_block_read (core);
-						ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-					} else {
-						ret = 0;
 					}
+					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 				}
 			}
 			if (tmpseek) {
@@ -2321,7 +2320,7 @@ next_arroba:
 			tmpasm = NULL;
 		}
 		if (tmpfd != -1) {
-			r_io_raise (core->io, tmpfd);
+			r_io_use_fd (core->io, tmpfd);
 		}
 		if (tmpbits) {
 			r_config_set (core->config, "asm.bits", tmpbits);
@@ -3292,7 +3291,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"$",        "alias", cmd_alias},
 		{"%",        "short version of 'env' command", cmd_env},
 		{"&",        "threading capabilities", cmd_thread},
-		{"(",        "macro", cmd_macro},
+		{"(",        "macro", cmd_macro, cmd_macro_init},
 		{"*",        "pointer read/write", cmd_pointer},
 		{"-",        "open cfg.editor and run script", cmd_stdin},
 		{".",        "interpret", cmd_interpret},
@@ -3303,7 +3302,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"0x",       "alias for s 0x", cmd_ox},
 		{"analysis", "analysis", cmd_anal, cmd_anal_init},
 		{"bsize",    "change block size", cmd_bsize},
-		{"cmp",      "compare memory", cmd_cmp},
+		{"cmp",      "compare memory", cmd_cmp, cmd_cmp_init},
 		{"Code",     "code metadata", cmd_meta, cmd_meta_init},
 		{"debug",    "debugger operations", cmd_debug, cmd_debug_init},
 		{"eval",     "evaluate configuration variable", cmd_eval, cmd_eval_init},

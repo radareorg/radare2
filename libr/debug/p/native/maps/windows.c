@@ -244,7 +244,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h_proc;
 	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_new(), *mod_list;
+	RList *map_list = r_list_new(), *mod_list = NULL;
 
 	GetSystemInfo (&si);
 	h_proc = w32_openprocess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);

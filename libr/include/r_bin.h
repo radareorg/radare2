@@ -522,11 +522,11 @@ typedef struct r_bin_bind_t {
 /* bin.c */
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
-R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr);
+R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);
-R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx);
-R_API bool r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
-R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
+R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx);
+R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
+R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
@@ -609,7 +609,7 @@ R_API void r_bin_iobind(RBin *bin, RIO *io);
 R_API RBinFile * r_bin_cur(RBin *bin);
 R_API RBinObject * r_bin_cur_object(RBin *bin);
 R_API int r_bin_file_set_cur_binfile_obj(RBin * bin, RBinFile *bf, RBinObject *obj);
-R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy);
+R_API int r_bin_io_load(RBin *bin, RIO *io, int fd, ut64 baseaddr, ut64 loadaddr, int dummy);
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx);

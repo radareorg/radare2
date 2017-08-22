@@ -131,34 +131,42 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 	// remove entry from idstorage and free the desc-struct
 	r_io_desc_del (io, desc->fd);
 	// remove all dead maps
-#if 0
 	r_io_map_cleanup (io);
 	r_io_section_cleanup (io);
-#endif
 	return true;
 }
 
-R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int count) {
-	if (!buf || !desc || !desc->plugin || !desc->plugin->write || count < 0) {
-		return -1;
+//returns length of written bytes
+R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
+	//check pointers
+	if (!buf || !desc || !desc->plugin || !desc->plugin->write || (len < 1)) {
+		return 0;
 	}
+	//check pointers and pcache
 	if (desc->io && desc->io->p_cache) {
 		return r_io_desc_cache_write (desc,
-				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, count);
+				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
 	}
-	return desc->plugin->write (desc->io, desc, buf, count);
+	//check permissions
+	if (!(desc->flags & R_IO_WRITE)) {
+		return 0;
+	}
+	return desc->plugin->write (desc->io, desc, buf, len);
 }
 
-R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int count) {
+//returns length of read bytes
+R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	ut64 seek;
 	int ret;
-	if (!buf || !desc || !desc->plugin || !desc->plugin->read || count < 0) {
-		return -1;
+	//check pointers and permissions
+	if (!buf || !desc || !desc->plugin || !desc->plugin->read ||
+	    (len < 1) || !(desc->flags & R_IO_READ)) {
+		return 0;
 	}
 	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
-	ret = desc->plugin->read (desc->io, desc, buf, count);
-	if ((ret >= 0) && desc->io && desc->io->p_cache) {
-		ret = r_io_desc_cache_read (desc, seek, buf, count);
+	ret = desc->plugin->read (desc->io, desc, buf, len);
+	if ((ret > 0) && desc->io && desc->io->p_cache) {
+		ret = r_io_desc_cache_read (desc, seek, buf, ret);
 	}
 	return ret;
 }
@@ -196,7 +204,7 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	RIODesc* desc, * descx;
 	SdbListIter* iter;
 	RIOMap* map;
-	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx)) || !io->maps) {
+	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
 		return false;
 	}
 	desc->fd = fdx;
@@ -210,14 +218,23 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		r_io_desc_cache_cleanup (desc);
 		r_io_desc_cache_cleanup (descx);
 	}
-	ls_foreach (io->maps, iter, map) {
-		if (map->fd == fdx) {
-			map->flags &= (desc->flags | R_IO_EXEC);
-		} else if (map->fd == fd) {
-			map->flags &= (descx->flags | R_IO_EXEC);
+	if (io->maps) {
+		ls_foreach (io->maps, iter, map) {
+			if (map->fd == fdx) {
+				map->flags &= (desc->flags | R_IO_EXEC);
+			} else if (map->fd == fd) {
+				map->flags &= (descx->flags | R_IO_EXEC);
+			}
 		}
 	}
 	return true;
+}
+
+R_API bool r_io_desc_is_dbg(RIODesc *desc) {
+	if (desc && desc->plugin) {
+		return desc->plugin->isdbg;
+	}
+	return false;
 }
 
 R_API int r_io_desc_get_pid(RIODesc *desc) {
@@ -258,14 +275,14 @@ R_API int r_io_desc_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
 	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_desc_read (desc, buf, len);
 	}
-	return -1;
+	return 0;
 }
 
 R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
 	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_desc_write (desc, buf, len);
 	}
-	return -1;
+	return 0;
 }
 
 static bool desc_fini_cb(void* user, void* data, ut32 id) {

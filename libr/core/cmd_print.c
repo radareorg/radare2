@@ -2474,7 +2474,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	if (totalsize == UT64_MAX) {
 		if (core->file && core->io) {
-			totalsize = r_io_desc_size (core->file->desc);
+			totalsize = r_io_fd_size (core->io, core->file->fd);
 			if ((st64) totalsize < 1) {
 				totalsize = -1;
 			}
@@ -2830,7 +2830,7 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 	for (i = 0; i < len; i += step, n++) {
 		delta = (st32 *) (buf + i);
 		addr = offset + *delta;
-		if (!r_io_is_valid_offset (core->io, addr, 0)) {
+		if (!r_io_is_valid_section_offset (core->io, addr, 0)) {
 			break;
 		}
 		if (mode == '*') {
@@ -4260,8 +4260,8 @@ static int cmd_print(void *data, const char *input) {
 		case 'j': // "psj"
 			if (l > 0) {
 				char *str, *type;
-				ut64 vaddr;
-				RIOSection *section;
+				ut64 vaddr = UT64_MAX;
+				RIOSection *section = NULL;
 
 				if (input[2] == ' ' && input[3]) {
 					len = r_num_math (core->num, input + 3);
@@ -4271,9 +4271,9 @@ static int cmd_print(void *data, const char *input) {
 				* string, by considering current offset as
 				* paddr and if it isn't, trying to consider it
 				* as vaddr. */
-				vaddr = r_io_section_maddr_to_vaddr (core->io, core->offset);
-				section = core->io->section;
-				if (vaddr == UT64_MAX) {
+				if ((section = r_io_section_get (core->io, core->offset))) {
+					vaddr = core->offset + section->vaddr - section->paddr;
+				} else {
 					section = r_io_section_vget (core->io, core->offset);
 					if (section) {
 						vaddr = core->offset;

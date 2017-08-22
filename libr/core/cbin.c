@@ -396,7 +396,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						if (block_ptr != block_list) {
 							r_cons_printf (",");
 						}
-						r_cons_printf ("\"%s\"", r_utf_blocks[*block_ptr].name);
+						const char *utfName = r_utf_block_name (*block_ptr);
+						r_cons_printf ("\"%s\"", utfName? utfName: "");
 					}
 					r_cons_printf ("]");
 					free (block_list);
@@ -443,15 +444,17 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						break;
 					}
 					int *block_ptr = block_list;
-					r_cons_printf (" \x1b[36mblocks=\x1b[0m");
+					r_cons_printf (" blocks=");
 					for (; *block_ptr != -1; block_ptr++) {
 						if (block_ptr != block_list) {
 							r_cons_printf (",");
 						}
-						r_cons_printf ("%s", r_utf_blocks[*block_ptr].name);
+						const char *name = r_utf_block_name (*block_ptr);
+						r_cons_printf ("%s", name? name: "");
 					}
 					free (block_list);
 				}
+				break;
 			}
 			r_cons_printf ("\n");
 		}
@@ -2238,6 +2241,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		i++;
 	}
+	if (r->bin && r->bin->cur && r->io && r->io->desc && r->io->desc->plugin && !r->io->desc->plugin->isdbg) {
+		r_io_section_apply_bin (r->io, r->bin->cur->id, R_IO_SECTION_APPLY_FOR_ANALYSIS);
+	}
 	if (IS_MODE_JSON (mode)) {
 		r_cons_println ("]");
 	} else if (IS_MODE_NORMAL (mode) && !at) {
@@ -3073,9 +3079,10 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 
 R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch, ut16 bits) {
 	RCoreFile *cf = r_core_file_cur (r);
+	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	RBinFile *binfile;
 	if (!name) {
-		name = (cf && cf->desc) ? cf->desc->name : NULL;
+		name = (desc) ? desc->name : NULL;
 	}
 	if (!name) {
 		return false;
@@ -3129,7 +3136,7 @@ R_API int r_core_bin_raise(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	}
 	binfile = r_core_bin_cur (core);
 	if (binfile) {
-		r_io_raise (core->io, binfile->fd);
+		r_io_use_fd (core->io, binfile->fd);
 	}
 	// it should be 0 to use r_io_use_fd in r_core_block_read
 	core->switch_file_view = 0;
@@ -3145,7 +3152,7 @@ R_API bool r_core_bin_delete(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	}
 	RBinFile *binfile = r_core_bin_cur (core);
 	if (binfile) {
-		r_io_raise (core->io, binfile->fd);
+		r_io_use_fd (core->io, binfile->fd);
 	}
 	core->switch_file_view = 0;
 	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core);

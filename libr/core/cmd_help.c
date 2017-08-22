@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -36,7 +36,7 @@ static const char *help_msg_root[] = {
 	"t","[?]", "Types, noreturn, signatures, C parser and more",
 	"T","[?] [-] [num|msg]", "Text log utility",
 	"u","[?]", "uname/undo seek/write",
-	"V","", "Enter visual mode (V! = panels, VV = fcngraph, VVV = callgraph)",
+	"V","", "Visual mode (V! = panels, VV = fcngraph, VVV = callgraph)",
 	"w","[?] [str]", "Multiple write operations",
 	"x","[?] [len]", "Alias for 'px' (print hexadecimal)",
 	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
@@ -716,32 +716,44 @@ static int cmd_help(void *data, const char *input) {
 		if (core->io->va) {
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			o = r_io_section_maddr_to_vaddr (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		} else {
-			eprintf ("io.va is false\n");
-		}
+			RIOSection *sec = r_io_section_get (core->io, n);
+			if (sec) {
+				o = n + sec->vaddr - sec->paddr;
+				r_cons_printf ("0x%08"PFMT64x"\n", o);
+			} else 	eprintf ("no sections at 0x%08"PFMT64x"\n", n);
+		} else eprintf ("io.va is false\n");
 		break;
 	case 'p':
 		if (core->io->va) {
 			// physical address
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input + 2): core->offset;
-			o = r_io_section_vaddr_to_maddr (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		} else {
-			eprintf ("Virtual addresses not enabled!\n");
-		}
+			RIOSection *sec = r_io_section_vget (core->io, n);
+			if (sec) {
+				o = n - sec->vaddr + sec->paddr;
+				r_cons_printf ("0x%08"PFMT64x"\n", o);
+			} else eprintf ("no section at 0x%08"PFMT64x"\n", n);
+		} else eprintf ("io.va is false\n");
 		break;
 	case 'S': {
 		// section name
 		RIOSection *s;
+		SdbList *sections;
+		SdbListIter *iter;
 		ut64 n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
+#if 0
 		n = r_io_section_vaddr_to_maddr_try (core->io, n);
 		s = r_io_section_mget_in (core->io, n);
 		if (s && *(s->name)) {
 			r_cons_println (s->name);
+		}
+#endif
+		if ((sections = r_io_sections_get (core->io, n))) {
+			ls_foreach (sections, iter, s) {
+				r_cons_printf ("%s\n", s->name);
+			}
+			ls_free (sections);
 		}
 		break;
 		}
@@ -833,12 +845,13 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		}
 		break;
+
 	case '\0':
 	default:
 		// TODO #7967 help refactor
-		r_cons_printf("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-			"Append '?' to any char command to get detailed help\n"
-			"Prefix with number to repeat command N times (f.ex: 3x)\n");
+		r_cons_printf ("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
+				"Append '?' to any char command to get detailed help\n"
+				"Prefix with number to repeat command N times (f.ex: 3x)\n");
 		r_core_cmd_help (core, help_msg_root);
 		break;
 	}

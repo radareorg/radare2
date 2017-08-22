@@ -8,6 +8,7 @@
 
 typedef struct {
 	HANDLE hnd;
+	ut64 winbase;
 } RIOW32;
 #define RIOW32_HANDLE(x) (((RIOW32*)x)->hnd)
 
@@ -63,6 +64,15 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
+static int w32__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (io && fd && fd->data && cmd && !strcmp (cmd, "winbase")) {
+		RIOW32 *w32 = (RIOW32 *)fd->data;
+		io->cb_printf ("%"PFMT64u , w32->winbase);
+		return true;
+	}
+	return false;
+}
+
 RIOPlugin r_io_plugin_w32 = {
 	.name = "w32",
 	.desc = "w32 API io",
@@ -72,7 +82,7 @@ RIOPlugin r_io_plugin_w32 = {
 	.read = w32__read,
 	.check = w32__plugin_open,
 	.lseek = w32__lseek,
-	.system = NULL, // w32__system,
+	.system = w32__system,
 	.write = w32__write,
 };
 

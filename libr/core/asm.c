@@ -65,7 +65,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int align = core->search->align;
 	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
-	int idx, tidx = 0, ret, len;
+	int idx, tidx = 0, len;
 	int tokcount, matchcount, count = 0;
 	int matches = 0, addrbytes = core->assembler->addrbytes;
 
@@ -101,16 +101,17 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if (ret != core->blocksize) {
+		if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
 			break;
 		}
 		idx = 0, matchcount = 0;
 		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
 			r_asm_set_pc (core->assembler, addr);
-			if (!(len = r_asm_disassemble (core->assembler, &op, buf + addrbytes * idx,
-																		 core->blocksize - addrbytes * idx))) {
+			if (!(len = r_asm_disassemble (
+				      core->assembler, &op,
+				      buf + addrbytes * idx,
+				      core->blocksize - addrbytes * idx))) {
 				idx = (matchcount)? tidx + 1: idx + 1;
 				matchcount = 0;
 				continue;
@@ -408,7 +409,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		return NULL;
 	}
 	len = len > addr ? addr : len;
-	if (r_io_read_at (core->io, addr - len, buf, len) != len) {
+	if (!r_io_read_at (core->io, addr - len, buf, len)) {
 		if (hits) {
 			r_list_free (hits);
 		}
@@ -468,7 +469,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		return NULL;
 	}
 
-	if (r_io_read_at (core->io, addr-(len+extra_padding), buf, len+extra_padding) != len+extra_padding) {
+	if (!r_io_read_at (core->io, addr-(len+extra_padding), buf, len + extra_padding)) {
 		r_list_purge (hits);
 		free (hits);
 		free (buf);
@@ -531,7 +532,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		return NULL;
 	}
 
-	if (r_io_read_at (core->io, (addr + extra_padding)-len, buf, len+extra_padding) != len+extra_padding) {
+	if (!r_io_read_at (core->io, (addr + extra_padding) - len, buf, len + extra_padding)) {
 		r_list_purge (hits);
 		free (hits);
 		free (buf);

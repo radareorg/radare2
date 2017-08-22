@@ -1,3 +1,5 @@
+/* libgdbr - LGPL - Copyright 2017 - srimanta.barua1 */
+
 #include "gdbclient/xml.h"
 #include "gdbclient/core.h"
 #include "arch.h"

@@ -246,6 +246,8 @@ R_API RCore *r_core_cast(void *p) {
 
 static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
 	RCore *core = (RCore *)user;
+	RIOSection *sec;
+	ut64 vaddr;
 
 	if (!r_config_get_i (core->config, "asm.cmtpatch")) {
 		return;
@@ -264,8 +266,11 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 		return;
 	}
 
-	ut64 vaddr = r_io_section_maddr_to_vaddr (core->io, maddr);
-	vaddr = (vaddr == UT64_MAX) ? maddr : vaddr;
+	if ((sec = r_io_section_get (core->io, maddr))) {
+		vaddr = maddr + sec->vaddr - sec->paddr;
+	} else {
+		vaddr = maddr;
+	}
 
 	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
 	free (comment);
@@ -513,9 +518,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'B':
 		case 'M': {
 				ut64 lower = UT64_MAX;
-				RListIter *iter;
+				SdbListIter *iter;
 				RIOSection *s;
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (!s->vaddr && s->paddr) {
 						continue;
 					}
@@ -535,7 +540,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'b': return core->blocksize;
 		case 's':
 			if (core->file) {
-				return r_io_desc_size (core->file->desc);
+				return r_io_fd_size (core->io, core->file->fd);
 			}
 			return 0LL;
 		case 'w':
@@ -560,7 +565,13 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0LL; // maybe // return UT64_MAX;
 		case '?': return core->num->value;
 		case '$': return core->offset;
-		case 'o': return r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		case 'o': 
+			{
+				RIOSection *s;
+				s = r_io_section_vget (core->io, core->offset); 
+				return s ? core->offset - s->vaddr + s->paddr : core->offset;
+			}
+			break;
 		case 'C': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
 		case 'J': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
 		case 'X': return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
@@ -1526,16 +1537,15 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->pal.ai_ascii: "";
 		const char *cend = (c && *c) ? Color_RESET: "";
 		int len, r;
-		r = r_io_read_at (core->io, value, buf, sizeof (buf));
-		buf[sizeof (buf) - 1] = 0;
-		if (r) {
+		if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
+			buf[sizeof (buf) - 1] = 0;
 			switch (is_string (buf, sizeof(buf), &len)) {
 			case 1:
 				r_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
 				break;
 			case 2:
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf,
-							sizeof (widebuf) - 1);
+						       sizeof (widebuf) - 1);
 				if (r == -1) {
 					eprintf ("Something was wrong with refs\n");
 				} else {
@@ -2138,7 +2148,6 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 
 	r_cons_break_push (rap_break, rior);
 reaccept:
-	core->io->plugin = NULL;
 	while (!r_cons_is_breaked ()) {
 		c = r_socket_accept (fd);
 		if (!c) {
@@ -2185,10 +2194,10 @@ reaccept:
 					file = r_core_file_open (core, (const char *)ptr, perm, 0);
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
-						file->map = r_io_map_add (core->io, file->desc->fd,
-								perm, 0, 0, r_io_desc_size (file->desc));
-						if (core->file && core->file->desc) {
-							pipefd = core->file->desc->fd;
+						file->map = r_io_map_add (core->io, file->fd,
+								perm, 0, 0, r_io_fd_size (core->io, file->fd));
+						if (core->file) {
+							pipefd = core->file->fd;
 						} else {
 							pipefd = -1;
 						}
@@ -2326,7 +2335,7 @@ reaccept:
 				x = r_read_at_be64 (buf, 1);
 				if (buf[0] == 2) {
 					if (core->file) {
-						x = r_io_desc_size (core->file->desc);
+						x = r_io_fd_size (core->io, core->file->fd);
 					} else {
 						x = 0;
 					}

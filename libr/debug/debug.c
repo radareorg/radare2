@@ -715,7 +715,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	if (!dbg->iob.read_at) {
 		return false;
 	}
-	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) < 0) {
+	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
 		return false;
 	}
 	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf))) {
@@ -750,7 +750,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	case R_ANAL_OP_TYPE_IRCALL:
 	case R_ANAL_OP_TYPE_IRJMP:
 		r = r_debug_reg_get (dbg,op.reg);
-		if (dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8) <0 ) {
+		if (!dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
 			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
@@ -764,8 +764,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		} else {
 			r = 0;
 		}
-		if (dbg->iob.read_at (dbg->iob.io,
-		      r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+		if (!dbg->iob.read_at (dbg->iob.io,
+		      r*op.scale + op.disp, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
 			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
@@ -1502,6 +1502,18 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 	return false;
 }
 
+#if __WINDOWS__
+#pragma message ("KILL ME PLS")
+static const char winbase_str[64];
+
+static void __winbase_cb_printf(const char *f, ...) {
+	va_list ap;
+	va_start (ap, f);
+	vsnprintf (winbase_str, 63, f, ap);
+	va_end (ap);
+}
+#endif
+
 R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	char *abspath;
 	RListIter *iter;
@@ -1509,18 +1521,24 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
-	if (!strcmp (dbg->iob.io->plugin->name, "gdb")) {
+	if (!strcmp (dbg->iob.io->desc->plugin->name, "gdb")) {		//this is very bad
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system(dbg->iob.io, "baddr");
 	}
 	int pid = r_io_desc_get_pid (dbg->iob.io->desc);
+	int tid = r_io_desc_get_tid (dbg->iob.io->desc);
 	if (r_debug_attach (dbg, pid) == -1) {
 		return 0LL;
 	}
 #if __WINDOWS__
-	return dbg->iob.io->winbase;
+#pragma message ("KILL ME PLS")
+	void *foo = dbg->iob.io->cb_printf;
+	dbg->iob.io->cb_printf = __winbase_cb_printf;
+	dbg->iob.system (dbg->iob.io, "winbase");
+	dbg->iob.io->cb_printf = foo;
+	return r_num_get (NULL, winbase_str);
 #else
-	r_debug_select (dbg, pid, pid);
+	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
 	abspath = r_sys_pid_to_path (pid);
 	if (!abspath) {

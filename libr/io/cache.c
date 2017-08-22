@@ -143,7 +143,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
-R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
+R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int l, covered = 0;
 	RListIter *iter;
 	RIOCache *c;
@@ -159,5 +159,5 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			covered += l;
 		}
 	}
-	return covered;
+	return (covered == 0) ? false: true;
 }

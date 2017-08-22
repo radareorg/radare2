@@ -60,7 +60,7 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 					    ut64 loadaddr, int idx, int fd,
 					    int rawstr);
 
-int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
+int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 				   ut64 loadaddr, int xtr_idx, ut64 offset,
 				   const char *name, ut64 sz);
 
@@ -864,72 +864,70 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
+	int ret;
 	if (!bin) {
 		return false;
 	}
 	// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr,
 	// xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
-	RIO *io = (iob && iob->get_io)? iob->get_io (iob): NULL;
-	if (!io) {
-		io = r_io_new ();
-		if (!io) {
+	if (!iob) {
+		return false;
+	}
+	if (!iob->io) {
+		iob->io = r_io_new ();	//wtf
+		if (!iob->io) {
 			return false;
 		}
 		bin->io_owned = true;
-		r_io_bind (io, &bin->iob);
+		r_io_bind (iob->io, &bin->iob);		//memleak?
+		iob = &bin->iob;
 	}
-	RIODesc *desc;
-	if (iob && fd == -1) {
-		desc = iob->open (io, file, R_IO_READ, 0644);
-	} else {
-		desc = iob->desc_get (io, fd);
+	if (!iob->desc_get (iob->io, fd)) {
+		fd = iob->fd_open (iob->io, file, R_IO_READ, 0644);
 	}
 	bin->rawstr = rawstr;
 	// Use the current RIODesc otherwise r_io_map_select can swap them later on
-	if (!desc) {
-		r_io_free (io);
+	if (fd < 0) {
+		r_io_free (iob->io);
 		memset (&bin->iob, 0, sizeof (bin->iob));
 		bin->io_owned = false;
 		return false;
 	}
-	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
+	//Use the current RIODesc otherwise r_io_map_select can swap them later on
+	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx);
 }
 
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 			 ut64 loadaddr, int xtr_idx, int fd, int rawstr,
 			 int fileoffset, const char *name) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->get_io (iob): NULL;
-	RIODesc *desc = NULL;
-	if (!io) {
+	if (!iob || !iob->io) {
 		return false;
 	}
-	desc = fd == -1 ?
-		iob->open (io, file, R_IO_READ, 0644) :
-		iob->desc_get (io, fd);
-	return desc
-		? r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr,
-						  xtr_idx, fileoffset, name)
-		: false;
+	if (fd < 0) {
+		fd = iob->fd_open (iob->io, file, R_IO_READ, 0644);
+	}
+	if (fd < 0) {
+		return false;
+	}
+	return r_bin_load_io_at_offset_as (bin, fd, baseaddr, loadaddr,
+						  xtr_idx, fileoffset, name);
 }
 
-R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
+R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->get_io (iob): NULL;
 	RList *the_obj_list;
 	int res = false;
 	RBinFile *bf = NULL;
 	ut8 *buf_bytes = NULL;
 	ut64 sz = UT64_MAX;
 
-	if (!io) {
+	if (!iob || !iob->io) {
 		return false;
 	}
-	if (!desc || !io) {
-		return false;
-	}
-	bf = r_bin_file_find_by_name (bin, desc->name);
+	const char *name = iob->fd_get_name (iob->io, fd);
+	bf = r_bin_file_find_by_name (bin, name);
 	if (!bf) {
 		return false;
 	}
@@ -938,13 +936,13 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	sz = iob->desc_size (desc);
+	sz = iob->fd_size (iob->io, fd);
 	if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) { 
 		// too big, probably wrong
 		eprintf ("Too big\n");
 		return false;
 	}
-	if (sz == UT64_MAX && desc->plugin && desc->plugin->isdbg) {
+	if (sz == UT64_MAX && iob->fd_is_dbg (iob->io, fd)) {
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a
 		// fixed size.
@@ -953,33 +951,32 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		// load the bin-properly.  Many of the plugins require all
 		// content and are not
 		// stream based loaders
-		RIODesc *tdesc = iob->open (io, desc->name, desc->flags, 0);
-		if (!tdesc) {
+		int tfd = iob->fd_open (iob->io, name, R_IO_READ, 0);
+		if (tfd < 0) {
 			return false;
 		}
-		iob->desc_use (io, desc->fd);
-		sz = iob->desc_size (tdesc);
+		sz = iob->fd_size (iob->io, tfd);
 		if (sz == UT64_MAX) {
-			iob->close (io, tdesc->fd);
+			iob->fd_close (iob->io, tfd);
 			return false;
 		}
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
-			iob->close (io, tdesc->fd);
+			iob->fd_close (iob->io, tfd);
 			return false;
 		}
-		if (!iob->read_at (io, 0LL, buf_bytes, sz)) {
+		if (!iob->read_at (iob->io, 0LL, buf_bytes, sz)) {
 			free (buf_bytes);
-			iob->close (io, tdesc->fd);
+			iob->fd_close (iob->io, tfd);
 			return false;
 		}
-		iob->close (io, tdesc->fd);
+		iob->fd_close (iob->io, tfd);
 	} else {
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
 			return false;
 		}
-		if (!iob->read_at (io, 0LL, buf_bytes, sz)) {
+		if (!iob->fd_read_at (iob->io, fd, 0LL, buf_bytes, sz)) {
 			free (buf_bytes);
 			return false;
 		}
@@ -990,14 +987,14 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
-		res = r_bin_load_io_at_offset_as (bin, desc, baseaddr,
+		res = r_bin_load_io_at_offset_as (bin, fd, baseaddr,
 						old_o->loadaddr, 0, old_o->boffset, NULL);
 	} else {
 		RListIter *iter = NULL;
 		RBinObject *old_o;
 		r_list_foreach (the_obj_list, iter, old_o) {
 			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-			res = r_bin_load_io_at_offset_as (bin, desc, baseaddr,
+			res = r_bin_load_io_at_offset_as (bin, fd, baseaddr,
 				old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
 		}
 	}
@@ -1006,57 +1003,50 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	return res;
 }
 
-R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
-	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, 0, NULL);
+R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
+	return r_bin_load_io_at_offset_as (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
 }
 
-R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
+R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->get_io (iob): NULL;
+	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
 	ut8 *buf_bytes = NULL;
 	RBinXtrPlugin *xtr;
 	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	RIODesc *tdesc = NULL;
-	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
-	const bool oiova = io->va;
+	int tfd;
 
-	if (!io || !desc) {
+	if (!io || (fd < 0)) {
 		return false;
 	}
+	bool is_debugger = iob->fd_is_dbg (io, fd);
+	const char *fname = iob->fd_get_name (io, fd);
 	if (loadaddr == UT64_MAX) {
 		loadaddr = 0;
 	}
-	file_sz = r_io_desc_size (desc);
+	file_sz = iob->fd_size (io, fd);
 	if (!file_sz || file_sz == UT64_MAX) {
-		tdesc = iob->open (io, desc->name, R_IO_READ, 0644);
-		if (tdesc) {
-			file_sz = r_io_desc_size (tdesc);
+		tfd = iob->fd_open (io, fname, R_IO_READ, 0644);
+		if (tfd >= 1) {
+			file_sz = iob->fd_size (io, tfd);
 		}
 	}
 	if (!sz) {
 		sz = file_sz;
 	}
 
-	bin->file = desc->name;
+	bin->file = fname;
 	sz = R_MIN (file_sz, sz);
 	if (!r_list_length (bin->binfiles)) {
 		if (is_debugger) {
 			//use the temporal RIODesc to read the content of the file instead
 			//from the memory
-			if (tdesc) {
+			if (tfd >= 0) {
 				buf_bytes = calloc (1, sz + 1);
-				io->va = 0;
-				r_io_desc_seek (tdesc, 0, R_IO_SEEK_SET);
-				r_io_desc_read (tdesc, buf_bytes, sz);
-				iob->close (io, tdesc->fd);
-				io->va = oiova;
-				tdesc = NULL;	
-				if (!io->desc) {
-					r_io_use_fd (io, desc->fd);
-				}
+				iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
+				iob->fd_close (io, tfd);
 			}
 		}
 	}
@@ -1066,11 +1056,16 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
+#if 0
 		io->va = 0;
 		if (!iob->read_at (io, seekaddr, buf_bytes, sz)) {
 			sz = 0;
 		}
 		io->va = 1;
+#endif
+		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
+			sz = 0LL;
+		}
 	}
 
 	if (!name) {
@@ -1082,31 +1077,25 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
 						free (buf_bytes);
-						if (!tdesc) {
-							tdesc = iob->open (io, desc->name, R_IO_READ, 0);
+						if (tfd < 0) {
+							tfd = iob->fd_open (io, fname, R_IO_READ, 0);
 						}
-						sz = r_io_desc_size (tdesc);
+						sz = iob->fd_size (io, tfd);
 						if (sz != UT64_MAX) {
 							buf_bytes = calloc (1, sz + 1);
 							if (buf_bytes) {
-								io->va = 0;
-								r_io_desc_seek (tdesc, 0, R_IO_SEEK_SET);
-								r_io_desc_read (tdesc, buf_bytes, sz);
-								io->va = oiova;
+								iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
 							}
 						}
-						iob->close (io, tdesc->fd);
-						tdesc = NULL;	
-						if (!io->desc) {
-							r_io_use_fd (io, desc->fd);
-						}
+						iob->fd_close (io, tfd);
+						tfd = -1;	// marking it closed
 					} else if (sz != file_sz) {
 						iob->read_at (io, 0LL, buf_bytes, sz);
 					}
 					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
-						desc->name, buf_bytes, sz, file_sz,
+						fname, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
-						desc->fd, bin->rawstr);
+						fd, bin->rawstr);
 				}
 				xtr = NULL;
 			}
@@ -1115,23 +1104,23 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	if (!binfile) {
 		bool steal_ptr = true; // transfer buf_bytes ownership to binfile
 		binfile = r_bin_file_new_from_bytes (
-			bin, desc->name, buf_bytes, sz, file_sz, bin->rawstr,
-			baseaddr, loadaddr, desc->fd, name, NULL, offset, steal_ptr);
+			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
+			baseaddr, loadaddr, fd, name, NULL, offset, steal_ptr);
 	}
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
-R_API bool r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr,
+R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
 		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB
 	// (MIN_LOAD_SIZE)
 	// if it fails, the whole file is loaded.
 	const ut64 MAX_LOAD_SIZE = 0;  // 0xfffff; //128 * (1 << 10 << 10);
-	int res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
+	int res = r_bin_load_io_at_offset_as_sz (bin, fd, baseaddr,
 		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
 	if (!res) {
-		res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
+		res = r_bin_load_io_at_offset_as_sz (bin, fd, baseaddr,
 			loadaddr, xtr_idx, offset, name, UT64_MAX);
 	}
 	return res;
@@ -2670,14 +2659,10 @@ R_API ut64 r_bin_get_size(RBin *bin) {
 }
 
 R_API int r_bin_file_delete_all(RBin *bin) {
-	RListIter *iter, *iter2;
-	RBinFile *bf;
 	int counter = 0;
 	if (bin) {
-		r_list_foreach_safe (bin->binfiles, iter, iter2, bf) {
-			r_list_delete (bin->binfiles, iter);
-			counter++;
-		}
+		counter = r_list_length (bin->binfiles);
+		r_list_purge (bin->binfiles);
 		bin->cur = NULL;
 	}
 	return counter;

@@ -154,10 +154,13 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
+#if 0	//review this
 	{
 		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
 		baddr = s? s->paddr: r_config_get_i (core->config, "bin.baddr");
 	}
+#endif
+	baddr = r_config_get_i (core->config, "bin.baddr");
 
 	line_count = start_addr? 0: 1;
 	core->print->lines_cache[0] = start_addr? 0: baddr;
@@ -660,7 +663,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (s) {
 			r_core_seek (core, s->vaddr + s->size + 2, 1);
 		} else {
-			r_core_seek (core, r_io_desc_size (core->file->desc), 1);
+			r_core_seek (core, r_io_fd_size (core->io, core->file->fd), 1);
 		}
 	}
 	break;

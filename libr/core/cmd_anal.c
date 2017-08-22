@@ -595,7 +595,7 @@ static void cmd_anal_init(RCore *core) {
 #if JAYRO_03
 
 static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
-	ut64 align = addr % PE_ALIGN;
+	ut64 align = R_ABS (addr % PE_ALIGN);
 	ut32 call_bytes;
 
 	// XXX this is x86 specific
@@ -643,7 +643,10 @@ static void type_cmd(RCore *core, const char *input) {
 		r_config_set_i (core->config, "io.cache", true);
 			r_reg_arena_push (core->anal->reg);
 		r_list_foreach (core->anal->fcns, it, fcn) {
-			r_core_seek (core, fcn->addr, true);
+			int ret = r_core_seek (core, fcn->addr, true);
+			if (!ret) {
+				continue;
+			}
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 			r_core_anal_type_match (core, fcn);
 			if (r_cons_is_breaked ()) {
@@ -2437,7 +2440,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						/* only follow code/call references */
 						continue;
 					}
-					if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
+					if (!r_io_is_valid_section_offset (core->io, ref->addr, 1)) {
 						continue;
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -2448,7 +2451,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						RListIter *iter;
 						RAnalRef *ref;
 						r_list_foreach (f->refs, iter, ref) {
-							if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
+							if (!r_io_is_valid_section_offset (core->io, ref->addr, R_IO_EXEC)) {
 								continue;
 							}
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -2881,7 +2884,7 @@ repeat:
 		*prev_addr = addr;
 	}
 	if (esil->exectrap) {
-		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
+		if (!r_io_is_valid_real_offset (core->io, addr, R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
@@ -2899,9 +2902,8 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
-	if (rc != sizeof (code)) {
-		eprintf ("read error\n");
+	if (!r_io_read_at (core->io, addr, code, sizeof (code))) {
+		eprintf ("read errno\n");
 	}
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
@@ -3246,10 +3248,11 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
 	if (cf) {
 		r_flag_set (core->flags, name, addr, size);
+		r_config_set_i (core->config, "io.va", 1);
 	}
 	r_core_file_set_by_file (core, cache);
 	if (cf) {
-		r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
+		r_flag_set (core->flags, "aeim.fd", cf->fd, 1);
 		r_flag_set (core->flags, "aeim.stack", addr, size);
 	}
 	if (patt && *patt) {
@@ -4101,12 +4104,17 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 			}
 		} else {
 			// search in full file
-			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
-			if (o != UT64_MAX && binfile->size > o) {
-				len = binfile->size - o;
+			RIOSection *sec = r_io_section_vget (core->io, addr);
+			if (sec->vaddr != sec->paddr && binfile->size > (core->offset - sec->vaddr + sec->paddr)) {
+				len = binfile->size - (core->offset - sec->vaddr + sec->paddr);
 			} else {
 				if (binfile->size > core->offset) {
-					len = binfile->size - core->offset;
+					if (binfile->size > core->offset) {
+						len = binfile->size - core->offset;
+					} else {
+						eprintf ("Opps something went wrong aac\n");
+						return;
+					}
 				} else {
 					eprintf ("Oops invalid range\n");
 					len = 0;
@@ -4164,13 +4172,13 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 }
 
 static void cmd_anal_blocks(RCore *core, const char *input) {
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOSection *s;
 	ut64 min = UT64_MAX;
 	ut64 max = 0;
 
 	r_cons_break_push (NULL, NULL);
-	r_list_foreach (core->io->sections, iter, s) {
+	ls_foreach (core->io->sections, iter, s) {
 		/* is executable */
 		if (!(s->flags & R_IO_EXEC)) {
 			continue;
@@ -4182,7 +4190,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 			goto ctrl_c;
 		}
 	}
-	if (r_list_empty (core->io->sections)) {
+	if (ls_empty (core->io->sections)) {
 		min = core->offset;
 		max = 0xffff + min;
 		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
@@ -4234,7 +4242,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				// add xref here
 				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
-				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
+				if (r_io_is_valid_section_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
 #endif
@@ -4269,9 +4277,9 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			r_list_append (ranges, m);
 		} else {
 			RIOSection *s;
-			RListIter *iter;
+			SdbListIter *iter;
 			ranges = r_list_newf ((RListFree)free);
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (s->flags & 1) {
 					RIOMap *m = R_NEW0 (RIOMap);
 					if (!m) {
@@ -5373,12 +5381,12 @@ static void rowlog_done(RCore *core) {
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;
-	RListIter *iter2;
+	SdbListIter *iter2;
 	RAnalFunction *fcn;
 	RIOSection *sec;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		r_list_foreach (core->io->sections, iter2, sec) {
+		ls_foreach (core->io->sections, iter2, sec) {
 			if (sec->flags & 1) {
 				ut64 section_end = sec->vaddr + sec->vsize;
 				ut64 s = r_anal_fcn_realsize (fcn);
@@ -5393,9 +5401,9 @@ static int compute_coverage(RCore *core) {
 
 static int compute_code (RCore* core) {
 	int code = 0;
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOSection *sec;
-	r_list_foreach (core->io->sections, iter, sec) {
+	ls_foreach (core->io->sections, iter, sec) {
 		if (sec->flags & 1) {
 			code += sec->vsize;
 		}
@@ -5452,7 +5460,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	RList *list = r_list_newf (NULL);
 	r_anal_xrefs_from (core->anal, list, "xref", R_ANAL_REF_TYPE_DATA, UT64_MAX);
 	r_list_foreach (list, iter, ref) {
-		if (r_io_is_valid_offset (core->io, ref->addr, false)) {
+		if (r_io_is_valid_section_offset (core->io, ref->addr, false)) {
 			r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
 		}
 	}
@@ -5532,7 +5540,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
 			from = r_config_get_i (core->config, "bin.baddr");
-			to = from + ((core->file)? r_io_desc_size (core->file->desc): 0);
+			to = from + ((core->file)? r_io_fd_size (core->io, core->file->fd): 0);
 			if (!s) {
 				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
 				return; // WTF!

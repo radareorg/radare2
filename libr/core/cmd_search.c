@@ -32,7 +32,7 @@ static const char *help_msg_slash[] = {
 	"/o", " [n]", "show offset of n instructions backward",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
-	"/r[e]", " sym.printf", "analyze opcode reference an offset (/re for esil)",
+	"/r[e]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
@@ -71,6 +71,15 @@ static const char *help_msg_slash_C[] = {
 	"/Ca", "", "Search for AES keys",
 	"/Cr", "", "Search for private RSA keys",
 	NULL
+};
+
+static const char *help_msg_slash_r[] = {
+	"Usage:", "/r[e] [address]", " search references to this specific address",
+	"/r", " [addr]", "search references to this specific address",
+	"/re", " [addr]", "search references using esil",
+	"/rc", "", "search for call references",
+	"/ra", "", "search all references",
+NULL
 };
 
 static const char *help_msg_slash_R[] = {
@@ -134,6 +143,7 @@ static void cmd_search_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /C, slash_C);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /r, slash_r);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /R, slash_R);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /Rk, slash_Rk);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /x, slash_x);
@@ -231,9 +241,8 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 			r_cons_printf ("0x%08"PFMT64x "  %s\n", from, plug->name);
 			// TODO: load the bin and calculate its size
 			if (plug->size) {
-				r_bin_load_io_at_offset_as_sz (core->bin,
-					core->file->desc, 0, 0, 0, core->offset,
-					plug->name, 4096);
+				r_bin_load_io_at_offset_as_sz (core->bin, core->file->fd,
+					0, 0, 0, core->offset, plug->name, 4096);
 				size = plug->size (core->bin->cur);
 				if (size > 0) {
 					r_cons_printf ("size %d\n", size);
@@ -255,9 +264,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return true;
 }
 
-R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
-                                int blen, const ut8 *mask, int mlen) {
-	int ret;
+R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
 	ut64 at;
 	ut8 *b = (ut8 *) malloc (core->blocksize);
 	if (!b) {
@@ -279,11 +286,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		if (r_cons_singleton ()->breaked) {
 			break;
 		}
-		ret = r_io_read_at (core->io, at, b, core->blocksize);
-		if (ret != core->blocksize) {
+		if (!r_io_read_at (core->io, at, b, core->blocksize)) {
 			break;
 		}
-		if (r_search_update (core->search, &at, b, ret) == -1) {
+		if (r_search_update (core->search, &at, b, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x "\n", at);
 			break;
 		}
@@ -613,10 +619,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		}
 	} else if (!strcmp (mode, "file")) {
 		//if (core->io->va) {
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			*from = *to = 0;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (!(s->flags & R_IO_MAP)) {
 					continue;
 				}
@@ -655,10 +661,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 #endif
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			*from = *to = core->offset;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (*from >= s->paddr && *from < (s->paddr + s->size)) {
 					*from = s->vaddr;
 					*to = s->vaddr + s->vsize;
@@ -709,7 +715,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (core->io->va) {
 			int mask = 0;
 			RIOMap *map;
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 
 			if (!strcmp (mode, "io.sections.exec")) {
@@ -721,7 +727,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 
 			*from = UT64_MAX;
 			*to = 0;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (!mask || (s->flags & mask)) {
 					if (!list) {
 						list = r_list_newf (free);
@@ -866,7 +872,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					/* TODO: section size? */
 				} else {
 					if (core->file) {
-						*to = r_io_desc_size (core->file->desc);
+						*to = r_io_fd_size (core->io, core->file->fd);
 					}
 				}
 			}
@@ -1906,8 +1912,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
-	int ret;
-	int oldfd = r_io_get_fd (core->io);
+	int oldfd = (core && core->io && core->io->desc) ? core->io->desc->fd : -1;
 	int bufsz;
 
 	if (json) {
@@ -1999,8 +2004,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				}
 				// if seek fails we shouldnt read at all
 				//(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-				ret = r_io_read_at (core->io, at, buf, bufsz);
-				if (ret < 1) {
+				if (!r_io_read_at (core->io, at, buf, bufsz)) {
 					//HACK to fix issue with .bss sections, SIOL does fix it
 					//creating a mmap 
 					at++;
@@ -2009,9 +2013,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if (param->crypto_search) {
 					int delta = 0;
 					if (param->aes_search) {
-						delta = r_search_aes_update (core->search, at, buf, ret);
+						delta = r_search_aes_update (core->search, at, buf, bufsz);
 					} else if (param->rsa_search) {
-						delta = r_search_rsa_update (core->search, at, buf, ret);
+						delta = r_search_rsa_update (core->search, at, buf, bufsz);
 					}
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at + delta)) {
@@ -2020,7 +2024,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 						}
 						aeskw.count++;
 					}
-				} else if (r_search_update (core->search, &at, buf, ret) == -1) {
+				} else if (r_search_update (core->search, &at, buf, bufsz) == -1) {
 					// eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
@@ -2473,19 +2477,15 @@ reread:
 			}
 			break;
 		case '?':
-			eprintf ("Usage /r[e] [address] - search references to this specific address\n"
-			" /r [addr]  - search references to this specific address\n"
-			" /re [addr] - search references using esil\n"
-			" /rc        - search for call references\n"
-			" /ra        - search all references\n");
 			break;
 		}
 		break;
-	case 'A':
+	case 'A': // "/A"
 		do_anal_search (core, &param, input + 1);
 		dosearch = false;
 		break;
-	case 'a': if (input[1]) {
+	case 'a': // "/a"
+		if (input[1]) {
 			char *kwd = r_core_asm_search (core, input + param_offset,
 				param.from, param.to);
 			if (kwd) {
@@ -2503,7 +2503,7 @@ reread:
 			}
 	}
 		break;
-	case 'C': {
+	case 'C': { // "/C"
 		dosearch = true;
 		param.crypto_search = true;
 		switch (input[1]) {
@@ -2563,7 +2563,7 @@ reread:
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1));
 		break;
-	case 'V':
+	case 'V': // "/V"
 		// TODO: add support for json
 	{
 		int err = 1, vsize = atoi (input + 1);
@@ -2652,7 +2652,7 @@ reread:
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
-	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
+	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
 		if (input[1]) {
 			if (input[2]) {
 				if (input[1] == 'j' || input[2] == 'j') {
@@ -2696,19 +2696,19 @@ reread:
 			}
 		}
 		break;
-	case 'i':
+	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
 			ret = false;
 			goto beach;
 		}
 		ignorecase = true;
-	case 'j':
+	case 'j': // "/j"
 		if (input[0] == 'j') {
 			json = true;
 		}
 	/* pass-thru */
-	case ' ': /* search string */
+	case ' ': // "/ " search string
 		inp = strdup (input + 1 + ignorecase + json);
 		len = r_str_unescape (inp);
 		if (!json) {
@@ -2738,7 +2738,7 @@ reread:
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
-	case 'e': /* match regexp */
+	case 'e': // "/e" match regexp
 		if (input[1]) {
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + param_offset, NULL);
@@ -2756,13 +2756,13 @@ reread:
 			eprintf ("Missing regex\n");
 		}
 		break;
-	case 'E':
+	case 'E': // "/E"
 		if (core->io && core->io->debug) {
 			r_debug_map_sync (core->dbg);
 		}
 		do_esil_search (core, &param, input);
 		goto beach;
-	case 'd': /* search delta key */
+	case 'd': // "/d" search delta key
 		if (input[1]) {
 			r_search_reset (core->search, R_SEARCH_DELTAKEY);
 			r_search_kw_add (core->search,
@@ -2773,7 +2773,7 @@ reread:
 			eprintf ("Missing delta\n");
 		}
 		break;
-	case 'h':
+	case 'h': // "/h"
 	{
 		char *p, *arg = r_str_chop (strdup (input + 1));
 		p = strchr (arg, ' ');
@@ -2845,7 +2845,7 @@ reread:
 			eprintf ("Usage: /f [file] ([offset] ([size]))\n");
 		}
 		break;
-	case 'x': /* search hex */
+	case 'x': // "/x" search hex
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_x);
 		} else {
@@ -2871,14 +2871,14 @@ reread:
 			free (p);
 		}
 		break;
-	case 'c': /* search asm */
+	case 'c': // "/c" search asm
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_c);
 		}
 		do_asm_search (core, &param, input);
 		dosearch = 0;
 		break;
-	case '+':
+	case '+': // "/+"
 		if (input[1] == ' ') {
 			// TODO: support /+j
 			char *buf = malloc (strlen (input) * 2);
@@ -2916,7 +2916,7 @@ again:
 			eprintf ("Usage: /+ [string]\n");
 		}
 		break;
-	case 'z': /* search strings of min-max range*/
+	case 'z': // "/z" search strings of min-max range
 	{
 		char *p;
 		ut32 min, max;
@@ -2948,7 +2948,7 @@ again:
 		dosearch = true;
 	}
 	break;
-	case '?':
+	case '?': // "/?"
 		r_core_cmd_help (core, help_msg_slash);
 		break;
 	default:
