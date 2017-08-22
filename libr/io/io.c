@@ -38,8 +38,9 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		iter = iter->p;
 		// end of list
 		if (!iter) {
+			//this could reach the desc that is why <= 0
 			if (io->desc) {
-				*ret &= (op (io, io->desc->fd, vaddr, buf, len) == len);
+				*ret &= (op (io, io->desc->fd ,vaddr, buf, len) <= 0);
 			}
 			return;
 		}
@@ -56,8 +57,8 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				*ret &= (op (io, map->fd, map->delta, buf, len - (int) (vendaddr - map->to + 1)) ==
-						(len - (int) (vendaddr - map->to + 1)));
+				int nlen = len - (int) (vendaddr - map->to + 1);
+				*ret &= (op (io, map->fd, map->delta, buf, nlen) == nlen);
 			}
 			vaddr = map->to;
 			buf = buf + (len - (int) (vendaddr - map->to + 1));
@@ -72,8 +73,8 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				*ret &= (op (io, map->fd, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to + 1)) ==
-						(len - (int) (vendaddr - map->to + 1)));
+				int nlen = len - (int) (vendaddr - map->to + 1);
+				*ret &= (op (io, map->fd, map->delta + (vaddr - map->from), buf, nlen) == nlen);
 			}
 			vaddr = map->to;
 			buf = buf + (len - (int) (vendaddr - map->to + 1));
