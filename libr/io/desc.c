@@ -283,7 +283,6 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 	if (desc->plugin && desc->plugin->close) {
 		desc->plugin->close (desc);
 	}
-	r_io_desc_free (desc);
 	return true;
 }
 

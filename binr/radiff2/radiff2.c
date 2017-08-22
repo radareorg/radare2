@@ -418,7 +418,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 		size = r_io_size (io);
 		if (size > 0 && size < ST32_MAX) {
 			data = calloc (1, size);
-			if (r_io_read_all_at (io, 0, data, size)) {
+			if (r_io_read_at (io, 0, data, size)) {
 				if (sz) {
 					*sz = size;
 				}

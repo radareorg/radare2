@@ -54,7 +54,7 @@ RIOSection *_section_chk_dup(RIO *io, ut64 paddr, ut64 vaddr, ut64 size, ut64 vs
 	SdbListIter *iter;
 	char sname[32];
 	if (!name) {
-		snprintf (sname, sizeof (sname), "section.0x016%"PFMT64x "", vaddr);
+		snprintf (sname, sizeof (sname) - 1, "section.0x016%"PFMT64x "", vaddr);
 	}
 	ls_foreach (io->sections, iter, sec) {
 		if ((sec->paddr == paddr) && (sec->vaddr == vaddr) && (sec->size == size) &&
@@ -79,6 +79,10 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 		if (!sec) {
 			return NULL;
 		}
+		if (!r_id_pool_grab_id (io->sec_ids, &sec->id)) {
+			free (sec);
+			return NULL;
+		}
 		sec->paddr = paddr;
 		sec->vaddr = vaddr;
 		sec->size = size;
@@ -90,15 +94,6 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 			sec->name = r_str_newf ("section.0x016%"PFMT64x "", vaddr);
 		} else {
 			sec->name = strdup (name);
-		}
-		if (!sec->name) {
-			free (sec);
-			return NULL;
-		}
-		if (!r_id_pool_grab_id (io->sec_ids, &sec->id)) {
-			free (sec->name);
-			free (sec);
-			return NULL;
 		}
 		ls_append (io->sections, sec);
 	}
@@ -421,7 +416,6 @@ static bool _create_null_map(RIO *io, RIOSection *sec, ut64 at) {
 	}
 	uri = r_str_newf ("null://%"PFMT64u "", sec->vsize - sec->size);
 	desc = r_io_open_at (io, uri, sec->flags, 664, at);
-	free (uri);
 	if (!desc) {
 		return false;
 	}

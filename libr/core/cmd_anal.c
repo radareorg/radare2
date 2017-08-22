@@ -2899,7 +2899,8 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	if (!r_io_read_all_at (core->io, addr, code, sizeof (code))) {
+	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
+	if (!rc) {
 		eprintf ("read error\n");
 	}
 	// TODO: sometimes this is dupe
