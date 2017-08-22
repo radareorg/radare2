@@ -45,7 +45,7 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 /*
  * something happened at the given pc that we need to trace
  */
-R_API int r_debug_trace_pc (RDebug *dbg, ut64 pc) {
+R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RAnalOp op = {0};
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction

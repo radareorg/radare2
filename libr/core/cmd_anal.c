@@ -2900,7 +2900,7 @@ repeat:
 		}
 	}
 	if (!r_io_read_at (core->io, addr, code, sizeof (code))) {
-		goto out_return_zero;
+		eprintf ("read errno\n");
 	}
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));

@@ -287,6 +287,7 @@ R_API bool r_io_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API RList *r_io_alvread_at (RIO *io, ut64 vaddr, ut8 *buf, int len, bool *allocation_failed);
 R_API RList *r_io_alvwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len, bool *allocation_failed);
+R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_read (RIO *io, ut8 *buf, int len);
 R_API bool r_io_write (RIO *io, ut8 *buf, int len);
