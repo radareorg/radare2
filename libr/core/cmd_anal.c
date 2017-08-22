@@ -595,7 +595,7 @@ static void cmd_anal_init(RCore *core) {
 #if JAYRO_03
 
 static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
-	ut64 align = addr % PE_ALIGN;
+	ut64 align = R_ABS (addr % PE_ALIGN);
 	ut32 call_bytes;
 
 	// XXX this is x86 specific
@@ -643,7 +643,10 @@ static void type_cmd(RCore *core, const char *input) {
 		r_config_set_i (core->config, "io.cache", true);
 			r_reg_arena_push (core->anal->reg);
 		r_list_foreach (core->anal->fcns, it, fcn) {
-			r_core_seek (core, fcn->addr, true);
+			int ret = r_core_seek (core, fcn->addr, true);
+			if (!ret) {
+				continue;
+			}
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 			r_core_anal_type_match (core, fcn);
 			if (r_cons_is_breaked ()) {
