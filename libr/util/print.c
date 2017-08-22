@@ -1693,7 +1693,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		case '0': /* address */
 			if (p[i + 1] == 'x') {
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
-					RIOSection *s;
+					RIOSection *s = NULL;
 					SdbList *secs = print->iob.sections_vget (print->iob.io, r_num_get (NULL, p + i));
 					if (secs) {
 						s = (RIOSection *)ls_pop (secs);
