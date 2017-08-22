@@ -961,7 +961,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		switch (mode) {
 		case 'j':
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-				PFMT64d ",\"writable\":%s,\"size\":%d,\"overlaps\"}%s",
+				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
 				core->io->desc->fd == f->fd ? "true": "false",
 				(int) f->fd, desc->uri, (ut64) from,
 				desc->flags & R_IO_WRITE? "true": "false",
