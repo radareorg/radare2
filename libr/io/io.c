@@ -449,7 +449,7 @@ R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 
 R_API RList *r_io_alvread_at (RIO *io, ut64 vaddr, ut8 *buf, int len, bool *allocation_failed) {
 	RList *log;
-	if (io || !buf || (len < 1)) {
+	if (!io || !buf || (len < 1)) {
 		return NULL;
 	}
 	if ((*allocation_failed = !(log = r_list_newf (free)))) {
