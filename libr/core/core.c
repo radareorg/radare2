@@ -1539,7 +1539,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		int len, r;
 		r = r_io_read_at (core->io, value, buf, sizeof (buf));
 		buf[sizeof (buf) - 1] = 0;
-		if (r) {
+		if (r > 0) {
 			switch (is_string (buf, sizeof(buf), &len)) {
 			case 1:
 				r_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
@@ -2389,7 +2389,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 			if (delta < len) {
 				len = (int)delta;
 			}
-			if (!r_io_read_at (core->io, from, buf, len)) {
+			if (r_io_read_at (core->io, from, buf, len) < 0) { // XXX
 				eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
 				break;
 			}

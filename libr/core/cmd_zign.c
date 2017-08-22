@@ -626,7 +626,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 			break;
 		}
 		rlen = R_MIN (core->blocksize, to - at);
-		if (!r_io_read_at (core->io, at, buf, rlen)) {
+		if (!r_io_read_all_at (core->io, at, buf, rlen)) {
 			retval = false;
 			break;
 		}
