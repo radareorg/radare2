@@ -71,7 +71,7 @@ r_core = library('r_core', files,
   objects: [
 	libr2sdb.extract_all_objects(),
 	libr2spp.extract_all_objects(),
-	libr2gdb.extract_all_objects()
+	libr2gdb.extract_all_objects(),
   ],
   install: true
 )

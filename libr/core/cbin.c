@@ -396,7 +396,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						if (block_ptr != block_list) {
 							r_cons_printf (",");
 						}
-						r_cons_printf ("\"%s\"", r_utf_blocks[*block_ptr].name);
+						const char *utfName = r_utf_block_name (*block_ptr);
+						r_cons_printf ("\"%s\"", utfName? utfName: "");
 					}
 					r_cons_printf ("]");
 					free (block_list);
@@ -443,15 +444,17 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						break;
 					}
 					int *block_ptr = block_list;
-					r_cons_printf (" \x1b[36mblocks=\x1b[0m");
+					r_cons_printf (" blocks=");
 					for (; *block_ptr != -1; block_ptr++) {
 						if (block_ptr != block_list) {
 							r_cons_printf (",");
 						}
-						r_cons_printf ("%s", r_utf_blocks[*block_ptr].name);
+						const char *name = r_utf_block_name (*block_ptr);
+						r_cons_printf ("%s", name? name: "");
 					}
 					free (block_list);
 				}
+				break;
 			}
 			r_cons_printf ("\n");
 		}

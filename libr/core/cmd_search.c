@@ -241,8 +241,7 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 			r_cons_printf ("0x%08"PFMT64x "  %s\n", from, plug->name);
 			// TODO: load the bin and calculate its size
 			if (plug->size) {
-				r_bin_load_io_at_offset_as_sz (core->bin,
-					r_io_desc_get (core->io, core->file->fd),
+				r_bin_load_io_at_offset_as_sz (core->bin, core->file->fd,
 					0, 0, 0, core->offset, plug->name, 4096);
 				size = plug->size (core->bin->cur);
 				if (size > 0) {
@@ -265,9 +264,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return true;
 }
 
-R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
-                                int blen, const ut8 *mask, int mlen) {
-	int ret;
+R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
 	ut64 at;
 	ut8 *b = (ut8 *) malloc (core->blocksize);
 	if (!b) {
@@ -289,11 +286,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		if (r_cons_singleton ()->breaked) {
 			break;
 		}
-		ret = r_io_read_at (core->io, at, b, core->blocksize);
-		if (ret != core->blocksize) {
+		if (!r_io_read_at (core->io, at, b, core->blocksize)) {
 			break;
 		}
-		if (r_search_update (core->search, &at, b, ret) == -1) {
+		if (r_search_update (core->search, &at, b, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x "\n", at);
 			break;
 		}
@@ -1916,7 +1912,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
-	int ret;
 	int oldfd = (core && core->io && core->io->desc) ? core->io->desc->fd : -1;
 	int bufsz;
 
@@ -2009,8 +2004,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				}
 				// if seek fails we shouldnt read at all
 				//(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-				ret = r_io_read_at (core->io, at, buf, bufsz);
-				if (ret < 1) {
+				if (!r_io_read_at (core->io, at, buf, bufsz)) {
 					//HACK to fix issue with .bss sections, SIOL does fix it
 					//creating a mmap 
 					at++;
@@ -2019,9 +2013,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if (param->crypto_search) {
 					int delta = 0;
 					if (param->aes_search) {
-						delta = r_search_aes_update (core->search, at, buf, ret);
+						delta = r_search_aes_update (core->search, at, buf, bufsz);
 					} else if (param->rsa_search) {
-						delta = r_search_rsa_update (core->search, at, buf, ret);
+						delta = r_search_rsa_update (core->search, at, buf, bufsz);
 					}
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at + delta)) {
@@ -2030,7 +2024,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 						}
 						aeskw.count++;
 					}
-				} else if (r_search_update (core->search, &at, buf, ret) == -1) {
+				} else if (r_search_update (core->search, &at, buf, bufsz) == -1) {
 					// eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}

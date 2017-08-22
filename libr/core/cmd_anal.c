@@ -595,7 +595,7 @@ static void cmd_anal_init(RCore *core) {
 #if JAYRO_03
 
 static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
-	ut64 align = addr % PE_ALIGN;
+	ut64 align = R_ABS (addr % PE_ALIGN);
 	ut32 call_bytes;
 
 	// XXX this is x86 specific
@@ -643,7 +643,10 @@ static void type_cmd(RCore *core, const char *input) {
 		r_config_set_i (core->config, "io.cache", true);
 			r_reg_arena_push (core->anal->reg);
 		r_list_foreach (core->anal->fcns, it, fcn) {
-			r_core_seek (core, fcn->addr, true);
+			int ret = r_core_seek (core, fcn->addr, true);
+			if (!ret) {
+				continue;
+			}
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 			r_core_anal_type_match (core, fcn);
 			if (r_cons_is_breaked ()) {
@@ -2899,9 +2902,8 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
-	if (!rc) {
-		eprintf ("read error\n");
+	if (!r_io_read_at (core->io, addr, code, sizeof (code))) {
+		eprintf ("read errno\n");
 	}
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
@@ -3246,6 +3248,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
 	if (cf) {
 		r_flag_set (core->flags, name, addr, size);
+		r_config_set_i (core->config, "io.va", 1);
 	}
 	r_core_file_set_by_file (core, cache);
 	if (cf) {

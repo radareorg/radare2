@@ -221,7 +221,7 @@ static RList* sections(RBinFile *arch) {
 			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel")) {
 				ptr->is_data = true;
 			}
-			ptr->size = section[i].size;
+			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;

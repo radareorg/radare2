@@ -2068,8 +2068,8 @@ next2:
 		int sz, len;
 		ut8 *buf;
 
-		*ptr = '\0';
-		for (ptr++; *ptr == ' '; ptr++) {
+		*ptr++ = '\0';
+		for (; *ptr == ' '; ptr++) {
 			//nothing to see here
 		}
 		if (*ptr && ptr[1] == ':') {
@@ -2294,12 +2294,11 @@ next_arroba:
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else {
 				if (addr != UT64_MAX) {
-					if (!ptr[1] || r_core_seek (core, addr, 1)) {
+					if (ptr[1]) {
+						r_core_seek (core, addr, 1);
 						r_core_block_read (core);
-						ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-					} else {
-						ret = 0;
 					}
+					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 				}
 			}
 			if (tmpseek) {

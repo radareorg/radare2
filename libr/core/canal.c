@@ -516,18 +516,13 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		RAnalRef *ref;
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
-		if (!r_io_read_at (core->io, at + delta, buf, buflen)) {
-			eprintf ("read errro\n");
-			goto error;
-		}
-		// real read.
-		// this is unnecessary if its contiguous
-		buflen = r_io_read_at (core->io, at+delta, buf, core->anal->opt.bb_max_size) ? 
-			core->anal->opt.bb_max_size : 0;
 		if (core->io->va) {
 			if (!r_io_is_valid_section_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
+		}
+		if (!r_io_read_at (core->io, at + delta, buf, buflen)) {
+			goto error;
 		}
 		if (r_cons_is_breaked ()) {
 			break;
@@ -761,7 +756,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 			goto err_op;
 		}
 	} else {
-		if (r_io_read_at (core->io, addr, buf, sizeof (buf)) < 1) {
+		if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
 			goto err_op;
 		}
 		ptr = buf;
@@ -1112,7 +1107,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[color=\"%s\"];\n", pal_fail, bbi->addr, bbi->fail);
+					"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
 				core_anal_color_curr_node (core, bbi);
 			}
 
@@ -1135,7 +1130,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					//	"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[color2=\"%s\"];\n", pal_fail, caseop->addr, caseop->jump);
+						"[color2=\"%s\"];\n", caseop->addr, caseop->jump, pal_fail);
 					core_anal_color_curr_node (core, bbi);
 				}
 			}
@@ -1245,12 +1240,12 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		}
 		do {
 #if SLOW_IO
-			if (r_io_read_at (core->io, at + bblen, buf, 4) != 4) { // ETOOSLOW
+			if (!r_io_read_at (core->io, at + bblen, buf, 4)) { // ETOOSLOW
 				goto error;
 			}
 			r_core_read_at (core, at + bblen, buf, core->anal->opt.bb_max_size);
 #else
-			if (r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size) != core->anal->opt.bb_max_size) { // ETOOSLOW
+			if (!r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;
 			}
 #endif
@@ -2307,7 +2302,7 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			buf = tbuf;
 			bb_size = bb->size;
 		}
-		if (r_io_read_at (core->io, bb->addr, buf, bb->size) != bb->size) {
+		if (!r_io_read_at (core->io, bb->addr, buf, bb->size)) {
 	//		eprintf ("read error\n");
 			break;
 		}
@@ -2519,7 +2514,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 		return -1;
 	}
 	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
-	int ret, i, count = 0;
+	int i, count = 0;
 	RAnalOp op = R_EMPTY;
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
@@ -2558,8 +2553,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				break;
 			}
 			// TODO: this can be probably enhaced
-			ret = r_io_read_at (core->io, at, buf, core->blocksize);
-			if (ret != core->blocksize) {
+			if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
 				break;
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;

@@ -571,7 +571,7 @@ static int cmd_open(void *data, const char *input) {
 				if (desc) {
 					*filename = 0;
 					addr = r_num_math (core->num, arg);
-					r_bin_load_io (core->bin, desc, addr, 0, 0);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -582,7 +582,7 @@ static int cmd_open(void *data, const char *input) {
 				RCoreFile *cf = r_core_file_cur (core);
 				RIODesc *desc = r_io_desc_get (core->io, cf->fd);
 				if (cf && desc) {
-					r_bin_load_io (core->bin, desc, addr, 0, 0);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("No file to load bin from?\n");
@@ -594,7 +594,7 @@ static int cmd_open(void *data, const char *input) {
 			RIODesc *desc;
 			r_list_foreach (core->files, iter, file) {
 				desc = r_io_desc_get (core->io, file->fd);
-				r_bin_load_io (core->bin, desc, addr, 0, 0);
+				r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
 				r_core_cmd0 (core, ".is*");
 				break;
 			}

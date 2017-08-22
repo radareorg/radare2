@@ -38,8 +38,9 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		iter = iter->p;
 		// end of list
 		if (!iter) {
+			//this could reach the desc that is why <= 0
 			if (io->desc) {
-				*ret &= (op (io, io->desc->fd, vaddr, buf, len) == len);
+				*ret &= (op (io, io->desc->fd ,vaddr, buf, len) <= 0);
 			}
 			return;
 		}
@@ -56,8 +57,8 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				*ret &= (op (io, map->fd, map->delta, buf, len - (int) (vendaddr - map->to + 1)) ==
-						(len - (int) (vendaddr - map->to + 1)));
+				int nlen = len - (int) (vendaddr - map->to + 1);
+				*ret &= (op (io, map->fd, map->delta, buf, nlen) == nlen);
 			}
 			vaddr = map->to;
 			buf = buf + (len - (int) (vendaddr - map->to + 1));
@@ -72,8 +73,8 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 			}
 		} else {
 			if (((map->flags & match_flg) == match_flg) || io->p_cache) {
-				*ret &= (op (io, map->fd, map->delta + (vaddr - map->from), buf, len - (int) (vendaddr - map->to + 1)) ==
-						(len - (int) (vendaddr - map->to + 1)));
+				int nlen = len - (int) (vendaddr - map->to + 1);
+				*ret &= (op (io, map->fd, map->delta + (vaddr - map->from), buf, nlen) == nlen);
 			}
 			vaddr = map->to;
 			buf = buf + (len - (int) (vendaddr - map->to + 1));
@@ -448,7 +449,7 @@ R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 
 R_API RList *r_io_alvread_at (RIO *io, ut64 vaddr, ut8 *buf, int len, bool *allocation_failed) {
 	RList *log;
-	if (io || !buf || (len < 1)) {
+	if (!io || !buf || (len < 1)) {
 		return NULL;
 	}
 	if ((*allocation_failed = !(log = r_list_newf (free)))) {
@@ -508,6 +509,18 @@ R_API RList *r_io_alvwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len, boo
 	}
 	alOnIterMap (io->maps->tail, io, vaddr, mybuf, len, R_IO_READ, r_io_fd_write_at, log, allocation_failed);
 	return log;
+}
+
+R_API void r_io_alprint(RList/*<RIOAccessLog>*/ *ls) {
+	RListIter *iter;
+	RIOAccessLog *al;
+	eprintf ("==============\n");
+	r_list_foreach (ls, iter, al) {
+		eprintf ("vaddr: 0x%08" PFMT64x " paddr: 0x%08" PFMT64x
+			 " -- expect_len: %d, len: %d, fd: %d, mapid: %d\n",
+			 al->vaddr, al->paddr, al->expect_len, al->len, al->fd,
+			 al->mapid);
+	}
 }
 
 R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
@@ -683,6 +696,16 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
 	bnd->system = r_io_system;
+	bnd->fd_open = r_io_fd_open;
+	bnd->fd_close = r_io_fd_close;
+	bnd->fd_seek = r_io_fd_seek;
+	bnd->fd_size = r_io_fd_size;
+	bnd->fd_read = r_io_fd_read;
+	bnd->fd_write = r_io_fd_write;
+	bnd->fd_read_at = r_io_fd_read_at;
+	bnd->fd_write_at = r_io_fd_write_at;
+	bnd->fd_is_dbg = r_io_fd_is_dbg;
+	bnd->fd_get_name = r_io_fd_get_name;
 	bnd->is_valid_offset = r_io_is_valid_real_offset;
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;

@@ -138,13 +138,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		r_debug_select (core->dbg, newpid, newtid);
 	}
 	if (core->file) {
-		RCoreFile *cf = core->file;
-		RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
-		if (desc) {
-			r_io_use_fd (core->io, desc->fd);
-			core->switch_file_view = 1;
-			r_core_block_read (core);
-		}
+		r_io_use_fd (core->io, core->file->fd);
+		core->switch_file_view = 1;
+		r_core_block_read (core);
 #if 0
 		else {
 			const char *name = (cf && cf->desc)? cf->desc->name: "ERROR";
@@ -306,10 +302,9 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	RCoreFile *cf = r_core_file_cur (r);
-	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	RBinFile *bf = NULL;
-	if (desc) {
-		result = r_bin_reload (r->bin, desc, baseaddr);
+	if (cf) {
+		result = r_bin_reload (r->bin, cf->fd, baseaddr);
 	}
 	bf = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, bf);
@@ -351,12 +346,12 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	if (!desc) {
 		return false;
 	}
-	if (cf && desc) {
+	if (cf) {
 #if __WINDOWS__
 		r_debug_select (r->dbg, r->dbg->pid, r->dbg->tid);
 #else
-		r_debug_select (r->dbg, r_io_desc_get_pid (desc),
-				r_io_desc_get_tid (desc));
+		r_debug_select (r->dbg, r_io_fd_get_pid (r->io, cf->fd),
+				r_io_fd_get_tid (r->io, cf->fd));
 #endif
 	}
 #if !__linux__
@@ -367,12 +362,12 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
-	int fd = desc->fd;
+	int fd = cf ? cf->fd : -1;
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, treat_as_rawstr)) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
 			treat_as_rawstr = true;
-			if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, desc->fd, treat_as_rawstr)) {
+			if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, treat_as_rawstr)) {
 				return false;
 			}
 		}
@@ -415,16 +410,16 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 
 static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
-	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
+	int fd = cf ? cf->fd : -1;
 	RBinFile *binfile = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	RBinPlugin *plugin;
 
-	if (!desc) {
+	if (fd < 0) {
 		return false;
 	}
-	r_io_use_fd (r->io, desc->fd);
-	if (!r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
+	r_io_use_fd (r->io, fd);
+	if (!r_bin_load_io (r->bin, fd, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
