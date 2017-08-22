@@ -26,6 +26,7 @@ typedef struct r_bin_elf_section_t {
 	ut32 info;
 	char name[ELF_STRING_LENGTH];
 	int last;
+	int type;
 } RBinElfSection;
 
 typedef struct r_bin_elf_symbol_t {
