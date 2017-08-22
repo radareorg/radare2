@@ -762,6 +762,7 @@ static int cmd_write(void *data, const char *input) {
 					core->offset = addr;
 					r_core_block_read (core);
 				}
+				cmd_suc = true;
 			}
 			break;
 		case 'x': // "wex"
@@ -833,8 +834,8 @@ static int cmd_write(void *data, const char *input) {
 		case '?':
 		default:
 			cmd_suc = false;
+			break;
 		}
-
 		if (cmd_suc == false) {
 			r_core_cmd_help (core, help_msg_we);
 		}

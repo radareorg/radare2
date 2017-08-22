@@ -656,10 +656,16 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 	if ((tmp_size = cur_size - addr) == 0LL) {
 		return true;
 	}
-	if (!(buffer = malloc ((size_t) tmp_size + 1))) {
+	if (!(buffer = calloc (1, (size_t) tmp_size + 1))) {
 		return false;
 	}
 	r_io_pread_at (io, addr, buffer, (int) tmp_size);
+	/* fill with null bytes */
+	ut8 *empty = calloc (1, size);
+	if (empty) {
+		r_io_pwrite_at (io, addr, empty, size);
+		free (empty);
+	}
 	r_io_pwrite_at (io, addr + size, buffer, (int) tmp_size);
 	free (buffer);
 	return true;
