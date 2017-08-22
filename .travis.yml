@@ -59,7 +59,6 @@ script:
   - export NOREPORT=1
   - cd radare2-regressions
   - VERBOSE=1 make -k all
-  - make unit_tests
 
 notifications:
   irc: "chat.freenode.net#radare"
