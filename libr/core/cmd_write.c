@@ -1166,7 +1166,7 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				if (toend) {
 					sz = r_io_fd_size (core->io, core->file->fd);
-					if (sz != UT64_MAX) {
+					if (sz <= core->offset) {
 						sz -= core->offset;
 						r_core_dump (core, filename, core->offset, (ut64)sz, append);
 					}
