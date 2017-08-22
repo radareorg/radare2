@@ -1086,7 +1086,27 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	if (!strcmp (op->mnemonic, "jmp")) {
 		if (op->operands[0].type & OT_GPREG) {
 			data[l++] = 0xff;
-			data[l++] = 0xe0 | op->operands[0].reg;
+			if (op->operands[0].type & OT_MEMORY) {
+				if (op->operands[0].offset) {
+					int offset = op->operands[0].offset * op->operands[0].offset_sign;
+					if (offset >= 128 || offset <= -129) {
+						data[l] = 0xa0;
+					} else {
+						data[l] = 0x60;
+					}
+					data[l++] |= op->operands[0].regs[0];
+					data[l++] = offset;
+					if (op->operands[0].offset >= 0x80) {
+						data[l++] = offset >> 8;
+						data[l++] = offset >> 16;
+						data[l++] = offset >> 24;
+					}
+				} else {
+					data[l++] = 0x20 | op->operands[0].regs[0];
+				}
+			} else {
+				data[l++] = 0xe0 | op->operands[0].reg;
+			}
 		} else {
 			if (-0x80 <= (immediate - 2) && (immediate - 2) <= 0x7f) {
 					/* relative byte address */
