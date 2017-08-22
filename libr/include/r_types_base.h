@@ -129,11 +129,13 @@ typedef struct _utX{
 #if !defined(NAN)
 #define NAN (0.0f/0.0f)
 #endif
+
 #ifdef _MSC_VER
 #define R_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 #undef INFINITY
 #undef NAN
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__TINYC__)
 #define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
-#endif
+
+#endif // R2_TYPES_BASE_H
