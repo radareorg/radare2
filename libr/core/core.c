@@ -1537,16 +1537,15 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->pal.ai_ascii: "";
 		const char *cend = (c && *c) ? Color_RESET: "";
 		int len, r;
-		r = r_io_read_at (core->io, value, buf, sizeof (buf));
-		buf[sizeof (buf) - 1] = 0;
-		if (r) {
+		if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
+			buf[sizeof (buf) - 1] = 0;
 			switch (is_string (buf, sizeof(buf), &len)) {
 			case 1:
 				r_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
 				break;
 			case 2:
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf,
-							sizeof (widebuf) - 1);
+						       sizeof (widebuf) - 1);
 				if (r == -1) {
 					eprintf ("Something was wrong with refs\n");
 				} else {

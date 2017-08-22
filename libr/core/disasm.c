@@ -2806,7 +2806,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				f = r_flag_get_i (core->flags, refaddr);
 				if (!f && ds->show_slow) {
 					r_io_read_at (ds->core->io, ds->analop.ptr,
-						      (ut8*)str, sizeof (str) - 1);
+						      (ut8 *)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
 					if (!string_printed && str[0] && r_str_is_printable_incl_newlines (str)) {
 						ds_print_str (ds, str, sizeof (str));
@@ -4897,4 +4897,3 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	core->offset = old_offset;
 	return err;
 }
-
