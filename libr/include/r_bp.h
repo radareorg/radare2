@@ -84,9 +84,9 @@ typedef struct r_bp_t {
 } RBreakpoint;
 
 enum {
-	R_BP_PROT_READ = 1,
+	R_BP_PROT_EXEC = 1,
 	R_BP_PROT_WRITE = 2,
-	R_BP_PROT_EXEC = 4,
+	R_BP_PROT_READ = 4,
 };
 
 typedef struct r_bp_trace_t {
