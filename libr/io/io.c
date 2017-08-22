@@ -683,6 +683,14 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
 	bnd->system = r_io_system;
+	bnd->fd_open = r_io_fd_open;
+	bnd->fd_close = r_io_fd_close;
+	bnd->fd_seek = r_io_fd_seek;
+	bnd->fd_size = r_io_fd_size;
+	bnd->fd_read = r_io_fd_read;
+	bnd->fd_write = r_io_fd_write;
+	bnd->fd_read_at = r_io_fd_read_at;
+	bnd->fd_write_at = r_io_fd_write_at;
 	bnd->is_valid_offset = r_io_is_valid_real_offset;
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;

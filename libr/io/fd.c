@@ -22,7 +22,7 @@ R_API int r_io_fd_read(RIO *io, int fd, ut8 *buf, int len) {
 }
 
 //returns length of written bytes
-R_API int r_io_fd_write(RIO *io, int fd, ut8 *buf, int len) {
+R_API int r_io_fd_write(RIO *io, int fd, const ut8 *buf, int len) {
 	RIODesc *desc;
 	if (!io || !buf || (len < 1) || !(desc = r_io_desc_get (io, fd))) {
 		return 0;
@@ -55,7 +55,7 @@ R_API int r_io_fd_read_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 }
 
 //returns length of written bytes
-R_API int r_io_fd_write_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len) {
+R_API int r_io_fd_write_at(RIO *io, int fd, ut64 addr, const ut8 *buf, int len) {
 	RIODesc *desc;
 	if (!io || !buf || (len < 1) || !(desc = r_io_desc_get (io, fd))) {
 		return 0;

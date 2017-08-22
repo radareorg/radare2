@@ -214,6 +214,14 @@ typedef bool (*RIOClose) (RIO *io, int fd);
 typedef bool (*RIOReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RIOWriteAt) (RIO *io, ut64 addr, const ut8 *buf, int len);
 typedef int (*RIOSystem) (RIO *io, const char* cmd);
+typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
+typedef bool (*RIOFdClose) (RIO *io, int fd);
+typedef ut64 (*RIOFdSeek) (RIO *io, int fd, ut64 addr, int whence);
+typedef ut64 (*RIOFdSize) (RIO *io, int fd);
+typedef int (*RIOFdRead) (RIO *io, int fd, ut8 *buf, int len);
+typedef int (*RIOFdWrite) (RIO *io, int fd, const ut8 *buf, int len);
+typedef int (*RIOFdReadAt) (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
+typedef int (*RIOFdWriteAt) (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
@@ -230,6 +238,14 @@ typedef struct r_io_bind_t {
 	RIOReadAt read_at;
 	RIOWriteAt write_at;
 	RIOSystem system;
+	RIOFdOpen fd_open;
+	RIOFdClose fd_close;
+	RIOFdSeek fd_seek;	//needed for esil
+	RIOFdSize fd_size;
+	RIOFdRead fd_read;	//needed for esil
+	RIOFdWrite fd_write;	//needed for esil
+	RIOFdReadAt fd_read_at;
+	RIOFdWriteAt fd_write_at;
 	RIOIsValidOff is_valid_offset;
 	RIOSectionVgetSecsAt sections_vget;
 	RIOSectionAdd section_add;
@@ -397,12 +413,12 @@ R_API void r_io_buffer_close (RIO* io);
 R_API int r_io_fd_open (RIO *io, const char *uri, int flags, int mode);
 R_API bool r_io_fd_close (RIO *io, int fd);
 R_API int r_io_fd_read (RIO *io, int fd, ut8 *buf, int len);
-R_API int r_io_fd_write (RIO *io, int fd, ut8 *buf, int len);
+R_API int r_io_fd_write (RIO *io, int fd, const ut8 *buf, int len);
 R_API ut64 r_io_fd_seek (RIO *io, int fd, ut64 addr, int whence);
 R_API ut64 r_io_fd_size (RIO *io, int fd);
 R_API bool r_io_fd_is_blockdevice (RIO *io, int fd);
 R_API int r_io_fd_read_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
-R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
+R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_fd_get_pid (RIO *io, int fd);
 R_API int r_io_fd_get_tid (RIO *io, int fd);
 R_API bool r_io_use_fd (RIO *io, int fd);
