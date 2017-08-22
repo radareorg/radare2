@@ -479,7 +479,7 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'X':
 		buf = malloc (core->blocksize);
 		if (buf) {
-			if (!r_io_read_all_at (core->io, r_num_math (core->num,
+			if (!r_io_read_at (core->io, r_num_math (core->num,
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {

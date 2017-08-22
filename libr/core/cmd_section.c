@@ -57,7 +57,7 @@ static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 		ls_foreach (io->sections, iter, s) {
 			char *n = strdup (s->name);
 			r_name_filter (n, strlen (n));
-			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->size, s->vaddr);
+			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->vaddr, s->vsize);
 			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->paddr,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
@@ -124,7 +124,7 @@ static bool dumpSectionToDisk(RCore *core, char *file) {
 	}
 	ut64 o = core->offset;
 	if (core->io->va || core->io->debug) {
-		s = r_io_section_vget (core->io, o);
+		s = r_io_section_vget (core->io, o); 
 		o = s ? o - s->vaddr + s->paddr : o;
 	}
 	ls_foreach (core->io->sections, iter, s) {

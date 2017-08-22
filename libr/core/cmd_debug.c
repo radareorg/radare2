@@ -1333,7 +1333,8 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	}
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
-			if (!r_io_read_all_at (core->io, s->vaddr + 16, (ut8 *) buf, 20)) {
+			err = r_io_read_at (core->io, s->vaddr + 16, (ut8 *) buf, 20);
+			if (!err) {
 				eprintf ("Unable to read from memory\n");
 				goto out_error;
 			}

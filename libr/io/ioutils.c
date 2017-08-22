@@ -47,7 +47,7 @@ R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 		return false;
 	}
 	size = R_DIM (size, 1, 8);
-	if (r_io_read_at (io, addr, buf, size) != size) {
+	if (!r_io_read_at (io, addr, buf, size)) {
 		return false;
 	}
 	*val = r_read_ble (buf, endian, size);
@@ -62,7 +62,7 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	}
 	size = R_DIM (size, 1, 8);
 	r_write_ble (buf, *val, endian, size);
-	if (r_io_write_at (io, addr, buf, size) != size) {
+	if (!r_io_write_at (io, addr, buf, size)) {
 		return false;
 	}
 	return true;
