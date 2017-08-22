@@ -14,13 +14,9 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 	char *url = strdup (file);
 	char *arname = strstr (url, "://") + 3;
 	char *filename = strstr (arname, "//");
-	*filename = 0;
-	filename += 2;
-
-	if (!filename) {
-		eprintf ("Wrong filename: use ar://lib.a//filename\n");
-		free (url);
-		return res;
+	if (filename) {
+		*filename = 0;
+		filename += 2;
 	}
 
 	RBuffer *b = ar_open_file (arname, filename);
