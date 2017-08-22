@@ -2678,18 +2678,19 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i, ret;
-		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if ((ret != core->blocksize && at + ret-OPSZ < to) || !ret) {
+		if (!r_io_read_at (core->io, at, buf, core->blocksize) || 
+			(at + core->blocksize - OPSZ < to)) {
 			break;
 		}
 		i = 0;
-		while (at + i < to && i < ret-OPSZ && !r_cons_is_breaked ()) {
+		ret = core->blocksize;
+		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
 			xref_from = at + i;
 			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
-			i += (ret > 0) ? ret : 1;
+			i += ret > 0 ? ret : 1;
 			if (ret <= 0 || at + i > to) {
 				continue;
 			}
