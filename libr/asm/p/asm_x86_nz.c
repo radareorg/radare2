@@ -1283,7 +1283,13 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			if (a->bits == 64 && ((op->operands[0].type & OT_QWORD) | (op->operands[1].type & OT_QWORD))) {
-				data[l++] = 0x48;
+				if (!(op->operands[1].type & OT_CONSTANT) && op->operands[1].extended) {
+					data[l++] = 0x49;
+				} else {
+					data[l++] = 0x48;
+				}
+			} else if (op->operands[0].extended) {
+				data[l++] = 0x41;
 			}
 			if (op->operands[0].type & OT_WORD) {
 				data[l++] = 0x66;
@@ -1420,6 +1426,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48 | rex;
 			}
+		} else if (op->operands[0].extended && op->operands[1].extended) {
+			data[l++] = 0x45;
 		}
 		offset = op->operands[0].offset * op->operands[0].offset_sign;
 		if (op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
@@ -2274,6 +2282,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
+	const char *regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
 	const char *regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL};
@@ -2330,6 +2339,13 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			if (!strncasecmp (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->bits = 64;
+				return i + 8;
+			}
+		}
+		for (i = 0; regsext[i]; i++) {
+			if (!strncasecmp (regsext[i], token, length)) {
+				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
+				a->bits = 32;
 				return i + 8;
 			}
 		}
@@ -2602,6 +2618,7 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	char *args = strchr (op, ' ');
 	out->mnemonic = args ? r_str_ndup (op, args - op) : strdup (op);
 	out->operands[0].type = out->operands[1].type = 0;
+	out->operands[0].extended = out->operands[1].extended = false;
 	out->operands[0].reg = out->operands[0].regs[0] = out->operands[0].regs[1] = X86R_UNDEFINED;
 	out->operands[1].reg = out->operands[1].regs[0] = out->operands[1].regs[1] = X86R_UNDEFINED;
 	out->operands[0].immediate = out->operands[1].immediate = 0;
