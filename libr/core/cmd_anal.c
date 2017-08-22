@@ -2899,9 +2899,8 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
-	if (!rc) {
-		eprintf ("read error\n");
+	if (!r_io_read_at (core->io, addr, code, sizeof (code))) {
+		goto out_return_zero;
 	}
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
