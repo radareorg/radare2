@@ -31,6 +31,7 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 
 R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 	RIOUndos *undo;
+	RIOSection *sec;
 
 	if (!io->undo.s_enable || !io->undo.undos)
 		return NULL;
@@ -47,12 +48,18 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.redos++;
 
 	undo = &io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_maddr_try (io, undo->off);
+	sec = r_io_section_vget (io, undo->off);
+	if (!sec || (sec->paddr == sec->vaddr)) {
+		io->off = undo->off;
+	} else {
+		io->off = undo->off - sec->vaddr + sec->paddr;
+	}
 	return undo;
 }
 
 R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	RIOUndos *undo;
+	RIOSection *sec;
 
 	if (!io->undo.s_enable || !io->undo.redos)
 		return NULL;
@@ -62,7 +69,12 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	io->undo.redos--;
 
 	undo = &io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_maddr_try (io, undo->off);
+	sec = r_io_section_vget (io, undo->off);
+	if (!sec || (sec->paddr == sec->vaddr)) {
+		io->off = undo->off;
+	} else {
+		io->off = undo->off - sec->vaddr + sec->paddr;
+	}
 	return undo;
 }
 

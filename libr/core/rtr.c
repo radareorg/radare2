@@ -1166,17 +1166,18 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		case 'f':
 		{
 			ut64 off, len, sz, namelen;
+			RIODesc *desc = core && core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;
 			if (sscanf (cmd + 2, "%"PFMT64x",%"PFMT64x, &off, &len) != 2) {
 				strcpy (out_buf, "E00");
 				return 0;
 			}
-			namelen = strlen (core->file->desc->name);
+			namelen = desc ? strlen (desc->name) : 0;
 			if (off >= namelen) {
 				out_buf[0] = 'l';
 				return 0;
 			}
 			sz = R_MIN (max_len, len + 2);
-			len = snprintf (out_buf, sz, "l%s", core->file->desc->name + off);
+			len = snprintf (out_buf, sz, "l%s", desc ? (desc->name + off) : "");
 			if (len >= sz) {
 				// There's more left
 				out_buf[0] = 'm';

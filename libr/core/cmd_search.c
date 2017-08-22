@@ -242,8 +242,8 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 			// TODO: load the bin and calculate its size
 			if (plug->size) {
 				r_bin_load_io_at_offset_as_sz (core->bin,
-					core->file->desc, 0, 0, 0, core->offset,
-					plug->name, 4096);
+					r_io_desc_get (core->io, core->file->fd),
+					0, 0, 0, core->offset, plug->name, 4096);
 				size = plug->size (core->bin->cur);
 				if (size > 0) {
 					r_cons_printf ("size %d\n", size);
@@ -623,10 +623,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		}
 	} else if (!strcmp (mode, "file")) {
 		//if (core->io->va) {
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			*from = *to = 0;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (!(s->flags & R_IO_MAP)) {
 					continue;
 				}
@@ -665,10 +665,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 #endif
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			*from = *to = core->offset;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (*from >= s->paddr && *from < (s->paddr + s->size)) {
 					*from = s->vaddr;
 					*to = s->vaddr + s->vsize;
@@ -719,7 +719,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (core->io->va) {
 			int mask = 0;
 			RIOMap *map;
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 
 			if (!strcmp (mode, "io.sections.exec")) {
@@ -731,7 +731,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 
 			*from = UT64_MAX;
 			*to = 0;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (!mask || (s->flags & mask)) {
 					if (!list) {
 						list = r_list_newf (free);
@@ -876,7 +876,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					/* TODO: section size? */
 				} else {
 					if (core->file) {
-						*to = r_io_desc_size (core->file->desc);
+						*to = r_io_fd_size (core->io, core->file->fd);
 					}
 				}
 			}
@@ -1917,7 +1917,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
 	int ret;
-	int oldfd = r_io_get_fd (core->io);
+	int oldfd = (core && core->io && core->io->desc) ? core->io->desc->fd : -1;
 	int bufsz;
 
 	if (json) {

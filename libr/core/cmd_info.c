@@ -129,6 +129,7 @@ static void r_core_file_info(RCore *core, int mode) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *binfile = r_core_bin_cur (core);
 	RCoreFile *cf = core->file;
+	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("{");
@@ -145,13 +146,13 @@ static void r_core_file_info(RCore *core, int mode) {
 			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
 		}
 	} else {
-		fn = (cf && cf->desc)? cf->desc->name: NULL;
+		fn = desc ? desc->name: NULL;
 	}
 	if (cf && mode == R_CORE_BIN_JSON) {
 		const char *uri = fn;
 		if (!uri) {
-			if (cf->desc && cf->desc->uri && *cf->desc->uri) {
-				uri = cf->desc->uri;
+			if (desc && desc->uri && *desc->uri) {
+				uri = desc->uri;
 			} else {
 				uri = "";
 			}
@@ -164,9 +165,9 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
-		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (cf->desc);
-			r_cons_printf (",\"fd\":%d", cf->desc->fd);
+		if (desc) {
+			ut64 fsz = r_io_desc_size (desc);
+			r_cons_printf (",\"fd\":%d", desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
 				char *humansz = r_num_units (NULL, fsz);
@@ -176,12 +177,12 @@ static void r_core_file_info(RCore *core, int mode) {
 				}
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache ||\
-					cf->desc->flags & R_IO_WRITE ));
+					desc->flags & R_IO_WRITE ));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
-					cf->desc->flags & 7 ));
+					desc->flags & 7 ));
 			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64) core->io->desc->obsz);
-			if (cf->desc->referer && *cf->desc->referer) {
-				r_cons_printf (",\"referer\":\"%s\"", cf->desc->referer);
+			if (desc->referer && *desc->referer) {
+				r_cons_printf (",\"referer\":\"%s\"", desc->referer);
 			}
 		}
 		r_cons_printf (",\"block\":%d", core->blocksize);
@@ -201,31 +202,31 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
-		if (cf->desc) {
+		if (desc) {
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
-		if (cf->desc) {
-			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
+		if (desc) {
+			pair ("fd", sdb_fmt (0, "%d", desc->fd));
 		}
-		if (fn || (cf->desc && cf->desc->uri)) {
-			pair ("file", fn? fn: cf->desc->uri);
+		if (fn || (desc && desc->uri)) {
+			pair ("file", fn? fn: desc->uri);
 		}
 		if (plugin) {
 			pair ("format", plugin->name);
 		}
-		if (cf->desc) {
-			pair ("iorw", r_str_bool (io_cache || cf->desc->flags & R_IO_WRITE ));
-			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
+		if (desc) {
+			pair ("iorw", r_str_bool (io_cache || desc->flags & R_IO_WRITE ));
+			pair ("mode", r_str_rwx_i (desc->flags & 7));
 		}
 		if (binfile && binfile->curxtr) {
 			pair ("packet", binfile->curxtr->name);
 		}
-		if (cf->desc && cf->desc->referer && *cf->desc->referer) {
-			pair ("referer", cf->desc->referer);
+		if (desc && desc->referer && *desc->referer) {
+			pair ("referer", desc->referer);
 		}
-		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (cf->desc);
+		if (desc) {
+			ut64 fsz = r_io_desc_size (desc);
 			if (fsz != UT64_MAX) {
 				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
 				char *humansz = r_num_units (NULL, fsz);
@@ -304,6 +305,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_config_get_i (core->config, "scr.interactive");
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
+	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
 	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
@@ -399,7 +401,7 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Core file not open\n");
 				return 0;
 			}
-			const char *fn = input[1] == ' '? input + 2: cf->desc->name;
+			const char *fn = input[1] == ' '? input + 2: desc->name;
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 			r_core_bin_load (core, fn, baddr);
 		}

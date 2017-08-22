@@ -918,8 +918,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_attach (core->dbg, (int) r_num_math (
 						core->num, input + 2));
 		} else {
-			if (core->file && core->file->desc) {
-				r_debug_attach (core->dbg, core->file->desc->fd);
+			if (core->file && core->io) {
+				r_debug_attach (core->dbg,
+						r_io_fd_get_pid (core->io, core->file->fd));
 			}
 		}
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
@@ -928,8 +929,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_core_cmdf (core, "=!pid %d", core->dbg->pid);
 		break;
 	case 'f': // "dpf"
-		if (core->file && core->file->desc) {
-			r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
+		if (core->file && core->io) {
+			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->file->fd),
+					r_io_fd_get_tid (core->io, core->file->fd));
 		}
 		break;
 	case '=': // "dp="

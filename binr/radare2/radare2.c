@@ -24,7 +24,8 @@ static bool haveRarunProfile = false;
 static struct r_core_t r;
 
 static bool is_valid_gdb_file(RCoreFile *fh) {
-	return fh && fh->desc && fh->desc->name && strncmp (fh->desc->name, "gdb://", 6);
+	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
+	return d && strncmp (d->name, "gdb://", 6);
 }
 
 static char* get_file_in_cur_dir(const char *filepath) {
@@ -219,7 +220,8 @@ static int main_print_var(const char *var_name) {
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
 static int rabin_delegate(RThread *th) {
-	if (rabin_cmd && r_file_exists (r.file->desc->name)) {
+	RIODesc *d = r_io_desc_get (r.io, r.file->fd);
+	if (rabin_cmd && r_file_exists (d->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
 		if (ptr) {
@@ -393,6 +395,7 @@ int main(int argc, char **argv, char **envp) {
 	RListIter *iter;
 	char *cmdn, *tmp;
 	RCoreFile *fh = NULL;
+	RIODesc *iod = NULL;
 	const char *patchfile = NULL;
 	const char *prj = NULL;
 	int debug = 0;
@@ -827,6 +830,7 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
 						const char *filepath;
 						ut64 addr;
@@ -836,9 +840,9 @@ int main(int argc, char **argv, char **envp) {
 						    && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
 							if (newpath) {
-								if (fh && fh->desc) {
-									free (fh->desc->name);
-									fh->desc->name = newpath;
+								if (iod) {
+									free (iod->name);
+									iod->name = newpath;
 								}
 								if (!addr || addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, newpath);
@@ -846,7 +850,7 @@ int main(int argc, char **argv, char **envp) {
 								r_core_bin_load (&r, NULL, addr);
 							}
 						} else if (is_valid_gdb_file (fh)) {
-							filepath = fh->desc->name;
+							filepath = iod->name;
 							if (r_file_exists (filepath)
 							    && !r_file_is_directory (filepath)) {
 								if (!addr || addr == UINT64_MAX) {
@@ -855,9 +859,9 @@ int main(int argc, char **argv, char **envp) {
 								r_core_bin_load (&r, filepath, addr);
 							} else if ((filepath = get_file_in_cur_dir (filepath))) {
 								// Present in local directory
-								if (fh && fh->desc) {
-									free (fh->desc->name);
-									fh->desc->name = (char*) filepath;
+								if (iod) {
+									free (iod->name);
+									iod->name = (char*) filepath;
 								}
 								if (!addr || addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
@@ -943,6 +947,7 @@ int main(int argc, char **argv, char **envp) {
 						}
 					}
 					if (fh) {
+						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 						if (run_anal > 0) {
 #if USE_THREADS
 							if (!rabin_th)
@@ -954,8 +959,8 @@ int main(int argc, char **argv, char **envp) {
 									filepath = file? strstr (file, "://"): NULL;
 									filepath = filepath ? filepath + 3 : pfile;
 								}
-								if (r.file && r.file->desc && r.file->desc->name)
-									filepath = r.file->desc->name;
+								if (r.file && iod && (iod->fd == r.file->fd) && iod->name)
+									filepath = iod->name;
 
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
@@ -968,7 +973,7 @@ int main(int argc, char **argv, char **envp) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
 								r_core_cmdf (&r, "Sf");
-								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", r.file->desc->name);
+								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
 							}
 						}
 					}
@@ -1033,12 +1038,13 @@ int main(int argc, char **argv, char **envp) {
 		if (!r.file) { // no given file
 			return 1;
 		}
+		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
 		if (run_anal > 0 && threaded) {
 			// XXX: if no rabin2 in path that may fail
 			// TODO: pass -B 0 ? for pie bins?
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
-					(debug || r.io->va) ? "" : "p", r.file->desc->name);
+					(debug || r.io->va) ? "" : "p", iod->name);
 			/* TODO: only load data if no project is used */
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
@@ -1072,8 +1078,8 @@ int main(int argc, char **argv, char **envp) {
 
 		(void)r_core_bin_update_arch_bits (&r);
 
-		debug = r.file && r.file->desc && r.file->desc->plugin && \
-			r.file->desc->plugin->isdbg;
+		debug = r.file && iod && (r.file->fd == iod->fd) && iod->plugin && \
+			iod->plugin->isdbg;
 		if (debug) {
 			if (baddr != UT64_MAX) {
 				//setup without attach again because there is dpa call
@@ -1094,13 +1100,13 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		if (fullfile) {
-			r_core_block_size (&r, r_io_desc_size (r.file->desc));
+			r_core_block_size (&r, r_io_desc_size (iod));
 		}
 
 		r_core_seek (&r, r.offset, 1); // read current block
 
 		/* check if file.sha1 has changed */
-		if (!strstr (r.file->desc->uri, "://")) {
+		if (!strstr (iod->uri, "://")) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
@@ -1108,7 +1114,7 @@ int main(int argc, char **argv, char **envp) {
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (r_core_hash_load (&r, r.file->desc->name) == false) {
+			if (r_core_hash_load (&r, iod->name) == false) {
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
@@ -1176,7 +1182,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 #endif
 	if (fullfile) {
-		r_core_block_size (&r, r_io_desc_size (r.file->desc));
+		r_core_block_size (&r, r_io_desc_size (iod));
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);

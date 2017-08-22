@@ -68,6 +68,9 @@ static const char *help_msg_wc[] = {
 	"wc*","","\"\" in radare commands",
 	"wcr","","reset all write changes in cache",
 	"wci","","commit write cache",
+	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
+	"wcp*"," [fd]","list all cached write-operations on p-layer in radare commands",
+	"wcpi"," [fd]", "commit and invalidate pcache for specified fd or current fd",
 	NULL
 };
 
@@ -442,7 +445,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 		off = r_num_math (core->num, input+2);
 	}
 	if (core->file) {
-		r_io_use_desc (core->io, core->file->desc);
+		r_io_use_fd (core->io, core->file->fd);
 	}
 	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (res == UT64_MAX) return;
@@ -509,7 +512,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 				return false;
 			}
 		}
-		r_io_use_desc (core->io, core->file->desc);
+		r_io_use_fd (core->io, core->file->fd);
 		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
 		WSEEK (core, size);
 		free (buf);
@@ -518,6 +521,66 @@ static bool cmd_wf(RCore *core, const char *input) {
 		eprintf ("Cannot open file '%s'\n", arg);
 	}
 	return true;
+}
+
+static void cmd_write_pcache(RCore *core, const char *input) {
+	RIODesc *desc;
+	RIOCache *cache;
+	RList *caches;
+	RListIter *iter;
+	int fd, i;
+	bool rad = false;
+	if (core && core->io && core->io->p_cache && core->print && core->print->cb_printf) {
+		switch (input[0]) {
+		case 'i' :
+			if (input[1]) {
+				fd = (int)r_num_math (core->num, input + 1);
+				desc = r_io_desc_get (core->io, fd);
+			} else {
+				desc = core->io->desc;
+			}
+			r_io_desc_cache_commit (desc);
+			break;
+		case '*':
+			rad = true;
+		case ' ':	//fall-o-through
+		case '\0':
+			if (input[0] && input[1]) {
+				fd = (int)r_num_math (core->num, input + 1);
+				desc = r_io_desc_get (core->io, fd);
+			} else {
+				desc = core->io->desc;
+			}
+			if ((caches = r_io_desc_cache_list (desc))) {
+				if (rad) {
+					core->print->cb_printf ("e io.va = false\n");
+					r_list_foreach (caches, iter, cache) {
+						core->print->cb_printf ("wx %02x", cache->data[0]);
+						for (i = 1; i < cache->size; i++) {
+							core->print->cb_printf ("%02x", cache->data[i]);
+						}
+						core->print->cb_printf (" @ 0x%08"PFMT64x" \n", cache->from);
+					}
+				} else {
+					r_list_foreach (caches, iter, cache) {
+						core->print->cb_printf ("0x%08"PFMT64x": %02x", cache->from, cache->odata[0]);
+						for (i = 1; i < cache->size; i++) {
+							core->print->cb_printf ("%02x", cache->odata[i]);
+						}
+						core->print->cb_printf (" -> %02x", cache->data[0]);
+						for (i = 1; i < cache->size; i++) {
+							core->print->cb_printf ("%02x", cache->data[i]);
+						}
+						core->print->cb_printf ("\n");
+					}
+				}
+				r_list_free (caches);
+			}
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 /* TODO: simplify using r_write */
@@ -951,6 +1014,9 @@ static int cmd_write(void *data, const char *input) {
 			memset (core->block, 0xff, core->blocksize);
 			r_core_block_read (core);
 			break;
+		case 'p':
+			cmd_write_pcache (core, &input[2]);
+			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_wc);
 			break;
@@ -1050,9 +1116,10 @@ static int cmd_write(void *data, const char *input) {
 			if (*str == 'f') { // "wtf"
 				str++;
 				if (*str == '!') {
+					RIOSection *s = r_io_section_vget (core->io, poff);
 					toend = true;
 					//use physical address
-					poff = r_io_section_vaddr_to_maddr_try (core->io, poff);
+					poff =  s ? poff - s->vaddr + s->paddr : poff;
 					str++;
 				}
 				if (*str) {
@@ -1085,7 +1152,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			if (tmp) {
 				if (toend) {
-					sz = r_io_desc_size (core->file->desc) - core->offset;
+					sz = r_io_fd_size (core->io, core->file->fd) - core->offset;
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					*tmp = 0;
@@ -1098,7 +1165,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else {
 				if (toend) {
-					sz = r_io_desc_size (core->file->desc);
+					sz = r_io_fd_size (core->io, core->file->fd);
 					if (sz != UT64_MAX) {
 						sz -= core->offset;
 						r_core_dump (core, filename, core->offset, (ut64)sz, append);
@@ -1128,7 +1195,7 @@ static int cmd_write(void *data, const char *input) {
 				else tmp[i] = str[i>>1];
 			}
 			str = tmp;
-			r_io_use_desc (core->io, core->file->desc);
+			r_io_use_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core);
@@ -1161,7 +1228,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else if (r_file_exists (arg)) {
 				if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-					r_io_use_desc (core->io, core->file->desc);
+					r_io_use_fd (core->io, core->file->fd);
 					if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
 						core->num->value = size;
 						WSEEK (core, size);
@@ -1276,7 +1343,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case ' ':
 			if (size>0) {
-				r_io_use_desc (core->io, core->file->desc);
+				r_io_use_fd (core->io, core->file->fd);
 				r_io_set_write_mask (core->io, (const ut8*)str, size);
 				WSEEK (core, size);
 				eprintf ("Write mask set to '");
@@ -1327,7 +1394,7 @@ static int cmd_write(void *data, const char *input) {
 	case '?':
 		if (core->oobi) {
 			eprintf ("Writing oobi buffer!\n");
-			r_io_use_desc (core->io, core->file->desc);
+			r_io_use_fd (core->io, core->file->fd);
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core);

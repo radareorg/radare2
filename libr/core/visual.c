@@ -1476,7 +1476,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'a':
 		{
-			if (core->file && core->file->desc && !(core->file->desc->flags & 2)) {
+			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->flags & 2)) {
 				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 				r_cons_any_key (NULL);
 				return true;
@@ -1689,7 +1689,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				return true;
 			}
-			if (core->file && core->file->desc && !(core->file->desc->flags & 2)) {
+			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->flags & 2)) {
 				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 				r_cons_any_key (NULL);
 				return true;
@@ -1809,7 +1809,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'g':
 			if (core->io->va) {
-				ut64 offset = r_io_section_get_vaddr (core->io, 0);
+				ut64 offset = r_io_section_get_paddr_at (core->io, 0LL);
 				if (offset == -1) {
 					offset = 0;
 				}
@@ -1824,19 +1824,20 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			int scols = r_config_get_i (core->config, "hex.cols");
 			if (core->file) {
 				if (core->io->va) {
-					ut64 offset = r_io_section_get_vaddr (core->io, 0);
-					if (offset == UT64_MAX) {
-						offset = r_io_desc_size (core->file->desc)
+					RIOSection *sec = r_io_section_get (core->io, 0LL);
+					ut64 offset;
+					if (!sec) {
+						offset = r_io_fd_size (core->io, core->file->fd)
 						- core->blocksize + 2 * scols;
 						ret = r_core_seek (core, offset, 1);
 					} else {
-						offset += r_io_desc_size (core->file->desc)
+						offset = r_io_fd_size (core->io, core->file->fd)
 						- core->blocksize + 2 * scols;
 						ret = r_core_seek (core, offset, 1);
 					}
 				} else {
 					ret = r_core_seek (core,
-						r_io_desc_size (core->file->desc)
+						r_io_fd_size (core->io, core->file->fd)
 						- core->blocksize + 2 * scols, 1);
 				}
 			} else {
@@ -1914,12 +1915,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
 					ut64 addr = core->print->screen_bounds;
-					if (core->io->pava) {
-						addr = core->offset + 32;
-					} else {
-						if (core->print->screen_bounds == core->offset) {
-							addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
-						}
+					if (core->print->screen_bounds == core->offset) {
+						addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
 					}
 					r_core_seek (core, addr, 1);
 				} else {
@@ -1961,14 +1958,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
 					int delta = (core->print->screen_bounds - core->offset);
-					if (core->io->pava) {
-						r_core_seek_delta (core, -32);
+					if (core->offset >= delta) {
+						r_core_seek (core, core->offset - delta, 1);
 					} else {
-						if (core->offset >= delta) {
-							r_core_seek (core, core->offset - delta, 1);
-						} else {
-							r_core_seek (core, 0, 1);
-						}
+						r_core_seek (core, 0, 1);
 					}
 				} else {
 					ut64 at = (core->offset > obs)? core->offset - obs: 0;
@@ -2428,7 +2421,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 	}
 
-	filename = (core->file && core->file->desc && core->file->desc->name)? core->file->desc->name: "";
+	filename = (core->file && core->io) ? r_io_desc_get (core->io, core->file->fd)->name : "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 #if 1
@@ -2495,7 +2488,11 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	{
 		ut64 sz = r_io_size (core->io);
-		ut64 pa = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		ut64 pa;
+		{
+			RIOSection *s = r_io_section_vget (core->io, core->offset); 
+			pa =  s ? core->offset - s->vaddr + s->paddr : core->offset;
+		}
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;
 		} else {

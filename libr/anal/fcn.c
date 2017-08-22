@@ -872,9 +872,17 @@ repeat:
 			{
 				bool must_eob = anal->opt.eobjmp;
 				if (!must_eob) {
-					RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
-					RIOSection *d = anal->iob.section_vget (anal->iob.io, op.jump);
-					must_eob = s != d;
+					RIOSection *s = NULL;
+					SdbList	*secs = anal->iob.sections_vget (anal->iob.io, addr);
+					if (secs) {
+						s = (RIOSection *) ls_pop (secs);
+						secs->free = NULL;
+						ls_free (secs);
+					}
+					if (s) {
+						must_eob = (s->vaddr <= op.jump);
+						must_eob &= ((s->vaddr + s->vsize) > op.jump);
+					}
 				}
 				if (must_eob) {
 					FITFCNSZ ();
@@ -1068,7 +1076,13 @@ repeat:
 			}
 			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
-				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
+				RIOSection *s = NULL;
+				SdbList *secs = anal->iob.sections_vget (anal->iob.io, addr);
+				if (secs) {
+					s = (RIOSection *) ls_pop (secs);
+					secs->free = NULL;
+					ls_free (secs);
+				}
 				if (s && s->name) {
 					bool in_plt = strstr (s->name, ".plt") != NULL;
 					if (!in_plt && strstr (s->name, "_stubs") != NULL) {

@@ -208,7 +208,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 
 #define Fhandled(x) sdb_fmt(0, "handled.%"PFMT64x"", x)
 R_API bool core_anal_bbs(RCore *core, const char* input) {
-	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
+	if (!r_io_is_valid_section_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;
 	}
