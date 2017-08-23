@@ -740,12 +740,12 @@ R_API bool r_io_section_reapply(RIO *io, ut32 id, RIOSectionApplyMethod method) 
 
 R_API bool r_io_section_reapply_bin(RIO *io, ut32 binid, RIOSectionApplyMethod method) {
 	RIOSection *sec;
-	SdbListIter *iter, *ator;
+	SdbListIter *iter;
 	bool ret = false;
 	if (!io || !io->sections) {
 		return false;
 	}
-	ls_foreach_safe (io->sections, iter, ator, sec) {
+	ls_foreach (io->sections, iter,  sec) {
 		if (sec && (sec->bin_id == binid)) {
 			ret = true;
 			_section_reapply (io, sec, method);
