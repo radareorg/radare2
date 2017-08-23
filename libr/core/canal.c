@@ -517,7 +517,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
 		if (core->io->va) {
-			if (!r_io_is_valid_section_offset (core->io, at+delta, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
 		}
@@ -1249,7 +1249,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			}
 #endif
-			if (!r_io_is_valid_section_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
 				goto error;
 			}
 			buflen = core->anal->opt.bb_max_size;
@@ -1354,7 +1354,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	r_core_seek_archbits (core, at);
 
 	if (core->io->va) {
-		if (!r_io_is_valid_section_offset (core->io, at, !core->anal->opt.noncode)) {
+		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 			return false;
 		}
 	}
@@ -2735,7 +2735,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			if (type == R_ANAL_REF_TYPE_NULL) {
 				continue;
 			}
-			if (!r_io_is_valid_section_offset (core->io, xref_to, R_IO_EXEC)) {	//review me
+			if (!r_io_is_valid_offset (core->io, xref_to, R_IO_EXEC)) {	//review me
 				continue;
 			}
 			if (cfg_debug) {
@@ -3334,7 +3334,7 @@ static bool myvalid(RIO *io, ut64 addr) {
 	if (addr == UT32_MAX || addr == UT64_MAX) {	//the best of the best of the best :(
 		return false;
 	}
-	if (!r_io_is_valid_real_offset (io, addr, 0)) {
+	if (!r_io_is_valid_offset (io, addr, 0)) {
 		return false;
 	}
 	return true;
@@ -3450,7 +3450,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			} else {
 				ut64 snv = r_reg_getv (anal->reg, "pc");
 				if (snv != UT32_MAX && snv != UT64_MAX) {
-					if (r_io_is_valid_real_offset (anal->iob.io, *val, 1)) {
+					if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
 						r_anal_hint_set_bits (anal, *val - 1, 16);
 					}
 				}

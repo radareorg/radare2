@@ -8,13 +8,16 @@
 // offset has the same or high permissions set. When there is no map it
 // check for the current desc permissions and size.
 // when io.va is false it only checks for the desc
-R_API bool r_io_is_valid_real_offset(RIO* io, ut64 offset, int hasperm) {
+R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	RIOMap* map;
 	if (!io) {
 		return false;
 	}
 	if (io->va && (map = r_io_map_get (io, offset))) {
-		return ((map->flags & hasperm) == hasperm);
+		if ((map = r_io_map_get (io, offset))) {
+			return ((map->flags & hasperm) == hasperm);
+		}
+		return false;
 	}
 	if (!io->desc) {
 		return false;
@@ -23,21 +26,6 @@ R_API bool r_io_is_valid_real_offset(RIO* io, ut64 offset, int hasperm) {
 		return false;
 	}
 	return ((io->desc->flags & hasperm) == hasperm);
-}
-
-// this check if the section at offset has the same or higher permissions
-R_API bool r_io_is_valid_section_offset(RIO* io, ut64 offset, int hasperm) {
-	RIOSection *sec;
-	if (!io) {
-		return false;
-	}
-	if (io->va && (sec = r_io_section_vget (io, offset))) {
-		return ((sec->flags & hasperm) == hasperm);
-	}
-	if ((sec = r_io_section_get (io, offset))) {
-		return ((sec->flags & hasperm) == hasperm);
-	}
-	return false;
 }
 
 // this is wrong, there is more than big and little endian

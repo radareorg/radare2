@@ -437,8 +437,7 @@ R_API bool r_io_use_fd (RIO *io, int fd);
 #define r_io_range_free(x)	free(x)
 
 /* io/ioutils.c */
-R_API bool r_io_is_valid_real_offset (RIO *io, ut64 offset, int hasperm);
-R_API bool r_io_is_valid_section_offset (RIO *io, ut64 offset, int hasperm);
+R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 

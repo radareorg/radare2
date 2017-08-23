@@ -2830,7 +2830,7 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 	for (i = 0; i < len; i += step, n++) {
 		delta = (st32 *) (buf + i);
 		addr = offset + *delta;
-		if (!r_io_is_valid_section_offset (core->io, addr, 0)) {
+		if (!r_io_is_valid_offset (core->io, addr, 0)) {
 			break;
 		}
 		if (mode == '*') {
