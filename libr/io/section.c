@@ -718,7 +718,7 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 	if (!io || !io->sections) {
 		return false;
 	}
-	ls_foreach (io->sections, iter, sec) {
+	ls_foreach_prev (io->sections, iter, sec) {
 		if (sec && (sec->bin_id == bin_id)) {
 			ret = true;
 			_section_apply (io, sec, method);
@@ -745,7 +745,7 @@ R_API bool r_io_section_reapply_bin(RIO *io, ut32 binid, RIOSectionApplyMethod m
 	if (!io || !io->sections) {
 		return false;
 	}
-	ls_foreach (io->sections, iter,  sec) {
+	ls_foreach_prev (io->sections, iter,  sec) {
 		if (sec && (sec->bin_id == binid)) {
 			ret = true;
 			_section_reapply (io, sec, method);
