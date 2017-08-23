@@ -331,10 +331,12 @@ static void cmd_open_map (RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		map = r_io_map_get (core->io, core->offset);	
-		core->print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
-				" - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
-				map->delta, map->from, map->to,
-				r_str_rwx_i (map->flags), map->name ? map->name : "");
+		if (map) {
+			core->print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
+			  " - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
+			map->delta, map->from, map->to,
+			r_str_rwx_i (map->flags), map->name ? map->name : "");
+		}
 
 		break;
 	case 'r':
