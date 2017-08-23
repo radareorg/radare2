@@ -73,10 +73,13 @@ static const char *help_msg_om[] = {
 	"om", "-mapid", "remove the map with corresponding id",
 	"om", " fd addr [size] [delta]", "create new io map",
 	"om.", "", "show map, that is mapped to current offset",
+	"omf", " [mapid] rwx", "change flags/perms for current/given map",
+	"omfg", " rwx", "change flags/perms for all maps (global)",
 	"omr", " mapid addr", "relocate map with corresponding id",
 	"omp", " mapid", "priorize map with corresponding id",
-	"omsp", " sectionid", "priorize maps of mapped section with sectionid",
-	"ombp", " binid", "priorize maps of mapped bin with binid",
+	"ompf", "[fd]", "priorize map by fd",
+	"ompb", " binid", "priorize maps of mapped bin with binid",
+	"omps", " sectionid", "priorize maps of mapped section with sectionid",
 	"om*", "", "show r2 commands to restore mapaddr",
 	NULL
 };
@@ -317,6 +320,47 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
+static void cmd_omfg (RCore *core, const char *input) {
+	SdbListIter *iter;
+	RIOMap *map;
+	input = r_str_chop_ro (input);
+	int flags = (input && *input)? r_str_rwx (input): 7;
+	ls_foreach (core->io->maps, iter, map) {
+		map->flags = flags;
+	}
+}
+
+static void cmd_omf (RCore *core, const char *input) {
+	SdbListIter *iter;
+	RIOMap *map;
+	char *arg = strdup (r_str_chop_ro (input));
+	if (!arg) {
+		return;
+	}
+	char *sp = strchr (arg, ' ');
+	if (sp) {
+		// change perms of Nth map
+		*sp++ = 0;
+		int fd = r_num_math (core->num, arg);
+		int flags = (*sp)? r_str_rwx (sp): 7;
+		ls_foreach (core->io->maps, iter, map) {
+			if (map->fd == fd) {
+				map->flags = flags;
+				break;
+			}
+		}
+	} else {
+		// change perms of current map
+		int flags = (arg && *arg)? r_str_rwx (arg): 7;
+		ls_foreach (core->io->maps, iter, map) {
+			if (R_BETWEEN (map->from, core->offset, map->to)) {
+				map->flags = flags;
+			}
+		}
+	}
+	free (arg);
+}
+
 static void cmd_open_map (RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
@@ -357,44 +401,34 @@ static void cmd_open_map (RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 's':
-		if (input[2] != 'p' || input[3] != ' ') {
-			break;
-		}
-		//sectionid
-		id = (ut32)r_num_math (core->num, input + 4);
-		if (!r_io_section_priorize (core->io, id)) {
-			eprintf ("Cannot priorize section with sectionid %d\n", id);
-		}
-		break;
-	case 'b':
-		if (input[2] != 'p' || input[3] != ' ') {
-			break;
-		}
-		//binid
-		id = (ut32)r_num_math (core->num, input + 4);
-		if (!r_io_section_priorize_bin (core->io, id)) {
-			eprintf ("Cannot priorize bin with binid %d\n", id);
-		}
-		break;
-	case 'f':
-		if (input[2] != 'p' || input[3] != ' ') {
-			break;
-		}
-		fd = r_num_math (core->num, input + 4);
-		if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
-			eprintf ("Cannot priorize any map for fd %d\n", (int)fd);
-		}
-		break;
 	case 'p':
-		if (input[2] != ' ') {
+		switch (input[2]) {
+		case 'f': // "ompf"
+			fd = r_num_math (core->num, input + 3);
+			if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
+				eprintf ("Cannot priorize any map for fd %d\n", (int)fd);
+			}
 			break;
-		}
-		id = r_num_math (core->num, input + 3);		//mapid
-		if (r_io_map_exists_for_id (core->io, id)) {
-			r_io_map_priorize (core->io, id);
-		} else {
-			eprintf ("Cannot find any map with mapid %d\n", id);
+		case 'b': // "ompb"
+			id = (ut32)r_num_math (core->num, input + 4);
+			if (!r_io_section_priorize_bin (core->io, id)) {
+				eprintf ("Cannot priorize bin with binid %d\n", id);
+			}
+			break;
+		case 's': // "omps"
+			id = (ut32)r_num_math (core->num, input + 4);
+			if (!r_io_section_priorize (core->io, id)) {
+				eprintf ("Cannot priorize section with sectionid %d\n", id);
+			}
+			break;
+		case ' ': // "omp"
+			id = r_num_math (core->num, input + 3);		//mapid
+			if (r_io_map_exists_for_id (core->io, id)) {
+				r_io_map_priorize (core->io, id);
+			} else {
+				eprintf ("Cannot find any map with mapid %d\n", id);
+			}
+			break;
 		}
 		break;
 	case ' ':
@@ -426,7 +460,6 @@ static void cmd_open_map (RCore *core, const char *input) {
 				}
 			} else {
 				size = r_io_desc_size (desc);
-
 			}
 			r_io_map_add (core->io, fd, desc->flags, delta, addr, size);	//TODO:user should be able to set these
 		} else {
@@ -438,9 +471,22 @@ static void cmd_open_map (RCore *core, const char *input) {
 	case '-':
 		r_io_map_del (core->io, r_num_math (core->num, input+2));
 		break;
-	case '\0':
-	case 'j':
-	case '*':
+	case 'f': // "omf"
+		switch (input[2]) {
+		case 'g': // "omfg"
+			cmd_omfg (core, input + 3);
+			break;
+		case ' ': // "omf"
+			cmd_omf (core, input + 3);
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_om);
+			break;
+		}
+		break;
+	case '\0': // "om"
+	case 'j': // "omj"
+	case '*': // "om*"
 		map_list (core->io, input[1], core->print, -1);
 		break;
 	default:
