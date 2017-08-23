@@ -885,9 +885,7 @@ static int cmd_open(void *data, const char *input) {
 			if (!r_core_file_open (core, input + 2, R_IO_READ, 0)) {
 				eprintf ("Cannot open file\n");
 			}
-			if (!r_core_bin_load (core, NULL, baddr)) {
-				r_config_set_i (core->config, "io.va", false);
-			}
+			(void)r_core_bin_load (core, NULL, baddr);
 		} else {
 			eprintf ("Missing argument\n");
 		}

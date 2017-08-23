@@ -104,9 +104,6 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		const char * arch = info->arch;
 		ut16 bits = info->bits;
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
-		/* Hack to make baddr work on some corner */
-		r_config_set_i (r->config, "io.va",
-			(binobj->info)? binobj->info->has_va: 0);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);

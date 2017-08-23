@@ -3248,7 +3248,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
 	if (cf) {
 		r_flag_set (core->flags, name, addr, size);
-		r_config_set_i (core->config, "io.va", 1);
+		r_config_set_i (core->config, "io.va", true);
 	}
 	r_core_file_set_by_file (core, cache);
 	if (cf) {

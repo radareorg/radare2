@@ -389,7 +389,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strncmp (plugin->name, "any", 5)) {
 		// set use of raw strings
-		r_config_set_i (r->config, "io.va", false);
+		// r_config_set_i (r->config, "io.va", false);
 		//\\ r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
@@ -434,7 +434,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		}
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
-		r_config_set_i (r->config, "io.va", false);
+		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
@@ -448,8 +448,6 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);
-		} else {
-			r_config_set_i (r->config, "io.va", false);
 		}
 	}
 
@@ -603,7 +601,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
 		// set use of raw strings
 		//r_config_set (r->config, "bin.rawstr", "true");
-		r_config_set_i (r->config, "io.va", false);
+		// r_config_set_i (r->config, "io.va", false);
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
