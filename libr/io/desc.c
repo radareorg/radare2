@@ -143,7 +143,7 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 		return 0;
 	}
 	//check pointers and pcache
-	if (desc->io && desc->io->p_cache) {
+	if (desc->io && (desc->io->p_cache & 2)) {
 		return r_io_desc_cache_write (desc,
 				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
 	}
@@ -165,7 +165,7 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	}
 	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
 	ret = desc->plugin->read (desc->io, desc, buf, len);
-	if ((ret > 0) && desc->io && desc->io->p_cache) {
+	if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
 		ret = r_io_desc_cache_read (desc, seek, buf, ret);
 	}
 	return ret;

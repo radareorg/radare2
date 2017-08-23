@@ -63,7 +63,7 @@ typedef struct r_io_t {
 	int autofd;
 	bool cached;
 	bool cached_read;
-	bool p_cache;
+	int p_cache;
 	int buffer_enabled;
 	int debug;
 //#warning remove debug from RIO
