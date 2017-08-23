@@ -165,8 +165,8 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	}
 	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
 	ret = desc->plugin->read (desc->io, desc, buf, len);
-	if ((ret == len) && desc->io && desc->io->p_cache) {
-		ret = r_io_desc_cache_read (desc, seek, buf, len);
+	if ((ret > 0) && desc->io && desc->io->p_cache) {
+		ret = r_io_desc_cache_read (desc, seek, buf, ret);
 	}
 	return ret;
 }
