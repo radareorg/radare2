@@ -881,7 +881,7 @@ repeat:
 					}
 					if (s) {
 						must_eob = (s->vaddr > op.jump);
-						must_eob |= ((s->vaddr + s->vsize) < op.jump);
+						must_eob |= ((s->vaddr + s->vsize) <= op.jump);
 					}
 				}
 				if (must_eob) {
