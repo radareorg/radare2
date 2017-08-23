@@ -1490,15 +1490,18 @@ static void place_original(RAGraph *g) {
 }
 
 #if 0
+static void free_anode(RANode *n);
 static void remove_dummy_nodes(const RAGraph *g) {
-	RGraphNode *gn;
-	const RListIter *it;
 	const RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn;
+	RListIter *it;
 	RANode *n;
 
 	graph_foreach_anode (nodes, it, gn, n) {
 		if (n->is_dummy) {
 			r_graph_del_node (g->graph, gn);
+			n->gnode = NULL;
+			free_anode (n);
 		}
 	}
 }
@@ -1596,6 +1599,152 @@ static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
 	}
 }
 
+static int get_nth (const RAGraph *g, RANode *src, RANode *dst);
+void backedge_info (RAGraph *g) {
+	int i, j, k;
+    int arr[g->n_layers][2]; //min, max
+	int min, max;
+	int inedge = 0;
+	int outedge = 0;
+
+	for (i = 0; i < g->n_layers; i++) {
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
+			RANode *t = (RANode *)g->layers[i].nodes[j]->data;
+			int tc = g->layout == 0 ? t->x : t->y;
+			int tl = g->layout == 0 ? t->w : t->h;
+			if (!j) {
+				arr[i][0] = tc;
+				arr[i][1] = tc + tl;
+			}
+
+			if (arr[i][0] > tc) {
+				arr[i][0] = tc;
+			}
+
+			if (arr[i][1] < tc + tl) {
+				arr[i][1] = tc + tl;
+			}
+		}
+
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
+			RANode *a = (RANode *)g->layers[i].nodes[j]->data;
+			if (a->is_dummy) {
+				continue;
+			}
+
+			const RList *neighbours = r_graph_get_neighbours (g->graph, a->gnode);
+			RGraphNode *gb;
+			RANode *b;
+			RListIter *itm;
+
+			if (i == 0) {
+				inedge += r_list_length (r_graph_innodes (g->graph, a->gnode));
+			} else if (i == g->n_layers - 1) {
+				outedge += r_list_length (neighbours);
+			}
+
+			graph_foreach_anode (neighbours, itm, gb, b) {
+				if (b->layer > a->layer) {
+					continue;
+				}
+
+				int nth = get_nth (g, a, b);
+				int xinc = 4 + 2 * (nth + 1);
+
+				int ax = g->layout == 0 ? a->x + xinc : a->y + (a->h / 2) + nth;
+				int bx = g->layout == 0 ? b->x + xinc : b->y + (b->h / 2) + nth;
+
+				if (g->layout == 0 && nth == 0 && bx > ax) {
+					ax += 4;
+				}
+
+				min = arr[b->layer][0];
+				max = arr[b->layer][1];
+				for (k = b->layer; k <= a->layer; k++) {
+					if (min > arr[k][0]) {
+						min = arr[k][0];
+					}
+
+					if (max < arr[k][1]) {
+						max = arr[k][1];
+					}
+				}
+
+				int l = (ax - min) + (bx - min);
+				int r = (max - ax) + (max - bx);
+
+			    for (k = b->layer; k <= a->layer; k++) {
+					if (r < l) {
+						arr[k][1] = max + 1;
+					} else {
+						arr[k][0] = min - 1;
+					}
+				}
+
+				AEdge *e = R_NEW0 (AEdge);
+				if (!e) {
+					return;
+				}
+
+				e->is_reversed = true;
+				e->from = a;
+				e->to = b;
+				e->x = r_list_new();
+				e->y = r_list_new();
+
+				if (r < l) {
+					r_list_append ((g->layout == 0 ? e->x : e->y), (void *) (size_t) (max + 1));
+				} else {
+					r_list_append ((g->layout == 0 ? e->x : e->y), (void *) (size_t) (min - 1));
+				}
+
+				r_list_append(g->edges, e);
+			}
+		}
+	}
+
+	//Assumption: layer layout is not changed w.r.t x-coordinate/y-coordinate for horizontal/vertical layout respectively.
+	if (inedge) {
+		RANode *n = (RANode *)g->layers[0].nodes[0]->data;
+		AEdge *e = R_NEW0 (AEdge);
+		if (!e) {
+			return;
+		}
+
+		e->is_reversed = true;
+		e->from = NULL;
+		e->to = NULL;
+		e->x = r_list_new();
+		e->y = r_list_new();
+		if (g->layout == 0) {
+			r_list_append (e->y, (void *) (size_t) (n->y - 1 - inedge));
+		} else {
+			r_list_append (e->x, (void *) (size_t) (n->x - 1 - inedge));
+		}
+		r_list_append (g->edges, e);
+	}
+
+	if (outedge) {
+		RANode *n = (RANode *)g->layers[g->n_layers - 1].nodes[0]->data;
+		AEdge *e = R_NEW0 (AEdge);
+		if (!e) {
+			return;
+		}
+
+		e->is_reversed = true;
+		e->from = NULL;
+		e->to = NULL;
+		e->x = r_list_new();
+		e->y = r_list_new();
+		if (g->layout == 0) {
+			r_list_append (e->y, (void *) (size_t) (n->y + g->layers[g->n_layers - 1].height + 2 + outedge));
+		} else {
+			r_list_append (e->x, (void *) (size_t) (n->x + g->layers[g->n_layers - 1].width + 2 + outedge));
+		}
+		r_list_append (g->edges, e);
+	}
+}
+
 /* 1) trasform the graph into a DAG
  * 2) partition the nodes in layers
  * 3) split long edges that traverse multiple layers
@@ -1608,7 +1757,6 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->edges);
 	g->edges = r_list_new ();
 
-    //remove_dummy_nodes(g); //TODO: what to do with dummy nodes? removing them is creating problem
 	remove_cycles (g);
 	assign_layers (g);
 	create_dummy_nodes (g);
@@ -1687,7 +1835,7 @@ static void set_layout(RAGraph *g) {
 		for (i = 0; i < g->n_layers; ++i) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->y = 1 + g->layers[0].gap + 1;
+				n->y = g->layers[0].gap ? 1 + g->layers[0].gap : 0; //TODO: XXX: set properly
 				for (k = 1; k <= n->layer; ++k) {
 					n->y += g->layers[k-1].height + g->layers[k].gap + 3; //XXX: should be 4?
 				}
@@ -1725,6 +1873,8 @@ static void set_layout(RAGraph *g) {
 		}
 		break;
 	}
+
+	backedge_info (g);
 
 	//restore_original_edges (g);
 	//remove_dummy_nodes (g);
@@ -2444,7 +2594,6 @@ static void agraph_print_edges(RAGraph *g) {
 		}
 
 		graph_foreach_anode (neighbours, itn, gb, b) {
-			AEdge e, *edg = NULL;
 			int is_first = true;
 
 			if (a->is_dummy) {
@@ -2477,36 +2626,10 @@ static void agraph_print_edges(RAGraph *g) {
 			bx = b->is_dummy ? b->x : (b->x + xinc);
 			by = b->y - 1;
 
-			e.from = a;
-			e.to = b;
-			RListIter *it = r_list_find (g->edges, &e, (RListComparator) find_ascii_edge);
 			switch (g->layout) {
 			case 0:
 			default:
 				style.symbol = a->is_dummy ? LINE_NOSYM_VERT : style.color;
-				if (it) { // This might cause overlapping. Used previous code.
-					int k, len;
-
-					edg = r_list_iter_get_data (it);
-					len = r_list_length (edg->x);
-
-					for (k = 0; k < len; ++k) {
-						bx = (int) (size_t) r_list_get_n (edg->x, k);
-						by = (int) (size_t) r_list_get_n (edg->y, k) - 1;
-
-						if (is_first && nth == 0 && bx > ax) {
-							xinc += 4;
-							ax += 4;
-						}
-
-						r_cons_canvas_line (g->can, ax, ay, bx, by, &style);
-
-						ax = bx;
-						ay = by;
-						style.symbol = LINE_NONE;
-						is_first = false;
-					}
-				}
 
 				if (!a->is_dummy && is_first && nth == 0 && bx > ax) {
 					xinc += 4;
@@ -2543,22 +2666,8 @@ static void agraph_print_edges(RAGraph *g) {
 				style.symbol = a->is_dummy ? LINE_NOSYM_HORIZ : style.color;
 				ax = a->x + a->w;
 				ay = a->is_dummy ? a->y : a->y + (a->h / 2) + nth;
-				if (it) { //Used previous code. Might overlap
-					int i, len;
-					edg = r_list_iter_get_data (it);
-					len = r_list_length (edg->x);
-
-					for (i = 0; i < len; i++) {
-						//r_cons_canvas_line (g->can, ax, ay, bx, b2, &style);
-						ax = a->x + a->w;
-						ay = a->y + (a->h / 2);
-						style.symbol = LINE_NONE;
-						is_first = false;
-					}
-				}
 				bx = b->x - 1;
 				by = b->is_dummy ? b->y : b->y + (b->h / 2) + nth;
-				//r_cons_canvas_line (g->can, ax, ay, bx, by, &style);
 				if (a->w < a->layer_width) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
 					ax = a->x + a->layer_width;
