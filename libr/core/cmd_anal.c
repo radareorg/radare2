@@ -2441,7 +2441,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						/* only follow code/call references */
 						continue;
 					}
-					if (!r_io_is_valid_section_offset (core->io, ref->addr, 1)) {
+					if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
 						continue;
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -2452,7 +2452,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						RListIter *iter;
 						RAnalRef *ref;
 						r_list_foreach (f->refs, iter, ref) {
-							if (!r_io_is_valid_section_offset (core->io, ref->addr, R_IO_EXEC)) {
+							if (!r_io_is_valid_offset (core->io, ref->addr, R_IO_EXEC)) {
 								continue;
 							}
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -2885,7 +2885,7 @@ repeat:
 		*prev_addr = addr;
 	}
 	if (esil->exectrap) {
-		if (!r_io_is_valid_real_offset (core->io, addr, R_IO_EXEC)) {
+		if (!r_io_is_valid_offset (core->io, addr, R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
@@ -4243,7 +4243,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				// add xref here
 				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
-				if (r_io_is_valid_section_offset (core->io, op.jump, 1)) {
+				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
 #endif
@@ -5461,7 +5461,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	RList *list = r_list_newf (NULL);
 	r_anal_xrefs_from (core->anal, list, "xref", R_ANAL_REF_TYPE_DATA, UT64_MAX);
 	r_list_foreach (list, iter, ref) {
-		if (r_io_is_valid_section_offset (core->io, ref->addr, false)) {
+		if (r_io_is_valid_offset (core->io, ref->addr, false)) {
 			r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
 		}
 	}
