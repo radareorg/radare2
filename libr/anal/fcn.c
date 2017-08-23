@@ -873,7 +873,7 @@ repeat:
 				bool must_eob = anal->opt.eobjmp;
 				if (!must_eob) {
 					RIOSection *s = anal->iob.sect_vget (anal->iob.io, addr);
-					must_eob = (op.jump < s->vaddr && op.jump > s->vaddr + s->size);
+					must_eob = s? (op.jump < s->vaddr && op.jump > s->vaddr + s->size) : must_eob;
 				}
 				if (must_eob) {
 					FITFCNSZ ();
