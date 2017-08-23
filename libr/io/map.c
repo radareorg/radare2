@@ -238,6 +238,22 @@ R_API void r_io_map_del_name(RIOMap* map) {
 	}
 }
 
+R_API bool r_io_map_is_in_range(RIOMap* map, ut64 from, ut64 to) { //rename pls
+	if (!map || (to < from)) {
+		return false;
+	}
+	if (R_BETWEEN (map->from, from, map->to)) {
+		return true;
+	}
+	if (R_BETWEEN (map->from, to, map->to)) {
+		return true;
+	}
+	if (map->from > from && to > map->to) {
+		return true;
+	}
+	return false;
+}
+
 //TODO: Kill it with fire
 R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
 	RIOMap* map;
