@@ -24,7 +24,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	}
 
 	/* Read magic header */
-	char *buffer = calloc (1, BUF_SIZE);
+	char *buffer = calloc (1, BUF_SIZE + 1);
 	if (!buffer) {
 		return NULL;
 	}
@@ -34,7 +34,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	}
 	files = r_list_new ();
 	/* Parse archive */
-	ar_read_file (b, buffer, true, NULL, NULL);
+	ar_read_file (b, buffer, BUF_SIZE, true, NULL, NULL);
 	ar_read_filename_table (b, buffer, files, filename);
 
 	/* If b->base is set, then we found the file root in the archive */
@@ -46,7 +46,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 			b->cur -= 1;
 			ar_read (b, buffer, 2);
 		}
-		r = ar_read_file (b, buffer, false, files, filename);
+		r = ar_read_file (b, buffer, BUF_SIZE, false, files, filename);
 	}
 
 	if (!filename) {
@@ -121,7 +121,7 @@ int ar_read_header(RBuffer *b, char *buffer) {
 	return r;
 }
 
-int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char *filename) {
+int ar_read_file(RBuffer *b, char *buffer, int bufsz, bool lookup, RList *files, const char *filename) {
 	ut64 filesize = 0;
 	char *tmp = NULL;
 	char *curfile = NULL;
@@ -130,13 +130,17 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 
 	/* File identifier */
 	if (lookup) {
-		r = ar_read (b, buffer, 16);
+		r = ar_read (b, buffer, bufsz);
 	} else {
-		r = ar_read (b, buffer + 2, 14);
+		r = ar_read (b, buffer + 2, bufsz - 1);
 	}
+	buffer[bufsz] = 0;
 	/* Fix some padding issues */
 	if (buffer[15] != '/' && buffer[15] != ' ') {
-		tmp = strrchr (buffer, ' ');
+		tmp = (char *)r_str_lchr (buffer, ' ');
+		if (!tmp) {
+			return 0;
+		}
 		int dif = (int) (tmp - buffer);
 		dif = 31 - dif;
 		b->cur -= dif;
@@ -164,32 +168,38 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	/* File timestamp */
 	r = ar_read (b, buffer, 12);
 	if (r != 12) {
+		free (curfile);
 		return 0;
 	}
 	/* Owner id */
 	r = ar_read (b, buffer, 6);
 	if (r != 6) {
+		free (curfile);
 		return 0;
 	}
 	/* Group id */
 	r = ar_read (b, buffer, 6);
 	if (r != 6) {
+		free (curfile);
 		return 0;
 	}
 	/* File mode */
 	r = ar_read (b, buffer, 8);
 	if (r != 8) {
+		free (curfile);
 		return 0;
 	}
 	/* File size */
 	r = ar_read (b, buffer, 10);
 	filesize = strtoull (buffer, &tmp, 10);
 	if (r != 10) {
+		free (curfile);
 		return 0;
 	}
 	/* Header end */
 	r = ar_read (b, buffer, 2);
 	if (strncmp (buffer, AR_FILE_HEADER_END, 2)) {
+		free (curfile);
 		return 0;
 	}
 
@@ -199,12 +209,14 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		if (index == index_filename || !strcmp (curfile, filename)) {
 			b->length = filesize;
 			b->base = b->cur;
+			free (curfile);
 			return b->length;
 		}
 	}
 	r = ar_read (b, buffer, 1);
 
 	b->cur += filesize - 1;
+	free (curfile);
 	return filesize;
 }
 

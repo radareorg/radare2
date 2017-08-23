@@ -1016,7 +1016,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	RBinXtrPlugin *xtr;
 	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	int tfd;
+	int tfd = -1;
 
 	if (!io || (fd < 0)) {
 		return false;

@@ -7,9 +7,9 @@
 R_LIB_VERSION (r_io);
 
 typedef int (*cbOnIterMap) (RIO *io, int fd, ut64 addr, ut8*buf, int len);
+
 static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		       int len, int match_flg, cbOnIterMap op, bool *ret) {
-	RIOMap* map;
 	ut64 vendaddr;
 	if (!io || !buf || len < 1) {
 		return;
@@ -30,7 +30,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	} else {
 		vendaddr = vaddr + len - 1;
 	}
-	map = (RIOMap*) iter->data;
+	RIOMap *map = (RIOMap*) iter->data;
 	// search for next map or end of list
 	while (!r_io_map_is_in_range (map, vaddr, vendaddr)) {
 		iter = iter->p;
@@ -321,7 +321,7 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 
 R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 	int i;
-	bool ret;
+	bool ret = false;
 	ut8 *mybuf = (ut8*)buf;
 	if (!io || !buf || len < 1) {
 		return false;
@@ -369,7 +369,7 @@ R_API bool r_io_write(RIO* io, ut8* buf, int len) {
 }
 
 R_API ut64 r_io_size(RIO* io) {
-#pragma message ("rethink this, maybe not needed")
+#warning rethink this, maybe not needed
 	return io? r_io_desc_size (io->desc): 0LL;
 }
 

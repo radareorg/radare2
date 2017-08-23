@@ -1890,7 +1890,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				r_anal_fcn_resize (fcn, addr_end - addr);
 			}
-
 			r_config_set_i (core->config, "anal.from", a);
 			r_config_set_i (core->config, "anal.to", b);
 			r_config_set (core->config, "anal.limits", c? c: "");
@@ -2023,7 +2022,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (arg) {
 				arg++;
 			}
-		} else addr = core->offset;
+		} else {
+			addr = core->offset;
+		}
 		if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 			if (arg && *arg) {
 				r_anal_str_to_fcn (core->anal, f, arg);
