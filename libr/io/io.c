@@ -490,6 +490,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->is_valid_offset = r_io_is_valid_real_offset;
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;
+	bnd->sect_vget = r_io_section_vget;
 	return true;
 }
 

@@ -226,6 +226,7 @@ typedef bool (*RIOFdIsDbg) (RIO *io, int fd);
 typedef const char *(*RIOFdGetName) (RIO *io, int fd);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
+typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 
 typedef struct r_io_bind_t {
@@ -252,6 +253,7 @@ typedef struct r_io_bind_t {
 	RIOFdGetName fd_get_name;
 	RIOIsValidOff is_valid_offset;
 	RIOSectionVgetSecsAt sections_vget;
+	RIOSectionVgetSec sect_vget;
 	RIOSectionAdd section_add;
 } RIOBind;
 

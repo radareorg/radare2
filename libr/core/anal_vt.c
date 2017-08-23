@@ -90,9 +90,9 @@ RList* search_virtual_tables(RCore *core){
 	ls_foreach (core->io->sections, iter, section) {
 		if (!strcmp (section->name, ".rodata")) {
 			ut8 *segBuff = calloc (1, section->size);
-			r_io_read_at (core->io, section->paddr, segBuff, section->size);
+			r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
 			startAddress = section->vaddr;
-			endAddress = startAddress + (section->size) - (bits/8);
+			endAddress = startAddress + (section->vsize) - (bits/8);
 			while (startAddress <= endAddress) {
 				if (isVtableStart (core, startAddress)) {
 					vtable_info *vtable = calloc (1, sizeof(vtable_info));
