@@ -341,10 +341,10 @@ static void cmd_omf (RCore *core, const char *input) {
 	if (sp) {
 		// change perms of Nth map
 		*sp++ = 0;
-		int fd = r_num_math (core->num, arg);
+		int id = r_num_math (core->num, arg);
 		int flags = (*sp)? r_str_rwx (sp): 7;
 		ls_foreach (core->io->maps, iter, map) {
-			if (map->fd == fd) {
+			if (map->id == id) {
 				map->flags = flags;
 				break;
 			}
