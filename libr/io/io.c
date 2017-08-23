@@ -16,7 +16,6 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	}
 	if (!iter && io->desc) {
 		// end of list
-		*ret &= (op (io, io->desc->fd, vaddr, buf, len) <= 0);
 		return;
 	}
 	// this block is not that much elegant
@@ -37,7 +36,6 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		// end of list
 		if (!iter && io->desc) {                      
 			// pread/pwrite
-			*ret &= (op (io, io->desc->fd, vaddr, buf, len) <= 0); 
 			return;
 		}
 		map = (RIOMap*) iter->data;
