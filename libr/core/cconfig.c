@@ -2615,7 +2615,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
-	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");
+	SETICB ("io.va", 1, &cb_iova, "Use virtual address layout:\n0 = pa\n1 = va\n2 = pa & va");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 
 	/* file */

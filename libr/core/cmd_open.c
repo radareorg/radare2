@@ -283,7 +283,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach (io->maps, iter, map) {
+	ls_foreach_prev (io->maps, iter, map) {
 		if (fd != -1 && map->fd != fd) {
 			continue;
 		}
