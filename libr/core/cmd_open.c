@@ -283,16 +283,16 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach_prev (io->maps, iter, map) {
+	ls_foreach (io->maps, iter, map) {
 		if (fd != -1 && map->fd != fd) {
 			continue;
 		}
-		if (!first) {
-			print->cb_printf (",");
-		}
-		first = false;
 		switch (mode) {
 		case 'j':
+			if (!first) {
+				print->cb_printf (",");
+			}
+			first = false;
 			print->cb_printf ("{\"map\":%i,\"fd\":%d,\"delta\":%"PFMT64d",\"from\":%"PFMT64d
 					",\"to\":%"PFMT64d",\"flags\":\"%s\",\"name\":\"%s\"}", map->id, map->fd,
 					map->delta, map->from, map->to,
@@ -531,11 +531,12 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-	RIOMap *map;
-	SdbListIter *iter;
 	p->cb_printf ("%2d %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
 			desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
+#if 0
+	RIOMap *map;
+	SdbListIter *iter;
 	if (desc->io && desc->io->va && desc->io->maps) {
 		ls_foreach_prev (desc->io->maps, iter, map) {
 			if (map->fd == desc->fd) {
@@ -546,6 +547,7 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 			}
 		}
 	}
+#endif
 	return true;
 }
 

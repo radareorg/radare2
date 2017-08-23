@@ -16,6 +16,7 @@ static int index_filename = -2;
  */
 R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	int r;
+	RList *files = NULL;
 	RBuffer *b = r_buf_new_file (arname, 0);
 	if (!b) {
 		r_sys_perror (__FUNCTION__);
@@ -31,9 +32,8 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	if (!r) {
 		goto fail;
 	}
-
+	files = r_list_new ();
 	/* Parse archive */
-	RList *files = r_list_new ();
 	ar_read_file (b, buffer, true, NULL, NULL);
 	ar_read_filename_table (b, buffer, files, filename);
 
