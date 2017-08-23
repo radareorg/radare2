@@ -64,7 +64,7 @@ static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 			free (n);
 		}
 	} else {
-		ls_foreach_prev (io->sections, iter, s) {
+		ls_foreach (io->sections, iter, s) {
 			print->cb_printf ("[%02d:%02d]", s->bin_id, s->id);
 			if (io->va) {
 				if ((s->vaddr <= offset) && ((offset - s->vaddr) < s->vsize)) {
