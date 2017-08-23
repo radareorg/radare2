@@ -366,10 +366,14 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 	}
 
 	if (op->operands[0].type & OT_MEMORY && op->operands[1].type & OT_REGALL) {
+		if (a->bits == 64 && (op->operands[0].type & OT_DWORD) &&
+		    (op->operands[1].type & OT_DWORD)) {
+			data[l++] = 0x67;
+		}
 		if (op->operands[0].type & OT_BYTE && op->operands[1].type & OT_BYTE) {
 			data[l++] = op1;
 		} else if (op->operands[0].type & (OT_DWORD | OT_QWORD) &&
-				   op->operands[1].type & (OT_DWORD | OT_QWORD)) {
+			   op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 			data[l++] = op1 + 0x1;
 		} else {
 			eprintf ("Error: mismatched operand sizes\n");
@@ -450,7 +454,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 	}
 	if (op->operands[0].regs[0] == X86R_EBP ||
 	    op->operands[1].regs[0] == X86R_EBP) {
-			reg += 8;
+			//reg += 8;
 			ebp_reg = 1;
 	}
 	data[l++] = mod_byte << 6 | reg << 3 | rm;
