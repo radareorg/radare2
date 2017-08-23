@@ -706,6 +706,8 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->fd_write = r_io_fd_write;
 	bnd->fd_read_at = r_io_fd_read_at;
 	bnd->fd_write_at = r_io_fd_write_at;
+	bnd->fd_is_dbg = r_io_fd_is_dbg;
+	bnd->fd_get_name = r_io_fd_get_name;
 	bnd->is_valid_offset = r_io_is_valid_real_offset;
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;

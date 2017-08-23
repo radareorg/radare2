@@ -63,6 +63,14 @@ R_API int r_io_fd_write_at(RIO *io, int fd, ut64 addr, const ut8 *buf, int len) 
 	return r_io_desc_write_at (desc, addr, buf, len);
 }
 
+R_API bool r_io_fd_is_dbg(RIO *io, int fd) {
+	RIODesc *desc;
+	if (!io || !io->files || !(desc = r_io_desc_get (io, fd))) {
+		return false;
+	}
+	return r_io_desc_is_dbg (desc);
+}
+
 R_API int r_io_fd_get_pid(RIO *io, int fd) {
 	RIODesc *desc;
 	if (!io || !io->files) {
@@ -79,6 +87,14 @@ R_API int r_io_fd_get_tid(RIO *io, int fd) {
 	}
  	desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_tid (desc);
+}
+
+R_API const char *r_io_fd_get_name(RIO *io, int fd) {
+	RIODesc *desc;
+	if (!io || !io->files || !(desc = r_io_desc_get (io, fd))) {
+		return NULL;
+	}
+	return desc->name;
 }
 
 R_API bool r_io_use_fd(RIO* io, int fd) {

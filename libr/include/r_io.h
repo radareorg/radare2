@@ -222,6 +222,8 @@ typedef int (*RIOFdRead) (RIO *io, int fd, ut8 *buf, int len);
 typedef int (*RIOFdWrite) (RIO *io, int fd, const ut8 *buf, int len);
 typedef int (*RIOFdReadAt) (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 typedef int (*RIOFdWriteAt) (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
+typedef bool (*RIOFdIsDbg) (RIO *io, int fd);
+typedef const char *(*RIOFdGetName) (RIO *io, int fd);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
@@ -246,6 +248,8 @@ typedef struct r_io_bind_t {
 	RIOFdWrite fd_write;	//needed for esil
 	RIOFdReadAt fd_read_at;
 	RIOFdWriteAt fd_write_at;
+	RIOFdIsDbg fd_is_dbg;
+	RIOFdGetName fd_get_name;
 	RIOIsValidOff is_valid_offset;
 	RIOSectionVgetSecsAt sections_vget;
 	RIOSectionAdd section_add;
@@ -352,6 +356,7 @@ R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_is_blockdevice (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);	//this should get 2 descs
+R_API bool r_io_desc_is_dbg (RIODesc *desc);
 R_API int r_io_desc_get_pid (RIODesc *desc);
 R_API int r_io_desc_get_tid (RIODesc *desc);
 R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
@@ -420,8 +425,10 @@ R_API ut64 r_io_fd_size (RIO *io, int fd);
 R_API bool r_io_fd_is_blockdevice (RIO *io, int fd);
 R_API int r_io_fd_read_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
+R_API bool r_io_fd_is_dbg (RIO *io, int fd);
 R_API int r_io_fd_get_pid (RIO *io, int fd);
 R_API int r_io_fd_get_tid (RIO *io, int fd);
+R_API const char *r_io_fd_get_name (RIO *io, int fd);
 R_API bool r_io_use_fd (RIO *io, int fd);
 
 

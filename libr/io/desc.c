@@ -230,6 +230,13 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	return true;
 }
 
+R_API bool r_io_desc_is_dbg(RIODesc *desc) {
+	if (desc && desc->plugin) {
+		return desc->plugin->isdbg;
+	}
+	return false;
+}
+
 R_API int r_io_desc_get_pid(RIODesc *desc) {
 	//-1 and -2 are reserved
 	if (!desc) {
