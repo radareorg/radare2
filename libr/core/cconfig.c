@@ -1151,14 +1151,14 @@ static int cb_iopcache(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if ((bool)node->i_value) {
 		if (core) {
-			r_config_eval (core->config, "io.pcacheread=true");
-			r_config_eval (core->config, "io.pcachewrite=true");
+			r_config_set_i (core->config, "io.pcache.read", true);
+			r_config_set_i (core->config, "io.pcache.write", true);
 		}
 	} else {
 		if (core && core->io) {
 			r_io_desc_cache_fini_all (core->io);
-			r_config_eval (core->config, "io.pcacheread=false");
-			r_config_eval (core->config, "io.pcachewrite=false");
+			r_config_set_i (core->config, "io.pcache.read", false);
+			r_config_set_i (core->config, "io.pcache.write", false);
 		}
 	}
 	return true;
@@ -1176,7 +1176,7 @@ static int cb_iopcacheread(void *user, void *data) {
 			core->io->p_cache &= 2;
 			if (!(core->io->p_cache & 2)) {
 				r_io_desc_cache_fini_all (core->io);
-				r_config_eval (core->config, "io.pcache=false");
+				r_config_set_i (core->config, "io.pcache", false);
 			}
 		}
 	}
@@ -1195,7 +1195,7 @@ static int cb_iopcachewrite(void *user, void *data) {
 			core->io->p_cache &= 1;
 			if (!(core->io->p_cache & 1)) {
 				r_io_desc_cache_fini_all (core->io);
-				r_config_eval (core->config, "io.pcache=false");
+				r_config_set_i (core->config, "io.pcache", false);
 			}
 		}
 	}
@@ -2610,8 +2610,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB ("io.cache", "false", &cb_iocache, "Enable cache for io changes");
 	SETCB ("io.pcache", "false", &cb_iopcache, "io.cache for p-level");
-	SETCB ("io.pcachewrite", "false", &cb_iopcachewrite, "Enable write-cache");
-	SETCB ("io.pcacheread", "false", &cb_iopcacheread, "Enable read-cache");
+	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "Enable write-cache");
+	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "Enable read-cache");
 	SETCB ("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
