@@ -4,6 +4,18 @@
 #include <r_util.h>
 #include <r_types.h>
 
+
+//This helper function only check if the given vaddr is mapped, it does not account
+//for map perms
+R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
+	if (io) {
+		if (io->va && r_io_map_get (io, vaddr)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // when io.va is true this checks if the highest priorized map at this
 // offset has the same or high permissions set. When there is no map it
 // check for the current desc permissions and size.
@@ -38,7 +50,8 @@ R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	if (!r_io_read_at (io, addr, buf, size)) {
 		return false;
 	}
-	*val = r_read_ble (buf, endian, size);
+	//size says the number of bytes to read transform to bits for r_read_ble
+	*val = r_read_ble (buf, endian, size * 8);
 	return true;
 }
 
@@ -49,7 +62,8 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 		return false;
 	}
 	size = R_DIM (size, 1, 8);
-	r_write_ble (buf, *val, endian, size);
+	//size says the number of bytes to read transform to bits for r_read_ble
+	r_write_ble (buf, *val, endian, size * 8);
 	if (!r_io_write_at (io, addr, buf, size)) {
 		return false;
 	}

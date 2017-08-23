@@ -438,6 +438,7 @@ R_API bool r_io_use_fd (RIO *io, int fd);
 
 /* io/ioutils.c */
 R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
+R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 
