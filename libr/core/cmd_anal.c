@@ -3368,10 +3368,12 @@ static int mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 			return len;
 		}
 	}
-	n = malloc (sizeof (AeaMemItem));
-	n->addr = addr;
-	n->size = len;
-	r_list_push (mymemxsw, n);
+	n = R_NEW (AeaMemItem);
+	if (n) {
+		n->addr = addr;
+		n->size = len;
+		r_list_push (mymemxsw, n);
+	}
 	return len;
 }
 
@@ -3383,10 +3385,12 @@ static int mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			return len;
 		}
 	}
-	n = malloc (sizeof (AeaMemItem));
-	n->addr = addr;
-	n->size = len;
-	r_list_push (mymemxsr, n);
+	n = R_NEW (AeaMemItem);
+	if (n) {
+		n->addr = addr;
+		n->size = len;
+		r_list_push (mymemxsr, n);
+	}
 	return len;
 }
 
