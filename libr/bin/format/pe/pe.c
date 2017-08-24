@@ -1032,7 +1032,7 @@ static int bin_pe_init_overlay(struct PE_(r_bin_pe_obj_t)* bin) {
 
 static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
-	PE_DWord image_clr_hdr_paddr = clr_dir? bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress): 0;
+	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress);
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
 	PE_(image_clr_header) * clr_hdr = R_NEW0 (PE_(image_clr_header));
 	int rr, len = sizeof (PE_(image_clr_header));
