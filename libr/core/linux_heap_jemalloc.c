@@ -240,11 +240,13 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		if (narenas == 0) {
 			eprintf ("No arenas allocated.\n");
 			free (stats);
+			free (ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			free (stats);
 			eprintf ("Cannot find narenas_total\n");
+			free (stats);
+			free (ar);
 			return;
 		}
 
