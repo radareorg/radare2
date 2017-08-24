@@ -1092,10 +1092,12 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 					} else if (sz != file_sz) {
 						iob->read_at (io, 0LL, buf_bytes, sz);
 					}
-					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
-						fname, buf_bytes, sz, file_sz,
-						baseaddr, loadaddr, xtr_idx,
-						fd, bin->rawstr);
+					if (buf_bytes) {
+						binfile = r_bin_file_xtr_load_bytes (bin, xtr,
+							fname, buf_bytes, sz, file_sz,
+							baseaddr, loadaddr, xtr_idx,
+							fd, bin->rawstr);
+					}
 				}
 				xtr = NULL;
 			}
