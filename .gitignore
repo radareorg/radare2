@@ -73,7 +73,7 @@ sys/_work
 radare2-bindings
 radare2-regressions
 radare2-w32-*
-radare2-regressions
+radare2-w64-*
 tags
 **/GPATH
 **/GRTAGS
