@@ -627,9 +627,6 @@ p_simp_re(struct parse *p,
 	case BACKSL|'8':
 	case BACKSL|'9':
 		i = (c&~BACKSL) - '0';
-		if (i > NPAREN) {
-			break;
-		}
 		if (p->pend[i] != 0) {
 			if (i <= p->g->nsub) {
 				EMIT(OBACK_, i);
