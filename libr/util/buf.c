@@ -119,8 +119,12 @@ R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 
 R_API RBuffer *r_buf_new_empty (ut64 len) {
 	RBuffer *b = r_buf_new ();
+	if (!b) {
+		return NULL;
+	}
 	b->buf = calloc (len, 1);
 	if (!b->buf) {
+		r_buf_free (b);
 		return NULL;
 	}
 	b->length = len;
