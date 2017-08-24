@@ -19,11 +19,11 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		return;
 	}
 	// this block is not that much elegant
-	if (UT64_ADD_OVFCHK (len - 1, vaddr)) { 
+	if (UT64_ADD_OVFCHK (len - 1, vaddr)) {
 		// needed for edge-cases
-		int nlen;                   
+		int nlen;
 		// add a test for this block
-		vendaddr = UT64_MAX;        
+		vendaddr = UT64_MAX;
 		nlen = (int) (UT64_MAX - vaddr + 1);
 		onIterMap (iter->p, io, 0LL, buf + nlen, len - nlen, match_flg, op, ret);
 	} else {
@@ -34,7 +34,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	while (!r_io_map_is_in_range (map, vaddr, vendaddr)) {
 		iter = iter->p;
 		// end of list
-		if (!iter && io->desc) {                      
+		if (!iter && io->desc) {
 			// pread/pwrite
 			return;
 		}
@@ -177,11 +177,11 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 
 	}
 	size = r_io_desc_size (desc);
 	// second map
-	if (size && ((UT64_MAX - size + 1) < at)) { 
+	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
 		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
 		// someone pls take a look at this confusing stuff
-		size = UT64_MAX - at + 1; 
+		size = UT64_MAX - at + 1;
 	}
 	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size); // first map
 	return desc;
@@ -212,7 +212,7 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int flags, int mode) {
 			}
 			//should autofd be honored here?
 			r_io_desc_add (io, desc);
-			if (!io->desc) {                                        
+			if (!io->desc) {
 				io->desc = desc;
 			}
 		}
@@ -367,7 +367,7 @@ R_API bool r_io_write(RIO* io, ut8* buf, int len) {
 }
 
 R_API ut64 r_io_size(RIO* io) {
-#warning rethink this, maybe not needed
+// TODO: rethink this, maybe not needed
 	return io? r_io_desc_size (io->desc): 0LL;
 }
 
@@ -412,7 +412,7 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 		r_io_seek (io, addr, R_IO_SEEK_SET);
 		ret = io->desc->plugin->extend (io, io->desc, size);
 		//no need to seek here
-		io->off = cur_off;                              
+		io->off = cur_off;
 		return ret;
 	}
 	if ((io->desc->flags & R_IO_RW) != R_IO_RW) {
