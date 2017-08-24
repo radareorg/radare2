@@ -1590,7 +1590,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 									w = "==";
 									break;
 								default:
-									w = "?"
+									w = "?";
 									break;
 							}
 							w = cmask64 ("0", w);
