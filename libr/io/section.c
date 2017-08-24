@@ -16,12 +16,14 @@ static void section_free(void *p) {
 }
 
 R_API void r_io_section_init(RIO *io) {
-	if (io && !io->sections) {
-		if (!(io->sections = ls_newf (section_free))) {
-			return;
+	if (io) {
+		if(!io->sections){
+			if (!(io->sections = ls_newf (section_free))) {
+				return;
+			}
 		}
+		io->sec_ids = r_id_pool_new (0, 0xffffffff);
 	}
-	io->sec_ids = r_id_pool_new (0, 0xffffffff);
 }
 
 R_API void r_io_section_fini(RIO *io) {
