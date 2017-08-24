@@ -592,7 +592,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		msg[1] = 0;
 		r_config_set (r->config, "bin.strfilter", msg);
 	}
-	r_core_bin_set_env (r, binfile);
+	//r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->name) {
 		load_scripts_for (r, plugin->name);
