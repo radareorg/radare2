@@ -341,11 +341,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	char *base_file = r_str_newf ("%s/%s.dump", path, file);
 	char *diff_file = r_str_newf ("%s/%s.session", path, file);
 
-	if (!base_file) {
-		free (base_file);
-		return;
-	}
-	if (!diff_file) {
+	if (!base_file || !diff_file) {
 		free (base_file);
 		free (diff_file);
 		return;
