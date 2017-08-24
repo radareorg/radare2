@@ -273,7 +273,14 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 		esil->trap_code = addr;
 		return false;
 	}
-	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
+		if (esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_READ_ERR;
+			esil->trap_code = addr;
+		}
+	}
+	return len;
 }
 
 R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -349,13 +356,13 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 		return 0;
 	}
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
-	if (ret != len) {
+	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
 		}
 	}
-	return ret;
+	return len;
 }
 
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
