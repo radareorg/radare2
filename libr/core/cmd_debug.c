@@ -4332,8 +4332,7 @@ static int cmd_debug(void *data, const char *input) {
 			default:
 				r_core_cmd_help (core, help_msg_di);
 			}
-			if (rdi)
-				r_debug_info_free (rdi);
+			r_debug_info_free (rdi);
 		}
 		break;
 	case 'x':

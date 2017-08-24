@@ -21,10 +21,13 @@ R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 }
 
 R_API void r_debug_info_free (RDebugInfo *rdi) {
-	free (rdi->cwd);
-	free (rdi->exe);
-	free (rdi->cmdline);
-	free (rdi->libname);
+	if (rdi) {
+		free (rdi->cwd);
+		free (rdi->exe);
+		free (rdi->cmdline);
+		free (rdi->libname);
+	}
+	free (rdi);
 }
 
 /*
