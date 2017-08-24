@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -17,7 +17,7 @@ static inline ut32 _io_malloc_sz(RIODesc *desc) {
 		return 0;
 	}
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
-	return mal->size;
+	return mal? mal->size: 0;
 } 
 
 static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
@@ -25,7 +25,9 @@ static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 		return;
 	}
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
-	mal->size = sz;
+	if (mal) {
+		mal->size = sz;
+	}
 } 
 
 static inline ut8* _io_malloc_buf(RIODesc *desc) {
@@ -153,16 +155,15 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname,0)) {
-		RIOMalloc *mal = R_NEW (RIOMalloc);
+		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (!strncmp (pathname, "hex://", 6)) {
 			mal->size = strlen (pathname);
-			mal->buf = malloc (mal->size + 1);
+			mal->buf = calloc (1, mal->size + 1);
 			if (!mal->buf) {
 				free (mal);
 				return NULL;
 			}
 			mal->offset = 0;
-			memset (mal->buf, 0, mal->size);
 			mal->size = r_hex_str2bin (pathname + 6, mal->buf);
 			if ((int)mal->size < 1) {
 				R_FREE (mal->buf);
