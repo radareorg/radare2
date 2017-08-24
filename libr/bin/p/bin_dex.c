@@ -1581,7 +1581,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	if (!bin || bin->methods_list) {
 		return false;
 	}
-	bin->version = strdup (r_bin_dex_get_version (bin));
+	bin->version = r_bin_dex_get_version (bin);
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
 	bin->methods_list = r_list_newf ((RListFree)free);

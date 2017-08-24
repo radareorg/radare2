@@ -3032,6 +3032,7 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		}
 		sym->type = r_str_const ("import");
 		if (!sym->type) {
+			free (sym);
 			break;
 		}
 		sym->vaddr = sym->paddr = imp->ordinal;
