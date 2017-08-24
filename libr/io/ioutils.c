@@ -4,6 +4,11 @@
 #include <r_util.h>
 #include <r_types.h>
 
+static int __access_log_e_cmp (const void *a, const void *b) {
+	RIOAccessLogElement *A = (RIOAccessLogElement *)a;
+	RIOAccessLogElement *B = (RIOAccessLogElement *)b;
+	return (A->buf_idx > B->buf_idx);
+}
 
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
@@ -69,3 +74,39 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	}
 	return true;
 }
+
+R_API RIOAccessLog *r_io_accesslog_new() {
+	RIOAccessLog *log = R_NEW0 (RIOAccessLog);
+	if (!log) {
+		return NULL;
+	}
+	if (!(log->log = r_list_newf (free))) {
+		free (log);
+		return NULL;
+	}
+	return log;
+}
+
+R_API void r_io_accesslog_free(RIOAccessLog *log) {
+	if (log) {
+		r_list_free (log->log);
+	}
+	free (log);
+}
+
+R_API void r_io_acccesslog_sort(RIOAccessLog *log) {
+	if (!log || !log->log) {
+		return;
+	}
+	r_list_sort (log->log, __access_log_e_cmp);
+}
+
+#if 0
+//TODO
+R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log) {
+	if (!log || !log->log) {
+		return;
+	}
+	return;
+}
+#endif
