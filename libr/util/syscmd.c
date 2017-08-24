@@ -136,7 +136,9 @@ R_API char *r_syscmd_ls(const char *input) {
 			path = input;
 		}
 	}
-	if (*path == '~') {
+	if (!path || !*path) {
+		path = ".";
+	} else if (*path == '~') {
 		homepath = r_str_home (path + 2);
 		if (homepath) {
 			path = (const char *)homepath;
@@ -148,9 +150,6 @@ R_API char *r_syscmd_ls(const char *input) {
 				path = (const char *)homepath;
 			}
 		}
-	}
-	if (!path || !*path) {
-		path = ".";
 	}
 	if (!r_file_is_directory (path)) {
 		p = strrchr (path, '/');
