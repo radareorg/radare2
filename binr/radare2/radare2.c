@@ -475,7 +475,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzuX:"
+	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzuX"
 #if USE_THREADS
 "t"
 #endif
@@ -635,7 +635,10 @@ int main(int argc, char **argv, char **envp) {
 		case 'V':
 			return verify_version (1);
 		case 'w':
-			perms = R_IO_READ | R_IO_WRITE;
+			perms |= R_IO_WRITE;
+			break;
+		case 'x':
+			perms |= R_IO_EXEC;
 			break;
 		default:
 			help++;
@@ -804,7 +807,7 @@ int main(int argc, char **argv, char **envp) {
 			}
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
-			perms = R_IO_READ | R_IO_WRITE;
+			perms = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
 			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
 				return 1;
@@ -816,7 +819,7 @@ int main(int argc, char **argv, char **envp) {
 					if (!haveRarunProfile) {
 						pfile = strdup (argv[optind++]);
 					}
-					perms = R_IO_READ; // XXX. should work with rw too
+					perms = R_IO_READ | R_IO_EXEC; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://")) {
 						optind--; // take filename

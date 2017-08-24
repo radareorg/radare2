@@ -770,9 +770,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 	}
-	if (strstr (file, "malloc://")) {
-		flags = R_IO_READ | R_IO_WRITE;
-	}
 	//if not flags was passed open it with -r--
 	if (!flags) {
 		flags = R_IO_READ;
