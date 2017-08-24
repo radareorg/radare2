@@ -176,7 +176,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	gdb_reg_t *arch_regs = NULL, *tmp_regs = NULL;
 	ut64 num_regs = 0, max_num_regs = 0, regs_blk_sz = 8;
 	gdbr_flags_reg_t *flags = NULL, *tmpflags = NULL;
-	ut64 num_flags = 0, num_fields = 0, name_sz = 0, cur_flag_num, i;
+	ut64 num_flags = 0, num_fields = 0, name_sz = 0, cur_flag_num = 0, i = 0;
 	char *flagstr, *flagsend, *field_start, *field_end, flagtmpchar, fieldtmpchar;
 	char flag_bits[65];
 	// Find architecture
