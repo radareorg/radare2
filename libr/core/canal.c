@@ -596,7 +596,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (f && *f->name && strncmp (f->name, "sect", 4)) {
 					fcn->name = strdup (f->name);
 				} else {
-					const char *fcnpfx = fcnpfx = r_anal_fcn_type_tostring (fcn->type);
+					const char *fcnpfx = r_anal_fcn_type_tostring (fcn->type);
 					if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
 						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 					}
