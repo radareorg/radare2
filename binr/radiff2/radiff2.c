@@ -677,7 +677,7 @@ int main(int argc, char **argv) {
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		if (pdc) {
 			if (!addr) {
-				addr = "entry0";
+				//addr = "entry0";
 				addr = "main";
 			}
 			/* should be in mode not in bool pdc */

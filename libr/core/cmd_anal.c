@@ -2499,26 +2499,27 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
-		use_color = ConsP (creg)
-		: Color_BWHITE;
+		use_color = ConsP (creg) : Color_BWHITE;
 	} else {
 		use_color = NULL;
 	}
-	core->dbg->reg = core->anal->reg;
-
-	if (core->anal && core->anal->cur && core->anal->cur->arch) {
-		/* workaround for thumb */
-		if (!strcmp (core->anal->cur->arch, "arm") && bits == 16) {
-			bits = 32;
-		}
-		/* workaround for 6502 */
-		if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
-		}
-		if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+	if (core->anal) {
+		core->dbg->reg = core->anal->reg;
+		if (core->anal->cur && core->anal->cur->arch) {
+			/* workaround for thumb */
+			if (!strcmp (core->anal->cur->arch, "arm") && bits == 16) {
+				bits = 32;
+			}
+			/* workaround for 6502 */
+			if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+			}
+			if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+			}
 		}
 	}
+
 	if (mode == '=') {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);

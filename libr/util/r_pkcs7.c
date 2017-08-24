@@ -466,6 +466,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 	}
 	if (length <= p) {
 		free (pad3);
+		r_asn1_free_string (s);
 		return NULL;
 	}
 	r = snprintf (buffer + p, length - p, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
