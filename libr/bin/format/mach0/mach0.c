@@ -2378,6 +2378,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		}
 		addr += word - 8;
 	}
+	free (mh);
 }
 
 RList* MACH0_(mach_fields)(RBinFile *arch) {
