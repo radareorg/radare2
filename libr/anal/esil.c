@@ -233,6 +233,7 @@ static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 }
 
 static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
@@ -248,7 +249,19 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 			}
 		}
 	}
-	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	ret = esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	// check if request addres is mapped , if dont fire trap and esil ioer callback
+	// now with siol, read_at return true/false cant be used to check error vs len
+	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
+		if (esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_READ_ERR;
+			esil->trap_code = addr;
+		}
+		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
+			esil->cmd (esil, esil->cmd_ioer, esil->address, 0);
+		}
+	}
+	return len;
 }
 
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -313,7 +326,9 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 		}
 	}
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
-	if (ret != len) {
+	// check if request addres is mapped , if dont fire trap and esil ioer callback
+	// now with siol, write_at return true/false cant be used to check error vs len
+	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
@@ -322,7 +337,7 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 			esil->cmd (esil, esil->cmd_ioer, esil->address, 0);
 		}
 	}
-	return ret;
+	return len;
 }
 
 static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
@@ -1721,7 +1736,12 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
 			int type = r_anal_esil_get_parm_type (esil, src);
 			if (type != R_ANAL_ESIL_PARM_INTERNAL) {
+				// this is a internal peek performed before a poke
+				// we disable hooks to avoid run hooks on internal peeks
+				int * oldhook = esil->cb.hook_mem_read;
+				esil->cb.hook_mem_read = NULL;
 				r_anal_esil_mem_read (esil, addr, b, bytes);
+				esil->cb.hook_mem_read = oldhook;
 				n = r_read_ble64 (b, esil->anal->big_endian);
 				esil->old = n;
 				esil->cur = num;
