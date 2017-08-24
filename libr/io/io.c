@@ -279,7 +279,7 @@ R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	}
 	r_io_map_cleanup (io);
 	if (!io->maps) {
-		return !!r_io_pread_at (io, vaddr, buf, len);
+		return false;
 	}
 	onIterMap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, r_io_fd_read_at, &ret);
 	return ret;
@@ -292,7 +292,7 @@ R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	}
 	r_io_map_cleanup (io);
 	if (!io->maps) {
-		return !!r_io_pwrite_at (io, vaddr, buf, len);
+		return false;
 	}
 	onIterMap (io->maps->tail, io, vaddr, (ut8*)buf, len, R_IO_WRITE, (cbOnIterMap)r_io_fd_write_at, &ret);
 	return ret;
