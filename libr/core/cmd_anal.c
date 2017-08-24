@@ -2780,9 +2780,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			regname = r_str_clean (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {
-				int type = r_reg_get_name_idx (regname);
-				if (type != -1) {
-					const char *alias = r_reg_get_name (core->dbg->reg, type);
+				int role = r_reg_get_name_idx (regname);
+				if (role != -1) {
+					const char *alias = r_reg_get_name (core->dbg->reg, role);
 					r = r_reg_get (core->dbg->reg, alias, -1);
 				}
 			}
@@ -3355,28 +3355,42 @@ static RList *mymemxsr = NULL;
 static RList *mymemxsw = NULL;
 
 #define R_NEW_DUP(x) memcpy((void*)malloc(sizeof(x)), &(x), sizeof(x))
+typedef struct {
+	ut64 addr;
+	int size;
+} AeaMemItem;
 
 static int mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	RListIter *iter;
-	ut64 *n;
+	AeaMemItem *n;
 	r_list_foreach (mymemxsw, iter, n) {
-		if (addr == *n) {
+		if (addr == n->addr) {
 			return len;
 		}
 	}
-	r_list_push (mymemxsw, R_NEW_DUP (addr));
+	n = R_NEW (AeaMemItem);
+	if (n) {
+		n->addr = addr;
+		n->size = len;
+		r_list_push (mymemxsw, n);
+	}
 	return len;
 }
 
 static int mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RListIter *iter;
-	ut64 *n;
+	AeaMemItem *n;
 	r_list_foreach (mymemxsr, iter, n) {
-		if (addr == *n) {
+		if (addr == n->addr) {
 			return len;
 		}
 	}
-	r_list_push (mymemxsr, R_NEW_DUP (addr));
+	n = R_NEW (AeaMemItem);
+	if (n) {
+		n->addr = addr;
+		n->size = len;
+		r_list_push (mymemxsr, n);
+	}
 	return len;
 }
 
@@ -3525,15 +3539,15 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	}
 	if ((mode >> 5) & 1) {
 		RListIter *iter;
-		ut64 *n;
+		AeaMemItem *n;
 		int c = 0;
 		r_cons_printf ("f-mem.*\n");
 		r_list_foreach (mymemxsr, iter, n) {
-			r_cons_printf ("f mem.read.%d = 0x%08"PFMT64x"\n", c++, *n);
+			r_cons_printf ("f mem.read.%d 0x%08x @ 0x%08"PFMT64x"\n", c++, n->size, n->addr);
 		}
 		c = 0;
 		r_list_foreach (mymemxsw, iter, n) {
-			r_cons_printf ("f mem.write.%d = 0x%08"PFMT64x"\n", c++, *n);
+			r_cons_printf ("f mem.write.%d 0x%08x @ 0x%08"PFMT64x"\n", c++, n->size, n->addr);
 		}
 	}
 
