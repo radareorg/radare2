@@ -758,7 +758,7 @@ static int cmd_open(void *data, const char *input) {
 		/* fall through */
 	case ' ':
 		{
-			ut64 ba = 0L;
+			ut64 ba = baddr;
 			ut64 ma = 0L;
 			char *fn = strdup (input + (isn? 2:1));
 			if (!fn || !*fn) {
