@@ -101,12 +101,53 @@ R_API void r_io_acccesslog_sort(RIOAccessLog *log) {
 	r_list_sort (log->log, __access_log_e_cmp);
 }
 
-#if 0
-//TODO
-R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log) {
-	if (!log || !log->log) {
+R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log, int flags) {
+	RListIter *iter, *ator;
+	RIOAccessLogElement *ale, *ela;
+	if (!log || !log->log || !log->log->length) {
 		return;
 	}
-	return;
+	if (!log->log->sorted) {
+		r_list_sort (log->log, __access_log_e_cmp);
+	}
+	r_list_foreach_safe (log->log, iter, ator, ale) {
+		if (iter->p) {
+			ela = (RIOAccessLogElement *)iter->p->data;
+			if (((ale->flags & flags) == (ela->flags & flags)) &&
+				((ale->flags & flags) == flags) &&
+				(ale->len == ale->expect_len) &&	//only sqash on succes
+				(ela->len == ela->expect_len) &&
+				((ela->buf_idx + ela->len) == ale->buf_idx)) {
+				if (ela->mapid != ale->mapid) {
+					ela->mapid = 0;			//what to do with fd?
+				}
+				ela->flags &= (ale->flags & flags);
+				ela->len += ale->len;
+				r_list_delete (log->log, iter);
+			}
+		}
+	}
 }
-#endif
+
+//gets first buffer that matches with the flags and frees the element
+R_API ut8 *r_io_access_getf_buf_byflags(RIOAccessLog *log, int flags, ut64 *addr, int *len) {
+	RListIter *iter;
+	RIOAccessLogElement *ale;
+	ut8 *ret;
+	if (!log || !log->log || !log->log->length) {
+		return NULL;
+	}
+	if (!log->log->sorted) {
+		r_list_sort (log->log, __access_log_e_cmp);
+	}
+	r_list_foreach (log->log, iter, ale) {
+		if (((ale->flags & flags) == flags) && (ale->len == ale->expect_len)) {
+			ret = &log->buf[ale->buf_idx];
+			*len = ale->len;
+			*addr = ale->vaddr;		//what about pa?
+			r_list_delete (log->log, iter);
+			return ret;
+		}
+	}
+	return NULL;
+}
