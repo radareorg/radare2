@@ -252,7 +252,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	ret = esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 	// check if request addres is mapped , if dont fire trap and esil ioer callback
 	// now with siol, read_at return true/false cant be used to check error vs len
-	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -274,7 +274,7 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 		return false;
 	}
 	esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
-	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -335,7 +335,7 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
 	// check if request addres is mapped , if dont fire trap and esil ioer callback
 	// now with siol, write_at return true/false cant be used to check error vs len
-	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
@@ -356,7 +356,7 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 		return 0;
 	}
 	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
-	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
