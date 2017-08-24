@@ -326,7 +326,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 		}
 		if (!GH(r_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
 			eprintf ("Error resolving je_arena_bin_info\n");
-			free (b);
+			R_FREE (b);
 			break;
 		}
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
@@ -378,6 +378,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 		break;
 	}
 	free (ar);
+	free (b);
 }
 
 #if 0
