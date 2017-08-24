@@ -285,8 +285,9 @@ static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
 		cmd->operands[0] = '\0';
 		break;
 	case V850_EXT_EXT2:
+		// can be only 0 or 1
 		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
-				ext_instrs2[word2 >> 13]);
+				(ext_instrs2[word2 >> 13]) & 1);
 		break;
 	default:
 		return -1;
