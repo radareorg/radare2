@@ -182,6 +182,15 @@ beach:
 	return amount;
 }
 
+static void __riocache_free(void *user) {
+	RIOCache *cache = (RIOCache *) user;
+	if (cache) {
+		free (cache->data);
+		free (cache->odata);
+	}
+	free (cache);
+}
+
 static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	RList *writes = (RList *)user;
 	RIODescCache *dcache;
@@ -215,6 +224,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 		} else if (cache) {
 			ut8 *data = realloc (cache->data, i);
 			if (!data) {
+				__riocache_free ((void *) cache);
 				return false;
 			}
 			cache->data = data;
@@ -231,15 +241,6 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 		r_list_push (writes, cache);
 	}
 	return true;
-}
-
-static void __riocache_free(void *user) {
-	RIOCache *cache = (RIOCache *)user;
-	if (cache) {
-		free (cache->data);
-		free (cache->odata);
-	}
-	free (cache);
 }
 
 R_API RList *r_io_desc_cache_list(RIODesc *desc) {
