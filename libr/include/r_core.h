@@ -90,7 +90,6 @@ typedef struct r_core_log_t {
 } RCoreLog;
 
 typedef struct r_core_file_t {
-	RIOMap *map;
 	int dbg;
 	int fd;
 	RBinBind binb;
