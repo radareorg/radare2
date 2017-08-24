@@ -2780,9 +2780,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			regname = r_str_clean (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {
-				int type = r_reg_get_name_idx (regname);
-				if (type != -1) {
-					const char *alias = r_reg_get_name (core->dbg->reg, type);
+				int role = r_reg_get_name_idx (regname);
+				if (role != -1) {
+					const char *alias = r_reg_get_name (core->dbg->reg, role);
 					r = r_reg_get (core->dbg->reg, alias, -1);
 				}
 			}
