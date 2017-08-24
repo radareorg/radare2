@@ -87,7 +87,9 @@ static RList *sections(RBinFile *arch) {
 	RListIter *iter;
 	r_list_foreach (secs, iter, sec) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
-			break;
+			r_list_free (secs);
+			r_list_free (ret);
+			return NULL;
 		}
 		strncpy (ptr->name, (char*)sec->name, R_BIN_SIZEOF_STRINGS);
 		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
