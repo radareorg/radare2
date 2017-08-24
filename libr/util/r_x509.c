@@ -454,9 +454,6 @@ char* r_x509_name_dump (RX509Name* name, char* buffer, ut32 length, const char* 
 	}
 	len = length;
 	c = buffer;
-	if (!c) {
-		return NULL;
-	}
 	for (i = 0, p = 0; i < name->length; ++i) {
 		if (!name->oids[i] || !name->names[i]) {
 			continue;
