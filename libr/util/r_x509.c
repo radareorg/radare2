@@ -509,9 +509,6 @@ char* r_x509_extensions_dump (RX509Extensions* exts, char* buffer, ut32 length, 
 	}
 	len = length;
 	c = buffer;
-	if (!c) {
-		return NULL;
-	}
 	for (i = 0, p = 0, r = 0; i < exts->length; ++i) {
 		//RASN1String *s;
 		RX509Extension *e = exts->extensions[i];
