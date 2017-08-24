@@ -28,13 +28,13 @@ static void clear_flags(RAnalOp *op, int flags) {
 static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *buf, int len)
 {
-	int ret;
-	ut8 opcode;
-	char *reg1, *reg2;
-	ut32 bitmask;
-	ut16 destaddr;
-	st16 destaddrs;
-	ut16 word1, word2;
+	int ret = 0;
+	ut8 opcode = 0;
+	char *reg1 = NULL, *reg2 = NULL;
+	ut32 bitmask = 0;
+	ut16 destaddr = 0;
+	st16 destaddrs = 0;
+	ut16 word1 = 0, word2 = 0;
 	struct v850_cmd cmd;
 
 	memset (&cmd, 0, sizeof (cmd));
@@ -194,37 +194,40 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		break;
 	case V850_SUBR:
 		op->type = R_ANAL_OP_TYPE_SUB;
-		r_strbuf_appendf (&op->esil, "%s,%s,-,%s=", F1_RN2(word1), F1_RN1(word1), F1_RN2(word1));
+		r_strbuf_appendf (&op->esil, "%s,%s,-,%s=", F1_RN2 (word1), F1_RN1 (word1), F1_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		r_strbuf_appendf (&op->esil, "%s,%s,+=", F1_RN1(word1), F1_RN2(word1));
+		r_strbuf_appendf (&op->esil, "%s,%s,+=", F1_RN1 (word1), F1_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADD_IMM5:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (F2_REG2(word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = F2_IMM(word1);
+			op->stackptr = F2_IMM (word1);
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "%d,%s,+=", (st8)SEXT5(F2_IMM(word1)), F2_RN2(word1));
-		update_flags(op, -1);
+		r_strbuf_appendf (&op->esil, "%d,%s,+=", (st8)SEXT5(F2_IMM (word1)), F2_RN2 (word1));
+		update_flags (op, -1);
 		break;
 	case V850_ADDI:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (F6_REG2(word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = F6_IMM(word1);
+			// Not so sure about the fix but
+			// F6_IMM works only for 32 bit words.
+			// word1 is 16 bits long.
+			op->stackptr = F2_IMM (word1);
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "%hd,%s,+,%s,=", word2, F6_RN1(word1), F6_RN2(word1));
+		r_strbuf_appendf (&op->esil, "%hd,%s,+,%s,=", word2, F6_RN1 (word1), F6_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_SHR_IMM5:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		r_strbuf_appendf (&op->esil, "%u,%s,>>=", (ut8)F2_IMM(word1), F2_RN2(word1));
+		r_strbuf_appendf (&op->esil, "%u,%s,>>=", (ut8)F2_IMM (word1), F2_RN2 (word1));
 		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
