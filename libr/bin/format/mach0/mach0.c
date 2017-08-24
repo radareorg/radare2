@@ -2346,6 +2346,9 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
+	if (!mh) {
+		return;
+	}
 	eprintf ("0x00000000  Magic       0x%x\n", mh->magic);
 	eprintf ("0x00000004  CpuType     0x%x\n", mh->cputype);
 	eprintf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
