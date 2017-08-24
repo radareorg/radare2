@@ -106,8 +106,8 @@ static RList *sections(RBinFile *arch) {
 }
 
 static RList *symbols(RBinFile *arch) {
-	RBinWasmObj *bin;
-	RList *ret, *codes, *imports;
+	RBinWasmObj *bin = NULL;
+	RList *ret = NULL, *codes = NULL, *imports = NULL;
 	RBinSymbol *ptr = NULL;
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
@@ -118,12 +118,10 @@ static RList *symbols(RBinFile *arch) {
 		return NULL;
 	}
 	if (!(codes = r_bin_wasm_get_codes (bin))) {
-		free (ret);
-		return NULL;
+		goto bad_alloc;
 	}
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
-		free (ret);
-		return NULL;
+		goto bad_alloc;
 	}
 	
 	ut32 i = 0;
@@ -131,7 +129,7 @@ static RList *symbols(RBinFile *arch) {
 	RListIter *iter;
 	r_list_foreach (imports, iter, imp) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
-			break;
+			goto bad_alloc;
 		}
 		char tmp[R_BIN_SIZEOF_STRINGS];
 		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "imp.%s.%s", imp->module_str, imp->field_str);
@@ -155,7 +153,7 @@ static RList *symbols(RBinFile *arch) {
 	RBinWasmCodeEntry *func;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
-			break;
+			goto bad_alloc;
 		}
 		char tmp[R_BIN_SIZEOF_STRINGS];
 		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fnc.%d", i);
@@ -174,6 +172,11 @@ static RList *symbols(RBinFile *arch) {
 	// TODO: use custom section "name" if present
 	// TODO: exports, globals, tables and memories
 	return ret;
+bad_alloc:
+	// not so sure if imports should be freed.
+	r_list_free (codes);
+	r_list_free (ret);
+	return NULL;
 }
 
 static RList *imports(RBinFile *arch) {
@@ -190,8 +193,7 @@ static RList *imports(RBinFile *arch) {
 		return NULL;
 	}
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
-		r_list_free (ret);
-		return NULL;
+		goto bad_alloc;
 	}
 
 	RBinWasmImportEntry *import = NULL;
@@ -199,7 +201,7 @@ static RList *imports(RBinFile *arch) {
 	RListIter *iter;
 	r_list_foreach (imports, iter, import) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
-			break;
+			goto bad_alloc;
 		}
 		ptr->name = strdup (import->field_str);
 		ptr->classname = strdup (import->module_str);
@@ -222,6 +224,10 @@ static RList *imports(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	return ret;
+bad_alloc:
+	r_list_free (imports);
+	r_list_free (ret);
+	return NULL;
 }
 
 static RList *libs(RBinFile *arch) {
