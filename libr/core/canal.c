@@ -3522,10 +3522,10 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	}
 	tmp_esil_str_len = strlen (esilstr) + strlen (spname) + maxaddrlen;
 	tmp_esil_str = (char*) malloc (tmp_esil_str_len);
-	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	if (!tmp_esil_str) {
 		goto err_anal_op;
 	}
+	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%s,[", spname);
 	if (!esilstr || !*esilstr || (strncmp ( esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
 		free (tmp_esil_str);
