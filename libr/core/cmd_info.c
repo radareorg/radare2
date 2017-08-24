@@ -760,9 +760,12 @@ static int cmd_info(void *data, const char *input) {
 			cmd_info_bin (core, va, mode);
 			break;
 		}
-		input++;
-		if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
-			break;
+		// input can be overwritten like the 'input = " ";' a few lines above
+		if (input[0] != ' ') {
+			input++;
+			if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
+				break;
+			}
 		}
 	}
 done:
