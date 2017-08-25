@@ -12,7 +12,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
-	ut64 ofrom = 0, laddr = r_config_get_i (core->config, "bin.laddr");
+	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
@@ -518,7 +518,7 @@ static void load_scripts_for(RCore *core, const char *name) {
 }
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
@@ -544,7 +544,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// if the cf does not match the filenameuri then
 			// either that RCoreFIle * needs to be loaded or a
 			// new RCoreFile * should be opened.
-			if (!strcmp (suppress_warning, "false")) {
+			if (!suppress_warning) {
 				eprintf ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
 					filenameuri, desc->name);
 			}
@@ -634,9 +634,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 R_API RIOMap *r_core_file_get_next_map(RCore *core, RCoreFile *fh, int mode, ut64 loadaddr) {
 	const char *loadmethod = r_config_get (core->config, "file.loadmethod");
-	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
+	bool suppress_warning = r_config_get_i (core->config, "file.nowarn");
 	ut64 load_align = r_config_get_i (core->config, "file.loadalign");
-	if (!loadmethod || !suppress_warning) {
+	if (!loadmethod) {
 		return NULL;
 	}
 	RIOMap *map = NULL;
@@ -649,7 +649,7 @@ R_API RIOMap *r_core_file_get_next_map(RCore *core, RCoreFile *fh, int mode, ut6
 	if (!strcmp (loadmethod, "append") && load_align) {
 		map = r_io_map_add_next_available (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), load_align);
 	}
-	if (!strcmp (suppress_warning, "false")) {
+	if (!suppress_warning) {
 		if (!map) {
 			eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x "\n", loadaddr);
 		} else {
@@ -665,9 +665,9 @@ R_API RIOMap *r_core_file_get_next_map(RCore *core, RCoreFile *fh, int mode, ut6
 
 
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
-	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	ut64 current_loadaddr = loadaddr;
+	bool openmany = r_config_get_i (r->config, "file.openmany");
+	int opened_count = 0;
+	// ut64 current_loadaddr = loadaddr;
 	RCoreFile *fh, *top_file = NULL;
 	RListIter *fd_iter, *iter2;
 	char *loadmethod = NULL;
@@ -734,7 +734,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 /* loadaddr is r2 -m (mapaddr) */
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	ut64 prev = r_sys_now ();
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	// bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;
 	RCoreFile *fh = NULL;
