@@ -773,8 +773,11 @@ repeat:
 			}
 			if (anal->opt.jmptbl) {
 				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
-					anal->cmdtail = r_str_appendf (anal->cmdtail, "pxt. 0x%08" PFMT64x
-						" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
+					char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
+					if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
+						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
+					}
+					free (str);
 					// jmptbl_addr = op.ptr;
 					// jmptbl_size = -1;
 					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
