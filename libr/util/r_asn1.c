@@ -264,11 +264,6 @@ RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 				slen = strlen (str);
 				t = str + slen;
 			} else {
-				//overflow
-				if ((ASN1_OID_LEN - slen) > ASN1_OID_LEN) {
-					free (str);
-					return NULL;
-				}
 				snprintf (t, ASN1_OID_LEN - slen, ".%01u", (ut32) oid);
 				slen = strlen (str);
 				t = str + slen;

@@ -1608,9 +1608,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 						"meta.%c.0x%"PFMT64x, *info, ds->at);
 				sdb_const_get (s, key, 0);
 				mt_sz = sdb_array_get_num (s, key, 0, 0);
-				if (mt_sz) {
-					break;
-				}
+				//if (mt_sz) { break; }
 				break;
 			}
 		}
