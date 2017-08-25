@@ -372,8 +372,8 @@ R_API RIOAccessLog *r_io_al_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int l
 	if (!io->maps || !(log = r_io_accesslog_new ())) {
 		return NULL;
 	}
-	log->buf = buf;
-	onIterMap (io->maps->tail, io, vaddr, buf, len, R_IO_WRITE, al_fd_write_at_wrap, log);
+	log->buf = (ut8*)buf;
+	onIterMap (io->maps->tail, io, vaddr, (ut8*)buf, len, R_IO_WRITE, al_fd_write_at_wrap, log);
 	return log;
 }
 

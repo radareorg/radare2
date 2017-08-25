@@ -90,6 +90,7 @@ static const char *help_msg_at_at[] = {
 	"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
 	"x", " @@f", "\"\" on all functions (see aflq)",
 	"x", " @@f:write", "\"\" on all functions matching write in the name",
+	"x", " @@s:from to step", "\"\" on all offsets from, to incrementing by step",
 	"x", " @@c:cmd", "the same as @@=`` without the backticks",
 	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 	// TODO: Add @@k sdb-query-expression-here

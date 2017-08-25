@@ -315,7 +315,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	ut64 arenas;
 	GHT arena = GHT_MAX; //, bin = GHT_MAX;
 	arena_t *ar = NULL;
-	arena_bin_info_t *b;
+	arena_bin_info_t *b = NULL;
 	switch (input[0]) {
 	case ' ':
 		ar = R_NEW0 (arena_t);
