@@ -705,6 +705,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		fh->fd = fd->fd;
 		r->file = fh;
 		// XXX - load addr should be at a set offset
+
 		//r_core_file_get_next_map (r, fh, flags, current_loadaddr);
 		r_bin_bind (r->bin, &(fh->binb));
 		r_list_append (r->files, fh);
@@ -801,7 +802,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	if (!r->files) {
 		r->files = r_list_newf ((RListFree)r_core_file_free);
 	}
-
 	r_core_file_set_by_file (r, fh);
 	r_list_append (r->files, fh);
 	if (r_config_get_i (r->config, "cfg.debug")) {
