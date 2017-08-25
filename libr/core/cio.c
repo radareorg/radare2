@@ -352,18 +352,31 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	if (b_size == 0 || b_size == (ut64) -1) {
 		res = r_io_use_fd (core->io, core->file->fd);
 		file_sz = r_io_size (core->io);
+		if (file_sz == UT64_MAX) {
+			file_sz = 0;
+		}
+#if 0
 		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
+		if (fend < 1) {
+			fend = 0;
+		}
+#else
+		bstart = 0;
+		fend = file_sz;
+#endif
 		fstart = file_sz - fend;
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
 
-	// XXX handling basic cases atm
 	if (b_size < 1) {
 		return false;
 	}
-	shift_buf = malloc (b_size);
-	memset (shift_buf, 0, b_size);
+	shift_buf = calloc (b_size, 1);
+	if (!shift_buf) {
+		eprintf ("Cannot allocated %d bytes\n", b_size);
+		return false;
+	}
 
 	// cases
 	// addr + b_size + dist > file_end
@@ -377,17 +390,15 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// addr + dist < file_start
 	if (addr + dist < fstart) {
 		res = false;
-	}
 	// addr + dist > file_end
-	else if ( (addr) + dist > fend) {
+	} else if ( (addr) + dist > fend) {
 		res = false;
 	} else {
 		r_io_use_fd (core->io, core->file->fd);
 		r_io_read_at (core->io, addr, shift_buf, b_size);
-		r_io_write_at (core->io, addr+dist, shift_buf, b_size);
+		r_io_write_at (core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
-
 	r_core_seek (core, addr, 1);
 	free (shift_buf);
 	return res;

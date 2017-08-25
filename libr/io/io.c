@@ -634,6 +634,9 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 		io->off = UT64_MAX;
 		break;
 	}
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->lseek) {
+		return io->off = io->desc->plugin->lseek (io, io->desc, offset, whence);
+	}
 	return io->off;
 }
 
