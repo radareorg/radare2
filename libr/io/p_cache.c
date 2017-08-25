@@ -368,11 +368,7 @@ static bool __desc_fini_cb (void *user, void *data, ut32 id) {
 }
 
 R_API void r_io_desc_cache_fini(RIODesc *desc) {
-	if (desc && desc->cache) {
-		sdb_foreach (desc->cache, __desc_cache_free_cb, NULL);
-		sdb_free (desc->cache);
-	}
-	desc->cache = NULL;
+	__desc_fini_cb (NULL, (void *) desc, 0);
 }
 
 R_API void r_io_desc_cache_fini_all(RIO *io) {
