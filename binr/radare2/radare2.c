@@ -942,6 +942,9 @@ int main(int argc, char **argv, char **envp) {
 					}
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
+						if (perms & R_IO_EXEC) {
+							iod->flags |= R_IO_EXEC;
+						}
 						if (run_anal > 0) {
 #if USE_THREADS
 							if (!rabin_th)
@@ -953,15 +956,16 @@ int main(int argc, char **argv, char **envp) {
 									filepath = file? strstr (file, "://"): NULL;
 									filepath = filepath ? filepath + 3 : pfile;
 								}
-								if (r.file && iod && (iod->fd == r.file->fd) && iod->name)
+								if (r.file && iod && (iod->fd == r.file->fd) && iod->name) {
 									filepath = iod->name;
-
+								}
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
 								(void)r_core_bin_load (&r, filepath, baddr);
 							}
 						} else {
-							r_io_map_new (r.io, iod->fd, iod->flags, 0LL, 0LL, r_io_desc_size (iod));
+							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod));
+							// r_io_map_new (r.io, iod->fd, iod->flags, 0LL, 0LL, r_io_desc_size (iod));
 							if (run_anal < 0) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)

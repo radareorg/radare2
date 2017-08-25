@@ -530,13 +530,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		return false;
 	}
 	// NULL deref guard
-	if (!desc) {
-		is_io_load = false;
-	} else {
-		is_io_load = desc && desc->plugin;
-	}
-
 	if (desc) {
+		is_io_load = desc && desc->plugin;
 		if (!filenameuri || !*filenameuri) {
 			filenameuri = desc->name;
 		} else if (desc->name && strcmp (filenameuri, desc->name)) {
@@ -549,6 +544,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					filenameuri, desc->name);
 			}
 		}
+	} else {
+		is_io_load = false;
 	}
 
 	if (!filenameuri) {
