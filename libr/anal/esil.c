@@ -248,7 +248,8 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 			}
 		}
 	}
-	esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
+	(void)esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 	// check if request addres is mapped , if dont fire trap and esil ioer callback
 	// now with siol, read_at return true/false cant be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
@@ -272,7 +273,10 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 		esil->trap_code = addr;
 		return false;
 	}
-	esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
+	(void)esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	// check if request addres is mapped , if dont fire trap and esil ioer callback
+	// now with siol, read_at return true/false cant be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
@@ -315,6 +319,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int ret = 0;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
 	}
@@ -330,7 +335,9 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 			}
 		}
 	}
-	esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
+		ret = len;
+	}
 	// check if request addres is mapped , if dont fire trap and esil ioer callback
 	// now with siol, write_at return true/false cant be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
@@ -342,24 +349,29 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 			esil->cmd (esil, esil->cmd_ioer, esil->address, 0);
 		}
 	}
-	return len;
+	return ret;
 }
 
 static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int ret = 0;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
 	if (esil->nowrite) {
 		return 0;
 	}
-	esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
+		ret = len;
+	}
+	// check if request addres is mapped , if dont fire trap and esil ioer callback
+	// now with siol, write_at return true/false cant be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
 		}
 	}
-	return len;
+	return ret;
 }
 
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
