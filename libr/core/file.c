@@ -626,7 +626,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	obj = r_bin_cur_object (r->bin);
 	//workaround to map correctly malloc:// and raw binaries
-	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || !obj->sections) {
+	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || !obj->sections) {
 		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc));
 	}
 	return true;
