@@ -788,6 +788,9 @@ static int cmd_open(void *data, const char *input) {
 							}
 						} else {
 							r_core_bin_load (core, fn, ba);
+						} else {
+							RIODesc *d = r_io_desc_get (core->io, file->fd);
+							r_io_map_new (core->io, d->fd, d->flags, 0LL, ma, r_io_desc_size (d));
 						}
 					} else if (!nowarn) {
 						eprintf ("Cannot open file '%s'\n", fn);
