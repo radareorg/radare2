@@ -62,7 +62,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	if (!io || !buf || len < 1) {
 		return;
 	}
-	if (!iter && io->desc) {
+	if (!iter || io->desc) {
 		// end of list
 		return;
 	}
