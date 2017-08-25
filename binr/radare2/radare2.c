@@ -961,6 +961,7 @@ int main(int argc, char **argv, char **envp) {
 								(void)r_core_bin_load (&r, filepath, baddr);
 							}
 						} else {
+							r_io_map_new (r.io, iod->fd, iod->flags, 0LL, 0LL, r_io_desc_size (iod));
 							if (run_anal < 0) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)

@@ -521,6 +521,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
+	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
 	int is_io_load;
@@ -562,7 +563,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
-			ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 			r_core_file_do_load_for_io_plugin (r, baddr, laddr);
 		}
 		// Restore original desc
@@ -624,8 +624,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 	//workaround to map correctly malloc:// and raw binaries
-	if (!plugin || !strcmp (plugin->name, "any") || !desc->plugin || !desc->plugin->isdbg) {
-		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc));
+	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc)) {
+		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc));
 	}
 	return true;
 }
@@ -809,6 +809,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		}
 		r_config_set_i (r->config, "dbg.swstep", swstep);
 	}
+	//used by r_core_bin_load otherwise won't load correctly
+	//this should be argument of r_core_bin_load <shrug>
+	r_config_set_i (r->config, "bin.laddr", loadaddr);
 beach:
 	r->times->file_open_time = r_sys_now () - prev;
 	return fh;
