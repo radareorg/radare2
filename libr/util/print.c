@@ -1209,8 +1209,11 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 		p = &staticp;
 	}
 	pc = R_MAX (0, R_MIN (100, pc));
-	p->cb_printf ("%4d%% [", pc);
+	if (p->flags & R_PRINT_FLAGS_HEADER) {
+		p->cb_printf ("%4d%% ", pc);
+	}
 	cols -= 15;
+	p->cb_printf ("[");
 	for (i = cols * pc / 100; i; i--) {
 		p->cb_printf ("#");
 	}
@@ -1308,7 +1311,10 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 }
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
-	const int show_colors = p->flags & R_PRINT_FLAGS_COLOR;
+	if (!p || !arr) {
+		return;
+	}
+	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	char *firebow[6];
 	int i = 0, j;
 

@@ -68,6 +68,7 @@ static const char *help_msg_om[] = {
 	"Usage:", "om[-] [arg]", " # map opened files",
 	"om", "", "list all defined IO maps",
 	"om*", "", "list all maps in r2 commands format",
+	"om=", "", "list all maps in ascii art",
 	"omj", "", "list all maps in json format",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", "-mapid", "remove the map with corresponding id",
@@ -147,6 +148,87 @@ static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, ood);
 	DEFINE_CMD_DESCRIPTOR (core, oon);
 	DEFINE_CMD_DESCRIPTOR (core, oonn);
+}
+
+// very similiar to section list, must reuse more code
+static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
+	ut64 mul, min = -1, max = -1;
+	SdbListIter *iter;
+	RIOMap *s;
+	int j, i;
+
+	width -= 80;
+	if (width < 1) {
+		width = 30;
+	}
+
+	// seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
+
+	ls_foreach (io->maps, iter, s) {
+		if (min == -1 || s->from < min) {
+			min = s->from;
+		}
+		if (max == -1 || s->to > max) {
+			max = s->to;
+		}
+	}
+	mul = (max - min) / width;
+	if (min != -1 && mul != 0) {
+		const char * color = "", *color_end = "";
+		i = 0;
+		ls_foreach_prev (io->maps, iter, s) {
+			if (use_color) {
+				color_end = Color_RESET;
+				if (s->flags & 1) { // exec bit
+					color = Color_GREEN;
+				} else if (s->flags & 2) { // write bit
+					color = Color_RED;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
+			if (io->va) {
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+						(seek>=s->from&& seek<s->to)?'*':' ',
+						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
+						color, s->from, color_end);
+			} else {
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+						(seek >= s->from && seek < s->to) ? '*':' ',
+						color, s->from, color_end);
+			}
+			for (j=0; j<width; j++) {
+				ut64 pos = min + (j*mul);
+				ut64 npos = min + ((j+1)*mul);
+				if (s->from<npos && (s->to)>pos)
+					io->cb_printf ("#");
+				else io->cb_printf ("-");
+			}
+			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %d %s\n",
+				color, s->to, color_end,
+				r_str_rwx_i (s->flags), s->fd, s->name);
+			i++;
+		}
+		/* current seek */
+		if (i > 0 && len != 0) {
+			if (seek == UT64_MAX) {
+				seek = 0;
+			}
+			//len = 8096;//r_io_size (io);
+			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
+			for (j=0;j<width;j++) {
+				io->cb_printf (
+					((j*mul)+min >= seek &&
+					 (j*mul)+min <= seek+len)
+					?"^":"-");
+			}
+			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
+		}
+	}
 }
 
 static void cmd_open_bin(RCore *core, const char *input) {
@@ -489,6 +571,10 @@ static void cmd_open_map (RCore *core, const char *input) {
 	case '*': // "om*"
 		map_list (core->io, input[1], core->print, -1);
 		break;
+	case '=': // "om="
+		list_maps_visual (core->io, core->offset, core->blocksize,
+			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_om);
@@ -576,12 +662,28 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 	free (newfile);
 }
 
-static bool desc_list_cb(void *user, void *data, ut32 id) {
+static int fdsz = 0;
+
+static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
+	RIODesc *desc = (RIODesc *)data;
+	ut64 sz = r_io_desc_size (desc);
+	if (sz > fdsz) {
+		fdsz = sz;
+	}
+	return true;
+}
+
+static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-	p->cb_printf ("%2d %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
-			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
-			desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
+	ut64 sz = r_io_desc_size (desc);
+	r_cons_printf ("%2d %c %s 0x%08"PFMT64x" ", desc->fd, 
+			(desc->io && (desc->io->desc == desc)) ? '*' : '-', r_str_rwx_i (desc->flags), sz);
+	int flags = p->flags;
+	p->flags &= ~R_PRINT_FLAGS_HEADER;
+	r_print_progressbar (p, sz * 100 / fdsz, r_cons_get_size (NULL) - 40);
+	p->flags = flags;
+	r_cons_printf (" %s\n", desc->uri);
 #if 0
 	RIOMap *map;
 	SdbListIter *iter;
@@ -599,6 +701,15 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool desc_list_cb(void *user, void *data, ut32 id) {
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)data;
+	p->cb_printf ("%2d %c %s 0x%08"PFMT64x" %s\n", desc->fd, 
+			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
+			r_str_rwx_i (desc->flags), r_io_desc_size (desc), desc->uri);
+	return true;
+}
+
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
@@ -610,12 +721,11 @@ static int cmd_open(void *data, const char *input) {
 	RListIter *iter;
 
 	switch (*input) {
-#if 0		//TODO: reimplement me, but not in io, io is not for printing
-	case '=':
-		r_io_desc_list_visual (core->io, core->offset, core->blocksize,
-			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+	case '=': // "o="
+		fdsz = 0;
+		r_id_storage_foreach (core->io->files, init_desc_list_visual_cb, core->print);
+		r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
 		break;
-#endif
 	case '\0':
 		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
 		break;
@@ -624,6 +734,8 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_o_star);
 			break;
 		}
+		r_core_file_list (core, (int)(*input));
+		break;
 	case 'j':
 		if ('?' == input[1]) {
 			r_core_cmd_help (core, help_msg_oj);

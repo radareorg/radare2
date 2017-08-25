@@ -138,7 +138,7 @@ static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 	if (!io || !io->sections || !print || !print->cb_printf) {
 		return;
 	}
-	if (rad == '=') {
+	if (rad == '=') { // "S="
 		int cols = r_cons_get_size(NULL);
 		list_section_visual (io, offset, -1, print->flags & R_PRINT_FLAGS_COLOR, cols);
 	} else if (rad) {
