@@ -59,15 +59,11 @@ typedef void (*cbOnIterMap) (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOM
 static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		       int len, int match_flg, cbOnIterMap op, void *user) {
 	ut64 vendaddr;
-	if (!io || !buf || len < 1) {
-		return;
-	}
-	if (!iter || io->desc) {
-		// end of list
+	if (!io || !iter || !buf || len < 1) {
 		return;
 	}
 	// this block is not that much elegant
-	if (UT64_ADD_OVFCHK (len - 1, vaddr)) {
+	if (iter && UT64_ADD_OVFCHK (len - 1, vaddr)) {
 		// needed for edge-cases
 		int nlen;
 		// add a test for this block
@@ -631,11 +627,10 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 		break;
 	case R_IO_SEEK_END:
 	default:
-		io->off = UT64_MAX;
+		if (io && io->desc && io->desc->plugin && io->desc->plugin->lseek) {
+			return io->off = io->desc->plugin->lseek (io, io->desc, offset, whence);
+		}
 		break;
-	}
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->lseek) {
-		return io->off = io->desc->plugin->lseek (io, io->desc, offset, whence);
 	}
 	return io->off;
 }

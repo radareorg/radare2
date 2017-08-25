@@ -410,7 +410,7 @@ int main(int argc, char **argv, char **envp) {
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
- 	int ret, c, perms = R_IO_READ;
+ 	int ret, c, perms = R_IO_READ | R_IO_EXEC;
 	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
@@ -639,7 +639,7 @@ int main(int argc, char **argv, char **envp) {
 			perms |= R_IO_WRITE;
 			break;
 		case 'x':
-			perms |= R_IO_EXEC;
+			perms &= ~R_IO_EXEC;
 			break;
 		default:
 			help++;
