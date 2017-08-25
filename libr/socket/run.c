@@ -1082,6 +1082,7 @@ R_API int r_run_start(RRunProfile *p) {
 			eprintf ("Too many arguments.\n");
 			return 1;
 		}
+		r_lib_dl_close (addr);
 	}
 	return 0;
 }

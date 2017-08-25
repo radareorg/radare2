@@ -513,7 +513,14 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 
 static int showreg(RCore *core, const char *str) {
 	int size = 0;
-	RRegItem *r = r_reg_get (core->dbg->reg, str , -1);
+	RRegItem *r = 0;
+	const char *rname = str;
+	// check for alias reg
+	int role = r_reg_get_name_idx (str);
+	if (role != -1) {
+		rname = r_reg_get_name (core->dbg->reg, role);
+	}
+	r = r_reg_get (core->dbg->reg, rname , -1);
 	if (r) {
 		ut64 off;
 		utX value;
@@ -4325,8 +4332,7 @@ static int cmd_debug(void *data, const char *input) {
 			default:
 				r_core_cmd_help (core, help_msg_di);
 			}
-			if (rdi)
-				r_debug_info_free (rdi);
+			r_debug_info_free (rdi);
 		}
 		break;
 	case 'x':

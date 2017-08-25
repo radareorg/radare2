@@ -512,6 +512,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			r_cons_println ("See C?");
 			break;
 		}
+		break;
 	case '-':
 		switch (input[2]) {
 		case '*':

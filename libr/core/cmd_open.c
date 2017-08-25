@@ -754,26 +754,24 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_list (core, 'n');
 			break;
 		}
-
 		/* fall through */
 	case ' ':
 		{
-			ut64 ba = 0L;
+			ut64 ba = baddr;
 			ut64 ma = 0L;
 			char *fn = strdup (input + (isn? 2:1));
 			if (!fn || !*fn) {
-				eprintf ("Usage: on [file]\n");
+				if (isn) {
+					eprintf ("Usage: on [file]\n");
+				} else {
+					eprintf ("Usage: o [file] addr\n");
+				}
 				free (fn);
 				break;
 			}
 			ptr = strchr (fn, ' ');
 			if (ptr) {
 				*ptr++ = '\0';
-				char *ptr2 = strchr (ptr, ' ');
-				if (ptr2) {
-					*ptr2++ = 0;
-					ba = r_num_math (core->num, ptr2);
-				}
 				ma = r_num_math (core->num, ptr);
 			}
 			int num = atoi (input + 1);
@@ -781,9 +779,14 @@ static int cmd_open(void *data, const char *input) {
 				if (fn && *fn) {
 					file = r_core_file_open (core, fn, perms, ma);
 					if (file) {
-						r_cons_printf ("%d\n", file->fd);
+						r_cons_printf ("%d\n", (ut32)file->fd);
 						// MUST CLEAN BEFORE LOADING
-						if (!isn) {
+						if (isn) {
+							RIODesc *d = r_io_desc_get (core->io, file->fd);
+							if (d) {
+								r_io_map_new (core->io, d->fd, d->flags, 0LL, ma, r_io_desc_size (d));
+							}
+						} else {
 							r_core_bin_load (core, fn, ba);
 						}
 					} else if (!nowarn) {

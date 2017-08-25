@@ -2346,6 +2346,9 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
+	if (!mh) {
+		return;
+	}
 	eprintf ("0x00000000  Magic       0x%x\n", mh->magic);
 	eprintf ("0x00000004  CpuType     0x%x\n", mh->cputype);
 	eprintf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
@@ -2378,6 +2381,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		}
 		addr += word - 8;
 	}
+	free (mh);
 }
 
 RList* MACH0_(mach_fields)(RBinFile *arch) {
@@ -2395,13 +2399,13 @@ RList* MACH0_(mach_fields)(RBinFile *arch) {
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt (0, "0x%08x", val), fmt)); \
 	addr += 4;
-
 	ROW("hdr.magic", 4, mh->magic, "x");
 	ROW("hdr.cputype", 4, mh->cputype, NULL);
 	ROW("hdr.cpusubtype", 4, mh->cpusubtype, NULL);
 	ROW("hdr.filetype", 4, mh->filetype, NULL);
 	ROW("hdr.ncmds", 4, mh->ncmds, NULL);
 	ROW("hdr.sizeofcmds", 4, mh->sizeofcmds, NULL);
+	free (mh);
 	return ret;
 }
 

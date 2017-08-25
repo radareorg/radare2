@@ -2060,7 +2060,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_UPUSH;
-			op->cycles = 1;
 			op->cycles = CYCLE_MEM + CYCLE_MEM;
 			break;
 		}

@@ -196,11 +196,18 @@ typedef struct r_io_desc_cache_t {
 typedef struct r_io_access_log_element_t {
 	ut64 vaddr;
 	ut64 paddr;
+	int buf_idx;
 	int expect_len;
 	int len;
 	int fd;
 	int mapid;
-	//something with flags here maybe
+	int flags;
+} RIOAccessLogElement;
+
+typedef struct r_io_access_log_t {
+	bool allocation_failed;
+	ut8 *buf;
+	RList *log;
 } RIOAccessLog;
 
 struct r_io_bind_t;
@@ -291,6 +298,8 @@ R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at (RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API bool r_io_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API bool r_io_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
+R_API RIOAccessLog *r_io_al_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
+R_API RIOAccessLog *r_io_al_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
@@ -441,6 +450,12 @@ R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
+R_API RIOAccessLog *r_io_accesslog_new ();
+R_API void r_io_accesslog_free (RIOAccessLog *log);
+R_API void r_io_acccesslog_sort (RIOAccessLog *log);
+R_API void r_io_accesslog_sqash_ignore_gaps (RIOAccessLog *log);
+R_API void r_io_accesslog_sqash_byflags (RIOAccessLog *log, int flags);
+R_API ut8 *r_io_accesslog_getf_buf_byflags (RIOAccessLog *log, int flags, ut64 *addr, int *len);
 
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;

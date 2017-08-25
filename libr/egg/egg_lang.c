@@ -335,7 +335,7 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 		op_ret = get_op (&next_pos);
 		if (op_ret > level) {
 			rcc_mathop (egg, pos, op_ret);
-			rcc_internal_mathop (egg, strdup (e->regs (egg, op_ret - 1))
+			rcc_internal_mathop (egg, e->regs (egg, op_ret - 1) 
 				, strdup (e->regs (egg, level - 1)), op);
 			next_pos = *pos + 1;
 		} else {

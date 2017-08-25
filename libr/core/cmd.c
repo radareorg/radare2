@@ -2568,7 +2568,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	int i, j;
 	char ch;
 	char *word = NULL;
-	char *str, *ostr;
+	char *str, *ostr = NULL;
 	RListIter *iter;
 	RFlagItem *flag;
 	ut64 oseek, addr;
@@ -2609,8 +2609,32 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 				}
 			}
-			free (ostr);
 			r_core_block_size (core, bs);
+			goto out_finish;
+		}
+		break;
+	case 's': // "@@s" - sequence
+		{
+			char *str = each + 1;
+			if (*str == ':' || *str == ' ') {
+				str++;
+			}
+			int count = r_str_split (str, ' ');
+			if (count == 3) {
+				ut64 cur;
+				ut64 from = r_num_math (core->num, r_str_word_get0 (str, 0));
+				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
+				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
+				for (cur = from; cur < to; cur += step) {
+					(void)r_core_seek (core, cur, 1);
+					r_core_cmd (core, cmd, 0);
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+				}
+			} else {
+				eprintf ("Usage: cmd @@s:from to step\n");
+			}
 			goto out_finish;
 		}
 		break;
@@ -2633,7 +2657,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 				}
 			}
-			free (ostr);
 			goto out_finish;
 		}
 		break;
@@ -2652,7 +2675,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 				}
 			}
-			free (ostr);
 			goto out_finish;
 		} else {
 			RAnalFunction *fcn;
@@ -2677,7 +2699,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 				core->cons->grep = grep;
 			}
-			free (ostr);
 			goto out_finish;
 		}
 		break;
@@ -2696,7 +2717,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_free (list);
 			}
 			r_debug_select (core->dbg, pid, pid);
-			free (ostr);
 			goto out_finish;
 		}
 		break;
@@ -2870,6 +2890,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	free (ostr);
 	return true;
 out_finish:
+	free (ostr);
 	r_cons_break_pop ();
 	return false;
 }

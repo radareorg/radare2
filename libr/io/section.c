@@ -16,12 +16,14 @@ static void section_free(void *p) {
 }
 
 R_API void r_io_section_init(RIO *io) {
-	if (io && !io->sections) {
-		if (!(io->sections = ls_newf (section_free))) {
-			return;
+	if (io) {
+		if (!io->sections) {
+			if (!(io->sections = ls_newf (section_free))) {
+				return;
+			}
 		}
+		io->sec_ids = r_id_pool_new (0, UT32_MAX);
 	}
-	io->sec_ids = r_id_pool_new (0, 0xffffffff);
 }
 
 R_API void r_io_section_fini(RIO *io) {
@@ -718,7 +720,7 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 	if (!io || !io->sections) {
 		return false;
 	}
-	ls_foreach (io->sections, iter, sec) {
+	ls_foreach_prev (io->sections, iter, sec) {
 		if (sec && (sec->bin_id == bin_id)) {
 			ret = true;
 			_section_apply (io, sec, method);
@@ -745,7 +747,7 @@ R_API bool r_io_section_reapply_bin(RIO *io, ut32 binid, RIOSectionApplyMethod m
 	if (!io || !io->sections) {
 		return false;
 	}
-	ls_foreach (io->sections, iter,  sec) {
+	ls_foreach_prev (io->sections, iter,  sec) {
 		if (sec && (sec->bin_id == binid)) {
 			ret = true;
 			_section_reapply (io, sec, method);

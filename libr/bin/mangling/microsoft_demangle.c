@@ -123,10 +123,13 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 		return 0;
 	}
 	if (free_space > str_for_copy_len) {
-		type_code_str->type_str_len =
-			((type_code_str->type_str_len + str_for_copy_len) << 1) + 1;
-		char *type_str = (char *) realloc (
-			type_code_str->type_str, type_code_str->type_str_len);
+		int newlen = ((type_code_str->type_str_len + str_for_copy_len) << 1) + 1;
+		if (newlen < 1) {
+			R_FREE (type_code_str->type_str);
+			goto copy_string_err;
+		}
+		type_code_str->type_str_len = newlen;
+		char *type_str = (char *) realloc (type_code_str->type_str, newlen);
 		if (!type_str) {
 			R_FREE (type_code_str->type_str);
 			goto copy_string_err;

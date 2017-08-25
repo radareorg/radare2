@@ -2092,7 +2092,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				r_io_section_add (r->io, section->paddr, addr,
 						  section->size, section->vsize,
 						  section->srwx, section->name,
-						  0, fd);
+						  r->bin->cur->id, fd);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
@@ -3077,7 +3077,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch, ut16 bits) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
-	RBinFile *binfile;
+	RBinFile *curfile, *binfile = NULL;
 	if (!name) {
 		name = (desc) ? desc->name : NULL;
 	}
@@ -3096,8 +3096,12 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 	if (!r_bin_use_arch (r->bin, arch, bits, name)) {
 		return false;
 	}
-	r_core_bin_set_cur (r, binfile);
-	return r_core_bin_set_env (r, binfile);
+	curfile = r_bin_cur (r->bin);	
+	if (curfile != binfile) {
+		r_core_bin_set_cur (r, binfile);
+		return r_core_bin_set_env (r, binfile);
+	}
+	return true;
 }
 
 R_API int r_core_bin_update_arch_bits(RCore *r) {

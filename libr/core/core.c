@@ -619,9 +619,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			// check for reg alias
 			struct r_reg_item_t *r = r_reg_get (core->dbg->reg, str, -1);
 			if (!r) {
-				int type = r_reg_get_name_idx (str);
-				if (type != -1) {
-					const char *alias = r_reg_get_name (core->dbg->reg, type);
+				int role = r_reg_get_name_idx (str);
+				if (role != -1) {
+					const char *alias = r_reg_get_name (core->dbg->reg, role);
 					r = r_reg_get (core->dbg->reg, alias, -1);
 					if (r) {
 						if (ok) *ok = true;
@@ -2194,8 +2194,7 @@ reaccept:
 					file = r_core_file_open (core, (const char *)ptr, perm, 0);
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
-						r_io_map_add (core->io, file->fd,
-								perm, 0, 0, r_io_fd_size (core->io, file->fd));
+						r_io_map_add (core->io, file->fd, perm, 0, 0, r_io_fd_size (core->io, file->fd));
 						if (core->file) {
 							pipefd = core->file->fd;
 						} else {

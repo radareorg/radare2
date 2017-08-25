@@ -86,16 +86,17 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	if (!fd || !fd->data || count == 0) {
 		return false;
 	}
-	if (_io_malloc_off (fd) > _io_malloc_sz (fd)) {
+	ut32 mallocsz = _io_malloc_sz (fd);
+	if (_io_malloc_off (fd) > mallocsz) {
 		return false;
 	}
 	new_buf = malloc (count);
 	if (!new_buf) {
 		return -1;
 	}
-	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, _io_malloc_sz (fd)));
-	if (count > _io_malloc_sz (fd)) {
-		memset (new_buf + _io_malloc_sz (fd), 0, count - _io_malloc_sz (fd));
+	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
+	if (count > mallocsz) {
+		memset (new_buf + mallocsz, 0, count - mallocsz);
 	}
 	free (_io_malloc_buf (fd));
 	_io_malloc_set_buf (fd, new_buf);
@@ -108,11 +109,12 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	if (_io_malloc_off (fd) > _io_malloc_sz (fd)) {
+	ut32 mallocsz = _io_malloc_sz (fd);
+	if (_io_malloc_off (fd) > mallocsz) {
 		return -1;
 	}
-	if (_io_malloc_off (fd) + count >= _io_malloc_sz (fd)) {
-		count = _io_malloc_sz (fd) - _io_malloc_off (fd);
+	if (_io_malloc_off (fd) + count >= mallocsz) {
+		count = mallocsz - _io_malloc_off (fd);
 	}
 	memcpy (buf, _io_malloc_buf (fd) + _io_malloc_off (fd), count);
 	return count;
@@ -134,12 +136,13 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	if (!fd || !fd->data) {
 		return offset;
 	}
+	ut32 mallocsz = _io_malloc_sz (fd);
 	switch (whence) {
 	case SEEK_SET:
-		r_offset = (offset <= _io_malloc_sz (fd)) ? offset : _io_malloc_sz (fd);
+		r_offset = (offset <= mallocsz) ? offset : mallocsz;
 		break;
 	case SEEK_CUR:
-		r_offset = (_io_malloc_off (fd) + offset <= _io_malloc_sz (fd)) ? _io_malloc_off (fd) + offset : _io_malloc_sz (fd);
+		r_offset = (_io_malloc_off (fd) + offset <= mallocsz ) ? _io_malloc_off (fd) + offset : mallocsz;
 		break;
 	case SEEK_END:
 		r_offset = _io_malloc_sz (fd);
