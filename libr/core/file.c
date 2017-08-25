@@ -524,6 +524,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
+	RBinObject *obj = NULL;
 	int is_io_load;
 	if (!cf) {
 		return false;
@@ -592,7 +593,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		obj = r_bin_get_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (plugin && plugin->name && info) {
 			if (strcmp (plugin->name, "any")) {
@@ -623,8 +624,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			libaddr += 0x2000000;
 		}
 	}
+	obj = r_bin_cur_object (r->bin);
 	//workaround to map correctly malloc:// and raw binaries
-	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc)) {
+	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || !obj->sections) {
 		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc));
 	}
 	return true;
