@@ -101,6 +101,30 @@ R_API void r_io_acccesslog_sort(RIOAccessLog *log) {
 	r_list_sort (log->log, __access_log_e_cmp);
 }
 
+R_API void r_io_accesslog_sqash_ignore_gaps(RIOAccessLog *log) {
+	RListIter *iter, *ator;
+	RIOAccessLogElement *ale, *ela;
+	if (!log || !log->log || !log->log->length) {
+		return;
+	}
+	if (!log->log->sorted) {
+		r_list_sort (log->log, __access_log_e_cmp);
+	}
+	r_list_foreach_safe (log->log, iter, ator, ale) {
+		if (iter->p) {
+			ela = (RIOAccessLogElement *)iter->p->data;
+			if ((ale->len == ale->expect_len) && (ela->len == ela->expect_len)) {
+				if (ela->mapid != ale->mapid) {
+					ela->mapid = 0;			//what to do with fd?
+				}
+				ela->flags &= ale->flags;
+				ela->len += (ale->buf_idx - ela->buf_idx) + ale->len;
+				r_list_delete (log->log, iter);
+			}
+		}
+	}
+}
+
 R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log, int flags) {
 	RListIter *iter, *ator;
 	RIOAccessLogElement *ale, *ela;
@@ -130,7 +154,7 @@ R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log, int flags) {
 }
 
 //gets first buffer that matches with the flags and frees the element
-R_API ut8 *r_io_access_getf_buf_byflags(RIOAccessLog *log, int flags, ut64 *addr, int *len) {
+R_API ut8 *r_io_accessilog_getf_buf_byflags(RIOAccessLog *log, int flags, ut64 *addr, int *len) {
 	RListIter *iter;
 	RIOAccessLogElement *ale;
 	ut8 *ret;

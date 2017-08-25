@@ -453,8 +453,9 @@ R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API RIOAccessLog *r_io_accesslog_new ();
 R_API void r_io_accesslog_free (RIOAccessLog *log);
 R_API void r_io_acccesslog_sort (RIOAccessLog *log);
+R_API void r_io_accesslog_sqash_ignore_gaps (RIOAccessLog *log);
 R_API void r_io_accesslog_sqash_byflags (RIOAccessLog *log, int flags);
-R_API ut8 *r_io_access_getf_buf_byflags (RIOAccessLog *log, int flags, ut64 *addr, int *len);
+R_API ut8 *r_io_accesslog_getf_buf_byflags (RIOAccessLog *log, int flags, ut64 *addr, int *len);
 
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;
