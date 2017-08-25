@@ -11,7 +11,6 @@ R_API bool r_io_fd_close(RIO *io, int fd) {
 	return r_io_desc_close (r_io_desc_get (io, fd));
 }
 
-
 //returns length of read bytes
 R_API int r_io_fd_read(RIO *io, int fd, ut8 *buf, int len) {
 	RIODesc *desc;

@@ -166,17 +166,10 @@ R_API void r_io_free(RIO *io) {
 }
 
 R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode) {
-	RIODesc *ret;
-	char *uri;
-	int urilen, hlen = strlen (urihandler);
-	urilen = hlen + strlen (file) + 5;
-	uri = malloc (urilen);
-	if (!uri)
-		return NULL;
-	if (hlen > 0)
-		snprintf (uri, urilen, "%s://%s", urihandler, file);
-	else strncpy (uri, file, urilen);
-	ret = r_io_open_nomap (io, uri, flags, mode);
+	char *uri = (urihandler && *urihandler)
+		? r_str_newf ("%s://%s", urihandler, file)
+		: strdup (file);
+	RIODesc *ret = r_io_open_nomap (io, uri, flags, mode);
 	free (uri);
 	return ret;
 }
