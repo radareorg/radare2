@@ -45,6 +45,7 @@ files=[
 'r_x509.c',
 'randomart.c',
 'range.c',
+'rbtree.c',
 'sandbox.c',
 'signal.c',
 'skiplist.c',
