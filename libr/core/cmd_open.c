@@ -10,8 +10,9 @@
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o","","list opened files",
-	"o=","","list opened files (ascii-art bars)",
+	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
+	"o=","","list opened files (ascii-art bars)",
 	"oa","[?] [addr]","Open bin info from the given address",
 	"ob","[?] [lbdos] [...]","list open binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
@@ -67,6 +68,7 @@ static const char *help_msg_oj[] = {
 static const char *help_msg_om[] = {
 	"Usage:", "om[-] [arg]", " # map opened files",
 	"om", "", "list all defined IO maps",
+	"omq", "", "list all maps and their fds",
 	"om*", "", "list all maps in r2 commands format",
 	"om=", "", "list all maps in ascii art",
 	"omj", "", "list all maps in json format",
@@ -368,11 +370,14 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach_prev (io->maps, iter, map) {
+	ls_foreach (io->maps, iter, map) {
 		if (fd != -1 && map->fd != fd) {
 			continue;
 		}
 		switch (mode) {
+		case 'q':
+			print->cb_printf ("%d %d\n", map->fd, map->id);
+			break;
 		case 'j':
 			if (!first) {
 				print->cb_printf (",");
@@ -569,6 +574,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	case '\0': // "om"
 	case 'j': // "omj"
 	case '*': // "om*"
+	case 'q': // "omq"
 		map_list (core->io, input[1], core->print, -1);
 		break;
 	case '=': // "om="
@@ -701,6 +707,13 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)data;
+	p->cb_printf ("%d\n", desc->fd);
+	return true;
+}
+
 static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
@@ -725,6 +738,9 @@ static int cmd_open(void *data, const char *input) {
 		fdsz = 0;
 		r_id_storage_foreach (core->io->files, init_desc_list_visual_cb, core->print);
 		r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
+		break;
+	case 'q':
+		r_id_storage_foreach (core->io->files, desc_list_quiet_cb, core->print);
 		break;
 	case '\0':
 		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);

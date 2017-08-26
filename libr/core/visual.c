@@ -1365,7 +1365,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	int i, ret, cols = core->print->cols, delta = 0;
 	int wheelspeed;
 	if ((ut8)ch == KEY_ALTQ) {
-		r_cons_readchar();
+		r_cons_readchar ();
 		ch = 'q';
 	}
 	ch = r_cons_arrow_to_hjkl (ch);
@@ -2804,6 +2804,9 @@ dodo:
 		}
 		if (!skip) {
 			ch = r_cons_readchar ();
+			if (r_cons_is_breaked()) {
+				break;
+			}
 			r_core_visual_show_char (core, ch);
 			if (ch == -1 || ch == 4) {
 				break;                  // error or eof
