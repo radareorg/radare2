@@ -167,8 +167,10 @@ R_API int r_reg_cond(RReg *r, int type);
 
 /* integer value 8-64 bits */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
-R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value);
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val);
+R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role);
+R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value);
+R_API bool r_reg_set_value_by_role(RReg *reg, RRegisterId role, ut64 value);
 
 /* float */
 R_API float r_reg_get_float(RReg *reg, RRegItem *item);
