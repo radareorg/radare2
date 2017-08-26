@@ -69,6 +69,7 @@ files=[
 'utf8.c',
 'utf16.c',
 'utf32.c',
+'vector.c',
 'w32-sys.c',
 'zip.c',
 'regex/regcomp.c',
