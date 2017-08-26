@@ -410,11 +410,8 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	}
 	len = len > addr ? addr : len;
 	if (!r_io_read_at (core->io, addr - len, buf, len)) {
-		if (hits) {
-			r_list_free (hits);
-		}
-		free (buf);
 		r_list_free (hits);
+		free (buf);
 		return NULL;
 	}
 

@@ -170,6 +170,9 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			
 			if (!node || !head) {
 				eprintf ("Erorr calling calloc\n");
+				free (ar);
+				free (node);
+				free (head);
 				return;
 			}
 

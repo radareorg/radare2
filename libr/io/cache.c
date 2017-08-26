@@ -129,11 +129,13 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	ch->size = len;
 	ch->odata = (ut8*)calloc (1, len + 1);
 	if (!ch->odata) {
+		free (ch);
 		return false;
 	}
 	ch->data = (ut8*)calloc (1, len + 1);
 	if (!ch->data) {
 		free (ch->odata);
+		free (ch);
 		return false;
 	}
 	ch->written = io->cached? false: true;
