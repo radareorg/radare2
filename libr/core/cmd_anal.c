@@ -3167,12 +3167,15 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	ut64 addr = 0x100000;
 	ut32 size = 0xf0000;
 	char name[128];
-	RCoreFile *cf, *cache;
 	RFlagItem *fi;
 	const char *sp;
 	char uri[32];
 	char nomalloc[256];
 	char *p;
+	if (!esil) {
+		eprintf ("Y U NO aei first?!!");
+		return;
+	}
 	if (*input == '?') {
 		eprintf ("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
 		eprintf ("Default: 0x100000 0xf0000\n");
@@ -3222,40 +3225,34 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	} else {
 		snprintf (name, sizeof (name), "mem.0x%" PFMT64x "_0x%x", addr, size);
 	}
-
-	fi = r_flag_get (core->flags, name);
-	if (fi) {
-		if (*input == '-') {
-			RFlagItem *fd = r_flag_get (core->flags, "aeim.fd");
-			if (fd) {
-				cf = r_core_file_get_by_fd (core, fd->offset);
-				r_core_file_close (core, cf);
-			} else {
-				eprintf ("Unknown fd for the aeim\n");
-			}
-			r_flag_unset_name (core->flags, "aeim.fd");
-			r_flag_unset_name (core->flags, name);
-			// eprintf ("Deinitialized %s\n", name);
+	if (*input == '-') {
+		if (esil->stack_fd > 2) {	//0, 1, 2 are reserved for stdio/stderr
+			r_io_fd_close (core->io, esil->stack_fd);
+			// no need to kill the maps, r_io_map_cleanup does that for us in the close
+			esil->stack_fd = 0;
+		} else {
+			eprintf ("Cannot deinitialize %s\n", name);
+		}
+		r_flag_unset_name (core->flags, name);
+		// eprintf ("Deinitialized %s\n", name);
+		return;
+	}
+	if (esil->stack_fd < 3) {
+		RIOMap *stack_map;
+		snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
+		esil->stack_fd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
+		if (!(stack_map = r_io_map_add (core->io, esil->stack_fd,
+						R_IO_RW, 0LL, addr, size))) {
+			r_io_fd_close (core->io, esil->stack_fd);
+			eprintf ("Cannot create map for tha stack, fd %d got closed again\n",
+					esil->stack_fd);
+			esil->stack_fd = 0;
 			return;
 		}
-		//eprintf ("Already initialized\n");
-		return;
-	}
-	if (*input == '-') {
-		eprintf ("Cannot deinitialize %s\n", name);
-		return;
-	}
-	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
-	cache = core->file;
-	cf = r_core_file_open (core, uri, R_IO_RW, addr);
-	if (cf) {
-		r_flag_set (core->flags, name, addr, size);
-		r_config_set_i (core->config, "io.va", true);
-	}
-	r_core_file_set_by_file (core, cache);
-	if (cf) {
-		r_flag_set (core->flags, "aeim.fd", cf->fd, 1);
+		r_io_map_set_name (stack_map, name);
+//		r_flag_set (core->flags, name, addr, size);	//why is this here?
 		r_flag_set (core->flags, "aeim.stack", addr, size);
+		r_config_set_i (core->config, "io.va", true);
 	}
 	if (patt && *patt) {
 		switch (*patt) {
@@ -3279,11 +3276,13 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	// BP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+#if 0
 	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
 		r_core_cmdf (core, "om %d 0x%"PFMT64x, cf->fd, addr);
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
 			ESIL_STACK_NAME, addr, addr, size, size);
 	}
+#endif
 	if (esil) {
 		esil->stack_addr = addr;
 		esil->stack_size = size;
