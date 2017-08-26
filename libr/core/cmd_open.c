@@ -1010,7 +1010,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			break;
-			case 0:
+		case 0:
 		case '?':
 			eprintf ("Usage: o-# or o-*, where # is the filedescriptor number\n");
 		}

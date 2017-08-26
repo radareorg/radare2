@@ -3227,7 +3227,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	if (!*input) {
 		RFlagItem *fi = r_flag_get (core->flags, "aeim.fd");
 		if (fi) {
-			r_core_cmdf (core, "o-%d", fi->offset);
+			// Close the fd associated with the aeim stack
+			(void)r_io_fd_close (core->io, fi->offset);
 		}
 	}
 	addr = r_config_get_i (core->config, "esil.stack.addr");

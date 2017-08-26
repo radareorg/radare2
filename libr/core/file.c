@@ -872,7 +872,6 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	r_core_bin_set_by_fd (r, fh->fd);
 
 	/* delete filedescriptor from io descs here */
-	r_io_desc_close (desc);
 	// r_io_desc_del (r->io, fh->fd);
 
 	// AVOID DOUBLE FREE HERE
@@ -892,6 +891,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 			ret = r_core_file_set_by_file (r, prev_cf);
 		}
 	}
+	r_io_desc_close (desc);
 	return ret;
 }
 
