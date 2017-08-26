@@ -225,7 +225,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
-			ptr->add = true;
+			ptr->add = false;
 			ptr->srwx = 0;
 			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
@@ -329,7 +329,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
-		ptr->add = true;
+		ptr->add = false;
 		if (obj->ehdr.e_type == ET_REL) {
 			ptr->add = true;
 		}
