@@ -44,14 +44,17 @@ static const char *help_msg_o_star[] = {
 
 static const char *help_msg_oa[] = {
 	"Usage:", "oa [addr] ([filename])", " # load bininfo and update flags",
-	"oa", " [addr]", "Open bin info from the given address",
-	"oa", " [addr] [filename]", "Open file and load bin info at given address",NULL
+	"oba", " [addr]", "Open bin info from the given address",
+	"oba", " [addr] [filename]", "Open file and load bin info at given address",
+	NULL
 };
 
 static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", "", "List opened binary files and objid",
 	"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
+	"oba", " [addr]", "Open bin info from the given address",
+	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"obb", " [fd]", "Switch to open binfile by fd number",
 	"obr", " [baddr]", "Rebase current bin object",
 	"ob-", " [fd]", "Delete binfile by fd",
@@ -246,24 +249,73 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		r_core_bin_list (core, input[1]);
 		break;
 	case 'b': // "obb"
-	{
-		ut32 fd;
-		value = *(input + 3) ? input + 3 : NULL;
-		if (!value) {
-			eprintf ("Invalid fd number.");
+		switch (input[2]) {
+		case 'a': // "oa"
+			if ('?' == input[1]) {
+				r_core_cmd_help (core, help_msg_oa);
+				break;
+			}
+			if (input[1]) {
+				char *arg = strdup (input + 2);
+				char *filename = strchr (arg, ' ');
+				if (filename) {
+					RIODesc *desc = r_io_open (core->io, filename + 1, R_IO_READ, 0);
+					if (desc) {
+						*filename = 0;
+						ut64 addr = r_num_math (core->num, arg);
+						r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+						r_io_desc_close (desc);
+						r_core_cmd0 (core, ".is*");
+					} else {
+						eprintf ("Cannot open %s\n", filename + 1);
+					}
+				} else {
+					ut64 addr = r_num_math (core->num, input + 1);
+					RCoreFile *cf = r_core_file_cur (core);
+					RIODesc *desc = r_io_desc_get (core->io, cf->fd);
+					if (cf && desc) {
+						r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+						r_core_cmd0 (core, ".is*");
+					} else {
+						eprintf ("No file to load bin from?\n");
+					}
+				}
+				free (arg);
+			} else {
+				/* reload all bininfo */
+				RIODesc *desc;
+				RListIter *iter;
+				RCoreFile *file;
+				r_list_foreach (core->files, iter, file) {
+					desc = r_io_desc_get (core->io, file->fd);
+					r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0);
+					r_core_cmd0 (core, ".is*");
+					break;
+				}
+			}
+			//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
+			break;
+		default:
+			{
+				ut32 fd;
+				value = *(input + 3) ? input + 3 : NULL;
+				if (!value) {
+					eprintf ("Invalid fd number.");
+					break;
+				}
+				binfile_num = UT32_MAX;
+				fd = *value && r_is_valid_input_num_value (core->num, value) ?
+					r_get_input_num_value (core->num, value) : UT32_MAX;
+				binfile_num = find_binfile_id_by_fd (core->bin, fd);
+				if (binfile_num == UT32_MAX) {
+					eprintf ("Invalid fd number.");
+					break;
+				}
+				r_core_bin_raise (core, binfile_num, -1);
+			}
 			break;
 		}
-		binfile_num = UT32_MAX;
-		fd = *value && r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
-		binfile_num = find_binfile_id_by_fd (core->bin, fd);
-		if (binfile_num == UT32_MAX) {
-			eprintf ("Invalid fd number.");
-			break;
-		}
-		r_core_bin_raise (core, binfile_num, -1);
 		break;
-	}
 	case ' ':
 	{
 		ut32 fd;
@@ -763,12 +815,11 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
-	ut64 addr, baddr = r_config_get_i (core->config, "bin.baddr");
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	RCoreFile *file;
 	int isn = 0;
 	char *ptr;
-	RListIter *iter;
 
 	switch (*input) {
 	case '=': // "o="
@@ -798,50 +849,6 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'L':
 		r_io_plugin_list (core->io);
-		break;
-	case 'a': // "oa"
-		if ('?' == input[1]) {
-			r_core_cmd_help (core, help_msg_oa);
-			break;
-		}
-		addr = core->offset;
-		if (input[1]) {
-			char *arg = strdup (input + 2);
-			char *filename = strchr (arg, ' ');
-			if (filename) {
-				RIODesc *desc = r_io_open (core->io, filename + 1, R_IO_READ, 0);
-				if (desc) {
-					*filename = 0;
-					addr = r_num_math (core->num, arg);
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-					r_io_desc_close (desc);
-					r_core_cmd0 (core, ".is*");
-				} else {
-					eprintf ("Cannot open %s\n", filename + 1);
-				}
-			} else {
-				addr = r_num_math (core->num, input + 1);
-				RCoreFile *cf = r_core_file_cur (core);
-				RIODesc *desc = r_io_desc_get (core->io, cf->fd);
-				if (cf && desc) {
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-					r_core_cmd0 (core, ".is*");
-				} else {
-					eprintf ("No file to load bin from?\n");
-				}
-			}
-			free (arg);
-		} else {
-			/* reload all bininfo */
-			RIODesc *desc;
-			r_list_foreach (core->files, iter, file) {
-				desc = r_io_desc_get (core->io, file->fd);
-				r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-				r_core_cmd0 (core, ".is*");
-				break;
-			}
-		}
-		//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
 		break;
 	case 'p':
 		if (r_sandbox_enable (0)) {
