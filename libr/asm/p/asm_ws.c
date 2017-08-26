@@ -22,7 +22,7 @@ RAsmPlugin r_asm_plugin_ws = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_ws,
 	.version = R2_VERSION
