@@ -166,7 +166,7 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 
 	// seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
 
-	ls_foreach (io->maps, iter, s) {
+	ls_foreach_prev (io->maps, iter, s) {			//this must be prev, maps the previous map allways has lower priority
 		if (min == -1 || s->from < min) {
 			min = s->from;
 		}
@@ -370,7 +370,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach (io->maps, iter, map) {
+	ls_foreach_prev (io->maps, iter, map) {			//this must be prev
 		if (fd != -1 && map->fd != fd) {
 			continue;
 		}
