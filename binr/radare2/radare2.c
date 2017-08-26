@@ -142,7 +142,7 @@ static int main_help(int line) {
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
-		" -x           open file with exec-flag (for analysis mostly)\n"
+		" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
@@ -640,6 +640,7 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'x':
 			perms &= ~R_IO_EXEC;
+			r_config_set (r.config, "io.exec", "false");
 			break;
 		default:
 			help++;
