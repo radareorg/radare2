@@ -3028,6 +3028,33 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case 'w': // "dbw"
+		if (input[2] == 'C') { // "dbwC"
+			if (input[3] == ' ') {
+				char *inp = strdup (input + 4);
+				if (inp) {
+					char *arg = strchr (inp, ' ');
+					if (arg) {
+						*arg++ = 0;
+						addr = r_num_math (core->num, inp);
+						bpi = r_bp_get_at (core->dbg->bp, addr);
+						if (bpi) {
+							free (bpi->cond);
+							bpi->cond = strdup (arg);
+						} else {
+							eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+						}
+					} else {
+						eprintf ("1 Missing argument\n");
+					}
+					free (inp);
+				} else {
+					eprintf ("Cannot strdup. Your heap is fucked up\n");
+				}
+			} else {
+				eprintf ("Use: dbwC [addr] [command]\n");
+			}
+			break;
+		}
 		input++; // skip 'w'
 		watch = true;
 		// passthru
