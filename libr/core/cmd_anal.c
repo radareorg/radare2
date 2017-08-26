@@ -3173,7 +3173,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	char nomalloc[256];
 	char *p;
 	if (!esil) {
-		eprintf ("Y U NO aei first?!!");
+		eprintf ("Y U NO aei first?!!\n");
 		return;
 	}
 	if (*input == '?') {
