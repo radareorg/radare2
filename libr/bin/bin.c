@@ -1076,7 +1076,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			if (xtr && xtr->check_bytes (buf_bytes, sz)) {
 				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
-						free (buf_bytes);
+						R_FREE (buf_bytes);
 						if (tfd < 0) {
 							tfd = iob->fd_open (io, fname, R_IO_READ, 0);
 						}
@@ -1084,20 +1084,18 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 						if (sz != UT64_MAX) {
 							buf_bytes = calloc (1, sz + 1);
 							if (buf_bytes) {
-								iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
+								(void) iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
 							}
 						}
 						iob->fd_close (io, tfd);
 						tfd = -1;	// marking it closed
 					} else if (sz != file_sz) {
-						iob->read_at (io, 0LL, buf_bytes, sz);
+						(void) iob->read_at (io, 0LL, buf_bytes, sz);
 					}
-					if (buf_bytes) {
-						binfile = r_bin_file_xtr_load_bytes (bin, xtr,
-							fname, buf_bytes, sz, file_sz,
-							baseaddr, loadaddr, xtr_idx,
-							fd, bin->rawstr);
-					}
+					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
+						fname, buf_bytes, sz, file_sz,
+						baseaddr, loadaddr, xtr_idx,
+						fd, bin->rawstr);
 				}
 				xtr = NULL;
 			}
@@ -1221,11 +1219,11 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 					    ut64 file_sz, ut64 baseaddr,
 					    ut64 loadaddr, int idx, int fd,
 					    int rawstr) {
-	RBinFile *bf = bin? r_bin_file_find_by_name (bin, filename): NULL;
+	if (!bin || !bytes) {
+		return NULL;
+	}
+	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		if (!bin) {
-			return NULL;
-		}
 		bf = r_bin_file_create_append (bin, filename, bytes, sz,
 					       file_sz, rawstr, fd, xtr->name, false);
 		if (!bf) {
