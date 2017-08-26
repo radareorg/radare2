@@ -58,17 +58,13 @@ typedef void (*cbOnIterMap) (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOM
 
 static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 		       int len, int match_flg, cbOnIterMap op, void *user) {
-	ut64 vendaddr;
+	ut64 vendaddr = UT64_MAX;
 	if (!io || !iter || !buf || len < 1) {
 		return;
 	}
 	// this block is not that much elegant
-	if (iter && UT64_ADD_OVFCHK (len - 1, vaddr)) {
-		// needed for edge-cases
-		int nlen;
-		// add a test for this block
-		vendaddr = UT64_MAX;
-		nlen = (int) (UT64_MAX - vaddr + 1);
+	if (UT64_ADD_OVFCHK (len - 1, vaddr)) {
+		int nlen = (int) (UT64_MAX - vaddr + 1);
 		onIterMap (iter->p, io, 0LL, buf + nlen, len - nlen, match_flg, op, user);
 	} else {
 		vendaddr = vaddr + len - 1;
