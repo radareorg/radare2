@@ -3875,7 +3875,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, pc);
 					ret = r_anal_op (core->anal, &op, addr, buf, left); // read overflow
 					if (ret) {
-						r_reg_setv (core->anal->reg, "PC", pc);
+						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
 						r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 						r_anal_esil_dumpstack (esil);
 						r_anal_esil_stack_free (esil);
