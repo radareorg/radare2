@@ -41,9 +41,11 @@ endif
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${LINK}
 ifneq (${ANDROID},1)
+ifneq (${OSTYPE},windows)
 ifneq (${OSTYPE},linux)
 ifneq ($(CC),cccl)
 LDFLAGS+=-lpthread
+endif
 endif
 endif
 endif

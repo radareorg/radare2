@@ -381,7 +381,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			eprintf ("(%d) Finished thread %d Exit code %d\n", item->pid, item->tid, item->dwExitCode);
+			eprintf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
 			r_debug_info_free (r);
 		}
 	}

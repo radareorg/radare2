@@ -73,13 +73,12 @@ err_add_map:
 }
 
 static RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC_INFORMATION *mbi) {
-	return add_map(list, name, (ut64)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
+	return add_map (list, name, (ut64)(size_t)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
 }
 
 static RList *w32_dbg_modules(RDebug *dbg) {
         MODULEENTRY32 me32;
         RDebugMap *mr;
-        int pid = dbg->pid;
         RList *list = r_list_new ();
 #if MINGW32
         HANDLE h_mod_snap = NULL;
@@ -124,7 +123,7 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	len = 0;
 	sect_hdr = NULL;
 	mod_inf_fill = -1;
-	ReadProcessMemory (h_proc, (LPCVOID)map->addr, (LPVOID)pe_hdr, sizeof (pe_hdr), &len);
+	ReadProcessMemory (h_proc, (LPCVOID)(size_t)map->addr, (LPVOID)pe_hdr, sizeof (pe_hdr), (PDWORD)&len);
 	if (len == sizeof (pe_hdr) && is_pe_hdr (pe_hdr)) {
 		dos_hdr = (IMAGE_DOS_HEADER *)pe_hdr;
 		if (!dos_hdr) {
@@ -162,7 +161,7 @@ err_set_mod_info:
 }
 
 static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinModInfo *mod, SYSTEM_INFO *si, MEMORY_BASIC_INFORMATION *mbi) {
-	ut64 addr = (ut64)mbi->BaseAddress;
+	ut64 addr = (ut64)(size_t)mbi->BaseAddress;
 	ut64 len = (ut64)mbi->RegionSize;
 	if (!mod->map || addr < mod->map->addr || (addr + len) > mod->map->addr_end) {
 		RListIter *iter;
@@ -270,7 +269,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 				add_map_reg (map_list, "", &mbi);
 			}
 		}
-	   	cur_addr = (LPVOID)((ut64)mbi.BaseAddress + mbi.RegionSize);
+	   	cur_addr = (LPVOID)(size_t)((ut64)(size_t)mbi.BaseAddress + mbi.RegionSize);
 	}
 err_w32_dbg_maps:
 	if (mod_inf.sect_hdr) {
