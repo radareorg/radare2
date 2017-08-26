@@ -583,8 +583,9 @@ R_API void r_cons_pop() {
 		if (data->grep) {
 			memcpy (&I.grep, data->grep, sizeof (RConsGrep));
 			if (data->grep->str) {
-				free (I.grep.str);
-				I.grep.str = data->grep->str;
+				char *old = I.grep.str;
+				I.grep.str = strdup (data->grep->str);
+				R_FREE (old);
 			}
 		}
 		cons_stack_free ((void *)data);
