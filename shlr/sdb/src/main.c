@@ -71,7 +71,6 @@ static char *stdin_slurp(int *sz) {
 		if (!newbuf) {
 			return buf;
 		}
-		free (buf);
 		return newbuf;
 	}
 #endif
