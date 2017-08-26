@@ -402,7 +402,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			r_cons_printf ("}");
 			free (q);
-			free (block_list);
 		} else if (IS_MODE_RAD (mode)) {
 			char *f_name, *str;
 			f_name = strdup (string->string);
