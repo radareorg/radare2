@@ -76,6 +76,7 @@ static const char *help_msg_om[] = {
 	"om", "-mapid", "remove the map with corresponding id",
 	"om", " fd addr [size] [delta]", "create new io map",
 	"om.", "", "show map, that is mapped to current offset",
+	"omn", " mapid [name]", "set/delete name for map with mapid",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", " rwx", "change flags/perms for all maps (global)",
 	"omr", " mapid addr", "relocate map with corresponding id",
@@ -554,6 +555,36 @@ static void cmd_open_map (RCore *core, const char *input) {
 			// eprintf ("Invalid use of om . See om? for help.");
 		}
 		free (s);
+		break;
+	case 'n': //omn
+		if (!(s = strdup (&input[2]))) {
+			break;
+		}
+		p = s;
+		while (*s == ' ') {
+			s++;
+		}
+		if (*s == '\0') {
+			free (p);
+			break;
+		}
+		if (!(q = strchr (s, ' '))) {
+			id = (ut32)r_num_math (core->num, s);
+			map = r_io_map_get (core->io, id);
+			r_io_map_del_name (map);
+			free (p);
+			break;
+		}
+		*q = '\0';
+		q++;
+		id = (ut32)r_num_math (core->num, s);
+		map = r_io_map_get (core->io, id);
+		if (*q) {
+			r_io_map_set_name (map, q);
+		} else {
+			r_io_map_del_name (map);
+		}
+		free (p);
 		break;
 	case '-':
 		r_io_map_del (core->io, r_num_math (core->num, input+2));
