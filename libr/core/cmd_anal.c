@@ -3162,6 +3162,7 @@ static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
 
 static void cmd_esil_mem(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
+	RIOMap *stack_map;
 	ut64 curoff = core->offset;
 	const char *patt = "";
 	ut64 addr = 0x100000;
@@ -3241,23 +3242,20 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		// eprintf ("Deinitialized %s\n", name);
 		return;
 	}
-	if (esil->stack_fd < 3) {
-		RIOMap *stack_map;
-		snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
-		esil->stack_fd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
-		if (!(stack_map = r_io_map_add (core->io, esil->stack_fd,
-						R_IO_RW, 0LL, addr, size))) {
-			r_io_fd_close (core->io, esil->stack_fd);
-			eprintf ("Cannot create map for tha stack, fd %d got closed again\n",
-					esil->stack_fd);
-			esil->stack_fd = 0;
-			return;
-		}
-		r_io_map_set_name (stack_map, name);
-//		r_flag_set (core->flags, name, addr, size);	//why is this here?
-		r_flag_set (core->flags, "aeim.stack", addr, size);
-		r_config_set_i (core->config, "io.va", true);
+	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
+	esil->stack_fd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
+	if (!(stack_map = r_io_map_add (core->io, esil->stack_fd,
+					  R_IO_RW, 0LL, addr, size))) {
+		r_io_fd_close (core->io, esil->stack_fd);
+		eprintf ("Cannot create map for tha stack, fd %d got closed again\n",
+		  esil->stack_fd);
+		esil->stack_fd = 0;
+		return;
 	}
+	r_io_map_set_name (stack_map, name);
+	//		r_flag_set (core->flags, name, addr, size);	//why is this here?
+	r_flag_set (core->flags, "aeim.stack", addr, size);
+	r_config_set_i (core->config, "io.va", true);
 	if (patt && *patt) {
 		switch (*patt) {
 		case '0':
