@@ -1027,7 +1027,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		loadaddr = 0;
 	}
 	file_sz = iob->fd_size (io, fd);
-	if (!file_sz || file_sz == UT64_MAX) {
+	// file_sz = UT64_MAX happens when attaching to frida:// and other non-debugger io plugins which results in double opening
+	if (!file_sz || (is_debugger && file_sz == UT64_MAX)) {
 		tfd = iob->fd_open (io, fname, R_IO_READ, 0644);
 		if (tfd >= 1) {
 			file_sz = iob->fd_size (io, tfd);

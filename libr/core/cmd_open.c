@@ -1003,11 +1003,14 @@ static int cmd_open(void *data, const char *input) {
 			// TODO: rbin?
 			break;
 		default:
-			if (!r_core_file_close_fd (core, atoi (input + 1))) {
-				eprintf ("Unable to find filedescriptor %d\n",
-						atoi (input + 1));
+			{
+				int fd = (int)r_num_math (core->num, input + 1);
+				if (!r_core_file_close_fd (core, fd)) {
+					eprintf ("Unable to find filedescriptor %d\n", fd);
+				}
 			}
 			break;
+			case 0:
 		case '?':
 			eprintf ("Usage: o-# or o-*, where # is the filedescriptor number\n");
 		}

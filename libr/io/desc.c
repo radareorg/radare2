@@ -81,6 +81,9 @@ R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and ch
 	if (desc == io->desc) {
 		io->desc = NULL;
 	}
+	// remove all dead maps
+	r_io_map_cleanup (io);
+	r_io_section_cleanup (io);
 	return true;
 }
 
