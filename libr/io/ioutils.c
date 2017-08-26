@@ -94,7 +94,7 @@ R_API void r_io_accesslog_free(RIOAccessLog *log) {
 	free (log);
 }
 
-R_API void r_io_acccesslog_sort(RIOAccessLog *log) {
+R_API void r_io_accesslog_sort(RIOAccessLog *log) {
 	if (!log || !log->log) {
 		return;
 	}
@@ -154,7 +154,7 @@ R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log, int flags) {
 }
 
 //gets first buffer that matches with the flags and frees the element
-R_API ut8 *r_io_accessilog_getf_buf_byflags(RIOAccessLog *log, int flags, ut64 *addr, int *len) {
+R_API ut8 *r_io_accesslog_getf_buf_byflags(RIOAccessLog *log, int flags, ut64 *addr, int *len) {
 	RListIter *iter;
 	RIOAccessLogElement *ale;
 	ut8 *ret;

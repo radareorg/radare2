@@ -381,6 +381,40 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	return ret;
 }
 
+R_API RIOAccessLog *r_io_al_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
+	RIOAccessLog *log;
+	RIOAccessLogElement *ale = R_NEW0(RIOAccessLogElement);
+	int rlen;
+	if (!io || !buf || (len < 1)) {
+		return NULL;
+	}
+	if (io->va) {
+		return r_io_al_vread_at (io, addr, buf, len);
+	}
+	if (!(log = r_io_accesslog_new ())) {
+		return NULL;
+	}
+	log->buf = buf;
+	if (io->ff) {
+		memset (buf, 0xff, len);
+	}
+	rlen = r_io_pread_at (io, addr, buf, len);
+	if (io->cached_read) {
+		(void)r_io_cache_read (io, addr, buf, len);
+	}
+	if (!(ale = R_NEW0 (RIOAccessLogElement))) {
+		log->allocation_failed = true;
+	} else {
+		ale->paddr = ale->vaddr = addr;
+		ale->len = rlen;
+		ale->expect_len = len;
+		ale->flags = io->desc ? io->desc->flags : 0;
+		ale->fd = io->desc ? io->desc->fd : 0;		//xxx
+		r_list_append (log->log, ale);
+	}
+	return log;
+}
+
 R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 	int i;
 	bool ret = false;
@@ -539,6 +573,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->open_at = r_io_open_at;
 	bnd->close = r_io_fd_close;
 	bnd->read_at = r_io_read_at;
+	bnd->al_read_at = r_io_al_read_at;
 	bnd->write_at = r_io_write_at;
 	bnd->system = r_io_system;
 	bnd->fd_open = r_io_fd_open;
@@ -551,6 +586,9 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->fd_write_at = r_io_fd_write_at;
 	bnd->fd_is_dbg = r_io_fd_is_dbg;
 	bnd->fd_get_name = r_io_fd_get_name;
+	bnd->al_sort = r_io_accesslog_sort;
+	bnd->al_free = r_io_accesslog_free;
+	bnd->al_buf_byflags = r_io_accesslog_getf_buf_byflags;
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;

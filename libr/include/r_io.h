@@ -219,6 +219,7 @@ typedef RIODesc *(*RIOOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef RIODesc *(*RIOOpenAt) (RIO *io, const  char *uri, int flags, int mode, ut64 at);
 typedef bool (*RIOClose) (RIO *io, int fd);
 typedef bool (*RIOReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
+typedef RIOAccessLog *(*RIOAlReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RIOWriteAt) (RIO *io, ut64 addr, const ut8 *buf, int len);
 typedef int (*RIOSystem) (RIO *io, const char* cmd);
 typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
@@ -231,6 +232,9 @@ typedef int (*RIOFdReadAt) (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 typedef int (*RIOFdWriteAt) (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 typedef bool (*RIOFdIsDbg) (RIO *io, int fd);
 typedef const char *(*RIOFdGetName) (RIO *io, int fd);
+typedef void (*RIOAlSort) (RIOAccessLog *log);
+typedef void (*RIOAlFree) (RIOAccessLog *log);
+typedef ut8 *(*RIOAlGetFbufByflags) (RIOAccessLog *log, int flags, ut64 *addr, int *len);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
@@ -246,6 +250,7 @@ typedef struct r_io_bind_t {
 	RIOOpenAt open_at;
 	RIOClose close;
 	RIOReadAt read_at;
+	RIOAlReadAt al_read_at;	//needed for esil
 	RIOWriteAt write_at;
 	RIOSystem system;
 	RIOFdOpen fd_open;
@@ -258,6 +263,9 @@ typedef struct r_io_bind_t {
 	RIOFdWriteAt fd_write_at;
 	RIOFdIsDbg fd_is_dbg;
 	RIOFdGetName fd_get_name;
+	RIOAlSort al_sort;	//needed for esil
+	RIOAlFree al_free;	//needed for esil
+	RIOAlGetFbufByflags al_buf_byflags;	//needed for esil
 	RIOIsValidOff is_valid_offset;
 	RIOSectionVgetSecsAt sections_vget;
 	RIOSectionVgetSec sect_vget;
@@ -301,6 +309,7 @@ R_API bool r_io_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
+R_API RIOAccessLog *r_io_al_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_read (RIO *io, ut8 *buf, int len);
@@ -452,7 +461,7 @@ R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API RIOAccessLog *r_io_accesslog_new ();
 R_API void r_io_accesslog_free (RIOAccessLog *log);
-R_API void r_io_acccesslog_sort (RIOAccessLog *log);
+R_API void r_io_accesslog_sort (RIOAccessLog *log);
 R_API void r_io_accesslog_sqash_ignore_gaps (RIOAccessLog *log);
 R_API void r_io_accesslog_sqash_byflags (RIOAccessLog *log, int flags);
 R_API ut8 *r_io_accesslog_getf_buf_byflags (RIOAccessLog *log, int flags, ut64 *addr, int *len);
