@@ -509,7 +509,6 @@ static int cmd_section(void *data, const char *input) {
 			break;
 		default:
 			{
-			RIOSection *s;
 			int i, rwx = 7;
 			char *ptr = strdup (input + 1);
 			const char *name = NULL;
@@ -550,10 +549,7 @@ static int cmd_section(void *data, const char *input) {
 				sprintf (vname, "area%d", (int)ls_length (core->io->sections));
 				name = vname;
 			}
-			s = r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
-			if (s) {
-				r_io_section_apply (core->io, s->id, R_IO_SECTION_APPLY_FOR_ANALYSIS);
-			}
+			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
 			free (ptr);
 			}
 			break;
