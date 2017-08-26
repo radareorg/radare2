@@ -750,9 +750,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	if (!flags) {
 		flags = R_IO_READ;
 	}
-	if (strstr (file, "malloc://")) {
-		flags = R_IO_READ | R_IO_WRITE;
-	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open_nomap (r->io, file, flags, 0644);
 	if (!fd && openmany > 2) {

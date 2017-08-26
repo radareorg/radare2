@@ -616,9 +616,7 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 		break;
 	case R_IO_SEEK_END:
 	default:
-		if (io && io->desc && io->desc->plugin && io->desc->plugin->lseek) {
-			return io->off = io->desc->plugin->lseek (io, io->desc, offset, whence);
-		}
+		io->off = r_io_desc_seek (io->desc, offset, whence);
 		break;
 	}
 	return io->off;
