@@ -506,7 +506,7 @@ R_API void r_cons_reset() {
 	I.grep.line = -1;
 	I.grep.sort = -1;
 	I.grep.sort_invert = false;
-	I.grep.str = NULL;
+	R_FREE (I.grep.str);
 	ZERO_FILL (I.grep.tokens);
 	I.grep.tokens_used = 0;
 }
