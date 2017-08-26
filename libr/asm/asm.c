@@ -391,9 +391,11 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		// shift buf N bits
 		if (a->bitshift > 0) {
 			ut8 *tmp = calloc (len, 1);
-			r_mem_copybits_delta (tmp, 0, buf, a->bitshift, (len * 8) - a->bitshift);
-			ret = a->cur->disassemble (a, op, tmp, len);
-			free (tmp);
+			if (tmp) {
+				r_mem_copybits_delta (tmp, 0, buf, a->bitshift, (len * 8) - a->bitshift);
+				ret = a->cur->disassemble (a, op, tmp, len);
+				free (tmp);
+			}
 		} else {
 			ret = a->cur->disassemble (a, op, buf, len);
 		}
@@ -436,7 +438,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	//XXX check against R_ASM_BUFSIZE other oob write
 	memcpy (op->buf, buf, R_MIN (R_ASM_BUFSIZE - 1, oplen));
 	r_hex_bin2str (buf, R_MIN (a->addrbytes * oplen,
-														 (sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
+		(sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
 	return ret;
 }
 
@@ -954,7 +956,7 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 R_API int r_asm_op_get_size(RAsmOp *op) {
 	int len;
 	if (!op) {
-		return 0;
+		return 1;
 	}
 	len = op->size - op->payload;
 	if (len < 1) {

@@ -8,11 +8,10 @@
 #define END_OF_MAP_IDS  0xffffffff
 
 R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
-	RIOMap* map = NULL;
 	if (!size || !io || !io->maps || ((UT64_MAX - size + 1) < addr) || !io->map_ids) {
 		return NULL;
 	}
-	map = R_NEW0 (RIOMap);
+	RIOMap* map = R_NEW0 (RIOMap);
 	if (!map || !io->map_ids || !r_id_pool_grab_id (io->map_ids, &map->id)) {
 		free (map);
 		return NULL;
@@ -84,6 +83,13 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
+		SdbListIter* iter;
+		RIOMap* map;
+		ls_foreach (io->maps, iter, map) {
+			if (map->fd == fd && map->from == addr) {
+				return NULL;
+			}
+		}
 		//a map cannot have higher permissions than the desc belonging to it
 		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC), 
 					delta, addr, size);
@@ -95,7 +101,7 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 	RIOMap* map;
 	SdbListIter* iter;
-	if (!io || !io->maps) {
+	if (!io) {
 		return NULL;
 	}
 	ls_foreach_prev (io->maps, iter, map) {
@@ -109,7 +115,7 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 R_API bool r_io_map_del(RIO* io, ut32 id) {
 	SdbListIter* iter;
 	RIOMap* map;
-	if (!io || !io->maps) {
+	if (!io) {
 		return false;
 	}
 	ls_foreach (io->maps, iter, map) {
@@ -127,7 +133,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 	SdbListIter* iter, * ator;
 	RIOMap* map;
 	bool ret = false;
-	if (!io || !io->maps) {
+	if (!io) {
 		return ret;
 	}
 	ls_foreach_safe (io->maps, iter, ator, map) {
@@ -148,7 +154,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	SdbListIter* iter;
 	RIOMap* map;
-	if (!io || !io->maps) {
+	if (!io) {
 		return false;
 	}
 	ls_foreach (io->maps, iter, map) {

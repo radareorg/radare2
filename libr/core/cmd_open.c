@@ -519,7 +519,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case ' ':
+	case ' ': // "om"
 		// i need to parse delta, offset, size
 		s = strdup (input + 2);
 		if (!s) {
@@ -528,11 +528,12 @@ static void cmd_open_map (RCore *core, const char *input) {
 		p = strchr (s, ' ');
 		if (p) {
 			RIODesc *desc;
-			q = strchr (p+1, ' ');
+			q = strchr (p + 1, ' ');
 			*p = 0;
 			fd = r_num_math (core->num, s);
 			if (!(desc = r_io_desc_get (core->io, fd))) {
 				free (s);
+				eprintf ("Invalid fd %d\n", (int)fd);
 				break;
 			}
 			addr = r_num_math (core->num, p + 1);
@@ -549,9 +550,14 @@ static void cmd_open_map (RCore *core, const char *input) {
 			} else {
 				size = r_io_desc_size (desc);
 			}
-			r_io_map_add (core->io, fd, desc->flags, delta, addr, size);	//TODO:user should be able to set these
+			//TODO:user should be able to set these
+			r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
 		} else {
-			map_list (core->io, 0, core->print, r_num_math (core->num, s));
+			if (r_io_desc_get (core->io, fd)) {
+				map_list (core->io, 0, core->print, r_num_math (core->num, s));
+			} else {
+				eprintf ("Invalid fd %d\n", (int)fd);
+			}
 			// eprintf ("Invalid use of om . See om? for help.");
 		}
 		free (s);
