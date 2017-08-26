@@ -1,9 +1,10 @@
 project('sdb', 'c')
 version = '1.0.0'
 
-platform_inc = include_directories(['.'])
 if host_machine.system() == 'windows'
-  platform_inc = include_directories(['.','./msvc'])
+  platform_inc = include_directories(['.', './msvc'])
+else
+  platform_inc = include_directories(['.'])
 endif
 
 # Create sdb_version.h

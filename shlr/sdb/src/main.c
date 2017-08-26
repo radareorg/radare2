@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2016 - pancake */
+/* sdb - MIT - Copyright 2011-2017 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -68,10 +68,10 @@ static char *stdin_slurp(int *sz) {
 
 		char *newbuf = realloc (buf, buf_len + 1);
 		// realloc behaves like free if buf_len is 0
-		if (!newbuf && buf_len > 0) {
-			free (buf);
+		if (!newbuf) {
+			return buf;
 		}
-
+		free (buf);
 		return newbuf;
 	}
 #endif
@@ -138,6 +138,7 @@ static char *stdin_slurp(int *sz) {
 			bufsize -= blocksize;
 			break;
 		}
+		memset (tmp + bufsize - blocksize, 0, blocksize);
 		buf = tmp;
 	}
 	if (sz) {
