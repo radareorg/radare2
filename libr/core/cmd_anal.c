@@ -2838,8 +2838,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (!esil) {
-		r_core_cmd0 (core, "aei");
-		esil = core->anal->esil;
+		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+		int iotrap = r_config_get_i (core->config, "esil.iotrap");
+		if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
+			return 0;
+		}
+		core->anal->esil = esil;
 	}
 	if (esil) {
 		esil->cmd = r_core_esil_cmd;
