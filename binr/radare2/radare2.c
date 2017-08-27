@@ -1078,13 +1078,7 @@ int main(int argc, char **argv, char **envp) {
 		debug = r.file && iod && (r.file->fd == iod->fd) && iod->plugin && \
 			iod->plugin->isdbg;
 		if (debug) {
-			if (baddr != UT64_MAX) {
-				//setup without attach again because there is dpa call
-				//producing two attach and it's annoying
-				r_core_setup_debugger (&r, debugbackend, false);
-			} else {
-				r_core_setup_debugger (&r, debugbackend, true);
-			}
+			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
 		if (!debug && r_flag_get (r.flags, "entry0")) {
 			r_core_cmd0 (&r, "s entry0");

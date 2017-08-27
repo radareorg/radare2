@@ -6,6 +6,7 @@
 #include <r_core.h>
 #include <spp/spp.h>
 
+#if 0
 static void __section_list_for_projects (RIO *io, RPrint *print) {
 	int i = 0;
 	SdbListIter *iter;
@@ -27,6 +28,7 @@ static void __section_list_for_projects (RIO *io, RPrint *print) {
 		i++;
 	}
 }
+#endif
 
 static bool is_valid_project_name(const char *name) {
 	int i;
@@ -549,8 +551,9 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_SECTIONS) {
 		r_str_write (fd, "# sections\n");
-		__section_list_for_projects (core->io, core->print);
-		r_cons_flush ();
+		r_core_cmd (core, "S*", 0);
+		// __section_list_for_projects (core->io, core->print);
+		// r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");
