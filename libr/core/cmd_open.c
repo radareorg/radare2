@@ -81,7 +81,7 @@ static const char *help_msg_om[] = {
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapid [name]", "set/delete name for map with mapid",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
-	"omfg", " rwx", "change flags/perms for all maps (global)",
+	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omr", " mapid addr", "relocate map with corresponding id",
 	"omp", " mapid", "priorize map with corresponding id",
 	"ompf", "[fd]", "priorize map by fd",
@@ -460,9 +460,29 @@ static void cmd_omfg (RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
 	input = r_str_chop_ro (input);
-	int flags = (input && *input)? r_str_rwx (input): 7;
-	ls_foreach (core->io->maps, iter, map) {
-		map->flags = flags;
+	if (input) {
+		int flags = *input
+		? (*input == '+' || *input == '-')
+			? r_str_rwx (input + 1)
+			: r_str_rwx (input)
+		: 7;
+		switch (*input) {
+		case '+':
+			ls_foreach (core->io->maps, iter, map) {
+				map->flags |= flags;
+			}
+			break;
+		case '-':
+			ls_foreach (core->io->maps, iter, map) {
+				map->flags &= ~flags;
+			}
+			break;
+		default:
+			ls_foreach (core->io->maps, iter, map) {
+				map->flags = flags;
+			}
+			break;
+		}
 	}
 }
 
