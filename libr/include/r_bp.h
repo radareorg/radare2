@@ -60,8 +60,7 @@ typedef struct r_bp_item_t {
 	char *cond; /* used for conditional breakpoints */
 } RBreakpointItem;
 
-typedef struct r_bp_t RBreakpoint;
-typedef int (*RBreakpointCallback)(RBreakpoint *bp, RBreakpointItem *b, bool set);
+typedef int (*RBreakpointCallback)(void *bp, RBreakpointItem *b, bool set);
 
 typedef struct r_bp_t {
 	void *user;
