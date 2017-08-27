@@ -521,9 +521,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				goto error;
 			}
 		}
-		if (!r_io_read_at (core->io, at + delta, buf, buflen)) {
+		// TODO bring back old hack, should be fixed
+		if (!r_io_read_at (core->io, at + delta, buf, 4)) {
 			goto error;
 		}
+		(void)r_io_read_at (core->io, at + delta, buf, buflen);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -3360,7 +3362,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		ut8 buf[8];
 		ut64 refptr;
 		if (len == 8) {
-			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf))) {
+			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
 				/* invalid read */
 				refptr = UT64_MAX;
 			} else {
@@ -3368,7 +3370,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 				esilbreak_last_data = refptr;
 			}
 		} else {
-			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf))) {
+			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
 				/* invalid read */
 				refptr = UT64_MAX;
 			} else {
