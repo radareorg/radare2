@@ -114,3 +114,10 @@ R_API bool r_io_use_fd(RIO* io, int fd) {
 	}
 	return true;
 }
+
+R_API int r_io_fd_get_current(RIO *io) {
+	if (io && io->desc) {
+		return io->desc->fd;
+	}
+	return -1;
+}

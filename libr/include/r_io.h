@@ -448,6 +448,7 @@ R_API bool r_io_fd_is_dbg (RIO *io, int fd);
 R_API int r_io_fd_get_pid (RIO *io, int fd);
 R_API int r_io_fd_get_tid (RIO *io, int fd);
 R_API const char *r_io_fd_get_name (RIO *io, int fd);
+R_API int r_io_fd_get_current(RIO *io);
 R_API bool r_io_use_fd (RIO *io, int fd);
 
 
