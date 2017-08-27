@@ -32,6 +32,24 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	return map;
 }
 
+R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
+	RIOMap *map;
+	ut64 size;
+	if (!(map = r_io_map_resolve (io, id))) {
+		return false;
+	}
+	size = map->to - map->from + 1;
+	map->from = addr;
+	if ((UT64_MAX - size + 1) < addr) {
+		r_io_map_new (io, map->fd, map->flags, UT64_MAX - addr + 1 + map->delta, 0LL, size - (UT64_MAX - addr) - 1);
+		size = UT64_MAX - addr + 1;
+		map->to = UT64_MAX;
+		return true;
+	}
+	map->to = addr + size - 1;
+	return true;
+}
+
 static void _map_free(void* p) {
 	RIOMap* map = (RIOMap*) p;
 	if (map) {
