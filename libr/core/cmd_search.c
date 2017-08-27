@@ -9,7 +9,8 @@
 #include "cmd_search_rop.c"
 
 static const char *help_msg_slash[] = {
-	"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)",
+	"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)\n"
+	"|Use io.va for searching in non virtual addressing spaces",
 	"/", " foo\\x00", "search for string 'foo\\0'",
 	"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
 	"/!", " ff", "search for first occurrence not matching",
