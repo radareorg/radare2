@@ -668,7 +668,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	bool openmany = r_config_get_i (r->config, "file.openmany");
 	int opened_count = 0;
 	// ut64 current_loadaddr = loadaddr;
-	// RCoreFile *fh, *top_file = NULL;
+	RCoreFile *fh; //, *top_file = NULL;
 	RListIter *fd_iter, *iter2;
 	char *loadmethod = NULL;
 	RList *list_fds = NULL;
