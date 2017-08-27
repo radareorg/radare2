@@ -8,7 +8,7 @@
 static const char *help_msg_S[] = {
 	"Usage:","S[?-.*=adlr] [...]","",
 	"S","","list sections",
-	"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
+	"S"," paddr va sz [vsz] name mrwx","add new section (if(!vsz)vsz=sz)",
 	"S.","","show current section name",
 	"S.-*","","remove all sections in current offset",
 	"S*","","list sections (in radare commands)",
@@ -331,7 +331,7 @@ static int cmd_section_reapply(RCore *core, const char *input) {
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
-	case '?':
+	case '?': // "S?"
 		r_core_cmd_help (core, help_msg_S);
 // TODO: add command to resize current section
 		break;
@@ -359,14 +359,14 @@ static int cmd_section(void *data, const char *input) {
 			}
 			}
 			break;
-		case '-':
+		case '-': // "Sa-"
 			r_io_section_set_archbits (core->io, core->offset, NULL, 0);
 			break;
-		case '?':
+		case '?': // "Sa?"
 		default:
 			eprintf ("Usage: Sa[-][arch] [bits] [[off]]\n");
 			break;
-		case ' ':
+		case ' ': // "Sa "
 			{
 				int i;
 				char *ptr = strdup (input+2);
@@ -395,7 +395,7 @@ static int cmd_section(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'r':
+	case 'r': // "Sr"
 		if (input[1] == ' ') {
 			RIOSection *s;
 			// int len = 0;
@@ -422,7 +422,7 @@ static int cmd_section(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_Sr);
 		}
 		break;
-	case 'd':
+	case 'd': // "Sd"
 		{
 		char *file = NULL;
 		int len = 128;
@@ -430,7 +430,7 @@ static int cmd_section(void *data, const char *input) {
 		case 0:
 			(void) dumpSectionToDisk (core, NULL);
 			break;
-		case ' ':
+		case ' ': // "Sd "
 			if (input[2]) {
 				file = (char *)calloc (len, sizeof (char));
 				if (file) {
@@ -440,13 +440,13 @@ static int cmd_section(void *data, const char *input) {
 			(void) dumpSectionToDisk (core, file);
 			free (file);
 			break;
-		case 'a':
+		case 'a': // "Sda"
 			(void)dumpSectionsToDisk (core);
 			break;
 		}
 		}
 		break;
-	case 'l':
+	case 'l': // "Sl"
 		{
 		ut64 o = core->offset;
 		SdbListIter *iter;
@@ -480,7 +480,7 @@ static int cmd_section(void *data, const char *input) {
 		return false;
 		}
 		break;
-	case '-':
+	case '-': // "S-"
 		// remove all sections
 		if (input[1] == '*') {
 			r_io_section_init (core->io);
@@ -497,9 +497,9 @@ static int cmd_section(void *data, const char *input) {
 			r_io_section_rm (core->io, atoi (input + 1));
 		}
 		break;
-	case ' ':
+	case ' ': // "S "
 		switch (input[1]) {
-		case '-': // remove
+		case '-': // "S -" remove
 			if (input[2] == '?' || input[2] == '\0') {
 				eprintf ("Usage: S -N   # where N is the "
 					" section index\n");
@@ -514,7 +514,7 @@ static int cmd_section(void *data, const char *input) {
 			const char *name = NULL;
 			char vname[64];
 			ut64 vaddr = 0LL;
-			ut64 offset = 0LL;
+			ut64 paddr = 0LL;
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
 			int fd = r_core_file_cur_fd(core);
@@ -526,15 +526,12 @@ static int cmd_section(void *data, const char *input) {
 				name = r_str_word_get0 (ptr, 4);
 			case 4: // get vsize
 				vsize = r_num_math (core->num, r_str_word_get0 (ptr, 3));
-				if (!vsize) {
-					vsize = size;
-				}
 			case 3: // get size
 				size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
 			case 2: // get vaddr
 				vaddr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get offset
-				offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			case 1: // get paddr
+				paddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
 			if (!vsize) {
 				vsize = size;
@@ -549,14 +546,14 @@ static int cmd_section(void *data, const char *input) {
 				sprintf (vname, "area%d", (int)ls_length (core->io->sections));
 				name = vname;
 			}
-			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
+			r_io_section_add (core->io, paddr, vaddr, size, vsize, rwx, name, 0, fd);
 			free (ptr);
 			}
 			break;
 		}
 		break;
-	case '.':
-		if (input[1] == '-') {
+	case '.': // "S."
+		if (input[1] == '-') { // "S.-"
 			ut64 o = core->offset;
 			SdbListIter *iter, *iter2;
 			RIOSection *s;
@@ -606,9 +603,9 @@ static int cmd_section(void *data, const char *input) {
 			}
 		}
 		break;
-	case '\0':
-	case '=':
-	case '*':
+	case '\0': // "S"
+	case '=': // "S="
+	case '*': // "S*"
 		__section_list (core->io, core->offset, core->print, *input);
 		break;
 	}
