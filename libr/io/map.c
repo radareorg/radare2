@@ -44,7 +44,7 @@ static bool _map_skyline_push(RVector *map_skyline, ut64 from, ut64 to, RIOMap *
 }
 
 // Store map parts that are not covered by others into io->map_skyline
-static void _calculate_skyline(RIO *io) {
+R_API void r_io_map_calculate_skyline(RIO *io) {
 #if MAP_USE_HALF_CLOSED
 # error Please migrate to half-closed
 #endif
@@ -121,13 +121,13 @@ static void _calculate_skyline(RIO *io) {
 		}
 	}
 
-out:
 	r_binheap_clear (&heap, NULL);
+out:
 	r_vector_clear (&events, free);
 	free (deleted);
 }
 
-R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
+R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
 	if (!size || !io || !io->maps || !io->map_ids) {
 		return NULL;
 	}
@@ -140,7 +140,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->from = addr;
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
-		r_io_map_new (io, fd, flags, UT64_MAX - addr + 1 + delta, 0LL, size - (UT64_MAX - addr) - 1);
+		r_io_map_new (io, fd, flags, UT64_MAX - addr + 1 + delta, 0LL, size - (UT64_MAX - addr) - 1, do_skyline);
 		size = UT64_MAX - addr + 1;
 	}
 	// RIOMap describes an interval of addresses (map->from; map->to)
@@ -150,7 +150,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	// new map lives on the top, being top the list's tail
 	ls_append (io->maps, map);
 	// TODO When maps are added in batch (sections), do not recalculate each time
-	_calculate_skyline (io);
+	//_calculate_skyline (io);
 	return map;
 }
 
@@ -163,13 +163,13 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 	size = map->to - map->from + 1;
 	map->from = addr;
 	if ((UT64_MAX - size + 1) < addr) {
-		r_io_map_new (io, map->fd, map->flags, UT64_MAX - addr + 1 + map->delta, 0LL, size - (UT64_MAX - addr) - 1);
+		r_io_map_new (io, map->fd, map->flags, UT64_MAX - addr + 1 + map->delta, 0LL, size - (UT64_MAX - addr) - 1, true);
 		size = UT64_MAX - addr + 1;
 		map->to = UT64_MAX;
 		return true;
 	}
 	map->to = addr + size - 1;
-	_calculate_skyline (io);
+	r_io_map_calculate_skyline (io);
 	return true;
 }
 
@@ -225,7 +225,7 @@ R_API RIOMap* r_io_map_resolve(RIO* io, ut32 id) {
 	return NULL;
 }
 
-R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
+R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
@@ -237,8 +237,8 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 			}
 		}
 		//a map cannot have higher permissions than the desc belonging to it
-		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC), 
-					delta, addr, size);
+		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
+				delta, addr, size, do_skyline);
 	}
 	return NULL;
 }
@@ -268,7 +268,7 @@ R_API bool r_io_map_del(RIO* io, ut32 id) {
 		if (map->id == id) {
 			ls_delete (io->maps, iter);
 			r_id_pool_kick_id (io->map_ids, id);
-			_calculate_skyline (io);
+			r_io_map_calculate_skyline (io);
 			return true;
 		}
 	}
@@ -294,7 +294,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 		}
 	}
 	if (ret) {
-		_calculate_skyline (io);
+		r_io_map_calculate_skyline (io);
 	}
 	return ret;
 }
@@ -312,7 +312,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		if (map->id == id) {
 			ls_split_iter (io->maps, iter);
 			ls_append (io->maps, map);
-			_calculate_skyline (io);
+			r_io_map_calculate_skyline (io);
 			return true;
 		}
 	}
@@ -342,7 +342,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	ls_join (io->maps, list);
 	ls_free (list);
 	io->maps->free = _map_free;
-	_calculate_skyline (io);
+	r_io_map_calculate_skyline (io);
 	return true;
 }
 
@@ -374,7 +374,7 @@ R_API void r_io_map_cleanup(RIO* io) {
 		}
 	}
 	if (del) {
-		_calculate_skyline (io);
+		r_io_map_calculate_skyline (io);
 	}
 }
 
@@ -440,5 +440,5 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta
 			break;
 		}
 	}
-	return r_io_map_new (io, fd, flags, delta, next_addr, size);
+	return r_io_map_new (io, fd, flags, delta, next_addr, size, true);
 }

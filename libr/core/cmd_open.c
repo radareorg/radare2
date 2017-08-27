@@ -617,7 +617,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 			if (!p) {
 				p = desc->name;
 			}
-			map = r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
+			map = r_io_map_add (core->io, fd, desc->flags, delta, addr, size, true);
 			r_io_map_set_name (map, p);
 		} else {
 			if (r_io_desc_get (core->io, fd)) {
@@ -971,7 +971,7 @@ static int cmd_open(void *data, const char *input) {
 						if (isn) {
 							RIODesc *d = r_io_desc_get (core->io, file->fd);
 							if (d) {
-								r_io_map_new (core->io, d->fd, d->flags, 0LL, ma, r_io_desc_size (d));
+								r_io_map_new (core->io, d->fd, d->flags, 0LL, ma, r_io_desc_size (d), true);
 							}
 						} else {
 							r_core_bin_load (core, fn, ba);

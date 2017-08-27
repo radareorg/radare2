@@ -627,7 +627,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	obj = r_bin_cur_object (r->bin);
 	//workaround to map correctly malloc:// and raw binaries
 	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || (obj && !obj->sections)) {
-		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc));
+		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc), true);
 	}
 	return true;
 }
@@ -641,10 +641,10 @@ R_API RIOMap *r_core_file_get_next_map(RCore *core, RCoreFile *fh, int mode, ut6
 	}
 	RIOMap *map = NULL;
 	if (!strcmp (loadmethod, "overwrite")) {
-		map = r_io_map_new (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd));
+		map = r_io_map_new (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), true);
 	}
 	if (!strcmp (loadmethod, "fail")) {
-		map = r_io_map_add (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd));
+		map = r_io_map_add (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), true);
 	}
 	if (!strcmp (loadmethod, "append") && load_align) {
 		map = r_io_map_add_next_available (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), load_align);

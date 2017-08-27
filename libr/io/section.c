@@ -462,7 +462,7 @@ static bool _create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch) {
 		//if the file was not opened with -w desc->flags won't have that bit active
 		flags = flags | desc->flags;
 	}
-	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size);
+	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, false);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -730,6 +730,7 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 			_section_apply (io, sec, method);
 		}
 	}
+	r_io_map_calculate_skyline (io);
 	return ret;
 }
 
