@@ -74,12 +74,12 @@ R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
 #define r_vector_foreach(vec, it) \
 	for (it = (vec)->a; it != (vec)->a + (vec)->len; it++)
 
-#define r_vector_lower_bound(vec, x, i, cmp_less) \
+#define r_vector_lower_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if (cmp_less ((vec)->a[m], x)) { \
+			if (cmp ((vec)->a[m], x) < 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
@@ -87,12 +87,12 @@ R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
 		} \
 	} while (0) \
 
-#define r_vector_upper_bound(vec, x, i, cmp_less) \
+#define r_vector_upper_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if (!(cmp_less (x, (vec)->a[m]))) { \
+			if (!(cmp (x, (vec)->a[m]) < 0)) { \
 				i = m + 1; \
 			} else { \
 				h = m; \

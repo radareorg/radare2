@@ -7,6 +7,7 @@
 #include <r_list.h>
 #include <r_socket.h>
 #include <r_util.h>
+#include <r_vector.h>
 
 #define R_IO_READ	4
 #define R_IO_WRITE	2
@@ -70,6 +71,7 @@ typedef struct r_io_t {
 	RIDPool *sec_ids;
 	RIDPool *map_ids;
 	SdbList *maps; //from tail backwards maps with higher priority are found
+	RVector map_skyline; // map parts that are not covered by others
 	SdbList *sections;
 	RIDStorage *files;
 	RCache *buffer;
@@ -155,6 +157,12 @@ typedef struct r_io_map_t {
 	ut64 delta; //this delta means paddr when talking about section
 	char *name;
 } RIOMap;
+
+typedef struct r_io_map_skyline_t {
+	RIOMap *map;
+	ut64 from;
+	ut64 to;
+} RIOMapSkyline;
 
 typedef struct r_io_section_t {
 	char *name;
