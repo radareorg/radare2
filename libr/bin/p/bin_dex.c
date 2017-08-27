@@ -1902,6 +1902,7 @@ static RList *sections(RBinFile *arch) {
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
+		ptr->vsize = ptr->size;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
 		ptr->add = true;
 		r_list_append (ret, ptr);
@@ -1910,6 +1911,7 @@ static RList *sections(RBinFile *arch) {
 		strcpy (ptr->name, "code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
+		ptr->vsize = ptr->size;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 		ptr->add = true;
 		r_list_append (ret, ptr);
