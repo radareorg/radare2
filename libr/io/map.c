@@ -8,7 +8,7 @@
 #define END_OF_MAP_IDS  0xffffffff
 
 R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
-	if (!size || !io || !io->maps || ((UT64_MAX - size + 1) < addr) || !io->map_ids) {
+	if (!size || !io || !io->maps || !io->map_ids) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
@@ -18,6 +18,11 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	}
 	map->fd = fd;
 	map->from = addr;
+	map->delta = delta;
+	if ((UT64_MAX - size + 1) < addr) {
+		r_io_map_new (io, fd, flags, UT64_MAX - addr + 1 + delta, 0LL, size - (UT64_MAX - addr) - 1);
+		size = UT64_MAX - addr + 1;
+	}
 	// RIOMap describes an interval of addresses (map->from; map->to)
 	map->to = addr + size - 1;
 	map->flags = flags;
