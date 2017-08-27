@@ -3119,7 +3119,7 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	}
 	binfile = r_core_bin_cur (r);
 	name = binfile ? binfile->file : NULL;
-	if (binfile->curxtr) {
+	if (binfile && binfile &&  binfile->curxtr) {
 		r_anal_hint_clear (r->anal);
 	}
 	return r_core_bin_set_arch_bits (r, name, arch, bits);
