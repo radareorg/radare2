@@ -626,7 +626,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	obj = r_bin_cur_object (r->bin);
 	//workaround to map correctly malloc:// and raw binaries
-	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || !obj->sections) {
+	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || (obj && !obj->sections)) {
 		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc));
 	}
 	return true;
@@ -668,7 +668,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	bool openmany = r_config_get_i (r->config, "file.openmany");
 	int opened_count = 0;
 	// ut64 current_loadaddr = loadaddr;
-	RCoreFile *fh, *top_file = NULL;
+	// RCoreFile *fh, *top_file = NULL;
 	RListIter *fd_iter, *iter2;
 	char *loadmethod = NULL;
 	RList *list_fds = NULL;
@@ -713,6 +713,8 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		r_list_append (r->files, fh);
 		r_core_bin_load (r, fd->name, 0LL);
 	}
+	return NULL;
+#if DEAD_CODE
 	if (!top_file) {
 		free (loadmethod);
 		return top_file;
@@ -729,6 +731,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	free (loadmethod);
 
 	return top_file;
+#endif
 }
 
 /* loadaddr is r2 -m (mapaddr) */

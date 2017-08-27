@@ -369,12 +369,12 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
 
-	if (b_size < 1) {
+	if ((st64)b_size < 1) {
 		return false;
 	}
 	shift_buf = calloc (b_size, 1);
 	if (!shift_buf) {
-		eprintf ("Cannot allocated %d bytes\n", b_size);
+		eprintf ("Cannot allocated %d bytes\n", (int)b_size);
 		return false;
 	}
 
