@@ -164,13 +164,13 @@ R_API void **r_vector_shrink(RVector *vec) {
 }
 
 // CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, int n, RVectorComparator cmp_less) {
+static void quick_sort(void **a, int n, RVectorComparator cmp) {
 	if (n <= 1) return;
 	int i = rand() % n, j = 0;
 	void *t, *pivot = a[i];
 	a[i] = a[n - 1];
 	for (i = 0; i < n - 1; i++)
-		if (cmp_less (a[i], pivot)) {
+		if (cmp (a[i], pivot) < 0) {
 			t = a[i];
 			a[i] = a[j];
 			a[j] = t;
@@ -178,12 +178,12 @@ static void quick_sort(void **a, int n, RVectorComparator cmp_less) {
 		}
 	a[n - 1] = a[j];
 	a[j] = pivot;
-	quick_sort (a, j, cmp_less);
-	quick_sort (a + j + 1, n - j - 1, cmp_less);
+	quick_sort (a, j, cmp);
+	quick_sort (a + j + 1, n - j - 1, cmp);
 }
 
-R_API void r_vector_sort(RVector *vec, RVectorComparator cmp_less) {
-	quick_sort (vec->a, vec->len, cmp_less);
+R_API void r_vector_sort(RVector *vec, RVectorComparator cmp) {
+	quick_sort (vec->a, vec->len, cmp);
 }
 
 #if TEST
@@ -246,23 +246,23 @@ int main () {
 		r_vector_insert_range (&s, 0, a + 2, a + 5);
 		r_vector_insert_range (&s, 0, a, a + 2);
 
-#define CMP_LESS(x, y) x < y
-		r_vector_lower_bound (&s, (void *)4, l, CMP_LESS);
+#define CMP(x, y) x < y
+		r_vector_lower_bound (&s, (void *)4, l, CMP);
 		assert (s.a[l] == (void *)4);
-		r_vector_lower_bound (&s, (void *)5, l, CMP_LESS);
+		r_vector_lower_bound (&s, (void *)5, l, CMP);
 		assert (s.a[l] == (void *)6);
-		r_vector_lower_bound (&s, (void *)6, l, CMP_LESS);
+		r_vector_lower_bound (&s, (void *)6, l, CMP);
 		assert (s.a[l] == (void *)6);
-		r_vector_lower_bound (&s, (void *)9, l, CMP_LESS);
+		r_vector_lower_bound (&s, (void *)9, l, CMP);
 		assert (l == s.len);
 
-		r_vector_upper_bound (&s, (void *)4, l, CMP_LESS);
+		r_vector_upper_bound (&s, (void *)4, l, CMP);
 		assert (s.a[l] == (void *)6);
-		r_vector_upper_bound (&s, (void *)5, l, CMP_LESS);
+		r_vector_upper_bound (&s, (void *)5, l, CMP);
 		assert (s.a[l] == (void *)6);
-		r_vector_upper_bound (&s, (void *)6, l, CMP_LESS);
+		r_vector_upper_bound (&s, (void *)6, l, CMP);
 		assert (s.a[l] == (void *)8);
-#undef CMP_LESS
+#undef CMP
 
 		r_vector_clear (&s, NULL);
 
@@ -273,8 +273,7 @@ int main () {
 		r_vector_push (&s, strdup ("Caterpie"));
 		r_vector_sort (&s, my_cmp);
 
-#define CMP_LESS(x, y) strcmp (x, y) < 0
-		r_vector_lower_bound (&s, "Meow", l, CMP_LESS);
+		r_vector_lower_bound (&s, "Meow", l, strcmp);
 		assert (!strcmp (s.a[l], "Meowth"));
 
 		r_vector_clear (&s, free);

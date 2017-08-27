@@ -4,7 +4,7 @@ NAME=r_util
 CFLAGS+=-DCORELIB -I$(TOP)/shlr
 DEPS=
 
-OBJS=mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
+OBJS=binheap.o mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
