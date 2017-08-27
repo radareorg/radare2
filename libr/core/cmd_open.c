@@ -248,72 +248,68 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '*':
 		r_core_bin_list (core, input[1]);
 		break;
-	case 'b': // "obb"
-		switch (input[2]) {
-		case 'a': // "oa"
-			if ('?' == input[1]) {
-				r_core_cmd_help (core, help_msg_oa);
+	case 'a':
+		if ('?' == input[2]) {
+			r_core_cmd_help (core, help_msg_oa);
+			break;
+		}
+		if (input[3]) {
+			char *arg = strdup (input + 3);
+			char *filename = strchr (arg, ' ');
+			if (filename) {
+				RIODesc *desc = r_io_open (core->io, filename + 1, R_IO_READ, 0);
+				if (desc) {
+					*filename = 0;
+					ut64 addr = r_num_math (core->num, arg);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+					r_io_desc_close (desc);
+					r_core_cmd0 (core, ".is*");
+				} else {
+					eprintf ("Cannot open %s\n", filename + 1);
+				}
+			} else {
+				ut64 addr = r_num_math (core->num, input + 2);
+				RCoreFile *cf = r_core_file_cur (core);
+				RIODesc *desc = r_io_desc_get (core->io, cf->fd);
+				if (cf && desc) {
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+					r_core_cmd0 (core, ".is*");
+				} else {
+					eprintf ("No file to load bin from?\n");
+				}
+			}
+			free (arg);
+		} else {
+			/* reload all bininfo */
+			RIODesc *desc;
+			RListIter *iter;
+			RCoreFile *file;
+			r_list_foreach (core->files, iter, file) {
+				desc = r_io_desc_get (core->io, file->fd);
+				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0);
+				r_core_cmd0 (core, ".is*");
 				break;
 			}
-			if (input[1]) {
-				char *arg = strdup (input + 2);
-				char *filename = strchr (arg, ' ');
-				if (filename) {
-					RIODesc *desc = r_io_open (core->io, filename + 1, R_IO_READ, 0);
-					if (desc) {
-						*filename = 0;
-						ut64 addr = r_num_math (core->num, arg);
-						r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-						r_io_desc_close (desc);
-						r_core_cmd0 (core, ".is*");
-					} else {
-						eprintf ("Cannot open %s\n", filename + 1);
-					}
-				} else {
-					ut64 addr = r_num_math (core->num, input + 1);
-					RCoreFile *cf = r_core_file_cur (core);
-					RIODesc *desc = r_io_desc_get (core->io, cf->fd);
-					if (cf && desc) {
-						r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-						r_core_cmd0 (core, ".is*");
-					} else {
-						eprintf ("No file to load bin from?\n");
-					}
-				}
-				free (arg);
-			} else {
-				/* reload all bininfo */
-				RIODesc *desc;
-				RListIter *iter;
-				RCoreFile *file;
-				r_list_foreach (core->files, iter, file) {
-					desc = r_io_desc_get (core->io, file->fd);
-					r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0);
-					r_core_cmd0 (core, ".is*");
-					break;
-				}
+		}
+		//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
+		break;
+	case 'b': // "obb"
+		{
+			ut32 fd;
+			value = *(input + 3) ? input + 3 : NULL;
+			if (!value) {
+				eprintf ("Invalid fd number.");
+				break;
 			}
-			//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
-			break;
-		default:
-			{
-				ut32 fd;
-				value = *(input + 3) ? input + 3 : NULL;
-				if (!value) {
-					eprintf ("Invalid fd number.");
-					break;
-				}
-				binfile_num = UT32_MAX;
-				fd = *value && r_is_valid_input_num_value (core->num, value) ?
-					r_get_input_num_value (core->num, value) : UT32_MAX;
-				binfile_num = find_binfile_id_by_fd (core->bin, fd);
-				if (binfile_num == UT32_MAX) {
-					eprintf ("Invalid fd number.");
-					break;
-				}
-				r_core_bin_raise (core, binfile_num, -1);
+			binfile_num = UT32_MAX;
+			fd = *value && r_is_valid_input_num_value (core->num, value) ?
+				r_get_input_num_value (core->num, value) : UT32_MAX;
+			binfile_num = find_binfile_id_by_fd (core->bin, fd);
+			if (binfile_num == UT32_MAX) {
+				eprintf ("Invalid fd number.");
+				break;
 			}
-			break;
+			r_core_bin_raise (core, binfile_num, -1);
 		}
 		break;
 	case ' ':
