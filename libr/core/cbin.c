@@ -2241,7 +2241,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		i++;
 	}
-	if (r->bin && r->bin->cur && r->io && r->io->desc && r->io->desc->plugin && !r->io->desc->plugin->isdbg) {
+	if (r->bin && r->bin->cur && r->io && !r_io_desc_is_dbg (r->io->desc)) {
 		r_io_section_apply_bin (r->io, r->bin->cur->id, R_IO_SECTION_APPLY_FOR_ANALYSIS);
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -3100,7 +3100,8 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 		return false;
 	}
 	curfile = r_bin_cur (r->bin);	
-	if (curfile != binfile) {
+	//set env if the binfile changed or we are dealing with xtr
+	if (curfile != binfile || binfile->curxtr) {
 		r_core_bin_set_cur (r, binfile);
 		return r_core_bin_set_env (r, binfile);
 	}
@@ -3122,7 +3123,7 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	}
 	binfile = r_core_bin_cur (r);
 	name = binfile ? binfile->file : NULL;
-	if (binfile && binfile &&  binfile->curxtr) {
+	if (binfile && binfile->curxtr) {
 		r_anal_hint_clear (r->anal);
 	}
 	return r_core_bin_set_arch_bits (r, name, arch, bits);
