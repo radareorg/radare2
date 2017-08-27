@@ -36,7 +36,7 @@ static inline RBNode *zig_zag(RBNode *x, int dir) {
 }
 
 // Returns true if a node with an equal key is deleted
-R_API bool r_rbtree_delete(RBTree *tree, void *data) {
+R_API bool r_rbtree_delete(RBTree *tree, void *data, void *user) {
 	RBNode head, *del = NULL, *g = NULL, *p = NULL, *q = &head;
 	head.child[0] = NULL;
 	head.child[1] = tree->root;
@@ -49,7 +49,7 @@ R_API bool r_rbtree_delete(RBTree *tree, void *data) {
 		if (del) {
 			d = 1;
 		} else {
-			d = tree->cmp (data, q->data);
+			d = tree->cmp (data, q->data, user);
 			if (d < 0) {
 				d = 0;
 			} else if (d > 0) {
@@ -102,10 +102,10 @@ R_API bool r_rbtree_delete(RBTree *tree, void *data) {
 	return true;
 }
 
-R_API void *r_rbtree_find(RBTree *tree, void *data) {
+R_API void *r_rbtree_find(RBTree *tree, void *data, void *user) {
 	RBNode *x = tree->root;
 	while (x) {
-		int d = tree->cmp (data, x->data);
+		int d = tree->cmp (data, x->data, user);
 		if (d < 0) {
 			x = x->child[0];
 		} else if (d > 0) {
@@ -117,7 +117,7 @@ R_API void *r_rbtree_find(RBTree *tree, void *data) {
 	return NULL;
 }
 
-R_API RBTree *r_rbtree_new(RListFree free, RListComparator cmp) {
+R_API RBTree *r_rbtree_new(RListFree free, RBTreeComparator cmp) {
 	RBTree *ret = R_NEW (RBTree);
 	if (!ret) {
 		return NULL;
@@ -135,7 +135,7 @@ R_API void r_rbtree_free(RBTree *tree) {
 }
 
 // Returns 1 if `data` is inserted; 0 if an equal key already exists; -1 if allocation fails.
-R_API int r_rbtree_insert(RBTree *tree, void *data) {
+R_API int r_rbtree_insert(RBTree *tree, void *data, void *user) {
 	if (!tree->root) {
 		RBNode *q = R_NEW (RBNode);
 		if (!q) {
@@ -179,7 +179,7 @@ R_API int r_rbtree_insert(RBTree *tree, void *data) {
 		if (done) {
 			break;
 		}
-		d = tree->cmp (data, q->data);
+		d = tree->cmp (data, q->data, user);
 		t = g;
 		g = p;
 		p = q;
@@ -197,11 +197,11 @@ R_API int r_rbtree_insert(RBTree *tree, void *data) {
 	return 1;
 }
 
-R_API void *r_rbtree_lower_bound(RBTree *tree, void *data) {
+R_API void *r_rbtree_lower_bound(RBTree *tree, void *data, void *user) {
 	void *ret = NULL;
 	RBNode *x = tree->root;
 	while (x) {
-		int d = tree->cmp (data, x->data);
+		int d = tree->cmp (data, x->data, user);
 		if (d < 0) {
 			ret = x->data;
 			x = x->child[0];
@@ -214,12 +214,12 @@ R_API void *r_rbtree_lower_bound(RBTree *tree, void *data) {
 	return ret;
 }
 
-static inline RBTreeIter bound_iter(RBTree *tree, void *data, bool upper, bool dir) {
+static inline RBTreeIter bound_iter(RBTree *tree, void *data, void *user, bool upper, bool dir) {
 	RBTreeIter it;
 	it.len = 0;
 	RBNode *x = tree->root;
 	while (x) {
-		int d = tree->cmp (data, x->data);
+		int d = tree->cmp (data, x->data, user);
 		if (d < 0) {
 			if (!dir) {
 				it.path[it.len++] = x;
@@ -240,19 +240,19 @@ static inline RBTreeIter bound_iter(RBTree *tree, void *data, bool upper, bool d
 	return it;
 }
 
-R_API RBTreeIter r_rbtree_lower_bound_backward(RBTree *tree, void *data) {
-	return bound_iter (tree, data, false, true);
+R_API RBTreeIter r_rbtree_lower_bound_backward(RBTree *tree, void *data, void *user) {
+	return bound_iter (tree, data, user, false, true);
 }
 
-R_API RBTreeIter r_rbtree_lower_bound_forward(RBTree *tree, void *data) {
-	return bound_iter (tree, data, false, false);
+R_API RBTreeIter r_rbtree_lower_bound_forward(RBTree *tree, void *data, void *user) {
+	return bound_iter (tree, data, user, false, false);
 }
 
-R_API void *r_rbtree_upper_bound(RBTree *tree, void *data) {
+R_API void *r_rbtree_upper_bound(RBTree *tree, void *data, void *user) {
 	void *ret = NULL;
 	RBNode *x = tree->root;
 	while (x) {
-		int d = tree->cmp (data, x->data);
+		int d = tree->cmp (data, x->data, user);
 		if (d < 0) {
 			ret = x->data;
 			x = x->child[0];
@@ -263,12 +263,12 @@ R_API void *r_rbtree_upper_bound(RBTree *tree, void *data) {
 	return ret;
 }
 
-R_API RBTreeIter r_rbtree_upper_bound_backward(RBTree *tree, void *data) {
-	return bound_iter (tree, data, true, true);
+R_API RBTreeIter r_rbtree_upper_bound_backward(RBTree *tree, void *data, void *user) {
+	return bound_iter (tree, data, user, true, true);
 }
 
-R_API RBTreeIter r_rbtree_upper_bound_forward(RBTree *tree, void *data) {
-	return bound_iter (tree, data, true, false);
+R_API RBTreeIter r_rbtree_upper_bound_forward(RBTree *tree, void *data, void *user) {
+	return bound_iter (tree, data, user, true, false);
 }
 
 static void print(RBNode *x, int dep, int black, bool leftmost) {
