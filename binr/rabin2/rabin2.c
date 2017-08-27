@@ -667,7 +667,7 @@ int main(int argc, char **argv) {
 					/* to store them just dump'm all to stdout */
 					rawstr = 2;
 				} else {
-					rawstr = true;
+					rawstr = 1;
 				}
 			} else {
 				set_action (R_BIN_REQ_STRINGS);

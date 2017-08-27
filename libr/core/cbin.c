@@ -495,10 +495,10 @@ static bool bin_strings(RCore *r, int mode, int va) {
 		return false;
 	}
 	if (!r_config_get_i (r->config, "bin.strings")) {
-		return 0;
+		return false;
 	}
 	if (!plugin) {
-		return 0;
+		return false;
 	}
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {

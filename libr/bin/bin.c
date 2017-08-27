@@ -1057,13 +1057,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-#if 0
-		io->va = 0;
-		if (!iob->read_at (io, seekaddr, buf_bytes, sz)) {
-			sz = 0;
-		}
-		io->va = 1;
-#endif
 		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
 			sz = 0LL;
 		}
