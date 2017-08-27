@@ -3189,7 +3189,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	ut32 size = 0xf0000;
 	char name[128];
 	RFlagItem *fi;
-	const char *sp;
+	const char *sp, *pc;
 	char uri[32];
 	char nomalloc[256];
 	char *p;
@@ -3330,6 +3330,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	// BP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	r_debug_reg_set (core->dbg, pc, curoff);
 #if 0
 	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
 		r_core_cmdf (core, "om %d 0x%"PFMT64x, cf->fd, addr);
