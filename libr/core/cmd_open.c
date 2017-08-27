@@ -77,7 +77,7 @@ static const char *help_msg_om[] = {
 	"omj", "", "list all maps in json format",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", "-mapid", "remove the map with corresponding id",
-	"om", " fd addr [size] [delta]", "create new io map",
+	"om", " fd addr [size] [delta] [name]", "create new io map",
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapid [name]", "set/delete name for map with mapid",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
@@ -581,7 +581,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		}
 		break;
 	case ' ': // "om"
-		// i need to parse delta, offset, size
+		// i need to parse delta, offset, size, name
 		s = strdup (input + 2);
 		if (!s) {
 			break;
@@ -598,6 +598,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 				break;
 			}
 			addr = r_num_math (core->num, p + 1);
+			p = NULL;
 			if (q) {
 				char *r = strchr (q + 1, ' ');
 				*q = 0;
@@ -605,6 +606,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 					*r = 0;
 					size = r_num_math (core->num, q + 1);
 					delta = r_num_math (core->num, r + 1);
+					p = strchr (r + 1, ' ');
 				} else {
 					size = r_num_math (core->num, q + 1);
 				}
@@ -612,7 +614,11 @@ static void cmd_open_map (RCore *core, const char *input) {
 				size = r_io_desc_size (desc);
 			}
 			//TODO:user should be able to set these
-			r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
+			if (!p) {
+				p = desc->name;
+			}
+			map = r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
+			r_io_map_set_name (map, p);
 		} else {
 			if (r_io_desc_get (core->io, fd)) {
 				map_list (core->io, 0, core->print, r_num_math (core->num, s));
