@@ -528,16 +528,6 @@ static void cmd_open_map (RCore *core, const char *input) {
 			id = (ut32)r_num_math (core->num, input+3);	//mapid
 			new = r_num_math (core->num, P+1);
 			r_io_map_remap (core->io, id, new);
-#if 0
-			map = r_io_map_resolve (core->io, id);	//the remapping should be done in the api
-			if (map) {
-				ut64 diff = map->to - map->from;
-				map->from = new;
-				map->to = new + diff;			//this is so risky
-			} else {
-				eprintf ("Cannot find any map with mapid %d\n", id);
-			}
-#endif
 		}
 		break;
 	case 'p':
