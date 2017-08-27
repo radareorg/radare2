@@ -2,8 +2,13 @@
 
 #ifndef R_ID_STORAGE_H
 #define R_ID_STORAGE_H
+
 #include <r_util.h>
 #include <r_types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct r_id_pool_t {
 	ut32 start_id;
@@ -34,4 +39,9 @@ R_API void r_id_storage_delete(RIDStorage *storage, ut32 id);
 R_API void *r_id_storage_take(RIDStorage *storage, ut32 id);
 R_API bool r_id_storage_foreach(RIDStorage *storage, RIDStorageForeachCb cb, void *user);
 R_API void r_id_storage_free(RIDStorage *storage);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

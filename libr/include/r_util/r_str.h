@@ -3,6 +3,10 @@
 
 #include "r_str_util.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	R_STRING_ENC_LATIN1,
 	R_STRING_ENC_UTF8,
@@ -144,5 +148,9 @@ R_API bool r_str_isnumber (const char *str);
 R_API const char *r_str_last (const char *in, const char *ch);
 R_API char* r_str_highlight(char *str, const char *word, const char *color);
 R_API char *r_qrcode_gen(const ut8* text, int len, bool utf8);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  R_STR_H

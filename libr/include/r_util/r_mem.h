@@ -1,6 +1,10 @@
 #ifndef R_MEM_H
 #define R_MEM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_mmap_t {
 	ut8 *buf;
 	ut64 base;
@@ -49,4 +53,8 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 R_API int r_mem_count(const ut8 **addr);
 R_API bool r_mem_is_printable (const ut8 *a, int la);
 R_API bool r_mem_is_zero(const ut8 *b, int l);
+
+#ifdef __cplusplus
+}
+#endif
 #endif //  R_MEM_H

@@ -1,6 +1,11 @@
 #ifndef R_SYS_H
 #define R_SYS_H
+
 #include <r_list.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum {
 	R_SYS_BITS_8 = 1,
@@ -58,5 +63,9 @@ R_API char *r_syscmd_ls(const char *input);
 R_API char *r_syscmd_cat(const char *file);
 R_API char *r_syscmd_mkdir(const char *dir);
 R_API bool r_syscmd_mv(const char *input);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  R_SYS_H
