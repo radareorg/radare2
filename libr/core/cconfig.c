@@ -369,11 +369,16 @@ static int cb_asmarch(void *user, void *data) {
 	if (core && core->anal && core->anal->bits) {
 		bits = core->anal->bits;
 	}
-	if (*node->value == '?') {
-		update_asmarch_options (core, node);
-		/* print more verbose help instead of plain option values */
-		rasm2_list (core, NULL, node->value[1]);
-		return false;
+	if (node->value[0] == '?') {
+		if (strlen (node->value) > 1 && node->value[1] == '?') {
+			update_asmarch_options (core, node);
+			/* print more verbose help instead of plain option values */
+			rasm2_list (core, NULL, node->value[1]);
+			return false;
+		} else {
+			print_node_options (node);
+			return false;
+		}
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
