@@ -265,6 +265,9 @@ static RList* sections(RBinFile *arch) {
 			case PT_LOAD:
 				snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "LOAD%d", n++);
 				found_load = 1;
+				if (R_BIN_ELF_SCN_IS_EXECUTABLE (phdr[i].p_flags)) {
+					ptr->is_data = true;
+				}
 				ptr->add = true;
 				break;
 			case PT_INTERP:

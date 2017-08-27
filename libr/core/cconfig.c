@@ -1833,9 +1833,7 @@ static int cb_searchin(void *user, void *data) {
 			print_node_options (node);
 		}
 		return false;
-	} else {
-		core->bin->strfilter = node->value[0];
-	}
+	} 
 	return true;
 }
 

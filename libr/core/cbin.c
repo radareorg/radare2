@@ -252,7 +252,9 @@ static bool string_filter(RCore *core, const char *str) {
 		if (str && *str) {
 			if (!strstr (str+1, "%"))
 				return false;
-		} else return false;
+		} else {
+			return false;
+		}
 		break;
 	case 'u': // URLs
 		if (!strstr (str, "://")) {
@@ -310,6 +312,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
 	RBin *bin = r->bin;
+	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
 	RBinString *string;
 	RBinSection *section;
@@ -343,7 +346,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			continue;
 		}
 
-		section = r_bin_get_section_at (r_bin_cur_object (bin), paddr, 0);
+		section = r_bin_get_section_at (obj, paddr, 0);
 		section_name = section ? section->name : "unknown";
 		type_string = r_bin_string_type (string->type);
 		if (IS_MODE_SET (mode)) {
