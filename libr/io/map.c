@@ -229,14 +229,6 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
-		SdbListIter* iter;
-		RIOMap* map;
-		ls_foreach (io->maps, iter, map) {
-			if (map->fd == fd && map->from == addr &&
-			    map->to == addr + size - 1 && map->delta == delta) {
-				return NULL;
-			}
-		}
 		//a map cannot have higher permissions than the desc belonging to it
 		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
 				delta, addr, size, do_skyline);
