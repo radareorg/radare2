@@ -1224,6 +1224,7 @@ int main(int argc, char **argv, char **envp) {
 
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
+		r_core_cmd0 (&r, "aeip");
 		for (;;) {
 #if USE_THREADS
 			do {
