@@ -66,9 +66,7 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 		r_list_append (list, mr);
 	}
 err_add_map:
-	if (map_name) {
-		free (map_name);
-	}
+	free (map_name);
 	return mr;
 }
 
@@ -148,10 +146,8 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	}
 err_set_mod_info:
 	if (mod_inf_fill == -1) {
-		if (mod->sect_hdr) {
-			free (mod->sect_hdr);
-			mod->sect_hdr = NULL;
-		}	
+		free (mod->sect_hdr);
+		mod->sect_hdr = NULL;
 	}
 	return mod_inf_fill;
 }
@@ -163,9 +159,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 		RListIter *iter;
 		RDebugMap *map;
 
-		if (mod->sect_hdr) {
-			free (mod->sect_hdr);
-		}
+		free (mod->sect_hdr);
 		memset (mod, 0, sizeof (RWinModInfo));
 		r_list_foreach (mod_list, iter, map) {
 			if (addr >= map->addr && addr <= map->addr_end) {
@@ -239,7 +233,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h_proc;
 	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_new(), *mod_list;
+	RList *map_list = r_list_new(), *mod_list = NULL;
 
 	GetSystemInfo (&si);
 	h_proc = w32_OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
@@ -268,9 +262,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	   	cur_addr = (LPVOID)((ut64)mbi.BaseAddress + mbi.RegionSize);
 	}
 err_w32_dbg_maps:
-	if (mod_inf.sect_hdr) {
-		free (mod_inf.sect_hdr);
-	}
+	free (mod_inf.sect_hdr);
 	r_list_free (mod_list);		
 	return map_list;
 }
