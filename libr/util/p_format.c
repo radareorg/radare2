@@ -349,12 +349,11 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode,
 
 static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
 	ut8 buffer[255];
+	bool can_read;
 	buffer[0] = 0;
 	if (p->iob.read_at) {
-		if (is64 == 1)
-			p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer)-8);
-		else
-			p->iob.read_at (p->iob.io, (ut64)addr, buffer, sizeof (buffer)-8);
+		// TODO #8264 bool vs int
+		can_read = p->iob.read_at (p->iob.io, is64 ? addr64 : (ut64)addr, buffer, sizeof (buffer)-8);
 	} else {
 		eprintf ("(cannot read memory)\n");
 		return -1;
@@ -362,9 +361,15 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 	if (MUSTSEEJSON) {
 		p->cb_printf ("%d,\"string\":\"%s\"}", seeki, buffer);
 	} else if (MUSTSEE) {
-		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
-		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
-		p->cb_printf ("%s", buffer);
+		if (!SEEVALUE) {
+			p->cb_printf ("0x%08"PFMT64x" = ", seeki);
+		}
+		if (!SEEVALUE) {
+			p->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
+		}
+		if (can_read) {
+			p->cb_printf ("%s", buffer);
+		}
 	}
 	return 0;
 }
