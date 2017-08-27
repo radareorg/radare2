@@ -2635,7 +2635,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		r_cons_printf ("%d\n", sz);
 		free (buf);
 		} break;
-	case 'b': { // WORK IN PROGRESS // DEBUG COMMAND
+	case 'b': { // "arb" WORK IN PROGRESS // DEBUG COMMAND
 		int len, type = R_REG_TYPE_GPR;
 		arg = strchr (str, ' ');
 		if (arg) {
@@ -2649,9 +2649,11 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			}
 		}
 		ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
-		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
-		r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
-		free (buf);
+		if (buf) {
+			//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
+			r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
+			free (buf);
+		}
 		} break;
 	case 'c':
 		// TODO: set flag values with drc zf=1
