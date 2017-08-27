@@ -1102,6 +1102,7 @@ int main(int argc, char **argv, char **envp) {
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
+			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
