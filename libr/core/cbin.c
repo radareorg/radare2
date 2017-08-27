@@ -3101,7 +3101,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 	}
 	curfile = r_bin_cur (r->bin);	
 	//set env if the binfile changed or we are dealing with xtr
-	if (curfile != binfile || binfile->curxtr) {
+	if (curfile != binfile || binfile->curxtr) {
 		r_core_bin_set_cur (r, binfile);
 		return r_core_bin_set_env (r, binfile);
 	}
