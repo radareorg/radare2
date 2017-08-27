@@ -197,7 +197,7 @@ R_API RIODesc* r_io_open(RIO* io, const char* uri, int flags, int mode) {
 	if (!desc) {
 		return NULL;
 	}
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc));
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc), true);
 	return desc;
 }
 
@@ -216,11 +216,11 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
-		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
+		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1, true);
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size); // first map
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size, true); // first map
 	return desc;
 }
 

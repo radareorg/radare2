@@ -3300,7 +3300,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
 	esil->stack_fd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
 	if (!(stack_map = r_io_map_add (core->io, esil->stack_fd,
-					  R_IO_RW, 0LL, addr, size))) {
+			R_IO_RW, 0LL, addr, size, true))) {
 		r_io_fd_close (core->io, esil->stack_fd);
 		eprintf ("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
 		esil->stack_fd = 0;
