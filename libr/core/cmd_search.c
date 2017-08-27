@@ -321,7 +321,7 @@ R_API int r_core_search_preludes(RCore *core) {
 	fc0 = count_functions (core);
 	r_list_foreach (list, iter, p) {
 		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ", r_str_rwx_i (p->flags), p->from, p->to);
-		if (!cfg_debug && !(p->flags & R_IO_MAP)) {
+		if (!(p->flags & R_IO_EXEC)) {
 			eprintf ("skip\n");
 			continue;
 		}
