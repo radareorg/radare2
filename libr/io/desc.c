@@ -95,20 +95,18 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 }
 
 R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
-	RIOPlugin *plugin;
-	RIODesc *desc;
 	if (!io || !io->files || !uri) {
 		return NULL;
 	}
-	plugin = r_io_plugin_resolve (io, uri, 0);
-	if (!plugin || !plugin->open || !plugin->close) {
+	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);
+	if (!plugin || !plugin->open) {
 		return NULL;
 	}
-	desc = plugin->open (io, uri, flags, mode);
+	RIODesc *desc = plugin->open (io, uri, flags, mode);
 	if (!desc) {
 		return NULL;
 	}
-	//for none static callbacks, those that cannot use r_io_desc_new
+	// for none static callbacks, those that cannot use r_io_desc_new
 	if (!desc->plugin) {
 		desc->plugin = plugin;
 	}
@@ -124,10 +122,10 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
 
 R_API bool r_io_desc_close(RIODesc *desc) {
 	RIO *io;
-	if (!desc || !desc->io || !desc->plugin || !desc->plugin->close) {
+	if (!desc || !desc->io || !desc->plugin) {
 		return false;
 	}
-	if (desc->plugin->close (desc)) {
+	if (desc->plugin->close && desc->plugin->close (desc)) {
 		return false;
 	}
 	io = desc->io;
@@ -142,7 +140,7 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 //returns length of written bytes
 R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	//check pointers
-	if (!buf || !desc || !desc->plugin || !desc->plugin->write || (len < 1)) {
+	if (!buf || !desc || !desc->plugin || len < 1) {
 		return 0;
 	}
 	//check pointers and pcache
@@ -154,20 +152,24 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	if (!(desc->flags & R_IO_WRITE)) {
 		return 0;
 	}
-	return desc->plugin->write (desc->io, desc, buf, len);
+	if (desc->plugin->write) {
+		return desc->plugin->write (desc->io, desc, buf, len);
+	}
+	return 0;
 }
 
 //returns length of read bytes
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	ut64 seek;
-	int ret;
+	int ret = -1;
 	//check pointers and permissions
-	if (!buf || !desc || !desc->plugin || !desc->plugin->read ||
-	    (len < 1) || !(desc->flags & R_IO_READ)) {
+	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->flags & R_IO_READ)) {
 		return 0;
 	}
 	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
-	ret = desc->plugin->read (desc->io, desc, buf, len);
+	if (desc->plugin->read) {
+		ret = desc->plugin->read (desc->io, desc, buf, len);
+	}
 	if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
 		ret = r_io_desc_cache_read (desc, seek, buf, ret);
 	}
