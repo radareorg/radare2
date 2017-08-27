@@ -79,15 +79,16 @@ RList* search_virtual_tables(RCore *core){
 	}
 	ut64 startAddress;
 	ut64 endAddress;
-	SdbListIter * iter;
-	RIOSection *section;
+	RListIter * iter;
+	RBinSection *section;
+	RList *sections = r_bin_get_sections (core->bin);
 	RList *vtables = r_list_newf ((RListFree)free);
-	if (!vtables) {
+	if (!vtables || !sections) {
 		return NULL;
 	}
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
 	int wordSize = bits / 8;
-	ls_foreach (core->io->sections, iter, section) {
+	r_list_foreach (sections, iter, section) {
 		if (!strcmp (section->name, ".rodata")) {
 			ut8 *segBuff = calloc (1, section->size);
 			r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
