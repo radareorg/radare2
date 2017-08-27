@@ -1812,23 +1812,23 @@ static int cb_searchin(void *user, void *data) {
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
-			"raw  search in raw io \n"
-			"block  search in the current block\n"
-			"file  search in all mapped sections\n"
-			"io.maps  search in current map\n"
-			"io.maprange  search in all maps\n"
-			"io.section  search in current mapped section\n"
-			"io.sections  search in all mapped sections\n"
-			"io.sections.write  search in all writable marked sections\n"
+			"raw               search in raw io (ignoring bounds)\n"
+			"block             search in the current block\n"
+			"file              search in all mapped sections\n"
+			"io.maps           search in current map\n"
+			"io.maprange       search in all maps\n"
+			"io.section        search in current mapped section\n"
+			"io.sections       search in all mapped sections\n"
+			"io.sections.write search in all writable marked sections\n"
 			"io.sections.exec  search in all executable marked sections\n"
-			"dbg.stack  search in the stack\n"
-			"dbg.heap  search in the heap\n"
-			"dbg.map  search in current memory map\n"
-			"dbg.maps  search in all memory maps\n"
-			"dbg.maps.exec  search in all executable marked memory maps\n"
-			"dbg.maps.write  search in all writable marked memory maps\n"
-			"anal.fcn  search in the current function\n"
-			"anal.bb  search in the current basic-block\n");
+			"dbg.stack         search in the stack\n"
+			"dbg.heap          search in the heap\n"
+			"dbg.map           search in current memory map\n"
+			"dbg.maps          search in all memory maps\n"
+			"dbg.maps.exec     search in all executable marked memory maps\n"
+			"dbg.maps.write    search in all writable marked memory maps\n"
+			"anal.fcn          search in the current function\n"
+			"anal.bb           search in the current basic-block\n");
 		} else {
 			print_node_options (node);
 		}
