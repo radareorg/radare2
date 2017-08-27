@@ -641,7 +641,9 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		uri = r_str_newf ("malloc://%"PFMT64u, sec->vsize);
 		r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
 		map = r_io_map_get (io, sec->vaddr);
-		r_io_use_fd (io, map->fd);
+		if (map) {
+			(void)r_io_use_fd (io, map->fd);
+		}
 		r_io_pwrite_at (io, sec->size, buf, (int) size);
 		free (buf);
 		if (sec->size > sec->vsize) {
@@ -656,11 +658,13 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		}
 		r_io_use_fd (io, sec->fd);
 		r_io_pread_at (io, sec->paddr, buf, (int) size);
-		r_io_use_fd (io, map->fd);
+		if (map) {
+			(void)r_io_use_fd (io, map->fd);
+			sec->filemap = sec->memmap = map->id;
+		}
 		r_io_pwrite_at (io, 0LL, buf, (int) size);
 		free (buf);
 		io->desc = oldesc;
-		sec->filemap = sec->memmap = map->id;
 		return true;
 	}
 	if (!sec->filemap) {
