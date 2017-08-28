@@ -91,10 +91,11 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	}
 
 	bool retval = false;
-	if (r_io_read_at (core->io, fcn->addr, buf, len) != len) {
+	if (!r_io_is_valid_offset (core->io, fcn->addr, 0)) {
 		eprintf ("error: cannot read at 0x%08"PFMT64x"\n", fcn->addr);
 		goto out;
 	}
+	(void)r_io_read_at (core->io, fcn->addr, buf, len);
 	retval = r_sign_add_anal (core->anal, name, len, buf, fcn->addr);
 
 out:
@@ -626,10 +627,11 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 			break;
 		}
 		rlen = R_MIN (core->blocksize, to - at);
-		if (!r_io_read_at (core->io, at, buf, rlen)) {
+		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			retval = false;
 			break;
 		}
+		(void)r_io_read_at (core->io, at, buf, rlen);
 		if (r_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
