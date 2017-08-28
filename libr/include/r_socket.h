@@ -42,7 +42,6 @@ R_LIB_VERSION_HEADER (r_socket);
 #define SD_SEND 1
 #define SD_BOTH 2
 #endif
-
 typedef struct {
 	int magic;
 	int child;

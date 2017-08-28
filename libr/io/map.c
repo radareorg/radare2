@@ -1,9 +1,9 @@
 /* radare2 - LGPL - Copyright 2017 - condret, MaskRay */
 
+#include <r_io.h>
 #include <stdlib.h>
 #include <sdb.h>
 #include "r_binheap.h"
-#include "r_io.h"
 #include "r_util.h"
 #include "r_vector.h"
 
