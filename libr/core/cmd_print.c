@@ -2762,7 +2762,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				blocksize, core->offset, totalsize);
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
-				ut64 off = blocksize * i;
+				ut64 off = ((ut64)blocksize) * i;
 				const char *comma = (i + 1 < (nblocks))? ",": "";
 				off += core->offset;
 				r_cons_printf ("{\"addr\":%"PFMT64d ",\"value\":%d}%s",
