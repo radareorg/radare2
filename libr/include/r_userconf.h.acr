@@ -29,6 +29,10 @@
 
 #define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
 
+#if __APPLE__ && __POWERPC__
+#define HAVE_JEMALLOC 0
+#else
 #define HAVE_JEMALLOC @HAVE_JEMALLOC@
+#endif
 
 #endif
