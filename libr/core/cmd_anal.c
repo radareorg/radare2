@@ -3685,8 +3685,6 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'c':
 			if (input[2] == ' ') {
 				// seek to this address
-				r_core_cmd0 (core, "aei");  // init vm
-				r_core_cmd0 (core, "aeim"); // init stack
 				r_core_cmdf (core, "ar PC=%s", input + 3);
 				r_core_cmd0 (core, ".ar*");
 			} else {
