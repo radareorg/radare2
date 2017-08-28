@@ -246,9 +246,13 @@ static void readlabel(const char **p, int store) {
 	}
 	if (!(buf = malloc (sizeof (struct label) + c - *p))) {
 		eprintf ("not enough memory to store label %s\n", *p);
+#if 0
 		*p = c;
 		return;
 	}
+	// not used and dead code.
+	// originally it was saved into lastlabel value.
+	// now only leaks bytes.
 	strncpy (buf->name, *p, c - *p - 1);
 	buf->name[c - *p - 1] = 0;
 	*p = c;
@@ -269,6 +273,11 @@ static void readlabel(const char **p, int store) {
 	if (buf->next) {
 		buf->next->prev = buf;
 	}
+	// leaks here since buf is not used.
+#else
+	}
+	*p = c;
+#endif
 }
 
 static int compute_ref(struct reference *ref, int allow_invalid) {
