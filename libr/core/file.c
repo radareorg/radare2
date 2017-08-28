@@ -521,7 +521,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
-	int va = 0;
+	int va = 1;
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
