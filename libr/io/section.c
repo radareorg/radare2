@@ -54,7 +54,7 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 				    ut64 vsize, int flags, const char *name,
 				    ut32 bin_id, int fd) {
 	if (!io || !io->sections || !io->sec_ids || !r_io_desc_get (io, fd) ||
-		UT64_ADD_OVFCHK (size, paddr) || UT64_ADD_OVFCHK (size, vaddr)) {
+		UT64_ADD_OVFCHK (size, paddr) || UT64_ADD_OVFCHK (size, vaddr) || !vsize) {
 		return NULL;
 	}
 	RIOSection *sec = R_NEW0 (RIOSection);

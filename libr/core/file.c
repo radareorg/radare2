@@ -521,6 +521,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
+	int va = 0;
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
@@ -625,11 +626,14 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 	obj = r_bin_cur_object (r->bin);
-	if (!obj->info->has_va) {
+	if (obj) {
+		va = obj->info->has_va;
+	}
+	if (!va) {
 		r_config_set_i (r->config, "io.va", 0);
 	}
 	//workaround to map correctly malloc:// and raw binaries
-	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || (obj && !obj->sections)) {
+	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || (obj && (!obj->sections || !va))) {
 		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc), true);
 	}
 	return true;
