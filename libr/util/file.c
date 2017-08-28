@@ -12,6 +12,7 @@
 #include <r_lib.h>
 #if __UNIX__
 #include <sys/mman.h>
+#include <limits.h>
 #endif
 #if __APPLE__ && __MAC_10_5
 #define HAVE_COPYFILE_H 1
@@ -202,10 +203,11 @@ R_API char *r_file_abspath(const char *file) {
 		ret = strdup (file);
 	}
 #if __UNIX__
-	char *abspath = realpath (ret, NULL);
+	char resolved_path[PATH_MAX] = {0};
+	char *abspath = realpath (ret, &resolved_path);
 	if (abspath) {
 		free (ret);
-		ret = abspath;
+		ret = strdup (abspath);
 	}
 #endif
 	return ret;
