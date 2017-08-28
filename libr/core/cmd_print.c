@@ -2017,7 +2017,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 		// XXX leak
-		str = strstr (line, " str.");
+		str = strdup (strstr (line, " str."));
 		if (str) {
 			char *qoe = NULL;
 			if (!qoe) {
@@ -2030,36 +2030,32 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				qoe = strchr (str + 1, ' ');
 			}
 			if (qoe) {
+				free (string2);
 				string2 = r_str_ndup (str + 1, qoe - str - 1);
 			} else {
+				free (string2);
 				string2 = strdup (str + 1);
 			}
 			if (string2) {
-				/* the str.* flag will win over naked "string",
-				 * since it's generally more accurate */
-				if (string) {
-					R_FREE (string);
-				}
+				R_FREE (string);
 				string = string2;
 				string2 = NULL;
 			}
 		}
-		if (string2) {
-			R_FREE (string2);
-		}
+		R_FREE (string2);
 		_handle_call (core, line, &str);
 		if (!str) {
-			str = strstr (line, "sym.");
+			str = strdup (strstr (line, "sym."));
 			if (!str) {
-				str = strstr (line, "fcn.");
+				str = strdup (strstr (line, "fcn."));
 			}
 		}
 		if (str) {
 			char *qoe = strstr (str, ";");
 			if (qoe) {
-				// XXX str leaks
+				char* t = str;
 				str = r_str_ndup (str, qoe - str);
-				is_free_pending = true;
+				free (t);
 			}
 		}
 		if (str) {
@@ -2161,9 +2157,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	free (string2);
 	free (string);
 	free (s);
-	if (is_free_pending) {
-		free (str);
-	}
+	free (str);
 }
 
 static void algolist(int mode) {
