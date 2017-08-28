@@ -2927,9 +2927,11 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	if (!r_io_read_at (core->io, addr, code, sizeof (code))) {
+	// TODO #8264 bool vs int, bring back old hack
+	if (!r_io_read_at (core->io, addr, code, 4)) {
 		eprintf ("read errno\n");
 	}
+	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	if (ret < 0) {
