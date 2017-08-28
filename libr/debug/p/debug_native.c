@@ -168,7 +168,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__ && !__CYGWIN__
 	int ret;
-	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, pid);
+	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (process != (HANDLE)NULL && DebugActiveProcess (pid)) {
 		ret = w32_first_thread (pid);
 	} else {
@@ -196,7 +196,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 
 static int r_debug_native_detach (RDebug *dbg, int pid) {
 #if __WINDOWS__ && !__CYGWIN__
-	return w32_detach (pid)? 0 : -1;
+	return w32_DebugActiveProcessStop (pid)? 0 : -1;
 #elif __CYGWIN__
 	#warning "r_debug_native_detach not supported on this platform"
 	return -1;
@@ -940,7 +940,7 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 #elif __WINDOWS__ && !__CYGWIN__
 	RDebugMap *map = NULL;
 	LPVOID base = NULL;
-	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (process == INVALID_HANDLE_VALUE) {
 		return map;
 	}
@@ -966,7 +966,7 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	return xnu_map_dealloc (dbg, addr, size);
 
 #elif __WINDOWS__ && !__CYGWIN__
-	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->tid);
+	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->tid);
 	if (process == INVALID_HANDLE_VALUE) {
 		return false;
 	}
@@ -1395,7 +1395,7 @@ static RList *win_desc_list (int pid) {
 	NTSTATUS status;
 	ULONG handleInfoSize = 0x10000;
 	LPVOID buff;
-	if (!(processHandle = w32_openprocess (0x0040, FALSE, pid))) {
+	if (!(processHandle = w32_OpenProcess (0x0040, FALSE, pid))) {
 		eprintf ("win_desc_list: Error opening process.\n");
 		return NULL;
 	}
@@ -1560,7 +1560,7 @@ static RList *r_debug_desc_native_list (int pid) {
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD old;
-	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	// TODO: align pointers
 	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr,
 	  			size, perms, &old);

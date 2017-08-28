@@ -66,9 +66,7 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 		r_list_append (list, mr);
 	}
 err_add_map:
-	if (map_name) {
-		free (map_name);
-	}
+	free (map_name);
 	return mr;
 }
 
@@ -77,14 +75,10 @@ static RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC_INFORM
 }
 
 static RList *w32_dbg_modules(RDebug *dbg) {
-        MODULEENTRY32 me32;
-        RDebugMap *mr;
-        RList *list = r_list_new ();
-#if MINGW32
-        HANDLE h_mod_snap = NULL;
-#else
-        HANDLE h_mod_snap = CreateToolhelp32Snapshot ( TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, dbg->pid );
-#endif
+	MODULEENTRY32 me32;
+	RDebugMap *mr;
+	RList *list = r_list_new ();
+	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, dbg->pid);
 
 	if (!h_mod_snap) {
 		r_sys_perror ("w32_dbg_modules/CreateToolhelp32Snapshot");
@@ -141,21 +135,17 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 			mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
 			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
 		}
-		if (sect_hdr) {
-			mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-			if (!mod->sect_hdr) {
-				perror ("malloc set_mod_inf()");
-				goto err_set_mod_info;
-			}
-			memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-			mod_inf_fill = 0;
+		mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+		if (!mod->sect_hdr) {
+			perror ("malloc set_mod_inf()");
+			goto err_set_mod_info;
 		}
+		memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+		mod_inf_fill = 0;
 	}
 err_set_mod_info:
 	if (mod_inf_fill == -1) {
-		if (mod->sect_hdr) {
-			free (mod->sect_hdr);
-		}	
+		R_FREE (mod->sect_hdr);
 	}
 	return mod_inf_fill;
 }
@@ -167,9 +157,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 		RListIter *iter;
 		RDebugMap *map;
 
-		if (mod->sect_hdr) {
-			free (mod->sect_hdr);
-		}
+		free (mod->sect_hdr);
 		memset (mod, 0, sizeof (RWinModInfo));
 		r_list_foreach (mod_list, iter, map) {
 			if (addr >= map->addr && addr <= map->addr_end) {
@@ -246,9 +234,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	RList *map_list = r_list_new(), *mod_list = NULL;
 
 	GetSystemInfo (&si);
-	h_proc = w32_openprocess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
+	h_proc = w32_OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 	if (!h_proc) {
-		r_sys_perror ("w32_dbg_maps/w32_openprocess");
+		r_sys_perror ("w32_dbg_maps/w32_OpenProcess");
 		goto err_w32_dbg_maps;
 	}
 	cur_addr = si.lpMinimumApplicationAddress;
@@ -272,9 +260,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	   	cur_addr = (LPVOID)(size_t)((ut64)(size_t)mbi.BaseAddress + mbi.RegionSize);
 	}
 err_w32_dbg_maps:
-	if (mod_inf.sect_hdr) {
-		free (mod_inf.sect_hdr);
-	}
+	free (mod_inf.sect_hdr);
 	r_list_free (mod_list);		
 	return map_list;
 }
