@@ -50,6 +50,7 @@ static RList* get_constants(const char *str) {
 		}
 		p = strtok (NULL, ",");
 	}
+	free (data);
 	return list;
 }
 
