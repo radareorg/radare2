@@ -709,14 +709,15 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				for (i = 0; i < buffsize;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
-						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
+						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
-					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1] &&
+					if (!proc_data.vmareastruct[i] && (i + 1 < buffsize) &&
+						!proc_data.vmareastruct[i + 1] &&
 					    nextstart > 0 && nextstart - 1 < buffsize) {
 						break;
 					}
-					io->cb_printf ("f pid.%d.%s.%d.start=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i+7]), j, (ut64) proc_data.vmareastruct[i]);
-					io->cb_printf ("f pid.%d.%s.%d.end=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i+7]), j, (ut64) proc_data.vmareastruct[i+1]);
+					io->cb_printf ("f pid.%d.%s.%d.start=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i + 7]), j, (ut64) proc_data.vmareastruct[i]);
+					io->cb_printf ("f pid.%d.%s.%d.end=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i + 7]), j, (ut64) proc_data.vmareastruct[i + 1]);
 					j += 1;
 					i = nextstart;
 				}
@@ -725,21 +726,21 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				for (i = 0; i < buffsize;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
-						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
+						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
-					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1] &&
+					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i + 1] &&
 					    nextstart > 0 && nextstart - 1 < buffsize) {
 						break;
 					}
 					io->cb_printf ("%08"PFMT64x"-%08"PFMT64x" %c%c%c%c %08"PFMT64x" %02x:%02x %-8"PFMT64u"",
 							(ut64) proc_data.vmareastruct[i], (ut64) proc_data.vmareastruct[i+1],
-							proc_data.vmareastruct[i+2] & VM_READ ? 'r' : '-',
-							proc_data.vmareastruct[i+2] & VM_WRITE ? 'w' : '-',
-							proc_data.vmareastruct[i+2] & VM_EXEC ? 'x' : '-',
-							proc_data.vmareastruct[i+2] & VM_MAYSHARE ? 's' : 'p',
-							(ut64) proc_data.vmareastruct[i+3], proc_data.vmareastruct[i+4],
-							proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
-					io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i+7]));
+							proc_data.vmareastruct[i + 2] & VM_READ ? 'r' : '-',
+							proc_data.vmareastruct[i + 2] & VM_WRITE ? 'w' : '-',
+							proc_data.vmareastruct[i + 2] & VM_EXEC ? 'x' : '-',
+							proc_data.vmareastruct[i + 2] & VM_MAYSHARE ? 's' : 'p',
+							(ut64) proc_data.vmareastruct[i + 3], proc_data.vmareastruct[i + 4],
+							proc_data.vmareastruct[i + 5], (ut64) proc_data.vmareastruct[i + 6]);
+					io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i + 7]));
 					i = nextstart;
 				}
 				io->cb_printf ("STACK BASE ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
