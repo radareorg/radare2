@@ -3124,6 +3124,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			eprintf ("No function in current seek\n");
 			r_config_restore (hc);
 			r_config_hold_free (hc);
+			r_cons_canvas_free (can);
 			return false;
 		}
 		g = r_agraph_new (can);
