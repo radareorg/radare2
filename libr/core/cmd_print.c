@@ -2444,7 +2444,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int totalsize = -1;
 	int skipblocks = -1;
 
-	int blocksize = -1;
+	ut64 blocksize = 0;
 	int mode = 'b'; // e, p, b, ...
 	int submode = 0; // q, j, ...
 
@@ -2512,7 +2512,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		case 'z': // zero terminated strings
 			{
 				ut8 *p;
-				int i, j, k;
+				ut64 i, j, k;
 				ptr = calloc (1, nblocks);
 				if (!ptr) {
 					eprintf ("Error: failed to malloc memory");
@@ -2526,7 +2526,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				}
 				int len = 0;
 				for (i = 0; i < nblocks; i++) {
-					ut64 off = (i + skipblocks) * blocksize;
+					ut64 off = blocksize * (i + skipblocks);
 					r_core_read_at (core, off, p, blocksize);
 					for (j = k = 0; j < blocksize; j++) {
 						switch (submode) {
@@ -2582,7 +2582,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
-				ut64 off = core->offset + (i + skipblocks) * blocksize;
+				ut64 off = core->offset + (blocksize * (i + skipblocks));
 				r_core_read_at (core, off, p, blocksize);
 				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
 			}
@@ -2650,7 +2650,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (i + skipblocks) * blocksize;
+			ut64 off = core->offset + (blocksize * (i + skipblocks));
 			for (j = 0; j < blocksize; j++) {
 				if (r_flag_get_at (core->flags, off + j, false)) {
 					matchBar (ptr, i);
@@ -2677,7 +2677,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (i + skipblocks) * blocksize;
+			ut64 off = core->offset + (blocksize * (i + skipblocks));
 			r_core_read_at (core, off, p, blocksize);
 			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
 		}
@@ -2691,7 +2691,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'z': // zero terminated strings
 	{
 		ut8 *p;
-		int i, j, k;
+		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
 			eprintf ("Error: failed to malloc memory");
@@ -2705,7 +2705,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		int len = 0;
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = (i + skipblocks) * blocksize;
+			ut64 off = blocksize * (i + skipblocks);
 			r_core_read_at (core, off, p, blocksize);
 			for (j = k = 0; j < blocksize; j++) {
 				switch (mode) {
@@ -2762,7 +2762,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				blocksize, core->offset, totalsize);
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
-				ut64 off = ((ut64)blocksize) * i;
+				ut64 off = blocksize * i;
 				const char *comma = (i + 1 < (nblocks))? ",": "";
 				off += core->offset;
 				r_cons_printf ("{\"addr\":%"PFMT64d ",\"value\":%d}%s",
