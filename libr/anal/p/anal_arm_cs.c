@@ -1279,6 +1279,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
 		break;
+	case ARM64_INS_SVC:
+		r_strbuf_setf (&op->esil, "%u,$", IMM64 (0));
+		break;
 	}
 	return 0;
 }
