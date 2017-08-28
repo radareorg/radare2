@@ -360,7 +360,6 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	char *pikaboo;
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
-	bool allocated = false;
 
 	if (!r_io_zip_plugin_open (io, file, false)) {
 		return NULL;
@@ -370,7 +369,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	pikaboo = strstr (zip_uri, "://");
 	if (pikaboo) {
 		allocated = false;
-		zip_filename = strstr (pikaboo + 3, "//");
+		zip_filename = strdup(strstr (pikaboo + 3, "//"));
 		// 1) Tokenize to the '//' and find the base file directory ('/')
 		if (!zip_filename) {
 			if (!strncmp (zip_uri, "apk://", 6)) {
@@ -380,7 +379,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				RList *files = NULL;
 				RListIter *iter;
 				char *name;
-				zip_filename = pikaboo + 3;
+				zip_filename = strdup(pikaboo + 3);
 				files = r_io_zip_get_files (zip_filename, 0, mode, rw );
 
 				if (files) {
@@ -404,10 +403,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 							}
 						}
 					}
-					r_list_free(files);
+					r_list_free (files);
 				}
 			} else {
-				zip_filename = pikaboo + 1;
+				zip_filename = strdup(pikaboo + 1);
 			}
 		}
 	}
@@ -497,9 +496,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 done:
 	free (filename_in_zipfile);
 	free (zip_uri);
-	if (allocated) {
-		free (zip_filename);
-	}
+	free (zip_filename);
 	return res;
 }
 
