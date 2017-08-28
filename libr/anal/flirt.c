@@ -660,7 +660,7 @@ static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) 
 	ut8 *func_buf = NULL;
 	RAnalFunction *func;
 	RFlirtNode *child;
-	int size, ret = true;
+	int ret = true;
 
 	if (r_list_length (anal->fcns) == 0) {
 		anal->cb_printf ("There is no analyzed functions. Have you run 'aa'?\n");
@@ -675,8 +675,7 @@ static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) 
 
 		int func_size = r_anal_fcn_size (func);
 		func_buf = malloc (func_size);
-		size = anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size);
-		if (size != func_size) {
+		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size)) {
 			eprintf ("Couldn't read function\n");
 			ret = false;
 			goto exit;
