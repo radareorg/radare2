@@ -4001,11 +4001,13 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(ut8 *buffe
 }
 
 R_API RBinJavaAttrInfo *r_bin_java_source_code_file_attr_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
+	if (!sz) {
+		return NULL;
+	}
 	ut64 offset = 0;
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
-	if (!attr || !sz) {
-		// free (attr); //r_bin_java_attribute_free (attr);
+	if (!attr) {
 		return NULL;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR;
