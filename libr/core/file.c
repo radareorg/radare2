@@ -626,7 +626,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 	obj = r_bin_cur_object (r->bin);
-	if (obj) {
+	if (obj && plugin && strcmp (plugin->name, "any")) {
 		va = obj->info->has_va;
 	}
 	if (!va) {
