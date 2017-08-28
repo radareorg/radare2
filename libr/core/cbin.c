@@ -1992,7 +1992,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	int fd = -1;
 	sections = r_bin_get_sections (r->bin);
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
+	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
+	bool ret = false;
 
+	if (!dup_chk_ht) {
+		return false;
+	}
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
 	else if (IS_MODE_NORMAL (mode) && !at) r_cons_printf ("[Sections]\n");
@@ -2092,17 +2097,23 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 			if (section->add) {
-				r_io_section_add (r->io, section->paddr, addr,
-						  section->size, section->vsize,
-						  section->srwx, section->name,
-						  r->bin->cur->id, fd);
+				char dup_chk_key[256];
+				snprintf (dup_chk_key, sizeof dup_chk_key,
+					"%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
+					section->paddr, addr, section->size, section->vsize, section->srwx, section->name, r->bin->cur->id, fd);
+				if (!ht_find (dup_chk_ht, dup_chk_key, NULL) && r_io_section_add (r->io, section->paddr, addr,
+						section->size, section->vsize,
+						section->srwx, section->name,
+						r->bin->cur->id, fd)) {
+					ht_insert (dup_chk_ht, dup_chk_key, NULL);
+				}
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
-					return false;
+					goto out;
 				}
 				ut32 datalen = section->size;
 				r_io_pread_at (r->io, section->paddr, data, datalen);
@@ -2122,7 +2133,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
-					return false;
+					goto out;
 				}
 				ut32 datalen = section->size;
 				r_io_pread_at (r->io, section->paddr, data, datalen);
@@ -2201,7 +2212,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			char *hashstr = NULL, str[128];
 			if (chksum) {
 				ut8 *data = malloc (section->size);
-				if (!data) return false;
+				if (!data) {
+					goto out;
+				}
 				ut32 datalen = section->size;
 				// VA READ IS BROKEN?
 				r_io_pread_at (r->io, section->paddr, data, datalen);
@@ -2249,7 +2262,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else if (IS_MODE_NORMAL (mode) && !at) {
 		r_cons_printf ("\n%i sections\n", i);
 	}
-	return true;
+
+	ret = true;
+out:
+	ht_free (dup_chk_ht);
+	return ret;
 }
 
 static int bin_fields(RCore *r, int mode, int va) {

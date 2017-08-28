@@ -50,24 +50,6 @@ R_API int r_io_section_exists_for_id(RIO *io, ut32 id) {
 	return false;
 }
 
-// @deprecate
-RIOSection *_section_chk_dup(RIO *io, ut64 paddr, ut64 vaddr, ut64 size, ut64 vsize, int flags, const char *name, ut32 bin_id, int fd) {
-	RIOSection *sec;
-	SdbListIter *iter;
-	char sname[32];
-	if (!name) {
-		snprintf (sname, sizeof (sname), "section.0x016%"PFMT64x "", vaddr);
-	}
-	ls_foreach (io->sections, iter, sec) {
-		if ((sec->paddr == paddr) && (sec->vaddr == vaddr) && (sec->size == size) &&
-		    (sec->vsize == vsize) && (sec->flags == flags) && (sec->bin_id == bin_id) &&
-		    (sec->fd == fd) && !strcmp ((name? name: sname), sec->name)) {
-			return sec;
-		}
-	}
-	return NULL;
-}
-
 R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 				    ut64 vsize, int flags, const char *name,
 				    ut32 bin_id, int fd) {
@@ -75,12 +57,8 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 		UT64_ADD_OVFCHK (size, paddr) || UT64_ADD_OVFCHK (size, vaddr)) {
 		return NULL;
 	}
-	RIOSection *sec = _section_chk_dup (io, paddr, vaddr, size, vsize, flags, name, bin_id, fd);
-	if (!sec) {
-		sec = R_NEW0 (RIOSection);
-		if (!sec) {
-			return NULL;
-		}
+	RIOSection *sec = R_NEW0 (RIOSection);
+	if (sec) {
 		sec->paddr = paddr;
 		sec->vaddr = vaddr;
 		sec->size = size;
