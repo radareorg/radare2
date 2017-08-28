@@ -174,6 +174,7 @@ static BOOL (WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NU
 static PVOID(WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD) = NULL;
 static BOOL (WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NULL;
 static DWORD (WINAPI *w32_GetModuleFileNameEx)(HANDLE, HMODULE, LPTSTR, DWORD) = NULL;
+static HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)(DWORD, DWORD) = NULL;
 
 #ifndef XSTATE_GSSE
 #define XSTATE_GSSE 2
@@ -295,6 +296,8 @@ static int w32_dbg_init() {
 		GetProcAddress(lib,"NtQueryObject");
 	w32_ntqueryinformationthread = (NTSTATUS  (WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress (lib, "NtQueryInformationThread");
+	w32_CreateToolhelp32Snapshot = (HANDLE (WINAPI *)(DWORD, DWORD))
+		GetProcAddress (lib, "CreateToolhelp32Snapshot");
 	if (!w32_DebugActiveProcessStop || !w32_openthread || !w32_DebugBreakProcess ||
 	    !w32_GetModuleBaseName || !w32_GetModuleInformation) {
 		// OOPS!
