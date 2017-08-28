@@ -2675,7 +2675,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = core->blocksize;
 		if (!r_io_read_at (core->io, at, buf, core->blocksize) || 
-			(at + core->blocksize - OPSZ < to)) {
+			(at + core->blocksize - OPSZ > to)) {
 			break;
 		}
 		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
@@ -2737,7 +2737,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			if (type == R_ANAL_REF_TYPE_NULL) {
 				continue;
 			}
-			if (!r_io_is_valid_offset (core->io, xref_to, R_IO_EXEC)) {	//review me
+			if (!r_io_is_valid_offset (core->io, xref_to, 0)) {	//review me
 				continue;
 			}
 			if (cfg_debug) {
