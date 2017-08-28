@@ -1045,7 +1045,7 @@ repeat:
 			}
 		}
 		if (reason == R_DEBUG_REASON_BREAKPOINT &&
-		   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked() && dbg->corebind.core &&
+		   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->corebind.core &&
 			   		    dbg->corebind.cfggeti (dbg->corebind.core, "dbg.bpsysign")))) {
 			goto repeat;
 		}
