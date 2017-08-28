@@ -1072,13 +1072,7 @@ repeat:
 			}
 			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
-				RIOSection *s = NULL;
-				SdbList *secs = anal->iob.sections_vget (anal->iob.io, addr);
-				if (secs) {
-					s = (RIOSection *) ls_pop (secs);
-					secs->free = NULL;
-					ls_free (secs);
-				}
+				RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
 				if (s && s->name) {
 					bool in_plt = strstr (s->name, ".plt") != NULL;
 					if (!in_plt && strstr (s->name, "_stubs") != NULL) {

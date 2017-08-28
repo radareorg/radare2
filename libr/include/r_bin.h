@@ -509,11 +509,15 @@ typedef struct r_bin_write_t {
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
 typedef const char *(*RBinGetName)(RBin *bin, int type, int idx);
+typedef RList *(*RBinGetSections)(RBin *bin);
+typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
 	RBinGetName get_name;
+	RBinGetSections get_sections;
+	RBinGetSectionAt get_vsect_at;
 	ut32 visibility;
 } RBinBind;
 
