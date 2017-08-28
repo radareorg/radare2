@@ -2266,6 +2266,7 @@ next_arroba:
 					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
 					free (tmpeval);
 					free (tmpasm);
+					free (tmpbits)
 					goto fail;
 				}
 				*p = '\x00';
