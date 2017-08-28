@@ -2792,6 +2792,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 	}
 beach:
+	free (ptr);
 	return;
 }
 
