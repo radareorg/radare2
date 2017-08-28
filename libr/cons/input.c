@@ -97,10 +97,13 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	case 0x06: ch='l'; break; // emacs right (ctrl + f)
 	case 0x02: ch='h'; break; // emacs left (ctrl + b)
 	}
-	if (ch != 0x1b)
+	if (ch != 0x1b) {
 		return ch;
+	}
 	ch = r_cons_readchar ();
-	if (!ch) return 0;
+	if (!ch) {
+		return 0;
+	}
 	switch (ch) {
 	case 0x1b:
 		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)

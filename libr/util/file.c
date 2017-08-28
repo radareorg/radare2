@@ -13,7 +13,12 @@
 #if __UNIX__
 #include <sys/mman.h>
 #endif
-#if __APPLE__
+#if __APPLE__ && __MAC_10_5
+#define HAVE_COPYFILE_H 1
+#else
+#define HAVE_COPYFILE_H 0
+#endif
+#if HAVE_COPYFILE_H
 #include <copyfile.h>
 #endif
 #if _MSC_VER
@@ -917,7 +922,7 @@ R_API char *r_file_tmpdir() {
 R_API bool r_file_copy (const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
-#if __APPLE__
+#if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, 0) != -1;
 #elif __WINDOWS__
 	return r_sys_cmdf ("copy %s %s", src, dst);

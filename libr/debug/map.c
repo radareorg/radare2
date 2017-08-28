@@ -101,7 +101,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 				r_str_rwx_i (map->perm),
 				map->name,
 				map->file?map->file:"?",
-				*flagname? " ; ": "", 
+				*flagname? " ; ": "",
 				flagname);
 		}
 		fmtstr = dbg->bits& R_SYS_BITS_64?
@@ -111,7 +111,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 			const char *type = map->shared? "sys": "usr";
 			r_num_units (buf, map->size);
 			dbg->cb_printf (fmtstr, type, buf, map->addr, map->addr_end,
-				map->user?'u':'s', (ut32)map->perm, 
+				map->user?'u':'s', (ut32)map->perm,
 				map->name,
 				map->file?map->file:"?");
 		}

@@ -1,7 +1,7 @@
 #ifndef SDB_H
 #define SDB_H
 
-#ifndef O_BINARY
+#if !defined(O_BINARY) && !defined(_MSC_VER)
 #define O_BINARY 0
 #endif
 

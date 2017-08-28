@@ -19,6 +19,7 @@ static const char *help_msg_i[] = {
 	"ia", "", "Show all info (imports, exports, sections..)",
 	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
+	"icc", "", "List classes, methods and fields in Header Format",
 	"iC", "", "Show signature info (entitlements, ...)",
 	"id", "[?]", "Debug information (source lines)",
 	"iD", " lang sym", "demangle symbolname for given language",
@@ -93,7 +94,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	}
 	if (res) {
 		if (*res) {
-			printf ("%s\n", res);
+			r_cons_printf ("%s\n", res);
 		}
 		free (res);
 		return false;
@@ -128,6 +129,7 @@ static void r_core_file_info(RCore *core, int mode) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *binfile = r_core_bin_cur (core);
 	RCoreFile *cf = core->file;
+	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("{");
@@ -144,13 +146,13 @@ static void r_core_file_info(RCore *core, int mode) {
 			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
 		}
 	} else {
-		fn = (cf && cf->desc)? cf->desc->name: NULL;
+		fn = desc ? desc->name: NULL;
 	}
 	if (cf && mode == R_CORE_BIN_JSON) {
 		const char *uri = fn;
 		if (!uri) {
-			if (cf->desc && cf->desc->uri && *cf->desc->uri) {
-				uri = cf->desc->uri;
+			if (desc && desc->uri && *desc->uri) {
+				uri = desc->uri;
 			} else {
 				uri = "";
 			}
@@ -163,9 +165,9 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
-		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
-			r_cons_printf (",\"fd\":%d", cf->desc->fd);
+		if (desc) {
+			ut64 fsz = r_io_desc_size (desc);
+			r_cons_printf (",\"fd\":%d", desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
 				char *humansz = r_num_units (NULL, fsz);
@@ -175,12 +177,12 @@ static void r_core_file_info(RCore *core, int mode) {
 				}
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache ||\
-					cf->desc->flags & R_IO_WRITE ));
+					desc->flags & R_IO_WRITE ));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
-					cf->desc->flags & 7 ));
+					desc->flags & 7 ));
 			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64) core->io->desc->obsz);
-			if (cf->desc->referer && *cf->desc->referer) {
-				r_cons_printf (",\"referer\":\"%s\"", cf->desc->referer);
+			if (desc->referer && *desc->referer) {
+				r_cons_printf (",\"referer\":\"%s\"", desc->referer);
 			}
 		}
 		r_cons_printf (",\"block\":%d", core->blocksize);
@@ -200,31 +202,31 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
-		if (cf->desc) {
+		if (desc) {
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
-		if (cf->desc) {
-			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
+		if (desc) {
+			pair ("fd", sdb_fmt (0, "%d", desc->fd));
 		}
-		if (fn || (cf->desc && cf->desc->uri)) {
-			pair ("file", fn? fn: cf->desc->uri);
+		if (fn || (desc && desc->uri)) {
+			pair ("file", fn? fn: desc->uri);
 		}
 		if (plugin) {
 			pair ("format", plugin->name);
 		}
-		if (cf->desc) {
-			pair ("iorw", r_str_bool (io_cache || cf->desc->flags & R_IO_WRITE ));
-			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
+		if (desc) {
+			pair ("iorw", r_str_bool (io_cache || desc->flags & R_IO_WRITE ));
+			pair ("mode", r_str_rwx_i (desc->flags & 7));
 		}
 		if (binfile && binfile->curxtr) {
 			pair ("packet", binfile->curxtr->name);
 		}
-		if (cf->desc && cf->desc->referer && *cf->desc->referer) {
-			pair ("referer", cf->desc->referer);
+		if (desc && desc->referer && *desc->referer) {
+			pair ("referer", desc->referer);
 		}
-		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+		if (desc) {
+			ut64 fsz = r_io_desc_size (desc);
 			if (fsz != UT64_MAX) {
 				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
 				char *humansz = r_num_units (NULL, fsz);
@@ -303,6 +305,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_config_get_i (core->config, "scr.interactive");
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
+	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
 	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
@@ -398,7 +401,7 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Core file not open\n");
 				return 0;
 			}
-			const char *fn = input[1] == ' '? input + 2: cf->desc->name;
+			const char *fn = input[1] == ' '? input + 2: desc->name;
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 			r_core_bin_load (core, fn, baddr);
 		}
@@ -623,8 +626,8 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'c': // for r2 `ic`
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[ljq*] [class-index or name]\n");
-			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l') {
+				eprintf ("Usage: ic[ljqc*] [class-index or name]\n");
+			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c') {
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
@@ -708,11 +711,15 @@ static int cmd_info(void *data, const char *input) {
 									r_cons_newline ();
 								}
 							}
+						} else if (input[1] == 'c' && obj) { // "icc"
+                					mode = R_CORE_BIN_CLASSDUMP;
+							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+							input = " ";
 						} else {
 							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						}
 					}
-				}
+        			}
 			} else {
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				int len = obj? r_list_length (obj->classes): 0;
@@ -726,9 +733,9 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a':
 			switch (mode) {
-			case R_CORE_BIN_RADARE: cmd_info (core, "iIiecsSmz*"); break;
-			case R_CORE_BIN_JSON: cmd_info (core, "iIiecsSmzj"); break;
-			case R_CORE_BIN_SIMPLE: cmd_info (core, "iIiecsSmzq"); break;
+			case R_CORE_BIN_RADARE: cmd_info (core, "IieEcsSmz*"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "IieEcsSmzj"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
 			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
@@ -753,9 +760,12 @@ static int cmd_info(void *data, const char *input) {
 			cmd_info_bin (core, va, mode);
 			break;
 		}
-		input++;
-		if ((*input == 'j' || *input == 'q') && !input[1]) {
-			break;
+		// input can be overwritten like the 'input = " ";' a few lines above
+		if (input[0] != ' ') {
+			input++;
+			if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
+				break;
+			}
 		}
 	}
 done:

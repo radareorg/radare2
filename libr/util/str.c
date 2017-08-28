@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -797,12 +797,11 @@ R_API char *r_str_trim_head_tail(char *str) {
 	return r_str_trim_tail (r_str_trim_head (str));
 }
 
-// Copy all printable characters from src to dst, copy all printable characters
-// as '.'.
+// Secure string copy with null terminator (like strlcpy or strscpy but ours
 R_API void r_str_ncpy(char *dst, const char *src, int n) {
 	int i;
 	for (i = 0; src[i] && n > 0; i++, n--) {
-		dst[i] = IS_PRINTABLE (src[i])? src[i]: '.';
+		dst[i] = src[i];
 	}
 	dst[i] = 0;
 }
@@ -822,6 +821,9 @@ R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
 // Compare two strings for the first len bytes. Returns true if they are equal.
 // NOTE: this is not useful as a comparitor, as it returns true or false.
 R_API int r_str_cmp(const char *a, const char *b, int len) {
+	if (!a || !b) {
+		return false;
+	}
 	if (a == b) {
 		return true;
 	}
@@ -1178,6 +1180,19 @@ R_API int r_str_unescape(char *buf) {
 			}
 			buf[i] = (ch << 4) + ch2;
 			memmove (buf + i + 1, buf + i + 4, strlen (buf + i + 4) + 1);
+		} else if (IS_OCTAL (buf[i + 1])) {
+			int num_digits = 1;
+			buf[i] = buf[i + 1] - '0';
+			if (IS_OCTAL (buf[i + 2])) {
+				num_digits++;
+				buf[i] = (ut8)buf[i] * 8 + (buf[i + 2] - '0');
+				if (IS_OCTAL (buf[i + 3])) {
+					num_digits++;
+					buf[i] = (ut8)buf[i] * 8 + (buf[i + 3] - '0');
+				}
+			}
+			memmove (buf + i + 1, buf + i + 1 + num_digits,
+			         strlen (buf + i + 1 + num_digits) + 1);
 		} else {
 			eprintf ("'\\x' expected.\n");
 			return 0; // -1?
@@ -2252,7 +2267,7 @@ R_API char *r_str_utf16_decode (const ut8 *s, int len) {
 	return result;
 }
 
-R_API char *r_str_utf16_encode (const char *s, int len) {
+R_API char *r_str_utf16_encode(const char *s, int len) {
 	int i;
 	char ch[4], *d, *od, *tmp;
 	if (!s) {

@@ -8,6 +8,7 @@
 
 typedef struct {
 	HANDLE hnd;
+	ut64 winbase;
 } RIOW32;
 #define RIOW32_HANDLE(x) (((RIOW32*)x)->hnd)
 
@@ -56,11 +57,20 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 			FILE_SHARE_READ | rw? FILE_SHARE_WRITE:0,
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (w32->hnd != INVALID_HANDLE_VALUE)
-			return r_io_desc_new (&r_io_plugin_w32, getw32fd (w32),
+			return r_io_desc_new (io, &r_io_plugin_w32,
 				pathname, rw, mode, w32);
 		free (w32);
 	}
 	return NULL;
+}
+
+static int w32__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (io && fd && fd->data && cmd && !strcmp (cmd, "winbase")) {
+		RIOW32 *w32 = (RIOW32 *)fd->data;
+		io->cb_printf ("%"PFMT64u , w32->winbase);
+		return true;
+	}
+	return false;
 }
 
 RIOPlugin r_io_plugin_w32 = {
@@ -72,7 +82,7 @@ RIOPlugin r_io_plugin_w32 = {
 	.read = w32__read,
 	.check = w32__plugin_open,
 	.lseek = w32__lseek,
-	.system = NULL, // w32__system,
+	.system = w32__system,
 	.write = w32__write,
 };
 

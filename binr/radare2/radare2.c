@@ -24,7 +24,8 @@ static bool haveRarunProfile = false;
 static struct r_core_t r;
 
 static bool is_valid_gdb_file(RCoreFile *fh) {
-	return fh && fh->desc && fh->desc->name && strncmp (fh->desc->name, "gdb://", 6);
+	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
+	return d && strncmp (d->name, "gdb://", 6);
 }
 
 static char* get_file_in_cur_dir(const char *filepath) {
@@ -141,6 +142,7 @@ static int main_help(int line) {
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
+		" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
@@ -219,7 +221,8 @@ static int main_print_var(const char *var_name) {
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
 static int rabin_delegate(RThread *th) {
-	if (rabin_cmd && r_file_exists (r.file->desc->name)) {
+	RIODesc *d = r_io_desc_get (r.io, r.file->fd);
+	if (rabin_cmd && r_file_exists (d->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
 		if (ptr) {
@@ -393,6 +396,7 @@ int main(int argc, char **argv, char **envp) {
 	RListIter *iter;
 	char *cmdn, *tmp;
 	RCoreFile *fh = NULL;
+	RIODesc *iod = NULL;
 	const char *patchfile = NULL;
 	const char *prj = NULL;
 	int debug = 0;
@@ -406,7 +410,7 @@ int main(int argc, char **argv, char **envp) {
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
- 	int ret, c, perms = R_IO_READ;
+ 	int ret, c, perms = R_IO_READ | R_IO_EXEC;
 	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
@@ -472,7 +476,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzuX:"
+	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzuX"
 #if USE_THREADS
 "t"
 #endif
@@ -632,7 +636,11 @@ int main(int argc, char **argv, char **envp) {
 		case 'V':
 			return verify_version (1);
 		case 'w':
-			perms = R_IO_READ | R_IO_WRITE;
+			perms |= R_IO_WRITE;
+			break;
+		case 'x':
+			perms &= ~R_IO_EXEC;
+			r_config_set (r.config, "io.exec", "false");
 			break;
 		default:
 			help++;
@@ -758,13 +766,6 @@ int main(int argc, char **argv, char **envp) {
 		break;
 	}
 
-	switch (va) {
-	case 0:
-		r_config_set_i (r.config, "io.va", false);
-		baddr = UT64_MAX;
-		break;
-	}
-
 	if (run_rc) {
 		radare2_rc (&r);
 	}
@@ -807,9 +808,8 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "asm.bits", asmbits);
 			}
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
-			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
-			perms = R_IO_READ | R_IO_WRITE;
+			perms = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
 			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
 				return 1;
@@ -821,36 +821,48 @@ int main(int argc, char **argv, char **envp) {
 					if (!haveRarunProfile) {
 						pfile = strdup (argv[optind++]);
 					}
-					perms = R_IO_READ; // XXX. should work with rw too
+					perms = R_IO_READ | R_IO_EXEC; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://")) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
 						const char *filepath;
 						ut64 addr;
 						filepath  = r_config_get (r.config, "dbg.exe.path");
+						addr = r_config_get_i (r.config, "bin.baddr");
 						if (filepath && r_file_exists (filepath)
 						    && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
 							if (newpath) {
-								free (fh->desc->name);
-								fh->desc->name = newpath;
-								addr = r_debug_get_baddr (r.dbg, newpath);
+								if (iod) {
+									free (iod->name);
+									iod->name = newpath;
+								}
+								if (!addr || addr == UINT64_MAX) {
+									addr = r_debug_get_baddr (r.dbg, newpath);
+								}
 								r_core_bin_load (&r, NULL, addr);
 							}
 						} else if (is_valid_gdb_file (fh)) {
-							filepath = fh->desc->name;
+							filepath = iod->name;
 							if (r_file_exists (filepath)
 							    && !r_file_is_directory (filepath)) {
-								addr = r_debug_get_baddr (r.dbg, filepath);
+								if (!addr || addr == UINT64_MAX) {
+									addr = r_debug_get_baddr (r.dbg, filepath);
+								}
 								r_core_bin_load (&r, filepath, addr);
 							} else if ((filepath = get_file_in_cur_dir (filepath))) {
 								// Present in local directory
-								free (fh->desc->name);
-								fh->desc->name = (char*) filepath;
-								addr = r_debug_get_baddr (r.dbg, filepath);
+								if (iod) {
+									free (iod->name);
+									iod->name = (char*) filepath;
+								}
+								if (!addr || addr == UINT64_MAX) {
+									addr = r_debug_get_baddr (r.dbg, filepath);
+								}
 								r_core_bin_load (&r, NULL, addr);
 							}
 						}
@@ -914,9 +926,7 @@ int main(int argc, char **argv, char **envp) {
 			if (optind == argc && dbg_profile && *dbg_profile) {
 				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 				if (fh) {
-					if (!r_core_bin_load (&r, pfile, baddr)) {
-						r_config_set_i (r.config, "io.va", false);
-					}
+					r_core_bin_load (&r, pfile, baddr);
 				}
 			}
 			if (optind < argc) {
@@ -932,6 +942,10 @@ int main(int argc, char **argv, char **envp) {
 						}
 					}
 					if (fh) {
+						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
+						if (perms & R_IO_EXEC) {
+							iod->flags |= R_IO_EXEC;
+						}
 						if (run_anal > 0) {
 #if USE_THREADS
 							if (!rabin_th)
@@ -943,21 +957,21 @@ int main(int argc, char **argv, char **envp) {
 									filepath = file? strstr (file, "://"): NULL;
 									filepath = filepath ? filepath + 3 : pfile;
 								}
-								if (r.file && r.file->desc && r.file->desc->name)
-									filepath = r.file->desc->name;
-
+								if (r.file && iod && (iod->fd == r.file->fd) && iod->name) {
+									filepath = iod->name;
+								}
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
-								if (!r_core_bin_load (&r, filepath, baddr)) {
-									r_config_set_i (r.config, "io.va", false);
-								}
+								(void)r_core_bin_load (&r, filepath, baddr);
 							}
 						} else {
+							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod), true);
+							// r_io_map_new (r.io, iod->fd, iod->flags, 0LL, 0LL, r_io_desc_size (iod));
 							if (run_anal < 0) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
 								r_core_cmdf (&r, "Sf");
-								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", r.file->desc->name);
+								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
 							}
 						}
 					}
@@ -1022,12 +1036,13 @@ int main(int argc, char **argv, char **envp) {
 		if (!r.file) { // no given file
 			return 1;
 		}
+		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
 		if (run_anal > 0 && threaded) {
 			// XXX: if no rabin2 in path that may fail
 			// TODO: pass -B 0 ? for pie bins?
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
-					(debug || r.io->va) ? "" : "p", r.file->desc->name);
+					(debug || r.io->va) ? "" : "p", iod->name);
 			/* TODO: only load data if no project is used */
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
@@ -1037,7 +1052,6 @@ int main(int argc, char **argv, char **envp) {
 		if (mapaddr) {
 			r_core_seek (&r, mapaddr, 1);
 		}
-
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r.config, cmdn);
 			r_cons_flush ();
@@ -1061,16 +1075,10 @@ int main(int argc, char **argv, char **envp) {
 
 		(void)r_core_bin_update_arch_bits (&r);
 
-		debug = r.file && r.file->desc && r.file->desc->plugin && \
-			r.file->desc->plugin->isdbg;
+		debug = r.file && iod && (r.file->fd == iod->fd) && iod->plugin && \
+			iod->plugin->isdbg;
 		if (debug) {
-			if (baddr != UT64_MAX) {
-				//setup without attach again because there is dpa call
-				//producing two attach and it's annoying
-				r_core_setup_debugger (&r, debugbackend, false);
-			} else {
-				r_core_setup_debugger (&r, debugbackend, true);
-			}
+			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
 		if (!debug && r_flag_get (r.flags, "entry0")) {
 			r_core_cmd0 (&r, "s entry0");
@@ -1083,21 +1091,22 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		if (fullfile) {
-			r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+			r_core_block_size (&r, r_io_desc_size (iod));
 		}
 
 		r_core_seek (&r, r.offset, 1); // read current block
 
 		/* check if file.sha1 has changed */
-		if (!strstr (r.file->desc->uri, "://")) {
+		if (!strstr (iod->uri, "://")) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
+			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (r_core_hash_load (&r, r.file->desc->name) == false) {
+			if (r_core_hash_load (&r, iod->name) == false) {
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
@@ -1165,7 +1174,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 #endif
 	if (fullfile) {
-		r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+		r_core_block_size (&r, r_io_desc_size (iod));
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
@@ -1210,6 +1219,10 @@ int main(int argc, char **argv, char **envp) {
 
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
+		r_core_cmd0 (&r, "aeip");
+		if (perms & R_IO_WRITE) {
+			r_core_cmd0 (&r, "omfg+w");
+		}
 		for (;;) {
 #if USE_THREADS
 			do {

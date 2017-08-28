@@ -1286,7 +1286,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
-		value->encoding.data = NULL;
+		value->encoding.data = 0;
 		return NULL;
 	}
 	return buf;
@@ -1522,9 +1522,11 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 			return false;
 		}
 		buf = calloc (1, len);
-		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-
-		if (!ret) {
+		if (!buf) {
+			free (debug_str_buf);
+			return false;
+		}
+		if (!r_buf_read_at (binfile->buf, section->paddr, buf, len)) {
 			free (debug_str_buf);
 			free (buf);
 			return false;

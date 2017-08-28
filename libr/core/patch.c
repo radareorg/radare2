@@ -83,7 +83,7 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	free (s);
 
 	r_egg_compile (core->egg);
-	r_egg_assemble (core->egg);
+	(void)r_egg_assemble (core->egg);
 
 	r_buf_free (b);
 	b = r_egg_get_bin (core->egg);

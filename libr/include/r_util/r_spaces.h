@@ -3,6 +3,10 @@
 
 #define R_SPACES_MAX 512
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_space_t {
 	char *name;
 	int space_idx;
@@ -26,4 +30,9 @@ R_API int r_space_set(RSpaces *s, const char *name);
 R_API int r_space_unset (RSpaces *s, const char *name);
 R_API int r_space_list(RSpaces *s, int mode);
 R_API bool r_space_rename (RSpaces *s, const char *oname, const char *nname);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_SPACES_H

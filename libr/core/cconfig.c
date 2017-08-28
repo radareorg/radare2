@@ -369,11 +369,16 @@ static int cb_asmarch(void *user, void *data) {
 	if (core && core->anal && core->anal->bits) {
 		bits = core->anal->bits;
 	}
-	if (*node->value == '?') {
-		update_asmarch_options (core, node);
-		/* print more verbose help instead of plain option values */
-		rasm2_list (core, NULL, node->value[1]);
-		return false;
+	if (node->value[0] == '?') {
+		if (strlen (node->value) > 1 && node->value[1] == '?') {
+			update_asmarch_options (core, node);
+			/* print more verbose help instead of plain option values */
+			rasm2_list (core, NULL, node->value[1]);
+			return false;
+		} else {
+			print_node_options (node);
+			return false;
+		}
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
@@ -639,6 +644,24 @@ static int cb_emuskip(void *user, void *data) {
 	return true;
 }
 
+static int cb_asm_armimm(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->assembler->immdisp = node->i_value ? true : false;
+	return true;
+}
+
+static int cb_asm_addrbytes(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value < 1) {
+		eprintf ("asm.arch: asm.addrbytes should >= 1\n");
+		return false;
+	}
+	core->anal->addrbytes = core->assembler->addrbytes = node->i_value;
+	return true;
+}
+
 static int cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -692,6 +715,7 @@ static int cb_asmstrenc (void *user, void *data) {
 	if (node->value[0] == '?') {
 		print_node_options (node);
 		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
+		               "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 		               "if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
@@ -837,16 +861,13 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
-#if __WINDOWS__
-			r_debug_select (core->dbg, core->dbg->pid,
-					core->dbg->tid);
-#else
-			r_debug_select (core->dbg, core->file->desc->fd,
-					core->file->desc->fd);
-#endif
+			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->file->fd),
+					r_io_fd_get_tid (core->io, core->file->fd));
 		}
 	} else {
-		if (core->dbg) r_debug_use (core->dbg, NULL);
+		if (core->dbg) {
+			r_debug_use (core->dbg, NULL);
+		}
 		core->bin->is_debugger = false;
 	}
 	return true;
@@ -1130,6 +1151,62 @@ static int cb_hexcomments(void *user, void *data) {
 	return true;
 }
 
+static int cb_iopcache(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if ((bool)node->i_value) {
+		if (core) {
+			r_config_set_i (core->config, "io.pcache.read", true);
+			r_config_set_i (core->config, "io.pcache.write", true);
+		}
+	} else {
+		if (core && core->io) {
+			r_io_desc_cache_fini_all (core->io);
+			r_config_set_i (core->config, "io.pcache.read", false);
+			r_config_set_i (core->config, "io.pcache.write", false);
+		}
+	}
+	return true;
+}
+
+static int cb_iopcacheread(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if ((bool)node->i_value) {
+		if (core && core->io) {
+			core->io->p_cache |= 1;
+		}
+	} else {
+		if (core && core->io && core->io->p_cache) {
+			core->io->p_cache &= 2;
+			if (!(core->io->p_cache & 2)) {
+				r_io_desc_cache_fini_all (core->io);
+				r_config_set_i (core->config, "io.pcache", false);
+			}
+		}
+	}
+	return true;
+}
+
+static int cb_iopcachewrite(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if ((bool)node->i_value) {
+		if (core && core->io) {
+			core->io->p_cache |= 2;
+		}
+	} else {
+		if (core && core->io && core->io->p_cache) {
+			core->io->p_cache &= 1;
+			if (!(core->io->p_cache & 1)) {
+				r_io_desc_cache_fini_all (core->io);
+				r_config_set_i (core->config, "io.pcache", false);
+			}
+		}
+	}
+	return true;
+}
+
 R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
@@ -1255,27 +1332,6 @@ static int cb_search_kwidx(void *user, void *data) {
 	return true;
 }
 
-static int cb_ioenforce(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	int perm = node->i_value;
-	core->io->enforce_rwx = 0;
-	if (perm & 1) {
-		core->io->enforce_rwx |= R_IO_READ;
-	}
-	if (perm & 2) {
-		core->io->enforce_rwx |= R_IO_WRITE;
-	}
-	return true;
-}
-
-static int cb_iosectonly(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->sectonly = node->i_value? 1: 0;
-	return true;
-}
-
 static int cb_iobuffer(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1286,7 +1342,9 @@ static int cb_iobuffer(void *user, void *data) {
 		if (from>=to) {
 			eprintf ("ERROR: io.buffer.from >= io.buffer.to"
 					" (0x%"PFMT64x" >= 0x%"PFMT64x")\n", from, to);
-		} else r_io_buffer_load (core->io, from, (int)(to-from));
+		} else {
+			r_io_buffer_load (core->io, from, (int)(to-from));
+		}
 	} else {
 		r_io_buffer_close (core->io);
 	}
@@ -1319,7 +1377,7 @@ static int cb_iova(void *user, void *data) {
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
 		/* ugly fix for r2 -d ... "r2 is going to die soon ..." */
-		if (r_io_desc_get (core->io, core->io->raised)) {
+		if (core->io->desc) {
 			r_core_block_read (core);
 		}
 #if 0
@@ -1329,13 +1387,6 @@ static int cb_iova(void *user, void *data) {
 		}
 #endif
 	}
-	return true;
-}
-
-static int cb_iopava(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->pava = node->i_value;
 	return true;
 }
 
@@ -1356,10 +1407,10 @@ static int cb_io_oxff(void *user, void *data) {
 static int cb_filepath(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_config_set (core->config, "file.lastpath", node->value);
 	char *pikaboo = strstr (node->value, "://");
 	if (pikaboo) {
 		if (pikaboo[3] == '/') {
+			r_config_set (core->config, "file.lastpath", node->value);
 			char *ovalue = node->value;
 			node->value = strdup (pikaboo + 3);
 			free (ovalue);
@@ -1367,6 +1418,7 @@ static int cb_filepath(void *user, void *data) {
 		}
 		return false;
 	}
+	r_config_set (core->config, "file.lastpath", node->value);
 	return true;
 }
 
@@ -1755,12 +1807,34 @@ static int cb_binminstr(void *user, void *data) {
 }
 
 static int cb_searchin(void *user, void *data) {
- 	RConfigNode *node = (RConfigNode*) data;
- 	if (*node->value == '?') {
-		print_node_options (node);
- 		return false;
- 	}
- 	return true;
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value[0] == '?') {
+		if (strlen (node->value) > 1 && node->value[1] == '?') {
+			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
+			"raw               search in raw io (ignoring bounds)\n"
+			"block             search in the current block\n"
+			"file              search in all mapped sections\n"
+			"io.maps           search in current map\n"
+			"io.maprange       search in all maps\n"
+			"io.section        search in current mapped section\n"
+			"io.sections       search in all mapped sections\n"
+			"io.sections.write search in all writable marked sections\n"
+			"io.sections.exec  search in all executable marked sections\n"
+			"dbg.stack         search in the stack\n"
+			"dbg.heap          search in the heap\n"
+			"dbg.map           search in current memory map\n"
+			"dbg.maps          search in all memory maps\n"
+			"dbg.maps.exec     search in all executable marked memory maps\n"
+			"dbg.maps.write    search in all writable marked memory maps\n"
+			"anal.fcn          search in the current function\n"
+			"anal.bb           search in the current basic-block\n");
+		} else {
+			print_node_options (node);
+		}
+		return false;
+	} 
+	return true;
 }
 
 static int cb_fileloadmethod(void *user, void *data) {
@@ -1923,8 +1997,18 @@ static int cb_malloc(void *user, void *data) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
  			core->dbg->malloc = data;
  		}
- 
+
  	}
+	return true;
+}
+
+static int cb_dbgsnap(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+
+	if (node->value){
+		r_debug_session_path (core->dbg, node->value);
+	}
 	return true;
 }
 
@@ -2032,6 +2116,8 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
+	SETICB ("asm.addrbytes", 1,  &cb_asm_addrbytes, "Number of bytes one vaddr unit uses");
+	SETICB ("asm.armimm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
@@ -2229,6 +2315,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("diff.levenstein", "false", "Use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
+	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	SETPREF ("dir.magic", R_MAGIC_PATH, "Path to r_magic files");
 #if __WINDOWS__
 	SETPREF ("dir.plugins", "plugins", "Path to plugin files to be loaded at startup");
@@ -2546,17 +2633,18 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
-	SETICB ("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB ("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
-	SETCB ("io.sectonly", "false", &cb_iosectonly, "Only read from sections (if any)");
 	SETI ("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI ("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB ("io.cache", "false", &cb_iocache, "Enable cache for io changes");
+	SETCB ("io.pcache", "false", &cb_iopcache, "io.cache for p-level");
+	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "Enable write-cache");
+	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "Enable read-cache");
 	SETCB ("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
+	SETPREF("io.exec", "true", "See !!r2 -h~-x");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");
-	SETCB ("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 
 	/* file */

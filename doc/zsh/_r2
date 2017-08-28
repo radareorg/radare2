@@ -38,7 +38,8 @@ _r2() {
   '(-q -Q)-Q[quiet mode (no prompt) and quit faster (quietLeak=true)]'
   '-p+[use project, list if no arg, load if no file]: :->project'
   '-P+[apply rapatch file and quit]:rapatch:_files'
-  '-R+[specify rarun2 profile to load (same as -e dbg.profile=X)]:dbg.profile'
+  '-r+[specify rarun2 profile to load (same as -e dbg.profile=X)]:dbg.profile'
+  '-R+[specify custom rarun2 directive]:rr2rule'
   '-s+[initial seek]:addr'
   '-S[start r2 in sandbox mode]'
   '-t[load rabin2 info in thread]'
@@ -46,7 +47,6 @@ _r2() {
   '(-v -V)-v[show radare2 version]'
   '(-v -V)-V[show radare2 and lib versions)]'
   '-w[open file in write mode]'
-  '-X+[specify custom rarun2 directive]:rr2rule'
   '(-z -zz)-z[do not load strings]'
   '(-z -zz)-zz[load strings from raw binary (even if unknown)]'
   )

@@ -65,9 +65,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int align = core->search->align;
 	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
-	int idx, tidx = 0, ret, len;
+	int idx, tidx = 0, len;
 	int tokcount, matchcount, count = 0;
-	int matches = 0;
+	int matches = 0, addrbytes = core->assembler->addrbytes;
 
 	if (!*input) {
 		return NULL;
@@ -89,40 +89,34 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount = 0; tokcount < (sizeof (tokens) / sizeof (char*)) - 1; tokcount++) {
+	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ";");
 		if (!tok) break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
-	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
+	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
 		matches = 0;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if (ret != core->blocksize) {
+		if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
 			break;
 		}
 		idx = 0, matchcount = 0;
-		while (idx < core->blocksize) {
+		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
 			r_asm_set_pc (core->assembler, addr);
-			op.buf_asm[0] = 0;
-			op.buf_hex[0] = 0;
-			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
+			if (!(len = r_asm_disassemble (
+				      core->assembler, &op,
+				      buf + addrbytes * idx,
+				      core->blocksize - addrbytes * idx))) {
 				idx = (matchcount)? tidx + 1: idx + 1;
 				matchcount = 0;
 				continue;
 			}
-			matches = true;
-			if (!strcmp (op.buf_asm, "unaligned")) {
-				matches = false; 
-			}
-			if (!strcmp (op.buf_asm, "invalid")) {
-				matches = false;
-			}
+			matches = strcmp (op.buf_asm, "invalid") && strcmp (op.buf_asm, "unaligned");
 			if (matches && tokens[matchcount]) {
 				if (!regexp) {
 					matches = strstr(op.buf_asm, tokens[matchcount]) != NULL;
@@ -168,7 +162,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 							goto beach;
 						}
 					}
-				} else  if (!matchcount) {
+				} else if (!matchcount) {
 					tidx = idx;
 					matchcount++;
 					idx += len;
@@ -182,7 +176,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matchcount = 0;
 			}
 		}
-		at += OPSZ;
 	}
 	r_cons_break_pop ();
 	r_asm_set_pc (core->assembler, toff);
@@ -386,64 +379,65 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 	return result;
 }
 
-R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
-	RList *hits = r_core_asm_hit_list_new();
+R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	RAsmOp op;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut8 *buf;
-	ut64 instrlen = 0, at = 0;
-	ut32 idx = 0, hit_count = 0;
+	ut64 at;
+	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
+	int addrbytes = core->assembler->addrbytes;
 	RAsmCode *c;
+	RList *hits = r_core_asm_hit_list_new();
+	if (!hits) return NULL;
 
+	len = R_MIN (len - len % addrbytes, addrbytes * addr);
 	if (len < 1) {
 		r_list_free (hits);
 		return NULL;
 	}
 
 	buf = (ut8 *)malloc (len);
-	if (!hits || !buf) {
+	if (!buf) {
 		if (hits) {
 			r_list_free (hits);
 		}
+		return NULL;
+	} else if (!hits) {
+		free (buf);
+		return NULL;
+	}
+	len = len > addr ? addr : len;
+	if (!r_io_read_at (core->io, addr - len, buf, len)) {
+		r_list_free (hits);
 		free (buf);
 		return NULL;
 	}
 
-	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
-		if (hits) {
-			r_list_free (hits);
-		}
-		free (buf);
-		return NULL;
-	}
-
-	for (idx = 1; idx < len; ++idx) {
+	for (idx = addrbytes; idx < len; idx += addrbytes) {
 		if (r_cons_singleton ()->breaked) break;
-		at = addr - idx; hit_count = 0;
 		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
-		if (strstr(c->buf_asm, "invalid") || strstr(c->buf_asm, ".byte")) {
+		if (strstr (c->buf_asm, "invalid") || strstr (c->buf_asm, ".byte")) {
 			r_asm_code_free(c);
 			continue;
 		}
 		numinstr = 0;
-		asmlen = strlen(c->buf_asm);
+		asmlen = strlen (c->buf_asm);
 		for(ii = 0; ii < asmlen; ++ii) {
 			if (c->buf_asm[ii] == '\n') ++numinstr;
 		}
 		r_asm_code_free(c);
-		if (numinstr >= n || idx > 32 * n) {
+		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
 			break;
 		}
 	}
-	at = addr - idx;
-	hit_count = 0;
+	at = addr - idx / addrbytes;
 	r_asm_set_pc (core->assembler, at);
-	at = addr-idx;
-	for ( hit_count = 0; hit_count < n; hit_count++) {
-		instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
-		add_hit_to_hits(hits, at, instrlen, true);
+	for (hit_count = 0; hit_count < n; hit_count++) {
+		int instrlen = r_asm_disassemble (core->assembler, &op,
+																			buf + len - addrbytes*(addr-at), addrbytes * (addr-at));
+		add_hit_to_hits (hits, at, instrlen, true);
 		at += instrlen;
 	}
 	free (buf);
@@ -472,7 +466,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		return NULL;
 	}
 
-	if (r_io_read_at (core->io, addr-(len+extra_padding), buf, len+extra_padding) != len+extra_padding) {
+	if (!r_io_read_at (core->io, addr-(len+extra_padding), buf, len + extra_padding)) {
 		r_list_purge (hits);
 		free (hits);
 		free (buf);
@@ -535,7 +529,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		return NULL;
 	}
 
-	if (r_io_read_at (core->io, (addr + extra_padding)-len, buf, len+extra_padding) != len+extra_padding) {
+	if (!r_io_read_at (core->io, (addr + extra_padding) - len, buf, len + extra_padding)) {
 		r_list_purge (hits);
 		free (hits);
 		free (buf);
@@ -662,21 +656,26 @@ R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, 
 
 /* Compute the len and the starting address
  * when disassembling `nb` opcodes backward. */
-R_API ut32 r_core_asm_bwdis_len (RCore* core, int* instr_len, ut64* start_addr, ut32 nb) {
+R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, ut32 nb) {
 	ut32 instr_run = 0;
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
+	// TODO if length of nb instructions is larger than blocksize
 	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
-	if (instr_len)
+	if (instr_len) {
 		*instr_len = 0;
+	}
 	if (hits && r_list_length (hits) > 0) {
 		hit = r_list_get_bottom (hits);
-		if (start_addr)
+		if (start_addr) {
 			*start_addr = hit->addr;
-		r_list_foreach (hits, iter, hit)
+		}
+		r_list_foreach (hits, iter, hit) {
 			instr_run += hit->len;
-		if (instr_len)
+		}
+		if (instr_len) {
 			*instr_len = instr_run;
+		}
 	}
 	r_list_free (hits);
 	return instr_run;

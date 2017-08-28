@@ -4,6 +4,9 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define VARPREFIX "local"
+#define ARGPREFIX "arg"
+
 #define USE_SDB_CACHE 0
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
@@ -264,8 +267,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		r_anal_fcn_set_size (fcn, 0);\
 		return R_ANAL_RET_ERROR; }
 
-#define VARPREFIX "local"
-#define ARGPREFIX "arg"
+// ETOOSLOW
 static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
@@ -284,8 +286,8 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			r_anal_var_free (v);
 			break;
 		}
-		free (varname);
 		r_anal_var_free (v);
+		free (varname);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
@@ -351,7 +353,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 		0
 	};
 	ut64 ret = UT64_MAX;
-	for (offs = 0; offs < len; offs += oplen) {
+	for (offs = 0; offs < len; offs += anal->addrbytes * oplen) {
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
 			break;
@@ -369,70 +371,69 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeachRet() goto beach;
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
+	char sigstr[16] = {0};
 	st64 ptr;
-	char *sig = r_str_newf (",%s,%s", reg, sign);
-	if (!sig || !anal) {
-		free (sig);
+	char *addr;
+	if (!anal || !fcn || !op) {
 		return;
 	}
-	op_esil = r_strbuf_get (&op->esil);
+	// snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
+	snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
+	const char *op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
-		free (sig);
 		return;
 	}
-	esil_buf = strdup (op_esil);
+	char *esil_buf = strdup (op_esil);
 	if (!esil_buf) {
-		free (sig);
-		free (op_esil);
 		return;
 	}
-	ptr_end = strstr (esil_buf, sig);
+	char *ptr_end = strstr (esil_buf, sigstr);
 	if (!ptr_end) {
-		free (sig);
 		free (esil_buf);
 		return;
 	}
+#if 1
 	*ptr_end = 0;
 	addr = ptr_end;
-	while ((addr[0] != '0' || addr[1] != 'x') &&
-	addr >= esil_buf + 1 && *addr != ',') {
+	while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
-		free (sig);
 		free (esil_buf);
 		return;
 	}
 	ptr = (st64) r_num_get (NULL, addr);
+#else
+	ptr = -op->ptr;
+	if (ptr%4) {
+		free (esil_buf);
+		return;
+	}
+#endif
 	if (*sign == '+') {
-		if (ptr < fcn->maxstack && type == 's') {
-			varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
-		} else {
-			varname = get_varname (anal, fcn, type, ARGPREFIX, R_ABS (ptr));
-		}
+		const char *pfx = (ptr < fcn->maxstack && type == 's')? VARPREFIX: ARGPREFIX;
+		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
 		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, ptr, 0, op->addr);
+		free (varname);
 	} else {
-		varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
+		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
 		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, -ptr, 1, op->addr);
-
+		free (varname);
 	}
-	free (varname);
-	free (sig);
 	free (esil_buf);
 }
 
-R_API void fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
-	if (anal && anal->reg) {
-		extract_arg (anal, fcn, op, anal->reg->name[R_REG_NAME_BP], "+", 'b');
-		extract_arg (anal, fcn, op, anal->reg->name[R_REG_NAME_BP], "-", 'b');
-		extract_arg (anal, fcn, op, anal->reg->name[R_REG_NAME_SP], "+", 's');
+R_API void r_anal_fcn_fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+	if (!anal || !fcn || !op) {
+		return;
 	}
-	extract_arg (anal, fcn, op, "bp", "+", 'b');
-	extract_arg (anal, fcn, op, "bp", "-", 'b');
-	extract_arg (anal, fcn, op, "sp", "+", 's');
+	const char *BP = anal->reg->name[R_REG_NAME_BP];
+	const char *SP =  anal->reg->name[R_REG_NAME_SP];
+	extract_arg (anal, fcn, op, BP, "+", 'b');
+	extract_arg (anal, fcn, op, BP, "-", 'b');
+	extract_arg (anal, fcn, op, SP, "+", 's');
 }
 
 static bool isInvalidMemory(const ut8 *buf, int len) {
@@ -549,6 +550,7 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	int noncode = anal->opt.noncode;
+	int addrbytes = anal->addrbytes;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
@@ -608,25 +610,26 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	bool last_is_push = false;
 	ut64 last_push_addr = UT64_MAX;
-	while (idx < len) {
-		if (anal->limit) {
-			if ((addr + idx) < anal->limit->from || (addr + idx + 1) > anal->limit->to) {
-				break;
-			}
+	if (anal->limit && addr + idx < anal->limit->from) {
+		return R_ANAL_RET_END;
+	}
+	while (addrbytes * idx < len) {
+		if (anal->limit && anal->limit->to <= addr + idx) {
+			break;
 		}
 repeat:
-		if ((len - idx) < 5) {
+		if ((len - addrbytes * idx) < 5) {
 			break;
 		}
 		r_anal_op_fini (&op);
-		if (isInvalidMemory (buf + idx, len - idx)) {
+		if (isInvalidMemory (buf + addrbytes * idx, len - addrbytes * idx)) {
 			FITFCNSZ ();
 			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
 			return R_ANAL_RET_ERROR;
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
@@ -770,8 +773,11 @@ repeat:
 			}
 			if (anal->opt.jmptbl) {
 				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
-					anal->cmdtail = r_str_appendf (anal->cmdtail, "pxt. 0x%08" PFMT64x
-						" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
+					char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
+					if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
+						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
+					}
+					free (str);
 					// jmptbl_addr = op.ptr;
 					// jmptbl_size = -1;
 					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
@@ -869,9 +875,10 @@ repeat:
 			{
 				bool must_eob = anal->opt.eobjmp;
 				if (!must_eob) {
-					RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
-					RIOSection *d = anal->iob.section_vget (anal->iob.io, op.jump);
-					must_eob = s != d;
+					RIOSection *s = anal->iob.sect_vget (anal->iob.io, addr);
+					if (s) {
+						must_eob = (op.jump < s->vaddr || op.jump >= s->vaddr + s->vsize);
+					}
 				}
 				if (must_eob) {
 					FITFCNSZ ();
@@ -1065,7 +1072,13 @@ repeat:
 			}
 			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
-				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
+				RIOSection *s = NULL;
+				SdbList *secs = anal->iob.sections_vget (anal->iob.io, addr);
+				if (secs) {
+					s = (RIOSection *) ls_pop (secs);
+					secs->free = NULL;
+					ls_free (secs);
+				}
 				if (s && s->name) {
 					bool in_plt = strstr (s->name, ".plt") != NULL;
 					if (!in_plt && strstr (s->name, "_stubs") != NULL) {

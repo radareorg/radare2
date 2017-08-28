@@ -15,7 +15,8 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 		int bits = r_config_get_i (core->config, "asm.bits");
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
-			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
+			ut64 curAddressValue;
+			r_io_read_i (core->io, startAddress, &curAddressValue, 8, false);	//XXX
 			RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
 			r_list_append (vtableMethods, curFuntion);
 			startAddress += wordSize;
@@ -37,7 +38,8 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 
 static int valueInTextSection(RCore *core, ut64 curAddress) {
 	//value at the current address
-	ut64 curAddressValue = r_io_read_i (core->io, curAddress, 8);
+	ut64 curAddressValue;
+	r_io_read_i (core->io, curAddress, &curAddressValue, 8, false);	//XXX
 	//if the value is in text section
 	return inTextSection (core, curAddressValue);
 }
@@ -78,19 +80,20 @@ RList* search_virtual_tables(RCore *core){
 	ut64 startAddress;
 	ut64 endAddress;
 	RListIter * iter;
-	RIOSection *section;
+	RBinSection *section;
+	RList *sections = r_bin_get_sections (core->bin);
 	RList *vtables = r_list_newf ((RListFree)free);
-	if (!vtables) {
+	if (!vtables || !sections) {
 		return NULL;
 	}
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
 	int wordSize = bits / 8;
-	r_list_foreach (core->io->sections, iter, section) {
+	r_list_foreach (sections, iter, section) {
 		if (!strcmp (section->name, ".rodata")) {
 			ut8 *segBuff = calloc (1, section->size);
-			r_io_read_at (core->io, section->paddr, segBuff, section->size);
+			r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
 			startAddress = section->vaddr;
-			endAddress = startAddress + (section->size) - (bits/8);
+			endAddress = startAddress + (section->vsize) - (bits/8);
 			while (startAddress <= endAddress) {
 				if (isVtableStart (core, startAddress)) {
 					vtable_info *vtable = calloc (1, sizeof(vtable_info));
@@ -186,7 +189,8 @@ static void r_core_anal_list_vtables_all(void *core) {
 static rtti_struct* get_rtti_data (RCore *core, ut64 atAddress) {
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
 	int wordSize = bits / 8;
-	ut64 BaseLocatorAddr = r_io_read_i (core->io, atAddress - wordSize, wordSize);
+	ut64 BaseLocatorAddr;
+	r_io_read_i (core->io, atAddress - wordSize, &BaseLocatorAddr, wordSize, false);	//XXX
 	eprintf ("Trying to parse rtti at 0x%08"PFMT64x"\n", BaseLocatorAddr);
 	return NULL;
 }

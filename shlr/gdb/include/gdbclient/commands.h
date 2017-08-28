@@ -126,5 +126,9 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid);
  */
 ut64 gdbr_get_baddr(libgdbr_t *g);
 
+/*!
+ * Select pid-tid
+ */
+int gdbr_select(libgdbr_t *g, int pid, int tid);
 
 #endif  // CLIENT_COMMANDS_H

@@ -60,7 +60,7 @@ typedef struct r_bp_item_t {
 	char *cond; /* used for conditional breakpoints */
 } RBreakpointItem;
 
-typedef int (*RBreakpointCallback)(RBreakpointItem *bp, int set, void *user);
+typedef int (*RBreakpointCallback)(void *bp, RBreakpointItem *b, bool set);
 
 typedef struct r_bp_t {
 	void *user;
@@ -75,6 +75,7 @@ typedef struct r_bp_t {
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;
+	int nhwbps;
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
@@ -82,9 +83,9 @@ typedef struct r_bp_t {
 } RBreakpoint;
 
 enum {
-	R_BP_PROT_READ = 1,
+	R_BP_PROT_EXEC = 1,
 	R_BP_PROT_WRITE = 2,
-	R_BP_PROT_EXEC = 4,
+	R_BP_PROT_READ = 4,
 };
 
 typedef struct r_bp_trace_t {
@@ -149,6 +150,9 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp);
 R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
 R_API RList *r_bp_traptrace_new(void);
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
+
+/* watchpoint */
+R_API RBreakpointItem *r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int rw);
 
 /* plugin pointers */
 extern RBreakpointPlugin r_bp_plugin_x86;

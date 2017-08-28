@@ -224,6 +224,8 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 				break;
 			case R_ANAL_OP_TYPE_UNK:
 			case R_ANAL_OP_TYPE_ILL:
+				eprintf ("a2f: Invalid instruction\n");
+				block_end = true;
 				break;
 			default:
 				if (op->ptr != UT64_MAX) {
@@ -287,11 +289,12 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 		return false;
 	}
 
-	addr = analyzeStackBased (core, db, addr, delayed_commands);
-	if (addr == UT64_MAX) {
+	ut64 a = analyzeStackBased (core, db, addr, delayed_commands);
+	if (a == addr || addr == UT64_MAX) {
 		eprintf ("Initial analysis failed\n");
 		return false;
 	}
+	addr = a;
 	sdb_num_set (db, "addr", addr, 0);
 
 	//TODO add the possible addresses to the analysis stack

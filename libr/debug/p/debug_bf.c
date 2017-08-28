@@ -153,7 +153,7 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	);
 }
 
-static int r_debug_bf_breakpoint (RBreakpointItem *bp, int set, void *user) {
+static int r_debug_bf_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }

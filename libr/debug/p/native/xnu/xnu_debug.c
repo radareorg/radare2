@@ -1196,7 +1196,6 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 			(ut8*)&all_infos, sizeof (DyldAllImageInfos64));
 		info_array_count = all_infos.info_array_count;
 		info_array_size = info_array_count * DYLD_IMAGE_INFO_64_SIZE;
-
 		info_array_address = all_infos.info_array;
 	} else {
 		DyldAllImageInfos32 all_info;
@@ -1210,8 +1209,8 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	if (info_array_address == 0) {
 		return NULL;
 	}
-
-	info_array = malloc (info_array_size);
+	info_array_size = R_ABS (info_array_size);
+	info_array = calloc (1, info_array_size);
 	if (!info_array) {
 		eprintf ("Cannot allocate info_array_size %d\n",
 			info_array_size);

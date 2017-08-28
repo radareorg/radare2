@@ -52,7 +52,7 @@ static const char *help_msg_at[] = {
 	"~", "word[2]", "grep 3rd column of lines matching word",
 	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-	"@", " addr[!blocksize]", "temporary set a new blocksize",
+	"@", " [addr]!blocksize", "temporary set a new blocksize",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
 	"@e:", "k=v,k=v", "temporary change eval vars",
@@ -90,6 +90,7 @@ static const char *help_msg_at_at[] = {
 	"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
 	"x", " @@f", "\"\" on all functions (see aflq)",
 	"x", " @@f:write", "\"\" on all functions matching write in the name",
+	"x", " @@s:from to step", "\"\" on all offsets from, to incrementing by step",
 	"x", " @@c:cmd", "the same as @@=`` without the backticks",
 	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 	// TODO: Add @@k sdb-query-expression-here
@@ -922,14 +923,6 @@ static void helpCmdTasks(RCore *core) {
 	r_core_cmd_help (core, help_msg_amper);
 }
 
-static void helpCmdForeach(RCore *core) {
-	r_core_cmd_help (core, help_msg_at_at);
-}
-
-static void helpCmdAt(RCore *core) {
-	r_core_cmd_help (core, help_msg_at);
-}
-
 static void print_format_help_help_help_help(RCore *core) {
 	const char *help_msg[] = {
 		"    STAHP IT!!!", "", "",
@@ -1217,7 +1210,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch;
-	const char *colors[10] = {NULL};
+	char *colors[10] = {NULL};
 	for (i = 0; i < 10; i++) {
 		colors[i] = r_cons_rainbow_get (i, 10, false);
 	}
@@ -1238,20 +1231,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	rows = len / nb_cols;
 
 	chars = calloc (nb_cols * 20, sizeof (char));
-	if (!chars) {
-		return;
-	}
+	if (!chars) goto err_chars;
 	note = calloc (nb_cols, sizeof (char *));
-	if (!note) {
-		free (chars);
-		return;
-	}
+	if (!note) goto err_note;
 	bytes = calloc (nb_cons_cols * 20, sizeof (char));
-	if (!bytes) {
-		free (chars);
-		free (note);
-		return;
-	}
+	if (!bytes) goto err_bytes;
 #if 1
 	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr)) - 8;
 	char addrpad[32];
@@ -1473,9 +1457,16 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		r_cons_newline ();
 		addr += nb_cols;
 	}
-	free (note);
+
 	free (bytes);
+ err_bytes:
+	free (note);
+ err_note:
 	free (chars);
+ err_chars:
+	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {
+		free (colors[i]);
+	}
 }
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
@@ -1687,7 +1678,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (!r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i)) {
+		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
@@ -1881,6 +1872,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			}
 		}
 		i += opsz;
+		r_anal_op_fini (&op);
 	}
 	r_cons_printf ("  %d\n", i - oi);
 	if (bgcolor_in_heap) {
@@ -2483,7 +2475,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	if (totalsize == UT64_MAX) {
 		if (core->file && core->io) {
-			totalsize = r_io_desc_size (core->io, core->file->desc);
+			totalsize = r_io_fd_size (core->io, core->file->fd);
 			if ((st64) totalsize < 1) {
 				totalsize = -1;
 			}
@@ -3306,6 +3298,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
+	int addrbytes = core->assembler->addrbytes;
 	mode = w = p = i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 
@@ -3318,7 +3311,8 @@ static int cmd_print(void *data, const char *input) {
 		if (p) {
 			l = (int) r_num_math (core->num, p + 1);
 			/* except disasm and memoryfmt (pd, pm) */
-			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
+			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && 
+				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
 				int n = (st32) l; // r_num_math (core->num, input+1);
 				if (l < 0) {
 					off = core->offset + n;
@@ -3684,6 +3678,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_seek_archbits (core, core->offset);
 			// r_anal_hint_set_bits (core->anal, core->offset, oldbits);
 		}
+		free (hex);
 		free (old_arch);
 		free (new_arch);
 	}
@@ -3854,7 +3849,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
-		default:
+		default: // "pi"
 			if (l != 0) {
 				r_core_print_disasm_instructions (core, 0, l);
 			}
@@ -3912,9 +3907,11 @@ static int cmd_print(void *data, const char *input) {
 			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -core->blocksize_max) {
 			bw_disassemble = true;
+			l = use_blocksize; // negative
 			use_blocksize = -use_blocksize;
+		} else {
+			l = use_blocksize;
 		}
-		l = use_blocksize;
 
 		if (!new_arch) {
 			new_arch = strdup (old_arch);
@@ -4179,7 +4176,6 @@ static int cmd_print(void *data, const char *input) {
 						r_core_read_at (core, addr - l, block, l); // core->blocksize);
 						core->num->value = r_core_print_disasm (core->print, core, addr - l, block, l, l, 0, 1);
 					} else { // pd
-						const int bs = core->blocksize;
 						int instr_len;
 						if (r_core_prevop_addr (core, core->offset, l, &start)) {
 							// We have some anal_info.
@@ -4189,12 +4185,18 @@ static int cmd_print(void *data, const char *input) {
 							r_core_asm_bwdis_len (core, &instr_len, &addr, l);
 						}
 						ut64 prevaddr = core->offset;
+						int bs = core->blocksize, bs1 = addrbytes * instr_len;
+						if (bs1 > bs) {
+							block = realloc (block, bs1);
+						}
 						r_core_seek (core, prevaddr - instr_len, true);
-						block = realloc (block, R_MAX (instr_len, bs));
 						memcpy (block, core->block, bs);
-						r_core_read_at (core, addr + bs, block + bs, instr_len - bs); // core->blocksize);
+						if (bs1 > bs) {
+							r_core_read_at (core, addr + bs / addrbytes, block + (bs - bs % addrbytes),
+															bs1 - (bs - bs % addrbytes));
+						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block, instr_len, l, 0, 1);
+							core, core->offset, block, bs1, l, 0, 1);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -4210,23 +4212,27 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Block size too big\n");
 						return 1;
 					}
-					block = malloc (l);
+					block = malloc (addrbytes * l);
 					if (block) {
-						if (l > core->blocksize) {
-							r_core_read_at (core, addr, block, l); // core->blocksize);
+						if (addrbytes * l > core->blocksize) {
+							r_core_read_at (core, addr, block, addrbytes * l); // core->blocksize);
 						} else {
-							memcpy (block, core->block, l);
+							memcpy (block, core->block, addrbytes * l);
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr, block, l, l, 0, 1);
+							core, addr, block, addrbytes * l, l, 0, 1);
 					} else {
-						eprintf ("Cannot allocate %d bytes\n", l);
+						eprintf ("Cannot allocate %d bytes\n", addrbytes * l);
 					}
 				} else {
-					block = malloc (R_MAX (l * 10, bs));
+					int bs1 = l * 16;
+					block = malloc (R_MAX (bs, bs1));
 					memcpy (block, core->block, bs);
-					r_core_read_at (core, addr + bs, block + bs, (l * 10) - bs); // core->blocksize);
-					core->num->value = r_core_print_disasm (core->print, core, addr, block, l * 10, l, 0, 0);
+					if (bs1 > bs) {
+						r_core_read_at (core, addr + bs / addrbytes, block + (bs - bs % addrbytes),
+													  bs1 - (bs - bs % addrbytes));
+					}
+					core->num->value = r_core_print_disasm (core->print, core, addr, block, bs1, l, 0, 0);
 				}
 			}
 			free (block);
@@ -4255,8 +4261,8 @@ static int cmd_print(void *data, const char *input) {
 		case 'j': // "psj"
 			if (l > 0) {
 				char *str, *type;
-				ut64 vaddr;
-				RIOSection *section;
+				ut64 vaddr = UT64_MAX;
+				RIOSection *section = NULL;
 
 				if (input[2] == ' ' && input[3]) {
 					len = r_num_math (core->num, input + 3);
@@ -4266,9 +4272,9 @@ static int cmd_print(void *data, const char *input) {
 				* string, by considering current offset as
 				* paddr and if it isn't, trying to consider it
 				* as vaddr. */
-				vaddr = r_io_section_maddr_to_vaddr (core->io, core->offset);
-				section = core->io->section;
-				if (vaddr == UT64_MAX) {
+				if ((section = r_io_section_get (core->io, core->offset))) {
+					vaddr = core->offset + section->vaddr - section->paddr;
+				} else {
 					section = r_io_section_vget (core->io, core->offset);
 					if (section) {
 						vaddr = core->offset;
@@ -4750,7 +4756,8 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "pxc"
-			// LOL? :D
+			{
+			int ocomments = core->print->use_comments;
 			core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
 			if (l) {
 				ut64 from = r_config_get_i (core->config, "diff.from");
@@ -4765,6 +4772,8 @@ static int cmd_print(void *data, const char *input) {
 					r_core_print_cmp (core, from, to);
 				}
 				core->num->value = len;
+			}
+			core->print->use_comments = ocomments;
 			}
 			break;
 		case 'i': // "pxi"

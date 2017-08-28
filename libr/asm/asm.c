@@ -307,8 +307,8 @@ static int has_bits(RAsmPlugin *h, int bits) {
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	if (a) {
 		free (a->cpu);
+		a->cpu = cpu? strdup (cpu): NULL;
 	}
-	a->cpu = cpu? strdup (cpu): NULL;
 }
 
 R_API int r_asm_set_bits(RAsm *a, int bits) {
@@ -391,9 +391,11 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		// shift buf N bits
 		if (a->bitshift > 0) {
 			ut8 *tmp = calloc (len, 1);
-			r_mem_copybits_delta (tmp, 0, buf, a->bitshift, (len * 8) - a->bitshift);
-			ret = a->cur->disassemble (a, op, tmp, len);
-			free (tmp);
+			if (tmp) {
+				r_mem_copybits_delta (tmp, 0, buf, a->bitshift, (len * 8) - a->bitshift);
+				ret = a->cur->disassemble (a, op, tmp, len);
+				free (tmp);
+			}
 		} else {
 			ret = a->cur->disassemble (a, op, buf, len);
 		}
@@ -412,9 +414,6 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	} else {
 		oplen = op->size;
-	}
-	if (oplen > len) {
-		oplen = len;
 	}
 	if (oplen < 1) {
 		oplen = 1;
@@ -438,11 +437,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	//XXX check against R_ASM_BUFSIZE other oob write
 	memcpy (op->buf, buf, R_MIN (R_ASM_BUFSIZE - 1, oplen));
-	*op->buf_hex = 0;
-	if ((oplen * 4) >= sizeof (op->buf_hex)) {
-		oplen = (sizeof (op->buf_hex) / 4) - 1;
-	}
-	r_hex_bin2str (buf, oplen, op->buf_hex);
+	r_hex_bin2str (buf, R_MIN (a->addrbytes * oplen,
+		(sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
 	return ret;
 }
 
@@ -587,7 +583,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	if (!(buf_asm = r_strbuf_new (NULL))) {
 		return r_asm_code_free (acode);
 	}
-	for (idx = ret = slen = 0; idx < len; idx += ret) {
+	for (idx = ret = slen = 0; idx + a->addrbytes <= len; idx += a->addrbytes * ret) {
 		r_asm_set_pc (a, pc + idx);
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {
@@ -960,7 +956,7 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 R_API int r_asm_op_get_size(RAsmOp *op) {
 	int len;
 	if (!op) {
-		return 0;
+		return 1;
 	}
 	len = op->size - op->payload;
 	if (len < 1) {

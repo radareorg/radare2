@@ -5,7 +5,7 @@
 R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp (debugbackend, "gdb");
-	RIODesc * fd = r->file ? r->file->desc : NULL;
+	RIODesc * fd = r->file ? r_io_desc_get (r->io, r->file->fd) : NULL;
 	const char *prompt = NULL;
 
 	p = fd ? fd->data : NULL;
@@ -275,42 +275,15 @@ R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
-	RIOSection *newsection;
-	ut64 ret, old = core->offset;
-
-	core->offset = addr;
-	core->io->section = core->section; // HACK
-	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
-	newsection = core->io->section;
-
-	if (ret == UT64_MAX) {
-		if (!core->io->va) {
-			return false;
-		}
-	} else {
-		core->offset = addr;
+	ut64 newoff = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+	if (newoff == UT64_MAX) {
+		return false;
 	}
+	core->offset = newoff;
 	if (rb) {
-		ret = r_core_block_read (core);
-		if (core->io->ff) {
-			if (ret < 1 || ret > core->blocksize) {
-				memset (core->block, core->io->Oxff, core->blocksize);
-			} else {
-				memset (core->block + ret, core->io->Oxff, core->blocksize - ret);
-			}
-			ret = core->blocksize;
-			core->offset = addr;
-		} else {
-			if (ret < 1) {
-				core->offset = old;
-			}
-		}
+		r_core_block_read (core);
 	}
-	if (core->section != newsection) {
-		r_core_seek_archbits (core, core->offset);
-		core->section = newsection;
-	}
-	return (ret == -1)? false: true;
+	return (newoff != addr);
 }
 
 R_API int r_core_seek_delta(RCore *core, st64 addr) {
@@ -339,28 +312,24 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return ret;
 }
 
-R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	int ret;
-	if (!core->io || !core->file || !core->file->desc || size < 1) {
+R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
+	bool ret;
+	if (!core) {
 		return false;
 	}
-	ret = r_io_use_desc (core->io, core->file->desc);
-	if (ret != -1) {
-		ret = r_io_write_at (core->io, addr, buf, size);
-		if (addr >= core->offset && addr <= core->offset + core->blocksize) {
-			r_core_block_read (core);
-		}
+	ret = r_io_write_at (core->io, addr, buf, size);
+	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
+		r_core_block_read (core);
 	}
-	return (ret == -1)? false: true;
+	return ret;
 }
 
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	int ret;
-	if (!core->io || !core->file || !core->file->desc || size < 1) {
+	if (!core->io || !core->file || size < 1) {
 		return false;
 	}
-	//ret = r_io_use_fd (core->io, core->file->desc->fd);
-	ret = r_io_use_desc (core->io, core->file->desc);
+	ret = r_io_use_fd (core->io, core->file->fd);
 	if (ret != -1) {
 		ret = r_io_extend_at (core->io, addr, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize) {
@@ -376,25 +345,38 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	ut8 * shift_buf = NULL;
 	int res = false;
 
-	if (!core->io || !core->file || !core->file->desc) {
+	if (!core->io || !core->file) {
 		return false;
 	}
 
 	if (b_size == 0 || b_size == (ut64) -1) {
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_use_fd (core->io, core->file->fd);
 		file_sz = r_io_size (core->io);
+		if (file_sz == UT64_MAX) {
+			file_sz = 0;
+		}
+#if 0
 		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
+		if (fend < 1) {
+			fend = 0;
+		}
+#else
+		bstart = 0;
+		fend = file_sz;
+#endif
 		fstart = file_sz - fend;
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
 
-	// XXX handling basic cases atm
-	if (b_size < 1) {
+	if ((st64)b_size < 1) {
 		return false;
 	}
-	shift_buf = malloc (b_size);
-	memset (shift_buf, 0, b_size);
+	shift_buf = calloc (b_size, 1);
+	if (!shift_buf) {
+		eprintf ("Cannot allocated %d bytes\n", (int)b_size);
+		return false;
+	}
 
 	// cases
 	// addr + b_size + dist > file_end
@@ -408,62 +390,32 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// addr + dist < file_start
 	if (addr + dist < fstart) {
 		res = false;
-	}
 	// addr + dist > file_end
-	else if ( (addr) + dist > fend) {
+	} else if ( (addr) + dist > fend) {
 		res = false;
 	} else {
-		res = r_io_use_desc (core->io, core->file->desc);
+		r_io_use_fd (core->io, core->file->fd);
 		r_io_read_at (core->io, addr, shift_buf, b_size);
-		r_io_write_at (core->io, addr+dist, shift_buf, b_size);
+		r_io_write_at (core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
-
 	r_core_seek (core, addr, 1);
 	free (shift_buf);
 	return res;
 }
 
-static RCoreFile * r_core_file_set_first_valid(RCore *core) {
-	RListIter *iter;
-	RCoreFile *file = NULL;
-
-	r_list_foreach (core->files, iter, file) {
-		if (file && file->desc) {
-			core->io->raised = file->desc->fd;
-			core->switch_file_view = 1;
-			break;
-		}
-	}
-	return file;
-}
-
 R_API int r_core_block_read(RCore *core) {
-	if (!core->file && !r_core_file_set_first_valid (core)) {
-		memset (core->block, core->io->Oxff, core->blocksize);
-		return -1;
+	if (core && core->block) {
+		return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
 	}
-	if (core->file && core->switch_file_view) {
-		r_io_use_desc (core->io, core->file->desc);
-		r_core_bin_set_by_fd (core, core->file->desc->fd); //needed?
-		core->switch_file_view = 0;
-	} else	{
-		r_io_use_fd (core->io, core->io->raised); //possibly not needed
-	}
-	return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
+	return -1;
 }
 
-R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
-	if (!core || !core->io || !core->file || !core->file->desc || size < 1) {
-		if (core && core->io && size > 0) {
-			memset (buf, core->io->Oxff, size);
-		}
-		return false;
+R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
+	if (core) {
+		return r_io_read_at (core->io, addr, buf, size);
 	}
-	if (core->file) {
-		r_io_use_desc (core->io, core->file->desc);
-	}
-	return r_io_read_at (core->io, addr, buf, size);
+	return false;
 }
 
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {

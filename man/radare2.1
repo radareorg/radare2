@@ -1,4 +1,4 @@
-.Dd Jun 20, 2016
+.Dd Aug 24, 2017
 .Dt RADARE2 1
 .Sh NAME
 .Nm radare2
@@ -19,7 +19,7 @@
 .Op Fl r Ar rarun2
 .Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvVX
+.Op Fl 0AdDwntLquvVx
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -106,6 +106,8 @@ Open in write mode
 Show help message
 .It Fl H
 Show files and environment help
+.It Fl x
+Open the file map without executable permissions
 .El
 .Sh SHELL
 Type '?' for help

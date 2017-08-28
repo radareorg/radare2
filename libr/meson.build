@@ -159,7 +159,8 @@ debug = [
 	'esil',
 	'io',
 	'native',
-	'rap'
+	'rap',
+	'windbg'
 ]
 
 egg = [
@@ -187,6 +188,7 @@ fs = [
 ]
 
 io = [
+	'ar',
 	'bfdbg',
 	'debug',
 	'default',
@@ -206,7 +208,8 @@ io = [
 	'self',
 	'shm',
 	'sparse',
-	'tcp'
+	'tcp',
+	'windbg'
 ]
 if host_os == 'windows'
 io += [

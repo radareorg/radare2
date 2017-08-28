@@ -185,7 +185,7 @@ while_end:
 		ptr2++;
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
-				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
+				ZERO_FILL (cons->grep.tokens);
 				cons->grep.tokens_used = 0;
 				fail = 0;
 				break;
@@ -423,7 +423,15 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			}
 			R_FREE (cons->grep.json_path);
 		} else {
-			char *out = r_print_json_indent (buf, I (use_color), "  ");
+			const char *palette[] = {
+				cons->pal.graph_false, // f
+				cons->pal.graph_true, // t
+				cons->pal.num, // k
+				cons->pal.comment, // v
+				Color_RESET,
+				NULL
+			};
+			char *out = r_print_json_indent (buf, I (use_color), "  ", palette);
 			if (!out) {
 				return 0;
 			}

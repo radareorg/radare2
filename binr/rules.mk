@@ -32,13 +32,6 @@ LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/java/libr_java.a
 LDFLAGS+=../../libr/socket/libr_socket.a
 LDFLAGS+=../../libr/util/libr_util.a
-ifneq (${ANDROID},1)
-ifneq (${OSTYPE},linux)
-ifneq ($(CC),cccl)
-LDFLAGS+=-lpthread
-endif
-endif
-endif
 ifneq (${OSTYPE},haiku)
 ifneq ($(CC),cccl)
 LDFLAGS+=-lm
@@ -47,6 +40,15 @@ endif
 endif
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${LINK}
+ifneq (${ANDROID},1)
+ifneq (${OSTYPE},windows)
+ifneq (${OSTYPE},linux)
+ifneq ($(CC),cccl)
+LDFLAGS+=-lpthread
+endif
+endif
+endif
+endif
 
 REAL_LDFLAGS=$(subst -shared,,$(LDFLAGS))
 

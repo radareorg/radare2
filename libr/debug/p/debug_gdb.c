@@ -261,7 +261,13 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
-	gdbr_continue (desc, pid, tid, sig);
+	gdbr_continue (desc, pid, -1, sig); // Continue all threads
+	if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
+		if (desc->tid != desc->stop_reason.thread.tid) {
+			eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+		}
+		desc->tid = desc->stop_reason.thread.tid;
+	}
 	return desc->tid;
 }
 
@@ -276,6 +282,12 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	desc->stop_reason.is_valid = false;
 	if (desc->stop_reason.thread.present) {
 		dbg->reason.tid = desc->stop_reason.thread.tid;
+		dbg->pid = desc->stop_reason.thread.pid;
+		dbg->tid = desc->stop_reason.thread.tid;
+		if (dbg->pid != desc->pid || dbg->tid != desc->tid) {
+			eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+			gdbr_select (desc, dbg->pid, dbg->tid);
+		}
 	}
 	dbg->reason.signum = desc->stop_reason.signum;
 	dbg->reason.type = desc->stop_reason.reason;
@@ -357,6 +369,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	check_connection (dbg);
+	if (desc && desc->target.valid) {
+		return strdup (desc->target.regprofile);
+	}
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 16 || bits == 32) {
@@ -385,14 +400,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	52	0\n"
 				"seg	fs	.32	56	0\n"
 				"seg	gs	.32	60	0\n"
-				"gpr	st0	.80	64	0\n"
-				"gpr	st1	.80	74	0\n"
-				"gpr	st2	.80	84	0\n"
-				"gpr	st3	.80	94	0\n"
-				"gpr	st4	.80	104	0\n"
-				"gpr	st5	.80	114	0\n"
-				"gpr	st6	.80	124	0\n"
-				"gpr	st7	.80	134	0\n"
+				"fpu	st0	.80	64	0\n"
+				"fpu	st1	.80	74	0\n"
+				"fpu	st2	.80	84	0\n"
+				"fpu	st3	.80	94	0\n"
+				"fpu	st4	.80	104	0\n"
+				"fpu	st5	.80	114	0\n"
+				"fpu	st6	.80	124	0\n"
+				"fpu	st7	.80	134	0\n"
 				"gpr	fctrl	.32	144	0\n"
 				"gpr	fstat	.32	148	0\n"
 				"gpr	ftag	.32	152	0\n"
@@ -448,14 +463,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	152	0\n"
 				"seg	fs	.32	156	0\n"
 				"seg	gs	.32	160	0\n"
-				"gpr	st0	.80	164	0\n"
-				"gpr	st1	.80	174	0\n"
-				"gpr	st2	.80	184	0\n"
-				"gpr	st3	.80	194	0\n"
-				"gpr	st4	.80	204	0\n"
-				"gpr	st5	.80	214	0\n"
-				"gpr	st6	.80	224	0\n"
-				"gpr	st7	.80	234	0\n"
+				"fpu	st0	.80	164	0\n"
+				"fpu	st1	.80	174	0\n"
+				"fpu	st2	.80	184	0\n"
+				"fpu	st3	.80	194	0\n"
+				"fpu	st4	.80	204	0\n"
+				"fpu	st5	.80	214	0\n"
+				"fpu	st6	.80	224	0\n"
+				"fpu	st7	.80	234	0\n"
 				"gpr	fctrl	.32	244	0\n"
 				"gpr	fstat	.32	248	0\n"
 				"gpr	ftag	.32	252	0\n"
@@ -855,20 +870,20 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
+static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int ret;
-	if (!bp) {
+	if (!b) {
 		return false;
 	}
 	// TODO handle rwx and conditions
 	if (set)
-		ret = bp->hw?
-			gdbr_set_hwbp (desc, bp->addr, ""):
-			gdbr_set_bp (desc, bp->addr, "");
+		ret = b->hw?
+			gdbr_set_hwbp (desc, b->addr, ""):
+			gdbr_set_bp (desc, b->addr, "");
 	else
-		ret = bp->hw?
-			gdbr_remove_hwbp (desc, bp->addr):
-			gdbr_remove_bp (desc, bp->addr);
+		ret = b->hw?
+			gdbr_remove_hwbp (desc, b->addr):
+			gdbr_remove_bp (desc, b->addr);
 	return !ret;
 }
 
@@ -878,6 +893,13 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 		return gdbr_kill (desc);
 	}
 	return true;
+}
+
+static int r_debug_gdb_select(int pid, int tid) {
+	if (!desc) {
+		return false;
+	}
+	return gdbr_select (desc, pid, tid) >= 0;
 }
 
 static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
@@ -938,6 +960,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.reg_profile = (void *)r_debug_gdb_reg_profile,
 	.kill = &r_debug_gdb_kill,
 	.info = &r_debug_gdb_info,
+	.select = &r_debug_gdb_select,
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };

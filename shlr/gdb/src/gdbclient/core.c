@@ -3,6 +3,7 @@
 #include "gdbclient/responses.h"
 #include "gdbclient/commands.h"
 #include "gdbclient/core.h"
+#include "gdbclient/xml.h"
 #include "arch.h"
 #include "libgdbr.h"
 #include "gdbr_common.h"
@@ -14,6 +15,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include <termios.h>
+#endif
+
+#if __UNIX__ || __CYGWIN__
+#include <signal.h>
 #endif
 
 extern char hex2char(char *hex);
@@ -75,6 +80,9 @@ static void reg_cache_init(libgdbr_t *g) {
 
 static int gdbr_connect_lldb(libgdbr_t *g) {
 	reg_cache_init (g);
+	if (g->stub_features.qXfer_features_read) {
+		gdbr_read_target_xml (g);
+	}
 	// Check if 'g' packet is supported
 	if (send_msg (g, "g") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
 		return -1;
@@ -87,7 +95,7 @@ static int gdbr_connect_lldb(libgdbr_t *g) {
 }
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
-	const char *message = "qSupported:multiprocess+;qRelocInsn+";
+	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	RStrBuf tmp;
 	r_strbuf_init (&tmp);
 	int ret;
@@ -163,32 +171,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// Check if vCont is supported
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
-	if (g->stub_features.multiprocess) {
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.0", (ut32) g->pid);
-#if 0
-		if (g->tid < 0) {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.-1", (ut32) g->pid);
-		} else {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%x.%x", (ut32) g->pid, (ut32) g->tid);
-		}
-#endif
-	} else {
-		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg0");
-#if 0
-		if (g->tid < 0) {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg-1");
-		} else {
-			snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%x", (ut32) g->tid);
-		}
-#endif
-	}
-	ret = send_msg (g, tmp.buf);
-	if (ret < 0) {
-		return ret;
-	}
-	read_packet (g);
-	ret = send_ack (g);
-	if (strncmp (g->data, "OK", 2)) {
+	if (gdbr_select (g, g->pid, 0) < 0) {
 		// return -1;
 	}
 	// Set thread for "step" and "continue" operations
@@ -199,8 +182,11 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet (g);
 	ret = send_ack (g);
-	if (strncmp (g->data, "OK", 2)) {
+	if (strcmp (g->data, "OK")) {
 		// return -1;
+	}
+	if (g->stub_features.qXfer_features_read) {
+		gdbr_read_target_xml (g);
 	}
 	reg_cache_init (g);
 	return ret;
@@ -213,7 +199,30 @@ int gdbr_disconnect(libgdbr_t *g) {
 	}
 	reg_cache.valid = false;
 	free (reg_cache.buf);
+	if (g->target.valid) {
+		free (g->target.regprofile);
+		free (g->registers);
+	}
 	g->connected = 0;
+	return 0;
+}
+
+int gdbr_select(libgdbr_t *g, int pid, int tid) {
+	char cmd[64] = { 0 };
+	reg_cache.valid = false;
+	g->pid = pid;
+	g->tid = tid;
+	strcpy (cmd, "Hg");
+	if (write_thread_id (cmd + 2, sizeof (cmd) - 3, pid, tid,
+			     g->stub_features.multiprocess) < 0) {
+		return -1;
+	}
+	if (send_msg (g, cmd) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+		return -1;
+	}
+	if (strcmp (g->data, "OK")) {
+		return -1;
+	}
 	return 0;
 }
 
@@ -796,6 +805,28 @@ int test_command(libgdbr_t *g, const char *command) {
 	return 0;
 }
 
+static libgdbr_t *cur_desc = NULL;
+
+
+#if __WINDOWS__ && !__CYGWIN__
+static HANDLE h;
+static BOOL __w32_signal(DWORD type) {
+	if (type == CTRL_C_EVENT) {
+		if (cur_desc) {
+			r_socket_write (cur_desc->sock, "\x03", 1);
+		}
+		return true;
+	}
+	return false;
+}
+#elif __UNIX__ || __CYGWIN__
+static void _sigint_handler(int signo) {
+	if (cur_desc) {
+		r_socket_write (cur_desc->sock, "\x03", 1);
+	}
+}
+#endif
+
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = {0};
 	int ret;
@@ -856,9 +887,29 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	if (ret < 0) {
 		return ret;
 	}
-	if (read_packet (g) < 0 && read_packet (g) < 0) {
-		// First read for Qemu might fail, hence second read
-		return -1;
+
+	// Temporarily set signal handler
+	cur_desc = g;
+#if __WINDOWS__ && !__CYGWIN__
+	// TODO
+#elif __UNIX__ || __CYGWIN__
+	signal (SIGINT, _sigint_handler);
+#endif
+
+	while ((ret = read_packet (g)) < 0);
+
+	// Unset signal handler
+#if __WINDOWS__ && !__CYGWIN__
+	// TODO
+#elif __UNIX__ || __CYGWIN__
+	signal (SIGINT, SIG_IGN);
+#endif
+
+	cur_desc = NULL;
+	if (ret < 0) {
+		if (read_packet (g) < 0) {
+			return -1;
+		}
 	}
 	return handle_cont (g);
 }

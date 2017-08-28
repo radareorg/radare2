@@ -221,11 +221,11 @@ static RList* sections(RBinFile *arch) {
 			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel")) {
 				ptr->is_data = true;
 			}
-			ptr->size = section[i].size;
+			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
-			ptr->add = true;
+			ptr->add = false;
 			ptr->srwx = 0;
 			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
@@ -329,7 +329,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
-		ptr->add = true;
+		ptr->add = false;
 		if (obj->ehdr.e_type == ET_REL) {
 			ptr->add = true;
 		}
@@ -699,13 +699,13 @@ static RList* patch_relocs(RBin *b) {
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOSection *g = NULL, *s = NULL;
-	RListIter *iter;
+	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	int i;
 	ut64 n_off, n_vaddr, vaddr, size, sym_addr = 0, offset = 0;
 	if (!b)
 		return NULL;
-	io = b->iob.get_io(&b->iob);
+	io = b->iob.io;
 	if (!io || !io->desc)
 		return NULL;
 	obj = r_bin_cur_object (b);
@@ -720,7 +720,7 @@ static RList* patch_relocs(RBin *b) {
 	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
 		return relocs (r_bin_cur (b));
 	}
-	r_list_foreach (io->sections, iter, s) {
+	ls_foreach (io->sections, iter, s) {
 		if (s->paddr > offset) {
 			offset = s->paddr;
 			g = s;

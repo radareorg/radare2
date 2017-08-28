@@ -318,11 +318,11 @@ static int checkcmd(const char *c) {
 R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
 	struct sigaction sigact;
-	void *array[1];
 	if (!checkcmd (cmd)) {
 		return false;
 	}
 #ifdef HAVE_BACKTRACE
+	void *array[1];
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
 #endif
@@ -384,17 +384,11 @@ R_API char *r_sys_getenv(const char *key) {
 }
 
 R_API char *r_sys_getdir(void) {
-	char *ret;
 #if __WINDOWS__ && !__CYGWIN__
-	char *cwd = _getcwd (NULL, 0);
+	return _getcwd (NULL, 0);
 #else
-	char *cwd = getcwd (NULL, 0);
+	return getcwd (NULL, 0);
 #endif
-	ret = cwd ? strdup (cwd) : NULL; 
-	if (cwd) {
-		free (cwd);
-	}
-	return ret;
 }
 
 R_API int r_sys_chdir(const char *s) {

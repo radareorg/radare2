@@ -4,6 +4,10 @@
 #define R_NUMCALC_STRSZ 1024
 #define r_num_abs(x) x>0?x:-x
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	double d;
 	ut64 n;
@@ -68,5 +72,9 @@ R_API void r_num_irand(void);
 R_API ut16 r_num_ntohs(ut16 foo);
 R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
 R_API int r_is_valid_input_num_value(RNum *num, const char *input_value);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  R_NUM_H

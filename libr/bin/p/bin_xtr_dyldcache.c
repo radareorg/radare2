@@ -51,6 +51,7 @@ static RList * extractall(RBin *bin) {
 	nlib = data->file_count;
 	result = r_list_newf (r_bin_xtrdata_free);
 	if (!result) {
+		r_bin_xtrdata_free (data);
 		return NULL;
 	}
 	r_list_append (result, data);

@@ -15,7 +15,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software Foundation,
-   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
+   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA.
+*/
 
 #include <assert.h>
 #include <limits.h>
@@ -1397,6 +1398,7 @@ int
 hexagon_get_opcode_mach
 (int bfd_mach, int big_p)
 {
+#if 0
   static int mach_type_map [] =
   {
     HEXAGON_MACH_V2,
@@ -1405,6 +1407,7 @@ hexagon_get_opcode_mach
     HEXAGON_MACH_V5,
     /* Leaving space for future cores */
   };
+#endif
 // v6 not supported :(
 // XXX hardcoded to v5
 return HEXAGON_MACH_V5;
@@ -1837,8 +1840,10 @@ hexagon_reg_num
                 continue;
 
               *input = regs + len - (*name? 1: 0);
-              // unused result . thank you gnu
-              return ((int) (aliasn? *aliasn = i: i), (int) regn);
+	      if (aliasn) {
+		      *aliasn = i;
+	      }
+              return regn;
             }
         }
     }

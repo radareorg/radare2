@@ -182,6 +182,13 @@ typedef struct libgdbr_t {
 	bool server_debug;
 	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
+
+	// parsed from target
+	struct {
+		char *regprofile;
+		int arch, bits;
+		bool valid;
+	} target;
 } libgdbr_t;
 
 /*!

@@ -74,6 +74,11 @@ RebuildGdb() {
 	Rebuild libr/debug
 }
 
+RebuildZip() {
+	Rebuild shlr/zip
+	Rebuild libr/io
+}
+
 case "$1" in
 grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
@@ -81,6 +86,7 @@ gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;
 spp)    RebuildSpp ; ;;
 bin)    RebuildBin ; ;;
+zip)    RebuildZip ; ;;
 java)   RebuildJava ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;

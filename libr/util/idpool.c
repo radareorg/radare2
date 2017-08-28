@@ -6,8 +6,8 @@
 ut32 get_msb(ut32 v) {
 	int i;
 	for (i = 31; i > (-1); i--) {
-		if (v & (0x1 << i)) {
-			return (v & (0x1 << i));
+		if (v & (0x1U << i)) {
+			return (v & (0x1U << i));
 		}
 	}
 	return 0;

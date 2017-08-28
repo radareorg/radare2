@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 #include <r_userconf.h>
+#include <r_util.h>
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
@@ -167,11 +168,12 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIODesc *desc = NULL;
 	int ret = -1;
 	if (__plugin_open (io, file,0)) {
 		int pid = atoi (file+9);
 		ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-		if (file[0]=='p')  //ptrace
+		if (file[0] == 'p')  //ptrace
 			ret = 0;
 		else if (ret == -1) {
 #ifdef __ANDROID__
@@ -192,53 +194,17 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = pid;
 		} else eprintf ("Error in waitpid\n");
 		if (ret != -1) {
-			RIODesc *desc;
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
-			if (!riop) return NULL;
+			if (!riop) {
+				return NULL;
+			}
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
-#if 1
-			{
-				char *pidpath = NULL;
-				if (io->referer && !strncmp (io->referer, "dbg://", 6)) {
-					// if it's a pid attach try to resolve real path
-					if (atoi (io->referer+6)) {
-						pidpath = r_sys_pid_to_path (pid);
-						eprintf ("PIDPATH: %s\n", pidpath);
-					} else {
-						char **argv = r_str_argv (&io->referer[6], NULL);
-						if (argv) {
-							pidpath = r_file_path (argv[0]);
-							r_str_argv_free (argv);
-							if (!pidpath) {
-								free (riop);
-								return NULL;
-							}
-						} else {
-							free (riop);
-							return NULL;
-						}
-					}
-				}
-				if (!pidpath) {
-					pidpath = strdup (file);
-				}
-				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
-						pidpath, rw | R_IO_EXEC, mode, riop);
-				free (pidpath);
-			}
-#else
-			{
-				char *pidpath = strdup ("/bin/ls"); //io->referer); //filer_sys_pid_to_path (pid);
-				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
-						pidpath, rw | R_IO_EXEC, mode, riop);
-				free (pidpath);
-			}
-#endif
-			return desc;
+			desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_IO_EXEC, mode, riop);
+			desc->name = r_sys_pid_to_path (pid);
 		}
 	}
-	return NULL;
+	return desc;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -300,8 +266,18 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 			return pid;
 		}
-	} else eprintf ("Try: '=!pid'\n");
+	} else {
+		eprintf ("Try: '=!pid'\n");
+	}
 	return true;
+}
+
+static int __getpid (RIODesc *fd) {
+	RIOPtrace *iop = (RIOPtrace *)fd->data;
+	if (!iop) {
+		return -1;
+	}
+	return iop->pid;
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
@@ -316,6 +292,8 @@ RIOPlugin r_io_plugin_ptrace = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
+	.getpid = __getpid,
+	.gettid = __getpid,
 	.isdbg = true
 };
 #else

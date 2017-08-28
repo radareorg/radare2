@@ -74,7 +74,7 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
 	r_reg_arena_push (dbg->reg);
 
 	/* save memory snapshots */
-	session->memlist = r_list_newf (r_debug_diff_free);
+	session->memlist = r_list_newf ((RListFree)r_debug_diff_free);
 
 	r_debug_map_sync (dbg);
 	r_list_foreach (dbg->maps, iter, map) {
@@ -99,7 +99,7 @@ R_API bool r_debug_session_delete(RDebug *dbg, int idx) {
 	RDebugSession *session;
 	if (idx == -1) {
 		r_list_free (dbg->sessions);
-		dbg->sessions = r_list_newf (r_debug_session_free);
+		dbg->sessions = r_list_newf ((RListFree)r_debug_session_free);
 		return true;
 	}
 	r_list_foreach (dbg->sessions, iter, session) {
@@ -232,6 +232,11 @@ static RDebugSnap *r_idx_to_snap(RDebug *dbg, ut32 idx) {
 	return NULL;
 }
 
+R_API void r_debug_session_path(RDebug *dbg, const char *path) {
+	R_FREE (dbg->snap_path);
+	dbg->snap_path =  r_file_abspath (path);
+}
+
 R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	RListIter *iter, *iter2, *iter3;
 	RDebugSession *session;
@@ -244,9 +249,23 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	RSnapEntry snapentry;
 
 	ut32 i;
+	const char *path = dbg->snap_path;
+	if (!r_file_is_directory (path)) {
+		eprintf ("%s is not correct path\n", path);
+		return;
+	}
+	char *base_file = r_str_newf ("%s/%s.dump", path, file);
+	char *diff_file = r_str_newf ("%s/%s.session", path, file);
 
-	char *base_file = r_str_newf ("%s.dump", file);
-	char *diff_file = r_str_newf ("%s.session", file);
+	if (!base_file) {
+		free (diff_file);
+		return;
+	}
+
+	if (!diff_file) {
+		free (base_file);
+		return;
+	}
 
 	/* dump all base snapshots */
 	r_list_foreach (dbg->snaps, iter, base) {
@@ -314,13 +333,15 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	ut32 i;
 
 	RReg *reg = dbg->reg;
-	char *base_file = r_str_newf ("%s.dump", file);
-	if (!base_file) {
-		free (base_file);
+	const char *path = dbg->snap_path;
+	if (!r_file_is_directory (path)) {
+		eprintf ("%s is not correct path\n", path);
 		return;
 	}
-	char *diff_file = r_str_newf ("%s.session", file);
-	if (!diff_file) {
+	char *base_file = r_str_newf ("%s/%s.dump", path, file);
+	char *diff_file = r_str_newf ("%s/%s.session", path, file);
+
+	if (!base_file || !diff_file) {
 		free (base_file);
 		free (diff_file);
 		return;
@@ -398,7 +419,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		if (!session) {
 			break;
 		}
-		session->memlist = r_list_newf (r_debug_diff_free);
+		session->memlist = r_list_newf ((RListFree)r_debug_diff_free);
 		session->key.id = header.id;
 		session->key.addr = header.addr;
 		r_list_append (dbg->sessions, session);
@@ -444,7 +465,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			/* Restore diff->base */
 			base = r_idx_to_snap (dbg, diffentry.base_idx);
 			snapdiff->base = base;
-			snapdiff->pages = r_list_newf (r_page_data_free);
+			snapdiff->pages = r_list_newf ((RListFree)r_page_data_free);
 			snapdiff->last_changes = R_NEWS0 (RPageData *, base->page_num);
 
 			if (r_list_length (base->history)) {

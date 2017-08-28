@@ -203,7 +203,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					}
 					strcpy (whites, kwhites);
 					if (delta && use_color) {
-						dbg->cb_printf (use_color);
+						dbg->cb_printf ("%s", use_color);
 					}
 					if (item->flags) {
 						str = r_reg_get_bvalue (dbg->reg, item);

@@ -1,6 +1,9 @@
 #ifndef R_SANDBOX_H
 #define R_SANDBOX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /**
  * This function verifies that the given path is allowed. Paths are allowed only if they don't
  * contain .. components (which would indicate directory traversal) and they are relative.
@@ -25,4 +28,9 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode);
 R_API int r_sandbox_chdir(const char *path);
 R_API bool r_sandbox_check_path(const char *path);
 R_API int r_sandbox_kill(int pid, int sig);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_SANDBOX_H

@@ -45,7 +45,7 @@ typedef struct tcaches_s tcaches_t;
 
 /* Number of tcache allocation/deallocation events between incremental GCs. */
 #define	TCACHE_GC_INCR							\
-    ((TCACHE_GC_SWEEP / NBINS) + ((TCACHE_GC_SWEEP / NBINS == 0) ? 0 : 1))
+    ((TCACHE_GC_SWEEP / JM_NBINS) + ((TCACHE_GC_SWEEP / JM_NBINS == 0) ? 0 : 1))
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
@@ -112,7 +112,7 @@ extern ssize_t	opt_lg_tcache_max;
 extern tcache_bin_info_t	*tcache_bin_info;
 
 /*
- * Number of tcache bins.  There are NBINS small-object bins, plus 0 or more
+ * Number of tcache bins.  There are JM_NBINS small-object bins, plus 0 or more
  * large-object bins.
  */
 extern unsigned	nhbins;
@@ -288,7 +288,7 @@ tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 	bool tcache_success;
 	size_t usize JEMALLOC_CC_SILENCE_INIT(0);
 
-	assert(binind < NBINS);
+	assert(binind < JM_NBINS);
 	tbin = &tcache->tbins[binind];
 	ret = tcache_alloc_easy(tbin, &tcache_success);
 	assert(tcache_success == (ret != NULL));

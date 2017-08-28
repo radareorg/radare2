@@ -46,7 +46,7 @@ typedef struct r_print_t {
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
 	void (*cb_printf)(const char *str, ...);
-	const char *(*cb_color)(int idx, int last, bool bg);
+	char *(*cb_color)(int idx, int last, bool bg);
 	int (*disasm)(void *p, ut64 addr);
 	void (*oprintf)(const char *str, ...);
 	char* (*get_bitfield)(void *user, const char *name, ut64 value);
@@ -176,7 +176,7 @@ R_API char *r_print_stereogram(const char *bump, int w, int h);
 R_API void r_print_stereogram_print(RPrint *p, const char *buf);
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr);
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
-R_API char* r_print_json_indent(const char* s, bool color, const char *tab);
+R_API char* r_print_json_indent(const char* s, bool color, const char *tab, const char **colors);
 
 #endif
 

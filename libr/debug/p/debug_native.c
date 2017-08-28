@@ -381,7 +381,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			eprintf ("(%d) Finished thread %d Exit code %d\n", item->pid, item->tid, item->dwExitCode);
+			eprintf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
 			r_debug_info_free (r);
 		}
 	}
@@ -426,7 +426,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
 			r_debug_info_free (r);
 		}
-	} 
+	}
 #else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
@@ -1244,19 +1244,6 @@ static int r_debug_native_init (RDebug *dbg) {
 #endif
 }
 
-#if __i386__ || __x86_64__
-// XXX: wtf cmon this  must use drx.c #if __linux__ too..
-static int drx_add (RDebug *dbg, ut64 addr, int rwx) {
-	// TODO
-	return false;
-}
-
-static int drx_del (RDebug *dbg, ut64 addr, int rwx) {
-	// TODO
-	return false;
-}
-#endif
-
 static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
 #if __i386__ || __x86_64__
 	drxt regs[8] = {0};
@@ -1303,13 +1290,13 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int r_debug_native_bp (RBreakpointItem *bp, int set, void *user) {
+static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 #if __i386__ || __x86_64__
-	RDebug *dbg = user;
-	if (bp && bp->hw) {
+	RDebug *dbg = bp->user;
+	if (b && b->hw) {
 		return set
-		? drx_add (dbg, bp->addr, bp->rwx)
-		: drx_del (dbg, bp->addr, bp->rwx);
+		? drx_add (dbg, bp, b)
+		: drx_del (dbg, bp, b);
 	}
 #endif
 	return false;

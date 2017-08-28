@@ -287,6 +287,7 @@ typedef struct r_debug_t {
 	const char *creg; // current register value
 	RBreakpoint *bp;
 	void *user; // XXX(jjd): unused?? meant for caller's use??
+	char *snap_path;
 
 	/* io */
 	PrintfCallback cb_printf;
@@ -520,7 +521,7 @@ R_API ut64 r_debug_arg_get(RDebug *dbg, int fast, int num);
 R_API bool r_debug_arg_set(RDebug *dbg, int fast, int num, ut64 value);
 
 /* breakpoints (most in r_bp, this calls those) */
-R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta);
+R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);
 
 /* pid */
 R_API int r_debug_thread_list(RDebug *dbg, int pid);
@@ -582,11 +583,12 @@ R_API void r_debug_session_list(RDebug *dbg);
 R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail);
 R_API bool r_debug_session_delete(RDebug *dbg, int idx);
 R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg);
+R_API void r_debug_session_path(RDebug *dbg, const char *path);
 R_API void r_debug_session_set(RDebug *dbg, RDebugSession *session);
-R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
 R_API void r_debug_session_save(RDebug *dbg, const char *file);
+R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API int r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
 

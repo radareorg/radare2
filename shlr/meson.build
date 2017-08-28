@@ -18,6 +18,7 @@ gdb_files=[
 
 'gdb/src/gdbclient/core.c',
 'gdb/src/gdbclient/responses.c',
+'gdb/src/gdbclient/xml.c',
 
 'gdb/src/gdbserver/core.c',
 ]
@@ -123,7 +124,7 @@ zlib_files=[
 'zip/zip/zip_entry.c',
 'zip/zip/zip_err_str.c',
 'zip/zip/zip_error.c',
-'zip/zip/zip_error_clear.c',
+#'zip/zip/zip_error_clear.c',
 'zip/zip/zip_error_get.c',
 'zip/zip/zip_error_get_sys_type.c',
 'zip/zip/zip_error_strerror.c',
@@ -133,7 +134,7 @@ zlib_files=[
 'zip/zip/zip_fclose.c',
 'zip/zip/zip_fdopen.c',
 'zip/zip/zip_file_add.c',
-'zip/zip/zip_file_error_clear.c',
+#'zip/zip/zip_file_error_clear.c',
 'zip/zip/zip_file_error_get.c',
 'zip/zip/zip_file_get_comment.c',
 'zip/zip/zip_file_get_offset.c',
@@ -376,5 +377,15 @@ udis86_files=[
 libr2udis86 = static_library('libr2udis86', udis86_files,
   include_directories: [platform_inc, include_directories([
     'udis86'
+  ])]
+)
+
+ar_files=[
+'ar/ar.c'
+]
+
+libr2ar = static_library('libr2ar', ar_files,
+  include_directories: [platform_inc, include_directories([
+	'ar'
   ])]
 )

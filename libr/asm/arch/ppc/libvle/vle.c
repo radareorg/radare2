@@ -806,7 +806,7 @@ int vle_option(vle_handle* handle, ut32 option) {
 
 vle_t* vle_next(vle_handle* handle) {
 	vle_t *op = NULL;
-	if (!handle || handle->pos + 2 >= handle->end) {
+	if (!handle || handle->pos + handle->inc >= handle->end) {
 		return NULL;
 	}
 	handle->pos += handle->inc;

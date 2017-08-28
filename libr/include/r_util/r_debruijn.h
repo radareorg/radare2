@@ -5,6 +5,10 @@
 
 #include <r_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
 // Efficient Algorithm for Generating Necklaces with Fixed Density"
 
@@ -17,5 +21,9 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset);
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
 R_API int r_debruijn_offset(ut64 value, bool is_big_endian);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // R_DEBRUIJN_H

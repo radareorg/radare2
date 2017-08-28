@@ -105,7 +105,7 @@ static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	int i_port = atoi (port);
 	if (qnxr_connect (&rioq->desc, host, i_port) == 0) {
 		desc = &rioq->desc;
-		rioqnx = r_io_desc_new (&r_io_plugin_qnx, rioq->desc.sock->fd, file, rw, mode, rioq);
+		rioqnx = r_io_desc_new (io, &r_io_plugin_qnx, file, rw, mode, rioq);
 		return rioqnx;
 	}
 	eprintf ("qnx.io.open: Cannot connect to host.\n");

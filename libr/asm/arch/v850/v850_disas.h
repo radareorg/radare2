@@ -283,7 +283,7 @@ enum v850_sysregs {
 };
 
 enum v850_flags {
-	V850_FLAG_CY,
+	V850_FLAG_CY = 1,
 	V850_FLAG_OV,
 	V850_FLAG_S,
 	V850_FLAG_Z,

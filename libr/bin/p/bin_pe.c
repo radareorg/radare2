@@ -183,6 +183,12 @@ static RList* sections(RBinFile *arch) {
 		}
 		if (R_BIN_PE_SCN_IS_READABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_READABLE;
+		} else {
+			//fix those sections that could have been fucked up
+			//if the section does have -x- but not -r- add it 
+			if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
+				ptr->srwx |= R_BIN_SCN_READABLE;
+			}
 		}
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;

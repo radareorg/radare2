@@ -66,8 +66,9 @@ R_API void r_fs_free(RFS* fs) {
 		return;
 	}
 	//r_io_free (fs->iob.io);
-	r_list_free (fs->plugins);
+	//root makes use of plugin so revert to avoid UaF
 	r_list_free (fs->roots);
+	r_list_free (fs->plugins);
 	free (fs);
 }
 

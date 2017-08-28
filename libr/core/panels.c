@@ -890,6 +890,7 @@ repeat:
 			menu_x = 0;
 		}
 		break;
+	case 'Z': // SHIFT-TAB
 	case 'K':
 		menu_y = 0;
 		menu_x = -1;

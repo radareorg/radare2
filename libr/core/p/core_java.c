@@ -557,7 +557,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 	if (res == true) {
 		ut64 n_file_sz = 0;
 		ut8 * bin_buffer = NULL;
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_use_fd (core->io, core->file->fd);
 		n_file_sz = r_io_size (core->io);
 		bin_buffer = n_file_sz > 0 ? malloc (n_file_sz) : NULL;
 		if (bin_buffer) {
@@ -885,7 +885,7 @@ static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
 	// XXX this may cause problems cause the file we are looking at may not be the bin we want.
 	// lets pretend it is for now
 	if (buf_size == 0) {
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_use_fd (core->io, core->file->fd);
 		buf_size = r_io_size (core->io);
 		buf = malloc (buf_size);
 		memset (buf, 0, buf_size);
@@ -1035,7 +1035,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 	ut64 sz = UT64_MAX;
 	ut64 addr = UT64_MAX;
 	ut64 res_size = UT64_MAX,
-		 cur_fsz = r_io_desc_size (core->io, r_core_file_cur (core)->desc);
+		 cur_fsz = r_io_fd_size (core->io, r_core_file_cur (core)->fd);
 	ut8 *buf = NULL;
 	ut32 init_size = (1 << 16);
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
@@ -1049,9 +1049,9 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 		sz = cur_fsz < init_size ? cur_fsz : init_size;
 		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
-			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
+			ut64 r_sz = r_core_read_at (core, addr, buf, sz) ? sz : 0LL;
 			// check the return read on the read
-			if (r_sz == UT64_MAX || r_sz == 0) break;
+			if (r_sz == 0) break;
 			res_size = r_bin_java_calc_class_size (buf, sz);
 			// if the data buffer contains a class starting
 			// at address, then the res_size will be the size
@@ -1082,7 +1082,7 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 	int res = false;
 	ut64 res_size = UT64_MAX;
 	ut8 *buf = NULL;
-	ut32 cur_fsz =  r_io_desc_size (core->io, r_core_file_cur (core)->desc);
+	ut32 cur_fsz =  r_io_fd_size (core->io, r_core_file_cur (core)->fd);
 	ut64 sz = UT64_MAX;
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 	ut64 addr = UT64_MAX;
@@ -1096,9 +1096,9 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 
 		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
-			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
+			ut64 r_sz = r_core_read_at (core, addr, buf, sz) ? sz : 0LL;
 			// check the return read on the read
-			if (r_sz == UT64_MAX || r_sz == 0) break;
+			if (r_sz == 0) break;
 			res_size = r_bin_java_calc_class_size (buf, sz);
 			// if the data buffer contains a class starting
 			// at address, then the res_size will be the size

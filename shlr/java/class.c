@@ -2992,10 +2992,9 @@ R_API RList *r_bin_java_get_imports(RBinJavaObj *bin) {
 R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RList *imports, *symbols = r_list_newf (free);
-	RBinSymbol *sym;
+	RBinSymbol *sym = NULL;
 	RBinImport *imp;
 	RBinJavaField *fm_type;
-	sym = NULL;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
 		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
 		if (sym) {
@@ -3026,12 +3025,14 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
 			bin->lang = "kotlin";
 		}
-		sym->name = strdup (sdb_fmt (0, "imp.%s", imp->name));
+		sym->name = r_str_newf ("imp.%s", imp->name);
 		if (!sym->name) {
+			free (sym);
 			break;
 		}
 		sym->type = r_str_const ("import");
 		if (!sym->type) {
+			free (sym);
 			break;
 		}
 		sym->vaddr = sym->paddr = imp->ordinal;
@@ -3367,8 +3368,6 @@ R_API RBinJavaAttrInfo *r_bin_java_unknown_attr_new(ut8 *buffer, ut64 sz, ut64 b
 }
 
 R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
-	RBinJavaExceptionEntry *exc_entry = NULL;
-	RBinJavaAttrInfo *_attr = NULL;
 	RListIter *iter, *iter_tmp;
 	ut64 size = 0;
 	if (attr) {
@@ -3385,6 +3384,7 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 		}
 		// attr->info.code_attr.exception_table_length =  R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
+		RBinJavaExceptionEntry *exc_entry;
 		r_list_foreach_safe (attr->info.code_attr.exception_table, iter, iter_tmp, exc_entry) {
 			// exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
 			size += 2;
@@ -3397,6 +3397,7 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 		}
 		// attr->info.code_attr.attributes_count = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
+		RBinJavaAttrInfo *_attr;
 		if (attr->info.code_attr.attributes_count > 0) {
 			r_list_foreach_safe (attr->info.code_attr.attributes, iter, iter_tmp, _attr) {
 				size += r_bin_java_attr_calc_size (attr);
@@ -3852,7 +3853,7 @@ R_API ut64 r_bin_java_local_variable_table_attr_calc_size(RBinJavaAttrInfo *attr
 	ut64 size = 0;
 	// ut64 offset = 0;
 	RListIter *iter;
-	RBinJavaLocalVariableAttribute *lvattr = NULL;
+	RBinJavaLocalVariableAttribute *lvattr;
 	if (!attr) {
 		return 0LL;
 	}
@@ -8987,9 +8988,13 @@ R_API void U(copy_type_info_to_stack_frame_list)(RList * type_list, RList * sf_l
 	r_list_foreach_safe (type_list, iter, iter_tmp, ver_obj) {
 		new_ver_obj = (RBinJavaVerificationObj *) malloc (sizeof (RBinJavaVerificationObj));
 		// FIXME: how to handle failed memory allocation?
-		if (ver_obj) {
+		if (new_ver_obj && ver_obj) {
 			memcpy (new_ver_obj, ver_obj, sizeof (RBinJavaVerificationObj));
-			r_list_append (sf_list, (void *) new_ver_obj);
+			if (!r_list_append (sf_list, (void *) new_ver_obj)) {
+				R_FREE (new_ver_obj);
+			}
+		} else {
+			R_FREE (new_ver_obj);
 		}
 	}
 }
@@ -9007,9 +9012,13 @@ R_API void U(copy_type_info_to_stack_frame_list_up_to_idx)(RList * type_list, RL
 	r_list_foreach_safe (type_list, iter, iter_tmp, ver_obj) {
 		new_ver_obj = (RBinJavaVerificationObj *) malloc (sizeof (RBinJavaVerificationObj));
 		// FIXME: how to handle failed memory allocation?
-		if (ver_obj) {
+		if (new_ver_obj && ver_obj) {
 			memcpy (new_ver_obj, ver_obj, sizeof (RBinJavaVerificationObj));
-			r_list_append (sf_list, (void *) new_ver_obj);
+			if (!r_list_append (sf_list, (void *) new_ver_obj)) {
+				R_FREE (new_ver_obj);
+			}
+		} else {
+			R_FREE (new_ver_obj);
 		}
 		pos++;
 		if (pos == idx) {

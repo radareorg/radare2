@@ -435,7 +435,6 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
   	    free (buf);
           return -1;
         }
-free (buf);
     }
   /* Direct blocks.  */
   if (fileblock < INDIRECT_BLOCKS) {

@@ -96,6 +96,7 @@ typedef struct {
 typedef struct r_asm_t {
 	char *cpu;
 	int bits;
+	int addrbytes;
 	int big_endian;
 	int syntax;
 	ut64 pc;
@@ -114,6 +115,7 @@ typedef struct r_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
+	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	SdbHash *flags;
 } RAsm;
 
@@ -257,6 +259,10 @@ extern RAsmPlugin r_asm_plugin_evm;
 
 #ifdef __cplusplus
 }
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
 #endif

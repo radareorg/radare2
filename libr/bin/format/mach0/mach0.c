@@ -1306,6 +1306,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
 			r_str_ncpy (sectname, seg->segname, sizeof (sectname) - 1);
+			r_str_filter (sectname, -1);
 			// hack to support multiple sections with same name
 			sections[i].srwx = prot2perm (seg->initprot);
 			sections[i].last = 0;
@@ -1331,6 +1332,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
 		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname) - 1);
+		r_str_filter (sectname, -1);
 		// hack to support multiple sections with same name
 		// snprintf (segname, sizeof (segname), "%d", i); // wtf
 		snprintf (segname, sizeof (segname), "%d.%s", i, bin->sects[i].segname);
@@ -1535,7 +1537,8 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 					if (!symstr_dup) {
 						symbols[j].name[0] = 0;
 					} else {
-						strncpy (symbols[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH-1);
+						r_str_ncpy (symbols[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH - 1);
+						r_str_filter (symbols[j].name, -1);
 						symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
 					}
 					free (symstr_dup);
@@ -1690,7 +1693,8 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 				}
 				symstr_dup = r_str_ndup (symstr, len);
 				if (symstr_dup) {
-					strncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH - 1);
+					r_str_ncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH - 1);
+					r_str_filter (imports[j].name, - 1);
 					imports[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
 					free (symstr_dup);
 				}
@@ -2342,6 +2346,9 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
+	if (!mh) {
+		return;
+	}
 	eprintf ("0x00000000  Magic       0x%x\n", mh->magic);
 	eprintf ("0x00000004  CpuType     0x%x\n", mh->cputype);
 	eprintf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
@@ -2374,6 +2381,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		}
 		addr += word - 8;
 	}
+	free (mh);
 }
 
 RList* MACH0_(mach_fields)(RBinFile *arch) {
@@ -2391,13 +2399,13 @@ RList* MACH0_(mach_fields)(RBinFile *arch) {
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt (0, "0x%08x", val), fmt)); \
 	addr += 4;
-
 	ROW("hdr.magic", 4, mh->magic, "x");
 	ROW("hdr.cputype", 4, mh->cputype, NULL);
 	ROW("hdr.cpusubtype", 4, mh->cpusubtype, NULL);
 	ROW("hdr.filetype", 4, mh->filetype, NULL);
 	ROW("hdr.ncmds", 4, mh->ncmds, NULL);
 	ROW("hdr.sizeofcmds", 4, mh->sizeofcmds, NULL);
+	free (mh);
 	return ret;
 }
 

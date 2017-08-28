@@ -61,10 +61,10 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_DLOPEN    0x200000
 #define R_BIN_REQ_EXPORTS   0x400000
 #define R_BIN_REQ_VERSIONINFO 0x800000
-#define R_BIN_REQ_PACKAGE     0x1000000
-#define R_BIN_REQ_HEADER   0x2000000
-#define R_BIN_REQ_LISTPLUGINS   0x4000000
-#define R_BIN_REQ_RESOURCES   0x8000000
+#define R_BIN_REQ_PACKAGE   0x1000000
+#define R_BIN_REQ_HEADER    0x2000000
+#define R_BIN_REQ_LISTPLUGINS 0x4000000
+#define R_BIN_REQ_RESOURCES 0x8000000
 
 /* RBinSymbol->method_flags : */
 #define R_BIN_METH_CLASS 0x0000000000000001L
@@ -276,6 +276,7 @@ typedef struct r_bin_t {
 	ut64 filter_rules;
 	bool demanglercmd;
 	bool verbose;
+	bool io_owned;
 } RBin;
 
 typedef struct r_bin_xtr_metadata_t {
@@ -414,6 +415,7 @@ typedef struct r_bin_symbol_t {
 	const char *forwarder;
 	const char *bind;
 	const char *type;
+  	const char *rtype;
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------
@@ -473,6 +475,7 @@ typedef struct r_bin_field_t {
 	int size;
 	ut32 visibility;
 	char *name;
+	char *type;
 	char *comment;
 	char *format;
 	ut64 flags;
@@ -519,11 +522,11 @@ typedef struct r_bin_bind_t {
 /* bin.c */
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
-R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr);
+R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);
-R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx);
-R_API bool r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
-R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
+R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx);
+R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
+R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
@@ -606,7 +609,7 @@ R_API void r_bin_iobind(RBin *bin, RIO *io);
 R_API RBinFile * r_bin_cur(RBin *bin);
 R_API RBinObject * r_bin_cur_object(RBin *bin);
 R_API int r_bin_file_set_cur_binfile_obj(RBin * bin, RBinFile *bf, RBinObject *obj);
-R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy);
+R_API int r_bin_io_load(RBin *bin, RIO *io, int fd, ut64 baseaddr, ut64 loadaddr, int dummy);
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx);

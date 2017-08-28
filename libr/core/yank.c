@@ -37,28 +37,28 @@ static ut32 consume_chars(const char *input, char b) {
 static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename) {
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
-	RIODesc *yankfd = NULL;
-	ut64 fd = core->file? core->file->desc->fd: -1, yank_file_sz = 0,
+	RIODesc *yankdesc = NULL;
+	ut64 fd = core->file? core->file->fd: -1, yank_file_sz = 0,
 	     loadaddr = 0, addr = offset;
 	int res = false;
 
 	if (filename && *filename) {
 		ut64 load_align = r_config_get_i (core->config, "file.loadalign");
 		RIOMap *map = NULL;
-		yankfd = r_io_open_nomap (core->io, filename, R_IO_READ, 0644);
+		yankdesc = r_io_open_nomap (core->io, filename, R_IO_READ, 0644);
 		// map the file in for IO operations.
-		if (yankfd && load_align) {
+		if (yankdesc && load_align) {
 			yank_file_sz = r_io_size (core->io);
-			map = r_io_map_add_next_available (core->io, yankfd->fd, R_IO_READ, 0, 0, yank_file_sz, load_align);
+			map = r_io_map_add_next_available (core->io, yankdesc->fd, R_IO_READ, 0, 0, yank_file_sz, load_align);
 			loadaddr = map? map->from: -1;
-			if (yankfd && map && loadaddr != -1) {
+			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to
 				// address the file at its physical address!
 				addr += loadaddr;
-			} else if (yankfd) {
+			} else if (yankdesc) {
 				eprintf ("Unable to map the opened file: %s", filename);
-				r_io_close (core->io, yankfd);
-				yankfd = NULL;
+				r_io_desc_close (yankdesc);
+				yankdesc = NULL;
 			} else {
 				eprintf ("Unable to open the file: %s", filename);
 			}
@@ -72,14 +72,15 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 
 	// this wont happen if the file failed to open or the file failed to
 	// map into the IO layer
-	if (yankfd) {
+	if (yankdesc) {
 		ut64 res = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		ut64 actual_len = len <= yank_file_sz? len: 0;
 		ut8 *buf = NULL;
 		if (actual_len > 0 && res == addr) {
 			buf = malloc (actual_len);
-			actual_len = r_io_read_at (core->io, addr, buf,
-				actual_len);
+			if (!r_io_read_at (core->io, addr, buf, actual_len)) {
+				actual_len = 0;
+			}
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = true;
 		} else if (res != addr) {
@@ -94,11 +95,11 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				PFMT64x ") > file_sz (0x%"PFMT64x ")\n", addr + len,
 				yank_file_sz );
 		}
-		r_io_close (core->io, yankfd);
+		r_io_desc_close (yankdesc);
 		free (buf);
 	}
 	if (fd != -1) {
-		r_io_raise (core->io, fd);
+		r_io_use_fd (core->io, fd);
 		core->switch_file_view = 1;
 		r_core_block_read (core);
 	}

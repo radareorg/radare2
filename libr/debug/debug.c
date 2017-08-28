@@ -21,10 +21,13 @@ R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 }
 
 R_API void r_debug_info_free (RDebugInfo *rdi) {
-	free (rdi->cwd);
-	free (rdi->exe);
-	free (rdi->cmdline);
-	free (rdi->libname);
+	if (rdi) {
+		free (rdi->cwd);
+		free (rdi->exe);
+		free (rdi->cmdline);
+		free (rdi->libname);
+	}
+	free (rdi);
 }
 
 /*
@@ -217,7 +220,7 @@ static int get_bpsz_arch(RDebug *dbg) {
 }
 
 /* add a breakpoint with some typical values */
-R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
+R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta) {
 	int bpsz = get_bpsz_arch (dbg);
 	RBreakpointItem *bpi;
 	const char *module_name = module;
@@ -276,9 +279,14 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 			}
 		}
 	}
-	bpi = hw
-		? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-		: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	if (watch) {
+		hw = 1; //XXX
+		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
+	} else {
+		bpi = hw
+			? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+			: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	}
 	if (bpi) {
 		if (module_name) {
 			bpi->module_name = strdup (module_name);
@@ -315,8 +323,8 @@ R_API RDebug *r_debug_new(int hard) {
 	R_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
-	dbg->snaps = r_list_newf (r_debug_snap_free);
-	dbg->sessions = r_list_newf (r_debug_session_free);
+	dbg->snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	dbg->sessions = r_list_newf ((RListFree)r_debug_session_free);
 	dbg->pid = -1;
 	dbg->bpsize = 1;
 	dbg->tid = -1;
@@ -359,6 +367,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		r_bp_free (dbg->bp);
 		//r_reg_free(&dbg->reg);
+		free (dbg->snap_path);
 		r_list_free (dbg->snaps);
 		r_list_free (dbg->sessions);
 		r_list_free (dbg->maps);
@@ -526,7 +535,6 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
-
 	if (pid != -1 && tid != -1) {
 		if (pid != dbg->pid || tid != dbg->tid) {
 			eprintf ("= attach %d %d\n", pid, tid);
@@ -543,6 +551,8 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 
 	dbg->pid = pid;
 	dbg->tid = tid;
+
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 
 	return true;
 }
@@ -708,7 +718,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	if (!dbg->iob.read_at) {
 		return false;
 	}
-	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) < 0) {
+	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
 		return false;
 	}
 	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf))) {
@@ -743,7 +753,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	case R_ANAL_OP_TYPE_IRCALL:
 	case R_ANAL_OP_TYPE_IRJMP:
 		r = r_debug_reg_get (dbg,op.reg);
-		if (dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8) <0 ) {
+		if (!dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
 			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
@@ -757,8 +767,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		} else {
 			r = 0;
 		}
-		if (dbg->iob.read_at (dbg->iob.io,
-		      r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+		if (!dbg->iob.read_at (dbg->iob.io,
+		      r*op.scale + op.disp, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
 			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
@@ -1058,7 +1068,7 @@ repeat:
 
 		if (reason == R_DEBUG_REASON_EXIT_TID) {
 			goto repeat;
-		} 
+		}
 #endif
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
@@ -1496,6 +1506,18 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 	return false;
 }
 
+#if __WINDOWS__
+#pragma message ("KILL ME PLS")
+static const char winbase_str[64];
+
+static void __winbase_cb_printf(const char *f, ...) {
+	va_list ap;
+	va_start (ap, f);
+	vsnprintf (winbase_str, 63, f, ap);
+	va_end (ap);
+}
+#endif
+
 R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	char *abspath;
 	RListIter *iter;
@@ -1503,29 +1525,24 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
-	if (!strcmp (dbg->iob.io->plugin->name, "gdb")) {
+	if (!strcmp (dbg->iob.io->desc->plugin->name, "gdb")) {		//this is very bad
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system(dbg->iob.io, "baddr");
 	}
-#if __WINDOWS__
-	typedef struct {
-		int pid;
-		int tid;
-		PROCESS_INFORMATION pi;
-	} RIOW32Dbg;
-	RIODesc *d = dbg->iob.io->desc;
-	if (!strcmp ("w32dbg", d->plugin->name)) {
-		RIOW32Dbg *g = d->data;
-		d->fd = g->pid;
-		r_debug_attach (dbg, g->pid);
-	}
-	return dbg->iob.io->winbase;
-#else
-	int pid = dbg->iob.io->desc->fd;
+	int pid = r_io_desc_get_pid (dbg->iob.io->desc);
+	int tid = r_io_desc_get_tid (dbg->iob.io->desc);
 	if (r_debug_attach (dbg, pid) == -1) {
 		return 0LL;
 	}
-	r_debug_select (dbg, pid, pid);
+#if __WINDOWS__
+#pragma message ("KILL ME PLS")
+	void *foo = dbg->iob.io->cb_printf;
+	dbg->iob.io->cb_printf = __winbase_cb_printf;
+	dbg->iob.system (dbg->iob.io, "winbase");
+	dbg->iob.io->cb_printf = foo;
+	return r_num_get (NULL, winbase_str);
+#else
+	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
 	abspath = r_sys_pid_to_path (pid);
 	if (!abspath) {

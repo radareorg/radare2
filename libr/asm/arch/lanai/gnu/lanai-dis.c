@@ -187,7 +187,8 @@ print_insn_lanai (memaddr, info)
 		    (*info->fprintf_func) (stream, "%c", *s);
 		    break;
 
-#define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
+#define	reg(n)	(*info->fprintf_func) (stream, "%s", reg_names[n])
+// #define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
 		  case '1':
 		    reg (X_RS1 (insn));
 		    break;

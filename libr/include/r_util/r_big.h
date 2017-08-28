@@ -6,6 +6,11 @@
 #define RNumBig BIGNUM
 #else
 #define	R_BIG_SIZE 10000
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_num_big_t {
 	char dgts[R_BIG_SIZE];
 	int sign, last;
@@ -31,4 +36,9 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
 R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_BIG_H

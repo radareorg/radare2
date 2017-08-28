@@ -1,6 +1,11 @@
 #ifndef R_GRAPH_H
 #define R_GRAPH_H
+
 #include <r_list.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct r_graph_node_t {
     unsigned int idx;
@@ -57,4 +62,9 @@ R_API const RList *r_graph_get_nodes(const RGraph *g);
 R_API int r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to);
 R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_GRAPH_H

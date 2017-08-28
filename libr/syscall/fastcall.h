@@ -36,6 +36,15 @@ static struct r_syscall_regs_t fastcall_x86_32 [R_SYSCALL_ARGS] = {
 
 // TODO: x86-64-microsoft RCX, RDX, R8, R9 
 static struct r_syscall_regs_t fastcall_x86_64 [R_SYSCALL_ARGS] = {
+	{{ "rax", "rdi", NULL }},
+	{{ "rax", "rdi", "rsi", NULL }},
+	{{ "rax", "rdi", "rsi", "rdx", NULL }},
+	{{ "rax", "rdi", "rsi", "rdx", "rdx", NULL }},
+	{{ "rax", "rdi", "rsi", "rdx", "rdx", "r8", NULL }},
+	{{ NULL }}
+};
+
+static struct r_syscall_regs_t fastcall_x86_64_msvc [R_SYSCALL_ARGS] = {
 	{{ "rdi", NULL }},
 	{{ "rdi", "rsi", NULL }},
 	{{ "rdi", "rsi", "rdx", NULL }},

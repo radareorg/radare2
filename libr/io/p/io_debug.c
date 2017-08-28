@@ -14,14 +14,14 @@
 #endif
 
 #if DEBUGGER && DEBUGGER_SUPPORTED
-
+#if 0
 static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 	free (io->referer);
 	io->referer = ref? strdup (ref): NULL;
 	free (io->redirect);
 	io->redirect = file? strdup (file): NULL;
 }
-
+#endif
 #define MAGIC_EXIT 123
 
 #include <signal.h>
@@ -32,9 +32,9 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #endif
 
 #if __APPLE__
-# if !__POWERPC__
-# include <spawn.h>
-# endif
+#if !__POWERPC__
+#include <spawn.h>
+#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -50,11 +50,8 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #include <mach-o/nlist.h>
 #endif
 
-#if __APPLE__ || __BSD__
-static void inferior_abort_handler(int pid) {
-        eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
-}
-#endif
+
+static void trace_me ();
 
 /*
  * Creates a new process and returns the result:
@@ -67,32 +64,39 @@ static void inferior_abort_handler(int pid) {
 #include <winbase.h>
 #include <psapi.h>
 
-static int setup_tokens() {
-        HANDLE tok = NULL;
-        TOKEN_PRIVILEGES tp;
-        DWORD err = -1;
+typedef struct {
+	HANDLE hnd;
+	ut64 winbase;
+} RIOW32;
 
-        if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &tok)) {
+static ut64 winbase;	//HACK
+
+static int setup_tokens() {
+	HANDLE tok = NULL;
+	TOKEN_PRIVILEGES tp;
+	DWORD err = -1;
+
+	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &tok)) {
 		goto err_enable;
 	}
-        tp.PrivilegeCount = 1;
-        if (!LookupPrivilegeValue (NULL,  SE_DEBUG_NAME, &tp.Privileges[0].Luid)) {
+	tp.PrivilegeCount = 1;
+	if (!LookupPrivilegeValue (NULL,  SE_DEBUG_NAME, &tp.Privileges[0].Luid)) {
 		goto err_enable;
 	}
-        // tp.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
-        tp.Privileges[0].Attributes = 0; //SE_PRIVILEGE_ENABLED;
-        if (!AdjustTokenPrivileges (tok, 0, &tp, sizeof (tp), NULL, NULL)) {
+	// tp.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
+	tp.Privileges[0].Attributes = 0; //SE_PRIVILEGE_ENABLED;
+	if (!AdjustTokenPrivileges (tok, 0, &tp, sizeof (tp), NULL, NULL)) {
 		goto err_enable;
 	}
-        err = 0;
+	err = 0;
 err_enable:
-        if (tok) {
+	if (tok) {
 		CloseHandle (tok);
 	}
-        if (err) {
+	if (err) {
 		r_sys_perror ("setup_tokens");
 	}
-        return err;
+	return err;
 }
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
@@ -106,7 +110,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	setup_tokens ();
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
-				strdup (cmd);
+		strdup (cmd);
 	char **argv = r_str_argv (_cmd, NULL);
 	// We need to build a command line with quoted argument and escaped quotes
 	int cmd_len = 0;
@@ -128,9 +132,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	int cmd_i = 0; // Next character to write in cmdline
 	i = 0;
 	while (argv[i]) {
-		if (i != 0)
+		if (i != 0) {
 			cmdline[cmd_i++] = ' ';
-
+		}
 		cmdline[cmd_i++] = '"';
 
 		int arg_i = 0; // Index of current character in orginal argument
@@ -173,34 +177,43 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		CloseHandle (th);
 	}
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
-	io->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
-	io->wintid = tid;
-	io->winpid = pid;
+	winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	return pid;
 
 err_fork:
 	eprintf ("ERRFORK\n");
-        TerminateProcess (pi.hProcess, 1);
+	TerminateProcess (pi.hProcess, 1);
 	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
-        return -1;
+	return -1;
 }
 #else // windows
 
+#if (__APPLE__ && __POWERPC__) || !__APPLE__
+#if __APPLE__ || __BSD__
+static void inferior_abort_handler(int pid) {
+	eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
+}
+#endif
+
+// UNUSED
 static void trace_me () {
 #if __APPLE__
 	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
 #endif
 #if __APPLE__ || __BSD__
-/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
+	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
 	signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
+		r_sys_perror ("ptrace-traceme");
+	}
 #else
 	if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
-#endif
 		r_sys_perror ("ptrace-traceme");
 		exit (MAGIC_EXIT);
 	}
+#endif
 }
+#endif
 
 void handle_posix_error(int err) {
 	switch (err) {
@@ -428,8 +441,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			}
 			if (argv && *argv) {
 				int i;
-				for (i = 3; i < 1024; i++)
+				for (i = 3; i < 1024; i++) {
 					(void)close (i);
+				}
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");
@@ -496,6 +510,8 @@ static int get_pid_of(RIO *io, const char *procname) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIOPlugin *_plugin;
+	RIODesc *ret = NULL;
 	char uri[128];
 	if (!strncmp (file, "waitfor://", 10)) {
 		const char *procname = file + 10;
@@ -533,21 +549,56 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (!_plugin || !_plugin->open) {
+				return NULL;
+			}
+			if ((ret = _plugin->open (io, uri, rw, mode))) {
+				RIOW32 *w32 = (RIOW32 *)ret->data;
+				w32->winbase = winbase;
+			}
+
 #elif __APPLE__
-			sprintf (uri, "mach://%d", pid);
+			sprintf (uri, "smach://%d", pid);		//s is for spawn
+			_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
+			if (!_plugin || !_plugin->open || !_plugin->close) {
+				return NULL;
+			}
+			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (!_plugin || !_plugin->open) {
+				return NULL;
+			}
+			ret = _plugin->open (io, uri, rw, mode);
 #endif
-			my_io_redirect (io, file, uri);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			my_io_redirect (io, file, uri);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (!_plugin || !_plugin->open) {
+				return NULL;
+			}
+			ret = _plugin->open (io, uri, rw, mode);
 		}
-		return NULL;
+		if (ret) {
+			ret->plugin = _plugin;
+			ret->referer = strdup (file);		//kill this
+		}
 	}
-	my_io_redirect (io, file, NULL);
-	return NULL;
+	return ret;
+}
+
+static int __close (RIODesc *desc) {
+	int ret = -2;
+	eprintf ("something went wrong\n");
+	if (desc) {
+		eprintf ("trying to close %d with io_debug\n", desc->fd);
+		ret = -1;
+	}
+	r_sys_backtrace ();
+	return ret;
 }
 
 RIOPlugin r_io_plugin_debug = {
@@ -557,6 +608,7 @@ RIOPlugin r_io_plugin_debug = {
 	.author = "pancake",
 	.version = "0.2.0",
 	.open = __open,
+	.close = __close,
 	.check = __plugin_open,
 	.isdbg = true,
 };

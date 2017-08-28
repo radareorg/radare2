@@ -1,5 +1,10 @@
 #ifndef R_FILE_H
 #define R_FILE_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_util/r_mem.h>
 
 R_API int r_file_is_abspath(const char *file);
@@ -37,5 +42,9 @@ R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
 R_API bool r_file_copy (const char *src, const char *dst);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  R_FILE_H

@@ -208,7 +208,9 @@
 /* #undef JEMALLOC_MUNMAP */
 
 /* TLS is used to map arenas and magazine caches to threads. */
-#define JEMALLOC_TLS 
+#ifndef _WIN32
+#define JEMALLOC_TLS
+#endif
 
 /*
  * Used to mark unreachable code to quiet "end of non-void" compiler warnings.

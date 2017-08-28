@@ -19,7 +19,7 @@
  *                      otherwise.
  *   NTBINS: Number of tiny bins.
  *   NLBINS: Number of bins supported by the lookup table.
- *   NBINS: Number of small size class bins.
+ *   JM_NBINS: Number of small size class bins.
  *   NSIZES: Number of size classes.
  *   NPSIZES: Number of size classes that are a multiple of (1U << LG_PAGE).
  *   LG_TINY_MAXCLASS: Lg of maximum tiny size class.
@@ -171,7 +171,7 @@
 #define	SIZE_CLASSES_DEFINED
 #define	NTBINS			0
 #define	NLBINS			32
-#define	NBINS			39
+#define	JM_NBINS			39
 #define	NSIZES			107
 #define	NPSIZES			71
 #define	LG_TINY_MAXCLASS	"NA"
@@ -318,7 +318,7 @@
 #define	SIZE_CLASSES_DEFINED
 #define	NTBINS			1
 #define	NLBINS			29
-#define	NBINS			36
+#define	JM_NBINS			36
 #define	NSIZES			104
 #define	NPSIZES			71
 #define	LG_TINY_MAXCLASS	3
@@ -463,7 +463,7 @@
 #define	SIZE_CLASSES_DEFINED
 #define	NTBINS			0
 #define	NLBINS			28
-#define	NBINS			35
+#define	JM_NBINS			35
 #define	NSIZES			103
 #define	NPSIZES			71
 #define	LG_TINY_MAXCLASS	"NA"
@@ -773,7 +773,7 @@
 #define	SIZE_CLASSES_DEFINED
 #define	NTBINS			0
 #define	NLBINS			32
-#define	NBINS			39
+#define	JM_NBINS			39
 #define	NSIZES			235
 #define	NPSIZES			199
 #define	LG_TINY_MAXCLASS	"NA"
@@ -1080,7 +1080,7 @@
 #define	SIZE_CLASSES_DEFINED
 #define	NTBINS			1
 #define	NLBINS			29
-#define	NBINS			36
+#define	JM_NBINS			36
 #define	NSIZES			232
 #define	NPSIZES			199
 #define	LG_TINY_MAXCLASS	3
@@ -1385,7 +1385,7 @@
 #define	SIZE_CLASSES_DEFINED
 #define	NTBINS			0
 #define	NLBINS			28
-#define	NBINS			35
+#define	JM_NBINS			35
 #define	NSIZES			231
 #define	NPSIZES			199
 #define	LG_TINY_MAXCLASS	"NA"
@@ -1401,11 +1401,11 @@
 #undef SIZE_CLASSES_DEFINED
 /*
  * The size2index_tab lookup table uses uint8_t to encode each bin index, so we
- * cannot support more than 256 small size classes.  Further constrain NBINS to
+ * cannot support more than 256 small size classes.  Further constrain JM_NBINS to
  * 255 since all small size classes, plus a "not small" size class must be
  * stored in 8 bits of arena_chunk_map_bits_t's bits field.
  */
-#if (NBINS > 255)
+#if (JM_NBINS > 255)
 #  error "Too many small size classes"
 #endif
 

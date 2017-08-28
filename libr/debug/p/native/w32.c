@@ -1003,7 +1003,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	ut80 st[8];
 	ut64 mm[8];
 	ut16 top = 0;
-	int x = 0, nxmm = 0,nymm = 0;
+	int x = 0, nxmm = 0, nymm = 0;
 #if __MINGW64__ || _WIN64
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
@@ -1028,10 +1028,10 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	}
 	nxmm = 16;
 #else
-	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FloatSave.ControlWord, ctx->FloatSave.StatusWord);
-	eprintf ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], ctx->FloatSave.TagWord);
-	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FloatSave.ErrorOffset, ctx->FloatSave.DataOffset);
-	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", ctx->FloatSave.ErrorSelector, ctx->FloatSave.DataSelector);
+	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", (ut32) ctx->FloatSave.ControlWord, (ut32) ctx->FloatSave.StatusWord);
+	eprintf ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], (ut32)ctx->FloatSave.TagWord);
+	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", (ut32)ctx->FloatSave.ErrorOffset, (ut32)ctx->FloatSave.DataOffset);
+	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", (ut32)ctx->FloatSave.ErrorSelector, (ut32) ctx->FloatSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].High = (ut16) *((ut16 *)(&ctx->FloatSave.RegisterArea[x * 10] + 8));
 		st[x].Low = (ut64)  *((ut64 *)&ctx->FloatSave.RegisterArea[x * 10]);
@@ -1065,7 +1065,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 		eprintf ("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
 	}
 	// show Ymm regs
-	nymm = GetAVX(hThread, &xmm, &ymm);
+	nymm = GetAVX (hThread, &xmm, &ymm);
 	if (nymm) {
 		for (x = 0; x < nymm; x++) {
 			eprintf ("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );

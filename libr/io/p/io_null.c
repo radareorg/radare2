@@ -49,11 +49,11 @@ static int __read(RIO* io, RIODesc* fd, ut8* buf, int count) {
 	}
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
-		memset (buf, 0xff, ret);
+		memset (buf, 0x00, ret);
 		null->offset = null->size;
 		return ret;
 	}
-	memset (buf, 0xff, count);
+	memset (buf, 0x00, count);
 	null->offset += count;
 	return count;
 }
@@ -100,7 +100,7 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 			null = R_NEW0 (RIONull);
 			null->size = r_num_math (NULL, pathname + 7) + 1;         //???
 			null->offset = 0LL;
-			return r_io_desc_new (&r_io_plugin_null, -2, pathname, rw, mode, null);
+			return r_io_desc_new (io, &r_io_plugin_null, pathname, rw, mode, null);
 		}
 	}
 	return NULL;

@@ -1166,17 +1166,18 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		case 'f':
 		{
 			ut64 off, len, sz, namelen;
+			RIODesc *desc = core && core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;
 			if (sscanf (cmd + 2, "%"PFMT64x",%"PFMT64x, &off, &len) != 2) {
 				strcpy (out_buf, "E00");
 				return 0;
 			}
-			namelen = strlen (core->file->desc->name);
+			namelen = desc ? strlen (desc->name) : 0;
 			if (off >= namelen) {
 				out_buf[0] = 'l';
 				return 0;
 			}
 			sz = R_MIN (max_len, len + 2);
-			len = snprintf (out_buf, sz, "l%s", core->file->desc->name + off);
+			len = snprintf (out_buf, sz, "l%s", desc ? (desc->name + off) : "");
 			if (len >= sz) {
 				// There's more left
 				out_buf[0] = 'm';
@@ -1296,37 +1297,6 @@ R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path) {
 	}
 	ret = r_core_rtr_gdb_run (core, launch, path);
 	return ret;
-}
-
-R_API void r_core_rtr_help(RCore *core) {
-	const char* help_msg[] = {
-	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
-	"\nrap commands:", "", "",
-	"=", "", "list all open connections",
-	"=<", "[fd] cmd", "send output of local command to remote fd",
-	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
-	"=!", " cmd", "run command via r_io_system",
-	"=+", " [proto://]host", "add host (default=rap://, tcp://, udp://)",
-	"=-", "[fd]", "remove all hosts or host 'fd'",
-	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
-	"=!=", "", "disable remote cmd mode",
-	"!=!", "", "enable remote cmd mode",
-	"\nrap server:","","",
-	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
-	"=&", ":port", "start rap server in background",
-	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nhttp server:", "", "",
-	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
-	"=h-", "", "stop background webserver",
-	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background)",
-	"=H", " port", "launch browser and listen for http",
-	"=H&", " port", "launch browser and listen for http in background",
-	"\ngdbserver:", "", "",
-	"=g", " port file", "listen on 'port' debugging 'file' using gdbserver",
-	"=g!", " port file", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
-	NULL };
-	r_core_cmd_help (core, help_msg);
 }
 
 R_API void r_core_rtr_pushout(RCore *core, const char *input) {

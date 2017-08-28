@@ -76,14 +76,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int i_port = -1;
 	bool isdev = false;
 
-	if (!__plugin_open (io, file, 0))
+	if (!__plugin_open (io, file, 0)) {
 		return NULL;
+	}
 	if (riogdb) {
 		// FIX: Don't allocate more than one gdb RIODesc
 		return riogdb;
 	}
-	strncpy (host, file+6, sizeof (host)-1);
-	host [sizeof (host)-1] = '\0';
+	strncpy (host, file + 6, sizeof (host)-1);
+	host [sizeof (host) - 1] = '\0';
 	if (host[0] == '/') {
 		isdev = true;
 	}
@@ -93,7 +94,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (port) {
 			*port = '\0';
 			port++;
-
 			pid = strchr (port, ':');
 		} else {
 			pid = strchr (host, ':');
@@ -113,7 +113,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		*port = '\0';
 		port++;
-
 		pid = strchr (port, '/');
 	}
 
@@ -128,33 +127,32 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		i_port = atoi (port);
 	}
 
-	riog = R_NEW0 (RIOGdb);
+	if (!(riog = R_NEW0 (RIOGdb))) {
+		return NULL;
+	}
 	gdbr_init (&riog->desc, false);
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
 		if (pid) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
-			int ret = gdbr_attach (desc, i_pid);
-			if (ret < 0) {
+			if (gdbr_attach (desc, i_pid) < 0) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
 				return NULL;
 			}
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		// Get name
-		char *name = gdbr_exec_file_read (desc, i_pid);
-		if (name) {
-			file = name;
-		}
-		riogdb = r_io_desc_new (&r_io_plugin_gdb, i_pid, file, rw, mode, riog);
-		free (name);
-		return riogdb;
+		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, rw, mode, riog);
 	}
-	eprintf ("gdb.io.open: Cannot connect to host.\n");
-	free (riog);
-	return NULL;
+	// Get name
+	if (riogdb) {
+		riogdb->name = gdbr_exec_file_read (desc, i_pid);
+	} else {
+		eprintf ("gdb.io.open: Cannot connect to host.\n");
+		free (riog);
+	}
+	return riogdb;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -179,15 +177,26 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
-	if (!desc || !desc->data) {
-		return -1;
-	}
+	if (!desc || !desc->data) return -1;
 	return debug_gdb_read_at(buf, count, addr);
 }
 
 static int __close(RIODesc *fd) {
-	// TODO
+	if (fd) {
+		R_FREE (fd->name);
+	}
+	gdbr_disconnect (desc);
+	gdbr_cleanup (desc);
+	free (desc);
 	return -1;
+}
+
+static int __getpid(RIODesc *fd) {
+	return desc ? desc->pid : -1;
+}
+
+static int __gettid(RIODesc *fd) {
+	return desc ? desc->tid : -1;
 }
 
 int send_msg(libgdbr_t* g, const char* command);
@@ -319,6 +328,8 @@ RIOPlugin r_io_plugin_gdb = {
 	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
+	.getpid = __getpid,
+	.gettid = __gettid,
 	.isdbg = true
 };
 

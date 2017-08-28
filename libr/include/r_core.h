@@ -90,9 +90,8 @@ typedef struct r_core_log_t {
 } RCoreLog;
 
 typedef struct r_core_file_t {
-	RIOMap *map;
 	int dbg;
-	RIODesc *desc;
+	int fd;
 	RBinBind binb;
 	const struct r_core_t *core;
 	ut8 alive;
@@ -246,10 +245,11 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int count);
 R_API void r_core_seek_archbits (RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
-R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
+R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
+R_API int r_core_visual_refs(RCore *core, bool xref);
 R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
 R_API bool r_core_visual_hudstuff(RCore *core);
 R_API int r_core_visual_classes(RCore *core);
@@ -304,7 +304,7 @@ R_API int r_core_file_binlist(RCore *core);
 R_API int r_core_file_bin_raise(RCore *core, ut32 num);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
-R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
+R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
 R_API int r_core_set_file_by_fd (RCore * core, ut64 bin_fd);
 R_API int r_core_set_file_by_name (RBin * bin, const char * name);
@@ -369,6 +369,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize);
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int gv);
+R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr);
 R_API int r_core_esil_step_back(RCore *core);
@@ -457,13 +458,14 @@ R_API void r_core_sysenv_help(const RCore* core);
 
 R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 /* bin.c */
-#define R_CORE_BIN_PRINT	0x000
+#define R_CORE_BIN_PRINT	0x000 
 #define R_CORE_BIN_RADARE	0x001
 #define R_CORE_BIN_SET		0x002
 #define R_CORE_BIN_SIMPLE	0x004
-#define R_CORE_BIN_JSON         0x008
-#define R_CORE_BIN_ARRAY 	0x010
-#define R_CORE_BIN_SIMPLEST 	0x020
+#define R_CORE_BIN_JSON		0x008
+#define R_CORE_BIN_ARRAY	0x010
+#define R_CORE_BIN_SIMPLEST	0x020
+#define R_CORE_BIN_CLASSDUMP	0x040
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002
@@ -477,8 +479,8 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_BIN_ACC_LIBS	0x200
 #define R_CORE_BIN_ACC_CLASSES	0x400
 #define R_CORE_BIN_ACC_DWARF	0x800
-#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
+#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_MEM	0x4000
 #define R_CORE_BIN_ACC_EXPORTS  0x8000
 #define R_CORE_BIN_ACC_VERSIONINFO 0x10000

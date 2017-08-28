@@ -2,6 +2,10 @@
 #define R_BUF_H
 #include <r_util/r_mem.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define R_BUF_CUR UT64_MAX
 
 typedef struct r_buf_t {
@@ -28,6 +32,7 @@ typedef struct r_buf_cache_t {
 /* constructors */
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
+R_API RBuffer *r_buf_new_with_string (const char *msg);
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
 R_API RBuffer *r_buf_new_file(const char *file, bool newFile);
@@ -62,4 +67,9 @@ R_API char *r_buf_free_to_string(RBuffer *b);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_BUF_H

@@ -7,39 +7,25 @@
 // TODO: Optimize to use memcpy when buffers are not in range..
 // check buf boundaries and offsets and use memcpy or memmove
 
-// copied from riocacheread
+// copied from libr/io/cache.c:r_io_cache_read
 // ret # of bytes copied
 static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
-        int l, ret, da, db;
-        RListIter *iter;
-        RBufferSparse *c;
-
-        r_list_foreach (list, iter, c) {
-                if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-                        if (ret > 0) {
-                                da = ret;
-                                db = 0;
-                                l = c->size;
-                        } else if (ret < 0) {
-                                da = 0;
-                                db = -ret;
-                                l = c->size-db;
-                        } else {
-                                da = 0;
-                                db = 0;
-                                l = c->size;
-                        }
-			// say hello to integer overflow, but this won't happen in
-			// realistic scenarios because malloc will fail befor
-                        if ((l + da) > len) {
-				l = len - da;
+	int l, covered = 0;
+	RListIter *iter;
+	RBufferSparse *c;
+	r_list_foreach (list, iter, c) {
+		if (addr < c->to && c->from < addr + len) {
+			if (addr < c->from) {
+				l = R_MIN (addr + len - c->from, c->size);
+				memcpy (buf + c->from - addr, c->data, l);
+			} else {
+				l = R_MIN (c->to - addr, len);
+				memcpy (buf, c->data + addr - c->from, l);
 			}
-			if (l > 0) {
-				memcpy (buf + da, c->data + db, l);
-			}
-                }
-        }
-        return len;
+			covered += l;
+		}
+	}
+	return covered;
 }
 
 static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
@@ -133,8 +119,12 @@ R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 
 R_API RBuffer *r_buf_new_empty (ut64 len) {
 	RBuffer *b = r_buf_new ();
+	if (!b) {
+		return NULL;
+	}
 	b->buf = calloc (len, 1);
 	if (!b->buf) {
+		r_buf_free (b);
 		return NULL;
 	}
 	b->length = len;
@@ -147,6 +137,10 @@ R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 		r_buf_set_bytes (b, bytes, len);
 	}
 	return b;
+}
+
+R_API RBuffer *r_buf_new_with_string (const char *msg) {
+	return r_buf_new_with_bytes ((const ut8*)msg, (ut64) strlen (msg));
 }
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
@@ -200,7 +194,9 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	if (b->mmap) {
 		b->buf = b->mmap->buf;
 		b->length = b->mmap->len;
-		if (b->length == 0) b->empty = 1;
+		if (!b->length) {
+			b->empty = 1;
+		}
 		return b;
 	}
 	r_buf_free (b);
@@ -471,9 +467,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 		} else {
 			// read from sparse and write into dst
 			memset (dst, 0xff, len);
-			if (sparse_read (b->sparse, addr, dst, len) < 0) {
-				return -1;
-			}
+			(void)sparse_read (b->sparse, addr, dst, len);
 		}
 		return len;
 	}
