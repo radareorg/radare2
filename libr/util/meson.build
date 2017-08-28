@@ -10,6 +10,7 @@ files=[
 'base91.c',
 'bdiff.c',
 'big.c',
+'binheap.c',
 'bitmap.c',
 'btree.c',
 'buf.c',

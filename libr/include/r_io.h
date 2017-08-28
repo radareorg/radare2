@@ -3,9 +3,8 @@
 #ifndef R2_IO_H
 #define R2_IO_H
 
-#include <r_types.h>
-#include <r_list.h>
 #include <r_socket.h>
+#include <r_list.h>
 #include <r_util.h>
 #include <r_vector.h>
 

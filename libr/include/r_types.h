@@ -109,7 +109,7 @@
   #define WIN32_LEAN_AND_MEAN
   #else
   /* Deprecated */
-  #include <winsock.h>
+  //#include <winsock.h>
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
@@ -325,6 +325,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define typeof(arg) __typeof__(arg)
 #endif
 
+#undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
@@ -579,7 +580,7 @@ static inline void r_run_call10 (void *fcn, void *arg1, void *arg2, void *arg3, 
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
-#endif
+#endif // R2_TYPES_H
 
 // Usage: R_DEFINE_OBJECT(r_asm);
 #if 0
