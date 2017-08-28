@@ -164,21 +164,24 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
-		return offset;
+		io->off = offset;
+		break;
 	case R_IO_SEEK_CUR:
-		return io->off + offset;
+		io->off += offset;
+		break;
 	case R_IO_SEEK_END:
-		return UT64_MAX;
-	default:
-		return offset;
+		io->off = UT64_MAX;
 	}
+	return io->off;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
-	if (!desc || !desc->data) return -1;
-	return debug_gdb_read_at(buf, count, addr);
+	if (!desc || !desc->data) {
+		return -1;
+	}
+	return debug_gdb_read_at (buf, count, addr);
 }
 
 static int __close(RIODesc *fd) {

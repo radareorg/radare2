@@ -382,7 +382,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"=A0	eax\n"
 				"=A1	ebx\n"
 				"=A2	ecx\n"
-				"=A3	edi\n"
+				"=A3	edx\n"
 				"=SN	oeax\n"
 				"gpr	eax	.32	0	0\n"
 				"gpr	ecx	.32	4	0\n"
@@ -870,7 +870,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_gdb_breakpoint (void *bp, RBreakpointItem *b, bool set) {
 	int ret;
 	if (!b) {
 		return false;
@@ -940,6 +940,12 @@ static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	return rdi;
 }
 
+#include "native/bt.c"
+
+static RList* r_debug_gdb_frames(RDebug *dbg, ut64 at) {
+	return r_debug_native_frames (dbg, at);
+}
+
 RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
@@ -961,6 +967,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.kill = &r_debug_gdb_kill,
 	.info = &r_debug_gdb_info,
 	.select = &r_debug_gdb_select,
+	.frames = &r_debug_gdb_frames,
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };
