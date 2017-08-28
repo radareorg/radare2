@@ -132,7 +132,7 @@ endif
 	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
-F=README.md config.mk src Makefile Jamroot meson.build
+F=README.md config.mk src Makefile Jamroot meson.build msvc
 SYNCFILES=$(addprefix sdb.vc/,${F})
 I=../libr/include
 
