@@ -3227,12 +3227,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 				}
 			}
 		}
-		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
-			return;
-		}
-		core->anal->esil = esil;
 	}
 	if (*input == '?') {
 		eprintf ("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
