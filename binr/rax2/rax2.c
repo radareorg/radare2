@@ -353,7 +353,8 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 12)) { // -E
 		const int len = strlen (str);
-		char *out = calloc (sizeof (char), ((len + 1) * 4) / 3);
+		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
+		char *out = calloc (sizeof (char), (len + 2) / 3 * 4 + 1); // ceil(len/3)*4 plus 1 for NUL
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, len);
 			printf ("%s\n", out);
@@ -363,8 +364,7 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 13)) { // -D
 		const int len = strlen (str);
-		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		ut8 *out = calloc (sizeof (ut8), ((len + 2) / 3) * 4);
+		ut8 *out = calloc (sizeof (ut8), len / 4 * 3 + 1);
 		if (out) {
 			r_base64_decode (out, str, len);
 			printf ("%s%s", out, nl);
