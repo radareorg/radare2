@@ -3156,6 +3156,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		r_cons_canvas_free (can);
 		r_config_restore (hc);
 		r_config_hold_free (hc);
+		r_agraph_free (g);
 		return false;
 	}
 	grd->g = g;
