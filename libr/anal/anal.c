@@ -136,7 +136,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_anal_op_free (a->queued);
 	r_list_free (a->bits_ranges);
 	a->sdb = NULL;
-	r_syscall_free (a->syscall);
 	sdb_ns_free (a->sdb);
 	if (a->esil) {
 		r_anal_esil_free (a->esil);

@@ -24,9 +24,11 @@ R_API RSyscall* r_syscall_new() {
 }
 
 R_API void r_syscall_free(RSyscall *s) {
-	sdb_free (s->db);
-	free (s->os);
-	free (s);
+	if (s) {
+		sdb_free (s->db);
+		free (s->os);
+		free (s);
+	}
 }
 
 /* return fastcall register argument 'idx' for a syscall with 'num' args */
