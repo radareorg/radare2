@@ -1026,7 +1026,6 @@ R_API int extract_type_value(const char *arg_str, char **output) {
 		case '(': len = 1; str = strdup ("("); break;
 		case ')': len = 1; str = strdup (")"); break;
 		default:
-			eprintf ("Invalid char '%c' in '%s'\n", *arg_str, arg_str);
 			return 0;
 		}
 		if (len < 1) {

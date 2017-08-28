@@ -498,9 +498,12 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 	//leak to avoid UAF is the easy solution otherwise a whole rewrite is needed
 	//r_anal_state_free (state);
 	if (r_anal_fcn_size (fcn) != code_length) {
+		return R_ANAL_RET_ERROR;
+#if 0
 		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%x\n", fcn->name, code_length, r_anal_fcn_size(fcn));
 		eprintf ("Deadcode detected, setting code length to: 0x%"PFMT64x"\n", code_length);
 		r_anal_fcn_set_size (fcn, code_length);
+#endif
 	}
 	return result;
 }
@@ -647,7 +650,8 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 					java_set_function_prototype (anal, fcn, method);
 					result = analyze_from_code_attr (anal, fcn, method, loadaddr);
 					if (result == R_ANAL_RET_ERROR) {
-						eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
+						//eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
+						return result;
 						// XXX - TO Stop or not to Stop ??
 					}
 					//r_listrange_add (anal->fcnstore, fcn);

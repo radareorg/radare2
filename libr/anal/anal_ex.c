@@ -176,7 +176,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 		if (current_bb->op_bytes) {
 			int buf_len = r_anal_state_get_len (state, addr);
 			if (current_bb->op_sz < buf_len) {
-				eprintf ("Oops\n");
+				//eprintf ("Oops\n");
 				r_anal_bb_free (current_bb);
 				return NULL;
 			}
