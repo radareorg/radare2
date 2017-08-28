@@ -1505,6 +1505,9 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 	RBinXtrPlugin *xtr = NULL;
 	RBinObject *o = NULL;
 	RBinFile *bf = NULL;
+	if (sz == UT64_MAX) {
+		return NULL;
+	}
 
 	if (xtrname) {
 		xtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
