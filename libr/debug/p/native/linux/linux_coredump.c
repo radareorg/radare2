@@ -554,6 +554,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 error:
 	free (buff_maps);
 	free (buff_smaps);
+	free (file);
 	clean_maps (me_head);
 	return NULL;
 }
