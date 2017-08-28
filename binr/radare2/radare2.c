@@ -827,7 +827,7 @@ int main(int argc, char **argv, char **envp) {
 						optind--; // take filename
 					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
+					iod = (r.io && fh) ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
 						const char *filepath;
 						ut64 addr;
