@@ -2003,14 +2003,10 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if ((at + bufsz) > param->to) {
 					bufsz = param->to - at;
 				}
-				// if seek fails we shouldnt read at all
-				//(void) r_io_seek (core->io, at, R_IO_SEEK_SET);
-				if (!r_io_read_at (core->io, at, buf, bufsz)) {
-					//HACK to fix issue with .bss sections, SIOL does fix it
-					//creating a mmap 
-					at++;
-					continue;
+				if (!r_io_is_valid_offset (core->io, at, 0)) {
+					break;
 				}
+				(void)r_io_read_at (core->io, at, buf, bufsz);
 				if (param->crypto_search) {
 					int delta = 0;
 					if (param->aes_search) {
