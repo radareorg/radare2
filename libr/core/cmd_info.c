@@ -766,6 +766,8 @@ static int cmd_info(void *data, const char *input) {
 			if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
 				break;
 			}
+		} else {
+			break;
 		}
 	}
 done:
