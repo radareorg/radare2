@@ -198,6 +198,9 @@ R_API RAsm *r_asm_free(RAsm *a) {
 			r_list_free (a->plugins);
 			a->plugins = NULL;
 		}
+		if (a->syscall) {
+			r_syscall_free (a->syscall);
+		}
 		free (a->cpu);
 		sdb_free (a->pair);
 		ht_free (a->flags);
