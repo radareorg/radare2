@@ -85,7 +85,7 @@ static int onIterMap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
 				ret += t;
 			}
 			if (map->to < vendaddr - 1) {
-				t = onIterMap (iter->p, io, map->to, buf + map->to - vaddr + 1, vendaddr - map->to - 1, match_flg, op, user);
+				t = onIterMap (iter->p, io, map->to + 1, buf + map->to - vaddr + 1, vendaddr - map->to - 1, match_flg, op, user);
 				if (t < 0) {
 					return t;
 				}
