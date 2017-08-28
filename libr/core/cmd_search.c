@@ -624,9 +624,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			RIOSection *s;
 			*from = *to = 0;
 			ls_foreach (core->io->sections, iter, s) {
-				if (!(s->flags & R_IO_MAP)) {
-					continue;
-				}
 				if (!*from) {
 					*from = s->vaddr;
 					*to = s->vaddr + s->vsize;
@@ -648,18 +645,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				*from = 0;
 			}
 		}
-#if 0
-		RIOMap *map = R_NEW0 (RIOMap);
-		if (map) {
-			map->fd = core->io->raised;
-			map->from = *from;
-			map->to = *to;
-			map->flags = 6;
-			map->delta = 0;
-			list = r_list_newf (free);
-			r_list_append (list, map);
-		}
-#endif
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
 			SdbListIter *iter;
