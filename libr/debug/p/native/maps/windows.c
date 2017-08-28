@@ -145,8 +145,7 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	}
 err_set_mod_info:
 	if (mod_inf_fill == -1) {
-		free (mod->sect_hdr);
-		mod->sect_hdr = NULL;
+		R_FREE (mod->sect_hdr);
 	}
 	return mod_inf_fill;
 }
