@@ -3810,6 +3810,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 				ret = r_core_esil_step (core, UT64_MAX, NULL, NULL);
 				r_anal_op_free (op);
+				op = NULL;
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
 					break;
 				}
@@ -3823,6 +3824,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				} else {
 					addr = newaddr;
 				}
+			}
+			if (op) {
+				r_anal_op_free (op);
 			}
 		} else {
 			// "aec"  -> continue until ^C
