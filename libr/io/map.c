@@ -232,7 +232,8 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 		SdbListIter* iter;
 		RIOMap* map;
 		ls_foreach (io->maps, iter, map) {
-			if (map->fd == fd && map->from == addr) {
+			if (map->fd == fd && map->from == addr &&
+			    map->to == addr + size - 1 && map->delta == delta) {
 				return NULL;
 			}
 		}
