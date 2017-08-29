@@ -383,7 +383,7 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 
 R_API RIOAccessLog *r_io_al_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	RIOAccessLog *log;
-	RIOAccessLogElement *ale = R_NEW0(RIOAccessLogElement);
+	RIOAccessLogElement *ale = NULL;
 	int rlen;
 	if (!io || !buf || (len < 1)) {
 		return NULL;

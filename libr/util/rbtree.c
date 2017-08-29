@@ -58,28 +58,28 @@ R_API bool r_rbtree_delete(RBTree *tree, void *data, void *user) {
 				del = q;
 			}
 		}
-    if (q->red || red (q->child[d])) {
-      continue;
+		if (q->red || red (q->child[d])) {
+			continue;
 		}
-    if (red (q->child[!d])) {
-      p->child[d2] = zag(q, !d);
-      p = p->child[d2];
-    } else {
-      RBNode *s = p->child[!d2];
-      if (! s) {
+		if (red (q->child[!d])) {
+			p->child[d2] = zag(q, !d);
+			p = p->child[d2];
+		} else {
+			RBNode *s = p->child[!d2];
+			if (! s) {
 				continue;
 			}
-      if (! red (s->child[0]) || ! red (s->child[1])) {
-        p->red = false;
-        q->red = s->red = true;
-      } else {
-        int d3 = g->child[0] != p;
-        RBNode *t = red (s->child[d2]) ? zig_zag (p, !d2) : zag (p, !d2);
-        t->red = q->red = true;
-        t->child[0]->red = t->child[1]->red = false;
-        g->child[d3] = t;
-      }
-    }
+			if (! red (s->child[0]) || ! red (s->child[1])) {
+				p->red = false;
+				q->red = s->red = true;
+			} else {
+				int d3 = g->child[0] != p;
+				RBNode *t = red (s->child[d2]) ? zig_zag (p, !d2) : zag (p, !d2);
+				t->red = q->red = true;
+				t->child[0]->red = t->child[1]->red = false;
+				g->child[d3] = t;
+			}
+		}
 	}
 	if (!del) {
 		tree->root = head.child[1];
@@ -151,7 +151,7 @@ R_API int r_rbtree_insert(RBTree *tree, void *data, void *user) {
 	int d;
 	bool done = false;
 	do {
-		if (! q) {
+		if (!q && p) {
 			q = R_NEW (RBNode);
 			if (!q) {
 				return -1;
@@ -167,13 +167,13 @@ R_API int r_rbtree_insert(RBTree *tree, void *data, void *user) {
 				q->red = true;
 			}
 		}
-		if (q->red && p->red) {
-      int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
-      g = p->child[d2] == q ? zag (g, d2) : zig_zag (g, d2);
-      if (t) {
-        t->child[d3] = g;
+		if (q->red && p && p->red) {
+			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
+			g = p->child[d2] == q ? zag (g, d2) : zig_zag (g, d2);
+			if (t) {
+				t->child[d3] = g;
 			} else {
-        tree->root = g;
+				tree->root = g;
 			}
 		}
 		if (done) {

@@ -270,12 +270,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			} else {
 				ut64 addr = r_num_math (core->num, input + 2);
 				RCoreFile *cf = r_core_file_cur (core);
-				RIODesc *desc = r_io_desc_get (core->io, cf->fd);
-				if (cf && desc) {
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-					r_core_cmd0 (core, ".is*");
-				} else {
-					eprintf ("No file to load bin from?\n");
+				if (cf) {
+					RIODesc *desc = r_io_desc_get (core->io, cf->fd);
+					if (desc) {
+						r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+						r_core_cmd0 (core, ".is*");
+					} else {
+						eprintf ("No file to load bin from?\n");
+					}
 				}
 			}
 			free (arg);
