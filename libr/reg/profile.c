@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -17,20 +17,17 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
 
 static ut64 parse_size(char *s, char **end) {
-	ut64 r = 0;
 	if (*s == '.') {
-		r = strtoul (s + 1, end, 10);
-	} else {
-		char *has_dot = strchr (s, '.');
-		if (has_dot) {
-			*has_dot = 0;
-			r = strtoul (s, end, 0) << 3;
-			r += strtoul (has_dot + 1, end, 0);
-		} else {
-			r = strtoul (s, end, 0) << 3;
-		}
+		return strtoul (s + 1, end, 10);
 	}
-	return r;
+	char *has_dot = strchr (s, '.');
+	if (has_dot) {
+		*has_dot++ = 0;
+		ut64 a = strtoul (s, end, 0) << 3;
+		ut64 b = strtoul (has_dot, end, 0);
+		return a + b;
+	}
+	return strtoul (s, end, 0) << 3;
 }
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
