@@ -2058,7 +2058,7 @@ next2:
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = UT64_MAX;
-		const char *tmpbits = NULL;
+		char *tmpbits = NULL;
 		const char *offstr = NULL;
 		ut64 tmpbsz = core->blocksize;
 		char *tmpeval = NULL;
@@ -2178,7 +2178,7 @@ repeat_arroba:
 					tmpasm = strdup (r_config_get (core->config, "asm.arch"));
 					if (q) {
 						*q++ = 0;
-						tmpbits = r_config_get (core->config, "asm.bits");
+						tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 						r_config_set (core->config, "asm.bits", q);
 					}
 					r_config_set (core->config, "asm.arch", ptr + 2);
@@ -2266,7 +2266,7 @@ next_arroba:
 					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
 					free (tmpeval);
 					free (tmpasm);
-					free (tmpbits)
+					free (tmpbits);
 					goto fail;
 				}
 				*p = '\x00';

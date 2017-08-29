@@ -1933,7 +1933,6 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	char *ox, *qo, *string = NULL;
 	char *line, *s, *str, *string2 = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
-	bool is_free_pending = false;
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
 
 	r_config_set_i (core->config, "scr.color", 0);
@@ -2481,7 +2480,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
 	if (blocksize < 1) {
-		eprintf ("Invalid block size: %d\n", blocksize);
+		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		return;
 	}
 	if (nblocks < 1) {
