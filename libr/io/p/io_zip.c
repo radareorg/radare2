@@ -368,7 +368,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	if (!zip_uri) return NULL;
 	pikaboo = strstr (zip_uri, "://");
 	if (pikaboo) {
-		zip_filename = strstr (pikaboo + 3, "//");
+		zip_filename = strdup (strstr (pikaboo + 3, "//"));
 		// 1) Tokenize to the '//' and find the base file directory ('/')
 		if (!zip_filename) {
 			if (!strncmp (zip_uri, "apk://", 6)) {
@@ -377,7 +377,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				RList *files = NULL;
 				RListIter *iter;
 				char *name;
-				zip_filename = pikaboo + 3;
+				zip_filename = strdup (pikaboo + 3);
 				files = r_io_zip_get_files (zip_filename, 0, mode, rw );
 
 				if (files) {
@@ -400,9 +400,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 							}
 						}
 					}
+					r_list_free (files);
 				}
 			} else {
-				zip_filename = pikaboo + 1;
+				zip_filename = strdup (pikaboo + 1);
 			}
 		}
 	}
@@ -430,6 +431,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				ZIP_CREATE, mode, rw);
 		} else {
 			filename_in_zipfile = r_str_newf ("%s", zip_filename);
+			free (zip_filename);
 			zip_filename = strdup (pikaboo + 3);
 			if (!strcmp (zip_filename, filename_in_zipfile)) {
 				//R_FREE (zip_filename);
@@ -452,7 +454,6 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		RListIter *iter;
 		char *name;
 		//eprintf("usage: zip:///path/to/archive//filepath\n");
-		files = r_io_zip_get_files (zip_filename, 0, mode, rw);
 		files = r_io_zip_get_files (zip_filename, 0, mode, rw);
 		if (files) {
 			ut32 i = 0;
@@ -489,6 +490,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 done:
 	free (filename_in_zipfile);
 	free (zip_uri);
+	free (zip_filename);
 	return res;
 }
 
