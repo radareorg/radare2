@@ -81,9 +81,13 @@ RList* search_virtual_tables(RCore *core){
 	ut64 endAddress;
 	RListIter * iter;
 	RBinSection *section;
-	RList *sections = r_bin_get_sections (core->bin);
 	RList *vtables = r_list_newf ((RListFree)free);
-	if (!vtables || !sections) {
+	if (!vtables) {
+		return NULL;
+	}
+	RList *sections = r_bin_get_sections (core->bin);
+	if (!sections) {
+		r_list_free (vtables);
 		return NULL;
 	}
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
