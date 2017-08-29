@@ -22,6 +22,7 @@ static char *rabin_cmd = NULL;
 static bool threaded = false;
 static bool haveRarunProfile = false;
 static struct r_core_t r;
+static int do_analysis = 0;
 
 static bool is_valid_gdb_file(RCoreFile *fh) {
 	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
@@ -326,6 +327,9 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 		r_cons_flush ();
 	}
 	if (quiet) {
+		if (do_analysis) {
+			return true;
+		}
 		if (cmds && !r_list_empty (cmds)) {
 			return true;
 		}
@@ -401,7 +405,6 @@ int main(int argc, char **argv, char **envp) {
 	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
-	int do_analysis = 0;
 	int do_connect = 0;
 	bool fullfile = false;
 	int has_project;
@@ -503,17 +506,20 @@ int main(int argc, char **argv, char **envp) {
 		case 'a':
 			asmarch = optarg;
 			break;
-		case 'z': zflag++; break;
+		case 'z':
+			zflag++;
+			break;
 		case 'A':
-			if (!do_analysis) do_analysis ++;
-			do_analysis++;
+			do_analysis += do_analysis ? 1: 2;
 			break;
 		case 'b': asmbits = optarg; break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
 			va = 2;
 			break;
-		case 'c': r_list_append (cmds, optarg); break;
+		case 'c':
+			r_list_append (cmds, optarg);
+			break;
 		case 'C':
 			do_connect = true;
 			break;
