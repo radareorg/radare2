@@ -16,7 +16,7 @@ typedef struct r_rbnode_t {
 	bool red;
 } RBNode;
 
-typedef int (*RBTreeComparator)(void *user, const void *a, const void *b);
+typedef int (*RBTreeComparator)(const void *a, const void *b, void *user);
 
 typedef struct r_rbtree_t {
 	RBNode *root;

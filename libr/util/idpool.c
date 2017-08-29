@@ -13,6 +13,23 @@ ut32 get_msb(ut32 v) {
 	return 0;
 }
 
+static int _insert_cmp (void *_incoming, void *_in, void *user) {
+	ut32 incoming = (ut32)(size_t)_incoming;
+	ut32 in = (ut32)(size_t)_in;
+//	eprintf ("incoming %d\tin %d\n", incoming, in);
+	return incoming - in;
+}
+
+static int _del_cmp (void *_incoming, void *_in, void *user) {
+	ut32 incoming = (ut32)(size_t)_incoming;
+	ut32 in = (ut32)(size_t)_in;
+//	eprintf ("incoming %d\tin %d\n", incoming, in);
+	if (incoming >= in) {
+		return 0;
+	}
+	return incoming - in;
+}
+
 R_API RIDPool* r_id_pool_new(ut32 start_id, ut32 last_id) {
 	RIDPool* pool = NULL;
 	if (start_id < last_id) {
@@ -31,10 +48,12 @@ R_API bool r_id_pool_grab_id(RIDPool* pool, ut32* grabber) {
 		return false;
 	}
 	if (pool->freed_ids) {
-		ut32 grab = (ut32) (size_t)r_queue_dequeue (pool->freed_ids);
-		*grabber = (ut32) grab;
-		if (r_queue_is_empty (pool->freed_ids)) {
-			r_queue_free (pool->freed_ids);
+		RBTreeIter iter = r_rbtree_first (pool->freed_ids);
+		*grabber = (ut32)(size_t)(iter.path[iter.len-1]->data);
+//		eprintf ("deleting %d from the tree\n", *grabber);
+		r_rbtree_delete (pool->freed_ids, (void *)(size_t)(*grabber), NULL);
+		if (r_rbtree_size (pool->freed_ids) == 1) {
+			r_rbtree_free (pool->freed_ids);
 			pool->freed_ids = NULL;
 		}
 		return true;
@@ -53,18 +72,34 @@ R_API bool r_id_pool_kick_id(RIDPool* pool, ut32 kick) {
 	}
 	if (kick == (pool->next_id - 1)) {
 		pool->next_id--;
+		if (pool->freed_ids) {
+			RBTreeIter iter = r_rbtree_last (pool->freed_ids);
+			while ((iter.len) && ((pool->next_id - 1) <= (ut32)(size_t)(iter.path[iter.len-1]->data))) {
+//				eprintf ("element in tree %d\n", (ut32)(size_t)(iter.path[iter.len-1]->data));
+				pool->next_id--;
+				r_rbtree_iter_prev (&iter);
+			}
+			pool->freed_ids->cmp = (RBTreeComparator)_del_cmp;
+			while (r_rbtree_delete (pool->freed_ids, (void *)(size_t)(pool->next_id - 1), NULL)) {}
+			if (r_rbtree_size (pool->freed_ids) == 1) {
+				r_rbtree_free (pool->freed_ids);
+				pool->freed_ids = NULL;
+			} else {
+				pool->freed_ids->cmp = (RBTreeComparator)_insert_cmp;
+			}
+		}
 		return true;
 	}
 	if (!pool->freed_ids) {
-		pool->freed_ids = r_queue_new (2);
+		pool->freed_ids = r_rbtree_new (NULL, (RBTreeComparator)_insert_cmp);
 	}
-	r_queue_enqueue (pool->freed_ids, (void*) (size_t) kick);
+	r_rbtree_insert (pool->freed_ids, (void*)(size_t)kick, NULL);
 	return true;
 }
 
 R_API void r_id_pool_free(RIDPool* pool) {
 	if (pool && pool->freed_ids) {
-		r_queue_free (pool->freed_ids);
+		r_rbtree_free (pool->freed_ids);
 	}
 	free (pool);
 }

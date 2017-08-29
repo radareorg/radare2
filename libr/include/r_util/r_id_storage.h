@@ -14,7 +14,7 @@ typedef struct r_id_pool_t {
 	ut32 start_id;
 	ut32 last_id;
 	ut32 next_id;
-	RQueue *freed_ids;
+	RBTree *freed_ids;
 } RIDPool;
 
 R_API RIDPool *r_id_pool_new(ut32 start_id, ut32 last_id);
