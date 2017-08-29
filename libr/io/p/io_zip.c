@@ -356,8 +356,8 @@ char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 
 }
 
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
-	RIODesc *res = NULL;
-	char *pikaboo;
+	RIODesc *res = NULL;	
+	char *pikaboo, *tmp;
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
 
@@ -368,7 +368,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	if (!zip_uri) return NULL;
 	pikaboo = strstr (zip_uri, "://");
 	if (pikaboo) {
-		zip_filename = strdup (strstr (pikaboo + 3, "//"));
+		tmp = strstr (pikaboo + 3, "//");
+		zip_filename = tmp ? strdup (tmp) : NULL;
 		// 1) Tokenize to the '//' and find the base file directory ('/')
 		if (!zip_filename) {
 			if (!strncmp (zip_uri, "apk://", 6)) {
@@ -407,6 +408,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			}
 		}
 	}
+	tmp = zip_filename;
 	if (zip_filename && zip_filename[1] && zip_filename[2]) {
 		if (zip_filename[0] && zip_filename[0] == '/' &&
 			zip_filename[1] && zip_filename[1] == '/' ) {
@@ -490,7 +492,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 done:
 	free (filename_in_zipfile);
 	free (zip_uri);
-	free (zip_filename);
+	free (tmp);
 	return res;
 }
 
