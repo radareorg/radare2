@@ -2016,8 +2016,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 		// XXX leak
-		str = strdup (strstr (line, " str."));
+		str = strstr (line, " str.");
 		if (str) {
+			str = strdup (str);
 			char *qoe = NULL;
 			if (!qoe) {
 				qoe = strchr (str + 1, '\x1b');
@@ -2044,12 +2045,13 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		R_FREE (string2);
 		_handle_call (core, line, &str);
 		if (!str) {
-			str = strdup (strstr (line, "sym."));
+			str = strstr (line, "sym.");
 			if (!str) {
-				str = strdup (strstr (line, "fcn."));
+				str = strstr (line, "fcn.");
 			}
 		}
 		if (str) {
+			str = strdup (str);
 			char *qoe = strstr (str, ";");
 			if (qoe) {
 				char* t = str;
