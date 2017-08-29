@@ -2,6 +2,7 @@
 
 #include <r_util.h>
 #include <r_types.h>
+#include <string.h>
 
 ut32 get_msb(ut32 v) {
 	int i;
@@ -233,6 +234,113 @@ R_API void r_id_storage_free(RIDStorage* storage) {
 	if (storage) {
 		r_id_pool_free (storage->pool);
 		free (storage->data);
+	}
+	free (storage);
+}
+
+R_API ROIDStorage * r_oid_storage_new (ut32 start_id, ut32 last_id) {
+	ROIDStorage *storage = R_NEW0 (ROIDStorage);
+	if (!storage) {
+		return NULL;
+	}
+	if (!(storage->permutation = r_id_storage_new (0, last_id))) {
+		free (storage);
+		return NULL;
+	}
+	if (!(storage->data = r_id_storage_new (start_id, last_id))) {
+		r_id_storage_free (storage->permutation);
+		free (storage);
+		return NULL;
+	}
+	return storage;
+}
+
+R_API void *r_oid_storage_get(ROIDStorage *storage, ut32 id) {
+	if (storage) {
+		return r_id_storage_get (storage->data, id);
+	}
+	return NULL;
+}
+
+R_API void *r_oid_storage_oget(ROIDStorage *storage, ut32 od) {
+	ut32 id;
+	if (r_oid_storage_get_id (storage, od, &id)) {
+		return r_id_storage_get (storage->data, id);
+	}
+	return r_id_storage_get (storage->data, id);
+}
+
+R_API bool r_oid_storage_get_id(ROIDStorage *storage, ut32 od, ut32 *id) {
+	if (storage && storage->permutation && (od < storage->permutation->pool->next_id)) {
+		*id = (ut32)(size_t)storage->permutation->data[od];
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_oid_storage_get_od(ROIDStorage *storage, ut32 id, ut32 *od) {
+	if (storage && storage->permutation &&
+		storage->data && (id < storage->data->pool->next_id)) {
+		for (*od = 0; *od < storage->permutation->pool->next_id; *od++) {
+			if (id == (ut32)(size_t)storage->permutation->data[*od]) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+R_API bool r_oid_storage_add(ROIDStorage *storage, void *data, ut32 *id, ut32 *od) {
+	if (!storage || !id || !od) {
+		return false;
+	}
+	if (!r_id_storage_add (storage->data, data, id)) {
+		return false;
+	}
+	if (!r_id_storage_add (storage->permutation, (void *)(size_t)id, od)) {
+		r_id_storage_delete (storage->data, id);
+		return false;
+	}
+	return true;
+}
+
+R_API bool r_oid_storage_to_front (ROIDStorage *storage, ut32 id) {
+	ut32 od;
+	if (!r_oid_storage_get_od (storage, id, &od)) {
+		return false;
+	}
+	if (od == (storage->permutation->pool->next_id - 1)) {
+		return true;
+	}
+	memmove (&storage->permutation->data[od], &storage->permutation->data[od + 1],
+		(storage->permutation->pool->next_id - (od + 1)) * sizeof(void *));
+	storage->permutation->data[storage->permutation->pool->next_id - 1] =
+		(void *)(size_t)id;
+	return true;
+}
+
+R_API void r_oid_storage_delete(ROIDStorage *storage, ut32 id) {
+	if (!r_oid_storage_to_front (storage, id)) {
+		return;
+	}
+	r_id_storage_delete (storage->permutation, storage->permutation->pool->next_id - 1);
+	r_id_storage_delete (storage->data, id);
+}
+
+R_API void *r_oid_storage_take (ROIDStorage *storage, ut32 id) {
+	void *ret;
+	if (!storage) {
+		return NULL;
+	}
+	ret = r_id_storage_get (storage->data, id);
+	r_oid_storage_delete (storage, id);
+	return ret;
+}
+
+R_API void r_oid_storage_free (ROIDStorage *storage) {
+	if (storage) {
+		r_id_storage_free (storage->permutation);
+		r_id_storage_free (storage->data);
 	}
 	free (storage);
 }
