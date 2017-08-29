@@ -657,7 +657,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					break;
 				}
 				if (*from >= s->vaddr && *from < (s->vaddr + s->vsize)) {
-					*to = s->vaddr + s->size;
+					*to = s->vaddr + s->vsize;
 					break;
 				}
 			}
@@ -726,7 +726,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 					map->fd = s->fd;
 					map->from = s->vaddr;
-					map->to = s->vaddr + s->size;
+					map->to = s->vaddr + s->vsize;
 					if (map->from && map->to) {
 						if (map->from < *from) {
 							*from = map->from;
