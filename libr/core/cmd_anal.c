@@ -3221,8 +3221,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 				}
 			}
 		}
-	}
-	if (!esil) {
 		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
