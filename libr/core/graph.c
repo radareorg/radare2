@@ -3124,17 +3124,18 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			eprintf ("No function in current seek\n");
 			r_config_restore (hc);
 			r_config_hold_free (hc);
+			r_cons_canvas_free (can);
 			return false;
 		}
 		g = r_agraph_new (can);
-		g->is_tiny = is_interactive == 2;
-		g->layout = r_config_get_i (core->config, "graph.layout");
 		if (!g) {
 			r_cons_canvas_free (can);
 			r_config_restore (hc);
 			r_config_hold_free (hc);
 			return false;
 		}
+		g->is_tiny = is_interactive == 2;
+		g->layout = r_config_get_i (core->config, "graph.layout");
 	} else {
 		o_can = g->can;
 	}
@@ -3156,6 +3157,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		r_cons_canvas_free (can);
 		r_config_restore (hc);
 		r_config_hold_free (hc);
+		r_agraph_free (g);
 		return false;
 	}
 	grd->g = g;

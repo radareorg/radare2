@@ -2017,7 +2017,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 		// XXX leak
-		str = strstr (line, " str.");
+		str = strdup (strstr (line, " str."));
 		if (str) {
 			char *qoe = NULL;
 			if (!qoe) {
@@ -2030,36 +2030,32 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				qoe = strchr (str + 1, ' ');
 			}
 			if (qoe) {
+				free (string2);
 				string2 = r_str_ndup (str + 1, qoe - str - 1);
 			} else {
+				free (string2);
 				string2 = strdup (str + 1);
 			}
 			if (string2) {
-				/* the str.* flag will win over naked "string",
-				 * since it's generally more accurate */
-				if (string) {
-					R_FREE (string);
-				}
+				R_FREE (string);
 				string = string2;
 				string2 = NULL;
 			}
 		}
-		if (string2) {
-			R_FREE (string2);
-		}
+		R_FREE (string2);
 		_handle_call (core, line, &str);
 		if (!str) {
-			str = strstr (line, "sym.");
+			str = strdup (strstr (line, "sym."));
 			if (!str) {
-				str = strstr (line, "fcn.");
+				str = strdup (strstr (line, "fcn."));
 			}
 		}
 		if (str) {
 			char *qoe = strstr (str, ";");
 			if (qoe) {
-				// XXX str leaks
+				char* t = str;
 				str = r_str_ndup (str, qoe - str);
-				is_free_pending = true;
+				free (t);
 			}
 		}
 		if (str) {
@@ -2161,9 +2157,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	free (string2);
 	free (string);
 	free (s);
-	if (is_free_pending) {
-		free (str);
-	}
+	free (str);
 }
 
 static void algolist(int mode) {
@@ -2444,7 +2438,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int totalsize = -1;
 	int skipblocks = -1;
 
-	int blocksize = -1;
+	ut64 blocksize = 0;
 	int mode = 'b'; // e, p, b, ...
 	int submode = 0; // q, j, ...
 
@@ -2512,7 +2506,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		case 'z': // zero terminated strings
 			{
 				ut8 *p;
-				int i, j, k;
+				ut64 i, j, k;
 				ptr = calloc (1, nblocks);
 				if (!ptr) {
 					eprintf ("Error: failed to malloc memory");
@@ -2526,7 +2520,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				}
 				int len = 0;
 				for (i = 0; i < nblocks; i++) {
-					ut64 off = (i + skipblocks) * blocksize;
+					ut64 off = blocksize * (i + skipblocks);
 					r_core_read_at (core, off, p, blocksize);
 					for (j = k = 0; j < blocksize; j++) {
 						switch (submode) {
@@ -2582,7 +2576,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
-				ut64 off = core->offset + (i + skipblocks) * blocksize;
+				ut64 off = core->offset + (blocksize * (i + skipblocks));
 				r_core_read_at (core, off, p, blocksize);
 				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
 			}
@@ -2650,7 +2644,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (i + skipblocks) * blocksize;
+			ut64 off = core->offset + (blocksize * (i + skipblocks));
 			for (j = 0; j < blocksize; j++) {
 				if (r_flag_get_at (core->flags, off + j, false)) {
 					matchBar (ptr, i);
@@ -2677,7 +2671,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (i + skipblocks) * blocksize;
+			ut64 off = core->offset + (blocksize * (i + skipblocks));
 			r_core_read_at (core, off, p, blocksize);
 			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
 		}
@@ -2691,7 +2685,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'z': // zero terminated strings
 	{
 		ut8 *p;
-		int i, j, k;
+		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
 			eprintf ("Error: failed to malloc memory");
@@ -2705,7 +2699,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		int len = 0;
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = (i + skipblocks) * blocksize;
+			ut64 off = blocksize * (i + skipblocks);
 			r_core_read_at (core, off, p, blocksize);
 			for (j = k = 0; j < blocksize; j++) {
 				switch (mode) {
@@ -2792,6 +2786,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 	}
 beach:
+	free (ptr);
 	return;
 }
 

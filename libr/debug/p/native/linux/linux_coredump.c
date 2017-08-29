@@ -330,11 +330,12 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 	char *aux = NULL;
 	ut8 vmflags = 0, perms = entry->perms;
 
-	/* if the map doesn't have r/w quit right here */
-	if ((!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
+	if (!identity) {
 		return false;
 	}
-	if (!identity) {
+	/* if the map doesn't have r/w quit right here */
+	if ((!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
+		free (identity);
 		return false;
 	}
 	aux = strdup (buff_smaps);
@@ -553,6 +554,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 error:
 	free (buff_maps);
 	free (buff_smaps);
+	free (file);
 	clean_maps (me_head);
 	return NULL;
 }
