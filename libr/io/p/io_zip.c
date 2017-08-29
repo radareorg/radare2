@@ -391,7 +391,6 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 								char *chkstr = r_str_newf ("Payload/%s.app/%s", bin_name);
 								if (!strcmp (name, chkstr)) {
 									zip_filename = r_str_newf ("//%s", chkstr);
-									allocated = true;
 									free (chkstr);
 									free (bin_name);
 									break;
@@ -432,11 +431,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				ZIP_CREATE, mode, rw);
 		} else {
 			filename_in_zipfile = r_str_newf ("%s", zip_filename);
-			if (allocated) {
-				free (zip_filename);
-			}
+			free (zip_filename);
 			zip_filename = strdup (pikaboo + 3);
-			allocated = true;
 			if (!strcmp (zip_filename, filename_in_zipfile)) {
 				//R_FREE (zip_filename);
 				R_FREE (filename_in_zipfile);
