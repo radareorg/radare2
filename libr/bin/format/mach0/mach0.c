@@ -849,6 +849,8 @@ static const char *cmd_to_string(ut32 cmd) {
 	switch (cmd) {
 	case LC_DATA_IN_CODE:
 		return "LC_DATA_IN_CODE";
+	case LC_CODE_SIGNATURE:
+		return "LC_CODE_SIGNATURE";
 	case LC_RPATH:
 		return "LC_RPATH";
 	case LC_SEGMENT:
