@@ -308,6 +308,7 @@ R_API RCons *r_cons_new() {
 	if (I.refcnt != 1) {
 		return &I;
 	}
+	I.rgbstr = r_cons_rgb_str_off;
 	I.line = r_line_new ();
 	I.highlight = NULL;
 	I.event_interrupt = NULL;

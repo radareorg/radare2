@@ -347,6 +347,7 @@ typedef struct r_cons_t {
 	bool use_color;
 	bool use_tts;
 	bool filter;
+	char* (*rgbstr)(char *str, ut64 addr);
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -611,6 +612,7 @@ R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, int is_bg);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init(void);
 R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg);
+R_API char *r_cons_rgb_str_off(char *outstr, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
 R_API char *r_cons_color_random(int bg);
 R_API char *r_cons_color_random_string(int bg);

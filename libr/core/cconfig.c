@@ -291,6 +291,18 @@ static int cb_asmminvalsub(void *user, void *data) {
 	return true;
 }
 
+static int cb_scrrainbow(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_RAINBOW;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_RAINBOW);
+	}
+	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
 static int cb_asmsecsub(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2170,6 +2182,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
+	SETCB ("scr.rainbow", "true", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETPREF ("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF ("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
 	SETPREF ("asm.section", "false", "Show section name before offset");

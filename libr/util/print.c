@@ -370,6 +370,13 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		if (use_color) {
 			const char *pre = PREOFF (offset): Color_GREEN;
 			const char *fin = Color_RESET;
+			if (p->flags & R_PRINT_FLAGS_RAINBOW) {
+				// pre = r_cons_rgb_str_off (rgbstr, addr);
+				if (p && p->cons && p->cons->rgbstr) {
+					char rgbstr[32];
+					pre = p->cons->rgbstr (rgbstr, addr);
+				}
+			}
 			if (dec) {
 				printfmt ("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {

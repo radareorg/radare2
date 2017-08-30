@@ -5413,7 +5413,11 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offde
 	const char *white;
 	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
+		char rgbstr[32];
 		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
+		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
+			k = r_cons_rgb_str_off (rgbstr, off);
+		}
 		if (invert) {
 			r_cons_invert (true, true);
 		}
