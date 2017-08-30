@@ -1898,7 +1898,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
-	int oldfd = (core && core->io && core->io->desc) ? core->io->desc->fd : -1;
+	int oldfd = (core && core->io) ? r_io_fd_get_current (core->io) : -1;
 	int bufsz;
 
 	if (json) {
@@ -1930,7 +1930,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
 		if (!param->boundaries) {
 			RIOMap *map = R_NEW0 (RIOMap);
-			map->fd = core->io->desc->fd;
+			map->fd = r_io_fd_get_current (core->io);
 			map->from = param->from;
 			map->to = param->to;
 			param->boundaries = r_list_newf (free);
