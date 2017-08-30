@@ -13,6 +13,9 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
+
+static char** env = NULL;
+
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE)
 # include <execinfo.h>
 #endif
@@ -23,8 +26,6 @@
 #else
 #define HAVE_ENVIRON 0
 #endif
-
-static char** env = NULL;
 
 #if !HAVE_ENVIRON
 #include <execinfo.h>
