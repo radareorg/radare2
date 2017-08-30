@@ -18,7 +18,15 @@
 #endif
 #if __APPLE__
 #include <errno.h>
-#if !__POWERPC__
+#ifdef __MAC_10_8
+#define HAVE_ENVIRON 1
+#else
+#define HAVE_ENVIRON 0
+#endif
+
+static char** env = NULL;
+
+#if !HAVE_ENVIRON
 #include <execinfo.h>
 #endif
 // iOS dont have this we cant hardcode
@@ -247,9 +255,18 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_clearenv(void) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
-#if __APPLE__ && __POWERPC__
+#if __UNIX__ || (__CYGWIN__ && !defined(MINGW32))
+#if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
+	if (!env) {
+		env = r_sys_get_environ ();
+		return 0;
+	}
+	if (env) {
+		while (*environ) {
+			*environ++ = NULL;
+		}
+	}
 #else
 	if (!environ) {
 		return 0;
@@ -921,11 +938,12 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 }
 
-static char** env = NULL;
-
+// TODO: rename to r_sys_env_init()
 R_API char **r_sys_get_environ () {
-#if __APPLE__ && !__POWERPC__
+#if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
+#else
+	env = environ;
 #endif
 	// return environ if available??
 	if (!env) {
