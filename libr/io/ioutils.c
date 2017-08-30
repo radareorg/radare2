@@ -30,7 +30,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	if (!io) {
 		return false;
 	}
-	if (io->va && (map = r_io_map_get (io, offset))) {
+	if (io->va) {
 		if ((map = r_io_map_get (io, offset))) {
 			return ((map->flags & hasperm) == hasperm);
 		}

@@ -2803,6 +2803,10 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 	if (step < 1) {
 		step = 4;
 	}
+	if (!r_io_is_valid_offset (core->io, origin, 0) || 
+	    !r_io_is_valid_offset (core->io, offset, 0)) {	
+		return;
+	}
 	if (origin != offset) {
 		switch (mode) {
 		case '*':
