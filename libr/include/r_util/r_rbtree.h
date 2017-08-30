@@ -1,75 +1,90 @@
+/* radare - BSD 3 Clause License - Copyright 2017 - MaskRay */
+
 #ifndef R2_RBTREE_H
 #define R2_RBTREE_H
 
 #include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "r_list.h"
+
+#ifndef container_of
+# ifdef _MSC_VER
+#  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
+# else
+#  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
+# endif
+#endif
 
 // max height <= 2 * floor(log2(n + 1))
 // We use `int` for size, so <= 2 * 31
 #define R_RBTREE_MAX_HEIGHT 62
 
-typedef struct r_rbnode_t {
-	void *data;
-	struct r_rbnode_t *child[2];
+// Singleton can be zero initialized
+typedef struct r_rb_node_t {
+	struct r_rb_node_t *child[2];
 	bool red;
 } RBNode;
 
-typedef int (*RBTreeComparator)(void *user, const void *a, const void *b);
+typedef int (*RBComparator)(const void *incoming, const RBNode *in_tree);
+typedef void (*RBNodeFree)(RBNode *);
+typedef void (*RBNodeSum)(RBNode *);
 
-typedef struct r_rbtree_t {
-	RBNode *root;
-	RBTreeComparator cmp;
-	RListFree free;
-	int size;
-} RBTree;
-
-
-typedef struct r_rbtree_iter_t {
+typedef struct r_rb_iter_t {
 	int len;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
-} RBTreeIter;
+} RBIter;
 
-R_API void r_rbtree_clear(RBTree *tree);
-R_API bool r_rbtree_delete(RBTree *tree, void *data, void *user);
-R_API void *r_rbtree_find(RBTree *tree, void *data, void *user);
-R_API void r_rbtree_free(RBTree *tree);
-R_API int r_rbtree_insert(RBTree *tree, void *data, void *user);
-R_API void *r_rbtree_lower_bound(RBTree *tree, void *data, void *user);
-R_API RBTree *r_rbtree_new(RListFree free, RBTreeComparator cmp);
-R_API void r_rbtree_print(RBTree *tree);
-R_API int r_rbtree_size(RBTree *tree);
-R_API void *r_rbtree_upper_bound(RBTree *tree, void *data, void *user);
+// Routines for augmented red-black trees. The user should provide an aggregation (monoid sum) callback `sum`
+// to calculate extra information such as size, sum, ...
+R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn, RBNodeSum sum);
+R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum);
 
-// Unidirectional iterator used with r_rbtree_next
-R_API RBTreeIter r_rbtree_first(RBTree *tree);
-// Unidirectional iterator used with r_rbtree_prev
-R_API RBTreeIter r_rbtree_last(RBTree *tree);
-R_API void *r_rbtree_iter_next(RBTreeIter *it);
-R_API void *r_rbtree_iter_prev(RBTreeIter *it);
+R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn);
+R_API RBNode *r_rbtree_find(RBNode *root, void *data, RBComparator cmp);
+R_API void r_rbtree_free(RBNode *root, RBNodeFree freefn);
+R_API void r_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp);
+// Return the smallest node that is greater than or equal to `data`
+R_API RBNode *r_rbtree_lower_bound(RBNode *root, void *data, RBComparator cmp);
+// Return the smallest node that is greater than `data`
+R_API RBNode *r_rbtree_upper_bound(RBNode *root, void *data, RBComparator cmp);
+
+// Create a forward iterator starting from the leftmost node
+R_API RBIter r_rbtree_first(RBNode *root);
+// Create a backward iterator starting from the rightmost node
+R_API RBIter r_rbtree_last(RBNode *root);
 // Iterate [lower_bound, end) forward, used with r_rbtree_iter_next
-R_API RBTreeIter r_rbtree_lower_bound_backward(RBTree *tree, void *data, void *user);
+R_API RBIter r_rbtree_lower_bound_backward(RBNode *root, void *data, RBComparator cmp);
 // Iterate [begin, lower_bound) backward, used with r_rbtree_iter_prev
-R_API RBTreeIter r_rbtree_lower_bound_forward(RBTree *tree, void *data, void *user);
+R_API RBIter r_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparator cmp);
 // Iterate [upper_bound, end) forward, used with r_rbtree_iter_next
-R_API RBTreeIter r_rbtree_upper_bound_backward(RBTree *tree, void *data, void *user);
+R_API RBIter r_rbtree_upper_bound_backward(RBNode *root, void *data, RBComparator cmp);
 // Iterate [begin, upper_bound) backward, used with r_rbtree_iter_prev
-R_API RBTreeIter r_rbtree_upper_bound_forward(RBTree *tree, void *data, void *user);
+R_API RBIter r_rbtree_upper_bound_forward(RBNode *root, void *data, RBComparator cmp);
 
-// has_next or has_prev
-#define r_rbtree_has(it) (it.len)
+// struct Node { int key; RBNode rb; };
+// r_rbtree_iter_get (it, struct Node, rb)
+#define r_rbtree_iter_get(it, struc, rb) container_of ((it)->path[(it)->len-1]), struc, rb)
+// If the iterator has more elements to iterate
+#define r_rbtree_iter_has(it) (it).len
+// Move forward
+R_API void r_rbtree_iter_next(RBIter *it);
+// Move backward
+R_API void r_rbtree_iter_prev(RBIter *it);
 
-#define r_rbtree_foreach(tree, it, data) \
-	for (it = r_rbtree_first (tree); it.len && (data = r_rbtree_iter_next (&it), 1); )
+// Iterate all elements of the forward iterator
+#define r_rbtree_iter_while(it, data, struc, rb) \
+	for (; (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_next (&(it)))
 
-#define r_rbtree_foreach_prev(tree, it, data) \
-	for (it = r_rbtree_last (tree); it.len && (data = r_rbtree_iter_prev (&it), 1); )
+// Iterate all elements of the backward iterator
+#define r_rbtree_iter_while_prev(it, data, struc, rb) \
+	for (; (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
 
-#define r_rbtree_iter_while(it, data) \
-	while (it.len && (data = r_rbtree_iter_next (&it), 1))
+#define r_rbtree_foreach(root, it, data, struc, rb) \
+	for ((it) = r_rbtree_first (root); (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_next (&(it)))
 
-#define r_rbtree_iter_while_prev(it, data) \
-	while (it.len && (data = r_rbtree_iter_prev (&it), 1))
+#define r_rbtree_foreach_prev(root, it, data, struc, rb) \
+	for ((it) = r_rbtree_last (root); (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
 
 #endif
