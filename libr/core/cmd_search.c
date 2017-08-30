@@ -271,25 +271,25 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	if (!b) {
 		return 0;
 	}
-// TODO: handle sections ?
+	// TODO: handle sections ?
 	if (from >= to) {
 		eprintf ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x "\n", from, to);
 		free (b);
 		return 0;
 	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
-	r_search_kw_add (core->search,
-		r_search_keyword_new (buf, blen, mask, mlen, NULL));
+	r_search_kw_add (core->search, r_search_keyword_new (buf, blen, mask, mlen, NULL));
 	r_search_begin (core->search);
 	r_search_set_callback (core->search, &__prelude_cb_hit, core);
 	preludecnt = 0;
 	for (at = from; at < to; at += core->blocksize) {
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if (!r_io_read_at (core->io, at, b, core->blocksize)) {
+		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			break;
 		}
+		(void)r_io_read_at (core->io, at, b, core->blocksize);
 		if (r_search_update (core->search, &at, b, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x "\n", at);
 			break;
