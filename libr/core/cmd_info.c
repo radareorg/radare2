@@ -22,6 +22,7 @@ static const char *help_msg_i[] = {
 	"icc", "", "List classes, methods and fields in Header Format",
 	"iC", "", "Show signature info (entitlements, ...)",
 	"id", "[?]", "Debug information (source lines)",
+	"idp", "", "Show pdb file information",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "", "Entrypoint",
 	"iE", "", "Exports (global symbols)",
@@ -516,7 +517,7 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
 					pdbopts.symbol_server = (char*) r_config_get (core->config, "pdb.server");
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
-					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);	
+					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
 					if (r > 0) {
 						eprintf ("Error while downloading pdb file\n");
 					}
@@ -550,7 +551,7 @@ static int cmd_info(void *data, const char *input) {
 				int current_fd = r_core_bin_cur (core)->fd;
 				char* r = r_core_cmd_strf (core, "o %s", filename);
 				if (!r || !*r) {
-					eprintf ("FixMe: Could not read file descriptor\n");
+					//eprintf ("FixMe: Could not read file descriptor\n");
 					if (!r) {
 						if (!(r = strdup ("0"))) {
 							eprintf ("Error: strdup fail\n");

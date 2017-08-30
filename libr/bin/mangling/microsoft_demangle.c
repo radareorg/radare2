@@ -118,7 +118,7 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 	int str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 	char *dst = NULL;
-	
+
 	if (str_for_copy_len > free_space) {
 		return 0;
 	}
@@ -956,7 +956,7 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str) {
 	ONE_LETTER_STATE (Q)
 	ONE_LETTER_STATE (A)
 	default:
-		eprintf("[uncorrect type] error while parsing type\n");
+		//eprintf("[uncorrect type] error while parsing type\n");
 
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUncorrectTypeCode;
