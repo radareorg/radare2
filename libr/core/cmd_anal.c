@@ -4350,20 +4350,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			m->to = addr + len;
 			r_list_append (ranges, m);
 		} else {
-			RIOSection *s;
-			SdbListIter *iter;
-			ranges = r_list_newf ((RListFree)free);
-			ls_foreach (core->io->sections, iter, s) {
-				if (s->flags & 1) {
-					RIOMap *m = R_NEW0 (RIOMap);
-					if (!m) {
-						continue;
-					}
-					m->from = s->vaddr;
-					m->to = s->vaddr + s->size;
-					r_list_append (ranges, m);
-				}
-			}
+			ranges = r_core_get_boundaries (core, "io.sections", NULL, NULL);
 		}
 		addr_end = addr + len;
 	}
