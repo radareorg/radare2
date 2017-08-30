@@ -290,7 +290,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	}
 
 	ut64 a = analyzeStackBased (core, db, addr, delayed_commands);
-	if (a == addr || addr == UT64_MAX) {
+	if (addr == UT64_MAX) {
 		eprintf ("Initial analysis failed\n");
 		return false;
 	}
