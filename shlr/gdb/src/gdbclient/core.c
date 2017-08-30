@@ -895,8 +895,9 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 #elif __UNIX__ || __CYGWIN__
 	signal (SIGINT, _sigint_handler);
 #endif
-
-	while ((ret = read_packet (g)) < 0);
+	// Fix infinite loop if connection is lost
+	// while ((ret = read_packet (g)) < 0);
+	ret = read_packet (g);
 
 	// Unset signal handler
 #if __WINDOWS__ && !__CYGWIN__
