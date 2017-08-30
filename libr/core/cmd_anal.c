@@ -5545,6 +5545,9 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 static bool archIsArmOrThumb(RCore *core) {
 	RAsm *as = core ? core->assembler : NULL;
 	if (as && as->cur && as->cur->arch) {
+		if (r_str_startswith (as->cur->arch, "mips")) {
+			return true;
+		}
 		if (r_str_startswith (as->cur->arch, "arm")) {
 			if (as->cur->bits < 64) {
 				return true;
@@ -5571,11 +5574,11 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 	if (asterisk) {
 		r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", to, from);
 		r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, from);
-		r_cons_printf ("f+ sym.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
+		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 		r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, to, from);
 		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
-		r_core_cmdf (core, "f+ sym.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
+		r_core_cmdf (core, "f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	}
 }
 
