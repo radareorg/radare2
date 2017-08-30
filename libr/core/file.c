@@ -1042,7 +1042,7 @@ R_API int r_core_file_binlist(RCore *core) {
 	return count;
 }
 
-R_API int r_core_file_close_fd(RCore *core, int fd) {
+R_API bool r_core_file_close_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
 	if (fd == -1) {
@@ -1060,7 +1060,7 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 			return true;
 		}
 	}
-	return false;
+	return r_io_fd_close (core->io, fd);
 }
 
 R_API int r_core_hash_load(RCore *r, const char *file) {
