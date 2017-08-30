@@ -201,7 +201,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 // fclose(tmp_file);
 			page->stream_size = sizes[i];
 			if (sizes[i] == 0) {
-				eprintf ("Warning: stream_size (%d) is 0\n", i);
+				//eprintf ("Warning: stream_size (%d) is 0\n", i);
 			}
 			page->stream_pages = tmp;
 			page->num_pages = num_pages;
@@ -209,7 +209,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 			page->stream_size = 0;
 			page->stream_pages = 0;
 			page->num_pages = 0;
-			eprintf ("Warning: stream_size (%d) is 0\n", i);
+			//eprintf ("Warning: stream_size (%d) is 0\n", i);
 			free (tmp);
 		}
 
@@ -338,7 +338,7 @@ static int pdb_read_root(R_PDB *pdb) {
 	while (r_list_iter_next (it)) {
 		page = (SPage *) r_list_iter_get (it);
 		if (page->stream_pages == 0) {
-			eprintf ("Warning: no stream pages. Skipping.\n");
+			//eprintf ("Warning: no stream pages. Skipping.\n");
 			i++;
 			continue;
 		}
@@ -426,7 +426,7 @@ static bool pdb7_parse(R_PDB *pdb) {
 
 	bytes_read = r_buf_read (pdb->buf, (unsigned char *) signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		eprintf ("Error while reading PDB7_SIGNATURE.\n");
+		//eprintf ("Error while reading PDB7_SIGNATURE.\n");
 		goto error;
 	}
 	if (!read_int_var ("page_size", &page_size, pdb)) {
@@ -778,7 +778,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			    (!strcmp (tmp, "arglist"))) {
 				break;
 			} else {
-				eprintf ("there is no support for type \"%s\" in PF structs\n", tmp);
+				//eprintf ("There is no support for type \"%s\" in PF structs\n", tmp);
 				res_field[pos] = 'A';
 				return 0;
 			}
@@ -899,7 +899,7 @@ static void print_types(R_PDB *pdb, int mode) {
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
 	if (!tpi_stream) {
-		eprintf ("there is no tpi stream in current pdb\n");
+		eprintf ("There is no tpi stream in current pdb\n");
 		return;
 	}
 
@@ -1151,8 +1151,8 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			}
 			free (name);
 		} else {
-			eprintf ("Skipping %s, segment %d does not exist\n",
-				gdata->name.name, (gdata->segment - 1));
+			//eprintf ("Skipping %s, segment %d does not exist\n",
+				//gdata->name.name, (gdata->segment - 1));
 		}
 		is_first = 0;
 	}

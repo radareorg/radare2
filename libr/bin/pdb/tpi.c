@@ -1310,7 +1310,7 @@ static void get_nesttype_print_type(void *type, char **name) {
 			//	this is possible because there is no support for
 			// parsing METHODLIST...
 			// need to investigate for this theme
-			eprintf ("warning: strange for nesttype\n");
+			//eprintf ("warning: strange for nesttype\n");
 		}
 	}
 
