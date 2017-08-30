@@ -1,283 +1,69 @@
+/* radare - BSD 3 Clause License - Copyright 2017 - MaskRay */
+
+#include <stdio.h>
+
 #include "r_util/r_rbtree.h"
-
-static void rbnode_clear(RListFree freefn, RBNode *x) {
-	if (x) {
-		rbnode_clear (freefn, x->child[0]);
-		rbnode_clear (freefn, x->child[1]);
-		if (freefn) {
-			freefn (x->data);
-		}
-		free (x);
-	}
-}
-
-R_API void r_rbtree_clear(RBTree *tree) {
-	rbnode_clear (tree->free, tree->root);
-	tree->root = NULL;
-	tree->size = 0;
-}
 
 static inline bool red(RBNode *x) {
 	return x && x->red;
 }
 
-static inline RBNode *zag(RBNode *x, int dir) {
+static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir];
 	x->child[dir] = y->child[!dir];
 	y->child[!dir] = x;
 	x->red = true;
 	y->red = false;
+	if (sum) {
+		sum (x);
+	}
 	return y;
 }
 
-static inline RBNode *zig_zag(RBNode *x, int dir) {
-	x->child[dir] = zag (x->child[dir], !dir);
-	return zag (x, dir);
+static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
+	RBNode *y = x->child[dir], *z = y->child[!dir];
+	y->child[!dir] = z->child[dir];
+	z->child[dir] = y;
+	x->child[dir] = z->child[!dir];
+	z->child[!dir] = x;
+	x->red = y->red = true;
+	z->red = false;
+	if (sum) {
+		sum (x);
+		sum (y);
+	}
+	return z;
 }
 
-// Returns true if a node with an equal key is deleted
-R_API bool r_rbtree_delete(RBTree *tree, void *data, void *user) {
-	RBNode head, *del = NULL, *g = NULL, *p = NULL, *q = &head;
-	head.child[0] = NULL;
-	head.child[1] = tree->root;
-	int d = 1, d2;
-	while (q->child[d]) {
-		d2 = d;
-		g = p;
-		p = q;
-		q = q->child[d];
-		if (del) {
-			d = 1;
-		} else {
-			d = tree->cmp (data, q->data, user);
-			if (d < 0) {
-				d = 0;
-			} else if (d > 0) {
-				d = 1;
-			} else {
-				del = q;
-			}
-		}
-		if (q->red || red (q->child[d])) {
-			continue;
-		}
-		if (red (q->child[!d])) {
-			p->child[d2] = zag(q, !d);
-			p = p->child[d2];
-		} else {
-			RBNode *s = p->child[!d2];
-			if (! s) {
-				continue;
-			}
-			if (! red (s->child[0]) || ! red (s->child[1])) {
-				p->red = false;
-				q->red = s->red = true;
-			} else {
-				int d3 = g->child[0] != p;
-				RBNode *t = red (s->child[d2]) ? zig_zag (p, !d2) : zag (p, !d2);
-				t->red = q->red = true;
-				t->child[0]->red = t->child[1]->red = false;
-				g->child[d3] = t;
-			}
-		}
-	}
-	if (!del) {
-		tree->root = head.child[1];
-		if (tree->root) {
-			tree->root->red = false;
-		}
-		return false;
-	}
-	p->child[q != p->child[0]] = q->child[q->child[0] == NULL];
-	if (tree->free) {
-		tree->free (del->data);
-	}
-	del->data = q->data;
-	free (q);
-	tree->root = head.child[1];
-	if (tree->root) {
-		tree->root->red = false;
-	}
-	tree->size--;
-	return true;
-}
-
-R_API void *r_rbtree_find(RBTree *tree, void *data, void *user) {
-	RBNode *x = tree->root;
-	while (x) {
-		int d = tree->cmp (data, x->data, user);
-		if (d < 0) {
-			x = x->child[0];
-		} else if (d > 0) {
-			x = x->child[1];
-		} else {
-			return x->data;
-		}
-	}
-	return NULL;
-}
-
-R_API RBTree *r_rbtree_new(RListFree free, RBTreeComparator cmp) {
-	RBTree *ret = R_NEW (RBTree);
-	if (!ret) {
-		return NULL;
-	}
-	ret->root = NULL;
-	ret->free = free;
-	ret->cmp = cmp;
-	ret->size = 0;
-	return ret;
-}
-
-R_API void r_rbtree_free(RBTree *tree) {
-	r_rbtree_clear (tree);
-	free (tree);
-}
-
-// Returns 1 if `data` is inserted; 0 if an equal key already exists; -1 if allocation fails.
-R_API int r_rbtree_insert(RBTree *tree, void *data, void *user) {
-	if (!tree->root) {
-		RBNode *q = R_NEW (RBNode);
-		if (!q) {
-			return -1;
-		}
-		q->data = data;
-		q->child[0] = q->child[1] = NULL;
-		q->red = false;
-		tree->root = q;
-		return tree->size = 1;
-	}
-	RBNode *t = NULL, *g = NULL, *p = NULL, *q = tree->root;
-	int d;
-	bool done = false;
-	do {
-		if (!q && p) {
-			q = R_NEW (RBNode);
-			if (!q) {
-				return -1;
-			}
-			q->data = data;
-			q->child[0] = q->child[1] = NULL;
-			q->red = true;
-			p->child[d] = q;
-			done = true;
-		} else if (red (q->child[0]) && red (q->child[1])) {
-			q->child[0]->red = q->child[1]->red = false;
-			if (q != tree->root) {
-				q->red = true;
-			}
-		}
-		if (q->red && p && p->red) {
-			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
-			g = p->child[d2] == q ? zag (g, d2) : zig_zag (g, d2);
-			if (t) {
-				t->child[d3] = g;
-			} else {
-				tree->root = g;
-			}
-		}
-		if (done) {
-			break;
-		}
-		d = tree->cmp (data, q->data, user);
-		t = g;
-		g = p;
-		p = q;
-		if (d < 0) {
-			d = 0;
-			q = q->child[0];
-		} else if (d > 0) {
-			d = 1;
-			q = q->child[1];
-		} else {
-			return 0;
-		}
-	} while (!done);
-	tree->size++;
-	return 1;
-}
-
-R_API void *r_rbtree_lower_bound(RBTree *tree, void *data, void *user) {
-	void *ret = NULL;
-	RBNode *x = tree->root;
-	while (x) {
-		int d = tree->cmp (data, x->data, user);
-		if (d < 0) {
-			ret = x->data;
-			x = x->child[0];
-		} else if (d > 0) {
-			x = x->child[1];
-		} else {
-			return x->data;
-		}
-	}
-	return ret;
-}
-
-static inline RBTreeIter bound_iter(RBTree *tree, void *data, void *user, bool upper, bool dir) {
-	RBTreeIter it;
+static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool upper, bool backward) {
+	RBIter it;
 	it.len = 0;
-	RBNode *x = tree->root;
 	while (x) {
-		int d = tree->cmp (data, x->data, user);
-		if (d < 0) {
-			if (!dir) {
+		int d = cmp (data, x);
+		if (upper ? d < 0 : d <= 0) {
+			if (!backward) {
 				it.path[it.len++] = x;
 			}
 			x = x->child[0];
-		} else if (upper || d > 0) {
-			if (dir) {
+		} else {
+			if (backward) {
 				it.path[it.len++] = x;
 			}
 			x = x->child[1];
-		} else {
-			if (!dir) {
-				it.path[it.len++] = x;
-			}
-			break;
 		}
 	}
 	return it;
 }
 
-R_API RBTreeIter r_rbtree_lower_bound_backward(RBTree *tree, void *data, void *user) {
-	return bound_iter (tree, data, user, false, true);
-}
-
-R_API RBTreeIter r_rbtree_lower_bound_forward(RBTree *tree, void *data, void *user) {
-	return bound_iter (tree, data, user, false, false);
-}
-
-R_API void *r_rbtree_upper_bound(RBTree *tree, void *data, void *user) {
-	void *ret = NULL;
-	RBNode *x = tree->root;
-	while (x) {
-		int d = tree->cmp (data, x->data, user);
-		if (d < 0) {
-			ret = x->data;
-			x = x->child[0];
-		} else {
-			x = x->child[1];
-		}
-	}
-	return ret;
-}
-
-R_API RBTreeIter r_rbtree_upper_bound_backward(RBTree *tree, void *data, void *user) {
-	return bound_iter (tree, data, user, true, true);
-}
-
-R_API RBTreeIter r_rbtree_upper_bound_forward(RBTree *tree, void *data, void *user) {
-	return bound_iter (tree, data, user, true, false);
-}
-
-static void print(RBNode *x, int dep, int black, bool leftmost) {
+static void _check1(RBNode *x, int dep, int black, bool leftmost) {
 	static int black_;
 	if (x) {
 		black += !x->red;
-		print (x->child[0], dep + 1, black, leftmost);
-		printf("%*s%p%s\n", 2 * dep, "", x->data, x->red ? " R" : "");
-		print (x->child[1], dep + 1, black, false);
+		if (x->red && ((x->child[0] && x->child[0]->red) || (x->child[1] && x->child[1]->red))) {
+			printf ("error: red violation\n");
+		}
+		_check1 (x->child[0], dep + 1, black, leftmost);
+		_check1 (x->child[1], dep + 1, black, false);
 	} else if (leftmost) {
 		black_ = black;
 	} else if (black_ != black) {
@@ -285,17 +71,241 @@ static void print(RBNode *x, int dep, int black, bool leftmost) {
 	}
 }
 
-R_API void r_rbtree_print(RBTree *tree) {
-	print (tree->root, 0, 0, true);
+static void _check(RBNode *x) {
+	_check1 (x, 0, 0, true);
 }
 
-R_API int r_rbtree_size(RBTree *tree) {
-	return tree->size;
+// Returns true if a node with an equal key is deleted
+R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn, RBNodeSum sum) {
+	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];
+	int d = 1, d2, dep = 0;
+	head.child[0] = NULL;
+	head.child[1] = *root;
+	while (q->child[d]) {
+		d2 = d;
+		g = p;
+		p = q;
+		if (del_link) {
+			d = 1;
+		} else {
+			d = cmp (data, q->child[d2]);
+			if (d < 0) {
+				d = 0;
+			} else if (d > 0) {
+				d = 1;
+			} else {
+				del_link = &q->child[d2];
+			}
+		}
+		if (q != &head) {
+			path[dep++] = q;
+		}
+		q = q->child[d2];
+		if (q->red || red (q->child[d])) {
+			continue;
+		}
+		if (red (q->child[!d])) {
+			if (del_link && *del_link == q) {
+				del_link = &q->child[!d]->child[d];
+			}
+			p->child[d2] = zag (q, !d, sum);
+			p = p->child[d2];
+			path[dep++] = p;
+		} else {
+			RBNode *s = p->child[!d2];
+			if (! s) {
+				continue;
+			}
+			if (! red (s->child[0]) && ! red (s->child[1])) {
+				p->red = false;
+				q->red = s->red = true;
+			} else {
+				int d3 = g->child[0] != p;
+				RBNode *t;
+				if (red (s->child[d2])) {
+					if (del_link && *del_link == p) {
+						del_link = &s->child[d2]->child[d2];
+					}
+					t = zig_zag (p, !d2, sum);
+				} else {
+					if (del_link && *del_link == p) {
+						del_link = &s->child[d2];
+					}
+					t = zag (p, !d2, sum);
+				}
+				t->red = q->red = true;
+				t->child[0]->red = t->child[1]->red = false;
+				g->child[d3] = t;
+				path[dep-1] = t;
+				path[dep++] = p;
+			}
+		}
+	}
+	if (del_link) {
+		del = *del_link;
+		p->child[q != p->child[0]] = q->child[q->child[0] == NULL];
+		if (del != q) {
+			*q = *del;
+			*del_link = q;
+		}
+		if (freefn) {
+			freefn (del);
+		}
+	}
+	if (sum) {
+		while (dep--) {
+			sum (path[dep] == del ? q : path[dep]);
+		}
+	}
+	if ((*root = head.child[1])) {
+		(*root)->red = false;
+	}
+	return del;
 }
 
-static RBTreeIter first(RBTree *tree, int dir) {
-	RBTreeIter it;
-	RBNode *x = tree->root;
+// Returns 1 if `data` is inserted; 0 if an equal key already exists; -1 if allocation fails.
+R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum) {
+	node->child[0] = node->child[1] = NULL;
+	if (!*root) {
+		*root = node;
+		node->red = false;
+		if (sum) {
+			sum (node);
+		}
+		return;
+	}
+	RBNode *t = NULL, *g = NULL, *p = NULL, *q = *root;
+	int d, dep = 0;
+	bool done = false;
+	RBNode *path[R_RBTREE_MAX_HEIGHT];
+	for (;;) {
+		if (! q) {
+			q = node;
+			q->red = true;
+			p->child[d] = q;
+			done = true;
+		} else if (red (q->child[0]) && red (q->child[1])) {
+			q->child[0]->red = q->child[1]->red = false;
+			if (q != *root) {
+				q->red = true;
+			}
+		}
+		if (q->red && p->red) {
+			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
+			if (p->child[d2] == q) {
+				g = zag (g, d2, sum);
+				dep--;
+				path[dep - 1] = g;
+			} else {
+				g = zig_zag (g, d2, sum);
+				dep -= 2;
+			}
+			if (t) {
+				t->child[d3] = g;
+			} else {
+				*root = g;
+			}
+		}
+		if (done) {
+			break;
+		}
+		d = cmp (data, q);
+		t = g;
+		g = p;
+		p = q;
+		path[dep++] = q;
+		if (d < 0) {
+			d = 0;
+			q = q->child[0];
+		} else {
+			d = 1;
+			q = q->child[1];
+		}
+	}
+	if (sum) {
+		sum (q);
+		while (dep) {
+			sum (path[--dep]);
+		}
+	}
+}
+
+R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn) {
+	return r_rbtree_aug_delete (root, data, cmp, freefn, NULL);
+}
+
+R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp) {
+	while (x) {
+		int d = cmp (data, x);
+		if (d < 0) {
+			x = x->child[0];
+		} else if (d > 0) {
+			x = x->child[1];
+		} else {
+			return x;
+		}
+	}
+	return NULL;
+}
+
+R_API void r_rbtree_free(RBNode *x, RBNodeFree freefn) {
+	if (x) {
+		r_rbtree_free (x->child[0], freefn);
+		r_rbtree_free (x->child[1], freefn);
+		freefn (x);
+	}
+}
+
+R_API void r_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp) {
+	r_rbtree_aug_insert (root, data, node, cmp, NULL);
+}
+
+R_API RBNode *r_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp) {
+	RBNode *ret = NULL;
+	while (x) {
+		int d = cmp (data, x);
+		if (d <= 0) {
+			ret = x;
+			x = x->child[0];
+		} else {
+			x = x->child[1];
+		}
+	}
+	return ret;
+}
+
+R_API RBIter r_rbtree_lower_bound_backward(RBNode *root, void *data, RBComparator cmp) {
+	return bound_iter (root, data, cmp, false, true);
+}
+
+R_API RBIter r_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparator cmp) {
+	return bound_iter (root, data, cmp, false, false);
+}
+
+R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp) {
+	void *ret = NULL;
+	while (x) {
+		int d = cmp (data, x);
+		if (d < 0) {
+			ret = x;
+			x = x->child[0];
+		} else {
+			x = x->child[1];
+		}
+	}
+	return ret;
+}
+
+R_API RBIter r_rbtree_upper_bound_backward(RBNode *root, void *data, RBComparator cmp) {
+	return bound_iter (root, data, cmp, true, true);
+}
+
+R_API RBIter r_rbtree_upper_bound_forward(RBNode *root, void *data, RBComparator cmp) {
+	return bound_iter (root, data, cmp, true, false);
+}
+
+static RBIter _first(RBNode *x, int dir) {
+	RBIter it;
 	it.len = 0;
 	for (; x; x = x->child[dir]) {
 		it.path[it.len++] = x;
@@ -303,31 +313,25 @@ static RBTreeIter first(RBTree *tree, int dir) {
 	return it;
 }
 
-R_API RBTreeIter r_rbtree_first(RBTree *tree) {
-	return first (tree, 0);
+R_API RBIter r_rbtree_first(RBNode *tree) {
+	return _first (tree, 0);
 }
 
-R_API RBTreeIter r_rbtree_last(RBTree *tree) {
-	return first (tree, 1);
+R_API RBIter r_rbtree_last(RBNode *tree) {
+	return _first (tree, 1);
 }
 
-static inline void *next(RBTreeIter *it, int dir) {
+static inline void _next(RBIter *it, int dir) {
 	RBNode *x = it->path[--it->len];
-	void *data = x->data;
 	for (x = x->child[!dir]; x; x = x->child[dir]) {
 		it->path[it->len++] = x;
 	}
-	return data;
 }
 
-R_API bool r_rbtree_iter_has(RBTreeIter *it) {
-	return it->len;
+R_API void r_rbtree_iter_next(RBIter *it) {
+	_next (it, 0);
 }
 
-R_API void *r_rbtree_iter_next(RBTreeIter *it) {
-	return next (it, 0);
-}
-
-R_API void *r_rbtree_iter_prev(RBTreeIter *it) {
-	return next (it, 1);
+R_API void r_rbtree_iter_prev(RBIter *it) {
+	_next (it, 1);
 }
