@@ -365,7 +365,9 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	zip_uri = strdup (file);
-	if (!zip_uri) return NULL;
+	if (!zip_uri) {
+		return NULL;
+	}
 	pikaboo = strstr (zip_uri, "://");
 	if (pikaboo) {
 		tmp = strstr (pikaboo + 3, "//");
@@ -406,6 +408,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			} else {
 				zip_filename = strdup (pikaboo + 1);
 			}
+		} else {
+			zip_filename = strdup (pikaboo + 1);
 		}
 	}
 	tmp = zip_filename;
@@ -433,7 +437,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				ZIP_CREATE, mode, rw);
 		} else {
 			filename_in_zipfile = r_str_newf ("%s", zip_filename);
-			free (zip_filename);
+			R_FREE (tmp);
 			zip_filename = strdup (pikaboo + 3);
 			if (!strcmp (zip_filename, filename_in_zipfile)) {
 				//R_FREE (zip_filename);
