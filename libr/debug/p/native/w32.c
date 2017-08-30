@@ -254,6 +254,9 @@ static int w32_dbg_init() {
 	w32_DebugBreakProcess = (BOOL (WINAPI *)(HANDLE))
 		GetProcAddress (GetModuleHandleA ("kernel32"),
 				"DebugBreakProcess");
+	w32_CreateToolhelp32Snapshot = (HANDLE (WINAPI *)(DWORD, DWORD))
+		GetProcAddress (GetModuleHandleA ("kernel32"),
+			       "CreateToolhelp32Snapshot");
 	// only windows vista :(
 	w32_getthreadid = (DWORD (WINAPI *)(HANDLE))
 		GetProcAddress (GetModuleHandleA ("kernel32"), "GetThreadId");
@@ -296,8 +299,6 @@ static int w32_dbg_init() {
 		GetProcAddress(lib,"NtQueryObject");
 	w32_ntqueryinformationthread = (NTSTATUS  (WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress (lib, "NtQueryInformationThread");
-	w32_CreateToolhelp32Snapshot = (HANDLE (WINAPI *)(DWORD, DWORD))
-		GetProcAddress (lib, "CreateToolhelp32Snapshot");
 	if (!w32_DebugActiveProcessStop || !w32_openthread || !w32_DebugBreakProcess ||
 	    !w32_GetModuleBaseName || !w32_GetModuleInformation) {
 		// OOPS!
