@@ -626,14 +626,14 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			ls_foreach (core->io->sections, iter, s) {
 				if (!*from) {
 					*from = s->vaddr;
-					*to = s->vaddr + s->vsize;
+					*to = s->vaddr + s->vsize -1 ;
 					continue;
 				}
 				if (((s->vaddr) < *from) && s->vaddr) {
 					*from = s->vaddr;
 				}
 				if ((s->vaddr + s->vsize) > *to) {
-					*to = s->vaddr + s->vsize;
+					*to = s->vaddr + s->vsize - 1;
 				}
 			}
 		//}
@@ -653,11 +653,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			ls_foreach (core->io->sections, iter, s) {
 				if (*from >= s->paddr && *from < (s->paddr + s->size)) {
 					*from = s->vaddr;
-					*to = s->vaddr + s->vsize;
+					*to = s->vaddr + s->vsize - 1;
 					break;
 				}
 				if (*from >= s->vaddr && *from < (s->vaddr + s->vsize)) {
-					*to = s->vaddr + s->vsize;
+					*to = s->vaddr + s->vsize - 1;
 					break;
 				}
 			}
@@ -726,7 +726,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 					map->fd = s->fd;
 					map->from = s->vaddr;
-					map->to = s->vaddr + s->vsize;
+					map->to = s->vaddr + s->vsize - 1;
 					if (map->from && map->to) {
 						if (map->from < *from) {
 							*from = map->from;
