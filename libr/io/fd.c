@@ -92,6 +92,14 @@ R_API int r_io_fd_get_tid(RIO *io, int fd) {
 	return r_io_desc_get_tid (desc);
 }
 
+R_API int r_io_fd_get_base (RIO *io, int fd) {
+	RIODesc *desc;
+	if (!io || !io->files) {
+		return -2;
+	}
+	desc = r_io_desc_get (io, fd);
+	return r_io_desc_get_base (desc);
+}
 R_API const char *r_io_fd_get_name(RIO *io, int fd) {
 	RIODesc *desc;
 	if (!io || !io->files || !(desc = r_io_desc_get (io, fd))) {
