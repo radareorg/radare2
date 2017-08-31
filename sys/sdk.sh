@@ -10,7 +10,7 @@ if [ -n "$1" ]; then
 fi
 
 # Builds an SDK to build stuff for rbin
-export CFLAGS="-Os"
+export CFLAGS="-Os -fPIC"
 make mrproper
 cp -f plugins.bin.cfg plugins.cfg
 #./configure-plugins
