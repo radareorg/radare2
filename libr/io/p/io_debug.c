@@ -69,7 +69,15 @@ typedef struct {
 	ut64 winbase;
 } RIOW32;
 
+typedef struct {
+	int pid;
+	int tid;
+	ut64 winbase;
+	PROCESS_INFORMATION pi;
+} RIOW32Dbg;
+
 static ut64 winbase;	//HACK
+static int wintid;
 
 static int setup_tokens() {
 	HANDLE tok = NULL;
@@ -178,6 +186,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
 	winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
+	wintid = tid;
 	return pid;
 
 err_fork:
@@ -554,8 +563,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
-				RIOW32 *w32 = (RIOW32 *)ret->data;
+				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
 				w32->winbase = winbase;
+				w32->tid = wintid;
 			}
 
 #elif __APPLE__
