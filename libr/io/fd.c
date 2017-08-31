@@ -40,6 +40,10 @@ R_API ut64 r_io_fd_size(RIO *io, int fd) {
 	return r_io_desc_size (r_io_desc_get (io, fd));
 }
 
+R_API bool r_io_fd_resize(RIO *io, int fd, ut64 newsize) {
+	return r_io_desc_resize (r_io_desc_get (io, fd), newsize);
+}
+
 R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {
 	return r_io_desc_is_blockdevice (r_io_desc_get (io, fd));
 }

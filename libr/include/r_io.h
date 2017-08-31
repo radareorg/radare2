@@ -379,6 +379,7 @@ R_API bool r_io_desc_add (RIO *io, RIODesc *desc);
 R_API bool r_io_desc_del (RIO *io, int fd);
 R_API RIODesc *r_io_desc_get (RIO *io, int fd);
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
+R_API bool r_io_desc_resize (RIODesc *desc, ut64 newsize);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_is_blockdevice (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);	//this should get 2 descs
@@ -448,6 +449,7 @@ R_API int r_io_fd_read (RIO *io, int fd, ut8 *buf, int len);
 R_API int r_io_fd_write (RIO *io, int fd, const ut8 *buf, int len);
 R_API ut64 r_io_fd_seek (RIO *io, int fd, ut64 addr, int whence);
 R_API ut64 r_io_fd_size (RIO *io, int fd);
+R_API bool r_io_fd_resize (RIO *io, int fd, ut64 newsize);
 R_API bool r_io_fd_is_blockdevice (RIO *io, int fd);
 R_API int r_io_fd_read_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);

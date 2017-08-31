@@ -198,6 +198,17 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 	return ret;
 }
 
+R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
+	if (desc && desc->plugin && desc->plugin->resize) {
+		bool ret = desc->plugin->resize (desc->io, desc, newsize);
+		if (desc->io && desc->io->p_cache) {
+			r_io_desc_cache_cleanup (desc);
+		}
+		return ret;
+	}
+	return false;
+}
+
 R_API bool r_io_desc_is_blockdevice (RIODesc *desc) {
 	if (!desc || !desc->plugin || !desc->plugin->is_blockdevice) {
 		return false;

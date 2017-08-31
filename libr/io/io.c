@@ -484,12 +484,8 @@ R_API int r_io_system(RIO* io, const char* cmd) {
 }
 
 R_API bool r_io_resize(RIO* io, ut64 newsize) {
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->resize) {
-		bool ret = io->desc->plugin->resize (io, io->desc, newsize);
-		if (io->p_cache) {
-			r_io_desc_cache_cleanup (io->desc);
-		}
-		return ret;
+	if (io) {
+		return r_io_desc_resize (io->desc, newsize);
 	}
 	return false;
 }
