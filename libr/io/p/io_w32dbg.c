@@ -143,6 +143,11 @@ static int __gettid (RIODesc *fd) {
 	return iow? iow->tid: -1;
 }
 
+static int __getbase (RIODesc *fd) {
+	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
+	return iow ? iow->winbase: -1;
+}
+
 RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
 	.desc = "w32dbg io",
@@ -156,6 +161,7 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.write = __write,
 	.getpid = __getpid,
 	.gettid = __gettid,
+	.getbase = __getbase,
 	.isdbg = true
 };
 #else

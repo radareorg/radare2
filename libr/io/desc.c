@@ -287,6 +287,23 @@ R_API int r_io_desc_get_tid(RIODesc *desc) {
 	return desc->plugin->gettid (desc);
 }
 
+R_API ut64 r_io_desc_get_base (RIODesc *desc) {
+	//-1 and -2 are reserved
+	if (!desc) {
+		return -3;
+	}
+	if (!desc->plugin) {
+		return -4;
+	}
+	if (!desc->plugin->isdbg) {
+		return -5;
+	}
+	if (!desc->plugin->getbase) {
+		return -6;
+	}
+	return desc->plugin->getbase (desc);
+}
+
 R_API int r_io_desc_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
 	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_desc_read (desc, buf, len);

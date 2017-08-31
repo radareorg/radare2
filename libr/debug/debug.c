@@ -1523,14 +1523,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		return 0LL;
 	}
 #if __WINDOWS__
-	typedef struct {
-		int pid;
-		int tid;
-		ut64 winbase;
-		PROCESS_INFORMATION pi;
-	} RIOW32Dbg;
-	return ((RIOW32Dbg*)dbg->iob.io->desc->data)->winbase;
-	//return r_num_get (NULL, winbase_str);
+	return r_io_desc_get_base (dbg->iob.io->desc);
 #else
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
