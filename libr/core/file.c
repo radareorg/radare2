@@ -333,12 +333,8 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		return false;
 	}
 	if (cf) {
-#if __WINDOWS__
-		r_debug_select (r->dbg, r->dbg->pid, r->dbg->tid);
-#else
 		r_debug_select (r->dbg, r_io_fd_get_pid (r->io, cf->fd),
 				r_io_fd_get_tid (r->io, cf->fd));
-#endif
 	}
 #if !__linux__
 #if !__WINDOWS__

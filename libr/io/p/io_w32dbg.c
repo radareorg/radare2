@@ -15,6 +15,7 @@
 typedef struct {
 	int pid;
 	int tid;
+	ut64 winbase;
 	PROCESS_INFORMATION pi;
 } RIOW32Dbg;
 #define RIOW32DBG_PID(x) (((RIOW32Dbg*)x->data)->pid)
@@ -83,11 +84,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	return (!whence)
-		? offset
-		: (whence == 1)
-			? io->off + offset
-			: UT64_MAX;
+	switch (whence) {
+	case 0: // abs
+		io->off = offset;
+		break;
+	case 1: // cur
+		io->off += (int)offset;
+		break;
+	case 2: // end
+		io->off = UT64_MAX;
+		break;
+	}
+	return io->off;
 }
 
 static int __close(RIODesc *fd) {
