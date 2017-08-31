@@ -14,7 +14,7 @@ export CFLAGS="-Os"
 make mrproper
 cp -f plugins.bin.cfg plugins.cfg
 #./configure-plugins
-./configure --prefix="$PREFIX" --with-nonpic --without-pic || exit 1
+./configure --prefix="$PREFIX" --with-nonpic --without-pic --without-gpl || exit 1
 #--disable-loadlibs || exit 1
 make -j8 || exit 1
 rm -rf "${SDKDIR}"
@@ -23,3 +23,13 @@ rm -f libr/libr.a
 cp -rf libr/include "${SDKDIR}"
 FILES=`find libr shlr -iname '*.a'`
 cp -f ${FILES} "${SDKDIR}"/lib
+OS=`uname`
+AR=`uname -m`
+SF=r2sdk-${OS}-${AR}
+
+(
+cd ${SDKDIR}/..
+mv r2-sdk ${SF}
+zip -r ${SF}.zip ${SF}
+)
+mv ${SDKDIR}/../${SF}.zip .
