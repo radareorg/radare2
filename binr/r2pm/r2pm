@@ -261,8 +261,8 @@ R2PM_Info() {
 		printf "# $(ls |wc -l) Packages" >&2
 	fi
 	cd "${R2PM_USRDIR}/pkg"
-	echo "# Installed:"
-	printf "# %s Packages\n#  " "$(ls | wc -l)" >&2
+	echo "\n# Installed:"
+	printf "# %s Packages\n# " "$(ls | wc -l)" >&2
 	du -hs "${HOME}/.config/radare2" >&2
 }
 
