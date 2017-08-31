@@ -4417,9 +4417,6 @@ static int cmd_print(void *data, const char *input) {
 					R_PRINT_STRING_WIDE32 | R_PRINT_STRING_ZEROEND);
 			}
 			break;
-		case ' ': // "ps"
-			r_print_string (core->print, core->offset, core->block, l, 0);
-			break;
 		case 'u': // "psu"
 			if (l > 0) {
 				char *str = r_str_utf16_encode (
@@ -4443,7 +4440,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_block_size (core, bs);
 			}
 			break;
-		default:
+		default: // "ps"
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block,
 					len, R_PRINT_STRING_ZEROEND);
