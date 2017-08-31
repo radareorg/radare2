@@ -37,6 +37,16 @@
 
 #define VERBOSE_DELAY if (0)
 
+#define FCN_CONTAINER(x) container_of (x, RAnalFunction, rb)
+#define fcn_tree_foreach_intersect(root, it, data, from, to) \
+	for (it = _fcn_tree_iter_first (root, from, to); it.cur && (data = FCN_CONTAINER (it.cur), 1); _fcn_tree_iter_next (&(it), from, to))
+
+typedef struct fcn_tree_iter_t {
+	int len;
+	RBNode *cur;
+	RBNode *path[R_RBTREE_MAX_HEIGHT];
+} FcnTreeIter;
+
 #if USE_SDB_CACHE
 static Sdb *HB = NULL;
 #endif
@@ -59,6 +69,39 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr - b->addr);
 }
 
+static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
+	const RAnalFunction *a = (const RAnalFunction *)a_,
+			*b = container_of (b_, const RAnalFunction, rb);
+	ut64 from0 = a->addr, to0 = a->addr + a->_size,
+			from1 = b->addr, to1 = b->addr + b->_size;
+	if (from0 != from1) {
+		return from0 < from1 ? -1 : 1;
+	}
+	if (to0 != to1) {
+		return to0 - 1 < to1 - 1 ? -1 : 1;
+	}
+	return 0;
+}
+
+static void _fcn_tree_calc_max_addr(RBNode *node) {
+	RAnalFunction *fcn = FCN_CONTAINER (node), *fcn1;
+	int i;
+	fcn->rb_max_addr = fcn->addr + fcn->_size - 1;
+	for (i = 0; i < 2; i++) {
+		if (node->child[i]) {
+			fcn1 = container_of (node->child[i], RAnalFunction, rb);
+			if (fcn1->rb_max_addr > fcn->rb_max_addr) {
+				fcn->rb_max_addr = fcn1->rb_max_addr;
+			}
+		}
+	}
+}
+
+static void _fcn_tree_free(RBNode *node) {
+	// TODO after ownership transfered from fcns to fcn_tree
+	// r_anal_fcn_free (FCN_CONTAINER (node));
+}
+
 static void update_tinyrange_bbs(RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
@@ -66,6 +109,90 @@ static void update_tinyrange_bbs(RAnalFunction *fcn) {
 	r_tinyrange_fini (&fcn->bbr);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		r_tinyrange_add (&fcn->bbr, bb->addr, bb->addr + bb->size);
+	}
+}
+
+static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) {
+	RAnalFunction *x = FCN_CONTAINER (x_), *y;
+	RBNode *y_;
+	for (;;) {
+		if ((y_ = x_->child[0]) && (y = FCN_CONTAINER (y_), from <= y->rb_max_addr)) {
+			it->path[it->len++] = x_;
+			x_ = y_;
+			x = y;
+			continue;
+		}
+		if (x->addr <= to - 1) {
+			if (from <= x->addr + x->_size - 1) {
+				return x_;
+			}
+			if ((y_ = x_->child[1])) {
+				x_ = y_;
+				x = FCN_CONTAINER (y_);
+				if (from <= x->rb_max_addr) {
+					continue;
+				}
+			}
+		}
+		return NULL;
+	}
+}
+
+R_API bool r_anal_fcn_tree_delete(RBNode **root, RAnalFunction *data) {
+	return r_rbtree_aug_delete (root, data, _fcn_tree_cmp_addr, _fcn_tree_free, _fcn_tree_calc_max_addr);
+}
+
+R_API void r_anal_fcn_tree_insert(RBNode **root, RAnalFunction *fcn) {
+	r_rbtree_aug_insert (root, fcn, &fcn->rb, _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+}
+
+static RAnalFunction *_fcn_tree_find_addr(RBNode *x_, ut64 from) {
+	while (x_) {
+		RAnalFunction *x = FCN_CONTAINER (x_);
+		if (from < x->addr) {
+			x_ = x_->child[0];
+		} else if (from > x->addr) {
+			x_ = x_->child[1];
+		} else {
+			return x;
+		}
+	}
+	return NULL;
+}
+
+static FcnTreeIter _fcn_tree_iter_first(RBNode *x_, ut64 from, ut64 to) {
+	FcnTreeIter it;
+	it.len = 0;
+	if (x_ && from <= FCN_CONTAINER (x_)->rb_max_addr) {
+		it.cur = _fcn_tree_probe (&it, x_, from, to);
+	} else {
+		it.cur = NULL;
+	}
+	return it;
+}
+
+static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
+	RBNode *x_ = it->cur, *y_;
+	RAnalFunction *x = FCN_CONTAINER (x_), *y;
+	for (;;) {
+		if ((y_ = x_->child[1]) && (y = FCN_CONTAINER (y_), from <= y->rb_max_addr)) {
+			it->cur = _fcn_tree_probe (it, y_, from, to);
+			break;
+		}
+		if (!it->len) {
+			it->cur = NULL;
+			break;
+		}
+		x_ = it->path[--it->len];
+		x = FCN_CONTAINER (x_);
+		if (to - 1 < x->addr) {
+			it->cur = NULL;
+			break;
+		}
+		if (from <= x->addr + x->_size - 1) {
+			it->cur = x_;
+			break;
+		}
 	}
 }
 
@@ -1304,6 +1431,7 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 #endif
 	/* TODO: sdbization */
 	r_list_append (anal->fcns, fcn);
+	r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
@@ -1366,6 +1494,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			continue;
 		}
 		if (fcn->addr >= f->addr && fcn->addr < (f->addr + r_anal_fcn_size (f))) {
+			r_anal_fcn_tree_delete (&anal->fcn_tree, fcn);
 			r_list_delete (anal->fcns, iter);
 		}
 	}
@@ -1380,6 +1509,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 		a->fcnstore = r_listrange_new ();
 #else
 		r_list_free (a->fcns);
+		a->fcn_tree = NULL;
 		if (!(a->fcns = r_anal_fcn_list_new ())) {
 			return false;
 		}
@@ -1399,6 +1529,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 				if (a->cb.on_fcn_delete) {
 					a->cb.on_fcn_delete (a, a->user, fcni);
 				}
+				r_anal_fcn_tree_delete (&a->fcn_tree, fcni);
 				r_list_delete (a->fcns, iter);
 			}
 		}
@@ -1413,9 +1544,11 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	// if (root) return r_listrange_find_root (anal->fcnstore, addr);
 	return r_listrange_find_in_range (anal->fcnstore, addr);
 #else
-	RAnalFunction *fcn, *ret = NULL;
-	RListIter *iter;
-	if (type == R_ANAL_FCN_TYPE_ROOT) {
+	FcnTreeIter it;
+	RAnalFunction *fcn;
+# if 0
+		RListIter *iter;
+		if (type == R_ANAL_FCN_TYPE_ROOT) {
 		r_list_foreach (anal->fcns, iter, fcn) {
 			if (addr == fcn->addr) {
 				return fcn;
@@ -1426,12 +1559,20 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
 			if (fcn->addr == addr || (!ret && r_anal_fcn_is_in_offset (fcn, addr))) {
-				ret = fcn;
-				break;
+				return fcn;
 			}
 		}
 	}
-	return ret;
+# endif
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		return _fcn_tree_find_addr (anal->fcn_tree, addr);
+	}
+	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
+		if ((!type || (fcn && fcn->type & type)) && r_anal_fcn_is_in_offset (fcn, addr)) {
+			return fcn;
+		}
+	}
+	return NULL;
 #endif
 }
 
