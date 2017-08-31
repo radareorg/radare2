@@ -237,9 +237,11 @@ static int cb_analnoncode(void *user, void *data) {
 static void update_analarch_options(RCore *core, RConfigNode *node) {
 	RAnalPlugin *h;
 	RListIter *it;
-	r_list_purge (node->options);
-	r_list_foreach (core->anal->plugins, it, h) {
-		SETOPTIONS (node, h->name, NULL);
+	if (core && core->anal && node) {
+		r_list_purge (node->options);
+		r_list_foreach (core->anal->plugins, it, h) {
+			SETOPTIONS (node, h->name, NULL);
+		}
 	}
 }
 
@@ -362,9 +364,11 @@ static int cb_asmcpu(void *user, void *data) {
 static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	r_list_purge (node->options);
-	r_list_foreach (core->assembler->plugins, iter, h) {
-		SETOPTIONS (node, h->name, NULL);
+	if (core && node && core->assembler) {
+		r_list_purge (node->options);
+		r_list_foreach (core->assembler->plugins, iter, h) {
+			SETOPTIONS (node, h->name, NULL);
+		}
 	}
 }
 
