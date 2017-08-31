@@ -4350,7 +4350,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			m->to = addr + len;
 			r_list_append (ranges, m);
 		} else {
-			ranges = r_core_get_boundaries (core, "io.sections", NULL, NULL);
+			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, "io.sections", NULL, NULL);
 		}
 		addr_end = addr + len;
 	}
