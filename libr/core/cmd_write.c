@@ -1161,26 +1161,31 @@ static int cmd_write(void *data, const char *input) {
 				if ((st64)sz < 1) {
 					// wtf?
 					sz = 0;
-				} else {
-					r_core_dump (core, filename, poff, (ut64)sz, append);
+				} else if (!r_core_dump (core, filename, poff, (ut64)sz, append)) {
+					sz = -1;
 				}
 			} else {
 				if (toend) {
 					sz = r_io_fd_size (core->io, core->file->fd);
-					if (sz <= core->offset) {
+					if (sz != -1 && core->offset <= sz) {
 						sz -= core->offset;
-						r_core_dump (core, filename, core->offset, (ut64)sz, append);
+						if (!r_core_dump (core, filename, core->offset, (ut64)sz, append)) {
+							sz = -1;
+						}
+					} else {
+						sz = -1;
 					}
 				} else {
-					if (!r_file_dump (filename, core->block, core->blocksize, append)) {
-						sz = 0;
-					} else {
-						sz = core->blocksize;
+					sz = core->blocksize;
+					if (!r_file_dump (filename, core->block, sz, append)) {
+						sz = -1;
 					}
 				}
 			}
-			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
-				sz, poff, filename);
+			if (sz >= 0) {
+				eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+						sz, poff, filename);
+			}
 		}
 		break;
 	case 'f':
