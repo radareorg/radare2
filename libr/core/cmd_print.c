@@ -272,7 +272,7 @@ static const char *help_msg_pi[] = {
 };
 
 static const char *help_msg_ps[] = {
-	"Usage:", "ps[zpw] [N]", "Print String",
+	"Usage:", "ps[zpw+] [N]", "Print String",
 	"ps", "", "print string",
 	"psb", "", "print strings in current block",
 	"psi", "", "print string inside curseek",
@@ -283,7 +283,8 @@ static const char *help_msg_ps[] = {
 	"psw", "", "print 16bit wide string",
 	"psW", "", "print 32bit wide string",
 	"psx", "", "show string with escaped chars",
-	"psz", "", "print zero terminated string",
+	"psz", "", "print zero-terminated string",
+	"ps+", "", "print libc++ std::string (same-endian, 32bit, ascii, zero-terminated)",
 	NULL
 };
 
@@ -4441,6 +4442,16 @@ static int cmd_print(void *data, const char *input) {
 				r_print_string (core->print, core->offset, core->block,
 						len, R_PRINT_STRING_WRAP);
 				r_core_block_size (core, bs);
+			}
+			break;
+		case '+': // "ps+"
+			if (l > 0) {
+				if (*core->block & 0x1) { // "long" string
+					r_core_cmdf (core, "ps @ 0x%" PFMT32x, *((ut32 *)core->block + 2));
+				} else {
+					r_print_string (core->print, core->offset, core->block + 1,
+					                len, R_PRINT_STRING_ZEROEND);
+				}
 			}
 			break;
 		default:
