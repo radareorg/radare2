@@ -4447,7 +4447,7 @@ static int cmd_print(void *data, const char *input) {
 		case '+': // "ps+"
 			if (l > 0) {
 				if (*core->block & 0x1) { // "long" string
-					r_core_cmdf (core, "ps @ 0x%08" PFMT32x, *((ut32 *)core->block + 2));
+					r_core_cmdf (core, "ps @ 0x%" PFMT32x, *((ut32 *)core->block + 2));
 				} else {
 					r_print_string (core->print, core->offset, core->block + 1,
 					                len, R_PRINT_STRING_ZEROEND);
