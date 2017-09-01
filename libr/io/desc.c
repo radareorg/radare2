@@ -317,6 +317,13 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 	return true;
 }
 
+R_API int r_io_desc_extend(RIODesc *desc, ut64 size) {
+	if (desc && desc->plugin && desc->plugin->extend) {
+		return desc->plugin->extend (desc->io, desc, size);
+	}
+	return 0;
+}
+
 //closes all descs and frees all descs and io->files
 R_API bool r_io_desc_fini(RIO* io) {
 	if (!io || !io->files) {

@@ -504,7 +504,7 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 		int ret;
 		ut64 cur_off = io->off;
 		r_io_seek (io, addr, R_IO_SEEK_SET);
-		ret = io->desc->plugin->extend (io, io->desc, size);
+		ret = r_io_desc_extend (io->desc, size);
 		//no need to seek here
 		io->off = cur_off;
 		return ret;
