@@ -754,7 +754,8 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 		// reset prj.name on fail
 		r_config_set (core->config, "prj.name", oldPrjName);
 	}
-	free(oldPrjName);
+	free (scriptPath);
+	free (oldPrjName);
 	return ret;
 }
 
