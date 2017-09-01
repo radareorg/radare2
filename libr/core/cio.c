@@ -60,7 +60,7 @@ R_API int r_core_seek_base (RCore *core, const char *hex) {
 	return r_core_seek (core, addr, 1);
 }
 
-R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
+R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
 	ut64 i;
 	ut8 *buf;
 	int bs = core->blocksize;
@@ -98,7 +98,6 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 			break;
 		}
 	}
-	eprintf ("dumped 0x%"PFMT64x" bytes\n", i);
 	r_cons_break_pop ();
 	fclose (fd);
 	free (buf);
