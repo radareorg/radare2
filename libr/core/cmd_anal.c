@@ -235,7 +235,7 @@ static const char *help_msg_afb[] = {
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
 	"afbr", "", "Show addresses of instructions which leave the function",
 	"afbj", "", "show basic blocks information in json",
-	"afbe", "bbfrom bbto", "add basic-block edge for switch-cases",
+	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
 };
@@ -1852,7 +1852,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
-	case 'f':
+	case 'f': // "aff"
 		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		break;
 	case '-': // "af-"
@@ -1867,7 +1867,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_anal_fcn_del (core->anal, addr);
 		}
 		break;
-	case 'u':
+	case 'u': // "afu"
 		{
 		ut64 addr = core->offset;
 		ut64 addr_end = r_num_math (core->num, input + 2);
@@ -1997,7 +1997,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_afl);
 			break;
-		case 'l':
+		case 'l': // "afll"
 			if (input[3] == '?') {
 				// TODO #7967 help refactor
 				help_msg_afll[1] = "afll";
@@ -2005,19 +2005,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
-		case 'j':
-		case 'q':
-		case 's':
-		case '*':
+		case 'j': // "aflj"
+		case 'q': // "aflq"
+		case 's': // "afls"
+		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
-		default:
+		default: // "afl "
 			r_core_anal_fcn_list (core, NULL, "o");
 			break;
 		}
 		break;
-	case 's':
-		{ // "afs"
+	case 's': // "afs"
+		{
 		ut64 addr;
 		RAnalFunction *f;
 		const char *arg = input + 3;
@@ -2075,7 +2075,26 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		switch (input[2]) {
-		case 'o':{
+		case '\0': // "afc"
+			r_cons_println (fcn->cc);
+			break;
+		case ' ': { // "afc "
+			char *cc = r_str_chop (strdup (input + 3));
+			if (!r_anal_cc_exist (core->anal, cc)) {
+				eprintf ("Unknown calling convention '%s'\n"
+						"See afcl for available types\n", cc);
+			} else {
+				fcn->cc = r_str_const (r_anal_cc_to_constant (core->anal, cc));
+			}
+			break;
+		}
+		case 'a': // "afca""
+			eprintf ("Todo\n");
+			break;
+		case 'l': // "afcl" list all function Calling conventions.
+			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
+			break;
+		case 'o': { // "afco"
 			char *dbpath = r_str_chop (strdup (input + 3));
 			if (r_file_exists (dbpath)) {
 				Sdb *db = sdb_new (0, dbpath, 0);
@@ -2084,17 +2103,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				sdb_free (db);
 			}
 			free (dbpath);
-			} break;
-		case'?':
-			r_core_cmd_help (core, help_msg_afc);
 			break;
-		case 'l': //afcl list all function Calling conventions.
-			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
-			break;
-		case 'a':
-			eprintf ("Todo\n");
-			break;
-		case 'r': {	// afcr
+		}
+		case 'r': {	// "afcr"
 			int i;
 			char *out, *cmd, *regname, *tmp;
 			char *subvec_str = r_str_new ("");
@@ -2158,20 +2169,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (subvec_str);
 			free (json_str);
 		} break;
-		case ' ': {
-			char *cc = r_str_chop (strdup (input + 3));
-			if (!r_anal_cc_exist (core->anal, cc)) {
-				eprintf ("Unknown calling convention '%s'\n"
-					"See afcl for available types\n", cc);
-			} else {
-				fcn->cc = r_str_const (r_anal_cc_to_constant (core->anal, cc));
-			}
-			}break;
-		case 0:
-			r_cons_println (fcn->cc);
-			break;
+		case '?': // "afc?"
 		default:
-			r_cons_println ("See afc?");
+			r_core_cmd_help (core, help_msg_afc);
 		}
 		}break;
 	case 'B': // "afB" // set function bits
@@ -2194,21 +2194,21 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'b': // "afb"
 		switch (input[2]) {
-		case '-':
+		case '-': // "afb-"
 			anal_fcn_del_bb (core, input + 3);
 			break;
-		case 'e':
+		case 'e': // "afbe"
 			anal_bb_edge (core, input + 3);
 			break;
 		case 0:
-		case ' ':
-		case 'q':
-		case 'r':
-		case '*':
+		case ' ': // "afb "
+		case 'q': // "afbq"
+		case 'r': // "afbr"
+		case '*': // "afb*"
 		case 'j': // "afbj"
 			anal_fcn_list_bb (core, input + 2, false);
 			break;
-		case '.':
+		case '.': // "afb."
 			anal_fcn_list_bb (core, input[2]? " $$": input + 2, true);
 			break;
 		case '+': // "afb+"
@@ -2222,10 +2222,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'n': // "afn"
 		switch (input[2]) {
-		case 's':
+		case 's': // "afns"
 			free (r_core_anal_fcn_autoname (core, core->offset, 1));
 			break;
-		case 'a':
+		case 'a': // "afna"
 			{
 			char *name = r_core_anal_fcn_autoname (core, core->offset, 0);
 			if (name) {
@@ -2234,7 +2234,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
-		case 0:
+		case 0: // "afn"
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 				if (fcn) {
@@ -2242,7 +2242,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 			}
 			break;
-		case ' ':
+		case ' ': // "afn "
 			{
 			ut64 off = core->offset;
 			char *p, *name = strdup (input + 3);
@@ -2266,7 +2266,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'S':
+	case 'S': // afS"
 		{
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 		if (fcn) {
@@ -2309,10 +2309,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 #endif
-	case 'x':
+	case 'x': // "afx"
 		switch (input[2]) {
-		case '\0':
-		case ' ':
+		case '\0': // "afx"
+		case ' ': // "afx "
 #if FCN_OLD
 			// TODO: sdbize!
 			// list xrefs from current address
@@ -2333,10 +2333,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("TODO\n");
 #endif
 			break;
-		case 'c': // add meta xref
-		case 'd':
-		case 's':
-		case 'C': {
+		case 'c': // "afxc" add code xref
+		case 'd': // "afxd"
+		case 's': // "afxs"
+		case 'C': { // "afxC"
 			char *p;
 			ut64 a, b;
 			RAnalFunction *fcn;
@@ -2357,7 +2357,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (mi);
 			}
 			break;
-		case '-':
+		case '-': // "afx-"
 			{
 			char *p;
 			ut64 a, b;
@@ -2378,7 +2378,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			break;
 		default:
-		case '?':
+		case '?': // "afx?"
 			r_core_cmd_help (core, help_msg_afx);
 			break;
 		}
@@ -2392,12 +2392,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case '?':
+	case '?': // "af?"
 		r_core_cmd_help (core, help_msg_af);
 		break;
 	case 'r': // "afr" // analyze function recursively
-	case ' ':
-	case 0:
+	case ' ': // "af "
+	case '\0': // "af"
 		{
 		char *uaddr = NULL, *name = NULL;
 		int depth = r_config_get_i (core->config, "anal.depth");
