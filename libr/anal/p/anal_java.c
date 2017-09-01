@@ -526,25 +526,24 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 
 	code_length = code_attr->info.code_attr.code_length;
 	code_addr = code_attr->info.code_attr.code_offset;
-	code_buf = malloc (code_length);
+	code_buf = calloc (1, code_length);
 
 	anal->iob.read_at (anal->iob.io, code_addr + loadaddr, code_buf, code_length);
 	result = analyze_from_code_buffer (anal, fcn, code_addr + loadaddr, code_buf, code_length);
 	free (code_buf);
 
 	{
-		char *cname = NULL;
 		char *name = strdup (method->name);
 		r_name_filter (name, 80);
 		free (fcn->name);
 		if (method->class_name) {
-			cname = strdup (method->class_name);
+			char *cname = strdup (method->class_name);
 			r_name_filter (cname, 50);
 			fcn->name = r_str_newf ("sym.%s.%s", cname, name);
+			free (cname);
 		} else {
 			fcn->name = r_str_newf ("sym.%s", name);
 		}
-		free (cname);
 		free (name);
 	}
 
@@ -585,10 +584,10 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 		end = start + buf_len;
 	}
 
-
 	buffer = malloc (buf_len);
-	if (!buffer) return R_ANAL_RET_ERROR;
-
+	if (!buffer) {
+		return R_ANAL_RET_ERROR;
+	}
 
 	anal->iob.read_at (anal->iob.io, addr, buffer, buf_len);
 
@@ -618,9 +617,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	RBinJavaObj *bin = NULL;// = get_java_bin_obj (anal);
 	RBinJavaField *method = NULL;
 	RListIter *methods_iter, *bin_obs_iter;
-
-	RList * bin_objs_list = get_java_bin_obj_list (anal),
-		  * methods_list = NULL;// = bin ? r_bin_java_get_methods_list (bin) : NULL;
+	RList * bin_objs_list = get_java_bin_obj_list (anal);
 
 	ut8 analyze_all = 0;
 	//RAnalRef *ref = NULL;
@@ -636,29 +633,27 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	r_list_foreach (bin_objs_list, bin_obs_iter, bin) {
 		// loop over all bin object that are loaded
 		java_update_anal_types (anal, bin);
-		methods_list = (RList *) r_bin_java_get_methods_list (bin);
-		if (methods_list) {
-			ut64 loadaddr = bin->loadaddr;
-			// loop over all methods in the binary object and analyse
-			// the functions
-			r_list_foreach ( methods_list, methods_iter, method ) {
-				if ((method && analyze_all) ||
-				    (check_addr_less_start (method, end) ||
-				     check_addr_in_code (method, end))) {
-					RAnalFunction *fcn = r_anal_fcn_new ();
-					fcn->cc = r_str_const (r_anal_cc_default (anal));
-					java_set_function_prototype (anal, fcn, method);
-					result = analyze_from_code_attr (anal, fcn, method, loadaddr);
-					if (result == R_ANAL_RET_ERROR) {
-						//eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
-						return result;
-						// XXX - TO Stop or not to Stop ??
-					}
-					//r_listrange_add (anal->fcnstore, fcn);
-					r_list_append (anal->fcns, fcn);
+		RList *methods_list = (RList *) r_bin_java_get_methods_list (bin);
+		ut64 loadaddr = bin->loadaddr;
+		// loop over all methods in the binary object and analyse
+		// the functions
+		r_list_foreach (methods_list, methods_iter, method) {
+			if ((method && analyze_all) ||
+			    (check_addr_less_start (method, end) ||
+			     check_addr_in_code (method, end))) {
+				RAnalFunction *fcn = r_anal_fcn_new ();
+				fcn->cc = r_str_const (r_anal_cc_default (anal));
+				java_set_function_prototype (anal, fcn, method);
+				result = analyze_from_code_attr (anal, fcn, method, loadaddr);
+				if (result == R_ANAL_RET_ERROR) {
+					//eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
+					return result;
+					// XXX - TO Stop or not to Stop ??
 				}
-			} // End of methods loop
-		}// end of methods_list is valid conditional
+				//r_listrange_add (anal->fcnstore, fcn);
+				r_list_append (anal->fcns, fcn);
+			}
+		} // End of methods loop
 	}// end of bin_objs list loop
 	return result;
 }

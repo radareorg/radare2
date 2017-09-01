@@ -1438,10 +1438,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				}
 			}
 			return true;
-		} else {
-			// split function if overlaps
-			r_anal_fcn_resize (fcn, at - fcn->addr);
 		}
+		// split function if overlaps
+		r_anal_fcn_resize (fcn, at - fcn->addr);
 	}
 	return core_anal_fcn (core, at, from, reftype, depth);
 }
