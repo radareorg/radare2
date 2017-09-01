@@ -346,11 +346,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 			case 0:
 				// do nothing
 				break;
-			case 1:
-				r_num_to_bits (num, off);
-				strcat (num, "b");
-				break;
-			case 2: // hack for ascii
+			case 1: // hack for ascii
 				tmp_count = 0;
 				for (tmp = data; tmp < ptr; tmp++) {
 					if (*tmp == 0x1b) {
@@ -403,6 +399,10 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				}
 				*pnum++ = '\'';
 				*pnum = '\0';
+				break;
+			case 2:
+				r_num_to_bits (num, off);
+				strcat (num, "b");
 				break;
 			case 8:
 				snprintf (num, sizeof (num), "0%o", (int)off);
