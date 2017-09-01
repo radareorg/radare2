@@ -258,11 +258,11 @@ R2PM_Info() {
 	if [ -n "${R2PM_DBDIR}" -a -d "${R2PM_DBDIR}" ]; then
 		echo "# Repository Database:"
 		cd "${R2PM_DBDIR}"
-		printf "# $(ls |wc -l) Packages" >&2
+		printf "# $(ls |wc -l) Packages\n" >&2
 	fi
 	cd "${R2PM_USRDIR}/pkg"
 	echo "# Installed:"
-	printf "# %s Packages\n#  " "$(ls | wc -l)" >&2
+	printf "# %s Packages\n# " "$(ls | wc -l)" >&2
 	du -hs "${HOME}/.config/radare2" >&2
 }
 
