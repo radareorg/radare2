@@ -680,8 +680,8 @@ static bool search(RCore *core, bool rad) {
 	if (useBytes) {
 		list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode);
 		r_list_foreach (list, iter, map) {
-			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
-			retval &= searchRange (core, map->from, map->to, rad, &bytes_search_ctx);
+			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			retval &= searchRange (core, map->itv.addr, r_itv_end (map->itv), rad, &bytes_search_ctx);
 		}
 		r_list_free (list);
 	}

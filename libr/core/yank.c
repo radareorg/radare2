@@ -50,7 +50,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 		if (yankdesc && load_align) {
 			yank_file_sz = r_io_size (core->io);
 			map = r_io_map_add_next_available (core->io, yankdesc->fd, R_IO_READ, 0, 0, yank_file_sz, load_align);
-			loadaddr = map? map->from: -1;
+			loadaddr = map? map->itv.addr: -1;
 			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to
 				// address the file at its physical address!
