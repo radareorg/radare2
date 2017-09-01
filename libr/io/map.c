@@ -18,13 +18,14 @@ struct map_event_t {
 	bool is_to;
 };
 
-// Sort by address, (addr, !is_to) precedes (addr, is_to)
+// Sort by address, (addr, is_to) precedes (addr, !is_to)
 static int _cmp_map_event(const void *a_, const void *b_) {
 	struct map_event_t *a = (void *)a_, *b = (void *)b_;
-	if (a->addr != b->addr) {
-		return a->addr < b->addr ? -1 : 1;
+	ut64 addr0 = a->addr - a->is_to, addr1 = b->addr - b->is_to;
+	if (addr0 != addr1) {
+		return addr0 < addr1 ? -1 : 1;
 	}
-	return a->is_to - b->is_to; // TODO swap if half-closed
+	return a->is_to - b->is_to;
 }
 
 static int _cmp_map_event_by_id(const void *a_, const void *b_) {
@@ -39,7 +40,7 @@ static bool _map_skyline_push(RVector *map_skyline, ut64 from, ut64 to, RIOMap *
 	}
 	part->map = map;
 	part->from = from;
-	part->to = to - 1; // TODO half-closed
+	part->to = to;
 	return r_vector_push (map_skyline, part);
 }
 
@@ -64,7 +65,7 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 			goto out;
 		}
 		ev->map = map;
-		ev->addr = map->from;
+		ev->addr = map->itv.addr;
 		ev->is_to = false;
 		ev->id = i;
 		r_vector_push (&events, ev);
@@ -72,7 +73,7 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 			goto out;
 		}
 		ev->map = map;
-		ev->addr = map->to;
+		ev->addr = r_itv_end (map->itv);
 		ev->is_to = true;
 		ev->id = i;
 		r_vector_push (&events, ev);
@@ -93,7 +94,7 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 		while (!r_binheap_empty (&heap) && deleted[((struct map_event_t *)r_binheap_top (&heap))->id]) {
 			r_binheap_pop (&heap);
 		}
-		ut64 to = ev->addr + ev->is_to; // TODO half-closed
+		ut64 to = ev->addr;
 		map = r_binheap_empty (&heap) ? NULL : ((struct map_event_t *)r_binheap_top (&heap))->map;
 		if (!i) {
 			last = to;
@@ -134,14 +135,14 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 		return NULL;
 	}
 	map->fd = fd;
-	map->from = addr;
+	map->itv.addr = addr;
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
-		r_io_map_new (io, fd, flags, UT64_MAX - addr + 1 + delta, 0LL, size - (UT64_MAX - addr) - 1, do_skyline);
-		size = UT64_MAX - addr + 1;
+		r_io_map_new (io, fd, flags, delta - addr, 0LL, size + addr, do_skyline);
+		size = -addr;
 	}
 	// RIOMap describes an interval of addresses (map->from; map->to)
-	map->to = addr + size - 1;
+	map->itv.size = size;
 	map->flags = flags;
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
@@ -153,19 +154,15 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 	RIOMap *map;
-	ut64 size;
 	if (!(map = r_io_map_resolve (io, id))) {
 		return false;
 	}
-	size = map->to - map->from + 1;
-	map->from = addr;
-	if ((UT64_MAX - size + 1) < addr) {
-		r_io_map_new (io, map->fd, map->flags, UT64_MAX - addr + 1 + map->delta, 0LL, size - (UT64_MAX - addr) - 1, true);
-		size = UT64_MAX - addr + 1;
-		map->to = UT64_MAX;
+	map->itv.addr = addr;
+	if (UT64_MAX - map->itv.size + 1 < addr) {
+		r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, map->itv.size + addr, true);
+		map->itv.size = -map->itv.addr;
 		return true;
 	}
-	map->to = addr + size - 1;
 	r_io_map_calculate_skyline (io);
 	return true;
 }
@@ -226,14 +223,6 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
-		SdbListIter* iter;
-		RIOMap* map;
-		ls_foreach (io->maps, iter, map) {
-			if (map->fd == fd && map->from == addr &&
-			    map->to == addr + size - 1 && map->delta == delta) {
-				return NULL;
-			}
-		}
 		//a map cannot have higher permissions than the desc belonging to it
 		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
 				delta, addr, size, do_skyline);
@@ -248,8 +237,7 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 		return NULL;
 	}
 	ls_foreach_prev (io->maps, iter, map) {
-		ut64 size = map->to - map->from + 1;
-		if ((map->delta <= paddr) && (map->delta + size > paddr)) {
+		if (map->delta <= paddr && paddr <= map->delta + map->itv.size - 1) {
 			return map;
 		}
 	}
@@ -264,7 +252,7 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 		return NULL;
 	}
 	ls_foreach_prev (io->maps, iter, map) {
-		if ((map->from <= addr) && (map->to >= addr)) {
+		if (r_itv_contain (map->itv, addr)) {
 			return map;
 		}
 	}
@@ -421,38 +409,24 @@ R_API void r_io_map_del_name(RIOMap* map) {
 	}
 }
 
-R_API bool r_io_map_is_in_range(RIOMap* map, ut64 from, ut64 to) { //rename pls
-	if (!map || (to < from)) {
-		return false;
-	}
-	if (R_BETWEEN (map->from, from, map->to)) {
-		return true;
-	}
-	if (R_BETWEEN (map->from, to, map->to)) {
-		return true;
-	}
-	if (map->from > from && to > map->to) {
-		return true;
-	}
-	return false;
-}
-
 //TODO: Kill it with fire
 R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
 	RIOMap* map;
 	SdbListIter* iter;
 	ut64 next_addr = addr,
 	end_addr = next_addr + size;
+	end_addr = next_addr + size;
 	ls_foreach (io->maps, iter, map) {
-		next_addr = R_MAX (next_addr, map->to + (load_align - (map->to % load_align)) % load_align);
+		ut64 to = r_itv_end (map->itv);
+		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
 		// adding the check for the map's fd to see if this removes contention for
 		// memory mapping with multiple files.
 
-		if (map->fd == fd && ((map->from <= next_addr && next_addr < map->to) ||
-		(map->from <= end_addr && end_addr < map->to))) {
+		if (map->fd == fd && ((map->itv.addr <= next_addr && next_addr < to) ||
+						r_itv_contain (map->itv, end_addr))) {
 			//return r_io_map_add(io, fd, flags, delta, map->to, size);
-			next_addr = map->to + (load_align - (map->to % load_align)) % load_align;
+			next_addr = to + (load_align - (to % load_align)) % load_align;
 			return r_io_map_add_next_available (io, fd, flags, delta, next_addr, size, load_align);
 		}
 		break;

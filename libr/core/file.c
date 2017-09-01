@@ -909,7 +909,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 					char *absfile = r_file_abspath (desc->uri);
 					r_list_foreach (maps, iter, current_map) {
 						if (current_map) {
-							r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, (ut64) current_map->from);
+							r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, current_map->itv.addr);
 						}
 					}
 					r_list_free (maps);

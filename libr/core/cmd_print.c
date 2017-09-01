@@ -3419,8 +3419,8 @@ static int cmd_print(void *data, const char *input) {
 			RList *list = r_core_get_boundaries (core, "file");
 			RIOMap *map = r_list_first (list);
 			if (map) {
-				from = map->from;
-				to = map->to;
+				from = map->itv.addr;
+				to = r_itv_end (map->itv);
 			}
 			r_list_free (list);
 		}

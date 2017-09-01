@@ -229,7 +229,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 			}
 			cache->data = data;
 			cache->size = i;
-			cache->to = cache->from + i - 1;
+			cache->to = cache->from + i;
 			i = 0;
 			r_list_push (writes, cache);
 			cache = NULL;
@@ -237,7 +237,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	}
 	if (cache) {
 		cache->size = i;
-		cache->to = blockaddr + R_IO_DESC_CACHE_SIZE - 1;
+		cache->to = blockaddr + R_IO_DESC_CACHE_SIZE;
 		r_list_push (writes, cache);
 	}
 	return true;
