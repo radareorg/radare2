@@ -17,6 +17,8 @@ branches:
 
 # Environment variables
 environment:
+  nodejs_version: "Stable"
+
   matrix:
     # TODO Add missing build platforms
     # MSVC CCCL 64
@@ -75,6 +77,20 @@ build_script:
   - cmd: if %builder% == msys2 ( set && set PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;"%PATH%" && echo "%PATH%" && sh.exe -c "export PATH=${PATH}:/mingw64/bin; ./configure --build=i686-unknown-windows-gnu ; mingw32-make -j1 ; mingw32-make windist WINBITS=%builder%" )
 
   - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
+
+test_script:
+  - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%;%PATH%
+  - echo %PATH%
+  - where radare2
+  - radare2 -v
+  - ps: Install-Product node $env:nodejs_version
+  - node --version
+  - git clone https://github.com/radare/radare2-regressions
+  - cd radare2-regressions/new
+  - npm install
+  - set NOOK=1
+  - node bin/r2r.js
+  - cd ../..
 
 after_test:
   - git clone https://github.com/radare/radare2-win-installer
