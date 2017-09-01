@@ -138,7 +138,7 @@ typedef struct r_io_plugin_t {
 	bool (*is_blockdevice)(RIODesc *desc);
 	int (*getpid)(RIODesc *desc);
 	int (*gettid)(RIODesc *desc);
-	ut64 (*getbase)(RIODesc *desc);
+	bool (*getbase)(RIODesc *desc, ut64 *base);
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
@@ -387,7 +387,7 @@ R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);	//this should get 2 de
 R_API bool r_io_desc_is_dbg (RIODesc *desc);
 R_API int r_io_desc_get_pid (RIODesc *desc);
 R_API int r_io_desc_get_tid (RIODesc *desc);
-R_API ut64 r_io_desc_get_base (RIODesc *desc);
+R_API bool r_io_desc_get_base (RIODesc *desc, ut64 *base);
 R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
 R_API int r_io_desc_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_desc_fini (RIO *io);
@@ -458,7 +458,7 @@ R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, const ut8 *buf, int len)
 R_API bool r_io_fd_is_dbg (RIO *io, int fd);
 R_API int r_io_fd_get_pid (RIO *io, int fd);
 R_API int r_io_fd_get_tid (RIO *io, int fd);
-R_API int r_io_fd_get_base (RIO *io, int fd);
+R_API bool r_io_fd_get_base (RIO *io, int fd, ut64 *base);
 R_API const char *r_io_fd_get_name (RIO *io, int fd);
 R_API int r_io_fd_get_current(RIO *io);
 R_API bool r_io_use_fd (RIO *io, int fd);

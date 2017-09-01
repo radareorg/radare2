@@ -1530,7 +1530,8 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		return 0LL;
 	}
 #if __WINDOWS__
-	return r_io_desc_get_base (dbg->iob.io->desc);
+	ut64 base;
+	return r_io_desc_get_base (dbg->iob.io->desc, &base), base;
 #else
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);

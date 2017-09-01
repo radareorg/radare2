@@ -143,9 +143,13 @@ static int __gettid (RIODesc *fd) {
 	return iow? iow->tid: -1;
 }
 
-static int __getbase (RIODesc *fd) {
+static bool __getbase (RIODesc *fd, ut64 *base) {
 	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
-	return iow ? iow->winbase: -1;
+	if (base && iow) {
+		*base = iow->winbase;
+		return true;
+	}
+	return false;
 }
 
 RIOPlugin r_io_plugin_w32dbg = {
