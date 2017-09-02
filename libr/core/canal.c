@@ -2673,10 +2673,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = core->blocksize;
-		if (!r_io_read_at (core->io, at, buf, core->blocksize) || 
-			(at + core->blocksize - OPSZ > to)) {
+		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			break;
 		}
+		(void)r_io_read_at (core->io, at, buf, core->blocksize);
 		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
@@ -2685,7 +2685,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
 			i += ret > 0 ? ret : 1;
 			if (ret <= 0 || at + i > to) {
-				continue;
+				break;
 			}
 			// Get reference type and target address
 			type = R_ANAL_REF_TYPE_NULL;
@@ -2736,22 +2736,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			if (type == R_ANAL_REF_TYPE_NULL) {
 				continue;
 			}
-			if (!r_io_is_valid_offset (core->io, xref_to, 0)) {	//review me
-				continue;
-			}
 			if (cfg_debug) {
 				if (!r_debug_map_get (core->dbg, xref_to)) {
 					continue;
 				}
 			} else if (core->io->va) {
-				SdbListIter *iter = NULL;
-				RIOSection *s;
-				ls_foreach (core->io->sections, iter, s) {
-					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
-						if (s->vaddr) break;
-					}
-				}
-				if (!iter) {
+				if (!r_io_is_valid_offset (core->io, xref_to, 0)) {
 					continue;
 				}
 			}
