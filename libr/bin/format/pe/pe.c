@@ -11,6 +11,7 @@
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
 #define bprintf if(bin->verbose) eprintf
+#define COFF_SYMBOL_SIZE 18
 
 struct SCV_NB10_HEADER;
 typedef struct {
@@ -605,7 +606,7 @@ typedef struct {
 
 static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_export_t* exports, int sz) {
 	ut64 sym_tbl_off, num = 0;
-	const int srsz = 18; // symbol record size
+	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
 	int bufsz, i, shsz;
@@ -3255,6 +3256,24 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 			char* new_name = r_str_newf ("sect_%d", j);
 			strncpy ((char*) sections[j].name, new_name, R_ARRAY_SIZE (sections[j].name) - 1);
 			free (new_name);
+		} else if (shdr[i].Name[0] == '/') {
+			//long name is something deprecated but still used
+			int idx = atoi ((const char *)shdr[i].Name + 1);
+			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
+			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
+			int off = num_symbols * COFF_SYMBOL_SIZE;
+			if (sym_tbl_off &&
+			    sym_tbl_off + off + idx < bin->size &&
+			    sym_tbl_off + off + idx > off) {
+				int sz = PE_IMAGE_SIZEOF_SHORT_NAME * 3;
+				char* buf[64] = {0};
+				if (r_buf_read_at (bin->b,
+						   sym_tbl_off + off + idx,
+						   (ut8*)buf, 64)) {
+					memcpy (sections[j].name, buf, sz);
+					sections[j].name[sz - 1] = '\0';
+				}
+			}
 		} else {
 			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
 			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME - 1] = '\0';
