@@ -244,6 +244,21 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	return NULL;
 }
 
+R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
+	RIOMap* map;
+	SdbListIter* iter;
+	if (!io) {
+		return NULL;
+	}
+	ls_foreach_prev (io->maps, iter, map) {
+		ut64 size = map->to - map->from + 1;
+		if ((map->delta <= paddr) && (map->delta + size > paddr)) {
+			return map;
+		}
+	}
+	return NULL;
+}
+
 // gets first map where addr fits in
 R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 	RIOMap* map;

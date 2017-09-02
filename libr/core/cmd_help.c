@@ -716,12 +716,12 @@ static int cmd_help(void *data, const char *input) {
 		if (core->io->va) {
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			RIOSection *sec = r_io_section_get (core->io, n);
-			if (sec) {
-				o = n + sec->vaddr - sec->paddr;
+			RIOMap *map = r_io_map_get_paddr (core->io, n);
+			if (map) {
+				o = n + map->from - map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
-				r_cons_printf ("no section at 0x%08"PFMT64x"\n", n);
+				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
@@ -732,12 +732,12 @@ static int cmd_help(void *data, const char *input) {
 			// physical address
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input + 2): core->offset;
-			RIOSection *sec = r_io_section_vget (core->io, n);
-			if (sec) {
-				o = n - sec->vaddr + sec->paddr;
+			RIOMap *map = r_io_map_get (core->io, n);
+			if (map) {
+				o = n - map->from + map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
-				r_cons_printf ("no section at 0x%08"PFMT64x"\n", n);
+				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
