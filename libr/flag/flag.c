@@ -395,6 +395,14 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	return evalFlag (f, oitem);
 }
 
+static bool isFunctionFlag(const char *n) {
+	return (!strncmp (n, "sym.func.", 9)
+	|| !strncmp (n, "method.", 7)
+	|| !strncmp (n, "sym.", 7)
+	|| !strncmp (n, "func.", 5)
+	|| !strncmp (n, "fcn.0", 5));
+}
+
 /* returns the last flag item defined before or at the given offset.
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
@@ -410,8 +418,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 				continue;
 			}
 			if (nice) {
-				char *n = nice->name;
-				if (!strncmp (n, "sym.func.", 9) || !strncmp (n, "func.", 5) || !strncmp (n, "fcn.0", 5)) {
+				if (isFunctionFlag (nice->name)) {
 					nice = item;
 				}
 			} else {

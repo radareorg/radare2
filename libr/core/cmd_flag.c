@@ -802,7 +802,6 @@ rep:
 					addr = r_num_math (core->num, input + 3);
 				}
 				break;
-				break;
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
