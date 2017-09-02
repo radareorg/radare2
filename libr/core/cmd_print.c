@@ -690,14 +690,11 @@ static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	int max = 0;
 	int dict = 0;
 	int range = 0;
-	bool histogram[0xff + 1];
-	for (i = 0; i < 0xff; i++) {
-		histogram[i] = false;
-	}
+	bool histogram[256] = {0};
 	for (i = 0; i < bsz; i++) {
 		histogram[block[i]] = true;
 	}
-	for (i = 0; i < 0xff; i++) {
+	for (i = 0; i < 256; i++) {
 		if (histogram[i]) {
 			if (min == 0) {
 				min = i;
@@ -2592,7 +2589,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case 'd': // "p=d"
-		if (input[1]) {
+		ptr = NULL;
+		if (input[2]) {
 			ut64 bufsz = r_num_math (core->num, input + 3);
 			ut64 curbsz = core->blocksize;
 			if (bufsz < 1) {
