@@ -1650,6 +1650,7 @@ R_API bool r_core_init(RCore *core) {
 	core->incomment = false;
 	core->config = NULL;
 	core->http_up = false;
+	ZERO_FILL (core->root_cmd_descriptor);
 	core->print = r_print_new ();
 	core->print->user = core;
 	core->print->num = core->num;
