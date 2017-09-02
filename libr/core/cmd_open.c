@@ -14,7 +14,7 @@ static const char *help_msg_o[] = {
 	"o*","","list opened files in r2 commands",
 	"o=","","list opened files (ascii-art bars)",
 	"oa","[?] [addr]","Open bin info from the given address",
-	"ob","[?] [lbdos] [...]","list open binary files backed by fd",
+	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"oi","[-|idx]","alias for o, but using index instead of fd",
 	"oj","[?]	","list opened files in JSON format",
@@ -844,30 +844,30 @@ static int cmd_open(void *data, const char *input) {
 		r_id_storage_foreach (core->io->files, init_desc_list_visual_cb, core->print);
 		r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
 		break;
-	case 'q':
+	case 'q': // "oq"
 		r_id_storage_foreach (core->io->files, desc_list_quiet_cb, core->print);
 		break;
-	case '\0':
+	case '\0': // "o"
 		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
 		break;
-	case '*':
+	case '*': // "o*"
 		if ('?' == input[1]) {
 			r_core_cmd_help (core, help_msg_o_star);
 			break;
 		}
 		r_core_file_list (core, (int)(*input));
 		break;
-	case 'j':
+	case 'j': // "oj"
 		if ('?' == input[1]) {
 			r_core_cmd_help (core, help_msg_oj);
 			break;
 		}
 		r_core_file_list (core, (int)(*input));
 		break;
-	case 'L':
+	case 'L': // "oL"
 		r_io_plugin_list (core->io);
 		break;
-	case 'p':
+	case 'p': // "op"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -912,17 +912,17 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'j':
-		case '*':
-		case 0:
+		case 'j': // "oij"
+		case '*': // "oi*"
+		case 0: // "oi"
 			r_core_file_list (core, input[1]);
 			break;
 		}
 		break;
-	case '+':
-		perms = R_IO_READ|R_IO_WRITE;
+	case '+': // "o+"
+		perms = R_IO_READ | R_IO_WRITE;
 		/* fall through */
-	case 'f':
+	case 'f': // "of"
 		/* open file with spaces or special chars */
 		if (input[1] == ' ') {
 			const char *fn = input + 2;
@@ -943,8 +943,11 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_list (core, 'n');
 			break;
 		}
+		if (input[1] != ' ') {
+			break;
+		}
 		/* fall through */
-	case ' ':
+	case ' ': // "o "
 		{
 			ut64 ba = baddr;
 			ut64 ma = 0L;
@@ -1003,10 +1006,10 @@ static int cmd_open(void *data, const char *input) {
 			free (fn);
 		}
 		break;
-	case 'b':
+	case 'b': // "ob"
 		cmd_open_bin (core, input);
 		break;
-	case '-': // o-
+	case '-': // "o-"
 		switch (input[1]) {
 		case '*': // "o-*"
 			r_core_file_close_fd (core, -1);
@@ -1043,10 +1046,10 @@ static int cmd_open(void *data, const char *input) {
 		// uninit deref
 		//r_core_block_read (core);
 		break;
-	case 'm':
+	case 'm': // "om"
 		cmd_open_map (core, input);
 		break;
-	case 'o':
+	case 'o': // "oo"
 		switch (input[1]) {
 		case 'm': // "oom"
 			r_core_file_reopen_in_malloc (core);
@@ -1065,7 +1068,7 @@ static int cmd_open(void *data, const char *input) {
 				r_core_file_reopen (core, input + 2, 0, 2);
 			}
 			break;
-		case 'n':
+		case 'n': // "oon"
 			if ('n' == input[2]) {
 				RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
 				if ('?' == input[3]) {
@@ -1086,7 +1089,7 @@ static int cmd_open(void *data, const char *input) {
 			perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
 			r_core_file_reopen (core, input + 3, perms, 0);
 			break;
-		case '+':
+		case '+': // "oo+"
 			if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_oo_plus);
 			} else if (core && core->io && core->io->desc) {
@@ -1117,7 +1120,7 @@ static int cmd_open(void *data, const char *input) {
 			 break;
 		}
 		break;
-	case 'c':
+	case 'c': // "oc"
 		if (input[1] && input[2]) {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");
@@ -1135,7 +1138,7 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Missing argument\n");
 		}
 		break;
-	case 'x':
+	case 'x': // "ox"
 		{
 			int fd, fdx;
 			fd = fdx = -1;
@@ -1145,7 +1148,6 @@ static int cmd_open(void *data, const char *input) {
 				if ((ptr = strchr (input, ' '))) {
 					fd = r_num_math (core->num, ptr + 1);
 				}
-					
 			}
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
 				break;
@@ -1154,7 +1156,7 @@ static int cmd_open(void *data, const char *input) {
 			r_core_block_read (core);
 		}
 		break;
-	case '?':
+	case '?': // "o?"
 	default:
 		r_core_cmd_help (core, help_msg_o);
 		break;
