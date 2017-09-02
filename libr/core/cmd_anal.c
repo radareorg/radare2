@@ -2931,8 +2931,8 @@ repeat:
 		}
 	}
 	// TODO #8264 bool vs int, bring back old hack
-	if (!r_io_read_at (core->io, addr, code, 4)) {
-		eprintf ("read errno\n");
+	if (!r_io_is_valid_offset (core->io, addr, 0)) {
+		goto out_return_one;
 	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe

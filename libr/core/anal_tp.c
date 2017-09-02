@@ -262,8 +262,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					r_reg_setv (core->dbg->reg, pc, addr);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 					r_anal_esil_set_pc (core->anal->esil, addr);
-					int myinc = R_MAX(1, stack_clean (core, addr, fcn));
-					addr += myinc;
+					addr += stack_clean (core, addr, fcn);
 					r_reg_setv (core->dbg->reg, pc, addr);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 					r_anal_esil_set_pc (core->anal->esil, addr);
@@ -272,15 +271,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				break;
 			default:
 				{
-					r_core_esil_step (core, UT64_MAX, NULL, NULL);
-					r_anal_op_free (op);
-					r_core_cmd0 (core, ".ar*");
-					ut64 newaddr = r_reg_getv (core->anal->reg, pc);
-					if (newaddr == addr) {
-						addr ++;
-					} else {
-						newaddr = addr;
-					}
+				   r_core_esil_step (core, UT64_MAX, NULL, NULL);
+				   r_anal_op_free (op);
+				   r_core_cmd0 (core, ".ar*");
+				   addr = r_reg_getv (core->anal->reg, pc);
 				}
 				break;
 			}

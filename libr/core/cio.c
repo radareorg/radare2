@@ -274,15 +274,11 @@ R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
-	ut64 newoff = r_io_seek (core->io, addr, R_IO_SEEK_SET);
-	if (newoff == UT64_MAX) {
-		return false;
-	}
-	core->offset = newoff;
+	core->offset = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	if (rb) {
 		r_core_block_read (core);
 	}
-	return (newoff != addr);
+	return core->offset == addr;
 }
 
 R_API int r_core_seek_delta(RCore *core, st64 addr) {

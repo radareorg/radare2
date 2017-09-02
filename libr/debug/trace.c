@@ -49,10 +49,11 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RAnalOp op = {0};
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
-	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
+	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
 		eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
+	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) < 1) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
