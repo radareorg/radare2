@@ -61,7 +61,6 @@ static const char *help_msg_question[] = {
 	"??", "", "show value of operation",
 	"??", " [cmd]", "run cmd if $? != 0",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?P", " paddr", "get virtual address for given physical one",
 	"?S", " addr", "return section name of given address",
 	"?T", "", "show loading times",
 	"?V", "", "show library version of r_core",
@@ -70,7 +69,7 @@ static const char *help_msg_question[] = {
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?d[.]", " opcode", "describe opcode for asm.arch",
-	"?e[ngc]", " string", "echo string, optionally without trailing newline (nonl, gotoxy, column)",
+	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?h", " [str]", "calculate hash for given string",
 	"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
@@ -82,6 +81,7 @@ static const char *help_msg_question[] = {
 	"?o", " num", "get octal value",
 	"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 	"?p", " vaddr", "get physical address for given virtual address",
+	"?P", " paddr", "get virtual address for given physical one",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
 	"?t", " cmd", "returns the time to run a command",
@@ -647,8 +647,19 @@ static int cmd_help(void *data, const char *input) {
 	case 'E': // clippy echo
 		r_core_clippy (r_str_chop_ro (input + 1));
 		break;
-	case 'e': // echo
+	case 'e': // "?e" echo
 		switch (input[1]) {
+		case 'b': {
+				  char *arg = strdup (r_str_chop_ro (input + 2));
+				  int n = r_str_split (arg, ' ');
+				  ut64 *portions = calloc (n, sizeof (ut64));
+				  for (i = 0; i < n; i++) {
+					  portions[i] = r_num_math (core->num, r_str_word_get0 (arg, i));
+				  }
+				  r_print_portionbar (core->print, portions, n);
+				  free (arg);
+			  }
+			break;
 		case 's': {
 			char *msg = strdup (input + 2);
 			msg = r_str_chop (msg);
