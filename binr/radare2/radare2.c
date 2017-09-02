@@ -1234,7 +1234,11 @@ int main(int argc, char **argv, char **envp) {
 
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
-		r_core_cmd0 (&r, "aeip");
+		if (!debug && r.bin && r.bin->cur && r.bin->cur->o && r.bin->cur->o->info) {
+			if (r.bin->cur->o->info->arch) {
+				r_core_cmd0 (&r, "aeip");
+			}
+		}
 		if (perms & R_IO_WRITE) {
 			r_core_cmd0 (&r, "omfg+w");
 		}
