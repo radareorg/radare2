@@ -142,10 +142,9 @@ static RList* sections(RBinFile *arch) {
 	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj;
 	ut64 ba = baddr (arch);
 	int i;
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;	
 	}
-	ret->free = free;
 	if (!(sections = PE_(r_bin_pe_get_sections) (bin))){
 		r_list_free (ret);
 		return NULL;
