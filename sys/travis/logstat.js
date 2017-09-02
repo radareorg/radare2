@@ -38,37 +38,22 @@ function parseLogs(log) {
     let issueFound = false;
     let last = '';
     for (let line of log.split('\n')) {
-      function pun() {
-        issueFound = false;
-        if (issue.length > 0) {
-          obj.issues.push('issue');
-        }
-        issue = '';
+      if (line.length === 0) {
+        continue;
       }
-/*
-      if (issueFound) {
-        pun();
-        issue += line;
-      }
-*/
       if (line.indexOf('FX]') !== -1) {
         obj.fx++;
       }
       if (line.indexOf('XX]') !== -1) {
         obj.xx++;
-  //      issueFound = true;
- //       issue += last + '\n';
+        console.log('   ' + line + last);
       } else if (line.indexOf('BR]') !== -1) {
         obj.br++;
-   //     issueFound = false;
-    //    pun();
       }
-     // issue += line + '\n';
-      // obj.txt += line + '\n';
       last = line;
     }
   }
-obj.issues = obj.issues.length;
+  obj.issues = obj.issues.length;
   return obj;
 }
 
@@ -82,7 +67,7 @@ async function processJob(job) {
     const travisLog = logExists
       ? { log: fs.readFileSync(logFile).toString() }
       : await travis(`jobs/${job.id}`, false);
-    const log = (travisLog && travisLog.log)? travisLog.log.replace('\r', ''): '';
+    const log = (travisLog && travisLog.log)? travisLog.log.replace(/\r/g, '\n'): '';
     const result = parseLogs(log);
     if (!logExists) {
       fs.writeFileSync(logFile, log);
