@@ -721,7 +721,7 @@ static int cmd_help(void *data, const char *input) {
 				o = n + sec->vaddr - sec->paddr;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
-				eprintf ("no sections at 0x%08"PFMT64x"\n", n);
+				r_cons_printf ("no section at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
@@ -737,7 +737,7 @@ static int cmd_help(void *data, const char *input) {
 				o = n - sec->vaddr + sec->paddr;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
-				eprintf ("no section at 0x%08"PFMT64x"\n", n);
+				r_cons_printf ("no section at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
