@@ -29,6 +29,9 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 		total = sum;
 	}
 	p->cb_printf ("[");
+	if (total == 0) {
+		total = 1;
+	}
 	for (i = 0; i < n_portions; i++) {
 		int pc = portions[i] * 100 / total;
 		// adjust pc to screen columns
