@@ -581,12 +581,22 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		SdbListIter *iter;
 		RIOMap *m;
 		*from = *to = 0;
-		list = r_list_newf (free);
+		list = r_list_newf ((RListFree)free);
 		if (!list) {
 			return NULL;
 		}
 		ls_foreach (core->io->maps, iter, m) {
 			RIOMap *map = R_NEW0 (RIOMap);
+			if (!*from) {
+				*from = map->from;
+				*to = map->to;
+			}
+			if ((m->from < *from) && m->from) {
+				*from = m->from;
+			}
+			if (m->to > *to) {
+				*to = m->to;
+			}
 			if (map) {
 				map->fd = m->fd;
 				map->from = m->from;
@@ -1799,12 +1809,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		json = 0;
 	}
 
-	if (!strncmp (param->mode, "dbg.", 4) || !strncmp (param->mode, "io.sections", 11)) {
-		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
-	} else {
-		param->boundaries = NULL;
-	}
-
+	param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
 	maxhits = (int) r_config_get_i (core->config, "search.count");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
 
