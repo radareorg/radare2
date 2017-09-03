@@ -416,7 +416,7 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
-		if (bin->ehdr.e_machine == EM_ARM) {
+		if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
 			_set_arm_thumb_bits (bin, &ptr);
 		}
 		r_list_append (ret, ptr);
