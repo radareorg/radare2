@@ -1799,12 +1799,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		json = 0;
 	}
 
-	if (!strncmp (param->mode, "dbg.", 4) || !strncmp (param->mode, "io.sections", 11)) {
-		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
-	} else {
-		param->boundaries = NULL;
-	}
-
 	maxhits = (int) r_config_get_i (core->config, "search.count");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
 
@@ -2218,6 +2212,54 @@ static void search_similar_pattern(RCore *core, int count) {
 	r_cons_break_pop ();
 }
 
+// Returns the intersection of two half-open intervals, [a_from, a_to) and
+// [b_from, b_to) or [UT64_MAX, UT64_MAX) if the intersection is empty.
+
+// valid inputs:
+// a_from <= a_to
+// b_from <= b_to
+// Issues a warning upon invalid input and does nothing.
+static void range_get_intersect(ut64 a_from, ut64 a_to, ut64 b_from, ut64 b_to,
+		ut64 *out_from, ut64 *out_to) {
+	if (a_from > a_to || b_from > b_to) {
+		eprintf ("WARNING: range_get_intersect called on invalid inputs!\n");
+		return;
+	}
+	*out_from = R_MAX (a_from, b_from);
+	*out_to = R_MIN (a_to, b_to);
+	if (*out_from >= *out_to) {
+		*out_from = UT64_MAX;
+		*out_to = UT64_MAX;
+	}
+}
+
+// Limit the range covered by a linked list of RIOMaps to the half-open
+// interval [from, to). Any RIOMap that does not fall in the range is deleted
+// from the list.
+
+// valid inputs:
+// list: not NULL, may be empty.
+// from <= to
+static void limit_boundaries(RList *list, ut64 from, ut64 to) {
+	RListIter *it, *__dont_touch;
+	RIOMap *m;
+
+	if (from > to) {
+		eprintf ("WARNING: limit_boundaries was called on invalid input range.\n");
+		return;
+	}
+
+	r_list_foreach_safe (list, it, __dont_touch, m) {
+		ut64 newfrom, newto;
+		range_get_intersect (m->from, m->to, from, to, &newfrom, &newto);
+		if (newfrom == newto) {
+			r_list_delete (list, it);
+		} else {
+			m->from = newfrom;
+			m->to = newto;
+		}
+	}
+}
 
 static bool isArm(RCore *core) {
 	RAsm *as = core ? core->assembler : NULL;
@@ -2253,7 +2295,7 @@ static int cmd_search(void *data, const char *input) {
 	int ignorecase = false;
 	int param_offset = 2;
 	char *inp;
-	ut64 n64, __from, __to;
+	ut64 n64, config_from, config_to;
 	ut32 n32;
 	ut16 n16;
 	ut8 n8;
@@ -2287,32 +2329,48 @@ static int cmd_search(void *data, const char *input) {
 	param.aes_search = false;
 	param.rsa_search = false;
 	param.do_bckwrd_srch = false;
+	param.boundaries = NULL;
 
 	c = 0;
 	json = false;
 	first_hit = true;
 	// core->search->n_kws = 0;
 	maplist = false;
-	__from = r_config_get_i (core->config, "search.from");
-	__to = r_config_get_i (core->config, "search.to");
+	config_from = r_config_get_i (core->config, "search.from");
+	config_to = r_config_get_i (core->config, "search.to");
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	param.mode = r_config_get (core->config, "search.in");
 	param.boundaries = r_core_get_boundaries (core, param.mode,
 		&param.from, &param.to);
 
-	if (__from != UT64_MAX) {
-		param.from = __from;
+	if (!strcmp (param.mode, "io.maps") && param.boundaries != NULL &&
+			config_from < config_to) {
+		// This code considers all empty or invalid config ranges to mean
+		// search everywhere. So users who don't want to limit the search area
+		// can set search.from equal to search.to, which is true in the
+		// unconfigured state as well, when search.from = search.to =
+		// UT64_MAX.
+		limit_boundaries (param.boundaries, config_from, config_to);
+		if (param.boundaries->length == 0) {
+			eprintf ("search failed: empty search area.\n");
+			ret = false;
+			goto beach;
+		}
 	}
-	if (__to != UT64_MAX) {
-		param.to = __to;
+
+	if (config_from != UT64_MAX) {
+		param.from = config_from;
+	}
+	if (config_to != UT64_MAX) {
+		param.to = config_to;
 	}
 	/*
 	   this introduces a bug until we implement backwards search
 	   for all search types
-	   if (__to < __from) {
-	        eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
-	        return false;
+	   if (config_to < config_from) {
+		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
+		return false;
 	   }
 	   since the backward search will be implemented soon I'm not gonna stick
 	   checks for every case in switch // jjdredd
@@ -2322,13 +2380,13 @@ static int cmd_search(void *data, const char *input) {
 	core->search->align = r_config_get_i (core->config, "search.align");
 	searchflags = r_config_get_i (core->config, "search.flags");
 	// TODO: handle section ranges if from&&to==0
-/*
-        section = r_io_section_vget (core->io, core->offset);
-        if (section) {
-                from += section->vaddr;
-                //fin = ini + s->size;
-        }
- */
+	/*
+		section = r_io_section_vget (core->io, core->offset);
+		if (section) {
+			from += section->vaddr;
+			// fin = ini + s->size;
+		}
+	 */
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
@@ -2343,9 +2401,9 @@ static int cmd_search(void *data, const char *input) {
 	   from now on 'from' and 'to' represent only the search boundaries, not
 	   search direction */
 	if (core->io->va) {
-		__from = R_MIN (param.from, param.to);
+		ut64 tmp = R_MIN (param.from, param.to);
 		param.to = R_MAX (param.from, param.to);
-		param.from = __from;
+		param.from = tmp;
 	} else {
 		ut64 rawsize = r_io_size (core->io);
 		param.from = R_MIN (param.from, rawsize);
@@ -2382,7 +2440,7 @@ reread:
 			goto beach;
 		}
 		core->search->bckwrds = param.bckwrds = param.do_bckwrd_srch = true;
-		/* if backward search and __to wasn't specified
+		/* if backward search and config_to wasn't specified
 		   search from the beginning */
 		if ((unsigned int) param.to == UT32_MAX) {
 			param.to = param.from;
@@ -2949,5 +3007,6 @@ beach:
 	if (json) {
 		r_cons_newline ();
 	}
+	r_list_free (param.boundaries);
 	return ret;
 }
