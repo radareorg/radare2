@@ -2440,36 +2440,39 @@ R_API int r_print_format_length (const char *fmt) {
 }
 
 R_API char *r_str_prefix_all (char *s, const char *pfx) {
-	char *o, *p, *os = s;
+	char *p, *os = s;
 	int newlines = 1;
 	int len = 0;
-	int plen = 0;
+	int pfx_len = 0;
 
-	if (s) {
-		if (!pfx) {
-			return strdup (s);
-		}
-		len = strlen (s);
-		plen = strlen (pfx);
-		for (p = s; *p; p++)  {
-			if (*p == '\n') {
-				newlines++;
-			}
-		}
-		o = malloc (len + (plen * newlines) + 1);
-		memcpy (o, pfx, plen);
-		for (p=o + plen; *s; s++) {
-			*p++ = *s;
-			if (*s == '\n' && s[1]) {
-				memcpy (p, pfx, plen);
-				p += plen;
-			}
-		}
-		*p = 0;
-		free (os);
-		return o;
+	if (!s) {
+		return strdup (pfx);
 	}
-	return NULL;
+	if (!pfx) {
+		return strdup (s);
+	}
+	len = strlen (s);
+	pfx_len = strlen (pfx);
+	for (p = s; *p; p++)  {
+		if (*p == '\n') {
+			newlines++;
+		}
+	}
+	char *o = malloc (len + (pfx_len * newlines) + 1);
+	if (!o) {
+		return os;
+	}
+	memcpy (o, pfx, pfx_len);
+	for (p = o + pfx_len; *s; s++) {
+		*p++ = *s;
+		if (*s == '\n' && s[1]) {
+			memcpy (p, pfx, pfx_len);
+			p += pfx_len;
+		}
+	}
+	*p = 0;
+	free (os);
+	return o;
 }
 
 #define HASCH(x) strchr (input_value,x)

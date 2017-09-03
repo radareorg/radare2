@@ -764,12 +764,13 @@ static void ds_build_op_str(RDisasmState *ds) {
 			}
 			if (ds->analop.refptr) {
 				if (core->parser->relsub_addr == 0) {
-					ut64 killme;
+					ut64 killme = UT64_MAX;
 					r_io_read_i (core->io, ds->analop.ptr, &killme, 8, false);
 					core->parser->relsub_addr = (int)killme;
 				}
 			}
-			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
+			r_parse_filter (core->parser, core->flags, asm_str,
+				ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
