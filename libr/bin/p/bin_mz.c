@@ -16,7 +16,7 @@ static Sdb * get_sdb(RBinFile *bf) {
 }
 
 static bool checkEntrypoint(const ut8 *buf, ut64 length) {
-	ut16 cs = r_read_ble16 (buf + 0x16, false);
+	st16 cs = r_read_ble16 (buf + 0x16, false);
 	ut16 ip = r_read_ble16 (buf + 0x14, false);
 	ut32 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
 	pa &= 0xffff;
