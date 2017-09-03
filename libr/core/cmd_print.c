@@ -284,7 +284,7 @@ static const char *help_msg_ps[] = {
 	"psW", "", "print 32bit wide string",
 	"psx", "", "show string with escaped chars",
 	"psz", "", "print zero-terminated string",
-	"ps+", "", "print libc++ std::string (same-endian, 32bit, ascii, zero-terminated)",
+	"ps+", "", "print libc++ std::string (same-endian, ascii, zero-terminated)",
 	NULL
 };
 
@@ -4444,8 +4444,17 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '+': // "ps+"
 			if (l > 0) {
+				ut64 bitness = r_config_get_i (core->config, "asm.bits");
+				if (bitness != 32 && bitness != 64) {
+					eprintf ("Error: bitness of %" PFMT64u " not supported", bitness);
+					break;
+				}
 				if (*core->block & 0x1) { // "long" string
-					r_core_cmdf (core, "ps @ 0x%" PFMT32x, *((ut32 *)core->block + 2));
+					if (bitness == 64) {
+						r_core_cmdf (core, "ps @ 0x%" PFMT64x, *((ut64 *)core->block + 2));
+					} else {
+						r_core_cmdf (core, "ps @ 0x%" PFMT32x, *((ut32 *)core->block + 2));
+					}
 				} else {
 					r_print_string (core->print, core->offset, core->block + 1,
 					                len, R_PRINT_STRING_ZEROEND);
