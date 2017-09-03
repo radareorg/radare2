@@ -225,7 +225,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
-			ptr->add = false;
+			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->srwx = 0;
 			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
