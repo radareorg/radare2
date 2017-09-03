@@ -32,7 +32,7 @@ R_API bool r_bin_wr_rpath_del(RBin *bin) {
 	return false;
 }
 
-R_API int r_bin_wr_output(RBin *bin, const char *filename) {
+R_API bool r_bin_wr_output(RBin *bin, const char *filename) {
 	RBinFile *binfile = r_bin_cur (bin);
 	if (!filename || !binfile || !binfile->buf) return false;
 	return r_file_dump (filename, binfile->buf->buf,
