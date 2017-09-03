@@ -19,8 +19,13 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	st16 cs = r_read_ble16 (buf + 0x16, false);
 	ut16 ip = r_read_ble16 (buf + 0x14, false);
 	ut32 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
-	pa &= 0xffff;
-	if (pa > 0x40 && pa + 1 < length) {
+
+    /* A minimal MZ header is 0x1B bytes.  Header length is measured in
+     * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
+     * This means that the entrypoint should be at least 0x20 unless someone
+     * cleverly fit a few instructions inside the header.
+     */
+	if (pa >= 0x20 && pa + 1 < length) {
 		return true;
 	}
 	return false;
