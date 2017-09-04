@@ -864,7 +864,6 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
-	int ret;
 	if (!bin) {
 		return false;
 	}

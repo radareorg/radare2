@@ -165,7 +165,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		int len;
 		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);	//memleak here?
-		mal->buf = r_inflate (data, len, NULL, (int*)&mal->size);
+		int *size = &mal->size;
+		mal->buf = r_inflate (data, len, NULL, size);
 		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
