@@ -2144,7 +2144,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	RCore *core = ds->core;
 	RAnalValue *src;
 	char *nl = ds->show_comment_right ? "" : "\n";
-	int addrbytes = core->assembler->addrbytes;
+	const int addrbytes = core->io->addrbytes;
 
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
@@ -3567,7 +3567,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
-	int addrbytes = core->assembler->addrbytes;
+	const int addrbytes = core->io->addrbytes;
 
 	// TODO: All those ds must be print flags
 	ds = ds_init (core);
@@ -3917,7 +3917,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
 	int nbytes = 0;
-	int addrbytes = core->assembler->addrbytes;
+	const int addrbytes = core->io->addrbytes;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
@@ -4680,11 +4680,11 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	int i = 0, j, ret, err = 0;
-	int addrbytes = core->assembler->addrbytes;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
 	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
+	const int addrbytes = core->io->addrbytes;
 
 	if (fmt == 'e') {
 		show_bytes = 0;
@@ -4715,8 +4715,8 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 				// anal ignorance.
 				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
 					nb_opcodes);
-				nb_bytes *= core->assembler->addrbytes;
 			}
+			nb_bytes *= core->io->addrbytes;
 			if (nb_bytes > core->blocksize) {
 				r_core_block_size (core, nb_bytes);
 			}

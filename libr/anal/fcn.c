@@ -353,7 +353,8 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 		0
 	};
 	ut64 ret = UT64_MAX;
-	for (offs = 0; offs < len; offs += anal->addrbytes * oplen) {
+	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
+	for (offs = 0; offs < len; offs += addrbytes * oplen) {
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
 			break;
@@ -548,9 +549,9 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
-	int continue_after_jump = anal->opt.afterjmp;
-	int noncode = anal->opt.noncode;
-	int addrbytes = anal->addrbytes;
+	const int continue_after_jump = anal->opt.afterjmp;
+	const int noncode = anal->opt.noncode;
+	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;

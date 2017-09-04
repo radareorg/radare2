@@ -67,7 +67,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, len;
 	int tokcount, matchcount, count = 0;
-	int matches = 0, addrbytes = core->assembler->addrbytes;
+	int matches = 0;
+	const int addrbytes = core->io->addrbytes;
 
 	if (!*input) {
 		return NULL;
@@ -388,7 +389,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	ut64 at;
 	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
-	int addrbytes = core->assembler->addrbytes;
+	const int addrbytes = core->io->addrbytes;
 	RAsmCode *c;
 	RList *hits = r_core_asm_hit_list_new();
 	if (!hits) return NULL;
@@ -401,16 +402,13 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 
 	buf = (ut8 *)malloc (len);
 	if (!buf) {
-		if (hits) {
-			r_list_free (hits);
-		}
+		r_list_free (hits);
 		return NULL;
 	} else if (!hits) {
 		free (buf);
 		return NULL;
 	}
-	len = len > addr ? addr : len;
-	if (!r_io_read_at (core->io, addr - len, buf, len)) {
+	if (!r_io_read_at (core->io, addr - len / addrbytes, buf, len)) {
 		r_list_free (hits);
 		free (buf);
 		return NULL;

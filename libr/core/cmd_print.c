@@ -3297,7 +3297,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
-	int addrbytes = core->assembler->addrbytes;
+	const int addrbytes = core->io->addrbytes;
 	mode = w = p = i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 
