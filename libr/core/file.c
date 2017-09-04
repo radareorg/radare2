@@ -215,9 +215,9 @@ CURSOR cursor position (offset from curseek)
 VERBOSE cfg.verbose
 #endif
 R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
-	char *f, *ret = strdup (cmd);
+	char *f, *ret = cmd? strdup (cmd): NULL;
 	RIODesc *desc = core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;
-	if (strstr (cmd, "R2_BYTES")) {
+	if (cmd && strstr (cmd, "R2_BYTES")) {
 		char *s = r_hex_bin2strdup (core->block, core->blocksize);
 		r_sys_setenv ("R2_BYTES", s);
 		free (s);
@@ -226,7 +226,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	if (desc && desc->name) {
 		r_sys_setenv ("R2_FILE", desc->name);
 		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d, r_io_desc_size (desc)));
-		if (strstr (cmd, "R2_BLOCK")) {
+		if (cmd && strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
 				if (r_file_dump (f, core->block, core->blocksize, 0)) {
