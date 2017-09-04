@@ -690,6 +690,10 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "vala")) {
+					r_lang_use (core->lang, "vala");
+					r_lang_run_file (core->lang, file);
+					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");

@@ -68,7 +68,7 @@ static int typeload(void *p, const char *k, const char *v) {
 			} while (next);
 			free (members);
 		}
-		tcc_sym_push (typename, typesize, btype);
+		tcc_sym_push ((char *)typename, typesize, btype);
 	}
 	return 0;
 }
