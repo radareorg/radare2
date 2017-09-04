@@ -1099,7 +1099,15 @@ static int cmd_open(void *data, const char *input) {
 				} else {
 					fd = core->io->desc->fd;
 				}
-				r_io_reopen (core->io , fd, R_IO_READ | R_IO_WRITE, 644);
+				if (r_io_reopen (core->io, fd, R_IO_READ | R_IO_WRITE, 644)) {
+					SdbListIter *iter;
+					RIOMap *map;
+					ls_foreach_prev (core->io->maps, iter, map) {
+						if (map->fd == fd) {
+							map->flags |= R_IO_WRITE;
+						}
+					}
+				}
 			}
 			break;
 		case '\0': // "oo"
