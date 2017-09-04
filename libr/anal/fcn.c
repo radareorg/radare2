@@ -59,7 +59,7 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr - b->addr);
 }
 
-static void update_tinyrange_bbs(RAnalFunction *fcn) {
+R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	r_list_sort (fcn->bbs, &cmpaddr);
@@ -94,7 +94,7 @@ R_API int r_anal_fcn_resize(RAnalFunction *fcn, int newsize) {
 			bb->fail = UT64_MAX;
 		}
 	}
-	update_tinyrange_bbs (fcn);
+	r_anal_fcn_update_tinyrange_bbs (fcn);
 	return true;
 }
 
@@ -299,7 +299,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		ut8 *bbuf = malloc (MAXBBSIZE);\
 		anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE);\
 		ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth - 1);\
-		update_tinyrange_bbs (fcn);\
+		r_anal_fcn_update_tinyrange_bbs (fcn);\
 		free (bbuf);\
 }
 
@@ -1247,7 +1247,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	fcn->maxstack = 0;
 	ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
 	// update tinyrange for the function
-	update_tinyrange_bbs (fcn);
+	r_anal_fcn_update_tinyrange_bbs (fcn);
 
 	if (ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
@@ -1498,7 +1498,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		if (bbi) {
 			/* shrink overlapped basic block */
 			bbi->size = addr - (bbi->addr);
-			update_tinyrange_bbs (fcn);
+			r_anal_fcn_update_tinyrange_bbs (fcn);
 		}
 	}
 	if (!bb) {
@@ -1526,7 +1526,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			}
 		}
 	}
-	update_tinyrange_bbs (fcn);
+	r_anal_fcn_update_tinyrange_bbs (fcn);
 	return true;
 }
 
