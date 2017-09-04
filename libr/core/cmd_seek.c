@@ -28,6 +28,7 @@ static const char *help_msg_s[] = {
 	"sC", "[?] string", "Seek to comment matching given string",
 	"sf", "", "Seek to next function (f->addr+f->size)",
 	"sf", " function", "Seek to address of specified function",
+	"sf.", "", "Seek to the beginning of current function",
 	"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
 	"sl", "[?] [+-]line", "Seek to line",
 	"sn/sp", "", "Seek to next/prev location, as specified by scr.nkey",
@@ -268,15 +269,15 @@ static int cmd_seek(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case 'r':
+	case 'r': // "sr"
 		if (input[1] && input[2]) {
 			seek_to_register (core, input + 2, silent);
 		} else {
 			eprintf ("|Usage| 'sr PC' seek to program counter register\n");
 		}
 		break;
-	case 'C':
-		if (input[1] == '*') {
+	case 'C': // "sC"
+		if (input[1] == '*') { // "sC*"
 			r_core_cmd0 (core, "C*~^\"CC");
 		} else if (input[1] == ' ') {
 			typedef struct {
@@ -343,14 +344,14 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_sC);
 		}
 		break;
-	case ' ':
+	case ' ': // "s "
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
 		r_core_seek (core, off * sign, 1);
 		r_core_block_read (core);
 		break;
-	case '/':
+	case '/': // "s/"
 	{
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		ut64 from = r_config_get_i (core->config, "search.from");
@@ -455,9 +456,9 @@ static int cmd_seek(void *data, const char *input) {
 			r_list_free (names);
 		}
 		break;
-	case '*':
-	case '=':
-	case '!':
+	case '*': // "s*"
+	case '=': // "s="
+	case '!': // "s!"
 		{
 			char mode = input[0];
 			if (input[1] == '=') {
@@ -498,7 +499,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 		}
 		break;
-	case '+':
+	case '+': // "s+"
 		if (input[1] != '\0') {
 			int delta = off;
 			if (input[1] == '+') {
@@ -525,10 +526,10 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '-': // "s-"
 		switch (input[1]) {
-		case '*':
+		case '*': // "s-*"
 			r_io_sundo_reset (core->io);
 			break;
-		case 0:
+		case 0: // "s-"
 			{
 				RIOUndos *undo = r_io_sundo (core->io, core->offset);
 				if (undo) {
@@ -537,7 +538,7 @@ static int cmd_seek(void *data, const char *input) {
 				}
 			}
 			break;
-		case '-':
+		case '-': // "s--"
 		default:
 			{
 				int delta = -off;
@@ -558,19 +559,19 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 		}
 		break;
-	case 'n':
+	case 'n': // "sn"
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
 		r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 		break;
-	case 'p':
+	case 'p': // "sp"
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
 		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 		break;
-	case 'a':
+	case 'a': // "sa"
 		off = core->blocksize;
 		if (input[1] && input[2]) {
 			cmd = strdup (input);
@@ -589,7 +590,7 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		r_core_seek_align (core, off, 0);
 		break;
-	case 'b':
+	case 'b': // "sb"
 		if (off == 0) {
 			off = core->offset;
 		}
@@ -598,19 +599,30 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		r_core_anal_bb_seek (core, off);
 		break;
-	case 'f': // "sf"
-		if (strlen (input) > 2 && input[1] == ' ') {
-			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, input + 2);
+	case 'f': { // "sf"
+		RAnalFunction *fcn;
+		switch (input[1]) {
+		case '\0': // "sf"
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				r_core_seek (core, fcn->addr + r_anal_fcn_size (fcn), 1);
+			}
+			break;
+		case ' ': // "sf "
+			fcn = r_anal_fcn_find_name (core->anal, input + 2);
+			if (fcn) {
+				r_core_seek (core, fcn->addr, 1);
+			}
+			break;
+		case '.': // "sf."
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_core_seek (core, fcn->addr, 1);
 			}
 			break;
 		}
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (fcn) {
-			r_core_seek (core, fcn->addr + r_anal_fcn_size (fcn), 1);
-		}
 		break;
+	}
 	case 'o': // "so"
 	{
 		RAnalOp op;
@@ -671,44 +683,44 @@ static int cmd_seek(void *data, const char *input) {
 	{
 		int sl_arg = r_num_math (core->num, input + 1);
 		switch (input[1]) {
-		case 0:
+		case '\0': // "sl"
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
 			__get_current_line (core);
 			break;
-		case ' ':
+		case ' ': // "sl "
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
 			__seek_line_absolute (core, sl_arg);
 			break;
-		case '+':
-		case '-':
+		case '+': // "sl+"
+		case '-': // "sl-"
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
 			__seek_line_relative (core, sl_arg);
 			break;
-		case 'c':
+		case 'c': // "slc"
 			__clean_lines_cache (core);
 			break;
-		case 'l':
+		case 'l': // "sll"
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
 			eprintf ("%d lines\n", core->print->lines_cache_sz - 1);
 			break;
-		case '?':
+		case '?': // "sl?"
 			r_core_cmd_help (core, help_msg_sl);
 			break;
 		}
 	}
 	break;
-	case ':':
+	case ':': // "s:"
 		printPadded (core, atoi (input + 1));
 		break;
-	case '?':
+	case '?': // "s?"
 		r_core_cmd_help (core, help_msg_s);
 		break;
 	}
