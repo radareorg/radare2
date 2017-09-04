@@ -465,7 +465,6 @@ int main (int argc, char *argv[]) {
 		r_anal_set_bits (anal, sysbits);
 	}
 	// TODO set addrbytes
-	anal->addrbytes = a->addrbytes = 1;
 	char *r2arch = r_sys_getenv ("R2_ARCH");
 	if (r2arch) {
 		arch = r2arch;
