@@ -39,14 +39,26 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	vapidir = r_sys_getenv ("VAPIDIR");
 	char *tail = silent?  " > /dev/null 2>&1": "";
+	char *src = r_file_slurp (name, NULL);
+	const char *pkgs = "";
+	const char *libs = "";
+	if (src) {
+		if (strstr (src, "using Json;")) {
+			pkgs = "--pkg json-glib-1.0";
+			libs = "json-glib-1.0";
+		}
+		free (src);
+	}
+	// const char *pkgs = "";
 	if (vapidir) {
 		if (*vapidir) {
-			snprintf (buf, sizeof (buf)-1, "valac --disable-warnings -d %s --vapidir=%s --pkg r_core -C '%s' '%s'",
-				srcdir, vapidir, name, tail);
+			snprintf (buf, sizeof (buf)-1, "valac --disable-warnings -d %s --vapidir=%s --pkg r_core %s -C %s %s",
+				srcdir, vapidir, pkgs, name, tail);
 		}
 		free (vapidir);
 	} else {
-		snprintf (buf, sizeof (buf) - 1, "valac --disable-warnings -d %s --pkg r_core -C '%s' '%s'", srcdir, name, tail);
+		snprintf (buf, sizeof (buf) - 1, "valac --disable-warnings -d %s %s --pkg r_core -C %s %s", srcdir, pkgs, name, tail);
+		//snprintf (buf, sizeof (buf) - 1, "valac --disable-warnings -d %s --pkg r_core -C '%s' '%s'", srcdir, name, tail);
 	}
 	free (srcdir);
 	if (r_sandbox_system (buf, 1) != 0) {
@@ -57,7 +69,7 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	p = strstr (name, ".gs"); if (p) *p=0;
 	// TODO: use CC environ if possible
 	snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s."R_LIB_EXT
-		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, libname);
+		" $(pkg-config --cflags --libs r_core gobject-2.0 %s)", name, libname, libs);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return false;
