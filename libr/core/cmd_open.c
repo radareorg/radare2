@@ -443,7 +443,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case '*':
 		case 'r':
 			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x"\n", map->fd,
-					map->from, map->to - map->from, map->delta);
+					map->from, map->to - map->from + 1, map->delta);
 			break;
 		default:
 			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x

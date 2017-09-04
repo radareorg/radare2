@@ -8,7 +8,7 @@
 static const char *help_msg_S[] = {
 	"Usage:","S[?-.*=adlr] [...]","",
 	"S","","list sections",
-	"S"," paddr va sz [vsz] name mrwx","add new section (if(!vsz)vsz=sz)",
+	"S"," paddr va sz [vsz] name rwx","add new section (if(!vsz)vsz=sz)",
 	"S.","","show current section name",
 	"S.-*","","remove all sections in current offset",
 	"S*","","list sections (in radare commands)",
@@ -517,9 +517,12 @@ static int cmd_section(void *data, const char *input) {
 			ut64 paddr = 0LL;
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
-			int fd = r_core_file_cur_fd(core);
+			int bin_id = -1;
+			int fd = r_core_file_cur_fd (core);
 			i = r_str_word_set0 (ptr);
 			switch (i) {
+			case 7: //get bin id
+				bin_id = r_num_math (core->num, r_str_word_get0 (ptr, 6));
 			case 6: // get rwx
 				rwx = r_str_rwx (r_str_word_get0 (ptr, 5));
 			case 5: // get name
@@ -546,7 +549,8 @@ static int cmd_section(void *data, const char *input) {
 				sprintf (vname, "area%d", (int)ls_length (core->io->sections));
 				name = vname;
 			}
-			r_io_section_add (core->io, paddr, vaddr, size, vsize, rwx, name, 0, fd);
+			RIOSection *sec = r_io_section_add (core->io, paddr, vaddr, size, vsize, rwx, name, bin_id, fd);
+			r_io_create_mem_for_section (core->io, sec);
 			free (ptr);
 			}
 			break;
