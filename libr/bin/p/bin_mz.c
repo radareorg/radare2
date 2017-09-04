@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 nodepad */
+/* radare - LGPL - Copyright 2015-2017 nodepad */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -20,12 +20,17 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	ut16 ip = r_read_ble16 (buf + 0x14, false);
 	ut32 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
 
-    /* A minimal MZ header is 0x1B bytes.  Header length is measured in
-     * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
-     * This means that the entrypoint should be at least 0x20 unless someone
-     * cleverly fit a few instructions inside the header.
-     */
-	if (pa >= 0x20 && pa + 1 < length) {
+	/* A minimal MZ header is 0x1B bytes.  Header length is measured in
+	 * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
+	 * This means that the entrypoint should be at least 0x20 unless someone
+	 * cleverly fit a few instructions inside the header.
+	 */
+//	if (pa >= 0x20 && pa + 1 < length) {
+	pa &= 0xffff;
+	if (pa > 0x20 && pa + 1 < length) {
+		if (length > 0x104 && !memcmp (buf + 0x100, "PE", 2)) {
+			return false;
+		}
 		return true;
 	}
 	return false;
