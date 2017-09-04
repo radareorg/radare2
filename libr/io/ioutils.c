@@ -70,10 +70,6 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch)
 
 
 R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
-	RIOMap *map = NULL;
-	RIODesc *desc = NULL;
-	char *uri = NULL;
-
 	if (!io || !sec) {
 		return false;
 	}
