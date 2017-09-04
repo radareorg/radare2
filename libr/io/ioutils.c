@@ -79,7 +79,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 	}
 	if (sec->vsize - sec->size > 0) {
 		ut64 at = sec->vaddr + sec->size;
-		if (!r_io_create_mem_map (io, sec, at, false)) {
+		if (!r_io_create_mem_map (io, sec, at, false)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, at);
