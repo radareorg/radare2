@@ -1853,15 +1853,6 @@ static int cb_searchin(void *user, void *data) {
 	return true;
 }
 
-static int cb_fileloadmethod(void *user, void *data) {
- 	RConfigNode *node = (RConfigNode*) data;
- 	if (*node->value == '?') {
-		print_node_options (node);
- 		return false;
- 	}
- 	return true;
-}
-
 static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
 	node->i_value = core->dbg->swstep;
@@ -2673,9 +2664,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("file.lastpath", "", "Path of current file");
 	SETPREF ("file.sha1", "", "SHA1 hash of current file");
 	SETPREF ("file.type", "", "Type of current file");
-	n = NODECB ("file.loadmethod", "fail", &cb_fileloadmethod);
-	SETDESC (n, "What to do when load addresses overlap");
-	SETOPTIONS (n, "fail", "overwrite", "append", NULL);
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
 	SETI ("file.openmany", 1, "Maximum number of files opened at once");
 	SETPREF ("file.nowarn", "true", "Suppress file loading warning messages");

@@ -635,47 +635,13 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	return true;
 }
 
-R_API RIOMap *r_core_file_get_next_map(RCore *core, RCoreFile *fh, int mode, ut64 loadaddr) {
-	const char *loadmethod = r_config_get (core->config, "file.loadmethod");
-	bool suppress_warning = r_config_get_i (core->config, "file.nowarn");
-	ut64 load_align = r_config_get_i (core->config, "file.loadalign");
-	if (!loadmethod) {
-		return NULL;
-	}
-	RIOMap *map = NULL;
-	if (!strcmp (loadmethod, "overwrite")) {
-		map = r_io_map_new (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), true);
-	}
-	if (!strcmp (loadmethod, "fail")) {
-		map = r_io_map_add (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), true);
-	}
-	if (!strcmp (loadmethod, "append") && load_align) {
-		map = r_io_map_add_next_available (core->io, fh->fd, mode, 0, loadaddr, r_io_fd_size (core->io, fh->fd), load_align);
-	}
-	if (!suppress_warning) {
-		if (!map) {
-			eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x "\n", loadaddr);
-		} else {
-			if (map->from != loadaddr) {
-				eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x ",\n"
-					"but loaded to 0x%08"PFMT64x "\n", loadaddr, map->from);
-			}
-		}
-	}
-//	r_io_sort_maps (core->io); //necessary ???	//condret says no
-	return map;
-}
-
-
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	bool openmany = r_config_get_i (r->config, "file.openmany");
 	int opened_count = 0;
 	// ut64 current_loadaddr = loadaddr;
 	RCoreFile *fh; //, *top_file = NULL;
 	RListIter *fd_iter, *iter2;
-	char *loadmethod = NULL;
 	RList *list_fds = NULL;
-	const char *cp = NULL;
 	RIODesc *fd;
 
 	list_fds = r_io_open_many (r->io, file, flags, 0644);
@@ -684,12 +650,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		r_list_free (list_fds);
 		return NULL;
 	}
-
-	cp = r_config_get (r->config, "file.loadmethod");
-	if (cp) {
-		loadmethod = strdup (cp);
-	}
-	r_config_set (r->config, "file.loadmethod", "append");
 
 	r_list_foreach_safe (list_fds, fd_iter, iter2, fd) {
 		opened_count++;
@@ -717,24 +677,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		r_core_bin_load (r, fd->name, 0LL);
 	}
 	return NULL;
-#if DEAD_CODE
-	if (!top_file) {
-		free (loadmethod);
-		return top_file;
-	}
-	cp = r_config_get (r->config, "cmd.open");
-	if (cp && *cp) {
-		r_core_cmd (r, cp, 0);
-	}
-
-	r_config_set (r->config, "file.path", r_file_abspath (r_io_desc_get (r->io, top_file->fd)->name));
-	if (loadmethod) {
-		r_config_set (r->config, "file.loadmethod", loadmethod);
-	}
-	free (loadmethod);
-
-	return top_file;
-#endif
 }
 
 /* loadaddr is r2 -m (mapaddr) */
