@@ -906,6 +906,26 @@ static int cb_cfgsanbox(void *user, void *data) {
 	return (!node->i_value && ret)? 0: 1;
 }
 
+static int cb_cfg_fortunes(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
+	if (node->value[0] == '?') {
+		r_core_fortune_list (core);
+		return false;
+	}
+	return true;
+}
+
+static int cb_cfg_fortunes_type(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->value[0] == '?') {
+		r_core_fortune_list_types ();
+		return false;
+	}
+	return true;
+}
+
 static int cb_cmdlog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1823,7 +1843,6 @@ static int cb_binminstr(void *user, void *data) {
 }
 
 static int cb_searchin(void *user, void *data) {
-	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
@@ -1849,7 +1868,7 @@ static int cb_searchin(void *user, void *data) {
 			print_node_options (node);
 		}
 		return false;
-	} 
+	}
 	return true;
 }
 
@@ -2304,8 +2323,8 @@ R_API int r_core_config_init(RCore *core) {
 	free (p);
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	SETPREF ("cfg.user", r_sys_whoami (buf), "Set current username/pid");
-	SETPREF ("cfg.fortunes", "true", "If enabled show tips at start");
-	SETPREF ("cfg.fortunes.type", "tips,fun", "Type of fortunes to show (tips, fun, nsfw, creepy)");
+	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
+	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun, nsfw, creepy)");
 	SETPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETI ("cfg.hashlimit", SLURP_LIMIT, "If the file is bigger than hashlimit, do not compute hashes");
