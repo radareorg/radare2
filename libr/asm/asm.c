@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <stdio.h>
+#include <r_core.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
@@ -438,7 +439,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	//XXX check against R_ASM_BUFSIZE other oob write
 	memcpy (op->buf, buf, R_MIN (R_ASM_BUFSIZE - 1, oplen));
-	r_hex_bin2str (buf, R_MIN (a->addrbytes * oplen,
+	const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;
+	r_hex_bin2str (buf, R_MIN (addrbytes * oplen,
 		(sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
 	return ret;
 }
@@ -565,10 +567,11 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RStrBuf *buf_asm;
 	RAsmCode *acode;
-	int ret, slen;
 	ut64 pc = a->pc;
 	RAsmOp op;
 	ut64 idx;
+	int ret, slen;
+	const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;
 
 	if (!(acode = r_asm_code_new ())) {
 		return NULL;
@@ -584,7 +587,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	if (!(buf_asm = r_strbuf_new (NULL))) {
 		return r_asm_code_free (acode);
 	}
-	for (idx = ret = slen = 0; idx + a->addrbytes <= len; idx += a->addrbytes * ret) {
+	for (idx = ret = slen = 0; idx + addrbytes <= len; idx += addrbytes * ret) {
 		r_asm_set_pc (a, pc + idx);
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {

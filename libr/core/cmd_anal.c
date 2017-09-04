@@ -4276,7 +4276,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	RAnalOp op;
 	int bufi, minop = 1; // 4
 	int depth = r_config_get_i (core->config, "anal.depth");
-	int addrbytes = core->anal->addrbytes;
+	const int addrbytes = core->io->addrbytes;
 	ut8 buf[4096];
 	bufi = 0;
 	if (addr_end - addr > 0xffffff) {

@@ -130,6 +130,7 @@ R_API RIO* r_io_init(RIO* io) {
 	if (!io) {
 		return NULL;
 	}
+	io->addrbytes = 1;
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_section_init (io);
