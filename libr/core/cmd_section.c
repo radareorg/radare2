@@ -8,7 +8,7 @@
 static const char *help_msg_S[] = {
 	"Usage:","S[?-.*=adlr] [...]","",
 	"S","","list sections",
-	"S"," paddr va sz [vsz] name mrwx","add new section (if(!vsz)vsz=sz)",
+	"S"," paddr va sz [vsz] name rwx","add new section (if(!vsz)vsz=sz)",
 	"S.","","show current section name",
 	"S.-*","","remove all sections in current offset",
 	"S*","","list sections (in radare commands)",
@@ -517,7 +517,7 @@ static int cmd_section(void *data, const char *input) {
 			ut64 paddr = 0LL;
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
-			int fd = r_core_file_cur_fd(core);
+			int fd = r_core_file_cur_fd (core);
 			i = r_str_word_set0 (ptr);
 			switch (i) {
 			case 6: // get rwx
@@ -546,7 +546,8 @@ static int cmd_section(void *data, const char *input) {
 				sprintf (vname, "area%d", (int)ls_length (core->io->sections));
 				name = vname;
 			}
-			r_io_section_add (core->io, paddr, vaddr, size, vsize, rwx, name, 0, fd);
+			RIOSection *sec = r_io_section_add (core->io, paddr, vaddr, size, vsize, rwx, name, -1, fd);
+			r_io_create_mem_for_section (core->io, sec);
 			free (ptr);
 			}
 			break;
