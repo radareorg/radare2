@@ -405,8 +405,8 @@ static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) 
 			// offset,where the memory should be mapped to
 			at = sec->vaddr + sec->size;
 			// TODO: harden this, handle mapslit
-			// craft the uri for the null-fd
-			if (!r_io_create_mem_map (io, sec, at, true)) {
+			// craft the uri for the malloc-fd
+			if (!r_io_create_mem_map (io, sec, at, false)) {
 				return false;
 			}
 			// we need to create this map for transfering the flags, no real remapping here
