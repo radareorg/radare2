@@ -2431,7 +2431,7 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 
 static void cmd_print_bars(RCore *core, const char *input) {
 	bool print_bars = false;
-	ut8 *ptr = core->block;
+	ut8 *ptr = NULL;
 	// p=e [nblocks] [totalsize] [skip]
 	int nblocks = -1;
 	int totalsize = -1;
