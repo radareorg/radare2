@@ -519,12 +519,9 @@ static void cmd_omf (RCore *core, const char *input) {
 	free (arg);
 }
 
-static void cmd_open_map (RCore *core, const char *input) {
+static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
-	ut64 addr = 0LL;
-	ut64 size = 0LL;
-	ut64 delta = 0LL;
 	char *s, *p, *q;
 	ut64 new;
 	RIOMap *map = NULL;
@@ -583,51 +580,47 @@ static void cmd_open_map (RCore *core, const char *input) {
 		}
 		break;
 	case ' ': // "om"
-		// i need to parse delta, offset, size, name
 		s = strdup (input + 2);
 		if (!s) {
 			break;
 		}
-		p = strchr (s, ' ');
-		if (p) {
-			RIODesc *desc;
-			q = strchr (p + 1, ' ');
-			*p = 0;
-			fd = r_num_math (core->num, s);
-			if (!(desc = r_io_desc_get (core->io, fd))) {
-				free (s);
-				eprintf ("Invalid fd %d\n", (int)fd);
+		if (strchr (s, ' ')) {
+			int fd = 0, words = 0;
+			ut64 size = 0, vaddr = 0, paddr = 0;
+			const char *name = NULL;
+			RIODesc *desc = NULL;
+			words = r_str_word_set0 (s);
+			switch (words) {
+			case 5:
+				name = r_str_word_get0 (s, 4);
+			case 4:
+				paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
+			case 3:
+				size = r_num_math (core->num, r_str_word_get0 (s, 2));
+			case 2:
+				vaddr = r_num_math (core->num, r_str_word_get0 (s, 1));
+			case 1:
+				fd = r_num_math (core->num, r_str_word_get0 (s, 0));
+			}
+			if (fd < 3) {
+				eprintf ("wrong fd, it must be greater than 3\n");
 				break;
 			}
-			addr = r_num_math (core->num, p + 1);
-			p = NULL;
-			if (q) {
-				char *r = strchr (q + 1, ' ');
-				*q = 0;
-				if (r) {
-					*r = 0;
-					size = r_num_math (core->num, q + 1);
-					delta = r_num_math (core->num, r + 1);
-					p = strchr (r + 1, ' ');
-				} else {
-					size = r_num_math (core->num, q + 1);
+			desc = r_io_desc_get (core->io, fd);
+			if (desc) {
+				if (!size) {
+					size = r_io_fd_size (core->io, fd);
 				}
-			} else {
-				size = r_io_desc_size (desc);
+				map = r_io_map_add (core->io, fd, desc->flags, paddr, vaddr, size, true);
+				r_io_map_set_name (map, name);
 			}
-			//TODO:user should be able to set these
-			if (!p) {
-				p = desc->name;
-			}
-			map = r_io_map_add (core->io, fd, desc->flags, delta, addr, size, true);
-			r_io_map_set_name (map, p);
 		} else {
+			int fd = r_io_fd_get_current (core->io);
 			if (r_io_desc_get (core->io, fd)) {
-				map_list (core->io, 0, core->print, r_num_math (core->num, s));
+				map_list (core->io, 0, core->print, fd);
 			} else {
 				eprintf ("Invalid fd %d\n", (int)fd);
 			}
-			// eprintf ("Invalid use of om . See om? for help.");
 		}
 		free (s);
 		break;
