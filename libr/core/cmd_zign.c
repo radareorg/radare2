@@ -15,6 +15,7 @@ static const char *help_msg_z[] = {
 	"z-", "zignature", "delete zignature",
 	"z-", "*", "delete all zignatures",
 	"za", "[?]", "add zignature",
+	"zg", "", "generate zignatures (alias for zaF)",
 	"zo", "[?]", "manage zignature files",
 	"zf", "[?]", "manage FLIRT signatures",
 	"z/", "[?]", "search zignatures",
@@ -844,6 +845,8 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case 'o':
 		return cmdOpen (data, input + 1);
+	case 'g':
+		return cmdAdd (data, "F");
 	case 'a':
 		return cmdAdd (data, input + 1);
 	case 'f':
