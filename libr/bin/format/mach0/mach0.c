@@ -897,6 +897,8 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_UNIXTHREAD";
 	case LC_IDENT:
 		return "LC_IDENT";
+	case LC_DYLD_INFO_ONLY:
+		return "LC_DYLD_INFO_ONLY";
 	}
 	return "";
 }
