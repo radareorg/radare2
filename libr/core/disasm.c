@@ -4879,6 +4879,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),
 						asm_str);
+					free (asm_str);
 					r_anal_op_fini (&aop);
 				} else {
 					r_cons_println (asm_str);
