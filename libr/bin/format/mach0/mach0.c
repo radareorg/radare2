@@ -1307,7 +1307,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sections[i].size = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
-			r_str_ncpy (sectname, seg->segname, sizeof (sectname) - 1);
+			r_str_ncpy (sectname, seg->segname, sizeof (sectname));
 			r_str_filter (sectname, -1);
 			// hack to support multiple sections with same name
 			sections[i].srwx = prot2perm (seg->initprot);
@@ -1333,7 +1333,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].size = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname) - 1);
+		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname));
 		r_str_filter (sectname, -1);
 		// hack to support multiple sections with same name
 		// snprintf (segname, sizeof (segname), "%d", i); // wtf
@@ -1539,7 +1539,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 					if (!symstr_dup) {
 						symbols[j].name[0] = 0;
 					} else {
-						r_str_ncpy (symbols[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH - 1);
+						r_str_ncpy (symbols[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH);
 						r_str_filter (symbols[j].name, -1);
 						symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
 					}
@@ -1695,7 +1695,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 				}
 				symstr_dup = r_str_ndup (symstr, len);
 				if (symstr_dup) {
-					r_str_ncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH - 1);
+					r_str_ncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH);
 					r_str_filter (imports[j].name, - 1);
 					imports[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
 					free (symstr_dup);
