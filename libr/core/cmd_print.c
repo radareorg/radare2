@@ -1580,10 +1580,11 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	case 's':
 		j = r_flag_space_get (core->flags, "strings");
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (flag->space == j && ((addr <= flag->offset
-			&& flag->offset < addr + size)
-			|| (addr <= flag->offset + flag->size
-			&& flag->offset + flag->size < addr + size))) {
+			if (flag->space == j &&
+			    ((addr <= flag->offset &&
+			      flag->offset < addr + size) ||
+			     (addr <= flag->offset + flag->size &&
+			      flag->offset + flag->size < addr + size))) {
 				ret++;
 			}
 		}
@@ -2519,7 +2520,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				}
 				int len = 0;
 				for (i = 0; i < nblocks; i++) {
-					ut64 off = blocksize * (i + skipblocks);
+					ut64 off = core->offset + blocksize * (i + skipblocks);
 					r_core_read_at (core, off, p, blocksize);
 					for (j = k = 0; j < blocksize; j++) {
 						switch (submode) {
@@ -2699,12 +2700,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		int len = 0;
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = blocksize * (i + skipblocks);
+			ut64 off = core->offset + blocksize * (i + skipblocks);
 			r_core_read_at (core, off, p, blocksize);
 			for (j = k = 0; j < blocksize; j++) {
 				switch (mode) {
 				case '0':
 					if (!p[j]) {
+						eprintf ("FOUND\n");
 						k++;
 					}
 					break;
