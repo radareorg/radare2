@@ -13,7 +13,6 @@ static const char *help_msg_o[] = {
 	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
 	"o=","","list opened files (ascii-art bars)",
-	"oa","[?] [addr]","Open bin info from the given address",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"oi","[-|idx]","alias for o, but using index instead of fd",
@@ -52,10 +51,12 @@ static const char *help_msg_oa[] = {
 static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", "", "List opened binary files and objid",
+	"ob*", "", "List opened binary files and objid (r2 commands)",
 	"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"obb", " [fd]", "Switch to open binfile by fd number",
+	"obj", "", "List opened binary files and objid (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
 	"ob-", " [fd]", "Delete binfile by fd",
 	"obd", " [objid]", "Delete binary file by objid. Do nothing if only one loaded.",
@@ -242,13 +243,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	ut32 binfile_num = -1, binobj_num = -1;
 
 	switch (input[1]) {
-	case 0:
-	case 'l':
-	case 'j':
-	case '*':
+	case '\0': // "ob"
+	case 'j': // "obj"
+	case '*': // "ob*"
 		r_core_bin_list (core, input[1]);
 		break;
-	case 'a':
+	case 'a': // "oba"
 		if ('?' == input[2]) {
 			r_core_cmd_help (core, help_msg_oa);
 			break;
@@ -314,7 +314,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_core_bin_raise (core, binfile_num, -1);
 		}
 		break;
-	case ' ':
+	case ' ': // "ob "
 	{
 		ut32 fd;
 		int n;
@@ -343,11 +343,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		free (v);
 		break;
 	}
-	case 'r':
+	case 'r': // "obr"
 		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 		r_core_cmd0 (core, ".is*");
 		break;
-	case 'o':
+	case 'o': // "obo"
 		value = input[3] ? input + 3 : NULL;
 		if (!value) {
 			eprintf ("Invalid argument");
@@ -390,7 +390,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'd': // backward compat, must be deleted
+	case 'd': // "obd" backward compat, must be deleted
 		value = input[2] ? input + 2 : NULL;
 		if (!value) {
 			eprintf ("Invalid bin object number.");
@@ -404,7 +404,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		r_core_bin_delete (core, -1, binobj_num);
 		break;
-	case '?':
+	case '?': // "ob?"
 		r_core_cmd_help (core, help_msg_ob);
 		break;
 	}
