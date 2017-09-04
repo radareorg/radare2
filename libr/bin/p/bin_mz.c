@@ -28,7 +28,8 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 //	if (pa >= 0x20 && pa + 1 < length) {
 	pa &= 0xffff;
 	if (pa > 0x20 && pa + 1 < length) {
-		if (length > 0x104 && !memcmp (buf + 0x100, "PE", 2)) {
+		ut16 pe = r_read_ble16 (buf + 0x3c, false);
+		if (pe < length && length > 0x104 && !memcmp (buf + pe, "PE", 2)) {
 			return false;
 		}
 		return true;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2017 - pancake */
 
 #include <r_egg.h>
 #include <r_bin.h>
@@ -243,8 +243,8 @@ int main(int argc, char **argv) {
 			{
 			char *p = strchr (optarg, '=');
 			if (p) {
-				*p = 0;
-				r_egg_option_set (egg, optarg, p + 1);
+				*p++ = 0;
+				r_egg_option_set (egg, optarg, p);
 			} else {
 				r_egg_option_set (egg, optarg, "true");
 			}
