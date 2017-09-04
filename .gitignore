@@ -66,6 +66,7 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/spp/config.h
+sys/travis/*.txt
 shlr/capstone/
 sys/.mark_python-deps
 sys/.mark_swig
