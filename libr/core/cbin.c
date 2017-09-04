@@ -2870,7 +2870,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 	}
 	while (true) {
 		const char *timestrKey = sdb_fmt (0, "resource.%d.timestr", index);
-		const char *paddrKey = sdb_fmt (1, "resource.%d.paddr", index);
+		const char *vaddrKey = sdb_fmt (1, "resource.%d.vaddr", index);
 		const char *sizeKey  = sdb_fmt (2, "resource.%d.size", index);
 		const char *typeKey  = sdb_fmt (3, "resource.%d.type", index);
 		const char *languageKey = sdb_fmt (4, "resource.%d.language", index);
@@ -2879,7 +2879,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		if (!timestr) {
 			break;
 		}
-		ut64 paddr = sdb_num_get (sdb, paddrKey, 0);
+		ut64 vaddr = sdb_num_get (sdb, vaddrKey, 0);
 		int size = (int)sdb_num_get (sdb, sizeKey, 0);
 		int name = (int)sdb_num_get (sdb, nameKey, 0);
 		char *type = sdb_get (sdb, typeKey, 0);
@@ -2887,19 +2887,19 @@ static void bin_pe_resources(RCore *r, int mode) {
 
 		if (IS_MODE_SET (mode)) {
 			const char *name = sdb_fmt (4, "resource.%d", index);
-			r_flag_set (r->flags, name, paddr, size);
+			r_flag_set (r->flags, name, vaddr, size);
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, paddr);
+			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
-					"\"paddr\":%"PFMT32d", \"size\":%d, \"lang\":\"%s\"}",
-					index? ",": "", name, index, type, paddr, size, lang);
+					"\"vaddr\":%"PFMT32d", \"size\":%d, \"lang\":\"%s\"}",
+					index? ",": "", name, index, type, vaddr, size, lang);
 		} else {
 			char *humanSize = r_num_units (NULL, size);
 			r_cons_printf ("Resource %d\n", index);
 			r_cons_printf ("\tname: %d\n", name);
 			r_cons_printf ("\ttimestamp: %s\n", timestr);
-			r_cons_printf ("\tpaddr: 0x%08"PFMT32x"\n", paddr);
+			r_cons_printf ("\tvaddr: 0x%08"PFMT32x"\n", vaddr);
 			r_cons_printf ("\tsize: %s\n", humanSize);
 			r_cons_printf ("\ttype: %s\n", type);
 			r_cons_printf ("\tlanguage: %s\n", lang);
