@@ -522,7 +522,7 @@ static void cmd_omf (RCore *core, const char *input) {
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
-	char *s, *p, *q;
+	char *s = NULL, *p = NULL, *q = NULL;
 	ut64 new;
 	RIOMap *map = NULL;
 	const char *P;
@@ -633,14 +633,14 @@ static void cmd_open_map(RCore *core, const char *input) {
 			s++;
 		}
 		if (*s == '\0') {
-			free (p);
+			R_FREE (p);
 			break;
 		}
 		if (!(q = strchr (s, ' '))) {
 			id = (ut32)r_num_math (core->num, s);
 			map = r_io_map_get (core->io, id);
 			r_io_map_del_name (map);
-			free (p);
+			R_FREE (p);
 			break;
 		}
 		*q = '\0';
@@ -652,7 +652,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else {
 			r_io_map_del_name (map);
 		}
-		free (p);
+		R_FREE (p);
 		break;
 	case '-':
 		r_io_map_del (core->io, r_num_math (core->num, input+2));
