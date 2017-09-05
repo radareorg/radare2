@@ -326,7 +326,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		}
 	}
 
-	// TODO: check if node is traced or not and hsow proper color
+	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
 	if (cur) {
 		B1 (n->x, n->y, n->w, n->h);
@@ -1507,7 +1507,7 @@ static void remove_dummy_nodes(const RAGraph *g) {
 }
 #endif
 
-static void set_layer_gap (RAGraph *g, int vertical_layout) {
+static void set_layer_gap (RAGraph *g) {
 	int gap = 0;
 	int i = 0, j = 0;
 	RListIter *itn;
@@ -1530,7 +1530,7 @@ static void set_layer_gap (RAGraph *g, int vertical_layout) {
 				continue;
 			}
 			graph_foreach_anode (outnodes, itn, gb, b) {
-				if (vertical_layout) {
+				if (g->layout == 0) { // vertical layout
 					if ((b->x != a->x) || b->layer <= a->layer) {
 						gap += 1;
 						if (b->layer <= a->layer) {
@@ -1602,10 +1602,21 @@ static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
 static int get_nth (const RAGraph *g, RANode *src, RANode *dst);
 void backedge_info (RAGraph *g) {
 	int i, j, k;
-    int arr[g->n_layers][2]; //min, max
+	int **arr; // arr[g->n_layers][2]  -- min, max
 	int min, max;
 	int inedge = 0;
 	int outedge = 0;
+
+	arr = R_NEWS0 (int *, g->n_layers);
+	if (!arr) {
+		return;
+	}
+	for (i = 0; i < g->n_layers; i++) {
+		arr[i] = R_NEWS0 (int, 2);
+		if (!arr[i]) {
+			goto err;
+		}
+	}
 
 	for (i = 0; i < g->n_layers; i++) {
 		for (j = 0; j < g->layers[i].n_nodes; j++) {
@@ -1743,6 +1754,13 @@ void backedge_info (RAGraph *g) {
 		}
 		r_list_append (g->edges, e);
 	}
+
+ err:
+	for (i = i - 1; i >= 0; i--) {
+		free (arr[i]);
+	}
+	free (arr);
+	return;
 }
 
 /* 1) trasform the graph into a DAG
@@ -1829,19 +1847,21 @@ static void set_layout(RAGraph *g) {
 			}
 		}
 
-		set_layer_gap (g, 1);
+		set_layer_gap (g);
 
 		/* vertical align */
 		for (i = 0; i < g->n_layers; ++i) {
+			int tmp_y = 0;
+			tmp_y = g->layers[0].gap; //TODO: XXX: set properly
+			for (k = 1; k <= i; k++) {
+				tmp_y += g->layers[k-1].height + g->layers[k].gap + 3; //XXX: should be 4?
+			}
+			if (g->is_tiny) {
+				tmp_y = i;
+			}
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->y = g->layers[0].gap ? 1 + g->layers[0].gap : 0; //TODO: XXX: set properly
-				for (k = 1; k <= n->layer; ++k) {
-					n->y += g->layers[k-1].height + g->layers[k].gap + 3; //XXX: should be 4?
-				}
-				if (g->is_tiny) {
-					n->y = n->layer;
-				}
+				n->y = tmp_y;
 			}
 		}
 		break;
@@ -1859,7 +1879,7 @@ static void set_layout(RAGraph *g) {
 			}
 		}
 
-		set_layer_gap (g, 0);
+		set_layer_gap (g);
 		/* vertical align */
 		for (i = 0; i < g->n_layers; i++) {
 			int xval = 1 + g->layers[0].gap + 1;
@@ -2700,106 +2720,68 @@ static void agraph_print_edges(RAGraph *g) {
 		}
 	}
 
-	if (g->layout == 0) {
-		struct tmpbackedgeinfo *temp;
-		r_list_foreach (bckedges, itm, temp) {
-			int leftlen, rightlen;
-			int minx, maxx;
-			struct tmplayer *tt;
-			tl = r_list_get_n (lyr, temp->fromlayer);
-			tm = r_list_get_n (lyr, temp->tolayer);
+	struct tmpbackedgeinfo *temp;
+	r_list_foreach (bckedges, itm, temp) {
+		int leftlen, rightlen;
+		int minx, maxx;
+		struct tmplayer *tt;
+		tl = r_list_get_n (lyr, temp->fromlayer);
+		tm = r_list_get_n (lyr, temp->tolayer);
 
-			r_list_foreach (lyr, ito, tl) {
-				if (tl->layer <= temp->tolayer) {
-					tt = tl;
-					minx = tl->minx;
-					maxx = tl->maxx;
-					continue;
-				}
-
-				minx = minx < tl->minx ? minx : tl->minx;
-				maxx = maxx > tl->maxx ? maxx : tl->maxx;
-
-				if (tl->layer >= temp->fromlayer) {
-					break;
-				}
+		r_list_foreach (lyr, ito, tl) {
+			if (tl->layer <= temp->tolayer) {
+				tt = tl;
+				minx = tl->minx;
+				maxx = tl->maxx;
+				continue;
 			}
 
+			minx = minx < tl->minx ? minx : tl->minx;
+			maxx = maxx > tl->maxx ? maxx : tl->maxx;
+
+			if (tl->layer >= temp->fromlayer) {
+				break;
+			}
+		}
+
+		tt->revedgectr += 1;
+		if (g->layout == 0) {
 			leftlen = (temp->ax - minx) + (temp->bx - minx);
 			rightlen = (maxx - temp->ax) + (maxx - temp->bx);
-			tt->revedgectr += 1;
-			if (rightlen < leftlen) {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr, 1);
-			} else {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr, 1);
-			}
-
-			r_list_foreach (lyr, ito, tl) {
-				if (tl->layer < temp->tolayer) {
-					continue;
-				}
-
-				if (rightlen < leftlen) {
-					tl->maxx = maxx + 1;
-				} else {
-					tl->minx = minx - 1;
-				}
-
-				if (tl->layer >= temp->fromlayer) {
-					break;
-				}
-			}
-		}
-	} else {
-		struct tmpbackedgeinfo *temp;
-		r_list_foreach (bckedges, itm, temp) {
-			int leftlen, rightlen;
-			int minx, maxx;
-			struct tmplayer *tt;
-			tl = r_list_get_n (lyr, temp->fromlayer);
-			tm = r_list_get_n (lyr, temp->tolayer);
-
-			r_list_foreach (lyr, ito, tl) {
-				if (tl->layer <= temp->tolayer) {
-					tt = tl;
-					minx = tl->minx;
-					maxx = tl->maxx;
-					continue;
-				}
-
-				minx = minx < tl->minx ? minx : tl->minx;
-				maxx = maxx > tl->maxx ? maxx : tl->maxx;
-
-				if (tl->layer >= temp->fromlayer) {
-					break;
-				}
-			}
-
+		} else {
 			leftlen = (temp->ay - minx) + (temp->by - minx);
 			rightlen = (maxx - temp->ay) + (maxx - temp->by);
-			tt->revedgectr += 1;
-			if (rightlen < leftlen) {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr, 0);
-			} else {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr, 0);
+		}
+
+		if (rightlen < leftlen) {
+			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr, !g->layout);
+		} else {
+			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr, !g->layout);
+		}
+
+		r_list_foreach (lyr, ito, tl) {
+			if (tl->layer < temp->tolayer) {
+				continue;
 			}
 
-			r_list_foreach (lyr, ito, tl) {
-				if (tl->layer < temp->tolayer) {
-					continue;
-				}
+			if (rightlen < leftlen) {
+				tl->maxx = maxx + 1;
+			} else {
+				tl->minx = minx - 1;
+			}
 
-				if (rightlen < leftlen) {
-					tl->maxx = maxx + 1;
-				} else {
-					tl->minx = minx - 1;
-				}
-
-				if (tl->layer >= temp->fromlayer) {
-					break;
-				}
+			if (tl->layer >= temp->fromlayer) {
+				break;
 			}
 		}
+	}
+
+	r_list_foreach (lyr, ito, tl) {
+		free (tl);
+	}
+
+	r_list_foreach (bckedges, ito, tl) {
+		free (tl);
 	}
 
 	r_list_free (lyr);
@@ -3034,9 +3016,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 
 	if (is_interactive) {
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
-		if (is_interactive) {
-			r_cons_strcat (Color_RESET);
-		}
+		r_cons_strcat (Color_RESET);
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 0);
 			r_cons_fill_line ();
