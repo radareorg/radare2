@@ -622,7 +622,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				eprintf ("Invalid fd %d\n", (int)fd);
 			}
 		}
-		free (s);
+		R_FREE (s);
 		break;
 	case 'n': //omn
 		if (!(s = strdup (&input[2]))) {
@@ -685,6 +685,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_om);
 		break;
 	}
+	R_FREE (s);
 	r_core_block_read (core);
 }
 
