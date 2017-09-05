@@ -257,6 +257,10 @@ typedef struct idasig_v8_v9_t {
 	ut16 pattern_size;
 } idasig_v8_v9_t;
 
+typedef struct idasig_v10_t {
+	ut16 unknown;
+} idasig_v10_t;
+
 #if DEBUG
 static int header_size = 0;
 #endif
@@ -1275,6 +1279,14 @@ static int parse_v8_v9_header(RBuffer *buf, idasig_v8_v9_t *header) {
 	return true;
 }
 
+static int parse_v10_header(RBuffer *buf, idasig_v10_t *header) {
+	if (r_buf_read_at (buf, buf->cur, (unsigned char *) &header->unknown, sizeof(header->unknown)) != sizeof(header->unknown)) {
+		return false;
+	}
+
+	return true;
+}
+
 static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	ut8 *name = NULL;
 	ut8 *buf = NULL, *decompressed_buf = NULL;
@@ -1285,6 +1297,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	idasig_v5_t *header = NULL;
 	idasig_v6_v7_t *v6_v7 = NULL;
 	idasig_v8_v9_t *v8_v9 = NULL;
+	idasig_v10_t *v10 = NULL;
 
 	buf_eof = false;
 	buf_err = false;
@@ -1293,7 +1306,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 		goto exit;
 	}
 
-	if (version < 5 || version > 9) {
+	if (version < 5 || version > 10) {
 		eprintf ("Unsupported flirt signature version\n");
 		goto exit;
 	}
@@ -1318,6 +1331,15 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 			}
 			if (!parse_v8_v9_header (flirt_buf, v8_v9)) {
 				goto exit;
+			}
+
+			if (version >= 9) {
+				if (!(v10 = R_NEW0 (idasig_v10_t))) {
+					goto exit;
+				}
+				if (!parse_v10_header (flirt_buf, v10)) {
+					goto exit;
+				}
 			}
 		}
 	}
@@ -1384,6 +1406,7 @@ exit:
 	free (header);
 	free (v6_v7);
 	free (v8_v9);
+	free (v10);
 	free (name);
 	return ret;
 }
