@@ -998,6 +998,11 @@ static char qrcode_utf8_expansions[16][7] = {"  ","▀ "," ▀","▀▀",
                                              " ▄","▀▄"," █","▀█",
                                              "▄▄","█▄","▄█","██"};
 
+static char qrcode_ascii_expansions[16][7] = {"  ","' "," '","''",
+                                                   ". ",": ",".'",":'",
+                                                   " .","'."," :",":.",
+                                                   "..",":.",".:","::"};
+
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool inverted) {
 	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX] = {
 		0
@@ -1038,10 +1043,15 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool
                                 bmp |= qrcodegen_getModule(qrcode,x+1,y)<<1;
                                 bmp |= qrcodegen_getModule(qrcode,x,y+1)<<2;
                                 bmp |= qrcodegen_getModule(qrcode,x+1,y+1)<<3;
-                                const char *pixel = qrcode_utf8_expansions[
-                                        inverted
-                                        ? 15 - bmp
-                                        : bmp];
+                                const char *pixel = utf8
+					? qrcode_utf8_expansions[
+                                        	inverted
+                                        	? 15 - bmp
+                                        	: bmp]
+					: qrcode_ascii_expansions[
+						inverted
+						? 15 - bmp
+						: bmp];
                                 memcpy(p,pixel,strlen(pixel));
                                 p += strlen(pixel);
                         }
