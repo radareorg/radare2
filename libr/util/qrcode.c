@@ -999,9 +999,9 @@ static char qrcode_utf8_expansions[16][7] = {"  ","▀ "," ▀","▀▀",
                                              "▄▄","█▄","▄█","██"};
 
 static char qrcode_ascii_expansions[16][7] = {"  ","' "," '","''",
-                                                   ". ",": ",".'",":'",
-                                                   " .","'."," :",":.",
-                                                   "..",":.",".:","::"};
+                                              ". ",": ",".'",":'",
+                                              " .","'."," :",":.",
+                                              "..",":.",".:","::"};
 
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool inverted) {
 	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX] = {
