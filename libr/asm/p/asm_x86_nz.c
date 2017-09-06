@@ -1988,6 +1988,15 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	if (a->bits == 64) {
+		data[l++] = 0x48;
+	}
+	data[l++] = 0x98;
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -2010,7 +2019,7 @@ LookupTable oplookup[] = {
 	{"call", 0, &opcall, 0},
 	{"cbw", 0, NULL, 0x6698, 2},
 	{"cdq", 0, NULL, 0x99, 1},
-	{"cdqe", 0, NULL, 0x98, 1},
+	{"cdqe", 0, &opcdqe, 0},
 	{"clc", 0, NULL, 0xf8, 1},
 	{"cld", 0, NULL, 0xfc, 1},
 	{"clgi", 0, NULL, 0x0f01dd, 3},
