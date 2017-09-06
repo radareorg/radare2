@@ -1052,8 +1052,8 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool
 			for (x = -border; x < size + border; x++) {
 				bool fill = qrcodegen_getModule (qrcode, x, y);
 				const char *pixel = utf8
-					? (fill? "██": "  ")
-					: (fill? "##": "  ");
+					? ((fill ^ inverted)? "██": "  ")
+					: ((fill ^ inverted)? "##": "  ");
 				memcpy (p, pixel, strlen (pixel));
 				p += strlen (pixel);
 			}
