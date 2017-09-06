@@ -2706,7 +2706,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				switch (mode) {
 				case '0':
 					if (!p[j]) {
-						eprintf ("FOUND\n");
 						k++;
 					}
 					break;
