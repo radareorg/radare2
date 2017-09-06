@@ -1031,7 +1031,6 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool
 	}
 	char *p = res;
 	int x, y;
-	printf("%x",denseqr);
 	if(denseqr) {
                 for(y = -border; y < size + border; y+=2) {
                         for(x = -border; x < size + border; x+= 2) {
