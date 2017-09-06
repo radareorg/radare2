@@ -193,6 +193,9 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int blen, err, copied = 0;
 	int blocksize = 32;
 	RIOMach *riom = (RIOMach *)fd->data;
+	if (!io || !fd || !buf || !riom) {
+		return -1;
+	}
 
 	memset (buf, 0xff, len);
 	if (task_is_dead (riom->pid)) {
