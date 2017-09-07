@@ -752,6 +752,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 	}
+	if (!strcmp (file, "r2k://") {
+	 	file = r_config_get (r->config, "file.path");
+	}
 	//if not flags was passed open it with -r--
 	if (!flags) {
 		flags = R_IO_READ;

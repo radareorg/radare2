@@ -835,9 +835,8 @@ int main(int argc, char **argv, char **envp) {
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					iod = (r.io && fh) ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
-						const char *filepath;
+						const char *filepath = r_config_get (r.config, "dbg.exe.path");
 						ut64 addr;
-						filepath  = r_config_get (r.config, "dbg.exe.path");
 						addr = r_config_get_i (r.config, "bin.baddr");
 						if (filepath && r_file_exists (filepath)
 						    && !r_file_is_directory (filepath)) {
