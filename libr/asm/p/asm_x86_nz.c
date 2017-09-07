@@ -1817,6 +1817,24 @@ static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	if (!strcmp(op->mnemonic, "stosw")) {
+		data[l++] = 0x66;
+	}
+	if (a->bits == 64) {
+		data[l++] = 0x67;
+	}
+	if (!strcmp(op->mnemonic, "stosb")) {
+		data[l++] = 0xaa;
+	} else if (!strcmp(op->mnemonic, "stosw")) {
+		data[l++] = 0xab;
+	} else if (!strcmp(op->mnemonic, "stosd")) {
+		data[l++] = 0xab;
+	}
+	return l;
+}
+
 static int opset(RAsm *a, ut8 *data, const Opcode *op) {
 	if (!(op->operands[0].type & (OT_GPREG | OT_BYTE))) {return -1;}
 	int l = 0;
@@ -2211,9 +2229,9 @@ LookupTable oplookup[] = {
 	{"std", 0, NULL, 0xfd, 1},
 	{"stgi", 0, NULL, 0x0f01dc, 3},
 	{"sti", 0, NULL, 0xfb, 1},
-	{"stosb", 0, NULL, 0xaa, 1},
-	{"stosd", 0, NULL, 0xab, 1},
-	{"stosw", 0, NULL, 0x66ab, 2},
+	{"stosb", 0, &opstos, 0},
+	{"stosd", 0, &opstos, 0},
+	{"stosw", 0, &opstos, 0},
 	{"sub", 0, &opsub, 0},
 	{"swapgs", 0, NULL, 0x0f1ff8, 3},
 	{"syscall", 0, NULL, 0x0f05, 2},
@@ -2242,38 +2260,6 @@ LookupTable oplookup[] = {
 	{"test", 0, &optest, 0},
 	{"null", 0, NULL, 0, 0}
 };
-
-static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
-	int l = 0;
-	LookupTable *lt_ptr;
-
-	if (!strcmp (op->mnemonic, "rep") ||
-	    !strcmp (op->mnemonic, "repe") ||
-	    !strcmp (op->mnemonic, "repz")) {
-		data[l++] = 0xf3;
-	} else if (!strcmp (op->mnemonic, "repne") ||
-	           !strcmp (op->mnemonic, "repnz")) {
-		data[l++] = 0xf2;
-	}
-	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
-		if (!strcasecmp (op->operands[0].rep_op, lt_ptr->mnemonic)) {
-			if (lt_ptr->opcode > 0) {
-				if (lt_ptr->only_x32 && a->bits == 64) {
-					return -1;
-				}
-				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
-				int i = 0;
-				for (; i < lt_ptr->size; i++) {
-					data[i+l] = ptr[lt_ptr->size - (i + 1)];
-				}
-				return l + lt_ptr->size;
-			} else {
-				return -1;
-			}
-		}
-	}
-	return -1;
-}
 
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
@@ -2680,6 +2666,56 @@ static ut64 getnum(RAsm *a, const char *s) {
 	if (!s) return 0;
 	if (*s == '$') s++;
 	return r_num_math (a->num, s);
+}
+
+static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	LookupTable *lt_ptr;
+	int retval;
+	if (!strcmp (op->mnemonic, "rep") ||
+	    !strcmp (op->mnemonic, "repe") ||
+	    !strcmp (op->mnemonic, "repz")) {
+		data[l++] = 0xf3;
+	} else if (!strcmp (op->mnemonic, "repne") ||
+	           !strcmp (op->mnemonic, "repnz")) {
+		data[l++] = 0xf2;
+	}
+	Opcode instr = {0};
+	parseOpcode (a, op->operands[0].rep_op, &instr);
+
+	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
+		//printf ("%s : %s\n", lt_ptr->mnemonic, op->operands[0].rep_op);
+		if (!strcasecmp (instr.mnemonic, lt_ptr->mnemonic)) {
+			if (lt_ptr->opcode > 0) {
+				if (lt_ptr->only_x32 && a->bits == 64) {
+					return -1;
+				}
+				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
+				int i = 0;
+				for (; i < lt_ptr->size; i++) {
+					data[i + l] = ptr[lt_ptr->size - (i + 1)];
+				}
+				return l + lt_ptr->size;
+			} else {
+				if (lt_ptr->opdo) {
+					data += l;
+					if (instr.has_bnd) {
+						data[l] = 0xf2;
+						data++;
+					}
+					retval = lt_ptr->opdo (a, data, &instr);
+					// if op supports bnd then the first byte will
+					// be 0xf2.
+					if (instr.has_bnd) {
+						retval++;
+					}
+					return l + retval;
+				}
+				break;
+			}
+		}
+	}
+	return -1;
 }
 
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
