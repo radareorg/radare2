@@ -1517,9 +1517,7 @@ static int scr_ansicon(void *user, void *data) {
 
 static int cb_denseqr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-        RCore *core = (RCore *) user;
-	r_cons_singleton()->denseqr = 
-		node->i_value && r_config_get_i (core->config, "scr.utf8");
+	r_cons_singleton()->denseqr = node->i_value;
 	return true;
 }
 
