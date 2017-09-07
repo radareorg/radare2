@@ -2441,8 +2441,8 @@ func.setvbuf.ret=int
 fprintf=func
 func.fprintf.args=3
 func.fprintf.arg.0=FILE,*stream
-func.fprintf.arg.1=,const char*
-func.fprintf.arg.2=,...
+func.fprintf.arg.1=const char *,format
+func.fprintf.arg.2= ,...
 func.fprintf.ret=int
 
 fscanf=func
@@ -2745,3 +2745,19 @@ func.error.arg.0=int,status
 func.error.arg.1=int,errname
 func.error.arg.2=char *,format
 func.error.ret=void
+
+nl_langinfo=func
+func.nl_langinfo.args=1
+func.nl_langinfo.arg.0=nl_item,item
+func.nl_langinfo.ret=char *
+
+nl_langinfo_l=func
+func.nl_langinfo_l.args=2
+func.nl_langinfo_l.arg.0=nl_item,item
+func.nl_langinfo_l.arg.1=locale_t locale
+func.nl_langinfo_l.ret=char *
+
+setjmp=func
+func.setjmp.args=1
+func.setjmp.arg.0=jmpbuf,env
+func.setjmp.ret=int
