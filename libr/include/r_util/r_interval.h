@@ -31,5 +31,6 @@ R_API ut64 r_interval_size (RInterval interv, bool *err);
 R_API ut64 r_interval_to_end (RInterval interv, ut64 from, bool *err);
 R_API ut64 r_interval_intersection_lower_bound (RInterval inter, RInterval val, bool *intersection);
 R_API ut64 r_interval_instersection_upper_bound (RInterval inter, RInterval val, bool *intersection);
+R_API bool r_interval_in_me (RInterval interv, ut64 you);
 
 #endif

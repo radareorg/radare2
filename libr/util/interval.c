@@ -22,10 +22,15 @@ R_API bool r_interval_init (RInterval *interv, RIntervalType type, ut64 from, ut
 			interv->from = from;
 			interv->to = from + size - 1;
 			break;
+		case R_INTERVAL_UNDEFINED:
 		default:
 			return false;
 	}
-	if (r_interval_first (*interv, NULL) > r_interval_last (*interv, NULL))
+	if (r_interval_first (*interv, NULL) > r_interval_last (*interv, NULL)) {
+		//This is a hack, for my lazyness
+		r_interval_init (interv, R_INTERVAL_CLOSED_CLOSED, from, UT64_MAX - from + 1);
+		interv->type = type;
+	}
 	return true;
 }
 
@@ -150,6 +155,15 @@ R_API ut64 r_interval_instersection_upper_bound (RInterval inter, RInterval val,
 		*intersection = true;
 		return to0;
 	}
-	*intersection * false;
+	*intersection = false;
 	return 0LL;
+}
+
+R_API bool r_interval_in_me (RInterval interv, ut64 you) {
+	ut64 from = r_interval_first (interv, NULL),
+	     to = r_interval_last (interv, NULL);
+	if ((from <= you) && (you <= to)) {
+		return true;
+	}
+	return false;
 }
