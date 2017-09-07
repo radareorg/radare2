@@ -351,7 +351,14 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
 		break;
 	case 'f': // "CCf"
-		r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
+		switch (input[2]) {
+		case 'j': // "CCfj"
+			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
+			break;
+		default:
+			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
+			break;
+		}
 		break;
 	case 'j': // "CCj"
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 'j');
