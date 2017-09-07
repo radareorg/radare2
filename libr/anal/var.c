@@ -50,7 +50,7 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 			}
 		} else {
 			if (usePxr) {
-				anal->cb_printf ("pxr $w @%s+0x%x\n", anal->reg->name[R_REG_NAME_BP], -delta);
+				anal->cb_printf ("pxr $w @%s-0x%x\n", anal->reg->name[R_REG_NAME_BP], -delta);
 			} else {
 				anal->cb_printf ("pf %s @%s-0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], -delta);
 			}
