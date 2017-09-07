@@ -2727,3 +2727,21 @@ func.objc_msgSend.args=2
 func.objc_msgSend.arg.0=void *,instance
 func.objc_msgSend.arg.1=char *,selector
 func.objc_msgSend.ret=void *
+
+bindtextdomain=func
+func.bindtextdomain.args=2
+func.bindtextdomain.arg.0=char *,domainname
+func.bindtextdomain.arg.1=char *,dirname
+func.bindtextdomain.ret=char *
+
+textdomain=func
+func.textdomain.args=1
+func.textdomain.arg.0=char *,domainname
+func.textdomain.ret=char *
+
+error=func
+func.error.args=3
+func.error.arg.0=int,status
+func.error.arg.1=int,errname
+func.error.arg.2=char *,format
+func.error.ret=void
