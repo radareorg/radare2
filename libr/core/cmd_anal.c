@@ -4005,8 +4005,17 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1<<5, core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+                        // "aeafj"
 			if (fcn) {
-				cmd_aea (core, 1, fcn->addr, r_anal_fcn_size (fcn));
+				switch (input[2]) {
+				case 'j': // "aeafj"
+					cmd_aea (core, 1<<4, fcn->addr, r_anal_fcn_size (fcn));
+					break;
+				default:
+					cmd_aea (core, 1, fcn->addr, r_anal_fcn_size (fcn));
+					break;
+				}
+				break;
 			}
 		} else {
 			cmd_aea (core, 0, core->offset, r_num_math (core->num, input+2));
