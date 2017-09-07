@@ -37,6 +37,7 @@ static const char *help_msg_aa[] = {
 	"aaa", "[?]", "autoname functions after aa (see afna)",
 	"aab", "", "aab across io.sections.text",
 	"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
+	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaE", "", "run aef on all functions (same as aef @@f)",
@@ -4336,7 +4337,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 }
 
-static void cmd_anal_calls(RCore *core, const char *input) {
+static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag) {
 	RList *ranges = NULL;
 	RIOMap *r;
 	RBinFile *binfile;
@@ -4364,7 +4365,11 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		r_list_free (ranges);
 		const char *search_in = r_config_get (core->config, "search.in");
 		ranges = r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end);
-		_anal_calls (core, addr, addr_end);
+		if (only_print_flag) {
+			r_cons_printf ("f fcn. 0x%08"PFMT64x" 0 0x%08"PFMT64x"\n", addr, addr);
+		} else {
+			_anal_calls (core, addr, addr_end);
+		}
 	} else {
 		RListIter *iter;
 		if (binfile) {
@@ -4373,7 +4378,11 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				addr_end = r->to;
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
-				_anal_calls (core, addr, addr_end);
+				if (only_print_flag) {
+					r_cons_printf ("f fcn.0x%08"PFMT64x" 0 0x%08"PFMT64x"\n", addr, addr);
+				} else {
+					_anal_calls (core, addr, addr_end);
+				}
 			}
 		}
 	}
@@ -5640,7 +5649,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
 	case 'b': cmd_anal_blocks (core, input + 1); break; // "aab"
-	case 'c': cmd_anal_calls (core, input + 1); break; // "aac"
+	case 'c':
+		switch (input[1]) {
+		case '*':
+			cmd_anal_calls (core, input + 1, true); break; // "aac*"
+		default:
+			cmd_anal_calls (core, input + 1, false); break; // "aac"
+		}
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
@@ -5720,7 +5735,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				rowlog (core, "Analyze function calls (aac)");
-				(void) cmd_anal_calls (core, ""); // "aac"
+				(void) cmd_anal_calls (core, "", false); // "aac"
 				r_core_seek (core, curseek, 1);
 				// rowlog (core, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
