@@ -1016,7 +1016,7 @@ static void r_bin_dwarf_free_attr_value(RBinDwarfAttrValue *val) {
 	};
 }
 
-static void r_bin_dwarf_free_die (RBinDwarfDIE *die) {
+static void r_bin_dwarf_free_die(RBinDwarfDIE *die) {
 	size_t i;
 	if (!die) {
 		return;
@@ -1027,13 +1027,15 @@ static void r_bin_dwarf_free_die (RBinDwarfDIE *die) {
 	R_FREE (die->attr_values);
 }
 
-static void r_bin_dwarf_free_comp_unit (RBinDwarfCompUnit *cu) {
+static void r_bin_dwarf_free_comp_unit(RBinDwarfCompUnit *cu) {
 	size_t i;
 	if (!cu) {
 		return;
 	}
 	for (i = 0; i < cu->length; i++) {
-		r_bin_dwarf_free_die (&cu->dies[i]);
+		if (cu->dies) {
+			r_bin_dwarf_free_die (&cu->dies[i]);
+		}
 	}
 	R_FREE (cu->dies);
 }
