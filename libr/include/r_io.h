@@ -303,7 +303,7 @@ R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta
 R_API void r_io_map_calculate_skyline(RIO *io);
 
 //io.c
-R_API RIO *r_io_new ();
+R_API RIO *r_io_new (void);
 R_API RIO *r_io_init (RIO *io);
 R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode);		//should return int
 R_API RIODesc *r_io_open (RIO *io, const char *uri, int flags, int mode);
@@ -478,7 +478,7 @@ R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
-R_API RIOAccessLog *r_io_accesslog_new ();
+R_API RIOAccessLog *r_io_accesslog_new (void);
 R_API void r_io_accesslog_free (RIOAccessLog *log);
 R_API void r_io_accesslog_sort (RIOAccessLog *log);
 R_API void r_io_accesslog_sqash_ignore_gaps (RIOAccessLog *log);

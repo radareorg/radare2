@@ -245,7 +245,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #endif
 
 #define R_LIB_VERSION_HEADER(x) \
-R_API const char *x##_version()
+R_API const char *x##_version(void)
 #define R_LIB_VERSION(x) \
 R_API const char *x##_version () { return "" R2_GITTAP; }
 
