@@ -1812,16 +1812,14 @@ static int cb_binminstr(void *user, void *data) {
 }
 
 static int cb_searchin(void *user, void *data) {
-	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
 			"raw               search in raw io (ignoring bounds)\n"
 			"block             search in the current block\n"
-			"file              search in all mapped sections\n"
-			"io.maps           search in current map\n"
-			"io.maprange       search in all maps\n"
+			"io.map            search in current map\n"
+			"io.maps           search in all maps\n"
 			"io.section        search in current mapped section\n"
 			"io.sections       search in all mapped sections\n"
 			"io.sections.write search in all writable marked sections\n"
@@ -2618,7 +2616,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("search.overlap", "false", "Look for overlapped search hits");
 	SETI ("search.maxhits", 0, "Maximum number of hits (0: no limit)");
 	SETI ("search.from", -1, "Search start address");
-	n = NODECB ("search.in", "file", &cb_searchin);
+	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "Specify search boundaries");
 	SETOPTIONS (n, "raw", "block", "file", "io.maps", "io.maprange", "io.section", NULL);
 	SETOPTIONS (n, "io.sections", "io.sections.write", "io.sections.exec",

@@ -577,6 +577,22 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
+	} else if (!strcmp (mode, "io.map")) {
+		RIOMap *m = r_io_map_get (core->io, core->offset);
+		if (m) {
+			*from = m->from;
+			*to = m->to;
+			list = r_list_newf ((RListFree)free);
+			if (!list) {
+				return NULL;
+			}
+			RIOMap *map = R_NEW0 (RIOMap);
+			*map = *m;
+			r_list_append (list, map);
+		} else {
+			*from = *to = 0;
+		}
+		return list;
 	} else if (!strcmp (mode, "io.maps")) {
 		SdbListIter *iter;
 		RIOMap *m;
@@ -607,54 +623,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			}
 		}
 		return list;
-	} else if (!strcmp (mode, "io.maps.range")) {
-		SdbListIter *iter;
-		RIOMap *m;
-		*from = *to = 0;
-		list = r_list_newf (free);
-		ls_foreach (core->io->maps, iter, m) {
-			if (!*from) {
-				*from = m->from;
-				*to = m->to;
-				continue;
-			}
-			if ((m->from < *from) && m->from) {
-				*from = m->from;
-			}
-			if (m->to > *to) {
-				*to = m->to;
-			}
-		}
-		if (!*to || *to == UT64_MAX || *to == UT32_MAX) {
-			*to = r_io_size (core->io);
-		}
-	} else if (!strcmp (mode, "file")) {
-		//if (core->io->va) {
-			SdbListIter *iter;
-			RIOSection *s;
-			*from = *to = 0;
-			ls_foreach (core->io->sections, iter, s) {
-				if (!*from) {
-					*from = s->vaddr;
-					*to = s->vaddr + s->vsize -1 ;
-					continue;
-				}
-				if (((s->vaddr) < *from) && s->vaddr) {
-					*from = s->vaddr;
-				}
-				if ((s->vaddr + s->vsize) > *to) {
-					*to = s->vaddr + s->vsize - 1;
-				}
-			}
-		//}
-		if (!*to || *to == UT64_MAX || *to == UT32_MAX) {
-			RIOMap *map = r_io_map_get (core->io, core->offset);
-			*from = core->offset;
-			*to = r_io_size (core->io) + (map? map->to: 0);
-			if (*from > *to) {
-				*from = 0;
-			}
-		}
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
 			SdbListIter *iter;
