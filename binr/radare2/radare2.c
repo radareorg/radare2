@@ -836,8 +836,10 @@ int main(int argc, char **argv, char **envp) {
 					iod = (r.io && fh) ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
 						const char *filepath = r_config_get (r.config, "dbg.exe.path");
-						ut64 addr;
-						addr = r_config_get_i (r.config, "bin.baddr");
+						ut64 addr = baddr;
+						if (addr == UINT64_MAX) {
+							addr = r_config_get_i (r.config, "bin.baddr");
+						}
 						if (filepath && r_file_exists (filepath)
 						    && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
@@ -846,7 +848,7 @@ int main(int argc, char **argv, char **envp) {
 									free (iod->name);
 									iod->name = newpath;
 								}
-								if (!addr || addr == UINT64_MAX) {
+								if (addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, newpath);
 								}
 								r_core_bin_load (&r, NULL, addr);
@@ -855,7 +857,7 @@ int main(int argc, char **argv, char **envp) {
 							filepath = iod->name;
 							if (r_file_exists (filepath)
 							    && !r_file_is_directory (filepath)) {
-								if (!addr || addr == UINT64_MAX) {
+								if (addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}
 								r_core_bin_load (&r, filepath, addr);
@@ -865,7 +867,7 @@ int main(int argc, char **argv, char **envp) {
 									free (iod->name);
 									iod->name = (char*) filepath;
 								}
-								if (!addr || addr == UINT64_MAX) {
+								if (addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}
 								r_core_bin_load (&r, NULL, addr);
