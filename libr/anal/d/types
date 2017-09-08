@@ -2491,8 +2491,8 @@ func.sprintf.ret=int
 sscanf=func
 func.sscanf.args=3
 func.sscanf.arg.0=const char *,s
-func.sscanf.arg.1=,const char*
-func.sscanf.arg.2=,...
+func.sscanf.arg.1=const char *,format
+func.sscanf.arg.2= ,...
 func.sscanf.ret=int
 
 vfprintf=func
