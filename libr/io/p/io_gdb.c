@@ -269,7 +269,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strncmp (cmd, "monitor", 7)) {
 		const char *qrcmd = cmd + 8;
-		if (!isspace (cmd[8])) {
+		if (!isspace (cmd[7])) {
 			qrcmd = "help";
 		}
 		if (gdbr_send_qRcmd (desc, qrcmd, io->cb_printf) < 0) {
