@@ -45,9 +45,6 @@ static bool _map_skyline_push(RVector *map_skyline, ut64 from, ut64 to, RIOMap *
 
 // Store map parts that are not covered by others into io->map_skyline
 R_API void r_io_map_calculate_skyline(RIO *io) {
-#if MAP_USE_HALF_CLOSED
-# error Please migrate to half-closed
-#endif
 #define PUSH
 	SdbListIter *iter;
 	RIOMap *map;
@@ -148,7 +145,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->flags = flags;
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
-	ls_append (io->maps, map);
+	ls_prepend (io->maps, map);
 	// TODO When maps are added in batch (sections), do not recalculate each time
 	//_calculate_skyline (io);
 	return map;
