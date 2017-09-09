@@ -494,7 +494,19 @@ int main(int argc, char **argv) {
 					printf ("\n");
 				} // else show_raw is_above()
 				break;
-			case 'p': // PE
+			case 'p':
+				if (format[1] == 'y') {
+	                                printf ("payload = \"", (int)b->length);
+	                                for (i = 0; i < b->length; i++) {
+	                                        if (!(i % 20)) {
+	                                                printf ("\"\\\n  \"");
+	                                        }
+	                                        printf ("\\x%02x", b->buf[i]);
+	                                }
+	                                printf ("\"\n");
+	                                break;
+				} // else follow through to...
+				  // PE
 			case 'e': // ELF
 			case 'm': // MACH0
 				create (format, arch, bits, b->buf, b->length);
