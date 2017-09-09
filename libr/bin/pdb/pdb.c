@@ -799,7 +799,7 @@ void build_command_field(ELeafType lt, char **command_field) {
 		if (!(*command_field)) {
 			break;
 		}
-		strcpy (*command_field, "pf");
+		strcpy (*command_field, "pf.");
 		break;
 	case eLF_ENUM:
 		*command_field = (char *) malloc (strlen ("\"td enum") + 1);
@@ -817,6 +817,7 @@ void build_command_field(ELeafType lt, char **command_field) {
 void build_name_field(char *name, char **name_field) {
 	*name_field = name? strdup (name): NULL;
 	r_name_filter (*name_field, -1);
+	r_str_replace_char (*name_field, ':', '_');
 }
 
 ///////////////////////////////////////////////////////////////////////////////

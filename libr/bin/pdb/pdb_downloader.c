@@ -131,12 +131,12 @@ int r_bin_pdb_download(RCore* core, int isradjson, int* actions_done, SPDBOption
 	RBinInfo *info = r_bin_get_info (core->bin);
 
 	if (!info || !info->debug_file_name) {
-		eprintf ("Can't find debug filename.\n");
+		eprintf ("Can't find debug filename\n");
 		return 1;
 	}
 
 	if (!options || !options->symbol_server || !options->user_agent) {
-		eprintf ("Can't retrieve pdb configurations.\n");
+		eprintf ("Can't retrieve pdb configurations\n");
 		return 1;
 	}
 
