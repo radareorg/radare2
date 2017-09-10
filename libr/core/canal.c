@@ -3342,33 +3342,34 @@ static ut64 esilbreak_last_data = UT64_MAX;
 
 static ut64 ntarget = UT64_MAX;
 
+// TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
 	}
-	if (myvalid (mycore->io, addr)) {
-		ut8 buf[8];
+	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
 		ut64 refptr;
-		if (len == 8) {
-			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
-				/* invalid read */
-				refptr = UT64_MAX;
-			} else {
-				refptr = r_read_ble64 (buf, esil->anal->big_endian);
-				esilbreak_last_data = refptr;
-			}
-		} else {
-			if (!r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
-				/* invalid read */
-				refptr = UT64_MAX;
-			} else {
-				refptr = (ut64)r_read_ble32 (buf, esil->anal->big_endian);
-				esilbreak_last_data = refptr;
-			}
+		bool trace = true;
+		switch (len) {
+		case 2:
+			esilbreak_last_data = refptr = (ut64)r_read_ble16 (buf, esil->anal->big_endian);
+			break;
+		case 4:
+			esilbreak_last_data = refptr = (ut64)r_read_ble32 (buf, esil->anal->big_endian);
+			break;
+		case 8:
+			esilbreak_last_data = refptr = r_read_ble64 (buf, esil->anal->big_endian);
+			break;
+		default:
+			trace = false;
+			r_io_read_at (mycore->io, addr, (ut8*)buf, len);
+			break;
 		}
+
+		// TODO incorrect
 		bool validRef = false;
-		if (myvalid (mycore->io, refptr)) {
+		if (trace && myvalid (mycore->io, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
 				r_core_cmdf (mycore, "axd 0x%"PFMT64x" 0x%"PFMT64x,
 						(ut64)refptr, esil->address);
