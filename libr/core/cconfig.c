@@ -2555,7 +2555,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB ("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
-	SETCB ("scr.denseqr", "false", &cb_denseqr, "Print QR using dense UTF-8 characters");
+	SETCB ("scr.denseqr", "true", &cb_denseqr, "Print QR using dense UTF-8 characters");
 	SETICB ("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");

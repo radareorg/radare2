@@ -993,15 +993,17 @@ static void setModuleBounded(ut8 qrcode[], int x, int y, bool isBlack) {
 
 /////////////////////////////////////
 
-static char qrcode_utf8_expansions[16][7] = {"  ","▀ "," ▀","▀▀",
-					     "▄ ","█ ","▄▀","█▀",
-					     " ▄","▀▄"," █","▀█",
-					     "▄▄","█▄","▄█","██"};
+static char qrcode_utf8_expansions[16][7] = { "  ","▀ "," ▀","▀▀",
+											  "▄ ","█ ","▄▀","█▀",
+											  " ▄","▀▄"," █","▀█",
+											  "▄▄","█▄","▄█","██"};
 
-static char qrcode_ascii_expansions[16][7] = {"  ","' "," '","''",
-					      ". ",": ",".'",":'",
-					      " .","'."," :",":.",
-					      "..",":.",".:","::"};
+static char qrcode_ascii_expansions[16][3] = { "  ","' "," '","''",
+											   ". ",": ",".'",":'",
+											   " .","'."," :","':",
+											   "..",":.",".:","::"};
+
+
 
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool inverted) {
 	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX] = {
@@ -1036,13 +1038,13 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool
 	}
 	char *p = res;
 	int x, y;
-	if(denseqr) {
-		for(y = -border; y < size + border; y+=2) {
-			for(x = -border; x < size + border; x+= 2) {
-				int bmp = qrcodegen_getModule(qrcode,x,y);
-				bmp |= qrcodegen_getModule(qrcode,x+1,y)<<1;
-				bmp |= qrcodegen_getModule(qrcode,x,y+1)<<2;
-				bmp |= qrcodegen_getModule(qrcode,x+1,y+1)<<3;
+	if (denseqr) {
+		for (y = -border; y < size + border; y += 2) {
+			for (x = -border; x < size + border; x += 2) {
+				int bmp = qrcodegen_getModule (qrcode, x, y);
+				bmp |= qrcodegen_getModule (qrcode, x + 1, y) << 1;
+				bmp |= qrcodegen_getModule (qrcode, x, y + 1) << 2;
+				bmp |= qrcodegen_getModule (qrcode, x + 1, y + 1) << 3;
 				const char *pixel = utf8
 					? qrcode_utf8_expansions[
 						inverted
@@ -1052,8 +1054,8 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool
 						inverted
 						? 15 - bmp
 						: bmp];
-				memcpy(p,pixel,strlen(pixel));
-				p += strlen(pixel);
+				memcpy (p, pixel, strlen (pixel));
+				p += strlen (pixel);
 			}
 			*p++ = '\n';
 		}
@@ -1062,8 +1064,8 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool denseqr, bool
 			for (x = -border; x < size + border; x++) {
 				bool fill = qrcodegen_getModule (qrcode, x, y);
 				const char *pixel = utf8
-					? ((fill ^ inverted)? "██": "  ")
-					: ((fill ^ inverted)? "##": "  ");
+					? ( (fill ^ inverted) ? "██" : "  ")
+					: ( (fill ^ inverted) ? "##" : "  ");
 				memcpy (p, pixel, strlen (pixel));
 				p += strlen (pixel);
 			}
