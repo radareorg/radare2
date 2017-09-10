@@ -41,7 +41,7 @@ static const char *help_msg_slash[] = {
 	"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
 	"/x", " ff..33", "search for hex string ignoring some nibbles",
 	"/x", " ff0033", "search for hex string",
-	"/x", " ff43 ffd0", "search for hexpair with mask",
+	"/x", " ff43:ffd0", "search for hexpair with mask",
 	"/z", " min max", "search for strings of given size",
 #if 0
 	"\nConfiguration:", "", " (type `e??search.` for a complete list)",
