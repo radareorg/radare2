@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_userconf.h>
 
@@ -8,6 +8,7 @@
 
 #if __APPLE__ && DEBUGGER
 
+static int __get_pid (RIODesc *desc);
 #define EXCEPTION_PORT 0
 
 // NOTE: mach/mach_vm is not available for iOS
@@ -36,12 +37,20 @@
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
 
+#define R_MACH_MAGIC r_str_hash ("mach")
+
 typedef struct {
-	int pid;
 	task_t task;
 } RIOMach;
+/*
 #define RIOMACH_PID(x) (x ? ((RIOMach*)(x))->pid : -1)
 #define RIOMACH_TASK(x) (x ? ((RIOMach*)(x))->task : -1)
+*/
+
+int RIOMACH_TASK(RIODescData *x) {
+	// TODO
+	return -1;
+}
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -144,7 +153,7 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	vm_size_t osize = (vm_size_t) 0;
 	natural_t depth = 0;
 	kern_return_t kr;
-	int tid = RIOMACH_PID (fd->data);
+	int tid = __get_pid (fd);
 	task_t task = pid_to_task (tid);
 	ut64 lower = addr;
 #if __arm64__ || __aarch64__
@@ -188,31 +197,36 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	return lower;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
+static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	vm_size_t size = 0;
 	int blen, err, copied = 0;
 	int blocksize = 32;
-	RIOMach *riom = (RIOMach *)fd->data;
-	if (!io || !fd || !buf || !riom) {
+	RIODescData *dd = (RIODescData *)desc->data;
+	if (!io || !desc || !buf || !dd) {
 		return -1;
 	}
-
+	if (dd ->magic != r_str_hash ("mach")) {
+		return -1;
+	}
 	memset (buf, 0xff, len);
-	if (task_is_dead (riom->pid)) {
+	int pid = __get_pid (desc);
+	task_t task = pid_to_task (pid);
+	if (task_is_dead (pid)) {
 		return -1;
 	}
-	if (RIOMACH_PID (fd->data) == 0) {
+	if (pid == 0) {
 		if (io->off < 4096) {
 			return len;
 		}
 	}
-	copied = getNextValid (io, fd, io->off) - io->off;
-	if (copied < 0) copied = 0;
-
+	copied = getNextValid (io, desc, io->off) - io->off;
+	if (copied < 0) {
+		copied = 0;
+	}
 	while (copied < len) {
 		blen = R_MIN ((len - copied), blocksize);
 		//blen = len;
-		err = vm_read_overwrite (RIOMACH_TASK (fd->data),
+		err = vm_read_overwrite (task,
 			(ut64)io->off + copied, blen,
 			(pointer_t)buf + copied, &size);
 		switch (err) {
@@ -257,16 +271,18 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 	return (kr != KERN_SUCCESS ? 0 : info.protection);
 }
 
-static int tsk_pagesize(RIOMach *riom) {
-#define GetPageSize(x) (host_page_size (riom->task, x) == KERN_SUCCESS)
+static int tsk_pagesize(RIODesc *desc) {
+	int tid = __get_pid (desc);
+	task_t task = pid_to_task (tid);
 	static vm_size_t pagesize = 0;
-	return pagesize ? pagesize
-		: GetPageSize (&pagesize)
+	return pagesize
+		? pagesize
+		: (host_page_size (task, &pagesize) == KERN_SUCCESS)
 			? pagesize : 4096;
 }
 
-static vm_address_t tsk_getpagebase(RIOMach *riom, ut64 addr) {
-	vm_address_t pagesize = tsk_pagesize (riom);
+static vm_address_t tsk_getpagebase(RIODesc *desc, ut64 addr) {
+	vm_address_t pagesize = tsk_pagesize (desc);
 	return (addr & ~(pagesize - 1));
 }
 
@@ -288,19 +304,23 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	return true;
 }
 
-static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 addr) {
+static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 addr) {
 	vm_address_t vaddr = addr;
 	vm_address_t pageaddr;
 	vm_size_t pagesize;
 	vm_size_t total_size;
 	int operms = 0;
-	task_t task;
-	if (!riom || len < 1 || task_is_dead (riom->pid)) {
+	int pid = __get_pid (desc);
+	if (!desc || pid < 0) {
 		return 0;
 	}
-	task = riom->task;
-	pageaddr = tsk_getpagebase (riom, addr);
-	pagesize = tsk_pagesize (riom);
+	task_t task = pid_to_task (pid);
+
+	if (len < 1 || task_is_dead (task)) {
+		return 0;
+	}
+	pageaddr = tsk_getpagebase (desc, addr);
+	pagesize = tsk_pagesize (desc);
 	total_size = (len > pagesize)
 		? pagesize * (1 + (len / pagesize))
 		: pagesize;
@@ -327,7 +347,7 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	return mach_write_at (io, (RIOMach*)fd->data, buf, len, io->off);
+	return mach_write_at (io, fd, buf, len, io->off);
 }
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
@@ -336,7 +356,7 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
-	RIOMach *riom;
+	RIOMach *riom = NULL;
 	const char *pidfile;
 	char *pidpath, *endptr;
 	int pid;
@@ -382,19 +402,26 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		return NULL;
 	}
+	RIODescData *iodd = R_NEW0 (RIODescData);
+	if (iodd) {
+		iodd->pid = pid;
+		iodd->tid = pid;
+		iodd->data = NULL;
+	}
 	riom = R_NEW0 (RIOMach);
-	riom->pid = pid;
 	riom->task = task;
+	iodd->magic = r_str_hash ("mach");
+	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
 	pidpath = pid
 		? r_sys_pid_to_path (pid)
 		: strdup ("kernel");
 	if (!strncmp (file, "smach://", 8)) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
-			       rw | R_IO_EXEC, mode, riom);
+			       rw | R_IO_EXEC, mode, iodd);
 	} else {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, file,
-			       rw | R_IO_EXEC, mode, riom);
+			       rw | R_IO_EXEC, mode, iodd);
 	}
 	ret->name = pidpath;
 	return ret;
@@ -416,29 +443,42 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	RIOMach *riom = (RIOMach*)fd->data;
-	kern_return_t kr;
-	if (!riom)
+	if (!fd) {
 		return false;
-	kr = mach_port_deallocate (mach_task_self (), riom->task);
-	if (kr != KERN_SUCCESS)
+	}
+	RIODescData *iodd = fd->data;
+	kern_return_t kr;
+	if (!iodd) {
+		return false;
+	}
+	if (iodd->magic != R_MACH_MAGIC) {
+		return false;
+	}
+	task_t task = pid_to_task (iodd->pid);
+	kr = mach_port_deallocate (mach_task_self (), task);
+	if (kr != KERN_SUCCESS) {
 		perror ("__close io_mach");
+	}
 	R_FREE (fd->data);
 	return kr == KERN_SUCCESS;
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-	RIOMach *riom;
-	if (!io || !fd || cmd || !fd->data) {
+	if (!io || !fd || !cmd || !fd->data) {
 		return 0;
 	}
-	riom = (RIOMach*)fd->data;
+	RIODescData *iodd = fd->data;
+	if (iodd->magic != R_MACH_MAGIC) {
+		return false;
+	}
+	
+	task_t task = pid_to_task (iodd->tid);
 	/* XXX ugly hack for testing purposes */
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd + 4);
 		if (perm) {
-			int pagesize = tsk_pagesize(riom);
-			tsk_setperm (io, riom->task, io->off, pagesize, perm);
+			int pagesize = tsk_pagesize (fd);
+			tsk_setperm (io, task, io->off, pagesize, perm);
 		} else {
 			eprintf ("Usage: =!perm [rwx]\n");
 		}
@@ -448,8 +488,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		const char *pidstr = cmd + 3;
 		int pid = -1;
 		if (*pidstr) {
-			int pid = RIOMACH_PID (fd->data);
-			eprintf ("%d\n", pid);
+			int pid = __get_pid (fd);
 			return 0;
 		}
 		if (!strcmp (pidstr, "0")) {
@@ -462,8 +501,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			task_t task = pid_to_task (pid);
 			if (task != -1) {
 				eprintf ("PID=%d\n", pid);
-				riom->pid = pid;
-				riom->task = task;
+				eprintf ("TODO: must set the pid in io here\n");
+		//		riom->pid = pid;
+		//		riom->task = task;
 				return 0;
 			}
 		}
@@ -475,8 +515,18 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 static int __get_pid (RIODesc *desc) {
-	RIOMach *mach = desc ? (RIOMach *) desc->data : NULL;
-	return mach ? mach->pid : -1;
+	// dupe for ? r_io_desc_get_pid (desc);
+	if (!desc || !desc->data) {
+		return -1;
+	}
+	RIODescData *iodd = desc->data;
+	if (iodd) {
+		if (iodd->magic != R_MACH_MAGIC) {
+			return -1;
+		}
+		return iodd->pid;
+	}
+	return -1;
 }
 
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
@@ -505,7 +555,7 @@ RIOPlugin r_io_plugin_mach = {
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION

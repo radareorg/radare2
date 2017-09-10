@@ -531,7 +531,10 @@ R_API int r_debug_detach(RDebug *dbg, int pid) {
 	return false;
 }
 
-R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
+R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
+	if (pid < 0) {
+		return false;
+	}
 	if (tid < 0) {
 		tid = pid;
 	}
@@ -540,8 +543,12 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 			eprintf ("= attach %d %d\n", pid, tid);
 		}
 	} else {
-		if (dbg->pid != -1)
+		if (dbg->pid != -1) {
 			eprintf ("Child %d is dead\n", dbg->pid);
+		}
+	}
+	if (pid < 0 || tid < 0) {
+		return false;
 	}
 
 	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))

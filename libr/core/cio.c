@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2016 - pancake */
+/* radare2 - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_core.h"
 
@@ -18,7 +18,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	r_config_set (r->config, "io.ff", "true");
 	r_core_cmdf (r, "dL %s", debugbackend);
 	if (!is_gdb) {
-		pid = *p; // 1st element in debugger's struct must be int
+		pid = r_io_desc_get_pid (fd);
 		r_core_cmdf (r, "dp=%d", pid);
 		if (attach) {
 			r_core_cmdf (r, "dpa %d", pid);

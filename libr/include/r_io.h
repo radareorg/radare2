@@ -100,7 +100,14 @@ typedef struct r_io_desc_t {
 	RIO *io;
 } RIODesc;
 
-//#warning move RIORap somewhere else
+typedef struct {
+	ut32 magic;
+	int pid;
+	int tid;
+	void *data;
+} RIODescData;
+
+// #warning move RIORap somewhere else
 typedef struct {
 	RSocket *fd;
 	RSocket *client;

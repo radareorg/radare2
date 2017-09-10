@@ -149,7 +149,7 @@ RDebugPlugin r_debug_plugin_esil = {
 	.wait = &__esil_wait,
 	.stop = __esil_stop,
 	.kill = __esil_kill,
-	.breakpoint = &__esil_breakpoint,
+	.breakpoint = (RBreakpointCallback)&__esil_breakpoint,
 	.reg_profile = __esil_reg_profile,
 	.reg_read = __reg_read,
 };

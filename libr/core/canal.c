@@ -2468,6 +2468,7 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	}
 	wordsize = (int)(core->anal->bits / 8);
 	if (!r_io_read_i (core->io, ptr, &dataptr, wordsize, false)) {
+		eprintf ("core_anal_followptr: Cannot read word at destination\n");
 		return false;
 	}
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
@@ -2555,6 +2556,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			}
 			// TODO: this can be probably enhaced
 			if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
+				eprintf ("Failed to read at 0x%08" PFMT64x "\n", at);
 				break;
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;

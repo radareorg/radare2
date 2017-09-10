@@ -354,8 +354,9 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 	mig_reply_error_t reply;
 	bool ret;
 	exc_msg msg;
-	if (!dbg)
+	if (!dbg) {
 		return reason;
+	}
 	msg.hdr.msgh_local_port = ex.exception_port;
 	msg.hdr.msgh_size = sizeof (exc_msg);
 	for (;;) {
@@ -409,8 +410,6 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 	return reason;
 }
 
-
-
 bool xnu_create_exception_thread(RDebug *dbg) {
 #if __POWERPC__
 	return false;
@@ -447,13 +446,11 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 		ex.masks, &ex.count, ex.ports, ex.behaviors, ex.flavors);
 	RETURN_ON_MACH_ERROR ("failed to swap exception ports\n", false);
 	//get notification when process die
-	kr = mach_port_request_notification (task_self, pid_to_task (dbg->pid),
-					 MACH_NOTIFY_DEAD_NAME, 0,
-					 exception_port,
-					 MACH_MSG_TYPE_MAKE_SEND_ONCE,
-					 &req_port);
-	if (kr != KERN_SUCCESS)
+	kr = mach_port_request_notification (task_self, task, MACH_NOTIFY_DEAD_NAME,
+		 0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
+	if (kr != KERN_SUCCESS) {
 		eprintf ("Termination notification request failed\n");
+	}
 	ex.exception_port = exception_port;
 	return true;
 #endif

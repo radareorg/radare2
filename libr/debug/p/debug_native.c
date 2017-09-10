@@ -697,7 +697,6 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	return list;
 }
 
-
 static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) {
@@ -717,10 +716,7 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 #endif
 }
 
-
-
 #if __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
-
 
 //Function to read register from Linux, BSD, Android systems
 static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
@@ -823,8 +819,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #else // i386/x86-64
 		return false;
 #endif
-	} else
-	if (type == R_REG_TYPE_GPR) {
+	} else if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__ && !__CYGWIN__
 		return w32_reg_write(dbg, type, buf, size);
 #elif __linux__

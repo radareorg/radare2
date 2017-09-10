@@ -142,7 +142,9 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 	int ret = 0;
 	char *p;
 	char *s = strdup (expr);
-	if (!s) return 0;
+	if (!s) {
+		return 0;
+	}
 	if (!strcmp (regname, s)) {
 		ret = 1;
 	} else {
@@ -182,7 +184,7 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 static int esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num) {
 	EsilBreak *ew;
 	RListIter *iter;
-	if (regname[0]>='0' && regname[0]<='9') {
+	if (regname[0] >= '0' && regname[0] <= '9') {
 		// wtf this should never happen
 		//eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
 		return 0;
@@ -212,9 +214,10 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 	if (!ESIL) {
 		ESIL = r_anal_esil_new (32, true);
 		// TODO setup something?
+		if (!ESIL) {
+			return 0;
+		}
 	}
-	if (!ESIL)
-		return 0;
 
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	opc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);

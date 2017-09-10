@@ -438,7 +438,7 @@ R_API int r_debug_continue_pass_exception(RDebug *dbg);
 #endif
 
 /* process/thread handling */
-R_API int r_debug_select(RDebug *dbg, int pid, int tid);
+R_API bool r_debug_select(RDebug *dbg, int pid, int tid);
 //R_API int r_debug_pid_add(RDebug *dbg);
 //R_API int r_debug_pid_add_thread(RDebug *dbg);
 //R_API int r_debug_pid_del(RDebug *dbg);

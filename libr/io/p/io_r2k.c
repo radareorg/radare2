@@ -19,13 +19,14 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
 #elif defined (__linux__) && !defined (__GNU__)
-	if (r2k_struct.beid == 0) {
+	switch (r2k_struct.beid) {
+	case 0:
 		return WriteMemory (io, fd, IOCTL_WRITE_KERNEL_MEMORY, r2k_struct.pid, io->off, buf, count);
-	} else if (r2k_struct.beid == 1) {
+	case 1:
 		return WriteMemory (io, fd, IOCTL_WRITE_PROCESS_ADDR, r2k_struct.pid, io->off, buf, count);
-	} else if (r2k_struct.beid == 2) {
+	case 2:
 		return WriteMemory (io, fd, IOCTL_WRITE_PHYSICAL_ADDR, r2k_struct.pid, io->off, buf, count);
-	} else {
+	default:
 		io->cb_printf ("ERROR: Undefined beid in r2k__write.\n");
 		return -1;
 	}
@@ -39,13 +40,14 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
 #elif defined (__linux__) && !defined (__GNU__)
-	if (r2k_struct.beid == 0) {
+	switch (r2k_struct.beid) {
+	case 0:
 		return ReadMemory (io, fd, IOCTL_READ_KERNEL_MEMORY, r2k_struct.pid, io->off, buf, count);
-	} else if (r2k_struct.beid == 1) {
+	case 1:
 		return ReadMemory (io, fd, IOCTL_READ_PROCESS_ADDR, r2k_struct.pid, io->off, buf, count);
-	} else if (r2k_struct.beid == 2) {
+	case 2:
 		return ReadMemory (io, fd, IOCTL_READ_PHYSICAL_ADDR, r2k_struct.pid, io->off, buf, count);
-	} else {
+	default:
 		io->cb_printf ("ERROR: Undefined beid in r2k__read.\n");
 		memset (buf, 0xff, count);
 		return count;

@@ -4506,8 +4506,9 @@ static int cmd_debug(void *data, const char *input) {
 	}
 	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow)))
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			r_core_cmd0 (core, "sr PC");
+		}
 	}
 	return 0;
 }

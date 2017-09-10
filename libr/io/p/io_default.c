@@ -380,7 +380,7 @@ static bool __is_blockdevice (RIODesc *desc) {
 }
 #endif
 
-struct r_io_plugin_t r_io_plugin_default = {
+RIOPlugin r_io_plugin_default = {
 	.name = "default",
 	.desc = "open local files using def_mmap://",
 	.license = "LGPL3",
@@ -397,7 +397,7 @@ struct r_io_plugin_t r_io_plugin_default = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_default,
 	.version = R2_VERSION

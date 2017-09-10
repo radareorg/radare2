@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_debug.h>
 #include <r_list.h>
@@ -273,9 +273,11 @@ R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	bool ret = false;
 	ut64 addr = map->addr;
-	if (dbg && dbg->h && dbg->h->map_dealloc)
-		if (dbg->h->map_dealloc (dbg, addr, map->size))
+	if (dbg && dbg->h && dbg->h->map_dealloc) {
+		if (dbg->h->map_dealloc (dbg, addr, map->size)) {
 			ret = true;
+		}
+	}
 	return (int)ret;
 }
 
@@ -298,7 +300,9 @@ R_API void r_debug_map_free(RDebugMap *map) {
 
 R_API RList *r_debug_map_list_new() {
 	RList *list = r_list_new ();
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	list->free = (RListFree)r_debug_map_free;
 	return list;
 }

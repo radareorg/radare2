@@ -688,18 +688,18 @@ static void xnu_build_corefile_header (vm_offset_t header,
 #if __ppc64__ || __x86_64__
 	struct mach_header_64 *mh64;
 	mh64 = (struct mach_header_64 *)header;
-	mh64->magic	= MH_MAGIC_64;
+	mh64->magic = MH_MAGIC_64;
 	mh64->cputype = xnu_get_cpu_type (pid);
 	mh64->cpusubtype = xnu_get_cpu_subtype (); 
 	mh64->filetype = MH_CORE;
-	mh64->ncmds	= segment_count + thread_count;
+	mh64->ncmds = segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
 	mh64->reserved = 0; // 8-byte alignment 
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
 	mh->magic = MH_MAGIC;
-	mh->cputype	= xnu_get_cpu_type (pid);
+	mh->cputype = xnu_get_cpu_type (pid);
 	mh->cpusubtype = xnu_get_cpu_subtype ();
 	mh->filetype = MH_CORE;
 	mh->ncmds = segment_count + thread_count;
