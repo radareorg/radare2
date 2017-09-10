@@ -1515,12 +1515,6 @@ static int scr_ansicon(void *user, void *data) {
 }
 #endif
 
-static int cb_denseqr(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->denseqr = node->i_value;
-	return true;
-}
-
 static int cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->echo = node->i_value;
@@ -2555,7 +2549,6 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB ("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
-	SETCB ("scr.denseqr", "true", &cb_denseqr, "Print QR using dense UTF-8 characters");
 	SETICB ("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");

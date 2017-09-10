@@ -5356,7 +5356,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		bool inverted = (input[1] == 'i'); // pqi -- inverted colors
-		char *res = r_qrcode_gen (core->block, len, r_config_get_i (core->config, "scr.utf8"), r_config_get_i (core->config, "scr.denseqr"), inverted);
+		char *res = r_qrcode_gen (core->block, len, r_config_get_i (core->config, "scr.utf8"), inverted);
 		if (res) {
 			r_cons_printf ("%s\n", res);
 			free (res);
