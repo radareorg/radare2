@@ -204,7 +204,7 @@ R_API char *r_file_abspath(const char *file) {
 	}
 #if __UNIX__
 	char resolved_path[PATH_MAX] = {0};
-	char *abspath = realpath (ret, &resolved_path);
+	char *abspath = realpath (ret, resolved_path);
 	if (abspath) {
 		free (ret);
 		ret = strdup (abspath);
