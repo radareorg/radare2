@@ -84,23 +84,17 @@ R_API RIDStorage* r_id_storage_new(ut32 start_id, ut32 last_id) {
 }
 
 static bool id_storage_reallocate(RIDStorage* storage, ut32 size) {
-	void* data;
 	if (!storage) {
 		return false;
 	}
-	if (storage->size == size) {
-		return true;
+	void **data = realloc (storage->data, size * sizeof (void*));
+	if (!data) {
+		return false;
 	}
-	if (storage->size > size) {
-		storage->data = realloc (storage->data, size * sizeof(void*));
-		storage->size = size;
-		return true;
+	if (size > storage->size) {
+		memset (data + storage->size, 0, (size - storage->size) * sizeof (void*));
 	}
-	data = storage->data;
-	storage->data = R_NEWS0 (void*, size);
-	if (data) {
-		memcpy (storage->data, data, storage->size * sizeof(void*));
-	}
+	storage->data = data;
 	storage->size = size;
 	return true;
 }
