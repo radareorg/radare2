@@ -1,9 +1,11 @@
 /* radare - LGPL - Copyright 2007-2017 - pancake */
 
+#include <errno.h>
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
+#include <string.h>
 
 #define USE_RARUN 0
 
@@ -453,7 +455,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				for (i = 3; i < 1024; i++) {
 					(void)close (i);
 				}
-				execvp (argv[0], argv);
+				if (execvp (argv[0], argv) == -1) {
+					eprintf ("Could not execvp: %s\n", strerror (errno));
+					exit (MAGIC_EXIT);
+				}
 			} else {
 				eprintf ("Invalid execvp\n");
 			}
