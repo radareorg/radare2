@@ -53,7 +53,6 @@ R_API int r_reg_type_by_name(const char* str) {
 	if (!strcmp (str, "all")) {
 		return R_REG_TYPE_ALL;
 	}
-	eprintf ("Unknown register type: '%s'\n", str);
 	return -1;
 }
 
