@@ -519,32 +519,46 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
 					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
 					if (r > 0) {
-						eprintf ("Error while downloading pdb file\n");
+						eprintf ("Error while downloading pdb file");
 					}
 					input += 2;
 					break;
 				}
-				input++;
+				RBinInfo *info = r_bin_get_info (core->bin);
+				bool local_file = false;
 				char* filename = strchr (input, ' ');
+				input++;
 				if (filename) {
 					*filename++ = '\0';
-					char* args = strchr (filename, ' ');
-					if (args) {
-						*args = '\0';
-					}
-				} else {
-					/* Autodetect local file or download remote file */
-					RBinInfo *info = r_bin_get_info (core->bin);
-					if (!info || !info->debug_file_name) {
-						eprintf ("Cannot get file's debug information\n");
+					local_file = r_file_exists (filename);
+					if (!local_file) {
+						eprintf ("Cannot open '%s'", filename);
 						break;
 					}
-					bool local_file = r_file_exists (info->debug_file_name);
+				} else {
+					/* Autodetect local file */
+					if (!info || !info->debug_file_name) {
+						eprintf ("Cannot get file's debug information");
+						break;
+					}
+					local_file = r_file_exists (info->debug_file_name);
 					if (local_file) {
 						filename = info->debug_file_name;
 					} else {
-						r_core_cmd0 (core, "idpd");
-						filename = (char*) r_file_basename (info->debug_file_name);
+						char *basename = (char*) r_file_basename (info->debug_file_name);
+						local_file = r_file_exists (basename);
+						if (local_file) {
+							filename = basename;
+						} else {
+							char *base = (char*) r_file_basename (info->debug_file_name);
+							local_file = r_file_exists (base);
+							if (local_file) {
+								filename = base;
+							} else {
+								eprintf ("File '%s' not found", base);
+								break;
+							}
+						}
 					}
 				}
 				// TODO Use R_IO api
@@ -554,7 +568,7 @@ static int cmd_info(void *data, const char *input) {
 					//eprintf ("FixMe: Could not read file descriptor\n");
 					if (!r) {
 						if (!(r = strdup ("0"))) {
-							eprintf ("Error: strdup fail\n");
+							eprintf ("Error: strdup fail");
 							break;
 						}
 					}
@@ -562,7 +576,7 @@ static int cmd_info(void *data, const char *input) {
 				int fd = atoi (r);
 				free (r);
 				if (fd < 0) {
-					eprintf ("Error while opening '%s'\n", filename);
+					eprintf ("Error while opening '%s'", filename);
 					break;
 				}
 				RCoreBinFilter filter = { 0 };
