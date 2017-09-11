@@ -369,7 +369,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	check_connection (dbg);
-	if (desc && desc->target.valid) {
+	if (desc && desc->target.valid && desc->target.regprofile) {
 		return strdup (desc->target.regprofile);
 	}
 	switch (arch) {

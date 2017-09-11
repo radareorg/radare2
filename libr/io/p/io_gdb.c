@@ -180,6 +180,9 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	if (!io || !fd || !buf || count < 1) {
+		return -1;
+	}
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc || !desc->data) {
