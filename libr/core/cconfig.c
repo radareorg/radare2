@@ -1836,7 +1836,7 @@ static int cb_searchin(void *user, void *data) {
 			print_node_options (node);
 		}
 		return false;
-	} 
+	}
 	return true;
 }
 
@@ -2083,7 +2083,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB ("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis");
 	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
-	SETCB ("anal.trace", "false", &cb_anal_trace, "Record ESIL trace in log database");
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB ("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 

@@ -389,7 +389,7 @@ static const char *help_msg_dt[] = {
 	"dta", " 0x804020 ...", "Only trace given addresses",
 	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
 	"dtd", "", "List all traced disassembled",
-	"dte", "[?]", "Show esil trace logs (anal.trace)",
+	"dte", "[?]", "Show esil trace logs",
 	"dtg", "", "Graph call/ret trace",
 	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "Interactive debug trace",
