@@ -232,9 +232,11 @@ R_API void r_core_clippy(const char *msg) {
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	RIOMap *map;
 	const char *k;
+	RListIter *iter;
 	char *p, out[128] = R_EMPTY;
-	ut64 n, n2;
+	ut64 n;
 	int i;
 	RList *tmp;
 
@@ -310,17 +312,19 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'B':
-		k = r_str_chop_ro (input+1);
-		tmp = r_core_get_boundaries (core, k, &n, &n2);
-		r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", n, n2);
+		k = r_str_chop_ro (input + 1);
+		tmp = r_core_get_boundaries (core, k);
+		r_list_foreach (tmp, iter, map) {
+			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->from, map->to);
+		}
 		r_list_free (tmp);
 		break;
 	case 'd':
 		if (input[1]=='.') {
-			int cur = R_MAX(core->print->cur, 0);
+			int cur = R_MAX (core->print->cur, 0);
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
-			core_anal_bytes(core, core->block + cur, core->blocksize, 1, 'd');
-		} else if (input[1]==' '){
+			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
+		} else if (input[1] == ' ') {
 			char *d = r_asm_describe (core->assembler, input+2);
 			if (d && *d) {
 				r_cons_println (d);
@@ -333,7 +337,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'h':
-		if (input[1]==' ') {
+		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input+2));
 		} else {
 			eprintf ("Usage: ?h [string-to-hash]\n");

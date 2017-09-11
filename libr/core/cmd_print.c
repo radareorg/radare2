@@ -3415,7 +3415,15 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_strcat ("{");
 		}
 		off = core->offset;
-		r_list_free (r_core_get_boundaries (core, "file", &from, &to));
+		{
+			RList *list = r_core_get_boundaries (core, "file");
+			RIOMap *map = r_list_first (list);
+			if (map) {
+				from = map->from;
+				to = map->to;
+			}
+			r_list_free (list);
+		}
 		piece = R_MAX ((to - from) / w, 1);
 		as = r_core_anal_get_stats (core, from, to, piece);
 		if (!as && mode != '?') {

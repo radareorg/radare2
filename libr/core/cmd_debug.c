@@ -3235,8 +3235,10 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 	int n = 0;
 
 	if (!trace_libs) {
-		RList *bounds = r_core_get_boundaries (core, "dbg.program", &from, &to);
+#if NOOP
+		RList *bounds = r_core_get_boundaries (core, "dbg.program");
 		r_list_free (bounds);
+#endif
 	}
 
 	/* set root if not already present */

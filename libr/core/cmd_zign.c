@@ -652,7 +652,6 @@ static bool search(RCore *core, bool rad) {
 	RAnalFunction *fcni = NULL;
 	RIOMap *map;
 	bool retval = true;
-	ut64 sin_from = UT64_MAX, sin_to = UT64_MAX;
 	int hits = 0;
 
 	struct ctxSearchCB bytes_search_ctx = { core, rad, 0, "bytes" };
@@ -679,17 +678,12 @@ static bool search(RCore *core, bool rad) {
 
 	// Bytes search
 	if (useBytes) {
-		list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, &sin_from, &sin_to);
-		if (list) {
-			r_list_foreach (list, iter, map) {
-				eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
-				retval &= searchRange (core, map->from, map->to, rad, &bytes_search_ctx);
-			}
-			r_list_free (list);
-		} else {
-			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", sin_from, sin_to);
-			retval = searchRange (core, sin_from, sin_to, rad, &bytes_search_ctx);
+		list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode);
+		r_list_foreach (list, iter, map) {
+			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
+			retval &= searchRange (core, map->from, map->to, rad, &bytes_search_ctx);
 		}
+		r_list_free (list);
 	}
 
 	// Function search

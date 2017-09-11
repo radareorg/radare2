@@ -4356,19 +4356,26 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 			m->to = addr + len;
 			r_list_append (ranges, m);
 		} else {
-			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, "io.sections", NULL, NULL);
+			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, "io.sections");
 		}
 		addr_end = addr + len;
 	}
 	r_cons_break_push (NULL, NULL);
 	if (!binfile || !r_list_length (ranges)) {
+		RListIter *iter;
+		RIOMap *map;
 		r_list_free (ranges);
 		const char *search_in = r_config_get (core->config, "search.in");
-		ranges = r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end);
-		if (only_print_flag) {
-			r_cons_printf ("f fcn. 0x%08"PFMT64x" 0 0x%08"PFMT64x"\n", addr, addr);
-		} else {
-			_anal_calls (core, addr, addr_end);
+		ranges = r_core_get_boundaries_prot (core, 0, search_in);
+		r_list_foreach (ranges, iter, map) {
+			ut64 addr = map->from;
+			ut64 addr_end = map->to;
+			if (only_print_flag) {
+				r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
+					addr, addr_end - addr, addr);
+			} else {
+				_anal_calls (core, addr, addr_end);
+			}
 		}
 	} else {
 		RListIter *iter;
@@ -4379,7 +4386,8 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
 				if (only_print_flag) {
-					r_cons_printf ("f fcn.0x%08"PFMT64x" 0 0x%08"PFMT64x"\n", addr, addr);
+					r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
+						addr, (int)addr_end - addr, addr);
 				} else {
 					_anal_calls (core, addr, addr_end);
 				}
@@ -5588,52 +5596,69 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	RIOSection *s = NULL;
 	ut64 o_align = geti ("search.align");
-	ut64 from, to, ptr = 0;
-	ut64 vmin, vmax;
+	ut64 ptr = 0;
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
-	if (is_debug) {
-		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
-	} else {
-		s = r_io_section_vget (core->io, core->offset);
-		if (s) {
-			from = s->vaddr;
-			to = s->vaddr + s->size;
-		} else {
-			eprintf ("aav: Cannot find section at this address\n");
-			// TODO: look in debug maps
-			return;
-		}
-	}
+	// pre
 	seti ("search.align", 4);
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		ptr = r_num_math (core->num, arg + 1);
 		s = r_io_section_vget (core->io, ptr);
 	}
-	{
+	if (false) {
 		RList *ret;
 		if (is_debug) {
-			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
+			ret = r_core_get_boundaries_prot (core, 0, "dbg.map");
 		} else {
-			from = r_config_get_i (core->config, "bin.baddr");
-			to = from + ((core->file)? r_io_fd_size (core->io, core->file->fd): 0);
+			// ut64 from = r_config_get_i (core->config, "bin.baddr");
+			//ut64 to = from + ((core->file)? r_io_fd_size (core->io, core->file->fd): 0);
 			if (!s) {
 				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
 				return; // WTF!
 			}
-			ret = r_core_get_boundaries_prot (core, 0, "io.sections", &vmin, &vmax);
+			ret = r_core_get_boundaries_prot (core, 0, "io.sections");
+		}
+		RIOMap *map = r_list_first (ret);
+		if (map) {
+		//	from = map->from;
+		//	to = map->to;
 		}
 		r_list_free (ret);
 	}
-	eprintf ("aav: using from to 0x%"PFMT64x" 0x%"PFMT64x"\n", from, to);
-	eprintf ("Using vmin 0x%"PFMT64x" and vmax 0x%"PFMT64x"\n", vmin, vmax);
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {
 		vsize = 8;
 	}
-	(void)r_core_search_value_in_range (core, from, to, vmin, vmax, vsize, asterisk, _CbInRangeAav);
+
+	// body
+	if (is_debug) {
+		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map");
+		RListIter *iter;
+		RIOMap *map;
+		r_list_foreach (list, iter, map) {
+			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->from, map->to);
+			(void)r_core_search_value_in_range (core, map->from, map->to,
+				map->from, map->to, map->to - map->from, asterisk, _CbInRangeAav);
+		}
+		r_list_free (list);
+	} else {
+		s = r_io_section_vget (core->io, core->offset);
+		if (s) {
+			ut64 from = s->vaddr;
+			ut64 to = s->vaddr + s->size;
+			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", from, to);
+			(void)r_core_search_value_in_range (core, from, to,
+				from, to, to - from, asterisk, _CbInRangeAav);
+		} else {
+			eprintf ("aav: Cannot find section at this address\n");
+			// TODO: look in debug maps
+		}
+	}
+
+	// end
+
 	seti ("search.align", o_align);
 }
 
