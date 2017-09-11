@@ -30,6 +30,9 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 		return -1;
 	}
 	size_max = desc->data_max / 2;
+	if (size_max < 1) {
+		size_max = sz;
+	}
 	packets = sz / size_max;
 	last = sz % size_max;
 	for (x = 0; x < packets; x++) {
@@ -83,12 +86,13 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		// FIX: Don't allocate more than one gdb RIODesc
 		return riogdb;
 	}
-	strncpy (host, file + 6, sizeof (host)-1);
+	strncpy (host, file + 6, sizeof (host) - 1);
 	host [sizeof (host) - 1] = '\0';
 	if (host[0] == '/') {
 		isdev = true;
 	}
 
+	rw |= R_IO_WRITE;
 	if (isdev) {
 		port = strchr (host, '@');
 		if (port) {
@@ -143,7 +147,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, rw, mode, riog);
+		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_IO_RWX, mode, riog);
 	}
 	// Get name
 	if (riogdb) {

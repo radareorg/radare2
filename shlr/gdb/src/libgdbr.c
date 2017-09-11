@@ -81,9 +81,9 @@ int gdbr_cleanup(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
-	free (g->data);
-	free (g->send_buff);
+	R_FREE (g->data);
 	g->send_len = 0;
-	free (g->read_buff);
+	R_FREE (g->send_buff);
+	R_FREE (g->read_buff);
 	return 0;
 }

@@ -12,6 +12,7 @@
 #define R_IO_WRITE	2
 #define R_IO_EXEC	1
 #define R_IO_RW		(R_IO_READ|R_IO_WRITE)
+#define R_IO_RWX	(R_IO_READ|R_IO_WRITE|R_IO_EXEC)
 #define R_IO_PRIV	16
 #define R_IO_SHAR	32	//wtf is this
 

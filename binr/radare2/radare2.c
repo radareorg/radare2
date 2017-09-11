@@ -1000,6 +1000,7 @@ int main(int argc, char **argv, char **envp) {
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 						if (iod) {
+							perms = iod->flags;
 							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
 						}
 					}
