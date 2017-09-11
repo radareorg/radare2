@@ -1469,15 +1469,15 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						char *uri = r_str_newf ("http://%s:%s/%s%s", host, port, file, res);
 						if (ptr == res) free (ptr);
 						str = r_socket_http_get (uri, NULL, &len);
-						if (str) {
+						if (str && len > 0) {
 							str[len] = 0;
 							res = strstr (str, "\n\n");
 							if (res) res = strstr (res+1, "\n\n");
 							if (res) res += 2; else res = str;
-							printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
+							printf ("%s%s", res, (*res && res[strlen (res)-1] == '\n') ? "" : "\n");
 							r_line_hist_add (str);
-							free (str);
 						}
+						free (str);
 						free (uri);
 					}
 				}
