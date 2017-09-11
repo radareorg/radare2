@@ -53,7 +53,7 @@ static RList *unsorted_lines = NULL;
 static int sorted_column = -1;
 
 R_API void r_cons_grep_help(void) {
-	r_core_cmd_help ((RCore *)r_cons_singleton ()->user, help_detail_tilde);
+	r_cons_cmd_help (help_detail_tilde, true);
 }
 
 #define R_CONS_GREP_BUFSIZE 4096

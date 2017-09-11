@@ -566,6 +566,7 @@ R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API int r_cons_is_utf8(void);
+R_API void r_cons_cmd_help(const char * help[], bool use_color);
 
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
