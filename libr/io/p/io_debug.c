@@ -457,6 +457,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				}
 				if (execvp (argv[0], argv) == -1) {
 					eprintf("Could not execvp: %s\n",strerror(errno));
+					exit (MAGIC_EXIT);
 				}
 
 			} else {
