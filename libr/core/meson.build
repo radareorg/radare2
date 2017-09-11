@@ -38,6 +38,7 @@ files=[
 'core.c',
 'disasm.c',
 'file.c',
+'fortune.c',
 'gdiff.c',
 'graph.c',
 'hack.c',
