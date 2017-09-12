@@ -663,6 +663,9 @@ static ut32 stp(ArmOp *op, int k) {
 	if (op->operands[3].immediate & 0x7) {
 		return data;
 	}
+	if (k == 0x000040a9 && (op->operands[0].reg == op->operands[1].reg)) {
+		return data;
+	}
 
 	data = k;
 	data += op->operands[0].reg << 24;
@@ -918,6 +921,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "stp", 3)) {
 		*op = stp (&ops, 0x000000a9);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldp", 3)) {
+		*op = stp (&ops, 0x000040a9);
 		return *op != -1;
 	}
 	if (!strncmp (str, "sub", 3)) { // w
