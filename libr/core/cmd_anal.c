@@ -2238,11 +2238,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'q': // "afbq"
 		case 'r': // "afbr"
 		case '*': // "afb*"
-		case 'i': // "afbi"
-			anal_fcn_list_bb (core, input + 2, true);
-			break;
 		case 'j': // "afbj"
 			anal_fcn_list_bb (core, input + 2, false);
+			break;
+		case 'i': // "afbi"
+			anal_fcn_list_bb (core, input + 2, true);
 			break;
 		case '.': // "afb."
 			anal_fcn_list_bb (core, input[2]? " $$": input + 2, true);
