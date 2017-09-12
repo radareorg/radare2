@@ -74,7 +74,7 @@ static void onIterMap(SdbListIter* iter, RIO* io, ut64 vaddr, ut8* buf,
 	while (!r_io_map_is_in_range (map, vaddr, vendaddr)) {
 		iter = iter->p;
 		// end of list
-		if (!iter && io->desc) {
+		if (!iter || (!iter && io->desc)) {
 			// pread/pwrite
 			return;
 		}
