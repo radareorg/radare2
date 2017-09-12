@@ -47,16 +47,16 @@ compile: ${F_SDB}
 
 linux-x86-32.sdb: linux-x86-32
 
-%.sdb:%
+%.sdb:%.sdb.txt
 ifneq ($(SILENT),)
-	@echo SDB $<
-	@rm -f $<.sdb
-	@cat $< | ${SDB} $<.sdb =
-	@test -f $<.sdb
+	@echo SDB $@
+	@rm -f $@
+	@cat $< | ${SDB} $@ =
+	@test -f $@
 else
-	rm -f $<.sdb
-	cat $< | ${SDB} $<.sdb =
-	test -f $<.sdb
+	rm -f $@
+	cat $< | ${SDB} $@ =
+	test -f $@
 endif
 
 clean:

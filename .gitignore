@@ -88,7 +88,7 @@ tags
 *.kdev4
 radare2-*.zip
 # Ignore meson related files
-bin/
+./bin
 meson.py
 ninja.exe
 .DS_Store
