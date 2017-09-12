@@ -10,7 +10,10 @@
 
 static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
+	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
+	"C[Chsdmf]", "", "list comments/hidden/strings/data/magic/formatted in human friendly form",
+	"C[Chsdmf]*", "", "list comments/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
@@ -555,7 +558,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		break;
 	case ' ':
 	case '\0':
-		if (type != 'z' && input[1] == '*') {
+		if (type != 'z' && !input[1] && !core->tmpseek) {
 			r_meta_list (core->anal, type, 0);
 			break;
 		}
@@ -821,6 +824,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'v': // Cr
 		r_comment_vars (core, input + 1);
 		break;
+	case '\0':
 	case 'j':
 	case '*':
 		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
@@ -846,7 +850,6 @@ static int cmd_meta(void *data, const char *input) {
 			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i, "");
 		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
-	case '\0':
 	case '?':
 		r_core_cmd_help (core, help_msg_C);
 		break;

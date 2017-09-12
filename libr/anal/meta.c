@@ -540,10 +540,12 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 	}
 	isFirst = true; // TODO: kill global
 	ls_foreach (ls, lsi, kv) {
-		if (cb) {
-			cb ((void *)&ui, kv->key, kv->value);
-		} else {
-			meta_print_item ((void *)&ui, kv->key, kv->value);
+		if (type == R_META_TYPE_ANY || (strlen (kv->key) > 5 && kv->key[5] == type)) {
+			if (cb) {
+				cb ((void *)&ui, kv->key, kv->value);
+			} else {
+				meta_print_item ((void *)&ui, kv->key, kv->value);
+			}
 		}
 	}
 	ls_free (ls);
