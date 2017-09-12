@@ -850,7 +850,6 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 		return 0;
 	}
 
-	r_name_filter (members_field[i], -1);
 	return 1;
 }
 
