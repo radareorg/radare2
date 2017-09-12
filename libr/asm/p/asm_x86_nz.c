@@ -1822,9 +1822,6 @@ static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
 	if (!strcmp(op->mnemonic, "stosw")) {
 		data[l++] = 0x66;
 	}
-	if (a->bits == 64) {
-		data[l++] = 0x67;
-	}
 	if (!strcmp(op->mnemonic, "stosb")) {
 		data[l++] = 0xaa;
 	} else if (!strcmp(op->mnemonic, "stosw")) {
@@ -2038,6 +2035,7 @@ LookupTable oplookup[] = {
 	{"cbw", 0, NULL, 0x6698, 2},
 	{"cdq", 0, NULL, 0x99, 1},
 	{"cdqe", 0, &opcdqe, 0},
+	{"cwde", 0, &opcdqe, 0},
 	{"clc", 0, NULL, 0xf8, 1},
 	{"cld", 0, NULL, 0xfc, 1},
 	{"clgi", 0, NULL, 0x0f01dd, 3},
@@ -2589,7 +2587,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		}
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
-			if (!(a->num) ) {
+			if (a->num->value == 0) {
 				if (isrepop) {
 					strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
 					op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
@@ -2693,7 +2691,6 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 	parseOpcode (a, op->operands[0].rep_op, &instr);
 
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
-		//printf ("%s : %s\n", lt_ptr->mnemonic, op->operands[0].rep_op);
 		if (!strcasecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (lt_ptr->only_x32 && a->bits == 64) {
@@ -2732,7 +2729,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	char op[128];
 	LookupTable *lt_ptr;
 	int retval;
-
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 
@@ -2769,7 +2765,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 		}
 	}
-	//eprintf ("Error: Unknown instruction (%s)\n", instr.mnemonic);
 	free (instr.mnemonic);
 	return -1;
 }
