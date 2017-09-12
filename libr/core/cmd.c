@@ -237,6 +237,7 @@ static const char *help_msg_y[] = {
 };
 
 static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
+	int i;
 	if (desc->help_msg) {
 		r_core_cmd_help (core, desc->help_msg);
 	}
@@ -248,15 +249,16 @@ static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
 			r_core_cmd_help (core, desc->help_detail2);
 		}
 	}
-	for (int i = 32; i < R_ARRAY_SIZE (desc->sub); i++)
+	for (i = 32; i < R_ARRAY_SIZE (desc->sub); i++)
 		if (desc->sub[i]) {
 			recursive_help_go (core, detail, desc->sub[i]);
 		}
 }
 
 static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
+	const ut8 *p;
 	RCmdDescriptor *desc = &core->root_cmd_descriptor;
-	for (const ut8 *p = (const ut8 *)cmd_prefix; *p && *p < R_ARRAY_SIZE (desc->sub); p++) {
+	for (p = (const ut8 *)cmd_prefix; *p && *p < R_ARRAY_SIZE (desc->sub); p++) {
 		if (!(desc = desc->sub[*p])) {
 			return;
 		}
