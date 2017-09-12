@@ -13,6 +13,8 @@ typedef struct {
 	libgdbr_t desc;
 } RIOGdb;
 
+#define R_GDB_MAGIC r_str_hash ("gdb")
+
 static libgdbr_t *desc = NULL;
 static RIODesc *riogdb = NULL;
 
@@ -203,6 +205,18 @@ static int __close(RIODesc *fd) {
 
 static int __getpid(RIODesc *fd) {
 	return desc ? desc->pid : -1;
+	// dupe for ? r_io_desc_get_pid (desc);
+	if (!desc || !desc->data) {
+		return -1;
+	}
+	RIODescData *iodd = desc->data;
+	if (iodd) {
+		if (iodd->magic != R_GDB_MAGIC) {
+			return -1;
+		}
+		return iodd->pid;
+	}
+	return -1;
 }
 
 static int __gettid(RIODesc *fd) {

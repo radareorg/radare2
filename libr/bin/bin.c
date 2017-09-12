@@ -1017,7 +1017,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	RBinFile *binfile = NULL;
 	int tfd = -1;
 
-	if (!io || (fd < 0)) {
+	if (!io || (fd < 0) || (st64)sz < 0) {
 		return false;
 	}
 	bool is_debugger = iob->fd_is_dbg (io, fd);
@@ -1046,7 +1046,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			if (tfd >= 0) {
 				buf_bytes = calloc (1, sz + 1);
 				iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
-				iob->fd_close (io, tfd);
+				// iob->fd_close (io, tfd);
 			}
 		}
 	}
@@ -1080,7 +1080,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 								(void) iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
 							}
 						}
-						iob->fd_close (io, tfd);
+				//DOUBLECLOSE UAF : iob->fd_close (io, tfd);
 						tfd = -1;	// marking it closed
 					} else if (sz != file_sz) {
 						(void) iob->read_at (io, 0LL, buf_bytes, sz);
