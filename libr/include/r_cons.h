@@ -449,6 +449,8 @@ enum {
 	LINE_TRUE,
 	LINE_FALSE,
 	LINE_UNCJMP,
+	LINE_NOSYM_VERT,
+	LINE_NOSYM_HORIZ
 };
 
 typedef struct r_cons_canvas_line_style_t {
@@ -500,6 +502,8 @@ R_API void r_cons_canvas_line_diagonal(RConsCanvas *c, int x, int y, int x2, int
 R_API void r_cons_canvas_line_square(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace);
+R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert);
+R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
@@ -716,6 +720,8 @@ typedef struct r_ascii_node_t {
 	int h;
 
 	int layer;
+	int layer_height;
+	int layer_width;
 	int pos_in_layer;
 	int is_dummy;
 	int is_reversed;

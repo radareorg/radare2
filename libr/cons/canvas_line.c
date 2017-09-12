@@ -10,11 +10,16 @@ enum {
 	APEX_DOT = 0,
 	DOT_APEX,
 	REV_APEX_APEX,
-	DOT_DOT
+	DOT_DOT,
+	NRM_DOT,
+	NRM_APEX,
+	DOT_NRM,
+	REV_APEX_NRM,
+	NRM_NRM
 };
 
 static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
-		RCanvasLineStyle *style){
+		RCanvasLineStyle *style, int isvert) {
 	RCons *cons = r_cons_singleton ();
 	switch (style->color) {
 	case LINE_UNCJMP:
@@ -37,7 +42,11 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	switch (style->symbol) {
 	case LINE_UNCJMP:
 		if (G (x, y)) {
-			W ("v");
+			if (isvert) {
+				W ("v");
+			} else {
+				W (">");
+			}
 		}
 		break;
 	case LINE_TRUE:
@@ -50,6 +59,16 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 			W ("f");
 		}
 		break;
+	case LINE_NOSYM_VERT:
+		if (G (x, y)) {
+			W (useUtf8 ? RUNECODESTR_LINE_VERT : "|");
+		}
+		break;
+	case LINE_NOSYM_HORIZ:
+		if (G (x, y)) {
+			W (useUtf8 ? RUNECODESTR_LINE_HORIZ : "-");
+		}
+		break;
 	case LINE_NONE:
 	default:
 		break;
@@ -58,7 +77,7 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 
 R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2,
 		RCanvasLineStyle *style) {
-	apply_line_style(c,x,y,x2,y2,style);
+	apply_line_style(c,x,y,x2,y2,style, 1);
 	if(y2<y){
 		int tmp = y2;
 		y2=y;
@@ -148,8 +167,56 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		}
 		break;
 	case DOT_DOT:
+		if (useUtf8) {
+			l_corner = RUNECODESTR_CORNER_TL;
+			r_corner = RUNECODESTR_CORNER_TR;
+		} else {
+			l_corner = r_corner = ".";
+		}
+		break;
+	case NRM_DOT:
+		if (useUtf8) {
+			l_corner = RUNECODESTR_LINE_HORIZ;
+			r_corner = RUNECODESTR_CORNER_TR;
+		} else {
+			l_corner = "-";
+			r_corner = ".";
+		}
+		break;
+	case NRM_APEX:
+		if (useUtf8) {
+			l_corner = RUNECODESTR_LINE_HORIZ;
+			r_corner = RUNECODESTR_CORNER_BR;
+		} else {
+			l_corner = "-";
+			r_corner = "'";
+		}
+		break;
+	case DOT_NRM:
+		if (useUtf8) {
+			l_corner = RUNECODESTR_CORNER_TL;
+			r_corner = RUNECODESTR_LINE_HORIZ;
+		} else {
+			l_corner = ".";
+			r_corner = "-";
+		}
+		break;
+	case REV_APEX_NRM:
+		if (useUtf8) {
+			l_corner = RUNECODESTR_CORNER_BL;
+			r_corner = RUNECODESTR_LINE_HORIZ;
+		} else {
+			l_corner = "`";
+			r_corner = "-";
+		}
+		break;
+	case NRM_NRM:
 	default:
-		l_corner = r_corner = ".";
+		if (useUtf8) {
+			l_corner = r_corner = RUNECODESTR_LINE_HORIZ;
+		} else {
+			l_corner = r_corner = "-";
+		}
 		break;
 	}
 
@@ -201,7 +268,7 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 	int diff_x = R_ABS (x - x2);
 	int diff_y = R_ABS (y - y2);
 
-	apply_line_style (c, x, y, x2, y2, style);
+	apply_line_style (c, x, y, x2, y2, style, 1);
 
 	// --
 	// TODO: find if there's any collision in this line
@@ -224,4 +291,88 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 		}
 	}
 	c->attr = Color_RESET;
+}
+
+
+R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert) {
+	int min_x = R_MIN (x, x2);
+	int diff_x = R_ABS (x - x2);
+	int diff_y = R_ABS (y - y2);
+	int min_y = R_MIN (y, y2);
+
+	apply_line_style (c, x, y, x2, y2, style, isvert);
+
+	if (isvert) {
+		if (x2 == x) {
+			draw_vertical_line (c, x, y + 1, diff_y);
+		} else if (y2 - y > 1) {
+			int h1 = 1 + bendpoint;
+			int h2 = diff_y - h1;
+			int w = diff_x == 0 ? 0 : diff_x + 1;
+			int style = min_x == x ? APEX_DOT : DOT_APEX;
+			draw_vertical_line (c, x, y + 1, h1);
+			draw_horizontal_line (c, min_x, y + bendpoint + 2, w, style);
+			draw_vertical_line (c, x2, y + h1 + 1 + 1, h2);
+		} else {
+			//TODO: currently copy-pasted
+			if (y2 == y) {
+				draw_horizontal_line (c, min_x, y, diff_x + 1, DOT_DOT);
+			} else {
+				if (x != x2) {
+					draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX);
+				}
+				draw_vertical_line (c, x2, y2, diff_y-2);
+			}
+		}
+	} else {
+		if (y2 == y) {
+			draw_horizontal_line (c, min_x + 1, y, diff_x, NRM_NRM);
+		} else if (x2 - x > 1) {
+			int w1 = 1 + bendpoint;
+			int w2 = diff_x - w1;
+			//int h = diff_x;// == 0 ? 0 : diff_x + 1;
+			//int style = min_x == x ? APEX_DOT : DOT_APEX;
+			//draw_vertical_line (c, x, y + 1, h1);
+			draw_horizontal_line (c, x + 1, y, w1 + 1, y2 > y ? NRM_DOT : NRM_APEX);
+			//draw_horizontal_line (c, min_x, y + bendpoint + 2, w, style);
+			draw_vertical_line (c, x + 1 + w1, min_y + 1, diff_y - 1);
+			//draw_vertical_line (c, x2, y + h1 + 1 + 1, h2);
+			draw_horizontal_line (c, x + 1 + w1, y2, w2, y2 < y ? DOT_NRM : REV_APEX_NRM);
+		}
+	}
+	c->attr = Color_RESET;
+}
+
+R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert) {
+	int min_x1 = R_MIN (x, xbendpoint);
+	int min_x2 = R_MIN (x2, xbendpoint);
+
+	int diff_x1 = R_ABS (x - xbendpoint);
+	int diff_x2 = R_ABS (x2 - xbendpoint);
+
+	int diff_y = R_ABS ((y + ybendpoint1 + 1) - (y2 - ybendpoint2- 1));
+
+	int w1 = diff_x1 == 0 ? 0 : diff_x1 + 1;
+	int w2 = diff_x2 == 0 ? 0 : diff_x2 + 1;
+
+	apply_line_style (c, x, y, x2, y2, style, isvert);
+
+	if (isvert) {
+		draw_vertical_line (c, x, y + 1, ybendpoint1 + 1);
+		draw_horizontal_line (c, min_x1, y + ybendpoint1 + 2, w1, REV_APEX_APEX);
+		draw_vertical_line (c, xbendpoint, y2 - ybendpoint2 + 1, diff_y - 1);
+		draw_horizontal_line (c, min_x2, y2 - ybendpoint2, w2, DOT_DOT);
+		draw_vertical_line (c, x2, y2 - ybendpoint2 + 1, ybendpoint2);
+	} else {
+		int miny1 = R_MIN (y, xbendpoint);
+		int miny2 = R_MIN (y2, xbendpoint);
+		int diff_y1 = R_ABS (y - xbendpoint);
+		int diff_y2 = R_ABS (y2 - xbendpoint);
+
+		draw_horizontal_line (c, x + 1, y, 1 + ybendpoint1 + 1, xbendpoint > y ? NRM_DOT : NRM_APEX);
+		draw_vertical_line (c, x + 1 + ybendpoint1 + 1, miny1 + 1, diff_y1 - 1);
+		draw_horizontal_line (c, x2 - ybendpoint2, xbendpoint, (x + 1 + ybendpoint1 + 1) - (x2 - ybendpoint2) + 1, xbendpoint > y ? REV_APEX_APEX : DOT_DOT);
+		draw_vertical_line (c, x2 - ybendpoint2, miny2 + 1, diff_y2 - 1);
+		draw_horizontal_line (c, x2 - ybendpoint2, y2, ybendpoint2 + 1, xbendpoint > y ? DOT_NRM : REV_APEX_NRM);
+	}
 }
