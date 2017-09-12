@@ -15,6 +15,7 @@ CFLAGS+=-DCORELIB -Iformat -Imangling
 include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
 include $(SHLR)/java/deps.mk
+include $(SHLR)/ar/deps.mk
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o dbginfo.o bin_write.o demangle.o dwarf.o filter.o

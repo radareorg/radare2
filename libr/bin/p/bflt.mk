@@ -16,6 +16,7 @@ LINK+=../../../shlr/windbg/libr_windbg.${EXT_AR}
 LINK+=../../../shlr/qnx/lib/libqnxr.${EXT_AR}
 LINK+=../../../shlr/bochs/lib/libbochs.${EXT_AR}
 LINK+=../../../shlr/java/libr_java.${EXT_AR}
+LINK+=../../../shlr/ar/libr_ar.${EXT_AR}
 endif
 
 ${TARGET_BFLT}: ${OBJ_BFLT}

@@ -10,6 +10,7 @@ OBJS+=io.o plugin.o map.o section.o desc.o cache.o p_cache.o undo.o iobuf.o iout
 CFLAGS+=-Wall -DCORELIB
 
 include ../socket/deps.mk
+include $(SHLR)/ar/deps.mk
 include $(SHLR)/zip/deps.mk
 include $(SHLR)/gdb/deps.mk
 include $(SHLR)/qnx/deps.mk
