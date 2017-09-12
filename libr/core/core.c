@@ -568,10 +568,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0LL; // maybe // return UT64_MAX;
 		case '?': return core->num->value;
 		case '$': return core->offset;
-		case 'o': 
+		case 'o':
 			{
 				RIOSection *s;
-				s = r_io_section_vget (core->io, core->offset); 
+				s = r_io_section_vget (core->io, core->offset);
 				return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			}
 			break;
