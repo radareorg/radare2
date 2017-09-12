@@ -126,6 +126,7 @@ static const char *help_msg_wp[] = {
 	"", "", "OFFSET 01020304",
 	"", "", "OFFSET : assembly",
 	"", "", "+ {code}|\"str\"|0210|: asm",
+	NULL
 };
 
 static const char *help_msg_wt[] = {
