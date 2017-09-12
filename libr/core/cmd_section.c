@@ -27,10 +27,12 @@ static const char *help_msg_S[] = {
 
 static const char *help_msg_Sl[] = {
 	"Usage:", "Sl", "[file]",
+	NULL
 };
 
 static const char *help_msg_Sr[] = {
 	"Usage:", "Sr", "[name] ([offset])",
+	NULL
 };
 
 static const char* help_msg_SR[] = {

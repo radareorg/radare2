@@ -236,39 +236,32 @@ static const char *help_msg_y[] = {
 	NULL
 };
 
-static void recursive_help(RCore *core, const char *cmd) {
-	char *nl, *line;
-	if (strchr (cmd, '[')) {
-		// eprintf ("Skip ((%s))\n", cmd);
-		return;
+static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
+	if (desc->help_msg) {
+		r_core_cmd_help (core, desc->help_msg);
 	}
-	char *msg = r_core_cmd_str (core, cmd);
-	if (!msg) {
-		return;
+	if (detail >= 1) {
+		if (desc->help_detail) {
+			r_core_cmd_help (core, desc->help_detail);
+		}
+		if (detail >= 2 && desc->help_detail2) {
+			r_core_cmd_help (core, desc->help_detail2);
+		}
 	}
-	line = msg;
-	r_cons_print (msg);
-	(void) r_str_ansi_filter (msg, NULL, NULL, strlen (msg));
-	do {
-		nl = strchr (line, '\n');
-		if (nl) {
-			*nl = 0;
+	for (int i = 32; i < R_ARRAY_SIZE (desc->sub); i++)
+		if (desc->sub[i]) {
+			recursive_help_go (core, detail, desc->sub[i]);
 		}
-		if (r_cons_is_breaked ()) {
-			break;
+}
+
+static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
+	RCmdDescriptor *desc = &core->root_cmd_descriptor;
+	for (const ut8 *p = (const ut8 *)cmd_prefix; *p && *p < R_ARRAY_SIZE (desc->sub); p++) {
+		if (!(desc = desc->sub[*p])) {
+			return;
 		}
-		char *help_token = strstr (line, "[?]");
-		if (help_token) {
-			help_token[0] = '?';
-			help_token[1] = 0;
-			const char *sp = strchr (line, ' ');
-			if (sp) {
-				recursive_help (core, sp + 1);
-			}
-		}
-		line = nl + 1;
-	} while (nl);
-	free (msg);
+	}
+	recursive_help_go (core, detail, desc);
 }
 
 static int r_core_cmd_nullcallback(void *data) {
@@ -1829,23 +1822,27 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	core->oobi = NULL;
 
 	ptr = strstr (cmd, "?*");
-	if (ptr) {
-		char *prech = ptr - 1;
-		if (*prech != '~') {
-			ptr[1] = 0;
-			if (*cmd != '#' && strlen (cmd) < 5) {
-				r_cons_break_push (NULL, NULL);
-				recursive_help (core, cmd);
-				r_cons_break_pop ();
-				r_cons_grep_parsecmd (ptr + 2, "`");
-				if (scr_html != -1) {
-					r_config_set_i (core->config, "scr.html", scr_html);
+	if (ptr && (ptr == cmd || ptr[-1] != '~')) {
+		ptr[0] = 0;
+		if (*cmd != '#') {
+			int detail = 0;
+			if (cmd < ptr && ptr[-1] == '?') {
+				detail++;
+				if (cmd < ptr - 1 && ptr[-2] == '?') {
+					detail++;
 				}
+			}
+			r_cons_break_push (NULL, NULL);
+			recursive_help (core, detail, cmd);
+			r_cons_break_pop ();
+			r_cons_grep_parsecmd (ptr + 2, "`");
+			if (scr_html != -1) {
+				r_config_set_i (core->config, "scr.html", scr_html);
+			}
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
 			}
-				return 0;
-			}
+			return 0;
 		}
 	}
 
