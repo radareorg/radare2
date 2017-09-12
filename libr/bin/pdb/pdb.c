@@ -802,11 +802,11 @@ void build_command_field(ELeafType lt, char **command_field) {
 		strcpy (*command_field, "pf.");
 		break;
 	case eLF_ENUM:
-		*command_field = (char *) malloc (strlen ("\"td enum") + 1);
+		*command_field = (char *) malloc (strlen ("\"td enum ") + 1);
 		if (!(*command_field)) {
 			break;
 		}
-		strcpy (*command_field, "\"td enum");
+		strcpy (*command_field, "\"td enum ");
 		break;
 	default:
 		break;
@@ -1018,7 +1018,7 @@ static void print_types(R_PDB *pdb, int mode) {
 			}
 
 			if (mode == 'r') {
-				pdb->cb_printf ("%s %s ", command_field, name_field);
+				pdb->cb_printf ("%s%s ", command_field, name_field);
 				if (lt != eLF_ENUM) {
 					pdb->cb_printf ("%s ", flags_format_field);
 				} else {
