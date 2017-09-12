@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2017 - pancake */
+/* radare2 - LGPL - Copyright 2008-2017 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_print.h>
@@ -1320,5 +1320,42 @@ R_API void r_cons_breakword(const char *s) {
 	} else {
 		I.break_word = NULL;
 		I.break_word_len = 0;
+	}
+}
+
+/* Prints a coloured help message.
+ * help should be an array of the following form:
+ * {"command", "args", "description",
+ * "command2", "args2", "description"}; */
+R_API void r_cons_cmd_help(const char *help[], bool use_color) {
+	RCons *cons = r_cons_singleton ();
+	const char *pal_args_color = use_color ? cons->pal.args : "",
+			*pal_help_color = use_color ? cons->pal.help : "",
+			*pal_reset = use_color ? cons->pal.reset : "";
+	int i, max_length = 0;
+
+	for (i = 0; help[i]; i += 3) {
+		int len0 = strlen (help[i]);
+		int len1 = strlen (help[i + 1]);
+		if (i) {
+			max_length = R_MAX (max_length, len0 + len1);
+		}
+	}
+
+	for (i = 0; help[i]; i += 3) {
+		if (i) {
+			int padding = max_length - (strlen (help[i]) + strlen (help[i + 1]));
+			r_cons_printf("| %s%s%s%*s  %s%s%s\n",
+					help[i],
+					pal_args_color, help[i + 1],
+					padding, "",
+					pal_help_color, help[i + 2], pal_reset);
+		} else {
+			// no need to indent the first line
+			r_cons_printf ("|%s%s %s%s%s\n",
+					pal_help_color,
+					help[i], help[i + 1], help[i + 2],
+					pal_reset);
+		}
 	}
 }

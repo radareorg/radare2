@@ -83,6 +83,7 @@ static const char *help_msg_fz[] = {
 	" fz.", "", "show around flagzone context",
 	" fz:", "", "show what's in scr.flagzone for visual",
 	" fz*", "", "dump into r2 commands, for projects",
+	NULL
 };
 
 static void cmd_flag_init(RCore *core) {

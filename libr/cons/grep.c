@@ -12,41 +12,47 @@ int js0n(const ut8 *js, RangstrType len, RangstrType *out);
 // #include "../../shlr/sdb/src/json.c"
 
 #define I(x) r_cons_singleton ()->x
+
+static const char *help_detail_tilde[] = {
+	"Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
+	"modifier:", "", "",
+	" &",        "", "all words must match to grep the line",
+	" $[n]",     "", "sort numerically / alphabetically the Nth column",
+	" +",        "", "case insensitive grep (grep -i)",
+	" ^",        "", "words must be placed at the beginning of line",
+	" !",        "", "negate grep",
+	" ?",        "", "count number of matching lines",
+	" ?.",       "", "count number chars",
+	" ??",       "", "show this help message",
+	" :[s]-[e]", "", "show lines s-e",
+	" ..",       "", "internal 'less'",
+	" ...",      "", "internal 'hud' (like V_)",
+	" {}",       "", "json indentation",
+	" {path}",   "", "json grep",
+	" {}..",     "", "less json indentation",
+	"endmodifier:", "", "",
+	" $",        "", "words must be placed at the end of line",
+	"column:", "", "",
+	" [n]",      "", "show only column n",
+	" [n-m]",    "", "show column n to m",
+	" [n-]",     "", "show all columns starting from column n",
+	" [i,j,k]",  "", "show the columns i, j and k",
+	"Examples:", "", "",
+	" i~:0",     "", "show first line of 'i' output",
+	" i~:-2",    "", "show first three lines of 'i' output",
+	" pd~mov",   "", "disasm and grep for mov",
+	" pi~[0]",   "", "show only opcode",
+	" i~0x400$", "", "show lines ending with 0x400",
+	NULL
+};
+
 /* TODO: remove globals */
 static RList *sorted_lines = NULL;
 static RList *unsorted_lines = NULL;
 static int sorted_column = -1;
 
-R_API void r_cons_grep_help() {
-	eprintf (
-		"|Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
-		"| modifiers:\n"
-		"|   &        all words must match to grep the line\n"
-		"|   $[n]     sort numerically / alphabetically the Nth column\n"
-		"|   +        case insensitive grep (grep -i)\n"
-		"|   ^        words must be placed at the beginning of line\n"
-		"|   !        negate grep\n"
-		"|   ?        count number of matching lines\n"
-		"|   ?.       count number chars\n"
-		"|   ??       show this help message\n"
-		"|   ..       internal 'less'\n"
-		"|   ...      internal 'hud' (like V_)\n"
-		"|   {}       json indentation\n"
-		"|   {path}   json grep\n"
-		"|   {}..     less json indentation\n"
-		"| endmodifiers:\n"
-		"|   $        words must be placed at the end of line\n"
-		"| column:\n"
-		"|   [n]      show only column n\n"
-		"|   [n-m]    show column n to m\n"
-		"|   [n-]     show all columns starting from column n\n"
-		"|   [i,j,k]  show the columns i, j and k\n"
-		"| examples:\n"
-		"|   i~:0     show fist line of 'i' output\n"
-		"|   pd~mov   disasm and grep for mov\n"
-		"|   pi~[0]   show only opcode\n"
-		"|   i~0x400$ show lines ending with 0x400\n"
-		);
+R_API void r_cons_grep_help(void) {
+	r_cons_cmd_help (help_detail_tilde, true);
 }
 
 #define R_CONS_GREP_BUFSIZE 4096
