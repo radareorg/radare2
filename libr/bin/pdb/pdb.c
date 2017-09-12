@@ -837,7 +837,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 		*pos = *pos + 1;
 		break;
 	case eLF_ENUM:
-		members_field[i] = r_str_newf ("%s=%08x", name, offset);
+		members_field[i] = r_str_newf ("%s=0x%"PFMT64x, name, offset);
 #if 0
 		members_field[i] = (char *) malloc (sizeof(char) * strlen (name) + 8 + 1 + 1);	// 8 - hex int, 1 - =
 		if (!members_field[i]) {
