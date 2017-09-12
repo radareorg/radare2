@@ -691,9 +691,10 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			if (!name) {
 				return 0;
 			}
-			strcpy (name, tmp);
 			r_name_filter (tmp, -1);
 			r_name_filter (*name_field, -1);
+			strcpy (name, tmp);
+
 			sprintf (name, "(%s)%s", tmp, *name_field);
 			free (*name_field);
 			*name_field = name;
