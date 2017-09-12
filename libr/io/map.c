@@ -271,18 +271,23 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 	return NULL;
 }
 
+R_API void r_io_map_reset(RIO* io) {
+	r_io_map_fini (io);
+	r_io_map_init (io);
+	r_io_map_calculate_skyline (io);
+}
+
 R_API bool r_io_map_del(RIO* io, ut32 id) {
-	SdbListIter* iter;
-	RIOMap* map;
-	if (!io) {
-		return false;
-	}
-	ls_foreach (io->maps, iter, map) {
-		if (map->id == id) {
-			ls_delete (io->maps, iter);
-			r_id_pool_kick_id (io->map_ids, id);
-			r_io_map_calculate_skyline (io);
-			return true;
+	if (io) {
+		RIOMap* map;
+		SdbListIter* iter;
+		ls_foreach (io->maps, iter, map) {
+			if (map->id == id) {
+				ls_delete (io->maps, iter);
+				r_id_pool_kick_id (io->map_ids, id);
+				r_io_map_calculate_skyline (io);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -449,9 +454,8 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta
 			//return r_io_map_add(io, fd, flags, delta, map->to, size);
 			next_addr = map->to + (load_align - (map->to % load_align)) % load_align;
 			return r_io_map_add_next_available (io, fd, flags, delta, next_addr, size, load_align);
-		} else {
-			break;
 		}
+		break;
 	}
 	return r_io_map_new (io, fd, flags, delta, next_addr, size, true);
 }

@@ -79,6 +79,7 @@ static const char *help_msg_om[] = {
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", "-mapid", "remove the map with corresponding id",
 	"om", " fd vaddr [size] [paddr] [name]", "create new io map",
+	"omm"," fd", "create default map for given fd. (omm `oq`)",
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapid [name]", "set/delete name for map with mapid",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
@@ -654,8 +655,25 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		R_FREE (p);
 		break;
-	case '-':
-		r_io_map_del (core->io, r_num_math (core->num, input+2));
+	case 'm': // "omm"
+		{
+			ut64 fd = r_num_math (core->num, input + 3);
+			RIODesc *desc = r_io_desc_get (core->io, fd);
+			if (desc) {
+				ut64 size = r_io_desc_size (desc);
+				map = r_io_map_add (core->io, fd, desc->flags, 0, 0, size, true);
+				r_io_map_set_name (map, desc->name);
+			} else {
+				eprintf ("Usage: omm [fd]\n");
+			}
+		}
+		break;
+	case '-': // "om-"
+		if (input[2] == '*') {
+			r_io_map_reset (core->io);
+		} else {
+			r_io_map_del (core->io, r_num_math (core->num, input + 2));
+		}
 		break;
 	case 'f': // "omf"
 		switch (input[2]) {
