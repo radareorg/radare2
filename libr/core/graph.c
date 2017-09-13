@@ -1558,8 +1558,8 @@ static void set_layer_gap (RAGraph *g) {
 }
 
 static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
-	RANode *v, *tmp;
-	RGraphNode *gv;
+	RANode *v, *tmp = NULL;
+	RGraphNode *gv = NULL;
 	RListIter *it;
 	int i;
 	const RList *neighbours = r_graph_get_neighbours (g->graph, to->gnode);
@@ -2724,7 +2724,7 @@ static void agraph_print_edges(RAGraph *g) {
 	r_list_foreach (bckedges, itm, temp) {
 		int leftlen, rightlen;
 		int minx, maxx;
-		struct tmplayer *tt;
+		struct tmplayer *tt = NULL;
 		tl = r_list_get_n (lyr, temp->fromlayer);
 		tm = r_list_get_n (lyr, temp->tolayer);
 
