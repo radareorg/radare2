@@ -1854,6 +1854,10 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		r_cons_printf ("fs hits\n");
 	}
 	core->search->inverse = param->inverse;
+	// TODO Bad but is to be compatible with the legacy behavior
+	if (param->inverse) {
+		core->search->maxhits = 1;
+	}
 	searchcount = r_config_get_i (core->config, "search.count");
 	if (searchcount) {
 		searchcount++;
@@ -2265,7 +2269,7 @@ static int cmd_search(void *data, const char *input) {
                 //fin = ini + s->size;
         }
  */
-	maxhits = r_config_get_i (core->config, "search.maxhits");
+	core->search->maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	// TODO: get ranges from current IO section
@@ -2670,7 +2674,7 @@ reread:
 		if (input[0] == 'j') {
 			json = true;
 		}
-	/* pass-thru */
+		// fallthrough
 	case ' ': // "/ " search string
 		inp = strdup (input + 1 + ignorecase + json);
 		len = r_str_unescape (inp);
@@ -2710,6 +2714,7 @@ reread:
 				break;
 			}
 			r_search_reset (core->search, R_SEARCH_REGEXP);
+			// TODO distance is unused
 			r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
 			r_search_kw_add (core->search, kw);
@@ -2788,7 +2793,7 @@ reread:
 					RSearchKeyword *kw;
 					r_search_reset (core->search, R_SEARCH_KEYWORD);
 					r_search_set_distance (core->search, (int)
-							r_config_get_i (core->config, "search.distance"));
+						r_config_get_i (core->config, "search.distance"));
 					kw = r_search_keyword_new (buf + offset, size - offset, NULL, 0, NULL);
 					if (kw) {
 						r_search_kw_add (core->search, kw);
