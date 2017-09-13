@@ -13,7 +13,7 @@ with open('Makefile', 'r') as f:
 DATADIRS = line.split('=')[1].split()
 DATADIRS = [os.path.abspath(p) for p in DATADIRS]
 BLACKLIST = ['Makefile', 'makefile']
-EXTENSIONS = ['txt', '']
+EXTENSIONS = ['sdb.txt']
 
 MESON = 'python meson.py' if os.path.isfile('meson.py') else 'meson'
 NINJA = 'ninja'

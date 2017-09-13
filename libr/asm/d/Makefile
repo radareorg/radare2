@@ -6,9 +6,9 @@ include ../../../config-user.mk
 
 all: ${F_SDB}
 
-%.sdb:%
-	${SDB} $<.sdb = < $<
-	test -f $<.sdb
+%.sdb:%.sdb.txt
+	${SDB} $@ = < $<
+	test -f $@
 
 clean:
 	rm -f *.sdb
