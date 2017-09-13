@@ -1310,9 +1310,11 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 			eprintf ("Error\n");
 			return;
 		}
-	} else cmd = input;
+	} else {
+		cmd = input;
+	}
 
-	if (!rtr_host[rtr_n].fd->fd) {
+	if (!rtr_host[0].fd || !rtr_host[rtr_n].fd->fd) {
 		eprintf("Error: Unknown host\n");
 		return;
 	}
