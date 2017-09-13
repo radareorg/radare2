@@ -27,7 +27,7 @@ static char** env = NULL;
 #define HAVE_ENVIRON 0
 #endif
 
-#if !HAVE_ENVIRON
+#if HAVE_ENVIRON
 #include <execinfo.h>
 #endif
 // iOS dont have this we cant hardcode

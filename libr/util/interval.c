@@ -6,25 +6,25 @@ R_API bool r_interval_init (RInterval *interv, RIntervalType type, ut64 from, ut
 	}
 	interv->type = type;
 	switch (type) {
-		case R_INTERVAL_OPEN_OPEN:
-			interv->from = from - 1;
-			interv->to = from + size;
-			break;
-		case R_INTERVAL_OPEN_CLOSED:
-			interv->from = from - 1;
-			interv->to = interv->from + size;
-			break;
-		case R_INTERVAL_CLOSED_OPEN:
-			interv->from = from;
-			interv->to = from + size;
-			break;
-		case R_INTERVAL_CLOSED_CLOSED:
-			interv->from = from;
-			interv->to = from + size - 1;
-			break;
-		case R_INTERVAL_UNDEFINED:
-		default:
-			return false;
+	case R_INTERVAL_OPEN_OPEN:
+		interv->from = from - 1;
+		interv->to = from + size;
+		break;
+	case R_INTERVAL_OPEN_CLOSED:
+		interv->from = from - 1;
+		interv->to = interv->from + size;
+		break;
+	case R_INTERVAL_CLOSED_OPEN:
+		interv->from = from;
+		interv->to = from + size;
+		break;
+	case R_INTERVAL_CLOSED_CLOSED:
+		interv->from = from;
+		interv->to = from + size - 1;
+		break;
+	case R_INTERVAL_UNDEFINED:
+	default:
+		return false;
 	}
 	if (r_interval_first (*interv, NULL) > r_interval_last (*interv, NULL)) {
 		//This is a hack, for my lazyness
@@ -36,12 +36,14 @@ R_API bool r_interval_init (RInterval *interv, RIntervalType type, ut64 from, ut
 
 R_API ut64 r_interval_first (RInterval interv, bool *err) {
 	switch (interv.type) {
-		case R_INTERVAL_OPEN_OPEN:
-		case R_INTERVAL_OPEN_CLOSED:
-			return interv.from + 1;
-		case R_INTERVAL_CLOSED_OPEN:
-		case R_INTERVAL_CLOSED_CLOSED:
-			return interv.from;
+	case R_INTERVAL_OPEN_OPEN:
+	case R_INTERVAL_OPEN_CLOSED:
+		return interv.from + 1;
+	case R_INTERVAL_CLOSED_OPEN:
+	case R_INTERVAL_CLOSED_CLOSED:
+		return interv.from;
+	case R_INTERVAL_UNDEFINED:
+		break;
 	}
 	if (err) {
 		*err = true;
@@ -51,12 +53,14 @@ R_API ut64 r_interval_first (RInterval interv, bool *err) {
 
 R_API ut64 r_interval_last (RInterval interv, bool *err) {
 	switch (interv.type) {
-		case R_INTERVAL_OPEN_OPEN:
-		case R_INTERVAL_CLOSED_OPEN:
-			return interv.to - 1;
-		case R_INTERVAL_OPEN_CLOSED:
-		case R_INTERVAL_CLOSED_CLOSED:
-			return interv.to;
+	case R_INTERVAL_OPEN_OPEN:
+	case R_INTERVAL_CLOSED_OPEN:
+		return interv.to - 1;
+	case R_INTERVAL_OPEN_CLOSED:
+	case R_INTERVAL_CLOSED_CLOSED:
+		return interv.to;
+	case R_INTERVAL_UNDEFINED:
+		break;
 	}
 	if (err) {
 		*err = true;
