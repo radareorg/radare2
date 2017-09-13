@@ -1606,6 +1606,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	}
 	cmd = r_str_trim_head_tail (cmd);
 
+	char *$0 = strstr (cmd, "$(");
+	if ($0) {
+		char *$1 = strchr ($0 + 2, ')');
+		if ($1) {
+			*$0 = '`';
+			*$1 = '`';
+			memmove ($0 + 1, $0 + 2, strlen ($0) + 1);
+		} else {
+			eprintf ("Unterminated $() block\n");
+		}
+	}
+
 	/* quoted / raw command */
 	switch (*cmd) {
 	case '.':
