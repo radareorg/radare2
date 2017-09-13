@@ -414,7 +414,7 @@ R_API bool r_diff_buffers_distance_original(RDiff *d, const ut8 *a, ut32 la, con
 		*similarity = (double)1 - (double)(m[la][lb])/(double)(R_MAX(la, lb));
 	}
 
-	for(i = 0; i <= la; i++) {
+	for (i = 0; i <= la; i++) {
 		free (m[i]);
 	}
 	free (m);
@@ -423,8 +423,15 @@ R_API bool r_diff_buffers_distance_original(RDiff *d, const ut8 *a, ut32 la, con
 }
 
 R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	if (d && d->levenstein) {
-		return r_diff_buffers_distance_original (d, a, la, b, lb, distance, similarity);
+	if (d) {
+		switch (d->type) {
+		case 'm':
+			return r_diff_buffers_distance_myers (d, a, la, b, lb, distance, similarity);
+		case 'l':
+			return r_diff_buffers_distance_levenstein (d, a, la, b, lb, distance, similarity);
+		default:
+			break;
+		}
 	}
-	return r_diff_buffers_distance_myers (d, a, la, b, lb, distance, similarity);
+	return r_diff_buffers_distance_original (d, a, la, b, lb, distance, similarity);
 }

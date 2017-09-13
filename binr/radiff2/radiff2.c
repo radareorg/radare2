@@ -11,6 +11,7 @@ enum {
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
 	MODE_DIST,
+	MODE_DIST_MYERS,
 	MODE_DIST_LEVENSTEIN,
 	MODE_CODE,
 	MODE_GRAPH,
@@ -536,7 +537,7 @@ int main(int argc, char **argv) {
 	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;
-	double sim;
+	double sim = 0.0;
 
 	evals = r_list_newf (NULL);
 
@@ -603,6 +604,8 @@ int main(int argc, char **argv) {
 		case 's':
 			if (mode == MODE_DIST) {
 				mode = MODE_DIST_LEVENSTEIN;
+			} else if (mode == MODE_DIST_LEVENSTEIN) {
+				mode = MODE_DIST_MYERS;
 			} else {
 				mode = MODE_DIST;
 			}
@@ -784,14 +787,23 @@ int main(int argc, char **argv) {
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
+	case MODE_DIST_MYERS:
 	case MODE_DIST_LEVENSTEIN:
-	{
-		RDiff *d = r_diff_new ();
-		d->verbose = verbose;
-		d->levenstein = (mode == MODE_DIST_LEVENSTEIN);
-		r_diff_buffers_distance (d, bufa, sza, bufb, szb, &count, &sim);
-		r_diff_free (d);
-	}
+		{
+			RDiff *d = r_diff_new ();
+			if (d) {
+				d->verbose = verbose;
+				if (mode == MODE_DIST_LEVENSTEIN) {
+					d->type = 'l';
+				} else if (mode == MODE_DIST_MYERS) {
+					d->type = 'm';
+				} else {
+					d->type = 0;
+				}
+				r_diff_buffers_distance (d, bufa, sza, bufb, szb, &count, &sim);
+				r_diff_free (d);
+			}
+		}
 		printf ("similarity: %.3f\n", sim);
 		printf ("distance: %d\n", count);
 		break;
