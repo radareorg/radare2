@@ -38,7 +38,7 @@ static ut64 jmp_dest(const ut8* b) {
 }
 
 static bool check_bytes_rjmp(const ut8 *b, ut64 length) {
-	CHECK3INSTR (b, rjmp, 2);
+	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > length) {
 		return false;
