@@ -42,6 +42,7 @@ static const char *origColors[] = {
 
 R_API char* r_print_json_indent(const char* s, bool color, const char* tab, const char **palette) {
 	int indent = 0;
+	const int indentSize = strlen (tab);
 	int instr = 0;
 	bool isValue = false;
 	char *o, *OE, *tmp;
@@ -60,9 +61,9 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 	}
 	OE = O + osz;
 	for (o = O; *s; s++) {
-		if (o + indent + 10 > OE) {
+		if (o + (indent * indentSize) + 10 > OE) {
 			int delta = o - O;
-			osz += 0x1000 + indent;
+			osz += 0x1000 + (indent * indentSize);
 			if (osz < 1) {
 				free (O);
 				return NULL;
@@ -132,7 +133,12 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 			isValue = false;
 			*o++ = *s;
 			*o++ = (indent != -1)? '\n': ' ';
-			indent++;
+			if (indent > 128) {
+				eprintf ("JSON indentation is too deep\n");
+				indent = 0;
+			} else {
+				indent++;
+			}
 			doIndent (indent, &o, tab);
 			break;
 		case '}':
