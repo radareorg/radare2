@@ -30,10 +30,13 @@
 #define R_BIN_WASM_SECTION_DATA 0xb
 
 typedef enum {
-	R_BIN_WASM_VALUETYPE_i32 = 0x7f,
-	R_BIN_WASM_VALUETYPE_i64 = 0x7e,
-	R_BIN_WASM_VALUETYPE_f32 = 0x7d,
-	R_BIN_WASM_VALUETYPE_f64 = 0x7c,
+	R_BIN_WASM_VALUETYPE_i32 = 0x1,
+	R_BIN_WASM_VALUETYPE_i64 = 0x2,
+	R_BIN_WASM_VALUETYPE_f32 = 0x3,
+	R_BIN_WASM_VALUETYPE_f64 = 0x4,
+	R_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
+	R_BIN_WASM_VALUETYPE_FUNC = 0x20,
+	R_BIN_WASM_VALUETYPE_EMPTY = 0x40,
 } r_bin_wasm_value_type_t;
 
 typedef enum {
@@ -45,7 +48,7 @@ typedef enum {
 
 typedef enum {
 	R_BIN_WASM_NAMETYPE_Function = 0x1,
-	R_BIN_WASM_NAMETYPELocal = 0x2,
+	R_BIN_WASM_NAMETYPE_Local = 0x2,
 } r_bin_wasm_name_type_t;
 
 struct r_bin_wasm_init_expr_t {
@@ -213,5 +216,6 @@ RList *r_bin_wasm_get_elements (RBinWasmObj *bin);
 RList *r_bin_wasm_get_codes (RBinWasmObj *bin);
 RList *r_bin_wasm_get_datas (RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin);
+const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type);
 
 #endif

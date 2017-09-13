@@ -17,7 +17,7 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	if (!check_bytes(buf, sz)) {
+	if (!check_bytes (buf, sz)) {
 		return NULL;
 	}
 	return r_bin_wasm_init (arch);
@@ -145,8 +145,8 @@ static RList *symbols(RBinFile *arch) {
 		case 3: ptr->type = r_str_const ("GLOBAL"); break;
 		}
 		ptr->size = 0;
-		ptr->vaddr = 0;
-		ptr->paddr = 0;
+		ptr->vaddr = -1;
+		ptr->paddr = -1;
 		ptr->ordinal = i;
 		i += 1;
 		r_list_append (ret, ptr);
@@ -167,7 +167,7 @@ static RList *symbols(RBinFile *arch) {
 		ptr->vaddr = (ut64)func->code;
 		ptr->paddr = (ut64)func->code;
 		ptr->ordinal = i;
-		i += 1;
+		i++;
 		r_list_append (ret, ptr);
 	}
 
@@ -251,9 +251,8 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->subsystem = strdup ("wasm");
 	ret->type = strdup ("EXEC");
 	ret->bits = 32;
-	ret->has_va = true;
+	ret->has_va = 0;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
 	ret->dbg_info = 0;
 	return ret;
 }
