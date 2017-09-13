@@ -459,3 +459,19 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta
 	}
 	return r_io_map_new (io, fd, flags, delta, next_addr, size, true);
 }
+
+R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
+	RList* map_list = r_list_newf (NULL);
+	SdbListIter* iter;
+	RIOMap* map;
+	if (!map_list) {
+		return NULL;
+	}
+
+	ls_foreach (io->maps, iter, map) {
+		if (map && map->fd == fd) {
+			r_list_append (map_list, map);
+		}
+	}
+	return map_list;
+}
