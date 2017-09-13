@@ -1873,7 +1873,7 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 		return NULL;
 	}
 	if (o->strings) {
-		r_list_purge (o->strings);
+		r_list_free (o->strings);
 		o->strings = NULL;
 	}
 
