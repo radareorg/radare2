@@ -435,8 +435,8 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 				print->cb_printf (",");
 			}
 			first = false;
-			print->cb_printf ("{\"map\":%i,\"fd\":%d,\"delta\":%"PFMT64d",\"from\":%"PFMT64d
-					",\"to\":%"PFMT64d",\"flags\":\"%s\",\"name\":\"%s\"}", map->id, map->fd,
+			print->cb_printf ("{\"map\":%i,\"fd\":%d,\"delta\":%"PFMT64u",\"from\":%"PFMT64u
+					",\"to\":%"PFMT64u",\"flags\":\"%s\",\"name\":\"%s\"}", map->id, map->fd,
 					map->delta, map->from, map->to,
 					r_str_rwx_i (map->flags), (map->name ? map->name : ""));
 			break;
