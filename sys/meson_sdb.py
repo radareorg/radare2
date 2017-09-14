@@ -30,7 +30,7 @@ def get_base_extension(f):
     """ file.sdb.txt => file, .txt """
     n = f.split('.')
     if len(n) == 1: return n[0], ''
-    return n[0], n[-1]
+    return n[0], '.'.join(n[1:])
 
 def handle_folder(folder):
     """ Convert each suitable file inside specified folder to sdb file """
