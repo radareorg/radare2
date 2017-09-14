@@ -370,7 +370,7 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	} else {
 		ret = (r_io_pread_at (io, addr, buf, len) > 0);
 	}
-	if (io->cached_read) {
+	if (io->cached & R_IO_READ) {
 		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
@@ -394,7 +394,7 @@ R_API RIOAccessLog *r_io_al_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 		memset (buf, 0xff, len);
 	}
 	rlen = r_io_pread_at (io, addr, buf, len);
-	if (io->cached_read) {
+	if (io->cached & R_IO_READ) {
 		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	if (!(ale = R_NEW0 (RIOAccessLogElement))) {
@@ -424,8 +424,8 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
-	if (io->cached) {
-		r_io_cache_write (io, addr, mybuf, len);	//can be ignored for the return
+	if (io->cached & R_IO_WRITE) {
+		ret = r_io_cache_write (io, addr, mybuf, len);
 	} else if (io->va) {
 		ret = r_io_vwrite_at (io, addr, mybuf, len);
 	} else {

@@ -3645,9 +3645,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	//this is necessary for the hook to read the id of analop
 	ESIL->user = &op;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
-	if (!core->io->cached) {
-		ESIL->cb.hook_mem_write = &esilbreak_mem_write;
-	}
+	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
