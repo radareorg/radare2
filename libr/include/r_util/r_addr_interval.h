@@ -11,6 +11,11 @@ typedef struct r_addr_interval_t {
 	ut64 size;
 } RAddrInterval;
 
+// Returns the right endpoint address (not included)
+static inline ut64 r_itv_end(RAddrInterval itv) {
+	return itv.addr + itv.size;
+}
+
 // Returns true if itv contained addr
 static inline bool r_itv_contain(RAddrInterval itv, ut64 addr) {
 	ut64 end = itv.addr + itv.size;

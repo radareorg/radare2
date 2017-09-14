@@ -3,10 +3,10 @@
 #ifndef R2_IO_H
 #define R2_IO_H
 
-#include <r_socket.h>
-#include <r_list.h>
-#include <r_util.h>
-#include <r_vector.h>
+#include "r_list.h"
+#include "r_socket.h"
+#include "r_util.h"
+#include "r_vector.h"
 
 #define R_IO_READ	4
 #define R_IO_WRITE	2
@@ -159,8 +159,7 @@ typedef struct r_io_map_t {
 	int fd;
 	int flags;
 	ut32 id;
-	ut64 from;
-	ut64 to;
+	RAddrInterval itv;
 	ut64 delta; //this delta means paddr when talking about section
 	char *name;
 } RIOMap;
@@ -307,7 +306,6 @@ R_API void r_io_map_fini (RIO *io);
 R_API bool r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to);
 R_API void r_io_map_set_name (RIOMap *map, const char *name);
 R_API void r_io_map_del_name (RIOMap *map);
-R_API bool r_io_map_is_in_range (RIOMap* map, ut64 from, ut64 to);
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align);
 R_API void r_io_map_calculate_skyline(RIO *io);
 R_API RList* r_io_map_get_for_fd(RIO *io, int fd);

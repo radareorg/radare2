@@ -30,12 +30,16 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	int ioc = io->cached;
 	io->cached = 2;
 	r_list_foreach (io->cache, iter, c) {
-		if (c->from >= from && c->to <= to) {
-			if (!r_io_write_at (io, c->from, c->data, c->size))
-				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
-			else 
+		if (from <= c->to - 1 && c->from <= to - 1) {
+			bool cached = io->cached;
+			io->cached = false;
+			if (r_io_write_at (io, c->from, c->data, c->size)) {
 				c->written = true;
-			break;
+			} else {
+				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
+			}
+			io->cached = cached;
+			break; // XXX old behavior, revisit this
 		}
 	}
 	io->cached = ioc;

@@ -4381,7 +4381,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 	RList *ranges = NULL;
 	RIOMap *r;
 	RBinFile *binfile;
-	ut64 addr, addr_end;
+	ut64 addr;
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
 		eprintf ("Too big\n");
@@ -4392,13 +4392,12 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 	if (binfile) {
 		if (len) {
 			RIOMap *m = R_NEW0 (RIOMap);
-			m->from = addr;
-			m->to = addr + len;
+			m->itv.addr = addr;
+			m->itv.size = len;
 			r_list_append (ranges, m);
 		} else {
 			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, "io.sections");
 		}
-		addr_end = addr + len;
 	}
 	r_cons_break_push (NULL, NULL);
 	if (!binfile || !r_list_length (ranges)) {
@@ -4408,28 +4407,26 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 		const char *search_in = r_config_get (core->config, "search.in");
 		ranges = r_core_get_boundaries_prot (core, 0, search_in);
 		r_list_foreach (ranges, iter, map) {
-			ut64 addr = map->from;
-			ut64 addr_end = map->to;
+			ut64 addr = map->itv.addr;
 			if (only_print_flag) {
 				r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
-					addr, addr_end - addr, addr);
+					addr, map->itv.size, addr);
 			} else {
-				_anal_calls (core, addr, addr_end);
+				_anal_calls (core, addr, r_itv_end (map->itv));
 			}
 		}
 	} else {
 		RListIter *iter;
 		if (binfile) {
 			r_list_foreach (ranges, iter, r) {
-				addr = r->from;
-				addr_end = r->to;
+				addr = r->itv.addr;
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
 				if (only_print_flag) {
 					r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
-						addr, (int)addr_end - addr, addr);
+						addr, r->itv.size, addr);
 				} else {
-					_anal_calls (core, addr, addr_end);
+					_anal_calls (core, addr, r_itv_end (r->itv));
 				}
 			}
 		}
@@ -5449,7 +5446,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		} else {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
 			from = core->offset;
-			to = r_io_size (core->io) + (map? map->to: 0);
+			to = r_io_size (core->io) + (map? r_itv_end (map->itv) : 0);
 		}
 		if (!from && !to) {
 			eprintf ("Cannot determine xref search boundaries\n");
@@ -5662,8 +5659,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		RIOMap *map = r_list_first (ret);
 		if (map) {
-		//	from = map->from;
-		//	to = map->to;
+		//	from = map->itv.addr;
+		//	to = r_itv_end (map->itv);
 		}
 		r_list_free (ret);
 	}
@@ -5678,9 +5675,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		RListIter *iter;
 		RIOMap *map;
 		r_list_foreach (list, iter, map) {
-			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->from, map->to);
-			(void)r_core_search_value_in_range (core, map->from, map->to,
-				map->from, map->to, vsize, asterisk, _CbInRangeAav);
+			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			(void)r_core_search_value_in_range (core, map->itv.addr, r_itv_end (map->itv),
+				map->itv.addr, r_itv_end (map->itv), vsize, asterisk, _CbInRangeAav);
 		}
 		r_list_free (list);
 	} else {

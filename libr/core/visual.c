@@ -2202,7 +2202,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						} else {
 							RIOMap *map = ls_pop (core->io->maps);
 							if (map) {
-								entry = map->from;
+								entry = map->itv.addr;
 							} else {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}
