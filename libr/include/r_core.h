@@ -3,9 +3,6 @@
 #ifndef R2_CORE_H
 #define R2_CORE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include "r_socket.h"
 #include "r_types.h"
 #include "r_magic.h"
@@ -32,6 +29,9 @@ extern "C" {
 #include "r_crypto.h"
 #include "r_bind.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 R_LIB_VERSION_HEADER(r_core);
 
 #define R_CORE_CMD_EXIT -2

@@ -258,10 +258,6 @@ extern RAsmPlugin r_asm_plugin_evm;
 
 #ifdef __cplusplus
 }
-#ifdef __cplusplus
-}
-#endif
-
 #endif
 
 #endif

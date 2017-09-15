@@ -58,6 +58,7 @@ r2 -q - <<EOF
 ?e #define R_EGG_OS_FREEBSD \`?h freebsd\`
 EOF
 #endif
+
 #define R_EGG_OS_LINUX 0x5ca62a43
 #define R_EGG_OS_OSX 0x0ad593a1
 #define R_EGG_OS_DARWIN 0xd86d1ae2
