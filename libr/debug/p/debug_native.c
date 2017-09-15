@@ -1664,8 +1664,12 @@ RDebugPlugin r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "mips",
 	.canstep = 0,
-#elif __POWERPC__
+#elif __powerpc__
+# if __powerpc64__
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+# else
 	.bits = R_SYS_BITS_32,
+#endif
 	.arch = "ppc",
 	.canstep = 1,
 #else
@@ -1690,7 +1694,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.wait = &r_debug_native_wait,
 	.kill = &r_debug_native_kill,
 	.frames = &r_debug_native_frames, // rename to backtrace ?
-	.reg_profile = (void *)r_debug_native_reg_profile,
+	.reg_profile = r_debug_native_reg_profile,
 	.reg_read = r_debug_native_reg_read,
 	.info = r_debug_native_info,
 	.reg_write = (void *)&r_debug_native_reg_write,
