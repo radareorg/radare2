@@ -131,8 +131,6 @@ run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.
 
 subdir('shlr/')
 subdir('libr/util')
-subdir('binr/rax2')
-
 
 subdir('libr/hash')
 subdir('libr/crypto')
@@ -170,3 +168,7 @@ subdir('libr/core')
 subdir('binr/rabin2')
 subdir('binr/radare2')
 subdir('binr/ragg2')
+subdir('binr/r2agent')
+subdir('binr/radiff2')
+subdir('binr/rafind2')
+subdir('binr/rax2')
