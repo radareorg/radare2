@@ -183,11 +183,14 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 #elif __APPLE__
 	return xnu_attach (dbg, pid);
 #elif __KFBSD__
-	if (ptrace (PT_ATTACH, pid, 0, 0) != -1) perror ("ptrace (PT_ATTACH)");
+	if (ptrace (PT_ATTACH, pid, 0, 0) != -1) {
+		perror ("ptrace (PT_ATTACH)");
+	}
 	return pid;
 #else
 	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) {
+		eprintf ("Trying to attach to %d\n", pid);
 		perror ("ptrace (PT_ATTACH)");
 	}
 	return pid;
