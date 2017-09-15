@@ -48,12 +48,16 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		free (tok0);
 	} else {
 		type2 = type = r_reg_type_by_name (tok[0]);
+		/* Hack to put flags in the same arena as gpr */
 		if (type == R_REG_TYPE_FLG) {
 			type2 = R_REG_TYPE_GPR;
 		}
 	}
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
+	}
+	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
+		return "Duplicate register definition";
 	}
 
 	item = R_NEW0 (RRegItem);
@@ -62,7 +66,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->type = type;
-	item->arena = type2;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2], &end);
@@ -89,16 +92,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		item->flags = strdup (tok[5]);
 	}
 
-	// Don't allow duplicate registers
-	if (r_reg_get (reg, item->name, R_REG_TYPE_ALL)) {
-		r_reg_item_free (item);
-		return "Duplicate register definition";
-	}
-	/* Hack to put flags in the same arena as gpr */
-	if (type == R_REG_TYPE_FLG) {
-		type2 = R_REG_TYPE_GPR;
-	}
-
+	item->arena = type2;
 	r_list_append (reg->regset[type2].regs, item);
 
 	// Update the overall profile size
