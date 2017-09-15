@@ -221,7 +221,7 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		// the value of v1[start] simply increments.
 		if (start > bLen) {
 			break;
-		} 
+		}
 		v1[start] = v0[start] + 1;
 
 		// need to have a bigger number in colMin than we'll ever encounter in the inner loop
@@ -358,67 +358,58 @@ out:
 	return true;
 }
 
-R_API bool r_diff_buffers_distance_original(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	int i, j, tmin, **m;
-	ut64 totalsz = 0;
-
-	if (!a || !b || la < 1 || lb < 1)
+R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	if (!a || !b)
 		return false;
 
-	if (la == lb && !memcmp (a, b, la)) {
-		if (distance != NULL)
-			*distance = 0;
-		if (similarity != NULL)
-			*similarity = 1.0;
-		return true;
+	const bool verbose = diff ? diff->verbose : false;
+	const ut32 length = R_MAX (la, lb);
+	const ut8 *ea = a + la, *eb = b + lb, *t;
+	ut32 *d, i, j;
+	// Strip prefix
+	for (; a < ea && b < eb && *a == *b; a++, b++) {}
+	// Strip suffix
+	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {}
+	la = ea - a;
+	lb = eb - b;
+	if (la < lb) {
+		i = la;
+		la = lb;
+		lb = i;
+		t = a;
+		a = b;
+		b = t;
 	}
-	totalsz = sizeof(int*) * (lb+1);
-	for(i = 0; i <= la; i++) {
-		totalsz += ((lb+1) * sizeof(int));
-	}
-	if (totalsz >= 1024 * 1024 * 1024) { // 1 GB of ram
-		char *szstr = r_num_units (NULL, totalsz);
-		eprintf ("Too much memory required (%s) to run distance diff, Use -c.\n", szstr);
-		free (szstr);
+
+	if (sizeof (ut32) > SIZE_MAX / (lb + 1) || !(d = malloc ((lb + 1) * sizeof (ut32)))) {
 		return false;
 	}
-	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
-		return false;
-	for(i = 0; i <= la; i++) {
-		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
-			eprintf ("Allocation failed\n");
-			while (i--)
-				free (m[i]);
-			free (m);
-			return false;
+	for (i = 0; i <= lb; i++) {
+		d[i] = i;
+	}
+	for (i = 0; i < la; i++) {
+		ut32 ul = d[0];
+		d[0] = i + 1;
+		for (j = 0; j < lb; j++) {
+			ut32 u = d[j + 1];
+			d[j + 1] = a[i] == b[j] ? ul : R_MIN (ul, R_MIN (d[j], u)) + 1;
+			ul = u;
+		}
+		if (verbose && i % 10000 == 0) {
+			eprintf ("\rProcessing %" PFMT32u " of %" PFMT32u "\r", i, la);
 		}
 	}
 
-	for (i = 0; i <= la; i++)
-		m[i][0] = i;
-	for (j = 0; j <= lb; j++)
-		m[0][j] = j;
-
-	for (i = 1; i <= la; i++) {
-		for (j = 1; j <= lb; j++) {
-			int cost = (a[i-1] != b[j-1])? 1: 0;
-			tmin = R_MIN (m[i-1][j] + 1, m[i][j-1] + 1);
-			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
-		}
+	if (verbose) {
+		eprintf ("\n");
 	}
-
 	if (distance) {
-		*distance = m[la][lb];
+		*distance = d[lb];
 	}
 	if (similarity) {
-		*similarity = (double)1 - (double)(m[la][lb])/(double)(R_MAX(la, lb));
+		*similarity = length ? 1.0 - (double)d[lb] / length : 1.0;
 	}
-
-	for (i = 0; i <= la; i++) {
-		free (m[i]);
-	}
-	free (m);
-
+	free (d);
 	return true;
 }
 
