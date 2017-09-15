@@ -3,6 +3,12 @@
 #include <r_diff.h>
 #include <r_core.h>
 #include <r_hash.h>
+#include <getopt.c>
+#ifdef _MSC_VER
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#endif
 
 #include "../blob/version.c"
 
