@@ -533,7 +533,6 @@ static void cmd_open_map(RCore *core, const char *input) {
 				map->delta, map->itv.addr, r_itv_end (map->itv),
 			r_str_rwx_i (map->flags), map->name ? map->name : "");
 		}
-
 		break;
 	case 'r': // "omr"
 		if (input[2] != ' ') {
@@ -641,14 +640,14 @@ static void cmd_open_map(RCore *core, const char *input) {
 			s++;
 		}
 		if (*s == '\0') {
-			R_FREE (p);
+			s = p;
 			break;
 		}
 		if (!(q = strchr (s, ' '))) {
 			id = (ut32)r_num_math (core->num, s);
 			map = r_io_map_get (core->io, id);
 			r_io_map_del_name (map);
-			R_FREE (p);
+			s = p;
 			break;
 		}
 		*q = '\0';
@@ -660,7 +659,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else {
 			r_io_map_del_name (map);
 		}
-		R_FREE (p);
+		s = p;
 		break;
 	case 'm': // "omm"
 		{
