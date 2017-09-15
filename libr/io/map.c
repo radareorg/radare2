@@ -449,3 +449,19 @@ R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
 	}
 	return map_list;
 }
+
+R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
+	RIOMap* map;
+	if (!io) {
+		return false;
+	}
+
+	map = r_io_map_get (io, id);
+	if (!map) {
+		return false;
+	}
+
+	map->itv.size = newsize;
+	r_io_map_cleanup (io);
+	return true;
+}
