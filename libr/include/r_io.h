@@ -309,6 +309,7 @@ R_API void r_io_map_del_name (RIOMap *map);
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align);
 R_API void r_io_map_calculate_skyline(RIO *io);
 R_API RList* r_io_map_get_for_fd(RIO *io, int fd);
+R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
 
 //io.c
 R_API RIO *r_io_new (void);

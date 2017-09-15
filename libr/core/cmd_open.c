@@ -85,7 +85,8 @@ static const char *help_msg_om[] = {
 	"omn", " mapid [name]", "set/delete name for map with mapid",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
-	"omr", " mapid addr", "relocate map with corresponding id",
+	"omb", " mapid addr", "relocate map with corresponding id",
+	"omr", " mapid newsize", "resize map with corresponding id",
 	"omp", " mapid", "priorize map with corresponding id",
 	"ompf", "[fd]", "priorize map by fd",
 	"ompb", " binid", "priorize maps of mapped bin with binid",
@@ -534,7 +535,18 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 
 		break;
-	case 'r':
+	case 'r': // "omr"
+		if (input[2] != ' ') {
+			break;
+		}
+		P = strchr (input+3, ' ');
+		if (P) {
+			id = (ut32)r_num_math (core->num, input+3);	//mapid
+			new = r_num_math (core->num, P+1);
+			r_io_map_resize (core->io, id, new);
+		}
+		break;
+	case 'b': // "omb"
 		if (input[2] != ' ') {
 			break;
 		}
