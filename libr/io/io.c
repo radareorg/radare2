@@ -485,11 +485,9 @@ R_API bool r_io_resize(RIO* io, ut64 newsize) {
 		RListIter *iter;
 		ut64 fd_size = r_io_fd_size (io, io->desc->fd);
 		r_list_foreach (maps, iter, current_map) {
-			if (current_map) {
-				// we just resize map of the same size of its fd
-				if (current_map->itv.size == fd_size) {
-					r_io_map_resize (io, current_map->id, newsize);
-				}
+			// we just resize map of the same size of its fd
+			if (current_map->itv.size == fd_size) {
+				r_io_map_resize (io, current_map->id, newsize);
 			}
 		}
 		r_list_free (maps);
