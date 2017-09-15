@@ -1531,7 +1531,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("cmd.cprompt> ");
 			I->line->contents = strdup (cmd);
 			buf = r_line_readline ();
-			if (!strcmp (buf, "|")) {
+			if (buf && !strcmp (buf, "|")) {
 				R_FREE (I->line->contents);
 				core->print->cur_enabled = true;
 				core->print->cur = 0;

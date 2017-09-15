@@ -31,6 +31,7 @@
 #endif
 
 static char *regs[] = R_GP;
+static int regs_count = R_NGP;
 
 static void emit_init (REgg *egg) {
 // TODO: add 'andb rsp, 0xf0'
@@ -110,18 +111,32 @@ static void emit_equ (REgg *egg, const char *key, const char *value) {
 	r_egg_printf (egg, ".equ %s,%s\n", key, value);
 }
 
+static const char *getreg(int i) {
+	if (i < 0 || i >= regs_count) {
+		return NULL;
+	}
+	return regs[i];
+}
+
 static void emit_syscall_args(REgg *egg, int nargs) {
 	int j, k;
-	for (j=0; j<nargs; j++) {
-		k = j*R_SZ;
-		if (attsyntax)
-			r_egg_printf (egg, "  mov %d(%%"R_SP"), %%%s\n", k, regs[j+1]);
-		else {
-			if (k>0)
-				r_egg_printf (egg, "  mov %s, ["R_SP"+%d]\n", regs[j+1], k);
-			else if (k<0)
-				r_egg_printf (egg, "  mov %s, ["R_SP"%d]\n", regs[j+1], k);
-			else r_egg_printf (egg, "  mov %s, ["R_SP"]\n", regs[j+1]);
+	for (j = 0; j < nargs; j++) {
+		k = j * R_SZ;
+		const char *reg = getreg (j + 1);
+		if (!reg) {
+			eprintf ("Cannot find gpr %d\n", j + 1);
+			break;
+		}
+		if (attsyntax) {
+			r_egg_printf (egg, "  mov %d(%%"R_SP"), %%%s\n", k, reg);
+		} else {
+			if (k > 0) {
+				r_egg_printf (egg, "  mov %s, ["R_SP"+%d]\n", reg, k);
+			} else if (k < 0) {
+				r_egg_printf (egg, "  mov %s, ["R_SP"%d]\n", reg, k);
+			} else {
+				r_egg_printf (egg, "  mov %s, ["R_SP"]\n", reg, k);
+			}
 		}
 	}
 }
@@ -295,8 +310,11 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	//eprintf ("emit_load_ptr: HACK\n");
 	// XXX: 32/64bit care
 	//r_egg_printf (egg, "# DELTA IS (%s)\n", dst);
-	if (attsyntax) r_egg_printf (egg, "  leal %d(%%"R_BP"), %%"R_AX"\n", d);
-	else r_egg_printf (egg, "  lea "R_AX", ["R_BP"+%d]\n", d);
+	if (attsyntax) {
+		r_egg_printf (egg, "  leal %d(%%"R_BP"), %%"R_AX"\n", d);
+	} else {
+		r_egg_printf (egg, "  lea "R_AX", ["R_BP"+%d]\n", d);
+	}
 	//r_egg_printf (egg, "  movl %%"R_BP", %%"R_AX"\n");
 	//r_egg_printf (egg, "  addl $%d, %%"R_AX"\n", d);
 }
@@ -310,24 +328,20 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	if (b) {
 		*b = '\0';
 		if (signed_value) {
-			if (e) op = "jge";
-			else op = "jg";
+			op = e? "jge": "jg";
 		} else {
-			if (e) op = "jae";
-			else op = "ja";
+			op = e? "jae": "ja";
 		}
 		arg = b+1;
 	} else
 	if (g) {
 		*g = '\0';
 		if (signed_value) {
-			if (e) op = "jle";
-			else op = "jl";
+			op = e? "jle": "jl";
 		} else {
-			if (e) op = "jbe";
-			else op = "jb";
+			op = e? "jbe": "jb";
 		}
-		arg = g+1;
+		arg = g + 1;
 	}
 	if (!arg) {
 		if (e) {

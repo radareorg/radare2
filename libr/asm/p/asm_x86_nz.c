@@ -2587,7 +2587,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		}
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
-			if (a->num->value == 0) {
+			if (a->num && a->num->value == 0) {
 				if (isrepop) {
 					strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
 					op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
@@ -2595,7 +2595,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				return nextpos;
 			}
 			op->type = OT_CONSTANT;
-			RCore *core = (RCore *)(a->num->userptr);
+			RCore *core = a->num? (RCore *)(a->num->userptr): NULL;
 			if (core && (flag = r_flag_get (core->flags, str))) {
 				op->is_good_flag = true;
 			}
