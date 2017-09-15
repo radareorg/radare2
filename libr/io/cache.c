@@ -15,24 +15,16 @@ static void cache_item_free(RIOCache *cache) {
 
 R_API void r_io_cache_init(RIO *io) {
 	io->cache = r_list_newf ((RListFree)cache_item_free);
-	io->cached = false; // cache write ops
-	io->cached_read = false; // cached read ops
-}
-
-R_API void r_io_cache_enable(RIO *io, int read, int write) {
-	io->cached = read | write;
-	io->cached_read = read;
+	io->cached = 0;
 }
 
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	RListIter *iter;
 	RIOCache *c;
-	int ioc = io->cached;
-	io->cached = 2;
 	r_list_foreach (io->cache, iter, c) {
 		if (from <= c->to - 1 && c->from <= to - 1) {
-			bool cached = io->cached;
-			io->cached = false;
+			int cached = io->cached;
+			io->cached = 0;
 			if (r_io_write_at (io, c->from, c->data, c->size)) {
 				c->written = true;
 			} else {
@@ -42,7 +34,6 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 			break; // XXX old behavior, revisit this
 		}
 	}
-	io->cached = ioc;
 }
 
 R_API void r_io_cache_reset(RIO *io, int set) {
@@ -59,10 +50,10 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		//r_list_foreach_safe (io->cache, iter, iter_tmp, c) {
 		r_list_foreach (io->cache, iter, c) {
 			if (c->from >= from && c->to <= to) {
-				int ioc = io->cached;
-				io->cached = 2; // magic number to skip caching this write
+				int cached = io->cached;
+				io->cached = 0;
 				r_io_write_at (io, c->from, c->odata, c->size);
-				io->cached = ioc;
+				io->cached = cached;
 				if (!c->written)
 					r_list_delete (io->cache, iter);
 				c->written = false;
@@ -142,7 +133,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		free (ch);
 		return false;
 	}
-	ch->written = io->cached? false: true;
+	ch->written = false;
 	r_io_read_at (io, addr, ch->odata, len);
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
