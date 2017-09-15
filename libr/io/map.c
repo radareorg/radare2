@@ -157,10 +157,11 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 	if (!(map = r_io_map_resolve (io, id))) {
 		return false;
 	}
+	ut64 size = map->itv.size;
 	map->itv.addr = addr;
-	if (UT64_MAX - map->itv.size + 1 < addr) {
-		r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, map->itv.size + addr, true);
-		map->itv.size = -map->itv.addr;
+	if (UT64_MAX - size + 1 < addr) {
+		map->itv.size = -addr;
+		r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, size + addr, true);
 		return true;
 	}
 	r_io_map_calculate_skyline (io);
@@ -451,17 +452,17 @@ R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
 }
 
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
-	RIOMap* map;
-	if (!io) {
+	RIOMap *map;
+	if (!newsize || !(map = r_io_map_resolve (io, id))) {
 		return false;
 	}
-
-	map = r_io_map_get (io, id);
-	if (!map) {
-		return false;
+	ut64 addr = map->itv.addr;
+	if (UT64_MAX - newsize + 1 < addr) {
+		map->itv.size = -addr;
+		r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, newsize + addr, true);
+		return true;
 	}
-
 	map->itv.size = newsize;
-	r_io_map_cleanup (io);
+	r_io_map_calculate_skyline (io);
 	return true;
 }
