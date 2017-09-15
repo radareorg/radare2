@@ -431,7 +431,6 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 				free (s);
 				}
 				break;
-			case 'h': /* hidden */
 			case 's': /* string */
 				if (rad) {
 					a->cb_printf ("%s %d @ 0x%08"PFMT64x" # %s\n",
@@ -443,14 +442,16 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 							d->from, (int)d->size, pstr);
 				}
 				break;
+			case 'h': /* hidden */
 			case 'd': /* data */
 				if (rad) {
 					a->cb_printf ("%s %d @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from);
 				} else {
-					a->cb_printf ("0x%08"PFMT64x" data %s %d\n",
-						d->from, r_meta_type_to_string (d->type), (int)d->size);
+					const char *dtype = d->type == 'h' ? "hidden" : "data";
+					a->cb_printf ("0x%08" PFMT64x " %s %s %d\n",
+					              d->from, dtype, r_meta_type_to_string (d->type), (int)d->size);
 
 				}
 				break;
