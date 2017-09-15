@@ -283,8 +283,12 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 				*rip = 0;
 				char *pre = tstr;
 				char *pos = rip + 6;
-				char *word = strchr (tstr, ' ');
-				if (word) {
+				char *word = rip;
+				while (word > tstr && *word != ' ') {
+					word--;
+				}
+
+				if (word > tstr) {
 					*word++ = 0;
 					*rip = 0;
 					st64 n = r_num_math (NULL, word);
