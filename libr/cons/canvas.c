@@ -220,7 +220,6 @@ static void stamp_attr(RConsCanvas *c, int length) {
 /* check for ANSI sequences and use them as attr */
 static const char *set_attr(RConsCanvas *c, const char *s) {
 	const char *p = s;
-	char *color;
 
 	while (is_ansi_seq (p)) {
 		p += 2;
@@ -231,8 +230,14 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 	}
 
 	if (p != s) {
-		color = r_str_ndup (s, p - s);
-		c->attr = color;
+		char tmp[64];
+		const int slen = R_MIN (p - s, sizeof (tmp) - 1);
+		if (slen > 0) {
+			memcpy (tmp, s, slen);
+			tmp[slen] = 0;
+			// could be faster
+			c->attr = r_str_const (tmp);
+		}
 	}
 	return p;
 }
