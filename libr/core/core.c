@@ -2516,13 +2516,14 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 }
 
 
-R_API int r_core_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
+R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut64 vmin,
 				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
 	int i, match, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
 	ut64 v64, value = 0;
+	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {

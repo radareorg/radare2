@@ -5676,7 +5676,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		RIOMap *map;
 		r_list_foreach (list, iter, map) {
 			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-			(void)r_core_search_value_in_range (core, map->itv.addr, r_itv_end (map->itv),
+			(void)r_core_search_value_in_range (core, map->itv,
 				map->itv.addr, r_itv_end (map->itv), vsize, asterisk, _CbInRangeAav);
 		}
 		r_list_free (list);
@@ -5686,7 +5686,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			ut64 from = s->vaddr;
 			ut64 to = s->vaddr + s->size;
 			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", from, to);
-			(void)r_core_search_value_in_range (core, from, to,
+			(void)r_core_search_value_in_range (core, (RAddrInterval){from, s->size},
 				from, to, vsize, asterisk, _CbInRangeAav);
 		} else {
 			eprintf ("aav: Cannot find section at this address\n");
