@@ -9,25 +9,26 @@
 #include "cmd_search_rop.c"
 
 static const char *help_msg_slash[] = {
-	"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)\n"
+	"Usage:", "/[!bf] [arg]", "Search stuff (see 'e??search' for options)\n"
 	"|Use io.va for searching in non virtual addressing spaces",
 	"/", " foo\\x00", "search for string 'foo\\0'",
 	"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
-	"/!", " ff", "search for first occurrence not matching",
-	"/+", " /bin/sh", "construct the string with chunks",
+	"/!", " ff", "search for first occurrence not matching, command modifier",
 	"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
+	"/+", " /bin/sh", "construct the string with chunks",
 	"//", "", "repeat last search",
-	"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 	"/a", " jmp eax", "assemble opcode and search its bytes",
 	"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
-	"/b", "", "search backwards",
+	"/b", "", "search backwards, command modifier, followed by other command",
 	"/B", "", "search recognized RBin headers",
 	"/c", " jmp [esp]", "search for asm code",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
 	"/E", " esil-expr", "offset matching given esil expressions %%= here",
-	"/f", " file [off] [sz]", "search contents of file with offset and size",
+	"/f", "", "search forwards, command modifier, followed by other command",
+	"/F", " file [off] [sz]", "search contents of file with offset and size",
+	"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
 	"/o", " [n]", "show offset of n instructions backward",
