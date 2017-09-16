@@ -1938,13 +1938,6 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			} else if (!json) {
 				eprintf ("hits: %d\n", searchhits);
 			}
-			{
-				RListIter *iter;
-				RSearchKeyword *kw;
-				r_list_foreach (core->search->kws, iter, kw) {
-					kw->kwidx++;
-				}
-			}
 		}
 		r_cons_break_pop ();
 		free (buf);
