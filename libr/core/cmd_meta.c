@@ -541,6 +541,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	case '*':
 		r_meta_list (core->anal, input[0], 1);
 		break;
+	case 'j':
+		r_meta_list (core->anal, input[0], 'j');
+		break;
 	case '!':
 		{
 			char *out, *comment = r_meta_get_string (
