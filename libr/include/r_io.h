@@ -477,8 +477,8 @@ R_API bool r_io_use_fd (RIO *io, int fd);
 #define r_io_range_free(x)	free(x)
 
 /* io/ioutils.c */
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null);
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch);
+R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline);
+R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline);
 R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec);
 R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);

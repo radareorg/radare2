@@ -10,7 +10,7 @@ static int __access_log_e_cmp (const void *a, const void *b) {
 	return (A->buf_idx > B->buf_idx);
 }
 
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null) {
+R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
 	RIOMap *map = NULL;
 	RIODesc *desc = NULL;
 	char *uri = NULL;
@@ -28,6 +28,9 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null) {
 	if (!desc) {
 		return false;
 	}
+	if (do_skyline) {
+		r_io_map_calculate_skyline (io);
+	}
 	// this works, because new maps are allways born on the top
 	map = r_io_map_get (io, at);
 	// check if the mapping failed
@@ -41,7 +44,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null) {
 	return true;
 }
 
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch) {
+R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
 	RIOMap *map = NULL;
 	int flags = 0;
 	RIODesc *desc;
@@ -59,7 +62,7 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch)
 		//if the file was not opened with -w desc->flags won't have that bit active
 		flags = flags | desc->flags;
 	}
-	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, false);
+	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -75,7 +78,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 	}
 	if (sec->vsize - sec->size > 0) {
 		ut64 at = sec->vaddr + sec->size;
-		if (!r_io_create_mem_map (io, sec, at, false)) {
+		if (!r_io_create_mem_map (io, sec, at, false, true)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, at);
@@ -83,7 +86,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 			
 	}
 	if (sec->size) {
-		if (!r_io_create_file_map (io, sec, sec->size, false)) {
+		if (!r_io_create_file_map (io, sec, sec->size, false, true)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, sec->vaddr);
