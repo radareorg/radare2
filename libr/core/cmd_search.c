@@ -588,6 +588,7 @@ static void append_bound(RList *list, RIO *io, RAddrInterval search_itv, ut64 fr
 	}
 }
 
+// TODO(maskray) returns RList<RAddrInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode) {
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
 	const ut64 search_from = r_config_get_i (core->config, "search.from"),
@@ -608,16 +609,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size);
 		}
-	} else if (!strcmp (mode, "io.maps")) {
-		SdbListIter *iter;
-		RIOMap *m;
-		ls_foreach (core->io->maps, iter, m) {
-			RIOMap *map = R_NEW0 (RIOMap);
-			if (map) {
-				*map = *m;
-				map->name = NULL;
-				r_list_append (list, map);
-			}
+	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
+		const RVector *skyline = &core->io->map_skyline;
+		int i;
+		for (i = 0; i < skyline->len; i++) {
+			const RIOMapSkyline *part = skyline->a[i];
+			append_bound (list, NULL, search_itv, part->itv.addr, r_itv_end (part->itv));
 		}
 	} else if (!strcmp (mode, "io.section")) {
 		RIOSection *s = r_io_section_get (core->io, core->offset);
