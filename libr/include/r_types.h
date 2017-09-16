@@ -402,10 +402,18 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #define R_SYS_ENDIAN 0
-#elif __POWERPC__
-#define R_SYS_ARCH "ppc"
-#define R_SYS_BITS R_SYS_BITS_32
-#define R_SYS_ENDIAN 0
+#elif __powerpc__
+# define R_SYS_ARCH "ppc"
+# ifdef __powerpc64__
+#  define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+# else
+#  define R_SYS_BITS R_SYS_BITS_32
+# endif
+# if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#  define R_SYS_ENDIAN 0
+# else
+#  define R_SYS_ENDIAN 1
+# endif
 #elif __arm__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32

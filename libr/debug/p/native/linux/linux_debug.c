@@ -38,8 +38,12 @@ const char *linux_reg_profile (RDebug *dbg) {
 	} else {
 #include "reg/linux-x64.h"
 	}
-#elif __ppc__ || __powerpc || __powerpc__ || __POWERPC__
+#elif __powerpc__
+	if (dbg->bits & R_SYS_BITS_32) {
 #include "reg/linux-ppc.h"
+	} else {
+#include "reg/linux-ppc64.h"
+	}
 #else
 #error "Unsupported Linux CPU"
 #endif
@@ -881,7 +885,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			};
 			ret = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &io);
 			}
-#elif __POWERPC__ || __sparc__
+#elif __BSD__ && __POWERPC__ || __sparc__
 			ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
 			/* linux -{arm/x86/x86_64} */
