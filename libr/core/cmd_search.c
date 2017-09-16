@@ -1854,12 +1854,6 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (r_itv_end (map->itv) < map->itv.addr) {
-				eprintf ("invalid from/to values\n");
-				break;
-			}
-
-			r_io_use_fd (core->io, map->fd);
 			if (!json) {
 				RSearchKeyword *kw = r_list_first (core->search->kws);
 				eprintf ("Searching %d bytes in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
@@ -1872,18 +1866,18 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 
 			if (param->bckwrds) {
 				if (itv.size <= bufsz) {
-					at = map->itv.addr;
+					at = itv.addr;
 					param->do_bckwrd_srch = false;
 				} else {
-					at = r_itv_end (map->itv) - bufsz;
+					at = r_itv_end (itv) - bufsz;
 				}
 			} else {
-				at = map->itv.addr;
+				at = itv.addr;
 			}
 			/* bckwrds = false -> normal search -> must be at < to
 			   bckwrds search -> check later */
-			for (; (!param->bckwrds && at < r_itv_end (map->itv)) || param->bckwrds;) {
-				print_search_progress (at, r_itv_end (map->itv), searchhits);
+			for (; (!param->bckwrds && at < r_itv_end (itv)) || param->bckwrds;) {
+				print_search_progress (at, r_itv_end (itv), searchhits);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
 					break;
@@ -1921,10 +1915,10 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 						param->do_bckwrd_srch = false;
 						bufsz = at;
 						at = 0;
-					} else if (at - bufsz < map->itv.addr) {
+					} else if (at - bufsz < itv.addr) {
 						param->do_bckwrd_srch = false;
-						bufsz = at - map->itv.addr;
-						at = map->itv.addr;
+						bufsz = at - itv.addr;
+						at = itv.addr;
 					} else {
 						at -= bufsz;
 					}
@@ -2774,7 +2768,7 @@ reread:
 			r_core_cmd_help (core, help_msg_slash_x);
 		} else {
 			RSearchKeyword *kw;
-			char *s, *p = strdup (input + json + 2);
+			char *s, *p = strdup (input + param_offset);
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
 			r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
 			s = strchr (p, ':');
