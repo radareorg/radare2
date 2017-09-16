@@ -43,7 +43,7 @@ R_API void r_core_asm_hit_free(void *_hit) {
 	}
 }
 
-R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to) {
+R_API char* r_core_asm_search(RCore *core, const char *input) {
 	RAsmCode *acode;
 	char *ret;
 	if (!(acode = r_asm_massemble (core->assembler, input))) {
