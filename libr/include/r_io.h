@@ -165,8 +165,7 @@ typedef struct r_io_map_t {
 
 typedef struct r_io_map_skyline_t {
 	RIOMap *map;
-	ut64 from;
-	ut64 to;
+	RAddrInterval itv;
 } RIOMapSkyline;
 
 typedef struct r_io_section_t {

@@ -33,20 +33,37 @@ static int _cmp_map_event_by_id(const void *a_, const void *b_) {
 	return a->id - b->id;
 }
 
+// Precondition: from == 0 && to == 0 (full address) or from < to
 static bool _map_skyline_push(RVector *map_skyline, ut64 from, ut64 to, RIOMap *map) {
-	RIOMapSkyline *part = R_NEW (RIOMapSkyline);
+	RIOMapSkyline *part = R_NEW (RIOMapSkyline), *part1;
 	if (!part) {
 		return false;
 	}
 	part->map = map;
-	part->from = from;
-	part->to = to;
-	return r_vector_push (map_skyline, part);
+	part->itv.addr = from;
+	part->itv.size = to - from;
+	if (!from && !to) {
+		// Split to two maps
+		part1 = R_NEW (RIOMapSkyline);
+		if (!part1) {
+			return false;
+		}
+		part1->map = map;
+		part1->itv.addr = part->itv.size = UT64_MAX;
+		part1->itv.size = 1;
+		if (!r_vector_push (map_skyline, part1)) {
+			free (part1);
+		}
+	}
+	if (!r_vector_push (map_skyline, part)) {
+		free (part);
+		return false;
+	}
+	return true;
 }
 
 // Store map parts that are not covered by others into io->map_skyline
 R_API void r_io_map_calculate_skyline(RIO *io) {
-#define PUSH
 	SdbListIter *iter;
 	RIOMap *map;
 	RVector events = {0};
@@ -147,8 +164,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
 	ls_prepend (io->maps, map);
-	// TODO When maps are added in batch (sections), do not recalculate each time
-	//_calculate_skyline (io);
+	r_io_map_calculate_skyline (io);
 	return map;
 }
 
