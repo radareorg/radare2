@@ -2305,14 +2305,18 @@ next_arroba:
 				tmpseek = true;
 			}
 			if (usemyblock) {
-				core->offset = addr;
-				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-			} else {
-				if (ptr[1]) {
-					r_core_seek (core, addr, 1);
-					r_core_block_read (core);
+				if (addr != UT64_MAX) {
+					core->offset = addr;
 				}
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+			} else {
+				if (addr != UT64_MAX) {
+					if (ptr[1]) {
+						r_core_seek (core, addr, 1);
+						r_core_block_read (core);
+					}
+					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+				}
 			}
 			if (tmpseek) {
 				// restore ranges
