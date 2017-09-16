@@ -7,17 +7,8 @@
 #define W(y) r_cons_canvas_write (c, y)
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)
 
-static void clean_attrs(RConsCanvas *c) {
-	int i = 0;
-	for (i = 0; i < c->attrslen; i++) {
-		free (c->attrs[i].a);
-	}
-}
-
 R_API void r_cons_canvas_free(RConsCanvas *c) {
 	free (c->b);
-	free (c->attr);
-	clean_attrs (c);
 	free (c->attrs);
 	free (c);
 }
@@ -31,7 +22,6 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 			c->b[y * c->w] = '\n';
 		}
 		if (c->attrs) {
-			clean_attrs (c);
 			c->attrslen = 0;
 			memset (c->attrs, 0, sizeof (*c->attrs) * c->blen);
 		}
@@ -61,7 +51,7 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 		free (c);
 		return NULL;
 	}
-	c->attr = strdup (Color_RESET);
+	c->attr = Color_RESET;
 	c->w = w;
 	c->h = h;
 	c->x = c->y = 0;
@@ -155,7 +145,7 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p + x;
 }
 
-static RConsCanvasAttr *attr_at(RConsCanvas *c, int loc) {
+static const char **attr_at(RConsCanvas *c, int loc) {
 	int i, j, delta;
 	if (!c->color || c->attrslen == 0) {
 		return NULL;
@@ -168,7 +158,7 @@ static RConsCanvasAttr *attr_at(RConsCanvas *c, int loc) {
 			delta = 1;
 		}
 		if (c->attrs[j].loc == loc) {
-			return &c->attrs[j];
+			return &c->attrs[j].a;
 		}
 		if (c->attrs[j].loc < loc) {
 			j += delta;
@@ -205,26 +195,24 @@ static void sort_attrs(RConsCanvas *c) {
 
 static void stamp_attr(RConsCanvas *c, int length) {
 	int i;
-	RConsCanvasAttr *s;
+	const char **s;
 	const int loc = c->x + (c->y * c->w);
 	s = attr_at (c, loc);
 
-	if (s && s->a) {
+	if (s) {
 		//If theres already an attr there, just replace it.
-		free (s->a);
-		s->a = strdup (c->attr);
+		*s = c->attr;
 	} else {
 		c->attrs[c->attrslen].loc = loc;
-		c->attrs[c->attrslen].a = strdup (c->attr);
+		c->attrs[c->attrslen].a = c->attr;
 		c->attrslen++;
 		sort_attrs (c);
 	}
 
 	for (i = 0; i < length; i++) {
 		s = attr_at (c, loc + i);
-		if (s && s->a) {
-			free (s->a);
-			s->a = strdup (c->attr);
+		if (s) {
+			*s = c->attr;
 		}
 	}
 }
@@ -244,7 +232,6 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 
 	if (p != s) {
 		color = r_str_ndup (s, p - s);
-		free (c->attr);
 		c->attr = color;
 	}
 	return p;
@@ -301,7 +288,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
 	char *o;
 	const char *b;
-	RConsCanvasAttr *atr;
+	const char **atr;
 	int is_first = true;
 
 	if (!c) {
@@ -320,9 +307,9 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		for (x = 0; x < c->w; x++) {
 			const int p = x + (y * c->w);
 			atr = attr_at (c, p);
-			if (atr && atr->a && *(atr->a)) {
-				strcat (o, atr->a);
-				olen += strlen (atr->a);
+			if (atr && *atr) {
+				strcat (o, *atr);
+				olen += strlen (*atr);
 			}
 			if (!b[p] || b[p] == '\n') {
 				break;
@@ -376,7 +363,6 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	newbuf = realloc (c->attrs, sizeof (*c->attrs) * blen + 1);
 	if (!newbuf) {
 		free (c->b);
-		clean_attrs (c);
 		free (c->attrs);
 		return false;
 	}
@@ -406,13 +392,9 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		return;
 	}
 	if (color) {
-		free (c->attr);
-		c->attr = strdup (color);
+		c->attr = color;
 	}
-	if (!c->color) {
-		free (c->attr);
-		c->attr = strdup (Color_RESET);
-	}
+	if (!c->color) c->attr = Color_RESET;
 	row = malloc (w + 1);
 	if (!row)
 		return;
@@ -444,10 +426,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		if (G (x + w - 1, y + i)) W (vline);
 	}
 	free (row);
-	if (color) {
-		free (c->attr);
-		c->attr = strdup (Color_RESET);
-	}
+	if (color) c->attr = Color_RESET;
 }
 
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {

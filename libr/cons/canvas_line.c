@@ -23,26 +23,21 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	RCons *cons = r_cons_singleton ();
 	switch (style->color) {
 	case LINE_UNCJMP:
-		free (c->attr);
-		c->attr = strdup (cons->pal.graph_trufae);
+		c->attr = cons->pal.graph_trufae;
 		break;
 	case LINE_TRUE:
-		free (c->attr);
-		c->attr = strdup (cons->pal.graph_true);
+		c->attr = cons->pal.graph_true;
 		break;
 	case LINE_FALSE:
-		free (c->attr);
-		c->attr = strdup (cons->pal.graph_false);
+		c->attr = cons->pal.graph_false;
 		break;
 	case LINE_NONE:
 	default:
-		free (c->attr);
-		c->attr = strdup (cons->pal.graph_trufae);
+		c->attr = cons->pal.graph_trufae;
 		break;
 	}
 	if (!c->color) {
-		free (c->attr);
-		c->attr = strdup (Color_RESET);
+		c->attr = Color_RESET;
 	}
 	switch (style->symbol) {
 	case LINE_UNCJMP:
@@ -125,8 +120,7 @@ loop:
 		}
 		goto loop;
 	}
-	free (c->attr);
-	c->attr = strdup (Color_RESET);
+	c->attr = Color_RESET;
 }
 
 static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int style) {
@@ -296,8 +290,7 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 			draw_vertical_line (c, x2, y2, diff_y);
 		}
 	}
-	free (c->attr);
-	c->attr = strdup (Color_RESET);
+	c->attr = Color_RESET;
 }
 
 
@@ -347,8 +340,7 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 			draw_horizontal_line (c, x + 1 + w1, y2, w2, y2 < y ? DOT_NRM : REV_APEX_NRM);
 		}
 	}
-	free (c->attr);
-	c->attr = strdup (Color_RESET);
+	c->attr = Color_RESET;
 }
 
 R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert) {
@@ -383,6 +375,4 @@ R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, i
 		draw_vertical_line (c, x2 - ybendpoint2, miny2 + 1, diff_y2 - 1);
 		draw_horizontal_line (c, x2 - ybendpoint2, y2, ybendpoint2 + 1, xbendpoint > y ? DOT_NRM : REV_APEX_NRM);
 	}
-	free (c->attr);
-	c->attr = strdup (Color_RESET);
 }
