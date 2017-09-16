@@ -2073,7 +2073,8 @@ next2:
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
-		ut64 addr = UT64_MAX;
+		ut64 addr;
+		bool addr_is_set = false;
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
 		ut64 tmpbsz = core->blocksize;
@@ -2239,6 +2240,7 @@ ignore:
 		offstr = r_str_trim_head (ptr + 1);
 
 		addr = r_num_math (core->num, offstr);
+		addr_is_set = true;
 		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
 				eprintf ("Invalid address (%s)\n", ptr + 1);
@@ -2305,12 +2307,12 @@ next_arroba:
 				tmpseek = true;
 			}
 			if (usemyblock) {
-				if (addr != UT64_MAX) {
+				if (addr_is_set) {
 					core->offset = addr;
 				}
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else {
-				if (addr != UT64_MAX) {
+				if (addr_is_set) {
 					if (ptr[1]) {
 						r_core_seek (core, addr, 1);
 						r_core_block_read (core);
