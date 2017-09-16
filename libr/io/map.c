@@ -164,7 +164,9 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
 	ls_prepend (io->maps, map);
-	r_io_map_calculate_skyline (io);
+	if (do_skyline) {
+		r_io_map_calculate_skyline (io);
+	}
 	return map;
 }
 
