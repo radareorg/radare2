@@ -2509,6 +2509,7 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 	return false;
 }
 
+// TODO(maskray) RAddrInterval API
 #define OPSZ 8
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
