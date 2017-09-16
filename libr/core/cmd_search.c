@@ -614,7 +614,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		int i;
 		for (i = 0; i < skyline->len; i++) {
 			const RIOMapSkyline *part = skyline->a[i];
-			append_bound (list, NULL, search_itv, part->itv.addr, r_itv_end (part->itv));
+			append_bound (list, NULL, search_itv, part->itv.addr, part->itv.size);
 		}
 	} else if (!strcmp (mode, "io.section")) {
 		RIOSection *s = r_io_section_get (core->io, core->offset);
@@ -2885,5 +2885,6 @@ beach:
 	if (json) {
 		r_cons_newline ();
 	}
+	r_list_free (param.boundaries);
 	return ret;
 }
