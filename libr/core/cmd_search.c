@@ -2711,47 +2711,56 @@ reread:
 			}
 		}
 		break;
-	case 'F': // "/F" search file /F [file] ([offset] ([size]))
-		if (input[1] == ' ') {
-			char *arg = strdup (input + 2);
-			char *off = strchr (arg, ' ');
-			char *sze = NULL;
-			int size = 0;
-			int offset = 0;
-			if (off) {
-				*off++ = 0;
-				offset = r_num_math (core->num, off);
-				sze = strchr (off, ' ');
-				if (sze) {
-					size = r_num_math (core->num, sze);
-				}
+	case 'F': // "/F" search file /F [file] ([offset] ([sz]))
+		if (input[param_offset - 1] == ' ') {
+			int n_args;
+			char **args = r_str_argv (input + param_offset, &n_args);
+			ut8 *buf = NULL;
+			ut64 offset = 0;
+			int size;
+			buf = (ut8 *)r_file_slurp (args[0], &size);
+			if (!buf) {
+				eprintf ("Cannot open '%s'\n", args[0]);
+				r_str_argv_free (args);
+				break;
 			}
-			if (offset > size) {
-				eprintf ("Invalid offset or size\n");
-			} else {
-				ut8 *buf = (ut8*)r_file_slurp (arg, &size);
-				if (buf) {
-					RSearchKeyword *kw;
-					r_search_reset (core->search, R_SEARCH_KEYWORD);
-					r_search_set_distance (core->search, (int)
-						r_config_get_i (core->config, "search.distance"));
-					kw = r_search_keyword_new (buf + offset, size - offset, NULL, 0, NULL);
-					if (kw) {
-						r_search_kw_add (core->search, kw);
-						// eprintf ("Searching %d bytes...\n", kw->keyword_length);
-						r_search_begin (core->search);
-						dosearch = true;
-					} else {
-						eprintf ("no keyword\n");
-					}
+			if (n_args > 1) {
+				offset = r_num_math (core->num, args[1]);
+				if (size <= offset) {
+					eprintf ("size <= offset\n");
+					r_str_argv_free (args);
 					free (buf);
-				} else {
-					eprintf ("Cannot open '%s'\n", arg);
+					break;
 				}
 			}
-			free (arg);
+			if (n_args > 2) {
+				len = r_num_math (core->num, args[2]);
+				if (len > size - offset) {
+					eprintf ("len too large\n");
+					r_str_argv_free (args);
+					free (buf);
+					break;
+				}
+			} else {
+				len = size - offset;
+			}
+			RSearchKeyword *kw;
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
+			kw = r_search_keyword_new (buf + offset, len, NULL, 0, NULL);
+			if (kw) {
+				r_search_kw_add (core->search, kw);
+				// eprintf ("Searching %d bytes...\n", kw->keyword_length);
+				r_search_begin (core->search);
+				dosearch = true;
+			} else {
+				eprintf ("no keyword\n");
+			}
+
+			r_str_argv_free (args);
+			free (buf);
 		} else {
-			eprintf ("Usage: /f [file] ([offset] ([size]))\n");
+			eprintf ("Usage: /F[j] [file] ([offset] ([sz]))\n");
 		}
 		break;
 	case 'x': // "/x" search hex
