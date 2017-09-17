@@ -493,8 +493,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				r_cons_printf (",");
 			}
 			char *es = escaped ? s : r_str_escape (s);
-			r_cons_printf ("{\"offset\":%"PFMT64d ",\"id\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
-					base_addr + addr, kw->kwidx, type, es);
+			r_cons_printf ("{\"offset\":%"PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
+					base_addr + addr, type, es);
 			if (!escaped) {
 				free (es);
 			}
