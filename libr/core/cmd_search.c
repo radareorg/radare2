@@ -121,7 +121,6 @@ static bool json = false;
 static int first_hit = true;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
-static unsigned int searchcount = 0;
 
 struct search_parameters {
 	RList *boundaries;
@@ -289,7 +288,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 			break;
 		}
 		(void)r_io_read_at (core->io, at, b, core->blocksize);
-		if (r_search_update (core->search, &at, b, core->blocksize) == -1) {
+		if (r_search_update (core->search, at, b, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x "\n", at);
 			break;
 		}
@@ -404,6 +403,7 @@ static char *getstring(char *b, int l) {
 	return res;
 }
 
+// TODO int -> bool
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *) user;
 	ut64 base_addr = 0;
@@ -414,18 +414,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		return false;
 	}
 	use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	if (maxhits && searchhits >= maxhits) {
-		// eprintf ("Error: search.maxhits reached.\n");
-		return false;
-	}
 
-	searchhits++;  ///= kw->count+1;
-	if (searchcount) {
-		if (!--searchcount) {
-			// eprintf ("\nsearch stop: search.count reached\n");
-			return false;
-		}
-	}
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		ut32 buf_sz = kw->keyword_length;
@@ -504,8 +493,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				r_cons_printf (",");
 			}
 			char *es = escaped ? s : r_str_escape (s);
-			r_cons_printf ("{\"offset\": %"PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
-				base_addr + addr, type, es);
+			r_cons_printf ("{\"offset\":%"PFMT64d ",\"id\":%d,\"type\":\"%s\",\"data\":\"%s\"}",
+					base_addr + addr, kw->kwidx, type, es);
 			if (!escaped) {
 				free (es);
 			}
@@ -521,7 +510,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (!first_hit) {
 				r_cons_printf (",");
 			}
-			r_cons_printf ("{\"offset\": %"PFMT64d ",\"id:\":%d,\"len\":%d}",
+			r_cons_printf ("{\"offset\": %"PFMT64d ",\"len\":%d}",
 				base_addr + addr, kw->kwidx, kw->keyword_length);
 		} else {
 			if (searchflags) {
@@ -1452,6 +1441,7 @@ static int esil_addrinfo(RAnalEsil *esil) {
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
+	RSearch *search = core->search;
 	RSearchKeyword kw = R_EMPTY;
 	searchhits = 0;
 	if (input[0] == 'E' && input[1] != ' ') {
@@ -1461,7 +1451,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (param->boundaries, iter, map) {
-		const int kwidx = r_config_get_i (core->config, "search.kwidx");
 		const int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		const int stacksize = r_config_get_i (core->config, "esil.stacksize");
 		int nonull = r_config_get_i (core->config, "esil.nonull");
@@ -1521,7 +1510,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					}
 					// eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
 					kw.type = 0; // R_SEARCH_TYPE_ESIL;
-					kw.kwidx = kwidx;
+					kw.kwidx = search->n_kws;
 					kw.count++;
 					eprintf ("Hits: %d\r", kw.count);
 					kw.keyword_length = 0;
@@ -1546,7 +1535,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				hit_combo = 0;
 			}
 		}
-		r_config_set_i (core->config, "search.kwidx", kwidx + 1);
+		r_config_set_i (core->config, "search.kwidx", search->n_kws); // TODO remove
 		r_cons_break_pop ();
 	}
 	r_cons_clear_line (1);
@@ -1806,8 +1795,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_string_search(RCore *core, RAddrInterval search_itv, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
-	int oldfd = (core && core->io) ? r_io_fd_get_current (core->io) : -1;
-	int bufsz;
+	RSearch *search = core->search;
 
 	if (json) {
 		r_cons_printf ("[");
@@ -1822,10 +1810,6 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 	if (param->inverse) {
 		core->search->maxhits = 1;
 	}
-	searchcount = r_config_get_i (core->config, "search.count");
-	if (searchcount) {
-		searchcount++;
-	}
 	if (core->search->n_kws > 0 || param->crypto_search) {
 		RSearchKeyword aeskw;
 		if (param->crypto_search) {
@@ -1839,10 +1823,14 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 		// REMOVE OLD FLAGS r_core_cmdf (core, "f-%s*", r_config_get (core->config, "search.prefix"));
 		r_search_set_callback (core->search, &__cb_hit, core);
 		cmdhit = r_config_get (core->config, "cmd.hit");
-		buf = (ut8 *) malloc (core->blocksize + 1);
-		buf[core->blocksize] = 0;
-		bufsz = core->blocksize;
+		if (!(buf = malloc (core->blocksize))) {
+			return;
+		}
+		if (search->bckwrds) {
+			r_search_string_prepare_backward (search);
+		}
 		r_cons_break_push (NULL, NULL);
+		// TODO search cross boundary
 		r_list_foreach (param->boundaries, iter, map) {
 			if (!r_itv_overlap (search_itv, map->itv)) {
 				continue;
@@ -1862,36 +1850,37 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 				break;
 			}
 
-			if (param->bckwrds) {
-				if (itv.size <= bufsz) {
-					at = itv.addr;
-					param->do_bckwrd_srch = false;
-				} else {
-					at = r_itv_end (itv) - bufsz;
-				}
-			} else {
-				at = itv.addr;
-			}
-			/* bckwrds = false -> normal search -> must be at < to
-			   bckwrds search -> check later */
-			for (; (!param->bckwrds && at < r_itv_end (itv)) || param->bckwrds;) {
-				print_search_progress (at, r_itv_end (itv), searchhits);
+			const ut64 from = itv.addr, to = r_itv_end (itv),
+					from1 = search->bckwrds ? to : from,
+					to1 = search->bckwrds ? from : to;
+			ut64 len;
+			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
+				print_search_progress (at, to1, search->nhits);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
 					break;
 				}
-				// avoid searching beyond limits
-				bufsz = R_MIN (bufsz, itv.size);
-				if (!r_io_is_valid_offset (core->io, at, 0)) {
-					break;
+				if (search->bckwrds) {
+					len = R_MIN (core->blocksize, at - from);
+					// TODO prefix_read_at
+					if (!r_io_is_valid_offset (core->io, at - len, 0)) {
+						break;
+					}
+					(void)r_io_read_at (core->io, at - len, buf, len);
+				} else {
+					len = R_MIN (core->blocksize, to - at);
+					if (!r_io_is_valid_offset (core->io, at, 0)) {
+						break;
+					}
+					(void)r_io_read_at (core->io, at, buf, len);
 				}
-				(void)r_io_read_at (core->io, at, buf, bufsz);
 				if (param->crypto_search) {
+					// TODO support backward search
 					int delta = 0;
 					if (param->aes_search) {
-						delta = r_search_aes_update (core->search, at, buf, bufsz);
+						delta = r_search_aes_update (core->search, at, buf, len);
 					} else if (param->rsa_search) {
-						delta = r_search_rsa_update (core->search, at, buf, bufsz);
+						delta = r_search_rsa_update (core->search, at, buf, len);
 					}
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at + delta)) {
@@ -1900,41 +1889,15 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 						}
 						aeskw.count++;
 					}
-				} else if (r_search_update (core->search, &at, buf, bufsz) == -1) {
+				} else if (r_search_update (core->search, at, buf, len) < 0) {
 					// eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
-
-				if (param->bckwrds) {
-					if (!param->do_bckwrd_srch) {
-						break;
-					}
-					if (at < bufsz) {
-						param->do_bckwrd_srch = false;
-						bufsz = at;
-						at = 0;
-					} else if (at - bufsz < itv.addr) {
-						param->do_bckwrd_srch = false;
-						bufsz = at - itv.addr;
-						at = itv.addr;
-					} else {
-						at -= bufsz;
-					}
-				} else {
-					at += bufsz;
-				}
 			}
-			print_search_progress (at, r_itv_end (itv), searchhits);
+			print_search_progress (at, to1, search->nhits);
 			r_cons_clear_line (1);
-			core->num->value = searchhits;
-			if (searchflags && (searchcount > 0) && !json) {
-				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
-					searchhits,
-					searchprefix, core->search->n_kws - 1,
-					searchprefix, core->search->n_kws - 1, searchcount - 1);
-			} else if (!json) {
-				eprintf ("hits: %d\n", searchhits);
-			}
+			core->num->value = search->nhits;
+			eprintf ("hits: %" PFMT64d "\n", search->nhits);
 		}
 		r_cons_break_pop ();
 		free (buf);
@@ -1943,7 +1906,6 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			r_list_free (param->boundaries);
 			param->boundaries = NULL;
 		}
-		r_io_use_fd (core->io, oldfd);
 	} else {
 		eprintf ("No keywords defined\n");
 	}
@@ -2131,6 +2093,7 @@ static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	int i, len, ret = true;
 	RCore *core = (RCore *) data;
+	RSearch *search = core->search;
 	int ignorecase = false;
 	int param_offset = 2;
 	char *inp;
@@ -2869,21 +2832,18 @@ again:
 		eprintf ("See /? for help.\n");
 		break;
 	}
-	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
 		do_string_search (core, search_itv, &param);
 	}
 beach:
-	core->num->value = searchhits;
+	core->num->value = search->nhits;
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
 	if (json) {
 		r_cons_newline ();
 	}
 	r_list_free (param.boundaries);
-	r_list_purge (core->search->kws);
-	r_list_purge (core->search->hits);
-	R_FREE (core->search->data);
+	r_search_fini_one (search);
 	return ret;
 }

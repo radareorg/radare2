@@ -920,7 +920,7 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 	if (!a || !ss || !buf || len <= 0) {
 		return 0;
 	}
-	return r_search_update (ss->search, at, buf, len);
+	return r_search_update (ss->search, *at, buf, len);
 }
 
 static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
