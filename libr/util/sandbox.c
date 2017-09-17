@@ -294,7 +294,11 @@ R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 	if (!(wcpath = r_utf8_to_utf16 (path))) {
 		return NULL;
 	}
+#if __MINGW32__
+	swprintf (dir, L"%ls\\*.*", wcpath);
+#else
 	swprintf (dir, MAX_PATH, L"%ls\\*.*", wcpath);
+#endif
 	free (wcpath);
 	return FindFirstFileW (dir, entry);
 }
