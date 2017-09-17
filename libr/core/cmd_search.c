@@ -641,6 +641,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		RIOMap *map;
 		SdbListIter *iter;
 		RIOSection *s;
+		bool readonly = false;
 
 		if (!strcmp (mode, "io.sections.exec")) {
 			mask = R_IO_EXEC;
@@ -648,10 +649,19 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (!strcmp (mode, "io.sections.write")) {
 			mask = R_IO_WRITE;
 		}
+		if (!strcmp (mode, "io.sections.readonly")) {
+			readonly = true;
+		}
 
 		ut64 from = UT64_MAX;
 		ut64 to = 0;
 		ls_foreach (core->io->sections, iter, s) {
+			if (readonly) {
+				const int f = s->flags;
+				if (f & R_IO_EXEC || f & R_IO_WRITE) {
+					continue;
+				}
+			}
 			if (!mask || (s->flags & mask)) {
 				map = R_NEW0 (RIOMap);
 				if (!map) {
@@ -711,6 +721,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 				}
 			} else {
+				bool readonly = false;
 				if (!strcmp (mode, "dbg.program")) {
 					first = true;
 					mask = R_IO_EXEC;
@@ -718,6 +729,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					all = true;
 				} else if (!strcmp (mode, "dbg.maps.exec")) {
 					mask = R_IO_EXEC;
+				} else if (!strcmp (mode, "dbg.maps.readonly")) {
+					readonly = true;
 				} else if (!strcmp (mode, "dbg.maps.write")) {
 					mask = R_IO_WRITE;
 				} else if (!strcmp (mode, "dbg.heap")) {
@@ -729,6 +742,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				ut64 from = UT64_MAX;
 				ut64 to = 0;
 				r_list_foreach (core->dbg->maps, iter, map) {
+					if (readonly) {
+						const int f = map->perm;
+						if (f & R_IO_WRITE || f & R_IO_EXEC) {
+							continue;
+						}
+					}
 					add = (stack && strstr (map->name, "stack"))? 1: 0;
 					if (!add && (heap && (map->perm & R_IO_WRITE)) && strstr (map->name, "heap")) {
 						add = 1;

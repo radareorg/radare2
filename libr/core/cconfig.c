@@ -2646,10 +2646,14 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.from", -1, "Search start address");
 	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "Specify search boundaries");
-	SETOPTIONS (n, "raw", "block", "file", "io.maps", "io.maprange", "io.section", NULL);
-	SETOPTIONS (n, "io.sections", "io.sections.write", "io.sections.exec",
-				"dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.exec",
-				"dbg.maps.write", "anal.fcn", "anal.bb", NULL);
+	SETOPTIONS (n, "raw", "block", "io.map", "io.maps", "io.section", "io.sections",
+		"dbg.map", "dbg.maps", "dbg.stack", "anal.fcn", "anal.bb", NULL);
+
+	SETOPTIONS (n, "raw", "block", "io.map", "io.maps",
+			"io.sections", "io.sections.write", "io.sections.exec", "io.sections.readonly",
+			"dbg.stack", "dbg.heap", "dbg.map",
+			"dbg.maps", "dbg.maps.exec", "dbg.maps.write", "dbg.maps.readonly",
+			"anal.fcn", "anal.bb", NULL);
 	SETICB ("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF ("search.prefix", "hit", "Prefix name in search hits label");
 	SETPREF ("search.show", "true", "Show search results");
