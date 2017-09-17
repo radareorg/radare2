@@ -1948,10 +1948,6 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 		eprintf ("No keywords defined\n");
 	}
 
-	/* Crazy party counter (kill me please) */
-	if (!searchhits && core->search->n_kws > 0) {
-		core->search->n_kws--;
-	}
 	if (json) {
 		r_cons_printf ("]");
 	}
@@ -2886,5 +2882,8 @@ beach:
 		r_cons_newline ();
 	}
 	r_list_free (param.boundaries);
+	r_list_purge (core->search->kws);
+	r_list_purge (core->search->hits);
+	R_FREE (core->search->data);
 	return ret;
 }

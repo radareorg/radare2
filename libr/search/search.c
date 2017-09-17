@@ -38,7 +38,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->maxhits = 0;
 	// TODO: review those mempool sizes. ensure never gets NULL
 	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
-	s->kws = r_list_new ();
+	s->kws = r_list_newf (free);
 	if (!s->kws) {
 		r_search_free (s);
 		return NULL;
@@ -51,8 +51,6 @@ R_API RSearch *r_search_free(RSearch *s) {
 	if (!s) {
 		return NULL;
 	}
-	// TODO: it leaks
-	free (s->data);
 	r_mem_pool_free (s->pool);
 	r_list_free (s->hits);
 	r_list_free (s->kws);
@@ -415,20 +413,8 @@ R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
 	return true;
 }
 
-R_API void r_search_kw_reset(RSearch *s) {
-	r_list_free (s->kws);
-	s->kws = r_list_new ();
-}
-
 R_API void r_search_reset(RSearch *s, int mode) {
-	R_FREE (s->data);
-	r_list_purge (s->hits);
 	s->nhits = 0;
-	s->hits = r_list_newf ((RListFree)free);
-	if (!s->hits) {
-		return;
-	}
-	r_search_kw_reset (s);
 	if (!r_search_set_mode (s, mode)) {
 		eprintf ("Cannot init search for mode %d\n", mode);
 	}
