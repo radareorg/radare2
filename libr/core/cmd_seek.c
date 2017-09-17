@@ -354,7 +354,8 @@ static int cmd_seek(void *data, const char *input) {
 	case '/': // "s/"
 	{
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		ut64 from = r_config_get_i (core->config, "search.from");
+		const ut64 saved_from = r_config_get_i (core->config, "search.from"),
+				saved_maxhits = r_config_get_i (core->config, "search.maxhits");
 // kwidx cfg var is ignored
 		int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 		if (kwidx < 0) {
@@ -378,11 +379,11 @@ static int cmd_seek(void *data, const char *input) {
 		case '/':
 		case 'x':
 			r_config_set_i (core->config, "search.from", core->offset + 1);
-			r_config_set_i (core->config, "search.count", 1);
+			r_config_set_i (core->config, "search.maxhits", 1);
 			r_core_cmdf (core, "s+1; %s; s-1; s %s%d_0; f-%s%d_0",
 				input, pfx, kwidx, pfx, kwidx, pfx, kwidx);
-			r_config_set_i (core->config, "search.from", from);
-			r_config_set_i (core->config, "search.count", 0);
+			r_config_set_i (core->config, "search.from", saved_from);
+			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
 			eprintf ("Usage: s/.. arg.\n");
