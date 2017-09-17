@@ -189,7 +189,7 @@ static int rafind_open(char *file) {
 			bsize = ret;
 		}
 
-		if (r_search_update (rs, &cur, buf, ret) == -1) {
+		if (r_search_update (rs, cur, buf, ret) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);
 			break;
 		}
