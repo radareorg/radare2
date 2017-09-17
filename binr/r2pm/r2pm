@@ -153,6 +153,7 @@ R2PM_SUDO() {
 		"$@"
 	fi
 }
+export R2PM_SUDO="R2PM_SUDO"
 
 R2PM_List() {
 	cd "${R2PM_USRDIR}/pkg"
