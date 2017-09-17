@@ -205,6 +205,7 @@ static int __close(RIODesc *fd) {
 
 static int __getpid(RIODesc *fd) {
 	return desc ? desc->pid : -1;
+#if 0
 	// dupe for ? r_io_desc_get_pid (desc);
 	if (!desc || !desc->data) {
 		return -1;
@@ -217,6 +218,7 @@ static int __getpid(RIODesc *fd) {
 		return iodd->pid;
 	}
 	return -1;
+#endif
 }
 
 static int __gettid(RIODesc *fd) {

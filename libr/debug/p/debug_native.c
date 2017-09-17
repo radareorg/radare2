@@ -271,6 +271,9 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	int ret = ptrace (PTRACE_CONT, pid, NULL, contsig);
+	if (ret) {
+		perror ("PTRACE_CONT");
+	}
 	if (dbg->continue_all_threads && dbg->n_threads) {
 		RList *list = dbg->threads;
 		RDebugPid *th;
@@ -325,7 +328,6 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
  * Returns R_DEBUG_REASON_*
  */
 static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
-	int status = -1;
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 #if __WINDOWS__ && !__CYGWIN__
@@ -413,7 +415,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		break;
 	} while (true);
 	r_cons_break_pop ();
-	status = reason? 1: 0;
+	int status = reason? 1: 0;
 #else
 #if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 	reason = linux_dbg_wait (dbg, dbg->tid);
@@ -431,6 +433,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		}
 	}
 #else
+	int status = -1;
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
 	int ret = waitpid (-1, &status, WAITPID_FLAGS);

@@ -1754,7 +1754,7 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 			if (type != R_ANAL_ESIL_PARM_INTERNAL) {
 				// this is a internal peek performed before a poke
 				// we disable hooks to avoid run hooks on internal peeks
-				int * oldhook = esil->cb.hook_mem_read;
+				void * oldhook = (void*)esil->cb.hook_mem_read;
 				esil->cb.hook_mem_read = NULL;
 				r_anal_esil_mem_read (esil, addr, b, bytes);
 				esil->cb.hook_mem_read = oldhook;

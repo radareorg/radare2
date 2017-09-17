@@ -279,7 +279,7 @@ static const char *find_alias(const char *str) {
 	// only strings or alias could return valuable data
 }
 
-static void rcc_internal_mathop(REgg *egg, char *ptr, char *ep, char op) {
+static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
 	char *p, *q, *oldp;	// avoid mem leak
 	char type = ' ';
 	char buf[64];	// may cause stack overflow
@@ -335,8 +335,8 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 		op_ret = get_op (&next_pos);
 		if (op_ret > level) {
 			rcc_mathop (egg, pos, op_ret);
-			rcc_internal_mathop (egg, e->regs (egg, op_ret - 1) 
-				, strdup (e->regs (egg, level - 1)), op);
+			rcc_internal_mathop (egg, e->regs (egg, op_ret - 1),
+				strdup (e->regs (egg, level - 1)), op);
 			next_pos = *pos + 1;
 		} else {
 			rcc_internal_mathop (egg, *pos, strdup (e->regs (egg, level - 1)), op);
