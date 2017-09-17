@@ -2722,10 +2722,12 @@ R_API void r_str_const_free(char ***consts) {
 	if (!consts) {
 		consts = &__consts;
 	}
-	for (i = 0; (*consts)[i]; i++) {
-		free ((*consts)[i]);
+	if (*consts) {
+		for (i = 0; (*consts)[i]; i++) {
+			free ((*consts)[i]);
+		}
+		R_FREE (*consts);
 	}
-	R_FREE (*consts);
 }
 
 R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {

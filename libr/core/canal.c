@@ -2991,6 +2991,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	ut64 at;
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
+		eprintf ("Cannot alloc for this range\n");
 		return NULL;
 	}
 	as = R_NEW0 (RCoreAnalStats);

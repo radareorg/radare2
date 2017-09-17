@@ -3416,7 +3416,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		off = core->offset;
 		{
-			RList *list = r_core_get_boundaries (core, "file");
+			RList *list = r_core_get_boundaries (core, r_config_get (core->config, "search.in"));
 			RIOMap *map = r_list_first (list);
 			if (map) {
 				from = map->itv.addr;
