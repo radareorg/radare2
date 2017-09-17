@@ -1545,6 +1545,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut64 at;
 	ut8 *buf;
 	RAnalOp aop;
+	const char *cmdhit = r_config_get (core->config, "cmd.hit");
 	int chk_family = 0;
 	int mode = 0;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
@@ -1656,6 +1657,12 @@ r_list_foreach (param->boundaries, iter, map) {
 					snprintf (flag, sizeof (flag), "%s%d_%d",
 						searchprefix, kwidx, count);
 					r_flag_set (core->flags, flag, at, ret);
+				}
+				if (*cmdhit) {
+					ut64 here = core->offset;
+					r_core_seek (core, at, true);
+					r_core_cmd (core, cmdhit, 0);
+					r_core_seek (core, here, true);
 				}
 				count++;
 				if (maxhits && count >= maxhits) {
