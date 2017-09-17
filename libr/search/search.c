@@ -460,7 +460,7 @@ R_API void r_search_reset(RSearch *s, int mode) {
 	}
 }
 
-R_API void r_search_fini_one(RSearch *s) {
+R_API void r_search_kw_reset(RSearch *s) {
 	r_list_purge (s->kws);
 	r_list_purge (s->hits);
 	R_FREE (s->data);

@@ -2844,6 +2844,6 @@ beach:
 		r_cons_newline ();
 	}
 	r_list_free (param.boundaries);
-	r_search_fini_one (search);
+	r_search_kw_reset (search);
 	return ret;
 }

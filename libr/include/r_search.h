@@ -99,7 +99,7 @@ R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 R_API void r_search_reset(RSearch *s, int mode);
 R_API void r_search_kw_reset(RSearch *s);
 R_API void r_search_string_prepare_backward(RSearch *s);
-R_API void r_search_fini_one(RSearch *s);
+R_API void r_search_kw_reset(RSearch *s);
 
 R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
