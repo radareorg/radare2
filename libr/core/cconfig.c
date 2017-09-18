@@ -1679,18 +1679,6 @@ static int cb_teefile(void *user, void *data) {
 	return true;
 }
 
-static int cb_anal_trace(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (core->anal) {
-		if (node->i_value && !core->anal->esil) {
-			r_core_cmd0 (core, "aei");
-		}
-		core->anal->trace = node->i_value;
-	}
-	return true;
-}
-
 static int cb_trace(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;

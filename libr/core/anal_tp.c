@@ -33,7 +33,6 @@ static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 }
 
 static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
-	sdb_reset (core->anal->esil->db_trace);
 	r_config_restore (hc);
 	r_config_hold_free (hc);
 }
@@ -121,7 +120,7 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 					if (write_addr == sp + size) {
 						ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
 						r_meta_set_string (core->anal, R_META_TYPE_COMMENT, instr_addr,
-							sdb_fmt (-1, "%s %s", type, name));
+								sdb_fmt (-1, "%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
 						char *tmp = sdb_fmt (-1, "%d.mem.read", j);
 						int i2, array_size = sdb_array_size (trace, tmp);
 						for (i2 = 0; i2 < array_size; i2++) {
@@ -281,5 +280,5 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	}
 	r_cons_break_pop ();
 	r_anal_emul_restore (core, hc);
-
+	sdb_reset (core->anal->esil->db_trace);
 }
