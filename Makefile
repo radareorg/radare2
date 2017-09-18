@@ -321,7 +321,7 @@ purge: purge-doc purge-dev user-uninstall
 	rm -f "${DESTDIR}${BINDIR}/r2"
 	rm -f "${DESTDIR}${LIBDIR}/libr_"*
 	rm -f "${DESTDIR}${LIBDIR}/libr2.${EXT_SO}"
-	rm -f "${DESTDIR}${LIBDIR}/libr2."*".${EXT_SO}"
+	rm -f "${DESTDIR}${LIBDIR}/libr2"*".${EXT_SO}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2"
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 	rm -rf "${DESTDIR}${DATADIR}/radare2"
