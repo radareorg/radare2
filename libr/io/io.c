@@ -371,7 +371,7 @@ R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 		return 0;
 	}
 	if (io->ff) {
-		memset (buf, 0xff, len);
+		memset (buf, io->Oxff, len);
 	}
 	return r_io_desc_read_at (io->desc, paddr, buf, len);
 }
@@ -388,7 +388,7 @@ R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 		return false;
 	}
 	if (io->ff) {
-		memset (buf, 0xff, len);
+		memset (buf, io->Oxff, len);
 	}
 	r_io_map_cleanup (io);
 	if (!io->maps) {
@@ -418,7 +418,7 @@ R_API RIOAccessLog *r_io_al_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 		return NULL;
 	}
 	if (io->ff) {
-		memset (buf, 0xff, len);
+		memset (buf, io->Oxff, len);
 	}
 	log->buf = buf;
 	onIterMap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, al_fd_read_at_wrap, log);
@@ -473,7 +473,7 @@ R_API RIOAccessLog *r_io_al_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	}
 	log->buf = buf;
 	if (io->ff) {
-		memset (buf, 0xff, len);
+		memset (buf, io->Oxff, len);
 	}
 	rlen = r_io_pread_at (io, addr, buf, len);
 	if (io->cached & R_IO_READ) {
