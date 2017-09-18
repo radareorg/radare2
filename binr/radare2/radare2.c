@@ -1193,6 +1193,9 @@ int main(int argc, char **argv, char **envp) {
 	if (fullfile) {
 		r_core_block_size (&r, r_io_desc_size (iod));
 	}
+	if (perms & R_IO_WRITE) {
+		r_core_cmd0 (&r, "omfg+w");
+	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
 	r_list_free (evals);
@@ -1240,9 +1243,6 @@ int main(int argc, char **argv, char **envp) {
 			if (r.bin->cur->o->info->arch) {
 				r_core_cmd0 (&r, "aeip");
 			}
-		}
-		if (perms & R_IO_WRITE) {
-			r_core_cmd0 (&r, "omfg+w");
 		}
 		for (;;) {
 #if USE_THREADS
