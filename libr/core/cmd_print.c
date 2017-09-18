@@ -3567,21 +3567,21 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'A': // "pA"
 	{
-		ut64 from = r_config_get_i (core->config, "search.from");
-		ut64 to = r_config_get_i (core->config, "search.to");
-		int count = r_config_get_i (core->config, "search.count");
+		const ut64 saved_from = r_config_get_i (core->config, "search.from"),
+				saved_to = r_config_get_i (core->config, "search.to"),
+				saved_maxhits = r_config_get_i (core->config, "search.maxhits");
 
 		int want = r_num_math (core->num, input + 1);
 		if (input[1] == '?') {
 			r_core_cmd0 (core, "/A?");
 		} else {
-			r_config_set_i (core->config, "search.count", want);
+			r_config_set_i (core->config, "search.maxhits", want);
 			r_config_set_i (core->config, "search.from", core->offset);
 			r_config_set_i (core->config, "search.to", core->offset + core->blocksize);
 			r_core_cmd0 (core, "/A");
-			r_config_set_i (core->config, "search.count", count);
-			r_config_set_i (core->config, "search.from", from);
-			r_config_set_i (core->config, "search.to", to);
+			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
+			r_config_set_i (core->config, "search.from", saved_from);
+			r_config_set_i (core->config, "search.to", saved_to);
 		}
 	}
 	break;

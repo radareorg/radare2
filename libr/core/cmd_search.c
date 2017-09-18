@@ -1174,7 +1174,7 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
-	int max_count = r_config_get_i (core->config, "search.count");
+	int max_count = r_config_get_i (core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
 	RList /*<intptr_t>*/ *badstart = r_list_new ();
@@ -1531,7 +1531,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					kw.type = 0; // R_SEARCH_TYPE_ESIL;
 					kw.kwidx = search->n_kws;
 					kw.count++;
-					eprintf ("Hits: %d\r", kw.count);
+					eprintf ("hits: %d\r", kw.count);
 					kw.keyword_length = 0;
 					hit_happens = true;
 				}
@@ -1569,7 +1569,8 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	int mode = 0;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
-	int maxhits, count = 0;
+	int count = 0;
+	int maxhits = (int)r_config_get_i (core->config, "search.maxhits");
 	bool firstItem = true;
 
 	if (*input == 'f') {
@@ -1618,7 +1619,6 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		eprintf ("Cannot allocate %d bytes\n", bsize);
 		return;
 	}
-	maxhits = (int) r_config_get_i (core->config, "search.count");
 	r_cons_break_push (NULL, NULL);
 RIOMap* map;
 RListIter *iter;
@@ -1728,7 +1728,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 	r_list_free (param->boundaries);
 	param->boundaries = r_core_get_boundaries (core, param->mode);
-	maxhits = (int) r_config_get_i (core->config, "search.count");
+	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
 
 	if (!param->boundaries) {
@@ -1861,6 +1861,7 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			if (!r_itv_overlap (search_itv, map->itv)) {
 				continue;
 			}
+			const ut64 saved_nhits = search->nhits;
 			RAddrInterval itv = r_itv_intersect (search_itv, map->itv);
 			searchhits = 0;
 			if (r_cons_is_breaked ()) {
@@ -1923,7 +1924,7 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			print_search_progress (at, to1, search->nhits);
 			r_cons_clear_line (1);
 			core->num->value = search->nhits;
-			eprintf ("hits: %" PFMT64d "\n", search->nhits);
+			eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 		}
 		r_cons_break_pop ();
 		free (buf);
@@ -2845,9 +2846,9 @@ again:
 		{
 			RSearchKeyword *kw = r_search_keyword_new_hexmask ("00", NULL);
 			kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
-			r_search_kw_add (core->search, kw);
+			r_search_kw_add (search, kw);
 		}
-		r_search_begin (core->search);
+		r_search_begin (search);
 		dosearch = true;
 	}
 	break;
@@ -2858,7 +2859,7 @@ again:
 		eprintf ("See /? for help.\n");
 		break;
 	}
-	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
+	r_config_set_i (core->config, "search.kwidx", search->n_kws);
 	if (dosearch) {
 		do_string_search (core, search_itv, &param);
 	}

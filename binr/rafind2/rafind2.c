@@ -109,7 +109,7 @@ static int rafind_open(char *file) {
 	int ret;
 
 	if (identify) {
-		char *cmd = r_str_newf ("r2 -e search.show=false -e search.count=1 -nqcpm '%s'", file);
+		char *cmd = r_str_newf ("r2 -e search.show=false -e search.maxhits=1 -nqcpm '%s'", file);
 		r_sandbox_system (cmd, 1);
 		free (cmd);
 		return 0;
