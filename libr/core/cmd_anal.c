@@ -5644,19 +5644,12 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
-	RIOSection *s = NULL;
 	ut64 o_align = geti ("search.align");
-	ut64 ptr = 0;
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	// pre
 	seti ("search.align", 4);
-	char *arg = strchr (input, ' ');
-	if (arg) {
-		ptr = r_num_math (core->num, arg + 1);
-		s = r_io_section_vget (core->io, ptr);
-	}
 
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {
@@ -5683,10 +5676,31 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		// find values pointing to non-executable regions
 		// TOO SLOW, but "correct", can be enhanced by adding search.in2
 		r_list_foreach (list, iter2, map2) {
+			if (!iter2->n) {
+				if (from == UT64_MAX) {
+					from = r_itv_begin (map2->itv);
+					to = r_itv_end (map2->itv);
+				} else {
+					if (r_itv_begin (map2->itv) == to) {
+						to = r_itv_end (map2->itv);
+					}
+				}
+			} else {
+				if (from == UT64_MAX) {
+					from = r_itv_begin (map2->itv);
+					to = r_itv_end (map2->itv);
+					continue;
+				} else {
+					if (r_itv_begin (map2->itv) == to) {
+						to = r_itv_end (map2->itv);
+						continue;
+					}
+				}
+			}
 //			if (r_itv_contain (map->itv, core->offset)) {
 			if (true) { //!(map2->flags & R_IO_EXEC)) {
-				from = r_itv_begin (map2->itv);
-				to = r_itv_end (map2->itv);
+//				from = r_itv_begin (map2->itv);
+//				to = r_itv_end (map2->itv);
 
 				eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
 				r_list_foreach (list, iter, map) {
@@ -5696,6 +5710,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 						vsize, asterisk, _CbInRangeAav);
 				}
 			}
+			from = UT64_MAX;
 		}
 		r_list_free (list);
 #if 0
@@ -5801,7 +5816,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
-					r_core_cmd0 (core, "aav $S+$SS+1");
 				}
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");

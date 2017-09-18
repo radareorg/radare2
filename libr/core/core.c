@@ -2515,7 +2515,6 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	return b;
 }
 
-
 R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut64 vmin,
 				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
 	int i, match, align = core->search->align, hitctr = 0;
