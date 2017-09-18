@@ -3132,10 +3132,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		case 'c': // "dbic"
 			p = strchr (input + 3, ' ');
 			if (p) {
-				p = strchr (p + 1, ' ');
-				if (p && (bpi = r_bp_get_index (core->dbg->bp, addr))) {
-					bpi->data = strdup (p+1);
-				} else eprintf ("Cannot set command\n");
+				char *q = strchr (p + 1, ' ');
+				if (q) {
+					*q++ = 0;
+					ut64 addr = r_num_math (core->num, p);
+					bpi = r_bp_get_index (core->dbg->bp, addr);
+					if (bpi) {
+						bpi->data = strdup (q);
+					} else {
+						eprintf ("Cannot set command\n");
+					}
+				} else {
+					eprintf ("|Usage: dbic # cmd\n");
+				}
 			} else {
 				eprintf ("|Usage: dbic # cmd\n");
 			}
