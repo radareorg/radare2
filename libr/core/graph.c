@@ -3095,6 +3095,7 @@ static void agraph_init(RAGraph *g) {
 static void free_anode(RANode *n) {
 	free (n->title);
 	free (n->body);
+	free (n);
 }
 
 static int free_anode_cb(void *user UNUSED, const char *k UNUSED, const char *v) {
