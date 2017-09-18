@@ -403,56 +403,6 @@ out_case_fcn:
 	return true;
 }
 
-static bool loadGzSdb(RAnal *a, const char *filename) {
-	ut8 *buf = NULL;
-	int size = 0;
-	char *tmpfile = NULL;
-	bool retval = true;
-
-	char *path = r_sign_path (a, filename);
-	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", filename);
-		retval = false;
-		goto out;
-	}
-
-	if (!(buf = r_file_gzslurp (path, &size, 0))) {
-		eprintf ("error: cannot decompress file\n");
-		retval = false;
-		goto out;
-	}
-
-	if (!(tmpfile = r_file_temp ("r2zign"))) {
-		eprintf ("error: cannot create temp file\n");
-		retval = false;
-		goto out;
-	}
-
-	if (!r_file_dump (tmpfile, buf, size, 0)) {
-		eprintf ("error: cannot dump file\n");
-		retval = false;
-		goto out;
-	}
-
-	if (!r_sign_load (a, tmpfile)) {
-		eprintf ("error: cannot load file\n");
-		retval = false;
-		goto out;
-	}
-
-	if (!r_file_rm (tmpfile)) {
-		eprintf ("error: cannot delete temp file\n");
-		retval = false;
-		goto out;
-	}
-
-out:
-	free (buf);
-	free (tmpfile);
-	free (path);
-
-	return retval;
-}
 
 static int cmdOpen(void *data, const char *input) {
 	RCore *core = (RCore *) data;
@@ -472,7 +422,7 @@ static int cmdOpen(void *data, const char *input) {
 		return false;
 	case 'z':
 		if (input[1] == ' ' && input[2]) {
-			return loadGzSdb (core->anal, input + 2);
+			return r_sign_load_gz (core->anal, input + 2);
 		}
 		eprintf ("usage: zoz filename\n");
 		return false;
