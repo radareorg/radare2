@@ -350,21 +350,21 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode,
 static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
 	ut8 buffer[255];
 	buffer[0] = 0;
-	if (p->iob.read_at) {
-		if (is64 == 1)
-			p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer)-8);
-		else
-			p->iob.read_at (p->iob.io, (ut64)addr, buffer, sizeof (buffer)-8);
-	} else {
+	if (!p->iob.read_at) {
 		eprintf ("(cannot read memory)\n");
 		return -1;
 	}
+	int res = (is64 == 1)
+		? p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer) - 8)
+		: p->iob.read_at (p->iob.io, (ut64)addr, buffer, sizeof (buffer) - 8);
 	if (MUSTSEEJSON) {
 		p->cb_printf ("%d,\"string\":\"%s\"}", seeki, buffer);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
-		p->cb_printf ("%s", buffer);
+		if (res && buffer[0] != 0xff && buffer[1] != 0xff) {
+			p->cb_printf ("%s", buffer);
+		}
 	}
 	return 0;
 }
@@ -1946,8 +1946,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						while (size--) i+=2;
 					break;
 				case 's':
-					if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0)
+					if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0) {
 						i += (size==-1) ? 4 : 4*size;
+					}
 					break;
 				case 'S':
 					if (r_print_format_string (p, seeki, addr64, addr, 1, mode) == 0)
