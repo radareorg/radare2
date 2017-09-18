@@ -79,7 +79,7 @@ R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if (cmp ((vec)->a[m], x) < 0) { \
+			if ((cmp (x, (vec)->a[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
@@ -92,7 +92,7 @@ R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if (!(cmp (x, (vec)->a[m]) < 0)) { \
+			if (!((cmp (x, (vec)->a[m])) < 0)) { \
 				i = m + 1; \
 			} else { \
 				h = m; \

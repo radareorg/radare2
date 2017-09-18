@@ -56,6 +56,83 @@ static int al_fd_write_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, R
 
 typedef int (*cbOnIterMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user);
 
+// If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
+// If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
+static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
+	const RVector *skyline = &io->map_skyline;
+	ut64 addr = vaddr;
+	int i;
+	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
+#define CMP(addr, part) (addr < r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? -1 : \
+			addr > r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? 1 : 0)
+	// Let i be the first skyline part whose right endpoint > addr
+	if (!len) {
+		i = skyline->len;
+	} else {
+		r_vector_lower_bound (skyline, addr, i, CMP);
+		if (i == skyline->len && wrap) {
+			wrap = false;
+			i = 0;
+			addr = 0;
+		}
+	}
+#undef CMP
+	while (i < skyline->len) {
+		const RIOMapSkyline *part = skyline->a[i];
+		// Right endpoint <= addr
+		if (r_itv_end (part->itv) - 1 < addr) {
+			i++;
+			if (wrap && i == skyline->len) {
+				wrap = false;
+				i = 0;
+				addr = 0;
+			}
+			continue;
+		}
+		if (addr < part->itv.addr) {
+			// [addr, part->itv.addr) is a gap
+			if (prefix_mode || len <= part->itv.addr - vaddr) {
+				break;
+			}
+			addr = part->itv.addr;
+		}
+		// Now left endpoint <= addr < right endpoint
+		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
+		// The map satisfies the permission requirement or p_cache is enabled
+		if (((part->map->flags & match_flg) == match_flg || io->p_cache)) {
+			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
+					buf + addr - vaddr, len1, part->map, NULL);
+			if (prefix_mode) {
+				if (result < 0) {
+					return result;
+				}
+				addr += result;
+				if (result != len1) {
+					break;
+				}
+			} else {
+				if (result != len1) {
+					ret = false;
+				}
+				addr += len1;
+			}
+		} else if (prefix_mode) {
+			break;
+		} else {
+			addr += len1;
+		}
+		// Reaches the end
+		if (addr == vaddr + len) {
+			break;
+		}
+		// Wrap to the beginning of skyline if address wraps
+		if (!addr) {
+			i = 0;
+		}
+	}
+	return prefix_mode ? addr - vaddr : ret;
+}
+
 // Precondition: len > 0
 // Non-stop IO
 // Returns true iff all reads/writes on overlapped maps are complete.
@@ -101,6 +178,9 @@ static bool onIterMap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
 // Returns true iff all reads/writes on overlapped maps are complete.
 static bool onIterMap_wrap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
 		int len, int match_flg, cbOnIterMap op, void *user) {
+#if 1
+	return on_map_skyline (io, vaddr, buf, len, match_flg, op, false);
+#else
 	if (!len) {
 		return true;
 	}
@@ -114,6 +194,7 @@ static bool onIterMap_wrap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
 		ret = onIterMap (iter, io, vaddr, buf, len, match_flg, op, user);
 	}
 	return ret;
+#endif
 }
 
 R_API RIO* r_io_new() {
