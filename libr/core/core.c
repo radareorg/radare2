@@ -2537,7 +2537,11 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
 		memset (buf, 0, sizeof (buf)); // probably unnecessary
-		(void) r_io_read_at (core->io, from, buf, sizeof (buf));
+		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
+		if (!res || (buf[0] == 0xff && buf[1] == 0xff)) {
+			from += sizeof (buf);
+			continue;
+		}
 		if (r_cons_is_breaked ()) {
 			goto beach;
 		}
@@ -2548,6 +2552,7 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 				goto beach;
 			}
 			if (align && (addr) % align) {
+				from += sizeof (buf);
 				continue;
 			}
 			match = false;
