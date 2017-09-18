@@ -437,9 +437,16 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from, pstr);
 				} else {
-					// TODO: use b64 here
-					a->cb_printf ("0x%08"PFMT64x" string[%d] \"%s\"\n",
-							d->from, (int)d->size, pstr);
+					bool ascii = true;
+					ut8 *ptr;
+					for (ptr = d->str; *ptr; ptr++) {
+						if (*ptr > 0x7f) {
+							ascii = false;
+							break;
+						}
+					}
+					a->cb_printf ("0x%08"PFMT64x" %s[%d] \"%s\"\n",
+					              d->from, ascii ? "ascii" : "latin1", (int)d->size, pstr);
 				}
 				break;
 			case 'h': /* hidden */
