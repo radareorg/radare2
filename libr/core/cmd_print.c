@@ -1112,8 +1112,51 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
+					char *newspace = NULL;
+					// Check for recursive struct
+					if (space && *space == '?') {
+						char* tmp = strdup (space);
+						if (!tmp) {
+							goto store_end;
+						}
+						char* opar = strchr (tmp, '(');
+						char* cpar = strchr (tmp, ')');
+						if (!opar || !cpar) {
+							free (tmp);
+							goto store_end;
+						}
+						*cpar = 0;
+						if (strcmp (opar + 1, name) == 0) {
+							eprintf ("Warning: recursive structure. Replacing input.\n");
+							newspace = strdup (space);
+							if (!newspace) {
+								free (tmp);
+								goto store_end;
+							}
+							cpar = strchr (newspace, ')');
+							if (!cpar || cpar <= newspace) {
+								free (tmp);
+								free (newspace);
+								goto store_end;
+							}
+							cpar -= 1;
+							cpar[0] = 'x';
+							cpar[1] = ' ';
+							space = strdup (cpar);
+							free (newspace);
+							if (!space) {
+								free (tmp);
+								goto store_end;
+							}
+						}
+						free (tmp);
+					}
 					sdb_set (core->print->formats, name, space, 0);
+					if (newspace) {
+						free (space);
+					}
 				}
+store_end:
 				free (name);
 				free (input);
 				return;
