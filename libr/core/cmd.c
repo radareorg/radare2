@@ -878,9 +878,12 @@ static int cmd_kuery(void *data, const char *input) {
 		if (!s) s = core->sdb;
 		for (;;) {
 			r_line_set_prompt (p);
-			if (r_cons_fgets (buf, buflen, 0, NULL) < 1)
+			if (r_cons_fgets (buf, buflen, 0, NULL) < 1) {
 				break;
-			if (!*buf) break;
+			}
+			if (!*buf) {
+				break;
+			}
 			out = sdb_querys (s, NULL, 0, buf);
 			if (out) {
 				r_cons_println (out);
@@ -1478,6 +1481,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	const char *cmdrep = NULL;
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
+	if (!*cmd) {
+	r_core_cmd_repeat (core, true);
+		return r_core_cmd_nullcallback (core);
+	}
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
@@ -1998,12 +2005,12 @@ next2:
 	/* sub commands */
 	ptr = strchr (cmd, '`');
 	if (ptr) {
-		int empty = 0;
+		bool empty = false;
 		int oneline = 1;
 		if (ptr[1] == '`') {
 			memmove (ptr, ptr + 1, strlen (ptr));
 			oneline = 0;
-			empty = 1;
+			empty = true;
 		}
 		ptr2 = strchr (ptr + 1, '`');
 		if (empty) {
@@ -3249,7 +3256,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 
 R_API void r_core_cmd_repeat(RCore *core, int next) {
 	// Fix for backtickbug px`~`
-	if (!core->lastcmd || core->cmd_depth + 1 < R_CORE_CMD_DEPTH) {
+	if (!core->lastcmd || core->cmd_depth < 1) {
 		return;
 	}
 	switch (*core->lastcmd) {
@@ -3269,13 +3276,21 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 	case 'p': // print
 	case 'x':
 	case '$':
-		if (next) {
-			r_core_seek (core, core->offset + core->blocksize, 1);
-		} else {
-			if (core->blocksize > core->offset) {
-				r_core_seek (core, 0, 1);
+		if (!strncmp (core->lastcmd, "pd", 2)) {
+			if (core->lastcmd[2]== ' ') {
+				r_core_cmdf (core, "so %s", core->lastcmd + 3);
 			} else {
-				r_core_seek (core, core->offset - core->blocksize, 1);
+				r_core_cmd0 (core, "so `pi~?`");
+			}
+		} else {
+			if (next) {
+				r_core_seek (core, core->offset + core->blocksize, 1);
+			} else {
+				if (core->blocksize > core->offset) {
+					r_core_seek (core, 0, 1);
+				} else {
+					r_core_seek (core, core->offset - core->blocksize, 1);
+				}
 			}
 		}
 		r_core_cmd0 (core, core->lastcmd);

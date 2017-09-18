@@ -201,8 +201,9 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	RListIter *iter;
 	RCorePlugin *cp;
 	if (!input || !*input) {
-		if (cmd->nullcallback != NULL)
+		if (cmd->nullcallback) {
 			ret = cmd->nullcallback (cmd->data);
+		}
 	} else {
 		char *nstr = NULL;
 		const char *ji = r_cmd_alias_get (cmd, input, 1);

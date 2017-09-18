@@ -190,7 +190,7 @@ R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 				q->red = true;
 			}
 		}
-		if (q->red && && p && p->red) {
+		if (q->red && p && p->red) {
 			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
 			if (p->child[d2] == q) {
 				g = zag (g, d2, sum);
