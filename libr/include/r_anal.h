@@ -1499,7 +1499,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPalette *pal);
 
 R_API void r_meta_free(RAnal *m);
 R_API void r_meta_space_unset_for(RAnal *a, int type);
-R_API int r_meta_space_count_for(RAnal *a, int ctx);
+R_API int r_meta_space_count_for(RAnal *a, int space_idx);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
