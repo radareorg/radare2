@@ -1539,7 +1539,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} else {
 				//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 				R_FREE (I->line->contents);
-				(void)r_config_set (core->config, "cmd.cprompt", buf);
+				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
 			}
 		}
 		break;
