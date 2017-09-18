@@ -775,6 +775,25 @@ int main(int argc, char **argv, char **envp) {
 	if (run_rc) {
 		radare2_rc (&r);
 	}
+
+	if (r_config_get_i (r.config, "zign.autoload")) {
+		char *path = r_file_abspath (r_config_get (r.config, "dir.zigns"));
+		RList *list = r_sys_dir (path);
+		RListIter *iter;
+		char *file = NULL;
+		r_list_foreach (list, iter, file) {
+			if (file && *file && *file != '.') {
+				if (r_str_endswith (file, "gz")) {
+					r_sign_load_gz (r.anal, file);
+				} else {
+					r_sign_load (r.anal, file);
+				}
+			}
+		}
+		r_list_free (list);
+		free (path);
+	}
+
 	// if (argv[optind] && r_file_is_directory (argv[optind]))
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {

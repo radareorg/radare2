@@ -2325,6 +2325,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("zign.bytes", "true", "Use bytes patterns for matching");
 	SETPREF ("zign.offset", "true", "Use original offset for matching");
 	SETPREF ("zign.refs", "true", "Use references for matching");
+	SETPREF ("zign.autoload", "false", "Autoload all zignatures located in ~/.config/radare2/zigns");
 
 	/* diff */
 	SETCB ("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
