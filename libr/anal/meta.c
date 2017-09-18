@@ -677,10 +677,8 @@ static int meta_count_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-R_API int r_meta_space_count_for(RAnal *a, int ctx) {
-	myMetaUser mu = {0};
-	mu.ctx = ctx;
-	int type = a->meta_spaces.space_idx;
-	r_meta_list_cb (a, type, 0, meta_count_cb, &mu, UT64_MAX);
+R_API int r_meta_space_count_for(RAnal *a, int space_idx) {
+	myMetaUser mu = {.ctx = space_idx};
+	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_count_cb, &mu, UT64_MAX);
 	return mu.count;
 }
