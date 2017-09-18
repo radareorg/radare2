@@ -5603,6 +5603,10 @@ static bool archIsArmOrThumb(RCore *core) {
 	return false;
 }
 
+const bool archIsMips (RCore *core) {
+	return strstr (core->assembler->cur->name, "mips");
+}
+
 void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	bool isarm = archIsArmOrThumb (core);
 	if (isarm) {
@@ -5616,12 +5620,21 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 			ut64 bits = r_config_get_i (core->config, "asm.bits");
 			r_anal_hint_set_bits (core->anal, from, bits);
 		}
+	} else {
+		bool ismips = archIsMips (core);
+		if (ismips) {
+			if (from % 4 || to % 4) {
+				eprintf ("False positive\n");
+				return;
+			}
+		}
 	}
 	if (asterisk) {
 		r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", to, from);
 		r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, from);
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
+		// TODO: use API
 		r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, to, from);
 		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
 		r_core_cmdf (core, "f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
@@ -5644,26 +5657,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		ptr = r_num_math (core->num, arg + 1);
 		s = r_io_section_vget (core->io, ptr);
 	}
-	if (false) {
-		RList *ret;
-		if (is_debug) {
-			ret = r_core_get_boundaries_prot (core, 0, "dbg.map");
-		} else {
-			// ut64 from = r_config_get_i (core->config, "bin.baddr");
-			//ut64 to = from + ((core->file)? r_io_fd_size (core->io, core->file->fd): 0);
-			if (!s) {
-				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
-				return; // WTF!
-			}
-			ret = r_core_get_boundaries_prot (core, 0, "io.sections");
-		}
-		RIOMap *map = r_list_first (ret);
-		if (map) {
-		//	from = map->itv.addr;
-		//	to = r_itv_end (map->itv);
-		}
-		r_list_free (ret);
-	}
+
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {
 		vsize = 8;
@@ -5681,6 +5675,30 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	} else {
+		RList *list = r_core_get_boundaries_prot (core, 0, "io.maps"); //r_config_get (core->config, "search.in"));
+		RListIter *iter, *iter2;
+		RIOMap *map, *map2;
+		ut64 from = UT64_MAX;
+		ut64 to = UT64_MAX;
+		// find values pointing to non-executable regions
+		// TOO SLOW, but "correct", can be enhanced by adding search.in2
+		r_list_foreach (list, iter2, map2) {
+//			if (r_itv_contain (map->itv, core->offset)) {
+			if (true) { //!(map2->flags & R_IO_EXEC)) {
+				from = r_itv_begin (map2->itv);
+				to = r_itv_end (map2->itv);
+
+				eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
+				r_list_foreach (list, iter, map) {
+					eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+					(void)r_core_search_value_in_range (core, map->itv, from, to,
+					//	map->itv.addr, r_itv_end (map->itv) 
+						vsize, asterisk, _CbInRangeAav);
+				}
+			}
+		}
+		r_list_free (list);
+#if 0
 		s = r_io_section_vget (core->io, core->offset);
 		if (s) {
 			ut64 from = s->vaddr;
@@ -5692,10 +5710,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			eprintf ("aav: Cannot find section at this address\n");
 			// TODO: look in debug maps
 		}
+#endif
 	}
 
 	// end
-
 	seti ("search.align", o_align);
 }
 
