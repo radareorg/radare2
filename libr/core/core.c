@@ -2536,9 +2536,9 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 	}
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
-		memset (buf, 0, sizeof (buf)); // probably unnecessary
+		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
 		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
-		if (!res || (buf[0] == 0xff && buf[1] == 0xff)) {
+		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4)) {
 			from += sizeof (buf);
 			continue;
 		}
@@ -2552,7 +2552,6 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 				goto beach;
 			}
 			if (align && (addr) % align) {
-				from += sizeof (buf);
 				continue;
 			}
 			match = false;
