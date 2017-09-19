@@ -778,16 +778,19 @@ int main(int argc, char **argv, char **envp) {
 
 	if (r_config_get_i (r.config, "zign.autoload")) {
 		char *path = r_file_abspath (r_config_get (r.config, "dir.zigns"));
+		char *complete_path = NULL;
 		RList *list = r_sys_dir (path);
 		RListIter *iter;
 		char *file = NULL;
 		r_list_foreach (list, iter, file) {
 			if (file && *file && *file != '.') {
-				if (r_str_endswith (file, "gz")) {
-					r_sign_load_gz (r.anal, file);
+				complete_path = r_str_newf ("%s"R_SYS_DIR"%s", path, file);
+				if (r_str_endswith (complete_path, "gz")) {
+					r_sign_load_gz (r.anal, complete_path);
 				} else {
-					r_sign_load (r.anal, file);
+					r_sign_load (r.anal, complete_path);
 				}
+				r_str_free (complete_path);
 			}
 		}
 		r_list_free (list);
