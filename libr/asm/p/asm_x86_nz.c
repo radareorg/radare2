@@ -1345,14 +1345,29 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				}
 			}
 		} else if (op->operands[0].type & OT_MEMORY) {
-			if (op->operands[0].type & OT_WORD ||
-			    op->operands[0].type & OT_BYTE) {
-				return -1;
-			}
-			if (a->bits == 64 &&
-				!(op->operands[0].type & OT_BYTE) &&
-				!(op->operands[0].type & OT_QWORD)) {
-				data[l++] = 0x67;
+			if (a->bits == 64) {
+				if (op->operands[0].extended) {
+					if (op->operands[0].reg < 0) {
+						return -1;
+					}
+					data[l++] = 0x41;
+					data[l++] = 0xc6;
+					// For r12 and r13
+					if (op->operands[0].reg == 4) {
+						data[l++] = 0x04;
+						data[l++] = 0x24;
+					} else if (op->operands[0].reg == 5) {
+						data[l++] = 0x45;
+						data[l++] = 0x00;
+					} else {
+						data[l++] = op->operands[0].reg;
+					}
+					data[l++] = op->operands[1].immediate;
+					return l;
+				} else if (!(op->operands[0].type & OT_BYTE) &&
+				           !(op->operands[0].type & OT_QWORD)) {
+					data[l++] = 0x67;
+				}
 			}
 			if (op->operands[0].type & (OT_DWORD | OT_QWORD)) {
 				data[l++] = 0xc7;
@@ -2533,7 +2548,11 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
 				reg = parseReg (a, str, &nextpos, &reg_type);
-
+				op->extended = false;
+				if (reg > 7) {
+					op->extended = true;
+					op->reg = reg - 8;
+				}
 				if (reg_type & OT_REGTYPE & OT_SEGMENTREG) {
 					op->reg = reg;
 					op->type = reg_type;
