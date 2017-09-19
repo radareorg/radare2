@@ -22,7 +22,7 @@ static const char *help_msg_i[] = {
 	"icc", "", "List classes, methods and fields in Header Format",
 	"iC", "", "Show signature info (entitlements, ...)",
 	"id", "[?]", "Debug information (source lines)",
-	"idp", "", "Show pdb file information",
+	"idp", "", "Load pdb file information",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "", "Entrypoint",
 	"iE", "", "Exports (global symbols)",
@@ -52,8 +52,8 @@ static const char *help_msg_id[] = {
 	"Output mode:", "", "",
 	"'*'", "", "Output in radare commands",
 	"id", "", "Source lines",
-	"idp", " [file.pdb]", "Show pdb file information",
-	".idp*", " [file.pdb]", "Load pdb file information",
+	"idp", " [file.pdb]", "Load pdb file information",
+	"idpi", " [file.pdb]", "Show pdb file information",
 	"idpd", "", "Download pdb file on remote server",
 	NULL
 };
@@ -508,12 +508,20 @@ static int cmd_info(void *data, const char *input) {
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
 		case 'd': // "id"
 			if (input[1] == 'p') { // "idp"
-				int mode = false;
-				if (input[2] == '*') { // "idp*"
-					mode = true;
-					input++;
-				} else if (input[2] == 'd') { // "idpd"
-					SPDBOptions pdbopts;
+				SPDBOptions pdbopts;
+				RBinInfo *info;
+				bool file_found;
+				char *filename;
+
+				switch (input[2]) {
+				case ' ':
+					r_core_cmdf (core, ".idpi* %s", input + 3);
+					while (input[2]) input++;
+					break;
+				case '\0':
+					r_core_cmd0 (core, ".idpi*");
+					break;
+				case 'd':
 					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
 					pdbopts.symbol_server = (char*) r_config_get (core->config, "pdb.server");
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
@@ -521,68 +529,69 @@ static int cmd_info(void *data, const char *input) {
 					if (r > 0) {
 						eprintf ("Error while downloading pdb file");
 					}
-					input += 2;
+					input++;
 					break;
-				}
-				RBinInfo *info = r_bin_get_info (core->bin);
-				bool local_file = false;
-				char* filename = strchr (input, ' ');
-				input++;
-				if (filename) {
-					*filename++ = '\0';
-					local_file = r_file_exists (filename);
-					if (!local_file) {
-						eprintf ("Cannot open '%s'", filename);
-						break;
-					}
-				} else {
-					/* Autodetect local file */
-					if (!info || !info->debug_file_name) {
-						eprintf ("Cannot get file's debug information");
-						break;
-					}
-					local_file = r_file_exists (info->debug_file_name);
-					if (local_file) {
-						filename = info->debug_file_name;
+				case 'i':
+					info = r_bin_get_info (core->bin);
+					file_found = false;
+					filename = strchr (input, ' ');
+					if (filename) {
+						*filename++ = '\0';
+						filename = strdup (filename);
+						file_found = r_file_exists (filename);
 					} else {
-						char *basename = (char*) r_file_basename (info->debug_file_name);
-						local_file = r_file_exists (basename);
-						if (local_file) {
-							filename = basename;
+						/* Autodetect local file */
+						if (!info || !info->debug_file_name) {
+							eprintf ("Cannot get file's debug information");
+							break;
+						}
+						// Check raw path for debug filename
+						file_found = r_file_exists (info->debug_file_name);
+						if (file_found) {
+							filename = strdup (info->debug_file_name);
 						} else {
-							char *base = (char*) r_file_basename (info->debug_file_name);
-							local_file = r_file_exists (base);
-							if (local_file) {
-								filename = base;
-							} else {
-								eprintf ("File '%s' not found", base);
-								break;
+							// Check debug filename basename in current directory
+							char* basename = (char*) r_file_basename (info->debug_file_name);
+							file_found = r_file_exists (basename);
+							if (!file_found) {
+								// Check if debug file is in file directory
+								char* dir = r_file_dirname (core->bin->cur->file);
+								filename = r_str_newf ("%s/%s", dir, basename);
+								file_found = r_file_exists (filename);
 							}
 						}
 					}
-				}
-				// TODO Use R_IO api
-				int current_fd = r_core_bin_cur (core)->fd;
-				char* r = r_core_cmd_strf (core, "o %s", filename);
-				if (!r || !*r) {
-					//eprintf ("FixMe: Could not read file descriptor\n");
-					if (!r) {
-						if (!(r = strdup ("0"))) {
-							eprintf ("Error: strdup fail");
-							break;
-						}
+
+					if (!file_found) {
+						eprintf ("File '%s' not found", filename);
+						free (filename);
+						break;
 					}
-				}
-				int fd = atoi (r);
-				free (r);
-				if (fd < 0) {
-					eprintf ("Error while opening '%s'", filename);
+					ut64 baddr = 0;
+					if (core->bin->cur && core->bin->cur->o) {
+						baddr = core->bin->cur->o->baddr;
+					} else {
+						eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+					}
+					RCoreFile *file = r_core_file_open (core, filename, R_IO_READ, baddr);
+					r_core_bin_load (core, filename, baddr);
+					if (!file) {
+						eprintf ("Error while opening '%s'", filename);
+						break;
+					}
+					RCoreBinFilter filter = { 0 };
+					r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
+					r_core_file_close (core, file);
+					free (filename);
+					input += (mode) ? 2 : 1;
+					break;
+				case '?':
+				default:
+					r_core_cmd_help (core, help_msg_id);
+					input++;
 					break;
 				}
-				RCoreBinFilter filter = { 0 };
-				r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
-				r_core_cmdf (core, "o-%d", fd);
-				r_core_cmdf (core, "o %d", current_fd);
+				input++;
 			} else if (input[1] == '?') { // "id?"
 				r_core_cmd_help (core, help_msg_id);
 				input++;
