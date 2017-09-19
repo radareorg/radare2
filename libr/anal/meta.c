@@ -389,9 +389,14 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
-			a->cb_printf ("%s{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",
+			a->cb_printf ("%s{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"",
 				isFirst? "": ",",
 				d->from, r_meta_type_to_string (d->type), str);
+			if (d->type == 's') {
+				a->cb_printf (", \"enc\":\"latin1\", \"ascii\":%s",
+				              r_str_bool (r_str_is_ascii (d->str)));
+			}
+			a->cb_printf ("}");
 			isFirst = false;
 			break;
 		case 0:
@@ -437,14 +442,7 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from, pstr);
 				} else {
-					bool ascii = true;
-					ut8 *ptr;
-					for (ptr = d->str; *ptr; ptr++) {
-						if (*ptr > 0x7f) {
-							ascii = false;
-							break;
-						}
-					}
+					bool ascii = r_str_is_ascii (d->str);
 					a->cb_printf ("0x%08"PFMT64x" %s[%d] \"%s\"\n",
 					              d->from, ascii ? "ascii" : "latin1", (int)d->size, pstr);
 				}
