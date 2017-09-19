@@ -17,6 +17,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	g->is_server = is_server;
 	g->send_max = 2500;
 	g->send_buff = (char *) calloc (g->send_max, 1);
+	g->page_size = 4096;
 	if (!g->send_buff) {
 		return -1;
 	}

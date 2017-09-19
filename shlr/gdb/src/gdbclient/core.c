@@ -497,7 +497,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 	return 0;
 }
 
-int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
+static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	char command[64] = {0};
 	int num_pkts, last, data_sz, ret_len;
 	int pkt;
@@ -549,6 +549,42 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	}
 	buf[ret_len] = '\0'; // Just in case
 	return ret_len;
+}
+
+int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
+	int ret_len, ret, tmp;
+	int page_size = g->page_size;
+	ret_len = 0;
+	// Read and round up to page size
+	tmp = page_size - (address & (page_size - 1));
+	if (tmp >= len) {
+		return gdbr_read_memory_page (g, address, buf, len);
+	}
+	if ((ret = gdbr_read_memory_page (g, address, buf, tmp)) != tmp) {
+		return ret;
+	}
+	len -= tmp;
+	address += tmp;
+	buf += tmp;
+	ret_len += ret;
+	// Read complete pages
+	while (len > page_size) {
+		if ((ret = gdbr_read_memory_page (g, address, buf, page_size)) != page_size) {
+			if (ret < 0) {
+				return ret_len;
+			}
+			return ret_len + ret;
+		}
+		len -= page_size;
+		address += page_size;
+		buf += page_size;
+		ret_len += page_size;
+	}
+	// Read left-overs
+	if ((ret = gdbr_read_memory_page (g, address, buf, len)) < 0) {
+		return ret_len;
+	}
+	return ret_len + ret;
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
