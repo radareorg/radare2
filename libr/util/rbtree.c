@@ -190,7 +190,9 @@ R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 				q->red = true;
 			}
 		}
-		if (q->red && p && p->red) {
+		// coverity[var_deref_op] false positive
+		// The root is black, when q is red, it cannot be the root and its parent (p) must exist (not NULL).
+		if (q->red && p->red) {
 			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
 			if (p->child[d2] == q) {
 				g = zag (g, d2, sum);
