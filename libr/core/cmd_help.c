@@ -54,23 +54,20 @@ static const char *help_msg_question[] = {
 	"?:", "", "list core cmd plugins",
 	"[cmd]?*", "", "Recursive help for the given cmd",
 	"?!", " [cmd]", "run cmd if $? == 0",
+	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
-	"?$", "", "show value all the variables ($)",
-	"??", "", "show value of operation",
 	"??", " [cmd]", "run cmd if $? != 0",
-	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?S", " addr", "return section name of given address",
-	"?T", "", "show loading times",
-	"?V", "", "show library version of r_core",
-	"?X", " num|expr", "returns the hexadecimal value numeric expr",
+	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
+	"?B", " [elem]", "show range boundaries like 'e?search.in",
 	"?d[.]", " opcode", "describe opcode for asm.arch",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
+	"?F", "", "flush cons output",
 	"?h", " [str]", "calculate hash for given string",
 	"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
 	"?ik", "", "press any key input dialog",
@@ -84,14 +81,18 @@ static const char *help_msg_question[] = {
 	"?P", " paddr", "get virtual address for given physical one",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
+	"?S", " addr", "return section name of given address",
 	"?t", " cmd", "returns the time to run a command",
+	"?T", "", "show loading times",
 	"?u", " num", "get value in human units (KB, MB, GB, TB)",
 	"?v", " eip-0x804800", "show hex value of math expr",
 	"?vi", " rsp-rbp", "show decimal value of math expr",
+	"?V", "", "show library version of r_core",
 	"?w", " addr", "show what's in this address (like pxr/pxq does)",
-	"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
 	"?x", " str", "returns the hexpair of number or string",
+	"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
 	"?x", "-hexst", "convert hexpair into raw string with newline",
+	"?X", " num|expr", "returns the hexadecimal value numeric expr",
 	"?y", " [str]", "show contents of yank buffer, or set with string",
 	NULL
 };
@@ -241,16 +242,16 @@ static int cmd_help(void *data, const char *input) {
 	RList *tmp;
 
 	switch (input[0]) {
-	case '0':
+	case '0': // "?0"
 		core->curtab = 0;
 		break;
-	case '1':
+	case '1': // "?1"
 		if (core->curtab < 0) {
 			core->curtab = 0;
 		}
 		core->curtab ++;
 		break;
-	case ':':
+	case ':': // "?:"
 		{
 		RListIter *iter;
 		RCorePlugin *cp;
@@ -266,7 +267,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 	}
 		break;
-	case 'r':
+	case 'r': // "?r"
 		{ // TODO : Add support for 64bit random numbers
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
@@ -290,7 +291,7 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
-	case 'b':
+	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
 			const int buflen = (strlen (input+3) * 4) + 1;
@@ -311,7 +312,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%sb\n", out);
 		}
 		break;
-	case 'B':
+	case 'B': // "?B"
 		k = r_str_chop_ro (input + 1);
 		tmp = r_core_get_boundaries (core, k);
 		r_list_foreach (tmp, iter, map) {
@@ -319,7 +320,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_list_free (tmp);
 		break;
-	case 'd':
+	case 'd': // "?d"
 		if (input[1]=='.') {
 			int cur = R_MAX (core->print->cur, 0);
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
@@ -336,14 +337,14 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
 		}
 		break;
-	case 'h':
+	case 'h': // "?h"
 		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input+2));
 		} else {
 			eprintf ("Usage: ?h [string-to-hash]\n");
 		}
 		break;
-	case 'y':
+	case 'y': // "?y"
 		for (input++; input[0]==' '; input++);
 		if (*input) {
 			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, input, strlen (input)+1);
@@ -351,10 +352,10 @@ static int cmd_help(void *data, const char *input) {
 			r_core_yank_cat (core, 0);
 		}
 		break;
-	case 'F':
+	case 'F': // "?F"
 		r_cons_flush ();
 		break;
-	case 'f':
+	case 'f': // "?f"
 		if (input[1] == ' ') {
 			char *q, *p = strdup (input + 2);
 			if (!p) {
@@ -375,11 +376,11 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("Whitespace expected after '?f'\n");
 		}
 		break;
-	case 'o':
+	case 'o': // "?o"
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
-	case 'O':
+	case 'O': // "?O"
 		if (input[1] == '?') {
 			r_cons_printf ("Usage: ?O[jd] [arg] .. list all mnemonics for asm.arch (d = describe, j=json)\n");
 		} else if (input[1] == 'd') {
@@ -420,7 +421,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'T':
+	case 'T': // "?T"
 		r_cons_printf("plug.init = %"PFMT64d"\n"
 			"plug.load = %"PFMT64d"\n"
 			"file.load = %"PFMT64d"\n",
@@ -428,7 +429,7 @@ static int cmd_help(void *data, const char *input) {
 			core->times->loadlibs_time,
 			core->times->file_open_time);
 		break;
-	case 'u':
+	case 'u': // "?u"
 		{
 			char unit[32];
 			n = r_num_math (core->num, input+1);
@@ -436,7 +437,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_println (unit);
 		}
 		break;
-	case ' ':
+	case ' ': // "? "
 		{
 			char *asnum, unit[32];
 			ut32 s, a;
@@ -469,7 +470,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%s %.01lf %ff %lf\n", out, core->num->fvalue, f, d);
 		}
 		break;
-	case 'v':
+	case 'v': // "?v"
 		{
 			const char *space = strchr (input, ' ');
 			if (space) {
@@ -521,14 +522,14 @@ static int cmd_help(void *data, const char *input) {
 		}
 		core->num->value = n; // redundant
 		break;
-	case '=': // set num->value
+	case '=': // "?=" set num->value
 		if (input[1]) {
 			r_num_math (core->num, input+1);
 		} else {
 			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
-	case '+':
+	case '+': // "?+"
 		if (input[1]) {
 			st64 n = (st64)core->num->value;
 			if (n > 0) {
@@ -538,7 +539,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
-	case '-':
+	case '-': // "?-"
 		if (input[1]) {
 			st64 n = (st64)core->num->value;
 			if (n < 0) {
@@ -562,17 +563,17 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
-	case '@':
+	case '@': // "?@"
 		if (input[1] == '@') {
 			r_core_cmd_help (core, help_msg_at_at);
 		} else {
 			r_core_cmd_help (core, help_msg_at);
 		}
 		break;
-	case '&':
+	case '&': // "?&"
 		helpCmdTasks (core);
 		break;
-	case '$':
+	case '$': // "?$"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_question_v);
 		} else {
@@ -589,12 +590,12 @@ static int cmd_help(void *data, const char *input) {
 			}
 		}
 		return true;
-	case 'V':
+	case 'V': // "?V"
 		switch (input[1]) {
-		case '?':
+		case '?': // "?V?"
 			r_core_cmd_help (core, help_msg_question_V);
 			break;
-		case 0:
+		case 0: // "?V"
 #if R2_VERSION_COMMIT == 0
 			r_cons_printf ("%s release\n", R2_VERSION);
 #else
@@ -605,25 +606,25 @@ static int cmd_help(void *data, const char *input) {
 			}
 #endif
 			break;
-		case 'j':
+		case 'j': // "?Vj"
 			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
 			break;
-		case 'q':
+		case 'q': // "?Vq"
 			r_cons_println (R2_VERSION);
 			break;
 		}
 		break;
-	case 'l':
+	case 'l': // "?l"
 		for (input++; input[0] == ' '; input++);
 		core->num->value = strlen (input);
 		break;
-	case 'X':
+	case 'X': // "?X"
 		for (input++; input[0] == ' '; input++);
 		n = r_num_math (core->num, input);
 		r_cons_printf ("%"PFMT64x"\n", n);
 		break;
-	case 'x':
+	case 'x': // "?x"
 		for (input++; input[0] == ' '; input++);
 		if (*input == '-') {
 			ut8 *out = malloc (strlen (input)+1);
@@ -648,51 +649,50 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_newline ();
 		}
 		break;
-	case 'E': // clippy echo
+	case 'E': // "?E" clippy echo
 		r_core_clippy (r_str_chop_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
-		case 'b': {
-				  char *arg = strdup (r_str_chop_ro (input + 2));
-				  int n = r_str_split (arg, ' ');
-				  ut64 *portions = calloc (n, sizeof (ut64));
-				  for (i = 0; i < n; i++) {
-					  portions[i] = r_num_math (core->num, r_str_word_get0 (arg, i));
-				  }
-				  r_print_portionbar (core->print, portions, n);
-				  free (arg);
-			  }
+		case 'b': { // "?eb"
+			char *arg = strdup (r_str_chop_ro (input + 2));
+			int n = r_str_split (arg, ' ');
+			ut64 *portions = calloc (n, sizeof (ut64));
+			for (i = 0; i < n; i++) {
+				portions[i] = r_num_math (core->num, r_str_word_get0 (arg, i));
+			}
+			r_print_portionbar (core->print, portions, n);
+			free (arg);
 			break;
-		case 's': {
+		}
+		case 's': { // "?es"
 			char *msg = strdup (input + 2);
 			msg = r_str_chop (msg);
 			char *p = strchr (msg, '&');
 			if (p) *p = 0;
 			r_sys_tts (msg, p != NULL);
 			free (msg);
-			}
 			break;
-		case 'c': { // column
+		}
+		case 'c': // "?ec" column
 			r_cons_column (r_num_math (core->num, input + 2));
-			}
 			break;
-		case 'g': { // gotoxy
+		case 'g': { // "?eg" gotoxy
 			int x = atoi (input + 2);
 			char *arg = strchr (input + 2, ' ');
 			int y = arg? atoi (arg + 1): 0;
 			r_cons_gotoxy (x, y);
 			}
 			break;
-		case 'n': { // echo -n
+		case 'n': { // "?en" echo -n
 			const char *msg = r_str_chop_ro (input + 2);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
 			r_cons_print (newmsg);
 			free (newmsg);
-			}
 			break;
+		}
 		default: {
 			const char *msg = r_str_chop_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
@@ -704,8 +704,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 's': // sequence from to step
-		{
+	case 's': { // "?s" sequence from to step
 		ut64 from, to, step;
 		char *p, *p2;
 		for (input++; *input==' '; input++);
@@ -725,9 +724,9 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("%"PFMT64d" ", from);
 			r_cons_newline ();
 		}
-		}
 		break;
-	case 'P':
+	}
+	case 'P': // "?P"
 		if (core->io->va) {
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
@@ -742,7 +741,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
 		}
 		break;
-	case 'p':
+	case 'p': // "?p"
 		if (core->io->va) {
 			// physical address
 			ut64 o, n = (input[0] && input[1])?
@@ -758,29 +757,20 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
 		}
 		break;
-	case 'S': {
-		// section name
+	case 'S': { // "?S" section name
 		RIOSection *s;
-		SdbList *sections;
+		ut64 n = input[1] ? r_num_math (core->num, input + 2) : core->offset;
+		SdbList *sections = core->io->va ? r_io_sections_vget (core->io, n) : r_io_sections_get (core->io, n);
 		SdbListIter *iter;
-		ut64 n = (input[0] && input[1])?
-			r_num_math (core->num, input+2): core->offset;
-#if 0
-		n = r_io_section_vaddr_to_maddr_try (core->io, n);
-		s = r_io_section_mget_in (core->io, n);
-		if (s && *(s->name)) {
-			r_cons_println (s->name);
-		}
-#endif
-		if ((sections = r_io_sections_get (core->io, n))) {
+		if (sections) {
 			ls_foreach (sections, iter, s) {
 				r_cons_printf ("%s\n", s->name);
 			}
 			ls_free (sections);
 		}
 		break;
-		}
-	case '_': // hud input
+	}
+	case '_': // "?_" hud input
 		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // "?i" input num
@@ -810,8 +800,7 @@ static int cmd_help(void *data, const char *input) {
 				 for (input += 2; *input==' '; input++);
 				 core->num->value = r_cons_yesno (0, "%s? (y/N)", input);
 				 break;
-			default:
-				{
+			default: {
 				char foo[1024];
 				r_cons_flush ();
 				for (input++; *input == ' '; input++);
@@ -828,24 +817,24 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_cons_set_raw (0);
 		break;
-	case 'w':
-		{
+	case 'w': { // "?w"
 		ut64 addr = r_num_math (core->num, input + 1);
 		const char *rstr = core->print->hasrefs (core->print->user, addr, true);
 		r_cons_println (rstr);
-		}
 		break;
-	case 't': {
+	}
+	case 't': { // "?t"
 		struct r_prof_t prof;
 		r_prof_start (&prof);
 		r_core_cmd (core, input + 1, 0);
 		r_prof_end (&prof);
 		core->num->value = (ut64)(int)prof.result;
 		eprintf ("%lf\n", prof.result);
-		} break;
-	case '?': // "??" "???"
-		if (input[1]=='?') {
-			if (input[2]=='?') {
+		break;
+	}
+	case '?': // "??"
+		if (input[1] == '?') {
+			if (input[2] == '?') { // "???"
 				r_core_clippy ("What are you doing?");
 				return 0;
 			}
@@ -869,7 +858,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 
-	case '\0':
+	case '\0': // "?"
 	default:
 		// TODO #7967 help refactor
 		r_cons_printf ("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
