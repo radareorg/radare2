@@ -40,7 +40,7 @@ int handle_m(libgdbr_t *g) {
 		return -1;
 	}
 	int len = strlen (g->data);
-	g->data_len = strlen (g->data) / 2;
+	g->data_len = len / 2;
 	unpack_hex (g->data, len, g->data);
 	return send_ack (g);
 }

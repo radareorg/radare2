@@ -23,35 +23,12 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
-	ut32 size_max;
-	ut32 packets;
-	ut32 last;
 	ut32 x;
 	int ret = 0;
 	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
-	size_max = desc->data_max / 2;
-	if (size_max < 1) {
-		size_max = sz;
-	}
-	packets = sz / size_max;
-	last = sz % size_max;
-	for (x = 0; x < packets; x++) {
-		if (gdbr_read_memory (desc, addr + (x * size_max), size_max) < 0) {
-			return ret;
-		}
-		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), R_MIN (sz, size_max));
-		ret += desc->data_len;
-	}
-	if (last) {
-		if (gdbr_read_memory (desc, addr + x * size_max, last) < 0) {
-			return ret;
-		}
-		memcpy ((buf + x * size_max), desc->data + (x * size_max), last);
-		ret += desc->data_len;
-	}
-	return ret;
+	return gdbr_read_memory (desc, addr, buf, sz);
 }
 
 static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
