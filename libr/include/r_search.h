@@ -47,11 +47,10 @@ typedef struct r_search_hit_t {
 	ut64 addr;
 } RSearchHit;
 
-typedef int (*RSearchUpdate)(void *s, ut64 from, const ut8 *buf, int len);
 typedef int (*RSearchCallback)(RSearchKeyword *kw, void *user, ut64 where);
 
 typedef struct r_search_t {
-	int n_kws;
+	int n_kws; // hit${n_kws}_${count}
 	int mode;
 	ut32 pattern_size;
 	ut32 string_min; // max length of strings for R_SEARCH_STRING
@@ -60,15 +59,15 @@ typedef struct r_search_t {
 	void *user; // user data passed to callback
 	RSearchCallback callback;
 	ut64 nhits;
-	ut64 maxhits;
+	ut64 maxhits; // search.maxhits
 	RList *hits;
 	RMemoryPool *pool;
 	int distance;
 	int inverse;
-	bool overlap;
+	bool overlap; // whether two matches can overlap
 	int contiguous;
 	int align;
-	RSearchUpdate update;
+	int (*update)(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 	RList *kws; // TODO: Use r_search_kw_new ()
 	RIOBind iob;
 	char bckwrds;
@@ -109,14 +108,15 @@ R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
 R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out);
 
 // TODO: is this an internal API?
-R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_aes_update(void *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_rsa_update(void *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_magic_update(void *_s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_deltakey_update(void *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_strings_update(void *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_regexp_update(void *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_xrefs_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_rsa_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_magic_update(RSearch *_s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_xrefs_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);
 R_API int r_search_strings(RSearch *s, ut32 min, ut32 max);

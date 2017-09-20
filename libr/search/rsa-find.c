@@ -45,7 +45,7 @@ static int check_rsa_fields(const ut8* start) {
 }
 
 // Finds and return index of private RSA key
-R_API int r_search_rsa_update(void* s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_rsa_update(RSearch* s, ut64 from, const ut8 *buf, int len) {
 	unsigned int i, k, index;
 	const ut8 versionmarker[] = {0x02, 0x01, 0x00, 0x02};
 

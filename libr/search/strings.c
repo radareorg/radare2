@@ -60,8 +60,7 @@ static bool is_encoded(int encoding, unsigned char c) {
 	return false;
 }
 
-R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) {
-	RSearch *s = (RSearch *)_s;
+R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i = 0;
 	int widechar = 0;
 	int matches = 0;
@@ -79,7 +78,7 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 				matches++;
 		} else {
 			/* wide char check \x??\x00\x??\x00 */
-			if (matches && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+			if (matches && i + 2 < len && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
 				widechar = 1;
 				return 1; // widechar
 			}
@@ -88,7 +87,6 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 				str[matches] = '\0';
 				int len = strlen(str);
 				if (len>2) {
-					kw->count++;
 					if (widechar) {
 						ut64 off = (ut64)from+i-(len*2)+1;
 						r_search_hit_new (s, kw, off);
