@@ -206,20 +206,34 @@ int send_msg(libgdbr_t* g, const char* command);
 int read_packet(libgdbr_t* instance);
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-        //printf("ptrace io command (%s)\n", cmd);
-        /* XXX ugly hack for testing purposes */
-        if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
-                eprintf ("Usage: =!cmd args\n"
-                         " =!pid             - show targeted pid\n"
-                         " =!pkt s           - send packet 's'\n"
-                         " =!monitor cmd     - hex-encode monitor command and pass"
-                                             " to target interpreter\n"
-                         " =!detach [pid]    - detach from remote/detach specific pid\n"
-                         " =!inv.reg         - invalidate reg cache\n"
-                         " =!pktsz           - get max packet size used\n"
-                         " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-                         " =!exec_file [pid] - get file which was executed for"
-                                             " current/specified pid\n");
+	if (!desc) {
+		return true;
+	}
+	if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
+		eprintf ("Usage: =!cmd args\n"
+			 " =!pid             - show targeted pid\n"
+			 " =!pkt s           - send packet 's'\n"
+			 " =!monitor cmd     - hex-encode monitor command and pass"
+			                     " to target interpreter\n"
+			 " =!detach [pid]    - detach from remote/detach specific pid\n"
+			 " =!inv.reg         - invalidate reg cache\n"
+			 " =!pktsz           - get max packet size used\n"
+			 " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			 " =!page_size       - get current setting for page size\n"
+			 " =!page_size bytes - set page size for memory reads (useful for qemu)\n"
+			 " =!exec_file [pid] - get file which was executed for"
+			                     " current/specified pid\n");
+		return true;
+	}
+	if (!strncmp (cmd, "page_size", 9)) {
+		int page_size;
+		if (isspace (cmd[9]) && isdigit (cmd[10])) {
+			if ((page_size = atoi (cmd + 10)) >= 64) { // 64 is hardcoded min packet size
+				desc->page_size = page_size;
+			}
+			return true;
+		}
+		io->cb_printf ("page size: %d bytes\n", desc->page_size);
 		return true;
 	}
 	if (!strncmp (cmd, "pktsz", 5)) {

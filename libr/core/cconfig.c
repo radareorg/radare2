@@ -1010,6 +1010,19 @@ static int cb_dbg_forks(void *user, void *data) {
 	return true;
 }
 
+static int cb_dbg_gdb_page_size(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (core->io && core->io->desc && core->io->desc->plugin
+	    && core->io->desc->plugin->name
+	    && !strcmp (core->io->desc->plugin->name, "gdb")) {
+		char cmd[64];
+		snprintf (cmd, sizeof (cmd), "page_size %"PFMT64d, node->i_value);
+		r_io_system (core->io, cmd);
+	}
+	return true;
+}
+
 static int cb_dbg_execs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2395,6 +2408,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dbg.trace.libs", "true", "Trace library code too");
 	SETPREF ("dbg.exitkills", "true", "Kill process on exit");
 	SETPREF ("dbg.exe.path", NULL, "Path to binary being debugged");
+	SETICB ("dbg.gdb.page_size", 4096, &cb_dbg_gdb_page_size, "Page size on gdb target (useful for QEMU)");
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
