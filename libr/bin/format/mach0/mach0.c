@@ -2309,6 +2309,10 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 	}
 	for (i = 0; !symbols[i].last; i++) {
 		const char *name = symbols[i].name;
+		if (!strcmp (name, "__Dmain")) {
+			addr = symbols[i].addr;
+			break;
+		}
 		if (strstr (name, "4main") && !strstr (name, "STATIC")) {
 			addr = symbols[i].addr;
 			break;
