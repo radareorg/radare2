@@ -3086,7 +3086,7 @@ static void agraph_init(RAGraph *g) {
 	g->color_box2 = Color_BLUE; // selected node
 	g->color_box3 = Color_MAGENTA;
 	g->graph = r_graph_new ();
-	g->nodes = sdb_new0 ();
+	g->nodes = sdb_new0 (); // XXX leak
 	g->zoom = ZOOM_DEFAULT;
 	g->movspeed = DEFAULT_SPEED; // r_config_get_i (g->core->config, "graph.scroll");
 	g->db = sdb_new0 ();
@@ -3307,13 +3307,12 @@ R_API void r_agraph_reset(RAGraph *g) {
 	agraph_free_nodes (g);
 	r_agraph_set_title (g, NULL);
 	sdb_reset (g->db);
-	r_list_free (g->edges);
+	r_list_purge (g->edges);
 
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
 	g->x = g->y = g->w = g->h = 0;
 	agraph_sdb_init (g);
-	g->edges = r_list_new ();
 	g->curnode = NULL;
 }
 
