@@ -230,7 +230,7 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 	}
 
 	if (p != s) {
-		char tmp[64];
+		char tmp[256];
 		const int slen = R_MIN (p - s, sizeof (tmp) - 1);
 		if (slen > 0) {
 			memcpy (tmp, s, slen);
