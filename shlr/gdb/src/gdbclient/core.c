@@ -655,7 +655,7 @@ fail:
 
 int gdbr_step(libgdbr_t *g, int tid) {
 	char thread_id[64];
-	if (write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
+	if (tid < 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
 			     g->stub_features.multiprocess) < 0) {
 		return send_vcont (g, CMD_C_STEP, NULL);
 	}
