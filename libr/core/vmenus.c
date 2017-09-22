@@ -301,11 +301,6 @@ static bool edit_bits (RCore *core) {
 		}
 		r_cons_printf ("len: %d\n", asmop.size);
 		{
-			char *op = colorize_asm_string (core, asmop.buf_asm, analopType);
-			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
-			free (op);
-		}
-		{
 			ut32 word = (x % 32);
 			r_cons_printf ("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
