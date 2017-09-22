@@ -512,8 +512,8 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 	for (pkt = 0; pkt < num_pkts; pkt++) {
 		if (snprintf (command, sizeof (command) - 1,
 			      "%s%016"PFMT64x ",%"PFMT64x, CMD_READMEM,
-			      address + (pkt * data_sz),
-			      data_sz) < 0) {
+			      (ut64)address + (pkt * data_sz),
+			      (ut64)data_sz) < 0) {
 			return -1;
 		}
 		if (send_msg (g, command) < 0) {
@@ -525,14 +525,18 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		if (handle_m (g) < 0) {
 			return -1;
 		}
-		memcpy (buf + (pkt * data_sz), g->data, g->data_len);
-		ret_len += g->data_len;
+		int delta = num_pkts * data_sz;
+		int left = R_MIN (g->data_len, len - delta);
+		if (left > 0) {
+			memcpy (buf + (pkt * data_sz), g->data, left);
+			ret_len += g->data_len;
+		}
         }
 	if (last) {
 		if (snprintf (command, sizeof (command) - 1,
 			      "%s%016"PFMT64x ",%"PFMT64x, CMD_READMEM,
-			      address + (num_pkts * data_sz),
-			      last) < 0) {
+			      (ut64) (address + (num_pkts * data_sz)),
+			      (ut64)last) < 0) {
 			return -1;
 		}
 		if (send_msg (g, command) < 0) {
@@ -544,10 +548,13 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		if (handle_m (g) < 0) {
 			return -1;
 		}
-		memcpy (buf + (num_pkts * data_sz), g->data, g->data_len);
-		ret_len += g->data_len;
+		int delta = num_pkts * data_sz;
+		int left = R_MIN (g->data_len, len - delta);
+		if (left > 0) {
+			memcpy (buf + delta, g->data, left);
+			ret_len += g->data_len;
+		}
 	}
-	buf[ret_len] = '\0'; // Just in case
 	return ret_len;
 }
 
