@@ -766,7 +766,15 @@ static int cmd_interpret(void *data, const char *input) {
 		}
 		break;
 	case '.': // ".." same as \n
-		r_core_cmd_repeat (core, 1);
+		if (input[1] == '.') { // ... same as \n with e cmd.repeat=true
+			r_core_cmd_repeat (core, 1);
+		} else {
+			char *str = r_core_cmd_str_pipe (core, input);
+			if (str) {
+				r_core_cmd (core, str, 0);
+				free (str);
+			}
+		}
 		break;
 	case '-': // ".-"
 		if (input[1] == '?') {
@@ -814,13 +822,17 @@ static int cmd_interpret(void *data, const char *input) {
 					break;
 				}
 				eol = strchr (ptr, '\n');
-				if (eol) *eol = '\0';
+				if (eol) {
+					*eol = '\0';
+				}
 				if (*ptr) {
 					char *p = r_str_append (strdup (ptr), filter);
 					r_core_cmd0 (core, p);
 					free (p);
 				}
-				if (!eol) break;
+				if (!eol) {
+					break;
+				}
 				ptr = eol + 1;
 			}
 		}
