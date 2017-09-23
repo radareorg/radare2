@@ -602,6 +602,7 @@ extern RDebugPlugin r_debug_plugin_io;
 extern RDebugPlugin r_debug_plugin_windbg;
 extern RDebugPlugin r_debug_plugin_bochs;
 extern RDebugPlugin r_debug_plugin_qnx;
+extern RDebugPlugin r_debug_plugin_null;
 #endif
 
 #ifdef __cplusplus

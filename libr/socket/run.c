@@ -264,7 +264,6 @@ static void restore_saved_fd (int saved, bool resore, int fd) {
 	if (resore) {
 		dup2 (saved, fd);
 	}
-
 	close (saved);
 }
 
@@ -333,7 +332,6 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	//this seems like a really good place to refactor stuff
 	return 0;
 #endif
-
 	if (cmd[0] == '"') {
 #if __UNIX__
 		if (in) {
