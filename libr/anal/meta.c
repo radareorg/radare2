@@ -367,7 +367,7 @@ R_API const char *r_meta_type_to_string(int type) {
 
 static bool isFirst = true;
 static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
-	char *pstr, *str;
+	char *pstr, *str, *base64_str;
 	//eprintf ("%d %d\n", d->space, a->meta_spaces.space_idx);
 	if (a->meta_spaces.space_idx != -1) {
 		if (a->meta_spaces.space_idx != d->space) {
@@ -389,9 +389,15 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
-			a->cb_printf ("%s{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"",
+			a->cb_printf ("%s{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":",
 				isFirst? "": ",",
-				d->from, r_meta_type_to_string (d->type), str);
+				d->from, r_meta_type_to_string (d->type));
+			if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
+				a->cb_printf ("\"%s\"", base64_str);
+				free (base64_str);
+			} else {
+				a->cb_printf ("\"%s\"", str);
+			}
 			if (d->type == 's') {
 				a->cb_printf (", \"enc\":\"latin1\", \"ascii\":%s",
 				              r_str_bool (r_str_is_ascii (d->str)));
