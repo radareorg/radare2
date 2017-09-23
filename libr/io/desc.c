@@ -209,7 +209,7 @@ R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
 	return false;
 }
 
-R_API bool r_io_desc_is_blockdevice (RIODesc *desc) {
+R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
 	if (!desc || !desc->plugin || !desc->plugin->is_blockdevice) {
 		return false;
 	}
