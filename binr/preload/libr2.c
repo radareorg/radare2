@@ -33,6 +33,7 @@ static void sigusr2(int s) {
 	(void)openself();
 	r_core_cmd0 (core, "=H&");
 }
+
 static void _libwrap_init() __attribute__ ((constructor));
 static void _libwrap_init() {
 	char *web;

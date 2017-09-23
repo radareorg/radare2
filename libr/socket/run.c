@@ -888,7 +888,9 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_preload) {
 #if __APPLE__
 		// 10.6
+#ifndef __MAC_10_7
 		r_sys_setenv ("DYLD_PRELOAD", p->_preload);
+#endif
 		r_sys_setenv ("DYLD_INSERT_LIBRARIES", p->_preload);
 		// 10.8
 		r_sys_setenv ("DYLD_FORCE_FLAT_NAMESPACE", "1");
