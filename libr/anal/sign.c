@@ -1267,6 +1267,11 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	if (!a || !file) {
 		return false;
 	}
+	
+	if (sdb_count (a->sdb_zigns) == 0) {
+		eprintf ("WARNING: no zignatures to save\n");
+		return false;
+	}
 
 	Sdb *db = sdb_new (NULL, file, 0);
 	if (!db) {
