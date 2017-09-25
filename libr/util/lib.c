@@ -137,7 +137,9 @@ R_API RLib *r_lib_new(const char *symname) {
 }
 
 R_API RLib *r_lib_free(RLib *lib) {
-	if (!lib) return NULL;
+	if (!lib) {
+		return NULL;
+	}
 	r_lib_close (lib, NULL);
 	r_list_free (lib->handlers);
 	r_list_free (lib->plugins);

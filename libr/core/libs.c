@@ -7,6 +7,7 @@
 	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
 		RCore *core = (RCore *) user;\
+		pl->free = NULL; \
 		r_ ## x ## _add (core->y, hand);\
 		return true;\
 	}\
