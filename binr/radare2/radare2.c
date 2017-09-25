@@ -1018,12 +1018,15 @@ int main(int argc, char **argv, char **envp) {
 					}
 				} else {
 					// necessary for GDB, otherwise io only works with io.va=false
-					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					if (fh) {
-						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-						if (iod) {
-							perms = iod->flags;
-							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
+						// avoid connecting twice to gdb if first try fails
+						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						if (fh) {
+							iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
+							if (iod) {
+								perms = iod->flags;
+								r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
+							}
 						}
 					}
 				}
