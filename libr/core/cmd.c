@@ -2094,7 +2094,7 @@ next2:
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
-		ut64 addr;
+		ut64 addr = core->offset;
 		bool addr_is_set = false;
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
