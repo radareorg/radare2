@@ -5858,6 +5858,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog_done (core);
 				}
 				if (input[1] == 'a') { // "aaaa"
+					rowlog (core, "Check for zignature from zigns folder (z/)");
+					r_core_cmd0 (core, "z/");
 					rowlog (core, "Type matching analysis for all functions (afta)");
 					r_core_cmd0 (core, "afta");
 					rowlog_done (core);
