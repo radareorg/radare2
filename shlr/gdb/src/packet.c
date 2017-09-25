@@ -64,8 +64,8 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 					g->read_buff[g->read_len] = '\0';
 					return 0;
 				}
-				eprintf ("%s: Garbage at end of packet: %s\n",
-					 __func__, g->read_buff + i + 1);
+				eprintf ("%s: Garbage at end of packet: %s (%s)\n",
+					 __func__, g->read_buff + i + 1, g->read_buff + i + 1);
 			}
 			g->read_len = 0;
 			return 0;

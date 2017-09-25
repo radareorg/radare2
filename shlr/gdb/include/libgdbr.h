@@ -17,6 +17,7 @@ typedef unsigned int ssize_t;
 
 #define GDB_REMOTE_TYPE_GDB 0
 #define GDB_REMOTE_TYPE_LLDB 1
+#define GDB_MAX_PKTSZ 4
 
 /*!
  * Structure that saves a gdb message

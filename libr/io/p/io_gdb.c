@@ -117,7 +117,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
-		if (pid) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
+		if (pid > 0) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
 			if (gdbr_attach (desc, i_pid) < 0) {
 				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
@@ -248,7 +248,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			// pktsz = 0 doesn't make sense
 			return false;
 		}
-		desc->stub_features.pkt_sz = R_MAX (pktsz, 64); // min = 64
+		desc->stub_features.pkt_sz = R_MAX (pktsz, 8); // min = 64
 		return true;
 	}
 	if (!strncmp (cmd, "detach", 6)) {
