@@ -46,7 +46,9 @@ LDFLAGS+=../../libr/hash/libr_hash.a
 LDFLAGS+=../../libr/bin/libr_bin.a
 LDFLAGS+=../../libr/util/libr_util.a
 # extra libs #
+ifeq (1,$(WITH_GPL))
 LDFLAGS+=../../shlr/grub/libgrubfs.a
+endif
 LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
