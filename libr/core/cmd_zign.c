@@ -21,6 +21,7 @@ static const char *help_msg_z[] = {
 	"z/", "[?]", "search zignatures",
 	"zc", "", "check zignatures at address",
 	"zs", "[?]", "manage zignspaces",
+	"zi", "", "show zignatures matching information",
 	NULL
 };
 
@@ -775,6 +776,17 @@ static int cmdCheck(void *data, const char *input) {
 	return retval;
 }
 
+static int cmdInfo(void *data, const char *input) {
+	if (!data || !input) {
+		return false;
+	}
+	RCore *core = (RCore *) data;
+	r_flag_space_push (core->flags, "sign");
+	r_flag_list (core->flags, *input, input[0] ? input + 1: "");
+	r_flag_space_pop (core->flags);
+	return true;
+}
+
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
@@ -801,6 +813,8 @@ static int cmd_zign(void *data, const char *input) {
 		return cmdCheck (data, input + 1);
 	case 's':
 		return cmdSpace (data, input + 1);
+	case 'i':
+		return cmdInfo (data, input + 1);
 	case '?':
 		r_core_cmd_help (core, help_msg_z);
 		break;
