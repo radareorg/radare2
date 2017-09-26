@@ -23,8 +23,6 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
-	ut32 x;
-	int ret = 0;
 	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}

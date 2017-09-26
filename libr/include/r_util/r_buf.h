@@ -17,6 +17,7 @@ typedef struct r_buf_t {
 	bool empty;
 	bool ro; // read-only
 	int fd;
+	int Oxff;
 	RList *sparse;
 } RBuffer;
 
@@ -39,7 +40,7 @@ R_API RBuffer *r_buf_new_file(const char *file, bool newFile);
 R_API RBuffer *r_buf_new_slurp(const char *file);
 R_API RBuffer *r_buf_new_empty (ut64 len);
 R_API RBuffer *r_buf_mmap(const char *file, int flags);
-R_API RBuffer *r_buf_new_sparse(void);
+R_API RBuffer *r_buf_new_sparse(ut8 Oxff);
 R_API bool r_buf_dump (RBuffer *buf, const char *file);
 /* methods */
 R_API bool r_buf_set_bits(RBuffer *b, ut64 at, const ut8* buf, int bitoff, int count);

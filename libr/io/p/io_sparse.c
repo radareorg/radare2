@@ -69,13 +69,13 @@ static bool __plugin_open(struct r_io_t *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname,0)) {
 		RIOSparse *mal = R_NEW0 (RIOSparse);
-		int size = (int)r_num_math (NULL, pathname+9);
-		mal->buf = r_buf_new_sparse ();
+		int size = (int)r_num_math (NULL, pathname + 9);
+		mal->buf = r_buf_new_sparse (io->Oxff);
 		if (!mal->buf) {
 			free (mal);
 			return NULL;
 		}
-		if (size>0) {
+		if (size > 0) {
 			ut8 *data = malloc (size);
 			if (!data) {
 				eprintf ("Cannot allocate (%s) %d bytes\n",

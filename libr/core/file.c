@@ -211,10 +211,11 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 }
 
 #if DISCUSS
-EDITOR   r_sys_setenv ("EDITOR", r_config_get (core->config, "cfg.editor"));
+EDITOR r_sys_setenv ("EDITOR", r_config_get (core->config, "cfg.editor"));
 CURSOR cursor position (offset from curseek)
 VERBOSE cfg.verbose
 #endif
+
 R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	char *f, *ret = cmd? strdup (cmd): NULL;
 	RIODesc *desc = core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;

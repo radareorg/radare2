@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake, fenugrec */
+/* radare - LGPL - Copyright 2013-2017 - pancake, fenugrec */
 
 /*
 *** .hex format description : every line follows this pattern
@@ -89,7 +89,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			tsiz = -addl0;
 			addl0 = 0;
 			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
-				eprintf("ihex:fwblock error\n");
+				eprintf ("ihex:fwblock error\n");
 				fclose (out);
 				return -1;
 			}
@@ -177,6 +177,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	Rihex *rih = fd->data;
+	memset (buf, io->Oxff, count);
 	if (r_buf_read_at (rih->rbuf, io->off, buf, count) != count) {
 		return -1; //should never happen with a sparsebuf..
 	}
@@ -315,17 +316,16 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			}
 			sec_size = 0;
 
-			eol = strchr (str+1, ':');
+			eol = strchr (str + 1, ':');
 			if (eol) *eol = 0;
 			cksum = bc;
 			cksum += addr_tmp>>8;
 			cksum += addr_tmp;
 			cksum += type;
-			if ((bc !=2) || (addr_tmp != 0)) {
+			if ((bc != 2) || (addr_tmp != 0)) {
 				eprintf ("invalid type 02/04 record!\n");
 				goto fail;
 			}
-
 			if ((sscanf (str + 9 + 0, "%02x", &extH) !=1) ||
 				(sscanf (str + 9 + 2, "%02x", &extL) !=1)) {
 				eprintf ("unparsable data !\n");
@@ -375,13 +375,15 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *str = NULL;
 	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname + 7, NULL);
-		if (!str) return NULL;
+		if (!str) {
+			return NULL;
+		}
 		mal= R_NEW0 (Rihex);
 		if (!mal) {
 			free (str);
 			return NULL;
 		}
-		mal->rbuf = r_buf_new_sparse ();
+		mal->rbuf = r_buf_new_sparse (io->Oxff);
 		if (!mal->rbuf) {
 			free (str);
 			free (mal);
@@ -402,8 +404,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
+	if (!fd) {
+		return false;
+	}
 	Rihex *rih = fd->data;
-	return r_buf_resize (rih->rbuf, size);
+	if (rih) {
+		return r_buf_resize (rih->rbuf, size);
+	}
+	return false;
 }
 
 RIOPlugin r_io_plugin_ihex = {
