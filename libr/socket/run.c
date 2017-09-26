@@ -943,8 +943,9 @@ R_API int r_run_start(RRunProfile *p) {
 			cpu_type_t cpu;
 #if __i386__ || __x86_64__
 			cpu = CPU_TYPE_I386;
-			if (p->_bits == 64)
+			if (p->_bits == 64) {
 				cpu |= CPU_ARCH_ABI64;
+			}
 #else
 			cpu = CPU_TYPE_ANY;
 #endif

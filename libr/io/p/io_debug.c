@@ -16,14 +16,6 @@
 #endif
 
 #if DEBUGGER && DEBUGGER_SUPPORTED
-#if 0
-static void my_io_redirect (RIO *io, const char *ref, const char *file) {
-	free (io->referer);
-	io->referer = ref? strdup (ref): NULL;
-	free (io->redirect);
-	io->redirect = file? strdup (file): NULL;
-}
-#endif
 #define MAGIC_EXIT 123
 
 #include <signal.h>
@@ -260,6 +252,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		return NULL;
 	}
 	rp->_program = strdup (argv[0]);
+
 	rp->_dodebug = true;
 	if (io->runprofile && *io->runprofile) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
@@ -370,6 +363,11 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 				argv[0] = dst;
 			}
 		}
+		// XXX: this is a workaround to fix spawning programs with spaces in path
+		if (strstr (argv[0], "\\ ")) {
+			argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
+		}
+
 		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
 		handle_posix_error (ret);
 		posix_spawn_file_actions_destroy (&fileActions);
@@ -549,7 +547,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
 		file = uri;
 	}
-	if (__plugin_open (io, file,  0)) {
+	if (__plugin_open (io, file, 0)) {
 		const char *pidfile = file + 6;
 		char *endptr;
 		int pid = (int)strtol (pidfile, &endptr, 10);
@@ -575,7 +573,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
-			_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri + 1, false);
 			if (!_plugin || !_plugin->open || !_plugin->close) {
 				return NULL;
 			}
