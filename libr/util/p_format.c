@@ -1213,11 +1213,14 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 }
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
+int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0;
 	if (!f) {
 		return -1;
+	}
+	if (n >= 3) {
+		return 0;
 	}
 	char *o = strdup (f);
 	if (!o) {
@@ -1338,9 +1341,13 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			} else {
 				format = sdb_get (p->formats, structname + 1, NULL);
 			}
-			int newsize = r_print_format_struct_size (format, p, mode);
+			if (!format) {
+				eprintf ("Cannot find format for struct `%s'\n", structname + 1);
+				return 0;
+			}
+			int newsize = r_print_format_struct_size (format, p, mode, n + 1);
 			if (newsize < 1) {
-				eprintf ("Cannot find size for %s\n", format);
+				eprintf ("Cannot find size for `%s'\n", format);
 				return 0;
 			}
 			if (format && newsize > 0) {
@@ -1451,7 +1458,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		p->cb_printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
-	return r_print_format_struct_size (fmt, p, mode);
+	return r_print_format_struct_size (fmt, p, mode, 0);
 }
 
 static char* get_args_offset(const char *arg) {
@@ -1634,7 +1641,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			int fs = r_print_format_struct_size (arg, p, 0);
+			int fs = r_print_format_struct_size (arg, p, 0, idx);
 			if (fs == -2) {
 				i = -1;
 				goto beach;

@@ -590,7 +590,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						if (n < 1) {
-							n = r_print_format_struct_size (p + 1, core->print, 0);
+							n = r_print_format_struct_size (p + 1, core->print, 0, 0);
 							if (n < 1) {
 								eprintf ("Cannot resolve struct size\n");
 								n = 32; //
