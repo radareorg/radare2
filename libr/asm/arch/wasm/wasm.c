@@ -416,10 +416,9 @@ int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	op->len = 1;
 	op->op = buf[0];
+	if (op->op > 0xbf) return 1;
+	// add support for extension opcodes (SIMD + atomics)
 	WasmOpDef *opdef = &opcodes[op->op];
-	if (!opdef) {
-		return op->len;
-	}
 	switch (op->op) {
 	case WASM_OP_TRAP:
 	case WASM_OP_NOP:
@@ -606,17 +605,22 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			op->len += n;
 			for (i = 0; i < count; i++) {
 				n = read_u32_leb128 (buf + op->len, buf + buf_len, &table[i]);
-				if (!(op->len + n <= buf_len)) goto err;
+				if (!(op->len + n <= buf_len)) goto beach;
 				op->len += n;
 			}
 			n = read_u32_leb128 (buf + op->len, buf + buf_len, &def);
-			if (!(n > 0 && n + op->len < buf_len)) goto err;
+			if (!(n > 0 && n + op->len < buf_len)) goto beach;
 			op->len += n;
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d ", opdef->txt, count);
-			for (i = 0; i < count; i++) {
+			for (i = 0; i < count && strlen (op->txt) < R_ASM_BUFSIZE; i++) {
 				snprintf (op->txt + strlen (op->txt), R_ASM_BUFSIZE, "%d ", table[i]);
 			}	
 			snprintf (op->txt + strlen (op->txt), R_ASM_BUFSIZE, "%d", def);
+			free (table);
+			break;
+			beach:
+				free (table);
+				goto err;
 		}
 		break;
 	case WASM_OP_CALLINDIRECT:
