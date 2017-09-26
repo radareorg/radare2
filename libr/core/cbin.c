@@ -3011,7 +3011,7 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 				}
 				flagname = dup;
 				r_cons_printf ("pf.%s %s\n", flagname, v);
-				int fmtsize = r_print_format_struct_size (v, core->print, 0);
+				int fmtsize = r_print_format_struct_size (v, core->print, 0, 0);
 				char *offset_key = r_str_newf ("%s.offset", flagname);
 				const char *off = sdb_const_get (db, offset_key, 0);
 				free (offset_key);

@@ -957,7 +957,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			_input++;
 			val = sdb_get (core->print->formats, _input, NULL);
 			if (val != NULL) {
-				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print, mode));
+				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -966,7 +966,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				_input++;
 			}
 			if (*_input) {
-				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print, mode));
+				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -1112,51 +1112,8 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
-					char *newspace = NULL;
-					// Check for recursive struct
-					if (space && *space == '?') {
-						char* tmp = strdup (space);
-						if (!tmp) {
-							goto store_end;
-						}
-						char* opar = strchr (tmp, '(');
-						char* cpar = strchr (tmp, ')');
-						if (!opar || !cpar) {
-							free (tmp);
-							goto store_end;
-						}
-						*cpar = 0;
-						if (strcmp (opar + 1, name) == 0) {
-							eprintf ("Warning: recursive structure. Replacing input.\n");
-							newspace = strdup (space);
-							if (!newspace) {
-								free (tmp);
-								goto store_end;
-							}
-							cpar = strchr (newspace, ')');
-							if (!cpar || cpar <= newspace) {
-								free (tmp);
-								free (newspace);
-								goto store_end;
-							}
-							cpar -= 1;
-							cpar[0] = 'x';
-							cpar[1] = ' ';
-							space = strdup (cpar);
-							free (newspace);
-							if (!space) {
-								free (tmp);
-								goto store_end;
-							}
-						}
-						free (tmp);
-					}
 					sdb_set (core->print->formats, name, space, 0);
-					if (newspace) {
-						free (space);
-					}
 				}
-store_end:
 				free (name);
 				free (input);
 				return;
@@ -1175,7 +1132,7 @@ store_end:
 			const char *fmt = NULL;
 			fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt != NULL) {
-				int size = r_print_format_struct_size (fmt, core->print, mode) + 10;
+				int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
 				if (size > core->blocksize) {
 					r_core_block_size (core, size);
 				}
@@ -1203,7 +1160,7 @@ store_end:
 		/* This make sure the structure will be printed entirely */
 		char *fmt = input + 1;
 		while (*fmt && ISWHITECHAR (*fmt)) fmt++;
-		int size = r_print_format_struct_size (fmt, core->print, mode) + 10;
+		int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
 		if (size > core->blocksize) {
 			r_core_block_size (core, size);
 		}
