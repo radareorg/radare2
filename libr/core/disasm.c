@@ -766,7 +766,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 				if (core->parser->relsub_addr == 0) {
 					ut64 killme = UT64_MAX;
 					const int be = core->assembler->big_endian;
-					r_io_read_i (core->io, ds->analop.ptr, &killme, sizeof (killme), be);
+					r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
 					core->parser->relsub_addr = (int)killme;
 				}
 			}
