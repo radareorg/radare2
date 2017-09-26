@@ -1325,7 +1325,9 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 				free (structname);
 				break;
 			}
-			if (endname) *endname = '\0';
+			if (endname) {
+				*endname = '\0';
+			}
 			format = strchr (structname, ' ');
 			if (format) {
 				tmp = *format;
@@ -1336,7 +1338,14 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			} else {
 				format = sdb_get (p->formats, structname + 1, NULL);
 			}
-			size += tabsize * r_print_format_struct_size (format, p, mode);
+			int newsize = r_print_format_struct_size (format, p, mode);
+			if (newsize < 1) {
+				eprintf ("Cannot find size for %s\n", format);
+				return 0;
+			}
+			if (format && newsize > 0) {
+				size += tabsize * newsize;
+			}
 			free (structname);
 			}
 			break;

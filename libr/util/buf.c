@@ -161,6 +161,7 @@ R_API RBuffer *r_buf_new() {
 	RBuffer *b = R_NEW0 (RBuffer);
 	if (b) {
 		b->fd = -1;
+		b->Oxff = 0xff;
 	}
 	return b;
 }
@@ -498,11 +499,14 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
 		return 0;
 	}
-	if (addr == R_BUF_CUR)
+	if (addr == R_BUF_CUR) {
 		addr = b->cur;
-	else addr -= b->base;
-	if (addr == UT64_MAX || addr > b->length)
+	} else {
+		addr -= b->base;
+	}
+	if (addr == UT64_MAX || addr > b->length) {
 		return -1;
+	}
 	tsize = 2;
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
