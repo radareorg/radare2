@@ -2410,17 +2410,32 @@ R_API void r_core_visual_anal(RCore *core) {
 			}
 			break;
 		case 'r':
-			r_cons_show_cursor (true);
-			r_cons_set_raw (false);
-			r_line_set_prompt ("New name: ");
-			if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
-				if (*old) {
-					//old[strlen (old)-1] = 0;
-					function_rename (core, addr, old);
+			{
+				switch (level) {
+						r_cons_show_cursor (true);
+						r_cons_set_raw (false);
+					case 1:
+						r_line_set_prompt ("TODO: New name: ");
+						if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
+							if (*old) {
+								//old[strlen (old)-1] = 0;
+								//variable_rename (core, addr, old);
+							}
+						}
+						break;
+					default:
+						r_line_set_prompt ("New name: ");
+						if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
+							if (*old) {
+								//old[strlen (old)-1] = 0;
+								function_rename (core, addr, old);
+							}
+						}
+						break;
 				}
+				r_cons_set_raw (true);
+				r_cons_show_cursor (false);
 			}
-			r_cons_set_raw (true);
-			r_cons_show_cursor (false);
 			break;
 		case 'p':
 			printMode ++;
