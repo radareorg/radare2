@@ -235,7 +235,7 @@ R_API int r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
 		eprintf ("r_socket_spawn: %s is dead\n", cmd);
 		exit (0);
 	}
-	sleep (1);
+	r_sys_sleep (1);
 	r_sys_usleep (timeout);
 	char aport[32];
 	sprintf (aport, "%d", port);
