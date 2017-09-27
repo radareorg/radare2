@@ -36,6 +36,7 @@ files=[
 'p/io_sparse.c',
 'p/io_tcp.c',
 'p/io_windbg.c',
+'p/io_winedbg.c',
 'p/io_zip.c',
 ]
 
