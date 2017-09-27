@@ -501,6 +501,15 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	return file;
 }
 
+static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
+	if (desc) {
+		r_cons_printf ("on %s\nom-1\n", desc->uri);
+		r_cons_flush ();
+	}
+	return true;
+}
+
+
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	int fd, fdold, tmp;
@@ -541,9 +550,12 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
 	}
-	if (opts & R_CORE_PRJ_IO_MAPS) {
-		r_core_cmd (core, "om*", 0);
-		r_cons_flush ();
+	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
+		r_id_storage_foreach (core->io->files, store_files_and_maps, core);
+		if (core->io->maps) {
+			r_core_cmd (core, "om*", 0);
+			r_cons_flush ();
+		}
 	}
 	{
 		r_core_cmd (core, "fz*", 0);

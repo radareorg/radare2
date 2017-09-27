@@ -439,13 +439,14 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case 1:
 		case '*':
 		case 'r':
-			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x"\n", map->fd,
-					map->itv.addr, map->itv.size, map->delta);
+			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x"%s%s\n", map->fd,
+					map->itv.addr, map->itv.size, map->delta, map->name ? " " : "",
+					map->name ? map->name : "");
 			break;
 		default:
 			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-					map->delta, map->itv.addr, r_itv_end (map->itv),
+					map->delta, map->itv.addr, r_itv_end (map->itv) - 1,
 					r_str_rwx_i (map->flags), (map->name ? map->name : ""));
 			break;
 		}
