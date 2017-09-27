@@ -13,10 +13,10 @@
 # define R_SP "rsp"
 # define R_BP "rbp"
 # define R_AX "rax"
-# define R_GP { "rax", "rdi", "rsi", "rdx" }
-# define R_NGP 4
 # define SYSCALL_ATT "syscall"
 # define SYSCALL_INTEL "syscall"
+# define R_REG_AR_OFF 1
+static char *regs[] = { "rax", "rdi", "rsi", "rdx", "r10", "r8", "r9" };
 #else
 # define EMIT_NAME emit_x86
 # define R_ARCH "x86"
@@ -24,14 +24,13 @@
 # define R_SP "esp"
 # define R_BP "ebp"
 # define R_AX "eax"
-# define R_GP { "eax", "ebx", "ecx", "edx" }
-# define R_NGP 4
 # define SYSCALL_ATT "int $0x80"
 # define SYSCALL_INTEL "int 0x80"
+# define R_REG_AR_OFF 0
+static char *regs[] = { "eax", "ebx", "ecx", "edx" };
 #endif
 
-static char *regs[] = R_GP;
-static int regs_count = R_NGP;
+# define R_NGP (sizeof (regs)/sizeof (char *))
 
 static void emit_init (REgg *egg) {
 // TODO: add 'andb rsp, 0xf0'
@@ -112,7 +111,7 @@ static void emit_equ (REgg *egg, const char *key, const char *value) {
 }
 
 static const char *getreg(int i) {
-	if (i < 0 || i >= regs_count) {
+	if (i < 0 || i >= R_NGP) {
 		return NULL;
 	}
 	return regs[i];
@@ -225,7 +224,21 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 		str = str +1;
 	switch (xs) {
 	case 0:
+#ifdef ARCH_X86_64
+		/*	push imm64 instruction not exist, it´s translated to:
+			mov rax, 0x0102030405060708	
+			push rax
+		*/
+		if (attsyntax) {
+			r_egg_printf (egg, "  mov %s, %%"R_AX "\n", str);
+			r_egg_printf (egg, "  push %%"R_AX "\n");
+		} else {
+			r_egg_printf (egg, "  mov "R_AX ", %s\n", str);
+			r_egg_printf (egg, "  push "R_AX "\n");
+		}
+#else
 		r_egg_printf (egg, "  push %s\n", str);
+#endif
 		break;
 	case '*':
 		if (attsyntax) r_egg_printf (egg, "  push (%s)\n", str);
@@ -436,6 +449,12 @@ static const char* emit_regs(REgg *egg, int idx) {
 	return regs[idx%R_NGP];
 }
 
+static void emit_get_ar (REgg *egg, char *out, int idx) {
+	const char *reg = emit_regs (egg, R_REG_AR_OFF + idx);
+
+	if (reg) strcpy (out, reg);
+}
+
 REggEmit EMIT_NAME = {
 	.retvar = R_AX,
 	.arch = R_ARCH,
@@ -455,6 +474,7 @@ REggEmit EMIT_NAME = {
 	.get_result = emit_get_result,
 	.syscall_args = emit_syscall_args,
 	.set_string = emit_string,
+	.get_ar = emit_get_ar,
 	.get_var = emit_get_var,
 	.while_end = emit_while_end,
 	.get_while_end = emit_get_while_end,

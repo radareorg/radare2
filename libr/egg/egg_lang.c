@@ -556,7 +556,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 }
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
-	int i, idx, len, qi;
+	int i, len, qi;
 	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
 
 	delta += stackfixed;	// XXX can be problematic
@@ -581,20 +581,27 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
-		idx = atoi (str + 4) + delta + e->size;
 		if (!strncmp (str + 1, "ret", 3)) {
 			strcpy (out, e->retvar);
 		} else if (!strncmp (str + 1, "fix", 3)) {
+			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - stackfixed);
 			// sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ-stackfixed));
 		} else if (!strncmp (str + 1, "var", 3)) {
+			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
 			// sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ));
+		} else if (!strncmp (str + 1, "rarg", 4)) {
+			if (e->get_ar) {
+				int idx = (int)r_num_math (NULL, str + 5);
+				e->get_ar (egg, out, idx);
+			}
 		} else if (!strncmp (str + 1, "arg", 3)) {
 			if (str[4]) {
 				if (stackframe == 0) {
 					e->get_var (egg, 1, out, 4);	// idx-4);
 				} else {
+					int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 					e->get_var (egg, 2, out, idx + 4);
 				}
 			} else {
@@ -708,10 +715,12 @@ static void rcc_fun(REgg *egg, const char *str) {
 				dstval = malloc (4096);
 			} else if (strstr (ptr, "naked")) {
 				mode = NAKED;
+				/*
 				free (dstvar);
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 				ndstval = 0;
+				*/
 				r_egg_printf (egg, "%s:\n", str);
 			} else if (strstr (ptr, "inline")) {
 				mode = INLINE;
@@ -1150,16 +1159,16 @@ static void rcc_next(REgg *egg) {
 
 		/* store result of call */
 		if (dstvar) {
-			if (mode != NAKED) {
-				*buf = 0;
-				free (str);
-				str = r_egg_mkvar (egg, buf, dstvar, 0);
-				if (*buf == 0) {
-					eprintf ("Cannot resolve variable '%s'\n", dstvar);
-				} else {
-					e->get_result (egg, buf);
-				}
+			//if (mode != NAKED) {
+			*buf = 0;
+			free (str);
+			str = r_egg_mkvar (egg, buf, dstvar, 0);
+			if (*buf == 0) {
+				eprintf ("Cannot resolve variable '%s'\n", dstvar);
+			} else {
+				e->get_result (egg, buf);
 			}
+			//}
 			R_FREE (dstvar);
 		}
 		rcc_reset_callname ();
