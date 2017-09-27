@@ -556,7 +556,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 }
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
-	int i, idx, len, qi;
+	int i, len, qi;
 	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
 
 	delta += stackfixed;	// XXX can be problematic
@@ -582,19 +582,18 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
 		if (!strncmp (str + 1, "ret", 3)) {
-			idx = atoi (str + 4) + delta + e->size;
 			strcpy (out, e->retvar);
 		} else if (!strncmp (str + 1, "fix", 3)) {
-			idx = atoi (str + 4) + delta + e->size;
+			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - stackfixed);
 			// sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ-stackfixed));
 		} else if (!strncmp (str + 1, "var", 3)) {
-			idx = atoi (str + 4) + delta + e->size;
+			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
 			// sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ));
 		} else if (!strncmp (str + 1, "rarg", 4)) {
 			if (e->get_ar) {
-				idx = atoi (str + 5);
+				int idx = (int)r_num_math (NULL, str + 5);
 				e->get_ar (egg, out, idx);
 			}
 		} else if (!strncmp (str + 1, "arg", 3)) {
@@ -602,7 +601,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				if (stackframe == 0) {
 					e->get_var (egg, 1, out, 4);	// idx-4);
 				} else {
-					idx = atoi (str + 4) + delta + e->size;
+					int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 					e->get_var (egg, 2, out, idx + 4);
 				}
 			} else {
