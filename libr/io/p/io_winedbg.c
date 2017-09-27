@@ -204,17 +204,17 @@ const char *msg =
 "seg	fs	.16	8	0\n"\
 "seg	gs	.16	10	0\n"\
 
-"seg	eip	.32	12	0\n"\
-"seg	esp	.32	16	0\n"\
-"seg	ebp	.32	20	0\n"\
-"seg	eflags	.32	24	0\n"\
+"gpr	eip	.32	12	0\n"\
+"gpr	esp	.32	16	0\n"\
+"gpr	ebp	.32	20	0\n"\
+"gpr	eflags	.32	24	0\n"\
 
-"seg	eax	.32	28	0\n"\
-"seg	ebx	.32	32	0\n"\
-"seg	ecx	.32	36	0\n"\
-"seg	edx	.32	40	0\n"\
-"seg	esi	.32	44	0\n"\
-"seg	edi	.32	48	0\n"\
+"gpr	eax	.32	28	0\n"\
+"gpr	ebx	.32	32	0\n"\
+"gpr	ecx	.32	36	0\n"\
+"gpr	edx	.32	40	0\n"\
+"gpr	esi	.32	44	0\n"\
+"gpr	edi	.32	48	0\n"\
 
 "flg	flags	.16	24	0\n"\
 "flg	cf	.1	.192	0\n"\

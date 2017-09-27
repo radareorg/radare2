@@ -6,13 +6,11 @@
 
 static int __io_step(RDebug *dbg) {
 	dbg->iob.system (dbg->iob.io, "ds");
-	r_cons_reset ();
-	return 0;
+	return true;
 }
 
 static int __io_step_over(RDebug *dbg) {
 	dbg->iob.system (dbg->iob.io, "dso");
-	r_cons_reset ();
 	return true;
 }
 
@@ -92,10 +90,11 @@ static char *__io_reg_profile(RDebug *dbg) {
 }
 
 // "dr8" read register state
-static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	dbg->iob.system (dbg->iob.io, "dr8");
 	const char *fb = r_cons_get_buffer ();
 	if (!fb || !*fb) {
+		eprintf ("debug.io: Failed to get dr8 from io\n");
 		return -1;
 	}
 	char *regs = strdup (fb);
@@ -105,6 +104,7 @@ static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return -1;
 	}
 	r_cons_reset ();
+	r_str_chop (bregs);
 	int sz = r_hex_str2bin (regs, bregs);
 	if (sz > 0) {
 		memcpy (buf, bregs, R_MIN (size, sz));
@@ -112,7 +112,7 @@ static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		free (regs);
 		return size;
 	} else {
-		eprintf ("SIZE %d (%s)\n", sz, regs);
+		// eprintf ("SIZE %d (%s)\n", sz, regs);
 	}
 	free (bregs);
 	free (regs);
@@ -143,11 +143,12 @@ RDebugPlugin r_debug_plugin_io = {
 	.map_get = __io_maps,
 	.attach = &__io_attach,
 	.wait = &__io_wait,
-	.reg_read = __io_read,
+	.reg_read = __reg_read,
 	.cont = __io_continue,
 	.kill = __io_kill,
 	.reg_profile = __io_reg_profile,
 	.step_over = __io_step_over,
+	.canstep = 1,
 #if 0
 	.init = __esil_init,
 	.contsc = __esil_continue_syscall,

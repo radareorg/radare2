@@ -1478,6 +1478,10 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 }
 
 R_API bool r_debug_is_dead (RDebug *dbg) {
+	// workaround for debug.io.. should be generic
+	if (!strcmp (dbg->h->name, "io")) {
+		return false;
+	}
 	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
 	if (dbg->pid > 0) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
