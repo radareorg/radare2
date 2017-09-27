@@ -209,7 +209,8 @@ io = [
 	'shm',
 	'sparse',
 	'tcp',
-	'windbg'
+	'windbg',
+	'winedbg'
 ]
 if host_os == 'windows'
 io += [
