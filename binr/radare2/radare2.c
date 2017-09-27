@@ -314,7 +314,7 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 		}
 		ret = r_core_run_script (&r, file);
 		if (ret == -2) {
-			eprintf ("Cannot open '%s'\n", file);
+			eprintf ("[c] Cannot open '%s'\n", file);
 		}
 		if (ret < 0 || (ret == 0 && quiet)) {
 			r_cons_flush ();
@@ -804,7 +804,7 @@ int main(int argc, char **argv, char **envp) {
 			return 1;
 		}
 		if (chdir (argv[optind])) {
-			eprintf ("Cannot open directory\n");
+			eprintf ("[d] Cannot open directory\n");
 			return 1;
 		}
 	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
@@ -819,7 +819,7 @@ int main(int argc, char **argv, char **envp) {
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
-				eprintf ("Cannot open '%s'\n", path);
+				eprintf ("[=] Cannot open '%s'\n", path);
 				return 1;
 			}
 			r_io_write_at (r.io, 0, buf, sz);
@@ -1010,7 +1010,9 @@ int main(int argc, char **argv, char **envp) {
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
 					if (pfile) {
-						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						if (!fh) {
+							fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						}
 						// run_anal = 0;
 						run_anal = -1;
 					} else {
@@ -1020,7 +1022,10 @@ int main(int argc, char **argv, char **envp) {
 					// necessary for GDB, otherwise io only works with io.va=false
 					if (fh) {
 						// avoid connecting twice to gdb if first try fails
-						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						RCoreFile *f = r_core_file_open (&r, pfile, perms, mapaddr);
+						if (f) {
+							fh = f;
+						}
 						if (fh) {
 							iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 							if (iod) {
@@ -1032,7 +1037,10 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 		} else {
-			fh = r_core_file_open (&r, pfile, perms, mapaddr);
+			RCoreFile *f = r_core_file_open (&r, pfile, perms, mapaddr);
+			if (f) {
+				fh = f;
+			}
 			if (fh) {
 				r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
 			}
@@ -1066,9 +1074,9 @@ int main(int argc, char **argv, char **envp) {
 			if (pfile && *pfile) {
 				r_cons_flush ();
 				if (perms & R_IO_WRITE) {
-					eprintf ("Cannot open '%s' for writing.\n", pfile);
+					eprintf ("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
-					eprintf ("Cannot open '%s'\n", pfile);
+					eprintf ("[r] Cannot open '%s'\n", pfile);
 				}
 			} else {
 				eprintf ("Missing file to open\n");
@@ -1251,7 +1259,7 @@ int main(int argc, char **argv, char **envp) {
 			r_core_seek (&r, 0, 1);
 			free (data);
 		} else {
-			eprintf ("Cannot open '%s'\n", patchfile);
+			eprintf ("[p] Cannot open '%s'\n", patchfile);
 		}
 	}
 	if ((patchfile && !quiet) || !patchfile) {

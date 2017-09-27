@@ -134,7 +134,6 @@ static void printcmd (RIO *io, const char *cmd) {
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-eprintf ("-> (%s)\n", cmd);
 	if (!strncmp (cmd, "?", 1)) {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
@@ -198,6 +197,7 @@ RIOPlugin r_io_plugin_winedbg = {
 	.lseek = __lseek,
 	.write = __write,
 	.system = __system,
+	.isdbg = true
 };
 
 #ifndef CORELIB

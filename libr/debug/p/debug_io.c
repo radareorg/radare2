@@ -94,7 +94,11 @@ static char *__io_reg_profile(RDebug *dbg) {
 // "dr8" read register state
 static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	dbg->iob.system (dbg->iob.io, "dr8");
-	char *regs = strdup (r_cons_get_buffer ());
+	const char *fb = r_cons_get_buffer ();
+	if (!fb || !*fb) {
+		return -1;
+	}
+	char *regs = strdup (fb);
 	ut8 *bregs = calloc (1, strlen (regs));
 	if (!bregs) {
 		free (regs);
