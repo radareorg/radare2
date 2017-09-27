@@ -133,6 +133,36 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
+struct winedbg_x86_32 { // __attribute__((__packed__)) {
+	ut16 cs, ss, ds, es, fs, gs;
+	ut32 eip, esp, ebp, eflags;
+	ut32 eax, ebx, ecx, edx;
+	ut32 esi, edi;
+};
+
+static struct winedbg_x86_32 regState() {
+	struct winedbg_x86_32 r = {0};
+	char *res = runcmd ("info reg");
+	if (res) {
+		char *line = strstr (res, "EIP:");
+		if (line) {
+			(void)sscanf (line, "EIP:%08x ESP:%08x EBP:%08x EFLAGS:%08x",
+				&r.eip, &r.esp, &r.ebp, &r.eflags);
+			line = strstr (line, "EAX:");
+			if (line) {
+				(void)sscanf (line, "EAX:%08x EBX:%08x ECX:%08x EDX:%08x",
+					&r.eax, &r.ebx, &r.ecx, &r.edx);
+				line = strstr (line, "ESI:");
+				if (line) {
+					(void)sscanf (line, "ESI:%08x EDI:%08x", &r.esi, &r.edi);
+				}
+			}
+		}
+		free (res);
+	}
+	return r;
+}
+
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "?", 1)) {
 		eprintf ("dr  : show registers\n");
@@ -145,8 +175,61 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("dm  : show maps\n");
 		eprintf ("pid : show current process id\n");
 		return 0;
+	} else if (!strncmp (cmd, "dr8", 3)) {
+		struct winedbg_x86_32 r = regState ();
+		ut8 *arena = (ut8*)calloc (sizeof (struct winedbg_x86_32), 3);
+		if (!arena) {
+			return 0;
+		}
+		r_hex_bin2str (&r, sizeof (r), arena);
+		io->cb_printf ("%s\n", arena);
+		free (arena);
 	} else if (!strncmp (cmd, "drp", 3)) {
-		eprintf ("TODO: drp\n");
+const char *msg =
+"=PC	eip\n"\
+"=SP	esp\n"\
+"=BP	ebp\n"\
+"=A0	eax\n"\
+"=A1	ebx\n"\
+"=A2	ecx\n"\
+"=A3	edx\n"\
+"=A4	esi\n"\
+"=A5	edi\n"\
+"=SN	eax\n"\
+
+"seg	cs	.16	0	0\n"\
+"seg	ss	.16	2	0\n"\
+"seg	ds	.16	4	0\n"\
+"seg	es	.16	6	0\n"\
+"seg	fs	.16	8	0\n"\
+"seg	gs	.16	10	0\n"\
+
+"seg	eip	.32	12	0\n"\
+"seg	esp	.32	16	0\n"\
+"seg	ebp	.32	20	0\n"\
+"seg	eflags	.32	24	0\n"\
+
+"seg	eax	.32	28	0\n"\
+"seg	ebx	.32	32	0\n"\
+"seg	ecx	.32	36	0\n"\
+"seg	edx	.32	40	0\n"\
+"seg	esi	.32	44	0\n"\
+"seg	edi	.32	48	0\n"\
+
+"flg	flags	.16	24	0\n"\
+"flg	cf	.1	.192	0\n"\
+"flg	pf	.1	.193	0\n"\
+"flg	af	.1	.194	0\n"\
+"flg	zf	.1	.195	0\n"\
+"flg	sf	.1	.196	0\n"\
+"flg	tf	.1	.197	0\n"\
+"flg	if	.1	.198	0\n"\
+"flg	df	.1	.199	0\n"\
+"flg	of	.1	.200	0\n"\
+"flg	nt	.1	.201	0\n"\
+"flg	rf	.1	.202	0\n"\
+"flg	vm	.1	.203	0\n";
+		io->cb_printf ("%s", msg);
 		return 0;
 	} else if (!strncmp (cmd, "dr", 2)) {
 		printcmd (io, "info reg");
@@ -168,9 +251,6 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		return 0;
 	} else if (!strncmp (cmd, "dm", 3)) {
 		printcmd (io, "info maps");
-		return 0;
-	} else if (!strncmp (cmd, "dr8", 3)) {
-		eprintf ("TODO: dr8\n");
 		return 0;
 	} else if (!strncmp (cmd, "pid", 3)) {
 		int pid = fd->fd;
