@@ -2747,25 +2747,23 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	ut8 *data = ao->buf;
 	char op[128];
 	LookupTable *lt_ptr;
-	int retval;
+	int retval = -1;
+	Opcode instr = {0};
+
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
-
-	Opcode instr = {0};
 	parseOpcode (a, op, &instr);
-
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
 		if (!strcasecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
-				if (lt_ptr->only_x32 && a->bits == 64) {
-					return -1;
+				if (!lt_ptr->only_x32 || a->bits != 64) {
+					ut8 *ptr = (ut8 *)&lt_ptr->opcode;
+					int i = 0;
+					for (; i < lt_ptr->size; i++) {
+						data[i] = ptr[lt_ptr->size - (i + 1)];
+					}
+					retval = lt_ptr->size;
 				}
-				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
-				int i = 0;
-				for (; i < lt_ptr->size; i++) {
-					data[i] = ptr[lt_ptr->size - (i + 1)];
-				}
-				return lt_ptr->size;
 			} else {
 				if (lt_ptr->opdo) {
 					if (instr.has_bnd) {
@@ -2778,14 +2776,13 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					if (instr.has_bnd) {
 						retval++;
 					}
-					return retval;
 				}
-				break;
 			}
+			break;
 		}
 	}
 	free (instr.mnemonic);
-	return -1;
+	return retval;
 }
 
 RAsmPlugin r_asm_plugin_x86_nz = {
