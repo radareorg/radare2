@@ -2156,6 +2156,31 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 	}
 }
 
+static void variable_rename (RCore *core, ut64 addr, int vindex, const char *name) {
+	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	ut64 a_tmp = core->offset;
+	int i = 0;
+	RListIter *iter;
+	// arguments.
+	RList* list2 = r_anal_var_list (core->anal, fcn, true);
+	// variables.
+	RList* list = r_anal_var_list (core->anal, fcn, false);
+	r_list_join (list, list2);
+	RAnalVar* var;
+
+	r_list_foreach (list, iter, var) {
+		if (i == vindex) {
+			r_core_seek (core, addr, false);
+			r_core_cmd_strf (core, "afvn %s %s", var->name, name);
+			r_core_seek (core, a_tmp, false);
+			break;
+		}
+		++i;
+	}
+	r_list_free (list);
+	r_list_free (list2);
+}
+
 // In visual mode, display function list
 static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int wdelta = (idx > 5)? idx - 5: 0;
@@ -2415,11 +2440,11 @@ R_API void r_core_visual_anal(RCore *core) {
 						r_cons_show_cursor (true);
 						r_cons_set_raw (false);
 					case 1:
-						r_line_set_prompt ("TODO: New name: ");
+						r_line_set_prompt ("New name: ");
 						if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
 							if (*old) {
 								//old[strlen (old)-1] = 0;
-								//variable_rename (core, addr, old);
+								variable_rename (core, addr, variable_option, old);
 							}
 						}
 						break;
