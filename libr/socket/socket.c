@@ -43,6 +43,9 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	return false;
 }
+R_API int r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
+	return -1;
+}
 R_API int r_socket_close_fd (RSocket *s) {
 	return -1;
 }
@@ -209,6 +212,35 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	}
 #endif
 	return s;
+}
+
+R_API int r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
+	// XXX TODO: dont use sockets, we can achieve the same with pipes
+	const int port = 2000 + r_num_rand (2000);
+	int childPid = r_sys_fork();
+	if (childPid == 0) {
+		char *a = r_str_replace (strdup (cmd), "\\", "\\\\", true);
+		r_sys_cmdf ("rarun2 system=\"%s\" listen=%d", a, port);
+		free (a);
+#if 0
+		// TODO: use the api
+		char *profile = r_str_newf (
+				"system=%s\n"
+				"listen=%d\n", cmd, port);
+		RRunProfile *rp = r_run_new (profile);
+		r_run_start (rp);
+		r_run_free (rp);
+		free (profile);
+#endif
+		eprintf ("r_socket_spawn: %s is dead\n", cmd);
+		exit (0);
+	}
+	sleep (1);
+	r_sys_usleep (timeout);
+	char aport[32];
+	sprintf (aport, "%d", port);
+	// redirect stdin/stdout/stderr
+	return r_socket_connect (s, "127.0.0.1", aport, R_SOCKET_PROTO_TCP, 2000);
 }
 
 R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
@@ -620,8 +652,9 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	FD_SET (s->fd, &rfds);
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
-	if (select (s->fd+1, &rfds, NULL, NULL, &tv) == -1)
+	if (select (s->fd + 1, &rfds, NULL, NULL, &tv) == -1) {
 		return -1;
+	}
 	return FD_ISSET (0, &rfds);
 #endif
 #else
@@ -675,15 +708,16 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 			ret = send (s->fd, (char *)buf+delta, b, 0);
 		}
 		//if (ret == 0) return -1;
-		if (ret<1) break;
-		if (ret == len)
+		if (ret < 1) {
+			break;
+		}
+		if (ret == len) {
 			return len;
+		}
 		delta += ret;
 		len -= ret;
 	}
-	if (ret == -1)
-		return -1;
-	return delta;
+	return (ret == -1)? -1 : delta;
 }
 
 R_API int r_socket_puts(RSocket *s, char *buf) {

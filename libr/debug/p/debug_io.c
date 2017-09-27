@@ -19,7 +19,11 @@ static int __io_step_over(RDebug *dbg) {
 static RList *__io_maps(RDebug *dbg) {
 	RList *list = r_list_new ();
 	dbg->iob.system (dbg->iob.io, "dm");
-	char *ostr, *str = strdup (r_cons_get_buffer ());
+	const char *consdata = r_cons_get_buffer ();
+	if (!consdata) {
+		return NULL;
+	}
+	char *ostr, *str = strdup (consdata);
 	ut64 map_start, map_end;
 	char perm[32];
 	char name[512];

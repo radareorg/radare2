@@ -813,13 +813,13 @@ int main(int argc, char **argv, char **envp) {
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
 		close (0);
 		if (buf && sz > 0) {
-			char path[1024];
+			char path[128];
 			snprintf (path, sizeof (path) - 1, "malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
-				eprintf ("Cannot open %s\n", path);
+				eprintf ("Cannot open '%s'\n", path);
 				return 1;
 			}
 			r_io_write_at (r.io, 0, buf, sz);
