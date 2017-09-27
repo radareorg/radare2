@@ -2198,9 +2198,9 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RListIter *iter;
 	// arguments.
-	RList* list2 = r_anal_var_list (core->anal, fcn, 'v');
+	RList* list2 = r_anal_var_list (core->anal, fcn, true);
 	// variables.
-	RList* list = r_anal_var_list (core->anal, fcn, 'a');
+	RList* list = r_anal_var_list (core->anal, fcn, false);
 	r_list_join (list, list2);
 	RAnalVar* var;
 	// Adjust the window size automatically.
