@@ -50,8 +50,10 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 					eprintf ("r_debug_reg: error writing "
 						"registers %d to %d\n", i, dbg->tid);
 				}
+				free (buf);
 				return false;
 			}
+			free (buf);
 		} else {
 			// int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
