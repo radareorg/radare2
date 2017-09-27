@@ -5290,6 +5290,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
 	const char *arg;
+	bool scrnull = r_config_get_i (core->config, "scr.null");
 	switch (input[0]) {
 	case 'f': // "agf"
 		if (input[1] == 't') { // "agft" - tiny graph
@@ -5362,6 +5363,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "agj"
+		r_config_set (core->config, "scr.null", "true");
+		r_core_cmd0 (core, "agf");
+		if (!scrnull) {
+			r_config_set (core->config, "scr.null", "false");
+		}
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
 		break;
 	case 'k': // "agk"
