@@ -2190,7 +2190,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 }
 
 // In visual mode, display the variables.
-static ut64 var_variables_show(RCore* core, int idx, int show) {
+static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 	int i = 0;
 	const ut64 addr = var_functions_show (core, idx, 0);
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
@@ -2210,6 +2210,11 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 	// A new line so this looks reasonable.
 	r_cons_newline ();
 
+	int llen = r_list_length (list);
+	if (*vindex >= llen) {
+		*vindex = llen - 1;
+	}
+
 	r_list_foreach (list, iter, var) {
 		if (i >= wdelta) {
 			if (i > window + wdelta) {
@@ -2217,7 +2222,8 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 				break;
 			}
 			if (show) {
-				r_cons_printf ("%s %s %s @ %s%s0x%x\n",
+				r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
+						i == *vindex ? "* ":"",
 						var->kind=='v'?"var":"arg",
 						var->type, var->name,
 						core->anal->reg->name[R_REG_NAME_BP],
@@ -2235,6 +2241,7 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 static int level = 0;
 static ut64 addr = 0;
 static int option = 0;
+static int variable_option = 0;
 static int printMode = 0;
 #define lastPrintMode 5
 
@@ -2304,7 +2311,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			"(a) add     (x)xrefs  \n"
 			"(r) rename  (g)go     \n"
 			"(d) delete  (q)quit   \n", addr);
-		addr = var_variables_show (core, option, 1);
+		addr = var_variables_show (core, option, &variable_option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
@@ -2437,13 +2444,31 @@ R_API void r_core_visual_anal(RCore *core) {
 			break;
 		case 'x': level = 3; break;
 		case 'c': level = 2; break;
-		case 'v': level = 1; break;
+		case 'v': level = 1; variable_option = 0; break;
 		case 'j':
-			option++;
-			if (option >= nfcns) --option;
+			{
+				switch (level) {
+					case 1:
+						variable_option++;
+						break;
+					default:
+						option++;
+						if (option >= nfcns) --option;
+				}
+			}
 			break;
 		case 'k':
-			option = (option<=0)? 0: option-1;
+			{
+				switch (level) {
+					case 1:
+						variable_option = (variable_option<=0)? 0: variable_option-1;
+						break;
+					default:
+						option = (option<=0)? 0: option-1;
+						break;
+				}
+			}
+
 			break;
 		case 'J':
 			{
