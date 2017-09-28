@@ -374,7 +374,11 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 			return;
 		}
 	}
-	str = r_str_escape (d->str);
+	if (d->type == 's') {
+		str = r_str_escape_latin1 (d->str, false, true);
+	} else {
+		str = r_str_escape (d->str);
+	}
 	if (str || d->type == 'd') {
 		if (d->type=='s' && !*str) {
 			free (str);
@@ -382,6 +386,8 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 		}
 		if (!str) {
 			pstr = "";
+		} else if (d->type == 's') {
+			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
