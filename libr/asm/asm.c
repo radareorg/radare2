@@ -655,6 +655,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
+	ht_free (a->flags);
 	if (!(a->flags = ht_new (dup_val, flag_free_kv, NULL))) {
 		return NULL;
 	}
