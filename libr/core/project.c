@@ -513,6 +513,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 
 static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	if (desc) {
+		// FIXME: File paths should be absolute.
 		r_cons_printf ("on %s\n"
 			       "om-1\n", desc->uri);
 	}
@@ -569,6 +570,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 		if (core->io->maps) {
 			r_core_cmd (core, "om*", 0);
 		}
+		// FIXME: Work around to override default -r--.
+		r_cons_printf ("omfg+x\n");
 		r_cons_flush ();
 	}
 	{

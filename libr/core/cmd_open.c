@@ -994,7 +994,9 @@ static int cmd_open(void *data, const char *input) {
 				if (fn && *fn) {
 					file = r_core_file_open (core, fn, perms, ma);
 					if (file) {
-						r_cons_printf ("%d\n", (ut32)file->fd);
+						// FIXME: on is used in project file to load files, and printing the fd is noisy.
+						if (!isn)
+							r_cons_printf ("%d\n", (ut32)file->fd);
 						// MUST CLEAN BEFORE LOADING
 						if (isn) {
 							RIODesc *d = r_io_desc_get (core->io, file->fd);
