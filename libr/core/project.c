@@ -382,6 +382,10 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		free (prj);
 		return false;
 	}
+
+	if (!filepath[0]) {
+		goto cookiefactory;
+	}
 	if (!strstr (filepath, "://")) {
 		/* check if path exists */
 		if (!r_file_exists (filepath)) {
@@ -391,6 +395,8 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 			return false;
 		}
 	}
+ cookiefactory:
+	;
 	const char *file_path = r_config_get (core->config, "file.path");
 	if (!file_path || !*file_path) {
 		file_path = r_config_get (core->config, "file.lastpath");
@@ -420,17 +426,19 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		r_bin_file_delete_all (core->bin);
 		// open new file
 		// TODO: handle read/read-write mode
-		// TODO: handle mapaddr (io.maps are not saved in projects yet)
 		r_io_desc_init (core->io);
-		fh = r_core_file_open (core, filepath, 0, 0);
-		if (!fh) {
-			eprintf ("Cannot open file '%s'\n", filepath);
-			ret = false;
-			goto beach;
+		if (filepath[0]) {
+			/* Old-style project without embedded on commands to open all files.  */
+			fh = r_core_file_open (core, filepath, 0, 0);
+			if (!fh) {
+				eprintf ("Cannot open file '%s'\n", filepath);
+				ret = false;
+				goto beach;
+			}
 		}
 	}
 
-	if (close_current_session && r_config_get_i (core->config, "file.info")) {
+	if (filepath[0] && close_current_session && r_config_get_i (core->config, "file.info")) {
 		mapaddr = r_config_get_i (core->config, "file.offset");
 		(void)r_core_bin_load (core, filepath, mapaddr? mapaddr: UT64_MAX);
 	}
@@ -441,12 +449,14 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		/* load sdb stuff in here */
 		ret = r_core_project_load (core, prjfile, prj);
 	}
-	newbin = r_config_get (core->config, "file.path");
-	if (!newbin || !*newbin) {
-		newbin = r_config_get (core->config, "file.lastpath");
-	}
-	if (strcmp (oldbin, newbin)) {
-		eprintf ("WARNING: file.path changed: %s => %s\n", oldbin, newbin);
+	if (filepath[0]) {
+		newbin = r_config_get (core->config, "file.path");
+		if (!newbin || !*newbin) {
+			newbin = r_config_get (core->config, "file.lastpath");
+		}
+		if (strcmp (oldbin, newbin)) {
+			eprintf ("WARNING: file.path changed: %s => %s\n", oldbin, newbin);
+		}
 	}
 beach:
 	free (oldbin);
@@ -503,8 +513,8 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 
 static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	if (desc) {
-		r_cons_printf ("on %s\nom-1\n", desc->uri);
-		r_cons_flush ();
+		r_cons_printf ("on %s\n"
+			       "om-1\n", desc->uri);
 	}
 	return true;
 }
@@ -545,6 +555,10 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 		core->flags->space_idx = tmp;
 		r_cons_flush ();
 	}
+	// Set file.path and file.lastpath to empty string to signal
+	// new behaviour to project load routine (see io maps below).
+	r_config_set (core->config, "file.path", "");
+	r_config_set (core->config, "file.lastpath", "");
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
 		r_config_list (core->config, NULL, true);
@@ -554,8 +568,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 		r_id_storage_foreach (core->io->files, store_files_and_maps, core);
 		if (core->io->maps) {
 			r_core_cmd (core, "om*", 0);
-			r_cons_flush ();
 		}
+		r_cons_flush ();
 	}
 	{
 		r_core_cmd (core, "fz*", 0);
