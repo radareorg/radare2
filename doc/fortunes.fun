@@ -1,5 +1,4 @@
 No disassemble!!!
-Everytime you run radare2, a random file is removed :)
 Deltify your life with radare2
 In soviet russia, radare2 debugs you!
 What do you want to debug today?
@@ -15,7 +14,7 @@ radare2 is for lulzhats
 Microloft Visual Radare.NET 2008. Now OOXML Powered!
 A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
 radare2 is like windows 7 but even better.
-Excellent; we can attack in any direction!
+We are surrounded by the enemy. - Excellent, we can attack in any direction!
 radare2 build farm beats the facebook one.
 Thank you for using radare2. Have a nice night!
 Your r2 was built 20h ago. TOO OLD!
@@ -73,7 +72,7 @@ How about a nice game of chess?
 THE ONLY WINNING MOVE IS NOT TO PLAY.
 SHALL WE PLAY A GAME?
 Sudo make me a pancake.
-I nodejs so hard my exams.What a nodejs!
+I nodejs so hard my exams. What a nodejs!
 Now featuring NoSQL!
 One does not simply write documentation.
 We are bleeding edge here. Can't you feel the razors?
@@ -84,7 +83,6 @@ This should be documented, since it's not that obvious.
 It's working! Look at the door!
 This is an unacceptable milion year dungeon.
 The Hard ROP Cafe
-Please remove pregnant women, pregnant children, and pregnant pets from the monitor.
 Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
 Well this is embarrasing ...
@@ -156,14 +154,14 @@ Are you still there?
 Follow the white rabbit
 Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: there is no binary.
 Hello Mr. Anderson
-try pressing the pigeon-shaped button
+Try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
 What about taking a break? Here, have this nice 0xCC.
 r2 is meant to be read by machines.
-prove you are a robot to continue ...
+Prove you are a robot to continue ...
 This is fine.
 Using radare2 to generate intelligence ...
-taking the file and moving it
+Taking the file and moving it somewhere else
 It's the year of desktop on radare2
 💺
 It's the year of radare2 on the desktop
@@ -193,12 +191,12 @@ There is no F5 key in radare2 yet
 Did you know that r2 is 10 years old?
 Beer in mind.
 r2 -- leading options since 2006
-don’t feed the bugs! (except delicious stacktraces)!
-feed the bugs!
+Don’t feed the bugs! (except delicious stacktraces)!
+Feed the bugs!
 You haxor! Me jane?
 r2 talks to you. tries to make you feel well.
-now i'm like an evil engineer. MUAHAHAH
-we only have bugs, features are an unintended side-effect
+Now i'm like an evil engineer. MUAHAHAH
+We only have bugs, features are an unintended side-effect
 There are 5 minutes from WTF to FIX in r2land
 Quantum dissasemble: it's there as long as you don't observe it
 Ceci n'est pas une r2pipe
@@ -230,4 +228,3 @@ Buy a Mac
 You have been designated for disassembly
 Helping siol merge? No way, that would be like.. way too much not lazy. - vifino
 What is the most complex r2 command? q - then you have to deal with real life /o\
-radare2: showing how the sausage is made... in vivid, gory detail

@@ -1,9 +1,10 @@
-Disassembly not pretty enough? Try changing the values with 'e asm.'
-Have you setup your ~/.radare2rc today?
+Tweak the disassembly output with `e asm.`
+Add custom Have you setup your ~/.radare2rc today?
+In visual mode press 'c' to toggle the cursor mode. Use tab to navigate
 You can mark an offset in visual mode with the cursor and the ',' key. Later press '.' to go back
 You can debug a program from the graph view ('ag') using standard radare2 commands
 Use the '[' and ']' keys in visual mode to adjust the screen width
-Choose your architecture by typing: 'e asm.arch=<arch>'
+Select your architecture with: 'e asm.arch=<arch>' or r2 -a from the shell
 Move between your search hits in visual mode using the 'f' and 'F' keys
 Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
 Enable asm.trace to see the tracing information inside the disassembly
