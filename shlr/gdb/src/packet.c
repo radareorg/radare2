@@ -141,7 +141,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 
 int read_packet(libgdbr_t *g, bool vcont) {
 	struct parse_ctx ctx = { 0 };
-	int ret;
+	int ret, i;
 	if (!g) {
 		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
@@ -159,7 +159,7 @@ int read_packet(libgdbr_t *g, bool vcont) {
 		}
 	}
 	g->data_len = 0;
-	while (1) {
+	for (i = 0; i < g->num_retries; vcont ? 0 : i++) {
 		ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
 		if (ret == 0 && !vcont) {
 			continue;
