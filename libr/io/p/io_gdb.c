@@ -217,24 +217,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			 " =!inv.reg         - invalidate reg cache\n"
 			 " =!pktsz           - get max packet size used\n"
 			 " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-			 " =!page_size       - get current setting for page size\n"
-			 " =!page_size bytes - set page size for memory reads (useful for qemu)\n"
 			 " =!exec_file [pid] - get file which was executed for"
 			                     " current/specified pid\n");
 		return true;
 	}
-	if (!strncmp (cmd, "page_size", 9)) {
-		int page_size;
-		if (isspace (cmd[9]) && isdigit (cmd[10])) {
-			if ((page_size = atoi (cmd + 10)) >= 64) { // 64 is hardcoded min packet size
-				desc->page_size = page_size;
-			}
-			return true;
-		}
-		io->cb_printf ("page size: %d bytes\n", desc->page_size);
-		return true;
-	}
-	if (!strncmp (cmd, "pktsz", 5)) {
+	if (r_str_startswith (cmd, "pktsz")) {
 		const char *ptr = r_str_chop_ro (cmd + 5);
 		if (!isdigit (*ptr)) {
 			io->cb_printf ("packet size: %u bytes\n",
@@ -249,7 +236,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		desc->stub_features.pkt_sz = R_MAX (pktsz, 8); // min = 64
 		return true;
 	}
-	if (!strncmp (cmd, "detach", 6)) {
+	if (r_str_startswith (cmd, "detach")) {
 		int pid;
 		if (!isspace (cmd[6]) || !desc->stub_features.multiprocess) {
 			return gdbr_detach (desc) >= 0;
@@ -260,7 +247,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return gdbr_detach_pid (desc, pid) >= 0;
 	}
-	if (!strncmp (cmd, "pkt ", 4)) {
+	if (r_str_startswith (cmd, "pkt ")) {
 		if (send_msg (desc, cmd + 4) == -1) {
 			return false;
 		}
@@ -272,14 +259,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return r >= 0;
 	}
-	if (!strncmp (cmd, "pid", 3)) {
+	if (r_str_startswith (cmd, "pid")) {
 		int pid = desc ? desc->pid : -1;
 		if (!cmd[3]) {
 			io->cb_printf ("%d\n", pid);
 		}
 		return pid;
 	}
-	if (!strncmp (cmd, "monitor", 7)) {
+	if (r_str_startswith (cmd, "monitor")) {
 		const char *qrcmd = cmd + 8;
 		if (!isspace (cmd[7])) {
 			qrcmd = "help";
@@ -290,7 +277,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return true;
 	}
-	if (!strncmp (cmd, "inv.reg", 7)) {
+	if (r_str_startswith (cmd, "inv.reg")) {
 		gdbr_invalidate_reg_cache ();
 		return true;
 	}
@@ -321,8 +308,30 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		free (file);
 		return true;
 	}
-	// This is internal, not available to user. Sets a flag that next call to
-	// get memmap will be for getting baddr
+	// These are internal, not available to user directly
+	if (r_str_startswith (cmd, "retries")) {
+		int num_retries;
+		if (isspace (cmd[7]) && isdigit (cmd[8])) {
+			if ((num_retries = atoi (cmd + 8)) >= 1) {
+				desc->num_retries = num_retries;
+			}
+			return true;
+		}
+		io->cb_printf ("num_retries: %d bytes\n", desc->page_size);
+		return true;
+	}
+	if (r_str_startswith (cmd, "page_size")) {
+		int page_size;
+		if (isspace (cmd[9]) && isdigit (cmd[10])) {
+			if ((page_size = atoi (cmd + 10)) >= 64) {
+				desc->page_size = page_size;
+			}
+			return true;
+		}
+		io->cb_printf ("page size: %d bytes\n", desc->page_size);
+		return true;
+	}
+	// Sets a flag that next call to get memmap will be for getting baddr
 	if (!strcmp (cmd, "baddr")) {
 		desc->get_baddr = true;
 		return true;

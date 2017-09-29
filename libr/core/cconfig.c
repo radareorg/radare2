@@ -1013,11 +1013,30 @@ static int cb_dbg_forks(void *user, void *data) {
 static int cb_dbg_gdb_page_size(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value < 64) { // 64 is hardcoded min packet size
+		return false;
+	}
 	if (core->io && core->io->desc && core->io->desc->plugin
 	    && core->io->desc->plugin->name
 	    && !strcmp (core->io->desc->plugin->name, "gdb")) {
 		char cmd[64];
 		snprintf (cmd, sizeof (cmd), "page_size %"PFMT64d, node->i_value);
+		r_io_system (core->io, cmd);
+	}
+	return true;
+}
+
+static int cb_dbg_gdb_retries(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value <= 0) {
+		return false;
+	}
+	if (core->io && core->io->desc && core->io->desc->plugin
+	    && core->io->desc->plugin->name
+	    && !strcmp (core->io->desc->plugin->name, "gdb")) {
+		char cmd[64];
+		snprintf (cmd, sizeof (cmd), "retries %"PFMT64d, node->i_value);
 		r_io_system (core->io, cmd);
 	}
 	return true;
@@ -2410,6 +2429,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dbg.exitkills", "true", "Kill process on exit");
 	SETPREF ("dbg.exe.path", NULL, "Path to binary being debugged");
 	SETICB ("dbg.gdb.page_size", 4096, &cb_dbg_gdb_page_size, "Page size on gdb target (useful for QEMU)");
+	SETICB ("dbg.gdb.retries", 10, &cb_dbg_gdb_retries, "Number of retries before gdb packet read times out");
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
