@@ -981,22 +981,23 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDRSW:
+		{
+		int size = REGSIZE64(0);
+		switch (insn->id) {
+		case ARM64_INS_LDRSB:
+		case ARM64_INS_LDRB:
+		    size = 1;
+		    break;
+		case ARM64_INS_LDRSW:
+		    size = 4;
+		    break;
+		default:
+		    break;
+		}
 		if ((int)MEMDISP64(1) < 0) {
-			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",-,=[]",
-				REG64(0), MEMBASE64(1), -(int)MEMDISP64(1));
+			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",-,=[%d]",
+				REG64(0), MEMBASE64(1), -(int)MEMDISP64(1), size);
 		} else {
-			int size = REGSIZE64(0);
-			switch (insn->id) {
-			case ARM64_INS_LDRSB:
-			case ARM64_INS_LDRB:
-				size = 1;
-				break;
-			case ARM64_INS_LDRSW:
-				size = 4;
-				break;
-			default:
-				break;
-			}
 			if (ISMEM64(1)) {
 				if (HASMEMINDEX64(1)) {
 					if (LSHIFT2_64(1)) {
@@ -1042,6 +1043,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			}
 		}
 		break;
+		}
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_TST: // cmp w8, 0xd
@@ -1068,24 +1070,40 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_appendf (&op->esil, "1,%s,+,%s,=,BREAK", REG64(1), REG64(0));
 		r_strbuf_appendf (&op->esil, "%s,%s,%s,=", postfix, REG64(1), REG64(0));
 		break;
-	case ARM64_INS_STRB:
-		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]",
-			REG64(0), MEMBASE64(1), MEMDISP64(1));
+	case ARM64_INS_STXRB:
+	case ARM64_INS_STXRH:
+	case ARM64_INS_STXR:
+		{
+		int size = REGSIZE64(1);
+		if (insn->id == ARM64_INS_STXRB) {
+		    size = 1;
+		} else if (insn->id == ARM64_INS_STXRH) {
+		    size = 2;
+		}
+		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[%d]",
+			REG64(1), MEMBASE64(1), MEMDISP64(1), size);
 		break;
+		}
+	case ARM64_INS_STRB:
+	case ARM64_INS_STRH:
 	case ARM64_INS_STUR:
 	case ARM64_INS_STR: // str x6, [x6,0xf90]
-	case ARM64_INS_STRH:
-	case ARM64_INS_STXR:
-	case ARM64_INS_STXRH:
-	case ARM64_INS_STXRB:
+		{
+		int size = REGSIZE64(0);
+		if (insn->id == ARM64_INS_STRB) {
+		    size = 1;
+		} else if (insn->id == ARM64_INS_STRH) {
+		    size = 2;
+		}
 		if ((int)MEMDISP64(1) < 0) {
-			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,-,=[]",
-				REG64(0), (ut64)-(int)MEMDISP64(1), MEMBASE64(1));
+			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,-,=[%d]",
+				REG64(0), (ut64)-(int)MEMDISP64(1), MEMBASE64(1), size);
 		} else {
-			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,+,=[]",
-				REG64(0), MEMDISP64(1), MEMBASE64(1));
+			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,+,=[%d]",
+				REG64(0), MEMDISP64(1), MEMBASE64(1), size);
 		}
 		break;
+		}
 	case ARM64_INS_CBZ:
 		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,=,}",
 			REG64(0), IMM64(1));
@@ -1111,15 +1129,16 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int disp = (int)MEMDISP64(2);
 		char sign = disp>=0?'+':'-';
 		ut64 abs = disp>=0? MEMDISP64(2): -MEMDISP64(2);
+		int size = REGSIZE64(0);
 		// Pre-index case
 		if (ISPREINDEX64()) {
 			// "stp x2, x3, [x8, 0x20]
-			// "32,x8,+=,x2,x8,=[],x3,x8,8,+,=[]",
+			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
 			r_strbuf_setf(&op->esil,
-					"%"PFMT64d",%s,%c=,%s,%s,=[],%s,%s,8,+,=[]",
+					"%"PFMT64d",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
 					abs, MEMBASE64(2), sign,
-					REG64(0), MEMBASE64(2),
-					REG64(1), MEMBASE64(2));
+					REG64(0), MEMBASE64(2), size,
+					REG64(1), MEMBASE64(2), size, size);
 		// Post-index case
 		} else if (ISPOSTINDEX64()) {
 			int val = IMM64(3);
@@ -1128,17 +1147,17 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			// "stp x4, x5, [x8], 0x10"
 			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
 			r_strbuf_setf(&op->esil,
-					"%s,%s,=[],%s,%s,8,+,=[],%d,%s,%c=",
-					REG64(0), MEMBASE64(2),
-					REG64(1), MEMBASE64(2),
+					"%s,%s,=[%d],%s,%s,%d,+,=[%d],%d,%s,%c=",
+					REG64(0), MEMBASE64(2), size,
+					REG64(1), MEMBASE64(2), size, size,
 					abs, MEMBASE64(2), sign);
 		// Everything else
 		} else {
 			r_strbuf_setf (&op->esil,
-					"%s,%s,%"PFMT64d",%c,=[],"
-					"%s,%s,%"PFMT64d",%c,%d,+,=[]",
-					REG64(0), MEMBASE64(2), abs, sign,
-					REG64(1), MEMBASE64(2), abs, sign, 8);
+					"%s,%s,%"PFMT64d",%c,=[%d],"
+					"%s,%s,%"PFMT64d",%c,%d,+,=[%d]",
+					REG64(0), MEMBASE64(2), abs, sign, size,
+					REG64(1), MEMBASE64(2), abs, sign, size, size);
 		}
 		}
 		break;
@@ -1147,34 +1166,39 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int disp = (int)MEMDISP64(2);
 		char sign = disp>=0?'+':'-';
 		ut64 abs = disp>=0? MEMDISP64(2): -MEMDISP64(2);
+		int size = REGSIZE64(0);
 		// Pre-index case
-		// x2,x8,32,+,=[],x3,x8,32,+,8,+,=[]
+		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
 		if (ISPREINDEX64()) {
 			// "ldp x0, x1, [x8, -0x10]!"
-			// 16,x8,-=,x0,x8,[],x1,x8,8,+,[]
+			// 16,x8,-=,x0,x8,[8],x1,x8,8,+,[8]
 			r_strbuf_setf (&op->esil,
-					"%"PFMT64d",%s,%c=,%s,%s,[],%s,%s,8,+,[]",
+					"%"PFMT64d",%s,%c=,"
+					"%s,%s,[%d],"
+					"%s,%s,%d,+,[%d]",
 					abs, MEMBASE64(2), sign,
-					REG64(0), MEMBASE64(2),
-					REG64(1), MEMBASE64(2));
+					REG64(0), MEMBASE64(2), size,
+					REG64(1), MEMBASE64(2), size, size);
 		// Post-index case
 		} else if (ISPOSTINDEX64()) {
 			int val = IMM64(3);
 			sign = val>=0?'+':'-';
 			abs = val>=0? val: -val;
 			// ldp x4, x5, [x8], -0x10
-			// x4,x8,[],x5,x8,8,+,[],16,x8,+=
+			// x4,x8,[8],x5,x8,8,+,[8],16,x8,+=
 			r_strbuf_setf (&op->esil,
-					"%s,%s,[],%s,%s,8,+,[],%d,%s,%c=",
-					REG64(0), MEMBASE64(2),
-					REG64(1), MEMBASE64(2),
+					"%s,%s,[%d],"
+					"%s,%s,%d,+,[%d],"
+					"%d,%s,%c=",
+					REG64(0), MEMBASE64(2), size,
+					REG64(1), MEMBASE64(2), size, size,
 					abs, MEMBASE64(2), sign);
 		} else {
 			r_strbuf_setf (&op->esil,
-					"%s,%s,%"PFMT64d",%c,[],"
-					"%s,%s,%"PFMT64d",%c,%d,+,[]",
-					REG64(0), MEMBASE64(2), abs, sign,
-					REG64(1), MEMBASE64(2), abs, sign, 8);
+					"%s,%s,%"PFMT64d",%c,[%d],"
+					"%s,%s,%"PFMT64d",%c,%d,+,[%d]",
+					REG64(0), MEMBASE64(2), abs, sign, size,
+					REG64(1), MEMBASE64(2), abs, sign, size, size);
 		}
 		}
 		break;
