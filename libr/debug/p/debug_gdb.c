@@ -279,7 +279,6 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 			return R_DEBUG_REASON_UNKNOWN;
 		}
 	}
-	desc->stop_reason.is_valid = false;
 	if (desc->stop_reason.thread.present) {
 		dbg->reason.tid = desc->stop_reason.thread.tid;
 		dbg->pid = desc->stop_reason.thread.pid;
