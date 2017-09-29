@@ -2668,7 +2668,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *prefix = "";
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot, false);
 		break;
 	case R_STRING_ENC_UTF8:
 		escstr = r_str_escape_utf8 (str, ds->show_asciidot);
@@ -2704,7 +2704,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
 				prefix = "U";
 			} else {
-				escstr = r_str_escape_latin1 (str, ds->show_asciidot);
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot, false);
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
@@ -2717,7 +2717,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
 			          r_str_escape_utf8 (str, ds->show_asciidot) :
-			          r_str_escape_latin1 (str, ds->show_asciidot));
+			          r_str_escape_latin1 (str, ds->show_asciidot, false));
 		}
 	}
 	if (escstr) {

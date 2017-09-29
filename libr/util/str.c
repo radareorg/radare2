@@ -1227,7 +1227,7 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
-static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot) {
+static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool ign_bslash) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -1240,7 +1240,9 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 		break;
 	case '\\':
 		*q++ = '\\';
-		*q++ = '\\';
+		if (!ign_bslash) {
+			*q++ = '\\';
+		}
 		break;
 	case '\t':
 		*q++ = '\\';
@@ -1278,7 +1280,7 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot, bool ign_bslash) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1313,7 +1315,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool s
 				break;
 			}
 		default:
-			r_str_byte_escape (p, &q, dot_nl, show_asciidot);
+			r_str_byte_escape (p, &q, dot_nl, show_asciidot, ign_bslash);
 		}
 		p++;
 	}
@@ -1323,15 +1325,15 @@ out:
 }
 
 R_API char *r_str_escape(const char *buf) {
-	return r_str_escape_ (buf, false, true, false);
+	return r_str_escape_ (buf, false, true, false, false);
 }
 
 R_API char *r_str_escape_dot(const char *buf) {
-	return r_str_escape_ (buf, true, true, false);
+	return r_str_escape_ (buf, true, true, false, false);
 }
 
-R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot) {
-	return r_str_escape_ (buf, false, false, show_asciidot);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool ign_bslash) {
+	return r_str_escape_ (buf, false, false, show_asciidot, ign_bslash);
 }
 
 static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot) {
@@ -1398,7 +1400,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
 		} else {
-			r_str_byte_escape (p, &q, false, false);
+			r_str_byte_escape (p, &q, false, false, false);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
