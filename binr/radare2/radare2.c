@@ -448,8 +448,9 @@ int main(int argc, char **argv, char **envp) {
 
 	r_sys_set_environ (envp);
 
-	if (r_sys_getenv ("R_DEBUG")) {
+	if ((tmp = r_sys_getenv ("R_DEBUG"))) {
 		r_sys_crash_handler ("gdb --pid %d");
+		free (tmp);
 	}
 	if (argc < 2) {
 		LISTS_FREE ();
