@@ -171,7 +171,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 * Comments should be smart. Function names should be explicit enough
   to not require a comment to explain what it does. If this is not
   possible at all, we can still use a comment. But it is a bad idea
-  to relay on comment to make the code readable.
+  to rely on comments to make the code readable.
 
 * Use 'R_API' define to mark exportable (public) methods only for module APIs
 
