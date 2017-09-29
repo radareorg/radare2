@@ -200,7 +200,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (short) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB * 2) - 6);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB * 2) + 8);
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineI:
