@@ -856,7 +856,6 @@ int test_command(libgdbr_t *g, const char *command) {
 	return 0;
 }
 
-static libgdbr_t *cur_desc = NULL;
 static bool _isbreaked = false;
 
 #if __WINDOWS__ && !__CYGWIN__
@@ -865,7 +864,6 @@ static BOOL __w32_signal(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		if (cur_desc) {
 			_isbreaked = true;
-			r_socket_write (cur_desc->sock, "\x03", 1);
 		}
 		return true;
 	}
@@ -877,18 +875,13 @@ static BOOL __w32_signal(DWORD type) {
 
 #elif __UNIX__ || __CYGWIN__
 static void _sigint_handler(int signo) {
-	if (cur_desc) {
-		_isbreaked = true;
-		r_socket_write (cur_desc->sock, "\x03", 1);
-	}
+	_isbreaked = true;
 }
 #define SET_SIGINT_HANDLER(g,x)	\
 	_isbreaked = false;	\
-	cur_desc = g;		\
 	signal (SIGINT, x);
-#define UNSET_SIGINT_HANDLER()		\
-	signal (SIGINT, SIG_IGN);	\
-	cur_desc = NULL;
+#define UNSET_SIGINT_HANDLER()	\
+	signal (SIGINT, SIG_DFL);
 
 #endif
 
@@ -958,6 +951,9 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	while ((ret = read_packet (g, true)) < 0 && !_isbreaked && r_socket_is_connected (g->sock));
 	UNSET_SIGINT_HANDLER ();
 	if (_isbreaked) {
+		_isbreaked = false;
+		// Stop target
+		r_socket_write (g->sock, "\x03", 1);
 		// Read the stop reason
 		if (read_packet (g, false) < 0) {
 			return -1;
