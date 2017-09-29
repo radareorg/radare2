@@ -84,7 +84,7 @@ static int gdbr_connect_lldb(libgdbr_t *g) {
 		gdbr_read_target_xml (g);
 	}
 	// Check if 'g' packet is supported
-	if (send_msg (g, "g") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+	if (send_msg (g, "g") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
 		return -1;
 	}
 	if (g->data_len == 0 || (g->data_len == 3 && g->data[0] == 'E')) {
@@ -126,14 +126,14 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	read_packet (g);
+	read_packet (g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
 	// TODO add config possibility here
 	ret = send_msg (g, message);
 	if (ret < 0) {
 		return ret;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	ret = handle_qSupported (g);
 	if (ret < 0) {
 		return ret;
@@ -146,7 +146,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		if (send_msg (g, "QStartNoAckMode") < 0) {
 			return -1;
 		}
-		read_packet (g);
+		read_packet (g, false);
 		if (!strncmp (g->data, "OK", 2)) {
 			// Just in case, send ack
 			send_ack (g);
@@ -163,7 +163,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	ret = handle_qC (g);
 	if (ret < 0) {
 		g->stub_features.qC = false;
@@ -180,7 +180,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (ret < 0) {
 		return ret;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	ret = send_ack (g);
 	if (strcmp (g->data, "OK")) {
 		// return -1;
@@ -198,6 +198,7 @@ int gdbr_disconnect(libgdbr_t *g) {
 		return -1;
 	}
 	reg_cache.valid = false;
+	g->stop_reason.is_valid = false;
 	free (reg_cache.buf);
 	if (g->target.valid) {
 		free (g->target.regprofile);
@@ -217,7 +218,8 @@ int gdbr_select(libgdbr_t *g, int pid, int tid) {
 			     g->stub_features.multiprocess) < 0) {
 		return -1;
 	}
-	if (send_msg (g, cmd) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+	g->stop_reason.is_valid = false;
+	if (send_msg (g, cmd) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
 		return -1;
 	}
 	if (strcmp (g->data, "OK")) {
@@ -231,7 +233,7 @@ int gdbr_check_vcont(libgdbr_t *g) {
 		return -1;
 	}
 	char *ptr = NULL;
-	if (send_msg (g, "vCont?") < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+	if (send_msg (g, "vCont?") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
 		return -1;
 	}
 	if (g->data_len == 0) {
@@ -270,7 +272,7 @@ int gdbr_check_vcont(libgdbr_t *g) {
 }
 
 int gdbr_stop_reason(libgdbr_t *g) {
-	if (!g || send_msg (g, "?") < 0 || read_packet (g) < 0) {
+	if (!g || send_msg (g, "?") < 0 || read_packet (g, false) < 0) {
 		return -1;
 	}
 	return handle_stop_reason (g);
@@ -278,6 +280,7 @@ int gdbr_stop_reason(libgdbr_t *g) {
 
 int gdbr_check_extended_mode(libgdbr_t *g) {
 	int ret;
+	g->stop_reason.is_valid = false;
 	reg_cache.valid = false;
 	// Activate extended mode if possible.
 	ret = send_msg (g, "!");
@@ -285,7 +288,7 @@ int gdbr_check_extended_mode(libgdbr_t *g) {
 		g->stub_features.extended_mode = 0;
 		return ret;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	ret = send_ack (g);
 	if (strncmp (g->data, "OK", 2)) {
 		g->stub_features.extended_mode = 0;
@@ -304,6 +307,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 	if (!g || !g->sock) {
 		return -1;
 	}
+	g->stop_reason.is_valid = false;
 	reg_cache.valid = false;
 
 	if (g->stub_features.extended_mode == -1) {
@@ -333,7 +337,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		return ret;
 	}
 
-	if (read_packet (g) >= 0) {
+	if (read_packet (g, false) >= 0) {
 		return handle_attach (g);
 	}
 	return -1;
@@ -346,6 +350,7 @@ int gdbr_detach(libgdbr_t *g) {
 		return -1;
 	}
 	reg_cache.valid = false;
+	g->stop_reason.is_valid = false;
 	ret = send_msg (g, "D");
 	if (ret < 0) {
 		return -1;
@@ -363,6 +368,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 		return -1;
 	}
 	reg_cache.valid = false;
+	g->stop_reason.is_valid = false;
 
 	buffer_size = strlen (CMD_DETACH_MP) + (sizeof (pid) * 2) + 1;
 	cmd = calloc (buffer_size, sizeof (char));
@@ -381,7 +387,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 		return ret;
 	}
 
-	read_packet (g);
+	read_packet (g, false);
 	if ((ret = send_ack (g)) < 0) {
 		return ret;
 	}
@@ -398,6 +404,7 @@ bool gdbr_kill(libgdbr_t *g) {
 		return false;
 	}
 	reg_cache.valid = false;
+	g->stop_reason.is_valid = false;
 
 	if (g->stub_features.multiprocess) {
 		if (g->pid <= 0) {
@@ -422,6 +429,7 @@ bool gdbr_kill_pid(libgdbr_t *g, int pid) {
 		return false;
 	}
 	reg_cache.valid = false;
+	g->stop_reason.is_valid = false;
 
 	buffer_size = strlen (CMD_KILL_MP) + (sizeof (pid) * 2) + 1;
 	cmd = calloc (buffer_size, sizeof (char));
@@ -439,7 +447,7 @@ bool gdbr_kill_pid(libgdbr_t *g, int pid) {
 		return false;
 	}
 
-	read_packet (g);
+	read_packet (g, false);
 	if ((ret = send_ack (g)) < 0) {
 		return false;
 	}
@@ -453,7 +461,7 @@ static int gdbr_read_registers_lldb(libgdbr_t *g) {
 	// Send the stop reply query packet and get register info
 	// (this is what lldb does)
 	int ret;
-	if (send_msg (g, "?") < 0 || read_packet (g) < 0) {
+	if (send_msg (g, "?") < 0 || read_packet (g, false) < 0) {
 		return -1;
 	}
 	if ((ret = handle_lldb_read_reg (g)) < 0) {
@@ -485,7 +493,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 	if (ret < 0) {
 		return ret;
 	}
-	if (read_packet (g) < 0 || handle_g (g) < 0) {
+	if (read_packet (g, false) < 0 || handle_g (g) < 0) {
 		return -1;
 	}
 	if (reg_cache.init) {
@@ -518,7 +526,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		if (send_msg (g, command) < 0) {
 			return -1;
 		}
-		if (read_packet (g) < 0) {
+		if (read_packet (g, false) < 0) {
 			return -1;
 		}
 		if (handle_m (g) < 0) {
@@ -546,7 +554,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		if (send_msg (g, command) < 0) {
 			return -1;
 		}
-		if (read_packet (g) < 0) {
+		if (read_packet (g, false) < 0) {
 			return -1;
 		}
 		if (handle_m (g) < 0) {
@@ -626,7 +634,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 		if ((ret = send_msg (g, tmp)) < 0) {
 			goto fail;
 		}
-		if ((ret = read_packet (g)) < 0) {
+		if ((ret = read_packet (g, false)) < 0) {
 			goto fail;
 		}
 		if ((ret = handle_M (g)) < 0) {
@@ -643,7 +651,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 		if ((ret = send_msg (g, tmp)) < 0) {
 			goto fail;
 		}
-		if ((ret = read_packet (g)) < 0) {
+		if ((ret = read_packet (g, false)) < 0) {
 			goto fail;
 		}
 		if ((ret = handle_M (g)) < 0) {
@@ -699,7 +707,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 		free (command);
 		return -1;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	free (command);
 	handle_G (g);
 	return 0;
@@ -722,7 +730,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	if (send_msg (g, command) < 0) {
 		return -1;
 	}
-	if (read_packet (g) >= 0) {
+	if (read_packet (g, false) >= 0) {
 		handle_P (g);
 	}
 	return 0;
@@ -832,7 +840,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		free (command);
 		return ret;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	free (command);
 	handle_G (g);
 	return 0;
@@ -843,31 +851,45 @@ int test_command(libgdbr_t *g, const char *command) {
 	if (ret < 0) {
 		return ret;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	hexdump (g->read_buff, g->data_len, 0);
 	return 0;
 }
 
 static libgdbr_t *cur_desc = NULL;
-
+static bool _isbreaked = false;
 
 #if __WINDOWS__ && !__CYGWIN__
 static HANDLE h;
 static BOOL __w32_signal(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		if (cur_desc) {
+			_isbreaked = true;
 			r_socket_write (cur_desc->sock, "\x03", 1);
 		}
 		return true;
 	}
 	return false;
 }
+// TODO
+#define SET_SIGINT_HANDLER(g,x)
+#define UNSET_SIGINT_HANDLER()
+
 #elif __UNIX__ || __CYGWIN__
 static void _sigint_handler(int signo) {
 	if (cur_desc) {
+		_isbreaked = true;
 		r_socket_write (cur_desc->sock, "\x03", 1);
 	}
 }
+#define SET_SIGINT_HANDLER(g,x)	\
+	_isbreaked = false;	\
+	cur_desc = g;		\
+	signal (SIGINT, x);
+#define UNSET_SIGINT_HANDLER()		\
+	signal (SIGINT, SIG_IGN);	\
+	cur_desc = NULL;
+
 #endif
 
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
@@ -926,31 +948,18 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 		return ret;
 	}
 	reg_cache.valid = false;
+	g->stop_reason.is_valid = false;
 	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
 
-	// Temporarily set signal handler
-	cur_desc = g;
-#if __WINDOWS__ && !__CYGWIN__
-	// TODO
-#elif __UNIX__ || __CYGWIN__
-	signal (SIGINT, _sigint_handler);
-#endif
-	ret = read_packet (g);
-	// while ((ret = read_packet (g)) < 0 && r_socket_is_connected (g->sock));
-
-	// Unset signal handler
-#if __WINDOWS__ && !__CYGWIN__
-	// TODO
-#elif __UNIX__ || __CYGWIN__
-	signal (SIGINT, SIG_IGN);
-#endif
-
-	cur_desc = NULL;
-	if (ret < 0) {
-		if (read_packet (g) < 0) {
+	SET_SIGINT_HANDLER (g, _sigint_handler);
+	while ((ret = read_packet (g, true)) < 0 && !_isbreaked && r_socket_is_connected (g->sock));
+	UNSET_SIGINT_HANDLER ();
+	if (_isbreaked) {
+		// Read the stop reason
+		if (read_packet (g, false) < 0) {
 			return -1;
 		}
 	}
@@ -984,12 +993,13 @@ int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint t
 	if (ret < 0) {
 		return ret;
 	}
+	g->stop_reason.is_valid = false;
 	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (read_packet (g) >= 0) {
+	if (read_packet (g, false) >= 0) {
 		return handle_setbp (g);
 	}
 	return 0;
@@ -1036,11 +1046,12 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
 	if (ret < 0) {
 		return ret;
 	}
+	g->stop_reason.is_valid = false;
 	ret = send_msg (g, tmp);
 	if (ret < 0) {
 		return ret;
 	}
-	if (read_packet (g) >= 0) {
+	if (read_packet (g, false) >= 0) {
 		return handle_removebp (g);
 	}
 	return 0;
@@ -1066,7 +1077,7 @@ int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
 		free (buf);
 		return -1;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	if (handle_vFile_open (g) < 0) {
 		free (buf);
 		return -1;
@@ -1103,7 +1114,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		if (send_msg (g, command) < 0) {
 			return -1;
 		}
-		if (read_packet (g) < 0) {
+		if (read_packet (g, false) < 0) {
 			return -1;
 		}
 		if ((ret1 = handle_vFile_pread (g, buf + ret)) < 0) {
@@ -1130,7 +1141,7 @@ int gdbr_close_file(libgdbr_t *g) {
 	if (send_msg (g, buf) < 0) {
 		return -1;
 	}
-	read_packet (g);
+	read_packet (g, false);
 	if (handle_vFile_close (g) < 0) {
 		return -1;
 	}
@@ -1152,12 +1163,14 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char
 		return -1;
 	}
 	strcpy (buf, "qRcmd,");
+	g->stop_reason.is_valid = false;
+	reg_cache.valid = false;
 	pack_hex (cmd, strlen (cmd), buf + 6);
 	if (send_msg (g, buf) < 0) {
 		free (buf);
 		return -1;
 	}
-	if (read_packet (g) < 0) {
+	if (read_packet (g, false) < 0) {
 		free (buf);
 		return -1;
 	}
@@ -1185,7 +1198,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char
 			g->data[g->data_len - 1] = '\0';
 			cb_printf ("%s", g->data + 1);
 		}
-		if (read_packet (g) < 0) {
+		if (read_packet (g, false) < 0) {
 			free (buf);
 			return -1;
 		}
@@ -1212,7 +1225,7 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 			free (path);
 			return NULL;
 		}
-		if (send_msg (g, msg) < 0 || read_packet (g) < 0
+		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0
 		    || send_ack (g) < 0 || g->data_len == 0) {
 			free (path);
 			return NULL;
@@ -1250,7 +1263,7 @@ bool gdbr_is_thread_dead (libgdbr_t *g, int pid, int tid) {
 	if (snprintf (msg, sizeof (msg) - 1, "T%s", thread_id) < 0) {
 		return false;
 	}
-	if (send_msg (g, msg) < 0 || read_packet (g) < 0 || send_ack (g) < 0) {
+	if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
 		return false;
 	}
 	if (g->data_len == 3 && g->data[0] == 'E') {
@@ -1277,7 +1290,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		// XML thread description is supported
 		// TODO: Handle this case
 	}
-	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g) < 0 || send_ack (g) < 0
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0
 	    || g->data_len == 0 || g->data[0] != 'm') {
 		return NULL;
 	}
@@ -1316,7 +1329,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			r_list_append (list, dpid);
 			ptr = ptr2;
 		}
-		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g) < 0
+		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
 		    || send_ack (g) < 0 || g->data_len == 0
 		    || (g->data[0] != 'm' && g->data[0] != 'l')) {
 			r_list_free (list);
@@ -1337,7 +1350,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 }
 
 ut64 gdbr_get_baddr(libgdbr_t *g) {
-	if (!g || send_msg (g, "qOffsets") < 0 || read_packet (g) < 0
+	if (!g || send_msg (g, "qOffsets") < 0 || read_packet (g, false) < 0
 	    || send_ack (g) < 0 || g->data_len == 0) {
 		return UINT64_MAX;
 	}

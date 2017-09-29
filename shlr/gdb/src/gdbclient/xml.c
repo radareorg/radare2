@@ -34,7 +34,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 		snprintf (msg, sizeof (msg), "qXfer:features:read:%s:%"PFMT64x
 			",%"PFMT64x, file, off, len);
 		if (send_msg (g, msg) < 0
-		    || read_packet (g) < 0 || send_ack (g) < 0) {
+		    || read_packet (g, false) < 0 || send_ack (g) < 0) {
 			free (ret);
 			*tot_len = 0;
 			return NULL;
