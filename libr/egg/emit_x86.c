@@ -27,7 +27,7 @@ static char *regs[] = { "rax", "rdi", "rsi", "rdx", "r10", "r8", "r9" };
 # define SYSCALL_ATT "int $0x80"
 # define SYSCALL_INTEL "int 0x80"
 # define R_REG_AR_OFF 0
-static char *regs[] = { "eax", "ebx", "ecx", "edx" };
+static char *regs[] = { "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp" };
 #endif
 
 # define R_NGP (sizeof (regs)/sizeof (char *))

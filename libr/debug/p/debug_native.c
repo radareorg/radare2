@@ -68,6 +68,7 @@ static void r_debug_native_stop(RDebug *dbg);
 # warning No debugger support for SunOS yet
 
 #elif __linux__
+#include <sys/mman.h>
 #include "native/linux/linux_debug.h"
 #include "native/procfs.h"
 # ifdef __ANDROID__
@@ -930,6 +931,93 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 
 	return list;
 }
+#elif __linux__
+static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
+	RBuffer *buf = NULL;
+	RDebugMap* map = NULL;
+	char code[1024], *sc_name;
+	int num;
+	/* force to usage of x86.as, not yet working x86.nz */
+	char *asm_list[] = {
+			"x86", "x86.as",
+			"x64", "x86.as",
+			NULL};
+
+	/* NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
+       		 mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
+       		 mmap2(2)). If arch is x86_32 then usage mmap2() */
+	if (!strcmp (dbg->arch, "x86") && dbg->bits == 4) {
+		sc_name = "mmap2";
+	} else {
+		sc_name = "mmap";
+	}
+	num = r_syscall_get_num (dbg->anal->syscall, sc_name);
+	snprintf (code, sizeof (code),
+		"sc_mmap@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_mmap(0x%08"PFMT64x",%d,%d,%d,%d,%d);break;\n"
+		"}\n",
+		num, addr, size, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	r_egg_reset (dbg->egg);
+	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	r_egg_load (dbg->egg, code, 0);
+	if (!r_egg_compile (dbg->egg)) {
+		eprintf ("Cannot compile.\n");
+		goto err_linux_map_alloc;
+	}	
+	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		goto err_linux_map_alloc;
+	}
+	buf = r_egg_get_bin (dbg->egg);
+	if (buf) {
+		ut64 map_addr;
+
+		r_reg_arena_push (dbg->reg);
+		map_addr = r_debug_execute (dbg, buf->buf, buf->length, 1);
+		r_reg_arena_pop (dbg->reg);
+		if (map_addr != (ut64)-1) {
+			r_debug_map_sync (dbg);
+			map = r_debug_map_get (dbg, map_addr);
+		}
+	}
+err_linux_map_alloc:
+	return map;
+}
+
+static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
+	RBuffer *buf = NULL;
+	char code[1024];
+	int ret = 0;
+	char *asm_list[] = {
+			"x86", "x86.as",
+			"x64", "x86.as",
+			NULL};
+	int num = r_syscall_get_num (dbg->anal->syscall, "munmap");
+
+	snprintf (code, sizeof (code),
+		"sc_munmap@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_munmap(0x%08"PFMT64x",%d);break;\n"
+		"}\n", num, addr, size);
+	r_egg_reset (dbg->egg);
+	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	r_egg_load (dbg->egg, code, 0);
+	if (!r_egg_compile (dbg->egg)) {
+		eprintf ("Cannot compile.\n");
+		goto err_linux_map_dealloc;
+	}	
+	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		goto err_linux_map_dealloc;
+	}
+	buf = r_egg_get_bin (dbg->egg);
+	if (buf) {
+		r_reg_arena_push (dbg->reg);
+		ret = r_debug_execute (dbg, buf->buf, buf->length, 1) == 0;
+		r_reg_arena_pop (dbg->reg);
+	}
+err_linux_map_dealloc:
+	return ret;
+}
 #endif
 
 static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
@@ -955,6 +1043,8 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	r_debug_map_sync (dbg);
 	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;
+#elif __linux__
+	return linux_map_alloc (dbg, addr, size);	
 #else
 	// malloc not implemented for this platform
 	return NULL;
@@ -979,6 +1069,8 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	}
 	CloseHandle (process);
 	return ret;
+#elif __linux__
+	return linux_map_dealloc(dbg, addr, size);
 #else
     // mdealloc not implemented for this platform
 	return false;
