@@ -181,7 +181,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (!arena) {
 			return 0;
 		}
-		r_hex_bin2str (&r, sizeof (r), arena);
+		r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
 		io->cb_printf ("%s\n", arena);
 		free (arena);
 	} else if (!strncmp (cmd, "drp", 3)) {
