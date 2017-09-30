@@ -37,7 +37,7 @@ libr/reg/reg.c          // top-level register specific code (all of r2)
 libr/reg/value.c        // dealing with register values
 libr/reg/t/p.c          // test code for printing general-purpose registers
 libr/reg/t/regdiff.c    // ?? test code for?
-libr/reg/t/test.c       // test code for register hnadling
+libr/reg/t/test.c       // test code for register handling
 
 
 ## libr/bp
