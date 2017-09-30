@@ -4699,8 +4699,8 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 }
 
 static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {
-	if (nb_opcodes) {
-		if (nb_bytes) {
+	if (nb_opcodes > 0) {
+		if (nb_bytes > 0) {
 			return j < nb_opcodes && i < nb_bytes;
 		}
 		return j < nb_opcodes;
@@ -4733,7 +4733,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 		return 0;
 	}
 	if (!nb_opcodes) {
-		nb_opcodes = 0xffff;
+		nb_opcodes = -1;
 		if (nb_bytes < 0) {
 			// Backward disasm `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
@@ -4784,7 +4784,10 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	r_cons_break_push (NULL, NULL);
 
 	int midflags = r_config_get_i (core->config, "asm.midflags");
-	for (i = j = 0; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
+	i = 0;
+	j = 0;
+toro:
+	for (; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
 		RFlagItem *item;
 		if (r_cons_is_breaked ()) {
 			err = 1;
@@ -4932,13 +4935,13 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 			}
 		}
 		i += ret;
-#if 0
-		if ((nb_bytes && (nb_bytes <= i)) || (i >= core->blocksize)) {
-			break;
-		}
-#endif
+	}
+	if (nb_opcodes > 0 && j < nb_opcodes) {
+		r_core_seek (core, core->offset + i, 1);
+		i = 0;
+		goto toro;
 	}
 	r_cons_break_pop ();
-	core->offset = old_offset;
+	r_core_seek (core, old_offset, 1);
 	return err;
 }
