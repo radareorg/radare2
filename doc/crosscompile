@@ -17,7 +17,7 @@ CC_AR=${CROSS_ROOT}/${CROSS_TRIPLET}-ar -r ${LIBAR}
 (...)
 ```
 
-After defining your new `mk/arch.mk` file it should be pretty straighforward to install the `dockcross`
+After defining your new `mk/arch.mk` file it should be pretty straightforward to install the `dockcross`
 tool from one of its own containers:
 
 ```

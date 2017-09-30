@@ -9,7 +9,7 @@ Installation
 ------------
 
 The Termux maintainer of the radare2 package updates the package really fast after every release
-which happens every 6 weeks. So in this case, as long as it's suposed to run on embedded devices
+which happens every 6 weeks. So in this case, as long as it's supposed to run on embedded devices
 it is ok to just install the package from Termux unless you really want to track git master or
 develop for this platform.
 

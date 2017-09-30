@@ -35,7 +35,7 @@ Default size is the destination of the operation. In this case 8bits, aka 1 byte
 ```
 movb $0, 0x80480     ->   0,0x80480,=[1]
 ```
-Conditionals are expressed with the '?' char at the begining of the expression. this checks if the rest of the expression is 0 or not and skips the next expression if doesn't matches. % is the prefix for internal vars.
+Conditionals are expressed with the '?' char at the beginning of the expression. This checks if the rest of the expression is 0 or not and skips the next expression if doesn't matches. % is the prefix for internal vars.
 ```
 cmp eax, 123  ->   123,eax,==,%z,zf,=
 jz eax        ->   zf,?{,eax,eip,=,}

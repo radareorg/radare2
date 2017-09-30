@@ -11,8 +11,8 @@ This document will focus on FLIRT, not the native r2 'Zignatures'.
 You need the flair tools/ida utilities. Those tools are closed source
 and privative, so you should not distribute them. It is probable that
 it is  not possible  to redistribute the  .pat or the .sig files.  It
-doesnt  seems to  have watermarks.  however it's  a bit unclear  what
-licence the file generated should have.  Mentionning the files should
+doesn't  seems to  have watermarks.  However it's  a bit unclear  what
+licence the file generated should have.  Mentioning the files should
 be free of copyrighted material  (the original libs bytes). That said,
 there's a paragraph in the flirt paper:
 

@@ -24,12 +24,12 @@ by the open() packet.
 Known Bugs
 ----------
 
-* Read/Write operations ignore the filedescriptor completely because it is suposed to be handled by the IO layer and it is redundant, but it introduces a bug that breaks support for multiple files.
+* Read/Write operations ignore the filedescriptor completely because it is supposed to be handled by the IO layer and it is redundant, but it introduces a bug that breaks support for multiple files.
 * This can be fixed with a new packet type RAP_SETFD.
 * Read lengths should be only 2 bytes, there's no sense in read > 64K of memory in a shot.
 * Seek does not returns anything
 * System vs Cmd - the first should have a return value as well as string result
-* Filedescriptors are asumed to be 32bit
+* Filedescriptors are assumed to be 32bit
 
 
 Operations
