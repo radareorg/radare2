@@ -212,10 +212,16 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 }
 
 static void emit_jmp(REgg *egg, const char *str, int atr) {
-	if (atr) {
-		if (attsyntax) r_egg_printf (egg, "  jmp *%s\n", str);
-		else r_egg_printf (egg, "  jmp [%s]\n", str);
-	} else r_egg_printf (egg, "  jmp %s\n", str);
+	if (str) {
+		if (atr) {
+			if (attsyntax) r_egg_printf (egg, "  jmp *%s\n", str);
+			else r_egg_printf (egg, "  jmp [%s]\n", str);
+		} else {
+			r_egg_printf (egg, "  jmp %s\n", str);
+		}
+	} else {
+		eprintf ("Jump without destionation\n");
+	}
 }
 
 static void emit_arg (REgg *egg, int xs, int num, const char *str) {
