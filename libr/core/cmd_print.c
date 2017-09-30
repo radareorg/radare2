@@ -4032,7 +4032,6 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				ut32 bsz = core->blocksize;
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				// R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				RAnalFunction *tmp_func;
 				ut32 cont_size = 0;
 				RListIter *locs_it = NULL;
@@ -4102,8 +4101,14 @@ static int cmd_print(void *data, const char *input) {
 					}
 					cont_size = tmp_get_contsize (f);
 #endif
-					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x,
-						f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
+					ut32 linear = f->_size;
+					ut32 bbsum = r_anal_fcn_realsize (f);
+					if (bbsum + 4096 < linear) {
+						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
+					} else {
+						r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x,
+							f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
+					}
 #if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						cont_size = tmp_get_contsize (tmp_func);
