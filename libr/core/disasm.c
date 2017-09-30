@@ -48,6 +48,7 @@ static const char* r_vline_u[] = {
 typedef struct r_disam_options_t {
 	RCore *core;
 	char str[1024], strsub[1024];
+	int offless;
 	bool use_esil;
 	bool show_color;
 	bool show_color_bytes;
@@ -414,6 +415,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
+	ds->offless = r_config_get_i (core->config, "asm.offless");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
@@ -737,6 +739,18 @@ static void ds_build_op_str(RDisasmState *ds) {
 		}
 	}
 	char *asm_str = colorize_asm_string (core, ds);
+	if (ds->offless) {
+		char *n = strstr (ds->opstr, "0x");
+		if (n) {
+			char *p = n + 2;
+			while (ISHEXCHAR (*p)) {
+				p++;
+			}
+			memmove (n, p, strlen (p) + 1);
+		}
+		free (asm_str);
+		return;
+	}
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 		// TODO: Use data from code analysis..not raw ds->analop here
@@ -3567,11 +3581,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int ret, i, inc, skip_bytes = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
-	RDisasmState *ds;
 	const int addrbytes = core->io->addrbytes;
 
 	// TODO: All those ds must be print flags
-	ds = ds_init (core);
+	RDisasmState *ds = ds_init (core);
 	ds->cbytes = cbytes;
 	ds->print = p;
 	ds->l = l;
