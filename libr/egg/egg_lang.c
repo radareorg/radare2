@@ -845,10 +845,14 @@ static void rcc_context(REgg *egg, int delta) {
 			char *b, *g, *e, *n;
 			emit->comment (egg, "cond frame %s (%s)", callname, elm);
 			/* TODO: simplify with a single for */
-			b = strchr (conditionstr, '<');	/* below */
-			g = strchr (conditionstr, '>');	/* greater */
-			e = strchr (conditionstr, '=');	/* equal */
-			n = strchr (conditionstr, '!');	/* negate */
+			if (conditionstr) {
+				b = strchr (conditionstr, '<');	/* below */
+				g = strchr (conditionstr, '>');	/* greater */
+				e = strchr (conditionstr, '=');	/* equal */
+				n = strchr (conditionstr, '!');	/* negate */
+			} else {
+				b = g = e = n = NULL;
+			}
 			if (!strcmp (callname, "while")) {
 				char lab[128];
 				sprintf (lab, "__begin_%d_%d_%d", nfunctions,
