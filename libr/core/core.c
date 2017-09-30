@@ -447,7 +447,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		// pop state
 		if (ok) *ok = 1;
 		ut8 buf[sizeof (ut64)] = R_EMPTY;
-		(void)r_io_read_at (core->io, n, buf, refsz);
+		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
 		switch (refsz) {
 		case 8:
 			return r_read_ble64 (buf, core->print->big_endian);
