@@ -3931,10 +3931,14 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					r_cons_println (out);
 					free (out);
 				}
-			} else eprintf ("esil.stats is empty. Run 'aei'\n");
+			} else {
+				eprintf ("esil.stats is empty. Run 'aei'\n");
+			}
 			break;
 		case '-':
-			sdb_reset (esil->stats);
+			if (esil) {
+				sdb_reset (esil->stats);
+			}
 			break;
 		}
 		break;
