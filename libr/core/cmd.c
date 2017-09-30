@@ -1495,8 +1495,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
-		r_core_cmd_repeat (core, true);
-		ret = r_core_cmd_nullcallback (core);
+		if (r_config_get_i (core->config, "cmd.repeat")) {
+			r_core_cmd_repeat (core, true);
+			ret = r_core_cmd_nullcallback (core);
+		}
 		goto beach;
 	}
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
