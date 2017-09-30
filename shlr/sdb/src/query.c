@@ -385,6 +385,9 @@ next_quote:
 		d = 1;
 		if (!buf) {
 			buf = calloc (1, len);
+			if (!buf) {
+				goto fail;
+			}
 			bufset = 1;
 		}
 		*buf = 0;

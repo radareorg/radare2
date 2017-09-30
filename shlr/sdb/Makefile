@@ -95,6 +95,7 @@ ifeq ($(BUILD_MEMCACHE),1)
 endif
 	$(INSTALL_DATA) pkgconfig/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
+	test -f ${VALADIR}/types/sdbtypes.h || $(MAKE) -C $(VALADIR)/types
 	$(INSTALL_DATA) ${VALADIR}/sdb.vapi ${DESTDIR}${DATADIR}/vala/vapi
 	cd ${VALADIR}/types && ${MAKE} install DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 ifeq ($(BUILD_MEMCACHE),1)
