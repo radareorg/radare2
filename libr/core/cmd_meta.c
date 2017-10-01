@@ -24,12 +24,22 @@ static const char *help_msg_C[] = {
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"Cv", "[bsr][?]", "add comments to args",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
-	"Cz", "[@addr]", "add zero-terminated string",
+	"Cz", "[@addr]", "add string (see Cs?)",
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
+	NULL
+};
+
+static const char *help_msg_Cs[] = {
+	"Usage:", "Cs[-*] [size] [@addr]", "",
+	"Cs", "", "list all strings in human friendly form",
+	"Cs*", "", "list all strings in r2 commands",
+	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
+	" Cz", " [size] [@addr]", "ditto",
+	"Cs-", " [@addr]", "remove string",
 	NULL
 };
 
@@ -517,6 +527,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				"but have only identified specific fields in it. In that case, use 'fmt'\n"
 				"to show the fields you know about (perhaps using 'skip' fields), and 'sz'\n"
 				"to match the total struct size in mem.\n");
+			break;
+		case 's':
+			r_core_cmd_help (core, help_msg_Cs);
 			break;
 		default:
 			r_cons_println ("See C?");
