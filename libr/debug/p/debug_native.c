@@ -933,7 +933,7 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 }
 #elif __linux__
 static int io_perms_to_prot (int io_perms) {
-	int prot_perms = 0;
+	int prot_perms = PROT_NONE;
 
 	if (io_perms & R_IO_READ) {
 		prot_perms |= PROT_READ;
