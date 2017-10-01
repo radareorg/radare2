@@ -478,7 +478,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 
 		if (json) {
-			if (core->search->nhits > 1) {
+			if (core->search->nhits >= 1) {
 				r_cons_printf (",");
 			}
 			char *es = escaped ? s : r_str_escape (s);
@@ -496,7 +496,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		free (str);
 	} else if (kw) {
 		if (json) {
-			if (core->search->nhits > 1) {
+			if (core->search->nhits >= 1) {
 				r_cons_printf (",");
 			}
 			r_cons_printf ("{\"offset\": %"PFMT64d ",\"len\":%d}",
