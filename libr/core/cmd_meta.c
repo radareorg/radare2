@@ -33,16 +33,6 @@ static const char *help_msg_C[] = {
 	NULL
 };
 
-static const char *help_msg_Cs[] = {
-	"Usage:", "Cs[-*] [size] [@addr]", "",
-	"Cs", "", "list all strings in human friendly form",
-	"Cs*", "", "list all strings in r2 commands",
-	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
-	" Cz", " [size] [@addr]", "ditto",
-	"Cs-", " [@addr]", "remove string",
-	NULL
-};
-
 static const char *help_msg_CC[] = {
 	"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
 	"CC", "", "list all comments in human friendly form",
@@ -70,6 +60,16 @@ static const char *help_msg_CS[] = {
 	"CS","-","pop to the previous metaspace",
 	//	"CSm"," [addr]","move metas at given address to the current metaspace",
 	"CSr"," newname","rename selected metaspace",
+	NULL
+};
+
+static const char *help_msg_Cs[] = {
+	"Usage:", "Cs[-*] [size] [@addr]", "",
+	"Cs", "", "list all strings in human friendly form",
+	"Cs*", "", "list all strings in r2 commands",
+	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
+	" Cz", " [size] [@addr]", "ditto",
+	"Cs-", " [@addr]", "remove string",
 	NULL
 };
 
@@ -111,9 +111,9 @@ static const char *help_msg_Cvs[] = {
 
 static void cmd_meta_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, C);
-	DEFINE_CMD_DESCRIPTOR (core, Cs);
 	DEFINE_CMD_DESCRIPTOR (core, CC);
 	DEFINE_CMD_DESCRIPTOR (core, CS);
+	DEFINE_CMD_DESCRIPTOR (core, Cs);
 	DEFINE_CMD_DESCRIPTOR (core, Cvb);
 	DEFINE_CMD_DESCRIPTOR (core, Cvr);
 	DEFINE_CMD_DESCRIPTOR (core, Cvs);
