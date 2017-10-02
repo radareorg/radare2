@@ -61,7 +61,7 @@ ECHO [ R2 WINDIST FOLDER CREATION ]
 MKDIR %DIST%
 MOVE bin\*.exe %DIST%\
 MOVE lib\*.dll %DIST%\
-IF "%COPYLIB"=="1" (
+IF "%COPYLIB%"=="1" (
     MOVE bin\*.lib %DIST%\
     MOVE bin\*.a %DIST%\
 )
