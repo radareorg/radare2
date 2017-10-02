@@ -18,7 +18,7 @@ static char *runcmd (const char *cmd) {
 	r_socket_block_time (gs, 1, timeout);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
-		r_socket_read (gs, (ut8*)buf, sizeof (buf));
+		r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
 		char *promptFound = strstr (buf, "Wine-dbg>");
 		if (promptFound) {
 			*promptFound = 0;
@@ -66,7 +66,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		free (res);
 		free (cmd);
 	}
-	
+
 	int left = count % wordSize;
 	if (left > 0) {
 		ut32 n = 0;
@@ -76,6 +76,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		char *res = runcmd (cmd);
 		sscanf (res, "%x", &n);
 		free (res);
+		free (cmd);
 		memcpy (buf + (words * wordSize), wn, left);
 	}
 	return count;

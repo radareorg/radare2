@@ -19,6 +19,7 @@ static RList *__io_maps(RDebug *dbg) {
 	dbg->iob.system (dbg->iob.io, "dm");
 	const char *consdata = r_cons_get_buffer ();
 	if (!consdata) {
+		r_list_free (list);
 		return NULL;
 	}
 	char *ostr, *str = strdup (consdata);
