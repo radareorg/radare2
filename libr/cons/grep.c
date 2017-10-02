@@ -18,6 +18,7 @@ static const char *help_detail_tilde[] = {
 	"modifier:", "", "",
 	" &",        "", "all words must match to grep the line",
 	" $[n]",     "", "sort numerically / alphabetically the Nth column",
+	" $!",       "", "sort in inverse order",
 	" +",        "", "case insensitive grep (grep -i)",
 	" ^",        "", "words must be placed at the beginning of line",
 	" !",        "", "negate grep",
