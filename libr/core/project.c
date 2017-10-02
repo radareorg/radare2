@@ -511,11 +511,23 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	return file;
 }
 
+static int fdc;		//this is a ugly, remove it, when we have $fd
+
 static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
+	RList *maps = NULL;
+	RListIter *iter;
+	RIOMap *map;
 	if (desc) {
-		// FIXME: File paths should be absolute.
-		r_cons_printf ("on %s\n"
-			       "om-1\n", desc->uri);
+		r_cons_printf ("ofs %s %s\n", desc->uri, r_str_rwx_i (desc->flags));
+		if (maps = r_io_map_get_for_fd (core->io, id)) {
+			r_list_foreach (maps, iter, map) {
+				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
+					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->flags),
+					map->name ? " " : "", map->name ? map->name : "");
+			}
+			r_list_free (maps);
+		}
+		fdc++;
 	}
 	return true;
 }
@@ -566,12 +578,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
+		fdc = 3;
 		r_id_storage_foreach (core->io->files, store_files_and_maps, core);
-		if (core->io->maps) {
-			r_core_cmd (core, "om*", 0);
-		}
-		// FIXME: Work around to override default -r--.
-		r_cons_printf ("omfg+x\n");
 		r_cons_flush ();
 	}
 	{
