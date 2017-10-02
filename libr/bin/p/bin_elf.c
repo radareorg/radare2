@@ -872,7 +872,7 @@ static bool has_canary(RBinFile *arch) {
 	RBinImport *import;
 	if (imports_list) {
 		r_list_foreach (imports_list, iter, import) {
-			if (!strcmp (import->name, "__stack_chk_fail") ) {
+			if (!strcmp (import->name, "__stack_chk_fail") || !strcmp (import->name, "__stack_smash_handler")) {
 				ret = true;
 				break;
 			}
