@@ -350,6 +350,7 @@ static int cmd_info(void *data, const char *input) {
 			// plugin that will be used to load the bin (e.g. malloc://)
 			// TODO: Might be nice to reload a bin at a specified offset?
 			r_core_bin_reload (core, NULL, baddr);
+			o = r_bin_cur_object (core->bin);
 			r_core_block_read (core);
 			newline = false;
 		}
