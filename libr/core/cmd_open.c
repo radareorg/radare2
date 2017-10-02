@@ -79,7 +79,7 @@ static const char *help_msg_om[] = {
 	"omj", "", "list all maps in json format",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", "-mapid", "remove the map with corresponding id",
-	"om", " fd vaddr [size] [paddr] [name]", "create new io map",
+	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapid [name]", "set/delete name for map with mapid",
@@ -418,7 +418,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach (io->maps, iter, map) {			//this must be prev
+	ls_foreach_prev (io->maps, iter, map) {			//this must be prev
 		if (fd != -1 && map->fd != fd) {
 			continue;
 		}
@@ -439,13 +439,14 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case 1:
 		case '*':
 		case 'r':
-			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x"\n", map->fd,
-					map->itv.addr, map->itv.size, map->delta);
+			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", map->fd,
+					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->flags),
+					map->name ? " " : "", map->name ? map->name : "");
 			break;
 		default:
 			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-					map->delta, map->itv.addr, r_itv_end (map->itv),
+					map->delta, map->itv.addr, r_itv_end (map->itv) - 1,
 					r_str_rwx_i (map->flags), (map->name ? map->name : ""));
 			break;
 		}
@@ -592,14 +593,18 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		}
 		if (strchr (s, ' ')) {
-			int fd = 0, words = 0;
+			int fd = 0, words = 0, rwx = 0;
 			ut64 size = 0, vaddr = 0, paddr = 0;
 			const char *name = NULL;
+			bool rwx_arg = false;
 			RIODesc *desc = NULL;
 			words = r_str_word_set0 (s);
 			switch (words) {
-			case 5:
-				name = r_str_word_get0 (s, 4);
+			case 6:
+				name = r_str_word_get0 (s, 5);
+			case 5:			//this sucks
+				rwx = r_str_rwx (r_str_word_get0 (s, 4));
+				rwx_arg = true;
 			case 4:
 				paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
 			case 3:
@@ -618,7 +623,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				if (!size) {
 					size = r_io_fd_size (core->io, fd);
 				}
-				map = r_io_map_add (core->io, fd, desc->flags, paddr, vaddr, size, true);
+				map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->flags, paddr, vaddr, size, true);
 				r_io_map_set_name (map, name);
 			}
 		} else {
@@ -854,11 +859,135 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
-	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-	int nowarn = r_config_get_i (core->config, "file.nowarn");
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr"),
+	     addr = 0LL;
+	int nowarn = r_config_get_i (core->config, "file.nowarn"),
+	    argc, fd;
 	RCoreFile *file;
-	int isn = 0;
-	char *ptr;
+	bool isn = false, silence = false;
+	char *ptr = NULL;
+	char **argv;
+
+	switch (*input) {
+	case 'n':
+		if (input[1] == '*') {
+			r_core_file_list (core, 'n');
+			return 0;
+		} else if (input[1] == 's') {
+			silence = true;
+			if (input[2] != ' ') {
+				eprintf ("Usage: ons file [addr] [rwx]\n");
+				return 0;
+			}
+			ptr = &input[3];
+		} else if (input[1] == ' ') {
+			ptr = &input[2];
+		} else {
+			eprintf ("Usage: on file [addr] [rwx]\n");
+			return 0;
+		}
+		argv = r_str_argv (ptr, &argc);
+		if (!argc) {
+			if (silence) {
+				eprintf ("Usage: ons file [addr] [rwx]\n");
+				return 0;
+			} else {
+				eprintf ("Usage: on file [addr] [rwx]\n");
+				return 0;
+			}
+			r_str_argv_free (argv);
+			return 0;
+		} else {
+			ptr = argv[0];
+		}
+		if (argc == 2) {
+			if (r_num_is_valid_input (core->num, argv[1])) {
+				addr = r_num_math (core->num, argv[1]);
+			} else {
+				perms = r_str_rwx (argv[1]);
+			}
+		}
+		if (argc == 3) {
+			addr = r_num_math (core->num, argv[1]);
+			perms = r_str_rwx (argv[2]);
+		}
+		if ((file = r_core_file_open (core, ptr, perms, addr))) {
+			fd = file->fd;
+			r_io_map_add (core->io, fd, perms, 0LL, addr,
+					r_io_fd_size (core->io, fd), true);
+		}
+		r_str_argv_free (argv);
+		if (!silence) {
+			eprintf ("%d\n", fd);
+		}
+		r_core_block_read (core);
+		return 0;
+	case 'f':
+		if ((input[1] == 's') && (input[2] == ' ')) {
+			silence = true;
+			ptr = &input[3];
+		} else if (input[1] == ' ') {
+			ptr = &input[2];
+		} else {
+			eprintf ("wrong\n");
+			return 0;
+		}
+		argv = r_str_argv (ptr, &argc);
+		if (argc == 0) {
+			eprintf ("wrong\n");
+			r_str_argv_free (argv);
+			return 0;
+		} else if (argc == 2) {
+			perms = r_str_rwx (argv[1]);
+		}
+		fd = r_io_fd_open (core->io, argv[0], perms, 0);
+		if (!silence) {
+			eprintf ("%d\n", fd);
+		}
+		r_str_argv_free (argv);
+		return 0;
+	case 's':
+		silence = true;
+	case ' ':
+		if (silence) {
+			ptr = &input[2];
+		} else {
+			ptr = &input[1];
+		}
+		if (ptr[-1] != ' ') {
+			eprintf ("wrong\n");
+			return 0;
+		}
+		r_str_argv (ptr, &argc);
+		if (argc == 0) {
+			eprintf ("wrong\n");
+			r_str_argv_free (argv);
+			return 0;
+		}
+		if (argc == 2) {
+			if (r_num_is_valid_input (core->num, argv[1])) {
+				addr = r_num_math (core->num, argv[1]);
+			} else {
+				perms = r_str_rwx (argv[1]);
+			}
+		}
+		if (argc == 3) {
+			addr = r_num_math (core->num, argv[1]);
+			perms = r_str_rwx (argv[2]);
+		}
+		if ((file = r_core_file_open (core, argv[0], perms, addr))) {
+			fd = file->fd;
+			if (!silence) {
+				eprintf ("%d\n", fd);
+			}
+			r_core_bin_load (core, argv[0], baddr);
+		} else if (!nowarn) {
+			eprintf ("cannot open file %s\n", argv[0]);
+		}
+		r_str_argv_free (argv);
+		r_core_block_read (core);
+		return 0;
+	}
 
 	switch (*input) {
 	case '=': // "o="
@@ -941,92 +1070,24 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		break;
-	case '+': // "o+"
-		perms = R_IO_READ | R_IO_WRITE;
-		/* fall through */
-	case 'f': // "of"
-		/* open file with spaces or special chars */
-		if (input[1] == ' ') {
-			const char *fn = input + 2;
-			file = r_core_file_open (core, fn, perms, 0);
-			if (file) {
-				r_core_bin_load (core, fn, UT64_MAX);
-			} else {
-				eprintf ("Cannot open (%s)\n", fn);
-			}
-		} else {
-			eprintf ("Usage: of [path-to-file]\n");
-		}
-		break;
-	case 'n': // "on"
-		// like in r2 -n
-		isn = 1;
-		if (input[1] == '*') {
-			r_core_file_list (core, 'n');
-			break;
-		}
-		if (input[1] != ' ') {
-			break;
-		}
-		/* fall through */
-	case ' ': // "o "
+	case 'u':
 		{
-			ut64 ba = baddr;
-			ut64 ma = 0L;
-			char *fn = strdup (input + (isn? 2:1));
-			if (!fn || !*fn) {
-				if (isn) {
-					eprintf ("Usage: on [file]\n");
-				} else {
-					eprintf ("Usage: o [file] addr\n");
-				}
-				free (fn);
-				break;
-			}
-			ptr = strchr (fn, ' ');
-			if (ptr) {
-				*ptr++ = '\0';
-				ma = r_num_math (core->num, ptr);
-			}
-			int num = atoi (input + 1);
-			if (num <= 0) {
-				if (fn && *fn) {
-					file = r_core_file_open (core, fn, perms, ma);
-					if (file) {
-						r_cons_printf ("%d\n", (ut32)file->fd);
-						// MUST CLEAN BEFORE LOADING
-						if (isn) {
-							RIODesc *d = r_io_desc_get (core->io, file->fd);
-							if (d) {
-								r_io_map_new (core->io, d->fd, d->flags, 0LL, ma, r_io_desc_size (d), true);
-							}
-						} else {
-							r_core_bin_load (core, fn, ba);
-						}
-					} else if (!nowarn) {
-						eprintf ("Cannot open file '%s'\n", fn);
-					}
-				} else {
-					eprintf ("Usage: on [file] ([maddr]) ([baddr])\n");
-				}
-			} else {
-				RListIter *iter = NULL;
-				RCoreFile *f;
-				core->switch_file_view = 0;
-				r_list_foreach (core->files, iter, f) {
-					if (f->fd == num) {
-						r_io_use_fd (core->io, num);
-						//core->switch_file_view = 1;
-						// raise rbinobj too
-						int binfile_num = find_binfile_id_by_fd (core->bin, num);
-						r_core_bin_raise (core, binfile_num, -1);
-						break;
-					}
+			RListIter *iter = NULL;
+			RCoreFile *f;
+			int binfile_num;
+			core->switch_file_view = 0;
+			int num = atoi (input + 2);
+
+			r_list_foreach (core->files, iter, f) {
+				if (f->fd == num) {
+					core->file = f;
 				}
 			}
-			r_core_block_read (core);
-			free (fn);
+			r_io_use_fd (core->io, num);
+			binfile_num = find_binfile_id_by_fd (core->bin, num);
+			r_core_bin_raise (core, binfile_num, -1);
 		}
+		r_core_block_read (core);
 		break;
 	case 'b': // "ob"
 		cmd_open_bin (core, input);

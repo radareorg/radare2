@@ -2051,6 +2051,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			fcn->type == R_ANAL_FCN_TYPE_IMP?'i':'f',
 			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
 			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
+	// FIXME: this command prints something annoying. Does it have important side-effects?
 	r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n", fcn->cc, fcn->addr);
 	if (fcn->folded) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);

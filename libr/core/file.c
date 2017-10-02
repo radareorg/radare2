@@ -995,6 +995,7 @@ R_API bool r_core_file_close_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
 	if (fd == -1) {
+		// FIXME: Only closes files known to the core!
 		r_list_free (core->files);
 		core->files = NULL;
 		core->file = NULL;
