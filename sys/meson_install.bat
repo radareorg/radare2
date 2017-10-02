@@ -2,16 +2,19 @@
 
 SET BUILDER=ninja
 SET DIST=
+SET COPYLIB=
 
 :PARSEARGS
 IF NOT "%1"=="" (
-	IF "%1"=="--msbuild" (
-		SET BUILDER=msbuild
-	) ELSE (
+    IF "%1"=="--msbuild" (
+        SET BUILDER=msbuild
+    ) ELSE IF "%1"=="--with-static" (
+        SET COPYLIB=1
+    ) ELSE (
         SET DIST=%1
     )
-	SHIFT
-	GOTO PARSEARGS
+    SHIFT
+    GOTO PARSEARGS
 )
 
 :START
@@ -58,6 +61,10 @@ ECHO [ R2 WINDIST FOLDER CREATION ]
 MKDIR %DIST%
 MOVE bin\*.exe %DIST%\
 MOVE lib\*.dll %DIST%\
+IF "%COPYLIB"=="1" (
+    MOVE bin\*.lib %DIST%\
+    MOVE bin\*.a %DIST%\
+)
 XCOPY /S /I shlr\www %DIST%\www
 MKDIR %DIST%\share\radare2\%R2_VERSION%\magic
 XCOPY /S libr\magic\d\default\* %DIST%\share\radare2\%R2_VERSION%\magic\
