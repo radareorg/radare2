@@ -304,7 +304,6 @@ static void playMsg(RCore *core, const char *n, int len) {
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	bool newline = r_config_get_i (core->config, "scr.interactive");
-	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
 	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
 	int i, va = core->io->va || core->io->debug;
@@ -350,12 +349,13 @@ static int cmd_info(void *data, const char *input) {
 			// plugin that will be used to load the bin (e.g. malloc://)
 			// TODO: Might be nice to reload a bin at a specified offset?
 			r_core_bin_reload (core, NULL, baddr);
-			o = r_bin_cur_object (core->bin);
 			r_core_block_read (core);
 			newline = false;
 		}
 		break;
 		case 'k':
+		{
+			RBinObject *o = r_bin_cur_object (core->bin);
 			db = o? o->kv: NULL;
 			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
@@ -396,7 +396,8 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Usage: ik*    # load all header information\n");
 			}
 			goto done;
-			break;
+		}
+		break;
 		case 'o':
 		{
 			if (!cf) {
