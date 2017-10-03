@@ -614,9 +614,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					if (input[1] == 'a') {
-						(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 1);
-						name_len = strlen (tmp);
-						strncpy (name, tmp, sizeof (name));
+						(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+						name[sizeof (name) - 1] = '\0';
+						name_len = strlen (name);
 					} else {
 						(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
 						name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
@@ -635,8 +635,8 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 								j++;
 							}
 						}
+						name[sizeof (name) - 1] = '\0';
 					}
-					name[sizeof (name) - 1] = '\0';
 					if (n == 0) {
 						n = name_len + 1;
 					} else {
