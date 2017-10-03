@@ -62,8 +62,8 @@ MKDIR %DIST%
 MOVE bin\*.exe %DIST%\
 MOVE lib\*.dll %DIST%\
 IF "%COPYLIB%"=="1" (
-    MOVE bin\*.lib %DIST%\
-    MOVE bin\*.a %DIST%\
+    MOVE lib\*.lib %DIST%\
+    MOVE lib\*.a %DIST%\
 )
 XCOPY /S /I shlr\www %DIST%\www
 MKDIR %DIST%\share\radare2\%R2_VERSION%\magic
