@@ -333,10 +333,10 @@ static const char *help_msg_afv[] = {
 };
 
 static const char *help_msg_afvb[] = {
-	"Usage:", "afvb", " [idx] [name] [type]",
+	"Usage:", "afvb", " [idx] [name] ([type])",
 	"afvb", "", "list base pointer based arguments, locals",
 	"afvb*", "", "same as afvb but in r2 commands",
-	"afvb", " [idx] [name] [type]", "define base pointer based arguments, locals",
+	"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 	"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
 	"afvb-", " [name]", "delete argument/locals at the given name",
 	"afvbg", " [idx] [addr]", "define var get reference",
