@@ -83,9 +83,11 @@ static const char *help_msg_om[] = {
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapid [name]", "set/delete name for map with mapid",
+	"omn.", "([-|name])", "show/set/delete name for current map",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omb", " mapid addr", "relocate map with corresponding id",
+	"omb.", " addr", "relocate current map",
 	"omr", " mapid newsize", "resize map with corresponding id",
 	"omp", " mapid", "priorize map with corresponding id",
 	"ompf", "[fd]", "priorize map by fd",
@@ -546,14 +548,22 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "omb"
-		if (input[2] != ' ') {
-			break;
-		}
-		P = strchr (input+3, ' ');
-		if (P) {
-			id = (ut32)r_num_math (core->num, input+3);	//mapid
-			new = r_num_math (core->num, P+1);
-			r_io_map_remap (core->io, id, new);
+		if (input[2] == '.') {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				ut64 dst = r_num_math (core->num, input + 3);
+				r_io_map_remap (core->io, map->id, dst);
+			}
+		} else {
+			if (input[2] != ' ') {
+				break;
+			}
+			P = strchr (input + 3, ' ');
+			if (P) {
+				id = (ut32)r_num_math (core->num, input+3);	//mapid
+				new = r_num_math (core->num, P + 1);
+				r_io_map_remap (core->io, id, new);
+			}
 		}
 		break;
 	case 'p':
@@ -631,35 +641,52 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		R_FREE (s);
 		break;
-	case 'n': //omn
-		if (!(s = strdup (&input[2]))) {
-			break;
-		}
-		p = s;
-		while (*s == ' ') {
-			s++;
-		}
-		if (*s == '\0') {
-			s = p;
-			break;
-		}
-		if (!(q = strchr (s, ' '))) {
+	case 'n': // "omn"
+		if (input[2] == '.') { // "omn."
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				switch (input[3]) {
+				case '-':
+					r_io_map_del_name (map);
+					break;
+				case 0:
+					r_cons_printf ("%s\n", map->name);
+					break;
+				default:
+					r_io_map_set_name (map, input + 3);
+					break;
+				}
+			}
+		} else {
+			if (!(s = strdup (&input[2]))) {
+				break;
+			}
+			p = s;
+			while (*s == ' ') {
+				s++;
+			}
+			if (*s == '\0') {
+				s = p;
+				break;
+			}
+			if (!(q = strchr (s, ' '))) {
+				id = (ut32)r_num_math (core->num, s);
+				map = r_io_map_get (core->io, id);
+				r_io_map_del_name (map);
+				s = p;
+				break;
+			}
+			*q = '\0';
+			q++;
 			id = (ut32)r_num_math (core->num, s);
 			map = r_io_map_get (core->io, id);
-			r_io_map_del_name (map);
+			if (*q) {
+				r_io_map_set_name (map, q);
+			} else {
+				r_io_map_del_name (map);
+			}
 			s = p;
-			break;
 		}
-		*q = '\0';
-		q++;
-		id = (ut32)r_num_math (core->num, s);
-		map = r_io_map_get (core->io, id);
-		if (*q) {
-			r_io_map_set_name (map, q);
-		} else {
-			r_io_map_del_name (map);
-		}
-		s = p;
 		break;
 	case 'm': // "omm"
 		{

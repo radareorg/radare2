@@ -1518,7 +1518,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		colon = NULL;
 	}
 	if (rep > 0) {
-		while (IS_DIGIT(*cmd)) {
+		while (IS_DIGIT (*cmd)) {
 			cmd++;
 		}
 		// do not repeat null cmd
