@@ -862,9 +862,7 @@ static bool _isbreaked = false;
 static HANDLE h;
 static BOOL __w32_signal(DWORD type) {
 	if (type == CTRL_C_EVENT) {
-		if (cur_desc) {
-			_isbreaked = true;
-		}
+		_isbreaked = true;
 		return true;
 	}
 	return false;
