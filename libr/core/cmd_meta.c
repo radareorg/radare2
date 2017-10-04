@@ -24,7 +24,7 @@ static const char *help_msg_C[] = {
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"Cv", "[bsr][?]", "add comments to args",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
-	"Cz", "[@addr]", "add zero-terminated string",
+	"Cz", "[@addr]", "add string (see Cs?)",
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
@@ -60,6 +60,16 @@ static const char *help_msg_CS[] = {
 	"CS","-","pop to the previous metaspace",
 	//	"CSm"," [addr]","move metas at given address to the current metaspace",
 	"CSr"," newname","rename selected metaspace",
+	NULL
+};
+
+static const char *help_msg_Cs[] = {
+	"Usage:", "Cs[-*] [size] [@addr]", "",
+	"Cs", "", "list all strings in human friendly form",
+	"Cs*", "", "list all strings in r2 commands",
+	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
+	" Cz", " [size] [@addr]", "ditto",
+	"Cs-", " [@addr]", "remove string",
 	NULL
 };
 
@@ -103,6 +113,7 @@ static void cmd_meta_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, C);
 	DEFINE_CMD_DESCRIPTOR (core, CC);
 	DEFINE_CMD_DESCRIPTOR (core, CS);
+	DEFINE_CMD_DESCRIPTOR (core, Cs);
 	DEFINE_CMD_DESCRIPTOR (core, Cvb);
 	DEFINE_CMD_DESCRIPTOR (core, Cvr);
 	DEFINE_CMD_DESCRIPTOR (core, Cvs);
@@ -518,6 +529,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				"to show the fields you know about (perhaps using 'skip' fields), and 'sz'\n"
 				"to match the total struct size in mem.\n");
 			break;
+		case 's':
+			r_core_cmd_help (core, help_msg_Cs);
+			break;
 		default:
 			r_cons_println ("See C?");
 			break;
@@ -571,9 +585,11 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		}
 		if (strlen (input) > 2) {
 			char *rep = strchr (input + 2, '[');
-			if (!rep) rep = strchr (input + 2, ' ');
+			if (!rep) {
+				rep = strchr (input + 2, ' ');
+			}
 			if (rep) {
-				repeat = r_num_get (core->num, rep + 1);
+				repeat = r_num_math (core->num, rep + 1);
 			}
 		}
 		int repcnt = 0;
@@ -849,7 +865,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'h': /* Ch comment */
 	case 's': /* Cs string */
 	case 'z': /* Cz zero-terminated string */
-	case 'd': /* Cd data */
+	case 'd': /* "Cd" data */
 	case 'm': /* Cm magic */
 	case 'f': /* Cf formatted */
 		cmd_meta_hsdmf (core, input);

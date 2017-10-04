@@ -304,7 +304,6 @@ static void playMsg(RCore *core, const char *n, int len) {
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	bool newline = r_config_get_i (core->config, "scr.interactive");
-	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
 	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
 	int i, va = core->io->va || core->io->debug;
@@ -355,6 +354,8 @@ static int cmd_info(void *data, const char *input) {
 		}
 		break;
 		case 'k':
+		{
+			RBinObject *o = r_bin_cur_object (core->bin);
 			db = o? o->kv: NULL;
 			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
@@ -395,7 +396,8 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Usage: ik*    # load all header information\n");
 			}
 			goto done;
-			break;
+		}
+		break;
 		case 'o':
 		{
 			if (!cf) {
@@ -535,6 +537,7 @@ static int cmd_info(void *data, const char *input) {
 					info = r_bin_get_info (core->bin);
 					file_found = false;
 					filename = strchr (input, ' ');
+					while (input[2]) input++;
 					if (filename) {
 						*filename++ = '\0';
 						filename = strdup (filename);
@@ -558,6 +561,8 @@ static int cmd_info(void *data, const char *input) {
 								char* dir = r_file_dirname (core->bin->cur->file);
 								filename = r_str_newf ("%s/%s", dir, basename);
 								file_found = r_file_exists (filename);
+							} else {
+								filename = strdup (basename);
 							}
 						}
 					}
@@ -583,7 +588,6 @@ static int cmd_info(void *data, const char *input) {
 					r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
 					r_core_file_close (core, file);
 					free (filename);
-					input += (mode) ? 2 : 1;
 					break;
 				case '?':
 				default:

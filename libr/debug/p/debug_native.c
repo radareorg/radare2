@@ -932,6 +932,21 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	return list;
 }
 #elif __linux__
+static int io_perms_to_prot (int io_perms) {
+	int prot_perms = PROT_NONE;
+
+	if (io_perms & R_IO_READ) {
+		prot_perms |= PROT_READ;
+	}
+	if (io_perms & R_IO_WRITE) {
+		prot_perms |= PROT_WRITE;
+	}
+	if (io_perms & R_IO_EXEC) {
+		prot_perms |= PROT_EXEC;
+	}
+	return prot_perms;
+}
+
 static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	RBuffer *buf = NULL;
 	RDebugMap* map = NULL;
@@ -1671,7 +1686,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
-		"}\n", num, (void*)addr, size, perms);
+		"}\n", num, (void*)addr, size, io_perms_to_prot (perms));
 
 	r_egg_reset (dbg->egg);
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);

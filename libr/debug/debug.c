@@ -1478,6 +1478,9 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 }
 
 R_API bool r_debug_is_dead (RDebug *dbg) {
+	if (!dbg->h) {
+		return false;
+	}
 	// workaround for debug.io.. should be generic
 	if (!strcmp (dbg->h->name, "io")) {
 		return false;
