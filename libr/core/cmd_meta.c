@@ -69,6 +69,7 @@ static const char *help_msg_Cs[] = {
 	"Cs*", "", "list all strings in r2 commands",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
 	" Cz", " [size] [@addr]", "ditto",
+	"Csa", " [size] [@addr]", "add ascii/latin1 string",
 	"Cs-", " [@addr]", "remove string",
 	NULL
 };
@@ -575,6 +576,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		break;
 	case ' ':
 	case '\0':
+	case 'a':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
 			r_meta_list (core->anal, type, 0);
 			break;
@@ -628,24 +630,30 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				} else if (type == 's') { //Cs
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
-					(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
-					name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
-					//handle wide strings
-					for (i = 0, j = 0; i < sizeof (name); i++, j++) {
-						name[i] = tmp[j];
-						if (!tmp[j]) {
-							break;
-						}
-						if (!tmp[j + 1]) {
-							if (j + 3 < sizeof (tmp)) {
-								if (tmp[j + 3]) {
-									break;	
-								}
+					if (input[1] == 'a') {
+						(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+						name[sizeof (name) - 1] = '\0';
+						name_len = strlen (name);
+					} else {
+						(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
+						name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
+						//handle wide strings
+						for (i = 0, j = 0; i < sizeof (name); i++, j++) {
+							name[i] = tmp[j];
+							if (!tmp[j]) {
+								break;
 							}
-							j++;
+							if (!tmp[j + 1]) {
+								if (j + 3 < sizeof (tmp)) {
+									if (tmp[j + 3]) {
+										break;
+									}
+								}
+								j++;
+							}
 						}
+						name[sizeof (name) - 1] = '\0';
 					}
-					name[sizeof (name) - 1] = '\0';
 					if (n == 0) {
 						n = name_len + 1;
 					} else {
