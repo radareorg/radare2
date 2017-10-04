@@ -69,6 +69,7 @@ static const char *help_msg_Cs[] = {
 	"Cs*", "", "list all strings in r2 commands",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
 	" Cz", " [size] [@addr]", "ditto",
+	"Csa", " [size] [@addr]", "add ascii/latin1 string",
 	"Cs-", " [@addr]", "remove string",
 	NULL
 };
