@@ -2071,6 +2071,7 @@ char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 	case ELFOSABI_LINUX: return strdup("linux");
 	case ELFOSABI_SOLARIS: return strdup("solaris");
 	case ELFOSABI_FREEBSD: return strdup("freebsd");
+	case ELFOSABI_HPUX: return strdup("hpux");
 	}
 	/* Hack to identify OS */
 	if (needle (bin, "openbsd")) return strdup ("openbsd");
