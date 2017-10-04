@@ -584,9 +584,11 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		}
 		if (strlen (input) > 2) {
 			char *rep = strchr (input + 2, '[');
-			if (!rep) rep = strchr (input + 2, ' ');
+			if (!rep) {
+				rep = strchr (input + 2, ' ');
+			}
 			if (rep) {
-				repeat = r_num_get (core->num, rep + 1);
+				repeat = r_num_math (core->num, rep + 1);
 			}
 		}
 		int repcnt = 0;
@@ -856,7 +858,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'h': /* Ch comment */
 	case 's': /* Cs string */
 	case 'z': /* Cz zero-terminated string */
-	case 'd': /* Cd data */
+	case 'd': /* "Cd" data */
 	case 'm': /* Cm magic */
 	case 'f': /* Cf formatted */
 		cmd_meta_hsdmf (core, input);
