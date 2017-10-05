@@ -2131,15 +2131,31 @@ static inline int needle(ELFOBJ *bin, const char *s) {
 
 // TODO: must return const char * all those strings must be const char os[LINUX] or so
 char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
+	int i;
+	int num = bin->ehdr.e_shnum;
+	const char *section_name = NULL;
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_LINUX: return strdup("linux");
 	case ELFOSABI_SOLARIS: return strdup("solaris");
 	case ELFOSABI_FREEBSD: return strdup("freebsd");
 	case ELFOSABI_HPUX: return strdup("hpux");
 	}
+
+	for (i = 0; i < num; i++) {
+		if (bin->shdr[i].sh_type == SHT_NOTE) {
+			section_name = &bin->shstrtab[bin->shdr[i].sh_name];
+			if (!strcmp (section_name, ".note.openbsd.ident")) {
+				return strdup ("openbsd");
+			}
+			if (!strcmp (section_name, ".note.minix.ident")) {
+				return strdup ("minix");
+			}
+			if (!strcmp (section_name, ".note.netbsd.ident")) {
+				return strdup ("netbsd");
+			}
+		}
+	}
 	/* Hack to identify OS */
-	if (needle (bin, "openbsd")) return strdup ("openbsd");
-	if (needle (bin, "netbsd")) return strdup ("netbsd");
 	if (needle (bin, "freebsd")) return strdup ("freebsd");
 	if (noodle (bin, "BEOS:APP_VERSION")) return strdup ("beos");
 	if (needle (bin, "GNU")) return strdup ("linux");
