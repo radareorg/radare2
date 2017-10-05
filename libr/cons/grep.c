@@ -101,6 +101,8 @@ static void parse_grep_expression(const char *str) {
 					free (cons->grep.json_path);
 					cons->grep.json_path = jsonPath;
 					cons->grep.json = 1;
+				} else {
+					free (jsonPath);
 				}
 				return;
 			}
