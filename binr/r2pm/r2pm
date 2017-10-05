@@ -210,7 +210,12 @@ R2PM_TGZ() {
 	cd "${DIR}" || R2PM_FAIL "Oops"
 }
 
+R2PM_DOC() {
+	R2PM_DOC="$@"
+}
+
 R2PM_GIT() {
+	[ -z "${NAME}" ] && return
 	URL="$1"
 	if [ -z "$2" ]; then
 		DIR="`basename $1`"
@@ -250,7 +255,6 @@ R2PM_FAIL() {
 }
 
 R2PM_BEGIN() {
-	echo "Processing ${NAME} ..."
 	R2PM_GIT=""
 	R2PM_DEPS=""
 }
@@ -276,7 +280,9 @@ R2PM_UNREGISTER() {
 }
 
 R2PM_END() {
-	echo "${ACTION} Done For ${NAME}"
+	if [ -n "${NAME}" ]; then
+		echo "${ACTION} Done For ${NAME}"
+	fi
 }
 
 R2PM_DEPS() {
@@ -303,6 +309,18 @@ pkgFilePath() {
 			return
 		fi
 	done
+}
+
+r2pm_doc() {
+	if [ -z "$1" ]; then
+		R2PM_Info
+	else
+		FILE="$(pkgFilePath "$1")"
+		if [ -f "${FILE}" ]; then
+			. "${FILE}"
+			echo "${R2PM_DOC}"
+		fi
+	fi
 }
 
 r2pm_install() {
@@ -518,6 +536,9 @@ ls)
 	fi
 	eval echo "\$$2"
 	;;
+-d|doc|--doc)
+	r2pm_doc "$2"
+	;;
 *|help|-h)
 	cat <<HELP
 Usage: r2pm [init|update|cmd] [...]
@@ -535,6 +556,7 @@ Commands:
  -h,help                     show this message
  -H variable                 show value of given variable
  -c,clean ([git/dir])        clear source cache (GITDIR)
+ -d,doc [pkgname]            show documentation for given package
  -w <pkgname>                what/where is installed
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'r2pm ls')
