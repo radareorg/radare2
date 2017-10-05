@@ -39,6 +39,12 @@ IF NOT "%1"=="" (
 		SET BACKEND=vs2015
 		SET XP=1
 	)
+	IF "%1"=="--static" (
+		SET DEFAULT_LIBRARY=--default-library static
+	)
+	IF "%1"=="--shared" (
+		SET DEFAULT_LIBRARY=--default-library shared
+	)
 	SHIFT
 	GOTO PARSEARGS
 )
