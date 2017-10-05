@@ -26,14 +26,17 @@ environment:
       PYTHON: 'C:\\Python36-x64'
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
+      APPVEYOR_JOB_NAME: vs2015_64
     # VS2015 32
     - builder: vs2015_32
       PYTHON: 'C:\\Python36'
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
+      APPVEYOR_JOB_NAME: vs2015_32
     # MINGW32 Variables
     - builder: mingw32
       EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
+      APPVEYOR_JOB_NAME: mingw32
     # MSYS2 Variables
     #- builder: msys2
     #  MSYS2_DIR: msys64
