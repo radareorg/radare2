@@ -26,6 +26,70 @@ typedef struct r_egg_plugin_t {
 	RBuffer* (*build) (void *egg);
 } REggPlugin;
 
+typedef struct r_egg_lang_t {
+	int pushargs;
+	int nalias;
+	int nsyscalls;
+	char *conditionstr;
+	char *syscallbody;
+	char *includefile;
+	char *setenviron;
+	char *mathline;
+	// used for confusing mathop
+	int commentmode;
+	int varsize;
+	int varxs;
+	int lastctxdelta;
+	int nargs;
+	int docall;
+	int nfunctions;
+	int nbrackets;
+	int slurpin;
+	int slurp;
+	int line;
+	char elem[1024];
+	int attsyntax;
+	int elem_n;
+	char *callname;
+	char *endframe;
+	char *ctxpush[32];
+	char *file;
+	char *dstvar;
+	char *dstval;
+	char *includedir;
+	char *ifelse_table[32][32];
+	// used to solve if-else problem in a not so ugly way
+	int ndstval;
+	int skipline;// BOOL
+	int quoteline;
+	int quotelinevar;
+	int stackframe;
+	int stackfixed;
+	int oc;
+	int mode;
+ 	int inlinectr;
+	struct {
+		char *name;
+		char *body;
+		// int fastcall; /* TODO: NOT YET USED */
+	} inlines[256];
+	int ninlines;
+	struct {
+		char *name;
+		char *arg;
+	} syscalls[256];
+	struct {
+		char *name;
+		char *content;
+	} aliases[256];
+	char *nested[32];
+	char *nested_callname[32];
+	// char *nestede[32] = {0};
+	// seems nestede are not used any more
+	// (only one place that gives nestede[] value, where could be replaced)
+	int nestedi[32];
+} REggLang;
+
 typedef struct r_egg_t {
 	RBuffer *src;
 	RBuffer *buf;
@@ -34,6 +98,7 @@ typedef struct r_egg_t {
 	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
 	RSyscall *syscall;
+	REggLang lang;
 	Sdb *db;
 	RList *plugins;
 	RList *patches; // <RBuffer>
@@ -115,14 +180,10 @@ typedef struct r_egg_emit_t {
 	void (*get_while_end)(REgg *egg, char *out, const char *ctxpush, const char *label);
 } REggEmit;
 
-typedef struct r_egg_lang_t {
-	int nsyscalls;
-	int nargs;
-	int docall;
-} REggLang;
-
 #ifdef R_API
 R_API REgg *r_egg_new (void);
+R_API void r_egg_lang_init(REgg *egg);
+R_API void r_egg_lang_free(REgg *egg);
 R_API char *r_egg_to_string (REgg *egg);
 R_API void r_egg_free (REgg *egg);
 R_API int r_egg_add (REgg *a, REggPlugin *foo);

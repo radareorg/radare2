@@ -79,6 +79,7 @@ R_API void r_egg_free (REgg *egg) {
 	sdb_free (egg->db);
 	r_list_free (egg->plugins);
 	r_list_free (egg->patches);
+	r_egg_lang_free (egg);
 	free (egg);
 }
 
@@ -314,6 +315,7 @@ R_API int r_egg_compile(REgg *egg) {
 			egg->remit->init (egg);
 	}
 #endif
+	r_egg_lang_init (egg);
 	if (b && *b) {
 		for (; b[0]; b++) {
 			r_egg_lang_parsechar (egg, *b);
