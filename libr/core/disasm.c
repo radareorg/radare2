@@ -716,6 +716,8 @@ static void offless(char *opstr) {
 		}
 		memmove (n, p, strlen (p) + 1);
 	}
+	r_str_replace (opstr, " - ", "", 1);
+	r_str_replace (opstr, " + ", "", 1);
 }
 
 static void ds_build_op_str(RDisasmState *ds) {
