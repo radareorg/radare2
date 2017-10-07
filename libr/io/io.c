@@ -684,6 +684,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 R_API int r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	ut8* buf;
 	ut64 chunksize = 0x10000;
+	ut64 saved_off = io->off;
 	ut64 src, shiftsize = r_num_abs (move);
 	if (!shiftsize || (end - start) <= shiftsize) {
 		return false;
@@ -712,6 +713,7 @@ R_API int r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 		rest -= chunksize;
 	}
 	free (buf);
+	io->off = r_io_desc_seek (io->desc, saved_off, R_IO_SEEK_SET);
 	return true;
 }
 
