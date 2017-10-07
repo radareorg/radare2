@@ -1079,8 +1079,10 @@ static int cmd_resize(void *data, const char *input) {
 			eprintf ("r_io_resize: cannot resize\n");
 	}
 
-	if (delta && core->offset < newsize)
+	if (delta && core->offset < newsize) {
 		r_io_shift (core->io, core->offset, grow?newsize:oldsize, delta);
+		r_io_desc_seek (core->io->desc, core->offset, R_IO_SEEK_SET);
+	}
 
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
@@ -1322,13 +1324,13 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int fd_out = -1, cons_out = -1;
 	char *_shell_cmd;
 
-	sa.nLength = sizeof (SECURITY_ATTRIBUTES); 
-	sa.bInheritHandle = TRUE; 
-	sa.lpSecurityDescriptor = NULL; 
+	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = TRUE;
+	sa.lpSecurityDescriptor = NULL;
    	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
 		goto err_r_w32_cmd_pipe;
-	}	
+	}
 	if (!SetHandleInformation (pipe[1], HANDLE_FLAG_INHERIT, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/SetHandleInformation");
 		goto err_r_w32_cmd_pipe;
