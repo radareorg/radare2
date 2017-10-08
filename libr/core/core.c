@@ -220,6 +220,17 @@ static const char *getName(RCore *core, ut64 addr) {
 	return item ? item->name : NULL;
 }
 
+static char *getNameDelta(RCore *core, ut64 addr) {
+	RFlagItem *item = r_flag_get_at (core->flags, addr, true);
+	if (item) {
+		if (item->offset != addr) {
+			return r_str_newf ("%s + %d", item->name, (int)(addr - item->offset));
+		}
+		return strdup (item->name);
+	}
+	return NULL;
+}
+
 static void archbits(RCore *core, ut64 addr) {
 	r_anal_build_range_on_hints (core->anal);
 	r_core_seek_archbits (core, addr);
@@ -239,6 +250,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->puts = (RCorePuts)r_cons_strcat;
 	bnd->setab = (RCoreSetArchBits)setab;
 	bnd->getName = (RCoreGetName)getName;
+	bnd->getNameDelta = (RCoreGetNameDelta)getNameDelta;
 	bnd->archbits = (RCoreSeekArchBits)archbits;
 	bnd->cfggeti = (RCoreConfigGetI)cfggeti;
 	return true;

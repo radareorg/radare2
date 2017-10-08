@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_cons.h>
@@ -196,8 +196,7 @@ static int xrefs_list_cb_quiet(RAnal *anal, const char *k, const char *v) {
 			dst = r_num_get (NULL, p + 1);
 			char * type = strchr (k, '.');
 			if (type) {
-				type ++;
-				type = strdup (type);
+				type = strdup (type + 1);
 				char *t = strchr (type, '.');
 				if (t) {
 					*t = ' ';
@@ -212,7 +211,44 @@ static int xrefs_list_cb_quiet(RAnal *anal, const char *k, const char *v) {
 				}
 				free (type);
 			}
+		}
+	}
+	return 1;
+}
 
+static int xrefs_list_cb_normal(RAnal *anal, const char *k, const char *v) {
+	ut64 dst, src = r_num_get (NULL, v);
+	if (!strncmp (k, "ref.", 4)) {
+		const char *p = r_str_rchr (k, NULL, '.');
+		if (p) {
+			dst = r_num_get (NULL, p + 1);
+			char * type = strchr (k, '.');
+			if (type) {
+				type = strdup (type + 1);
+				char *t = strchr (type, '.');
+				if (t) {
+					*t = ' ';
+				}
+				t = (char *)r_str_rchr (type, NULL, '.');
+				if (t) {
+					t = (char *)r_str_rchr (t, NULL, '.');
+					if (t) {
+						*t = 0;
+						char *name = anal->coreb.getNameDelta (anal->coreb.core, src);
+						anal->cb_printf ("%40s", name? name: "");
+						free (name);
+						anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, src, type, dst);
+						name = anal->coreb.getNameDelta (anal->coreb.core, dst);
+						if (name && *name) {
+							anal->cb_printf (" %s\n", name? name: "");
+						} else {
+							anal->cb_printf ("\n");
+						}
+						free (name);
+					}
+				}
+				free (type);
+			}
 		}
 	}
 	return 1;
@@ -246,6 +282,9 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	case 1:
 	case '*':
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_rad, anal);
+		break;
+	case '\0':
+		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_normal, anal);
 		break;
 	case 'q':
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_quiet, anal);

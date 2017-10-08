@@ -4680,10 +4680,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		break;
 	case 'k': // "axk"
-		if (input[1] == ' ') {
+		if (input[1] == '?') {
+			eprintf ("Usage: axk [query]\n");
+		} else if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_xrefs, input + 2);
 		} else {
-			eprintf ("|ERROR| Usage: axk [query]\n");
+			r_core_anal_ref_list (core, 0);
 		}
 		break;
 	case '\0': // "ax"
