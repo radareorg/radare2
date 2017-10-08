@@ -285,7 +285,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 	free (anal->cpu);
-	anal->cpu = (cpu ? strdup (cpu) : NULL);
+	anal->cpu = cpu ? strdup (cpu) : NULL;
 }
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
@@ -312,6 +312,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	if (!(ret = malloc (size))) {
+		free (op);
 		return NULL;
 	}
 
@@ -453,7 +454,10 @@ static int nonreturn_print(void *p, const char *k, const char *v) {
 		}
 	}
 	if (!strncmp (k, "addr.", 5)) {
-		char *off = strdup (k + 5);
+		char *off;
+		if (!(off = strdup (k + 5))) {
+			return 1;
+		}
 		char *ptr = strstr (off, ".noret");
 		if (ptr) {
 			*ptr = 0;
