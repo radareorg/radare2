@@ -1722,6 +1722,9 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
+
+	// We save the old num, in order to restore it after free
+	core->old_num = core->cons->num;
 	core->cons->num = core->num;
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
@@ -1836,6 +1839,12 @@ R_API RCore *r_core_fini(RCore *c) {
 	free (c->lastcmd);
 	free (c->block);
 	r_io_free (c->io);
+
+	// Check if the old num is saved. If yes, we restore it.
+	if (c->cons != NULL && c->old_num != NULL) { 
+		c->cons->num = c->old_num;
+		c->old_num   = NULL;
+	}
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
