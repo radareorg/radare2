@@ -307,8 +307,15 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		return anal->cur->anal_mask (anal, size, data, at);
 	}
 
-	op = r_anal_op_new ();
-	ret = malloc (size);
+	if (!(op = r_anal_op_new ())) {
+		return NULL;
+	}
+
+	if (!(ret = malloc (size))) {
+		r_anal_op_free (op);
+		return NULL;
+	}
+
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
@@ -447,7 +454,10 @@ static int nonreturn_print(void *p, const char *k, const char *v) {
 		}
 	}
 	if (!strncmp (k, "addr.", 5)) {
-		char *off = strdup (k + 5);
+		char *off;
+		if (!(off = strdup (k + 5))) {
+			return 1;
+		}
 		char *ptr = strstr (off, ".noret");
 		if (ptr) {
 			*ptr = 0;
