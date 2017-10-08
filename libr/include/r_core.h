@@ -133,7 +133,7 @@ typedef struct r_core_t {
 	RList *files;
 	RNum *num;
 	RNum *old_num;
-        RLib *lib;
+	RLib *lib;
 	RCmd *rcmd;
 	RCmdDescriptor root_cmd_descriptor;
 	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
