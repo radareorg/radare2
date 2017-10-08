@@ -43,6 +43,20 @@ static const char* r_vline_u[] = {
 	"<", // ARROW_LEFT
 };
 
+static const char* r_vline_uc[] = {
+	"│", // LINE_VERT
+	"├", // LINE_CROSS
+	"─", // LINE_HORIZ
+	"↑", // LINE_UP
+	//"┌", // LUP_CORNER
+	"╯", // LUP_CORNER
+	"╰", // RDWN_CORNER
+	"╭", // RUP_CORNER
+	"╮", // LDWN_CORNER
+	">", // ARROW_RIGHT
+	"<", // ARROW_LEFT
+};
+
 // TODO: what about using bit shifting and enum for keys? see libr/util/bitmap.c
 // the problem of this is that the fields will be more opaque to bindings, but we will earn some bits
 typedef struct r_disam_options_t {
@@ -3629,7 +3643,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, p2v (ds, ds->addr + idx));
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? r_vline_u : r_vline_a;
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
@@ -4565,7 +4579,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 	ds_reflines_fcn_init (ds, fcn, buf);
 	core->inc = 0;
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8")? r_vline_u: r_vline_a;
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 	i = idx = 0;
 	r_cons_break_push (NULL, NULL);
 	ds_print_esil_anal_init (ds);

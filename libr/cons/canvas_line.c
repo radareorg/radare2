@@ -5,6 +5,7 @@
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
 #define useUtf8 (r_cons_singleton()->use_utf8)
+#define useUtf8Curvy (r_cons_singleton()->use_utf8_curvy)
 
 enum {
 	APEX_DOT = 0,
@@ -141,8 +142,13 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 	switch (style) {
 	case APEX_DOT:
 		if (useUtf8) {
-			l_corner = RUNECODESTR_CORNER_BL;
-			r_corner = RUNECODESTR_CORNER_TR;
+			if (useUtf8Curvy) {
+				l_corner = RUNECODESTR_CURVE_CORNER_BL;
+				r_corner = RUNECODESTR_CURVE_CORNER_TR;
+			} else {
+				l_corner = RUNECODESTR_CORNER_BL;
+				r_corner = RUNECODESTR_CORNER_TR;
+			}
 		} else {
 			l_corner = "'";
 			r_corner = ".";
@@ -150,8 +156,13 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		break;
 	case DOT_APEX:
 		if (useUtf8) {
-			l_corner = RUNECODESTR_CORNER_TL;
-			r_corner = RUNECODESTR_CORNER_BR;
+			if (useUtf8Curvy) {
+				l_corner = RUNECODESTR_CURVE_CORNER_TL;
+				r_corner = RUNECODESTR_CURVE_CORNER_BR;
+			} else {
+				l_corner = RUNECODESTR_CORNER_TL;
+				r_corner = RUNECODESTR_CORNER_BR;
+			}
 		} else {
 			l_corner = ".";
 			r_corner = "'";
@@ -159,8 +170,13 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		break;
 	case REV_APEX_APEX:
 		if (useUtf8) {
-			l_corner = RUNECODESTR_CORNER_BL;
-			r_corner = RUNECODESTR_CORNER_BR;
+			if (useUtf8Curvy) {
+				l_corner = RUNECODESTR_CURVE_CORNER_BL;
+				r_corner = RUNECODESTR_CURVE_CORNER_BR;
+			} else {
+				l_corner = RUNECODESTR_CORNER_BL;
+				r_corner = RUNECODESTR_CORNER_BR;
+			}
 		} else {
 			l_corner = "`";
 			r_corner = "'";
@@ -168,8 +184,13 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		break;
 	case DOT_DOT:
 		if (useUtf8) {
-			l_corner = RUNECODESTR_CORNER_TL;
-			r_corner = RUNECODESTR_CORNER_TR;
+			if (useUtf8Curvy) {
+				l_corner = RUNECODESTR_CURVE_CORNER_TL;
+				r_corner = RUNECODESTR_CURVE_CORNER_TR;
+			} else {
+				l_corner = RUNECODESTR_CORNER_TL;
+				r_corner = RUNECODESTR_CORNER_TR;
+			}
 		} else {
 			l_corner = r_corner = ".";
 		}
@@ -177,7 +198,11 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 	case NRM_DOT:
 		if (useUtf8) {
 			l_corner = RUNECODESTR_LINE_HORIZ;
-			r_corner = RUNECODESTR_CORNER_TR;
+			if (useUtf8Curvy) {
+				r_corner = RUNECODESTR_CURVE_CORNER_TR;
+			} else {
+				r_corner = RUNECODESTR_CORNER_TR;
+			}
 		} else {
 			l_corner = "-";
 			r_corner = ".";
@@ -186,7 +211,11 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 	case NRM_APEX:
 		if (useUtf8) {
 			l_corner = RUNECODESTR_LINE_HORIZ;
-			r_corner = RUNECODESTR_CORNER_BR;
+			if (useUtf8Curvy) {
+				r_corner = RUNECODESTR_CURVE_CORNER_BR;
+			} else {
+				r_corner = RUNECODESTR_CORNER_BR;
+			}
 		} else {
 			l_corner = "-";
 			r_corner = "'";
@@ -194,7 +223,11 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		break;
 	case DOT_NRM:
 		if (useUtf8) {
-			l_corner = RUNECODESTR_CORNER_TL;
+			if (useUtf8Curvy) {
+				l_corner = RUNECODESTR_CURVE_CORNER_TL;
+			} else {
+				l_corner = RUNECODESTR_CORNER_TL;
+			}
 			r_corner = RUNECODESTR_LINE_HORIZ;
 		} else {
 			l_corner = ".";
@@ -203,7 +236,11 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		break;
 	case REV_APEX_NRM:
 		if (useUtf8) {
-			l_corner = RUNECODESTR_CORNER_BL;
+			if (useUtf8Curvy) {
+				l_corner = RUNECODESTR_CURVE_CORNER_BL;
+			} else {
+				l_corner = RUNECODESTR_CORNER_BL;
+			}
 			r_corner = RUNECODESTR_LINE_HORIZ;
 		} else {
 			l_corner = "`";

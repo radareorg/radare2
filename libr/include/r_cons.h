@@ -249,7 +249,11 @@ typedef struct r_cons_canvas_t {
 #define RUNECODE_CORNER_TL 0xcf
 #define RUNECODE_CORNER_TR 0xd0
 #define RUNECODE_LINE_UP 0xd1
-#define RUNECODE_MAX 0xd2
+#define RUNECODE_CURVE_CORNER_TL 0xd2
+#define RUNECODE_CURVE_CORNER_TR 0xd3
+#define RUNECODE_CURVE_CORNER_BR 0xd4
+#define RUNECODE_CURVE_CORNER_BL 0xd5
+#define RUNECODE_MAX 0xd6
 
 #define RUNECODESTR_MIN 0xc8 // 200
 #define RUNECODESTR_LINE_VERT "\xc8"
@@ -262,7 +266,11 @@ typedef struct r_cons_canvas_t {
 #define RUNECODESTR_CORNER_TL "\xcf"
 #define RUNECODESTR_CORNER_TR "\xd0"
 #define RUNECODESTR_LINE_UP "\xd1"
-#define RUNECODESTR_MAX 0xd1
+#define RUNECODESTR_CURVE_CORNER_TL "\xd2"
+#define RUNECODESTR_CURVE_CORNER_TR "\xd3"
+#define RUNECODESTR_CURVE_CORNER_BR "\xd4"
+#define RUNECODESTR_CURVE_CORNER_BL "\xd5"
+#define RUNECODESTR_MAX 0xd5
 
 #define RUNE_LINE_VERT "│"
 #define RUNE_LINE_CROSS "┼" /* ├ */
@@ -274,6 +282,10 @@ typedef struct r_cons_canvas_t {
 #define RUNE_CORNER_TR "┐"
 #define RUNE_ARROW_RIGHT ">"
 #define RUNE_ARROW_LEFT "<"
+#define RUNE_CURVE_CORNER_TL "╭"
+#define RUNE_CURVE_CORNER_TR "╮"
+#define RUNE_CURVE_CORNER_BR "╯"
+#define RUNE_CURVE_CORNER_BL "╰"
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
@@ -339,6 +351,7 @@ typedef struct r_cons_t {
 #endif
 	bool flush;
 	bool use_utf8; // use utf8 features
+	bool use_utf8_curvy; // use utf8 curved corners
 	int linesleep;
 	int pagesize;
 	char *break_word;
