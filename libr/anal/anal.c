@@ -285,7 +285,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 	free (anal->cpu);
-	anal->cpu = cpu ? strdup (cpu) : NULL;
+	anal->cpu = (cpu ? strdup (cpu) : NULL);
 }
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
@@ -307,8 +307,14 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		return anal->cur->anal_mask (anal, size, data, at);
 	}
 
-	op = r_anal_op_new ();
-	ret = malloc (size);
+	if (!(op = r_anal_op_new ())) {
+		return NULL;
+	}
+
+	if (!(ret = malloc (size))) {
+		return NULL;
+	}
+
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
