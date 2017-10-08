@@ -7,12 +7,12 @@ static TAG_CALLBACK(pod_default) {
 
 static TAG_CALLBACK(pod_cut) {
 	do_printf (out, "\n");
-	echo[ifl] = 0;
+	state->echo[state->ifl] = 0;
 	return 0;
 }
 
 static TAG_CALLBACK(pod_head1) {
-	echo[ifl] = 1;
+	state->echo[state->ifl] = 1;
 	do_printf (out, "\n");
 	if (!buf) {
 		return 0;

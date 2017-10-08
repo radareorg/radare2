@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (proc->eof)
-		proc->eof ("", &out);
+		proc->eof (&proc->state, "", &out);
 	if (out.fout) {
 		fclose (out.fout);
 	}

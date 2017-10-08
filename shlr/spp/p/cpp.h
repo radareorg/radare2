@@ -7,8 +7,8 @@ static TAG_CALLBACK(cpp_default) {
 
 static TAG_CALLBACK(cpp_error) {
 	do_printf (out,"\n");
-	if (echo[ifl] && buf != NULL) {
-		do_printf (out, "ERROR: %s (line=%d)\n", buf, lineno);
+	if (state->echo[state->ifl] && buf != NULL) {
+		do_printf (out, "ERROR: %s (line=%d)\n", buf, state->lineno);
 		return -1;
 	}
 	return 0;
@@ -16,8 +16,8 @@ static TAG_CALLBACK(cpp_error) {
 
 static TAG_CALLBACK(cpp_warning) {
 	do_printf (out,"\n");
-	if (echo[ifl] && buf != NULL) {
-		do_printf (out, "WARNING: line %d: %s\n", lineno, buf);
+	if (state->echo[state->ifl] && buf != NULL) {
+		do_printf (out, "WARNING: line %d: %s\n", state->lineno, buf);
 	}
 	return 0;
 }
@@ -25,26 +25,26 @@ static TAG_CALLBACK(cpp_warning) {
 static TAG_CALLBACK(cpp_if) {
 	char *var = getenv (buf + ((*buf == '!') ? 1 : 0));
 	if (var && *var=='1')
-		echo[ifl + 1] = 1;
-	else echo[ifl + 1] = 0;
-	if (*buf=='!') echo[ifl+1] = !!!echo[ifl+1];
+		state->echo[state->ifl + 1] = 1;
+	else state->echo[state->ifl + 1] = 0;
+	if (*buf=='!') state->echo[state->ifl + 1] = !!!state->echo[state->ifl + 1];
 	return 1;
 }
 
 static TAG_CALLBACK(cpp_ifdef) {
 	char *var = getenv (buf);
-	echo[ifl + 1] = var? 1: 0;
+	state->echo[state->ifl + 1] = var? 1: 0;
 	return 1;
 }
 
 static TAG_CALLBACK(cpp_else) {
-	echo[ifl] = echo[ifl]? 0: 1;
+	state->echo[state->ifl] = state->echo[state->ifl]? 0: 1;
 	return 0;
 }
 
 static TAG_CALLBACK(cpp_ifndef) {
-	cpp_ifdef (buf, out);
-	cpp_else (buf, out);
+	cpp_ifdef (state, buf, out);
+	cpp_else (state, buf, out);
 	return 1;
 }
 
@@ -111,7 +111,7 @@ static TAG_CALLBACK(cpp_endif) {
 }
 
 static TAG_CALLBACK(cpp_include) {
-	if (echo[ifl]) {
+	if (state->echo[state->ifl]) {
 		spp_file (buf, out);
 	}
 	return 0;

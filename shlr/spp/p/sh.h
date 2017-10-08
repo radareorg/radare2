@@ -24,7 +24,9 @@ static TAG_CALLBACK(sh_default) {
 	// printf("system(%s)\n", buf);
 	if (eof)
 #endif
-	system(buf);
+#if HAVE_FORK
+	system (buf);
+#endif
 	return 0;
 }
 
@@ -49,7 +51,9 @@ static PUT_CALLBACK(sh_fputs) {
 	if (sh_pipe_enabled) {
 		char str[1024]; // XXX
 		sprintf (str, "echo '%s' | %s", buf, sh_pipe_cmd); // XXX
+#if HAVE_FORK
 		system (str);
+#endif
 	} else {
 		do_printf (out, "%s", buf);
 	}

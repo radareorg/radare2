@@ -302,6 +302,6 @@ spp-sync sync-spp:
 	git add spp
 
 spp: spp-sync
-	CFLAGS=-fPIC $(MAKE) -C spp
+	CFLAGS="-DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp
 
 .PHONY: spp
