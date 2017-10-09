@@ -52,11 +52,18 @@ libr.${EXT_AR}:
 		ls -l .libr/$$D/$$F ; \
 		(cd .libr/$$D && ${AR} x $$F || true ) ; \
 	done
-	echo lets ar
+ifeq ($(IOSVER),)
+	$(MAKE) libr____ar_ranlib
+else
+	$(MAKE) libr____libtool
+endif
+
+libr____libtool:
+	libtool -static -o libr.${EXT_AR} `find * -iname *.${EXT_AR} 2> /dev/null`
+
+libr____ar_ranlib:
 	cd .libr ; ${AR} qv libr.${EXT_AR} `find * -iname *.${EXT_AR} 2> /dev/null`
-	echo lets m
 	mv .libr/libr.${EXT_AR} libr.${EXT_AR}
-	echo ranlibin
 	${RANLIB} libr.${EXT_AR}
 
 libr.${EXT_SO}:
