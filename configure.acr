@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 1.7.0-git
+VERSION 2.0.0
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -128,6 +128,7 @@ ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 ARG_WITH WITHNONPIC nonpic build the library archives .a ;
 (( this hack is required for openbsd ports ))
 ARG_WITH LIBVERSION=xxx libversion specify different libversion ;
+ARG_WITHOUT HAVE_JEMALLOC jemalloc build without jemalloc ;
 
 IFEQ LIBVERSION xxx ; {
 	LIBVERSION = $VERSION ;
