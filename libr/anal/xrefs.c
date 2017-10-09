@@ -201,14 +201,19 @@ static int xrefs_list_cb_quiet(RAnal *anal, const char *k, const char *v) {
 				if (t) {
 					*t = ' ';
 				}
-				t = (char *)r_str_rchr (type, NULL, '.');
-				if (t) {
-					t = (char *)r_str_rchr (t, NULL, '.');
+				char *T = (char *)r_str_rchr (type, NULL, '.');
+				if (T) {
+					T = (char *)r_str_rchr (T, NULL, '.');
+					if (T) {
+						*T = 0;
+						anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", src, dst, type);
+					}
+				} else {
 					if (t) {
 						*t = 0;
-						anal->cb_printf ("0x%"PFMT64x" -> 0x%"PFMT64x"  %s\n", src, dst, type);
 					}
 				}
+				anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", src, dst, type);
 				free (type);
 			}
 		}
@@ -225,27 +230,33 @@ static int xrefs_list_cb_normal(RAnal *anal, const char *k, const char *v) {
 			char * type = strchr (k, '.');
 			if (type) {
 				type = strdup (type + 1);
-				char *t = strchr (type, '.');
-				if (t) {
-					*t = ' ';
+				char *ot = strchr (type, '.');
+				if (ot) {
+					*ot = ' ';
 				}
-				t = (char *)r_str_rchr (type, NULL, '.');
+				char *t = (char *)r_str_rchr (type, NULL, '.');
 				if (t) {
 					t = (char *)r_str_rchr (t, NULL, '.');
 					if (t) {
 						*t = 0;
-						char *name = anal->coreb.getNameDelta (anal->coreb.core, src);
-						anal->cb_printf ("%40s", name? name: "");
-						free (name);
-						anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, src, type, dst);
-						name = anal->coreb.getNameDelta (anal->coreb.core, dst);
-						if (name && *name) {
-							anal->cb_printf (" %s\n", name? name: "");
-						} else {
-							anal->cb_printf ("\n");
-						}
-						free (name);
 					}
+				} else {
+					if (ot) {
+						*ot = 0;
+					}
+				}
+				{
+					char *name = anal->coreb.getNameDelta (anal->coreb.core, src);
+					anal->cb_printf ("%40s", name? name: "");
+					free (name);
+					anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, src, type, dst);
+					name = anal->coreb.getNameDelta (anal->coreb.core, dst);
+					if (name && *name) {
+						anal->cb_printf (" %s\n", name? name: "");
+					} else {
+						anal->cb_printf ("\n");
+					}
+					free (name);
 				}
 				free (type);
 			}
