@@ -1635,7 +1635,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		if ($1) {
 			*$0 = '`';
 			*$1 = '`';
-			memmove ($0 + 1, $0 + 2, strlen ($0) + 1);
+			memmove ($0 + 1, $0 + 2, strlen ($0 + 2) + 1);
 		} else {
 			eprintf ("Unterminated $() block\n");
 		}
