@@ -2720,7 +2720,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	default:
 		str_len = strlen (str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3])
-		    || (str_len == 3 && len > 5 && !memcmp(str, "\xff\xfe", 2) && str[4] && !str[5])) {
+		    || (str_len == 3 && len > 5 && !memcmp (str, "\xff\xfe", 2) && str[4] && !str[5])) {
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
@@ -2925,7 +2925,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 #if 1
 		if (!(IS_PRINTABLE (*msg) || ISWHITECHAR (*msg)
-		      || (len > 1 && !memcmp(msg, "\xff\xfe", 2)))) {
+		      || (len > 1 && !memcmp (msg, "\xff\xfe", 2)))) {
 			*msg = 0;
 		} else {
 			msg[len - 1] = 0;
