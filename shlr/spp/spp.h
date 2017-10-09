@@ -28,8 +28,12 @@ extern int ifl;
 extern int echo[MAXIFL];
 extern int lineno;
 
+#ifndef HAVE_FORK
+#define HAVE_FORK 1
+#endif
+
 #ifndef DLL_LOCAL
-#ifdef _MSC_VER
+#ifdef MSC_VER
 #define DLL_LOCAL
 #else
 #define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
@@ -48,7 +52,6 @@ typedef struct {
 	FILE *fout;
 	int size;
 } Output;
-
 
 typedef struct SppState {
 	int lineno;
@@ -107,8 +110,8 @@ void do_printf(Output *out, char *str, ...);
 void do_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
 
-void spp_proc_list();
-void spp_proc_list_kw();
+void spp_proc_list(void);
+void spp_proc_list_kw(void);
 void spp_proc_set(struct Proc *p, char *arg, int fail);
 
 #if DEBUG

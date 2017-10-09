@@ -313,17 +313,16 @@ static const char *r_debug_qnx_reg_profile (RDebug *dbg) {
 }
 
 static int r_debug_qnx_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
-	int ret;
-	if (!b)
+	if (!b) {
 		return false;
-	if (set)
-		ret = b->hw ?
-			      qnxr_set_hwbp (desc, b->addr, "") :
-			      qnxr_set_bp (desc, b->addr, "");
-	else
-		ret = b->hw ?
-			      qnxr_remove_hwbp (desc, b->addr) :
-			      qnxr_remove_bp (desc, b->addr);
+	}
+	int ret = set
+		? b->hw
+			? qnxr_set_hwbp (desc, b->addr, "")
+			: qnxr_set_bp (desc, b->addr, "")
+		: b->hw
+			? qnxr_remove_hwbp (desc, b->addr)
+			: qnxr_remove_bp (desc, b->addr);
 	return !ret;
 }
 
@@ -343,7 +342,7 @@ RDebugPlugin r_debug_plugin_qnx = {
 	.canstep = 1,
 	.wait = &r_debug_qnx_wait,
 	.map_get = r_debug_qnx_map_get,
-	.breakpoint = &r_debug_qnx_breakpoint,
+	.breakpoint = (RBreakpointCallback)&r_debug_qnx_breakpoint,
 	.reg_read = &r_debug_qnx_reg_read,
 	.reg_write = &r_debug_qnx_reg_write,
 	.reg_profile = (void *)r_debug_qnx_reg_profile,

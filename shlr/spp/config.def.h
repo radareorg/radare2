@@ -1,4 +1,6 @@
+#if !TARGET_OS_IPHONE
 #include "p/sh.h"
+#endif
 #include "p/spp.h"
 #include "p/acr.h"
 #include "p/pod.h"
@@ -13,7 +15,9 @@ struct Proc *procs[] = {
 	&cpp_proc,
 	&pod_proc,
 	&acr_proc,
+#if !TARGET_OS_IPHONE
 	&sh_proc,
+#endif
 	NULL
 };
 
