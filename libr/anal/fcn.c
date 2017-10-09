@@ -1396,7 +1396,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 		RAnalFunction *fcni;
 		RListIter *iter, *iter_tmp;
 		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
-			if (addr >= fcni->addr && addr < fcni->addr + r_anal_fcn_size (fcni)) {
+			if (addr >= fcni->addr && addr < fcni->addr + r_anal_fcn_realsize (fcni)) {
 				if (a->cb.on_fcn_delete) {
 					a->cb.on_fcn_delete (a, a->user, fcni);
 				}
