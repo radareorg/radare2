@@ -1853,9 +1853,9 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_io_free (c->io);
 
 	// Check if the old num is saved. If yes, we restore it.
-	if (c->cons != NULL && c->old_num != NULL) { 
+	if (c->cons && c->old_num) {
 		c->cons->num = c->old_num;
-		c->old_num   = NULL;
+		c->old_num = NULL;
 	}
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
