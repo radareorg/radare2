@@ -4685,7 +4685,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		} else if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_xrefs, input + 2);
 		} else {
-			r_core_anal_ref_list (core, 0);
+			r_core_anal_ref_list (core, 'k');
 		}
 		break;
 	case '\0': // "ax"
