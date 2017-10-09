@@ -3125,6 +3125,7 @@ static void agraph_sdb_init(const RAGraph *g) {
 	sdb_set_enc (g->db, "agraph.color_box3", g->color_box3, 0);
 	sdb_set_enc (g->db, "agraph.color_true", g->color_true, 0);
 	sdb_set_enc (g->db, "agraph.color_false", g->color_false, 0);
+	sdb_set (g->db, "g", sdb_fmt (0, "%p", g), 0);
 }
 
 R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
@@ -4039,7 +4040,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	free (grd);
 	if (graph_allocated) {
-		r_agraph_free (g);
+		// Get older graph and free it
+		Sdb* sdb = sdb_ns (core->sdb, "agraph", 0);
+		if (sdb) {
+			char* addr = sdb_get (sdb, "g", 0);
+			RAGraph *old_graph = (RAGraph *) (size_t) sdb_atoi (addr);
+			r_agraph_free (old_graph);
+		}
+
+		// Expose agraph structure to sdb
+		sdb_ns_set (core->sdb, "agraph", g->db);
+
 		r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	} else {
 		g->can = o_can;

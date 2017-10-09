@@ -982,6 +982,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		DB = sdb_ns (core->anal->sdb, "graph", 1);
 		snprintf (ns, sizeof (ns), "fcn.0x%08"PFMT64x, fcn->addr);
 		DB = sdb_ns (DB, ns, 1);
+	} else if (is_json) {
+		DB = sdb_ns (core->sdb, "agraph", 1);
 	}
 
 	if (is_keva) {
@@ -1044,6 +1046,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"d}",
 					t->count, t->times);
 			}
+			r_cons_printf (",\"x\":%d", sdb_num_get (DB, sdb_fmt (0, "agraph.nodes.0x%x.x", bbi->addr), 0));
+			r_cons_printf (",\"y\":%d", sdb_num_get (DB, sdb_fmt (0, "agraph.nodes.0x%x.y", bbi->addr), 0));
+			r_cons_printf (",\"h\":%d", sdb_num_get (DB, sdb_fmt (0, "agraph.nodes.0x%x.h", bbi->addr), 0));
+			r_cons_printf (",\"w\":%d", sdb_num_get (DB, sdb_fmt (0, "agraph.nodes.0x%x.w", bbi->addr), 0));
 			r_cons_printf (",\"ops\":[");
 			if (buf) {
 				r_io_read_at (core->io, bbi->addr, buf, bbi->size);
