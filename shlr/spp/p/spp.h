@@ -127,9 +127,7 @@ static TAG_CALLBACK(spp_sub) {
 static TAG_CALLBACK(spp_trace) {
 #if HAVE_FORK
 	char b[1024];
-	if (!state->echo[state->ifl]) {
-		return 0;
-	}
+	if (!state->echo[state->ifl]) return 0;
 	snprintf(b, 1023, "echo '%s' >&2 ", buf);
 	system(b);
 #endif
