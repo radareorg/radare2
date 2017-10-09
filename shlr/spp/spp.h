@@ -102,7 +102,7 @@ int spp_run(char *buf, Output *out);
 void spp_eval(char *buf, Output *out);
 void spp_io(FILE *in, Output *out);
 #ifdef _MSC_VER
-void do_printf(Output *out, char *str, ...)
+void do_printf(Output *out, char *str, ...);
 #else
 void do_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
