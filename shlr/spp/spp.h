@@ -29,7 +29,11 @@ extern int echo[MAXIFL];
 extern int lineno;
 
 #ifndef DLL_LOCAL
+#ifdef _MSC_VER
+#define DLL_LOCAL
+#else
 #define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+#endif
 #endif
 
 #define GET_ARG(x,y,i) if (y[i][2]) x = y[i] + 2; else x = y[++i]
@@ -97,7 +101,11 @@ int spp_file(const char *file, Output *out);
 int spp_run(char *buf, Output *out);
 void spp_eval(char *buf, Output *out);
 void spp_io(FILE *in, Output *out);
+#ifdef _MSC_VER
+void do_printf(Output *out, char *str, ...)
+#else
 void do_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
+#endif
 
 void spp_proc_list();
 void spp_proc_list_kw();
