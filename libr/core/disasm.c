@@ -205,6 +205,7 @@ typedef struct r_disam_options_t {
 	int index;
 	ut64 at, vat, addr, dest;
 	int tries, cbytes, idx;
+	char chref;
 	bool retry;
 	bool mi_found;
 	RAsmOp asmop;
@@ -2720,7 +2721,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	default:
 		str_len = strlen (str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3])
-		    || (str_len == 3 && len > 5 && !memcmp(str, "\xff\xfe", 2) && str[4] && !str[5])) {
+		    || (str_len == 3 && len > 5 && !memcmp (str, "\xff\xfe", 2) && str[4] && !str[5])) {
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
@@ -2795,8 +2796,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
+	ds->chref = 0;
 	if (((char)v > 0) && v >= '!' && v <= '~') {
 		char ch = v;
+		ds->chref = ch;
 		ALIGN;
 		ds_comment (ds, true, "; '%c'%s", ch, nl);
 	}
@@ -2925,7 +2928,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 #if 1
 		if (!(IS_PRINTABLE (*msg) || ISWHITECHAR (*msg)
-		      || (len > 1 && !memcmp(msg, "\xff\xfe", 2)))) {
+		      || (len > 1 && !memcmp (msg, "\xff\xfe", 2)))) {
 			*msg = 0;
 		} else {
 			msg[len - 1] = 0;
@@ -2960,7 +2963,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
 				ALIGN;
-				ds_comment (ds, true, "; '%c'%s", ch, nl);
+				if (ch != ds->chref) {
+					ds_comment (ds, true, "; '%c'%s", ch, nl);
+				}
 			} else if (refaddr > 10) {
 				if ((st64)refaddr < 0) {
 					// resolve local var if possible
