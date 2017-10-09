@@ -941,8 +941,10 @@ static int parseinlinechar(REgg *egg, char c) {
 			eprintf ("Parse error\n");
 		}
 	}
-	egg->lang.dstval[egg->lang.ndstval++] = c;
-	egg->lang.dstval[egg->lang.ndstval] = 0;
+	if (egg->lang.dstval) {
+		egg->lang.dstval[egg->lang.ndstval++] = c;
+		egg->lang.dstval[egg->lang.ndstval] = 0;
+	}
 	return 0;
 }
 

@@ -252,7 +252,7 @@ static int xrefs_list_cb_normal(RAnal *anal, const char *k, const char *v) {
 					anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, src, type, dst);
 					name = anal->coreb.getNameDelta (anal->coreb.core, dst);
 					if (name && *name) {
-						anal->cb_printf (" %s\n", name? name: "");
+						anal->cb_printf (" %s\n", name);
 					} else {
 						anal->cb_printf ("\n");
 					}
