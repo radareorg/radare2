@@ -1756,9 +1756,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 		return true;
 	case '(':
-		if (cmd[1] != '*') {
+		if (cmd[1] != '*' && !strstr (cmd, ")()")) {
 			return r_cmd_call (core->rcmd, cmd);
 		}
+		break;
 	}
 
 // TODO must honor " and `
@@ -2083,7 +2084,8 @@ next2:
 	}
 
 	/* temporary seek commands */
-	if (*cmd!= '(' && *cmd != '"') {
+	// if (*cmd != '(' && *cmd != '"') {
+	if (*cmd != '"') {
 		ptr = strchr (cmd, '@');
 		if (ptr == cmd + 1 && *cmd == '?') {
 			ptr = NULL;
@@ -2615,7 +2617,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	RFlagItem *flag;
 	ut64 oseek, addr;
 
-	// for (; *each == ' '; each++);
 	for (; *cmd == ' '; cmd++);
 
 	oseek = core->offset;
