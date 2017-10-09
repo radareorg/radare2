@@ -1366,7 +1366,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 		if (fcn->type != R_ANAL_FCN_TYPE_LOC) {
 			continue;
 		}
-		if (fcn->addr >= f->addr && fcn->addr < (f->addr + r_anal_fcn_size (f))) {
+		if (r_anal_fcn_in (fcn, addr)) {
 			r_list_delete (anal->fcns, iter);
 		}
 	}
@@ -1396,7 +1396,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 		RAnalFunction *fcni;
 		RListIter *iter, *iter_tmp;
 		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
-			if (addr >= fcni->addr && addr < fcni->addr + r_anal_fcn_size (fcni)) {
+			if (r_anal_fcn_in (fcni, addr)) {
 				if (a->cb.on_fcn_delete) {
 					a->cb.on_fcn_delete (a, a->user, fcni);
 				}
