@@ -19,7 +19,7 @@ iosEnviron() {
 	# select ios sdk version
 	export IOSVER=9.0
 	export IOSINC=`pwd`/sys/ios-include
-	export CFLAGS="-O2 -fembed-bitcode"
+	export CFLAGS="-O2 -fembed-bitcode -arch armv7"
 	export USE_SIMULATOR=0
 	export USE_IOS_STORE=1
 }

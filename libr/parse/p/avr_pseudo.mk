@@ -10,5 +10,5 @@ ifeq ($(CC),cccl)
 		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_AVRPSEUDO} ${OBJ_AVRPSEUDO}
 else
 	${CC} $(call libname,parse_avr_pseudo) -L../../util -lr_util \
-		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_AVRPSEUDO} ${OBJ_AVRPSEUDO}
+		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_AVRPSEUDO} ${OBJ_AVRPSEUDO} $(LINK)
 endif

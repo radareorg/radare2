@@ -8,6 +8,8 @@ DEPS+=r_cons
 LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/
 
+include $(SHLR)/zip/deps.mk
+
 foo:
 	@for TARGET in pre libr_parse.${EXT_SO} \
 	libr_parse.${EXT_AR} plugins bins ; do \
