@@ -180,7 +180,6 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 			ptr->bits = 16;
 		}
 	}
-
 }
 
 static RList* symbols(RBinFile *arch) {
@@ -253,9 +252,11 @@ static RList* symbols(RBinFile *arch) {
 	}
 	//functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
+		char symstr[128];
 		ut64 value = 0, address = 0;
 		const ut8* temp = bin->func_start;
 		const ut8* temp_end = bin->func_start + bin->func_size;
+		strcpy (symstr, "sym0x");
 		while (temp + 3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
@@ -267,9 +268,9 @@ static RList* symbols(RBinFile *arch) {
 			ptr->paddr = address;
 			ptr->size = 0;
 			ptr->name = r_str_newf ("func.%08"PFMT64x, ptr->vaddr);
-			ptr->type = r_str_const ("FUNC");
-			ptr->forwarder = r_str_const ("NONE");
-			ptr->bind = r_str_const ("LOCAL");
+			ptr->type = "FUNC";
+			ptr->forwarder = "NONE";
+			ptr->bind = "LOCAL";
 			ptr->ordinal = i++;
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb (bin, &ptr);
@@ -277,11 +278,11 @@ static RList* symbols(RBinFile *arch) {
 			r_list_append (ret, ptr);
 			// if any func is not found in symbols then we can consider it is stripped
 			if (!isStripped) {
-				if (!sdb_const_get (symcache, sdb_fmt (0, "sym0x%llx", ptr->vaddr), 0)) {
+				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, ptr->vaddr);
+				if (!sdb_const_get (symcache, symstr, 0)) {
 					isStripped = true;
 				}
 			}
-
 		}
 	}
 	bin->lang = lang;
@@ -294,6 +295,7 @@ static RList* symbols(RBinFile *arch) {
 }
 
 static RList* imports(RBinFile *arch) {
+	RBinObject *obj = arch ? arch->o : NULL;
 	const char *_objc_class = "_OBJC_CLASS_$";
 	const int _objc_class_len = strlen (_objc_class);
 	const char *_objc_metaclass = "_OBJC_METACLASS_$";
@@ -304,7 +306,6 @@ static RList* imports(RBinFile *arch) {
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 	int i;
-	RBinObject *obj = arch ? arch->o : NULL;
 
 	if (!obj || !bin || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
@@ -437,7 +438,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(arch->o->bin_obj));
 	ret->subsystem = strdup ("darwin");
-	ret->arch = MACH0_(get_cputype) (arch->o->bin_obj);
+	ret->arch = strdup (MACH0_(get_cputype) (arch->o->bin_obj));
 	ret->machine = MACH0_(get_cpusubtype) (arch->o->bin_obj);
 	ret->has_lit = true;
 	ret->type = MACH0_(get_filetype) (arch->o->bin_obj);

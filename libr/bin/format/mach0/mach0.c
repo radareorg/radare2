@@ -1948,8 +1948,9 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 		entry->addr = entry_to_vaddr (bin);
 		entry->offset = addr_to_offset (bin, entry->addr);
 		entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
+		sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
+		sdb_num_set (bin->kv, "mach0.entry.paddr", bin->entry, 0);
 	}
-
 	if (!bin->entry || entry->offset == 0) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
 		for (i = 0; i < bin->nsects; i++) {
@@ -1968,6 +1969,13 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 	return entry;
 }
 
+void MACH0_(kv_loadlibs)(struct MACH0_(obj_t)* bin) {
+	int i;
+	for (i = 0; i < bin->nlibs; i++) {
+		sdb_set (bin->kv, sdb_fmt (0, "libs.%d.name", i), bin->libs[i], 0);
+	}
+}
+
 struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 	struct lib_t *libs;
 	int i;
@@ -1979,6 +1987,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 		return NULL;
 	}
 	for (i = 0; i < bin->nlibs; i++) {
+		sdb_set (bin->kv, sdb_fmt (0, "libs.%d.name", i), bin->libs[i], 0);
 		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
 		libs[i].name[R_BIN_MACH0_STRING_LENGTH-1] = '\0';
 		libs[i].last = 0;
@@ -2056,7 +2065,7 @@ const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
 	return "darwin";
 }
 
-char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+const char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	const char *archstr = "unknown";
 	switch (hdr->cputype) {
 	case CPU_TYPE_VAX:
@@ -2095,14 +2104,11 @@ char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	case CPU_TYPE_POWERPC64:
 		archstr = "ppc";
 	}
-	return strdup (archstr);
+	return archstr;
 }
 
-char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
-	if (bin) {
-		return MACH0_(get_cputype_from_hdr) (&bin->hdr);
-	}
-	return strdup ("unknown");
+const char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
+	return bin? MACH0_(get_cputype_from_hdr) (&bin->hdr): "unknown";
 }
 
 // TODO: use const char*
