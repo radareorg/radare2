@@ -69,11 +69,9 @@ else
 		RV=0
 	fi
 	if [ $RV = 0 ]; then
-		time make -j2
+		time make -j4
 		if [ $? = 0 ]; then
 			makeDeb
 		fi
 	fi
 fi
-
-

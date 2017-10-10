@@ -125,7 +125,7 @@ static TAG_CALLBACK(spp_sub) {
 
 // XXX This method needs some love
 static TAG_CALLBACK(spp_trace) {
-#if HAVE_FORK
+#if HAVE_SYSTEM
 	char b[1024];
 	if (state->echo[state->ifl]) {
 		snprintf (b, 1023, "echo '%s' >&2 ", buf);

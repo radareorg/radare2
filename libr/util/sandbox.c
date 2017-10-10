@@ -123,7 +123,19 @@ R_API int r_sandbox_system (const char *x, int n) {
 	}
 #if LIBC_HAVE_FORK
 #if LIBC_HAVE_SYSTEM
-	if (n) return system (x);
+	if (n) {
+#if APPLE_SDK_IPHONEOS
+#include <dlfcn.h>
+		int (*__system)(const char *cmd)
+			= dlsym (NULL, "system");
+		if (__system) {
+			return __system (x);
+		}
+		return -1;
+#else
+		return system (x);
+#endif
+	}
 	return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 #else
 	#include <spawn.h>
