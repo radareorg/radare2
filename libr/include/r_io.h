@@ -309,7 +309,7 @@ R_API void r_io_map_calculate_skyline(RIO *io);
 R_API RList* r_io_map_get_for_fd(RIO *io, int fd);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
 
-//io.c
+/* io.c */
 R_API RIO *r_io_new (void);
 R_API RIO *r_io_init (RIO *io);
 R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode);		//should return int
@@ -326,9 +326,11 @@ R_API bool r_io_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
+R_API int r_io_prefix_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
+R_API int r_io_prefix_write_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_read (RIO *io, ut8 *buf, int len);
 R_API bool r_io_write (RIO *io, ut8 *buf, int len);
 R_API ut64 r_io_size (RIO *io);

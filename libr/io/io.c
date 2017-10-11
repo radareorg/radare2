@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2008-2017 - condret, pancake, alvaro_fe */
 
+#include <errno.h>
 #include <r_io.h>
 #include <sdb.h>
 #include <config.h>
@@ -383,6 +384,7 @@ R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 	return r_io_desc_write_at (io->desc, paddr, buf, len);
 }
 
+// Non-stop mode
 R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
@@ -397,6 +399,7 @@ R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	return onIterMap_wrap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, NULL);
 }
 
+// Non-stop mode
 R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
@@ -439,6 +442,7 @@ R_API RIOAccessLog *r_io_al_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int l
 	return log;
 }
 
+// Non-stop mode
 R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	bool ret;
 	if (!io || !buf || len < 1) {
@@ -454,6 +458,26 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	}
 	if (io->cached & R_IO_READ) {
 		(void)r_io_cache_read (io, addr, buf, len);
+	}
+	return ret;
+}
+
+// Prefix mode
+R_API int r_io_prefix_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	if (!io || !buf || len < 0) {
+		return -EINVAL;
+	}
+	if (io->buffer_enabled) {
+		return r_io_buffer_read (io, addr, buf, len);
+	}
+	int ret;
+	if (io->va) {
+		ret = (int)on_map_skyline (io, addr, buf, len, R_IO_READ, fd_read_at_wrap, true);
+	} else {
+		ret = r_io_pread_at (io, addr, buf, len);
+	}
+	if (ret > 0 && io->cached & R_IO_READ) {
+		(void)r_io_cache_read (io, addr, buf, ret);
 	}
 	return ret;
 }
@@ -492,6 +516,7 @@ R_API RIOAccessLog *r_io_al_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	return log;
 }
 
+// Non-stop mode
 R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 	int i;
 	bool ret = false;
@@ -515,6 +540,39 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 	}
 	if (buf != mybuf) {
 		free (mybuf);
+	}
+	return ret;
+}
+
+// Prefix mode
+R_API int r_io_prefix_write_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	if (!io || !buf || len < 0) {
+		return -EINVAL;
+	}
+	ut8 *buf1 = (ut8 *)buf;
+	int ret;
+	if (io->write_mask) {
+		buf1 = r_mem_dup ((void*)buf, len);
+		if (!buf1) {
+			return -ENOMEM;
+		}
+		int i, j = 0;
+		for (i = 0; i < len; i++) {
+			buf1[i] &= io->write_mask[j];
+			if (++j == io->write_mask_len) {
+				j = 0;
+			}
+		}
+	}
+	if (io->cached & R_IO_WRITE) {
+		ret = r_io_cache_write (io, addr, buf1, len);
+	} else if (io->va) {
+		ret = (int)on_map_skyline (io, addr, buf1, len, R_IO_WRITE, fd_write_at_wrap, true);
+	} else {
+		ret = r_io_pwrite_at (io, addr, buf1, len);
+	}
+	if (buf1 != buf) {
+		free (buf1);
 	}
 	return ret;
 }
