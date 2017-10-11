@@ -64,7 +64,7 @@ static const char *help_msg_CS[] = {
 };
 
 static const char *help_msg_Cs[] = {
-	"Usage:", "Cs[-*] [size] [@addr]", "",
+	"Usage:", "Cs[ga-*.] [size] [@addr]", "",
 	"Cs", "", "list all strings in human friendly form",
 	"Cs*", "", "list all strings in r2 commands",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
@@ -72,6 +72,7 @@ static const char *help_msg_Cs[] = {
 	" Cz", " [size] [@addr]", "ditto",
 	"Csa", " [size] [@addr]", "add ascii/latin1 string",
 	"Cs-", " [@addr]", "remove string",
+	"Cs.", "", "show string at current address",
 	NULL
 };
 
@@ -514,7 +515,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 
 static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	int n, type = input[0];
-	char *t = 0, *p, name[256];
+	char *t = 0, *p, name[256], *str;
 	int repeat = 1;
 	ut64 addr_end = 0LL, addr = core->offset;
 
@@ -573,6 +574,19 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				free (out);
 			}
 			free (comment);
+		}
+		break;
+	case '.':
+		str = r_meta_get_string (core->anal, type, addr);
+		if (str) {
+			if (type == 's') {
+				char *esc_str = r_str_escape_latin1 (str, false, true);
+				r_cons_printf ("\"%s\"\n", esc_str);
+				free (esc_str);
+			} else {
+				r_cons_println (str);
+			}
+			free (str);
 		}
 		break;
 	case ' ':
