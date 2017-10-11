@@ -1129,6 +1129,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 			res = r_str_appendf (res, ", ");
 		}
 	}
+	r_syscall_item_free (item);
 	res = r_str_appendf (res, ")");
 	return res;
 }
