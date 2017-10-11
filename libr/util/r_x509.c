@@ -295,7 +295,7 @@ RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 	r_x509_parse_name (&crl->issuer, elems[1]);
 	crl->lastUpdate = r_asn1_stringify_utctime (elems[2]->sector, elems[2]->length);
 	crl->nextUpdate = r_asn1_stringify_utctime (elems[3]->sector, elems[3]->length);
-	if (object->list.length > 4) {
+	if (object->list.length > 4 && object->list.objects[4]) {
 		ut32 i;
 		crl->revokedCertificates = calloc (object->list.objects[4]->list.length, sizeof (RX509CRLEntry*));
 		if (!crl->revokedCertificates) {
