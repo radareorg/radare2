@@ -7,6 +7,7 @@ static const char *help_msg_q[] = {
 	"q","","quit program",
 	"q!","","force quit (no questions)",
 	"q!!","","force quit without saving history",
+	"q!!!","","force quit without freeing anything",
 	"q"," 1","quit with return value 1",
 	"q"," a-b","quit with return value a-b",
 	"q[y/n][y/n]","","quit, chose to kill process, chose to save project ",
@@ -20,6 +21,12 @@ static void cmd_quit_init(RCore *core) {
 static int cmd_Quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '!') {
+		if (input[1] == '!') {
+			if (!r_sandbox_enable (false)) {
+				exit (0);
+			}
+			return -2;
+		}
 		r_config_set (core->config, "scr.histsave", "false");
 	}
 	if (IS_DIGIT (input[0]) || input[0] == ' ') {
