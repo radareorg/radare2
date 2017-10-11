@@ -449,8 +449,10 @@ R_API bool r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	}
 	if (io->va) {
 		ret = r_io_vread_at (io, addr, buf, len);
+		io->ret = ret? len: -1;
 	} else {
-		ret = (r_io_pread_at (io, addr, buf, len) > 0);
+		io->ret = r_io_pread_at (io, addr, buf, len);
+		ret = io->ret > 0;
 	}
 	if (io->cached & R_IO_READ) {
 		(void)r_io_cache_read (io, addr, buf, len);
@@ -508,10 +510,13 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 	}
 	if (io->cached & R_IO_WRITE) {
 		ret = r_io_cache_write (io, addr, mybuf, len);
+		io->ret = ret? len: -1;
 	} else if (io->va) {
 		ret = r_io_vwrite_at (io, addr, mybuf, len);
+		io->ret = ret? len: -1;
 	} else {
-		ret = (r_io_pwrite_at (io, addr, mybuf, len) > 0);
+		io->ret = r_io_pwrite_at (io, addr, mybuf, len);
+		ret = io->ret > 0;
 	}
 	if (buf != mybuf) {
 		free (mybuf);
