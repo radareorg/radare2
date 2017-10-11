@@ -74,7 +74,7 @@ static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	dir == -1 -> result <= off
 	dir == 0 ->  result == off
 	dir == 1 ->  result >= off*/
-static  RFlagsAtOffset* r_flag_get_nearest_list(RFlag *f, ut64 off, int dir) {
+static RFlagsAtOffset* r_flag_get_nearest_list(RFlag *f, ut64 off, int dir) {
 	RFlagsAtOffset *flags = NULL;
 	RFlagsAtOffset key;
 	key.off = off;
