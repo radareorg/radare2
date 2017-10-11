@@ -33,7 +33,7 @@ extern int lineno;
 #endif
 
 #ifndef DLL_LOCAL
-#ifdef MSC_VER
+#ifdef _MSC_VER
 #define DLL_LOCAL
 #else
 #define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
