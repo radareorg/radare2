@@ -1117,6 +1117,10 @@ static int cmd_write(void *data, const char *input) {
 			ut64 poff = core->offset;
 			if (*str == 'f') { // "wtf"
 				str++;
+				if (*str == '?') {
+					r_core_cmd_help (core, help_msg_wt);
+					return 0;
+				}
 				if (*str == '!') {
 					RIOSection *s = r_io_section_vget (core->io, poff);
 					toend = true;
