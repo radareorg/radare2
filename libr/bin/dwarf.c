@@ -1266,7 +1266,12 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_udata:
-		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.data);
+		{
+			ut8 data[32];
+			buf = r_uleb128 (buf, R_MIN (sizeof (data), buf_end - buf), &data);
+			memcpy (&value->encoding.data, data, sizeof (value->encoding.data));
+			value->encoding.str_struct.string = NULL;
+		}
 		break;
 	case DW_FORM_ref_addr:
 		value->encoding.reference = READ (buf, ut64); // addr size of machine
@@ -1291,7 +1296,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = 0;
 		return NULL;
 	}
-	return buf;
+	return obuf;
 }
 
 static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
@@ -1361,7 +1366,8 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 	const ut8 *buf = obuf, *buf_end = obuf + len;
 	size_t k, offset = 0;
 	int curr_unit = 0;
-	RBinDwarfDebugInfo di, *inf = &di;
+	RBinDwarfDebugInfo di = {0};
+	RBinDwarfDebugInfo *inf = &di;
 	bool ret = true;
 
 	if (!da || !s || !obuf) {
