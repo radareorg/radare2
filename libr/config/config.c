@@ -138,6 +138,36 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 	}
 }
 
+R_API RConfigNode *r_config_define_bool(RConfig *cfg, const char *name, bool initial) {
+	RConfigNode *node = r_config_node_new (name, NULL);
+	if (!node) {
+		return NULL;
+	}
+	node->flags = CN_RW | CN_BOOL;
+	node->i_value = initial;
+	ht_insert (cfg->ht, node->name, node);
+	return node;
+}
+
+R_API RConfigNode *r_config_define_ut64(RConfig *cfg, const char *name, const ut64 initial) {
+	char buf[16];
+	if (initial < 1024) {
+		snprintf (buf, sizeof (buf), "%" PFMT64d "", initial);
+	} else {
+		snprintf (buf, sizeof (buf), "0x%08" PFMT64x "", initial);
+	}
+	RConfigNode *node = r_config_node_new (name, buf);
+	if (!node) {
+		return NULL;
+	}
+	node->flags = CN_RW | CN_INT; // TODO rename CN_INT
+	node->i_value = initial;
+	ht_insert (cfg->ht, node->name, node);
+	r_list_append (cfg->nodes, node);
+	cfg->n_nodes++;
+	return node;
+}
+
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	RConfigNode *node;
 	RListIter *iter;
@@ -337,8 +367,8 @@ R_API RConfigNode* r_config_set_cb(RConfig *cfg, const char *name, const char *v
 	return node;
 }
 
-R_API RConfigNode* r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb) {
-	RConfigNode *node = r_config_set_i (cfg, name, ivalue);
+R_API RConfigNode* r_config_define_ut64_cb(RConfig *cfg, const char *name, ut64 initial, RConfigCallback cb) {
+	RConfigNode *node = r_config_define_ut64 (cfg, name, initial);
 	if (node && (node->setter = cb)) {
 		if (!node->setter (cfg->user, node)) {
 			return NULL;
@@ -470,62 +500,40 @@ R_API int r_config_rm(RConfig *cfg, const char *name) {
 	return false;
 }
 
+// Cannot be used to define an RConfigNode
 R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
 	if (!cfg || !name) {
 		return NULL;
 	}
 	RConfigNode *node = r_config_node_get (cfg, name);
-	if (node) {
-		if (node->flags & CN_RO) {
-			node = NULL;
-			goto beach;
-		}
-		if (node->value) {
-			ov = strdup (node->value);
-			if (!ov) {
-				node = NULL;
-				goto beach;
-			}
-			free (node->value);
-		}
-		if (node->flags & CN_BOOL) {
-			node->value = strdup (r_str_bool (i));
-		} else {
-			snprintf (buf, sizeof (buf) - 1, "%" PFMT64d, i);
-			node->value = strdup (buf);
-		}
-		if (!node->value) {
-			node = NULL;
-			goto beach;
-		}
-		//node->flags = CN_RW | CN_INT;
-		node->i_value = i;
-	} else {
-		if (!cfg->lock) {
-			if (i < 1024) {
-				snprintf (buf, sizeof (buf), "%" PFMT64d "", i);
-			} else {
-				snprintf (buf, sizeof (buf), "0x%08" PFMT64x "", i);
-			}
-			node = r_config_node_new (name, buf);
-			if (!node) {
-				node = NULL;
-				goto beach;
-			}
-			node->flags = CN_RW | CN_OFFT;
-			node->i_value = i;
-			if (cfg->ht) {
-				ht_insert (cfg->ht, node->name, node);
-			}
-			if (cfg->nodes) {
-				r_list_append (cfg->nodes, node);
-				cfg->n_nodes++;
-			}
-		} else {
-			eprintf ("(locked: no new keys can be created (%s))\n", name);
-		}
+	if (!node) {
+		return NULL;
 	}
+	if (node->flags & CN_RO) {
+		node = NULL;
+		goto beach;
+	}
+	if (node->value) {
+		ov = strdup (node->value);
+		if (!ov) {
+			node = NULL;
+			goto beach;
+		}
+		free (node->value);
+	}
+	if (node->flags & CN_BOOL) {
+		node->value = strdup (r_str_bool (i));
+	} else {
+		snprintf (buf, sizeof (buf), "%" PFMT64d, i);
+		node->value = strdup (buf);
+	}
+	if (!node->value) {
+		node = NULL;
+		goto beach;
+	}
+	//node->flags = CN_RW | CN_INT;
+	node->i_value = i;
 
 	if (node && node->setter) {
 		ut64 oi = node->i_value;

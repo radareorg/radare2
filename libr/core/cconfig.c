@@ -3,10 +3,10 @@
 #include <r_core.h>
 
 #define NODECB(w,x,y) r_config_set_cb (cfg,w,x,y)
-#define NODEICB(w,x,y) r_config_set_i_cb (cfg,w,x,y)
+#define NODEICB(w,x,y) r_config_define_ut64_cb (cfg,w,x,y)
 #define SETDESC(x,y) r_config_node_desc (x,y)
 #define SETOPTIONS(x, ...) set_options (x, __VA_ARGS__)
-#define SETI(x,y,z) SETDESC (r_config_set_i (cfg,x,y), z)
+#define SETI(x,y,z) SETDESC (r_config_define_ut64 (cfg,x,y), z)
 #define SETICB(w,x,y,z) SETDESC (NODEICB (w,x,y), z)
 #define SETPREF(x,y,z) SETDESC (r_config_set (cfg,x,y), z)
 #define SETCB(w,x,y,z) SETDESC (NODECB (w,x,y), z)
