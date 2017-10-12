@@ -1296,7 +1296,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = 0;
 		return NULL;
 	}
-	return obuf;
+	return buf;
 }
 
 static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
