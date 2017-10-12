@@ -115,7 +115,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 		o = r_print_randomart (c, dlen, from);
 		printf ("%s\n%s", hname, o);
 		if (linebreak) {
-			printf("\n");
+			printf ("\n");
 		}
 		free (o);
 		break;
@@ -477,7 +477,7 @@ int main(int argc, char **argv) {
 		case 'D': decrypt = optarg; break;
 		case 'E': encrypt = optarg; break;
 		case 'L': algolist (); return 0;
-		case 'l': linebreak=0;
+		case 'l': linebreak = 0;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
