@@ -581,8 +581,12 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		if (str) {
 			if (type == 's') {
 				char *esc_str = r_str_escape_latin1 (str, false, true);
-				r_cons_printf ("\"%s\"\n", esc_str);
-				free (esc_str);
+				if (esc_str) {
+					r_cons_printf ("\"%s\"\n", esc_str);
+					free (esc_str);
+				} else {
+					r_cons_println ("<oom>");
+				}
 			} else {
 				r_cons_println (str);
 			}
