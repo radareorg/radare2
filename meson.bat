@@ -65,6 +65,7 @@ IF "%BUILD%"=="project" GOTO BUILDPROJECT
 
 rem Creating build directory with correct parameters
 IF EXIST %BUILDDIR% GOTO BUILD
+ECHO [ R2 MESON GENERATING PROJECT ]
 python meson.py --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %BACKEND%
 
 :BUILD
