@@ -237,7 +237,7 @@ wf file: Writes the content of the file at the current address or specified offs
 wF file: Writes the content of the file at the current address or specified offset
 wt file [sz]: Write to file (from current seek, blocksize or sz bytes)
 	Eg: Dump ELF files with wt @@ hit0* (after searching for ELF headers: \x7fELF)
-woO 41424344 : get the index in the De Bruijn Pattern of the given word
+wopO 41424344 : get the index in the De Bruijn Pattern of the given word
 ```
 
 ## Flags
