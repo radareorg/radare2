@@ -731,7 +731,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
-	for (cnt = 0, i = 0; cnt < shdr->sh_info && ((char *)defs + i < end); ++cnt) {
+	for (cnt = 0, i = 0; i >= 0 && cnt < shdr->sh_info && ((char *)defs + i < end); ++cnt) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
 		char key[32] = {0};
@@ -801,6 +801,10 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		if (!verdef->vd_next) {
 			sdb_free (sdb_verdef);
 			goto out_error;
+		}
+		if ((st32)verdef->vd_next < 1) {
+			eprintf ("Warning: Invalid vd_next in the ELF version\n");
+			break;
 		}
 		i += verdef->vd_next;
 	}
