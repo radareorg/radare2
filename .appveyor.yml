@@ -80,13 +80,14 @@ after_test:
   - git clone https://github.com/radare/radare2-win-installer
   - set PATH=%PATH%;"C:\\Program Files (x86)\\Inno Setup 5"
   - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
+  - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
 
 # Artifacts
 artifacts:
   # Binaries
   - path: "%ARTIFACT_ZIP%"
   # Inno Setup files
-  - path: radare2-win-installer\Output\*
+  - path: radare2_installer-%builder%.exe
 
 # Disable deployment
 deploy: off
