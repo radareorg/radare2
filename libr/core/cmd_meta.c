@@ -73,6 +73,7 @@ static const char *help_msg_Cs[] = {
 	"Csa", " [size] [@addr]", "add ascii/latin1 string",
 	"Cs-", " [@addr]", "remove string",
 	"Cs.", "", "show string at current address",
+	"Cs..", "", "show string + info about it at current address",
 	NULL
 };
 
@@ -577,6 +578,13 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		}
 		break;
 	case '.':
+		if (input[2] == '.') {
+			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
+			if (mi) {
+				r_meta_print (core->anal, mi, 0, false);
+			}
+			break;
+		}
 		str = r_meta_get_string (core->anal, type, addr);
 		if (str) {
 			if (type == 's') {
