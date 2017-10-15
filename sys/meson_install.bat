@@ -54,9 +54,6 @@ IF "%BUILDER%"=="msbuild" (
     FOR /F "tokens=*" %%F IN (' dir /s /b build\libr\*.dll ') DO COPY %%F lib\
 )
 
-ECHO [ R2 SDB GENERATION ]
-ECHO TODO
-
 ECHO [ R2 WINDIST FOLDER CREATION ]
 MKDIR %DIST%
 MOVE bin\*.exe %DIST%\

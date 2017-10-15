@@ -32,6 +32,7 @@ IF NOT "%1"=="" (
 		SET RELEASE=--buildtype=release
 	)
 	IF "%1"=="--msbuild" (
+		SET BACKEND=vs2015
 		SET BUILD=msbuild
 	)
 	IF "%1"=="--xp" (
