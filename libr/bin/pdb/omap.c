@@ -112,6 +112,14 @@ int omap_remap(void *stream, int address) {
 	// mb (len -1) ???
 	pos = binary_search (omap_stream->froms, address, 0, (len));
 
+	// TODO(nartes): it might introduce seg fault, cause we might peek into
+	// the bytes before allocated area, i.e. omap_stream->froms[-1]
+	//
+	// if (pos == -1)
+	// {
+	//		return -1;
+	// }
+	assert (pos >= 0);
 	if (omap_stream->froms[pos] != address) {
 		pos -= 1;
 	}

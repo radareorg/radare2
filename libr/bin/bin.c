@@ -930,7 +930,22 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	if (!bf) {
 		return false;
 	}
+
+	// TODO(nartes):  the_obj_list might be leaked along the way.
+	// r_list_free (the_obj_list) is to be called after several
+	// error handling if-statements. It might be fixed!
+	// The following command:
+	// ```
+	//   dd if=/dev/urandom of=tmp/test_128Mb.blob\
+	//       bs=512 count=$((2 * 1024 //   * 128))
+	//   valgrind radare2 --show-leak-kinds=all --leak-check=full\
+	//       -qc "o tmp/test_128Mb.blob; 2000ib" -- > /dev/null 2>&1
+	// ```
+	// makes bf->objs to have a non-zero length list,
+	// but amount of leaked memory for 2000 tries is about 64Kb,
+	// may be it's a feature and not a leak :)
 	the_obj_list = bf->objs;
+
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	// invalidate current object reference
 	bf->o = NULL;
