@@ -366,7 +366,7 @@ R_API const char *r_meta_type_to_string(int type) {
 }
 
 static bool isFirst = true;
-static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
+R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	char *pstr, *str, *base64_str;
 	//eprintf ("%d %d\n", d->space, a->meta_spaces.space_idx);
 	if (a->meta_spaces.space_idx != -1) {
@@ -454,9 +454,14 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from, pstr);
 				} else {
-					bool ascii = r_str_is_ascii (d->str);
-					a->cb_printf ("0x%08"PFMT64x" %s[%d] \"%s\"\n",
-					              d->from, ascii ? "ascii" : "latin1", (int)d->size, pstr);
+					const char *ascii = r_str_is_ascii (d->str) ? "ascii" : "latin1";
+					if (show_full) {
+						a->cb_printf ("0x%08"PFMT64x" %s[%d] \"%s\"\n",
+						              d->from, ascii, (int)d->size, pstr);
+					} else {
+						a->cb_printf ("%s[%d] \"%s\"\n",
+						              ascii, (int)d->size, pstr);
+					}
 				}
 				break;
 			case 'h': /* hidden */
@@ -466,10 +471,14 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from);
 				} else {
-					const char *dtype = d->type == 'h' ? "hidden" : "data";
-					a->cb_printf ("0x%08" PFMT64x " %s %s %d\n",
-					              d->from, dtype, r_meta_type_to_string (d->type), (int)d->size);
-
+					if (show_full) {
+						const char *dtype = d->type == 'h' ? "hidden" : "data";
+						a->cb_printf ("0x%08" PFMT64x " %s %s %d\n",
+						              d->from, dtype,
+						              r_meta_type_to_string (d->type), (int)d->size);
+					} else {
+						a->cb_printf ("%d\n", (int)d->size);
+					}
 				}
 				break;
 			case 'm': /* magic */
@@ -479,9 +488,13 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 							r_meta_type_to_string (d->type),
 							(int)d->size, pstr, d->from);
 				} else {
-					const char *dtype = d->type=='m'?"magic":"format";
-					a->cb_printf ("0x%08"PFMT64x" %s %d %s\n",
-							d->from, dtype, (int)d->size, pstr);
+					if (show_full) {
+						const char *dtype = d->type == 'm' ? "magic" : "format";
+						a->cb_printf ("0x%08" PFMT64x " %s %d %s\n",
+						              d->from, dtype, (int)d->size, pstr);
+					} else {
+						a->cb_printf ("%d %s\n", (int)d->size, pstr);
+					}
 				}
 				break;
 			default:
@@ -540,7 +553,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 			goto beach;
 		}
 	}
-	printmetaitem (ui->anal, &it, ui->rad);
+	r_meta_print (ui->anal, &it, ui->rad, true);
 	free (it.str);
 beach:
 	ui->rad = uirad;
