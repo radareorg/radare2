@@ -1,16 +1,16 @@
 #ifndef R_BIG_H
 #define R_BIG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if HAVE_LIB_GMP
 #define RNumBig mpz_t
 #elif HAVE_LIB_SSL
 #define RNumBig BIGNUM
 #else
 #define	R_BIG_SIZE 10000
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct r_num_big_t {
 	char dgts[R_BIG_SIZE];
 	int sign, last;
