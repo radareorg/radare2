@@ -2791,6 +2791,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
 	ut64 refaddr = p;
+	int refptr = ds->analop.refptr;
 	RFlagItem *f;
 	char *nl = ds->show_comment_right? "" : "\n";
 	if (!ds->show_comments || !ds->show_slow) {
@@ -2816,6 +2817,15 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 	}
 	r_list_free (list);
+	if (ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
+	    && ds->analop.stackop == R_ANAL_STACK_SET
+	    && ds->analop.val != UT64_MAX && ds->analop.val > 10) {
+		const char *arch = r_config_get (core->config, "asm.arch");
+		if (arch && !strcmp (arch, "x86")) {
+			p = refaddr = ds->analop.val;
+			refptr = 0;
+		}
+	}
 	bool flag_printed = false;
 	bool refaddr_printed = false;
 	bool string_printed = false;
@@ -2837,8 +2847,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 		r_io_read_at (core->io, refaddr, (ut8*)msg, len - 1);
-		if (ds->analop.refptr) {
-			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
+		if (refptr) {
+			ut64 num = r_read_ble (msg, core->print->big_endian, refptr * 8);
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
@@ -2858,11 +2868,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				if (n == UT32_MAX || n == UT64_MAX) {
 					ALIGN;
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1%s",
-							refaddr, ds->analop.refptr, nl);
+							refaddr, refptr, nl);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
 					ALIGN;
 					ds_comment (ds, true, "; [0x%" PFMT64x
-							  ":%d]=%"PFMT64d"%s", refaddr, ds->analop.refptr, n, nl);
+							  ":%d]=%"PFMT64d"%s", refaddr, refptr, n, nl);
 				} else {
 					const char *kind, *flag = "";
 					char *msg2 = NULL;
@@ -2893,7 +2903,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							}
 						}
 						ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s%s",
-							refaddr, ds->analop.refptr, refptrstr, *refptrstr?".":"",
+							refaddr, refptr, refptrstr, *refptrstr?".":"",
 							n, (flag && *flag) ? " " : "", flag, nl);
 					}
 					free (msg2);
