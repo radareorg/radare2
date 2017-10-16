@@ -1356,6 +1356,52 @@ static bool insert_mode_enabled(RCore *core) {
 	return true;
 }
 
+static void visual_browse(RCore *core) {
+	const char *browsemsg = "Browse stuff:\n"
+		" f  flags\n"
+		" e  eval var configurations\n"
+		" b  blocks\n"
+		" c  classes\n"
+		" t  types\n"
+		" m  maps\n"
+		" x  xrefs\n"
+		" X  refs\n"
+		" q  quit\n"
+	;
+	// r_cons_clear00 ();
+	r_cons_printf ("%s\n", browsemsg);
+	r_cons_flush ();
+	char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
+	switch (ch) {
+	case 'f':
+		r_core_visual_trackflags (core);
+		break;
+	case 'c':
+		r_core_visual_classes (core);
+		break;
+	case 't':
+		r_core_visual_types (core);
+		break;
+	case 'e':
+		r_core_visual_config (core);
+		break;
+	case 'b':
+		r_core_cmd0 (core, "s $(afb~...)");
+		break;
+	case 'm':
+		r_core_cmd0 (core, "s $(dm~...)");
+		break;
+	case 'x':
+		r_core_visual_refs (core, true);
+		break;
+	case 'X':
+		r_core_visual_refs (core, false);
+		break;
+	case 'q':
+		return;
+	}
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -1762,15 +1808,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (!r_list_empty (core->fs->roots)) {
 				r_core_visual_mounts (core);
 			}
-			break;
-		case 't':
-			r_core_visual_types (core);
-			break;
-		case 'B':
-			r_core_visual_classes (core);
-			break;
-		case 'F':
-			r_core_visual_trackflags (core);
 			break;
 		case 'x':
 			r_core_visual_refs (core, true);
@@ -2284,6 +2321,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			showcursor (core, false);
 			break;
 		case 'b':
+			visual_browse (core);
+			break;
+		case 'B':
 			{
 			ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
 			r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
