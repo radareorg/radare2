@@ -2818,6 +2818,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 	r_list_free (list);
 	if (ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
+	    && ds->analop.stackop == R_ANAL_STACK_SET
 	    && ds->analop.val != UT64_MAX && ds->analop.val > 10) {
 		const char *arch = r_config_get (core->config, "asm.arch");
 		if (arch && !strcmp (arch, "x86")) {
