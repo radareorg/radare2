@@ -632,6 +632,7 @@ R_API const char *r_str_rstr(const char *base, const char *p) {
 		r = base + strlen (base) - (q - s) - strlen (p);
 	}
 	free (s);
+	free (k);
 	return r;
 }
 
