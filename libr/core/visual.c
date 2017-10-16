@@ -1357,48 +1357,65 @@ static bool insert_mode_enabled(RCore *core) {
 }
 
 static void visual_browse(RCore *core) {
-	const char *browsemsg = "Browse stuff:\n"
+	const char *browsemsg = \
+		"Browse stuff:\n"
+		"-------------\n"
 		" f  flags\n"
 		" e  eval var configurations\n"
 		" b  blocks\n"
 		" c  classes\n"
+		" h  hud mode (V_)\n"
 		" t  types\n"
+		" s  seek history\n"
 		" m  maps\n"
 		" x  xrefs\n"
 		" X  refs\n"
+		" v  vars\n"
 		" q  quit\n"
 	;
-	// r_cons_clear00 ();
-	r_cons_printf ("%s\n", browsemsg);
-	r_cons_flush ();
-	char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
-	switch (ch) {
-	case 'f':
-		r_core_visual_trackflags (core);
-		break;
-	case 'c':
-		r_core_visual_classes (core);
-		break;
-	case 't':
-		r_core_visual_types (core);
-		break;
-	case 'e':
-		r_core_visual_config (core);
-		break;
-	case 'b':
-		r_core_cmd0 (core, "s $(afb~...)");
-		break;
-	case 'm':
-		r_core_cmd0 (core, "s $(dm~...)");
-		break;
-	case 'x':
-		r_core_visual_refs (core, true);
-		break;
-	case 'X':
-		r_core_visual_refs (core, false);
-		break;
-	case 'q':
-		return;
+	for (;;) {
+		r_cons_clear00 ();
+		r_cons_printf ("%s\n", browsemsg);
+		r_cons_flush ();
+		char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
+		switch (ch) {
+		case 'f':
+			r_core_visual_trackflags (core);
+			break;
+		case 'c':
+			r_core_visual_classes (core);
+			break;
+		case 't':
+			r_core_visual_types (core);
+			break;
+		case 'e':
+			r_core_visual_config (core);
+			break;
+		case 'b':
+			r_core_cmd0 (core, "s $(afb~...)");
+			break;
+		case 'm':
+			r_core_cmd0 (core, "s $(dm~...)");
+			break;
+		case 'x':
+			r_core_visual_refs (core, true);
+			break;
+		case 'X':
+			r_core_visual_refs (core, false);
+			break;
+		case 's':
+			r_core_cmdf (core, "s!~...");
+			break;
+		case 'v':
+			r_core_visual_anal (core);
+			break;
+		case 'h':
+		case '_':
+			r_core_visual_hudstuff (core);
+			break;
+		case 'q':
+			return;
+		}
 	}
 }
 
