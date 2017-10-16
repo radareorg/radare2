@@ -27,14 +27,18 @@ R_API int r2p_close(R2Pipe *r2p) {
 #else
 	if (r2p->input[0] != -1) {
 		close (r2p->input[0]);
-		close (r2p->input[1]);
 		r2p->input[0] = -1;
+	}
+	if (r2p->input[1] != -1) {
+		close (r2p->input[1]);
 		r2p->input[1] = -1;
 	}
 	if (r2p->output[0] != -1) {
 		close (r2p->output[0]);
-		close (r2p->output[1]);
 		r2p->output[0] = -1;
+	}
+	if (r2p->output[1] != -1) {
+		close (r2p->output[1]);
 		r2p->output[1] = -1;
 	}
 	if (r2p->child != -1) {
@@ -134,6 +138,7 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	env ("R2PIPE_IN", r2p->input[0]);
 	env ("R2PIPE_OUT", r2p->output[1]);
 
+
 	if (r2p->child) {
 		char ch;
 		// eprintf ("[+] r2pipe child is %d\n", r2p->child);
@@ -147,6 +152,11 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 			r2p_close (r2p);
 			return NULL;
 		}
+		// Close parent's end of pipes
+		close(r2p->input[0]);
+		close(r2p->output[1]);
+		r2p->input[0] = -1;
+		r2p->output[1] = -1;
 	} else {
 		int rc = 0;
 		if (cmd && *cmd) {
@@ -154,6 +164,12 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 			close (1);
 			dup2 (r2p->input[0], 0);
 			dup2 (r2p->output[1], 1);
+
+			close(r2p->input[1]);
+			close(r2p->output[0]);
+			r2p->input[1] = -1;
+			r2p->output[0] = -1;
+
 			rc = r_sandbox_system (cmd, 0);
 		}
 		r2p_close (r2p);
