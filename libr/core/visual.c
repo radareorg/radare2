@@ -182,8 +182,8 @@ static int visual_help() {
 		" /*+-[]   change block size, [] = resize hex.cols\n"
 		" </>      seek aligned to block size (seek cursor in cursor mode)\n"
 		" a/A      (a)ssemble code, visual (A)ssembler\n"
-		" b        toggle breakpoint\n"
-		" B        enumerate and inspect classes\n"
+		" b        browse symbols, flags, configurations, classes, ...\n"
+		" B        toggle breakpoint\n"
 		" c/C      toggle (c)ursor and (C)olors\n"
 		" d[f?]    define function, data, code, ..\n"
 		" D        enter visual diff mode (set diff.from/to)\n"
@@ -2694,7 +2694,7 @@ static void visual_refresh(RCore *core) {
 				}
 			}
 			snprintf (debugstr, sizeof (debugstr),
-					"?0;%s %d @ %"PFMT64d";"
+					"?0;%s %d @ %"PFMT64d";cl;"
 					"?1;%s %d @ %"PFMT64d";",
 					pxw, size, splitPtr,
 					pxw, size, core->offset);

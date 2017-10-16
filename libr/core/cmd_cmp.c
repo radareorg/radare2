@@ -749,17 +749,12 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'l':
 		if (strchr (input, 'f')) {
 			r_cons_flush ();
+		} else if (input[1] == 0) {
+			r_cons_fill_line ();
+			// r_cons_clear_line (0);
 		} else if (!strchr (input, '0')) {
-			r_cons_clear ();
-#if 0
-			write (1, "\x1b[2J", 4);
-			write (1, "\x1b[0;0H", 6);
-			write (1, "\x1b[0m", 4);
-#endif
-			// r_cons_clear();
+			r_cons_clear00 ();
 		}
-		r_cons_gotoxy (0, 0);
-		// r_cons_flush ();
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_c);

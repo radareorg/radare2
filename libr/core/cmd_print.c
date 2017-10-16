@@ -3300,56 +3300,6 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	}
 }
 
-static const char *json_path_level(RCore *core, const char *str, int level, int *len) {
-	char *token = r_str_newf ("\n%s\"", r_str_pad(' ', level * 2));
-	const char *a = r_str_rstr (str, token);
-	if (a) {
-		const char *from = a + strlen (token);
-		const char *e = strchr (from, '"');
-		free (token);
-		if (len) {
-			if (e) {
-				*len = e - from;
-			} else {
-				*len = 0;
-			}
-		}
-		return from;
-	}
-	return NULL;
-}
-
-static int print_json_path (RCore *core, const char *str) {
-	int depth = 10;
-	RList *list = r_list_newf (free);
-	RListIter *iter;
-	char *row;
-	ut64 opos = UT64_MAX;
-	while (depth > 0) {
-		int len;
-		const char *res = json_path_level (core, str, depth, &len);
-		if (res && *res && len > 0) {
-			ut64 pos = res - str;
-			if (pos > opos || pos > core->offset) {
-				opos = pos;
-				depth--;
-				continue;
-			}
-			opos = pos;
-			char *key = r_str_ndup (res, len);
-			char *row = r_str_newf ("0x%08"PFMT64x" %.3d \"%s\"", pos, depth, key);
-			r_list_append (list, row);
-			free (key);
-		}
-		depth--;
-	}
-	r_list_foreach_prev (list, iter, row) {
-		eprintf ("%s\n", row);
-	}
-	r_list_free (list);
-	return 0;
-}
-
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	RCoreAnalStats *as;
@@ -3471,7 +3421,7 @@ static int cmd_print(void *data, const char *input) {
 				if (data) {
 					data[core->offset] = 0;
 					(void)r_core_read_at (core, 0, data, core->offset);
-					char *res = r_print_json_path (data, core->offset);
+					char *res = r_print_json_path ((const char *)data, core->offset);
 					if (res) {
 						eprintf ("-> res(%s)\n", res);
 					}
