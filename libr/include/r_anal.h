@@ -719,6 +719,13 @@ typedef struct r_anal_value_t {
 	RRegItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;
 
+enum RAnalOpDirection {
+	R_ANAL_OP_DIR_READ = 1,
+	R_ANAL_OP_DIR_WRITE = 2,
+	R_ANAL_OP_DIR_EXEC = 4,
+	R_ANAL_OP_DIR_REF = 8,
+};
+
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */

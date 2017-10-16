@@ -2567,13 +2567,29 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (mode == 'c') {
+				switch (mode) {
+				case 'c':
 					if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
 						i += op.size;
 						r_anal_op_fini (&op);
 						continue;
 					}
-				} else {
+					break;
+				case 'r':
+				case 'w':
+				case 'x':
+					{
+						RAnalOp op ={0};
+						r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
+						int mask = mode=='r' ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
+						if (op.direction == mask) {
+							i += op.size;
+						}
+						r_anal_op_fini (&op);
+						continue;
+					}
+					break;
+				default:
 					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i)) {
 						r_anal_op_fini (&op);
 						continue;

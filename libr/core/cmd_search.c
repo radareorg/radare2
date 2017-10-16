@@ -34,7 +34,7 @@ static const char *help_msg_slash[] = {
 	"/o", " [n]", "show offset of n instructions backward",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
-	"/r[e]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
+	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
@@ -75,12 +75,16 @@ static const char *help_msg_slash_C[] = {
 	NULL
 };
 
+
 static const char *help_msg_slash_r[] = {
-	"Usage:", "/r[e] [address]", " search references to this specific address",
+	"Usage:", "/r[acerwx] [address]", " search references to this specific address",
 	"/r", " [addr]", "search references to this specific address",
-	"/re", " [addr]", "search references using esil",
-	"/rc", "", "search for call references",
 	"/ra", "", "search all references",
+	"/rc", "", "search for call references",
+	"/re", " [addr]", "search references using esil",
+	"/rr", "", "Find read references",
+	"/rw", "", "Find write references",
+	"/rx", "", "Find exec references",
 NULL
 };
 
@@ -2260,7 +2264,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'c');
 				}
 			}
@@ -2270,7 +2274,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 0);
 				}
 			}
@@ -2282,7 +2286,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
 					r_core_seek (core, map->itv.addr, 1);
@@ -2295,8 +2299,25 @@ reread:
 				}
 			}
 			break;
-		case 'r': // "/rr"
-			eprintf ("TODO: https://github.com/radare/radare2/issues/6549\n");
+		case 'r': // "/rr" - read refs
+			{
+				RListIter *iter;
+				RIOMap *map;
+				r_list_foreach (param.boundaries, iter, map) {
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'r');
+				}
+			}
+			break;
+		case 'w': // "/rw" - write refs
+			{
+				RListIter *iter;
+				RIOMap *map;
+				r_list_foreach (param.boundaries, iter, map) {
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'w');
+				}
+			}
 			break;
 		case ' ': // "/r $$"
 		case 0: // "/r"
@@ -2320,6 +2341,7 @@ reread:
 			}
 			break;
 		case '?':
+			r_core_cmd_help (core, help_msg_slash_r);
 			break;
 		}
 		break;
