@@ -40,6 +40,121 @@ static const char *origColors[] = {
 };
 // static const char colors
 
+R_API char* r_print_json_path(const char* s, int pos) {
+	int indent = 0;
+#define DSZ 128
+	const char *words[DSZ] = { NULL };
+	int lengths[DSZ] = { 0 };
+	int indexs[DSZ] = { 0 };
+
+	int instr = 0;
+	bool isarr = false;
+	bool isValue = false;
+	const char *o;
+	if (!s) {
+		return NULL;
+	}
+	int arrpos = 0;
+	const char *os = s;
+	int osz = (1 + strlen (s)) * 20;
+	if (osz < 1) {
+		return NULL;
+	}
+
+	const char *str_a = NULL;
+	for (o = s; *s; s++) {
+		if (instr) {
+			if (s[0] == '"') {
+				instr = 0;
+				ut64 cur = str_a - os;
+				if (cur > pos) {
+					break;
+				}
+				words[indent - 1] = str_a;
+				lengths[indent - 1] = s - str_a;
+				indexs[indent - 1] = 0;
+			}
+			continue;
+		}
+
+		if (s[0] == '"') {
+			instr = 1;
+			str_a = s + 1;
+		}
+		if (*s == '\n' || *s == '\r' || *s == '\t' || *s == ' ') {
+			continue;
+		}
+		switch (*s) {
+		case ':':
+			isValue = true;
+			break;
+		case ',':
+			isValue = false;
+			if (isarr) {
+				arrpos ++;
+				indexs[indent - 1] = arrpos;
+				lengths[indent - 1] = (s - os);
+			}
+			break;
+		case '{':
+		case '[':
+			isValue = false;
+			if (*s == '[') {
+				isarr = true;
+				arrpos = 0;
+			}
+			if (indent > 128) {
+				eprintf ("JSON indentation is too deep\n");
+				indent = 0;
+			} else {
+				indent++;
+			}
+			break;
+		case '}':
+		case ']':
+			if (*s == ']') {
+				isarr = false;
+			}
+			isValue = false;
+			indent--;
+			break;
+		}
+	}
+	int i;
+	ut64 opos = 0;
+	for (i=0; i< DSZ && i< indent; i++) {
+		if ((int)words[i] < DSZ) {
+			ut64 cur = lengths[i];
+			if (cur < opos) {
+				continue;
+			}
+			opos = cur;
+			if (cur > pos) {
+				break;
+			}
+			eprintf ("0x%08"PFMT64x"  %d  [%d]\n", cur, i, indexs[i]);
+		} else {
+			char *a = r_str_ndup (words[i], lengths[i]);
+			ut64 cur = words[i] - os - 1;
+			if (cur < opos) {
+				continue;
+			}
+			opos = cur;
+			if (cur > pos) {
+				break;
+			}
+			char *q = strchr (a, '"');
+			if (q) {
+				*q = 0;
+			}
+			eprintf ("0x%08"PFMT64x"  %d  %s\n", cur, i, a);
+			free (a);
+		}
+	}
+	// TODO return something
+	return NULL;
+}
+
 R_API char* r_print_json_indent(const char* s, bool color, const char* tab, const char **palette) {
 	int indent = 0;
 	const int indentSize = strlen (tab);
