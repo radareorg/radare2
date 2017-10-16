@@ -105,7 +105,7 @@ static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return -1;
 	}
 	r_cons_reset ();
-	r_str_chop (bregs);
+	r_str_chop ((char *)bregs);
 	int sz = r_hex_str2bin (regs, bregs);
 	if (sz > 0) {
 		memcpy (buf, bregs, R_MIN (size, sz));
