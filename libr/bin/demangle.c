@@ -158,7 +158,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 			if (sign) {
 				char *str = out;
 				char *ptr = NULL;
-				char *nerd = str;
+				char *nerd = NULL;
 				do {
 					ptr = strstr (str, "::");
 					if (!ptr || ptr > sign) {
@@ -168,7 +168,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 					str = ptr + 1;
 				} while (1);
 
-				if (ptr && *ptr) {
+				if (nerd && *nerd) {
 					*nerd = 0;
 					RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
 					if (sym) {
