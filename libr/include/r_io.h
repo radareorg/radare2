@@ -22,6 +22,10 @@
 
 #define R_IO_UNDOS 64
 
+#if __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_io);
 
 typedef struct r_io_undos_t {
@@ -522,5 +526,9 @@ extern RIOPlugin r_io_plugin_null;
 extern RIOPlugin r_io_plugin_ar;
 extern RIOPlugin r_io_plugin_rbuf;
 extern RIOPlugin r_io_plugin_winedbg;
+
+#if __cplusplus
+}
+#endif
 
 #endif
