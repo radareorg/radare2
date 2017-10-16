@@ -726,9 +726,13 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				dst = getarg (&gop, 0, 1, NULL, DST_AR);
 				esilprintf (op, "%s,%s", src, dst);
 			}
+			op->direction = 2; // write
 			break;
 		case X86_OP_REG:
 		default:
+			if (INSOP(0).type == X86_OP_MEM) {
+				op->direction = 1; // read
+			}
 			{
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
 				dst = getarg (&gop, 0, 0, NULL, DST_AR);

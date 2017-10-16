@@ -1363,6 +1363,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.jump != UT64_MAX) {
 				printline ("jump", "0x%08" PFMT64x "\n", op.jump);
 			}
+			if (op.direction != 0) {
+				const char * dir = op.direction == 1 ? "read"
+					: op.direction == 2 ? "write"
+					: op.direction == 4 ? "exec"
+					: op.direction == 8 ? "ref": "none";
+				printline ("direction", "%s\n", dir);
+			}
 			if (hint && hint->fail != UT64_MAX) {
 				op.fail = hint->fail;
 			}
