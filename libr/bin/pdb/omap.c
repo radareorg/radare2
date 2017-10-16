@@ -112,6 +112,10 @@ int omap_remap(void *stream, int address) {
 	// mb (len -1) ???
 	pos = binary_search (omap_stream->froms, address, 0, (len));
 
+	if (pos == -1) {
+		return -1;
+	}
+
 	if (omap_stream->froms[pos] != address) {
 		pos -= 1;
 	}

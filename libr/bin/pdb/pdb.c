@@ -554,17 +554,17 @@ static void finish_pdb_parse(R_PDB *pdb) {
 		switch (i) {
 		case 1:
 			pdb_info_stream = (SPDBInfoStream *) r_list_iter_get (it);
-			// pdb_info_stream->free_(pdb_info_stream);
+			pdb_info_stream->free_(pdb_info_stream);
 			free (pdb_info_stream);
 			break;
 		case 2:
 			tpi_stream = (STpiStream *) r_list_iter_get (it);
-			// tpi_stream->free_(tpi_stream);
+			tpi_stream->free_(tpi_stream);
 			free (tpi_stream);
 			break;
 		case 3:
 			dbi_stream = (SDbiStream *) r_list_iter_get (it);
-			// dbi_stream->free_(dbi_stream);
+			dbi_stream->free_(dbi_stream);
 			free (dbi_stream);
 			break;
 		default:
@@ -573,7 +573,7 @@ static void finish_pdb_parse(R_PDB *pdb) {
 				break;
 			}
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get (it);
-			// pdb_stream->free_(pdb_stream);
+			pdb_stream->free_(pdb_stream);
 			free (pdb_stream);
 			break;
 		}
@@ -583,7 +583,7 @@ static void finish_pdb_parse(R_PDB *pdb) {
 	r_list_free (pdb->pdb_streams);
 	// enf of free of pdb->pdb_streams
 
-#if 0
+#if 1
 	// start of free pdb->pdb_streams2
 	it = r_list_iterator (pdb->pdb_streams2);
 	while (r_list_iter_next (it)) {
@@ -599,7 +599,7 @@ static void finish_pdb_parse(R_PDB *pdb) {
 	// end of free pdb->streams2
 
 	free (pdb->stream_map);
-	free (pdb->buf);
+	r_buf_free (pdb->buf);
 
 // fclose(pdb->fp);
 // printf("finish_pdb_parse()\n");
@@ -798,7 +798,7 @@ void build_command_field(ELeafType lt, char **command_field) {
 	switch (lt) {
 	case eLF_STRUCTURE:
 	case eLF_UNION:
-		*command_field = (char *) malloc (strlen ("pf") + 1);
+		*command_field = (char *) malloc (strlen ("pf.") + 1);
 		if (!(*command_field)) {
 			break;
 		}

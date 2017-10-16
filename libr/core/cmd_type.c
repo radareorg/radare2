@@ -685,6 +685,7 @@ static int cmd_type(void *data, const char *input) {
 							r_anal_type_del (core->anal, kv->key);
 						}
 					}
+					ls_free (l);
 					free (tmp);
 				}
 			} else eprintf ("Invalid use of t- . See t-? for help.\n");

@@ -930,6 +930,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	if (!bf) {
 		return false;
 	}
+
 	the_obj_list = bf->objs;
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	// invalidate current object reference
