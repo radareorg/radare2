@@ -153,15 +153,30 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 		r_str_replace_char (out, ' ', 0);
 	}
 	{
-		/* extract class/method information */
-		char *nerd = (char*)r_str_last (out, "::");
-		if (nerd && *nerd) {
-			*nerd = 0;
-			RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
-			if (sym) {
-				sym->vaddr = vaddr;
+		if (out) {
+			char *sign = (char *)strchr (out, '(');
+			if (sign) {
+				char *str = out;
+				char *ptr = NULL;
+				char *nerd = NULL;
+				do {
+					ptr = strstr (str, "::");
+					if (!ptr || ptr > sign) {
+						break;
+					}
+					nerd = ptr;
+					str = ptr + 1;
+				} while (1);
+
+				if (nerd && *nerd) {
+					*nerd = 0;
+					RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
+					if (sym) {
+						sym->vaddr = vaddr;
+					}
+					*nerd = ':';
+				}
 			}
-			*nerd = ':';
 		}
 	}
 	return out;
