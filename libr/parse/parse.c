@@ -285,7 +285,6 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
-						int copied_len;
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
 								while (*ptr_right && *ptr_right != 'm') ptr_right++;
@@ -311,11 +310,14 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 								if (ptr_esc < str) {
 									ptr_esc = ptr_end - flag_len + 1;
 								}
-								copied_len = ptr_end - ptr_esc + 1;
+								int copied_len = ptr_end - ptr_esc + 1;
+								if (copied_len < 1) {
+									break;
+								}
 								memmove (ptr_left, ptr_esc, copied_len);
 								sprintf (ptr_left + copied_len, "%s%s",
-									 ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
-									 ptr_right + 1);
+										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
+										ptr_right + 1);
 							}
 							break;
 						}
