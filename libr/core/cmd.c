@@ -204,6 +204,7 @@ static const char *help_msg_r[] = {
 	"r-", "num", "remove num bytes, move following data down",
 	"r+", "num", "insert num bytes, move following data up",
 	"rm" ," [file]", "remove file",
+	"rh" ,"", "show size in human format",
 	"r2" ," [file]", "launch r2",
 	NULL
 };
@@ -1050,6 +1051,15 @@ static int cmd_resize(void *data, const char *input) {
 		if (core->file) {
 			if (oldsize != -1) {
 				r_cons_printf ("%"PFMT64d"\n", oldsize);
+			}
+		}
+		return true;
+	case 'h':
+		if (core->file) {
+			if (oldsize != -1) {
+				char *s = r_num_units (NULL, oldsize);
+				r_cons_printf ("%s\n", s);
+				free (s);
 			}
 		}
 		return true;
