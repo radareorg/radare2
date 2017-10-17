@@ -4741,8 +4741,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
-						ref->addr, ref->type, str, iter->n? ",": "");
+					r_cons_printf ("{\"from\":%" PFMT64u ",\"fromFcn\":\"%s\",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
+						ref->addr, fcn? fcn->name: "", ref->type, str, iter->n? ",": "");
 				}
 				r_cons_printf ("]");
 				r_cons_newline ();
@@ -4755,7 +4755,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 				char str[512];
 				RAnalFunction *fcn;
-				char *buf_fcn;
 				char *comment;
 				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
@@ -4782,16 +4781,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						buf_asm = r_str_new (str);
 					}
 					comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
-					if (comment) {
-						buf_fcn = r_str_newf ("%s; %s", fcn ?
-								     fcn->name : "unknown function",
-								     strtok (comment, "\n"));
-					} else {
-						buf_fcn = r_str_newf ("%s", fcn ? fcn->name : "unknown function");
-					}
-					r_cons_printf ("%s 0x%" PFMT64x " %s in %s\n",
-						r_anal_ref_to_string (core->anal, ref->type),
-						ref->addr, buf_asm, buf_fcn);
+					char *buf_fcn = comment
+						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+					r_cons_printf ("%s 0x%" PFMT64x " (%s) %s\n",
+						buf_fcn, ref->addr, r_anal_ref_to_string (core->anal, ref->type), buf_asm);
 					free (buf_asm);
 					free (buf_fcn);
 				}
