@@ -65,6 +65,8 @@ static const char *help_msg_CS[] = {
 
 static const char *help_msg_Cs[] = {
 	"Usage:", "Cs[ga-*.] [size] [@addr]", "",
+	"NOTE:", " size", "1 unit in bytes == width in bytes of smallest possible char in encoding,",
+	"", "", "  so ascii/latin1 = 1, utf16le = 2",
 	"Cs", "", "list all strings in human friendly form",
 	"Cs*", "", "list all strings in r2 commands",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
@@ -626,7 +628,8 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			repeat = 1;
 		}
 		while (repcnt < repeat) {
-			t = strdup (r_str_chop_ro (input + 1));
+			int off = (!input[1] || input[1] == ' ') ? 1 : 2;
+			t = strdup (r_str_chop_ro (input + off));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
