@@ -1882,7 +1882,9 @@ static void afCc(RCore *core, const char *input) {
 	}
 	if (fcn) {
 		ut32 totalCycles = r_anal_fcn_cost (core->anal, fcn);
-		r_cons_printf ("%d\n", totalCycles);
+		// FIXME: This defeats the purpose of the function, but afC is used in project files.
+		// cf. canal.c
+		//r_cons_printf ("%d\n", totalCycles);
 	} else {
 		eprintf ("Cannot find function\n");
 	}

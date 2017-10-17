@@ -598,6 +598,9 @@ int main(int argc, char **argv, char **envp) {
 				return 0;
 			}
 			r_config_set (r.config, "prj.name", optarg);
+			// FIXME: Doing this here will overwrite -e flags coming before -p on the cmdline.
+			r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
+			r_config_set (r.config, "bin.strings", "false");
 			break;
 		case 'P':
 			patchfile = optarg;
@@ -831,7 +834,7 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Cannot slurp from stdin\n");
 			return 1;
 		}
-	} else if (strcmp (argv[optind - 1], "--")) {
+	} else if (strcmp (argv[optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
 		if (debug) {
 			if (asmbits) {
 				r_config_set (r.config, "asm.bits", asmbits);
