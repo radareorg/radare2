@@ -8,13 +8,13 @@ all clean:
 install: ${F_SDB}
 	rm -rf "$P"
 	mkdir -p "$P"
-	cp -f * "$P"
+	cp -af * "$P"
 
 CWD=$(shell pwd)
 symstall install-symlink:
 	mkdir -p "$P"
 	for FILE in * ; do \
-		if [ $$FILE != Makefile ]; then \
+		if [ $$FILE != Makefile -a -f $$FILE ]; then \
 			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done

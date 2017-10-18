@@ -3,7 +3,7 @@
 ARTYPE?=default
 EXT_AR?=a
 
-ifeq ($(ARTYPE),default)
+ifeq (${ARTYPE},default)
 libr.${EXT_AR}:
 	rm -rf .libr
 	mkdir .libr

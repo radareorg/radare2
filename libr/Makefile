@@ -6,8 +6,8 @@ include ../mk/${COMPILER}.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
-ARTYPE=default # gnu or ios
-
+#ARTYPE:=gnu or ios
+ARTYPE:=default
 
 S=$
 B=`
