@@ -277,6 +277,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				break;
 			}
 		}
+		r_cons_break_pop();
 	}
 	r_cons_break_pop ();
 	r_anal_emul_restore (core, hc);
