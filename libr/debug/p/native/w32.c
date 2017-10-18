@@ -153,8 +153,9 @@ typedef struct _OBJECT_TYPE_INFORMATION
 	ULONG NonPagedPoolUsage;
 } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
 
-static void (*w32_GetModuleBaseName)(HANDLE, HMODULE, LPCSTR, int) = NULL;
-static int (*w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
+static BOOL (WINAPI *w32_QueryFullProcessImageNameA)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
+static DWORD (WINAPI *w32_GetModuleBaseName)(HANDLE, HMODULE, LPCSTR, DWORD) = NULL;
+static BOOL (WINAPI *w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, DWORD) = NULL;
 static BOOL (WINAPI *w32_DebugActiveProcessStop)(DWORD) = NULL;
 static HANDLE (WINAPI *w32_openthread)(DWORD, BOOL, DWORD) = NULL;
 static BOOL (WINAPI *w32_DebugBreakProcess)(HANDLE) = NULL;
@@ -283,9 +284,9 @@ static int w32_dbg_init() {
 	}
 	w32_GetMappedFileName = (DWORD (WINAPI *)(HANDLE, LPVOID, LPCSTR, DWORD))
 		GetProcAddress (lib, "GetMappedFileNameA");
-	w32_GetModuleBaseName = (void (*)(HANDLE, HMODULE, LPCSTR, int))
+	w32_GetModuleBaseName = (DWORD (WINAPI *)(HANDLE, HMODULE, LPCSTR, DWORD))
 		GetProcAddress (lib, "GetModuleBaseNameA");
-	w32_GetModuleInformation = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
+	w32_GetModuleInformation = (BOOL (WINAPI *)(HANDLE, HMODULE, LPMODULEINFO, DWORD))
 		GetProcAddress (lib, "GetModuleInformation");
 	w32_GetModuleFileNameEx = (DWORD (WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD))
 		GetProcAddress (lib, "GetModuleFileNameExA");
@@ -407,10 +408,6 @@ static char *get_w32_excep_name(unsigned long code) {
 static int debug_exception_event (DEBUG_EVENT *de) {
 	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
 	switch (code) {
-	case EXCEPTION_BREAKPOINT:
-		break;
-	case EXCEPTION_SINGLE_STEP:
-		break;
 	/* fatal exceptions */
 	case EXCEPTION_ACCESS_VIOLATION:
 	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
@@ -422,12 +419,6 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 			get_w32_excep_name(code),
 			(int)de->dwThreadId);
 		break;
-#if __MINGW64__ || _WIN64
-	/* STATUS_WX86_BREAKPOINT */
-	case 0x4000001f:
-		eprintf ("(%d) WOW64 loaded.\n", (int)de->dwProcessId);
-		return 1;
-#endif
 	/* MS_VC_EXCEPTION */
 	case 0x406D1388:
 		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
@@ -729,12 +720,15 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
 #if __MINGW64__ || _WIN64
-			case 0x4000001f:
+			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
 #endif
 			case EXCEPTION_BREAKPOINT:
 				ret = R_DEBUG_REASON_BREAKPOINT;
 				next_event = 0;
 				break;
+#if __MINGW64__ || _WIN64
+			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP */
+#endif
 			case EXCEPTION_SINGLE_STEP:
 				ret = R_DEBUG_REASON_STEP;
 				next_event = 0;
@@ -1136,6 +1130,102 @@ static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
 	return ret;
 }
 
+static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
+	HANDLE h_tok = NULL;
+	DWORD tok_len = 0;
+	PTOKEN_USER tok_usr = NULL;
+	LPTSTR usr = NULL, usr_dom = NULL;
+	DWORD usr_len = 512;
+	DWORD usr_dom_len = 512;
+	SID_NAME_USE snu = {0};
+	HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, dbg->pid);
+
+	if (!h_proc) {
+		r_sys_perror ("w32_info_user/OpenProcess");
+		goto err_w32_info_user;
+	}
+	if (!OpenProcessToken (h_proc, TOKEN_QUERY, &h_tok)) {
+		r_sys_perror ("w32_info_user/OpenProcessToken");
+		goto err_w32_info_user;
+	}
+	if (!GetTokenInformation (h_tok, TokenUser, (LPVOID)&tok_usr, 0, &tok_len) && GetLastError () != ERROR_INSUFFICIENT_BUFFER) {
+		r_sys_perror ("w32_info_user/GetTokenInformation");
+		goto err_w32_info_user;
+	}
+	tok_usr = (PTOKEN_USER)malloc (tok_len);
+	if (!tok_usr) {
+		perror ("w32_info_user/malloc tok_usr");
+		goto err_w32_info_user;
+	}
+	if (!GetTokenInformation (h_tok, TokenUser, (LPVOID)tok_usr, tok_len, &tok_len)) {
+		r_sys_perror ("w32_info_user/GetTokenInformation");
+		goto err_w32_info_user;
+	}
+	usr = (LPTSTR)malloc (usr_len);
+	if (!usr) {
+		perror ("w32_info_user/malloc usr");
+		goto err_w32_info_user;
+	}
+	*usr = '\0';
+	usr_dom = (LPTSTR)malloc (usr_dom_len);
+	if (!usr_dom) {
+		perror ("w32_info_user/malloc usr_dom");
+		goto err_w32_info_user;
+	}
+	*usr_dom = '\0';
+	if (!LookupAccountSidA (NULL, tok_usr->User.Sid, usr, &usr_len, usr_dom, &usr_dom_len, &snu)) {
+		r_sys_perror ("w32_info_user/LookupAccountSidA");
+		goto err_w32_info_user;
+	}
+	if (*usr_dom) {
+		rdi->usr = r_str_newf ("%s\\%s", usr_dom, usr);		
+	} else {
+		rdi->usr = r_str_new (usr);
+	}
+err_w32_info_user:
+    if (h_proc) {
+	CloseHandle (h_proc);
+    }
+    if (h_tok) {
+	CloseHandle (h_tok);
+    }
+    free (usr);
+    free (usr_dom);
+    free (tok_usr);
+}
+
+static void w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
+	LPTSTR path = NULL;
+	HANDLE h_proc;
+	DWORD len;
+
+	if (!w32_QueryFullProcessImageNameA) {
+		return;
+	}
+	h_proc = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, dbg->pid);
+	if (!h_proc) {
+		r_sys_perror ("w32_info_exe/OpenProcess");
+		goto err_w32_info_exe;
+	}
+	path = (LPTSTR)malloc (MAX_PATH + 1);
+	if (!path) {
+		perror ("w32_info_exe/malloc path");
+		goto err_w32_info_exe;
+	}
+	len = MAX_PATH;
+	if (w32_QueryFullProcessImageNameA (h_proc, 0, path, &len)) {
+		path[len] = '\0';
+		rdi->exe = r_str_new (path);
+	} else {
+		r_sys_perror ("w32_info_exe/QueryFullProcessImageNameA");
+	}
+err_w32_info_exe:
+	if (h_proc) {
+		CloseHandle (h_proc);
+	}
+	free (path);
+}
+
 static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
@@ -1143,12 +1233,14 @@ static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
 	rdi->tid = dbg->tid;
 	rdi->lib = (void *) r_debug_get_lib_item();
 	rdi->thread = (void *)r_debug_get_thread_item ();
-	rdi->uid = -1;// TODO
-	rdi->gid = -1;// TODO
+	rdi->uid = -1;
+	rdi->gid = -1;
 	rdi->cwd = NULL;
 	rdi->exe = NULL;
 	rdi->cmdline = NULL;
 	rdi->libname = NULL;
+	w32_info_user (dbg, rdi);
+	w32_info_exe (dbg, rdi);
 	return rdi;
 }
 

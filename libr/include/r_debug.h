@@ -324,6 +324,7 @@ typedef struct r_debug_info_t {
 	int tid;
 	int uid;
 	int gid;
+	char *usr;
 	char *exe;
 	char *cmdline;
 	char *libname;
