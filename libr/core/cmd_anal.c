@@ -1884,7 +1884,7 @@ static void afCc(RCore *core, const char *input) {
 		ut32 totalCycles = r_anal_fcn_cost (core->anal, fcn);
 		// FIXME: This defeats the purpose of the function, but afC is used in project files.
 		// cf. canal.c
-		//r_cons_printf ("%d\n", totalCycles);
+		r_cons_printf ("%d\n", totalCycles);
 	} else {
 		eprintf ("Cannot find function\n");
 	}
@@ -3969,7 +3969,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				if (bbs < 1 || bbs > 0xfffff) {
 					eprintf ("Invalid block size\n");
 				}
-				eprintf ("Emulate basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", pc, end);
+		//		eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
 				buf = calloc (1, bbs + 1);
 				r_io_read_at (core->io, pc, buf, bbs);
 				int left;
@@ -3988,7 +3988,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					}
 				}
 			}
-		} else eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		} else {
+			eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		}
 	} break;
 	case 't': // "aet"
 		switch (input[1]) {
@@ -4743,8 +4745,21 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"fromFcn\":\"%s\",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
-						ref->addr, fcn? fcn->name: "", ref->type, str, iter->n? ",": "");
+
+					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%c\",\"opcode\":\"%s\"", ref->addr, ref->type, str);
+					if (fcn) {
+						r_cons_printf (",\"fcn_addr\":%"PFMT64d",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
+					}
+					RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, true);
+					if (fi) {
+						if (fcn && strcmp (fcn->name, fi->name)) {
+							r_cons_printf (",\"flag\":\"%s\"", fi->name);
+						}
+						if (fi->realname && strcmp (fi->name, fi->realname)) {
+							r_cons_printf (",\"realname\":\"%s\"", fi->realname);
+						}
+					}
+					r_cons_printf ("}%s", iter->n? ",": "");
 				}
 				r_cons_printf ("]");
 				r_cons_newline ();
@@ -4786,7 +4801,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *buf_fcn = comment
 						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
-					r_cons_printf ("%s 0x%" PFMT64x " (%s) %s\n",
+					r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_ref_to_string (core->anal, ref->type), buf_asm);
 					free (buf_asm);
 					free (buf_fcn);

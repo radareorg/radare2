@@ -519,7 +519,7 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	RIOMap *map;
 	if (desc) {
 		r_cons_printf ("ofs %s %s\n", desc->uri, r_str_rwx_i (desc->flags));
-		if (maps = r_io_map_get_for_fd (core->io, id)) {
+		if ((maps = r_io_map_get_for_fd (core->io, id))) {
 			r_list_foreach (maps, iter, map) {
 				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
 					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->flags),
@@ -579,7 +579,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
 		fdc = 3;
-		r_id_storage_foreach (core->io->files, store_files_and_maps, core);
+		r_id_storage_foreach (core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
 		r_cons_flush ();
 	}
 	{

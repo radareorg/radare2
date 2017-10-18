@@ -891,9 +891,9 @@ static int cmd_open(void *data, const char *input) {
 	int nowarn = r_config_get_i (core->config, "file.nowarn"),
 	    argc, fd;
 	RCoreFile *file;
-	bool isn = false, silence = false;
-	char *ptr = NULL;
-	char **argv;
+	bool silence = false;
+	const char *ptr = NULL;
+	char **argv = NULL;
 
 	switch (*input) {
 	case 'n':
@@ -906,9 +906,9 @@ static int cmd_open(void *data, const char *input) {
 				eprintf ("Usage: ons file [addr] [rwx]\n");
 				return 0;
 			}
-			ptr = &input[3];
+			ptr = input + 3;
 		} else if (input[1] == ' ') {
-			ptr = &input[2];
+			ptr = input + 2;
 		} else {
 			eprintf ("Usage: on file [addr] [rwx]\n");
 			return 0;
@@ -952,9 +952,9 @@ static int cmd_open(void *data, const char *input) {
 	case 'f':
 		if ((input[1] == 's') && (input[2] == ' ')) {
 			silence = true;
-			ptr = &input[3];
+			ptr = input + 3;
 		} else if (input[1] == ' ') {
-			ptr = &input[2];
+			ptr = input + 2;
 		} else {
 			eprintf ("wrong\n");
 			return 0;
@@ -977,9 +977,9 @@ static int cmd_open(void *data, const char *input) {
 		silence = true;
 	case ' ':
 		if (silence) {
-			ptr = &input[2];
+			ptr = input + 2;
 		} else {
-			ptr = &input[1];
+			ptr = input + 1;
 		}
 		if (ptr[-1] != ' ') {
 			eprintf ("wrong\n");
@@ -1260,10 +1260,11 @@ static int cmd_open(void *data, const char *input) {
 		{
 			int fd, fdx;
 			fd = fdx = -1;
-			if ((ptr = strrchr (input, ' '))) {
+			char *ptr, *inp = strdup (input);
+			if ((ptr = strrchr (inp, ' '))) {
 				fdx = (int)r_num_math (core->num, ptr + 1);
 				*ptr = '\0';
-				if ((ptr = strchr (input, ' '))) {
+				if ((ptr = strchr (inp, ' '))) {
 					fd = r_num_math (core->num, ptr + 1);
 				}
 			}
