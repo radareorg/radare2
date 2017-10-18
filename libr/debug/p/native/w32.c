@@ -284,9 +284,9 @@ static int w32_dbg_init() {
 	}
 	w32_GetMappedFileName = (DWORD (WINAPI *)(HANDLE, LPVOID, LPCSTR, DWORD))
 		GetProcAddress (lib, "GetMappedFileNameA");
-	w32_GetModuleBaseName = (void (*)(HANDLE, HMODULE, LPCSTR, int))
+	w32_GetModuleBaseName = (DWORD (WINAPI *)(HANDLE, HMODULE, LPCSTR, DWORD))
 		GetProcAddress (lib, "GetModuleBaseNameA");
-	w32_GetModuleInformation = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
+	w32_GetModuleInformation = (BOOL (WINAPI *)(HANDLE, HMODULE, LPMODULEINFO, DWORD))
 		GetProcAddress (lib, "GetModuleInformation");
 	w32_GetModuleFileNameEx = (DWORD (WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD))
 		GetProcAddress (lib, "GetModuleFileNameExA");
