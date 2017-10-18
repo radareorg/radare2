@@ -1,2 +1,2 @@
 all:
-	cd ../libr && ${MAKE} pkgcfg
+	$(MAKE) -C libr pkgcfg

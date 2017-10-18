@@ -184,7 +184,7 @@ install-man:
 install-man-symlink:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
 	mkdir -p "${DESTDIR}${MANDIR}/man7"
-	cd man && for FILE in *.1 ; do \
+	for FILE in $(shell cd man && ls *.1) ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
 	for FILE in *.7 ; do \
@@ -192,14 +192,15 @@ install-man-symlink:
 
 install-doc:
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
+	@echo ${DOCDIR}
 	for FILE in doc/* ; do \
 		if [ -f $$FILE ]; then ${INSTALL_DATA} $$FILE "${DESTDIR}${DOCDIR}" || true ; fi; \
 	done
 
 install-doc-symlink:
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
-	cd doc ; for FILE in * ; do \
-		ln -fs "${PWD}/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
+	for FILE in $(shell cd doc ; ls) ; do \
+		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
 install love: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1
@@ -220,7 +221,7 @@ install love: install-doc install-man install-www
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
-	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
+	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
 
 # Remove make .d files. fixes build when .c files are removed
 rmd:
@@ -237,14 +238,13 @@ symstall-www:
 	rm -rf "${DESTDIR}${WWWROOT}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/www" # old dir
 	mkdir -p "${DESTDIR}${WWWROOT}"
-	cd "${DESTDIR}${WWWROOT}" ; \
-		for FILE in "${PWD}/shlr/www/"* ; do \
-			ln -fs "$$FILE" "$(DESTDIR)$(WWWROOT)" ; done
+	for FILE in $(shell cd shlr/www ; ls) ; do \
+		ln -fs "$(PWD)/shlr/www/$$FILE" "$(DESTDIR)$(WWWROOT)" ; done
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
-	cd pkgcfg ; for FILE in *.pc ; do \
-		ln -fs "$${PWD}/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
+	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
+		ln -fs "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
 
 symstall-sdb:
 	for DIR in ${DATADIRS} ; do (\

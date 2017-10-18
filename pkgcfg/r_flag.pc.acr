@@ -3,7 +3,7 @@ exec_prefix=${prefix}
 libdir=@LIBDIR@
 includedir=${prefix}/include
 
-Name: r_flags
+Name: r_flag
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:

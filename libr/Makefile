@@ -102,8 +102,8 @@ $(LIBS):
 	@${MAKE} -C $@
 
 pkgcfg:
-	@for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
-	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
+	@for lib in ${LIBS}; do ${MAKE} -C $${lib} pkgcfg; done
+	$(MAKE) -C asm pkgcfg NAME=libr DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBS and so :)
 
 install-pkgconfig:
