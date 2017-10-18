@@ -111,9 +111,9 @@ static int r_debug_handle_signals (RDebug *dbg) {
 //this is temporal
 #if __APPLE__ || __linux__
 
-static const char *r_debug_native_reg_profile (RDebug *dbg) {
+static char *r_debug_native_reg_profile (RDebug *dbg) {
 #if __APPLE__
-	return xnu_reg_profile (dbg);
+	return strdup (xnu_reg_profile (dbg));
 #elif __linux__
 	return linux_reg_profile (dbg);
 #endif
@@ -227,6 +227,7 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #endif
 }
 
+// XXX linux specific?
 /* Callback to trigger SIGINT signal */
 static void r_debug_native_stop(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
@@ -416,7 +417,6 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		break;
 	} while (true);
 	r_cons_break_pop ();
-	int status = reason? 1: 0;
 #else
 #if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 	reason = linux_dbg_wait (dbg, dbg->tid);
@@ -1813,7 +1813,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.map_get = r_debug_native_map_get,
 	.modules_get = r_debug_native_modules_get,
 	.map_protect = r_debug_native_map_protect,
-	.breakpoint = r_debug_native_bp,
+	.breakpoint = (RBreakpointCallback)r_debug_native_bp,
 	.drx = r_debug_native_drx,
 	.gcore = r_debug_gcore,
 };
