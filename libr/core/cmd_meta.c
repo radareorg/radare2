@@ -614,10 +614,11 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		if (type == 'z') {
 			type = 's';
 		}
-		if (strlen (input) > 2) {
-			char *rep = strchr (input + 2, '[');
+		int len = (!input[1] || input[1] == ' ') ? 2 : 3;
+		if (strlen (input) > len) {
+			char *rep = strchr (input + len, '[');
 			if (!rep) {
-				rep = strchr (input + 2, ' ');
+				rep = strchr (input + len, ' ');
 			}
 			if (rep) {
 				repeat = r_num_math (core->num, rep + 1);
