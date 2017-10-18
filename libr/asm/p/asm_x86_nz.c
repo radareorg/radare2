@@ -1562,7 +1562,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (a->bits == 64 && !(op->operands[1].regs[0] == X86R_RBP)) {
 			if (op->operands[0].type & OT_QWORD) {
 				if (!(op->operands[1].type & OT_QWORD)) {
-					data[l++] = 0x67;
+					if (op->operands[1].regs[0] != -1) {
+						data[l++] = 0x67;
+					}
 					data[l++] = 0x48;
 				} else {}
 			} else if (!(op->operands[1].type & OT_QWORD)) {
