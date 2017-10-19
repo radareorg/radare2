@@ -11,6 +11,8 @@
 #define IRAM 0x10000
 
 static bool i8051_is_init = false;
+// doesnt needs to be global, but anyway :D
+static RAnalEsilCallbacks ocbs = {0};
 
 static ut8 bitindex[] = {
 	// bit 'i' can be found in (ram[bitindex[i>>3]] >> (i&7)) & 1
@@ -398,12 +400,6 @@ static int i8051_reg_get_offset(RAnalEsil *esil, RI8015Reg *ri) {
 //           as r_reg_get already does this. Also, the anal esil callbacks
 //           approach interferes with r_reg_arena_swap.
 
-#define ocbs ((struct r_i8051_user*)esil->cb.user)->cbs
-
-struct r_i8051_user {
-	RAnalEsilCallbacks cbs;
-};
-
 static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	ut64 val = 0LL;
@@ -446,7 +442,6 @@ static int esil_i8051_init (RAnalEsil *esil) {
 	if (esil->cb.user) {
 		return true;
 	}
-	esil->cb.user = R_NEW0 (struct r_i8051_user);
 	ocbs = esil->cb;
 	esil->cb.hook_reg_read = i8051_hook_reg_read;
 	esil->cb.hook_reg_write = i8051_hook_reg_write;
@@ -458,8 +453,7 @@ static int esil_i8051_fini (RAnalEsil *esil) {
 	if (!i8051_is_init) {
 		return false;
 	}
-	esil->cb = ocbs;
-	R_FREE (esil->cb.user);
+	R_FREE (ocbs.user);
 	i8051_is_init = false;
 	return true;
 }

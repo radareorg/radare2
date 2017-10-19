@@ -683,11 +683,9 @@ R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 R_API int r_anal_esil_reg_read_nocallback(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
 	int ret;
 	void *old_hook_reg_read = (void *) esil->cb.hook_reg_read;
-
 	esil->cb.hook_reg_read = NULL;
 	ret = r_anal_esil_reg_read (esil, regname, num, size);
 	esil->cb.hook_reg_read = old_hook_reg_read;
-
 	return ret;
 }
 
@@ -705,7 +703,9 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 	}
 	if (!num) num = &localnum;
 	*num = 0LL;
-	if (size) *size = esil->anal->bits;
+	if (size) {
+		*size = esil->anal->bits;
+	}
 	if (esil->cb.hook_reg_read) {
 		ret = esil->cb.hook_reg_read (esil, regname, num, size);
 	}
