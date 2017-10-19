@@ -1002,16 +1002,19 @@ static int cmd_open(void *data, const char *input) {
 			addr = r_num_math (core->num, argv[1]);
 			perms = r_str_rwx (argv[2]);
 		}
-		if ((file = r_core_file_open (core, argv[0], perms, addr))) {
-			fd = file->fd;
-			if (!silence) {
-				eprintf ("%d\n", fd);
+		{
+			const char *argv0 = argv ? argv[0] : ptr;
+			if ((file = r_core_file_open (core, argv0, perms, addr))) {
+				fd = file->fd;
+				if (!silence) {
+					eprintf ("%d\n", fd);
+				}
+				r_core_bin_load (core, argv0, baddr);
+			} else if (!nowarn) {
+				eprintf ("cannot open file %s\n", argv0);
 			}
-			r_core_bin_load (core, argv[0], baddr);
-		} else if (!nowarn) {
-			eprintf ("cannot open file %s\n", argv[0]);
+			r_str_argv_free (argv);
 		}
-		r_str_argv_free (argv);
 		r_core_block_read (core);
 		return 0;
 	}

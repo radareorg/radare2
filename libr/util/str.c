@@ -1970,9 +1970,10 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 }
 
 R_API void r_str_argv_free(char **argv) {
-	// TODO: free the internal food or just the first element
-//	free (argv[0]); // MEMORY LEAK
 	int argc = 0;
+	if (!argv) {
+		return;
+	}
 	while (argv[argc]) {
 		free (argv[argc++]);
 	}
