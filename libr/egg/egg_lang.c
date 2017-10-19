@@ -349,8 +349,10 @@ static void rcc_element(REgg *egg, char *str) {
 				rcc_pushstr (egg, str, 1);
 			}
 		} else {
-			if (strstr (egg->lang.callname, "while") || strstr (egg->lang.callname, "if")) {
-				egg->lang.conditionstr = strdup (str);
+			if (egg->lang.callname) {
+				if (strstr (egg->lang.callname, "while") || strstr (egg->lang.callname, "if")) {
+					egg->lang.conditionstr = strdup (str);
+				}
 			}
 			egg->lang.nargs = 0;
 			if (egg->lang.mode == GOTO) {
