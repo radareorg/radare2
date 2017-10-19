@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
+#include <r_anal.h>
 
 static int obs = 0;
 static int blocksize = 0;
@@ -1937,28 +1938,36 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_cmd0 (core, "sn");
 				} else {
 					int times = R_MAX (1, wheelspeed);
-					while (times--) {
-						if (isDisasmPrint (core->printidx)) {
-							RAnalFunction *f = NULL;
-							if (true) {
-								f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+					// Check if we have a data annotation.
+					RAnalMetaItem *ami = r_meta_find (core->anal,
+							core->offset, R_META_TYPE_DATA,
+							R_META_WHERE_HERE);
+					if (ami) {
+						r_core_seek_delta (core, ami->size);
+					} else {
+						while (times--) {
+							if (isDisasmPrint (core->printidx)) {
+								RAnalFunction *f = NULL;
+								if (true) {
+									f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+								}
+								op.size = 1;
+								if (f && f->folded) {
+									cols = core->offset - f->addr + r_anal_fcn_size (f);
+								} else {
+									r_asm_set_pc (core->assembler, core->offset);
+									cols = r_asm_disassemble (core->assembler,
+											&op, core->block, 32);
+								}
+								if (cols < 1) {
+									cols = op.size;
+								}
+								if (cols < 1) {
+									cols = 1;
+								}
 							}
-							op.size = 1;
-							if (f && f->folded) {
-								cols = core->offset - f->addr + r_anal_fcn_size (f);
-							} else {
-								r_asm_set_pc (core->assembler, core->offset);
-								cols = r_asm_disassemble (core->assembler,
-									&op, core->block, 32);
-							}
-							if (cols < 1) {
-								cols = op.size;
-							}
-							if (cols < 1) {
-								cols = 1;
-							}
+							r_core_seek (core, core->offset + cols, 1);
 						}
-						r_core_seek (core, core->offset + cols, 1);
 					}
 				}
 			}
