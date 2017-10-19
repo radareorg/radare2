@@ -983,6 +983,7 @@ static int cmd_open(void *data, const char *input) {
 					core->io->desc = desc;
 				}
 			}
+			r_core_block_read (core);
 		}
 		return 0;
 		break;
