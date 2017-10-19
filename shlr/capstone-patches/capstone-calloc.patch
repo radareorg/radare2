@@ -6,6 +6,7 @@ index d521845..3f75de3 100644
  
  void MCInst_Init(MCInst *inst)
  {
+-	inst->Opcode = 0;
 -	inst->OpcodePub = 0;
 -	inst->size = 0;
 -	inst->has_imm = false;
@@ -56,16 +57,3 @@ index 19c65c7..96f9898 100644
  
  			total = tmp;
  			// continue to fill in the cache after the last instruction
-diff --git a/utils.c b/utils.c
-index ca2a7ec..647eb57 100644
---- a/utils.c
-+++ b/utils.c
-@@ -17,7 +17,7 @@ static unsigned short *make_id2insn(insn_map *insns, unsigned int size)
- 	unsigned short max_id = insns[size - 1].id;
- 	unsigned short i;
- 
--	unsigned short *cache = (unsigned short *)cs_mem_malloc(sizeof(*cache) * (max_id + 1));
-+	unsigned short *cache = (unsigned short *)cs_mem_calloc(sizeof(*cache), (max_id + 1));
- 
- 	for (i = 1; i < size; i++)
- 		cache[insns[i].id] = i;
