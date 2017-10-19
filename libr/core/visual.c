@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
-#include <r_anal.h>
 
 static int obs = 0;
 static int blocksize = 0;
