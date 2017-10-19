@@ -21,8 +21,8 @@ static const char *mousemodes[] = {
 #define BORDER_HEIGHT 3
 #define MARGIN_TEXT_X 2
 #define MARGIN_TEXT_Y 2
-#define HORIZONTAL_NODE_SPACING 6
-#define VERTICAL_NODE_SPACING 4
+#define HORIZONTAL_NODE_SPACING 4
+#define VERTICAL_NODE_SPACING 2
 #define MIN_NODE_WIDTH 22
 #define MIN_NODE_HEIGHT BORDER_HEIGHT
 #define TITLE_LEN 128
@@ -2476,10 +2476,11 @@ static void agraph_print_node(const RAGraph *g, RANode *n) {
 		return;
 	}
 	const int cur = g->curnode && get_anode (g->curnode) == n;
+	const bool isMini = is_mini (g);
 	if (g->is_tiny) {
 		tiny_RANode_print (g, n, cur);
-	} else if (is_mini (g) || n->is_mini) {
-		mini_RANode_print (g, n, cur, is_mini (g));
+	} else if (isMini || n->is_mini) {
+		mini_RANode_print (g, n, cur, isMini);
 	} else {
 		normal_RANode_print (g, n, cur);
 	}
@@ -3000,14 +3001,19 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	// r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
-		g->can->sy = -g->y + 1;
+		g->can->sy = -g->y - 1;
 	}
 
 	if (!g->is_tiny) {
 		agraph_print_edges (g);
 	}
-	agraph_print_nodes (g);
-
+	if (g->title && *g->title) {
+		g->can->sy ++;
+		agraph_print_nodes (g);
+		g->can->sy --;
+	} else {
+		agraph_print_nodes (g);
+	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
 	W (g->title);
