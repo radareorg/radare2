@@ -1538,7 +1538,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			break;
 		case 'd':
 			if (p) {
-				r_meta_del (core->anal, R_META_TYPE_ANY, from, size);
+				r_meta_del (core->anal, R_META_TYPE_ANY, from, size, p);
 			}
 			break;
 		case 'P':

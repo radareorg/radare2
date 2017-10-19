@@ -195,10 +195,20 @@ R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
 	return (char *)sdb_decode (p2+1, NULL);
 }
 
-R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
+R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) {
 	char key[100], *dtr, *s, *p, *next;
 	const char *val;
 	int i;
+	if (type != R_META_TYPE_END) {
+		// first delete the end of this.
+		RAnalMetaItem *item = r_meta_find (a, addr, R_META_TYPE_ANY, R_META_WHERE_HERE);
+		if (item) {
+			RAnalMetaItem *item2 = r_meta_find (a, item->from, R_META_TYPE_END, R_META_WHERE_HERE);
+			if (item2) {
+				r_meta_del (a, R_META_TYPE_END, item2->from, item2->size, str);
+			}
+		}
+	}
 	if (size == UT64_MAX) {
 		// FULL CLEANUP
 		// XXX: this thing ignores the type
@@ -224,10 +234,12 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		}
 		return false;
 	}
+#if 0
 	if (type == R_META_TYPE_ANY) {
 		/* special case */
 		r_meta_del (a, R_META_TYPE_COMMENT, addr, size);
 	}
+#endif
 	meta_inrange_del (a, addr, size);
 	snprintf (key, sizeof (key)-1, type == R_META_TYPE_COMMENT ?
 		"meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
@@ -274,7 +286,7 @@ R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
 }
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
-	return r_meta_del (a, R_META_TYPE_ANY, from, (to-from));
+	return r_meta_del (a, R_META_TYPE_ANY, from, to - from, NULL);
 }
 
 R_API void r_meta_item_free(void *_item) {
@@ -369,7 +381,11 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 	}
 	snprintf (val, sizeof (val)-1, "%c", type);
 	sdb_array_add (DB, key, val, 0);
-
+	// Mark the end of this guy.
+	if (type != R_META_TYPE_END) {
+		r_meta_add (a, R_META_TYPE_END, to,
+				to + (to - from) /* hold negative size */, str);
+	}
 	return true;
 }
 
@@ -401,7 +417,17 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 		if (*infos == ',') {
 			continue;
 		}
-		if (type != R_META_TYPE_ANY && type != *infos) {
+		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, *infos, at);
+		metas = sdb_const_get (s, key, 0);
+		mi.size = sdb_array_get_num (s, key, 0, 0);
+		mi.type = *infos;
+		mi.from = at;
+		mi.to = at + mi.size;
+		if (type == R_META_TYPE_ANY && mi.type == R_META_TYPE_END) {
+			// This isn't the thing we are looking for.
+			continue;
+		}
+		if (type != R_META_TYPE_ANY && type != mi.type) {
 			continue;
 		}
 		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, at);
@@ -426,6 +452,7 @@ R_API const char *r_meta_type_to_string(int type) {
 	case R_META_TYPE_FORMAT: return "Cf";
 	case R_META_TYPE_MAGIC: return "Cm";
 	case R_META_TYPE_COMMENT: return "CCu";
+	case R_META_TYPE_END: return "CE"; /* XXX wut */
 	}
 	return "(...)";
 }
