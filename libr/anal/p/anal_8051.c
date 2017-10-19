@@ -162,6 +162,12 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emitf(F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
 		break;
 	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+#if 0
+	case 0x42: /* orl 0x31, a */ break;
+	case 0x43: /* orl 0x31, #0x01 */ break;
+	case 0x44: /* orl a, #0x01 */ break;
+	case 0x45: /* orl a, 0x31 */ break;
+#endif
 	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
@@ -171,9 +177,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xB0: /* anl  */ k(BIT_R "C,&="); break;
 	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
 	case 0xD0: /* pop  */ h(POP1 XW(IB1)); break;
-	case 0xE0: /* movx */ /* TODO */ break;
-	case 0xF0: /* TODO: movx */
-		break;
+	case 0xE0: /* movx */ emit ("dptr,[2],a,="); break;
+	case 0xF0: /* movx */ emit ("a,dptr,=[2]"); break;
 	case 0x11: case 0x31: case 0x51: case 0x71:
 	case 0x91: case 0xB1: case 0xD1: case 0xF1:
 		emit (CALL ("2"));
