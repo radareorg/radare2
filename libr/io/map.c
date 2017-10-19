@@ -333,7 +333,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		return false;
 	}
 	ls_foreach (io->maps, iter, map) {
-		//search for iter with the correct map
+		// search for iter with the correct map
 		if (map->id == id) {
 			ls_split_iter (io->maps, iter);
 			ls_append (io->maps, map);

@@ -973,9 +973,22 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_str_argv_free (argv);
 		return 0;
-	case 's':
+	case 'p': // "op"
+		/* handle priorize */
+		{
+			int fd = r_num_math (core->num, input + 1);
+			if (fd) {
+				RIODesc *desc = r_io_desc_get (core->io, fd);
+				if (desc) {
+					core->io->desc = desc;
+				}
+			}
+		}
+		return 0;
+		break;
+	case 's': // "os"
 		silence = true;
-	case ' ':
+	case ' ': // "o"
 		if (silence) {
 			ptr = input + 2;
 		} else {
@@ -985,6 +998,7 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("wrong\n");
 			return 0;
 		}
+
 		r_str_argv (ptr, &argc);
 		if (argc == 0) {
 			eprintf ("wrong\n");
@@ -1046,18 +1060,16 @@ static int cmd_open(void *data, const char *input) {
 		r_core_file_list (core, (int)(*input));
 		break;
 	case 'L': // "oL"
-		r_io_plugin_list (core->io);
-		break;
-	case 'p': // "op"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
-		if (input[1]==' ') {
+		if (input[1] == ' ') {
 			if (r_lib_open (core->lib, input+2) == R_FAIL) {
 				eprintf ("Oops\n");
 			}
 		} else {
+			r_io_plugin_list (core->io);
 			eprintf ("Usage: op [r2plugin."R_LIB_EXT"]\n");
 		}
 		break;
