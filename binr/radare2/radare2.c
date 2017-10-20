@@ -1127,8 +1127,6 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "asm.os", asmos);
 		}
 
-		(void)r_core_bin_update_arch_bits (&r);
-
 		debug = r.file && iod && (r.file->fd == iod->fd) && iod->plugin && \
 			iod->plugin->isdbg;
 		if (debug) {

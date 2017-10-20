@@ -569,12 +569,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		binfile->fd = desc->fd;
 	}
 	binfile = r_bin_cur (r->bin);
-	// load sub-bin that matches current asm.arch/bits if its a fat binary
-	if (binfile) {
-		r_core_bin_set_arch_bits (r, binfile->file,
-				r_config_get (r->config, "asm.arch"),
-				r_config_get_i (r->config, "asm.bits"));
-	}
 	if (r->bin->cur && r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
 		char msg[2];
 		msg[0] = r->bin->cur->curplugin->strfilter;
@@ -587,22 +581,30 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		load_scripts_for (r, plugin->name);
 	}
 
-	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
-		// set use of raw strings
-		//r_config_set (r->config, "bin.rawstr", "true");
-		// r_config_set_i (r->config, "io.va", false);
-		// get bin.minstr
-		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
-	} else if (binfile) {
-		obj = r_bin_get_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
-		if (plugin && plugin->name && info) {
-			if (strcmp (plugin->name, "any")) {
+	if (plugin && plugin->name) {
+		if (!strncmp (plugin->name, "any", 3)) {
+			// set use of raw strings
+			//r_config_set (r->config, "bin.rawstr", "true");
+			// r_config_set_i (r->config, "io.va", false);
+			// get bin.minstr
+			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
+		} else if (binfile) {
+			obj = r_bin_get_object (r->bin);
+			RBinInfo *info = obj? obj->info: NULL;
+			if (info) {
 				r_core_bin_set_arch_bits (r, binfile->file,
-					info->arch, info->bits);
+						info->arch, info->bits);
+			} else {
+				r_core_bin_set_arch_bits (r, binfile->file,
+						r_config_get (r->config, "asm.arch"),
+						r_config_get_i (r->config, "asm.bits"));
 			}
 		}
+	} else {
+		r_core_bin_set_arch_bits (r, binfile->file,
+				r_config_get (r->config, "asm.arch"),
+				r_config_get_i (r->config, "asm.bits"));
 	}
 	if (r_config_get_i (r->config, "io.exec")) {
 		desc->flags |= R_IO_EXEC;
