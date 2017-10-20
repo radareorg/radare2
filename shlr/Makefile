@@ -242,11 +242,15 @@ else
 capstone: capstone-sync
 
 capstone-sync:
+ifeq ($(WITHOUT_PULL),1)
+	@echo "Nothing to sync because of --without-pull"
+else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; $(GIT) reset --hard
 	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+endif
 endif
 
 .PHONY: capstone
@@ -270,7 +274,11 @@ endif
 	cd ../.. ; git clone --depth 1 https://github.com/radare/radare2-webui
 
 ../../radare2-webui/dist/m: ../../radare2-webui
-	cd ../../radare2-webui/www/m ; git pull ; npm install ; $(MAKE) release
+ifeq ($(WITHOUT_PULL),1)
+	cd ../../radare2-webui/www/m && npm i ; $(MAKE) release
+else
+	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
+endif
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
 	cp -rf ../../radare2-webui/dist/m www/m.tmp
