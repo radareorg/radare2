@@ -1401,8 +1401,7 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 						print_rop (core, hitlist, mode, &json_first);
 					}
 					if (max_count > 0) {
-						// max_count -= 1; //r_list_length (hitlist);
-						max_count -= r_list_length (hitlist);
+						max_count--;
 						if (max_count < 1) {
 							break;
 						}
