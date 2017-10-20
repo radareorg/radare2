@@ -1541,7 +1541,9 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		if (!plugin) {
 			plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
 			if (!plugin) {
-				plugin = r_bin_get_binplugin_any (bin);
+				r_bin_file_delete (bin, bf->fd);
+				return NULL;
+				//plugin = r_bin_get_binplugin_any (bin);
 			}
 		}
 	}
@@ -2675,10 +2677,10 @@ R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd) {
 	RListIter *iter;
 	RBinFile *bf;
 	RBinFile *cur = r_bin_cur (bin);
-	if (bin && cur) {
+	if (bin) {
 		r_list_foreach (bin->binfiles, iter, bf) {
 			if (bf && bf->fd == bin_fd) {
-				if (cur->fd == bin_fd) {
+				if (cur && (cur->fd == bin_fd)) {
 					//avoiding UaF due to dead reference 
 					bin->cur = NULL;
 				}
