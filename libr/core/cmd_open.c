@@ -325,7 +325,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		n = r_str_word_set0 (v);
-		if (n < 2 || n > 2) {
+		if (n < 1 || n > 2) {
 			eprintf ("Invalid arguments\n");
 			eprintf ("usage: ob fd obj\n");
 			free (v);
@@ -334,10 +334,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		tmp = r_str_word_get0 (v, 0);
 		fd  = *v && r_is_valid_input_num_value (core->num, tmp) ?
 			r_get_input_num_value (core->num, tmp) : UT32_MAX;
-		tmp = r_str_word_get0 (v, 1);
-		binobj_num  = *v && r_is_valid_input_num_value (core->num, tmp) ?
-			r_get_input_num_value (core->num, tmp) : UT32_MAX;
-		binfile_num = find_binfile_id_by_fd (core->bin, fd);
+		if (n == 2) {
+			tmp = r_str_word_get0 (v, 1);
+			binobj_num  = *v && r_is_valid_input_num_value (core->num, tmp) ?
+				r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		} else {
+			binfile_num = find_binfile_id_by_fd (core->bin, fd);
+		}
 		r_core_bin_raise (core, binfile_num, binobj_num);
 		free (v);
 		break;
@@ -980,7 +983,10 @@ static int cmd_open(void *data, const char *input) {
 			if (fd) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
+					// only useful for io.va=0
 					core->io->desc = desc;
+					// load bininfo for given fd
+					r_core_cmdf (core, "ob %d", fd);
 				}
 			}
 			r_core_block_read (core);
