@@ -570,9 +570,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	binfile = r_bin_cur (r->bin);
 	// load sub-bin that matches current asm.arch/bits if its a fat binary
-	r_core_bin_set_arch_bits (r, binfile->file,
-		r_config_get (r->config, "asm.arch"),
-		r_config_get_i (r->config, "asm.bits"));
+	if (binfile) {
+		r_core_bin_set_arch_bits (r, binfile->file,
+				r_config_get (r->config, "asm.arch"),
+				r_config_get_i (r->config, "asm.bits"));
+	}
 	if (r->bin->cur && r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
 		char msg[2];
 		msg[0] = r->bin->cur->curplugin->strfilter;

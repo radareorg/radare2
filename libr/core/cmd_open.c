@@ -1273,7 +1273,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'x': // "ox"
-		{
+		if (input[1] && input[1] != '?') {
 			int fd, fdx;
 			fd = fdx = -1;
 			char *ptr, *inp = strdup (input);
@@ -1289,6 +1289,8 @@ static int cmd_open(void *data, const char *input) {
 			}
 			r_io_desc_exchange (core->io, fd, fdx);
 			r_core_block_read (core);
+		} else {
+			eprintf ("Usage: ox [fd] [fdx] - exchange two file descriptors\n");
 		}
 		break;
 	case '?': // "o?"
