@@ -1007,23 +1007,24 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("wrong\n");
 			return 0;
 		}
-
-		r_str_argv (ptr, &argc);
+		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
 			eprintf ("wrong\n");
 			r_str_argv_free (argv);
 			return 0;
 		}
-		if (argc == 2) {
-			if (r_num_is_valid_input (core->num, argv[1])) {
-				addr = r_num_math (core->num, argv[1]);
-			} else {
-				perms = r_str_rwx (argv[1]);
+		if (argv) {
+			if (argc == 2) {
+				if (r_num_is_valid_input (core->num, argv[1])) {
+					addr = r_num_math (core->num, argv[1]);
+				} else {
+					perms = r_str_rwx (argv[1]);
+				}
 			}
-		}
-		if (argc == 3) {
-			addr = r_num_math (core->num, argv[1]);
-			perms = r_str_rwx (argv[2]);
+			if (argc == 3) {
+				addr = r_num_math (core->num, argv[1]);
+				perms = r_str_rwx (argv[2]);
+			}
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
