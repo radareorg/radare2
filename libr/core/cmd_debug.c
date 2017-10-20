@@ -318,6 +318,7 @@ static const char *help_msg_dr[] = {
 	"drp", "[?] <file>", "Load register metadata file",
 	"drpi", "", "Display current internal representation of the register profile",
 	"drps", "", "Fake register profile size",
+	"drpj", "", "Show the current register profile (JSON)",
 	"drr", "", "Show registers references (telescoping)",
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "Stack register states",
@@ -1848,7 +1849,7 @@ static void show_drpi(RCore *core) {
 	}
 }
 
-static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" and "drp"
+static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
 	switch (str[1]) {
 	case '\0': // "drp"
@@ -1951,10 +1952,10 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 			const char **help_msg = help_msg_drp;
 			if (from == 'a') {
 				help_msg[1] = help_msg[3] = help_msg[6] = help_msg[9] = from_a[0];
-				help_msg[9] = from_a[1];
-				help_msg[12] = from_a[2];
-				help_msg[15] = from_a[3];
-				help_msg[18] = from_a[4];
+				help_msg[12] = from_a[1];
+				help_msg[15] = from_a[2];
+				help_msg[18] = from_a[3];
+				help_msg[21] = from_a[4];
 			}
 			r_core_cmd_help (core, help_msg);
 			break;
