@@ -2,6 +2,9 @@
 #define R_SYS_H
 
 #include <r_list.h>
+#if __WINDOWS__
+#include <string.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +48,21 @@ R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
+#if UNICODE
+#define W32_TCHAR_FSTR "%S"
+#define W32_TCALL(name) name"W"
+#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf, strlen (buf))
+#define r_sys_conv_char_to_w32_l(buf, len) r_str_mb_to_wc (buf, len)
+#define r_sys_conv_w32_to_char(buf) r_str_wc_to_mb (buf, wcslen (buf))
+#define r_sys_conv_w32_to_char_l(buf, len) r_str_wc_to_mb (buf, len)
+#else
+#define W32_TCHAR_FSTR "%s"
+#define W32_TCALL(name) name"A"
+#define r_sys_conv_char_to_w32(buf) strdup (buf)
+#define r_sys_conv_char_to_w32_l(buf, len) strndup (buf, (size_t)len)
+#define r_sys_conv_w32_to_char(buf) r_sys_conv_char_to_w32(buf)
+#define r_sys_conv_w32_to_char_l(buf, len) r_sys_conv_char_to_w32_l(buf, len)
+#endif
 R_API int r_sys_get_src_dir_w32(char *buf);
 R_API char *r_sys_cmd_str_w32(const char *cmd);
 #endif

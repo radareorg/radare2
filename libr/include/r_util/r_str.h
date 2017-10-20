@@ -102,6 +102,8 @@ R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char * r_str_tok(const char *str1, const char b, size_t len);
+R_API wchar_t *r_str_mb_to_wc(char *buf, int len);
+R_API char *r_str_wc_to_mb(wchar_t *buf, int len);
 
 typedef void(*str_operation)(char *c);
 

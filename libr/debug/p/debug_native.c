@@ -1,5 +1,4 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
-
 #include <r_userconf.h>
 #include <r_debug.h>
 #include <r_asm.h>
@@ -1510,7 +1509,7 @@ static RList *win_desc_list (int pid) {
 	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc(handleInfoSize);
 	#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
 	#define SystemHandleInformation 16
-	while ((status = w32_ntquerysysteminformation(SystemHandleInformation,handleInfo,handleInfoSize,NULL)) == STATUS_INFO_LENGTH_MISMATCH)
+	while ((status = w32_NtQuerySystemInformation(SystemHandleInformation,handleInfo,handleInfoSize,NULL)) == STATUS_INFO_LENGTH_MISMATCH)
 		handleInfo = (PSYSTEM_HANDLE_INFORMATION)realloc(handleInfo, handleInfoSize *= 2);
 	if (status) {
 		eprintf("win_desc_list: NtQuerySystemInformation failed!\n");
@@ -1527,17 +1526,17 @@ static RList *win_desc_list (int pid) {
 			continue;
 		if (handle.ObjectTypeNumber != 0x1c)
 			continue;
-		if (w32_ntduplicateobject (processHandle, &handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
+		if (w32_NtDuplicateObject (processHandle, &handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
 			continue;
 		objectTypeInfo = (POBJECT_TYPE_INFORMATION)malloc(0x1000);
-		if (w32_ntqueryobject(dupHandle,2,objectTypeInfo,0x1000,NULL)) {
+		if (w32_NtQueryObject(dupHandle,2,objectTypeInfo,0x1000,NULL)) {
 			CloseHandle(dupHandle);
 			continue;
 		}
 		objectNameInfo = malloc(0x1000);
-		if (w32_ntqueryobject(dupHandle,1,objectNameInfo,0x1000,&returnLength)) {
+		if (w32_NtQueryObject(dupHandle,1,objectNameInfo,0x1000,&returnLength)) {
 			objectNameInfo = realloc(objectNameInfo, returnLength);
-			if (w32_ntqueryobject(dupHandle,1,objectNameInfo,returnLength,NULL)) {
+			if (w32_NtQueryObject(dupHandle, 1, objectNameInfo, returnLength, NULL)) {
 				free(objectTypeInfo);
 				free(objectNameInfo);
 				CloseHandle(dupHandle);
@@ -1670,7 +1669,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	DWORD old;
 	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	// TODO: align pointers
-	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr,
+	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(size_t)addr,
 	  			size, perms, &old);
 	CloseHandle (process);
 	return ret;

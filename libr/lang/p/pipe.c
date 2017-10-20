@@ -182,8 +182,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 #if __WINDOWS__
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
-	SetEnvironmentVariableA ("R2PIPE_PATH", r2pipe_var);
-	hPipeInOut = CreateNamedPipeA (r2pipe_paz,
+	LPTSTR r2pipe_var_ = r_sys_conv_char_to_w32 (r2pipe_var);
+	LPTSTR r2pipe_paz_ = r_sys_conv_char_to_w32 (r2pipe_paz_);
+
+	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_var_);
+	hPipeInOut = CreateNamedPipe (r2pipe_paz_,
 			PIPE_ACCESS_DUPLEX,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
@@ -196,11 +199,13 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		CloseHandle (CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL));
 		/* lang_pipe_run_win has to run in the command thread to prevent deadlock. */
 		lang_pipe_run_win (lang);
-		DeleteFileA (r2pipe_paz);
+		DeleteFile (r2pipe_paz_);
 		CloseHandle (hPipeInOut);
 	}
 	free (r2pipe_var);
 	free (r2pipe_paz);
+	free (r2pipe_var_);
+	free (r2pipe_paz_);
 	return hproc != NULL;
 #endif
 #endif

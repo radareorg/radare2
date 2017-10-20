@@ -1,7 +1,7 @@
 include ../../config.mk
 
 ifeq ($(WITHPIC),1)
-CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
+CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB 
 
 foo: all
 
