@@ -25,13 +25,13 @@ static const char *help_msg_o[] = {
 	"oo","+","reopen current file in read-write",
 	"ood"," [args]","reopen in debugger mode (with args)",
 	"oo[bnm]"," [...]","see oo? for help",
-	"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
+	"op"," [fd]", "priorize given fd (see also ob)",
 	"o"," 4","Switch to open file on fd 4",
 	"o","-1","close file descriptor 1",
 	"o-","*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 	"o"," [file]","open [file] file in read-only",
-	"o","+ [file]","open file in read-write mode",
+	"o+"," [file]","open file in read-write mode",
 	"o"," [file] 0x4000","map file at 0x4000",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -993,6 +993,8 @@ static int cmd_open(void *data, const char *input) {
 		}
 		return 0;
 		break;
+	case '+': // "o+"
+		perms |= R_IO_WRITE;
 	case 's': // "os"
 		silence = true;
 	case ' ': // "o"
