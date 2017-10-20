@@ -832,9 +832,7 @@ static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
 }
 
 // TODO: follow unconditional jumps
-static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
-                                   const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget,
-                                   RList *badstart, int *max_count) {
+static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, RList *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
@@ -853,11 +851,6 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	void *p;
 	int count = 0;
 
-	if (*max_count == 0) {
-		r_list_free (localbadstart);
-		r_list_free (hitlist);
-		return NULL;
-	}
 	if (grep) {
 		start = grep;
 		end = strstr (grep, ";");
@@ -950,7 +943,6 @@ ret:
 		r_list_free (hitlist);
 		return NULL;
 	}
-	*max_count = *max_count - 1;
 	return hitlist;
 }
 
@@ -1164,7 +1156,8 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
-	int max_count = r_config_get_i (core->config, "search.maxhits");
+// int max_count = core->search->maxhits;
+	int max_count = r_config_get_i (core->config, "search.maxhits"); // core->search->maxhits
 	int i = 0, end = 0, mode = 0, increment = 1, ret;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
 	RList /*<intptr_t>*/ *badstart = r_list_new ();
@@ -1301,11 +1294,13 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 			}
 			if (is_end_gadget (&end_gadget, crop)) {
 				struct endlist_pair *epair;
+#if 0
 				if (search->maxhits && r_list_length (end_list) >= search->maxhits) {
 					// limit number of high level rop gadget results
 					r_anal_op_fini (&end_gadget);
 					break;
 				}
+#endif
 				epair = R_NEW0 (struct endlist_pair);
 				// If this arch has branch delay slots, add the next instr as well
 				if (end_gadget.delay) {
@@ -1343,7 +1338,7 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 			next = end_gadget->instr_offset;
 			prev = 0;
 			// Start at just before the first end gadget.
-			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count != 0; i += increment) {
+			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count; i += increment) {
 				if (increment == 1) {
 					// give in-boundary instructions a shot
 					if (i < prev - max_inst_size_x86) {
@@ -1387,7 +1382,7 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 					r_asm_set_pc (core->assembler, from + i);
 					hitlist = construct_rop_gadget (core,
 						from + i, buf, i, grep, regexp,
-						rx_list, end_gadget, badstart, &max_count);
+						rx_list, end_gadget, badstart);
 					if (!hitlist) {
 						continue;
 					}
@@ -1404,6 +1399,13 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 						} while (hitlist->head->n);
 					} else {
 						print_rop (core, hitlist, mode, &json_first);
+					}
+					if (max_count > 0) {
+						// max_count -= 1; //r_list_length (hitlist);
+						max_count -= r_list_length (hitlist);
+						if (max_count < 1) {
+							break;
+						}
 					}
 				}
 				if (increment != 1) {
