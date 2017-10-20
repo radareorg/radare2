@@ -17,6 +17,7 @@ if [ "$1" != "--without-pull" ]; then
 		fi
 	fi
 else
+	export WITHOUT_PULL=1
 	shift
 fi
 

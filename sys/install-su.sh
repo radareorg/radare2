@@ -25,8 +25,9 @@ if [ "$1" != "--without-pull" ]; then
                         echo "WARNING: Updating from remote repository"
                         echo git pull
                 fi
-fi # wat ?
+	fi
 else
+	export WITHOUT_PULL=1
         shift
 fi
 
