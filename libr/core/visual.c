@@ -1537,6 +1537,20 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			break;
+		case '&':
+			{
+				RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+				// const char *arch = r_config_get_i (core->config, "asm.arch");
+				int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
+				// TODO: Honor core->assembler->cur->bitsmask
+				//if (hint) {
+				int nb = bits == 64 ? 8:
+					bits == 32 ? 64:
+					bits == 16 ? 32:
+					bits == 8 ? 16: bits;
+				r_core_cmdf (core, "ahb %d", nb);
+			}
+			break;
 		case 'a':
 		{
 			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->flags & 2)) {
