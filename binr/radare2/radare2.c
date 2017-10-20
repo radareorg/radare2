@@ -953,6 +953,15 @@ int main(int argc, char **argv, char **envp) {
 				pfile = file;
 			}
 		}
+		if (asmarch) {
+			r_config_set (r.config, "asm.arch", asmarch);
+		}
+		if (asmbits) {
+			r_config_set (r.config, "asm.bits", asmbits);
+		}
+		if (asmos) {
+			r_config_set (r.config, "asm.os", asmos);
+		}
 
 		if (!debug || debug == 2) {
 			const char *dbg_profile = r_config_get (r.config, "dbg.profile");

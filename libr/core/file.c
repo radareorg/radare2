@@ -602,9 +602,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		r_core_bin_set_arch_bits (r, binfile->file,
-				r_config_get (r->config, "asm.arch"),
-				r_config_get_i (r->config, "asm.bits"));
+		if (binfile) {
+			r_core_bin_set_arch_bits (r, binfile->file,
+					r_config_get (r->config, "asm.arch"),
+					r_config_get_i (r->config, "asm.bits"));
+		}
 	}
 	if (r_config_get_i (r->config, "io.exec")) {
 		desc->flags |= R_IO_EXEC;
