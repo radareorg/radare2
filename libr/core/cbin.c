@@ -309,6 +309,7 @@ static bool string_filter(RCore *core, const char *str) {
 }
 
 static void _print_strings(RCore *r, RList *list, int mode, int va) {
+	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
 	RBin *bin = r->bin;
@@ -330,6 +331,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_flag_space_set (r->flags, "strings");
 		r_cons_break_push (NULL, NULL);
 	}
+	RBinString b64 = {0};
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
@@ -349,6 +351,17 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		section = r_bin_get_section_at (obj, paddr, 0);
 		section_name = section ? section->name : "unknown";
 		type_string = r_bin_string_type (string->type);
+		if (b64str) {
+			ut8 *s = r_base64_decode_dyn (string->string, -1);
+			if (s && *s && IS_PRINTABLE (*s)) {
+				// TODO: add more checks
+				free (b64.string);
+				memcpy (&b64, string, sizeof (b64));
+				b64.string = (char *)s;
+				b64.size = strlen (b64.string);
+				string = &b64;
+			}
+		}
 		if (IS_MODE_SET (mode)) {
 			char *f_name, *str;
 			if (r_cons_is_breaked ()) {
@@ -459,6 +472,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_cons_printf ("\n");
 		}
 	}
+	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("]");
 	}
