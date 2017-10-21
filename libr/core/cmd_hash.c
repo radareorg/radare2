@@ -235,7 +235,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 			} else eprintf ("Error: scr.interactive required to run the rlang prompt\n");
 		}
 	} else {
-		if (!p || *p == ' ')
+		if (!p || *p==' ')
 			eprintf ("Invalid hashbang. See '#!' for help.\n");
 		else
 			eprintf ("No bindings installed for rlang '%s'\n", p);
