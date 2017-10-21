@@ -2078,7 +2078,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	if (infos) {
 		for (;*infos; infos++) {
 			/* XXX wtf, must use anal.meta.deserialize() */
-			char *p, *q;
+			char *p, *q, *r;
 			if (*infos == ',') {
 				continue;
 			}
@@ -2086,6 +2086,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 			metas = sdb_const_get (s, key, 0);
 			MI.size = sdb_array_get_num (s, key, 0, 0);
 			MI.type = *infos;
+			MI.subtype = 0;
 			MI.from = ds->at;
 			MI.to = ds->at + MI.size;
 			if (metas) {
@@ -2097,6 +2098,13 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				q = strchr (p + 1, ',');
 				if (!q) {
 					continue;
+				}
+				if (MI.type == R_META_TYPE_STRING) {
+					r = strchr (q + 1, ',');
+					if (r) {
+						MI.subtype = *(q + 1);
+						q = r;
+					}
 				}
 				MI.str = (char*)sdb_decode (q + 1, 0);
 			} else {

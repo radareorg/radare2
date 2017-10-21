@@ -517,7 +517,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 }
 
 static int cmd_meta_hsdmf(RCore *core, const char *input) {
-	int n, type = input[0];
+	int n, type = input[0], subtype;
 	char *t = 0, *p, name[256], *str;
 	int repeat = 1;
 	ut64 addr_end = 0LL, addr = core->offset;
@@ -716,7 +716,12 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				n++;
 			}
 			addr_end = addr + n;
-			r_meta_add (core->anal, type, addr, addr_end, name);
+			if (type == 's') {
+				subtype = input[1] == 'a' ? R_STRING_ENC_LATIN1 : R_STRING_ENC_GUESS;
+				r_meta_add_with_subtype (core->anal, type, subtype, addr, addr_end, name);
+			} else {
+				r_meta_add (core->anal, type, addr, addr_end, name);
+			}
 			free (t);
 			repcnt ++;
 			addr = addr_end;

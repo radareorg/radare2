@@ -8,11 +8,11 @@ extern "C" {
 #endif
 
 typedef enum {
-	R_STRING_ENC_LATIN1,
-	R_STRING_ENC_UTF8,
-	R_STRING_ENC_UTF16LE,
-	R_STRING_ENC_UTF32LE,
-	R_STRING_ENC_GUESS,
+	R_STRING_ENC_LATIN1 = 'a',
+	R_STRING_ENC_UTF8 = '8',
+	R_STRING_ENC_UTF16LE = 'u',
+	R_STRING_ENC_UTF32LE = 'U',
+	R_STRING_ENC_GUESS = 'g',
 } RStrEnc;
 
 typedef int (*RStrRangeCallback) (void *, int);
