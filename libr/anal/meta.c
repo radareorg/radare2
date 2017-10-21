@@ -268,6 +268,15 @@ R_API RAnalMetaItem *r_meta_item_new(int type) {
 	return mi;
 }
 
+static void meta_serialize(RAnalMetaItem *it, char *k, size_t k_size, char *v, size_t v_size) {
+	snprintf (k, k_size, "meta.%c.0x%" PFMT64x, it->type, it->from);
+	if (it->subtype) {
+		snprintf (v, v_size, "%d,%d,%c,%s", (int)it->size, it->space, it->subtype, it->str);
+	} else {
+		snprintf (v, v_size, "%d,%d,%s", (int)it->size, it->space, it->str);
+	}
+}
+
 static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const char *str) {
 	int space_idx = a->meta_spaces.space_idx;
 	char *e_str, key[100], val[2048];
@@ -283,12 +292,8 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 	}
 	/* set entry */
 	e_str = sdb_encode ((const void*)str, -1);
-	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, from);
-	if (subtype) {
-		snprintf (val, sizeof (val)-1, "%d,%d,%c,%s", (int)(to-from), space_idx, subtype, e_str);
-	} else {
-		snprintf (val, sizeof (val)-1, "%d,%d,%s", (int)(to-from), space_idx, e_str);
-	}
+	RAnalMetaItem mi = {from, to, (int)(to - from), type, subtype, e_str, space_idx};
+	meta_serialize (&mi, key, sizeof (key), val, sizeof (val));
 	exists = sdb_exists (DB, key);
 
 	sdb_set (DB, key, val, 0);
@@ -718,15 +723,6 @@ beach:
 	return 1;
 }
 
-static void serialize(RAnalMetaItem *it, char *k, char *v) {
-	sprintf (k, "meta.%c.0x%"PFMT64x, it->type, it->from);
-	if (it->type == R_META_TYPE_STRING) {
-		snprintf (v, 4095, "%d,%d,%c,%s", (int)it->size, it->space, it->subtype, it->str);
-	} else {
-		snprintf (v, 4095, "%d,%d,%s", (int)it->size, it->space, it->str);
-	}
-}
-
 static int meta_unset_cb(void *user, const char *k, const char *v) {
 	char nk[128], nv[4096];
 	RAnalMetaUserItem *ui = user;
@@ -737,7 +733,7 @@ static int meta_unset_cb(void *user, const char *k, const char *v) {
 	deserialize (&it, k, v);
 	if (it.space != -1) {
 		it.space = -1;
-		serialize (&it, nk, nv);
+		meta_serialize (&it, nk, sizeof (nk), nv, sizeof (nv));
 		sdb_set (DB, nk, nv, 0);
 	}
 	return 1;
