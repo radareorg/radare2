@@ -4339,7 +4339,9 @@ static int cmd_print(void *data, const char *input) {
 				* string, by considering current offset as
 				* paddr and if it isn't, trying to consider it
 				* as vaddr. */
-				if ((section = r_bin_get_section_at (obj, core->offset, true))) {
+				if ((section = r_bin_get_section_at (
+					 obj, core->offset, true, NULL,
+					 NULL))) {
 					vaddr = core->offset + section->vaddr - section->paddr;
 				}
 

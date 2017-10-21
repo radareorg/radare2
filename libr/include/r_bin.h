@@ -201,6 +201,8 @@ typedef struct r_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
+	RList/*<RBinSortedSection>*/ *sorted_sections_vaddr;
+	RList/*<RBinSortedSection>*/ *sorted_sections_paddr;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
 	RList/*<RBinSymbol>*/ *symbols;
@@ -596,7 +598,9 @@ R_API void r_bin_class_free(RBinClass *c);
 R_API RBinSymbol *r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
 
-R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va);
+R_API RBinSection *r_bin_get_section_at (RBinObject *o, ut64 off, int va,
+					 RBinSection *section,
+					 RListIter **iter);
 R_API RList* r_bin_get_strings(RBin *bin);
 R_API int r_bin_is_string(RBin *bin, ut64 va);
 R_API RList* r_bin_reset_strings(RBin *bin);
@@ -670,6 +674,19 @@ R_API void r_bin_filter_name(Sdb *db, ut64 addr, char *name, int maxlen);
 R_API void r_bin_filter_symbols (RList *list);
 R_API void r_bin_filter_sections (RList *list);
 R_API void r_bin_filter_classes (RList *list);
+
+/* sections */
+typedef struct r_bin_sorted_section_t {
+	RBinSection * section;
+	RBinObject * object;
+} RBinSortedSection;
+
+R_API void r_bin_sorted_section_free (void  /*RBinSortedSection*/ *data);
+R_API int r_bin_sorted_section_vaddr_cmp (const RBinSortedSection *a, const RBinSortedSection *b);
+R_API int r_bin_sorted_section_paddr_cmp (const RBinSortedSection *a, const RBinSortedSection *b);
+R_API ut64 r_bin_sorted_section_get_from_addr (RBinSortedSection *sorted_section, int va);
+R_API ut64 r_bin_sorted_section_get_to_addr (RBinSortedSection *sorted_section, int va);
+R_API int r_bin_sorted_section_contains_addr (const RBinSortedSection *a, ut64 off, int va);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;

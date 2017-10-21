@@ -31,7 +31,8 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 
 static int inTextSection(RCore *core, ut64 curAddress) {
 	//section of the curAddress
-	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddress, true);
+	RBinSection *value = r_bin_get_section_at (
+	    core->bin->cur->o, curAddress, true, NULL, NULL);
 	//If the pointed value lies in .text section
 	return value && !strcmp (value->name, ".text");
 }
