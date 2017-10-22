@@ -558,11 +558,11 @@ R_API bool r_io_is_listener(RIO* io) {
 	return false;
 }
 
-R_API int r_io_system(RIO* io, const char* cmd) {
+R_API char *r_io_system(RIO* io, const char* cmd) {
 	if (io && io->desc && io->desc->plugin && io->desc->plugin->system) {
 		return io->desc->plugin->system (io, io->desc, cmd);
 	}
-	return -1;
+	return NULL;
 }
 
 R_API bool r_io_resize(RIO* io, ut64 newsize) {

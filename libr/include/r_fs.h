@@ -126,6 +126,7 @@ R_API const char *r_fs_partition_type_get(int n);
 R_API int r_fs_partition_get_size(void); // WTF. wrong function name
 
 /* plugins */
+extern RFSPlugin r_fs_plugin_io;
 extern RFSPlugin r_fs_plugin_ext2;
 extern RFSPlugin r_fs_plugin_fat;
 extern RFSPlugin r_fs_plugin_ntfs;

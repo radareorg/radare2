@@ -164,7 +164,7 @@ static struct winedbg_x86_32 regState() {
 	return r;
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "?", 1)) {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
@@ -175,16 +175,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("dc  : continue\n");
 		eprintf ("dm  : show maps\n");
 		eprintf ("pid : show current process id\n");
-		return 0;
 	} else if (!strncmp (cmd, "dr8", 3)) {
 		struct winedbg_x86_32 r = regState ();
 		ut8 *arena = (ut8*)calloc (sizeof (struct winedbg_x86_32), 3);
-		if (!arena) {
-			return 0;
+		if (arena) {
+			r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
+			io->cb_printf ("%s\n", arena);
+			free (arena);
 		}
-		r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
-		io->cb_printf ("%s\n", arena);
-		free (arena);
 	} else if (!strncmp (cmd, "drp", 3)) {
 const char *msg =
 "=PC	eip\n"\
@@ -230,41 +228,29 @@ const char *msg =
 "flg	nt	.1	.201	0\n"\
 "flg	rf	.1	.202	0\n"\
 "flg	vm	.1	.203	0\n";
-		io->cb_printf ("%s", msg);
-		return 0;
+		return strdup (msg);
 	} else if (!strncmp (cmd, "dr", 2)) {
 		printcmd (io, "info reg");
-		return 0;
 	} else if (!strncmp (cmd, "db ", 3)) {
 		free (runcmd (sdb_fmt (0, "break *%"PFMT64x, r_num_get (NULL, cmd + 3) || io->off)));
-		return 0;
 	} else if (!strncmp (cmd, "ds", 2)) {
 		free (runcmd ("stepi"));
-		return 0;
 	} else if (!strncmp (cmd, "dc", 2)) {
 		free (runcmd ("cont"));
-		return 0;
 	} else if (!strncmp (cmd, "dso", 3)) {
 		eprintf ("TODO: dso\n");
-		return 0;
 	} else if (!strncmp (cmd, "dp", 3)) {
 		printcmd (io, "info thread");
-		return 0;
 	} else if (!strncmp (cmd, "dm", 3)) {
 		printcmd (io, "info maps");
-		return 0;
 	} else if (!strncmp (cmd, "pid", 3)) {
-		int pid = fd->fd;
-		if (!cmd[3]) {
-			io->cb_printf ("%d\n", pid);
-		}
-		return pid;
+		return r_str_newf ("%d", fd->fd);
 	} else {
 		char *res = runcmd (cmd);
 		io->cb_printf ("%s\n", res);
 		free (res);
 	}
-	return 0;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_winedbg = {

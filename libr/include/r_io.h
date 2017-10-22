@@ -141,7 +141,7 @@ typedef struct r_io_plugin_t {
 	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
-	int (*system)(RIO *io, RIODesc *fd, const char *);
+	char *(*system)(RIO *io, RIODesc *fd, const char *);
 	RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
 	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int rw, int mode);
 	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
@@ -338,7 +338,7 @@ R_API bool r_io_read (RIO *io, ut8 *buf, int len);
 R_API bool r_io_write (RIO *io, ut8 *buf, int len);
 R_API ut64 r_io_size (RIO *io);
 R_API bool r_io_is_listener (RIO *io);
-R_API int r_io_system (RIO *io, const char* cmd);
+R_API char *r_io_system (RIO *io, const char* cmd);
 R_API bool r_io_resize (RIO *io, ut64 newsize);
 R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size);
 R_API bool r_io_set_write_mask (RIO *io, const ut8 *mask, int len);

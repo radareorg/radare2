@@ -1,4 +1,4 @@
-// Copyright (c) 2016 - LGPL, SkUaTeR, All rights reserved.
+// Copyright (c) 2016-2017 - LGPL, SkUaTeR, All rights reserved.
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -90,7 +90,7 @@ static int __close(RIODesc *fd) {
 	return true;
 }
 	
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
         lprintf ("system command (%s)\n", cmd);
         if (!strcmp (cmd, "help")) {
                 lprintf ("Usage: =!cmd args\n"
@@ -99,13 +99,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		lprintf ("io_system: Enviando comando bochs\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
-		return 1;
 	} else if (!strncmp (cmd, "dobreak", 7)) {
 		bochs_cmd_stop (desc);
 		io->cb_printf ("%s\n", desc->data);
-		return 1;
 	}         
-        return true;
+        return NULL;
 }
 
 RIOPlugin r_io_plugin_bochs = {

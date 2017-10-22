@@ -470,7 +470,11 @@ static int cmd_rap(void *data, const char *input) {
 			core->cmdremote = input[2]? 1: 0;
 			r_cons_println (r_str_bool (core->cmdremote));
 		} else {
-			r_io_system (core->io, input + 1);
+			char *res = r_io_system (core->io, input + 1);
+			if (res) {
+				r_cons_printf ("%s\n", res);
+				free (res);
+			}
 		}
 		break;
 	case '$': // "=$"
@@ -513,7 +517,13 @@ static int cmd_rap(void *data, const char *input) {
 
 static int cmd_rap_run(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	return r_io_system (core->io, input);
+	char *res = r_io_system (core->io, input);
+	if (res) {
+		int ret = atoi (res);
+		free (res);
+		return ret;
+	}
+	return false;
 }
 
 static int cmd_yank(void *data, const char *input) {
@@ -1830,7 +1840,12 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					if (*cmd) {
 						r_core_cmd_pipe (core, cmd, ptr + 1);
 					} else {
-						r_io_system (core->io, ptr + 1);
+						char *res = r_io_system (core->io, ptr + 1);
+						if (res) {
+							r_cons_printf ("%s\n", res);
+							free (res);
+						}
+						free (res);
 					}
 					core->num->value = value;
 					return 0;
@@ -2968,7 +2983,11 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	if (core->cmdremote) {
 		if (*cstr != '=' && *cstr != 'q' && strncmp (cstr, "!=", 2)) {
-			r_io_system (core->io, cstr);
+			char *res = r_io_system (core->io, cstr);
+			if (res) {
+				r_cons_printf ("%s\n", res);
+				free (res);
+			}
 			goto beach; // false
 		}
 	}

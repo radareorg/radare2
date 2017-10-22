@@ -188,16 +188,16 @@ static void got_alarm(int sig) {
 #endif
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
-		eprintf ("%d\n", fd->fd);
+		return r_str_newf ("%d", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		/* do nothing here */
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "kill", 4)) {
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return 1;
+			return NULL;
 		}
 		/* do nothing here */
 		kill (getpid (), 9);
@@ -206,7 +206,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		size_t cbptr = 0;
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return 1;
+			return NULL;
 		}
 		ut64 result = 0;
 		char *argv = strdup (cmd + 5);
@@ -214,7 +214,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (argc == 0) {
 			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
 			free (argv);
-			return 0;
+			return NULL;
 		}
 		const char *sym = r_str_word_get0 (argv, 0);
 		if (sym) {
@@ -344,7 +344,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
 		eprintf ("| =!mameio            enter mame IO mode\n");
 	}
-	return 0;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_self = {

@@ -463,13 +463,13 @@ static int __close(RIODesc *fd) {
 	return kr == KERN_SUCCESS;
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!io || !fd || !cmd || !fd->data) {
-		return 0;
+		return NULL;
 	}
 	RIODescData *iodd = fd->data;
 	if (iodd->magic != R_MACH_MAGIC) {
-		return false;
+		return NULL;
 	}
 	
 	task_t task = pid_to_task (iodd->tid);
@@ -482,20 +482,22 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		} else {
 			eprintf ("Usage: =!perm [rwx]\n");
 		}
-		return 0;
+		return NULL;
 	}
 	if (!strncmp (cmd, "pid", 3)) {
 		const char *pidstr = cmd + 3;
 		int pid = -1;
 		if (*pidstr) {
 			// int pid = __get_pid (fd);
-			return 0;
+			return NULL;
 		}
 		if (!strcmp (pidstr, "0")) {
 			pid = 0;
 		} else {
 			pid = atoi (pidstr);
-			if (!pid) pid = -1;
+			if (!pid) {
+				pid = -1;
+			}
 		}
 		if (pid != -1) {
 			task_t task = pid_to_task (pid);
@@ -504,14 +506,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 				eprintf ("TODO: must set the pid in io here\n");
 		//		riom->pid = pid;
 		//		riom->task = task;
-				return 0;
+				return NULL;
 			}
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
 	} else {
 		eprintf ("Try: '=!pid' or '=!perm'\n");
 	}
-	return 1;
+	return NULL;
 }
 
 static int __get_pid (RIODesc *desc) {

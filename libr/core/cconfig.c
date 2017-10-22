@@ -23,6 +23,15 @@ static void set_options(RConfigNode *node, ...) {
 	va_end (argp);
 }
 
+static bool isGdbPlugin(RCore *core) {
+	if (core->io && core->io->desc && core->io->desc->plugin) {
+		if (core->io->desc->plugin->name && !strcmp (core->io->desc->plugin->name, "gdb")) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void print_node_options(RConfigNode *node) {
 	RListIter *iter;
 	char *option;
@@ -1016,12 +1025,10 @@ static int cb_dbg_gdb_page_size(void *user, void *data) {
 	if (node->i_value < 64) { // 64 is hardcoded min packet size
 		return false;
 	}
-	if (core->io && core->io->desc && core->io->desc->plugin
-	    && core->io->desc->plugin->name
-	    && !strcmp (core->io->desc->plugin->name, "gdb")) {
+	if (isGdbPlugin (core)) {
 		char cmd[64];
 		snprintf (cmd, sizeof (cmd), "page_size %"PFMT64d, node->i_value);
-		r_io_system (core->io, cmd);
+		free (r_io_system (core->io, cmd));
 	}
 	return true;
 }
@@ -1032,12 +1039,10 @@ static int cb_dbg_gdb_retries(void *user, void *data) {
 	if (node->i_value <= 0) {
 		return false;
 	}
-	if (core->io && core->io->desc && core->io->desc->plugin
-	    && core->io->desc->plugin->name
-	    && !strcmp (core->io->desc->plugin->name, "gdb")) {
+	if (isGdbPlugin (core)) {
 		char cmd[64];
 		snprintf (cmd, sizeof (cmd), "retries %"PFMT64d, node->i_value);
-		r_io_system (core->io, cmd);
+		free (r_io_system (core->io, cmd));
 	}
 	return true;
 }

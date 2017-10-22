@@ -84,19 +84,20 @@ static bool r2k__plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "r2k://", 6));
 }
 
-static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "mod", 3)) {
 #if __WINDOWS__
 		GetSystemModules (io);
 #endif
 	} else {
 #if defined (__linux__) && !defined (__GNU__)
-		return run_ioctl_command (io, fd, cmd);
+		(void)run_ioctl_command (io, fd, cmd);
+		return NULL;
 #else
 		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
 #endif
 	}
-	return -1;
+	return NULL;
 }
 
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
