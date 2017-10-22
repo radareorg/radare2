@@ -154,7 +154,9 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 }
 
 static int r_io_def_mmap_close(RIODesc *fd) {
-	if (!fd || !fd->data) return -1;
+	if (!fd || !fd->data) {
+		return -1;
+	}
 	r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
 	fd->data = NULL;
 	return 0;
@@ -182,8 +184,9 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return count;
 	}
 	mmo = fd->data;
-	if (!mmo)
+	if (!mmo) {
 		return -1;
+	}
 	if (mmo->rawio) {
 		if (fd->obsz) {
 			char *a_buf;
@@ -380,6 +383,10 @@ static bool __is_blockdevice (RIODesc *desc) {
 }
 #endif
 
+static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
+	return NULL;
+}
+
 RIOPlugin r_io_plugin_default = {
 	.name = "default",
 	.desc = "open local files using def_mmap://",
@@ -391,6 +398,7 @@ RIOPlugin r_io_plugin_default = {
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,
+	.system = __system,
 #if __UNIX__
 	.is_blockdevice = __is_blockdevice,
 #endif

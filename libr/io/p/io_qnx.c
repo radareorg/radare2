@@ -135,8 +135,8 @@ static int __close (RIODesc *fd) {
 	return -1;
 }
 
-static int __system (RIO *io, RIODesc *fd, const char *cmd) {
-	return true;
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_qnx = {
@@ -154,7 +154,7 @@ RIOPlugin r_io_plugin_qnx = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_qnx,
 	.version = R2_VERSION

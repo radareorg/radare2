@@ -2006,7 +2006,6 @@ R_API const char *r_str_firstbut (const char *s, char ch, const char *but) {
 	return NULL;
 }
 
-
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	int idx, _b = 0;
 	ut8 *b = (ut8*)&_b;
@@ -2784,6 +2783,15 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 		return false;
 	}
 	return !strcmp (str + (slen - nlen), needle);
+}
+
+R_API RList *r_str_split_list(char *str) {
+	RList *list = r_list_newf (free);
+	int i, count, *a = r_str_split_lines (str, &count);
+	for (i = 0; i < count; i++) {
+		r_list_append (list, str + a[i]);
+	}
+	return list;
 }
 
 R_API int *r_str_split_lines(char *str, int *count) {

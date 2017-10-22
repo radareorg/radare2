@@ -238,7 +238,7 @@ typedef bool (*RIOClose) (RIO *io, int fd);
 typedef bool (*RIOReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
 typedef RIOAccessLog *(*RIOAlReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RIOWriteAt) (RIO *io, ut64 addr, const ut8 *buf, int len);
-typedef int (*RIOSystem) (RIO *io, const char* cmd);
+typedef char *(*RIOSystem) (RIO *io, const char* cmd);
 typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef bool (*RIOFdClose) (RIO *io, int fd);
 typedef ut64 (*RIOFdSeek) (RIO *io, int fd, ut64 addr, int whence);
