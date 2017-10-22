@@ -1311,7 +1311,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 }
 
 static int bin_relocs(RCore *r, int mode, int va) {
-	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RList *relocs;
 	RListIter *iter;
 	RBinReloc *reloc = NULL;

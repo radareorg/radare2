@@ -432,7 +432,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 }
 
 static int is_data_section(RBinFile *a, RBinSection *s) {
-	if (s->has_strings) {
+	if (s->has_strings || s->is_data) {
 		return true;
 	}
 	if (s->is_data) {

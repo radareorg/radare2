@@ -209,7 +209,7 @@ R_API int r_lang_run_string(RLang *lang, const char *code) {
 	return r_lang_run (lang, code, strlen (code));
 }
 
-R_API int r_lang_run_file(RLang *lang, const char *file) { 
+R_API int r_lang_run_file(RLang *lang, const char *file) {
 	int len, ret = false;
 	if (lang->cur) {
 		if (!lang->cur->run_file) {
@@ -218,7 +218,9 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 				ret = lang->cur->run (lang, code, len);
 				free (code);
 			}
-		} else ret = lang->cur->run_file (lang, file);
+		} else {
+			ret = lang->cur->run_file (lang, file);
+		}
 	}
 	return ret;
 }

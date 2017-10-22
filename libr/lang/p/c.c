@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 pancake */
+/* radare - LGPL - Copyright 2011-2017 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -6,16 +6,28 @@
 #include "r_core.h"
 #include "r_lang.h"
 
+static int ac = 0;
+static const char **av = NULL;
+
+static bool lang_c_set_argv(RLang *lang, int argc, const char **argv) {
+	ac = argc;
+	av = argv;
+	return true;
+}
+
 static int lang_c_file(RLang *lang, const char *file) {
-	void *lib;
 	char *a, *cc, *p, name[512], buf[512];
 	const char *libpath, *libname;
+	void *lib;
 
-	if (strlen (file) > (sizeof(name)-10))
+	if (strlen (file) > (sizeof (name) - 10)) {
 		return false;
-	if (!strstr (file, ".c"))
+	}
+	if (!strstr (file, ".c")) {
 		sprintf (name, "%s.c", file);
-	else strcpy (name, file);
+	} else {
+		strcpy (name, file);
+	}
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
 		return false;
@@ -25,31 +37,42 @@ static int lang_c_file(RLang *lang, const char *file) {
 	if (a) {
 		*a = 0;
 		libpath = name;
-		libname = a+1;
+		libname = a + 1;
 	} else {
 		libpath = ".";
 		libname = name;
 	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
-	p = strstr (name, ".c"); if (p) *p=0;
+	p = strstr (name, ".c");
+	if (p) {
+		*p=0;
+	}
 	cc = r_sys_getenv ("CC");
-	if (!cc || !*cc)
+	if (!cc || !*cc) {
 		cc = strdup ("gcc");
+	}
 	snprintf (buf, sizeof (buf), "%s -fPIC -shared %s -o %s/lib%s."R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core)", cc, file, libpath, libname);
 	free (cc);
-	if (r_sandbox_system (buf, 1) != 0)
+	if (r_sandbox_system (buf, 1) != 0) {
 		return false;
-
+	}
 	snprintf (buf, sizeof (buf), "%s/lib%s."R_LIB_EXT, libpath, libname);
 	lib = r_lib_dl_open (buf);
-	if (lib!= NULL) {
-		void (*fcn)(RCore *);
+	if (lib) {
+		void (*fcn)(RCore *, int argc, const char **argv);
 		fcn = r_lib_dl_sym (lib, "entry");
-		if (fcn) fcn (lang->user);
-		else eprintf ("Cannot find 'entry' symbol in library\n");
+		if (fcn) {
+			fcn (lang->user, ac, av);
+			ac = 0;
+			av = NULL;
+		} else {
+			eprintf ("Cannot find 'entry' symbol in library\n");
+		}
 		r_lib_dl_close (lib);
-	} else eprintf ("Cannot open library\n");
+	} else {
+		eprintf ("Cannot open library\n");
+	}
 	r_file_rm (buf); // remove lib
 	return 0;
 }
@@ -62,7 +85,7 @@ static int lang_c_init(void *user) {
 static int lang_c_run(RLang *lang, const char *code, int len) {
 	FILE *fd = fopen (".tmp.c", "w");
 	if (fd) {
-		fputs ("#include <r_core.h>\n\nvoid entry(RCore *core) {\n", fd);
+		fputs ("#include <r_core.h>\n\nvoid entry(RCore *core, int argc, const char **argv) {\n", fd);
 		fputs (code, fd);
 		fputs ("\n}\n", fd);
 		fclose (fd);
@@ -80,4 +103,5 @@ static RLangPlugin r_lang_plugin_c = {
 	.run = lang_c_run,
 	.init = (void*)lang_c_init,
 	.run_file = (void*)lang_c_file,
+	.set_argv = (void*)lang_c_set_argv,
 };
