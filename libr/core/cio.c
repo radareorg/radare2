@@ -167,24 +167,33 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		if (p) {
 			*p = 0;
 			step = r_num_math (core->num, s);
-			s = p+1;
+			s = p + 1;
 			wordsize = r_num_math (core->num, s);
 		} else {
 			step = r_num_math (core->num, s);
 		}
 		free (os);
 		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
-		dif = (to<=from)? UT8_MAX: (to-from)+1;
-		if (wordsize==1) {
-			if (to<1 || to>UT8_MAX) to = UT8_MAX;
-			from %= (UT8_MAX+1);
-		}
-		if (dif<1) dif = UT8_MAX+1;
-		if (step<1) step = 1;
-		if (wordsize<1) wordsize = 1;
+		dif = (to <= from)? UT8_MAX: to - from + 1;
 		if (wordsize == 1) {
-			for (i=n=0; i<core->blocksize; i++, n+= step)
+			if (to < 1 || to > UT8_MAX) {
+				to = UT8_MAX;
+			}
+			from %= (UT8_MAX + 1);
+		}
+		if (dif < 1) {
+			dif = UT8_MAX + 1;
+		}
+		if (step < 1) {
+			step = 1;
+		}
+		if (wordsize < 1) {
+			wordsize = 1;
+		}
+		if (wordsize == 1) {
+			for (i = n = 0; i < core->blocksize; i++, n += step) {
 				buf[i] = (ut8)(n % dif) + from;
+			}
 		} else if (wordsize == 2) {
 			ut16 num16 = from;
 			for (i = 0; i < core->blocksize; i += wordsize, num16 += step) {
@@ -203,8 +212,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
 		}
-	} else
-	if (op=='2' || op=='4') {
+	} else if (op=='2' || op=='4') {
 		op -= '0';
 		// if i < core->blocksize would pass the test but buf[i+3] goes beyond the buffer
 		if (core->blocksize > 3) {
@@ -213,10 +221,10 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				ut8 tmp = buf[i];
 				buf[i] = buf[i+3];
 				buf[i+3] = tmp;
-				if (op==4) {
-					tmp = buf[i+1];
-					buf[i+1] = buf[i+2];
-					buf[i+2] = tmp;
+				if (op == 4) {
+					tmp = buf[i + 1];
+					buf[i + 1] = buf[i + 2];
+					buf[i + 2] = tmp;
 				}
 			}
 		}
