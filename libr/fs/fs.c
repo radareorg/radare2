@@ -700,10 +700,6 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 			// mountpoints if any
 			RFSRoot *r;
 			char *me = strdup (ptr);
-			char *ls = (char *)r_str_lchr (me, '/');
-			if (ls) {
-				// *ls = 0;
-			}
 			r_list_foreach (fs->roots, iter, r) {
 				char *base = strdup (r->path);
 				char *ls = (char *)r_str_lchr (base, '/');
@@ -724,8 +720,9 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 			char opath[PROMT_PATH_BUFSIZE];
 			strncpy (opath, path, sizeof (opath) - 1);
 			input = buf + 3;
-			while (*input == ' ')
+			while (*input == ' ') {
 				input++;
+			}
 			if (!strcmp (input, "..")) {
 				char* p = (char*) r_str_lchr (path, '/');
 				if (p) {
@@ -748,8 +745,14 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 			r_str_chop_path (path);
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
-				strcpy (path, opath);
-				eprintf ("cd: unknown path: %s\n", path);
+			//	strcpy (path, opath);
+				RFSRoot *root;
+				RListIter *iter;
+				r_list_foreach (fs->roots, iter, root) {
+					if (!strcmp (path, root->path)) {
+						r_list_append (list, root->path);
+					}
+				}
 			}
 		} else if (!memcmp (buf, "cat ", 4)) {
 			input = buf + 3;
