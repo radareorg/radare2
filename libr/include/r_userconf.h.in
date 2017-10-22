@@ -5,7 +5,7 @@
 
 #define DEBUGGER @DEBUGGER@
 
-#if __WINDOWS__ || __CYGWIN__ || MINGW32
+#if __WINDOWS__ || __CYGWIN__ || MINGW32 || _MSC_VER || CUTTER
 #define R2_PREFIX "."
 #define R2_LIBDIR "./lib"
 #define R2_INCDIR "./include/libr"
