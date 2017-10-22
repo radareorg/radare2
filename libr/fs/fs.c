@@ -677,6 +677,7 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 		if (buf[0] == '!') {
 			r_sandbox_system (buf + 1, 1);
 		} else if (!memcmp (buf, "ls", 2)) {
+			char *ptr = str;
 			if (buf[2] == ' ') {
 				if (buf[3] != '/') {
 					strncpy (str, path, sizeof (str) - 1);
@@ -685,16 +686,38 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 					list = r_fs_dir (fs, str);
 				} else {
 					list = r_fs_dir (fs, buf + 3);
+					ptr = buf + 3;
 				}
 			} else {
+				ptr = path;
 				list = r_fs_dir (fs, path);
 			}
 			if (list) {
-				r_list_foreach (list, iter, file)
-				printf ("%c %s\n", file->type, file->name);
-			} else {
-				eprintf ("Unknown path: %s\n", path);
+				r_list_foreach (list, iter, file) {
+					printf ("%c %s\n", file->type, file->name);
+				}
 			}
+			// mountpoints if any
+			RFSRoot *r;
+			char *me = strdup (ptr);
+			char *ls = (char *)r_str_lchr (me, '/');
+			if (ls) {
+				// *ls = 0;
+			}
+			r_list_foreach (fs->roots, iter, r) {
+				char *base = strdup (r->path);
+				char *ls = (char *)r_str_lchr (base, '/');
+				if (ls) {
+					ls++;
+					*ls = 0;
+				}
+				// TODO: adjust contents between //
+				if (!strcmp (me, base)) {
+					printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
+				}
+				free (base);
+			}
+			free (me);
 		} else if (!strncmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {

@@ -71,6 +71,7 @@ typedef struct r_fs_partition_t {
 	int type;
 } RFSPartition;
 
+#define R_FS_FILE_TYPE_MOUNTPOINT 'm'
 #define R_FS_FILE_TYPE_DIRECTORY 'd'
 #define R_FS_FILE_TYPE_REGULAR 'r'
 #define R_FS_FILE_TYPE_DELETED 'x'
