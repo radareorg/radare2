@@ -1997,7 +1997,7 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 }
 
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
-	char str[R_FLAG_NAME_SIZE];
+	char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
 	RList *sections;
@@ -2069,21 +2069,22 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 			}
 			if (r->bin->prefix) {
-				snprintf (str, sizeof(str)-1, "%s.section.%s",
-					r->bin->prefix, section->name);
+				str = r_str_newf ("%s.section.%s", r->bin->prefix, section->name);
 			} else {
-				snprintf (str, sizeof(str)-1, "section.%s", section->name);
+				str = r_str_newf ("section.%s", section->name);
 
 			}
 			r_flag_set (r->flags, str, addr, section->size);
-			if (r->bin->prefix) {
-				snprintf (str, sizeof(str) - 1, "%s.section_end.%s",
-					r->bin->prefix, section->name);
-			} else {
-				snprintf (str, sizeof(str) - 1, "section_end.%s", section->name);
-			}
+			R_FREE (str);
 
+			if (r->bin->prefix) {
+				str = r_str_newf ("%s.section_end.%s", r->bin->prefix, section->name);
+			} else {
+				str = r_str_newf ("section_end.%s", section->name);
+			}
 			r_flag_set (r->flags, str, addr + section->vsize, 0);
+			R_FREE (str);
+
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
@@ -2098,29 +2099,29 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
 			if (r->bin->prefix) {
-				snprintf (str, sizeof (str)-1, "section %i va=0x%08"PFMT64x" pa=0x%08"
+				str = r_str_newf ("section %i va=0x%08"PFMT64x" pa=0x%08"
 					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s",
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, r->bin->prefix, section->name);
 			} else {
-				snprintf (str, sizeof (str)-1, "section %i va=0x%08"PFMT64x" pa=0x%08"
+				str = r_str_newf ("section %i va=0x%08"PFMT64x" pa=0x%08"
 					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s",
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, section->name);
 
 			}
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
+			R_FREE (str);
 			if (section->add) {
-				char dup_chk_key[256];
-				snprintf (dup_chk_key, sizeof dup_chk_key,
-					"%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
+				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
 					section->paddr, addr, section->size, section->vsize, section->srwx, section->name, r->bin->cur->id, fd);
-				if (!ht_find (dup_chk_ht, dup_chk_key, NULL) && r_io_section_add (r->io, section->paddr, addr,
+				if (!ht_find (dup_chk_ht, str, NULL) && r_io_section_add (r->io, section->paddr, addr,
 						section->size, section->vsize,
 						section->srwx, section->name,
 						r->bin->cur->id, fd)) {
-					ht_insert (dup_chk_ht, dup_chk_key, NULL);
+					ht_insert (dup_chk_ht, str, NULL);
 				}
+				R_FREE (str);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
