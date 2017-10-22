@@ -2,6 +2,7 @@
 #define R_STR_H
 
 #include "r_str_util.h"
+#include "r_list.h"
 
 #ifdef __cplusplus
 extern "C" {
