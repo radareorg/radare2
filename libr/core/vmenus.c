@@ -1007,7 +1007,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 }
 
 R_API int r_core_visual_classes(RCore *core) {
-	int ch, option = 0;
+	int ch, index = 0;
 	char cmd[1024];
 	int mode = 'c';
 	RBinClass *cur = NULL;
@@ -1027,7 +1027,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		if (grepmode) {
 			r_cons_printf ("Grep: %s\n", grep? grep: "");
 		}
-		ptr = show_class (core, mode, option, cur, grep, list);
+		ptr = show_class (core, mode, index, cur, grep, list);
 		switch (mode) {
 		case 'm':
 			mur = (RBinSymbol*)ptr;
@@ -1041,7 +1041,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		(void) r_cons_get_size (&cols);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
-		if (ch==-1 || ch==4) {
+		if (ch == -1 || ch == 4) {
 			R_FREE (grep);
 			return false;
 		}
@@ -1083,15 +1083,26 @@ R_API int r_core_visual_classes(RCore *core) {
 				return true;
 			}
 			break;
-		case 'J': option += 10; break;
-		case 'j': option++; break;
-		case 'k': if (--option < 0) option = 0; break;
-		case 'K': option -= 10; if (option<0) option = 0; break;
+		case 'J': index += 10; break;
+		case 'j': index++; break;
+		case 'k': 
+			if (--index < 0) {
+				index = 0;
+			}
+			break;
+		case 'K': 
+			index -= 10; 
+			if (index < 0) {
+				index = 0;
+			}
+			break;
 		case 'g':
 			{
 				char *num = prompt ("Index:", NULL);
-				option = atoi (num);
-				free (num);
+				if (num) {
+					index = atoi (num);
+					free (num);
+				}
 			}
 			break;
 		case 'p':
@@ -1109,7 +1120,7 @@ R_API int r_core_visual_classes(RCore *core) {
 				return true;
 			}
 			mode = 'c';
-			option = oldcur;
+			index = oldcur;
 			break;
 		case '/':
 			grepmode = true;
@@ -1123,8 +1134,8 @@ R_API int r_core_visual_classes(RCore *core) {
 				return true;
 			}
 			if (cur) {
-				oldcur = option;
-				option = 0;
+				oldcur = index;
+				index = 0;
 				mode = 'm';
 			}
 			break;
