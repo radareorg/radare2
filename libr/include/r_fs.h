@@ -3,7 +3,8 @@
 
 #include <r_types.h>
 #include <r_list.h>
-#include <r_io.h>
+#include <r_bind.h> // RCoreBind
+#include <r_io.h> // RIOBind
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +18,7 @@ struct r_fs_t;
 
 typedef struct r_fs_t {
 	RIOBind iob;
+	RCoreBind cob;
 	RList /*<RFSPlugin>*/ *plugins;
 	RList /*<RFSRoot>*/ *roots;
 	int view;
@@ -47,6 +49,7 @@ typedef struct r_fs_root_t {
 	struct r_fs_plugin_t *p;
 	void *ptr;
 	RIOBind iob;
+	RCoreBind cob;
 } RFSRoot;
 
 typedef struct r_fs_plugin_t {
@@ -128,6 +131,7 @@ R_API int r_fs_partition_get_size(void); // WTF. wrong function name
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_io;
+extern RFSPlugin r_fs_plugin_r2;
 extern RFSPlugin r_fs_plugin_ext2;
 extern RFSPlugin r_fs_plugin_fat;
 extern RFSPlugin r_fs_plugin_ntfs;

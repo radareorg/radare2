@@ -198,7 +198,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 					*dot = 0;
 				}
 				if (!strcmp (str, space)) {
-					cfg->cb_printf ("%s\n", node->name);
+					cfg->cb_printf ("%s\n", dot + 1);
 				}
 				free (space);
 			}

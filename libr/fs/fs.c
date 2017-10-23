@@ -149,6 +149,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->p = p;
 	//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
 	root->iob = fs->iob;
+	root->cob = fs->cob;
 	if (!p->mount (root)) {
 		eprintf ("r_fs_mount: Cannot mount partition\n");
 		free (str);
