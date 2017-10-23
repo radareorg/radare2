@@ -84,10 +84,10 @@ typedef enum tokentype_t {
 
 typedef enum register_t {
 	X86R_UNDEFINED = -1,
-	X86R_EAX = 0, X86R_ECX, X86R_EDX, X86R_EBX, X86R_ESP, X86R_EBP, X86R_ESI, X86R_EDI,
+	X86R_EAX = 0, X86R_ECX, X86R_EDX, X86R_EBX, X86R_ESP, X86R_EBP, X86R_ESI, X86R_EDI, X86R_EIP,
 	X86R_AX = 0, X86R_CX, X86R_DX, X86R_BX, X86R_SP, X86R_BP, X86R_SI, X86R_DI,
 	X86R_AL = 0, X86R_CL, X86R_DL, X86R_BL, X86R_AH, X86R_CH, X86R_DH, X86R_BH,
-	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI,
+	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI, X86R_RIP,
 	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15,
 	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS	// Is this the right order?
 } Register;
@@ -1295,7 +1295,6 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 	int base = 0;
 	int rex = 0;
 	ut64 immediate = 0;
-
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (!op->operands[1].is_good_flag) {
 			return -1;
@@ -1533,6 +1532,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else if (op->operands[1].type & OT_MEMORY) {
+
 		if (op->operands[0].type & OT_MEMORY) {
 			return -1;
 		}
@@ -1559,14 +1559,14 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 
-		if (a->bits == 64 && !(op->operands[1].regs[0] == X86R_RBP)) {
+		if (a->bits == 64) {
 			if (op->operands[0].type & OT_QWORD) {
 				if (!(op->operands[1].type & OT_QWORD)) {
 					if (op->operands[1].regs[0] != -1) {
 						data[l++] = 0x67;
 					}
 					data[l++] = 0x48;
-				} else {}
+				}
 			} else if (!(op->operands[1].type & OT_QWORD)) {
 				data[l++] = 0x67;
 			}
@@ -1586,7 +1586,12 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 
 		if (op->operands[1].regs[0] == X86R_UNDEFINED) {
-			data[l++] = op->operands[0].reg << 3 | 0x5;
+			if (a->bits == 64) {
+				data[l++] = op->operands[0].reg << 3 | 0x4;
+				data[l++] = 0x25;
+			} else {
+				data[l++] = op->operands[0].reg << 3 | 0x5;
+			}
 			data[l++] = offset;
 			data[l++] = offset >> 8;
 			data[l++] = offset >> 16;
@@ -1623,12 +1628,26 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					mod = 0x4;
 				}
 			}
-			if (a->bits == 64 && offset) {
-				if (op->operands[1].offset > 128) {
+			if (a->bits == 64 && offset && op->operands[0].type & OT_QWORD) {
+				if (op->operands[1].regs[0] == X86R_RIP) {
+					data[l++] = 0x5;
+				} else {
+					if (op->operands[1].offset > 127) {
+						data[l++] = 0x80 | op->operands[0].reg << 3 | op->operands[1].regs[0];
+					} else {
+						data[l++] = 0x40 | op->operands[1].regs[0];
+					}
+				}
+				if (op->operands[1].offset > 127) {
 					mod = 0x1;
 				}
+			} else {
+				if (op->operands[1].regs[0] == X86R_EIP) {
+					data[l++] = 0x0d;
+				} else {
+					data[l++] = mod << 5 | op->operands[0].reg << 3 | op->operands[1].regs[0];
+				}
 			}
-			data[l++] = mod << 5 | op->operands[0].reg << 3 | op->operands[1].regs[0];
 			if (op->operands[1].regs[0] == X86R_ESP) {
 				data[l++] = 0x24;
 			}
@@ -1641,6 +1660,11 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				}
 			} else if (a->bits == 64 && offset) {
 				data[l++] = offset;
+				if (op->operands[1].offset > 127) {
+					data[l++] = offset >> 8;
+					data[l++] = offset >> 16;
+					data[l++] = offset >> 24;
+				}
 			}
 		}
 	}
@@ -2315,11 +2339,11 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
-	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
+	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
 	const char *regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
 	const char *regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
-	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL};
+	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL};
 	const char *regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL};
 
