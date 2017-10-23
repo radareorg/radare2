@@ -746,13 +746,17 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 			r_str_chop_path (path);
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
-			//	strcpy (path, opath);
 				RFSRoot *root;
+				bool found = false;
 				RListIter *iter;
 				r_list_foreach (fs->roots, iter, root) {
 					if (!strcmp (path, root->path)) {
 						r_list_append (list, root->path);
+						found = true;
 					}
+				}
+				if (!found) {
+					strcpy (path, opath);
 				}
 			}
 		} else if (!memcmp (buf, "cat ", 4)) {
@@ -838,7 +842,9 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 				" q/exit      ; leave prompt mode\n"
 				" ?/help      ; show this help\n");
 		} else {
-			eprintf ("Unknown command %s\n", buf);
+			if (*buf) {
+				eprintf ("Unknown command %s\n", buf);
+			}
 		}
 	}
 beach:
