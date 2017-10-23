@@ -117,6 +117,7 @@ R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 R_API char *r_fs_name(RFS *fs, ut64 offset);
 R_API int r_fs_prompt(RFS *fs, const char *root);
+R_API bool r_fs_check(RFS *fs, const char *p);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);

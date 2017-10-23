@@ -40,13 +40,24 @@ R_API int r_flag_space_push(RFlag *f, const char *name) {
 	return ret;
 }
 
-R_API int r_flag_space_pop(RFlag *f) {
+R_API bool r_flag_space_pop(RFlag *f) {
 	char *p = r_list_pop (f->spacestack);
 	if (p) {
 		if (*p) {
 			r_flag_space_set (f, p);
 		}
 		return true;
+	}
+	return false;
+}
+
+R_API bool r_flag_space_set_i(RFlag *f, int idx) {
+	int i;
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
+		if (f->spaces[i]) {
+			f->space_idx = idx;
+			return true;
+		}
 	}
 	return false;
 }
@@ -83,7 +94,7 @@ R_API int r_flag_space_unset(RFlag *f, const char *fs) {
 	RListIter *iter;
 	RFlagItem *fi;
 	int i, count = 0;
-	for (i = 0; i<R_FLAG_SPACES_MAX; i++) {
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (!f->spaces[i]) {
 			continue;
 		}
@@ -130,7 +141,9 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 			continue;
 		}
 		count = r_flag_space_count (f, i);
-		if (mode == 'j') {
+		if (mode == 'q') {
+			f->cb_printf ("%s\n", f->spaces[i]);
+		} else if (mode == 'j') {
 			f->cb_printf ("%s{\"name\":\"%s\",\"count\":%d,\"selected\":%s}",
 					j? ",":"", f->spaces[i], count,
 					(allSelected || i == f->space_idx)? "true":"false");

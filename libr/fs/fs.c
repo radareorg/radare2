@@ -162,7 +162,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	return root;
 }
 
-static inline int r_fs_match(const char* root, const char* path, int len) {
+static inline bool r_fs_match(const char* root, const char* path, int len) {
 	return (!strncmp (path, root, len));
 }
 
@@ -333,16 +333,28 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 		strcpy (npath, path);
 		strcat (npath, "/");
 		strcat (npath, file->name);
-		if (file->type != R_FS_FILE_TYPE_DIRECTORY) {
+		switch (file->type) {
+		// DONT FOLLOW MOUNTPOINTS
+		case R_FS_FILE_TYPE_DIRECTORY:
+			if (!r_fs_dir_dump (fs, npath, str)) {
+				free (npath);
+				free (str);
+				return false;
+			}
+			break;
+		case R_FS_FILE_TYPE_REGULAR:
 			item = r_fs_open (fs, npath);
 			if (item) {
 				r_fs_read (fs, item, 0, item->size);
-				r_file_dump (str, item->data, item->size, 0);
+				if (!r_file_dump (str, item->data, item->size, 0)) {
+					free (npath);
+					free (str);
+					return false;
+				}
 				free (item->data);
 				r_fs_close (fs, item);
 			}
-		} else {
-			r_fs_dir_dump (fs, npath, str);
+			break;
 		}
 		free (npath);
 		free (str);
@@ -856,4 +868,22 @@ beach:
 
 R_API void r_fs_view(RFS* fs, int view) {
 	fs->view = view;
+}
+
+R_API bool r_fs_check(RFS *fs, const char *p) {
+	RFSRoot *root;
+	RListIter *iter;
+	char* path = strdup (p);
+	if (!path) {
+		return NULL;
+	}
+	r_str_chop_path (path);
+	r_list_foreach (fs->roots, iter, root) {
+		if (r_fs_match (path, root->path, strlen (root->path))) {
+			free (path);
+			return true;
+		}
+	}
+	free (path);
+	return false;
 }

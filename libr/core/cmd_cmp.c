@@ -407,16 +407,23 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'p':
 		return cmd_cp (data, input);
 		break;
-	case 'a':
+	case 'a': // "cat"
 		if (input[1] == 't') {
-			char *res = r_syscmd_cat (input + 1);
-			if (res) {
-				r_cons_print (res);
-				free (res);
+			const char *path = r_str_chop_ro (input + 2);
+			if (r_fs_check (core->fs, path)) {
+				r_core_cmdf (core, "mg %s", path);
+			} else {
+				char *res = r_syscmd_cat (path);
+				if (res) {
+					r_cons_print (res);
+					free (res);
+				}
 			}
 		}
 		break;
-	case 'w': cmd_cmp_watcher (core, input + 1); break;
+	case 'w':
+		cmd_cmp_watcher (core, input + 1);
+		break;
 	case '*':
 		if (!input[2]) {
 			eprintf ("Usage: cx* 00..22'\n");

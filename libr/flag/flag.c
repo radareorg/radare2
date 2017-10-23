@@ -215,6 +215,14 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 	}
 
 	switch (rad) {
+	case 'q':
+		r_list_foreach (f->flags, iter, flag) {
+			if (IS_IN_SPACE (f, flag)) {
+				continue;
+			}
+			f->cb_printf ("%s\n", flag->name);
+		}
+		break;
 	case 'j': {
 		int first = 1;
 		f->cb_printf ("[");

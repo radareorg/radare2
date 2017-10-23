@@ -44,6 +44,7 @@ static const char *help_msg_f[] = {
 	"fS","[on]","sort flags by offset or name",
 	"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
 	"fx","[d]","show hexdump (or disasm) of flag:flagsize",
+	"fq","","list flags in quiet mode",
 	"fz","[?][name]","add named flag zone -name to delete. see fz?[name]",
 	NULL
 };
@@ -67,6 +68,7 @@ static const char *help_msg_fs[] = {
 	"fs","+foo","push previous flagspace and set",
 	"fs","-","pop to the previous flagspace",
 	"fs","-.","remove the current flagspace",
+	"fsq","", "list flagspaces in quiet mode",
 	"fsm"," [addr]","move flags at given address to the current flagspace",
 	"fss","","display flagspaces stack",
 	"fss*","","display flagspaces stack in r2 commands",
@@ -540,7 +542,7 @@ rep:
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
 		break;
-	case 's':
+	case 's': // "fs"
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_fs);
@@ -580,6 +582,7 @@ rep:
 		case 'j':
 		case '\0':
 		case '*':
+		case 'q':
 			r_flag_space_list (core->flags, input[1]);
 			break;
 		case ' ':
@@ -692,6 +695,7 @@ rep:
 	case 'n': // "fn"
 	case '*': // "f*"
 	case 'j': // "fj"
+	case 'q': // "fq"
 		r_flag_list (core->flags, *input, input[0]? input + 1: "");
 		break;
 	case 'i': // "fi"

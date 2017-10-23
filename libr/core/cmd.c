@@ -725,11 +725,17 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 }
 
 static int cmd_ls(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	if (*input) {
-		char *res = r_syscmd_ls (input + 1);
-		if (res) {
-			r_cons_print (res);
-			free (res);
+		const char *path = r_str_chop_ro (input + 1);
+		if (r_fs_check (core->fs, path)) {
+			r_core_cmdf (core, "md %s", path);
+		} else {
+			char *res = r_syscmd_ls (path);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
 		}
 	}
 	return 0;
@@ -2131,6 +2137,7 @@ next2:
 		char *tmpeval = NULL;
 		ut64 tmpoff = core->offset;
 		char *tmpasm = NULL;
+		int flgspc = -123;
 		int tmpfd = -1;
 		int sz, len;
 		ut8 *buf;
@@ -2155,6 +2162,10 @@ repeat_arroba:
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			usemyblock = true;
 			switch (ptr[0]) {
+			case 'F': // "@F:" // temporary flag space
+				flgspc = r_flag_space_get (core->flags, ptr + 2);
+				r_flag_space_set (core->flags, ptr + 2);
+				break;
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
@@ -2398,6 +2409,10 @@ next_arroba:
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
 			R_FREE (tmpeval);
+		}
+		if (flgspc != -123) {
+			r_flag_space_set_i (core->flags, flgspc);
+			flgspc = -123;
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';
