@@ -2504,9 +2504,11 @@ static void agraph_print_nodes(const RAGraph *g) {
 	}
 }
 
+#if 0
 static int find_ascii_edge(const AEdge *a, const AEdge *b) {
 	return a->from == b->from && a->to == b->to? 0: 1;
 }
+#endif
 
 static int get_nth (const RAGraph *g, RANode *src, RANode *dst) {
 	RListIter *itn;

@@ -20,6 +20,7 @@ static const char *help_msg_e[] = {
 	"ej", "", "list config vars in JSON",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
+	"es", " [space]", "list all eval spaces [or keys]",
 	"et", " [key]", "show type of given config variable",
 	"ev", " [key]", "list config vars in verbose format",
 	"evj", " [key]", "list config vars in verbose format in JSON",
@@ -451,6 +452,9 @@ static int cmd_eval(void *data, const char *input) {
 		if (!r_config_toggle (core->config, input))
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		break;
+	case 's':
+		r_config_list (core->config, (input[1])? input + 1: NULL, 's');
+		break;
 	case '-':
 		r_core_config_init (core);
 		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
@@ -467,9 +471,12 @@ static int cmd_eval(void *data, const char *input) {
 	case 'r':
 		if (input[1]) {
 			const char *key = input+((input[1]==' ')?2:1);
-			if (!r_config_readonly (core->config, key))
+			if (!r_config_readonly (core->config, key)) {
 				eprintf ("cannot find key '%s'\n", key);
-		} else eprintf ("Usage: er [key]\n");
+			}
+		} else {
+			eprintf ("Usage: er [key]\n");
+		}
 		break;
 	case ' ': r_config_eval (core->config, input+1); break;
 	default: r_config_eval (core->config, input); break;

@@ -189,6 +189,42 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 			}
 		}
 		break;
+	case 's':
+		if (str && *str) {
+			r_list_foreach (cfg->nodes, iter, node) {
+				char *space = strdup (node->name);
+				char *dot = strchr (space, '.');
+				if (dot) {
+					*dot = 0;
+				}
+				if (!strcmp (str, space)) {
+					cfg->cb_printf ("%s\n", node->name);
+				}
+				free (space);
+			}
+		} else {
+			char *oldSpace = NULL;
+			r_list_foreach (cfg->nodes, iter, node) {
+				char *space = strdup (node->name);
+				char *dot = strchr (space, '.');
+				if (dot) {
+					*dot = 0;
+				}
+				if (oldSpace) {
+					if (!strcmp (space, oldSpace)) {
+						free (space);
+						continue;
+					}
+					free (oldSpace);
+					oldSpace = space;
+				} else {
+					oldSpace = space;
+				}
+				cfg->cb_printf ("%s\n", space);
+			}
+			free (oldSpace);
+		}
+		break;
 	case 'v':
 		verbose = true;
 		r_list_foreach (cfg->nodes, iter, node) {
