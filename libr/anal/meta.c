@@ -277,6 +277,39 @@ static void meta_serialize(RAnalMetaItem *it, char *k, size_t k_size, char *v, s
 	}
 }
 
+static bool meta_deserialize(RAnalMetaItem *it, const char *k, const char *v) {
+	const char *v2;
+	char *v3;
+	if (strlen (k) < 8) {
+		return false;
+	}
+	if (memcmp (k + 6, ".0x", 3)) {
+		return false;
+	}
+	it->type = k[5];
+	it->subtype = 0;
+	it->size = sdb_atoi (v);
+	it->from = sdb_atoi (k + 7);
+	it->to = it->from + it->size;
+	v2 = strchr (v, ',');
+	if (!v2) {
+		return false;
+	}
+	it->space = atoi (v2 + 1);
+	it->str = strchr (v2 + 1, ',');
+	if (it->str) {
+		if (it->type == R_META_TYPE_STRING) {
+			v3 = strchr (it->str + 1, ',');
+			if (v3) {
+				it->subtype = *(it->str + 1);
+				it->str = v3;
+			}
+		}
+		it->str = (char *)sdb_decode ((const char*)it->str + 1, 0);
+	}
+	return true;
+}
+
 static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const char *str) {
 	int space_idx = a->meta_spaces.space_idx;
 	char *e_str, key[100], val[2048];
@@ -550,21 +583,11 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 }
 
 static int meta_print_item(void *user, const char *k, const char *v) {
-	// const char *v; // size
-	const char *v2; // space_idx
-	char *v3;
 	RAnalMetaUserItem *ui = user;
 	RAnalMetaItem it;
-	if (strlen (k) < 8) {
+	if (!meta_deserialize (&it, k, v)) {
 		return 1;
 	}
-	if (memcmp (k + 6, ".0x", 3)) {
-		return 1;
-	}
-	it.type = k[5];
-	it.subtype = 0;
-	it.size = sdb_atoi (v);
-	it.from = sdb_atoi (k + 7);
 	int uirad = ui->rad;
 	if (ui->rad == 'f') {
 		if (!r_anal_fcn_in (ui->fcn, it.from)) {
@@ -572,31 +595,15 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 		}
 		ui->rad = 0;
 	}
-	v2 = strchr (v, ',');
-	if (!v2) {
-		goto beach;
-	}
-	it.space = atoi (v2 + 1);
-	it.to = it.from + it.size;
-	it.str = strchr (v2 + 1, ',');
-	if (it.str) {
-		if (it.type == R_META_TYPE_STRING) {
-			v3 = strchr (it.str + 1, ',');
-			if (v3) {
-				it.subtype = *(it.str + 1);
-				it.str = v3;
-			}
-		}
-		it.str = (char *)sdb_decode ((const char*)it.str + 1, 0);
-	} else {
-		it.str = strdup (it.str? it.str: ""); // don't break in free
+	if (!it.str) {
+		it.str = strdup (""); // don't break in free
 		if (!it.str) {
 			goto beach;
 		}
 	}
 	r_meta_print (ui->anal, &it, ui->rad, true);
-	free (it.str);
 beach:
+	free (it.str);
 	ui->rad = uirad;
 	return 1;
 }
@@ -636,51 +643,22 @@ R_API int r_meta_list_at(RAnal *a, int type, int rad, ut64 addr) {
 }
 
 static int meta_enumerate_cb(void *user, const char *k, const char *v) {
-	const char *v2;
-	char *v3;
 	RAnalMetaUserItem *ui = user;
 	RList *list = ui->user;
-	//RAnal *a = ui->anal;
-	RAnalMetaItem *it;
-	if (strlen (k) < 8) {
-		return 1;
-	}
-	if (memcmp (k + 6, ".0x", 3)) {
-		return 1;
-	}
-	it = R_NEW0 (RAnalMetaItem);
+	RAnalMetaItem *it = R_NEW0 (RAnalMetaItem);
 	if (!it) {
 		return 0;
 	}
-	it->type = k[5];
-	it->subtype = 0;
-	it->size = sdb_atoi (v);
-	it->from = sdb_atoi (k+7);
-	it->to = it->from + it->size;
-	v2 = strchr (v, ',');
-	if (!v2) {
-		free (it);
+	if (!meta_deserialize (it, k, v)) {
 		goto beach;
 	}
-	it->space = atoi (v2 + 1);
-	it->str = strchr (v2 + 1, ',');
-
-	if (it->str) {
-		if (it->type == R_META_TYPE_STRING) {
-			v3 = strchr (it->str + 1, ',');
-			if (v3) {
-				it->subtype = *(it->str + 1);
-				it->str = v3;
-			}
-		}
-		it->str = (char *)sdb_decode ((const char*)it->str+1, 0);
-	} else {
-		free(it);
+	if (!it->str) {
 		goto beach;
 	}
-	//r_meta_print (ui->anal, &it, ui->rad);
 	r_list_append (list, it);
 beach:
+	free (it->str);
+	free (it);
 	return 1;
 }
 
@@ -690,39 +668,6 @@ R_API RList *r_meta_enumerate(RAnal *a, int type) {
 	return list;
 }
 
-static int deserialize(RAnalMetaItem *it, const char *k, const char *v) {
-	const char *v2;
-	char *v3;
-	if (strlen (k) < 8) {
-		return 1;
-	}
-	if (memcmp (k + 6, ".0x", 3)) {
-		return 1;
-	}
-	it->type = k[5];
-	it->subtype = 0;
-	it->size = sdb_atoi (v);
-	it->from = sdb_atoi (k + 7);
-	it->to = it->from + it->size;
-	v2 = strchr (v, ',');
-	if (!v2) goto beach;
-	it->space = atoi (v2+1);
-	it->str = strchr (v2+1, ',');
-	if (it->str) {
-		if (it->type == R_META_TYPE_STRING) {
-			v3 = strchr (it->str + 1, ',');
-			if (v3) {
-				it->subtype = *(it->str + 1);
-				it->str = v3;
-			}
-		}
-		it->str = (char *)sdb_decode ((const char*)it->str+1, 0);
-	}
-	//r_meta_print (ui->anal, &it, ui->rad);
-beach:
-	return 1;
-}
-
 static int meta_unset_cb(void *user, const char *k, const char *v) {
 	char nk[128], nv[4096];
 	RAnalMetaUserItem *ui = user;
@@ -730,7 +675,7 @@ static int meta_unset_cb(void *user, const char *k, const char *v) {
 	RAnalMetaItem it = {0};
 	if (!strstr(k, ".0x"))
 		return 1;
-	deserialize (&it, k, v);
+	meta_deserialize (&it, k, v);
 	if (it.space != -1) {
 		it.space = -1;
 		meta_serialize (&it, nk, sizeof (nk), nv, sizeof (nv));
@@ -755,7 +700,7 @@ static int meta_count_cb(void *user, const char *k, const char *v) {
 	RAnalMetaItem it = {0};
 	if (!strstr(k, ".0x"))
 		return 1;
-	deserialize (&it, k, v);
+	meta_deserialize (&it, k, v);
 	if (mu) {
 		if (it.space == mu->ctx) {
 			mu->count++;
