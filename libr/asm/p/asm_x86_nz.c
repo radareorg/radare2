@@ -1290,7 +1290,7 @@ static int oples(RAsm *a, ut8* data, const Opcode *op) {
 
 static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	int offset = 0;
+	long offset = 0;
 	int mod = 0;
 	int base = 0;
 	int rex = 0;
@@ -1536,6 +1536,28 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].type & OT_MEMORY) {
 			return -1;
 		}
+		offset = op->operands[1].offset * op->operands[1].offset_sign;
+		if (op->operands[0].reg == X86R_EAX && op->operands[1].regs[0] == X86R_UNDEFINED) {
+			if (a->bits == 64) {
+				data[l++] = 0x48;
+			}
+			if (op->operands[0].type & OT_BYTE) {
+				data[l++] = 0xa0;
+			} else {
+				data[l++] = 0xa1;
+			}
+			data[l++] = offset;
+			data[l++] = offset >> 8;
+			data[l++] = offset >> 16;
+			data[l++] = offset >> 24;
+			if (a->bits == 64) {
+				data[l++] = offset >> 32;
+				data[l++] = offset >> 40;
+				data[l++] = offset >> 48;
+				data[l++] = offset >> 54;
+			}
+			return l;
+		}
 		if (op->operands[0].type & OT_BYTE && a->bits == 64 && op->operands[1].regs[0]) {
 			if (op->operands[1].regs[0] >= X86R_R8 &&
 			    op->operands[0].reg < 4) {
@@ -1546,7 +1568,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			return -1;
 		}
-		offset = op->operands[1].offset * op->operands[1].offset_sign;
+
 		if (op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 			if (op->operands[1].scale[0] == 0) return -1;
 			data[l++] = SEG_REG_PREFIXES[op->operands[1].regs[0]];
