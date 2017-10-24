@@ -1331,6 +1331,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	HANDLE pipe[2] = {NULL, NULL};
 	int fd_out = -1, cons_out = -1;
 	char *_shell_cmd;
+	LPTSTR _shell_cmd_;
 
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES); 
 	sa.bInheritHandle = TRUE; 
@@ -1352,11 +1353,13 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	while (*_shell_cmd && isspace (*_shell_cmd)) {
 		_shell_cmd++;
 	}
+	_shell_cmd_ = r_sys_conv_char_to_w32 (_shell_cmd);
 	// exec windows process
-	if (!CreateProcess (NULL, _shell_cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+	if (!CreateProcess (NULL, _shell_cmd_, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");
 		goto err_r_w32_cmd_pipe;
 	}
+	free (_shell_cmd_);
 	fd_out = _open_osfhandle ((intptr_t)pipe[1], _O_WRONLY|_O_TEXT);
 	if (fd_out == -1) {
 		perror ("_open_osfhandle");

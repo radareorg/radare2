@@ -17,10 +17,6 @@ ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
 COREDUMP_OBJS=native/linux/linux_coredump.o
 endif
 
-ifeq (,$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
-CFLAGS+=-DUNICODE -D_UNICODE
-endif
-
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} $(call libname,debug_native) ${CFLAGS} \
 		${LDFLAGS_LINKPATH}.. -L.. -lr_debug \

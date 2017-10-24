@@ -16,7 +16,7 @@ R_LIB_VERSION(r_lib);
   #define DLCLOSE(x) dlclose(x)
 #elif __WINDOWS__
 #include <windows.h>
-  #define DLOPEN(x)  LoadLibraryA(x)
+  #define DLOPEN(x)  LoadLibrary(x)
   #define DLSYM(x,y) GetProcAddress(x,y)
   #define DLCLOSE(x) 0//(x)
 //CloseLibrary(x)

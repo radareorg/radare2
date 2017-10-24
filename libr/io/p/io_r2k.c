@@ -63,7 +63,7 @@ static int r2k__close(RIODesc *fd) {
 #if __WINDOWS__
 	if (gHandleDriver) {
 		CloseHandle (gHandleDriver);
-		StartStopService ("r2k",TRUE);
+		StartStopService (TEXT ("r2k"),TRUE);
 	}
 #elif defined (__linux__) && !defined (__GNU__)
 	if (fd) {

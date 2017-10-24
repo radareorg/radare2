@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_util
-CFLAGS+=-DCORELIB -DUNICODE -I$(TOP)/shlr
+CFLAGS+=-DCORELIB -I$(TOP)/shlr
 DEPS=
 
 OBJS=binheap.o mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
@@ -30,7 +30,6 @@ endif
 endif
 
 include $(SHLR)/zip/deps.mk
-
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}

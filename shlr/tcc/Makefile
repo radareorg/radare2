@@ -1,10 +1,10 @@
+include ../../libr/config.mk
 include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
 CFLAGS+=${PIC_CFLAGS}
-
 ifneq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
 EXT_SO=dll
@@ -20,6 +20,10 @@ LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 endif
 endif
+
+LDFLAGS+=-L../../libr/util
+LIBS+=-lr_util
+CFLAGS+=-I../../libr/include
 
 CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include
@@ -41,7 +45,7 @@ LIBNAME=libr_tcc.${SOEXT}
 all: ${LIBNAME} libr_tcc.$(EXT_AR)
 
 ${LIBNAME}: ${OFILES}
-	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}
+	${CC} -o ${LIBNAME} ${LDFLAGS} ${LIBS} ${OFILES}
 
 libr_tcc.$(EXT_AR): ${OFILES}
 	rm -f libr_tcc.$(EXT_AR)

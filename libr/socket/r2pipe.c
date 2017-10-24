@@ -52,30 +52,14 @@ R_API int r2p_close(R2Pipe *r2p) {
 }
 
 #if __WINDOWS__ && !defined(__CYGWIN__)
-static int w32_createChildProcess(const char * szCmdline) {
-	PROCESS_INFORMATION piProcInfo;
-	STARTUPINFOA siStartInfo;
-	BOOL bSuccess = FALSE;
-	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
-	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
-	siStartInfo.cb = sizeof (STARTUPINFO);
-	bSuccess = CreateProcessA (NULL, (LPSTR)szCmdline, NULL, NULL,
-		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
-	if (!bSuccess)
-		return false;
-	CloseHandle (piProcInfo.hProcess);
-	CloseHandle (piProcInfo.hThread);
-	return true;
-}
-
 static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
 	CHAR buf[1024];
-	r2p->pipe = CreateNamedPipeA ("\\\\.\\pipe\\R2PIPE_IN",
+	r2p->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (w32_createChildProcess (cmd)) {
+	if (create_child_proc (cmd, NULL)) {
 		if (ConnectNamedPipe (r2p->pipe, NULL))
 			return true;
 	}

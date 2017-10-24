@@ -10,13 +10,60 @@
 #include "sdb.h"
 
 #if __SDB_WINDOWS__
-#define r_sys_mkdir(x) (CreateDirectoryA(x,NULL)!=0)
+
+#if UNICODE
+static wchar_t* r_str_mb_to_wc(char *buf, int len)
+{
+	wchar_t *res_buf = NULL;
+	size_t sz;
+	bool fail = true;
+
+	if (!buf || len <= 0) {
+		return NULL;
+	}
+	sz = mbstowcs (NULL, buf, len);
+	if (sz == (size_t)-1) {
+		goto err_r_str_mb_to_wc;
+	}
+	res_buf = (wchar_t *)calloc (1, (sz + 1) * sizeof (wchar_t));  
+    	if (!res_buf) {
+		goto err_r_str_mb_to_wc;
+	}
+	sz = mbstowcs (res_buf, buf, sz + 1);
+	if (sz == (size_t)-1) {
+		goto err_r_str_mb_to_wc;
+	}
+	fail = false;
+err_r_str_mb_to_wc:
+	if (fail) {
+		free (res_buf);
+		res_buf = NULL;
+	}
+	return res_buf;
+}
+
+static bool r_sys_mkdir(char *path) {
+	LPTSTR path_;
+	bool ret;
+
+	path_ = r_sys_conv_char_to_w32 (path);
+	ret = CreateDirectory (path_, NULL);
+	free (path);
+	return ret;
+}
+
+#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf, strlen (buf)) 
+#else
+#define r_sys_conv_char_to_w32(buf) strdup (buf) 
+#define r_sys_mkdir(x) CreateDirectory (x, NULL)
+#endif
 #ifndef ERROR_ALREADY_EXISTS
 #define ERROR_ALREADY_EXISTS 183
 #endif
+
 #define r_sys_mkdir_failed() (GetLastError () != 183)
 #else
-#define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
+#define r_sys_mkdir(x) (mkdir (x,0755)!=-1)
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
 
@@ -106,9 +153,15 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 		reopen = true;
 	}
 #if __SDB_WINDOWS__
-	if (MoveFileExA (s->ndump, s->dir, MOVEFILE_REPLACE_EXISTING)) {
+	LPTSTR ndump_, dir_;
+
+	ndump_ = r_sys_conv_char_to_w32 (s->ndump);
+	dir_ = r_sys_conv_char_to_w32 (s->dir);
+	if (MoveFileEx (ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
 		//eprintf ("Error 0x%02x\n", GetLastError ());
 	}
+	free (ndump_);
+	free (dir_);
 #else
 	if (s->ndump && s->dir) {
 		IFRET (rename (s->ndump, s->dir));

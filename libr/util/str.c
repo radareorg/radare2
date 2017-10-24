@@ -2995,6 +2995,9 @@ R_API wchar_t* r_str_mb_to_wc(char *buf, int len)
 	size_t sz;
 	bool fail = true;
 
+	if (!buf || len <= 0) {
+		return NULL;
+	}
 	sz = mbstowcs (NULL, buf, len);
 	if (sz == (size_t)-1) {
 		goto err_r_str_mb_to_wc;
@@ -3022,6 +3025,9 @@ R_API char* r_str_wc_to_mb(wchar_t *buf, int len)
 	bool fail = true;
 	size_t sz;
 
+	if (!buf || len <= 0) {
+		return NULL;
+	}
 	sz = wcstombs (NULL, buf, len);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;

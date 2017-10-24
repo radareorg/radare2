@@ -17,16 +17,14 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 
 #if __WINDOWS__
 static HANDLE  myCreateChildProcess(const char * szCmdline) {
-	PROCESS_INFORMATION piProcInfo;
-	STARTUPINFOA siStartInfo;
+	PROCESS_INFORMATION piProcInfo = {0};
+	STARTUPINFO siStartInfo = {0};
 	BOOL bSuccess = FALSE;
-	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
-	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	char * szCmdLine2 = strdup (szCmdline);
-	bSuccess = CreateProcessA (NULL, szCmdLine2, NULL, NULL,
+	LPTSTR cmdline_ = r_sys_conv_char_to_w32 ((char *)szCmdline);
+	bSuccess = CreateProcess (NULL, cmdline_, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
-	free (szCmdLine2);
+	free (cmdline_);
 	//CloseHandle (piProcInfo.hProcess);
 	//CloseHandle (piProcInfo.hThread);
 	return bSuccess? piProcInfo.hProcess: NULL;
@@ -183,7 +181,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
 	LPTSTR r2pipe_var_ = r_sys_conv_char_to_w32 (r2pipe_var);
-	LPTSTR r2pipe_paz_ = r_sys_conv_char_to_w32 (r2pipe_paz_);
+	LPTSTR r2pipe_paz_ = r_sys_conv_char_to_w32 (r2pipe_paz);
 
 	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_var_);
 	hPipeInOut = CreateNamedPipe (r2pipe_paz_,
