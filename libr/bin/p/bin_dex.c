@@ -1094,9 +1094,9 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 	ut32 debug_info_off, insns_size;
 	const ut8 *encoded_method_addr;
 
-	if (DM > 1024) {
-		eprintf ("This DEX is probably corrupted. Chopping DM to 1KB\n");
-		DM = 1024;
+	if (DM > 4096) {
+		eprintf ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
+		DM = 4096;
 	}
 	for (i = 0; i < DM; i++) {
 		encoded_method_addr = p;
