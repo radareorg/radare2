@@ -2384,7 +2384,9 @@ reread:
 	} break;
 	case 'm': // "/m"
 		dosearch = false;
-		if (input[1] == ' ' || input[1] == '\0') {
+		if (input[1] == 'e') { // "/me"
+			r_cons_printf ("* r2 thinks%s\n", input + 2);
+		} else if (input[1] == ' ' || input[1] == '\0') {
 			int ret;
 			const char *file = input[1]? input + 2: NULL;
 			ut64 addr = search_itv.addr;
