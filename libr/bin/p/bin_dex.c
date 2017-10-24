@@ -56,7 +56,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (!len || len >= bin->size) {
 		return NULL;
 	}
-	if (uleblen + bin->strings[idx] >= bin->strings + bin->header.strings_size) {
+	if (bin->strings[idx] + uleblen >= bin->strings[idx] + bin->header.strings_size) {
 		return NULL;
 	}
 	char* ptr = (char*) r_buf_get_at (bin->b, bin->strings[idx] + uleblen, NULL);
@@ -64,8 +64,8 @@ static char *getstr(RBinDexObj *bin, int idx) {
 		return NULL;
 	}
 
-	if (len != r_utf8_strlen (ptr)) {
-		eprintf ("WARNING: Invalid string for index %d\n", idx);
+	if (len != r_utf8_strlen ((const ut8*)ptr)) {
+		// eprintf ("WARNING: Invalid string for index %d\n", idx);
 		return NULL;
 	}
 	return ptr;
@@ -1094,6 +1094,10 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 	ut32 debug_info_off, insns_size;
 	const ut8 *encoded_method_addr;
 
+	if (DM > 1024) {
+		eprintf ("This DEX is probably corrupted. Chopping DM to 1KB\n");
+		DM = 1024;
+	}
 	for (i = 0; i < DM; i++) {
 		encoded_method_addr = p;
 		char *method_name, *flag_name;
@@ -1214,6 +1218,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					if (size <= 0) {
 						catchAll = true;
 						size = -size;
+						// XXX this is probably wrong
 					} else {
 						catchAll = false;
 					}
