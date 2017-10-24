@@ -224,17 +224,20 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static int __close(RIODesc *desc) {
 	int pid, fd;
-	if (!desc || !desc->data)
+	if (!desc || !desc->data) {
 		return -1;
+	}
 	pid = RIOPTRACE_PID (desc);
 	fd = RIOPTRACE_FD (desc);
-	if (fd!=-1) close (fd);
+	if (fd != -1) {
+		close (fd);
+	}
 	free (desc->data);
 	desc->data = NULL;
 	return ptrace (PTRACE_DETACH, pid, 0, 0);
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
@@ -255,7 +258,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (iop) {
 			int pid = iop->pid;
 			if (cmd[3] == ' ') {
-				pid = atoi (cmd+4);
+				pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
 					(void)ptrace (PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?
@@ -264,12 +267,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			} else {
 				io->cb_printf ("%d\n", iop->pid);
 			}
-			return pid;
+			return r_str_newf ("%d", iop->pid);
 		}
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}
-	return true;
+	return NULL;
 }
 
 static int __getpid (RIODesc *fd) {
@@ -303,7 +306,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ptrace,
 	.version = R2_VERSION

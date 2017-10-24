@@ -112,7 +112,7 @@ static int __close(RIODesc *fd) {
 	return ret;
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOProcpid *iop = (RIOProcpid*)fd->data;
 	if (!strncmp (cmd, "pid", 3)) {
 		int pid = atoi (cmd + 3);
@@ -120,11 +120,10 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			iop->pid = pid;
 		}
 		io->cb_printf ("%d\n", iop->pid);
-		return 0;
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}
-	return true;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_procpid = {
@@ -147,7 +146,7 @@ struct r_io_plugin_t r_io_plugin_procpid = {
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_procpid,
 	.version = R2_VERSION

@@ -256,7 +256,7 @@ static int rap__listener(RIODesc *fd) {
 	return (RIORAP_IS_VALID (fd))? RIORAP_IS_LISTEN (fd): 0; // -1 ?
 }
 
-static int rap__system(RIO *io, RIODesc *fd, const char *command) {
+static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 	int ret, reslen = 0, cmdlen = 0;
 	RSocket *s = RIORAP_FD (fd);
 	unsigned int i, j = 0;
@@ -267,7 +267,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	i = strlen (command) + 1;
 	if (i > RMT_MAX - 5) {
 		eprintf ("Command too long\n");
-		return -1;
+		return NULL;
 	}
 	r_write_be32 (buf + 1, i);
 	memcpy (buf + 5, command, i);
@@ -278,7 +278,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	for (;;) {
 		ret = r_socket_read_block (s, buf, 1);
 		if (ret != 1) {
-			return -1;
+			return NULL;
 		}
 		/* system back in the middle */
 		/* TODO: all pkt handlers should check for reverse queries */
@@ -291,8 +291,9 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		memset (buf + 1, 0, 4);
 		ret = r_socket_read_block (s, buf + 1, 4);
 		cmdlen = r_read_at_be32 (buf, 1);
-		if (cmdlen + 1 == 0) // check overflow
+		if (cmdlen + 1 == 0) { // check overflow
 			cmdlen = 0;
+		}
 		str = calloc (1, cmdlen + 1);
 		ret = r_socket_read_block (s, (ut8*)str, cmdlen);
 		eprintf ("RUN %d CMD(%s)\n", ret, str);
@@ -314,18 +315,18 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	// read
 	ret = r_socket_read_block (s, buf + 1, 4);
 	if (ret != 4) {
-		return -1;
+		return NULL;
 	}
 	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
 		eprintf ("Unexpected rap cmd reply\n");
-		return -1;
+		return NULL;
 	}
 
 	i = r_read_at_be32 (buf, 1);
 	ret = 0;
 	if (i > ST32_MAX) {
 		eprintf ("Invalid length\n");
-		return -1;
+		return NULL;
 	}
 	ptr = (char *)calloc (1, i + 1);
 	if (ptr) {
@@ -351,7 +352,8 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		ret -= r_socket_read (s, (ut8*)buf, RMT_MAX);
 	}
 #endif
-	return i - j;
+	//int delta = i - j;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_rap = {
