@@ -2786,12 +2786,16 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 }
 
 R_API RList *r_str_split_list(char *str) {
-	RList *list = r_list_newf (free);
 	int i, count, *a = r_str_split_lines (str, &count);
-	for (i = 0; i < count; i++) {
-		r_list_append (list, str + a[i]);
+	if (a) {
+		RList *list = r_list_newf (free);
+		for (i = 0; i < count; i++) {
+			r_list_append (list, str + a[i]);
+		}
+		free (a);
+		return list;
 	}
-	return list;
+	return NULL;
 }
 
 R_API int *r_str_split_lines(char *str, int *count) {

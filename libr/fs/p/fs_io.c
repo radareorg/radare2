@@ -70,10 +70,13 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	if (res) {
 		int i, count = 0;
 		int *lines = r_str_split_lines (res, &count);
-		for (i = 0; i < count; i++) {
-			append_file (list, res + lines[i], 'f', 0, 0);
+		if (lines) {
+			for (i = 0; i < count; i++) {
+				append_file (list, res + lines[i], 'f', 0, 0);
+			}
+			free (res);
+			free (lines);
 		}
-		free (res);
 	}
 	free (cmd);
 	return list;

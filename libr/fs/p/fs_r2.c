@@ -125,11 +125,14 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 		}
 		int i, count = 0;
 		int *lines = r_str_split_lines (res, &count);
-		for (i = 0; i < count; i++) {
-			char *line = res + lines[i];
-			append_file (list, line, prefix? 'f': 'd', 0, 0);
+		if (lines) {
+			for (i = 0; i < count; i++) {
+				char *line = res + lines[i];
+				append_file (list, line, prefix? 'f': 'd', 0, 0);
+			}
+			free (res);
+			free (lines);
 		}
-		free (res);
 		return list;
 	}
 	return NULL;
