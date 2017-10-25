@@ -59,7 +59,7 @@ static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (create_child_proc (cmd, NULL)) {
+	if (r_sys_create_child_proc_w32 (cmd, NULL)) {
 		if (ConnectNamedPipe (r2p->pipe, NULL))
 			return true;
 	}

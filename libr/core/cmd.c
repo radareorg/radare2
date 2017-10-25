@@ -1331,7 +1331,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	HANDLE pipe[2] = {NULL, NULL};
 	int fd_out = -1, cons_out = -1;
 	char *_shell_cmd;
-	LPTSTR _shell_cmd_;
+	LPTSTR _shell_cmd_ = NULL;
 
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES); 
 	sa.bInheritHandle = TRUE; 
@@ -1359,7 +1359,6 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");
 		goto err_r_w32_cmd_pipe;
 	}
-	free (_shell_cmd_);
 	fd_out = _open_osfhandle ((intptr_t)pipe[1], _O_WRONLY|_O_TEXT);
 	if (fd_out == -1) {
 		perror ("_open_osfhandle");
@@ -1375,6 +1374,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	fd_out = -1;
 	WaitForSingleObject (pi.hProcess, INFINITE);
 err_r_w32_cmd_pipe:
+	free (_shell_cmd_);
 	if (pi.hProcess) {
 		CloseHandle (pi.hProcess);
 	}

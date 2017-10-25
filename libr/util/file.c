@@ -608,7 +608,7 @@ R_API bool r_file_rm(const char *file) {
 	}
 	if (r_file_is_directory (file)) {
 #if __WINDOWS__
-		LPTSTR file_ = r_sys_conv_char_to_w32 ((char *)file);
+		LPTSTR file_ = r_sys_conv_char_to_w32 (file);
 		bool ret = RemoveDirectory (file_);
 
 		free (file_);
@@ -618,7 +618,7 @@ R_API bool r_file_rm(const char *file) {
 #endif
 	} else {
 #if __WINDOWS__
-		LPTSTR file_ = r_sys_conv_char_to_w32 ((char *)file);
+		LPTSTR file_ = r_sys_conv_char_to_w32 (file);
 		bool ret = DeleteFile (file_);
 
 		free (file_);
@@ -658,7 +658,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	if (r_sandbox_enable (0)) {
 		return -1;
 	}
-	file_ = r_sys_conv_char_to_w32 ((char *)file);
+	file_ = r_sys_conv_char_to_w32 (file);
 	fh = CreateFile ((LPCTSTR)file_, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -709,7 +709,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	if (r_sandbox_enable (0)) {
 		return -1;
 	}
-	file_ = r_sys_conv_char_to_w32 ((char *)file);
+	file_ = r_sys_conv_char_to_w32 (file);
 	fh = CreateFile (file_, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("r_file_mmap_read/CreateFile");
@@ -769,7 +769,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 }
 #elif __WINDOWS__
 static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
-	LPTSTR file_ = r_sys_conv_char_to_w32 ((char *)file);
+	LPTSTR file_ = r_sys_conv_char_to_w32 (file);
 	bool success = false;
 
 	m->fh = CreateFile (file_, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
@@ -907,8 +907,8 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	LPTSTR path_, prefix_;
 	TCHAR name[MAX_PATH + 1];
 
-	path_ = r_sys_conv_char_to_w32 ((char *)path);
-	prefix_ = r_sys_conv_char_to_w32 ((char *)prefix);
+	path_ = r_sys_conv_char_to_w32 (path);
+	prefix_ = r_sys_conv_char_to_w32 (prefix);
 	if (GetTempFileName ((LPCTSTR)path_, (LPCTSTR)prefix_, 0, name)) {
 		char *name_ = r_sys_conv_w32_to_char (name);
 		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);

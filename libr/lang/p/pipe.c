@@ -21,7 +21,7 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	STARTUPINFO siStartInfo = {0};
 	BOOL bSuccess = FALSE;
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	LPTSTR cmdline_ = r_sys_conv_char_to_w32 ((char *)szCmdline);
+	LPTSTR cmdline_ = r_sys_conv_char_to_w32 (szCmdline);
 	bSuccess = CreateProcess (NULL, cmdline_, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	free (cmdline_);

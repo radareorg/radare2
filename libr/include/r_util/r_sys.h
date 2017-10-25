@@ -64,7 +64,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #endif
 R_API int r_sys_get_src_dir_w32(char *buf);
 R_API char *r_sys_cmd_str_w32(const char *cmd);
-R_API bool create_child_proc(const char *cmdline, HANDLE out);
+R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out);
 #endif
 R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);

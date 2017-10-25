@@ -300,8 +300,8 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #elif __WINDOWS__
 	LPTSTR key_, value_;
 
-	key_ = r_sys_conv_char_to_w32 ((char *)key);
-	value_ = r_sys_conv_char_to_w32 ((char *)value);
+	key_ = r_sys_conv_char_to_w32 (key);
+	value_ = r_sys_conv_char_to_w32 (value);
 	SetEnvironmentVariable (key_, value_);
 	free (key_);
 	free (value_);
@@ -387,7 +387,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!key) {
 		return NULL;
 	}
-	key_ = r_sys_conv_char_to_w32 ((char *)key);
+	key_ = r_sys_conv_char_to_w32 (key);
 	dwRet = GetEnvironmentVariable (key_, envbuf, sizeof (envbuf) / sizeof (TCHAR));
 	free (key_);
 	if (dwRet == 0) {
@@ -670,7 +670,7 @@ R_API bool r_sys_mkdir(const char *dir) {
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	LPTSTR dir_;
 
-	dir_ = r_sys_conv_char_to_w32 ((char *)dir);
+	dir_ = r_sys_conv_char_to_w32 (dir);
 	ret = CreateDirectory ((LPCTSTR)dir_, NULL) != 0;
 	free (dir_);
 #else

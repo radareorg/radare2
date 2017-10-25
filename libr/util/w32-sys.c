@@ -68,7 +68,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 	if (!SetHandleInformation (fh, HANDLE_FLAG_INHERIT, 0) )
 		ErrorExit ("Stdout SetHandleInformation");
 
-	create_child_proc (cmd, out);
+	r_sys_create_child_proc_w32 (cmd, out);
 
 	// Close the write end of the pipe before reading from the
 	// read end of the pipe, to control child process execution.
@@ -82,7 +82,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 	return ret;
 }
 
-R_API bool create_child_proc(const char *cmdline, HANDLE out) {
+R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	PROCESS_INFORMATION pi = {0};
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
@@ -95,7 +95,7 @@ R_API bool create_child_proc(const char *cmdline, HANDLE out) {
 	si.hStdOutput = out;
 	si.hStdInput = NULL;
 	si.dwFlags |= STARTF_USESTDHANDLES;
-	cmdline_ = r_sys_conv_char_to_w32 ((char *)cmdline);
+	cmdline_ = r_sys_conv_char_to_w32 (cmdline);
 	if ((ret = CreateProcess (NULL,
 			cmdline_,// command line
 			NULL,          // process security attributes

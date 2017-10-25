@@ -2989,7 +2989,7 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color) {
 	return strdup (o);
 }
 
-R_API wchar_t* r_str_mb_to_wc(char *buf, int len)
+R_API wchar_t* r_str_mb_to_wc(const char *buf, int len)
 {
 	wchar_t *res_buf = NULL;
 	size_t sz;
@@ -3019,7 +3019,7 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
-R_API char* r_str_wc_to_mb(wchar_t *buf, int len)
+R_API char* r_str_wc_to_mb(const wchar_t *buf, int len)
 {
 	char *res_buf = NULL;
 	bool fail = true;
