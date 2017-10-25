@@ -17,7 +17,6 @@
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size);
-static void r_debug_native_stop(RDebug *dbg);
 
 #include "native/bt.c"
 
@@ -110,7 +109,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 //this is temporal
 #if __APPLE__ || __linux__
 
-static const char *r_debug_native_reg_profile (RDebug *dbg) {
+static char *r_debug_native_reg_profile (RDebug *dbg) {
 #if __APPLE__
 	return xnu_reg_profile (dbg);
 #elif __linux__
@@ -120,7 +119,6 @@ static const char *r_debug_native_reg_profile (RDebug *dbg) {
 #else
 
 #include "native/reg.c" // x86 specific
-
 #endif
 #if __WINDOWS__ && !__CYGWIN__
 static int windows_step (RDebug *dbg) {
@@ -226,11 +224,14 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #endif
 }
 
+#if !__WINDOWS__ && !__CYGWIN__ && !__APPLE__ && !__BSD__
 /* Callback to trigger SIGINT signal */
-static void r_debug_native_stop(RDebug *dbg) {
+static int r_debug_native_stop(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
 	r_cons_break_pop ();
+	return 1;
 }
+#endif
 
 /* TODO: specify thread? */
 /* TODO: must return true/false */
@@ -1032,6 +1033,29 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 err_linux_map_dealloc:
 	return ret;
 }
+#elif __WINDOWS__ && !__CYGWIN__
+static int io_perms_to_prot (int io_perms) {
+	int prot_perms;
+
+	if ((io_perms & R_IO_RWX) == R_IO_RWX) {
+		prot_perms = PAGE_EXECUTE_READWRITE;
+	} else if ((io_perms & (R_IO_WRITE | R_IO_EXEC)) == (R_IO_WRITE | R_IO_EXEC)) {
+		prot_perms = PAGE_EXECUTE_READWRITE;
+	} else if ((io_perms & (R_IO_READ | R_IO_EXEC)) == (R_IO_READ | R_IO_EXEC)) {
+		prot_perms = PAGE_EXECUTE_READ;
+	} else if ((io_perms & R_IO_RW) == R_IO_RW) {
+		prot_perms = PAGE_READWRITE;
+	} else if (io_perms & R_IO_WRITE) {
+		prot_perms = PAGE_READWRITE;
+	} else if (io_perms & R_IO_EXEC) {
+		prot_perms = PAGE_EXECUTE;
+	} else if (io_perms & R_IO_READ) {
+		prot_perms = PAGE_READONLY;
+	} else {
+		prot_perms = PAGE_NOACCESS;
+	}
+	return prot_perms;
+}
 #endif
 
 static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
@@ -1397,8 +1421,9 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_native_bp (void *bp_, RBreakpointItem *b, bool set) {
 #if __i386__ || __x86_64__
+	RBreakpoint *bp = (RBreakpoint *)bp_;
 	RDebug *dbg = bp->user;
 	if (b && b->hw) {
 		return set
@@ -1667,11 +1692,14 @@ static RList *r_debug_desc_native_list (int pid) {
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD old;
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	// TODO: align pointers
-	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(size_t)addr,
-	  			size, perms, &old);
-	CloseHandle (process);
+	BOOL ret = FALSE;
+	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+
+	if (h_proc) {
+		ret = VirtualProtectEx (h_proc, (LPVOID)(size_t)addr,
+			size, io_perms_to_prot (perms), &old);
+		CloseHandle (h_proc);
+	}
 	return ret;
 #elif __APPLE__
 	return xnu_map_protect (dbg, addr, size, perms);

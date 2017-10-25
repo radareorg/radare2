@@ -462,15 +462,15 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	while (*cur_drive) {
 		/* Look up each device name */
 		*drive = *cur_drive;
-		if (QueryDosDevice ((LPCTSTR)drive, name, MAX_PATH)) {
+		if (QueryDosDevice (drive, name, MAX_PATH)) {
 			size_t name_length = _tcslen (name);
 
 			if (name_length < MAX_PATH) {
 				if (_tcsnicmp (filename, name, name_length) == 0
 					&& *(filename + name_length) == __T ('\\')) {
 					TCHAR temp_filename[MAX_PATH];
-					_stprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
-						drive, filename+name_length);
+					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
+						drive, filename + name_length);
 					_tcsncpy (filename, temp_filename,
 						_tcslen (temp_filename));
 					break;
