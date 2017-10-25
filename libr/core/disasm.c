@@ -2068,47 +2068,24 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	const char *infos, *metas;
 	char key[100];
 	RAnalMetaItem MI, *mi = &MI;
-	RCore * core = ds->core;
+	RCore *core = ds->core;
 	Sdb *s = core->anal->sdb_meta;
 
-	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, ds->at);
+	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, ds->at);
 	infos = sdb_const_get (s, key, 0);
 
 	ds->mi_found = false;
 	if (infos) {
-		for (;*infos; infos++) {
-			/* XXX wtf, must use anal.meta.deserialize() */
-			char *p, *q, *r;
+		for (; *infos; infos++) {
 			if (*infos == ',') {
 				continue;
 			}
-			snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, *infos, ds->at);
+			snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, ds->at);
 			metas = sdb_const_get (s, key, 0);
-			MI.size = sdb_array_get_num (s, key, 0, 0);
-			MI.type = *infos;
-			MI.subtype = 0;
-			MI.from = ds->at;
-			MI.to = ds->at + MI.size;
 			if (metas) {
-				p = strchr (metas, ',');
-				if (!p) {
+				if (!r_meta_deserialize_val (mi, *infos, ds->at, metas)) {
 					continue;
 				}
-				MI.space = atoi (p + 1);
-				q = strchr (p + 1, ',');
-				if (!q) {
-					continue;
-				}
-				if (MI.type == R_META_TYPE_STRING) {
-					r = strchr (q + 1, ',');
-					if (r) {
-						MI.subtype = *(q + 1);
-						q = r;
-					}
-				}
-				MI.str = (char*)sdb_decode (q + 1, 0);
-			} else {
-				MI.str = NULL;
 			}
 			// TODO: implement ranged meta find (if not at the begging of function..
 			char *out = NULL;
