@@ -900,7 +900,11 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			free (s);
 		}
 		sdb_num_set (sdb_version, "cnt", entry->vn_cnt, 0);
-		vstart += entry->vn_aux;
+		st32 vnaux = entry->vn_aux;
+		if (vnaux < 1) {
+			goto beach;
+		}
+		vstart += vnaux;
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
 			int k;
 			Elf_(Vernaux) * aux = NULL;
