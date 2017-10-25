@@ -278,19 +278,23 @@ static void meta_serialize(RAnalMetaItem *it, char *k, size_t k_size, char *v, s
 }
 
 static bool meta_deserialize(RAnalMetaItem *it, const char *k, const char *v) {
-	const char *v2;
-	char *v3;
 	if (strlen (k) < 8) {
 		return false;
 	}
 	if (memcmp (k + 6, ".0x", 3)) {
 		return false;
 	}
-	it->type = k[5];
+	return r_meta_deserialize_val (it, k[5], sdb_atoi (k + 7), v);
+}
+
+R_API bool r_meta_deserialize_val(RAnalMetaItem *it, int type, ut64 from, const char *v) {
+	const char *v2;
+	char *v3;
+	it->type = type;
 	it->subtype = 0;
 	it->size = sdb_atoi (v);
-	it->from = sdb_atoi (k + 7);
-	it->to = it->from + it->size;
+	it->from = from;
+	it->to = from + it->size;
 	v2 = strchr (v, ',');
 	if (!v2) {
 		return false;
@@ -368,49 +372,25 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 		return NULL;
 	}
 
-	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
+	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, at);
 	infos = sdb_const_get (s, key, 0);
 	if (!infos) {
 		return NULL;
 	}
 	for (; *infos; infos++) {
-		/* XXX wtf, must use anal.meta.deserialize() */
-		char *p, *q, *r;
 		if (*infos == ',') {
 			continue;
 		}
-		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, *infos, at);
-		metas = sdb_const_get (s, key, 0);
-		mi.size = sdb_array_get_num (s, key, 0, 0);
-		mi.type = *infos;
-		mi.subtype = 0;
-		mi.from = at;
-		mi.to = at + mi.size;
-		if (type != R_META_TYPE_ANY && type != mi.type) {
+		if (type != R_META_TYPE_ANY && type != *infos) {
 			continue;
 		}
+		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, at);
+		metas = sdb_const_get (s, key, 0);
 		if (metas) {
-			p = strchr (metas, ',');
-			if (!p) {
+			if (!r_meta_deserialize_val (&mi, *infos, at, metas)) {
 				continue;
 			}
-			mi.space = atoi (p + 1);
-			q = strchr (p + 1, ',');
-			if (!q) {
-				continue;
-			}
-			if (mi.type == R_META_TYPE_STRING) {
-				r = strchr (q + 1, ',');
-				if (r) {
-					mi.subtype = *(q + 1);
-					q = r;
-				}
-			}
-			free (mi.str);
-			mi.str = (char*)sdb_decode (q + 1, 0);
 			return &mi;
-		} else {
-			mi.str = NULL;
 		}
 	}
 	return NULL;
