@@ -5936,6 +5936,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		} else {
 			ut64 at = core->offset;
 			ut64 from = r_num_get (core->num, "$S");
+			// TODO: use anal.in
 			r_core_seek (core, from, 1);
 			r_core_anal_esil (core, "$SS", NULL);
 			r_core_seek (core, at, 1);

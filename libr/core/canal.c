@@ -3338,7 +3338,6 @@ R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
 	/* TODO: implement me */
 }
 
-
 static bool myvalid(RIO *io, ut64 addr) {
 	if (addr < 0x100) {
 		return false;
@@ -3392,8 +3391,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		bool validRef = false;
 		if (trace && myvalid (mycore->io, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
-				r_core_cmdf (mycore, "axd 0x%"PFMT64x" 0x%"PFMT64x,
-						(ut64)refptr, esil->address);
+				r_anal_ref_add (mycore->anal, refptr, esil->address, 'd');
 				str[0] = 0;
 				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
 					eprintf ("Invalid read\n");
@@ -3408,8 +3406,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 
 		/** resolve ptr */
 		if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-			r_core_cmdf (mycore, "axd 0x%"PFMT64x" 0x%"PFMT64x,
-					addr, esil->address);
+			r_anal_ref_add (mycore->anal, addr, esil->address, 'd');
 		}
 	}
 	return 0; // fallback

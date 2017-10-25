@@ -208,7 +208,7 @@ static bool string_filter(RCore *core, const char *str) {
 				continue;
 			}
 			if (ch < '@'|| ch > 'Z') {
-					return false;
+				return false;
 			}
 			if (ch < 0 || !IS_PRINTABLE (ch)) {
 				return false;
@@ -250,8 +250,9 @@ static bool string_filter(RCore *core, const char *str) {
 		break;
 	case 'f': // format-string
 		if (str && *str) {
-			if (!strstr (str+1, "%"))
+			if (!strstr (str + 1, "%")) {
 				return false;
+			}
 		} else {
 			return false;
 		}
