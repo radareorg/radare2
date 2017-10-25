@@ -748,7 +748,12 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		verdef->vd_hash = READ32 (dfs, j)
 		verdef->vd_aux = READ32 (dfs, j)
 		verdef->vd_next = READ32 (dfs, j)
-		vstart += verdef->vd_aux;
+		int vdaux = verdef->vd_aux;
+		if (vdaux < 1) {
+			sdb_free (sdb_verdef);
+			goto out_error;
+		}
+		vstart += vdaux;
 		if (vstart > end || vstart + sizeof (Elf_(Verdaux)) > end) {
 			sdb_free (sdb_verdef);
 			goto out_error;
