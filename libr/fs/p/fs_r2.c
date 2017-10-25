@@ -50,9 +50,11 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 		}
 		int i, count = 0;
 		int *lines = r_str_split_lines (res, &count);
-		for (i = 0; i < count; i++) {
-			char *line = strdup (res + lines[i]);
-			append_file (list, line, type, 0, 0);
+		if (lines) {
+			for (i = 0; i < count; i++) {
+				append_file (list, res + lines[i], type, 0, 0);
+			}
+			free (lines);
 		}
 		free (res);
 		return list;
