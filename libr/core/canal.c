@@ -3446,6 +3446,8 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	anal = esil->anal;
 	op = esil->user;
 	//specific case to handle blx/bx cases in arm through emulation
+// XXX this thing creates a lot of false positives
+#if 0
 	if (anal && anal->cur && anal->cur->arch && anal->bits < 33 &&
 	    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
 		switch (op->id) {
@@ -3454,7 +3456,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 		//do not include here capstone's headers
 		case 14: //ARM_INS_BLX
 		case 15: //ARM_INS_BX
-		{
+		if (0) {
 			if (!(*val & 1)) {
 				r_anal_hint_set_bits (anal, *val, 32);
 			} else {
@@ -3472,6 +3474,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 		}
 
 	}
+#endif
 	return 0;
 }
 
@@ -3689,6 +3692,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i)) {
 			i += minopsize - 1;
 		}
+		// if (op.type & 0x80000000 || op.type == 0) {
+		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
+			// i +=2;
+			continue;
+		}
 		r_asm_set_pc (core->assembler, cur);
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
@@ -3726,6 +3734,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				continue;
 			}
 			(void)r_anal_esil_parse (ESIL, esilstr);
+			// r_anal_esil_set_pc (ESIL, cur);
 			// looks like ^C is handled by esil_parse !!!!
 			//r_anal_esil_dumpstack (ESIL);
 			//r_anal_esil_stack_free (ESIL);

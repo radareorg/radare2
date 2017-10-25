@@ -506,13 +506,17 @@ R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
 	if (str[0] == ESIL_INTERNAL_PREFIX && str[1]) {
 		return R_ANAL_ESIL_PARM_INTERNAL;
 	}
-	if (!strncmp (str, "0x", 2))
+	if (!strncmp (str, "0x", 2)) {
 		return R_ANAL_ESIL_PARM_NUM;
-	if (!((IS_DIGIT(str[0])) || str[0] == '-'))
+	}
+	if (!((IS_DIGIT(str[0])) || str[0] == '-')) {
 		goto not_a_number;
-	for (i = 1; i < len; i++)
-		if (!(IS_DIGIT(str[i])))
+	}
+	for (i = 1; i < len; i++) {
+		if (!(IS_DIGIT(str[i]))) {
 			goto not_a_number;
+		}
+	}
 	return R_ANAL_ESIL_PARM_NUM;
 not_a_number:
 	if (r_reg_get (esil->anal->reg, str, -1))
