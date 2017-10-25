@@ -56,6 +56,7 @@ R_API int r_lib_types_get_i(const char *str) {
 
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
+	LPTSTR libname_;
 #if __UNIX__
 	if (!libname) {
 		return dlopen (NULL, RTLD_NOW);
@@ -64,7 +65,8 @@ R_API void *r_lib_dl_open(const char *libname) {
 	if (!libname || !*libname) {
 		return NULL;
 	}
-	ret = DLOPEN (libname);
+	libname_ = r_sys_conv_char_to_w32 (libname);
+	ret = DLOPEN (libname_);
 	if (__has_debug && !ret) {
 #if __UNIX__
 		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
@@ -72,6 +74,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
 #endif
 	}
+	free (libname_);
 	return ret;
 }
 

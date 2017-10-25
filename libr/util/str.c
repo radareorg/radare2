@@ -2989,8 +2989,7 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color) {
 	return strdup (o);
 }
 
-R_API wchar_t* r_str_mb_to_wc(const char *buf, int len)
-{
+R_API wchar_t* r_str_mb_to_wc_l(const char *buf, int len) {
 	wchar_t *res_buf = NULL;
 	size_t sz;
 	bool fail = true;
@@ -3019,8 +3018,7 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
-R_API char* r_str_wc_to_mb(const wchar_t *buf, int len)
-{
+R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	char *res_buf = NULL;
 	bool fail = true;
 	size_t sz;
@@ -3047,4 +3045,18 @@ err_r_str_wc_to_mb:
 		res_buf = NULL;
 	}
 	return res_buf;
+}
+
+R_API char* r_str_wc_to_mb(const wchar_t *buf) {
+	if (!buf) {
+		return NULL;
+	}
+	return r_str_wc_to_mb_l (buf, wcslen (buf));
+}
+
+R_API wchar_t* r_str_mb_to_wc(const char *buf) {
+	if (!buf) {
+		return NULL;
+	}
+	return r_str_mb_to_wc_l (buf, strlen (buf));
 }

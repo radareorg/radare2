@@ -51,10 +51,10 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #if UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
-#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf, strlen (buf))
-#define r_sys_conv_char_to_w32_l(buf, len) r_str_mb_to_wc (buf, len) 
-#define r_sys_conv_w32_to_char(buf) r_str_wc_to_mb (buf, wcslen (buf)
-#define r_sys_conv_w32_to_char_l(buf, len) r_str_wc_to_mb (buf, len) 
+#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf)
+#define r_sys_conv_char_to_w32_l(buf, len) r_str_mb_to_wc_l (buf, len) 
+#define r_sys_conv_w32_to_char(buf) r_str_wc_to_mb (buf)
+#define r_sys_conv_w32_to_char_l(buf, len) r_str_wc_to_mb_l (buf, len) 
 #else
 #define W32_TCHAR_FSTR "%s"
 #define W32_TCALL(name) name"A"
