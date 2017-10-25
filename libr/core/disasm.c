@@ -2082,10 +2082,11 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 			}
 			snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, ds->at);
 			metas = sdb_const_get (s, key, 0);
-			if (metas) {
-				if (!r_meta_deserialize_val (mi, *infos, ds->at, metas)) {
-					continue;
-				}
+			if (!metas) {
+				continue;
+			}
+			if (!r_meta_deserialize_val (mi, *infos, ds->at, metas)) {
+				continue;
 			}
 			// TODO: implement ranged meta find (if not at the begging of function..
 			char *out = NULL;
