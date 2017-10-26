@@ -4,6 +4,7 @@ include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
 CFLAGS+=${PIC_CFLAGS}
+
 ifneq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
 EXT_SO=dll

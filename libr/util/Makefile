@@ -30,6 +30,7 @@ endif
 endif
 
 include $(SHLR)/zip/deps.mk
+
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
