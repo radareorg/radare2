@@ -14,7 +14,7 @@ int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut
 	LPVOID pProcessMemory;
 	HANDLE hInjectThread;
 	int result = 0;
-	DWORD NumberOfBytesWritten;
+	SIZE_T NumberOfBytesWritten;
 
 	pProcessMemory = VirtualAllocEx (b->processInfo.hProcess, 0, dwSize, 0x1000u, 0x40u);
 	if (pProcessMemory) {

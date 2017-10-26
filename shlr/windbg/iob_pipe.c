@@ -11,9 +11,8 @@
 
 static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;
-	LPTSTR path_;
+	LPTSTR path_ = r_sys_conv_char_to_w32 (path);
 
-	path_ = r_sys_conv_char_to_w32 ((char *)path);
 	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	free (path_);
 	return hPipe != INVALID_HANDLE_VALUE? (void *)(HANDLE)hPipe : NULL;

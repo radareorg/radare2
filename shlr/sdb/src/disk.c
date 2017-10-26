@@ -12,8 +12,7 @@
 #if __SDB_WINDOWS__
 
 #if UNICODE
-static wchar_t* r_str_mb_to_wc(char *buf, int len)
-{
+static wchar_t* r_str_mb_to_wc_l(const char *buf, int len) {
 	wchar_t *res_buf = NULL;
 	size_t sz;
 	bool fail = true;
@@ -42,17 +41,22 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
-static bool r_sys_mkdir(char *path) {
-	LPTSTR path_;
-	bool ret;
+static wchar_t* r_str_mb_to_wc(const char *buf) {
+	if (!buf) {
+		return NULL;
+	}
+	return r_str_mb_to_wc_l (buf, strlen (buf));
+}
 
-	path_ = r_sys_conv_char_to_w32 (path);
-	ret = CreateDirectory (path_, NULL);
+#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf)
+
+static bool r_sys_mkdir(char *path) {
+	LPTSTR path_ = r_sys_conv_char_to_w32 (path);
+	bool ret = CreateDirectory (path_, NULL);
+
 	free (path);
 	return ret;
 }
-
-#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf, strlen (buf)) 
 #else
 #define r_sys_conv_char_to_w32(buf) strdup (buf) 
 #define r_sys_mkdir(x) CreateDirectory (x, NULL)
@@ -153,10 +157,9 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 		reopen = true;
 	}
 #if __SDB_WINDOWS__
-	LPTSTR ndump_, dir_;
+	LPTSTR ndump_ = r_sys_conv_char_to_w32 (s->ndump);
+	LPTSTR dir_ = r_sys_conv_char_to_w32 (s->dir);
 
-	ndump_ = r_sys_conv_char_to_w32 (s->ndump);
-	dir_ = r_sys_conv_char_to_w32 (s->dir);
 	if (MoveFileEx (ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
 		//eprintf ("Error 0x%02x\n", GetLastError ());
 	}
