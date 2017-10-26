@@ -70,7 +70,7 @@ err_add_map:
 	return mr;
 }
 
-static RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC_INFORMATION *mbi) {
+static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC_INFORMATION *mbi) {
 	return add_map (list, name, (ut64)(size_t)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
 }
 
@@ -224,10 +224,13 @@ err_proc_mem_img:
 }
 
 static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
-	char f_name[MAX_PATH + 1];
+	TCHAR f_name[MAX_PATH + 1];
+
 	DWORD len = w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
-		add_map_reg (map_list, f_name, mbi);
+		char *f_name_ = r_sys_conv_w32_to_char (f_name);
+		add_map_reg (map_list, f_name_, mbi);
+		free (f_name_);
 	} else {
 		add_map_reg (map_list, "", mbi);
 	}
