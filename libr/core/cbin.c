@@ -2409,7 +2409,7 @@ static char* get_rp (const char* rtype) {
 	case 'd':
 		rp = strdup ("double");
 		break;
-	case 'D': 
+	case 'D':
 		rp = strdup ("long double");
 		break;
 	case 'B':
@@ -2418,10 +2418,10 @@ static char* get_rp (const char* rtype) {
 	case '#':
 		rp = strdup ("CLASS");
 		break;
-	default:	
+	default:
 		rp = strdup ("unknown");
 		break;
-	}	
+	}
 	return rp;
 }
 
@@ -2538,11 +2538,11 @@ static int bin_classes(RCore *r, int mode) {
 				}
 			}
 			r_cons_printf ("]}");
-		} else if (IS_MODE_CLASSDUMP (mode)) { 
+		} else if (IS_MODE_CLASSDUMP (mode)) {
 			char *rp = NULL;
 			if (c) {
 				//TODO -> Print Superclass
-				r_cons_printf ("@interface %s :  \n{\n", c->name); 
+				r_cons_printf ("@interface %s :  \n{\n", c->name);
 				r_list_foreach (c->fields, iter2, f) {
 					if (f->name && r_regex_match ("ivar","e", f->name)) {
 						r_cons_printf ("  %s %s\n", f->type, f->name);
@@ -3027,6 +3027,17 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 				}
 				flagname = dup;
 				r_cons_printf ("pf.%s %s\n", flagname, v);
+			}
+		}
+		ls_foreach (ls, iter, kv) {
+			char *dup = kv->key;
+			char *v = kv->value;
+			if ((flagname = strstr (dup, ".format"))) {
+				*flagname = 0;
+				if (!offset) {
+					offset = strdup ("0");
+				}
+				flagname = dup;
 				int fmtsize = r_print_format_struct_size (v, core->print, 0, 0);
 				char *offset_key = r_str_newf ("%s.offset", flagname);
 				const char *off = sdb_const_get (db, offset_key, 0);
@@ -3132,7 +3143,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 	if (!r_bin_use_arch (r->bin, arch, bits, name)) {
 		return false;
 	}
-	curfile = r_bin_cur (r->bin);	
+	curfile = r_bin_cur (r->bin);
 	//set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		r_core_bin_set_cur (r, binfile);
