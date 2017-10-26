@@ -30,8 +30,8 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 	TCHAR shortpath[MAX_PATH + 1];
 	char *path;
 
-	if (!GetModuleFileName (NULL, fullpath, MAX_PATH) ||
-		!GetShortPathName (fullpath, shortpath, MAX_PATH)) {
+	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
+		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
 		return false;
 	}
 	path = r_sys_conv_w32_to_char (shortpath);

@@ -650,7 +650,7 @@ R_API char *r_file_readlink(const char *path) {
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
 #if __WINDOWS__
-	HANDLE fh;
+	HANDLE fh = INVALID_HANDLE_VALUE;
 	DWORD written = 0;
 	LPTSTR file_ = NULL;
 	int ret = -1;
@@ -659,7 +659,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 		return -1;
 	}
 	file_ = r_sys_conv_char_to_w32 (file);
-	fh = CreateFile ((LPCTSTR)file_, GENERIC_READ|GENERIC_WRITE,
+	fh = CreateFile (file_, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
@@ -674,7 +674,9 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	ret = len;
 err_r_file_mmap_write:
 	free (file_);
-	CloseHandle (fh);
+	if (fh != INVALID_HANDLE_VALUE) {
+		CloseHandle (fh);
+	}
 	return ret;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
@@ -715,7 +717,6 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		r_sys_perror ("r_file_mmap_read/CreateFile");
 		goto err_r_file_mmap_read;
 	}
-
 	fm = CreateFileMapping (fh, NULL, PAGE_READONLY, 0, 0, NULL);
 	if (!fm) {
 		r_sys_perror ("CreateFileMapping");
@@ -726,7 +727,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	UnmapViewOfFile (obuf);
 	ret = len;
 err_r_file_mmap_read:
-	if (fh) {
+	if (fh != INVALID_HANDLE_VALUE) {
 		CloseHandle (fh);
 	}
 	if (fm) {
@@ -904,12 +905,11 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h = -1;
 	char *path = r_file_tmpdir ();
 #if __WINDOWS__
-	LPTSTR path_, prefix_;
 	TCHAR name[MAX_PATH + 1];
+	LPTSTR path_ = r_sys_conv_char_to_w32 (path);
+	LPTSTR prefix_ = r_sys_conv_char_to_w32 (prefix);
 
-	path_ = r_sys_conv_char_to_w32 (path);
-	prefix_ = r_sys_conv_char_to_w32 (prefix);
-	if (GetTempFileName ((LPCTSTR)path_, (LPCTSTR)prefix_, 0, name)) {
+	if (GetTempFileName (path_, prefix_, 0, name)) {
 		char *name_ = r_sys_conv_w32_to_char (name);
 		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
 		if (oname) {
@@ -946,7 +946,7 @@ R_API char *r_file_tmpdir() {
 	char *path = NULL;
 	DWORD len = 0;
 
-	if ((len = GetTempPath ((sizeof (tmpdir) - 1) / sizeof(TCHAR), tmpdir)) == 0) {
+	if ((len = GetTempPath (MAX_PATH + 1, tmpdir)) == 0) {
 		path = r_sys_getenv ("TEMP");
 		if (!path) {
 			path = strdup ("C:\\WINDOWS\\Temp\\");
