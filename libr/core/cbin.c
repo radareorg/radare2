@@ -3018,8 +3018,9 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		}
 		R_FREE (offset);
 		ls_foreach (ls, iter, kv) {
-			char *dup = kv->key;
+			char *k = kv->key;
 			char *v = kv->value;
+			char *dup = strdup (k);
 			if ((flagname = strstr (dup, ".format"))) {
 				*flagname = 0;
 				if (!offset) {
@@ -3028,10 +3029,12 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 				flagname = dup;
 				r_cons_printf ("pf.%s %s\n", flagname, v);
 			}
+			free (dup);
 		}
 		ls_foreach (ls, iter, kv) {
-			char *dup = kv->key;
+			char *k = kv->key;
 			char *v = kv->value;
+			char *dup = strdup (k);
 			if ((flagname = strstr (dup, ".format"))) {
 				*flagname = 0;
 				if (!offset) {
