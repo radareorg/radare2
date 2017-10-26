@@ -1,3 +1,4 @@
+include ../../libr/config.mk
 include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
