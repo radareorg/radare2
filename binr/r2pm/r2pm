@@ -90,6 +90,58 @@ if [ -f "d/baleful" ]; then
 	R2PM_DBDIR="$(pwd)/d/"
 fi
 
+confirm() {
+	printf "$@ (y/N)? "
+	read A
+	if [ "$A" = y -o "$A" = Y ]; then
+		return 0
+	fi
+	return 1
+}
+
+purgeR2() {
+	P="$1"
+	BINS="r2 radare2 rabin2 rafind2 r2pm "
+	cd "$P/bin" && rm -f ${BINS}
+	cd "$P/lib" && rm -f libr_*
+	cd "$P/lib" && rm -rf radare2
+	cd "$P/share" && rm -rf radare2
+	cd "$P/share/man" && rm -rf man1/r*2.1
+	cd "$P/share/doc" && rm -rf radare2
+}
+
+countDown() {
+	M="$1"
+	C="$2"
+	printf "$M"
+	while : ; do
+		printf "$C "
+		C=$(($C-1))
+		[ "$C" = 0 ] && break
+	done
+	echo 'Go!'
+}
+
+commitSuicide() {
+	confirm "Do you wanna purge r2 completely from your system and home? (y/N)?"
+	if [ $? != 0 ]; then
+		echo "Aborted." > /dev/stderr
+		exit 1
+	fi
+	countDown "Self destroying in" 3
+	confirm "> Delete ~/config.radare2" && (
+		rm -rf ~/.config/radare2
+	)
+	R2PATHS="${PREFIX} /usr /usr/local /opt/radare2 ~/config/radare2/prefix /"
+	for a in $R2PATHS ; do
+		if [ -x "${a}/bin/radare2" ]; then
+			confirm "> Delete r2 from ${a}" && (
+				purgeR2 "$a"
+			)
+		fi
+	done
+}
+
 case "$1" in
 init|up|update)
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
@@ -542,6 +594,9 @@ ls)
 	fi
 	eval echo "\$$2"
 	;;
+suicide)
+	commitSuicide
+	;;
 -d|doc|--doc)
 	r2pm_doc "$2"
 	;;
@@ -568,6 +623,7 @@ Commands:
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'r2pm ls')
  ls                          ls all cloned git repos in GITDIR
+ suicide                     self remove all (home + system) installations of r2
 Environment:
  SUDO=sudo                    use this tool as sudo
  R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins
