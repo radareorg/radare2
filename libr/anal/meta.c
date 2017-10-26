@@ -630,15 +630,15 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 		return 0;
 	}
 	if (!meta_deserialize (it, k, v)) {
+		free (it);
 		goto beach;
 	}
 	if (!it->str) {
+		free (it);
 		goto beach;
 	}
 	r_list_append (list, it);
 beach:
-	free (it->str);
-	free (it);
 	return 1;
 }
 
