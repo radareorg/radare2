@@ -2052,7 +2052,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
 			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 	// FIXME: this command prints something annoying. Does it have important side-effects?
-	r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n", fcn->cc, fcn->addr);
+	r_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc, fcn->addr);
 	if (fcn->folded) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
@@ -2484,7 +2484,7 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 	case R2_ARCH_ARM64:
 		aop->size = 4;
 		//addr should be aligned by 4 in aarch64
-		if (addr % 4) { 
+		if (addr % 4) {
 			char diff = addr % 4;
 			addr = addr - diff;
 			buf = buf - diff;
@@ -3027,7 +3027,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	memset (as->block, 0, as_size);
 	for (at = from; at < to; at += step) {
-		RIOSection *sec = r_io_section_get (core->io, at); 
+		RIOSection *sec = r_io_section_get (core->io, at);
 		piece = (at - from) / step;
 		as->block[piece].rwx = sec ? sec->flags :
 				(core->io->desc ? core->io->desc->flags: 0);
