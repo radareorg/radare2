@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 
-static RFSFile* fs_io_open(RFSRoot *root, const char *path) {
+static RFSFile *fs_io_open(RFSRoot *root, const char *path) {
 	char *cmd = r_str_newf ("m %s", path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	free (cmd);
@@ -42,7 +42,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 			free (res);
 			return NULL:
 		}
-		file->data = (ut8*)calloc (1, len);
+		file->data = (ut8 *) calloc (1, len);
 		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
 			eprintf ("Inconsistent read\n");
@@ -55,7 +55,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 }
 
 static void fs_io_close(RFSFile *file) {
-	//fclose (file->ptr);
+	// fclose (file->ptr);
 }
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
@@ -81,7 +81,7 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 		int *lines = r_str_split_lines (res, &count);
 		if (lines) {
 			for (i = 0; i < count; i++) {
-				const char * line = res + lines[i];
+				const char *line = res + lines[i];
 				if (!*line) {
 					continue;
 				}
@@ -122,8 +122,8 @@ RFSPlugin r_fs_plugin_io = {
 
 #ifndef CORELIB
 RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_FS,
-        .data = &r_fs_plugin_io,
-        .version = R2_VERSION
+	.type = R_LIB_TYPE_FS,
+	.data = &r_fs_plugin_io,
+	.version = R2_VERSION
 };
 #endif
