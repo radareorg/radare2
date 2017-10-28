@@ -5,20 +5,25 @@
 #include <sys/stat.h>
 
 static RFSFile* fs_io_open(RFSRoot *root, const char *path) {
-	char *res = root->iob.system (root->iob.io, "m");
+	char *cmd = r_str_newf ("m %s", path);
+	char *res = root->iob.system (root->iob.io, cmd);
+	free (cmd);
 	if (res) {
-		eprintf ("Res %s\n", res);
+		ut32 size = 0;
+		if (sscanf (res, "%u", &size) != 1) {
+			size = 0;
+		}
 		free (res);
+		if (size == 0) {
+			return NULL;
+		}
 		RFSFile *file = r_fs_file_new (root, path);
 		if (!file) {
 			return NULL;
 		}
 		file->ptr = NULL;
 		file->p = root->p;
-		//file->size = 123;
-		// fseek (fd, 0, SEEK_END);
-		// file->size = ftell (fd);
-		// fclose (fd);
+		file->size = size;
 		return file;
 	}
 	return NULL;
@@ -27,21 +32,25 @@ static RFSFile* fs_io_open(RFSRoot *root, const char *path) {
 static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	RFSRoot *root = file->root;
 	// char *cmd = r_str_newf ("mg %s %"PFMT64x" %d", file->path, addr, len);
-	char *cmd = r_str_newf ("mg %s", file->path);
+	char *cmd = r_str_newf ("mg %s", file->name);
 	char *res = root->iob.system (root->iob.io, cmd);
+	free (cmd);
 	if (res) {
-		eprintf ("Res %s\n", res);
+		int encoded_size = strlen (res);
+		if (encoded_size != len * 2) {
+			eprintf ("Wrong size\n");
+			free (res);
+			return NULL:
+		}
 		file->data = (ut8*)calloc (1, len);
-		memcpy (file->data, res, R_MIN (len, strlen (res)));
-#if 0
-		int ret = r_hex_str2bin ((char *)file->data, NULL);
+		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
 			eprintf ("Inconsistent read\n");
+			free (file->data);
+			file->data = NULL;
 		}
-#endif
 		free (res);
 	}
-	free (cmd);
 	return NULL;
 }
 
@@ -72,7 +81,16 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 		int *lines = r_str_split_lines (res, &count);
 		if (lines) {
 			for (i = 0; i < count; i++) {
-				append_file (list, res + lines[i], 'f', 0, 0);
+				const char * line = res + lines[i];
+				if (!*line) {
+					continue;
+				}
+				char type = 'f';
+				if (line[1] == ' ' && line[0] != ' ') {
+					type = line[0];
+					line += 2;
+				}
+				append_file (list, line, type, 0, 0);
 			}
 			free (res);
 			free (lines);
