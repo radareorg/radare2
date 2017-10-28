@@ -890,7 +890,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	free (top_title);
 }
 
-static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_arena, GHT *initial_brk) {
+static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_arena, GHT *initial_brk, GHT global_max_fast) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
@@ -925,12 +925,13 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 			break;
 		}
+
 		PRINT_YA ("\n  Malloc chunk @ ");
 		PRINTF_BA ("0x%"PFMT64x" ", (ut64)prev_chunk);
 
 		bool is_free = false;
 		GHT double_free = GHT_MAX;
-		if (size_tmp >= SZ * 4 && size_tmp <= SZ * 24) {
+		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
 			int i = (size_tmp / (SZ * 2)) - 2;
 			GHT next = (GHT)main_arena->fastbinsY[i];
 			double_free = next;
@@ -948,9 +949,6 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 				}
 			}
 		}
-		next_chunk += size_tmp;
-		prev_chunk = next_chunk;
-		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 
 		PRINT_GA ("[size: ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size);
@@ -965,6 +963,10 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 				PRINT_GA ("[allocated]");
 			}
 		}
+
+		next_chunk += size_tmp;
+		prev_chunk = next_chunk;
+		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	}
 	PRINT_YA ("\n  Top chunk @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->top);
@@ -978,7 +980,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	free (cnk);
 }
 
-static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
+static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_fast) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
@@ -1019,7 +1021,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
 
 		bool is_free = false;
 		GHT double_free = GHT_MAX;
-		if (size_tmp >= (GHT)SZ * 4 && size_tmp <= (GHT)SZ * 24) {
+		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
 			int i = (size_tmp / (SZ * 2)) - 2;
 			GHT next = ms->fastbinsY[i];
 			double_free = next;
@@ -1038,9 +1040,6 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
 				}
 			}
 		}
-		next_chunk += size_tmp;
-		prev_chunk = next_chunk;
-		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 
 		PRINT_GA ("[size: ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size);
@@ -1055,6 +1054,10 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
 				PRINT_GA ("[allocated]");
 			}
 		}
+
+		next_chunk += size_tmp;
+		prev_chunk = next_chunk;
+		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	}
 
 	PRINT_YA ("\n  Top chunk @ ");
@@ -1157,8 +1160,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	}
 	switch (input[0]) {
 	case '\0': // dmh
-		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena)) {
-			GH(print_heap_segment) (core, main_arena, &initial_brk);
+		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+			GH(print_heap_segment) (core, main_arena, &initial_brk, global_max_fast);
 		}
 		break;
 	case ' ' : // dmh [malloc_state]
@@ -1166,8 +1169,15 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 			GHT m_state = strstr (input, "0x")
 				? (GHT)strtol (input, NULL, 0)
 				: (GHT)strtol (input, NULL, 16);
-			if (m_state == m_arena) GH(print_heap_segment) (core, main_arena, &initial_brk);
-			GH(print_heap_mmaped)(core, m_state);
+			if (m_state == m_arena) {			
+				GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast);	
+				GH(print_heap_segment) (core, main_arena, &initial_brk, global_max_fast);
+			} else {
+				global_max_fast = GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)
+					? global_max_fast
+					: SZ * 0x10;
+				GH(print_heap_mmaped)(core, m_state, global_max_fast);
+ 			}
 		}
 		break;
 	case 'a': // dmha
@@ -1175,7 +1185,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 			GH(print_malloc_states) (core, m_arena, main_arena);
 		}
 		break;
-	case 'i': //dmhi
+	case 'i': // dmhi
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena)) {
 			GH(print_malloc_info) (core, m_arena);
 		}
@@ -1185,7 +1195,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) &&
 			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
 			input += 1;
-			if (!strcmp (input,"\0")) {
+			if (!strcmp (input, "\0")) {
 				GH(print_main_arena) (core, m_arena, main_arena, global_max_fast, *input);
 			} else {
 				GHT m_state = strstr (input, "0x")
