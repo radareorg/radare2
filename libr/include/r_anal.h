@@ -586,6 +586,7 @@ typedef struct r_anal_options_t {
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
 	bool pushret; // analyze push+ret as jmp
+	bool armthumb; // 
 } RAnalOptions;
 
 typedef struct r_anal_t {

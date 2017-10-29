@@ -177,6 +177,13 @@ static int cb_debug_hitinfo(void *user, void *data) {
 	return true;
 }
 
+static int cb_analarmthumb(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.armthumb = node->i_value;
+	return true;
+}
+
 static int cb_analeobjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2122,6 +2129,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
 
+	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB ("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETCB ("anal.afterjmp", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETI ("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic

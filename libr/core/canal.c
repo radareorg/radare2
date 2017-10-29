@@ -3446,35 +3446,35 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	anal = esil->anal;
 	op = esil->user;
 	//specific case to handle blx/bx cases in arm through emulation
-// XXX this thing creates a lot of false positives
-#if 0
-	if (anal && anal->cur && anal->cur->arch && anal->bits < 33 &&
-	    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
-		switch (op->id) {
-		//Thoses values comes from capstone so basically for others plugin
-		//will not work since they not fill analop.id
-		//do not include here capstone's headers
-		case 14: //ARM_INS_BLX
-		case 15: //ARM_INS_BX
-		if (0) {
-			if (!(*val & 1)) {
-				r_anal_hint_set_bits (anal, *val, 32);
-			} else {
-				ut64 snv = r_reg_getv (anal->reg, "pc");
-				if (snv != UT32_MAX && snv != UT64_MAX) {
-					if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
-						r_anal_hint_set_bits (anal, *val - 1, 16);
+	// XXX this thing creates a lot of false positives
+	if (anal->opt.armthumb) {
+		if (anal && anal->cur && anal->cur->arch && anal->bits < 33 &&
+		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
+			switch (op->id) {
+			//Thoses values comes from capstone so basically for others plugin
+			//will not work since they not fill analop.id
+			//do not include here capstone's headers
+			case 14: //ARM_INS_BLX
+			case 15: //ARM_INS_BX
+			if (0) {
+				if (!(*val & 1)) {
+					r_anal_hint_set_bits (anal, *val, 32);
+				} else {
+					ut64 snv = r_reg_getv (anal->reg, "pc");
+					if (snv != UT32_MAX && snv != UT64_MAX) {
+						if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
+							r_anal_hint_set_bits (anal, *val - 1, 16);
+						}
 					}
 				}
 			}
-		}
-			break;
-		default:
-			break;
-		}
+				break;
+			default:
+				break;
+			}
 
+		}
 	}
-#endif
 	return 0;
 }
 
