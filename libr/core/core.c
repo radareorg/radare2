@@ -2570,13 +2570,13 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
+		if (r_cons_is_breaked ()) {
+			goto beach;
+		}
 		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4)) {
 			from += sizeof (buf);
 			continue;
-		}
-		if (r_cons_is_breaked ()) {
-			goto beach;
 		}
 		for (i = 0; i < sizeof (buf) - vsize; i++) {
 			void *v = (buf + i);

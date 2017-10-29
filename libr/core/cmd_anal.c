@@ -5682,11 +5682,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	}
 
 	// body
+	r_cons_break_push (NULL, NULL);
 	if (is_debug) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map");
 		RListIter *iter;
 		RIOMap *map;
 		r_list_foreach (list, iter, map) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 			(void)r_core_search_value_in_range (core, map->itv,
 				map->itv.addr, r_itv_end (map->itv), vsize, asterisk, _CbInRangeAav);
@@ -5701,6 +5705,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		// find values pointing to non-executable regions
 		// TOO SLOW, but "correct", can be enhanced by adding search.in2
 		r_list_foreach (list, iter2, map2) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			if (!iter2->n) {
 				if (from == UT64_MAX) {
 					from = r_itv_begin (map2->itv);
@@ -5729,6 +5736,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 
 				eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
 				r_list_foreach (list, iter, map) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
 					eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 					(void)r_core_search_value_in_range (core, map->itv, from, to,
 					//	map->itv.addr, r_itv_end (map->itv) 
@@ -5753,6 +5763,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #endif
 	}
 
+	r_cons_break_pop ();
 	// end
 	seti ("search.align", o_align);
 }
