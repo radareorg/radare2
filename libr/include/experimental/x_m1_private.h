@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#ifndef TEST
+  #define TEST_STATIC static
+#else
+  #define TEST_STATIC R_API
+#endif
+
 typedef struct r_bin_x_s1_t {
 	ut64 off;
 	bool start;
@@ -36,15 +42,20 @@ typedef struct r_bin_x_s5_t {
 	RBinXS4 *sections;
 } RBinXS5;
 
-static void r_bin_x_f2 (RBinXS1 *b, int n, RBinXS3 **out, int *out_len);
-static int _r_bin_x_f2 (RBinXS1 *b, int n, int dry, RBinXS3 **out, int out_len);
-static int r_bin_x_f3 (RBinXS3 *c, int m, RBinXS4 **out);
-static void r_bin_x_f1 (RBinObject *o);
-static void r_bin_x_f5 (RBinObject *o);
-static void r_bin_x_f6_bt (RBinObject *o, ut64 off, int va);
-static RBinSection *r_bin_x_f7_get_first (RBinObject *o, int va);
-static int r_bin_x_cmp1 (RBinXS1 const *x, RBinXS1 const *y);
-static int r_bin_x_cmp2_less (RBinXS1 const *x, RBinXS1 const *y);
+typedef int (*RBinXComp) (const void *a, const void *b);
+
+TEST_STATIC void r_bin_x_f2 (RBinXS1 *b, int n, RBinXS3 **out, int *out_len);
+TEST_STATIC int _r_bin_x_f2 (RBinXS1 *b, int n, int dry, RBinXS3 **out, int out_len);
+TEST_STATIC int r_bin_x_f3 (RBinXS3 *c, int m, RBinXS4 **out);
+TEST_STATIC void r_bin_x_f1 (RBinObject *o);
+TEST_STATIC void r_bin_x_f5 (RBinObject *o);
+TEST_STATIC void r_bin_x_f6_bt (RBinObject *o, ut64 off, int va);
+TEST_STATIC RBinSection *r_bin_x_f7_get_first (RBinObject *o, int va);
+TEST_STATIC int r_bin_x_cmp1_less (RBinXS1 const *x, RBinXS1 const *y);
+TEST_STATIC int r_bin_x_cmp2 (RBinXS1 const *x, RBinXS1 const *y);
+TEST_STATIC void r_bin_x_sort1_asc (void *b, void *e, int t_s, RBinXComp c);
+
+TEST_STATIC int x_m1_status(RBinObject *o);
 
 #ifdef __cplusplus
 }
