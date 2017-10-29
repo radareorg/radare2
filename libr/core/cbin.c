@@ -348,7 +348,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			continue;
 		}
 
-		section = r_bin_get_section_at (obj, paddr, false, NULL, NULL);
+		section = r_bin_get_section_at (obj, paddr, false);
 		section_name = section ? section->name : "unknown";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
