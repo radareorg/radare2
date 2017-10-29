@@ -3456,7 +3456,6 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			//do not include here capstone's headers
 			case 14: //ARM_INS_BLX
 			case 15: //ARM_INS_BX
-			if (0) {
 				if (!(*val & 1)) {
 					r_anal_hint_set_bits (anal, *val, 32);
 				} else {
@@ -3467,7 +3466,6 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 						}
 					}
 				}
-			}
 				break;
 			default:
 				break;
