@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#ifndef TEST
+#ifndef UNIT_TEST
   #define TEST_STATIC static
 #else
   #define TEST_STATIC R_API
@@ -55,7 +55,7 @@ TEST_STATIC int r_bin_x_cmp1_less (RBinXS1 const *x, RBinXS1 const *y);
 TEST_STATIC int r_bin_x_cmp2 (RBinXS1 const *x, RBinXS1 const *y);
 TEST_STATIC void r_bin_x_sort1_asc (void *b, void *e, int t_s, RBinXComp c);
 
-TEST_STATIC int x_m1_status(RBinObject *o);
+TEST_STATIC int x_m1_status (RBinObject *o);
 
 #ifdef __cplusplus
 }
