@@ -1267,8 +1267,9 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_udata:
 		{
-			ut8 data[32];
-			buf = r_uleb128 (buf, R_MIN (sizeof (data), buf_end - buf), &data);
+			ut64 ndata = 0;
+			const ut8 *data = (const ut8*)&ndata;
+			buf = r_uleb128 (buf, R_MIN (sizeof (data), buf_end - buf), &ndata);
 			memcpy (&value->encoding.data, data, sizeof (value->encoding.data));
 			value->encoding.str_struct.string = NULL;
 		}
