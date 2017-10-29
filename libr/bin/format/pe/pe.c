@@ -436,6 +436,9 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					if (symname) {
 						snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, symname);
 					}
+					free (symname);
+					sdb_free (db);
+					db = NULL;
 				} else {
 					bprintf ("Cannot find %s\n", filename);
 
@@ -1961,6 +1964,8 @@ static Sdb* Pe_r_bin_store_string(String* string) {
 	}
 	sdb_set (sdb, "key",   encodedKey, 0);
 	sdb_set (sdb, "value", encodedVal, 0);
+	free (encodedKey);
+	free (encodedVal);
 	return sdb;
 }
 
@@ -1982,6 +1987,7 @@ static Sdb* Pe_r_bin_store_string_table(StringTable* stringTable) {
 		return NULL;
 	}
 	sdb_set (sdb, "key", encodedKey, 0);
+	free (encodedKey);
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf (key, 20, "string%d", i);
 		sdb_ns_set (sdb, key, Pe_r_bin_store_string (stringTable->Children[i]));
@@ -3402,6 +3408,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
+  free (bin->tls_directory);
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);

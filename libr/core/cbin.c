@@ -1299,7 +1299,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 				}
 				if (*db) {
 					// ordinal-1 because we enumerate starting at 0
-					char *symname = resolveModuleOrdinal (*db, module, ordinal - 1);
+					char *symname = resolveModuleOrdinal (*db, module, ordinal - 1);  // uses sdb_get
 					if (symname) {
 						if (r->bin->prefix) {
 							reloc->import->name = r_str_newf
@@ -1308,6 +1308,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 							reloc->import->name = r_str_newf
 								("%s.%s", module, symname);
 						}
+						free (symname);
 					}
 				}
 			}
@@ -1466,6 +1467,11 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i relocations\n", i);
 	}
+
+	R_FREE (sdb_module);
+	sdb_free (db);
+	db = NULL;
+
 	return relocs != NULL;
 }
 
@@ -2951,6 +2957,11 @@ static void bin_pe_resources(RCore *r, int mode) {
 			r_cons_printf ("\tlanguage: %s\n", lang);
 			free (humanSize);
 		}
+
+		R_FREE (timestr);
+		R_FREE (type);
+		R_FREE (lang)
+
 		index++;
 	}
 	if (IS_MODE_JSON (mode)) {

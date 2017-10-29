@@ -287,15 +287,19 @@ static RList* imports(RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
-	if (!(relocs = r_list_new ())) {
+
+	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
+	if (((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs) {
+		r_list_free (((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs);
+	}
+
+	if (!(relocs = r_list_newf (free))) {
 		free (ret);
 		return NULL;
 	}
-	ret->free = free;
-	relocs->free = free;
 	((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj)->relocs = relocs;
 
 	if (!(imports = PE_(r_bin_pe_get_imports)(bf->o->bin_obj))) {
@@ -401,17 +405,17 @@ static int is_vb6(RBinFile *bf) {
 }
 
 static int has_canary(RBinFile *bf) {
-	const RList* imports_list = imports (bf);
+  // XXX: We only need imports here but this causes leaks, we need to wait for the below
+	struct PE_ (r_bin_pe_obj_t) *bin = bf->o->bin_obj;
+	const RList* relocs_list = bin->relocs;
 	RListIter *iter;
-	RBinImport *import;
+	RBinReloc *rel;
 	// TODO: use O(1) when imports sdbized
-	if (imports_list) {
-		r_list_foreach (imports_list, iter, import)
-			if (!strcmp (import->name, "__security_init_cookie")) {
-				//r_list_free (imports_list);
+	if (relocs_list) {
+		r_list_foreach (relocs_list, iter, rel)
+			if (!strcmp (rel->import->name, "__security_init_cookie")) {
 				return 1;
 			}
-		// DO NOT FREE IT! r_list_free (imports_list);
 	}
 	return 0;
 }
