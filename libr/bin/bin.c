@@ -941,7 +941,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	bf->o = NULL;
 
 	sz = iob->fd_size (iob->io, fd);
-	if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) { 
+	if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) {
 		// too big, probably wrong
 		eprintf ("Too big\n");
 		res = false;
@@ -2693,7 +2693,7 @@ R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd) {
 		r_list_foreach (bin->binfiles, iter, bf) {
 			if (bf && bf->fd == bin_fd) {
 				if (cur->fd == bin_fd) {
-					//avoiding UaF due to dead reference 
+					//avoiding UaF due to dead reference
 					bin->cur = NULL;
 				}
 				r_list_delete (bin->binfiles, iter);

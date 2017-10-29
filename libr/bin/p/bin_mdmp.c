@@ -78,7 +78,7 @@ static RBinInfo *info(RBinFile *arch) {
 	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
 
 	ret->big_endian = obj->endian;
-	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", obj->hdr->check_sum));
+	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", obj->hdr->check_sum));  // FIXME: Leaks
 	ret->file = arch->file ? strdup (arch->file) : NULL;
 	ret->has_va = true;
 	ret->rclass = strdup ("mdmp");

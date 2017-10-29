@@ -11,7 +11,7 @@ static Sdb* get_sdb (RBinFile *bf) {
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
 		return NULL;
-	}	
+	}
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
 	return bin? bin->kv: NULL;
 }
@@ -143,7 +143,7 @@ static RList* sections(RBinFile *arch) {
 	ut64 ba = baddr (arch);
 	int i;
 	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;	
+		return NULL;
 	}
 	if (!(sections = PE_(r_bin_pe_get_sections) (bin))){
 		r_list_free (ret);
@@ -169,7 +169,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sections[i].vsize;
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
-		} 
+		}
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
@@ -184,7 +184,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->srwx |= R_BIN_SCN_READABLE;
 		} else {
 			//fix those sections that could have been fucked up
-			//if the section does have -x- but not -r- add it 
+			//if the section does have -x- but not -r- add it
 			if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
 			}
@@ -287,18 +287,22 @@ static RList* imports(RBinFile *arch) {
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
-	if (!(relocs = r_list_new ())) {
+
+	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
+	if (((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs) {
+		r_list_free (((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs);
+	}
+
+	if (!(relocs = r_list_newf (free))) {
 		free (ret);
 		return NULL;
 	}
-	ret->free = free;
-	relocs->free = free;
 	((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) { 
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !imports[i].last; i++) {
@@ -401,17 +405,17 @@ static int is_vb6(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-	const RList* imports_list = imports (arch);
+  // XXX: We only need imports here but this causes leaks, we need to wait for the below
+	struct PE_ (r_bin_pe_obj_t) *bin = arch->o->bin_obj;
+	const RList* relocs_list = bin->relocs;
 	RListIter *iter;
-	RBinImport *import;
+	RBinReloc *rel;
 	// TODO: use O(1) when imports sdbized
-	if (imports_list) {
-		r_list_foreach (imports_list, iter, import)
-			if (!strcmp (import->name, "__security_init_cookie")) {
-				//r_list_free (imports_list);
+	if (relocs_list) {
+		r_list_foreach (relocs_list, iter, rel)
+			if (!strcmp (rel->import->name, "__security_init_cookie")) {
 				return 1;
 			}
-		// DO NOT FREE IT! r_list_free (imports_list);
 	}
 	return 0;
 }
@@ -433,7 +437,7 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 		return false;
 	}
 	//it's funny here idx+0x5E can be 158 and sz 159 but with
-	//the cast it reads two bytes until 160 
+	//the cast it reads two bytes until 160
 	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 
