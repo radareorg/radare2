@@ -401,6 +401,7 @@ static void cmd_print_init(RCore *core) {
 
 // colordump
 static void cmd_prc (RCore *core, int len) {
+	const char *chars = " .,:;!O@#";
 	bool square = true; //false;
 	int i, j;
 	char ch, ch2, *color;
@@ -423,13 +424,19 @@ static void cmd_prc (RCore *core, int len) {
 				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[*p]);
 				color = r_cons_pal_parse (str);
 				free (str);
+				if (show_cursor && core->print->cur == j) {
+					ch = '_';
+				} else {
+					ch = ' ';
+				}
 			} else {
 				color = strdup ("");
-			}
-			if (show_cursor && core->print->cur == j) {
-				ch = '_';
-			} else {
-				ch = ' ';
+				if (show_cursor && core->print->cur == j) {
+					ch = '_';
+				} else {
+					const int idx = ((float)*p / 255) * (strlen (chars) - 1);
+					ch = chars[idx];
+				}
 			}
 			if (square) {
 				if (show_flags) {
