@@ -467,7 +467,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 
 			if (name_length < MAX_PATH) {
 				if (_tcsnicmp (filename, name, name_length) == 0
-					&& *(filename + name_length) == __T ('\\')) {
+					&& *(filename + name_length) == TEXT ('\\')) {
 					TCHAR temp_filename[MAX_PATH];
 					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
 						drive, filename + name_length);
