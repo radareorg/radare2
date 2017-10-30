@@ -5745,9 +5745,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 						eprintf ("Skipping huge range\n");
 						continue;
 					}
-					eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", begin, end);
-					(void)r_core_search_value_in_range (core, map->itv, begin, end,
-						vsize, asterisk, _CbInRangeAav);
+					eprintf ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x"\n", from, to, begin, end);
+					(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
 				}
 			}
 			from = UT64_MAX;
