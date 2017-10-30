@@ -103,7 +103,7 @@ static int __close(RIODesc *fd) {
 	return true;
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOW32Dbg *iop = fd->data;
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
@@ -119,15 +119,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 				}
 			}
 			/* TODO: Implement child attach */
-			return -1;
-		} else {
-			io->cb_printf ("%d\n", iop->pid);
-			return iop->pid;
 		}
+		return r_str_newf ("%d", iop->pid);
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}
-	return -1;
+	return NULL;
 }
 
 static int __getpid (RIODesc *fd) {
