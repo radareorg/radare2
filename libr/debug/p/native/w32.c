@@ -472,7 +472,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
 						drive, filename + name_length);
 					_tcsncpy (filename, temp_filename,
-						_tcslen (temp_filename));
+						_tcslen (temp_filename) + 1);
 					break;
 				}
 			}
