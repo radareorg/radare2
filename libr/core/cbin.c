@@ -1113,7 +1113,13 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 		}
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, "symbols");
-			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
+			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
+				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", i);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
+				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.fini", i);
+			} else {
+				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
+			}
 			r_flag_set (r->flags, str, at, 1);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"\n", at);
@@ -1126,9 +1132,17 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 				"\"type\":\"%s\"}",
 				iter->p ? "," : "", at, paddr, baddr, laddr, haddr, type);
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
-			r_cons_printf ("f entry%i_haddr 1 @ 0x%08"PFMT64x"\n", i, haddr);
-			r_cons_printf ("s entry%i\n", i);
+			char *name = NULL;
+			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
+				name = r_str_newf ("entry%i.init", i);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
+				name = r_str_newf ("entry%i.fini", i);
+			} else {
+				name = r_str_newf ("entry%i", i);
+			}
+			r_cons_printf ("f %s 1 @ 0x%08"PFMT64x"\n", name, at);
+			r_cons_printf ("f %s_haddr 1 @ 0x%08"PFMT64x"\n", name, haddr);
+			r_cons_printf ("s %s\n", name);
 		} else {
 			r_cons_printf (
 				 "vaddr=0x%08"PFMT64x

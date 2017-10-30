@@ -88,16 +88,16 @@ static ut64 addr_to_offset(struct MACH0_(obj_t)* bin, ut64 addr) {
 }
 
 static int init_hdr(struct MACH0_(obj_t)* bin) {
-	ut8 magicbytes[4]= {0};
+	ut8 magicbytes[4] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;
 
 	if (r_buf_read_at (bin->b, 0, magicbytes, 4) < 1) {
 		return false;
 	}
-	if (r_read_le32(magicbytes) == 0xfeedface) {
+	if (r_read_le32 (magicbytes) == 0xfeedface) {
 		bin->big_endian = false;
-	} else if (r_read_be32(magicbytes) == 0xfeedface) { 
+	} else if (r_read_be32 (magicbytes) == 0xfeedface) { 
 		bin->big_endian = true;
 	} else if (r_read_le32(magicbytes) == FAT_MAGIC) {
 		bin->big_endian = false;

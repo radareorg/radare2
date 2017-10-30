@@ -169,6 +169,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->metadata = metadata;
 	data->loaded = 0;
 	data->buffer = malloc (size + 1);
+	// data->laddr = 0; /// XXX
 	if (!data->buffer) {
 		free (data);
 		return NULL;

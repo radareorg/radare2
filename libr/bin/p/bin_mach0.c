@@ -82,38 +82,6 @@ static ut64 baddr(RBinFile *arch) {
 	return MACH0_(get_baddr)(bin);
 }
 
-static RList* entries(RBinFile *arch) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	RBinObject *obj = arch ? arch->o : NULL;
-	struct addr_t *entry = NULL;
-	int wordsize = 0;
-
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
-		return NULL;
-	}
-	wordsize = MACH0_(get_bits) (obj->bin_obj);
-	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj))) {
-		return ret;
-	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entry->offset + obj->boffset;
-		ptr->vaddr = entry->addr;
-		ptr->haddr = entry->haddr;
-		ptr->bits = wordsize;
-		//realign due to thumb
-		if (wordsize == 16) {
-			if (ptr->vaddr & 1) {
-				ptr->paddr--;
-				ptr->vaddr--;
-			}
-		}
-		r_list_append (ret, ptr);
-	}
-	free (entry);
-	return ret;
-}
-
 static void handle_data_sections(RBinSection *sect) {
 	if (strstr (sect->name, "_cstring")) {
 		sect->is_data = true;
@@ -167,6 +135,93 @@ static RList* sections(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	free (sections);
+	return ret;
+}
+
+static RBinAddr* newEntry(ut64 haddr, ut64 paddr, int type, int bits) {
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	if (ptr) {
+		ptr->paddr = paddr;
+		ptr->vaddr = paddr;
+		ptr->haddr = haddr;
+		ptr->bits = bits;
+		ptr->type = type;
+		//realign due to thumb
+		if (bits == 16 && ptr->vaddr & 1) {
+			ptr->paddr--;
+			ptr->vaddr--;
+		}
+	}
+	return ptr;
+}
+
+static void process_constructors (RBinFile *bf, RList *ret, int bits) {
+	RList *secs = sections (bf);
+	RListIter *iter;
+	RBinSection *sec;
+	int i, type;
+	r_list_foreach (secs, iter, sec) {
+		type = -1;
+		if (strstr (sec->name, "_mod_fini_func")) {
+			type  = R_BIN_ENTRY_TYPE_FINI;
+		} else if (strstr (sec->name, "_mod_init_func")) {
+			type  = R_BIN_ENTRY_TYPE_INIT;
+		}
+		if (type != -1) {
+			ut8 *buf = calloc (sec->size, 1);
+			if (!buf) {
+				continue;
+			}
+			(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+			if (bits == 32) {
+				for (i = 0; i < sec->size; i += 4) {
+					ut32 addr32 = r_read_le32 (buf + i);
+					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
+					r_list_append (ret, ba);
+				}
+			} else {
+				for (i = 0; i < sec->size; i += 8) {
+					ut64 addr64 = r_read_le64 (buf + i);
+					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
+					r_list_append (ret, ba);
+				}
+			}
+		}
+	}
+}
+
+static RList* entries(RBinFile *arch) {
+	RList *ret;
+	RBinAddr *ptr = NULL;
+	RBinObject *obj = arch ? arch->o : NULL;
+	struct addr_t *entry = NULL;
+
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
+		return NULL;
+	}
+
+	int bits = MACH0_(get_bits) (obj->bin_obj);
+	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj))) {
+		return ret;
+	}
+	if ((ptr = R_NEW0 (RBinAddr))) {
+		ptr->paddr = entry->offset + obj->boffset;
+		ptr->vaddr = entry->addr;
+		ptr->haddr = entry->haddr;
+		ptr->bits = bits;
+		//realign due to thumb
+		if (bits == 16) {
+			if (ptr->vaddr & 1) {
+				ptr->paddr--;
+				ptr->vaddr--;
+			}
+		}
+		r_list_append (ret, ptr);
+	}
+	
+	process_constructors (arch, ret, bits);
+	// constructors
+	free (entry);
 	return ret;
 }
 
