@@ -106,10 +106,10 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->pe32_bins);
 	r_list_free (obj->pe64_bins);
 
-	sdb_free (obj->kv);
+	// fails because sub-sdb of this instance doesnt handle refs properly
+	// better leak than crash
+	//sdb_free (obj->kv);
 	r_buf_free (obj->b);
-
-	memset (obj, 0, sizeof (struct r_bin_mdmp_obj));
 
 	R_FREE (obj);
 
@@ -728,7 +728,9 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 		if (!(paddr = r_bin_mdmp_get_paddr (obj, module->base_of_image))) {
 			continue;
 		}
-		buf = r_buf_new_with_bytes (obj->b->buf + paddr, module->size_of_image);
+		ut32 left = 0;
+		const ut8 *b = r_buf_get_at (obj->b, paddr, &left);
+		buf = r_buf_new_with_bytes (b, R_MIN (left, module->size_of_image));
 		dup = false;
 		if (check_pe32_bytes (buf->buf, module->size_of_image)) {
 			r_list_foreach(obj->pe32_bins, it_dup, pe32_dup) {
