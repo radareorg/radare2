@@ -654,7 +654,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				if (!ptr2) {
 					eprintf ("Oops. invalid label name\n");
 					break;
-				} else if (ptr != ptr2) { 
+				} else if (ptr != ptr2) {
 					ptr = ptr2;
 					if (end) *end ='\n';
 					end = strchr (ptr, '\n');

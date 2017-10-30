@@ -3319,7 +3319,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		char *s = cmd_syscall_dostr (core, -1);
 		if (s) {
 			// XXX this should be shown in ds_comment_esil, for some reason it doesnt
-			r_cons_printf ("; "); 
+			r_cons_printf ("; ");
 			ds_comment_esil (ds, true, "; %s", s);
 			free (s);
 		}
@@ -4294,7 +4294,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 		}
 
-		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str, 
+		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str,
 			sizeof (str), core->print->big_endian);
 
 		r_cons_printf (j > 0 ? ",{" : "{");

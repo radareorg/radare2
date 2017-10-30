@@ -3406,7 +3406,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
-  free (bin->tls_directory);
+	free (bin->tls_directory);
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);

@@ -228,40 +228,40 @@ static RList* symbols(RBinFile *arch) {
 	}
 	if ((symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
-		    if (!(ptr = R_NEW0 (RBinSymbol))) {
+			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-		    ptr->name = strdup ((char *)symbols[i].name);
-		    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
-		    //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		    ptr->bind = r_str_const ("GLOBAL");
-		    ptr->type = r_str_const ("FUNC");
-		    ptr->size = 0;
-		    ptr->vaddr = symbols[i].vaddr;
-		    ptr->paddr = symbols[i].paddr;
-		    ptr->ordinal = symbols[i].ordinal;
-		    r_list_append (ret, ptr);
+			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
+			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+			ptr->bind = r_str_const ("GLOBAL");
+			ptr->type = r_str_const ("FUNC");
+			ptr->size = 0;
+			ptr->vaddr = symbols[i].vaddr;
+			ptr->paddr = symbols[i].paddr;
+			ptr->ordinal = symbols[i].ordinal;
+			r_list_append (ret, ptr);
 		}
 		free (symbols);
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
-        for (i = 0; !imports[i].last; i++) {
-            if (!(ptr = R_NEW0 (RBinSymbol))) {
-                break;
+		for (i = 0; !imports[i].last; i++) {
+			if (!(ptr = R_NEW0 (RBinSymbol))) {
+				break;
 			}
-            //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 			ptr->name = r_str_newf ("imp.%s", imports[i].name);
-            //strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
-            ptr->bind = r_str_const ("NONE");
-            ptr->type = r_str_const ("FUNC");
-            ptr->size = 0;
-            ptr->vaddr = imports[i].vaddr;
-            ptr->paddr = imports[i].paddr;
-            ptr->ordinal = imports[i].ordinal;
-            r_list_append (ret, ptr);
-        }
-        free (imports);
+			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
+			ptr->bind = r_str_const ("NONE");
+			ptr->type = r_str_const ("FUNC");
+			ptr->size = 0;
+			ptr->vaddr = imports[i].vaddr;
+			ptr->paddr = imports[i].paddr;
+			ptr->ordinal = imports[i].ordinal;
+			r_list_append (ret, ptr);
+		}
+		free (imports);
 	}
 	find_pe_overlay(arch);
 	return ret;
@@ -405,7 +405,7 @@ static int is_vb6(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-  // XXX: We only need imports here but this causes leaks, we need to wait for the below
+	// XXX: We only need imports here but this causes leaks, we need to wait for the below
 	struct PE_ (r_bin_pe_obj_t) *bin = arch->o->bin_obj;
 	const RList* relocs_list = bin->relocs;
 	RListIter *iter;

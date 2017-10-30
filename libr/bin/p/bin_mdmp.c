@@ -280,6 +280,7 @@ static RList *sections(RBinFile *arch) {
 		index += memory64->data_size;
 	}
 
+	// XXX: Never add here as they are covered above
 	r_list_foreach (obj->streams.modules, it, module) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -291,7 +292,7 @@ static RList *sections(RBinFile *arch) {
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
 		ptr->size = module->size_of_image;
-		ptr->add = true;
+		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->srwx = R_BIN_SCN_MAP;

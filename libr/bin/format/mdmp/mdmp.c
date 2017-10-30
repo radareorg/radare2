@@ -109,7 +109,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->pe64_bins);
 
 	r_buf_free (obj->b);
-  obj->b = NULL;
+	obj->b = NULL;
 	free (obj);
 
 	return;
