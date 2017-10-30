@@ -41,6 +41,7 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
 		" -e              entrypoint\n"
+		" -ee             constructor/destructor entrypoints\n"
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
@@ -613,7 +614,7 @@ int main(int argc, char **argv) {
 	}
 
 #define is_active(x) (action & x)
-#define set_action(x) actions++; action |= x
+#define set_action(x) { actions++; action |= x; }
 #define unset_action(x) action &= ~x
 	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrvLhuxXzZ")) != -1) {
 		switch (c) {
@@ -701,7 +702,14 @@ int main(int argc, char **argv) {
 				do_demangle = argv[optind];
 			}
 			break;
-		case 'e': set_action (R_BIN_REQ_ENTRIES); break;
+		case 'e':
+			if (action & R_BIN_REQ_ENTRIES) {
+				action &= ~R_BIN_REQ_ENTRIES;
+				action |= R_BIN_REQ_INITFINI;
+			} else {
+				set_action (R_BIN_REQ_ENTRIES);
+			}
+			break;
 		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
 		case 'U': set_action (R_BIN_REQ_RESOURCES); break;
 		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
@@ -1031,6 +1039,7 @@ int main(int argc, char **argv) {
 
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
+	run_action ("entries", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
 	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);

@@ -610,7 +610,14 @@ static int cmd_info(void *data, const char *input) {
 			  }
 			  break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
-		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0); break;
+		case 'e':
+			  if (input[1] == 'e') {
+				  RBININFO ("entries", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				  input++;
+			  } else {
+				  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+			  }
+			break;
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0); break;
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0); break;
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0); break;

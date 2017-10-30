@@ -1084,7 +1084,7 @@ static int bin_main(RCore *r, int mode, int va) {
 	return true;
 }
 
-static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
+static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *entries = r_bin_get_entries (r->bin);
 	RListIter *iter;
@@ -1103,6 +1103,15 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 haddr = UT64_MAX;
+		if (inifin) {
+			if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM) {
+				continue;
+			}
+		} else {
+			if (entry->type != R_BIN_ENTRY_TYPE_PROGRAM) {
+				continue;
+			}
+		}
 		if (entry->haddr) {
 			haddr = entry->haddr;
 		}
@@ -3104,7 +3113,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_MAIN)) ret &= bin_main (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_DWARF)) ret &= bin_dwarf (core, mode);
 	if ((action & R_CORE_BIN_ACC_PDB)) ret &= bin_pdb (core, mode);
-	if ((action & R_CORE_BIN_ACC_ENTRIES)) ret &= bin_entry (core, mode, loadaddr, va);
+	if ((action & R_CORE_BIN_ACC_ENTRIES)) ret &= bin_entry (core, mode, loadaddr, va, false);
+	if ((action & R_CORE_BIN_ACC_INITFINI)) ret &= bin_entry (core, mode, loadaddr, va, true);
 	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum);
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
