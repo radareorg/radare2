@@ -45,8 +45,23 @@ R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
+#if UNICODE
+#define W32_TCHAR_FSTR "%S"
+#define W32_TCALL(name) name"W"
+#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf)
+#define r_sys_conv_char_to_w32_l(buf, len) r_str_mb_to_wc_l (buf, len) 
+#define r_sys_conv_w32_to_char(buf) r_str_wc_to_mb (buf)
+#define r_sys_conv_w32_to_char_l(buf, len) r_str_wc_to_mb_l (buf, len) 
+#else
+#define W32_TCHAR_FSTR "%s"
+#define W32_TCALL(name) name"A"
+#define r_sys_conv_char_to_w32(buf) r_str_new (buf)
+#define r_sys_conv_w32_to_char(buf) r_sys_conv_char_to_w32 (buf)
+#define r_sys_conv_w32_to_char_l(buf, len) r_str_newlen (buf, len)
+#endif
 R_API int r_sys_get_src_dir_w32(char *buf);
 R_API char *r_sys_cmd_str_w32(const char *cmd);
+R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out);
 #endif
 R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);

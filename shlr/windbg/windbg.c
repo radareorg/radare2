@@ -1014,10 +1014,8 @@ int windbg_break_read(WindCtx *ctx) {
 #if __WINDOWS__ && !defined(_MSC_VER)
 	static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
 	if (!w32_CancelIoEx) {
-		HANDLE lib;
-		lib = LoadLibrary ("psapi.dll");
 		w32_CancelIoEx = (BOOL WINAPI (*)(HANDLE, LPOVERLAPPED))
-				 GetProcAddress (GetModuleHandle ("kernel32"),
+				 GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
 			"CancelIoEx");
 	}
 	if (w32_CancelIoEx) {

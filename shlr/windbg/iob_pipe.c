@@ -11,14 +11,11 @@
 
 static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;
-	hPipe = CreateFileA (path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	eprintf ("iob_pipe_open: invocado %s\n", path);
-	if (hPipe != INVALID_HANDLE_VALUE) {
-		return (void *) (HANDLE) hPipe;
-	} else {
-		perror ("pipe");
-	}
-	return NULL;
+	LPTSTR path_ = r_sys_conv_char_to_w32 (path);
+
+	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	free (path_);
+	return hPipe != INVALID_HANDLE_VALUE? (void *)(HANDLE)hPipe : NULL;
 }
 
 static int iob_pipe_close(void *p) {

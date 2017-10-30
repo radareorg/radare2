@@ -5,6 +5,7 @@
 #include "r_cons.h"
 #include "r_bin.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -2999,4 +3000,76 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color) {
 		}
 	}
 	return strdup (o);
+}
+
+R_API wchar_t* r_str_mb_to_wc_l(const char *buf, int len) {
+	wchar_t *res_buf = NULL;
+	size_t sz;
+	bool fail = true;
+
+	if (!buf || len <= 0) {
+		return NULL;
+	}
+	sz = mbstowcs (NULL, buf, len);
+	if (sz == (size_t)-1) {
+		goto err_r_str_mb_to_wc;
+	}
+	res_buf = (wchar_t *)calloc (1, (sz + 1) * sizeof (wchar_t));  
+    	if (!res_buf) {
+		goto err_r_str_mb_to_wc;
+	}
+	sz = mbstowcs (res_buf, buf, sz + 1);
+	if (sz == (size_t)-1) {
+		goto err_r_str_mb_to_wc;
+	}
+	fail = false;
+err_r_str_mb_to_wc:
+	if (fail) {
+		free (res_buf);
+		res_buf = NULL;
+	}
+	return res_buf;
+}
+
+R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
+	char *res_buf = NULL;
+	bool fail = true;
+	size_t sz;
+
+	if (!buf || len <= 0) {
+		return NULL;
+	}
+	sz = wcstombs (NULL, buf, len);
+	if (sz == (size_t)-1) {
+		goto err_r_str_wc_to_mb;
+	}
+	res_buf = (char *)calloc (1, (sz + 1) * sizeof (char));
+	if (!res_buf) {
+		goto err_r_str_wc_to_mb;
+	}
+	sz = wcstombs (res_buf, buf, sz + 1);
+	if (sz == (size_t)-1) {
+		goto err_r_str_wc_to_mb;
+	}
+	fail = false;
+err_r_str_wc_to_mb:
+	if (fail) {
+		free (res_buf);
+		res_buf = NULL;
+	}
+	return res_buf;
+}
+
+R_API char* r_str_wc_to_mb(const wchar_t *buf) {
+	if (!buf) {
+		return NULL;
+	}
+	return r_str_wc_to_mb_l (buf, wcslen (buf));
+}
+
+R_API wchar_t* r_str_mb_to_wc(const char *buf) {
+	if (!buf) {
+		return NULL;
+	}
+	return r_str_mb_to_wc_l (buf, strlen (buf));
 }
