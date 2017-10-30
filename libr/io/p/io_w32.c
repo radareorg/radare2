@@ -64,13 +64,12 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static int w32__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *w32__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (io && fd && fd->data && cmd && !strcmp (cmd, "winbase")) {
 		RIOW32 *w32 = (RIOW32 *)fd->data;
 		io->cb_printf ("%"PFMT64u , w32->winbase);
-		return true;
 	}
-	return false;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_w32 = {
