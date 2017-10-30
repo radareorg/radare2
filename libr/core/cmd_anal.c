@@ -4223,34 +4223,27 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	addr = core->offset;
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
-		RIOSection *s = r_io_section_vget (core->io, addr);
-		if (s && s->flags & 1) {
+		RIOSection *sec = r_io_section_vget (core->io, addr);
+		if (sec && sec->flags & 1) {
 			// search in current section
-			if (s->size > binfile->size) {
-				addr = s->vaddr;
-				if (binfile->size > s->paddr) {
-					len = binfile->size - s->paddr;
+			if (sec->size > binfile->size) {
+				addr = sec->vaddr;
+				if (binfile->size > sec->paddr) {
+					len = binfile->size - sec->paddr;
 				} else {
 					eprintf ("Opps something went wrong aac\n");
 					return;
 				}
 			} else {
-				addr = s->vaddr;
-				len = s->size;
+				addr = sec->vaddr;
+				len = sec->size;
 			}
 		} else {
-			// search in full file
-			RIOSection *sec = r_io_section_vget (core->io, addr);
-			if (sec->vaddr != sec->paddr && binfile->size > (core->offset - sec->vaddr + sec->paddr)) {
+			if (sec && sec->vaddr != sec->paddr && binfile->size > (core->offset - sec->vaddr + sec->paddr)) {
 				len = binfile->size - (core->offset - sec->vaddr + sec->paddr);
 			} else {
 				if (binfile->size > core->offset) {
-					if (binfile->size > core->offset) {
-						len = binfile->size - core->offset;
-					} else {
-						eprintf ("Opps something went wrong aac\n");
-						return;
-					}
+					len = binfile->size - core->offset;
 				} else {
 					eprintf ("Oops invalid range\n");
 					len = 0;
