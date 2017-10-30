@@ -7,16 +7,16 @@
  */
 
 #include <stdio.h>
-
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <capstone/capstone.h>
+
 static csh cd = 0;
-#include "cs_mnemonics.c"
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1
+//#include "cs_mnemonics.c"
 #else
 #define CAPSTONE_HAS_TMS320C64X 0
 #warning Cannot find capstone-tms320c64x support
@@ -90,7 +90,8 @@ static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		return op->size = -1;
 	}
 	op->size = tms320_dasm (&engine, buf, len);
-	snprintf (op->buf_asm, R_ASM_BUFSIZE-1, "%s", engine.syntax);
+	strncpy (op->buf_asm, engine.syntax, R_ASM_BUFSIZE - 1);
+	op->buf_asm[R_ASM_BUFSIZE - 1] = 0;
 	return op->size;
 }
 
