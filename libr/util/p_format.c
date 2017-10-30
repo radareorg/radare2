@@ -6,7 +6,7 @@
 #include "r_reg.h"
 #ifdef _MSC_VER
 #include <time.h>
-#endif 
+#endif
 #define NOPTR 0
 #define PTRSEEK 1
 #define PTRBACK 2
@@ -1219,7 +1219,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	if (!f) {
 		return -1;
 	}
-	if (n >= 3) {
+	if (n >= 5) {  // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
 	char *o = strdup (f);
@@ -1653,7 +1653,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					// Max byte number where updateAddr will look into
 				if (len - i < 7) {
 					updateAddr (buf + i, THRESHOLD - (len - i), endian, &addr, &addr64);
-				} else { 
+				} else {
 					updateAddr (buf + i, len - i, endian, &addr, &addr64);
 				}
 			} else {
@@ -2133,6 +2133,19 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->cb_printf ("\n");
 			}
 			last = tmp;
+
+			// XXX: Due to the already noted issues with the above, we need to strip
+			// args from fmt:args the same way we strip fmt
+			if (arg[0] == 'E' || arg[0] == '?') {
+				char *end_fmt = strchr (arg, ' ');
+				char *next_args = strchr (end_fmt+1, ' ');
+				if (next_args) {
+					while (*next_args != '\0') {
+						*end_fmt++ = *next_args++;
+					}
+				}
+				*end_fmt = '\0';
+			}
 		}
 		if (otimes > 1) {
 			if (MUSTSEEJSON) {
