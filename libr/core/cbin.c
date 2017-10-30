@@ -1103,13 +1103,15 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 haddr = UT64_MAX;
-		if (inifin) {
-			if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM) {
-				continue;
-			}
-		} else {
-			if (entry->type != R_BIN_ENTRY_TYPE_PROGRAM) {
-				continue;
+		if (mode == 0) {
+			if (inifin) {
+				if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM) {
+					continue;
+				}
+			} else {
+				if (entry->type != R_BIN_ENTRY_TYPE_PROGRAM) {
+					continue;
+				}
 			}
 		}
 		if (entry->haddr) {
