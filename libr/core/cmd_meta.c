@@ -391,7 +391,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			if (out) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal,
 						R_META_TYPE_COMMENT, addr, out);
 				free (out);
@@ -427,7 +427,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
 	case '-': // "CC-"
-		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1, NULL);
+		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
 		break;
 	case 'u':
 		//
@@ -477,7 +477,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				addr = r_num_math (core->num, input+3);
 				r_meta_del (core->anal,
 						R_META_TYPE_COMMENT,
-						addr, 1, NULL);
+						addr, 1);
 			} else eprintf ("Usage: CCa-[address]\n");
 			free (s);
 			return true;
@@ -547,14 +547,14 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '*':
 			core->num->value = r_meta_del (core->anal,
-					input[0], 0, UT64_MAX, NULL);
+					input[0], 0, UT64_MAX);
 			break;
 		case ' ':
 			addr = r_num_math (core->num, input+3);
 			/* fallthrough */
 		default:
 			core->num->value = r_meta_del (core->anal,
-					input[0], addr, 1, NULL);
+					input[0], addr, 1);
 			break;
 		}
 		break;
@@ -572,7 +572,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			if (out) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
@@ -911,7 +911,7 @@ static int cmd_meta(void *data, const char *input) {
 	case '-':
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
-			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i, "");
+			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i);
 		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
 	case '?':

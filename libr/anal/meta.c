@@ -194,7 +194,7 @@ R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
 	return (char *)sdb_decode (p2+1, NULL);
 }
 
-R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) {
+R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	char key[100], *dtr, *s, *p, *next;
 	const char *ptr;
 	int i;
@@ -254,7 +254,7 @@ R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
 }
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
-	return r_meta_del (a, R_META_TYPE_ANY, from, (to-from), NULL);
+	return r_meta_del (a, R_META_TYPE_ANY, from, (to-from));
 }
 
 R_API void r_meta_item_free(void *_item) {
