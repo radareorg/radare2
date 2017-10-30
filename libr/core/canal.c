@@ -2861,17 +2861,6 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 
 	r_cons_break_push (NULL, NULL);
-	/* Main */
-	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
-		ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
-		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
-	}
-	if ((list = r_bin_get_entries (core->bin)) != NULL) {
-		r_list_foreach (list, iter, entry) {
-			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
-			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
-		}
-	}
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL) {
 		r_list_foreach (list, iter, symbol) {
@@ -2884,6 +2873,17 @@ R_API int r_core_anal_all(RCore *core) {
 				r_core_anal_fcn (core, addr, -1,
 					R_ANAL_REF_TYPE_NULL, depth);
 			}
+		}
+	}
+	/* Main */
+	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
+		ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
+		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	}
+	if ((list = r_bin_get_entries (core->bin)) != NULL) {
+		r_list_foreach (list, iter, entry) {
+			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
+			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 		}
 	}
 	if (anal_vars) {

@@ -396,7 +396,7 @@ static RList* entries(RBinFile *bf) {
 		}
 	}
 	int bin_bits = Elf_(r_bin_elf_get_bits) (bf->o->bin_obj);
-	process_constructors (bf, ret, bin_bits);
+	process_constructors (bf, ret, bin_bits < 32 ? 32: bin_bits);
 	return ret;
 }
 

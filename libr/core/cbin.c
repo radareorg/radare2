@@ -9,7 +9,6 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
-
 #define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
 #define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
 #define IS_MODE_SIMPLEST(mode) (mode & R_CORE_BIN_SIMPLEST)
@@ -269,7 +268,7 @@ static bool string_filter(RCore *core, const char *str) {
 			bool prevd = false;
 			for (i = 0; str[i]; i++) {
 				char ch = str[i];
-				if (IS_DIGIT(ch)) {
+				if (IS_DIGIT (ch)) {
 					segmentsum = segmentsum*10 + (ch - '0');
 					if (segment == 3) {
 						return true;
@@ -380,7 +379,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			free (str);
 			free (f_name);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr, string->size, string->length, string->string);
+			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
+				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
@@ -1097,13 +1097,17 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	} else if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("[");
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("[Entrypoints]\n");
+		if (inifin) {
+			r_cons_printf ("[Constructors]\n");
+		} else {
+			r_cons_printf ("[Entrypoints]\n");
+		}
 	}
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 haddr = UT64_MAX;
-		if (mode == 0) {
+		if (mode != R_CORE_BIN_SET) {
 			if (inifin) {
 				if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM) {
 					continue;
