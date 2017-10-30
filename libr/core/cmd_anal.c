@@ -5736,12 +5736,17 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 
 				eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
 				r_list_foreach (list, iter, map) {
+					ut64 begin = map->itv.addr;
+					ut64 end = r_itv_end (map->itv);
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					(void)r_core_search_value_in_range (core, map->itv, from, to,
-					//	map->itv.addr, r_itv_end (map->itv) 
+					if (end - begin > UT32_MAX) {
+						eprintf ("Skipping huge range\n");
+						continue;
+					}
+					eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", begin, end);
+					(void)r_core_search_value_in_range (core, map->itv, begin, end,
 						vsize, asterisk, _CbInRangeAav);
 				}
 			}
