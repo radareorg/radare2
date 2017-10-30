@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+#include <r_util.h>
 #include "tcc.h"
 
 /********************************************************/
@@ -56,15 +56,21 @@ static HMODULE tcc_module;
 /* on win32, we suppose the lib and includes are at the location of 'tcc.exe' */
 static void tcc_set_lib_path_w32(TCCState *s)
 {
-    char path[1024], *p;
-    GetModuleFileNameA(tcc_module, path, sizeof path);
-    p = tcc_basename(normalize_slashes(strlwr(path)));
-    if (p - 5 > path && 0 == strncmp(p - 5, "/bin/", 5))
+    TCHAR path[1024];
+    char *p, *path_;
+
+    if (!GetModuleFileName (tcc_module, path, sizeof (path) / sizeof (TCHAR))) {
+	return;
+    }
+    path_ = r_sys_conv_w32_to_char (path);
+    p = tcc_basename (normalize_slashes (strlwr (path_)));
+    if (p - 5 > path_ && 0 == strncmp (p - 5, "/bin/", 5))
         p -= 5;
-    else if (p > path)
+    else if (p > path_)
         p--;
     *p = 0;
-    tcc_set_lib_path(s, path);
+    tcc_set_lib_path (s, path_);
+    free (path_);
 }
 
 #ifdef TCC_TARGET_PE

@@ -103,7 +103,7 @@ err_enable:
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
-	STARTUPINFOA si = { sizeof (si) };
+	STARTUPINFO si = { 0 } ;
 	DEBUG_EVENT de;
 	int pid, tid;
 	HANDLE th = INVALID_HANDLE_VALUE;
@@ -117,6 +117,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	// We need to build a command line with quoted argument and escaped quotes
 	int cmd_len = 0;
 	int i = 0;
+
+	si.cb = sizeof (si);
 	while (argv[i]) {
 		char *current = argv[i];
 		int quote_count = 0;
@@ -154,12 +156,18 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	cmdline[cmd_i] = '\0';
 
-	if (!CreateProcessA (argv[0], cmdline, NULL, NULL, FALSE,
+	LPTSTR appname_ = r_sys_conv_char_to_w32 (argv[0]);
+	LPTSTR cmdline_ = r_sys_conv_char_to_w32 (cmdline);
+	if (!CreateProcess (appname_, cmdline_, NULL, NULL, FALSE,
 						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 						 NULL, NULL, &si, &pi)) {
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
+		free (appname_);
+		free (cmdline_);
 		return -1;
 	}
+	free (appname_);
+	free (cmdline_);
 	free (cmdline);
 	r_str_argv_free (argv);
 	/* get process id and thread id */

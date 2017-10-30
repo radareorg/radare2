@@ -54,7 +54,7 @@ FILE_WRITE_ACCESS 2
 
 extern HANDLE gHandleDriver;
 
-BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop);
+BOOL StartStopService(LPCTSTR lpServiceName, BOOL bStop);
 int GetSystemModules(RIO *io);
 int ReadKernelMemory (ut64 address, ut8 *buf, int len);
 int WriteKernelMemory (ut64 address, const ut8 *buf, int len);

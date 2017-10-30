@@ -18,7 +18,6 @@
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size);
-static void r_debug_native_stop(RDebug *dbg);
 
 #include "native/bt.c"
 
@@ -228,12 +227,13 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #endif
 }
 
-// XXX linux specific?
+#if !__WINDOWS__ && !__CYGWIN__ && !__APPLE__ && !__BSD__
 /* Callback to trigger SIGINT signal */
 static void r_debug_native_stop(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
 	r_cons_break_pop ();
 }
+#endif
 
 /* TODO: specify thread? */
 /* TODO: must return true/false */
@@ -1036,6 +1036,29 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 err_linux_map_dealloc:
 	return ret;
 }
+#elif __WINDOWS__ && !__CYGWIN__
+static int io_perms_to_prot (int io_perms) {
+	int prot_perms;
+
+	if ((io_perms & R_IO_RWX) == R_IO_RWX) {
+		prot_perms = PAGE_EXECUTE_READWRITE;
+	} else if ((io_perms & (R_IO_WRITE | R_IO_EXEC)) == (R_IO_WRITE | R_IO_EXEC)) {
+		prot_perms = PAGE_EXECUTE_READWRITE;
+	} else if ((io_perms & (R_IO_READ | R_IO_EXEC)) == (R_IO_READ | R_IO_EXEC)) {
+		prot_perms = PAGE_EXECUTE_READ;
+	} else if ((io_perms & R_IO_RW) == R_IO_RW) {
+		prot_perms = PAGE_READWRITE;
+	} else if (io_perms & R_IO_WRITE) {
+		prot_perms = PAGE_READWRITE;
+	} else if (io_perms & R_IO_EXEC) {
+		prot_perms = PAGE_EXECUTE;
+	} else if (io_perms & R_IO_READ) {
+		prot_perms = PAGE_READONLY;
+	} else {
+		prot_perms = PAGE_NOACCESS;
+	}
+	return prot_perms;
+}
 #endif
 
 static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
@@ -1401,8 +1424,9 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_native_bp (void *bp_, RBreakpointItem *b, bool set) {
 #if __i386__ || __x86_64__
+	RBreakpoint *bp = (RBreakpoint *)bp_;
 	RDebug *dbg = bp->user;
 	if (b && b->hw) {
 		return set
@@ -1513,7 +1537,7 @@ static RList *win_desc_list (int pid) {
 	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc(handleInfoSize);
 	#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
 	#define SystemHandleInformation 16
-	while ((status = w32_ntquerysysteminformation(SystemHandleInformation,handleInfo,handleInfoSize,NULL)) == STATUS_INFO_LENGTH_MISMATCH)
+	while ((status = w32_NtQuerySystemInformation(SystemHandleInformation,handleInfo,handleInfoSize,NULL)) == STATUS_INFO_LENGTH_MISMATCH)
 		handleInfo = (PSYSTEM_HANDLE_INFORMATION)realloc(handleInfo, handleInfoSize *= 2);
 	if (status) {
 		eprintf("win_desc_list: NtQuerySystemInformation failed!\n");
@@ -1530,17 +1554,17 @@ static RList *win_desc_list (int pid) {
 			continue;
 		if (handle.ObjectTypeNumber != 0x1c)
 			continue;
-		if (w32_ntduplicateobject (processHandle, &handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
+		if (w32_NtDuplicateObject (processHandle, &handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
 			continue;
 		objectTypeInfo = (POBJECT_TYPE_INFORMATION)malloc(0x1000);
-		if (w32_ntqueryobject(dupHandle,2,objectTypeInfo,0x1000,NULL)) {
+		if (w32_NtQueryObject(dupHandle,2,objectTypeInfo,0x1000,NULL)) {
 			CloseHandle(dupHandle);
 			continue;
 		}
 		objectNameInfo = malloc(0x1000);
-		if (w32_ntqueryobject(dupHandle,1,objectNameInfo,0x1000,&returnLength)) {
+		if (w32_NtQueryObject(dupHandle,1,objectNameInfo,0x1000,&returnLength)) {
 			objectNameInfo = realloc(objectNameInfo, returnLength);
-			if (w32_ntqueryobject(dupHandle,1,objectNameInfo,returnLength,NULL)) {
+			if (w32_NtQueryObject(dupHandle, 1, objectNameInfo, returnLength, NULL)) {
 				free(objectTypeInfo);
 				free(objectNameInfo);
 				CloseHandle(dupHandle);
@@ -1671,11 +1695,14 @@ static RList *r_debug_desc_native_list (int pid) {
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD old;
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	// TODO: align pointers
-	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr,
-	  			size, perms, &old);
-	CloseHandle (process);
+	BOOL ret = FALSE;
+	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+
+	if (h_proc) {
+		ret = VirtualProtectEx (h_proc, (LPVOID)(size_t)addr,
+			size, io_perms_to_prot (perms), &old);
+		CloseHandle (h_proc);
+	}
 	return ret;
 #elif __APPLE__
 	return xnu_map_protect (dbg, addr, size, perms);
@@ -1816,7 +1843,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.map_get = r_debug_native_map_get,
 	.modules_get = r_debug_native_modules_get,
 	.map_protect = r_debug_native_map_protect,
-	.breakpoint = (RBreakpointCallback)r_debug_native_bp,
+	.breakpoint = r_debug_native_bp,
 	.drx = r_debug_native_drx,
 	.gcore = r_debug_gcore,
 };

@@ -95,6 +95,7 @@ endif
 ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
 EXT_SO=dll
 SOVER=${EXT_SO}
+CFLAGS+=-DUNICODE -D_UNICODE
 else
 EXT_SO=so
 SOVER=${EXT_SO}.${SDBVER}

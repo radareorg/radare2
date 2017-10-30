@@ -16,7 +16,7 @@ R_LIB_VERSION(r_lib);
   #define DLCLOSE(x) dlclose(x)
 #elif __WINDOWS__
 #include <windows.h>
-  #define DLOPEN(x)  LoadLibraryA(x)
+  #define DLOPEN(x)  LoadLibrary(x)
   #define DLSYM(x,y) GetProcAddress(x,y)
   #define DLCLOSE(x) 0//(x)
 //CloseLibrary(x)
@@ -64,7 +64,14 @@ R_API void *r_lib_dl_open(const char *libname) {
 	if (!libname || !*libname) {
 		return NULL;
 	}
+#if __WINDOWS__
+	LPTSTR libname_;
+
+	libname_ = r_sys_conv_char_to_w32 (libname);
+	ret = DLOPEN (libname_);
+#else
 	ret = DLOPEN (libname);
+#endif
 	if (__has_debug && !ret) {
 #if __UNIX__
 		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
@@ -72,6 +79,9 @@ R_API void *r_lib_dl_open(const char *libname) {
 		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
 #endif
 	}
+#if __WINDOWS__
+	free (libname_);
+#endif
 	return ret;
 }
 

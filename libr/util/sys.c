@@ -60,10 +60,10 @@ extern char **environ;
 #include <process.h>  // to allow getpid under windows msvc compilation
 #include <direct.h>  // to allow getcwd under windows msvc compilation
 #else
-typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
-typedef DWORD WINAPI (*GetProcessImageFileNameA_t) (HANDLE, LPTSTR, DWORD);
-static GetProcessImageFileNameA_t GetProcessImageFileNameA;
-static QueryFullProcessImageNameA_t QueryFullProcessImageNameA;
+typedef BOOL WINAPI (*QueryFullProcessImageName_t) (HANDLE, DWORD, LPTSTR, PDWORD);
+typedef DWORD WINAPI (*GetProcessImageFileName_t) (HANDLE, LPTSTR, DWORD);
+GetProcessImageFileName_t GetProcessImageFileName;
+QueryFullProcessImageName_t QueryFullProcessImageName;
 #endif
 #endif
 
@@ -298,7 +298,12 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	SetEnvironmentVariableA (key, (LPSTR)value);
+	LPTSTR key_ = r_sys_conv_char_to_w32 (key);
+	LPTSTR value_ = r_sys_conv_char_to_w32 (value);
+
+	SetEnvironmentVariable (key_, value_);
+	free (key_);
+	free (value_);
 	return 0; // TODO. get ret
 #else
 #warning r_sys_setenv : unimplemented for this platform
@@ -306,9 +311,9 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
+#if __UNIX__
 static char *crash_handler_cmd = NULL;
 
-#if __UNIX__
 static void signal_handler(int signum) {
 	char cmd[1024];
 	if (!crash_handler_cmd) {
@@ -374,13 +379,16 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
-	static char envbuf[4096];
+	TCHAR envbuf[4096];
 	DWORD dwRet;
+	LPTSTR key_;
 
 	if (!key) {
 		return NULL;
 	}
-	dwRet = GetEnvironmentVariableA (key, (LPSTR)&envbuf, sizeof (envbuf));
+	key_ = r_sys_conv_char_to_w32 (key);
+	dwRet = GetEnvironmentVariable (key_, envbuf, sizeof (envbuf) / sizeof (TCHAR));
+	free (key_);
 	if (dwRet == 0) {
 		/* Variable not found. */
 		return NULL;
@@ -390,7 +398,7 @@ R_API char *r_sys_getenv(const char *key) {
 		eprintf ("Buffer too small to read `%s' environment variable.\n", key);
 		return NULL;
 	}
-	return strdup (envbuf);
+	return r_sys_conv_w32_to_char_l (envbuf, (int)dwRet);
 #else
 	char *b;
 	if (!key) {
@@ -653,14 +661,20 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 }
 
 R_API bool r_sys_mkdir(const char *dir) {
+	bool ret;
+
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	return CreateDirectoryA (dir, NULL) != 0;
+	LPTSTR dir_ = r_sys_conv_char_to_w32 (dir);
+
+	ret = CreateDirectory (dir_, NULL) != 0;
+	free (dir_);
 #else
-	return mkdir (dir, 0755) != -1;
+	ret= mkdir (dir, 0755) != -1;
 #endif
+	return ret;
 }
 
 R_API bool r_sys_mkdirp(const char *dir) {
@@ -716,26 +730,22 @@ R_API void r_sys_perror_str(const char *fun) {
 	perror (fun);
 #pragma pop_macro("perror")
 #elif __WINDOWS__
-	char *lpMsgBuf;
-	LPVOID lpDisplayBuf;
-	DWORD dw = GetLastError ();
+	LPTSTR lpMsgBuf;
+	DWORD dw = GetLastError();
 
-	FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER |
+	if (FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER |
 			FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
 			dw,
 			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR) &lpMsgBuf,
-			0, NULL );
-
-	lpDisplayBuf = (LPVOID)LocalAlloc (LMEM_ZEROINIT,
-			(lstrlen ((LPCTSTR)lpMsgBuf)+
-			lstrlen ((LPCTSTR)fun) + 40) * sizeof (TCHAR));
-	eprintf ("%s: %s\n", fun, lpMsgBuf);
-
-	LocalFree (lpMsgBuf);
-	LocalFree (lpDisplayBuf);
+			(LPTSTR)&lpMsgBuf,
+			0, NULL )) {
+		eprintf ("%s: " W32_TCHAR_FSTR "\n", fun, lpMsgBuf);
+		LocalFree (lpMsgBuf);
+	} else {
+		eprintf ("%s\n", fun);
+	}
 #endif
 }
 
@@ -846,50 +856,50 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	HANDLE kernel32 = LoadLibraryA ("Kernel32.dll");
+	HANDLE kernel32 = GetModuleHandle (TEXT("kernel32"));
 	if (!kernel32) {
-		eprintf ("Error getting the handle to Kernel32.dll\n");
+		eprintf ("Error getting the handle to kernel32.dll\n");
 		return NULL;
 	}
 #ifndef _MSC_VER
-	if (!GetProcessImageFileNameA) {
-		if (!QueryFullProcessImageNameA) {
-			QueryFullProcessImageNameA = (QueryFullProcessImageNameA_t) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
+	if (!GetProcessImageFileName) {
+		if (!QueryFullProcessImageName) {
+			QueryFullProcessImageName = (QueryFullProcessImageName_t) GetProcAddress (kernel32, W32_TCALL ("QueryFullProcessImageName"));
 		}
-		if (!QueryFullProcessImageNameA) {
+		if (!QueryFullProcessImageName) {
 			// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
-			HANDLE psapi = LoadLibrary ("Psapi.dll");
+			HANDLE psapi = LoadLibrary (TEXT("Psapi.dll"));
 			if (!psapi) {
 				eprintf ("Error getting the handle to Psapi.dll\n");
 				return NULL;
 			}
-			GetProcessImageFileNameA = (GetProcessImageFileNameA_t) GetProcAddress (psapi, "GetProcessImageFileNameA");
-			if (!GetProcessImageFileNameA) {
-				eprintf ("Error getting the address of GetProcessImageFileNameA\n");
+			GetProcessImageFileName = (GetProcessImageFileName_t) GetProcAddress (psapi, W32_TCALL ("GetProcessImageFileName"));
+			if (!GetProcessImageFileName) {
+				eprintf ("Error getting the address of GetProcessImageFileName\n");
 				return NULL;
 			}
 		}
 	}
 	HANDLE handle = NULL;
-	CHAR filename[MAX_PATH];
+	TCHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
 	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (handle != NULL) {
-		if (QueryFullProcessImageNameA) {
-			if (QueryFullProcessImageNameA (handle, 0, filename, &maxlength) == 0) {
-				eprintf ("Error calling QueryFullProcessImageNameA\n");
+		if (QueryFullProcessImageName) {
+			if (QueryFullProcessImageName (handle, 0, filename, &maxlength) == 0) {
+				eprintf ("Error calling QueryFullProcessImageName\n");
 				CloseHandle (handle);
 				return NULL;
 			}
 		} else {
-			if (GetProcessImageFileNameA (handle, filename, maxlength) == 0) {
-				eprintf ("Error calling GetProcessImageFileNameA\n");
+			if (GetProcessImageFileName (handle, filename, maxlength) == 0) {
+				eprintf ("Error calling GetProcessImageFileName\n");
 				CloseHandle (handle);
 				return NULL;
 			}
 		}
 		CloseHandle (handle);
-		return strdup (filename);
+		return r_sys_conv_w32_to_char (filename);
 	}
 	return NULL;
 #else
