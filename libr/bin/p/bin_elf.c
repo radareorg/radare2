@@ -9,6 +9,8 @@
 #include <r_cons.h>
 #include "elf/elf.h"
 
+static RBinInfo* info(RBinFile *arch);
+
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
@@ -177,7 +179,9 @@ static RList* entries(RBinFile *arch) {
 		}
 	}
 	r_list_append (ret, ptr);
-	//add entrypoint for jni libraries
+
+	// add entrypoint for jni libraries
+	// NOTE: this is slow, we shouldnt find for java constructors here
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (obj))) {
 		return ret;
 	}
@@ -379,8 +383,6 @@ arm_symbol:
 		}
 	}
 }
-
-static RBinInfo* info(RBinFile *arch);
 
 static RList* symbols(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t) *bin;

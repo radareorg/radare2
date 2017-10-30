@@ -188,7 +188,7 @@ R_API void r_core_sysenv_help(const RCore *core) {
 		"R2_BITS", "", "arch reg size (8, 16, 32, 64)",
 		"RABIN2_LANG", "", "assume this lang to demangle",
 		"RABIN2_DEMANGLE", "", "demangle or not",
-		"PDB_SERVER", "", "e pdb.server",
+		"RABIN2_PDBSERVER", "", "e pdb.server",
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
@@ -224,7 +224,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 		r_sys_setenv ("R2_BYTES", s);
 		free (s);
 	}
-	r_sys_setenv ("PDB_SERVER", r_config_get (core->config, "pdb.server"));
+	r_sys_setenv ("RABIN2_PDBSERVER", r_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
 		r_sys_setenv ("R2_FILE", desc->name);
 		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d, r_io_desc_size (desc)));
