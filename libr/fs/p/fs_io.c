@@ -4,21 +4,26 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 
-static RFSFile* fs_io_open(RFSRoot *root, const char *path) {
-	char *res = root->iob.system (root->iob.io, "m");
+static RFSFile *fs_io_open(RFSRoot *root, const char *path) {
+	char *cmd = r_str_newf ("m %s", path);
+	char *res = root->iob.system (root->iob.io, cmd);
+	R_FREE (cmd);
 	if (res) {
-		eprintf ("Res %s\n", res);
-		free (res);
+		ut32 size = 0;
+		if (sscanf (res, "%u", &size) != 1) {
+			size = 0;
+		}
+		R_FREE (res);
+		if (size == 0) {
+			return NULL;
+		}
 		RFSFile *file = r_fs_file_new (root, path);
 		if (!file) {
 			return NULL;
 		}
 		file->ptr = NULL;
 		file->p = root->p;
-		//file->size = 123;
-		// fseek (fd, 0, SEEK_END);
-		// file->size = ftell (fd);
-		// fclose (fd);
+		file->size = size;
 		return file;
 	}
 	return NULL;
@@ -27,26 +32,34 @@ static RFSFile* fs_io_open(RFSRoot *root, const char *path) {
 static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	RFSRoot *root = file->root;
 	// char *cmd = r_str_newf ("mg %s %"PFMT64x" %d", file->path, addr, len);
-	char *cmd = r_str_newf ("mg %s", file->path);
+	char *cmd = r_str_newf ("mg %s", file->name);
 	char *res = root->iob.system (root->iob.io, cmd);
+	R_FREE (cmd);
 	if (res) {
-		eprintf ("Res %s\n", res);
-		file->data = (ut8*)calloc (1, len);
-		memcpy (file->data, res, R_MIN (len, strlen (res)));
-#if 0
-		int ret = r_hex_str2bin ((char *)file->data, NULL);
+		int encoded_size = strlen (res);
+		if (encoded_size != len * 2) {
+			eprintf ("Wrong size\n");
+			R_FREE (res);
+			return NULL;
+		}
+		file->data = (ut8 *) calloc (1, len);
+		if (!file->data) {
+			R_FREE (res);
+			return NULL;
+		}
+		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
 			eprintf ("Inconsistent read\n");
+			R_FREE (file->data);
+			file->data = NULL;
 		}
-#endif
-		free (res);
+		R_FREE (res);
 	}
-	free (cmd);
 	return NULL;
 }
 
 static void fs_io_close(RFSFile *file) {
-	//fclose (file->ptr);
+	// fclose (file->ptr);
 }
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
@@ -72,13 +85,22 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 		int *lines = r_str_split_lines (res, &count);
 		if (lines) {
 			for (i = 0; i < count; i++) {
-				append_file (list, res + lines[i], 'f', 0, 0);
+				const char *line = res + lines[i];
+				if (!*line) {
+					continue;
+				}
+				char type = 'f';
+				if (line[1] == ' ' && line[0] != ' ') {
+					type = line[0];
+					line += 2;
+				}
+				append_file (list, line, type, 0, 0);
 			}
-			free (res);
-			free (lines);
+			R_FREE (res);
+			R_FREE (lines);
 		}
 	}
-	free (cmd);
+	R_FREE (cmd);
 	return list;
 }
 
@@ -104,8 +126,8 @@ RFSPlugin r_fs_plugin_io = {
 
 #ifndef CORELIB
 RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_FS,
-        .data = &r_fs_plugin_io,
-        .version = R2_VERSION
+	.type = R_LIB_TYPE_FS,
+	.data = &r_fs_plugin_io,
+	.version = R2_VERSION
 };
 #endif
