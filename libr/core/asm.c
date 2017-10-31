@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_core.h>
@@ -182,7 +182,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (everyByte) {
 					idx = matchcount? tidx + 1: idx + 1;
 				} else {
-					idx += len;
+					idx += R_MAX(1, len);
 				}
 				R_FREE (code);
 				matchcount = 0;
