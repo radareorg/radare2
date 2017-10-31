@@ -186,8 +186,10 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 					r_list_append (ret, ba);
 				}
 			}
+			free (buf);
 		}
 	}
+	r_list_free (secs);
 }
 
 static RList* entries(RBinFile *arch) {
