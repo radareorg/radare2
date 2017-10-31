@@ -60,9 +60,9 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 		goto err_add_map;
 	}
 	mr = r_debug_map_new (map_name,
-			     addr,
-			     addr + len, perm, mbi->Type == MEM_PRIVATE);
-	if (mr)  {
+				addr,
+				addr + len, perm, mbi->Type == MEM_PRIVATE);
+	if (mr) {
 		r_list_append (list, mr);
 	}
 err_add_map:
@@ -94,23 +94,23 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 	}
 	do {
 		char *mod_name;
-
 		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
+
 		mod_name = r_sys_conv_w32_to_char (me32.szModule);
-                mr = r_debug_map_new (mod_name, baddr, baddr + me32.modBaseSize, 0, 0);
+		mr = r_debug_map_new (mod_name, baddr, baddr + me32.modBaseSize, 0, 0);
 		free (mod_name);
-                if (mr) {
+		if (mr) {
 			mr->file = r_sys_conv_w32_to_char (me32.szExePath);
 			if (mr->file) {
 				r_list_append (list, mr);
 			}
-                }
-        } while (Module32Next (h_mod_snap, &me32));
+		}
+	} while (Module32Next (h_mod_snap, &me32));
 err_w32_dbg_modules:
 	if (h_mod_snap) {
-        	CloseHandle (h_mod_snap);
+		CloseHandle (h_mod_snap);
 	}
-        return list;
+	return list;
 }
 
 static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
@@ -184,7 +184,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 		for (i = 0; i < mod->sect_count; i++) {
 			IMAGE_SECTION_HEADER *sect_hdr = &mod->sect_hdr[i];
 			ut64 sect_addr = mod->map->addr + (ut64)sect_hdr->VirtualAddress;
-		       	ut64 sect_len= (((ut64)sect_hdr->Misc.VirtualSize) + p_mask) & ~p_mask;
+			ut64 sect_len = (((ut64)sect_hdr->Misc.VirtualSize) + p_mask) & ~p_mask;
 			int sect_found = 0;
 
 			/* section in memory region? */
@@ -255,8 +255,8 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	mod_list = w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress && 
-	       VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
-	       	if (mbi.State != MEM_FREE) {
+		VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
+		if (mbi.State != MEM_FREE) {
 			switch (mbi.Type) {
 			case MEM_IMAGE:
 				proc_mem_img (h_proc, map_list, mod_list, &mod_inf, &si, &mbi);
@@ -268,7 +268,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 				add_map_reg (map_list, "", &mbi);
 			}
 		}
-	   	cur_addr = (LPVOID)(size_t)((ut64)(size_t)mbi.BaseAddress + mbi.RegionSize);
+		cur_addr = (LPVOID)(size_t)((ut64)(size_t)mbi.BaseAddress + mbi.RegionSize);
 	}
 err_w32_dbg_maps:
 	free (mod_inf.sect_hdr);

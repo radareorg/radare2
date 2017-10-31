@@ -672,7 +672,7 @@ R_API bool r_sys_mkdir(const char *dir) {
 	ret = CreateDirectory (dir_, NULL) != 0;
 	free (dir_);
 #else
-	ret= mkdir (dir, 0755) != -1;
+	ret = mkdir (dir, 0755) != -1;
 #endif
 	return ret;
 }
