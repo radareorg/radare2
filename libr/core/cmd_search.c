@@ -2345,6 +2345,9 @@ reread:
 					}
 					//r_core_anal_search (core, param.from, param.to, UT64_MAX, 'c');
 					//			r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'c');
+					if (r_cons_is_breaked ()) {
+						break;
+					}
 				}
 			}
 			break;
