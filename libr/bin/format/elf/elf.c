@@ -749,7 +749,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		verdef->vd_aux = READ32 (dfs, j)
 		verdef->vd_next = READ32 (dfs, j)
 		int vdaux = verdef->vd_aux;
-		if (vdaux < 1 || (char *)UINTPTR_MAX - vstart < vdaux) {
+		if (vdaux < 1 || vstart + vdaux < vstart) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
