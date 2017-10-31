@@ -1308,7 +1308,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 							reloc->import->name = r_str_newf
 								("%s.%s", module, symname);
 						}
-						free (symname);
+						R_FREE (symname);
 					}
 				}
 			}

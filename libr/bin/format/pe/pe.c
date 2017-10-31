@@ -409,6 +409,9 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
+					if (db) {
+						sdb_free (db);
+					}
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
@@ -435,10 +438,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
 					if (symname) {
 						snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, symname);
+						R_FREE (symname);
 					}
-					free (symname);
-					sdb_free (db);
-					db = NULL;
 				} else {
 					bprintf ("Cannot find %s\n", filename);
 
@@ -482,11 +483,19 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 		}
 	} while (import_table);
 
+	if (db) {
+		sdb_free (db);
+		db = NULL;
+	}
 	free (symdllname);
 	free (sdb_module);
 	return i;
 
 error:
+	if (db) {
+		sdb_free (db);
+		db = NULL;
+	}
 	free (symdllname);
 	free (sdb_module);
 	return false;
