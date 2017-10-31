@@ -353,6 +353,7 @@ repeat:
 				if (WSTOPSIG (status) != SIGTRAP &&
 					WSTOPSIG (status) != SIGSTOP) {
 					eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
+					reason = R_DEBUG_REASON_DEAD;
 				}
 				if (!linux_handle_signals (dbg)) {
 					eprintf ("can't handle signals\n");
@@ -406,7 +407,6 @@ static void linux_add_and_attach_new_thread(RDebug *dbg, int tid) {
 	dbg->tid = tid;
 	dbg->n_threads++;
 }
-
 
 static int linux_stop_process(int pid) {
 	int status;

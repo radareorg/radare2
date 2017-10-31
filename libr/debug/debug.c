@@ -1228,26 +1228,28 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 }
 
 static int r_debug_continue_until_internal(RDebug *dbg, ut64 addr, bool block) {
-	int has_bp;
-	ut64 pc;
-
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return false;
-
+	}
 	// Check if there was another breakpoint set at addr
-	has_bp = r_bp_get_in (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
-	if (!has_bp)
+	bool has_bp = r_bp_get_in (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
+	if (!has_bp) {
 		r_bp_add_sw (dbg->bp, addr, dbg->bpsize, R_BP_PROT_EXEC);
+	}
 
 	// Continue until the bp is reached
+	dbg->reason.type = 0;
 	for (;;) {
-		if (r_debug_is_dead (dbg))
+		if (r_debug_is_dead (dbg) || dbg->reason.type) {
 			break;
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		if (pc == addr)
+		}
+		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		if (pc == addr) {
 			break;
-		if (block && r_bp_get_at (dbg->bp, pc))
+		}
+		if (block && r_bp_get_at (dbg->bp, pc)) {
 			break;
+		}
 		r_debug_continue (dbg);
 	}
 	// Clean up if needed
