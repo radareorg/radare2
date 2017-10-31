@@ -586,7 +586,9 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
 
 	if (strncmp ((char*) &bin->dos_header->e_magic, "MZ", 2) ||
-	strncmp ((char*) &bin->nt_headers->Signature, "PE", 2)) {
+	(strncmp ((char*) &bin->nt_headers->Signature, "PE", 2) &&
+	/* Check also for Phar Lap TNT DOS extender PL executable */
+	strncmp ((char*) &bin->nt_headers->Signature, "PL", 2))) {
 		return false;
 	}
 	return true;

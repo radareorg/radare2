@@ -11,7 +11,7 @@ static Sdb* get_sdb (RBinFile *bf) {
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
 		return NULL;
-	}	
+	}
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
 	return bin? bin->kv: NULL;
 }
@@ -143,7 +143,7 @@ static RList* sections(RBinFile *arch) {
 	ut64 ba = baddr (arch);
 	int i;
 	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;	
+		return NULL;
 	}
 	if (!(sections = PE_(r_bin_pe_get_sections) (bin))){
 		r_list_free (ret);
@@ -169,7 +169,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sections[i].vsize;
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
-		} 
+		}
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
@@ -184,7 +184,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->srwx |= R_BIN_SCN_READABLE;
 		} else {
 			//fix those sections that could have been fucked up
-			//if the section does have -x- but not -r- add it 
+			//if the section does have -x- but not -r- add it
 			if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
 			}
@@ -298,7 +298,7 @@ static RList* imports(RBinFile *arch) {
 	relocs->free = free;
 	((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) { 
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !imports[i].last; i++) {
@@ -433,7 +433,7 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 		return false;
 	}
 	//it's funny here idx+0x5E can be 158 and sz 159 but with
-	//the cast it reads two bytes until 160 
+	//the cast it reads two bytes until 160
 	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 
@@ -538,10 +538,18 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	}
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (length > idx + 0x18 + 2) {
-		if (!memcmp (buf, "MZ", 2) &&
-		    !memcmp (buf+idx, "PE", 2) &&
-		    !memcmp (buf+idx+0x18, "\x0b\x01", 2)) {
-			return true;
+		/* Here PE signature for usual PE files
+		 * and PL signature for Phar Lap TNT DOS extender 32bit executables
+		 */
+		if (!memcmp (buf, "MZ", 2)) {
+			if (!memcmp (buf+idx, "PE", 2) &&
+				!memcmp (buf+idx+0x18, "\x0b\x01", 2)) {
+				return true;
+			}
+			// TODO: Add one more indicator, to prevent false positives
+			if (!memcmp (buf+idx, "PL", 2)) {
+				return true;
+			}
 		}
 	}
 	return false;
