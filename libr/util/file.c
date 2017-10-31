@@ -905,10 +905,14 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h = -1;
 	char *path = r_file_tmpdir ();
 #if __WINDOWS__
-	TCHAR name[MAX_PATH + 1];
+	LPTSTR name = NULL;
 	LPTSTR path_ = r_sys_conv_char_to_w32 (path);
 	LPTSTR prefix_ = r_sys_conv_char_to_w32 (prefix);
 
+	name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
+	if (!name) {
+		goto err_r_file_mkstemp;
+	}
 	if (GetTempFileName (path_, prefix_, 0, name)) {
 		char *name_ = r_sys_conv_w32_to_char (name);
 		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
@@ -923,6 +927,8 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 			free (name_);
 		}	
 	}
+err_r_file_mkstemp:
+	free (name);
 	free (path_);
 	free (prefix_);
 #else
@@ -942,10 +948,14 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 
 R_API char *r_file_tmpdir() {
 #if __WINDOWS__
-	TCHAR tmpdir[MAX_PATH + 1];
+	LPTSTR tmpdir;
 	char *path = NULL;
 	DWORD len = 0;
 
+	tmpdir = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
+	if (!tmpdir) {
+		return NULL;
+	}
 	if ((len = GetTempPath (MAX_PATH + 1, tmpdir)) == 0) {
 		path = r_sys_getenv ("TEMP");
 		if (!path) {
@@ -956,10 +966,11 @@ R_API char *r_file_tmpdir() {
 		DWORD (WINAPI *glpn)(LPCTSTR, LPCTSTR, DWORD) = r_lib_dl_sym (GetModuleHandle (TEXT ("kernel32.dll")), W32_TCALL("GetLongPathName"));
 		if (glpn) {
 			// Windows XP sometimes returns short path name
-			glpn (tmpdir, tmpdir, sizeof (tmpdir));
+			glpn (tmpdir, tmpdir, MAX_PATH + 1);
 		}
 		path = r_sys_conv_w32_to_char (tmpdir);
 	}
+	free (tmpdir);
 	// Windows 7, stat() function fail if tmpdir ends with '\\'
 	if (path) {
 		int path_len = strlen (path);

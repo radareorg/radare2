@@ -54,6 +54,7 @@ extern char **environ;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 # include <io.h>
 # include <winbase.h>
+#define TMP_BUFSIZE	4096
 #ifdef _MSC_VER
 #include <psapi.h>
 #include <io.h>
@@ -379,26 +380,38 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
-	TCHAR envbuf[4096];
 	DWORD dwRet;
-	LPTSTR key_;
+	LPTSTR envbuf = NULL, key_ = NULL;
+	char *val = NULL;
 
 	if (!key) {
 		return NULL;
 	}
+	envbuf = (LPTSTR)malloc (sizeof (TCHAR) * TMP_BUFSIZE);
+	if (!envbuf) {
+		goto err_r_sys_get_env;
+	}
 	key_ = r_sys_conv_char_to_w32 (key);
-	dwRet = GetEnvironmentVariable (key_, envbuf, sizeof (envbuf) / sizeof (TCHAR));
-	free (key_);
+	dwRet = GetEnvironmentVariable (key_, envbuf, TMP_BUFSIZE);
 	if (dwRet == 0) {
-		/* Variable not found. */
-		return NULL;
+		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
+			goto err_r_sys_get_env;
+		}
+	} else if (TMP_BUFSIZE < dwRet) {
+		envbuf = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
+		if (!envbuf) {
+			goto err_r_sys_get_env;
+		}
+		dwRet = GetEnvironmentVariable (key_, envbuf, dwRet);
+		if (!dwRet) {
+			goto err_r_sys_get_env;
+		}
 	}
-	if (dwRet == sizeof(envbuf)) {
-		/* The contents of envbuf are undefined, so return NULL */
-		eprintf ("Buffer too small to read `%s' environment variable.\n", key);
-		return NULL;
-	}
-	return r_sys_conv_w32_to_char_l (envbuf, (int)dwRet);
+	val = r_sys_conv_w32_to_char_l (envbuf, (int)dwRet);
+err_r_sys_get_env:
+	free (key_);
+	free (envbuf);
+	return val;
 #else
 	char *b;
 	if (!key) {
