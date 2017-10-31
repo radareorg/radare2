@@ -207,7 +207,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xC2: /* clr   */ /* TODO */ break;
 
 	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
-	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,=") break;
+	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
 	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
 	case 0x33: /* rlc  */ /* TODO */ break;
 	case 0x73: /* jmp  */ emit("dptr,A,+,pc,="); break;
