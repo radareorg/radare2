@@ -352,16 +352,16 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				// TODO: move into adjust_offset
 				switch (str_type) {
 				case R_STRING_TYPE_WIDE:
-					{
-						const ut8 *p = buf  + str_start - 2;
+					if (str_start > 1) {
+						const ut8 *p = buf + str_start - 2;
 						if (p[0] == 0xff && p[1] == 0xfe) {
 							str_start -= 2; // \xff\xfe
 						}
 					}
 					break;
 				case R_STRING_TYPE_WIDE32:
-					{
-						const ut8 *p = buf  + str_start - 4;
+					if (str_start > 3) {
+						const ut8 *p = buf + str_start - 4;
 						if (p[0] == 0xff && p[1] == 0xfe) {
 							str_start -= 4; // \xff\xfe\x00\x00
 						}
