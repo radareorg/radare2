@@ -245,6 +245,7 @@ static RList* symbols(RBinFile *bf) {
 		free (symbols);
 	}
 
+
 	if ((imports = PE_(r_bin_pe_get_imports)(bf->o->bin_obj))) {
 		for (i = 0; !imports[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
@@ -292,8 +293,8 @@ static RList* imports(RBinFile *bf) {
 	}
 
 	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
-	if (((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs) {
-		r_list_free (((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs);
+	if (((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj)->relocs) {
+		r_list_free (((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj)->relocs);
 	}
 
 	if (!(relocs = r_list_newf (free))) {
@@ -415,7 +416,7 @@ static int has_canary(RBinFile *bf) {
 		if (relocs_list) {
 			r_list_foreach (relocs_list, iter, rel) {
 				if (!strcmp (rel->import->name, "__security_init_cookie")) {
-					return 1;
+					return true;
 				}
 			}
 		}
@@ -425,12 +426,12 @@ static int has_canary(RBinFile *bf) {
 		if (imports_list) {
 			r_list_foreach (imports_list, iter, imp) {
 				if (!strcmp (imp->name, "__security_init_cookie")) {
-					return 1;
+					return true;
 				}
 			}
 		}
 	}
-	return 0;
+	return false;
 }
 
 static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
