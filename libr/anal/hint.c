@@ -55,6 +55,9 @@ static void setHint(RAnal *a, const char *type, ut64 addr, const char *s, ut64 p
 	}
 }
 
+R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char* typeoff) {
+	setHint (a, "Offset:", addr, r_str_trim_const (typeoff), 0);
+}
 R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "jump:", addr, NULL, ptr);
 }
@@ -112,6 +115,9 @@ R_API void r_anal_hint_unset_syntax(RAnal *a, ut64 addr) {
 R_API void r_anal_hint_unset_pointer(RAnal *a, ut64 addr) {
 	unsetHint(a, "ptr:", addr);
 }
+R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr) {
+	unsetHint (a, "Offset:", addr);
+}
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr) {
 	unsetHint (a, "jump:", addr);
 }
@@ -125,6 +131,7 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 		free (h->esil);
 		free (h->opcode);
 		free (h->syntax);
+		free (h->offset);
 		free (h);
 	}
 }
@@ -162,6 +169,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 's': hint->size = sdb_atoi (nxt); break;
 			case 'S': hint->syntax = (char*)sdb_decode (nxt, 0); break;
 			case 'o': hint->opcode = (char*)sdb_decode (nxt, 0); break;
+			case 'O': hint->offset = (char*)sdb_decode (nxt, 0); break;
 			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;
 			case 'a': hint->arch = (char*)sdb_decode (nxt, 0); break;
 			}
