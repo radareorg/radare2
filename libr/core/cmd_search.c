@@ -59,6 +59,7 @@ static const char *help_msg_slash[] = {
 static const char *help_msg_slash_c[] = {
 	"Usage:", "/c [inst]", " Search for asm",
 	"/c ", "instr", "search for instruction 'instr'",
+	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
 	"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 	"/c/a ", "instr", "search for every byte instruction that matches regexp 'instr'",
 	"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
@@ -1704,6 +1705,9 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	bool everyByte = regexp && input[2] == 'a';
 	char *end_cmd = strstr (input, " ");
 	int outmode;
+	if (!regexp && input[1] == 'a') {
+		everyByte = true;
+	}
 	if (!end_cmd) {
 		outmode = input[1];
 	} else {
