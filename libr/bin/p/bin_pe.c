@@ -405,17 +405,30 @@ static int is_vb6(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-	// XXX: We only need imports here but this causes leaks, we need to wait for the below
-	struct PE_ (r_bin_pe_obj_t) *bin = arch->o->bin_obj;
-	const RList* relocs_list = bin->relocs;
-	RListIter *iter;
-	RBinReloc *rel;
+	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
-	if (relocs_list) {
-		r_list_foreach (relocs_list, iter, rel)
-			if (!strcmp (rel->import->name, "__security_init_cookie")) {
-				return 1;
+	RListIter *iter;
+	struct PE_ (r_bin_pe_obj_t) *bin = arch->o->bin_obj;
+	if (bin) {
+		const RList* relocs_list = bin->relocs;
+		RBinReloc *rel;
+		if (relocs_list) {
+			r_list_foreach (relocs_list, iter, rel) {
+				if (!strcmp (rel->import->name, "__security_init_cookie")) {
+					return 1;
+				}
 			}
+		}
+	} else {  // rabin2 needs this as it will not initialise bin
+		const RList* imports_list = imports (arch);
+		RBinImport *imp;
+		if (imports_list) {
+			r_list_foreach (imports_list, iter, imp) {
+				if (!strcmp (imp->name, "__security_init_cookie")) {
+					return 1;
+				}
+			}
+		}
 	}
 	return 0;
 }
