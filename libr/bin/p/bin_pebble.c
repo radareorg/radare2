@@ -39,37 +39,37 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	// XXX: this may be wrong if check_bytes is true
 	return R_NOTNULL;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static int destroy(RBinFile *arch) {
-	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)bf->o->bin_obj);
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	PebbleAppInfo pai;
 	memset (&pai, 0, sizeof (pai));
-	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai));
+	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
 	if (reat != sizeof (pai)) {
 		eprintf ("Truncated Header\n");
 		return NULL;
@@ -77,7 +77,7 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->lang = NULL;
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("pebble");
 	ret->bclass = r_str_ndup (pai.name, 32);
 	ret->rclass = r_str_ndup (pai.company, 32);
@@ -92,13 +92,13 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList* sections(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai;
 	memset (&pai, 0, sizeof (pai));
-	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
+	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
@@ -152,7 +152,7 @@ static RList* sections(RBinFile *arch) {
 }
 
 #if 0
-static RList* relocs(RBinFile *arch) {
+static RList* relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	ut64 got_addr;
@@ -165,11 +165,11 @@ static RList* relocs(RBinFile *arch) {
 }
 #endif
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *ret;
 	PebbleAppInfo pai;
-	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
+	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}

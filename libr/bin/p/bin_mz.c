@@ -47,18 +47,25 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		ret = true;
 		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
 		if (length > exth_offset + 2) {
-			//check for PE
+			// check for PE
 			if (length > exth_offset + 0x20) {
-				if (!memcmp (buf, "MZ", 2) &&
-				    !memcmp (buf + exth_offset, "PE", 2) &&
-				    !memcmp (buf + exth_offset + 0x18,
-					     "\x0b\x01", 2)) {
-					return false;
+				if (!memcmp (buf, "MZ", 2)) {
+					if (!memcmp (buf + exth_offset, "PE", 2) &&
+						!memcmp (buf + exth_offset + 0x18,
+							"\x0b\x01", 2)) {
+						return false;
 					}
+					// check for Phar Lap TNT PL executable
+					if (!memcmp (buf + exth_offset, "PL", 2)) {
+						return false;
+					}
+				}
 			}
+			// Check for New Executable, LE/LX or Phar Lap executable
 			if (!memcmp (buf + exth_offset, "NE", 2) ||
 			    !memcmp (buf + exth_offset, "LE", 2) ||
-			    !memcmp (buf + exth_offset, "LX", 2) ) {
+			    !memcmp (buf + exth_offset, "LX", 2) ||
+				!memcmp (buf + exth_offset, "PL", 2)) {
 				if (!checkEntrypoint (buf, length)) {
 					ret = false;
 				}
@@ -74,7 +81,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return ret;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz,
 		ut64 loadaddr, Sdb *sdb) {
 	const struct r_bin_mz_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -91,29 +98,29 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
 	return (void *)res;
 }
 
-static bool load(RBinFile *arch) {
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	if (!bf || !bf->o) {
 		return false;
 	}
-	const ut8 *bytes = r_buf_buffer (arch->buf);
-	ut64 sz = r_buf_size (arch->buf);
-	const void *res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	arch->o->bin_obj = (void *)res;
+	const ut8 *bytes = r_buf_buffer (bf->buf);
+	ut64 sz = r_buf_size (bf->buf);
+	const void *res = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	bf->o->bin_obj = (void *)res;
 	return res != NULL;
 }
 
-static int destroy(RBinFile *arch) {
-	r_bin_mz_free ((struct r_bin_mz_obj_t*)arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	r_bin_mz_free ((struct r_bin_mz_obj_t*)bf->o->bin_obj);
 	return true;
 }
 
-static RList * entries(RBinFile *arch) {
+static RList * entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *res = NULL;
 	if (!(res = r_list_newf (free))) {
 		return NULL;
 	}
-	int entry = r_bin_mz_get_entrypoint (arch->o->bin_obj);
+	int entry = r_bin_mz_get_entrypoint (bf->o->bin_obj);
 	if (entry >= 0) {
 		if ((ptr = R_NEW0 (RBinAddr))) {
 			ptr->paddr = (ut64) entry;
@@ -124,7 +131,7 @@ static RList * entries(RBinFile *arch) {
 	return res;
 }
 
-static RList * sections(RBinFile *arch) {
+static RList * sections(RBinFile *bf) {
 	const struct r_bin_mz_segment_t *segments = NULL;
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
@@ -134,7 +141,7 @@ static RList * sections(RBinFile *arch) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(segments = r_bin_mz_get_segments (arch->o->bin_obj))){
+	if (!(segments = r_bin_mz_get_segments (bf->o->bin_obj))){
 		r_list_free (ret);
 		return NULL;
 	}
@@ -157,12 +164,12 @@ static RList * sections(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo * info(RBinFile *arch) {
+static RBinInfo * info(RBinFile *bf) {
 	RBinInfo * const ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("MZ");
 	ret->rclass = strdup ("mz");
 	ret->os = strdup ("DOS");
@@ -181,19 +188,19 @@ static RBinInfo * info(RBinFile *arch) {
 	return ret;
 }
 
-static RList * relocs(RBinFile *arch) {
+static RList * relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *rel = NULL;
 	const struct r_bin_mz_reloc_t *relocs = NULL;
 	int i;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	if (!(relocs = r_bin_mz_get_relocs (arch->o->bin_obj))) {
+	if (!(relocs = r_bin_mz_get_relocs (bf->o->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !relocs[i].last; i++) {

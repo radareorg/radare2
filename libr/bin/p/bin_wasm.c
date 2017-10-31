@@ -13,43 +13,43 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
 	if (!check_bytes (buf, sz)) {
 		return NULL;
 	}
-	return r_bin_wasm_init (arch);
+	return r_bin_wasm_init (bf);
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj != NULL;
+	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return bf->o->bin_obj != NULL;
 }
 
-static int destroy(RBinFile *arch) {
-	r_bin_wasm_destroy (arch);
+static int destroy(RBinFile *bf) {
+	r_bin_wasm_destroy (bf);
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static RBinAddr *binsym(RBinFile *arch, int type) {
+static RBinAddr *binsym(RBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RList *sections(RBinFile *arch);
+static RList *sections(RBinFile *bf);
 
-static RList *entries(RBinFile *arch) {
-	RBinWasmObj *bin = arch && arch->o ? arch->o->bin_obj : NULL;
+static RList *entries(RBinFile *bf) {
+	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
 	RList *ret;
 	RBinAddr *ptr = NULL;
@@ -70,8 +70,8 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
-	RBinWasmObj *bin = arch && arch->o ? arch->o->bin_obj : NULL;
+static RList *sections(RBinFile *bf) {
+	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	RList *ret = NULL;
 	RList *secs = NULL;
 	RBinSection *ptr = NULL;
@@ -107,15 +107,15 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
 	RList *ret = NULL, *codes = NULL, *imports = NULL;
 	RBinSymbol *ptr = NULL;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = arch->o->bin_obj;
+	bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
@@ -125,7 +125,7 @@ static RList *symbols(RBinFile *arch) {
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
 		goto bad_alloc;
 	}
-	
+
 	ut32 i = 0;
 	RBinWasmImportEntry *imp;
 	RListIter *iter;
@@ -151,7 +151,7 @@ static RList *symbols(RBinFile *arch) {
 		i += 1;
 		r_list_append (ret, ptr);
 	}
-	
+
 	RBinWasmCodeEntry *func;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
@@ -181,16 +181,16 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *imports(RBinFile *arch) {
+static RList *imports(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
 	RList *imports = NULL;
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = arch->o->bin_obj;
+	bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
@@ -232,17 +232,17 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *libs(RBinFile *arch) {
+static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("module");
 	ret->rclass = strdup ("wasm");
 	ret->os = strdup ("Wasm");
@@ -257,14 +257,14 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 size(RBinFile *arch) {
-	if (!arch->o->info) {
-		arch->o->info = info (arch);
+static ut64 size(RBinFile *bf) {
+	if (!bf->o->info) {
+		bf->o->info = info (bf);
 	}
-	if (!arch->o->info) {
+	if (!bf->o->info) {
 		return 0;
 	}
-	return arch->buf->length;
+	return bf->buf->length;
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */

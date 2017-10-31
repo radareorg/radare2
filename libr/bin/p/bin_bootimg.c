@@ -79,7 +79,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb) {
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (!bio) {
 		return NULL;
@@ -89,32 +89,32 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *s
 		free (bio);
 		return NULL;
 	}
-	bootimg_header_load (&bio->bi, arch->buf, bio->kv);
+	bootimg_header_load (&bio->bi, bf->buf, bio->kv);
 	sdb_ns_set (sdb, "info", bio->kv);
 	return bio;
 }
 
-static bool load(RBinFile *arch) {
+static bool load(RBinFile *bf) {
 	return true;
 }
 
-static int destroy(RBinFile *arch) {
+static int destroy(RBinFile *bf) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
-	BootImageObj *bio = arch->o->bin_obj;
+static ut64 baddr(RBinFile *bf) {
+	BootImageObj *bio = bf->o->bin_obj;
 	return bio? bio->bi.kernel_addr: 0;
 }
 
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	// BootImageObj *bio;
 	RBinInfo *ret;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	ret = R_NEW0 (RBinInfo);
@@ -123,7 +123,7 @@ static RBinInfo *info(RBinFile *arch) {
 	}
 
 	ret->lang = NULL;
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("Android Boot Image");
 	ret->os = strdup ("android");
 	ret->subsystem = strdup ("unknown");
@@ -136,8 +136,8 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->dbg_info = 0;
 	ret->rclass = strdup ("image");
 #if 0
-	// bootimg_header_load (&art, arch->buf);
-	bio = arch->o->bin_obj;
+	// bootimg_header_load (&art, bf->buf);
+	bio = bf->o->bin_obj;
 #endif
 	return ret;
 }
@@ -146,8 +146,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length > 12 && !strncmp ((const char *) buf, "ANDROID!", 8));
 }
 
-static RList *entries(RBinFile *arch) {
-	BootImageObj *bio = arch->o->bin_obj;
+static RList *entries(RBinFile *bf) {
+	BootImageObj *bio = bf->o->bin_obj;
 	RBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;
@@ -167,9 +167,9 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	ut64 base;
-	BootImageObj *bio = arch->o->bin_obj;
+	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;
 	}

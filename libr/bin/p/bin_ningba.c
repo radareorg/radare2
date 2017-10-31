@@ -16,27 +16,27 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (lict, lic_gba, 156))? 1: 0;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->rbin->maxstrbuf = 0x20000000;
+	bf->rbin->maxstrbuf = 0x20000000;
 	return check_bytes (bytes, sz);
 }
 
-static int destroy(RBinFile *arch) {
-	r_buf_free (arch->buf);
-	arch->buf = NULL;
+static int destroy(RBinFile *bf) {
+	r_buf_free (bf->buf);
+	bf->buf = NULL;
 	return true;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	RBinAddr *ptr = NULL;
 
-	if (arch && arch->buf) {
+	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
@@ -49,7 +49,7 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	ut8 rom_info[16];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 
@@ -57,13 +57,13 @@ static RBinInfo *info(RBinFile *arch) {
 		return NULL;
 	}
 
-	if (!arch || !arch->buf) {
+	if (!bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
 
 	ret->lang = NULL;
-	r_buf_read_at (arch->buf, 0xa0, rom_info, 16);
+	r_buf_read_at (bf->buf, 0xa0, rom_info, 16);
 	ret->file = r_str_ndup ((const char *) rom_info, 12);
 	ret->type = r_str_ndup ((char *) &rom_info[12], 4);
 	ret->machine = strdup ("GameBoy Advance");
@@ -76,10 +76,10 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *s = R_NEW0 (RBinSection);
-	ut64 sz = r_buf_size (arch->buf);
+	ut64 sz = r_buf_size (bf->buf);
 
 	if (!(ret = r_list_new ())) {
 		free (s);

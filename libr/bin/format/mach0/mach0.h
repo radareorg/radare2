@@ -68,7 +68,7 @@ struct lib_t {
 struct blob_index_t {
 	ut32 type;
 	ut32 offset;
-}; 
+};
 
 struct blob_t {
 	ut32 magic;
@@ -79,7 +79,7 @@ struct super_blob_t {
 	struct blob_t blob;
 	ut32 count;
 	struct blob_index_t index[];
-}; 
+};
 
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
@@ -161,6 +161,6 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr);
 struct MACH0_(mach_header)* MACH0_(get_hdr_from_bytes)(RBuffer *buf);
-void MACH0_(mach_headerfields)(RBinFile *arch);
-RList* MACH0_(mach_fields)(RBinFile *arch);
+void MACH0_(mach_headerfields)(RBinFile *bf);
+RList* MACH0_(mach_fields)(RBinFile *bf);
 #endif

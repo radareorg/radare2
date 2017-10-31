@@ -705,7 +705,7 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
@@ -721,18 +721,18 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	return res;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 
-	if (!arch || !arch->o) {
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? true: false;
+	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return bf->o->bin_obj ? true: false;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
@@ -767,21 +767,21 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("DEX CLASS");
 	ret->has_va = false;
 	ret->has_lit = true;
-	ret->bclass = r_bin_dex_get_version (arch->o->bin_obj);
+	ret->bclass = r_bin_dex_get_version (bf->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (arch->buf->buf, arch->buf->length, (const ut8*)kw, strlen (kw))) {
+	if (r_mem_mem (bf->buf->buf, bf->buf->length, (const ut8*)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
@@ -792,20 +792,20 @@ static RBinInfo *info(RBinFile *arch) {
 	h->len = 20;
 	h->addr = 12;
 	h->from = 12;
-	h->to = arch->buf->length-32;
-	memcpy (h->buf, arch->buf->buf + 12, 20);
+	h->to = bf->buf->length-32;
+	memcpy (h->buf, bf->buf->buf + 12, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
 	h->addr = 0x8;
 	h->from = 12;
-	h->to = arch->buf->length-h->from;
+	h->to = bf->buf->length-h->from;
 	h = &ret->sum[2];
 	h->type = 0;
-	memcpy (h->buf, arch->buf->buf + 8, 4);
+	memcpy (h->buf, bf->buf->buf + 8, 4);
 	{
-		ut32 *fc = (ut32 *)(arch->buf->buf + 8);
-		ut32  cc = __adler32 (arch->buf->buf + 12, arch->buf->length - 12);
+		ut32 *fc = (ut32 *)(bf->buf->buf + 8);
+		ut32  cc = __adler32 (bf->buf->buf + 12, bf->buf->length - 12);
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
@@ -819,17 +819,17 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	struct r_bin_dex_obj_t *bin = NULL;
 	RBinString *ptr = NULL;
 	RList *ret = NULL;
 	int i, len;
 	ut8 buf[6];
 	ut64 off;
-	if (!arch || !arch->o) {
+	if (!bf || !bf->o) {
 		return NULL;
 	}
-	bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
+	bin = (struct r_bin_dex_obj_t *) bf->o->bin_obj;
 	if (!bin || !bin->strings) {
 		return NULL;
 	}
@@ -975,8 +975,8 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	return flagname;
 }
 
-static ut64 dex_get_type_offset(RBinFile *arch, int type_idx) {
-	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
+static ut64 dex_get_type_offset(RBinFile *bf, int type_idx) {
+	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
 	if (!bin || !bin->types) {
 		return 0;
 	}
@@ -1066,7 +1066,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 		RBinField *field = R_NEW0 (RBinField);
 		if (!field) {
 			return NULL;
-		}		
+		}
 		field->vaddr = field->paddr = sym->paddr;
 		field->name = strdup (sym->name);
 		field->flags = get_method_flags (accessFlags);
@@ -1580,8 +1580,8 @@ static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
 	return false;
 }
 
-static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
-	struct r_bin_t *rbin = arch->rbin;
+static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
+	struct r_bin_t *rbin = bf->rbin;
 	int i;
 	int *methods = NULL;
 	int sym_count = 0;
@@ -1641,7 +1641,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			if (dexdump) {
 				rbin->cb_printf ("Class #%d            -\n", i);
 			}
-			parse_class (arch, bin, c, i, methods, &sym_count);
+			parse_class (bf, bin, c, i, methods, &sym_count);
 		}
 	}
 	if (methods) {
@@ -1719,37 +1719,37 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	return true;
 }
 
-static RList* imports(RBinFile *arch) {
-	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
+static RList* imports(RBinFile *bf) {
+	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
 	if (!bin) {
 		return NULL;
 	}
 	if (bin && bin->imports_list) {
 		return bin->imports_list;
 	}
-	dex_loadcode (arch, bin);
+	dex_loadcode (bf, bin);
 	return bin->imports_list;
 }
 
-static RList *methods(RBinFile *arch) {
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+static RList *methods(RBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
+	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
 	if (!bin->methods_list) {
-		dex_loadcode (arch, bin);
+		dex_loadcode (bf, bin);
 	}
 	return bin->methods_list;
 }
 
-static RList *classes(RBinFile *arch) {
+static RList *classes(RBinFile *bf) {
 	RBinDexObj *bin;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinDexObj*) arch->o->bin_obj;
+	bin = (RBinDexObj*) bf->o->bin_obj;
 	if (!bin->classes_list) {
-		dex_loadcode (arch, bin);
+		dex_loadcode (bf, bin);
 	}
 	return bin->classes_list;
 }
@@ -1765,21 +1765,21 @@ static int already_entry(RList *entries, ut64 vaddr) {
 	return 0;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RListIter *iter;
 	RBinDexObj *bin;
 	RBinSymbol *m;
 	RBinAddr *ptr;
 	RList *ret;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinDexObj*) arch->o->bin_obj;
+	bin = (RBinDexObj*) bf->o->bin_obj;
 	ret = r_list_newf ((RListFree)free);
 
 	if (!bin->methods_list) {
-		dex_loadcode (arch, bin);
+		dex_loadcode (bf, bin);
 	}
 
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
@@ -1826,18 +1826,18 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 offset_of_method_idx(RBinFile *arch, struct r_bin_dex_obj_t *dex, int idx) {
+static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int idx) {
 	// ut64 off = dex->header.method_offset + idx;
 	return sdb_num_get (mdb, sdb_fmt (0, "method.%d", idx), 0);
 }
 
 // TODO: change all return type for all getoffset
-static int getoffset(RBinFile *arch, int type, int idx) {
-	struct r_bin_dex_obj_t *dex = arch->o->bin_obj;
+static int getoffset(RBinFile *bf, int type, int idx) {
+	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		return offset_of_method_idx (arch, dex, idx);
+		return offset_of_method_idx (bf, dex, idx);
 	case 'o': // objects
 		break;
 	case 's': // strings
@@ -1846,15 +1846,15 @@ static int getoffset(RBinFile *arch, int type, int idx) {
 		}
 		break;
 	case 't': // type
-		return dex_get_type_offset (arch, idx);
+		return dex_get_type_offset (bf, idx);
 	case 'c': // class
-		return dex_get_type_offset (arch, idx);
+		return dex_get_type_offset (bf, idx);
 	}
 	return -1;
 }
 
-static char *getname(RBinFile *arch, int type, int idx) {
-	struct r_bin_dex_obj_t *dex = arch->o->bin_obj;
+static char *getname(RBinFile *bf, int type, int idx) {
+	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		return dex_method_fullname (dex, idx);
@@ -1868,9 +1868,9 @@ static char *getname(RBinFile *arch, int type, int idx) {
 	return NULL;
 }
 
-static RList *sections(RBinFile *arch) {
-	struct r_bin_dex_obj_t *bin = arch->o->bin_obj;
-	RList *ml = methods (arch);
+static RList *sections(RBinFile *bf) {
+	struct r_bin_dex_obj_t *bin = bf->o->bin_obj;
+	RList *ml = methods (bf);
 	RBinSection *ptr = NULL;
 	int ns, fsymsz = 0;
 	RList *ret = NULL;
@@ -1883,7 +1883,7 @@ static RList *sections(RBinFile *arch) {
 			fsym = m->paddr;
 		}
 		ns = m->paddr + m->size;
-		if (ns > arch->buf->length) {
+		if (ns > bf->buf->length) {
 			continue;
 		}
 		if (ns > fsymsz) {
@@ -1926,14 +1926,14 @@ static RList *sections(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		//ut64 sz = arch ? r_buf_size (arch->buf): 0;
+		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
 		strcpy (ptr->name, "data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
-		if (ptr->vaddr > arch->buf->length) {
+		if (ptr->vaddr > bf->buf->length) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
-			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
+			ptr->size = ptr->vsize = bf->buf->length - ptr->vaddr;
 		} else {
-			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
+			ptr->size = ptr->vsize = bf->buf->length - ptr->vaddr;
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
@@ -1944,9 +1944,9 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static void header(RBinFile *arch) {
-	struct r_bin_dex_obj_t *bin = arch->o->bin_obj;
-	struct r_bin_t *rbin = arch->rbin;
+static void header(RBinFile *bf) {
+	struct r_bin_dex_obj_t *bin = bf->o->bin_obj;
+	struct r_bin_t *rbin = bf->rbin;
 
 	rbin->cb_printf ("DEX file header:\n");
 	rbin->cb_printf ("magic               : 'dex\\n035\\0'\n");
@@ -1974,21 +1974,21 @@ static void header(RBinFile *arch) {
 	// TODO: print information stored in the RBIN not this ugly fix
 	dexdump = true;
 	bin->methods_list = NULL;
-	dex_loadcode (arch, bin);
+	dex_loadcode (bf, bin);
 	dexdump = false;
 }
 
-static ut64 size(RBinFile *arch) {
+static ut64 size(RBinFile *bf) {
 	int ret;
 	ut32 off = 0, len = 0;
 	ut8 u32s[sizeof (ut32)] = {0};
 
-	ret = r_buf_read_at (arch->buf, 108, u32s, 4);
+	ret = r_buf_read_at (bf->buf, 108, u32s, 4);
 	if (ret != 4) {
 		return 0;
 	}
 	off = r_read_le32 (u32s);
-	ret = r_buf_read_at (arch->buf, 104, u32s, 4);
+	ret = r_buf_read_at (bf->buf, 104, u32s, 4);
 	if (ret != 4) {
 		return 0;
 	}
@@ -1996,9 +1996,9 @@ static ut64 size(RBinFile *arch) {
 	return off + len;
 }
 
-static RList *lines(RBinFile *arch) {
-	struct r_bin_dex_obj_t *dex = arch->o->bin_obj;
-	/// XXX this is called more than once 
+static RList *lines(RBinFile *bf) {
+	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
+	/// XXX this is called more than once
 	// r_sys_backtrace();
 	return dex->lines_list;
 	// return r_list_clone (dex->lines_list);

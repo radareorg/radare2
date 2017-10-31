@@ -59,7 +59,9 @@ static const char *help_msg_slash[] = {
 static const char *help_msg_slash_c[] = {
 	"Usage:", "/c [inst]", " Search for asm",
 	"/c ", "instr", "search for instruction 'instr'",
+	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
 	"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
+	"/c/a ", "instr", "search for every byte instruction that matches regexp 'instr'",
 	"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
 	"/c/ ", "instr1;instr2", "search for regex instruction 'instr1' followed by regex 'instr2'",
 	"/cj ", "instr", "json output",
@@ -74,7 +76,6 @@ static const char *help_msg_slash_C[] = {
 	"/Cr", "", "Search for private RSA keys",
 	NULL
 };
-
 
 static const char *help_msg_slash_r[] = {
 	"Usage:", "/r[acerwx] [address]", " search references to this specific address",
@@ -1700,9 +1701,13 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
 	RIOMap *map;
-	int regexp = input[1] == '/';
+	bool regexp = input[1] == '/'; // "/c/"
+	bool everyByte = regexp && input[2] == 'a';
 	char *end_cmd = strstr (input, " ");
 	int outmode;
+	if (!regexp && input[1] == 'a') {
+		everyByte = true;
+	}
 	if (!end_cmd) {
 		outmode = input[1];
 	} else {
@@ -1730,6 +1735,9 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		r_cons_print ("[");
 	}
 	r_cons_break_push (NULL, NULL);
+	if (everyByte) {
+		input ++;
+	}
 	r_list_foreach (param->boundaries, itermap, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
@@ -1743,7 +1751,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 			hits = NULL;
 		} else {
 			hits = r_core_asm_strsearch (core, input + 2,
-				from, to, maxhits, regexp);
+				from, to, maxhits, regexp, everyByte);
 		}
 		if (hits) {
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
@@ -2337,6 +2345,9 @@ reread:
 					}
 					//r_core_anal_search (core, param.from, param.to, UT64_MAX, 'c');
 					//			r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'c');
+					if (r_cons_is_breaked ()) {
+						break;
+					}
 				}
 			}
 			break;

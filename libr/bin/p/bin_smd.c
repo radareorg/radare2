@@ -98,20 +98,20 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Sega Megadrive");
-	ret->bclass = r_str_ndup ((char *) arch->buf->buf + 0x100, 32);
+	ret->bclass = r_str_ndup ((char *) bf->buf->buf + 0x100, 32);
 	ret->os = strdup ("smd");
 	ret->arch = strdup ("m68k");
 	ret->bits = 16;
@@ -137,8 +137,8 @@ static void showstr(const char *str, const ut8 *s, int len) {
 	free (msg);
 }
 
-static RList *symbols(RBinFile *arch) {
-	ut32 *vtable = (ut32 *) arch->buf->buf;
+static RList *symbols(RBinFile *bf) {
+	ut32 *vtable = (ut32 *) bf->buf->buf;
 	RList *ret = NULL;
 	const char *name;
 	SMD_Header *hdr;
@@ -149,7 +149,7 @@ static RList *symbols(RBinFile *arch) {
 	}
 	ret->free = free;
 	// TODO: store all this stuff in SDB
-	hdr = (SMD_Header *) (arch->buf->buf + 0x100);
+	hdr = (SMD_Header *) (bf->buf->buf + 0x100);
 	addsym (ret, "rom_start", hdr->RomStart);
 	addsym (ret, "rom_end", hdr->RomEnd);
 	addsym (ret, "ram_start", hdr->RamStart);
@@ -239,7 +239,7 @@ static RList *symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -271,18 +271,18 @@ static RList *sections(RBinFile *arch) {
 	strcpy (ptr->name, "text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
-		SMD_Header *hdr = (SMD_Header *) (arch->buf->buf + 0x100);
+		SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
 		ut64 baddr = hdr->RamStart;
 		ptr->vaddr += baddr;
 	}
-	ptr->size = ptr->vsize = arch->buf->length - ptr->paddr;
+	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
 	ptr->srwx = R_BIN_SCN_MAP;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RList *entries(RBinFile *arch) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {

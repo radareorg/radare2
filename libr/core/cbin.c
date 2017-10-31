@@ -1158,6 +1158,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			r_cons_printf ("f %s 1 @ 0x%08"PFMT64x"\n", name, at);
 			r_cons_printf ("f %s_haddr 1 @ 0x%08"PFMT64x"\n", name, haddr);
 			r_cons_printf ("s %s\n", name);
+			free (name);
 		} else {
 			r_cons_printf (
 				 "vaddr=0x%08"PFMT64x
@@ -3023,7 +3024,7 @@ static int bin_signature(RCore *r, int mode) {
 
 R_API void r_core_bin_export_info_rad(RCore *core) {
 	Sdb *db = NULL;
-	char *flagname, *offset = NULL;
+	char *flagname = NULL, *offset = NULL;
 	RBinFile *bf = r_core_bin_cur (core);
 	if (!bf) {
 		return;
@@ -3043,7 +3044,6 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 			char *v = kv->value;
 			char *dup = strdup (k);
 			//printf ("?e (%s) (%s)\n", k, v);
-
 			if ((flagname = strstr (dup, ".offset"))) {
 				*flagname = 0;
 				flagname = dup;

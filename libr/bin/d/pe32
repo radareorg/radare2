@@ -1,4 +1,4 @@
-pf.pe_dos_header [2]zwwwwwwwwwwwww[4]www[10]wx e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid e_oeminfo e_res2 e_lfanew
+pfo mz
 pf.pe_nt_image_headers32 [4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header32)optionalHeader
 pf.pe_image_optional_header32 [2]Ebbxxxxxxxxxwwwwwwxxxx[2]E[2]Bxxxxxx[16]? (pe_magic)magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData sizeOfUninitializedData addressOfEntryPoint baseOfCode baseOfData imageBase sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion majorImageVersion minorImageVersion majorSubsystemVersion minorSubsystemVersion win32VersionValue sizeOfImage sizeOfHeaders checkSum (pe_subsystem)subsystem (pe_dllcharacteristics)dllCharacteristics sizeOfStackReserve sizeOfStackCommit sizeOfHeapReserve sizeOfHeapCommit loaderFlags numberOfRvaAndSizes (pe_image_data_directory)dataDirectory
 pf.pe_image_file_header [2]Ewtxxw[2]B (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable numberOfSymbols sizeOfOptionalHeader (pe_characteristics)characteristics

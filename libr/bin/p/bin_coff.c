@@ -19,38 +19,38 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
 	RBuffer *tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
-	void *res = r_bin_coff_new_buf (tbuf, arch->rbin->verbose);
+	void *res = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
 	r_buf_free (tbuf);
 	return res;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 
-	if (!arch || !arch->o) {
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? true: false;
+	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return bf->o->bin_obj ? true: false;
 }
 
-static int destroy(RBinFile *arch) {
-	r_bin_coff_free((struct r_bin_coff_obj*)arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	r_bin_coff_free((struct r_bin_coff_obj*)bf->o->bin_obj);
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static RBinAddr *binsym(RBinFile *arch, int sym) {
+static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
@@ -103,8 +103,8 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 	return true;
 }
 
-static RList *entries(RBinFile *arch) {
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
+static RList *entries(RBinFile *bf) {
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_newf (free))) {
@@ -115,12 +115,12 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	char *tmp, *coffname = NULL;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 
 	ret = r_list_newf (free);
 	if (!ret) {
@@ -137,7 +137,7 @@ static RList *sections(RBinFile *arch) {
 			//IO does not like sections with the same name append idx
 			//since it will update it
 			coffname = r_str_newf ("%s-%d", tmp, i);
-			free (tmp); 
+			free (tmp);
 			ptr = R_NEW0 (RBinSection);
 			if (!ptr) {
 				free (coffname);
@@ -168,11 +168,11 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
 	}
@@ -193,16 +193,16 @@ static RList *symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RList *imports(RBinFile *arch) {
+static RList *imports(RBinFile *bf) {
 	return NULL;
 }
 
-static RList *libs(RBinFile *arch) {
+static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RList *relocs(RBinFile *arch) {
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)arch->o->bin_obj;
+static RList *relocs(RBinFile *bf) {
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
@@ -258,11 +258,11 @@ static RList *relocs(RBinFile *arch) {
 	return list_rel;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0(RBinInfo);
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->rclass = strdup ("coff");
 	ret->bclass = strdup ("coff");
 	ret->type = strdup ("COFF (Executable file)");
@@ -329,12 +329,12 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static RList *fields(RBinFile *arch) {
+static RList *fields(RBinFile *bf) {
 	return NULL;
 }
 
 
-static ut64 size(RBinFile *arch) {
+static ut64 size(RBinFile *bf) {
 	return 0;
 }
 

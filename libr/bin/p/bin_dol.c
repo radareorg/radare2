@@ -45,18 +45,18 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	bool has_dol_extension = false;
 	DolHeader *dol;
 	char *lowername, *ext;
-	if (!arch || sz < sizeof (DolHeader)) {
+	if (!bf || sz < sizeof (DolHeader)) {
 		return NULL;
 	}
 	dol = R_NEW0 (DolHeader);
 	if (!dol) {
 		return NULL;
 	}
-	lowername = strdup (arch->file);
+	lowername = strdup (bf->file);
 	if (!lowername) {
 		free (dol);
 		return NULL;
@@ -68,10 +68,10 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	}
 	free (lowername);
 	if (has_dol_extension) {
-		r_buf_fread_at (arch->buf, 0, (void *) dol, "67I", 1);
-		// r_buf_fread_at (arch->buf, 0, (void*)dol, "67i", 1);
-		if (arch && arch->o && arch->o->bin_obj) {
-			arch->o->bin_obj = dol;
+		r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
+		// r_buf_fread_at (bf->buf, 0, (void*)dol, "67i", 1);
+		if (bf && bf->o && bf->o->bin_obj) {
+			bf->o->bin_obj = dol;
 		}
 		return (void *) dol;
 	}
@@ -79,26 +79,26 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	return NULL;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes,
-		sz, arch->o->loadaddr, arch->sdb);
+	bf->o->bin_obj = load_bytes (bf, bytes,
+		sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	int i;
 	RList *ret;
 	RBinSection *s;
 	DolHeader *dol;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	dol = arch->o->bin_obj;
+	dol = bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
@@ -147,33 +147,33 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *addr;
 	DolHeader *dol;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	ret = r_list_new ();
 	addr = R_NEW0 (RBinAddr);
-	dol = arch->o->bin_obj;
+	dol = bf->o->bin_obj;
 	addr->vaddr = (ut64) dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
 	r_list_append (ret, addr);
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
-	if (!arch || !arch->buf) {
+	if (!bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->big_endian = true;
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Nintendo Wii");
@@ -185,7 +185,7 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0x80b00000; // XXX
 }
 
@@ -208,4 +208,3 @@ RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

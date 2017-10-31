@@ -726,7 +726,11 @@ int main(int argc, char **argv, char **envp) {
 			char *p = strstr (uri, "://");
 			if (p) {
 				*p = 0;
-				debugbackend = uri;
+				if (!strcmp (uri, "winedbg")) {
+					debugbackend = "io";
+				} else {
+					debugbackend = uri;
+				}
 				debug = 2;
 			} else {
 				free (uri);

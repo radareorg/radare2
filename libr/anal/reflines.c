@@ -438,7 +438,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 			add_spaces (b, ref->level, pos, wide);
 			if (ref->direction < 0) {
-				r_buf_append_string (b, "!");
+				r_buf_append_string (b, ":");
 			} else {
 				r_buf_append_string (b, "|");
 			}

@@ -13,16 +13,16 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return !memcmp (buf, PSXEXE_ID, PSXEXE_ID_LEN);
 }
 
-static void* load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void* load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static RBinInfo* info(RBinFile* arch) {
+static RBinInfo* info(RBinFile* bf) {
 	RBinInfo* ret = NULL;
 	psxexe_header psxheader;
 
-	if (r_buf_read_at (arch->buf, 0, (ut8*)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
+	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
@@ -30,7 +30,7 @@ static RBinInfo* info(RBinFile* arch) {
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("Sony PlayStation 1 Executable");
 	ret->machine = strdup ("Sony PlayStation 1");
 	ret->os = strdup ("psx");
@@ -40,7 +40,7 @@ static RBinInfo* info(RBinFile* arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile* arch) {
+static RList* sections(RBinFile* bf) {
 	RList* ret = NULL;
 	RBinSection* sect = NULL;
 	psxexe_header psxheader;
@@ -55,14 +55,14 @@ static RList* sections(RBinFile* arch) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (arch->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
+	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
 		eprintf ("Truncated Header\n");
 		free (sect);
 		r_list_free (ret);
 		return NULL;
 	}
 
-	sz = r_buf_size (arch->buf);
+	sz = r_buf_size (bf->buf);
 
 	strcpy (sect->name, "TEXT");
 	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
@@ -77,7 +77,7 @@ static RList* sections(RBinFile* arch) {
 	return ret;
 }
 
-static RList* entries(RBinFile* arch) {
+static RList* entries(RBinFile* bf) {
 	RList* ret = NULL;
 	RBinAddr* addr = NULL;
 	psxexe_header psxheader;
@@ -90,7 +90,7 @@ static RList* entries(RBinFile* arch) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (arch->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
+	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
 		eprintf ("PSXEXE Header truncated\n");
 		r_list_free (ret);
 		free (addr);

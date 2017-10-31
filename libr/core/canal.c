@@ -3447,8 +3447,8 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	op = esil->user;
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
-	if (anal->opt.armthumb) {
-		if (anal && anal->cur && anal->cur->arch && anal->bits < 33 &&
+	if (anal && anal->opt.armthumb) {
+		if (anal->cur && anal->cur->arch && anal->bits < 33 &&
 		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
 			switch (op->id) {
 			//Thoses values comes from capstone so basically for others plugin

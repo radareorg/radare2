@@ -352,16 +352,16 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				// TODO: move into adjust_offset
 				switch (str_type) {
 				case R_STRING_TYPE_WIDE:
-					{
-						const ut8 *p = buf  + str_start - 2;
+					if (str_start > 1) {
+						const ut8 *p = buf + str_start - 2;
 						if (p[0] == 0xff && p[1] == 0xfe) {
 							str_start -= 2; // \xff\xfe
 						}
 					}
 					break;
 				case R_STRING_TYPE_WIDE32:
-					{
-						const ut8 *p = buf  + str_start - 4;
+					if (str_start > 3) {
+						const ut8 *p = buf + str_start - 4;
 						if (p[0] == 0xff && p[1] == 0xfe) {
 							str_start -= 4; // \xff\xfe\x00\x00
 						}
@@ -380,15 +380,15 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 	return count;
 }
 
-static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to) {
-	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
+static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut64 to) {
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
 
-	if (!arch || !arch->buf || !arch->buf->buf) {
+	if (!bf || !bf->buf || !bf->buf->buf) {
 		return;
 	}
-	if (!arch->rawstr) {
+	if (!bf->rawstr) {
 		if (!plugin || !plugin->info) {
 			return;
 		}
@@ -403,14 +403,14 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (min < 0) {
 		return;
 	}
-	if (!to || to > arch->buf->length) {
-		to = arch->buf->length;
+	if (!to || to > bf->buf->length) {
+		to = bf->buf->length;
 	}
-	if (arch->rawstr != 2) {
+	if (bf->rawstr != 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
-		if (arch->rbin->maxstrbuf && size && size > arch->rbin->maxstrbuf) {
-			if (arch->rbin->verbose) {
+		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
+			if (bf->rbin->verbose) {
 				eprintf ("WARNING: bin_strings buffer is too big "
 					"(0x%08" PFMT64x
 					")."
@@ -421,11 +421,11 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			return;
 		}
 	}
-	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0) {
+	if (string_scan_range (list, bf->buf->buf, min, from, to, -1) < 0) {
 		return;
 	}
 	r_list_foreach (list, it, ptr) {
-		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, false);
+		RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
 		if (s) {
 			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
 		}

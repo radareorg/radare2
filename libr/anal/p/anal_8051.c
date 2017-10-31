@@ -173,8 +173,16 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
 	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
-	case 0xA0: /* orl  */ k(BIT_R "C,|="); break;
-	case 0xB0: /* anl  */ k(BIT_R "C,&="); break;
+	/* orl */
+	case 0xA0:
+	case 0x72:
+		k(BIT_R "C,|=");
+		break;
+	/* anl */
+	case 0xB0:
+	case 0x82:
+		k(BIT_R "C,&=");
+		break;
 	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
 	case 0xD0: /* pop  */ h(POP1 XW(IB1)); break;
 	case 0xE0: /* movx */ emit ("dptr,[2],a,="); break;
@@ -190,9 +198,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x02: /* ljmp  */ emitf (          "%d,pc,=", (ut32)((buf[1] << 8) + buf[2])); break;
 	case 0x12: /* lcall */ emitf (CALL ("3")",%d,pc,=", (ut32)((buf[1] << 8) + buf[2])); break;
 	case 0x22: /* ret   */ emitf (POP2 "pc,="); break;
-	case 0x32: /* reti  */ /* TODO */ break;
-	case 0x72: /* orl   */ /* TODO */ break;
-	case 0x82: /* anl   */ /* TODO */ break;
+	case 0x32: /* reti  */ emitf (POP2 "pc,="); break;
 	case 0x92: /* mov   */ /* TODO */ break;
 	case 0xA2: /* mov   */ /* TODO */ break;
 	case 0xB2: /* cpl   */
@@ -201,7 +207,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xC2: /* clr   */ /* TODO */ break;
 
 	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
-	case 0x13: /* rrc  */ /* TODO */ break;
+	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
 	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
 	case 0x33: /* rlc  */ /* TODO */ break;
 	case 0x73: /* jmp  */ emit("dptr,A,+,pc,="); break;
@@ -209,6 +215,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x93: /* movc */ emit("A,pc,+,[1],A,="); break;
 	case 0xA3: /* inc  */ h(XI(IB1, "++")); break;
 	case 0xB3: /* cpl  */ emit("1," XI(C, "^")); break;
+	// FIXME: Wrong - should use register name
 	case 0xC3: /* clr  */ emit("0,C,="); break;
 
 	// Regulars sorted by upper nibble
@@ -220,7 +227,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		h (XR(L1)  "C,+," XI(A, "+"));
 		 break;
 	case 0x35:
-		h (XR(IB1) "C,+," XI(A, "+")); 
+		h (XR(IB1) "C,+," XI(A, "+"));
 		break;
 	case 0x36: case 0x37:
 		j (XR(R0I) "C,+," XI(A, "+"));
@@ -327,50 +334,50 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
 
 	case 0xE2: case 0xE3:
-		/* movx */ 
-		j(XRAM_BASE "r%0$d,+,[1]," XW(A)); 
+		/* movx */
+		j(XRAM_BASE "r%0$d,+,[1]," XW(A));
 		break;
 	case 0xE4:
-		/* clr  */ 
-		emit("0,A,="); 
+		/* clr  */
+		emit("0,A,=");
 		break;
 	case 0xE5:
-		/* mov  */ 
-		h (XR(IB1) XW(A)); 
+		/* mov  */
+		h (XR(IB1) XW(A));
 		break;
 	case 0xE6: case 0xE7:
-		/* mov  */ 
+		/* mov  */
 		j (XR(R0I) XW(A));
 		break;
 	case 0xE8: case 0xE9:
 	case 0xEA: case 0xEB:
 	case 0xEC: case 0xED:
 	case 0xEE: case 0xEF:
-		/* mov  */ 
+		/* mov  */
 		h (XR(R0)  XW(A));
 		break;
 	case 0xF2: case 0xF3:
-		/* movx */ 
+		/* movx */
 		j(XR(A) XRAM_BASE "r%0$d,+,=[1]");
 		break;
 	case 0xF4:
-		/* cpl  */ 
-		h ("255" XI(A, "^")); 
+		/* cpl  */
+		h ("255" XI(A, "^"));
 		break;
 	case 0xF5:
-		/* mov  */ 
-		h (XR(A) XW(IB1)); 
+		/* mov  */
+		h (XR(A) XW(IB1));
 		break;
 	case 0xF6: case 0xF7:
-		/* mov  */ 
-		j (XR(A) XW(R0I)); 
+		/* mov  */
+		j (XR(A) XW(R0I));
 		break;
 	case 0xF8: case 0xF9:
 	case 0xFA: case 0xFB:
 	case 0xFC: case 0xFD:
 	case 0xFE: case 0xFF:
-		/* mov  */ 
-		h (XR(A) XW(R0)); 
+		/* mov  */
+		h (XR(A) XW(R0));
 		break;
 	default: break;
 	}

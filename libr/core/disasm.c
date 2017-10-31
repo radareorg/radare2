@@ -20,7 +20,7 @@ static const char* r_vline_a[] = {
 	"|",  // LINE_VERT
 	"|-", // LINE_CROSS
 	"-",  // LINE_HORIZ
-	"!",  // LINE_UP
+	":",  // LINE_UP
 	",",  // LUP_CORNER
 	"\\", // RDWN_CORNER
 	"/",  // RUP_CORNER
@@ -33,7 +33,8 @@ static const char* r_vline_u[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
-	"↑", // LINE_UP
+	"⁝", // LINE_UP
+	// "↑", // LINE_UP
 	//"┌", // LUP_CORNER
 	"┘", // LUP_CORNER
 	"└", // RDWN_CORNER
@@ -1595,9 +1596,12 @@ static void ds_show_flags(RDisasmState *ds) {
 static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines) {
 		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
-		if (ds->show_color) {
-			char *newstr = r_str_newf ("%s%s%s", ds->color_flow2, "|", ds->color_flow);
-			ds->line = r_str_replace (ds->line, ds->core->cons->vline[LINE_UP], newstr, true);
+		{
+			const char *col = ds->show_utf8? r_vline_u[LINE_UP] : r_vline_a[LINE_UP];
+			char *newstr = ds->show_color
+				? r_str_newf ("%s%s%s", ds->color_flow, col, ds->color_flow)
+				: strdup (col);
+			ds->line = r_str_replace (ds->line, r_vline_a[LINE_UP], newstr, true);
 			free (newstr);
 		}
 		free (ds->refline);

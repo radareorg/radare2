@@ -477,7 +477,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		} else if (WIFSTOPPED (status)) {
 			if (WSTOPSIG (status) != SIGTRAP &&
 				WSTOPSIG (status) != SIGSTOP) {
-				eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
+				eprintf ("Child stopped with signal %d\n", WSTOPSIG (status));
 			}
 
 			/* the ptrace documentation says GETSIGINFO is only necessary for
@@ -485,8 +485,9 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
-			if (!r_debug_handle_signals (dbg))
+			if (!r_debug_handle_signals (dbg)) {
 				return R_DEBUG_REASON_ERROR;
+			}
 			reason = dbg->reason.type;
 		} else if (WIFCONTINUED (status)) {
 			eprintf ("child continued...\n");
@@ -632,12 +633,12 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		 */
 		for (i = 2; i < MAXPID; i++) {
 			/* try to send signal 0, if it fails it must not be valid */
-			if (r_sandbox_kill (i, 0) == -1)
+			if (r_sandbox_kill (i, 0) == -1) {
 				continue;
-
-			if (procfs_pid_slurp (i, "cmdline", buf, sizeof(buf)) == -1)
+			}
+			if (procfs_pid_slurp (i, "cmdline", buf, sizeof (buf)) == -1) {
 				continue;
-
+			}
 			r_list_append (list, r_debug_pid_new (buf, i, 0, 's', 0));
 		}
 	}
@@ -678,7 +679,6 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		eprintf ("kvm_openfiles says %s\n", errbuf);
 		return NULL;
 	}
-
 	if (pid) {
 		kp = KVM_GETPROCS (kd, KERN_PROC_PID, pid, &cnt);
 		if (cnt == 1) {
@@ -696,7 +696,9 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		int i;
 		for (i = 0; i < cnt; i++) {
 			RDebugPid *p = r_debug_pid_new (KP_COMM(kp + i), KP_PID(kp + i), KP_UID(kp), 's', 0);
-			if (p) r_list_append (list, p);
+			if (p) {
+				r_list_append (list, p);
+			}
 		}
 	}
 	kvm_close(kd);

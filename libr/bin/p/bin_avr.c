@@ -68,18 +68,18 @@ static bool check_bytes(const ut8 *b, ut64 length) {
 	return check_bytes_rjmp (b, length);
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !arch || !arch->buf) {
+	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("ATmel");
 	ret->os = strdup ("avr");
@@ -87,11 +87,11 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_lit = false;
 	ret->arch = strdup ("avr");
 	ret->bits = 8;
-	// bs = (const char*)arch->buf->buf;
+	// bs = (const char*)bf->buf->buf;
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
         RList* ret;
         RBinAddr *ptr = NULL;
 	if (tmp_entry == UT64_MAX) {
@@ -127,15 +127,15 @@ static void addptr(RList *ret, const char *name, ut64 addr, const ut8 *b, int le
 	}
 }
 
-static RList* symbols(RBinFile *arch) {
+static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
-	const ut8 *b = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *b = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	if (false) { // TODO arch->cpu && !strcmp (arch->cpu, "atmega8")) {
+	if (false) { // TODO bf->cpu && !strcmp (bf->cpu, "atmega8")) {
 		/* ... */
 	} else {
 		/* atmega8 */
@@ -150,7 +150,7 @@ static RList* symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RList* strings (RBinFile *arch) {
+static RList* strings (RBinFile *bf) {
 	return NULL;
 }
 
@@ -173,4 +173,3 @@ RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-
