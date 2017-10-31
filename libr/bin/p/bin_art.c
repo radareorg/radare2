@@ -63,7 +63,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (!ao) {
 		return NULL;
@@ -73,42 +73,42 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *s
 		free (ao);
 		return NULL;
 	}
-	art_header_load (&ao->art, arch->buf, ao->kv);
+	art_header_load (&ao->art, bf->buf, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
 	return ao;
 }
 
-static bool load(RBinFile *arch) {
+static bool load(RBinFile *bf) {
 	return true;
 }
 
-static int destroy(RBinFile *arch) {
+static int destroy(RBinFile *bf) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
-	ArtObj *ao = arch->o->bin_obj;
+static ut64 baddr(RBinFile *bf) {
+	ArtObj *ao = bf->o->bin_obj;
 	return ao? ao->art.image_base: 0;
 }
 
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	ArtObj *ao;
 	RBinInfo *ret;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	// art_header_load (&art, arch->buf);
-	ao = arch->o->bin_obj;
+	// art_header_load (&art, bf->buf);
+	ao = bf->o->bin_obj;
 	ret->lang = NULL;
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");
 
 	ret->bclass = malloc (5);
@@ -133,7 +133,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length > 3 && !strncmp ((const char *) buf, "art\n", 4));
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -149,8 +149,8 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
-	ArtObj *ao = arch->o->bin_obj;
+static RList *sections(RBinFile *bf) {
+	ArtObj *ao = bf->o->bin_obj;
 	if (!ao) {
 		return NULL;
 	}
@@ -167,7 +167,7 @@ static RList *sections(RBinFile *arch) {
 		return ret;
 	}
 	strncpy (ptr->name, "load", R_BIN_SIZEOF_STRINGS);
-	ptr->size = arch->buf->length;
+	ptr->size = bf->buf->length;
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;

@@ -13,30 +13,30 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return (void *) (size_t) check_bytes (buf, sz);
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	ut64 la = (arch && arch->o)? arch->o->loadaddr: 0;
-	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL);
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
+	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
+	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
-static int destroy(RBinFile *arch) {
+static int destroy(RBinFile *bf) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0x1000000; // XXX
 }
 
-static RBinAddr *binsym(RBinFile *arch, int type) {
+static RBinAddr *binsym(RBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -46,29 +46,29 @@ static RList *entries(RBinFile *arch) {
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = 8 * 4;
-		ptr->vaddr = 8 * 4;// + baddr (arch);
+		ptr->vaddr = 8 * 4;// + baddr (bf);
 		r_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	ut64 textsize, datasize, symssize, spszsize, pcszsize;
-	if (!arch->o->info) {
+	if (!bf->o->info) {
 		return NULL;
 	}
 
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	if (r_buf_size (arch->buf) < 28) {
+	if (r_buf_size (bf->buf) < 28) {
 		r_list_free (ret);
 		return NULL;
 	}
 	// add text segment
-	textsize = r_mem_get_num (arch->buf->buf + 4, 4);
+	textsize = r_mem_get_num (bf->buf->buf + 4, 4);
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		r_list_free (ret);
 		return NULL;
@@ -82,7 +82,7 @@ static RList *sections(RBinFile *arch) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	// add data segment
-	datasize = r_mem_get_num (arch->buf->buf + 8, 4);
+	datasize = r_mem_get_num (bf->buf->buf + 8, 4);
 	if (datasize > 0) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -98,7 +98,7 @@ static RList *sections(RBinFile *arch) {
 	}
 	// ignore bss or what
 	// add syms segment
-	symssize = r_mem_get_num (arch->buf->buf + 16, 4);
+	symssize = r_mem_get_num (bf->buf->buf + 16, 4);
 	if (symssize) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -113,7 +113,7 @@ static RList *sections(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	// add spsz segment
-	spszsize = r_mem_get_num (arch->buf->buf + 24, 4);
+	spszsize = r_mem_get_num (bf->buf->buf + 24, 4);
 	if (spszsize) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -128,7 +128,7 @@ static RList *sections(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	// add pcsz segment
-	pcszsize = r_mem_get_num (arch->buf->buf + 24, 4);
+	pcszsize = r_mem_get_num (bf->buf->buf + 24, 4);
 	if (pcszsize) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -145,30 +145,30 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *bf) {
 	// TODO: parse symbol table
 	return NULL;
 }
 
-static RList *imports(RBinFile *arch) {
+static RList *imports(RBinFile *bf) {
 	return NULL;
 }
 
-static RList *libs(RBinFile *arch) {
+static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	int bits = 32, bina, big_endian = 0;
 
-	if (!(bina = r_bin_p9_get_arch (arch->buf->buf, &bits, &big_endian))) {
+	if (!(bina = r_bin_p9_get_arch (bf->buf->buf, &bits, &big_endian))) {
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("program");
 	ret->rclass = strdup ("p9");
 	ret->os = strdup ("Plan9");
@@ -183,22 +183,22 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 size(RBinFile *arch) {
+static ut64 size(RBinFile *bf) {
 	ut64 text, data, syms, spsz;
-	if (!arch->o->info) {
-		arch->o->info = info (arch);
+	if (!bf->o->info) {
+		bf->o->info = info (bf);
 	}
-	if (!arch->o->info) {
+	if (!bf->o->info) {
 		return 0;
 	}
 	// TODO: reuse section list
-	if (r_buf_size (arch->buf) < 28) {
+	if (r_buf_size (bf->buf) < 28) {
 		return 0;
 	}
-	text = r_mem_get_num (arch->buf->buf + 4, 4);
-	data = r_mem_get_num (arch->buf->buf + 8, 4);
-	syms = r_mem_get_num (arch->buf->buf + 16, 4);
-	spsz = r_mem_get_num (arch->buf->buf + 24, 4);
+	text = r_mem_get_num (bf->buf->buf + 4, 4);
+	data = r_mem_get_num (bf->buf->buf + 8, 4);
+	syms = r_mem_get_num (bf->buf->buf + 16, 4);
+	spsz = r_mem_get_num (bf->buf->buf + 24, 4);
 	return text + data + syms + spsz + (6 * 4);
 }
 

@@ -23,18 +23,18 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return rc;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return (void *) (size_t) check_bytes (buf, sz);
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	ut64 la = (arch && arch->o) ? arch->o->loadaddr: 0;
-	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL) != NULL;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
+	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
+	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL) != NULL;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -46,13 +46,13 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	bool big_endian = 0;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("dyldcache");
 	ret->rclass = strdup ("ios");
 	ret->os = strdup ("iOS");
@@ -68,21 +68,21 @@ static RBinInfo *info(RBinFile *arch) {
 }
 
 #if 0
-static ut64 size(RBinFile *arch) {
+static ut64 size(RBinFile *bf) {
 	ut64 text, data, syms, spsz;
 	int big_endian;
-	if (!arch->o->info) {
-		arch->o->info = info (arch);
+	if (!bf->o->info) {
+		bf->o->info = info (bf);
 	}
-	if (!arch->o->info) {
+	if (!bf->o->info) {
 		return 0;
 	}
-	big_endian = arch->o->info->big_endian;
+	big_endian = bf->o->info->big_endian;
 	// TODO: reuse section list
-	text = r_mem_get_num (arch->buf->buf + 4, 4, big_endian);
-	data = r_mem_get_num (arch->buf->buf + 8, 4, big_endian);
-	syms = r_mem_get_num (arch->buf->buf + 16, 4, big_endian);
-	spsz = r_mem_get_num (arch->buf->buf + 24, 4, big_endian);
+	text = r_mem_get_num (bf->buf->buf + 4, 4, big_endian);
+	data = r_mem_get_num (bf->buf->buf + 8, 4, big_endian);
+	syms = r_mem_get_num (bf->buf->buf + 16, 4, big_endian);
+	spsz = r_mem_get_num (bf->buf->buf + 24, 4, big_endian);
 	return text + data + syms + spsz + (6 * 4);
 }
 #endif

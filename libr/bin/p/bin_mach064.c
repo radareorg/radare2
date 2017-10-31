@@ -257,12 +257,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinFile *arch, int sym) {
+static RBinAddr* binsym(RBinFile *bf, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (arch->o->bin_obj);
+		addr = MACH0_(get_main) (bf->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
 		ret->paddr = ret->vaddr = addr;

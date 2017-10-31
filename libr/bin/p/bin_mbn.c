@@ -61,28 +61,28 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 	return false;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return (void*)(size_t)check_bytes (buf, sz);
 }
 
-static bool load(RBinFile *arch) {
-	if (arch && arch->buf) {
-		const ut8 *bytes = r_buf_buffer (arch->buf);
-		ut64 sz = r_buf_size (arch->buf);
-		return load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb) != NULL;
+static bool load(RBinFile *bf) {
+	if (bf && bf->buf) {
+		const ut8 *bytes = r_buf_buffer (bf->buf);
+		ut64 sz = r_buf_size (bf->buf);
+		return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb) != NULL;
 	}
 	return false;
 }
 
-static int destroy (RBinFile *arch) {
+static int destroy (RBinFile *bf) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return sb.vaddr; // XXX
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 
@@ -98,7 +98,7 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList* sections(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 	int rc;
@@ -107,7 +107,7 @@ static RList* sections(RBinFile *arch) {
 		return NULL;
 	}
 	ret->free = free;
-	rc = r_buf_fread_at (arch->buf, 0, (ut8*)&sb, "10i", 1);
+	rc = r_buf_fread_at (bf->buf, 0, (ut8*)&sb, "10i", 1);
 	if (!rc) {
 		r_list_free (ret);
 		return false;
@@ -157,13 +157,13 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	const int bits = 16;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("bootloader");
 	ret->rclass = strdup ("mbn");
 	ret->os = strdup ("MBN");
@@ -181,7 +181,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 size(RBinFile *arch) {
+static ut64 size(RBinFile *bf) {
 	return sizeof (SBLHDR) + sb.psize;
 }
 

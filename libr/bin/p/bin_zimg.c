@@ -14,7 +14,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || size == 0 || size == UT64_MAX) {
@@ -27,17 +27,17 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr
 	return res;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 size = arch? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 size = bf? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, size, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj? true: false;
+	bf->o->bin_obj = load_bytes (bf, bytes, size, bf->o->loadaddr, bf->sdb);
+	return bf->o->bin_obj? true: false;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
@@ -52,12 +52,12 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("Linux zImage Kernel");
 	ret->has_va = false;
 	ret->bclass = strdup ("Compressed Linux Kernel");

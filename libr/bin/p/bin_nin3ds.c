@@ -17,27 +17,27 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, "FIRM", 4));
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof (struct n3ds_firm_hdr));
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 
-static int destroy(RBinFile *arch) {
-	r_buf_free (arch->buf);
-	arch->buf = NULL;
+static int destroy(RBinFile *bf) {
+	r_buf_free (bf->buf);
+	bf->buf = NULL;
 	return true;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *sections[4] = {
 		NULL, NULL, NULL, NULL
@@ -89,11 +89,11 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
-	if (arch && arch->buf) {
+	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
@@ -119,13 +119,13 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
-	if (!arch || !arch->buf) {
+	if (!bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
@@ -160,4 +160,3 @@ RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

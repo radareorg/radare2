@@ -69,13 +69,13 @@ typedef struct r_bin_wasm_section_t {
 	char name[R_BIN_WASM_STRING_LENGTH];
 	ut32 offset;
 	ut32 payload_data;
-	ut32 payload_len; 
+	ut32 payload_len;
 	ut32 count;
 } RBinWasmSection;
 
 typedef struct r_bin_wasm_type_t {
-	ut8 form; 
-	ut32 param_count; 
+	ut8 form;
+	ut32 param_count;
 	r_bin_wasm_value_type_t *param_types;
 	st8 return_count; // MVP = 1
 	r_bin_wasm_value_type_t return_type;
@@ -109,7 +109,7 @@ typedef struct r_bin_wasm_import_t {
 		struct r_bin_wasm_table_type_t type_t;
 		struct r_bin_wasm_memory_type_t type_m;
 	};
-		
+
 } RBinWasmImportEntry;
 
 typedef struct r_bin_wasm_function_t {
@@ -177,7 +177,7 @@ typedef struct r_bin_wasm_data_t {
 typedef struct r_bin_wasm_custom_name_t {
 	r_bin_wasm_name_type_t name_type;
 	ut32 name_payload_length;
-	ut32 name_payload_data;	
+	ut32 name_payload_data;
 } RBinWasmCustomNameEntry;
 
 typedef struct r_bin_wasm_obj_t {
@@ -203,8 +203,8 @@ typedef struct r_bin_wasm_obj_t {
 
 } RBinWasmObj;
 
-RBinWasmObj *r_bin_wasm_init (RBinFile *arch);
-void r_bin_wasm_destroy (RBinFile *arch);
+RBinWasmObj *r_bin_wasm_init (RBinFile *bf);
+void r_bin_wasm_destroy (RBinFile *bf);
 RList *r_bin_wasm_get_sections (RBinWasmObj *bin);
 RList *r_bin_wasm_get_types (RBinWasmObj *bin);
 RList *r_bin_wasm_get_imports (RBinWasmObj *bin);

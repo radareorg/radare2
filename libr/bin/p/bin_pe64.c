@@ -16,9 +16,9 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return ret;
 }
 
-static void header(RBinFile *arch) {
-	struct PE_(r_bin_pe_obj_t) * bin = arch->o->bin_obj;
-	struct r_bin_t *rbin = arch->rbin;
+static void header(RBinFile *bf) {
+	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	struct r_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("PE file header:\n");
 	rbin->cb_printf ("IMAGE_NT_HEADERS\n");
 	rbin->cb_printf ("\tSignature : 0x%x\n", bin->nt_headers->Signature);

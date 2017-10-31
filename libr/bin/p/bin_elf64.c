@@ -15,16 +15,16 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
-static ut64 get_elf_vaddr64 (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_elf_vaddr64 (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
-	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
+	struct Elf_(r_bin_elf_obj_t)* obj = bf->o->bin_obj;
 	return obj->baddr - obj->boffset + vaddr;
 
 }
 
-static void headers64(RBinFile *arch) {
-#define p arch->rbin->cb_printf
-	const ut8 *buf = r_buf_get_at (arch->buf, 0, NULL);
+static void headers64(RBinFile *bf) {
+#define p bf->rbin->cb_printf
+	const ut8 *buf = r_buf_get_at (bf->buf, 0, NULL);
 	p ("0x00000000  ELF64       0x%08x\n", r_read_le32 (buf));
 	p ("0x00000010  Type        0x%04x\n", r_read_le16 (buf + 0x10));
 	p ("0x00000012  Machine     0x%04x\n", r_read_le16 (buf + 0x12));
@@ -75,7 +75,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	p_phdr = buf->length;
 	D (1);  // p_type
 	D (5);  // p_flags = PF_R | PF_X
-	Q (0);  // p_offset 
+	Q (0);  // p_offset
 	p_vaddr = buf->length;
 	Q (-1); // p_vaddr = 0xFFFFFFFF
 	p_paddr = buf->length;

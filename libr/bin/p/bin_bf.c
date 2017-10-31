@@ -5,33 +5,33 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return R_NOTNULL;
 }
 
-static bool load(RBinFile *arch) {
+static bool load(RBinFile *bf) {
 	return true;
 }
 
-static int destroy(RBinFile *arch) {
+static int destroy(RBinFile *bf) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("brainfuck");
 	ret->bclass = strdup ("1.0");
 	ret->rclass = strdup ("program");
@@ -90,7 +90,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return is_bf;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 

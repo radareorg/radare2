@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "../../fs/types.h"
 
-//static char *fsname(RBinFile *arch) {
+//static char *fsname(RBinFile *bf) {
 static char *fsname(const ut8* buf, ut64 length) {
 	ut8 fs_lbuf[1024];
 	int i, j, len, ret = false;
@@ -51,47 +51,47 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return p != NULL;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	if (check_bytes (buf, sz)) {
 		return R_NOTNULL;
 	}
 	return NULL;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	ut64 la = (arch && arch->o) ? arch->o->loadaddr: 0;
-	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL) != NULL;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
+	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
+	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL) != NULL;
 }
 
-static int destroy(RBinFile *arch) {
-	//r_bin_fs_free ((struct r_bin_fs_obj_t*)arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->o->bin_obj);
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	const ut8 *bytes;
 	ut64 sz;
 
-	if (!arch) return NULL;
-	bytes = r_buf_buffer (arch->buf);
+	if (!bf) return NULL;
+	bytes = r_buf_buffer (bf->buf);
 	if (!bytes) return NULL;
-	sz = arch->buf ? r_buf_size (arch->buf): 0;
+	sz = bf->buf ? r_buf_size (bf->buf): 0;
 
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("fs");
 	ret->bclass = strdup ("1.0");
 	ret->rclass = strdup ("fs");

@@ -32,27 +32,27 @@ static bool check_bytes(const ut8 *bs, ut64 length) {
 	return false;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	const char *bs;
 	SMS_Header *hdr = NULL;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !arch || !arch->buf) {
+	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("SEGA MasterSystem");
 	ret->os = strdup ("sms");
 	ret->arch = strdup ("z80");
 	ret->has_va = 1;
 	ret->bits = 8;
-	bs = (const char*)arch->buf->buf;
+	bs = (const char*)bf->buf->buf;
 	// TODO: figure out sections/symbols for this format and move this there
 	//       also add SDSC headers..and find entry
 	if (!CMP8(0x1ff0, "TMR SEGA")) {
@@ -129,4 +129,3 @@ RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

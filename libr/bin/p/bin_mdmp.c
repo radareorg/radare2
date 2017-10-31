@@ -19,28 +19,28 @@ static void r_bbin_mem_free(void *data) {
 }
 
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
 
-static Sdb *get_sdb(RBinFile *arch) {
+static Sdb *get_sdb(RBinFile *bf) {
 	struct r_bin_mdmp_obj *obj;
 
-	if (!(arch)) return NULL;
+	if (!(bf)) return NULL;
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	if (obj && (obj->kv)) return obj->kv;
 
 	return NULL;
 }
 
-static int destroy(RBinFile *arch) {
-	r_bin_mdmp_free ((struct r_bin_mdmp_obj*)arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	r_bin_mdmp_free ((struct r_bin_mdmp_obj*)bf->o->bin_obj);
 	return true;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
@@ -51,7 +51,7 @@ static RList* entries(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_entrypoint (pe32_bin);
@@ -67,7 +67,7 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	struct r_bin_mdmp_obj *obj;
 	RBinInfo *ret;
 
@@ -75,11 +75,11 @@ static RBinInfo *info(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	ret->big_endian = obj->endian;
 	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", obj->hdr->check_sum));
-	ret->file = arch->file ? strdup (arch->file) : NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->has_va = true;
 	ret->rclass = strdup ("mdmp");
 	ret->rpath = strdup ("NONE");
@@ -88,8 +88,8 @@ static RBinInfo *info(RBinFile *arch) {
 	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
 	ret->has_lit = true;
 
-	sdb_set (arch->sdb, "mdmp.flags", sdb_fmt (0, "0x%08x", obj->hdr->flags), 0);
-	sdb_num_set (arch->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
+	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt (0, "0x%08x", obj->hdr->flags), 0);
+	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info)
 	{
@@ -144,7 +144,7 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static RList* libs(RBinFile *arch) {
+static RList* libs(RBinFile *bf) {
 	char *ptr = NULL;
 	int i;
 	struct r_bin_mdmp_obj *obj;
@@ -158,7 +158,7 @@ static RList* libs(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	/* TODO: Resolve module name for lib, or filter to remove duplicates,
 	** rather than the vaddr :) */
@@ -186,7 +186,7 @@ static RList* libs(RBinFile *arch) {
 	return ret;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *tbuf;
 	struct r_bin_mdmp_obj *res;
 
@@ -204,20 +204,20 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	return res;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf) : 0;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
 
-	if (!arch || !arch->o) {
+	if (!bf || !bf->o) {
 		return false;
 	}
 
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 
-	return arch->o->bin_obj ? true : false;
+	return bf->o->bin_obj ? true : false;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	struct minidump_memory_descriptor *memory;
 	struct minidump_memory_descriptor64 *memory64;
 	struct minidump_module *module;
@@ -230,7 +230,7 @@ static RList *sections(RBinFile *arch) {
 	RBinSection *ptr;
 	ut64 index;
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -320,7 +320,7 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *mem (RBinFile *arch) {
+static RList *mem (RBinFile *bf) {
 	struct minidump_location_descriptor *location;
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
@@ -336,7 +336,7 @@ static RList *mem (RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	/* [1] As there isnt a better place to put this info at the moment we will
 	** mash it into the name field, but without enumeration for now  */
@@ -389,7 +389,7 @@ static RList *mem (RBinFile *arch) {
 	return ret;
 }
 
-static RList* relocs(RBinFile *arch) {
+static RList* relocs(RBinFile *bf) {
 	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
@@ -400,7 +400,7 @@ static RList* relocs(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (pe32_bin->bin) {
@@ -416,7 +416,7 @@ static RList* relocs(RBinFile *arch) {
 	return ret;
 }
 
-static RList* imports(RBinFile *arch) {
+static RList* imports(RBinFile *bf) {
 	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
@@ -427,7 +427,7 @@ static RList* imports(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_imports (pe32_bin);
@@ -442,7 +442,7 @@ static RList* imports(RBinFile *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinFile *arch) {
+static RList* symbols(RBinFile *bf) {
 	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
@@ -453,7 +453,7 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_symbols (pe32_bin);

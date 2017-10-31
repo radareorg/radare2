@@ -107,8 +107,8 @@ static const char *readString(RBuffer *buf, int off) {
 	return left > 0 ? data: NULL;
 }
 
-static ut64 baddr(RBinFile *arch) {
-	return arch? readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF): 0;
+static ut64 baddr(RBinFile *bf) {
+	return bf? readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
 static const char *fileType(const ut8 *buf) {
@@ -131,40 +131,40 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBinNROObj *bin = R_NEW0 (RBinNROObj);
 	if (!bin) {
 		return NULL;
 	}
-	ut64 ba = baddr (arch);
+	ut64 ba = baddr (bf);
 	bin->methods_list = r_list_newf ((RListFree)free);
 	bin->imports_list = r_list_newf ((RListFree)free);
 	bin->classes_list = r_list_newf ((RListFree)free);
-	ut32 mod0 = readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
-	parseMod (arch, bin, mod0, ba);
+	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
+	parseMod (bf, bin, mod0, ba);
 	return (void *) bin;//(size_t) check_bytes (buf, sz);
 }
 
-static bool load(RBinFile *arch) {
-	if (!arch || !arch->buf || !arch->o) {
+static bool load(RBinFile *bf) {
+	if (!bf || !bf->buf || !bf->o) {
 		return false;
 	}
-	const ut64 sz = r_buf_size (arch->buf);
-	const ut64 la = arch->o->loadaddr;
-	const ut8 *bytes = r_buf_buffer (arch->buf);
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL);
-	return arch->o->bin_obj != NULL;
+	const ut64 sz = r_buf_size (bf->buf);
+	const ut64 la = bf->o->loadaddr;
+	const ut8 *bytes = r_buf_buffer (bf->buf);
+	bf->o->bin_obj = load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL);
+	return bf->o->bin_obj != NULL;
 }
 
-static int destroy(RBinFile *arch) {
+static int destroy(RBinFile *bf) {
 	return true;
 }
 
-static RBinAddr *binsym(RBinFile *arch, int type) {
+static RBinAddr *binsym(RBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
@@ -173,7 +173,7 @@ static RList *entries(RBinFile *arch) {
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = 0x80;
-		ptr->vaddr = ptr->paddr + baddr (arch);
+		ptr->vaddr = ptr->paddr + baddr (bf);
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -318,11 +318,11 @@ static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr) {
 	}
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	RBuffer *b = arch->buf;
-	if (!arch->o->info) {
+	RBuffer *b = bf->buf;
+	if (!bf->o->info) {
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {
@@ -330,7 +330,7 @@ static RList *sections(RBinFile *arch) {
 	}
 	ret->free = free;
 
-	ut64 ba = baddr (arch);
+	ut64 ba = baddr (bf);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
@@ -344,14 +344,14 @@ static RList *sections(RBinFile *arch) {
 	ptr->add = false;
 	r_list_append (ret, ptr);
 
-	int bufsz = r_buf_size (arch->buf);
+	int bufsz = r_buf_size (bf->buf);
 
-	ut32 mod0 = readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
+	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		ut32 mod0sz = readLE32 (arch->buf, mod0 + 4);
+		ut32 mod0sz = readLE32 (bf->buf, mod0 + 4);
 		strncpy (ptr->name, "mod0", R_BIN_SIZEOF_STRINGS);
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
@@ -364,12 +364,12 @@ static RList *sections(RBinFile *arch) {
 		eprintf ("Invalid MOD0 address\n");
 	}
 
-	ut32 sig0 = readLE32 (arch->buf, 0x18);
+	ut32 sig0 = readLE32 (bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		ut32 sig0sz = readLE32 (arch->buf, sig0 + 4);
+		ut32 sig0sz = readLE32 (bf->buf, sig0 + 4);
 		strncpy (ptr->name, "sig0", R_BIN_SIZEOF_STRINGS);
 		ptr->size = sig0sz;
 		ptr->vsize = sig0sz;
@@ -421,49 +421,49 @@ static RList *sections(RBinFile *arch) {
 	ptr->add = true;
 	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
-			readLE32 (arch->buf, NRO_OFF (bss_size)));
+			readLE32 (bf->buf, NRO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RList *symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *bf) {
 	RBinNROObj *bin;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNROObj*) arch->o->bin_obj;
+	bin = (RBinNROObj*) bf->o->bin_obj;
 	if (!bin) {
 		return NULL;
 	}
 	return bin->methods_list;
 }
 
-static RList *imports(RBinFile *arch) {
+static RList *imports(RBinFile *bf) {
 	RBinNROObj *bin;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNROObj*) arch->o->bin_obj;
+	bin = (RBinNROObj*) bf->o->bin_obj;
 	if (!bin) {
 		return NULL;
 	}
 	return bin->imports_list;
 }
 
-static RList *libs(RBinFile *arch) {
+static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	const char *ft = fileType (r_buf_get_at (arch->buf, NRO_OFF (magic), NULL));
+	const char *ft = fileType (r_buf_get_at (bf->buf, NRO_OFF (magic), NULL));
 	if (!ft) {
 		ft = "nro";
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->rclass = strdup (ft);
 	ret->os = strdup ("switch");
 	ret->arch = strdup ("arm");
