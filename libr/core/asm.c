@@ -14,8 +14,12 @@ static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid);
 
 static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
-	if (a->addr == b->addr) return 0;
-	if (a->addr < b->addr) return -1;
+	if (a->addr == b->addr) {
+		return 0;
+	}
+	if (a->addr < b->addr) {
+		return -1;
+	}
 	return 1; /* a->addr > b->addr */
 }
 
@@ -29,16 +33,18 @@ R_API RCoreAsmHit *r_core_asm_hit_new() {
 
 R_API RList *r_core_asm_hit_list_new() {
 	RList *list = r_list_new ();
-	if (!list) return NULL;
-	list->free = &r_core_asm_hit_free;
+	if (list) {
+		list->free = &r_core_asm_hit_free;
+	}
 	return list;
 }
 
 R_API void r_core_asm_hit_free(void *_hit) {
 	RCoreAsmHit *hit = _hit;
 	if (hit) {
-		if (hit->code)
+		if (hit->code) {
 			free (hit->code);
+		}
 		free (hit);
 	}
 }
@@ -56,7 +62,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 
 #define OPSZ 8
 // TODO: add support for byte-per-byte opcode search
-R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp) {
+R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte) {
 	RCoreAsmHit *hit;
 	RAsmOp op;
 	RList *hits;
@@ -173,7 +179,11 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx += len;
 				}
 			} else {
-				idx = matchcount? tidx + 1: idx + 1;
+				if (everyByte) {
+					idx = matchcount? tidx + 1: idx + 1;
+				} else {
+					idx += len;
+				}
 				R_FREE (code);
 				matchcount = 0;
 			}
