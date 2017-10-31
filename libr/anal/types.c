@@ -119,6 +119,74 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	return 0;
 }
 
+// FIXME: Make it recursive
+static int get_types_by_offset(RAnal *anal, RList *offtypes, int offset, const char *k, const char *v) {
+	char buf[256] = {0};
+	//r_cons_printf ("tk %s=%s\n", k, v);
+	// TODO: Add unions support
+	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
+		const char *typename = k;
+		int typesize = 0;
+		char* query = sdb_fmt (-1, "struct.%s", k);
+		char *members = sdb_get (anal->sdb_types, query, 0);
+		char *next, *ptr = members;
+		if (members) {
+			// Search for members, summarize the size
+			int typesize = 0;
+			do {
+				char *name = sdb_anext (ptr, &next);
+				if (!name) {
+					break;
+				}
+				query = sdb_fmt (-1, "struct.%s.%s", k, name);
+				char *subtype = sdb_get (anal->sdb_types, query, 0);
+				if (!subtype) {
+					break;
+				}
+				char *tmp = strchr (subtype, ',');
+				if (tmp) {
+					*tmp++ = 0;
+					tmp = strchr (tmp, ',');
+					if (tmp) {
+						*tmp++ = 0;
+					}
+					char *subname = tmp;
+					// TODO: Go recurse here
+					int elements = r_num_math (NULL, tmp);
+					if (elements == 0) {
+						elements = 1;
+					}
+					// TODO: Handle also alignment, unions, etc
+					// If previous types size matches the offset
+					if ((typesize / 8) == offset) {
+						// Add them in the list
+						buf[0] = '\0';
+						sprintf (buf, "%s.%s", k, name);
+						r_list_append (offtypes, strdup (buf));
+					}
+					typesize += r_anal_type_get_size (anal, subtype) * elements;
+				}
+				free (subtype);
+				ptr = next;
+			} while (next);
+			free (members);
+		}
+	}
+	return 0;
+}
+
+R_API RList* r_anal_type_get_by_offset(RAnal *anal, ut64 offset) {
+	RList *offtypes = r_list_new ();
+	SdbList *ls = sdb_foreach_list (anal->sdb_types, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
+	ls_foreach (ls, lsi, kv) {
+		get_types_by_offset (anal, offtypes, offset, kv->key, kv->value);
+	}
+	ls_free (ls);
+	return offtypes;
+}
+
 R_API char* r_anal_type_to_str (RAnal *a, const char *type) {
 	// convert to C text... maybe that should be in format string..
 	return NULL;
@@ -138,6 +206,17 @@ R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) 
 R_API int r_anal_type_link(RAnal *anal, const char *type, ut64 addr) {
 	if (sdb_const_get (anal->sdb_types, type, 0)) {
 		char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
+		sdb_set (anal->sdb_types, laddr, type, 0);
+		free (laddr);
+		return true;
+	}
+	// eprintf ("Cannot find type\n");
+	return false;
+}
+
+R_API int r_anal_type_link_offset(RAnal *anal, const char *type, ut64 addr) {
+	if (sdb_const_get (anal->sdb_types, type, 0)) {
+		char *laddr = r_str_newf ("offset.%08"PFMT64x, addr);
 		sdb_set (anal->sdb_types, laddr, type, 0);
 		free (laddr);
 		return true;

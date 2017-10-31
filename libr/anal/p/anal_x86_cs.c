@@ -1931,6 +1931,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		// number of bits shifted is greater than the size of the
 		// destination.
 		op->type = R_ANAL_OP_TYPE_SHL;
+		op->src[0] = r_anal_value_new ();
+		op->src[0]->imm = INSOP(1).imm;
 		break;
 	case X86_INS_SAR:
 	case X86_INS_SARX:
@@ -1949,6 +1951,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		op->type = R_ANAL_OP_TYPE_SHR;
+		op->src[0] = r_anal_value_new ();
+		op->src[0]->imm = INSOP(1).imm;
 		break;
 	case X86_INS_CMP:
 	case X86_INS_CMPPD:

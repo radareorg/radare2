@@ -677,6 +677,7 @@ typedef struct r_anal_hint_t {
 	char *opcode;
 	char *syntax;
 	char *esil;
+	char *offset;
 	int size;
 	int bits;
 	int immbase;
@@ -1182,6 +1183,7 @@ R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
 /* type.c */
 R_API int r_anal_type_get_size (RAnal *anal, const char *type);
+R_API RList* r_anal_type_get_by_offset(RAnal *anal, ut64 offset);
 R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API void r_anal_type_del(RAnal *l, const char *name);
@@ -1201,6 +1203,7 @@ R_API void r_anal_type_header (RAnal *anal, const char *hdr);
 
 R_API int r_anal_type_link (RAnal *anal, const char *val, ut64 addr);
 R_API int r_anal_type_unlink(RAnal *anal, ut64 addr);
+R_API int r_anal_type_link_offset (RAnal *anal, const char *val, ut64 addr);
 R_API char *r_anal_type_format (RAnal *anal, const char *t);
 R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
 R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name);
@@ -1547,6 +1550,7 @@ R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
+R_API void r_anal_hint_set_offset (RAnal *a, ut64 addr, const char *typeoff);
 R_API void r_anal_hint_set_immbase (RAnal *a, ut64 addr, int base);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int length);
@@ -1563,6 +1567,7 @@ R_API void r_anal_hint_unset_opcode(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_syntax(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_pointer(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr);
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);

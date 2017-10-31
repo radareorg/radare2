@@ -14,6 +14,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	//"t-!", "",          "Use to open $EDITOR",
+	"ta", " <type>", "Mark immediate as a type offset",
 	"tb", " <enum> <value>", "Show matching enum bitfield for given number",
 	"tc", " ([cctype])", "calling conventions listing and manipulations",
 	"te", "[?]", "List all loaded enums",
@@ -36,6 +37,14 @@ static const char *help_msg_t[] = {
 
 static const char *help_msg_t_minus[] = {
 	"Usage: t-", " <type>", "Delete type by its name",
+	NULL
+};
+
+static const char *help_msg_ta[] = {
+	"USAGE ta[...]", "", "",
+	"tas", " <offset>", "List all matching structure offsets",
+	"ta", " <struct member>", "Change immediate to structure offset",
+	"ta?", "", "show this help",
 	NULL
 };
 
@@ -107,6 +116,7 @@ static const char *help_msg_tu[] = {
 static void cmd_type_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, t);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, t-, t_minus);
+	DEFINE_CMD_DESCRIPTOR (core, ta);
 	DEFINE_CMD_DESCRIPTOR (core, tc);
 	DEFINE_CMD_DESCRIPTOR (core, td);
 	DEFINE_CMD_DESCRIPTOR (core, te);
@@ -557,6 +567,85 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else {
 			eprintf ("Invalid use of td. See td? for help\n");
+		}
+		break;
+	// ta - link immediate type offset to an address
+	case 'a': // "ta"
+		switch (input[1]) {
+		case 's': {
+			char *off = strdup (input + 2);
+			r_str_chop (off);
+			int toff = r_num_math (NULL, off);
+			if (toff) {
+				RList *typeoffs = r_anal_type_get_by_offset (core->anal, toff);
+				RListIter *iter;
+				char *ty;
+				r_list_foreach (typeoffs, iter, ty) {
+					r_cons_printf ("%s\n", ty);
+				}
+			}
+			break;
+		}
+		case ' ': {
+			char *type = strdup (input + 2);
+			char *ptr = strchr (type, '=');
+			ut64 offimm = 0;
+			int i = 0;
+			ut64 addr;
+
+			if (ptr) {
+				*ptr++ = 0;
+				r_str_chop (ptr);
+				if (ptr && *ptr) {
+					addr = r_num_math (core->num, ptr);
+				} else {
+					eprintf ("address is unvalid\n");
+					free (type);
+					break;
+				}
+			} else {
+				addr = core->offset;
+			}
+			r_str_chop (type);
+			RAsmOp asmop;
+			RAnalOp op;
+			ut8 code[128] = {0};
+			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
+			r_asm_set_pc (core->assembler, addr);
+			int ret = r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
+			ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize);
+			if (ret >= 0) {
+				// HACK: Just convert only the first imm seen
+				for (i = 0; i < 3; i++) {
+					if (op.src[i] && op.src[i]->imm) {
+						offimm = op.src[i]->imm;
+						//eprintf ("imm = %d\n", offimm);
+					}
+				}
+				if (offimm != 0) {
+					// TODO: Allow to select from multiple choices
+					RList* otypes = r_anal_type_get_by_offset (core->anal, offimm);
+					RListIter *iter;
+					char *otype = NULL;
+					r_list_foreach (otypes, iter, otype) {
+						if (!strcmp(type, otype)) {
+							//eprintf ("Adding type offset %s\n", type);
+							r_anal_type_link_offset (core->anal, type, addr);
+							r_anal_hint_set_offset (core->anal, addr, otype);
+							break;
+						}
+					}
+					if (!otype) {
+						eprintf ("wrong type for opcode offset\n");
+					}
+				}
+			}
+			free (type);
+		}
+		break;
+		case '?':
+			r_core_cmd_help (core, help_msg_ta);
+			break;
 		}
 		break;
 	// tl - link a type to an address

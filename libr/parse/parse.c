@@ -328,9 +328,14 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		}
 		if (p->hint) {
 			int pnumleft, immbase = p->hint->immbase;
-			char num[256], *pnum, *tmp;
+			char num[256] = {0}, *pnum, *tmp;
 			bool is_hex = false;
 			int tmp_count;
+			if (p->hint->offset) {
+				*ptr = 0;
+				snprintf (str, len, "%s%s%s", data, p->hint->offset, (ptr != ptr2)? ptr2: "");
+				return true;
+			}
 			strncpy (num, ptr, sizeof (num)-2);
 			pnum = num;
 			if (!strncmp (pnum, "0x", 2)) {
