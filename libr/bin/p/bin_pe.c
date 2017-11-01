@@ -228,40 +228,41 @@ static RList* symbols(RBinFile *bf) {
 	}
 	if ((symbols = PE_(r_bin_pe_get_exports)(bf->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
-		    if (!(ptr = R_NEW0 (RBinSymbol))) {
+			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-		    ptr->name = strdup ((char *)symbols[i].name);
-		    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
-		    //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		    ptr->bind = r_str_const ("GLOBAL");
-		    ptr->type = r_str_const ("FUNC");
-		    ptr->size = 0;
-		    ptr->vaddr = symbols[i].vaddr;
-		    ptr->paddr = symbols[i].paddr;
-		    ptr->ordinal = symbols[i].ordinal;
-		    r_list_append (ret, ptr);
+			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
+			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+			ptr->bind = r_str_const ("GLOBAL");
+			ptr->type = r_str_const ("FUNC");
+			ptr->size = 0;
+			ptr->vaddr = symbols[i].vaddr;
+			ptr->paddr = symbols[i].paddr;
+			ptr->ordinal = symbols[i].ordinal;
+			r_list_append (ret, ptr);
 		}
 		free (symbols);
 	}
 
+
 	if ((imports = PE_(r_bin_pe_get_imports)(bf->o->bin_obj))) {
-        for (i = 0; !imports[i].last; i++) {
-            if (!(ptr = R_NEW0 (RBinSymbol))) {
-                break;
+		for (i = 0; !imports[i].last; i++) {
+			if (!(ptr = R_NEW0 (RBinSymbol))) {
+				break;
 			}
-            //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 			ptr->name = r_str_newf ("imp.%s", imports[i].name);
-            //strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
-            ptr->bind = r_str_const ("NONE");
-            ptr->type = r_str_const ("FUNC");
-            ptr->size = 0;
-            ptr->vaddr = imports[i].vaddr;
-            ptr->paddr = imports[i].paddr;
-            ptr->ordinal = imports[i].ordinal;
-            r_list_append (ret, ptr);
-        }
-        free (imports);
+			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
+			ptr->bind = r_str_const ("NONE");
+			ptr->type = r_str_const ("FUNC");
+			ptr->size = 0;
+			ptr->vaddr = imports[i].vaddr;
+			ptr->paddr = imports[i].paddr;
+			ptr->ordinal = imports[i].ordinal;
+			r_list_append (ret, ptr);
+		}
+		free (imports);
 	}
 	find_pe_overlay(bf);
 	return ret;
@@ -287,15 +288,19 @@ static RList* imports(RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
-	if (!(relocs = r_list_new ())) {
+
+	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
+	if (((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj)->relocs) {
+		r_list_free (((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj)->relocs);
+	}
+
+	if (!(relocs = r_list_newf (free))) {
 		free (ret);
 		return NULL;
 	}
-	ret->free = free;
-	relocs->free = free;
 	((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj)->relocs = relocs;
 
 	if (!(imports = PE_(r_bin_pe_get_imports)(bf->o->bin_obj))) {
@@ -401,19 +406,32 @@ static int is_vb6(RBinFile *bf) {
 }
 
 static int has_canary(RBinFile *bf) {
-	const RList* imports_list = imports (bf);
-	RListIter *iter;
-	RBinImport *import;
+	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
-	if (imports_list) {
-		r_list_foreach (imports_list, iter, import)
-			if (!strcmp (import->name, "__security_init_cookie")) {
-				//r_list_free (imports_list);
-				return 1;
+	RListIter *iter;
+	struct PE_ (r_bin_pe_obj_t) *bin = bf->o->bin_obj;
+	if (bin) {
+		const RList* relocs_list = bin->relocs;
+		RBinReloc *rel;
+		if (relocs_list) {
+			r_list_foreach (relocs_list, iter, rel) {
+				if (!strcmp (rel->import->name, "__security_init_cookie")) {
+					return true;
+				}
 			}
-		// DO NOT FREE IT! r_list_free (imports_list);
+		}
+	} else {  // rabin2 needs this as it will not initialise bin
+		const RList* imports_list = imports (bf);
+		RBinImport *imp;
+		if (imports_list) {
+			r_list_foreach (imports_list, iter, imp) {
+				if (!strcmp (imp->name, "__security_init_cookie")) {
+					return true;
+				}
+			}
+		}
 	}
-	return 0;
+	return false;
 }
 
 static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {

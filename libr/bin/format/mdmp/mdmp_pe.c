@@ -175,7 +175,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 		}
 		ptr->paddr = sections[i].paddr + pe_bin->paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
-		ptr->add = true;
+		ptr->add = false;
 		ptr->srwx = R_BIN_SCN_MAP;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;

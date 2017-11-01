@@ -1348,13 +1348,13 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int fd_out = -1, cons_out = -1;
 	char *_shell_cmd;
 
-	sa.nLength = sizeof (SECURITY_ATTRIBUTES); 
-	sa.bInheritHandle = TRUE; 
-	sa.lpSecurityDescriptor = NULL; 
+	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = TRUE;
+	sa.lpSecurityDescriptor = NULL;
    	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
 		goto err_r_w32_cmd_pipe;
-	}	
+	}
 	if (!SetHandleInformation (pipe[1], HANDLE_FLAG_INHERIT, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/SetHandleInformation");
 		goto err_r_w32_cmd_pipe;

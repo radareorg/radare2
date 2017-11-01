@@ -78,7 +78,7 @@ static RBinInfo *info(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	ret->big_endian = obj->endian;
-	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", obj->hdr->check_sum));
+	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", obj->hdr->check_sum));  // FIXME: Leaks
 	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->has_va = true;
 	ret->rclass = strdup ("mdmp");
@@ -280,6 +280,7 @@ static RList *sections(RBinFile *bf) {
 		index += memory64->data_size;
 	}
 
+	// XXX: Never add here as they are covered above
 	r_list_foreach (obj->streams.modules, it, module) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -291,7 +292,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
 		ptr->size = module->size_of_image;
-		ptr->add = true;
+		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->srwx = R_BIN_SCN_MAP;

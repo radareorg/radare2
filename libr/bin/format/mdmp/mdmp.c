@@ -77,6 +77,7 @@ ut32 r_bin_mdmp_get_srwx(struct r_bin_mdmp_obj *obj, ut64 vaddr)
 static void r_bin_mdmp_free_pe32_bin(void *pe_bin_) {
 	struct Pe32_r_bin_mdmp_pe_bin *pe_bin = pe_bin_;
 	if (pe_bin) {
+		sdb_free (pe_bin->bin->kv);
 		Pe32_r_bin_pe_free (pe_bin->bin);
 		R_FREE (pe_bin);
 	}
@@ -85,6 +86,7 @@ static void r_bin_mdmp_free_pe32_bin(void *pe_bin_) {
 static void r_bin_mdmp_free_pe64_bin(void *pe_bin_) {
 	struct Pe64_r_bin_mdmp_pe_bin *pe_bin = pe_bin_;
 	if (pe_bin) {
+		sdb_free (pe_bin->bin->kv);
 		Pe64_r_bin_pe_free (pe_bin->bin);
 		R_FREE (pe_bin);
 	}
@@ -106,12 +108,9 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->pe32_bins);
 	r_list_free (obj->pe64_bins);
 
-	// fails because sub-sdb of this instance doesnt handle refs properly
-	// better leak than crash
-	//sdb_free (obj->kv);
 	r_buf_free (obj->b);
-
-	R_FREE (obj);
+	obj->b = NULL;
+	free (obj);
 
 	return;
 }
