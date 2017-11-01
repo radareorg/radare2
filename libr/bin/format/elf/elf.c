@@ -705,7 +705,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		return false;
 	}
 	link_shdr = &bin->shdr[shdr->sh_link];
-	if (shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
+	if ((int)shdr->sh_size < 1) {
 		return false;
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
@@ -837,7 +837,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	if (shdr->sh_link > bin->ehdr.e_shnum) {
 		return NULL;
 	}
-	if (shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
+	if ((int)shdr->sh_size < 1) {
 		return NULL;
 	}
 	sdb = sdb_new0 ();

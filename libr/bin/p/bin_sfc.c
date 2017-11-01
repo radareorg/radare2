@@ -39,11 +39,11 @@ static RBinInfo* info(RBinFile *bf) {
 	sfc_int_hdr sfchdr = {{0}};
 	RBinInfo *ret = NULL;
 	int hdroffset = 0;
-
+#if THIS_IS_ALWAYS_FALSE_WTF
 	if ((bf->size & 0x8000) == 0x200) {
 		hdroffset = 0x200;
 	}
-
+#endif
 	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset,
 		(ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
@@ -119,12 +119,12 @@ static RList* sections(RBinFile *bf) {
 	int hdroffset = 0;
 	bool is_hirom = false;
 	int i = 0; //0x8000-long bank number for loops
-
+#if THIS_IS_ALWAYS_FALSE_WTF
 	if ((bf->size & 0x8000) == 0x200) {
 		hdroffset = 0x200;
 	}
-	sfc_int_hdr sfchdr;
-	memset (&sfchdr, 0, SFC_HDR_SIZE);
+#endif
+	sfc_int_hdr sfchdr = {0};
 
 	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
