@@ -282,10 +282,37 @@ TEST_STATIC void r_bin_x_sort1_asc (void *b, void *e, int t_s, RBinXComp c) {
 	R_FREE (tmp);
 }
 
+TEST_STATIC int r_bin_x_binary_search (void *b, void *e, int t_s, RBinXComp c, void *g) {
+	int n = (e - b) / t_s;
+	void *m;
+	void *_b = b;
+	void *_e = e;
+
+	while (b + t_s < e) {
+		m = b + ((e - b) / t_s / 2) * t_s;
+
+		if (c (m, g) > 0) {
+			e = m;
+		} else {
+			b = m;
+		}
+	}
+
+	if (b + t_s == e && c (b, g) == 0) {
+		return (b - _b) / t_s;
+	}
+
+	return -1;
+}
+
 TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 	RListIter *iter;
 	RBinSection *section;
 	int va, n, i, m, u, k;
+	RBinXS2 *a = NULL;
+	RBinXS1 *b = NULL;
+	RBinXS3 *c = NULL;
+	RBinXS4 *d = NULL;
 
 	if (!o) {
 		return;
@@ -296,7 +323,7 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 	for (va = 0; va <= 1; ++va) {
 		n = o->sections->length;
 
-		RBinXS2 *a = R_NEWS (RBinXS2, n);
+		a = R_NEWS (RBinXS2, n);
 
 		i = 0;
 		r_list_foreach (o->sections, iter, section) {
@@ -306,7 +333,7 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 			++i;
 		}
 
-		RBinXS1 *b = R_NEWS (RBinXS1, 2 * n);
+		b = R_NEWS (RBinXS1, 2 * n);
 
 		for (i = 0; i < n; ++i) {
 			b[2 * i].off = a[i].from;
@@ -322,14 +349,16 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 		// any RList sort we already have.
 		r_bin_x_sort1_asc (b, b + 2 * n, sizeof (RBinXS1), (RBinXComp)r_bin_x_cmp2);
 
-		RBinXS3 *c = NULL;
+		c = NULL;
 		r_bin_x_f2 (b, n, &c, &m);
 
-		RBinXS4 *d = NULL;
+		d = NULL;
 		u = r_bin_x_f3 (c, m, &d);
 
 		((RBinXS5 *)o->x_d1)[va].d = d;
 		((RBinXS5 *)o->x_d1)[va].u = u;
+		((RBinXS5 *)o->x_d1)[va].sections = NULL;
+		((RBinXS5 *)o->x_d1)[va].lru = -1;
 
 		R_FREE (a);
 		R_FREE (b);
@@ -340,24 +369,53 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 	}
 }
 
-TEST_STATIC void r_bin_x_f6_bt (RBinObject *o, ut64 off, int va) {
-	RBinXS5 *e = o->x_d1;
+TEST_STATIC int r_bin_x_cmp3 (RBinXS4 const *d, ut64 const *off) {
+	if (d->to <= *off) {
+		return -1;
+	} else if (d->from <= *off && *off < d->to) {
+		return 0;
+	} else { // if (*off < d->from)
+		return 1;
+	}
+}
+
+TEST_STATIC void r_bin_x_f6_bt (RBinXS5 *e, ut64 off, int va) {
 	RBinXS4 *d = e[va].d;
 	int u = e[va].u;
-	int k;
+	int lru = e[va].lru;
 
-	e[va].sections = NULL;
-
-	for (k = 0; k < u; ++k) {
-		if (d[k].from <= off && off < d[k].to) {
-			e[va].sections = &d[k];
+	if (lru != -1) {
+		if (0 <= lru && lru < u && r_bin_x_cmp3 (&d[lru], &off) == 0) {
+			// do nothing
+		} else if (0 <= lru + 1 && lru + 1 < u && r_bin_x_cmp3 (&d[lru + 1], &off) == 0) {
+			++lru;
+		} else if (0 <= lru - 1 && lru - 1 < u && r_bin_x_cmp3 (&d[lru - 1], &off) == 0) {
+			--lru;
+		} else {
+			lru = -1;
 		}
 	}
+
+	if (lru == -1) {
+		lru = r_bin_x_binary_search(d, d + u, sizeof(RBinXS4), r_bin_x_cmp3, &off);
+	}
+
+	if (lru != -1) {
+		e[va].sections = &d[lru];
+		e[va].lru = lru;
+	} else {
+		e[va].sections = NULL;
+		e[va].lru = -1;
+	}
+}
+
+TEST_STATIC RBinXS4 *r_bin_x_f8_get_all (RBinXS5 *e, int va) {
+	return e[va].sections;
 }
 
 TEST_STATIC RBinSection *r_bin_x_f7_get_first (RBinObject *o, int va) {
 	RBinXS5 *e = o->x_d1;
-	RBinXS4 *d = e[va].sections;
+	RBinXS4 *d = r_bin_x_f8_get_all(e, va);
 
 	if (!d) {
 		return NULL;
@@ -371,7 +429,7 @@ R_API RBinSection *r_bin_get_section_at (RBinObject *o, ut64 off, int va) {
 	RBinSection *res = NULL;
 
 	if (x_m1_status (o)) {
-		r_bin_x_f6_bt (o, off, va);
+		r_bin_x_f6_bt (o->x_d1, off, va);
 
 		res = r_bin_x_f7_get_first (o, va);
 	}

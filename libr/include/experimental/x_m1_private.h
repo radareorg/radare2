@@ -40,6 +40,7 @@ typedef struct r_bin_x_s5_t {
 	RBinXS4 *d;
 	int u;
 	RBinXS4 *sections;
+	int lru;
 } RBinXS5;
 
 typedef int (*RBinXComp) (const void *a, const void *b);
@@ -49,11 +50,14 @@ TEST_STATIC int _r_bin_x_f2 (RBinXS1 *b, int n, int dry, RBinXS3 **out, int out_
 TEST_STATIC int r_bin_x_f3 (RBinXS3 *c, int m, RBinXS4 **out);
 TEST_STATIC void r_bin_x_f1 (RBinObject *o);
 TEST_STATIC void r_bin_x_f5 (RBinObject *o);
-TEST_STATIC void r_bin_x_f6_bt (RBinObject *o, ut64 off, int va);
+TEST_STATIC void r_bin_x_f6_bt (RBinXS5 *e, ut64 off, int va);
+TEST_STATIC RBinXS4 * r_bin_x_f8_get_all (RBinXS5 *e, int va);
 TEST_STATIC RBinSection *r_bin_x_f7_get_first (RBinObject *o, int va);
 TEST_STATIC int r_bin_x_cmp1_less (RBinXS1 const *x, RBinXS1 const *y);
 TEST_STATIC int r_bin_x_cmp2 (RBinXS1 const *x, RBinXS1 const *y);
+TEST_STATIC int r_bin_x_cmp3 (RBinXS4 const *d, ut64 const *off);
 TEST_STATIC void r_bin_x_sort1_asc (void *b, void *e, int t_s, RBinXComp c);
+TEST_STATIC int r_bin_x_binary_search (void *b, void *e, int t_s, RBinXComp c, void *g);
 
 TEST_STATIC int x_m1_status (RBinObject *o);
 
