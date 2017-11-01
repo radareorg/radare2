@@ -734,6 +734,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	for (cnt = 0, i = 0; i >= 0 && cnt < shdr->sh_info && ((char *)defs + i < end); ++cnt) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
+		size_t vstart_off = i;
 		char key[32] = {0};
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
 		Elf_(Verdaux) aux = {0};
@@ -749,11 +750,12 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		verdef->vd_aux = READ32 (dfs, j)
 		verdef->vd_next = READ32 (dfs, j)
 		int vdaux = verdef->vd_aux;
-		if (vdaux < 1 || vstart + vdaux < vstart) {
+		if (vdaux < 1 || shdr->sh_size - vstart_off < vdaux) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
 		vstart += vdaux;
+		vstart_off += vdaux;
 		if (vstart > end || vstart + sizeof (Elf_(Verdaux)) > end) {
 			sdb_free (sdb_verdef);
 			goto out_error;
@@ -781,6 +783,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 			Sdb *sdb_parent = sdb_new0 ();
 			isum += aux.vda_next;
 			vstart += aux.vda_next;
+			vstart_off += aux.vda_next;
 			if (vstart > end || vstart + sizeof (Elf_(Verdaux)) > end) {
 				sdb_free (sdb_verdef);
 				sdb_free (sdb_parent);
