@@ -701,7 +701,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	ut8 dfs[sizeof (Elf_(Verdef))] = {0};
 	Sdb *sdb;
 	ut32 cnt;
-	ut64 i;
+	size_t i;
 	if (shdr->sh_link > bin->ehdr.e_shnum) {
 		return false;
 	}
@@ -739,7 +739,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	for (cnt = 0, i = 0; i >= 0 && cnt < shdr->sh_info && i < shdr->sh_size; ++cnt) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
-		ut64 vstart_off = i;
+		size_t vstart_off = i;
 		char key[32] = {0};
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
 		Elf_(Verdaux) aux = {0};
