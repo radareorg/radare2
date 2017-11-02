@@ -299,8 +299,8 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = r_sys_conv_char_to_w32 (key);
-	LPTSTR value_ = r_sys_conv_char_to_w32 (value);
+	LPTSTR key_ = r_sys_conv_utf8_to_utf16 (key);
+	LPTSTR value_ = r_sys_conv_utf8_to_utf16 (value);
 
 	SetEnvironmentVariable (key_, value_);
 	free (key_);
@@ -391,7 +391,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!envbuf) {
 		goto err_r_sys_get_env;
 	}
-	key_ = r_sys_conv_char_to_w32 (key);
+	key_ = r_sys_conv_utf8_to_utf16 (key);
 	dwRet = GetEnvironmentVariable (key_, envbuf, TMP_BUFSIZE);
 	if (dwRet == 0) {
 		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
@@ -407,7 +407,7 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	}
-	val = r_sys_conv_w32_to_char_l (envbuf, (int)dwRet);
+	val = r_sys_conv_utf16_to_utf8_l (envbuf, (int)dwRet);
 err_r_sys_get_env:
 	free (key_);
 	free (envbuf);
@@ -680,7 +680,7 @@ R_API bool r_sys_mkdir(const char *dir) {
 		return false;
 	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	LPTSTR dir_ = r_sys_conv_char_to_w32 (dir);
+	LPTSTR dir_ = r_sys_conv_utf8_to_utf16 (dir);
 
 	ret = CreateDirectory (dir_, NULL) != 0;
 	free (dir_);
@@ -912,7 +912,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 		CloseHandle (handle);
-		return r_sys_conv_w32_to_char (filename);
+		return r_sys_conv_utf16_to_utf8 (filename);
 	}
 	return NULL;
 #else

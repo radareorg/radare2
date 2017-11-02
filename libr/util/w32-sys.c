@@ -34,7 +34,7 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
 		return false;
 	}
-	path = r_sys_conv_w32_to_char (shortpath);
+	path = r_sys_conv_utf16_to_utf8 (shortpath);
 	memcpy (buf, path, strlen(path) + 1);
 	free (path);
 	i = strlen (buf);
@@ -95,7 +95,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	si.hStdOutput = out;
 	si.hStdInput = NULL;
 	si.dwFlags |= STARTF_USESTDHANDLES;
-	cmdline_ = r_sys_conv_char_to_w32 (cmdline);
+	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
 	if ((ret = CreateProcess (NULL,
 			cmdline_,// command line
 			NULL,          // process security attributes

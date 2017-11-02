@@ -67,7 +67,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 #if __WINDOWS__
 	LPTSTR libname_;
 
-	libname_ = r_sys_conv_char_to_w32 (libname);
+	libname_ = r_sys_conv_utf8_to_utf16 (libname);
 	ret = DLOPEN (libname_);
 #else
 	ret = DLOPEN (libname);
