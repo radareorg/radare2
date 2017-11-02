@@ -175,6 +175,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	} else {
 		ret = -1;
 	}
+	// XXX: What is this for?
 	ret = w32_first_thread (pid);
 	CloseHandle (process);
 	return ret;

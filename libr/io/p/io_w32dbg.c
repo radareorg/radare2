@@ -53,12 +53,61 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "w32dbg://", 9);
 }
 
+static int __w32_first_thread(int pid) {
+	HANDLE th;
+	HANDLE thid;
+	THREADENTRY32 te32;
+	te32.dwSize = sizeof (THREADENTRY32);
+
+	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
+	if (th == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+	if (!Thread32First (th, &te32)) {
+		CloseHandle (th);
+		return -1;
+	}
+	do {
+		/* get all threads of process */
+		if (te32.th32OwnerProcessID == pid) {
+			thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			if (!thid) {
+				r_sys_perror ("__w32_first_thread/OpenThread");
+				goto err_first_th;
+			}
+			CloseHandle (th);
+			return te32.th32ThreadID;
+		}
+	} while (Thread32Next (th, &te32));
+err_first_th:
+	eprintf ("Could not find an active thread for pid %d\n", pid);
+	CloseHandle (th);
+	return pid;
+}
+
 static int __attach (RIOW32Dbg *dbg) {
+	DEBUG_EVENT de;
 	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (!dbg->pi.hProcess) {
 		return -1;
 	}
+	/* Attach to the process */
+	if (!DebugActiveProcess(dbg->pid)) goto att_exit;
+
+	/* catch create process event */
+	if (!WaitForDebugEvent (&de, 10000)) goto att_exit;
+
+	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
+		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+		goto att_exit;
+	}
+	dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
+	dbg->tid = __w32_first_thread (dbg->pid);
 	return dbg->pid;
+att_exit:
+	CloseHandle (dbg->pi.hProcess);
+	r_sys_perror ("__attach");
+	return -1;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
