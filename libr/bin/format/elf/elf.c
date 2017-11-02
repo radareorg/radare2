@@ -700,7 +700,8 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	Elf_(Shdr) *link_shdr = NULL;
 	ut8 dfs[sizeof (Elf_(Verdef))] = {0};
 	Sdb *sdb;
-	int cnt, i;
+	ut32 cnt;
+	ut64 i;
 	if (shdr->sh_link > bin->ehdr.e_shnum) {
 		return false;
 	}
@@ -735,10 +736,10 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
-	for (cnt = 0, i = 0; i >= 0 && cnt < shdr->sh_info && ((char *)defs + i < end); ++cnt) {
+	for (cnt = 0, i = 0; i >= 0 && cnt < shdr->sh_info && i < shdr->sh_size; ++cnt) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
-		size_t vstart_off = i;
+		ut64 vstart_off = i;
 		char key[32] = {0};
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
 		Elf_(Verdaux) aux = {0};
@@ -760,7 +761,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		}
 		vstart += vdaux;
 		vstart_off += vdaux;
-		if (vstart > end || vstart + sizeof (Elf_(Verdaux)) > end) {
+		if (vstart > end || shdr->sh_size - sizeof (Elf_(Verdaux)) < vstart_off) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
@@ -785,10 +786,15 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		for (j = 1; j < verdef->vd_cnt; ++j) {
 			int k;
 			Sdb *sdb_parent = sdb_new0 ();
+			if (shdr->sh_size - vstart_off < aux.vda_next) {
+				sdb_free (sdb_verdef);
+				sdb_free (sdb_parent);
+				goto out_error;
+			}
 			isum += aux.vda_next;
 			vstart += aux.vda_next;
 			vstart_off += aux.vda_next;
-			if (vstart > end || vstart + sizeof (Elf_(Verdaux)) > end) {
+			if (vstart > end || shdr->sh_size - sizeof (Elf_(Verdaux)) < vstart_off) {
 				sdb_free (sdb_verdef);
 				sdb_free (sdb_parent);
 				goto out_error;
@@ -808,7 +814,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 			sdb_ns_set (sdb_verdef, key, sdb_parent);
 		}
 
-		snprintf (key, sizeof (key), "verdef%d", cnt);
+		snprintf (key, sizeof (key), "verdef%u", cnt);
 		sdb_ns_set (sdb, key, sdb_verdef);
 		if (!verdef->vd_next) {
 			sdb_free (sdb_verdef);
