@@ -48,17 +48,17 @@ static wchar_t* r_str_mb_to_wc(const char *buf) {
 	return r_str_mb_to_wc_l (buf, strlen (buf));
 }
 
-#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf)
+#define r_sys_conv_utf8_to_utf16(buf) r_str_mb_to_wc (buf)
 
 static bool r_sys_mkdir(char *path) {
-	LPTSTR path_ = r_sys_conv_char_to_w32 (path);
+	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
 	bool ret = CreateDirectory (path_, NULL);
 
 	free (path);
 	return ret;
 }
 #else
-#define r_sys_conv_char_to_w32(buf) strdup (buf) 
+#define r_sys_conv_utf8_to_utf16(buf) strdup (buf) 
 #define r_sys_mkdir(x) CreateDirectory (x, NULL)
 #endif
 #ifndef ERROR_ALREADY_EXISTS
@@ -156,8 +156,8 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 		reopen = true;
 	}
 #if __SDB_WINDOWS__
-	LPTSTR ndump_ = r_sys_conv_char_to_w32 (s->ndump);
-	LPTSTR dir_ = r_sys_conv_char_to_w32 (s->dir);
+	LPTSTR ndump_ = r_sys_conv_utf8_to_utf16 (s->ndump);
+	LPTSTR dir_ = r_sys_conv_utf8_to_utf16 (s->dir);
 
 	if (MoveFileEx (ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
 		//eprintf ("Error 0x%02x\n", GetLastError ());

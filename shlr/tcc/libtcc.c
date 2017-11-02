@@ -62,7 +62,7 @@ static void tcc_set_lib_path_w32(TCCState *s)
     if (!GetModuleFileName (tcc_module, path, sizeof (path) / sizeof (TCHAR))) {
 	return;
     }
-    path_ = r_sys_conv_w32_to_char (path);
+    path_ = r_sys_conv_utf16_to_utf8 (path);
     p = tcc_basename (normalize_slashes (strlwr (path_)));
     if (p - 5 > path_ && 0 == strncmp (p - 5, "/bin/", 5))
         p -= 5;

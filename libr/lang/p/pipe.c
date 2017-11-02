@@ -21,7 +21,7 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	STARTUPINFO siStartInfo = {0};
 	BOOL bSuccess = FALSE;
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	LPTSTR cmdline_ = r_sys_conv_char_to_w32 (szCmdline);
+	LPTSTR cmdline_ = r_sys_conv_utf8_to_utf16 (szCmdline);
 	bSuccess = CreateProcess (NULL, cmdline_, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	free (cmdline_);
@@ -180,8 +180,8 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 #if __WINDOWS__
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
-	LPTSTR r2pipe_var_ = r_sys_conv_char_to_w32 (r2pipe_var);
-	LPTSTR r2pipe_paz_ = r_sys_conv_char_to_w32 (r2pipe_paz);
+	LPTSTR r2pipe_var_ = r_sys_conv_utf8_to_utf16 (r2pipe_var);
+	LPTSTR r2pipe_paz_ = r_sys_conv_utf8_to_utf16 (r2pipe_paz);
 
 	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_var_);
 	hPipeInOut = CreateNamedPipe (r2pipe_paz_,

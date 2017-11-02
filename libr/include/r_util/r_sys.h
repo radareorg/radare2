@@ -48,16 +48,16 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #if UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
-#define r_sys_conv_char_to_w32(buf) r_str_mb_to_wc (buf)
-#define r_sys_conv_char_to_w32_l(buf, len) r_str_mb_to_wc_l (buf, len) 
-#define r_sys_conv_w32_to_char(buf) r_str_wc_to_mb (buf)
-#define r_sys_conv_w32_to_char_l(buf, len) r_str_wc_to_mb_l (buf, len) 
+#define r_sys_conv_utf8_to_utf16(buf) r_str_mb_to_wc (buf)
+#define r_sys_conv_utf8_to_utf16_l(buf, len) r_str_mb_to_wc_l (buf, len) 
+#define r_sys_conv_utf16_to_utf8(buf) r_str_wc_to_mb (buf)
+#define r_sys_conv_utf16_to_utf8_l(buf, len) r_str_wc_to_mb_l (buf, len) 
 #else
 #define W32_TCHAR_FSTR "%s"
 #define W32_TCALL(name) name"A"
-#define r_sys_conv_char_to_w32(buf) r_str_new (buf)
-#define r_sys_conv_w32_to_char(buf) r_sys_conv_char_to_w32 (buf)
-#define r_sys_conv_w32_to_char_l(buf, len) r_str_newlen (buf, len)
+#define r_sys_conv_utf8_to_utf16(buf) r_str_new (buf)
+#define r_sys_conv_utf16_to_utf8(buf) r_sys_conv_utf8_to_utf16 (buf)
+#define r_sys_conv_utf16_to_utf8_l(buf, len) r_str_newlen (buf, len)
 #endif
 R_API int r_sys_get_src_dir_w32(char *buf);
 R_API char *r_sys_cmd_str_w32(const char *cmd);
