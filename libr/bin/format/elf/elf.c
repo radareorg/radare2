@@ -736,7 +736,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
-	for (cnt = 0, i = 0; i >= 0 && cnt < shdr->sh_info && i < shdr->sh_size; ++cnt) {
+	for (cnt = 0, i = 0; cnt < shdr->sh_info && i < shdr->sh_size; ++cnt) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
 		size_t vstart_off = i;
