@@ -369,7 +369,15 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 	}
 }
 
+#ifdef TEST_STATIC
+R_API int r_bin_x_cmp3_count;
+#endif TEST_STATIC
+
 TEST_STATIC int r_bin_x_cmp3 (RBinXS4 const *d, ut64 const *off) {
+#ifdef TEST_STATIC
+	++r_bin_x_cmp3_count;
+#endif TEST_STATIC
+
 	if (d->to <= *off) {
 		return -1;
 	} else if (d->from <= *off && *off < d->to) {
@@ -383,6 +391,10 @@ TEST_STATIC void r_bin_x_f6_bt (RBinXS5 *e, ut64 off, int va) {
 	RBinXS4 *d = e[va].d;
 	int u = e[va].u;
 	int lru = e[va].lru;
+
+#ifdef TEST_STATIC
+	r_bin_x_cmp3_count = 0;
+#endif TEST_STATIC
 
 	if (lru != -1) {
 		if (0 <= lru && lru < u && r_bin_x_cmp3 (&d[lru], &off) == 0) {

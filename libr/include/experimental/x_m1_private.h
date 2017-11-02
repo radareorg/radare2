@@ -61,6 +61,10 @@ TEST_STATIC int r_bin_x_binary_search (void *b, void *e, int t_s, RBinXComp c, v
 
 TEST_STATIC int x_m1_status (RBinObject *o);
 
+#ifdef TEST_STATIC
+R_API int r_bin_x_cmp3_count;
+#endif TEST_STATIC
+
 #ifdef __cplusplus
 }
 #endif
