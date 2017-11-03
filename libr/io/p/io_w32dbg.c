@@ -87,27 +87,35 @@ err_first_th:
 
 static int __attach (RIOW32Dbg *dbg) {
 	DEBUG_EVENT de;
-	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	if (!dbg->pi.hProcess) {
-		return -1;
+	int ret = -1;
+	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+
+	if (!h_proc) {
+		r_sys_perror ("__attach/OpenProcess");
+		goto att_exit;
 	}
 	/* Attach to the process */
-	if (!DebugActiveProcess(dbg->pid)) goto att_exit;
-
+	if (!DebugActiveProcess(dbg->pid)) {
+		r_sys_perror ("__attach/DebugActiveProcess");
+		goto att_exit;
+	}
 	/* catch create process event */
-	if (!WaitForDebugEvent (&de, 10000)) goto att_exit;
-
+	if (!WaitForDebugEvent (&de, 10000)) {
+		r_sys_perror ("__attach/WaitForDebugEvent");
+		goto att_exit;
+	}
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
 		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
 		goto att_exit;
 	}
 	dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	dbg->tid = __w32_first_thread (dbg->pid);
-	return dbg->pid;
+	ret = dbg->pid;
 att_exit:
-	CloseHandle (dbg->pi.hProcess);
-	r_sys_perror ("__attach");
-	return -1;
+	if (h_proc) {
+		CloseHandle (h_proc);
+	}
+	return ret;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -119,9 +127,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 		dbg->pid = atoi (file + 9);
-		if (__attach (dbg) == -1) {
-			free (dbg);
-			return NULL;
+		if (!strncmp (file, "attach://", 9)) {
+			if (__attach (dbg) == -1) {
+				free (dbg);
+				return NULL;
+			}
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
