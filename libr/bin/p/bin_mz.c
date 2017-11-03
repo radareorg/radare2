@@ -25,9 +25,8 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	 * This means that the entrypoint should be at least 0x20 unless someone
 	 * cleverly fit a few instructions inside the header.
 	 */
-//	if (pa >= 0x20 && pa + 1 < length) {
 	pa &= 0xffff;
-	if (pa > 0x20 && pa + 1 < length) {
+	if (pa >= 0x20 && pa + 1 < length) {
 		ut16 pe = r_read_ble16 (buf + 0x3c, false);
 		if (pe < length && length > 0x104 && !memcmp (buf + pe, "PE", 2)) {
 			return false;
@@ -45,7 +44,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	}
 	if (!memcmp (buf, "MZ", 2) || !memcmp (buf, "ZM", 2)) {
 		ret = true;
-		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
+		exth_offset = r_read_ble16 (buf + 0x3c, false);
 		if (length > exth_offset + 2) {
 			// check for PE
 			if (length > exth_offset + 0x20) {
