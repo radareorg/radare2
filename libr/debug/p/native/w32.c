@@ -814,7 +814,6 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	*image_name = '\0';
 	if (process) {
 		if (w32_QueryFullProcessImageName) {
-			eprintf ("HOLA");
 			w32_QueryFullProcessImageName (process, 0, image_name, &length);
 		}
 		CloseHandle(process);
