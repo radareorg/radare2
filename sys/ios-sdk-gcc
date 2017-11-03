@@ -1,14 +1,11 @@
 #!/bin/sh
 
 [ -z "${CPU}" ] && CPU="arm64"
-# CPU=arm64
 CWD="$(dirname "$0")"
 [ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
-#CC="xcrun --sdk iphoneos gcc -arch armv7 -I${CWD}/ios-include"
 CPUS=""
 CPU=`echo $CPU | sed -e 's,+, ,g'`
-#EXTRA=""
-EXTRA="-fembed-bitcode"
+EXTRA=""
 for a in `IFS=+ echo ${CPU}` ; do
 	CPUS="-arch $a ${CPUS}"
 done
@@ -16,79 +13,9 @@ done
 APPLE_SDK=`echo ${SDK} |tr a-z A-Z`
 CC="xcrun --sdk ${SDK} clang ${CPUS} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} ${EXTRA}"
 echo $CC $*
-#CC="xcrun --sdk iphoneos gcc -arch arm64"
 ${CC} $*
 r=$?
 if [ "$r" != 0 ]; then
 	echo ${CC} $* >&2
 fi
 exit $r
-
-
-##################################### LEGACY AND UNUSED CODE ##########################################
-export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
-
-#CPU="armv7 arm64"
-if [ -z "${CPU}" ]; then
-	CPU=armv7
-	#CPU=arm64
-fi
-if [ -z "${IOSVER}" ]; then
-	IOSVER=9.0
-fi
-
-# USE_SIMULATOR=1
-if [ -z "${USE_SIMULATOR}" ]; then
-	USE_SIMULATOR=0
-fi
-
-DEVROOT=/Applications/Xcode.app/Contents/Developer
-if [ "${USE_SIMULATOR}" = 1 ]; then
-CPU=i386
-CFLAGS="${CFLAGS} -miphoneos-version-min=7.0"
-SDKROOT=${DEVROOT}/Platforms/iPhoneSimulator.platform
-IOSROOT=${SDKROOT}/Developer/SDKs/iPhoneSimulator${IOSVER}.sdk
-CFLAGS="${CFLAGS} -isysroot ${SDKROOT} -I${SDKROOT}"
-LDFLAGS="-static"
-else
-SDKROOT=${DEVROOT}/Platforms/iPhoneOS.platform
-IOSROOT=${SDKROOT}/Developer/SDKs/iPhoneOS${IOSVER}.sdk
-CFLAGS="-isysroot ${SDKROOT} -I${SDKROOT} -D__arm=1"
-fi
-
-LDFLAGS="-isysroot ${SDKROOT}"
-# -Wl, -syslibroot ${SDKROOT}"
-export PATH=${DEVROOT}/usr/bin:${SDKROOT}/Developer/usr/bin:${PATH}
-CC=${DEVROOT}/usr/bin/gcc
-CC="xcrun --sdk iphoneos gcc"
-CXX="xcrun --sdk iphoneos g++"
-LD=${CC}
-export CC CXX LD
-for a in ${CPU} ; do
-	CFLAGS="${CFLAGS} -arch ${a}"
-done
-if [ "${USE_SIMULATOR}" != 1 ]; then
-	if [ -z "${IOSINC}" ]; then
-		IOSINC=${CWD}/ios-include
-		IOSINC=/Users/pancake/prg/radare2/sys/ios-include
-	fi
-	if [ -n "${IOSINC}" ]; then
-		CFLAGS="${CFLAGS} -I${IOSINC}"
-	fi
-fi
-CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
-#CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
-LDFLAGS="-L ${IOSROOT}/usr/lib/system ${LDFLAGS}"
-LDFLAGS="-L ${IOSROOT}/usr/lib/ ${LDFLAGS}"
-
-# Workaround
-#if [ ! -e ${IOSROOT}/usr/lib/system/libcrypto.dylib ]; then
-#sudo cp \
-#	${IOSROOT}/usr/lib/system/libcorecrypto.dylib \
-#	${IOSROOT}/usr/lib/system/libcrypto.dylib
-#fi
-
-# arm64
-# shellcheck disable=SC2048
-# shellcheck disable=SC2086
-${CC} "${CFLAGS}" "${LDFLAGS}" $*
