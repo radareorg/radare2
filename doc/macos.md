@@ -1,12 +1,12 @@
-OSX
+macOS
 ===
 
-Mac OS-X Users need to follow some extra steps to get the radare2 program signed and ready to debug other applications without running it as root. Same happens for iOS users, read `doc/ios` for more information.
+macOS Users need to follow some extra steps to get the radare2 program signed and ready to debug other applications without running it as root. Same happens for iOS users, read `doc/ios` for more information.
 
 Installation
 ------------
 
-To compile for OSX automatically, do it this way:
+To compile for macOS automatically, do it this way:
 
 	$ sys/install.sh
 
@@ -21,7 +21,7 @@ To install bindings you will need to install r2, valac, valabind and swig. The w
 Code Signing
 ------------
 
-After OSX 10.6, binaries that need permissions to debug require to be signed and include a PLIST describing them. In order to do this you can follow the following steps:
+After Mac OS X 10.6, binaries that need permissions to debug require to be signed and include a .plist describing them. In order to do this you can follow the following steps:
 
 (Based on https://llvm.org/svn/llvm-project/lldb/trunk/docs/code-signing.txt)
 
@@ -62,19 +62,21 @@ Another alternative is to build a static version of r2 and just sign it.
 	$ sys/static.sh
 	$ make -C binr/radare2 osxsign
 
-You can verify that the binary is properly signed and verified by the code signing utility:
+You can verify that the binary is properly signed and verified by using the code signing utility:
 
 	$ codesign -dv binr/radare2/radare2
 
-After doing it you should be able to debug on OSX without root permissions!
+After doing it you should be able to debug on macOS without root permissions!
 
-	$ r2 -d ls
+	$ r2 -d r2
 
-Note: if you already have a valid certifcate for code signing, you can specify its name by setting the env var CERTID.
+Note: Apple-signed binaries cannot be debugged, since Apple's SIP (System Integrity Protection) prevents attaching to an Apple-signed binary. If you want to debug an Apple-signed binary, either remove its certificate (https://github.com/steakknife/unsign; WARNING: this cannot be reversed!) or disable SIP (`csrutil enable --without debug`).
+
+Note: if you already have a valid certificate for code signing, you can specify its name by setting the env var CERTID.
 
 Packaging
 ---------
 
-To create an OSX .pkg just run the following command:
+To create a macOS .pkg just run the following command:
 
 	$ sys/osx-pkg.sh
