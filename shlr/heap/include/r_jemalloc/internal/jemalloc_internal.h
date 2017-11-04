@@ -256,6 +256,9 @@ typedef unsigned szind_t;
 #  ifdef __hppa__
 #    define LG_QUANTUM		4
 #  endif
+#  ifdef __m68k__
+#    define LG_QUANTUM          3
+#  endif
 #  ifdef __mips__
 #    define LG_QUANTUM		3
 #  endif
