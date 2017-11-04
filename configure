@@ -54,7 +54,7 @@ done
 }
 
 VPATH=`dirname ${0}`
-if [ "${VPATH}" = "." ]; then 
+if [ "${VPATH}" = "." ]; then
 	WODIS=current
 else
 	if [ "${VPATH}" = "${PWD}" ]; then
@@ -118,7 +118,7 @@ done
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
  PKGNAME='radare2' ; VERSION='2.1.0-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
-                
+
 show_usage() {
 cat <<EOF2
 'configure' configures radare2-2.1.0-git to adapt to many kinds of systems.
@@ -163,21 +163,21 @@ EOF2
 
 printf "
 Optional Features:
-  --disable-debugger     disable native debugger features 
-  --with-sysmagic        force to use system's magic 
-  --disable-loadlibs     disable loading plugins 
-  --without-fork         disable fork 
-  --with-syscapstone     force to use system-wide capstone 
-  --with-syszip          force to use system's libzip and zlib 
-  --without-gpl          do not build GPL code (grub, cxx, ... ) 
-  --with-openssl         build with openssl if possible 
-  --with-rpath           use rpath to build 
+  --disable-debugger     disable native debugger features
+  --with-sysmagic        force to use system's magic
+  --disable-loadlibs     disable loading plugins
+  --without-fork         disable fork
+  --with-syscapstone     force to use system-wide capstone
+  --with-syszip          force to use system's libzip and zlib
+  --without-gpl          do not build GPL code (grub, cxx, ... )
+  --with-openssl         build with openssl if possible
+  --with-rpath           use rpath to build
   --with-compiler        Define compiler to use (see mk/)  (USERCC=gcc)
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku )  (USEROSTYPE=auto)
-  --without-pic          do not build libr as a program independent location 
-  --with-nonpic          build the library archives .a 
+  --without-pic          do not build libr as a program independent location
+  --with-nonpic          build the library archives .a
   --with-libversion      specify different libversion  (LIBVERSION=xxx)
-  --without-jemalloc     build without jemalloc 
+  --without-jemalloc     build without jemalloc
 "
 printf "
 Some influential environment variables:
@@ -236,7 +236,7 @@ echo "PKG-CONFIG:  capstone openssl"
 echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without-fork --with-syscapstone --with-syszip --without-gpl --with-openssl --with-rpath --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx --without-jemalloc"
 	exit 0
 	;;
---cache-file) 
+--cache-file)
 	# ignored: acr have no cache
 	;;
 --build)
@@ -294,7 +294,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without
 "--with-nonpic") WITHNONPIC="1"; ;;
 --with-libversion) if [ -z "${value}" ]; then LIBVERSION="xxx"; else LIBVERSION="${value}" ; fi ;;
 "--without-jemalloc") HAVE_JEMALLOC="0"; ;;
-*) if [ "$value" ]; then eval "`echo $flag2=$value`" ; 
+*) if [ "$value" ]; then eval "`echo $flag2=$value`" ;
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
 esac
 }
@@ -326,7 +326,7 @@ echo "checking for working directories... ${WODIS}"
 echo "using prefix '${PREFIX}'"
 ACR_RMFILES=" test.c a.out a.exe"
 
-: 
+:
 COMPILER=CC
 printf "checking for c compiler... "
 HAVE_LANG_C=1
@@ -417,7 +417,7 @@ if [ $? = 0 ]; then
 else
 	eval ${VAR}=0
 	echo no  ; fi }
-check_library HAVE_LIB_MAGIC magic 0 
+check_library HAVE_LIB_MAGIC magic 0
 if [ 11 = "$HAVE_LIB_MAGIC$USE_MAGIC" ]; then
 
 USE_LIB_MAGIC="1"
@@ -429,20 +429,21 @@ LIBMAGIC="-lr_magic"; fi
 echo 'Using PKGCONFIG: '${PKGCONFIG}
 printf 'checking pkg-config flags for capstone... '
 tmp=`${PKGCONFIG} --cflags capstone 2>/dev/null`
-if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
-else 
-CAPSTONE_CFLAGS=$tmp; 
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0;
+else
+CAPSTONE_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs capstone 2>/dev/null`
-if [ $? = 0 ]; then 
-echo yes; HAVE_PKGCFG_CAPSTONE=1; 
+if [ $? = 0 ]; then
+echo yes; HAVE_PKGCFG_CAPSTONE=1;
 CAPSTONE_LDFLAGS=$tmp; fi; fi
 if [ 11 = "$WITH_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
 
 USE_CAPSTONE="1"
 else
 USE_CAPSTONE="0"; fi
-check_library HAVE_LIB_Z z 0 
-check_library HAVE_LIB_ZIP zip 0 
+check_library HAVE_LIB_Z z 0
+check_library HAVE_LIB_ZIP zip 0
+check_library HAVE_LIB_LZ4 lz4 0
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
 
 if [ "$HAVE_LIB_ZIP" = "1" ]; then
@@ -454,18 +455,24 @@ LIBZIP="-lrz"; fi
 else
 USE_LIB_ZIP="0"
 LIBZIP="-lrz"; fi
+
+if [ "$HAVE_LIB_LZ4" = "1" ]; then
+USE_LIB_LZ4="1"
+LIBZIP="-llz4"
+fi
+
 HAVE_LIB_GMP="0"
-check_library HAVE_LIB_SSL ssl 0 
+check_library HAVE_LIB_SSL ssl 0
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
 echo 'Using PKGCONFIG: '${PKGCONFIG}
 printf 'checking pkg-config flags for openssl... '
 tmp=`${PKGCONFIG} --cflags openssl 2>/dev/null`
-if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
-else 
-SSL_CFLAGS=$tmp; 
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0;
+else
+SSL_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs openssl 2>/dev/null`
-if [ $? = 0 ]; then 
-echo yes; HAVE_PKGCFG_OPENSSL=1; 
+if [ $? = 0 ]; then
+echo yes; HAVE_PKGCFG_OPENSSL=1;
 SSL_LDFLAGS=$tmp; fi; fi
 if [ ! "$SSL_LDFLAGS" = "" ]; then
 HAVE_OPENSSL="1"; fi
@@ -517,7 +524,7 @@ SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do
 	[ "${A}" = VPATH ] && continue
-	[ "${A}" = srcdir ] && continue 
+	[ "${A}" = srcdir ] && continue
 	eval "VAR=\$${A}"
 	VAR="`echo ${VAR} | sed -e 's/\,/\\\,/g'`"
 	[ $COUNT = 10 ] && COUNT=0 && SEDFLAGS="${SEDFLAGS}' -e '"

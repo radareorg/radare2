@@ -50,6 +50,19 @@ IFAND HAVE_LIB_Z USE_ZIP {
 	LIBZIP = -lrz ; (( static linking to shlr/zip ))
 }
 
+CHKLIB lz4
+ARG_WITH USE_LZ4 syslz4 force to use system's liblz4 ;
+IFAND HAVE_LIB_LZ4 USE_LZ4 {
+	IF HAVE_LIB_LZ4 {
+		USE_LIB_LZ4 = 1 ;
+		LIBLZ4 = -llz4 ;
+	}{
+		USE_LIB_LZ4 = 0 ;
+	}
+}{
+	USE_LIB_LZ4 = 0 ;
+}
+
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 
 (( TODO must deprecate 
