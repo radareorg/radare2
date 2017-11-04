@@ -1079,10 +1079,11 @@ static int cmd_open(void *data, const char *input) {
 				eprintf ("Oops\n");
 			}
 		} else {
-			if('j' == input[1])
+			if ('j' == input[1]) {
 				r_io_plugin_list_json (core->io);
-			else
+			} else {
 				r_io_plugin_list (core->io);
+			}
 			eprintf ("Usage: op [r2plugin."R_LIB_EXT"]\n");
 		}
 		break;
