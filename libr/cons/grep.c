@@ -9,9 +9,20 @@
 #include "../../shlr/sdb/src/json/rangstr.c"
 int js0n(const ut8 *js, RangstrType len, RangstrType *out);
 #include "../../shlr/sdb/src/json/path.c"
-// #include "../../shlr/sdb/src/json.c"
 
 #define I(x) r_cons_singleton ()->x
+
+static char *strchr_ns (char *s, const char ch) {
+	char *p = strchr (s, ch);
+	if (p && p > s) {
+		char *prev = p - 1;
+		if (*prev == '\\') {
+			memmove (prev, p, strlen (p) + 1);
+			return strchr_ns (p, ch);
+		}
+	}
+	return p;
+}
 
 static const char *help_detail_tilde[] = {
 	"Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
@@ -230,9 +241,9 @@ while_end:
 		}
 	}
 
-	ptr2 = strchr (ptr, ':'); // line number
+	ptr2 = strchr_ns (ptr, ':'); // line number
 	cons->grep.range_line = 2; // there is not :
-	if (ptr2 && ptr2[1] != ':') {
+	if (ptr2 && ptr2[1] != ':' && isalnum(ptr2[1])) {
 		*ptr2 = '\0';
 		char *p, *token = ptr + 1;
 		p = strstr (token, "..");
@@ -242,15 +253,15 @@ while_end:
 		} else {
 			*p = '\0';
 			cons->grep.range_line = 1;
-			if (!*token) {
-				cons->grep.f_line = 0;
-			} else {
+			if (*token) {
 				cons->grep.f_line = r_num_get (cons->num, token);
-			}
-			if (!p[2]) {
-				cons->grep.l_line = -1;
 			} else {
+				cons->grep.f_line = 0;
+			}
+			if (p[2]) {
 				cons->grep.l_line = r_num_get (cons->num, p + 2);
+			} else {
+				cons->grep.l_line = -1;
 			}
 		}
 	}
