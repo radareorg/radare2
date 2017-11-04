@@ -12,22 +12,22 @@
 
 // starting at 0
 typedef struct {
-	ut32 magic;  // NSO0
-	ut32 pad0; // 4
-	ut32 pad1; // 8
-	ut32 pad2; // 12
-	ut32 text_memoffset; // 16
-	ut32 text_loc; // 20
-	ut32 text_size; // 24
-	ut32 pad3; // 28
-	ut32 ro_memoffset; // 32
-	ut32 ro_loc; // 36
-	ut32 ro_size; // 40
-	ut32 pad4; // 44
-	ut32 data_memoffset; // 48
-	ut32 data_loc; // 52
-	ut32 data_size; // 56
-	ut32 bss_size; // 60
+	ut32 magic;	// NSO0
+	ut32 pad0;	// 4
+	ut32 pad1;	// 8
+	ut32 pad2;	// 12
+	ut32 text_memoffset;	// 16
+	ut32 text_loc;	// 20
+	ut32 text_size;	// 24
+	ut32 pad3;	// 28
+	ut32 ro_memoffset;	// 32
+	ut32 ro_loc;	// 36
+	ut32 ro_size;	// 40
+	ut32 pad4;	// 44
+	ut32 data_memoffset;	// 48
+	ut32 data_loc;	// 52
+	ut32 data_size;	// 56
+	ut32 bss_size;	// 60
 } NSOHeader;
 
 static ut32 readLE32(RBuffer *buf, int off) {
@@ -36,18 +36,12 @@ static ut32 readLE32(RBuffer *buf, int off) {
 	return left > 3? r_read_le32 (data): 0;
 }
 
-static ut64 readLE64(RBuffer *buf, int off) {
-	int left = 0;
-	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 7? r_read_le64 (data): 0;
-}
-
 static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, uint32_t csize, uint32_t usize) {
-	return LZ4_decompress_safe(cbuf, obuf, csize, usize);
+	return LZ4_decompress_safe (cbuf, obuf, csize, usize);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return 0; //XXX
+	return 0;	// XXX
 }
 
 static const char *fileType(const ut8 *buf) {
@@ -109,7 +103,7 @@ static int destroy(RBinFile *bf) {
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
-	return NULL; // TODO
+	return NULL;	// TODO
 }
 
 static RList *entries(RBinFile *bf) {
@@ -166,8 +160,6 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = false;
 	r_list_append (ret, ptr);
 
-	int bufsz = r_buf_size (bf->buf);
-
 	// add text segment
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
@@ -177,7 +169,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (text_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (text_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE |R_BIN_SCN_MAP; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;	// r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -190,7 +182,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (ro_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (ro_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;	// r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -203,11 +195,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (data_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (data_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;	// rw-
 	ptr->add = true;
-	//eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
+	// eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
-			readLE32 (bf->buf, NSO_OFF (bss_size)));
+		readLE32 (bf->buf, NSO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
 }
