@@ -540,13 +540,6 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	int ret;
 	task_t task = pid_to_task (dbg->tid);
-	// TODO: align pointers
-#if 0
-	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
-	if (!th) {
-		return false;
-	}
-#endif
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 	int xnu_perms = xwr2rwx (perms);
 	ret = mach_vm_protect (task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); //VM_PROT_COPY | perms);
