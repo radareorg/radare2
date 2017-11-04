@@ -57,6 +57,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	int wordSize = 4;
 	ut32 *w = (ut32*)buf;
 	int i;
+	memset (buf, 0xff, count);
 	int words = count / wordSize; // XXX must pad align to 4
 	for (i = 0; i < words ; i++) {
 		ut64 addr = io->off + (i * wordSize);
@@ -69,7 +70,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 	int left = count % wordSize;
 	if (left > 0) {
-		ut32 n = 0;
+		ut32 n = 0xff;
 		ut8 *wn = (ut8*)&n;
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);
@@ -93,10 +94,15 @@ static int __close(RIODesc *fd) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return UT64_MAX;
+	case SEEK_SET:
+		io->off = offset;
+		return offset;
+	case SEEK_CUR:
+		return io->off + offset;
+	case SEEK_END:
+		return UT64_MAX;
 	}
+	io->off = offset;
 	return offset;
 }
 
