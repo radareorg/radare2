@@ -193,8 +193,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		ut8 *arena = (ut8*)calloc (sizeof (struct winedbg_x86_32), 3);
 		if (arena) {
 			r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
-			io->cb_printf ("%s\n", arena);
-			free (arena);
+			return (char *)arena;
 		}
 	} else if (!strncmp (cmd, "drp", 3)) {
 const char *msg =
@@ -284,9 +283,7 @@ const char *msg =
 	} else if (!strncmp (cmd, "pid", 3)) {
 		return r_str_newf ("%d", fd->fd);
 	} else {
-		char *res = runcmd (cmd);
-		io->cb_printf ("%s\n", res);
-		free (res);
+		printcmd (io, cmd);
 	}
 	return NULL;
 }
