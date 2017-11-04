@@ -791,8 +791,9 @@ static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	if (size < 1)
+	if (size < 1) {
 		return false;
+	}
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_reg_read (dbg, type, buf, size);
 #elif __APPLE__

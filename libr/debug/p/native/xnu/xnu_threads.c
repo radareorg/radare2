@@ -257,9 +257,12 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 
 static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t port) {
 	xnu_thread_t *thread = R_NEW0 (xnu_thread_t);
-	if (!thread) return NULL;
+	if (!thread) {
+		return NULL;
+	}
 	thread->port = port;
 	if (!xnu_fill_info_thread (dbg, thread)) {
+		free (thread->name);
 		thread->name = strdup ("unknown");
 	}
 	return thread;
@@ -297,7 +300,9 @@ static int xnu_update_thread_list (RDebug *dbg) {
 	// ok we have the list that will hold our threads, now is time to get
 	// them
 	task = pid_to_task (dbg->pid);
-	if (!task) return false;
+	if (!task) {
+		return false;
+	}
 	kr = task_threads (task, &thread_list, &thread_count);
 	if (kr != KERN_SUCCESS) {
 		// we can get into this when the process has terminated but we

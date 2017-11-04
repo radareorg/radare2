@@ -300,7 +300,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 	//TODO free refs count threads
-	xnu_thread_t *th  = get_xnu_thread (dbg, getcurthread (dbg));
+	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
 		eprintf ("failed to get thread in xnu_continue\n");
 		return false;
