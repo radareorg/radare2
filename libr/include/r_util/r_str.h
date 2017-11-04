@@ -158,6 +158,7 @@ R_API bool r_str_isnumber (const char *str);
 R_API const char *r_str_last (const char *in, const char *ch);
 R_API char* r_str_highlight(char *str, const char *word, const char *color);
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
+R_API char *r_str_from_ut64(ut64 val);
 #ifdef __cplusplus
 }
 #endif
