@@ -125,27 +125,31 @@ static task_t task_for_pid_workaround(int Pid) {
 	if (kr != KERN_SUCCESS) {
 		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
-		return 0;
+		return -1;
 	}
 
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("processor_set_tasks failed with error %x\n", kr);
-		return 0;
+		return -1;
 	}
 	/* kernel task */
+	task_t task = -1;
 	if (Pid == 0) {
-		return tasks[0];
-	}
-	for (i = 0; i < numTasks; i++) {
-		int pid = 0;
-		pid_for_task (i, &pid);
-		if (pid == Pid) {
-			return tasks[i];
+		task = tasks[0];
+	} else {
+		for (i = 0; i < numTasks; i++) {
+			pid_t pid = 0;
+			pid_for_task (i, &pid);
+			if (pid == Pid) {
+				task = tasks[i];
+				break;
+			}
 		}
 	}
-	return 0;
+	vm_deallocate (myhost, (vm_address_t)tasks, numTasks * sizeof (task_t));
+	return task;
 }
 
 static task_t task_for_pid_ios9pangu(int pid) {
