@@ -329,6 +329,9 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 		r_list_foreach (o->sections, iter, section) {
 			a[i].from = r_bin_section_get_from_addr (o, section, va);
 			a[i].to = r_bin_section_get_to_addr (o, section, va);
+			if (a[i].from > a[i].to) {
+				a[i].from = a[i].to = -0x1;
+			}
 			a[i].s_id = i;
 			++i;
 		}
@@ -429,11 +432,12 @@ TEST_STATIC RBinSection *r_bin_x_f7_get_first (RBinObject *o, int va) {
 	RBinXS5 *e = o->x_d1;
 	RBinXS4 *d = r_bin_x_f8_get_all(e, va);
 
-	if (!d) {
-		return NULL;
+	if (d && d->l > 0) {
+		return r_list_get_n (o->sections, d->s[0]);
 	}
 
-	return r_list_get_n (o->sections, d->s[0]);
+	return NULL;
+
 }
 
 // TODO: Move into section.c and rename it to r_io_section_get_at ()
