@@ -52,6 +52,8 @@ endif
 endif
 endif
 
+LDFLAGS+=-llz4
+
 REAL_LDFLAGS=$(subst -shared,,$(LDFLAGS))
 
 ifeq ($(ISLIB),1)
