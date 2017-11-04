@@ -685,7 +685,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 		dbg->reason.type = reason;
 		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 			/* handle signal on continuations here */
-			eprintf ("got signal...\n");
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			const char *name = r_signal_to_string (dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name)) {

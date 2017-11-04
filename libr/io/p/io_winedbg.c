@@ -134,7 +134,7 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
-struct winedbg_x86_32 { // __attribute__((__packed__)) {
+struct __attribute__((packed)) winedbg_x86_32 {
 	ut16 cs, ss, ds, es, fs, gs;
 	ut32 eip, esp, ebp, eflags;
 	ut32 eax, ebx, ecx, edx;
@@ -147,15 +147,28 @@ static struct winedbg_x86_32 regState() {
 	if (res) {
 		char *line = strstr (res, "EIP:");
 		if (line) {
+			ut32 eip, esp, ebp, eflags;
 			(void)sscanf (line, "EIP:%08x ESP:%08x EBP:%08x EFLAGS:%08x",
-				&r.eip, &r.esp, &r.ebp, &r.eflags);
+				&eip, &esp, &ebp, &eflags);
+			r.eip = eip;
+			r.esp = esp;
+			r.ebp = ebp;
+			r.eflags = eflags;
 			line = strstr (line, "EAX:");
 			if (line) {
+				ut32 eax, ebx, ecx, edx;
 				(void)sscanf (line, "EAX:%08x EBX:%08x ECX:%08x EDX:%08x",
-					&r.eax, &r.ebx, &r.ecx, &r.edx);
+					&eax, &ebx, &ecx, &edx);
+				r.eax = eax;
+				r.ebx = ebx;
+				r.ecx = ecx;
+				r.edx = edx;
 				line = strstr (line, "ESI:");
 				if (line) {
-					(void)sscanf (line, "ESI:%08x EDI:%08x", &r.esi, &r.edi);
+					ut32 esi, edi;
+					(void)sscanf (line, "ESI:%08x EDI:%08x", &esi, &edi);
+					r.esi = esi;
+					r.edi = edi;
 				}
 			}
 		}
@@ -242,7 +255,32 @@ const char *msg =
 	} else if (!strncmp (cmd, "dp", 3)) {
 		printcmd (io, "info thread");
 	} else if (!strncmp (cmd, "dm", 3)) {
-		printcmd (io, "info maps");
+		char *wineDbgMaps = runcmd ("info maps");
+		char *res = NULL;
+		if (wineDbgMaps) {
+			const char *perm;
+			char *ptr = wineDbgMaps;
+			for (;;) {
+				char *nl = strchr (ptr, '\n');
+				if (!nl) {
+					break;
+				}
+				*nl++ = 0;
+				perm = "r-x";
+				ut64 from = 0, to = 0;
+				if (strstr (ptr, " commit ")) {
+					if (strstr (ptr, "RW")) {
+						perm = "rw-";
+					}
+					sscanf (ptr, "%08"PFMT64x" %08"PFMT64x, &from, &to);
+				}
+				char *row = r_str_newf ("0x%08"PFMT64x" - 0x%08" PFMT64x" %s %s\n", from, to, perm, "");
+				ptr = nl + 1;
+				res = r_str_append (res, row);
+			}
+			free (wineDbgMaps);
+			return res;
+		}
 	} else if (!strncmp (cmd, "pid", 3)) {
 		return r_str_newf ("%d", fd->fd);
 	} else {

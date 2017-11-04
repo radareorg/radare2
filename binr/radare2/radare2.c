@@ -723,17 +723,20 @@ int main(int argc, char **argv, char **envp) {
 		const char *src = haveRarunProfile? pfile: argv[optind];
 		if (src && *src) {
 			char *uri = strdup (src);
-			char *p = strstr (uri, "://");
-			if (p) {
-				*p = 0;
-				if (!strcmp (uri, "winedbg")) {
-					debugbackend = "io";
+			if (uri) {
+				char *p = strstr (uri, "://");
+				if (p) {
+					*p = 0;
+					// TODO: this must be specified by the io plugin, not hardcoded here
+					if (!strcmp (uri, "winedbg")) {
+						debugbackend = "io";
+					} else {
+						debugbackend = uri;
+					}
+					debug = 2;
 				} else {
-					debugbackend = uri;
+					free (uri);
 				}
-				debug = 2;
-			} else {
-				free (uri);
 			}
 		}
 	}
@@ -904,12 +907,6 @@ int main(int argc, char **argv, char **envp) {
 							}
 						}
 					}
-/*
-					if (fh) {
-						r_core_bin_load (&r, pfile);
-						r_debug_use (r.dbg, debugbackend);
-					}
-*/
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile)? pfile: argv[optind];

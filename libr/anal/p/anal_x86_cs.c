@@ -3006,15 +3006,8 @@ static char *get_reg_profile(RAnal *anal) {
 		 break;
 #endif
 	}
-	if (p && *p) return strdup (p);
-	return NULL;
+	return (p && *p)? strdup (p): NULL;
 }
-
-/*
-static int set_reg_profile(RAnal *anal) {
-	return r_reg_set_profile_string (anal->reg, p);
-}
-*/
 
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {

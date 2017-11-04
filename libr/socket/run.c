@@ -716,7 +716,6 @@ R_API int r_run_config_env(RRunProfile *p) {
 				eprintf ("Cannot connect\n");
 				return 1;
 			}
-			eprintf ("connected\n");
 			if (p->_pty) {
 				if (redirect_socket_to_pty (fd) != 0) {
 					eprintf ("socket redirection failed\n");

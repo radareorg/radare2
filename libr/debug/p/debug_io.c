@@ -5,29 +5,27 @@
 #include <r_debug.h>
 
 static int __io_step(RDebug *dbg) {
-	dbg->iob.system (dbg->iob.io, "ds");
+	free (dbg->iob.system (dbg->iob.io, "ds"));
 	return true;
 }
 
 static int __io_step_over(RDebug *dbg) {
-	dbg->iob.system (dbg->iob.io, "dso");
+	free (dbg->iob.system (dbg->iob.io, "dso"));
 	return true;
 }
 
 static RList *__io_maps(RDebug *dbg) {
 	RList *list = r_list_new ();
-	dbg->iob.system (dbg->iob.io, "dm");
-	const char *consdata = r_cons_get_buffer ();
-	if (!consdata) {
+	char *str = dbg->iob.system (dbg->iob.io, "dm");
+	if (!str) {
 		r_list_free (list);
 		return NULL;
 	}
-	char *ostr, *str = strdup (consdata);
+	char *ostr = str;
 	ut64 map_start, map_end;
 	char perm[32];
 	char name[512];
-	ostr = str;
-	while (true) {
+	for (;;) {
 		char *nl = strchr (str, '\n');
 		if (nl) {
 			*nl = 0;
@@ -80,7 +78,10 @@ static int __io_attach(RDebug *dbg, int pid) {
 // "drp" register profile
 static char *__io_reg_profile(RDebug *dbg) {
 	r_cons_push ();
-	dbg->iob.system (dbg->iob.io, "drp");
+	char *drp = dbg->iob.system (dbg->iob.io, "drp");
+	if (drp) {
+		return drp;
+	}
 	const char *buf = r_cons_get_buffer ();
 	if (buf && *buf) {
 		char *ret = strdup (buf);

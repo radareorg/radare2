@@ -563,15 +563,11 @@ static int cb_asmbits(void *user, void *data) {
 		core->print->bits = bits;
 	}
 	if (core->dbg && core->anal && core->anal->cur) {
-		bool load_from_debug = false;
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			load_from_debug = true;
-		} else {
-			(void)r_anal_set_reg_profile (core->anal);
-		}
+		bool load_from_debug = r_config_get_i (core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
+// XXX. that should depend on the plugin, not the host os
 #if __WINDOWS__
 #if !defined(__MINGW64__) && !defined(_WIN64)
 				core->dbg->bits = R_SYS_BITS_32;
@@ -584,6 +580,8 @@ static int cb_asmbits(void *user, void *data) {
 				r_reg_set_profile_string (core->anal->reg, rp);
 				free (rp);
 			}
+		} else {
+			(void)r_anal_set_reg_profile (core->anal);
 		}
 	}
 
@@ -602,11 +600,7 @@ static int cb_asmbits(void *user, void *data) {
 	/* set pcalign */
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) {
-			r_config_set_i (core->config, "asm.pcalign", v);
-		} else {
-			r_config_set_i (core->config, "asm.pcalign", 0);
-		}
+		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return ret;
 }
@@ -879,16 +873,15 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (r_config_get (core->config, "cmd.prompt"), "")) {
 			r_config_set (core->config, "cmd.prompt", ".dr*");
 		}
-		if (!strcmp (dbgbackend, "bf"))
+		if (!strcmp (dbgbackend, "bf")) {
 			r_config_set (core->config, "asm.arch", "bf");
+		}
 		if (core->file) {
 			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->file->fd),
 					r_io_fd_get_tid (core->io, core->file->fd));
 		}
 	} else {
-		if (core->dbg) {
-			r_debug_use (core->dbg, NULL);
-		}
+		r_debug_use (core->dbg, NULL);
 		core->bin->is_debugger = false;
 	}
 	return true;
