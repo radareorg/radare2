@@ -74,7 +74,7 @@ static const char *help_msg_question[] = {
 	"?im", " message", "show message centered in screen",
 	"?in", " prompt", "noyes input prompt",
 	"?iy", " prompt", "yesno input prompt",
-	"?l", " str", "returns the length of string",
+	"?l", " str", "show and return the length of string",
 	"?o", " num", "get octal value",
 	"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 	"?p", " vaddr", "get physical address for given virtual address",
@@ -82,7 +82,7 @@ static const char *help_msg_question[] = {
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
 	"?S", " addr", "return section name of given address",
-	"?t", " cmd", "returns the time to run a command",
+	"?t", " cmd", "return the time to run a command",
 	"?T", "", "show loading times",
 	"?u", " num", "get value in human units (KB, MB, GB, TB)",
 	"?v", " eip-0x804800", "show hex value of math expr",
@@ -326,7 +326,8 @@ static int cmd_help(void *data, const char *input) {
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1] == ' ') {
-			char *d = r_asm_describe (core->assembler, input+2);
+			for (input++; input[0]==' '; input++);
+			char *d = r_asm_describe (core->assembler, input);
 			if (d && *d) {
 				r_cons_println (d);
 				free (d);
@@ -618,6 +619,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'l': // "?l"
 		for (input++; input[0] == ' '; input++);
 		core->num->value = strlen (input);
+		r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case 'X': // "?X"
 		for (input++; input[0] == ' '; input++);
