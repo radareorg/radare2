@@ -68,7 +68,7 @@ You can verify that the binary is properly signed and verified by using the code
 
 After doing it you should be able to debug on macOS without root permissions!
 
-	$ r2 -d r2
+	$ r2 -d mybin
 
 Note: Apple-signed binaries cannot be debugged, since Apple's SIP (System Integrity Protection) prevents attaching to an Apple-signed binary. If you want to debug an Apple-signed binary, either remove its certificate (https://github.com/steakknife/unsign; WARNING: this cannot be reversed!) or disable SIP (`csrutil enable --without debug`).
 
