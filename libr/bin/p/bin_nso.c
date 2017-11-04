@@ -36,8 +36,11 @@ static ut32 readLE32(RBuffer *buf, int off) {
 	return left > 3? r_read_le32 (data): 0;
 }
 
-static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, uint32_t csize, uint32_t usize) {
-	return LZ4_decompress_safe (cbuf, obuf, csize, usize);
+static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t usize) {
+	if (csize < 0 || usize < 0) {
+		return -1;
+	}
+	return LZ4_decompress_safe (cbuf, obuf, (uint32_t) csize, (uint32_t) usize);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -67,7 +70,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	ut32 doff = readLE32 (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = readLE32 (bf->buf, NSO_OFF (data_size));
 	ut64 total_size = tsize + rosize + dsize;
-	ut8 *newbuf = malloc (total_size);
+	ut8 *newbuf = calloc (total_size, sizeof (ut8));
 	ut64 ba = baddr (bf);
 	/* Decompress each sections */
 	if (decompress (buf + toff, newbuf, rooff - toff, tsize) != tsize) {
@@ -233,7 +236,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = true;
 	ret->has_lit = true;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
 	ret->dbg_info = 0;
 	return ret;
 }
