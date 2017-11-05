@@ -120,6 +120,26 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			memcpy (op->buf_asm, "jnz", 3);
 		}
 	}
+#if 0
+	// [eax + ebx*4]  =>  [eax + ebx * 4]
+	char *ast = strchr (op->buf_asm, '*');
+	if (ast && ast > op->buf_asm) {
+		ast--;
+		if (ast[0] != ' ') {
+			char *tmp = strdup (ast + 1);
+			if (tmp) {
+				ast[0] = ' ';
+				if (tmp[0] && tmp[1] && tmp[1] != ' ') {
+					strcpy (ast, " * ");
+					strcpy (ast + 3, tmp + 1);
+				} else {
+					strcpy (ast + 1, tmp);
+				}
+				free (tmp);
+			}
+		}
+	}
+#endif
 #if USE_ITER_API
 	/* do nothing because it should be allocated once and freed in the_end */
 #else
