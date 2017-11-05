@@ -1,7 +1,6 @@
 BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
-include ../../shlr/lz4/deps.mk
 
 ifneq ($(OSTYPE),windows)
 # tcc doesn't recognize the -pie option
