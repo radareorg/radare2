@@ -112,6 +112,16 @@ libr2sdb = static_library('libr2sdb', sdb_files,
   ])]
 )
 
+lz4_files=[
+'lz4/lz4.c',
+]
+
+libr2lz4 = static_library('libr2lz4', lz4_files,
+  include_directories: [platform_inc, include_directories([
+    'lz4'
+  ])]
+)
+
 zlib_files=[
 'zip/zip/zip_add.c',
 'zip/zip/zip_add_dir.c',
