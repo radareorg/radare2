@@ -95,7 +95,7 @@ $(LIBLZ4): $(SRCFILES)
 	@echo compiling dynamic library $(LIBVER)
 ifneq (,$(filter Windows%,$(OS)))
 	@$(CC) $(FLAGS) -DLZ4_DLL_EXPORT=1 -shared $^ -o dll\$@.dll
-	dlltool -D dll\liblz4.dll -d dll\liblz4.def -l dll\liblz4.lib
+	dlltool -D dll\liblz4.dll -d dll\liblz4.def -l liblz4.lib
 else
 	@$(CC) $(FLAGS) -shared $^ -fPIC -fvisibility=hidden $(SONAME_FLAGS) -o $@
 	@echo creating versioned links
