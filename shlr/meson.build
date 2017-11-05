@@ -114,9 +114,6 @@ libr2sdb = static_library('libr2sdb', sdb_files,
 
 lz4_files=[
 'lz4/lz4.c',
-'lz4/lz4frame.c',
-'lz4/lz4hc.c',
-'lz4/xxhash.c'
 ]
 
 libr2lz4 = static_library('libr2lz4', lz4_files,
