@@ -56,7 +56,6 @@ TEST_STATIC RBinSection *r_bin_x_f7_get_first (RBinObject *o, int va);
 TEST_STATIC int r_bin_x_cmp1_less (RBinXS1 const *x, RBinXS1 const *y);
 TEST_STATIC int r_bin_x_cmp2 (RBinXS1 const *x, RBinXS1 const *y);
 TEST_STATIC int r_bin_x_cmp3 (RBinXS4 const *d, ut64 const *off);
-TEST_STATIC void r_bin_x_sort1_asc (void *b, void *e, int t_s, RBinXComp c);
 TEST_STATIC int r_bin_x_binary_search (void *b, void *e, int t_s, RBinXComp c, void *g);
 
 TEST_STATIC int x_m1_status (RBinObject *o);

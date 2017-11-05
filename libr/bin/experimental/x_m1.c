@@ -1,5 +1,6 @@
 #include <experimental/x_m1.h>
 #include <experimental/x_m1_private.h>
+#include <stdlib.h>
 
 R_API void x_m1_init (RBinObject *o) {
 	if (!(o && o->sections)) {
@@ -263,25 +264,6 @@ R_API ut64 r_bin_section_get_to_addr (RBinObject *o, RBinSection *s, int va) {
 	return va ? (r_bin_object_a2b (o, s->vaddr) + s->vsize) : (s->paddr + s->size);
 }
 
-TEST_STATIC void r_bin_x_sort1_asc (void *b, void *e, int t_s, RBinXComp c) {
-	int n = (e - b) / t_s;
-
-	void *tmp = malloc (t_s);
-	void *i, *j;
-
-	for (i = e; i > b; i -= t_s) {
-		for (j = b + t_s; j < i; j += t_s) {
-			if (c (j, j - t_s) < 0) {
-				memcpy (tmp, j, t_s);
-				memcpy (j, j - t_s, t_s);
-				memcpy (j - t_s, tmp, t_s);
-			}
-		}
-	}
-
-	R_FREE (tmp);
-}
-
 TEST_STATIC int r_bin_x_binary_search (void *b, void *e, int t_s, RBinXComp c, void *g) {
 	int n = (e - b) / t_s;
 	void *m;
@@ -348,9 +330,7 @@ TEST_STATIC void r_bin_x_f1 (RBinObject *o) {
 			b[2 * i + 1].s_id = a[i].s_id;
 		}
 
-		// TODO(nartes): might be replaced with a quick sort, or
-		// any RList sort we already have.
-		r_bin_x_sort1_asc (b, b + 2 * n, sizeof (RBinXS1), (RBinXComp)r_bin_x_cmp2);
+		qsort (b, 2 * n, sizeof (RBinXS1), (RBinXComp)r_bin_x_cmp2);
 
 		c = NULL;
 		r_bin_x_f2 (b, n, &c, &m);
