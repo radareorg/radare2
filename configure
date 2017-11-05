@@ -443,7 +443,6 @@ else
 USE_CAPSTONE="0"; fi
 check_library HAVE_LIB_Z z 0
 check_library HAVE_LIB_ZIP zip 0
-check_library HAVE_LIB_LZ4 lz4 0
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
 
 if [ "$HAVE_LIB_ZIP" = "1" ]; then
@@ -455,11 +454,6 @@ LIBZIP="-lrz"; fi
 else
 USE_LIB_ZIP="0"
 LIBZIP="-lrz"; fi
-
-if [ "$HAVE_LIB_LZ4" = "1" ]; then
-USE_LIB_LZ4="1"
-LIBZIP="-llz4"
-fi
 
 HAVE_LIB_GMP="0"
 check_library HAVE_LIB_SSL ssl 0
