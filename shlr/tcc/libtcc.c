@@ -50,53 +50,6 @@ static char *normalize_slashes(char *path)
     }
     return path;
 }
-
-static HMODULE tcc_module;
-
-/* on win32, we suppose the lib and includes are at the location of 'tcc.exe' */
-static void tcc_set_lib_path_w32(TCCState *s)
-{
-    TCHAR path[1024];
-    char *p, *path_;
-
-    if (!GetModuleFileName (tcc_module, path, sizeof (path) / sizeof (TCHAR))) {
-	return;
-    }
-    path_ = r_sys_conv_utf16_to_utf8 (path);
-    p = tcc_basename (normalize_slashes (strlwr (path_)));
-    if (p - 5 > path_ && 0 == strncmp (p - 5, "/bin/", 5))
-        p -= 5;
-    else if (p > path_)
-        p--;
-    *p = 0;
-    tcc_set_lib_path (s, path_);
-    free (path_);
-}
-
-#ifdef TCC_TARGET_PE
-static void tcc_add_systemdir(TCCState *s)
-{
-    char buf[1000];
-    GetSystemDirectory(buf, sizeof buf);
-    tcc_add_library_path(s, normalize_slashes(buf));
-}
-#endif
-
-#ifndef CONFIG_TCC_STATIC
-void dlclose(void *p)
-{
-    FreeLibrary((HMODULE)p);
-}
-#endif
-
-#ifdef LIBTCC_AS_DLL
-BOOL WINAPI DllMain (HANDLE hDll, DWORD dwReason, LPVOID lpReserved)
-{
-    if (DLL_PROCESS_ATTACH == dwReason)
-        tcc_module = hDll;
-    return TRUE;
-}
-#endif
 #endif
 
 /********************************************************/
@@ -297,16 +250,6 @@ LIBTCCAPI void tcc_set_error_func(TCCState *s, void *error_opaque,
 }
 
 /* error without aborting current compilation */
-PUB_FUNC void tcc_error_noabort(const char *fmt, ...)
-{
-    TCCState *s1 = tcc_state;
-    va_list ap;
-
-    va_start(ap, fmt);
-    error1(s1, 0, fmt, ap);
-    va_end(ap);
-}
-
 PUB_FUNC void tcc_error(const char *fmt, ...)
 {
     TCCState *s1 = tcc_state;
@@ -315,13 +258,6 @@ PUB_FUNC void tcc_error(const char *fmt, ...)
     va_start(ap, fmt);
     error1(s1, 0, fmt, ap);
     va_end(ap);
-    /* better than nothing: in some cases, we accept to handle errors */
-    if (s1->error_set_jmp_enabled) {
-        longjmp(s1->error_jmp_buf, 1);
-    } else {
-        /* XXX: eliminate this someday */
-        exit(1);
-    }
 }
 
 PUB_FUNC void tcc_warning(const char *fmt, ...)
@@ -558,11 +494,6 @@ LIBTCCAPI TCCState *tcc_new(const char* arch, int bits, const char *os)
 		return NULL;
 	}
     tcc_state = s;
-#ifdef __WINDOWS__
-    tcc_set_lib_path_w32(s);
-#else
-    tcc_set_lib_path(s, CONFIG_TCCDIR);
-#endif
 	s->arch = strdup(arch);
 	s->bits = bits;
 	s->os = strdup(os);
@@ -630,11 +561,6 @@ LIBTCCAPI TCCState *tcc_new(const char* arch, int bits, const char *os)
 #undef str
 	}
 
-// FIXME: No need for that, afaik. Remove in the next release
-//#if defined(__FreeBSD_kernel__)
-//    tcc_define_symbol(s, "__FreeBSD_kernel__", NULL);
-//#endif
-
     /* TinyCC & gcc defines */
 	if (!strncmp(os, "windows", 7) && (bits == 64)) {
 		tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long long");
@@ -651,10 +577,6 @@ LIBTCCAPI TCCState *tcc_new(const char* arch, int bits, const char *os)
 		/* glibc defines */
 		tcc_define_symbol(s, "__REDIRECT(name, proto, alias)", "name proto __asm__ (#alias)");
 		tcc_define_symbol(s, "__REDIRECT_NTH(name, proto, alias)", "name proto __asm__ (#alias) __THROW");
-		/* default library paths */
-		tcc_add_library_path(s, CONFIG_TCC_LIBPATHS);
-		/* paths for crt objects */
-		tcc_split_path(s, (void ***)&s->crt_paths, &s->nb_crt_paths, CONFIG_TCC_CRTPREFIX);
 	}
 
     s->alacarte_link = 1;
@@ -737,17 +659,11 @@ ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
     if (ext[0])
         ext++;
 
-#ifdef CONFIG_TCC_ASM
-    /* if .S file, define __ASSEMBLER__ like gcc does */
-    if (!strcmp(ext, "S"))
-        tcc_define_symbol(s1, "__ASSEMBLER__", NULL);
-#endif
-
     /* open the file */
     ret = tcc_open(s1, filename);
     if (ret < 0) {
         if (flags & AFF_PRINT_ERROR)
-            tcc_error_noabort("file '%s' not found", filename);
+			tcc_error("file '%s' not found", filename);
         return ret;
     }
 
@@ -766,7 +682,7 @@ ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
         goto the_end;
     }
     if (ret < 0)
-        tcc_error_noabort("unrecognized file type");
+        tcc_error("unrecognized file type");
 
 the_end:
     tcc_close();
@@ -781,51 +697,6 @@ LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename)
         return tcc_add_file_internal(s, filename, AFF_PRINT_ERROR);
 }
 
-LIBTCCAPI int tcc_add_library_path(TCCState *s, const char *pathname)
-{
-    tcc_split_path(s, (void ***)&s->library_paths, &s->nb_library_paths, pathname);
-    return 0;
-}
-
-static int tcc_add_library_internal(TCCState *s, const char *fmt,
-    const char *filename, int flags, char **paths, int nb_paths)
-{
-    char buf[1024];
-    int i;
-
-    for(i = 0; i < nb_paths; i++) {
-        snprintf(buf, sizeof(buf), fmt, paths[i], filename);
-        if (tcc_add_file_internal(s, buf, flags) == 0)
-            return 0;
-    }
-    return -1;
-}
-
-/* the library name is the same as the argument of the '-l' option */
-LIBTCCAPI int tcc_add_library(TCCState *s, const char *libraryname)
-{
-#ifdef TCC_TARGET_PE
-    const char *libs[] = { "%s/%s.def", "%s/lib%s.def", "%s/%s.dll", "%s/lib%s.dll", "%s/lib%s.a", NULL };
-    const char **pp = s->static_link ? libs + 4 : libs;
-#else
-    const char *libs[] = { "%s/lib%s.so", "%s/lib%s.a", NULL };
-    const char **pp = s->static_link ? libs + 1 : libs;
-#endif
-    while (*pp) {
-        if (0 == tcc_add_library_internal(s, *pp,
-            libraryname, 0, s->library_paths, s->nb_library_paths))
-            return 0;
-        ++pp;
-    }
-    return -1;
-}
-
-LIBTCCAPI void tcc_set_lib_path(TCCState *s, const char *path)
-{
-    free(s->tcc_lib_path);
-    s->tcc_lib_path = strdup(path);
-}
-
 #define WD_ALL    0x0001 /* warning is activated when using -Wall */
 #define FD_INVERT 0x0002 /* invert value before storing */
 
@@ -834,16 +705,6 @@ typedef struct FlagDef {
     uint16_t flags;
     const char *name;
 } FlagDef;
-
-#if 0
-static const FlagDef warning_defs[] = {
-    { offsetof(TCCState, warn_unsupported), 0, "unsupported" },
-    { offsetof(TCCState, warn_write_strings), 0, "write-strings" },
-    { offsetof(TCCState, warn_error), 0, "error" },
-    { offsetof(TCCState, warn_implicit_function_declaration), WD_ALL,
-      "implicit-function-declaration" },
-};
-#endif
 
 ST_FUNC int set_flag(TCCState *s, const FlagDef *flags, int nb_flags,
                     const char *name, int value)
@@ -869,14 +730,6 @@ ST_FUNC int set_flag(TCCState *s, const FlagDef *flags, int nb_flags,
     return 0;
 }
 
-#if 0
-static const FlagDef flag_defs[] = {
-    { offsetof(TCCState, char_is_unsigned), 0, "unsigned-char" },
-    { offsetof(TCCState, char_is_unsigned), FD_INVERT, "signed-char" },
-    { offsetof(TCCState, nocommon), FD_INVERT, "common" },
-    { offsetof(TCCState, leading_underscore), 0, "leading-underscore" },
-};
-#endif
 void (*tcc_cb)(const char *, char **);
 
 PUB_FUNC void tcc_set_callback (TCCState *s, void (*cb)(const char *,char**), char **p) {
