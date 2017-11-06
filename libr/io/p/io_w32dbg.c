@@ -108,6 +108,7 @@ static int __attach (RIOW32Dbg *dbg) {
 		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
 		goto att_exit;
 	}
+	dbg->pi.hProcess = h_proc;
 	dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	dbg->tid = __w32_first_thread (dbg->pid);
 	ret = dbg->pid;
