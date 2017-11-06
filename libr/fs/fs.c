@@ -103,7 +103,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	int len, lenstr;
 
 	if (path[0] != '/') {
-		eprintf ("r_fs_mount: invalid mountpoint\n");
+		eprintf ("r_fs_mount: invalid mountpoint %s\n", path);
 		return NULL;
 	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {

@@ -689,8 +689,10 @@ static int bin_info(RCore *r, int mode) {
 		r_config_set (r->config, "cfg.bigendian",
 			      info->big_endian ? "true" : "false");
 		if (info->rclass && !strcmp (info->rclass, "fs")) {
-			r_config_set (r->config, "asm.arch", info->arch);
-			r_core_cmdf (r, "m /root %s 0", info->arch);
+			// r_config_set (r->config, "asm.arch", info->arch);
+			// r_core_seek (r, 0, 1);
+			// eprintf ("m /root %s 0", info->arch);
+	//		r_core_cmdf (r, "m /root hfs @ 0", info->arch);
 		} else {
 			if (info->lang) {
 				r_config_set (r->config, "bin.lang", info->lang);

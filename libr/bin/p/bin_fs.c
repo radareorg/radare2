@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,7 +6,6 @@
 #include <r_bin.h>
 #include "../../fs/types.h"
 
-//static char *fsname(RBinFile *bf) {
 static char *fsname(const ut8* buf, ut64 length) {
 	ut8 fs_lbuf[1024];
 	int i, j, len, ret = false;
@@ -35,7 +34,9 @@ static char *fsname(const ut8* buf, ut64 length) {
 						break;
 					}
 				}
-				if (ret) return strdup (f->name);
+				if (ret) {
+					return strdup (f->name);
+				}
 			}
 		}
 	}
@@ -84,21 +85,25 @@ static RBinInfo* info(RBinFile *bf) {
 	const ut8 *bytes;
 	ut64 sz;
 
-	if (!bf) return NULL;
-	bytes = r_buf_buffer (bf->buf);
-	if (!bytes) return NULL;
-	sz = bf->buf ? r_buf_size (bf->buf): 0;
-
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!bf) {
 		return NULL;
+	}
+	bytes = r_buf_buffer (bf->buf);
+	if (!bytes) {
+		return NULL;
+	}
+	sz = bf->buf ? r_buf_size (bf->buf): 0;
+	if (!(ret = R_NEW0 (RBinInfo))) {
+		return NULL;
+	}
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("fs");
-	ret->bclass = strdup ("1.0");
+	ret->bclass = fsname (bytes, sz);
 	ret->rclass = strdup ("fs");
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("unknown");
 	ret->machine = strdup ("any");
-	ret->arch = fsname (bytes, sz);
+	// ret->arch = strdup ("any");
 	ret->has_va = 0;
 	ret->bits = 32;
 	ret->big_endian = 0;

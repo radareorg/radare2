@@ -2393,6 +2393,32 @@ reread:
 		}
 		}
 	} break;
+	case 'M': // "/M"
+		{
+			int ret;
+			const char *file = input[1]? input + 2: NULL;
+			ut64 addr = search_itv.addr;
+			RListIter *iter;
+			RIOMap *map;
+			r_list_foreach (param.boundaries, iter, map) {
+				eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+				r_cons_break_push (NULL, NULL);
+				for (addr = map->itv.addr; addr < r_itv_end (map->itv); addr++) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+					ret = r_core_magic_at (core, file, addr, 99, false);
+					if (ret == -1) {
+						// something went terribly wrong.
+						break;
+					}
+					addr += ret - 1;
+				}
+				r_cons_clear_line (1);
+				r_cons_break_pop ();
+			}
+		}
+		break;
 	case 'm': // "/m"
 		dosearch = false;
 		if (input[1] == 'e') { // "/me"

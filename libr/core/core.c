@@ -1311,22 +1311,6 @@ R_API int r_core_fgets(char *buf, int len) {
 	buf[len - 1] = 0;
 	return strlen (buf) + 1;
 }
-/*-----------------------------------*/
-
-#if 0
-static int __dbg_read(void *user, int pid, ut64 addr, ut8 *buf, int len)
-{
-	RCore *core = (RCore *)user;
-	// TODO: pid not used
-	return r_core_read_at(core, addr, buf, len);
-}
-
-static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len) {
-	RCore *core = (RCore *)user;
-	// TODO: pid not used
-	return r_core_write_at(core, addr, buf, len);
-}
-#endif
 
 static const char *r_core_print_offname(void *p, ut64 addr) {
 	RCore *c = (RCore*)p;

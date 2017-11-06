@@ -248,7 +248,9 @@ static int rabin_delegate(RThread *th) {
 		r_str_free (rabin_cmd);
 		rabin_cmd = NULL;
 	}
-	if (th) eprintf ("rabin2: done\n");
+	if (th) {
+		eprintf ("rabin2: done\n");
+	}
 	return 0;
 }
 #endif
@@ -260,7 +262,6 @@ static void radare2_rc(RCore *r) {
 		has_debug = true;
 		R_FREE (env_debug);
 	}
-
 	char *homerc = r_str_home (".radare2rc");
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
@@ -1099,6 +1100,9 @@ int main(int argc, char **argv, char **envp) {
 		}
 		if (!r.file) { // no given file
 			return 1;
+		}
+		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
+			r_core_cmd0 (&r, "m /root @ 0");
 		}
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
