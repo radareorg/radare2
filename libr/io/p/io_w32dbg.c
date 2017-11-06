@@ -113,7 +113,7 @@ static int __attach (RIOW32Dbg *dbg) {
 	dbg->tid = __w32_first_thread (dbg->pid);
 	ret = dbg->pid;
 att_exit:
-	if (h_proc) {
+	if (ret == -1 && h_proc) {
 		CloseHandle (h_proc);
 	}
 	return ret;
