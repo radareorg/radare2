@@ -692,7 +692,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "rb")) {
-					char *cmd = cmdstr ("ruby %s");
+					char *cmd = cmdstr ("ruby");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
