@@ -355,7 +355,7 @@ R_API RCons *r_cons_new() {
 	signal (SIGWINCH, resize);
 #elif __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, (PDWORD) &I.term_buf);
+	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf ("r_cons: Cannot set control console handler\n");
@@ -1092,9 +1092,9 @@ R_API void r_cons_set_raw(int is_raw) {
 	}
 #elif __WINDOWS__
 	if (is_raw) {
-		SetConsoleMode (h, (DWORD)I.term_raw);
+		SetConsoleMode (h, I.term_raw);
 	} else {
-		SetConsoleMode (h, (DWORD)I.term_buf);
+		SetConsoleMode (h, I.term_buf);
 	}
 #else
 #warning No raw console supported for this platform
