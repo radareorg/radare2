@@ -188,9 +188,6 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
 		return 0LL;
 	}
-	if (r_io_desc_is_blockdevice (desc)) {
-		return UT64_MAX;
-	}
 	off = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
 	ret = r_io_desc_seek (desc, 0LL, R_IO_SEEK_END);
 	//what to do if that seek fails?

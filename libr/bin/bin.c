@@ -1051,6 +1051,10 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	if (!sz) {
 		sz = file_sz;
 	}
+	// check if blockdevice?
+	if (sz >= UT32_MAX) {
+		sz = 1024 * 32;
+	}
 
 	bin->file = fname;
 	sz = R_MIN (file_sz, sz);
