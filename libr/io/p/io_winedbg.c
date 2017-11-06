@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2017 - pancake */
 
+#include "r_types_base.h"
 #include "r_io.h"
 #include "r_lib.h"
 #include <stdio.h>
@@ -140,12 +141,24 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
-R_PACKED(
+R_PACKED (
 struct winedbg_x86_32 {
-	ut16 cs, ss, ds, es, fs, gs;
-	ut32 eip, esp, ebp, eflags;
-	ut32 eax, ebx, ecx, edx;
-	ut32 esi, edi;
+	ut16 cs;
+	ut16 ss;
+	ut16 ds;
+	ut16 es;
+	ut16 fs;
+	ut16 gs;
+	ut32 eip;
+	ut32 esp;
+	ut32 ebp;
+	ut32 eflags;
+	ut32 eax;
+	ut32 ebx;
+	ut32 ecx;
+	ut32 edx;
+	ut32 esi;
+	ut32 edi;
 });
 
 static struct winedbg_x86_32 regState() {
