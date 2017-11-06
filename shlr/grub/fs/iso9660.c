@@ -122,7 +122,7 @@ struct grub_iso9660_susp_entry
   grub_uint8_t sig[2];
   grub_uint8_t len;
   grub_uint8_t version;
-  grub_uint8_t *data;
+  grub_uint8_t data[0];
 });
 
 /* The CE entry.  This is used to describe the next block where data
@@ -342,7 +342,8 @@ grub_iso9660_mount (grub_disk_t disk)
 	     + (rootdir.namelen % 2) - 1);
   sua_size = rootdir.len - sua_pos;
 
-  sua = grub_malloc (sua_size);
+  //sua = grub_malloc (sua_size + 2);
+  sua = calloc (1, sua_size + 1024);
   if (! sua)
     goto fail;
 
@@ -355,6 +356,7 @@ grub_iso9660_mount (grub_disk_t disk)
       goto fail;
     }
 
+#if 1
   entry = (struct grub_iso9660_susp_entry *) sua;
 
   /* Test if the SUSP protocol is used on this filesystem.  */
@@ -373,6 +375,7 @@ grub_iso9660_mount (grub_disk_t disk)
 				     sua_pos, sua_size, susp_iterate, data))
 	goto fail;
     }
+#endif
 
   return data;
 
