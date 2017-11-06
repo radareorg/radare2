@@ -1,4 +1,17 @@
 /* keywords */
+/* Here we define intN_t as an atoms
+ * due to the specific application of this parser */
+	 DEF(TOK_INT8, "int8_t")
+	 DEF(TOK_UINT8, "uint8_t")
+	 DEF(TOK_INT16, "int16_t")
+	 DEF(TOK_UINT16, "uint16_t")
+	 DEF(TOK_INT32, "int32_t")
+	 DEF(TOK_UINT32, "uint32_t")
+	 DEF(TOK_INT64, "int64_t")
+	 DEF(TOK_UINT64, "uint64_t")
+	 DEF(TOK_INT128, "int128_t")
+	 DEF(TOK_UINT128, "uint128_t")
+/* THose will depend from the target platform */
      DEF(TOK_INT, "int")
      DEF(TOK_VOID, "void")
      DEF(TOK_CHAR, "char")
@@ -39,6 +52,7 @@
      DEF(TOK_FLOAT, "float")
      DEF(TOK_DOUBLE, "double")
      DEF(TOK_BOOL, "_Bool")
+	 DEF(TOK_STDBOOL, "bool")
      DEF(TOK_SHORT, "short")
      DEF(TOK_STRUCT, "struct")
      DEF(TOK_UNION, "union")
