@@ -160,6 +160,14 @@ static int init_phdr(ELFOBJ *bin) {
 		perror ("malloc (phdr)");
 		return false;
 	}
+
+	bool linux_kern_hack = false;
+	/* Enable this hack only for the X86 64bit ELFs */
+	if (bin->ehdr.e_machine == EM_X86_64 ||
+		bin->ehdr.e_machine == EM_386) {
+		linux_kern_hack = true;
+	}
+read_phdr:
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		j = 0;
 		len = r_buf_read_at (bin->b, bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr)), phdr, sizeof (Elf_(Phdr)));
@@ -187,6 +195,20 @@ static int init_phdr(ELFOBJ *bin) {
 		bin->phdr[i].p_align = READ32 (phdr, j)
 #endif
 	}
+	/* Here is the where all the fun starts.
+	 * Linux kernel since 2005 calculates phdr offset wrongly
+	 * adding it to the load address (va of the LOAD0).
+	 * See `fs/binfmt_elf.c` file this line:
+	 *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
+	 * So after the first read, we fix the address and read it again
+	 */
+	if (linux_kern_hack) {
+		ut64 load_addr = Elf_(r_bin_elf_get_baddr) (bin);
+		bin->ehdr.e_phoff = Elf_(r_bin_elf_v2p) (bin, load_addr + bin->ehdr.e_phoff);
+		linux_kern_hack = false;
+		goto read_phdr;
+	}
+
 	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
 	sdb_num_set (bin->kv, "elf_phdr.size", sizeof (Elf_(Phdr)), 0);
 	sdb_set (bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
