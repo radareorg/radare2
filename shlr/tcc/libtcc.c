@@ -340,20 +340,24 @@ static int tcc_compile(TCCState *s1)
     anon_sym = SYM_FIRST_ANOM;
 
 	/* define some often used types */
-    int_type.t = VT_INT;
-	llong_type.t = VT_LLONG;
+	int8_type.t = VT_INT8;
+	int16_type.t = VT_INT16;
+    int32_type.t = VT_INT32;
+	int64_type.t = VT_INT64;
 
-    char_pointer_type.t = VT_BYTE;
+    char_pointer_type.t = VT_INT8;
     mk_pointer(&char_pointer_type);
 
-#if PTR_SIZE == 4
-    size_type.t = VT_INT;
-#else
-    size_type.t = VT_LLONG;
-#endif
+	if (tcc_state->bits != 64) {
+		size_type.t = VT_INT32;
+	} else {
+		size_type.t = VT_INT64;
+	}
 
     func_old_type.t = VT_FUNC;
-    func_old_type.ref = sym_push(SYM_FIELD, &int_type, FUNC_CDECL, FUNC_OLD);
+    func_old_type.ref = sym_push(SYM_FIELD, &int32_type, FUNC_CDECL, FUNC_OLD);
+
+// FIXME: Should depend on the target options too
 #ifdef TCC_TARGET_ARM
     arm_init_types();
 #endif

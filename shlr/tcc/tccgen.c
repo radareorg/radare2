@@ -62,7 +62,8 @@ ST_DATA int func_vc;
 ST_DATA int last_line_num, last_ind, func_ind; /* debug last line number and pc */
 ST_DATA char *funcname;
 
-ST_DATA CType char_pointer_type, func_old_type, int_type, llong_type, size_type;
+ST_DATA CType char_pointer_type, func_old_type;
+ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;
 
 /* ------------------------------------------------------------------------- */
 static inline CType *pointed_type(CType *type);
@@ -226,13 +227,13 @@ void dump_type(CType *type, int depth)
 			break;
 		case VT_ENUM: eprintf("[ENUM]\n");
 			break;
-		case VT_LLONG: eprintf("[LLONG]\n");
+		case VT_INT64: eprintf("[INT64_T]\n");
 			break;
-		case VT_INT: eprintf("[INT]\n");
+		case VT_INT32: eprintf("[INT32_T]\n");
 			break;
-		case VT_SHORT: eprintf("[SHORT]\n");
+		case VT_INT16: eprintf("[INT16_T]\n");
 			break;
-		case VT_BYTE: eprintf("[BYTE]\n");
+		case VT_INT8: eprintf("[INT8_T]\n");
 			break;
 		default:
 			eprintf("\n");
@@ -366,7 +367,7 @@ ST_FUNC void vpushi(int v)
 {
     CValue cval = {0};
     cval.i = v;
-    vsetc(&int_type, VT_CONST, &cval);
+    vsetc(&int32_type, VT_CONST, &cval);
 }
 
 /* push a pointer sized constant */
@@ -396,7 +397,7 @@ ST_FUNC void vpushll(long long v)
 {
 	CValue cval;
 	cval.ll = v;
-	vsetc(&llong_type, VT_CONST, &cval);
+	vsetc(&int64_type, VT_CONST, &cval);
 }
 
 ST_FUNC void vset(CType *type, int r, int v)
@@ -410,7 +411,7 @@ ST_FUNC void vset(CType *type, int r, int v)
 static void vseti(int r, int v)
 {
     CType type;
-    type.t = VT_INT;
+    type.t = VT_INT32;
     type.ref = NULL;
     vset(&type, r, v);
 }
@@ -459,21 +460,10 @@ static int pointed_size(CType *type)
     return type_size(pointed_type(type), &align);
 }
 
-#if 0
-static inline int is_null_pointer(SValue *p)
-{
-    if ((p->r & (VT_VALMASK | VT_LVAL | VT_SYM)) != VT_CONST)
-        return 0;
-    return ((p->type.t & VT_BTYPE) == VT_INT && p->c.i == 0) ||
-        ((p->type.t & VT_BTYPE) == VT_LLONG && p->c.ll == 0) ||
-	((p->type.t & VT_BTYPE) == VT_PTR && p->c.ptr == 0);
-}
-#endif
-
 static inline int is_integer_btype(int bt)
 {
-    return (bt == VT_BYTE || bt == VT_SHORT ||
-            bt == VT_INT || bt == VT_LLONG);
+    return (bt == VT_INT8 || bt == VT_INT16 ||
+            bt == VT_INT32 || bt == VT_INT64);
 }
 
 /* return type size as known at compile time. Put alignment at 'a' */
@@ -506,7 +496,7 @@ ST_FUNC int type_size(CType *type, int *a)
     } else if (bt == VT_LDOUBLE) {
         *a = LDOUBLE_ALIGN;
         return LDOUBLE_SIZE;
-    } else if (bt == VT_DOUBLE || bt == VT_LLONG) {
+    } else if (bt == VT_DOUBLE || bt == VT_INT64) {
 		if (!strncmp(tcc_state->arch, "x86", 3) && tcc_state->bits == 32) {
 			if (!strncmp(tcc_state->os, "windows", 7)) {
 				*a = 8;
@@ -532,10 +522,10 @@ ST_FUNC int type_size(CType *type, int *a)
 		 * and implemented in GCC, MSVC */
 		*a = 8;
 		return 8;
-    } else if (bt == VT_INT || bt == VT_FLOAT) {
+    } else if (bt == VT_INT32 || bt == VT_FLOAT) {
         *a = 4;
         return 4;
-    } else if (bt == VT_SHORT) {
+    } else if (bt == VT_INT16) {
         *a = 2;
         return 2;
     } else if (bt == VT_QLONG || bt == VT_QFLOAT) {
@@ -656,33 +646,53 @@ static void type_to_str(char *buf, int buf_size,
     t = type->t & VT_TYPE;
     bt = t & VT_BTYPE;
     buf[0] = '\0';
-    if (t & VT_CONSTANT)
+    if (t & VT_CONSTANT) {
         pstrcat(buf, buf_size, "const ");
-    if (t & VT_VOLATILE)
+	}
+    if (t & VT_VOLATILE) {
         pstrcat(buf, buf_size, "volatile ");
-    if (t & VT_UNSIGNED)
-        pstrcat(buf, buf_size, "unsigned ");
+	}
     switch(bt) {
     case VT_VOID:
         tstr = "void";
         goto add_tstr;
     case VT_BOOL:
-        tstr = "_Bool";
+        tstr = "bool";
         goto add_tstr;
-    case VT_BYTE:
-        tstr = "char";
+    case VT_INT8:
+		if (t & VT_UNSIGNED) {
+			tstr = "uint8_t";
+		} else {
+			if (t & VT_CHAR) {
+				tstr = "char";
+			} else {
+				tstr = "int8_t";
+			}
+		}
         goto add_tstr;
-    case VT_SHORT:
-        tstr = "short";
+    case VT_INT16:
+		if (t & VT_UNSIGNED) {
+			tstr = "uint16_t";
+		} else {
+			tstr = "int16_t";
+		}
         goto add_tstr;
-    case VT_INT:
-        tstr = "int";
+    case VT_INT32:
+		if (t & VT_UNSIGNED) {
+			tstr = "uint32_t";
+		} else {
+			tstr = "int32_t";
+		}
         goto add_tstr;
     case VT_LONG:
         tstr = "long";
         goto add_tstr;
-    case VT_LLONG:
-        tstr = "long long";
+    case VT_INT64:
+		if (t & VT_UNSIGNED) {
+			tstr = "uint64_t";
+		} else {
+			tstr = "int64_t";
+		}
         goto add_tstr;
     case VT_FLOAT:
         tstr = "float";
@@ -694,6 +704,11 @@ static void type_to_str(char *buf, int buf_size,
         tstr = "long double";
     add_tstr:
         pstrcat(buf, buf_size, tstr);
+		if ((t & VT_UNSIGNED) && (bt != VT_INT8) &&
+			(bt != VT_INT16) && (bt != VT_INT32) &&
+			(bt != VT_INT64)) {
+			pstrcat(buf, buf_size, "unsigned ");
+		}
         break;
     case VT_ENUM:
     case VT_STRUCT:
@@ -837,13 +852,13 @@ static void parse_attribute(AttributeDef *ad)
             skip('(');
             switch(tok) {
                 case TOK_MODE_DI:
-                    ad->mode = VT_LLONG + 1;
+                    ad->mode = VT_INT64 + 1;
                     break;
                 case TOK_MODE_HI:
-                    ad->mode = VT_SHORT + 1;
+                    ad->mode = VT_INT16 + 1;
                     break;
                 case TOK_MODE_SI:
-                    ad->mode = VT_INT + 1;
+                    ad->mode = VT_INT32 + 1;
                     break;
                 default:
                     tcc_warning("__mode__(%s) not supported\n", get_tok_str(tok, NULL));
@@ -954,7 +969,7 @@ static void struct_decl(CType *type, int u)
 					//  if (varstr isInside (arrayOfvars)) { erprintf ("ERROR: DUP VAR IN ENUM\n"); }
 				}
                 /* enum symbols have static storage */
-                ss = sym_push(v, &llong_type, VT_CONST, c);
+                ss = sym_push(v, &int64_type, VT_CONST, c);
                 ss->type.t |= VT_STATIC;
                 if (tok != ',')
                     break;
@@ -968,7 +983,7 @@ static void struct_decl(CType *type, int u)
         } else {
             maxalign = 1;
             ps = &s->next;
-            prevbt = VT_INT;
+            prevbt = VT_INT32;
             bit_pos = 0;
             offset = 0;
             while (tok != '}') {
@@ -1013,12 +1028,12 @@ static void struct_decl(CType *type, int u)
                     lbit_pos = 0;
                     if (bit_size >= 0) {
                         bt = type1.t & VT_BTYPE;
-                        if (bt != VT_INT &&
-                            bt != VT_BYTE &&
-                            bt != VT_SHORT &&
-                            bt != VT_BOOL &&
+                        if (bt != VT_INT8 &&
+                            bt != VT_INT16 &&
+                            bt != VT_INT32 &&
+                            bt != VT_INT64 &&
                             bt != VT_ENUM &&
-                            bt != VT_LLONG)
+                            bt != VT_BOOL)
                             tcc_error("bitfields must have scalar type");
                         bsize = size * 8;
                         if (bit_size > bsize) {
@@ -1138,7 +1153,8 @@ static int parse_btype(CType *type, AttributeDef *ad)
     type_found = 0;
     typespec_found = 0;
     typedef_found = 0;
-    t = 0;
+	/* FIXME: Make this dependent on the target */
+    t = 0; /* default for 'int' */
     while(1) {
         switch(tok) {
         case TOK_EXTENSION:
@@ -1146,42 +1162,76 @@ static int parse_btype(CType *type, AttributeDef *ad)
             next();
             continue;
 
-            /* basic types */
+        /*  ------------------------------------------------------------------  */
+		/*	basic types */
+        /*  ------------------------------------------------------------------  */
+
+		/* int8_t, uint8_t, char */
+		case TOK_UINT8:
+			t |= VT_UNSIGNED;
+		case TOK_INT8:
+			u = VT_INT8;
+			goto basic_type;
         case TOK_CHAR:
-            u = VT_BYTE;
+            u = VT_INT8;
+			/* Mark as character type, for strings */
+			t |= VT_CHAR;
         basic_type:
             next();
         basic_type1:
-            if ((t & VT_BTYPE) != 0)
+            if ((t & VT_BTYPE) != 0) {
                 tcc_error("too many basic types");
+			}
             t |= u;
             typespec_found = 1;
             break;
+
+		/* void* */
         case TOK_VOID:
             u = VT_VOID;
             goto basic_type;
+
+		/* int16_t, uint16_t, short */
+		case TOK_UINT16:
+            t |= VT_UNSIGNED;
+		case TOK_INT16:
         case TOK_SHORT:
-            u = VT_SHORT;
-            goto basic_type;
+            u = VT_INT16;
+			goto basic_type;
+
+		/* int32_t, uint32_t, int */
+		case TOK_UINT32:
+			t |= VT_UNSIGNED;
+		case TOK_INT32:
+			u = VT_INT32;
+			goto basic_type;
         case TOK_INT:
             next();
             typespec_found = 1;
             break;
+
+		/* int64_t, uint64_t, long, long long */
+		case TOK_UINT64:
+			t |= VT_UNSIGNED;
+		case TOK_INT64:
+			u = VT_INT64;
+			goto basic_type;
         case TOK_LONG:
             next();
+			// FIXME: Better handling long and long long types
             if ((t & VT_BTYPE) == VT_DOUBLE) {
-				// #ifndef TCC_TARGET_PE
 				if (strncmp(tcc_state->os, "windows", 7)) {
 					t = (t & ~VT_BTYPE) | VT_LDOUBLE;
 				}
             } else if ((t & VT_BTYPE) == VT_LONG) {
-                t = (t & ~VT_BTYPE) | VT_LLONG;
+                t = (t & ~VT_BTYPE) | VT_INT64;
             } else {
                 u = VT_LONG;
                 goto basic_type1;
             }
             break;
         case TOK_BOOL:
+		case TOK_STDBOOL:
             u = VT_BOOL;
             goto basic_type;
         case TOK_FLOAT:
@@ -1306,21 +1356,24 @@ static int parse_btype(CType *type, AttributeDef *ad)
         type_found = 1;
     }
 the_end:
-    if ((t & (VT_SIGNED|VT_UNSIGNED)) == (VT_SIGNED|VT_UNSIGNED))
+    if ((t & (VT_SIGNED|VT_UNSIGNED)) == (VT_SIGNED|VT_UNSIGNED)) {
         tcc_error("signed and unsigned modifier");
+	}
     if (tcc_state->char_is_unsigned) {
-        if ((t & (VT_SIGNED|VT_UNSIGNED|VT_BTYPE)) == VT_BYTE)
+        if ((t & (VT_SIGNED|VT_UNSIGNED|VT_BTYPE)) == VT_INT8)
             t |= VT_UNSIGNED;
     }
     t &= ~VT_SIGNED;
 
     /* long is never used as type */
-    if ((t & VT_BTYPE) == VT_LONG)
-#if !defined TCC_TARGET_X86_64 || defined TCC_TARGET_PE
-        t = (t & ~VT_BTYPE) | VT_INT;
-#else
-        t = (t & ~VT_BTYPE) | VT_LLONG;
-#endif
+    if ((t & VT_BTYPE) == VT_LONG) {
+		if (!strncmp(tcc_state->os, "windows", 7) ||
+			(!strncmp(tcc_state->arch, "x86", 3) && tcc_state->bits == 32)) {
+			t = (t & ~VT_BTYPE) | VT_INT32;
+		} else {
+			t = (t & ~VT_BTYPE) | VT_INT64;
+		}
+	}
     type->t = t;
     return type_found;
 }
@@ -1387,7 +1440,7 @@ int narg  =0;
                     n = tok;
                     if (n < TOK_UIDENT)
                         expect("identifier");
-                    pt.t = VT_INT;
+                    pt.t = VT_INT32;
                     next();
                 }
                 convert_parameter_type(&pt);
@@ -1589,9 +1642,9 @@ ST_FUNC int lvalue_type(int t)
     int bt, r;
     r = VT_LVAL;
     bt = t & VT_BTYPE;
-    if (bt == VT_BYTE || bt == VT_BOOL)
+    if (bt == VT_INT8 || bt == VT_BOOL)
         r |= VT_LVAL_BYTE;
-    else if (bt == VT_SHORT)
+    else if (bt == VT_INT16)
         r |= VT_LVAL_SHORT;
     else
         return r;
@@ -1680,15 +1733,15 @@ ST_FUNC void unary(void)
         next();
         break;
     case TOK_CUINT:
-        vpush_tokc(VT_INT | VT_UNSIGNED);
+        vpush_tokc(VT_INT32 | VT_UNSIGNED);
         next();
         break;
     case TOK_CLLONG:
-        vpush_tokc(VT_LLONG);
+        vpush_tokc(VT_INT64);
         next();
         break;
     case TOK_CULLONG:
-        vpush_tokc(VT_LLONG | VT_UNSIGNED);
+        vpush_tokc(VT_INT64 | VT_UNSIGNED);
         next();
         break;
     case TOK_CFLOAT:
@@ -1714,7 +1767,7 @@ ST_FUNC void unary(void)
             /* special function name identifier */
             len = strlen(funcname) + 1;
             /* generate char[len] type */
-            type.t = VT_BYTE;
+            type.t = VT_INT8;
             mk_pointer(&type);
             type.t |= VT_ARRAY;
             type.ref->c = len;
@@ -1725,14 +1778,14 @@ ST_FUNC void unary(void)
         break;
     case TOK_LSTR:
 		if (!strncmp(tcc_state->os, "windows", 7)) {
-			t = VT_SHORT | VT_UNSIGNED;
+			t = VT_INT16 | VT_UNSIGNED;
 		} else {
-			t = VT_INT;
+			t = VT_INT32;
 		}
         goto str_init;
     case TOK_STR:
         /* string parsing */
-        t = VT_BYTE;
+        t = VT_INT8;
     str_init:
         if (tcc_state->warn_write_strings)
             t |= VT_CONSTANT;
@@ -2414,11 +2467,11 @@ static void decl_initializer(CType *type, unsigned long c,
         if ((tok == TOK_LSTR &&
 /* FIXME: Handle platform here ! */
 #ifdef TCC_TARGET_PE
-             (t1->t & VT_BTYPE) == VT_SHORT && (t1->t & VT_UNSIGNED)
+             (t1->t & VT_BTYPE) == VT_INT16 && (t1->t & VT_UNSIGNED)
 #else
-             (t1->t & VT_BTYPE) == VT_INT
+             (t1->t & VT_BTYPE) == VT_INT32
 #endif
-            ) || (tok == TOK_STR && (t1->t & VT_BTYPE) == VT_BYTE)) {
+            ) || (tok == TOK_STR && (t1->t & VT_BTYPE) == VT_INT8)) {
             while (tok == TOK_STR || tok == TOK_LSTR) {
                 int cstr_len, ch;
                 CString *cstr;
@@ -2844,7 +2897,7 @@ return 1;
                type. Only accepted when defining global data */
             if (l == VT_LOCAL || tok < TOK_DEFINE)
                 break;
-            btype.t = VT_INT;
+            btype.t = VT_INT32;
         }
         if (((btype.t & VT_BTYPE) == VT_ENUM ||
              (btype.t & VT_BTYPE) == VT_STRUCT) &&
