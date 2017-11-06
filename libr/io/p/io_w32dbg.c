@@ -85,28 +85,30 @@ err_first_th:
 	return pid;
 }
 
-static int __attach (RIOW32Dbg *dbg) {
+static int __open_proc (RIOW32Dbg *dbg, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
 	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 
 	if (!h_proc) {
-		r_sys_perror ("__attach/OpenProcess");
+		r_sys_perror ("__open_proc/OpenProcess");
 		goto att_exit;
 	}
-	/* Attach to the process */
-	if (!DebugActiveProcess(dbg->pid)) {
-		r_sys_perror ("__attach/DebugActiveProcess");
-		goto att_exit;
-	}
-	/* catch create process event */
-	if (!WaitForDebugEvent (&de, 10000)) {
-		r_sys_perror ("__attach/WaitForDebugEvent");
-		goto att_exit;
-	}
-	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
-		goto att_exit;
+	if (attach) {
+		/* Attach to the process */
+		if (!DebugActiveProcess(dbg->pid)) {
+			r_sys_perror ("__open_proc/DebugActiveProcess");
+			goto att_exit;
+		}
+		/* catch create process event */
+		if (!WaitForDebugEvent (&de, 10000)) {
+			r_sys_perror ("__open_proc/WaitForDebugEvent");
+			goto att_exit;
+		}
+		if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
+			eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+			goto att_exit;
+		}
 	}
 	dbg->pi.hProcess = h_proc;
 	dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
@@ -128,11 +130,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 		dbg->pid = atoi (file + 9);
-		if (!strncmp (file, "attach://", 9)) {
-			if (__attach (dbg) == -1) {
-				free (dbg);
-				return NULL;
-			}
+		if (__open_proc (dbg, !strncmp (file, "attach://", 9)) == -1) {
+			free (dbg);
+			return NULL;
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
@@ -170,7 +170,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "pid", 3)) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
-			if  (pid > 0 && pid != iop->pid) {
+			if (pid > 0 && pid != iop->pid) {
 				iop->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, false, pid);
 				if (iop->pi.hProcess) {
 					iop->pid = iop->tid = pid;
