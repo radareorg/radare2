@@ -140,12 +140,13 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
-struct __attribute__((packed)) winedbg_x86_32 {
+R_PACKED(
+struct winedbg_x86_32 {
 	ut16 cs, ss, ds, es, fs, gs;
 	ut32 eip, esp, ebp, eflags;
 	ut32 eax, ebx, ecx, edx;
 	ut32 esi, edi;
-};
+});
 
 static struct winedbg_x86_32 regState() {
 	struct winedbg_x86_32 r = {0};
