@@ -53,6 +53,9 @@ R_API RFS* r_fs_new() {
 R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
 	RListIter* iter;
 	RFSPlugin* p;
+	if (!fs || !name) {
+		return NULL;
+	}
 	r_list_foreach (fs->plugins, iter, p) {
 		if (!strcmp (p->name, name)) {
 			return p;
@@ -106,8 +109,11 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		eprintf ("r_fs_mount: invalid mountpoint %s\n", path);
 		return NULL;
 	}
+	if (!fstype) {
+		fstype = r_fs_name(fs, delta);
+	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {
-		eprintf ("r_fs_mount: Invalid filesystem type\n");
+		// eprintf ("r_fs_mount: Invalid filesystem type\n");
 		return NULL;
 	}
 	str = strdup (path);
@@ -115,6 +121,10 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		return NULL;
 	}
 	r_str_chop_path (str);
+	if (*str && strchr (str + 1, '/')) {
+		eprintf ("r_fs_mount: mountpoint must have no subdirectories\n");
+		return NULL;
+	}
 	/* Check if path exists */
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);
@@ -122,7 +132,8 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		if (!strncmp (str, root->path, len)) {
 			if (len < lenstr && str[len] != '/') {
 				continue;
-			} else if (len > lenstr && root->path[lenstr] == '/') {
+			}
+			if (len > lenstr && root->path[lenstr] == '/') {
 				continue;
 			}
 			eprintf ("r_fs_mount: Invalid mount point\n");
@@ -136,14 +147,13 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		eprintf ("r_fs_mount: Invalid mount point\n");
 		free (str);
 		return NULL;
-	} else {
-		list = r_fs_dir (fs, str);
-		if (!r_list_empty (list)) {
-			//XXX: list need free ??
-			eprintf ("r_fs_mount: Invalid mount point\n");
-			free (str);
-			return NULL;
-		}
+	}
+	list = r_fs_dir (fs, str);
+	if (!r_list_empty (list)) {
+		//XXX: list need free ??
+		eprintf ("r_fs_mount: Invalid mount point\n");
+		free (str);
+		return NULL;
 	}
 	root = r_fs_root_new (str, delta);
 	root->p = p;
@@ -151,7 +161,6 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->iob = fs->iob;
 	root->cob = fs->cob;
 	if (!p->mount (root)) {
-		eprintf ("r_fs_mount: Cannot mount partition\n");
 		free (str);
 		r_fs_root_free (root);
 		return NULL;

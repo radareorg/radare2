@@ -31,6 +31,7 @@ static const char *help_msg_slash[] = {
 	"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
+	"/M", " ", "search for known filesystems and mount them automatically",
 	"/o", " [n]", "show offset of n instructions backward",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
@@ -2400,6 +2401,8 @@ reread:
 			ut64 addr = search_itv.addr;
 			RListIter *iter;
 			RIOMap *map;
+			int count = 0;
+			const int align = core->search->align;
 			r_list_foreach (param.boundaries, iter, map) {
 				eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
 				r_cons_break_push (NULL, NULL);
@@ -2407,16 +2410,22 @@ reread:
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, file, addr, 99, false);
-					if (ret == -1) {
-						// something went terribly wrong.
-						break;
+					if (align && (0 != (addr % align))) {
+						continue;
 					}
+					char *mp = r_str_newf ("/mnt%d", count);
+					eprintf ("[*] Trying to mount at 0x%08"PFMT64x"\r[", addr);
+					if (r_fs_mount (core->fs, NULL, mp, addr)) {
+						count ++;
+						eprintf ("Mounted %s at 0x%08"PFMT64x"\n", mp, addr);
+					}
+					free (mp);
 					addr += ret - 1;
 				}
 				r_cons_clear_line (1);
 				r_cons_break_pop ();
 			}
+			eprintf ("\n");
 		}
 		break;
 	case 'm': // "/m"

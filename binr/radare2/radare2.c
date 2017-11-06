@@ -1101,7 +1101,7 @@ int main(int argc, char **argv, char **envp) {
 		if (!r.file) { // no given file
 			return 1;
 		}
-		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
+		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && r.bin->cur->o->info->rclass && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
 			r_core_cmd0 (&r, "m /root @ 0");
 		}
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
