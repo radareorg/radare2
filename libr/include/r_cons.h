@@ -328,7 +328,7 @@ typedef struct r_cons_t {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
-	LPDWORD term_raw, term_buf;
+	DWORD term_raw, term_buf;
 #endif
 	RNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
