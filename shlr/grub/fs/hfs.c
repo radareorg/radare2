@@ -313,7 +313,6 @@ grub_hfs_mount (grub_disk_t disk)
   struct grub_hfs_catalog_key key;
   struct grub_hfs_dirrec dir;
   int first_block;
-
   struct
   {
     struct grub_hfs_node node;
@@ -321,8 +320,9 @@ grub_hfs_mount (grub_disk_t disk)
   } treehead;
 
   data = grub_malloc (sizeof (struct grub_hfs_data));
-  if (!data)
+  if (!data) {
     return 0;
+	}
 
   /* Read the superblock.  */
   if (grub_disk_read (disk, GRUB_HFS_SBLOCK, 0,
@@ -677,22 +677,29 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
     grub_uint16_t offsets[nodesize / 2];
   } node;
 #else
+if (nodesize != 512) {
+eprintf ("Unhandled nodesize %d != 512\n", nodesize);
+	return grub_errno;
+}
   union
   {
     struct grub_hfs_node node;
-    char *rawnode;
-    grub_uint16_t *offsets; //[nodesize / 2];
+    char rawnode[512];
+    grub_uint16_t offsets[256];
   } node;
-#endif
 
+#if 0
 node.rawnode = malloc (nodesize);
 if (!node.rawnode) {
   return grub_errno;
 }
 node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
+eprintf ("SET FOFS %p\n", node.offsets);
 if (!node.offsets) {
   return grub_errno;
 }
+#endif
+#endif
 
   do
     {
@@ -710,20 +717,15 @@ if (!node.offsets) {
 			    idx / (data->blksz / nodesize), 0);
       blk += (idx % (data->blksz / nodesize));
       if (grub_errno) {
-        free (node.rawnode);
-        free (node.offsets);
 	return grub_errno;
       }
 
       if (grub_disk_read (data->disk, blk, 0,
 			      sizeof (node), &node)) {
-	      free (node.rawnode);
-	      free (node.offsets);
 	      return grub_errno;
       }
 
       /* Iterate over all records in this node.  */
-if (node.offsets) {
       for (i = 0; i < grub_be_to_cpu16 (node.node.reccnt); i++)
 	{
 	  int pos = (nodesize >> 1) - 1 - i;
@@ -746,18 +748,14 @@ if (node.offsets) {
 	    };
 
 	  if (node_hook (&node.node, &rec, closure)) {
-		  free (node.rawnode);
-		  free (node.offsets);
+		  // free (node.rawnode);
+		  // free (node.offsets);
 	    return 0;
 		}
 	}
-}
 
       idx = grub_be_to_cpu32 (node.node.next);
     } while (idx && this);
-
-  free (node.rawnode);
-  free (node.offsets);
 
   return 0;
 }
@@ -837,11 +835,13 @@ grub_hfs_find_node (struct grub_hfs_data *data, char *key,
       c.found = -1;
 
       if (grub_hfs_iterate_records (data, type, idx, 0,
-				    grub_hfs_find_node_node_found, &c))
+				    grub_hfs_find_node_node_found, &c)) {
         return 0;
+	}
 
-      if (c.found == -1)
+      if (c.found == -1) {
         return 0;
+}
 
       idx = c.found;
     } while (! c.isleaf);
