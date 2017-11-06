@@ -333,6 +333,7 @@ grub_hfs_mount (grub_disk_t disk)
   if (grub_be_to_cpu16 (data->sblock.magic) != GRUB_HFS_MAGIC)
     {
       grub_error (GRUB_ERR_BAD_FS, "not an HFS filesystem");
+      eprintf ("not an HFS filesystem %x vs %x\n", GRUB_HFS_MAGIC, grub_be_to_cpu16(data->sblock.magic));
       goto fail;
     }
 
@@ -340,6 +341,7 @@ grub_hfs_mount (grub_disk_t disk)
   if (grub_be_to_cpu16 (data->sblock.embed_sig) == GRUB_HFS_EMBED_HFSPLUS_SIG)
     {
       grub_error (GRUB_ERR_BAD_FS, "embedded HFS+ filesystem");
+      eprintf ("embedded HFS+ filesystem");
       goto fail;
     }
 
@@ -377,6 +379,7 @@ grub_hfs_mount (grub_disk_t disk)
 			  0, (char *) &dir, sizeof (dir)) == 0)
     {
       grub_error (GRUB_ERR_BAD_FS, "cannot find the HFS root directory");
+      eprintf ("cannot find the HFS root directory");
       goto fail;
     }
 
@@ -683,7 +686,13 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
 #endif
 
 node.rawnode = malloc (nodesize);
+if (!node.rawnode) {
+  return grub_errno;
+}
 node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
+if (!node.offsets) {
+  return grub_errno;
+}
 
   do
     {
@@ -714,6 +723,7 @@ node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
       }
 
       /* Iterate over all records in this node.  */
+if (node.offsets) {
       for (i = 0; i < grub_be_to_cpu16 (node.node.reccnt); i++)
 	{
 	  int pos = (nodesize >> 1) - 1 - i;
@@ -741,6 +751,7 @@ node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
 	    return 0;
 		}
 	}
+}
 
       idx = grub_be_to_cpu32 (node.node.next);
     } while (idx && this);
