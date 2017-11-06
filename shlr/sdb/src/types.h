@@ -26,9 +26,10 @@
 #define SDB_IPI static
 #endif
 
-
 #if MINGW || __MINGW32__ || __MINGW64__
 #define __MINGW__ 1
+#else
+#define __MINGW__ 0
 #endif
 
 #if __WIN32__ || __MINGW__ || __WINDOWS__ || _MSC_VER

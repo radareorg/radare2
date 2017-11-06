@@ -1,4 +1,5 @@
 OBJ_NSO=bin_nso.o
+#include $(SHLR)/lz4/deps.mk
 
 STATIC_OBJ+=${OBJ_NSO}
 TARGET_NSO=bin_nso.${EXT_SO}

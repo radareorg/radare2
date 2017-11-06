@@ -8293,7 +8293,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		out = malloc (34);
 		memset (out, 0, 34);
 		if (str) {
-			snprintf (str, 34, "0x%llx", r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0));
+			snprintf (str, 34, "0x%"PFMT64x, r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0));
 			r_base64_encode (out, (const ut8 *) str, strlen (str));
 			free (str);
 			str = out;

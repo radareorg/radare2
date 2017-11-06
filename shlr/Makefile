@@ -38,7 +38,8 @@ SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
 MODS=sdb zip udis86 java tcc
-MODS+=gdb qnx ar lz4
+MODS+=gdb qnx ar
+# lz4
 ifneq ($(CC),cccl)
 ifeq (1,$(WITH_GPL))
 MODS+=grub

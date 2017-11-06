@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2017 - Davis, Alex Kornitzer */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -18,21 +18,16 @@ static void r_bbin_mem_free(void *data) {
 	free (mem);
 }
 
-
 static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	struct r_bin_mdmp_obj *obj;
-
-	if (!(bf)) return NULL;
-
-	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
-
-	if (obj && (obj->kv)) return obj->kv;
-
-	return NULL;
+	if (!bf || !bf->o) {
+		return NULL;
+	}
+	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
+	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
 static int destroy(RBinFile *bf) {
@@ -91,24 +86,23 @@ static RBinInfo *info(RBinFile *bf) {
 	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt (0, "0x%08x", obj->hdr->flags), 0);
 	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
-	if (obj->streams.system_info)
-	{
+	if (obj->streams.system_info) {
 		switch (obj->streams.system_info->processor_architecture) {
-		case PROCESSOR_ARCHITECTURE_INTEL:
+		case MDMP_PROCESSOR_ARCHITECTURE_INTEL:
 			ret->machine = strdup ("i386");
 			ret->arch = strdup ("x86");
 			ret->bits = 32;
 			break;
-		case PROCESSOR_ARCHITECTURE_ARM:
+		case MDMP_PROCESSOR_ARCHITECTURE_ARM:
 			ret->machine = strdup ("ARM");
 			ret->big_endian = false;
 			break;
-		case PROCESSOR_ARCHITECTURE_IA64:
+		case MDMP_PROCESSOR_ARCHITECTURE_IA64:
 			ret->machine = strdup ("IA64");
 			ret->arch = strdup ("IA64");
 			ret->bits = 64;
 			break;
-		case PROCESSOR_ARCHITECTURE_AMD64:
+		case MDMP_PROCESSOR_ARCHITECTURE_AMD64:
 			ret->machine = strdup ("AMD64");
 			ret->arch = strdup ("x86");
 			ret->bits = 64;
@@ -118,19 +112,19 @@ static RBinInfo *info(RBinFile *bf) {
 		}
 
 		switch (obj->streams.system_info->product_type) {
-		case VER_NT_WORKSTATION:
+		case MDMP_VER_NT_WORKSTATION:
 			ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d",
 			obj->streams.system_info->major_version,
 			obj->streams.system_info->minor_version,
 			obj->streams.system_info->build_number);
 			break;
-		case VER_NT_DOMAIN_CONTROLLER:
+		case MDMP_VER_NT_DOMAIN_CONTROLLER:
 			ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d",
 			obj->streams.system_info->major_version,
 			obj->streams.system_info->minor_version,
 			obj->streams.system_info->build_number);
 			break;
-		case VER_NT_SERVER:
+		case MDMP_VER_NT_SERVER:
 			ret->os = r_str_newf ("Windows NT Server %d.%d.%d",
 			obj->streams.system_info->major_version,
 			obj->streams.system_info->minor_version,
@@ -154,6 +148,9 @@ static RList* libs(RBinFile *bf) {
 	RList *ret = NULL;
 	RListIter *it;
 
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
@@ -182,7 +179,6 @@ static RList* libs(RBinFile *bf) {
 		}
 		free (libs);
 	}
-
 	return ret;
 }
 

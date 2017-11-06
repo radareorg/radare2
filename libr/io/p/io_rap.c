@@ -259,7 +259,7 @@ static int rap__listener(RIODesc *fd) {
 static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 	int ret, reslen = 0, cmdlen = 0;
 	RSocket *s = RIORAP_FD (fd);
-	unsigned int i, j = 0;
+	unsigned int i;
 	char *ptr, *res, *str;
 	ut8 buf[RMT_MAX];
 
@@ -340,9 +340,8 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 		ptr[i] = 0;
 		if (io->cb_printf) {
 			io->cb_printf ("%s", ptr);
-			j = i;
 		} else {
-			j = write (1, ptr, i);
+			(void)write (1, ptr, i);
 		}
 		free (ptr);
 	}
@@ -352,7 +351,6 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 		ret -= r_socket_read (s, (ut8*)buf, RMT_MAX);
 	}
 #endif
-	//int delta = i - j;
 	return NULL;
 }
 

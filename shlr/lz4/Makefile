@@ -1,3 +1,4 @@
+include ../../libr/config.mk
 # ################################################################
 # LZ4 library - Makefile
 # Copyright (C) Yann Collet 2011-2016
@@ -77,18 +78,21 @@ default: lib-release
 lib-release: DEBUGFLAGS :=
 lib-release: lib
 
-lib: liblz4.a liblz4
+EXT_AR?=a
+
+lib: liblz4.$(EXT_AR)
+# liblz4
 
 all: lib
 
 all32: CFLAGS+=-m32
 all32: all
 
-liblz4.a: $(SRCFILES)
+liblz4.$(EXT_AR): $(SRCFILES)
 ifeq ($(BUILD_STATIC),yes)  # can be disabled on command line
 	@echo compiling static library
-	@$(CC) $(CPPFLAGS) $(CFLAGS) -c $^
-	@$(AR) rcs $@ *.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $^
+	$(AR) rcs $@ *.o
 endif
 
 $(LIBLZ4): $(SRCFILES)
@@ -107,7 +111,7 @@ liblz4: $(LIBLZ4)
 
 clean:
 	@$(RM) core *.o liblz4.pc dll/liblz4.dll dll/liblz4.lib
-	@$(RM) *.a *.$(SHARED_EXT) *.$(SHARED_EXT_MAJOR) *.$(SHARED_EXT_VER)
+	@$(RM) *.$(EXT_AR) *.$(SHARED_EXT) *.$(SHARED_EXT_MAJOR) *.$(SHARED_EXT_VER)
 	@echo Cleaning library completed
 
 
@@ -156,7 +160,7 @@ install: lib liblz4.pc
 	@$(INSTALL_DATA) liblz4.pc $(DESTDIR)$(PKGCONFIGDIR)/
 	@echo Installing libraries
 ifeq ($(BUILD_STATIC),yes)
-	@$(INSTALL_DATA) liblz4.a $(DESTDIR)$(LIBDIR)/liblz4.a
+	@$(INSTALL_DATA) liblz4.$(EXT_AR) $(DESTDIR)$(LIBDIR)/liblz4.$(EXT_AR)
 	@$(INSTALL_DATA) lz4frame_static.h $(DESTDIR)$(INCLUDEDIR)/lz4frame_static.h
 endif
 	@$(INSTALL_PROGRAM) liblz4.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)
@@ -173,7 +177,7 @@ uninstall:
 	@$(RM) $(DESTDIR)$(LIBDIR)/liblz4.$(SHARED_EXT)
 	@$(RM) $(DESTDIR)$(LIBDIR)/liblz4.$(SHARED_EXT_MAJOR)
 	@$(RM) $(DESTDIR)$(LIBDIR)/liblz4.$(SHARED_EXT_VER)
-	@$(RM) $(DESTDIR)$(LIBDIR)/liblz4.a
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblz4.$(EXT_AR)
 	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz4.h
 	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz4hc.h
 	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz4frame.h
