@@ -228,7 +228,19 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		"meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
 	ptr = sdb_const_get (DB, key, 0);
 	if (ptr) {
-		sdb_unset (DB, key, 0);
+		if (strchr (ptr, ',')) {
+			char type_fld[] = "##";
+			if (ptr[0] == type) {
+				type_fld[0] = type;
+				type_fld[1] = ',';
+			} else {
+				type_fld[0] = ',';
+				type_fld[1] = type;
+			}
+			sdb_uncat (DB, key, type_fld, 0);
+		} else {
+			sdb_unset (DB, key, 0);
+		}
 		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, type, addr);
 		sdb_unset (DB, key, 0);
 		#if 0
