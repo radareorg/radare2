@@ -38,6 +38,7 @@ extern "C" {
 
 #ifndef LZ4_H_2983827168210
 #define LZ4_H_2983827168210
+#include <r_types.h>
 
 /* --- Dependency --- */
 #include <stddef.h>   /* size_t */
@@ -242,7 +243,7 @@ typedef union LZ4_stream_u LZ4_stream_t;   /* incomplete type (defined later) */
  *  LZ4_freeStream() releases its memory.
  */
 LZ4LIB_API LZ4_stream_t* LZ4_createStream(void);
-LZ4LIB_API int           LZ4_freeStream (LZ4_stream_t* streamPtr);
+LZ4LIB_API void LZ4_freeStream (LZ4_stream_t* streamPtr);
 
 /*! LZ4_resetStream() :
  *  An LZ4_stream_t structure can be allocated once and re-used multiple times.
@@ -292,7 +293,7 @@ typedef union LZ4_streamDecode_u LZ4_streamDecode_t;   /* incomplete type (defin
  *  creation / destruction of streaming decompression tracking structure.
  *  A tracking structure can be re-used multiple times sequentially. */
 LZ4LIB_API LZ4_streamDecode_t* LZ4_createStreamDecode(void);
-LZ4LIB_API int                 LZ4_freeStreamDecode (LZ4_streamDecode_t* LZ4_stream);
+LZ4LIB_API void LZ4_freeStreamDecode (LZ4_streamDecode_t* LZ4_stream);
 
 /*! LZ4_setStreamDecode() :
  *  An LZ4_streamDecode_t structure can be allocated once and re-used multiple times.

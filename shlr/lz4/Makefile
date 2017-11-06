@@ -1,4 +1,5 @@
 include ../../libr/config.mk
+CFLAGS+=-I../../libr/include
 # ################################################################
 # LZ4 library - Makefile
 # Copyright (C) Yann Collet 2011-2016
@@ -46,7 +47,7 @@ LIBVER  := $(shell echo $(LIBVER_SCRIPT))
 BUILD_STATIC:=yes
 
 CPPFLAGS+= -DXXH_NAMESPACE=LZ4_
-CFLAGS = -O3 -fPIC
+CFLAGS ?= -O3 -fPIC
 DEBUGFLAGS:= -Wall -Wextra -Wcast-qual -Wcast-align -Wshadow \
              -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes \
              -Wundef -Wpointer-arith -Wstrict-aliasing=1
