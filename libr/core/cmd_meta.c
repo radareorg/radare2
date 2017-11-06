@@ -518,7 +518,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 
 static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
-	char *t = 0, *p, name[256], *str;
+	char *t = 0, *p, *p2, name[256], *str;
 	int repeat = 1;
 	ut64 addr_end = 0LL, addr = core->offset;
 
@@ -550,8 +550,23 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 					input[0], 0, UT64_MAX);
 			break;
 		case ' ':
-			addr = r_num_math (core->num, input+3);
-			/* fallthrough */
+			p2 = strchr (input + 3, ' ');
+			if (p2) {
+				ut64 i;
+				ut64 size = r_num_math (core->num, input + 3);
+				ut64 rep = r_num_math (core->num, p2 + 1);
+				ut64 cur_addr = addr;
+				if (!size) {
+					break;
+				}
+				for (i = 0; i < rep && UT64_MAX - cur_addr > size; i++, cur_addr += size) {
+					core->num->value = r_meta_del (core->anal, input[0], cur_addr, size);
+				}
+				break;
+			} else {
+				addr = r_num_math (core->num, input + 3);
+				/* fallthrough */
+			}
 		default:
 			core->num->value = r_meta_del (core->anal,
 					input[0], addr, 1);
