@@ -1102,7 +1102,8 @@ int main(int argc, char **argv, char **envp) {
 			return 1;
 		}
 		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && r.bin->cur->o->info->rclass && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
-			r_core_cmd0 (&r, "m /root @ 0");
+			const char *fstype = r.bin->cur->o->info->bclass;
+			r_core_cmdf (&r, "m /root %s @ 0", fstype);
 		}
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS

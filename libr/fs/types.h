@@ -15,5 +15,6 @@ static RFSType fstypes[] = {
 	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
 	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
 	{ "btrfs", 0x10040, "_BHRfS_M", 8, 0, 0, 0x0 },
+	{ "iso9660", 0x8000, "\x01" "CD0", 4, 0, 0, 0x8000 },
 	{ NULL }
 };

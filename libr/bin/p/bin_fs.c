@@ -15,20 +15,21 @@ static char *fsname(const ut8* buf, ut64 length) {
 
 		len = R_MIN (f->buflen, sizeof (fs_lbuf));
 		memset (fs_lbuf, 0, sizeof (fs_lbuf));
-
-		if (f->bufoff + len > length) break;
+		if (f->bufoff + len > length) {
+			break;
+		}
 		memcpy (fs_lbuf, buf + f->bufoff, len);
-
-		if ((f->buflen > 0) && (len >= f->buflen)) {
+		if ((f->buflen > 0) && len >= f->buflen) {
 			int min = R_MIN (f->buflen, sizeof (fs_lbuf));
 			if (!memcmp (fs_lbuf, f->buf, min)) {
 				ret = true;
 				len = R_MIN (f->bytelen, sizeof (fs_lbuf));
-
-				if (f->byteoff + len > length) break;
+				if (f->byteoff + len > length) {
+					break;
+				}
 				memcpy (fs_lbuf, buf + f->byteoff, len);
-
-				for (j = 0; j < f->bytelen; j++) {
+				// for (j = 0; j < f->bytelen; j++) {
+				for (j = 0; j < len; j++) {
 					if (fs_lbuf[j] != f->byte) {
 						ret = false;
 						break;

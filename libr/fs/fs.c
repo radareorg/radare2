@@ -109,8 +109,8 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		eprintf ("r_fs_mount: invalid mountpoint %s\n", path);
 		return NULL;
 	}
-	if (!fstype) {
-		fstype = r_fs_name(fs, delta);
+	if (!fstype || !*fstype) {
+		fstype = r_fs_name (fs, delta);
 	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {
 		// eprintf ("r_fs_mount: Invalid filesystem type\n");
@@ -645,7 +645,8 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 			ret = true;
 			len = R_MIN (f->bytelen, sizeof (buf));
 			fs->iob.read_at (fs->iob.io, offset + f->byteoff, buf, len);
-			for (j = 0; j < f->bytelen; j++) {
+			// for (j = 0; j < f->bytelen; j++) {
+			for (j = 0; j < len; j++) {
 				if (buf[j] != f->byte) {
 					ret = false;
 					break;
