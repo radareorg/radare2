@@ -309,7 +309,7 @@ static int cmd_help(void *data, const char *input) {
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {
-				eprintf("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
+				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
 			n = r_num_get (core->num, input+1);
