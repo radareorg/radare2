@@ -66,6 +66,10 @@ libr/core/yank.c
 libr/core/blaze.c
 libr/core/cmd_egg.c
 
+shlr/tcc/tccgen.c
+shlr/tcc/libtcc.c
+shlr/tcc/tccpp.c
+
 binr/radare2/radare2.c
 binr/rabin2/rabin2.c
 binr/radiff2/radiff2.c
