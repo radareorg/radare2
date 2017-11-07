@@ -580,3 +580,28 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	mask = UT64_MAX << i;
 	return (addr & mask) | n;
 }
+
+R_API int r_num_between (RNum *num, const char *input_value) {
+	ut64 ns[3];
+	ns[0] = r_num_math (num, input_value);
+	for (int i = 1; i < 3; i++) {
+		while (*input_value == ' ') {
+			input_value++;
+		}
+		int num_parens = 0;
+		for (; num_parens != 0 || *input_value != ' '; input_value++) {
+			if (!*input_value) {
+				return -1;
+			}
+			if (*input_value == '(') {
+				num_parens++;
+			} else if (*input_value == ')') {
+				num_parens--;
+			}
+		}
+		ns[i] = r_num_math (num, input_value);
+	}
+	return num->value = ns[0] < ns[1] && ns[1] < ns[2]
+				? 1
+				: 0;
+}
