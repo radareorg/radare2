@@ -617,9 +617,12 @@ static int cmd_type(void *data, const char *input) {
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
 				for (i = 0; i < 3; i++) {
-					if (op.src[i] && op.src[i]->imm) {
-						offimm = op.src[i]->imm;
-						//eprintf ("imm = %d\n", offimm);
+					if (op.src[i]) {
+						if (op.src[i]->imm) {
+							offimm = op.src[i]->imm;
+						} else if (op.src[i]->delta) {
+							offimm = op.src[i]->delta;
+						}
 					}
 				}
 				if (offimm != 0) {
