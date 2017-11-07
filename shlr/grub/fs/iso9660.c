@@ -597,11 +597,7 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	}
 
       {
-#ifndef _MSC_VER
-	char name[dirent.namelen + 1];
-#else
-	char * name = grub_malloc(dirent.namelen + 1);
-#endif
+	char * name = calloc (1, dirent.namelen + 1);
 	int nameoffset = offset + sizeof (dirent);
 	struct grub_fshelp_node *node;
 	int sua_off = (sizeof (dirent) + dirent.namelen + 1
@@ -622,7 +618,7 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 					     / GRUB_DISK_SECTOR_SIZE),
 					  sua_off % GRUB_DISK_SECTOR_SIZE,
 					  sua_size, susp_iterate_dir, &c))
-	  return 0;
+	  goto err;
 
 	/* Read the name.  */
 	if (grub_disk_read (dir->data->disk,
@@ -630,11 +626,11 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 			    + nameoffset / GRUB_DISK_SECTOR_SIZE,
 			    nameoffset % GRUB_DISK_SECTOR_SIZE,
 			    dirent.namelen, (char *) name))
-	  return 0;
+	  goto err;
 
-	node = grub_malloc (sizeof (struct grub_fshelp_node));
+	node = calloc (1, sizeof (struct grub_fshelp_node));
 	if (!node)
-	  return 0;
+	  goto err;
 
 	/* Setup a new node.  */
 	node->data = dir->data;
@@ -697,12 +693,17 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	  }
 	if (c.filename_alloc)
 	  grub_free (filename);
+      err:
+        free (name);
       }
-
+      if (dirent.len < 1) {
+        eprintf ("Invalid dirent.len\n");
+        break;
+      }
       offset += dirent.len;
     }
 
-  return 0;
+    return 0;
 }
 
 struct grub_iso9660_dir_closure
