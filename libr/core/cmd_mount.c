@@ -172,7 +172,7 @@ static int cmd_mount(void *data, const char *_input) {
 			eprintf ("Cannot open file\n");
 		}
 		break;
-	case 'g':
+	case 'g': // "mg"
 		input++;
 		if (*input == ' ') {
 			input++;
@@ -186,9 +186,9 @@ static int cmd_mount(void *data, const char *_input) {
 		file = r_fs_open (core->fs, input);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
-			write (1, file->data, file->size);
+			r_cons_memcat ((const char *)file->data, file->size);
 			r_fs_close (core->fs, file);
-			write (1, "\n", 1);
+			r_cons_memcat ("\n", 1);
 		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
 			eprintf ("Cannot open file\n");
 		}
