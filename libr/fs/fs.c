@@ -104,25 +104,30 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	RListIter* iter;
 	char* str;
 	int len, lenstr;
+	char *heapFsType = NULL;
 
 	if (path[0] != '/') {
 		eprintf ("r_fs_mount: invalid mountpoint %s\n", path);
 		return NULL;
 	}
 	if (!fstype || !*fstype) {
-		fstype = r_fs_name (fs, delta);
+		heapFsType = r_fs_name (fs, delta);
+		fstype = (const char *)heapFsType;
 	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {
 		// eprintf ("r_fs_mount: Invalid filesystem type\n");
+		free (heapFsType);
 		return NULL;
 	}
 	str = strdup (path);
 	if (!str) {
+		free (heapFsType);
 		return NULL;
 	}
 	r_str_chop_path (str);
 	if (*str && strchr (str + 1, '/')) {
 		eprintf ("r_fs_mount: mountpoint must have no subdirectories\n");
+		free (heapFsType);
 		return NULL;
 	}
 	/* Check if path exists */
@@ -145,6 +150,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	if (file) {
 		r_fs_close (fs, file);
 		eprintf ("r_fs_mount: Invalid mount point\n");
+		free (heapFsType);
 		free (str);
 		return NULL;
 	}
@@ -153,6 +159,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		//XXX: list need free ??
 		eprintf ("r_fs_mount: Invalid mount point\n");
 		free (str);
+		free (heapFsType);
 		return NULL;
 	}
 	root = r_fs_root_new (str, delta);
@@ -162,12 +169,14 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->cob = fs->cob;
 	if (!p->mount (root)) {
 		free (str);
+		free (heapFsType);
 		r_fs_root_free (root);
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
 	eprintf ("Mounted %s on %s at 0x%" PFMT64x "\n", fstype, str, delta);
 	free (str);
+	free (heapFsType);
 	return root;
 }
 

@@ -113,6 +113,7 @@ static RFSFile *__version(RFSRoot *root, const char *path, RFSFile *file) {
 		file->p = root->p;
 		file->size = strlen (res);
 	}
+	free (a);
 	return file;
 }
 
@@ -147,7 +148,7 @@ static RList *__flags(RFSRoot *root, const char *path) {
 		prefix = path + 7;
 	}
 	char *cmd = prefix
-		? r_str_newf ("fq@F:%s", prefix? prefix: "")
+		? r_str_newf ("fq@F:%s", prefix)
 		: strdup ("fsq");
 	RList *res = fscmd (root, cmd, prefix? 'f': 'd');
 	free (cmd);
@@ -160,7 +161,7 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 		prefix = path + 5;
 	}
 	char *cmd = prefix
-		? r_str_newf ("es %s", prefix? prefix: "")
+		? r_str_newf ("es %s", prefix)
 		: strdup ("es");
 	char *res = root->cob.cmdstr (root->cob.core, cmd);
 	free (cmd);

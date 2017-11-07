@@ -122,7 +122,7 @@ struct grub_iso9660_susp_entry
   grub_uint8_t sig[2];
   grub_uint8_t len;
   grub_uint8_t version;
-  grub_uint8_t data[0];
+  grub_uint8_t data[4];
 });
 
 /* The CE entry.  This is used to describe the next block where data
@@ -687,8 +687,10 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 
 	if (hook (filename, c.type, node, closure))
 	  {
-	    if (c.filename_alloc)
+	    if (c.filename_alloc) {
 	      grub_free (filename);
+            }
+            free (name);
 	    return 1;
 	  }
 	if (c.filename_alloc)
