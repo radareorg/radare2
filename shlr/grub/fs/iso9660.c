@@ -122,8 +122,10 @@ struct grub_iso9660_susp_entry
   grub_uint8_t sig[2];
   grub_uint8_t len;
   grub_uint8_t version;
-  grub_uint8_t data[4];
+  // grub_uint8_t data[0];
 });
+// wtf sizeof not working? R_PACKED is failing here?
+#define ENTRY_DATA(x) ((((grub_uint8_t*)(x)) + 4))
 
 /* The CE entry.  This is used to describe the next block where data
    can be found.  */
@@ -364,7 +366,8 @@ grub_iso9660_mount (grub_disk_t disk)
     {
       /* The 2nd data byte stored how many bytes are skipped every time
 	 to get to the SUA (System Usage Area).  */
-      data->susp_skip = entry->data[2];
+      // grub_uint8_t *data = ENTRY_DATA(entry);
+      data->susp_skip = ENTRY_DATA(entry)[2]; // data[2]; // entry->data[2];
       entry = (struct grub_iso9660_susp_entry *) ((char *) entry + entry->len);
 
       /* Iterate over the entries in the SUA area to detect
@@ -423,17 +426,18 @@ susp_iterate_sl (struct grub_iso9660_susp_entry *entry, void *closure)
 	      c->addslash = 0;
 	    }
 
+          unsigned char *data = ENTRY_DATA(entry);
 	  /* The current position is the `Component Flag'.  */
-	  switch (entry->data[pos] & 30)
+	  switch (data[pos] & 30)
 	    {
 	    case 0:
 	      {
 		/* The data on pos + 2 is the actual data, pos + 1
 		   is the length.  Both are part of the `Component
 		   Record'.  */
-		add_part ((char *) &entry->data[pos + 2],
-			  entry->data[pos + 1], c);
-		if ((entry->data[pos] & 1))
+		add_part ((char *) &data[pos + 2],
+			  data[pos + 1], c);
+		if ((data[pos] & 1))
 		  c->addslash = 1;
 
 		break;
@@ -453,7 +457,7 @@ susp_iterate_sl (struct grub_iso9660_susp_entry *entry, void *closure)
 	    }
 	  /* In pos + 1 the length of the `Component Record' is
 	     stored.  */
-	  pos += entry->data[pos + 1] + 2;
+	  pos += data[pos + 1] + 2;
 	}
 
       /* Check if `grub_realloc' failed.  */
@@ -516,9 +520,10 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
     {
       /* The flags are stored at the data position 0, here the
 	 filename type is stored.  */
-      if (entry->data[0] & GRUB_ISO9660_RR_DOT)
+      grub_uint8_t *data = ENTRY_DATA(entry);
+      if (data[0] & GRUB_ISO9660_RR_DOT)
 	filename = ".";
-      else if (entry->data[0] & GRUB_ISO9660_RR_DOTDOT)
+      else if (data[0] & GRUB_ISO9660_RR_DOTDOT)
 	filename = "..";
       else
 	{
@@ -536,7 +541,7 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
 	      filename = grub_zalloc (size + 1);
 	    }
 	  c->filename_alloc = 1;
-	  grub_strncpy (filename, (char *) &entry->data[1], size);
+	  grub_strncpy (filename, (char *) data + 1, size);
 	  filename[size] = '\0';
 	}
     }
@@ -545,7 +550,8 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
     {
       /* At position 0 of the PX record the st_mode information is
 	 stored (little-endian).  */
-      grub_uint32_t mode = ((entry->data[0] + (entry->data[1] << 8))
+      grub_uint8_t *data = ENTRY_DATA(entry);
+      grub_uint32_t mode = ((data[0] + (data[1] << 8))
 			    & GRUB_ISO9660_FSTYPE_MASK);
 
       switch (mode)
