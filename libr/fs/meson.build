@@ -15,7 +15,6 @@ files=[
 'p/fs_posix.c',
 'p/fs_reiserfs.c',
 'p/fs_sfs.c',
-#'p/fs_squash.c',
 'p/fs_tar.c',
 'p/fs_udf.c',
 'p/fs_ufs.c',

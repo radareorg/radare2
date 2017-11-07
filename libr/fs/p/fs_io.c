@@ -51,7 +51,6 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 		if (ret != len) {
 			eprintf ("Inconsistent read\n");
 			R_FREE (file->data);
-			file->data = NULL;
 		}
 		R_FREE (res);
 	}
@@ -116,6 +115,7 @@ static void fs_io_umount(RFSRoot *root) {
 RFSPlugin r_fs_plugin_io = {
 	.name = "io",
 	.desc = "r_io based filesystem",
+	.license = "MIT",
 	.open = fs_io_open,
 	.read = fs_io_read,
 	.close = fs_io_close,

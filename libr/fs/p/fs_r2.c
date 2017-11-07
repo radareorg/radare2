@@ -221,6 +221,7 @@ static void fs_r2_umount(RFSRoot *root) {
 RFSPlugin r_fs_plugin_r2 = {
 	.name = "r2",
 	.desc = "r2-based filesystem",
+	.license = "MIT",
 	.open = fs_r2_open,
 	.read = fs_r2_read,
 	.close = fs_r2_close,

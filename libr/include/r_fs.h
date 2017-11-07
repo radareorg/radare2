@@ -55,6 +55,7 @@ typedef struct r_fs_root_t {
 typedef struct r_fs_plugin_t {
 	const char *name;
 	const char *desc;
+	const char *license;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path);
 	bool (*read)(RFSFile *fs, ut64 addr, int len);
@@ -155,7 +156,6 @@ extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_posix;
-extern RFSPlugin r_fs_plugin_squash;
 #endif
 
 #ifdef __cplusplus

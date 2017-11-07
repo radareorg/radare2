@@ -129,6 +129,7 @@ static void fs_posix_umount(RFSRoot *root) {
 RFSPlugin r_fs_plugin_posix = {
 	.name = "posix",
 	.desc = "POSIX filesystem",
+	.license = "MIT",
 	.open = fs_posix_open,
 	.read = fs_posix_read,
 	.close = fs_posix_close,
