@@ -267,8 +267,9 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 	}
 	if (fs && file) {
 		free (file->data);
-		file->data = malloc (len + 1);
-		if (file->p && file->p->read) {
+		file->data = calloc (1, len + 1);
+		// file->data_len = len;
+		if (file->p && file->data && file->p->read) {
 			file->p->read (file, addr, len);
 			return true;
 		} else {
