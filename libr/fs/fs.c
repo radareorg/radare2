@@ -581,8 +581,9 @@ R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 		eprintf ("Unknown partition type '%s'.\n", ptype);
 	}
 	eprintf ("Supported types:\n");
-	for (i = 0; partitions[i].name; i++)
+	for (i = 0; partitions[i].name; i++) {
 		eprintf (" %s", partitions[i].name);
+	}
 	eprintf ("\n");
 	return NULL;
 }
