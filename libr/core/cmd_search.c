@@ -2396,8 +2396,6 @@ reread:
 	} break;
 	case 'M': // "/M"
 		{
-			int ret;
-			const char *file = input[1]? input + 2: NULL;
 			ut64 addr = search_itv.addr;
 			RListIter *iter;
 			RIOMap *map;
@@ -2411,6 +2409,7 @@ reread:
 						break;
 					}
 					if (align && (0 != (addr % align))) {
+						addr += (addr % align) - 1;
 						continue;
 					}
 					char *mp = r_str_newf ("/mnt%d", count);
@@ -2420,7 +2419,6 @@ reread:
 						eprintf ("Mounted %s at 0x%08"PFMT64x"\n", mp, addr);
 					}
 					free (mp);
-					addr += ret - 1;
 				}
 				r_cons_clear_line (1);
 				r_cons_break_pop ();
