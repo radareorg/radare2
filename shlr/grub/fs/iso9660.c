@@ -122,7 +122,7 @@ struct grub_iso9660_susp_entry
   grub_uint8_t sig[2];
   grub_uint8_t len;
   grub_uint8_t version;
-  grub_uint8_t data[0];
+  grub_uint8_t *data;
 });
 
 /* The CE entry.  This is used to describe the next block where data
