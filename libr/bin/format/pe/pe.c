@@ -877,9 +877,13 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 	if (bin->optional_header) {
 		for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+			if (i == PE_IMAGE_DIRECTORY_ENTRY_SECURITY) {
+				continue;
+			}
+
 			computeOverlayOffset (
-				bin_pe_rva_to_paddr (bin, bin->optional_header->DataDirectory[i].VirtualAddress),
-				bin->optional_header->DataDirectory[i].Size,
+				bin_pe_rva_to_paddr (bin, bin->data_directory[i].VirtualAddress),
+				bin->data_directory[i].Size,
 				bin->size,
 				&largest_offset,
 				&largest_size);
