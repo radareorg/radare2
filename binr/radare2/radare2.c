@@ -481,7 +481,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzuX"
+	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuX"
 #if USE_THREADS
 "t"
 #endif
