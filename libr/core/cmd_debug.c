@@ -270,9 +270,10 @@ static const char *help_msg_dms[] = {
 };
 
 static const char *help_msg_do[] = {
-	"Usage:", "do", " # Debug commands",
+	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
-	"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
+	"dor", " [rarun2]", "Comma separated list of k=v rarun2 profile options (e dbg.profile)",
+	"doo", " [args]", "Reopen in debugger mode with args (alias for 'ood')",
 	NULL
 };
 
@@ -490,6 +491,17 @@ static void cmd_debug_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, dte);
 	DEFINE_CMD_DESCRIPTOR (core, dts);
 	DEFINE_CMD_DESCRIPTOR (core, dx);
+}
+
+// XXX those tmp files are never removed and we shuoldnt use files for this
+static void setRarunProfileString(RCore *core, const char *str) {
+	char *file = r_file_temp ("rarun2");
+	char *s = strdup (str);
+	r_config_set (core->config, "dbg.profile", file);
+	r_str_replace_char (s, ',', '\n');
+	r_file_dump (file, (const ut8*)s, strlen (s), 0);
+	r_file_dump (file, (const ut8*)"\n", 1, 1);
+	free (file);
 }
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
@@ -4428,6 +4440,14 @@ static int cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case '\0': // "do"
 			r_core_file_reopen (core, input[1] ? input + 2: NULL, 0, 1);
+			break;
+		case 'r': //"dor" : rarun profile
+			if (input[2] == ' ') {
+				setRarunProfileString (core, input + 3);
+			} else {
+				// TODO use the api
+				r_sys_cmd ("rarun2 -h");
+			}
 			break;
 		case 'o': //"doo" : reopen in debugger
 			r_core_file_reopen_debug (core, input + 2);
