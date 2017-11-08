@@ -72,16 +72,23 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 
 R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	char *query;
-	const char *t = sdb_const_get (anal->sdb_types, type, 0);
+	/* Filter out the structure keyword if type looks like "struct mystruc" */
+	const char *tmptype;
+	if (!strncmp (type, "struct ", 7)) {
+		tmptype = type + 7;
+	} else {
+		tmptype = type;
+	}
+	const char *t = sdb_const_get (anal->sdb_types, tmptype, 0);
 	if (!t) {
 		return 0;
 	}
 	if (!strcmp (t, "type")){
-		query = sdb_fmt (-1, "type.%s.size", type);
+		query = sdb_fmt (-1, "type.%s.size", tmptype);
 		return sdb_num_get (anal->sdb_types, query, 0);
 	}
 	if (!strcmp (t, "struct")) {
-		query = sdb_fmt (-1, "struct.%s", type);
+		query = sdb_fmt (-1, "struct.%s", tmptype);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		int ret = 0;
@@ -91,7 +98,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 				if (!name) {
 					break;
 				}
-				query = sdb_fmt (-1, "struct.%s.%s", type, name);
+				query = sdb_fmt (-1, "struct.%s.%s", tmptype, name);
 				char *subtype = sdb_get (anal->sdb_types, query, 0);
 				if (!subtype) {
 					break;
