@@ -582,9 +582,10 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 }
 
 R_API int r_num_between (RNum *num, const char *input_value) {
+	int i;
 	ut64 ns[3];
 	ns[0] = r_num_math (num, input_value);
-	for (int i = 1; i < 3; i++) {
+	for (i = 1; i < 3; i++) {
 		while (*input_value == ' ') {
 			input_value++;
 		}
