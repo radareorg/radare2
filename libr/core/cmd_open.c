@@ -13,6 +13,7 @@ static const char *help_msg_o[] = {
 	"o","","list opened files",
 	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
+	"o."," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
@@ -1184,6 +1185,23 @@ static int cmd_open(void *data, const char *input) {
 		//r_core_cmd0 (core, "oo");
 		// uninit deref
 		//r_core_block_read (core);
+		break;
+	case '.': // "o."
+		{
+			int len = r_num_math (core->num, input + 1);
+			if (len < 1) {
+				len = core->blocksize;
+			}
+                        char *uri = r_str_newf ("malloc://%d", len);
+			ut8 *data = calloc (len, 1);
+			r_core_read_at (core, core->offset, data, len);
+                        RIODesc *fd = r_io_open (core->io, uri, R_IO_READ | R_IO_WRITE, 0);
+                        if (fd) {
+                                r_io_desc_write (fd, data, len);
+                        }
+			free (uri);
+			free (data);
+                }
 		break;
 	case 'm': // "om"
 		cmd_open_map (core, input);

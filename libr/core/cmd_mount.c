@@ -11,7 +11,8 @@ static const char *help_msg_m[] = {
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
 	"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
-	"mo", " /foo", "Get offset and size of given file",
+	"mo", " /foo/bar", "Open given file into a malloc://",
+	"mi", " /foo/bar", "Get offset and size of given file",
 	"mp", "", "List all supported partition types",
 	"mp", " msdos 0", "Show partitions in msdos format at offset 0",
 	"ms", " /mnt", "Open filesystem prompt at /mnt",
@@ -158,6 +159,23 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'o':
+		input++;
+		if (input[0]==' ') {
+			input++;
+		}
+		file = r_fs_open (core->fs, input);
+		if (file) {
+			r_fs_read (core->fs, file, 0, file->size);
+			char *uri = r_str_newf ("malloc://%d", file->size);
+			RIODesc *fd = r_io_open (core->io, uri, R_IO_READ | R_IO_WRITE, 0);
+			if (fd) {
+				r_io_desc_write (fd, file->data, file->size);
+			}
+		} else {
+			eprintf ("Cannot open file\n");
+		}
+		break;
+	case 'i':
 		input++;
 		if (input[0]==' ') {
 			input++;

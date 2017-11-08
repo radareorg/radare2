@@ -264,8 +264,11 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p) {
 
 // TODO: close or free?
 R_API void r_fs_close(RFS* fs, RFSFile* file) {
-	if (fs && file && file->p && file->p->close) {
-		file->p->close (file);
+	if (fs && file) {
+		R_FREE (file->data);
+		if (file->p && file->p->close) {
+			file->p->close (file);
+		}
 	}
 }
 
