@@ -63,6 +63,7 @@ static const char *help_msg_question[] = {
 	"?_", " hudfile", "load hud menu with given file",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
+	"?btw", " num|(expr) num|(expr) num|(expr)", "returns boolean value of a < b < c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
 	"?d[.]", " opcode", "describe opcode for asm.arch",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
@@ -306,6 +307,10 @@ static int cmd_help(void *data, const char *input) {
 			}
 			r_cons_println (buf);
 			free (buf);
+		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
+			if (r_num_between (core->num, input + 3) == -1) {
+				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
+			}
 		} else {
 			n = r_num_get (core->num, input+1);
 			r_num_to_bits (out, n);
