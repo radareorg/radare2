@@ -679,7 +679,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *mai
 
 static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_state, GHT m_state) {
 	int w, h;
-	GHT top_size = GHT_MAX;
+	GHT top_size = GHT_MAX, min_size = SZ * 4;
 
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
@@ -739,7 +739,7 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 		r_core_read_at (core, next_chunk_ref, (ut8 *)prev_c, sizeof (GH(RHeapChunk)));
 	       	node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_ref);
 		size_tmp = (prev_c->size >> 3) << 3;
-		if (size_tmp > top_size  || next_chunk_ref + size_tmp > malloc_state->top) {
+		if (size_tmp < min_size || size_tmp > top_size  || next_chunk_ref + size_tmp > malloc_state->top) {
 			node_data = r_str_newf ("[corrupted] size: 0x%"PFMT64x"\n fd: 0x%"PFMT64x", bk: 0x%"PFMT64x
 				"\nHeap graph could not be recovered\n", (ut64)prev_c->size, (ut64)prev_c->fd, (ut64)prev_c->bk) ;
 			r_agraph_add_node (g, node_title, node_data);
@@ -780,7 +780,7 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 
 static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena, GHT *initial_brk) {
 	int w, h;
-	GHT top_size = GHT_MAX;
+	GHT top_size = GHT_MAX, min_size = SZ * 4;
 
 	if (!core || !core->dbg || !core->config || !core->dbg->maps) {
 		return;
@@ -850,7 +850,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 		r_core_read_at (core, next_chunk_ref, (ut8 *)prev_c, sizeof (GH(RHeapChunk)));
 	       	node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_ref);
 		size_tmp = (prev_c->size >> 3) << 3;
-		if (top_size != GHT_MAX && (size_tmp > top_size  || next_chunk_ref + size_tmp > main_arena->top)) {
+		if (top_size < min_size || size_tmp > top_size  || next_chunk_ref + size_tmp > main_arena->top) {
 			node_data = r_str_newf ("[corrupted] size: 0x%"PFMT64x"\n fd: 0x%"PFMT64x", bk: 0x%"PFMT64x
 				"\nHeap graph could not be recovered\n", (ut64)prev_c->size, (ut64)prev_c->fd, (ut64)prev_c->bk) ;
 			r_agraph_add_node (g, node_title, node_data);
@@ -895,7 +895,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 		return;
 	}
 
-	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX;
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 
 	if (!cnk) {
@@ -917,12 +917,12 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
 		(void)r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
 			PRINT_RA ("[corrupted]\n");
 			PRINTF_RA ("   size: 0x%"PFMT64x"\n   fd: 0x%"PFMT64x", bk: 0x%"PFMT64x"\n",
-				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
+			(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 			break;
 		}
 
@@ -986,7 +986,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	}
 
 	GHT mmap_start = GHT_MAX, mmap_end = GHT_MAX, size_tmp;
-	GHT top_size = GHT_MAX;
+	GHT top_size = GHT_MAX, min_size = SZ * 4;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	GH(RHeap_MallocState) *ms = R_NEW0 (GH(RHeap_MallocState));
 
@@ -1008,12 +1008,12 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	while (next_chunk && next_chunk >= mmap_start && next_chunk < ms->top) {
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (top_size != GHT_MAX && (size_tmp > top_size)) {
+		if (top_size < min_size || size_tmp > top_size) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
 			PRINT_RA ("[corrupted]\n");
 			PRINTF_RA ("   size: %0x"PFMT64x"\n   fd: 0x%"PFMT64x", bk: 0x%"PFMT64x"\n",
-				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
+			(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 			break;
 		}
 		PRINT_YA ("\n  Malloc chunk @ ");
