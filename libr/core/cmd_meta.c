@@ -924,8 +924,8 @@ static int cmd_meta(void *data, const char *input) {
 		cmd_meta_hsdmf (core, input);
 		break;
 	case '-':
-		if (input[1]!='*') {
-			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
+		if (input[1] != '*') {
+			i = input[1] ? r_num_math (core->num, input + (input[1] == ' ' ? 2 : 1)) : 1;
 			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i);
 		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;

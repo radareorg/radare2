@@ -196,7 +196,7 @@ R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
 
 R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	char key[100], *dtr, *s, *p, *next;
-	const char *ptr;
+	const char *val;
 	int i;
 	if (size == UT64_MAX) {
 		// FULL CLEANUP
@@ -223,14 +223,39 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		}
 		return false;
 	}
+	if (type == R_META_TYPE_ANY) {
+		/* special case */
+		r_meta_del (a, R_META_TYPE_COMMENT, addr, size);
+	}
 	meta_inrange_del (a, addr, size);
 	snprintf (key, sizeof (key)-1, type == R_META_TYPE_COMMENT ?
 		"meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
-	ptr = sdb_const_get (DB, key, 0);
-	if (ptr) {
-		if (strchr (ptr, ',')) {
+	val = sdb_const_get (DB, key, 0);
+	if (val) {
+		if (type == R_META_TYPE_ANY) {
+			char *types = strdup (val);
+			const char *ptr = types;
+			if (!types) {
+				return false;
+			}
+			if (*ptr == R_META_TYPE_ANY) {
+				goto beach;
+			}
+			r_meta_del (a, *ptr, addr, size);
+			while ((ptr = strchr (ptr, ',')) != NULL) {
+				ptr++;
+				if (*ptr == R_META_TYPE_ANY) {
+					goto beach;
+				}
+				r_meta_del (a, *ptr, addr, size);
+			}
+beach:
+			free (types);
+			return false;
+		}
+		if (strchr (val, ',')) {
 			char type_fld[] = "##";
-			if (ptr[0] == type) {
+			if (val[0] == type) {
 				type_fld[0] = type;
 				type_fld[1] = ',';
 			} else {
@@ -243,17 +268,6 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		}
 		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, type, addr);
 		sdb_unset (DB, key, 0);
-		#if 0
-		// This code is wrong, but i guess it's necessary in case type is ANY
-		for (i=0; ptr[i]; i++) {
-			if (ptr[i] != SDB_RS) {
-				snprintf (key2, sizeof (key2)-1,
-					"meta.%c.0x%"PFMT64x, ptr[i], addr);
-					printf ("UNSET (%s)\n", key2);
-				sdb_unset (DB, key2, 0);
-			}
-		}
-		#endif
 	}
 	sdb_unset (DB, key, 0);
 	return false;
