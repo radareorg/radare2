@@ -54,6 +54,19 @@ if [ ! -x /work ]; then
 	else
 		#[ -z "${SDK}" ] && SDK="${HOME}/Downloads/android-sdk-${OS}"
 		if [ -z "${NDK}" ]; then
+			# Checking if Android NDK is installed with macOS's brew
+			D=/usr/local/Caskroom/android-ndk/
+			if [ -d "${D}" ]; then
+				for a in $(cd "$D" && ls) ; do
+					N="$D/$a/android-ndk-r$a"
+					if [ -f "$N/README.md" ]; then
+						NDK="$N"
+						break
+					fi
+				done
+			fi
+		fi
+		if [ -z "${NDK}" ]; then
 			if [ "`uname`" = "Darwin" ]; then
 				NDK="${HOME}/Library/Android/sdk/ndk-bundle/"
 			else
