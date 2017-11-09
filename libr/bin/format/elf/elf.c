@@ -1171,7 +1171,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	bool is_rela = false;
 	const char *rel_sect[] = { ".rel.plt", ".rela.plt", ".rel.dyn", ".rela.dyn", NULL };
 	const char *rela_sect[] = { ".rela.plt", ".rel.plt", ".rela.dyn", ".rel.dyn", NULL };
-
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
 		return -1;
 	}
@@ -1183,6 +1182,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		(got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1) {
 		return -1;
 	}
+	RBinElfSection *plt_section = get_section_by_name (bin, ".plt");
 	if (bin->is_rela == DT_REL) {
 		j = 0;
 		while (!rel_sec && rel_sect[j]) {
@@ -1261,7 +1261,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			case EM_PPC:
 			case EM_PPC64:
 				{
-					RBinElfSection *s = get_section_by_name (bin, ".plt");
+					RBinElfSection *s = plt_section;
 					if (s) {
 						ut8 buf[4];
 						ut64 base;
@@ -1426,11 +1426,18 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 						plt_addr += k * 16;
 						free (REL);
 						return plt_addr;
+					} else if (plt_section) {
+						const int sizeOfProcedureLinkageTable = 32;
+						const int sizeOfPltEntry = 16;
+						return plt_section->rva + sizeOfProcedureLinkageTable + (k * sizeOfPltEntry);
+					} else {
+						eprintf ("Unsupported relocs type %d for arch %d\n",
+								reloc_type, bin->ehdr.e_machine);
 					}
 				}
 				break;
 			default:
-				bprintf ("Unsupported relocs type %d for arch %d\n",
+				eprintf ("Unsupported relocs type %d for arch %d\n",
 					reloc_type, bin->ehdr.e_machine);
 				break;
 			}
