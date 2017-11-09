@@ -158,7 +158,7 @@ static int cmd_mount(void *data, const char *_input) {
 			eprintf ("Cannot read partition\n");
 		}
 		break;
-	case 'o':
+	case 'o': //"mo"
 		input++;
 		if (input[0]==' ') {
 			input++;
