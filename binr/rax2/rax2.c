@@ -448,11 +448,11 @@ dotherax:
 	} else if (str[0] == 'O' && str[1] == 'x') {
 		out_mode = 'O';
 		*str = '0';
-	} else if (str[strlen (str) - 1] == 'd') {
+	} else if (*str && str[strlen (str) - 1] == 'd') {
 		out_mode = 'I';
 		str[strlen (str) - 1] = 'b';
 		// TODO: Move print into format_output
-	} else if (str[strlen (str) - 1] == 'f') {
+	} else if (*str && str[strlen (str) - 1] == 'f') {
 		ut8 *p = (ut8 *) &f;
 		sscanf (str, "%f", &f);
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
