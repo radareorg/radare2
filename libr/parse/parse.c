@@ -411,6 +411,27 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				r_num_to_bits (num, off);
 				strcat (num, "b");
 				break;
+			case 3:
+				{
+					ut64 swap = 0;
+					if (big_endian) {
+						swap = off & 0xffff;
+					} else {
+						if (off >> 32) {
+							r_mem_swapendian ((ut8*)&swap, (const ut8*)&off, sizeof (off));
+						} else if (off >> 16) {
+							ut32 port = 0;
+							r_mem_swapendian ((ut8*)&port, (const ut8*)&off, sizeof (port));
+							swap = port;
+						} else {
+							ut16 port = 0;
+							r_mem_swapendian ((ut8*)&port, (const ut8*)&off, sizeof (port));
+							swap = port;
+						}
+					}
+					snprintf (num, sizeof (num), "htons (%d)", (int)(swap & 0xFFFF));
+				}
+				break;
 			case 8:
 				snprintf (num, sizeof (num), "0%o", (int)off);
 				break;

@@ -1,4 +1,4 @@
-/* ported to C by pancake for r2 in 2012-2014 */
+/* ported to C by pancake for r2 in 2012-2017 */
 // TODO: integrate floating point support
 // TODO: do not use global variables
 /*
@@ -31,6 +31,7 @@ static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
 	n.n *= v.n;
 	return n;
 }
+
 static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
 static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
@@ -38,6 +39,7 @@ static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	if (v.n) n.n %= v.n; else n.n = 0;
 	return n;
 }
+
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 	if (v.d) n.d /= v.d; else n.d = 0;
 	if (v.n) n.n /= v.n; else n.n = 0;

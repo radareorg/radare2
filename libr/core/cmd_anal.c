@@ -462,6 +462,7 @@ static const char *help_msg_ahi[] = {
 	"ahi", " d", "set base to decimal (10)",
 	"ahi", " h", "set base to hexadecimal (16)",
 	"ahi", " o", "set base to octal (8)",
+	"ahi", " p", "set base to htons(port) (3)",
 	"ahi", " i", "set base to IP address (32)",
 	"ahi", " S", "set base to syscall (80)",
 	"ahi", " s", "set base to string (1)",
@@ -4977,6 +4978,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			const int base =
 				(input[2] == 's') ? 1 :
 				(input[2] == 'b') ? 2 :
+				(input[2] == 'p') ? 3 :
 				(input[2] == 'o') ? 8 :
 				(input[2] == 'd') ? 10 :
 				(input[2] == 'h') ? 16 :

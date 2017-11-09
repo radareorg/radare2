@@ -58,12 +58,15 @@ static void setHint(RAnal *a, const char *type, ut64 addr, const char *s, ut64 p
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char* typeoff) {
 	setHint (a, "Offset:", addr, r_str_trim_const (typeoff), 0);
 }
+
 R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "jump:", addr, NULL, ptr);
 }
+
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "fail:", addr, NULL, ptr);
 }
+
 R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base) {
 	if (base) {
 		setHint (a, "immbase:", addr, NULL, (ut64)base);
@@ -71,56 +74,73 @@ R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base) {
 		unsetHint (a, "immbase:", addr);
 	}
 }
+
 R_API void r_anal_hint_set_pointer(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "ptr:", addr, NULL, ptr);
 }
+
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch) {
 	setHint (a, "arch:", addr, r_str_trim_const (arch), 0);
 }
+
 R_API void r_anal_hint_set_syntax(RAnal *a, ut64 addr, const char *syn) {
 	setHint (a, "Syntax:", addr, syn, 0);
 }
+
 R_API void r_anal_hint_set_opcode(RAnal *a, ut64 addr, const char *opcode) {
 	setHint (a, "opcode:", addr, r_str_trim_const (opcode), 0);
 }
+
 R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
 	setHint (a, "esil:", addr, r_str_trim_const (esil), 0);
 }
+
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
 	a->bits_hints_changed = true;
 	setHint (a, "bits:", addr, NULL, bits);
 }
+
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, int size) {
 	setHint (a, "size:", addr, NULL, size);
 }
+
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr) {
 	unsetHint(a, "size:", addr);
 }
+
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
 	a->bits_hints_changed = true;
 	unsetHint(a, "bits:", addr);
 }
+
 R_API void r_anal_hint_unset_esil(RAnal *a, ut64 addr) {
 	unsetHint(a, "esil:", addr);
 }
+
 R_API void r_anal_hint_unset_opcode(RAnal *a, ut64 addr) {
 	unsetHint(a, "opcode:", addr);
 }
+
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr) {
 	unsetHint(a, "arch:", addr);
 }
+
 R_API void r_anal_hint_unset_syntax(RAnal *a, ut64 addr) {
 	unsetHint(a, "Syntax:", addr);
 }
+
 R_API void r_anal_hint_unset_pointer(RAnal *a, ut64 addr) {
 	unsetHint(a, "ptr:", addr);
 }
+
 R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr) {
 	unsetHint (a, "Offset:", addr);
 }
+
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr) {
 	unsetHint (a, "jump:", addr);
 }
+
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr) {
 	unsetHint (a, "fail:", addr);
 }

@@ -1996,6 +1996,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	switch (size) {
 	case 1: type = isSigned? ".char": ".byte"; break;
 	case 2: type = isSigned? ".int16": ".word"; break;
+	case 3: type = "htons"; break;
 	case 4: type = isSigned? ".int32": ".dword"; break;
 	case 8: type = isSigned? ".int64": ".qword"; break;
 	default: return false;
@@ -2012,7 +2013,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 			} else if (ds->cursor == ds->index) {
 				r_cons_printf ("  *  ");
 			} else {
-			r_cons_printf ("     ");
+				r_cons_printf ("     ");
 			}
 		} else {
 			r_cons_printf ("     ");
@@ -2023,6 +2024,9 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	case 1:
 		r_str_bits (msg, buf, size * 8, NULL);
 		r_cons_printf ("%s %sb", type, msg);
+		break;
+	case 3:
+		r_cons_printf ("%s %d", type, ntohs (n & 0xFFFF));
 		break;
 	case 8:
 		r_cons_printf ("%s %oo", type, n);
