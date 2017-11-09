@@ -25,6 +25,7 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.cjmp = Color_GREEN;
 	cons->pal.cmp = Color_CYAN;
 	cons->pal.comment = Color_RED;
+	cons->pal.usercomment = Color_WHITE;
 	cons->pal.creg = Color_CYAN;
 	cons->pal.flag = Color_CYAN;
 	cons->pal.fline = Color_CYAN;
@@ -220,6 +221,7 @@ static struct {
 	int off;
 } keys[] = {
 	{ "comment", r_offsetof (RConsPalette, comment) },
+	{ "usrcmt", r_offsetof (RConsPalette, usercomment) },
 	{ "args", r_offsetof (RConsPalette, args) },
 	{ "fname", r_offsetof (RConsPalette, fname) },
 	{ "floc", r_offsetof (RConsPalette, floc) },

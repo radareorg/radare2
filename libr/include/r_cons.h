@@ -153,6 +153,7 @@ typedef struct r_cons_palette_t {
 	char *cjmp;
 	char *cmp;
 	char *comment;
+	char *usercomment;
 	char *creg;
 	char *flag;
 	char *fline;

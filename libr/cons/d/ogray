@@ -8,6 +8,7 @@ ec call rgb:f72 rgb:333
 ec cjmp rgb:f72
 ec cmp rgb:aaa
 ec comment rgb:f72
+ec usrcmt rgb:000 rgb:f72
 ec reg rgb:fff
 ec creg rgb:f72
 ec flag rgb:f72
