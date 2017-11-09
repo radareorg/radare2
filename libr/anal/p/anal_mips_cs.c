@@ -871,12 +871,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_RJMP;
 		op->delay = 1;
-        // register is $ra, so jmp is a return
-        if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
-            op->type = R_ANAL_OP_TYPE_RET;
-        }
+		// register is $ra, so jmp is a return
+		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
 		break;
 	case MIPS_INS_SLTI:
 	case MIPS_INS_SLTIU:

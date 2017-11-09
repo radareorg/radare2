@@ -1271,8 +1271,7 @@ static int autocomplete(RLine *line) {
 				// fallback to old command completion
 			}
 			for (i = j = 0; i < CMDS && radare_argv[i]; i++)
-				if (!strncmp (radare_argv[i], line->buffer.data,
-											line->buffer.index))
+				if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
@@ -1281,8 +1280,7 @@ static int autocomplete(RLine *line) {
 	} else {
 			int i, j;
 			for (i=j=0; i<CMDS && radare_argv[i]; i++) {
-				if (!strncmp (radare_argv[i], line->buffer.data,
-											line->buffer.index)) {
+				if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index)) {
 					tmp_argv[j++] = radare_argv[i];
 				}
 			}
@@ -1576,11 +1574,11 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		ut64 n = (core->assembler->bits == 64)? *n64: *n32;
 		if(n != value) {
 			char* rrstr = r_core_anal_hasrefs_to_depth (core, n, depth-1);
-			if(rrstr) {
-				if(rrstr[0]) {
-					r_strbuf_appendf (s, " -->%s", rrstr);
+			if (rrstr) {
+				if (rrstr[0]) {
+					r_strbuf_appendf (s, " --> %s", rrstr);
 				}
-				free(rrstr);
+				free (rrstr);
 			}
 		}
 	}
@@ -1588,10 +1586,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 }
 
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
-	if (core) {
-		return r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-	}
-	return NULL;
+	return core? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr): NULL;
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
@@ -1603,16 +1598,21 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 		return NULL;
 	}
 	type = r_core_anal_address (core, addr);
-	if (type & R_ANAL_ADDR_TYPE_EXEC)
+	if (type & R_ANAL_ADDR_TYPE_EXEC) {
 		return core->cons->pal.ai_exec; //Color_RED;
-	if (type & R_ANAL_ADDR_TYPE_WRITE)
+	}
+	if (type & R_ANAL_ADDR_TYPE_WRITE) {
 		return core->cons->pal.ai_write; //Color_BLUE;
-	if (type & R_ANAL_ADDR_TYPE_READ)
+	}
+	if (type & R_ANAL_ADDR_TYPE_READ) {
 		return core->cons->pal.ai_read; //Color_GREEN;
-	if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+	}
+	if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
 		return core->cons->pal.ai_seq; //Color_MAGENTA;
-	if (type & R_ANAL_ADDR_TYPE_ASCII)
+	}
+	if (type & R_ANAL_ADDR_TYPE_ASCII) {
 		return core->cons->pal.ai_ascii; //Color_YELLOW;
+	}
 	return NULL;
 }
 
