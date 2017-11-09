@@ -3108,7 +3108,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		str[sizeof (str)-1] = 0;
 		if (*str && r_str_is_printable (str)) {
 			// do nothing
-			msg = r_str_newf ("\"%s\" ", str);
+			char *escstr = r_str_escape_utf8 (str, ds->show_asciidot);
+			if (escstr) {
+				msg = r_str_newf ("\"%s\" ", escstr);
+				free (escstr);
+			}
 		} else {
 			str[0] = 0;
 			if (!*n32) {
