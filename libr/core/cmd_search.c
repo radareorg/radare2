@@ -1608,86 +1608,84 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
-RIOMap* map;
-RListIter *iter;
-r_list_foreach (param->boundaries, iter, map) {
-	ut64 from = map->itv.addr;
-	ut64 to = r_itv_end (map->itv);
-	for (i = 0, at = from; at < to; at++, i++) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		if (i >= (bsize - 32)) {
-			i = 0;
-		}
-		if (!i) {
-			r_core_read_at (core, at, buf, bsize);
-		}
-		ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
-		if (ret) {
-			bool match = false;
-			if (chk_family) {
-				const char *fam = r_anal_op_family_to_string (aop.family);
-				if (fam) {
-					if (!*input || !strcmp (input, fam)) {
-						match = true;
-						r_cons_printf ("0x%08"PFMT64x " - %d %s\n", at, ret, fam);
+	RIOMap* map;
+	RListIter *iter;
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = map->itv.addr;
+		ut64 to = r_itv_end (map->itv);
+		for (i = 0, at = from; at < to; at++, i++) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (i >= (bsize - 32)) {
+				i = 0;
+			}
+			if (!i) {
+				r_core_read_at (core, at, buf, bsize);
+			}
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
+			if (ret) {
+				bool match = false;
+				if (chk_family) {
+					const char *fam = r_anal_op_family_to_string (aop.family);
+					if (fam) {
+						if (!*input || !strcmp (input, fam)) {
+							match = true;
+							r_cons_printf ("0x%08"PFMT64x " - %d %s\n", at, ret, fam);
+						}
+					}
+				} else {
+					const char *type = r_anal_optype_to_string (aop.type);
+					if (type) {
+						if (!*input || !strcmp (input, type)) {
+							match = true;
+						}
 					}
 				}
-			} else {
-				const char *type = r_anal_optype_to_string (aop.type);
-				if (type) {
-					if (!*input || !strcmp (input, type)) {
-						match = true;
+				if (match) {
+					// char *opstr = r_core_disassemble_instr (core, at, 1);
+					char *opstr = r_core_op_str (core, at);
+					switch (mode) {
+					case 'j':
+						r_cons_printf ("%s{\"addr\":%"PFMT64d ",\"size\":%d,\"opstr\":\"%s\"}",
+							firstItem? "": ",",
+							at, ret, opstr);
+						break;
+					case 'q':
+						r_cons_printf ("0x%08"PFMT64x "\n", at);
+						break;
+					default:
+						r_cons_printf ("0x%08"PFMT64x " %d %s\n", at, ret, opstr);
+						break;
 					}
+					R_FREE (opstr);
+					if (*input && searchflags) {
+						char flag[64];
+						snprintf (flag, sizeof (flag), "%s%d_%d",
+							searchprefix, kwidx, count);
+						r_flag_set (core->flags, flag, at, ret);
+					}
+					if (*param->cmd_hit) {
+						ut64 here = core->offset;
+						r_core_seek (core, at, true);
+						r_core_cmd (core, param->cmd_hit, 0);
+						r_core_seek (core, here, true);
+					}
+					count++;
+					if (search->maxhits && count >= search->maxhits) {
+						break;
+					}
+					firstItem = false;
 				}
-			}
-			if (match) {
-				// char *opstr = r_core_disassemble_instr (core, at, 1);
-				char *opstr = r_core_op_str (core, at);
-				switch (mode) {
-				case 'j':
-					r_cons_printf ("%s{\"addr\":%"PFMT64d ",\"size\":%d,\"opstr\":\"%s\"}",
-						firstItem? "": ",",
-						at, ret, opstr);
-					break;
-				case 'q':
-					r_cons_printf ("0x%08"PFMT64x "\n", at);
-					break;
-				default:
-					r_cons_printf ("0x%08"PFMT64x " %d %s\n", at, ret, opstr);
-					break;
+				int inc = (core->search->align > 0)? core->search->align - 1: ret -1;
+				if (inc < 1) {
+					inc = 1;
 				}
-				R_FREE (opstr);
-				if (*input && searchflags) {
-					char flag[64];
-					snprintf (flag, sizeof (flag), "%s%d_%d",
-						searchprefix, kwidx, count);
-					r_flag_set (core->flags, flag, at, ret);
-				}
-				if (*param->cmd_hit) {
-					ut64 here = core->offset;
-					r_core_seek (core, at, true);
-					r_core_cmd (core, param->cmd_hit, 0);
-					r_core_seek (core, here, true);
-				}
-				count++;
-				if (search->maxhits && count >= search->maxhits) {
-					break;
-				}
-				firstItem = false;
-			}
-			if (core->search->align > 0) {
-				i += core->search->align - 1;
-				at += core->search->align - 1;
-			} else {
-				// skip instruction
-				i += ret - 1; // aop.size-1;
-				at += ret - 1;
+	 			i += inc;
+	 			at += inc;
 			}
 		}
 	}
-}
 	if (mode == 'j') {
 		r_cons_println ("]\n");
 	}
