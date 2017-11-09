@@ -156,6 +156,7 @@ typedef struct r_disam_options_t {
 	bool show_noisy_comments;
 	const char *pal_comment;
 	const char *color_comment;
+	const char *color_usrcmt;
 	const char *color_fname;
 	const char *color_floc;
 	const char *color_fline;
@@ -357,7 +358,7 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
 		COLOR_RESET (ds), COLOR (ds, color_fline),
 		ds->pre, sn, ds->refline, COLOR_RESET (ds),
-		up? "": "`-", COLOR (ds, pal_comment));
+		up? "": "`-", COLOR (ds, color_comment));
 }
 #define ALIGN _ds_comment_align_ (ds, true, false)
 
@@ -402,6 +403,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 	ds->color_comment = P(comment): Color_CYAN;
+	ds->color_usrcmt = P(usercomment): Color_CYAN;
 	ds->color_fname = P(fname): Color_RED;
 	ds->color_floc = P(floc): Color_MAGENTA;
 	ds->color_fline = P(fline): Color_CYAN;
@@ -937,7 +939,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		flagi = r_flag_get_i (ds->core->flags, ref->addr);
 		flagat = r_flag_get_at (ds->core->flags, ref->addr, false);
-		//ds_align_comment (ds);
+		// ds_align_comment (ds);
 		if (ds->show_color) {
 			r_cons_strcat (ds->color_comment);
 		}
@@ -1504,7 +1506,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	}
 	if (!ds->show_comment_right) {
 		int mycols = ds->lcols;
-		if (mycols + linelen + 10 > core->cons->columns) {
+		if ((mycols + linelen + 10) > core->cons->columns) {
 			mycols = 0;
 		}
 		mycols /= 2;
@@ -1513,7 +1515,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 		/* print multiline comment */
 		if (ds->cmtfold) {
-			char * p = strdup (ds->comment);
+			char *p = strdup (ds->comment);
 			char *q = strchr (p, '\n');
 			if (q) {
 				*q = 0;
@@ -1524,6 +1526,9 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		} else {
 			ds->comment = r_str_prefix_all (ds->comment, "; ");
 			ALIGN;
+			if (ds->show_color) {
+				r_cons_strcat (ds->color_usrcmt);
+			}
 			ds_comment (ds, false, "%s", ds->comment);
 		}
 		if (ds->show_color) {
@@ -3592,7 +3597,8 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					ds_align_comment (ds);
 				}
 				if (ds->show_color) {
-					r_cons_strcat (ds->color_comment);
+					// r_cons_strcat (ds->color_comment);
+					r_cons_strcat (ds->color_usrcmt);
 				}
 				r_cons_printf ("; %s", comment);
 			}

@@ -528,14 +528,14 @@ RDebugPlugin r_debug_plugin_bochs = {
 	.stop = &r_debug_bochs_stop,
 	.wait = &r_debug_bochs_wait,
 	.map_get = r_debug_bochs_map_get,
-	.breakpoint = &r_debug_bochs_breakpoint,
+	.breakpoint = (RBreakpointCallback)&r_debug_bochs_breakpoint,
 	.reg_read = &r_debug_bochs_reg_read,
 	.reg_write = &r_debug_bochs_reg_write,
 	.reg_profile = (void *)r_debug_bochs_reg_profile,
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bochs,
 	.version = R2_VERSION
