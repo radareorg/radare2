@@ -82,6 +82,7 @@ static int help() {
 		"  int     ->  bin           ;  rax2 b30\n"
 		"  int     ->  ternary       ;  rax2 t42\n"
 		"  bin     ->  int           ;  rax2 1010d\n"
+		"  ternary ->  int           ;  rax2 1010dt\n"
 		"  float   ->  hex           ;  rax2 3.33f\n"
 		"  hex     ->  float         ;  rax2 Fx40551ed8\n"
 		"  oct     ->  hex           ;  rax2 35o\n"
@@ -458,6 +459,11 @@ dotherax:
 		sscanf (str, "%f", &f);
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		return true;
+	} else if (*str && str[strlen (str) - 2] == 'd'
+			&& str[strlen (str) - 1] == 't') {
+		out_mode = 'I';
+		str[strlen (str) - 2] = 't';
+		str[strlen (str) - 1] = '\0';
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
