@@ -190,6 +190,17 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 				}
 			}
 			break;
+		case 't': // ternary
+			ret = 0;
+			ut64 x = 1;
+			for (i = strlen (str) - 2; i >= 0; i--) {
+				if (str[i] < '0' || '2' < str[i]) {
+					return 0;
+				}
+				ret += x * (str[i] - '0');
+				x *= 3;
+			}
+			break;
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
