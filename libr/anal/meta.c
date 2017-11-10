@@ -233,24 +233,17 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	val = sdb_const_get (DB, key, 0);
 	if (val) {
 		if (type == R_META_TYPE_ANY) {
-			char *types = strdup (val);
-			const char *ptr = types;
-			if (!types) {
-				return false;
-			}
-			if (*ptr == R_META_TYPE_ANY) {
-				goto beach;
-			}
-			r_meta_del (a, *ptr, addr, size);
-			while ((ptr = strchr (ptr, ',')) != NULL) {
+			char item_key[100];
+			const char *ptr = val;
+			while (*ptr) {
+				snprintf (item_key, sizeof (item_key), "meta.%c.0x%" PFMT64x, *ptr, addr);
+				sdb_unset (DB, item_key, 0);
 				ptr++;
-				if (*ptr == R_META_TYPE_ANY) {
-					goto beach;
+				if (*ptr) {
+					ptr++;
 				}
-				r_meta_del (a, *ptr, addr, size);
 			}
-beach:
-			free (types);
+			sdb_unset (DB, key, 0);
 			return false;
 		}
 		if (strchr (val, ',')) {
@@ -266,7 +259,7 @@ beach:
 		} else {
 			sdb_unset (DB, key, 0);
 		}
-		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, type, addr);
+		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, type, addr);
 		sdb_unset (DB, key, 0);
 	}
 	sdb_unset (DB, key, 0);
