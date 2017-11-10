@@ -3113,6 +3113,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		str[sizeof (str)-1] = 0;
 		if (*str && r_str_is_printable (str)) {
 			// do nothing
+			/* Temporary fix for #8788 */
 			char *escstr = r_str_escape_utf8 (str, ds->show_asciidot);
 			if (escstr) {
 				msg = r_str_newf ("\"%s\" ", escstr);
