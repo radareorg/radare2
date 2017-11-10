@@ -83,7 +83,7 @@ RAsmPlugin r_asm_plugin_x86_udis = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_udis,
 	.version = R2_VERSION

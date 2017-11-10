@@ -121,7 +121,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
 	.version = R2_VERSION

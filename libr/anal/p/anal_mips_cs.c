@@ -985,7 +985,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_mips_cs,
 	.version = R2_VERSION

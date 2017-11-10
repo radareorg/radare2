@@ -17,7 +17,7 @@ struct r_bp_plugin_t r_bp_plugin_mips = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BP,
 	.data = &r_bp_plugin_mips,
 	.version = R2_VERSION

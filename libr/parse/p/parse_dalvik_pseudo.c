@@ -325,7 +325,7 @@ struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_dalvik_pseudo,
 	.version = R2_VERSION

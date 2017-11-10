@@ -182,7 +182,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_xtr_dyldcache = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_xtr_dyldcache,
 	.version = R2_VERSION

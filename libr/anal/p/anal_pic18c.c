@@ -409,7 +409,7 @@ RAnalPlugin r_anal_plugin_pic18c = {
 	.esil = true };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_pic18c,
 	.version = R2_VERSION };

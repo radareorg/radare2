@@ -175,7 +175,7 @@ struct r_parse_plugin_t r_parse_plugin_6502_pseudo = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {.type = R_LIB_TYPE_PARSE,
+RLibStruct radare_plugin = {.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_6502_pseudo,
 	.version = R2_VERSION};
 #endif

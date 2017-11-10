@@ -146,7 +146,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_elf64,
 	.version = R2_VERSION

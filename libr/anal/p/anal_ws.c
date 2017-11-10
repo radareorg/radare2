@@ -139,7 +139,7 @@ RAnalPlugin r_anal_plugin_ws = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ws,
 	.version = R2_VERSION

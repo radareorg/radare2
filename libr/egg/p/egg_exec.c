@@ -120,7 +120,7 @@ REggPlugin r_egg_plugin_exec = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_exec,
 	.version = R2_VERSION
