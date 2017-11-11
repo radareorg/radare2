@@ -430,37 +430,36 @@ dotherax:
 		return true;
 	}
 
-	if (str[0] == '0' && str[1] == 'x') {
+	if (r_str_startswith (str, "0x")) {
 		out_mode = (flags & 32)? '0': 'I';
-	} else if (str[0] == 'b') {
+	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
 		str++;
-	} else if (str[0] == 't') {
+	} else if (r_str_startswith (str, "t")) {
 		out_mode = 'T';
 		str++;
-	} else if (str[0] == 'F' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Fx")) {
 		out_mode = 'F';
 		*str = '0';
-	} else if (str[0] == 'B' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Bx")) {
 		out_mode = 'B';
 		*str = '0';
-	} else if (str[0] == 'T' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Tx")) {
 		out_mode = 'T';
 		*str = '0';
-	} else if (str[0] == 'O' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Ox")) {
 		out_mode = 'O';
 		*str = '0';
-	} else if (*str && str[strlen (str) - 1] == 'd') {
+	} else if (r_str_endswith (str, "d")) {
 		out_mode = 'I';
 		str[strlen (str) - 1] = 'b';
 		// TODO: Move print into format_output
-	} else if (*str && str[strlen (str) - 1] == 'f') {
+	} else if (r_str_endswith (str, "f")) {
 		ut8 *p = (ut8 *) &f;
 		sscanf (str, "%f", &f);
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		return true;
-	} else if (*str && str[strlen (str) - 2] == 'd'
-			&& str[strlen (str) - 1] == 't') {
+	} else if (r_str_endswith (str, "dt")) {
 		out_mode = 'I';
 		str[strlen (str) - 2] = 't';
 		str[strlen (str) - 1] = '\0';
