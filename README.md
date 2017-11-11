@@ -102,10 +102,15 @@ is not able to build all the plugins, it has been tested to work on the followin
 
 # Update
 
-To update Radare2 you don't need to uninstall or pull,
+To update Radare2 system wide you don't need to uninstall or pull,
 just re-run:
 
 	$ sys/install.sh
+
+If you installed Radare2 in the home directory,
+just re-run:
+
+	$ sys/user.sh
 
 # Uninstall
 
