@@ -1677,9 +1677,9 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 					firstItem = false;
 				}
-				int inc = (core->search->align > 0)? core->search->align - 1: ret -1;
-				if (inc < 1) {
-					inc = 1;
+				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+				if (inc < 0) {
+					inc = 0;
 				}
 	 			i += inc;
 	 			at += inc;
