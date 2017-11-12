@@ -590,7 +590,7 @@ R_API bool r_debug_session_set_idx(RDebug *dbg, int idx);
 R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail);
 R_API void r_debug_session_save(RDebug *dbg, const char *file);
 R_API void r_debug_session_restore(RDebug *dbg, const char *file);
-R_API int r_debug_step_back(RDebug *dbg);
+R_API bool r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
 
 /* plugin pointers */

@@ -3802,7 +3802,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	RAnalOp aop;
 	int i, times = 1;
 	if (strlen (input) > 2) {
-		times = atoi (input + 2);
+		times = r_num_math (core->num, input + 2);
 	}
 	if (times < 1) {
 		times = 1;
@@ -3820,7 +3820,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				core->break_loop = true;
 			}
 		} else {
-			r_core_cmdf (core, "%daes", R_MAX(1,times));
+			r_core_cmdf (core, "%daes", R_MAX (1, times));
 		}
 		break;
 	case 'i': // "dsi"
@@ -3933,12 +3933,18 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "dsb"
-		{
+		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (!r_debug_step_back (core->dbg)) {
 				eprintf ("cannot step back\n");
 			}
-			break;
+		} else {
+			if (r_core_esil_step_back (core)) {
+				r_core_cmd0 (core, ".dr*");
+			} else {
+				eprintf ("cannot step back\n");
+			}
 		}
+		break;
 	case 'l': // "dsl"
 		r_reg_arena_swap (core->dbg->reg, true);
 		step_line (core, times);

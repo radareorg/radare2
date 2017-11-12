@@ -54,10 +54,12 @@ static int r_debug_windbg_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return windbg_continue(wctx);
 }
 
+#if 0
 static void wstatic_debug_break(void *u) {
 	dbreak = true;
 	windbg_break_read (wctx);
 }
+#endif
 
 static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
@@ -211,7 +213,7 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.pids = &r_debug_windbg_pids,
 	.wait = &r_debug_windbg_wait,
 	.select = &r_debug_windbg_select,
-	.breakpoint = &r_debug_windbg_breakpoint,
+	.breakpoint = (RBreakpointCallback)&r_debug_windbg_breakpoint,
 	.reg_read = &r_debug_windbg_reg_read,
 	.reg_write = &r_debug_windbg_reg_write,
 	.reg_profile = &r_debug_windbg_reg_profile

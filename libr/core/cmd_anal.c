@@ -3110,14 +3110,15 @@ R_API int r_core_esil_step_back(RCore *core) {
 		return 0;
 	}
 	RAnalEsilSession *before = (RAnalEsilSession *) tail->data;
-
-	//eprintf ("Execute until 0x%08"PFMT64x"\n", end);
+	if (!before) {
+		eprintf ("Cannot find any previous state here\n");
+		return 0;
+	}
+	// eprintf ("Execute until 0x%08"PFMT64x"\n", end);
 
 	r_anal_esil_session_set (esil, before);
-
 	r_core_esil_step (core, end, NULL, &prev);
-	//eprintf ("Before 0x%08"PFMT64x"\n", prev);
-
+	// eprintf ("Before 0x%08"PFMT64x"\n", prev);
 	r_anal_esil_session_set (esil, before);
 	r_core_esil_step (core, prev, NULL, NULL);
 	return 1;

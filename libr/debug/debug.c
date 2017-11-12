@@ -948,26 +948,26 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
-R_API int r_debug_step_back(RDebug *dbg) {
+// TODO: add <int steps> parameter for repetition like step() and step_over() do and change return type to int
+R_API bool r_debug_step_back(RDebug *dbg) {
 	ut64 pc, prev = 0, end, cnt = 0;
 	RDebugSession *before;
 
 	if (r_debug_is_dead (dbg)) {
-		return 0;
+		return false;
 	}
 	if (!dbg->anal || !dbg->reg) {
-		return 0;
+		return false;
 	}
 	if (r_list_empty (dbg->sessions)) {
-		return 0;
+		return false;
 	}
-
 	end = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 
 	/* Get previous state */
 	before = r_debug_session_get (dbg, dbg->sessions->tail);
 	if (!before) {
-		return 0;
+		return false;
 	}
 	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
@@ -981,7 +981,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 	 * XXX: too slow... */
 	for (;;) {
 		if (r_debug_is_dead (dbg)) {
-			goto fail;
+			return false;
 		}
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		if (pc == end) {
@@ -996,7 +996,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 			cnt = 0;
 		}
 		if (!r_debug_step (dbg, 1)) {
-			goto fail;
+			return false;
 		}
 		cnt++;
 	}
@@ -1007,9 +1007,7 @@ R_API int r_debug_step_back(RDebug *dbg) {
 		eprintf ("continue until 0x%08"PFMT64x"\n", prev);
 		r_debug_continue_until_nonblock (dbg, prev);
 	}
-	return 1;
-fail:
-	return 0;
+	return true;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
