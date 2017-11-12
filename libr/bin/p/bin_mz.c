@@ -37,47 +37,43 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	unsigned int exth_offset;
-	int ret = false;
+	ut16 new_exe_header_offset;
 	if (!buf || length <= 0x3d) {
 		return false;
 	}
-	if (!memcmp (buf, "MZ", 2) || !memcmp (buf, "ZM", 2)) {
-		ret = true;
-		exth_offset = r_read_ble16 (buf + 0x3c, false);
-		if (length > exth_offset + 2) {
-			// check for PE
-			if (length > exth_offset + 0x20) {
-				if (!memcmp (buf, "MZ", 2)) {
-					if (!memcmp (buf + exth_offset, "PE", 2) &&
-						!memcmp (buf + exth_offset + 0x18,
-							"\x0b\x01", 2)) {
-						return false;
-					}
-					// check for Phar Lap TNT PL executable
-					if (!memcmp (buf + exth_offset, "PL", 2)) {
-						return false;
-					}
-				}
-			}
-			// Check for New Executable, LE/LX or Phar Lap executable
-			if (!memcmp (buf + exth_offset, "NE", 2) ||
-			    !memcmp (buf + exth_offset, "LE", 2) ||
-			    !memcmp (buf + exth_offset, "LX", 2) ||
-				!memcmp (buf + exth_offset, "PL", 2)) {
-				if (!checkEntrypoint (buf, length)) {
-					ret = false;
-				}
-			} else {
-				if (checkEntrypoint (buf, length)) {
-					/* raw plain MZ executable (watcom) */
-				} else {
-					ret = false;
-				}
+
+	// Check for MZ magic.
+	if (memcmp (buf, "MZ", 2) && memcmp (buf, "ZM", 2)) {
+		return false;
+	}
+
+	// See if there is a new exe header.
+	new_exe_header_offset = r_read_ble16 (buf + 0x3c, false);
+	if (length > new_exe_header_offset + 2) {
+		// check for PE
+		if (!memcmp (buf + new_exe_header_offset, "PE", 2) &&
+		    (length > new_exe_header_offset + 0x20) &&
+		    !memcmp (buf + new_exe_header_offset + 0x18, "\x0b\x01", 2)) {
+			return false;
+		}
+
+		// Check for New Executable, LE/LX or Phar Lap executable
+		if (!memcmp (buf + new_exe_header_offset, "NE", 2) ||
+		    !memcmp (buf + new_exe_header_offset, "LE", 2) ||
+		    !memcmp (buf + new_exe_header_offset, "LX", 2) ||
+		    !memcmp (buf + new_exe_header_offset, "PL", 2)) {
+			if (!checkEntrypoint (buf, length)) {
+				return false;
 			}
 		}
 	}
-	return ret;
+
+	// Raw plain MZ executable (watcom)
+	if (!checkEntrypoint (buf, length)) {
+		return false;
+	}
+
+	return true;
 }
 
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz,
