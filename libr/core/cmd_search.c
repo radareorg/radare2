@@ -1610,7 +1610,7 @@ r_list_foreach (param->boundaries, iter, map) {
 					core->offset = old_offset;
 					r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes);
 				}
-
+				curpc = at-nbytes;
 				snprintf(temp_inst,sizeof(temp_inst),"aepc 0x%08"PFMT64x"",curpc);
 				r_core_cmd0 (core , temp_inst);
                                 arr = malloc (bsize);
