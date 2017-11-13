@@ -2800,15 +2800,19 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 
 	ds->chref = 0;
-	if ((char)v > 0 && v >= '!' && v <= '~') {
+	{
 		ds->chref = (char)v;
 		ALIGN;
 		if (ds->immstr) {
-			char *str = r_str_from_ut64 (r_read_ble64(&v, core->print->big_endian));
-			ds_comment (ds, true, "; '%s'%s", str, nl);
+			char *str = r_str_from_ut64 (r_read_ble64 (&v, core->print->big_endian));
+			if (str && *str) {
+				ds_comment (ds, true, "; '%s'%s", str, nl);
+			}
 			free (str);
 		} else {
-			ds_comment (ds, true, "; '%c'%s", (char)v, nl);
+			if ((char)v > 0 && v >= '!' && v <= '~') {
+				ds_comment (ds, true, "; '%c'%s", (char)v, nl);
+			}
 		}
 	}
 	RList *list = NULL;

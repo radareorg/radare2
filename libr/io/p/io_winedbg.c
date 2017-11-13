@@ -296,6 +296,7 @@ const char *msg =
 				char *row = r_str_newf ("0x%08"PFMT64x" - 0x%08" PFMT64x" %s %s\n", from, to, perm, "");
 				ptr = nl + 1;
 				res = r_str_append (res, row);
+				free (row);
 			}
 			free (wineDbgMaps);
 			return res;

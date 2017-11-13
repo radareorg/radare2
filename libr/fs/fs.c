@@ -143,6 +143,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 			}
 			eprintf ("r_fs_mount: Invalid mount point\n");
 			free (str);
+			free (heapFsType);
 			return NULL;
 		}
 	}

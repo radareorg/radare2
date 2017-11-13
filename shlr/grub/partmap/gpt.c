@@ -84,7 +84,7 @@ gpt_partition_map_iterate (grub_disk_t disk,
 		       sizeof (grub_gpt_partition_type_empty)))
 	{
 	  /* Calculate the first block and the size of the partition.  */
-          memset (&part, 0, sizeof (sizeof (struct grub_partition)));
+          memset (&part, 0, sizeof (struct grub_partition));
 	  part.start = grub_le_to_cpu64 (entry.start);
 	  part.len = (grub_le_to_cpu64 (entry.end)
 		      - grub_le_to_cpu64 (entry.start) + 1);
