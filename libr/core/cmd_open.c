@@ -921,7 +921,7 @@ static int cmd_open(void *data, const char *input) {
 				char *ptr = strdup (input+2);
 				const char *arch = NULL;
 				ut16 bits = 0;
-				char *filename = NULL;
+				const char *filename = NULL;
 				i = r_str_word_set0 (ptr);
 				if (i < 2) {
 					eprintf ("Missing argument\n");

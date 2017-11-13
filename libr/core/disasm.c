@@ -2800,7 +2800,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 
 	ds->chref = 0;
-	{
+	if ((char)v > 0 && v >= '!') {
 		ds->chref = (char)v;
 		ALIGN;
 		if (ds->immstr) {
