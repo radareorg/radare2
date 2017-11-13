@@ -2157,7 +2157,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.datarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
 	SETCB ("anal.brokenrefs", "false", &cb_anal_brokenrefs, "Follow function references as well if function analysis was failed");
 
-	SETCB ("anal.searchstringrefs", "false", &cb_anal_searchstringrefs, "Search string references in data references");
+	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
 	SETCB ("anal.bb.split", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB ("anal.bb.align", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
 	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");

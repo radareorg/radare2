@@ -3111,7 +3111,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (*val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
-		if (*str && r_str_is_printable (str)) {
+		if (ds && *str && r_str_is_printable (str)) {
 			// do nothing
 			/* Temporary fix for #8788 */
 			char *escstr = r_str_escape_utf8 (str, ds->show_asciidot);
