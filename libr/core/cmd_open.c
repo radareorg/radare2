@@ -11,6 +11,7 @@
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o","","list opened files",
+	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
 	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
 	"o."," [len]","open a malloc://[len] copying the bytes from current offset",
@@ -900,6 +901,58 @@ static int cmd_open(void *data, const char *input) {
 	char **argv = NULL;
 
 	switch (*input) {
+	case 'a':
+		switch (input[1]) {
+		case '*': // "oa*"
+			{
+				RListIter *iter;
+				RBinFile *bf = NULL;
+				r_list_foreach (core->bin->binfiles, iter, bf) {
+					if (bf && bf->o && bf->o->info) {
+						eprintf ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
+					}
+				}
+				return 1;
+			}
+		case '?': // "oa?"
+		case ' ': // "oa "
+			{
+				int i;
+				char *ptr = strdup (input+2);
+				const char *arch = NULL;
+				ut16 bits = 0;
+				char *filename = NULL;
+				i = r_str_word_set0 (ptr);
+				if (i < 2) {
+					eprintf ("Missing argument\n");
+					free (ptr);
+					return 0;
+				}
+				if (i == 3) {
+					filename = r_str_word_get0 (ptr, 2);
+				}
+				bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				arch = r_str_word_get0 (ptr, 0);
+				r_core_bin_set_arch_bits (core, filename, arch, bits);
+				RBinFile *file = r_bin_file_find_by_name (core->bin, filename);
+				if (!file) {
+					eprintf ("Cannot find file %s\n", filename);
+					free (ptr);
+					return 0;
+				}
+				if (file->o && file->o->info) {
+					file->o->info->arch = strdup(arch);
+					file->o->info->bits = bits;
+					r_core_bin_set_env (core, file);
+				}
+				free (ptr);
+				return 1;
+			}
+		break;
+		default:
+			eprintf ("Usage: oa[-][arch] [bits] [filename]\n");
+			return 0;
+	}
 	case 'n':
 		if (input[1] == '*') {
 			r_core_file_list (core, 'n');
