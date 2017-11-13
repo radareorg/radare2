@@ -602,5 +602,5 @@ R_API int r_num_between (RNum *num, const char *input_value) {
 		}
 		ns[i] = r_num_math (num, input_value);
 	}
-	return num->value = R_BETWEEN(ns[0], ns[1], ns[2]);
+	return num->value = R_BETWEEN (ns[0], ns[1], ns[2]);
 }
