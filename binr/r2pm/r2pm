@@ -421,7 +421,16 @@ export PYTHON_PATH="${R2PM_PYPATH}:${PYTHON_PATH}"
 
 case "$1" in
 -i|install)
-	r2pm_install "$@"
+	if [ "$2" = "all" ]; then
+		for a in `cd ${R2PM_DBDIR} && ls` ; do
+			r2pm_install "$a"
+			if [ "$?" != 0 ]; then
+				printf "\033[31mERROR: Installation failed for $a\033[0m\n"
+			fi
+		done
+	else
+		r2pm_install "$@"
+	fi
 	;;
 -uu)
 	FILE="${R2PM_USRDIR}/pkg/$2"
@@ -604,15 +613,15 @@ suicide)
 	cat <<HELP
 Usage: r2pm [init|update|cmd] [...]
 Commands:
- -i,info                     pkgs info
- -i,install <pkgname>        baleful
- -gi,global-install <pkg>    install baleful in system
+ -i,info                     show information about a package
+ -i,install <pkgname>        install package in your home (pkgname=all)
+ -gi,global-install <pkg>    install package system-wide
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
  -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
  -l,list                     list installed pkgs
  -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
  -s,search [<keyword>]       search in database
- -t,test FX,XX,BR BID        check in travis regressions
+ -t,test FX,XX,BR BID        check in Travis regressions
  -v,version                  show version
  -h,help                     show this message
  -H variable                 show value of given variable
