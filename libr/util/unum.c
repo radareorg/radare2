@@ -190,6 +190,17 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 				}
 			}
 			break;
+		case 't': // ternary
+			ret = 0;
+			ut64 x = 1;
+			for (i = strlen (str) - 2; i >= 0; i--) {
+				if (str[i] < '0' || '2' < str[i]) {
+					return 0;
+				}
+				ret += x * (str[i] - '0');
+				x *= 3;
+			}
+			break;
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
@@ -399,19 +410,16 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	return size;
 }
 
-static const char *trit_c = "012";
-
 R_API int r_num_to_trits (char *out, ut64 num) {
-	int i = 63, j;
-	while (i>=0 && num) {
-		out[i] = trit_c[num % 3];
-		num = num/3;
-		i--;
+	if (out == NULL) {
+		return false;
 	}
-	j = 63 - i;
-	i++;
-	memmove (out, &out[i], j);
-	out[j] = '\0';
+	int i;
+	for (i = 0; num; i++, num /= 3) {
+		out[i] = (char) ('0' + num % 3);
+	}
+	out[i] = '\0';
+	r_str_reverse (out);
 	return true;
 }
 

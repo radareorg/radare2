@@ -75,44 +75,46 @@ static int format_output(char mode, const char *s) {
 static int help() {
 	printf (
 		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
-		"  int   ->  hex           ;  rax2 10\n"
-		"  hex   ->  int           ;  rax2 0xa\n"
-		"  -int  ->  hex           ;  rax2 -77\n"
-		"  -hex  ->  int           ;  rax2 0xffffffb3\n"
-		"  int   ->  bin           ;  rax2 b30\n"
-		"  int   ->  ternary       ;  rax2 t42\n"
-		"  bin   ->  int           ;  rax2 1010d\n"
-		"  float ->  hex           ;  rax2 3.33f\n"
-		"  hex   ->  float         ;  rax2 Fx40551ed8\n"
-		"  oct   ->  hex           ;  rax2 35o\n"
-		"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
-		"  bin   ->  hex           ;  rax2 1100011b\n"
-		"  hex   ->  bin           ;  rax2 Bx63\n"
-		"  hex   ->  ternary       ;  rax2 Tx23\n"
-		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
-		"  hex   ->  raw           ;  rax2 -s 414141\n"
-		"  -l                      ;  append newline to output (for -E/-D/-r/..\n"
-		"  -b    bin -> str        ;  rax2 -b 01000101 01110110\n"
-		"  -B    str -> bin        ;  rax2 -B hello\n"
-		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
-		"  -e    swap endianness   ;  rax2 -e 0x33\n"
-		"  -D    base64 decode     ;\n"
-		"  -E    base64 encode     ;\n"
-		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
-		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
-		"  -h    help              ;  rax2 -h\n"
-		"  -k    keep base         ;  rax2 -k 33+3 -> 36\n"
-		"  -K    randomart         ;  rax2 -K 0x34 1020304050\n"
-		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
-		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
-		"  -r    r2 style output   ;  rax2 -r 0x1234\n"
-		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
-		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
-		"  -t    tstamp -> str     ;  rax2 -t 1234567890\n"
-		"  -x    hash string       ;  rax2 -x linux osx\n"
-		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
-		"  -w    signed word       ;  rax2 -w 16 0xffff\n"
-		"  -v    version           ;  rax2 -v\n");
+		"  int     ->  hex           ;  rax2 10\n"
+		"  hex     ->  int           ;  rax2 0xa\n"
+		"  -int    ->  hex           ;  rax2 -77\n"
+		"  -hex    ->  int           ;  rax2 0xffffffb3\n"
+		"  int     ->  bin           ;  rax2 b30\n"
+		"  int     ->  ternary       ;  rax2 t42\n"
+		"  bin     ->  int           ;  rax2 1010d\n"
+		"  ternary ->  int           ;  rax2 1010dt\n"
+		"  float   ->  hex           ;  rax2 3.33f\n"
+		"  hex     ->  float         ;  rax2 Fx40551ed8\n"
+		"  oct     ->  hex           ;  rax2 35o\n"
+		"  hex     ->  oct           ;  rax2 Ox12 (O is a letter)\n"
+		"  bin     ->  hex           ;  rax2 1100011b\n"
+		"  hex     ->  bin           ;  rax2 Bx63\n"
+		"  ternary ->  hex           ;  rax2 212t\n"
+		"  hex     ->  ternary       ;  rax2 Tx23\n"
+		"  raw     ->  hex           ;  rax2 -S < /binfile\n"
+		"  hex     ->  raw           ;  rax2 -s 414141\n"
+		"  -l                        ;  append newline to output (for -E/-D/-r/..\n"
+		"  -b      bin -> str        ;  rax2 -b 01000101 01110110\n"
+		"  -B      str -> bin        ;  rax2 -B hello\n"
+		"  -d      force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
+		"  -e      swap endianness   ;  rax2 -e 0x33\n"
+		"  -D      base64 decode     ;\n"
+		"  -E      base64 encode     ;\n"
+		"  -f      floating point    ;  rax2 -f 6.3+2.1\n"
+		"  -F      stdin slurp C hex ;  rax2 -F < shellcode.c\n"
+		"  -h      help              ;  rax2 -h\n"
+		"  -k      keep base         ;  rax2 -k 33+3 -> 36\n"
+		"  -K      randomart         ;  rax2 -K 0x34 1020304050\n"
+		"  -n      binary number     ;  rax2 -n 0x1234 # 34120000\n"
+		"  -N      binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
+		"  -r      r2 style output   ;  rax2 -r 0x1234\n"
+		"  -s      hexstr -> raw     ;  rax2 -s 43 4a 50\n"
+		"  -S      raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
+		"  -t      tstamp -> str     ;  rax2 -t 1234567890\n"
+		"  -x      hash string       ;  rax2 -x linux osx\n"
+		"  -u      units             ;  rax2 -u 389289238 # 317.0M\n"
+		"  -w      signed word       ;  rax2 -w 16 0xffff\n"
+		"  -v      version           ;  rax2 -v\n");
 	return true;
 }
 
@@ -428,35 +430,39 @@ dotherax:
 		return true;
 	}
 
-	if (str[0] == '0' && str[1] == 'x') {
+	if (r_str_startswith (str, "0x")) {
 		out_mode = (flags & 32)? '0': 'I';
-	} else if (str[0] == 'b') {
+	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
 		str++;
-	} else if (str[0] == 't') {
+	} else if (r_str_startswith (str, "t")) {
 		out_mode = 'T';
 		str++;
-	} else if (str[0] == 'F' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Fx")) {
 		out_mode = 'F';
 		*str = '0';
-	} else if (str[0] == 'B' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Bx")) {
 		out_mode = 'B';
 		*str = '0';
-	} else if (str[0] == 'T' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Tx")) {
 		out_mode = 'T';
 		*str = '0';
-	} else if (str[0] == 'O' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Ox")) {
 		out_mode = 'O';
 		*str = '0';
-	} else if (*str && str[strlen (str) - 1] == 'd') {
+	} else if (r_str_endswith (str, "d")) {
 		out_mode = 'I';
 		str[strlen (str) - 1] = 'b';
 		// TODO: Move print into format_output
-	} else if (*str && str[strlen (str) - 1] == 'f') {
+	} else if (r_str_endswith (str, "f")) {
 		ut8 *p = (ut8 *) &f;
 		sscanf (str, "%f", &f);
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		return true;
+	} else if (r_str_endswith (str, "dt")) {
+		out_mode = 'I';
+		str[strlen (str) - 2] = 't';
+		str[strlen (str) - 1] = '\0';
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
