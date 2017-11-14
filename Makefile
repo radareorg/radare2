@@ -378,11 +378,11 @@ tests:
 	fi
 	cd $(R2R) ; ${MAKE}
 
-osx-sign:
-	$(MAKE) -C binr/radare2 osx-sign
+macos-sign:
+	$(MAKE) -C binr/radare2 macos-sign
 
-osx-sign-libs:
-	$(MAKE) -C binr/radare2 osx-sign-libs
+macos-sign-libs:
+	$(MAKE) -C binr/radare2 macos-sign-libs
 
 osx-pkg:
 	sys/osx-pkg.sh $(VERSION)
