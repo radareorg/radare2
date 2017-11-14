@@ -3060,8 +3060,9 @@ repeat:
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	if (follow > 0) {
-		if ((pc < core->offset) || (pc > (core->offset + follow)))
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			r_core_cmd0 (core, "sr PC");
+		}
 	}
 
 	// check addr
@@ -3115,11 +3116,13 @@ R_API int r_core_esil_step_back(RCore *core) {
 		eprintf ("Cannot find any previous state here\n");
 		return 0;
 	}
-	// eprintf ("Execute until 0x%08"PFMT64x"\n", end);
-
+	eprintf ("NOTE: step back in esil is setting an initial state and stepping into pc is the same.\n");
+	eprintf ("NOTE: this is extremely wrong and poorly efficient. so don't use this feature unless\n");
+	eprintf ("NOTE: you are going to fix it by making it consistent with dts, which is also broken as hell\n");
+	eprintf ("Execute until 0x%08"PFMT64x"\n", end);
 	r_anal_esil_session_set (esil, before);
 	r_core_esil_step (core, end, NULL, &prev);
-	// eprintf ("Before 0x%08"PFMT64x"\n", prev);
+	eprintf ("Before 0x%08"PFMT64x"\n", prev);
 	r_anal_esil_session_set (esil, before);
 	r_core_esil_step (core, prev, NULL, NULL);
 	return 1;

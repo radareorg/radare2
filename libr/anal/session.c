@@ -54,7 +54,8 @@ R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
 	r_reg_arena_push (esil->anal->reg);
 
 	/* Save current memory dump */
-	esil->anal->iob.read_at (esil->anal->iob.io, session->addr, session->data, session->size);
+	esil->anal->iob.read_at (esil->anal->iob.io, session->addr,
+		session->data, session->size);
 
 	r_list_append (esil->sessions, session);
 	return session;
@@ -65,14 +66,14 @@ R_API void r_anal_esil_session_set(RAnalEsil *esil, RAnalEsilSession *session) {
 		return;
 	}
 	ut32 i;
-	RListIter *iter;
 	/* Restore registers */
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		iter = session->reg[i];
+		RListIter *iter = session->reg[i];
 		RRegArena *arena = iter->data;
 		if (esil->anal->reg->regset[i].arena->bytes) {
 			if (esil->anal->reg->regset[i].arena->size >= arena->size) {
-				memcpy (esil->anal->reg->regset[i].arena->bytes, arena->bytes, arena->size);
+				memcpy (esil->anal->reg->regset[i].arena->bytes,
+					arena->bytes, arena->size);
 			}
 		}
 	}
