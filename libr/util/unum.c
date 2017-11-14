@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
 #include <stdlib.h>
@@ -554,7 +554,7 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
 
 static bool isHexDigit (const char _ch) {
 	const char ch = tolower (_ch);
-	if (IS_DIGIT(ch)) {
+	if (IS_DIGIT (ch)) {
 		return true;
 	}
 	return (ch >= 'a' && ch <= 'f');
@@ -566,24 +566,21 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	char *p;
 	int i;
 
-	while (*hex && (*hex==' ' || *hex=='.')) {
+	while (*hex && (*hex == ' ' || *hex=='.')) {
 		hex++;
 	}
 	i = strlen (hex) * 4;
-	p = malloc (strlen (hex)+10);
+	p = malloc (strlen (hex) + 10);
 	if (p) {
 		strcpy (p, "0x");
-		strcpy (p+2, hex);
+		strcpy (p + 2, hex);
 		if (isHexDigit (hex[0])) {
 			n = r_num_math (num, p);
 		} else {
 			eprintf ("Invalid argument\n");
-			n = 0;
+			return addr;
 		}
 		free (p);
-	}
-	if (!n) {
-		return UT64_MAX;
 	}
 	mask = UT64_MAX << i;
 	return (addr & mask) | n;
