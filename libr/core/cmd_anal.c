@@ -446,6 +446,7 @@ static const char *help_msg_ah[] = {
 	"ahc", " 0x804804", "override call/jump address",
 	"ahe", " 3,eax,+=", "set vm analysis string",
 	"ahf", " 0x804840", "override fallback address for call",
+	"ahh", " 0x804840", "highlight this adrress offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
 	"aho", " foo a0,33", "replace opcode string",
@@ -4991,6 +4992,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_set_immbase (core->anal, core->offset, 0);
 		} else {
 			eprintf ("|ERROR| Usage: ahi [base]\n");
+		}
+		break;
+	case 'h': // "ahh"
+		if (input[1] == '-') {
+			r_anal_hint_unset_high (core->anal, core->offset);
+		} else if (input[1] == ' ') {
+			r_anal_hint_set_high (core->anal, r_num_math (core->num, input + 1));
+		} else {
+			r_anal_hint_set_high (core->anal, core->offset);
 		}
 		break;
 	case 'c': // "ahc"

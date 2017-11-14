@@ -92,6 +92,7 @@ typedef struct r_disam_options_t {
 	bool show_dwarf;
 	bool show_size;
 	bool show_trace;
+	bool highlight;
 	bool show_family;
 	bool asm_describe;
 	int linesout;
@@ -882,6 +883,8 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 				hint_syntax = strdup (r_config_get (core->config, "asm.syntax"));
 			}
 			r_config_set (core->config, "asm.syntax", hint->syntax);
+		}
+		if (hint->high) {
 		}
 	}
 	return hint;
@@ -1933,9 +1936,11 @@ static void ds_print_offset(RDisasmState *ds) {
 			}
 		}
 		if (ds->show_trace) {
-			RDebugTracepoint *tp = NULL;
-			tp = r_debug_trace_get (ds->core->dbg, ds->at);
-			show_trace = (tp?!!tp->count:false);
+			RDebugTracepoint *tp = r_debug_trace_get (ds->core->dbg, ds->at);
+			show_trace = (tp? !!tp->count: false);
+		}
+		if (ds->hint && ds->hint->high) {
+			show_trace = true;
 		}
 		r_print_offset (core->print, at, (at == ds->dest) || show_trace,
 				ds->show_offseg, ds->show_offdec, delta, label);
@@ -4641,15 +4646,23 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 		if (len > cur_buf_sz) {
 			free (buf);
-			cur_buf_sz = len;
 			buf = malloc (cur_buf_sz);
 			ds->buf = buf;
+			if (buf) {
+				cur_buf_sz = len;
+			} else {
+				cur_buf_sz = 0;
+			}
 		}
 		do {
 			// XXX - why is it necessary to set this everytime?
 			r_asm_set_pc (core->assembler, ds->at);
-			if (ds->lines >= ds->l) break;
-			if (r_cons_is_breaked ()) break;
+			if (ds->lines >= ds->l) {
+				break;
+			}
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 
 			ds_update_ref_lines (ds);
 			/* show type links */

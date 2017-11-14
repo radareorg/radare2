@@ -67,6 +67,10 @@ R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "fail:", addr, NULL, ptr);
 }
 
+R_API void r_anal_hint_set_high(RAnal *a, ut64 addr) {
+	setHint (a, "high:", addr, NULL, 1);
+}
+
 R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base) {
 	if (base) {
 		setHint (a, "immbase:", addr, NULL, (ut64)base);
@@ -121,6 +125,10 @@ R_API void r_anal_hint_unset_opcode(RAnal *a, ut64 addr) {
 	unsetHint(a, "opcode:", addr);
 }
 
+R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr) {
+	unsetHint(a, "high:", addr);
+}
+
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr) {
 	unsetHint(a, "arch:", addr);
 }
@@ -160,13 +168,12 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	char *r, *nxt, *nxt2;
 	int token = 0;
 	RAnalHint *hint = R_NEW0 (RAnalHint);
-	char *s;
 	if (!hint) {
 		return NULL;
 	}
 	hint->jump = UT64_MAX;
 	hint->fail = UT64_MAX;
-	s = strdup (str);
+	char *s = strdup (str);
 	if (!s) {
 		free (hint);
 		return NULL;
@@ -192,6 +199,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'O': hint->offset = (char*)sdb_decode (nxt, 0); break;
 			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;
 			case 'a': hint->arch = (char*)sdb_decode (nxt, 0); break;
+			case 'h': hint->high = sdb_atoi (nxt); break;
 			}
 		}
 		if (!nxt || !nxt2) {
