@@ -586,8 +586,8 @@ task_t pid_to_task (int pid) {
 							(char *)MACH_ERROR_STRING (err));
 				}
 				eprintf ("You probably need to run as root or sign "
-					"the binary.\n Read doc/ios.md || doc/osx.md\n"
-					" make -C binr/radare2 ios-sign || osx-sign\n");
+					"the binary.\n Read doc/ios.md || doc/macos.md\n"
+					" make -C binr/radare2 ios-sign || macos-sign\n");
 				return 0;
 			}
 		}
