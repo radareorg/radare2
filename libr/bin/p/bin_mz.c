@@ -183,6 +183,39 @@ static RBinInfo * info(RBinFile *bf) {
 	return ret;
 }
 
+static void header(RBinFile *bf) {
+	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *) bf->o->bin_obj;
+	eprintf("[0000:0000]  Signature           %c%c\n",
+		mz->dos_header->signature & 0xFF,
+		mz->dos_header->signature >> 8);
+	eprintf("[0000:0002]  BytesInLastBlock    0x%04x\n",
+	   mz->dos_header->bytes_in_last_block);
+	eprintf("[0000:0004]  BlocksInFile        0x%04x\n",
+	    mz->dos_header->blocks_in_file);
+	eprintf("[0000:0006]  NumRelocs           0x%04x\n",
+	    mz->dos_header->num_relocs);
+	eprintf("[0000:0008]  HeaderParagraphs    0x%04x\n",
+	    mz->dos_header->header_paragraphs);
+	eprintf("[0000:000a]  MinExtraParagraphs  0x%04x\n",
+	    mz->dos_header->min_extra_paragraphs);
+	eprintf("[0000:000c]  MaxExtraParagraphs  0x%04x\n",
+	    mz->dos_header->max_extra_paragraphs);
+	eprintf("[0000:000e]  InitialSs           0x%04x\n",
+	    mz->dos_header->ss);
+	eprintf("[0000:0010]  InitialSp           0x%04x\n",
+	    mz->dos_header->sp);
+	eprintf("[0000:0012]  Checksum            0x%04x\n",
+	    mz->dos_header->checksum);
+	eprintf("[0000:0014]  InitialIp           0x%04x\n",
+	    mz->dos_header->ip);
+	eprintf("[0000:0016]  InitialCs           0x%04x\n",
+	    mz->dos_header->cs);
+	eprintf("[0000:0018]  RelocTableOffset    0x%04x\n",
+	    mz->dos_header->reloc_table_offset);
+	eprintf("[0000:001a]  OverlayNumber       0x%04x\n",
+	    mz->dos_header->overlay_number);
+}
+
 static RList * relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *rel = NULL;
@@ -225,6 +258,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
+	.header = &header,
 	.relocs = &relocs,
 	.minstrlen = 4,
 };
