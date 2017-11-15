@@ -51,16 +51,16 @@ After Mac OS X 10.6, binaries that need permissions to debug require to be signe
 
 As said before, the signing process can also be done manually following the next process. First, you will need to sign the radare2 binary:
 
-	$ make -C binr/radare2 osxsign
+	$ make -C binr/radare2 macossign
 
 But this is not enough. As long as r2 code is splitted into several libraries, you should sign every single dependency (libr*).
 
-	$ make -C binr/radare2 osx-sign-libs
+	$ make -C binr/radare2 macos-sign-libs
 
 Another alternative is to build a static version of r2 and just sign it.
 
 	$ sys/static.sh
-	$ make -C binr/radare2 osxsign
+	$ make -C binr/radare2 macossign
 
 You can verify that the binary is properly signed and verified by using the code signing utility:
 

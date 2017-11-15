@@ -45,7 +45,7 @@ ios-sign iossign sign:
 ios_sdk_sign:
 	-codesign -s- --entitlements radare2.xml radare2
 
-osx-sign osxsign:
+macos-sign macossign:
 	rm -f radare2
 	${CC} radare2.c ${CFLAGS} ${LDFLAGS} -o radare2 \
 		-sectcreate __TEXT __info_plist Info.plist \
@@ -57,7 +57,7 @@ osx-sign osxsign:
 	#sudo chmod g+s radare2
 #	sudo chmod 4755 radare2
 
-osx-sign-libs:
+macos-sign-libs:
 	for LIB in ${SIGN_LIBS} ; do \
 		echo Signing $$LIB ; \
 		codesign -f -s ${CERTID} $$LIB ; \
