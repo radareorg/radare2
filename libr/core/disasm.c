@@ -2704,10 +2704,9 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
-static void ds_print_str(RDisasmState *ds, const char *str, int len) {
-	const char *nl = ds->show_comment_right ? "" : "\n";
+static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out) {
 	int str_len;
-	char *escstr;
+	char *escstr = NULL;
 	const char *prefix = "";
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
@@ -2764,6 +2763,16 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 			          r_str_escape_latin1 (str, ds->show_asciidot, false));
 		}
 	}
+	if (prefix_out) {
+		*prefix_out = prefix;
+	}
+	return escstr;
+}
+
+static void ds_print_str(RDisasmState *ds, const char *str, int len) {
+	const char *nl = ds->show_comment_right ? "" : "\n";
+	const char *prefix;
+	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
 		ALIGN;
 		ds_comment (ds, true, "; %s\"%s\"%s", prefix, escstr, nl);
@@ -3102,6 +3111,7 @@ static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return 1;
 }
 
+#define R_DISASM_MAX_STR 512
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
@@ -3121,11 +3131,16 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
 		if (ds && *str && r_str_is_printable (str)) {
-			// do nothing
-			/* Temporary fix for #8788 */
-			char *escstr = r_str_escape_utf8 (str, ds->show_asciidot);
+			RCore *core = ds->core;
+			const char *prefix;
+			char *escstr;
+			ut32 len = core->blocksize + 256;
+			if (len < core->blocksize || len > R_DISASM_MAX_STR) {
+				len = R_DISASM_MAX_STR;
+			}
+			escstr = ds_esc_str (ds, str, (int)len, &prefix);
 			if (escstr) {
-				msg = r_str_newf ("\"%s\" ", escstr);
+				msg = r_str_newf ("%s\"%s\" ", prefix, escstr);
 				free (escstr);
 			}
 		} else {
