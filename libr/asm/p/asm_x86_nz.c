@@ -627,6 +627,9 @@ static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].reg == X86R_UNDEFINED) {
 			return -1;
 		}
+		if (a->bits == 64 && op->operands[0].extended) {
+			data[l++] = 0x41;
+		}
 		data[l++] = 0xff;
 		mod = 3;
 		data[l++] = mod << 6 | 2 << 3 | op->operands[0].reg;
@@ -1760,6 +1763,9 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = base + (8 * op->operands[0].reg);
 		} else {
+			if (op->operands[0].extended && a->bits == 64) {
+				data[l++] = 0x41;
+			}
 			ut8 base = 0x50;
 			data[l++] = base + op->operands[0].reg;
 		}
