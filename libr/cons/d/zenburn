@@ -12,6 +12,7 @@ ec cjmp rgb:d52
 ec jmp rgb:d52
 ec cmp rgb:ff8
 ec comment rgb:7a7
+ec usrcmt rgb:d52
 ec ret rgb:ff8
 ec fline rgb:ddc
 ec flow rgb:d50

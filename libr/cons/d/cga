@@ -1,4 +1,5 @@
 ec comment rgb:0ff
+ec usrcmt rgb:f0f
 ec mov white
 ec fname rgb:f00
 ec args white

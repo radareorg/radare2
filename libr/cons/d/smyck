@@ -10,6 +10,7 @@ ec cjmp rgb:9c4
 ec jmp rgb:9c4
 ec cmp rgb:888
 ec comment rgb:9df
+ec usrcmt rgb:9f4
 ec ret rgb:d66
 ec num rgb:bb5
 ec fline rgb:2bc

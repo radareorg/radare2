@@ -8,6 +8,7 @@ ec jmp rgb:03f
 ec cjmp rgb:33c
 ec offset rgb:366
 ec comment rgb:0cf
+ec usrcmt rgb:ff0 rgb:06f
 ec push rgb:0c0
 ec pop rgb:0c0
 ec cmp rgb:060

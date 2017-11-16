@@ -17,6 +17,7 @@ ec prompt black
 ec flag rgb:28d
 ec fname rgb:28d
 ec comment rgb:d38
+ec usrcmt black
 ec reg rgb:28d
 ec creg rgb:28d
 ec trap rgb:e33

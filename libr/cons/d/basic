@@ -8,6 +8,7 @@ ec fline `k one`
 ec flag `k one`
 ec offset `k two`
 ec comment red
+ec usrcmt green
 ec flow green
 ec flow2 green
 ec b0x00 white

@@ -8,6 +8,7 @@ ec cjmp rgb:890 # b80 #ee8
 ec jmp rgb:e37
 ec cmp rgb:c41 # ffe
 ec comment rgb:28d
+ec usrcmt rgb:890
 ec ret rgb:899
 ec fline rgb:b80
 ec flow rgb:3a9

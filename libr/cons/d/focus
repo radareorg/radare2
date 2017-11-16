@@ -1,4 +1,3 @@
-ec comment rgb:06f
 ec fname rgb:0cf rgb:000
 ec label rgb:0cf rgb:000
 ec math rgb:ccc
@@ -11,6 +10,7 @@ ec trap rgb:000 rgb:f00
 ec offset rgb:fff
 ec prompt yellow 
 ec comment rgb:0cf
+ec usrcmt rgb:ff0 rgb:06f
 ec push rgb:f3f
 ec pop rgb:000 rgb:f3f
 ec cmp rgb:000 rgb:0f0

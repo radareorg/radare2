@@ -17,6 +17,7 @@ ec prompt black
 ec flag blue
 ec fname blue
 ec comment magenta
+ec usrcmt green
 ec reg blue
 ec creg blue
 ec trap red

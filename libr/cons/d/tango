@@ -26,6 +26,7 @@ ec cjmp rgb:370
 ec jmp rgb:370
 ec cmp rgb:bbb
 ec comment rgb:370
+ec usrcmt rgb:7d1
 ec ret rgb:248
 ec fline rgb:950
 ec flow rgb:248

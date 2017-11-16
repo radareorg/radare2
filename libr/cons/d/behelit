@@ -11,6 +11,7 @@ ec prompt rgb:5f87ff
 ec args rgb:ff005f
 ec help rgb:af87d7
 ec comment rgb:ff005f
+ec usrcmt rgb:000000 rgb:5f87ff
 ec flag rgb:5f87ff
 ec fline rgb:af87ff
 ec fname rgb:5f87ff
