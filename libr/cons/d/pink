@@ -21,7 +21,8 @@ ec push rgb:75a
 ec pop rgb:75a
 ec jmp rgb:f5d
 ec cjmp rgb:f5d
-ec call rgb:f5d rgb:502
+ec usrcmt rgb:f5d rgb:502
+ec call rgb:000 rgb:faf
 ec nop rgb:fa5
 ec ret rgb:ffa
 ec trap rgb:a22
