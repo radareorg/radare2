@@ -66,13 +66,14 @@ static const char *help_msg_CS[] = {
 static const char *help_msg_Cs[] = {
 	"Usage:", "Cs[ga-*.] [size] [@addr]", "",
 	"NOTE:", " size", "1 unit in bytes == width in bytes of smallest possible char in encoding,",
-	"", "", "  so ascii/latin1 = 1, utf16le = 2",
+	"", "", "  so ascii/latin1/utf8 = 1, utf16le = 2",
 	"Cs", "", "list all strings in human friendly form",
 	"Cs*", "", "list all strings in r2 commands",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
 	"Csg", " [size] [@addr]", "as above but addr not needed",
 	" Cz", " [size] [@addr]", "ditto",
 	"Csa", " [size] [@addr]", "add ascii/latin1 string",
+	"Cs8", " [size] [@addr]", "add utf8 string",
 	"Cs-", " [@addr]", "remove string",
 	"Cs.", "", "show string at current address",
 	"Cs..", "", "show string + info about it at current address",
@@ -622,6 +623,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	case '\0':
 	case 'g':
 	case 'a':
+	case '8':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
 			r_meta_list (core->anal, type, 0);
 			break;
@@ -677,7 +679,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				} else if (type == 's') { //Cs
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
-					if (input[1] == 'a') {
+					if (input[1] == 'a' || input[1] == '8') {
 						(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
 						name[sizeof (name) - 1] = '\0';
 						name_len = strlen (name);
@@ -732,7 +734,14 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			}
 			addr_end = addr + n;
 			if (type == 's') {
-				subtype = input[1] == 'a' ? R_STRING_ENC_LATIN1 : R_STRING_ENC_GUESS;
+				switch (input[1]) {
+				case 'a':
+				case '8':
+					subtype = input[1];
+					break;
+				default:
+					subtype = R_STRING_ENC_GUESS;
+				}
 				r_meta_add_with_subtype (core->anal, type, subtype, addr, addr_end, name);
 			} else {
 				r_meta_add (core->anal, type, addr, addr_end, name);

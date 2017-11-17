@@ -439,7 +439,11 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 		}
 	}
 	if (d->type == 's') {
-		str = r_str_escape_latin1 (d->str, false, true);
+		if (d->subtype == R_STRING_ENC_UTF8) {
+			str = r_str_escape_utf8 (d->str, false, true);
+		} else {
+			str = r_str_escape_latin1 (d->str, false, true);
+		}
 	} else {
 		str = r_str_escape (d->str);
 	}
@@ -514,17 +518,32 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 				break;
 			case 's': /* string */
 				if (rad) {
-					const char *cmd = d->subtype == 'a' ? "Csa" : "Cs";
+					char cmd[] = "Cs#";
+					switch (d->subtype) {
+					case 'a':
+					case '8':
+						cmd[2] = d->subtype;
+						break;
+					default:
+						cmd[2] = 0;
+					}
 					a->cb_printf ("%s %d @ 0x%08"PFMT64x" # %s\n",
 							cmd, (int)d->size, d->from, pstr);
 				} else {
-					const char *ascii = r_str_is_ascii (d->str) ? "ascii" : "latin1";
+					const char *enc;
+					switch (d->subtype) {
+					case '8':
+						enc = "utf8";
+						break;
+					default:
+						enc = r_str_is_ascii (d->str) ? "ascii" : "latin1";
+					}
 					if (show_full) {
 						a->cb_printf ("0x%08"PFMT64x" %s[%d] \"%s\"\n",
-						              d->from, ascii, (int)d->size, pstr);
+						              d->from, enc, (int)d->size, pstr);
 					} else {
 						a->cb_printf ("%s[%d] \"%s\"\n",
-						              ascii, (int)d->size, pstr);
+						              enc, (int)d->size, pstr);
 					}
 				}
 				break;

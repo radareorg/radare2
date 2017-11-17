@@ -2713,7 +2713,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 		escstr = r_str_escape_latin1 (str, ds->show_asciidot, false);
 		break;
 	case R_STRING_ENC_UTF8:
-		escstr = r_str_escape_utf8 (str, ds->show_asciidot);
+		escstr = r_str_escape_utf8 (str, ds->show_asciidot, false);
 		break;
 	case R_STRING_ENC_UTF16LE:
 		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
@@ -2759,7 +2759,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
-			          r_str_escape_utf8 (str, ds->show_asciidot) :
+			          r_str_escape_utf8 (str, ds->show_asciidot, false) :
 			          r_str_escape_latin1 (str, ds->show_asciidot, false));
 		}
 	}
