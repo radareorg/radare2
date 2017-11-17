@@ -1352,7 +1352,7 @@ R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool ign_bs
 	return r_str_escape_ (buf, false, false, show_asciidot, ign_bslash);
 }
 
-static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot) {
+static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool ign_bslash) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1416,7 +1416,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
 		} else {
-			r_str_byte_escape (p, &q, false, false, false);
+			r_str_byte_escape (p, &q, false, false, ign_bslash);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
@@ -1433,16 +1433,16 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	return new_buf;
 }
 
-R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot) {
-	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot);
+R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool ign_bslash) {
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, ign_bslash);
 }
 
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, false);
 }
 
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, false);
 }
 
 /* ansi helpers */
