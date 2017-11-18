@@ -841,7 +841,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 
 		snprintf (key, sizeof (key), "verdef%u", cnt);
 		sdb_ns_set (sdb, key, sdb_verdef);
-		if (!verdef->vd_next || shdr->sh_size - vstart_off < verdef->vd_next) {
+		if (!verdef->vd_next || shdr->sh_size - i < verdef->vd_next) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
