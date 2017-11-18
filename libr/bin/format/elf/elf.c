@@ -735,6 +735,9 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 #endif
 		return false;
 	}
+	if (shdr->sh_size < sizeof (Elf_(Verdef)) || shdr->sh_size < sizeof (Elf_(Verdaux))) {
+		return false;
+	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (!defs) {
 		return false;
@@ -838,7 +841,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 
 		snprintf (key, sizeof (key), "verdef%u", cnt);
 		sdb_ns_set (sdb, key, sdb_verdef);
-		if (!verdef->vd_next) {
+		if (!verdef->vd_next || shdr->sh_size - vstart_off < verdef->vd_next) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
