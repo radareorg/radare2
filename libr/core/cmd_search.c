@@ -37,6 +37,7 @@ static const char *help_msg_slash[] = {
 	"/P", " patternsize", "search similar blocks",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
+	"/s", "", "search for all syscalls in a region",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
@@ -1552,137 +1553,131 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
 	ut64 at;
-	ut64 curpc ;
+	ut64 curpc;
 	ut8 *buf;
 	ut8 *arr;
 	RAnalOp aop;
-	int i,j,inslen, ret, bsize = R_MIN (64, core->blocksize);
+	int i,j,inslen, ret, bsize = R_MIN (64,core->blocksize);
 	int kwidx = core->search->n_kws;
 	int count = 0;	
-	char *input = "swi";
-	char temp_inst[50] ;
-	int nb_opcodes = 8 ;
+	int nb_opcodes = 8;
 	ut64 old_offset = core->offset;
 	int nbytes = 0;
-	RAnalEsil *ESIL = core->anal->esil;
-
-	r_core_cmd0 (core, "aei");
-	r_core_cmd0 (core, "aeim");
-	r_core_cmd0 (core, "aeip");
-
-	buf = malloc (bsize);
-	if (!buf) {
-		eprintf ("Cannot allocate %d bytes\n", bsize);
+	RAnalEsil *esil = core->anal->esil;
+	RIOMap* map;
+	RListIter *iter; 
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	int bits   = r_config_get_i (core->config, "asm.bits");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	
+	if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
+		return;
+	}	
+	buf = malloc (bsize);	
+	arr = malloc (bsize);
+	if (!buf || !arr) {
+		eprintf ("Cannot allocate %d bytes\n",bsize);
 		return;
 	}
-	r_cons_break_push (NULL, NULL);
-RIOMap* map;
-RListIter *iter;
-r_list_foreach (param->boundaries, iter, map) {
-	ut64 from = map->itv.addr;
-	ut64 to = r_itv_end (map->itv);
-	for (i = 0, at = from; at < to; at++, i++) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		if (i >= (bsize - 32)) {
-			i = 0;
-		}
-		if (!i) {
-			r_core_read_at (core, at, buf, bsize);
-			
-		}
-		ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
-		if (ret) {
-			bool match = false;
-			const char *type = r_anal_optype_to_string (aop.type);
-			if (type) {
-				if (!*input || !strcmp (input, type)) {
+	r_cons_break_push (NULL,NULL);
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = map->itv.addr;
+		ut64 to = r_itv_end (map->itv);
+		for (i = 0, at = from; at < to; at++, i++) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (i >= (bsize - 32)) {
+				i = 0;
+			}
+			if (!i) {
+				r_core_read_at (core,at,buf,bsize);
+			}
+			ret = r_anal_op (core->anal,&aop,at,buf + i,bsize - i);
+			if (ret) {
+				bool match = false;
+				if (aop.type == R_ANAL_OP_TYPE_SWI) {
 					match = true;
 				}
-			}
-			if (match) {
-	
-				// This for calculating no of bytes to be subtracted , to get 8 instr above syscall
-				if (r_core_prevop_addr (core, core->offset, nb_opcodes, &core->offset)) {
-				nbytes = old_offset - core->offset;
-				} else {
-					core->offset = old_offset;
-					r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes);
-				}
-				curpc = at-nbytes;
-				snprintf(temp_inst,sizeof(temp_inst),"aepc 0x%08"PFMT64x"",curpc);
-				r_core_cmd0 (core , temp_inst);
-                                arr = malloc (bsize);
-				// This loop is for emulating 8 instr above the syscall 
-				for (j = 0; curpc < at; curpc++, j++) {
-
-					if (j >= (bsize - 32)) {
-						i = 0;
+				if (match) {
+					// This for calculating no of bytes to be subtracted , to get 8 instr above syscall
+					if (r_core_prevop_addr (core,core->offset,nb_opcodes,&core->offset)) {
+						nbytes = old_offset - core->offset;
+					} else {
+						core->offset = old_offset;
+						r_core_asm_bwdis_len (core,&nbytes,&core->offset,nb_opcodes);
 					}
-					if (!j) {
-						r_core_read_at (core, curpc,arr, bsize);
-					}
-					inslen = r_anal_op (core->anal, &aop, curpc, arr + j, bsize - j);
-					if (inslen) {
-						bool tmatch = false;
-						const char *op_type = r_anal_optype_to_string (aop.type);
-						if (op_type) {
-							if (!strcmp ("call", type) || !strcmp ("jmp", type)) {
+					curpc = (at <= 8)? 0 : at-nbytes; // A quick fix for small binaries
+					r_core_cmdf (core, "ar PC=0x%08"PFMT64x"",curpc);
+					r_core_cmd0 (core, ".ar*");
+					// This loop is for emulating 8 instr above the syscall 
+					for (j = 0; curpc < at; curpc++, j++) {
+						if (j >= (bsize - 32)) {
+							i = 0;
+						}
+						if (!j) {
+							r_core_read_at (core,curpc,arr,bsize);
+						}
+						inslen = r_anal_op (core->anal,&aop,curpc,arr + j,bsize - j);
+						if (inslen) {
+							bool tmatch = false;
+							if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type == R_ANAL_OP_TYPE_JMP) {
 								tmatch = true;	
 							}
-						}
-						int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
-						if (incr < 0) {
-							incr = 0;
-						}
-						j += incr;
-						curpc += incr;
-						if (tmatch) {  // skip the instr
-							snprintf(temp_inst,sizeof(temp_inst),"aepc 0x%08"PFMT64x"",curpc);
-							r_core_cmd0 (core , temp_inst);
+							int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
+							if (incr < 0) {
+								incr = 0;
 							}
-
-						else{
-							r_core_cmd0 (core , "aes"); // step instr
+							j += incr;
+							curpc += incr;
+							if (tmatch) {	// skip the instr
+								r_core_cmdf (core,"ar PC=0x%08"PFMT64x"",curpc);
+								r_core_cmd0 (core, ".ar*");
+							} else {	// step instr
+								r_core_esil_step (core,UT64_MAX,NULL,NULL);
+								r_core_cmd0 (core, ".ar*");
 							}
+						}
+					}
+					int off = (int)r_debug_reg_get (core->dbg,"oeax");
+				        if (!off || off == -1) {
+						const char *a0 = r_reg_get_name (core->anal->reg,R_REG_NAME_SN);
+						off = (int)r_debug_reg_get (core->dbg,a0);
+					}	
+					RSyscallItem *item = r_syscall_get (core->anal->syscall,off,-1);
+					if (item) {
+						r_cons_printf ("0x%08"PFMT64x" %s\n",at,item->name);	
+					}
+					if (searchflags) {
+						char flag[64];
+						snprintf (flag, sizeof (flag), "%s%d_%d",
+							searchprefix, kwidx, count);
+						r_flag_set (core->flags,flag,at,ret);
+					}
+					if (*param->cmd_hit) {
+						ut64 here = core->offset;
+						r_core_seek (core, at,true);
+						r_core_cmd (core, param->cmd_hit,0);
+						r_core_seek (core, here,true);
+					}
+					count++;
+					if (search->maxhits && count >= search->maxhits) {
+						break;
 					}
 				}
-
-
-				ut64 off = r_reg_getv (core->anal->reg,"rax");
-				RSyscallItem *item = r_syscall_get (core->anal->syscall,off, -1);
-				if (item) {
-					r_cons_printf ("0x%08"PFMT64x " %s\n", at, item->name);	
-			        }
-				if (*input && searchflags) {
-					char flag[64];
-					snprintf (flag, sizeof (flag), "%s%d_%d",
-						searchprefix, kwidx, count);
-					r_flag_set (core->flags, flag, at, ret);
-				}
-				if (*param->cmd_hit) {
-					ut64 here = core->offset;
-					r_core_seek (core, at, true);
-					r_core_cmd (core, param->cmd_hit, 0);
-					r_core_seek (core, here, true);
-				}
-				count++;
-				if (search->maxhits && count >= search->maxhits) {
-					break;
-				}
+					int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+					if (inc < 0) {
+						inc = 0;
+					}
+					i += inc;
+					at += inc;
 			}
-				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
-				if (inc < 0) {
-					inc = 0;
-				}
-	 			i += inc;
-				at += inc;
 		}
 	}
-}
+	r_anal_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
+	free (arr);
 }
 
 
