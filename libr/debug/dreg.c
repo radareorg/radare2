@@ -98,7 +98,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->corebind.core) {
 		pr = ((RCore*)dbg->corebind.core)->print;
 	}
-	if (!(dbg->reg->bits & size)) {
+	if (size != 0 && !(dbg->reg->bits & size)) {
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?
 		size = 32;
 	}
