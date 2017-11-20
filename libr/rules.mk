@@ -24,6 +24,7 @@ CFLAGS+=-I$(LIBR)
 CFLAGS+=-I$(LIBR)/include
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
+LINK+=-lcurl -ljansson
 SRC=$(subst .o,.c,$(OBJ))
 MAGICSED=| sed -e 's,-lr_magic,@LIBMAGIC@,g'
 

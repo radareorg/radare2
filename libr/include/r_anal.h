@@ -659,6 +659,7 @@ typedef struct r_anal_t {
 	int stackptr;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
 	char *cmdtail;
+    ut8 addrmy;
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
@@ -1655,6 +1656,7 @@ extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_8051;
 extern RAnalPlugin r_anal_plugin_arc;
 extern RAnalPlugin r_anal_plugin_ebc;
+extern RAnalPlugin r_anal_plugin_evm;
 extern RAnalPlugin r_anal_plugin_gb;
 extern RAnalPlugin r_anal_plugin_nios2;
 extern RAnalPlugin r_anal_plugin_malbolge;
