@@ -267,7 +267,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ec","","list all color keys",
 			"ec*","","same as above, but using r2 commands",
 			"ecd","","set default palette",
-			"ecr","","set random palette",
+			"ecr","","set random palette (see also scr.randpal)",
 			"ecs","","show a colorful palette",
 			"ecj","","show palette in JSON",
 			"ecc"," [prefix]","show palette in CSS",
