@@ -2710,10 +2710,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	const char *prefix = "";
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot, false);
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot, true);
 		break;
 	case R_STRING_ENC_UTF8:
-		escstr = r_str_escape_utf8 (str, ds->show_asciidot, false);
+		escstr = r_str_escape_utf8 (str, ds->show_asciidot, true);
 		break;
 	case R_STRING_ENC_UTF16LE:
 		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
@@ -2747,7 +2747,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
 				prefix = "U";
 			} else {
-				escstr = r_str_escape_latin1 (str, ds->show_asciidot, false);
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot, true);
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
@@ -2759,8 +2759,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
-			          r_str_escape_utf8 (str, ds->show_asciidot, false) :
-			          r_str_escape_latin1 (str, ds->show_asciidot, false));
+			          r_str_escape_utf8 (str, ds->show_asciidot, true) :
+			          r_str_escape_latin1 (str, ds->show_asciidot, true));
 		}
 	}
 	if (prefix_out) {

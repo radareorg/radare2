@@ -440,9 +440,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	}
 	if (d->type == 's') {
 		if (d->subtype == R_STRING_ENC_UTF8) {
-			str = r_str_escape_utf8 (d->str, false, true);
+			str = r_str_escape_utf8 (d->str, false, false);
 		} else {
-			str = r_str_escape_latin1 (d->str, false, true);
+			str = r_str_escape_latin1 (d->str, false, false);
 		}
 	} else {
 		str = r_str_escape (d->str);
