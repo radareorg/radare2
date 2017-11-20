@@ -729,6 +729,9 @@ repeat:
 			} else if (strstr (action, "Step Over")) {
 				r_core_cmd (core, "dso", 0);
 				r_cons_flush ();
+			} else if (strstr (action, "Continue")) {
+				r_core_cmd (core, "dc", 0);
+				r_cons_flush ();
 			} else if (strstr (action, "Breakpoints")) {
 				addPanelFrame ("Breakpoints", "db", 0);
 			} else if (strstr (action, "Symbols")) {
