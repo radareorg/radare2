@@ -5186,9 +5186,9 @@ static int cmd_print(void *data, const char *input) {
 					for (j = i; j < i + cols; j += 1) {
 						ut8 *p = (ut8 *) core->block + j;
 						if (j < len) {
-							r_cons_printf ("\xf0\x9f%c%c  ", emoji[*p * 2], emoji[*p * 2 + 1]);
+							r_cons_printf ("\xf0\x9f%c%c ", emoji[*p * 2], emoji[*p * 2 + 1]);
 						} else {
-							r_cons_print ("   ");
+							r_cons_print ("  ");
 						}
 					}
 					r_cons_print (" ");
