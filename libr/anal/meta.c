@@ -434,7 +434,7 @@ static bool isFirst = true;
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	char *pstr, *str, *base64_str;
 	RCore *core = a->coreb.core;
-	bool esc_bslash = r_config_get_i (core->config, "cfg.escbslash");
+	bool esc_bslash = !core ? false : core->print->esc_bslash;
 	//eprintf ("%d %d\n", d->space, a->meta_spaces.space_idx);
 	if (a->meta_spaces.space_idx != -1) {
 		if (a->meta_spaces.space_idx != d->space) {
