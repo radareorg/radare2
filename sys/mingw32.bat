@@ -16,13 +16,18 @@ set "MINGW_BIN_PATH=%MINGW_PATH%\bin"
 rem -----------------------------------------------------------------------------------
 
 if not [%GIT_PATH%] NEQ [] (
-	set "GIT_PATH=C:\Program Files (x86)\Git"
+	rem Prefer 64 bit version of installed Git
+	if not exist "C:\Program Files\Git\nul" (
+		set "GIT_PATH=C:\Program Files (x86)\Git"
+	) else (
+		set "GIT_PATH=C:\Program Files\Git"
+	)
 )
 set "GIT_BIN_PATH=%GIT_PATH%\bin"
 
 rem -----------------------------------------------------------------------------------
 
-SET PATH=%MINGW_BIN_PATH%;%GIT_BIN_PATH%;%PATH%
+SET PATH=%MINGW_BIN_PATH%;%GIT_BIN_PATH%;%MINGW_MSYS_PATH%;%PATH%
 
 echo Using PATH = %PATH% ...
 
