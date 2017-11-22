@@ -148,6 +148,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 	// update anal io bind
 	r_io_bind (core->io, &(core->anal->iob));
+	if (core->file && core->file->fd >= 0) {
+		r_core_cmd0 (core, "o-!");
+	}
+	r_core_file_close_all_but (core);
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free (obinfilepath);
@@ -999,6 +1003,23 @@ R_API int r_core_file_binlist(RCore *core) {
 	r_core_file_set_by_file (core, cur_cf);
 	//r_core_bin_bind (core, cur_bf);
 	return count;
+}
+
+static bool close_but_cb (void *user, void *data, ut32 id) {
+	RCore *core = (RCore *)user;
+	RIODesc *desc = (RIODesc *)data;
+	if (core && desc && core->file) {
+		if (desc->fd != core->file->fd) {
+			// TODO: use the API
+			r_core_cmdf (core, "o-%d", desc->fd);
+		}
+	}
+	return true;
+}
+
+R_API bool r_core_file_close_all_but(RCore *core) {
+	r_id_storage_foreach (core->io->files, close_but_cb, core);
+	return true;
 }
 
 R_API bool r_core_file_close_fd(RCore *core, int fd) {

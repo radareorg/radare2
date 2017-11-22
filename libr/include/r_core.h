@@ -300,6 +300,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd);
 R_API int r_core_file_close(RCore *core, RCoreFile *fh);
 R_API bool r_core_file_close_fd(RCore *core, int fd);
+R_API bool r_core_file_close_all_but(RCore *core);
 R_API int r_core_file_list(RCore *core, int mode);
 R_API int r_core_file_binlist(RCore *core);
 R_API int r_core_file_bin_raise(RCore *core, ut32 num);

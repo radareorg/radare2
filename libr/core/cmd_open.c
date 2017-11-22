@@ -30,12 +30,20 @@ static const char *help_msg_o[] = {
 	"op"," [fd]", "priorize given fd (see also ob)",
 	"o"," 4","Switch to open file on fd 4",
 	"o","-1","close file descriptor 1",
-	"o-","*","close all opened files",
+	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 	"o"," [file]","open [file] file in read-only",
 	"o+"," [file]","open file in read-write mode",
 	"o"," [file] 0x4000","map file at 0x4000",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
+	NULL
+};
+
+static const char *help_msg_o_[] = {
+	"Usage: o-","[#!*]", "",
+	"o-*","","close all opened files",
+	"o-!","","close all files except the current one",
+	"o-3","","close fd=3",
 	NULL
 };
 
@@ -807,7 +815,6 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 	char *newfile2 = strdup (newfile);
 	desc->uri = newfile;
 	desc->referer = NULL;
-	//r_core_file_reopen (core, newfile, 0, 2);
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
 	r_core_file_reopen (core, newfile, 0, 2);
@@ -1204,11 +1211,14 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '-': // "o-"
 		switch (input[1]) {
+		case '!': // "o-!"
+			r_core_file_close_all_but (core);
+			break;
 		case '*': // "o-*"
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-			r_list_purge(core->files);
+			r_list_purge (core->files);
 			break;
 		case '-': // "o--"
 			eprintf ("All core files, io, anal and flags info purged.\n");
@@ -1232,12 +1242,9 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case 0:
 		case '?':
-			eprintf ("Usage: o-# or o-*, where # is the filedescriptor number\n");
+			r_core_cmd_help (core, help_msg_o_);
+			eprintf ("Usage: o-#, o-! or o-*, where # is the filedescriptor number\n");
 		}
-		// hackaround to fix invalid read
-		//r_core_cmd0 (core, "oo");
-		// uninit deref
-		//r_core_block_read (core);
 		break;
 	case '.': // "o."
 		{
