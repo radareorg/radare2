@@ -1416,6 +1416,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #else
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
+
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
 		r_list_foreach (anal->fcns, iter, fcn) {
 			if (addr == fcn->addr) {
@@ -1426,7 +1427,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
-			if (fcn->addr == addr || (!ret && r_anal_fcn_is_in_offset (fcn, addr))) {
+        		if (r_tinyrange_in (&fcn->bbr, addr)) {
 				ret = fcn;
 				break;
 			}
