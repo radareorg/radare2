@@ -1550,33 +1550,44 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	r_cons_clear_line (1);
 }
 
+#define MAXINSTR 8
+#define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
+
+static inline bool isnonlinear(int optype) {
+	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP);
+}	
+
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
-	ut64 at;
-	ut64 curpc;
-	ut8 *buf;
-	ut8 *arr;
+	ut64 at, curpc;
+	ut8 *buf, *arr;
+	int previnstr[MAXINSTR + 1];
+	int curpos, idx, count = 0;
 	RAnalOp aop;
-	int i,j,inslen, ret, bsize = R_MIN (64, core->blocksize);
+	int i, j, inslen, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
-	int count = 0;	
-	int nb_opcodes = 8;
-	ut64 old_offset = core->offset;
-	int nbytes = 0;
 	RAnalEsil *esil = core->anal->esil;
 	RIOMap* map;
-	RListIter *iter; 
+	RListIter *iter;
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+        const int minopcode = R_MAX (1, mininstrsz);
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	int bits   = r_config_get_i (core->config, "asm.bits");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	struct r_reg_item_t *r = r_reg_get (core->dbg->reg, pc, -1);
+	struct r_reg_item_t *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
 	
 	if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
 		return;
-	}	
-	buf = malloc (bsize);	
+	}
+	memset (previnstr, 0, sizeof (previnstr));
+	buf = malloc (bsize);
 	arr = malloc (bsize);
 	if (!buf || !arr) {
 		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free(buf);
+		free(arr);
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -1594,26 +1605,24 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				r_core_read_at (core, at, buf, bsize);
 			}
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
+			curpos = idx++ % (MAXINSTR + 1);
+			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
 			if (ret) {
 				bool match = false;
 				if (aop.type == R_ANAL_OP_TYPE_SWI) {
 					match = true;
 				}
 				if (match) {
-					// This for calculating no of bytes to be subtracted , to get 8 instr above syscall
-					if (r_core_prevop_addr (core, core->offset, nb_opcodes, &core->offset)) {
-						nbytes = old_offset - core->offset;
-					} else {
-						core->offset = old_offset;
-						r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes);
-					}
-					curpc = (at <= 8)? 0 : at-nbytes; // A quick fix for small binaries
-					r_core_cmdf (core, "ar PC=0x%08"PFMT64x"", curpc);
-					r_core_cmd0 (core, ".ar*");
-					// This loop is for emulating 8 instr above the syscall 
+					// This for calculating no of bytes to be subtracted , to get n instr above syscall
+					int nbytes = 0;
+					int nb_opcodes = MAXINSTR;
+					SUMARRAY (previnstr, nb_opcodes, nbytes);
+					curpc = at - (nbytes - previnstr[curpos]);
+					r_reg_set_value (core->dbg->reg, r, curpc);
+					// This loop is for emulating n instr above the syscall
 					for (j = 0; curpc < at; curpc++, j++) {
 						if (j >= (bsize - 32)) {
-							i = 0;
+							j = 0;
 						}
 						if (!j) {
 							r_core_read_at (core, curpc, arr, bsize);
@@ -1621,57 +1630,55 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 						inslen = r_anal_op (core->anal, &aop, curpc, arr + j, bsize - j);
 						if (inslen) {
 							bool tmatch = false;
-							if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type == R_ANAL_OP_TYPE_JMP) {
+							if (isnonlinear (aop.type)) {
 								tmatch = true;	
 							}
 							int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 							if (incr < 0) {
-								incr = 0;
-							}
+								incr = minopcode;
+							}	
 							j += incr;
 							curpc += incr;
 							if (tmatch) {	// skip the instr
-								r_core_cmdf (core, "ar PC=0x%08"PFMT64x"", curpc);
-								r_core_cmd0 (core, ".ar*");
+								r_reg_set_value (core->dbg->reg, r, curpc + 1);
 							} else {	// step instr
 								r_core_esil_step (core, UT64_MAX, NULL, NULL);
-								r_core_cmd0 (core, ".ar*");
 							}
 						}
 					}
-					const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 					int off = r_debug_reg_get (core->dbg, a0);
 					RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
 					if (item) {
 						r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
 					}
+					memset (previnstr, 0, sizeof (previnstr)); // clearing the buffer
+					r_reg_set_value (core->dbg->reg, reg_a0, -2); // clearing register A0
 					if (searchflags) {
-						char flag[64];
-						snprintf (flag, sizeof (flag), "%s%d_%d",
-							searchprefix, kwidx, count);
-						r_flag_set (core->flags,flag,at,ret);
+						char *flag = r_str_newf ("%s%d_%d", searchprefix, kwidx, count);
+						r_flag_set (core->flags, flag, at, ret);
 					}
 					if (*param->cmd_hit) {
 						ut64 here = core->offset;
-						r_core_seek (core, at,true);
-						r_core_cmd (core, param->cmd_hit,0);
-						r_core_seek (core, here,true);
+						r_core_seek (core, at, true);
+						r_core_cmd (core, param->cmd_hit, 0);
+						r_core_seek (core, here, true);
 					}
 					count++;
-					if (search->maxhits && count >= search->maxhits) {
+					if (search->maxhits > 0 && count >= search->maxhits) {
 						break;
 					}
 				}
-					int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
-					if (inc < 0) {
-						inc = 0;
-					}
-					i += inc;
-					at += inc;
+				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+				if (inc < 0) {
+					inc = minopcode;
+				}
+				i += inc;
+				at += inc;
 			}
 		}
 	}
 	r_anal_esil_free (esil);
+	r_anal_esil_stack_free (core->anal->esil);
 	r_cons_break_pop ();
 	free (buf);
 	free (arr);
