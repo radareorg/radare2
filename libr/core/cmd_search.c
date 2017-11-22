@@ -37,6 +37,7 @@ static const char *help_msg_slash[] = {
 	"/P", " patternsize", "search similar blocks",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
+	"/s", "", "search for all syscalls in a region",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
@@ -1549,6 +1550,144 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	r_cons_clear_line (1);
 }
 
+#define MAXINSTR 8
+#define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
+
+static inline bool isnonlinear(int optype) {
+	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP);
+}	
+
+static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
+	int i, inslen, bsize = R_MIN (64, core->blocksize);
+	ut8 *arr;
+	RAnalOp aop;
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
+	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
+	
+	arr = malloc (bsize);
+	if (!arr) {
+		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free (arr);
+		return -1;
+	}
+	r_reg_set_value (core->dbg->reg, r, curpc);
+	for (i = 0; curpc < at; curpc++, i++) {
+		if (i >= (bsize - 32)) {
+			i = 0;
+		}
+		if (!i) {
+			r_core_read_at (core, curpc, arr, bsize);
+		}
+		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i);
+		if (inslen) {	
+ 			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
+			if (incr < 0) {
+				incr = minopcode;
+			}	
+			i += incr;
+			curpc += incr;
+			if (isnonlinear (aop.type)) {	// skip the instr
+				r_reg_set_value (core->dbg->reg, r, curpc + 1);
+			} else {	// step instr
+				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			}
+		}
+	}
+	free (arr);
+	int sysno = r_debug_reg_get (core->dbg, a0);
+	r_reg_set_value (core->dbg->reg, reg_a0, -2); // clearing register A0
+	return sysno; 
+}	
+
+static void do_syscall_search(RCore *core, struct search_parameters *param) {
+	RSearch *search = core->search;
+	ut64 at, curpc;
+	ut8 *buf;
+	int curpos, idx, count = 0;
+	RAnalOp aop;
+	int i, ret, bsize = R_MIN (64, core->blocksize);
+	int kwidx = core->search->n_kws;
+	RIOMap* map;
+	RListIter *iter;
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	RAnalEsil *esil = core->anal->esil;
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+
+	if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
+		return;
+	}
+	int *previnstr = calloc(MAXINSTR + 1, sizeof (int));
+	buf = malloc (bsize);
+
+	if (!buf) {
+		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free (buf);
+		return;
+	}
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = map->itv.addr;
+		ut64 to = r_itv_end (map->itv);
+		for (i = 0, at = from; at < to; at++, i++) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (i >= (bsize - 32)) {
+				i = 0;
+			}
+			if (!i) {
+				r_core_read_at (core, at, buf, bsize);
+			}
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
+			curpos = idx++ % (MAXINSTR + 1);
+			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
+			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) {
+				// This for calculating no of bytes to be subtracted , to get n instr above syscall
+				int nbytes = 0;
+				int nb_opcodes = MAXINSTR;
+				SUMARRAY (previnstr, nb_opcodes, nbytes);
+				curpc = at - (nbytes - previnstr[curpos]);
+				int off = emulateSyscallPrelude(core, at, curpc);
+				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
+				if (item) {
+					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
+				}
+				memset (previnstr, 0, sizeof (previnstr)); // clearing the buffer
+				if (searchflags) {
+					char *flag = r_str_newf ("%s%d_%d", searchprefix, kwidx, count);
+					r_flag_set (core->flags, flag, at, ret);
+					free (flag);
+				}
+				if (*param->cmd_hit) {
+					ut64 here = core->offset;
+					r_core_seek (core, at, true);
+					r_core_cmd (core, param->cmd_hit, 0);
+					r_core_seek (core, here, true);
+				}
+				count++;
+				if (search->maxhits > 0 && count >= search->maxhits) {
+					break;
+				}
+			}
+			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+			if (inc < 0) {
+				inc = minopcode;
+			}
+			i += inc;
+			at += inc;
+		}
+	}
+	r_anal_esil_free (esil);
+	r_cons_break_pop ();
+	free (buf);
+}
+
 static void do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
@@ -2478,6 +2617,10 @@ reread:
 	break;
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1));
+		break;
+	case 's': // "/s"
+		do_syscall_search (core, &param);
+		dosearch = false;
 		break;
 	case 'V': // "/V"
 		// TODO: add support for json
