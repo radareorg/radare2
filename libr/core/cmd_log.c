@@ -11,6 +11,8 @@ static const char *help_msg_L[] = {
 	"L", "", "List all plugins loaded by RCore.lib",
 	"L-", "duk", "Unload plugin matching in filename",
 	"L", " blah."R_LIB_EXT, "Load plugin file",
+	"Ls", "", "list RCore plugins",
+	"Ls", " java", "run RCore java plugin",
 	NULL
 };
 
@@ -173,6 +175,17 @@ static int cmd_plugins(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
 		break;
+		case 's':
+		if (input[1]) {
+			return r_core_cmd0 (core, input + 2);
+		} else {
+			RListIter *iter;
+			RCorePlugin *cp;
+			r_list_foreach (core->rcmd->plist, iter, cp) {
+				r_cons_printf ("%s: %s\n", cp->name, cp->desc);
+			}
+		}
+			break;
 	}
 	return 0;
 }

@@ -44,7 +44,6 @@ static const char *help_msg_root[] = {
 	"?[??]","[expr]", "Help or evaluate math expression",
 	"?$?", "", "Show available '$' variables and aliases",
 	"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
-	"?:?", "", "List and manage core plugins",
 	NULL
 };
 
@@ -95,13 +94,6 @@ static const char *help_msg_question[] = {
 	"?x", "-hexst", "convert hexpair into raw string with newline",
 	"?X", " num|expr", "returns the hexadecimal value numeric expr",
 	"?y", " [str]", "show contents of yank buffer, or set with string",
-	NULL
-};
-
-static const char *help_msg_question_colon[] = {
-	"Usage:", "?:[plugin] [args]", "",
-	":", "", "list RCore plugins",
-	":java", "", "run java plugin",
 	NULL
 };
 
@@ -159,7 +151,6 @@ static const char *help_msg_question_V[] = {
 
 static void cmd_help_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?:, question_colon);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
 }
@@ -251,22 +242,6 @@ static int cmd_help(void *data, const char *input) {
 			core->curtab = 0;
 		}
 		core->curtab ++;
-		break;
-	case ':': // "?:"
-		{
-		RListIter *iter;
-		RCorePlugin *cp;
-		if (input[1]=='?') {
-			r_core_cmd_help (core, help_msg_question_colon);
-			return 0;
-		}
-		if (input[1]) {
-			return r_core_cmd0 (core, input + 1);
-		}
-		r_list_foreach (core->rcmd->plist, iter, cp) {
-			r_cons_printf ("%s: %s\n", cp->name, cp->desc);
-		}
-	}
 		break;
 	case 'r': // "?r"
 		{ // TODO : Add support for 64bit random numbers
