@@ -1490,11 +1490,10 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 }
 
 static char *parse_tmp_evals(RCore *core, const char *str) {
-	char *res = NULL;
-	RStrBuf *buf;
 	char *s = strdup (str);
-	buf = r_strbuf_new ("");
 	int i, argc = r_str_split (s, ',');
+	char *res = malloc (1);
+	*res = '\0';
 	for (i = 0; i < argc; i++) {
 		char *eq, *kv = (char *)r_str_word_get0 (s, i);
 		if (!kv) {
@@ -1504,14 +1503,19 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 		if (eq) {
 			*eq = 0;
 			const char *ov = r_config_get (core->config, kv);
-			r_strbuf_appendf (buf, "e %s=%s;", kv, ov);
+			size_t kv_len = strlen (kv);
+			size_t ov_len = strlen (ov);
+			size_t cmd_size = kv_len + ov_len + 5;
+			char *cmd = malloc (cmd_size);
+			snprintf (cmd, cmd_size, "e %s=%s;", kv, ov);
+			res = r_str_prefix (res, cmd);
+			free (cmd);
 			r_config_set (core->config, kv, eq + 1);
 			*eq = '=';
 		} else {
 			eprintf ("Missing '=' in e: expression (%s)\n", kv);
 		}
 	}
-	res = r_strbuf_drain (buf);
 	free (s);
 	return res;
 }
@@ -2224,7 +2228,15 @@ repeat_arroba:
 				}
 				break;
 			case 'e': // "@e:"
-				tmpeval = parse_tmp_evals (core, ptr + 2);
+				{
+					char *cmd = parse_tmp_evals (core, ptr + 2);
+					if (!tmpeval) {
+						tmpeval = cmd;
+					} else {
+						tmpeval = r_str_prefix (tmpeval, cmd);
+						free (cmd);
+					}
+				}
 				break;
 			case 'x': // "@x:" // hexpairs
 				if (ptr[1] == ':') {
