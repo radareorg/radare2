@@ -904,7 +904,7 @@ static int cb_cfgsanbox(void *user, void *data) {
 	return (!node->i_value && ret)? 0: 1;
 }
 
-static int cb_cfg_escbslash(void *user, void *data) {
+static int cb_str_escbslash(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->print->esc_bslash = node->i_value;
@@ -2371,7 +2371,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	SETCB ("cfg.escbslash", "false", &cb_cfg_escbslash, "Escape the backslash (Cs output only)");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");
@@ -2682,6 +2681,10 @@ R_API int r_core_config_init(RCore *core) {
 		&cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
 	SETPREF ("scr.histsave", "true", "Always save history on exit");
+
+	/* str */
+	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash (Cs output only)");
+
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB ("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
