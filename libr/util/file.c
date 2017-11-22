@@ -978,18 +978,18 @@ R_API char *r_file_tmpdir() {
 			path[path_len - 1] = '\0';
 		}
 	}
-#elif __ANDROID__
-	char *path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
-#else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {
 		free (path);
 		path = NULL;
 	}
 	if (!path) {
+#elif __ANDROID__
+		path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
+#else
 		path = strdup ("/tmp");
-	}
 #endif
+	}
 	if (!r_file_is_directory (path)) {
 		eprintf ("Cannot find temporary directory '%s'\n", path);
 	}
