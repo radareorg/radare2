@@ -2146,9 +2146,9 @@ next2:
 		ut8 *buf;
 
 		*ptr++ = '\0';
-		arroba = (ptr[0] && ptr[1] && ptr[2])?
-			strchr (ptr + 2, '@'): NULL;
 repeat_arroba:
+		arroba = (ptr[0] && ptr[1] && ptr[2])?
+				 strchr (ptr + 2, '@'): NULL;
 		if (arroba) {
 			*arroba = 0;
 		}
