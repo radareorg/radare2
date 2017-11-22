@@ -87,6 +87,7 @@ typedef struct r_print_t {
 	ut64* lines_cache;
 	int lines_cache_sz;
 	int lines_abs;
+	bool esc_bslash;
 
 	// offset of the first byte of each printed row.
 	// Last elements is marked with a UT32_MAX.

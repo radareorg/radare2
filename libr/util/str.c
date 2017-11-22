@@ -1243,7 +1243,7 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
-static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool ign_bslash) {
+static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -1256,7 +1256,7 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 		break;
 	case '\\':
 		*q++ = '\\';
-		if (!ign_bslash) {
+		if (esc_bslash) {
 			*q++ = '\\';
 		}
 		break;
@@ -1296,7 +1296,7 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot, bool ign_bslash) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1331,7 +1331,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool s
 				break;
 			}
 		default:
-			r_str_byte_escape (p, &q, dot_nl, show_asciidot, ign_bslash);
+			r_str_byte_escape (p, &q, dot_nl, show_asciidot, esc_bslash);
 		}
 		p++;
 	}
@@ -1341,18 +1341,18 @@ out:
 }
 
 R_API char *r_str_escape(const char *buf) {
-	return r_str_escape_ (buf, false, true, false, false);
+	return r_str_escape_ (buf, false, true, false, true);
 }
 
 R_API char *r_str_escape_dot(const char *buf) {
-	return r_str_escape_ (buf, true, true, false, false);
+	return r_str_escape_ (buf, true, true, false, true);
 }
 
-R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool ign_bslash) {
-	return r_str_escape_ (buf, false, false, show_asciidot, ign_bslash);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_ (buf, false, false, show_asciidot, esc_bslash);
 }
 
-static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool ign_bslash) {
+static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1416,7 +1416,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
 		} else {
-			r_str_byte_escape (p, &q, false, false, ign_bslash);
+			r_str_byte_escape (p, &q, false, false, esc_bslash);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
@@ -1433,16 +1433,16 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	return new_buf;
 }
 
-R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool ign_bslash) {
-	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, ign_bslash);
+R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash);
 }
 
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, false);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, true);
 }
 
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, false);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, true);
 }
 
 /* ansi helpers */

@@ -606,7 +606,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		str = r_meta_get_string (core->anal, type, addr);
 		if (str) {
 			if (type == 's') {
-				char *esc_str = r_str_escape_latin1 (str, false, true);
+				char *esc_str = r_str_escape_latin1 (str, false, false);
 				if (esc_str) {
 					r_cons_printf ("\"%s\"\n", esc_str);
 					free (esc_str);

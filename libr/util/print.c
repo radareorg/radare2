@@ -301,6 +301,7 @@ R_API RPrint* r_print_new() {
 	p->row_offsets = NULL;
 	p->vflush = true;
 	p->screen_bounds = 0;
+	p->esc_bslash = false;
 	memset (&p->consbind, 0, sizeof (p->consbind));
 	return p;
 }

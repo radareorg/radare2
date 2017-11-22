@@ -23,6 +23,7 @@ Keys:
 #endif
 
 #include <r_anal.h>
+#include <r_core.h>
 #include <r_print.h>
 
 #define META_RANGE_BASE(x) ((x)>>12)
@@ -432,6 +433,8 @@ R_API const char *r_meta_type_to_string(int type) {
 static bool isFirst = true;
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	char *pstr, *str, *base64_str;
+	RCore *core = a->coreb.core;
+	bool esc_bslash = core ? core->print->esc_bslash : false;
 	//eprintf ("%d %d\n", d->space, a->meta_spaces.space_idx);
 	if (a->meta_spaces.space_idx != -1) {
 		if (a->meta_spaces.space_idx != d->space) {
@@ -440,9 +443,12 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	}
 	if (d->type == 's') {
 		if (d->subtype == R_STRING_ENC_UTF8) {
-			str = r_str_escape_utf8 (d->str, false, true);
+			str = r_str_escape_utf8 (d->str, false, esc_bslash);
 		} else {
-			str = r_str_escape_latin1 (d->str, false, true);
+			if (!d->subtype) {  /* temporary legacy workaround */
+				esc_bslash = false;
+			}
+			str = r_str_escape_latin1 (d->str, false, esc_bslash);
 		}
 	} else {
 		str = r_str_escape (d->str);

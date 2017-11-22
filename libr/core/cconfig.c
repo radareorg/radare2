@@ -904,6 +904,13 @@ static int cb_cfgsanbox(void *user, void *data) {
 	return (!node->i_value && ret)? 0: 1;
 }
 
+static int cb_cfg_escbslash(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->print->esc_bslash = node->i_value;
+	return true;
+}
+
 static int cb_cfg_fortunes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -2364,6 +2371,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+	SETCB ("cfg.escbslash", "false", &cb_cfg_escbslash, "Escape the backslash (Cs output only)");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");
