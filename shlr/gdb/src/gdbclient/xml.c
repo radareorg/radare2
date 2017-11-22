@@ -35,14 +35,10 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 			",%"PFMT64x, file, off, len);
 		if (send_msg (g, msg) < 0
 		    || read_packet (g, false) < 0 || send_ack (g) < 0) {
-			free (ret);
-			*tot_len = 0;
-			return NULL;
+			goto exit_err;
 		}
 		if (g->data_len == 0) {
-			free (ret);
-			*tot_len = 0;
-			return NULL;
+			goto exit_err;
 		}
 		if (g->data_len == 1 && g->data[0] == 'l') {
 			break;
@@ -50,9 +46,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 		status = g->data[0];
 		if (retmax - retlen < g->data_len) {
 			if (!(tmp = realloc (ret, retmax + blksz))) {
-				free (ret);
-				*tot_len = 0;
-				return NULL;
+				goto exit_err;
 			}
 			retmax += blksz;
 			ret = tmp;
@@ -64,9 +58,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 			break;
 		}
 		if (status != 'm') {
-			free (ret);
-			*tot_len = 0;
-			return NULL;
+			goto exit_err;
 		}
 	}
 	if (!ret) {
@@ -77,21 +69,15 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	while (tmp) {
 		// inclusion
 		if (!(tmp2 = strstr (tmp, "/>"))) {
-			free (ret);
-			*tot_len = 0;
-			return NULL;
+			goto exit_err;
 		}
 		subret_space = tmp2 + 2 - tmp;
 		if (!(tmp2 = strstr (tmp, "href="))) {
-			free (ret);
-			*tot_len = 0;
-			return NULL;
+			goto exit_err;
 		}
 		tmp2 += 6;
 		if (!(tmp3 = strchr (tmp2, '"'))) {
-			free (ret);
-			*tot_len = 0;
-			return NULL;
+			goto exit_err;
 		}
 		tmpchar = *tmp3;
 		*tmp3 = '\0';
@@ -110,10 +96,8 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 			if (subret_len > retmax - retlen - 1) {
 				tmp3 = NULL;
 				if (!(tmp3 = realloc (ret, retmax + subret_len))) {
-					free (ret);
 					free (subret);
-					*tot_len = 0;
-					return NULL;
+					goto exit_err;
 				}
 				tmp = tmp3 + (tmp - ret);
 				ret = tmp3;
@@ -130,9 +114,13 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	}
 	*tot_len = retlen;
 	return ret;
+exit_err:
+	free (ret);
+	*tot_len = 0;
+	return NULL;
 }
 
-// NOTE:
+
 typedef struct {
 	char type[32];
 	struct {
@@ -142,10 +130,188 @@ typedef struct {
 	} fields[64];
 	ut32 num_bits;
 	ut32 num_fields;
-} gdbr_flags_reg_t;
+} gdbr_xml_flags_t;
+
+typedef struct {
+	char name[32];
+	char type[8];
+	ut32 size;
+	ut32 flagnum;
+} gdbr_xml_reg_t;
+
+static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags);
+static int _resolve_arch(libgdbr_t *g, char *xml_data);
+static RList* _extract_flags(char *flagstr);
+static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias);
+
+static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
+	char *regstr, *flagstr, *tmp, *profile = NULL, pc_alias[64], flag_bits[65];
+	RList *flags, *regs;
+	RListIter *iter;
+	gdbr_xml_flags_t *tmpflag;
+	gdbr_xml_reg_t *tmpreg;
+	ut64 profile_len = 0, profile_max_len, regnum = 0, regoff = 0;
+	pc_alias[0] = '\0';
+	gdb_reg_t *arch_regs = NULL;
+	if (_resolve_arch (g, xml_data) < 0) {
+		return -1;
+	}
+	if (!(flagstr = strstr (xml_data, "<feature"))) {
+		return -1;
+	}
+	regstr = flagstr;
+	if (!(flags = _extract_flags (flagstr))) {
+		return -1;
+	}
+	if (!(regs = _extract_regs (regstr, flags, pc_alias))) {
+		r_list_free (flags);
+		return -1;
+	}
+	if (!(arch_regs = malloc (sizeof (gdb_reg_t) * (r_list_length (regs) + 1)))) {
+		goto exit_err;
+	}
+	// approximate per-reg size estimates
+	profile_max_len = r_list_length (regs) * 128 + r_list_length (flags) * 128;
+	if (!(profile = malloc (profile_max_len))) {
+		goto exit_err;
+	}
+	r_list_foreach (regs, iter, tmpreg) {
+		// regsize > 64 not supported by r2 currently
+		if (tmpreg->size > 8) {
+			regoff += tmpreg->size;
+			continue;
+		}
+		memcpy (arch_regs[regnum].name, tmpreg->name, sizeof (tmpreg->name));
+		arch_regs[regnum].size = tmpreg->size;
+		arch_regs[regnum].offset = regoff;
+		if (profile_len + 128 >= profile_max_len) {
+			if (!(tmp = realloc (profile, profile_max_len + 512))) {
+				goto exit_err;
+			}
+			profile = tmp;
+			profile_max_len += 512;
+		}
+		flag_bits[0] = '\0';
+		tmpflag = NULL;
+		if (tmpreg->flagnum < r_list_length (flags)) {
+			tmpflag = r_list_get_n (flags, tmpreg->flagnum);
+			_write_flag_bits (flag_bits, tmpflag);
+		}
+		profile_len += snprintf (profile + profile_len, 128, "%s\t%s\t"
+					".%u\t%"PFMT64d"\t0\t%s\n", tmpreg->type,
+					tmpreg->name, tmpreg->size * 8, regoff, flag_bits);
+		// TODO write flag subregisters
+		if (tmpflag) {
+			int i;
+			for (i = 0; i < tmpflag->num_fields; i++) {
+				if (profile_len + 128 >= profile_max_len) {
+					if (!(tmp = realloc (profile, profile_max_len + 512))) {
+						goto exit_err;
+					}
+					profile = tmp;
+					profile_max_len += 512;
+				}
+				profile_len += snprintf (profile + profile_len, 128, "gpr\t%s\t"
+							".%u\t.%"PFMT64d"\t0\n", tmpflag->fields[i].name,
+							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + (regoff * 8));
+			}
+		}
+		regnum++;
+		regoff += tmpreg->size;
+	}
+	// Difficult to parse these out from xml. So manually added from gdb's xml files
+	switch (g->target.arch) {
+	case R_SYS_ARCH_ARM:
+		switch (g->target.bits) {
+		case 32:
+			if (!(profile = r_str_prefix (profile,
+							"=PC	r15\n"
+							"=SP	r14\n" // XXX
+							"=A0	r0\n"
+							"=A1	r1\n"
+							"=A2	r2\n"
+							"=A3	r3\n"
+						      ))) {
+				goto exit_err;
+			}
+			break;
+		case 64:
+			if (!(profile = r_str_prefix (profile,
+							"=PC	pc\n"
+							"=SP	sp\n"
+							"=BP	x29\n"
+							"=A0	x0\n"
+							"=A1	x1\n"
+							"=A2	x2\n"
+							"=A3	x3\n"
+							"=ZF	zf\n"
+							"=SF	nf\n"
+							"=OF	vf\n"
+							"=CF	cf\n"
+							"=SN	x8\n"
+						      ))) {
+				goto exit_err;
+			}
+		}
+		break;
+		break;
+	case R_SYS_ARCH_X86:
+		switch (g->target.bits) {
+		case 32:
+			if (!(profile = r_str_prefix (profile,
+						     "=PC	eip\n"
+						     "=SP	esp\n"
+						     "=BP	ebp\n"))) {
+				goto exit_err;
+			}
+			break;
+		case 64:
+			if (!(profile = r_str_prefix (profile,
+						     "=PC	rip\n"
+						     "=SP	rsp\n"
+						     "=BP	rbp\n"))) {
+				goto exit_err;
+			}
+		}
+		break;
+	case R_SYS_ARCH_MIPS:
+		if (!(profile = r_str_prefix (profile, "=PC	pc\n"))) {
+			goto exit_err;
+		}
+		break;
+	default:
+		// TODO others
+		if (*pc_alias) {
+			if (!(profile = r_str_prefix (profile, pc_alias))) {
+				goto exit_err;
+			}
+		}
+	}
+	// Special case for MIPS, since profile doesn't separate 32/64 bit MIPS
+	if (g->target.arch == R_SYS_ARCH_MIPS) {
+		if (arch_regs && arch_regs[0].size == 8) {
+			g->target.bits = 64;
+		}
+	}
+	r_list_free (flags);
+	r_list_free (regs);
+	free (g->target.regprofile);
+	g->target.regprofile = strdup (profile);
+	free (profile);
+	g->target.valid = true;
+	g->registers = arch_regs;
+	return 0;
+
+exit_err:
+	r_list_free (flags);
+	r_list_free (regs);
+	free (profile);
+	free (arch_regs);
+	return -1;
+}
 
 // sizeof (buf) needs to be atleast flags->num_bits + 1
-static void write_flag_bits(char *buf, const gdbr_flags_reg_t *flags) {
+static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags) {
 	bool fc[26] = { false };
 	ut32 i, c;
 	memset (buf, '.', flags->num_bits);
@@ -167,18 +333,8 @@ static void write_flag_bits(char *buf, const gdbr_flags_reg_t *flags) {
 	}
 }
 
-static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
-	char *arch, *feature, *reg, *reg_end, *regname, *reg_typ, *tmp1, *tmp2,
-	     tmpchar, pc_alias[64] = { 0 }, *profile = NULL;
-	ut64 reg_off = 0, reg_sz, reg_name_len, profile_line_len, profile_len = 0,
-	     profile_max_len = 0, blk_sz = 4096;
-	bool is_pc = false;
-	gdb_reg_t *arch_regs = NULL, *tmp_regs = NULL;
-	ut64 num_regs = 0, max_num_regs = 0, regs_blk_sz = 8;
-	gdbr_flags_reg_t *flags = NULL, *tmpflags = NULL;
-	ut64 num_flags = 0, num_fields = 0, name_sz = 0, cur_flag_num = 0, i = 0;
-	char *flagstr, *flagsend, *field_start, *field_end, flagtmpchar, fieldtmpchar;
-	char flag_bits[65];
+static int _resolve_arch(libgdbr_t *g, char *xml_data) {
+	char *arch;
 	// Find architecture
 	g->target.arch = R_SYS_ARCH_NONE;
 	if ((arch = strstr (xml_data, "<architecture"))) {
@@ -199,6 +355,9 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		} else if (r_str_startswith (arch, "arm")) {
 			g->target.arch = R_SYS_ARCH_ARM;
 			g->target.bits = 32;
+		} else if (r_str_startswith (arch, "mips")) {
+			g->target.arch = R_SYS_ARCH_MIPS;
+			g->target.bits = 32;
 		}
 		// TODO others
 	} else {
@@ -206,322 +365,236 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		if (strstr (xml_data, "com.apple.debugserver.arm64")) {
 			g->target.arch = R_SYS_ARCH_ARM;
 			g->target.bits = 64;
+		} else if (strstr (xml_data, "org.gnu.gdb.mips")) {
+			// openocd mips?
+			g->target.arch = R_SYS_ARCH_MIPS;
+			g->target.bits = 32;
 		} else {
 			eprintf ("Unknown architecture parsing XML (%s)\n", xml_data);
 		}
 	}
-	// Features
-	feature = xml_data;
-	while ((feature = strstr (feature, "<feature"))) {
-		reg = feature;
-		flagstr = reg;
-		if (!(feature = strstr (feature, "</feature>"))) {
+	return 0;
+}
+
+static RList* _extract_flags(char *flagstr) {
+	char *tmp1, *tmp2, *flagsend, *field_start, *field_end;
+	ut64 num_fields, type_sz, name_sz;
+	gdbr_xml_flags_t *tmpflag = NULL;
+	RList *flags;
+	if (!(flags = r_list_new ())) {
+		return NULL;
+	}
+	flags->free = free;
+	while ((flagstr = strstr (flagstr, "<flags"))) {
+		if (!(flagsend = strstr (flagstr, "</flags>"))) {
 			goto exit_err;
 		}
-		*feature = '\0';
-		feature += strlen ("</feature>");
-		// Get flags
-		while ((flagstr = strstr (flagstr, "<flags"))) {
-			if (!(flagsend = strstr (flagstr, "</flags>"))) {
+		*flagsend = '\0';
+		if (!(tmpflag = calloc (1, sizeof (gdbr_xml_flags_t)))) {
+			goto exit_err;
+		}
+		// Get id
+		if (!(tmp1 = strstr (flagstr, "id="))) {
+			goto exit_err;
+		}
+		tmp1 += 4;
+		if (!(tmp2 = strchr (tmp1, '"'))) {
+			goto exit_err;
+		}
+		*tmp2 = '\0';
+		type_sz = sizeof (tmpflag->type);
+		strncpy (tmpflag->type, tmp1, type_sz - 1);
+		tmpflag->type[type_sz - 1] = '\0';
+		*tmp2 = '"';
+		// Get size of flags register
+		if (!(tmp1 = strstr (flagstr, "size="))) {
+			goto exit_err;
+		}
+		tmp1 += 6;
+		if (!(tmpflag->num_bits = (ut32) strtoul (tmp1, NULL, 10))) {
+			goto exit_err;
+		}
+		tmpflag->num_bits *= 8;
+		// Get fields
+		num_fields = 0;
+		field_start = flagstr;
+		while ((field_start = strstr (field_start, "<field"))) {
+			// Max 64 fields
+			if (num_fields >= 64) {
+				break;
+			}
+			if (!(field_end = strstr (field_start, "/>"))) {
 				goto exit_err;
 			}
-			flagtmpchar = *flagsend;
-			*flagsend = '\0';
-			tmpflags = realloc (flags, (num_flags + 1) * sizeof (gdbr_flags_reg_t));
-			if (!tmpflags) {
-				goto exit_err;
-			}
-			flags = tmpflags;
-			memset (&flags[num_flags], 0, sizeof (gdbr_flags_reg_t));
-			// Get id
-			if (!(tmp1 = strstr (flagstr, "id="))) {
-				goto exit_err;
-			}
-			tmp1 += 4;
-			if (!(tmp2 = strchr (tmp1, '"'))) {
-				goto exit_err;
-			}
-			tmpchar = *tmp2;
-			*tmp2 = '\0';
-			name_sz = sizeof (flags[num_flags].type);
-			strncpy (flags[num_flags].type, tmp1, name_sz - 1);
-			flags[num_flags].type[name_sz - 1] = '\0';
-			*tmp2 = tmpchar;
-			// Get size of flags register
-			if (!(tmp1 = strstr (flagstr, "size="))) {
+			*field_end = '\0';
+			// Get name
+			if (!(tmp1 = strstr (field_start, "name="))) {
 				goto exit_err;
 			}
 			tmp1 += 6;
-			if (!(flags[num_flags].num_bits = (ut32) strtoul (tmp1, NULL, 10))) {
+			if (!(tmp2 = strchr (tmp1, '"'))) {
 				goto exit_err;
 			}
-			flags[num_flags].num_bits *= 8;
-			field_start = flagstr;
-			num_fields = 0;
-			while ((field_start = strstr (field_start, "<field"))) {
-				if (num_fields == 64) {
-					break;
-				}
-				if (!(field_end = strstr (field_start, "/>"))) {
-					goto exit_err;
-				}
-				fieldtmpchar = *field_end;
-				*field_end = '\0';
-				// Get name
-				if (!(tmp1 = strstr (field_start, "name="))) {
-					goto exit_err;
-				}
-				tmp1 += 6;
-				if (!(tmp2 = strchr (tmp1, '"'))) {
-					goto exit_err;
-				}
-				// If name length is 0, it is a 1 field. Don't include
-				if (tmp2 - tmp1 <= 1) {
-					*field_end = fieldtmpchar;
-					field_start = field_end + 1;
-					continue;
-				}
-				tmpchar = *tmp2;
-				*tmp2 = '\0';
-				name_sz = sizeof (flags[num_flags].fields[num_fields].name);
-				strncpy (flags[num_flags].fields[num_fields].name,
-					tmp1, name_sz - 1);
-				flags[num_flags].fields[num_fields].name[name_sz - 1] = '\0';
-				*tmp2 = tmpchar;
-				// Get offset
-				if (!(tmp1 = strstr (field_start, "start="))) {
-					goto exit_err;
-				}
-				tmp1 += 7;
-				if (!isdigit (*tmp1)) {
-					goto exit_err;
-				}
-				flags[num_flags].fields[num_fields].bit_num = (ut32) strtoul (tmp1, NULL, 10);
-				// Get end
-				if (!(tmp1 = strstr (field_start, "end="))) {
-					goto exit_err;
-				}
-				tmp1 += 5;
-				if (!isdigit (*tmp1)) {
-					goto exit_err;
-				}
-				flags[num_flags].fields[num_fields].sz = (ut32) strtoul (tmp1, NULL, 10) + 1;
-				flags[num_flags].fields[num_fields].sz -= flags[num_flags].fields[num_fields].bit_num;
-				num_fields++;
-				*field_end = fieldtmpchar;
+			// If name length is 0, it is a 1 field. Don't include
+			if (tmp2 - tmp1 <= 1) {
+				*field_end = '/';
 				field_start = field_end + 1;
+				continue;
 			}
-			flags[num_flags].num_fields = num_fields;
-			num_flags++;
-			*flagsend = flagtmpchar;
-			flagstr = flagsend + 1;
-		}
-		// Get registers
-		while ((reg = strstr (reg, "<reg")) && reg < feature) {
-			// null out end of reg description
-			if (!(reg_end = strchr (reg, '/')) || reg_end >= feature) {
+			*tmp2 = '\0';
+			name_sz = sizeof (tmpflag->fields[num_fields].name);
+			strncpy (tmpflag->fields[num_fields].name, tmp1, name_sz - 1);
+			tmpflag->fields[num_fields].name[name_sz - 1] = '\0';
+			*tmp2 = '"';
+			// Get offset
+			if (!(tmp1 = strstr (field_start, "start="))) {
 				goto exit_err;
 			}
-			tmpchar = *reg_end;
-			*reg_end = '\0';
-			// name
-			if (!(regname = strstr (reg, "name="))) {
-				goto exit_err;
-			}
-			regname += 6;
-			if (!(tmp1 = strchr (regname, '"'))) {
-				goto exit_err;
-			}
-			reg_name_len = tmp1 - regname;
-			// size
-			if (!(tmp1 = strstr (reg, "bitsize="))) {
-				goto exit_err;
-			}
-			tmp1 += 9;
+			tmp1 += 7;
 			if (!isdigit (*tmp1)) {
 				goto exit_err;
 			}
-			reg_sz = strtoul (tmp1, NULL, 10);
-			// type
-			reg_typ = "gpr";
-			if ((tmp1 = strstr (reg, "group="))) {
-				tmp1 += 7;
-				if (r_str_startswith (tmp1, "float")) {
-					reg_typ = "fpu";
-				}
-				// We need type information in r2 register profiles
+			tmpflag->fields[num_fields].bit_num = (ut32) strtoul (tmp1, NULL, 10);
+			// Get end
+			if (!(tmp1 = strstr (field_start, "end="))) {
+				goto exit_err;
 			}
-			if ((tmp1 = strstr (reg, "type="))) {
-				tmp1 += 6;
-				if (r_str_startswith (tmp1, "vec")
-				    || r_str_startswith (tmp1, "i387_ext")) {
-					reg_typ = "fpu";
-				}
-				if (r_str_startswith (tmp1, "code_ptr")) {
-					if (!is_pc) {
-						is_pc = true;
-						strcpy (pc_alias, "=PC\t");
-						strncpy (pc_alias + 4, regname, reg_name_len);
-						strcpy (pc_alias + 4 + reg_name_len, "\n");
-					}
-				}
-				// Check all flags
-				for (cur_flag_num = 0; cur_flag_num < num_flags; cur_flag_num++) {
-					if (r_str_startswith (tmp1, flags[cur_flag_num].type)) {
+			tmp1 += 5;
+			if (!isdigit (*tmp1)) {
+				goto exit_err;
+			}
+			tmpflag->fields[num_fields].sz = (ut32) strtoul (tmp1, NULL, 10) + 1;
+			tmpflag->fields[num_fields].sz -= tmpflag->fields[num_fields].bit_num;
+			num_fields++;
+			*field_end = '/';
+			field_start = field_end + 1;
+		}
+		tmpflag->num_fields = num_fields;
+		r_list_push (flags, tmpflag);
+		*flagsend = '<';
+		flagstr = flagsend + 1;
+	}
+	return flags;
+exit_err:
+	if (flags) {
+		r_list_free (flags);
+	}
+	return NULL;
+}
+
+static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
+	char *regstr_end, *regname, *regtype, *tmp1;
+	ut32 flagnum, regname_len, regsize, regnum;
+	RList *regs;
+	RListIter *iter;
+	gdbr_xml_reg_t *tmpreg;
+	gdbr_xml_flags_t *tmpflag;
+	if (!(regs = r_list_new ())) {
+		return NULL;
+	}
+	while ((regstr = strstr (regstr, "<reg"))) {
+		if (!(regstr_end = strchr (regstr, '/'))) {
+			goto exit_err;
+		}
+		*regstr_end = '\0';
+		// name
+		if (!(regname = strstr (regstr, "name="))) {
+			goto exit_err;
+		}
+		regname += 6;
+		if (!(tmp1 = strchr (regname, '"'))) {
+			goto exit_err;
+		}
+		regname_len = tmp1 - regname;
+		// size
+		if (!(tmp1 = strstr (regstr, "bitsize="))) {
+			goto exit_err;
+		}
+		tmp1 += 9;
+		if (!isdigit (*tmp1)) {
+			goto exit_err;
+		}
+		regsize = strtoul (tmp1, NULL, 10);
+		// regnum
+		regnum = UINT32_MAX;
+		if ((tmp1 = strstr (regstr, "regnum="))) {
+			tmp1 += 8;
+			if (!isdigit (*tmp1)) {
+				goto exit_err;
+			}
+			regnum = strtoul (tmp1, NULL, 10);
+		}
+		// type
+		regtype = "gpr";
+		flagnum = r_list_length (flags);
+		if ((tmp1 = strstr (regstr, "group="))) {
+			tmp1 += 7;
+			if (r_str_startswith (tmp1, "float")) {
+				regtype = "fpu";
+			}
+			// We need type information in r2 register profiles
+		} else if ((tmp1 = strstr (regstr, "type="))) {
+			tmp1 += 6;
+			if (r_str_startswith (tmp1, "vec")
+			    || r_str_startswith (tmp1, "i387_ext")
+			    || r_str_startswith (tmp1, "ieee_single")
+			    || r_str_startswith (tmp1, "ieee_double")) {
+				regtype = "fpu";
+			} else if (r_str_startswith (tmp1, "code_ptr")) {
+				strcpy (pc_alias, "=PC	");
+				strncpy (pc_alias + 4, regname, regname_len);
+				strcpy (pc_alias + 4 + regname_len, "\n");
+			} else {
+				// Check all flags. If reg is a flag, write flag data
+				flagnum = 0;
+				r_list_foreach (flags, iter, tmpflag) {
+					if (r_str_startswith (tmp1, tmpflag->type)) {
 						// Max 64-bit :/
-						if (flags[cur_flag_num].num_bits > 64) {
-							cur_flag_num = num_flags;
+						if (tmpflag->num_bits <= 64) {
 							break;
 						}
-						break;
 					}
-				}
-				// We need type information in r2 register profiles
-			}
-			*reg_end = tmpchar;
-			profile_line_len = strlen (reg_typ) + reg_name_len + 64;
-			if (profile_max_len - profile_len <= profile_line_len) {
-				if (!(tmp2 = realloc (profile, profile_max_len + blk_sz))) {
-					goto exit_err;
-				}
-				profile = tmp2;
-				profile_max_len += blk_sz;
-			}
-			// reg_size > 64 is not supported? :/
-			// We don't handle register names > 31 chars. Re-evaluate?
-			if (reg_sz > 64 || reg_name_len > 31) {
-				reg_off += reg_sz / 8;
-				reg = reg_end;
-				continue;
-			}
-			tmpchar = regname[reg_name_len];
-			regname[reg_name_len] = '\0';
-			flag_bits[0] = '\0';
-			if (cur_flag_num < num_flags) {
-				write_flag_bits (flag_bits, &flags[cur_flag_num]);
-			}
-			snprintf (profile + profile_len, profile_line_len, "%s\t%s\t"
-				".%"PFMT64d "\t%"PFMT64d "\t0\t%s\n", reg_typ, regname,
-				reg_sz, reg_off, flag_bits);
-			profile_len += strlen (profile + profile_len);
-			if (cur_flag_num < num_flags) {
-				for (i = 0; i < flags[cur_flag_num].num_fields; i++) {
-					profile_line_len = strlen (flags[cur_flag_num].fields[i].name) + 64;
-					if (profile_max_len - profile_len <= profile_line_len) {
-						if (!(tmp2 = realloc (profile, profile_max_len + blk_sz))) {
-							goto exit_err;
-						}
-						profile = tmp2;
-						profile_max_len += blk_sz;
-					}
-					snprintf (profile + profile_len, profile_line_len,
-						"gpr\t%s\t.%d\t.%"PFMT64d "\t0\n",
-						flags[cur_flag_num].fields[i].name,
-						flags[cur_flag_num].fields[i].sz,
-						flags[cur_flag_num].fields[i].bit_num + (reg_off * 8));
-					profile_len += strlen (profile + profile_len);
+					flagnum++;
 				}
 			}
-			if (num_regs + 1 >= max_num_regs) {
-				tmp_regs = realloc (arch_regs, (max_num_regs + regs_blk_sz) * sizeof (gdb_reg_t));
-				if (!tmp_regs) {
-					goto exit_err;
-				}
-				arch_regs = tmp_regs;
-				max_num_regs += regs_blk_sz;
-			}
-			if (reg_name_len >= sizeof (arch_regs[num_regs].name)) {
-			    eprintf ("Register name too long: %s\n", regname);
-			}
-			strncpy (arch_regs[num_regs].name, regname,
-				 sizeof (arch_regs[num_regs].name) - 1);
-			arch_regs[num_regs].name[sizeof (arch_regs[num_regs].name) - 1] = '\0';
-			arch_regs[num_regs].offset = reg_off;
-			arch_regs[num_regs].size = reg_sz / 8;
-			num_regs++;
-			arch_regs[num_regs].name[0] = '\0';
-			reg_off += reg_sz / 8;
-			regname[reg_name_len] = tmpchar;
-			reg = reg_end;
+			// We need type information in r2 register profiles
 		}
+		if (!(tmpreg = calloc (1, sizeof (gdbr_xml_reg_t)))) {
+			goto exit_err;
+		}
+		regname[regname_len] = '\0';
+		if (regname_len > sizeof (tmpreg->name) - 1) {
+			eprintf ("Register name too long: %s\n", regname);
+		}
+		strncpy (tmpreg->name, regname, sizeof (tmpreg->name) - 1);
+		tmpreg->name[sizeof (tmpreg->name) - 1] = '\0';
+		regname[regname_len] = '"';
+		strncpy (tmpreg->type, regtype, sizeof (tmpreg->type) - 1);
+		tmpreg->type[sizeof (tmpreg->type) - 1] = '\0';
+		tmpreg->size = regsize / 8;
+		tmpreg->flagnum = flagnum;
+		if (regnum == UINT32_MAX) {
+			r_list_push (regs, tmpreg);
+		} else if (regnum >= r_list_length (regs)) {
+			int i;
+			for (i = regnum - r_list_length (regs); i >= 0; i--) {
+				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
+				// shouldn't cause a crash though
+				r_list_push (regs, tmpreg);
+			}
+		} else {
+			// this is where we replace those placeholder regs
+			r_list_set_n (regs, regnum, tmpreg);
+		}
+		*regstr_end = '/';
+		regstr = regstr_end + 2;
 	}
-	if (*pc_alias) {
-		profile_line_len = strlen (pc_alias);
-		if (profile_max_len - profile_len <= profile_line_len) {
-			if (!(tmp2 = realloc (profile, profile_max_len + profile_line_len + 1 - profile_len))) {
-				goto exit_err;
-			}
-			profile = tmp2;
-		}
-		strcpy (profile + profile_len, pc_alias);
-	}
-	// Difficult to parse these out from xml. So manually added from gdb's xml files
-	switch (g->target.arch) {
-	case R_SYS_ARCH_ARM:
-		switch (g->target.bits) {
-		case 32:
-			if (!(profile = r_str_prefix (profile,
-							"=PC    r15\n"
-							"=SP    r14\n" // XXX
-							"=A0    r0\n"
-							"=A1    r1\n"
-							"=A2    r2\n"
-							"=A3    r3\n"
-						      ))) {
-				goto exit_err;
-			}
-			break;
-		case 64:
-			if (!(profile = r_str_prefix (profile,
-							"=PC\tpc\n"
-							"=SP\tsp\n"
-							"=BP\tx29\n"
-							"=A0    x0\n"
-							"=A1    x1\n"
-							"=A2    x2\n"
-							"=A3    x3\n"
-							"=ZF    zf\n"
-							"=SF    nf\n"
-							"=OF    vf\n"
-							"=CF    cf\n"
-							"=SN    x8\n"
-						      ))) {
-				goto exit_err;
-			}
-		}
-		break;
-		break;
-	case R_SYS_ARCH_X86:
-		switch (g->target.bits) {
-		case 32:
-			if (!(profile = r_str_prefix (profile,
-						     "=PC\teip\n"
-						     "=SP\tesp\n"
-						     "=BP\tebp\n"))) {
-				goto exit_err;
-			}
-			break;
-		case 64:
-			if (!(profile = r_str_prefix (profile,
-						     "=PC\trip\n"
-						     "=SP\trsp\n"
-						     "=BP\trbp\n"))) {
-				goto exit_err;
-			}
-		}
-		break;
-		// TODO others
-	}
-	free (g->target.regprofile);
-	free (flags);
-	g->target.regprofile = profile;
-	g->target.valid = true;
-	g->registers = arch_regs;
-	return 0;
-
+	regs->free = free;
+	return regs;
 exit_err:
-	free (profile);
-	free (arch_regs);
-	free (flags);
-	return -1;
+	if (regs) {
+		regs->free = free;
+		r_list_free (regs);
+	}
+	return NULL;
 }
