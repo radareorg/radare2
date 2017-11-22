@@ -11,6 +11,7 @@
 #define USE_UTF8 0
 #else
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <termios.h>
 #include <signal.h>
 #define USE_UTF8 1
@@ -461,6 +462,7 @@ R_API void r_line_autocomplete() {
 				end_word: I.buffer.data + I.buffer.index;
 		int largv0 = strlen (argv[0]? argv[0]: "");
 		size_t len_t = strlen (t);
+		p[largv0]='\0';
 
 		if ((p - I.buffer.data) + largv0 + 1 + len_t < plen) {
 			if (len_t > 0) {
@@ -471,7 +473,15 @@ R_API void r_line_autocomplete() {
 				memmove (p + tt, t, len_t);
 			}
 			memcpy (p, argv[0], largv0);
-			p[largv0] = ' ';
+			struct stat s;
+			stat(p, &s);
+			if(S_ISDIR(s.st_mode)){
+				p[largv0] = '/';
+			} else {
+				p[largv0] = ' ';
+			}
+
+
 			if (!len_t) {
 				p[largv0 + 1] = '\0';
 			}
