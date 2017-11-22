@@ -303,7 +303,10 @@ R_API char *r_str_home(const char *str) {
 	char *dst, *home = r_sys_getenv (R_SYS_HOME);
 	size_t length;
 	if (!home) {
-		return NULL;
+		home = r_file_tmpdir ();
+		if (!home) {
+			return NULL;
+		}
 	}
 	length = strlen (home) + 1;
 	if (str) {
