@@ -2146,6 +2146,13 @@ next2:
 		ut8 *buf;
 
 		*ptr++ = '\0';
+		arroba = (ptr[0] && ptr[1] && ptr[2])?
+			strchr (ptr + 2, '@'): NULL;
+repeat_arroba:
+		if (arroba) {
+			*arroba = 0;
+		}
+
 		for (; *ptr == ' '; ptr++) {
 			//nothing to see here
 		}
@@ -2154,12 +2161,9 @@ next2:
 		} else {
 			ptr--;
 		}
-		arroba = (ptr[0] && ptr[1] && ptr[2])?
-			strchr (ptr + 2, '@'): NULL;
-repeat_arroba:
-		if (arroba) {
-			*arroba = 0;
-		}
+
+		ptr = r_str_trim_tail (ptr);
+
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
@@ -2318,7 +2322,8 @@ ignore:
 		}
 next_arroba:
 		if (arroba) {
-			ptr = arroba;
+			ptr = arroba + 1;
+			*arroba = '@';
 			arroba = NULL;
 			goto repeat_arroba;
 		}
