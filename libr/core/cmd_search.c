@@ -1562,7 +1562,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	ut8 *arr;
 	RAnalOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-        const int minopcode = R_MAX (1, mininstrsz);
+	const int minopcode = R_MAX (1, mininstrsz);
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
