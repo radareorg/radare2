@@ -795,7 +795,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 err_r_file_mmap_windows:
 	if (!success) {
 		if (m->fh != INVALID_HANDLE_VALUE) {
-			CloseHandle (m->fh);	
+			CloseHandle (m->fh);
 		}
 		free (m);
 		m = NULL;
@@ -925,7 +925,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 			}
 		} else {
 			free (name_);
-		}	
+		}
 	}
 err_r_file_mkstemp:
 	free (name);
@@ -952,7 +952,7 @@ R_API char *r_file_tmpdir() {
 	char *path = NULL;
 	DWORD len = 0;
 
-	tmpdir = (LPTSTR)calloc (1,esizeof (TCHAR) * (MAX_PATH + 1));
+	tmpdir = (LPTSTR)calloc (1, sizeof (TCHAR) * (MAX_PATH + 1));
 	if (!tmpdir) {
 		return NULL;
 	}
@@ -978,7 +978,7 @@ R_API char *r_file_tmpdir() {
 			path[path_len - 1] = '\0';
 		}
 	}
-#endif
+#else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {
 		free (path);
@@ -991,6 +991,7 @@ R_API char *r_file_tmpdir() {
 		path = strdup ("/tmp");
 #endif
 	}
+#endif
 	if (!r_file_is_directory (path)) {
 		eprintf ("Cannot find temporary directory '%s'\n", path);
 	}
