@@ -271,6 +271,7 @@ static const char *help_msg_afi[] = {
 static const char *help_msg_afl[] = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
+	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
 	"aflq", "", "list functions in quiet mode",
@@ -2055,6 +2056,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 's': // "afls"
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
+			break;
+		case 'c': // "aflc"
+			r_cons_printf ("%d\n", r_list_length (core->anal->fcns));
 			break;
 		default: // "afl "
 			r_core_anal_fcn_list (core, NULL, "o");

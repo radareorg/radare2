@@ -1,12 +1,8 @@
-/* radare2 - LGPL - Copyright 2016 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2017 - Davis, Alex Kornitzer */
 
 #include <r_util.h>
 
 #include "mdmp.h"
-
-ut64 r_bin_mdmp_get_baddr(struct r_bin_mdmp_obj *obj) {
-	return (ut64)(obj->b->buf);
-}
 
 ut64 r_bin_mdmp_get_paddr(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
 	/* FIXME: Will only resolve exact matches, probably no need to fix as
