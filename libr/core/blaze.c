@@ -222,6 +222,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	RList *block_list;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
+	bool debug = r_config_get_i (core->config, "cfg.debug");
 
 
 	block_list = r_list_new ();
@@ -229,8 +230,10 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Failed to create block_list\n");
 	}
 
-	eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
-	eprintf ("Creating basic blocks...");
+	if (debug) {
+		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
+		eprintf ("Creating basic blocks\b");
+	}
 	while (cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -301,8 +304,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		op = NULL;
 	}
 
-	eprintf ("DONE\n");
-	eprintf ("Found %d basic blocks\n", block_list->length);
+	if (debug) {
+		eprintf ("Found %d basic blocks\n", block_list->length);
+	}
 
 	RList *result = r_list_newf (free);
 	if (!result) {
@@ -319,11 +323,13 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		return false;
 	}
 
-	eprintf ("Sorting all blocks...");
 	r_list_sort (block_list, (RListComparator)bbCMP);
-	eprintf ("DONE\n");
 
-	eprintf ("Creating the complete graph...");
+	if (debug) {
+		eprintf ("Sorting all blocks done\n");
+		eprintf ("Creating the complete graph\n");
+	}
+
 	while (block_list->length > 0) {
 		block = r_list_pop (block_list);
 		if (!block) {
@@ -383,12 +389,14 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		sdb_ptr_set (sdb, sdb_fmt (0, "bb.0x%08"PFMT64x, block->start), block, 0);
 		r_list_append (result, block);
 	}
-	eprintf ("DONE\n");
 
 	// finally search for functions
 	// we simply assume that non reached blocks or called blocks
 	// are functions
-	eprintf ("Trying to create functions...");
+	if (debug) {
+		eprintf ("Trying to create functions\n");
+	}
+
 	r_list_foreach (result, iter, block) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -460,7 +468,6 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 			r_stack_free (stack);
 		}
 	}
-	eprintf ("DONE\n");
 
 	sdb_free (sdb);
 	r_list_free (result);
