@@ -227,7 +227,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
 			break;
 		case ARM_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
@@ -246,11 +246,11 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM_OP_CIMM:
 			r_strbuf_append (buf, "\"type\":\"cimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
 			break;
 		case ARM_OP_PIMM:
 			r_strbuf_append (buf, "\"type\":\"pimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
 			break;
 		case ARM_OP_SETEND:
 			r_strbuf_append (buf, "\"type\":\"setend\"");
