@@ -1313,14 +1313,7 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
 	int append = 0;
-	RAnalFunction *fcn;
-
-#if 0
-	if (size < 1) {
-		return false;
-	}
-#endif
-	fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (!fcn) {
 		if (!(fcn = r_anal_fcn_new ())) {
 			return false;
