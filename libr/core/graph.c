@@ -3067,8 +3067,13 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (fcn) {
 		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!f) {
-			r_cons_message ("Not in a function. Type 'df' to define it here");
-			return 0;
+			// r_cons_message ("Not in a function. Type 'df' to define it here");
+			r_cons_flush ();
+			if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
+				return 0;
+			}
+			r_core_cmd0 (core, "af");
+			f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		}
 		if (f && f != *fcn) {
 			*fcn = f;
