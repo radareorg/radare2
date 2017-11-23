@@ -216,7 +216,14 @@ static int cmd_flag(void *data, const char *input) {
 rep:
 	switch (*input) {
 	case 'f': // "ff"
-		r_cons_printf ("%d\n", flag_to_flag (core, input + 1));
+		if (input[1] == 's') { // "ffs"
+			int delta = flag_to_flag (core, input + 2);
+			if (delta > 0) {
+				r_cons_printf ("0x%08"PFMT64x"\n", core->offset + delta);
+			}
+		} else {
+			r_cons_printf ("%d\n", flag_to_flag (core, input + 1));
+		}
 		break;
 	case 'e': // "fe"
 		switch (input[1]) {
