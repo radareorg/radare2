@@ -1,7 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake */
-
-/* blaze is the codename for the new analysis engine for radare2 */
-/* by --pancake thanks to @defragger and @nguyen for ideas */
+/* radare - LGPL - Copyright 2017 - pancake, defragger */
 
 #include <r_core.h>
 
@@ -39,6 +36,7 @@ static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 		return false;
 	}
 	fcn->score += block->score;
+	fcn->size += block->end - block->start;
 	if (block->type == END) {
 		fcn->ends++;
 	}
@@ -137,7 +135,7 @@ void dump_blocks (RList* list) {
 }
 
 static bool checkFunction(fcn_t *fcn) {
-	if (fcn && fcn->ends > 0) {
+	if (fcn && fcn->ends > 0 && fcn->size > 0) {
 		return true;
 	}
 
@@ -231,6 +229,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Failed to create block_list\n");
 	}
 
+	eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
+	eprintf ("Creating basic blocks...");
 	while (cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -248,6 +248,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 
 		if (op->mnemonic[0] == '?') {
+			printf ("? Bad op at: 0x%x\n", cur + start);
 			eprintf ("Cannot analyze opcode at %"PFMT64x"\n", start + cur);
 			block_score -= 10;
 			cur++;
@@ -300,6 +301,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		op = NULL;
 	}
 
+	eprintf ("DONE\n");
+	eprintf ("Found %d basic blocks\n", block_list->length);
+
 	RList *result = r_list_newf (free);
 	if (!result) {
 		r_list_free (block_list);
@@ -315,8 +319,11 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		return false;
 	}
 
+	eprintf ("Sorting all blocks...");
 	r_list_sort (block_list, (RListComparator)bbCMP);
+	eprintf ("DONE\n");
 
+	eprintf ("Creating the complete graph...");
 	while (block_list->length > 0) {
 		block = r_list_pop (block_list);
 		if (!block) {
@@ -376,10 +383,12 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		sdb_ptr_set (sdb, sdb_fmt (0, "bb.0x%08"PFMT64x, block->start), block, 0);
 		r_list_append (result, block);
 	}
+	eprintf ("DONE\n");
 
 	// finally search for functions
 	// we simply assume that non reached blocks or called blocks
 	// are functions
+	eprintf ("Trying to create functions...");
 	r_list_foreach (result, iter, block) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -402,6 +411,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 				}
 				sdb_num_set (sdb, Fhandled(cur->start), 1, 0);
 				if (cur->score < 0) {
+					fcnFree (current_function);
+					current_function = NULL;
 					break;
 				}
 				// we ignore negative blocks
@@ -435,18 +446,21 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 			}
 
 			// function creation complete
-			if (checkFunction (current_function)) {
-				if (input[0] == '*') {
-					printFunctionCommands (core, current_function, NULL);
-				} else {
-					createFunction (core, current_function, NULL);
+			if (current_function) {
+				if (checkFunction (current_function)) {
+					if (input[0] == '*') {
+						printFunctionCommands (core, current_function, NULL);
+					} else {
+						createFunction (core, current_function, NULL);
+					}
 				}
+				fcnFree (current_function);
 			}
 
 			r_stack_free (stack);
-			fcnFree (current_function);
 		}
 	}
+	eprintf ("DONE\n");
 
 	sdb_free (sdb);
 	r_list_free (result);
