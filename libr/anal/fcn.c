@@ -1427,7 +1427,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
-        		if (r_tinyrange_in (&fcn->bbr, addr)) {
+			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
 				ret = fcn;
 				break;
 			}
