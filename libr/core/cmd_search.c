@@ -1608,8 +1608,8 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	ut64 at, curpc;
 	ut8 *buf;
 	int curpos, idx = 0, count = 0;
-	RAnalOp aop;
-	int i, ret, bsize = R_MIN (64, core->blocksize);
+	RAnalOp aop = {0};
+	int i, ret, bsize = R_MAX (64, core->blocksize);
 	int kwidx = core->search->n_kws;
 	RIOMap* map;
 	RListIter *iter;
@@ -1622,14 +1622,19 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
 		return;
 	}
-	int *previnstr = calloc(MAXINSTR + 1, sizeof (int));
+	int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
+	if (!previnstr) {
+		r_anal_esil_free (esil);
+		return;
+	}
 	buf = malloc (bsize);
-
 	if (!buf) {
 		eprintf ("Cannot allocate %d bytes\n", bsize);
+		r_anal_esil_free (esil);
 		free (buf);
 		return;
 	}
+	ut64 oldoff = core->offset;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = map->itv.addr;
@@ -1653,7 +1658,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				int nb_opcodes = MAXINSTR;
 				SUMARRAY (previnstr, nb_opcodes, nbytes);
 				curpc = at - (nbytes - previnstr[curpos]);
-				int off = emulateSyscallPrelude(core, at, curpc);
+				int off = emulateSyscallPrelude (core, at, curpc);
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
@@ -1672,6 +1677,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 				count++;
 				if (search->maxhits > 0 && count >= search->maxhits) {
+					r_anal_op_fini (&aop);
 					break;
 				}
 			}
@@ -1681,8 +1687,10 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			}
 			i += inc;
 			at += inc;
+			r_anal_op_fini (&aop);
 		}
 	}
+	r_core_seek (core, oldoff, 1);
 	r_anal_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
