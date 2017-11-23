@@ -37,7 +37,7 @@ static const char *help_msg_slash[] = {
 	"/P", " patternsize", "search similar blocks",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
-	"/s", "", "search for all syscalls in a region",
+	"/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
@@ -1607,7 +1607,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
 	ut64 at, curpc;
 	ut8 *buf;
-	int curpos, idx, count = 0;
+	int curpos, idx = 0, count = 0;
 	RAnalOp aop;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
@@ -1658,7 +1658,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
 				}
-				memset (previnstr, 0, sizeof (previnstr)); // clearing the buffer
+				memset (previnstr, 0, sizeof (previnstr) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
 					char *flag = r_str_newf ("%s%d_%d", searchprefix, kwidx, count);
 					r_flag_set (core->flags, flag, at, ret);
