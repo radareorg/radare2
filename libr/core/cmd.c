@@ -1511,11 +1511,12 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 			if (!ov) {
 				continue;
 			}
-			size_t kv_len = strlen (kv);
-			size_t ov_len = strlen (ov);
-			size_t cmd_size = kv_len + ov_len + 5;
-			char *cmd = malloc (cmd_size);
-			snprintf (cmd, cmd_size, "e %s=%s;", kv, ov);
+			char *cmd = r_str_newf ("e %s=%s;", kv, ov);
+			if (!cmd) {
+				free (s);
+				free (res);
+				return NULL;
+			}
 			res = r_str_prefix (res, cmd);
 			free (cmd);
 			r_config_set (core->config, kv, eq + 1);
