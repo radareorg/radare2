@@ -3036,7 +3036,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			r_cons_gotoxy (0, 0);
 			r_core_cmd0 (core, cmdv);
 		}
-		r_cons_flush ();
+		r_cons_visual_flush ();
 	}
 	return true;
 }

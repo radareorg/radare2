@@ -706,8 +706,12 @@ R_API void r_cons_visual_flush() {
 		fps = 0;
 		if (prev) {
 			ut64 now = r_sys_now ();
-			ut64 diff = now-prev;
-			fps = (diff<1000000)? (1000000/diff): 0;
+			ut64 diff = now - prev;
+			if (diff < 0) {
+				fps = 0;
+			} else {
+				fps = (diff < 1000000)? (1000000.0/diff): 0;
+			}
 			prev = now;
 		} else {
 			prev = r_sys_now ();
