@@ -289,11 +289,11 @@ static ut64 p2v(RDisasmState *ds, ut64 addr) {
 	return addr;
 }
 
-static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at) {
+static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	if (ds->fcn && r_tinyrange_in (&ds->fcn->bbr, at)) {
 		return ds->fcn;
 	}
-	return r_anal_get_fcn_in (ds->core->anal, at, R_ANAL_FCN_TYPE_NULL);
+	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
@@ -759,7 +759,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
-		RAnalFunction *f = fcnIn (ds, at);
+		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->varlist = r_anal_var_list_dynamic;
 		r_parse_varsub (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
@@ -1027,7 +1027,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
-			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, -1);
+			RAnalFunction *fun = fcnIn (ds, refi->addr, -1); //r_anal_get_fcn_in (core->anal, refi->addr, -1);
 			if (fun) {
 				name = strdup (fun->name);
 			} else {
@@ -1441,7 +1441,7 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 		return;
 	}
 	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	f = fcnIn (ds, ds->at);
+	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		if (f->addr == ds->at) {
 			if (ds->analop.size == r_anal_fcn_size (f) && !middle) {
@@ -1469,7 +1469,7 @@ static void ds_print_pre(RDisasmState *ds) {
 		return;
 	}
 	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	RAnalFunction *f = fcnIn (ds, ds->at);
+	RAnalFunction *f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		r_cons_printf ("%s%s%s", COLOR (ds, color_fline),
 			ds->pre, COLOR_RESET (ds));
@@ -1573,7 +1573,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	f = fcnIn (ds, ds->at);
+	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 	r_list_foreach (flaglist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
@@ -1909,7 +1909,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (ds->show_reloff) {
 			RAnalFunction *f = r_anal_get_fcn_at (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (!f) {
-				f = fcnIn (ds, at); // r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+				f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL); // r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			}
 			if (f) {
 				delta = at - f->addr;
@@ -2439,7 +2439,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	const char *label;
 	if (!f) {
 		// f = r_anal_get_fcn_in (core->anal, ds->at, 0);
-		f = fcnIn (ds, ds->at);
+		f = fcnIn (ds, ds->at, 0);
 	}
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
 	if (!label) {
@@ -2507,7 +2507,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_CALL:
 		// f = r_anal_get_fcn_in (core->anal, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-		f = fcnIn (ds, ds->analop.jump);
+		f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->name && ds->opstr && !strstr (ds->opstr, f->name)) {
 			//beginline (core, ds, f);
 			// print label
@@ -2517,7 +2517,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 				ALIGN;
 				ds_comment (ds, true, "; %s.%s%s", f->name, label, nl);
 			} else {
-				RAnalFunction *f2 = fcnIn (ds, ds->at); //r_anal_get_fcn_in (core->anal, ds->at, 0);
+				RAnalFunction *f2 = fcnIn (ds, ds->at, 0); //r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
 					ALIGN;
 					if (delta > 0) {
@@ -3561,7 +3561,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	RAnal *anal = ds->core->anal;
 	// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
-	RAnalFunction *fcn = fcnIn (ds, ds->analop.jump);
+	RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
 	char *name;
 	if (!fcn) {
 		return;
@@ -3751,7 +3751,7 @@ toro:
 		r_asm_set_pc (core->assembler, ds->at);
 		ds_update_ref_lines (ds);
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		ds->fcn = fcnIn (ds, ds->at);
+		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + r_anal_fcn_size (f)): 0;
 			if (of != f) {
@@ -3874,7 +3874,7 @@ toro:
 		ds_setup_print_pre (ds, false, false);
 		ds_print_lines_left (ds);
 		// f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
-		f = fcnIn (ds, ds->addr);
+		f = fcnIn (ds, ds->addr, 0);
 		if (ds_print_labels (ds, f)) {
 			ds_show_functions (ds);
 			ds_show_xrefs (ds);
@@ -4105,7 +4105,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		ds->has_description = false;
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
-	//	r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		// r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->assembler, &ds->asmop,
 			core->block + addrbytes * i, core->blocksize - addrbytes * i);
 		ds->oplen = ret;
@@ -4341,8 +4341,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		}
 
-		// f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-		f = fcnIn (ds, at);
+		// f = r_anal_get_fcn_in (core->anal, at, 
+		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list_dynamic;
 			r_parse_varsub (core->parser, f, at, ds->analop.size,
