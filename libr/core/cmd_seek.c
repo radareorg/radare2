@@ -31,7 +31,7 @@ static const char *help_msg_s[] = {
 	"sf.", "", "Seek to the beginning of current function",
 	"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
 	"sl", "[?] [+-]line", "Seek to line",
-	"sn/sp", "", "Seek to next/prev location, as specified by scr.nkey",
+	"sn/sp", " ([nkey])", "Seek to next/prev location, as specified by scr.nkey",
 	"so", " [N]", "Seek to N next opcode(s)",
 	"sr", " pc", "Seek to register",
 	"ss", "", "Seek silently (without adding an entry to the seek history)",
@@ -561,16 +561,26 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "sn"
-		if (!silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		{
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			}
+			const char *nkey = (input[1] == ' ')
+				? input + 2
+				: r_config_get (core->config, "scr.nkey");
+			r_core_seek_next (core, nkey);
 		}
-		r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 		break;
 	case 'p': // "sp"
-		if (!silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		{
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			}
+			const char *nkey = (input[1] == ' ')
+				? input + 2
+				: r_config_get (core->config, "scr.nkey");
+			r_core_seek_previous (core, nkey);
 		}
-		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 		break;
 	case 'a': // "sa"
 		off = core->blocksize;
