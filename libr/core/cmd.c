@@ -238,6 +238,10 @@ static const char *help_msg_y[] = {
 	NULL
 };
 
+R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
+	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
+}
+
 static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
 	int i;
 	if (desc->help_msg) {
