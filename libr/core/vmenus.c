@@ -2592,19 +2592,23 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		RFlagItem *flag;
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (!strncmp (flag->name, pfx, strlen (pfx)))
-				if (flag->offset < next && flag->offset > core->offset)
+			if (!strncmp (flag->name, pfx, strlen (pfx))) {
+				if (flag->offset < next && flag->offset > core->offset) {
 					next = flag->offset;
+				}
+			}
 		}
 	} else { // flags
 		RFlagItem *flag;
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (flag->offset < next && flag->offset > core->offset)
+			if (flag->offset < next && flag->offset > core->offset) {
 				next = flag->offset;
+			}
 		}
 	}
-	if (next != UT64_MAX)
+	if (next != UT64_MAX) {
 		r_core_seek (core, next, 1);
+	}
 }
 
 R_API void r_core_seek_previous (RCore *core, const char *type) {

@@ -29,6 +29,7 @@ static const char *help_msg_f[] = {
 	"fd"," addr","return flag+delta",
 	"fe-","","resets the enumerator counter",
 	"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
+	"ff"," ([glob])","distance in bytes to reach the next flag (see sn/sp)",
 	"fi"," [size] | [from] [to]","show flags in current block or range",
 	"fg","","bring visual mode to foreground",
 	"fj","","list flags in JSON format",
@@ -180,6 +181,25 @@ static void flagbars(RCore *core, const char *glob) {
 	}
 }
 
+static int flag_to_flag(RCore *core, const char *glob) {
+	RFlagItem *flag;
+	RListIter *iter;
+	ut64 next = UT64_MAX;
+	glob = r_str_trim_const (glob);
+	r_list_foreach (core->flags->flags, iter, flag) {
+		if (flag->offset < next && flag->offset > core->offset) {
+			if (glob && *glob && !r_str_glob (flag->name, glob)) {
+				continue;
+			}
+			next = flag->offset;
+		}
+	}
+	if (next != UT64_MAX && next > core->offset) {
+		return next - core->offset;
+	}
+	return 0;
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -195,12 +215,14 @@ static int cmd_flag(void *data, const char *input) {
 	}
 rep:
 	switch (*input) {
-	case 'e':
+	case 'f': // "ff"
+		r_cons_printf ("%d\n", flag_to_flag (core, input + 1));
+		break;
+	case 'e': // "fe"
 		switch (input[1]) {
 		case ' ':
-			ptr = r_str_newf ("%s.%d", input+2, flagenum);
-			(void)r_flag_set (core->flags, ptr,
-					core->offset, 1);
+			ptr = r_str_newf ("%s.%d", input + 2, flagenum);
+			(void)r_flag_set (core->flags, ptr, core->offset, 1);
 			flagenum++;
 			free (ptr);
 			break;
@@ -785,7 +807,6 @@ rep:
 		break;
 	}
 	}
-	if (str)
-		free (str);
+	free (str);
 	return 0;
 }
