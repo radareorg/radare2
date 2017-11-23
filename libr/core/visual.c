@@ -9,6 +9,10 @@ static void visual_refresh(RCore *core);
 
 #define KEY_ALTQ 0xc5
 
+static ut64 ts = UT64_MAX;
+static int tsFPS = 0;
+static int oldFPS = 0;
+
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
 	"pxw 64@r:SP;dr=;pd $r",
@@ -2450,6 +2454,17 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	char pos[512], foo[512], bar[512], pcs[32];
 	if (!oldpc) {
 		oldpc = r_debug_reg_get (core->dbg, "PC");
+	}
+	if (r_config_get_i (core->config, "scr.fps")) {
+		ut64 now = r_sys_now ();
+		st64 diff = now - ts;
+		if (diff < 10000000) {
+			ut32 newFPS = (100000.0 / diff) * 10;
+			tsFPS = (tsFPS + newFPS + oldFPS) / 3;
+			oldFPS = newFPS;
+		}
+		ts = now;
+		r_cons_printf ("(fps %d) ", tsFPS);
 	}
 	/* automatic block size */
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");

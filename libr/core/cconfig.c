@@ -2625,6 +2625,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
+	SETPREF ("scr.fps", "false", "Display FPS in visual title");
 	/* TODO: rename to asm.color.ops ? */
 	SETPREF ("scr.zoneflags", "true", "Show zoneflags in visual mode before the title (see fz?)");
 	SETPREF ("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
