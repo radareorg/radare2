@@ -296,8 +296,10 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	r_list_free (flags);
 	r_list_free (regs);
 	free (g->target.regprofile);
-	g->target.regprofile = strdup (profile);
-	free (profile);
+	if (profile) {
+		g->target.regprofile = strdup (profile);
+		free (profile);
+	}
 	g->target.valid = true;
 	g->registers = arch_regs;
 	return 0;
@@ -479,6 +481,7 @@ exit_err:
 	if (flags) {
 		r_list_free (flags);
 	}
+	free (tmpflag);
 	return NULL;
 }
 

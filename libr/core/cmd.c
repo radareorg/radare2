@@ -1483,8 +1483,9 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #endif
 	eprintf ("r_core_cmd_pipe: unimplemented for this platform\n");
 #endif
-	if (pipecolor != -1)
+	if (pipecolor != -1) {
 		r_config_set_i (core->config, "scr.color", pipecolor);
+	}
 	r_config_set_i (core->config, "scr.interactive", si);
 	return ret;
 }
@@ -1492,8 +1493,12 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 static char *parse_tmp_evals(RCore *core, const char *str) {
 	char *s = strdup (str);
 	int i, argc = r_str_split (s, ',');
-	char *res = malloc (1);
-	*res = '\0';
+	char *res = strdup ("");
+	if (!s || !res) {
+		free (s);
+		free (res);
+		return NULL;
+	}
 	for (i = 0; i < argc; i++) {
 		char *eq, *kv = (char *)r_str_word_get0 (s, i);
 		if (!kv) {
@@ -1503,6 +1508,9 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 		if (eq) {
 			*eq = 0;
 			const char *ov = r_config_get (core->config, kv);
+			if (!ov) {
+				continue;
+			}
 			size_t kv_len = strlen (kv);
 			size_t ov_len = strlen (ov);
 			size_t cmd_size = kv_len + ov_len + 5;
