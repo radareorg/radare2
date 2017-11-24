@@ -159,7 +159,9 @@ R_API char *r_cons_pal_parse (const char *str) {
 	ut8 r, g, b;
 	char out[128];
 	char *s = strdup (str);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	char *p = strchr (s + 1, ' ');
 	out[0] = 0;
 	if (p) *p++ = 0;

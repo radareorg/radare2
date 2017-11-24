@@ -368,9 +368,10 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	// }
 	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
-	r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
-			COLOR_RESET (ds), COLOR (ds, color_fline),
-			ds->pre, sn, ds->refline, COLOR_RESET (ds),
+	r_cons_printf ("%s%s%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
+			COLOR_RESET (ds),
+			COLOR (ds, color_fline), ds->pre, COLOR_RESET(ds), sn,
+			COLOR (ds, color_flow),ds->refline, COLOR_RESET (ds),
 			up? "": ".-", COLOR (ds, color_comment));
 #if 0
 // r_cons_printf ("(%d)", ds->cmtcount);
@@ -1626,16 +1627,32 @@ static void ds_show_flags(RDisasmState *ds) {
 			r_cons_printf (";-- ");
 		}
 		if (ds->show_color) {
-			r_cons_strcat (ds->color_flag);
+			bool hasColor = false;
+			if (flag->color) {
+				char *color = r_cons_pal_parse (flag->color);
+				if (color) {
+					r_cons_strcat (color);
+					free (color);
+					ds->lastflag = flag;
+					hasColor = true;
+				}
+			}
+			if (!hasColor) {
+				r_cons_strcat (ds->color_flag);
+			}
 		}
 		if (ds->asm_demangle && flag->realname) {
 			const char *lang = r_config_get (core->config, "bin.lang");
 			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
-			r_cons_printf ("%s:\n", name? name: flag->realname);
+			r_cons_printf ("%s:", name? name: flag->realname);
 			R_FREE (name);
 		} else {
-			r_cons_printf ("%s:\n", flag->name);
+			r_cons_printf ("%s:", flag->name);
 		}
+		if (ds->show_color) {
+			r_cons_strcat (Color_RESET);
+		}
+		r_cons_newline ();
 	}
 }
 
@@ -1919,8 +1936,9 @@ static void ds_print_stackptr(RDisasmState *ds) {
 		}
 		/* XXX if we reset the stackptr 'ret 0x4' has not effect.
 		 * Use RAnalFunction->RAnalOp->stackptr? */
-		if (ds->analop.type == R_ANAL_OP_TYPE_RET)
+		if (ds->analop.type == R_ANAL_OP_TYPE_RET) {
 			ds->stackptr = 0;
+		}
 	}
 }
 
@@ -1928,6 +1946,23 @@ static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
 	ut64 at = ds->vat;
 
+	bool hasCustomColor = false;
+	// probably tooslow
+	RFlagItem *f = r_flag_get_at (core->flags, at, 1);
+	if (ds->show_color && f) { // ds->lastflag) {
+		const char *color = f->color;
+		if (ds->at >= f->offset && ds->at < f->offset + f->size) {
+		//	if (r_itv_inrange (f->itv, ds->at))
+			if (color && *color) {
+				char *k = r_cons_pal_parse (f->color);
+				if (k) {
+					r_cons_printf ("%s", k);
+					hasCustomColor = true;
+					free (k);
+				}
+			}
+		}
+	}
 	r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
 		static RFlagItem sfi = R_EMPTY;
@@ -1978,8 +2013,17 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (ds->hint && ds->hint->high) {
 			show_trace = true;
 		}
-		r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-				ds->show_offseg, ds->show_offdec, delta, label);
+		if (hasCustomColor) {
+			int of = core->print->flags;
+			core->print->flags = 0;
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
+					ds->show_offseg, ds->show_offdec, delta, label);
+			core->print->flags = of;
+			r_cons_strcat (Color_RESET);
+		} else {
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
+					ds->show_offseg, ds->show_offdec, delta, label);
+		}
 	}
 	if (ds->atabsoff > 0) {
 		if (ds->_tabsoff != ds->atabsoff) {
