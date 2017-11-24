@@ -2239,6 +2239,13 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk
 	}
 	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to); 
 	r_core_cmdf (core, "f %s.0x%08"PFMT64x" %d = 0x%08"PFMT64x "# from 0x%"PFMT64x "\n", prefix, to, vsize, to, from);
+	const char *cmdHit = r_config_get (core->config, "cmd.hit");
+	if (cmdHit && *cmdHit) {
+		ut64 addr = core->offset;
+		r_core_seek (core, from, 1);
+		r_core_cmd (core, cmdHit, 0);
+		r_core_seek (core, addr, 1);
+	}
 }
 
 static int cmd_search(void *data, const char *input) {
@@ -2632,29 +2639,36 @@ reread:
 		break;
 	case 'V': // "/V"
 		// TODO: add support for json
-	{
-		int err = 1, vsize = atoi (input + 1);
-		bool asterisk = strchr (input + 1, '*');
-		if (vsize && input[2] && input[3]) {
-			char *w = strchr (input + 3, ' ');
-			if (w) {
-				*w++ = 0;
-				ut64 vmin = r_num_math (core->num, input + 3);
-				ut64 vmax = r_num_math (core->num, w);
-				if (vsize > 0) {
-					err = 0;
-					int hits = r_core_search_value_in_range (core, search_itv,
-							vmin, vmax, vsize, asterisk,
-							_CbInRangeSearchV);
-					eprintf ("hits: %d\n", hits);
+		{
+			int err = 1, vsize = atoi (input + 1);
+			bool asterisk = strchr (input + 1, '*');
+			if (vsize && input[2] && input[3]) {
+				char *w = strchr (input + 3, ' ');
+				if (w) {
+					*w++ = 0;
+					ut64 vmin = r_num_math (core->num, input + 3);
+					ut64 vmax = r_num_math (core->num, w);
+					if (vsize > 0) {
+						RIOMap *map;
+						RListIter *iter;
+						const char *searchIn = r_config_get (core->config, "search.in");
+						RList *list = r_core_get_boundaries (core, searchIn);
+						r_list_foreach (list, iter, map) {
+							err = 0;
+							int hits = r_core_search_value_in_range (core, map->itv,
+									vmin, vmax, vsize, asterisk,
+									_CbInRangeSearchV);
+							eprintf ("hits: %d\n", hits);
+						}
+					}
 				}
 			}
+			if (err) {
+				eprintf ("Usage: /V[1|2|4|8] [minval] [maxval]\n");
+			}
 		}
-		if (err) {
-			eprintf ("Usage: /V[1|2|4|8] [minval] [maxval]\n");
-		}
-	}
-	break;
+		dosearch = false;
+		break;
 	case 'v': // "/v"
 		if (input[1]) {
 			if (input[1] == '?') {
