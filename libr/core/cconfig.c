@@ -2269,6 +2269,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETPREF ("asm.family", "false", "Show family name in disasm");
 	SETPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
+	SETI ("asm.shortcut", 1, "Shortcut position (-1, 0, 1)");
 	SETI ("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETPREF ("asm.minicols", "false", "Only show the instruction in the column disasm");

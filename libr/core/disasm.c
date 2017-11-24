@@ -231,6 +231,7 @@ typedef struct {
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
+	int shortcut_pos;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -269,7 +270,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
-static void ds_print_core_vmode(RDisasmState *ds);
+static void ds_print_core_vmode(RDisasmState *ds, int pos);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static void ds_print_comments_right(RDisasmState *ds);
@@ -436,6 +437,7 @@ static RDisasmState * ds_init(RCore *core) {
 	if (!ds) {
 		return NULL;
 	}
+	ds->shortcut_pos = r_config_get_i (core->config, "asm.shortcut");
 	ds->core = core;
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
@@ -2604,54 +2606,57 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	}
 }
 
-static void ds_print_core_vmode(RDisasmState *ds) {
-	char *shortcut = NULL;
+static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
+	char *shortcut = r_core_add_asmqjmp (ds->core, addr);
+	if (!pos && !shortcut) {
+		r_cons_printf ("   ");
+		return;
+	}
+	char *ch = pos?  ";": "";
+	if (ds->show_color) {
+		r_cons_strcat (ds->pal_comment);
+	}
+	if (shortcut) {
+		if (ds->core->is_asmqjmps_letter) {
+			r_cons_printf ("%s[g%s]", ch, shortcut);
+		} else {
+			r_cons_printf ("%s[%s]", ch, shortcut);
+		}
+		free (shortcut);
+	} else {
+		r_cons_printf ("%s[?]", ch);
+	}
+	if (ds->show_color) {
+		r_cons_strcat (Color_RESET);
+	}
+}
+
+static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
+	bool gotShortcut = false;
 
 	if (!ds->show_jmphints) {
 		return;
 	}
 	if (core->vmode) {
-		switch (ds->analop.type) { //  & R_ANAL_OP_TYPE_MASK) {
+		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			if (ds->show_leahints) {
-				ds_align_comment (ds);
-				if (ds->show_color) {
-					r_cons_strcat (ds->pal_comment);
+				if (pos) {
+					ds_align_comment (ds);
 				}
-				shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
-				if (shortcut) {
-					r_cons_printf (";[%s]", shortcut);
-					free (shortcut);
-				} else {
-					r_cons_strcat (";[?]");
-				}
-				if (ds->show_color) {
-					r_cons_strcat (Color_RESET);
-				}
+				ds_print_shortcut (ds, ds->analop.ptr, pos);
+				gotShortcut = true;
 			}
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
 		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
-			ds_align_comment (ds);
-			if (ds->show_color) {
-				r_cons_strcat (ds->pal_comment);
+			if (pos) {
+				ds_align_comment (ds);
 			}
-			shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
-			if (shortcut) {
-				if (core->is_asmqjmps_letter) {
-					r_cons_printf (";[g%s]", shortcut);
-				} else {
-					r_cons_printf (";[%s]", shortcut);
-				}
-				free (shortcut);
-			} else {
-				r_cons_strcat (";[?]");
-			}
-			if (ds->show_color) {
-				r_cons_strcat (Color_RESET);
-			}
+			ds_print_shortcut (ds, ds->analop.jump, pos);
+			gotShortcut = true;
 			break;
 		case R_ANAL_OP_TYPE_RCALL:
 			break;
@@ -2659,25 +2664,15 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-			ds_align_comment (ds);
-			if (ds->show_color) {
-				r_cons_strcat (ds->pal_comment);
+			if (pos) {
+				ds_align_comment (ds);
 			}
-			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
-			if (shortcut) {
-				if (core->is_asmqjmps_letter) {
-					r_cons_printf (";[g%s]", shortcut);
-				} else {
-					r_cons_printf (";[%s]", shortcut);
-				}
-				free (shortcut);
-			} else {
-				r_cons_strcat (";[?]");
-			}
-			if (ds->show_color) {
-				r_cons_strcat (Color_RESET);
-			}
+			ds_print_shortcut (ds, ds->analop.jump, pos);
+			gotShortcut = true;
 			break;
+		}
+		if (!gotShortcut) {
+			r_cons_strcat ("   ");
 		}
 	}
 }
@@ -3968,6 +3963,9 @@ toro:
 			ds_print_lines_left (ds);
 		}
 		ds_print_offset (ds);
+		if (ds->shortcut_pos == 0) {
+			ds_print_core_vmode (ds, ds->shortcut_pos);
+		}
 		ds_print_op_size (ds);
 		ds_print_trace (ds);
 		ds_print_cycles (ds);
@@ -3992,7 +3990,9 @@ toro:
 				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx, len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			ds_print_core_vmode (ds);
+			if (ds->shortcut_pos > 0) {
+				ds_print_core_vmode (ds, ds->shortcut_pos);
+			}
 			// ds_print_cc_update (ds);
 
 			ds_cdiv_optimization (ds);
@@ -4843,7 +4843,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 					buf+idx, len-bb_size_consumed);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			ds_print_core_vmode (ds);
+			if (ds->shortcut_pos > 0) {
+				ds_print_core_vmode (ds, ds->shortcut_pos);
+			}
 			//ds_print_cc_update (ds);
 			/*if (ds->analop.refptr) {
 				handle_print_refptr (core, ds);
