@@ -2612,6 +2612,9 @@ static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 		r_cons_printf ("   ");
 		return;
 	}
+	if (pos) {
+		ds_align_comment (ds);
+	}
 	char *ch = pos?  ";": "";
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
@@ -2642,9 +2645,6 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			if (ds->show_leahints) {
-				if (pos) {
-					ds_align_comment (ds);
-				}
 				ds_print_shortcut (ds, ds->analop.ptr, pos);
 				gotShortcut = true;
 			}
@@ -2652,9 +2652,6 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
 		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
-			if (pos) {
-				ds_align_comment (ds);
-			}
 			ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 			break;
@@ -2664,9 +2661,6 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-			if (pos) {
-				ds_align_comment (ds);
-			}
 			ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 			break;
