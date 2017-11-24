@@ -2275,23 +2275,21 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	case R_ANAL_OP_TYPE_CMOV:
 	case R_ANAL_OP_TYPE_MOV:
 		src = ds->analop.src[0];
-		if (src && src->memref>0 && src->reg) {
-			if (core->anal->reg) {
-				const char *pc = core->anal->reg->name[R_REG_NAME_PC];
-				RAnalValue *dst = ds->analop.dst;
-				if (dst && dst->reg && dst->reg->name) {
-					if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
-						RFlagItem *item;
-						ut8 b[8];
-						ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
-						ut64 off = 0LL;
-						r_core_read_at (core, ptr, b, src->memref);
-						off = r_mem_get_num (b, src->memref);
-						item = r_flag_get_i (core->flags, off);
-						//TODO: introduce env for this print?
-						r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
-						  dst->reg->name, ptr, off, item?item->name: "");
-					}
+		if (src && src->memref>0 && src->reg && core->anal->reg) {
+			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
+			RAnalValue *dst = ds->analop.dst;
+			if (dst && dst->reg && dst->reg->name) {
+				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
+					RFlagItem *item;
+					ut8 b[8];
+					ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
+					ut64 off = 0LL;
+					r_core_read_at (core, ptr, b, src->memref);
+					off = r_mem_get_num (b, src->memref);
+					item = r_flag_get_i (core->flags, off);
+					//TODO: introduce env for this print?
+					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
+					  dst->reg->name, ptr, off, item?item->name: "");
 				}
 			}
 		}
@@ -3715,9 +3713,18 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					// r_cons_strcat (ds->color_comment);
 					r_cons_strcat (ds->color_usrcmt);
 				}
-				r_cons_printf ("; %s", comment);
+				if (strchr (comment, '\n')) {
+					r_cons_newline ();
+					char *align = r_str_newf ("%s  ;^ ", ds->pre);
+					char *c = r_str_prefix_all (strdup (comment), align);
+					r_cons_strcat (c);
+					free (align);
+					free (c);
+				} else {
+					r_cons_printf ("; %s", comment);
+				}
 			}
-			// r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
+			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 			if (ds->show_color) {
 				ds_print_color_reset (ds);
 			}
