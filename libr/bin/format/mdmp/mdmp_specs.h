@@ -189,6 +189,7 @@ typedef enum thread_write_flags_t {
 } thread_write_flags;
 
 /* Contains header information for the minidump file. */
+R_PACKED (
 struct minidump_header {
 	ut32 	signature;
 	ut32	version;
@@ -202,43 +203,47 @@ struct minidump_header {
 	};
 
 	ut64	flags;
-}__attribute__((packed));
+});
 
 /* Contains information describing the location of a data stream within a
  * minidump file. */
+R_PACKED (
 struct minidump_location_descriptor {
 	ut32	data_size;
 	rva_t	rva;
-}__attribute__((packed));
+});
 
 /* Contains information describing the location of a data stream within a
  * minidump file. */
+R_PACKED (
 struct minidump_location_descriptor64 {
 	ut64 	data_size;
 	rva64_t	rva;
-}__attribute__((packed));
+});
 
 /* Describes a range of memory. */
+R_PACKED (
 struct minidump_memory_descriptor {
 	ut64 start_of_memory_range;
-
 	struct minidump_location_descriptor memory;
-}__attribute__((packed));
+});
 
 /* Describes a range of memory. */
+R_PACKED (
 struct minidump_memory_descriptor64 {
 	ut64	start_of_memory_range;
 	ut64	data_size;
-}__attribute__((packed));
+});
 
 /* Contains the information needed to access a specific data stream in a minidump file. */
+R_PACKED (
 struct minidump_directory {
 	ut32	stream_type;
-
 	struct minidump_location_descriptor location;
-} __attribute__((packed));
+});
 
 /* Contains exception information. */
+R_PACKED (
 struct minidump_exception {
 	ut32 	exception_code;
 	ut32	exception_flags;
@@ -247,18 +252,20 @@ struct minidump_exception {
 	ut32	number_parameters;
 	ut32	__unused_alignment;
 	ut64	exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-}__attribute__((packed));
+});
 
 /* Contains exception information. */
+R_PACKED (
 struct minidump_exception_stream {
 	ut32	thread_id;
 	ut32	 __alignment;
 
 	struct minidump_exception exception_record;
 	struct minidump_location_descriptor thread_context;
-}__attribute__((packed));
+});
 
 /* Describes an exception. */
+R_PACKED (
 struct minidump_exception_record {
 	ut32	exception_code;
 	ut32	exception_flags;
@@ -268,37 +275,40 @@ struct minidump_exception_record {
 	void 	*exception_address;
 	ut32	number_parameters;
 	void /*ULONG_PTR*/ *exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-}__attribute__((packed));
+});
 
 /* Contains an exception record with a machine-independent description of an
  * exception and a context record with a machine-dependent description of the
  * processor context at the time of the exception. */
+R_PACKED (
 struct minidump_exception_pointers {
 	struct minidump_exception_record exception_record;
-
 	void /* struct context */ *context_record;
-}__attribute__((packed));
+});
 
 /* Contains the exception information written to the minidump file by the
  * MiniDumpWriteDump function. */
+R_PACKED (
 struct minidump_exception_information {
 	ut32	thread_id;
 
 	struct minidump_exception_pointers *exception_pointers;
 
 	ut8 /*bool*/ client_pointers;
-}__attribute__((packed));
+});
 
 /* Represents a function table stream. */
+R_PACKED (
 struct minidump_function_table_descriptor {
 	ut64	minimum_address;
 	ut64	maximum_address;
 	ut64	base_address;
 	ut32	entry_count;
 	ut32	size_of_align_pad;
-}__attribute__((packed));
+});
 
 /* Represents the header for the function table stream. */
+R_PACKED (
 struct minidump_function_table_stream {
 	ut32	size_of_header;
 	ut32	size_of_descriptor;
@@ -306,18 +316,20 @@ struct minidump_function_table_stream {
 	ut32	size_of_function_entry;
 	ut32	number_of_descriptors;
 	ut32	size_of_align_pad;
-}__attribute__((packed));
+});
 
 /* Represents the header for a handle data stream. */
+R_PACKED (
 struct minidump_handle_data_stream {
 	ut32	size_of_header;
 	ut32	size_of_descriptor;
 	ut32	number_of_descriptors;
 	ut32	reserved;
-}__attribute__((packed));
+});
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
+R_PACKED (
 struct minidump_handle_descriptor {
 	ut64	handle;
 	rva_t	type_name_rva;
@@ -326,10 +338,11 @@ struct minidump_handle_descriptor {
 	ut32	granted_access;
 	ut32	handle_count;
 	ut32	pointer_count;
-}__attribute__((packed));
+});
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
+R_PACKED (
 struct minidump_handle_descriptor_2 {
 	ut64	handle;
 	rva_t	type_name_rva;
@@ -340,39 +353,42 @@ struct minidump_handle_descriptor_2 {
 	ut32	pointer_count;
 	rva_t	object_info_rva;
 	ut32	reserved_0;
-}__attribute__((packed));
+});
 
 /* Contains object-specific information for a handle. */
+R_PACKED (
 struct minidump_handle_object_information {
 	rva_t	next_info_rva;
 	ut32	info_type;
 	ut32	size_of_info;
-}__attribute__((packed));
+});
 
 /* Contains a list of handle operations. */
+R_PACKED (
 struct minidump_handle_operation_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut32	number_of_entries;
 	ut32	reserved;
-}__attribute__((packed));
+});
 
 /* Contains a list of memory ranges. */
+R_PACKED (
 struct minidump_memory_list {
 	ut32	number_of_memory_ranges;
-
 	struct minidump_memory_descriptor *memory_ranges;
-}__attribute__((packed));
+});
 
 /* Contains a list of memory ranges. */
+R_PACKED (
 struct minidump_memory64_list {
 	ut64	number_of_memory_ranges;
 	rva64_t	base_rva;
-
 	struct minidump_memory_descriptor64 *memory_ranges;
-}__attribute__((packed));
+});
 
 /* Describes a region of memory. */
+R_PACKED (
 struct minidump_memory_info {
 	ut64	base_address;
 	ut64	allocation_base;
@@ -383,16 +399,18 @@ struct minidump_memory_info {
 	ut32	protect;
 	ut32	type;
 	ut32	__alignment_2;
-}__attribute__((packed));
+});
 
 /* Contains a list of memory regions. */
+R_PACKED (
 struct minidump_memory_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut64	number_of_entries;
-}__attribute__((packed));
+});
 
 /* Contains a variety of information. */
+R_PACKED (
 struct minidump_misc_info {
 	ut32	size_of_info;
 	ut32	flags_1;
@@ -400,9 +418,10 @@ struct minidump_misc_info {
 	ut32	process_create_time;
 	ut32	process_user_time;
 	ut32	process_kernel_time;
-}__attribute__((packed));
+});
 
 /* Represents information in the miscellaneous information stream. */
+R_PACKED (
 struct minidump_misc_info_2 {
 	ut32	size_of_info;
 	ut32	flags_1;
@@ -415,10 +434,11 @@ struct minidump_misc_info_2 {
 	ut32	processor_mhz_limit;
 	ut32	processor_max_idle_state;
 	ut32	processor_current_idle_state;
-}__attribute__((packed));
+});
 
 /* Contains version information for a file. This information is language and
  * code page independent. */
+R_PACKED (
 struct vs_fixedfileinfo {
 	ut32	dw_signature;
 	ut32	dw_struc_version;
@@ -433,9 +453,10 @@ struct vs_fixedfileinfo {
 	ut32	dw_file_subtype;
 	ut32	dw_file_date_ms;
 	ut32	dw_file_date_ls;
-}__attribute__((packed));
+});
 
 /* Contains information for a specific module. */
+R_PACKED (
 struct minidump_module {
 	ut64	base_of_image;
 	ut32	size_of_image;
@@ -449,22 +470,25 @@ struct minidump_module {
 
 	ut64	reserved_0;
 	ut64	reserved_1;
-}__attribute__((packed));
+});
 
 /* Contains a list of modules. */
+R_PACKED (
 struct minidump_module_list {
 	ut32	number_of_modules;
 
 	struct minidump_module *modules;
-}__attribute__((packed));
+});
 
 /* Describes a string. */
+R_PACKED (
 struct minidump_string {
 	ut32	length;
 	ut16	*buffer;
-}__attribute__((packed));
+});
 
 /* Contains processor and operating system information. */
+R_PACKED (
 struct minidump_system_info {
 	ut16	processor_architecture;
 	ut16	processor_level;
@@ -503,9 +527,10 @@ struct minidump_system_info {
 			ut64	processor_features[2];
 		} other_cpu_info;
 	} cpu;
-}__attribute__((packed));
+});
 
 /* Contains information for a specific thread. */
+R_PACKED (
 struct minidump_thread {
 	ut32	thread_id;
 	ut32	suspend_count;
@@ -515,16 +540,18 @@ struct minidump_thread {
 
 	struct minidump_memory_descriptor stack;
 	struct minidump_location_descriptor thread_context;
-}__attribute__((packed));
+});
 
 /* Contains a list of threads. */
+R_PACKED (
 struct minidump_thread_list {
 	ut32	number_of_threads;
 
 	struct minidump_thread *threads;
-}__attribute__((packed));
+});
 
 /* Contains extended information for a specific thread. */
+R_PACKED (
 struct minidump_thread_ex {
 	ut32	thread_id;
 	ut32	suspend_count;
@@ -535,16 +562,18 @@ struct minidump_thread_ex {
 	struct minidump_memory_descriptor stack;
 	struct minidump_location_descriptor thread_context;
 	struct minidump_memory_descriptor backing_store;
-}__attribute__((packed));
+});
 
 /* Contains a list of threads. */
+R_PACKED (
 struct minidump_thread_ex_list {
 	ut32	number_of_threads;
 
 	struct minidump_thread_ex *threads;
-}__attribute__((packed));
+});
 
 /* Contains thread state information. */
+R_PACKED (
 struct minidump_thread_info {
 	ut32	thread_id;
 	ut32	dump_flags;
@@ -556,54 +585,61 @@ struct minidump_thread_info {
 	ut64	user_time;
 	ut64	start_address;
 	ut64	affinity;
-}__attribute__((packed));
+});
 
 /* Contains a list of threads. */
+R_PACKED (
 struct minidump_thread_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut32	number_of_entries;
-}__attribute__((packed));
+});
 
 /* Contains information about a module that has been unloaded. This information
  * can help diagnose problems calling code that is no longer loaded. */
+R_PACKED (
 struct minidump_unloaded_module {
 	ut64	base_of_image;
 	ut32	size_of_image;
 	ut32	check_sum;
 	ut32	time_date_stamp;
 	rva_t	module_name_rva;
-}__attribute__((packed));
+});
 
 /* Contains a list of unloaded modules. */
+R_PACKED (
 struct minidump_unloaded_module_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut32	number_of_entries;
-}__attribute__((packed));
+});
 
 /* Contains user-defined information stored in a data stream. */
+R_PACKED (
 struct minidump_user_stream {
 	ut32	type;
 	ut32	buffer_size;
 	void /*PVOID*/ *buffer;
-}__attribute__((packed));
+});
 
 /* Contains a list of user data streams used by the MiniDumpWriteDump function. */
+R_PACKED (
 struct minidump_user_stream_information {
 	ut32	user_stream_count;
 
 	struct minidump_user_stream *user_stream_array;
-}__attribute__((packed));
+});
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeThreadCallback. */
+R_PACKED (
 struct minidump_include_thread_callback {
 	ut32	thread_id;
-}__attribute__((packed));
+});
 
 /* Contains module information for the MiniDumpCallback function when the
  * callback type is ModuleCallback. */
+R_PACKED (
 struct minidump_module_callback {
 	ut16	/*pwchar*/ *full_path;
 	ut64	base_of_image;
@@ -617,34 +653,38 @@ struct minidump_module_callback {
 	ut32	size_of_cv_record;
 	void	/*pvoid*/ *misc_record;
 	ut32	size_of_misc_record;
-}__attribute__((packed));
+});
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeModuleCallback. */
+R_PACKED (
 struct minidump_include_module_callback {
 	ut64	base_of_image;
-}__attribute__((packed));
+});
 
 /* Contains I/O callback information. This structure is used by the
  * MiniDumpCallback function when the callback type is IoStartCallback,
  * IoWriteAllCallback, or IoFinishCallback. */
+R_PACKED (
 struct minidump_io_callback {
 	void	/*handle*/ *Handle;
 	ut64	offset;
 	void	/*pvoid*/ *buffer;
 	ut32	buffer_bytes;
-}__attribute__((packed));
+});
 
 /* Contains information about a failed memory read operation. This structure is
  * used by the MiniDumpCallback function when the callback type is
  * ReadMemoryFailureCallback. */
+R_PACKED (
 struct minidump_read_memory_failure_callback {
 	ut64	offset;
 	ut32	bytes;
 	st32	/* HRESULT */ failure_status;
-}__attribute__((packed));
+});
 
 /* Contains information returned by the MiniDumpCallback function. */
+R_PACKED (
 struct minidump_callback_output {
 	union {
 		ut32	module_write_flags;
@@ -667,14 +707,16 @@ struct minidump_callback_output {
 	};
 
 	st32 /* HRESULT */ status;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct avrf_backtrace_information {
 	ut32	 depth;
 	ut32	 index;
 	ut64	 return_addresses[AVRF_MAX_TRACES];
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct avrf_handle_operation {
 	ut64	handle;
 	ut32	process_id;
@@ -683,6 +725,6 @@ struct avrf_handle_operation {
 	ut32	spare_0;
 
 	struct avrf_backtrace_information back_trace_information;
-}__attribute__((packed));
+});
 
 #endif /* MDMP_SPECS_H */

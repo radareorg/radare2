@@ -3,7 +3,6 @@
 #ifndef MDMP_WINDEFS_H
 #define MDMP_WINDEFS_H
 
-
 #define EXCEPTION_MAXIMUM_PARAMETERS 15
 
 #define MAXIMUM_SUPPORTED_EXTENSION 512
@@ -13,7 +12,7 @@
 #define ARM_MAX_BREAKPOINTS 8
 #define ARM_MAX_WATCHPOINTS 1
 
-
+R_PACKED (
 struct windows_floating_save_area {
 	ut32	control_word;
 	ut32	status_word;
@@ -24,8 +23,9 @@ struct windows_floating_save_area {
 	ut32	data_selector;
 	ut8	register_area[SIZE_OF_80387_REGISTERS];
 	ut32	spare_0;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_systemtime {
 	ut16	w_year;
 	ut16	w_month;
@@ -35,8 +35,9 @@ struct windows_systemtime {
 	ut16	w_minute;
 	ut16	w_second;
 	ut16	w_milliseconds;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_timezone_information {
 	ut32	bias;
 	ut16	standard_name[32];
@@ -45,23 +46,27 @@ struct windows_timezone_information {
 	ut16	daylight_name[32];
 	struct windows_systemtime daylight_date;
 	ut32	daylight_bias;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_m128a {
 	ut64	low;
 	st64	high;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_neon128 {
 	ut64	low;
 	st64	high;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_float128 {
 	ut64 low;
 	st64 high;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct context_type_i386 {
 	ut32	context_flags;
 
@@ -94,8 +99,9 @@ struct context_type_i386 {
 	ut32	seg_ss;
 
 	ut8	extended_registers[MAXIMUM_SUPPORTED_EXTENSION];
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct context_type_ia64 {
 	ut32	context_flags;
 	ut32	fill_1[3];
@@ -329,9 +335,9 @@ struct context_type_ia64 {
 	ut64	st_fdr;
 
 	ut64	unusedpack;
-}__attribute__((packed));
+});
 
-
+R_PACKED (
 struct context_type_arm {
 	ut32	context_flags;
 
@@ -367,8 +373,9 @@ struct context_type_arm {
 	ut32 wvr[ARM_MAX_WATCHPOINTS];
 	ut32 wcr[ARM_MAX_WATCHPOINTS];
 	ut32 padding_2[2];
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_xsave_format32 {
 	ut16	control_word;
 	ut16	status_word;
@@ -386,8 +393,9 @@ struct windows_xsave_format32 {
 	struct windows_m128a float_registers[8];
 	struct windows_m128a xmm_registers[8];
 	ut8 reserved_4[224];
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct context_type_amd64 {
 	ut64	p1_home;
 	ut64	p2_home;
@@ -465,8 +473,9 @@ struct context_type_amd64 {
 	ut64	last_branch_from_rip;
 	ut64	last_exception_to_rip;
 	ut64	last_exception_from_rip;
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct windows_exception_record32 {
 	ut32	exception_code;
 	ut32	exception_flags;
@@ -474,11 +483,12 @@ struct windows_exception_record32 {
 	ut32	exception_address;
 	ut32	number_parameters;
 	ut32	exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-}__attribute__((packed));
+});
 
+R_PACKED (
 struct exception_pointers_i386 {
 	struct windows_exception_record32 *exception_record;
 	void /*struct context*/ *context_record;
-}__attribute__((packed));
+});
 
 #endif /* MDMP_WINDEFS_H */
