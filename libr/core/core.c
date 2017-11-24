@@ -768,7 +768,7 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 	list= r_sys_dir (dirname);
 	n = strlen (basename);
 	char *tmpstring;
-	int chgdir = (!strncmp (line->buffer.data, "cd ", 3) ? 1 : 0);
+	bool chgdir = !strncmp (line->buffer.data, "cd ", 3);
 	if (list) {
 		r_list_foreach (list, iter, filename) {
 			if (*filename == '.') {

@@ -479,8 +479,8 @@ R_API void r_line_autocomplete() {
 					p[largv0 + 1] = '\0';
 				}
 			}
-		I.buffer.length = strlen (I.buffer.data);
-		I.buffer.index = I.buffer.length;
+			I.buffer.length = strlen (I.buffer.data);
+			I.buffer.index = I.buffer.length;
 		}
 	} else if (argc > 0) {
 		if (*p) {
