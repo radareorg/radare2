@@ -1876,6 +1876,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					break;
 				}
 				reset_print_cur (core->print);
+				eprintf ("\rRendering graph...");
 				r_core_visual_graph (core, NULL, NULL, true);
 				r_config_set_i (core->config, "scr.color", ocolor);
 			}

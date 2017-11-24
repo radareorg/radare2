@@ -230,6 +230,7 @@ typedef struct {
 	bool dwarfAbspath;
 	bool showpayloads;
 	bool showrelocs;
+	int cmtcount;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -353,7 +354,7 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 // up means if this lines go up, it controls whether to insert `_
 // nl if we have to insert new line, it controls whether to insert \n
 static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
-	const char *sn;
+	ds->cmtcount ++;
 	if (ds->show_comment_right) {
 		if (ds->show_color) {
 			r_cons_printf (ds->pal_comment);
@@ -361,12 +362,39 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 		return;
 	}
 	//XXX fix this generate many dupes with section name
+	const char *sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
+	// if (ds->cmtcount == 0) {
+		ds_align_comment (ds);
+	// }
 	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
 	r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
-		COLOR_RESET (ds), COLOR (ds, color_fline),
-		ds->pre, sn, ds->refline, COLOR_RESET (ds),
-		up? "": "`-", COLOR (ds, color_comment));
+			COLOR_RESET (ds), COLOR (ds, color_fline),
+			ds->pre, sn, ds->refline, COLOR_RESET (ds),
+			up? "": ".-", COLOR (ds, color_comment));
+#if 0
+// r_cons_printf ("(%d)", ds->cmtcount);
+	if (ds->cmtcount == 1) {
+		ds_align_comment (ds);
+		r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
+			COLOR_RESET (ds), COLOR (ds, color_fline),
+			ds->pre, sn, ds->refline, COLOR_RESET (ds),
+			up? "": ".v", COLOR (ds, color_comment));
+	} else {
+		r_cons_printf ("%s%s", COLOR (ds, color_comment), " "); //nl? "\n": "");
+	}
+#if 0
+	if (!up || ds->cmtcount > 1) {
+		r_cons_printf ("%s%s", COLOR (ds, color_comment), nl? "\n": "");
+	} else {
+		ds_align_comment (ds);
+		r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
+			COLOR_RESET (ds), COLOR (ds, color_fline),
+			ds->pre, sn, ds->refline, COLOR_RESET (ds),
+			up? "": "`-", COLOR (ds, color_comment));
+	}
+#endif
+#endif
 }
 #define ALIGN _ds_comment_align_ (ds, true, false)
 
@@ -1437,6 +1465,7 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	RCore *core = ds->core;
 	RAnalFunction *f;
 
+	ds->cmtcount = 0;
 	if (!ds->show_functions) {
 		return;
 	}
@@ -2004,7 +2033,6 @@ static void ds_adistrick_comments(RDisasmState *ds) {
 	}
 }
 
-
 static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int size) {
 	RCore *core = ds->core;
 	const char *type = NULL;
@@ -2556,7 +2584,9 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 				} else {
 					r_cons_strcat (";[?]");
 				}
-				if (ds->show_color) r_cons_strcat (Color_RESET);
+				if (ds->show_color) {
+					r_cons_strcat (Color_RESET);
+				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
@@ -3062,6 +3092,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	} else {
 		ds_print_as_string (ds);
 	}
+#if 0
+	if (!ds->show_comment_right && ds->cmtcount > 0) {
+		r_cons_newline ();
+	}
+#endif
 #if DEADCODE
 	if (aligned && ds->show_color) {
 		r_cons_printf (Color_RESET);
