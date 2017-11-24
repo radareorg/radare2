@@ -1603,6 +1603,21 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 	return R_ANAL_RET_NEW;
 }
 
+R_API int r_anal_fcn_loops(RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	ut32 loops = 0;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->jump != UT64_MAX && bb->jump < bb->addr) {
+			loops ++;
+		}
+		if (bb->fail != UT64_MAX && bb->fail < bb->addr) {
+			loops ++;
+		}
+	}
+	return loops;
+}
+
 R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 /*
         CC = E - N + 2P

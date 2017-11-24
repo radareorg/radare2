@@ -207,7 +207,7 @@ static const char *help_msg_af[] = {
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
-	"afC[c]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
+	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"aft", "[?]", "type matching, type propagation",
 	"aff", "", "re-adjust function boundaries to fit",
@@ -257,6 +257,7 @@ static const char *help_msg_afC[] = {
 	"Usage:", "afC", " [addr]",
 	"afC", "", "function cycles cost",
 	"afCc", "", "cyclomatic complexity",
+	"afCl", "", "loop count (backward jumps)",
 	NULL
 };
 
@@ -2108,6 +2109,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *fcn;
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
 				r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
+			} else {
+				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+			}
+		} else if (input[2] == 'l') {
+			RAnalFunction *fcn;
+			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
+				r_cons_printf ("%d\n", r_anal_fcn_loops (fcn));
 			} else {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
 			}
