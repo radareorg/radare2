@@ -590,8 +590,9 @@ int windbg_sync(WindCtx *ctx) {
 	// Reset the sequence id
 	ctx->seq_id = 0x80800001;
 
-	ctx->cpu = PKT_STC (s)->cpu;
-	ctx->cpu_count = PKT_STC (s)->cpu_count;
+	kd_stc_64 *stc64 = (kd_stc_64*)s->data;
+	ctx->cpu = stc64->cpu;
+	ctx->cpu_count = stc64->cpu_count;
 	ctx->target = NULL;
 	ctx->plist_cache = NULL;
 	ctx->pae = 0;
