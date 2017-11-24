@@ -166,6 +166,7 @@ crypto = [
 debug = [
 	'bf',
 	'esil',
+	'gdb',
 	'io',
 	'native',
 	'rap',
@@ -201,6 +202,7 @@ io = [
 	'bfdbg',
 	'debug',
 	'default',
+	'gdb',
 	'gzip',
 	'http',
 	'ihex',
