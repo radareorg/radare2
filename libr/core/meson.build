@@ -42,7 +42,6 @@ files=[
 'gdiff.c',
 'graph.c',
 'hack.c',
-'help.c',
 'libs.c',
 #'linux_heap_glibc.c',
 'log.c',
