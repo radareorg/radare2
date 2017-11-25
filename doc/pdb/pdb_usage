@@ -63,4 +63,6 @@ Extracting cabinet: /home/inisider/Downloads/libs/user32.pd_
 extracting /home/inisider/Downloads/libs/user32.pdb
 All done, no errors.
 ````
-To use the PDB downloader in unix like systems need to setup curl and cabextract, and for Windows just curl
+The following dependencies are required for PDB downloader:
+* curl
+* cabextract (non-Windows only, optional)
