@@ -132,6 +132,7 @@ static const char *help_msg_dot[] = {
 	"..", " [file]", "run the output of the execution of a script as r2 commands",
 	"...", "", "repeat last command forward (same as \\n)",
 	".:", "8080", "listen for commands on given tcp port",
+	".--", "", "terminate tcp server for remote commands",
 	".", " foo.r2", "interpret r2 script",
 	".-", "", "open cfg.editor and interpret tmp file",
 	".!", "rabin -ri $FILE", "interpret output of command",
