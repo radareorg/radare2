@@ -62,7 +62,7 @@ static int download(struct SPDBDownloader *pd) {
 		res = 1;
 		abspath_to_archive = r_str_newf ("%s%s%s", basepath,
 		                                 R_SYS_DIR, archive_name);
-		curl_cmd = r_str_newf ("curl -sA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
+		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
 		                       opt->user_agent,
 		                       opt->symbol_server,
 		                       opt->dbg_file,
@@ -112,7 +112,7 @@ static int download(struct SPDBDownloader *pd) {
 		archive_name[archive_name_len - 1] = 'b';
 		abspath_to_archive = r_str_newf ("%s%s%s", basepath,
 		                                 R_SYS_DIR, archive_name);
-		curl_cmd = r_str_newf ("curl -sA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
+		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
 		                       opt->user_agent,
 		                       opt->symbol_server,
 		                       opt->dbg_file,
