@@ -271,8 +271,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
 		char *name = r_core_anal_fcn_autoname (core, fcn->addr, 0);
-		if (name && (!strncmp (fcn->name, "method.", 7) || \
-				!strncmp (fcn->name, "fcn.", 4) || \
+		if (name && (!strncmp (fcn->name, "fcn.", 4) && \
 				!strncmp (fcn->name, "sym.func.", 9))) {
 			r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), name);
 			free (fcn->name);
