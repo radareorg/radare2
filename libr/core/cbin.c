@@ -443,17 +443,23 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			char *str = string->string;
 			char *no_dbl_bslash_str = NULL;
 			if (!r->print->esc_bslash) {
-				no_dbl_bslash_str = strdup (str);
-				if (no_dbl_bslash_str) {
-					char *ptr;
-					for (ptr = no_dbl_bslash_str; *ptr; ptr++) {
-						if (*ptr != '\\') {
-							continue;
-						}
-						if (*(ptr + 1) == '\\') {
-							memmove (ptr + 1, ptr + 2, strlen (ptr + 2) + 1);
-						}
+				char *ptr;
+				for (ptr = str; *ptr; ptr++) {
+					if (*ptr != '\\') {
+						continue;
 					}
+					if (*(ptr + 1) == '\\') {
+						if (!no_dbl_bslash_str) {
+							no_dbl_bslash_str = strdup (str);
+							if (!no_dbl_bslash_str) {
+								break;
+							}
+							ptr = no_dbl_bslash_str + (ptr - str);
+						}
+						memmove (ptr + 1, ptr + 2, strlen (ptr + 2) + 1);
+					}
+				}
+				if (no_dbl_bslash_str) {
 					str = no_dbl_bslash_str;
 				}
 			}
