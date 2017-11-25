@@ -1451,11 +1451,20 @@ static int esil_addrinfo(RAnalEsil *esil) {
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
+	const bool cfgDebug = r_config_get_i (core->config, "cfg.debug");
 	RSearch *search = core->search;
 	RSearchKeyword kw = R_EMPTY;
 	if (input[0] == 'E' && input[1] != ' ') {
 		eprintf ("Usage: /E [esil-expr]\n");
 		return;
+	}
+	if (!core->anal->esil) {
+		// initialize esil vm
+		r_core_cmd0 (core, "aei");
+		if (!core->anal->esil) {
+			eprintf ("Cannot initialize the ESIL vm\n");
+			return;
+		}
 	}
 	RIOMap *map;
 	RListIter *iter;
@@ -1466,12 +1475,11 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		int hit_happens = 0;
 		int hit_combo = 0;
 		char *res;
-		ut64 nres, addr = map->itv.addr;
+		ut64 nres, addr;
+		ut64 from = map->itv.addr;
+		ut64 to = r_itv_end (map->itv);
 		if (!core->anal->esil) {
 			core->anal->esil = r_anal_esil_new (stacksize, iotrap);
-		}
-		if (!core->anal->esil) {
-			return;
 		}
 		/* hook addrinfo */
 		core->anal->esil->cb.user = core;
@@ -1482,7 +1490,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		core->anal->esil->verbose = 0;
 
 		r_cons_break_push (NULL, NULL);
-		for (; addr < r_itv_end (map->itv); addr++) {
+		for (addr = from; addr < to; addr++) {
 			if (core->search->align) {
 				if ((addr % core->search->align)) {
 					continue;
@@ -1512,6 +1520,9 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			hit_happens = false;
 			res = r_anal_esil_pop (core->anal->esil);
 			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
+				if (cfgDebug) {
+					eprintf ("RES 0x%08"PFMT64x" %"PFMT64d"\n", addr, nres);
+				}
 				if (nres) {
 					if (!_cb_hit (&kw, param, addr)) {
 						free (res);
@@ -1537,7 +1548,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			if (hit_happens) {
 				hit_combo++;
 				if (hit_combo > hit_combo_limit) {
-					eprintf ("Hit combo limit reached. Stopping search. Use f-\n");
+					eprintf ("Hit search.esilcombo reached (%d). Stopping search. Use f-\n", hit_combo_limit);
 					break;
 				}
 			} else {
