@@ -2652,7 +2652,24 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
 		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
-			ds_print_shortcut (ds, ds->analop.jump, pos);
+#if 0
+			if (ds->analop.jump == 0 && ds->analop.ptr) {
+				ut8 buf[sizeof(ut64)] = {0};
+				r_io_read_at (core->io, ds->analop.ptr, buf, sizeof (buf));
+				ut32 n32 = r_read_ble32 (buf, 0);
+				// is valid address
+				// ut32 n64 = r_read_ble32 (buf, 0);
+				ds_print_shortcut (ds, n32, pos);
+			} else {
+				// ds_print_shortcut (ds, ds->analop.jump, pos);
+				ds_print_shortcut (ds, ds->analop.ptr, pos);
+			}
+#endif
+			if (ds->analop.jump != UT64_MAX) {
+				ds_print_shortcut (ds, ds->analop.jump, pos);
+			} else {
+				ds_print_shortcut (ds, ds->analop.ptr, pos);
+			}
 			gotShortcut = true;
 			break;
 		case R_ANAL_OP_TYPE_RCALL:

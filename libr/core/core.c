@@ -157,13 +157,15 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
 		}
 		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
 			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * 2 * sizeof (ut64));
-			if (!core->asmqjmps) return NULL;
+			if (!core->asmqjmps) {
+				return NULL;
+			}
 			core->asmqjmps_size *= 2;
 		}
 	}
 	if (core->asmqjmps_count < core->asmqjmps_size - 1) {
 		int i;
-		char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
+		char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1] = {0};
 		for (i = 0; i < core->asmqjmps_count + 1; i++) {
 			if (core->asmqjmps[i] == addr) {
 				found = true;
@@ -187,13 +189,15 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 	if (core->is_asmqjmps_letter) {
 		int i, j = 0;
-
-		pos -= 1;
-		for (i = 0; i < R_CORE_ASMQJMPS_LEN_LETTERS - 1; ++i) {
+		// if (pos > 0) {
+			pos --;
+		////  }
+		for (i = 0; i < R_CORE_ASMQJMPS_LEN_LETTERS - 1; i++) {
 			ut64 div = pos / letter_divs[i];
 			pos %= letter_divs[i];
-			if (div != 0 && j < len) {
-				str[j++] = 'A' + div - 1;
+			if (div > 0 && j < len) {
+				str[j] = 'A' + div - 1;
+				j++;
 			}
 		}
 		if (j < len) {

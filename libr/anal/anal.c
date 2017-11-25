@@ -557,7 +557,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	}
 	char *tmp = r_anal_type_func_guess (anal, (char *)name);
 	if (tmp) {
-		if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(tmp), NULL)) {
+		if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (tmp), NULL)) {
 			free (tmp);
 			return true;
 		}
@@ -567,10 +567,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 }
 
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
-	if (sdb_bool_get (anal->sdb_types, K_NORET_ADDR(addr), NULL)) {
-		return true;
-	}
-	return false;
+	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR(addr), NULL);
 }
 
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
