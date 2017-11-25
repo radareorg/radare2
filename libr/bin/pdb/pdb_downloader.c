@@ -20,7 +20,7 @@ static bool checkExtract() {
 
 static bool checkCurl() {
 #if __WINDOWS__ && !__CYGWIN__
-	static const char nul[] = "nul";
+	const char nul[] = "nul";
 #else
 	const char nul[] = "/dev/null";
 #endif
