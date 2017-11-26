@@ -2914,7 +2914,7 @@ static void agraph_prev_node(RAGraph *g) {
 static void agraph_update_title(RAGraph *g, RAnalFunction *fcn) {
 	const char *mode_str = g->is_callgraph? mode2str (g, "CG"): mode2str (g, "BB");
 	char *new_title = r_str_newf (
-		"[0x%08"PFMT64x "]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
+		"[0x%08"PFMT64x "]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s mov-speed:%d",
 		fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 		g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
 	r_agraph_set_title (g, new_title);

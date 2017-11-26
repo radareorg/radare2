@@ -336,13 +336,9 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 	char *o = r_cons_canvas_to_string (c);
 	if (o) {
-		char *p = r_str_trim_tail (o);
-		if (p) {
-			r_cons_strcat (p);
-			free (p);
-		} else {
-			free (o);
-		}
+		// r_str_trim_tail (o);
+		r_cons_strcat (o);
+		free (o);
 	}
 }
 
