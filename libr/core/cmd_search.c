@@ -2831,9 +2831,11 @@ reread:
 		dosearch = true;
 		break;
 	case 'e': // "/e" match regexp
-		if (input[1]) {
+		if (input[1] == '?') {
+			eprintf ("Usage: /e /foo/i or /e/foo/i\n");
+		} else if (input[1]) {
 			RSearchKeyword *kw;
-			kw = r_search_keyword_new_regexp (input + param_offset, NULL);
+			kw = r_search_keyword_new_regexp (input + 1, NULL);
 			if (!kw) {
 				eprintf ("Invalid regexp specified\n");
 				break;
