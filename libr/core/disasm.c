@@ -1875,7 +1875,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			ds->lastflag = &sfi;
 		} else {
 			RFlagItem *fi = r_flag_get_at (core->flags, ds->at, false);
-			if (fi) { // && (!ds->lastflag || fi->offset != ds->at)) {
+			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
 				sfi.offset = fi->offset;
 				sfi.name = fi->name;
 				ds->lastflag = &sfi;
@@ -1891,8 +1891,14 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			free (str);
 		}
 	}
-	if (!ds->linesright && ds->show_lines && ds->line) {
-		r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
+	if (ds->line) {
+		if (ds->show_color) {
+			if (!ds->linesright && ds->show_lines) {
+				r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
+			}
+		} else {
+			r_cons_printf ("%s", ds->line);
+		}
 	}
 }
 

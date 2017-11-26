@@ -55,9 +55,9 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bi
 	}
 	if (!strcmp (arch, "mips")) {
 		s->regs = fastcall_mips;
-	} else if (!strcmp (arch,"avr")) {
+	} else if (!strcmp (arch, "avr")) {
 		s->sysport = sysport_avr;
-	} else if (!strcmp (os,"osx")) {
+	} else if (!strcmp (os, "osx") || !strcmp (os, "macos")) {
 		os = "darwin";
 	} else if (!strcmp (arch,"sh")) {
 		s->regs = fastcall_sh;
