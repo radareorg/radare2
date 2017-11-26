@@ -57,6 +57,8 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bi
 		s->regs = fastcall_mips;
 	} else if (!strcmp (arch,"avr")) {
 		s->sysport = sysport_avr;
+	} else if (!strcmp (os,"osx")) {
+		os = "darwin";
 	} else if (!strcmp (arch,"sh")) {
 		s->regs = fastcall_sh;
 	} else if (!strcmp (arch, "arm")) {
@@ -182,7 +184,11 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	}
 	ret = sdb_const_get (s->db, key, 0);
 	if (!ret) {
-		return NULL;
+		key = sdb_fmt (0, "0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed 
+		ret = sdb_const_get (s->db, key, 0);
+		if (!ret) {
+			return NULL;
+		}	
 	}
 	ret2 = sdb_const_get (s->db, ret, 0);
 	if (!ret2) {
