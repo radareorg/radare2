@@ -771,13 +771,24 @@ static int autocompleteProcessPath(RLine *line, const char *path, int argv_idx) 
 
 	list= r_sys_dir (dirname);
 	n = strlen (basename);
+	char *tmpstring;
+	bool chgdir = !strncmp (line->buffer.data, "cd ", 3);
 	if (list) {
 		r_list_foreach (list, iter, filename) {
 			if (*filename == '.') {
 				continue;
 			}
-			if (!basename[0] || !strncmp (filename, basename, n)) {
-				tmp_argv[i++] = r_str_newf ("%s%s", dirname, filename);
+
+			if (!basename[0] || !strncmp (filename, basename, n))  {
+				tmpstring = r_str_newf ("%s%s", dirname, filename);
+				if (r_file_is_directory (tmpstring ) && chgdir) {
+					tmp_argv[i++] = r_str_newf ("%s/", tmpstring);
+				} else if (r_file_is_directory (tmpstring) && !chgdir) {
+					tmp_argv[i++] = r_str_newf ("%s/", tmpstring);
+				} else if (!chgdir) {
+					tmp_argv[i++] = tmpstring;
+				}
+
 				if (i == TMP_ARGV_SZ - 1) {
 					i--;
 					break;
