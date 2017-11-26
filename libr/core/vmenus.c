@@ -2856,7 +2856,6 @@ repeat:
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		if (op.var) {
 //			q = r_str_newf ("?i Rename variable %s to;afvn %s `?y`", op.var->name, op.var->name);
-#if 1
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
 				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
@@ -2883,7 +2882,6 @@ repeat:
 				eprintf ("Cannot find function\n");
 				r_sys_sleep (1);
 			}
-#endif
 		} else if (tgt_addr != UT64_MAX) {
 			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
 			RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
