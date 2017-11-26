@@ -2684,7 +2684,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.histsave", "true", "Always save history on exit");
 
 	/* str */
-	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash (Cs output only)");
+	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash (iz and Cs-based output only)");
 
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");

@@ -440,12 +440,37 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			free (f_name);
 		} else {
 			int *block_list;
+			char *str = string->string;
+			char *no_dbl_bslash_str = NULL;
+			if (!r->print->esc_bslash) {
+				char *ptr;
+				for (ptr = str; *ptr; ptr++) {
+					if (*ptr != '\\') {
+						continue;
+					}
+					if (*(ptr + 1) == '\\') {
+						if (!no_dbl_bslash_str) {
+							no_dbl_bslash_str = strdup (str);
+							if (!no_dbl_bslash_str) {
+								break;
+							}
+							ptr = no_dbl_bslash_str + (ptr - str);
+						}
+						memmove (ptr + 1, ptr + 2, strlen (ptr + 2) + 1);
+					}
+				}
+				if (no_dbl_bslash_str) {
+					str = no_dbl_bslash_str;
+				}
+			}
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
 				PFMT64x" ordinal=%03u sz=%u len=%u "
 				"section=%s type=%s string=%s",
 				vaddr, paddr, string->ordinal, string->size,
-				string->length, section_name, type_string,
-				string->string);
+				string->length, section_name, type_string, str);
+			if (str == no_dbl_bslash_str) {
+				R_FREE (str);
+			}
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:

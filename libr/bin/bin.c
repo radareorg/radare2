@@ -300,7 +300,7 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 
 			needle += rc;
 
-			if (r_isprint (r)) {
+			if (r_isprint (r) && r != '\\') {
 				if (str_type == R_STRING_TYPE_WIDE32) {
 					if (r == 0xff) {
 						r = 0;
@@ -309,10 +309,13 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				rc = r_utf8_encode (&tmp[i], r);
 				runes++;
 				/* Print the escape code */
-			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
-				if ((i + 32) < sizeof (tmp) && r < 28) {
+			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e\\", (char)r)) {
+				if ((i + 32) < sizeof (tmp) && r < 93) {
 					tmp[i + 0] = '\\';
-					tmp[i + 1] = "       abtnvfr             e"[r];
+					tmp[i + 1] = "       abtnvfr             e  "
+					             "                              "
+					             "                              "
+					             "  \\"[r];
 				} else {
 					// string too long
 					break;
