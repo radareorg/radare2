@@ -37,7 +37,6 @@ static const char *help_msg_f[] = {
 	"fla"," [glob]","automatically compute the size of all flags matching glob",
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
-	"fn"," name [@addr]","rename or create whatever flag is at addr",
 	"fo","","show fortunes",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
 	"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
@@ -198,55 +197,6 @@ static int flag_to_flag(RCore *core, const char *glob) {
 	if (next != UT64_MAX && next > core->offset) {
 		return next - core->offset;
 	}
-	return 0;
-}
-
-static int cmd_fn(RCore *core, const char *name)
-{
-	ut64 off = core->offset;
-	RAnalOp op;
-	char *q = NULL;
-	ut64 tgt_addr = UT64_MAX;
-	r_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32);
-
-	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
-	if (op.var) {
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-		if (fcn) {
-			RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-			if (!bar) {
-				bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-				if (!bar) {
-					bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-				}
-			}
-			if (bar) {
-				r_anal_var_rename (core->anal, fcn->addr, bar->scope,
-								bar->kind, bar->name, name);
-			} else {
-				eprintf ("Cannot find variable\n");
-			}
-		} else {
-			eprintf ("Cannot find function\n");
-		}
-	} else if (tgt_addr != UT64_MAX) {
-		RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
-		RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
-		if (fcn) {
-			q = r_str_newf ("afn %s` 0x%"PFMT64x, name, tgt_addr);
-		} else if (f) {
-			q = r_str_newf ("fr %s %s", f->name, name);
-		} else {
-			q = r_str_newf ("f %s @ 0x%"PFMT64x, name, tgt_addr);
-		}
-	}
-
-	if (q) {
-		r_core_cmd0 (core, q);
-		free (q);
-	}
-	r_anal_op_fini (&op);
 	return 0;
 }
 
@@ -772,13 +722,6 @@ rep:
 		break;
 	case '\0':
 	case 'n': // "fn"
-		{
-		char *arg = strchr(input + 1, ' ');
-		if (arg) {
-			cmd_fn (core, arg + 1);
-			break;
-		}
-		}
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
