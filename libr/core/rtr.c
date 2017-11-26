@@ -659,26 +659,19 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 						char *out, *cmd = rs->path + 5;
 						r_str_uri_decode (cmd);
 						r_config_set (core->config, "scr.interactive", "false");
-						if (!strcmp (cmd, "=h*")) {
-							if (r_sandbox_enable (0)) {
-								out = NULL;
-							} else {
-								/* do stuff */
-								out = NULL;
-								r_socket_http_close (rs);
-								free (dir);
-								free (refstr);
-								ret = -2;
-								goto the_end;
-							}
-						}
-						if (*cmd == ':') {
+
+						if (!r_sandbox_enable (0) &&
+						    (!strcmp (cmd, "=h*") ||
+						     !strcmp (cmd, "=h--"))) {
+							out = NULL;
+						} else if (*cmd == ':') {
 							/* commands in /cmd/: starting with : do not show any output */
 							r_core_cmd0 (core, cmd + 1);
 							out = NULL;
 						} else {
 							out = r_core_cmd_str_pipe (core, cmd);
 						}
+
 						if (out) {
 							char *res = r_str_uri_encode (out);
 							char *newheaders = r_str_newf (
@@ -689,6 +682,21 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 							free (res);
 						} else {
 							r_socket_http_response (rs, 200, "", 0, headers);
+						}
+
+						if (!r_sandbox_enable (0)) {
+							if (!strcmp (cmd, "=h*")) {
+								/* do stuff */
+								r_socket_http_close (rs);
+								free (dir);
+								free (refstr);
+								ret = -2;
+								goto the_end;
+							} else if (!strcmp (cmd, "=h--")) {
+								r_socket_http_close (rs);
+								ret = 0;
+								goto the_end;
+							}
 						}
 					}
 				}
@@ -1838,7 +1846,8 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 				}
 			}
 			if (!r_config_get_i (core->config, "scr.prompt") &&
-			    !strcmp ((char *)buf, "q!")) {
+			    !strcmp ((char *)buf, "q!") ||
+			    !strcmp ((char *)buf, ".--")) {
 				r_socket_close (ch);
 				break;
 			}
