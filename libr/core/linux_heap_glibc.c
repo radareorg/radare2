@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2017 - n4x0r, soez, pancake */
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C

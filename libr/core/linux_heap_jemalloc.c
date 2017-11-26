@@ -270,41 +270,44 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		PRINT_GA ("}\n");
 		break;
 	case ' ':
-		input += 1;
-		arena = r_num_math (core->num, input);
+		arena = r_num_math (core->num, input + 1);
 		r_core_read_at (core, (GHT)arena, (ut8 *)ar, sizeof (arena_t));
 
-    PRINT_GA ("struct arena_s {\n");
+		PRINT_GA ("struct arena_s {\n");
+#define OO(x) arena + r_offsetof (arena_t, x)
 		PRINTF_BA ("  ind = 0x%"PFMTx"\n", ar->ind);
-		PRINTF_BA ("  nthreads: application allocation = 0x%"PFMTx"\n", ar->nthreads[0]);
-		PRINTF_BA ("  nthreads: internal metadata allocation = 0x%"PFMTx"\n", ar->nthreads[1]);
-		PRINTF_BA ("  lock = 0x%"PFMTx"\n", *(GHT *)&ar->lock);
-		PRINTF_BA ("  stats = 0x%"PFMTx"\n", *(GHT *)&ar->stats);
-		PRINTF_BA ("  tcache_ql = 0x%"PFMTx"\n", *(GHT *)&ar->tcache_ql);
-		PRINTF_BA ("  prof_accumbytes = 0x%"PFMTx"x\n", (GHT)ar->prof_accumbytes);
-		PRINTF_BA ("  offset_state = 0x%"PFMTx"\n", (GHT)ar->offset_state);
-		PRINTF_BA ("  dss_prec_t = 0x%"PFMTx"\n", *(GHT *)&ar->dss_prec);
-		PRINTF_BA ("  achunks = 0x%"PFMTx"\n", *(GHT *)&ar->achunks);
-		PRINTF_BA ("  extent_sn_next = 0x%"PFMTx"\n", (GHT)ar->extent_sn_next);
-		PRINTF_BA ("  spare = 0x%"PFMTx"\n", *(GHT *)&ar->spare);
-		PRINTF_BA ("  lg_dirty_mult = 0x%"PFMTx"\n", (GHT)ar->lg_dirty_mult);
-		PRINTF_BA ("  purging = 0x%"PFMTx"\n", (GHT)ar->purging);
-		PRINTF_BA ("  nactive = 0x%"PFMTx"\n", (GHT)ar->nactive);
-		PRINTF_BA ("  ndirty = 0x%"PFMTx"\n", (GHT)ar->ndirty);
-		PRINTF_BA ("  runs_dirty = 0x%"PFMTx"\n", *(GHT *)&ar->runs_dirty);
-		PRINTF_BA ("  chunks_cache = 0x%"PFMTx"\n", *(GHT *)&ar->chunks_cache);
-		PRINTF_BA ("  huge = 0x%"PFMTx"\n", *(GHT *)&ar->huge);
-		PRINTF_BA ("  huge_mtx = 0x%"PFMTx"\n", *(GHT *)&ar->huge_mtx);
-		PRINTF_BA ("  chunks_szsnad_cached = 0x%"PFMTx"\n", *(GHT *)&ar->chunks_szsnad_cached);
-		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMTx"\n", *(GHT *)&ar->chunks_ad_cached);
-		PRINTF_BA ("  chunks_szsnad_retained = 0x%"PFMTx"\n", *(GHT *)&ar->chunks_szsnad_retained);
-		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMTx"\n", *(GHT *)&ar->chunks_ad_retained);
-		PRINTF_BA ("  chunks_mtx = 0x%"PFMTx"\n", *(GHT *)&ar->chunks_mtx);
-		PRINTF_BA ("  node_cache = 0x%"PFMTx"\n", *(GHT *)&ar->node_cache);
-		PRINTF_BA ("  node_cache_mtx = 0x%"PFMTx"\n", *(GHT *)&ar->node_cache_mtx);
-		PRINTF_BA ("  chunks_hooks = 0x%"PFMTx"\n", *(GHT *)&ar->chunk_hooks);
-		PRINTF_BA ("  bins = %d 0x%"PFMTx"\n", JM_NBINS, *(GHT *)&ar->bins);
-		PRINTF_BA ("  runs_avail = %d 0x%"PFMTx"\n", NPSIZES, *(GHT *)&ar->runs_avail);
+		PRINTF_BA ("  nthreads: application allocation = 0x%"PFMTx"\n", (ut32)ar->nthreads[0]);
+		PRINTF_BA ("  nthreads: internal metadata allocation = 0x%"PFMTx"\n", (ut32)ar->nthreads[1]);
+		PRINTF_BA ("  lock = 0x%"PFMT64x"\n", OO(lock));
+		PRINTF_BA ("  stats = 0x%"PFMT64x"\n", OO(stats));
+		PRINTF_BA ("  tcache_ql = 0x%"PFMT64x"\n", OO(tcache_ql));
+		PRINTF_BA ("  prof_accumbytes = 0x%"PFMT64x"x\n", (ut64)ar->prof_accumbytes);
+		PRINTF_BA ("  offset_state = 0x%"PFMT64x"\n", (ut64)ar->offset_state);
+		PRINTF_BA ("  dss_prec_t = 0x%"PFMT64x"\n", OO(dss_prec));
+		PRINTF_BA ("  achunks = 0x%"PFMT64x"\n", OO(achunks));
+		PRINTF_BA ("  extent_sn_next = 0x%"PFMTx"\n", (ut64)(size_t)ar->extent_sn_next);
+		PRINTF_BA ("  spare = 0x%"PFMT64x"\n", (ut64)(size_t)ar->spare);
+		PRINTF_BA ("  lg_dirty_mult = 0x%"PFMT64x"\n", (ut64)(ssize_t)ar->lg_dirty_mult);
+		PRINTF_BA ("  purging = %s\n", r_str_bool (ar->purging));
+		PRINTF_BA ("  nactive = 0x%"PFMT64x"\n", (ut64)(size_t)ar->nactive);
+		PRINTF_BA ("  ndirty = 0x%"PFMT64x"\n", (ut64)(size_t)ar->ndirty);
+
+		PRINTF_BA ("  runs_dirty = 0x%"PFMT64x"\n", OO(runs_dirty));
+		PRINTF_BA ("  chunks_cache = 0x%"PFMT64x"\n", OO(chunks_cache));
+		PRINTF_BA ("  huge = 0x%"PFMT64x"\n", OO(huge));
+		PRINTF_BA ("  huge_mtx = 0x%"PFMT64x"\n", OO(huge_mtx));
+
+		PRINTF_BA ("  chunks_szsnad_cached = 0x%"PFMT64x"\n", OO(chunks_szsnad_cached));
+		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_cached));
+		PRINTF_BA ("  chunks_szsnad_retained = 0x%"PFMT64x"\n", OO(chunks_szsnad_retained));
+		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_retained));
+
+		PRINTF_BA ("  chunks_mtx = 0x%"PFMT64x"\n", OO(chunks_mtx));
+		PRINTF_BA ("  node_cache = 0x%"PFMT64x"\n", OO(node_cache));
+		PRINTF_BA ("  node_cache_mtx = 0x%"PFMT64x"\n", OO(node_cache_mtx));
+		PRINTF_BA ("  chunks_hooks = 0x%"PFMTx"\n", OO(chunk_hooks));
+		PRINTF_BA ("  bins = %d 0x%"PFMTx"\n", JM_NBINS, OO(bins));
+		PRINTF_BA ("  runs_avail = %d 0x%"PFMTx"\n", NPSIZES, OO(runs_avail));
 		PRINT_GA ("}\n");
 		break;
 	}
