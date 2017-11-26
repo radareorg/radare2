@@ -1572,7 +1572,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
 static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP);
+	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP || 
+			optype == R_ANAL_OP_TYPE_RET);
 }	
 
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
@@ -1670,7 +1671,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
-			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) {
+			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret && (aop.val > 10)) {
 				// This for calculating no of bytes to be subtracted , to get n instr above syscall
 				int nbytes = 0;
 				int nb_opcodes = MAXINSTR;
