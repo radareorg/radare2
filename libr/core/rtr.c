@@ -1846,8 +1846,8 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 				}
 			}
 			if (!r_config_get_i (core->config, "scr.prompt") &&
-			    !strcmp ((char *)buf, "q!") ||
-			    !strcmp ((char *)buf, ".--")) {
+			    (!strcmp ((char *)buf, "q!") ||
+			    !strcmp ((char *)buf, ".--"))) {
 				r_socket_close (ch);
 				break;
 			}

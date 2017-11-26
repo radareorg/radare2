@@ -21,7 +21,8 @@ static const char *help_msg_slash[] = {
 	"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
 	"/b", "", "search backwards, command modifier, followed by other command",
 	"/B", "", "search recognized RBin headers",
-	"/c", " jmp [esp]", "search for asm code",
+	"/c", " jmp [esp]", "search for asm code matching the given string",
+	"/ce", " rsp,rbp", "search for esil expressions matching",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -874,32 +875,38 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		valid = false;
 		goto ret;
 	}
+	int opsz = 0;
+	char *opst = NULL;
+
 	while (nb_instr < max_instr) {
 		r_list_append (localbadstart, (void *) (intptr_t) idx);
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, 15)) {
+			opsz = 1;
 			goto ret;
+		} else {
+			opsz = asmop.size;
+			opst = asmop.buf_asm;
 		}
-		if (!strncasecmp (asmop.buf_asm, "invalid", strlen ("invalid")) ||
-		    !strncasecmp (asmop.buf_asm, ".byte", strlen (".byte"))) {
+		if (!strncasecmp (opst, "invalid", strlen ("invalid")) ||
+		    !strncasecmp (opst, ".byte", strlen (".byte"))) {
 			valid = false;
 			goto ret;
 		}
 
 		hit = r_core_asm_hit_new ();
 		hit->addr = addr;
-		hit->len = asmop.size;
+		hit->len = opsz;
 		r_list_append (hitlist, hit);
 
 		// Move on to the next instruction
-		idx += asmop.size;
-		addr += asmop.size;
+		idx += opsz;
+		addr += opsz;
 		if (rx) {
-			// grep_find = r_regex_exec (rx, asmop.buf_asm, 0, 0, 0);
-			grep_find = !r_regex_match (rx, "e", asmop.buf_asm);
+			grep_find = !r_regex_match (rx, "e", opst);
 			search_hit = (end && grep && (grep_find < 1));
 		} else {
-			search_hit = (end && grep && strstr (asmop.buf_asm, grep_str));
+			search_hit = (end && grep && strstr (opst, grep_str));
 		}
 
 		// Handle (possible) grep
@@ -919,8 +926,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			}
 		}
 
-		if (endaddr <= (idx - asmop.size)) {
-			valid = (endaddr == idx - asmop.size);
+		if (endaddr <= (idx - opsz)) {
+			valid = (endaddr == idx - opsz);
 			goto ret;
 		}
 		nb_instr++;
@@ -1851,7 +1858,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	free (buf);
 }
 
-static void do_asm_search(RCore *core, struct search_parameters *param, const char *input) {
+static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
 	int count = 0, maxhits = 0, filter = 0;
@@ -1908,7 +1915,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 			hits = NULL;
 		} else {
 			hits = r_core_asm_strsearch (core, input + 2,
-				from, to, maxhits, regexp, everyByte);
+				from, to, maxhits, regexp, everyByte, mode);
 		}
 		if (hits) {
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
@@ -2565,7 +2572,7 @@ reread:
 			int count = 0;
 			const int align = core->search->align;
 			r_list_foreach (param.boundaries, iter, map) {
-				eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+				// eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
 				r_cons_break_push (NULL, NULL);
 				for (addr = map->itv.addr; addr < r_itv_end (map->itv); addr++) {
 					if (r_cons_is_breaked ()) {
@@ -2988,11 +2995,14 @@ reread:
 		}
 		break;
 	case 'c': // "/c" search asm
+		dosearch = 0;
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_c);
+		} else if (input[1] == 'e') { // "/ce"
+			do_asm_search (core, &param, input + 1, 'e');
+		} else { // "/c"
+			do_asm_search (core, &param, input, 0);
 		}
-		do_asm_search (core, &param, input);
-		dosearch = 0;
 		break;
 	case '+': // "/+"
 		if (input[1] == ' ') {
