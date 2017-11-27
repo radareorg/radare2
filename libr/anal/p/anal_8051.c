@@ -216,7 +216,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
 	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
 	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
-	case 0x33: /* rlc  */ /* TODO */ break;
+	case 0x33: /* rlc  */ emit("1,A,>>,$c0,C,=,A,="); break;
 	case 0x73: /* jmp  */ emit("dptr,A,+,pc,="); break;
 	case 0x83: /* movc */ emit("A,dptr,+,[1],A,="); break;
 	case 0x93: /* movc */ emit("A,pc,+,[1],A,="); break;
@@ -321,10 +321,13 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xCE: case 0xCF: /* xch  */
 		h (XR(A) XR(R0) XW(A) ","  XW(R0));
 		break;
-	case 0xD2:
-		/* setb */ /* TODO */ break;
+	case 0xD2: /* setb */
+		emitf("%d,1,<<,A,|=", (ut8)buf[1]);
+		break;
 	case 0xD3:
-		/* setb */ /* TODO */ break;
+		/* setb */
+		emitf("%d,1,<<,%d,[],|=,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[2]);
+		break;
 	case 0xD4:
 		/* da   */ emit("A,--="); break;
 	case 0xD5:
