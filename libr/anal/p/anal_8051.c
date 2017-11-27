@@ -29,9 +29,9 @@ typedef struct {
 	ut8 num_bytes; // no more than sizeof(ut64)
 	ut8 banked : 1;
 	ut8 isdptr : 1;
-} RI8015Reg;
+} RI8051Reg;
 
-static RI8015Reg registers[] = {
+static RI8051Reg registers[] = {
 	// keep these sorted
 	{"acc",   0xE0, 0x00, 1, 0},
 	{"b",     0xF0, 0x00, 1, 0},
@@ -162,13 +162,83 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emitf(F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
 		break;
 	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-#if 0
-	case 0x42: /* orl 0x31, a */ break;
-	case 0x43: /* orl 0x31, #0x01 */ break;
-	case 0x44: /* orl a, #0x01 */ break;
-	case 0x45: /* orl a, 0x31 */ break;
-#endif
+	case 0x42: /* orl 0x31, a */
+		emitf ("%d,[],A,|,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+		break;
+	case 0x43: /* orl 0x31, #0x01 */
+		emitf ("%d,[],%d,|,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+		break;
+	case 0x44: /* orl a, #0x01 */
+		emitf ("%d,A,|=", (ut8)buf[1]);
+		break;
+	case 0x45: /* orl a, 0x31 */
+		emitf ("%d,[],A,|,A,=", (ut8)buf[1]);
+		break;
+	case 0x46: /* orl a, @r0 */ break;
+	case 0x47: /* orl a, @r1 */ break;
+	case 0x48: /* orl a, r0 */
+		emitf ("r0,A,|=");
+		break;
+	case 0x49: /* orl a, r1 */
+		emitf ("r1,A,|=");
+		break;
+	case 0x4A: /* orl a, r2 */
+		emitf ("r2,A,|=");
+		break;
+	case 0x4B: /* orl a, r3 */
+		emitf ("r3,A,|=");
+		break;
+	case 0x4C: /* orl a, r4 */
+		emitf ("r4,A,|=");
+		break;
+	case 0x4D: /* orl a, r5 */
+		emitf ("r5,A,|=");
+		break;
+	case 0x4E: /* orl a, r6 */
+		emitf ("r6,A,|=");
+		break;
+	case 0x4F: /* orl a, r7 */
+		emitf ("r7,A,|=");
+		break;
 	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x52: /* anl 0x31, a */
+		emitf ("%d,[],A,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+		break;
+	case 0x53: /* anl 0x31, #0x01 */
+		emitf ("%d,[],%d,&,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+		break;
+	case 0x54: /* anl a, #0x01 */
+		emitf ("%d,A,&=", (ut8)buf[1]);
+		break;
+	case 0x55: /* anl a, 0x31 */
+		emitf ("%d,[],A,&,A,=", (ut8)buf[1]);
+		break;
+	case 0x56: /* anl a, @r0 */ break;
+	case 0x57: /* anl a, @r1 */ break;
+	case 0x58: /* anl a, r0 */
+		emitf ("r0,A,&=");
+		break;
+	case 0x59: /* anl a, r1 */
+		emitf ("r1,A,&=");
+		break;
+	case 0x5A: /* anl a, r2 */
+		emitf ("r2,A,&=");
+		break;
+	case 0x5B: /* anl a, r3 */
+		emitf ("r3,A,&=");
+		break;
+	case 0x5C: /* anl a, r4 */
+		emitf ("r4,A,&=");
+		break;
+	case 0x5D: /* anl a, r5 */
+		emitf ("r5,A,&=");
+		break;
+	case 0x5E: /* anl a, r6 */
+		emitf ("r6,A,&=");
+		break;
+	case 0x5F: /* anl a, r7 */
+		emitf ("r7,A,&=");
+		break;
 	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
@@ -204,8 +274,9 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xB2: /* cpl   */
 		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
 		break;
-	case 0xC2: /* clr   */ /* TODO */ break;
-
+	case 0xC2: /* clr   */
+		emitf ("0,%d,=[]", (ut8)buf[1]);
+		break;
 	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
 	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
 	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
@@ -386,18 +457,18 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *, int *);
 
 static int i8051_reg_compare(const void *name, const void *reg) {
-	return strcmp ((const char*)name, ((RI8015Reg*)reg)->name);
+	return strcmp ((const char*)name, ((RI8051Reg*)reg)->name);
 }
 
-static RI8015Reg *i8051_reg_find(const char *name) {
-	return (RI8015Reg *) bsearch (
+static RI8051Reg *i8051_reg_find(const char *name) {
+	return (RI8051Reg *) bsearch (
 		name, registers,
 		sizeof (registers) / sizeof (registers[0]),
 		sizeof (registers[0]),
 		i8051_reg_compare);
 }
 
-static int i8051_reg_get_offset(RAnalEsil *esil, RI8015Reg *ri) {
+static int i8051_reg_get_offset(RAnalEsil *esil, RI8051Reg *ri) {
 	ut8 offset = ri->offset;
 	if (ri->banked) {
 		ut64 psw = 0LL;
@@ -415,7 +486,7 @@ static int i8051_reg_get_offset(RAnalEsil *esil, RI8015Reg *ri) {
 static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	ut64 val = 0LL;
-	RI8015Reg *ri;
+	RI8051Reg *ri;
 	RAnalEsilCallbacks cbs = esil->cb;
 
 	if ((ri = i8051_reg_find (name))) {
@@ -436,7 +507,7 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 
 static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
-	RI8015Reg *ri;
+	RI8051Reg *ri;
 	RAnalEsilCallbacks cbs = esil->cb;
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
