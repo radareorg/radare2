@@ -658,7 +658,17 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 	if (noStderr) {
-		close (2);
+		if (-1 == close (2)) {
+			eprintf ("Failed to close stderr");
+			return 1;
+		}
+		int new_stderr = open ("/dev/null", O_RDWR);
+		if (-1 == new_stderr) {
+			eprintf ("Failed to open /dev/null");
+			return 1;
+		} else {
+			dup2 (new_stderr, 2);
+		}
 	}
 	{
 		const char *dbg_profile = r_config_get (r.config, "dbg.profile");
