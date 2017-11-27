@@ -168,76 +168,12 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x43: /* orl 0x31, #0x01 */
 		emitf ("%d,[],%d,|,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
 		break;
-	case 0x44: /* orl a, #0x01 */
-		emitf ("%d,A,|=", (ut8)buf[1]);
-		break;
-	case 0x45: /* orl a, 0x31 */
-		emitf ("%d,[],A,|,A,=", (ut8)buf[1]);
-		break;
-	case 0x46: /* orl a, @r0 */ break;
-	case 0x47: /* orl a, @r1 */ break;
-	case 0x48: /* orl a, r0 */
-		emitf ("r0,A,|=");
-		break;
-	case 0x49: /* orl a, r1 */
-		emitf ("r1,A,|=");
-		break;
-	case 0x4A: /* orl a, r2 */
-		emitf ("r2,A,|=");
-		break;
-	case 0x4B: /* orl a, r3 */
-		emitf ("r3,A,|=");
-		break;
-	case 0x4C: /* orl a, r4 */
-		emitf ("r4,A,|=");
-		break;
-	case 0x4D: /* orl a, r5 */
-		emitf ("r5,A,|=");
-		break;
-	case 0x4E: /* orl a, r6 */
-		emitf ("r6,A,|=");
-		break;
-	case 0x4F: /* orl a, r7 */
-		emitf ("r7,A,|=");
-		break;
 	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x52: /* anl 0x31, a */
 		emitf ("%d,[],A,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
 		break;
 	case 0x53: /* anl 0x31, #0x01 */
 		emitf ("%d,[],%d,&,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
-		break;
-	case 0x54: /* anl a, #0x01 */
-		emitf ("%d,A,&=", (ut8)buf[1]);
-		break;
-	case 0x55: /* anl a, 0x31 */
-		emitf ("%d,[],A,&,A,=", (ut8)buf[1]);
-		break;
-	case 0x56: /* anl a, @r0 */ break;
-	case 0x57: /* anl a, @r1 */ break;
-	case 0x58: /* anl a, r0 */
-		emitf ("r0,A,&=");
-		break;
-	case 0x59: /* anl a, r1 */
-		emitf ("r1,A,&=");
-		break;
-	case 0x5A: /* anl a, r2 */
-		emitf ("r2,A,&=");
-		break;
-	case 0x5B: /* anl a, r3 */
-		emitf ("r3,A,&=");
-		break;
-	case 0x5C: /* anl a, r4 */
-		emitf ("r4,A,&=");
-		break;
-	case 0x5D: /* anl a, r5 */
-		emitf ("r5,A,&=");
-		break;
-	case 0x5E: /* anl a, r6 */
-		emitf ("r6,A,&=");
-		break;
-	case 0x5F: /* anl a, r7 */
-		emitf ("r7,A,&=");
 		break;
 	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
