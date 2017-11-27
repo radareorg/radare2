@@ -7,13 +7,13 @@
 static int parse_global(char *data, int data_size, SGlobal *global) {
 	unsigned int read_bytes = 2;
 
-	READ(read_bytes, 4, data_size, global->symtype, data, unsigned int);
-	READ(read_bytes, 4, data_size, global->offset, data, unsigned int);
-	READ(read_bytes, 2, data_size, global->segment, data, unsigned short);
+	READ4(read_bytes, data_size, global->symtype, data, ut32);
+	READ4(read_bytes, data_size, global->offset, data, ut32);
+	READ2(read_bytes, data_size, global->segment, data, ut8);
 	if (global->leaf_type == 0x110E) {
 		parse_sctring(&global->name, (unsigned char *)data, &read_bytes, data_size);
 	} else {
-		READ(read_bytes, 1, data_size, global->name.size, data, unsigned char);
+		READ1(read_bytes, data_size, global->name.size, data, ut8);
 		init_scstring(&global->name, global->name.size, data);
 	}
 

@@ -1462,7 +1462,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 {
 	val->name_or_val = 0;
 
-	READ(*read_bytes, 2, len, val->value_or_type, leaf_data, unsigned short);
+	READ2(*read_bytes, len, val->value_or_type, leaf_data, ut16);
 
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *sctr = (SCString *) malloc (sizeof (SCString));
@@ -1474,7 +1474,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR lf_char;
-			READ (*read_bytes, 2, len, lf_char.value, leaf_data, char);
+			READ2(*read_bytes, len, lf_char.value, leaf_data, st16);
 			parse_sctring (&lf_char.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_CHAR));
 			if (!val->name_or_val) break;
@@ -1489,7 +1489,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			// long = 4 bytes for Windows, but not in Linux x64,
 			// so here is using int instead of long when
 			// reading long value
-			READ (*read_bytes, 4, len, lf_long.value, leaf_data, int);
+			READ4(*read_bytes, len, lf_long.value, leaf_data, st32);
 			parse_sctring (&lf_long.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_LONG));
 			if (!val->name_or_val) break;
@@ -1503,7 +1503,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			// unsinged long = 4 bytes for Windows, but not in Linux x64,
 			// so here is using unsinged int instead of unsigned long when
 			// reading ulong value
-			READ(*read_bytes, 4, len, lf_ulong.value, leaf_data, unsigned int);
+			READ4(*read_bytes, len, lf_ulong.value, leaf_data, ut32);
 			parse_sctring (&lf_ulong.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_ULONG));
 			if (!val->name_or_val) break;
@@ -1513,7 +1513,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		case eLF_SHORT:
 		{
 			SVal_LF_SHORT lf_short;
-			READ (*read_bytes, 2, len, lf_short.value, leaf_data, short);
+			READ2(*read_bytes, len, lf_short.value, leaf_data, st16);
 			parse_sctring (&lf_short.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_SHORT));
 			if (!val->name_or_val) break;
@@ -1523,7 +1523,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT lf_ushort;
-			READ (*read_bytes, 2, len, lf_ushort.value, leaf_data, unsigned short);
+			READ2(*read_bytes, len, lf_ushort.value, leaf_data, ut16);
 			parse_sctring (&lf_ushort.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof(SVal_LF_USHORT));
 			if (!val->name_or_val) break;
@@ -1547,13 +1547,13 @@ static int parse_lf_enumerate(SLF_ENUMERATE *lf_enumerate, unsigned char *leaf_d
 	lf_enumerate->enum_value.name_or_val = 0;
 
 	read_bytes_before = *read_bytes;
-	READ(*read_bytes, 2, len, lf_enumerate->fldattr.fldattr, leaf_data, unsigned short);
+	READ2(*read_bytes, len, lf_enumerate->fldattr.fldattr, leaf_data, ut16);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sval(&lf_enumerate->enum_value, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	PEEK_READ(*read_bytes, 1, len, lf_enumerate->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_enumerate->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_enumerate->pad, *read_bytes, leaf_data, len);
 
 //	printf("%s:", "parse_lf_enumerate()");
@@ -1570,8 +1570,8 @@ static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, unsigned char *leaf_data
 
 	lf_nesttype->name.name = 0;
 
-	READ(*read_bytes, 2, len, lf_nesttype->pad, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_nesttype->index, leaf_data, unsigned short);
+	READ2(*read_bytes, len, lf_nesttype->pad, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_nesttype->index, leaf_data, ut16);
 
 	parse_sctring(&lf_nesttype->name, leaf_data, read_bytes, len);
 //	printf("parse_lf_nesttype(): name = %s\n", lf_nesttype->name.name);
@@ -1586,14 +1586,14 @@ static int parse_lf_method(SLF_METHOD *lf_method, unsigned char *leaf_data, unsi
 
 	lf_method->name.name = 0;
 
-	READ(*read_bytes, 2, len, lf_method->count, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_method->mlist, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_method->count, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_method->mlist, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sctring(&lf_method->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	PEEK_READ(*read_bytes, 1, len, lf_method->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_method->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_method->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_method(): name = %s\n", lf_method->name.name);
@@ -1608,14 +1608,14 @@ static int parse_lf_member(SLF_MEMBER *lf_member, unsigned char *leaf_data, unsi
 
 	lf_member->offset.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_member->fldattr.fldattr, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_member->inedex, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_member->fldattr.fldattr, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_member->inedex, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sval(&lf_member->offset, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	PEEK_READ(*read_bytes, 1, len, lf_member->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_member->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_member->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_member(): name = ");
@@ -1633,21 +1633,21 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, unsigned char *leaf_d
 	lf_onemethod->val.str_data.name = 0;
 	lf_onemethod->val.val = 0;
 
-	READ(*read_bytes, 2, len, lf_onemethod->fldattr.fldattr, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_onemethod->index, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_onemethod->fldattr.fldattr, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_onemethod->index, leaf_data, ut32);
 
 	lf_onemethod->fldattr.fldattr = SWAP_UINT16(lf_onemethod->fldattr.fldattr);
 
 	if((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
 		(lf_onemethod->fldattr.bits.mprop == eMTpureintro)) {
-		READ(*read_bytes, 4, len, lf_onemethod->val.val, leaf_data, unsigned int);
+		READ4(*read_bytes, len, lf_onemethod->val.val, leaf_data, ut32);
 	}
 
 	tmp_before_read_bytes = *read_bytes;
 	parse_sctring(&(lf_onemethod->val.str_data), leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_onemethod->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_onemethod->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_onemethod->pad, *read_bytes, leaf_data, len);
 
 	return (*read_bytes - read_bytes_before);
@@ -1842,7 +1842,7 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist,  unsigned char *leaf_
 	lf_fieldlist->substructs = r_list_new();
 
 	while (*read_bytes <= len) {
-		READ(*read_bytes, 2, len, leaf_type, p, unsigned short);
+		READ2(*read_bytes, len, leaf_type, p, ut16);
 		switch (leaf_type) {
 		case eLF_ENUMERATE:
 			PARSE_LF2(SLF_ENUMERATE, lf_enumerate, eLF_ENUMERATE);
@@ -1879,17 +1879,17 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, unsigned char *leaf_data, unsigned i
 
 	lf_enum->name.name = 0;
 
-	READ(*read_bytes, 2, len, lf_enum->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_enum->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_enum->utype, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_enum->field_list, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_enum->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_enum->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_enum->utype, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_enum->field_list, leaf_data, ut32);
 
 	lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
 	before_read_bytes = *read_bytes;
 	parse_sctring(&lf_enum->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_enum->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_enum->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_enum->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_enum(): name = %s\n", lf_enum->name.name);
@@ -1905,18 +1905,18 @@ static int parse_lf_class(SLF_CLASS *lf_class, unsigned char *leaf_data, unsigne
 
 	lf_class->size.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_class->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_class->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_class->field_list, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_class->derived, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_class->vshape, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_class->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_class->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_class->field_list, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_class->derived, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_class->vshape, leaf_data, ut32);
 
 	before_read_bytes = *read_bytes;
 	parse_sval(&lf_class->size, leaf_data, read_bytes, len);
 	before_read_bytes = *read_bytes - before_read_bytes;
 	leaf_data = (unsigned char *)leaf_data + before_read_bytes;
 
-	PEEK_READ(*read_bytes, 1, len, lf_class->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_class->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_class->pad, *read_bytes, leaf_data, len);
 
 //	printf("%s:", "parse_lf_class()");
@@ -1934,11 +1934,11 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, unsigned char *leaf_d
 
 	lf_structure->size.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_structure->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_structure->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_structure->field_list, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_structure->derived, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_structure->vshape, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_structure->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_structure->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_structure->field_list, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_structure->derived, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_structure->vshape, leaf_data, ut32);
 
 	lf_structure->prop.cv_property = SWAP_UINT16(lf_structure->prop.cv_property);
 
@@ -1946,7 +1946,7 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, unsigned char *leaf_d
 	parse_sval(&lf_structure->size, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_structure->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_structure->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_structure->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_structure(): name = ");
@@ -1960,12 +1960,12 @@ static int parse_lf_pointer(SLF_POINTER *lf_pointer, unsigned char *leaf_data, u
 {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_pointer->utype, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_pointer->ptr_attr.ptr_attr, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_pointer->utype, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_pointer->ptr_attr.ptr_attr, leaf_data, ut32);
 
 	lf_pointer->ptr_attr.ptr_attr = SWAP_UINT32(lf_pointer->ptr_attr.ptr_attr);
 
-	PEEK_READ(*read_bytes, 1, len, lf_pointer->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_pointer->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_pointer->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -1979,14 +1979,14 @@ static int parse_lf_array(SLF_ARRAY *lf_array, unsigned char *leaf_data, unsigne
 
 	lf_array->size.name_or_val = 0;
 
-	READ(*read_bytes, 4, len, lf_array->element_type, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_array->index_type, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_array->element_type, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_array->index_type, leaf_data, ut32);
 
 	before_read_bytes = *read_bytes;
 	parse_sval(&lf_array->size, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_array->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_array->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_array->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_array(): name = ");
@@ -2000,11 +2000,11 @@ static int parse_lf_modifier(SLF_MODIFIER *lf_modifier, unsigned char *leaf_data
 {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_modifier->modified_type, leaf_data, unsigned int);
-	READ(*read_bytes, 2, len, lf_modifier->umodifier.modifier, leaf_data, unsigned short);
+	READ4(*read_bytes, len, lf_modifier->modified_type, leaf_data, ut32);
+	READ2(*read_bytes, len, lf_modifier->umodifier.modifier, leaf_data, ut16);
 	lf_modifier->umodifier.modifier = SWAP_UINT16(lf_modifier->umodifier.modifier);
 
-	PEEK_READ(*read_bytes, 1, len, lf_modifier->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_modifier->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_modifier->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2017,7 +2017,7 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, unsigned char *leaf_data, u
 
 	lf_arglist->arg_type = 0;
 
-	READ (*read_bytes, 4, len, lf_arglist->count, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_arglist->count, leaf_data, ut32);
 
 	lf_arglist->arg_type = (unsigned int *) malloc (lf_arglist->count * 4);
 	if (!lf_arglist->arg_type) return 0;
@@ -2025,7 +2025,7 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, unsigned char *leaf_data, u
 	leaf_data += (lf_arglist->count * 4);
 	*read_bytes += (lf_arglist->count * 4);
 
-	PEEK_READ (*read_bytes, 1, len, lf_arglist->pad, leaf_data, unsigned char);
+	PEEK_READ1 (*read_bytes, len, lf_arglist->pad, leaf_data, ut8);
 	PAD_ALIGN (lf_arglist->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2036,16 +2036,16 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, unsigned char *leaf_d
 {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_mfunction->return_type, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_mfunction->class_type, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_mfunction->this_type, leaf_data, unsigned int);
-	READ(*read_bytes, 1, len, lf_mfunction->call_conv, leaf_data, unsigned char);
-	READ(*read_bytes, 1, len, lf_mfunction->reserved, leaf_data, unsigned char);
-	READ(*read_bytes, 2, len, lf_mfunction->parm_count, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_mfunction->arglist, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_mfunction->this_adjust, leaf_data, int);
+	READ4(*read_bytes, len, lf_mfunction->return_type, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_mfunction->class_type, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_mfunction->this_type, leaf_data, ut32);
+	READ1(*read_bytes, len, lf_mfunction->call_conv, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_mfunction->reserved, leaf_data, ut8);
+	READ2(*read_bytes, len, lf_mfunction->parm_count, leaf_data, ut8);
+	READ4(*read_bytes, len, lf_mfunction->arglist, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_mfunction->this_adjust, leaf_data, st32);
 
-	PEEK_READ(*read_bytes, 1, len, lf_mfunction->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_mfunction->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_mfunction->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2054,13 +2054,13 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, unsigned char *leaf_d
 static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_procedure->return_type, leaf_data, unsigned int);
-	READ(*read_bytes, 1, len, lf_procedure->call_conv, leaf_data, unsigned char);
-	READ(*read_bytes, 1, len, lf_procedure->reserved, leaf_data, unsigned char);
-	READ(*read_bytes, 2, len, lf_procedure->parm_count, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_procedure->arg_list, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_procedure->return_type, leaf_data, ut32);
+	READ1(*read_bytes, len, lf_procedure->call_conv, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_procedure->reserved, leaf_data, ut8);
+	READ2(*read_bytes, len, lf_procedure->parm_count, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_procedure->arg_list, leaf_data, ut32);
 
-	PEEK_READ(*read_bytes, 1, len, lf_procedure->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_procedure->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_procedure->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2072,16 +2072,16 @@ static int parse_lf_union(SLF_UNION *lf_union, unsigned char *leaf_data, unsigne
 
 	lf_union->size.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_union->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_union->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_union->field_list, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_union->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_union->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_union->field_list, leaf_data, ut32);
 
 	before_read_bytes = *read_bytes;
 	parse_sval(&lf_union->size, leaf_data, read_bytes, len);
 	before_read_bytes = *read_bytes - before_read_bytes;
 	leaf_data = (unsigned char *)leaf_data + before_read_bytes;
 
-	PEEK_READ(*read_bytes, 1, len, lf_union->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_union->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_union->pad, *read_bytes, leaf_data, len);
 
 //	printf("%s:", "parse_lf_union()");
@@ -2093,11 +2093,11 @@ static int parse_lf_union(SLF_UNION *lf_union, unsigned char *leaf_data, unsigne
 static int parse_lf_bitfield(SLF_BITFIELD *lf_bitfield, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_bitfield->base_type, leaf_data, unsigned int);
-	READ(*read_bytes, 1, len, lf_bitfield->length, leaf_data, unsigned char);
-	READ(*read_bytes, 1, len, lf_bitfield->position, leaf_data, unsigned char);
+	READ4(*read_bytes, len, lf_bitfield->base_type, leaf_data, ut32);
+	READ1(*read_bytes, len, lf_bitfield->length, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_bitfield->position, leaf_data, ut8);
 
-	PEEK_READ(*read_bytes, 1, len, lf_bitfield->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_bitfield->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_bitfield->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2109,7 +2109,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 
 	lf_vtshape->vt_descriptors = 0;
 
-	READ (*read_bytes, 2, len, lf_vtshape->count, leaf_data, unsigned short);
+	READ2(*read_bytes, len, lf_vtshape->count, leaf_data, ut16);
 
 	size = (4 * lf_vtshape->count + (lf_vtshape->count % 2) * 4) / 8;
 	lf_vtshape->vt_descriptors = (char *) malloc (size);
@@ -2118,7 +2118,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 	leaf_data += size;
 	*read_bytes += size;
 
-	PEEK_READ (*read_bytes, 1, len, lf_vtshape->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_vtshape->pad, leaf_data, ut8);
 	PAD_ALIGN (lf_vtshape->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
