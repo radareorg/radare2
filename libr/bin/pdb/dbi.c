@@ -52,17 +52,17 @@ static int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_ran
 {
 	int read_bytes = 0;
 
-	READ(read_bytes, 2, max_len, symbol_range->section, data, short);
-	READ(read_bytes, 2, max_len, symbol_range->padding1, data, short);
-	READ(read_bytes, 4, max_len, symbol_range->offset, data, int);
-	READ(read_bytes, 4, max_len, symbol_range->size, data, int);
-	READ(read_bytes, 4, max_len, symbol_range->flags, data, ut32);
-	READ(read_bytes, 4, max_len, symbol_range->module, data, int);
+	READ2(read_bytes, max_len, symbol_range->section, data, st16);
+	READ2(read_bytes, max_len, symbol_range->padding1, data, st16);
+	READ4(read_bytes, max_len, symbol_range->offset, data, st32);
+	READ4(read_bytes, max_len, symbol_range->size, data, st32);
+	READ4(read_bytes, max_len, symbol_range->flags, data, ut32);
+	READ4(read_bytes, max_len, symbol_range->module, data, st32);
 
 // TODO: why not need to read this padding?
-//	READ(read_bytes, 2, max_len, symbol_range->padding2, data, short);
-	READ(read_bytes, 4, max_len, symbol_range->data_crc, data, ut32);
-	READ(read_bytes, 4, max_len, symbol_range->reloc_crc, data, ut32);
+//	READ2(read_bytes, max_len, symbol_range->padding2, data, short);
+	READ4(read_bytes, max_len, symbol_range->data_crc, data, ut32);
+	READ4(read_bytes, max_len, symbol_range->reloc_crc, data, ut32);
 
 	return read_bytes;
 }
@@ -72,22 +72,22 @@ static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_hea
 {
 	ut32 read_bytes = 0, before_read_bytes = 0;
 
-	READ(read_bytes, 4, max_len, dbi_ex_header->opened, data, ut32);
+	READ4(read_bytes, max_len, dbi_ex_header->opened, data, ut32);
 
 	before_read_bytes = read_bytes;
 	read_bytes += parse_ssymbol_range (data, max_len, &dbi_ex_header->range);
 	data += (read_bytes - before_read_bytes);
 
-	READ(read_bytes, 2, max_len, dbi_ex_header->flags, data, ut16);
-	READ(read_bytes, 2, max_len, dbi_ex_header->stream, data, short);
-	READ(read_bytes, 4, max_len, dbi_ex_header->symSize, data, ut32);
-	READ(read_bytes, 4, max_len, dbi_ex_header->oldLineSize, data, ut32);
-	READ(read_bytes, 4, max_len, dbi_ex_header->lineSize, data, ut32);
-	READ(read_bytes, 2, max_len, dbi_ex_header->nSrcFiles, data, short);
-	READ(read_bytes, 2, max_len, dbi_ex_header->padding1, data, short);
-	READ(read_bytes, 4, max_len, dbi_ex_header->offsets, data, ut32);
-	READ(read_bytes, 4, max_len, dbi_ex_header->niSource, data, ut32);
-	READ(read_bytes, 4, max_len, dbi_ex_header->niCompiler, data, ut32);
+	READ2(read_bytes, max_len, dbi_ex_header->flags, data, ut16);
+	READ2(read_bytes, max_len, dbi_ex_header->stream, data, st16);
+	READ4(read_bytes, max_len, dbi_ex_header->symSize, data, ut32);
+	READ4(read_bytes, max_len, dbi_ex_header->oldLineSize, data, ut32);
+	READ4(read_bytes, max_len, dbi_ex_header->lineSize, data, ut32);
+	READ2(read_bytes, max_len, dbi_ex_header->nSrcFiles, data, st16);
+	READ2(read_bytes, max_len, dbi_ex_header->padding1, data, st16);
+	READ4(read_bytes, max_len, dbi_ex_header->offsets, data, ut32);
+	READ4(read_bytes, max_len, dbi_ex_header->niSource, data, ut32);
+	READ4(read_bytes, max_len, dbi_ex_header->niCompiler, data, ut32);
 
 	before_read_bytes = read_bytes;
 	parse_sctring(&dbi_ex_header->modName, (unsigned char *)data, &read_bytes, max_len);

@@ -7,11 +7,11 @@ static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA 
 {
 	int curr_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, data_size, fpo_data->ul_off_start, data, unsigned int);
-	READ(*read_bytes, 4, data_size, fpo_data->cb_proc_size, data, unsigned int);
-	READ(*read_bytes, 4, data_size, fpo_data->cdw_locals, data, unsigned int);
-	READ(*read_bytes, 2, data_size, fpo_data->cdw_params, data, unsigned short);
-	READ(*read_bytes, 2, data_size, fpo_data->bit_values.bit_values, data, unsigned short);
+	READ4(*read_bytes, data_size, fpo_data->ul_off_start, data, ut32);
+	READ4(*read_bytes, data_size, fpo_data->cb_proc_size, data, ut32);
+	READ4(*read_bytes, data_size, fpo_data->cdw_locals, data, ut32);
+	READ2(*read_bytes, data_size, fpo_data->cdw_params, data, ut16);
+	READ2(*read_bytes, data_size, fpo_data->bit_values.bit_values, data, ut16);
 
 	fpo_data->bit_values.bit_values = SWAP_UINT16(fpo_data->bit_values.bit_values);
 

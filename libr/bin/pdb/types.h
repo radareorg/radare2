@@ -42,15 +42,41 @@
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-#define PEEK_READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
-	CAN_READ((curr_read_bytes), (bytes_for_read), (max_len)); \
+#define PEEK_READ1(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 1, (max_len)); \
 	(dst) = *(type_name *) (src); \
 }
-
+#define PEEK_READ2(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 2, (max_len)); \
+	(dst) = (type_name) r_read_le16 (src); \
+}
+#define PEEK_READ4(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 4, (max_len)); \
+	(dst) = (type_name) r_read_le32 (src); \
+}
+#define PEEK_READ8(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 8, (max_len)); \
+	(dst) = (type_name) r_read_le64 (src); \
+}
 ///////////////////////////////////////////////////////////////////////////////
-#define READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
-	PEEK_READ((curr_read_bytes), (bytes_for_read), (max_len), (dst), (src), type_name); \
-	UPDATE_DATA((src), (curr_read_bytes), (bytes_for_read)); \
+#define READ1(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ1((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 1); \
+}
+
+#define READ2(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ2((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 2); \
+}
+
+#define READ4(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ4((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 4); \
+}
+
+#define READ8(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ8((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 8); \
 }
 
 ///////////////////////////////////////////////////////////////////////////////
