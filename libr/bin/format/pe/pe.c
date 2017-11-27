@@ -81,7 +81,8 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			// E8 3E F9 FF FF  call    0x44B4FF
 			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
 			for (n = 0; n < sizeof (b) - 6; n++) {
-				if (b[n] == 0x68 && *((ut32*) &b[n + 1]) == imageBase && b[n + 5] == 0xe8) {
+				const ut32 tmp_imgbase = r_read_ble32 (b + n + 1, bin->big_endian);
+				if (b[n] == 0x68 && tmp_imgbase == imageBase && b[n + 5] == 0xe8) {
 					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
 					entry->vaddr += (n + 5 + 5 + call_dst);
