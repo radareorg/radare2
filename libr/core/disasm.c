@@ -3568,14 +3568,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					ut64 arg_addr = UT64_MAX;
 					//this should be taken out on its own function
 					for (i = 0; i < nargs; i++) {
-						const char *arg_name, *fmt, *cc_source;
+						const char *arg_name, *fmt, *cc_source = NULL;
 						char *arg_orig_c_type, *arg_c_type;
 						ut64 arg_size;
 						int on_stack = 0, warning = 0;
 						get_fcn_args_info (core->anal, key, i, cc, &arg_name,
 							&arg_orig_c_type, &arg_c_type, &fmt,
 							&arg_size, &cc_source);
-						if (!strcmp (cc_source, "stack_rev")) {
+						if (cc_source && !strcmp (cc_source, "stack_rev")) {
 							int j;
 							free (arg_orig_c_type);
 							on_stack = 1;
@@ -3611,7 +3611,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 							}
 							break;
 						}
-						if (!strncmp (cc_source, "stack", 5)) {
+						if (cc_source && !strncmp (cc_source, "stack", 5)) {
 							arg_addr = spv;
 							if (!arg_size) {
 								ds_comment_esil (ds, false, false, "%s: unk_size", arg_c_type);
