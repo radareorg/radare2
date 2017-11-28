@@ -60,6 +60,7 @@ R_API char *r_str_arg_escape(const char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(const char *str);
+R_API int r_snprintf (char *string, int len, const char *fmt, ...);
 R_API bool r_str_is_ascii(const char *str);
 R_API int r_str_is_printable(const char *str);
 R_API bool r_str_is_printable_incl_newlines(const char *str);

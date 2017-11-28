@@ -14,36 +14,35 @@ static const char *ops[] = { FOREACHOP(REIL_OP_STRING) };
 
 // Get size of a register.
 static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
-	RRegItem *i;
-	if (!esil || !esil->anal || !esil->anal->reg || !r)
+	if (!esil || !esil->anal || !esil->anal->reg || !r) {
 		return false;
-	i = r_reg_get(esil->anal->reg, r, -1);
-	if (!i)
-		return false;
-	return (ut8)i->size;
+	}
+	RRegItem *i = r_reg_get(esil->anal->reg, r, -1);
+	return i ? (ut8)i->size : 0;
 }
 
 RAnalReilArgType reil_get_arg_type(RAnalEsil *esil, char *s) {
-	if (!strncmp(s, REIL_TEMP_PREFIX, strlen(REIL_TEMP_PREFIX)))
+	if (!strncmp (s, REIL_TEMP_PREFIX, strlen(REIL_TEMP_PREFIX))) {
 		return ARG_TEMP;
+	}
 	int type = r_anal_esil_get_parm_type(esil, s);
 	switch (type) {
-		case R_ANAL_ESIL_PARM_REG:
-			return ARG_REG;
-		case R_ANAL_ESIL_PARM_NUM:
-			return ARG_CONST;
-		case R_ANAL_ESIL_PARM_INTERNAL:
-			return ARG_ESIL_INTERNAL;
-		default:
-			return ARG_NONE;
+	case R_ANAL_ESIL_PARM_REG:
+		return ARG_REG;
+	case R_ANAL_ESIL_PARM_NUM:
+		return ARG_CONST;
+	case R_ANAL_ESIL_PARM_INTERNAL:
+		return ARG_ESIL_INTERNAL;
+	default:
+		return ARG_NONE;
 	}
 }
 
 // Marshall the struct into a string
 void reil_push_arg(RAnalEsil *esil, RAnalReilArg *op) {
-	char tmp_buf[REGBUFSZ];
-	snprintf(tmp_buf, REGBUFSZ, "%s:%d", op->name, op->size);
-	r_anal_esil_push (esil, tmp_buf);
+	char *s = r_str_newf ("%s:%d", op->name, op->size);
+	r_anal_esil_push (esil, s);
+	free (s);
 }
 
 // Unmarshall the string in stack to the struct.
@@ -257,9 +256,9 @@ static int reil_eq(RAnalEsil *esil) {
 		reil_print_inst (esil, ins);
 
 		// Used for setting the flags
-		snprintf (esil->Reil->old, sizeof (esil->Reil->old) - 1, "%s:%d",
+		r_snprintf (esil->Reil->old, sizeof (esil->Reil->old) - 1, "%s:%d",
 				ins->arg[2]->name, ins->arg[2]->size);
-		snprintf (esil->Reil->cur, sizeof (esil->Reil->cur) - 1, "%s:%d", dst->name,
+		r_snprintf (esil->Reil->cur, sizeof (esil->Reil->cur) - 1, "%s:%d", dst->name,
 				dst->size);
 		esil->Reil->lastsz = dst->size;
 
@@ -413,9 +412,9 @@ static int reil_cmp(RAnalEsil *esil) {
 	ins->arg[2]->size = 1;
 	reil_print_inst(esil, ins);
 	// Set vars needed to determine flags.
-	snprintf(esil->Reil->cur, sizeof(esil->Reil->old) - 1, "%s:%d",
+	r_snprintf (esil->Reil->cur, sizeof (esil->Reil->old) - 1, "%s:%d",
 			ins->arg[2]->name, ins->arg[2]->size);
-	snprintf(esil->Reil->old, sizeof(esil->Reil->cur) - 1, "%s:%d", op2->name,
+	r_snprintf (esil->Reil->old, sizeof (esil->Reil->cur) - 1, "%s:%d", op2->name,
 			op2->size);
 
 	if (r_reg_get(esil->anal->reg, op2->name, -1)) {
@@ -762,10 +761,10 @@ static int reil_poken(RAnalEsil *esil, ut8 n) {
 		reil_make_arg (esil, ins->arg[2], tmp_buf);
 		ins->arg[2]->size = ins->arg[0]->size;
 		reil_print_inst (esil, ins);
-		snprintf (esil->Reil->old, sizeof (esil->Reil->old) - 1, "%s:%d",
+		r_snprintf (esil->Reil->old, sizeof (esil->Reil->old) - 1, "%s:%d",
 				ins->arg[2]->name, ins->arg[2]->size);
-		snprintf (esil->Reil->cur, sizeof (esil->Reil->cur) - 1, "%s:%d", op2->name,
-				op2->size);
+		r_snprintf (esil->Reil->cur, sizeof (esil->Reil->cur) - 1, "%s:%d",
+				op2->name, op2->size);
 		esil->lastsz = n * 8;
 		reil_push_arg (esil, op1);
 		reil_push_arg (esil, op2);
