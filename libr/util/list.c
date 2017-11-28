@@ -79,7 +79,7 @@ R_API bool r_list_delete_data(RList *list, void *ptr) {
 	RListIter *iter;
 	r_list_foreach (list, iter, p) {
 		if (ptr == p) {
-			r_list_delete (list, iter); //r_list_delete decrements 1 the length
+			r_list_delete (list, iter);
 			return true;
 		}
 	}
