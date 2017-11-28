@@ -662,17 +662,23 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Failed to close stderr");
 			return 1;
 		}
-		int new_stderr = open ("/dev/null", O_RDWR);
+#if __WINDOWS__ && !__CYGWIN__
+		const char nul[] = "nul";
+#else
+		const char nul[] = "/dev/null";
+#endif
+		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
-			eprintf ("Failed to open /dev/null");
+			eprintf ("Failed to open %s", nul);
 			return 1;
-		} else if (2 != new_stderr) {
+		}
+		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
 				return 1;
 			}
 			if (-1 == close (new_stderr)) {
-				eprintf ("Failed to close /dev/null");
+				eprintf ("Failed to close %s", nul);
 				return 1;
 			}
 		}
