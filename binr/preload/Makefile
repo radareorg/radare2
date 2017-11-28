@@ -1,4 +1,4 @@
-ISPPC=$(shell uname -a | grep Power)
+ISPPC=$(shell uname -m | grep Power)
 
 ifeq ($(ISPPC),)
 BIN=libr2
