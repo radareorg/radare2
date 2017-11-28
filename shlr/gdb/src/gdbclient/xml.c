@@ -176,6 +176,9 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		goto exit_err;
 	}
 	r_list_foreach (regs, iter, tmpreg) {
+		if (!tmpreg) {
+			continue;
+		}
 		// regsize > 64 not supported by r2 currently
 		if (tmpreg->size > 8) {
 			regoff += tmpreg->size;
@@ -580,11 +583,12 @@ static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			r_list_push (regs, tmpreg);
 		} else if (regnum >= r_list_length (regs)) {
 			int i;
-			for (i = regnum - r_list_length (regs); i >= 0; i--) {
+			for (i = regnum - r_list_length (regs); i > 0; i--) {
 				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
-				// shouldn't cause a crash though
 				r_list_push (regs, tmpreg);
+				r_list_tail (regs)->data = NULL;
 			}
+			r_list_push (regs, tmpreg);
 		} else {
 			// this is where we replace those placeholder regs
 			r_list_set_n (regs, regnum, tmpreg);
