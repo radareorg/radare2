@@ -658,7 +658,30 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 	if (noStderr) {
-		close (2);
+		if (-1 == close (2)) {
+			eprintf ("Failed to close stderr");
+			return 1;
+		}
+#if __WINDOWS__ && !__CYGWIN__
+		const char nul[] = "nul";
+#else
+		const char nul[] = "/dev/null";
+#endif
+		int new_stderr = open (nul, O_RDWR);
+		if (-1 == new_stderr) {
+			eprintf ("Failed to open %s", nul);
+			return 1;
+		}
+		if (2 != new_stderr) {
+			if (-1 == dup2 (new_stderr, 2)) {
+				eprintf ("Failed to dup2 stderr");
+				return 1;
+			}
+			if (-1 == close (new_stderr)) {
+				eprintf ("Failed to close %s", nul);
+				return 1;
+			}
+		}
 	}
 	{
 		const char *dbg_profile = r_config_get (r.config, "dbg.profile");
