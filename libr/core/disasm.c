@@ -232,6 +232,7 @@ typedef struct {
 	bool showrelocs;
 	int cmtcount;
 	int shortcut_pos;
+	bool asm_anal;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -478,6 +479,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
+	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
 	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
@@ -1800,6 +1802,13 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 static void ds_control_flow_comments(RDisasmState *ds) {
 	if (ds->show_comments && ds->show_cmtflgrefs) {
 		RFlagItem *item;
+		if (ds->asm_anal) {
+			switch (ds->analop.type) {
+			case R_ANAL_OP_TYPE_CALL:
+				r_core_cmdf (ds->core, "af @ 0x%"PFMT64x, ds->analop.jump);
+				break;
+			}
+		}
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
@@ -2297,7 +2306,12 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					item = r_flag_get_i (core->flags, off);
 					//TODO: introduce env for this print?
 					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
-					  dst->reg->name, ptr, off, item?item->name: "");
+							dst->reg->name, ptr, off, item?item->name: "");
+					if (ds->asm_anal) {
+						if (r_io_is_valid_offset (core->io, off, 0)) {
+							r_anal_ref_add (core->anal, ds->addr, off, 'd');
+						}
+					}
 				}
 			}
 		}
@@ -2313,7 +2327,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				int memref = core->assembler->bits/8;
 				RFlagItem *item;
 				ut8 b[64];
-				ut64 ptr = index+ds->addr+src->delta+ds->analop.size;
+				ut64 ptr = index + ds->addr + src->delta + ds->analop.size;
 				ut64 off = 0LL;
 				r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 				off = r_mem_get_num (b, memref);
@@ -2325,6 +2339,11 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					ALIGN;
 					ds_comment (ds, true, "; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"%s",
 					            dst->reg->name, ptr, off, item?item->name: s, nl);
+					if (ds->asm_anal) {
+						if (r_io_is_valid_offset (core->io, off, 0)) {
+							r_anal_ref_add (core->anal, ds->addr, ptr, 'd');
+						}
+					}
 				}
 			}
 		}
