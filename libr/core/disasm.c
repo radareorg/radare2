@@ -3249,17 +3249,31 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
 		if (ds && *str && r_str_is_printable (str)) {
-			RCore *core = ds->core;
-			const char *prefix;
-			char *escstr;
-			ut32 len = core->blocksize + 256;
-			if (len < core->blocksize || len > R_DISASM_MAX_STR) {
-				len = R_DISASM_MAX_STR;
+			bool jump_op = false;
+			switch (ds->analop.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_RJMP:
+			case R_ANAL_OP_TYPE_IJMP:
+			case R_ANAL_OP_TYPE_IRJMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_MJMP:
+			case R_ANAL_OP_TYPE_UCJMP:
+				jump_op = true;
 			}
-			escstr = ds_esc_str (ds, str, (int)len, &prefix);
-			if (escstr) {
-				msg = r_str_newf ("%s\"%s\" ", prefix, escstr);
-				free (escstr);
+			if (!jump_op) {
+				RCore *core = ds->core;
+				const char *prefix;
+				char *escstr;
+				ut32 len = core->blocksize + 256;
+				if (len < core->blocksize || len > R_DISASM_MAX_STR) {
+					len = R_DISASM_MAX_STR;
+				}
+				escstr = ds_esc_str (ds, str, (int)len, &prefix);
+				if (escstr) {
+					msg = r_str_newf ("%s\"%s\" ", prefix, escstr);
+					free (escstr);
+				}
 			}
 		} else {
 			str[0] = 0;
