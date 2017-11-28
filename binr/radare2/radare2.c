@@ -666,8 +666,15 @@ int main(int argc, char **argv, char **envp) {
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open /dev/null");
 			return 1;
-		} else {
-			dup2 (new_stderr, 2);
+		} else if (2 != new_stderr) {
+			if (-1 == dup2 (new_stderr, 2)) {
+				eprintf ("Failed to dup2 stderr");
+				return 1;
+			}
+			if (-1 == close (new_stderr)) {
+				eprintf ("Failed to close /dev/null");
+				return 1;
+			}
 		}
 	}
 	{
