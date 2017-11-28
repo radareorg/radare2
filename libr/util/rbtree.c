@@ -55,6 +55,7 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 	return it;
 }
 
+/*
 static void _check1(RBNode *x, int dep, int black, bool leftmost) {
 	static int black_;
 	if (x) {
@@ -74,6 +75,7 @@ static void _check1(RBNode *x, int dep, int black, bool leftmost) {
 static void _check(RBNode *x) {
 	_check1 (x, 0, 0, true);
 }
+*/
 
 // Returns true if a node with an equal key is deleted
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn, RBNodeSum sum) {

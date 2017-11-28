@@ -1,3 +1,6 @@
+ISPPC=$(shell uname -a | grep Power)
+
+ifeq ($(ISPPC),)
 BIN=libr2
 ISLIB=1
 BINDEPS=r_core r_parse r_search r_cons r_config
@@ -22,3 +25,7 @@ include ../../shlr/ar/deps.mk
 
 clean::
 	rm -f $(BIN).$(EXT_SO) $(BIN).o
+else
+all:
+	@echo Cant build preloaded lib in old Macs
+endif

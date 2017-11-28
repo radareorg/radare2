@@ -265,8 +265,9 @@ R_API int r_sys_clearenv(void) {
 		return 0;
 	}
 	if (env) {
-		while (*environ) {
-			*environ++ = NULL;
+		char **e = env;
+		while (*e) {
+			*e++ = NULL;
 		}
 	}
 #else
