@@ -45,7 +45,6 @@ static const char *rwxstr[] = {
 	[23] = "mrwx",
 };
 
-
 // TODO: simplify this horrible loop
 R_API void r_str_chop_path(char *s) {
 	char *src, *dst, *p;
@@ -3092,7 +3091,7 @@ R_API char *r_str_from_ut64(ut64 val) {
 R_API int r_snprintf (char *string, int len, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
-	int ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
+	int ret = vsnprintf (string, len, fmt, ap);
 	string[len - 1] = 0;
 	va_end (ap);
 	return ret;

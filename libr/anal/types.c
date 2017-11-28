@@ -132,8 +132,6 @@ static int get_types_by_offset(RAnal *anal, RList *offtypes, int offset, const c
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
-		const char *typename = k;
-		int typesize = 0;
 		char* query = sdb_fmt (-1, "struct.%s", k);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
@@ -157,7 +155,6 @@ static int get_types_by_offset(RAnal *anal, RList *offtypes, int offset, const c
 					if (tmp) {
 						*tmp++ = 0;
 					}
-					char *subname = tmp;
 					// TODO: Go recurse here
 					int elements = r_num_math (NULL, tmp);
 					if (elements == 0) {
