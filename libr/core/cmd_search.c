@@ -62,6 +62,7 @@ static const char *help_msg_slash[] = {
 static const char *help_msg_slash_c[] = {
 	"Usage:", "/c [inst]", " Search for asm",
 	"/c ", "instr", "search for instruction 'instr'",
+	"/ce ", "esil", "search for esil expressions matching substring",
 	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
 	"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 	"/c/a ", "instr", "search for every byte instruction that matches regexp 'instr'",

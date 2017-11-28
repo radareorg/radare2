@@ -264,9 +264,11 @@ static const char *help_msg_afC[] = {
 
 static const char *help_msg_afi[] = {
 	"Usage:", "afi[jl*]", " <addr>",
+	"afi", "", "show information of the function",
+	"afi.", "", "show function name in current offset",
+	"afi*", "", "function, variables and arguments",
 	"afij", "", "function info in json format",
 	"afil", "", "verbose function info",
-	"afi*", "", "function, variables and arguments",
 	NULL
 };
 
@@ -2071,7 +2073,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_afi);
 			break;
-		case 'l':   // "afil"
+		case '.': // "afi."
+			{
+				ut64 addr = core->offset;
+				if (input[3] == ' ') {
+					addr = r_num_math (core->num, input + 3);
+				}
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_cons_printf ("%s\n", fcn->name);
+				}
+			}
+			break;
+		case 'l': // "afil"
 			if (input[3] == '?') {
 				// TODO #7967 help refactor
 				help_msg_afll[1] = "afil";
