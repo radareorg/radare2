@@ -2880,6 +2880,7 @@ static ut32 tmp_get_contsize(RAnalFunction *f) {
 }
 
 static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type) {
+	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	core->anal->gp = saved_gp;
 	if (emu) {
 		if (b->parent_reg_arena) {
@@ -2913,7 +2914,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 				}
 			}
 		}
-		if (p_type == 'D') {
+		if (p_type == 'D' && show_flags) {
 			r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
 		}
 	}
@@ -2929,17 +2930,21 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 				}
 			}
 		}
-		if (p_type == 'D') {
+		if (p_type == 'D' && show_flags) {
 			r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
 		}
 	}
-	if (p_type == 'D') {
+	if (p_type == 'D' && show_flags) {
 		r_cons_newline ();
 	}
 }
 
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
+	bool show_flags = r_config_get_i (core->config, "asm.flags");
+	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
+	bool show_offset = r_config_get_i (core->config, "asm.offset");
+	bool show_imtrim = r_config_get_i (core->config, "asm.offless");
 	Sdb *db = sdb_new0 ();
 	RAsmOp asmop = {0};
 	RAnalOp aop = {0};
@@ -2966,19 +2971,30 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				continue;
 			}
 			if (loop > 0) {
-				const char *x = sdb_const_get (db, sdb_fmt (-1, "label.0x%"PFMT64x, addr + i), NULL);
-				if (x) {
-					r_cons_printf ("%s:\n", x);
+				if (show_flags) {
+					const char *x = sdb_const_get (db, sdb_fmt (-1, "label.0x%"PFMT64x, addr + i), NULL);
+					if (x) {
+						r_cons_printf ("%s:\n", x);
+					}
 				}
 				char *asm_str = asmop.buf_asm;
 				char *color_reg = P(reg): Color_YELLOW;
 				char *color_num = P(num): Color_CYAN;
 				asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false);
-				char *hexstr = r_print_hexpair (core->print, asmop.buf_hex, -1);
-				const char *pad = r_str_pad (' ', 20 - strlen (asmop.buf_hex));
-				r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
-				r_cons_printf (" %s%s %s\n", pad, hexstr, asm_str);
-				free (hexstr);
+				if (show_imtrim) {
+					r_parse_immtrim (asm_str);
+				}
+				if (show_offset) {
+					r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
+				}
+				if (show_bytes) {
+					char *hexstr = r_print_hexpair (core->print, asmop.buf_hex, -1);
+					const char *pad = r_str_pad (' ', 20 - strlen (asmop.buf_hex));
+					r_cons_printf (" %s%s %s\n", pad, hexstr, asm_str);
+					free (hexstr);
+				} else {
+					r_cons_printf (" %s\n", asm_str);
+				}
 			}
 			switch (aop.type) {
 			case R_ANAL_OP_TYPE_CALL:

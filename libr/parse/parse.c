@@ -472,6 +472,29 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	return false;
 }
 
+R_API bool r_parse_immtrim (char *opstr) {
+	bool changed = false;
+	if (!opstr || !*opstr) {
+		return false;
+	}
+	char *n = strstr (opstr, "0x");
+	if (n) {
+		char *p = n + 2;
+		while (ISHEXCHAR (*p)) {
+			p++;
+		}
+		memmove (n, p, strlen (p) + 1);
+		changed = true;
+	}
+	if (strstr (opstr, " - ")) {
+		r_str_replace (opstr, " - ", "", 1);
+	}
+	if (strstr (opstr, " + ")) {
+		r_str_replace (opstr, " + ", "", 1);
+	}
+	return changed;
+}
+
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
 	filter (p, f, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
