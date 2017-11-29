@@ -1950,11 +1950,13 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
+	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);
+	r_config_set_i (core->config, "asm.tabs", 0);
 r_cons_push();
-	if (!strncmp (input, "dsf", 3)) {
+	if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
 			line = s = r_core_cmd_str (core, "pdr");
@@ -2181,10 +2183,11 @@ r_cons_pop();
 				}
 			}
 		}
-		line = line + strlen (line) + 1;
+		line += strlen (line) + 1;
 	}
 	// r_cons_printf ("%s", s);
 	r_config_set_i (core->config, "asm.offset", show_offset);
+	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	free (string2);
 	free (string);
 	free (s);
