@@ -49,12 +49,14 @@ R_API RJSVar* r_json_number_new(int value);
 R_API RJSVar* r_json_boolean_new(bool value);
 R_API RJSVar* r_json_null_new(void);
 
-R_API void r_json_object_add(RJSVar* object, const char* name, RJSVar* value);
-R_API void r_json_array_add(RJSVar* array, RJSVar* value);
+R_API bool r_json_object_add(RJSVar* object, const char* name, RJSVar* value);
+R_API bool r_json_array_add(RJSVar* array, RJSVar* value);
 R_API RJSVar* r_json_object_get(RJSVar* object, const char* name);
 R_API RJSVar* r_json_array_get(RJSVar* array, int index);
 
 R_API char* r_json_stringify(RJSVar* var, bool expanded);
+
+#define R_JSON_FREE_ON_FAIL(x,v) if(!x){r_json_var_free(v);}
 
 #ifdef __cplusplus
 }
