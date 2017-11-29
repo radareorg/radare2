@@ -118,52 +118,59 @@ R_API RJSVar* r_json_null_new () {
 	return var;
 }
 
-R_API void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
+R_API bool r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	ut32 len;
 	RJSVar** v;
 	char** c;
 	if (!object || !name || !value) {
-		return;
+		return false;
 	}
-	value->ref++;
 	len = object->object.l + 1;
 	if (len <= 0) {
-		return;
+		value->ref--;;
+		return false;
 	}
-	v = (RJSVar**) realloc (object->object.a, len * sizeof (RJSVar*));
+	v = (RJSVar**) malloc (len * sizeof (RJSVar*));
 	if (!v) {
-		return;
+		return false;
 	}
-	c = (char**) realloc (object->object.n, len * sizeof (char*));
+	c = (char**) malloc (len * sizeof (char*));
 	if (!c) {
 		free (v);
-		return;
+		return false;
 	}
+	value->ref++;
+	memcpy (v, object->object.a, (object->object.l * sizeof (RJSVar*)));
+	memcpy (c, object->object.n, (object->object.l * sizeof (char*)));
 	v[len - 1] = value;
 	c[len - 1] = strdup (name);
 	object->object.l = len;
+	free (object->object.a);
 	object->object.a = v;
+	free (object->object.n);
 	object->object.n = (const char**) c;
+	return true;
 }
 
-R_API void r_json_array_add (RJSVar* array, RJSVar* value) {
+R_API bool r_json_array_add (RJSVar* array, RJSVar* value) {
 	ut32 len;
 	RJSVar** v;
 	if (!array || !value) {
-		return;
+		return false;
 	}
-	value->ref++;
 	len = array->array.l + 1;
 	if (len <= 0) {
-		return;
+		return false;
 	}
 	v = (RJSVar**) realloc (array->array.a, len * sizeof (RJSVar*));
 	if (!v) {
-		return;
+		return false;
 	}
+	value->ref++;
 	v[len - 1] = value;
 	array->array.l = len;
 	array->array.a = v;
+	return true;
 }
 
 R_API RJSVar* r_json_object_get (RJSVar* object, const char* name) {
