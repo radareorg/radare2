@@ -3792,7 +3792,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 static void cmd_aexn(RCore *core, ut64 addr, int off) {
 	RAnalEsil *esil = core->anal->esil;
 	int i, j = 0;
-        ut64 curpc = addr;
+	ut64 curpc = addr;
 	int instr_size = 0;
 	ut8 *buf;
 	RAnalOp aop = {0};
