@@ -486,11 +486,25 @@ R_API bool r_parse_immtrim (char *opstr) {
 		memmove (n, p, strlen (p) + 1);
 		changed = true;
 	}
+	if (strstr (opstr, " - ]")) {
+		r_str_replace (opstr, " - ]", "]", 1);
+		changed = true;
+	}
+	if (strstr (opstr, " + ]")) {
+		r_str_replace (opstr, " + ]", "]", 1);
+		changed = true;
+	}
+	if (strstr (opstr, ", ]")) {
+		r_str_replace (opstr, ", ]", "]", 1);
+		changed = true;
+	}
 	if (strstr (opstr, " - ")) {
-		r_str_replace (opstr, " - ", "", 1);
+		r_str_replace (opstr, " - ", "-", 1);
+		changed = true;
 	}
 	if (strstr (opstr, " + ")) {
-		r_str_replace (opstr, " + ", "", 1);
+		r_str_replace (opstr, " + ", "+", 1);
+		changed = true;
 	}
 	return changed;
 }

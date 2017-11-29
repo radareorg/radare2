@@ -62,7 +62,7 @@ static const char* r_vline_uc[] = {
 typedef struct {
 	RCore *core;
 	char str[1024], strsub[1024];
-	int offless;
+	bool immtrim;
 	bool immstr;
 	bool use_esil;
 	bool show_color;
@@ -474,7 +474,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
 	ds->immstr = r_config_get_i (core->config, "asm.immstr");
-	ds->offless = r_config_get_i (core->config, "asm.offless");
+	ds->immtrim = r_config_get_i (core->config, "asm.immtrim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
@@ -799,7 +799,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 		}
 	}
 	char *asm_str = colorize_asm_string (core, ds);
-	if (ds->offless) {
+	if (ds->immtrim) {
 		r_parse_immtrim (ds->opstr);
 		free (asm_str);
 		return;
@@ -4255,7 +4255,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			free (ds->opstr);
 			ds->opstr = strdup (ds->hint->opcode);
 		} else {
-			if (ds->decode && !ds->offless) {
+			if (ds->decode && !ds->immtrim) {
 				free (ds->opstr);
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
@@ -4263,7 +4263,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
-			} else if (ds->offless) {
+			} else if (ds->immtrim) {
 				ds->opstr = strdup (ds->asmop.buf_asm);
 				r_parse_immtrim (ds->opstr);
 			} else if (ds->use_esil) {
@@ -4305,7 +4305,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			} else {
 				ds->opstr = strdup (ds->asmop.buf_asm);
 			}
-			if (ds->offless) {
+			if (ds->immtrim) {
 				ds->opstr = strdup (ds->asmop.buf_asm);
 				r_parse_immtrim (ds->opstr);
 			}
@@ -4939,7 +4939,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
-	bool asm_offless = r_config_get_i (core->config, "asm.offless");
+	bool asm_immtrim = r_config_get_i (core->config, "asm.immtrim");
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
@@ -5097,7 +5097,7 @@ toro:
 				r_cons_printf ("%20s  ", asmop.buf_hex);
 			}
 			ret = asmop.size;
-			if (!asm_offless && (decode || esil)) {
+			if (!asm_immtrim && (decode || esil)) {
 				RAnalOp analop = {
 					0
 				};
@@ -5114,7 +5114,7 @@ toro:
 					} else if (esil) {
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
-					if (asm_offless) {
+					if (asm_immtrim ) {
 						r_parse_immtrim (opstr);
 					}
 					r_cons_println (opstr);
@@ -5127,7 +5127,7 @@ toro:
 				if (asm_ucase) {
 					r_str_case (asm_str, 1);
 				}
-				if (asm_offless) {
+				if (asm_immtrim) {
 					r_parse_immtrim (asm_str);
 				}
 				if (filter) {

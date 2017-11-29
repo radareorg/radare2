@@ -1949,8 +1949,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	char *line, *s, *str, *string2 = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
-
+	bool show_offset = r_config_get_i (core->config, "asm.offset");
+	// force defaults
+	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);
+r_cons_push();
 	if (!strncmp (input, "dsf", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
@@ -1967,6 +1970,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
+r_cons_pop();
 	r_config_set_i (core->config, "scr.color", use_color);
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
@@ -2082,7 +2086,6 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			string = string2;
 			string2 = NULL;
 		}
-
 		if (strstr (line, "XREF")) {
 			addr = UT64_MAX;
 		}
@@ -2092,8 +2095,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			if (show_comments) {
 				char *comment = r_core_anal_get_comments (core, addr);
 				if (comment) {
-					r_cons_printf ("%s0x%08"PFMT64x, use_color? pal->offset: "", addr);
-					r_cons_printf (" %s%s\n", use_color? pal->comment: "", comment);
+					if (show_offset) {
+						r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
+					}
+					r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					R_FREE (comment);
 				}
 			}
@@ -2105,7 +2110,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				RListIter *iter;
 				r_list_foreach (fcn->bbs, iter, bb) {
 					if (addr == bb->jump) {
-						r_cons_printf ("%s0x%08"PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
+						if (show_offset) {
+							r_cons_printf ("%s0x%08"PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
+						}
 						label = true;
 						break;
 					}
@@ -2122,9 +2129,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 							} else {
 								op = (bb->fail == UT64_MAX)? "jmp": "cjmp";
 							}
-							r_cons_printf ("%s0x%08"PFMT64x " %s 0x%08"PFMT64x "%s\n",
-								use_color? R_CONS_COLOR (offset): "", addr, op,
-								bb->jump, use_color? Color_RESET: "");
+							if (show_offset) {
+								r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
+							}
+							r_cons_printf ("%s 0x%08"PFMT64x "%s\n",
+								op, bb->jump, use_color? Color_RESET: "");
 							break;
 						}
 					}
@@ -2154,13 +2163,18 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					string = r_str_chop (string);
 					string2 = r_str_chop (string2);
 					if (use_color) {
-						r_cons_printf ("%s0x%08"PFMT64x "%s %s%s%s%s%s%s%s\n",
-							R_CONS_COLOR (offset), addr, Color_RESET,
+						if (show_offset) {
+							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
+						}
+						r_cons_printf ("%s%s%s%s%s%s%s\n",
 							linecolor? linecolor: "",
 							string2? string2: "", string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "", Color_RESET);
 					} else {
-						r_cons_printf ("0x%08"PFMT64x " %s%s%s%s%s\n", addr,
+						if (show_offset) {
+							r_cons_printf ("0x%08"PFMT64x" ", addr);
+						}
+						r_cons_printf ("%s%s%s%s%s\n", 
 							string2? string2: "", string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "");
 					}
@@ -2170,6 +2184,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		line = line + strlen (line) + 1;
 	}
 	// r_cons_printf ("%s", s);
+	r_config_set_i (core->config, "asm.offset", show_offset);
 	free (string2);
 	free (string);
 	free (s);
@@ -2944,7 +2959,7 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
-	bool show_imtrim = r_config_get_i (core->config, "asm.offless");
+	bool show_imtrim = r_config_get_i (core->config, "asm.immtrim");
 	Sdb *db = sdb_new0 ();
 	RAsmOp asmop = {0};
 	RAnalOp aop = {0};
