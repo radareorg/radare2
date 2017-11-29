@@ -109,6 +109,7 @@ static const char *help_msg_ae[] = {
 	"aesue", " [esil]", "step until esil expression match",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 	"aex", " [hex]", "evaluate opcode expression",
+	"aexn", "[X] [N]  ", "emulate N instr from offset X",
 	NULL
 };
 
@@ -3788,6 +3789,58 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
+static void cmd_aexn(RCore *core, ut64 addr, int off) {
+	RAnalEsil *esil = core->anal->esil;
+	int i, j = 0;
+        ut64 curpc = addr;
+	int instr_size = 0;
+	ut8 *buf;
+	RAnalOp aop = {0};
+	int ret , bsize = R_MAX (64, core->blocksize);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);	
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+
+	if (!esil) {
+		if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
+			return;
+		}	
+	}
+	buf = malloc (bsize);
+	if (!buf) {
+		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free (buf);
+		return;
+	}
+	ut64 oldoff = core->offset;
+	for (i = 0, j = 0; j < off ; i++, j++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		if (i >= (bsize - 32)) {
+			i = 0;
+		}
+		if (!i) {
+			r_core_read_at (core, addr, buf, bsize);
+		}
+		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i);
+		instr_size += ret;
+		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+		if (inc < 0) {
+			inc = minopcode;
+		}
+		i += inc;
+		addr += inc;
+		r_anal_op_fini (&aop);	
+	}
+	r_reg_set_value (core->dbg->reg, r, curpc);
+	r_core_esil_step (core, curpc + instr_size, NULL, NULL);
+	r_core_seek (core, oldoff, 1);
+}	
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -4158,6 +4211,17 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'x': { // "aex"
+		if (input[1] == 'n'){
+			ut64 addr = r_num_math (core->num, input + 3);
+			char *n = strchr (input+3, ' ');
+			if (!n || !addr){
+				eprintf ("aexn [offset] [num]");
+				break;
+			}
+			int off = r_num_math (core->num, n+1);	
+			cmd_aexn (core, addr, off);
+			break;
+		}		
 		ut32 new_bits = -1;
 		int segoff, old_bits, pos = 0;
 		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
