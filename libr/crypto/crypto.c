@@ -20,6 +20,7 @@ static const crypto_name_bytes[] = {
 	{"cps2", R_CRYPTO_CPS2},
 	{"des-ecb", R_CRYPTO_DES_ECB},
 	{"xor", R_CRYPTO_XOR},
+	{"serpent-ecb", R_CRYPTO_SERPENT},
 	{NULL, 0}
 };
 
