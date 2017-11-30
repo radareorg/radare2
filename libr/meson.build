@@ -160,7 +160,8 @@ crypto = [
 	'rol',
 	'ror',
 	'rot',
-	'xor'
+	'xor',
+	'serpent'
 ]
 
 debug = [
