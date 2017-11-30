@@ -12,7 +12,7 @@
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
 static const char *help_msg_amper[] = {
-	"Usage:", "&[-|<cmd>]", "Manage tasks",
+	"Usage:", "&[-|<cmd>]", "Manage tasks ( XXX broken because of mutex in r_core_cmd )",
 	"&", "", "list all running threads",
 	"&=", "", "show output of all tasks",
 	"&=", " 3", "show output of task 3",
@@ -1951,6 +1951,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
+	bool asm_flags = r_config_get_i (core->config, "asm.flags");
+	RConsPalette *pal = &core->cons->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);
@@ -2036,6 +2038,12 @@ r_cons_pop();
 				R_FREE (string2);
 			}
 		}
+		if (asm_flags) {
+			str = strstr (line, ";-- ");
+			if (str) {
+				r_cons_printf ("%s\n", str);
+			}
+		}
 		// XXX leak
 		str = strstr (line, " str.");
 		if (str) {
@@ -2093,7 +2101,6 @@ r_cons_pop();
 		}
 		if (addr != UT64_MAX) {
 			const char *str = NULL;
-			RConsPalette *pal = &core->cons->pal;
 			if (show_comments) {
 				char *comment = r_core_anal_get_comments (core, addr);
 				if (comment) {
