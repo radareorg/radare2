@@ -4,33 +4,34 @@
 
 static struct serpent_state st = {{0}};
 
-static bool serpent_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
+static bool serpent_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	eprintf ("key_size: %d\n", keylen);
+	if ((keylen != 128 / 8) && (keylen != 192 / 8) && (keylen != 256 / 8)) {
 		return false;
 	}
 	st.key_size = keylen*8;
+	eprintf ("key_size: %d\n", st.key_size);
 	memcpy (st.key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
 
-static int serpent_get_key_size (RCrypto *cry) {
+static int serpent_get_key_size(RCrypto *cry) {
 	return st.key_size;
 }
 
-static bool serpent_use (const char *algo) {
+static bool serpent_use(const char *algo) {
 	return !strcmp (algo, "serpent-ecb");
 }
 
 #define BLOCK_SIZE 16
 
-static bool update (RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
 	const int blocks = size / BLOCK_SIZE;
-	int i;
-	int j;
+	int i, j;
 
 	ut8 *const obuf = calloc (4, size/4);
 	if (!obuf) {
@@ -70,11 +71,13 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	}
 	
 	// Construct ut32 blocks from byte stream
+	int k;
 	for (j = 0; j < size/4; j++) {
-		obuf[4*j] = tmp[j] & 0xff;
-		obuf[4*j+1] = (tmp[j] >> 8) & 0xff;
-		obuf[4*j+2] = (tmp[j] >> 16) & 0xff;
-		obuf[4*j+3] = (tmp[j] >> 24) & 0xff;
+		k = 4*j;
+		obuf[k] = tmp[j] & 0xff;
+		obuf[k+1] = (tmp[j] >> 8) & 0xff;
+		obuf[k+2] = (tmp[j] >> 16) & 0xff;
+		obuf[k+3] = (tmp[j] >> 24) & 0xff;
 	}
 
 	r_crypto_append (cry, obuf, size);
@@ -84,7 +87,7 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final (RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
