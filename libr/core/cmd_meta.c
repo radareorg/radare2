@@ -519,7 +519,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 
 static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
-	char *t = 0, *p, *p2, name[256], *str;
+	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
 	ut64 addr_end = 0LL, addr = core->offset;
 
@@ -603,21 +603,43 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			}
 			break;
 		}
-		str = r_meta_get_string (core->anal, type, addr);
-		if (str) {
-			if (type == 's') {
-				char *esc_str = r_str_escape_latin1 (str, false, false);
-				if (esc_str) {
-					r_cons_printf ("\"%s\"\n", esc_str);
-					free (esc_str);
-				} else {
-					r_cons_println ("<oom>");
-				}
-			} else {
-				r_cons_println (str);
-			}
-			free (str);
+		char key[100];
+		const char *val;
+		RAnalMetaItem mi;
+		Sdb *s = core->anal->sdb_meta;
+		bool esc_bslash = core->print->esc_bslash;
+		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, type, addr);
+		val = sdb_const_get (s, key, 0);
+		if (!val) {
+			break;
 		}
+		if (!r_meta_deserialize_val (&mi, type, addr, val)) {
+			break;
+		}
+		if (!mi.str) {
+			break;
+		}
+		if (type == 's') {
+			char *esc_str;
+			switch (mi.subtype) {
+			case R_STRING_ENC_UTF8:
+				esc_str = r_str_escape_utf8 (mi.str, false, esc_bslash);
+				break;
+			case 0:  /* temporary legacy workaround */
+				esc_bslash = false;
+			default:
+				esc_str = r_str_escape_latin1 (mi.str, false, esc_bslash);
+			}
+			if (esc_str) {
+				r_cons_printf ("\"%s\"\n", esc_str);
+				free (esc_str);
+			} else {
+				r_cons_println ("<oom>");
+			}
+		} else {
+			r_cons_println (mi.str);
+		}
+		free (mi.str);
 		break;
 	case ' ':
 	case '\0':
