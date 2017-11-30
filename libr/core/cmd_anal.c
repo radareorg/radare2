@@ -844,7 +844,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
 				r_cons_printf ("{\"type\":\"address\",\"offset\":"
-							   "%08" PFMT64d "}", tgt_addr);
+							   "%" PFMT64d "}", tgt_addr);
 			}
 		}
 	}
