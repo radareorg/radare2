@@ -20,7 +20,7 @@ static const char *help_msg_a[] = {
 	"ag", "[?] [options]", "output Graphviz code",
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
-	"an"," name [@addr]","rename/create whatever flag/function is at addr",
+	"an"," [name] [@addr]","show/rename/create whatever flag/function is used at addr",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "", "Analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
@@ -796,8 +796,12 @@ static int cmd_an(RCore *core, const char *name)
 				}
 			}
 			if (bar) {
-				r_anal_var_rename (core->anal, fcn->addr, bar->scope,
-								bar->kind, bar->name, name);
+				if (name) {
+					r_anal_var_rename (core->anal, fcn->addr, bar->scope,
+									bar->kind, bar->name, name);
+				} else {
+					r_cons_println (bar->name);
+				}
 			} else {
 				eprintf ("Cannot find variable\n");
 			}
@@ -808,9 +812,17 @@ static int cmd_an(RCore *core, const char *name)
 		RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
 		RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 		if (fcn) {
-			q = r_str_newf ("afn %s` 0x%"PFMT64x, name, tgt_addr);
+			if (name) {
+				q = r_str_newf ("afn %s 0x%"PFMT64x, name, tgt_addr);
+			} else {
+				r_cons_println (fcn->name);
+			}
 		} else if (f) {
-			q = r_str_newf ("fr %s %s", f->name, name);
+			if (name) {
+				q = r_str_newf ("fr %s %s", f->name, name);
+			} else {
+				r_cons_println (f->name);
+			}
 		} else {
 			q = r_str_newf ("f %s @ 0x%"PFMT64x, name, tgt_addr);
 		}
@@ -6225,12 +6237,23 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'n': // 'an'
 		{
-		char *arg = strchr(input + 1, ' ');
-		if (arg) {
-			cmd_an (core, arg + 1);
-			break;
+		const char *name = NULL;
+		if (input[1] == ' ') {
+			name = input + 1;
+			while (name[0] == ' ') {
+				name++;
+			}
+			char *end = strchr (name, ' ');
+			if (end) {
+				*end = '\0';
+			}
+			if (*name == '\0') {
+				name = NULL;
+			}
 		}
+		cmd_an (core, name);
 		}
+		break;
 	case 'g': // "ag"
 		cmd_anal_graph (core, input + 1);
 		break;
