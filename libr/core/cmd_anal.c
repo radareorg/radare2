@@ -6237,12 +6237,21 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'n': // 'an'
 		{
-		char *arg = strchr(input + 1, ' ');
-		if (arg) {
-			cmd_an (core, arg + 1);
-		} else {
-			cmd_an (core, NULL);
+		const char *name = NULL;
+		if (input[1] == ' ') {
+			name = input + 1;
+			while (name[0] == ' ') {
+				name++;
+			}
+			char *end = strchr (name, ' ');
+			if (end) {
+				*end = '\0';
+			}
+			if (*name == '\0') {
+				name = NULL;
+			}
 		}
+		cmd_an (core, name);
 		}
 		break;
 	case 'g': // "ag"
