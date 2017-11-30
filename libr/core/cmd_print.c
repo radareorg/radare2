@@ -183,6 +183,7 @@ static const char *help_msg_pd[] = {
 	"pdk", "", "disassemble all methods of a class",
 	"pdl", "", "show instruction sizes",
 	"pdr", "", "recursive disassemble across the function graph",
+	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	// "pds", "", "disassemble with back sweep (greedy disassembly backwards)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
@@ -2904,9 +2905,16 @@ static ut32 tmp_get_contsize(RAnalFunction *f) {
 	return (size < 0)? 0: size;
 }
 
-static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type) {
+static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	core->anal->gp = saved_gp;
+	if (fromHere) {
+		if (b->addr < core->offset) {
+			core->cons->null = true;
+		} else {
+			core->cons->null = false;
+		}
+	}
 	if (emu) {
 		if (b->parent_reg_arena) {
 			ut64 gp;
@@ -3030,7 +3038,7 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				break;
 			}
 			if (aop.size < 1) {
-				aop.size += 1;
+				aop.size = 1;
 			}
 		}
 	}
@@ -3038,7 +3046,7 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	sdb_free (db);
 }
 
-static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print) {
+static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print, bool fromHere) {
 	RListIter *iter;
 	RAnalBlock *b;
 	RAnalFunction *tmp_func;
@@ -3063,6 +3071,13 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			if (fromHere) {
+				if (b->addr < core->offset) {
+					core->cons->null = true;
+				} else {
+					core->cons->null = false;
+				}
+			}
 			if (tmp_func->addr > f->addr) {
 				break;
 			}
@@ -3074,7 +3089,6 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				}
 // const char *cmd = (type_print == 'D')? "pDj": "pIj";
 // r_core_cmdf (core, "%s %d @ 0x%"PFMT64x, cmd, b->size, b->addr);
-
 				ut8 *buf = malloc (b->size);
 				if (buf) {
 					r_io_read_at (core->io, b->addr, buf, b->size);
@@ -3086,6 +3100,13 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			}
 		}
 		r_list_foreach (f->bbs, iter, b) {
+			if (fromHere) {
+				if (b->addr < core->offset) {
+					core->cons->null = true;
+				} else {
+					core->cons->null = false;
+				}
+			}
 			if (isFirst) {
 				isFirst = false;
 			} else {
@@ -3096,7 +3117,6 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			const char *cmd = (type_print == 'D')? "pDj": "pIj";
 			r_core_cmdf (core, "%s %d @ 0x%"PFMT64x, cmd, b->size, b->addr);
 #endif
-
 			ut8 *buf = malloc (b->size);
 			if (buf) {
 				r_io_read_at (core->io, b->addr, buf, b->size);
@@ -3111,6 +3131,13 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				break;
 			}
 			r_list_foreach (tmp_func->bbs, iter, b) {
+				if (fromHere) {
+					if (b->addr < core->offset) {
+						core->cons->null = true;
+					} else {
+						core->cons->null = false;
+					}
+				}
 				if (isFirst) {
 					isFirst = false;
 				} else {
@@ -3147,11 +3174,11 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				break;
 			}
 			r_list_foreach (tmp_func->bbs, iter, b) {
-				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
+				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print, fromHere);
 			}
 		}
 		r_list_foreach (f->bbs, iter, b) {
-			pr_bb (core, f, b, emu, saved_gp, saved_arena, type_print);
+			pr_bb (core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 			if (r_cons_is_breaked ()) {
@@ -3159,7 +3186,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			}
 			// this should be more advanced
 			r_list_foreach (tmp_func->bbs, iter, b) {
-				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
+				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print, fromHere);
 			}
 		}
 		if (emu) {
@@ -3933,7 +3960,7 @@ static int cmd_print(void *data, const char *input) {
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 			if (f) {
-				func_walk_blocks (core, f, input[1], 'I');
+				func_walk_blocks (core, f, input[1], 'I', input[2] == '.');
 			} else {
 				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
@@ -4071,7 +4098,7 @@ static int cmd_print(void *data, const char *input) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
-					func_walk_blocks (core, f, input[2], 'D');
+					func_walk_blocks (core, f, input[2], 'D', input[2] == '.');
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				}
