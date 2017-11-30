@@ -16,6 +16,8 @@ files=[
 	'p/crypto_ror.c',
 	'p/crypto_rot.c',
 	'p/crypto_xor.c',
+	'p/crypto_serpent.c',
+	'p/crypto_serpent_algo.c',
 ]
 
 r_crypto = library('r_crypto', files,
