@@ -775,12 +775,17 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	}
 }
 
-static int cmd_an(RCore *core, const char *name)
+static int cmd_an(RCore *core, bool use_json, const char *name)
 {
 	ut64 off = core->offset;
 	RAnalOp op;
 	char *q = NULL;
 	ut64 tgt_addr = UT64_MAX;
+
+	if (use_json) {
+		r_cons_print ("[");
+	}
+
 	r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32);
 
@@ -799,8 +804,11 @@ static int cmd_an(RCore *core, const char *name)
 				if (name) {
 					r_anal_var_rename (core->anal, fcn->addr, bar->scope,
 									bar->kind, bar->name, name);
-				} else {
+				} else if (!use_json) {
 					r_cons_println (bar->name);
+				} else {
+					r_cons_printf ("{\"type\":\"var\",\"name\":\"%s\"}",
+								bar->name);
 				}
 			} else {
 				eprintf ("Cannot find variable\n");
@@ -814,18 +822,35 @@ static int cmd_an(RCore *core, const char *name)
 		if (fcn) {
 			if (name) {
 				q = r_str_newf ("afn %s 0x%"PFMT64x, name, tgt_addr);
-			} else {
+			} else if (!use_json) {
 				r_cons_println (fcn->name);
+			} else {
+				r_cons_printf ("{\"type\":\"function\",\"name\":\"%s\"}",
+							fcn->name);
 			}
 		} else if (f) {
 			if (name) {
 				q = r_str_newf ("fr %s %s", f->name, name);
-			} else {
+			} else if (!use_json) {
 				r_cons_println (f->name);
+			} else {
+				r_cons_printf ("{\"type\":\"flag\",\"name\":\"%s\"}",
+							f->name);
 			}
 		} else {
-			q = r_str_newf ("f %s @ 0x%"PFMT64x, name, tgt_addr);
+			if (name) {
+				q = r_str_newf ("f %s @ 0x%"PFMT64x, name, tgt_addr);
+			} else if (!use_json) {
+				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
+			} else {
+				r_cons_printf ("{\"type\":\"address\",\"offset\":"
+							   "%08" PFMT64d "}", tgt_addr);
+			}
 		}
+	}
+
+	if (use_json) {
+		r_cons_print ("]\n");
 	}
 
 	if (q) {
@@ -6238,6 +6263,13 @@ static int cmd_anal(void *data, const char *input) {
 	case 'n': // 'an'
 		{
 		const char *name = NULL;
+		bool use_json = false;
+
+		if (input[1] == 'j') {
+			use_json = true;
+			input++;
+		}
+
 		if (input[1] == ' ') {
 			name = input + 1;
 			while (name[0] == ' ') {
@@ -6251,7 +6283,8 @@ static int cmd_anal(void *data, const char *input) {
 				name = NULL;
 			}
 		}
-		cmd_an (core, name);
+
+		cmd_an (core, use_json, name);
 		}
 		break;
 	case 'g': // "ag"
