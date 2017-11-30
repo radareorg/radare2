@@ -30,6 +30,7 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	const int size = len + diff;
 	const int blocks = size / BLOCK_SIZE;
 	int i;
+	int j;
 
 	ut8 *const obuf = calloc (4, size/4);
 	if (!obuf) {
@@ -48,8 +49,8 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	// Construct ut32 blocks from byte stream
-	for (int i = 0; i < size/4; i++) {
-		ibuf[i] = r_read_le32(&buf[4*i]);
+	for (j = 0; j < size/4; j++) {
+		ibuf[j] = r_read_le32(&buf[4*j]);
 	}
 
 	// Zero padding.
@@ -69,11 +70,11 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	}
 	
 	// Construct ut32 blocks from byte stream
-	for (int i = 0; i < size/4; i++) {
-		obuf[4*i] = tmp[i] & 0xff;
-		obuf[4*i+1] = (tmp[i] >> 8) & 0xff;
-		obuf[4*i+2] = (tmp[i] >> 16) & 0xff;
-		obuf[4*i+3] = (tmp[i] >> 24) & 0xff;
+	for (j = 0; j < size/4; j++) {
+		obuf[4*j] = tmp[j] & 0xff;
+		obuf[4*j+1] = (tmp[j] >> 8) & 0xff;
+		obuf[4*j+2] = (tmp[j] >> 16) & 0xff;
+		obuf[4*j+3] = (tmp[j] >> 24) & 0xff;
 	}
 
 	r_crypto_append (cry, obuf, size);

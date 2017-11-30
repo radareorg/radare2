@@ -29,7 +29,8 @@ static inline ut8 get_bit(int i, ut32 input) {
 
 void apply_IP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	int index;
-	for (int i = 0; i < DW_BY_BLOCK*32; i++) {
+	int i;
+	for (i = 0; i < DW_BY_BLOCK*32; i++) {
 		index = IPTable[i];
 		out[i/32] ^= (-(ut32)get_bit(index%32, in[index/32])^out[i/32])
 			& (1 << i);
@@ -38,7 +39,8 @@ void apply_IP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 
 void apply_FP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	int index;
-	for (int i = 0; i < DW_BY_BLOCK*32; i++) {
+	int i;
+	for (i = 0; i < DW_BY_BLOCK*32; i++) {
 		index = FPTable[i];
 		out[i/32] ^= (-(ut32)get_bit(index%32, in[index/32])^out[i/32])
 			& (1 << i);
@@ -57,8 +59,9 @@ void serpent_keyschedule(struct serpent_state st,
 	const ut32 phi = 0x9e3779b9;
 	int si;
 	ut8 in, out;
+	int i, j, l;
 
-	for (int i = 0; i < st.key_size/32; i++) {
+	for (i = 0; i < st.key_size/32; i++) {
 		tmpkeys[i] = st.key[i];
 	}
 
@@ -67,31 +70,31 @@ void serpent_keyschedule(struct serpent_state st,
 		tmpkeys[st.key_size/32] = 1;
 	}
 
-	for (int i=DW_BY_USERKEY; i < NB_SUBKEYS*DW_BY_BLOCK+DW_BY_USERKEY; i++) {
+	for (i=DW_BY_USERKEY; i < NB_SUBKEYS*DW_BY_BLOCK+DW_BY_USERKEY; i++) {
 		tmpkeys[i] = tmpkeys[i-8]^tmpkeys[i-5]^tmpkeys[i-3]^tmpkeys[i-1]
 			^phi^(i-8);
 		rotl(&(tmpkeys[i]), 11);
 	}
 
 	// Applying sbox for subkey i
-	for (int i = 0; i < NB_SUBKEYS; i++) {
+	for (i = 0; i < NB_SUBKEYS; i++) {
 		si = (32 + 3 - i) % 8;
 
 		// Iterates over all nibbles of the subkey i
-		for (int j = 0; j < NIBBLES_BY_SUBKEY; j++) {
+		for (j = 0; j < NIBBLES_BY_SUBKEY; j++) {
 			in = get_bit(j, tmpkeys[0+DW_BY_BLOCK*i+DW_BY_USERKEY])
 				| get_bit(j, tmpkeys[1+DW_BY_BLOCK*i+DW_BY_USERKEY]) << 1
 				| get_bit(j, tmpkeys[2+DW_BY_BLOCK*i+DW_BY_USERKEY]) << 2
 				| get_bit(j, tmpkeys[3+DW_BY_BLOCK*i+DW_BY_USERKEY]) << 3;
 			out = apply_sbox(si, in);
-			for (int l = 0; l < DW_BY_BLOCK; l++) {
+			for (l = 0; l < DW_BY_BLOCK; l++) {
 				subkeys[l+DW_BY_BLOCK*i] |= get_bit(l, (ut32)out) << j;
 			}
 		}
 	}
 
 	// Apply IP on every subkey
-	for (int i = 0; i < NB_SUBKEYS; i++) {
+	for (i = 0; i < NB_SUBKEYS; i++) {
 		apply_IP(&(subkeys[i*DW_BY_BLOCK]), 
 				&(tmpkeys[DW_BY_USERKEY + i*DW_BY_BLOCK]));
 	}
@@ -100,7 +103,8 @@ void serpent_keyschedule(struct serpent_state st,
 }
 
 void apply_xor(ut32 block[DW_BY_BLOCK], ut32 subkey[DW_BY_BLOCK]) {
-	for (int i = 0; i < DW_BY_BLOCK; i++) {
+	int i;
+	for (i = 0; i < DW_BY_BLOCK; i++) {
 		block[i] ^= subkey[i];
 	}
 }
@@ -140,13 +144,15 @@ void apply_permut_inv(ut32 block[DW_BY_BLOCK]) {
 void apply_round(int round, ut32 block[DW_BY_BLOCK], 
 		ut32 subkeys[DW_BY_BLOCK*NB_SUBKEYS]) {
 
+	
+	ut32 res;
+	int i, j;
 
 	apply_xor(block, &(subkeys[4*round]));
 
-	ut32 res;
-	for (int i = 0; i < DW_BY_BLOCK; i++) {
+	for (i = 0; i < DW_BY_BLOCK; i++) {
 		res = 0; 
-		for (int j = 0; j < 8; j++) {
+		for (j = 0; j < 8; j++) {
 			res |= apply_sbox(round%8, (block[i] >> 4*j) & 0xf) << 4*j;
 		}
 		block[i] = res;
@@ -168,10 +174,12 @@ void apply_round_inv(int round, ut32 block[DW_BY_BLOCK],
 		apply_permut_inv(block);
 	}
 
+	int i, j;
+
 	ut32 res;
-	for (int i = 0; i < DW_BY_BLOCK; i++) {
+	for (i = 0; i < DW_BY_BLOCK; i++) {
 		res = 0; 
-		for (int j = 0; j < 8; j++) {
+		for (j = 0; j < 8; j++) {
 			res |= apply_sbox_inv(round%8, (block[i] >> 4*j) & 0xf) << 4*j;
 		}
 		block[i] = res;
@@ -183,13 +191,15 @@ void apply_round_inv(int round, ut32 block[DW_BY_BLOCK],
 void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK], 
 		ut32 out[DW_BY_BLOCK]) {
 
+	int i;
+
 	ut32 subkeys[DW_BY_BLOCK*NB_SUBKEYS] = {0};
 	ut32 tmp_block[DW_BY_BLOCK] = {0};
 
 	serpent_keyschedule(*st, subkeys);
 
 	apply_IP(in, tmp_block);
-	for (int i = 0; i < NB_ROUNDS; i++) {
+	for (i = 0; i < NB_ROUNDS; i++) {
 		apply_round(i, tmp_block, subkeys);
 	}
 	apply_FP(tmp_block, out);
@@ -200,13 +210,15 @@ void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
 void serpent_decrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
 		ut32 out[DW_BY_BLOCK]) {
 
+	int i;
+
 	ut32 subkeys[DW_BY_BLOCK*NB_SUBKEYS] = {0};
 	ut32 tmp_block[DW_BY_BLOCK] = {0};
 
 	serpent_keyschedule(*st, subkeys);
 
 	apply_IP(in, tmp_block);
-	for (int i = NB_ROUNDS - 1; i >= 0; i--) {
+	for (i = NB_ROUNDS - 1; i >= 0; i--) {
 		apply_round_inv(i, tmp_block, subkeys);
 	}
 	apply_FP(tmp_block, out);
