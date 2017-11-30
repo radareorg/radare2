@@ -227,13 +227,11 @@ static RList* r_debug_gdb_modules_get(RDebug *dbg) {
 	RDebugMap *map;
 	RListIter *iter, *iter2;
 	RList *list, *last;
-	int must_delete;
-	list = r_debug_gdb_map_get (dbg);
-	if (!list) {
+	bool must_delete;
+	if (!(list = r_debug_gdb_map_get (dbg))) {
 		return NULL;
 	}
-	last = r_list_newf ((RListFree)r_debug_map_free);
-	if (!last) {
+	if (!(last = r_list_newf ((RListFree)r_debug_map_free))) {
 		r_list_free (list);
 		return NULL;
 	}
@@ -242,16 +240,10 @@ static RList* r_debug_gdb_modules_get(RDebug *dbg) {
 		if (!map->file) {
 			file = map->file = strdup (map->name);
 		}
-		must_delete = 1;
-		if (file && *file) {
-			if (file[0] == '/') {
-				if (lastname) {
-					if (strcmp (lastname, file)) {
-						must_delete = 0;
-					}
-				} else {
-					must_delete = 0;
-				}
+		must_delete = true;
+		if (file && *file == '/') {
+			if (!lastname || strcmp (lastname, file)) {
+				must_delete = false;
 			}
 		}
 		if (must_delete) {
