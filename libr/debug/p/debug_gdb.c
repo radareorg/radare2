@@ -222,6 +222,44 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	return retlist;
 }
 
+static RList* r_debug_gdb_modules_get(RDebug *dbg) {
+	char *lastname = NULL;
+	RDebugMap *map;
+	RListIter *iter, *iter2;
+	RList *list, *last;
+	bool must_delete;
+	if (!(list = r_debug_gdb_map_get (dbg))) {
+		return NULL;
+	}
+	if (!(last = r_list_newf ((RListFree)r_debug_map_free))) {
+		r_list_free (list);
+		return NULL;
+	}
+	r_list_foreach_safe (list, iter, iter2, map) {
+		const char *file = map->file;
+		if (!map->file) {
+			file = map->file = strdup (map->name);
+		}
+		must_delete = true;
+		if (file && *file == '/') {
+			if (!lastname || strcmp (lastname, file)) {
+				must_delete = false;
+			}
+		}
+		if (must_delete) {
+			r_list_delete (list, iter);
+		} else {
+			r_list_append (last, map);
+			free (lastname);
+			lastname = strdup (file);
+		}
+	}
+	list->free = NULL;
+	free (lastname);
+	r_list_free (list);
+	return last;
+}
+
 static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	check_connection (dbg);
 	if (!reg_buf) {
@@ -971,6 +1009,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.canstep = 1,
 	.wait = &r_debug_gdb_wait,
 	.map_get = r_debug_gdb_map_get,
+	.modules_get = r_debug_gdb_modules_get,
 	.breakpoint = &r_debug_gdb_breakpoint,
 	.reg_read = &r_debug_gdb_reg_read,
 	.reg_write = &r_debug_gdb_reg_write,
