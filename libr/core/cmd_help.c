@@ -5,6 +5,21 @@
 #include "r_core.h"
 #include "r_util.h"
 
+static ut32 vernum(const char *s) {
+	// XXX this is known to be buggy, only works for strings like "x.x.x"
+	// XXX anything like "x.xx.x" will break the parsing
+	// XXX -git is ignored, maybe we should shift for it
+	char *a = strdup (s);
+	a = r_str_replace (a, ".", "0", 1);
+	char *dash = strchr (a, '-');
+	if (dash) {
+		*dash = 0;
+	}
+	ut32 res = atoi (a);
+	free (a);
+	return res;
+}
+
 static const char *help_msg_root[] = {
 	"%var", "=value", "Alias for 'env' command",
 	"*", "[?] off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
@@ -144,6 +159,7 @@ static const char *help_msg_question_v[] = {
 static const char *help_msg_question_V[] = {
 	"Usage: ?V[jq]","","",
 	"?V", "", "show version information",
+	"?Vc", "", "show numeric version",
 	"?Vj", "", "same as above but in JSON",
 	"?Vq", "", "quiet mode, just show the version number",
 	NULL
@@ -586,9 +602,17 @@ static int cmd_help(void *data, const char *input) {
 			}
 #endif
 			break;
+		case 'c': // "?Vc"
+			r_cons_printf ("%d\n", vernum (R2_VERSION));
+			break;
 		case 'j': // "?Vj"
-			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
-			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
+			r_cons_printf ("{\"archos\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
+			r_cons_printf (",\"arch\":\"%s\"", R_SYS_ARCH);
+			r_cons_printf (",\"os\":\"%s\"", R_SYS_OS);
+			r_cons_printf (",\"commit\":%d", R2_VERSION_COMMIT);
+			r_cons_printf (",\"tap\":\"%s\"", R2_GITTAP);
+			r_cons_printf (",\"nversion\":%d", vernum (R2_VERSION));
+			r_cons_printf (",\"version\":\"%s\"}\n", R2_VERSION);
 			break;
 		case 'q': // "?Vq"
 			r_cons_println (R2_VERSION);
