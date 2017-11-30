@@ -1540,6 +1540,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int ret = 0, rep = atoi (cmd), orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	const char *cmdrep = NULL;
+	bool tmpseek = false;
+	ut64 orig_offset;
+
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
@@ -1598,6 +1601,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	orep = rep;
 
 	int ocur_enabled = core->print->cur_enabled;
+	orig_offset = core->offset;
 	while (rep-- && *cmd) {
 		core->print->cur_enabled = false;
 		if (ocur_enabled && core->seltab >= 0) {
@@ -1608,6 +1612,13 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon);
+		/*
+		 * r_core_cmd_subst_i will set core->tmpseek when run cmd the first time
+		 * if `@ tmpoff` is used, keep core->tmpseek in the remaining runs
+		 */
+		if (core->tmpseek) {
+			tmpseek = true;
+		}
 		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
@@ -1625,6 +1636,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			}
 		}
 		free (cr);
+	}
+	if (tmpseek) {
+		r_core_seek (core, orig_offset, 1);
 	}
 	core->print->cur_enabled = ocur_enabled;
 	if (colon && colon[1]) {
@@ -2157,7 +2171,6 @@ next2:
 		const char *offstr = NULL;
 		ut64 tmpbsz = core->blocksize;
 		char *tmpeval = NULL;
-		ut64 tmpoff = core->offset;
 		char *tmpasm = NULL;
 		int flgspc = -123;
 		int tmpfd = -1;
@@ -2449,7 +2462,6 @@ next_arroba:
 			r_flag_space_set_i (core->flags, flgspc);
 			flgspc = -123;
 		}
-		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';
 		rc = ret;
 		goto beach;
