@@ -11,6 +11,7 @@
 	}
 
 static RNum *num;
+static RPrint *rp;
 static int help();
 static ut64 flags = 0;
 static int use_stdin();
@@ -74,7 +75,7 @@ static int format_output(char mode, const char *s) {
 
 static int help() {
 	printf (
-		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
+		"  =[base]                   ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int     ->  hex           ;  rax2 10\n"
 		"  hex     ->  int           ;  rax2 0xa\n"
 		"  -int    ->  hex           ;  rax2 -77\n"
@@ -105,6 +106,7 @@ static int help() {
 		"  -h      help              ;  rax2 -h\n"
 		"  -k      keep base         ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart         ;  rax2 -K 0x34 1020304050\n"
+		"  -L      bin -> hex(bignum);  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N      binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r      r2 style output   ;  rax2 -r 0x1234\n"
@@ -163,6 +165,7 @@ static int rax(char *str, int len, int last) {
 			case 'N': flags ^= 1 << 15; break;
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
+			case 'L': flags ^= 1 << 19; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -428,6 +431,9 @@ dotherax:
 			out, num->fvalue, f, d);
 
 		return true;
+	} else if (flags & (1 << 19)) { // -L
+		r_print_hex_from_bin (rp, str);
+		return true;
 	}
 
 	if (r_str_startswith (str, "0x")) {
@@ -514,6 +520,7 @@ static int use_stdin() {
 int main(int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
+	rp = r_print_new ();
 	if (argc == 1) {
 		use_stdin ();
 	} else {

@@ -1867,3 +1867,32 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	p->cb_printf ("]\n");
 	return words;
 }
+
+R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
+	int i, j, index;
+	const int len = strlen (bin_str);
+	ut64 n, *buf = malloc (len / 8);
+	if (buf == NULL) {
+		eprintf ("allocation failed\n");
+		return;
+	}
+	for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
+		n = 0;
+		for (j = 0; j < 64 && i - j >= 0; j++) {
+			n += (ut64) (bin_str[i - j] - '0') << j;
+		}
+		buf[index] = n;
+	}
+	index--;
+	p->cb_printf ("0x");
+	while (buf[index] == 0 && index > 0) {
+		index--;
+	}
+	p->cb_printf ("%" PFMT64x, buf[index]);
+	index--;
+	for (i = index; i >= 0; i--) {
+		p->cb_printf ("%016" PFMT64x, buf[i]);
+	}
+	p->cb_printf ("\n");
+	free (buf);
+}
