@@ -103,6 +103,7 @@ static const char *help_msg_ae[] = {
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aets", "[?]", "ESIL Trace session",
 	"aes", "", "perform emulated debugger step",
+	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
 	"aeso", " ", "step over",
 	"aesu", " [addr]", "step until given address",
@@ -3825,9 +3826,67 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
+static void cmd_aespc(RCore *core, ut64 addr, int off) {
+	RAnalEsil *esil = core->anal->esil;
+	int i, j = 0;
+	int instr_size = 0;
+	ut8 *buf;
+	RAnalOp aop = {0};
+	int ret , bsize = R_MAX (64, core->blocksize);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);	
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+
+	if (!esil) {
+		if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
+			return;
+		}	
+	}
+	buf = malloc (bsize);
+	if (!buf) {
+		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free (buf);
+		return;
+	}
+	if (addr == -1) {
+		addr = r_debug_reg_get (core->dbg, pc);
+	}
+	ut64 curpc = addr;	
+	ut64 oldoff = core->offset;
+	for (i = 0, j = 0; j < off ; i++, j++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		if (i >= (bsize - 32)) {
+			i = 0;
+		}
+		if (!i) {
+			r_core_read_at (core, addr, buf, bsize);
+		}
+		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i);
+		instr_size += ret;
+		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+		if (inc < 0) {
+			inc = minopcode;
+		}
+		i += inc;
+		addr += inc;
+		r_anal_op_fini (&aop);	
+	}
+	r_reg_set_value (core->dbg->reg, r, curpc); 
+	r_core_esil_step (core, curpc + instr_size, NULL, NULL);
+	r_core_seek (core, oldoff, 1);
+}	
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
+	ut64 adr ;
+	char *n, *n1;
+	int off;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
@@ -3939,6 +3998,26 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_esil_step (core, until_addr, until_expr, NULL);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
+			break;
+		case 'p': //"aesp"
+			n = strchr (input, ' ');
+			n1 = strchr (n + 1, ' ');
+			if (!(n + 1) || !(n1 + 1)){
+				eprintf ("aesp [offset] [num]");
+				break;
+			}
+			adr = r_num_math (core->num, n + 1);
+			off = r_num_math (core->num, n1 + 1);
+			cmd_aespc (core, adr, off);
+			break;
+		case ' ':
+			n = strchr (input, ' ');
+			if (!(n + 1)) {
+				r_core_esil_step (core, until_addr, until_expr, NULL);
+				break;
+			}	
+			off = r_num_math (core->num, n + 1);
+			cmd_aespc (core, -1, off);
 			break;
 		default:
 			r_core_esil_step (core, until_addr, until_expr, NULL);
@@ -4194,7 +4273,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 0, core->offset, r_num_math (core->num, input+2));
 		}
 		break;
-	case 'x': { // "aex"
+	case 'x': { // "aex"	
 		ut32 new_bits = -1;
 		int segoff, old_bits, pos = 0;
 		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
