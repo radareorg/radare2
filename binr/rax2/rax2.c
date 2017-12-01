@@ -11,6 +11,7 @@
 	}
 
 static RNum *num;
+static RPrint *rp;
 static int help();
 static ut64 flags = 0;
 static int use_stdin();
@@ -431,24 +432,7 @@ dotherax:
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
-		int i, j, index;
-		ut64 n, *buf = malloc (len / 8);
-		for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
-			n = 0;
-			for (j = 0; j < 64 && i - j >= 0; j++) {
-				n += (ut64) (str[i - j] - '0') << j;
-			}
-			buf[index] = n;
-		}
-		index--;
-		printf ("0x");
-		while (buf[index] == 0 && index > 0) index--;
-		printf ("%" PFMT64x, buf[index]);
-		index--;
-		for (i = index; i >= 0; i--) {
-			printf ("%016" PFMT64x, buf[i]);
-		}
-		printf ("\n");
+		print_hex_from_bin (rp, str);
 		return true;
 	}
 
@@ -536,6 +520,7 @@ static int use_stdin() {
 int main(int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
+	rp = r_print_new ();
 	if (argc == 1) {
 		use_stdin ();
 	} else {
