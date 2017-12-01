@@ -463,7 +463,13 @@ static int cmd_help(void *data, const char *input) {
 			/* binary and floating point */
 			r_str_bits64 (out, n);
 			f = d = core->num->fvalue;
-			r_cons_printf ("%s %.01lf %ff %lf\n", out, core->num->fvalue, f, d);
+			r_cons_printf ("%s %.01lf %ff %lf ", out, core->num->fvalue, f, d);
+
+			/* ternary */
+			r_num_to_trits (out, n);
+			r_cons_printf ("%s ", out);
+
+			r_cons_printf ("\n");
 		}
 		break;
 	case 'v': // "?v"
