@@ -432,7 +432,7 @@ dotherax:
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
-		print_hex_from_bin (rp, str);
+		r_print_hex_from_bin (rp, str);
 		return true;
 	}
 

@@ -1868,7 +1868,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	return words;
 }
 
-R_API void print_hex_from_bin (RPrint *p, char *bin_str) {
+R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	int i, j, index;
 	const int len = strlen (bin_str);
 	ut64 n, *buf = malloc (len / 8);
