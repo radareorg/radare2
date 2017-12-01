@@ -440,14 +440,13 @@ dotherax:
 			}
 			buf[index] = n;
 		}
+		index--;
 		printf ("0x");
-		while (buf[index] == 0 && index >= 0) index--;
-		if (index < 0) {
-			printf ("0\n");
-			return true;
-		}
+		while (buf[index] == 0 && index > 0) index--;
+		printf ("%" PFMT64x, buf[index]);
+		index--;
 		for (i = index; i >= 0; i--) {
-			printf ("%" PFMT64x, buf[i]);
+			printf ("%016" PFMT64x, buf[i]);
 		}
 		printf ("\n");
 		return true;
