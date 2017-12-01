@@ -74,7 +74,7 @@ static int format_output(char mode, const char *s) {
 
 static int help() {
 	printf (
-		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
+		"  =[base]                   ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int     ->  hex           ;  rax2 10\n"
 		"  hex     ->  int           ;  rax2 0xa\n"
 		"  -int    ->  hex           ;  rax2 -77\n"
@@ -105,6 +105,7 @@ static int help() {
 		"  -h      help              ;  rax2 -h\n"
 		"  -k      keep base         ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart         ;  rax2 -K 0x34 1020304050\n"
+		"  -L      bin -> hex(bignum);  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N      binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r      r2 style output   ;  rax2 -r 0x1234\n"
@@ -163,6 +164,7 @@ static int rax(char *str, int len, int last) {
 			case 'N': flags ^= 1 << 15; break;
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
+			case 'L': flags ^= 1 << 19; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -427,6 +429,27 @@ dotherax:
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
 
+		return true;
+	} else if (flags & (1 << 19)) { // -L
+		int i, j, index;
+		ut64 n, *buf = malloc (len / 8);
+		for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
+			n = 0;
+			for (j = 0; j < 64 && i - j >= 0; j++) {
+				n += (ut64) (str[i - j] - '0') << j;
+			}
+			buf[index] = n;
+		}
+		printf ("0x");
+		while (buf[index] == 0 && index >= 0) index--;
+		if (index < 0) {
+			printf ("0\n");
+			return true;
+		}
+		for (i = index; i >= 0; i--) {
+			printf ("%" PFMT64x, buf[i]);
+		}
+		printf ("\n");
 		return true;
 	}
 
