@@ -1894,4 +1894,5 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 		p->cb_printf ("%016" PFMT64x, buf[i]);
 	}
 	p->cb_printf ("\n");
+	free (buf);
 }
