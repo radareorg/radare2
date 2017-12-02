@@ -72,7 +72,10 @@ endif
 # CC CFLAGS CC_LIB CC_AR LINK
 
 # Debug
-CFLAGS+=-g -Wall
+ifneq ($(OSTYPE),mingw32)
+CFLAGS+=-g
+endif
+CFLAGS+=-Wall
 
 # libgmp
 ifeq (${HAVE_LIB_GMP},1)

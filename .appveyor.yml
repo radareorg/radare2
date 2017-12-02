@@ -17,6 +17,8 @@ branches:
 
 # Environment variables
 environment:
+  nodejs_version: "Stable"
+
   matrix:
     # TODO Add missing build platforms
     # MSVC CCCL 64
@@ -32,8 +34,8 @@ environment:
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
     # MINGW32 Variables
-    - builder: mingw32
-      EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
+    #- builder: mingw32
+    #  EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
     # MSYS2 Variables
     #- builder: msys2
     #  MSYS2_DIR: msys64
@@ -70,11 +72,25 @@ build_script:
 
   - cmd: if %builder% == vs2015_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86 && meson.bat --release --msbuild --xp && sys\meson_install.bat --msbuild %DIST_FOLDER% && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == mingw32 ( sys\mingw32.bat && sh -c "export PATH=%EXP_PATH%:${PATH}; make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
+  - cmd: if %builder% == mingw32 ( set "PATH=%EXP_PATH%;%PATH%" && sh -c "CC=mingw32-gcc-5.3.0 ./configure --with-ostype=mingw32 && make" && sh -c "make windist WINBITS=%builder% ZIPNAME=%ARTIFACT_ZIP%" )
 
   - cmd: if %builder% == msys2 ( set && set PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;"%PATH%" && echo "%PATH%" && sh.exe -c "export PATH=${PATH}:/mingw64/bin; ./configure --build=i686-unknown-windows-gnu ; mingw32-make -j1 ; mingw32-make windist WINBITS=%builder%" )
 
   - cmd: if %builder% == cygwin32 ( %CYG_BASH% -lc "gcc -v" && %CYG_BASH% -lc "uname | tr 'A-Z' 'a-z'" && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; ./configure --prefix=/usr/local' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make' && %CYG_BASH% -lc 'cd $APPVEYOR_BUILD_FOLDER; make windist WINBITS=%builder%' )
+
+test_script:
+  - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%;%PATH%
+  - echo %PATH%
+  - where radare2
+  - radare2 -v
+  - ps: Install-Product node $env:nodejs_version
+  - node --version
+  - git clone https://github.com/radare/radare2-regressions
+  - cd radare2-regressions/new
+  - npm install
+  - set NOOK=1
+  - node bin/r2r.js
+  - cd ../..
 
 after_test:
   - git clone https://github.com/radare/radare2-win-installer
