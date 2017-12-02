@@ -33,7 +33,7 @@ static const char *help_msg_w[] = {
 	"wts"," host:port [sz]", "send data to remote host:port via tcp://",
 	"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 	"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
-	"wv","[?] eip+34","write 32-64 bit value",
+	"wv","[?] eip+34","write 32-64 bit value honoring cfg.bigendian",
 	"wz"," string","write zero terminated string (like w + \\x00)",
 	NULL
 };
