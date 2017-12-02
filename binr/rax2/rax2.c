@@ -11,7 +11,6 @@
 	}
 
 static RNum *num;
-static RPrint *rp;
 static int help();
 static ut64 flags = 0;
 static int use_stdin();
@@ -432,7 +431,7 @@ dotherax:
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
-		r_print_hex_from_bin (rp, str);
+		r_print_hex_from_bin (NULL, str);
 		return true;
 	}
 
@@ -520,7 +519,6 @@ static int use_stdin() {
 int main(int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
-	rp = r_print_new ();
 	if (argc == 1) {
 		use_stdin ();
 	} else {

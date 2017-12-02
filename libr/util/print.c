@@ -1876,6 +1876,11 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 		eprintf ("allocation failed\n");
 		return;
 	}
+	if (!p) {
+		p = &(RPrint){
+			.cb_printf = libc_printf,
+		};
+	}
 	for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
 		n = 0;
 		for (j = 0; j < 64 && i - j >= 0; j++) {
