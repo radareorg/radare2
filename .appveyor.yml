@@ -34,8 +34,8 @@ environment:
       BUILD_DIR: build
       NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
     # MINGW32 Variables
-    - builder: mingw32
-      EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
+    #- builder: mingw32
+    #  EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'
     # MSYS2 Variables
     #- builder: msys2
     #  MSYS2_DIR: msys64
