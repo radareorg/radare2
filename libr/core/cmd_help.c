@@ -439,31 +439,46 @@ static int cmd_help(void *data, const char *input) {
 			ut32 s, a;
 			double d;
 			float f;
-			n = r_num_math (core->num, input + 1);
-			if (core->num->dbz) {
-				eprintf ("RNum ERROR: Division by Zero\n");
+			char * const inputs = strdup (input + 1);
+			int inputs_len = r_str_split (inputs, ' ');
+			const char *iter = inputs;
+			for (i = 0; i < inputs_len; i++, iter += strlen (iter) + 1) {
+				if (*iter == '\0') {
+					continue;
+				}
+				n = r_num_math (core->num, iter);
+				if (core->num->dbz) {
+					eprintf ("RNum ERROR: Division by Zero\n");
+				}
+				asnum  = r_num_as_string (NULL, n, false);
+				/* decimal, hexa, octal */
+				s = n >> 16 << 12;
+				a = n & 0x0fff;
+				r_num_units (unit, n);
+				r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
+					" %s %04x:%04x ",
+					n, n, n, unit, s, a);
+				if (n >> 32) {
+					r_cons_printf ("%"PFMT64d" ", (st64)n);
+				} else {
+					r_cons_printf ("%d ", (st32)n);
+				}
+				if (asnum) {
+					r_cons_printf ("\"%s\" ", asnum);
+					free (asnum);
+				}
+				/* binary and floating point */
+				r_str_bits64 (out, n);
+				f = d = core->num->fvalue;
+				r_cons_printf ("0b%s %.01lf %ff %lf ", out, core->num->fvalue, f, d);
+
+				/* ternary */
+				r_num_to_trits (out, n);
+				r_cons_printf ("0t%s ", out);
+
+				r_cons_printf ("\n");
 			}
-			asnum  = r_num_as_string (NULL, n, false);
-			/* decimal, hexa, octal */
-			s = n >> 16 << 12;
-			a = n & 0x0fff;
-			r_num_units (unit, n);
-			r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
-				" %s %04x:%04x ",
-				n, n, n, unit, s, a);
-			if (n >> 32) {
-				r_cons_printf ("%"PFMT64d" ", (st64)n);
-			} else {
-				r_cons_printf ("%d ", (st32)n);
-			}
-			if (asnum) {
-				r_cons_printf ("\"%s\" ", asnum);
-				free (asnum);
-			}
-			/* binary and floating point */
-			r_str_bits64 (out, n);
-			f = d = core->num->fvalue;
-			r_cons_printf ("%s %.01lf %ff %lf\n", out, core->num->fvalue, f, d);
+			free (inputs);
 		}
 		break;
 	case 'v': // "?v"
