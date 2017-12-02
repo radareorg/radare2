@@ -1871,10 +1871,15 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	int i, j, index;
 	const int len = strlen (bin_str);
-	ut64 n, *buf = malloc (len / 8);
+	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
 	if (buf == NULL) {
 		eprintf ("allocation failed\n");
 		return;
+	}
+	if (!p) {
+		p = &(RPrint){
+			.cb_printf = libc_printf,
+		};
 	}
 	for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
 		n = 0;
