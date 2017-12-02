@@ -1716,6 +1716,45 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	free (buf);
 }
 
+static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
+	const int size = 12;
+	char str[512];
+	char *comment;
+	RAnalFunction *fcn;
+	RAnalRef *ref;
+	RListIter *iter;
+	ut8 buf[12];
+	RAsmOp asmop;	
+	char *buf_asm = NULL;
+	RList *list = r_anal_xrefs_get (core->anal, addr);
+	if (list) {
+		r_list_foreach (list, iter, ref) {
+			r_core_read_at (core, ref->addr, buf, size);
+			r_asm_set_pc (core->assembler, ref->addr);
+			r_asm_disassemble (core->assembler, &asmop, buf, size);
+			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+			r_parse_filter (core->parser, core->flags,
+					asmop.buf_asm, str, sizeof (str), core->print->big_endian);
+			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+			char *buf_fcn = comment
+				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+				: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+			if (from <= ref->addr && to >= ref->addr) {
+				r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
+						buf_fcn, ref->addr, r_anal_ref_to_string (core->anal, ref->type), str);
+				if (*param->cmd_hit) {
+					ut64 here = core->offset;
+					r_core_seek (core, ref->addr, true);
+					r_core_cmd (core, param->cmd_hit, 0);
+					r_core_seek (core, here, true);
+				}
+			}	 	
+			free (buf_fcn);
+		}	
+	}
+	r_list_free (list);
+}	
+
 static void do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
@@ -2511,16 +2550,14 @@ reread:
 					if (input[param_offset - 1] == ' ') {
 						r_core_anal_search (core, from, to,
 								r_num_math (core->num, input + 2), 0);
-						r_core_cmdf (core, "axt @ 0x%"PFMT64x "\n", r_num_math (core->num, input + 2));
+						do_ref_search (core, r_num_math (core->num, input + 2), from, to, &param);
 					} else {
 						r_core_anal_search (core, from, to, core->offset, 0);
-						r_core_cmdf (core, "axt @ 0x%"PFMT64x "\n", core->offset);
+						do_ref_search (core, core->offset, from, to, &param);
 					}
-					//r_core_anal_search (core, param.from, param.to, UT64_MAX, 'c');
-					//			r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'c');
 					if (r_cons_is_breaked ()) {
 						break;
-					}
+					}	
 				}
 			}
 			break;
