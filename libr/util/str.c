@@ -3088,7 +3088,7 @@ R_API char *r_str_from_ut64(ut64 val) {
 	return str;
 }
 
-R_API int r_snprintf (char *string, int len, const char *fmt, ...) {
+R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	int ret = vsnprintf (string, len, fmt, ap);

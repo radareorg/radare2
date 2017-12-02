@@ -418,7 +418,12 @@ R_API int r_num_to_trits (char *out, ut64 num) {
 	for (i = 0; num; i++, num /= 3) {
 		out[i] = (char) ('0' + num % 3);
 	}
+	if (i == 0) {
+		out[0] = '0';
+		i++;
+	}
 	out[i] = '\0';
+
 	r_str_reverse (out);
 	return true;
 }
