@@ -1223,10 +1223,11 @@ int main(int argc, char **argv, char **envp) {
 			char f[128];
 			snprintf (f, sizeof (f), "%s.r2", pfile);
 			if (r_file_exists (f)) {
-				if (!quiet) {
-					eprintf ("NOTE: Loading '%s' script.\n", f);
+				// TODO: should 'q' unset the interactive bit?
+				bool isInteractive = r_config_get_i (r.config, "scr.interactive");
+				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", f)) {
+					r_core_cmd_file (&r, f);
 				}
-				r_core_cmd_file (&r, f);
 			}
 		}
 	}
