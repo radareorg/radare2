@@ -49,7 +49,10 @@ def handle_folder(folder):
 
 def main():
     # Create sdb binary
-    r = os.system('{meson} --prefix=%CD% {sdbdir} {builddir}'.format(meson=MESON, sdbdir=SDBDIR, builddir=BUILDDIR))
+    cd = '$(pwd)'
+    if os.name == 'nt':
+        cd = '%CD%'
+    r = os.system('{meson} --prefix={CD} {sdbdir} {builddir}'.format(meson=MESON, CD=cd, sdbdir=SDBDIR, builddir=BUILDDIR))
     if r: exit(r)
     r = os.system('{ninja} -C {builddir}'.format(ninja=NINJA, builddir=BUILDDIR))
     if r: exit(r)

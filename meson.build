@@ -74,6 +74,12 @@ if host_machine.system() == 'windows'
   else
 	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
   endif
+elif host_machine.system() == 'linux'
+  if get_option('default_library') == 'static'
+	message(' ------ LINUX VERSION: BUILD STATIC ------')
+  else
+	message(' ------ LINUX VERSION: BUILD SHARED ------')
+  endif
 endif
 
 # load plugin configuration

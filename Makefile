@@ -396,19 +396,18 @@ menu nconfig:
 pie:
 	sys/pie.sh ${PREVIOUS_RELEASE}
 
-build:
+meson-config meson-cfg meson-conf:
+	@echo "[ Meson Configure ]"
+	cp -f plugins.meson.cfg plugins.cfg
+	./configure --prefix="${PREFIX}"
+
+meson-build: meson-config
+	@echo "[ Meson R2 Building ]"
 	$(MESON) --prefix="${PREFIX}" build
 
-meson-config meson-cfg meson-conf:
-	# TODO: this is wrong for each platform different plugins must be compiled
-	#cp -f plugins.meson.cfg plugins.cfg
-	#./configure --prefix="${PREFIX}"
-	echo TODO
-
-meson: build
+meson: meson-build
 	@echo "[ SDB Build ]"
 	$(PYTHON) sys/meson_sdb.py
-	cmp plugins.meson.cfg plugins.cfg || $(MAKE) meson-config
 	@echo "[ Ninja Build ]"
 	ninja -C build
 
@@ -452,6 +451,7 @@ meson-uninstall:
 
 meson-clean:
 	rm -rf build
+	rm -rf build_sdb
 
 MESON_FILES=$(shell find build/libr build/binr -type f| grep -v @)
 meson-symstall-experimental:
