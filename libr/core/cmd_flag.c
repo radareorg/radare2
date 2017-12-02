@@ -38,6 +38,7 @@ static const char *help_msg_f[] = {
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
 	"fo","","show fortunes",
+	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
 	"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
 	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
@@ -198,6 +199,26 @@ static int flag_to_flag(RCore *core, const char *glob) {
 		return next - core->offset;
 	}
 	return 0;
+}
+
+static void flag_ordinals(RCore *core, const char *str) {
+	RFlagItem *flag;
+	RListIter *iter;
+	ut64 next = UT64_MAX;
+	const char *glob = r_str_trim_const (str);
+	int count = 0;
+	char *pfx = strdup (glob);
+	char *p = strchr (pfx, '*');
+	if (p) {
+		*p = 0;
+	}
+	r_list_foreach (core->flags->flags, iter, flag) {
+		if (r_str_glob (flag->name, glob)) {
+			char *newName = r_str_newf ("%s%d", pfx, count++);
+			r_flag_rename (core->flags, flag, newName);
+			free (newName);
+		}
+	}
 }
 
 static int cmd_flag(void *data, const char *input) {
@@ -693,6 +714,9 @@ rep:
 		break;
 	case 'o': // "fo"
 		r_core_fortune_print_random (core);
+		break;
+	case 'O': // "fO"
+		flag_ordinals (core, input + 1);
 		break;
 	case 'r':
 		if (input[1]==' ' && input[2]) {

@@ -491,6 +491,7 @@ static bool _section_apply(RIO *io, RIOSection *sec, RIOSectionApplyMethod metho
 		return false;
 	}
 }
+
 R_API bool r_io_section_apply(RIO *io, ut32 id, RIOSectionApplyMethod method) {
 	RIOSection *sec;
 	if (!(sec = r_io_section_get_i (io, id))) {
