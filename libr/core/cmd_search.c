@@ -1636,6 +1636,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	RAnalEsil *esil = core->anal->esil;
+	const char *searchIn = r_config_get (core->config, "search.in");
+	RList *list = r_core_get_boundaries (core, searchIn);
+	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 
@@ -1656,9 +1659,17 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	}
 	ut64 oldoff = core->offset;
 	r_cons_break_push (NULL, NULL);
-	r_list_foreach (param->boundaries, iter, map) {
+	r_list_foreach (list, iter, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
+		if (from >= to) {
+			eprintf ("Error: from must be lower than to\n");
+			return;
+		}
+		if (to == UT64_MAX) {
+			eprintf ("Error: Invalid destination boundary\n");
+			return;
+		}
 		for (i = 0, at = from; at < to; at++, i++) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -1666,6 +1677,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
+			if (align && (at % align)) {
+				continue;
+			}	
 			if (!i) {
 				r_core_read_at (core, at, buf, bsize);
 			}
