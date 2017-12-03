@@ -598,6 +598,7 @@ static int cb_asmbits(void *user, void *data) {
 		__setsegoff (core->config, asmarch, core->anal->bits);
 		if (core->dbg) {
 			r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
+			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 	}
 	/* set pcalign */
@@ -865,7 +866,9 @@ static int cb_cfglog(void *user, void *data) {
 static int cb_cfgdebug(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (!core) return false;
+	if (!core) {
+		return false;
+	}
 	if (core->io) {
 		core->io->debug = node->i_value;
 	}

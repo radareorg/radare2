@@ -58,7 +58,7 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 	if (bp->cur) {
 		// find matching size breakpoint
 repeat:
-		for (i=0; i< bp->cur->nbps; i++) {
+		for (i = 0; i < bp->cur->nbps; i++) {
 			b = &bp->cur->bps[i];
 			if (bp->cur->bps[i].bits) {
 				if (bp->bits != bp->cur->bps[i].bits) {
@@ -346,4 +346,19 @@ R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
 		return true;
 	}
 	return false;
+}
+
+R_API int r_bp_size(RBreakpoint *bp) {
+	RBreakpointArch *bpa;
+	int i, bpsize = 8;
+	for (i = 0; bp->cur->bps[i].bytes; i++) {
+		bpa = &bp->cur->bps[i];
+		if (bpa->bits != bp->bits) {
+			continue;
+		}
+		if (bpa->length < bpsize) {
+			bpsize = bpa->length;
+		}
+	}
+	return bpsize;
 }

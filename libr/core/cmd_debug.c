@@ -3654,9 +3654,13 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		ut64 addr = from;
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
 		r_reg_arena_swap (core->dbg->reg, true);
-		r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC);
-		r_debug_continue (core->dbg);
-		r_bp_del (core->dbg->bp, addr);
+		if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
+			r_debug_continue (core->dbg);
+			r_bp_del (core->dbg->bp, addr);
+		} else {
+			eprintf ("Cannot set breakpoint of size %d at 0x%08"PFMT64x"\n",
+				core->dbg->bpsize, addr);
+		}
 	}
 	return true;
 }
@@ -3768,7 +3772,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			r_cons_break_pop ();
 			return 1;
 		}
-	case 'u':
+	case 'u': // "dcu"
 		cmd_dcu (core, input);
 		break;
 	case ' ':
