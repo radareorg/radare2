@@ -11,7 +11,6 @@ static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 static int null_set_reg_profile(RAnal* anal){
-	const char *p = "";
 	return r_reg_set_profile_string(anal->reg, "");
 }
 
@@ -22,7 +21,7 @@ RAnalPlugin r_anal_plugin_null = {
 	.license = "LGPL3",
 	.bits = 8|16|32|64,	/* is this used? */
 	.op = &null_anal,
-	.set_reg_profile = "",
+	.set_reg_profile = &null_set_reg_profile,
 };
 
 #ifndef CORELIB
