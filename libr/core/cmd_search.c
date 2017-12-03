@@ -1677,7 +1677,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
-			if (align && (at) % align) {
+			if (align && (at % align)) {
 				continue;
 			}	
 			if (!i) {
