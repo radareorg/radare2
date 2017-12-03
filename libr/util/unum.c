@@ -580,24 +580,16 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 R_API int r_num_between(RNum *num, const char *input_value) {
 	int i;
 	ut64 ns[3];
-	ns[0] = r_num_math (num, input_value);
-	for (i = 1; i < 3; i++) {
-		while (*input_value == ' ') {
-			input_value++;
-		}
-		int num_parens = 0;
-		for (; num_parens != 0 || *input_value != ' '; input_value++) {
-			if (!*input_value) {
-				return -1;
-			}
-			if (*input_value == '(') {
-				num_parens++;
-			} else if (*input_value == ')') {
-				num_parens--;
-			}
-		}
-		ns[i] = r_num_math (num, input_value);
+	char * const str = strdup (input_value);
+	RList *nums = r_num_str_split_list (str);
+	int len = r_list_length (nums);
+	if (len > 3) {
+		len = 3;
 	}
+	for (i = 0; i < len; i++) {
+		ns[i] = r_num_math (num, r_list_pop_head (nums));
+	}
+	free (str);
 	return num->value = R_BETWEEN (ns[0], ns[1], ns[2]);
 }
 

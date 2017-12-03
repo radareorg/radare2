@@ -77,7 +77,7 @@ static const char *help_msg_question[] = {
 	"?_", " hudfile", "load hud menu with given file",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
-	"?btw", " num|(expr) num|(expr) num|(expr)", "returns boolean value of a <= b <= c",
+	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
 	"?d[.]", " opcode", "describe opcode for asm.arch",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
