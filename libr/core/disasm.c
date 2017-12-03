@@ -15,6 +15,10 @@
 #define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
+// ugly globals but meh
+static ut64 emustack_min = 0LL;
+static ut64 emustack_max = 0LL;
+
 static const char* r_vline_a[] = {
 	"|",  // LINE_VERT
 	"|-", // LINE_CROSS
@@ -102,6 +106,7 @@ typedef struct {
 	bool show_bbline;
 	bool show_emu;
 	bool show_emu_str;
+	bool show_emu_stack;
 	bool show_emu_write;
 	bool show_section;
 	int show_section_col;
@@ -123,6 +128,7 @@ typedef struct {
 	bool show_cmtflgrefs;
 	bool show_cycles;
 	bool show_stackptr;
+	int stackFd;
 	bool show_xrefs;
 	bool show_cmtrefs;
 	const char *show_cmtoff;
@@ -529,6 +535,26 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emustr");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
+	ds->show_emu_stack = r_config_get_i (core->config, "asm.emustack");
+	ds->stackFd = -1;
+	if (ds->show_emu_stack) {
+		// TODO: initialize fake stack in here
+		const char *uri = "malloc://32K";
+		ut64 size = r_num_get (core->num, "32K");
+		ut64 addr = r_reg_getv (core->anal->reg, "SP") - (size / 2);
+		emustack_min = addr;
+		emustack_max = addr + size;
+		ds->stackFd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
+		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_IO_RW, 0LL, addr, size, true);
+		if (!map) {
+			r_io_fd_close (core->io, ds->stackFd);
+			eprintf ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
+			ds->stackFd = -1;
+		} else {
+			r_io_map_set_name (map, "fake.stack");
+		}
+eprintf ("Make fake stack\n");
+	}
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -690,6 +716,13 @@ static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut
 static void ds_free(RDisasmState *ds) {
 	if (!ds) {
 		return;
+	}
+	if (ds->show_emu_stack) {
+		// TODO: destroy fake stack in here
+		eprintf ("Free fake stack\n");
+		if (ds->stackFd != -1) {
+			r_io_fd_close (ds->core->io, ds->stackFd);
+		}
 	}
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
@@ -3210,6 +3243,10 @@ static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return 1;
 }
 
+static int mymemwrite2(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	return (addr >= emustack_min && addr < emustack_max);
+}
+
 #define R_DISASM_MAX_STR 512
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
@@ -3465,10 +3502,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	esil->cb.user = ds;
 	esil->cb.hook_reg_write = myregwrite;
 	hook_mem_write = esil->cb.hook_mem_write;
-	if (ds->show_emu_write) {
-		esil->cb.hook_mem_write = mymemwrite0;
+	if (ds->show_emu_stack) {
+		esil->cb.hook_mem_write = mymemwrite2;
 	} else {
-		esil->cb.hook_mem_write = mymemwrite1;
+		if (ds->show_emu_write) {
+			esil->cb.hook_mem_write = mymemwrite0;
+		} else {
+			esil->cb.hook_mem_write = mymemwrite1;
+		}
 	}
 	ds->esil_likely = 0;
 	r_anal_esil_set_pc (esil, at);

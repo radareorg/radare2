@@ -2225,6 +2225,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
+	SETPREF ("asm.emustack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF ("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
 	n = NODECB ("asm.emuskip", "ds", &cb_emuskip);

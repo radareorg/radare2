@@ -127,7 +127,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	int i;
 	ut64 opos = 0;
 	for (i = 0; i < DSZ && i < indent; i++) {
-		if ((int)words[i] < DSZ) {
+		if ((int)(size_t)words[i] < DSZ) {
 			ut64 cur = lengths[i];
 			if (cur < opos) {
 				continue;

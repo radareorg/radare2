@@ -1870,6 +1870,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 
 R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	int i, j, index;
+	RPrint myp = {.cb_printf = libc_printf};
 	const int len = strlen (bin_str);
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
 	if (buf == NULL) {
@@ -1877,9 +1878,7 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 		return;
 	}
 	if (!p) {
-		p = &(RPrint){
-			.cb_printf = libc_printf,
-		};
+		p = &myp;
 	}
 	for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
 		n = 0;
