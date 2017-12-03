@@ -2283,7 +2283,7 @@ static void list_xtr_archs(RBin *bin, int mode) {
 				bin->cb_printf (
 					"%s{\"arch\":\"%s\",\"bits\":%d,"
 					"\"offset\":%" PFMT64d
-					",\"size\":\"%" PFMT64d
+					",\"size\":%" PFMT64d
 					",\"machine\":\"%s\"}",
 					i++ ? "," : "", arch, bits,
 					xtr_data->offset, xtr_data->size,
