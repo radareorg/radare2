@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2016 - pancake */
+/* radare2 - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -2139,6 +2139,10 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_BRK:
 		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
+	case ARM64_INS_HLT:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		// hlt stops the process, not skips some cycles like in x86
 		break;
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
