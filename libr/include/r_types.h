@@ -107,9 +107,6 @@
   /* Must be included before windows.h */
   #include <winsock2.h>
   #define WIN32_LEAN_AND_MEAN
-  #else
-  /* Deprecated */
-  //#include <winsock.h>
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS

@@ -73,5 +73,6 @@ r_core = library('r_core', files,
 	libr2spp.extract_all_objects(),
 	libr2gdb.extract_all_objects(),
   ],
+  dependencies: [platform_deps],
   install: true
 )
