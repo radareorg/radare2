@@ -2563,6 +2563,13 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 		eprintf ("Error: from must be lower than to\n");
 		return -1;
 	}
+	bool maybeThumb = false;
+	if (align) {
+		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits != 64) {
+			maybeThumb = true;
+		}
+	}
+
 	if (vmin >= vmax) {
 		eprintf ("Error: vmin must be lower than vmax\n");
 		return -1;
@@ -2612,8 +2619,18 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 				}
 			}
 			if (match) {
-				cb (core, addr, value, vsize, asterisk, hitctr);
-				hitctr++;
+				bool isValidMatch = true;
+				if (value % align) {
+					// ignored .. unless we are analyzing arm/thumb and lower bit is 1
+					isValidMatch = false;
+					if (maybeThumb && value & 1) {
+						isValidMatch = true;
+					}
+				}
+				if (isValidMatch) {
+					cb (core, addr, value, vsize, asterisk, hitctr);
+					hitctr++;
+				}
 			}
 		}
 		from += sizeof (buf);
