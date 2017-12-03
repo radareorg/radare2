@@ -266,11 +266,6 @@ static ut64 r_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	return b;
 }
 
-R_API bool r_num_is_op(char c) {
-	return c == '/' || c == '+' || c == '-' || c == '*'
-		|| c == '&' || c == '^' || c == '|';
-}
-
 R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
@@ -582,7 +577,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	return (addr & mask) | n;
 }
 
-R_API int r_num_between (RNum *num, const char *input_value) {
+R_API int r_num_between(RNum *num, const char *input_value) {
 	int i;
 	ut64 ns[3];
 	ns[0] = r_num_math (num, input_value);
@@ -604,4 +599,71 @@ R_API int r_num_between (RNum *num, const char *input_value) {
 		ns[i] = r_num_math (num, input_value);
 	}
 	return num->value = R_BETWEEN (ns[0], ns[1], ns[2]);
+}
+
+R_API bool r_num_is_op(const char c) {
+	return c == '/' || c == '+' || c == '-' || c == '*'
+		|| c == '&' || c == '^' || c == '|';
+}
+
+//Assumed *str is parsed as an expression correctly
+R_API int r_num_str_len (const char *str) {
+	int i = 0, len = 0, st;
+	st = 0;//0: number, 1: op
+	if (str[0] == '(') {
+		i++;
+	}
+	while (str[i] != '\0') {
+		switch (st) {
+		case 0: //number
+			while (!r_num_is_op (str[i]) && str[i] != ' '
+			  && str[i] != '\0') {
+				i++;
+				if (str[i] == '(') {
+				  i += r_num_str_len (str+i);
+				}
+			}
+			len = i;
+			st = 1;
+			break;
+		case 1: //op
+			while (str[i] != '\0' && str[i] == ' ') {
+				i++;
+			}
+			if (!r_num_is_op (str[i])) {
+				return len;
+			} else if (str[i] == ')') {
+				return i+1;
+			}
+			i++;
+			while (str[i] != '\0' && str[i] == ' ') {
+				i++;
+			}
+			st = 0;
+			break;
+		}
+	}
+	return len;
+}
+
+R_API int r_num_str_split(char *str) {
+	int i = 0, count = 0;
+	const int len = strlen (str);
+	while (i < len) {
+		i += r_num_str_len (str+i);
+		str[i] = '\0';
+		i++;
+		count++;
+	}
+	return count;
+}
+
+R_API RList *r_num_str_split_list(char *str) {
+	int i, count = r_num_str_split (str);
+	RList *list = r_list_newf (free);
+	for (i = 0; i < count; i++) {
+		r_list_append (list, str);
+		str += strlen (str) + 1;
+	}
+	return list;
 }
