@@ -11,7 +11,7 @@ files=[
 
 r_socket = library('r_socket', files,
   include_directories: [platform_inc],
-  dependencies: [utl],
+  dependencies: [utl, platform_deps],
   link_with: [r_util],
   c_args : '-DCORELIB=1',
   install: true

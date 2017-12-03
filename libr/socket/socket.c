@@ -13,9 +13,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#ifdef _MSC_VER
-#pragma comment(lib, "ws2_32.lib")
-#endif
 
 #if EMSCRIPTEN
 #define NETWORK_DISABLED 1
