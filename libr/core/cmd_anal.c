@@ -5872,7 +5872,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	// pre
-	seti ("search.align", 4);
+	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	seti ("search.align", archAlign);
 
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {

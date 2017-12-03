@@ -2620,10 +2620,10 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 			}
 			if (match) {
 				bool isValidMatch = true;
-				if (value % align) {
+				if (align && (value % align)) {
 					// ignored .. unless we are analyzing arm/thumb and lower bit is 1
 					isValidMatch = false;
-					if (maybeThumb && value & 1) {
+					if (maybeThumb && (value & 1)) {
 						isValidMatch = true;
 					}
 				}
