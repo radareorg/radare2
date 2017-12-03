@@ -271,14 +271,7 @@ R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	char *p = s;
 	int i, nop, op = 0;
 	for (i=0; s[i]; i++) {
-		switch (s[i]) {
-		case '/':
-		case '+':
-		case '-':
-		case '*':
-		case '&':
-		case '^':
-		case '|':
+		if (r_num_is_op (s[i])) {
 			nop = s[i]; s[i] = '\0';
 			ret = r_num_op (num, op, ret, r_num_get (num, p));
 			op = s[i] = nop; p = s + i + 1;
@@ -330,14 +323,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 			group[0] = '\0';
 			ret = r_num_op (op, ret, r_num_math_internal (num, p));
 			for (; p<group; p+=1) {
-				switch (*p) {
-				case '+':
-				case '-':
-				case '*':
-				case '/':
-				case '&':
-				case '|':
-				case '^':
+				if (r_num_is_op (*p)) {
 					op = *p;
 					break;
 				}
@@ -591,26 +577,86 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	return (addr & mask) | n;
 }
 
-R_API int r_num_between (RNum *num, const char *input_value) {
+R_API int r_num_between(RNum *num, const char *input_value) {
 	int i;
 	ut64 ns[3];
-	ns[0] = r_num_math (num, input_value);
-	for (i = 1; i < 3; i++) {
-		while (*input_value == ' ') {
-			input_value++;
-		}
-		int num_parens = 0;
-		for (; num_parens != 0 || *input_value != ' '; input_value++) {
-			if (!*input_value) {
-				return -1;
-			}
-			if (*input_value == '(') {
-				num_parens++;
-			} else if (*input_value == ')') {
-				num_parens--;
-			}
-		}
-		ns[i] = r_num_math (num, input_value);
+	char * const str = strdup (input_value);
+	RList *nums = r_num_str_split_list (str);
+	int len = r_list_length (nums);
+	if (len > 3) {
+		len = 3;
 	}
+	for (i = 0; i < len; i++) {
+		ns[i] = r_num_math (num, r_list_pop_head (nums));
+	}
+	free (str);
 	return num->value = R_BETWEEN (ns[0], ns[1], ns[2]);
+}
+
+R_API bool r_num_is_op(const char c) {
+	return c == '/' || c == '+' || c == '-' || c == '*'
+		|| c == '&' || c == '^' || c == '|';
+}
+
+//Assumed *str is parsed as an expression correctly
+R_API int r_num_str_len (const char *str) {
+	int i = 0, len = 0, st;
+	st = 0;//0: number, 1: op
+	if (str[0] == '(') {
+		i++;
+	}
+	while (str[i] != '\0') {
+		switch (st) {
+		case 0: //number
+			while (!r_num_is_op (str[i]) && str[i] != ' '
+			  && str[i] != '\0') {
+				i++;
+				if (str[i] == '(') {
+				  i += r_num_str_len (str+i);
+				}
+			}
+			len = i;
+			st = 1;
+			break;
+		case 1: //op
+			while (str[i] != '\0' && str[i] == ' ') {
+				i++;
+			}
+			if (!r_num_is_op (str[i])) {
+				return len;
+			}
+			if (str[i] == ')') {
+				return i + 1;
+			}
+			i++;
+			while (str[i] != '\0' && str[i] == ' ') {
+				i++;
+			}
+			st = 0;
+			break;
+		}
+	}
+	return len;
+}
+
+R_API int r_num_str_split(char *str) {
+	int i = 0, count = 0;
+	const int len = strlen (str);
+	while (i < len) {
+		i += r_num_str_len (str + i);
+		str[i] = '\0';
+		i++;
+		count++;
+	}
+	return count;
+}
+
+R_API RList *r_num_str_split_list(char *str) {
+	int i, count = r_num_str_split (str);
+	RList *list = r_list_newf (free);
+	for (i = 0; i < count; i++) {
+		r_list_append (list, str);
+		str += strlen (str) + 1;
+	}
+	return list;
 }

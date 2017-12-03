@@ -77,7 +77,7 @@ static const char *help_msg_question[] = {
 	"?_", " hudfile", "load hud menu with given file",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
-	"?btw", " num|(expr) num|(expr) num|(expr)", "returns boolean value of a <= b <= c",
+	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
 	"?d[.]", " opcode", "describe opcode for asm.arch",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
@@ -440,13 +440,14 @@ static int cmd_help(void *data, const char *input) {
 			double d;
 			float f;
 			char * const inputs = strdup (input + 1);
-			int inputs_len = r_str_split (inputs, ' ');
-			const char *iter = inputs;
-			for (i = 0; i < inputs_len; i++, iter += strlen (iter) + 1) {
-				if (*iter == '\0') {
+			RList *list = r_num_str_split_list (inputs);
+			const int list_len = r_list_length (list);
+			for (i = 0; i < list_len; i++) {
+				const char *str = r_list_pop_head (list);
+				if (*str == '\0') {
 					continue;
 				}
-				n = r_num_math (core->num, iter);
+				n = r_num_math (core->num, str);
 				if (core->num->dbz) {
 					eprintf ("RNum ERROR: Division by Zero\n");
 				}
@@ -479,6 +480,7 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("\n");
 			}
 			free (inputs);
+			r_list_free (list);
 		}
 		break;
 	case 'v': // "?v"
