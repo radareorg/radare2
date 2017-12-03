@@ -3284,8 +3284,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		} else {
-			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x" %s", name, *val,
-					 msg ? msg : "");
+			if (msg && *msg) {
+				ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x" %s", name, *val, msg);
+			} else {
+				ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x, name, *val);
+			}
 			if (ds->show_comments && !ds->show_comment_right) {
 				r_cons_newline ();
 			}
@@ -3753,9 +3756,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				}
 			}
 			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
-			if (ds->show_color) {
-				ds_print_color_reset (ds);
-			}
+			ds_print_color_reset (ds);
 			R_FREE (ds->comment);
 		}
 	}
