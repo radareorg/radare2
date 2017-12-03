@@ -276,6 +276,9 @@ static int cb_analarch(void *user, void *data) {
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
 			eprintf ("anal.arch: cannot find '%s'\n", node->value);
+		} else {
+		r_config_set (core->config, "anal.arch", "null");
+		return true;
 		}
 	}
 	return false;
