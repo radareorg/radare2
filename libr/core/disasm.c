@@ -417,10 +417,8 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
-	if (ds->show_comments && !ds->show_comment_right) {
-		if (up) {
-			ds_comment_lineup (ds);
-		}
+	if (ds->show_comments && up) {
+		ds->show_comment_right ? ds_align_comment (ds) : ds_comment_lineup (ds);
 	}
 	r_cons_printf_list (format, ap);
 	va_end (ap);
@@ -3461,7 +3459,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
-	ds_align_comment (ds);
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
@@ -3486,9 +3483,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, -1);
 		if (s) {
-			// XXX this should be shown in ds_comment_esil, for some reason it doesnt
-			r_cons_printf ("; ");
-			ds_comment_esil (ds, true, "; %s", s);
+			ds_comment_esil (ds, true, true, "; %s", s);
 			free (s);
 		}
 		} break;
