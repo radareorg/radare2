@@ -3529,7 +3529,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					if (ds->show_color) {
 						ds_comment_esil (ds, true, false, ds->pal_comment);
 					}
-					ds_align_comment (ds);
 					ds_comment_esil (ds, ds->show_color? false : true, false,
 							"; %s%s%s(", r_str_get (fcn_type), (fcn_type && *fcn_type &&
 							fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
