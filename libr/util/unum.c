@@ -266,19 +266,17 @@ static ut64 r_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	return b;
 }
 
+R_API bool r_num_is_op(char c) {
+	return c == '/' || c == '+' || c == '-' || c == '*'
+		|| c == '&' || c == '^' || c == '|';
+}
+
 R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op = 0;
 	for (i=0; s[i]; i++) {
-		switch (s[i]) {
-		case '/':
-		case '+':
-		case '-':
-		case '*':
-		case '&':
-		case '^':
-		case '|':
+		if (r_num_is_op (s[i])) {
 			nop = s[i]; s[i] = '\0';
 			ret = r_num_op (num, op, ret, r_num_get (num, p));
 			op = s[i] = nop; p = s + i + 1;
@@ -330,14 +328,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 			group[0] = '\0';
 			ret = r_num_op (op, ret, r_num_math_internal (num, p));
 			for (; p<group; p+=1) {
-				switch (*p) {
-				case '+':
-				case '-':
-				case '*':
-				case '/':
-				case '&':
-				case '|':
-				case '^':
+				if (r_num_is_op (*p)) {
 					op = *p;
 					break;
 				}
