@@ -106,7 +106,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
-		r_config_set (r->config, "anal.arch", arch);
+		r_config_set (r->config, "anal.arch", arch ? arch: "null");
 		if (info->cpu && *info->cpu) {
 			r_config_set (r->config, "anal.cpu", info->cpu);
 		} else {
