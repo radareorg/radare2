@@ -474,7 +474,7 @@ static int cmd_help(void *data, const char *input) {
 
 				/* ternary */
 				r_num_to_trits (out, n);
-				r_cons_printf ("0t%s ", out);
+				r_cons_printf ("0t%s", out);
 
 				r_cons_printf ("\n");
 			}
