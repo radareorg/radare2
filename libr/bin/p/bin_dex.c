@@ -644,7 +644,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 
 	rbin->cb_printf ("      positions     :\n");
 	r_list_foreach (debug_positions, iter2, position) {
-		rbin->cb_printf ("        0x%04llx line=%llu\n",
+		rbin->cb_printf ("        0x%04"PFMT64x" line=%llu\n",
 				 position->address, position->line);
 	}
 
@@ -1232,20 +1232,20 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 							if (dexdump) {
 								rbin->cb_printf (
 									"          %s "
-									"-> 0x%04llx\n",
+									"-> 0x%04"PFMT64x"\n",
 									s,
 									handler_addr);
 							}
 						} else {
 							if (dexdump) {
-								rbin->cb_printf ("          (error) -> 0x%04llx\n", handler_addr);
+								rbin->cb_printf ("          (error) -> 0x%04"PFMT64x"\n", handler_addr);
 							}
 						}
 					}
 					if (catchAll) {
 						p3 = r_uleb128 (p3, p3_end - p3, &v2);
 						if (dexdump) {
-							rbin->cb_printf ("          <any> -> 0x%04llx\n", v2);
+							rbin->cb_printf ("          <any> -> 0x%04"PFMT64x"\n", v2);
 						}
 					}
 				}

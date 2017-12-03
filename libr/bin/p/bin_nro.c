@@ -302,15 +302,15 @@ static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr) {
 			.symtab = MO_(symtab),
 			.strtab_size = MO_(strtab_size)
 		};
-		eprintf ("next 0x%llx\n", mo.next);
-		eprintf ("prev 0x%llx\n", mo.prev);
-		eprintf ("base 0x%llx\n", mo.base);
-		eprintf ("init 0x%llx\n", mo.init);
-		eprintf ("fini 0x%llx\n", mo.fini);
-		eprintf ("relplt 0x%llx\n", mo.relplt - mo.base);
-		eprintf ("symtab = 0x%llx\n", mo.symtab - mo.base);
-		eprintf ("strtab = 0x%llx\n", mo.strtab - mo.base);
-		eprintf ("strtabsz = 0x%llx\n", mo.strtab_size);
+		eprintf ("next 0x%"PFMT64x"\n", mo.next);
+		eprintf ("prev 0x%"PFMT64x"\n", mo.prev);
+		eprintf ("base 0x%"PFMT64x"\n", mo.base);
+		eprintf ("init 0x%"PFMT64x"\n", mo.init);
+		eprintf ("fini 0x%"PFMT64x"\n", mo.fini);
+		eprintf ("relplt 0x%"PFMT64x"\n", mo.relplt - mo.base);
+		eprintf ("symtab = 0x%"PFMT64x"\n", mo.symtab - mo.base);
+		eprintf ("strtab = 0x%"PFMT64x"\n", mo.strtab - mo.base);
+		eprintf ("strtabsz = 0x%"PFMT64x"\n", mo.strtab_size);
 		//ut32 modo = mh.mod_object;
 		ut64 strtab = mo.strtab - mo.base;
 		ut64 symtab = mo.symtab - mo.base;
