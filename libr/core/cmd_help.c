@@ -440,13 +440,14 @@ static int cmd_help(void *data, const char *input) {
 			double d;
 			float f;
 			char * const inputs = strdup (input + 1);
-			int inputs_len = r_str_split (inputs, ' ');
-			const char *iter = inputs;
-			for (i = 0; i < inputs_len; i++, iter += strlen (iter) + 1) {
-				if (*iter == '\0') {
+			RList *list = r_num_str_split_list (inputs);
+			const int list_len = r_list_length (list);
+			for (i = 0; i < list_len; i++) {
+				const char *str = r_list_pop_head (list);
+				if (*str == '\0') {
 					continue;
 				}
-				n = r_num_math (core->num, iter);
+				n = r_num_math (core->num, str);
 				if (core->num->dbz) {
 					eprintf ("RNum ERROR: Division by Zero\n");
 				}
@@ -479,6 +480,7 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("\n");
 			}
 			free (inputs);
+			r_list_free (list);
 		}
 		break;
 	case 'v': // "?v"
