@@ -134,6 +134,7 @@ static const char *help_msg_dcs[] = {
 
 static const char *help_msg_dcu[] = {
 	"Usage:", "dcu", " Continue until address",
+	"dcu.", "", "Alias for dcu $$ (continue until current address",
 	"dcu", " address", "Continue until address",
 	"dcu", " [..tail]", "Continue until the range",
 	"dcu", " [from] [to]", "Continue until the range",
@@ -3773,7 +3774,13 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			return 1;
 		}
 	case 'u': // "dcu"
-		cmd_dcu (core, input);
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_dcu);
+		} else if (input[2] == '.') {
+			cmd_dcu (core, "cu $$");
+		} else {
+			cmd_dcu (core, input);
+		}
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
