@@ -3289,7 +3289,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 				escstr = ds_esc_str (ds, str, (int)len, &prefix);
 				if (escstr) {
-					msg = r_str_newf ("%s\"%s\" ", prefix, escstr);
+					msg = r_str_newf ("%s\"%s\"", prefix, escstr);
 					free (escstr);
 				}
 			}
@@ -3301,13 +3301,13 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				/* nothing */
 			} else {
 				if (ds && !ds->show_emu_str) {
-					msg = r_str_newf ("-> 0x%x ", *n32);
+					msg = r_str_newf ("-> 0x%x", *n32);
 				}
 			}
 		}
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 		if (fi) {
-			msg = r_str_appendf (msg, "%s", fi->name);
+			msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
 		}
 	}
 	if (ds) {
