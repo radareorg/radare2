@@ -1306,7 +1306,6 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			return -1;
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
-
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			if (a->bits == 64 && ((op->operands[0].type & OT_QWORD) | (op->operands[1].type & OT_QWORD))) {
 				if (!(op->operands[1].type & OT_CONSTANT) && op->operands[1].extended) {
@@ -1406,17 +1405,27 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 
 			//if (op->operands[0].regs[0] == X86R_EBP) mod = 0x2;
-			if (op->operands[0].regs[0] == X86R_UNDEFINED) {
-				data[l++] = 0x5;
-				mod = 0x02;
-			} else if (op->operands[0].scale[0] < 2) {
-				data[l++] = mod << 6 | op->operands[0].regs[0];
-			}
-			if (op->operands[0].regs[0] == X86R_ESP) {
-				data[l++] = 0x24;
-			}
-			if (op->operands[0].regs[0] == X86R_EBP && !offset) {
-				data[l++] = 0x00;
+			if (op->operands[0].regs[1] != X86R_UNDEFINED) {
+				data[l++] = 0x44;
+				if (op->operands[0].regs[1] == X86R_ESP) {
+					data[l++] = 0x4 | op->operands[0].regs[0] << 3;
+				} else {
+					data[l++] = op->operands[0].regs[1] << 3 | op->operands[0].regs[0];
+				}
+			} else {
+				if (op->operands[0].regs[0] == X86R_UNDEFINED) {
+					data[l++] = 0x5;
+					mod = 0x02;
+				} else if (op->operands[0].scale[0] < 2) {
+					data[l++] = mod << 6 | op->operands[0].regs[0];
+				}
+
+				if (op->operands[0].regs[0] == X86R_ESP) {
+					data[l++] = 0x24;
+				}
+				if (op->operands[0].regs[0] == X86R_EBP && !offset) {
+					data[l++] = 0x00;
+				}
 			}
 			if (offset) {
 				data[l++] = offset;
