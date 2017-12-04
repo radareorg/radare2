@@ -2326,6 +2326,19 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		// TABLE JUMP  used for switch statements
 		break;
+	case ARM_INS_PLD:
+		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
+		if (ISMEM (0)) {
+			int regBase = REGBASE(0);
+			int delta = MEMDISP(0);
+			if (regBase == ARM_REG_PC) {
+				eprintf ("IS PC\n");
+				op->ptr = addr + 4 + delta;
+			} else {
+				// exotic pld
+			}
+		}
+		break;
 	case ARM_INS_IT:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + insn->size;
