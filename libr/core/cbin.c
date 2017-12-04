@@ -2037,6 +2037,7 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 			tmp[i] = *ptr++;
 		}
 		tmp[i] = '\0';
+		r_str_trim_head_tail (tmp);
 		chkstr = r_hash_to_string (NULL, tmp, data, datalen);
 		if (!chkstr) {
 			if (*ptr && *ptr == ',') {
