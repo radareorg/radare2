@@ -26,6 +26,7 @@ typedef struct r_parse_t {
 	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
 	int relsub_addr;
 	int minval;
+	char *retleave_asm;
 	struct r_parse_plugin_t *cur;
 	RAnal *anal; // weak anal ref
 	RAnalHint *hint; // weak anal ref
