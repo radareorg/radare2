@@ -1368,6 +1368,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				} else if (!(op->operands[0].type & OT_BYTE) &&
 				           !(op->operands[0].type & OT_QWORD)) {
 					data[l++] = 0x67;
+				} else if (op->operands[0].type & OT_QWORD) {
+					// The operand is a QWORD PTR memory access, so we want a
+					// REX prefix with a set W bit.
+					data[l++] = 0x48;
 				}
 			}
 			if (op->operands[0].type & (OT_DWORD | OT_QWORD)) {
