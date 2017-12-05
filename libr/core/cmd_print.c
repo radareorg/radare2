@@ -1234,7 +1234,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	char **note;
 	int html = r_config_get_i (core->config, "scr.html");
 	int nb_cons_cols;
+	bool compact = false;
 
+	if (core->print) {
+		compact = core->print->flags & R_PRINT_FLAGS_COMPACT;
+	}
+	char *format = compact ? " %X %X" : " %X %X ";
+	int step = compact ? 4 : 5;
+	
 	// Adjust the number of columns
 	if (nb_cols < 1) {
 		nb_cols = 16;
@@ -1268,8 +1275,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 #endif
 	j = strlen (bytes);
 	for (i = 0; i < nb_cols; i += 2) {
-		sprintf (bytes + j, " %X %X  ", (i & 0xf), (i + 1) & 0xf);
-		j += 5;
+		sprintf (bytes + j, format, (i & 0xf), (i + 1) & 0xf);
+		j += step;
 	}
 	sprintf (bytes + j + i, " ");
 	j++;
@@ -1402,7 +1409,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				hascolor = false;
 			}
 
-			if (j < (nb_cols - 1) && (j % 2)) {
+			if (j < (nb_cols - 1) && (j % 2) && !compact) {
 				append (ebytes, " ");
 			}
 
