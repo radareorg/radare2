@@ -14,7 +14,7 @@
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
-static int replace(int argc, const char *argv[], char *newstr) {
+static int replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -196,12 +196,16 @@ static int parse(RParse *p, const char *data, char *str) {
 			}
 		}
 		{
-			const char *wa[] = { w0, w1, w2, w3 };
+			char *wa[] = { w0, w1, w2, w3 };
 			int nw = 0;
 			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}
+			}
+			if (strstr (w0, "mul") && nw == 2 ) {
+				strncpy (wa[2], wa[1], sizeof (w2) - 1);
+				strncpy (wa[1], "eax", sizeof (w1) - 1);
 			}
 			replace (nw, wa, str);
 		}
