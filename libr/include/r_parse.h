@@ -50,7 +50,7 @@ typedef struct r_parse_plugin_t {
 R_API struct r_parse_t *r_parse_new(void);
 R_API void r_parse_free(RParse *p);
 R_API void r_parse_set_user_ptr(RParse *p, void *user);
-R_API int r_parse_add(RParse *p, struct r_parse_plugin_t *foo);
+R_API int r_parse_add(RParse *p, RParsePlugin *foo);
 R_API int r_parse_list(RParse *p);
 R_API int r_parse_use(RParse *p, const char *name);
 R_API int r_parse_parse(RParse *p, const char *data, char *str);

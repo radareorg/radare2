@@ -1743,7 +1743,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-struct r_parse_plugin_t r_parse_plugin_ppc_pseudo = {
+RParsePlugin r_parse_plugin_ppc_pseudo = {
 	.name = "ppc.pseudo",
 	.desc = "PowerPC pseudo syntax",
 	.parse = parse,

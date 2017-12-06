@@ -47,7 +47,7 @@ RParsePlugin r_parse_plugin_mreplace = {
 };
 
 #else
-struct r_parse_plugin_t r_parse_plugin_mreplace = {
+RParsePlugin r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin (NOT SUPPORTED FOR THIS PLATFORM)",
 };

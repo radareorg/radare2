@@ -217,7 +217,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		str[0] = 0;
 		return true;
 	}
-	
+
 	// malloc can be slow here :?
 	if (!(buf = malloc (len+1)))
 		return false;
@@ -316,7 +316,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo = {
+RParsePlugin r_parse_plugin_dalvik_pseudo = {
 	.name = "dalvik.pseudo",
 	.desc = "DALVIK pseudo syntax",
 	.init = NULL,

@@ -154,7 +154,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-struct r_parse_plugin_t r_parse_plugin_att2intel = {
+RParsePlugin r_parse_plugin_att2intel = {
 	.name = "att2intel",
 	.desc = "X86 att 2 intel plugin",
 	.init = NULL,

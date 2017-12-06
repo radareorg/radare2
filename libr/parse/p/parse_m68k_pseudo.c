@@ -62,7 +62,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lsl",  "2 <<= 1", 2},
 		{ "andi",  "2 &= 1", 2},
 		{ "nop",  ""},
-// 
+//
 		{ NULL }
 	};
 
@@ -187,7 +187,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-struct r_parse_plugin_t r_parse_plugin_m68k_pseudo = {
+RParsePlugin r_parse_plugin_m68k_pseudo = {
 	.name = "m68k.pseudo",
 	.desc = "M68K pseudo syntax",
 	.parse = parse,
