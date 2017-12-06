@@ -3896,6 +3896,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			}
 		}
 	}
+
+	if (ds->use_json) {
+		r_cons_print ("[");
+	}
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, p2v (ds, ds->addr + idx));
@@ -3916,10 +3920,6 @@ toro:
 		if (item) {
 			ds->dest = item->offset;
 		}
-	}
-
-	if (ds->use_json) {
-		r_cons_print ("[");
 	}
 
 	ds_print_esil_anal_init (ds);
