@@ -27,8 +27,13 @@ R_API int r_name_check(const char *name) {
 	return true;
 }
 
+static inline bool is_special_char (char *name) {
+	const char n = *name;
+	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v');
+}
+
 R_API int r_name_filter(char *name, int maxlen) {
-	int i;
+	int i, len;
 	char *oname;
 	if (!name) return 0;
 	if (maxlen < 0) {
@@ -40,12 +45,35 @@ R_API int r_name_filter(char *name, int maxlen) {
 			*name = '\0';
 			break;
 		}
-		if (!r_name_validate_char (*name)) {
+		if (!r_name_validate_char (*name) && *name != '\\') {
 			*name = '_';
 			//		r_str_ccpy (name, name+1, 0);
 			//name--;
 		}
 	}
+	while (i > 0) {
+		if (*(name - 1) == '\\' && is_special_char (name)) {
+			*name = '_';
+			*(name - 1) = '_';
+		}
+		if (*name == '\\') {
+			*name = '_';
+		}
+		name--;
+		i--;
+	}
+	if (*name == '\\') {
+		*name = '_';
+	}
+	// trimming trailing and leading underscores
+	len = strlen (name);
+	for (len; *(name + len - 1) == '_'; len--);
+	if (!len) { // name conists only of underscore
+		return r_name_check (oname);
+	}
+	for (i = 0; *(name + i) == '_'; i++, len--);
+	memmove (name, name + i, len);
+	*(name + len) = '\0';
 	return r_name_check (oname);
 }
 
