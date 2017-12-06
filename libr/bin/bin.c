@@ -9,6 +9,7 @@
 #include <r_io.h>
 #include <config.h>
 
+
 R_LIB_VERSION (r_bin);
 
 #define bprintf if(binfile->rbin->verbose)eprintf
