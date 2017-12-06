@@ -72,7 +72,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-struct r_parse_plugin_t r_parse_plugin_z80_pseudo = {
+RParsePlugin r_parse_plugin_z80_pseudo = {
 	.name = "z80.pseudo",
 	.desc = "z80 pseudo syntax",
 	.init = NULL,

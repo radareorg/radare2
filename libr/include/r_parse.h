@@ -75,6 +75,7 @@ extern RParsePlugin r_parse_plugin_sh_pseudo;
 extern RParsePlugin r_parse_plugin_avr_pseudo;
 extern RParsePlugin r_parse_plugin_6502_pseudo;
 extern RParsePlugin r_parse_plugin_m68k_pseudo;
+extern RParsePlugin r_parse_plugin_z80_pseudo;
 #endif
 
 #ifdef __cplusplus
