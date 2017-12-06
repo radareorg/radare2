@@ -2621,6 +2621,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, R_IO_EXEC)) {
 								continue;
 							}
+							if (ref->type != 'c' && ref->type != 'C') {
+								continue;
+							}	
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
 							// recursively follow fcn->refs again and again
 						}
