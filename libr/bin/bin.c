@@ -9,7 +9,6 @@
 #include <r_io.h>
 #include <config.h>
 
-
 R_LIB_VERSION (r_bin);
 
 #define bprintf if(binfile->rbin->verbose)eprintf
@@ -2268,9 +2267,9 @@ static void list_xtr_archs(RBin *bin, int mode) {
 		RBinXtrData *xtr_data;
 		int bits, i = 0;
 		char *arch, *machine;
-    if (mode == 'j') {
-		  bin->cb_printf ("\"bins\":[");
-	  }
+        if (mode == 'j') {
+            bin->cb_printf ("\"bins\":[");
+        }
 		r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
 			if (!xtr_data || !xtr_data->metadata ||
 			    !xtr_data->metadata->arch) {
@@ -2302,9 +2301,9 @@ static void list_xtr_archs(RBin *bin, int mode) {
 				break;
 			}
 		}
-    if (mode == 'j') {
-		  bin->cb_printf ("]");
-	  }
+        if (mode == 'j') {
+            bin->cb_printf ("]");
+        }
 	}
 }
 
