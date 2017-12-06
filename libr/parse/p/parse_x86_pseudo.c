@@ -205,7 +205,26 @@ static int parse(RParse *p, const char *data, char *str) {
 			}
 			if (strstr (w0, "mul") && nw == 2 ) {
 				strncpy (wa[2], wa[1], sizeof (w2) - 1);
-				strncpy (wa[1], "eax", sizeof (w1) - 1);
+
+				switch (wa[2][0]) {
+				case 'q':
+				case 'r': //qword, r.. 
+					strncpy (wa[1], "rax", sizeof (w1) - 1);
+					break;
+				case 'd':
+				case 'e': //dword, e..
+					if (strlen (wa[2]) > 2) {
+						strncpy (wa[1], "eax", sizeof (w1) - 1);
+						break;
+					}
+				default : // .x, .p, .i or word 
+					if (wa[2][1] == 'x' || wa[2][1] == 'p' || \
+						wa[2][1] == 'i' || wa[2][0] == 'w') {
+						strncpy (wa[1], "ax", sizeof (w1) - 1);
+					} else { // byte and lowest 8 bit registers
+						strncpy (wa[1], "al", sizeof (w1) - 1);
+					}
+				}
 			}
 			replace (nw, wa, str);
 		}
