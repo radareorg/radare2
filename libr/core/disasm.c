@@ -980,7 +980,7 @@ static void ds_begin_json_line(RDisasmState *ds) {
 		r_cons_print (",");
 	}
 	ds->first_line = false;
-	r_cons_printf ("{offset:%"PFMT64d",text:\"", ds->vat);
+	r_cons_printf ("{\"offset\":%"PFMT64d",\"text\":\"", ds->vat);
 }
 
 static void ds_newline(RDisasmState *ds) {
@@ -1317,11 +1317,12 @@ static void ds_show_functions(RDisasmState *ds) {
 	} else {
 		fcn_name = f->name;
 	}
+	ds_begin_json_line (ds);
 	sign = r_anal_fcn_to_string (core->anal, f);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
-		r_cons_printf ("%s%s%s %d\n", COLOR (ds, color_floc),
+		r_cons_printf ("%s%s%s %d", COLOR (ds, color_floc),
 			fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
 	} else {
 		const char *space = ds->show_fcnlines ? " " : "";
@@ -1355,18 +1356,21 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			ds_print_lines_left (ds);
 			ds_print_offset (ds);
-			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
+			r_cons_printf ("%s%s%s(%s) %s%s%s %d",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
 					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 		} else {
-			r_cons_printf ("%s%s%s%s%s(%s) %s%s%s %d\n",
+			r_cons_printf ("%s%s%s%s%s(%s) %s%s%s %d",
 					COLOR (ds, color_fline), ds->pre,
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
 					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 		}
 	}
+	ds_newline (ds);
 	if (sign) {
-		r_cons_printf ("// %s\n", sign);
+		ds_begin_json_line (ds);
+		r_cons_printf ("// %s", sign);
+		ds_newline (ds);
 	}
 	R_FREE (sign);
 	ds_set_pre (ds, core->cons->vline[LINE_VERT]);
@@ -1395,6 +1399,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
 		if (call) {
+			ds_begin_json_line (ds);
 			r_cons_printf ("%s%s%s %s %s%s (",
 				COLOR (ds, color_fline), ds->pre,
 				COLOR_RESET (ds), COLOR (ds, color_fname),
@@ -1434,11 +1439,13 @@ static void ds_show_functions(RDisasmState *ds) {
 						var->name, iter->n ? ", " : "");
 				}
 			}
-			r_cons_printf (");\n");
+			r_cons_printf (");");
+			ds_newline (ds);
 		}
 		r_list_join (args, sp_vars);
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
+			ds_begin_json_line (ds);
 			char *tmp;
 			int idx;
 			RAnal *anal = ds->core->anal;
@@ -1490,7 +1497,8 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (comment) {
 				r_cons_printf ("    %s; %s", COLOR(ds, color_comment), comment);
 			}
-			r_cons_println (COLOR_RESET (ds));
+			r_cons_print (COLOR_RESET (ds));
+			ds_newline (ds);
 		}
 		r_list_free (regs);
 		// it's already empty, but rlist instance is still there
@@ -1654,11 +1662,11 @@ static void ds_show_flags(RDisasmState *ds) {
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 	r_list_foreach (flaglist, iter, flag) {
-		ds_begin_json_line (ds);
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
 			continue;
 		}
+		ds_begin_json_line (ds);
 		if (ds->show_flgoff) {
 			if (f) {
 				ds_beginline (ds, f, false);
