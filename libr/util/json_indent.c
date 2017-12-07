@@ -200,7 +200,7 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 			if (s[0] == '"') {
 				instr = 0;
 			} else if (s[0] == '\\' && s[1] == '"') {
-				*o++ = *s;
+				*o++ = *s++;
 			}
 			if (instr) {
 				if (isValue) {
