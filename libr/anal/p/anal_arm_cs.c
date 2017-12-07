@@ -1502,10 +1502,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
 		break;
 	case ARM_INS_CBZ:
-		r_strbuf_appendf (&op->esil, "zf,?{,%s,pc,=", ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,!,?{,%"PFMT32u",pc,=,}",
+			REG(0), IMM(1));
 		break;
 	case ARM_INS_CBNZ:
-		r_strbuf_appendf (&op->esil, "zf,!,?{,%s,pc,=", ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,?{,%"PFMT32u",pc,=,}",
+			REG(0), IMM(1));
 		break;
 		// TODO (maybe?): ARM Cortex allows for a STRD "double word" 64-bit store
 		// e.g. 'strD r1, r2, [r3]'
