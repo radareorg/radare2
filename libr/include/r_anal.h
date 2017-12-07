@@ -586,7 +586,7 @@ typedef struct r_anal_options_t {
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
 	bool pushret; // analyze push+ret as jmp
-	bool armthumb; // 
+	bool armthumb; //
 } RAnalOptions;
 
 typedef struct r_anal_t {
@@ -1668,6 +1668,7 @@ extern RAnalPlugin r_anal_plugin_sparc_cs;
 extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_propeller;
 extern RAnalPlugin r_anal_plugin_msp430;
+extern RAnalPlugin r_anal_plugin_chip8;
 extern RAnalPlugin r_anal_plugin_cris;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_6502;
