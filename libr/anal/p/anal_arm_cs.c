@@ -1105,11 +1105,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 		}
 	case ARM64_INS_CBZ:
-		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,=,}",
 			REG64(0), IMM64(1));
 		break;
 	case ARM64_INS_CBNZ:
-		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,=,}",
 			REG64(0), IMM64(1));
 		break;
 	case ARM64_INS_TBZ:
