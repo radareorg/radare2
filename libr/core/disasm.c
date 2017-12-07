@@ -1130,11 +1130,13 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					name = tmp;
 				}
 			}
+			ds_begin_json_line (ds);
 			ds_pre_xrefs (ds);
 			//those extra space to align
-			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
+			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s",
 				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
 				refi->addr, name, COLOR_RESET (ds));
+			ds_newline (ds);
 			R_FREE (name);
 		}
 	}
