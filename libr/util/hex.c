@@ -18,6 +18,24 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
 	return 0;
 }
 
+void skip_comment_c(char **code) {
+	const char *s = *code;
+	if (!strncmp (s, "/*", 2)) {
+		char *end = strstr (s, "*/");
+		if (end) {
+			*code = end + 1;
+		} else {
+			eprintf ("Missing closing comment\n");
+		}
+		*code += 1;
+	} else if (!strncmp (s, "//", 2)) {
+		char *end = strchr (s, '\n');
+		if (end) {
+			*code = end;
+		}
+		*code += 1;
+	}
+}
 /* convert:
  *    char *foo = "\x41\x23\x42\x1b";
  * into:
@@ -42,23 +60,7 @@ R_API char *r_hex_from_c(const char *code) {
 		return ret;
 	}
 	for (;*code; code++) {
-		if (!strncmp (code, "/*", 2)) {
-			/* skip comments */
-			char *end = strstr (code, "*/");
-			if (end) {
-				code = end + 1;
-			} else {
-				eprintf ("Missing closing comment\n");
-			}
-			continue;
-		}
-		if (!strncmp (code, "//", 2)) {
-			char *end = strchr (code, '\n');
-			if (end) {
-				code = end;
-			}
-			continue;
-		}
+		skip_comment_c (&code);
 		if (parse_on) {
 			if (*code == '}') {
 				parse_on = false;
@@ -96,8 +98,9 @@ R_API char *r_hex_from_c(const char *code) {
 			if (comma) {
 				char *word = r_str_ndup (code, comma - code);
 				char * _word = word;
-				while (IS_WHITESPACE (*word)) {
+				while (*word == ' ' || *word == '\t' || *word == '\n') {
 					word++;
+					skip_comment_c (&word);
 				}
 				if (IS_DIGIT (*word)) {
 					ut8 n = (ut8)r_num_math (NULL, word);
