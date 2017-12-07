@@ -60,8 +60,14 @@ R_API char *r_hex_from_c(const char *code) {
 			continue;
 		}
 		if (parse_on) {
-			if (*code == '}' || *code == '"') {
+			if (*code == '}') {
 				parse_on = false;
+				// stop parsing after the first string statement
+				break;
+			} else if (*code == '"') {
+				parse_on = false;
+				continue;
+			} else if (*code == ';') {
 				// stop parsing after the string statement
 				break;
 			}
