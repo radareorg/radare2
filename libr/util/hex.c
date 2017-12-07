@@ -93,6 +93,10 @@ R_API char *r_hex_from_c(const char *code) {
 			if (!comma) comma = strchr (code, '}');
 			if (comma) {
 				char *word = r_str_ndup (code, comma - code);
+				char * _word = word;
+				while (*word == ' ') {
+					word++;
+				}
 				if (IS_DIGIT (*word)) {
 					ut8 n = (ut8)r_num_math (NULL, word);
 					*out++ = abc[(n >> 4) & 0xf];
@@ -101,7 +105,7 @@ R_API char *r_hex_from_c(const char *code) {
 					parse_on = false;
 				}
 				code = comma;
-				free (word);
+				free (_word);
 			}
 		} else if (*code == '"') {
 			if (code[1] == '\\') {
