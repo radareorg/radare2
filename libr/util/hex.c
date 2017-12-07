@@ -122,7 +122,7 @@ R_API char *r_hex_from_c(const char *code) {
 							is_hexa = 0;
 					} else goto error;
 				} else {
-					*out++ = abc[*code >>4];
+					*out++ = abc[*code >> 4];
 					*out++ = abc[*code & 0xf];
 				}
 			}
