@@ -66,10 +66,12 @@ R_API char *r_hex_from_c(const char *code) {
 				break;
 			} else if (*code == '"') {
 				parse_on = false;
+				char *s1 = strchr (code+1, ';');
+				char *s2 = strchr (code+1, '"');
+				if (s2 == NULL || (s1 < s2)) {
+					break;
+				}
 				continue;
-			} else if (*code == ';') {
-				// stop parsing after the string statement
-				break;
 			}
 		} else {
 			if (*code == '{') {
@@ -94,7 +96,7 @@ R_API char *r_hex_from_c(const char *code) {
 			if (comma) {
 				char *word = r_str_ndup (code, comma - code);
 				char * _word = word;
-				while (*word == ' ') {
+				while (IS_WHITESPACE (*word)) {
 					word++;
 				}
 				if (IS_DIGIT (*word)) {
