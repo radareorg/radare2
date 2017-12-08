@@ -4225,7 +4225,7 @@ toro:
 	}
 
 	if (ds->use_json) {
-		r_cons_print ("]");
+		r_cons_print ("]\n");
 	}
 
 	R_FREE (nbuf);
