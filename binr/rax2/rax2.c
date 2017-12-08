@@ -433,6 +433,20 @@ dotherax:
 	} else if (flags & (1 << 19)) { // -L
 		r_print_hex_from_bin (NULL, str);
 		return true;
+	} else if (flags & (1 << 20)) { // -P
+		char *str = r_stdin_slurp (NULL);
+		if (str) {
+			char *res = r_hex_from_py (str);
+			if (res) {
+				printf ("%s\n", res);
+				fflush (stdout);
+				free (res);
+			} else {
+				eprintf ("Invalid input.\n");
+			}
+			free (str);
+		}
+		return false;
 	}
 
 	if (r_str_startswith (str, "0x")) {
