@@ -2321,6 +2321,16 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk
 	}
 }
 
+static int count_arg(const char *input) {
+	char * n;
+	int count = 1;
+	n = strchr (input + 1, ' ');
+	while((n = strchr (n +1, ' '))) {
+		count++;
+	}
+	return count;	
+}	
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	int i, len, ret = true;
@@ -2757,31 +2767,57 @@ reread:
 		switch (input[1]) {
 		case '8':
 			if (input[param_offset]) {
-				n64 = r_num_math (core->num, input + param_offset);
-				ut8 buf[sizeof (ut64)];
-				r_write_le64 (buf, n64);
+				int num = count_arg(input + 1);
+				ut8 buf[sizeof (ut64) * num];
+				ut8 *ptr = buf;
+				char *n  = strchr(input + param_offset, ' ');
+				for (i = 0; i < num; i++)
+				{
+					n64 = r_num_math (core->num, n + 1);
+					r_write_le64 (ptr, n64);
+					n = strchr (n + 1, ' ');
+					ptr = (ut8 *) ptr + sizeof (ut64);
+				}	
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8 *) buf, sizeof (ut64), NULL, 0, NULL));
+					r_search_keyword_new ((const ut8 *) buf, sizeof (buf), NULL, 0, NULL));
 			} else {
 				eprintf ("Usage: /v8 value\n");
 			}
 			break;
 		case '1':
 			if (input[param_offset]) {
-				n8 = (ut8) r_num_math (core->num, input + param_offset);
+				int num = count_arg(input + 1);
+				ut8 buf[sizeof (ut8) * num];
+				ut8 *ptr = buf;
+				char *n  = strchr(input + param_offset, ' ');
+				for (i = 0; i < num; i++)
+				{
+					n8 = (ut8) r_num_math (core->num, n + 1);
+					r_write_le8 (ptr, n8);
+					n = strchr (n + 1, ' ');
+					ptr = (ut8 *) ptr + sizeof (ut8);
+				}	
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8 *) &n8, 1, NULL, 0, NULL));
+					r_search_keyword_new ((const ut8 *) buf, sizeof (buf), NULL, 0, NULL));
 			} else {
 				eprintf ("Usage: /v1 value\n");
 			}
 			break;
 		case '2':
 			if (input[param_offset]) {
-				n16 = (ut16) r_num_math (core->num, input + param_offset);
-				ut8 buf[sizeof (ut16)];
-				r_write_le16 (buf, n16);
+				int num = count_arg(input + 1);
+				ut8 buf[sizeof (ut16) * num];
+				ut8 *ptr = buf;
+				char *n  = strchr(input + param_offset, ' ');
+				for (i = 0; i < num; i++)
+				{
+					 n16 = (ut16) r_num_math (core->num, n + 1);
+					 r_write_le16 (ptr, n16);
+					 n = strchr (n + 1, ' ');
+					 ptr = (ut8 *) ptr + sizeof (ut16);
+				}	
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8 *) buf, sizeof (ut16), NULL, 0, NULL));
+					r_search_keyword_new ((const ut8 *) buf, sizeof (buf), NULL, 0, NULL));
 			} else {
 				eprintf ("Usage: /v2 value\n");
 			}
@@ -2790,11 +2826,19 @@ reread:
 		case '4':
 			if (input[param_offset - 1]) {
 				if (input[param_offset]) {
-					n32 = (ut32) r_num_math (core->num, input + param_offset);
-					ut8 buf[sizeof (ut32)];
-					r_write_le32 (buf, n32);
+					int num = count_arg(input + 1);
+					ut8 buf[sizeof (ut32) * num];
+					ut8 *ptr = buf;
+					char *n  = strchr(input + param_offset, ' ');
+					for (i = 0; i < num; i++)
+					{
+						n32 = (ut32) r_num_math (core->num, n + 1);
+						r_write_le32 (ptr, n32);
+						n = strchr (n + 1, ' ');
+						ptr = (ut8 *) ptr + sizeof (ut32);
+					}	
 					r_search_kw_add (core->search,
-						r_search_keyword_new ((const ut8 *) buf, sizeof (ut32), NULL, 0, NULL));
+						r_search_keyword_new ((const ut8 *) buf, sizeof (buf), NULL, 0, NULL));
 				}
 			} else {
 				eprintf ("Usage: /v4 value\n");
