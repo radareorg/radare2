@@ -295,14 +295,14 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 }
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
-	struct r_bin_pe_addr_t *main = PE_(check_msvcseh) (bin);
-	if (!main) {
-		main = PE_(check_mingw) (bin);
+	struct r_bin_pe_addr_t *winmain = PE_(check_msvcseh) (bin);
+	if (!winmain) {
+		winmain = PE_(check_mingw) (bin);
+		if (!winmain) {
+			winmain = PE_(check_unknow) (bin);
+		}
 	}
-	if (!main) {
-		main = PE_(check_unknow) (bin);
-	}
-	return main;
+	return winmain;
 }
 
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)

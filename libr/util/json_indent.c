@@ -46,11 +46,8 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	const char *words[DSZ] = { NULL };
 	int lengths[DSZ] = { 0 };
 	int indexs[DSZ] = { 0 };
-
 	int instr = 0;
 	bool isarr = false;
-	bool isValue = false;
-	const char *o;
 	if (!s) {
 		return NULL;
 	}
@@ -62,7 +59,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	}
 
 	const char *str_a = NULL;
-	for (o = s; *s; s++) {
+	for (; *s; s++) {
 		if (instr) {
 			if (s[0] == '"') {
 				instr = 0;
@@ -88,10 +85,8 @@ R_API char* r_print_json_path(const char* s, int pos) {
 		}
 		switch (*s) {
 		case ':':
-			isValue = true;
 			break;
 		case ',':
-			isValue = false;
 			if (isarr) {
 				arrpos ++;
 				if (indent < DSZ) {
@@ -102,7 +97,6 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			break;
 		case '{':
 		case '[':
-			isValue = false;
 			if (*s == '[') {
 				isarr = true;
 				arrpos = 0;
@@ -119,7 +113,6 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			if (*s == ']') {
 				isarr = false;
 			}
-			isValue = false;
 			indent--;
 			break;
 		}

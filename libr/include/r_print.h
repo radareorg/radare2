@@ -108,6 +108,7 @@ R_API void r_print_set_interrupt(int i);
 
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
+R_API void r_print_hex_from_bin (RPrint *p, char *bin_str);
 R_API RPrint *r_print_new(void);
 R_API RPrint *r_print_free(RPrint *p);
 R_API bool r_print_mute(RPrint *p, int x);

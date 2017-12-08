@@ -41,7 +41,7 @@ static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t us
 	if (csize < 0 || usize < 0) {
 		return -1;
 	}
-	return LZ4_decompress_safe (cbuf, obuf, (uint32_t) csize, (uint32_t) usize);
+	return LZ4_decompress_safe ((const char*)cbuf, (char*)obuf, (uint32_t) csize, (uint32_t) usize);
 }
 
 static ut64 baddr(RBinFile *bf) {
