@@ -53,6 +53,13 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "w32dbg://", 9);
 }
 
+// mingw32 toolchain doesnt have this symbol
+static HANDLE WINAPI (*r2_OpenThread)(
+	DWORD dwDesiredAccess,
+	BOOL  bInheritHandle,
+	DWORD dwThreadId
+) = NULL;
+
 static int __w32_first_thread(int pid) {
 	HANDLE th;
 	HANDLE thid;
@@ -70,7 +77,13 @@ static int __w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-			thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+#if __MINGW32__
+			r2_OpenThread = r_lib_dl_sym (NULL, "OpenThread");
+#else
+			r2_OpenThread = OpenThread;
+#endif
+			thid = r2_OpenThread
+			? r2_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID) : NULL;
 			if (!thid) {
 				r_sys_perror ("__w32_first_thread/OpenThread");
 				goto err_first_th;
