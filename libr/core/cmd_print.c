@@ -3580,7 +3580,7 @@ static int cmd_print(void *data, const char *input) {
 
 		bool use_color = r_config_get_i (core->config, "scr.color");
 		len = 0;
-		for (i = 0; i < w; i++) {
+		for (i = 0; i < ((to-from)/piece); i++) {
 			at = from + (piece * i);
 			ate = at + piece;
 			p = (at - from) / piece;
