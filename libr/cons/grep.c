@@ -800,10 +800,11 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 		if (ptr[0] == '\n') {
 			tmp = (int) (size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
-			r_strbuf_append (res, "<br />");
 			if (!ptr[1]) {
 				// write new line if it's the end of the output
 				r_strbuf_append (res, "\n");
+			} else {
+				r_strbuf_append (res, "<br />");
 			}
 			str = ptr + 1;
 			continue;
