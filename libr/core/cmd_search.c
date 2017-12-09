@@ -2321,9 +2321,54 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk
 	}
 }
 
+static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
+	ut8 *ptr;
+	ut64 n64;
+	ut32 n32;
+	ut16 n16;
+	ut8 n8;
+	int i = 0;
+	ut8 *buf = malloc (bsize);
+	if (!buf) {
+		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free (buf);
+		return -1;
+	}	
+	ptr = buf;
+	for (i = 0; i < len; i++) {
+		switch (ch) {
+		case '1':
+			n8 = r_num_math (core->num, r_list_pop_head (nums));
+			r_write_le8 (ptr, n8);
+			ptr = (ut8 *) ptr + sizeof (ut8);
+			break;
+		case '2':
+			n16 = r_num_math (core->num, r_list_pop_head (nums));
+			r_write_le16 (ptr, n16);
+			ptr = (ut8 *) ptr + sizeof (ut16);
+			break;	
+		case '4':
+			n32 =  r_num_math (core->num, r_list_pop_head (nums));
+			r_write_le32 (ptr, n32);
+			ptr = (ut8 *) ptr + sizeof (ut32);
+			break;
+		default:	
+		case '8':
+			n64 = r_num_math (core->num, r_list_pop_head (nums));
+			r_write_le64 (ptr, n64);
+			ptr = (ut8 *) ptr + sizeof (ut64);
+			break;	
+		}
+		if (ptr > ptr + bsize) {
+			return -1;
+		}	
+	}
+	return buf;	
+}       	
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
-	int i, len, ret = true;
+	int i, ret = true;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
 		.core = core,
@@ -2340,10 +2385,6 @@ static int cmd_search(void *data, const char *input) {
 	int ignorecase = false;
 	int param_offset = 2;
 	char *inp;
-	ut64 n64;
-	ut32 n32;
-	ut16 n16;
-	ut8 n8;
 	if (!core || !core->io || !core->io->desc) {
 		eprintf ("Can't search if we don't have an open file.\n");
 		return false;
@@ -2754,34 +2795,32 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
+		char *v_str = input + 3;
+		RList *nums = r_num_str_split_list (v_str);
+		int len = r_list_length (nums);
+		int bsize = 0;
+		ut8 *v_buf;
 		switch (input[1]) {
 		case '8':
 			if (input[param_offset]) {
-				n64 = r_num_math (core->num, input + param_offset);
-				ut8 buf[sizeof (ut64)];
-				r_write_le64 (buf, n64);
-				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8 *) buf, sizeof (ut64), NULL, 0, NULL));
+				bsize = sizeof (ut64) * len;
+				v_buf = v_writebuf (core, nums, len, '8', bsize);	
 			} else {
 				eprintf ("Usage: /v8 value\n");
 			}
 			break;
 		case '1':
 			if (input[param_offset]) {
-				n8 = (ut8) r_num_math (core->num, input + param_offset);
-				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8 *) &n8, 1, NULL, 0, NULL));
+				bsize = sizeof (ut8) * len;
+				v_buf = v_writebuf (core, nums, len, '1', bsize);
 			} else {
 				eprintf ("Usage: /v1 value\n");
 			}
 			break;
 		case '2':
 			if (input[param_offset]) {
-				n16 = (ut16) r_num_math (core->num, input + param_offset);
-				ut8 buf[sizeof (ut16)];
-				r_write_le16 (buf, n16);
-				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8 *) buf, sizeof (ut16), NULL, 0, NULL));
+				bsize = sizeof (ut16) * len;
+				v_buf = v_writebuf (core, nums, len, '2', bsize);	
 			} else {
 				eprintf ("Usage: /v2 value\n");
 			}
@@ -2790,17 +2829,19 @@ reread:
 		case '4':
 			if (input[param_offset - 1]) {
 				if (input[param_offset]) {
-					n32 = (ut32) r_num_math (core->num, input + param_offset);
-					ut8 buf[sizeof (ut32)];
-					r_write_le32 (buf, n32);
-					r_search_kw_add (core->search,
-						r_search_keyword_new ((const ut8 *) buf, sizeof (ut32), NULL, 0, NULL));
+					bsize = sizeof (ut32) * len;
+					v_buf = v_writebuf (core, nums, len, '4', bsize);
 				}
 			} else {
 				eprintf ("Usage: /v4 value\n");
 			}
 			break;
 		}
+		if (v_buf) {
+			r_search_kw_add (core->search,
+					r_search_keyword_new ((const ut8 *) v_buf, bsize, NULL, 0, NULL));
+			free (v_buf);
+		}	
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
