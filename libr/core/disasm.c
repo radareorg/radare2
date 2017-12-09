@@ -504,6 +504,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
+	core->parser->retleave_asm = NULL;
 	ds->show_vars = r_config_get_i (core->config, "asm.vars");
 	ds->show_varsum = r_config_get_i (core->config, "asm.varsum");
 	ds->show_varxs = r_config_get_i (core->config, "asm.varxs");

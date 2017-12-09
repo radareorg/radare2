@@ -14,7 +14,7 @@
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
-static int replace(int argc, char *argv[], char *newstr) {
+static int replace (int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -76,12 +76,13 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "movntpd", "# = #", {1, 2}},
 		{ "mul",  "# *= #", {1, 2}},
 		{ "neg",  "# ~= #", {1, 1}},
-		{ "nop",  "", {0}},
+		{ "nop",  "no operation", {0}},
 		{ "not",  "# = !#", {1, 1}},
 		{ "or",   "# |= #", {1, 2}},
 		{ "out",  "io[#] = #", {1, 2}},
 		{ "pop",  "pop #", {1}},
 		{ "push", "push #", {1}},
+		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
 		{ "sete",  "# = e", {1}},
@@ -153,12 +154,12 @@ static int replace(int argc, char *argv[], char *newstr) {
 #undef MAXPSEUDOOPS
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse (RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data);
+	int sz = len + sizeof ("return ") + 1;
 	char *buf, *ptr, *optr;
-
-	if (len >= sizeof (w0)) {
+	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
 	}
 	// malloc can be slow here :?
@@ -166,68 +167,86 @@ static int parse(RParse *p, const char *data, char *str) {
 		return false;
 	}
 	memcpy (buf, data, len + 1);
-
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
 		ptr = strchr (buf, ' ');
-		if (!ptr)
+		if (!ptr) {
 			ptr = strchr (buf, '\t');
+		}
+		if (!ptr) {
+			ptr = strchr (buf, '\0');
+		}
+		if (!ptr) {
+			free (buf);
+			return false;
+		}
+		*ptr = '\0';
+		for (++ptr; *ptr == ' '; ptr++);
+		r_str_ncpy (w0, buf, sizeof (w0));
+		r_str_ncpy (w1, ptr, sizeof (w1));
+		optr = ptr;
+		ptr = strchr (ptr, ',');
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr == ' '; ptr++);
-			strncpy (w0, buf, sizeof (w0) - 1);
-			strncpy (w1, ptr, sizeof (w1) - 1);
-
+			r_str_ncpy (w1, optr, sizeof (w1));
+			r_str_ncpy (w2, ptr, sizeof (w2));
 			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr == ' '; ptr++);
-				strncpy (w1, optr, sizeof (w1) - 1);
-				strncpy (w2, ptr, sizeof (w2) - 1);
-				optr = ptr;
-				ptr = strchr (ptr, ',');
-				if (ptr) {
-					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++);
-					strncpy (w2, optr, sizeof (w2) - 1);
-					strncpy (w3, ptr, sizeof (w3) - 1);
-				}
+				r_str_ncpy (w2, optr, sizeof (w2));
+				r_str_ncpy (w3, ptr, sizeof (w3));
 			}
+		}	
+	}
+	char *wa[] = { w0, w1, w2, w3 };
+	int nw = 0;
+	for (i = 0; i < 4; i++) {
+		if (wa[i][0] != '\0') {
+			nw++;
 		}
-		{
-			char *wa[] = { w0, w1, w2, w3 };
-			int nw = 0;
-			for (i = 0; i < 4; i++) {
-				if (wa[i][0] != '\0') {
-					nw++;
-				}
-			}
-			if (strstr (w0, "mul") && nw == 2 ) {
-				strncpy (wa[2], wa[1], sizeof (w2) - 1);
+	}
+	if (strstr (w0, "mul") && nw == 2 ) {
+		r_str_ncpy (wa[2], wa[1], sizeof (w2));
 
-				switch (wa[2][0]) {
-				case 'q':
-				case 'r': //qword, r.. 
-					strncpy (wa[1], "rax", sizeof (w1) - 1);
-					break;
-				case 'd':
-				case 'e': //dword, e..
-					if (strlen (wa[2]) > 2) {
-						strncpy (wa[1], "eax", sizeof (w1) - 1);
-						break;
-					}
-				default : // .x, .p, .i or word 
-					if (wa[2][1] == 'x' || wa[2][1] == 'p' || \
-						wa[2][1] == 'i' || wa[2][0] == 'w') {
-						strncpy (wa[1], "ax", sizeof (w1) - 1);
-					} else { // byte and lowest 8 bit registers
-						strncpy (wa[1], "al", sizeof (w1) - 1);
-					}
-				}
+		switch (wa[2][0]) {
+		case 'q':
+		case 'r': //qword, r..
+			r_str_ncpy (wa[1], "rax", sizeof (w1));
+			break;
+		case 'd':
+		case 'e': //dword, e..
+			if (strlen (wa[2]) > 2) {
+				r_str_ncpy (wa[1], "eax", sizeof (w1));
+				break;
 			}
-			replace (nw, wa, str);
+		default : // .x, .p, .i or word
+			if (wa[2][1] == 'x' || wa[2][1] == 'p' || \
+				wa[2][1] == 'i' || wa[2][0] == 'w') {
+				r_str_ncpy (wa[1], "ax", sizeof (w1));
+			} else { // byte and lowest 8 bit registers
+				r_str_ncpy (wa[1], "al", sizeof (w1));
+			}
 		}
+		replace (nw, wa, str);
+	} else if (strstr (w1, "ax") && !p->retleave_asm) {
+		if (!(p->retleave_asm = (char *) malloc (sz))) {
+			return false;
+		}
+		r_snprintf (p->retleave_asm, sz, "return %s", w2);
+		replace (nw, wa, str);
+	} else if (strstr (w0, "leave") && p->retleave_asm) {
+		replace (nw, wa, str);
+	} else if (strstr (w0, "ret") && p->retleave_asm) {
+		r_str_ncpy (str, p->retleave_asm, sz);
+		R_FREE (p->retleave_asm);
+	} else if (p->retleave_asm) {
+		R_FREE (p->retleave_asm);
+		replace (nw, wa, str);
+	} else {
+		replace (nw, wa, str);
 	}
 	free (buf);
 	return true;
@@ -255,7 +274,7 @@ static inline int issegoff (const char *w) {
 }
 #endif
 
-static void parse_localvar(RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, bool att) {
+static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, bool att) {
 	if (att) {
 		if (p->localvar_only) {
 			snprintf (newstr, newstr_len - 1, "%s", var);
