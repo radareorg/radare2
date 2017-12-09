@@ -2322,13 +2322,18 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk
 }
 
 static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
-	ut8 *buf, *ptr;
+	ut8 *ptr;
 	ut64 n64;
 	ut32 n32;
 	ut16 n16;
 	ut8 n8;
 	int i = 0;
-	buf = malloc (bsize);
+	ut8 *buf = malloc (bsize);
+	if (!buf) {
+		eprintf ("Cannot allocate %d bytes\n", bsize);
+		free (buf);
+		return -1;
+	}	
 	ptr = buf;
 	for (i = 0; i < len; i++) {
 		switch (ch) {
@@ -2341,17 +2346,21 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			n16 = r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le16 (ptr, n16);
 			ptr = (ut8 *) ptr + sizeof (ut16);
-			break;
+			break;	
 		case '4':
 			n32 =  r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le32 (ptr, n32);
 			ptr = (ut8 *) ptr + sizeof (ut32);
 			break;
+		default:	
 		case '8':
 			n64 = r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le64 (ptr, n64);
 			ptr = (ut8 *) ptr + sizeof (ut64);
 			break;	
+		}
+		if (ptr > ptr + bsize) {
+			return -1;
 		}	
 	}
 	return buf;	
@@ -2828,9 +2837,11 @@ reread:
 			}
 			break;
 		}
-		r_search_kw_add (core->search,
-				r_search_keyword_new ((const ut8 *) v_buf, bsize, NULL, 0, NULL));
-		free (v_buf);
+		if (v_buf) {
+			r_search_kw_add (core->search,
+					r_search_keyword_new ((const ut8 *) v_buf, bsize, NULL, 0, NULL));
+			free (v_buf);
+		}	
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
