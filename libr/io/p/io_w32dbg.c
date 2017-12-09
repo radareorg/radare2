@@ -53,12 +53,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "w32dbg://", 9);
 }
 
+#ifdef __MINGW32__
 // mingw32 toolchain doesnt have this symbol
 static HANDLE WINAPI (*r2_OpenThread)(
 	DWORD dwDesiredAccess,
 	BOOL  bInheritHandle,
 	DWORD dwThreadId
 ) = NULL;
+#endif
 
 static int __w32_first_thread(int pid) {
 	HANDLE th;
