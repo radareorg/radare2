@@ -353,7 +353,7 @@ R_API int r_bp_size(RBreakpoint *bp) {
 	int i, bpsize = 8;
 	for (i = 0; bp->cur->bps[i].bytes; i++) {
 		bpa = &bp->cur->bps[i];
-		if (bpa->bits != bp->bits) {
+		if (bpa->bits && bpa->bits != bp->bits) {
 			continue;
 		}
 		if (bpa->length < bpsize) {
