@@ -7,10 +7,12 @@ SET RELEASE=
 SET BUILD=
 SET XP=
 IF [%MESON%] == [] (
-	FOR /F "tokens=* USEBACKQ" %%F IN (`where python`) DO (
-		SET PYTHON=%%F
+	IF [%PYTHON%] == [] (
+		FOR /F "tokens=* USEBACKQ" %%F IN (`where python`) DO (
+			SET PYTHON=%%F\..
+		)
 	)
-	SET MESON="%PYTHON%\..\Scripts\meson.py"
+	SET MESON="%PYTHON%\Scripts\meson.py"
 )
 ECHO [ FOUND MESON: %MESON% ]
 
