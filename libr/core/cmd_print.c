@@ -180,6 +180,7 @@ static const char *help_msg_pd[] = {
 	"pdf", "", "disassemble function",
 	"pdi", "", "like 'pi', with offset and bytes",
 	"pdj", "", "disassemble to json",
+	"pdJ", "", "formatted disassembly like pd as json",
 	"pdk", "", "disassemble all methods of a class",
 	"pdl", "", "show instruction sizes",
 	"pdr", "", "recursive disassemble across the function graph",
