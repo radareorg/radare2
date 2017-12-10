@@ -89,7 +89,6 @@ tags
 radare2-*.zip
 # Ignore meson related files
 ./bin
-meson.py
 ninja.exe
 .DS_Store
 infer_out
