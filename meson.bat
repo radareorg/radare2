@@ -6,6 +6,13 @@ SET DEFAULT_LIBRARY=--default-library static
 SET RELEASE=
 SET BUILD=
 SET XP=
+IF [%MESON%] == [] (
+	FOR /F "tokens=* USEBACKQ" %%F IN (`where python`) DO (
+		SET PYTHON=%%F
+	)
+	SET MESON="%PYTHON%\..\Scripts\meson.py"
+)
+ECHO [ FOUND MESON: %MESON% ]
 
 rem ######## Meson msvc script ########
 rem ## Usage examples:
@@ -67,7 +74,7 @@ IF "%BUILD%"=="project" GOTO BUILDPROJECT
 rem Creating build directory with correct parameters
 IF EXIST %BUILDDIR% GOTO BUILD
 ECHO [ R2 MESON GENERATING PROJECT ]
-python meson.py --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %BACKEND%
+python %MESON% --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %BACKEND%
 
 :BUILD
 CALL :SDB_BUILD
@@ -87,14 +94,14 @@ EXIT /b %errorlevel%
 :BUILDPROJECT
 ECHO [ R2 MESON BUILDING %BACKEND% SLN]
 IF EXIST %BUILDDIR% rd /s /q %BUILDDIR%
-python meson.py --prefix=%CD% %BUILDDIR% --backend=%BACKEND% %RELEASE% %DEFAULT_LIBRARY%
+python %MESON% --prefix=%CD% %BUILDDIR% --backend=%BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 IF "%XP%"=="1" (
 	python sys\meson_extra.py
 )
 GOTO EXIT
 
 :REBUILD
-python meson.py --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
+python %MESON% --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 
 :EXIT
 EXIT /B 0

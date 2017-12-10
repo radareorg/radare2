@@ -65,7 +65,7 @@ install:
   - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:R2_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
-  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson && COPY %PYTHON%\Scripts\meson.py meson.py )
+  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson )
   - cmd: if defined NINJA_URL ( powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
 
 # Build scripts
