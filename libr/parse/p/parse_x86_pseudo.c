@@ -157,7 +157,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 static int parse (RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data);
-	int sz = len + sizeof ("return ") + 1;
+	int sz = 32;
 	char *buf, *ptr, *optr;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
@@ -231,13 +231,15 @@ static int parse (RParse *p, const char *data, char *str) {
 			}
 		}
 		replace (nw, wa, str);
-	} else if (strstr (w1, "ax") && !p->retleave_asm) {
+	} else if (strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al") && !p->retleave_asm) {
 		if (!(p->retleave_asm = (char *) malloc (sz))) {
 			return false;
 		}
 		r_snprintf (p->retleave_asm, sz, "return %s", w2);
 		replace (nw, wa, str);
-	} else if (strstr (w0, "leave") && p->retleave_asm) {
+	} else if ((strstr (w0, "leave") && p->retleave_asm) || (strstr (w0, "pop") && strstr (w1, "bp"))) {
+		r_str_ncpy (wa[0], " \0", 2);
+		r_str_ncpy (wa[1], " \0", 2);
 		replace (nw, wa, str);
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		r_str_ncpy (str, p->retleave_asm, sz);
