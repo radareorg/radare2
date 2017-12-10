@@ -1739,7 +1739,6 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RListIter *iter;
 	ut8 buf[12];
 	RAsmOp asmop;	
-	char *buf_asm = NULL;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {

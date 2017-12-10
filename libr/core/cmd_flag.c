@@ -204,7 +204,6 @@ static int flag_to_flag(RCore *core, const char *glob) {
 static void flag_ordinals(RCore *core, const char *str) {
 	RFlagItem *flag;
 	RListIter *iter;
-	ut64 next = UT64_MAX;
 	const char *glob = r_str_trim_const (str);
 	int count = 0;
 	char *pfx = strdup (glob);
@@ -395,7 +394,7 @@ rep:
 			break;
 		}
 		break;
-	case '+':
+	case '+': // "f+'
 	case ' ': {
 		const char *cstr = r_str_chop_ro (str);
 		char* eq = strchr (cstr, '=');
