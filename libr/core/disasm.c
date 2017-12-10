@@ -434,7 +434,7 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = ds_esc_str (ds, (const char *)buffer, (int)strlen(buffer), NULL);
+		char *escstr = ds_esc_str (ds, (const char *)buffer, (int)strlen (buffer), NULL);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);
@@ -1520,11 +1520,11 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (comment) {
 				char *comment_esc = NULL;
 				if (ds->use_json) {
-					comment = comment_esc = ds_esc_str(ds, comment, (int)strlen(comment), NULL);
+					comment = comment_esc = ds_esc_str (ds, comment, (int)strlen (comment), NULL);
 				}
 
 				if (comment) {
-					r_cons_printf ("    %s; %s", COLOR(ds, color_comment), comment);
+					r_cons_printf ("    %s; %s", COLOR (ds, color_comment), comment);
 				}
 
 				if (comment_esc) {
@@ -3860,7 +3860,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 							int i;
 							for (i = 0; i < lines_count; i++) {
 								char *c = comment + line_indexes[i];
-								char *escstr = ds_esc_str (ds, c, (int)strlen(c), NULL);
+								char *escstr = ds_esc_str (ds, c, (int)strlen (c), NULL);
 								if (escstr) {
 									r_cons_printf ("; %s", escstr);
 									ds_newline (ds);
@@ -3911,7 +3911,7 @@ static void ds_print_as_string(RDisasmState *ds) {
 }
 
 // int l is for lines
-int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json) {
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json) {
 	int continueoninvbreak = (len == l) && invbreak;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
