@@ -2332,7 +2332,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 	if (!buf) {
 		eprintf ("Cannot allocate %d bytes\n", bsize);
 		free (buf);
-		return -1;
+		return NULL;
 	}	
 	ptr = buf;
 	for (i = 0; i < len; i++) {
@@ -2360,7 +2360,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			break;	
 		}
 		if (ptr > ptr + bsize) {
-			return -1;
+			return NULL;
 		}	
 	}
 	return buf;	
@@ -2795,11 +2795,11 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		char *v_str = input + 3;
+		char *v_str = (char *) input + 3;
 		RList *nums = r_num_str_split_list (v_str);
 		int len = r_list_length (nums);
 		int bsize = 0;
-		ut8 *v_buf;
+		ut8 *v_buf = NULL;
 		switch (input[1]) {
 		case '8':
 			if (input[param_offset]) {
