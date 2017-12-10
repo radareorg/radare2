@@ -174,6 +174,7 @@ typedef struct {
 	const char *color_nop;
 	const char *color_bin;
 	const char *color_math;
+	const char *color_btext;
 	const char *color_jmp;
 	const char *color_cjmp;
 	const char *color_call;
@@ -458,6 +459,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_nop = P(nop): Color_BLUE;
 	ds->color_bin = P(bin): Color_YELLOW;
 	ds->color_math = P(math): Color_YELLOW;
+	ds->color_btext = P(btext): Color_YELLOW;
 	ds->color_jmp = P(jmp): Color_GREEN;
 	ds->color_cjmp = P(cjmp): Color_GREEN;
 	ds->color_call = P(call): Color_BGREEN;
@@ -2229,7 +2231,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				{
 					out = r_str_escape (mi->str);
 					r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
-							COLOR_CONST (ds, YELLOW), out, COLOR_RESET (ds),
+							COLOR (ds, color_btext), out, COLOR_RESET (ds),
 							mi->size);
 					free (out);
 					delta = ds->at - mi->from;
