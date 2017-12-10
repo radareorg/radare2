@@ -25,19 +25,19 @@ environment:
     # - builder: msvc_cccl_64
     # VS2015 64
     - builder: vs2015_64
-      PYTHON: 'C:\\Python36-x64'
+      PYTHON: 'C:\Python36-x64'
       BUILD_DIR: build
-      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
+      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip
     # VS2015 32
     - builder: vs2015_32
-      PYTHON: 'C:\\Python36'
+      PYTHON: 'C:\Python36'
       BUILD_DIR: build
-      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
+      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip
     # VS2015 64 (Dynamic linking)
     - builder: vs2015_64_dyn
-      PYTHON: 'C:\\Python36'
+      PYTHON: 'C:\Python36'
       BUILD_DIR: build
-      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
+      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip
     # MINGW32 Variables
     #- builder: mingw32
     #  EXP_PATH: '/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin'

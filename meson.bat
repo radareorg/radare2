@@ -6,15 +6,18 @@ SET DEFAULT_LIBRARY=--default-library static
 SET RELEASE=
 SET BUILD=
 SET XP=
-IF [%MESON%] == [] (
-	IF [%PYTHON%] == [] (
-		FOR /F "tokens=* USEBACKQ" %%F IN (`where python`) DO (
-			SET PYTHON=%%F\..
-		)
+
+rem ## Use specific Python and mesonbuild binaries
+IF [%PYTHON%] == [] (
+	FOR /F "tokens=* USEBACKQ" %%F IN (`where python`) DO (
+		SET PYTHON=%%F\..
 	)
+)
+IF [%MESON%] == [] (
 	SET MESON="%PYTHON%\Scripts\meson.py"
 )
-ECHO [ FOUND MESON: %MESON% ]
+ECHO [ Using Python: %PYTHON% ]
+ECHO [ Using Mesonbuild: %MESON% ]
 
 rem ######## Meson msvc script ########
 rem ## Usage examples:
@@ -76,7 +79,7 @@ IF "%BUILD%"=="project" GOTO BUILDPROJECT
 rem Creating build directory with correct parameters
 IF EXIST %BUILDDIR% GOTO BUILD
 ECHO [ R2 MESON GENERATING PROJECT ]
-python %MESON% --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %BACKEND%
+%PYTHON%\python.exe %MESON% --prefix=%CD% %BUILDDIR% %RELEASE% %DEFAULT_LIBRARY% --backend %BACKEND%
 
 :BUILD
 CALL :SDB_BUILD
@@ -88,7 +91,7 @@ EXIT /b %errorlevel%
 :MSBUILD
 ECHO [ R2 MESON MSBUILD ]
 IF "%XP%"=="1" (
-	python sys\meson_extra.py
+	%PYTHON%\python.exe sys\meson_extra.py
 )
 msbuild %BUILDDIR%\radare2.sln
 EXIT /b %errorlevel%
@@ -96,19 +99,19 @@ EXIT /b %errorlevel%
 :BUILDPROJECT
 ECHO [ R2 MESON BUILDING %BACKEND% SLN]
 IF EXIST %BUILDDIR% rd /s /q %BUILDDIR%
-python %MESON% --prefix=%CD% %BUILDDIR% --backend=%BACKEND% %RELEASE% %DEFAULT_LIBRARY%
+%PYTHON%\python.exe %MESON% --prefix=%CD% %BUILDDIR% --backend=%BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 IF "%XP%"=="1" (
-	python sys\meson_extra.py
+	%PYTHON%\python.exe sys\meson_extra.py
 )
 GOTO EXIT
 
 :REBUILD
-python %MESON% --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
+%PYTHON%\python.exe %MESON% --internal regenerate %CD% "%CD%\%BUILDDIR%" --backend %BACKEND% %RELEASE% %DEFAULT_LIBRARY%
 
 :EXIT
 EXIT /B 0
 
 :SDB_BUILD
 ECHO [ SDB BUILD AND GENERATION ]
-python sys\meson_sdb.py
+%PYTHON%\python.exe sys\meson_sdb.py
 EXIT /B 0
