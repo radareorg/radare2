@@ -2618,7 +2618,7 @@ R_API int r_core_search_value_in_range(RCore *core, RAddrInterval search_itv, ut
 					}
 				}
 			}
-			if (match) {
+			if (match && value) {
 				bool isValidMatch = true;
 				if (align && (value % align)) {
 					// ignored .. unless we are analyzing arm/thumb and lower bit is 1
