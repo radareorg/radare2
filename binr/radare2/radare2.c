@@ -26,7 +26,10 @@ static int do_analysis = 0;
 
 static bool is_valid_gdb_file(RCoreFile *fh) {
 	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
-	return d && strncmp (d->name, "gdb://", 6);
+	if (d) {
+		return strncmp (d->name, "gdb://", 6);	
+	}
+	return false;
 }
 
 static char* get_file_in_cur_dir(const char *filepath) {
