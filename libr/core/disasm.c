@@ -2300,9 +2300,25 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				switch (mi->type) {
 				case R_META_TYPE_STRING:
 				{
+					char *quote = "\"";
+
 					out = r_str_escape (mi->str);
-					r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
-							COLOR (ds, color_btext), out, COLOR_RESET (ds),
+					if (!out) {
+						break;
+					}
+					if (ds->use_json) {
+						// escape twice for json
+						char *out2 = out;
+						out = r_str_escape (out2);
+						free (out2);
+						if (!out) {
+							break;
+						}
+						quote = "\\\"";
+					}
+
+					r_cons_printf ("    .string %s%s%s%s%s ; len=%"PFMT64d,
+							COLOR (ds, color_btext), quote, out, quote, COLOR_RESET (ds),
 							mi->size);
 					free (out);
 					delta = ds->at - mi->from;
@@ -4231,10 +4247,6 @@ toro:
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
 	}
 
-	if (ds->use_json) {
-		r_cons_print ("]\n");
-	}
-
 	R_FREE (nbuf);
 	r_cons_break_pop ();
 
@@ -4267,6 +4279,11 @@ toro:
 		R_FREE (nbuf);
 	}
 #endif
+
+	if (ds->use_json) {
+		r_cons_print ("]\n");
+	}
+
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);
 	// TODO: this too (must review)
