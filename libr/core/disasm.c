@@ -1077,7 +1077,6 @@ static void ds_show_refs(RDisasmState *ds) {
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
-	RList *xrefs;
 	RAnalRef *refi;
 	RListIter *iter;
 	RCore *core = ds->core;
@@ -1089,7 +1088,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	/* show xrefs */
-	xrefs = r_anal_xref_get (core->anal, ds->at);
+	RList *xrefs = r_anal_xref_get (core->anal, ds->at);
 	if (!xrefs) {
 		return;
 	}
@@ -1148,6 +1147,8 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				refi->addr, name, COLOR_RESET (ds));
 			ds_newline (ds);
 			R_FREE (name);
+		} else {
+			eprintf ("Corrupted database?\n");
 		}
 	}
 	r_list_free (xrefs);

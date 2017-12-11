@@ -12,6 +12,7 @@ extern "C" {
 #include "types.h"
 #include "sdbht.h"
 #include "ls.h"
+#include "mht.h"
 #include "cdb.h"
 #include "cdb_make.h"
 #include "sdb_version.h"
@@ -100,6 +101,7 @@ typedef struct sdb_t {
 	SdbKv tmpkv;
 	ut32 depth;
 	bool timestamped;
+	SdbMini mht;
 } Sdb;
 
 typedef struct sdb_ns_t {
@@ -209,12 +211,13 @@ SDB_API int sdb_unlink(Sdb* s);
 SDB_API int sdb_lock_wait(const char *s UNUSED);
 
 /* expiration */
-bool sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas);
-ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
-ut64 sdb_now(void);
-ut64 sdb_unow(void);
-ut32 sdb_hash(const char *key);
-ut32 sdb_hash_len(const char *key, ut32 *len);
+SDB_API bool sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas);
+SDB_API ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
+SDB_API ut64 sdb_now(void);
+SDB_API ut64 sdb_unow(void);
+SDB_API ut32 sdb_hash(const char *key);
+SDB_API ut32 sdb_hash_len(const char *key, ut32 *len);
+SDB_API ut8 sdb_hash_byte(const char *s);
 
 /* json api */
 SDB_API bool sdb_isjson(const char *k);

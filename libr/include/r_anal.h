@@ -3,6 +3,8 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
+#define USE_MHT 0
+
 /* use sdb function storage */
 #define FCN_SDB 1
 /* use old refs and function storage */
@@ -630,6 +632,10 @@ typedef struct r_anal_t {
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	Sdb *sdb_zigns;
+
+	mht *mht_refs;
+	mht *mht_xrefs;
+
 	RSpaces meta_spaces;
 	RSpaces zign_spaces;
 	char *zign_path;

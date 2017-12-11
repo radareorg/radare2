@@ -163,7 +163,7 @@ static bool refExists(RList *refs, RAnalRef *ref) {
 	RAnalRef *r;
 	RListIter *iter;
 	r_list_foreach (refs, iter, r) {
-		if (r->at == ref->at && ref->addr == r->addr) {
+		if (r && r->at == ref->at && ref->addr == r->addr) {
 			r->type = ref->type;
 			return true;
 		}
@@ -184,9 +184,11 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 		return false;
 	}
 	// set global reference
+// r_cons_printf ("C 0x%llx  0x%llx\n", at, addr);
 	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference
 #if FCN_OLD
+// TOO OLD we shouldnt be storing this.. or we do?
 	ref->at = at; // from
 	ref->addr = addr; // to
 	ref->type = type;

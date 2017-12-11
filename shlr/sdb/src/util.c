@@ -65,6 +65,12 @@ SDB_API ut32 sdb_hash(const char *s) {
 	return sdb_hash_len (s, NULL);
 }
 
+SDB_API ut8 sdb_hash_byte(const char *s) {
+	const ut32 hash = sdb_hash_len (s, NULL);
+	const ut8 *h = (const ut8*)&hash;
+	return h[0] ^ h[1] ^ h[2] ^ h[3];
+}
+
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
 SDB_API char *sdb_itoa(ut64 n, char *s, int base) {

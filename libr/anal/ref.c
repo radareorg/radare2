@@ -47,11 +47,23 @@ R_API const char *r_anal_ref_to_string(RAnal *anal, int type) {
 }
 
 R_API int r_anal_ref_del(RAnal *anal, ut64 from, ut64 to) {
+#if USE_MHT
+// TODO Must delete from mht_refs too
+	mht *m = anal->mht_xrefs;
+	mhtkv *kv = mht_getr (m, from);
+	if (kv) {
+		mht *ht = kv->u;
+		if (ht) {
+			mht_del (ht, to);
+		}
+	}
+#else
 	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_NULL, from, to);
 	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CODE, from, to);
 	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CALL, from, to);
 	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_DATA, from, to);
 	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_STRING, from, to);
+#endif
 	return true;
 }
 
