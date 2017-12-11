@@ -3851,27 +3851,29 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				if (strchr (comment, '\n')) {
 					char *align = r_str_newf ("%s  ;^ ", ds->pre);
 					comment = strdup (comment);
-					ds_newline (ds);
-					ds_begin_json_line (ds);
-					if (ds->use_json) {
-						int lines_count;
-						int *line_indexes = r_str_split_lines (comment, &lines_count);
-						if (line_indexes) {
-							int i;
-							for (i = 0; i < lines_count; i++) {
-								char *c = comment + line_indexes[i];
-								char *escstr = ds_esc_str (ds, c, (int)strlen (c), NULL);
-								if (escstr) {
-									r_cons_printf ("; %s", escstr);
-									ds_newline (ds);
-									ds_begin_json_line (ds);
-									free (escstr);
+					if (align && comment) {
+						ds_newline (ds);
+						ds_begin_json_line (ds);
+						if (ds->use_json) {
+							int lines_count;
+							int *line_indexes = r_str_split_lines (comment, &lines_count);
+							if (line_indexes) {
+								int i;
+								for (i = 0; i < lines_count; i++) {
+									char *c = comment + line_indexes[i];
+									char *escstr = ds_esc_str (ds, c, (int)strlen (c), NULL);
+									if (escstr) {
+										r_cons_printf ("; %s", escstr);
+										ds_newline (ds);
+										ds_begin_json_line (ds);
+										free (escstr);
+									}
 								}
 							}
+						} else {
+							char *c = r_str_prefix_all (comment, align);
+							r_cons_strcat (c);
 						}
-					} else {
-						char *c = r_str_prefix_all (comment, align);
-						r_cons_strcat (c);
 					}
 					free (comment);
 					free (align);
@@ -3885,9 +3887,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 						r_cons_printf ("; %s", comment);
 					}
 
-					if (escstr) {
-						free (escstr);
-					}
+					free (escstr);
 				}
 			}
 			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
