@@ -8,6 +8,7 @@ import os
 from mesonbuild import mesonmain
 
 ROOT = None
+BUILDDIR = 'build'
 log = None
 
 def setGlobalVariables():
@@ -20,14 +21,24 @@ def setGlobalVariables():
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s', level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
 
-def meson(args):
+def build_sdb():
+    print('TODO')
+
+def meson(*args):
     """ meson.py equivalent """
     launcher = os.path.realpath(ROOT)
     return mesonmain.run(args, launcher)
 
+def ninja(folder):
+    os.system('ninja -C {}'.format(os.path.join(ROOT, BUILDDIR)))
+
 def build_r2():
     """ Build radare2 """
     log.info('Building radare2')
+    if not os.path.exists(BUILDDIR):
+        meson(ROOT, BUILDDIR)
+    ninja(BUILDDIR)
+    build_sdb()
 
 def build():
     """ Prepare requirements and build radare2 """
