@@ -108,7 +108,6 @@ static int help() {
 		"  -L      bin -> hex(bignum);  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N      binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
-		"  -P      stdin slurp py hex;  rax2 -P < shellcode.py\n"
 		"  -r      r2 style output   ;  rax2 -r 0x1234\n"
 		"  -s      hexstr -> raw     ;  rax2 -s 43 4a 50\n"
 		"  -S      raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
@@ -166,7 +165,6 @@ static int rax(char *str, int len, int last) {
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
 			case 'L': flags ^= 1 << 19; break;
-			case 'P': flags ^= 1 << 20; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -502,8 +500,7 @@ static int use_stdin() {
 	if (!buf) {
 		return 0;
 	}
-	if (!(flags & 1064960)) {
-		//!(flags & 0b100000100000000000000)
+	if (!(flags & 16384)) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
