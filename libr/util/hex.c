@@ -238,6 +238,16 @@ R_API char *r_hex_from_c(const char *code) {
 	}
 }
 
+R_API char *r_hex_from_code(const char *code) {
+	if (strstr (code, "char") || strstr (code, "int")) {
+		//C language
+		return r_hex_from_c (code);
+	} else {
+		// Python
+		return r_hex_from_py (code);
+	}
+}
+
 /* int byte = hexpair2bin("A0"); */
 // (0A) => 10 || -1 (on error)
 R_API int r_hex_pair2bin(const char *arg) {
