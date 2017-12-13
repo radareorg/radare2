@@ -62,13 +62,23 @@ def build():
     # Build radare2
     build_r2()
 
+    # Build sdb
+    build_sdb()
+
+def install():
+    """ Install radare2 """
+    print('INSTALL TODO')
+
 def main():
     # Create logger and get applications paths
     setGlobalVariables()
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
     args = parser.parse_args()
+
+    # Build it!
     build()
+    install()
 
 if __name__ == '__main__':
     main()
