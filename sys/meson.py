@@ -4,9 +4,8 @@ import argparse
 import inspect
 import logging
 import os
+import subprocess
 import sys
-
-from mesonbuild import mesonmain
 
 ROOT = None
 BUILDDIR = 'build'
@@ -27,17 +26,17 @@ def setGlobalVariables():
     else:
         cmd = 'where meson.py'
     MESON = os.popen(cmd).read().split('\n')[0]
-    if os.name == 'nt' and ' ' in MESON:
-        MESON = '"{}"'.format(MESON)
+    #if os.name == 'nt' and ' ' in MESON:
+    #    MESON = '"{}"'.format(MESON)
 
     PYTHON = sys.executable
-    if os.name == 'nt' and ' ' in PYTHON:
-        PYTHON = '"{}"'.format(PYTHON)
+    #if os.name == 'nt' and ' ' in PYTHON:
+    #    PYTHON = '"{}"'.format(PYTHON)
 
     ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) +
             os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
-    if os.name == 'nt' and ' ' in ROOT:
-        ROOT = '"{}"'.format(ROOT)
+    #if os.name == 'nt' and ' ' in ROOT:
+    #    ROOT = '"{}"'.format(ROOT)
 
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
@@ -46,30 +45,29 @@ def setGlobalVariables():
 
 def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     """ Start meson build (i.e. python meson.py ./ build) """
-    command = '{python} {meson} {source} {build}'.format(python=PYTHON,
-            meson=MESON, source=root, build=build)
+    command = [PYTHON, MESON, root, build]
     if prefix:
-        command += ' --prefix={}'.format(prefix)
+        command += ['--prefix={}'.format(prefix)]
     if backend:
-        command += ' --backend={}'.format(backend)
+        command += ['--backend={}'.format(backend)]
     if release:
-        command += ' --buildtype=release'
+        command += ['--buildtype=release']
     if shared:
-        command += ' --default-library shared'
+        command += ['--default-library', 'shared']
     else:
-        command += ' --default-library static'
+        command += ['--default-library', 'static']
 
-    log.debug('Invoking meson: \'{}\''.format(command))
-    ret = os.system(command)
+    log.debug('Invoking meson: {}'.format(command))
+    ret = subprocess.call(command)
     if ret != 0:
         log.error('Meson error. Exiting.')
         sys.exit(1)
 
 def ninja(folder):
     """ Start ninja build (i.e. ninja -C build) """
-    command= 'ninja -C {}'.format(os.path.join(ROOT, folder))
-    log.debug('Invoking ninja: \'{}\''.format(command))
-    ret = os.system(command)
+    command = ['ninja', '-C', os.path.join(ROOT, folder)]
+    log.debug('Invoking ninja: {}'.format(command))
+    ret = subprocess.call(command)
     if ret != 0:
         log.error('Ninja error. Exiting.')
         sys.exit(1)
@@ -96,7 +94,7 @@ def build_r2(args):
         if not args.project:
             log.info('Starting msbuild')
             project = os.path.join(ROOT, args.dir, 'radare2.sln')
-            os.system('msbuild {project}'.format(project=project))
+            subprocess.call(['msbuild', project])
     else:
         if not os.path.exists(args.dir):
             meson(ROOT, args.dir, args.prefix, args.backend, args.release,
@@ -110,7 +108,7 @@ def build(args):
     capstone_path = os.path.join(ROOT, 'shlr', 'capstone')
     if not os.path.isdir(capstone_path):
         log.info('Cloning capstone')
-        os.system('git clone -b next --depth 10 https://github.com/aquynh/capstone.git {capstone_path}'.format(capstone_path=capstone_path))
+        subprocess.call('git clone -b next --depth 10 https://github.com/aquynh/capstone.git'.split() + [capstone_path])
 
     # Build radare2
     build_r2(args)
@@ -123,11 +121,9 @@ def install(args):
     log.warning('Install not implemented yet.')
     return
     # TODO
-    if os.name == 'posix':
-        os.system('DESTDIR="{destdir}" ninja -C {build} install'
-                .format(destdir=destdir, build=args.dir))
-    else:
-        log.warning('Installation not implemented (TODO)')
+    #if os.name == 'posix':
+    #    os.system('DESTDIR="{destdir}" ninja -C {build} install'
+    #            .format(destdir=destdir, build=args.dir))
 
 def main():
     # Create logger and get applications paths
