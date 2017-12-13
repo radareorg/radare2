@@ -12,6 +12,7 @@ ROOT = None
 BUILDDIR = 'build'
 MESON = None
 PYTHON = None
+BACKENDS = ['ninja', 'vs2015', 'vs2017']
 log = None
 
 def setGlobalVariables():
@@ -28,30 +29,63 @@ def setGlobalVariables():
 
     PYTHON = sys.executable
 
-    ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) + os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
+    ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) +
+            os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
 
-    logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s', level=logging.DEBUG)
+    logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
+            level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
 
-def build_sdb():
-    print('SDB TODO')
-
-def meson(root, build):
+def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     """ Start meson build (i.e. python meson.py ./ build) """
-    os.system('{python} {meson} {source} {build}'.format(python=PYTHON, meson=MESON, source=root, build=build))
+    command = '{python} {meson} {source} {build}'.format(python=PYTHON,
+            meson=MESON, source=root, build=build)
+    if prefix:
+        command += ' --prefix={}'.format(prefix)
+    if backend:
+        command += ' --backend={}'.format(backend)
+    if release:
+        command += ' --buildtype=release'
+    if shared:
+        command += ' --default-library shared'
+    else:
+        command += ' --default-library static'
+
+    os.system(command)
 
 def ninja(folder):
     """ Start ninja build (i.e. ninja -C build) """
     os.system('ninja -C {}'.format(os.path.join(ROOT, BUILDDIR)))
 
-def build_r2():
+def build_sdb(args):
+    """ Build and generate sdb files """
+    log.info('Building SDB')
+    log.debug('TODO Merge scripts')
+    os.system('{python} {path}'.format(python=PYTHON,
+        path=os.path.join(ROOT, 'sys', 'meson_sdb.py')))
+
+def build_r2(args):
     """ Build radare2 """
     log.info('Building radare2')
-    if not os.path.exists(BUILDDIR):
-        meson(ROOT, BUILDDIR)
-    ninja(BUILDDIR)
+    if args.backend != 'ninja':
+        if not os.path.exists(args.dir):
+            meson(ROOT, args.dir, args.prefix, args.backend, args.release,
+                    args.shared)
+        if args.xp:
+            log.debug('TODO Merge this script')
+            meson_extra = os.path.join(ROOT, 'sys', 'meson_extra.py')
+            os.system('python {meson_extra}'.format(meson_extra=meson_extra))
+        if not args.project:
+            project = os.path.join(ROOT, args.dir, 'radare2.sln')
+            os.system('msbuild {project}'.format(project=project))
+    else:
+        if not os.path.exists(args.dir):
+            meson(ROOT, args.dir, args.prefix, args.backend, args.release,
+                    args.shared)
+        ninja(args.dir)
 
-def build():
+
+def build(args):
     """ Prepare requirements and build radare2 """
     # Prepare capstone
     capstone_path = os.path.join(ROOT, 'shlr', 'capstone')
@@ -60,25 +94,57 @@ def build():
         os.system('git clone -b next --depth 10 https://github.com/aquynh/capstone.git {capstone_path}'.format(capstone_path=capstone_path))
 
     # Build radare2
-    build_r2()
+    build_r2(args)
 
     # Build sdb
-    build_sdb()
+    build_sdb(args)
 
 def install():
     """ Install radare2 """
-    print('INSTALL TODO')
+    log.warning('Install not implemented yet.')
+    return
+    # TODO
+    if os.name == 'posix':
+        os.system('DESTDIR="{destdir}" ninja -C {build} install'
+                .format(destdir=destdir, build=BUILDDIR))
+    else:
+        print('INSTALL TODO')
 
 def main():
     # Create logger and get applications paths
     setGlobalVariables()
+
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
+    parser.add_argument('--project', action='store_true',
+            help='Create a visual studio project rather than building.')
+    parser.add_argument('--release', action='store_true',
+            help='Set the build as Release (remove debug info)')
+    parser.add_argument('--backend', action='store', choices=BACKENDS,
+            default='ninja', help='Choose build backend')
+    parser.add_argument('--shared', action='store_true',
+            help='Link dynamically (shared library) rather than statically')
+    parser.add_argument('--install', action='store_true',
+            help='Install radare2 after building')
+    parser.add_argument('--dir', action='store', default=BUILDDIR,
+            help='Destination build directory (default: {})'.format(BUILDDIR),
+            required=False)
+    parser.add_argument('--xp', action='store_true',
+            help='Adds support for Windows XP')
     args = parser.parse_args()
 
+    # Check arguments
+    if args.project and args.backend == 'ninja':
+        log.error('--project is not compatible with --backend ninja')
+        sys.exit(1)
+    if args.xp and args.backend == 'ninja':
+        log.error('--xp is not compatible with --backend ninja')
+        sys.exit(1)
+
     # Build it!
-    build()
-    install()
+    build(args)
+    if args.install:
+        install()
 
 if __name__ == '__main__':
     main()
