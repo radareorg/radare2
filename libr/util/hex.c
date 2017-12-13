@@ -146,17 +146,15 @@ const char *skip_comment_c(const char *code) {
 	if (!strncmp (code, "/*", 2)) {
 		char *end = strstr (code, "*/");
 		if (end) {
-			code = end + 1;
+			code = end + 2;
 		} else {
 			eprintf ("Missing closing comment\n");
 		}
-		code++;
 	} else if (!strncmp (code, "//", 2)) {
 		char *end = strchr (code, '\n');
 		if (end) {
-			code = end;
+			code = end + 2;
 		}
-		code++;
 	}
 	return code;
 }
@@ -174,6 +172,7 @@ R_API char *r_hex_from_c_array(char *out, const char *code) {
 		}
 		const char *word = r_str_ndup (code, comma - code);
 		char * _word = word;
+		word = skip_comment_c (word);
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
 			word = skip_comment_c (word);
