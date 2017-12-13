@@ -116,7 +116,7 @@ def install(args):
         os.system('DESTDIR="{destdir}" ninja -C {build} install'
                 .format(destdir=destdir, build=args.dir))
     else:
-        print('INSTALL TODO')
+        log.warning('Installation not implemented (TODO)')
 
 def main():
     # Create logger and get applications paths
