@@ -2133,6 +2133,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
+	n = NODECB ("anal.in", "io.maps", &cb_searchin);
+	SETDESC (n, "Specify search boundaries for analysis");
+	SETOPTIONS (n, "raw", "block", "io.map", "io.maps",
+			"io.sections", "io.sections.write", "io.sections.exec", "io.sections.readonly",
+			"dbg.stack", "dbg.heap", "dbg.map",
+			"dbg.maps", "dbg.maps.exec", "dbg.maps.write", "dbg.maps.readonly",
+			"anal.fcn", "anal.bb", NULL);
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");

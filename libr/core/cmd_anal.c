@@ -4611,8 +4611,8 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 		RListIter *iter;
 		RIOMap *map;
 		r_list_free (ranges);
-		const char *search_in = r_config_get (core->config, "search.in");
-		ranges = r_core_get_boundaries_prot (core, 0, search_in);
+		const char *analin = r_config_get (core->config, "anal.in");
+		ranges = r_core_get_boundaries_prot (core, 0, analin);
 		r_list_foreach (ranges, iter, map) {
 			ut64 addr = map->itv.addr;
 			if (only_print_flag) {
@@ -5880,6 +5880,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	ut64 o_align = geti ("search.align");
+	const char *analin = r_config_get (core->config, "anal.in");
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
@@ -5908,7 +5909,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	} else {
-		RList *list = r_core_get_boundaries_prot (core, 0, "io.maps"); //r_config_get (core->config, "search.in"));
+		RList *list = r_core_get_boundaries (core, analin);
 		RListIter *iter, *iter2;
 		RIOMap *map, *map2;
 		ut64 from = UT64_MAX;
@@ -6129,18 +6130,28 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			R_FREE (dh_orig);
 		}
 		break;
-	case 't': {
+	case 't': {		
 		ut64 cur = core->offset;
 		RIOSection *s = r_io_section_vget (core->io, cur);
+		bool hasnext = r_config_get_i (core->config, "anal.hasnext");
+		RListIter *iter;
+		RIOMap* map;
 		if (s) {
-			bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_core_seek (core, s->vaddr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
 			r_core_cmd0 (core, "afr");
 			r_config_set_i (core->config, "anal.hasnext", hasnext);
 		} else {
-			// TODO: honor search.in? support dbg.maps?
-			eprintf ("Cannot find section boundaries in here\n");
+			// Honors anal.in
+			eprintf ("Cannot find section boundaries in current offset\n");
+			const char *analin = r_config_get (core->config, "anal.in");
+			RList *list = r_core_get_boundaries (core, analin);
+			r_list_foreach (list, iter, map) {
+				r_core_seek (core, map->itv.addr, 1);
+				r_config_set_i (core->config, "anal.hasnext", 1);
+				r_core_cmd0 (core, "afr");
+				r_config_set_i (core->config, "anal.hasnext", hasnext);
+			}	
 		}
 		r_core_seek (core, cur, 1);
 		break;
