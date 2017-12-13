@@ -16,9 +16,10 @@ R_API st64 r_hex_bin_truncate(ut64 in, int n);
 R_API char *r_hex_from_c(const char *code);
 R_API char *r_hex_from_py(const char *code);
 R_API char *r_hex_from_code(const char *code);
+R_API char *r_hex_no_code(const char *code);
 R_API char *r_hex_from_py_str(char *out, const char *code);
 R_API char *r_hex_from_py_array(char *out, const char *code);
-R_API char *r_hex_from_c_str(char *out, char **code);
+R_API char *r_hex_from_c_str(char *out, const char **code);
 R_API char *r_hex_from_c_array(char *out, const char *code);
 #ifdef __cplusplus
 }

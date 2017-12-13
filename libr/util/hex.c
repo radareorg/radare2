@@ -97,7 +97,7 @@ R_API char* r_hex_from_py(const char *code) {
 	return ret;
 }
 
-R_API char *r_hex_from_c_str(char *out, char **code) {
+R_API char *r_hex_from_c_str(char *out, const char **code) {
 	const char abc[] = "0123456789abcdefABCDEF";
 	const char *iter = *code;
 	if (*iter != '\'' && *iter != '"') {
@@ -237,8 +237,33 @@ R_API char *r_hex_from_c(const char *code) {
 	}
 }
 
+/* convert
+ * "\x41\x23\x42\x1b"
+ * "\x41\x23\x42\x1b"
+ * into
+ * 4123421b4123421b
+ */
+R_API char *r_hex_no_code(const char *code) {
+	if (code == NULL) {
+		return NULL;
+	}
+	char * const ret = malloc (strlen (code) * 3);
+	if (!ret) {
+		return NULL;
+	}
+	*ret = '\0';
+	char *out = ret;
+	do {
+		out = r_hex_from_c_str (out, &code);
+		code = strchr (code + 1, '"');
+	} while (out != NULL && code != NULL);
+	return ret;
+}
+
 R_API char *r_hex_from_code(const char *code) {
-	if (strstr (code, "char") || strstr (code, "int")) {
+	if (strchr (code, '=') == NULL) {
+		return r_hex_no_code (code);
+	} else if (strstr (code, "char") || strstr (code, "int")) {
 		//C language
 		return r_hex_from_c (code);
 	} else {
