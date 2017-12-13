@@ -51,17 +51,20 @@ def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     else:
         command += ' --default-library static'
 
+    log.debug('Invoking meson: \'{}\''.format(command))
     os.system(command)
 
 def ninja(folder):
     """ Start ninja build (i.e. ninja -C build) """
-    os.system('ninja -C {}'.format(os.path.join(ROOT, BUILDDIR)))
+    command= 'ninja -C {}'.format(os.path.join(ROOT, folder))
+    log.debug('Invoking ninja: \'{}\''.format(command)
+    return os.system(command)
 
 def build_sdb(args):
     """ Build and generate sdb files """
     log.info('Building SDB')
     log.debug('TODO Merge scripts')
-    os.system('{python} {path}'.format(python=PYTHON,
+    return os.system('{python} {path}'.format(python=PYTHON,
         path=os.path.join(ROOT, 'sys', 'meson_sdb.py')))
 
 def build_r2(args):
@@ -78,14 +81,14 @@ def build_r2(args):
         if not args.project:
             if args.msbuild:
                 project = os.path.join(ROOT, args.dir, 'radare2.sln')
-                os.system('msbuild {project}'.format(project=project))
+                return os.system('msbuild {project}'.format(project=project))
             else:
-                ninja(args.dir)
+                return ninja(args.dir)
     else:
         if not os.path.exists(args.dir):
             meson(ROOT, args.dir, args.prefix, args.backend, args.release,
                     args.shared)
-        ninja(args.dir)
+        return ninja(args.dir)
 
 
 def build(args):
@@ -97,19 +100,22 @@ def build(args):
         os.system('git clone -b next --depth 10 https://github.com/aquynh/capstone.git {capstone_path}'.format(capstone_path=capstone_path))
 
     # Build radare2
-    build_r2(args)
+    ret = build_r2(args)
+    if ret != 0:
+        log.error('An error occured while building radare2. Exiting.')
+        sys.exit(1)
 
     # Build sdb
     build_sdb(args)
 
-def install():
+def install(args):
     """ Install radare2 """
     log.warning('Install not implemented yet.')
     return
     # TODO
     if os.name == 'posix':
         os.system('DESTDIR="{destdir}" ninja -C {build} install'
-                .format(destdir=destdir, build=BUILDDIR))
+                .format(destdir=destdir, build=args.dir))
     else:
         print('INSTALL TODO')
 
@@ -149,9 +155,10 @@ def main():
         sys.exit(1)
 
     # Build it!
+    log.debug('Arguments: {}'.format(args))
     build(args)
     if args.install:
-        install()
+        install(args)
 
 if __name__ == '__main__':
     main()
