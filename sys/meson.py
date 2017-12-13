@@ -23,18 +23,26 @@ def setGlobalVariables():
     global PYTHON
 
     if os.name == 'posix':
-        MESON = os.popen('which meson').read().strip()
+        cmd = 'which meson'
     else:
-        MESON = os.popen('where meson.py').read().strip()
+        cmd = 'where meson.py'
+    MESON = os.popen(cmd).read().split('\n')[0]
+    if os.name == 'nt' and ' ' in MESON:
+        MESON = '"{}"'.format(MESON)
 
     PYTHON = sys.executable
+    if os.name == 'nt' and ' ' in PYTHON:
+        PYTHON = '"{}"'.format(PYTHON)
 
     ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) +
             os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
+    if os.name == 'nt' and ' ' in ROOT:
+        ROOT = '"{}"'.format(ROOT)
 
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
+    log.debug('Root:{} Meson:{} Python:{}'.format(ROOT, MESON, PYTHON))
 
 def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     """ Start meson build (i.e. python meson.py ./ build) """
@@ -52,13 +60,19 @@ def meson(root, build, prefix=None, backend=None, release=False, shared=False):
         command += ' --default-library static'
 
     log.debug('Invoking meson: \'{}\''.format(command))
-    os.system(command)
+    ret = os.system(command)
+    if ret != 0:
+        log.error('Meson error. Exiting.')
+        sys.exit(1)
 
 def ninja(folder):
     """ Start ninja build (i.e. ninja -C build) """
     command= 'ninja -C {}'.format(os.path.join(ROOT, folder))
     log.debug('Invoking ninja: \'{}\''.format(command))
-    return os.system(command)
+    ret = os.system(command)
+    if ret != 0:
+        log.error('Ninja error. Exiting.')
+        sys.exit(1)
 
 def build_sdb(args):
     """ Build and generate sdb files """
@@ -82,12 +96,12 @@ def build_r2(args):
         if not args.project:
             log.info('Starting msbuild')
             project = os.path.join(ROOT, args.dir, 'radare2.sln')
-            return os.system('msbuild {project}'.format(project=project))
+            os.system('msbuild {project}'.format(project=project))
     else:
         if not os.path.exists(args.dir):
             meson(ROOT, args.dir, args.prefix, args.backend, args.release,
                     args.shared)
-        return ninja(args.dir)
+        ninja(args.dir)
 
 
 def build(args):
@@ -99,10 +113,7 @@ def build(args):
         os.system('git clone -b next --depth 10 https://github.com/aquynh/capstone.git {capstone_path}'.format(capstone_path=capstone_path))
 
     # Build radare2
-    ret = build_r2(args)
-    if ret != 0:
-        log.error('An error occured while building radare2. Exiting.')
-        sys.exit(1)
+    build_r2(args)
 
     # Build sdb
     build_sdb(args)
