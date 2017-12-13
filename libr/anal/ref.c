@@ -35,7 +35,7 @@ R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 	return true;
 }
 
-R_API const char *r_anal_ref_to_string(RAnal *anal, int type) {
+R_API const char *r_anal_ref_to_string(int type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_NULL: return "null";
 	case R_ANAL_REF_TYPE_CODE: return "code";
