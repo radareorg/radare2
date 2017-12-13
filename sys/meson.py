@@ -4,17 +4,29 @@ import argparse
 import inspect
 import logging
 import os
+import sys
 
 from mesonbuild import mesonmain
 
 ROOT = None
 BUILDDIR = 'build'
+MESON = None
+PYTHON = None
 log = None
 
 def setGlobalVariables():
     """ Set global variables """
     global log
     global ROOT
+    global MESON
+    global PYTHON
+
+    if os.name == 'posix':
+        MESON = os.popen('which meson').read().strip()
+    else:
+        MESON = os.popen('where meson.py').read().strip()
+
+    PYTHON = sys.executable
 
     ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) + os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
 
@@ -22,14 +34,14 @@ def setGlobalVariables():
     log = logging.getLogger('r2-meson')
 
 def build_sdb():
-    print('TODO')
+    print('SDB TODO')
 
-def meson(*args):
-    """ meson.py equivalent """
-    launcher = os.path.realpath(ROOT)
-    return mesonmain.run(args, launcher)
+def meson(root, build):
+    """ Start meson build (i.e. python meson.py ./ build) """
+    os.system('{python} {meson} {source} {build}'.format(python=PYTHON, meson=MESON, source=root, build=build))
 
 def ninja(folder):
+    """ Start ninja build (i.e. ninja -C build) """
     os.system('ninja -C {}'.format(os.path.join(ROOT, BUILDDIR)))
 
 def build_r2():
@@ -38,7 +50,6 @@ def build_r2():
     if not os.path.exists(BUILDDIR):
         meson(ROOT, BUILDDIR)
     ninja(BUILDDIR)
-    build_sdb()
 
 def build():
     """ Prepare requirements and build radare2 """
@@ -52,7 +63,7 @@ def build():
     build_r2()
 
 def main():
-    # Create logger and get root directory
+    # Create logger and get applications paths
     setGlobalVariables()
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
