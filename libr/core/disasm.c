@@ -3887,9 +3887,11 @@ static void ds_print_comments_right(RDisasmState *ds) {
 									}
 								}
 							}
+							free (line_indexes);
 						} else {
 							char *c = r_str_prefix_all (comment, align);
 							r_cons_strcat (c);
+							free (c);
 						}
 					}
 					free (comment);
@@ -3899,11 +3901,9 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					if (ds->use_json) {
 						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL);
 					}
-
 					if (comment) {
 						r_cons_printf ("; %s", comment);
 					}
-
 					free (escstr);
 				}
 			}
@@ -3974,7 +3974,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			}
 		}
 	}
-
 	if (ds->use_json) {
 		r_cons_print ("[");
 	}
@@ -4279,11 +4278,9 @@ toro:
 		R_FREE (nbuf);
 	}
 #endif
-
 	if (ds->use_json) {
 		r_cons_print ("]\n");
 	}
-
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);
 	// TODO: this too (must review)

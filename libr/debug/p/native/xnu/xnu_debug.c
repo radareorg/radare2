@@ -772,7 +772,6 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 		sc->initprot = xwr2rwx (curr_map->perm);
 		sc->nsects = 0;
 #endif
-
 		if ((curr_map->perm & VM_PROT_READ) == 0) {
 			mach_vm_protect (task_dbg, curr_map->addr, curr_map->size, FALSE,
 				curr_map->perm | VM_PROT_READ);
@@ -961,12 +960,11 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 
 cleanup:
 	//if (corefile_fd > 0) close (corefile_fd);
-	if (mem_maps_buffer) r_buf_free (mem_maps_buffer);
-	if (header) free ((void *)header);
-	if (padding) free ((void *)padding);
-	if (threads_list) r_list_free (threads_list);
-	if (error) return false;
-	return true;
+	r_buf_free (mem_maps_buffer);
+	free ((void *)header);
+	free ((void *)padding);
+	r_list_free (threads_list);
+	return !error;
 }
 
 RDebugPid *xnu_get_pid (int pid) {
@@ -1121,10 +1119,12 @@ vm_address_t get_kernel_base(task_t ___task) {
 		ret = vm_region_recurse_64 (task, (vm_address_t*)&naddr,
 					   (vm_size_t*)&size, &depth,
 					   (vm_region_info_t)&info, &info_count);
-		if (ret != KERN_SUCCESS)
+		if (ret != KERN_SUCCESS) {
 			break;
-		if (size < 1)
+		}
+		if (size < 1) {
 			break;
+		}
 		if (addr == naddr) {
 			addr += size;
 			continue;
@@ -1264,8 +1264,12 @@ static RDebugMap *moduleAt(RList *list, ut64 addr) {
 static int cmp (const void *_a, const void *_b) {
 	const RDebugMap *a = _a;
 	const RDebugMap *b = _b;
-	if (a->addr > b->addr) return 1;
-	if (a->addr < b->addr) return -1;
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	if (a->addr < b->addr) {
+		return -1;
+	}
 	return 0;
 }
 
