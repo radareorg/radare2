@@ -80,12 +80,9 @@ def build_r2(args):
             meson_extra = os.path.join(ROOT, 'sys', 'meson_extra.py')
             os.system('python {meson_extra}'.format(meson_extra=meson_extra))
         if not args.project:
-            if args.msbuild:
-                log.info('Starting msbuild')
-                project = os.path.join(ROOT, args.dir, 'radare2.sln')
-                return os.system('msbuild {project}'.format(project=project))
-            else:
-                return ninja(args.dir)
+            log.info('Starting msbuild')
+            project = os.path.join(ROOT, args.dir, 'radare2.sln')
+            return os.system('msbuild {project}'.format(project=project))
     else:
         if not os.path.exists(args.dir):
             meson(ROOT, args.dir, args.prefix, args.backend, args.release,
@@ -128,7 +125,7 @@ def main():
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
     parser.add_argument('--project', action='store_true',
-            help='Create a visual studio project rather than building.')
+            help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
             help='Set the build as Release (remove debug info)')
     parser.add_argument('--backend', action='store', choices=BACKENDS,
@@ -142,8 +139,6 @@ def main():
     parser.add_argument('--dir', action='store', default=BUILDDIR,
             help='Destination build directory (default: {})'.format(BUILDDIR),
             required=False)
-    parser.add_argument('--msbuild', action='store_true',
-            help='Build with msbuild rather than with ninja')
     parser.add_argument('--xp', action='store_true',
             help='Adds support for Windows XP')
     args = parser.parse_args()
