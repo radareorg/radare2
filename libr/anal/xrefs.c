@@ -6,6 +6,24 @@
 
 #define DB anal->sdb_xrefs
 
+#if 0
+DICT
+====
+
+refs
+  10 -> 20 C
+  16 -> 10 J
+  20 -> 10 C
+
+xrefs
+  20 -> [ 10 C ]
+  10 -> [ 16 J, 20 C ]
+
+10: call 20
+16: jmp 10
+20: call 10
+#endif
+
 static const char *analref_toString(RAnalRefType type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_NULL:
@@ -32,7 +50,6 @@ static void XREFKEY(char * const key, const size_t key_len,
 R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjDir) {
 #if USE_DICT
 	anal->sdb_xrefs = sdb_new0 ();
-	sdb_
 #endif
 	char *xrefs_path = r_str_newf ("%s" R_SYS_DIR "xrefs.sdb", prjDir);
 	sdb_file (anal->sdb_xrefs, xrefs_path);
@@ -82,34 +99,40 @@ static void listrefs(dict *m, ut64 addr, RList *list) {
 			}
 		}
 	} else {
-		dict *ht = dict_getu (m, addr);
-		if (!ht) {
+		dict *d = dict_getu (m, addr);
+		if (!d) {
 			return;
 		}
-		mylistrefs (ht, addr, list);
+		mylistrefs (d, addr, list);
 	}
 }
 
 // [from=[from:to,],]
 // 10->20
 static void setref(dict *m, ut64 from, ut64 to, int type) {
+	dict_set (m, from, to, r_anal_xrefs_type_tostring (type));
+}
+
+static void setxref(dict *m, ut64 from, ut64 to, int type) {
 	dictkv *kv = dict_getr (m, from);
-	dict *ht = NULL;
+	dict *d = NULL;
 	if (kv) {
-		ht = kv->u;
+		d = kv->u;
 	} else {
-		ht = R_NEW0 (dict);
-		if (ht) {
-			dict_init (ht, 9, dict_free);
-			dict_set (m, from, to, ht);
+		d = R_NEW0 (dict);
+		if (d) {
+			dict_init (d, 9, dict_free);
+			dict_set (m, from, to, d);
 		}
 	}
-	if (ht) {
-		dict_set (ht, from, to, r_anal_xrefs_type_tostring (type));
+	if (d) {
+		dict_set (d, from, to, r_anal_xrefs_type_tostring (type));
 	}
 }
 
 static void delref(dict *m, ut64 from, ut64 to, int type) {
+	dict_del (m, to);
+#if 0
 	dictkv *kv = dict_getr (m, from);
 	if (kv) {
 		dict *ht = kv->u;
@@ -117,6 +140,7 @@ static void delref(dict *m, ut64 from, ut64 to, int type) {
 			dict_del (ht, to);
 		}
 	}
+#endif
 }
 #endif
 
@@ -135,8 +159,9 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	}
 #endif
 #if USE_DICT
+	setxref (anal->dict_xrefs, to, from, type);
+	setref (anal->dict_refs, from, to, type);
 	// setref (anal->dict_refs, from, to, type);
-	setref (anal->dict_xrefs, to, from, type);
 //	setref (anal->dict_xrefs, from, to, type);
 //	setref (anal->dict_refs, to, from, type);
 // eprintf ("set %llx %llx %p\n", from , to, dict_getr(anal->dict_refs, from));
@@ -187,6 +212,7 @@ static int xrefs_list_cb_any(RAnal *anal, const char *k, const char *v) {
 	return true;
 }
 
+#if !USE_DICT
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	char *next, *s, *str, *ptr, key[256];
 	RAnalRef *ref = NULL;
@@ -216,6 +242,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 	free (str);
 	return true;
 }
+#endif
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	RList *list = r_list_newf (r_anal_ref_free);
@@ -223,7 +250,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 		return NULL;
 	}
 #if USE_DICT
-	listrefs (anal->dict_refs, to, list);
+	// listrefs (anal->dict_refs, to, list);
 // XXX, one or the other?
 	listrefs (anal->dict_xrefs, to, list);
 	// listrefs (anal->dict_xrefs, to, list);
@@ -265,11 +292,10 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 }
 
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
-	RList *list = r_list_new ();
+	RList *list = r_list_newf (NULL);
 	if (!list) {
 		return NULL;
 	}
-	list->free = NULL; // XXX
 #if USE_DICT
 	listrefs (anal->dict_xrefs, to, list);
 	listrefs (anal->dict_refs, to, list);
@@ -279,11 +305,11 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CALL, to);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_DATA, to);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_STRING, to);
+#endif
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
 	}
-#endif
 	return list;
 }
 

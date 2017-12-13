@@ -84,6 +84,7 @@ R_API RAnal *r_anal_new() {
 	anal->dict_refs = dict_new (32, dict_free);
 	anal->dict_xrefs = dict_new (32, dict_free);
 #endif
+	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
