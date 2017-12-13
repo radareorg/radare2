@@ -76,8 +76,11 @@ def build_r2(args):
             meson_extra = os.path.join(ROOT, 'sys', 'meson_extra.py')
             os.system('python {meson_extra}'.format(meson_extra=meson_extra))
         if not args.project:
-            project = os.path.join(ROOT, args.dir, 'radare2.sln')
-            os.system('msbuild {project}'.format(project=project))
+            if args.msbuild:
+                project = os.path.join(ROOT, args.dir, 'radare2.sln')
+                os.system('msbuild {project}'.format(project=project))
+            else:
+                ninja(args.dir)
     else:
         if not os.path.exists(args.dir):
             meson(ROOT, args.dir, args.prefix, args.backend, args.release,
@@ -124,11 +127,15 @@ def main():
             default='ninja', help='Choose build backend')
     parser.add_argument('--shared', action='store_true',
             help='Link dynamically (shared library) rather than statically')
+    parser.add_argument('--prefix', action='store', default=None,
+            help='Set project installation prefix (default: /usr/local)')
     parser.add_argument('--install', action='store_true',
             help='Install radare2 after building')
     parser.add_argument('--dir', action='store', default=BUILDDIR,
             help='Destination build directory (default: {})'.format(BUILDDIR),
             required=False)
+    parser.add_argument('--msbuild', action='store_true',
+            help='Build with msbuild rather than with ninja')
     parser.add_argument('--xp', action='store_true',
             help='Adds support for Windows XP')
     args = parser.parse_args()
