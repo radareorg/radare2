@@ -12,7 +12,7 @@ extern "C" {
 #include "types.h"
 #include "sdbht.h"
 #include "ls.h"
-#include "mht.h"
+#include "dict.h"
 #include "cdb.h"
 #include "cdb_make.h"
 #include "sdb_version.h"

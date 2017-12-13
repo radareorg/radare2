@@ -706,7 +706,7 @@ R_API void r_cons_visual_flush() {
 		fps = 0;
 		if (prev) {
 			ut64 now = r_sys_now ();
-			ut64 diff = now - prev;
+			st64 diff = (st64)(now - prev);
 			if (diff < 0) {
 				fps = 0;
 			} else {
@@ -724,7 +724,7 @@ static int real_strlen(const char *ptr, int len) {
 	int utf8len = r_str_len_utf8 (ptr);
 	int ansilen = r_str_ansi_len (ptr);
 	int diff = len - utf8len;
-	if (diff) {
+	if (diff > 0) {
 		diff--;
 	}
 	return ansilen - diff;
