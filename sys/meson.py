@@ -57,7 +57,7 @@ def meson(root, build, prefix=None, backend=None, release=False, shared=False):
 def ninja(folder):
     """ Start ninja build (i.e. ninja -C build) """
     command= 'ninja -C {}'.format(os.path.join(ROOT, folder))
-    log.debug('Invoking ninja: \'{}\''.format(command)
+    log.debug('Invoking ninja: \'{}\''.format(command))
     return os.system(command)
 
 def build_sdb(args):
@@ -75,11 +75,13 @@ def build_r2(args):
             meson(ROOT, args.dir, args.prefix, args.backend, args.release,
                     args.shared)
         if args.xp:
+            log.info('Running XP compat script')
             log.debug('TODO Merge this script')
             meson_extra = os.path.join(ROOT, 'sys', 'meson_extra.py')
             os.system('python {meson_extra}'.format(meson_extra=meson_extra))
         if not args.project:
             if args.msbuild:
+                log.info('Starting msbuild')
                 project = os.path.join(ROOT, args.dir, 'radare2.sln')
                 return os.system('msbuild {project}'.format(project=project))
             else:
