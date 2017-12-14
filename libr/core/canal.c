@@ -2668,6 +2668,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut8 *buf;
 	ut64 at;
+	ut8 *block;
 	int count = 0;
 	RAnalOp op = { 0 };
 	if (from == to) {
@@ -2684,10 +2685,18 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		return -1;
 	}
 	buf = (ut8 *)malloc (core->blocksize);
+	block = malloc (core->blocksize);
 	if (!buf) {
 		eprintf ("Error: cannot allocate a block\n");
+		free (buf);
 		return -1;
 	}
+	if (!block) {
+		eprintf ("Error: cannot allocate a temp block\n");
+		free (block);
+		return -1;
+	}	
+	memset (block, -1, core->blocksize);
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
@@ -2696,14 +2705,23 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = core->blocksize;
-		if (!r_io_is_valid_offset (core->io, at, 0)) {
+		if (!r_io_is_valid_offset (core->io, at, R_IO_EXEC)) {
 			break;
 		}
 		(void)r_io_read_at (core->io, at, buf, core->blocksize);
+		if (!memcmp(buf, block, core->blocksize)) {
+			//eprintf ("Error: skipping uninitialized block \n");
+			break;
+		}
+		memset (block, 0, core->blocksize);
+		if (!memcmp(buf, block, core->blocksize)) {
+			//eprintf ("Error: skipping uninitialized block \n");
+			break;
+		}		
 		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
-			xref_from = at + i;
+			xref_from = at + i;	
 			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
 			i += ret > 0 ? ret : 1;
@@ -2786,7 +2804,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					free (str_string);
 				}
 				// Add to SDB
-				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+				if (xref_to) {
+					r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+				}	
 			} else if (rad == 'j') {
 				// Output JSON
 				if (count > 0) {
@@ -2822,6 +2842,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	}
 	r_cons_break_pop ();
 	free (buf);
+	free (block);
 	r_anal_op_fini (&op);
 	if (rad == 'j') {
 		r_cons_printf ("}\n");
