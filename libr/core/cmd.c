@@ -2470,10 +2470,7 @@ next_arroba:
 
 	rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
 beach:
-
-	if (grep) {
-		r_cons_grep_process (grep);
-	}
+	r_cons_grep_process (grep);
 	if (scr_html != -1) {
 		r_cons_flush ();
 		r_config_set_i (core->config, "scr.html", scr_html);
