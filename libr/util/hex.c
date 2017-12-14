@@ -94,6 +94,13 @@ R_API char* r_hex_from_py(const char *code) {
 	} else if (*code == '"' || *code == '\'') {
 		out = r_hex_from_py_str (out, code);
 	}
+	if (out == NULL) {
+		free (ret);
+		return NULL;
+	} else {
+		*out++ = '\0';
+		return ret;
+	}
 	return ret;
 }
 
@@ -253,10 +260,18 @@ R_API char *r_hex_no_code(const char *code) {
 	}
 	*ret = '\0';
 	char *out = ret;
-	do {
+	out = r_hex_from_c_str (out, &code);
+	code = strchr (code + 1, '"');
+	if (out == NULL) {
+		free (ret);
+		return NULL;
+	}
+	*out = '\0';
+	while (out != NULL && code != NULL) {
+		*out = '\0';
 		out = r_hex_from_c_str (out, &code);
 		code = strchr (code + 1, '"');
-	} while (out != NULL && code != NULL);
+	}
 	return ret;
 }
 
