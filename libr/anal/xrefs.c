@@ -58,6 +58,19 @@ R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjDir) {
 }
 
 #if USE_DICT
+static void appendRef(RList *list, dicti k, dicti v, void *u) {
+	RAnalRef *ref = r_anal_ref_new ();
+	if (ref) {
+#if 0
+		eprintf ("%s 0x%08llx -> 0x%08llx (0x%llx)\n",
+				kv->u, kv->k, kv->v, addr);
+#endif
+		ref->at = k;
+		ref->addr = v;
+		ref->type = u;
+		r_list_append (list, ref);
+	}
+}
 
 static void mylistrefs(dict *m, ut64 addr, RList *list) {
 	int i, j;
@@ -68,17 +81,7 @@ static void mylistrefs(dict *m, ut64 addr, RList *list) {
 		}
 		while (kv->k != MHTNO) {
 			if (addr == UT64_MAX || addr == kv->k) {
-				RAnalRef *ref = r_anal_ref_new ();
-				if (ref) {
-#if 0
-			eprintf ("%s 0x%08llx -> 0x%08llx (0x%llx)\n",
-					kv->u, kv->k, kv->v, addr);
-#endif
-					ref->at = kv->k;
-					ref->addr = kv->v;
-					ref->type = kv->u ? *((char *)kv->u): 0;
-					r_list_append (list, ref);
-				}
+				appendRef (list, kv->k, kv->v, kv->u);
 			}
 			kv++;
 		}
@@ -86,6 +89,40 @@ static void mylistrefs(dict *m, ut64 addr, RList *list) {
 }
 
 static void listrefs(dict *m, ut64 addr, RList *list) {
+	int i;
+	if (addr == UT64_MAX) {
+		for (i = 0; i < m->size; i++) {
+			dictkv *kv = m->table[i];
+			if (kv) {
+				dict *ht = kv->u;
+				while (kv->k != MHTNO) {
+					mylistrefs (ht, UT64_MAX, list);
+					kv++;
+				}
+			}
+		}
+	} else {
+		dict *d = dict_getu (m, addr);
+		if (!d) {
+			return;
+		}
+		mylistrefs (d, addr, list);
+		for (i = 0; i < m->size; i++) {
+			dictkv *kv = m->table[i];
+			if (kv) {
+				while (kv->k != MHTNO) {
+					if (kv->k == addr) {
+						appendRef (list, kv->k, kv->v, kv->u);
+					}
+				//	mylistrefs (ht, UT64_MAX, list);
+					kv++;
+				}
+			}
+		}
+	}
+}
+
+static void listxrefs(dict *m, ut64 addr, RList *list) {
 	int i;
 	if (addr == UT64_MAX) {
 		for (i = 0; i < m->size; i++) {
@@ -214,8 +251,8 @@ static int xrefs_list_cb_any(RAnal *anal, const char *k, const char *v) {
 
 #if USE_DICT
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
-	eprintf ("TODO: r_anal_xrefs_from\n");
-	return false;
+	listrefs (anal->dict_refs, addr, list);
+	return true;
 }
 #else
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
@@ -257,7 +294,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 #if USE_DICT
 	// listrefs (anal->dict_refs, to, list);
 // XXX, one or the other?
-	listrefs (anal->dict_xrefs, to, list);
+	listxrefs (anal->dict_xrefs, to, list);
 	// listrefs (anal->dict_xrefs, to, list);
 #else
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_NULL, to);
@@ -279,8 +316,8 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 		return NULL;
 	}
 #if USE_DICT
-	listrefs (anal->dict_refs, from, list);
-	listrefs (anal->dict_xrefs, from, list);
+//	listrefs (anal->dict_refs, from, list);
+	listxrefs (anal->dict_xrefs, from, list);
 // eprintf ("refs_get from %llx %d\n", from, r_list_length (list));
 #else
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_NULL, from);
@@ -302,8 +339,8 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 		return NULL;
 	}
 #if USE_DICT
-	listrefs (anal->dict_xrefs, to, list);
-	listrefs (anal->dict_refs, to, list);
+	listxrefs (anal->dict_xrefs, to, list);
+	//listrefs (anal->dict_refs, to, list);
 #else
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_NULL, to);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CODE, to);
@@ -444,7 +481,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *list = r_list_new();
-	listrefs (anal->dict_xrefs, UT64_MAX, list);
+	listxrefs (anal->dict_xrefs, UT64_MAX, list);
 	r_list_foreach (list, iter, ref) {
 		int type = ref->type? ref->type: ' ';
 		r_cons_printf ("%c 0x%08llx -> 0x%08llx\n", type, ref->at, ref->addr);
