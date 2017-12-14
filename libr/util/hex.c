@@ -42,7 +42,7 @@ const char *skip_comment_py(const char *code) {
 
 R_API char *r_hex_from_py_array(char *out, const char *code) {
 	const char abc[] = "0123456789abcdef";
-	if (*code != '[' || strchr (code, ']') == NULL) {
+	if (*code != '[' || !strchr (code, ']')) {
 		return NULL;
 	}
 	code++;
@@ -72,7 +72,7 @@ R_API char *r_hex_from_py_array(char *out, const char *code) {
 }
 
 R_API char* r_hex_from_py(const char *code) {
-	if (code == NULL) {
+	if (!code) {
 		return NULL;
 	}
 	char * const ret = malloc (strlen (code) * 3);
@@ -82,7 +82,7 @@ R_API char* r_hex_from_py(const char *code) {
 	*ret = '\0';
 	char *out = ret;
 	const char *tmp_code = strchr (code, '=');
-	if (tmp_code != NULL) {
+	if (tmp_code) {
 		code = tmp_code;
 	}
 	for (; *code && *code != '[' && *code != '\''
@@ -94,10 +94,15 @@ R_API char* r_hex_from_py(const char *code) {
 	} else if (*code == '"' || *code == '\'') {
 		out = r_hex_from_py_str (out, code);
 	}
+	if (!out) {
+		free (ret);
+		return NULL;
+	}
+	*out = '\0';
 	return ret;
 }
 
-R_API char *r_hex_from_c_str(char *out, char **code) {
+R_API char *r_hex_from_c_str(char *out, const char **code) {
 	const char abc[] = "0123456789abcdefABCDEF";
 	const char *iter = *code;
 	if (*iter != '\'' && *iter != '"') {
@@ -161,7 +166,7 @@ const char *skip_comment_c(const char *code) {
 
 R_API char *r_hex_from_c_array(char *out, const char *code) {
 	const char abc[] = "0123456789abcdef";
-	if (*code != '{' || strchr(code, '}') == NULL) {
+	if (*code != '{' || !strchr(code, '}')) {
 		return NULL;
 	}
 	code++;
@@ -197,7 +202,7 @@ R_API char *r_hex_from_c_array(char *out, const char *code) {
  *    4123421b
  */
 R_API char *r_hex_from_c(const char *code) {
-	if (code == NULL) {
+	if (!code) {
 		return NULL;
 	}
 	char * const ret = malloc (strlen (code) * 3);
@@ -207,7 +212,7 @@ R_API char *r_hex_from_c(const char *code) {
 	*ret = '\0';
 	char *out = ret;
 	const char *tmp_code = strchr (code, '=');
-	if (tmp_code != NULL) {
+	if (tmp_code) {
 		code = tmp_code;
 	}
 	for (; *code != '\0' && *code != '{' && *code != '"'; code++) {
@@ -221,24 +226,56 @@ R_API char *r_hex_from_c(const char *code) {
 		do {
 			code = s1;
 			out = r_hex_from_c_str (out, &code);
-			if (out == NULL) {
+			if (!out) {
 				break;
 			}
 			s1 = strchr (code + 1, '"');
 			s2 = strchr (code + 1, ';');
-		} while (s1 != NULL && s2 != NULL && (s1 <= s2));
+		} while (s1 && s2 && (s1 <= s2));
 	}
-	if (out == NULL) {
+	if (!out) {
 		free (ret);
 		return NULL;
-	} else {
-		*out++ = '\0';
-		return ret;
 	}
+	*out = '\0';
+	return ret;
+}
+
+/* convert
+ * "\x41\x23\x42\x1b"
+ * "\x41\x23\x42\x1b"
+ * into
+ * 4123421b4123421b
+ */
+R_API char *r_hex_no_code(const char *code) {
+	if (!code) {
+		return NULL;
+	}
+	char * const ret = malloc (strlen (code) * 3);
+	if (!ret) {
+		return NULL;
+	}
+	*ret = '\0';
+	char *out = ret;
+	out = r_hex_from_c_str (out, &code);
+	code = strchr (code + 1, '"');
+	if (!out) {
+		free (ret);
+		return NULL;
+	}
+	*out = '\0';
+	while (out && code) {
+		*out = '\0';
+		out = r_hex_from_c_str (out, &code);
+		code = strchr (code + 1, '"');
+	}
+	return ret;
 }
 
 R_API char *r_hex_from_code(const char *code) {
-	if (strstr (code, "char") || strstr (code, "int")) {
+	if (!strchr (code, '=')) {
+		return r_hex_no_code (code);
+	} else if (strstr (code, "char") || strstr (code, "int")) {
 		//C language
 		return r_hex_from_c (code);
 	} else {
