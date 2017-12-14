@@ -5681,6 +5681,8 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				to = r_itv_end (map->itv);
 				if (!from && !to) {
 					eprintf ("Cannot determine xref search boundaries\n");
+				} else if (to - from > UT32_MAX) {
+					eprintf ("Skipping huge range\n");
 				} else {
 					r_core_anal_search_xrefs (core, from, to, rad);
 				}	
