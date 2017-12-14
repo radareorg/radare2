@@ -3855,6 +3855,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			}
 			r_cons_strcat ("; ");
 			r_cons_strcat (desc);
+			ds_print_color_reset (ds);
 		}
 		if (ds->show_comment_right && ds->comment) {
 			char *comment = r_str_chop (ds->comment);
