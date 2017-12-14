@@ -4535,10 +4535,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	ut8 buf[4096];
+	ut8 block[4096];
 	bufi = 0;
 	if (addr_end - addr > 0xffffff) {
 		return;
 	}
+	memset (block, -1, 4096);
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -4550,6 +4552,15 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 		}
+		if (!memcmp(buf, block, core->blocksize)) {
+			//eprintf ("Error: skipping uninitialized block \n");
+			break;
+		}
+		memset (block, 0, core->blocksize);
+		if (!memcmp(buf, block, core->blocksize)) {
+			//eprintf ("Error: skipping uninitialized block \n");
+			break;
+		}	
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, sizeof (buf) - bufi)) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
