@@ -3465,13 +3465,14 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 
 static void ds_print_bbline(RDisasmState *ds, bool force) {
 	if (ds->show_bbline && (force || (ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)))) {
+		ds_begin_json_line (ds);
 		ds_setup_print_pre (ds, false, false);
 		ds_update_ref_lines (ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
 			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 				ds->refline2, COLOR_RESET (ds));
 		}
-		r_cons_printf ("\n");
+		ds_newline (ds);
 	}
 }
 
