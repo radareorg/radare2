@@ -1652,12 +1652,20 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	return true;
 }
 
-static const char *getPrefixFor(const char *s) {
-	if (s) {
-		if (!strcmp (s, "NOTYPE")) {
+static const char *getPrefixFor(const char *type, const char *bind) {
+	if (bind) {
+		if (!strcmp (bind, "LOCAL")) {
+			return "local";
+		}
+		if (!strcmp (bind, "GLOBAL")) {
+			return "global";
+		}
+	}
+	if (type) {
+		if (!strcmp (type, "NOTYPE")) {
 			return "loc";
 		}
-		if (!strcmp (s, "OBJECT")) {
+		if (!strcmp (type, "OBJECT")) {
 			return "obj";
 		}
 	}
@@ -1681,7 +1689,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	int bin_demangle = lang != NULL;
 	const char *pfx;
 	if (!r || !sym || !sym->name) return;
-	pfx = getPrefixFor (sym->type);
+	pfx = getPrefixFor (sym->type, sym->bind);
 	sn->name = strdup (sym->name);
 	if (sym->dup_count) {
 		sn->nameflag = r_str_newf ("%s.%s_%d", pfx, sym->name, sym->dup_count);
