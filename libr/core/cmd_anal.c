@@ -4552,12 +4552,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 		}
-		if (!memcmp(buf, block, core->blocksize)) {
+		if (!memcmp(buf, block, 4096)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			break;
 		}
-		memset (block, 0, core->blocksize);
-		if (!memcmp(buf, block, core->blocksize)) {
+		memset (block, 0, 4096);
+		if (!memcmp(buf, block, 4096)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			break;
 		}	
