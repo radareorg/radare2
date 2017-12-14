@@ -212,7 +212,12 @@ static int xrefs_list_cb_any(RAnal *anal, const char *k, const char *v) {
 	return true;
 }
 
-#if !USE_DICT
+#if USE_DICT
+R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
+	eprintf ("TODO: r_anal_xrefs_from\n");
+	return false;
+}
+#else
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	char *next, *s, *str, *ptr, key[256];
 	RAnalRef *ref = NULL;

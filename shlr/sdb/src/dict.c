@@ -7,19 +7,34 @@
 
 dict *dict_new(ut32 size, dict_freecb f) {
 	dict *m = calloc (1, sizeof (dict));
-	dict_init (m, size, f);
+	if (!dict_init (m, R_MAX (size, 1), f)) {
+		free (m);
+		m = NULL;
+	}
 	return m;
 }
 
-void dict_init(dict *m, ut32 size, dict_freecb f) {
+// maybe internal?
+static ut32 dict_bucket(dict *m, dicti k) {
+	if (m->size > 0) {
+		return k % m->size;
+	}
+	return 0;
+}
+
+bool dict_init(dict *m, ut32 size, dict_freecb f) {
 	if (m) {
 		memset (m, 0, sizeof (dict));
 		if (size > 0) {
 			m->table = calloc (size, sizeof (dictkv));
+			if (!m->table) {
+				return false;
+			}	
 			m->size = size;
 		}
 		m->f = f;
 	}
+	return true;
 }
 
 void dict_fini(dict *m) {
@@ -60,16 +75,16 @@ bool dict_set(dict *m, dicti k, dicti v, void *u) {
 	if (!m || !m->size || k == MHTNO) {
 		return false;
 	}
-	const int bucket = k % m->size;
+	const int bucket = dict_bucket (m, k);
 	dictkv *kv = m->table[bucket];
 	if (!kv) {
-		kv = calloc (sizeof(dictkv), 2);
+		kv = calloc (sizeof (dictkv), 2);
 		if (kv) {
 			m->table[bucket] = kv;
 			kv->k = MHTNO;
 			kv->v = MHTNO;
 			kv->u = NULL;
-			return dict_set(m, k, v, u);
+			return dict_set (m, k, v, u);
 		}
 		return false;
 	}
@@ -82,9 +97,8 @@ bool dict_set(dict *m, dicti k, dicti v, void *u) {
 		}
 		kv++;
 	}
-	int cursz = (kv - tmp);
-	int curln = cursz / sizeof(dictkv);
-	dictkv *newkv = realloc(tmp, (curln + 2) * sizeof(dictkv));
+	int curln = (kv - tmp);
+	dictkv *newkv = realloc (tmp, (curln + 2) * sizeof (dictkv));
 	if (newkv) {
 		kv = m->table[bucket] = newkv;
 		kv += curln;
@@ -95,13 +109,32 @@ bool dict_set(dict *m, dicti k, dicti v, void *u) {
 		kv->k = MHTNO;
 		kv->v = MHTNO;
 		kv->u = NULL;
-		return false;
+		return true;
 	}
-	return true;
+	return false;
+}
+
+SDB_API void dict_stats(dict *m) {
+	ut32 i, j;
+	for (i = 0; i < m->size; i++) {
+		printf ("%d: ", i);
+		j = 0;
+		dictkv *kv = m->table[i];
+		if (kv) {
+			while (kv->k != MHTNO) {
+				j++;
+				kv++;
+			}
+		}
+		printf ("%d\n", j);
+	}
 }
 
 dictkv *dict_getr(dict *m, dicti k) {
-	int bucket = k % m->size;
+	if (!m->size) {
+		return NULL;
+	}
+	int bucket = dict_bucket (m, k);
 	dictkv *kv = m->table[bucket];
 	if (kv) {
 		while (kv->k != MHTNO) {
@@ -115,12 +148,12 @@ dictkv *dict_getr(dict *m, dicti k) {
 }
 
 dicti dict_get(dict *m, dicti k) {
-	dictkv *kv = dict_getr(m, k);
+	dictkv *kv = dict_getr (m, k);
 	return kv? kv->v: MHTNO;
 }
 
 void *dict_getu(dict *m, dicti k) {
-	dictkv *kv = dict_getr(m, k);
+	dictkv *kv = dict_getr (m, k);
 	return kv? kv->u: NULL;
 }
 
@@ -131,7 +164,7 @@ bool dict_add(dict *m, dicti k, dicti v, void *u) {
 }
 
 bool dict_del(dict *m, dicti k) {
-	int bucket = k % m->size;
+	int bucket = dict_bucket (m, k);
 	if (k == MHTNO) {
 		return false;
 	}
@@ -186,12 +219,22 @@ static char *dict_str(dict *m) {
 
 int main() {
 	dict m;
-	dict_init(&m, 32, free);
+	dict_init (&m, 2, free);
+	dict_set (&m, 0x100, 1, NULL);
+	dict_set (&m, 0x200, 2, NULL);
+	dict_set (&m, 0x300, 3, NULL);
+	dict_set (&m, 0x400, 4, NULL);
+printf ("%d %d\n", (int)dict_get(&m, 0x100), (int)dict_get(&m, 0x200));
+printf ("%d %d\n", (int)dict_get(&m, 0x300), (int)dict_get(&m, 0x400));
+dict_stats(&m);
+
+#if 0
 	dict_set(&m, dict_hash("username"), 1024, NULL);
 	dict_set(&m, 32, 212, strdup("test"));
 	dict_del(&m, dict_hash("username"));
 	printf ("%d\n", (int)dict_get(&m, dict_hash("username")));
 	printf ("%s\n", dict_getu(&m, 32)); //dict_hash("username")));
+#endif
 	dict_fini(&m);
 	return 0;
 }
