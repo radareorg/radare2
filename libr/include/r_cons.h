@@ -624,6 +624,8 @@ R_API char *r_cons_hud_file(const char *f);
 R_API const char *r_cons_get_buffer(void);
 R_API void r_cons_grep_help(void);
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
+R_API char * r_cons_grep_strip(char *cmd, const char *quotestr);
+R_API void r_cons_grep_process(char * grep);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API int r_cons_grepbuf(char *buf, int len);
 

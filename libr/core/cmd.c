@@ -1679,6 +1679,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
+	char *grep = NULL;
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
@@ -2147,7 +2148,7 @@ next2:
 		return true;
 	}
 	if (*cmd != '.') {
-		r_cons_grep_parsecmd (cmd, quotestr);
+		grep = r_cons_grep_strip (cmd, quotestr);
 	}
 
 	/* temporary seek commands */
@@ -2469,6 +2470,7 @@ next_arroba:
 
 	rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
 beach:
+	r_cons_grep_process (grep);
 	if (scr_html != -1) {
 		r_cons_flush ();
 		r_config_set_i (core->config, "scr.html", scr_html);

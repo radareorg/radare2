@@ -378,6 +378,23 @@ R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 	}
 }
 
+R_API char * r_cons_grep_strip(char *cmd, const char *quotestr) {
+	char *ptr = NULL;
+
+	if (cmd) {
+		ptr = preprocess_filter_expr (cmd, quotestr);
+		r_str_chop (cmd);
+	}
+	return ptr;
+}
+
+R_API void r_cons_grep_process(char * grep) {
+	if (grep) {
+		parse_grep_expression (grep);
+		free (grep);
+	}
+}
+
 static int cmp(const void *a, const void *b) {
 	char *da = NULL;
 	char *db = NULL;
