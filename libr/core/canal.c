@@ -2696,7 +2696,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		free (block);
 		return -1;
 	}	
-	memset (block, -1, core->blocksize);
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
@@ -2709,6 +2708,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			break;
 		}
 		(void)r_io_read_at (core->io, at, buf, core->blocksize);
+		memset (block, -1, core->blocksize);
 		if (!memcmp(buf, block, core->blocksize)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			break;
