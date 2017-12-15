@@ -4948,7 +4948,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%c\",\"opcode\":\"%s\"", ref->addr, ref->type, str);
+					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"", ref->addr, r_anal_ref_to_string (ref->type), str);
 					if (fcn) {
 						r_cons_printf (",\"fcn_addr\":%"PFMT64d",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
 					}
@@ -5004,7 +5004,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
 					r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
-						buf_fcn, ref->addr, r_anal_ref_to_string (core->anal, ref->type), buf_asm);
+						buf_fcn, ref->addr, r_anal_ref_to_string (ref->type), buf_asm);
 					free (buf_asm);
 					free (buf_fcn);
 				}
@@ -5051,8 +5051,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_core_read_at (core, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
-					r_cons_printf ("{\"from\":%" PFMT64d ",\"to\":%" PFMT64d ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
-						ref->at, ref->addr, ref->type, asmop.buf_asm, iter->n? ",": "");
+					r_cons_printf ("{\"from\":%" PFMT64d ",\"to\":%" PFMT64d ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
+						ref->at, ref->addr, r_anal_ref_to_string (ref->type), asmop.buf_asm, iter->n? ",": "");
 				}
 				r_cons_print ("]\n");
 			} else if (input[1] == '*') { // axf*
