@@ -4,6 +4,10 @@
 #include <r_types.h>
 #include <r_util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER (r_reg);
 
 /*
@@ -211,6 +215,10 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source);
 R_API const char *r_reg_cond_to_string(int n);
 R_API int r_reg_cond_from_string(const char *str);
 R_API void r_reg_arena_shrink(RReg *reg);
+
+#ifdef __cplusplus
+}
 #endif
 
+#endif
 #endif
