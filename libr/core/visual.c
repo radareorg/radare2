@@ -5,6 +5,7 @@
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
+static int disMode = 0;
 static void visual_refresh(RCore *core);
 
 #define KEY_ALTQ 0xc5
@@ -180,9 +181,8 @@ static int visual_help() {
 	r_cons_clear00 ();
 	return r_cons_less_str (
 		"Visual mode help:\n"
-		"?        show this help\n"
+		" ?        show this help\n"
 		" ??       show the user-friendly hud\n"
-		" $        toggle asm.pseudo\n"
 		" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 		" @        redraw screen every 1s (multi-user view), in cursor set position\n"
 		" !        enter into the visual panels mode\n"
@@ -215,7 +215,7 @@ static int visual_help() {
 		" M        walk the mounted filesystems\n"
 		" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
 		" o        go/seek to given offset\n"
-		" O        toggle asm.esil\n"
+		" O        toggle asm.pseudo and asm.esil\n"
 		" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
 		" q        back to radare shell\n"
 		" r        refresh screen / in cursor mode browse comments\n" // browse anal info and comments / in cursor mode = remove byte\n"
@@ -1477,6 +1477,27 @@ static void visual_browse(RCore *core) {
 	}
 }
 
+static void applyDisMode(RCore *core) {
+	switch (disMode) {
+	case 0:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 1:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 2:
+		r_config_set (core->config, "asm.pseudo", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 3:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "true");
+		break;
+	}
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -2417,10 +2438,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'O':
-			r_core_cmd0 (core, "e!asm.esil");
-			break;
-		case '$':
-			r_core_cmd0 (core, "e!asm.pseudo");
+			disMode++;
+			if (disMode > 2) {
+				disMode = 0;
+			}
+			applyDisMode (core);
+			// r_core_cmd0 (core, "e!asm.pseudo");
 			break;
 		case 'u':
 		{
