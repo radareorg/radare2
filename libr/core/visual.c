@@ -1484,14 +1484,10 @@ static void applyDisMode(RCore *core) {
 		r_config_set (core->config, "asm.esil", "false");
 		break;
 	case 1:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.esil", "false");
-		break;
-	case 2:
 		r_config_set (core->config, "asm.pseudo", "true");
 		r_config_set (core->config, "asm.esil", "false");
 		break;
-	case 3:
+	case 2:
 		r_config_set (core->config, "asm.pseudo", "false");
 		r_config_set (core->config, "asm.esil", "true");
 		break;
