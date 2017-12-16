@@ -2778,7 +2778,7 @@ repeat:
 		edit_bits (core);
 		break;
 	case 'x':
-		r_core_cmd0 (core, "./r");
+		r_core_cmd0 (core, "/r $$");
 		break;
 	case 'i':
 		{
