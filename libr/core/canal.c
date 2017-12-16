@@ -2472,7 +2472,7 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	}
 	wordsize = (int)(core->anal->bits / 8);
 	if (!r_io_read_i (core->io, ptr, &dataptr, wordsize, false)) {
-		eprintf ("core_anal_followptr: Cannot read word at destination\n");
+		// eprintf ("core_anal_followptr: Cannot read word at destination\n");
 		return false;
 	}
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);

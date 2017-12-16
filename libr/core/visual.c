@@ -801,6 +801,8 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	int idx = 0;
 	char cstr[32];
 	ut64 addr = core->offset;
+		int printMode = 0;
+		int lastPrintMode = 3;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
@@ -817,7 +819,8 @@ repeat:
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
-		r_cons_printf ("[GOTO %cREF]> 0x%08"PFMT64x "\n", xref ? 'X':' ', addr);
+		r_cons_printf ("[GOTO %cREF]> 0x%08"PFMT64x "  ", xref ? 'X':' ', addr);
+		r_core_cmd0 (core, "fd");
 		if (r_list_empty (xrefs)) {
 			r_cons_printf ("No %cREF found at 0x%"PFMT64x "\n", xref ? 'X':' ', addr);
 			r_cons_any_key (NULL);
@@ -828,7 +831,7 @@ repeat:
 			idx = 0;
 			count = 0;
 			char *dis = NULL;
-			rows -= 3;
+			rows -= 4;
 			idx = 0;
 			ut64 curat = UT64_MAX;
 			r_list_foreach (xrefs, iter, refi) {
@@ -869,7 +872,20 @@ repeat:
 						curat = refi->addr;
 						// TODO: show disasm with context. not seek addr
 						// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
-						dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+						switch(printMode) {
+						case 0:
+							dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+							break;
+						case 1:
+							dis = r_core_cmd_strf (core, "pd @ 0x%08"PFMT64x"-32", refi->addr);
+							break;
+						case 2:
+							dis = r_core_cmd_strf (core, "px @ 0x%08"PFMT64x, refi->addr);
+							break;
+						case 3:
+							dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
+							break;
+						}
 					}
 					if (++count >= rows) {
 						r_cons_printf ("...");
@@ -883,7 +899,7 @@ repeat:
 					r_cons_newline ();
 				}
 				int i = count;
-				for (; i < 10; i++)  {
+				for (; i < 9; i++)  {
 					r_cons_newline ();
 				}
 				/* prepare highlight */
@@ -917,6 +933,29 @@ repeat:
 	ch = r_cons_readchar ();
 	if (ch == ':') {
 		r_core_visual_prompt_input (core);
+	} else if (ch == '?') {
+		r_cons_clear00 ();
+		r_cons_printf ("Usage: Visual Xrefs\n"
+		" jk  - select next or previous item (use arrows)\n"
+		" pP  - rotate between various print modes\n"
+		" :   - run r2 command\n"
+		" ?   - show this help message\n"
+		" \\n  - seek to this xref");
+		r_cons_flush ();
+		r_cons_any_key (NULL);
+		goto repeat;
+	} else if (ch == 'p') {
+		printMode++;
+		if (printMode > lastPrintMode) {
+			printMode = 0;
+		}
+		goto repeat;
+	} else if (ch == 'P') {
+		printMode--;
+		if (printMode<0) {
+			printMode = lastPrintMode;
+		}
+		goto repeat;
 	} else if (r_cons_arrow_to_hjkl (ch) == 'j') {
 		skip++;
 		goto repeat;
