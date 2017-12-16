@@ -2711,12 +2711,14 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		memset (block, -1, core->blocksize);
 		if (!memcmp(buf, block, core->blocksize)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			break;
+			at += core->blocksize;
+			continue;
 		}
 		memset (block, 0, core->blocksize);
 		if (!memcmp(buf, block, core->blocksize)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			break;
+			at += core->blocksize;
+			continue;
 		}		
 		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
