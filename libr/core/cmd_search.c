@@ -34,6 +34,7 @@ static const char *help_msg_slash[] = {
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
 	"/M", " ", "search for known filesystems and mount them automatically",
 	"/o", " [n]", "show offset of n instructions backward",
+	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
@@ -2530,6 +2531,19 @@ reread:
 			addr = UT64_MAX;
 			(void)r_core_asm_bwdis_len (core, NULL, &addr, n);
 		}
+		if (json) {
+			r_cons_printf ("[%"PFMT64u "]", addr);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x "\n", addr);
+		}
+		break;
+	}
+	case 'O': { // "/O" alternative to "/o"
+		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
+		if (!n) {
+			n = 1;
+		}
+		addr = r_core_prevop_addr_force (core, core->offset, n);
 		if (json) {
 			r_cons_printf ("[%"PFMT64u "]", addr);
 		} else {
