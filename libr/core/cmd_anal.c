@@ -4552,12 +4552,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 		}
-		if (!memcmp(buf, block, 4096)) {
+		if (!memcmp (buf, block, 4096)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			break;
 		}
 		memset (block, 0, 4096);
-		if (!memcmp(buf, block, 4096)) {
+		if (!memcmp (buf, block, 4096)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			break;
 		}	
@@ -4640,6 +4640,9 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 				addr = r->itv.addr;
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
+				if (r_cons_is_breaked ()) {
+					break;
+				}	
 				if (only_print_flag) {
 					r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
 						addr, r->itv.size, addr);
@@ -5679,6 +5682,9 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				from = map->itv.addr;
 				to = r_itv_end (map->itv);
+				if (r_cons_is_breaked ()) {
+					break;
+				}	
 				if (!from && !to) {
 					eprintf ("Cannot determine xref search boundaries\n");
 				} else if (to - from > UT32_MAX) {
