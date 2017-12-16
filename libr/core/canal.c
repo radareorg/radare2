@@ -2709,13 +2709,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		}
 		(void)r_io_read_at (core->io, at, buf, core->blocksize);
 		memset (block, -1, core->blocksize);
-		if (!memcmp(buf, block, core->blocksize)) {
+		if (!memcmp (buf, block, core->blocksize)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			at += core->blocksize;
 			continue;
 		}
 		memset (block, 0, core->blocksize);
-		if (!memcmp(buf, block, core->blocksize)) {
+		if (!memcmp (buf, block, core->blocksize)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			at += core->blocksize;
 			continue;
