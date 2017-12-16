@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2017 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +29,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "int-to-byte", "1 = (byte) 2"},
 		{ "aget-byte", "1 = (byte) 2[3]"},
 		{ "aget-short", "1 = (short) 2[3]"},
+		{ "aget-object", "1 = (object) 2[3]"},
 		{ "sput-wide", "1 = 2"},
 		{ "sput-object", "1 = 2"},
 		{ "add-long", "1 = 2 + 3"},
@@ -44,6 +45,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "cmpl-float", "1 = (float)(2 == 3)"},
 		{ "cmpl-int", "1 = (int)(2 == 3)"},
 		{ "cmpg-double", "1 = (2 == 3)"},
+		{ "cmpg-float", "1 = (2 == 3)"},
 		{ "or-int/2addr", "1 |= 2"},
 		{ "or-long", "1 |= 2"},
 		{ "and-long/2addr", "1 &= (long) 2"},
@@ -82,6 +84,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "const-wide/32", "1 = 2"},
 		{ "const-class", "1 = (class) 2"},
 		{ "const/high16", "1 = 2"},
+		{ "const", "1 = 2"},
 		{ "rem-long", "1 = (long) 2 % 3"},
 		{ "rem-double", "1 = (double) 2 % 3"},
 		{ "rem-float", "1 = (float) 2 % 3"},
@@ -93,8 +96,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "aput-object", "2[3] = (object) 1"},
 		{ "aput-wide", "2[3] = (wide) 1"},
 		{ "aput-char", "2[3] = (char) 1"},
+		{ "aput-boolean", "2[3] = (bool) 1"},
 		{ "aget", "1 = 2[3]"},
 		{ "aget-wide", "1 = (wide) 2[3]"},
+		{ "aget-char", "1 = (char) 2[3]"},
 		{ "aget-boolean", "1 = (boolean) 2[3]"},
 		{ "sget", "1 = 2"},
 		{ "sget-char", "1 = (char) 2"},
@@ -104,6 +109,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "iput-object", "2[3] = (object) 1"},
 		{ "iput-boolean", "2[3] = (bool) 1"},
 		{ "sput-boolean", "2[3] = (bool) 1"},
+		{ "sput-char", "2[3] = (char) 1"},
 		{ "iput-int", "2[3] = (int) 1"},
 		{ "iget", "1 = 2[3]"},
 		{ "sget-byte", "1 = (byte) 2[3]"},
@@ -128,6 +134,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "packed-switch", "switch 2"},
 		{ "sparse-switch", "switch 2"},
 		{ "invoke-direct", "call 2 1"},
+		{ "invoke-direct/range", "call 2 1"},
 		{ "invoke-interface", "call 2 1"},
 		{ "invoke-static", "call 2 1"},
 		{ "invoke-super", "call super 2 1"},
