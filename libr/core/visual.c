@@ -765,6 +765,16 @@ R_API bool r_core_prevop_addr(RCore *core, ut64 start_addr, int numinstrs, ut64 
 	return false;
 }
 
+//  Like r_core_prevop_addr(), but also uses fallback from prevop_addr() if
+//  no anal info is available.
+R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs) {
+	int i;
+	for (i = 0; i < numinstrs; ++i) {
+		start_addr = prevop_addr (core, start_addr);
+	}
+	return start_addr;
+}
+
 static void reset_print_cur(RPrint *p) {
 	p->cur = 0;
 	p->ocur = -1;
