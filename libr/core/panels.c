@@ -832,6 +832,10 @@ repeat:
 		core->vmode = false;
 		r_core_visual_prompt_input (core);
 		core->vmode = true;
+
+		// FIX: Issue with visual mode instruction highlighter
+		// not updating after 'ds' or 'dcu' commands.
+		r_core_cmd0 (core, ".dr*");
 		break;
 	case 'C':
 		can->color = !can->color;                               // WTF
