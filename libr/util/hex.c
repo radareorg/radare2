@@ -29,7 +29,7 @@ R_API char *r_hex_from_py_str(char *out, const char *code) {
 	return out;
 }
 
-const char *skip_comment_py(const char *code) {
+static const char *skip_comment_py(const char *code) {
 	if (*code != '#') {
 		return code;
 	}
@@ -51,8 +51,11 @@ R_API char *r_hex_from_py_array(char *out, const char *code) {
 		if (!comma) {
 			comma = strchr (code, ']');
 		}
-		char *word = r_str_ndup (code, comma - code);
-		char * _word = word;
+		if (!comma) {
+			break;
+		}
+		char * _word = r_str_ndup (code, comma - code);
+		const char *word = _word;
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
 			word = skip_comment_py (word);
@@ -175,8 +178,8 @@ R_API char *r_hex_from_c_array(char *out, const char *code) {
 		if (!comma) {
 			comma = strchr (code, '}');
 		}
-		const char *word = r_str_ndup (code, comma - code);
-		char * _word = word;
+		char * _word = r_str_ndup (code, comma - code);
+		const char *word = _word;
 		word = skip_comment_c (word);
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
