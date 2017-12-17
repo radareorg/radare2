@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_egg
-DEPS=r_asm r_syscall r_util r_parse r_reg r_anal 
+DEPS=r_asm r_syscall r_util r_parse r_reg
 DEPS+=r_flag r_cons
 
 OBJS=egg.o egg_lang.o
