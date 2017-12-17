@@ -2382,6 +2382,103 @@ static int esil_mem_deceq(RAnalEsil *esil) {
 	return esil_mem_deceq_n (esil, esil->anal->bits);
 }
 
+/* LSLEQ */
+
+static int esil_mem_lsleq_n(RAnalEsil *esil, int bits) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		if (s > sizeof (ut64) * 8) {
+			ERR ("esil_mem_lsleq_n: shift is too big");
+		} else {
+			r_anal_esil_push (esil, dst);
+			ret = (!!esil_peek_n (esil, bits));
+			src1 = r_anal_esil_pop (esil);
+			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+				if (s > 63) {
+					d = 0;
+				} else {
+					d <<= s;
+				}
+				r_anal_esil_pushnum (esil, d);
+				r_anal_esil_push (esil, dst);
+				ret &= (!!esil_poke_n (esil, bits));
+			} else {
+				ret = 0;
+			}
+		}
+	}
+	if (!ret) {
+		ERR ("esil_mem_lsleq_n: invalid parameters");
+	}
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_lsleq1(RAnalEsil *esil) {
+	return esil_mem_lsleq_n (esil, 8);
+}
+static int esil_mem_lsleq2(RAnalEsil *esil) {
+	return esil_mem_lsleq_n (esil, 16);
+}
+static int esil_mem_lsleq4(RAnalEsil *esil) {
+	return esil_mem_lsleq_n (esil, 32);
+}
+static int esil_mem_lsleq8(RAnalEsil *esil) {
+	return esil_mem_lsleq_n (esil, 64);
+}
+static int esil_mem_lsleq(RAnalEsil *esil) {
+	return esil_mem_lsleq_n (esil, esil->anal->bits);
+}
+
+/* LSREQ */
+
+static int esil_mem_lsreq_n(RAnalEsil *esil, int bits) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		r_anal_esil_push (esil, dst);
+		ret = (!!esil_peek_n (esil, bits));
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d >>= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= (!!esil_poke_n (esil, bits));
+		} else ret = 0;
+	}
+	if (!ret)
+		ERR ("esil_mem_lsreq_n: invalid parameters");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_lsreq1(RAnalEsil *esil) {
+	return esil_mem_lsreq_n (esil, 8);
+}
+static int esil_mem_lsreq2(RAnalEsil *esil) {
+	return esil_mem_lsreq_n (esil, 16);
+}
+static int esil_mem_lsreq4(RAnalEsil *esil) {
+	return esil_mem_lsreq_n (esil, 32);
+}
+static int esil_mem_lsreq8(RAnalEsil *esil) {
+	return esil_mem_lsreq_n (esil, 64);
+}
+static int esil_mem_lsreq(RAnalEsil *esil) {
+	return esil_mem_lsreq_n (esil, esil->anal->bits);
+}
+
 /* get value of register or memory reference and push the value */
 static int esil_num(RAnalEsil *esil) {
 	char *dup_me;
@@ -2953,6 +3050,16 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("--=[2]", esil_mem_deceq2);
 	OP ("--=[4]", esil_mem_deceq4);
 	OP ("--=[8]", esil_mem_deceq8);
+        OP ("<<=[]", esil_mem_lsleq);
+	OP ("<<=[1]", esil_mem_lsleq1);
+	OP ("<<=[2]", esil_mem_lsleq2);
+	OP ("<<=[4]", esil_mem_lsleq4);
+	OP ("<<=[8]", esil_mem_lsleq8);
+	OP (">>=[]", esil_mem_lsreq);
+	OP (">>=[1]", esil_mem_lsreq1);
+	OP (">>=[2]", esil_mem_lsreq2);
+	OP (">>=[4]", esil_mem_lsreq4);
+	OP (">>=[8]", esil_mem_lsreq8);
 	OP ("[]", esil_peek);
 	OP ("[*]", esil_peek_some);
 	OP ("=[*]", esil_poke_some);
