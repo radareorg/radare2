@@ -6,6 +6,7 @@
 #include <limits.h>
 
 static int mousemode = 0;
+static int disMode = 0;
 static const char *mousemodes[] = {
 	"canvas-y",
 	"canvas-x",
@@ -3463,6 +3464,22 @@ static void graph_breakpoint(RCore *core) {
 static void graph_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
+static void applyDisMode(RCore *core) {
+	switch (disMode) {
+	case 0:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 1:
+		r_config_set (core->config, "asm.pseudo", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 2:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "true");
+		break;
+	}
+}
 
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
@@ -3690,6 +3707,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" m/M          - change mouse modes\n"
 				" n/N          - next/previous scr.nkey (function/flag..)\n"
 				" o            - go/seek to given offset\n"
+				" O            - toggle asm.pseudo and asm.esil\n"
 				" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
 				" q            - back to Visual mode\n"
 				" r            - refresh graph\n"
@@ -3731,6 +3749,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'o':
 			visual_offset (g, core);
 			break;
+		case 'O':
+			disMode++;
+			if (disMode > 2) {
+				disMode = 0;
+			}
+			applyDisMode (core);
+			get_bbupdate (g, core, fcn);
+			break;	
 		case 'u':
 		{
 			if (!fcn) {
