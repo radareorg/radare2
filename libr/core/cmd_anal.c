@@ -5952,10 +5952,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				eprintf ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x"\n", from, to, begin, end);
 				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
 				}
-			}
+		}
 		r_list_free (list);
 	}
-
 	r_cons_break_pop ();
 	// end
 	seti ("search.align", o_align);
