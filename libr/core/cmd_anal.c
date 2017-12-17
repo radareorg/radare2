@@ -5925,76 +5925,36 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	} else {
-		RList *list = r_core_get_boundaries (core, analin);
+		RList *list = r_core_get_boundaries_prot (core, 0, analin);
 		RListIter *iter, *iter2;
 		RIOMap *map, *map2;
 		ut64 from = UT64_MAX;
 		ut64 to = UT64_MAX;
 		// find values pointing to non-executable regions
-		// TOO SLOW, but "correct", can be enhanced by adding search.in2
 		r_list_foreach (list, iter2, map2) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (!iter2->n) {
-				if (from == UT64_MAX) {
-					from = r_itv_begin (map2->itv);
-					to = r_itv_end (map2->itv);
-				} else {
-					if (r_itv_begin (map2->itv) == to) {
-						to = r_itv_end (map2->itv);
-					}
+			//TODO: Reduce multiple hits for same addr 
+			from = r_itv_begin (map2->itv);
+			to = r_itv_end (map2->itv);
+			eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
+			r_list_foreach (list, iter, map) {
+				ut64 begin = map->itv.addr;
+				ut64 end = r_itv_end (map->itv);
+				if (r_cons_is_breaked ()) {
+					break;
 				}
-			} else {
-				if (from == UT64_MAX) {
-					from = r_itv_begin (map2->itv);
-					to = r_itv_end (map2->itv);
+				if (end - begin > UT32_MAX) {
+					eprintf ("Skipping huge range\n");
 					continue;
-				} else {
-					if (r_itv_begin (map2->itv) == to) {
-						to = r_itv_end (map2->itv);
-						continue;
-					}
 				}
-			}
-//			if (r_itv_contain (map->itv, core->offset)) {
-			if (true) { //!(map2->flags & R_IO_EXEC)) {
-//				from = r_itv_begin (map2->itv);
-//				to = r_itv_end (map2->itv);
-
-				eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
-				r_list_foreach (list, iter, map) {
-					ut64 begin = map->itv.addr;
-					ut64 end = r_itv_end (map->itv);
-					if (r_cons_is_breaked ()) {
-						break;
-					}
-					if (end - begin > UT32_MAX) {
-						eprintf ("Skipping huge range\n");
-						continue;
-					}
-					eprintf ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x"\n", from, to, begin, end);
-					(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
+				eprintf ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x"\n", from, to, begin, end);
+				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
 				}
-			}
-			from = UT64_MAX;
 		}
 		r_list_free (list);
-#if 0
-		s = r_io_section_vget (core->io, core->offset);
-		if (s) {
-			ut64 from = s->vaddr;
-			ut64 to = s->vaddr + s->size;
-			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", from, to);
-			(void)r_core_search_value_in_range (core, (RAddrInterval){from, s->size},
-				from, to, vsize, asterisk, _CbInRangeAav);
-		} else {
-			eprintf ("aav: Cannot find section at this address\n");
-			// TODO: look in debug maps
-		}
-#endif
 	}
-
 	r_cons_break_pop ();
 	// end
 	seti ("search.align", o_align);
