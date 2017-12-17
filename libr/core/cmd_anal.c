@@ -211,7 +211,7 @@ static const char *help_msg_af[] = {
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
-	"afd", "[addr]","show function + delta for given offset"
+	"afd", "[addr]","show function + delta for given offset",
 	"aft", "[?]", "type matching, type propagation",
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
