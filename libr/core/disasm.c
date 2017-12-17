@@ -1230,7 +1230,9 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
-					r_cons_printf ("(%s)\n", fi->name);
+					ds_begin_json_line (ds);
+					r_cons_printf ("(%s)", fi->name);
+					ds_newline (ds);
 				}
 				continue;
 			} else if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
