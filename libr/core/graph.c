@@ -3466,18 +3466,18 @@ static void graph_continue(RCore *core) {
 }
 static void applyDisMode(RCore *core) {
 	switch (disMode) {
-		case 0:
-			r_config_set (core->config, "asm.pseudo", "false");
-			r_config_set (core->config, "asm.esil", "false");
-			break;
-		case 1:
-			r_config_set (core->config, "asm.pseudo", "true");
-			r_config_set (core->config, "asm.esil", "false");
-			break;
-		case 2:
-			r_config_set (core->config, "asm.pseudo", "false");
-			r_config_set (core->config, "asm.esil", "true");
-			break;
+	case 0:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 1:
+		r_config_set (core->config, "asm.pseudo", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 2:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "true");
+		break;
 	}
 }
 
