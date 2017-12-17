@@ -1843,7 +1843,11 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	if (!p || !buf || len < 1 || wordsize < 1) {
 		return 0;
 	}
-	int i, words = (len / wordsize);
+	int bytesize = wordsize / 8;
+	if (bytesize < 1) {
+		bytesize = 8;
+	}
+	int i, words = (len / bytesize);
 	p->cb_printf ("[");
 	for (i = 0; i < words; i++) {
 		ut16 w16 = r_read_ble16 (&buf16[i], p->big_endian);

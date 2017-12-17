@@ -113,6 +113,7 @@ R_API void r_bp_plugin_list(RBreakpoint *bp);
 R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int rwx);
 // deprecate?
 R_API int r_bp_list(RBreakpoint *bp, int rad);
+R_API int r_bp_size(RBreakpoint *bp);
 
 /* bp item attribs setters */
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
