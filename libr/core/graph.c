@@ -3707,6 +3707,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" m/M          - change mouse modes\n"
 				" n/N          - next/previous scr.nkey (function/flag..)\n"
 				" o            - go/seek to given offset\n"
+				" O            - toggle asm.pseudo and asm.esil\n"
 				" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
 				" q            - back to Visual mode\n"
 				" r            - refresh graph\n"
