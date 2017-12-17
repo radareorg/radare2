@@ -548,7 +548,7 @@ static const char *help_msg_ax[] = {
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"axc", " addr [at]", "add code jmp ref // unused?",
 	"axC", " addr [at]", "add code call ref",
-	"axg", " addr", "show xrefs graph to reach current function",
+	"axg", " [addr]", "show xrefs graph to reach current function",
 	"axd", " addr [at]", "add data ref",
 	"axq", "", "list refs in quiet/human-readable format",
 	"axj", "", "list refs in json format",
@@ -4838,6 +4838,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 			}
 		}
 	}
+	r_list_free (xrefs);
 }
 
 static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
@@ -4892,7 +4893,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'g': // "axg"
 		{
 			Sdb *db = sdb_new0 ();
-			anal_axg (core, input + 2, 0, db);
+			anal_axg (core, input[1] ? input + 2 : NULL, 0, db);
 			sdb_free (db);
 		}
 		break;
