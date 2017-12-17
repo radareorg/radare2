@@ -211,6 +211,7 @@ static const char *help_msg_af[] = {
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
+	"afd", "[addr]","show function + delta for given offset",
 	"aft", "[?]", "type matching, type propagation",
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
@@ -1992,6 +1993,27 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'f': // "aff"
 		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		break;
+	case 'd': // "afd"
+		{
+		ut64 addr = 0;	
+		if (input[2] == ' ') {
+			addr = r_num_math (core->num, input + 2); 
+		} else {
+			eprintf ("afd [offset]\n");
+		}	
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (fcn) {
+			if (fcn->addr != addr) {
+				r_cons_printf ("%s + %d\n", fcn->name,
+						(int)(addr - fcn->addr));
+			} else {
+				r_cons_println (fcn->name);
+			}	
+		} else {
+			eprintf ("Cannot find function\n");
+		}
+		}
+		break;	
 	case '-': // "af-"
 		if (!input[2] || !strcmp (input + 2, "*")) {
 			r_anal_fcn_del_locs (core->anal, UT64_MAX);
