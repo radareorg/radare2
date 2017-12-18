@@ -213,6 +213,7 @@ R_API bool r_core_init(RCore *core);
 R_API RCore *r_core_new(void);
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);
+R_API void r_core_wait(RCore *core);
 R_API RCore *r_core_ncast(ut64 p);
 R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
@@ -283,7 +284,7 @@ R_API void r_core_visual_mark_dump(RCore *core);
 R_API void r_core_visual_mark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
-R_API int r_core_serve(RCore *core, RIODesc *fd);
+R_API bool r_core_serve(RCore *core, RIODesc *fd);
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int binload);
 R_API void r_core_file_reopen_debug(RCore *core, const char *args);
 R_API RCoreFile * r_core_file_find_by_fd(RCore* core, ut64 fd);

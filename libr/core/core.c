@@ -1842,10 +1842,11 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) {
 		return NULL;
 	}
+	r_core_wait (c);
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
 	// avoid double free
-	r_core_free_autocomplete(c);
+	r_core_free_autocomplete (c);
 	R_FREE (c->lastsearch);
 	c->cons->pager = NULL;
 	r_core_task_join (c, NULL);
@@ -1898,6 +1899,7 @@ R_API RCore *r_core_fini(RCore *c) {
 }
 
 R_API RCore *r_core_free(RCore *c) {
+	// must wait all threads first
 	if (c) {
 		r_core_fini (c);
 		free (c);
@@ -2169,26 +2171,23 @@ static void rap_break (void *u) {
 
 // TODO: PLEASE move into core/io/rap? */
 // TODO: use static buffer instead of mallocs all the time. it's network!
-R_API int r_core_serve(RCore *core, RIODesc *file) {
+R_API bool r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
-	RSocket *c, *fd;
 	int i, pipefd = -1;
-	RIORap *rior;
 	ut64 x;
 
-	rior = (RIORap *)file->data;
+	RIORap *rior = (RIORap *)file->data;
 	if (!rior|| !rior->fd) {
 		eprintf ("rap: cannot listen.\n");
-		return -1;
+		return false;
 	}
-	fd = rior->fd;
+	RSocket *fd = rior->fd;
 	eprintf ("RAP Server started (rap.loop=%s)\n",
 			r_config_get (core->config, "rap.loop"));
-
 	r_cons_break_push (rap_break, rior);
 reaccept:
 	while (!r_cons_is_breaked ()) {
-		c = r_socket_accept (fd);
+		RSocket *c = r_socket_accept (fd);
 		if (!c) {
 			break;
 		}
@@ -2222,15 +2221,14 @@ reaccept:
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
-					RCoreFile *file;
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
-					r_socket_read_block (c, ptr, cmd); //filename
+					r_socket_read_block (c, ptr, cmd);
 					ptr[cmd] = 0;
 					ut32 perm = R_IO_READ;
 					if (flg & R_IO_WRITE) {
 						perm |= R_IO_WRITE;
 					}
-					file = r_core_file_open (core, (const char *)ptr, perm, 0);
+					RCoreFile *file = r_core_file_open (core, (const char *)ptr, perm, 0);
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						r_io_map_add (core->io, file->fd, perm, 0, 0, r_io_fd_size (core->io, file->fd), true);
@@ -2414,7 +2412,7 @@ reaccept:
 	}
 out_of_function:
 	r_cons_break_pop ();
-	return -1;
+	return false;
 }
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {

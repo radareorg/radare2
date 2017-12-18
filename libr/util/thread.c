@@ -67,9 +67,12 @@ R_API void r_th_break(RThread *th) {
 }
 
 R_API int r_th_kill(RThread *th, int force) {
+	if (!th) {
+		return false;
+	}
 	th->breaked = true;
-	r_th_break(th);
-	r_th_wait(th);
+	r_th_break (th);
+	r_th_wait (th);
 #if HAVE_PTHREAD
 #ifdef __ANDROID__
 	pthread_kill (th->tid, 9);

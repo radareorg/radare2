@@ -39,8 +39,16 @@ typedef struct {
 
 typedef struct {
 	RCore *core;
-	const char* input;
+	char* input;
 } RapThread;
+
+R_API void r_core_wait(RCore *core) {
+	r_cons_singleton () -> breaked = true;
+	r_th_kill (httpthread, true);
+	r_th_kill (rapthread, true);
+	r_th_wait (httpthread);
+	r_th_wait (rapthread);
+}
 
 static void http_logf(RCore *core, const char *fmt, ...) {
 	bool http_log_enabled = r_config_get_i (core->config, "http.log");
@@ -1609,17 +1617,18 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	int fd;
 
 	prompt[0] = 0;
-	if (IS_DIGIT(input[0])) {
+	if (IS_DIGIT (input[0])) {
 		fd = r_num_math (core->num, input);
 		for (rtr_n = 0; rtr_host[rtr_n].fd \
 			&& rtr_host[rtr_n].fd->fd != fd \
 			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
 	}
 
-	for (;;) {
-		if (rtr_host[rtr_n].fd)
+	while (!r_cons_is_breaked ()) {
+		if (rtr_host[rtr_n].fd) {
 			snprintf (prompt, sizeof (prompt),
 				"fd:%d> ", rtr_host[rtr_n].fd->fd);
+		}
 		free (r_line_singleton ()->prompt);
 		r_line_singleton ()->prompt = strdup (prompt);
 		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
@@ -1653,9 +1662,22 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 	}
 }
 
-static void r_core_rtr_rap_run(RCore *core, const char *input) {
-	/* ouch, this hurts a bit, isnt? */
-	r_core_cmdf (core, "o rap://%s", input);
+static bool r_core_rtr_rap_run(RCore *core, const char *input) {
+	char *file = r_str_newf ("rap://%s", input);
+	int flags = R_IO_READ | R_IO_WRITE;
+	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
+	if (fd) {
+		if (r_io_is_listener (core->io)) {
+			if (!r_core_serve (core, fd)) {
+				r_cons_singleton() -> breaked = true;
+			}
+			r_io_desc_free (fd);
+		}
+	} else {
+		r_cons_singleton()->breaked = true;
+	}
+	return !r_cons_singleton ()->breaked;
+	// r_core_cmdf (core, "o rap://%s", input);
 }
 
 static int r_core_rtr_rap_thread (RThread *th) {
@@ -1666,8 +1688,7 @@ static int r_core_rtr_rap_thread (RThread *th) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	r_core_rtr_rap_run (rt->core, rt->input);
-	return true;
+	return r_core_rtr_rap_run (rt->core, rt->input);
 }
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
@@ -1687,10 +1708,15 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			eprintf ("RAP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
-			RapThread rt = { core, input + 1 };
-			rapthread = r_th_new (r_core_rtr_rap_thread, &rt, false);
-			r_th_start (rapthread, true);
-			eprintf ("Background rap server started.\n");
+			RapThread *RT = R_NEW0 (RapThread);
+			if (RT) {
+				RT->core = core;
+				RT->input = strdup (input + 1);
+				//RapThread rt = { core, strdup (input + 1) };
+				rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
+				r_th_start (rapthread, true);
+				eprintf ("Background rap server started.\n");
+			}
 		}
 		return;
 	}

@@ -177,6 +177,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (is_ssl) {
 			if (file && *file) {
 				if (!r_socket_listen (rior->fd, port, file)) {
+					r_socket_free (rior->fd);
 					free (rior);
 					return NULL;
 				}
