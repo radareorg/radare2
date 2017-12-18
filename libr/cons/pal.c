@@ -192,12 +192,12 @@ R_API char *r_cons_pal_parse (const char *str) {
 		}
 	}
 	if (p && !strncmp (p, "rgb:", 4)) {
-		if (strlen (s) == 7) {
+		if (strlen (p) == 7) {
 			r = rgbnum (p[4], '0');
 			g = rgbnum (p[5], '0');
 			b = rgbnum (p[6], '0');
 			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
-		} else if (strlen (s) == 10) {
+		} else if (strlen (p) == 10) {
 			r = rgbnum (p[4], p[5]);
 			g = rgbnum (p[6], p[7]);
 			b = rgbnum (p[8], p[9]);
