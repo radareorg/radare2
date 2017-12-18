@@ -3751,10 +3751,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'O':
 			disMode++;
-			if (disMode > 2) {
+			if (disMode > 3) {
 				disMode = 0;
 			}
 			applyDisMode (core);
+			if (disMode == 3) {
+				g->mode = R_AGRAPH_MODE_SUMMARY;
+			} else {
+				g->mode = 0;
+			}
+			g->need_reload_nodes = true;
 			get_bbupdate (g, core, fcn);
 			break;	
 		case 'u':
