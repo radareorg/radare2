@@ -1,5 +1,6 @@
 #!/bin/sh
-LIBS=$(ls ../../libr/*/*.dylib)
+EXT=$(r2 -H LIBEXT)
+LIBS=$(ls ../../libr/*/*.${EXT})
 mkdir tmp
 for LIB in $LIBS; do
 	echo $LIB
