@@ -167,6 +167,10 @@ static int parse (RParse *p, const char *data, char *str) {
 		return false;
 	}
 	memcpy (buf, data, len + 1);
+	if (!strncasecmp (buf, "lea", 3)) {
+		r_str_replace_char (buf, '[', 0);
+		r_str_replace_char (buf, ']', 0);
+	}
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
 		ptr = strchr (buf, ' ');
@@ -231,7 +235,7 @@ static int parse (RParse *p, const char *data, char *str) {
 			}
 		}
 		replace (nw, wa, str);
-	} else if (strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al") && !p->retleave_asm) {
+	} else if ((strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al")) && !p->retleave_asm) {
 		if (!(p->retleave_asm = (char *) malloc (sz))) {
 			return false;
 		}
@@ -366,11 +370,11 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 				tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
 				free (tstr);
 				tstr = tstr_new;
+			}
 				if (!strncasecmp (tstr, "lea", 3)) {
 					r_str_replace_char (tstr, '[', 0);
 					r_str_replace_char (tstr, ']', 0);
 				}
-			}
 		}
 	}
 
