@@ -2096,8 +2096,10 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			}
 			if (!json) {
 				RSearchKeyword *kw = r_list_first (core->search->kws);
-				eprintf ("Searching %d bytes in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
-					kw? kw->keyword_length: 0, itv.addr, r_itv_end (itv));
+				int lenstr = kw? kw->keyword_length: 0;
+				const char *bytestr = lenstr > 1? "bytes": "byte";
+				eprintf ("Searching %d %s in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
+					kw? kw->keyword_length: 0, bytestr, itv.addr, r_itv_end (itv));
 			}
 			if (r_sandbox_enable (0) && itv.size > 1024 * 64) {
 				eprintf ("Sandbox restricts search range\n");
@@ -2390,7 +2392,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
-	int i, ret = true;
+	int ret = true;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
 		.core = core,
@@ -2939,6 +2941,7 @@ reread:
 	case ' ': // "/ " search string
 		inp = strdup (input + 1 + ignorecase + json);
 		len = r_str_unescape (inp);
+#if 0
 		if (!json) {
 			eprintf ("Searching %d bytes from 0x%08"PFMT64x " to 0x%08"PFMT64x ": ",
 					len, search_itv.addr, r_itv_end (search_itv));
@@ -2947,6 +2950,7 @@ reread:
 			}
 			eprintf ("\n");
 		}
+#endif
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
