@@ -22,7 +22,7 @@ static const char *help_msg_a[] = {
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"an"," [name] [@addr]","show/rename/create whatever flag/function is used at addr",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
-	"aO", "", "Analyze N instructions in M bytes",
+	"aO", "[?] [len]", "Analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
@@ -1252,6 +1252,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAsmOp asmop;
 	RAnalOp op;
 	ut64 addr;
+	bool isFirst = true;
 
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
@@ -1325,6 +1326,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_anal_esil_stack_free (esil);
 			}
 		} else if (fmt == 'j') {
+			if (isFirst) {
+				isFirst = false;
+			} else {
+				r_cons_print (",");
+			}
 			r_cons_printf ("{\"opcode\":\"%s\",", asmop.buf_asm);
 			r_cons_printf ("\"mnemonic\":\"%s\",", mnem);
 			if (hint && hint->opcode) {
@@ -1387,8 +1393,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("\"stackptr\":%d,", op.stackptr);
 			}
 			{
-				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)?
-					r_anal_cond_tostring (op.cond): NULL;
+				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
+					? r_anal_cond_tostring (op.cond): NULL;
 				if (arg) {
 					r_cons_printf ("\"cond\":\"%s\",", arg);
 				}
@@ -1487,9 +1493,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//free (hint);
 		free (mnem);
 		r_anal_hint_free (hint);
-		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r') {
-			r_cons_print (",");
-		}
 	}
 
 	if (fmt == 'j') {
