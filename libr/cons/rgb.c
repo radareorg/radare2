@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
@@ -9,6 +9,7 @@ int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
 static void init_color_table () {
 	int i, r, g, b;
+	// ansi colors
 	color_table[0] = 0x000000;
 	color_table[1] = 0x800000;
 	color_table[2] = 0x008000;
@@ -25,6 +26,7 @@ static void init_color_table () {
 	color_table[13] = 0xff00ff;
 	color_table[14] = 0x00ffff;
 	color_table[15] = 0xffffff;
+	// color palette
 	for (i = 0; i < 216; i++) {
 		r = value_range[(i / 36) % 6];
 		g = value_range[(i / 6) % 6];
@@ -32,6 +34,7 @@ static void init_color_table () {
 		color_table[i + 16] = ((r << 16) & 0xffffff) +
 			((g << 8) & 0xffff) + (b & 0xff);
 	}
+	// grayscale
 	for (i = 0; i < 24; i++) {
 		r = 8 + (i * 10);
 		color_table[i + 232] = ((r << 16) & 0xffffff) +
@@ -50,25 +53,48 @@ static int lookup_rgb (int r, int g, int b) {
 	return -1;
 }
 
-static int approximate_rgb (int r, int g, int b) {
+static ut32 approximate_rgb (int r, int g, int b) {
 	bool grey = (r > 0 && r < 255 && r == g && r == b);
-	const double k = (256.0 / 6.0);
 	if (grey) {
-		return 232 + (double)r / (255 / 24.1);
+		return 232 + (int)((double)r / (255 / 24.1));
 	}
-	r = R_DIM (r / k, 0, 5);
-	g = R_DIM (g / k, 0, 5);
-	b = R_DIM (b / k, 0, 5);
+#if 0
+	const double M = 16;
+	double R = r;
+	double G = g;
+	double B = b;
+	R = R /256 * 216;
+	R /= 256 * 216;
+	R /= 256 * 216;
+	r = R = R_DIM (R / 16, 0, 16);
+	g = G = R_DIM (G / 16, 0, 16);
+	b = B = R_DIM (B / 16, 0, 16);
+	r &= 0xff;
+	g &= 0xff;
+	b &= 0xff;
+	return (ut32)((G * M * M)  + (g * M) + b) + 16;
+#else
+	const int k = (256.0 / 6);
+	r = R_DIM (r / k, 0, 6);
+	g = R_DIM (g / k, 0, 6);
+	b = R_DIM (b / k, 0, 6);
 	return 16 + (r * 36) + (g * 6) + b;
+#endif
 }
 
 static int rgb (int r, int g, int b) {
 	int c = lookup_rgb (r, g, b);
-	if (c == -1) return approximate_rgb (r, g, b);
-	else return c;
+	if (c == -1) {
+		return approximate_rgb (r, g, b);
+	}
+	return c;
 }
 
 static void unrgb (int color, int *r, int *g, int *b) {
+	if (color < 0 || color > 256) {
+		*r = *g = *b = 0;
+		return;
+	}
 	int rgb = color_table[color];
 	*r = (rgb >> 16) & 0xff;
 	*g = (rgb >> 8) & 0xff;

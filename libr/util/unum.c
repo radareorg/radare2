@@ -72,7 +72,7 @@ R_API char *r_num_units(char *buf, ut64 num) {
 	if (num>=GB) { unit = 'G'; fnum = fnum/GB; } else
 	if (num>=MB) { unit = 'M'; fnum = fnum/MB; } else
 	if (num>=KB) { unit = 'K'; fnum = fnum/KB; } else
-		{ unit = 0; fnum = num; }
+		{ unit = 0; fnum = (double)num; }
 	tnum = (int)((double)(fnum - (int)fnum)*10);
 	if (tnum) {
 		snprintf (buf, 31, "%.1f%c", fnum, unit);

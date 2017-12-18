@@ -156,7 +156,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
 		r_io_map_new (io, fd, flags, delta - addr, 0LL, size + addr, do_skyline);
-		size = -addr;
+		size = -(st64)addr;
 	}
 	// RIOMap describes an interval of addresses (map->from; map->to)
 	map->itv.size = size;

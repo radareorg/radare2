@@ -1123,7 +1123,7 @@ static int like_cb(void *user, const char *k, const char *v) {
 	if (lcd->array) {
 		int idx = lcd->array_index;
 		int newsize = lcd->array_size + sizeof (char*) * 2;
-		const char **newarray = realloc (lcd->array, newsize);
+		const char **newarray = (const char **)realloc (lcd->array, newsize);
 		if (!newarray) {
 			return 0;
 		}
@@ -1163,7 +1163,7 @@ SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback
 	lcd.array_index = 0;
 	sdb_foreach (s, like_cb, &lcd);
 	if (lcd.array_index == 0) {
-		free (lcd.array);
+		free ((void*)lcd.array);
 		return NULL;
 	}
 	return (char**)lcd.array;

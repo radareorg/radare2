@@ -2575,17 +2575,17 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	if (autoblocksize) {
 		switch (core->printidx) {
 		case R_CORE_VISUAL_MODE_PRC: // prc
-			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
+			r_core_block_size (core, (int)(core->cons->rows * hexcols * 3.5));
 			break;
 		case R_CORE_VISUAL_MODE_PX: // x
 		case R_CORE_VISUAL_MODE_PXa: // pxa
-			r_core_block_size (core, core->cons->rows * hexcols * 3.5);
+			r_core_block_size (core, (int)(core->cons->rows * hexcols * 3.5));
 			break;
 		case R_CORE_VISUAL_MODE_PW: // XXX pw
-			r_core_block_size (core, core->cons->rows * hexcols);
+			r_core_block_size (core, (int)(core->cons->rows * hexcols));
 			break;
 		case R_CORE_VISUAL_MODE_PC: // XXX pc
-			r_core_block_size (core, core->cons->rows * hexcols * 4);
+			r_core_block_size (core, (int)(core->cons->rows * hexcols * 4));
 			break;
 		case R_CORE_VISUAL_MODE_PD: // pd
 		case R_CORE_VISUAL_MODE_PDDBG: // pd+dbg

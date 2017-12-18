@@ -1627,7 +1627,7 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	while (!r_cons_is_breaked ()) {
 		if (rtr_host[rtr_n].fd) {
 			snprintf (prompt, sizeof (prompt),
-				"fd:%d> ", rtr_host[rtr_n].fd->fd);
+				"fd:%d> ", (int)(size_t)rtr_host[rtr_n].fd->fd);
 		}
 		free (r_line_singleton ()->prompt);
 		r_line_singleton ()->prompt = strdup (prompt);

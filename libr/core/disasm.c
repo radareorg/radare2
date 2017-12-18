@@ -3225,7 +3225,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						ds_comment (ds, true, "; var %s", v->name);
 						r_anal_var_free (v);
 					} else {
-						ds_comment (ds, true, "; var %d", (int)-refaddr);
+						ds_comment (ds, true, "; var %d", -(int)refaddr);
 					}
 				} else {
 					if (r_core_anal_address (core, refaddr) & R_ANAL_ADDR_TYPE_ASCII) {

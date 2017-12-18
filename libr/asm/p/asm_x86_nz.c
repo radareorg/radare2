@@ -1541,6 +1541,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					data[l++] = offset;
 				}
 				if (mod == 2) {
+					// warning C4293: '>>': shift count negative or too big, undefined behavior
 					data[l++] = offset >> 8;
 					data[l++] = offset >> 16;
 					data[l++] = offset >> 24;
@@ -1548,7 +1549,6 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else if (op->operands[1].type & OT_MEMORY) {
-
 		if (op->operands[0].type & OT_MEMORY) {
 			return -1;
 		}

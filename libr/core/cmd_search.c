@@ -2278,6 +2278,9 @@ static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
 static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to) {
 	ut64 addr = from;
 	ut8 *block = calloc (core->blocksize, 1);
+	if (!block) {
+		return;
+	}
 	while (addr < to) {
 		(void) r_io_read_at (core->io, addr, block, core->blocksize);
 		if (r_cons_is_breaked ()) {
@@ -2289,7 +2292,7 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 			int pc = (equal * 100) / core->blocksize;
 			r_cons_printf ("0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
 			ut8 ptr[2] = {
-				pc * 2.5, 0
+				(ut8)(pc * 2.5), 0
 			};
 			r_print_fill (core->print, ptr, 1, UT64_MAX, core->blocksize);
 		}

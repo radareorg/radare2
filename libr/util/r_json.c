@@ -147,7 +147,7 @@ R_API bool r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	object->object.l = len;
 	free (object->object.a);
 	object->object.a = v;
-	free (object->object.n);
+	free ((void *)object->object.n);
 	object->object.n = (const char**) c;
 	return true;
 }

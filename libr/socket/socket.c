@@ -661,9 +661,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 
 R_API char *r_socket_to_string(RSocket *s) {
 #if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
-	char *str = malloc (32);
-	snprintf (str, 31, "fd%d", s->fd);
-	return str;
+	return r_str_newf ("fd%d", (int)(size_t)s->fd);
 #elif __UNIX__ || defined(__CYGWIN__)
 	char *str = NULL;
 	struct sockaddr sa;

@@ -204,7 +204,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	RListIter *iter;
 	RCorePlugin *cp;
 	if (!cmd || !input) {
-		return NULL;
+		return -1;
 	}
 	if (!input || !*input) {
 		if (cmd->nullcallback) {

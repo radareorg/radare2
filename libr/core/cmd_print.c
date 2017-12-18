@@ -3540,7 +3540,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '-': // "p-"
 		mode = input[1];
-		w = core->print->cols * 2.7;
+		w = (int)(core->print->cols * 2.7);
 		if (mode == 'j') {
 			r_cons_strcat ("{");
 		}
@@ -4044,7 +4044,7 @@ static int cmd_print(void *data, const char *input) {
 			free (old_arch);
 			free (new_arch);
 			goto beach;
-		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -core->blocksize_max) {
+		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -(int)core->blocksize_max) {
 			bw_disassemble = true;
 			l = use_blocksize; // negative
 			use_blocksize = -use_blocksize;

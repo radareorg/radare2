@@ -309,7 +309,7 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				rc = r_utf8_encode (&tmp[i], r);
 				runes++;
 				/* Print the escape code */
-			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e\\", (char)r)) {
+			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
 				if ((i + 32) < sizeof (tmp) && r < 93) {
 					tmp[i + 0] = '\\';
 					tmp[i + 1] = "       abtnvfr             e  "

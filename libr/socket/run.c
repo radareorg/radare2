@@ -204,8 +204,11 @@ static char *getstr(const char *src) {
 		eprintf ("Invalid hexpair string\n");
 		free (ret);
 		return NULL;
+#if 0
+	// what is this for??
 	case '%':
 		return (char *) strtoul (src + 1, NULL, 0);
+#endif
 	}
 	r_str_unescape ((ret = strdup (src)));
 	return ret;

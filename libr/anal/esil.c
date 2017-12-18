@@ -1162,10 +1162,10 @@ static int esil_asreq(RAnalEsil *esil) {
 			}
 			if (isNegative) {
 				if (regsize == 32) {
-					op_num = -op_num;
+					op_num = -(st64)op_num;
 					if (op_num >> param_num) {
 						op_num >>= param_num;
-						op_num = -op_num;
+						op_num = -(st64)op_num;
 					} else {
 						op_num = -1;
 					}
@@ -1245,7 +1245,7 @@ static int esil_ror(RAnalEsil *esil) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ut64 mask = (regsize - 1);
 			num2 &= mask;
-			ut64 res = (num >> num2) | (num << ((-num2) & mask));
+			ut64 res = (num >> num2) | (num << ((-(st64)num2) & mask));
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
@@ -1266,7 +1266,7 @@ static int esil_rol(RAnalEsil *esil) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ut64 mask = (regsize - 1);
 			num2 &= mask;
-			ut64 res = (num << num2) | (num >> ((-num2) & mask));
+			ut64 res = (num << num2) | (num >> ((-(st64)num2) & mask));
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {

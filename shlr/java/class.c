@@ -8713,7 +8713,8 @@ R_API int U(r_bin_java_float_cp_set)(RBinJavaObj * bin, ut16 idx, float val) {
 	r_bin_java_check_reset_cp_obj (cp_obj, R_BIN_JAVA_CP_FLOAT);
 	cp_obj->tag = R_BIN_JAVA_CP_FLOAT;
 	memcpy (bytes, (const char *) &val, 4);
-	val = R_BIN_JAVA_UINT (bytes, 0);
+	float *foo = (float*) bytes;
+	val = *foo; //(float)R_BIN_JAVA_UINT (bytes, 0);
 	memcpy (&cp_obj->info.cp_float.bytes.raw, (const char *) &val, 4);
 	return true;
 }
