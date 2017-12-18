@@ -15,6 +15,10 @@ static inline ut64 r_itv_begin(RAddrInterval itv) {
 	return itv.addr;
 }
 
+static inline ut64 r_itv_size(RAddrInterval itv) {
+	return itv.size;
+}
+
 // Returns the right endpoint address (not included)
 static inline ut64 r_itv_end(RAddrInterval itv) {
 	return itv.addr + itv.size;
