@@ -2724,9 +2724,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.from", -1, "Search start address");
 	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "Specify search boundaries");
-	SETOPTIONS (n, "raw", "block", "io.map", "io.maps", "io.section", "io.sections",
-		"dbg.map", "dbg.maps", "dbg.stack", "anal.fcn", "anal.bb", NULL);
-
 	SETOPTIONS (n, "raw", "block", "io.map", "io.maps",
 			"io.sections", "io.sections.write", "io.sections.exec", "io.sections.readonly",
 			"dbg.stack", "dbg.heap", "dbg.map",
