@@ -233,6 +233,10 @@ install-www:
 	mkdir -p "${DESTDIR}${WWWROOT}"
 	cp -rf shlr/www/* "${DESTDIR}${WWWROOT}"
 
+fix-perms:
+	chmod 0755 ${DESTDIR}${DATADIR}/radare2
+	chmod 0755 ${DESTDIR}${DATADIR}/radare2/*
+	chmod 0755 ${DESTDIR}${DATADIR}/radare2/*/*
 
 symstall-www:
 	rm -rf "${DESTDIR}${WWWROOT}"
@@ -269,6 +273,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
+	$(MAKE) fix-perms
 
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
