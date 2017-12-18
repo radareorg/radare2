@@ -1999,10 +1999,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'd': // "afd"
 		{
 		ut64 addr = 0;	
-		if (input[2] == ' ') {
+		if (input[2] == '?') {
+			eprintf ("afd [offset]\n");
+		} else if (input[2] == ' ') {
 			addr = r_num_math (core->num, input + 2); 
 		} else {
-			eprintf ("afd [offset]\n");
+			addr = core->offset;
 		}	
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (fcn) {
