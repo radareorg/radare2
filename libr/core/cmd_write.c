@@ -191,59 +191,60 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 
 static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
 	//TODO: generalise no_key_mode for all non key encoding/decoding.
-	int keylen = key ? strlen (key): 0;
+	int keylen = 0;
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
-	if (no_key_mode || keylen > 0) {
-		RCrypto *cry = r_crypto_new ();
-		if (r_crypto_use (cry, algo)) {
-			ut8 *binkey = malloc (keylen + 1);
-			if (binkey) {
-				int len = no_key_mode ? 1 : r_hex_str2bin (key, binkey);
-				if (len < 1) {
-					len = keylen;
-					strcpy ((char *)binkey, key);
-				} else {
-					keylen = len;
+	ut8 *binkey = NULL;
+	if (!strncmp (key, "s:", 2)) {
+		binkey = (ut8*)strdup (key + 2);
+		keylen = strlen (key + 2);
+	} else {
+		binkey = (ut8 *)strdup (key);
+		keylen = r_hex_str2bin (key, binkey);
+	}
+	if (!no_key_mode && keylen < 1) {
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+		return false;
+	}
+	RCrypto *cry = r_crypto_new ();
+	if (r_crypto_use (cry, algo)) {
+		if (!binkey) {
+			eprintf ("Cannot allocate %d bytes\n", keylen);
+			r_crypto_free (cry);
+			return false;
+		}
+		if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+			if (iv) {
+				ut8 *biniv = malloc (strlen (iv) + 1);
+				int ivlen = r_hex_str2bin (iv, biniv);
+				if (ivlen < 1) {
+					ivlen = strlen(iv);
+					strcpy ((char *)biniv, iv);
 				}
-				if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
-					if (iv) {
-						ut8 *biniv = malloc (strlen (iv) + 1);
-						int ivlen = r_hex_str2bin (iv, biniv);
-						if (ivlen < 1) {
-							ivlen = strlen(iv);
-							strcpy ((char *)biniv, iv);
-						}
-						if (!r_crypto_set_iv (cry, biniv, ivlen)) {
-							eprintf ("Invalid IV.\n");
-							return 0;
-						}
-					}
-
-					r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
-					r_crypto_final (cry, NULL, 0);
-
-					int result_size = 0;
-					ut8 *result = r_crypto_get_output (cry, &result_size);
-					if (result) {
-						r_io_write_at (core->io, core->offset, result, result_size);
-						eprintf ("Written %d bytes\n", result_size);
-						free (result);
-					}
-				} else {
-					eprintf ("Invalid key\n");
+				if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+					eprintf ("Invalid IV.\n");
+					return 0;
 				}
-				free (binkey);
-				return 0;
-			} else {
-				eprintf ("Cannot allocate %d bytes\n", keylen);
+			}
+			r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
+			r_crypto_final (cry, NULL, 0);
+
+			int result_size = 0;
+			ut8 *result = r_crypto_get_output (cry, &result_size);
+			if (result) {
+				r_io_write_at (core->io, core->offset, result, result_size);
+				eprintf ("Written %d bytes\n", result_size);
+				free (result);
 			}
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
+			eprintf ("Invalid key\n");
 		}
+		free (binkey);
 		r_crypto_free (cry);
+		return 0;
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+		eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
 	}
+	r_crypto_free (cry);
 	return 1;
 }
 
@@ -313,8 +314,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 		r_core_write_op (core, "ff", 'x');
 		r_core_block_read (core);
 		break;
-	case 'E': // encrypt
-	case 'D': // decrypt
+	case 'E': // "woE" encrypt
+	case 'D': // "woD" decrypt
 		{
 			int direction = (input[1] == 'E') ? 0 : 1;
 			const char *algo = NULL;
