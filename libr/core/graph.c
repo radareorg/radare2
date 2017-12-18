@@ -3502,11 +3502,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	int h, w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
 	if (!can) {
-		eprintf (
-			"Cannot create RCons.canvas context. Invalid screen "
-			"size? See scr.columns + scr.rows\n");
-		r_config_hold_free (hc);
-		return false;
+		w = 80;
+		h = 25;
+		can = r_cons_canvas_new (w, h);
+		if (!can) {
+			eprintf (
+					"Cannot create RCons.canvas context. Invalid screen "
+					"size? See scr.columns + scr.rows\n");
+			r_config_hold_free (hc);
+			return false;
+		}
 	}
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");

@@ -2006,7 +2006,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		if (fcn->diff->addr != -1) {
 			r_cons_printf (",\"diffaddr\":%"PFMT64d, fcn->diff->addr);
 		}
-		if (fcn->diff->name != NULL) {
+		if (fcn->diff->name) {
 			r_cons_printf (",\"diffname\":\"%s\"", fcn->diff->name);
 		}
 	}
@@ -2020,7 +2020,6 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		r_anal_var_count (core->anal, fcn, 'b', 0) +
 		r_anal_var_count (core->anal, fcn, 'r', 0) +
 		r_anal_var_count (core->anal, fcn, 's', 0));
-
 	r_cons_printf ("}");
 	free (name);
 	return 0;
@@ -2048,6 +2047,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 }
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
+	const char *defaultCC = r_anal_cc_default (core->anal);
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("\"f %s %d 0x%08"PFMT64x"\"\n", name, r_anal_fcn_size (fcn), fcn->addr);
 	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
@@ -2058,7 +2058,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
 			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 	// FIXME: this command prints something annoying. Does it have important side-effects?
-	r_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc, fcn->addr);
+	r_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc?fcn->cc: defaultCC, fcn->addr);
 	if (fcn->folded) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
