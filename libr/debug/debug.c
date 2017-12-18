@@ -856,11 +856,6 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
-R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
-	r_io_bind (io, &dbg->bp->iob);
-	r_io_bind (io, &dbg->iob);
-}
-
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;

@@ -158,19 +158,26 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	return 0;
 }
 
-//returns length of read bytes
+// returns length of read bytes
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	ut64 seek;
 	int ret = -1;
-	//check pointers and permissions
+	// check pointers and permissions
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->flags & R_IO_READ)) {
 		return 0;
 	}
 	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	if (desc->io->cachemode) {
+		if (seek != UT64_MAX && r_io_cache_at (desc->io, seek)) {
+			return r_io_cache_read (desc->io, seek, buf, len);
+		}
+	}
 	if (desc->plugin->read) {
 		ret = desc->plugin->read (desc->io, desc, buf, len);
 	}
-	if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
+	if (ret > 0 && desc->io->cachemode) {
+		r_io_cache_write (desc->io, seek, buf, len);
+	} else if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
 		ret = r_io_desc_cache_read (desc, seek, buf, ret);
 	}
 	return ret;
@@ -184,13 +191,12 @@ R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
 }
 
 R_API ut64 r_io_desc_size(RIODesc* desc) {
-	ut64 off, ret;
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
 		return 0LL;
 	}
-	off = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
-	ret = r_io_desc_seek (desc, 0LL, R_IO_SEEK_END);
-	//what to do if that seek fails?
+	ut64 off = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	ut64 ret = r_io_desc_seek (desc, 0LL, R_IO_SEEK_END);
+	// what to do if that seek fails?
 	r_io_desc_seek (desc, off, R_IO_SEEK_SET);
 	return ret;
 }

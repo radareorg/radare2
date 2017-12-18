@@ -1427,6 +1427,17 @@ static int cb_iobuffer(void *user, void *data) {
 	return true;
 }
 
+static int cb_io_cache_mode(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->i_value) {
+		core->io->cachemode = true;
+	} else {
+		core->io->cachemode = false;
+	}
+	return true;
+}
+
 static int cb_io_cache_read(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -2739,6 +2750,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI ("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB ("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");
+	SETCB ("io.cache.auto", "false", &cb_io_cache_mode, "Automatic cache all reads in the IO backend");
 	SETCB ("io.cache.read", "false", &cb_io_cache_read, "Enable read cache for vaddr (or paddr when io.va=0)");
 	SETCB ("io.cache.write", "false", &cb_io_cache_write, "Enable write cache for vaddr (or paddr when io.va=0)");
 	SETCB ("io.pcache", "false", &cb_iopcache, "io.cache for p-level");

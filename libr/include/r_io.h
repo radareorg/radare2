@@ -67,6 +67,7 @@ typedef struct r_io_t {
 	int aslr;
 	int autofd;
 	int cached;
+	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
 	int buffer_enabled;
 	int debug;
@@ -409,6 +410,7 @@ R_API bool r_io_desc_fini (RIO *io);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
+R_API bool r_io_cache_at(RIO *io, ut64 addr);
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to);
 R_API void r_io_cache_init(RIO *io);
 R_API int r_io_cache_list(RIO *io, int rad);

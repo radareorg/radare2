@@ -6,11 +6,23 @@
 #include "r_io.h"
 
 static void cache_item_free(RIOCache *cache) {
-	if (!cache)
+	if (!cache) {
 		return;
+	}
 	free (cache->data);
 	free (cache->odata);
 	free (cache);
+}
+
+R_API bool r_io_cache_at(RIO *io, ut64 addr) {
+	RListIter *iter;
+	RIOCache *c;
+	r_list_foreach (io->cache, iter, c) {
+		if (addr >= c->from && addr < c->to) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API void r_io_cache_init(RIO *io) {
@@ -134,7 +146,12 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		return false;
 	}
 	ch->written = false;
-	r_io_read_at (io, addr, ch->odata, len);
+	{
+		bool cm = io->cachemode;
+		io->cachemode = false;
+		r_io_read_at (io, addr, ch->odata, len);
+		io->cachemode = cm;
+	}
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
 	return true;
