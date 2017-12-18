@@ -2199,6 +2199,16 @@ repeat_arroba:
 
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
+		} else if (ptr[1] == '.') { // "@."
+			if (ptr[2] == '.') {
+				addr = r_num_tail (core->num, core->offset, ptr + 3);
+				r_core_seek (core, addr, 1);
+				core->tmpseek = true;
+				goto fuji;
+			} else {
+				// WAT DU
+				eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
+			}
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			usemyblock = true;
 			switch (ptr[0]) {
@@ -2369,7 +2379,6 @@ next_arroba:
 			goto repeat_arroba;
 		}
 		if (ptr[1] == '@') {
-			// TODO: remove temporally seek (should be done by cmd_foreach)
 			if (ptr[2] == '@') {
 				char *rule = ptr + 3;
 				while (*rule && *rule == ' ') rule++;
@@ -2377,7 +2386,6 @@ next_arroba:
 			} else {
 				ret = r_core_cmd_foreach (core, cmd, ptr + 2);
 			}
-			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
 			bool tmpseek = false;
 			const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
@@ -2467,7 +2475,7 @@ next_arroba:
 		rc = ret;
 		goto beach;
 	}
-
+fuji:
 	rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
 beach:
 	r_cons_grep_process (grep);

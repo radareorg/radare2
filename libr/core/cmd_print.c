@@ -53,6 +53,7 @@ static const char *help_msg_at[] = {
 	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
 	"@", " [addr]!blocksize", "temporary set a new blocksize",
+	"@..", "addr", "temporary partial address seek (see s..)",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
 	"@e:", "k=v,k=v", "temporary change eval vars",
