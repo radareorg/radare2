@@ -299,7 +299,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	FD_SET (s->fd, &Write);
 	FD_SET (s->fd, &Err);
 	select (0, NULL, &Write, &Err, &Timeout);
-	if(FD_ISSET (s->fd, &Write)) {
+	if (FD_ISSET (s->fd, &Write)) {
 		return true;
 	}
 	return false;

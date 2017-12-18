@@ -8,6 +8,14 @@ static int autoblocksize = 1;
 static int disMode = 0;
 static void visual_refresh(RCore *core);
 
+
+static bool snowMode = false;
+static RList *snows = NULL;
+typedef struct {
+	int x;
+	int y;
+} Snow;
+
 #define KEY_ALTQ 0xc5
 
 static const char *printfmtSingle[] = {
@@ -77,6 +85,41 @@ static void rotateAsmBits(RCore *core) {
 		bits = nb;
 		retries--;
 	}
+}
+
+static void printSnow(RCore *core) {
+	if (!snows) {
+		snows = r_list_newf (free);
+	}
+	int i, h, w = r_cons_get_size (&h);
+	int amount = rand () % 4;
+	if (amount > 0) {
+		for (i = 0; i < amount; i++) {
+			Snow *snow = R_NEW (Snow);
+			snow->x = rand () % w;
+			snow->y = 0;
+			r_list_append (snows, snow);
+		}
+	}
+	RListIter *iter, *iter2;
+	Snow *snow;
+	r_list_foreach_safe (snows, iter, iter2, snow) {
+		int pos = (rand () % 3) - 1;
+		snow->x += pos;
+		snow->y++;
+		if (snow->x >= w) {
+			r_list_delete (snows, iter);
+			continue;
+		}
+		if (snow->y > h) {
+			r_list_delete (snows, iter);
+			continue;
+		}
+		r_cons_gotoxy (snow->x, snow->y);
+		r_cons_printf ("*");
+	}
+	// r_cons_gotoxy (10 , 10);
+	r_cons_flush ();
 }
 
 static void visual_repeat(RCore *core) {
@@ -2305,6 +2348,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			break;
+		case '(':
+			snowMode = !snowMode;
+			if (!snowMode) {
+				r_list_free (snows);
+				snows = NULL;
+			}
+			break;
 		case '*':
 			if (core->print->cur_enabled) {
 				r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
@@ -2839,6 +2889,10 @@ static void visual_refresh(RCore *core) {
 	core->cons->blankline = true;
 	core->curtab = 0; // which command are we focusing
 	//core->seltab = 0; // user selected tab
+
+	if (snowMode) {
+		printSnow (core);
+	}
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
@@ -2959,7 +3013,15 @@ dodo:
 			goto dodo;
 		}
 		if (!skip) {
-			ch = r_cons_readchar ();
+			if (snowMode) {
+				ch = r_cons_readchar_timeout (300);
+				if (ch == -1) {
+					skip = 1;
+					continue;
+				}
+			} else {
+				ch = r_cons_readchar ();
+			}
 			if (r_cons_is_breaked()) {
 				break;
 			}

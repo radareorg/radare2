@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -33,7 +33,6 @@ static int is_fd_ready(int fd) {
 R_API int r_cons_controlz(int ch) {
 #if __UNIX__
 	if (ch == 0x1a) {
-		r_cons_set_raw (0);
 		r_cons_show_cursor (1);
 		r_cons_enable_mouse (0);
 		r_sys_stop ();
@@ -305,19 +304,13 @@ do_it_again:
 					ch=irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
 					bCtrl=irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
 					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar==0) {
-						ch=0;
+						ch = 0;
 						switch (irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
-							if (bCtrl)
-								ch='J';
-							else
-								ch='j';
+							ch = bCtrl ? 'J': 'j';
 							break;
 						case VK_RIGHT: // key right
-							if (bCtrl)
-								ch='L';
-							else
-								ch='l';
+							ch = bCtrl ? 'L': 'l';
 							break;
 						case VK_UP: // key up
 							if (bCtrl)
@@ -426,8 +419,9 @@ do_it_again:
 	}
 	FlushConsoleInputBuffer(h);
 	SetConsoleMode (h, mode);
-	if (ch==0)
+	if (ch == 0) {
 		goto do_it_again;
+	}
 	/*r_cons_gotoxy (1, 2);
 	r_cons_printf ("\n");
 	r_cons_printf ("| buf = %x |\n", ch);
@@ -437,6 +431,28 @@ do_it_again:
 	return  ch;
 }
 #endif
+
+R_API int r_cons_readchar_timeout(ut32 usec) {
+#if __UNIX__
+	struct timeval tv;
+	fd_set fdset, errset;
+	FD_ZERO (&fdset);
+	FD_SET (0, &fdset);
+	tv.tv_sec = 0; // usec / 1000;
+	tv.tv_usec = 1000 * usec;
+	r_cons_set_raw (1);
+	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
+		return r_cons_readchar ();
+	}
+	r_cons_set_raw (0);
+	// timeout
+	return -1;
+#else
+	// TODO: unimplemented readchar_timeout for windows
+	return r_cons_readchar ();
+#endif
+}
+
 R_API int r_cons_readchar() {
 	char buf[2];
 	buf[0] = -1;
@@ -451,15 +467,17 @@ R_API int r_cons_readchar() {
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
 	ret = ReadConsole (h, buf, 1, &out, NULL);
-	FlushConsoleInputBuffer(h);
-	if (!ret)
+	FlushConsoleInputBuffer (h);
+	if (!ret) {
 		return -1;
+	}
 	SetConsoleMode (h, mode);
 #else
 	r_cons_set_raw (1);
-	if (read (0, buf, 1)==-1)
+	if (read (0, buf, 1) == -1) {
 		return -1;
-	//r_cons_set_raw (0);
+	}
+	r_cons_set_raw (0);
 #endif
 	return r_cons_controlz (buf[0]);
 }
