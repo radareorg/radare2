@@ -1861,7 +1861,6 @@ R_API char *r_str_arg_escape (const char *arg) {
 R_API char **r_str_argv(const char *cmdline, int *_argc) {
 	int argc = 0;
 	int argv_len = 128; // Begin with that, argv will reallocated if necessary
-	char **argv;
 	char *args; // Working buffer for writing unescaped args
 	int cmdline_current = 0; // Current character index in _cmdline
 	int args_current = 0; // Current character index in  args
@@ -1871,7 +1870,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		return NULL;
 	}
 
-	argv = malloc (argv_len * sizeof (char *));
+	char **argv = malloc (argv_len * sizeof (char *));
 	if (!argv) {
 		return NULL;
 	}
@@ -1958,12 +1957,22 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		argv[argc++] = strdup (&args[arg_begin]);
 		if (argc >= argv_len) {
 			argv_len *= 2;
-			argv = realloc (argv, argv_len * sizeof (char *));
+			char **tmp = realloc (argv, argv_len * sizeof (char *));
+			if (!tmp) {
+				free (argv);
+				return NULL;
+			}
+			argv = tmp;
 		}
 		arg_begin = args_current;
 	} while (cmdline[cmdline_current++] != '\0');
 	argv[argc] = NULL;
-	argv = realloc (argv, (argc+1) * sizeof (char *));
+	char **tmp = realloc (argv, (argc + 1) * sizeof (char *));
+	if (tmp) {
+		argv = tmp;
+	} else {
+		argv = NULL;
+	}
 	if (_argc) {
 		*_argc = argc;
 	}

@@ -1600,13 +1600,15 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	orep = rep;
 
-	int ocur_enabled = core->print->cur_enabled;
+	int ocur_enabled = core->print && core->print->cur_enabled;
 	orig_offset = core->offset;
 	while (rep-- && *cmd) {
-		core->print->cur_enabled = false;
-		if (ocur_enabled && core->seltab >= 0) {
-			if (core->seltab == core->curtab) {
-				core->print->cur_enabled = true;
+		if (core->print) {
+			core->print->cur_enabled = false;
+			if (ocur_enabled && core->seltab >= 0) {
+				if (core->seltab == core->curtab) {
+					core->print->cur_enabled = true;
+				}
 			}
 		}
 		char *cr = strdup (cmdrep);
@@ -1640,7 +1642,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, 1);
 	}
-	core->print->cur_enabled = ocur_enabled;
+	if (core->print) {
+		core->print->cur_enabled = ocur_enabled;
+	}
 	if (colon && colon[1]) {
 		for (++colon; *colon == ';'; colon++);
 		r_core_cmd_subst (core, colon);
@@ -3121,7 +3125,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	r_th_lock_leave (core->lock);
 	/* run pending analysis commands */
-	if (core->anal->cmdtail) {
+	if (core && core->anal && core->anal->cmdtail) {
 		char *res = core->anal->cmdtail;
 		core->anal->cmdtail = NULL;
 		r_core_cmd_lines (core, res);

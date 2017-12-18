@@ -135,7 +135,10 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 
 R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote) {
 	int matches, i;
-	for (i=0; i<cmd->aliases.count; i++) {
+	if (!cmd || !k) {
+		return NULL;
+	}
+	for (i=0; i < cmd->aliases.count; i++) {
 		matches = 0;
 		if (remote) {
 			if (cmd->aliases.remote[i]) {
@@ -200,6 +203,9 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	int ret = -1;
 	RListIter *iter;
 	RCorePlugin *cp;
+	if (!cmd || !input) {
+		return NULL;
+	}
 	if (!input || !*input) {
 		if (cmd->nullcallback) {
 			ret = cmd->nullcallback (cmd->data);

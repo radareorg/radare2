@@ -1400,7 +1400,6 @@ int main(int argc, char **argv, char **envp) {
 
 	/* capture return value */
 	ret = r.num->value;
-
 beach:
 	if (quietLeak) {
 		exit (ret);
