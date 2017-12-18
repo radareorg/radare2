@@ -595,8 +595,8 @@ R_API int r_num_between(RNum *num, const char *input_value) {
 }
 
 R_API bool r_num_is_op(const char c) {
-	return c == '/' || c == '+' || c == '-' || c == '*'
-		|| c == '&' || c == '^' || c == '|';
+	return c == '/' || c == '+' || c == '-' || c == '*' ||
+		c == '%' || c == '&' || c == '^' || c == '|';
 }
 
 //Assumed *str is parsed as an expression correctly
