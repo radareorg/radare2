@@ -67,8 +67,8 @@ R_API int r_name_filter(char *name, int maxlen) {
 	}
 	// trimming trailing and leading underscores
 	len = strlen (name);
-	for (len; *(name + len - 1) == '_'; len--);
-	if (!len) { // name conists only of underscore
+	for (; *(name + len - 1) == '_'; len--);
+	if (!len) { // name consists only of underscores
 		return r_name_check (oname);
 	}
 	for (i = 0; *(name + i) == '_'; i++, len--);
