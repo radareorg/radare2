@@ -2,6 +2,7 @@
 
 #include "r_core.h"
 #include "r_util.h"
+#include "r_cons.h"
 #include "sdb/sdb.h"
 
 #define TN_KEY_LEN 32
@@ -1799,25 +1800,44 @@ static int cmd_debug_map(RCore *core, const char *input) {
 #endif
 
 R_API void r_core_debug_rr(RCore *core, RReg *reg) {
-	ut64 value;
+	char *use_color, *color = "";
+	int use_colors = r_config_get_i (core->config, "scr.color");
 	int bits = core->assembler->bits;
+	int delta = 0;
+	ut64 diff, value;
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
+	if (use_colors) {
+#undef ConsP
+#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+		use_color = ConsP(creg): Color_BWHITE;
+	} else {
+		use_color = NULL;
+	}
 	r_debug_map_sync (core->dbg);
 	r_list_foreach (list, iter, r) {
 		char *rrstr, *tmp = NULL;
 		if (r->size != bits) {
 			continue;
 		}
+		if(delta && use_color){
+			color = use_color;
+		} else {
+			*color = "";
+		}
 		value = r_reg_get_value (core->dbg->reg, r);
+		r_reg_arena_swap (core->dbg->reg, false);
+		diff = r_reg_get_value (core->dbg->reg, r);
+		r_reg_arena_swap (core->dbg->reg, false);
+		delta = value-diff;
 		rrstr = r_core_anal_hasrefs (core, value, true);
 		if (bits == 64) {
 			if (r->flags) {
 				tmp = r_reg_get_bvalue (reg, r);
-				r_cons_printf ("%6s %018s", r->name, tmp);
+				r_cons_printf ("%s%6s %018s%s", color, r->name, tmp, Color_RESET);
 			} else {
-				r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
+				r_cons_printf ("%s%6s 0x%016"PFMT64x"%s", color, r->name, value, Color_RESET);
 			}
 		} else {
 			if (r->flags) {
