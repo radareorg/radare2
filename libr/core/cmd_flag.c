@@ -853,9 +853,9 @@ rep:
 					char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
 					if (*match) {
 						r_cons_println (match);
-					}	
+					}
+				r_list_free (temp);	
 				}
-				r_list_free (temp);
 				return 0;
 				}	
 			default:
