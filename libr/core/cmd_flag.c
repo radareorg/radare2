@@ -57,6 +57,14 @@ static const char *help_msg_fc[] = {
 	"fc", " flagname color", "Set color to a flag",
 	NULL
 };
+static const char *help_msg_fd[] = {
+	"Usage: fd[d]", " [offset|flag|expression]", " # Describe flags",
+	"fd", " $$" , "# describe flag + delta for given offset",
+ 	"fd.","", "# check flags in current address (no delta)",
+	"fdd", " $$", "# describe flag without space restrictions",
+	"fdw", " [string]", "# filter closest flag by string for current offset",
+	NULL	
+};
 
 static const char *help_msg_fs[] = {
 	"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
@@ -93,6 +101,7 @@ static const char *help_msg_fz[] = {
 static void cmd_flag_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, f);
 	DEFINE_CMD_DESCRIPTOR (core, fc);
+	DEFINE_CMD_DESCRIPTOR (core, fd);
 	DEFINE_CMD_DESCRIPTOR (core, fs);
 	DEFINE_CMD_DESCRIPTOR (core, fz);
 }
@@ -218,6 +227,11 @@ static void flag_ordinals(RCore *core, const char *str) {
 			free (newName);
 		}
 	}
+}
+
+static int cmpflag(const void *_a, const void *_b) {
+	const RFlagItem *flag1 = _a , *flag2 = _b;
+	return (flag1->offset - flag2->offset);
 }
 
 static int cmd_flag(void *data, const char *input) {
@@ -789,10 +803,7 @@ rep:
 			bool strict_offset = false;
 			switch (input[1]) {
 			case '?':
-				eprintf ("Usage: fd[d] [offset|flag|expression]\n");
-				eprintf (" fd $$   # describe flag + delta for given offset\n");
-				eprintf (" fd.     # check flags in current address (no delta)\n");
-				eprintf (" fdd $$  # describe flag without space restrictions\n");
+				r_core_cmd_help (core, help_msg_fd);
 				if (str) {
 					free (str);
 				}
@@ -812,6 +823,49 @@ rep:
 					addr = r_num_math (core->num, input + 3);
 				}
 				break;
+			case 'w':
+				{
+				char *arg = strdup (r_str_chop_ro (input + 2));
+				if (arg) {
+					if (*arg) {
+						RFlag *f = core->flags;
+						RList *temp = r_list_new ();
+						ut64 loff = 0; 
+						ut64 uoff = 0;
+						ut64 curseek = core->offset;
+						char *lmatch , *umatch;
+						RFlagItem *flag;
+						RListIter *iter;
+						r_list_foreach (f->flags, iter, flag) { // creating a local copy
+							r_list_append (temp, flag);
+						}	
+						r_list_sort (temp, &cmpflag);
+						r_list_foreach (temp, iter, flag) {
+							if ((f->space_idx != -1) && (flag->space != f->space_idx)) {
+								continue;
+							}
+							if (strstr (flag->name , arg) != NULL) {
+								if (flag->offset < core->offset) {
+									loff = flag->offset;
+									lmatch = flag->name;							
+									continue;
+								}
+								uoff = flag->offset;
+								umatch = flag->name;
+								break;
+							}	
+						}		
+						char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
+						if (match) {
+							if (*match) {
+								r_cons_println (match);
+							}
+						}	
+						r_list_free (temp);
+					}	
+				}
+				return 0;
+				}	
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
