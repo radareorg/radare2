@@ -220,6 +220,11 @@ static void flag_ordinals(RCore *core, const char *str) {
 	}
 }
 
+static int cmpflag(const void *_a, const void *_b) {
+	const RFlagItem *flag1 = _a , *flag2 = _b;
+	return (flag1->offset - flag2->offset);
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -793,6 +798,7 @@ rep:
 				eprintf (" fd $$   # describe flag + delta for given offset\n");
 				eprintf (" fd.     # check flags in current address (no delta)\n");
 				eprintf (" fdd $$  # describe flag without space restrictions\n");
+				eprintf (" fdw [string] # filter closest flag by string for current offset\n ");
 				if (str) {
 					free (str);
 				}
@@ -812,6 +818,46 @@ rep:
 					addr = r_num_math (core->num, input + 3);
 				}
 				break;
+			case 'w':
+				{
+				char *arg = strdup (r_str_chop_ro (input + 2));
+				if (*arg) {
+					RFlag *f = core->flags;
+					RList *temp = r_list_new ();
+					ut64 loff = 0; 
+					ut64 uoff = 0;
+					ut64 curseek = core->offset;
+					char *lmatch , *umatch;
+					RFlagItem *flag;
+					RListIter *iter;
+					r_list_foreach (f->flags, iter, flag) { // creating a local copy
+						r_list_append (temp, flag);
+					}	
+					r_list_sort (temp, &cmpflag);
+					r_list_foreach (temp, iter, flag) {
+						if ((f->space_idx != -1) && (flag->space != f->space_idx)) {
+							continue;
+						}
+						if (strstr(flag->name , arg) != NULL) {
+							if (flag->offset < core->offset) {
+								loff = flag->offset;
+								lmatch = flag->name;							
+								continue;
+							} else {
+								uoff = flag->offset;
+								umatch = flag->name;	
+								break;	
+							}	
+						}	
+					}
+					char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
+					if (*match) {
+						r_cons_println (match);
+					}	
+				}
+				r_list_free (temp);
+				return 0;
+				}	
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
