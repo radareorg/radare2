@@ -4127,6 +4127,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				until_addr = r_num_math (core->num, input + 2);
 			else until_expr = "0";
 			r_core_esil_step (core, until_addr, until_expr, NULL);
+			r_core_cmd0 (core, ".ar*");
 		}
 		break;
 	case 'i': // "aei"
