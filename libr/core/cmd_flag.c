@@ -852,7 +852,7 @@ rep:
 								}
 								uoff = flag->offset;
 								umatch = flag->name;
-								break;		
+								break;
 							}	
 						}		
 						char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
@@ -864,7 +864,7 @@ rep:
 						r_list_free (temp);
 					}	
 				}
-				return 0;	
+				return 0;
 				}	
 			default:
 				addr = r_num_math (core->num, input + 2);
