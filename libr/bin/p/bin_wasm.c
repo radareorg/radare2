@@ -133,9 +133,7 @@ static RList *symbols(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
 		}
-		char tmp[R_BIN_SIZEOF_STRINGS];
-		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "imp.%s.%s", imp->module_str, imp->field_str);
-		ptr->name = strdup(tmp);
+		ptr->name = r_str_newf ("imp.%s.%s", imp->module_str, imp->field_str);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ("NONE");
 		switch (imp->kind) {
