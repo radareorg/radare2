@@ -43,7 +43,8 @@ static inline bool r_itv_overlap(RAddrInterval itv, RAddrInterval x) {
 }
 
 static inline bool r_itv_overlap2(RAddrInterval itv, ut64 addr, ut64 size) {
-	return r_itv_overlap (itv, (RAddrInterval){addr, size});
+	RAddrInterval rai = {addr, size};
+	return r_itv_overlap (itv, rai);
 }
 
 // Precondition: itv and x overlap
@@ -51,7 +52,8 @@ static inline bool r_itv_overlap2(RAddrInterval itv, ut64 addr, ut64 size) {
 static inline RAddrInterval r_itv_intersect(RAddrInterval itv, RAddrInterval x) {
 	ut64 addr = R_MAX (itv.addr, x.addr),
 			end = R_MIN (itv.addr + itv.size - 1, x.addr + x.size - 1) + 1;
-	return (RAddrInterval){addr, end - addr};
+	RAddrInterval rai = {addr, end - addr};
+	return rai;
 }
 
 #endif  // R_ADDR_INTERVAL_H

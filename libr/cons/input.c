@@ -437,6 +437,7 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 	struct timeval tv;
 	fd_set fdset, errset;
 	FD_ZERO (&fdset);
+	FD_ZERO (&errset);
 	FD_SET (0, &fdset);
 	tv.tv_sec = 0; // usec / 1000;
 	tv.tv_usec = 1000 * usec;

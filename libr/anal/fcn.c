@@ -165,7 +165,7 @@ static RAnalFunction *_fcn_tree_find_addr(RBNode *x_, ut64 addr) {
 
 // _fcn_tree_{iter_first,iter_next} are used to iterate functions whose intervals intersect [from, to) in O(log(n) + |candidates|) time
 static FcnTreeIter _fcn_tree_iter_first(RBNode *x_, ut64 from, ut64 to) {
-	FcnTreeIter it;
+	FcnTreeIter it = {0};
 	it.len = 0;
 	if (x_ && from <= FCN_CONTAINER (x_)->rb_max_addr) {
 		it.cur = _fcn_tree_probe (&it, x_, from, to);
@@ -1570,7 +1570,6 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 # else
   // Interval tree query
 	RAnalFunction *fcn;
-	RListIter *iter;
 	FcnTreeIter it;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
 		return _fcn_tree_find_addr (anal->fcn_tree, addr);

@@ -92,11 +92,11 @@ static void printSnow(RCore *core) {
 		snows = r_list_newf (free);
 	}
 	int i, h, w = r_cons_get_size (&h);
-	int amount = rand () % 4;
+	int amount = r_num_rand (4);
 	if (amount > 0) {
 		for (i = 0; i < amount; i++) {
 			Snow *snow = R_NEW (Snow);
-			snow->x = rand () % w;
+			snow->x = r_num_rand (w);
 			snow->y = 0;
 			r_list_append (snows, snow);
 		}
@@ -104,7 +104,7 @@ static void printSnow(RCore *core) {
 	RListIter *iter, *iter2;
 	Snow *snow;
 	r_list_foreach_safe (snows, iter, iter2, snow) {
-		int pos = (rand () % 3) - 1;
+		int pos = (r_num_rand (3)) - 1;
 		snow->x += pos;
 		snow->y++;
 		if (snow->x >= w) {
