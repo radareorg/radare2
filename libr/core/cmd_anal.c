@@ -5151,7 +5151,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (ptr);
 			return false;
 		}
-		r_anal_ref_add (core->anal, addr, at, input[0]);
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
+		if (fcn) {
+			r_anal_fcn_xref_add (core->anal, fcn, at, addr, input[0]);
+		} else {
+			r_anal_ref_add (core->anal, addr, at, input[0]);
+		}
 		free (ptr);
 		}
 	   	break;
