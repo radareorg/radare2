@@ -49,6 +49,14 @@ const char *linux_reg_profile (RDebug *dbg) {
 #endif
 }
 
+static void linux_detach_all (RDebug *dbg);
+static char *read_link (int pid, const char *file);
+static int linux_attach_single_pid (RDebug *dbg, int ptid);
+static void linux_attach_all (RDebug *dbg);
+static void linux_remove_thread (RDebug *dbg, int pid);
+static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
+static int linux_stop_process(int pid);
+
 int linux_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
 	int ret = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
