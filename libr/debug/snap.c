@@ -24,6 +24,7 @@ R_API void r_debug_snap_free(void *p) {
 
 R_API int r_debug_snap_delete(RDebug *dbg, int idx) {
 	ut32 count = 0;
+	RDebugSnap *snap;
 	RListIter *iter;
 	if (idx == -1) {
 		r_list_free (dbg->snaps);
