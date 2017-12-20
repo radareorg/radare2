@@ -33,7 +33,8 @@ static inline bool is_special_char (char *name) {
 }
 
 R_API int r_name_filter(char *name, int maxlen) {
-	int i, len;
+	int i;
+	size_t len;
 	char *oname;
 	if (!name) return 0;
 	if (maxlen < 0) {
@@ -67,7 +68,7 @@ R_API int r_name_filter(char *name, int maxlen) {
 	}
 	// trimming trailing and leading underscores
 	len = strlen (name);
-	for (; *(name + len - 1) == '_'; len--);
+	for (; len > 0 && *(name + len - 1) == '_'; len--);
 	if (!len) { // name consists only of underscores
 		return r_name_check (oname);
 	}
