@@ -6,9 +6,7 @@
 
 #include <r_lib.h>
 #include <r_util.h>
-#include <r_flag.h>
 #include <r_anal.h>
-#include <r_reg.h>
 #include <r_parse.h>
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
@@ -156,36 +154,33 @@ static int replace (int argc, char *argv[], char *newstr) {
 
 static int parse (RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
-	int i, len = strlen (data);
+	int i;
+	size_t len = strlen (data);
 	int sz = 32;
-	char *buf, *ptr, *optr;
+	char *buf, *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
 	}
-	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
+	// strdup can be slow here :?
+	if (!(buf = strdup (data))) {
 		return false;
 	}
-	memcpy (buf, data, len + 1);
 	if (!strncasecmp (buf, "lea", 3)) {
 		r_str_replace_char (buf, '[', 0);
 		r_str_replace_char (buf, ']', 0);
 	}
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
+		end = strchr (buf, '\0');
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
 		}
 		if (!ptr) {
-			ptr = strchr (buf, '\0');
-		}
-		if (!ptr) {
-			free (buf);
-			return false;
+			ptr = end;
 		}
 		*ptr = '\0';
-		for (++ptr; *ptr == ' '; ptr++);
+		if (ptr != end) for (++ptr; *ptr == ' '; ptr++);
 		r_str_ncpy (w0, buf, sizeof (w0));
 		r_str_ncpy (w1, ptr, sizeof (w1));
 		optr = ptr;
@@ -203,7 +198,7 @@ static int parse (RParse *p, const char *data, char *str) {
 				r_str_ncpy (w2, optr, sizeof (w2));
 				r_str_ncpy (w3, ptr, sizeof (w3));
 			}
-		}	
+		}
 	}
 	char *wa[] = { w0, w1, w2, w3 };
 	int nw = 0;
