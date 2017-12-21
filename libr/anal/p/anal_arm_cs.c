@@ -291,7 +291,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			case ARM_SFT_ROR_REG:
 			case ARM_SFT_RRX_REG:
 				r_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				r_strbuf_appendf (buf, ",\"value\":\"%x\"", cs_reg_name (handle, op->shift.value));
+				r_strbuf_appendf (buf, ",\"value\":\"%d\"", cs_reg_name (handle, op->shift.value));
 				break;
 			default:
 				break;
@@ -525,7 +525,19 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_PSTATE:
 			r_strbuf_append (buf, "\"type\":\"pstate\"");
-			r_strbuf_appendf (buf, ",\"value\":%x", op->pstate);
+			switch (op->pstate) {
+			case ARM64_PSTATE_SPSEL:
+				r_strbuf_append (buf, ",\"value\":\"spsel\"");
+				break;
+			case ARM64_PSTATE_DAIFSET:
+				r_strbuf_append (buf, ",\"value\":\"daifset\"");
+				break;
+			case ARM64_PSTATE_DAIFCLR:
+				r_strbuf_append (buf, ",\"value\":\"daifclr\"");
+				break;
+			default:
+				r_strbuf_appendf (buf, ",\"value\":%d", op->pstate);
+			}
 			break;
 		case ARM64_OP_SYS:
 			r_strbuf_append (buf, "\"type\":\"sys\"");
@@ -533,11 +545,11 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_PREFETCH:
 			r_strbuf_append (buf, "\"type\":\"prefetch\"");
-			r_strbuf_appendf (buf, ",\"value\":%x", op->prefetch - 1);
+			r_strbuf_appendf (buf, ",\"value\":%d", op->prefetch - 1);
 			break;
 		case ARM64_OP_BARRIER:
 			r_strbuf_append (buf, "\"type\":\"prefetch\"");
-			r_strbuf_appendf (buf, ",\"value\":%x", op->barrier - 1);
+			r_strbuf_appendf (buf, ",\"value\":%d", op->barrier - 1);
 			break;
 		default:
 			r_strbuf_append (buf, ",\"type\":\"invalid\"");
