@@ -1240,6 +1240,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
 	bool romem = r_config_get_i (core->config, "esil.romem");
 	bool stats = r_config_get_i (core->config, "esil.stats");
+	bool be = core->print->big_endian;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	int ret, i, j, idx, size;
@@ -1338,10 +1339,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					core->offset + idx,
 					asmop.size, asmop.buf_asm,
 					strsub, sizeof (strsub));
+				{
+					ut64 killme = UT64_MAX;
+					if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
+						core->parser->relsub_addr = killme;
+					}
+				}
 				// 0x33->sym.xx
 				char *p = strdup (strsub);
 				r_parse_filter (core->parser, core->flags, p,
-						strsub, sizeof (strsub), core->print->big_endian);
+						strsub, sizeof (strsub), be);
 				free (p);
 				r_cons_printf ("\"disasm\":\"%s\",", strsub);
 			}
