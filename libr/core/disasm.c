@@ -1092,6 +1092,14 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	if (!xrefs) {
 		return;
 	}
+	if (ds->maxrefs < 1) {
+		ds_pre_xrefs (ds);
+		ds_comment (ds, false, "   %s; XREFS(%d)\n",
+			ds->show_color? ds->pal_comment: "",
+			r_list_length (xrefs));
+		r_list_free (xrefs);
+		return;
+	}
 	if (r_list_length (xrefs) > ds->maxrefs) {
 		int cols = r_cons_get_size (NULL);
 		cols -= 15;
