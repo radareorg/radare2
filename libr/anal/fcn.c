@@ -97,7 +97,7 @@ static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	RAnalFunction *fcn = FCN_CONTAINER (node), *fcn1;
 	int i;
-	fcn->rb_max_addr = fcn->addr + fcn->_size - 1;
+	fcn->rb_max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
 			fcn1 = container_of (node->child[i], RAnalFunction, rb);
@@ -128,7 +128,7 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 			continue;
 		}
 		if (x->addr <= to - 1) {
-			if (from <= x->addr + x->_size - 1) {
+			if (from <= x->addr + (x->_size == 0 ? 0 : x->_size - 1)) {
 				return x_;
 			}
 			if ((y_ = x_->child[1])) {
@@ -193,7 +193,7 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 			it->cur = NULL;
 			break;
 		}
-		if (from <= x->addr + x->_size - 1) {
+		if (from <= x->addr + (x->_size == 0 ? 0 : x->_size - 1)) {
 			it->cur = x_;
 			break;
 		}
