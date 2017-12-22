@@ -1568,7 +1568,6 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	if (!ds->show_functions) {
 		return;
 	}
-	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		if (f->addr == ds->at) {
@@ -1716,7 +1715,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			if (f) {
 				ds_beginline (ds, f, false);
 			} else {
-				ds_print_lines_left (ds);
+	//			ds_print_lines_left (ds);
 				if (ds->show_fcnlines) {
 					r_cons_printf ("  ");
 				}
@@ -1724,9 +1723,15 @@ static void ds_show_flags(RDisasmState *ds) {
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
-			r_cons_printf ((f && ds->at > f->addr)? "| " : "  ");
-			ds_print_lines_left (ds);
+#if OLDPRE
+			r_cons_printf ((f && ds->at > f->addr)? "| " : "");
+	//		ds_print_lines_left (ds);
 			r_cons_printf (";-- ");
+#else
+			ds_pre_xrefs (ds);
+			// r_cons_printf ("   ;-- ");
+			r_cons_printf (";-- ");
+#endif
 		}
 		if (ds->show_color) {
 			bool hasColor = false;
@@ -3088,7 +3093,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
 				    && (!ds->opstr || !strstr (ds->opstr, f->name))) {
-					ALIGN;
+					if (ds->show_comment_right) {
+						ALIGN;
+					} else {
+						ds_pre_xrefs (ds);
+					}
 					ds_comment (ds, true, "; %s", f->name);
 					flag_printed = true;
 				}
