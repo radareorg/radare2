@@ -1241,6 +1241,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	bool romem = r_config_get_i (core->config, "esil.romem");
 	bool stats = r_config_get_i (core->config, "esil.stats");
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	int ret, i, j, idx, size;
 	const char *color = "";
 	const char *esilstr;
@@ -1330,6 +1331,20 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_print (",");
 			}
 			r_cons_printf ("{\"opcode\":\"%s\",", asmop.buf_asm);
+			{
+				char strsub[128];
+				// pc+33
+				r_parse_varsub (core->parser, NULL,
+					core->offset + idx,
+					asmop.size, asmop.buf_asm,
+					strsub, sizeof (strsub));
+				// 0x33->sym.xx
+				char *p = strdup (strsub);
+				r_parse_filter (core->parser, core->flags, p,
+						strsub, sizeof (strsub), core->print->big_endian);
+				free (p);
+				r_cons_printf ("\"disasm\":\"%s\",", strsub);
+			}
 			r_cons_printf ("\"mnemonic\":\"%s\",", mnem);
 			if (hint && hint->opcode) {
 				r_cons_printf ("\"ophint\":\"%s\",", hint->opcode);

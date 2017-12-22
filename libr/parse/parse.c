@@ -243,7 +243,6 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						flag = flag2;
 					}
 				}
-
 				if (isvalidflag (flag)) {
 					if (p->notin_flagspace != -1) {
 						if (p->flagspace == flag->space) {
@@ -384,7 +383,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						ch = off & 0xff;
 						off >>= 8;
 					} else {
-						ch = off >> (8 * (sizeof(off) - 1));
+						ch = off >> (8 * (sizeof (off) - 1));
 						off <<= 8;
 					}
 

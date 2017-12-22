@@ -235,6 +235,7 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	RList *spargs, *bpargs, *regargs;
 	RAnalVar *var;
 	RListIter *iter;
 	char *oldstr, *newstr;
@@ -242,7 +243,6 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	if (!tstr) {
 		return false;
 	}
-	RList *spargs, *bpargs, *regargs;
 
 	if (!p->varlist) {
 		free (tstr);
@@ -316,7 +316,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			free (oldstr);
 			break;
 		}
-		free(oldstr);
+		free (oldstr);
 	}
 	r_list_foreach (spargs, iter, var) {
 		if (var->delta > -10 && var->delta < 10) {

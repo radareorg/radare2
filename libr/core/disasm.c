@@ -83,7 +83,7 @@ typedef struct {
 	bool pseudo;
 	int filter;
 	int interactive;
-	int varsub;
+	bool varsub;
 	bool show_lines;
 	bool show_lines_ret;
 	bool show_lines_call;
