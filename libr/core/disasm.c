@@ -4620,6 +4620,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			j++;
 			continue;
 		}
+		char *opstr = strdup (asmop.buf_asm);
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
@@ -4645,7 +4646,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				oplen = ds->oplen = ret = skip_bytes;
 			}
 		}
-
+		{
+			ut64 killme = UT64_MAX;
+			bool be = core->print->big_endian;
+			if (r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be)) {
+				core->parser->relsub_addr = killme;
+			}
+		}
 		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str,
 			sizeof (str), core->print->big_endian);
 
@@ -4668,17 +4675,20 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
+			r_cons_printf (",\"opcode\":\"%s\"", opstr);
 			char *quoted_str, *qpos, *spos = NULL;
 			char *escaped_str = r_str_utf16_encode (str, -1);
-			qpos = quoted_str = malloc (strlen (escaped_str)*4 + 1);
-			for(spos = escaped_str; *spos != '\0'; spos++) {
-				if(*spos == '"') {
-					*qpos++ = '\\';
+			qpos = quoted_str = malloc ((strlen (escaped_str) * 4) + 1);
+			if (qpos) {
+				for (spos = escaped_str; *spos != '\0'; spos++) {
+					if (*spos == '"') {
+						*qpos++ = '\\';
+					}
+					*qpos++ = *spos;
 				}
-				*qpos++ = *spos;
+				*qpos = '\0';
+				r_cons_printf (",\"disasm\":\"%s\"", quoted_str);
 			}
-			*qpos = '\0';
-			r_cons_printf (",\"opcode\":\"%s\"", quoted_str);
 			free (escaped_str);
 			free (quoted_str);
 		}
@@ -4764,6 +4774,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		j++; // instructions
 		line++;
 
+		free (opstr);
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
 		if (end_nbopcodes || end_nbbytes) {

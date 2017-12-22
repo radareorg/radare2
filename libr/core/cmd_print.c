@@ -4208,13 +4208,15 @@ static int cmd_print(void *data, const char *input) {
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							cont_size = tmp_get_contsize (tmp_func);
 							loc_buf = calloc (cont_size, 1);
-							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-							if (!first) {
-								r_cons_print (",");
+							if (loc_buf) {
+								r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
+								if (!first) {
+									r_cons_print (",");
+								}
+								r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+								first = false;
+								free (loc_buf);
 							}
-							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
-							first = false;
-							free (loc_buf);
 						}
 					} else {
 						eprintf ("cannot allocate %d bytes\n", fcn_size);
