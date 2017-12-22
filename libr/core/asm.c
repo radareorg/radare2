@@ -103,7 +103,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
-	int opsz = 0;
+	// int opsz = 0;
 	char *opst = NULL;
 	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
 		matches = 0;
@@ -124,7 +124,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
-				opsz = analop.size;
+				//opsz = analop.size;
 				opst = strdup (r_strbuf_get (&analop.esil));
 				r_anal_op_fini (&analop);
 			} else {
@@ -136,7 +136,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					matchcount = 0;
 					continue;
 				}
-				opsz = op.size;
+				//opsz = op.size;
 				opst = strdup (op.buf_asm);
 			}
 			matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");

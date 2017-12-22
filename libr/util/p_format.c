@@ -358,7 +358,11 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 		? p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer) - 8)
 		: p->iob.read_at (p->iob.io, (ut64)addr, buffer, sizeof (buffer) - 8);
 	if (MUSTSEEJSON) {
-		p->cb_printf ("%d,\"string\":\"%s\"}", seeki, buffer);
+		char *encstr = r_str_utf16_encode ((const char *)buffer, -1);
+		if (encstr) {
+			p->cb_printf ("%d,\"string\":\"%s\"}", seeki, encstr);
+			free (encstr);
+		}
 	} else if (MUSTSEE) {
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
@@ -1870,13 +1874,19 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						p->cb_printf ("%c", tmp);
 					}
 				}
-				if (isptr) p->cb_printf ("*");
-				p->cb_printf ("\",\"offset\":%d,\"value\":",(isptr)?(seek+nexti-(p->bits/8)):seek+i);
+				if (isptr) {
+					p->cb_printf ("*");
+				}
+				p->cb_printf ("\",\"offset\":%d,\"value\":",
+					isptr? (seek + nexti - (p->bits / 8)) : seek + i);
 			}
 
 			if (isptr == NULLPTR) {
-				if (MUSTSEEJSON) p->cb_printf ("\"NULL\"}", tmp, seek+i);
-				else if (MUSTSEE) p->cb_printf (" NULL\n");
+				if (MUSTSEEJSON) {
+					p->cb_printf ("\"NULL\"}", tmp, seek + i);
+				} else if (MUSTSEE) {
+					p->cb_printf (" NULL\n");
+				}
 				isptr = PTRBACK;
 			} else
 			/* format chars */

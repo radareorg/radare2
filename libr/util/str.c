@@ -2160,16 +2160,13 @@ R_API void r_str_uri_decode (char *s) {
 	int n;
 	char *d;
 	for (d = s; *s; s++, d++) {
-#if 0
-		if (*s == '+') {
-			*d = ' ';
-		} else
-#endif
 		if (*s == '%') {
-			sscanf (s+1, "%02x", &n);
+			sscanf (s + 1, "%02x", &n);
 			*d = n;
-			s+=2;
-		} else *d = *s;
+			s += 2;
+		} else {
+			*d = *s;
+		}
 	}
 	*d = 0;
 }
@@ -2179,7 +2176,7 @@ R_API char *r_str_uri_encode (const char *s) {
 	if (!s) {
 		return NULL;
 	}
-	od = d = malloc (1+(strlen (s)*4));
+	od = d = malloc (1 + (strlen (s) * 4));
 	if (!d) {
 		return NULL;
 	}
@@ -2196,7 +2193,8 @@ R_API char *r_str_uri_encode (const char *s) {
 		}
 	}
 	*d = 0;
-	return realloc (od, strlen (od)+1); // FIT
+	char *trimDown = realloc (od, strlen (od) + 1); // FIT
+	return trimDown? trimDown: od;
 }
 
 R_API int r_str_utf16_to_utf8 (ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
@@ -2738,13 +2736,15 @@ R_API const char *r_str_const_at(char ***consts, const char *ptr) {
 			ctr ++;
 		}
 		char **res = realloc (*consts, (ctr + 2) * sizeof (void*));
-		if (res) {
-			*consts = res;
-		} else {
+		if (!res) {
 			return NULL;
 		}
+		*consts = res;
 	} else {
 		*consts = malloc (sizeof (void*) * 2);
+		if (!consts) {
+			return NULL;
+		}
 	}
 	(*consts)[ctr] = strdup (ptr);
 	(*consts)[ctr + 1] = NULL;
