@@ -225,7 +225,7 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	char *cmd, *p;
-	ut64 off;
+	ut64 off = core->offset;
 
 	if (!*input) {
 		r_cons_printf ("0x%"PFMT64x "\n", core->offset);
@@ -344,11 +344,18 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_sC);
 		}
 		break;
+	case '0': // "s0"
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
+		r_core_seek (core, r_num_math (core->num, input), 1);
+		r_core_block_read (core);
+		break;
 	case ' ': // "s "
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
-		r_core_seek (core, off * sign, 1);
+		r_core_seek (core, r_num_math (core->num, input + 1), 1);
 		r_core_block_read (core);
 		break;
 	case '/': // "s/"
