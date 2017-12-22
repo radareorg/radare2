@@ -117,7 +117,7 @@ R_API int r_str_replace_char_once(char *s, int a, int b) {
 R_API int r_str_replace_char(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
-	if (a == b) {
+	if (!s || a == b) {
 		return 0;
 	}
 	for (; *o; s++, o++) {
