@@ -344,13 +344,6 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_sC);
 		}
 		break;
-	case '0': // "s0"
-		if (!silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-		}
-		r_core_seek (core, r_num_math (core->num, input), 1);
-		r_core_block_read (core);
-		break;
 	case ' ': // "s "
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
@@ -742,6 +735,18 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '?': // "s?"
 		r_core_cmd_help (core, help_msg_s);
+		break;
+	default:
+		{
+			ut64 n = r_num_math (core->num, input);
+			if (n) {
+				if (!silent) {
+					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				}
+				r_core_seek (core, n, 1);
+				r_core_block_read (core);
+			}
+		}
 		break;
 	}
 	return 0;
