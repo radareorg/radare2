@@ -546,7 +546,9 @@ static const char *help_msg_as[] = {
 
 static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
+	"ax", "", "list refs",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
+	"ax-", " [at]", "clean all refs (or refs from addr)",
 	"axc", " addr [at]", "add code jmp ref // unused?",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
@@ -556,8 +558,6 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
-	"ax-", " [at]", "clean all refs (or refs from addr)",
-	"ax", "", "list refs",
 	"axk", " [query]", "perform sdb query",
 	"ax*", "", "output radare commands",
 	NULL

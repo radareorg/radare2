@@ -435,10 +435,12 @@ static int xrefs_list_cb_normal(RAnal *anal, const char *k, const char *v) {
 				}
 				{
 					char *name = anal->coreb.getNameDelta (anal->coreb.core, src);
+					r_str_replace_char (name, ' ', 0);
 					anal->cb_printf ("%40s", name? name: "");
 					free (name);
 					anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, src, type, dst);
 					name = anal->coreb.getNameDelta (anal->coreb.core, dst);
+					r_str_replace_char (name, ' ', 0);
 					if (name && *name) {
 						anal->cb_printf (" %s\n", name);
 					} else {
