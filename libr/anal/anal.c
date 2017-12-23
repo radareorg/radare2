@@ -580,27 +580,33 @@ R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
 bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	RAnalOp op = {0};
 	ut8 bbuf[0x10];
+	ut64 recurse_addr = UT64_MAX;
 	anal->iob.read_at (anal->iob.io, addr, bbuf, 0x10);
 	r_anal_op (anal, &op, addr, bbuf, 0x10);
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_JMP:
-	{
 		if (op.jump == UT64_MAX) {
-			return r_anal_noreturn_at (anal, op.ptr);
+			recurse_addr = op.ptr;
+		} else {
+			recurse_addr = op.jump;
 		}
-		return r_anal_noreturn_at (anal, op.jump);
-	}
+		break;
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_RCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_IRCALL:
-		return r_anal_noreturn_at (anal, op.ptr);
+		recurse_addr = op.ptr;
+		break;
 	case R_ANAL_OP_TYPE_CCALL:
 	case R_ANAL_OP_TYPE_CALL:
-		return r_anal_noreturn_at (anal, op.jump);
-	default:
+		recurse_addr = op.jump;
+		break;
+	}
+	if (recurse_addr == UT64_MAX
+	  || recurse_addr == addr) {
 		return false;
 	}
+	return r_anal_noreturn_at (anal, recurse_addr);
 }
 
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
