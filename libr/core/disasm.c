@@ -1723,15 +1723,15 @@ static void ds_show_flags(RDisasmState *ds) {
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
-#if OLDPRE
-			r_cons_printf ((f && ds->at > f->addr)? "| " : "");
-	//		ds_print_lines_left (ds);
+			bool fl = ds->show_fcnlines;
+			if (f->addr == ds->at) {
+				ds->show_fcnlines = false;
+				ds_pre_xrefs (ds);
+				ds->show_fcnlines = fl;
+			} else {
+				ds_pre_xrefs (ds);
+			}
 			r_cons_printf (";-- ");
-#else
-			ds_pre_xrefs (ds);
-			// r_cons_printf ("   ;-- ");
-			r_cons_printf (";-- ");
-#endif
 		}
 		if (ds->show_color) {
 			bool hasColor = false;
