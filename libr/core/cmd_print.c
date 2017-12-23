@@ -2881,7 +2881,7 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 		r_core_cmdf (core, "f switch.0x%08"PFMT64x"=0x%08"PFMT64x"\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
 	int n = 0;
-	for (i = 0; i < len; i += step, n++) {
+	for (i = 0; (i + sizeof (st32)) <= len; i += step, n++) {
 		delta = (st32 *) (buf + i);
 		addr = offset + *delta;
 		if (!r_io_is_valid_offset (core->io, addr, 0)) {
@@ -4963,7 +4963,15 @@ static int cmd_print(void *data, const char *input) {
 				if (arg) {
 					origin = r_num_math (core->num, arg + 1);
 				}
-				_pointer_table (core, origin, core->offset, core->block, len, 4, input[2]);
+				// _pointer_table does r_core_cmd with @, so it modifies core->block
+				// and this results in an UAF access when iterating over the jmptable
+				// so we do a new allocation to avoid that issue
+				ut8 *block = calloc (len, 1);
+				if (block) {
+					memcpy (block, core->block, len);
+					_pointer_table (core, origin, core->offset, block, len, 4, input[2]);
+					free (block);
+				}
 			}
 			break;
 		case 'd': // "pxd"
