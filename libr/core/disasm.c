@@ -1662,7 +1662,8 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			free (p);
 		} else {
 			ds->comment = r_str_prefix_all (ds->comment, "; ");
-			ALIGN;
+			// ALIGN;
+			ds_pre_xrefs (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_usrcmt);
 			}
@@ -1731,7 +1732,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			} else {
 				ds_pre_xrefs (ds);
 			}
-			r_cons_printf (";-- ");
+			r_cons_printf (" ;-- ");
 		}
 		if (ds->show_color) {
 			bool hasColor = false;
@@ -3123,11 +3124,13 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			} else {
 				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
-					ALIGN;
+		//			ALIGN;
+ds_pre_xrefs(ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
 							refaddr, refptr);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
-					ALIGN;
+//					ALIGN;
+ds_pre_xrefs(ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x
 							  ":%d]=%"PFMT64d, refaddr, refptr, n);
 				} else {
@@ -3219,7 +3222,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
-				ALIGN;
+//				ALIGN;
+
+ds_pre_xrefs(ds);
 				ds_comment (ds, true, "; %s", f->name);
 				flag_printed = true;
 			}
@@ -3839,9 +3844,9 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 			char *type = r_anal_type_func_args_type (anal, name, i);
 			if (type && *type) {
 				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
-				  type[strlen (type) -1] == '*' ? "": " ",
-							  r_anal_type_func_args_name (anal, name, i),
-							  i == arg_max - 1 ? ")": ",");
+						type[strlen (type) -1] == '*' ? "": " ",
+						r_anal_type_func_args_name (anal, name, i),
+						i == arg_max - 1 ? ")": ",");
 			}
 			free (type);
 		}
@@ -3911,8 +3916,10 @@ static void ds_print_comments_right(RDisasmState *ds) {
 							free (line_indexes);
 						} else {
 							char *c = r_str_prefix_all (comment, align);
-							r_cons_strcat (c);
-							free (c);
+							if (c) {
+								r_cons_strcat (c);
+								free (c);
+							}
 						}
 					}
 					free (comment);
