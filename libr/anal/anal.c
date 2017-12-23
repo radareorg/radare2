@@ -577,6 +577,32 @@ R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
 	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR(addr), NULL);
 }
 
+bool noreturn_recurse(RAnal *anal, ut64 addr) {
+	RAnalOp op = {0};
+	ut8 bbuf[0x10];
+	anal->iob.read_at (anal->iob.io, addr, bbuf, 0x10);
+	r_anal_op (anal, &op, addr, bbuf, 0x10);
+	switch (op.type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_JMP:
+	{
+		if (op.jump == UT64_MAX) {
+			return r_anal_noreturn_at (anal, op.ptr);
+		}
+		return r_anal_noreturn_at (anal, op.jump);
+	}
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_IRCALL:
+		return r_anal_noreturn_at (anal, op.ptr);
+	case R_ANAL_OP_TYPE_CCALL:
+	case R_ANAL_OP_TYPE_CALL:
+		return r_anal_noreturn_at (anal, op.jump);
+	default:
+		return false;
+	}
+}
+
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	if (r_anal_noreturn_at_addr (anal, addr)) {
 		return true;
@@ -604,7 +630,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	return false;
+	return noreturn_recurse (anal, addr);
 }
 
 // based on anal hint we construct a list of RAnalRange to handle
