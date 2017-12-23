@@ -1724,7 +1724,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			r_cons_printf (" ");
 		} else {
 			bool fl = ds->show_fcnlines;
-			if (f->addr == ds->at) {
+			if (f && f->addr == ds->at) {
 				ds->show_fcnlines = false;
 				ds_pre_xrefs (ds);
 				ds->show_fcnlines = fl;

@@ -744,9 +744,9 @@ enum RAnalOpDirection {
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
-	ut64 type;      /* type of opcode */
+	ut32 type;      /* type of opcode */
 	ut64 prefix;    /* type of opcode prefix (rep,lock,..) */
-	ut64 type2;	/* used by java */
+	ut32 type2;	/* used by java */
 	int group;      /* is fpu, is privileged, mmx, etc */
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
