@@ -2742,7 +2742,7 @@ R_API const char *r_str_const_at(char ***consts, const char *ptr) {
 		*consts = res;
 	} else {
 		*consts = malloc (sizeof (void*) * 2);
-		if (!consts) {
+		if (!*consts) {
 			return NULL;
 		}
 	}

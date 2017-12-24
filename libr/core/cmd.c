@@ -2204,11 +2204,17 @@ repeat_arroba:
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
 		} else if (ptr[1] == '.') { // "@."
-			if (ptr[2] == '.') {
-				addr = r_num_tail (core->num, core->offset, ptr + 3);
-				r_core_seek (core, addr, 1);
-				core->tmpseek = true;
-				goto fuji;
+			if (ptr[2] == '.') { // "@.."
+				if (ptr[3] == '.') { // "@..."
+					ut64 addr = r_num_tail (core->num, core->offset, ptr + 4);
+					r_core_block_size (core, R_ABS (addr - core->offset));
+					goto fuji;
+				} else {
+					addr = r_num_tail (core->num, core->offset, ptr + 3);
+					r_core_seek (core, addr, 1);
+					core->tmpseek = true;
+					goto fuji;
+				}
 			} else {
 				// WAT DU
 				eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
