@@ -5939,7 +5939,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int fcns = r_list_length (core->anal->fcns);
 	int strs = r_flag_count (core->flags, "str.*");
 	int syms = r_flag_count (core->flags, "sym.*");
-	int imps = r_flag_count (core->flags, "sym.imp.*");
+	int imps = r_flag_count (core->flags, "*.imp.*");
 	int code = compute_code (core);
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);

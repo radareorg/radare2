@@ -400,31 +400,28 @@ static char *type_func_try_guess(RAnal *anal, char *name) {
 // - symbol names are long and noisy, some of them might not be matched due
 //   to additional information added around name
 R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
-	int offset = 0;
-	char *str = func_name;
+	const char *str = func_name;
 	char *result = NULL;
 	char *first, *last;
 	if (!func_name) {
 		return NULL;
 	}
 
-	size_t slen = strlen (str);
+	const size_t slen = strlen (str);
 	if (slen < MIN_MATCH_LEN) {
 		return NULL;
 	}
 
 	if (slen > 4) { // were name-matching so ignore autonamed
-		if ((str[0] == 'f' && str[1] == 'c' && str[2] == 'n' && str[3] == '.') ||
-		    (str[0] == 'l' && str[1] == 'o' && str[2] == 'c' && str[3] == '.')) {
+		if (!strncmp (str, "fcn.", 4) ||
+		    !strncmp (str, "loc.", 4) ) {
 			return NULL;
 		}
 	}
 	// strip r2 prefixes (sym, sym.imp, etc')
-	while (slen > 4 && (offset + 3 < slen) && str[offset + 3] == '.') {
-		offset += 4;
+	for (char *dot = strchr (str, '.'); dot && *dot; dot = strchr (str, '.')) {
+		str = dot + 1;
 	}
-	slen -= offset;
-	str += offset;
 	if ((result = type_func_try_guess (anal, str))) {
 		return result;
 	}

@@ -365,7 +365,9 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 					do_call = strdup (f->name + 4);
 					break;
 				}
-				if (!strncmp (f->name, "sym.imp.", 8)) {
+				if (!strncmp (f->name, "sym.imp.", 8)
+				|| !strncmp (f->name, "local.imp.", 10)
+				|| !strncmp (f->name, "global.imp.", 11)) {
 					free (do_call);
 					do_call = strdup (f->name + 8);
 					break;
@@ -1877,7 +1879,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	const char *color_end = "";
 	if (use_color) {
 		color_end = Color_RESET;
-		if (strstr (name, "sym.imp.")) {
+		if (strstr (name, ".imp.")) {
 			color = Color_YELLOW;
 		} else if (strstr (name, "sym.")) {
 			color = Color_GREEN;

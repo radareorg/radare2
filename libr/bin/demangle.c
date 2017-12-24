@@ -131,6 +131,8 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 		"__symbol_stub1_",
 		"reloc.",
 		"sym.imp.",
+		"local.imp",
+		"global.imp",
 		"imp.",
 		NULL
 	};
