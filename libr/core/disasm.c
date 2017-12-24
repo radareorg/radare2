@@ -2319,7 +2319,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				case R_META_TYPE_STRING:
 				{
 					char *quote = "\"";
-					bool esc_bslash = core->print->esc_bslash;
+					bool esc_bslash = ds->use_json ? true : core->print->esc_bslash;
 
 					switch (mi->subtype) {
 					case R_STRING_ENC_UTF8:
