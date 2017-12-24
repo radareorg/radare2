@@ -2145,8 +2145,10 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 						}
 					}
 				} else {
-					// TODO stop if search.maxhits is reached
 					(void)r_search_update (core->search, at, buf, len);
+					if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
+						goto done;
+					}
 				}
 			}
 			print_search_progress (at, to1, search->nhits);
@@ -2154,6 +2156,7 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 			core->num->value = search->nhits;
 			eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 		}
+done:
 		r_cons_break_pop ();
 		free (buf);
 	} else {
