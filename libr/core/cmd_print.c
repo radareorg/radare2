@@ -79,7 +79,6 @@ static const char *help_msg_at[] = {
 
 static const char *help_msg_at_at[] = {
 	"@@", "", " # foreach iterator command:",
-	"Repeat a command over a list of offsets", "", "",
 	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
 	"x", " @@dbt[abs]", "run 'x' command on every backtrace address, bp or sp",
 	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
