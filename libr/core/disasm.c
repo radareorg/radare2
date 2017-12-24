@@ -2640,7 +2640,15 @@ static void ds_print_indent(RDisasmState *ds) {
 
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
-	r_cons_strcat (ds->opstr);
+	if (ds->use_json) {
+		char *escaped_str = r_str_escape(ds->opstr);
+		if (escaped_str) {
+			r_cons_strcat(escaped_str);
+		}
+		free(escaped_str);
+	} else {
+		r_cons_strcat (ds->opstr);
+	}
 	ds_print_color_reset (ds);
 }
 
