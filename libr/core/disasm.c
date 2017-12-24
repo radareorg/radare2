@@ -1537,7 +1537,6 @@ static void ds_show_functions(RDisasmState *ds) {
 				if (comment) {
 					r_cons_printf ("    %s; %s", COLOR (ds, color_comment), comment);
 				}
-
 				if (comment_esc) {
 					free (comment_esc);
 				}
@@ -1662,8 +1661,11 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			free (p);
 		} else {
 			ds->comment = r_str_prefix_all (ds->comment, "; ");
-			// ALIGN;
-			ds_pre_xrefs (ds);
+			if (ds->show_comment_right) {
+				ALIGN;
+			} else {
+				ds_pre_xrefs (ds);
+			}
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_usrcmt);
 			}
@@ -2455,7 +2457,11 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					char s[64];
 					r_str_ncpy (s, (const char *)b, sizeof (s));
 					r_str_filter (s, -1);
-					ALIGN;
+					if (ds->show_comment_right) {
+						ALIGN;
+					} else {
+						ds_pre_xrefs (ds);
+					}
 					ds_comment (ds, true, "; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"",
 					            dst->reg->name, ptr, off, item?item->name: s);
 					if (ds->asm_anal) {
@@ -3003,7 +3009,11 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *prefix;
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
-		ALIGN;
+		if (ds->show_comment_right) {
+			ALIGN;
+		} else {
+			ds_pre_xrefs (ds);
+		}
 		ds_comment (ds, true, "; %s\"%s\"", prefix, escstr);
 		free (escstr);
 	}
@@ -3035,6 +3045,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
 	ut64 refaddr = p;
+	bool aligned = false;
 	int refptr = ds->analop.refptr;
 	RFlagItem *f;
 	if (!ds->show_comments || !ds->show_slow) {
@@ -3053,7 +3064,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			free (str);
 		} else {
 			if ((char)v > 0 && v >= '!' && v <= '~') {
-				ALIGN;
+				if (ds->show_comment_right) {
+					ALIGN;
+				} else {
+					ds_pre_xrefs (ds);
+				}
+				aligned = true;
 				ds_comment (ds, true, "; '%c'", (char)v);
 			}
 		}
@@ -3124,13 +3140,19 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			} else {
 				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
-		//			ALIGN;
-ds_pre_xrefs(ds);
+					if (ds->show_comment_right) {
+						ALIGN;
+					} else {
+						ds_pre_xrefs (ds);
+					}
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
 							refaddr, refptr);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
-//					ALIGN;
-ds_pre_xrefs(ds);
+					if (ds->show_comment_right) {
+						ALIGN;
+					} else {
+						ds_pre_xrefs (ds);
+					}
 					ds_comment (ds, true, "; [0x%" PFMT64x
 							  ":%d]=%"PFMT64d, refaddr, refptr, n);
 				} else {
@@ -3142,7 +3164,7 @@ ds_pre_xrefs(ds);
 					} else {
 						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
-						msg2[len-1] = 0;
+						msg2[len - 1] = 0;
 						kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg2, len - 1);
 						if (kind && !strcmp (kind, "text")) {
 							r_str_filter (msg2, 0);
@@ -3153,7 +3175,11 @@ ds_pre_xrefs(ds);
 							}
 						}
 					}
-					ALIGN;
+					if (ds->show_comment_right) {
+						ALIGN;
+					} else {
+						ds_pre_xrefs (ds);
+					}
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
@@ -3172,7 +3198,11 @@ ds_pre_xrefs(ds);
 			}
 		}
 		if (!strcmp (ds->show_cmtoff, "true")) {
-			ALIGN;
+			if (ds->show_comment_right) {
+				ALIGN;
+			} else {
+				ds_pre_xrefs (ds);
+			}
 			ds_comment (ds, true, "; 0x%" PFMT64x, refaddr);
 			refaddr_printed = true;
 		} else if (!refaddr_printed && strcmp (ds->show_cmtoff, "false")) {
@@ -3189,7 +3219,13 @@ ds_pre_xrefs(ds);
 						}
 					}
 					if (print_refaddr) {
-						ALIGN;
+						if (!aligned) {
+							if (ds->show_comment_right) {
+								ALIGN;
+							} else {
+								ds_pre_xrefs (ds);
+							}
+						}
 						ds_comment (ds, true, "; 0x%" PFMT64x, refaddr);
 						refaddr_printed = true;
 					}
@@ -3222,19 +3258,29 @@ ds_pre_xrefs(ds);
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
-//				ALIGN;
-
-ds_pre_xrefs(ds);
+				if (ds->show_comment_right) {
+					ALIGN;
+				} else {
+					ds_pre_xrefs (ds);
+				}
 				ds_comment (ds, true, "; %s", f->name);
 				flag_printed = true;
 			}
 		} else {
 			if (refaddr == UT64_MAX || refaddr == UT32_MAX) {
-				ALIGN;
+				if (ds->show_comment_right) {
+					ALIGN;
+				} else {
+					ds_pre_xrefs (ds);
+				}
 				ds_comment (ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
-				ALIGN;
+				if (ds->show_comment_right) {
+					ALIGN;
+				} else {
+					ds_pre_xrefs (ds);
+				}
 				if (ch != ds->chref) {
 					ds_comment (ds, true, "; '%c'", ch);
 				}
@@ -3242,7 +3288,11 @@ ds_pre_xrefs(ds);
 				if ((st64)refaddr < 0) {
 					// resolve local var if possible
 					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)refaddr);
-					ALIGN;
+					if (ds->show_comment_right) {
+						ALIGN;
+					} else {
+						ds_pre_xrefs (ds);
+					}
 					if (v) {
 						ds_comment (ds, true, "; var %s", v->name);
 						r_anal_var_free (v);
@@ -3275,7 +3325,13 @@ ds_pre_xrefs(ds);
 					/* avoid double ; -1 */
 					if (p != UT64_MAX && p != UT32_MAX) {
 						if (*n > -0xfff && *n < 0xfff) {
-							ALIGN;
+							if (!aligned) {
+								if (ds->show_comment_right) {
+									ALIGN;
+								} else {
+									ds_pre_xrefs (ds);
+								}
+							}
 							ds_comment (ds, true, "; %"PFMT64d, p);
 						}
 					}
