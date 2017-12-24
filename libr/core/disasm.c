@@ -1734,7 +1734,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			} else {
 				ds_pre_xrefs (ds);
 			}
-			r_cons_printf (" ;-- ");
+			r_cons_printf (";-- ");
 		}
 		if (ds->show_color) {
 			bool hasColor = false;
