@@ -62,7 +62,7 @@ static void filesave() {
 		}
 	}
 	if (r_file_dump (path, (const ut8 *)lines, bytes, 0)) {
-		eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
+		eprintf ("File '%s' saved (%d byte(s))\n", path, bytes);
 	} else {
 		eprintf ("Cannot save file\n");
 	}
@@ -81,7 +81,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		bytes = 0;
 		lines = r_file_slurp (file, &bytes);
 		nlines = r_str_split (lines, '\n');
-		eprintf ("Loaded %d lines on %d bytes\n",
+		eprintf ("Loaded %d lines on %d byte(s)\n",
 			(nlines? (nlines - 1): 0), bytes);
 	} else {
 		path = NULL;
