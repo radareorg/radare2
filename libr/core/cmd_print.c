@@ -5039,8 +5039,11 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 					}
-					r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s %s\n",
-						(ut64) core->offset + i, a, (ut64) v, b, fn? fn: "");
+					r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s%s%s\n",
+						(ut64) core->offset + i, a, (ut64) v,
+						b,
+						fn? " ": "",
+						fn? fn: "");
 					free (fn);
 				}
 			}
