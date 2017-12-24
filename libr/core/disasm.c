@@ -2640,7 +2640,15 @@ static void ds_print_indent(RDisasmState *ds) {
 
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
-	r_cons_strcat (ds->opstr);
+	if (ds->use_json) {
+		char *escaped_str = r_str_escape(ds->opstr);
+		if (escaped_str) {
+			r_cons_strcat(escaped_str);
+		}
+		free(escaped_str);
+	} else {
+		r_cons_strcat (ds->opstr);
+	}
 	ds_print_color_reset (ds);
 }
 
@@ -4764,9 +4772,23 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
-			r_cons_printf (",\"opcode\":\"%s\"", opstr);
 			char *quoted_str, *qpos, *spos = NULL;
-			char *escaped_str = r_str_utf16_encode (str, -1);
+			char *escaped_str = r_str_utf16_encode (opstr, -1);
+			qpos = quoted_str = malloc ((strlen (escaped_str) * 4) + 1);
+			if (qpos) {
+				for (spos = escaped_str; *spos != '\0'; spos++) {
+					if (*spos == '"') {
+						*qpos++ = '\\';
+					}
+					*qpos++ = *spos;
+				}
+				*qpos = '\0';
+				r_cons_printf (",\"opcode\":\"%s\"", quoted_str);
+			}
+			free (escaped_str);
+			free (quoted_str);
+
+			escaped_str = r_str_utf16_encode (str, -1);
 			qpos = quoted_str = malloc ((strlen (escaped_str) * 4) + 1);
 			if (qpos) {
 				for (spos = escaped_str; *spos != '\0'; spos++) {
