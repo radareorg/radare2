@@ -2325,7 +2325,7 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 		if (*s == '\\') {
 			*d++ = '\\';
 			*d++ = '\\';
-		} else if ((*s >= 0x20) && (*s <= 126)) {
+		} else if ((*s >= 0x20) && (*s <= 126) && (*s != '"')) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
