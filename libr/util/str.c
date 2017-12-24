@@ -2476,8 +2476,9 @@ R_API int r_print_format_length (const char *fmt) {
 	return i;
 }
 
-R_API char *r_str_prefix_all (char *s, const char *pfx) {
-	char *p, *os = s;
+R_API char *r_str_prefix_all (const char *s, const char *pfx) {
+	const char *os = s;
+	char *p;
 	int newlines = 1;
 	int len = 0;
 	int pfx_len = 0;
@@ -2490,14 +2491,14 @@ R_API char *r_str_prefix_all (char *s, const char *pfx) {
 	}
 	len = strlen (s);
 	pfx_len = strlen (pfx);
-	for (p = s; *p; p++)  {
-		if (*p == '\n') {
+	for (os = s; *os; os++)  {
+		if (*os == '\n') {
 			newlines++;
 		}
 	}
 	char *o = malloc (len + (pfx_len * newlines) + 1);
 	if (!o) {
-		return os;
+		return NULL;
 	}
 	memcpy (o, pfx, pfx_len);
 	for (p = o + pfx_len; *s; s++) {
@@ -2508,7 +2509,6 @@ R_API char *r_str_prefix_all (char *s, const char *pfx) {
 		}
 	}
 	*p = 0;
-	free (os);
 	return o;
 }
 
