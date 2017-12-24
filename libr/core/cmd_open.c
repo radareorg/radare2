@@ -25,7 +25,7 @@ static const char *help_msg_o[] = {
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?]","reopen current file (kill+fork in debugger)",
 	"oo","+","reopen current file in read-write",
-	"ood"," [args]","reopen in debugger mode (with args)",
+	"ood","[r] [args]","reopen in debugger mode (with args)",
 	"oo[bnm]"," [...]","see oo? for help",
 	"op"," [fd]", "priorize given fd (see also ob)",
 	"o"," 4","Switch to open file on fd 4",
@@ -133,6 +133,7 @@ static const char *help_msg_oob[] = {
 
 static const char *help_msg_ood[] = {
 	"ood"," [args]","reopen in debugger mode (with args)",
+	"oodr"," [rarun2]","same as dor ..;ood",
 	NULL
 };
 
@@ -1272,7 +1273,10 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_reopen_in_malloc (core);
 			break;
 		case 'd': // "ood" : reopen in debugger
-			if ('?' == input[2]) {
+			if (input[2] == 'r') { // "oodr"
+				r_core_cmdf ("dor %s", input + 3);
+				r_core_file_reopen_debug (core, "");
+			} else if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_ood);
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
@@ -1303,7 +1307,7 @@ static int cmd_open(void *data, const char *input) {
 				break;
 			}
 
-			perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
+			perms = ('+' == input[2])? R_IO_READ | R_IO_WRITE: 0;
 			r_core_file_reopen (core, input + 3, perms, 0);
 			break;
 		case '+': // "oo+"
