@@ -579,9 +579,8 @@ R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
 
 bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	RAnalOp op = {0};
-	ut8 bbuf[0x10];
+	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
-	memset(bbuf, '\0', sizeof (bbuf));
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
