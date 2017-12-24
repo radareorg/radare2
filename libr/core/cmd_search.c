@@ -1189,8 +1189,7 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
-// int max_count = core->search->maxhits;
-	int max_count = r_config_get_i (core->config, "search.maxhits"); // core->search->maxhits
+	int max_count = r_config_get_i (core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
 	RList /*<intptr_t>*/ *badstart = r_list_new ();
@@ -1915,7 +1914,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 					count++;
 					if (search->maxhits && count >= search->maxhits) {
-						break;
+						goto done;
 					}
 					firstItem = false;
 				}
@@ -1928,6 +1927,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			}
 		}
 	}
+done:
 	if (mode == 'j') {
 		r_cons_println ("]\n");
 	}

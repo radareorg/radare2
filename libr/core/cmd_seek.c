@@ -354,8 +354,8 @@ static int cmd_seek(void *data, const char *input) {
 	case '/': // "s/"
 	{
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		const ut64 saved_from = r_config_get_i (core->config, "search.from"),
-				saved_maxhits = r_config_get_i (core->config, "search.maxhits");
+		const ut64 saved_from = r_config_get_i (core->config, "search.from");
+		const ut64 saved_maxhits = r_config_get_i (core->config, "search.maxhits");
 // kwidx cfg var is ignored
 		int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 		if (kwidx < 0) {
