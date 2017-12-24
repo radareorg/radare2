@@ -581,8 +581,12 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	RAnalOp op = {0};
 	ut8 bbuf[0x10];
 	ut64 recurse_addr = UT64_MAX;
-	anal->iob.read_at (anal->iob.io, addr, bbuf, 0x10);
-	r_anal_op (anal, &op, addr, bbuf, 0x10);
+	memset(bbuf, '\0', sizeof (bbuf));
+	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
+		eprintf ("Couldn't read buffer\n");
+		return false;
+	}
+	r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf));
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {
