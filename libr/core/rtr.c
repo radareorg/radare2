@@ -797,7 +797,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 						r_file_dump (filename, ret, retlen, 0);
 						free (filename);
 						snprintf (buf, sizeof (buf),
-							"<html><body><h2>uploaded %d bytes. Thanks</h2>\n", retlen);
+							"<html><body><h2>uploaded %d byte(s). Thanks</h2>\n", retlen);
 							r_socket_http_response (rs, 200, buf, 0, headers);
 					}
 					free (ret);
@@ -959,7 +959,7 @@ static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool b
 				 r_swap_ut64 (val->v128.Low),
 				 r_swap_ut64 (val->v128.High));
 	default:
-		eprintf ("%s: big registers (%d bytes) not yet supported\n",
+		eprintf ("%s: big registers (%d byte(s)) not yet supported\n",
 			 __func__, regsize);
 		return -1;
 	}
@@ -1006,7 +1006,7 @@ static int swap_big_regs (char *dest, ut64 sz, const char *src, int regsz) {
 		return snprintf (dest, sz, "0x%016"PFMT64x"%016"PFMT64x,
 				 val.v128.High, val.v128.Low);
 	default:
-		eprintf ("%s: big registers (%d bytes) not yet supported\n",
+		eprintf ("%s: big registers (%d byte(s)) not yet supported\n",
 			 __func__, regsz);
 		return -1;
 	}

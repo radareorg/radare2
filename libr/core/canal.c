@@ -1054,7 +1054,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %d bytes\n", bbi->size);
+				eprintf ("cannot allocate %d byte(s)\n", bbi->size);
 			}
 			r_cons_printf ("]}");
 			continue;

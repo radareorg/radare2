@@ -329,7 +329,7 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 	}
 	operms = tsk_getperm (io, task, pageaddr);
 	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
-		eprintf ("io.mach: Cannot set page perms for %d bytes at 0x%08"
+		eprintf ("io.mach: Cannot set page perms for %d byte(s) at 0x%08"
 			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
 		return -1;
 	}

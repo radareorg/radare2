@@ -318,7 +318,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf ("num_retries: %d bytes\n", desc->page_size);
+		io->cb_printf ("num_retries: %d byte(s)\n", desc->page_size);
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "page_size")) {
@@ -329,7 +329,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf ("page size: %d bytes\n", desc->page_size);
+		io->cb_printf ("page size: %d byte(s)\n", desc->page_size);
 		return NULL;
 	}
 	// Sets a flag that next call to get memmap will be for getting baddr

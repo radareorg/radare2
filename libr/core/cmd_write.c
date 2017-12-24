@@ -208,7 +208,7 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 	RCrypto *cry = r_crypto_new ();
 	if (r_crypto_use (cry, algo)) {
 		if (!binkey) {
-			eprintf ("Cannot allocate %d bytes\n", keylen);
+			eprintf ("Cannot allocate %d byte(s)\n", keylen);
 			r_crypto_free (cry);
 			return false;
 		}
@@ -232,7 +232,7 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			ut8 *result = r_crypto_get_output (cry, &result_size);
 			if (result) {
 				r_io_write_at (core->io, core->offset, result, result_size);
-				eprintf ("Written %d bytes\n", result_size);
+				eprintf ("Written %d byte(s)\n", result_size);
 				free (result);
 			}
 		} else {
@@ -628,7 +628,7 @@ static int cmd_write(void *data, const char *input) {
 					r_io_write_at (core->io, core->offset, buf, len);
 					r_core_block_read (core);
 					free (buf);
-				} else eprintf ("Cannot allocate %d bytes\n", (int)len);
+				} else eprintf ("Cannot allocate %d byte(s)\n", (int)len);
 			}
 		}
 		break;
@@ -928,7 +928,7 @@ static int cmd_write(void *data, const char *input) {
 				r_core_write_at (core, core->offset, buf, len);
 				WSEEK (core, len);
 				free (buf);
-			} else eprintf ("Cannot allocate %d bytes\n", len);
+			} else eprintf ("Cannot allocate %d byte(s)\n", len);
 		}
 		break;
 	case 'A':
@@ -1291,7 +1291,7 @@ static int cmd_write(void *data, const char *input) {
 					cmd_write_hexpair(core, acode->buf_hex);
 				} else {
 					if (r_config_get_i (core->config, "scr.prompt"))
-						eprintf ("Written %d bytes (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
+						eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
 					r_core_write_at (core, core->offset, acode->buf, acode->len);
 					WSEEK (core, acode->len);
 					r_core_block_read (core);
@@ -1310,7 +1310,7 @@ static int cmd_write(void *data, const char *input) {
 						cmd_write_hexpair(core, acode->buf_hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt"))
-						eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+						eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
 						r_core_write_at (core, core->offset, acode->buf, acode->len);
 						WSEEK (core, acode->len);
 						r_core_block_read (core);

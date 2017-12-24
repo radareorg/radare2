@@ -1224,7 +1224,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 				eprintf ("Cannot write '%s'\n", file);
 				ret = 0;
 			} else {
-				eprintf ("Dumped %d bytes into %s\n", (int)map->size, file);
+				eprintf ("Dumped %d byte(s) into %s\n", (int)map->size, file);
 			}
 			free (file);
 			free (buf);
@@ -1558,14 +1558,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				char *buf = r_file_slurp (input + 2, &sz);
 				//TODO: use mmap here. we need a portable implementation
 				if (!buf) {
-					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
+					eprintf ("Cannot allocate 0x%08"PFMT64x" byte(s)\n", map->size);
 					return false;
 				}
 				r_io_write_at (core->io, map->addr, (const ut8*)buf, sz);
 				if (sz != map->size)
 					eprintf	("File size differs from region size (%d vs %"PFMT64d")\n",
 							sz, map->size);
-				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n",
+				eprintf ("Loaded %d byte(s) into the map region at 0x%08"PFMT64x"\n",
 						sz, map->addr);
 				free (buf);
 				return true;

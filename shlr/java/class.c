@@ -3821,7 +3821,7 @@ R_API RBinJavaAttrInfo *r_bin_java_source_debug_attr_new(ut8 *buffer, ut64 sz, u
 		attr->info.debug_extensions.debug_extension = NULL;
 		return attr;
 	} else if ((attr->length + offset) > sz) {
-		eprintf ("r_bin_java_source_debug_attr_new: Expected %d bytes got %"
+		eprintf ("r_bin_java_source_debug_attr_new: Expected %d byte(s) got %"
 			PFMT64d " bytes for debug_extension.\n", attr->length, (offset + sz));
 	}
 	attr->info.debug_extensions.debug_extension = (ut8 *) malloc (attr->length);
@@ -4335,11 +4335,11 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 		IFDBG eprintf("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_FULL_FRAME.\n");
 		stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Code Size > 65535, read(%d bytes), offset = 0x%08x.\n", var_sz, stack_frame->offset_delta);
+		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Code Size > 65535, read(%d byte(s)), offset = 0x%08x.\n", var_sz, stack_frame->offset_delta);
 		// Read the number of variables based on the max # local variable
 		stack_frame->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Max ulocalvar > 65535, read(%d bytes), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_locals);
+		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Max ulocalvar > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_locals);
 		IFDBG r_bin_java_print_stack_map_frame_summary(stack_frame);
 		// read the number of locals off the stack
 		for (i = 0; i < stack_frame->number_of_locals; i++) {
@@ -4357,7 +4357,7 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 		// Read the number of stack items based on the max size of stack
 		stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d bytes), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
+		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
 		// read the stack items
 		for (i = 0; i < stack_frame->number_of_stack_items; i++) {
 			se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
@@ -8765,16 +8765,16 @@ R_API int U(r_bin_java_utf8_cp_set)(RBinJavaObj * bin, ut16 idx, const ut8 * buf
 	if (!cp_obj) {
 		return false;
 	}
-	eprintf ("Writing %d bytes (%s)\n", len, buffer);
+	eprintf ("Writing %d byte(s) (%s)\n", len, buffer);
 	// r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_INTEGER);
 	if (cp_obj->tag != R_BIN_JAVA_CP_UTF8) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
 		return false;
 	}
 	if (cp_obj->info.cp_utf8.length != len) {
-		eprintf ("Not supporting the resize, rewriting utf8 string up to %d bytes.\n", cp_obj->info.cp_utf8.length);
+		eprintf ("Not supporting the resize, rewriting utf8 string up to %d byte(s).\n", cp_obj->info.cp_utf8.length);
 		if (cp_obj->info.cp_utf8.length > len) {
-			eprintf ("Remaining %d bytes will be filled with \\x00.\n", cp_obj->info.cp_utf8.length - len);
+			eprintf ("Remaining %d byte(s) will be filled with \\x00.\n", cp_obj->info.cp_utf8.length - len);
 		}
 	}
 	memcpy (cp_obj->info.cp_utf8.bytes, buffer, cp_obj->info.cp_utf8.length);

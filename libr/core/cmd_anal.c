@@ -3899,7 +3899,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 	}
 	buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d bytes\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return;
 	}

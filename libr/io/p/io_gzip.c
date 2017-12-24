@@ -171,7 +171,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
 		free (data);
-		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
+		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname+9, mal->size);
 		free (mal);
 	}
 	return NULL;

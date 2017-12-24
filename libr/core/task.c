@@ -76,7 +76,7 @@ R_API void r_core_task_run(RCore *core, RCoreTask *_task) {
 		}
 		task->state = 'r'; // running
 		str = r_core_cmd_str (core, task->msg->text);
-		eprintf ("Task %d finished width %d bytes: %s\n%s\n",
+		eprintf ("Task %d finished width %d byte(s): %s\n%s\n",
 				task->id, (int)strlen (str), task->msg->text, str);
 		task->state = 'd'; // done
 		task->msg->done = 1; // done DUP!!
@@ -97,7 +97,7 @@ R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task) {
 		}
 		task->state = 'r'; // running
 		str = r_core_cmd_str (core, task->msg->text);
-		eprintf ("Task %d finished width %d bytes: %s\n%s\n",
+		eprintf ("Task %d finished width %d byte(s): %s\n%s\n",
 				task->id, (int)strlen (str), task->msg->text, str);
 		task->state = 'd'; // done
 		task->msg->done = 1; // done DUP!!

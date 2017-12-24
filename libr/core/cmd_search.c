@@ -1613,7 +1613,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	
 	arr = malloc (bsize);
 	if (!arr) {
-		eprintf ("Cannot allocate %d bytes\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (arr);
 		return -1;
 	}
@@ -1675,7 +1675,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	}
 	buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d bytes\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		r_anal_esil_free (esil);
 		free (buf);
 		return;
@@ -1846,7 +1846,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	input = r_str_chop_ro (input);
 	buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d bytes\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -2357,7 +2357,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 	int i = 0;
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d bytes\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return NULL;
 	}	
@@ -2946,7 +2946,7 @@ reread:
 		len = r_str_unescape (inp);
 #if 0
 		if (!json) {
-			eprintf ("Searching %d bytes from 0x%08"PFMT64x " to 0x%08"PFMT64x ": ",
+			eprintf ("Searching %d byte(s) from 0x%08"PFMT64x " to 0x%08"PFMT64x ": ",
 					len, search_itv.addr, r_itv_end (search_itv));
 			for (i = 0; i < len; i++) {
 				eprintf ("%02x ", (ut8) inp[i]);
@@ -3091,7 +3091,7 @@ reread:
 			kw = r_search_keyword_new (buf + offset, len, NULL, 0, NULL);
 			if (kw) {
 				r_search_kw_add (core->search, kw);
-				// eprintf ("Searching %d bytes...\n", kw->keyword_length);
+				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
 				r_search_begin (core->search);
 				dosearch = true;
 			} else {
@@ -3121,7 +3121,7 @@ reread:
 			}
 			if (kw) {
 				r_search_kw_add (core->search, kw);
-				// eprintf ("Searching %d bytes...\n", kw->keyword_length);
+				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
 				r_search_begin (core->search);
 				dosearch = true;
 			} else {

@@ -132,7 +132,7 @@ PUB_FUNC void *tcc_mallocz(unsigned long size)
 PUB_FUNC void tcc_memstats(void)
 {
 #ifdef MEM_DEBUG
-	printf ("memory: %d bytes, max = %d bytes\n", mem_cur_size, mem_max_size);
+	printf ("memory: %d byte(s), max = %d byte(s)\n", mem_cur_size, mem_max_size);
 #endif
 }
 

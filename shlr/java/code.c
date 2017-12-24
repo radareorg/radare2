@@ -118,7 +118,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	}
 
 #if 0
-	IFDBG eprintf ("Handling the following opcode %s expects: %d bytes, BYTES_CONSUMED: 0x%04"PFMT64x"\n",
+	IFDBG eprintf ("Handling the following opcode %s expects: %d byte(s), BYTES_CONSUMED: 0x%04"PFMT64x"\n",
 			JAVA_OPS[idx].name, JAVA_OPS[idx].size, BYTES_CONSUMED);
 #endif
 	switch (op_byte) {

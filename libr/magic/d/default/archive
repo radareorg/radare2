@@ -81,7 +81,7 @@
 >9	string	\0		
 >>0	string	KWAJ		
 >>>7	string	\321\003	MS Compress archive data
->>>>14	ulong	>0		\b, original size: %d bytes
+>>>>14	ulong	>0		\b, original size: %d byte(s)
 >>>>18		ubyte	>0x65  	
 >>>>>18		string	x    	\b, was %.8s
 >>>>>(10.b-4)	string	x    	\b.%.3s
@@ -233,7 +233,7 @@
 0	string	RZIP		rzip compressed data
 >4	byte	x		- version %d
 >5	byte	x		\b.%d
->6	belong	x		(%d bytes)
+>6	belong	x		(%d byte(s))
 
 # From: Dirk Jagdmann <doj@cubic.org>
 # xar archive format: http://code.google.com/p/xar/

@@ -1822,7 +1822,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	/* Add 'function' keyword */
 	char *str = calloc (1, length);
 	if (!str) {
-		eprintf ("Cannot allocate %d bytes\n", length);
+		eprintf ("Cannot allocate %d byte(s)\n", length);
 		return false;
 	}
 	strcpy (str, "function ");
