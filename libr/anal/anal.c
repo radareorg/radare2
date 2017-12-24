@@ -558,6 +558,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		}
 	}
 }
+
 static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(name), NULL)) {
 		return true;
@@ -574,7 +575,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 }
 
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
-	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR(addr), NULL);
+	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR (addr), NULL);
 }
 
 bool noreturn_recurse(RAnal *anal, ut64 addr) {
@@ -585,7 +586,8 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
 	}
-	r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf));
+	// TODO: check return value
+	(void)r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf));
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {
@@ -605,8 +607,7 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 		recurse_addr = op.jump;
 		break;
 	}
-	if (recurse_addr == UT64_MAX
-	  || recurse_addr == addr) {
+	if (recurse_addr == UT64_MAX || recurse_addr == addr) {
 		return false;
 	}
 	return r_anal_noreturn_at (anal, recurse_addr);
@@ -639,7 +640,10 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	return noreturn_recurse (anal, addr);
+	if (anal->recursive_noreturn) {
+		return noreturn_recurse (anal, addr);
+	}
+	return false;
 }
 
 // based on anal hint we construct a list of RAnalRange to handle

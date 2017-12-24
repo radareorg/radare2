@@ -640,7 +640,7 @@ typedef struct r_anal_t {
 	dict *dict_refs;
 	dict *dict_xrefs;
 #endif
-
+	bool recursive_noreturn;
 	RSpaces meta_spaces;
 	RSpaces zign_spaces;
 	char *zign_path;

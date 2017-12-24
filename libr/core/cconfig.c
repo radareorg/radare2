@@ -277,8 +277,8 @@ static int cb_analarch(void *user, void *data) {
 		if (!aa || strcmp (aa, node->value)) {
 			eprintf ("anal.arch: cannot find '%s'\n", node->value);
 		} else {
-		r_config_set (core->config, "anal.arch", "null");
-		return true;
+			r_config_set (core->config, "anal.arch", "null");
+			return true;
 		}
 	}
 	return false;
@@ -1966,6 +1966,12 @@ static int cb_anal_limits(void *user, RConfigNode *node) {
 	return 1;
 }
 
+static int cb_anal_rnr(void *user, RConfigNode *node) {
+	RCore *core = (RCore*)user;
+	core->anal->recursive_noreturn = node->i_value;
+	return 1;
+}
+
 static int cb_anal_jmptbl(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2141,6 +2147,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
+	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
+	SETCB ("anal.rnr", "false", (RConfigCallback)&cb_anal_rnr, "Recursive no return checks (EXPERIMENTAL)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
