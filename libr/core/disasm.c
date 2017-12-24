@@ -2319,8 +2319,17 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				case R_META_TYPE_STRING:
 				{
 					char *quote = "\"";
+					bool esc_bslash = core->print->esc_bslash;
 
-					out = r_str_escape (mi->str);
+					switch (mi->subtype) {
+					case R_STRING_ENC_UTF8:
+						out = r_str_escape_utf8 (mi->str, false, esc_bslash);
+						break;
+					case 0:  /* temporary legacy workaround */
+						esc_bslash = false;
+					default:
+						out = r_str_escape_latin1 (mi->str, false, esc_bslash);
+					}
 					if (!out) {
 						break;
 					}
