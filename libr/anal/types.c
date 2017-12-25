@@ -420,7 +420,7 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 	}
 	// strip r2 prefixes (sym, sym.imp, etc')
 	char *dot = NULL;
-	for (*dot = strchr (str, '.'); dot && *dot; dot = strchr (str, '.')) {
+	for (dot = strchr (str, '.'); dot && *dot; dot = strchr (str, '.')) {
 		str = dot + 1;
 	}
 	if ((result = type_func_try_guess (anal, str))) {
