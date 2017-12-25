@@ -9,7 +9,7 @@ conditional breakpoints are implemented in the following way:
 ======================================
 1.) ignore breakpoint at address 0x4000ce for five times:
 	f times=5
-	(dec_times,f times=`?vi times-1,?= times)
+	(dec_times,f times=`?vi times-1`,?= times)
 	db 0x4000ce
 	dbC 0x4000ce .(dec_times)
 	dc
