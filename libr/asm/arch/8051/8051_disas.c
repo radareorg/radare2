@@ -24,8 +24,8 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 		ut8 val1, val2;
 		char* disasm = malloc(80);
 		if (!disasm) {
-    		return -1;  // out of memory
-    	}
+			return -1;  // out of memory
+		}
 
 		switch (oplen) {
 		case 1:
@@ -114,38 +114,38 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 			return 0;
 		}
 
-	    // substitute direct addresses with register name
+		// substitute direct addresses with register name
 		char key[10];
 		char subst[10];
-	    if (arg1 == A_DIRECT && _8051_regs[val1]) {
-	        sprintf (key, " 0x%02x", val1);
-	        sprintf (subst, " %s", _8051_regs[val1]);
-	        disasm = r_str_replace(disasm, key, subst, 0);
-	    }
-	    if (arg1 == A_BIT) {
-	        val1 = arg_bit(val1);
-            if (_8051_regs[val1]) {
-                sprintf (key, "0x%02x.", val1);
-                sprintf (subst, "%s.", _8051_regs[val1]);
-                disasm = r_str_replace(disasm, key, subst, 0);
-            }
-        }
-	    if (arg2 == A_DIRECT && _8051_regs[val2]) {
-	        sprintf (key, " 0x%02x", val2);
-	        sprintf (subst, " %s", _8051_regs[val2]);
-            disasm = r_str_replace(disasm, key, subst, 0);
-	    }
-	    if (arg2 == A_BIT) {
-	        val2 = arg_bit(val2);
-            if (_8051_regs[val2]) {
-                sprintf (key, "0x%02x.", val2);
-                sprintf (subst, "%s.", _8051_regs[val2]);
-                disasm = r_str_replace(disasm, key, subst, 0);
-            }
-        }
+		if (arg1 == A_DIRECT && _8051_regs[val1]) {
+			sprintf (key, " 0x%02x", val1);
+			sprintf (subst, " %s", _8051_regs[val1]);
+			disasm = r_str_replace(disasm, key, subst, 0);
+		}
+		if (arg1 == A_BIT) {
+			val1 = arg_bit(val1);
+			if (_8051_regs[val1]) {
+				sprintf (key, "0x%02x.", val1);
+				sprintf (subst, "%s.", _8051_regs[val1]);
+				disasm = r_str_replace(disasm, key, subst, 0);
+			}
+		}
+		if (arg2 == A_DIRECT && _8051_regs[val2]) {
+			sprintf (key, " 0x%02x", val2);
+			sprintf (subst, " %s", _8051_regs[val2]);
+			disasm = r_str_replace(disasm, key, subst, 0);
+		}
+		if (arg2 == A_BIT) {
+			val2 = arg_bit(val2);
+			if (_8051_regs[val2]) {
+				sprintf (key, "0x%02x.", val2);
+				sprintf (subst, "%s.", _8051_regs[val2]);
+				disasm = r_str_replace(disasm, key, subst, 0);
+			}
+		}
 
-	    sprintf (op->buf_asm, "%s", disasm);
-	    free (disasm);
+		sprintf (op->buf_asm, "%s", disasm);
+		free (disasm);
 		return oplen;
 	}
 
