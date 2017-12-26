@@ -1369,11 +1369,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			int width = INSOP(0).size;
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			const char *r_ax = (width==2)?"ax": (width==4)?"eax":"rax";
-			const char *r_dx = (width==2)?"dx": (width==4)?"edx":"rdx";
+			const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
+			const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
+			const char *r_nume = (width==1)?"ax": r_quot;
 			// TODO update flags & handle signedness
-			esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
-				dst, r_ax, r_dx, dst, r_ax, r_ax);
+			if ( width == 1 ) {
+				esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
+					   dst, r_nume, dst, r_nume, r_quot, r_rema);
+			} else {
+				esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
+					    dst, r_nume, r_rema, dst, r_nume, r_quot);
+			}
 		}
 		break;
 	case X86_INS_IMUL:
