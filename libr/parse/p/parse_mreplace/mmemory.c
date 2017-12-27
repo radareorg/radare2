@@ -58,7 +58,7 @@ memChunk *memReserve(long size) {
 		perror ("memReserve");
 		exit (0);
   	}
-	//printf("- reservando %d bytes\n",size);
+	//printf("- reservando %d byte(s)\n",size);
 	buffer->size = size;
 	memset (buffer->address, 0, buffer->size);
 	mInfo->allocated += buffer->size;
@@ -84,7 +84,7 @@ void memCopy(memChunk *dest,memChunk *source) {
 	if ((!source->address) || (!dest->address)) return;
 	nbytes=dest->size > source->size ? source->size : dest->size;
 	#if DEBUG3
-	eprintf ("Copying %d bytes to dest (size %d)\n", nbytes, dest->address, dest->size);
+	eprintf ("Copying %d byte(s) to dest (size %d)\n", nbytes, dest->address, dest->size);
 	#endif
 	memcpy (dest->address, source->address, nbytes);
 }

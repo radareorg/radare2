@@ -722,7 +722,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	memset (op, '\0', sizeof (RAnalOp));
 
 	IFDBG {
-		//eprintf ("Extracting op from buffer (%d bytes) @ 0x%04x\n", len, addr);
+		//eprintf ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", len, addr);
 		//eprintf ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;

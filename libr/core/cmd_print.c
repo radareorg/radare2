@@ -753,7 +753,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 			r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 			free (buf);
 		} else {
-			eprintf ("cannot allocate %d bytes\n", bsize);
+			eprintf ("cannot allocate %d byte(s)\n", bsize);
 		}
 	}
 	r_cons_print ("]");
@@ -975,7 +975,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			_input++;
 			val = sdb_get (core->print->formats, _input, NULL);
 			if (val != NULL) {
-				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print, mode, 0));
+				r_cons_printf ("%d byte(s)\n", r_print_format_struct_size (val, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -984,7 +984,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				_input++;
 			}
 			if (*_input) {
-				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print, mode, 0));
+				r_cons_printf ("%d byte(s)\n", r_print_format_struct_size (_input, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -3103,7 +3103,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 					free (buf);
 				} else {
-					eprintf ("cannot allocate %d bytes\n", b->size);
+					eprintf ("cannot allocate %d byte(s)\n", b->size);
 				}
 			}
 		}
@@ -3131,7 +3131,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %d bytes\n", b->size);
+				eprintf ("cannot allocate %d byte(s)\n", b->size);
 			}
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
@@ -3161,7 +3161,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 					free (buf);
 				} else {
-					eprintf ("cannot allocate %d bytes\n", b->size);
+					eprintf ("cannot allocate %d byte(s)\n", b->size);
 				}
 			}
 		}
@@ -3857,7 +3857,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_println (buf + from);
 				free (buf);
 			} else {
-				eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
 			}
 		}
 	}
@@ -3878,7 +3878,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_println (buf);
 				free (buf);
 			} else {
-				eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
 			}
 		}
 	}
@@ -4218,7 +4218,7 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 					} else {
-						eprintf ("cannot allocate %d bytes\n", fcn_size);
+						eprintf ("cannot allocate %d byte(s)\n", fcn_size);
 					}
 					r_cons_printf ("]}\n");
 					pd_result = 0;
@@ -4371,7 +4371,7 @@ static int cmd_print(void *data, const char *input) {
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block, addrbytes * l, l, 0, 1, formatted_json);
 					} else {
-						eprintf ("Cannot allocate %d bytes\n", addrbytes * l);
+						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
 				} else {
 					int bs1 = l * 16;

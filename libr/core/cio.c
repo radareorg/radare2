@@ -80,7 +80,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		bs = 4096;
 	buf = malloc (bs);
 	if (!buf) {
-		eprintf ("Cannot alloc %d bytes\n", bs);
+		eprintf ("Cannot alloc %d byte(s)\n", bs);
 		fclose (fd);
 		return false;
 	}
@@ -378,7 +378,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 	shift_buf = calloc (b_size, 1);
 	if (!shift_buf) {
-		eprintf ("Cannot allocated %d bytes\n", (int)b_size);
+		eprintf ("Cannot allocated %d byte(s)\n", (int)b_size);
 		return false;
 	}
 

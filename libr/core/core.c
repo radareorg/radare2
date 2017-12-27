@@ -283,7 +283,7 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 		return;
 	}
 
-	char *comment = r_str_newf ("patch: %d bytes (%s)", cnt, hex_pairs);
+	char *comment = r_str_newf ("patch: %d byte(s) (%s)", cnt, hex_pairs);
 	free (hex_pairs);
 	if (!comment) {
 		eprintf ("core_post_write_callback: Cannot create comment\n");
@@ -1662,7 +1662,7 @@ R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
-		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
+		eprintf ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
 		/* XXX memory leak */
 		return false;
 	}
@@ -2276,7 +2276,7 @@ reaccept:
 					free (ptr);
 					ptr = NULL;
 				} else {
-					eprintf ("Cannot read %d bytes\n", i);
+					eprintf ("Cannot read %d byte(s)\n", i);
 					r_socket_free (c);
 					// TODO: reply error here
 					goto out_of_function;

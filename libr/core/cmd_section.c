@@ -198,7 +198,7 @@ static bool dumpSectionsToDisk(RCore *core) {
 			free (buf);
 			return false;
 		}
-		eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+		eprintf ("Dumped %d byte(s) into %s\n", (int)s->size, file);
 		free (buf);
 	}
 	return true;
@@ -239,7 +239,7 @@ static bool dumpSectionToDisk(RCore *core, char *file) {
 				free (heapfile);
 				return false;
 			}
-			eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+			eprintf ("Dumped %d byte(s) into %s\n", (int)s->size, file);
 			free (buf);
 			free (heapfile);
 			return true;
@@ -472,7 +472,7 @@ static int cmd_section(void *data, const char *input) {
 					return false;
 				}
 				r_io_write_at (core->io, s->vaddr, (const ut8*)buf, sz);
-				eprintf ("Loaded %d bytes into the map region "
+				eprintf ("Loaded %d byte(s) into the map region "
 					" at 0x%08"PFMT64x"\n", sz, s->vaddr);
 				free (buf);
 				return true;

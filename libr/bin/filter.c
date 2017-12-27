@@ -126,7 +126,7 @@ R_API void r_bin_filter_classes(RList *list) {
 				if (sym->name)
 					r_bin_filter_sym (db, sym->vaddr, sym);
 			}
-		} else eprintf ("Cannot alloc %d bytes\n", namepad_len);
+		} else eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
 	}
 	sdb_free (db);
 }

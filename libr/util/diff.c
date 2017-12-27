@@ -40,7 +40,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	lb = R_ABS (lb);
 	if (la != lb) {
 	 	len = R_MIN(la, lb);
-		eprintf ("Buffer truncated to %d bytes (%d not compared)\n", len, R_ABS(lb-la));
+		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
 	} else {
 		len = la;
 	}

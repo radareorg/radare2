@@ -163,7 +163,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	r_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
 	printf ("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
 	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
-	printf ("Shifted %d bytes\n", (int)delta);
+	printf ("Shifted %d byte(s)\n", (int)delta);
 	free (buf);
 	bin->size = bin->b->length;
 

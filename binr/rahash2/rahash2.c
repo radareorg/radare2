@@ -518,7 +518,7 @@ int main(int argc, char **argv) {
 			return 1;
 		} else if (compareBin_len != r_hash_size (algobit))   {
 			eprintf (
-				"rahash2: Given -c hash has %d bytes but the selected algorithm returns %d bytes.\n",
+				"rahash2: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
 				compareBin_len,
 				r_hash_size (algobit));
 			free (compareBin);

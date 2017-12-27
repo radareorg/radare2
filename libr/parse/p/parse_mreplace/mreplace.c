@@ -239,7 +239,7 @@ void doChecks(){
 	}
 
 	for(n=1;n<=CHECKS_CHUNCK_COUNT;n+=1+CHECKS_CHUNCK_COUNT/10){
-		fprintf(stdout,"\r[ + ] Checking stability for different input sizes consistence %d bytes, memory allocated: %d bytes",n*CHECKS_CHUNCK_COUNT*CHECKS_CHUNCK_SIZE,memAllocated());
+		fprintf(stdout,"\r[ + ] Checking stability for different input sizes consistence %d byte(s), memory allocated: %d byte(s)",n*CHECKS_CHUNCK_COUNT*CHECKS_CHUNCK_SIZE,memAllocated());
 		fflush(stdout);
 		memset(checkBuffer,'.',n*CHECKS_CHUNCK_SIZE-1);
 		checkBuffer[n*CHECKS_CHUNCK_SIZE]=0;
@@ -247,7 +247,7 @@ void doChecks(){
 		treplace(checkBuffer,"_",".");
 	}
 	fprintf(stdout,"\n");
-	fprintf(stdout,"[ m ] Memory allocated final: %d bytes\n",memAllocated());
+	fprintf(stdout,"[ m ] Memory allocated final: %d byte(s)\n",memAllocated());
 }
 
 /*
