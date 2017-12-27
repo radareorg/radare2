@@ -393,7 +393,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			break;
 		case EINVAL:
 			perror ("ptrace: Cannot attach");
-			eprintf ("Possibly unsigned r2. Please see doc/osx.md\n");
+			eprintf ("Possibly unsigned r2. Please see doc/macos.md\n");
 			eprintf ("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
@@ -471,7 +471,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (iodd->magic != R_MACH_MAGIC) {
 		return NULL;
 	}
-	
+
 	task_t task = pid_to_task (iodd->tid);
 	/* XXX ugly hack for testing purposes */
 	if (!strncmp (cmd, "perm", 4)) {
