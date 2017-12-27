@@ -2327,6 +2327,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 						break;
 					case 0:  /* temporary legacy workaround */
 						esc_bslash = false;
+						/* fallthrough */
 					default:
 						out = r_str_escape_latin1 (mi->str, false, esc_bslash);
 					}
