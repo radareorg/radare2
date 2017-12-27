@@ -631,19 +631,19 @@ RJSVar *r_x509_signedinfo_json (RPKCS7SignerInfo* si) {
 		return obj;
 	}
 
-	r_json_object_add (obj, "Version", r_json_number_new (si->version + 1));
-	r_json_object_add (obj, "Issuer", r_x509_name_json (&si->issuerAndSerialNumber.issuer));
+	(void)r_json_object_add (obj, "Version", r_json_number_new (si->version + 1));
+	(void)r_json_object_add (obj, "Issuer", r_x509_name_json (&si->issuerAndSerialNumber.issuer));
 	if (si->issuerAndSerialNumber.serialNumber) {
 		RASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
 		RASN1String *s = r_asn1_stringify_integer (o->binary, o->length);
 		if (s) {
-			r_json_object_add (obj, "SerialNumber", r_json_string_new (s->string));
+			(void)r_json_object_add (obj, "SerialNumber", r_json_string_new (s->string));
 		}
 		r_asn1_free_string (s);
 	}
 
 	if (si->digestAlgorithm.algorithm) {
-		r_json_object_add (obj, "DigestAlgorithm", r_json_string_new (si->digestAlgorithm.algorithm->string));
+		(void) r_json_object_add (obj, "DigestAlgorithm", r_json_string_new (si->digestAlgorithm.algorithm->string));
 	}
 
 	array = r_json_array_new (si->authenticatedAttributes.length);

@@ -212,7 +212,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_cons_printf ("function %s () {", fcn->name);
 	int indent = 1;
 	int nindent = 1;
-
+	RList *visited = r_list_newf (NULL);
+	r_cons_printf ("\n    //  %d basic blocks\n", n_bb);
 	do {
 #define I_TAB 4
 #define K_MARK(x) sdb_fmt(0,"mark.%"PFMT64x,x)
@@ -222,6 +223,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (!bb) {
 			break;
 		}
+		r_list_append (visited, bb);
 		r_cons_push ();
 		bool html = r_config_get_i (core->config, "scr.html");
 		r_config_set_i (core->config, "scr.html", 0);
@@ -235,6 +237,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		indentstr [(indent * I_TAB) - 2] = 0;
 		code = r_str_prefix_all (code, indentstr);
 		if (!code) {
+			eprintf ("No code here\n");
 			break;
 		}
 		int len = strlen (code);
@@ -268,7 +271,19 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					r_cons_printf ("\n%s}", indentstr);
 				}
 				r_cons_printf ("\n%sreturn;\n", indentstr);
-				break;
+				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
+				if (r_list_contains (visited, nbb)) {
+					nbb = r_anal_bb_from_offset (core->anal, bb->jump);
+					if (r_list_contains (visited, nbb)) {
+						nbb = NULL;
+					}
+				}
+				if (!nbb) {
+					break;
+				}
+				bb = nbb;
+				indent--;
+				continue;
 			}
 			if (sdb_num_get (db, K_ELSE (bb->addr), 0)) {
 				if (!strcmp (blocktype, "else")) {
@@ -281,7 +296,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			if (addr != bb->addr) {
 				queuegoto = addr;
-				//r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
+				// r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
 			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
@@ -310,7 +325,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (curfcn != fcn) {
 					// chop that branch
 					r_cons_printf ("\n  // chop\n");
-					break;
+				//	break;
 				}
 				if (sdb_get (db, K_INDENT (jump), 0)) {
 					// already tracekd
@@ -354,7 +369,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			} else {
 				ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 				if (addr == UT64_MAX) {
-					//r_cons_printf ("\nbreak\n");
+					r_cons_printf ("\n(break)\n");
 					break;
 				}
 				bb = r_anal_bb_from_offset (core->anal, addr);
@@ -374,6 +389,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		//n_bb --;
 	} while (n_bb > 0);
+	r_list_free (visited);
 	r_cons_printf ("\n}\n");
 	r_config_restore (hc);
 	r_config_hold_free (hc);
