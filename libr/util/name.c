@@ -9,6 +9,7 @@ R_API int r_name_validate_char(const char ch) {
 	case ':':
 	case '.':
 	case '_':
+	case ' ':
 		return true;
 	}
 	return false;
