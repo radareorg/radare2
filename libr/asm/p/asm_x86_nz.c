@@ -1991,7 +1991,12 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		if (op->operands[0].type & OT_QWORD &&
 			op->operands[1].type & OT_QWORD) {
-			data[l++] = 0x48;
+			if (op->operands[0].extended &&
+			    op->operands[1].extended) {
+					data[l++] = 0x4d;
+				} else {
+					data[l++] = 0x48;
+				}
 		}
 	}
 
