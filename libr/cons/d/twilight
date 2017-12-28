@@ -37,3 +37,12 @@ ec trap rgb:445
 ec swi rgb:bb7
 ec creg rgb:788
 ec flag rgb:ffd
+ec graph.true rgb:9b7
+ec graph.false rgb:b97
+ec graph.box2 rgb:060
+ec graph.box3 rgb:ff0000
+ec graph.box4 rgb:0000ff
+ec graph.trufae rgb:64c
+ec graph.current blue
+ec graph.traced blue
+ec graph.traced blue
