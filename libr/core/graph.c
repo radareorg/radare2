@@ -3638,13 +3638,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_set (core->config, "cmd.gprompt", buf);
 		}
 		break;
-#if 0
+#if 1
 // disabled for now, ultraslow in most situations
 		case '>':
-			r_core_cmd0 (core, "ag-;.agc* $$;aggi");
+			if (r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
+				r_core_cmd0 (core, "ag-;.agc* $$;.axtg $$;aggi");
+			}
 			break;
 		case '<':
-			r_core_cmd0 (core, "ag-;.agc*;aggi");
+			// r_core_visual_refs (core, true);
+			r_core_cmd0 (core, "ag-;.axtg $$;aggi");
 			break;
 #endif
 		case 'G':

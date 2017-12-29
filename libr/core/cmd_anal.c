@@ -5019,6 +5019,23 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 				r_cons_printf ("]");
 				r_cons_newline ();
+			} else if (input[1] == 'g') { // axtg
+				r_list_foreach (list, iter, ref) {
+					char *str = r_core_cmd_strf (core, "fd 0x%"PFMT64x, ref->addr);
+					if (!str) {
+						str = strdup ("?\n");
+					}
+					r_str_trim_tail (str);
+					r_cons_printf ("agn 0x%" PFMT64x " \"%s\"\n", ref->addr, str);
+					free (str);
+				}
+				if (input[2] != '*') {
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+					r_cons_printf ("agn 0x%" PFMT64x " \"%s\"\n", addr, fcn?fcn->name: "$$");
+				}
+				r_list_foreach (list, iter, ref) {
+					r_cons_printf ("age 0x%" PFMT64x " 0x%"PFMT64x"\n", ref->addr, addr);
+				}
 			} else if (input[1] == '*') { // axt*
 				// TODO: implement multi-line comments
 				r_list_foreach (list, iter, ref)
