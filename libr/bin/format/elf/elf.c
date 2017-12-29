@@ -2131,8 +2131,8 @@ static inline int needle(ELFOBJ *bin, const char *s) {
 
 // TODO: must return const char * all those strings must be const char os[LINUX] or so
 char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
-	int i;
-	int num = bin->ehdr.e_shnum;
+	size_t i;
+	size_t num = bin->ehdr.e_shnum;
 	const char *section_name = NULL;
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_LINUX: return strdup("linux");
@@ -2141,17 +2141,19 @@ char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 	case ELFOSABI_HPUX: return strdup("hpux");
 	}
 
-	for (i = 0; i < num; i++) {
-		if (bin->shdr[i].sh_type == SHT_NOTE) {
-			section_name = &bin->shstrtab[bin->shdr[i].sh_name];
-			if (!strcmp (section_name, ".note.openbsd.ident")) {
-				return strdup ("openbsd");
-			}
-			if (!strcmp (section_name, ".note.minix.ident")) {
-				return strdup ("minix");
-			}
-			if (!strcmp (section_name, ".note.netbsd.ident")) {
-				return strdup ("netbsd");
+	if (bin->shdr && bin->shstrtab) {
+		for (i = 0; i < num; i++) {
+			if (bin->shdr[i].sh_type == SHT_NOTE && bin->shdr[i].sh_name < bin->shstrtab_size) {
+				section_name = &bin->shstrtab[bin->shdr[i].sh_name];
+				if (!strcmp (section_name, ".note.openbsd.ident")) {
+					return strdup ("openbsd");
+				}
+				if (!strcmp (section_name, ".note.minix.ident")) {
+					return strdup ("minix");
+				}
+				if (!strcmp (section_name, ".note.netbsd.ident")) {
+					return strdup ("netbsd");
+				}
 			}
 		}
 	}
