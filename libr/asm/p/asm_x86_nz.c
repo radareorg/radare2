@@ -1711,6 +1711,36 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	int offset = 0;
+	st64 immediate = 0;
+
+	if ( op->operands[0].type & OT_QWORD ) {
+		data[l++] = 0x48;
+	}
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x66;
+		}
+		if (op->operands[0].type & OT_BYTE) {
+			data[l++] = 0xf6;
+		} else {
+			data[l++] = 0xf7;
+		}
+		if (op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0x20 | op->operands[0].regs[0];
+		} else {
+			data[l++] = 0xe0 | op->operands[0].reg;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
@@ -2241,6 +2271,7 @@ LookupTable oplookup[] = {
 	{"movsw", 0, NULL, 0x66a5, 2},
 	{"movzx", 0, &opmovx, 0},
 	{"movsx", 0, &opmovx, 0},
+	{"mul", 0, &opmul, 0},
 	{"mwait", 0, NULL, 0x0f01c9, 3},
 	{"nop", 0, NULL, 0x90, 1},
 	{"not", 0, &opnot, 0},
