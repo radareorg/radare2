@@ -124,7 +124,14 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	ut64 buflen = 16384;
 	// If /proc/%d/maps is not valid for gdbserver, we return NULL, as of now
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
-	if (gdbr_open_file (desc, path, O_RDONLY, S_IRUSR | S_IWUSR | S_IXUSR) < 0) {
+
+#ifdef _MSC_VER
+#define GDB_FILE_OPEN_MODE (_S_IREAD | _S_IWRITE)
+#else
+#define GDB_FILE_OPEN_MODE (S_IRUSR | S_IWUSR | S_IXUSR)
+#endif
+
+	if (gdbr_open_file (desc, path, O_RDONLY, GDB_FILE_OPEN_MODE) < 0) {
 		return NULL;
 	}
 	if (!(buf = malloc (buflen))) {

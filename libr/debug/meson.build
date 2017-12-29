@@ -9,7 +9,7 @@ files=[
 'p/debug_bf.c',
 #'p/debug_bochs.c',
 'p/debug_esil.c',
-#'p/debug_gdb.c',
+'p/debug_gdb.c',
 'p/debug_io.c',
 'p/debug_native.c',
 #'p/debug_qnx.c',
@@ -56,12 +56,14 @@ endif
 r_debug = library('r_debug', files,
   include_directories: [platform_inc, include_directories([
 	'../bin/format/elf',
+	'../../shlr/gdb/include',
 	'../../shlr/windbg'
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  link_with: [r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search, r_cons, r_lang, r_egg],
+  link_with: [r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search, r_cons, r_lang, r_egg, r_socket],
   objects: [
 	libr2sdb.extract_all_objects(),
+	libr2gdb.extract_all_objects(),
 	libr2windbg.extract_all_objects()
   ],
   install: true

@@ -170,6 +170,7 @@ debug = [
 	'io',
 	'native',
 	'rap',
+	'gdb',
 	'windbg'
 ]
 
@@ -202,6 +203,7 @@ io = [
 	'bfdbg',
 	'debug',
 	'default',
+	'gdb',
 	'gzip',
 	'http',
 	'ihex',
