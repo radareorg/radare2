@@ -864,6 +864,36 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	int offset = 0;
+	st64 immediate = 0;
+
+	if ( op->operands[0].type & OT_QWORD ) {
+		data[l++] = 0x48;
+	}
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x66;
+		}
+		if (op->operands[0].type & OT_BYTE) {
+			data[l++] = 0xf6;
+		} else {
+			data[l++] = 0xf7;
+		}
+		if (op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0x30 | op->operands[0].regs[0];
+		} else {
+			data[l++] = 0xf0 | op->operands[0].reg;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
@@ -2203,6 +2233,7 @@ LookupTable oplookup[] = {
 	{"daa", 0, NULL, 0x27, 1},
 	{"das", 0, NULL, 0x2f, 1},
 	{"dec", 0, &opdec, 0},
+	{"div", 0, &opdiv, 0},
 	{"emms", 0, NULL, 0x0f77, 2},
 	{"femms", 0, NULL, 0x0f0e, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
