@@ -60,7 +60,7 @@ r_debug = library('r_debug', files,
 	'../../shlr/windbg'
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  link_with: [r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search, r_cons, r_lang, r_egg],
+  link_with: [r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search, r_cons, r_lang, r_egg, r_socket],
   objects: [
 	libr2sdb.extract_all_objects(),
 	libr2gdb.extract_all_objects(),
