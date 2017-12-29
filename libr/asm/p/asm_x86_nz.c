@@ -869,20 +869,22 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	st64 immediate = 0;
 
-	if (a->bits == 64) {
+	if ( op->operands[0].type & OT_QWORD ) {
 		data[l++] = 0x48;
 	}
 	switch (op->operands_count) {
 	case 1:
-		if (op->operands[0].type & OT_MEMORY) {
-			if (op->operands[0].type & OT_BYTE) {
-				data[l++] = 0xf6;
-			} else {
-				data[l++] = 0xf7;
-			}
-			data[l++] = 0x28 | op->operands[0].regs[0];
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x66;
+		}
+		if (op->operands[0].type & OT_BYTE) {
+			data[l++] = 0xf6;
 		} else {
 			data[l++] = 0xf7;
+		}
+		if (op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0x28 | op->operands[0].regs[0];
+		} else {
 			data[l++] = 0xe8 | op->operands[0].reg;
 		}
 		break;
