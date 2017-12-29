@@ -9,7 +9,7 @@ files=[
 'p/debug_bf.c',
 #'p/debug_bochs.c',
 'p/debug_esil.c',
-#'p/debug_gdb.c',
+'p/debug_gdb.c',
 'p/debug_io.c',
 'p/debug_native.c',
 #'p/debug_qnx.c',
@@ -56,6 +56,7 @@ endif
 r_debug = library('r_debug', files,
   include_directories: [platform_inc, include_directories([
 	'../bin/format/elf',
+	'../../shlr/gdb/include',
 	'../../shlr/windbg'
   ])],
   c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
