@@ -2566,10 +2566,34 @@ int tmplayercmp (const void *a, const void *b) {
 	return ((struct tmplayer *)a)->layer > ((struct tmplayer *)b)->layer;
 }
 
+static void agraph_print_edges_simple(RAGraph *g) {
+	RCanvasLineStyle style = {0};
+	RANode *n, *n2;
+	RGraphNode *gn, *gn2;
+	RListIter *iter, *iter2;
+	const RList *nodes = r_graph_get_nodes (g->graph);
+	graph_foreach_anode (nodes, iter, gn, n) {
+		const RList *outnodes = n->gnode->out_nodes;
+		graph_foreach_anode (outnodes, iter2, gn2, n2) {
+			// TODO: better alignments here
+			r_cons_canvas_line (g->can,
+				n->x + (n->w/2), n->y + n->h,
+				n2->x + (n2->w/2), n2->y, &style);
+		}
+	}
+}
+
 static void agraph_print_edges(RAGraph *g) {
+	if (!g->edgemode) {
+		return;
+	}
+	if (g->edgemode == 1) {
+		agraph_print_edges_simple (g);
+		return;
+	}
 	int nth;
 	RListIter *itn, *itm, *ito;
-	RCanvasLineStyle style;
+	RCanvasLineStyle style = {0};
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *ga;
 	RANode *a;
@@ -3006,10 +3030,28 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		g->can->sx = -g->x;
 		g->can->sy = -g->y - 1;
 	}
-
-	if (!g->is_tiny) {
-		agraph_print_edges (g);
+	if (g->is_dis) {
+		(void) G (-g->can->sx + 1, -g->can->sy + 2);
+		int scr_utf8 = r_config_get_i (core->config, "scr.utf8");
+		int asm_bytes = r_config_get_i (core->config, "asm.bytes");
+		int asm_cmtright = r_config_get_i (core->config, "asm.cmtright");
+		r_config_set_i (core->config, "scr.utf8", 0);
+		r_config_set_i (core->config, "asm.bytes", 0);
+		r_config_set_i (core->config, "asm.cmtright", 0);
+		char *str = r_core_cmd_str (core, "pd $r");
+		//r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
+		//		w - title_len, 1, ' ', true);
+		W(str);
+		free (str);
+		r_config_set_i (core->config, "scr.utf8", scr_utf8);
+		r_config_set_i (core->config, "asm.bytes", asm_bytes);
+		r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
 	}
+
+	// TODO: add an option/key to toggle this
+	// if (!g->is_tiny) {
+		agraph_print_edges (g);
+	// }
 	if (g->title && *g->title) {
 		g->can->sy ++;
 		agraph_print_nodes (g);
@@ -3077,11 +3119,14 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		if (!f) {
 			// r_cons_message ("Not in a function. Type 'df' to define it here");
 			r_cons_flush ();
-			if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
-				return 0;
+			if (!g->is_dis) {
+				if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
+					return 0;
+				}
+				r_core_cmd0 (core, "af");
 			}
-			r_core_cmd0 (core, "af");
 			f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			g->need_reload_nodes = true;
 		}
 		if (f && f != *fcn) {
 			*fcn = f;
@@ -3108,6 +3153,7 @@ static void agraph_init(RAGraph *g) {
 	g->color_box3 = Color_MAGENTA;
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 (); // XXX leak
+	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->movspeed = DEFAULT_SPEED; // r_config_get_i (g->core->config, "graph.scroll");
 	g->db = sdb_new0 ();
@@ -3819,6 +3865,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				r_core_cmd0 (core, "ecn");
 			}
+			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			g->color_box = core->cons->pal.graph_box;
 			g->color_box2 = core->cons->pal.graph_box2;
 			g->color_box3 = core->cons->pal.graph_box3;
@@ -3872,6 +3919,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 		}
 		break;
+		case 'D':
+			g->is_dis = !g->is_dis;
+			break;
 		case 'n':
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			break;
@@ -3886,31 +3936,39 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_toggle_mini (g);
 			break;
 		case 'J':
-			if (okey == 27) { // && r_cons_readchar () == 126) {
-				// handle page down key
-				can->sy -= PAGEKEY_SPEED * (invscroll? -1: 1);
+			if (g->is_dis) {
+				r_core_cmd0 (core, "so 4");
 			} else {
-				RANode *n = get_anode (g->curnode);
-				if (n) {
-					if (g->is_tiny) {
-						n->y++;
-					} else {
-						n->y += movspeed;
+				if (okey == 27) { // && r_cons_readchar () == 126) {
+					// handle page down key
+					can->sy -= PAGEKEY_SPEED * (invscroll? -1: 1);
+				} else {
+					RANode *n = get_anode (g->curnode);
+					if (n) {
+						if (g->is_tiny) {
+							n->y++;
+						} else {
+							n->y += movspeed;
+						}
 					}
 				}
 			}
 			break;
 		case 'K':
-			if (okey == 27) { // && r_cons_readchar () == 126) {
-				// handle page up key
-				can->sy += PAGEKEY_SPEED * (invscroll? -1: 1);
+			if (g->is_dis) {
+				r_core_cmd0 (core, "so -4");
 			} else {
-				RANode *n = get_anode (g->curnode);
-				if (n) {
-					if (g->is_tiny) {
-						n->y --;
-					} else {
-						n->y -= movspeed;
+				if (okey == 27) { // && r_cons_readchar () == 126) {
+					// handle page up key
+					can->sy += PAGEKEY_SPEED * (invscroll? -1: 1);
+				} else {
+					RANode *n = get_anode (g->curnode);
+					if (n) {
+						if (g->is_tiny) {
+							n->y --;
+						} else {
+							n->y -= movspeed;
+						}
 					}
 				}
 			}
@@ -3946,8 +4004,20 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		}
-		case 'j': can->sy -= movspeed * (invscroll? -1: 1); break;
-		case 'k': can->sy += movspeed * (invscroll? -1: 1); break;
+		case 'j':
+			if (g->is_dis) {
+				r_core_cmd0 (core, "so 1");
+			} else {
+				can->sy -= movspeed * (invscroll? -1: 1);
+			}
+			break;
+		case 'k':
+			if (g->is_dis) {
+				r_core_cmd0 (core, "so -1");
+			} else {
+				can->sy += movspeed * (invscroll? -1: 1);
+			}
+			break;
 		case 'l': can->sx -= movspeed * (invscroll? -1: 1); break;
 		case 'h': can->sx += movspeed * (invscroll? -1: 1); break;
 		case '.':

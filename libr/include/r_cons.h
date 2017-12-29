@@ -767,6 +767,8 @@ typedef struct r_ascii_graph_t {
 	int layout;
 	int is_instep;
 	bool is_tiny;
+	bool is_dis;
+	int edgemode;
 	int mode;
 	bool is_callgraph;
 	int zoom;

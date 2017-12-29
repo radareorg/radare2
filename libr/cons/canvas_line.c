@@ -76,50 +76,67 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	}
 }
 
-R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2,
-		RCanvasLineStyle *style) {
-	apply_line_style(c,x,y,x2,y2,style, 1);
-	if(y2<y){
+R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
+	if (x == x2 || y == y2) {
+		r_cons_canvas_line_square (c, x, y +1, x2, y2, style);
+		return;
+	}
+	apply_line_style (c, x, y, x2, y2, style, 1);
+	if (y2 < y) {
 		int tmp = y2;
-		y2=y;
+		y2 = y;
 		y=tmp;
 		tmp=x2;
 		x2=x;
 		x=tmp;
 	}
 	char chizzle[2] = {0}; // = '.';//my nizzle
-	int dx = abs(x2-x);
-        int dy = abs(y2-y);
-	int sx = x<x2 ? 1 : -1;
-	int sy = y<y2 ? 1 : -1;
-	int err = (dx>dy?dx:-dy)/2;
+	// destination
+	int dx = abs (x2-x);
+        int dy = abs (y2-y);
+	// source
+	int sx = (x < x2) ? 1 : -1;
+	int sy = (y < y2) ? 1 : -1;
+
+	int err = (dx > (dy?dx:-dy)) / 2;
 	int e2;
+
 	// TODO: find if there's any collision in this line
 loop:
 	e2 = err;
-	if (e2>-dx) {
-		*chizzle='_';
-		err-=dy;
+	if (e2 > -dx) {
+		*chizzle = '_';
+		err -= dy;
 		x+=sx;
 	}
 	if (e2<dy) {
 		*chizzle='|';
-		err+=dx;
-		y+=sy;
+		err += dx;
+		y += sy;
 	}
-	if ((e2<dy) && (e2>-dx)) {
-		if (sy > 0){
+	if ((e2 < dy) && (e2 > -dx)) {
+		if (sy > 0) {
 			*chizzle = (sx > 0)?'\\':'/';
 		} else {
 			*chizzle = (sx > 0)?'/':'\\';
 		}
 	}
 	if (!(x == x2 && y == y2)) {
-		int i = (*chizzle=='_'&&sy<0) ? 1 : 0;
-		if(G(x,y-i)) {
+		int i = (*chizzle == '_' && sy < 0) ? 1 : 0;
+		if (G(x, y - i)) {
 			W(chizzle);
 		}
 		goto loop;
+	}
+	if (dx) {
+		if ((dx / dy) < 1) {
+			if (G(x, y)) {
+				W("|");
+			}
+		}
+		if (G(x, y + 1)) {
+			W("|");
+		}
 	}
 	c->attr = Color_RESET;
 }
@@ -330,8 +347,11 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 	c->attr = Color_RESET;
 }
 
-
 R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert) {
+	if (!c->linemode) {
+		r_cons_canvas_line (c, x, y, x2, y2, style);
+		return;
+	}
 	int min_x = R_MIN (x, x2);
 	int diff_x = R_ABS (x - x2);
 	int diff_y = R_ABS (y - y2);
@@ -381,6 +401,10 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 }
 
 R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert) {
+	if (!c->linemode) {
+		r_cons_canvas_line (c, x, y, x2, y2, style);
+		return;
+	}
 	int min_x1 = R_MIN (x, xbendpoint);
 	int min_x2 = R_MIN (x2, xbendpoint);
 

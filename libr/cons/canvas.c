@@ -435,11 +435,10 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {
 	int i;
-	char *row = NULL;
 	if (w < 0) {
 		return;
 	}
-	row = malloc (w + 1);
+	char *row = malloc (w + 1);
 	if (!row) {
 		return;
 	}
