@@ -3688,6 +3688,30 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_set (core->config, "cmd.gprompt", buf);
 		}
 		break;
+		case 'e':
+			{
+				int e = r_config_get_i (core->config, "graph.edges");
+				e++;
+				if (e > 2) {
+					e = 0;
+				}
+				r_config_set_i (core->config, "graph.edges", e);
+				g->edgemode = e;
+				get_bbupdate (g, core, fcn);
+			}
+			break;
+		case 'E':
+			{
+				int e = r_config_get_i (core->config, "graph.edges");
+				e--;
+				if (e < 0) {
+					e = 2;
+				}
+				r_config_set_i (core->config, "graph.edges", e);
+				g->edgemode = e;
+				get_bbupdate (g, core, fcn);
+			}
+			break;
 #if 1
 // disabled for now, ultraslow in most situations
 		case '>':
@@ -3761,6 +3785,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" Page-UP/DOWN - scroll canvas up/down\n"
 				" C            - toggle scr.colors\n"
 				" d            - rename function\n"
+				" D            - toggle the mixed graph+disasm mode\n"
+				" e/E          - rotate graph.edges (show/hide edges)\n"
 				" F            - enter flag selector\n"
 				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
 				" G            - debug trace callgraph (generated with dtc)\n"
@@ -3912,6 +3938,20 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'd':
+			{
+				int wheel = r_config_get_i (core->config, "scr.wheel");
+				if (wheel) {
+					r_cons_enable_mouse (false);
+				}
+				// WTF?
+				r_config_set_i (core->config, "scr.interactive", true);
+				r_core_visual_define (core, "");
+				get_bbupdate (g, core, fcn);
+				if (wheel) {
+					r_cons_enable_mouse (true);
+				}
+			}
+#if 0
 		{
 			char *newname = r_cons_input ("New function name:");
 			if (newname) {
@@ -3922,6 +3962,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				free (newname);
 			}
 		}
+#endif
 		break;
 		case 'D':
 			g->is_dis = !g->is_dis;
