@@ -274,7 +274,7 @@ R_API int r_cons_any_key(const char *msg) {
 }
 
 #if __WINDOWS__ && !__CYGWIN__
-static int readchar_win() {
+static int readchar_win(ut32 usec) {
 	int ch=0;
 	BOOL ret;
 	BOOL bCtrl = FALSE;
@@ -286,6 +286,11 @@ do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0 | ENABLE_MOUSE_INPUT); // RAW
+	if (usec) {
+		if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
+			return -1;
+		}
+	}
 	ret = ReadConsoleInput (h, irInBuf, 128, &out);
 	if (ret) {
 		for (i = 0; i < out; i++) {
@@ -449,8 +454,7 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 	// timeout
 	return -1;
 #else
-	// TODO: unimplemented readchar_timeout for windows
-	return r_cons_readchar ();
+	return  readchar_win (usec);
 #endif
 }
 
@@ -459,7 +463,7 @@ R_API int r_cons_readchar() {
 	buf[0] = -1;
 #if __WINDOWS__ && !__CYGWIN__ //&& !MINGW32
 	#if 1   // if something goes wrong set this to 0. skuater.....
-	return readchar_win();
+	return readchar_win(0);
 	#endif
 	BOOL ret;
 	DWORD out;

@@ -2648,7 +2648,14 @@ static void agraph_print_edges(RAGraph *g) {
 
 		graph_foreach_anode (neighbours, itn, gb, b) {
 			int is_first = true;
+#if  _MSC_VER
+#define STRINGISE_IMPL(x) #x
+#define STRINGISE(x) STRINGISE_IMPL(x)
+#define FILE_LINE_LINK __FILE__ "(" STRINGISE(__LINE__) ") : "
+#pragma message (FILE_LINE_LINK "TODO: if neighbours > 2 then dont use true/false colors")
+#else
 #warning TODO: if neighbours > 2 then dont use true/false colors
+#endif
 			if (a->is_dummy) {
 				RANode *in = (RANode *) (((RGraphNode *)r_list_first (ga->in_nodes))->data);
 				nth = get_nth (g, in, a);
