@@ -8,7 +8,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include "../arch/wasm/wasm.c"
+#include "../arch/wasm/wasm.h"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	WasmOp wop = {0};
