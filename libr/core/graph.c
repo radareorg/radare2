@@ -1569,7 +1569,6 @@ static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
 		while (tmp->is_dummy) {
 			tmp = (RANode *) (((RGraphNode *)r_list_first (tmp->gnode->out_nodes))->data);
 		}
-
 		if (tmp->gnode->idx == from->gnode->idx) {
 			break;
 		}
@@ -1602,12 +1601,11 @@ static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
 static int get_nth (const RAGraph *g, RANode *src, RANode *dst);
 void backedge_info (RAGraph *g) {
 	int i, j, k;
-	int **arr; // arr[g->n_layers][2]  -- min, max
 	int min, max;
 	int inedge = 0;
 	int outedge = 0;
 
-	arr = R_NEWS0 (int *, g->n_layers);
+	int **arr = R_NEWS0 (int *, g->n_layers);
 	if (!arr) {
 		return;
 	}
@@ -1756,7 +1754,6 @@ void backedge_info (RAGraph *g) {
 		}
 		r_list_append (g->edges, e);
 	}
-
  err:
 	for (i = i - 1; i >= 0; i--) {
 		free (arr[i]);
@@ -2015,6 +2012,13 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	char *shortcut = 0;
 	int shortcuts = 0;
 	core->keep_asmqjmps = false;
+
+	/* update colors from palette */
+	g->color_box = core->cons->pal.graph_box;
+	g->color_box2 = core->cons->pal.graph_box2;
+	g->color_box3 = core->cons->pal.graph_box3;
+	g->color_true = core->cons->pal.graph_true;
+	g->color_false = core->cons->pal.graph_false;
 
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
@@ -2620,7 +2624,7 @@ static void agraph_print_edges(RAGraph *g) {
 
 		graph_foreach_anode (neighbours, itn, gb, b) {
 			int is_first = true;
-
+#warning TODO: if neighbours > 2 then dont use true/false colors
 			if (a->is_dummy) {
 				RANode *in = (RANode *) (((RGraphNode *)r_list_first (ga->in_nodes))->data);
 				nth = get_nth (g, in, a);
@@ -2702,15 +2706,17 @@ static void agraph_print_edges(RAGraph *g) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, tm->edgectr, false);
 				} else {
 					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
-					tmp->ax = ax;
-					tmp->bx = bx;
-					tmp->ay = ay;
-					tmp->by = by;
-					tmp->edgectr = tm->edgectr;
-					tmp->fromlayer = a->layer;
-					tmp->tolayer = b->layer;
-					tmp->style = style;
-					r_list_append (bckedges, tmp);
+					if (tmp) {
+						tmp->ax = ax;
+						tmp->bx = bx;
+						tmp->ay = ay;
+						tmp->by = by;
+						tmp->edgectr = tm->edgectr;
+						tmp->fromlayer = a->layer;
+						tmp->tolayer = b->layer;
+						tmp->style = style;
+						r_list_append (bckedges, tmp);
+					}
 				}
 				if (b->is_dummy) {
 					style.symbol = LINE_NOSYM_HORIZ;
@@ -2721,7 +2727,6 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 				break;
 			}
-
 		}
 	}
 
@@ -2761,24 +2766,19 @@ static void agraph_print_edges(RAGraph *g) {
 		}
 
 		if (tt) {
-			if (rightlen < leftlen) {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, maxx + 1, tt->revedgectr, !g->layout);
-			} else {
-				r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, minx - 1, tt->revedgectr, !g->layout);
-			}
+			int arg = (rightlen < leftlen)? maxx + 1: minx - 1;
+			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, arg, tt->revedgectr, !g->layout);
 		}
 
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer < temp->tolayer) {
 				continue;
 			}
-
 			if (rightlen < leftlen) {
 				tl->maxx = maxx + 1;
 			} else {
 				tl->minx = minx - 1;
 			}
-
 			if (tl->layer >= temp->fromlayer) {
 				break;
 			}
@@ -3026,9 +3026,10 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			w - title_len, 1, ' ', true);
 	}
 
+
 	r_cons_canvas_print_region (g->can);
 	if (is_interactive) {
-		r_cons_newline();
+		r_cons_newline ();
 	}
 
 	if (is_interactive) {
@@ -3046,6 +3047,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 }
 
 static int agraph_refresh(struct agraph_refresh_data *grd) {
+	if (!grd) {
+		return 0;
+	}
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
 	RAnalFunction *f, **fcn = grd->fcn;
@@ -3801,8 +3805,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case '$':
-			r_core_cmd0 (core, "e!asm.pseudo");
-			g->need_reload_nodes = true;
+			r_core_cmd (core, "sr PC", 0);
 			break;
 		case 'R':
 			if (!fcn) {

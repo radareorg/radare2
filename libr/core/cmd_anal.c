@@ -391,7 +391,7 @@ static const char *help_msg_ag[] = {
 	"aga", " [addr]", "idem, but only addresses",
 	"agr", "[j] [addr]", "output graphviz call graph of function",
 	"agg", "", "display current graph created with agn and age (see also ag-)",
-	"agc", "[j] [addr]", "output graphviz call graph of function",
+	"agc", "[*j] [addr]", "output graphviz call graph of function",
 	"agC", "[j]", "Same as agc -1. full program callgraph",
 	"agd", " [fcn name]", "output graphviz code of diffed function",
 	"age", "[?] title1 title2", "Add an edge to the current graph",
@@ -5654,7 +5654,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
 			r_core_anal_coderefs (core, addr, 1);
 		} else {
-			eprintf ("|ERROR| Usage: agc [addr]\n");
+			eprintf ("|ERROR| Usage: agc[j*] ([addr])\n");
 		}
 		break;
 	case 'j': // "agj"

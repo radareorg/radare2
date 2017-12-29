@@ -704,6 +704,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_MOVSXD:
 	case X86_INS_MOVD:
 	case X86_INS_MOVQ:
+	case X86_INS_MOVDQU:
+	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
 		switch (INSOP(0).type) {
