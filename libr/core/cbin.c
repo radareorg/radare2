@@ -1993,7 +1993,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
 			// const char *fwd = r_str_get (symbol->forwarder);
 			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"PFMT64x" "
-				"%6s %4s %4d %s\n",
+				"%6s %6s %4d %s\n",
 				symbol->ordinal,
 				symbol->paddr, addr, bind, type,
 				symbol->size, name);
