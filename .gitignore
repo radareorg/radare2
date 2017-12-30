@@ -97,3 +97,7 @@ cscope.out
 r2-static/*
 binr/rasign2/rasign2
 binr/rasign2/rasign2.exe
+.idea/
+cmake-build-*
+.vs/
+dist/
