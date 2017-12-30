@@ -1773,7 +1773,7 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 					r_write_ble (b, num, esil->anal->big_endian, 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 					r_write_ble (b, num2, esil->anal->big_endian, 64);
-					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
+					ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
 					return ret;
 				}
 				return -1;
