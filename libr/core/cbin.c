@@ -1898,6 +1898,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","
 				"\"flagname\":\"%s\","
+				"\"ordinal\":%d,"
+				"\"bind\":\"%s\","
 				"\"size\":%d,"
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
@@ -1905,6 +1907,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				(exponly && firstexp) ? "" : (iter->p ? "," : ""), str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
+				symbol->ordinal,
+				symbol->bind,
 				(int)symbol->size,
 				symbol->type,
 				(ut64)addr, (ut64)symbol->paddr);
