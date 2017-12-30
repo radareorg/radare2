@@ -19,14 +19,16 @@ ec other gray
 ec btext cyan
 ec invalid red
 ec trap red
+ec args green
+ec help yellow
 ec prompt white
 ec mov gray
 ec math gray
 ec push yellow
 ec reg white
+ec creg white
 ec num cyan
 ec invalid red
-ec trap red
 ec swi cyan
 ec cmp yellow
 ec leave gray
@@ -34,3 +36,13 @@ ec call cyan
 ec cjmp green
 ec jmp green
 ec pop yellow
+
+ec graph.true green
+ec graph.false red
+ec graph.trufae blue
+ec graph.current blue
+ec graph.traced blue
+ec graph.box gray
+ec graph.box2 blue
+ec graph.box3 gray
+ec graph.box4 gray

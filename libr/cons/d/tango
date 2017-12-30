@@ -50,3 +50,13 @@ ec trap rgb:a00
 ec swi rgb:950
 ec creg rgb:590
 ec flag rgb:950
+
+ec graph.true rgb:370
+ec graph.false rgb:a00
+ec graph.trufae rgb:bbb
+ec graph.current rgb:7d1
+ec graph.traced rgb:f00
+ec graph.box rgb:950
+ec graph.box2 rgb:7d1
+ec graph.box3 rgb:950
+ec graph.box4 rgb:950

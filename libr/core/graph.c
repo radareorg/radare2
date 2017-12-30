@@ -3593,6 +3593,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_hold_free (hc);
 			return false;
 		}
+		g->color_box = core->cons->pal.graph_box;
+		g->color_box2 = core->cons->pal.graph_box2;
+		g->color_box3 = core->cons->pal.graph_box3;
+		g->color_true = core->cons->pal.graph_true;
+		g->color_false = core->cons->pal.graph_false;
 		g->is_tiny = is_interactive == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
 	} else {
