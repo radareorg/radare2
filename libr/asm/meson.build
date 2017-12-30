@@ -33,6 +33,7 @@ files=[
 'p/asm_msp430.c',
 'p/asm_nios2.c',
 'p/asm_pic18c.c',
+'p/asm_picbaseline.c',
 'p/asm_ppc_cs.c',
 'p/asm_ppc_gnu.c',
 'p/asm_propeller.c',
