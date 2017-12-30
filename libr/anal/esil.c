@@ -1753,7 +1753,7 @@ static int esil_deceq(RAnalEsil *esil) {
 /* POKE */
 static int esil_poke_n(RAnalEsil *esil, int bits) {
 	ut64 bitmask = genmask (bits - 1);
-	ut64 num, addr;
+	ut64 num, num2, addr;
 	ut8 b[8] = {0};
 	ut64 n;
 	char *dst = r_anal_esil_pop (esil);
@@ -1767,6 +1767,17 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 	//eprintf ("GONA POKE %d src:%s dst:%s\n", bits, src, dst);
 	if (src && r_anal_esil_get_parm (esil, src, &num)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
+			if (bits == 128) {
+				char *src2 = r_anal_esil_pop (esil);
+				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
+					r_write_ble (b, num, esil->anal->big_endian, 64);
+					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
+					r_write_ble (b, num2, esil->anal->big_endian, 64);
+					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
+					return ret;
+				}
+				return -1;
+			}
 			int type = r_anal_esil_get_parm_type (esil, src);
 			if (type != R_ANAL_ESIL_PARM_INTERNAL) {
 				// this is a internal peek performed before a poke
@@ -1880,7 +1891,6 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
 			ut64 b = r_read_ble64 (&a, 0); //esil->anal->big_endian);
 			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->big_endian);
-			#warning TODO
 			snprintf (res, sizeof (res), "0x%" PFMT64x, b);
 			r_anal_esil_push (esil, res);
 			snprintf (res, sizeof (res), "0x%" PFMT64x, c);
