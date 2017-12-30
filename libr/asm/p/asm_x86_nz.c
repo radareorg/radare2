@@ -2272,6 +2272,7 @@ LookupTable oplookup[] = {
 	{"fscale", 0, NULL, 0xd9fd, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
+	{"fsqrt", 0, NULL, 0xd9fa, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
 	{"getsec", 0, NULL, 0x0f37, 2},
 	{"hlt", 0, NULL, 0xf4, 1},
