@@ -48,6 +48,11 @@ static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	return false;
 }
 
+static bool ispackedreg(RAnalEsil *esil, const char *str) {
+	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
+	return ri? ri->packed_size > 0: false;
+}
+
 static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
 	if (!r_anal_esil_reg_read (esil, str, num, NULL)) {
 		if (!isnum (esil, str, num)) {
@@ -724,6 +729,14 @@ static int esil_eq(RAnalEsil *esil) {
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
+	if (ispackedreg (esil, dst)) {
+		char *src2 = r_anal_esil_pop (esil);
+		char *newreg = r_str_newf ("%sl", dst);
+		if (r_anal_esil_get_parm (esil, src2, &num2)) {
+			ret = r_anal_esil_reg_write (esil, newreg, num2);
+		}
+		free (newreg);
+	}
 
 	if (src && dst && r_anal_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
 		if (r_anal_esil_get_parm (esil, src, &num2)) {
@@ -1780,18 +1793,27 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 static int esil_poke1(RAnalEsil *esil) {
 	return esil_poke_n (esil, 8);
 }
+
 static int esil_poke2(RAnalEsil *esil) {
 	return esil_poke_n (esil, 16);
 }
+
 static int esil_poke3(RAnalEsil *esil) {
 	return esil_poke_n (esil, 24);
 }
+
 static int esil_poke4(RAnalEsil *esil) {
 	return esil_poke_n (esil, 32);
 }
+
 static int esil_poke8(RAnalEsil *esil) {
 	return esil_poke_n (esil, 64);
 }
+
+static int esil_poke16(RAnalEsil *esil) {
+	return esil_poke_n (esil, 128);
+}
+
 static int esil_poke(RAnalEsil *esil) {
 	return esil_poke_n (esil, esil->anal->bits);
 }
@@ -1844,16 +1866,28 @@ static int esil_poke_some(RAnalEsil *esil) {
 /* PEEK */
 
 static int esil_peek_n(RAnalEsil *esil, int bits) {
+	if (bits & 7) {
+		return 0;
+	}
 	char res[32];
 	ut64 addr;
 	int ret = 0, bytes = bits / 8;
 	char *dst = r_anal_esil_pop (esil);
-	if (bits & 7) {
-		free (dst);
-		return 0;
-	}
 	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
 	if (dst && isregornum (esil, dst, &addr)) {
+		if (bits == 128) {
+			ut8 a[sizeof(ut64) * 2] = {0};
+			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
+			ut64 b = r_read_ble64 (&a, 0); //esil->anal->big_endian);
+			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->big_endian);
+			#warning TODO
+			snprintf (res, sizeof (res), "0x%" PFMT64x, b);
+			r_anal_esil_push (esil, res);
+			snprintf (res, sizeof (res), "0x%" PFMT64x, c);
+			r_anal_esil_push (esil, res);
+			free (dst);
+			return ret;
+		}
 		ut64 bitmask = genmask (bits - 1);
 		ut8 a[sizeof(ut64)] = {0};
 		ret = r_anal_esil_mem_read (esil, addr, a, bytes);
@@ -1872,18 +1906,28 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 static int esil_peek1(RAnalEsil *esil) {
 	return esil_peek_n (esil, 8);
 }
+
 static int esil_peek2(RAnalEsil *esil) {
 	return esil_peek_n (esil, 16);
 }
+
 static int esil_peek3(RAnalEsil *esil) {
 	return esil_peek_n (esil, 24);
 }
+
 static int esil_peek4(RAnalEsil *esil) {
 	return esil_peek_n (esil, 32);
 }
+
 static int esil_peek8(RAnalEsil *esil) {
 	return esil_peek_n (esil, 64);
 }
+
+static int esil_peek16(RAnalEsil *esil) {
+	// packed only
+	return esil_peek_n (esil, 128);
+}
+
 static int esil_peek(RAnalEsil *esil) {
 	return esil_peek_n (esil, esil->anal->bits);
 };
@@ -3000,6 +3044,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("=[3]", esil_poke3);
 	OP ("=[4]", esil_poke4);
 	OP ("=[8]", esil_poke8);
+	OP ("=[16]", esil_poke16);
 	OP ("|=[]", esil_mem_oreq);
 	OP ("|=[1]", esil_mem_oreq1);
 	OP ("|=[2]", esil_mem_oreq2);
@@ -3068,6 +3113,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("[3]", esil_peek3);
 	OP ("[4]", esil_peek4);
 	OP ("[8]", esil_peek8);
+	OP ("[16]", esil_peek16);
 	OP ("STACK", r_anal_esil_dumpstack);
 	OP ("REPEAT", esil_repeat);
 	OP ("POP", esil_pop);

@@ -640,10 +640,13 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			r_strbuf_appendf (&op->esil, "%s,[2],ax,=,df,?{,2,%s,-=,},df,!,?{,2,%s,+=,}", si, si, si);
 		break;
 	case X86_INS_LODSD:
-			r_strbuf_appendf (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
+		r_strbuf_appendf (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
 		break;
 	case X86_INS_LODSQ:
-			r_strbuf_appendf (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
+		r_strbuf_appendf (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
+		break;
+	case X86_INS_PEXTRB:
+		r_strbuf_appendf (&op->esil, "TODO");
 		break;
 	// string mov
 	// PS: MOVSD can correspond to one of the two instruction (yes, intel x86
@@ -2923,27 +2926,35 @@ static char *get_reg_profile(RAnal *anal) {
 		 "fpu    st6 .64 128  0\n"
 		 "fpu    st7 .64 144  0\n"
 
+		 "fpu    xmm0  .64 160  4\n"
 		 "fpu    xmm0h .64 160  0\n"
 		 "fpu    xmm0l .64 168  0\n"
 
+		 "fpu    xmm1  .64 176  4\n"
 		 "fpu    xmm1h .64 176  0\n"
 		 "fpu    xmm1l .64 184  0\n"
 
+		 "fpu    xmm2  .64 192  4\n"
 		 "fpu    xmm2h .64 192  0\n"
 		 "fpu    xmm2l .64 200  0\n"
 
+		 "fpu    xmm3  .64 208  4\n"
 		 "fpu    xmm3h .64 208  0\n"
 		 "fpu    xmm3l .64 216  0\n"
 
+		 "fpu    xmm4  .64 224  4\n"
 		 "fpu    xmm4h .64 224  0\n"
 		 "fpu    xmm4l .64 232  0\n"
 
+		 "fpu    xmm5  .64 240  4\n"
 		 "fpu    xmm5h .64 240  0\n"
 		 "fpu    xmm5l .64 248  0\n"
 
+		 "fpu    xmm6  .64 256  4\n"
 		 "fpu    xmm6h .64 256  0\n"
 		 "fpu    xmm6l .64 264  0\n"
 
+		 "fpu    xmm7  .64 272  4\n"
 		 "fpu    xmm7h .64 272  0\n"
 		 "fpu    xmm7l .64 280  0\n"
 		 "fpu    x64   .64 288  0\n";
