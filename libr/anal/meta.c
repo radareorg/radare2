@@ -483,8 +483,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 				a->cb_printf ("\"%s\"", str);
 			}
 			if (d->type == 's') {
-				a->cb_printf (", \"enc\":\"latin1\", \"ascii\":%s",
-				              r_str_bool (r_str_is_ascii (d->str)));
+				const char *enc = d->subtype ? "latin1" : "iz";
+				a->cb_printf (", \"enc\":\"%s\", \"ascii\":%s",
+				              enc, r_str_bool (r_str_is_ascii (d->str)));
 			}
 			a->cb_printf ("}");
 			isFirst = false;
