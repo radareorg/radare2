@@ -51,7 +51,7 @@ static const char *help_msg_db[] = {
 	"dbj", "", "List breakpoints in JSON format",
 	// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 	"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
-	"dbC", " <addr> <cmd>", "Set breakpoint condition on command",
+	"dbC", " <addr> <cmd>", "Run command but continue until <cmd> returns zero",
 	"dbd", " <addr>", "Disable breakpoint",
 	"dbe", " <addr>", "Enable breakpoint",
 	"dbs", " <addr>", "Toggle breakpoint",
