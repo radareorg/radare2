@@ -3698,6 +3698,18 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_set (core->config, "cmd.gprompt", buf);
 		}
 		break;
+		case '=':
+			{
+				int e = r_config_get_i (core->config, "graph.layout");
+				if (++e > 1) {
+					e = 0;
+				}
+				r_config_set_i (core->config, "graph.layout", e);
+				g->layout = r_config_get_i (core->config, "graph.layout");
+				g->need_reload_nodes = true;
+				get_bbupdate (g, core, fcn);
+			}
+			break;
 		case 'e':
 			{
 				int e = r_config_get_i (core->config, "graph.edges");
@@ -3784,6 +3796,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" ;            - add comment in current basic block\n"
 				" .            - center graph to the current node\n"
 				" ^            - seek to the first bb of the function\n"
+				" =            - toggle graph.layout\n"
 				" :cmd         - run radare command\n"
 				" '            - toggle graph.comments\n"
 				" \"            - toggle graph.refs\n"
@@ -3823,7 +3836,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" y            - toggle node folding/minification\n"
 				" Y            - toggle tiny graph\n"
 				" Z            - follow parent node");
-			r_cons_flush ();
+			r_cons_less ();
 			r_cons_any_key (NULL);
 			break;
 		case '"':
