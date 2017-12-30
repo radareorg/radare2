@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2017 - nibble, pancake */
 
 // TODO: rename to r_anal_meta_get() ??
 #if 0
@@ -460,12 +460,16 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 		}
 		if (!str) {
 			pstr = "";
+		} else if (d->type == 'f') {
+			pstr = str;
 		} else if (d->type == 's') {
 			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
-		} else pstr = d->str;
+		} else {
+			pstr = d->str;
+		}
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
