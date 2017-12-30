@@ -1654,6 +1654,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else {
 			const char *bind = r_str_get (import->bind);
 			const char *type = r_str_get (import->type);
+#if 0
 			r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s",
 				import->ordinal, addr, bind, type);
 			if (import->classname && import->classname[0]) {
@@ -1664,6 +1665,19 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 				r_cons_printf (" descriptor=%s", import->descriptor);
 			}
 			r_cons_newline ();
+#else
+			r_cons_printf ("%03d 0x%08"PFMT64x" %s %s ",
+				import->ordinal, addr, bind, type);
+			if (import->classname && import->classname[0]) {
+				r_cons_printf ("%s.", import->classname);
+			}
+			r_cons_printf ("%s", symname);
+			if (import->descriptor && import->descriptor[0]) {
+				// Uh?
+				r_cons_printf (" descriptor=%s", import->descriptor);
+			}
+			r_cons_newline ();
+#endif
 		}
 		R_FREE (symname);
 		i++;
@@ -1671,7 +1685,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("]");
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("\n%i imports\n", i);
+		// r_cons_printf ("# %i imports\n", i);
 	}
 #if MYDB
 	// NOTE: if we comment out this, it will leak.. but it will be faster
@@ -1974,17 +1988,19 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				}
 			}
 		} else {
-			const char *bind = symbol->bind;
-			const char *type = symbol->type;
-			const char *name = sn.demname? sn.demname: symbol->name;
-			const char *fwd = symbol->forwarder;
-			if (!bind) bind = "";
-			if (!type) type = "";
-			if (!fwd) fwd = "";
-			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
-				"fwd=%s sz=%u bind=%s type=%s name=%s\n",
-				addr, symbol->paddr, symbol->ordinal, fwd,
-				symbol->size, bind, type, name);
+			const char *bind = r_str_get (symbol->bind);
+			const char *type = r_str_get (symbol->type);
+			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
+			const char *fwd = r_str_get (symbol->forwarder);
+			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"PFMT64x" "
+				"%6s %4s %4d %s\n",
+				symbol->ordinal,
+				symbol->paddr, addr, bind, type,
+				symbol->size, name);
+			// r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
+			//	"fwd=%s sz=%u bind=%s type=%s name=%s\n",
+			//	addr, symbol->paddr, symbol->ordinal, fwd,
+			//	symbol->size, bind, type, name);
 		}
 		snFini (&sn);
 		i++;
