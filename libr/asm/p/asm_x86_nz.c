@@ -2269,6 +2269,7 @@ LookupTable oplookup[] = {
 	{"femms", 0, NULL, 0x0f0e, 2},
 	{"fcos", 0, NULL, 0xd9ff, 2},
 	{"fnop", 0, NULL, 0xd9d0, 2},
+	{"fscale", 0, NULL, 0xd9fd, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
