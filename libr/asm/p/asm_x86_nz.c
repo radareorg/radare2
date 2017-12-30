@@ -2266,6 +2266,7 @@ LookupTable oplookup[] = {
 	{"div", 0, &opdiv, 0},
 	{"emms", 0, NULL, 0x0f77, 2},
 	{"femms", 0, NULL, 0x0f0e, 2},
+	{"fnop", 0, NULL, 0xd9d0, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
