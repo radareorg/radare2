@@ -483,7 +483,17 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 				a->cb_printf ("\"%s\"", str);
 			}
 			if (d->type == 's') {
-				const char *enc = d->subtype ? "latin1" : "iz";
+				const char *enc;
+				switch (d->subtype) {
+				case R_STRING_ENC_UTF8:
+					enc = "utf8";
+					break;
+				case 0:  /* temporary legacy encoding */
+					enc = "iz";
+					break;
+				default:
+					enc = "latin1";
+				}
 				a->cb_printf (", \"enc\":\"%s\", \"ascii\":%s",
 				              enc, r_str_bool (r_str_is_ascii (d->str)));
 			}
