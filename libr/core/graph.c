@@ -3020,6 +3020,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 }
 
 static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
+	bool preEdges = true;
 	int h, w = r_cons_get_size (&h);
 	int ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
@@ -3058,8 +3059,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 		r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
 	}
-
-//	agraph_print_edges (g);
+	if (preEdges) {
+		agraph_print_edges (g);
+	}
 	if (g->title && *g->title) {
 		g->can->sy ++;
 		agraph_print_nodes (g);
@@ -3067,7 +3069,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	} else {
 		agraph_print_nodes (g);
 	}
-	agraph_print_edges (g);
+	if (!preEdges) {
+		agraph_print_edges (g);
+	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
 	W (g->title);
