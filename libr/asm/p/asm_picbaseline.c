@@ -51,7 +51,7 @@ static int asm_picbaseline_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l)
 			strncpy (op->buf_asm, "incf f, d", R_ASM_BUFSIZE);
 			break;
 		case 0b001111:
-			strncpy (op->buf_asm, "incf f, d", R_ASM_BUFSIZE);
+			strncpy (op->buf_asm, "incfsz f, d", R_ASM_BUFSIZE);
 			break;
 		case 0b000100:
 			strncpy (op->buf_asm, "iorwf f, d", R_ASM_BUFSIZE);
@@ -80,6 +80,22 @@ static int asm_picbaseline_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l)
 					case 0b00110:
 					case 0b00111:
 						strncpy (op->buf_asm, "tris f", R_ASM_BUFSIZE);
+						break;
+					case 0b10000:
+					case 0b10001:
+					case 0b10010:
+					case 0b10011:
+					case 0b10100:
+					case 0b10101:
+					case 0b10110:
+					case 0b10111:
+						strncpy (op->buf_asm, "movlb k", R_ASM_BUFSIZE);
+						break;
+					case 0b11110:
+						strncpy (op->buf_asm, "return", R_ASM_BUFSIZE);
+						break;
+					case 0b11111:
+						strncpy (op->buf_asm, "retfie", R_ASM_BUFSIZE);
 						break;
 					default:
 						EMIT_INVALID
@@ -130,7 +146,7 @@ static int asm_picbaseline_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l)
 		case 0b111001:
 		case 0b111010:
 		case 0b111011:
-			strncpy (op->buf_asm, "addlw k", R_ASM_BUFSIZE);
+			strncpy (op->buf_asm, "andlw k", R_ASM_BUFSIZE);
 			break;
 		case 0b100100:
 		case 0b100101:
