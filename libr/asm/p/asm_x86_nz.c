@@ -2291,6 +2291,7 @@ LookupTable oplookup[] = {
 	{"fsqrt", 0, NULL, 0xd9fa, 2},
 	{"ftst", 0, NULL, 0xd9e4, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
+	{"fxam", 0, NULL, 0xd9e5, 2},
 	{"fyl2x", 0, NULL, 0xd9f1, 2},
 	{"fyl2xp1", 0, NULL, 0xd9f9, 2},
 	{"getsec", 0, NULL, 0x0f37, 2},
