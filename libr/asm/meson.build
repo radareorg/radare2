@@ -139,6 +139,7 @@ files=[
 #'arch//z80/expressions.c',
 'arch//z80/z80.c',
 #'arch//z80/z80asm.c',
+'arch//wasm/wasm.c', 
 ]
 
 r_asm = library('r_asm', files,

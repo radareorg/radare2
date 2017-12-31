@@ -1,0 +1,81 @@
+cmake_minimum_required(VERSION 3.8)
+
+set(files
+	anal_tp.c
+	#anal_vt.c
+	asm.c
+	p/core_anal.c
+	blaze.c
+	canal.c
+	cbin.c
+	cconfig.c
+	cio.c
+	cmd.c
+	#cmd_anal.c
+	cmd_api.c
+	#cmd_cmp.c
+	#cmd_debug.c
+	#cmd_egg.c
+	#cmd_eval.c
+	#cmd_flag.c
+	#cmd_hash.c
+	#cmd_help.c
+	#cmd_info.c
+	#cmd_log.c
+	cmd_macro.c
+	cmd_magic.c
+	#cmd_meta.c
+	#cmd_mount.c
+	#cmd_open.c
+	#cmd_print.c
+	#cmd_project.c
+	#cmd_quit.c
+	#cmd_search.c
+	#cmd_search_rop.c
+	#cmd_section.c
+	#cmd_seek.c
+	#cmd_type.c
+	#cmd_write.c
+	#cmd_zign.c
+	core.c
+	disasm.c
+	file.c
+	fortune.c
+	gdiff.c
+	graph.c
+	hack.c
+	libs.c
+	#linux_heap_glibc.c
+	log.c
+	panels.c
+	patch.c
+	plugin.c
+	project.c
+	pseudo.c
+	rtr.c
+	task.c
+	vasm.c
+	visual.c
+	vmarks.c
+	vmenus.c
+	yank.c)
+
+add_library(r_core ${LIBR_LIB_TYPE} ${files}
+		$<TARGET_OBJECTS:libr2sdb>
+		$<TARGET_OBJECTS:libr2spp>
+		$<TARGET_OBJECTS:libr2gdb>)
+set(EXTRA_INCLUDES ../../shlr)
+if(WIN32)
+	list(APPEND EXTRA_INCLUDES ../../shlr/heap/include)
+endif(WIN32)
+target_include_directories(r_core
+		PUBLIC
+		${PLATFORM_INC}
+		${EXTRA_INCLUDES})
+set(R_CORE_COMPILE_FLAGS 
+	"-DCORELIB=1"
+	"-I${CMAKE_CURRENT_BINARY_DIR}/../..")
+target_compile_options(r_core PUBLIC ${R_CORE_COMPILE_FLAGS})
+target_link_libraries(r_core
+		r_util r_reg r_syscall r_search r_cons r_anal r_socket r_io r_fs r_lang
+		r_hash r_flag r_parse r_egg r_debug r_magic r_crypto r_config r_bin r_asm r_bp)

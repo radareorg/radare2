@@ -1,0 +1,72 @@
+cmake_minimum_required(VERSION 3.9)
+
+set(cs_files
+    capstone/arch/AArch64/AArch64BaseInfo.c
+    capstone/arch/AArch64/AArch64Disassembler.c
+    capstone/arch/AArch64/AArch64InstPrinter.c
+    capstone/arch/AArch64/AArch64Mapping.c
+    capstone/arch/AArch64/AArch64Module.c
+    capstone/arch/ARM/ARMDisassembler.c
+    capstone/arch/ARM/ARMInstPrinter.c
+    capstone/arch/ARM/ARMMapping.c
+    capstone/arch/ARM/ARMModule.c
+    capstone/arch/M68K/M68KDisassembler.c
+    capstone/arch/M68K/M68KInstPrinter.c
+    capstone/arch/M68K/M68KModule.c
+    capstone/arch/Mips/MipsDisassembler.c
+    capstone/arch/Mips/MipsInstPrinter.c
+    capstone/arch/Mips/MipsMapping.c
+    capstone/arch/Mips/MipsModule.c
+    capstone/arch/PowerPC/PPCDisassembler.c
+    capstone/arch/PowerPC/PPCInstPrinter.c
+    capstone/arch/PowerPC/PPCMapping.c
+    capstone/arch/PowerPC/PPCModule.c
+    capstone/arch/Sparc/SparcDisassembler.c
+    capstone/arch/Sparc/SparcInstPrinter.c
+    capstone/arch/Sparc/SparcMapping.c
+    capstone/arch/Sparc/SparcModule.c
+    capstone/arch/SystemZ/SystemZDisassembler.c
+    capstone/arch/SystemZ/SystemZInstPrinter.c
+    capstone/arch/SystemZ/SystemZMapping.c
+    capstone/arch/SystemZ/SystemZMCTargetDesc.c
+    capstone/arch/SystemZ/SystemZModule.c
+    capstone/arch/TMS320C64x/TMS320C64xDisassembler.c
+    capstone/arch/TMS320C64x/TMS320C64xInstPrinter.c
+    capstone/arch/TMS320C64x/TMS320C64xMapping.c
+    capstone/arch/TMS320C64x/TMS320C64xModule.c
+    capstone/arch/X86/X86ATTInstPrinter.c
+    capstone/arch/X86/X86Disassembler.c
+    capstone/arch/X86/X86DisassemblerDecoder.c
+    capstone/arch/X86/X86IntelInstPrinter.c
+    capstone/arch/X86/X86Mapping.c
+    capstone/arch/X86/X86Module.c
+    capstone/arch/XCore/XCoreDisassembler.c
+    capstone/arch/XCore/XCoreInstPrinter.c
+    capstone/arch/XCore/XCoreMapping.c
+    capstone/arch/XCore/XCoreModule.c
+    capstone/cs.c
+    capstone/MCInst.c
+    capstone/MCInstrDesc.c
+    capstone/MCRegisterInfo.c
+    capstone/SStream.c
+    capstone/utils.c)
+add_library(libr2capstone ${SHLR_LIB_TYPE} ${cs_files})
+target_include_directories(libr2capstone
+        PUBLIC
+        capstone/include)
+set(CAPSTONE_COMPILE_FLAGS
+        "-DCAPSTONE_X86_ATT_DISABLE_NO"
+        "-DCAPSTONE_X86_REDUCE_NO"
+        "-DCAPSTONE_USE_SYS_DYN_MEM"
+        "-DCAPSTONE_DIET_NO"
+        "-DCAPSTONE_HAS_ARM"
+        "-DCAPSTONE_HAS_ARM64"
+        "-DCAPSTONE_HAS_M68K"
+        "-DCAPSTONE_HAS_MIPS"
+        "-DCAPSTONE_HAS_POWERPC"
+        "-DCAPSTONE_HAS_SPARC"
+        "-DCAPSTONE_HAS_SYSZ"
+        "-DCAPSTONE_HAS_X86"
+        "-DCAPSTONE_HAS_XCORE"
+        "-DCAPSTONE_HAS_TMS320C64X")
+target_compile_options(libr2capstone PUBLIC ${CAPSTONE_COMPILE_FLAGS})
