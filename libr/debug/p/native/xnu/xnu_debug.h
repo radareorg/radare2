@@ -265,7 +265,7 @@ char *xnu_corefile_default_location(void);
 bool xnu_generate_corefile(RDebug *dbg, RBuffer *dest);
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int xnu_reg_write (RDebug *dgb, int type, const ut8 *buf, int size);
-const char *xnu_reg_profile (RDebug *dbg);
+char *xnu_reg_profile (RDebug *dbg);
 int xnu_attach (RDebug *dbg, int pid);
 bool xnu_step (RDebug *dbg);
 int xnu_detach (RDebug *dbg, int pid);

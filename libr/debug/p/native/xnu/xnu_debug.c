@@ -327,7 +327,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #endif
 }
 
-const char *xnu_reg_profile(RDebug *dbg) {
+char *xnu_reg_profile(RDebug *dbg) {
 #if __i386__ || __x86_64__
 	if (dbg->bits & R_SYS_BITS_32) {
 #		include "reg/darwin-x86.h"

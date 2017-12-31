@@ -93,5 +93,5 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list (int pid);
 int linux_handle_signals (RDebug *dbg);
 int linux_dbg_wait (RDebug *dbg, int pid);
-const char *linux_reg_profile (RDebug *dbg);
+char *linux_reg_profile (RDebug *dbg);
 int match_pid (const void *pid_o, const void *th_o);

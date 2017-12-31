@@ -112,7 +112,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 
 static char *r_debug_native_reg_profile (RDebug *dbg) {
 #if __APPLE__
-	return strdup (xnu_reg_profile (dbg));
+	return xnu_reg_profile (dbg);
 #elif __linux__
 	return linux_reg_profile (dbg);
 #endif
