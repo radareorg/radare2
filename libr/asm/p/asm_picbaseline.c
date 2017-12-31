@@ -106,138 +106,138 @@ static PicBaselineOpcode picbaseline_get_opcode(ut16 instr) {
 	}
 
 	switch ((instr >> 6) & 0b111111) {
-		case 0b000111:
-			return PIC_BASELINE_OPCODE_ADDWF;
-		case 0b000101:
-			return PIC_BASELINE_OPCODE_ANDWF;
-		case 0b000001:
-			if (instr & 0b100000) {
-				return PIC_BASELINE_OPCODE_CLRF;
-			} else if ((instr & 0x11111) == 0b00000) {
-				return PIC_BASELINE_OPCODE_CLRW;
-			} else {
+	case 0b000111:
+		return PIC_BASELINE_OPCODE_ADDWF;
+	case 0b000101:
+		return PIC_BASELINE_OPCODE_ANDWF;
+	case 0b000001:
+		if (instr & 0b100000) {
+			return PIC_BASELINE_OPCODE_CLRF;
+		} else if ((instr & 0x11111) == 0b00000) {
+			return PIC_BASELINE_OPCODE_CLRW;
+		} else {
+			return PIC_BASELINE_OPCODE_INVALID;
+		}
+	case 0b001001:
+		return PIC_BASELINE_OPCODE_COMF;
+	case 0b000011:
+		return PIC_BASELINE_OPCODE_DECF;
+	case 0b001011:
+		return PIC_BASELINE_OPCODE_DECFSZ;
+	case 0b001010:
+		return PIC_BASELINE_OPCODE_INCF;
+	case 0b001111:
+		return PIC_BASELINE_OPCODE_INCFSZ;
+	case 0b000100:
+		return PIC_BASELINE_OPCODE_IORWF;
+	case 0b001000:
+		return PIC_BASELINE_OPCODE_MOVF;
+	case 0b000000:
+		if (instr & 0b100000) {
+			return PIC_BASELINE_OPCODE_MOVWF;
+		} else {
+			switch (instr & 0b11111) {
+			case 0b00000:
+				return PIC_BASELINE_OPCODE_NOP;
+			case 0b00100:
+				return PIC_BASELINE_OPCODE_CLRWDT;
+			case 0b00010:
+				return PIC_BASELINE_OPCODE_OPTION;
+			case 0b00011:
+				return PIC_BASELINE_OPCODE_SLEEP;
+			case 0b00001:
+			case 0b00101:
+			case 0b00110:
+			case 0b00111:
+				return PIC_BASELINE_OPCODE_TRIS;
+			case 0b10000:
+			case 0b10001:
+			case 0b10010:
+			case 0b10011:
+			case 0b10100:
+			case 0b10101:
+			case 0b10110:
+			case 0b10111:
+				return PIC_BASELINE_OPCODE_MOVLB;
+			case 0b11110:
+				return PIC_BASELINE_OPCODE_RETURN;
+			case 0b11111:
+				return PIC_BASELINE_OPCODE_RETFIE;
+			default:
 				return PIC_BASELINE_OPCODE_INVALID;
 			}
-		case 0b001001:
-			return PIC_BASELINE_OPCODE_COMF;
-		case 0b000011:
-			return PIC_BASELINE_OPCODE_DECF;
-		case 0b001011:
-			return PIC_BASELINE_OPCODE_DECFSZ;
-		case 0b001010:
-			return PIC_BASELINE_OPCODE_INCF;
-		case 0b001111:
-			return PIC_BASELINE_OPCODE_INCFSZ;
-		case 0b000100:
-			return PIC_BASELINE_OPCODE_IORWF;
-		case 0b001000:
-			return PIC_BASELINE_OPCODE_MOVF;
-		case 0b000000:
-			if (instr & 0b100000) {
-				return PIC_BASELINE_OPCODE_MOVWF;
-			} else {
-				switch (instr & 0b11111) {
-					case 0b00000:
-						return PIC_BASELINE_OPCODE_NOP;
-					case 0b00100:
-						return PIC_BASELINE_OPCODE_CLRWDT;
-					case 0b00010:
-						return PIC_BASELINE_OPCODE_OPTION;
-					case 0b00011:
-						return PIC_BASELINE_OPCODE_SLEEP;
-					case 0b00001:
-					case 0b00101:
-					case 0b00110:
-					case 0b00111:
-						return PIC_BASELINE_OPCODE_TRIS;
-					case 0b10000:
-					case 0b10001:
-					case 0b10010:
-					case 0b10011:
-					case 0b10100:
-					case 0b10101:
-					case 0b10110:
-					case 0b10111:
-						return PIC_BASELINE_OPCODE_MOVLB;
-					case 0b11110:
-						return PIC_BASELINE_OPCODE_RETURN;
-					case 0b11111:
-						return PIC_BASELINE_OPCODE_RETFIE;
-					default:
-						return PIC_BASELINE_OPCODE_INVALID;
-				}
-			}
-		case 0b001101:
-			return PIC_BASELINE_OPCODE_RLF;
-		case 0b001100:
-			return PIC_BASELINE_OPCODE_RRF;
-		case 0b000010:
-			return PIC_BASELINE_OPCODE_SUBWF;
-		case 0b001110:
-			return PIC_BASELINE_OPCODE_SWAPF;
-		case 0b000110:
-			return PIC_BASELINE_OPCODE_XORWF;
-		case 0b010000:
-		case 0b010001:
-		case 0b010010:
-		case 0b010011:
-			return PIC_BASELINE_OPCODE_BCF;
-		case 0b010100:
-		case 0b010101:
-		case 0b010110:
-		case 0b010111:
-			return PIC_BASELINE_OPCODE_BSF;
-		case 0b011000:
-		case 0b011001:
-		case 0b011010:
-		case 0b011011:
-			return PIC_BASELINE_OPCODE_BTFSC;
-		case 0b011100:
-		case 0b011101:
-		case 0b011110:
-		case 0b011111:
-			return PIC_BASELINE_OPCODE_BTFSS;
-		case 0b111000:
-		case 0b111001:
-		case 0b111010:
-		case 0b111011:
-			return PIC_BASELINE_OPCODE_ANDLW;
-		case 0b100100:
-		case 0b100101:
-		case 0b100110:
-		case 0b100111:
-			return PIC_BASELINE_OPCODE_CALL;
-		case 0b101000:
-		case 0b101001:
-		case 0b101010:
-		case 0b101011:
-		case 0b101100:
-		case 0b101101:
-		case 0b101110:
-		case 0b101111:
-			return PIC_BASELINE_OPCODE_GOTO;
-		case 0b110100:
-		case 0b110101:
-		case 0b110110:
-		case 0b110111:
-			return PIC_BASELINE_OPCODE_IORLW;
-		case 0b110000:
-		case 0b110001:
-		case 0b110010:
-		case 0b110011:
-			return PIC_BASELINE_OPCODE_MOVLW;
-		case 0b100000:
-		case 0b100001:
-		case 0b100010:
-		case 0b100011:
-			return PIC_BASELINE_OPCODE_RETLW;
-		case 0b111100:
-		case 0b111101:
-		case 0b111110:
-		case 0b111111:
-			return PIC_BASELINE_OPCODE_XORLW;
-		default:
-			return PIC_BASELINE_OPCODE_INVALID;
+		}
+	case 0b001101:
+		return PIC_BASELINE_OPCODE_RLF;
+	case 0b001100:
+		return PIC_BASELINE_OPCODE_RRF;
+	case 0b000010:
+		return PIC_BASELINE_OPCODE_SUBWF;
+	case 0b001110:
+		return PIC_BASELINE_OPCODE_SWAPF;
+	case 0b000110:
+		return PIC_BASELINE_OPCODE_XORWF;
+	case 0b010000:
+	case 0b010001:
+	case 0b010010:
+	case 0b010011:
+		return PIC_BASELINE_OPCODE_BCF;
+	case 0b010100:
+	case 0b010101:
+	case 0b010110:
+	case 0b010111:
+		return PIC_BASELINE_OPCODE_BSF;
+	case 0b011000:
+	case 0b011001:
+	case 0b011010:
+	case 0b011011:
+		return PIC_BASELINE_OPCODE_BTFSC;
+	case 0b011100:
+	case 0b011101:
+	case 0b011110:
+	case 0b011111:
+		return PIC_BASELINE_OPCODE_BTFSS;
+	case 0b111000:
+	case 0b111001:
+	case 0b111010:
+	case 0b111011:
+		return PIC_BASELINE_OPCODE_ANDLW;
+	case 0b100100:
+	case 0b100101:
+	case 0b100110:
+	case 0b100111:
+		return PIC_BASELINE_OPCODE_CALL;
+	case 0b101000:
+	case 0b101001:
+	case 0b101010:
+	case 0b101011:
+	case 0b101100:
+	case 0b101101:
+	case 0b101110:
+	case 0b101111:
+		return PIC_BASELINE_OPCODE_GOTO;
+	case 0b110100:
+	case 0b110101:
+	case 0b110110:
+	case 0b110111:
+		return PIC_BASELINE_OPCODE_IORLW;
+	case 0b110000:
+	case 0b110001:
+	case 0b110010:
+	case 0b110011:
+		return PIC_BASELINE_OPCODE_MOVLW;
+	case 0b100000:
+	case 0b100001:
+	case 0b100010:
+	case 0b100011:
+		return PIC_BASELINE_OPCODE_RETLW;
+	case 0b111100:
+	case 0b111101:
+	case 0b111110:
+	case 0b111111:
+		return PIC_BASELINE_OPCODE_XORLW;
+	default:
+		return PIC_BASELINE_OPCODE_INVALID;
 	}
 }
 
@@ -251,8 +251,8 @@ static int asm_picbaseline_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l)
 		EMIT_INVALID
 	}
 
-	ut16 instr = r_read_le16(b);
-	PicBaselineOpcode opcode = picbaseline_get_opcode(instr);
+	ut16 instr = r_read_le16 (b);
+	PicBaselineOpcode opcode = picbaseline_get_opcode (instr);
 	if (opcode == PIC_BASELINE_OPCODE_INVALID) {
 		EMIT_INVALID
 	}
@@ -260,52 +260,52 @@ static int asm_picbaseline_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l)
 	const PicBaselineOpInfo *op_info = &picbaseline_op_info[opcode];
 	op->size = 2;
 
-	switch(op_info->args) {
-		case PIC_BASELINE_OP_ARGS_NONE:
-			strncpy(op->buf_asm, op_info->mnemonic, R_ASM_BUFSIZE);
-			break;
-		case PIC_BASELINE_OP_ARGS_2F:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
-					 op_info->mnemonic,
-					 instr & 0b11);
-			break;
-		case PIC_BASELINE_OP_ARGS_3F:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
-					 op_info->mnemonic,
-					 instr & 0b111);
-			break;
-		case PIC_BASELINE_OP_ARGS_3K:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
-					 op_info->mnemonic,
-					 instr & 0b111);
-			break;
-		case PIC_BASELINE_OP_ARGS_1D_5F:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x, %c",
-					 op_info->mnemonic,
-					 instr & 0b11111,
-					 (instr & (1 << 5)) >> 5 ? 'f' : 'w');
-			break;
-		case PIC_BASELINE_OP_ARGS_5F:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
-					 op_info->mnemonic,
-					 instr & 0b11111);
-			break;
-		case PIC_BASELINE_OP_ARGS_3B_5F:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x, 0x%x",
-					 op_info->mnemonic,
-					 instr & 0b11111,
-					 (instr & (0b111 << 5)) >> 5);
-			break;
-		case PIC_BASELINE_OP_ARGS_8K:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
-					 op_info->mnemonic,
-					 instr & 0xff);
-			break;
-		case PIC_BASELINE_OP_ARGS_9K:
-			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
-					 op_info->mnemonic,
-					 instr & 0b111111111);
-			break;
+	switch (op_info->args) {
+	case PIC_BASELINE_OP_ARGS_NONE:
+		strncpy (op->buf_asm, op_info->mnemonic, R_ASM_BUFSIZE);
+		break;
+	case PIC_BASELINE_OP_ARGS_2F:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+				  op_info->mnemonic,
+				  instr & 0b11);
+		break;
+	case PIC_BASELINE_OP_ARGS_3F:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+				  op_info->mnemonic,
+				  instr & 0b111);
+		break;
+	case PIC_BASELINE_OP_ARGS_3K:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+				  op_info->mnemonic,
+				  instr & 0b111);
+		break;
+	case PIC_BASELINE_OP_ARGS_1D_5F:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x, %c",
+				  op_info->mnemonic,
+				  instr & 0b11111,
+				  (instr & (1 << 5)) >> 5 ? 'f' : 'w');
+		break;
+	case PIC_BASELINE_OP_ARGS_5F:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+				  op_info->mnemonic,
+				  instr & 0b11111);
+		break;
+	case PIC_BASELINE_OP_ARGS_3B_5F:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x, 0x%x",
+				  op_info->mnemonic,
+				  instr & 0b11111,
+				  (instr & (0b111 << 5)) >> 5);
+		break;
+	case PIC_BASELINE_OP_ARGS_8K:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+				  op_info->mnemonic,
+				  instr & 0xff);
+		break;
+	case PIC_BASELINE_OP_ARGS_9K:
+		snprintf (op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+				  op_info->mnemonic,
+				  instr & 0b111111111);
+		break;
 	}
 
 	return op->size;
