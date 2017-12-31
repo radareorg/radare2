@@ -6,6 +6,7 @@
 typedef enum {
 	PIC_BASELINE_OP_ARGS_NONE = 0,
 	PIC_BASELINE_OP_ARGS_2F,
+	PIC_BASELINE_OP_ARGS_3F,
 	PIC_BASELINE_OP_ARGS_3K,
 	PIC_BASELINE_OP_ARGS_1D_5F,
 	PIC_BASELINE_OP_ARGS_5F,
@@ -64,7 +65,7 @@ static const PicBaselineOpInfo picbaseline_op_info[PIC_BASELINE_OPCODE_INVALID] 
 	{ "option", PIC_BASELINE_OP_ARGS_NONE },
 	{ "sleep", PIC_BASELINE_OP_ARGS_NONE },
 	{ "clrwdt", PIC_BASELINE_OP_ARGS_NONE },
-	{ "tris", PIC_BASELINE_OP_ARGS_2F },
+	{ "tris", PIC_BASELINE_OP_ARGS_3F },
 	{ "movlb", PIC_BASELINE_OP_ARGS_3K },
 	{ "return", PIC_BASELINE_OP_ARGS_NONE },
 	{ "retfie", PIC_BASELINE_OP_ARGS_NONE },
@@ -144,6 +145,7 @@ static PicBaselineOpcode picbaseline_get_opcode(ut16 instr) {
 						return PIC_BASELINE_OPCODE_OPTION;
 					case 0b00011:
 						return PIC_BASELINE_OPCODE_SLEEP;
+					case 0b00001:
 					case 0b00101:
 					case 0b00110:
 					case 0b00111:
@@ -266,6 +268,11 @@ static int asm_picbaseline_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l)
 			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
 					 op_info->mnemonic,
 					 instr & 0b11);
+			break;
+		case PIC_BASELINE_OP_ARGS_3F:
+			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
+					 op_info->mnemonic,
+					 instr & 0b111);
 			break;
 		case PIC_BASELINE_OP_ARGS_3K:
 			snprintf(op->buf_asm, R_ASM_BUFSIZE + 1, "%s 0x%x",
