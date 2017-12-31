@@ -4,7 +4,8 @@
 PREFIX="/usr"
 INSTALL_DST="/tmp/r2ios"
 USE_SIMULATOR=0
-SIMULATOR_ARCHS="i386+x86_64"
+#SIMULATOR_ARCHS="i386+x86_64"
+SIMULATOR_ARCHS="x86_64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=0
 CFLAGS="-O2"
@@ -126,16 +127,16 @@ if [ $# -eq 0 ] && [ "${#ARCHS}" = 0 ] && [ "${USE_SIMULATOR}" = 0 ]; then
 fi
 
 while test $# -gt 0; do
-    case "$1" in 
+	case "$1" in 
 		-archs)
 			shift
-            if test $# -gt 0; then
-            	if [ "$1" == "all" ]; then
-            		ARCHS="armv7+armv7s+arm64"
-            	else
-            		ARCHS=$1
-            	fi
-            fi
+			if test $# -gt 0; then
+				if [ "$1" == "all" ]; then
+					ARCHS="armv7+armv7s+arm64"
+				else
+					ARCHS=$1
+				fi
+			fi
 			shift
 			;;
 		-p)	
@@ -143,6 +144,10 @@ while test $# -gt 0; do
  			exit 0
 		 	;;
 		-s)
+			if [ "${USE_SIMULATOR}" = 1 ]; then
+				export CPU="$SIMULATOR_ARCHS"
+				export SDK=iphonesimulator
+			fi
 			export PS1="\033[33m[ios-sdk-$CPU \w]> \033[0m"
 			exec "$SHELL"
 			exit $?
@@ -168,12 +173,12 @@ if [ "${#ARCHS}" -gt 0 ]; then
 	[ "${USE_SIMULATOR}" = 1 ] && echo "and \\c"
 fi
 [ "${USE_SIMULATOR}" = 1 ] && echo "simulator($SIMULATOR_ARCHS)"
-echo 
+echo
 sleep 2
 
 rm -rf $INSTALL_DST
 
-# Build radare2 for xi386 and x86_64
+# Build radare2 for i386 and x86_64
 if [ "${USE_SIMULATOR}" = 1 ]; then
 	iosClean
 	iosConfigure
