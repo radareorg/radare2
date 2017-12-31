@@ -2275,6 +2275,7 @@ LookupTable oplookup[] = {
 	{"fldl2t", 0, NULL, 0xd9e9, 2},	
 	{"fldl2e", 0, NULL, 0xd9ea, 2},	
 	{"fldlg2", 0, NULL, 0xd9ec, 2},
+	{"fldln2", 0, NULL, 0xd9ed, 2},
 	{"fldpi", 0, NULL, 0xd9eb, 2},	
 	{"fldz", 0, NULL, 0xd9ee, 2},	
 	{"fnop", 0, NULL, 0xd9d0, 2},
