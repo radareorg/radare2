@@ -2289,6 +2289,7 @@ LookupTable oplookup[] = {
 	{"fsincos", 0, NULL, 0xd9fb, 2},
 	{"fsqrt", 0, NULL, 0xd9fa, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
+	{"fyl2x", 0, NULL, 0xd9f1, 2},
 	{"getsec", 0, NULL, 0x0f37, 2},
 	{"hlt", 0, NULL, 0xf4, 1},
 	{"idiv", 0, &opidiv, 0},
