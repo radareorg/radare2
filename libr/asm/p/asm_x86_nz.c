@@ -2191,6 +2191,19 @@ static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;	
+	switch (op->operands_count) {
+	case 1:
+		data[l++] = 0xdd;
+		data[l++] = 0xc0 | op->operands[0].reg;
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -2272,6 +2285,7 @@ LookupTable oplookup[] = {
 	{"fcos", 0, NULL, 0xd9ff, 2},
 	{"fdecstp", 0, NULL, 0xd9f6, 2},
 	{"femms", 0, NULL, 0x0f0e, 2},
+	{"ffree", 0, &opffree, 0},
 	{"fincstp", 0, NULL, 0xd9f7, 2},
 	{"finit", 0, NULL, 0x9bdbe3, 3},
 	{"fld1", 0, NULL, 0xd9e8, 2},
