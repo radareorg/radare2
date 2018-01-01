@@ -2100,9 +2100,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	
 	if (chksum) {
-		if (IS_MODE_JSON (mode) && *(chksum) == '.') {
-			printHere = true;
-		} else if (IS_MODE_NORMAL (mode) && *chksum == '.') {
+		if (chksum && *chksum == '.') {
 			printHere = true;
 		}
 	}
