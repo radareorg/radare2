@@ -2089,6 +2089,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	RListIter *iter;
 	int i = 0;
 	int fd = -1;
+	bool print_current_only = false;
 	sections = r_bin_get_sections (r->bin);
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
@@ -2097,9 +2098,18 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	if (!dup_chk_ht) {
 		return false;
 	}
-	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	
+	if (chksum) {
+		if (IS_MODE_JSON (mode) && *(chksum - sizeof(char)) == '.') {
+			print_current_only = true;
+		} else if (IS_MODE_NORMAL (mode) && *chksum == '.') {
+			print_current_only = true;
+		}
+	}
+	if (IS_MODE_JSON (mode) && !print_current_only) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
-	else if (IS_MODE_NORMAL (mode) && !at) r_cons_printf ("[Sections]\n");
+	else if (IS_MODE_NORMAL (mode) && !at && !print_current_only) r_cons_printf ("[Sections]\n");
+  else if (IS_MODE_NORMAL (mode) && print_current_only) r_cons_printf("Current section\n");
 	else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, "sections");
@@ -2117,6 +2127,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		if (name && strcmp (section->name, name)) {
 			continue;
 		}
+
+		if (print_current_only && !(section->paddr <= r->offset && r->offset < (section->paddr + section->size))) {
+			continue;
+		}
+
 		r_name_filter (section->name, sizeof (section->name));
 		if (at && (!section->size || !is_in_range (at, addr, section->size))) {
 			continue;
@@ -2248,7 +2263,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
-				iter->p?",":"",
+				(iter->p && !print_current_only)?",":"",
 				section->name,
 				section->size,
 				section->vsize,
@@ -2364,13 +2379,16 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		}
 		i++;
+		if (print_current_only) {
+			break;
+		}
 	}
 	if (r->bin && r->bin->cur && r->io && !r_io_desc_is_dbg (r->io->desc)) {
 		r_io_section_apply_bin (r->io, r->bin->cur->id, R_IO_SECTION_APPLY_FOR_ANALYSIS);
 	}
-	if (IS_MODE_JSON (mode)) {
+	if (IS_MODE_JSON (mode) && !print_current_only) {
 		r_cons_println ("]");
-	} else if (IS_MODE_NORMAL (mode) && !at) {
+	} else if (IS_MODE_NORMAL (mode) && !at && !print_current_only) {
 		r_cons_printf ("\n%i sections\n", i);
 	}
 
@@ -3171,14 +3189,15 @@ static int bin_header(RCore *r, int mode) {
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
-	ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
+  ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
 		at = filter->offset;
 	}
 	if (filter && filter->name) {
 		name = filter->name;
 	}
-	// use our internal values for va
+	
+  // use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 	if (r_config_get_i (core->config, "anal.strings")) {
 		r_core_cmd0 (core, "aar");
