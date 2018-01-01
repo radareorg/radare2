@@ -2192,11 +2192,45 @@ static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
-	int l = 0;	
+	int l = 0;
 	switch (op->operands_count) {
 	case 1:
 		data[l++] = 0xdd;
 		data[l++] = 0xc0 | op->operands[0].reg;
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfucom(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		data[l++] = 0xdd;
+		data[l++] = 0xe0 | op->operands[0].reg;
+		break;
+	case 0:
+		data[l++] = 0xdd;
+		data[l++] = 0xe1;
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfucomp(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		data[l++] = 0xdd;
+		data[l++] = 0xe8 | op->operands[0].reg;
+		break;
+	case 0:
+		data[l++] = 0xdd;
+		data[l++] = 0xe9;
 		break;
 	default:
 		return -1;
@@ -2308,6 +2342,9 @@ LookupTable oplookup[] = {
 	{"fsincos", 0, NULL, 0xd9fb, 2},
 	{"fsqrt", 0, NULL, 0xd9fa, 2},
 	{"ftst", 0, NULL, 0xd9e4, 2},
+	{"fucom", 0, &opfucom, 0},
+	{"fucomp", 0, &opfucomp, 0},
+	{"fucompp", 0, NULL, 0xdae9, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
 	{"fxam", 0, NULL, 0xd9e5, 2},
 	{"fxtract", 0, NULL, 0xd9f4, 2},
