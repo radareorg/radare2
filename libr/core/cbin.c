@@ -2081,8 +2081,8 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
-static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
-	char *str = NULL;
+static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {	
+  char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
 	RList *sections;
@@ -2104,15 +2104,21 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, "sections");
 	}
+   
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "-----";
 		int va_sect = va;
 		ut64 addr;
+    bool current_section = false;
 
 		if (va && !(section->srwx & R_BIN_SCN_READABLE)) {
 			va_sect = VA_NOREBASE;
 		}
 		addr = rva (r->bin, section->paddr, section->vaddr, va_sect);
+
+		if (section->paddr <= r->offset && r->offset < (section->paddr + section->size)) {
+			current_section = true;
+		}
 
 		if (name && strcmp (section->name, name)) {
 			continue;
@@ -2185,20 +2191,20 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 			if (r->bin->prefix) {
 				str = r_str_newf ("section %i va=0x%08"PFMT64x" pa=0x%08"
-					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s",
+					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s %s",
 					i, addr, section->paddr, section->size, section->vsize,
-					perms, r->bin->prefix, section->name);
+					perms, r->bin->prefix, section->name, (current_section) ? "(you are here)" : "");
 			} else {
 				str = r_str_newf ("section %i va=0x%08"PFMT64x" pa=0x%08"
-					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s",
+					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s %s",
 					i, addr, section->paddr, section->size, section->vsize,
-					perms, section->name);
+					perms, section->name, (current_section) ? "(you are here)" : "");
 			}
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 			R_FREE (str);
 			if (section->add) {
-				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
-					section->paddr, addr, section->size, section->vsize, section->srwx, section->name, r->bin->cur->id, fd);
+				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d %s",
+					section->paddr, addr, section->size, section->vsize, section->srwx, section->name, r->bin->cur->id, fd, (current_section) ? "(you are here)" : "");
 				if (!ht_find (dup_chk_ht, str, NULL) && r_io_section_add (r->io, section->paddr, addr,
 						section->size, section->vsize,
 						section->srwx, section->name,
@@ -2220,11 +2226,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 							data, datalen);
 				free (data);
 			}
-			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
+			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s %s\n",
 				addr, addr + section->size,
 				perms,
 				hashstr ? hashstr : "", hashstr ? " " : "",
-				section->name
+				section->name,
+				(current_section) ? "(you are here)" : ""
 			);
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
@@ -2247,7 +2254,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				"\"flags\":\"%s\","
 				"%s"
 				"\"paddr\":%"PFMT64d","
-				"\"vaddr\":%"PFMT64d"}",
+				"\"vaddr\":%"PFMT64d","
+        "\"current_section\":%s}",
 				iter->p?",":"",
 				section->name,
 				section->size,
@@ -2255,7 +2263,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				perms,
 				hashstr ? hashstr : "",
 				section->paddr,
-				addr);
+				addr,
+        (current_section) ? "true" : "false");
 			free (hashstr);
 		} else if (IS_MODE_RAD (mode)) {
 			if (!strcmp (section->name, ".bss") && !inDebugger) {
@@ -2265,13 +2274,13 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 #endif
 			}
 			if (r->bin->prefix) {
-				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s.%s %d\n",
+				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s.%s %d %s\n",
 					section->paddr, addr, section->size, section->vsize,
-					r->bin->prefix, section->name, (int)section->srwx);
+					r->bin->prefix, section->name, (int)section->srwx, (current_section) ? "(you are here)" : "");
 			} else {
-				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
+				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d %s\n",
 					section->paddr, addr, section->size, section->vsize,
-					section->name, (int)section->srwx);
+					section->name, (int)section->srwx, (current_section) ? "(you are here)" : "");
 
 			}
 			if (section->arch || section->bits) {
@@ -2346,9 +2355,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
 #endif
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
-					"%s %s% %s.%s\n",
+					"%s %s% %s.%s %s\n",
 					i, section->paddr, section->size, addr, section->vsize,
-					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
+					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name,
+					(current_section) ? "(you are here)" : "");
 			} else {
 #if 0
 				r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
@@ -2357,9 +2367,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					perms, str, hashstr ?hashstr : "", section->name);
 #endif
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
-					"%s %s%s%s\n",
+					"%s %s%s%s %s\n",
 					i, section->paddr, (ut64)section->size, addr, (ut64)section->vsize,
-					perms, str, hashstr ?hashstr : "", section->name);
+					perms, str, hashstr ?hashstr : "", section->name,
+					(current_section) ? "(you are here)" : "");
 			}
 			free (hashstr);
 		}
