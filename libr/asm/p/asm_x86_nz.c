@@ -2191,6 +2191,48 @@ static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfcmov(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	char* fcmov = op->mnemonic + strlen("fcmov");
+	switch (op->operands_count) {
+	case 2:
+		if ( op->operands[0].reg != 0 ) {
+			return -1;
+		}
+		if ( !strcmp( fcmov, "b" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xc0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "e" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xc8 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "be" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xd0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "u" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xd8 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "nb" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xc0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "ne" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xc8 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "nbe" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xd0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "nu" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xd8 | op->operands[1].reg;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
@@ -2316,6 +2358,14 @@ LookupTable oplookup[] = {
 	{"fabs", 0, NULL, 0xd9e1, 2},
 	{"fchs", 0, NULL, 0xd9e0, 2},
 	{"fclex", 0, NULL, 0x9bdbe2, 3},
+	{"fcmovb", 0, &opfcmov, 0},
+	{"fcmove", 0, &opfcmov, 0},
+	{"fcmovbe", 0, &opfcmov, 0},
+	{"fcmovu", 0, &opfcmov, 0},
+	{"fcmovnb", 0, &opfcmov, 0},
+	{"fcmovne", 0, &opfcmov, 0},
+	{"fcmovnbe", 0, &opfcmov, 0},
+	{"fcmovnu", 0, &opfcmov, 0},
 	{"fcos", 0, NULL, 0xd9ff, 2},
 	{"fdecstp", 0, NULL, 0xd9f6, 2},
 	{"femms", 0, NULL, 0x0f0e, 2},
