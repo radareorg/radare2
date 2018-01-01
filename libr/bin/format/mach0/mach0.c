@@ -861,6 +861,8 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_SYMTAB";
 	case LC_SYMSEG:
 		return "LC_SYMSEG";
+	case LC_ID_DYLIB:
+		return "LC_ID_DYLIB";
 	case LC_DYSYMTAB:
 		return "LC_DYSYMTAB";
 	case LC_FUNCTION_STARTS:
@@ -2382,15 +2384,35 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		} \
 		word = r_read_le32 (wordbuf);
 	for (n = 0; n < mh->ncmds; n++) {
-		eprintf ("\nLoad Command %d\n", n);
+		eprintf ("\n# Load Command %d\n", n);
 		READWORD();
+		int lcType = word;
 		eprintf ("0x%08"PFMT64x"  cmd          0x%x %s\n",
-			addr, word, cmd_to_string (word));
+			addr, lcType, cmd_to_string (lcType));
 		READWORD();
+		int lcSize = word;
 		word &= 0xFFFFFF;
 		eprintf ("0x%08"PFMT64x"  cmdsize      %d\n", addr, word);
-		if ((int)(word) < 1) {
+		if ((int)(lcSize) < 1) {
 			eprintf ("Invalid size\n");
+			break;
+		}
+		switch (lcType) {
+		case LC_ID_DYLIB: // install_name_tool
+			eprintf ("0x%08"PFMT64x"  id           %s\n",
+				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
+			break;
+		case LC_UUID:
+			eprintf ("0x%08"PFMT64x"  uuid         %s\n",
+				addr + 20, r_buf_get_at (buf, addr + 32, NULL));
+			break;
+		case LC_LOAD_DYLIB:
+			eprintf ("0x%08"PFMT64x"  uuid         %s\n",
+				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
+			break;
+		case LC_RPATH:
+			eprintf ("0x%08"PFMT64x"  uuid         %s\n",
+				addr + 8, r_buf_get_at (buf, addr + 8, NULL));
 			break;
 		}
 		addr += word - 8;
