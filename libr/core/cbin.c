@@ -2089,7 +2089,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	RListIter *iter;
 	int i = 0;
 	int fd = -1;
-	bool print_current_only = false;
+	bool printHere = false;
 	sections = r_bin_get_sections (r->bin);
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
@@ -2100,16 +2100,16 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	
 	if (chksum) {
-		if (IS_MODE_JSON (mode) && *(chksum - sizeof(char)) == '.') {
-			print_current_only = true;
+		if (IS_MODE_JSON (mode) && *(chksum) == '.') {
+			printHere = true;
 		} else if (IS_MODE_NORMAL (mode) && *chksum == '.') {
-			print_current_only = true;
+			printHere = true;
 		}
 	}
-	if (IS_MODE_JSON (mode) && !print_current_only) r_cons_printf ("[");
+	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
-	else if (IS_MODE_NORMAL (mode) && !at && !print_current_only) r_cons_printf ("[Sections]\n");
-  else if (IS_MODE_NORMAL (mode) && print_current_only) r_cons_printf("Current section\n");
+	else if (IS_MODE_NORMAL (mode) && !at && !printHere) r_cons_printf ("[Sections]\n");
+	else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
 	else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, "sections");
@@ -2128,7 +2128,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		if (print_current_only && !(section->paddr <= r->offset && r->offset < (section->paddr + section->size))) {
+		if ((printHere && !(section->paddr <= r->offset && r->offset < (section->paddr + section->size)))
+				&& (printHere && !(addr <= r->offset && r->offset < (addr + section->size)))) {
 			continue;
 		}
 
@@ -2263,7 +2264,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
-				(iter->p && !print_current_only)?",":"",
+				(iter->p && !printHere)?",":"",
 				section->name,
 				section->size,
 				section->vsize,
@@ -2379,16 +2380,16 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		}
 		i++;
-		if (print_current_only) {
+		if (printHere) {
 			break;
 		}
 	}
 	if (r->bin && r->bin->cur && r->io && !r_io_desc_is_dbg (r->io->desc)) {
 		r_io_section_apply_bin (r->io, r->bin->cur->id, R_IO_SECTION_APPLY_FOR_ANALYSIS);
 	}
-	if (IS_MODE_JSON (mode) && !print_current_only) {
+	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_println ("]");
-	} else if (IS_MODE_NORMAL (mode) && !at && !print_current_only) {
+	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
 		r_cons_printf ("\n%i sections\n", i);
 	}
 
@@ -3189,7 +3190,7 @@ static int bin_header(RCore *r, int mode) {
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
-  ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
+	ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
 		at = filter->offset;
 	}
@@ -3197,7 +3198,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		name = filter->name;
 	}
 	
-  // use our internal values for va
+	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 	if (r_config_get_i (core->config, "anal.strings")) {
 		r_core_cmd0 (core, "aar");
