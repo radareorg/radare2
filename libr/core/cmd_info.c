@@ -40,6 +40,7 @@ static const char *help_msg_i[] = {
 	"iR", "", "Resources",
 	"is", "", "Symbols",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
+	"iS.", "", "Current section",
 	"iV", "", "Display file version info",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
@@ -434,6 +435,10 @@ static int cmd_info(void *data, const char *input) {
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
 				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
 			} else {  //iS entropy,sha1
+				// case for iSj.
+				if (input[1] == 'j' && input[2] == '.') {
+					mode = R_CORE_BIN_JSON;
+				}
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_CORE_BIN_RADARE || mode == R_CORE_BIN_JSON || mode == R_CORE_BIN_SIMPLE) {
 					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2,
