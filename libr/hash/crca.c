@@ -4,7 +4,7 @@
 
 #include <r_hash.h>
 
-void crc_init (R_CRC_CTX *ctx, ut32 crc, ut32 size, int reflect, ut32 poly, ut32 xout) {
+void crc_init (R_CRC_CTX *ctx, utcrc crc, ut32 size, int reflect, utcrc poly, utcrc xout) {
 	ctx->crc = crc;
 	ctx->size = size;
 	ctx->reflect = reflect;
@@ -13,7 +13,7 @@ void crc_init (R_CRC_CTX *ctx, ut32 crc, ut32 size, int reflect, ut32 poly, ut32
 }
 
 void crc_update (R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
-	ut32 crc, d;
+	utcrc crc, d;
 	int i, j;
 
 	crc = ctx->crc;
@@ -34,16 +34,16 @@ void crc_update (R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
 	ctx->crc = crc;
 }
 
-static void crc_final (R_CRC_CTX *ctx, ut32 *r) {
-	ut32 crc;
+static void crc_final (R_CRC_CTX *ctx, utcrc *r) {
+	utcrc crc;
 	int i;
 
 	crc = ctx->crc;
-	crc &= ((((ut32) 1 << (ctx->size - 1)) - 1) << 1) | 1;
+	crc &= (((UTCRC_C(1) << (ctx->size - 1)) - 1) << 1) | 1;
 	if (ctx->reflect) {
 		for (i = 0; i < (ctx->size >> 1); i++) {
 			if (((crc >> i) ^ (crc >> (ctx->size - 1 - i))) & 1) {
-				crc ^= ((ut32) 1 << i) ^ ((ut32) 1 << (ctx->size - 1 - i));
+				crc ^= (UTCRC_C(1) << i) ^ (UTCRC_C(1) << (ctx->size - 1 - i));
 			}
 		}
 	}
@@ -51,17 +51,22 @@ static void crc_final (R_CRC_CTX *ctx, ut32 *r) {
 	*r = crc ^ ctx->xout;
 }
 
+/* preset initializer to provide compatibility */
+#define CRC_PRESET(crc, size, reflect, poly, xout) \
+	{ UTCRC_C(crc), (size), (reflect), UTCRC_C(poly), UTCRC_C(xout) }
+
+/* NOTE: Run `rahash2 -a <algo> -s 123456789` to test CRC. */
 R_CRC_CTX crc_presets[] = {
-	{ 0xFFFFFFFF, 32, 1, 0x04C11DB7, 0xFFFFFFFF }, //CRC-32, test vector for "1234567892: cbf43926
-	{ 0x0000    , 16, 1, 0x8005    , 0x0000 },     //CRC-16-IBM, test vector for "1234567892: bb3d
-	{ 0x00000000, 32, 0, 0x80000011, 0x00000000 }, //CRC-32-ECMA-267 (EDC for DVD sectors), test vector for "1234567892: b27ce117
-	{ 0xFFFFFFFF, 32, 1, 0x1EDC6F41, 0xFFFFFFFF }, //CRC-32C, test vector for "1234567892: e3069283
-	{ 0xB704CE  , 24, 0, 0x864CFB  , 0x000000 },   //CRC-24, test vector for "1234567892: 21cf02
-	{ 0xFFFF    , 16, 0, 0x1021    , 0x0000 },     //CRC-16-CITT, test vector for "1234567892: 29b1
-	{ 0xFFFF    , 16, 1, 0x8005    , 0xFFFF },     //CRC-16-USB, test vector for "1234567892:  b4c8
-	{ 0xFFFF    , 16, 1, 0x1021    , 0xFFFF },     //CRC-HDLC, test vector for "1234567892: 906e
-	{ 0x0000    , 15, 0, 0x4599    , 0x0000 },     //CRC-15-CAN, test vector for "1234567892: 059e
-	{ 0x00      ,  8, 0, 0x07      , 0x00 },       //CRC-8-SMBUS, test vector for "1234567892: f4
+	CRC_PRESET(0xFFFFFFFF, 32, 1, 0x04C11DB7, 0xFFFFFFFF ), //CRC-32, test vector for "1234567892: cbf43926
+	CRC_PRESET(0x0000    , 16, 1, 0x8005    , 0x0000 ),     //CRC-16-IBM, test vector for "1234567892: bb3d
+	CRC_PRESET(0x00000000, 32, 0, 0x80000011, 0x00000000 ), //CRC-32-ECMA-267 (EDC for DVD sectors), test vector for "1234567892: b27ce117
+	CRC_PRESET(0xFFFFFFFF, 32, 1, 0x1EDC6F41, 0xFFFFFFFF ), //CRC-32C, test vector for "1234567892: e3069283
+	CRC_PRESET(0xB704CE  , 24, 0, 0x864CFB  , 0x000000 ),   //CRC-24, test vector for "1234567892: 21cf02
+	CRC_PRESET(0xFFFF    , 16, 0, 0x1021    , 0x0000 ),     //CRC-16-CITT, test vector for "1234567892: 29b1
+	CRC_PRESET(0xFFFF    , 16, 1, 0x8005    , 0xFFFF ),     //CRC-16-USB, test vector for "1234567892:  b4c8
+	CRC_PRESET(0xFFFF    , 16, 1, 0x1021    , 0xFFFF ),     //CRC-HDLC, test vector for "1234567892: 906e
+	CRC_PRESET(0x0000    , 15, 0, 0x4599    , 0x0000 ),     //CRC-15-CAN, test vector for "1234567892: 059e
+	CRC_PRESET(0x00      ,  8, 0, 0x07      , 0x00 ),       //CRC-8-SMBUS, test vector for "1234567892: f4
 };
 
 void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
@@ -72,15 +77,15 @@ void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
 	ctx->xout = crc_presets[preset].xout;
 }
 
-ut32 r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
+utcrc r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
 	if (!data || !size || preset >= CRC_PRESET_SIZE) {
 		return 0;
 	}
-	ut32 r;
-	R_CRC_CTX crc32;
-	crc_init_preset (&crc32, preset);
-	crc_update (&crc32, data, size);
-	crc_final (&crc32, &r);
+	utcrc r;
+	R_CRC_CTX crcctx;
+	crc_init_preset (&crcctx, preset);
+	crc_update (&crcctx, data, size);
+	crc_final (&crcctx, &r);
 	return r;
 }
 

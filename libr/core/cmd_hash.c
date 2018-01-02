@@ -146,43 +146,43 @@ static void handle_luhn (const ut8 *block, int len) {
 }
 
 static void handle_crc8_smbus (const ut8 *block, int len) {
-	r_cons_printf ("%02x\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
 }
 
 static void handle_crc15_can (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_15_CAN));
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_15_CAN));
 }
 
 static void handle_crc16 (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16));
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16));
 }
 
 static void handle_crc16_hdlc (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16_HDLC));
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16_HDLC));
 }
 
 static void handle_crc16_usb (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16_USB));
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16_USB));
 }
 
 static void handle_crc16_citt (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16_CITT));
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16_CITT));
 }
 
 static void handle_crc24 (const ut8 *block, int len) {
-	r_cons_printf ("%06x\n", r_hash_crc_preset (block, len, CRC_PRESET_24));
+	r_cons_printf ("%06" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_24));
 }
 
 static void handle_crc32 (const ut8 *block, int len) {
-	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32));
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32));
 }
 
 static void handle_crc32c (const ut8 *block, int len) {
-	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32C));
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32C));
 }
 
 static void handle_crc32_ecma_267 (const ut8 *block, int len) {
-	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32_ECMA_267));
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32_ECMA_267));
 }
 
 static int cmd_hash_bang (RCore *core, const char *input) {

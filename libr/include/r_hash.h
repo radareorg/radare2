@@ -25,12 +25,22 @@ typedef struct {
 	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
 
+#if 1
+typedef ut32 utcrc;
+#define PFMTCRCx PFMT32x
+#else
+/* TODO: future expansion */
+typedef ut64 utcrc;
+#define PFMTCRCx PFMT64x
+#endif
+#define UTCRC_C(x) ((utcrc)(x))
+
 typedef struct {
-	ut32 crc;
+	utcrc crc;
 	ut32 size;
 	int reflect;
-	ut32 poly;
-	ut32 xout;
+	utcrc poly;
+	utcrc xout;
 } R_CRC_CTX;
 
 enum CRC_PRESETS {
@@ -177,7 +187,7 @@ R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
 R_API int r_hash_parity(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
 R_API ut64 r_hash_luhn(const ut8 *buf, ut64 len);
-R_API ut32 r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset);
+R_API utcrc r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, int len);
