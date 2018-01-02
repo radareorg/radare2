@@ -3,15 +3,14 @@
 #include "r_hash.h"
 
 
-#define HANDLE_CRC_PRESET(aname, rtype) \
+#define HANDLE_CRC_PRESET(rbits, aname) \
 	do { \
 		if (algobit & R_HASH_##aname) { \
-			rtype res = r_hash_crc_preset (buf, len, CRC_PRESET_##aname); \
-			memcpy (ctx->digest, &res, R_HASH_SIZE_##aname); \
+			ut##rbits res = r_hash_crc_preset (buf, len, CRC_PRESET_##aname); \
+			r_write_be##rbits (ctx->digest, res); \
 			return R_HASH_SIZE_##aname; \
 		} \
 	} while(0)
-
 
 /* TODO: do it more beautiful with structs and not spaguetis */
 R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
@@ -101,16 +100,16 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC8_SMBUS);
 		return R_HASH_SIZE_CRC8_SMBUS;
 	}
-	HANDLE_CRC_PRESET(CRC8_CDMA2000, ut8);
-	HANDLE_CRC_PRESET(CRC8_CDMA2000, ut8);
-	HANDLE_CRC_PRESET(CRC8_DARC, ut8);
-	HANDLE_CRC_PRESET(CRC8_DVB_S2, ut8);
-	HANDLE_CRC_PRESET(CRC8_EBU, ut8);
-	HANDLE_CRC_PRESET(CRC8_ICODE, ut8);
-	HANDLE_CRC_PRESET(CRC8_ITU, ut8);
-	HANDLE_CRC_PRESET(CRC8_MAXIM, ut8);
-	HANDLE_CRC_PRESET(CRC8_ROHC, ut8);
-	HANDLE_CRC_PRESET(CRC8_WCDMA, ut8);
+	HANDLE_CRC_PRESET(8, CRC8_CDMA2000);
+	HANDLE_CRC_PRESET(8, CRC8_CDMA2000);
+	HANDLE_CRC_PRESET(8, CRC8_DARC);
+	HANDLE_CRC_PRESET(8, CRC8_DVB_S2);
+	HANDLE_CRC_PRESET(8, CRC8_EBU);
+	HANDLE_CRC_PRESET(8, CRC8_ICODE);
+	HANDLE_CRC_PRESET(8, CRC8_ITU);
+	HANDLE_CRC_PRESET(8, CRC8_MAXIM);
+	HANDLE_CRC_PRESET(8, CRC8_ROHC);
+	HANDLE_CRC_PRESET(8, CRC8_WCDMA);
 	if (algobit & R_HASH_CRC15_CAN) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_15_CAN);
 		r_write_be16 (ctx->digest, res);
@@ -131,6 +130,26 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC16_CITT;
 	}
+	HANDLE_CRC_PRESET(16, CRC16_AUG_CCITT);
+	HANDLE_CRC_PRESET(16, CRC16_BUYPASS);
+	HANDLE_CRC_PRESET(16, CRC16_CDMA2000);
+	HANDLE_CRC_PRESET(16, CRC16_DDS110);
+	HANDLE_CRC_PRESET(16, CRC16_DECT_R);
+	HANDLE_CRC_PRESET(16, CRC16_DECT_X);
+	HANDLE_CRC_PRESET(16, CRC16_DNP);
+	HANDLE_CRC_PRESET(16, CRC16_EN13757);
+	HANDLE_CRC_PRESET(16, CRC16_GENIBUS);
+	HANDLE_CRC_PRESET(16, CRC16_MAXIM);
+	HANDLE_CRC_PRESET(16, CRC16_MCRF4XX);
+	HANDLE_CRC_PRESET(16, CRC16_RIELLO);
+	HANDLE_CRC_PRESET(16, CRC16_T10_DIF);
+	HANDLE_CRC_PRESET(16, CRC16_TELEDISK);
+	HANDLE_CRC_PRESET(16, CRC16_TMS37157);
+	HANDLE_CRC_PRESET(16, CRCA);
+	HANDLE_CRC_PRESET(16, CRC16_KERMIT);
+	HANDLE_CRC_PRESET(16, CRC16_MODBUS);
+	HANDLE_CRC_PRESET(16, CRC16_X25);
+	HANDLE_CRC_PRESET(16, CRC16_XMODEM);
 	if (algobit & R_HASH_CRC24) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_24);
 		r_write_be24 (ctx->digest, res);

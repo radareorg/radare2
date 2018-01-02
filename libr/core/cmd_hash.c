@@ -36,6 +36,26 @@ static void handle_crc16 (const ut8 *block, int len);
 static void handle_crc16_hdlc (const ut8 *block, int len);
 static void handle_crc16_usb (const ut8 *block, int len);
 static void handle_crc16_citt (const ut8 *block, int len);
+static void handle_crc16_aug_ccitt (const ut8 *block, int len);
+static void handle_crc16_buypass (const ut8 *block, int len);
+static void handle_crc16_cdma2000 (const ut8 *block, int len);
+static void handle_crc16_dds110 (const ut8 *block, int len);
+static void handle_crc16_dect_r (const ut8 *block, int len);
+static void handle_crc16_dect_x (const ut8 *block, int len);
+static void handle_crc16_dnp (const ut8 *block, int len);
+static void handle_crc16_en13757 (const ut8 *block, int len);
+static void handle_crc16_genibus (const ut8 *block, int len);
+static void handle_crc16_maxim (const ut8 *block, int len);
+static void handle_crc16_mcrf4xx (const ut8 *block, int len);
+static void handle_crc16_riello (const ut8 *block, int len);
+static void handle_crc16_t10dif (const ut8 *block, int len);
+static void handle_crc16_teledisk (const ut8 *block, int len);
+static void handle_crc16_tms37157 (const ut8 *block, int len);
+static void handle_crca (const ut8 *block, int len);
+static void handle_crc16_kermit (const ut8 *block, int len);
+static void handle_crc16_modbus (const ut8 *block, int len);
+static void handle_crc16_x25 (const ut8 *block, int len);
+static void handle_crc16_xmodem (const ut8 *block, int len);
 static void handle_crc24 (const ut8 *block, int len);
 static void handle_crc32 (const ut8 *block, int len);
 static void handle_crc32c (const ut8 *block, int len);
@@ -61,20 +81,40 @@ static RHashHashHandlers hash_handlers[] = {
 	{"mod255", handle_mod255},
 	{"luhn", handle_luhn},
 	{"crc8smbus", handle_crc8_smbus},
-	{"crc8cdma2000", handle_crc8_cdma2000},
-	{"crc8darc", handle_crc8_darc},
-	{"crc8dvbs2", handle_crc8_dvb_s2},
-	{"crc8ebu", handle_crc8_ebu},
-	{"crc8icode", handle_crc8_icode},
-	{"crc8itu", handle_crc8_itu},
-	{"crc8maxim", handle_crc8_maxim},
-	{"crc8rohc", handle_crc8_rohc},
-	{"crc8wcdma", handle_crc8_wcdma},
+	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000},
+	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc},
+	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", handle_crc8_dvb_s2},
+	{ /* CRC-8/EBU          */ "crc8ebu", handle_crc8_ebu},
+	{ /* CRC-8/I-CODE       */ "crc8icode", handle_crc8_icode},
+	{ /* CRC-8/ITU          */ "crc8itu", handle_crc8_itu},
+	{ /* CRC-8/MAXIM        */ "crc8maxim", handle_crc8_maxim},
+	{ /* CRC-8/ROHC         */ "crc8rohc", handle_crc8_rohc},
+	{ /* CRC-8/WCDMA        */ "crc8wcdma", handle_crc8_wcdma},
 	{"crc15can", handle_crc15_can},
 	{"crc16", handle_crc16},
 	{"crc16hdlc", handle_crc16_hdlc},
-	{"crc16usb", handle_crc16_usb},
-	{"crc16citt", handle_crc16_citt},
+	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb},
+	{ /* CRC-16/CCITT-FALSE */ "crc16citt", handle_crc16_citt},
+	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", handle_crc16_aug_ccitt },
+	{ /* CRC-16/BUYPASS     */ "crc16buypass", handle_crc16_buypass },
+	{ /* CRC-16/CDMA2000    */ "crc16cdma2000", handle_crc16_cdma2000 },
+	{ /* CRC-16/DDS-110     */ "crc16dds110", handle_crc16_dds110 },
+	{ /* CRC-16/RECT-R      */ "crc16dectr", handle_crc16_dect_r },
+	{ /* CRC-16/RECT-X      */ "crc16dectx", handle_crc16_dect_x },
+	{ /* CRC-16/DNP         */ "crc16dnp", handle_crc16_dnp },
+	{ /* CRC-16/EN-13757    */ "crc16en13757", handle_crc16_en13757 },
+	{ /* CRC-16/GENIBUS     */ "crc16genibus", handle_crc16_genibus },
+	{ /* CRC-16/MAXIM       */ "crc16maxim", handle_crc16_maxim },
+	{ /* CRC-16/MCRF4XX     */ "crc16mcrf4xx", handle_crc16_mcrf4xx },
+	{ /* CRC-16/RIELLO      */ "crc16riello", handle_crc16_riello },
+	{ /* CRC-16/T10-DIF     */ "crc16t10dif", handle_crc16_t10dif },
+	{ /* CRC-16/TELEDISK    */ "crc16teledisk", handle_crc16_teledisk },
+	{ /* CRC-16/TMS37157    */ "crc16tms37157", handle_crc16_tms37157 },
+	{ /* CRC-A              */ "crca", handle_crca },
+	{ /* CRC-16/KERMIT      */ "crc16kermit", handle_crc16_kermit },
+	{ /* CRC-16/MODBUS      */ "crc16modbus", handle_crc16_modbus },
+	{ /* CRC-16/X-25        */ "crc16x25", handle_crc16_x25 },
+	{ /* CRC-16/XMODEM      */ "crc16xmodem", handle_crc16_xmodem },
 	{"crc24", handle_crc24},
 	{"crc32", handle_crc32},
 	{"crc32c", handle_crc32c},
@@ -221,6 +261,86 @@ static void handle_crc16_usb (const ut8 *block, int len) {
 
 static void handle_crc16_citt (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16_CITT));
+}
+
+static void handle_crc16_aug_ccitt (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_AUG_CCITT));
+}
+
+static void handle_crc16_buypass (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_BUYPASS));
+}
+
+static void handle_crc16_cdma2000 (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_CDMA2000));
+}
+
+static void handle_crc16_dds110 (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_DDS110));
+}
+
+static void handle_crc16_dect_r (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_DECT_R));
+}
+
+static void handle_crc16_dect_x (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_DECT_X));
+}
+
+static void handle_crc16_dnp (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_DNP));
+}
+
+static void handle_crc16_en13757 (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_EN13757));
+}
+
+static void handle_crc16_genibus (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_GENIBUS));
+}
+
+static void handle_crc16_maxim (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_MAXIM));
+}
+
+static void handle_crc16_mcrf4xx (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_MCRF4XX));
+}
+
+static void handle_crc16_riello (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_RIELLO));
+}
+
+static void handle_crc16_t10dif (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_T10_DIF));
+}
+
+static void handle_crc16_teledisk (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_TELEDISK));
+}
+
+static void handle_crc16_tms37157 (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_TMS37157));
+}
+
+static void handle_crca (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRCA));
+}
+
+static void handle_crc16_kermit (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_KERMIT));
+}
+
+static void handle_crc16_modbus (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_MODBUS));
+}
+
+static void handle_crc16_x25 (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_X25));
+}
+
+static void handle_crc16_xmodem (const ut8 *block, int len) {
+	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_XMODEM));
 }
 
 static void handle_crc24 (const ut8 *block, int len) {

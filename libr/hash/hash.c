@@ -31,20 +31,40 @@ static const hash_name_bytes[] = {
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
 	{ "crc8smbus", R_HASH_CRC8_SMBUS },
-	{ "crc8cdma2000", R_HASH_CRC8_CDMA2000 },
-	{ "crc8darc", R_HASH_CRC8_DARC },
-	{ "crc8dvbs2", R_HASH_CRC8_DVB_S2 },
-	{ "crc8ebu", R_HASH_CRC8_EBU },
-	{ "crc8icode", R_HASH_CRC8_ICODE },
-	{ "crc8itu", R_HASH_CRC8_ITU },
-	{ "crc8maxim", R_HASH_CRC8_MAXIM },
-	{ "crc8rohc", R_HASH_CRC8_ROHC },
-	{ "crc8wcdma", R_HASH_CRC8_WCDMA },
+	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", R_HASH_CRC8_CDMA2000 },
+	{ /* CRC-8/DARC         */ "crc8darc", R_HASH_CRC8_DARC },
+	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", R_HASH_CRC8_DVB_S2 },
+	{ /* CRC-8/EBU          */ "crc8ebu", R_HASH_CRC8_EBU },
+	{ /* CRC-8/I-CODE       */ "crc8icode", R_HASH_CRC8_ICODE },
+	{ /* CRC-8/ITU          */ "crc8itu", R_HASH_CRC8_ITU },
+	{ /* CRC-8/MAXIM        */ "crc8maxim", R_HASH_CRC8_MAXIM },
+	{ /* CRC-8/ROHC         */ "crc8rohc", R_HASH_CRC8_ROHC },
+	{ /* CRC-8/WCDMA        */ "crc8wcdma", R_HASH_CRC8_WCDMA },
 	{ "crc15can", R_HASH_CRC15_CAN },
 	{ "crc16", R_HASH_CRC16 },
 	{ "crc16hdlc", R_HASH_CRC16_HDLC },
-	{ "crc16usb", R_HASH_CRC16_USB },
-	{ "crc16citt", R_HASH_CRC16_CITT },
+	{ /* CRC-16/USB         */ "crc16usb", R_HASH_CRC16_USB },
+	{ /* CRC-16/CCITT-FALSE */ "crc16citt", R_HASH_CRC16_CITT },
+	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", R_HASH_CRC16_AUG_CCITT },
+	{ /* CRC-16/BUYPASS     */ "crc16buypass", R_HASH_CRC16_BUYPASS },
+	{ /* CRC-16/CDMA2000    */ "crc16cdma2000", R_HASH_CRC16_CDMA2000 },
+	{ /* CRC-16/DDS-110     */ "crc16dds110", R_HASH_CRC16_DDS110 },
+	{ /* CRC-16/RECT-R      */ "crc16dectr", R_HASH_CRC16_DECT_R },
+	{ /* CRC-16/RECT-X      */ "crc16dectx", R_HASH_CRC16_DECT_X },
+	{ /* CRC-16/DNP         */ "crc16dnp", R_HASH_CRC16_DNP },
+	{ /* CRC-16/EN-13757    */ "crc16en13757", R_HASH_CRC16_EN13757 },
+	{ /* CRC-16/GENIBUS     */ "crc16genibus", R_HASH_CRC16_GENIBUS },
+	{ /* CRC-16/MAXIM       */ "crc16maxim", R_HASH_CRC16_MAXIM },
+	{ /* CRC-16/MCRF4XX     */ "crc16mcrf4xx", R_HASH_CRC16_MCRF4XX },
+	{ /* CRC-16/RIELLO      */ "crc16riello", R_HASH_CRC16_RIELLO },
+	{ /* CRC-16/T10-DIF     */ "crc16t10dif", R_HASH_CRC16_T10_DIF },
+	{ /* CRC-16/TELEDISK    */ "crc16teledisk", R_HASH_CRC16_TELEDISK },
+	{ /* CRC-16/TMS37157    */ "crc16tms37157", R_HASH_CRC16_TMS37157 },
+	{ /* CRC-A              */ "crca", R_HASH_CRCA },
+	{ /* CRC-16/KERMIT      */ "crc16kermit", R_HASH_CRC16_KERMIT },
+	{ /* CRC-16/MODBUS      */ "crc16modbus", R_HASH_CRC16_MODBUS },
+	{ /* CRC-16/X-25        */ "crc16x25", R_HASH_CRC16_X25 },
+	{ /* CRC-16/XMODEM      */ "crc16xmodem", R_HASH_CRC16_XMODEM },
 	{ "crc24", R_HASH_CRC24 },
 	{ "crc32", R_HASH_CRC32 },
 	{ "crc32c", R_HASH_CRC32C },
@@ -158,6 +178,26 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (CRC16_USB);
 	ALGOBIT (CRC16_CITT);
 	ALGOBIT (CRC24);
+	ALGOBIT (CRC16_AUG_CCITT);
+	ALGOBIT (CRC16_BUYPASS)
+	ALGOBIT (CRC16_CDMA2000);
+	ALGOBIT (CRC16_DDS110);
+	ALGOBIT (CRC16_DECT_R);
+	ALGOBIT (CRC16_DECT_X);
+	ALGOBIT (CRC16_DNP);
+	ALGOBIT (CRC16_EN13757);
+	ALGOBIT (CRC16_GENIBUS);
+	ALGOBIT (CRC16_MAXIM);
+	ALGOBIT (CRC16_MCRF4XX);
+	ALGOBIT (CRC16_RIELLO);
+	ALGOBIT (CRC16_T10_DIF);
+	ALGOBIT (CRC16_TELEDISK);
+	ALGOBIT (CRC16_TMS37157);
+	ALGOBIT (CRCA);
+	ALGOBIT (CRC16_KERMIT);
+	ALGOBIT (CRC16_MODBUS);
+	ALGOBIT (CRC16_X25);
+	ALGOBIT (CRC16_XMODEM);
 	ALGOBIT (CRC32C);
 	ALGOBIT (CRC32_ECMA_267);
 	return 0;
