@@ -23,7 +23,6 @@ files=[
 'p/asm_i8080.c',
 'p/asm_java.c',
 'p/asm_lanai_gnu.c',
-'p/asm_lh5801.c',
 'p/asm_lm32.c',
 'p/asm_m68k_cs.c',
 'p/asm_malbolge.c',
