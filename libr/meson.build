@@ -54,6 +54,7 @@ asm = [
 	'i4004',
 	'i8080',
 	'lanai_gnu',
+	'lh5801',
 	'lm32',
 	'm68k_cs',
 	'malbolge',

@@ -93,7 +93,7 @@ files=[
 'arch/i8080/i8080dis.c',
 'arch/lanai/gnu/lanai-dis.c',
 'arch/lanai/gnu/lanai-opc.c',
-#'arch/lh5801/lh5801.c',
+'arch/lh5801/lh5801.c',
 'arch/mips/gnu/mips-dis.c',
 'arch/mips/gnu/mips-opc.c',
 'arch/mips/gnu/mips16-opc.c',
