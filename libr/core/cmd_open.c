@@ -11,6 +11,13 @@
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o","","list opened files",
+	"o"," 4","Switch to open file on fd 4",
+	"o","-1","close file descriptor 1",
+	"o-","!*","close all opened files",
+	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
+	"o"," [file]","open [file] file in read-only",
+	"o+"," [file]","open file in read-write mode",
+	"o"," [file] 0x4000 rwx", "map file at 0x4000",
 	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
 	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
@@ -18,6 +25,7 @@ static const char *help_msg_o[] = {
 	"o=","","list opened files (ascii-art bars)",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
+	"of"," [file]","open file and map it at addr 0 as read-only",
 	"oi","[-|idx]","alias for o, but using index instead of fd",
 	"oj","[?]	","list opened files in JSON format",
 	"oL","","list all IO plugins registered",
@@ -28,13 +36,6 @@ static const char *help_msg_o[] = {
 	"ood","[r] [args]","reopen in debugger mode (with args)",
 	"oo[bnm]"," [...]","see oo? for help",
 	"op"," [fd]", "priorize given fd (see also ob)",
-	"o"," 4","Switch to open file on fd 4",
-	"o","-1","close file descriptor 1",
-	"o-","!*","close all opened files",
-	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
-	"o"," [file]","open [file] file in read-only",
-	"o+"," [file]","open file in read-write mode",
-	"o"," [file] 0x4000","map file at 0x4000",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
 };
@@ -961,11 +962,11 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Usage: oa[-][arch] [bits] [filename]\n");
 			return 0;
 	}
-	case 'n':
+	case 'n': // "on"
 		if (input[1] == '*') {
 			r_core_file_list (core, 'n');
 			return 0;
-		} else if (input[1] == 's') {
+		} else if (input[1] == 's') { // "ons"
 			silence = true;
 			if (input[2] != ' ') {
 				eprintf ("Usage: ons file [addr] [rwx]\n");
@@ -1014,7 +1015,8 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_core_block_read (core);
 		return 0;
-	case 'f':
+#if 0
+	case 'f': // "of"
 		if ((input[1] == 's') && (input[2] == ' ')) {
 			silence = true;
 			ptr = input + 3;
@@ -1038,6 +1040,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_str_argv_free (argv);
 		return 0;
+#endif
 	case 'p': // "op"
 		/* handle priorize */
 		{
@@ -1055,11 +1058,29 @@ static int cmd_open(void *data, const char *input) {
 		}
 		return 0;
 		break;
+	case 'f': // "of"
+		{
+			addr = 0; // honor bin.baddr ? 
+			const char *argv0 = r_str_chop_ro (input + 2);
+			if ((file = r_core_file_open (core, argv0, perms, addr))) {
+				fd = file->fd;
+				if (!silence) {
+					eprintf ("%d\n", fd);
+				}
+				r_core_bin_load (core, argv0, baddr);
+			} else if (!nowarn) {
+				eprintf ("cannot open file %s\n", argv0);
+			}
+			r_str_argv_free (argv);
+		}
+		r_core_block_read (core);
+		return 0;
+		break;
 	case '+': // "o+"
 		perms |= R_IO_WRITE;
 	case 's': // "os"
 		silence = true;
-	case ' ': // "o"
+	case ' ': // "o" "o "
 		if (silence) {
 			ptr = input + 2;
 		} else {
