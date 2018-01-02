@@ -22,6 +22,15 @@ static void handle_pcprint (const ut8 *input, int len);
 static void handle_mod255 (const ut8 *input, int len);
 static void handle_luhn (const ut8 *input, int len);
 static void handle_crc8_smbus (const ut8 *block, int len);
+static void handle_crc8_cdma2000 (const ut8 *block, int len);
+static void handle_crc8_darc (const ut8 *block, int len);
+static void handle_crc8_dvb_s2 (const ut8 *block, int len);
+static void handle_crc8_ebu (const ut8 *block, int len);
+static void handle_crc8_icode (const ut8 *block, int len);
+static void handle_crc8_itu (const ut8 *block, int len);
+static void handle_crc8_maxim (const ut8 *block, int len);
+static void handle_crc8_rohc (const ut8 *block, int len);
+static void handle_crc8_wcdma (const ut8 *block, int len);
 static void handle_crc15_can (const ut8 *block, int len);
 static void handle_crc16 (const ut8 *block, int len);
 static void handle_crc16_hdlc (const ut8 *block, int len);
@@ -52,6 +61,15 @@ static RHashHashHandlers hash_handlers[] = {
 	{"mod255", handle_mod255},
 	{"luhn", handle_luhn},
 	{"crc8smbus", handle_crc8_smbus},
+	{"crc8cdma2000", handle_crc8_cdma2000},
+	{"crc8darc", handle_crc8_darc},
+	{"crc8dvbs2", handle_crc8_dvb_s2},
+	{"crc8ebu", handle_crc8_ebu},
+	{"crc8icode", handle_crc8_icode},
+	{"crc8itu", handle_crc8_itu},
+	{"crc8maxim", handle_crc8_maxim},
+	{"crc8rohc", handle_crc8_rohc},
+	{"crc8wcdma", handle_crc8_wcdma},
 	{"crc15can", handle_crc15_can},
 	{"crc16", handle_crc16},
 	{"crc16hdlc", handle_crc16_hdlc},
@@ -147,6 +165,42 @@ static void handle_luhn (const ut8 *block, int len) {
 
 static void handle_crc8_smbus (const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
+}
+
+static void handle_crc8_cdma2000 (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_CDMA2000));
+}
+
+static void handle_crc8_darc (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_DARC));
+}
+
+static void handle_crc8_dvb_s2 (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_DVB_S2));
+}
+
+static void handle_crc8_ebu (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_EBU));
+}
+
+static void handle_crc8_icode (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_ICODE));
+}
+
+static void handle_crc8_itu (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_ITU));
+}
+
+static void handle_crc8_maxim (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_MAXIM));
+}
+
+static void handle_crc8_rohc (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_ROHC));
+}
+
+static void handle_crc8_wcdma (const ut8 *block, int len) {
+	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_WCDMA));
 }
 
 static void handle_crc15_can (const ut8 *block, int len) {

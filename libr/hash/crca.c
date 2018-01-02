@@ -67,6 +67,15 @@ R_CRC_CTX crc_presets[] = {
 	CRC_PRESET(0xFFFF    , 16, 1, 0x1021    , 0xFFFF ),     //CRC-HDLC, test vector for "1234567892: 906e
 	CRC_PRESET(0x0000    , 15, 0, 0x4599    , 0x0000 ),     //CRC-15-CAN, test vector for "1234567892: 059e
 	CRC_PRESET(0x00      ,  8, 0, 0x07      , 0x00 ),       //CRC-8-SMBUS, test vector for "1234567892: f4
+	CRC_PRESET(0xFF      ,  8, 0, 0x9B      , 0x00 ),       //CRC-8/CDMA2000, test vector for "123456789": 0xda
+	CRC_PRESET(0x00      ,  8, 1, 0x39      , 0x00 ),       //CRC-8/DARC,   test vector for "123456789": 0x15
+	CRC_PRESET(0x00      ,  8, 0, 0xD5      , 0x00 ),       //CRC-8/DVB-S2, test vector for "123456789": 0xbc
+	CRC_PRESET(0xFF      ,  8, 1, 0x1D      , 0x00 ),       //CRC-8/EBU,    test vector for "123456789": 0x97
+	CRC_PRESET(0xFD      ,  8, 0, 0x1D      , 0x00 ),       //CRC-8/I-CODE, test vector for "123456789": 0x7e
+	CRC_PRESET(0x00      ,  8, 0, 0x07      , 0x55 ),       //CRC-8/ITU,    test vector for "123456789": 0xa1
+	CRC_PRESET(0x00      ,  8, 1, 0x31      , 0x00 ),       //CRC-8/MAXIM,  test vector for "123456789": 0xa1
+	CRC_PRESET(0xFF      ,  8, 1, 0x07      , 0x00 ),       //CRC-8/ROHC,   test vector for "123456789": 0xd0
+	CRC_PRESET(0x00      ,  8, 1, 0x9B      , 0x00 ),       //CRC-8/WCDMA,  test vector for "123456789": 0x25
 };
 
 void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {

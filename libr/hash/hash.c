@@ -31,6 +31,15 @@ static const hash_name_bytes[] = {
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
 	{ "crc8smbus", R_HASH_CRC8_SMBUS },
+	{ "crc8cdma2000", R_HASH_CRC8_CDMA2000 },
+	{ "crc8darc", R_HASH_CRC8_DARC },
+	{ "crc8dvbs2", R_HASH_CRC8_DVB_S2 },
+	{ "crc8ebu", R_HASH_CRC8_EBU },
+	{ "crc8icode", R_HASH_CRC8_ICODE },
+	{ "crc8itu", R_HASH_CRC8_ITU },
+	{ "crc8maxim", R_HASH_CRC8_MAXIM },
+	{ "crc8rohc", R_HASH_CRC8_ROHC },
+	{ "crc8wcdma", R_HASH_CRC8_WCDMA },
 	{ "crc15can", R_HASH_CRC15_CAN },
 	{ "crc16", R_HASH_CRC16 },
 	{ "crc16hdlc", R_HASH_CRC16_HDLC },
@@ -135,6 +144,15 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (PCPRINT);
 	ALGOBIT (LUHN);
 	ALGOBIT (CRC8_SMBUS);
+	ALGOBIT (CRC8_CDMA2000);
+	ALGOBIT (CRC8_DARC);
+	ALGOBIT (CRC8_DVB_S2);
+	ALGOBIT (CRC8_EBU);
+	ALGOBIT (CRC8_ICODE);
+	ALGOBIT (CRC8_ITU);
+	ALGOBIT (CRC8_MAXIM);
+	ALGOBIT (CRC8_ROHC);
+	ALGOBIT (CRC8_WCDMA);
 	ALGOBIT (CRC15_CAN);
 	ALGOBIT (CRC16_HDLC);
 	ALGOBIT (CRC16_USB);
