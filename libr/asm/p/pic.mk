@@ -1,5 +1,6 @@
 OBJ_PIC=asm_pic.o
-OBJ_PIC+=../arch/pic/pic_baseline.o
+OBJ_PIC+=../arch/pic/pic_baseline.o \
+    ../arch/pic/pic_pic18.o
 
 STATIC_OBJ+=${OBJ_PIC}
 TARGET_PIC=asm_pic.${EXT_SO}

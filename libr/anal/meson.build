@@ -42,7 +42,7 @@ files=[
 'p/anal_msp430.c',
 'p/anal_nios2.c',
 'p/anal_null.c',
-'p/anal_pic18c.c',
+'p/anal_pic.c',
 'p/anal_ppc_cs.c',
 'p/anal_ppc_gnu.c',
 #'p/anal_propeller.c',
