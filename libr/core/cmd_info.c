@@ -25,6 +25,7 @@ static const char *help_msg_i[] = {
 	"idp", "", "Load pdb file information",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "", "Entrypoint",
+	"iee", "", "Show Entry and Exit (init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
