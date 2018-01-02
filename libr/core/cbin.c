@@ -2099,10 +2099,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		return false;
 	}
 	
-	if (chksum) {
-		if (chksum && *chksum == '.') {
-			printHere = true;
-		}
+	if (chksum && *chksum == '.') {
+		printHere = true;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
