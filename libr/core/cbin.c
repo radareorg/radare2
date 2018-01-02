@@ -2031,9 +2031,11 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		}
 	}
 	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+#if 0
 	if (IS_MODE_NORMAL (mode) && !at) {
 		r_cons_printf ("\n%i %s\n", i, exponly ? "exports" : "symbols");
 	}
+#endif
 
 	r_space_set (&r->anal->meta_spaces, NULL);
 	return true;
@@ -2386,7 +2388,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_println ("]");
 	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
-		r_cons_printf ("\n%i sections\n", i);
+		// r_cons_printf ("\n%i sections\n", i);
 	}
 
 	ret = true;
