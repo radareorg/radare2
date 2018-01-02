@@ -33,8 +33,8 @@ static int is_fd_ready(int fd) {
 R_API int r_cons_controlz(int ch) {
 #if __UNIX__
 	if (ch == 0x1a) {
-		r_cons_show_cursor (1);
-		r_cons_enable_mouse (0);
+		r_cons_show_cursor (true);
+		r_cons_enable_mouse (false);
 		r_sys_stop ();
 		return 0;
 	}
@@ -214,8 +214,8 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
 	int ret = 0, color = cons->pal.input && *cons->pal.input;
 	if (cons->echo) {
-		r_cons_set_raw (0);
-		r_cons_show_cursor (1);
+		r_cons_set_raw (false);
+		r_cons_show_cursor (true);
 	}
 #if 0
 	int mouse = r_cons_enable_mouse (false);
@@ -494,13 +494,13 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
 	fflush (stderr);
-	r_cons_set_raw (1);
+	r_cons_set_raw (true);
 	(void)read (0, &key, 1);
 	write (2, "\n", 1);
 	if (key == 'Y') {
 		key = 'y';
 	}
-	r_cons_set_raw (0);
+	r_cons_set_raw (false);
 	if (key == '\n' || key == '\r') {
 		key = def;
 	}

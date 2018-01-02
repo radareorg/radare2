@@ -562,8 +562,8 @@ R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
 R_API void r_cons_chop(void);
-R_API void r_cons_set_raw(int b);
-R_API void r_cons_set_interactive(int b);
+R_API void r_cons_set_raw(bool b);
+R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
 
 /* output */
