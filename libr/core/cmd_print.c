@@ -2821,7 +2821,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		switch (submode) {
 		case 'j':
 			r_cons_printf ("{\"blocksize\":%d,\"address\":%"PFMT64d ",\"size\":%"PFMT64d ",\"entropy\":[",
-				blocksize, from, (to - from));
+				blocksize, from, totalsize);
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
 				ut64 off = blocksize * i;
