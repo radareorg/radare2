@@ -39,7 +39,7 @@ ec swi red
 ec creg green
 ec flag yellow
 ec graph.box yellow
-ec graph.box2 green
+ec graph.box2 red
 ec graph.box3 red
 ec graph.box4 red
 ec graph.true green
