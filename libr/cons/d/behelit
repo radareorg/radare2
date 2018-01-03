@@ -41,7 +41,7 @@ ec ai.exec rgb:ff005f
 ec ai.seq rgb:af87ff
 ec ai.ascii rgb:ff5f5f
 ec graph.box rgb:00ff5f
-ec graph.box2 rgb:5f87ff
+ec graph.box2 rgb:a07800
 ec graph.box3 rgb:af87ff
 ec graph.box4 rgb:ff005f
 ec graph.true rgb:00ff5f

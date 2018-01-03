@@ -40,7 +40,7 @@ ec help rgb:0ff
 ec trap rgb:000 rgb:f0f
 
 ec graph.box rgb:f0f
-ec graph.box2 rgb:f0f
+ec graph.box2 rgb:ff0
 ec graph.box3 rgb:f0f
 ec graph.box4 rgb:f0f
 ec graph.true rgb:f0f
