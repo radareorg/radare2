@@ -451,7 +451,7 @@ enum HASH_INDICES {
 
 #ifdef R_API
 /* OO */
-R_API RHash *r_hash_new(bool rst, int flags);
+R_API RHash *r_hash_new(bool rst, ut64 flags);
 R_API void r_hash_free(RHash *ctx);
 
 /* methods */
@@ -491,9 +491,9 @@ R_API double r_hash_entropy_fraction(const ut8 *data, ut64 len);
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
 
 /* lifecycle */
-R_API void r_hash_do_begin(RHash *ctx, int flags);
-R_API void r_hash_do_end(RHash *ctx, int flags);
-R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed);
+R_API void r_hash_do_begin(RHash *ctx, ut64 flags);
+R_API void r_hash_do_end(RHash *ctx, ut64 flags);
+R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed);
 #endif
 
 #ifdef __cplusplus

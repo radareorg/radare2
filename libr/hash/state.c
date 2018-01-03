@@ -8,7 +8,7 @@ R_API void mdfour(ut8 *out, const ut8 *in, int n);
 
 #define CHKFLAG(x) if (!flags || flags & x)
 
-R_API RHash *r_hash_new(bool rst, int flags) {
+R_API RHash *r_hash_new(bool rst, ut64 flags) {
 	RHash *ctx = R_NEW0 (RHash);
 	if (ctx) {
 		r_hash_do_begin (ctx, flags);
@@ -17,7 +17,7 @@ R_API RHash *r_hash_new(bool rst, int flags) {
 	return ctx;
 }
 
-R_API void r_hash_do_begin(RHash *ctx, int flags) {
+R_API void r_hash_do_begin(RHash *ctx, ut64 flags) {
 	CHKFLAG (R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -1);
 	CHKFLAG (R_HASH_SHA1) SHA1_Init (&ctx->sha1);
 	CHKFLAG (R_HASH_SHA256) SHA256_Init (&ctx->sha256);
@@ -26,7 +26,7 @@ R_API void r_hash_do_begin(RHash *ctx, int flags) {
 	ctx->rst = false;
 }
 
-R_API void r_hash_do_end(RHash *ctx, int flags) {
+R_API void r_hash_do_end(RHash *ctx, ut64 flags) {
 	CHKFLAG (R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -2);
 	CHKFLAG (R_HASH_SHA1) SHA1_Final (ctx->digest, &ctx->sha1);
 	CHKFLAG (R_HASH_SHA256) SHA256_Final (ctx->digest, &ctx->sha256);

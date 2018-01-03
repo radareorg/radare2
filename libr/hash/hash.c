@@ -308,7 +308,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	return ret;
 }
 
-R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
+R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 	ut8 buf[1024];
 	int i, len, hlen = r_hash_size (algo);
 	for (i = 0; i < loops; i++) {
