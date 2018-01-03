@@ -29,7 +29,7 @@ typedef struct {
 /* TODO: subject to place in config */
 #define R_HAVE_CRC8 1
 #define R_HAVE_CRC15 1
-//#define R_HAVE_CRC16 1
+#define R_HAVE_CRC16 1
 #define R_HAVE_CRC24 1
 #define R_HAVE_CRC32 1
 #define R_HAVE_CRC64 1
@@ -431,7 +431,7 @@ enum HASH_INDICES {
 #define R_HASH_CRC64_ISO (1ULL << R_HASH_IDX_CRC64_ISO)
 #endif /* #if R_HAVE_CRC64 */
 
-#define R_HASH_ALL ((1ULL << R_HASH_NUM_INDICES)-1)
+#define R_HASH_ALL ((1ULL << R_MIN(63, R_HASH_NUM_INDICES))-1)
 
 #ifdef R_API
 /* OO */
