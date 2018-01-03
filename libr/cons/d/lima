@@ -39,7 +39,7 @@ ec invalid rgb:ef0
 ec trap rgb:000 rgb:af2
 
 ec graph.box rgb:af2
-ec graph.box2 rgb:0a0
+ec graph.box2 rgb:0ef
 ec graph.box3 rgb:af2
 ec graph.box4 rgb:af2
 ec graph.true rgb:ef2
