@@ -2263,6 +2263,27 @@ static int opfrstor(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfxch(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 0:
+		data[l++] = 0xd9;
+		data[l++] = 0xc9;
+		break;
+	case 1:
+		if (op->operands[0].type & OT_FPUREG & ~OT_REGALL) {
+			data[l++] = 0xd9;
+			data[l++] = 0xc8 | op->operands[0].reg;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 static int opfucom(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
@@ -2415,6 +2436,7 @@ LookupTable oplookup[] = {
 	{"fucompp", 0, NULL, 0xdae9, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
 	{"fxam", 0, NULL, 0xd9e5, 2},
+	{"fxch", 0, &opfxch, 0},
 	{"fxtract", 0, NULL, 0xd9f4, 2},
 	{"fyl2x", 0, NULL, 0xd9f1, 2},
 	{"fyl2xp1", 0, NULL, 0xd9f9, 2},
