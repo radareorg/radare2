@@ -69,6 +69,13 @@ static const hash_name_bytes[] = {
 	{ "crc32", R_HASH_CRC32 },
 	{ "crc32c", R_HASH_CRC32C },
 	{ "crc32ecma267", R_HASH_CRC32_ECMA_267 },
+	{ /* CRC-32/BZIP2       */ "crc32bzip2", R_HASH_CRC32_BZIP2 },
+	{ /* CRC-32D            */ "crc32d", R_HASH_CRC32D },
+	{ /* CRC-32/MPEG2       */ "crc32mpeg2", R_HASH_CRC32_MPEG2 },
+	{ /* CRC-32/POSIX       */ "crc32posix", R_HASH_CRC32_POSIX },
+	{ /* CRC-32Q            */ "crc32q", R_HASH_CRC32Q },
+	// OOps!!! { /* CRC-32/JAMCRC      */ "crc32jamcrc", R_HASH_CRC32_JAMCRC },
+	// OOps!!! { /* CRC-32/XFER        */ "crc32xfer",   R_HASH_CRC32_CRC32_XFER },
 	{ NULL, 0 }
 };
 
@@ -200,6 +207,13 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (CRC16_XMODEM);
 	ALGOBIT (CRC32C);
 	ALGOBIT (CRC32_ECMA_267);
+	ALGOBIT (CRC32_BZIP2);
+	ALGOBIT (CRC32D);
+	ALGOBIT (CRC32_MPEG2);
+	ALGOBIT (CRC32_POSIX);
+	ALGOBIT (CRC32Q);
+	//ALGOBIT (CRC32_JAMCRC); Oops!!!
+	//ALGOBIT (CRC32_XFER); OOps!!!
 	return 0;
 }
 

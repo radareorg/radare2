@@ -60,6 +60,13 @@ static void handle_crc24 (const ut8 *block, int len);
 static void handle_crc32 (const ut8 *block, int len);
 static void handle_crc32c (const ut8 *block, int len);
 static void handle_crc32_ecma_267 (const ut8 *block, int len);
+static void handle_crc32_bzip2 (const ut8 * block, int len);
+static void handle_crc32d (const ut8 * block, int len);
+static void handle_crc32_mpeg2 (const ut8 * block, int len);
+static void handle_crc32_posix (const ut8 * block, int len);
+static void handle_crc32q (const ut8 * block, int len);
+static void handle_crc32_jamcrc (const ut8 * block, int len);
+static void handle_crc32_xfer (const ut8 * block, int len);
 
 typedef struct {
 	const char *name;
@@ -119,6 +126,13 @@ static RHashHashHandlers hash_handlers[] = {
 	{"crc32", handle_crc32},
 	{"crc32c", handle_crc32c},
 	{"crc32ecma267", handle_crc32_ecma_267},
+	{ /* CRC-32/BZIP2       */ "crc32bzip2", handle_crc32_bzip2 },
+	{ /* CRC-32D            */ "crc32d", handle_crc32d },
+	{ /* CRC-32/MPEG-2      */ "crc32mpeg2", handle_crc32_mpeg2 },
+	{ /* CRC-32/POSIX       */ "crc32posix", handle_crc32_posix },
+	{ /* CRC-32Q            */ "crc32q", handle_crc32q },
+	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", handle_crc32_jamcrc },
+	{ /* CRC-32/XFER        */ "crc32xfer", handle_crc32_xfer },
 	{NULL, NULL},
 };
 
@@ -357,6 +371,34 @@ static void handle_crc32c (const ut8 *block, int len) {
 
 static void handle_crc32_ecma_267 (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32_ECMA_267));
+}
+
+static void handle_crc32_bzip2 (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_BZIP2));
+}
+
+static void handle_crc32d (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32D));
+}
+
+static void handle_crc32_mpeg2 (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_MPEG2));
+}
+
+static void handle_crc32_posix (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_POSIX));
+}
+
+static void handle_crc32q (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32Q));
+}
+
+static void handle_crc32_jamcrc (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_JAMCRC));
+}
+
+static void handle_crc32_xfer (const ut8 *block, int len) {
+	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_XFER));
 }
 
 static int cmd_hash_bang (RCore *core, const char *input) {

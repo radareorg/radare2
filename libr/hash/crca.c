@@ -96,6 +96,13 @@ R_CRC_CTX crc_presets[] = {
 	CRC_PRESET(0xFFFF    , 16, 1, 0x8005    , 0x0000 ),     //CRC-16/MODBUS,      test vector for "123456789": 0x4b37
 	CRC_PRESET(0xFFFF    , 16, 1, 0x1021    , 0xFFFF ),     //CRC-16/X-25,        test vector for "123456789": 0x906e
 	CRC_PRESET(0x0000    , 16, 0, 0x1021    , 0x0000 ),     //CRC-16/XMODEM,      test vector for "123456789": 0x31c3
+	CRC_PRESET(0xFFFFFFFF, 32, 0, 0x04C11DB7, 0xFFFFFFFF ), //CRC-32/BZIP2,       test vector for "123456789": 0xfc891918
+	CRC_PRESET(0xFFFFFFFF, 32, 1, 0xA833982B, 0xFFFFFFFF ), //CRC-32D,            test vector for "123456789": 0x87315576
+	CRC_PRESET(0xFFFFFFFF, 32, 0, 0x04C11DB7, 0x00000000 ), //CRC-32/MPEG2,       test vector for "123456789": 0x0376e6e7
+	CRC_PRESET(0x00000000, 32, 0, 0x04C11DB7, 0xFFFFFFFF ), //CRC-32/POSIX,       test vector for "123456789": 0x765e7680
+	CRC_PRESET(0x00000000, 32, 0, 0x814141AB, 0x00000000 ), //CRC-32Q,            test vector for "123456789": 0x3010bf7f
+	CRC_PRESET(0xFFFFFFFF, 32, 1, 0x04C11DB7, 0x00000000 ), //CRC-32/JAMCRC,      test vector for "123456789": 0x340bc6d9
+	CRC_PRESET(0x00000000, 32, 0, 0x000000AF, 0x00000000 ), //CRC-32/XFER,        test vector for "123456789": 0xbd0be338
 };
 
 void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {

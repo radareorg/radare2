@@ -165,5 +165,12 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		r_write_be32 (ctx->digest, res);
 		return R_HASH_SIZE_CRC32_ECMA_267;
 	}
+	HANDLE_CRC_PRESET(32, CRC32_BZIP2);
+	HANDLE_CRC_PRESET(32, CRC32D);
+	HANDLE_CRC_PRESET(32, CRC32_MPEG2);
+	HANDLE_CRC_PRESET(32, CRC32_POSIX);
+	HANDLE_CRC_PRESET(32, CRC32Q);
+	//HANDLE_CRC_PRESET(32, CRC32_JAMCRC); OOps!!!
+	//HANDLE_CRC_PRESET(32, CRC32_XFER); OOps!!!
 	return 0;
 }
