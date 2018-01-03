@@ -864,6 +864,36 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	int offset = 0;
+	st64 immediate = 0;
+
+	if ( op->operands[0].type & OT_QWORD ) {
+		data[l++] = 0x48;
+	}
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x66;
+		}
+		if (op->operands[0].type & OT_BYTE) {
+			data[l++] = 0xf6;
+		} else {
+			data[l++] = 0xf7;
+		}
+		if (op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else {
+			data[l++] = 0xf8 | op->operands[0].reg;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
@@ -2161,6 +2191,95 @@ static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfcmov(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	char* fcmov = op->mnemonic + strlen("fcmov");
+	switch (op->operands_count) {
+	case 2:
+		if ( op->operands[0].reg != 0 ) {
+			return -1;
+		}
+		if ( !strcmp( fcmov, "b" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xc0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "e" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xc8 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "be" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xd0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "u" ) ) {
+			data[l++] = 0xda;
+			data[l++] = 0xd8 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "nb" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xc0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "ne" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xc8 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "nbe" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xd0 | op->operands[1].reg;
+		} else if ( !strcmp( fcmov, "nu" ) ) {
+			data[l++] = 0xdb;
+			data[l++] = 0xd8 | op->operands[1].reg;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		data[l++] = 0xdd;
+		data[l++] = 0xc0 | op->operands[0].reg;
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfucom(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		data[l++] = 0xdd;
+		data[l++] = 0xe0 | op->operands[0].reg;
+		break;
+	case 0:
+		data[l++] = 0xdd;
+		data[l++] = 0xe1;
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfucomp(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		data[l++] = 0xdd;
+		data[l++] = 0xe8 | op->operands[0].reg;
+		break;
+	case 0:
+		data[l++] = 0xdd;
+		data[l++] = 0xe9;
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -2235,12 +2354,55 @@ LookupTable oplookup[] = {
 	{"dec", 0, &opdec, 0},
 	{"div", 0, &opdiv, 0},
 	{"emms", 0, NULL, 0x0f77, 2},
+	{"f2xm1", 0, NULL, 0xd9f0, 2},
+	{"fabs", 0, NULL, 0xd9e1, 2},
+	{"fchs", 0, NULL, 0xd9e0, 2},
+	{"fclex", 0, NULL, 0x9bdbe2, 3},
+	{"fcmovb", 0, &opfcmov, 0},
+	{"fcmove", 0, &opfcmov, 0},
+	{"fcmovbe", 0, &opfcmov, 0},
+	{"fcmovu", 0, &opfcmov, 0},
+	{"fcmovnb", 0, &opfcmov, 0},
+	{"fcmovne", 0, &opfcmov, 0},
+	{"fcmovnbe", 0, &opfcmov, 0},
+	{"fcmovnu", 0, &opfcmov, 0},
+	{"fcos", 0, NULL, 0xd9ff, 2},
+	{"fdecstp", 0, NULL, 0xd9f6, 2},
 	{"femms", 0, NULL, 0x0f0e, 2},
+	{"ffree", 0, &opffree, 0},
+	{"fincstp", 0, NULL, 0xd9f7, 2},
+	{"finit", 0, NULL, 0x9bdbe3, 3},
+	{"fld1", 0, NULL, 0xd9e8, 2},
+	{"fldl2t", 0, NULL, 0xd9e9, 2},
+	{"fldl2e", 0, NULL, 0xd9ea, 2},
+	{"fldlg2", 0, NULL, 0xd9ec, 2},
+	{"fldln2", 0, NULL, 0xd9ed, 2},
+	{"fldpi", 0, NULL, 0xd9eb, 2},
+	{"fldz", 0, NULL, 0xd9ee, 2},
+	{"fnclex", 0, NULL, 0xdbe2, 2},
+	{"fninit", 0, NULL, 0xdbe3, 2},
+	{"fnop", 0, NULL, 0xd9d0, 2},
+	{"fpatan", 0, NULL, 0xd9f3, 2},
+	{"fprem", 0, NULL, 0xd9f8, 2},
+	{"fprem1", 0, NULL, 0xd9f5, 2},
+	{"fptan", 0, NULL, 0xd9f2, 2},
+	{"frndint", 0, NULL, 0xd9fc, 2},
+	{"fscale", 0, NULL, 0xd9fd, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
+	{"fsqrt", 0, NULL, 0xd9fa, 2},
+	{"ftst", 0, NULL, 0xd9e4, 2},
+	{"fucom", 0, &opfucom, 0},
+	{"fucomp", 0, &opfucomp, 0},
+	{"fucompp", 0, NULL, 0xdae9, 2},
 	{"fwait", 0, NULL, 0x9b, 1},
+	{"fxam", 0, NULL, 0xd9e5, 2},
+	{"fxtract", 0, NULL, 0xd9f4, 2},
+	{"fyl2x", 0, NULL, 0xd9f1, 2},
+	{"fyl2xp1", 0, NULL, 0xd9f9, 2},
 	{"getsec", 0, NULL, 0x0f37, 2},
 	{"hlt", 0, NULL, 0xf4, 1},
+	{"idiv", 0, &opidiv, 0},
 	{"imul", 0, &opimul, 0},
 	{"in", 0, &opin, 0},
 	{"inc", 0, &opinc, 0},

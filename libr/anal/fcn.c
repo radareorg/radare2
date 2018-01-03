@@ -148,7 +148,7 @@ R_API bool r_anal_fcn_tree_delete(RBNode **root, RAnalFunction *data) {
 }
 
 R_API void r_anal_fcn_tree_insert(RBNode **root, RAnalFunction *fcn) {
-	r_rbtree_aug_insert (root, fcn, &fcn->rb, _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_insert (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
 }
 
 // Find RAnalFunction whose addr is equal to addr
@@ -1207,6 +1207,7 @@ repeat:
 				}
 				walk_switch (anal, fcn, op.addr, op.addr + op.size);
 			}
+#if 0
 			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
 				RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
@@ -1229,11 +1230,14 @@ repeat:
 					}
 				}
 			}
+#endif
 			FITFCNSZ ();
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
+#if 0
 river:
 			break;
+#endif
 		/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;

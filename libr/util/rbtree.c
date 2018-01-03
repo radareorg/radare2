@@ -100,6 +100,10 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNo
 			}
 		}
 		if (q != &head) {
+			if (dep >= R_RBTREE_MAX_HEIGHT) {
+				eprintf ("Too deep tree\n");
+				break;
+			}
 			path[dep++] = q;
 		}
 		q = q->child[d2];
@@ -215,6 +219,10 @@ R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		t = g;
 		g = p;
 		p = q;
+		if (dep >= R_RBTREE_MAX_HEIGHT) {
+			eprintf ("Too deep tree\n");
+			break;
+		}
 		path[dep++] = q;
 		if (d < 0) {
 			d = 0;

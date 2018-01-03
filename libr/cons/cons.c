@@ -632,7 +632,7 @@ R_API void r_cons_flush() {
 			}
 #endif
 			// fix | more | less problem
-			r_cons_set_raw (1);
+			r_cons_set_raw (true);
 		}
 	}
 	if (tee && *tee) {
@@ -1078,7 +1078,7 @@ R_API void r_cons_show_cursor (int cursor) {
  *
  */
 static int oldraw = -1;
-R_API void r_cons_set_raw(int is_raw) {
+R_API void r_cons_set_raw(bool is_raw) {
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;
@@ -1166,7 +1166,7 @@ R_API void r_cons_column(int c) {
 
 static int lasti = 0; /* last interactive mode */
 
-R_API void r_cons_set_interactive(int x) {
+R_API void r_cons_set_interactive(bool x) {
 	lasti = r_cons_singleton ()->is_interactive;
 	r_cons_singleton ()->is_interactive = x;
 }

@@ -2794,12 +2794,26 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	break;
 	case 'b': // bytes
 	case '\0':
-		ptr = calloc (1, nblocks);
-		r_core_read_at (core, core->offset, ptr, nblocks);
+		{
+		RIOMap* map;
+		RListIter *iter;
+		ut64 from , to ;
+		const char *zoomin = r_config_get (core->config, "zoom.in");
+		RList *list = r_core_get_boundaries (core, zoomin);
+		RListIter *iter1 = list->head;
+		RIOMap* map1 = iter1->data;
+		from = map1->itv.addr;
+		r_list_foreach (list, iter, map) {
+			to = r_itv_end (map->itv);
+		}
+		ut64 nblks = (to - from) / blocksize;
+		ptr = calloc (1, nblks);
+		r_core_read_at (core, from, ptr, nblks);
 		// TODO: support print_bars
-		r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
+		r_print_fill (core->print, ptr, nblks, from, blocksize);
 		R_FREE (ptr);
 		break;
+		}
 	}
 	if (print_bars) {
 		int i;
@@ -5527,15 +5541,29 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_pz);
 		} else {
+			RIOMap* map;
+			RListIter *iter;
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
+			const char *zoomin = r_config_get (core->config, "zoom.in");
+			const ut64 search_from = r_config_get_i (core->config, "search.from");
+			const ut64 search_to = r_config_get_i (core->config, "search.to");
+			// temporarily setting it coz r_core_get_boundaries only honors search.from/to
+			r_config_set_i (core->config, "search.from", from);
+			r_config_set_i (core->config, "search.to", to);
+			RList *list = r_core_get_boundaries (core, zoomin);
+			RListIter *iter1 = list->head;
+			RIOMap* map1 = iter1->data;
+			from = map1->itv.addr;
+			r_list_foreach (list, iter, map) {
+				to = r_itv_end (map->itv);
+			}
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			int oldva = core->io->va;
 			char *oldmode = NULL;
 			bool do_zoom = true;
 
 			core->io->va = 0;
-
 			if (input[1] && input[1] != ' ') {
 				oldmode = strdup (r_config_get (core->config, "zoom.byte"));
 				if (!r_config_set (core->config, "zoom.byte", input + 1)) {
@@ -5552,6 +5580,8 @@ static int cmd_print(void *data, const char *input) {
 				r_config_set (core->config, "zoom.byte", oldmode);
 			}
 			core->io->va = oldva;
+			r_config_set_i (core->config, "search.from", search_from);
+			r_config_set_i (core->config, "search.to", search_to);
 			R_FREE (oldmode);
 		}
 		break;

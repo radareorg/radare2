@@ -37,3 +37,11 @@ ec swi rgb:d22
 ec creg rgb:ccc
 ec flag rgb:d50
 ec graph.box2 rgb:ff0
+ec graph.box rgb:aaa
+ec graph.box3 rgb:aaa
+ec graph.box4 rgb:aaa
+ec graph.true rgb:d52
+ec graph.false rgb:aaa
+ec graph.trufae rgb:aaa
+ec graph.current blue
+ec graph.traced red

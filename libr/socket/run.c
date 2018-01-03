@@ -12,7 +12,8 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#if __APPLE__
+
+#if __APPLE__ && LIBC_HAVE_FORK
 #if !__POWERPC__
 #include <spawn.h>
 #endif
@@ -29,6 +30,7 @@
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #endif
+
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>

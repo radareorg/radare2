@@ -223,13 +223,13 @@ esac
 USE_CLANG=0
 case "$K-$A-$B" in
 darwin-arm-64)
-	CC="xcrun --sdk iphoneos gcc -arch arm64"
+	CC="xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=0.0"
 	USE_CLANG=1
 	TEXT=0.__TEXT.__text
 	;;
 darwin-arm-32)
 	USE_CLANG=1
-	CC="xcrun --sdk iphoneos gcc -arch armv7"
+	CC="xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=0.0"
 	TEXT=0.__TEXT.__text
 	;;
 esac

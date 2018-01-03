@@ -39,11 +39,10 @@ ec creg rgb:788
 ec flag rgb:ffd
 ec graph.true rgb:9b7
 ec graph.false rgb:b97
+ec graph.trufae rgb:64c
+ec graph.current blue
+ec graph.traced blue
 ec graph.box rgb:9b7
 ec graph.box2 rgb:b97
 ec graph.box3 rgb:b97
 ec graph.box4 rgb:b97
-ec graph.trufae rgb:64c
-ec graph.current blue
-ec graph.traced blue
-ec graph.traced blue

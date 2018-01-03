@@ -34,3 +34,13 @@ ec ai.write blue
 ec ai.exec red
 ec ai.seq rgb:ff00ff
 ec ai.ascii rgb:ffff00
+
+ec graph.box blue
+ec graph.box2 yellow
+ec graph.box3 blue
+ec graph.box4 blue
+ec graph.true green
+ec graph.false red
+ec graph.trufae blue
+ec graph.current blue
+ec graph.traced red

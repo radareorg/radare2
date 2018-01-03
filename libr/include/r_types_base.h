@@ -138,4 +138,11 @@ typedef struct _utX{
 #define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
 
+#if APPLE_SDK_IPHONESIMULATOR
+#undef LIBC_HAVE_FORK
+#define LIBC_HAVE_FORK 0
+#undef DEBUGGER
+#define DEBUGGER 0
+#endif
+
 #endif // R2_TYPES_BASE_H

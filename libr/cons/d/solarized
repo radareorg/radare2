@@ -33,5 +33,15 @@ ec swi rgb:f00
 ec creg rgb:de8
 ec flag rgb:c41
 
+ec graph.box rgb:033
+ec graph.box2 rgb:de8
+ec graph.box3 rgb:033
+ec graph.box4 rgb:033
+ec graph.true rgb:890
+ec graph.false rgb:c41
+ec graph.trufae rgb:899
+ec graph.current rgb:f00
+ec graph.traced red
+
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'eco solarized' /bin/ls"

@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2015-2016 - oddcoder */
+/* radare2 - LGPL - Copyright 2015-2018 - oddcoder, thestr4ng3r */
 
 #include <r_types.h>
 #include <r_anal.h>
-#include <r_asm.h>
 #include <r_lib.h>
 
 void cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
@@ -12,7 +11,8 @@ void cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
 	op->cycles = 2;
 	r_strbuf_setf (&op->esil, "%s,?,{,0x%x,pc,=,}", flag, op->jump);
 }
-static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+
+static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	//TODO code should be refactored and brocken into smaller chuncks!!
 	//TODO complete the esil emitter
 	if (len < 2) {
@@ -281,7 +281,8 @@ beach:
 	op->type = R_ANAL_OP_TYPE_ILL;
 	return op->size;
 }
-static int set_reg_profile(RAnal *esil) {
+
+static int anal_pic_pic18_set_reg_profile(RAnal *esil) {
 	const char *p;
 	p =
 		"#pc lives in nowhere actually"
@@ -398,19 +399,45 @@ static int set_reg_profile(RAnal *esil) {
 
 	return r_reg_set_profile_string (esil->reg, p);
 }
-RAnalPlugin r_anal_plugin_pic18c = {
-	.name = "pic18c",
-	.desc = "PIC 18c analysis plugin",
+
+
+static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
+		// TODO: implement
+		return -1;
+	}
+	if (anal->cpu && strcasecmp (anal->cpu, "pic18") == 0) {
+		return anal_pic_pic18_op (anal, op, addr, buf, len);
+	}
+	return -1;
+}
+
+static int anal_pic_set_reg_profile(RAnal *anal) {
+	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
+		// TODO: implement
+		return r_reg_set_profile_string (anal->reg, "");
+	}
+	if (anal->cpu && strcasecmp (anal->cpu, "pic18") == 0) {
+		return anal_pic_pic18_set_reg_profile (anal);
+	}
+	return -1;
+}
+
+RAnalPlugin r_anal_plugin_pic = {
+	.name = "pic",
+	.desc = "PIC analysis plugin",
 	.license = "LGPL3",
-	.arch = "PIC 18c",
+	.arch = "pic",
 	.bits = 8,
-	.op = &pic18c_anal,
-	.set_reg_profile = &set_reg_profile,
-	.esil = true };
+	.op = &anal_pic_op,
+	.set_reg_profile = &anal_pic_set_reg_profile,
+	.esil = true
+};
 
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_pic18c,
-	.version = R2_VERSION };
+	.data = &r_anal_plugin_pic,
+	.version = R2_VERSION
+};
 #endif

@@ -437,7 +437,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		const char *arg = input + 2;
 		while (*arg && *arg == ' ') arg++;
 		if (!strncmp (arg, "base64:", 7)) {
-			char *s = (char *)sdb_decode (arg+7, NULL);
+			char *s = (char *)sdb_decode (arg + 7, NULL);
 			if (s) {
 				newcomment = s;
 			} else {
@@ -684,13 +684,14 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 								eprintf ("Cannot resolve struct size\n");
 								n = 32; //
 							}
+p = t;
 						}
 						//make sure we do not overflow on r_print_format
 						if (n > core->blocksize) {
 							n = core->blocksize;
 						}
 						int r = r_print_format (core->print, addr, core->block,
-							n, p + 1, 0, NULL, NULL);
+							n, p, 0, NULL, NULL);
 						if (r < 0) {
 							n  = -1;
 						}

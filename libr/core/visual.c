@@ -228,6 +228,7 @@ static int visual_help() {
 		" ??       show the user-friendly hud\n"
 		" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 		" @        redraw screen every 1s (multi-user view), in cursor set position\n"
+		" ^        seek to the begining of the function\n"
 		" !        enter into the visual panels mode\n"
 		" _        enter the flag/comment/functions/.. hud (same as VF_)\n"
 		" =        set cmd.vprompt (top row)\n"
@@ -1949,6 +1950,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'e':
 			r_core_visual_config (core);
 			break;
+		case '^':
+			  {
+				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				  if (fcn) {
+					  r_core_seek (core, fcn->addr, 0);
+				  }
+			  }
+			  break;
 		case 'E':
 			r_core_visual_colors (core);
 			break;
