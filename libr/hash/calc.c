@@ -41,16 +41,6 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		r_hash_do_sha512 (ctx, buf, len);
 		return R_HASH_SIZE_SHA512;
 	}
-	if (algobit & R_HASH_CRC16) {
-		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16);
-		r_write_be16 (ctx->digest, res);
-		return R_HASH_SIZE_CRC16;
-	}
-	if (algobit & R_HASH_CRC32) {
-		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32);
-		r_write_be32 (ctx->digest, res);
-		return R_HASH_SIZE_CRC32;
-	}
 	if (algobit & R_HASH_XXHASH) {
 		ut32 res = r_hash_xxhash (buf, len);
 		memcpy (ctx->digest, &res, R_HASH_SIZE_XXHASH);
@@ -95,6 +85,8 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		*ctx->digest = r_hash_luhn (buf, len);
 		return R_HASH_SIZE_LUHN;
 	}
+
+#if R_HAVE_CRC8
 	if (algobit & R_HASH_CRC8_SMBUS) {
 		ut8 res = r_hash_crc_preset (buf, len, CRC_PRESET_8_SMBUS);
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC8_SMBUS);
@@ -110,10 +102,21 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	HANDLE_CRC_PRESET (8, CRC8_MAXIM);
 	HANDLE_CRC_PRESET (8, CRC8_ROHC);
 	HANDLE_CRC_PRESET (8, CRC8_WCDMA);
+#endif /* #if R_HAVE_CRC8 */
+
+#if R_HAVE_CRC15
 	if (algobit & R_HASH_CRC15_CAN) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_15_CAN);
 		r_write_be16 (ctx->digest, res);
 		return R_HASH_SIZE_CRC15_CAN;
+	}
+#endif /* #if R_HAVE_CRC15 */
+
+#if R_HAVE_CRC16
+	if (algobit & R_HASH_CRC16) {
+		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16);
+		r_write_be16 (ctx->digest, res);
+		return R_HASH_SIZE_CRC16;
 	}
 	if (algobit & R_HASH_CRC16_HDLC) {
 		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_HDLC);
@@ -150,10 +153,21 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	HANDLE_CRC_PRESET (16, CRC16_MODBUS);
 	HANDLE_CRC_PRESET (16, CRC16_X25);
 	HANDLE_CRC_PRESET (16, CRC16_XMODEM);
+#endif /* #if R_HAVE_CRC16 */
+
+#if R_HAVE_CRC24
 	if (algobit & R_HASH_CRC24) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_24);
 		r_write_be24 (ctx->digest, res);
 		return R_HASH_SIZE_CRC24;
+	}
+#endif /* #if R_HAVE_CRC24 */
+
+#if R_HAVE_CRC32
+	if (algobit & R_HASH_CRC32) {
+		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32);
+		r_write_be32 (ctx->digest, res);
+		return R_HASH_SIZE_CRC32;
 	}
 	if (algobit & R_HASH_CRC32C) {
 		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32C);
@@ -172,6 +186,8 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	HANDLE_CRC_PRESET (32, CRC32Q);
 	//HANDLE_CRC_PRESET(32, CRC32_JAMCRC); OOps!!!
 	//HANDLE_CRC_PRESET(32, CRC32_XFER); OOps!!!
+#endif /* #if R_HAVE_CRC32 */
+
 #if R_HAVE_CRC64
 	HANDLE_CRC_PRESET (64, CRC64);
 	HANDLE_CRC_PRESET (64, CRC64_ECMA182);

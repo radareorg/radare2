@@ -21,6 +21,8 @@ static void handle_parity (const ut8 *block, int len);
 static void handle_pcprint (const ut8 *input, int len);
 static void handle_mod255 (const ut8 *input, int len);
 static void handle_luhn (const ut8 *input, int len);
+
+#if R_HAVE_CRC8
 static void handle_crc8_smbus (const ut8 *block, int len);
 static void handle_crc8_cdma2000 (const ut8 *block, int len);
 static void handle_crc8_darc (const ut8 *block, int len);
@@ -31,7 +33,13 @@ static void handle_crc8_itu (const ut8 *block, int len);
 static void handle_crc8_maxim (const ut8 *block, int len);
 static void handle_crc8_rohc (const ut8 *block, int len);
 static void handle_crc8_wcdma (const ut8 *block, int len);
+#endif /* #if R_HACE_CRC8 */
+
+#if R_HAVE_CRC15
 static void handle_crc15_can (const ut8 *block, int len);
+#endif /* #if R_HACE_CRC15 */
+
+#if R_HAVE_CRC16
 static void handle_crc16 (const ut8 *block, int len);
 static void handle_crc16_hdlc (const ut8 *block, int len);
 static void handle_crc16_usb (const ut8 *block, int len);
@@ -56,7 +64,13 @@ static void handle_crc16_kermit (const ut8 *block, int len);
 static void handle_crc16_modbus (const ut8 *block, int len);
 static void handle_crc16_x25 (const ut8 *block, int len);
 static void handle_crc16_xmodem (const ut8 *block, int len);
+#endif /* #if R_HAVE_CRC16 */
+
+#if R_HAVE_CRC24
 static void handle_crc24 (const ut8 *block, int len);
+#endif /* #if R_HAVE_CRC24 */
+
+#if R_HAVE_CRC32
 static void handle_crc32 (const ut8 *block, int len);
 static void handle_crc32c (const ut8 *block, int len);
 static void handle_crc32_ecma_267 (const ut8 *block, int len);
@@ -67,6 +81,7 @@ static void handle_crc32_posix (const ut8 * block, int len);
 static void handle_crc32q (const ut8 * block, int len);
 static void handle_crc32_jamcrc (const ut8 * block, int len);
 static void handle_crc32_xfer (const ut8 * block, int len);
+#endif /* #if R_HAVE_CRC32 */
 
 #if R_HAVE_CRC64
 static void handle_crc64 (const ut8 * block, int len);
@@ -95,6 +110,8 @@ static RHashHashHandlers hash_handlers[] = {
 	{"pcprint", handle_pcprint},
 	{"mod255", handle_mod255},
 	{"luhn", handle_luhn},
+
+#if R_HAVE_CRC8
 	{"crc8smbus", handle_crc8_smbus},
 	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000},
 	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc},
@@ -105,7 +122,13 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-8/MAXIM        */ "crc8maxim", handle_crc8_maxim},
 	{ /* CRC-8/ROHC         */ "crc8rohc", handle_crc8_rohc},
 	{ /* CRC-8/WCDMA        */ "crc8wcdma", handle_crc8_wcdma},
+#endif /* #if R_HAVE_CRC8 */
+
+#if R_HAVE_CRC15
 	{"crc15can", handle_crc15_can},
+#endif /* #if R_HAVE_CRC15 */
+
+#if R_HAVE_CRC16
 	{"crc16", handle_crc16},
 	{"crc16hdlc", handle_crc16_hdlc},
 	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb},
@@ -130,7 +153,13 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-16/MODBUS      */ "crc16modbus", handle_crc16_modbus },
 	{ /* CRC-16/X-25        */ "crc16x25", handle_crc16_x25 },
 	{ /* CRC-16/XMODEM      */ "crc16xmodem", handle_crc16_xmodem },
+#endif /* #if R_HAVE_CRC16 */
+
+#if R_HAVE_CRC24
 	{"crc24", handle_crc24},
+#endif /* #if R_HAVE_CRC24 */
+
+#if R_HAVE_CRC32
 	{"crc32", handle_crc32},
 	{"crc32c", handle_crc32c},
 	{"crc32ecma267", handle_crc32_ecma_267},
@@ -141,6 +170,8 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-32Q            */ "crc32q", handle_crc32q },
 	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", handle_crc32_jamcrc },
 	{ /* CRC-32/XFER        */ "crc32xfer", handle_crc32_xfer },
+#endif /* #if R_HAVE_CRC32 */
+
 #if R_HAVE_CRC64
 	{ /* CRC-64             */ "crc64", handle_crc64 },
 	{ /* CRC-64/ECMA-182    */ "crc64ecma182", handle_crc64_ecma182 },
@@ -232,6 +263,7 @@ static void handle_luhn (const ut8 *block, int len) {
 	r_cons_printf ("%d\n", r_hash_luhn (block, len));
 }
 
+#if R_HAVE_CRC8
 static void handle_crc8_smbus (const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
 }
@@ -271,11 +303,15 @@ static void handle_crc8_rohc (const ut8 *block, int len) {
 static void handle_crc8_wcdma (const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_WCDMA));
 }
+#endif /* #if R_HAVE_CRC8 */
 
+#if R_HAVE_CRC15
 static void handle_crc15_can (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_15_CAN));
 }
+#endif /* #if R_HAVE_CRC15 */
 
+#if R_HAVE_CRC16
 static void handle_crc16 (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16));
 }
@@ -371,11 +407,15 @@ static void handle_crc16_x25 (const ut8 *block, int len) {
 static void handle_crc16_xmodem (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_XMODEM));
 }
+#endif /* #if R_HAVE_CRC16 */
 
+#if R_HAVE_CRC24
 static void handle_crc24 (const ut8 *block, int len) {
 	r_cons_printf ("%06" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_24));
 }
+#endif /* #if R_HAVE_CRC24 */
 
+#if R_HAVE_CRC32
 static void handle_crc32 (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32));
 }
@@ -415,6 +455,7 @@ static void handle_crc32_jamcrc (const ut8 *block, int len) {
 static void handle_crc32_xfer (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_XFER));
 }
+#endif /* #ifR_HAVE_CRC32 */
 
 #if R_HAVE_CRC64
 static void handle_crc64 (const ut8 * block, int len) {
