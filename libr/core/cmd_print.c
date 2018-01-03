@@ -2497,16 +2497,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int mode = 'b'; // e, p, b, ...
 	int submode = 0; // q, j, ...
 	
-	if (list) {
-		RListIter *iter1 = list->head;
-		RIOMap* map1 = iter1->data;
-		from = map1->itv.addr;
-	} else {
-		from = core->offset;	
-	}
-	r_list_foreach (list, iter, map) {
-		to = r_itv_end (map->itv);
-	}
 	if (input[0]) {
 		char *spc = strchr (input, ' ');
 		if (spc) {
@@ -2549,8 +2539,19 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		return;
 	}
+	if (list) {
+		RListIter *iter1 = list->head;
+		RIOMap* map1 = iter1->data;
+		from = map1->itv.addr;
+		r_list_foreach (list, iter, map) {
+			to = r_itv_end (map->itv);
+		}
+		totalsize = to - from;	
+	} else {
+		from = core->offset;
+	}
 	if (nblocks < 1) {
-		nblocks = (to - from) / blocksize;
+		nblocks = totalsize / blocksize;
 	} else {
 		blocksize = totalsize / nblocks;
 	}
