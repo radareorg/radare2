@@ -2246,6 +2246,23 @@ static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfrstor(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if (op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0xdd;
+			data[l++] = 0x20 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 static int opfucom(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
@@ -2387,6 +2404,7 @@ LookupTable oplookup[] = {
 	{"fprem1", 0, NULL, 0xd9f5, 2},
 	{"fptan", 0, NULL, 0xd9f2, 2},
 	{"frndint", 0, NULL, 0xd9fc, 2},
+	{"frstor", 0, &opfrstor, 0},
 	{"fscale", 0, NULL, 0xd9fd, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
