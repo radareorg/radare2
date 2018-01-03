@@ -33,7 +33,7 @@ ec flow2 green
 ec mov black
 ec invalid red
 ec graph.box blue
-ec graph.box2 green
+ec graph.box2 rgb:00fffa
 ec graph.box3 red
 ec graph.box4 blue
 ec graph.true green
