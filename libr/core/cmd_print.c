@@ -133,6 +133,7 @@ static const char *help_msg_p[] = {
 
 static const char *help_msg_p_equal[] = {
 	"Usage:", "p=[=bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
+	"e ", "zoom.in", "specify range for zoom",
 	"p=", "", "print bytes of current block in bars",
 	"p==", "[..]", "same subcommands as p=, but using flame column graph instead of rows",
 	"p=", "b", "same as above",
@@ -2433,7 +2434,7 @@ static inline void matchBar(ut8 *ptr, int i) {
 	}
 }
 
-static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skipblocks) {
+static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skipblocks, ut64 from) {
 	ut8 *p;
 	int j, i = 0;
 	ut8 *ptr = calloc (1, nblocks);
@@ -2451,7 +2452,7 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		ut64 off = core->offset + (i + skipblocks) * blocksize;
+		ut64 off = from + (i + skipblocks) * blocksize;
 		for (j = 0; j < blocksize ; j++) {
 			RAnalOp *op = r_core_anal_op (core, off + j);
 			if (op) {
@@ -2487,11 +2488,15 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int nblocks = -1;
 	int totalsize = -1;
 	int skipblocks = -1;
-
+	RIOMap* map;
+	RListIter *iter;
+	ut64 from , to ;
+	const char *zoomin = r_config_get (core->config, "zoom.in");
+	RList *list = r_core_get_boundaries (core, zoomin);
 	ut64 blocksize = 0;
 	int mode = 'b'; // e, p, b, ...
 	int submode = 0; // q, j, ...
-
+	
 	if (input[0]) {
 		char *spc = strchr (input, ' ');
 		if (spc) {
@@ -2534,12 +2539,22 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		return;
 	}
+	if (list) {
+		RListIter *iter1 = list->head;
+		RIOMap* map1 = iter1->data;
+		from = map1->itv.addr;
+		r_list_foreach (list, iter, map) {
+			to = r_itv_end (map->itv);
+		}
+		totalsize = to - from;	
+	} else {
+		from = core->offset;
+	}
 	if (nblocks < 1) {
 		nblocks = totalsize / blocksize;
 	} else {
 		blocksize = totalsize / nblocks;
 	}
-
 	switch (mode) {
 	case '?': // bars
 		r_core_cmd_help (core, help_msg_p_equal);
@@ -2570,7 +2585,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				}
 				int len = 0;
 				for (i = 0; i < nblocks; i++) {
-					ut64 off = core->offset + blocksize * (i + skipblocks);
+					ut64 off = from + blocksize * (i + skipblocks);
 					r_core_read_at (core, off, p, blocksize);
 					for (j = k = 0; j < blocksize; j++) {
 						switch (submode) {
@@ -2626,12 +2641,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
-				ut64 off = core->offset + (blocksize * (i + skipblocks));
+				ut64 off = from + (blocksize * (i + skipblocks));
 				r_core_read_at (core, off, p, blocksize);
 				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
 			}
 			free (p);
-			r_print_columns (core->print, ptr, nblocks, 14); //core->block, core->blocksize, 10);
+			r_print_columns (core->print, ptr, nblocks, 14);
 		}
 			break;
 		default:
@@ -2660,22 +2675,22 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
-		if ((ptr = analBars (core, 'j', nblocks, blocksize, skipblocks))) {
+		if ((ptr = analBars (core, 'j', nblocks, blocksize, skipblocks, from))) {
 			print_bars = true;
 		}
 		break;
 	case 'c': // "p=c" calls
-		if ((ptr = analBars (core, 'c', nblocks, blocksize, skipblocks))) {
+		if ((ptr = analBars (core, 'c', nblocks, blocksize, skipblocks, from))) {
 			print_bars = true;
 		}
 		break;
 	case 'i': // "p=i" invalid
-		if ((ptr = analBars (core, 'i', nblocks, blocksize, skipblocks))) {
+		if ((ptr = analBars (core, 'i', nblocks, blocksize, skipblocks, from))) {
 			print_bars = true;
 		}
 		break;
 	case 's': // "p=s" syscalls
-		if ((ptr = analBars (core, 's', nblocks, blocksize, skipblocks))) {
+		if ((ptr = analBars (core, 's', nblocks, blocksize, skipblocks, from))) {
 			print_bars = true;
 		}
 		break;
@@ -2695,7 +2710,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (blocksize * (i + skipblocks));
+			ut64 off = from + (blocksize * (i + skipblocks));
 			for (j = 0; j < blocksize; j++) {
 				if (r_flag_get_at (core->flags, off + j, false)) {
 					matchBar (ptr, i);
@@ -2722,7 +2737,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + (blocksize * (i + skipblocks));
+			ut64 off = from + (blocksize * (i + skipblocks));
 			r_core_read_at (core, off, p, blocksize);
 			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
 		}
@@ -2750,7 +2765,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		int len = 0;
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = core->offset + blocksize * (i + skipblocks);
+			ut64 off = from + blocksize * (i + skipblocks);
 			r_core_read_at (core, off, p, blocksize);
 			for (j = k = 0; j < blocksize; j++) {
 				switch (mode) {
@@ -2794,38 +2809,24 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	break;
 	case 'b': // bytes
 	case '\0':
-		{
-		RIOMap* map;
-		RListIter *iter;
-		ut64 from , to ;
-		const char *zoomin = r_config_get (core->config, "zoom.in");
-		RList *list = r_core_get_boundaries (core, zoomin);
-		RListIter *iter1 = list->head;
-		RIOMap* map1 = iter1->data;
-		from = map1->itv.addr;
-		r_list_foreach (list, iter, map) {
-			to = r_itv_end (map->itv);
-		}
-		ut64 nblks = (to - from) / blocksize;
-		ptr = calloc (1, nblks);
-		r_core_read_at (core, from, ptr, nblks);
+		ptr = calloc (1, nblocks);
+		r_core_read_at (core, from, ptr, nblocks);
 		// TODO: support print_bars
-		r_print_fill (core->print, ptr, nblks, from, blocksize);
+		r_print_fill (core->print, ptr, nblocks, from, blocksize);
 		R_FREE (ptr);
 		break;
-		}
 	}
 	if (print_bars) {
 		int i;
 		switch (submode) {
 		case 'j':
 			r_cons_printf ("{\"blocksize\":%d,\"address\":%"PFMT64d ",\"size\":%"PFMT64d ",\"entropy\":[",
-				blocksize, core->offset, totalsize);
+				blocksize, from, totalsize);
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
 				ut64 off = blocksize * i;
 				const char *comma = (i + 1 < (nblocks))? ",": "";
-				off += core->offset;
+				off += from;
 				r_cons_printf ("{\"addr\":%"PFMT64d ",\"value\":%d}%s",
 					off, ep, comma);
 
@@ -2834,7 +2835,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			break;
 		case 'q':
 			for (i = 0; i < nblocks; i++) {
-				ut64 off = core->offset + (blocksize * i);
+				ut64 off = from + (blocksize * i);
 				if (core->print->cur_enabled) {
 					if (i == core->print->cur) {
 						r_cons_printf ("> ");
@@ -2848,7 +2849,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			break;
 		default:
 			core->print->num = core->num;
-			r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
+			r_print_fill (core->print, ptr, nblocks, from, blocksize);
 			break;
 		}
 	}
