@@ -57,8 +57,8 @@ static void crc_final (R_CRC_CTX *ctx, utcrc *r) {
 
 /* NOTE: Run `rahash2 -a <algo> -s 123456789` to test CRC. */
 R_CRC_CTX crc_presets[] = {
-#if R_HAVE_CRC8
 	CRC_PRESET (0x00      ,  8, 0, 0x07      , 0x00 ),       //CRC-8-SMBUS, test vector for "1234567892: f4
+#if R_HAVE_CRC8_EXTRA
 	CRC_PRESET (0xFF      ,  8, 0, 0x9B      , 0x00 ),       //CRC-8/CDMA2000,     test vector for "123456789": 0xda
 	CRC_PRESET (0x00      ,  8, 1, 0x39      , 0x00 ),       //CRC-8/DARC,         test vector for "123456789": 0x15
 	CRC_PRESET (0x00      ,  8, 0, 0xD5      , 0x00 ),       //CRC-8/DVB-S2,       test vector for "123456789": 0xbc
@@ -68,17 +68,17 @@ R_CRC_CTX crc_presets[] = {
 	CRC_PRESET (0x00      ,  8, 1, 0x31      , 0x00 ),       //CRC-8/MAXIM,        test vector for "123456789": 0xa1
 	CRC_PRESET (0xFF      ,  8, 1, 0x07      , 0x00 ),       //CRC-8/ROHC,         test vector for "123456789": 0xd0
 	CRC_PRESET (0x00      ,  8, 1, 0x9B      , 0x00 ),       //CRC-8/WCDMA,        test vector for "123456789": 0x25
-#endif /* #if R_HAVE_CRC8 */
+#endif /* #if R_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15
+#if R_HAVE_CRC15_EXTRA
 	CRC_PRESET (0x0000    , 15, 0, 0x4599    , 0x0000 ),     //CRC-15-CAN, test vector for "1234567892: 059e
-#endif /* #if R_HAVE_CRC15 */
+#endif /* #if R_HAVE_CRC15_EXTRA */
 
-#if R_HAVE_CRC16
 	CRC_PRESET (0x0000    , 16, 1, 0x8005    , 0x0000 ),     //CRC-16-IBM (CRC-16/ARC), test vector for "1234567892: bb3d
 	CRC_PRESET (0xFFFF    , 16, 0, 0x1021    , 0x0000 ),     //CRC-16-CITT (CRC-16/CCITT-FALSE), test vector for "1234567892: 29b1
 	CRC_PRESET (0xFFFF    , 16, 1, 0x8005    , 0xFFFF ),     //CRC-16-USB, test vector for "1234567892:  b4c8
 	CRC_PRESET (0xFFFF    , 16, 1, 0x1021    , 0xFFFF ),     //CRC-HDLC, test vector for "1234567892: 906e
+#if R_HAVE_CRC16_EXTRA
 	CRC_PRESET (0x1D0F    , 16, 0, 0x1021    , 0x0000 ),     //CRC-16/AUG-CCITT,   test vector for "123456789": 0xe5cc
 	CRC_PRESET (0x0000    , 16, 0, 0x8005    , 0x0000 ),     //CRC-16/BUYPASS,     test vector for "123456789": 0xfee8
 	CRC_PRESET (0xFFFF    , 16, 0, 0xC867    , 0x0000 ),     //CRC-16/CDMA2000,    test vector for "123456789": 0x4c06
@@ -99,16 +99,16 @@ R_CRC_CTX crc_presets[] = {
 	CRC_PRESET (0xFFFF    , 16, 1, 0x8005    , 0x0000 ),     //CRC-16/MODBUS,      test vector for "123456789": 0x4b37
 	CRC_PRESET (0xFFFF    , 16, 1, 0x1021    , 0xFFFF ),     //CRC-16/X-25,        test vector for "123456789": 0x906e
 	CRC_PRESET (0x0000    , 16, 0, 0x1021    , 0x0000 ),     //CRC-16/XMODEM,      test vector for "123456789": 0x31c3
-#endif /* #if R_HAVE_CRC16 */
+#endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
 	CRC_PRESET (0xB704CE  , 24, 0, 0x864CFB  , 0x000000 ),   //CRC-24, test vector for "1234567892: 21cf02
 #endif /* #if R_HAVE_CRC24 */
 
-#if R_HAVE_CRC32
 	CRC_PRESET (0xFFFFFFFF, 32, 1, 0x04C11DB7, 0xFFFFFFFF ), //CRC-32, test vector for "1234567892: cbf43926
 	CRC_PRESET (0x00000000, 32, 0, 0x80000011, 0x00000000 ), //CRC-32-ECMA-267 (EDC for DVD sectors), test vector for "1234567892: b27ce117
 	CRC_PRESET (0xFFFFFFFF, 32, 1, 0x1EDC6F41, 0xFFFFFFFF ), //CRC-32C, test vector for "1234567892: e3069283
+#if R_HAVE_CRC32_EXTRA
 	CRC_PRESET (0xFFFFFFFF, 32, 0, 0x04C11DB7, 0xFFFFFFFF ), //CRC-32/BZIP2,       test vector for "123456789": 0xfc891918
 	CRC_PRESET (0xFFFFFFFF, 32, 1, 0xA833982B, 0xFFFFFFFF ), //CRC-32D,            test vector for "123456789": 0x87315576
 	CRC_PRESET (0xFFFFFFFF, 32, 0, 0x04C11DB7, 0x00000000 ), //CRC-32/MPEG2,       test vector for "123456789": 0x0376e6e7
@@ -116,15 +116,17 @@ R_CRC_CTX crc_presets[] = {
 	CRC_PRESET (0x00000000, 32, 0, 0x814141AB, 0x00000000 ), //CRC-32Q,            test vector for "123456789": 0x3010bf7f
 	CRC_PRESET (0xFFFFFFFF, 32, 1, 0x04C11DB7, 0x00000000 ), //CRC-32/JAMCRC,      test vector for "123456789": 0x340bc6d9
 	CRC_PRESET (0x00000000, 32, 0, 0x000000AF, 0x00000000 ), //CRC-32/XFER,        test vector for "123456789": 0xbd0be338
-#endif /* #if R_HAVE_CRC32 */
+#endif /* #if R_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
 	CRC_PRESET (0x0000000000000000, 64, 0, 0x42F0E1EBA9EA3693, 0x0000000000000000 ), //CRC-64, check: 0x6c40df5f0b497347
+#endif /* #if R_HAVE_CRC64 */
+#if R_HAVE_CRC64_EXTRA
 	CRC_PRESET (0x0000000000000000, 64, 0, 0x42F0E1EBA9EA3693, 0x0000000000000000 ), //CRC-64/ECMA-182, check: 0x6c40df5f0b497347
 	CRC_PRESET (0xFFFFFFFFFFFFFFFF, 64, 0, 0x42F0E1EBA9EA3693, 0xFFFFFFFFFFFFFFFF ), //CRC-64/WE, check: 0x62ec59e3f1a4f00a
 	CRC_PRESET (0xFFFFFFFFFFFFFFFF, 64, 1, 0x42F0E1EBA9EA3693, 0xFFFFFFFFFFFFFFFF ), //CRC-64/XZ, check: 0x995dc9bbdf1939fa
 	CRC_PRESET (0xFFFFFFFFFFFFFFFF, 64, 1, 0x000000000000001b, 0xFFFFFFFFFFFFFFFF ), //CRC-64/ISO, check: 0xb90956c775a41001
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if R_HAVE_CRC64_EXTRA */
 };
 
 void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {

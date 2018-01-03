@@ -22,8 +22,8 @@ static void handle_pcprint (const ut8 *input, int len);
 static void handle_mod255 (const ut8 *input, int len);
 static void handle_luhn (const ut8 *input, int len);
 
-#if R_HAVE_CRC8
 static void handle_crc8_smbus (const ut8 *block, int len);
+#if R_HAVE_CRC8_EXTRA
 static void handle_crc8_cdma2000 (const ut8 *block, int len);
 static void handle_crc8_darc (const ut8 *block, int len);
 static void handle_crc8_dvb_s2 (const ut8 *block, int len);
@@ -33,17 +33,17 @@ static void handle_crc8_itu (const ut8 *block, int len);
 static void handle_crc8_maxim (const ut8 *block, int len);
 static void handle_crc8_rohc (const ut8 *block, int len);
 static void handle_crc8_wcdma (const ut8 *block, int len);
-#endif /* #if R_HACE_CRC8 */
+#endif /* #if R_HACE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15
+#if R_HAVE_CRC15_EXTRA
 static void handle_crc15_can (const ut8 *block, int len);
-#endif /* #if R_HACE_CRC15 */
+#endif /* #if R_HACE_CRC15_EXTRA */
 
-#if R_HAVE_CRC16
 static void handle_crc16 (const ut8 *block, int len);
 static void handle_crc16_hdlc (const ut8 *block, int len);
 static void handle_crc16_usb (const ut8 *block, int len);
 static void handle_crc16_citt (const ut8 *block, int len);
+#if R_HAVE_CRC16_EXTRA
 static void handle_crc16_aug_ccitt (const ut8 *block, int len);
 static void handle_crc16_buypass (const ut8 *block, int len);
 static void handle_crc16_cdma2000 (const ut8 *block, int len);
@@ -64,16 +64,16 @@ static void handle_crc16_kermit (const ut8 *block, int len);
 static void handle_crc16_modbus (const ut8 *block, int len);
 static void handle_crc16_x25 (const ut8 *block, int len);
 static void handle_crc16_xmodem (const ut8 *block, int len);
-#endif /* #if R_HAVE_CRC16 */
+#endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
 static void handle_crc24 (const ut8 *block, int len);
 #endif /* #if R_HAVE_CRC24 */
 
-#if R_HAVE_CRC32
 static void handle_crc32 (const ut8 *block, int len);
 static void handle_crc32c (const ut8 *block, int len);
 static void handle_crc32_ecma_267 (const ut8 *block, int len);
+#if R_HAVE_CRC32_EXTRA
 static void handle_crc32_bzip2 (const ut8 * block, int len);
 static void handle_crc32d (const ut8 * block, int len);
 static void handle_crc32_mpeg2 (const ut8 * block, int len);
@@ -81,15 +81,17 @@ static void handle_crc32_posix (const ut8 * block, int len);
 static void handle_crc32q (const ut8 * block, int len);
 static void handle_crc32_jamcrc (const ut8 * block, int len);
 static void handle_crc32_xfer (const ut8 * block, int len);
-#endif /* #if R_HAVE_CRC32 */
+#endif /* #if R_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
 static void handle_crc64 (const ut8 * block, int len);
+#endif /* #if R_HAVE_CRC64 */
+#if R_HAVE_CRC64_EXTRA
 static void handle_crc64_ecma182 (const ut8 * block, int len);
 static void handle_crc64_we (const ut8 * block, int len);
 static void handle_crc64_xz (const ut8 * block, int len);
 static void handle_crc64_iso (const ut8 * block, int len);
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if R_HAVE_CRC64_EXTRA */
 
 typedef struct {
 	const char *name;
@@ -111,8 +113,8 @@ static RHashHashHandlers hash_handlers[] = {
 	{"mod255", handle_mod255},
 	{"luhn", handle_luhn},
 
-#if R_HAVE_CRC8
 	{"crc8smbus", handle_crc8_smbus},
+#if R_HAVE_CRC8_EXTRA
 	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000},
 	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc},
 	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", handle_crc8_dvb_s2},
@@ -122,17 +124,17 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-8/MAXIM        */ "crc8maxim", handle_crc8_maxim},
 	{ /* CRC-8/ROHC         */ "crc8rohc", handle_crc8_rohc},
 	{ /* CRC-8/WCDMA        */ "crc8wcdma", handle_crc8_wcdma},
-#endif /* #if R_HAVE_CRC8 */
+#endif /* #if R_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15
+#if R_HAVE_CRC15_EXTRA
 	{"crc15can", handle_crc15_can},
-#endif /* #if R_HAVE_CRC15 */
+#endif /* #if R_HAVE_CRC15_EXTRA */
 
-#if R_HAVE_CRC16
 	{"crc16", handle_crc16},
 	{"crc16hdlc", handle_crc16_hdlc},
 	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb},
 	{ /* CRC-16/CCITT-FALSE */ "crc16citt", handle_crc16_citt},
+#if R_HAVE_CRC16_EXTRA
 	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", handle_crc16_aug_ccitt },
 	{ /* CRC-16/BUYPASS     */ "crc16buypass", handle_crc16_buypass },
 	{ /* CRC-16/CDMA2000    */ "crc16cdma2000", handle_crc16_cdma2000 },
@@ -153,16 +155,16 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-16/MODBUS      */ "crc16modbus", handle_crc16_modbus },
 	{ /* CRC-16/X-25        */ "crc16x25", handle_crc16_x25 },
 	{ /* CRC-16/XMODEM      */ "crc16xmodem", handle_crc16_xmodem },
-#endif /* #if R_HAVE_CRC16 */
+#endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
 	{"crc24", handle_crc24},
 #endif /* #if R_HAVE_CRC24 */
 
-#if R_HAVE_CRC32
 	{"crc32", handle_crc32},
 	{"crc32c", handle_crc32c},
 	{"crc32ecma267", handle_crc32_ecma_267},
+#if R_HAVE_CRC32_EXTRA
 	{ /* CRC-32/BZIP2       */ "crc32bzip2", handle_crc32_bzip2 },
 	{ /* CRC-32D            */ "crc32d", handle_crc32d },
 	{ /* CRC-32/MPEG-2      */ "crc32mpeg2", handle_crc32_mpeg2 },
@@ -170,15 +172,19 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-32Q            */ "crc32q", handle_crc32q },
 	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", handle_crc32_jamcrc },
 	{ /* CRC-32/XFER        */ "crc32xfer", handle_crc32_xfer },
-#endif /* #if R_HAVE_CRC32 */
+#endif /* #if R_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
 	{ /* CRC-64             */ "crc64", handle_crc64 },
+#endif /* #if R_HAVE_CRC64 */
+
+#if R_HAVE_CRC64_EXTRA
 	{ /* CRC-64/ECMA-182    */ "crc64ecma182", handle_crc64_ecma182 },
 	{ /* CRC-64/WE          */ "crc64we", handle_crc64_we },
 	{ /* CRC-64/XZ          */ "crc64xz", handle_crc64_xz },
 	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if R_HAVE_CRC64_EXTRA */
+
 	{NULL, NULL},
 };
 
@@ -263,11 +269,11 @@ static void handle_luhn (const ut8 *block, int len) {
 	r_cons_printf ("%d\n", r_hash_luhn (block, len));
 }
 
-#if R_HAVE_CRC8
 static void handle_crc8_smbus (const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
 }
 
+#if R_HAVE_CRC8_EXTRA
 static void handle_crc8_cdma2000 (const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_CDMA2000));
 }
@@ -303,15 +309,14 @@ static void handle_crc8_rohc (const ut8 *block, int len) {
 static void handle_crc8_wcdma (const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC8_WCDMA));
 }
-#endif /* #if R_HAVE_CRC8 */
+#endif /* #if R_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15
+#if R_HAVE_CRC15_EXTRA
 static void handle_crc15_can (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_15_CAN));
 }
-#endif /* #if R_HAVE_CRC15 */
+#endif /* #if R_HAVE_CRC15_EXTRA */
 
-#if R_HAVE_CRC16
 static void handle_crc16 (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16));
 }
@@ -328,6 +333,7 @@ static void handle_crc16_citt (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_16_CITT));
 }
 
+#if R_HAVE_CRC16_EXTRA
 static void handle_crc16_aug_ccitt (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_AUG_CCITT));
 }
@@ -407,7 +413,7 @@ static void handle_crc16_x25 (const ut8 *block, int len) {
 static void handle_crc16_xmodem (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_XMODEM));
 }
-#endif /* #if R_HAVE_CRC16 */
+#endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
 static void handle_crc24 (const ut8 *block, int len) {
@@ -415,7 +421,6 @@ static void handle_crc24 (const ut8 *block, int len) {
 }
 #endif /* #if R_HAVE_CRC24 */
 
-#if R_HAVE_CRC32
 static void handle_crc32 (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32));
 }
@@ -428,6 +433,7 @@ static void handle_crc32_ecma_267 (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_32_ECMA_267));
 }
 
+#if R_HAVE_CRC32_EXTRA
 static void handle_crc32_bzip2 (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_BZIP2));
 }
@@ -455,13 +461,15 @@ static void handle_crc32_jamcrc (const ut8 *block, int len) {
 static void handle_crc32_xfer (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_XFER));
 }
-#endif /* #ifR_HAVE_CRC32 */
+#endif /* #ifR_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
 static void handle_crc64 (const ut8 * block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64));
 }
+#endif /* #if R_HAVE_CRC64 */
 
+#if R_HAVE_CRC64_EXTRA
 static void handle_crc64_ecma182 (const ut8 * block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ECMA182));
 }
@@ -477,7 +485,7 @@ static void handle_crc64_xz (const ut8 * block, int len) {
 static void handle_crc64_iso (const ut8 * block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ISO));
 }
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if R_HAVE_CRC64_EXTRA */
 
 static int cmd_hash_bang (RCore *core, const char *input) {
 	char *p;

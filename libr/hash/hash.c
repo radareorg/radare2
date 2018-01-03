@@ -31,8 +31,8 @@ static const hash_name_bytes[] = {
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
 
-#if R_HAVE_CRC8
 	{ "crc8smbus", R_HASH_CRC8_SMBUS },
+#if R_HAVE_CRC8_EXTRA
 	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", R_HASH_CRC8_CDMA2000 },
 	{ /* CRC-8/DARC         */ "crc8darc", R_HASH_CRC8_DARC },
 	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", R_HASH_CRC8_DVB_S2 },
@@ -42,17 +42,17 @@ static const hash_name_bytes[] = {
 	{ /* CRC-8/MAXIM        */ "crc8maxim", R_HASH_CRC8_MAXIM },
 	{ /* CRC-8/ROHC         */ "crc8rohc", R_HASH_CRC8_ROHC },
 	{ /* CRC-8/WCDMA        */ "crc8wcdma", R_HASH_CRC8_WCDMA },
-#endif /* #if R_HAVE_CRC8 */
+#endif /* #if R_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15
+#if R_HAVE_CRC15_EXTRA
 	{ "crc15can", R_HASH_CRC15_CAN },
-#endif /* #if R_HAVE_CRC15 */
+#endif /* #if R_HAVE_CRC15_EXTRA */
 
-#if R_HAVE_CRC16
 	{ "crc16", R_HASH_CRC16 },
 	{ "crc16hdlc", R_HASH_CRC16_HDLC },
 	{ /* CRC-16/USB         */ "crc16usb", R_HASH_CRC16_USB },
 	{ /* CRC-16/CCITT-FALSE */ "crc16citt", R_HASH_CRC16_CITT },
+#if R_HAVE_CRC16_EXTRA
 	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", R_HASH_CRC16_AUG_CCITT },
 	{ /* CRC-16/BUYPASS     */ "crc16buypass", R_HASH_CRC16_BUYPASS },
 	{ /* CRC-16/CDMA2000    */ "crc16cdma2000", R_HASH_CRC16_CDMA2000 },
@@ -73,32 +73,35 @@ static const hash_name_bytes[] = {
 	{ /* CRC-16/MODBUS      */ "crc16modbus", R_HASH_CRC16_MODBUS },
 	{ /* CRC-16/X-25        */ "crc16x25", R_HASH_CRC16_X25 },
 	{ /* CRC-16/XMODEM      */ "crc16xmodem", R_HASH_CRC16_XMODEM },
-#endif /* #if R_HAVE_CRC16 */
+#endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
 	{ "crc24", R_HASH_CRC24 },
 #endif /* #if R_HAVE_CRC24 */
 
-#if R_HAVE_CRC32
 	{ "crc32", R_HASH_CRC32 },
 	{ "crc32c", R_HASH_CRC32C },
 	{ "crc32ecma267", R_HASH_CRC32_ECMA_267 },
+#if R_HAVE_CRC32_EXTRA
 	{ /* CRC-32/BZIP2       */ "crc32bzip2", R_HASH_CRC32_BZIP2 },
 	{ /* CRC-32D            */ "crc32d", R_HASH_CRC32D },
 	{ /* CRC-32/MPEG2       */ "crc32mpeg2", R_HASH_CRC32_MPEG2 },
 	{ /* CRC-32/POSIX       */ "crc32posix", R_HASH_CRC32_POSIX },
 	{ /* CRC-32Q            */ "crc32q", R_HASH_CRC32Q },
-	// OOps!!! { /* CRC-32/JAMCRC      */ "crc32jamcrc", R_HASH_CRC32_JAMCRC },
-	// OOps!!! { /* CRC-32/XFER        */ "crc32xfer",   R_HASH_CRC32_CRC32_XFER },
-#endif /* #if R_HAVE_CRC32 */
+	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", R_HASH_CRC32_JAMCRC },
+	{ /* CRC-32/XFER        */ "crc32xfer",   R_HASH_CRC32_XFER },
+#endif /* #if R_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
 	{ /* CRC-64             */ "crc64", R_HASH_CRC64 },
+#endif /* #if R_HAVE_CRC64 */
+
+#if R_HAVE_CRC64_EXTRA
 	{ /* CRC-64/ECMA-182    */ "crc64ecma", R_HASH_CRC64_ECMA182 },
 	{ /* CRC-64/WE          */ "crc64we", R_HASH_CRC64_WE },
 	{ /* CRC-64/XZ          */ "crc64xz", R_HASH_CRC64_XZ },
 	{ /* CRC-64/ISO         */ "crc64iso", R_HASH_CRC64_ISO },
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if R_HAVE_CRC64_EXTRA */
 	{ NULL, 0 }
 };
 
@@ -192,8 +195,8 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (PCPRINT);
 	ALGOBIT (LUHN);
 
-#if R_HAVE_CRC8
 	ALGOBIT (CRC8_SMBUS);
+#if R_HAVE_CRC8_EXTRA
 	ALGOBIT (CRC8_CDMA2000);
 	ALGOBIT (CRC8_DARC);
 	ALGOBIT (CRC8_DVB_S2);
@@ -203,17 +206,17 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (CRC8_MAXIM);
 	ALGOBIT (CRC8_ROHC);
 	ALGOBIT (CRC8_WCDMA);
-#endif /* #if R_HAVE_CRC8 */
+#endif /* #if R_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15
+#if R_HAVE_CRC15_EXTRA
 	ALGOBIT (CRC15_CAN);
-#endif /* #if R_HAVE_CRC15 */
+#endif /* #if R_HAVE_CRC15_EXTRA */
 
-#if R_HAVE_CRC16
 	ALGOBIT (CRC16);
 	ALGOBIT (CRC16_HDLC);
 	ALGOBIT (CRC16_USB);
 	ALGOBIT (CRC16_CITT);
+#if R_HAVE_CRC16_EXTRA
 	ALGOBIT (CRC16_AUG_CCITT);
 	ALGOBIT (CRC16_BUYPASS)
 	ALGOBIT (CRC16_CDMA2000);
@@ -234,32 +237,35 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (CRC16_MODBUS);
 	ALGOBIT (CRC16_X25);
 	ALGOBIT (CRC16_XMODEM);
-#endif /* #if R_HAVE_CRC16 */
+#endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
 	ALGOBIT (CRC24);
 #endif /* #if R_HAVE_CRC24 */
 
-#if R_HAVE_CRC32
 	ALGOBIT (CRC32);
 	ALGOBIT (CRC32C);
 	ALGOBIT (CRC32_ECMA_267);
+#if R_HAVE_CRC32_EXTRA
 	ALGOBIT (CRC32_BZIP2);
 	ALGOBIT (CRC32D);
 	ALGOBIT (CRC32_MPEG2);
 	ALGOBIT (CRC32_POSIX);
 	ALGOBIT (CRC32Q);
-	//ALGOBIT (CRC32_JAMCRC); Oops!!!
-	//ALGOBIT (CRC32_XFER); OOps!!!
-#endif /* #if R_HAVE_CRC32 */
+	ALGOBIT (CRC32_JAMCRC);
+	ALGOBIT (CRC32_XFER);
+#endif /* #if R_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
 	ALGOBIT (CRC64);
+#endif /* #if R_HAVE_CRC64 */
+
+#if R_HAVE_CRC64_EXTRA
 	ALGOBIT (CRC64_ECMA182);
 	ALGOBIT (CRC64_WE);
 	ALGOBIT (CRC64_XZ);
 	ALGOBIT (CRC64_ISO);
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if R_HAVE_CRC64_EXTRA */
 	return 0;
 }
 
