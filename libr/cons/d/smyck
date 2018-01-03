@@ -37,7 +37,7 @@ ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec ai.exec rgb:6d6
 ec graph.box rgb:9df
-ec graph.box2 rgb:9df
+ec graph.box2 rgb:602050
 ec graph.box3 rgb:9df
 ec graph.box4 rgb:9df
 ec graph.true rgb:9c4
