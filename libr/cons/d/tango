@@ -57,6 +57,6 @@ ec graph.trufae rgb:bbb
 ec graph.current rgb:7d1
 ec graph.traced rgb:f00
 ec graph.box rgb:950
-ec graph.box2 rgb:7d1
+ec graph.box2 rgb:ff0
 ec graph.box3 rgb:950
 ec graph.box4 rgb:950
