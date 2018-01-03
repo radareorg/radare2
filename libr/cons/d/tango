@@ -50,3 +50,4 @@ ec trap rgb:a00
 ec swi rgb:950
 ec creg rgb:590
 ec flag rgb:950
+ec graph rgb:ff0
