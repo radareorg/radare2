@@ -76,6 +76,13 @@ static const hash_name_bytes[] = {
 	{ /* CRC-32Q            */ "crc32q", R_HASH_CRC32Q },
 	// OOps!!! { /* CRC-32/JAMCRC      */ "crc32jamcrc", R_HASH_CRC32_JAMCRC },
 	// OOps!!! { /* CRC-32/XFER        */ "crc32xfer",   R_HASH_CRC32_CRC32_XFER },
+#if R_HAVE_CRC64
+	{ /* CRC-64             */ "crc64", R_HASH_CRC64 },
+	{ /* CRC-64/ECMA-182    */ "crc64ecma", R_HASH_CRC64_ECMA182 },
+	{ /* CRC-64/WE          */ "crc64we", R_HASH_CRC64_WE },
+	{ /* CRC-64/XZ          */ "crc64xz", R_HASH_CRC64_XZ },
+	{ /* CRC-64/ISO         */ "crc64iso", R_HASH_CRC64_ISO OOps },
+#endif /* #if R_HAVE_CRC64 */
 	{ NULL, 0 }
 };
 
@@ -214,6 +221,13 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (CRC32Q);
 	//ALGOBIT (CRC32_JAMCRC); Oops!!!
 	//ALGOBIT (CRC32_XFER); OOps!!!
+#if R_HAVE_CRC64
+	ALGOBIT (CRC64);
+	ALGOBIT (CRC64_ECMA182);
+	ALGOBIT (CRC64_WE);
+	ALGOBIT (CRC64_XZ);
+	ALGOBIT (CRC64_ISO);
+#endif /* #if R_HAVE_CRC64 */
 	return 0;
 }
 

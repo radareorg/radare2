@@ -68,6 +68,14 @@ static void handle_crc32q (const ut8 * block, int len);
 static void handle_crc32_jamcrc (const ut8 * block, int len);
 static void handle_crc32_xfer (const ut8 * block, int len);
 
+#if R_HAVE_CRC64
+static void handle_crc64 (const ut8 * block, int len);
+static void handle_crc64_ecma182 (const ut8 * block, int len);
+static void handle_crc64_we (const ut8 * block, int len);
+static void handle_crc64_xz (const ut8 * block, int len);
+static void handle_crc64_iso (const ut8 * block, int len);
+#endif /* #if R_HAVE_CRC64 */
+
 typedef struct {
 	const char *name;
 	HashHandler handler;
@@ -133,6 +141,13 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-32Q            */ "crc32q", handle_crc32q },
 	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", handle_crc32_jamcrc },
 	{ /* CRC-32/XFER        */ "crc32xfer", handle_crc32_xfer },
+#if R_HAVE_CRC64
+	{ /* CRC-64             */ "crc64", handle_crc64 },
+	{ /* CRC-64/ECMA-182    */ "crc64ecma182", handle_crc64_ecma182 },
+	{ /* CRC-64/WE          */ "crc64we", handle_crc64_we },
+	{ /* CRC-64/XZ          */ "crc64xz", handle_crc64_xz },
+	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
+#endif /* #if R_HAVE_CRC64 */
 	{NULL, NULL},
 };
 
@@ -400,6 +415,28 @@ static void handle_crc32_jamcrc (const ut8 *block, int len) {
 static void handle_crc32_xfer (const ut8 *block, int len) {
 	r_cons_printf ("%08" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC32_XFER));
 }
+
+#if R_HAVE_CRC64
+static void handle_crc64 (const ut8 * block, int len) {
+	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64));
+}
+
+static void handle_crc64_ecma182 (const ut8 * block, int len) {
+	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ECMA182));
+}
+
+static void handle_crc64_we (const ut8 * block, int len) {
+	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_WE));
+}
+
+static void handle_crc64_xz (const ut8 * block, int len) {
+	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_XZ));
+}
+
+static void handle_crc64_iso (const ut8 * block, int len) {
+	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ISO));
+}
+#endif /* #if R_HAVE_CRC64 */
 
 static int cmd_hash_bang (RCore *core, const char *input) {
 	char *p;

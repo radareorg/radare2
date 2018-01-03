@@ -25,13 +25,15 @@ typedef struct {
 	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
 
-#if 1
-typedef ut32 utcrc;
-#define PFMTCRCx PFMT32x
-#else
-/* TODO: future expansion */
+
+//#define R_HAVE_CRC64 1
+
+#if R_HAVE_CRC64
 typedef ut64 utcrc;
 #define PFMTCRCx PFMT64x
+#else
+typedef ut32 utcrc;
+#define PFMTCRCx PFMT32x
 #endif
 #define UTCRC_C(x) ((utcrc)(x))
 
@@ -90,6 +92,13 @@ enum CRC_PRESETS {
 	CRC_PRESET_CRC32Q,
 	CRC_PRESET_CRC32_JAMCRC,
 	CRC_PRESET_CRC32_XFER,
+#if R_HAVE_CRC64
+	CRC_PRESET_CRC64,
+	CRC_PRESET_CRC64_ECMA182,
+	CRC_PRESET_CRC64_WE,
+	CRC_PRESET_CRC64_XZ,
+	CRC_PRESET_CRC64_ISO,
+#endif /* #if R_HAVE_CRC64 */
 	CRC_PRESET_SIZE
 };
 
@@ -174,6 +183,13 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_CRC32Q 4
 #define R_HASH_SIZE_CRC32_JAMCRC 4
 #define R_HASH_SIZE_CRC32_XFER 4
+#if R_HAVE_CRC64
+#define R_HASH_SIZE_CRC64 8
+#define R_HASH_SIZE_CRC64_ECMA182 8
+#define R_HASH_SIZE_CRC64_WE 8
+#define R_HASH_SIZE_CRC64_XZ 8
+#define R_HASH_SIZE_CRC64_ISO 8
+#endif /* #if R_HAVE_CRC64 */
 #define R_HASH_SIZE_XXHASH 4
 #define R_HASH_SIZE_MD4 16
 #define R_HASH_SIZE_MD5 16
@@ -260,6 +276,13 @@ typedef struct r_hash_seed_t {
 #define R_HASH_CRC32Q (1ULL << 62)
 //#define R_HASH_CRC32_JAMCRC (1ULL << 63)
 //#define R_HASH_CRC32_XFER  TODO: OOOps! No empty bitspace!
+#if R_HAVE_CRC64
+#define R_HASH_CRC64 OOps
+#define R_HASH_CRC64_ECMA182 OOps
+#define R_HASH_CRC64_WE OOps
+#define R_HASH_CRC64_XZ OOps
+#define R_HASH_CRC64_ISO OOps
+#endif /* #if R_HAVE_CRC64 */
 #define R_HASH_ALL ((1ULL << 63)-1)
 
 #ifdef R_API
