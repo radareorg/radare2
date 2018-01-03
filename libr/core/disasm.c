@@ -288,7 +288,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
-static void ds_print_str(RDisasmState *ds, const char *str, int len);
+static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 #if 0
@@ -3023,8 +3023,18 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	return escstr;
 }
 
-static void ds_print_str(RDisasmState *ds, const char *str, int len) {
-	const char *prefix;
+static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
+	const char *prefix, *val;
+	char key[100];
+	RAnalMetaItem mi;
+	Sdb *db = ds->core->anal->sdb_meta;
+	snprintf (key, sizeof (key), "meta.s.0x%" PFMT64x, refaddr);
+	val = sdb_const_get (db, key, 0);
+	if (val && r_meta_deserialize_val (&mi, 's', refaddr, val)) {
+		if (mi.subtype == '-') {
+			return;
+		}
+	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
 		if (ds->show_comment_right) {
@@ -3151,7 +3161,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						      (ut8 *)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
 					if (!string_printed && str[0] && r_str_is_printable_incl_newlines (str)) {
-						ds_print_str (ds, str, sizeof (str));
+						ds_print_str (ds, str, sizeof (str), ds->analop.ptr);
 						string_printed = true;
 					}
 				}
@@ -3272,7 +3282,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 			if (*msg) {
 				if (!string_printed) {
-					ds_print_str (ds, msg, len);
+					ds_print_str (ds, msg, len, refaddr);
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
@@ -3320,7 +3330,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else {
 					if (r_core_anal_address (core, refaddr) & R_ANAL_ADDR_TYPE_ASCII) {
 						if (!string_printed && *msg) {
-							ds_print_str (ds, msg, len);
+							ds_print_str (ds, msg, len, refaddr);
 							string_printed = true;
 						}
 					}
@@ -3331,7 +3341,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (kind) {
 				if (!strcmp (kind, "text")) {
 					if (!string_printed && *msg) {
-						ds_print_str (ds, msg, len);
+						ds_print_str (ds, msg, len, refaddr);
 						string_printed = true;
 					}
 				} else if (!strcmp (kind, "invalid")) {
