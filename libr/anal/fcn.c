@@ -148,7 +148,7 @@ R_API bool r_anal_fcn_tree_delete(RBNode **root, RAnalFunction *data) {
 }
 
 R_API void r_anal_fcn_tree_insert(RBNode **root, RAnalFunction *fcn) {
-	r_rbtree_aug_insert (root, fcn, &fcn->rb, _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_insert (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
 }
 
 // Find RAnalFunction whose addr is equal to addr

@@ -168,7 +168,6 @@ static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
 }
 
 static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
-	RAnalFunction *f = NULL;
 	if (!fcn) {
 		eprintf ("No function given to create\n");
 		return;
@@ -181,13 +180,13 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	f = r_anal_fcn_new ();
+	RAnalFunction *f = r_anal_fcn_new ();
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
 	}
 
-	f->name = name? (char *) name: r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
+	f->name = name? strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
 	f->cc = r_str_const (r_anal_cc_default (core->anal));
