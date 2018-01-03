@@ -54,9 +54,11 @@ static int compileShellcode(REgg *egg, const char *input){
 	RBuffer *b;
 	if (!r_egg_shellcode (egg, input)) {
 		eprintf ("Unknown shellcode '%s'\n", input);
+		return 1;
 	}
 	if (!r_egg_assemble (egg)) {
 		eprintf ("r_egg_assemble : invalid assembly\n");
+		r_egg_reset (egg);
 		return 1;
 	}
 	if (!egg->bin) {
@@ -64,6 +66,7 @@ static int compileShellcode(REgg *egg, const char *input){
 	}
 	if (!(b = r_egg_get_bin (egg))) {
 		eprintf ("r_egg_get_bin: invalid egg :(\n");
+		r_egg_reset (egg);
 		return 1;
 	}
 	r_egg_finalize (egg);
@@ -71,6 +74,7 @@ static int compileShellcode(REgg *egg, const char *input){
 		r_cons_printf ("%02x", b->buf[i]);
 	}
 	r_cons_newline ();
+	r_egg_reset (egg);
 	return 0;
 }
 
