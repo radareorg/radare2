@@ -8,11 +8,11 @@ Make sure you are testing using the latest git version of radare2 before submitt
 
 | Questions                                            | Answers
 |------------------------------------------------------|--------------------
-| OS/arch/bits (mandatory)                             | Debian arm 64, Ubuntu x86 32 
+| OS/arch/bits (mandatory)                             | Debian arm 64, Ubuntu x86 32
 | File format of the file you reverse (mandatory)      | PE, ELF etc.
 | Architecture/bits of the file (mandatory)            | PPC, x86/32, x86/64 etc.
 | r2 -v full output, **not truncated** (mandatory)         | radare2 2.2.0 16809 @....
-| r2 -V full output in a pastebin document (mandatory) | https://pastebin.com
+| r2 -V full output in a pastebin document (mandatory) | https://gist.github.com/
 
 ### Expected behavior
 
