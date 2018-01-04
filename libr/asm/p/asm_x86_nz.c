@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2016 - pancake */
+/* Copyright (C) 2008-2018 - pancake, unlogic, emvivre */
 
 #include <r_flag.h>
 #include <r_core.h>
