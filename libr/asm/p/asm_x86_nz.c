@@ -2473,6 +2473,33 @@ static int opficomp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfild(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			if ( op->operands[0].type & OT_WORD ) {
+				data[l++] = 0xdf;
+				data[l++] = 0x00 | op->operands[0].regs[0];
+			} else if ( op->operands[0].type & OT_DWORD ) {
+				data[l++] = 0xdb;
+				data[l++] = 0x00 | op->operands[0].regs[0];
+			} else if ( op->operands[0].type & OT_QWORD ) {
+				data[l++] = 0xdf;
+				data[l++] = 0x28 | op->operands[0].regs[0];
+			} else {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 
 typedef struct lookup_t {
 	char mnemonic[12];
@@ -2570,6 +2597,7 @@ LookupTable oplookup[] = {
 	{"fiadd", 0, &opfiadd, 0},
 	{"ficom", 0, &opficom, 0},
 	{"ficomp", 0, &opficomp, 0},
+	{"fild", 0, &opfild, 0},
 	{"fincstp", 0, NULL, 0xd9f7, 2},
 	{"finit", 0, NULL, 0x9bdbe3, 3},
 	{"fld1", 0, NULL, 0xd9e8, 2},
