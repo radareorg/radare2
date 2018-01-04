@@ -4,11 +4,16 @@ import argparse
 import inspect
 import logging
 import os
+import re
 import subprocess
 import sys
 
 ROOT = None
 BUILDDIR = 'build'
+SDB_BUILDDIR = 'build_sdb'
+SDB = os.path.join(SDB_BUILDDIR, 'sdb')
+BLACKLIST = ['Makefile', 'makefile']
+EXTENSIONS = ['sdb.txt']
 MESON = None
 PYTHON = None
 BACKENDS = ['ninja', 'vs2015', 'vs2017']
@@ -72,12 +77,72 @@ def ninja(folder):
         log.error('Ninja error. Exiting.')
         sys.exit(1)
 
+def convert_sdb(folder, f):
+    """ Convert f to sdb format """
+    base, _ = get_base_extension(f)
+    inf = os.path.join(folder, f)
+    sdb = os.path.join(folder, base) + '.sdb'
+    log.debug('Converting {} to {}'.format(inf, sdb))
+    os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=sdb, inf=inf))
+
+def get_base_extension(f):
+    """ file.sdb.txt => file, .txt """
+    n = f.split('.')
+    if len(n) == 1: return n[0], ''
+    return n[0], '.'.join(n[1:])
+
+def handle_folder(folder):
+    """ Convert each suitable file inside specified folder to sdb file """
+    log.debug('Handling {} directory...'.format(folder))
+    for f in os.listdir(folder):
+        if f in BLACKLIST:
+            continue
+        base, ext = get_base_extension(f)
+        absf = os.path.join(folder, f)
+        if os.path.isdir(absf) and not os.path.islink(absf):
+            handle_folder(absf)
+            continue
+        if ext not in EXTENSIONS:
+            continue
+        convert_sdb(folder, f)
+
+def xp_compat(builddir):
+    with open(os.path.join(builddir, 'REGEN.vcxproj'), 'r') as f:
+        version = re.search('<PlatformToolset>(.*)</PlatformToolset>', f.read()).group(1)
+
+    log.debug('Translating from %s to %s_xp' % (version, version))
+    newversion=version+'_xp'
+
+    for root, dirs, files in os.walk(builddir):
+        for f in files:
+            if f.endswith('.vcxproj'):
+                with open(os.path.join(root, f), 'r') as proj:
+                    c = proj.read()
+                c = c.replace(version, newversion)
+                with open(os.path.join(root, f), 'w') as proj:
+                    proj.write(c)
+                    log.debug("%s .. OK" % f)
+
 def build_sdb(args):
     """ Build and generate sdb files """
     log.info('Building SDB')
-    log.debug('TODO Merge scripts')
-    return os.system('{python} {path}'.format(python=PYTHON,
-        path=os.path.join(ROOT, 'sys', 'meson_sdb.py')))
+    cmd = 'ECHO %CD%' if os.name == 'nt' else 'pwd'
+    cd = os.popen(cmd).read().rstrip()
+    meson(os.path.join(ROOT, 'shlr', 'sdb'), SDB_BUILDDIR, prefix=cd)
+    ninja(SDB_BUILDDIR)
+
+    # Create .sdb files
+    log.info('Generating sdb files.')
+    with open('Makefile', 'r') as f:
+        line = ''
+        while 'DATADIRS' not in line:
+            line = f.readline()
+    datadirs = line.split('=')[1].split()
+    datadirs = [os.path.abspath(p) for p in datadirs]
+    log.debug('Looking up {}'.format(', '.join(datadirs)))
+    for folder in datadirs:
+        handle_folder(folder)
+    log.debug('Done')
 
 def build_r2(args):
     """ Build radare2 """
@@ -88,9 +153,7 @@ def build_r2(args):
                     args.shared)
         if args.xp:
             log.info('Running XP compat script')
-            log.debug('TODO Merge this script')
-            meson_extra = os.path.join(ROOT, 'sys', 'meson_extra.py')
-            os.system('python {meson_extra}'.format(meson_extra=meson_extra))
+            xp_compat(BUILDDIR)
         if not args.project:
             log.info('Starting msbuild')
             project = os.path.join(ROOT, args.dir, 'radare2.sln')
