@@ -1685,9 +1685,11 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 	n = bb->addr + bb->size - fcn->addr;
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
-		r_anal_fcn_set_size (fcn, n);
-		r_anal_fcn_tree_delete (&anal->fcn_tree, fcn);
-		r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
+		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.
+		if (r_anal_fcn_tree_delete (&anal->fcn_tree, fcn)) {
+			r_anal_fcn_set_size (fcn, n);
+			r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
+		}
 	}
 	return true;
 }
