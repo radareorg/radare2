@@ -38,7 +38,7 @@ ec graph.trufae rgb:f5d
 ec graph.current rgb:f5d
 ec graph.traced rgb:a7f
 ec graph.box rgb:f5d
-ec graph.box2 rgb:f5d
+ec graph.box2 red
 ec graph.box3 rgb:f5d
 ec graph.box4 rgb:f5d
 ec gui.cflow rgb:f5d

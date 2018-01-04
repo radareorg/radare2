@@ -38,7 +38,7 @@ ec creg rgb:ccc
 ec flag rgb:d50
 
 ec graph.box rgb:aaa
-ec graph.box2 rgb:d52
+ec graph.box2 rgb:ff0
 ec graph.box3 rgb:aaa
 ec graph.box4 rgb:aaa
 ec graph.true rgb:d52

@@ -34,7 +34,7 @@ ec trap rgb:000 rgb:
 ec swi rgb:99a
 ec invalid rgb:rgb:44f rgb:123
 ec graph.box rgb:040
-ec graph.box2 rgb:040
+ec graph.box2 rgb:f218f2
 ec graph.box3 rgb:040
 ec graph.box4 rgb:040
 ec graph.true rgb:06c
