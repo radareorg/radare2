@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-// TODO: implement r_list_foreach_prev
-
 #ifndef _INCLUDE_R_LIST_HEAD_H_
 #define _INCLUDE_R_LIST_HEAD_H_
 typedef void (*RListFree)(void *ptr);
