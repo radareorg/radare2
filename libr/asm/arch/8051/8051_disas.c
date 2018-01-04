@@ -41,7 +41,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 		ut8 arg2 = _8051_ops[i].arg2;
 		ut8 arg3 = _8051_ops[i].arg3;
 		ut8 oplen = _8051_ops[i].len;
-		ut8 val1, val2;
+		ut8 val1, val2 = 0;
 		char* disasm = 0;
 
 		switch (oplen) {
@@ -86,7 +86,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 			}
 			break;
 		case 3:
-			if (len>2) {
+			if (len > 2) {
 				if ((arg1 == A_ADDR16) || (arg1 == A_IMM16)) {
 					disasm = r_str_newf (name, 0x100 * buf[1] + buf[2]);
 				} else if (arg1 == A_IMM16) {
@@ -132,7 +132,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 		if (disasm) {
 			disasm = _replace_register (disasm, arg1, val1);
 			disasm = _replace_register (disasm, arg2, val2);
-			strcpy (op->buf_asm, disasm);
+			r_str_ncpy (op->buf_asm, disasm, sizeof (op->buf_asm));
 			free (disasm);
 		}
 		return oplen;
