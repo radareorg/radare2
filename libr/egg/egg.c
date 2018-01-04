@@ -438,7 +438,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			if (!b) {
-				eprintf ("%s Encoder has failed\n", p->name);
+				eprintf ("%s Shellcode has failed\n", p->name);
 				return false;
 			}
 			r_egg_raw (egg, b->buf, b->length);
