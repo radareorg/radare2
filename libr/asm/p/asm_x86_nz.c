@@ -1104,6 +1104,16 @@ static int opin(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	if (op->operands[0].type & OT_MEMORY) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+		data[l++] = (7 << 3) | op->operands[0].regs[0];
+	}
+	return l;
+}
+
 static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (a->bits == 64) {
@@ -2358,6 +2368,7 @@ LookupTable oplookup[] = {
 	{"cwde", 0, &opcdqe, 0},
 	{"clc", 0, NULL, 0xf8, 1},
 	{"cld", 0, NULL, 0xfc, 1},
+	{"clflush", 0, &opclflush, 0},
 	{"clgi", 0, NULL, 0x0f01dd, 3},
 	{"cli", 0, NULL, 0xfa, 1},
 	{"clts", 0, NULL, 0x0f06, 2},
