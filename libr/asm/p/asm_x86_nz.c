@@ -866,8 +866,6 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	int offset = 0;
-	st64 immediate = 0;
 
 	if ( op->operands[0].type & OT_QWORD ) {
 		data[l++] = 0x48;
@@ -896,8 +894,6 @@ static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	int offset = 0;
-	st64 immediate = 0;
 
 	if ( op->operands[0].type & OT_QWORD ) {
 		data[l++] = 0x48;
@@ -1783,8 +1779,6 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	int offset = 0;
-	st64 immediate = 0;
 
 	if ( op->operands[0].type & OT_QWORD ) {
 		data[l++] = 0x48;
