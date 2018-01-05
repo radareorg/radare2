@@ -1779,7 +1779,7 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, "GLOBAL"));
 }
 
-static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
+static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
 	RBinSymbol *symbol;
@@ -1788,18 +1788,24 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	RList *symbols;
 	const char *lang;
 	bool firstexp = true;
+	bool printHere = false;
 	int i = 0, is_arm, lastfs = 's';
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		return 0;
 	}
+
+	if (args && *args == '.') {
+		printHere = true;
+	}
+
 	is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
 	symbols = r_bin_get_symbols (r->bin);
 	r_space_set (&r->anal->meta_spaces, "bin");
 
-	if (IS_MODE_JSON (mode)) {
+	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_printf ("[");
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "symbols");
@@ -1807,13 +1813,13 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf ("[Exports]\n");
+			r_cons_printf (printHere ? "Current export\n" : "[Exports]\n");
 		}
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf ("[Symbols]\n");
+			r_cons_printf (printHere ? "Current symbol\n" : "[Symbols]\n");
 		}
 	}
 
@@ -1830,7 +1836,10 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
 			continue;
 		}
-
+		if ((printHere && !(symbol->paddr <= r->offset && r->offset < (symbol->paddr + symbol->size)))
+				&& (printHere && !(addr <= r->offset && r->offset < (addr + symbol->size)))) {
+			continue;
+		}
 		snInit (r, &sn, symbol, lang);
 
 		if (IS_MODE_SET (mode)) {
@@ -1918,7 +1927,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				(exponly && firstexp) ? "" : (iter->p ? "," : ""), str,
+				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""), str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
 				symbol->ordinal,
@@ -2007,6 +2016,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (exponly && firstexp) {
 			firstexp = false;
 		}
+		if (printHere) {
+			break;
+		}
 	}
 
 	//handle thumb and arm for entry point since they are not present in symbols
@@ -2030,7 +2042,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 		}
 	}
-	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("]");
 #if 0
 	if (IS_MODE_NORMAL (mode) && !at) {
 		r_cons_printf ("\n%i %s\n", i, exponly ? "exports" : "symbols");
@@ -2041,12 +2053,12 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	return true;
 }
 
-static int bin_exports(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name) {
-	return bin_symbols_internal (r, mode, laddr, va, at, name, true);
+static int bin_exports(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *args) {
+	return bin_symbols_internal (r, mode, laddr, va, at, name, true, args);
 }
 
-static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name) {
-	return bin_symbols_internal (r, mode, laddr, va, at, name, false);
+static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *args) {
+	return bin_symbols_internal (r, mode, laddr, va, at, name, false, args);
 }
 
 static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
@@ -3214,8 +3226,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
 	}
  	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name); // 6s
-	if ((action & R_CORE_BIN_ACC_EXPORTS)) ret &= bin_exports (core, mode, loadaddr, va, at, name);
-	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name); // 6s
+	if ((action & R_CORE_BIN_ACC_EXPORTS)) ret &= bin_exports (core, mode, loadaddr, va, at, name, chksum);
+	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name, chksum); // 6s
 	if ((action & R_CORE_BIN_ACC_LIBS)) ret &= bin_libs (core, mode);
 	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode); // 3s
 	if ((action & R_CORE_BIN_ACC_SIZE)) ret &= bin_size (core, mode);

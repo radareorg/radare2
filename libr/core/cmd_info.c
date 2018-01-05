@@ -27,6 +27,7 @@ static const char *help_msg_i[] = {
 	"ie", "", "Entrypoint",
 	"iee", "", "Show Entry and Exit (init and fini)",
 	"iE", "", "Exports (global symbols)",
+	"iE.", "", "Current export",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
@@ -40,6 +41,7 @@ static const char *help_msg_i[] = {
 	"ir", "", "Relocs",
 	"iR", "", "Resources",
 	"is", "", "Symbols",
+	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
 	"iV", "", "Display file version info",
@@ -429,7 +431,19 @@ static int cmd_info(void *data, const char *input) {
 				r_bin_list_archs (core->bin, 1);
 			}
 			break;
-		case 'E': RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, NULL, 0); break;
+		case 'E': 
+		{
+			// case for iEj.
+			if (input[1] == 'j' && input[2] == '.') {	
+				mode = R_CORE_BIN_JSON;
+				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0); 
+			} else {
+				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0); 
+			}
+			while (*(++input)) ;
+			input--;
+			break;
+		}
 		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0); break;
 		case 'S':
 			//we comes from ia or iS
@@ -488,21 +502,17 @@ static int cmd_info(void *data, const char *input) {
 		}
 		break;
 		case 's':
-			if (input[1] == '.') {
-				ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
-				RFlagItem *f = r_flag_get_at (core->flags, addr, false);
-				if (f) {
-					if (f->offset == addr || !f->offset) {
-						r_cons_printf ("%s", f->name);
-					} else {
-						r_cons_printf ("%s+%d", f->name, (int) (addr - f->offset));
-					}
-				}
-				input++;
-				break;
-			} else {
+			{
 				RBinObject *obj = r_bin_cur_object (core->bin);
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL, obj? r_list_length (obj->symbols): 0);
+  			// Case for isj.
+				if (input[1] == 'j' && input[2] == '.') {
+					mode = R_CORE_BIN_JSON;
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, obj? r_list_length (obj->symbols): 0);
+				} else {
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, obj? r_list_length (obj->symbols): 0);
+				}
+				while (*(++input)) ;
+				input--;
 				break;
 			}
 		case 'R':
