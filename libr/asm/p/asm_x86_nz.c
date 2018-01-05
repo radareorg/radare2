@@ -2551,6 +2551,23 @@ static int opfbld(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfbstp(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & (OT_MEMORY | OT_TBYTE) ) {
+			data[l++] = 0xdf;
+			data[l++] = 0x30 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 
 typedef struct lookup_t {
 	char mnemonic[12];
@@ -2632,6 +2649,7 @@ LookupTable oplookup[] = {
 	{"fadd", 0, &opfadd, 0},
 	{"faddp", 0, &opfaddp, 0},
 	{"fbld", 0, &opfbld, 0},
+	{"fbstp", 0, &opfbstp, 0},
 	{"fchs", 0, NULL, 0xd9e0, 2},
 	{"fclex", 0, NULL, 0x9bdbe2, 3},
 	{"fcmovb", 0, &opfcmov, 0},
