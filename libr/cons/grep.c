@@ -214,6 +214,7 @@ while_end:
 			case '-':
 				is_range = 1;
 				num_is_parsed = 0;
+				range_end = -1;
 				break;
 			case ']':  // fallthrough to handle ']' like ','
 			case ',':
@@ -225,13 +226,23 @@ while_end:
 					cons->grep.tokens[range_begin] = 1;
 					cons->grep.tokens_used = 1;
 				}
-				is_range = 0;
-				num_is_parsed = 0;
+				// case of [n-]
+				if (*ptr2 == ']' && is_range && !num_is_parsed) {
+					num_is_parsed = 1;
+					range_end = -1;
+				} else {
+					is_range = 0;
+					num_is_parsed = 0;
+				}
 				break;
 			default:
 				if (!num_is_parsed) {
 					if (is_range) {
 						range_end = r_num_get (cons->num, ptr2);
+						// check for bad value, if range_end == 0, we check if ptr2 == '0'
+						if (range_end == 0 && *ptr != '0') {
+							range_end = -1; // this allow [n- ]
+						}
 					} else {
 						range_begin = range_end = r_num_get (cons->num, ptr2);
 					}
