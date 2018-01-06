@@ -428,7 +428,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
 	case '-': // "CC-"
-		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
+		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1, NULL);
 		break;
 	case 'u':
 		//
@@ -478,7 +478,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				addr = r_num_math (core->num, input+3);
 				r_meta_del (core->anal,
 						R_META_TYPE_COMMENT,
-						addr, 1);
+						addr, 1, NULL);
 			} else eprintf ("Usage: CCa-[address]\n");
 			free (s);
 			return true;
@@ -548,7 +548,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '*':
 			core->num->value = r_meta_del (core->anal,
-					input[0], 0, UT64_MAX);
+					input[0], 0, UT64_MAX, NULL);
 			break;
 		case ' ':
 			p2 = strchr (input + 3, ' ');
@@ -561,7 +561,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 					break;
 				}
 				for (i = 0; i < rep && UT64_MAX - cur_addr > size; i++, cur_addr += size) {
-					core->num->value = r_meta_del (core->anal, input[0], cur_addr, size);
+					core->num->value = r_meta_del (core->anal, input[0], cur_addr, size, NULL);
 				}
 				break;
 			} else {
@@ -570,7 +570,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			}
 		default:
 			core->num->value = r_meta_del (core->anal,
-					input[0], addr, 1);
+					input[0], addr, 1, NULL);
 			break;
 		}
 		break;
@@ -958,8 +958,10 @@ static int cmd_meta(void *data, const char *input) {
 	case '-':
 		if (input[1] != '*') {
 			i = input[1] ? r_num_math (core->num, input + (input[1] == ' ' ? 2 : 1)) : 1;
-			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i);
-		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
+			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i, NULL);
+		} else {
+			r_meta_cleanup (core->anal, 0LL, UT64_MAX);
+		}
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_C);

@@ -329,6 +329,7 @@ enum {
 	R_META_TYPE_COMMENT = 'C',
 	R_META_TYPE_RUN = 'r',
 	R_META_TYPE_HIGHLIGHT = 'H',
+	R_META_TYPE_END = 'E',
 };
 
 // anal
@@ -1533,7 +1534,7 @@ R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
 R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
 R_API int r_meta_set_var_comment (RAnal *a, int type, ut64 idx, ut64 addr, const char *s);
-R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
+R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 size, const char *str);
