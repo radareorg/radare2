@@ -581,7 +581,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 #if 0
 	int fd = -1;
 	if (core && core->io && core->io->cur) {
-		fd = core->io->cur->fd; 
+		fd = core->io->cur->fd;
 	}
 #endif
 	if (!core->io->va) {
@@ -1595,7 +1595,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
 static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP || 
+	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP ||
 			optype == R_ANAL_OP_TYPE_RET);
 }	
 
@@ -1642,7 +1642,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	free (arr);
 	int sysno = r_debug_reg_get (core->dbg, a0);
 	r_reg_set_value (core->dbg->reg, reg_a0, -2); // clearing register A0
-	return sysno; 
+	return sysno;
 }	
 
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
@@ -2333,14 +2333,14 @@ static bool isArm(RCore *core) {
 void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
-	// and for not messing adding a new param 
+	// and for not messing adding a new param
 	const char *prefix = r_config_get (core->config, "search.prefix");
 	if (isarm) {
 		if (to & 1) {
 			to--;
 		}
 	}
-	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to); 
+	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	r_core_cmdf (core, "f %s.0x%08"PFMT64x" %d = 0x%08"PFMT64x "# from 0x%"PFMT64x "\n", prefix, to, vsize, to, from);
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
@@ -2358,7 +2358,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 	ut16 n16;
 	ut8 n8;
 	int i = 0;
-	ut8 *buf = malloc (bsize);
+	ut8 *buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
@@ -2378,7 +2378,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			ptr = (ut8 *) ptr + sizeof (ut16);
 			break;	
 		case '4':
-			n32 =  r_num_math (core->num, r_list_pop_head (nums));
+			n32 = (ut32)r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le32 (ptr, n32);
 			ptr = (ut8 *) ptr + sizeof (ut32);
 			break;
@@ -2393,8 +2393,8 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			return NULL;
 		}	
 	}
-	return buf;	
-}       	
+	return buf;
+}
 
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
@@ -2838,7 +2838,7 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		char *v_str = (char *) input + 3;
+		char *v_str = (char *)r_str_chop_ro (input + 2);
 		RList *nums = r_num_str_split_list (v_str);
 		int len = r_list_length (nums);
 		int bsize = 0;

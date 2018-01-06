@@ -2490,7 +2490,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int skipblocks = -1;
 	RIOMap* map;
 	RListIter *iter;
-	ut64 from , to ;
+	ut64 from = 0, to = 0;
 	const char *zoomin = r_config_get (core->config, "zoom.in");
 	RList *list = r_core_get_boundaries (core, zoomin);
 	ut64 blocksize = 0;

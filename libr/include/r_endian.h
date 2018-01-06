@@ -219,10 +219,7 @@ static inline void r_write_at_le64(void *dest, ut64 val, size_t offset) {
 /* Middle Endian functions. */
 
 static inline ut8 r_read_me8(const void *src) {
-	if (!src) {
-		return UT8_MAX;
-	}
-	return r_read_ble8 (src);
+	return src ? r_read_ble8 (src): UT8_MAX;
 }
 
 static inline ut8 r_read_at_me8(const void *src, size_t offset) {
