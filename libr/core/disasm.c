@@ -3470,10 +3470,13 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				RCore *core = ds->core;
 				const char *prefix;
 				char *escstr;
+ut32 len = sizeof (str) -1;
+#if 0
 				ut32 len = core->blocksize + 256;
 				if (len < core->blocksize || len > R_DISASM_MAX_STR) {
 					len = R_DISASM_MAX_STR;
 				}
+#endif
 				escstr = ds_esc_str (ds, str, (int)len, &prefix);
 				if (escstr) {
 					msg = r_str_newf ("%s\"%s\"", prefix, escstr);
