@@ -2018,9 +2018,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	}
 next:
 #endif
-	// TODO must honor " and `
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
+	// TODO honor `
+	if (ptr) {
+		// must honor "
+		char *ch;
+		ut32 cnt = 0;
+		for (ch = cmd; ch < ptr; ++ch) {
+			if (*ch == '"') ++cnt;
+		}
+		if (cnt == 0 || (cnt % 2)) ptr = NULL;
+	}
 	if (ptr) {
 		int fdn = 1;
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
