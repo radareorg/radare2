@@ -1838,10 +1838,19 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		break;
 	}
 
-// TODO must honor " and `
+// TODO must honor `
 	/* comments */
 	if (*cmd != '#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
+		if (ptr) {
+			// must honor "
+			char *ch;
+			ut32 cnt = 0;
+			for (ch = ptr; ch < ptr; ++ch) {
+				if (*ch == '"') ++cnt;
+			}
+			if (cnt == 0 || (cnt % 2)) ptr = NULL;
+		}
 		if (ptr && (ptr[1] == ' ' || ptr[1] == '\t')) {
 			*ptr = '\0';
 		}
