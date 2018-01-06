@@ -675,6 +675,10 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			strncpy (name, t, sizeof (name) - 1);
 			if (type != 'C') {
 				n = r_num_math (core->num, t);
+				if (n == 0 && type == 's' && t[0] == '0' && (!t[1] || t[1] == ' ')) { // "Cs 0"
+					r_meta_add_with_subtype (core->anal, type, '-', addr, addr, "");
+					break;
+				}
 				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
 					if (p) {
