@@ -2037,17 +2037,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 next:
 #endif
 	/* pipe console to file */
-	ptr = strchr (cmd, '>');
+	ptr = (char *)r_str_lastbut (cmd, '>', "\"");
 	// TODO honor `
-	if (ptr) {
-		// must honor "
-		char *ch;
-		ut32 cnt = 0;
-		for (ch = cmd; ch < ptr; ++ch) {
-			if (*ch == '"') ++cnt;
-		}
-		if (cnt % 2) ptr = NULL;
-	}
 	if (ptr) {
 		int fdn = 1;
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
