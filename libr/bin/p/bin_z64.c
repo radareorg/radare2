@@ -13,7 +13,7 @@
 #include <r_io.h>
 #include <r_cons.h>
 
-//#define NSO_OFF(x) r_offsetof (NSOHeader, x)
+#define N64_ROM_START 0x1000
 
 // starting at 0
 /*
@@ -71,7 +71,7 @@ static ut64 baddr(RBinFile *bf) {
 
 static bool check_bytes (const ut8 *buf, ut64 length) {
 	// XXX just based on size? we should validate the struct too
-	if (length < 0x1000) {
+	if (length < N64_ROM_START) {
 		return false;
 	}
 	return true;
@@ -112,7 +112,7 @@ static RList *entries(RBinFile *bf) {
 	}
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = 0x1000;
+		ptr->paddr = N64_ROM_START;
 		ptr->vaddr = baddr (bf);
 		r_list_append (ret, ptr);
 	}
@@ -132,7 +132,7 @@ static RList *sections(RBinFile *bf) {
 	strncpy (text->name, "text", R_BIN_SIZEOF_STRINGS);
 	text->size = bf->buf->length - sizeof (N64Header);
 	text->vsize = text->size;
-	text->paddr = 0x1000;
+	text->paddr = N64_ROM_START;
 	text->vaddr = baddr (bf);
 	text->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
 	text->add = true;
@@ -151,7 +151,7 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 	memcpy (GameName, n64_header.Name, sizeof (n64_header.Name));
-	ret->file = strdup (GameName);
+	ret->file = r_str_newf ("%s (%c)", GameName, n64_header.CountryCode);
 	ret->os = strdup ("n64");
 	ret->arch = strdup ("mips");
 	ret->machine = strdup ("Nintendo 64");
