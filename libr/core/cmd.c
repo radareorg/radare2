@@ -2041,12 +2041,13 @@ next:
 	// TODO honor `
 	if (ptr) {
 		// must honor "
+		char *oldptr = ptr;
 		char *ch;
 		ut32 cnt = 0;
 		for (ch = cmd; ch < ptr; ++ch) {
 			if (*ch == '"') ++cnt;
 		}
-		if (cnt == 0 || (cnt % 2)) ptr = NULL;
+		if (cnt == 0 || cnt % 2) ptr = oldptr;
 	}
 	if (ptr) {
 		int fdn = 1;
