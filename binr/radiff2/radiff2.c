@@ -3,6 +3,7 @@
 #include <r_diff.h>
 #include <r_core.h>
 #include <r_hash.h>
+#include <limits.h>
 #include <getopt.c>
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
@@ -26,6 +27,7 @@ enum {
 
 static char *file = NULL;
 static char *file2 = NULL;
+static char *file3 = NULL;
 static ut32 count = 0;
 static int showcount = 0;
 static int useva = true;
@@ -43,6 +45,8 @@ static int bits = 0;
 static int anal_all = 0;
 static bool verbose = false;
 static RList *evals = NULL;
+static FILE *patch_file;
+
 
 static RCore *opencore(const char *f) {
 	RListIter *iter;
@@ -268,13 +272,129 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	return 0;
 }
 
+static ut64 gdiff_start = 0;
+
+void print_bytes(const void *p, size_t len, bool big_endian) {
+	size_t i;
+	for (i = 0; i < len; ++i) {
+		fprintf(patch_file, "%c", ((unsigned char*) p)[big_endian ? (len - i - 1) : i]);
+	}
+}
+
+static int bcb(RDiff *d, void *user, RDiffOp *op) {
+	ut64 offset_diff = op->a_off - gdiff_start;
+	unsigned char opcode;
+	unsigned short USAddr = 0;
+	int IAddr = 0;
+	unsigned char UCLen = 0;
+	unsigned short USLen = 0;
+	int ILen = 0;
+	
+	// we copy from gdiff_start to a_off
+	if (offset_diff > 0) {
+
+		// size for the position
+		if (gdiff_start <= USHRT_MAX) {
+			opcode = 249;
+			USAddr = (unsigned short) gdiff_start;
+		} else if (gdiff_start <= INT_MAX) {
+			opcode = 252;
+			IAddr = (int) gdiff_start;
+		} else {
+			opcode = 255;
+		}
+
+		// size for the length
+		if (opcode != 255 && offset_diff <= UCHAR_MAX) {
+			UCLen = (unsigned char) offset_diff;
+		} else if (opcode != 255 && offset_diff <= USHRT_MAX) {
+			USLen = (unsigned short) offset_diff;
+			opcode += 1;
+		} else if (opcode != 255 && offset_diff <= INT_MAX) {
+			ILen = (int) offset_diff;
+			opcode += 2;
+		} else if (offset_diff > INT_MAX) {
+			int times = offset_diff / INT_MAX;
+			int max = INT_MAX;
+			size_t i;
+			for(i = 0; i < times; i++) {
+				print_bytes(&opcode, sizeof(opcode), true);
+				print_bytes(&gdiff_start + i * max, sizeof(gdiff_start), true);
+				print_bytes(&max, sizeof(max), true);
+			}
+		}
+
+		// print opcode for COPY
+		print_bytes(&opcode, sizeof(opcode), true);
+
+		// print position for COPY
+		if (opcode <= 251) {
+			print_bytes(&USAddr, sizeof(USAddr), true);
+		} else if (opcode < 255) {
+			print_bytes(&IAddr, sizeof(IAddr), true);
+		} else {
+			print_bytes(&gdiff_start, sizeof(gdiff_start), true);
+		}
+		
+		// print length for COPY
+		switch (opcode) {
+			case 249:
+			case 252:
+				print_bytes(&UCLen, sizeof(UCLen), true);
+				break;
+			case 250:
+			case 253:
+				print_bytes(&USLen, sizeof(USLen), true);
+				break;
+			case 251:
+			case 254:
+			case 255:
+				print_bytes(&ILen, sizeof(ILen), true);
+				break;
+		}
+	}
+	
+	// we append data
+	if (op->b_len <= 246) {
+		fprintf(patch_file, "%c", (unsigned char) op->b_len);
+	} else if (op->b_len <= USHRT_MAX) {
+		USLen = (unsigned short) op->b_len;
+		fprintf(patch_file, "%c", 247);
+		print_bytes(&USLen, sizeof(USLen), true);
+	} else if (op->b_len <= INT_MAX) {
+		fprintf(patch_file, "%c", 248);
+		ILen = (int) op->b_len;
+		print_bytes(&ILen, sizeof(ILen), true);
+	} else {
+		// split into multiple DATA, because op->b_len is greater than INT_MAX
+		int times = op->b_len / INT_MAX;
+		int max = INT_MAX;
+		size_t i;
+		for(i = 0;i < times; i++) {
+			fprintf(patch_file, "%c", 248);
+			print_bytes(&max, sizeof(max), true);
+			print_bytes(op->b_buf, max, false);
+			op->b_buf += max;
+		}
+		op->b_len = op->b_len % max;
+
+		// print the remaining size
+		int remain_size = op->b_len;
+		print_bytes(&remain_size, sizeof(remain_size), true);
+	}
+	print_bytes(op->b_buf, op->b_len, false);
+	gdiff_start = op->b_off + op->b_len;
+	return 0;
+}
+
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdjrspOxuUvV] [-A[A]] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOxuUvV] [-A[A]] [-g sym] [-t %%] [file] [file] [-B patch_file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 			"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
+			"  -B         output in binary diff (GDIFF)\n"
 			"  -c         count of changes\n"
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
@@ -547,7 +667,7 @@ int main(int argc, char **argv) {
 
 	evals = r_list_newf (NULL);
 
-	while ((o = getopt (argc, argv, "Aa:b:CDe:npg:G:OijrhcdsS:uUvVxt:zq")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDe:npg:G:BOijrhcdsS:uUvVxt:zq")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -557,6 +677,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'b':
 			bits = atoi (optarg);
+			break;
+		case 'B':
+			diffmode = 'B';
 			break;
 		case 'e':
 			r_list_append (evals, optarg);
@@ -653,6 +776,8 @@ int main(int argc, char **argv) {
 	}
 	file = (optind < argc)? argv[optind]: NULL;
 	file2 = (optind + 1 < argc)? argv[optind + 1]: NULL;
+	file3 = (optind + 2 < argc)? argv[optind + 2]: NULL;
+
 
 	switch (mode) {
 	case MODE_GRAPH:
@@ -667,7 +792,7 @@ int main(int argc, char **argv) {
 		if (!c || !c2) {
 			eprintf ("Cannot open '%s'\n", r_str_get (file2));
 			return 1;
-		}
+		}	
 		if (arch) {
 			r_config_set (c->config, "asm.arch", arch);
 			r_config_set (c2->config, "asm.arch", arch);
@@ -773,6 +898,18 @@ int main(int argc, char **argv) {
 	case MODE_DIFF_IMPORTS:
 		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
+		if (diffmode == 'B') {
+			if (file3 != NULL) {
+				patch_file = fopen(file3, "w+");
+				if (patch_file == NULL) {
+					eprintf ("Cannot open '%s'\n", r_str_get (file3));
+					return 1;
+				}
+			} else {
+				eprintf ("Patch file not specified.\n");
+				return 1;
+			}
+		}	
 		if (diffmode == 'j') {
 			printf ("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza);
 			handle_sha256 (bufa, sza);
@@ -781,8 +918,17 @@ int main(int argc, char **argv) {
 			printf ("\"}],\n");
 			printf ("\"changes\":[");
 		}
+		if (diffmode == 'B') {
+			fprintf(patch_file, "\xd1\xff\xd1\xff");
+			fprintf(patch_file, "\x04");
+		}
 		if (diffmode == 'U') {
 			r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+		} else if (diffmode == 'B') {
+			r_diff_set_callback (d, &bcb, 0);
+			r_diff_buffers (d, bufa, sza, bufb, szb);
+			fprintf(patch_file, "%c", 0);
+			fclose(patch_file);
 		} else {
 			r_diff_set_callback (d, &cb, 0); // (void *)(size_t)diffmode);
 			r_diff_buffers (d, bufa, sza, bufb, szb);
