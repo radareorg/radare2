@@ -147,56 +147,62 @@ R_API RBinFile * r_core_bin_cur(RCore *core) {
 	return binfile;
 }
 
+R_API bool r_core_bin_strpurge(const char *str) {
+	int i;
+	ut8 bo[0x100];
+	int up = 0;
+	int lo = 0;
+	int ot = 0;
+	int di = 0;
+	int ln = 0;
+	int sp = 0;
+	int nm = 0;
+	for (i = 0; i < 0x100; i++) {
+		bo[i] = 0;
+	}
+	for (i = 0; str[i]; i++) {
+		if (IS_DIGIT(str[i])) {
+			nm++;
+		} else if (str[i]>='a' && str[i]<='z') {
+			lo++;
+		} else if (str[i]>='A' && str[i]<='Z') {
+			up++;
+		} else {
+			ot++;
+		}
+		if (str[i]=='\\') {
+			ot++;
+		}
+		if (str[i]==' ') {
+			sp++;
+		}
+		bo[(ut8)str[i]] = 1;
+		ln++;
+	}
+	for (i = 0; i<0x100; i++) {
+		if (bo[i]) {
+			di++;
+		}
+	}
+	if (ln > 2 && str[0] != '_') {
+		if (ln < 10) {
+			return true;
+		}
+		if (ot >= (nm + up + lo)) {
+			return true;
+		}
+		if (lo < 3) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool string_filter(RCore *core, const char *str) {
 	int i;
 	/* pointer/rawdata detection */
-	if (core->bin->strpurge) {
-		ut8 bo[0x100];
-		int up = 0;
-		int lo = 0;
-		int ot = 0;
-		int di = 0;
-		int ln = 0;
-		int sp = 0;
-		int nm = 0;
-		for (i = 0; i < 0x100; i++) {
-			bo[i] = 0;
-		}
-		for (i = 0; str[i]; i++) {
-			if (IS_DIGIT(str[i])) {
-				nm++;
-			} else if (str[i]>='a' && str[i]<='z') {
-				lo++;
-			} else if (str[i]>='A' && str[i]<='Z') {
-				up++;
-			} else {
-				ot++;
-			}
-			if (str[i]=='\\') {
-				ot++;
-			}
-			if (str[i]==' ') {
-				sp++;
-			}
-			bo[(ut8)str[i]] = 1;
-			ln++;
-		}
-		for (i = 0; i<0x100; i++) {
-			if (bo[i]) {
-				di++;
-			}
-		}
-		if (ln > 2 && str[0] != '_') {
-			if (ln < 10) {
-				return false;
-			}
-			if (ot >= (nm + up + lo)) {
-				return false;
-			}
-			if (lo < 3) {
-				return false;
-			}
-		}
+	if (core->bin->strpurge && r_core_bin_strpurge (str)) {
+		return false;
 	}
 
 	switch (core->bin->strfilter) {

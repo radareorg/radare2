@@ -3025,6 +3025,9 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len) {
 	const char *prefix;
+	if (ds->core->bin->strpurge && r_core_bin_strpurge (str)) {
+		return;
+	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
 		if (ds->show_comment_right) {
