@@ -277,7 +277,7 @@ static ut64 gdiff_start = 0;
 void print_bytes(const void *p, size_t len, bool big_endian) {
 	size_t i;
 	for (i = 0; i < len; ++i) {
-		fprintf(patch_file, "%c", ((unsigned char*) p)[big_endian ? (len - i - 1):i]);
+		fprintf(patch_file, "%c", ((unsigned char*) p)[big_endian ? (len - i - 1) : i]);
 	}
 }
 
@@ -366,7 +366,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		ILen = (int) op->b_len;
 		print_bytes(&ILen, sizeof(ILen), true);
 	} else {
-		// split into multiple DATA
+		// split into multiple DATA, because op->b_len is greater than INT_MAX
 		int times = op->b_len / INT_MAX;
 		int max = INT_MAX;
 		size_t i;
@@ -377,9 +377,13 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 			op->b_buf += max;
 		}
 		op->b_len = op->b_len % max;
+
+		// print the remaining size
+		int remain_size = op->b_len;
+		print_bytes(&remain_size, sizeof(remain_size), true);
 	}
 	print_bytes(op->b_buf, op->b_len, false);
-  gdiff_start = op->b_off + op->b_len;
+	gdiff_start = op->b_off + op->b_len;
 	return 0;
 }
 
