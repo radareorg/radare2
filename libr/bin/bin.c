@@ -3,6 +3,7 @@
 // TODO: dlopen library and show address
 
 #include <r_bin.h>
+#include <experimental/x_m1.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -117,8 +118,8 @@ static void binobj_set_baddr(RBinObject *o, ut64 baddr) {
 	o->baddr_shift = baddr - o->baddr;
 }
 
-static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
-	return addr + (o? o->baddr_shift: 0);
+R_API ut64 r_bin_object_a2b (RBinObject *o, ut64 addr) {
+	return addr + (o ? o->baddr_shift : 0);
 }
 
 static void filterStrings (RBin *bin, RList *strings) {
@@ -386,6 +387,7 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut64 to) {
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
+	RList *current_list = NULL;
 	RListIter *it;
 
 	if (!bf || !bf->buf || !bf->buf->buf) {
@@ -421,18 +423,30 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 					"(RABIN2_MAXSTRBUF) in r2 (rabin2)\n",
 					size);
 			}
-			return;
+			goto error;
 		}
 	}
-	if (string_scan_range (list, bf->buf->buf, min, from, to, -1) < 0) {
-		return;
+
+	current_list = r_list_newf(r_bin_string_free);
+
+	if (string_scan_range (current_list, bf->buf->buf, min, from, to, -1) < 0) {
+		goto error;
 	}
-	r_list_foreach (list, it, ptr) {
+
+	r_list_foreach (current_list, it, ptr) {
 		RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
 		if (s) {
 			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
 		}
 	}
+
+	r_list_foreach (current_list, it, ptr) {
+		r_list_append(list, ptr);
+	}
+
+	current_list->free = NULL;
+error:
+	r_list_free(current_list);
 }
 
 static int is_data_section(RBinFile *a, RBinSection *s) {
@@ -442,7 +456,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 	if (s->is_data) {
 		return true;
 	}
- 	// Rust
+	// Rust
 	return (strstr (s->name, "_const") != NULL);
 }
 
@@ -468,7 +482,7 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				get_strings_range (a, ret, min, section->paddr,
-						section->paddr + section->size);
+						   section->paddr + section->size);
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
@@ -575,6 +589,7 @@ static void r_bin_object_delete_items(RBinObject *o) {
 	r_list_free (o->imports);
 	r_list_free (o->libs);
 	r_list_free (o->relocs);
+	x_m1_fini(o);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
 	r_list_free (o->symbols);
@@ -814,7 +829,10 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		if (bin->filter) {
 			r_bin_filter_sections (o->sections);
 		}
+
+		x_m1_init(o);
 	}
+
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (cp->relocs) {
 			o->relocs = cp->relocs (binfile);
@@ -1867,25 +1885,6 @@ R_API RList *r_bin_get_sections(RBin *bin) {
 	return o? o->sections: NULL;
 }
 
-// TODO: Move into section.c and rename it to r_io_section_get_at ()
-R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
-	RBinSection *section;
-	RListIter *iter;
-	ut64 from, to;
-	if (o) {
-		// TODO: must be O(1) .. use sdb here
-		r_list_foreach (o->sections, iter, section) {
-			from = va? binobj_a2b (o, section->vaddr): section->paddr;
-			to = va? (binobj_a2b (o, section->vaddr) + section->vsize) :
-				(section->paddr + section->size);
-			if (off >= from && off < to) {
-				return section;
-			}
-		}
-	}
-	return NULL;
-}
-
 R_API RList *r_bin_reset_strings(RBin *bin) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -2654,7 +2653,7 @@ R_API ut64 r_binfile_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	if (binfile && binfile->o && binfile->o->info) {
 		use_va = binfile->o->info->has_va;
 	}
-	return use_va? binobj_a2b (binfile->o, vaddr): paddr;
+	return use_va? r_bin_object_a2b (binfile->o, vaddr): paddr;
 }
 
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
@@ -2669,7 +2668,8 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 	/* hack to realign thumb symbols */
 	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
 		if (bin->cur->o->info->bits == 16) {
-			RBinSection *s = r_bin_get_section_at (bin->cur->o, paddr, false);
+			RBinSection *s = r_bin_get_section_at (
+				bin->cur->o, paddr, false);
 			// autodetect thumb
 			if (s && s->srwx & 1 && strstr (s->name, "text")) {
 				if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {

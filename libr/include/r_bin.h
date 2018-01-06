@@ -201,6 +201,7 @@ typedef struct r_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
+	void *x_d1;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
 	RList/*<RBinSymbol>*/ *symbols;
@@ -596,7 +597,6 @@ R_API void r_bin_class_free(RBinClass *c);
 R_API RBinSymbol *r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
 
-R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
 R_API int r_bin_is_string(RBin *bin, ut64 va);
 R_API RList* r_bin_reset_strings(RBin *bin);
@@ -621,6 +621,7 @@ R_API int r_bin_select_idx(RBin *bin, const char *name, int idx);
 R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id );
 R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id);
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
+R_API ut64 r_bin_object_a2b(RBinObject *o, ut64 addr);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinFile * r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char *arch, int bits, const char *name);
@@ -723,6 +724,8 @@ extern RBinPlugin r_bin_plugin_sfc;
 #ifdef __cplusplus
 }
 #endif
+
+#include <experimental/x_m1.h>
 
 #endif
 #endif
