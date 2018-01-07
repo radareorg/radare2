@@ -3379,7 +3379,6 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		r_cons_print ("]}");
 		break;
 	default:
-		r_cons_printf ("binfile fd=%d name=%s id=%d\n", fd, name, id);
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
@@ -3387,8 +3386,9 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 			if (!arch) {
 				arch = r_config_get (core->config, "asm.arch");
 			}
-			r_cons_printf ("objid=%d arch=%s bits=%d boffset=0x%04"PFMT64x" size=0x%04"PFMT64x"\n",
+			r_cons_printf ("%4d  %s-%d at:0x%08"PFMT64x" sz:%"PFMT64d" ",
 					obj->id, arch, bits, obj->boffset, obj->obj_size );
+			r_cons_printf ("fd:%d %s\n", fd, name);
 		}
 		break;
 	}

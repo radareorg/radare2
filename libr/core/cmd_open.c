@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_list.h"
 #include "r_config.h"
@@ -70,8 +70,8 @@ static const char *help_msg_ob[] = {
 	"obb", " [fd]", "Switch to open binfile by fd number",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
-	"ob-", " [fd]", "Delete binfile by fd",
-	"obd", " [objid]", "Delete binary file by objid. Do nothing if only one loaded.",
+	"ob-", "[objid]", "Delete binfile by binobjid",
+	"ob-", "*", "Delete all binfiles",
 	"obo", " [objid]", "Switch to open binary file by objid",
 	NULL
 };
@@ -157,6 +157,20 @@ static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 		}
 	}
 	return UT32_MAX;
+}
+
+static RBinObject *find_binfile_by_id (RBin *bin, ut32 id) {
+	RListIter *it, *it2;
+	RBinFile *bf;
+	RBinObject *obj;
+	r_list_foreach (bin->binfiles, it, bf) {
+		r_list_foreach (bf->objs, it2, obj) {
+			if (obj->id == id) {
+				return obj;
+			}
+		}
+	}
+	return NULL;
 }
 
 static void cmd_open_init(RCore *core) {
@@ -376,47 +390,28 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		r_core_bin_raise (core, -1, binobj_num);
 		break;
 	case '-': // "ob-"
-		//FIXME this command doesn't remove nothing
 		if (input[2] == '*') {
-			//FIXME this only delete from a list but it doesn't free any space
-			r_cons_printf ("[i] Deleted %d binfiles\n",
-					r_bin_file_delete_all (core->bin));
+			r_bin_file_delete_all (core->bin);
 		} else {
 			ut32 fd;
-			value = input[3] ? input + 3 : NULL;
+			value = r_str_chop_ro (input + 2);
 			if (!value) {
 				eprintf ("Invalid argument\n");
 				break;
 			}
 			fd  = *value && r_is_valid_input_num_value (core->num, value) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
-
-			binfile_num = find_binfile_id_by_fd (core->bin, fd);
-			if (binfile_num == UT32_MAX) {
-				eprintf ("Invalid fd\n");
+			RBinObject *bo = find_binfile_by_id (core->bin, fd);
+			if (!bo) {
+				eprintf ("Invalid binid\n");
 				break;
 			}
-			if (r_core_bin_delete (core, binfile_num, -1)){
-				if (!r_bin_file_delete (core->bin, fd))
+			if (r_core_bin_delete (core, binfile_num, bo->id)) {
+				if (!r_bin_file_delete (core->bin, fd)) {
 					eprintf ("Cannot find an RBinFile associated with that fd.\n");
-			} else {
-				eprintf ("Couldn't erase because there must be 1 bin object loaded\n");
+				}
 			}
 		}
-		break;
-	case 'd': // "obd" backward compat, must be deleted
-		value = input[2] ? input + 2 : NULL;
-		if (!value) {
-			eprintf ("Invalid bin object number.");
-			break;
-		}
-		binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
-		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid bin object number.");
-			break;
-		}
-		r_core_bin_delete (core, -1, binobj_num);
 		break;
 	case '?': // "ob?"
 		r_core_cmd_help (core, help_msg_ob);
