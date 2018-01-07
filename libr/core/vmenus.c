@@ -3015,14 +3015,14 @@ repeat:
 						   (const char *)name + 4);
 				r_meta_add (core->anal, R_META_TYPE_STRING_END,
 				  off + (n * 2) + ntotal,
-				  off + ntotal + (n * 4), (const char *)name + 4);
+				  off + ntotal + (n * 4), NULL);
 			} else {
 				r_meta_add (core->anal, R_META_TYPE_STRING,
 				  off + ntotal, off + n + ntotal,
 						   (const char *)name + 4);
 				r_meta_add (core->anal, R_META_TYPE_STRING_END,
 				  off + n + ntotal,
-				  off + ntotal + n + n, (const char *)name + 4);
+				  off + ntotal + n + n, NULL);
 			}
 			r_name_filter (name, n + 10);
 			r_flag_set (core->flags, name, off+ntotal, n);
@@ -3072,13 +3072,13 @@ repeat:
 				    off + (n * 2), (const char *)name + 4);
 				r_meta_add (core->anal, R_META_TYPE_STRING_END,
 				  off + (n * 2) + ntotal,
-				  off + ntotal + (n * 4), (const char *)name + 4);
+				  off + ntotal + (n * 4), NULL);
 		} else {
 			r_meta_add (core->anal, R_META_TYPE_STRING, off,
 				    off + n, (const char *)name + 4);
 			r_meta_add (core->anal, R_META_TYPE_STRING_END,
 					off + n + ntotal,
-					off + ntotal + (n * 2), (const char *)name + 4);
+					off + ntotal + (n * 2), NULL);
 		}
 		r_name_filter (name, n + 10);
 		r_flag_set (core->flags, name, off, n);
