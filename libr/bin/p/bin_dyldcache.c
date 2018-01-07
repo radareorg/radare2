@@ -52,6 +52,7 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
+eprintf ("IS INFO\n");
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("dyldcache");
 	ret->rclass = strdup ("ios");

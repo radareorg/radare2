@@ -262,6 +262,7 @@ typedef struct r_bin_t {
 	RIDPool *file_ids;
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
+	RList/*<RBinLdrPlugin>*/ *binldrs;
 	RList/*<RBinFile>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -317,15 +318,26 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*fini)(void *user);
 // XXX: ut64 for size is maybe too much, what about st64? signed sizes are useful for detecting errors
 	bool (*check_bytes)(const ut8 *bytes, ut64 sz);
+
 	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
 	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
 	RBinXtrData * (*extract)(RBin *bin, int idx);
 	RList * (*extractall)(RBin *bin);
+
 	bool (*load)(RBin *bin);
 	int (*size)(RBin *bin);
 	int (*destroy)(RBin *bin);
 	int (*free_xtr)(void *xtr_obj);
 } RBinXtrPlugin;
+
+typedef struct r_bin_ldr_plugin_t {
+	char *name;
+	char *desc;
+	char *license;
+	int (*init)(void *user);
+	int (*fini)(void *user);
+	bool (*load)(RBin *bin);
+} RBinLdrPlugin;
 
 typedef struct r_bin_plugin_t {
 	char *name;
@@ -533,8 +545,9 @@ R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr
 R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
 R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
-R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
-R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
+R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
+R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
+R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_load_languages(RBinFile *binfile);
 R_API int r_bin_dump_strings(RBinFile *a, int min);
@@ -548,8 +561,7 @@ R_API int r_bin_file_deref_by_bind (RBinBind * binb);
 R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
 R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);
-R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf,
-						ut64 baseaddr, ut64 loadaddr,
+R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr,
 						RBinXtrData *xtr_data);
 R_API int r_bin_list(RBin *bin, int json);
 R_API int r_bin_list_plugin(RBin *bin, const char* name, int json);
@@ -698,8 +710,9 @@ extern RBinPlugin r_bin_plugin_ninds;
 extern RBinPlugin r_bin_plugin_nin3ds;
 extern RBinPlugin r_bin_plugin_xbe;
 extern RBinPlugin r_bin_plugin_bflt;
-extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
+extern RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
+extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;

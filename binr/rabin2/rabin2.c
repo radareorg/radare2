@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
 #include <getopt.c>
 #include <r_core.h>
@@ -276,16 +276,19 @@ static int rabin_dump_symbols(int len) {
 		} else {
 			len = olen;
 		}
-		if (!(buf = malloc (len))) {
+		if (!(buf = calloc (1, len))) {
 			return false;
 		}
-		if (!(ret = malloc (len * 2 + 1))) {
+		if (!(ret = malloc ((len * 2) + 1))) {
 			free (buf);
 			return false;
 		}
-		r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len);
-		r_hex_bin2str (buf, len, ret);
-		printf ("%s %s\n", symbol->name, ret);
+		if (r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len) == len) {
+			r_hex_bin2str (buf, len, ret);
+			printf ("%s %s\n", symbol->name, ret);
+		} else {
+			eprintf ("Cannot read from buffer\n");
+		}
 		free (buf);
 		free (ret);
 	}
@@ -483,26 +486,38 @@ static int rabin_show_srcline(ut64 at) {
 }
 
 /* bin callback */
-static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
 	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_add (bin, hand);
 	return true;
 }
 
-static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+static int __lib_bin_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
 /* binxtr callback */
-static int __lib_bin_xtr_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+static int __lib_bin_xtr_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_xtr_plugin_t *hand = (struct r_bin_xtr_plugin_t *)data;
 	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_xtr_add (bin, hand);
 	return true;
 }
 
-static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+static int __lib_bin_xtr_dt(RLibPlugin *pl, void *p, void *u) {
+	return true;
+}
+
+/* binldr callback */
+static int __lib_bin_ldr_cb(RLibPlugin *pl, void *user, void *data) {
+	struct r_bin_ldr_plugin_t *hand = (struct r_bin_ldr_plugin_t *)data;
+	//printf(" * Added (dis)assembly plugin\n");
+	r_bin_ldr_add (bin, hand);
+	return true;
+}
+
+static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
@@ -561,11 +576,12 @@ int main(int argc, char **argv) {
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
 		char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
 		l = r_lib_new ("radare_plugin");
-	
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
-		  &__lib_bin_cb, &__lib_bin_dt, NULL);
+			&__lib_bin_cb, &__lib_bin_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-		  &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
+			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, NULL);
 		/* load plugins everywhere */
 
 		path = r_sys_getenv (R_LIB_ENV);

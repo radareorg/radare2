@@ -6543,11 +6543,13 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_a);
+#if 0
 		r_cons_printf ("Examples:\n"
 			" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 			" f ds @ `S*~data:0[3]`; f d @ section..data\n"
 			" .ad t t+ts @ d:ds\n",
 			NULL);
+#endif
 		break;
 	}
 	if (tbs != core->blocksize) {

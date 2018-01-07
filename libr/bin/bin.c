@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
 
 // TODO: dlopen library and show address
 
@@ -35,9 +35,13 @@ R_LIB_VERSION (r_bin);
 #if !defined(R_BIN_XTR_STATIC_PLUGINS)
 #define R_BIN_XTR_STATIC_PLUGINS 0
 #endif
+#if !defined(R_BIN_LDR_STATIC_PLUGINS)
+#define R_BIN_LDR_STATIC_PLUGINS 0
+#endif
 
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
+static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
 static int is_data_section(RBinFile *a, RBinSection *s);
 static RList *get_strings(RBinFile *a, int min, int dump);
@@ -1597,7 +1601,7 @@ static void plugin_free(RBinPlugin *p) {
 }
 
 // rename to r_bin_plugin_add like the rest
-R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
+R_API bool r_bin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
 	if (foo->init) {
@@ -1614,7 +1618,24 @@ R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	return true;
 }
 
-R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
+R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
+	RListIter *it;
+	RBinLdrPlugin *ldr;
+
+	if (foo->init) {
+		foo->init (bin->user);
+	}
+	// avoid duplicates
+	r_list_foreach (bin->binldrs, it, ldr) {
+		if (!strcmp (ldr->name, foo->name)) {
+			return false;
+		}
+	}
+	r_list_append (bin->binldrs, foo);
+	return true;
+}
+
+R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
@@ -1652,7 +1673,7 @@ R_API void *r_bin_free(RBin *bin) {
 	return NULL;
 }
 
-static int r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
+static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
 	if (json == 'q') {
 		bin->cb_printf ("%s\n", bp->name);
 	} else if (json) {
@@ -1698,6 +1719,7 @@ R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
+	RBinLdrPlugin *ld;
 
 	if (json == 'q') {
 		r_list_foreach (bin->plugins, it, bp) {
@@ -1728,6 +1750,16 @@ R_API int r_bin_list(RBin *bin, int json) {
 				i? ",": "", bx->name, bx->desc, bx->license? bx->license: "???");
 			i++;
 		}
+
+		i = 0;
+		bin->cb_printf ("],\"ldr\":[");
+		r_list_foreach (bin->binxtrs, it, ld) {
+			bin->cb_printf (
+				"%s{\"name\":\"%s\",\"description\":\"%s\","
+				"\"license\":\"%s\"}",
+				i? ",": "", ld->name, ld->desc, ld->license? ld->license: "???");
+			i++;
+		}
 		bin->cb_printf ("]}\n");
 	} else {
 		r_list_foreach (bin->plugins, it, bp) {
@@ -1737,8 +1769,14 @@ R_API int r_bin_list(RBin *bin, int json) {
 				bp->author? bp->author: "");
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
-			bin->cb_printf ("xtr  %-11s %s (%s)\n", bx->name,
+			const char *name = strncmp (bx->name, "xtr.", 4)? bx->name : bx->name + 3;
+			bin->cb_printf ("xtr  %-11s %s (%s)\n", name,
 				bx->desc, bx->license? bx->license: "???");
+		}
+		r_list_foreach (bin->binldrs, it, ld) {
+			const char *name = strncmp (ld->name, "ldr.", 4)? ld->name : ld->name + 3;
+			bin->cb_printf ("ldr  %-11s %s (%s)\n", name,
+				ld->desc, ld->license? ld->license: "???");
 		}
 	}
 	return false;
@@ -2012,6 +2050,7 @@ R_API int r_bin_has_dbg_relocs(RBin *bin) {
 R_API RBin *r_bin_new() {
 	int i;
 	RBinXtrPlugin *static_xtr_plugin;
+	RBinLdrPlugin *static_ldr_plugin;
 	RBin *bin = R_NEW0 (RBin);
 	if (!bin) {
 		return NULL;
@@ -2025,11 +2064,14 @@ R_API RBin *r_bin_new() {
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
 	bin->io_owned = false;
+	bin->file_ids = r_id_pool_new (0, 0xffffffff);
 
+	/* bin parsers */
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	for (i = 0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]);
 	}
+	/* extractors */
 	bin->binxtrs = r_list_new ();
 	bin->binxtrs->free = free;
 	for (i = 0; bin_xtr_static_plugins[i]; i++) {
@@ -2041,7 +2083,18 @@ R_API RBin *r_bin_new() {
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
 		r_bin_xtr_add (bin, static_xtr_plugin);
 	}
-	bin->file_ids = r_id_pool_new (0, 0xffffffff);
+	/* loaders */
+	bin->binldrs = r_list_new ();
+	bin->binldrs->free = free;
+	for (i = 0; bin_ldr_static_plugins[i]; i++) {
+		static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
+		if (!static_ldr_plugin) {
+			free (bin);
+			return NULL;
+		}
+		*static_ldr_plugin = *bin_ldr_static_plugins[i];
+		r_bin_ldr_add (bin, static_ldr_plugin);
+	}
 	return bin;
 }
 

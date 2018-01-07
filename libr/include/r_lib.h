@@ -64,8 +64,9 @@ enum {
 	R_LIB_TYPE_ASM,     /* assembler */
 	R_LIB_TYPE_ANAL,    /* analysis */
 	R_LIB_TYPE_PARSE,   /* parsers */
-	R_LIB_TYPE_BIN,     /* bins */
+	R_LIB_TYPE_BIN,     /* bin headers */
 	R_LIB_TYPE_BIN_XTR, /* bin extractors */
+	R_LIB_TYPE_BIN_LDR, /* bin loaders */
 	R_LIB_TYPE_BP,      /* breakpoint */
 	R_LIB_TYPE_SYSCALL, /* syscall */
 	R_LIB_TYPE_FASTCALL,/* fastcall */
@@ -102,11 +103,11 @@ R_API int r_lib_opendir(RLib *lib, const char *path);
 R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct *stru);
 R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(RLib *lib);
-R_API int r_lib_add_handler(RLib *lib, int type, const char *desc,
+R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc,
 	int (*cb)(RLibPlugin *, void *, void *),
 	int (*dt)(RLibPlugin *, void *, void *),
 	void *user );
-R_API int r_lib_del_handler(RLib *lib, int type);
+R_API bool r_lib_del_handler(RLib *lib, int type);
 R_API int r_lib_close(RLib *lib, const char *file);
 
 R_API const char *r_lib_types_get(int idx);
