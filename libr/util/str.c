@@ -1600,7 +1600,7 @@ R_API bool r_str_is_printable_incl_newlines(const char *str) {
 }
 
 // Length in chars of a wide string (find better name?)
-R_API int r_wstr_clen (const char *s) {
+R_API int r_wstr_clen(const char *s) {
 	int len = 0;
 	if (!*s++) {
 		return 0;
@@ -1776,7 +1776,7 @@ R_API void r_str_filter(char *str, int len) {
 	}
 }
 
-R_API bool r_str_glob (const char* str, const char *glob) {
+R_API bool r_str_glob(const char* str, const char *glob) {
         const char* cp = NULL, *mp = NULL;
         if (!glob || !strcmp (glob, "*")) {
                 return true;
@@ -1792,7 +1792,7 @@ R_API bool r_str_glob (const char* str, const char *glob) {
                                         return true;
                                 }
                                 str++;
-                        } 
+                        }
                 } else {
                         return strstr (str, glob) != NULL;
                 }
@@ -1829,7 +1829,7 @@ R_API bool r_str_glob (const char* str, const char *glob) {
 }
 
 // Escape the string arg so that it is parsed as a single argument by r_str_argv
-R_API char *r_str_arg_escape (const char *arg) {
+R_API char *r_str_arg_escape(const char *arg) {
 	char *str;
 	int dest_i = 0, src_i = 0;
 	if (!arg) {
@@ -1991,7 +1991,7 @@ R_API void r_str_argv_free(char **argv) {
 	free (argv);
 }
 
-R_API const char *r_str_firstbut (const char *s, char ch, const char *but) {
+R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 	int idx, _b = 0;
 	ut8 *b = (ut8*)&_b;
 	const char *isbut, *p;
@@ -2017,7 +2017,7 @@ R_API const char *r_str_firstbut (const char *s, char ch, const char *but) {
 	return NULL;
 }
 
-R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
+R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 	int idx, _b = 0;
 	ut8 *b = (ut8*)&_b;
 	const char *isbut, *p, *lp = NULL;
@@ -2044,7 +2044,7 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 }
 
 // Must be merged inside strlen
-R_API int r_str_len_utf8char (const char *s, int left) {
+R_API int r_str_len_utf8char(const char *s, int left) {
 	int i = 1;
 	while (s[i] && (!left || i<left)) {
 		if ((s[i] & 0xc0) != 0x80) {
@@ -2082,7 +2082,7 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 	return NULL;
 }
 
-R_API int r_str_write (int fd, const char *b) {
+R_API int r_str_write(int fd, const char *b) {
 	return write (fd, b, strlen (b));
 }
 
@@ -2156,7 +2156,7 @@ R_API bool r_str_range_in(const char *r, ut64 addr) {
 
 // convert from html escaped sequence "foo%20bar" to "foo bar"
 // TODO: find better name.. unencode? decode
-R_API void r_str_uri_decode (char *s) {
+R_API void r_str_uri_decode(char *s) {
 	int n;
 	char *d;
 	for (d = s; *s; s++, d++) {
@@ -2171,7 +2171,7 @@ R_API void r_str_uri_decode (char *s) {
 	*d = 0;
 }
 
-R_API char *r_str_uri_encode (const char *s) {
+R_API char *r_str_uri_encode(const char *s) {
 	char ch[4], *d, *od;
 	if (!s) {
 		return NULL;
@@ -2197,7 +2197,7 @@ R_API char *r_str_uri_encode (const char *s) {
 	return trimDown? trimDown: od;
 }
 
-R_API int r_str_utf16_to_utf8 (ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
+R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
 	ut8 *outstart = dst;
 	const ut8 *processed = src;
 	ut8 *outend = dst + len_dst;
@@ -2274,7 +2274,7 @@ R_API int r_str_utf16_to_utf8 (ut8 *dst, int len_dst, const ut8 *src, int len_sr
 	return len_dst;
 }
 
-R_API char *r_str_utf16_decode (const ut8 *s, int len) {
+R_API char *r_str_utf16_decode(const ut8 *s, int len) {
 	int i = 0;
 	int j = 0;
 	char *result = NULL;
@@ -2352,7 +2352,7 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 
 // TODO: merge print inside rutil
 /* hack from print */
-R_API int r_print_format_length (const char *fmt) {
+R_API int r_print_format_length(const char *fmt) {
 	int nargs, i, j, idx, times, endian;
 	char *args, *bracket, tmp, last = 0;
 	const char *arg = fmt;
@@ -2479,7 +2479,7 @@ R_API int r_print_format_length (const char *fmt) {
 	return i;
 }
 
-R_API char *r_str_prefix_all (const char *s, const char *pfx) {
+R_API char *r_str_prefix_all(const char *s, const char *pfx) {
 	const char *os = s;
 	char *p;
 	int newlines = 1;
@@ -2553,7 +2553,7 @@ R_API void r_str_truncate_cmd(char *string) {
 	}
 }
 
-R_API const char *r_str_closer_chr (const char *b, const char *s) {
+R_API const char *r_str_closer_chr(const char *b, const char *s) {
 	const char *a;
 	while (*b) {
 		for (a = s; *a; a++) {
@@ -2844,7 +2844,7 @@ R_API int *r_str_split_lines(char *str, int *count) {
 	return indexes;
 }
 
-R_API bool r_str_isnumber (const char *str) {
+R_API bool r_str_isnumber(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
@@ -3027,8 +3027,8 @@ R_API wchar_t* r_str_mb_to_wc_l(const char *buf, int len) {
 	if (sz == (size_t)-1) {
 		goto err_r_str_mb_to_wc;
 	}
-	res_buf = (wchar_t *)calloc (1, (sz + 1) * sizeof (wchar_t));  
-    	if (!res_buf) {
+	res_buf = (wchar_t *)calloc (1, (sz + 1) * sizeof (wchar_t));
+	if (!res_buf) {
 		goto err_r_str_mb_to_wc;
 	}
 	sz = mbstowcs (res_buf, buf, sz + 1);
