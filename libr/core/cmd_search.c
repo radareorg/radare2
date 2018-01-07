@@ -2608,8 +2608,8 @@ reread:
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
 					r_core_seek (core, map->itv.addr, 1);
-					char *arg = r_str_newf ("%"PFMT64d, r_itv_end (map->itv) - map->itv.addr);
-					char *trg = refptr? r_str_newf ("%"PFMT64d, refptr): strdup ("");
+					char *arg = r_str_newf (" %"PFMT64d, r_itv_end (map->itv) - map->itv.addr);
+					char *trg = refptr? r_str_newf (" %"PFMT64d, refptr): strdup ("");
 					r_core_anal_esil (core, arg, trg);
 					free (arg);
 					free (trg);
