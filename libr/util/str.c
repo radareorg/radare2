@@ -2007,7 +2007,7 @@ R_API const char *r_str_firstbut (const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int)(size_t)(isbut - but);
-			_b = R_BIT_SWAP(b, idx);
+			_b = R_BIT_TOGGLE (b, idx);
 			continue;
 		}
 		if (*p == ch && !_b) {
@@ -2033,7 +2033,7 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int)(size_t)(isbut - but);
-			_b = R_BIT_SWAP(b, idx);
+			_b = R_BIT_TOGGLE (b, idx);
 			continue;
 		}
 		if (*p == ch && !_b) {
