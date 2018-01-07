@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018 - lowlyw */
+/* radare2 - LGPL 3 - Copyright 2018 - lowlyw */
 
 /*
  * info comes from here.
@@ -167,7 +167,7 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_z64 = {
 	.name = "z64",
 	.desc = "Nintendo 64 binaries big endian r_bin plugin",
-	.license = "LGPL2",
+	.license = "LGPL3",
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
