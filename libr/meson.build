@@ -129,6 +129,7 @@ bin = [
 	'wasm',
 	'xbe',
 	'zimg',
+	'z64',
 ]
 
 bin_xtr = [

@@ -59,6 +59,7 @@ files=[
 'p/bin_xtr_dyldcache.c',
 'p/bin_xtr_fatmach0.c',
 'p/bin_zimg.c',
+'p/bin_z64.c',
 
 'format/bflt/bflt.c',
 'format/coff/coff.c',
