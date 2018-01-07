@@ -139,6 +139,7 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			free (oa);
 			showBuffer (buf);
+			egg->lang.nsyscalls = 0;
 		} else {
 			eprintf ("Usage: gs [syscallname] [parameters]\n");
 		}
