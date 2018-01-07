@@ -19,7 +19,7 @@
 .Op Fl r Ar rarun2
 .Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvVx
+.Op Fl 0AdDwntLquvVxX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -108,6 +108,8 @@ Show help message
 Show files and environment help
 .It Fl x
 Open the file map without executable permissions
+.It Fl X
+Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache
 .El
 .Sh SHELL
 Type '?' for help

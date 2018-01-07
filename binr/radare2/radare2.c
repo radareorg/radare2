@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #define USE_THREADS 1
 #define UNCOLORIZE_NONTTY 0
@@ -144,6 +144,7 @@ static int main_help(int line) {
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
+		" -X           same as -e bin.usextr=false (useful for dyldcache)\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
@@ -518,6 +519,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
 			va = 2;
+			break;
+		case 'X':
+			r_config_set (r.config, "bin.usextr", "false");
 			break;
 		case 'c':
 			r_list_append (cmds, optarg);
