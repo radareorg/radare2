@@ -912,8 +912,9 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		goto beach;
 	}
 	i = r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
-	if (i < 0)
+	if (i < 0) {
 		goto beach;
+	}
 	//XXX we should use DT_VERNEEDNUM instead of sh_info
 	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
@@ -952,14 +953,11 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			goto beach;
 		}
 		vstart += vnaux;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
+		ut32 vn_cnt = entry->vn_cnt;
+		for (j = 0, isum = i + entry->vn_aux; j < vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
 			int k;
 			Elf_(Vernaux) * aux = NULL;
 			Elf_(Vernaux) vaux = {0};
-			sdb_vernaux = sdb_new0 ();
-			if (!sdb_vernaux) {
-				goto beach;
-			}
 			aux = (Elf_(Vernaux)*)&vaux;
 			k = 0;
 			vaux.vna_hash = READ32 (vstart, k)
@@ -968,6 +966,11 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			vaux.vna_name = READ32 (vstart, k)
 			vaux.vna_next = READ32 (vstart, k)
 			if (aux->vna_name > bin->dynstr_size) {
+				goto beach;
+			}
+#if 0
+			sdb_vernaux = sdb_new0 ();
+			if (!sdb_vernaux) {
 				goto beach;
 			}
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
@@ -983,6 +986,13 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			vstart += aux->vna_next;
 			snprintf (key, sizeof (key), "vernaux%d", j);
 			sdb_ns_set (sdb_version, key, sdb_vernaux);
+#else
+			char *key = r_str_newf ("vernaux%d", j);
+			char *val = r_str_newf ("%d,%s", isum, get_ver_flags (aux->vna_flags));
+			sdb_set (sdb_version, key, val, 0);
+			free (key);
+			free (val);
+#endif
 		}
 		if ((int)entry->vn_next < 0) {
 			bprintf ("Invalid vn_next\n");
@@ -1025,7 +1035,7 @@ static Sdb *store_versioninfo(ELFOBJ *bin) {
 		char key[32] = {0};
 		int size = bin->shdr[i].sh_size;
 
-		if (size - (i*sizeof(Elf_(Shdr)) > bin->size)) {
+		if (size - (i * sizeof (Elf_(Shdr)) > bin->size)) {
 			size = bin->size - (i*sizeof(Elf_(Shdr)));
 		}
 		int left = size - (i * sizeof (Elf_(Shdr)));
