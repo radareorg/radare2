@@ -86,7 +86,7 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
 	}
 }
 
-static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
+static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
