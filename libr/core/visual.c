@@ -2082,6 +2082,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					RAnalMetaItem *ami = r_meta_find (core->anal,
 							core->offset, R_META_TYPE_DATA,
 							R_META_WHERE_HERE);
+					if (!ami) {
+						ami = r_meta_find (core->anal,
+								core->offset, R_META_TYPE_STRING,
+								R_META_WHERE_HERE);
+					}
 					if (ami) {
 						r_core_seek_delta (core, ami->size);
 					} else {
