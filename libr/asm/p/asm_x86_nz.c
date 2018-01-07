@@ -2813,6 +2813,89 @@ static int opfidiv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfdivr(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			if ( op->operands[0].type & OT_DWORD ) {
+				data[l++] = 0xd8;
+				data[l++] = 0x38 | op->operands[0].regs[0];
+			} else if ( op->operands[0].type & OT_QWORD ) {
+				data[l++] = 0xdc;
+				data[l++] = 0x38 | op->operands[0].regs[0];
+			} else {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	case 2:
+		if ( op->operands[0].type & OT_FPUREG & ~OT_REGALL && op->operands[0].reg == 0 &&
+		     op->operands[1].type & OT_FPUREG & ~OT_REGALL ) {
+			data[l++] = 0xd8;
+			data[l++] = 0xf8 | op->operands[1].reg;
+		} else if ( op->operands[0].type & OT_FPUREG & ~OT_REGALL &&
+			    op->operands[1].type & OT_FPUREG & ~OT_REGALL && op->operands[1].reg == 0 ) {
+			data[l++] = 0xdc;
+			data[l++] = 0xf0 | op->operands[0].reg;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfdivrp(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 0:
+		data[l++] = 0xde;
+		data[l++] = 0xf1;
+		break;
+	case 2:
+		if ( op->operands[0].type & OT_FPUREG & ~OT_REGALL &&
+		     op->operands[1].type & OT_FPUREG & ~OT_REGALL && op->operands[1].reg == 0 ) {
+			data[l++] = 0xde;
+			data[l++] = 0xf0 | op->operands[0].reg;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfidivr(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			if ( op->operands[0].type & OT_DWORD ) {
+				data[l++] = 0xda;
+				data[l++] = 0x38 | op->operands[0].regs[0];
+			} else if ( op->operands[0].type & OT_WORD ) {
+				data[l++] = 0xde;
+				data[l++] = 0x38 | op->operands[0].regs[0];
+			} else {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -2908,12 +2991,15 @@ LookupTable oplookup[] = {
 	{"fdecstp", 0, NULL, 0xd9f6, 2},
 	{"fdiv", 0, &opfdiv, 0},
 	{"fdivp", 0, &opfdivp, 0},
+	{"fdivr", 0, &opfdivr, 0},
+	{"fdivrp", 0, &opfdivrp, 0},
 	{"femms", 0, NULL, 0x0f0e, 2},
 	{"ffree", 0, &opffree, 0},
 	{"fiadd", 0, &opfiadd, 0},
 	{"ficom", 0, &opficom, 0},
 	{"ficomp", 0, &opficomp, 0},
 	{"fidiv", 0, &opfidiv, 0},
+	{"fidivr", 0, &opfidivr, 0},
 	{"fild", 0, &opfild, 0},
 	{"fincstp", 0, NULL, 0xd9f7, 2},
 	{"finit", 0, NULL, 0x9bdbe3, 3},
