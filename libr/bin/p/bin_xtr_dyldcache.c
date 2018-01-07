@@ -14,7 +14,7 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
 static int free_xtr (void *xtr_obj);
 
 static bool check_bytes(const ut8* buf, ut64 sz) {
-	return (buf && sz > 3 && !memcmp (buf, "\x64\x79\x6c\x64", 4));
+	return buf && sz > 3 && !memcmp (buf, "dyld", 4);
 }
 
 // TODO: destroy must be void?

@@ -756,6 +756,19 @@ static int cb_bdc(void *user, void *data) {
 	return true;
 }
 
+static int cb_useldr(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->bin->use_ldr = node->i_value;
+	return true;
+}
+
+static int cb_usextr(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->bin->use_xtr = node->i_value;
+	return true;
+}
 
 static int cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore*) user;
@@ -2346,6 +2359,8 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("asm.strenc", "guess", &cb_asmstrenc);
 	SETDESC (n, "Assumed string encoding for disasm");
 	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
+	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
+	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");

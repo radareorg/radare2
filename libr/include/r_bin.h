@@ -279,6 +279,8 @@ typedef struct r_bin_t {
 	bool demanglercmd;
 	bool verbose;
 	bool io_owned;
+	bool use_xtr; // use extract plugins when loading a file?
+	bool use_ldr; // use loader plugins when loading a file?
 } RBin;
 
 typedef struct r_bin_xtr_metadata_t {

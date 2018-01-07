@@ -64,7 +64,7 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 					    ut64 loadaddr, int idx, int fd,
 					    int rawstr);
 
-int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
+R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 				   ut64 loadaddr, int xtr_idx, ut64 offset,
 				   const char *name, ut64 sz);
 
@@ -1087,7 +1087,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		}
 	}
 
-	if (!name && (st64)sz > 0) {
+	if (bin->use_xtr && !name && (st64)sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
