@@ -2516,10 +2516,33 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	char code[1024];
 	int num;
 
-	num = r_syscall_get_num (core->anal->syscall, name);
-	if (!num) {
-		num = atoi (name);
+	//arch check
+	if (strcmp (core->anal->cur->arch, "x86")) {
+		eprintf ("architecture not yet supported!\n");
+		return 0;
 	}
+
+	num = r_syscall_get_num (core->anal->syscall, name);
+
+	//bits check
+	switch (core->assembler->bits) {
+	case 32:
+		if (strcmp (name, "setup") && !num ) {
+			eprintf ("syscall not found!\n");
+			return 0;
+		}
+		break;
+	case 64:
+		if (strcmp (name, "read") && !num ) {
+			eprintf ("syscall not found!\n");
+			return 0;
+		}
+		break;
+	default:
+		eprintf ("syscall not found!\n");
+		return 0;
+	}
+
 	snprintf (code, sizeof (code),
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%s);\n"
