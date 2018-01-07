@@ -2224,17 +2224,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
-			if (r->bin->prefix) {
-				str = r_str_newf ("section %i va=0x%08"PFMT64x" pa=0x%08"
-					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s",
-					i, addr, section->paddr, section->size, section->vsize,
-					perms, r->bin->prefix, section->name);
-			} else {
-				str = r_str_newf ("section %i va=0x%08"PFMT64x" pa=0x%08"
-					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s",
-					i, addr, section->paddr, section->size, section->vsize,
-					perms, section->name);
-			}
+			char *pfx = r->bin->prefix;
+			str = r_str_newf ("[%02d] %s section size %" PFMT64d" named %s%s%s",
+				i, perms, section->size,
+				pfx? pfx: "", pfx? ".": "", section->name);
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 			R_FREE (str);
 			if (section->add) {
