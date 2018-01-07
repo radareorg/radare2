@@ -355,7 +355,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		}
 
 		section = r_bin_get_section_at (obj, paddr, 0);
-		section_name = section ? section->name : "unknown";
+		section_name = section ? section->name : "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
 			ut8 *s = r_base64_decode_dyn (string->string, -1);
@@ -469,11 +469,20 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 					str = no_dbl_bslash_str;
 				}
 			}
+#if 0
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
 				PFMT64x" ordinal=%03u sz=%u len=%u "
 				"section=%s type=%s string=%s",
 				vaddr, paddr, string->ordinal, string->size,
 				string->length, section_name, type_string, str);
+#else
+			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"
+				PFMT64x" %3u %3u "
+				"(%s) %5s %s",
+				string->ordinal, paddr, vaddr, 
+				string->length, string->size,
+				section_name, type_string, str);
+#endif
 			if (str == no_dbl_bslash_str) {
 				R_FREE (str);
 			}
