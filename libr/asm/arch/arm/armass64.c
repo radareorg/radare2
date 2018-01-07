@@ -487,6 +487,8 @@ static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
 	}
 	if (op->operands[0].type == ARM_MEM_OPT) {
 		data |= op->operands[0].mem_option << 16;
+	} else if (op->operands_count == 1 && op->operands[0].type == ARM_CONSTANT) {
+		data |= (op->operands[0].immediate << 16);
 	}
 	return data;
 }
@@ -945,24 +947,6 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strcmp (str, "isb")) {
 		*op = 0xdf3f03d5;
-		return *op != -1;
-	}
-	if (!strncmp (str, "dsb", 3)) {
-		if (ops.operands_count == 1 && ops.operands[0].type == ARM_CONSTANT) {
-			*op = 0x9f3003d5;
-			*op |= (ops.operands[0].immediate << 16);
-		} else {
-			eprintf ("Missing or invalid argument for dsb\n");
-		}
-		return *op != -1;
-	}
-	if (!strcmp (str, "dmb")) {
-		if (ops.operands_count == 1 && ops.operands[0].type == ARM_CONSTANT) {
-			*op = 0xbf3003d5;
-			*op |= (ops.operands[0].immediate << 16);
-		} else {
-			eprintf ("Missing or invalid argument for dmb\n");
-		}
 		return *op != -1;
 	}
 	if (!strcmp (str, "nop")) {
