@@ -3145,6 +3145,41 @@ static int opfisubr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfnstcw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & (OT_MEMORY | OT_WORD) ) {
+			data[l++] = 0xd9;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfstcw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & (OT_MEMORY | OT_WORD) ) {
+			data[l++] = 0x9b;
+			data[l++] = 0xd9;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3272,6 +3307,7 @@ LookupTable oplookup[] = {
 	{"fnclex", 0, NULL, 0xdbe2, 2},
 	{"fninit", 0, NULL, 0xdbe3, 2},
 	{"fnop", 0, NULL, 0xd9d0, 2},
+        {"fnstcw", 0, &opfnstcw, 0},
         {"fnstenv", 0, &opfnstenv, 0},
 	{"fpatan", 0, NULL, 0xd9f3, 2},
 	{"fprem", 0, NULL, 0xd9f8, 2},
@@ -3283,6 +3319,7 @@ LookupTable oplookup[] = {
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
 	{"fsqrt", 0, NULL, 0xd9fa, 2},
+        {"fstcw", 0, &opfstcw, 0},
         {"fstenv", 0, &opfstenv, 0},
 	{"fsub", 0, &opfsub, 0},
 	{"fsubp", 0, &opfsubp, 0},
