@@ -309,7 +309,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'B': // "?B"
-		k = r_str_chop_ro (input + 1);
+		k = r_str_trim_ro (input + 1);
 		tmp = r_core_get_boundaries (core, k);
 		r_list_foreach (tmp, iter, map) {
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
@@ -671,12 +671,12 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (r_str_chop_ro (input + 1));
+		r_core_clippy (r_str_trim_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
 		case 'b': { // "?eb"
-			char *arg = strdup (r_str_chop_ro (input + 2));
+			char *arg = strdup (r_str_trim_ro (input + 2));
 			int n = r_str_split (arg, ' ');
 			ut64 *portions = calloc (n, sizeof (ut64));
 			for (i = 0; i < n; i++) {
@@ -706,7 +706,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 'n': { // "?en" echo -n
-			const char *msg = r_str_chop_ro (input + 2);
+			const char *msg = r_str_trim_ro (input + 2);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
@@ -715,7 +715,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		}
 		default: {
-			const char *msg = r_str_chop_ro (input+1);
+			const char *msg = r_str_trim_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);

@@ -828,7 +828,7 @@ static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
 	if (!input) {
 		goto out;
 	}
-	const char *tinput = r_str_trim_const (input);
+	const char *tinput = r_str_trim_ro (input);
 
 	int argv_idx = autocompleteProcessPath (line, tinput, 0);
 
@@ -861,7 +861,7 @@ static int autocomplete(RLine *line) {
 		char *ptr = strchr (line->buffer.data, '@');
 		if (ptr && strchr (ptr + 1, ' ') && line->buffer.data+line->buffer.index >= ptr) {
 			int sdelta, n, i = 0;
-			ptr = (char *)r_str_chop_ro (ptr+1);
+			ptr = (char *)r_str_trim_ro (ptr+1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
 			sdelta = (int)(size_t)(ptr - line->buffer.data);
 			r_list_foreach (core->flags->flags, iter, flag) {

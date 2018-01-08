@@ -752,7 +752,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	ut64 pc;
 	int ret;
 
-	instr = r_str_chop_ro (instr);
+	instr = r_str_trim_ro (instr);
 	if (!core || !instr|| !core->dbg) {
 		eprintf ("Wrong state\n");
 		return false;
@@ -798,7 +798,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 	RFlagItem *f;
 	ut64 pc;
 
-	instr = r_str_chop_ro (instr);
+	instr = r_str_trim_ro (instr);
 	if (!core || !instr || !core->dbg) {
 		eprintf ("Wrong state\n");
 		return false;
@@ -922,7 +922,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		/* XXX: but we want fine-grained access to process resources */
 		pid = atoi (input + 2);
 		if (pid > 0) {
-			ptr = r_str_chop_ro (input + 2);
+			ptr = r_str_trim_ro (input + 2);
 			ptr = strchr (ptr, ' ');
 			sig = ptr? atoi (ptr + 1): 0;
 			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
@@ -1589,7 +1589,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				if (input[1]=='*') {
 					mode = "-r ";
 				}
-				ptr = strdup (r_str_chop_ro (input + 2));
+				ptr = strdup (r_str_trim_ro (input + 2));
 				if (!ptr || !*ptr) {
 					r_core_cmd (core, "dmm", 0);
 					free (ptr);
@@ -3404,16 +3404,16 @@ static void debug_trace_calls(RCore *core, const char *input) {
 		return;
 	}
 	if (*input == ' ') {
-		input = r_str_chop_ro (input);
+		input = r_str_trim_ro (input);
 		ut64 first_n = r_num_math (core->num, input);
 		input = strchr (input, ' ');
 		if (input) {
-			input = r_str_chop_ro (input);
+			input = r_str_trim_ro (input);
 			from = first_n;
 			to = r_num_math (core->num, input);
 			input = strchr (input, ' ');
 			if (input) {
-				input = r_str_chop_ro (input);
+				input = r_str_trim_ro (input);
 				final_addr = r_num_math (core->num, input);
 			}
 		} else {

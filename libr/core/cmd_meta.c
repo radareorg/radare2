@@ -403,7 +403,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = r_str_chop_ro (input + 2);
+		const char* newcomment = r_str_trim_ro (input + 2);
 		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
@@ -669,7 +669,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		}
 		while (repcnt < repeat) {
 			int off = (!input[1] || input[1] == ' ') ? 1 : 2;
-			t = strdup (r_str_chop_ro (input + off));
+			t = strdup (r_str_trim_ro (input + off));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);

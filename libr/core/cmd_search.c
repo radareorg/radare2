@@ -1842,7 +1842,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		}
 		return;
 	}
-	input = r_str_chop_ro (input);
+	input = r_str_trim_ro (input);
 	buf = malloc (bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
@@ -2838,7 +2838,7 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		char *v_str = (char *)r_str_chop_ro (input + 2);
+		char *v_str = (char *)r_str_trim_ro (input + 2);
 		RList *nums = r_num_str_split_list (v_str);
 		int len = r_list_length (nums);
 		int bsize = 0;

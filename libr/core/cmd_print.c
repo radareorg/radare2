@@ -2243,7 +2243,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		algolist (0);
 		return true;
 	}
-	input = r_str_chop_ro (input);
+	input = r_str_trim_ro (input);
 	ptr = strchr (input, ' ');
 	sscanf (input, "%31s", algo);
 	if (ptr && ptr[1]) { // && r_num_is_valid_input (core->num, ptr + 1)) {
@@ -4094,7 +4094,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'k': // "pdk" -print class
 		{
 			int len = 0;
-			ut64 at = findClassBounds (core, r_str_chop_ro (input + 2), &len);
+			ut64 at = findClassBounds (core, r_str_trim_ro (input + 2), &len);
 			return r_core_cmdf (core, "pD %d @ %"PFMT64d, len, at);
 		}
 		case 'i': // "pdi" // "pDi"

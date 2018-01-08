@@ -306,7 +306,7 @@ R_API int r_debug_snap_comment(RDebug *dbg, int idx, const char *msg) {
 	r_list_foreach (dbg->snaps, iter, snap) {
 		if (count == idx) {
 			free (snap->comment);
-			snap->comment = strdup (r_str_trim_const (msg));
+			snap->comment = strdup (r_str_trim_ro (msg));
 			break;
 		}
 		count++;

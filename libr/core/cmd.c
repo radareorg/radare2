@@ -585,7 +585,7 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 't': // "wt"
 		if (input[1] == 'f') { // "wtf"
-			const char *file = r_str_chop_ro (input + 2);
+			const char *file = r_str_trim_ro (input + 2);
 			if (!r_file_dump (file, core->yank_buf->buf, core->yank_buf->length, false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}
@@ -733,7 +733,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 static int cmd_ls(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input) {
-		const char *path = r_str_chop_ro (input + 1);
+		const char *path = r_str_trim_ro (input + 1);
 		if (r_fs_check (core->fs, path)) {
 			r_core_cmdf (core, "md %s", path);
 		} else {

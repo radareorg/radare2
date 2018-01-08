@@ -149,7 +149,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	bool isFirst = false;
 
 	if (!STRNULL (str)) {
-		str = r_str_chop_ro (str);
+		str = r_str_trim_ro (str);
 		len = strlen (str);
 		if (len > 0 && str[0] == 'j') {
 			str++;

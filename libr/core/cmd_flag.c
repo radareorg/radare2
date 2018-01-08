@@ -149,7 +149,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		r_flag_zone_add (core->flags, r_str_chop_ro (input + 1), core->offset);
+		r_flag_zone_add (core->flags, r_str_trim_ro (input + 1), core->offset);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -195,7 +195,7 @@ static int flag_to_flag(RCore *core, const char *glob) {
 	RFlagItem *flag;
 	RListIter *iter;
 	ut64 next = UT64_MAX;
-	glob = r_str_trim_const (glob);
+	glob = r_str_trim_ro (glob);
 	r_list_foreach (core->flags->flags, iter, flag) {
 		if (flag->offset < next && flag->offset > core->offset) {
 			if (glob && *glob && !r_str_glob (flag->name, glob)) {
@@ -213,7 +213,7 @@ static int flag_to_flag(RCore *core, const char *glob) {
 static void flag_ordinals(RCore *core, const char *str) {
 	RFlagItem *flag;
 	RListIter *iter;
-	const char *glob = r_str_trim_const (str);
+	const char *glob = r_str_trim_ro (str);
 	int count = 0;
 	char *pfx = strdup (glob);
 	char *p = strchr (pfx, '*');
@@ -298,8 +298,8 @@ rep:
 			if (!ptr)
 				ptr = strchr (str, ' ');
 			if (ptr) *ptr++ = 0;
-			name = (char *)r_str_chop_ro (str);
-			ptr = (char *)r_str_chop_ro (ptr);
+			name = (char *)r_str_trim_ro (str);
+			ptr = (char *)r_str_trim_ro (ptr);
 			fi = r_flag_get (core->flags, name);
 			if (!fi)
 				fi = r_flag_set (core->flags, name,
@@ -410,7 +410,7 @@ rep:
 		break;
 	case '+': // "f+'
 	case ' ': {
-		const char *cstr = r_str_chop_ro (str);
+		const char *cstr = r_str_trim_ro (str);
 		char* eq = strchr (cstr, '=');
 		char* s = strchr (cstr, ' ');
 		char* s2 = NULL;
@@ -451,7 +451,7 @@ rep:
 		if (input[1] == '-') {
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
-			const char *flagname = r_str_chop_ro (input + 1);
+			const char *flagname = r_str_trim_ro (input + 1);
 			while (*flagname==' ') {
 				flagname++;
 			}
@@ -475,7 +475,7 @@ rep:
 		}
 		break;
 	case '.':
-		input = r_str_chop_ro (input + 1) - 1;
+		input = r_str_trim_ro (input + 1) - 1;
 		if (input[1]) {
 			if (input[1] == '*') {
 				if (input[2] == '*') {
@@ -766,9 +766,9 @@ rep:
 		break;
 	case 'i': // "fi"
 		if (input[1] == ' ' || input[2] == ' ') {
-			char *arg = strdup (r_str_chop_ro (input + 2));
+			char *arg = strdup (r_str_trim_ro (input + 2));
 			if (*arg) {
-				arg = strdup (r_str_chop_ro (input + 2));
+				arg = strdup (r_str_trim_ro (input + 2));
 				char *sp = strchr (arg, ' ');
 				if (!sp) {
 					char *newarg = r_str_newf ("%c0x%"PFMT64x" %s+0x%"PFMT64x,
@@ -825,7 +825,7 @@ rep:
 				break;
 			case 'w':
 				{
-				char *arg = strdup (r_str_chop_ro (input + 2));
+				char *arg = strdup (r_str_trim_ro (input + 2));
 				if (arg) {
 					if (*arg) {
 						RFlag *f = core->flags;

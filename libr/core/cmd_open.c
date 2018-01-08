@@ -394,7 +394,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_bin_file_delete_all (core->bin);
 		} else {
 			ut32 fd;
-			value = r_str_chop_ro (input + 2);
+			value = r_str_trim_ro (input + 2);
 			if (!value) {
 				eprintf ("Invalid argument\n");
 				break;
@@ -471,7 +471,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 static void cmd_omfg (RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
-	input = r_str_chop_ro (input);
+	input = r_str_trim_ro (input);
 	if (input) {
 		int flags = *input
 		? (*input == '+' || *input == '-')
@@ -501,7 +501,7 @@ static void cmd_omfg (RCore *core, const char *input) {
 static void cmd_omf (RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
-	char *arg = strdup (r_str_chop_ro (input));
+	char *arg = strdup (r_str_trim_ro (input));
 	if (!arg) {
 		return;
 	}
@@ -1056,7 +1056,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'f': // "of"
 		{
 			addr = 0; // honor bin.baddr ? 
-			const char *argv0 = r_str_chop_ro (input + 2);
+			const char *argv0 = r_str_trim_ro (input + 2);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {

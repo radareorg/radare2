@@ -316,7 +316,7 @@ out_case_manual:
 			int n = 0;
 			bool retval = true;
 
-			args = r_str_new (r_str_trim_const (input + 1));
+			args = r_str_new (r_str_trim_ro (input + 1));
 			n = r_str_word_set0 (args);
 
 			if (n > 2) {

@@ -409,7 +409,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'a': // "cat"
 		if (input[1] == 't') {
-			const char *path = r_str_chop_ro (input + 2);
+			const char *path = r_str_trim_ro (input + 2);
 			if (r_fs_check (core->fs, path)) {
 				r_core_cmdf (core, "mg %s", path);
 			} else {
@@ -612,7 +612,7 @@ static int cmd_cmp(void *data, const char *input) {
 		char *file2 = NULL;
 		switch (input[1]) {
 		case 'o':         // "cgo"
-			file2 = (char *) r_str_chop_ro (input + 2);
+			file2 = (char *) r_str_trim_ro (input + 2);
 			r_anal_diff_setup (core->anal, true, -1, -1);
 			break;
 		case 'f':         // "cgf"
@@ -622,7 +622,7 @@ static int cmd_cmp(void *data, const char *input) {
 				r_num_math (core->num, input + 2));
 			return false;
 		case ' ':
-			file2 = (char *) r_str_chop_ro (input + 2);
+			file2 = (char *) r_str_trim_ro (input + 2);
 			r_anal_diff_setup (core->anal, false, -1, -1);
 			break;
 		default: {

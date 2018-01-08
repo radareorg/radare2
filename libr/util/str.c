@@ -665,7 +665,7 @@ R_API const char *r_str_nstr(const char *from, const char *to, int size) {
 }
 
 // TODO: rewrite in macro?
-R_API const char *r_str_chop_ro(const char *str) {
+R_API const char *r_str_trim_ro(const char *str) {
 	if (str) {
 		while (*str && ISWHITECHAR (*str)) {
 			str++;
@@ -759,7 +759,7 @@ R_API char *r_str_trim(char *str) {
 }
 
 // Returns a pointer to the first non-whitespace character of str.
-R_API const char *r_str_trim_const(const char *str) {
+R_API const char *r_str_trim_ro(const char *str) {
 	if (str) {
 		for (; *str && ISWHITECHAR (*str); str++);
 	}
@@ -1477,9 +1477,7 @@ R_API int r_str_ansi_len(const char *str) {
 	return len - sub;
 }
 
-
-/* suposed to chop a string with ansi controls to
- * max length of n. */
+/* suposed to chop a string with ansi controls to max length of n. */
 R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 	char ch, ch2;
 	int back = 0, i = 0, len = 0;
@@ -1506,8 +1504,9 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 				}
 			} else if (ch2 == '[') {
 				for (++i; (i < str_len) && str[i]
-					     && str[i]!='J' && str[i]!='m'
-					     && str[i]!='H';
+					&& str[i] != 'J'
+					&& str[i] != 'm'
+					&& str[i] != 'H';
 				     i++);
 			}
 		} else if ((str[i] & 0xc0) != 0x80) {

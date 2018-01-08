@@ -415,7 +415,7 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 				keys[i].name, r, g, b, hasnext);
 			break;
 		case 'c': {
-			const char *prefix = r_str_chop_ro (arg);
+			const char *prefix = r_str_trim_ro (arg);
 			if (!prefix) {
 				prefix = "";
 			}

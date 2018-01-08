@@ -3632,7 +3632,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 #define CHECKREF(x) ((refptr && x == refptr) || !refptr)
 	if (target) {
-		const char *expr = r_str_chop_ro (target);
+		const char *expr = r_str_trim_ro (target);
 		if (*expr) {
 			refptr = ntarget = r_num_math (core->num, expr);
 			if (!refptr) {

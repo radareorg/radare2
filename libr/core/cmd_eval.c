@@ -448,7 +448,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case '!':
-		input = r_str_chop_ro (input+1);
+		input = r_str_trim_ro (input+1);
 		if (!r_config_toggle (core->config, input))
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		break;

@@ -1686,7 +1686,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 
 static bool anal_bb_edge (RCore *core, const char *input) {
 	// "afbe" switch-bb-addr case-bb-addr
-	char *arg = strdup (r_str_chop_ro(input));
+	char *arg = strdup (r_str_trim_ro(input));
 	char *sp = strchr (arg, ' ');
 	if (sp) {
 		*sp++ = 0;
@@ -5357,7 +5357,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case '*': // "ah*"
 		if (input[1] == ' ') {
-			char *ptr = strdup (r_str_chop_ro (input + 2));
+			char *ptr = strdup (r_str_trim_ro (input + 2));
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_core_anal_hint_print (core->anal, addr, '*');
@@ -5374,7 +5374,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (input[1] == '*') {
 				r_anal_hint_clear (core->anal);
 			} else {
-				char *ptr = strdup (r_str_chop_ro (input + 1));
+				char *ptr = strdup (r_str_trim_ro (input + 1));
 				ut64 addr;
 				int size = 1;
 				int i = r_str_word_set0 (ptr);

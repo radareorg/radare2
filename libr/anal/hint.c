@@ -56,7 +56,7 @@ static void setHint(RAnal *a, const char *type, ut64 addr, const char *s, ut64 p
 }
 
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char* typeoff) {
-	setHint (a, "Offset:", addr, r_str_trim_const (typeoff), 0);
+	setHint (a, "Offset:", addr, r_str_trim_ro (typeoff), 0);
 }
 
 R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 ptr) {
@@ -84,7 +84,7 @@ R_API void r_anal_hint_set_pointer(RAnal *a, ut64 addr, ut64 ptr) {
 }
 
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch) {
-	setHint (a, "arch:", addr, r_str_trim_const (arch), 0);
+	setHint (a, "arch:", addr, r_str_trim_ro (arch), 0);
 }
 
 R_API void r_anal_hint_set_syntax(RAnal *a, ut64 addr, const char *syn) {
@@ -92,11 +92,11 @@ R_API void r_anal_hint_set_syntax(RAnal *a, ut64 addr, const char *syn) {
 }
 
 R_API void r_anal_hint_set_opcode(RAnal *a, ut64 addr, const char *opcode) {
-	setHint (a, "opcode:", addr, r_str_trim_const (opcode), 0);
+	setHint (a, "opcode:", addr, r_str_trim_ro (opcode), 0);
 }
 
 R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
-	setHint (a, "esil:", addr, r_str_trim_const (esil), 0);
+	setHint (a, "esil:", addr, r_str_trim_ro (esil), 0);
 }
 
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {

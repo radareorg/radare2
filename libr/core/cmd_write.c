@@ -321,7 +321,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 			const char *algo = NULL;
 			const char *key = NULL;
 			const char *iv = NULL;
-			char *space, *args = strdup (r_str_chop_ro (input+2));
+			char *space, *args = strdup (r_str_trim_ro (input+2));
 			space = strchr (args, ' ');
 			if (space) {
 				*space++ = 0;
