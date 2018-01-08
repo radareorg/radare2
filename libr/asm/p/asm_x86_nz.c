@@ -3189,7 +3189,8 @@ static int opfnstsw(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & OT_MEMORY && op->operands[0].type & OT_WORD ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
 			data[l++] = 0xdd;
 			data[l++] = 0x38 | op->operands[0].regs[0];
 		} else if ( op->operands[0].type & OT_GPREG &&
@@ -3222,6 +3223,43 @@ static int opfstsw(RAsm *a, ut8 *data, const Opcode *op) {
 			data[l++] = 0x9b;
 			data[l++] = 0xdf;
 			data[l++] = 0xe0;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfnsave(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_DWORD ) {
+			data[l++] = 0xdd;
+			data[l++] = 0x30 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfsave(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_DWORD ) {
+			data[l++] = 0x9b;
+			data[l++] = 0xdd;
+			data[l++] = 0x30 | op->operands[0].regs[0];
 		} else {
 			return -1;
 		}
@@ -3359,6 +3397,7 @@ LookupTable oplookup[] = {
 	{"fnclex", 0, NULL, 0xdbe2, 2},
 	{"fninit", 0, NULL, 0xdbe3, 2},
 	{"fnop", 0, NULL, 0xd9d0, 2},
+        {"fnsave", 0, &opfnsave, 0},
         {"fnstcw", 0, &opfnstcw, 0},
         {"fnstenv", 0, &opfnstenv, 0},
         {"fnstsw", 0, &opfnstsw, 0},
@@ -3368,6 +3407,7 @@ LookupTable oplookup[] = {
 	{"fptan", 0, NULL, 0xd9f2, 2},
 	{"frndint", 0, NULL, 0xd9fc, 2},
 	{"frstor", 0, &opfrstor, 0},
+	{"fsave", 0, &opfsave, 0},
 	{"fscale", 0, NULL, 0xd9fd, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
