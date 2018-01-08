@@ -308,9 +308,9 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
 	gdbr_continue (desc, pid, -1, sig); // Continue all threads
 	if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
-		if (desc->tid != desc->stop_reason.thread.tid) {
-			eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
-		}
+		//if (desc->tid != desc->stop_reason.thread.tid) {
+		//	eprintf ("thread id (%d) in reason differs from current thread id (%d)\n", dbg->pid, dbg->tid);
+		//}
 		desc->tid = desc->stop_reason.thread.tid;
 	}
 	return desc->tid;
@@ -329,7 +329,7 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 		dbg->pid = desc->stop_reason.thread.pid;
 		dbg->tid = desc->stop_reason.thread.tid;
 		if (dbg->pid != desc->pid || dbg->tid != desc->tid) {
-			eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+			//eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
 			gdbr_select (desc, dbg->pid, dbg->tid);
 		}
 	}
