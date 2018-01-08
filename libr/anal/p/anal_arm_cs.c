@@ -906,12 +906,28 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
+	case ARM64_INS_UBFX: // Unsigned bitfield extract.
+	case ARM64_INS_UXTW:
+	case ARM64_INS_UBFM:
+	case ARM64_INS_UBFIZ:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case ARM64_INS_DMB:
 	case ARM64_INS_DSB:
 	case ARM64_INS_ISB:
-		op->type = R_ANAL_OP_TYPE_SYNC;
+	case ARM64_INS_IC: // instruction cache invalidate
+	case ARM64_INS_DC: // data cache invalidate
+		op->type = R_ANAL_OP_TYPE_SYNC; // or cache
+		break;
+	case ARM64_INS_CLS: // Count leading sign bits.
+	case ARM64_INS_CLZ: // Count leading zero bits.
+		op->type = R_ANAL_OP_TYPE_MOV; // XXX
+		break;
+	case ARM64_INS_BIC:
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case ARM64_INS_ADD:
+	case ARM64_INS_ADC: // Add with carry.
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		OPCALL("+");
@@ -1291,6 +1307,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64(1),REG64(0));
 		break;
 	case ARM64_INS_RET:
+		r_strbuf_setf (&op->esil, "lr,pc,=");
+		break;
+	case ARM64_INS_ERET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
 		break;
 	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
@@ -2224,6 +2243,10 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 				op->refptr = 4;
 			}
 		}
+		break;
+	case ARM64_INS_ERET:
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->family = R_ANAL_OP_FAMILY_PRIV;
 		break;
 	case ARM64_INS_RET:
 		op->type = R_ANAL_OP_TYPE_RET;
