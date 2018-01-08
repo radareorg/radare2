@@ -3362,6 +3362,16 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		return false;
 	}
 	switch (mode) {
+	case '*':
+		r_list_foreach (binfile->objs, iter, obj) {
+			r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", obj->boffset, name, obj->id);
+		}
+		break;
+	case 'q':
+		r_list_foreach (binfile->objs, iter, obj) {
+			r_cons_printf ("%d\n", obj->id);
+		}
+		break;
 	case 'j':
 		r_cons_printf ("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"size\":%d,\"objs\":[",
 			name, fd, id, bin_sz);

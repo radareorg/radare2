@@ -269,6 +269,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '\0': // "ob"
+	case 'q': // "obj"
 	case 'j': // "obj"
 	case '*': // "ob*"
 		r_core_bin_list (core, input[1]);
