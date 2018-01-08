@@ -1880,7 +1880,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 			} else r_cons_printf ("Root undefined\n");
 		}
 		if (mode==2) {
-			r_str_chop_path (path);
+			r_str_trim_path (path);
 			str = path + strlen (path);
 			strncat (path, "/", sizeof (path)-strlen (path)-1);
 			list = r_fs_dir (core->fs, path);
@@ -1947,14 +1947,14 @@ R_API void r_core_visual_mounts(RCore *core) {
 					r_list_free (list);
 					list = NULL;
 				} else if (mode == 2){
-					r_str_chop_path (path);
+					r_str_trim_path (path);
 					strncat (path, "/", sizeof (path)-strlen (path)-1);
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file) {
 						if (file->type == 'd') {
 							strncat (path, file->name, sizeof (path)-strlen (path)-1);
-							r_str_chop_path (path);
+							r_str_trim_path (path);
 							if (root && strncmp (root, path, strlen (root)-1))
 								strncpy (path, root, sizeof (path)-1);
 						} else {
@@ -2019,7 +2019,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					} else
 					if (strcmp (path, root)) {
 						strcat (path, "/..");
-						r_str_chop_path (path);
+						r_str_trim_path (path);
 					} else {
 						r_fs_umount (core->fs, root);
 						mode = 0;
@@ -2041,14 +2041,14 @@ R_API void r_core_visual_mounts(RCore *core) {
 				break;
 			case 'g':
 				if (mode == 2) {
-					r_str_chop_path (path);
+					r_str_trim_path (path);
 					str = path + strlen (path);
 					strncat (path, "/", sizeof (path)-strlen (path)-1);
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file && root) {
 						strncat (path, file->name, sizeof (path)-strlen (path)-1);
-						r_str_chop_path (path);
+						r_str_trim_path (path);
 						if (strncmp (root, path, strlen (root)-1))
 							strncpy (path, root, sizeof (path)-1);
 						file = r_fs_open (core->fs, path);

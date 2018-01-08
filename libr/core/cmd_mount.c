@@ -230,7 +230,7 @@ static int cmd_mount(void *data, const char *_input) {
 				*ptr++ = 0;
 				list = r_fs_find_name (core->fs, input, ptr);
 				r_list_foreach (list, iter, ptr) {
-					r_str_chop_path (ptr);
+					r_str_trim_path (ptr);
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);
@@ -246,7 +246,7 @@ static int cmd_mount(void *data, const char *_input) {
 				ut64 off = r_num_math (core->num, ptr);
 				list = r_fs_find_off (core->fs, input, off);
 				r_list_foreach (list, iter, ptr) {
-					r_str_chop_path (ptr);
+					r_str_trim_path (ptr);
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);

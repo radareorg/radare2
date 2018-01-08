@@ -70,7 +70,7 @@ R_API char *r_str_newlen(const char *str, int len);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
-R_API int r_str_ansi_chop(char *str, int str_len, int n);
+R_API int r_str_ansi_trim(char *str, int str_len, int n);
 R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len);
 R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 R_API int r_str_word_count(const char *string);
@@ -143,7 +143,7 @@ R_API char *r_str_append(char *ptr, const char *string);
 R_API char *r_str_appendf(char *ptr, const char *fmt, ...);
 R_API char *r_str_appendch(char *x, char y);
 R_API void r_str_case(char *str, bool up);
-R_API void r_str_chop_path(char *s);
+R_API void r_str_trim_path(char *s);
 R_API ut8 r_str_contains_macro(const char *input_value);
 R_API void r_str_truncate_cmd(char *string);
 R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,

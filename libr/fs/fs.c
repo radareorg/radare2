@@ -124,7 +124,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		free (heapFsType);
 		return NULL;
 	}
-	r_str_chop_path (str);
+	r_str_trim_path (str);
 	if (*str && strchr (str + 1, '/')) {
 		eprintf ("r_fs_mount: mountpoint must have no subdirectories\n");
 		free (heapFsType);
@@ -217,7 +217,7 @@ R_API RList* r_fs_root(RFS* fs, const char* p) {
 		return NULL;
 	}
 	roots = r_list_new ();
-	r_str_chop_path (path);
+	r_str_trim_path (path);
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);
 		if (r_fs_match (path, root->path, len)) {
@@ -241,7 +241,7 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p) {
 	RFSFile* f = NULL;
 	const char* dir;
 	char* path = strdup (p);
-	//r_str_chop_path (path);
+	//r_str_trim_path (path);
 	roots = r_fs_root (fs, path);
 	if (!r_list_empty (roots)) {
 		r_list_foreach (roots, iter, root) {
@@ -298,7 +298,7 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 	RListIter* iter;
 	const char* dir;
 	char* path = strdup (p);
-	r_str_chop_path (path);
+	r_str_trim_path (path);
 	roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
 		if (root) {
@@ -688,7 +688,7 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 
 	if (root && *root) {
 		strncpy (buf, root, sizeof (buf) - 1);
-		r_str_chop_path (buf);
+		r_str_trim_path (buf);
 		list = r_fs_root (fs, buf);
 		if (r_list_empty (list)) {
 			printf ("Unknown root\n");
@@ -780,7 +780,7 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 				}
 				path[sizeof (path) - 1] = 0;
 			}
-			r_str_chop_path (path);
+			r_str_trim_path (path);
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
 				RFSRoot *root;
@@ -902,7 +902,7 @@ R_API bool r_fs_check(RFS *fs, const char *p) {
 	if (!path) {
 		return false;
 	}
-	r_str_chop_path (path);
+	r_str_trim_path (path);
 	r_list_foreach (fs->roots, iter, root) {
 		if (r_fs_match (path, root->path, strlen (root->path))) {
 			free (path);

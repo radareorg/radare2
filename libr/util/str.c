@@ -46,7 +46,7 @@ static const char *rwxstr[] = {
 };
 
 // TODO: simplify this horrible loop
-R_API void r_str_chop_path(char *s) {
+R_API void r_str_trim_path(char *s) {
 	char *src, *dst, *p;
 	int i = 0;
 	if (!s || !*s) {
@@ -78,14 +78,14 @@ R_API void r_str_chop_path(char *s) {
 			}
 		} else if (*src == '/' && *(src + 1) == '.' && (*(src + 2) == '/' || *(src + 2) == '\0')) {
 			src++;
-		} else if (*src != '/' || *(src-1) != '/') {
+		} else if (*src != '/' || *(src - 1) != '/') {
 			*dst = *src;
 			dst++;
 		}
 		src++;
 	}
 	if (dst > s + 1 && *(dst - 1) == '/') {
-		*(dst-1) = 0;
+		*(dst - 1) = 0;
 	} else {
 		*dst = 0;
 	}
@@ -1478,7 +1478,7 @@ R_API int r_str_ansi_len(const char *str) {
 }
 
 /* suposed to chop a string with ansi controls to max length of n. */
-R_API int r_str_ansi_chop(char *str, int str_len, int n) {
+R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 	char ch, ch2;
 	int back = 0, i = 0, len = 0;
 	if (!str) {
