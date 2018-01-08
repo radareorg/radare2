@@ -739,6 +739,9 @@ static int bin_info(RCore *r, int mode) {
 			}
 			r_config_set (r->config, "asm.os", info->os);
 			r_config_set (r->config, "asm.arch", info->arch);
+			if (info->cpu && *info->cpu) {
+				r_config_set (r->config, "asm.cpu", info->cpu);
+			}
 			r_config_set (r->config, "anal.arch", info->arch);
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
@@ -749,6 +752,9 @@ static int bin_info(RCore *r, int mode) {
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
+		if (info->cpu && *info->cpu) {
+			r_cons_printf ("cpu %s\n", info->cpu);
+		}
 		r_cons_printf ("bits %d\n", info->bits);
 		r_cons_printf ("os %s\n", info->os);
 		r_cons_printf ("endian %s\n", info->big_endian? "big": "little");
@@ -788,6 +794,9 @@ static int bin_info(RCore *r, int mode) {
 			if (info->arch) {
 				r_cons_printf ("e asm.arch=%s\n", info->arch);
 			}
+			if (info->cpu && *info->cpu) {
+				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
+			}
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			if (v != -1) r_cons_printf ("e asm.pcalign=%d\n", v);
 		}
@@ -798,6 +807,9 @@ static int bin_info(RCore *r, int mode) {
 			r_cons_printf ("{");
 		}
 		pair_str ("arch", info->arch, mode, false);
+		if (info->cpu && *info->cpu) {
+			pair_str ("cpu", info->cpu, mode, false);
+		}
 		pair_int ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
@@ -899,7 +911,7 @@ static int bin_info(RCore *r, int mode) {
 					eprintf ("Invaild wtf\n");
 				}
 				r_hash_free (rh);
-				r_cons_printf ("%s\t%d-%dc\t", h->type, h->from, h->to+h->from);
+				r_cons_printf ("%s  %d-%dc  ", h->type, h->from, h->to+h->from);
 				for (j = 0; j < h->len; j++) {
 					r_cons_printf ("%02x", h->buf[j]);
 				}
@@ -953,7 +965,6 @@ static int bin_dwarf(RCore *core, int mode) {
 	int *lastFileLines2 = NULL;
 	char *lastFileContents2 = NULL;
 	int lastFileLinesCount2 = 0;
-
 
 	const char *lf = NULL;
 	int *lfl = NULL;
