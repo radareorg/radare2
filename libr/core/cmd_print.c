@@ -212,7 +212,7 @@ static const char *help_msg_pf[] = {
 	"pfo", " fdf_name", "Load a Format Definition File (fdf)",
 	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
 	"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
-	"pfs", " fmt_name|fmt", "Print the size of (named) format in bytes",
+	"pfs", "[.fmt_name| fmt]", "Print the size of (named) format in bytes",
 	NULL
 };
 
@@ -975,8 +975,8 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 		if (*_input == '.') {
 			_input++;
 			val = sdb_get (core->print->formats, _input, NULL);
-			if (val != NULL) {
-				r_cons_printf ("%d byte(s)\n", r_print_format_struct_size (val, core->print, mode, 0));
+			if (val) {
+				r_cons_printf ("%d\n", r_print_format_struct_size (val, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -985,7 +985,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				_input++;
 			}
 			if (*_input) {
-				r_cons_printf ("%d byte(s)\n", r_print_format_struct_size (_input, core->print, mode, 0));
+				r_cons_printf ("%d\n", r_print_format_struct_size (_input, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -1128,7 +1128,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				// char *fields = NULL;
 				*space++ = 0;
 				// fields = strchr (space, ' ');
-				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
+				if (strchr (name, '.')) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
 					sdb_set (core->print->formats, name, space, 0);
@@ -1150,7 +1150,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			/* This make sure the whole structure will be printed */
 			const char *fmt = NULL;
 			fmt = sdb_get (core->print->formats, name, NULL);
-			if (fmt != NULL) {
+			if (fmt) {
 				int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
 				if (size > core->blocksize) {
 					r_core_block_size (core, size);
@@ -2962,7 +2962,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 		if (b->jump > b->addr) {
 			RAnalBlock *jumpbb = r_anal_bb_get_jumpbb (fcn, b);
 			if (jumpbb) {
-				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
+				if (emu && core->anal->last_disasm_reg && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 				}
 				if (jumpbb->parent_stackptr == INT_MAX) {
@@ -2978,7 +2978,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 		if (b->fail > b->addr) {
 			RAnalBlock *failbb = r_anal_bb_get_failbb (fcn, b);
 			if (failbb) {
-				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
+				if (emu && core->anal->last_disasm_reg && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 				}
 				if (failbb->parent_stackptr == INT_MAX) {

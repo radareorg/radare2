@@ -936,7 +936,8 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		lc.cmdsize = r_read_ble32 (&loadc[4], bin->big_endian);
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf ("Warning: mach0_header %d = cmdsize<1.\n", i);
+			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
 
@@ -1245,16 +1246,17 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose) {
 	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
 	bin->verbose = verbose;
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size)))
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
 		return MACH0_(mach0_free)(bin);
+	}
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes(bin->b, buf, bin->size)) {
+	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
 		free (buf);
 		return MACH0_(mach0_free)(bin);
 	}
 	free (buf);
 	bin->dyld_info = NULL;
-	if (!init(bin)) {
+	if (!init (bin)) {
 		return MACH0_(mach0_free)(bin);
 	}
 	bin->imports_by_ord_size = 0;
@@ -1268,12 +1270,15 @@ struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, bool verbose) {
 		return NULL;
 	}
 	bin->kv = sdb_new (NULL, "bin.mach0", 0);
-	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	bin->verbose = verbose;
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
+// 	bin->b = r_buf_ref (buf);
+#if 1
+	bin->b = r_buf_new ();
+	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
 		return MACH0_(mach0_free) (bin);
 	}
+#endif
 	if (!init (bin)) {
 		return MACH0_(mach0_free)(bin);
 	}
@@ -1399,7 +1404,7 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
 				if (stridx >= 0 && stridx < bin->symstrlen) {
-					symstr = (char *)bin->symstr+stridx;
+					symstr = (char *)bin->symstr + stridx;
 				} else {
 					symstr = "???";
 				}
@@ -1521,7 +1526,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			}
 			stridx = bin->symtab[i].n_strx;
 			if (stridx >= 0 && stridx < bin->symstrlen) {
-				symstr = (char*)bin->symstr+stridx;
+				symstr = (char*)bin->symstr + stridx;
 			} else {
 				symstr = "???";
 			}
@@ -1669,7 +1674,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 		return NULL;
 	}
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
-		idx = bin->dysymtab.iundefsym +i;
+		idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
 			bprintf ("WARNING: Imports index out of bounds. Ignoring relocs\n");
 			free (imports);

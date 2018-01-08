@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -141,6 +141,12 @@ R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 
 R_API RBuffer *r_buf_new_with_string (const char *msg) {
 	return r_buf_new_with_bytes ((const ut8*)msg, (ut64) strlen (msg));
+}
+
+R_API RBuffer *r_buf_new_with_bufref(RBuffer *b) {
+	RBuffer *buf = r_buf_new_with_pointers (b->buf, b->length);
+	r_buf_ref (buf);
+	return buf;
 }
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
@@ -596,11 +602,11 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (b->empty) {
-		return 0;
+		return NULL;
 	}
 	if (b->fd != -1) {
 		eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
-		return 0;
+		return NULL;
 	}
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;
@@ -613,7 +619,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (left) {
 		*left = b->length - addr;
 	}
-	return b->buf+addr;
+	return b->buf + addr;
 }
 
 //ret 0 if failed; ret copied length if successful
@@ -712,6 +718,10 @@ R_API void r_buf_free(RBuffer *b) {
 	if (!b) {
 		return;
 	}
+	if (b->refctr > 0) {
+		b->refctr--;
+		return;
+	}
 	if (!b->ro) {
 		r_buf_deinit (b);
 	}
@@ -777,4 +787,11 @@ R_API bool r_buf_resize (RBuffer *b, ut64 newsize) {
 		return true;
 	}
 	return false;
+}
+
+R_API RBuffer *r_buf_ref(RBuffer *b) {
+	if (b) {
+		b->refctr++;
+	}
+	return b;
 }

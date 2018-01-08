@@ -203,4 +203,44 @@ struct cache_header {
 	ut64 localSymbolsSize;
 };
 
+// dupe?
+typedef struct {
+	char     magic[16];
+	uint32_t mappingOffset;
+	uint32_t mappingCount;
+	uint32_t imagesOffset;
+	uint32_t imagesCount;
+	uint64_t dyldBaseAddress;
+	uint64_t codeSignatureOffset;
+	uint64_t codeSignatureSize;
+	uint64_t slideInfoOffset;
+	uint64_t slideInfoSize;
+	uint64_t localSymbolsOffset;
+	uint64_t localSymbolsSize;
+	uint8_t  uuid[16];
+	uint64_t cacheType;
+	uint32_t branchPoolsOffset;
+	uint32_t branchPoolsCount;
+	uint64_t accelerateInfoAddr;
+	uint64_t accelerateInfoSize;
+	uint64_t imagesTextOffset;
+	uint64_t imagesTextCount;
+} cache_hdr_t;
+
+typedef struct {
+	uint64_t address;
+	uint64_t size;
+	uint64_t fileOffset;
+	uint32_t maxProt;
+	uint32_t initProt;
+} cache_map_t;
+
+typedef struct {
+	uint64_t address;
+	uint64_t modTime;
+	uint64_t inode;
+	uint32_t pathFileOffset;
+	uint32_t pad;
+} cache_img_t;
+
 #endif

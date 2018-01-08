@@ -111,7 +111,7 @@ static RList* sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		r_str_ncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		if (strstr (ptr->name, "la_symbol_ptr")) {
 #ifndef R_BIN_MACH064
 			const int sz = 4;
