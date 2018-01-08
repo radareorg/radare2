@@ -386,7 +386,7 @@ static int cmd_type(void *data, const char *input) {
 				char *cc = r_str_trim (r_core_cmd_str (core, "k anal/cc/default.cc"));
 				for (i = 0; i < 8; i++) {
 					char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
-					r_str_clean (res);
+					r_str_trim_nc (res);
 					if (*res) {
 						char *row = r_str_trim (r_core_cmd_strf (core, "drr~%s 0x", res));
 						r_cons_printf ("arg[%d] %s\n", i, row);

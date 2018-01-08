@@ -1043,7 +1043,6 @@ static int cmd_bsize(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_b);
 		break;
 	default:
-		//input = r_str_clean(input);
 		r_core_block_size (core, r_num_math (core->num, input));
 		break;
 	}
@@ -1052,22 +1051,22 @@ static int cmd_bsize(void *data, const char *input) {
 
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	ut64 oldsize, newsize = 0;
+	ut64 newsize = 0;
 	st64 delta = 0;
 	int grow, ret;
 
-	if (core->file)
-		oldsize = r_io_fd_size (core->io, core->file->fd);
-	else oldsize = 0;
+	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
 	switch (*input) {
 	case '2': // "r2"
 		// TODO: use argv[0] instead of 'radare2'
 		r_sys_cmdf ("radare%s", input);
 		return true;
 	case 'm': // "rm"
-		if (input[1] == ' ')
+		if (input[1] == ' ') {
 			r_file_rm (input + 2);
-		else eprintf ("Usage: rm [file]   # removes a file\n");
+		} else {
+			eprintf ("Usage: rm [file]   # removes a file\n");
+		}
 		return true;
 	case '\0':
 		if (core->file) {
@@ -1093,8 +1092,9 @@ static int cmd_resize(void *data, const char *input) {
 	case ' ': // "r "
 		newsize = r_num_math (core->num, input + 1);
 		if (newsize == 0) {
-			if (input[1] == '0')
+			if (input[1] == '0') {
 				eprintf ("Invalid size\n");
+			}
 			return false;
 		}
 		break;
@@ -1107,8 +1107,9 @@ static int cmd_resize(void *data, const char *input) {
 	grow = (newsize > oldsize);
 	if (grow) {
 		ret = r_io_resize (core->io, newsize);
-		if (ret < 1)
+		if (ret < 1) {
 			eprintf ("r_io_resize: cannot resize\n");
+		}
 	}
 
 	if (delta && core->offset < newsize)
@@ -1116,12 +1117,12 @@ static int cmd_resize(void *data, const char *input) {
 
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
-		if (ret < 1)
+		if (ret < 1) {
 			eprintf ("r_io_resize: cannot resize\n");
+		}
 	}
 
-	if (newsize < core->offset+core->blocksize ||
-			oldsize < core->offset + core->blocksize) {
+	if (newsize < core->offset+core->blocksize || oldsize < core->offset + core->blocksize) {
 		r_core_block_read (core);
 	}
 	return true;
@@ -1176,7 +1177,9 @@ static int cmd_thread(void *data, const char *input) {
 				RCoreTask *task = r_core_task_get (core, tid);
 				if (task) {
 					r_core_task_join (core, task);
-				} else eprintf ("Cannot find task\n");
+				} else {
+					eprintf ("Cannot find task\n");
+				}
 			} else {
 				r_core_task_run (core, NULL);
 			}
@@ -1207,9 +1210,7 @@ static int cmd_thread(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		{
-			helpCmdTasks (core);
-		}
+		helpCmdTasks (core);
 		break;
 	case ' ':
 		{
@@ -1242,7 +1243,10 @@ static int cmd_pointer(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	int ret = true;
 	char *str, *eq;
-	while (*input == ' ') input++;
+	input = r_str_trim_ro (input);
+	while (*input == ' ') {
+		input++;
+	}
 	if (!*input || *input == '?') {
 		r_core_cmd_help (core, help_msg_star);
 		return ret;
@@ -1884,7 +1888,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		if (!ptr2 || (ptr2 && ptr2 > ptr)) {
 			if (!tick || (tick && tick > ptr)) {
 				*ptr = '\0';
-				cmd = r_str_clean (cmd);
+				cmd = r_str_trim_nc (cmd);
 				if (!strcmp (ptr + 1, "?")) { // "|?"
 					// TODO: should be disable scr.color in pd| ?
 					eprintf ("Usage: <r2command> | <program|H|>\n");
@@ -2366,7 +2370,7 @@ ignore:
 		ptr = r_str_trim_head (ptr + 1);
 		ptr--;
 
-		cmd = r_str_clean (cmd);
+		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
 			    !memcmp (ptr + 1, "0x", 2) &&

@@ -3002,7 +3002,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			char *ostr, *regname;
 			*arg = 0;
 			ostr = r_str_trim (strdup (str + 1));
-			regname = r_str_clean (ostr);
+			regname = r_str_trim_nc (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {
 				int role = r_reg_get_name_idx (regname);
