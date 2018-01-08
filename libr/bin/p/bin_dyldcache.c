@@ -9,8 +9,9 @@
 #include "../format/mach0/mach0.h"
 
 static void* addr2ptr(uint64_t addr, cache_hdr_t *hdr) {
+	uint32_t i;
 	cache_map_t *map = (cache_map_t*)((const ut8*)hdr + hdr->mappingOffset);
-	for(uint32_t i = 0; i < hdr->mappingCount; ++i) {
+	for (i = 0; i < hdr->mappingCount; ++i) {
 		if (addr >= map[i].address && addr < map[i].address + map[i].size) {
 			return (void*)((const ut8*)hdr + map[i].fileOffset + (addr - map[i].address));
 		}
@@ -19,15 +20,16 @@ static void* addr2ptr(uint64_t addr, cache_hdr_t *hdr) {
 }
 
 static ut64 va2pa(uint64_t addr, void *cache) {
-        cache_hdr_t *hdr = (cache_hdr_t*)cache;
-        cache_map_t *map = (cache_map_t*)((uintptr_t)cache + hdr->mappingOffset);
-        for(uint32_t i = 0; i < hdr->mappingCount; ++i) {
-                if (addr >= map[i].address && addr < map[i].address + map[i].size) {
-                        return map[i].fileOffset + addr - map[i].address;
-                        // (void*)((uintptr_t)cache + map[i].fileOffset + (addr - map[i].address));
-                }
-        }
-        return UT64_MAX;
+	uint32_t i;
+	cache_hdr_t *hdr = (cache_hdr_t*)cache;
+	cache_map_t *map = (cache_map_t*)((uintptr_t)cache + hdr->mappingOffset);
+	for (i = 0; i < hdr->mappingCount; ++i) {
+		if (addr >= map[i].address && addr < map[i].address + map[i].size) {
+			return map[i].fileOffset + addr - map[i].address;
+			// (void*)((uintptr_t)cache + map[i].fileOffset + (addr - map[i].address));
+		}
+	}
+	return UT64_MAX;
 }
 
 static bool dyld64 = false;
@@ -129,7 +131,6 @@ void parse_mach064 (RList *ret, ut64 paddr, RBinFile *bf) {
 			break;
 		}
 		sym->name = strdup (symbols[i].name);
-eprintf ("-> %s\n", sym->name);
 		sym->vaddr = symbols[i].addr;
 		sym->paddr = symbols[i].offset + bf->o->boffset;
 		sym->size = symbols[i].size;
