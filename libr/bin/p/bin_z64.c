@@ -74,7 +74,7 @@ static bool check_bytes (const ut8 *buf, ut64 length) {
 	if (length < N64_ROM_START) {
 		return false;
 	}
-	return true;
+	return false;
 }
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
