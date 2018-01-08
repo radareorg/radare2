@@ -264,7 +264,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		sdb_unset (DB, key, 0);
 	}
 	sdb_unset (DB, key, 0);
-	if (type == R_META_TYPE_STRING_END) {
+	if (type == R_META_TYPE_STRING) {
 		r_meta_del (a, R_META_TYPE_STRING_END, addr + size, size);
 	}
 	return false;
