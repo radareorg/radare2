@@ -519,7 +519,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		if (_e) {
 			doEval = true;
 			p = _e + 2;
-			p = r_str_chop (p);
+			p = r_str_trim (p);
 		}
 	}
 	// TODO: set argv here

@@ -736,8 +736,7 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	return tmp;
 }
 
-// TODO: rename to r_str_trim_inplace() or something like that
-R_API char *r_str_chop(char *str) {
+R_API char *r_str_trim(char *str) {
 	int len;
 	char *ptr;
 

@@ -81,7 +81,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	ptr = strchr (buf, '#');
 	if (ptr) {
 		*ptr = 0;
-		r_str_chop (buf);
+		r_str_trim (buf);
 	}
 	if (*buf == '.' || buf[strlen(buf)-1] == ':') {
 		free (buf);

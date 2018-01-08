@@ -228,7 +228,7 @@ R_API char *r_syscmd_cat(const char *file) {
 	}
 	if (p && *p) {
 		char *filename = strdup (p);
-		filename = r_str_chop (filename);
+		filename = r_str_trim (filename);
 		char *data = r_file_slurp (filename, &sz);
 		if (!data) {
 			eprintf ("No such file or directory\n");
@@ -248,10 +248,10 @@ R_API char *r_syscmd_mkdir(const char *dir) {
 		int ret;
 		char *dirname;
 		if (!strncmp (p + 1, "-p ", 3)) {
-			dirname = r_str_chop (strdup (p + 3));
+			dirname = r_str_trim (strdup (p + 3));
 			ret = r_sys_mkdirp (dirname);
 		} else {
-			dirname = r_str_chop (strdup (p + 1));
+			dirname = r_str_trim (strdup (p + 1));
 			ret = r_sys_mkdir (dirname);
 		}
 		if (!ret) {

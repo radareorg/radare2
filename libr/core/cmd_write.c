@@ -483,7 +483,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 	int size;
 	const char *arg = input + ((input[1] == ' ') ? 2 : 1);
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
-	char *p, *a = r_str_chop (strdup (arg));
+	char *p, *a = r_str_trim (strdup (arg));
 	// XXX: file names cannot contain spaces
 	p = strchr (a, ' ');
 	if (p) *p++ = 0;

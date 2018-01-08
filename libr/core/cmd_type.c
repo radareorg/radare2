@@ -137,7 +137,7 @@ static void showFormat(RCore *core, const char *name) {
 	} else {
 		char *fmt = r_anal_type_format (core->anal, name);
 		if (fmt) {
-			r_str_chop (fmt);
+			r_str_trim (fmt);
 			r_cons_printf ("pf %s\n", fmt);
 			free (fmt);
 		} else {
@@ -383,12 +383,12 @@ static int cmd_type(void *data, const char *input) {
 		case 'r':
 			{ /* very slow, but im tired of waiting for having this, so this is the quickest implementation */
 				int i;
-				char *cc = r_str_chop (r_core_cmd_str (core, "k anal/cc/default.cc"));
+				char *cc = r_str_trim (r_core_cmd_str (core, "k anal/cc/default.cc"));
 				for (i = 0; i < 8; i++) {
 					char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
 					r_str_clean (res);
 					if (*res) {
-						char *row = r_str_chop (r_core_cmd_strf (core, "drr~%s 0x", res));
+						char *row = r_str_trim (r_core_cmd_strf (core, "drr~%s 0x", res));
 						r_cons_printf ("arg[%d] %s\n", i, row);
 						free (row);
 					}
@@ -574,7 +574,7 @@ static int cmd_type(void *data, const char *input) {
 		switch (input[1]) {
 		case 's': {
 			char *off = strdup (input + 2);
-			r_str_chop (off);
+			r_str_trim (off);
 			int toff = r_num_math (NULL, off);
 			if (toff) {
 				RList *typeoffs = r_anal_type_get_by_offset (core->anal, toff);
@@ -595,7 +595,7 @@ static int cmd_type(void *data, const char *input) {
 
 			if (ptr) {
 				*ptr++ = 0;
-				r_str_chop (ptr);
+				r_str_trim (ptr);
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
@@ -606,7 +606,7 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				addr = core->offset;
 			}
-			r_str_chop (type);
+			r_str_trim (type);
 			RAsmOp asmop;
 			RAnalOp op;
 			ut8 code[128] = {0};
@@ -664,7 +664,7 @@ static int cmd_type(void *data, const char *input) {
 
 			if (ptr) {
 				*ptr++ = 0;
-				r_str_chop (ptr);
+				r_str_trim (ptr);
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
@@ -675,7 +675,7 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				addr = core->offset;
 			}
-			r_str_chop (type);
+			r_str_trim (type);
 			char *tmp = sdb_get (core->anal->sdb_types, type, 0);
 			if (tmp && *tmp) {
 				r_anal_type_link (core->anal, type, addr);
@@ -692,7 +692,7 @@ static int cmd_type(void *data, const char *input) {
 			SdbKv *kv;
 			SdbListIter *sdb_iter;
 			SdbList *sdb_list = sdb_foreach_list (core->anal->sdb_types, true);
-			r_str_chop (addr);
+			r_str_trim (addr);
 			ptr = r_num_math (NULL, addr);
 			//r_core_cmdf (core, "tl~0x%08"PFMT64x" = ", addr);
 			ls_foreach (sdb_list, sdb_iter, kv) {

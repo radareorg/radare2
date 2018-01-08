@@ -114,7 +114,7 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCNAME:
 		//fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
 		//double& v = table[nc->string_value];
-		r_str_chop (nc->string_value);
+		r_str_trim (nc->string_value);
 		v = Nset (r_num_get (num, nc->string_value));
 		get_token (num, nc);
 		if (nc->curr_tok  == RNCASSIGN) {

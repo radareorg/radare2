@@ -2900,7 +2900,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 				r_str_replace_char (line, '\x1b', ' ');
 				r_str_replace_char (line, '\r', ' ');
 				r_str_replace_char (line, '\n', '\x00');
-				chopstr = r_str_chop (line);
+				chopstr = r_str_trim (line);
 				if (!*chopstr) {
 					free (line);
 					return;
@@ -3962,7 +3962,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			ds_print_color_reset (ds);
 		}
 		if (ds->show_comment_right && ds->comment) {
-			char *comment = r_str_chop (ds->comment);
+			char *comment = r_str_trim (ds->comment);
 			if (*comment) {
 				if (!desc) {
 					ds_align_comment (ds);

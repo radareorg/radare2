@@ -1646,7 +1646,7 @@ static int parse(RParse *p, const char *data, char *str) {
 
 	r_str_replace_char (buf, '(', ',');
 	r_str_replace_char (buf, ')', ' ');
-	r_str_chop (buf);
+	r_str_trim (buf);
 	if (*buf) {
 		w0[0] = '\0';
 		w1[0] = '\0';

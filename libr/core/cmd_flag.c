@@ -494,7 +494,7 @@ rep:
 						*eq ++ = 0;
 						off = r_num_math (core->num, eq);
 					}
-					r_str_chop (name);
+					r_str_trim (name);
 					if (fcn) {
 						if (*name=='-') {
 							r_anal_fcn_label_del (core->anal, fcn, name + 1, off);
@@ -685,7 +685,7 @@ rep:
 		} else {
 			RFlagItem *fi;
 			const char *ret;
-			char *arg = r_str_chop (strdup (input+2));
+			char *arg = r_str_trim (strdup (input+2));
 			char *color = strchr (arg, ' ');
 			if (color && color[1]) {
 				*color++ = 0;

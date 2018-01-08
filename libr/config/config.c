@@ -588,7 +588,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		return false;
 	}
 	memcpy (name, str, len);
-	str = r_str_chop (name);
+	str = r_str_trim (name);
 
 	if (!str) {
 		return false;
@@ -608,11 +608,11 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 	if (ptr) {
 		/* set */
 		ptr[0] = '\0';
-		a = r_str_chop (name);
-		b = r_str_chop (ptr + 1);
+		a = r_str_trim (name);
+		b = r_str_trim (ptr + 1);
 		(void) r_config_set (cfg, a, b);
 	} else {
-		char *foo = r_str_chop (name);
+		char *foo = r_str_trim (name);
 		if (foo[strlen (foo) - 1] == '.') {
 			r_config_list (cfg, name, 0);
 			return false;

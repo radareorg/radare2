@@ -2179,8 +2179,8 @@ r_cons_pop();
 					}
 				}
 				if (string) {
-					string = r_str_chop (string);
-					string2 = r_str_chop (string2);
+					string = r_str_trim (string);
+					string2 = r_str_trim (string2);
 					if (use_color) {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
@@ -2331,7 +2331,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		break;
 	case 'j':
 	{
-		char *str = r_str_chop (r_core_cmd_str (core, "ps @ [$$]"));
+		char *str = r_str_trim (r_core_cmd_str (core, "ps @ [$$]"));
 		char *p = str;
 		if (p) {
 			while (*p) {

@@ -823,10 +823,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				} else if (!strncmp (ptr, ".lil_endian", 7 + 4) || !strncmp (ptr, "little_endian", 7 + 6)) {
 					r_asm_set_big_endian (a, false);
 				} else if (!strncmp (ptr, ".asciz", 6)) {
-					r_str_chop (ptr + 8);
+					r_str_trim (ptr + 8);
 					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".string ", 8)) {
-					r_str_chop (ptr + 8);
+					r_str_trim (ptr + 8);
 					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".ascii", 6)) {
 					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
@@ -900,7 +900,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				}
 			} else { /* Instruction */
 				char *str = ptr_start;
-				ptr_start = r_str_chop (str);
+				ptr_start = r_str_trim (str);
 				if (a->ifilter) {
 					r_parse_parse (a->ifilter, ptr_start, ptr_start);
 				}

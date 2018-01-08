@@ -513,7 +513,7 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
 	ts += gmtoff;
-	return r_str_chop (strdup (ctime (&ts)));
+	return r_str_trim (strdup (ctime (&ts)));
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {

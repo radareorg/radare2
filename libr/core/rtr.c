@@ -1417,7 +1417,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		return;
 	}
 	*file++ = 0;
-	port = r_str_chop (port);
+	port = r_str_trim (port);
 	while (*file == ' ') {
 		file++;
 	}

@@ -244,7 +244,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		return false;
 	memcpy (buf, data, len+1);
 
-	r_str_chop (buf);
+	r_str_trim (buf);
 
 	if (*buf) {
 		w0[0]='\0';

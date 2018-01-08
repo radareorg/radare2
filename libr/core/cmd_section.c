@@ -264,7 +264,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
 			free (item->realname);
 			item->name = strdup (sdb_fmt (-1, "section.%s", s->name));
-			r_str_chop (item->name);
+			r_str_trim (item->name);
 			r_name_filter (item->name, 0);
 			item->realname = item->name;
 			break;
@@ -280,7 +280,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
 			free (item->realname);
 			item->name = strdup (sdb_fmt (-1, "section_end.%s", s->name));
-			r_str_chop (item->name);
+			r_str_trim (item->name);
 			r_name_filter (item->name, 0);
 			item->realname = item->name;
 			break;

@@ -123,7 +123,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	r_str_replace_in (buf, len+1, ".w", "", 1);
 	r_str_replace_in (buf, len+1, ".d", "", 1);
 	r_str_replace_in (buf, len+1, ".b", "", 1);
-	r_str_chop (buf);
+	r_str_trim (buf);
 
 	if (*buf) {
 		w0[0]='\0';

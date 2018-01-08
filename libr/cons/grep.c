@@ -383,7 +383,7 @@ R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 	ptr = preprocess_filter_expr (cmd, quotestr);
 
 	if (ptr) {
-		r_str_chop (cmd);
+		r_str_trim (cmd);
 		parse_grep_expression (ptr);
 		free (ptr);
 	}
@@ -394,7 +394,7 @@ R_API char * r_cons_grep_strip(char *cmd, const char *quotestr) {
 
 	if (cmd) {
 		ptr = preprocess_filter_expr (cmd, quotestr);
-		r_str_chop (cmd);
+		r_str_trim (cmd);
 	}
 	return ptr;
 }

@@ -939,7 +939,7 @@ static int var_cmd(RCore *core, const char *str) {
 				return false;
 			}
 			*new_name++ = 0;
-			r_str_chop (new_name);
+			r_str_trim (new_name);
 			v1 = r_anal_var_get_byname (core->anal, fcn, old_name);
 			if (v1) {
 				r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
@@ -960,7 +960,7 @@ static int var_cmd(RCore *core, const char *str) {
 		return true;
 	case 'd': // "afvd"
 		if (str[1]) {
-			p = r_str_chop (strchr (ostr, ' '));
+			p = r_str_trim (strchr (ostr, ' '));
 			if (!p) {
 				free (ostr);
 				return false;
@@ -1045,7 +1045,7 @@ static int var_cmd(RCore *core, const char *str) {
 				r_anal_var_delete (core->anal, fcn->addr,
 						type, 1, (int)r_num_math (core->num, str + 1));
 			} else {
-				char *name = r_str_chop ( strdup (str + 2));
+				char *name = r_str_trim ( strdup (str + 2));
 				r_anal_var_delete_byname (core->anal, fcn, type, name);
 				free (name);
 			}
@@ -2285,7 +2285,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_cons_println (fcn->cc);
 			break;
 		case ' ': { // "afc "
-			char *cc = r_str_chop (strdup (input + 3));
+			char *cc = r_str_trim (strdup (input + 3));
 			if (!r_anal_cc_exist (core->anal, cc)) {
 				eprintf ("Unknown calling convention '%s'\n"
 						"See afcl for available types\n", cc);
@@ -2301,7 +2301,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
 			break;
 		case 'o': { // "afco"
-			char *dbpath = r_str_chop (strdup (input + 3));
+			char *dbpath = r_str_trim (strdup (input + 3));
 			if (r_file_exists (dbpath)) {
 				Sdb *db = sdb_new (0, dbpath, 0);
 				sdb_merge (core->anal->sdb_cc, db);
@@ -2861,7 +2861,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		int len, type = R_REG_TYPE_GPR;
 		arg = strchr (str, ' ');
 		if (arg) {
-			char *string = r_str_chop (strdup (arg + 1));
+			char *string = r_str_trim (strdup (arg + 1));
 			if (string) {
 				type = r_reg_type_by_name (string);
 				if (type == -1 && string[0] != 'a') {
@@ -3001,7 +3001,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		if (arg) {
 			char *ostr, *regname;
 			*arg = 0;
-			ostr = r_str_chop (strdup (str + 1));
+			ostr = r_str_trim (strdup (str + 1));
 			regname = r_str_clean (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {

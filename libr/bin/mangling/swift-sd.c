@@ -146,7 +146,7 @@ static char *swift_demangle_cmd(const char *s) {
 			free (res);
 			res = NULL;
 		}
-		return r_str_chop (res);
+		return r_str_trim (res);
 	}
 	return NULL;
 }

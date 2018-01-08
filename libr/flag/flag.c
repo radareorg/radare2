@@ -107,7 +107,7 @@ static int set_name(RFlagItem *item, const char *name) {
 	if (!item->name) {
 		return false;
 	}
-	r_str_chop (item->name);
+	r_str_trim (item->name);
 	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
 	free (item->realname);
 	item->realname = item->name;

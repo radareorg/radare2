@@ -63,7 +63,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	free (obinfilepath);
 	obinfilepath = strdup (ofilepath);
 
-	// r_str_chop (path);
+	// r_str_trim (path);
 	file = r_core_file_open (core, path, perm, laddr);
 	if (file) {
 		bool had_rbin_info = false;
