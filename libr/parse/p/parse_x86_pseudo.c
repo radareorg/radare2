@@ -170,10 +170,6 @@ static int parse (RParse *p, const char *data, char *str) {
 	if (!(buf = strdup (data))) {
 		return false;
 	}
-	if (!strncasecmp (buf, "lea", 3)) {
-		r_str_replace_char (buf, '[', 0);
-		r_str_replace_char (buf, ']', 0);
-	}
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
 		end = strchr (buf, '\0');
@@ -371,10 +367,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 				free (tstr);
 				tstr = tstr_new;
 			}
-				if (!strncasecmp (tstr, "lea", 3)) {
-					r_str_replace_char (tstr, '[', 0);
-					r_str_replace_char (tstr, ']', 0);
-				}
 		}
 	}
 
