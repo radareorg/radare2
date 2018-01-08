@@ -2517,7 +2517,8 @@ static int opfldcw(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_WORD) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
 			data[l++] = 0xd9;
 			data[l++] = 0x28 | op->operands[0].regs[0];
 		} else {
@@ -2551,7 +2552,8 @@ static int opfbld(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_TBYTE) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_TBYTE ) {
 			data[l++] = 0xdf;
 			data[l++] = 0x20 | op->operands[0].regs[0];
 		} else {
@@ -2568,7 +2570,8 @@ static int opfbstp(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_TBYTE) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_TBYTE ) {
 			data[l++] = 0xdf;
 			data[l++] = 0x30 | op->operands[0].regs[0];
 		} else {
@@ -3149,7 +3152,8 @@ static int opfnstcw(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_WORD) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
 			data[l++] = 0xd9;
 			data[l++] = 0x38 | op->operands[0].regs[0];
 		} else {
@@ -3166,7 +3170,8 @@ static int opfstcw(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_WORD) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
 			data[l++] = 0x9b;
 			data[l++] = 0xd9;
 			data[l++] = 0x38 | op->operands[0].regs[0];
