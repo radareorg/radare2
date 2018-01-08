@@ -2139,23 +2139,30 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (r_config_get_i (core->config, "scr.wheelnkey")) {
 					r_core_cmd0 (core, "sp");
 				} else {
+					RAnalMetaItem *ami = r_meta_find (core->anal,
+							core->offset, R_META_TYPE_STRING_END,
+							R_META_WHERE_HERE);
 					int times = wheelspeed;
 					if (times < 1) {
 						times = 1;
 					}
-					while (times--) {
-						if (isDisasmPrint (core->printidx)) {
-							RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-							if (f && f->folded) {
-								cols = core->offset - f->addr; // + f->size;
-								if (cols < 1) {
-									cols = 4;
+					if (ami) {
+						r_core_seek_delta (core, -1 * ami->size);
+					} else {
+						while (times--) {
+							if (isDisasmPrint (core->printidx)) {
+								RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+								if (f && f->folded) {
+									cols = core->offset - f->addr; // + f->size;
+									if (cols < 1) {
+										cols = 4;
+									}
+								} else {
+									cols = prevopsz (core, core->offset);
 								}
-							} else {
-								cols = prevopsz (core, core->offset);
 							}
+							r_core_seek_delta (core, -cols);
 						}
-						r_core_seek_delta (core, -cols);
 					}
 				}
 			}

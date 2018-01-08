@@ -264,6 +264,9 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		sdb_unset (DB, key, 0);
 	}
 	sdb_unset (DB, key, 0);
+	if (type == R_META_TYPE_STRING_END) {
+		r_meta_del (a, R_META_TYPE_STRING_END, addr + size, size);
+	}
 	return false;
 }
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
@@ -369,6 +372,11 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 	}
 	snprintf (val, sizeof (val)-1, "%c", type);
 	sdb_array_add (DB, key, val, 0);
+
+	if (type == R_META_TYPE_STRING) {
+		// it's a string, let's also mark where the end of it is.
+		meta_add (a, R_META_TYPE_STRING_END, subtype, to, to + (to - from), NULL);
+	}
 
 	return true;
 }
