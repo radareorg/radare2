@@ -6,8 +6,6 @@ include ../mk/${COMPILER}.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
-#ARTYPE:=gnu or ios
-ARTYPE:=default
 
 S=$
 B=`
@@ -42,7 +40,13 @@ libr.${EXT_SO}:
 	rm -rf .libr/tcc # WHY
 	$(CC) $(LDFLAGS) -shared -dynamic -arch arm64 -o libr.${EXT_SO} .libr/*/*.o ../shlr/gdb/lib/libgdbr.a
 
-include Makefile-ar.mk
+libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) $(shell find ../shlr -name '*.${EXT_AR}')
+	rm -rf .libr
+	mkdir .libr
+	for LIB in $^ ; do \
+		${PARTIALLD} -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+	done
+	${AR} crs $@ .libr/*.o
 
 $(LIBS):
 	@echo "DIR $@"
