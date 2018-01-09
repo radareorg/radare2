@@ -3270,6 +3270,28 @@ static int opfsave(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int oplldt(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x00;
+			if ( op->operands[0].type & OT_MEMORY ) {
+				data[l++] = 0x10 | op->operands[0].regs[0];
+			} else {
+				data[l++] = 0xd0 | op->operands[0].reg;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3480,6 +3502,7 @@ LookupTable oplookup[] = {
 	{"js", 0, &opjc, 0},
 	{"jz", 0, &opjc, 0},
 	{"lahf", 0, NULL, 0x9f},
+	{"lldt", 0, &oplldt, 0},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
 	{"les", 0, &oples, 0},
