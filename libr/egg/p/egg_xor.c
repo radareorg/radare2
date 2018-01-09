@@ -33,6 +33,12 @@ static RBuffer *build (REgg *egg) {
 		return NULL;
 	}
 	sc = egg->bin; // hack
+	if (!sc->length) {
+		eprintf ("No shellcode found!\n");
+		free (key);
+		return NULL;
+	}
+
 	for (i = 0; i<sc->length; i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 		if ((sc->buf[i]^nkey)==0) {
