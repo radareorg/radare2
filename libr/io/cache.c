@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2008-2017 - pancake */
 
 // TODO: implement a more inteligent way to store cached memory
-// TODO: define limit of max mem to cache
 
 #include "r_io.h"
 
@@ -120,8 +119,9 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 		}
 		j++;
 	}
-	if (rad == 2)
+	if (rad == 2) {
 		io->cb_printf ("]");
+	}
 	return false;
 }
 
