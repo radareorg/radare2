@@ -2187,7 +2187,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("function: %s", fcn->diff->name);
 		}
 	}
-	r_list_free (xrefs)
+	r_list_free (xrefs);
 	free (name);
 	return 0;
 }
