@@ -976,7 +976,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			_input++;
 			val = sdb_get (core->print->formats, _input, NULL);
 			if (val) {
-				r_cons_printf ("%d\n", r_print_format_struct_size (val, core->print, mode, 0));
+				r_cons_printf ("%d byte(s)\n", r_print_format_struct_size (val, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -985,7 +985,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				_input++;
 			}
 			if (*_input) {
-				r_cons_printf ("%d\n", r_print_format_struct_size (_input, core->print, mode, 0));
+				r_cons_printf ("%d byte(s)\n", r_print_format_struct_size (_input, core->print, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
