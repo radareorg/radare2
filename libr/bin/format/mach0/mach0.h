@@ -22,6 +22,7 @@ struct section_t {
 	ut64 offset;
 	ut64 addr;
 	ut64 size;
+	ut64 vsize;
 	ut32 align;
 	ut32 flags;
 	int srwx;

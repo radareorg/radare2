@@ -124,7 +124,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);
 		ptr->size = sections[i].size;
-		ptr->vsize = sections[i].size;
+		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].offset + obj->boffset;
 		ptr->vaddr = sections[i].addr;
 		ptr->add = true;
