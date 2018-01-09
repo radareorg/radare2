@@ -3314,6 +3314,42 @@ static int oplmsw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int oplgdt(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x01;
+			data[l++] = 0x10 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int oplidt(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x01;
+			data[l++] = 0x18 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3524,11 +3560,13 @@ LookupTable oplookup[] = {
 	{"js", 0, &opjc, 0},
 	{"jz", 0, &opjc, 0},
 	{"lahf", 0, NULL, 0x9f},
-	{"lldt", 0, &oplldt, 0},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
 	{"les", 0, &oples, 0},
 	{"lfence", 0, NULL, 0x0faee8, 3},
+	{"lgdt", 0, &oplgdt, 0},
+	{"lidt", 0, &oplidt, 0},
+	{"lldt", 0, &oplldt, 0},
 	{"lmsw", 0, &oplmsw, 0},
 	{"lodsb", 0, NULL, 0xac, 1},
 	{"lodsd", 0, NULL, 0xad, 1},
