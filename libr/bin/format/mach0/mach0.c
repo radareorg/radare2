@@ -1313,7 +1313,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			seg = &bin->segs[i];
 			sections[i].addr = seg->vmaddr;
 			sections[i].offset = seg->fileoff;
-			sections[i].size = seg->flags & S_ZEROFILL ? 0 : seg->vmsize;
+			sections[i].size = seg->vmsize;
 			sections[i].vsize = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
