@@ -73,6 +73,11 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	ut64 total_size = tsize + rosize + dsize;
 	ut8 *newbuf = calloc (total_size, sizeof (ut8));
 	ut64 ba = baddr (bf);
+
+        if (rbin->iob.io && !(rbin->iob.io->cached & R_IO_WRITE)) {
+                eprintf ("Please add \'-e io.cache=true\' option to r2 command\n");
+                goto fail;
+        }
 	/* Decompress each sections */
 	if (decompress (buf + toff, newbuf, rooff - toff, tsize) != tsize) {
 		goto fail;
@@ -201,7 +206,6 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = readLE32 (b, NSO_OFF (data_loc)) + ba;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;	// rw-
 	ptr->add = true;
-	// eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		readLE32 (bf->buf, NSO_OFF (bss_size)));
 	r_list_append (ret, ptr);
