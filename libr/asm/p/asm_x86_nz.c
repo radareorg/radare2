@@ -2517,7 +2517,8 @@ static int opfldcw(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_WORD) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
 			data[l++] = 0xd9;
 			data[l++] = 0x28 | op->operands[0].regs[0];
 		} else {
@@ -2551,7 +2552,8 @@ static int opfbld(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_TBYTE) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_TBYTE ) {
 			data[l++] = 0xdf;
 			data[l++] = 0x20 | op->operands[0].regs[0];
 		} else {
@@ -2568,7 +2570,8 @@ static int opfbstp(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
-		if ( op->operands[0].type & (OT_MEMORY | OT_TBYTE) ) {
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_TBYTE ) {
 			data[l++] = 0xdf;
 			data[l++] = 0x30 | op->operands[0].regs[0];
 		} else {
@@ -3145,6 +3148,128 @@ static int opfisubr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opfnstcw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
+			data[l++] = 0xd9;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfstcw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x9b;
+			data[l++] = 0xd9;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfnstsw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
+			data[l++] = 0xdd;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else if ( op->operands[0].type & OT_GPREG &&
+			    op->operands[0].type & OT_WORD  &&
+			    op->operands[0].reg == X86R_AX ) {
+			data[l++] = 0xdf;
+			data[l++] = 0xe0;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfstsw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x9b;
+			data[l++] = 0xdd;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else if ( op->operands[0].type & OT_GPREG &&
+			    op->operands[0].type & OT_WORD  &&
+			    op->operands[0].reg == X86R_AX ) {
+			data[l++] = 0x9b;
+			data[l++] = 0xdf;
+			data[l++] = 0xe0;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfnsave(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_DWORD ) {
+			data[l++] = 0xdd;
+			data[l++] = 0x30 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opfsave(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_DWORD ) {
+			data[l++] = 0x9b;
+			data[l++] = 0xdd;
+			data[l++] = 0x30 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3272,18 +3397,24 @@ LookupTable oplookup[] = {
 	{"fnclex", 0, NULL, 0xdbe2, 2},
 	{"fninit", 0, NULL, 0xdbe3, 2},
 	{"fnop", 0, NULL, 0xd9d0, 2},
+        {"fnsave", 0, &opfnsave, 0},
+        {"fnstcw", 0, &opfnstcw, 0},
         {"fnstenv", 0, &opfnstenv, 0},
+        {"fnstsw", 0, &opfnstsw, 0},
 	{"fpatan", 0, NULL, 0xd9f3, 2},
 	{"fprem", 0, NULL, 0xd9f8, 2},
 	{"fprem1", 0, NULL, 0xd9f5, 2},
 	{"fptan", 0, NULL, 0xd9f2, 2},
 	{"frndint", 0, NULL, 0xd9fc, 2},
 	{"frstor", 0, &opfrstor, 0},
+	{"fsave", 0, &opfsave, 0},
 	{"fscale", 0, NULL, 0xd9fd, 2},
 	{"fsin", 0, NULL, 0xd9fe, 2},
 	{"fsincos", 0, NULL, 0xd9fb, 2},
 	{"fsqrt", 0, NULL, 0xd9fa, 2},
+        {"fstcw", 0, &opfstcw, 0},
         {"fstenv", 0, &opfstenv, 0},
+        {"fstsw", 0, &opfstsw, 0},
 	{"fsub", 0, &opfsub, 0},
 	{"fsubp", 0, &opfsubp, 0},
 	{"fsubr", 0, &opfsubr, 0},
