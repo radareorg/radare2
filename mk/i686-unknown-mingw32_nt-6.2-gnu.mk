@@ -1,4 +1,4 @@
-# AppVeyour
+# AppVeyor
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 CC=gcc
@@ -6,7 +6,8 @@ RANLIB=ranlib
 ONELIB=0
 OSTYPE=windows
 LINK=
-CC_AR=ar -r ${LIBAR}
+AR=ar
+CC_AR=${AR} -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

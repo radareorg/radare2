@@ -1,11 +1,12 @@
-#CC=arm-linux-androideabi-gcc
-CC=ios-sdk-gcc
-USERCC=ios-sdk-gcc
+CROSS=ios-sdk-
+CC=${CROSS}gcc
+USERCC=${CROSS}gcc
 RANLIB=ranlib
 ONELIB=0
 OSTYPE=darwin
 LINK=
-CC_AR=ar -r ${LIBAR}
+AR=ar
+CC_AR=${AR} -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o

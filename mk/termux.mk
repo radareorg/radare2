@@ -5,7 +5,8 @@ USERCC=gcc -fPIC -fPIE
 ARCH=arm
 
 RANLIB=ranlib
-CC_AR=ar -r ${LIBAR}
+AR=ar
+CC_AR=${AR} -r ${LIBAR}
 
 ONELIB=0
 OSTYPE=android
