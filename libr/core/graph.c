@@ -2175,6 +2175,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RANode *node, *fcn_anode;
 	RListIter *iter;
 	RAnalRef *ref;
+	RList *refs;
 	char *title, *body;
 
 	if (!f) {
@@ -2197,7 +2198,8 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
-	r_list_foreach (fcn->refs, iter, ref) {
+	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	r_list_foreach (refs, iter, ref) {
 		/* XXX: something is broken, why there are duplicated
 		 *      nodes here?! goto check fcn->refs!! */
 		/* avoid dups wtf */
@@ -2229,6 +2231,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		r_agraph_add_edge (g, fcn_anode, node);
 	}
+	r_list_free (refs);
 #else
 	eprintf ("Must be sdbized\n");
 #endif

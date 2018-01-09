@@ -1882,16 +1882,6 @@ R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
 	return closer;
 }
 
-/* getters */
-#if FCN_OLD
-R_API RList *r_anal_fcn_get_refs(RAnalFunction *fcn) {
-	return fcn->refs;
-}
-R_API RList *r_anal_fcn_get_xrefs(RAnalFunction *fcn) {
-	return fcn->xrefs;
-}
-#endif
-
 R_API RList *r_anal_fcn_get_bbs(RAnalFunction *anal) {
 	// avoid received to free this thing
 	// anal->bbs->rc++;
@@ -2048,4 +2038,14 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 		}
 	}
 	return edges;
+}
+
+R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
+	RList *ret = r_list_clone (fcn->refs);
+	return ret;
+}
+
+R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
+	RList *ret = r_list_clone (fcn->xrefs);
+	return ret;
 }
