@@ -44,16 +44,18 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 		return NULL;
 	}
 
-	RList *refs = r_list_newf ((RListFree) free);
-	r_list_foreach (fcn->refs, iter, refi) {
+	RList *ret = r_list_newf ((RListFree) free);
+	RList *refs = r_anal_fcn_get_refs (a, fcn);
+	r_list_foreach (refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
-				r_list_append (refs, r_str_newf (flag));
+				r_list_append (ret, r_str_newf (flag));
 			}
 		}
 	}
-	return refs;
+	r_list_free (refs);
+	return ret;
 }
 
 static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {

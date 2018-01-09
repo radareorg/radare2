@@ -303,7 +303,8 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	if (fcn) {
 		RAnalRef *ref;
 		RListIter *iter;
-		r_list_foreach (fcn->refs, iter, ref) {
+		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+		r_list_foreach (refs, iter, ref) {
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 			if (f) {
 				if (dump) {
@@ -340,6 +341,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				}
 			}
 		}
+		r_list_free (refs);
 		// TODO: append counter if name already exists
 		if (use_getopt) {
 			RFlagItem *item = r_flag_get (core->flags, "main");
@@ -378,12 +380,14 @@ static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
 static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *ref;
-	r_list_foreach (fcn->refs, iter, ref) {
+	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_DATA &&
 		    r_bin_is_string (core->bin, ref->addr)) {
 			ref->type = R_ANAL_REF_TYPE_STRING;
 		}
 	}
+	r_list_free (refs);
 }
 
 static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
@@ -454,8 +458,9 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	RListIter *iter, *tmp;
 	RAnalRef *ref;
+	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 
-	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
+	r_list_foreach_safe (refs, iter, tmp, ref) {
 		if (ref->addr != UT64_MAX) {
 			switch (ref->type) {
 			case 'd':
@@ -475,6 +480,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 		}
 	}
 
+	r_list_free (refs);
 	return 1;
 }
 
@@ -646,7 +652,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				ref->addr = from;
 				ref->at = fcn->addr;
 				ref->type = reftype;
-				r_list_append (fcn->xrefs, ref);
 				// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
 				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
 			}
@@ -1353,6 +1358,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
+	RList *xrefs = NULL;
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
@@ -1406,24 +1412,18 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			// XXX: use r_anal-xrefs api and sdb
 			// If the xref is new, add it
 			// avoid dupes
-			r_list_foreach (fcn->xrefs, iter, ref) {
+			xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+			r_list_foreach (xrefs, iter, ref) {
 				if (from == ref->addr) {
+					r_list_free (xrefs);
 					return true;
 				}
 			}
 			ref = r_anal_ref_new ();
+			r_list_free (xrefs);
 			if (!ref) {
 				eprintf ("Error: new (xref)\n");
 				return false;
-			}
-			ref->addr = from;
-			ref->at = at;
-			ref->type = reftype;
-			if (reftype == R_ANAL_REF_TYPE_DATA) {
-				// XXX HACK TO AVOID INVALID REFS
-				r_list_append (fcn->xrefs, ref);
-			} else {
-				free (ref);
 			}
 			// we should analyze and add code ref otherwise aaa != aac
 			if (from != UT64_MAX) {
@@ -1434,7 +1434,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					ref->addr = from;
 					ref->at = fcn->addr;
 					ref->type = reftype;
-					r_list_append (fcn->xrefs, ref);
 					// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
 					r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
 				} else {
@@ -1477,15 +1476,17 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 		const char *me = fcn->name;
 		RListIter *iter;
 		RAnalRef *ref;
+		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 		r_cons_printf ("e graph.layout=1\n");
 		r_cons_printf ("ag-\n");
 		r_cons_printf ("agn %s\n", me);
-		r_list_foreach (fcn->refs, iter, ref) {
+		r_list_foreach (refs, iter, ref) {
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
 			const char *dst = item? item->name: sdb_fmt (0, "0x%08"PFMT64x, ref->addr);
 			r_cons_printf ("agn %s\n", dst);
 			r_cons_printf ("age %s %s\n", me, dst);
 		}
+		r_list_free (refs);
 		RList *list = r_anal_xrefs_get (core->anal, addr);
 		r_list_foreach (list, iter, ref) {
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
@@ -1547,6 +1548,7 @@ repeat:
 		if (addr != UT64_MAX && addr != fcni->addr) {
 			continue;
 		}
+		RList *refs = r_anal_fcn_get_refs (core->anal, fcni);
 		if (!fmt) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		} else if (fmt == 1 && isGML) {
@@ -1560,7 +1562,7 @@ repeat:
 				free (msg);
 			}
 		} else if (fmt == 2) {
-			if (hideempty && !r_list_length (fcni->refs)) {
+			if (hideempty && !r_list_length (refs)) {
 				continue;
 			}
 			if (usenames) {
@@ -1579,7 +1581,7 @@ repeat:
 		}
 		first2 = 0;
 		// TODO: maybe fcni->calls instead ?
-		r_list_foreach (fcni->refs, iter2, fcnr) {
+		r_list_foreach (refs, iter2, fcnr) {
 			RAnalFunction *fr = r_anal_get_fcn_in (core->anal, fcnr->addr, 0);
 			if (!fr) {
 				fr = &fakefr;
@@ -1675,7 +1677,8 @@ repeat:
 				}
 			} else if (fmt == 2) {
 				if (fr) {
-					if (!hideempty || (hideempty && r_list_length (fr->refs) > 0)) {
+					RList *refs1 = r_anal_fcn_get_refs (core->anal, fr);
+					if (!hideempty || (hideempty && r_list_length (refs1) > 0)) {
 						if (usenames) {
 							r_cons_printf ("%s\"%s\"", first2?",":"", fr->name);
 						} else {
@@ -1683,6 +1686,7 @@ repeat:
 						}
 						first2 = 1;
 					}
+					r_list_free (refs1);
 				}
 			} else {
 				if (refgraph || fcnr->type == 'C') {
@@ -1772,22 +1776,24 @@ static int cmpfcn(const void *_a, const void *_b) {
 static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	RList *refs = NULL;
+	RList *refs, *xrefs;
 
 	r_list_foreach (fcns, iter, fcn) {
 		// Count the number of references and number of calls
 		RListIter *callrefiter;
 		RAnalRef *ref;
+		RList *refs = r_anal_fcn_get_refs (anal, fcn);
 		int numcallrefs = 0;
-		r_list_foreach (fcn->refs, callrefiter, ref) {
+		r_list_foreach (refs, callrefiter, ref) {
 			if (ref->type == R_ANAL_REF_TYPE_CALL) {
 				numcallrefs++;
 			}
 		}
 		fcn->meta.numcallrefs = numcallrefs;
-		refs = r_anal_xrefs_get (anal, fcn->addr);
-		fcn->meta.numrefs = refs? refs->length: 0;
+		xrefs = r_anal_xrefs_get (anal, fcn->addr);
+		fcn->meta.numrefs = xrefs? xrefs->length: 0;
 		r_list_free (refs);
+		r_list_free (xrefs);
 
 		// Determine the bounds of the functions address space
 		ut64 min = UT64_MAX;
@@ -1923,6 +1929,7 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
+	RList *refs, *xrefs;
 	bool first = true;
 	int ebbs = 0;
 	char *name = get_fcn_name (core, fcn);
@@ -1942,9 +1949,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
 	int outdegree = 0;
-	if (!r_list_empty (fcn->refs)) {
+	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	if (!r_list_empty (refs)) {
 		r_cons_printf (",\"callrefs\":[");
-		r_list_foreach (fcn->refs, iter, refi) {
+		r_list_foreach (refs, iter, refi) {
 			if (refi->type == R_ANAL_REF_TYPE_CALL) {
 				outdegree++;
 			}
@@ -1962,7 +1970,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 
 		first = true;
 		r_cons_printf (",\"datarefs\":[");
-		r_list_foreach (fcn->refs, iter, refi) {
+		r_list_foreach (refs, iter, refi) {
 			if (refi->type == R_ANAL_REF_TYPE_DATA) {
 				r_cons_printf ("%s%"PFMT64d, first?"":",", refi->addr);
 				first = false;
@@ -1970,12 +1978,14 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		}
 		r_cons_printf ("]");
 	}
+	r_list_free (refs);
 
 	int indegree = 0;
-	if (!r_list_empty (fcn->xrefs)) {
+	xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+	if (!r_list_empty (xrefs)) {
 		first = true;
 		r_cons_printf (",\"codexrefs\":[");
-		r_list_foreach (fcn->xrefs, iter, refi) {
+		r_list_foreach (xrefs, iter, refi) {
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			    refi->type == R_ANAL_REF_TYPE_CALL) {
 				indegree++;
@@ -1990,7 +2000,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 
 		first = 1;
 		r_cons_printf ("],\"dataxrefs\":[");
-		r_list_foreach (fcn->xrefs, iter, refi) {
+		r_list_foreach (xrefs, iter, refi) {
 			if (refi->type == R_ANAL_REF_TYPE_DATA) {
 				r_cons_printf ("%s%"PFMT64d, first?"":",", refi->addr);
 				first = 0;
@@ -1998,6 +2008,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		}
 		r_cons_printf ("]");
 	}
+	r_list_free (xrefs);
 
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"difftype\":\"%s\"",
@@ -2070,7 +2081,8 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	/* Show references */
 	RListIter *refiter;
 	RAnalRef *refi;
-	r_list_foreach (fcn->refs, refiter, refi) {
+	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	r_list_foreach (refs, refiter, refi) {
 		switch (refi->type) {
 		case R_ANAL_REF_TYPE_CALL:
 			r_cons_printf ("afxC 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->at, refi->addr);
@@ -2085,6 +2097,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	}
 	/*Saving Function stack frame*/
 	r_cons_printf ("afS %"PFMT64d" @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
+	r_list_free (refs);
 	free (name);
 	return 0;
 }
@@ -2092,6 +2105,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
+	RList *refs, *xrefs;
 	int ebbs = 0;
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
@@ -2114,7 +2128,8 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nend-bbs: %d", ebbs);
 	r_cons_printf ("\ncall-refs: ");
 	int outdegree = 0;
-	r_list_foreach (fcn->refs, iter, refi) {
+	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	r_list_foreach (refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CALL) {
 			outdegree++;
 		}
@@ -2124,15 +2139,17 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	r_cons_printf ("\ndata-refs: ");
-	r_list_foreach (fcn->refs, iter, refi) {
+	r_list_foreach (refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_DATA) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 		}
 	}
+	r_list_free (refs);
 
 	int indegree = 0;
 	r_cons_printf ("\ncode-xrefs: ");
-	r_list_foreach (fcn->xrefs, iter, refi) {
+	xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+	r_list_foreach (xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			indegree++;
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
@@ -2142,7 +2159,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
 	r_cons_printf ("\ndata-xrefs: ");
-	r_list_foreach (fcn->xrefs, iter, refi) {
+	r_list_foreach (xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_DATA) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 		}
@@ -2170,6 +2187,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("function: %s", fcn->diff->name);
 		}
 	}
+	r_list_free (xrefs)
 	free (name);
 	return 0;
 }

@@ -2531,10 +2531,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (fcn) {
 					RAnalRef *ref;
 					RListIter *iter;
-					r_list_foreach (fcn->refs, iter, ref) {
+					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+					r_list_foreach (refs, iter, ref) {
 						r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
 							ref->type, ref->at, ref->addr);
 					}
+					r_list_free (refs);
 				} else eprintf ("Cannot find function\n");
 			}
 #else
@@ -2548,18 +2550,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'C': { // "afxC"
 			char *p;
 			ut64 a, b;
-			RAnalFunction *fcn;
 			char *mi = strdup (input);
 			if (mi && mi[3] == ' ' && (p = strchr (mi + 4, ' '))) {
 				*p = 0;
 				a = r_num_math (core->num, mi + 3);
 				b = r_num_math (core->num, p + 1);
-				fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_NULL);
-				if (fcn) {
-					r_anal_fcn_xref_add (core->anal, fcn, a, b, input[2]);
-				} else {
-					eprintf ("Cannot add reference to non-function\n");
-				}
+				r_anal_xrefs_set (core->anal, input[2], a, b);
 			} else {
 				r_core_cmd_help (core, help_msg_afx);
 			}
@@ -2570,16 +2566,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			{
 			char *p;
 			ut64 a, b;
-			RAnalFunction *fcn;
 			char *mi = strdup (input + 3);
 			if (mi && *mi == ' ' && (p = strchr (mi + 1, ' '))) {
 				*p = 0;
 				a = r_num_math (core->num, mi);
 				b = r_num_math (core->num, p + 1);
-				fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
-				if (fcn) {
-					r_anal_fcn_xref_del (core->anal, fcn, a, b, -1);
-				} else eprintf ("Cannot del reference to non-function\n");
+				r_anal_xrefs_deln (core->anal, -1, a, b);
 			} else {
 				eprintf ("Usage: afx- [src] [dst]\n");
 			}
@@ -2645,7 +2637,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				RAnalRef *ref;
 				RListIter *iter;
-				r_list_foreach (fcn->refs, iter, ref) {
+				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+				r_list_foreach (refs, iter, ref) {
 					if (ref->addr == UT64_MAX) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
@@ -2664,7 +2657,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (f) {
 						RListIter *iter;
 						RAnalRef *ref;
-						r_list_foreach (f->refs, iter, ref) {
+						RList *refs1 = r_anal_fcn_get_refs (core->anal, f);
+						r_list_foreach (refs1, iter, ref) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
 								continue;
 							}
@@ -2674,6 +2668,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
 							// recursively follow fcn->refs again and again
 						}
+						r_list_free (refs1);
 					} else {
 						f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 						if (f) {
@@ -2689,6 +2684,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 #endif
 				}
+				r_list_free (refs);
 			}
 		}
 
@@ -4628,8 +4624,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				}
 #else
 				// add xref here
-				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-				r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
+				r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_CALL, addr, op.jump);
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
@@ -5105,7 +5100,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 			if (!list) {
 				RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-				list = fcn? fcn->refs: NULL;
+				list = r_anal_fcn_get_refs (core->anal, fcn);
 			}
 		} else {
 			list = r_anal_refs_get (core->anal, addr);
@@ -5162,6 +5157,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			}
 			r_list_free (list_);
+			r_list_free (list);
 		} else {
 			if (input[1] == 'j') { // axfj
 				r_cons_print ("[]\n");
@@ -5191,12 +5187,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (ptr);
 			return false;
 		}
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
-		if (fcn) {
-			r_anal_fcn_xref_add (core->anal, fcn, at, addr, input[0]);
-		} else {
-			r_anal_ref_add (core->anal, addr, at, input[0]);
-		}
+		r_anal_xrefs_set (core->anal, input[0], at, addr);
 		free (ptr);
 		}
 	   	break;
@@ -5849,9 +5840,15 @@ static int compute_code (RCore* core) {
 static int compute_calls(RCore *core) {
 	RListIter *iter;
 	RAnalFunction *fcn;
+	RList *xrefs;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		cov += r_list_length (fcn->xrefs);
+		xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+		if (xrefs) {
+			cov += r_list_length (xrefs);
+			r_list_free (xrefs);
+			xrefs = NULL;
+		}
 	}
 	return cov;
 }

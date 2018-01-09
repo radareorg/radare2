@@ -320,7 +320,11 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 		return UT64_MAX;
 	}
 #if FCN_OLD
-	list = (t=='r')? fcn->refs: fcn->xrefs;
+	if (t == 'r') {
+		list = r_anal_fcn_get_refs (core->anal, fcn);
+	} else {
+		list = r_anal_fcn_get_xrefs (core->anal, fcn);
+	}
 	r_list_foreach (list, iter, r) {
 		if (r->type == type) {
 			if (i == n) {
@@ -329,6 +333,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 			i++;
 		}
 	}
+	r_list_free (list);
 #else
 #warning implement getref() using sdb
 #endif
