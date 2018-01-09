@@ -430,6 +430,7 @@ int main(int argc, char **argv) {
 	if (encoder) {
 		if (!r_egg_encode (egg, encoder)) {
 			eprintf ("Invalid encoder '%s'\n", encoder);
+			return 1;
 		}
 	}
 
