@@ -1560,15 +1560,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	}
 	cmt = *icmd ? strchr (icmd + 1, '#'): NULL;
-	if (cmt) {
-		// must honor "
-		char *ch;
-		ut32 cnt = 0;
-		for (ch = icmd + 1; ch < cmt; ++ch) {
-			if (*ch == '"') ++cnt;
-		}
-		if (cnt == 0 || (cnt % 2)) cmt = NULL;
-	}
+	// TODO must honor "
 	if (cmt && (cmt[1] == ' ' || cmt[1] == '\t')) {
 		*cmt = 0;
 	}
@@ -1843,18 +1835,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	}
 
 // TODO must honor `
+// must honor "
 	/* comments */
 	if (*cmd != '#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
-		if (ptr) {
-			// must honor "
-			char *ch;
-			ut32 cnt = 0;
-			for (ch = ptr; ch < ptr; ++ch) {
-				if (*ch == '"') ++cnt;
-			}
-			if (cnt == 0 || (cnt % 2)) ptr = NULL;
-		}
 		if (ptr && (ptr[1] == ' ' || ptr[1] == '\t')) {
 			*ptr = '\0';
 		}
