@@ -5157,6 +5157,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			}
 			r_list_free (list_);
+			r_list_free (list);
 		} else {
 			if (input[1] == 'j') { // axfj
 				r_cons_print ("[]\n");

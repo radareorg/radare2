@@ -333,6 +333,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 			i++;
 		}
 	}
+	r_list_free (list);
 #else
 #warning implement getref() using sdb
 #endif
