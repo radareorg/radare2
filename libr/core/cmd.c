@@ -2025,7 +2025,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 next:
 #endif
 	/* pipe console to file */
-	ptr = (char *)r_str_lastbut (cmd, '>', "\"");
+	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
 	if (ptr) {
 		int fdn = 1;
