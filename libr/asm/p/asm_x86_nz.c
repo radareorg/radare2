@@ -3292,6 +3292,28 @@ static int oplldt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int oplmsw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x01;
+			if ( op->operands[0].type & OT_MEMORY ) {
+				data[l++] = 0x30 | op->operands[0].regs[0];
+			} else {
+				data[l++] = 0xf0 | op->operands[0].reg;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3507,6 +3529,7 @@ LookupTable oplookup[] = {
 	{"leave", 0, NULL, 0xc9, 1},
 	{"les", 0, &oples, 0},
 	{"lfence", 0, NULL, 0x0faee8, 3},
+	{"lmsw", 0, &oplmsw, 0},
 	{"lodsb", 0, NULL, 0xac, 1},
 	{"lodsd", 0, NULL, 0xad, 1},
 	{"lodsw", 0, NULL, 0x66ad, 2},
