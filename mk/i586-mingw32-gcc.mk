@@ -1,12 +1,13 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
-CC=i586-mingw32-gcc
-RANLIB=i586-mingw32-ranlib
+CROSS=i586-mingw32-
+CC=${CROSS}gcc
+RANLIB=${CROSS}ranlib
 ONELIB=0
 OSTYPE=windows
-LINK=
-AR=i586-mingw32-ar
-CC_AR=$(AR) -r ${LIBAR}
+LINK=-shared
+AR=${CROSS}ar
+CC_AR=${AR} -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o
