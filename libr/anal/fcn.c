@@ -1207,8 +1207,8 @@ repeat:
 				}
 				walk_switch (anal, fcn, op.addr, op.addr + op.size);
 			}
-#if 0
-			if (anal->cur) {
+
+			if (anal->opt.pltujmp && anal->cur) {
 				/* if UJMP is in .plt section just skip it */
 				RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
 				if (s && s->name[0]) {
@@ -1230,14 +1230,11 @@ repeat:
 					}
 				}
 			}
-#endif
 			FITFCNSZ ();
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
-#if 0
 river:
 			break;
-#endif
 		/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;

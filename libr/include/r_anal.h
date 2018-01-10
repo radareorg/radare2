@@ -589,6 +589,7 @@ typedef struct r_anal_options_t {
 	int nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
+	int pltujmp; // if UJMP is in .plt section just skip it
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
 } RAnalOptions;
