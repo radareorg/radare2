@@ -8,7 +8,6 @@
 #include <r_lib.h>
 #include <r_io.h>
 #include <config.h>
-#include <r_cons.h>
 
 R_LIB_VERSION (r_bin);
 
@@ -235,12 +234,15 @@ R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 
-static int string_scan_range(RList *list, const ut8 *buf, int min,
+static int string_scan_range(RList *list, RBinFile *bf, int min,
 			      const ut64 from, const ut64 to, int type) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
 	bool rdump = false;
+	const ut8 *buf = bf->buf->buf;
+	RIOBind *iob;
+	RIO *io;
 	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
@@ -387,10 +389,20 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 			} else {
 				if (rdump) {
 					// DUMP the strings to r2 shell for izzz
-					r_cons_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+					if (!bf->rbin || !(iob = &(bf->rbin->iob))) {
+						return false;
+					}
+					if (iob) {
+						io = iob->io;
+					}
+					if (io) {
+						io->cb_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+					} else {
+						return false;
+					}
 				} else {
 					// DUMP TO STDOUT. raw dumping for rabin2 -zzz
-					printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+					io->cb_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
 				}
 			}
 		}
@@ -443,7 +455,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 	if (bf->rawstr == 3) {
 		type = R_STRING_TYPE_DUMP;
 	}
-	if (string_scan_range (list, bf->buf->buf, min, from, to, type) < 0) {
+	if (string_scan_range (list, bf, min, from, to, type) < 0) {
 		return;
 	}
 	r_list_foreach (list, it, ptr) {
