@@ -1,6 +1,6 @@
 # capstone
 
-OBJ_PPCCS=asm_ppc_cs.o ../arch/ppc/libvle/vle.o
+OBJ_PPCCS=asm_ppc_cs.o ../arch/ppc/libvle/vle.o ../arch/ppc/libps/libps.o
 
 include ${CURDIR}capstone.mk
 
