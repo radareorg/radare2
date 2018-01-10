@@ -8,7 +8,7 @@ LDFLAGS+=${LINK}
 CURDIR=
 
 ifeq ($(WITHPIC),1)
-all: ${ALL_TARGETS} ;
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins

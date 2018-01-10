@@ -13,7 +13,8 @@ LDFLAGS+=-L$(LTOP)/io -lr_io
 endif
 SHLR=$(LTOP)/../shlr
 
-foo: all
+ifeq ($(WITHPIC),1)
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
@@ -28,13 +29,15 @@ FORMATS+=xtr_fatmach0.mk
 
 include $(FORMATS)
 
-all: ${ALL_TARGETS}
-	@true
-
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}
 
 mrproper: clean
 	-rm -f *.d $(TOP)/libr/bin/format/*/*.d
 
-.PHONY: all clean foo mrproper
+.PHONY: all clean mrproper
+else
+all clean mrproper:
+
+.PHONY: all clean mrproper
+endif

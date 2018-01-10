@@ -59,7 +59,9 @@ $(LIB):
 	mkdir -p $(LIB)
 
 $(LIB)/$(LIBNAME).$(EXT_AR): $(LIB) $(SRC_O)
+ifeq ($(WITHPIC),1)
 	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
+endif
 	$(AR) rvs $(LIB)/$(LIBNAME).$(EXT_AR) $(SRC_O)
 	# required for solaris and w32
 	$(RANLIB) $(LIB)/$(LIBNAME).$(EXT_AR)
@@ -68,7 +70,7 @@ clean:
 	-rm -f $(SRC_O)
 	-rm -rf lib
 
-unit: lib 
+unit: lib
 	$(CC) $(CFLAGS) $(TEST_INCLUDES) -c $(UNIT_TEST) -o $(TEST_D)/unit.o
 	$(LD) $(TEST_D)/unit.o -o $(TEST_D)/unit -L$(LIB) -lqnxr -lglib-2.0
 

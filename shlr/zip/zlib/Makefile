@@ -61,7 +61,10 @@ CFLAGS+=-I../../libr/include -I../include/
 LIBNAME=libr_z.${SOVER}
 LIBAR=libr_z.$(EXT_AR)
 
-all: ${LIBNAME} ${LIBAR}
+all:: ${LIBAR}
+ifeq ($(WITHPIC),1)
+all:: ${LIBNAME}
+endif
 
 ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)

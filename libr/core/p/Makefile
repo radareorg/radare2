@@ -22,15 +22,12 @@ include $(STOP)/windbg/deps.mk
 #CFLAGS+=-L../../anal -lr_anal -L../../core -lr_core
 LDFLAGS+=${LINK}
 
-foo: all
+ifeq ($(WITHPIC),1)
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 PLUGS=java.mk anal.mk
-
 include $(PLUGS)
-
-all: ${ALL_TARGETS}
-	@true
 
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
@@ -39,3 +36,8 @@ mrproper: clean
 	-rm -f *.d
 
 .PHONY: all clean foo mrproper
+else
+all clean mrproper:
+
+.PHONY: all clean mrproper
+endif
