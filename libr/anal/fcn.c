@@ -82,7 +82,7 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 // _fcn_tree_{cmp_addr,calc_max_addr,free,probe} are used by interval tree.
 static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
 	const RAnalFunction *a = (const RAnalFunction *)a_,
-		*b = container_of (b_, const RAnalFunction, rb);
+	const RAnalFunction *b = FCN_CONTAINER (b);
 	ut64 from0 = a->addr, to0 = a->addr + a->_size,
 		from1 = b->addr, to1 = b->addr + b->_size;
 	if (from0 != from1) {
@@ -95,12 +95,12 @@ static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
 }
 
 static void _fcn_tree_calc_max_addr(RBNode *node) {
-	RAnalFunction *fcn = FCN_CONTAINER (node), *fcn1;
 	int i;
+	RAnalFunction *fcn = FCN_CONTAINER (node);
 	fcn->rb_max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
-			fcn1 = container_of (node->child[i], RAnalFunction, rb);
+			RAnalFunction *fcn1 = FCN_CONTAINER (node->child[i]);
 			if (fcn1->rb_max_addr > fcn->rb_max_addr) {
 				fcn->rb_max_addr = fcn1->rb_max_addr;
 			}
@@ -1572,7 +1572,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	return ret;
 
 # else
-  // Interval tree query
+	// Interval tree query
 	RAnalFunction *fcn;
 	FcnTreeIter it;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {

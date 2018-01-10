@@ -256,7 +256,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (send_msg (desc, cmd + 4) == -1) {
 			return NULL;
 		}
-		int r = read_packet (desc);
+		(void)read_packet (desc);
 		desc->data[desc->data_len] = '\0';
 		io->cb_printf ("reply:\n%s\n", desc->data);
 		if (!desc->no_ack) {

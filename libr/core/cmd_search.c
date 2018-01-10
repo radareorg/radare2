@@ -224,7 +224,7 @@ hell:
 	return -1;
 }
 
-static void cmd_search_bin(RCore *core, RAddrInterval itv) {
+static void cmd_search_bin(RCore *core, RInterval itv) {
 	RBinPlugin *plug;
 	ut8 buf[1024];
 	ut64 from = itv.addr, to = r_itv_end (itv);
@@ -547,7 +547,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 	}
 }
 
-static void append_bound(RList *list, RIO *io, RAddrInterval search_itv, ut64 from, ut64 size) {
+static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, ut64 size) {
 	RIOMap *map = R_NEW0 (RIOMap);
 	if (!map) {
 		return;
@@ -555,7 +555,7 @@ static void append_bound(RList *list, RIO *io, RAddrInterval search_itv, ut64 fr
 	if (io && io->desc) {
 		map->fd = io->desc->fd;
 	}
-	RAddrInterval itv = {from, size};
+	RInterval itv = {from, size};
 	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
 	if (search_itv.addr == UT64_MAX && !search_itv.size) {
 		map->itv = itv;
@@ -572,12 +572,12 @@ static void append_bound(RList *list, RIO *io, RAddrInterval search_itv, ut64 fr
 	}
 }
 
-// TODO(maskray) returns RList<RAddrInterval>
+// TODO(maskray) returns RList<RInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode) {
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
 	const ut64 search_from = r_config_get_i (core->config, "search.from"),
 			search_to = r_config_get_i (core->config, "search.to");
-	const RAddrInterval search_itv = {search_from, search_to - search_from};
+	const RInterval search_itv = {search_from, search_to - search_from};
 #if 0
 	int fd = -1;
 	if (core && core->io && core->io->cur) {
@@ -1181,7 +1181,7 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	return list;
 }
 
-static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, const char *grep, int regexp) {
+static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const char *grep, int regexp) {
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
@@ -1297,7 +1297,7 @@ static int r_core_search_rop(RCore *core, RAddrInterval search_itv, int opt, con
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
 		}
-		RAddrInterval itv = r_itv_intersect (search_itv, map->itv);
+		RInterval itv = r_itv_intersect (search_itv, map->itv);
 		from = itv.addr;
 		to = r_itv_end (itv);
 		if (r_cons_is_breaked ()) {
@@ -2046,7 +2046,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	r_cons_break_pop ();
 }
 
-static void do_string_search(RCore *core, RAddrInterval search_itv, struct search_parameters *param) {
+static void do_string_search(RCore *core, RInterval search_itv, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
 	RSearch *search = core->search;
@@ -2090,7 +2090,7 @@ static void do_string_search(RCore *core, RAddrInterval search_itv, struct searc
 				continue;
 			}
 			const ut64 saved_nhits = search->nhits;
-			RAddrInterval itv = r_itv_intersect (search_itv, map->itv);
+			RInterval itv = r_itv_intersect (search_itv, map->itv);
 			if (r_cons_is_breaked ()) {
 				break;
 			}
@@ -2445,7 +2445,7 @@ static int cmd_search(void *data, const char *input) {
 		goto beach;
 	}
 	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
-	RAddrInterval search_itv = {search_from, search_to - search_from};
+	RInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
 	if (search_from == UT64_MAX && search_to == UT64_MAX) {
@@ -2478,7 +2478,7 @@ static int cmd_search(void *data, const char *input) {
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	if (!core->io->va) {
-		RAddrInterval itv = {0, r_io_size (core->io)};
+		RInterval itv = {0, r_io_size (core->io)};
 		if (!r_itv_overlap (search_itv, itv)) {
 			empty_search_itv = true;
 		} else {
@@ -2520,7 +2520,7 @@ reread:
 		}
 		search->bckwrds = true;
 		if (core->offset) {
-			RAddrInterval itv = {0, core->offset};
+			RInterval itv = {0, core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
 				empty_search_itv = true;
 				ret = false;
@@ -3045,7 +3045,7 @@ reread:
 	break;
 	case 'f': // "/f" forward search
 		if (core->offset) {
-			RAddrInterval itv = {core->offset, -core->offset};
+			RInterval itv = {core->offset, -core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
 				empty_search_itv = true;
 				ret = false;

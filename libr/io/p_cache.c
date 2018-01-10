@@ -217,7 +217,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 					free (cache);
 					return false;
 				}
-				cache->from = blockaddr + byteaddr;
+				cache->itv.addr = blockaddr + byteaddr;
 			}
 			cache->data[i] = dcache->cdata[byteaddr];
 			i++;
@@ -228,16 +228,18 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 				return false;
 			}
 			cache->data = data;
-			cache->size = i;
-			cache->to = cache->from + i;
+			cache->itv.size = i;
 			i = 0;
 			r_list_push (writes, cache);
 			cache = NULL;
 		}
 	}
 	if (cache) {
+#if 0
 		cache->size = i;
 		cache->to = blockaddr + R_IO_DESC_CACHE_SIZE;
+#endif
+		cache->itv.size = i;
 		r_list_push (writes, cache);
 	}
 	return true;
@@ -259,12 +261,12 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	RIOCache *c;
 	RListIter *iter;
 	r_list_foreach (writes, iter, c) {
-		c->odata = malloc (c->size);
+		c->odata = calloc (1, R_ITV_SIZE (c));
 		if (!c->odata) {
 			r_list_free (writes);
 			return NULL;
 		}
-		r_io_pread_at (desc->io, c->from, c->odata, c->size);
+		r_io_pread_at (desc->io, R_ITV_BEGIN (c), c->odata, R_ITV_SIZE (c));
 	}
 	desc->io->p_cache = true;
 	desc->io->desc = current;

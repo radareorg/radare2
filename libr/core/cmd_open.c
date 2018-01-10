@@ -6,7 +6,6 @@
 #include "r_print.h"
 #include "r_bin.h"
 #include "r_debug.h"
-#include "r_util/r_addr_interval.h"
 
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",

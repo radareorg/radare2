@@ -164,14 +164,14 @@ typedef struct r_io_map_t {
 	int fd;
 	int flags;
 	ut32 id;
-	RAddrInterval itv;
+	RInterval itv;
 	ut64 delta; //this delta means paddr when talking about section
 	char *name;
 } RIOMap;
 
 typedef struct r_io_map_skyline_t {
 	RIOMap *map;
-	RAddrInterval itv;
+	RInterval itv;
 } RIOMapSkyline;
 
 typedef struct r_io_section_t {
@@ -197,9 +197,7 @@ typedef enum {
 } RIOSectionApplyMethod;
 
 typedef struct r_io_cache_t {
-	ut64 from;
-	ut64 to;
-	int size;
+	RInterval itv;
 	ut8 *data;
 	ut8 *odata;
 	int written;
