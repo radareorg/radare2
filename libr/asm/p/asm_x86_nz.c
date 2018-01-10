@@ -3387,6 +3387,30 @@ static int opstmxcsr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opstr(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x00;
+			data[l++] = 0x08 | op->operands[0].regs[0];
+		} else if ( op->operands[0].type & OT_GPREG &&
+			    op->operands[0].type & OT_DWORD ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x00;
+			data[l++] = 0xc8 | op->operands[0].reg;
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3706,6 +3730,7 @@ LookupTable oplookup[] = {
 	{"stosb", 0, &opstos, 0},
 	{"stosd", 0, &opstos, 0},
 	{"stosw", 0, &opstos, 0},
+	{"str", 0, &opstr, 0},
 	{"sub", 0, &opsub, 0},
 	{"swapgs", 0, NULL, 0x0f1ff8, 3},
 	{"syscall", 0, NULL, 0x0f05, 2},
