@@ -13,7 +13,9 @@ BIN=sdb${EXT_EXE}
 
 all: ${BIN} sdb_version.h
 	${MAKE} static
+ifeq ($(WITHPIC),1)
 	${MAKE} shared
+endif
 
 bin: $(BIN)
 

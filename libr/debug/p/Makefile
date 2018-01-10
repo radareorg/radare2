@@ -3,14 +3,11 @@ include ../../config.mk
 ifeq ($(WITHPIC),1)
 CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
 
-foo: all
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 DEBUGS=native.mk gdb.mk qnx.mk windbg.mk bochs.mk
 include $(DEBUGS)
-
-all: ${ALL_TARGETS}
-	@true
 
 pre:
 	@cd libgdbwrap && ${MAKE}
@@ -21,7 +18,9 @@ clean:
 mrproper: clean
 	-rm -f *.d */*.d
 
-.PHONY: all clean foo mrproper
+.PHONY: all clean mrproper
 else
-all:
+all clean mrproper:
+
+.PHONY: all clean mrproper
 endif

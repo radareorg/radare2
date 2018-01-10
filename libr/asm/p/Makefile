@@ -12,7 +12,8 @@ endif
 
 CURDIR=
 
-foo: all
+ifeq ($(WITHPIC),1)
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
@@ -25,12 +26,15 @@ ARCHS+=lh5801.mk v810.mk mcs96.mk lm32.mk
 ARCHS+=riscv.mk rsp.mk
 include $(ARCHS)
 
-all: ${ALL_TARGETS}
-
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 
 mrproper: clean
 	-rm -f *.d ../arch/*/*/*.d
 
-.PHONY: all clean foo mrproper
+.PHONY: all clean mrproper
+else
+all clean mrproper:
+
+.PHONY: all clean mrproper
+endif

@@ -89,7 +89,10 @@ LIBNAME=libr_zip.${SOVER}
 
 LIBAR=libr_zip.$(EXT_AR)
 
-all: ${LIBNAME} ${LIBAR}
+all:: ${LIBAR}
+ifeq ($(WITHPIC),1)
+all:: ${LIBNAME}
+endif
 
 ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)
