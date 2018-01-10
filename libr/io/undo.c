@@ -81,13 +81,13 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 }
 
 R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
+	RIOUndos *undo;
 	if (!io->undo.s_enable) {
 		return;
 	}
-	RIOUndos *undo;
 	// the first insert
 	if (io->undo.idx > 0) {
-		RIOUndos *undo = &io->undo.seek[io->undo.idx - 1];
+		undo = &io->undo.seek[io->undo.idx - 1];
 		if (undo->off == off && undo->cursor == cursor) {
 			return;
 		}
