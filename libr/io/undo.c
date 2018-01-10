@@ -100,8 +100,9 @@ R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
 	/* Only R_IO_UNDOS - 1 undos can be used because r_io_sundo_undo () must
 	 * push the current position for redo as well, which takes one entry in
 	 * the table. */
-	if (io->undo.undos < R_IO_UNDOS - 1)
+	if (io->undo.undos < R_IO_UNDOS - 1) {
 		io->undo.undos++;
+	}
 	/* We only have linear undo/redo, no tree. So after this new possible
 	 * undo, all redos are lost. */
 	io->undo.redos = 0;
