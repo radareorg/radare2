@@ -39,6 +39,7 @@ R_API void r_id_storage_delete(RIDStorage *storage, ut32 id);
 R_API void *r_id_storage_take(RIDStorage *storage, ut32 id);
 R_API bool r_id_storage_foreach(RIDStorage *storage, RIDStorageForeachCb cb, void *user);
 R_API void r_id_storage_free(RIDStorage *storage);
+R_API RList *r_id_storage_list(RIDStorage *s);
 
 #ifdef __cplusplus
 }

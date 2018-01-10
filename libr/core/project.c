@@ -417,7 +417,6 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		}
 	}
 	if (close_current_session) {
-		RCoreFile *fh;
 		// delete
 		r_core_file_close_fd (core, -1);
 		r_io_close_all (core->io);
@@ -429,8 +428,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		r_io_desc_init (core->io);
 		if (filepath[0]) {
 			/* Old-style project without embedded on commands to open all files.  */
-			fh = r_core_file_open (core, filepath, 0, 0);
-			if (!fh) {
+			if (!r_core_file_open (core, filepath, 0, 0)) {
 				eprintf ("Cannot open file '%s'\n", filepath);
 				ret = false;
 				goto beach;

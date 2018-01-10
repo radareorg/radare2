@@ -294,29 +294,27 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				}
 			} else {
 				ut64 addr = r_num_math (core->num, input + 2);
-				RCoreFile *cf = r_core_file_cur (core);
-				if (cf) {
-					RIODesc *desc = r_io_desc_get (core->io, cf->fd);
-					if (desc) {
-						r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
-						r_core_cmd0 (core, ".is*");
-					} else {
-						eprintf ("No file to load bin from?\n");
-					}
+				int fd = r_io_fd_get_current (core->io);
+				RIODesc *desc = r_io_desc_get (core->io, fd);
+				if (desc) {
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+					r_core_cmd0 (core, ".is*");
+				} else {
+					eprintf ("No file to load bin from?\n");
 				}
 			}
 			free (arg);
 		} else {
-			/* reload all bininfo */
+			eprintf ("RCoreFile has been killed here, this needs to be redone properly from non-uri iofiles\n");
+			RList *files = r_id_storage_list (core->io->files);
 			RIODesc *desc;
 			RListIter *iter;
-			RCoreFile *file;
-			r_list_foreach (core->files, iter, file) {
-				desc = r_io_desc_get (core->io, file->fd);
+			r_list_foreach (files, iter, desc) {
 				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0);
 				r_core_cmd0 (core, ".is*");
 				break;
 			}
+			r_list_free (files);
 		}
 		//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
 		break;
@@ -1010,7 +1008,8 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_core_block_read (core);
 		return 0;
-#if 0
+#if 1
+	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
 		if ((input[1] == 's') && (input[2] == ' ')) {
 			silence = true;
@@ -1035,6 +1034,28 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_str_argv_free (argv);
 		return 0;
+#else
+		{
+			if ((input[1] == 's') && (input[2] == ' ')) {
+				silence = true;
+				input++;
+			}
+			addr = 0; // honor bin.baddr ? 
+			const char *argv0 = r_str_trim_ro (input + 2);
+			if ((file = r_core_file_open (core, argv0, perms, addr))) {
+				fd = file->fd;
+				if (!silence) {
+					eprintf ("%d\n", fd);
+				}
+				r_core_bin_load (core, argv0, baddr);
+			} else if (!nowarn) {
+				eprintf ("cannot open file %s\n", argv0);
+			}
+			r_str_argv_free (argv);
+		}
+		r_core_block_read (core);
+		return 0;
+		break;
 #endif
 	case 'p': // "op"
 		/* handle priorize */
@@ -1051,24 +1072,6 @@ static int cmd_open(void *data, const char *input) {
 			}
 			r_core_block_read (core);
 		}
-		return 0;
-		break;
-	case 'f': // "of"
-		{
-			addr = 0; // honor bin.baddr ? 
-			const char *argv0 = r_str_trim_ro (input + 2);
-			if ((file = r_core_file_open (core, argv0, perms, addr))) {
-				fd = file->fd;
-				if (!silence) {
-					eprintf ("%d\n", fd);
-				}
-				r_core_bin_load (core, argv0, baddr);
-			} else if (!nowarn) {
-				eprintf ("cannot open file %s\n", argv0);
-			}
-			r_str_argv_free (argv);
-		}
-		r_core_block_read (core);
 		return 0;
 		break;
 	case '+': // "o+"

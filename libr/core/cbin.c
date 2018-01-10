@@ -3268,8 +3268,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 }
 
 R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch, ut16 bits) {
-	RCoreFile *cf = r_core_file_cur (r);
-	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
+	int fd = r_io_fd_get_current (r->io);
+	RIODesc *desc = r_io_desc_get (r->io, fd);
 	RBinFile *curfile, *binfile = NULL;
 	if (!name) {
 		name = (desc) ? desc->name : NULL;

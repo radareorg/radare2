@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -19,7 +19,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		: NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = bf? strdup (bf->file): NULL;
-	int newpid, ret = false;
+	int ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
 		if (odesc->referer) {
@@ -40,7 +40,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		free (obinfilepath);
 		return false;
 	}
-	newpid = odesc? odesc->fd: -1;
+	int newpid = odesc? odesc->fd: -1;
 
 	if (isdebug) {
 		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // KILL
@@ -875,6 +875,8 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RCoreFile *f;
 	RIODesc *desc;
 	ut64 from;
+	RListIter *it;
+	RBinFile *bf;
 	RListIter *iter;
 	if (mode == 'j') {
 		r_cons_printf ("[");
@@ -894,22 +896,24 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			break;
 		case '*':
 		case 'r':
+			// TODO: use a getter
 			{
-				RListIter *it;
-				RBinFile *bf;
+				bool fileHaveBin = false;
+				char *absfile = r_file_abspath (desc->uri);
 				r_list_foreach (core->bin->binfiles, it, bf) {
 					if (bf->fd == f->fd) {
-						char *absfile = r_file_abspath (desc->uri);
 						r_cons_printf ("o %s 0x%"PFMT64x "\n", absfile, (ut64) from);
-						free(absfile);
+						fileHaveBin = true;
 					}
 				}
+				if (!fileHaveBin && !strstr (absfile, "://")) {
+					r_cons_printf ("o %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+				}
+				free (absfile);
 			}
 			break;
 		case 'n':
 			{
-				RListIter *it;
-				RBinFile *bf;
 				bool header_loaded = false;
 				r_list_foreach (core->bin->binfiles, it, bf) {
 					if (bf->fd == f->fd) {

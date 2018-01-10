@@ -1222,7 +1222,6 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	char port[10];
 	char *file = NULL, *args = NULL;
 	libgdbr_t *g;
-	RCoreFile *cf;
 
 	if (!core || !path) {
 		return -1;
@@ -1258,7 +1257,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!(cf = r_core_file_open (core, file, R_IO_READ, 0))) {
+	if (!r_core_file_open (core, file, R_IO_READ, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}

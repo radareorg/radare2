@@ -3467,11 +3467,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				jump_op = true;
 			}
 			if (!jump_op) {
-				RCore *core = ds->core;
 				const char *prefix;
 				char *escstr;
-ut32 len = sizeof (str) -1;
+				ut32 len = sizeof (str) -1;
 #if 0
+				RCore *core = ds->core;
 				ut32 len = core->blocksize + 256;
 				if (len < core->blocksize || len > R_DISASM_MAX_STR) {
 					len = R_DISASM_MAX_STR;

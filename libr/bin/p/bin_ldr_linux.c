@@ -9,9 +9,6 @@ static bool load(RBin *bin) {
 	if (!bin || !bin->cur) {
 	    return false;
 	}
-	if (!bin->cur->xtr_obj) {
-		bin->cur->xtr_obj = r_bin_dyldcache_new (bin->cur->file);
-	}
 	if (!bin->file) {
 	   	bin->file = bin->cur->file;
 	}

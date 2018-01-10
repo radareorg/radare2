@@ -195,3 +195,14 @@ R_API void r_id_storage_free(RIDStorage* storage) {
 	}
 	free (storage);
 }
+
+static bool _list(void* user, void* data, ut32 id) {
+	r_list_append (user, data);
+	return true;
+}
+
+R_API RList *r_id_storage_list(RIDStorage *s) {
+	RList *list = r_list_newf (NULL);
+	r_id_storage_foreach (s, _list, list);
+	return list;
+}

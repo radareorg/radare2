@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <string.h>
 #include "r_bin.h"
@@ -133,8 +133,8 @@ static void r_core_file_info(RCore *core, int mode) {
 	bool io_cache = r_config_get_i (core->config, "io.cache");
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *binfile = r_core_bin_cur (core);
-	RCoreFile *cf = core->file;
-	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
+	int fd = r_io_fd_get_current (core->io);
+	RIODesc *desc = r_io_desc_get (core->io, fd);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("{");
@@ -153,7 +153,7 @@ static void r_core_file_info(RCore *core, int mode) {
 	} else {
 		fn = desc ? desc->name: NULL;
 	}
-	if (cf && mode == R_CORE_BIN_JSON) {
+	if (desc && mode == R_CORE_BIN_JSON) {
 		const char *uri = fn;
 		if (!uri) {
 			if (desc && desc->uri && *desc->uri) {
@@ -202,7 +202,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			}
 		}
 		r_cons_printf ("}");
-	} else if (cf && mode != R_CORE_BIN_SIMPLE) {
+	} else if (desc && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
 		if (dbg) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
@@ -308,8 +308,8 @@ static void playMsg(RCore *core, const char *n, int len) {
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	bool newline = r_config_get_i (core->config, "scr.interactive");
-	RCoreFile *cf = core->file;
-	RIODesc *desc = cf ? r_io_desc_get (core->io, cf->fd) : NULL;
+	int fd = r_io_fd_get_current (core->io);
+	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
@@ -404,7 +404,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 		case 'o':
 		{
-			if (!cf) {
+			if (!desc) {
 				eprintf ("Core file not open\n");
 				return 0;
 			}
@@ -594,15 +594,16 @@ static int cmd_info(void *data, const char *input) {
 					} else {
 						eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
 					}
-					RCoreFile *file = r_core_file_open (core, filename, R_IO_READ, baddr);
-					r_core_bin_load (core, filename, baddr);
-					if (!file) {
+					void *res = r_core_file_open (core, filename, R_IO_READ, baddr);
+					if (!res) {
 						eprintf ("Error while opening '%s'", filename);
 						break;
 					}
+					int fd = r_io_fd_get_current (core->io);
+					r_core_bin_load (core, filename, baddr);
 					RCoreBinFilter filter = { 0 };
 					r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
-					r_core_file_close (core, file);
+					r_core_file_close_fd (core, fd);
 					free (filename);
 					break;
 				case '?':

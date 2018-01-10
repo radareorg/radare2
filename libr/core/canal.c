@@ -1776,7 +1776,7 @@ static int cmpfcn(const void *_a, const void *_b) {
 static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	RList *refs, *xrefs;
+	RList *xrefs;
 
 	r_list_foreach (fcns, iter, fcn) {
 		// Count the number of references and number of calls

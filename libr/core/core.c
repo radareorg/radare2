@@ -2233,12 +2233,12 @@ reaccept:
 					if (flg & R_IO_WRITE) {
 						perm |= R_IO_WRITE;
 					}
-					RCoreFile *file = r_core_file_open (core, (const char *)ptr, perm, 0);
-					if (file) {
+					if (r_core_file_open (core, (const char *)ptr, perm, 0)) {
+						int fd = r_io_fd_get_current (core->io);
 						r_core_bin_load (core, NULL, baddr);
-						r_io_map_add (core->io, file->fd, perm, 0, 0, r_io_fd_size (core->io, file->fd), true);
+						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd), true);
 						if (core->file) {
-							pipefd = core->file->fd;
+							pipefd = fd;
 						} else {
 							pipefd = -1;
 						}
