@@ -14,12 +14,12 @@ typedef struct r_diff_op_t {
 	/* file A */
 	ut64 a_off;
 	const ut8 *a_buf;
-	int a_len;
+	ut32 a_len;
 
 	/* file B */
 	ut64 b_off;
 	const ut8 *b_buf;
-	int b_len;
+	ut32 b_len;
 } RDiffOp;
 
 //typedef struct r_diff_t RDiff;

@@ -758,10 +758,14 @@ static void cmd_open_map(RCore *core, const char *input) {
 }
 
 R_API void r_core_file_reopen_in_malloc (RCore *core) {
-	RCoreFile *f;
 	RListIter *iter;
-	r_list_foreach (core->files, iter, f) {
-		ut64 sz = r_io_fd_size (core->io, f->fd);
+	RList *files = r_id_storage_list (core->io->files);
+	RIODesc *desc;
+	r_list_foreach (files, iter, desc) {
+		if (strstr (desc->name, "://")) {
+			continue;
+		}
+		ut64 sz = r_io_desc_size (desc);
 		ut8 *buf = calloc (sz, 1);
 		if (!buf) {
 			eprintf ("Cannot allocate %d\n", (int)sz);
@@ -769,10 +773,10 @@ R_API void r_core_file_reopen_in_malloc (RCore *core) {
 		}
 		(void)r_io_pread_at (core->io, 0, buf, sz);
 		char *url = r_str_newf ("malloc://%d", (int)sz);
-		RIODesc *desc = r_io_open (core->io, url, R_IO_READ | R_IO_WRITE, 0);		//use r_io_desc_exchange pls
-		if (desc) {
-			r_io_fd_close (core->io, f->fd);
-			f->fd = desc->fd;
+		// use r_io_desc_exchange pls
+		RIODesc *newDesc = r_io_open (core->io, url, R_IO_READ | R_IO_WRITE, 0);
+		if (newDesc) {
+			r_io_desc_close (desc);
 			(void)r_io_write_at (core->io, 0, buf, sz);
 		} else {
 			eprintf ("Cannot open %s\n", url);

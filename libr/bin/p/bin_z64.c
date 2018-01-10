@@ -70,11 +70,11 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static bool check_bytes (const ut8 *buf, ut64 length) {
-	ut32 magic = 0x80371240;
+	ut32 magic = 0x37804012;
 	if (length < N64_ROM_START) {
 		return false;
 	}
-	return magic == r_read_be32(buf);
+	return magic == r_read_be32 (buf);
 }
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
@@ -86,7 +86,6 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 
 static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	char *fname = bf->file;
 	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
 	if (!bf || !bf->o) {
 		return false;
@@ -100,13 +99,12 @@ static int destroy(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList /*<RBinAddr>*/ *ret = r_list_new ();
-	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ())) {
+	RList /*<RBinAddr>*/ *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	if (ptr) {
 		ptr->paddr = N64_ROM_START;
 		ptr->vaddr = baddr (bf);
 		r_list_append (ret, ptr);

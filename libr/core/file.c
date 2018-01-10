@@ -883,6 +883,10 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	}
 	r_list_foreach (core->files, iter, f) {
 		desc = r_io_desc_get (core->io, f->fd);
+		if (!desc) {
+			// cannot find desc for this fd, RCoreFile inconsistency!!!1
+			continue;
+		}
 		from = 0LL;
 		switch (mode) {
 		case 'j':

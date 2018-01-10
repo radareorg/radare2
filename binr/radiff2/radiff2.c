@@ -244,7 +244,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			}
 			printf ("\n");
 			if (core) {
-				int len = R_MAX(4, op->b_len);
+				int len = R_MAX (4, op->b_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, len);
 				if (quiet) {
 					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "+ ");
@@ -252,7 +252,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					free (bufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_GREEN"+ ");
-					printf ("%s\n"Color_RESET, bufasm);
+					printf ("%s\n" Color_RESET, bufasm);
 					free (bufasm);
 				}
 				// r_asm_code_free (ac);
@@ -315,10 +315,11 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 			int times = offset_diff / INT_MAX;
 			int max = INT_MAX;
 			size_t i;
-			for(i = 0; i < times; i++) {
-				print_bytes (&opcode, sizeof(opcode), true);
-				print_bytes (&gdiff_start + i * max, sizeof(gdiff_start), true);
-				print_bytes (&max, sizeof(max), true);
+			for (i = 0; i < times; i++) {
+				print_bytes (&opcode, sizeof (opcode), true);
+				// XXX this is overflowingly wrong
+				// XXX print_bytes (&gdiff_start + i * max, sizeof (gdiff_start), true);
+				print_bytes (&max, sizeof (max), true);
 			}
 		}
 
@@ -338,16 +339,16 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		switch (opcode) {
 		case 249:
 		case 252:
-			print_bytes (&UCLen, sizeof(UCLen), true);
+			print_bytes (&UCLen, sizeof (UCLen), true);
 			break;
 		case 250:
 		case 253:
-			print_bytes (&USLen, sizeof(USLen), true);
+			print_bytes (&USLen, sizeof (USLen), true);
 			break;
 		case 251:
 		case 254:
 		case 255:
-			print_bytes (&ILen, sizeof(ILen), true);
+			print_bytes (&ILen, sizeof (ILen), true);
 			break;
 		}
 	}
@@ -357,7 +358,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		ut8 data = op->b_len;
 		write (1, &data, 1);
 	} else if (op->b_len <= USHRT_MAX) {
-		USLen = (unsigned short) op->b_len;
+		USLen = (ut16) op->b_len;
 		ut8 data = 247;
 		write (1, &data, 1);
 		print_bytes (&USLen, sizeof (USLen), true);
@@ -365,7 +366,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		ut8 data = 248;
 		write (1, &data, 1);
 		ILen = (int) op->b_len;
-		print_bytes(&ILen, sizeof(ILen), true);
+		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
 		// split into multiple DATA, because op->b_len is greater than INT_MAX
 		int times = op->b_len / INT_MAX;
@@ -374,7 +375,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		for(i = 0;i < times; i++) {
 			ut8 data = 248;
 			write (1, &data, 1);
-			print_bytes (&max, sizeof(max), true);
+			print_bytes (&max, sizeof (max), true);
 			print_bytes (op->b_buf, max, false);
 			op->b_buf += max;
 		}

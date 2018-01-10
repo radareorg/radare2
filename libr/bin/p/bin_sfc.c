@@ -124,7 +124,7 @@ static RList* sections(RBinFile *bf) {
 		hdroffset = 0x200;
 	}
 #endif
-	sfc_int_hdr sfchdr = {0};
+	sfc_int_hdr sfchdr = {{0}};
 
 	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
