@@ -6,7 +6,7 @@ TARGET_BFLT=bin_bflt.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_BFLT}
 
-ifeq ($(WITHNONPIC),1)
+ifeq ($(WITHPIC),0)
 LINK+=../../io/libr_io.${EXT_AR}
 LINK+=../../util/libr_util.${EXT_AR}
 LINK+=../../magic/libr_magic.${EXT_AR}
