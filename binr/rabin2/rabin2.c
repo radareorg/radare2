@@ -564,7 +564,6 @@ int main(int argc, char **argv) {
 	const char *op = NULL;
 	const char *path = NULL;
 	RCoreBinFilter filter;
-	RCoreFile *cf = NULL;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
 	int fd = -1;
@@ -962,12 +961,13 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file) {
-		cf = r_core_file_open (&core, file, R_IO_READ, 0);
-		fd = cf ? r_core_file_cur_fd (&core) : -1;
-		if (!cf || fd == -1) {
-			eprintf ("r_core: Cannot open file '%s'\n", file);
-			r_core_fini (&core);
-			return 1;
+		if (r_core_file_open (&core, file, R_IO_READ, 0)) {
+			fd = r_io_fd_get_current (core.io);
+			if (fd == -1) {
+				eprintf ("r_core: Cannot open file '%s'\n", file);
+				r_core_fini (&core);
+				return 1;
+			}
 		}
 	}
 	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
