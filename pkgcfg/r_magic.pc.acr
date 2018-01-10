@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_magic
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} @LIBMAGIC@ -lr_util
-Cflags: -I${includedir}/libr
+Requires: r_util
+Libs: -L${libdir} -lr_magic  @LIBMAGIC@
+Cflags: -I${includedir}/libr 
