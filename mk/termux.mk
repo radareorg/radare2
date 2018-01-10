@@ -7,6 +7,7 @@ ARCH=arm
 RANLIB=ranlib
 AR=ar
 CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=ld -r --whole-archive
 
 ONELIB=0
 OSTYPE=android

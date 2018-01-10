@@ -8,6 +8,7 @@ ONELIB=0
 LINK=-shared
 AR=${CROSS}ar
 CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

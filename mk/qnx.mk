@@ -6,6 +6,7 @@ OSTYPE=qnx
 LINK=
 AR=${CROSS}ar
 CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o

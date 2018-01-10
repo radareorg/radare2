@@ -8,6 +8,7 @@ USERCC=${CROSS}gcc
 RANLIB=${CROSS}ranlib
 AR=${CROSS}ar
 CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 
 ONELIB=0
 OSTYPE=gnulinux
