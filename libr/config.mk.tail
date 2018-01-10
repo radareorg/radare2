@@ -29,43 +29,6 @@ else
 ifneq ($(DEPS),)
 LINK+=$(shell echo ${DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
-ifneq ($(BINDEPS),)
-LDLIBS+=$(shell echo "${BINDEPS} " | sed -e 's:r_\([^ ]*\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
-endif
-
-#link dependencies of individual r_ libs
-#TODO: move them inside libr/*/subdeps.mk
-ifneq (,$(findstring r_db,$(BINDEPS)))
-LDLIBS+=$(LIBR)/db/sdb/src/libsdb.a
-endif
-ifneq (,$(findstring r_fs,$(BINDEPS)))
-LDLIBS+=$(LIBR)/fs/p/grub/libgrubfs.a
-endif
-ifneq (,$(findstring r_hash,$(BINDEPS)))
-ifneq (${OSTYPE},haiku)
-LDLIBS+=-lm
-endif
-endif
-ifneq (,$(findstring r_socket,$(BINDEPS)))
-ifeq (${HAVE_LIB_SSL},1)
-LDLIBS+=${SSL_LDFLAGS}
-endif
-endif
-ifneq (,$(findstring r_th,$(BINDEPS)))
-LDLIBS+=${TH_LIBS}
-endif
-ifneq (,$(findstring r_util,$(BINDEPS)))
-LDLIBS+=${DL_LIBS}
-ifeq (${HAVE_LIB_GMP},1)
-LDLIBS+=-lgmp
-endif
-endif
-ifneq (,$(findstring r_magic,$(BINDEPS)))
-ifeq (${USE_LIB_MAGIC},1)
-LDLIBS+=-lmagic
-endif
-endif
-
 endif
 
 # Compiler: see mk/gcc.mk
