@@ -27,6 +27,8 @@ typedef struct r_rb_node_t {
 	bool red;
 } RBNode;
 
+typedef RBNode* RBTree;
+
 typedef int (*RBComparator)(const void *incoming, const RBNode *in_tree);
 typedef void (*RBNodeFree)(RBNode *);
 typedef void (*RBNodeSum)(RBNode *);

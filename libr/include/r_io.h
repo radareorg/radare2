@@ -80,6 +80,7 @@ typedef struct r_io_t {
 	RIDStorage *files;
 	RCache *buffer;
 	RList *cache;	//sdblist?
+	RBNode cacheTree;
 	ut8 *write_mask;
 	int write_mask_len;
 	RIOUndo undo;

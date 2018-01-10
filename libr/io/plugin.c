@@ -1,8 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - pancake */
-
-/* TODO: write li->fds setter/getter helpers */
-// TODO: return true/false everywhere,, not -1 or 0
-// TODO: use RList here
+/* radare - LGPL - Copyright 2008-2018 - pancake */
 
 #include "r_io.h"
 #include "config.h"
@@ -44,9 +40,9 @@ R_API bool r_io_plugin_init(RIO *io) {
 }
 
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many) {
-	if (!DEFAULT ||
-		!DEFAULT->check ||
-		!DEFAULT->check (io, filename, many) ) return NULL;
+	if (!DEFAULT || !DEFAULT->check || !DEFAULT->check (io, filename, many) ) {
+		return NULL;
+	}
 	return (RIOPlugin*) DEFAULT;
 }
 
@@ -57,8 +53,9 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 		if (!ret || !ret->check) {
 			continue;
 		}
-		if (ret->check (io, filename, many))
+		if (ret->check (io, filename, many)) {
 			return ret;
+		}
 	}
 	return r_io_plugin_get_default (io, filename, many);
 }

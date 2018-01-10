@@ -58,7 +58,7 @@ static inline bool r_itv_overlap2(RInterval itv, ut64 addr, ut64 size) {
 
 // Precondition: itv and x overlap
 // Returns the intersection of itv and x
-#define R_ITV_INTERSECT(x,y) r_itv_intersect(x->itv, y)
+#define R_ITV_INTERSECT(x,y) r_itv_intersect((RInterval)x->itv, (RInterval)y)
 static inline RInterval r_itv_intersect(RInterval itv, RInterval x) {
 	ut64 addr = R_MAX (itv.addr, x.addr);
 	ut64 end = R_MIN (itv.addr + itv.size - 1, x.addr + x.size - 1) + 1;

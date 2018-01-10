@@ -37,7 +37,7 @@
 
 #define VERBOSE_DELAY if (0)
 
-#define FCN_CONTAINER(x) container_of (x, RAnalFunction, rb)
+#define FCN_CONTAINER(x) container_of ((RBNode*)x, RAnalFunction, rb)
 #define fcn_tree_foreach_intersect(root, it, data, from, to)										\
 	for (it = _fcn_tree_iter_first (root, from, to); it.cur && (data = FCN_CONTAINER (it.cur), 1); _fcn_tree_iter_next (&(it), from, to))
 

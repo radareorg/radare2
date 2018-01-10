@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include <r_io.h>
 
@@ -33,8 +33,9 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 	RIOUndos *undo;
 	RIOSection *sec;
 
-	if (!io->undo.s_enable || !io->undo.undos)
+	if (!io->undo.s_enable || !io->undo.undos) {
 		return NULL;
+	}
 
 	/* No redos yet, store the current seek so we can redo to it. */
 	if (!io->undo.redos) {
@@ -61,8 +62,9 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	RIOUndos *undo;
 	RIOSection *sec;
 
-	if (!io->undo.s_enable || !io->undo.redos)
+	if (!io->undo.s_enable || !io->undo.redos) {
 		return NULL;
+	}
 
 	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
 	io->undo.undos++;
@@ -79,11 +81,12 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 }
 
 R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
-	if (!io->undo.s_enable) return;
-	RIOUndos *undo;
-	//the first insert
+	if (!io->undo.s_enable) {
+		return;
+	}
+	// the first insert
 	if (io->undo.idx > 0) {
-		undo = &io->undo.seek[io->undo.idx - 1];
+		RIOUndos *undo = &io->undo.seek[io->undo.idx - 1];
 		if (undo->off == off && undo->cursor == cursor) {
 			return;
 		}
@@ -137,7 +140,7 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 	}
 	const char *comma = "";
 	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
-		int idx = (j< undos)? undos - j - 1: j - undos - 1;
+		int idx = (j < undos)? undos - j - 1: j - undos - 1;
 		RIOUndos *undo = &io->undo.seek[i];
 		ut64 addr = undo->off;
 		ut64 notLast = (j + 1 < undos) && (i != end - 1);
@@ -193,22 +196,25 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 		return;
 	/* undo write changes */
 	uw = R_NEW0 (RIOUndoWrite);
-	if (!uw) return;
+	if (!uw) {
+		return;
+	}
 	uw->set = true;
 	uw->off = off;
 	uw->len = len;
 	uw->n = (ut8*) malloc (len);
 	if (!uw->n) {
-		R_FREE (uw);
+		free (uw);
 		return;
 	}
-	memcpy(uw->n, data, len);
+	memcpy (uw->n, data, len);
 	uw->o = (ut8*) malloc (len);
 	if (!uw->o) {
 		R_FREE (uw);
 		return;
 	}
-	r_io_read_at(io, off, uw->o, len);
+	memset (uw->o, 0xff, len);
+	r_io_read_at (io, off, uw->o, len);
 	r_list_append (io->undo.w_list, uw);
 }
 
@@ -243,7 +249,7 @@ R_API void r_io_wundo_list(RIO *io) {
 	}
 }
 
-R_API int r_io_wundo_apply(RIO *io, struct r_io_undo_w_t *u, int set) {
+R_API int r_io_wundo_apply(RIO *io, RIOUndoWrite *u, int set) {
 	int orig = io->undo.w_enable;
 	io->undo.w_enable = 0;
 	if (set) {
@@ -274,14 +280,18 @@ R_API int r_io_wundo_set(RIO *io, int n, int set) {
 	RIOUndoWrite *u = NULL;
 	int i = 0;
 	if (io->undo.w_init) {
-		r_list_foreach_prev (io->undo.w_list, iter, u)
-			if (i++ == n)
+		r_list_foreach_prev (io->undo.w_list, iter, u) {
+			if (i++ == n) {
 				break;
+			}
+		}
 		if (u) { // wtf?
 			r_io_wundo_apply (io, u, set);
 			return true;
 		}
 		eprintf ("invalid undo-write index\n");
-	} else eprintf ("no writes done\n");
+	} else {
+		eprintf ("no writes done\n");
+	}
 	return false;
 }
