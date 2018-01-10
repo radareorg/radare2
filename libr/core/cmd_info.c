@@ -47,6 +47,7 @@ static const char *help_msg_i[] = {
 	"iV", "", "Display file version info",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
+	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
 	"iZ", "", "Guess size of binary program",
 	NULL
 };
