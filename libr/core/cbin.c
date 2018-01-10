@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2017 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2018 - earada, pancake */
 
 #include <r_core.h>
 #include "r_util.h"
@@ -2849,14 +2849,15 @@ static void bin_pe_versioninfo(RCore *r) {
 	do {
 		char path_version[256] = R_EMPTY;
 		snprintf (path_version, sizeof (path_version), format_version, num_version);
-		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0)))
+		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 			break;
+		}
 		r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
 		char path_fixedfileinfo[256] = R_EMPTY;
 		snprintf (path_fixedfileinfo, sizeof (path_fixedfileinfo), "%s/fixed_file_info", path_version);
-		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0)))
+		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0))) {
 			break;
-
+		}
 		r_cons_printf ("  Signature: 0x%"PFMT64x"\n", sdb_num_get (sdb, "Signature", 0));
 		r_cons_printf ("  StrucVersion: 0x%"PFMT64x"\n", sdb_num_get (sdb, "StrucVersion", 0));
 		r_cons_printf ("  FileVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
@@ -2883,7 +2884,7 @@ static void bin_pe_versioninfo(RCore *r) {
 #endif
 		r_cons_newline ();
 		r_cons_println ("# StringTable\n");
-		for (num_stringtable = 0; sdb; ++num_stringtable) {
+		for (num_stringtable = 0; sdb; num_stringtable++) {
 			char path_stringtable[256] = R_EMPTY;
 			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
 			sdb = sdb_ns_path (r->sdb, path_stringtable, 0);
@@ -2913,19 +2914,20 @@ static void bin_pe_versioninfo(RCore *r) {
 				}
 			}
 		}
-		++num_version;
+		num_version++;
 	} while (sdb);
 }
 
 static void bin_elf_versioninfo(RCore *r) {
 	const char *format = "bin/cur/info/versioninfo/%s%d";
-	char path[256] = R_EMPTY;
+	char path[256] = {0};
 	int num_versym = 0;
 	int num_verneed = 0;
-	int num_entry = 0;
+	int num_version = 0;
 	Sdb *sdb = NULL;
-	do {
-		snprintf (path, sizeof (path), format, "versym", num_versym++);
+	const char *oValue = NULL;
+	for (;; num_versym++) {
+		snprintf (path, sizeof (path), format, "versym", num_versym);
 		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
 			break;
 		}
@@ -2939,35 +2941,31 @@ static void bin_elf_versioninfo(RCore *r) {
 		r_cons_printf ("Version symbols section '%s' contains %"PFMT64u" entries:\n", section_name, num_entries);
 		r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
 			(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
-
-		do {
+		int i;
+		for (i = 0; i < num_entries; i++) {
 			int num_val = 0;
 			char path_entry[256] = R_EMPTY;
-			snprintf (path_entry, sizeof (path_entry), "%s/entry%d", path, num_entry++);
-			if (!(sdb = sdb_ns_path (r->sdb, path_entry, 0)))
-				break;
-
-			r_cons_printf ("  0x%08"PFMT64x": ", sdb_num_get (sdb, "idx", 0));
-			const char *value = NULL;
-
-			do {
-				char key[32] = R_EMPTY;
-				snprintf (key, sizeof (key), "value%d", num_val++);
-
-				if ((value = sdb_const_get (sdb, key, 0)))
-					r_cons_printf ("%s ", value);
-			} while (value);
-			r_cons_newline ();
-		} while (sdb);
+			char key[32] = R_EMPTY;
+			snprintf (key, sizeof (key), "entry%d", i);
+			const char *value = sdb_const_get (sdb, key, 0);
+			if (value) {
+				if (oValue && !strcmp (value, oValue)) {
+					continue;
+				}
+				r_cons_printf ("  0x%08"PFMT64x": ", (ut64) i);
+				r_cons_printf ("%s\n", value);
+				oValue = value;
+			}
+		}
 		r_cons_println ("\n");
-	} while (sdb);
+	}
 
 	do {
-		int num_version = 0;
 		char path_version[256] = R_EMPTY;
 		snprintf (path, sizeof (path), format, "verneed", num_verneed++);
-		if (!(sdb = sdb_ns_path (r->sdb, path, 0)))
+		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
 			break;
+		}
 
 		r_cons_printf ("Version need section '%s' contains %d entries:\n",
 			sdb_const_get (sdb, "section_name", 0), (int)sdb_num_get (sdb, "num_entries", 0));
@@ -2977,35 +2975,33 @@ static void bin_elf_versioninfo(RCore *r) {
 		r_cons_printf ("  Offset: 0x%08"PFMT64x"  Link to section: %"PFMT64d" (%s)\n",
 			sdb_num_get (sdb, "offset", 0), sdb_num_get (sdb, "link", 0),
 			sdb_const_get (sdb, "link_section_name", 0));
-
-		do {
-			snprintf (path_version, sizeof (path_version), "%s/version%d", path, num_version++);
+		for (num_version = 0;; num_version++) {
+			snprintf (path_version, sizeof (path_version), "%s/version%d", path, num_version);
 			const char *filename = NULL;
 			char path_vernaux[256] = R_EMPTY;
 			int num_vernaux = 0;
-			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0)))
+			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 				break;
-
+			}
 			r_cons_printf ("  0x%08"PFMT64x": Version: %d",
 				sdb_num_get (sdb, "idx", 0), (int)sdb_num_get (sdb, "vn_version", 0));
 
-			if ((filename = sdb_const_get (sdb, "file_name", 0)))
+			if ((filename = sdb_const_get (sdb, "file_name", 0))) {
 				r_cons_printf ("  File: %s", filename);
-
+			}
 			r_cons_printf ("  Cnt: %d\n", (int)sdb_num_get (sdb, "cnt", 0));
 			do {
 				snprintf (path_vernaux, sizeof (path_vernaux), "%s/vernaux%d",
 					path_version, num_vernaux++);
-				if (!(sdb = sdb_ns_path (r->sdb, path_vernaux, 0)))
+				if (!(sdb = sdb_ns_path (r->sdb, path_vernaux, 0))) {
 					break;
-
+				}
 				r_cons_printf ("  0x%08"PFMT64x":   Name: %s",
 					sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
-
 				r_cons_printf ("  Flags: %s Version: %d\n",
 					sdb_const_get (sdb, "flags", 0), (int)sdb_num_get (sdb, "version", 0));
 			} while (sdb);
-		} while (sdb);
+		}
 	} while (sdb);
 }
 

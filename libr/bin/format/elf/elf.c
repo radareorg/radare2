@@ -592,21 +592,17 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		int j;
 		int check_def;
 		char key[32] = {0};
-		Sdb *sdb_entry = sdb_new0 ();
-		snprintf (key, sizeof (key), "entry%d", i / 4);
-		sdb_ns_set (sdb, key, sdb_entry);
-		sdb_num_set (sdb_entry, "idx", i, 0);
 
-		for (j = 0; (j < 4) && (i + j) < num_entries; ++j) {
+		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
 			int k;
 			char *tmp_val = NULL;
-			snprintf (key, sizeof (key), "value%d", j);
+			snprintf (key, sizeof (key), "entry%d", i + j);
 			switch (data[i + j]) {
 			case 0:
-				sdb_set (sdb_entry, key, "0 (*local*)", 0);
+				sdb_set (sdb, key, "0 (*local*)", 0);
 				break;
 			case 1:
-				sdb_set (sdb_entry, key, "1 (*global*)", 0);
+				sdb_set (sdb, key, "1 (*global*)", 0);
 				break;
 			default:
 				tmp_val = sdb_fmt (0, "%x ", data[i+j] & 0x7FFF);
@@ -654,7 +650,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 							if (vna.vna_name > bin->strtab_size) {
 								goto beach;
 							}
-							sdb_set (sdb_entry, key, sdb_fmt (0, "%s(%s)", tmp_val, bin->strtab + vna.vna_name), 0);
+							sdb_set (sdb, key, sdb_fmt (0, "%s(%s)", tmp_val, bin->strtab + vna.vna_name), 0);
 							check_def = false;
 							break;
 						}
@@ -704,7 +700,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 							goto beach;
 						}
 						const char *name = bin->strtab + vda.vda_name;
-						sdb_set (sdb_entry, key, sdb_fmt (0,"%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)),")") , 0);
+						sdb_set (sdb, key, sdb_fmt (0,"%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)),")") , 0);
 					}
 				}
 			}
@@ -968,7 +964,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			if (aux->vna_name > bin->dynstr_size) {
 				goto beach;
 			}
-#if 0
+#if 1
 			sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
 				goto beach;
