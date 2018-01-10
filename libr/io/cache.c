@@ -4,12 +4,13 @@
 
 #include "r_io.h"
 
-
+#if 0
 #define CACHE_CONTAINER(x) container_of ((RBNode*)x, RCache, rb)
 
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	RIOCache *c = CACHE_CONTAINER (node);
 }
+#endif // 0
 
 static void cache_item_free(RIOCache *cache) {
 	if (!cache) {

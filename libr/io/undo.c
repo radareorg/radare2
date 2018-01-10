@@ -84,6 +84,7 @@ R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
 	if (!io->undo.s_enable) {
 		return;
 	}
+	RIOUndos *undo;
 	// the first insert
 	if (io->undo.idx > 0) {
 		RIOUndos *undo = &io->undo.seek[io->undo.idx - 1];
