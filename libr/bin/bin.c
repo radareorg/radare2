@@ -239,17 +239,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
-	bool rdump = false;
 	const ut8 *buf = bf->buf->buf;
 	RIOBind *iob;
 	RIO *io;
 	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
-		type = R_STRING_TYPE_DETECT;
-	}
-	if (type == R_STRING_TYPE_DUMP) {
-		rdump = true;
 		type = R_STRING_TYPE_DETECT;
 	}
 	if (!buf || !min) {
@@ -387,22 +382,17 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);
 			} else {
-				if (rdump) {
-					// DUMP the strings to r2 shell for izzz
-					if (!bf->rbin || !(iob = &(bf->rbin->iob))) {
-						return false;
-					}
-					if (iob) {
-						io = iob->io;
-					}
-					if (io) {
-						io->cb_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
-					} else {
-						return false;
-					}
-				} else {
-					// DUMP TO STDOUT. raw dumping for rabin2 -zzz
+				// DUMP the strings for izzz and rabin2 -zzz
+				if (!bf->rbin || !(iob = &(bf->rbin->iob))) {
+					return false;
+				}
+				if (iob) {
+					io = iob->io;
+				}
+				if (io) {
 					io->cb_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+				} else {
+					return false;
 				}
 			}
 		}
@@ -437,7 +427,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 	if (!to || to > bf->buf->length) {
 		to = bf->buf->length;
 	}
-	if (bf->rawstr < 2) {
+	if (bf->rawstr != 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
@@ -452,10 +442,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 			return;
 		}
 	}
-	if (bf->rawstr == 3) {
-		type = R_STRING_TYPE_DUMP;
-	}
-	if (string_scan_range (list, bf, min, from, to, type) < 0) {
+	if (string_scan_range (list, bf, min, from, to, -1) < 0) {
 		return;
 	}
 	r_list_foreach (list, it, ptr) {

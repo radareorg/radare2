@@ -648,7 +648,7 @@ static int cmd_info(void *data, const char *input) {
 					int min = r_config_get_i (core->config, "bin.minstr");
 					if (bf) {
 						int tmp = bf->rawstr;
-						bf->rawstr = 3;
+						bf->rawstr = 2;
 						r_bin_dump_strings (bf, min);
 						bf->rawstr = tmp;
 					}
