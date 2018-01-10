@@ -424,18 +424,18 @@ USE_LIB_MAGIC="1"
 LIBMAGIC="-lmagic"
 else
 USE_LIB_MAGIC="0"
-LIBMAGIC="-lr_magic"; fi
+LIBMAGIC=""; fi
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
 type ${PKGCONFIG} > /dev/null 2>&1 || echo "ERROR: Cannot find PKGCONFIG ${PKGCONFIG}"
 echo 'Using PKGCONFIG: '${PKGCONFIG}
 printf 'checking pkg-config flags for capstone... '
 tmp=`${PKGCONFIG} --cflags capstone 2>/dev/null`
-if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
-else 
-CAPSTONE_CFLAGS=$tmp; 
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0;
+else
+CAPSTONE_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs capstone 2>/dev/null`
-if [ $? = 0 ]; then 
-echo yes; HAVE_PKGCFG_CAPSTONE=1; 
+if [ $? = 0 ]; then
+echo yes; HAVE_PKGCFG_CAPSTONE=1;
 CAPSTONE_LDFLAGS=$tmp; fi; fi
 if [ 11 = "$WITH_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
 
@@ -451,21 +451,21 @@ USE_LIB_ZIP="1"
 LIBZIP="-lz -lzip"
 else
 USE_LIB_ZIP="0"
-LIBZIP="-lrz"; fi
+LIBZIP=""; fi
 else
 USE_LIB_ZIP="0"
-LIBZIP="-lrz"; fi
+LIBZIP=""; fi
 HAVE_LIB_GMP="0"
 check_library HAVE_LIB_SSL ssl 0
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
 printf 'checking pkg-config flags for openssl... '
 tmp=`${PKGCONFIG} --cflags openssl 2>/dev/null`
-if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
-else 
-SSL_CFLAGS=$tmp; 
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0;
+else
+SSL_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs openssl 2>/dev/null`
-if [ $? = 0 ]; then 
-echo yes; HAVE_PKGCFG_OPENSSL=1; 
+if [ $? = 0 ]; then
+echo yes; HAVE_PKGCFG_OPENSSL=1;
 SSL_LDFLAGS=$tmp; fi; fi
 if [ ! "$SSL_LDFLAGS" = "" ]; then
 HAVE_OPENSSL="1"; fi
@@ -525,7 +525,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in ./config-user.mk libr/include/r_userconf.h pkgcfg/r_io.pc pkgcfg/r_magic.pc pkgcfg/r_asm.pc pkgcfg/r_bin.pc pkgcfg/r_anal.pc pkgcfg/r_hash.pc pkgcfg/r_cons.pc pkgcfg/r_core.pc pkgcfg/r_lang.pc pkgcfg/r_socket.pc pkgcfg/r_debug.pc pkgcfg/r_reg.pc pkgcfg/r_config.pc pkgcfg/r_flag.pc pkgcfg/r_syscall.pc pkgcfg/r_util.pc pkgcfg/r_search.pc pkgcfg/r_bp.pc pkgcfg/r_parse.pc pkgcfg/r_fs.pc  ; do # SUBDIRS
+for A in ./config-user.mk libr/include/r_userconf.h pkgcfg/r_io.pc pkgcfg/r_magic.pc pkgcfg/r_asm.pc pkgcfg/r_bin.pc pkgcfg/r_anal.pc pkgcfg/r_hash.pc pkgcfg/r_cons.pc pkgcfg/r_core.pc pkgcfg/r_lang.pc pkgcfg/r_socket.pc pkgcfg/r_debug.pc pkgcfg/r_reg.pc pkgcfg/r_config.pc pkgcfg/r_flag.pc pkgcfg/r_syscall.pc pkgcfg/r_util.pc pkgcfg/r_search.pc pkgcfg/r_bp.pc pkgcfg/r_parse.pc pkgcfg/r_fs.pc pkgcfg/r_egg.pc pkgcfg/r_crypto.pc  ; do # SUBDIRS
 if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else

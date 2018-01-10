@@ -18,7 +18,7 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	LIBMAGIC = -lmagic ;
 }{
 	USE_LIB_MAGIC = 0 ;
-	LIBMAGIC = -lr_magic ;
+	LIBMAGIC = ;
 }
 
 (( useful for static builds . see sys/static.sh ))
@@ -43,16 +43,16 @@ IFAND HAVE_LIB_Z USE_ZIP {
 		LIBZIP = -lz -lzip ;
 	}{
 		USE_LIB_ZIP = 0 ;
-		LIBZIP = -lrz ; (( static linking to shlr/zip ))
+		LIBZIP = ; (( static linking to shlr/zip ))
 	}
 }{
 	USE_LIB_ZIP = 0 ;
-	LIBZIP = -lrz ; (( static linking to shlr/zip ))
+	LIBZIP = ; (( static linking to shlr/zip ))
 }
 
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 
-(( TODO must deprecate 
+(( TODO must deprecate
 CHKLIB gmp
 ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;
 IFNOT HAVE_GMP { HAVE_LIB_GMP = 0 ; }
@@ -72,7 +72,7 @@ IFAND WANT_OPENSSL HAVE_OPENSSL {
 }{
 	HAVE_OPENSSL = 0 ;
 }
-IFNULL SSL_LDFLAGS { 
+IFNULL SSL_LDFLAGS {
 	IFNOT HAVE_LIB_SSL {
 		HAVE_OPENSSL = 0 ;
 	}{
@@ -161,4 +161,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_bp.pc
 	pkgcfg/r_parse.pc
 	pkgcfg/r_fs.pc
+	pkgcfg/r_egg.pc
+	pkgcfg/r_crypto.pc
 ;

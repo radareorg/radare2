@@ -3,6 +3,7 @@ include $(LTOP)/config.mk
 
 NAME=r_magic
 DEPS=r_util
+PCLIBS=@LIBMAGIC@
 CFLAGS+=-I.
 ifeq (${USE_LIB_MAGIC},1)
 LDFLAGS+=-lmagic

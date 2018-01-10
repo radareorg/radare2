@@ -25,7 +25,6 @@ CFLAGS+=-I$(LIBR)/include
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
 SRC=$(subst .o,.c,$(OBJ))
-MAGICSED=| sed -e 's,-lr_magic,@LIBMAGIC@,g'
 
 BEXE=$(BIN)$(EXT_EXE)
 
@@ -108,10 +107,10 @@ pkgcfg:
 	@echo 'Name: ${NAME}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Description: radare foundation libraries' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Version: @VERSION@' >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'Requires:' >> ../../pkgcfg/${NAME}.pc.acr
+	@echo 'Requires: $(filter r_%,${DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
 	@if [ "${NAME}" = "libr" ]; then NAME=''; else NAME=${NAME}; fi ;\
-	echo 'Libs: -L$${libdir} '`echo $${NAME} ${DEPS}|sed -e s,r_,-lr_,g` ${MAGICSED} >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'Cflags: -I$${includedir}/libr' >> ../../pkgcfg/${NAME}.pc.acr
+	echo 'Libs: -L$${libdir} -l${NAME} $(filter-out r_%,${DEPS}) ${PCLIBS}' >> ../../pkgcfg/${NAME}.pc.acr
+	@echo 'Cflags: -I$${includedir}/libr ${PCCFLAGS}' >> ../../pkgcfg/${NAME}.pc.acr
 
 clean:: ${EXTRA_CLEAN}
 	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR} *.d */*.d */*/*.d */*/*/*.d
