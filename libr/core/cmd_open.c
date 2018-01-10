@@ -278,7 +278,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_oa);
 			break;
 		}
-		if (input[3]) {
+		if (input[2] && input[3]) {
 			char *arg = strdup (input + 3);
 			char *filename = strchr (arg, ' ');
 			if (filename) {

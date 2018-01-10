@@ -2943,8 +2943,6 @@ static void bin_elf_versioninfo(RCore *r) {
 			(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
 		int i;
 		for (i = 0; i < num_entries; i++) {
-			int num_val = 0;
-			char path_entry[256] = R_EMPTY;
 			char key[32] = R_EMPTY;
 			snprintf (key, sizeof (key), "entry%d", i);
 			const char *value = sdb_const_get (sdb, key, 0);
