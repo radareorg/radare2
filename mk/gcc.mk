@@ -19,10 +19,12 @@ ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
+PARTIALLD=ld -r -all_load
 CFLAGS+=-fno-common
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
 else
+PARTIALLD=ld -r --whole-archive
 LDFLAGS_LIB=${LDFLAGS} -shared
 #ifneq (${NAME},)
 #LDFLAGS_LIB+=-Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}

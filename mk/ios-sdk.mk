@@ -7,6 +7,7 @@ OSTYPE=darwin
 LINK=
 AR=ar
 CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=ld -r -all_load
 PICFLAGS=
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o
