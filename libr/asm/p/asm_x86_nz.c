@@ -3350,6 +3350,24 @@ static int oplidt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opsgdt(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x01;
+			data[l++] = 0x00 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3658,6 +3676,7 @@ LookupTable oplookup[] = {
 	{"setnle", 0, &opset, 0},
 	{"setg", 0, &opset, 0},
 	{"sfence", 0, NULL, 0x0faef8, 3},
+	{"sgdt", 0, &opsgdt, 0},
 	{"shl", 0, &process_group_2, 0},
 	{"shr", 0, &process_group_2, 0},
 	{"stc", 0, NULL, 0xf9, 1},
