@@ -8,6 +8,7 @@
 #include <r_lib.h>
 #include <r_io.h>
 #include <config.h>
+#include <r_cons.h>
 
 R_LIB_VERSION (r_bin);
 
@@ -239,9 +240,14 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
+	bool rdump = false;
 	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
+		type = R_STRING_TYPE_DETECT;
+	}
+	if (type == R_STRING_TYPE_DUMP) {
+		rdump = true;
 		type = R_STRING_TYPE_DETECT;
 	}
 	if (!buf || !min) {
@@ -379,8 +385,13 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);
 			} else {
-				// DUMP TO STDOUT. raw dumping for rabin2 -zzz
-				printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+				if (rdump) {
+					// DUMP the strings to r2 shell for izzz
+					r_cons_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+				} else {
+					// DUMP TO STDOUT. raw dumping for rabin2 -zzz
+					printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+				}
 			}
 		}
 	}
@@ -391,6 +402,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
+	int type = -1;
 
 	if (!bf || !bf->buf || !bf->buf->buf) {
 		return;
@@ -413,7 +425,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 	if (!to || to > bf->buf->length) {
 		to = bf->buf->length;
 	}
-	if (bf->rawstr != 2) {
+	if (bf->rawstr < 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
@@ -428,7 +440,10 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 			return;
 		}
 	}
-	if (string_scan_range (list, bf->buf->buf, min, from, to, -1) < 0) {
+	if (bf->rawstr == 3) {
+		type = R_STRING_TYPE_DUMP;
+	}
+	if (string_scan_range (list, bf->buf->buf, min, from, to, type) < 0) {
 		return;
 	}
 	r_list_foreach (list, it, ptr) {

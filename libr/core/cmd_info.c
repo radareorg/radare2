@@ -641,6 +641,16 @@ static int cmd_info(void *data, const char *input) {
 		case 'z':
 			if (input[1] == 'z') { //izz
 				switch (input[2]) {
+				case 'z'://izzz
+					{
+					RBinFile *bf = r_core_bin_cur (core);
+					int min = r_config_get_i (core->config, "bin.minstr");
+					int tmp = bf->rawstr;
+					bf->rawstr = 3;
+					r_bin_dump_strings (bf, min);
+					bf->rawstr = tmp;
+					goto done;
+					}
 				case '*':
 					mode = R_CORE_BIN_RADARE;
 					break;

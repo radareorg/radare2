@@ -120,6 +120,7 @@ enum {
 	R_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
 	R_STRING_TYPE_WIDE32 = 'W', // utf32
 	R_STRING_TYPE_BASE64 = 'b',
+	R_STRING_TYPE_DUMP = 'D', // hack to dump strings
 };
 
 enum {
