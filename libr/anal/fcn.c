@@ -81,7 +81,7 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 
 // _fcn_tree_{cmp_addr,calc_max_addr,free,probe} are used by interval tree.
 static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
-	const RAnalFunction *a = (const RAnalFunction *)a_,
+	const RAnalFunction *a = (const RAnalFunction *)a_;
 	const RAnalFunction *b = FCN_CONTAINER (b);
 	ut64 from0 = a->addr, to0 = a->addr + a->_size,
 		from1 = b->addr, to1 = b->addr + b->_size;
