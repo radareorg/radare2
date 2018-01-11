@@ -234,11 +234,14 @@ R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 
-static int string_scan_range(RList *list, const ut8 *buf, int min,
+static int string_scan_range(RList *list, RBinFile *bf, int min,
 			      const ut64 from, const ut64 to, int type) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
+	const ut8 *buf = r_buf_buffer (bf->buf);
+	RIOBind *iob;
+	RIO *io;
 	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
@@ -379,8 +382,18 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);
 			} else {
-				// DUMP TO STDOUT. raw dumping for rabin2 -zzz
-				printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+				// DUMP the strings for izzz and rabin2 -zzz
+				if (!bf->rbin || !(iob = &(bf->rbin->iob))) {
+					return false;
+				}
+				if (iob) {
+					io = iob->io;
+				}
+				if (io) {
+					io->cb_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
+				} else {
+					return false;
+				}
 			}
 		}
 	}
@@ -391,6 +404,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
+	int type = -1;
 
 	if (!bf || !bf->buf || !bf->buf->buf) {
 		return;
@@ -411,7 +425,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 		return;
 	}
 	if (!to || to > bf->buf->length) {
-		to = bf->buf->length;
+		to = r_buf_size (bf->buf);
 	}
 	if (bf->rawstr != 2) {
 		ut64 size = to - from;
@@ -428,7 +442,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 			return;
 		}
 	}
-	if (string_scan_range (list, bf->buf->buf, min, from, to, -1) < 0) {
+	if (string_scan_range (list, bf, min, from, to, -1) < 0) {
 		return;
 	}
 	r_list_foreach (list, it, ptr) {

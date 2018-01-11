@@ -47,6 +47,7 @@ static const char *help_msg_i[] = {
 	"iV", "", "Display file version info",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
+	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
 	"iZ", "", "Guess size of binary program",
 	NULL
 };
@@ -642,6 +643,18 @@ static int cmd_info(void *data, const char *input) {
 		case 'z':
 			if (input[1] == 'z') { //izz
 				switch (input[2]) {
+				case 'z'://izzz
+					{
+					RBinFile *bf = r_core_bin_cur (core);
+					int min = r_config_get_i (core->config, "bin.minstr");
+					if (bf) {
+						int tmp = bf->rawstr;
+						bf->rawstr = 2;
+						r_bin_dump_strings (bf, min);
+						bf->rawstr = tmp;
+					}
+					goto done;
+					}
 				case '*':
 					mode = R_CORE_BIN_RADARE;
 					break;
