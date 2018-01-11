@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble, maijin */
 
 #include "../blob/version.c"
 #include <getopt.c> /* getopt.h is not portable :D */
@@ -226,6 +226,8 @@ static int rasm_show_help(int v) {
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
 			" RASM2_NOPLUGINS  do not load shared plugins (speedup loading)\n"
+			" RASM2_ARCH       same as rasm2 -a\n"
+			" RASM2_BITS       same as rasm2 -b\n"
 			" R_DEBUG          if defined, show error messages and crash signal\n"
 			"");
 	}
