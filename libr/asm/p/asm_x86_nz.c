@@ -3411,6 +3411,66 @@ static int opstr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opsidt(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x01;
+			data[l++] = 0x08 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opsldt(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( a->bits == 64 ) {
+			data[l++] = 0x48;
+		}
+		data[l++] = 0x0f;
+		data[l++] = 0x00;
+		if ( op->operands[0].type & OT_MEMORY ) {
+			data[l++] = 0x00 | op->operands[0].regs[0];
+		} else {
+			data[l++] = 0xc0 | op->operands[0].reg;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opsmsw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( a->bits == 64 ) {
+			data[l++] = 0x48;
+		}
+		data[l++] = 0x0f;
+		data[l++] = 0x01;
+		if ( op->operands[0].type & OT_MEMORY ) {
+			data[l++] = 0x20 | op->operands[0].regs[0];
+		} else {
+			data[l++] = 0xe0 | op->operands[0].reg;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3722,6 +3782,9 @@ LookupTable oplookup[] = {
 	{"sgdt", 0, &opsgdt, 0},
 	{"shl", 0, &process_group_2, 0},
 	{"shr", 0, &process_group_2, 0},
+	{"sidt", 0, &opsidt, 0},
+	{"sldt", 0, &opsldt, 0},
+	{"smsw", 0, &opsmsw, 0},
 	{"stc", 0, NULL, 0xf9, 1},
 	{"std", 0, NULL, 0xfd, 1},
 	{"stgi", 0, NULL, 0x0f01dc, 3},
