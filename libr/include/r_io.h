@@ -321,6 +321,7 @@ R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode);	
 R_API RIODesc *r_io_open (RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at (RIO *io, const char *uri, int flags, int mode, ut64 at);
 R_API RList *r_io_open_many (RIO *io, const char *uri, int flags, int mode);
+R_API RIODesc* r_io_open_buffer (RIO *io, RBuffer *b, int flags, int mode);
 R_API bool r_io_close (RIO *io);
 R_API bool r_io_reopen (RIO *io, int fd, int flags, int mode);
 R_API int r_io_close_all (RIO *io);

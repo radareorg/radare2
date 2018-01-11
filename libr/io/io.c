@@ -241,13 +241,14 @@ R_API void r_io_free(RIO *io) {
 	free (io);
 }
 
-R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode) {
-	char *uri = (urihandler && *urihandler)
-		? r_str_newf ("%s://%s", urihandler, file)
-		: strdup (file);
-	RIODesc *ret = r_io_open_nomap (io, uri, flags, mode);
-	free (uri);
-	return ret;
+R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int flags, int mode) {
+	const int bufSize = r_buf_size (b);
+	char *uri = r_str_newf ("malloc://%d", bufSize);
+	RIODesc *desc = r_io_open_nomap (io, uri, flags, mode);
+	if (desc) {
+		r_io_desc_write (desc, r_buf_get_at(b, 0, NULL), bufSize);
+	}
+	return desc;
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
