@@ -70,7 +70,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static bool check_bytes (const ut8 *buf, ut64 length) {
-	ut32 magic = 0x37804012;
+	ut32 magic = 0x80371240;
 	if (length < N64_ROM_START) {
 		return false;
 	}
