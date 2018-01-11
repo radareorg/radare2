@@ -883,7 +883,7 @@ rep:
 									   (int)(addr - f->offset));
 					}
 				} else {
-					if (strchr(input, 'j')) {
+					if (strchr (input, 'j')) {
 						r_cons_printf ("{\"name\":\"%s\"}\n",
 									   f->name);
 					} else {
