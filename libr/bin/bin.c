@@ -239,7 +239,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
-	const ut8 *buf = bf->buf->buf;
+	const ut8 *buf = r_buf_buffer (bf->buf);
 	RIOBind *iob;
 	RIO *io;
 	int str_type = R_STRING_TYPE_DETECT;
@@ -425,7 +425,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 		return;
 	}
 	if (!to || to > bf->buf->length) {
-		to = bf->buf->length;
+		to = r_buf_size (bf->buf);
 	}
 	if (bf->rawstr != 2) {
 		ut64 size = to - from;
