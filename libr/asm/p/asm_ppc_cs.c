@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include "../arch/ppc/libvle/vle.h"
+#include "../arch/ppc/libps/libps.h"
 
 static csh handle = 0;
 
@@ -33,6 +34,22 @@ static int decompile_vle(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static int decompile_ps(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	ppcps_t instr = {0};
+	if (len < 4) {
+		return -1;
+	}
+	op->size = 4;
+	const ut32 data = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	if (libps_decode (data, &instr)) {
+		libps_snprint (op->buf_asm, R_ASM_BUFSIZE, a->pc, &instr);
+	} else {
+		strcpy (op->buf_asm, "invalid");
+		return -1;
+	}
+	return op->size;
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1, obits = -1;
 	int n, ret;
@@ -47,6 +64,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			return -1;
 		}
 		ret = decompile_vle (a, op, buf, len);
+		if (ret >= 0) {
+			return op->size;
+		}
+	} else if (a->cpu && strncmp (a->cpu, "ppcps", 3) == 0) {
+		// libps is big-endian only
+		//if (!a->big_endian) {
+		//	return -1;
+		//}
+		ret = decompile_ps (a, op, buf, len);
 		if (ret >= 0) {
 			return op->size;
 		}
@@ -86,7 +112,7 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.desc = "Capstone PowerPC disassembler",
 	.license = "BSD",
 	.arch = "ppc",
-	.cpus = "ppc,vle",
+	.cpus = "ppc,vle,ppcps",
 	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.fini = the_end,

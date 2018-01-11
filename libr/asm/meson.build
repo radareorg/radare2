@@ -105,6 +105,7 @@ files=[
 'arch/ppc/gnu/ppc-dis.c',
 'arch/ppc/gnu/ppc-opc.c',
 'arch/ppc/libvle/vle.c',
+'arch/ppc/libps/libps.c',
 'arch/propeller/propeller_disas.c',
 #'arch/riscv/riscv-opc.c',
 #'arch/riscv/riscv.c',
