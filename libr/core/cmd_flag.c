@@ -867,7 +867,6 @@ rep:
 				return 0;
 				}	
 			default:
-				addr = r_num_math (core->num, input + 2);
 				break;
 			}
 			core->flags->space_strict = space_strict;
@@ -875,10 +874,21 @@ rep:
 			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
-					r_cons_printf ("%s + %d\n", f->name,
-						(int)(addr - f->offset));
+					// if input contains 'j' print json
+					if (strchr (input, 'j')) {
+						r_cons_printf ("{\"name\":\"%s\",\"offset\":%d}\n",
+									   f->name, (int)(addr - f->offset));
+					} else {
+						r_cons_printf ("%s + %d\n", f->name,
+									   (int)(addr - f->offset));
+					}
 				} else {
-					r_cons_println (f->name);
+					if (strchr(input, 'j')) {
+						r_cons_printf ("{\"name\":\"%s\"}\n",
+									   f->name);
+					} else {
+						r_cons_println (f->name);
+					}
 				}
 			}
 		}
