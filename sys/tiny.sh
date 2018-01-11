@@ -12,7 +12,7 @@ unset LDFLAGS
 export CC="emcc --ignore-dynamic-linking"
 export AR="emar"
 
-CFGFLAGS="--prefix=/usr --without-ewf --without-gmp"
+CFGFLAGS="--prefix=/usr"
 
 make mrproper
 cp -f plugins.tiny.cfg plugins.cfg

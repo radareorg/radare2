@@ -17,7 +17,7 @@ sys/emscripten.sh
 --- random notes ---
 
 export CC="emcc --ignore-dynamic-linking"
-./configure --prefix=/usr --disable-shared --enable-static --disable-debugger --with-compiler=emscripten --without-ewf --without-pic --with-nonpic --without-gmp
+./configure --prefix=/usr --disable-shared --enable-static --disable-debugger --with-compiler=emscripten --without-pic --with-nonpic
 emmake make -j4 
 
 cd binr/radare2

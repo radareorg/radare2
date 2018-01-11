@@ -104,7 +104,7 @@ if [ "${BUILD}" = 1 ]; then
 		fi
 		# dup
 		echo ./configure --with-compiler=android \
-			--with-ostype=android --without-ewf \
+			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS}
 
 		./configure --with-compiler=android --with-ostype=android \
