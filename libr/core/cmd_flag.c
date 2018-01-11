@@ -872,25 +872,25 @@ rep:
 			core->flags->space_strict = space_strict;
 			f = r_flag_get_at (core->flags, addr, !strict_offset);
 			core->flags->space_strict = false;
-            if (f) {
-                if (f->offset != addr) {
-                    // if input contains 'j' print json
-                    if (strchr(input, 'j') != NULL) {
-                        r_cons_printf ("{\"name\":\"%s\",\"offset\":%d}\n",
-                                       f->name, (int)(addr - f->offset));
-                    } else {
-                        r_cons_printf ("%s + %d\n", f->name,
-                                       (int)(addr - f->offset));
-                    }
-                } else {
-                    if (strchr(input, 'j') != NULL) {
-                        r_cons_printf ("{\"name\":\"%s\"}\n",
-                                       f->name);
-                    } else {
-                        r_cons_println (f->name);
-                    }
-                }
-            }
+			if (f) {
+				if (f->offset != addr) {
+					// if input contains 'j' print json
+					if (strchr (input, 'j')) {
+						r_cons_printf ("{\"name\":\"%s\",\"offset\":%d}\n",
+									   f->name, (int)(addr - f->offset));
+					} else {
+						r_cons_printf ("%s + %d\n", f->name,
+									   (int)(addr - f->offset));
+					}
+				} else {
+					if (strchr(input, 'j')) {
+						r_cons_printf ("{\"name\":\"%s\"}\n",
+									   f->name);
+					} else {
+						r_cons_println (f->name);
+					}
+				}
+			}
 		}
 		break;
 	case '?':
