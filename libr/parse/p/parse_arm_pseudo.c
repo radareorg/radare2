@@ -66,7 +66,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsl",  "1 = 2 << 3"},
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "mov",  "1 = 2"},
-		{ 0, "mvn",  "1 = 2"},
+		{ 0, "mvn",  "1 = ~2"},
 		{ 0, "movz",  "1 = 2"},
 		{ 0, "movk",  "1 = 2"},
 		{ 0, "movn",  "1 = 2"},
