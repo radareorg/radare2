@@ -227,6 +227,7 @@ typedef struct r_bin_file_t {
 	int fd;
 	int size;
 	int rawstr;
+	int strmode;
 	ut32 id;
 	RBuffer *buf;
 	ut64 offset;

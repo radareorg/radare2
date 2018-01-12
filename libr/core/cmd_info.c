@@ -313,6 +313,7 @@ static int cmd_info(void *data, const char *input) {
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
+	bool rdump = false;
 	int is_array = 0;
 	Sdb *db;
 
@@ -644,17 +645,8 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'z') { //izz
 				switch (input[2]) {
 				case 'z'://izzz
-					{
-					RBinFile *bf = r_core_bin_cur (core);
-					int min = r_config_get_i (core->config, "bin.minstr");
-					if (bf) {
-						int tmp = bf->rawstr;
-						bf->rawstr = 2;
-						r_bin_dump_strings (bf, min);
-						bf->rawstr = tmp;
-					}
-					goto done;
-					}
+					rdump = true;
+					break;
 				case '*':
 					mode = R_CORE_BIN_RADARE;
 					break;
@@ -674,6 +666,18 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				input++;
+				if (rdump) {
+					RBinFile *bf = r_core_bin_cur (core);
+					int min = r_config_get_i (core->config, "bin.minstr");
+					if (bf) {
+						int tmp = bf->rawstr;
+						bf->rawstr = 2;
+						bf->strmode = mode;
+						r_bin_dump_strings (bf, min);
+						bf->rawstr = tmp;
+					}
+					goto done;
+				}
 				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 			} else {
 				RBinObject *obj = r_bin_cur_object (core->bin);

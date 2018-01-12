@@ -992,7 +992,11 @@ int main(int argc, char **argv) {
 	}
 	if (rawstr == 2) {
 		rawstr = false;
-		r_bin_dump_strings (core.bin->cur, bin->minstrlen);
+		RBinFile *bf = r_core_bin_cur (&core);
+		if (bf) {
+			bf->strmode = rad;
+			r_bin_dump_strings (bf, bin->minstrlen);
+		}
 	}
 	if (query) {
 		if (rad) {
