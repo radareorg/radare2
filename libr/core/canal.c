@@ -1419,12 +1419,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					return true;
 				}
 			}
-			ref = r_anal_ref_new ();
 			r_list_free (xrefs);
-			if (!ref) {
-				eprintf ("Error: new (xref)\n");
-				return false;
-			}
 			// we should analyze and add code ref otherwise aaa != aac
 			if (from != UT64_MAX) {
 				// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
@@ -1699,6 +1694,7 @@ repeat:
 				}
 			}
 		}
+		r_list_free (refs);
 		if (fmt == 2) {
 			r_cons_printf ("]}");
 		}
