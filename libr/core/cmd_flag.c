@@ -60,7 +60,7 @@ static const char *help_msg_fc[] = {
 static const char *help_msg_fd[] = {
 	"Usage: fd[d]", " [offset|flag|expression]", " # Describe flags",
 	"fd", " $$" , "# describe flag + delta for given offset",
- 	"fd.","", "# check flags in current address (no delta)",
+ 	"fd.", " $$", "# check flags in current address (no delta)",
 	"fdd", " $$", "# describe flag without space restrictions",
 	"fdw", " [string]", "# filter closest flag by string for current offset",
 	NULL	
@@ -798,6 +798,7 @@ rep:
 	case 'd': // "fd"
 		{
 			ut64 addr = core->offset;
+			char *arg = NULL;
 			RFlagItem *f = NULL;
 			bool space_strict = true;
 			bool strict_offset = false;
@@ -813,20 +814,23 @@ rep:
 				break;
 			case 'd':
 				space_strict = false;
-				if (input[2] == ' ') {
-					addr = r_num_math (core->num, input + 3);
+				arg = strchr (input, ' ');
+				if (arg) {
+					addr = r_num_math (core->num, arg + 1);
 				}
 				break;
 			case '.':
 				strict_offset = true;
-				if (input[2] == ' ') {
-					addr = r_num_math (core->num, input + 3);
+				arg = strchr (input, ' ');
+				if (arg) {
+					addr = r_num_math (core->num, arg + 1);
 				}
 				break;
 			case 'w':
 				{
-				char *arg = strdup (r_str_trim_ro (input + 2));
+				arg = strchr (input, ' ');
 				if (arg) {
+					arg++;
 					if (*arg) {
 						RFlag *f = core->flags;
 						RList *temp = r_list_new ();
@@ -867,6 +871,10 @@ rep:
 				return 0;
 				}	
 			default:
+				arg = strchr (input, ' ');
+				if (arg) {
+					addr = r_num_math (core->num, arg + 1);
+				}
 				break;
 			}
 			core->flags->space_strict = space_strict;
@@ -883,7 +891,7 @@ rep:
 									   (int)(addr - f->offset));
 					}
 				} else {
-					if (strchr(input, 'j')) {
+					if (strchr (input, 'j')) {
 						r_cons_printf ("{\"name\":\"%s\"}\n",
 									   f->name);
 					} else {
