@@ -395,23 +395,12 @@ menu nconfig:
 pie:
 	sys/pie.sh ${PREVIOUS_RELEASE}
 
-meson-config meson-cfg meson-conf:
-	@echo "[ Meson Configure ]"
-	cp -f plugins.meson.cfg plugins.cfg
-	./configure --prefix="${PREFIX}"
-
-meson-build: meson-config
+meson:
 	@echo "[ Meson R2 Building ]"
-	$(MESON) --prefix="${PREFIX}" build
-
-meson: meson-build
-	@echo "[ SDB Build ]"
-	$(PYTHON) sys/meson_sdb.py
-	@echo "[ Ninja Build ]"
-	ninja -C build
+	$(PYTHON) sys/meson.py --prefix="${PREFIX}" --shared
 
 meson-install:
-	cd build && DESTDIR="$(DESTDIR)" ninja install
+	DESTDIR="$(DESTDIR)" ninja -C build install
 
 B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
@@ -446,6 +435,7 @@ meson-symstall: symstall-sdb
 	ln -fs $(PWD)/build/libr/core/libr_core.$(EXT_SO) ${L}/libr_core.$(EXT_SO)
 
 meson-uninstall:
+	ninja -C build uninstall
 	$(MAKE) uninstall
 
 meson-clean:
