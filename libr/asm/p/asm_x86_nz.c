@@ -3471,6 +3471,50 @@ static int opsmsw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opverr(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x00;
+			if ( op->operands[0].type & OT_MEMORY ) {
+				data[l++] = 0x20 | op->operands[0].regs[0];
+			} else {
+				data[l++] = 0xe0 | op->operands[0].reg;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
+static int opverw(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_WORD ) {
+			data[l++] = 0x0f;
+			data[l++] = 0x00;
+			if ( op->operands[0].type & OT_MEMORY ) {
+				data[l++] = 0x28 | op->operands[0].regs[0];
+			} else {
+				data[l++] = 0xe8 | op->operands[0].reg;
+			}
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3801,6 +3845,8 @@ LookupTable oplookup[] = {
 	{"sysexit", 0, NULL, 0x0f35, 2},
 	{"sysret", 0, NULL, 0x0f07, 2},
 	{"ud2", 0, NULL, 0x0f0b, 2},
+	{"verr", 0, &opverr, 0},
+	{"verw", 0, &opverw, 0},
 	{"vmcall", 0, NULL, 0x0f01c1, 3},
 	{"vmlaunch", 0, NULL, 0x0f01c2, 3},
 	{"vmload", 0, NULL, 0x0f01da, 3},
