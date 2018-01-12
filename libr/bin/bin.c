@@ -231,6 +231,70 @@ R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
 	return false;
 }
 
+#define MODE_PRINT 0x000
+#define MODE_RADARE 0x001
+#define MODE_SIMPLE 0x004
+
+static void print_string(RBinString *string, RBinFile *bf) {
+	int mode = bf->strmode;
+	ut64 addr , vaddr;
+	RBin *bin = bf->rbin;
+	const char *section_name, *type_string;
+	RIOBind *iob;
+
+	if (!bin || !(iob = &(bin->iob))) {
+		return;
+	}
+	RIO *io = iob? iob->io: NULL;
+	if (!io) {
+		return;
+	}
+	RBinSection *s = r_bin_get_section_at (bf->o, string->paddr, false);
+	if (s) {
+		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+	}
+	section_name = s ? s->name : "";
+	type_string = r_bin_string_type (string->type);
+	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
+
+	switch(mode) {
+	case MODE_SIMPLE :
+		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
+		break;
+	case MODE_RADARE :
+		{
+		char *f_name, *nstr;
+		f_name = strdup (string->string);
+		r_name_filter (f_name, 512);
+		if (bin->prefix) {
+			nstr = r_str_newf ("%s.str.%s", bin->prefix, f_name);
+			io->cb_printf ("f %s.str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
+					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+					bin->prefix, f_name, string->size, addr,
+					string->size, addr);
+		} else {
+			nstr = r_str_newf ("str.%s", f_name);
+			io->cb_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
+					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+					f_name, string->size, addr,
+					string->size, addr);
+		}
+		free (nstr);
+		free (f_name);
+		break;
+		}
+	case MODE_PRINT :
+		io->cb_printf ("%03u 0x%08"PFMT64x" 0x%08"
+				PFMT64x" %3u %3u "
+				"(%s) %5s %s\n",
+				string->ordinal, string->paddr, vaddr,
+				string->length, string->size,
+				section_name, type_string, string->string);
+		break;
+	}
+}
+
+
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 
@@ -350,50 +414,39 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					}
 				}
 			}
+			RBinString *new = R_NEW0 (RBinString);
+			if (!new) {
+				break;
+			}
+			new->type = str_type;
+			new->length = runes;
+			new->size = needle - str_start;
+			new->ordinal = count++;
+			// TODO: move into adjust_offset
+			switch (str_type) {
+			case R_STRING_TYPE_WIDE:
+				if (str_start > 1) {
+					const ut8 *p = buf + str_start - 2;
+					if (p[0] == 0xff && p[1] == 0xfe) {
+						str_start -= 2; // \xff\xfe
+					}
+				}
+				break;
+			case R_STRING_TYPE_WIDE32:
+				if (str_start > 3) {
+					const ut8 *p = buf + str_start - 4;
+					if (p[0] == 0xff && p[1] == 0xfe) {
+						str_start -= 4; // \xff\xfe\x00\x00
+					}
+				}
+				break;
+			}
+			new->paddr = new->vaddr = str_start;
+			new->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
-				RBinString *new = R_NEW0 (RBinString);
-				if (!new) {
-					break;
-				}
-				new->type = str_type;
-				new->length = runes;
-				new->size = needle - str_start;
-				new->ordinal = count++;
-				// TODO: move into adjust_offset
-				switch (str_type) {
-				case R_STRING_TYPE_WIDE:
-					if (str_start > 1) {
-						const ut8 *p = buf + str_start - 2;
-						if (p[0] == 0xff && p[1] == 0xfe) {
-							str_start -= 2; // \xff\xfe
-						}
-					}
-					break;
-				case R_STRING_TYPE_WIDE32:
-					if (str_start > 3) {
-						const ut8 *p = buf + str_start - 4;
-						if (p[0] == 0xff && p[1] == 0xfe) {
-							str_start -= 4; // \xff\xfe\x00\x00
-						}
-					}
-					break;
-				}
-				new->paddr = new->vaddr = str_start;
-				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);
 			} else {
-				// DUMP the strings for izzz and rabin2 -zzz
-				if (!bf->rbin || !(iob = &(bf->rbin->iob))) {
-					return false;
-				}
-				if (iob) {
-					io = iob->io;
-				}
-				if (io) {
-					io->cb_printf ("0x%08" PFMT64x " %s\n", str_start, tmp);
-				} else {
-					return false;
-				}
+				print_string (new,bf);
 			}
 		}
 	}
