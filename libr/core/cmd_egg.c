@@ -16,6 +16,7 @@ static const char *help_msg_g[] = {
 	"gp", " padding", "Define padding for command",
 	"ge", " xor", "Specify an encoder",
 	"gr", "", "Reset r_egg",
+	"gS", "", "Show the current configuration",
 	"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
 	NULL
 };
@@ -84,11 +85,17 @@ static int cmd_egg_compile(REgg *egg) {
 	char *p = r_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
 		if (!r_egg_shellcode (egg, p)) {
+			eprintf ("Unknown shellcode '%s'\n", p);
 			free (p);
 			return false;
 		}
 		free (p);
+	} else {
+		eprintf ("Setup a shellcode before (gi command)\n");
+		free (p);
+		return false;
 	}
+
 	r_egg_compile (egg);
 	if (!r_egg_assemble (egg)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
@@ -110,6 +117,11 @@ static int cmd_egg_compile(REgg *egg) {
 	}
 	// we do not own this buffer!!
 	// r_buf_free (b);
+	r_egg_option_set (egg, "egg.shellcode", "");
+	r_egg_option_set (egg, "egg.padding", "");
+	r_egg_option_set (egg, "egg.encoder", "");
+	r_egg_option_set (egg, "key", "");
+
 	r_egg_reset (egg);
 	return ret;
 }
@@ -193,6 +205,14 @@ static int cmd_egg(void *data, const char *input) {
 		}
 	}
 	break;
+	case 'S': // "gS"
+		eprintf ("shellcode: '%s'\n", r_egg_option_get (egg, "egg.shellcode"));
+		eprintf ("encoder: '%s'\n", r_egg_option_get (egg, "egg.encoder"));
+		eprintf ("padding: '%s'\n", r_egg_option_get (egg, "egg.padding"));
+		eprintf ("key: '%s'\n", r_egg_option_get (egg, "key"));
+		eprintf ("cmd: '%s'\n", r_egg_option_get (egg, "cmd"));
+		eprintf ("suid: '%s'\n", r_egg_option_get (egg, "suid"));
+		break;
 	case 'r': // "gr"
 		cmd_egg_option (egg, "egg.padding", "");
 		cmd_egg_option (egg, "egg.shellcode", "");
