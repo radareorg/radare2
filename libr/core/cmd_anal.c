@@ -6122,7 +6122,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				(void)r_core_anal_refs (core, input + 1); // "aar"
+				(void)r_core_anal_refs (core, ""); // "aar"
 				rowlog_done (core);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
