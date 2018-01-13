@@ -303,9 +303,9 @@ R_API int r_str_delta(char *p, char a, char b) {
 }
 
 // In-place split string using ch as a delimeter. Replaces all instances of ch
-// with a null byte. Returns the number of times that the string was split.
-// For example r_str_split("hello world", ' ') will replace the space with '\0'
-// and return 1.
+// with a null byte. Returns the number of split strings. For example
+// r_str_split("hello world", ' ') will replace the space with '\0' and
+// return 2.
 R_API int r_str_split(char *str, char ch) {
 	int i;
 	char *p;
