@@ -67,11 +67,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (ret >= 0) {
 			return op->size;
 		}
-	} else if (a->cpu && strncmp (a->cpu, "ppcps", 3) == 0) {
+	} else if (a->cpu && strncmp (a->cpu, "ps", 2) == 0) {
 		// libps is big-endian only
-		//if (!a->big_endian) {
-		//	return -1;
-		//}
+		if (!a->big_endian) {
+			return -1;
+		}
 		ret = decompile_ps (a, op, buf, len);
 		if (ret >= 0) {
 			return op->size;
@@ -112,7 +112,7 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.desc = "Capstone PowerPC disassembler",
 	.license = "BSD",
 	.arch = "ppc",
-	.cpus = "ppc,vle,ppcps",
+	.cpus = "ppc,vle,ps",
 	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.fini = the_end,
