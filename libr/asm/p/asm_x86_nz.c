@@ -3536,6 +3536,27 @@ static int opvmclear(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opvmon(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_QWORD
+		     ) {
+			data[l++] = 0xf3;
+			data[l++] = 0x0f;
+			data[l++] = 0xc7;
+			data[l++] = 0x30 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3757,6 +3778,7 @@ LookupTable oplookup[] = {
 	{"lodsb", 0, NULL, 0xac, 1},
 	{"lodsd", 0, NULL, 0xad, 1},
 	{"lodsw", 0, NULL, 0x66ad, 2},
+	{"loop", 0, &oploop, 0},
 	{"mfence", 0, NULL, 0x0faef0, 3},
 	{"monitor", 0, NULL, 0x0f01c8, 3},
 	{"mov", 0, &opmov, 0},
@@ -3799,7 +3821,6 @@ LookupTable oplookup[] = {
 	{"rdtsc", 0, NULL, 0x0f31, 2},
 	{"rdtscp", 0, NULL, 0x0f01f9, 3},
 	{"ret", 0, &opret, 0},
-	{"loop", 0, &oploop, 0},
 	{"retf", 0, &opretf, 0},
 	{"retw", 0, NULL, 0x66c3, 2},
 	{"rol", 0, &process_group_2, 0},
@@ -3877,6 +3898,7 @@ LookupTable oplookup[] = {
 	{"vmrun", 0, NULL, 0x0f01d8, 3},
 	{"vmsave", 0, NULL, 0x0f01db, 3},
 	{"vmxoff", 0, NULL, 0x0f01c4, 3},
+	{"vmxon", 0, &opvmon, 0},
 	{"vzeroall", 0, NULL, 0xc5fc77, 3},
 	{"vzeroupper", 0, NULL, 0xc5f877, 3},
 	{"wait", 0, NULL, 0x9b, 1},
