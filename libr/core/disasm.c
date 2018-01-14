@@ -288,7 +288,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
-static void ds_print_str(RDisasmState *ds, const char *str, int len);
+static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 #if 0
@@ -3023,10 +3023,30 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	return escstr;
 }
 
-static void ds_print_str(RDisasmState *ds, const char *str, int len) {
+static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	const char *prefix;
-	if (ds->core->bin->strpurge && r_core_bin_strpurge (str)) {
-		return;
+	if (ds->core->bin->strpurge_addrs) {
+		char *addrs = strdup (ds->core->bin->strpurge_addrs);
+		if (addrs) {
+			int splits = r_str_split (addrs, '+');
+			int i;
+			char *ptr;
+			ut64 addr;
+			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
+				if (!strcmp (ptr, "true") && r_core_bin_strpurge (str)) {
+					free (addrs);
+					return;
+				}
+				addr = r_num_get (NULL, ptr);
+				if (addr != 0 || *ptr == '0') {
+					if (refaddr == addr) {
+						free (addrs);
+						return;
+					}
+				}
+			}
+			free (addrs);
+		}
 	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
@@ -3154,7 +3174,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						      (ut8 *)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
 					if (!string_printed && str[0] && r_str_is_printable_incl_newlines (str)) {
-						ds_print_str (ds, str, sizeof (str));
+						ds_print_str (ds, str, sizeof (str), ds->analop.ptr);
 						string_printed = true;
 					}
 				}
@@ -3275,7 +3295,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 			if (*msg) {
 				if (!string_printed) {
-					ds_print_str (ds, msg, len);
+					ds_print_str (ds, msg, len, refaddr);
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
@@ -3323,7 +3343,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else {
 					if (r_core_anal_address (core, refaddr) & R_ANAL_ADDR_TYPE_ASCII) {
 						if (!string_printed && *msg) {
-							ds_print_str (ds, msg, len);
+							ds_print_str (ds, msg, len, refaddr);
 							string_printed = true;
 						}
 					}
@@ -3334,7 +3354,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (kind) {
 				if (!strcmp (kind, "text")) {
 					if (!string_printed && *msg) {
-						ds_print_str (ds, msg, len);
+						ds_print_str (ds, msg, len, refaddr);
 						string_printed = true;
 					}
 				} else if (!strcmp (kind, "invalid")) {
