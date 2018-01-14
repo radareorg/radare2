@@ -23,6 +23,18 @@ static const char *help_msg_g[] = {
 
 static void cmd_egg_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
+
+	if (!(configList = r_list_new ())) {
+		return NULL;
+	}
+
+	r_list_append (configList, "egg.shellcode");
+	r_list_append (configList, "egg.encoder");
+	r_list_append (configList, "egg.padding");
+	r_list_append (configList, "key");
+	r_list_append (configList, "cmd");
+	r_list_append (configList, "suid");
+
 }
 
 static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
@@ -206,13 +218,23 @@ static int cmd_egg(void *data, const char *input) {
 	}
 	break;
 	case 'S': // "gS"
-		eprintf ("shellcode: '%s'\n", r_egg_option_get (egg, "egg.shellcode"));
-		eprintf ("encoder: '%s'\n", r_egg_option_get (egg, "egg.encoder"));
-		eprintf ("padding: '%s'\n", r_egg_option_get (egg, "egg.padding"));
-		eprintf ("key: '%s'\n", r_egg_option_get (egg, "key"));
-		eprintf ("cmd: '%s'\n", r_egg_option_get (egg, "cmd"));
-		eprintf ("suid: '%s'\n", r_egg_option_get (egg, "suid"));
-		break;
+	{
+		RListIter *iter;
+		char *p;
+		eprintf ("Configuration options\n");
+		r_list_foreach (configList, iter, p) {
+			if (r_egg_option_get (egg, p)) {
+				eprintf ("%s : %s\n", p, r_egg_option_get (egg, p));
+			} else {
+				eprintf ("%s : %s\n", p, "");
+			}
+		}
+		eprintf ("\nTarget options\n");
+		eprintf ("%s : %s\n", "arch", core->anal->cpu);
+		eprintf ("%s : %s\n", "os", core->anal->os);
+		eprintf ("%s : %d\n", "bits", core->anal->bits);
+	}
+	break;
 	case 'r': // "gr"
 		cmd_egg_option (egg, "egg.padding", "");
 		cmd_egg_option (egg, "egg.shellcode", "");
