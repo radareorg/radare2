@@ -4583,10 +4583,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	ut8 buf[4096];
 	ut8 block[4096];
 	bufi = 0;
-	if (addr_end - addr > 0xffffff) {
+	if (addr_end - addr > UT32_MAX) {
 		return;
 	}
-	memset (block, -1, 4096);
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -4598,14 +4597,17 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 		}
+		memset (block, -1, 4096);
 		if (!memcmp (buf, block, 4096)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			break;
+			addr += 4096;
+			continue;
 		}
 		memset (block, 0, 4096);
 		if (!memcmp (buf, block, 4096)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			break;
+			addr += 4096;
+			continue;
 		}	
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, sizeof (buf) - bufi)) {
 			if (op.size < 1) {

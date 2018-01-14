@@ -2735,8 +2735,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			at += core->blocksize;
 			continue;
-		}		
-		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
+		}
+		while (at < at + core->blocksize && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
 			xref_from = at + i;	
@@ -2855,7 +2855,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			}
 			count++;
 		}
-
 		at += i;
 	}
 	r_cons_break_pop ();
