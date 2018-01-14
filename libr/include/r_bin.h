@@ -274,6 +274,7 @@ typedef struct r_bin_t {
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings
+	char *strpurge_addrs;
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 	ut64 filter_rules;
