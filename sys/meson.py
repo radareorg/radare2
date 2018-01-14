@@ -199,7 +199,7 @@ def win_install(args):
     makedirs(r'{DIST}\share\radare2\{R2_VERSION}\fcnsign')
     copy(r'{ROOT}\libr\anal\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\fcnsign')
     makedirs(r'{DIST}\share\radare2\{R2_VERSION}\opcodes')
-    copy(r'{ROOT}\libr\anal\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\opcodes')
+    copy(r'{ROOT}\libr\asm\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\opcodes')
     makedirs(r'{DIST}\include\libr\sdb')
     makedirs(r'{DIST}\include\libr\r_util')
     copy(r'{ROOT}\libr\include\*.h', r'{DIST}\include\libr')
