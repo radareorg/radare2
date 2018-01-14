@@ -21,6 +21,8 @@ static const char *help_msg_g[] = {
 	NULL
 };
 
+static RList *configList = NULL;
+
 static void cmd_egg_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
 
@@ -230,9 +232,9 @@ static int cmd_egg(void *data, const char *input) {
 			}
 		}
 		eprintf ("\nTarget options\n");
-		eprintf ("%s : %s\n", "arch", core->anal->cpu);
-		eprintf ("%s : %s\n", "os", core->anal->os);
-		eprintf ("%s : %d\n", "bits", core->anal->bits);
+		eprintf ("arch : %s\n", core->anal->cpu);
+		eprintf ("os   : %s\n", core->anal->os);
+		eprintf ("bits : %d\n", core->anal->bits);
 	}
 	break;
 	case 'r': // "gr"
