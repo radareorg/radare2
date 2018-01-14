@@ -107,7 +107,7 @@ bool libps_decode(ut32 data, ppcps_t* ps) {
 		for (l = 0; l < size; l++) {
 			if ((data & instruction->mask) == instruction->opcode) {
 				j = 0;
-				for (; instruction->operands[j] != 0 && j < 6; j++) {
+				for (;j < 6 && instruction->operands[j] != 0; j++) {
 					ppcps_field_t* field = &ps->operands[j];
 					ps_operand_t* ps_operand = &ps_operands_array[instruction->operands[j]];
 
