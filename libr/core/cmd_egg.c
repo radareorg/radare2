@@ -223,18 +223,18 @@ static int cmd_egg(void *data, const char *input) {
 	{
 		RListIter *iter;
 		char *p;
-		eprintf ("Configuration options\n");
+		r_cons_printf ("Configuration options\n");
 		r_list_foreach (configList, iter, p) {
 			if (r_egg_option_get (egg, p)) {
-				eprintf ("%s : %s\n", p, r_egg_option_get (egg, p));
+				r_cons_printf ("%s : %s\n", p, r_egg_option_get (egg, p));
 			} else {
-				eprintf ("%s : %s\n", p, "");
+				r_cons_printf ("%s : %s\n", p, "");
 			}
 		}
-		eprintf ("\nTarget options\n");
-		eprintf ("arch : %s\n", core->anal->cpu);
-		eprintf ("os   : %s\n", core->anal->os);
-		eprintf ("bits : %d\n", core->anal->bits);
+		r_cons_printf ("\nTarget options\n");
+		r_cons_printf ("arch : %s\n", core->anal->cpu);
+		r_cons_printf ("os   : %s\n", core->anal->os);
+		r_cons_printf ("bits : %d\n", core->anal->bits);
 	}
 	break;
 	case 'r': // "gr"
