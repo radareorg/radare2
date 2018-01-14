@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2017 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2018 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -7,6 +7,7 @@
 
 static int mousemode = 0;
 static int disMode = 0;
+static int discroll = 0;
 static const char *mousemodes[] = {
 	"canvas-y",
 	"canvas-x",
@@ -176,9 +177,8 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom) {
 			n->h = 1;
 			n->w = MININODE_MIN_WIDTH;
 		} else {
-			unsigned int len;
 			n->w = r_str_bounds (n->body, (int *) &n->h);
-			len = strlen (n->title) + MARGIN_TEXT_X;
+			ut32 len = strlen (n->title) + MARGIN_TEXT_X;
 			if (len > INT_MAX) {
 				len = INT_MAX;
 			}
@@ -219,8 +219,15 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 			snprintf (title, sizeof (title) - 1,
 				"[ %s ]", n->title);
 			W (title);
-			(void) G (-g->can->sx, -g->can->sy + 3);
-			W (n->body);
+			if (discroll > 0) {
+				char *body = r_str_ansi_crop (n->body, 0, discroll, -1, -1);
+				(void) G (-g->can->sx, -g->can->sy + 3);
+				W (body);
+				free (body);
+			} else {
+				(void) G (-g->can->sx, -g->can->sy + 3);
+				W (n->body);
+			}
 		} else {
 			char *str = "____";
 			if (n->title) {
@@ -2031,14 +2038,11 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	shortcuts = r_config_get_i (core->config, "graph.nodejmps");
 	r_list_foreach (fcn->bbs, iter, bb) {
-		RANode *node;
-		char *title, *body;
-
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
-		title = get_title (bb->addr);
+		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
+		char *title = get_title (bb->addr);
 
 		if (shortcuts) {
 			shortcut = r_core_add_asmqjmp (core, bb->addr);
@@ -2047,7 +2051,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				free (shortcut);
 			}
 		}
-		node = r_agraph_get_node (g, title);
+		RANode *node = r_agraph_get_node (g, title);
 		if (node) {
 			free (node->body);
 			node->body = body;
@@ -2091,16 +2095,13 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		RANode *node;
-		char *title, *body;
-
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
-		title = get_title (bb->addr);
+		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
+		char *title = get_title (bb->addr);
 
-		node = r_agraph_add_node (g, title, body);
+		RANode *node = r_agraph_add_node (g, title, body);
 		shortcuts = r_config_get_i (core->config, "graph.nodejmps");
 
 		if (shortcuts) {
@@ -2176,8 +2177,6 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *refs;
-	char *title, *body;
-
 	if (!f) {
 		return false;
 	}
@@ -2187,7 +2186,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	r_core_seek (core, f->addr, 1);
 
-	title = get_title (fcn->addr);
+	char *title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, "");
 
 	free (title);
@@ -2215,7 +2214,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			size = bb->size;
 		}
 
-		body = get_body (core, ref->addr, size, mode2opts (g));
+		char *body = get_body (core, ref->addr, size, mode2opts (g));
 		title = get_title (ref->addr);
 
 		node = r_agraph_add_node (g, title, body);
@@ -2235,7 +2234,6 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 #else
 	eprintf ("Must be sdbized\n");
 #endif
-
 	return true;
 }
 
@@ -2990,8 +2988,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		ut64 off = r_core_anal_get_bbaddr (core, core->offset);
 		char *title = get_title (off);
 		RANode *cur_anode = get_anode (g->curnode);
-		if (fcn && ((is_interactive && !cur_anode) ||
-				(cur_anode && strcmp (cur_anode->title, title) != 0))) {
+		if (fcn && ((is_interactive && !cur_anode) || (cur_anode && strcmp (cur_anode->title, title)))) {
 			g->update_seek_on = r_agraph_get_node (g, title);
 			if (g->update_seek_on) {
 				r_agraph_set_curnode (g, g->update_seek_on);
@@ -3056,7 +3053,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		char *str = r_core_cmd_str (core, "pd $r");
 		//r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
 		//		w - title_len, 1, ' ', true);
-		W(str);
+		W (str);
 		free (str);
 		r_config_set_i (core->config, "scr.utf8", scr_utf8);
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
@@ -3794,6 +3791,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 		case 9: // tab
 			agraph_next_node (g);
+			discroll = 0;
 			break;
 		case '?':
 			r_cons_clear00 ();
@@ -4001,7 +3999,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_toggle_mini (g);
 			break;
 		case 'J':
-			if (g->is_dis) {
+			if (is_mini (g)) {
+				discroll ++;
+			} else if (g->is_dis) {
 				r_core_cmd0 (core, "so 4");
 			} else {
 				if (okey == 27) { // && r_cons_readchar () == 126) {
@@ -4020,7 +4020,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'K':
-			if (g->is_dis) {
+			if (is_mini (g)) {
+				discroll --;
+				if (discroll < 0) {
+					discroll = 0;
+				}
+			} else if (g->is_dis) {
 				r_core_cmd0 (core, "so -4");
 			} else {
 				if (okey == 27) { // && r_cons_readchar () == 126) {
@@ -4039,7 +4044,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'H':
-			if (okey == 27) {
+			if (is_mini (g)) {
+				discroll = 0;
+			} else if (okey == 27) {
 				// handle home key
 				const RGraphNode *gn = find_near_of (g, NULL, true);
 				g->update_seek_on = get_anode (gn);
@@ -4058,17 +4065,19 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_visual_anal (core);
 			break;
 		case 'L':
-		{
-			RANode *n = get_anode (g->curnode);
-			if (n) {
-				if (g->is_tiny) {
-					n->x++;
-				} else {
-					n->x += movspeed;
+			if (is_mini (g)) {
+				discroll = 0;
+			} else {
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					if (g->is_tiny) {
+						n->x++;
+					} else {
+						n->x += movspeed;
+					}
 				}
+				break;
 			}
-			break;
-		}
 		case 'j':
 			if (g->is_dis) {
 				r_core_cmd0 (core, "so 1");
@@ -4095,6 +4104,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			  agraph_update_seek (g, get_anode (g->curnode), true);
 			  break;
 		case '.':
+			discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 't':

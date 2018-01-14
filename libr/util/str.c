@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -1486,12 +1486,11 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	return j;
 }
 
-R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
-		unsigned int x2, unsigned int y2) {
+R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	char *r, *r_end, *ret;
 	const char *s;
 	size_t r_len, str_len = 0, nr_of_lines = 0;
-	unsigned int ch = 0, cw = 0;
+	ut32 ch = 0, cw = 0;
 	if (x2 < 1 || y2 < 1 || !str) {
 		return strdup ("");
 	}
@@ -1517,8 +1516,9 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
 			if (ch >= y && ch < y2) {
 				const char *reset = Color_RESET "\n";
 				if (strlen (reset) < (r_end - r)) {
-					memcpy (r, reset, strlen (reset) + 1);
-					r += strlen (reset);
+					const int reset_length = strlen (reset);
+					memcpy (r, reset, reset_length + 1);
+					r += reset_length;
 				}
 			}
 			str++;
@@ -1526,7 +1526,7 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
 			cw = 0;
 		} else if (*str == 0x1b && *(str + 1) == '[') {
 			const char *ptr = str;
-			if ((r_end - r) > 3) {
+			if ((r_end - r) > 2) {
 				/* copy 0x1b and [ */
 				*r++ = *str++;
 				*r++ = *str++;

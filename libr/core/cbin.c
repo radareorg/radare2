@@ -1692,7 +1692,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 			r_cons_newline ();
 #else
-			r_cons_printf ("%03d 0x%08"PFMT64x" %s %s ",
+			r_cons_printf ("%4d 0x%08"PFMT64x" %7s %7s ",
 				import->ordinal, addr, bind, type);
 			if (import->classname && import->classname[0]) {
 				r_cons_printf ("%s.", import->classname);
