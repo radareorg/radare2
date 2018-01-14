@@ -15,6 +15,7 @@ static const char *help_msg_g[] = {
 	"gi", " [type]", "Compile shellcode. like ragg2 -i (see gl or ragg2 -L)",
 	"gp", " padding", "Define padding for command",
 	"ge", " xor", "Specify an encoder",
+	"gS", "", "Show the current configuration",
 	"gr", "", "Reset r_egg",
 	"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
 	NULL
@@ -22,6 +23,18 @@ static const char *help_msg_g[] = {
 
 static void cmd_egg_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
+
+	if (!(configList = r_list_new ())) {
+		return NULL;
+	}
+
+	r_list_append (configList, "egg.shellcode");
+	r_list_append (configList, "egg.encoder");
+	r_list_append (configList, "egg.padding");
+	r_list_append (configList, "key");
+	r_list_append (configList, "cmd");
+	r_list_append (configList, "suid");
+
 }
 
 static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
@@ -84,11 +97,17 @@ static int cmd_egg_compile(REgg *egg) {
 	char *p = r_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
 		if (!r_egg_shellcode (egg, p)) {
+			eprintf ("Unknown shellcode '%s'\n", p);
 			free (p);
 			return false;
 		}
 		free (p);
+	} else {
+		eprintf ("Setup a shellcode before (gi command)\n");
+		free (p);
+		return false;
 	}
+
 	r_egg_compile (egg);
 	if (!r_egg_assemble (egg)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
@@ -110,6 +129,11 @@ static int cmd_egg_compile(REgg *egg) {
 	}
 	// we do not own this buffer!!
 	// r_buf_free (b);
+	r_egg_option_set (egg, "egg.shellcode", "");
+	r_egg_option_set (egg, "egg.padding", "");
+	r_egg_option_set (egg, "egg.encoder", "");
+	r_egg_option_set (egg, "key", "");
+
 	r_egg_reset (egg);
 	return ret;
 }
@@ -191,6 +215,24 @@ static int cmd_egg(void *data, const char *input) {
 				(p->type == R_EGG_PLUGIN_SHELLCODE)?
 				"shc": "enc", p->name, p->desc);
 		}
+	}
+	break;
+	case 'S': // "gS"
+	{
+		RListIter *iter;
+		char *p;
+		eprintf ("Configuration options\n");
+		r_list_foreach (configList, iter, p) {
+			if (r_egg_option_get (egg, p)) {
+				eprintf ("%s : %s\n", p, r_egg_option_get (egg, p));
+			} else {
+				eprintf ("%s : %s\n", p, "");
+			}
+		}
+		eprintf ("\nTarget options\n");
+		eprintf ("%s : %s\n", "arch", core->anal->cpu);
+		eprintf ("%s : %s\n", "os", core->anal->os);
+		eprintf ("%s : %d\n", "bits", core->anal->bits);
 	}
 	break;
 	case 'r': // "gr"
