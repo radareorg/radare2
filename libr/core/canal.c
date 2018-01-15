@@ -2686,7 +2686,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	ut64 at;
 	ut8 *block;
 	int count = 0;
+	const int bsz = core->blocksize;
 	RAnalOp op = { 0 };
+
 	if (from == to) {
 		return -1;
 	}
@@ -2700,8 +2702,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		eprintf ("Error: block size too small\n");
 		return -1;
 	}
-	buf = (ut8 *)malloc (core->blocksize);
-	block = malloc (core->blocksize);
+	buf = malloc (bsz);
+	block = malloc (bsz);
 	if (!buf) {
 		eprintf ("Error: cannot allocate a block\n");
 		free (block);
@@ -2719,31 +2721,30 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
-		int i = 0, ret = core->blocksize;
+		int i = 0, ret = bsz;
 		if (!r_io_is_valid_offset (core->io, at, R_IO_EXEC)) {
 			break;
 		}
-		(void)r_io_read_at (core->io, at, buf, core->blocksize);
-		memset (block, -1, core->blocksize);
-		if (!memcmp (buf, block, core->blocksize)) {
+		(void)r_io_read_at (core->io, at, buf, bsz);
+		memset (block, -1, bsz);
+		if (!memcmp (buf, block, bsz)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			at += core->blocksize;
+			at += bsz;
 			continue;
 		}
-		memset (block, 0, core->blocksize);
-		if (!memcmp (buf, block, core->blocksize)) {
+		memset (block, 0, bsz);
+		if (!memcmp (buf, block, bsz)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			at += core->blocksize;
+			at += bsz;
 			continue;
-		}		
-		while (at + i < to && i < ret - OPSZ && !r_cons_is_breaked ()) {
+		}
+		while (at < (at + bsz) && !r_cons_is_breaked ()) {
 			RAnalRefType type;
-			ut64 xref_from, xref_to;
-			xref_from = at + i;	
-			r_anal_op_fini (&op);
-			ret = r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
-			i += ret > 0 ? ret : 1;
-			if (ret <= 0 || at + i > to) {
+			ut64 xref_to;
+			ret = r_anal_op (core->anal, &op, at, buf + i, bsz - i);
+			ret = ret > 0 ? ret : 1;
+			i += ret;
+			if (ret <= 0 || i > bsz) {
 				break;
 			}
 			// Get reference type and target address
@@ -2793,15 +2794,15 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			// the number of false positives. In debugger mode, the reference
 			// must point to a mapped memory region.
 			if (type == R_ANAL_REF_TYPE_NULL) {
-				continue;
+				goto beach;
 			}
 			if (cfg_debug) {
 				if (!r_debug_map_get (core->dbg, xref_to)) {
-					continue;
+					goto beach;
 				}
 			} else if (core->io->va) {
 				if (!r_io_is_valid_offset (core->io, xref_to, 0)) {
-					continue;
+					goto beach;
 				}
 			}
 			if (!rad) {
@@ -2823,14 +2824,14 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				}
 				// Add to SDB
 				if (xref_to) {
-					r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+					r_anal_xrefs_set (core->anal, type, at, xref_to);
 				}	
 			} else if (rad == 'j') {
 				// Output JSON
 				if (count > 0) {
 					r_cons_printf (",");
 				}
-				r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, xref_from);
+				r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
 			} else {
 				int len = 0;
 				// Display in radare commands format
@@ -2841,7 +2842,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
 				default: cmd = "ax"; break;
 				}
-				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, xref_from);
+				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
 				if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
 					char *str_flagname = is_string_at (core, xref_to, &len);
 					if (str_flagname) {
@@ -2853,15 +2854,15 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					}
 				}
 			}
-			count++;
+			beach :
+				count++;
+				at += ret;
+				r_anal_op_fini (&op);
 		}
-
-		at += i;
 	}
 	r_cons_break_pop ();
 	free (buf);
 	free (block);
-	r_anal_op_fini (&op);
 	if (rad == 'j') {
 		r_cons_printf ("}\n");
 	}

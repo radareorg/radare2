@@ -4580,13 +4580,25 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	int bufi, minop = 1; // 4
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
-	ut8 buf[4096];
-	ut8 block[4096];
+	const int bsz = 4096;
+	ut8 *buf;
+	ut8 *block;
 	bufi = 0;
-	if (addr_end - addr > 0xffffff) {
+	if (addr_end - addr > UT32_MAX) {
 		return;
 	}
-	memset (block, -1, 4096);
+	buf = malloc (bsz);
+	block = malloc (bsz);
+	if (!buf) {
+		eprintf ("Error: cannot allocate a block\n");
+		free (block);
+		return;
+	}
+	if (!block) {
+		eprintf ("Error: cannot allocate a temp block\n");
+		free (buf);
+		return;
+	}	
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -4596,18 +4608,21 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 			bufi = 0;
 		}
 		if (!bufi) {
-			r_io_read_at (core->io, addr, buf, sizeof (buf));
+			r_io_read_at (core->io, addr, buf, bsz);
 		}
-		if (!memcmp (buf, block, 4096)) {
+		memset (block, -1, bsz);
+		if (!memcmp (buf, block, bsz)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			break;
+			addr += bsz;
+			continue;
 		}
-		memset (block, 0, 4096);
-		if (!memcmp (buf, block, 4096)) {
+		memset (block, 0, bsz);
+		if (!memcmp (buf, block, bsz)) {
 			//eprintf ("Error: skipping uninitialized block \n");
-			break;
+			addr += bsz;
+			continue;
 		}	
-		if (r_anal_op (core->anal, &op, addr, buf + bufi, sizeof (buf) - bufi)) {
+		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi)) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
 				op.size = minop;
@@ -4638,6 +4653,8 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		bufi += addrbytes * op.size;
 		r_anal_op_fini (&op);
 	}
+	free (buf);
+	free (block);
 }
 
 static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag) {
