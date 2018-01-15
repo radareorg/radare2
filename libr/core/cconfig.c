@@ -2263,6 +2263,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF ("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
+	SETPREF ("asm.jmpsub", "false", "Always substitute jump, call and branch targets in disassembly");
 	SETPREF ("asm.leahints", "false", "Show LEA hints [numbers] in disasm");
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF ("asm.decode", "false", "Use code analysis as a disassembler");

@@ -83,6 +83,7 @@ typedef struct {
 	bool pseudo;
 	int filter;
 	int interactive;
+	bool jmpsub;
 	bool varsub;
 	bool show_lines;
 	bool show_lines_ret;
@@ -289,6 +290,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
+static char *ds_sub_jumps(RDisasmState *ds, char *str);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 #if 0
@@ -530,6 +532,7 @@ static RDisasmState * ds_init(RCore *core) {
 	}
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
+	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
@@ -860,6 +863,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 		}
 	}
 	char *asm_str = colorize_asm_string (core, ds);
+	asm_str = ds_sub_jumps (ds, asm_str);
 	if (ds->immtrim) {
 		r_parse_immtrim (ds->opstr);
 		free (asm_str);
@@ -4053,6 +4057,79 @@ static void ds_print_as_string(RDisasmState *ds) {
 			str, COLOR_RESET (ds));
 	}
 	free (str);
+}
+
+static char *_find_next_number(char *op) {
+	char *p = op;
+	if (p) {
+		while (*p) {
+			// look for start of next separator or ANSI sequence
+			while (*p && !ISSEPARATOR (*p) && *p != 0x1b) p++;
+			if (*p == 0x1b) {
+				// skip to end of ANSI sequence (lower or uppercase char)
+				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) p++;
+				if (*p) p++;
+			}
+			if (ISSEPARATOR (*p)) {
+				// skip to end of separator
+				while (*p && ISSEPARATOR (*p)) p++;
+			}
+			if (IS_DIGIT (*p)) {
+				// we found the start of the next number
+				return p;
+			}
+		}
+	}
+	return NULL;
+}
+
+static char *ds_sub_jumps(RDisasmState *ds, char *str) {
+	RAnal *anal = ds->core->anal;
+	RFlag *f = ds->core->flags;
+	int optype;
+	RAnalFunction *fcn;
+	RFlagItem *flag;
+	ut64 addr;
+	const char *name = 0;
+
+	if (!ds->jmpsub || !anal) {
+		return str;
+	}
+
+	optype = ds->analop.type & 0xFFFF;
+	if (optype < R_ANAL_OP_TYPE_JMP || optype >= R_ANAL_OP_TYPE_RET) {
+		return str;
+	}
+	addr = ds->analop.jump;
+
+	fcn = r_anal_get_fcn_in (anal, addr, 0);
+	if (fcn) {
+		name = fcn->name;
+	} else if (f) {
+		flag = r_flag_get_i2 (f, addr);
+		if (flag) {
+			name = flag->name;
+		}
+	}
+
+	if (name) {
+		char *nptr, *ptr;
+		ut64 numval;
+		ptr = str;
+		while ((nptr = _find_next_number (ptr))) {
+			ptr = nptr;
+			numval = r_num_get (NULL, ptr);
+			if (numval == addr) {
+				while (*nptr && !ISSEPARATOR (*nptr) && *nptr != 0x1b) nptr++;
+				char* numstr = r_str_ndup (ptr, nptr-ptr);
+				str = r_str_replace (str, numstr, name, 0);
+				free (numstr);
+				break;
+			}
+		}
+	}
+
+	return str;
 }
 
 // int l is for lines
