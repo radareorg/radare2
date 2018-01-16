@@ -1558,6 +1558,7 @@ repeat:
 			}
 		} else if (fmt == 2) {
 			if (hideempty && !r_list_length (refs)) {
+				r_list_free (refs);
 				continue;
 			}
 			if (usenames) {

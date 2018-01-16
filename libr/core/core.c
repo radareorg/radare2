@@ -333,8 +333,9 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	r_list_foreach (list, iter, r) {
 		if (r->type == type) {
 			if (i == n) {
+				ut64 addr = r->addr;
 				r_list_free (list);
-				return r->addr;
+				return addr;
 			}
 			i++;
 		}
