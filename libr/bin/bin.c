@@ -236,16 +236,14 @@ R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
 #define MODE_SIMPLE 0x004
 
 static void print_string(RBinString *string, RBinFile *bf) {
+	if (!string || !bf) {
+		return;
+	}
 	int mode = bf->strmode;
 	ut64 addr , vaddr;
 	RBin *bin = bf->rbin;
 	const char *section_name, *type_string;
-	RIOBind *iob;
-
-	if (!bin || !(iob = &(bin->iob))) {
-		return;
-	}
-	RIO *io = iob? iob->io: NULL;
+	RIO *io = bin->iob.io;
 	if (!io) {
 		return;
 	}
@@ -304,8 +302,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
 	const ut8 *buf = r_buf_buffer (bf->buf);
-	RIOBind *iob;
-	RIO *io;
 	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
@@ -414,14 +410,14 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					}
 				}
 			}
-			RBinString *new = R_NEW0 (RBinString);
-			if (!new) {
+			RBinString *bs = R_NEW0 (RBinString);
+			if (!bs) {
 				break;
 			}
-			new->type = str_type;
-			new->length = runes;
-			new->size = needle - str_start;
-			new->ordinal = count++;
+			bs->type = str_type;
+			bs->length = runes;
+			bs->size = needle - str_start;
+			bs->ordinal = count++;
 			// TODO: move into adjust_offset
 			switch (str_type) {
 			case R_STRING_TYPE_WIDE:
@@ -441,12 +437,13 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				break;
 			}
-			new->paddr = new->vaddr = str_start;
-			new->string = r_str_ndup ((const char *)tmp, i);
+			bs->paddr = bs->vaddr = str_start;
+			bs->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
-				r_list_append (list, new);
+				r_list_append (list, bs);
 			} else {
-				print_string (new,bf);
+				print_string (bs, bf);
+				r_bin_string_free (bs);
 			}
 		}
 	}
@@ -457,7 +454,6 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut6
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
-	int type = -1;
 
 	if (!bf || !bf->buf || !bf->buf->buf) {
 		return;
