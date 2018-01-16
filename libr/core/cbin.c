@@ -1848,7 +1848,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "Current export\n" : "[Exports]\n");
+			r_cons_printf (printHere ? "" : "[Exports]\n");
 		}
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) {
