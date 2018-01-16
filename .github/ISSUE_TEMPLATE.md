@@ -19,9 +19,10 @@ Make sure you are testing using the latest git version of radare2 before submitt
 ### Actual behavior
 
 ### Steps to reproduce the behavior 
+- The Compiled binary or some links to it , it could also be some bins in r2r/bins repo (mandatory)
 - Use asciinema if you can and use code markdown `CODE` to make your code lisible
 - Or even better, create a Pull-Request for the https://github.com/radare/radare2-regressions containing the test case examples can be found in the t/ folder see for example https://github.com/radare/radare2-regressions/blob/master/t/cmd_search#L7
 
-### Additional Logs, screenshots, compiled binaries, source-code,  configuration dump, ...
+### Additional Logs, screenshots, source-code,  configuration dump, ...
 
-Drag and drop zip archives containing the compiled binaries here, don't use external services or link.
+Drag and drop zip archives containing the Additional info here, don't use external services or link.
