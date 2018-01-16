@@ -275,7 +275,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
-	const char *dirPrefix = a->coreb.cfgGet ? a->coreb.cfgGet (a->coreb.core, "dir.prefix"): R2_PREFIX;
+	const char *dirPrefix = r_sys_prefix (NULL);
 	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;

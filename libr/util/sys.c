@@ -1020,3 +1020,16 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	}
 	return false;
 }
+
+static char *prefix = NULL;
+
+R_API const char *r_sys_prefix(const char *pfx) {
+	if (pfx) {
+		free (prefix);
+		prefix = strdup (pfx);
+	}
+	if (!prefix) {
+		prefix = strdup (R2_PREFIX);
+	}
+	return prefix;
+}

@@ -1964,6 +1964,11 @@ static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 	return true;
 }
 
+static int cb_dirpfx(RCore *core, RConfigNode *node) {
+	r_sys_prefix (node->value);
+	return true;
+}
+
 static int cb_anal_gp(RCore *core, RConfigNode *node) {
 	core->anal->gp = node->i_value;
 	return true;
@@ -2169,7 +2174,7 @@ R_API int r_core_config_init(RCore *core) {
 		if (!pfx) {
 			pfx = strdup (R2_PREFIX);
 		}
-		SETPREF ("dir.prefix", pfx, "Default prefix r2 was compiled for");
+		SETCB ("dir.prefix", pfx, (RConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
 		free (pfx);
 	}
 	/* pdb */

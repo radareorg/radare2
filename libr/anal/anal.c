@@ -230,8 +230,7 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 #define FCNSIGNPATH "share/radare2/" R2_VERSION "/fcnsign"
-	const char *dirPrefix = anal->coreb.cfgGet
-		? anal->coreb.cfgGet (anal->coreb.core, "dir.prefix") : R2_PREFIX;
+	const char *dirPrefix = r_sys_prefix (NULL);
 	char *file = NULL;
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
 	if (name && *name) {

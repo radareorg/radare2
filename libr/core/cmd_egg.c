@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
@@ -28,9 +28,8 @@ static void cmd_egg_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
 
 	if (!(configList = r_list_new ())) {
-		return NULL;
+		return;
 	}
-
 	r_list_append (configList, "egg.shellcode");
 	r_list_append (configList, "egg.encoder");
 	r_list_append (configList, "egg.padding");

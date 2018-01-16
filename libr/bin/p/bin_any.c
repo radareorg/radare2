@@ -18,12 +18,15 @@ static char *get_filetype(RBinFile *bf) {
 	ck = r_magic_new (0);
 	if (ck && bf && bf->buf) {
 		const char *tmp = NULL;
+		// TODO: dir.magic not honored here
+		char *pfx = r_str_newf ("%s/%s", r_sys_prefix (NULL), R_MAGIC_PATH);
 		r_magic_load (ck, R_MAGIC_PATH);
 		r_buf_read_at (bf->buf, 0, buf, sizeof (buf));
 		tmp = r_magic_buffer (ck, buf, sizeof (buf));
 		if (tmp) {
 			res = strdup (tmp);
 		}
+		free (pfx);
 	}
 	r_magic_free (ck);
 	return res;

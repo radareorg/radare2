@@ -1820,7 +1820,6 @@ R_API bool r_core_init(RCore *core) {
 	r_anal_bind (core->anal, &(core->parser->analb));
 
 	r_core_bind (core, &(core->anal->coreb));
-	r_core_bind (core, &(core->assembler->coreb));
 
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
