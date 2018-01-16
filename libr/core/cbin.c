@@ -1848,18 +1848,19 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "Current export\n" : "[Exports]\n");
+			r_cons_printf (printHere ? "" : "[Exports]\n");
 		}
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "Current symbol\n" : "[Symbols]\n");
+			r_cons_printf (printHere ? "" : "[Symbols]\n");
 		}
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
 		ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
+		int len = symbol->size ? symbol->size : 32;
 		SymName sn;
 
 		if (exponly && !isAnExport (symbol)) {
@@ -1871,8 +1872,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
 			continue;
 		}
-		if ((printHere && !(symbol->paddr <= r->offset && r->offset < (symbol->paddr + symbol->size)))
-				&& (printHere && !(addr <= r->offset && r->offset < (addr + symbol->size)))) {
+		if ((printHere && !is_in_range (r->offset, symbol->paddr, len))
+				&& (printHere && !is_in_range (r->offset, addr, len))) {
 			continue;
 		}
 		snInit (r, &sn, symbol, lang);
