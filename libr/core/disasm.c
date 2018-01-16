@@ -3028,7 +3028,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	if (ds->core->bin->strpurge_addrs) {
 		char *addrs = strdup (ds->core->bin->strpurge_addrs);
 		if (addrs) {
-			int splits = r_str_split (addrs, '+');
+			int splits = r_str_split (addrs, ',');
 			int i;
 			char *ptr;
 			ut64 addr;
