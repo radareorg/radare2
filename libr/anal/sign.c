@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_sign.h>
@@ -1180,8 +1180,9 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		free (abs);
 	}
 
-	const char *pfx = R2_PREFIX "/share/radare2/" R2_VERSION "/zigns";
-	abs = r_str_newf ("%s%s%s", pfx, R_SYS_DIR, file);
+	/// XXX mixed / and R_SYS_DIR
+	const char *pfx = "/share/radare2/" R2_VERSION "/zigns";
+	abs = r_str_newf ("%s%s%s%s", a->coreb.cfgGet (a->coreb.core, "dir.prefix"), pfx, R_SYS_DIR, file);
 	if (r_file_is_regular (abs)) {
 		return abs;
 	}

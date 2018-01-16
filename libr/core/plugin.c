@@ -30,7 +30,7 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 }
 
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
-	if (plugin->init && !plugin->init (cmd, NULL)) {
+	if (!cmd || (plugin && plugin->init && !plugin->init (cmd, NULL))) {
 		return false;
 	}
 	r_list_append (cmd->plist, plugin);

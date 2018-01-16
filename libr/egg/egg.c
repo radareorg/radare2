@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2017 - pancake */
+/* radare - LGPL - Copyright 2011-2018 - pancake */
 
 #include <r_egg.h>
 #include <config.h>
@@ -17,7 +17,9 @@ static REggPlugin *egg_static_plugins[] =
 R_API REgg *r_egg_new () {
 	int i;
 	REgg *egg = R_NEW0 (REgg);
-	if (!egg) return NULL;
+	if (!egg) {
+		return NULL;
+	}
 	egg->src = r_buf_new ();
 	if (!egg->src) goto beach;
 	egg->buf = r_buf_new ();

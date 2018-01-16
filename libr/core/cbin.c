@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include "r_util.h"
 
+#define DBSPATH "/share/radare2/" R2_VERSION "/fcnsign"
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -597,7 +598,6 @@ static int is_executable(RBinObject *obj) {
 	return false;
 }
 
-#define DBSPATH R2_PREFIX "/share/radare2/" R2_VERSION "/fcnsign"
 static void sdb_concat_by_path(Sdb *s, const char *path) {
 	Sdb *db = sdb_new (0, path, 0);
 	sdb_merge (s, db);
@@ -608,6 +608,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API void r_core_anal_type_init(RCore *core) {
 	Sdb *types = NULL;
 	const char *anal_arch = NULL, *os = NULL;
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	int bits = 0;
 	char *dbpath;
 	if (!core || !core->anal) {
@@ -619,35 +620,36 @@ R_API void r_core_anal_type_init(RCore *core) {
 	sdb_reset (types);
 	anal_arch = r_config_get (core->config, "anal.arch");
 	os = r_config_get (core->config, "asm.os");
-	if (r_file_exists (DBSPATH"/types.sdb")) {
-		sdb_concat_by_path (types, DBSPATH"/types.sdb");
-	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", anal_arch);
+	// spaguetti ahead
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types.sdb", dir_prefix);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", os);
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s.sdb", dir_prefix, anal_arch);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%d.sdb", bits);
-
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s.sdb", dir_prefix, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", os, bits);
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%d.sdb", dir_prefix, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch, bits);
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s.sdb", anal_arch, os);
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s-%d.sdb", anal_arch, os, bits);
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%s.sdb", dir_prefix, anal_arch, os);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
+	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%s-%d.sdb", dir_prefix, anal_arch, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -670,6 +672,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_new0 (),
 		core->anal->sdb_cc
 	};
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	//save pointers and values stored inside them
 	//to recover from freeing heeps
 	const char *defaultcc = sdb_const_get (sdbs[1], "default.cc", 0);
@@ -683,7 +686,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		bits = 32;
 	}
 
-	char *dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch, bits);
+	char *dbpath = sdb_fmt (-1, "%s/"DBSPATH"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
@@ -1335,18 +1338,24 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					} else {
-#if __WINDOWS__
-						char invoke_dir[MAX_PATH];
-						if (r_sys_get_src_dir_w32(invoke_dir)) {
-							filename = sdb_fmt (1, "%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
-						} else {
-							filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
-						}
-#else
-						filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", module);
-#endif
+					// XXX. we have dir.prefix, windows shouldnt work different
+						filename = sdb_fmt (1, "%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
 						if (r_file_exists (filename)) {
 							*db = sdb_new (NULL, filename, 0);
+#if __WINDOWS__
+						} else {
+							char invoke_dir[MAX_PATH];
+							if (r_sys_get_src_dir_w32 (invoke_dir)) {
+								filename = sdb_fmt (1, "%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
+							} else {
+								filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
+							}
+#else
+							filename = sdb_fmt (1, "%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
+							if (r_file_exists (filename)) {
+								*db = sdb_new (NULL, filename, 0);
+							}
+#endif
 						}
 					}
 				}

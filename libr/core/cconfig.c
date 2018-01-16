@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
 
@@ -858,7 +858,9 @@ static int cb_bigendian(void *user, void *data) {
 	// Set anal endianness the same as asm
 	r_anal_set_big_endian (core->anal, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
-	core->dbg->bp->endian = isbig;
+	if (core->dbg && core->dbg->bp) {
+		core->dbg->bp->endian = isbig;
+	}
 	// Set printing endian to user's choice
 	core->print->big_endian = node->i_value;
 	return true;
@@ -2109,9 +2111,11 @@ static int cb_malloc(void *user, void *data) {
  	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
 
- 	if (node->value){
+ 	if (node->value) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
- 			core->dbg->malloc = data;
+			if (core->dbg) {
+				core->dbg->malloc = data;
+			}
  		}
 
  	}
@@ -2159,6 +2163,15 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	cfg->cb_printf = r_cons_printf;
 	cfg->num = core->num;
+	/* dir.prefix is used in other modules, set it first */
+	{
+		char *pfx = r_sys_getenv("R2_PREFIX");
+		if (!pfx) {
+			pfx = strdup (R2_PREFIX);
+		}
+		SETPREF ("dir.prefix", pfx, "Default prefix r2 was compiled for");
+		free (pfx);
+	}
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_core.h>
@@ -7,6 +7,8 @@
 #include <r_asm.h>
 #include <spp/spp.h>
 #include <config.h>
+
+#define R_ASM_OPCODES_PATH "/share/radare2/" R2_VERSION "/opcodes"
 
 R_LIB_VERSION (r_asm);
 
@@ -35,7 +37,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 	if (*input == '"') {
 		input++;
 	}
-	len = r_str_unescape (input)+zero;
+	len = r_str_unescape (input) + zero;
 	r_hex_bin2str ((ut8*)input, len, op->buf_hex);
 	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE - 1);
 	return len;
@@ -124,11 +126,14 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 	int i, repeat=0, size=0, value=0;
 	sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
 	size *= repeat;
-	if (size>0) {
-		for (i=0; i<size; i++)
+	if (size > 0) {
+		for (i = 0; i < size; i++) {
 			op->buf[i] = value;
+		}
 		r_hex_bin2str (op->buf, size, op->buf_hex);
-	} else size = 0;
+	} else {
+		size = 0;
+	}
 	return size;
 }
 
@@ -270,6 +275,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
+	const char *dirPrefix = a->coreb.cfgGet ? a->coreb.cfgGet (a->coreb.core, "dir.prefix"): R2_PREFIX;
 	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
@@ -281,7 +287,7 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				//const char *dop = r_config_get (core->config, "dir.opcodes");
 				// TODO: allow configurable path for sdb files
-				snprintf (file, sizeof (file), R_ASM_OPCODES_PATH"/%s.sdb", h->arch);
+				snprintf (file, sizeof (file), "%s/"R_ASM_OPCODES_PATH"/%s.sdb", dirPrefix, h->arch);
 				sdb_free (a->pair);
 				r_asm_set_cpu (a, NULL);
 				a->pair = sdb_new (NULL, file, 0);

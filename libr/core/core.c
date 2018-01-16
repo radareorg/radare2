@@ -244,6 +244,10 @@ static int cfggeti(RCore *core, const char *k) {
 	return r_config_get_i (core->config, k);
 }
 
+static const char *cfgget(RCore *core, const char *k) {
+	return r_config_get (core->config, k);
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
@@ -257,6 +261,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->getNameDelta = (RCoreGetNameDelta)getNameDelta;
 	bnd->archbits = (RCoreSeekArchBits)archbits;
 	bnd->cfggeti = (RCoreConfigGetI)cfggeti;
+	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	return true;
 }
 
@@ -1792,6 +1797,15 @@ R_API bool r_core_init(RCore *core) {
 		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
 	}
 
+	core->file = NULL;
+	core->files = r_list_newf ((RListFree)r_core_file_free);
+	core->offset = 0LL;
+	r_core_cmd_init (core);
+	core->dbg = r_debug_new (true);
+
+	// initialize config before any corebind
+	r_core_config_init (core);
+
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
@@ -1804,13 +1818,10 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));
 	r_anal_bind (core->anal, &(core->parser->analb));
-	r_core_bind (core, &(core->anal->coreb));
 
-	core->file = NULL;
-	core->files = r_list_newf ((RListFree)r_core_file_free);
-	core->offset = 0LL;
-	r_core_cmd_init (core);
-	core->dbg = r_debug_new (true);
+	r_core_bind (core, &(core->anal->coreb));
+	r_core_bind (core, &(core->assembler->coreb));
+
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
 	r_core_bind (core, &core->dbg->corebind);
@@ -1822,8 +1833,6 @@ R_API bool r_core_init(RCore *core) {
 	core->io->cb_printf = r_cons_printf;
 	core->dbg->cb_printf = r_cons_printf;
 	core->dbg->bp->cb_printf = r_cons_printf;
-
-	r_core_config_init (core);
 
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);

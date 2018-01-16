@@ -151,12 +151,12 @@ static int main_help(int line) {
 		char *homedir = r_str_home (R2_HOMEDIR);
 		printf (
 		"Scripts:\n"
-		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
-		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
-		" file     ${filename}.r2\n"
+		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
+		" user         ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
+		" file         ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc    ~/.config/radare2/rc.d/bin-<format>/ (elf, elf64, mach0, ..)\n"
-		" plugins  "R2_PREFIX"/lib/radare2/last\n"
+		" binrc        ~/.config/radare2/rc.d/bin-<format>/ (elf, elf64, mach0, ..)\n"
+		" plugins      "R2_PREFIX"/lib/radare2/last\n"
 		" USER_PLUGINS ~/.config/radare2/plugins\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
 		" USER_ZIGNS   ~/.config/radare2/zigns\n"
@@ -168,10 +168,10 @@ static int main_help(int line) {
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		"Paths:\n"
-		" PREFIX       "R2_PREFIX"\n"
-		" INCDIR       "R2_INCDIR"\n"
-		" LIBDIR       "R2_LIBDIR"\n"
-		" LIBEXT       "R_LIB_EXT"\n"
+		" R2_PREFIX    "R2_PREFIX"\n"
+		" R2_INCDIR    "R2_INCDIR"\n"
+		" R2_LIBDIR    "R2_LIBDIR"\n"
+		" R2_LIBEXT    "R_LIB_EXT"\n"
 		, homedir);
 		free (homedir);
 	}

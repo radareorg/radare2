@@ -30,7 +30,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			}
 		}
 	}
-	if (dbg->h && dbg->h->reg_profile) {
+	if (dbg && dbg->h && dbg->h->reg_profile) {
 		char *p = dbg->h->reg_profile (dbg);
 		if (p) {
 			r_reg_set_profile_string (dbg->reg, p);
@@ -47,7 +47,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			eprintf ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
 		}
 	}
-	return (dbg->h != NULL);
+	return (dbg && dbg->h);
 }
 
 R_API int r_debug_plugin_list(RDebug *dbg, int mode) {

@@ -428,7 +428,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 							filename = sdb_fmt (1, "share/radare2/"R2_VERSION "/format/dll/%s.sdb", symdllname);
 						}
 #else
-						filename = sdb_fmt (1, R2_PREFIX "/share/radare2/" R2_VERSION "/format/dll/%s.sdb", symdllname);
+						const char *dirPrefix = R2_PREFIX; // XXX must be configurable
+						filename = sdb_fmt (1, "%s/share/radare2/" R2_VERSION "/format/dll/%s.sdb", dirPrefix, symdllname);
 #endif
 						if (r_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
