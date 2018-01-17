@@ -3577,6 +3577,26 @@ static int opvmptrld(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opvmptrst(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	switch (op->operands_count) {
+	case 1:
+		if ( op->operands[0].type & OT_MEMORY &&
+		     op->operands[0].type & OT_QWORD
+		     ) {
+			data[l++] = 0x0f;
+			data[l++] = 0xc7;
+			data[l++] = 0x38 | op->operands[0].regs[0];
+		} else {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return l;
+}
+
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
@@ -3915,6 +3935,7 @@ LookupTable oplookup[] = {
 	{"vmload", 0, NULL, 0x0f01da, 3},
 	{"vmmcall", 0, NULL, 0x0f01d9, 3},
 	{"vmptrld", 0, &opvmptrld, 0},
+	{"vmptrst", 0, &opvmptrst, 0},
 	{"vmresume", 0, NULL, 0x0f01c3, 3},
 	{"vmrun", 0, NULL, 0x0f01d8, 3},
 	{"vmsave", 0, NULL, 0x0f01db, 3},
