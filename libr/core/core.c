@@ -1798,15 +1798,6 @@ R_API bool r_core_init(RCore *core) {
 		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
 	}
 
-	core->file = NULL;
-	core->files = r_list_newf ((RListFree)r_core_file_free);
-	core->offset = 0LL;
-	r_core_cmd_init (core);
-	core->dbg = r_debug_new (true);
-
-	// initialize config before any corebind
-	r_core_config_init (core);
-
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
@@ -1822,6 +1813,12 @@ R_API bool r_core_init(RCore *core) {
 
 	r_core_bind (core, &(core->anal->coreb));
 
+	core->file = NULL;
+	core->files = r_list_newf ((RListFree)r_core_file_free);
+	core->offset = 0LL;
+	r_core_cmd_init (core);
+	core->dbg = r_debug_new (true);
+
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
 	r_core_bind (core, &core->dbg->corebind);
@@ -1833,6 +1830,8 @@ R_API bool r_core_init(RCore *core) {
 	core->io->cb_printf = r_cons_printf;
 	core->dbg->cb_printf = r_cons_printf;
 	core->dbg->bp->cb_printf = r_cons_printf;
+	// initialize config before any corebind
+	r_core_config_init (core);
 
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);
