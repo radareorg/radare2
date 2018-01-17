@@ -267,7 +267,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emit("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,=");
 		break;
 	case 0x85: /* mov */
-		h(IRAM_BASE ",%2$d,+,[1]," IRAM_BASE ",%2$d,+,=[1]");
+		h(IRAM_BASE ",%2$d,+,[1]," IRAM_BASE ",%3$d,+,=[1]");
 		break;
 	case 0x86: case 0x87:
 		j (XR(R0I) XW(IB1));
