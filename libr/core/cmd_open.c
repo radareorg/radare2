@@ -854,7 +854,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
 	ut64 sz = r_io_desc_size (desc);
-	r_cons_printf ("%2d %c %s 0x%08"PFMT64x" ", desc->fd, 
+	r_cons_printf ("%2d %c %s 0x%08"PFMT64x" ", desc->fd,
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-', r_str_rwx_i (desc->flags), sz);
 	int flags = p->flags;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
@@ -888,7 +888,7 @@ static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-	p->cb_printf ("%2d %c %s 0x%08"PFMT64x" %s\n", desc->fd, 
+	p->cb_printf ("%2d %c %s 0x%08"PFMT64x" %s\n", desc->fd,
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
 			r_str_rwx_i (desc->flags), r_io_desc_size (desc), desc->uri);
 	return true;
@@ -903,6 +903,7 @@ static int cmd_open(void *data, const char *input) {
 	    argc, fd;
 	RCoreFile *file;
 	bool silence = false;
+	bool write = false;
 	const char *ptr = NULL;
 	char **argv = NULL;
 
@@ -963,13 +964,30 @@ static int cmd_open(void *data, const char *input) {
 		if (input[1] == '*') {
 			r_core_file_list (core, 'n');
 			return 0;
-		} else if (input[1] == 's') { // "ons"
-			silence = true;
+		} else if (input[1] == '+') { // "on+"
+			write = true;
+			perms |= R_IO_WRITE;
 			if (input[2] != ' ') {
-				eprintf ("Usage: ons file [addr] [rwx]\n");
+				eprintf ("Usage: on+ file [addr] [rwx]\n");
 				return 0;
 			}
 			ptr = input + 3;
+		} else if (input[1] == 's') { // "ons"
+			silence = true;
+			if (input[2] == '+') { // "ons+"
+				write = true;
+				perms |= R_IO_WRITE;
+				if (input[3] != ' ') {
+					eprintf ("Usage: ons+ file [addr] [rwx]\n");
+					return 0;
+				}
+				ptr = input + 4;
+			} else if (input[2] == ' ') {
+				ptr = input + 3;
+			} else {
+				eprintf ("Usage: ons file [addr] [rwx]\n");
+				return 0;
+			}
 		} else if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
@@ -978,15 +996,27 @@ static int cmd_open(void *data, const char *input) {
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (!argc) {
-			if (silence) {
-				eprintf ("Usage: ons file [addr] [rwx]\n");
-				return 0;
+			if (write) {
+				if (silence) {
+					eprintf ("Usage: ons+ file [addr] [rwx]\n");
+					r_str_argv_free (argv);
+					return 0;
+				} else {
+					eprintf ("Usage: on+ file [addr] [rwx]\n");
+					r_str_argv_free (argv);
+					return 0;
+				}
 			} else {
-				eprintf ("Usage: on file [addr] [rwx]\n");
-				return 0;
+				if (silence) {
+					eprintf ("Usage: ons file [addr] [rwx]\n");
+					r_str_argv_free (argv);
+					return 0;
+				} else {
+					eprintf ("Usage: on file [addr] [rwx]\n");
+					r_str_argv_free (argv);
+					return 0;
+				}
 			}
-			r_str_argv_free (argv);
-			return 0;
 		} else {
 			ptr = argv[0];
 		}
@@ -1044,7 +1074,7 @@ static int cmd_open(void *data, const char *input) {
 				silence = true;
 				input++;
 			}
-			addr = 0; // honor bin.baddr ? 
+			addr = 0; // honor bin.baddr ?
 			const char *argv0 = r_str_trim_ro (input + 2);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
