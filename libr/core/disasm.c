@@ -3029,28 +3029,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	const char *prefix;
-	if (ds->core->bin->strpurge_addrs) {
-		char *addrs = strdup (ds->core->bin->strpurge_addrs);
-		if (addrs) {
-			int splits = r_str_split (addrs, ',');
-			int i;
-			char *ptr;
-			ut64 addr;
-			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
-				if (!strcmp (ptr, "true") && r_core_bin_strpurge (str)) {
-					free (addrs);
-					return;
-				}
-				addr = r_num_get (NULL, ptr);
-				if (addr != 0 || *ptr == '0') {
-					if (refaddr == addr) {
-						free (addrs);
-						return;
-					}
-				}
-			}
-			free (addrs);
-		}
+	if (r_core_bin_strpurge (ds->core, str, refaddr)) {
+		return;
 	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {

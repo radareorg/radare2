@@ -780,9 +780,9 @@ static int cb_usextr(void *user, void *data) {
 static int cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->bin->strpurge = !strncmp (node->value, "true", 4);
-	free (core->bin->strpurge_addrs);
-	core->bin->strpurge_addrs = strdup (node->value);
+	free (core->bin->strpurge);
+	core->bin->strpurge = !*node->value || !strcmp (node->value, "false")
+	                ? NULL : strdup (node->value);
 	return true;
 }
 
@@ -2390,8 +2390,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
-	SETCB ("bin.strpurge", "", &cb_strpurge, "Try to purge false positive strings (true: use the classifier in "
-	       "r_core_bin_strpurge(), [,addr]*: specific string addresses to purge)");
+	SETCB ("bin.strpurge", "", &cb_strpurge, "Try to purge false positive strings (true: use the "
+	       "false_positive() classifier in cbin.c, [,addr]*: specific string addresses to purge)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.strfilter", "", &cb_strfilter);
