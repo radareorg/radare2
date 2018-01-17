@@ -445,7 +445,7 @@ R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
 R_API int r_core_bin_refresh_strings(RCore *core);
-R_API bool r_core_bin_strpurge(const char *str);
+R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 addr);
 R_API int r_core_pseudo_code (RCore *core, const char *input);
 
 /* gdiff.c */

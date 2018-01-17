@@ -273,8 +273,7 @@ typedef struct r_bin_t {
 	bool want_dbginfo;
 	int filter; // symbol filtering
 	char strfilter; // string filtering
-	int strpurge; // purge false positive strings
-	char *strpurge_addrs;
+	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 	ut64 filter_rules;

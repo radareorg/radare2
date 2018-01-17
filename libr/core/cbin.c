@@ -148,7 +148,7 @@ R_API RBinFile * r_core_bin_cur(RCore *core) {
 	return binfile;
 }
 
-R_API bool r_core_bin_strpurge(const char *str) {
+static bool false_positive(const char *str) {
 	int i;
 	ut8 bo[0x100];
 	int up = 0;
@@ -199,10 +199,37 @@ R_API bool r_core_bin_strpurge(const char *str) {
 	return false;
 }
 
-static bool string_filter(RCore *core, const char *str) {
+R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
+	if (core->bin->strpurge) {
+		char *addrs = strdup (core->bin->strpurge);
+		if (addrs) {
+			int splits = r_str_split (addrs, ',');
+			int i;
+			char *ptr;
+			ut64 addr;
+			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
+				if (!strcmp (ptr, "true") && false_positive (str)) {
+					free (addrs);
+					return true;
+				}
+				addr = r_num_get (NULL, ptr);
+				if (addr != 0 || *ptr == '0') {
+					if (refaddr == addr) {
+						free (addrs);
+						return true;
+					}
+				}
+			}
+			free (addrs);
+		}
+	}
+	return false;
+}
+
+static bool string_filter(RCore *core, const char *str, ut64 addr) {
 	int i;
 	/* pointer/rawdata detection */
-	if (core->bin->strpurge && r_core_bin_strpurge (str)) {
+	if (r_core_bin_strpurge (core, str, addr)) {
 		return false;
 	}
 
@@ -342,12 +369,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
-		if (!string_filter (r, string->string)) {
-			continue;
-		}
 		paddr = string->paddr;
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
+		if (!string_filter (r, string->string, addr)) {
+			continue;
+		}
 		if (string->length < minstr) {
 			continue;
 		}

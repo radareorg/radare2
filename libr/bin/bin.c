@@ -2124,7 +2124,7 @@ R_API RBin *r_bin_new() {
 	bin->cb_printf = (PrintfCallback)printf;
 	bin->plugins = r_list_newf ((RListFree)plugin_free);
 	bin->minstrlen = 0;
-	bin->strpurge_addrs = NULL;
+	bin->strpurge = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
 	bin->io_owned = false;
