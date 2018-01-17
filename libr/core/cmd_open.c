@@ -997,26 +997,14 @@ static int cmd_open(void *data, const char *input) {
 		argv = r_str_argv (ptr, &argc);
 		if (!argc) {
 			if (write) {
-				if (silence) {
-					eprintf ("Usage: ons+ file [addr] [rwx]\n");
-					r_str_argv_free (argv);
-					return 0;
-				} else {
-					eprintf ("Usage: on+ file [addr] [rwx]\n");
-					r_str_argv_free (argv);
-					return 0;
-				}
+				if (silence) eprintf ("Usage: ons+ file [addr] [rwx]\n");
+				else eprintf ("Usage: on+ file [addr] [rwx]\n");
 			} else {
-				if (silence) {
-					eprintf ("Usage: ons file [addr] [rwx]\n");
-					r_str_argv_free (argv);
-					return 0;
-				} else {
-					eprintf ("Usage: on file [addr] [rwx]\n");
-					r_str_argv_free (argv);
-					return 0;
-				}
+				if (silence) eprintf ("Usage: ons file [addr] [rwx]\n");
+				else eprintf ("Usage: on file [addr] [rwx]\n");
 			}
+			r_str_argv_free (argv);
+			return 0;
 		} else {
 			ptr = argv[0];
 		}
