@@ -81,6 +81,8 @@ static RI8051Reg registers[] = {
 #define CALL(skipbytes) skipbytes",pc,+," PUSH2
 #define JMP(skipbytes) skipbytes",+,pc,+="
 #define CJMP(target, skipbytes) "?{," ESX_##target "" JMP(skipbytes) ",}"
+#define BIT_SET "%2$d,1,<<,"
+#define BIT_MASK BIT_SET "!,"
 #define BIT_R "%2$d,%1$d,[1],>>,1,&,"
 #define F_BIT_R "%d,%d,[1],>>,1,&,"
 #define A_BIT_R a2, a1
@@ -90,7 +92,9 @@ static RI8051Reg registers[] = {
 
 #define ES_IB1 IRAM_BASE ",%2$d,+,"
 #define ES_IB2 IRAM_BASE ",%3$d,+,"
-#define ES_R0I "r%1$d,"
+#define ES_BIT IRAM_BASE ",%1$d,+,"
+#define ES_R0I IRAM_BASE ",r%1$d,+,"
+#define ES_R0X XRAM_BASE ",r%1$d,+,"
 #define ES_AI "A,"
 #define ES_R0  "r%1$d,"
 #define ES_R1 "r%2$d,"
@@ -105,7 +109,9 @@ static RI8051Reg registers[] = {
 
 #define ACC_IB1 "[1],"
 #define ACC_IB2 "[1],"
+#define ACC_BIT "[1],"
 #define ACC_R0I "[1],"
+#define ACC_R0X "[1],"
 #define ACC_AI  "[1],"
 #define ACC_R0  ""
 #define ACC_R1  ""
@@ -210,8 +216,9 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xB2: /* cpl   */
 		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
 		break;
-	case 0xC2: /* clr   */
-		emitf ("0,%d,=[]", (ut8)buf[1]);
+	case 0xC2:
+		/* clr bit */
+		k (BIT_MASK XI(BIT, "&"));
 		break;
 	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
 	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
@@ -304,89 +311,100 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD:
 	case 0xBE: case 0xBF:
+		/* cjne Rn, imm, offset */
+		/* TODO: is != correct op for "not equal"? */
 		h (XR(L1)  XR(R0)  "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
-	case 0xC4: /* swap */
+	case 0xC4:
+		/* swap A */
 		emit("4,A,0x101,*,>>,A,=");
 		break;
 	case 0xC5:
-		/* xch  */ /* TODO */
+		/* xch A, direct */
+		j (XR(A) XR(IB1) XW(A) "," XW(IB1));
 		break;
 	case 0xC6: case 0xC7:
-		/* xch  */ /* TODO */
+		/* xch A, @Ri */ 
+		j (XR(A) XR(R0I) XW(A) "," XW(R0I));
 		break;
 	case 0xC8: case 0xC9:
 	case 0xCA: case 0xCB:
 	case 0xCC: case 0xCD:
-	case 0xCE: case 0xCF: /* xch  */
-		h (XR(A) XR(R0) XW(A) ","  XW(R0));
+	case 0xCE: case 0xCF:
+		/* xch A, Rn */
+		h (XR(A) XR(R0) XW(A) "," XW(R0));
 		break;
-	case 0xD2: /* setb */
-		emitf("%d,1,<<,A,|=", (ut8)buf[1]);
+	case 0xD2:
+		/* setb bit */
+		k (BIT_SET XI(BIT, "|"));
 		break;
 	case 0xD3:
-		/* setb */
-		emitf("%d,1,<<,%d,[],|=,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[2]);
+		/* setb C */
+		emitf ("1,C,=");
 		break;
 	case 0xD4:
-		/* da   */ emit("A,--="); break;
+		/* da  A (BCD adjust after add) */
+		/* TODO */
+		break;
 	case 0xD5:
-		/* djnz */ h(XI(R0I, "--") "," XR(R0I) CJMP(L2, "2")); break;
+		/* djnz direct, offset */
+		h (XI(IB1, "--") "," XR(IB1) CJMP(L2, "2"));
+		break;
 	case 0xD6:
-		/* xchd */ /* TODO */ break;
 	case 0xD7:
-		/* xchd */ /* TODO */ break;
-
+		/* xchd A, @Ri*/
+		/* TODO */
+		break;
 	case 0xD8: case 0xD9:
 	case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD:
 	case 0xDE: case 0xDF:
-		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
-
+		/* djnz Rn, offset */
+		h (XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
 	case 0xE2: case 0xE3:
-		/* movx */
-		j(XRAM_BASE "r%0$d,+,[1]," XW(A));
+		/* movx A, @Ri */
+		j (XR(R0X) XW(A));
 		break;
 	case 0xE4:
-		/* clr  */
-		emit("0,A,=");
+		/* clr A */
+		emit ("0,A,=");
 		break;
 	case 0xE5:
-		/* mov  */
+		/* mov A, direct */
 		h (XR(IB1) XW(A));
 		break;
 	case 0xE6: case 0xE7:
-		/* mov  */
+		/* mov A, @Ri */
 		j (XR(R0I) XW(A));
 		break;
 	case 0xE8: case 0xE9:
 	case 0xEA: case 0xEB:
 	case 0xEC: case 0xED:
 	case 0xEE: case 0xEF:
-		/* mov  */
-		h (XR(R0)  XW(A));
+		/* mov A, Rn */
+		h (XR(R0) XW(A));
 		break;
 	case 0xF2: case 0xF3:
-		/* movx */
-		j(XR(A) XRAM_BASE "r%0$d,+,=[1]");
+		/* movx @Ri, A */
+		j (XR(A) XW(R0X));
 		break;
 	case 0xF4:
-		/* cpl  */
+		/* cpl A */
 		h ("255" XI(A, "^"));
 		break;
 	case 0xF5:
-		/* mov  */
+		/* mov direct, A */
 		h (XR(A) XW(IB1));
 		break;
 	case 0xF6: case 0xF7:
-		/* mov  */
+		/* mov  @Ri, A */
 		j (XR(A) XW(R0I));
 		break;
 	case 0xF8: case 0xF9:
 	case 0xFA: case 0xFB:
 	case 0xFC: case 0xFD:
 	case 0xFE: case 0xFF:
-		/* mov  */
+		/* mov Rn, A */
 		h (XR(A) XW(R0));
 		break;
 	default: break;
