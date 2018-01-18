@@ -213,98 +213,148 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x32: /* reti  */ emitf (POP2 "pc,="); break;
 	case 0x92: /* mov   */ /* TODO */ break;
 	case 0xA2: /* mov   */ /* TODO */ break;
-	case 0xB2: /* cpl   */
-		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
-		break;
-	case 0xC2:
-		/* clr bit */
-		k (BIT_MASK XI(BIT, "&"));
-		break;
 	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
 	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
 	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
 	case 0x33: /* rlc  */ emit("1,A,>>,$c0,C,=,A,="); break;
-	case 0x73: /* jmp  */ emit("dptr,A,+,pc,="); break;
-	case 0x83: /* movc */ emit("A,dptr,+,[1],A,="); break;
-	case 0x93: /* movc */ emit("A,pc,+,[1],A,="); break;
-	case 0xA3: /* inc  */ h(XI(IB1, "++")); break;
-	case 0xB3: /* cpl  */ emit("1," XI(C, "^")); break;
-	// FIXME: Wrong - should use register name
-	case 0xC3: /* clr  */ emit("0,C,="); break;
-
-	// Regulars sorted by upper nibble
 	OP_GROUP_UNARY_4(0x00, "++")
 	OP_GROUP_UNARY_4(0x10, "--")
 	OP_GROUP_INPLACE_LHS_4(0x20, A, "+")
-
 	case 0x34:
+		/* addc a, imm */
 		h (XR(L1)  "C,+," XI(A, "+"));
 		 break;
 	case 0x35:
+		/* addc a, direct */
 		h (XR(IB1) "C,+," XI(A, "+"));
 		break;
 	case 0x36: case 0x37:
+		/* addc a, @Ri */
 		j (XR(R0I) "C,+," XI(A, "+"));
 		break;
 	case 0x38: case 0x39:
 	case 0x3A: case 0x3B:
 	case 0x3C: case 0x3D:
 	case 0x3E: case 0x3F:
+		/* addc a, Rn */
 		h (XR(R0)  "C,+," XI(A, "+"));
 		break;
 	OP_GROUP_INPLACE_LHS_4 (0x40, A, "|")
 	OP_GROUP_INPLACE_LHS_4 (0x50, A, "&")
 	OP_GROUP_INPLACE_LHS_4 (0x60, A, "^")
+	case 0x73:
+		/* jmp @a+dptr */
+		emit ("dptr,A,+,pc,="); break;
 	case 0x74:
+		/* mov a, imm */
 		h (XR(L1) XW(A));
 		break;
 	case 0x75:
+		/* mov direct, imm */
 		h (XR(L2) XW(IB1));
 		break;
 	case 0x76: case 0x77:
+		/* mov @Ri, imm */
 		j (XR(L1) XW(R0I));
 		break;
 	case 0x78: case 0x79:
 	case 0x7A: case 0x7B:
 	case 0x7C: case 0x7D:
 	case 0x7E: case 0x7F:
+		/* mov Rn, imm */
 		h (XR(L1) XW(R0));
 		break;
-	case 0x84: /* div */
-		emit("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,=");
+	case 0x83:
+		/* movc a, @a+pc */
+		emit ("A,pc,+,[1],A,=");
 		break;
-	case 0x85: /* mov */
-		h(IRAM_BASE ",%2$d,+,[1]," IRAM_BASE ",%3$d,+,=[1]");
+	case 0x84:
+		/* div ab */
+		emit ("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,=");
+		break;
+	case 0x85:
+		/* mov direct, direct */
+		h (XR(IB1) XW(IB2));
 		break;
 	case 0x86: case 0x87:
+		/* mov direct, @Ri */
 		j (XR(R0I) XW(IB1));
 		break;
 	case 0x88: case 0x89:
 	case 0x8A: case 0x8B:
 	case 0x8C: case 0x8D:
 	case 0x8E: case 0x8F:
+		/* mov direct, Rn */
 		h (XR(R0) XW(IB1));
 		break;
-	OP_GROUP_INPLACE_LHS_4(0x90, A, ".")
+	case 0x93:
+		/* movc a, @a+dptr */
+		emit ("A,dptr,+,[1],A,=");
+		break;
+	case 0x94:
+		/* subb a, imm */
+		h (XR(L1)  "C,-," XI(A, "-"));
+		 break;
+	case 0x95:
+		/* subb a, direct */
+		h (XR(IB1) "C,-," XI(A, "-"));
+		break;
+	case 0x96: case 0x97:
+		/* subb a, @Ri */
+		j (XR(R0I) "C,-," XI(A, "-"));
+		break;
+	case 0x98: case 0x99:
+	case 0x9A: case 0x9B:
+	case 0x9C: case 0x9D:
+	case 0x9E: case 0x9F:
+		/* subb a, Rn */
+		h (XR(R0)  "C,-," XI(A, "-"));
+		break;
+	case 0xA3:
+		/* inc dptr */
+		emit ("dptr,++=");
+		break;
 	case 0xA4:
-		/* mul */ emit("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,="); break;
-	case 0xA5: /* ??? */ emit("0,TRAP"); break;
+		/* mul ab */
+		emit ("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,=");
+		break;
+	case 0xA5: 
+		/* "reserved" */
+		emit ("0,TRAP");
+		break;
 	case 0xA6: case 0xA7:
+		/* mov @Ri, direct */
 		j (XR(IB1) XW(R0I));
 		break;
 	case 0xA8: case 0xA9:
 	case 0xAA: case 0xAB:
 	case 0xAC: case 0xAD:
 	case 0xAE: case 0xAF:
+		/* mov Rn, direct */
 		h (XR(IB1) XW(R0));
 		break;
+	case 0xB2:
+		/* cpl bit */
+		/* TODO: translate to macros */
+		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
+		break;
+	case 0xB3:
+		/* cpl C */
+		emit ("1," XI(C, "^"));
+		break;
 	case 0xB4:
+		/* cjne a, imm, offset */
+		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		h (XR(L1)  XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
 	case 0xB5:
+		/* cjne a, direct, offset */
+		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		h (XR(IB1) XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
 	case 0xB6: case 0xB7:
+		/* cjne @ri, imm, offset */
+		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		j (XR(L1)  XR(R0I) "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
 	case 0xB8: case 0xB9:
@@ -312,8 +362,16 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xBC: case 0xBD:
 	case 0xBE: case 0xBF:
 		/* cjne Rn, imm, offset */
-		/* TODO: is != correct op for "not equal"? */
+		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		h (XR(L1)  XR(R0)  "!=,?{,%3$hhd,2,+pc,+=,}");
+		break;
+	case 0xC2:
+		/* clr bit */
+		k (BIT_MASK XI(BIT, "&"));
+		break;
+	case 0xC3:
+		/* clr C */
+		emit("0,C,=");
 		break;
 	case 0xC4:
 		/* swap A */
