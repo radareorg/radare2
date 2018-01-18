@@ -157,315 +157,310 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 
 	switch (buf[0]) {
 	// Irregulars sorted by lower nibble
-	case 0x00: /* nop  */ emit(","); break;
-	case 0x10: /* jbc  */
-		emitf(F_BIT_R "&,?{,%d,1,<<,255,^,%d,&=[1],%hhd,3,+,pc,+=,}", A_BIT_R, a2, a1, a3);
+	case 0x00: /* nop */
+		emit (",");
 		break;
-	case 0x20: /* jb   */
-		emitf(F_BIT_R "&,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
+
+	case 0x10: /* jbc bit, offset */
+		emitf (F_BIT_R "&,?{,%d,1,<<,255,^,%d,&=[1],%hhd,3,+,pc,+=,}", A_BIT_R, a2, a1, a3);
 		break;
-	case 0x30: /* jnb  */
-		emitf(F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
+	case 0x20: /* jb bit, offset */
+		emitf (F_BIT_R "&,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
 		break;
-	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x42: /* orl 0x31, a */
-		emitf ("%d,[],A,|,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+	case 0x30: /* jnb bit, offset */
+		emitf (F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
 		break;
-	case 0x43: /* orl 0x31, #0x01 */
-		emitf ("%d,[],%d,|,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+	case 0x40: /* jc offset */
+		emitf ("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
-	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x52: /* anl 0x31, a */
-		emitf ("%d,[],A,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+	case 0x50: /* jnc offset */
+		emitf ("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
-	case 0x53: /* anl 0x31, #0x01 */
-		emitf ("%d,[],%d,&,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+	case 0x60: /* jz offset */
+		emitf ("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
-	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
-	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
-	/* orl */
-	case 0xA0:
-	case 0x72:
-		k(BIT_R "C,|=");
+	case 0x70: /* jnz offset */
+		emitf ("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
-	/* anl */
-	case 0xB0:
-	case 0x82:
-		k(BIT_R "C,&=");
+	case 0x80: /* sjmp offset */
+		j (ESX_L1 JMP("2"));
 		break;
-	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
-	case 0xD0: /* pop  */ h(POP1 XW(IB1)); break;
-	case 0xE0: /* movx */ emit ("dptr,[2],a,="); break;
-	case 0xF0: /* movx */ emit ("a,dptr,=[2]"); break;
+
 	case 0x11: case 0x31: case 0x51: case 0x71:
-	case 0x91: case 0xB1: case 0xD1: case 0xF1:
+	case 0x91: case 0xB1: case 0xD1: case 0xF1: /* acall addr11 */
 		emit (CALL ("2"));
 		/* fall through */
 	case 0x01: case 0x21: case 0x41: case 0x61:
-	case 0x81: case 0xA1: case 0xC1: case 0xE1:
+	case 0x81: case 0xA1: case 0xC1: case 0xE1: /* ajmp addr11 */
 		emitf ("0x%x,pc,=", (addr & 0xF800) | ((((ut16)buf[0])<<3) & 0x0700) | buf[1]);
 		break;
-	case 0x02: /* ljmp  */ emitf (          "%d,pc,=", (ut32)((buf[1] << 8) + buf[2])); break;
-	case 0x12: /* lcall */ emitf (CALL ("3")",%d,pc,=", (ut32)((buf[1] << 8) + buf[2])); break;
-	case 0x22: /* ret   */ emitf (POP2 "pc,="); break;
-	case 0x32: /* reti  */ emitf (POP2 "pc,="); break;
-	case 0x92: /* mov   */ /* TODO */ break;
-	case 0xA2: /* mov   */ /* TODO */ break;
-	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
-	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
-	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
-	case 0x33: /* rlc  */ emit("1,A,>>,$c0,C,=,A,="); break;
-	OP_GROUP_UNARY_4(0x00, "++")
-	OP_GROUP_UNARY_4(0x10, "--")
-	OP_GROUP_INPLACE_LHS_4(0x20, A, "+")
-	case 0x34:
-		/* addc a, imm */
+
+	case 0x12: /* lcall addr16 */
+		emitf (CALL ("3"));
+		/* fall through */
+	case 0x02: /* ljmp addr16 */
+		emitf ("%d,pc,=", (ut32)((buf[1] << 8) + buf[2]));
+		break;
+	
+	case 0x22: /* ret */
+	case 0x32: /* reti */
+		emitf (POP2 "pc,=");
+		break;
+
+	case 0x03: /* rr a */
+		emit ("1,A,0x101,*,>>,A,=");
+		break;
+	OP_GROUP_UNARY_4 (0x00, "++") /* 0x04..0x0f: inc */
+	case 0x13: /* rrc a */
+		emit ("1,A,>>,$c7,C,=,A,=");
+		break;
+	OP_GROUP_UNARY_4 (0x10, "--") /* 0x14..0x1f dec */
+	case 0x23: /* rl a */
+		emit ("7,A,0x101,*,>>,A,=");
+		break;
+	OP_GROUP_INPLACE_LHS_4 (0x20, A, "+") /* 0x24..0x2f add A,.. */
+	case 0x33: /* rlc a */
+		emit ("1,A,>>,$c0,C,=,A,=");
+		break;
+	case 0x34: /* addc a, imm */
 		h (XR(L1)  "C,+," XI(A, "+"));
 		 break;
-	case 0x35:
-		/* addc a, direct */
+	case 0x35: /* addc a, direct */
 		h (XR(IB1) "C,+," XI(A, "+"));
 		break;
-	case 0x36: case 0x37:
-		/* addc a, @Ri */
+	case 0x36: case 0x37: /* addc a, @Ri */
 		j (XR(R0I) "C,+," XI(A, "+"));
 		break;
 	case 0x38: case 0x39:
 	case 0x3A: case 0x3B:
 	case 0x3C: case 0x3D:
-	case 0x3E: case 0x3F:
-		/* addc a, Rn */
+	case 0x3E: case 0x3F: /* addc a, Rn */
 		h (XR(R0)  "C,+," XI(A, "+"));
 		break;
-	OP_GROUP_INPLACE_LHS_4 (0x40, A, "|")
-	OP_GROUP_INPLACE_LHS_4 (0x50, A, "&")
-	OP_GROUP_INPLACE_LHS_4 (0x60, A, "^")
-	case 0x73:
-		/* jmp @a+dptr */
+	case 0x42: /* orl direct, A */
+		emitf ("%d,[],A,|,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+		break;
+	case 0x43: /* orl direct, imm */
+		emitf ("%d,[],%d,|,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+		break;
+	OP_GROUP_INPLACE_LHS_4 (0x40, A, "|") /* 0x44..0x4f orl A,.. */
+	case 0x52: /* anl direct, A */
+		emitf ("%d,[],A,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+		break;
+	case 0x53: /* anl direct, imm */
+		emitf ("%d,[],%d,&,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+		break;
+	OP_GROUP_INPLACE_LHS_4 (0x50, A, "&") /* 0x54..0x5f anl A,.. */
+	OP_GROUP_INPLACE_LHS_4 (0x60, A, "^") /* 0x64..0x6f xrl A,.. */
+	case 0x72: /* orl C, bit */
+		k(BIT_R "C,|=");
+		break;
+	case 0x73: /* jmp @a+dptr */
 		emit ("dptr,A,+,pc,="); break;
-	case 0x74:
-		/* mov a, imm */
+	case 0x74: /* mov a, imm */
 		h (XR(L1) XW(A));
 		break;
-	case 0x75:
-		/* mov direct, imm */
+	case 0x75: /* mov direct, imm */
 		h (XR(L2) XW(IB1));
 		break;
-	case 0x76: case 0x77:
-		/* mov @Ri, imm */
+	case 0x76: case 0x77: /* mov @Ri, imm */
 		j (XR(L1) XW(R0I));
 		break;
 	case 0x78: case 0x79:
 	case 0x7A: case 0x7B:
 	case 0x7C: case 0x7D:
-	case 0x7E: case 0x7F:
-		/* mov Rn, imm */
+	case 0x7E: case 0x7F: /* mov Rn, imm */
 		h (XR(L1) XW(R0));
 		break;
-	case 0x83:
-		/* movc a, @a+pc */
+	case 0x82: /* anl C, bit */
+		k (BIT_R "C,&=");
+		break;
+	case 0x83: /* movc a, @a+pc */
 		emit ("A,pc,+,[1],A,=");
 		break;
-	case 0x84:
-		/* div ab */
+	case 0x84: /* div ab */
 		emit ("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,=");
 		break;
-	case 0x85:
-		/* mov direct, direct */
+	case 0x85: /* mov direct, direct */
 		h (XR(IB1) XW(IB2));
 		break;
-	case 0x86: case 0x87:
-		/* mov direct, @Ri */
+	case 0x86: case 0x87: /* mov direct, @Ri */
 		j (XR(R0I) XW(IB1));
 		break;
 	case 0x88: case 0x89:
 	case 0x8A: case 0x8B:
 	case 0x8C: case 0x8D:
-	case 0x8E: case 0x8F:
-		/* mov direct, Rn */
+	case 0x8E: case 0x8F: /* mov direct, Rn */
 		h (XR(R0) XW(IB1));
 		break;
-	case 0x93:
-		/* movc a, @a+dptr */
+	case 0x90: /* mov dptr, imm */
+		emitf ("%d,dptr,=", (buf[1]<<8) + buf[2]);
+		break;
+	case 0x92: /* mov bit, C */
+		/* TODO */
+		break;
+	case 0x93: /* movc a, @a+dptr */
 		emit ("A,dptr,+,[1],A,=");
 		break;
-	case 0x94:
-		/* subb a, imm */
+	case 0x94: /* subb a, imm */
 		h (XR(L1)  "C,-," XI(A, "-"));
 		 break;
-	case 0x95:
-		/* subb a, direct */
+	case 0x95: /* subb a, direct */
 		h (XR(IB1) "C,-," XI(A, "-"));
 		break;
-	case 0x96: case 0x97:
-		/* subb a, @Ri */
+	case 0x96: case 0x97: /* subb a, @Ri */
 		j (XR(R0I) "C,-," XI(A, "-"));
 		break;
 	case 0x98: case 0x99:
 	case 0x9A: case 0x9B:
 	case 0x9C: case 0x9D:
-	case 0x9E: case 0x9F:
-		/* subb a, Rn */
+	case 0x9E: case 0x9F: /* subb a, Rn */
 		h (XR(R0)  "C,-," XI(A, "-"));
 		break;
-	case 0xA3:
-		/* inc dptr */
+	case 0xA0: /* orl C, /bit */
+		k(BIT_R "!,C,|=");
+	case 0xA2: /* mov C, bit */
+		/* TODO */
+		break;
+	case 0xA3: /* inc dptr */
 		emit ("dptr,++=");
 		break;
-	case 0xA4:
-		/* mul ab */
+	case 0xA4: /* mul ab */
 		emit ("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,=");
 		break;
-	case 0xA5: 
-		/* "reserved" */
+	case 0xA5: /* "reserved" */
 		emit ("0,TRAP");
 		break;
-	case 0xA6: case 0xA7:
-		/* mov @Ri, direct */
+	case 0xA6: case 0xA7: /* mov @Ri, direct */
 		j (XR(IB1) XW(R0I));
 		break;
 	case 0xA8: case 0xA9:
 	case 0xAA: case 0xAB:
 	case 0xAC: case 0xAD:
-	case 0xAE: case 0xAF:
-		/* mov Rn, direct */
+	case 0xAE: case 0xAF: /* mov Rn, direct */
 		h (XR(IB1) XW(R0));
 		break;
-	case 0xB2:
-		/* cpl bit */
+	case 0xB0: /* anl C, /bit */
+		k (BIT_R "!,C,&=");
+		break;
+	case 0xB2: /* cpl bit */
 		/* TODO: translate to macros */
 		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
 		break;
-	case 0xB3:
-		/* cpl C */
+	case 0xB3: /* cpl C */
 		emit ("1," XI(C, "^"));
 		break;
-	case 0xB4:
-		/* cjne a, imm, offset */
+	case 0xB4: /* cjne a, imm, offset */
 		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		h (XR(L1)  XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
-	case 0xB5:
-		/* cjne a, direct, offset */
+	case 0xB5: /* cjne a, direct, offset */
 		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		h (XR(IB1) XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
-	case 0xB6: case 0xB7:
-		/* cjne @ri, imm, offset */
+	case 0xB6: case 0xB7: /* cjne @ri, imm, offset */
 		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		j (XR(L1)  XR(R0I) "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
 	case 0xB8: case 0xB9:
 	case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD:
-	case 0xBE: case 0xBF:
-		/* cjne Rn, imm, offset */
+	case 0xBE: case 0xBF: /* cjne Rn, imm, offset */
 		/* TODO: is != correct op for "not equal"? Replace branch with CJMP macro? */
 		h (XR(L1)  XR(R0)  "!=,?{,%3$hhd,2,+pc,+=,}");
 		break;
-	case 0xC2:
-		/* clr bit */
+	case 0xC0: /* push direct */
+		h (XR(IB1) PUSH1);
+		break;
+	case 0xC2: /* clr bit */
 		k (BIT_MASK XI(BIT, "&"));
 		break;
-	case 0xC3:
-		/* clr C */
+	case 0xC3: /* clr C */
 		emit("0,C,=");
 		break;
-	case 0xC4:
-		/* swap A */
+	case 0xC4: /* swap A */
 		emit("4,A,0x101,*,>>,A,=");
 		break;
-	case 0xC5:
-		/* xch A, direct */
+	case 0xC5: /* xch A, direct */
 		j (XR(A) XR(IB1) XW(A) "," XW(IB1));
 		break;
-	case 0xC6: case 0xC7:
-		/* xch A, @Ri */ 
+	case 0xC6: case 0xC7: /* xch A, @Ri */ 
 		j (XR(A) XR(R0I) XW(A) "," XW(R0I));
 		break;
 	case 0xC8: case 0xC9:
 	case 0xCA: case 0xCB:
 	case 0xCC: case 0xCD:
-	case 0xCE: case 0xCF:
-		/* xch A, Rn */
+	case 0xCE: case 0xCF: /* xch A, Rn */
 		h (XR(A) XR(R0) XW(A) "," XW(R0));
 		break;
-	case 0xD2:
-		/* setb bit */
+	case 0xD0: /* pop direct */
+		h (POP1 XW(IB1));
+		break;
+	case 0xD2: /* setb bit */
 		k (BIT_SET XI(BIT, "|"));
 		break;
-	case 0xD3:
-		/* setb C */
+	case 0xD3: /* setb C */
 		emitf ("1,C,=");
 		break;
-	case 0xD4:
-		/* da  A (BCD adjust after add) */
+	case 0xD4: /* da  A (BCD adjust after add) */
 		/* TODO */
 		break;
-	case 0xD5:
-		/* djnz direct, offset */
+	case 0xD5: /* djnz direct, offset */
 		h (XI(IB1, "--") "," XR(IB1) CJMP(L2, "2"));
 		break;
 	case 0xD6:
-	case 0xD7:
-		/* xchd A, @Ri*/
+	case 0xD7: /* xchd A, @Ri*/
 		/* TODO */
 		break;
 	case 0xD8: case 0xD9:
 	case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD:
-	case 0xDE: case 0xDF:
-		/* djnz Rn, offset */
+	case 0xDE: case 0xDF: /* djnz Rn, offset */
 		h (XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
-	case 0xE2: case 0xE3:
-		/* movx A, @Ri */
+	case 0xE0: /* movx A, @dptr */
+		emit (XRAM_BASE ",dptr,+,[2],A,=");
+		break;
+	case 0xE2: case 0xE3: /* movx A, @Ri */
 		j (XR(R0X) XW(A));
 		break;
-	case 0xE4:
-		/* clr A */
+	case 0xE4: /* clr A */
 		emit ("0,A,=");
 		break;
-	case 0xE5:
-		/* mov A, direct */
+	case 0xE5: /* mov A, direct */
 		h (XR(IB1) XW(A));
 		break;
-	case 0xE6: case 0xE7:
-		/* mov A, @Ri */
+	case 0xE6: case 0xE7: /* mov A, @Ri */
 		j (XR(R0I) XW(A));
 		break;
 	case 0xE8: case 0xE9:
 	case 0xEA: case 0xEB:
 	case 0xEC: case 0xED:
-	case 0xEE: case 0xEF:
-		/* mov A, Rn */
+	case 0xEE: case 0xEF: /* mov A, Rn */
 		h (XR(R0) XW(A));
 		break;
-	case 0xF2: case 0xF3:
-		/* movx @Ri, A */
+	case 0xF0: /* movx @dptr, A */
+		emit ("A," XRAM_BASE ",dptr,+,=[2]");
+		break;
+	case 0xF2: case 0xF3: /* movx @Ri, A */
 		j (XR(A) XW(R0X));
 		break;
-	case 0xF4:
-		/* cpl A */
+	case 0xF4: /* cpl A */
 		h ("255" XI(A, "^"));
 		break;
-	case 0xF5:
-		/* mov direct, A */
+	case 0xF5: /* mov direct, A */
 		h (XR(A) XW(IB1));
 		break;
-	case 0xF6: case 0xF7:
-		/* mov  @Ri, A */
+	case 0xF6: case 0xF7: /* mov  @Ri, A */
 		j (XR(A) XW(R0I));
 		break;
 	case 0xF8: case 0xF9:
 	case 0xFA: case 0xFB:
 	case 0xFC: case 0xFD:
-	case 0xFE: case 0xFF:
-		/* mov Rn, A */
+	case 0xFE: case 0xFF: /* mov Rn, A */
 		h (XR(A) XW(R0));
 		break;
-	default: break;
+	default:
+		break;
 	}
 }
 
