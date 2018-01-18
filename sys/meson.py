@@ -14,11 +14,8 @@ from mesonbuild import mesonmain
 
 BUILDDIR = 'build'
 SDB_BUILDDIR = 'build_sdb'
-SDB = os.path.join(SDB_BUILDDIR, 'sdb')
 
 BACKENDS = ['ninja', 'vs2015', 'vs2017']
-BLACKLIST = ['Makefile', 'makefile']
-EXTENSIONS = ['sdb.txt']
 
 PATH_FMT = {}
 
@@ -108,34 +105,12 @@ def makedirs(path):
     log.debug('makedirs "%s"' % path)
     os.makedirs(path)
 
-def convert_sdb(folder, f):
+def convert_sdb(f):
     """ Convert f to sdb format """
-    base, _ = get_base_extension(f)
-    inf = os.path.join(folder, f)
-    sdb = os.path.join(folder, base) + '.sdb'
-    log.debug('Converting {} to {}'.format(inf, sdb))
-    os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=sdb, inf=inf))
-
-def get_base_extension(f):
-    """ file.sdb.txt => file, .txt """
-    n = f.split('.')
-    if len(n) == 1: return n[0], ''
-    return n[0], '.'.join(n[1:])
-
-def handle_folder(folder):
-    """ Convert each suitable file inside specified folder to sdb file """
-    log.debug('Handling {} directory...'.format(folder))
-    for f in os.listdir(folder):
-        if f in BLACKLIST:
-            continue
-        base, ext = get_base_extension(f)
-        absf = os.path.join(folder, f)
-        if os.path.isdir(absf) and not os.path.islink(absf):
-            handle_folder(absf)
-            continue
-        if ext not in EXTENSIONS:
-            continue
-        convert_sdb(folder, f)
+    sdb = os.path.splitext(f)[0]
+    sdb_app = os.path.join(SDB_BUILDDIR, 'sdb')
+    log.debug('Converting {} to {}'.format(f, sdb))
+    os.system('{app} {outf} = <{inf}'.format(app=sdb_app, outf=sdb, inf=f))
 
 def xp_compat(builddir):
     log.info('Running XP compat script')
@@ -150,15 +125,13 @@ def xp_compat(builddir):
     log.debug('Translating from %s to %s_xp' % (version, version))
     newversion = version+'_xp'
 
-    for root, dirs, files in os.walk(builddir):
-        for f in files:
-            if f.endswith('.vcxproj'):
-                with open(os.path.join(root, f), 'r') as proj:
-                    c = proj.read()
-                c = c.replace(version, newversion)
-                with open(os.path.join(root, f), 'w') as proj:
-                    proj.write(c)
-                    log.debug("%s .. OK" % f)
+    for f in glob.iglob(os.path.join(builddir, '**', '*.vcxproj')):
+        with open(f, 'r') as proj:
+            c = proj.read()
+        c = c.replace(version, newversion)
+        with open(f, 'w') as proj:
+            proj.write(c)
+            log.debug("%s .. OK" % f)
 
 def win_install(args):
     global PATH_FMT
@@ -242,9 +215,12 @@ def build_sdb(args):
             line = f.readline()
     datadirs = line.split('=')[1].split()
     datadirs = [os.path.abspath(p) for p in datadirs]
-    log.debug('Looking up {}'.format(', '.join(datadirs)))
     for folder in datadirs:
-        handle_folder(folder)
+        log.debug('Looking up %s' % folder)
+        for f in glob.iglob(os.path.join(folder, '**', '*.sdb.txt')):
+            if os.path.isdir(f) or os.path.islink(f):
+                continue
+            convert_sdb(f)
     log.debug('Done')
 
 def build_r2(args):
