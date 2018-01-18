@@ -33,11 +33,11 @@ typedef struct {
 
 static RI8051Reg registers[] = {
 	// keep these sorted
-	{"acc",   0xE0, 0x00, 1, 0},
+	{"a",     0xE0, 0x00, 1, 0},
 	{"b",     0xF0, 0x00, 1, 0},
 	{"dph",   0x83, 0x00, 1, 0},
 	{"dpl",   0x82, 0x00, 1, 0},
-	{"dptr",  0x00, 0x00, 2, 0, 1},
+	{"dptr",  0x82, 0x00, 2, 0, 1},
 	{"ie",    0xA8, 0x00, 1, 0},
 	{"ip",    0xB8, 0x00, 1, 0},
 	{"p0",    0x80, 0xFF, 1, 0},
@@ -95,10 +95,10 @@ static RI8051Reg registers[] = {
 #define ES_BIT IRAM_BASE ",%1$d,+,"
 #define ES_R0I IRAM_BASE ",r%1$d,+,"
 #define ES_R0X XRAM_BASE ",r%1$d,+,"
-#define ES_AI "A,"
+#define ES_AI "a,"
 #define ES_R0  "r%1$d,"
 #define ES_R1 "r%2$d,"
-#define ES_A "A,"
+#define ES_A "a,"
 #define ES_L1 "%2$d,"
 #define ES_L2 "%3$d,"
 #define ES_C "C,"
@@ -177,10 +177,10 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emitf ("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
 	case 0x60: /* jz offset */
-		emitf ("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]);
+		emitf ("a,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
 	case 0x70: /* jnz offset */
-		emitf ("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
+		emitf ("a,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
 		break;
 	case 0x80: /* sjmp offset */
 		j (ESX_L1 JMP("2"));
@@ -208,19 +208,19 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		break;
 
 	case 0x03: /* rr a */
-		emit ("1,A,0x101,*,>>,A,=");
+		emit ("1,a,0x101,*,>>,a,=");
 		break;
 	OP_GROUP_UNARY_4 (0x00, "++") /* 0x04..0x0f: inc */
 	case 0x13: /* rrc a */
-		emit ("1,A,>>,$c7,C,=,A,=");
+		emit ("1,a,>>,$c7,C,=,a,=");
 		break;
 	OP_GROUP_UNARY_4 (0x10, "--") /* 0x14..0x1f dec */
 	case 0x23: /* rl a */
-		emit ("7,A,0x101,*,>>,A,=");
+		emit ("7,a,0x101,*,>>,a,=");
 		break;
-	OP_GROUP_INPLACE_LHS_4 (0x20, A, "+") /* 0x24..0x2f add A,.. */
+	OP_GROUP_INPLACE_LHS_4 (0x20, A, "+") /* 0x24..0x2f add a,.. */
 	case 0x33: /* rlc a */
-		emit ("1,A,>>,$c0,C,=,A,=");
+		emit ("1,a,>>,$c0,C,=,a,=");
 		break;
 	case 0x34: /* addc a, imm */
 		h (XR(L1)  "C,+," XI(A, "+"));
@@ -237,26 +237,26 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0x3E: case 0x3F: /* addc a, Rn */
 		h (XR(R0)  "C,+," XI(A, "+"));
 		break;
-	case 0x42: /* orl direct, A */
-		emitf ("%d,[],A,|,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+	case 0x42: /* orl direct, a */
+		emitf ("%d,[],a,|,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
 		break;
 	case 0x43: /* orl direct, imm */
 		emitf ("%d,[],%d,|,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
 		break;
-	OP_GROUP_INPLACE_LHS_4 (0x40, A, "|") /* 0x44..0x4f orl A,.. */
-	case 0x52: /* anl direct, A */
-		emitf ("%d,[],A,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+	OP_GROUP_INPLACE_LHS_4 (0x40, A, "|") /* 0x44..0x4f orl a,.. */
+	case 0x52: /* anl direct, a */
+		emitf ("%d,[],a,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
 		break;
 	case 0x53: /* anl direct, imm */
 		emitf ("%d,[],%d,&,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
 		break;
-	OP_GROUP_INPLACE_LHS_4 (0x50, A, "&") /* 0x54..0x5f anl A,.. */
-	OP_GROUP_INPLACE_LHS_4 (0x60, A, "^") /* 0x64..0x6f xrl A,.. */
+	OP_GROUP_INPLACE_LHS_4 (0x50, A, "&") /* 0x54..0x5f anl a,.. */
+	OP_GROUP_INPLACE_LHS_4 (0x60, A, "^") /* 0x64..0x6f xrl a,.. */
 	case 0x72: /* orl C, bit */
 		k(BIT_R "C,|=");
 		break;
 	case 0x73: /* jmp @a+dptr */
-		emit ("dptr,A,+,pc,="); break;
+		emit ("dptr,a,+,pc,="); break;
 	case 0x74: /* mov a, imm */
 		h (XR(L1) XW(A));
 		break;
@@ -276,10 +276,10 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		k (BIT_R "C,&=");
 		break;
 	case 0x83: /* movc a, @a+pc */
-		emit ("A,pc,+,[1],A,=");
+		emit ("a,pc,+,[1],a,=");
 		break;
 	case 0x84: /* div ab */
-		emit ("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,=");
+		emit ("b,!,OV,=,0,a,b,a,/=,a,b,*,-,-,b,=,0,C,=");
 		break;
 	case 0x85: /* mov direct, direct */
 		h (XR(IB1) XW(IB2));
@@ -300,7 +300,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		/* TODO */
 		break;
 	case 0x93: /* movc a, @a+dptr */
-		emit ("A,dptr,+,[1],A,=");
+		emit ("a,dptr,+,[1],a,=");
 		break;
 	case 0x94: /* subb a, imm */
 		h (XR(L1)  "C,-," XI(A, "-"));
@@ -326,7 +326,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emit ("dptr,++=");
 		break;
 	case 0xA4: /* mul ab */
-		emit ("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,=");
+		emit ("8,a,b,*,NUM,>>,NUM,!,!,OV,=,b,=,a,=,0,C,=");
 		break;
 	case 0xA5: /* "reserved" */
 		emit ("0,TRAP");
@@ -378,19 +378,19 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xC3: /* clr C */
 		emit("0,C,=");
 		break;
-	case 0xC4: /* swap A */
-		emit("4,A,0x101,*,>>,A,=");
+	case 0xC4: /* swap a */
+		emit("4,a,0x101,*,>>,a,=");
 		break;
-	case 0xC5: /* xch A, direct */
+	case 0xC5: /* xch a, direct */
 		j (XR(A) XR(IB1) XW(A) "," XW(IB1));
 		break;
-	case 0xC6: case 0xC7: /* xch A, @Ri */ 
+	case 0xC6: case 0xC7: /* xch a, @Ri */ 
 		j (XR(A) XR(R0I) XW(A) "," XW(R0I));
 		break;
 	case 0xC8: case 0xC9:
 	case 0xCA: case 0xCB:
 	case 0xCC: case 0xCD:
-	case 0xCE: case 0xCF: /* xch A, Rn */
+	case 0xCE: case 0xCF: /* xch a, Rn */
 		h (XR(A) XR(R0) XW(A) "," XW(R0));
 		break;
 	case 0xD0: /* pop direct */
@@ -402,14 +402,14 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xD3: /* setb C */
 		emitf ("1,C,=");
 		break;
-	case 0xD4: /* da  A (BCD adjust after add) */
+	case 0xD4: /* da a (BCD adjust after add) */
 		/* TODO */
 		break;
 	case 0xD5: /* djnz direct, offset */
 		h (XI(IB1, "--") "," XR(IB1) CJMP(L2, "2"));
 		break;
 	case 0xD6:
-	case 0xD7: /* xchd A, @Ri*/
+	case 0xD7: /* xchd a, @Ri*/
 		/* TODO */
 		break;
 	case 0xD8: case 0xD9:
@@ -417,46 +417,46 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xDC: case 0xDD:
 	case 0xDE: case 0xDF: /* djnz Rn, offset */
 		h (XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
-	case 0xE0: /* movx A, @dptr */
-		emit (XRAM_BASE ",dptr,+,[2],A,=");
+	case 0xE0: /* movx a, @dptr */
+		emit (XRAM_BASE ",dptr,+,[2],a,=");
 		break;
-	case 0xE2: case 0xE3: /* movx A, @Ri */
+	case 0xE2: case 0xE3: /* movx a, @Ri */
 		j (XR(R0X) XW(A));
 		break;
-	case 0xE4: /* clr A */
-		emit ("0,A,=");
+	case 0xE4: /* clr a */
+		emit ("0,a,=");
 		break;
-	case 0xE5: /* mov A, direct */
+	case 0xE5: /* mov a, direct */
 		h (XR(IB1) XW(A));
 		break;
-	case 0xE6: case 0xE7: /* mov A, @Ri */
+	case 0xE6: case 0xE7: /* mov a, @Ri */
 		j (XR(R0I) XW(A));
 		break;
 	case 0xE8: case 0xE9:
 	case 0xEA: case 0xEB:
 	case 0xEC: case 0xED:
-	case 0xEE: case 0xEF: /* mov A, Rn */
+	case 0xEE: case 0xEF: /* mov a, Rn */
 		h (XR(R0) XW(A));
 		break;
-	case 0xF0: /* movx @dptr, A */
-		emit ("A," XRAM_BASE ",dptr,+,=[2]");
+	case 0xF0: /* movx @dptr, a */
+		emit ("a," XRAM_BASE ",dptr,+,=[2]");
 		break;
-	case 0xF2: case 0xF3: /* movx @Ri, A */
+	case 0xF2: case 0xF3: /* movx @Ri, a */
 		j (XR(A) XW(R0X));
 		break;
-	case 0xF4: /* cpl A */
+	case 0xF4: /* cpl a */
 		h ("255" XI(A, "^"));
 		break;
-	case 0xF5: /* mov direct, A */
+	case 0xF5: /* mov direct, a */
 		h (XR(A) XW(IB1));
 		break;
-	case 0xF6: case 0xF7: /* mov  @Ri, A */
+	case 0xF6: case 0xF7: /* mov  @Ri, a */
 		j (XR(A) XW(R0I));
 		break;
 	case 0xF8: case 0xF9:
 	case 0xFA: case 0xFB:
 	case 0xFC: case 0xFD:
-	case 0xFE: case 0xFF: /* mov Rn, A */
+	case 0xFE: case 0xFF: /* mov Rn, a */
 		h (XR(A) XW(R0));
 		break;
 	default:
@@ -536,6 +536,8 @@ static int esil_i8051_init (RAnalEsil *esil) {
 		return true;
 	}
 	ocbs = esil->cb;
+	/* these hooks seem to break ar command, as it does not call hook_reg_read */
+	/* all 8051 regs are mem mapped, and reg access via mem is very common */
 	esil->cb.hook_reg_read = i8051_hook_reg_read;
 	esil->cb.hook_reg_write = i8051_hook_reg_write;
 	i8051_is_init = true;
@@ -551,7 +553,7 @@ static int esil_i8051_fini (RAnalEsil *esil) {
 	return true;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -563,14 +565,18 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
-		"gpr	A	.8	8	0\n"
-		"gpr	B	.8	9	0\n"
-		"gpr	sp	.8	10	0\n"
-		"gpr	pc	.16	12	0\n"
-		"gpr	dptr	.16	14	0\n"
-		"gpr	C	.1	16	0\n"
-		"gpr	OV	.1	17	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+		"gpr	a	.8	8	0\n"
+		"gpr	b	.8	9	0\n"
+		"gpr	dptr	.16	10	0\n"
+		"gpr	dpl	.8	10	0\n"
+		"gpr	dph	.8	11	0\n"
+		"gpr	psw	.8	12	0\n"
+		"gpr	sp	.8	13	0\n"
+		"gpr	pc	.16	15	0\n"
+		"flg	P	.1	96	0\n"
+		"flg	OV	.1	98	0\n"
+		"flg	C	.1	103	0\n";
+		return strdup (p);
 }
 
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -738,11 +744,12 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 RAnalPlugin r_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
+	.esil = true,
 	.bits = 8|16,
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_i8051_init,
 	.esil_fini = esil_i8051_fini
 };
