@@ -1,6 +1,5 @@
 OBJ_PROPELLER=asm_propeller.o
-OBJ_PROPELLER+=../arch/propeller/propeller_disas.o
-CFLAGS+=-I./arch/propeller/
+CFLAGS+=-I$(LIBR)/asm/arch/propeller/
 
 STATIC_OBJ+=${OBJ_PROPELLER}
 TARGET_PROPELLER=asm_propeller.${EXT_SO}

@@ -1,5 +1,5 @@
 OBJ_EBC=anal_ebc.o
-CFLAGS+=-I../asm/arch/ebc/
+CFLAGS+=-I$(LIBR)/asm/arch/ebc/
 
 STATIC_OBJ+=${OBJ_EBC}
 #OBJ_EBC+=../../../../../../../../../../../../../../../../../../../../${LTOP}/asm/arch/ebc/ebc_disas.o

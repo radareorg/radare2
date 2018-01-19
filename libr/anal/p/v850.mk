@@ -5,7 +5,7 @@ STATIC_OBJ+=${OBJ_V850}
 OBJ_V850+=../../asm/arch/v850/v850_disas.o
 TARGET_V850=anal_v850.${EXT_SO}
 
-CFLAGS+=-I../asm/arch/v850/
+CFLAGS+=-I$(LIBR)/asm/arch/v850/
 
 ALL_TARGETS+=${TARGET_V850}
 

@@ -10,6 +10,7 @@ NATIVE_OBJS=native/xnu/xnu_debug.o
 endif
 
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
+CFLAGS+=-I$(LIBR)/bin/format/elf
 NATIVE_OBJS=native/linux/linux_debug.o
 NATIVE_OBJS+=native/procfs.o
 endif

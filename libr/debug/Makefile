@@ -33,7 +33,6 @@ endif
 endif
 
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
-CFLAGS+=-I../bin/format/elf
 OBJS+=$(addprefix p/,$(NATIVE_OBJS))
 endif
 

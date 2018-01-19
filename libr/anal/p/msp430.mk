@@ -1,5 +1,5 @@
 OBJ_msp430=anal_msp430.o
-CFLAGS+=-I../asm/arch/msp430/
+CFLAGS+=-I$(LIBR)/asm/arch/msp430/
 
 STATIC_OBJ+=${OBJ_msp430}
 OBJ_msp430+=../../asm/arch/msp430/msp430_disas.o

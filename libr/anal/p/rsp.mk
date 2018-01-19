@@ -1,6 +1,5 @@
 OBJ_RSP=anal_rsp.o
-#RSP_ROOT=$(LIBR)/asm/arch/rsp
-CFLAGS+=-I../asm/arch/rsp
+CFLAGS+=-I$(LIBR)/asm/arch/rsp
 
 STATIC_OBJ+=${OBJ_RSP}
 OBJ_RSP+=../../asm/arch/rsp/rsp_idec.o
