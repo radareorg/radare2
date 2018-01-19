@@ -638,7 +638,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		}
 		/* TODO: fill in the extansion functions */
 		// op->type = R_ANAL_OP_TYPE_UNK;
-		op->type = R_ANAL_OP_TYPE_SHL;
+		// op->type = R_ANAL_OP_TYPE_SHL;
 		op->type = R_ANAL_OP_TYPE_SHR;
 		break;
 	case 0x09:

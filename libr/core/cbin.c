@@ -647,13 +647,12 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API void r_core_anal_type_init(RCore *core) {
 	Sdb *types = NULL;
 	const char *anal_arch = NULL, *os = NULL;
-	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
-	int bits = 0;
 	char *dbpath;
 	if (!core || !core->anal) {
 		return;
 	}
-	bits = core->assembler->bits;
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
+	int bits = core->assembler->bits;
 	types = core->anal->sdb_types;
  	// make sure they are empty this is initializing
 	sdb_reset (types);
