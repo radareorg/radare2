@@ -621,7 +621,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 							simulate_r = simulate_op (op, value_ct, value_src1, 
 							  			value_ct, diff_src1, op_result_r, 
 										item_dst->size);
-							if (simulate op_result && && value_dst == *op_result) {
+							if (simulate && op_result && value_dst == *op_result) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
 									arithmetic = r_str_append (arithmetic, tmp);
