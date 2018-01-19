@@ -68,9 +68,9 @@ static RI8051Reg registers[] = {
 #define emit(frag) r_strbuf_appendf(&op->esil, frag)
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 
-#define j(frag) emitf(frag, 1 & buf[0], buf[1], buf[2])
-#define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2])
-#define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2])
+#define j(frag) emitf(frag, 1 & buf[0], buf[1], buf[2], op->jump)
+#define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2], op->jump)
+#define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2], op->jump)
 
 // on 8051 the stack grows upward and lsb is pushed first meaning
 // that on little-endian esil vms =[2] works as indended
@@ -79,8 +79,8 @@ static RI8051Reg registers[] = {
 #define PUSH2 "1,sp,+=,sp,=[2],1,sp,+="
 #define POP2  "1,sp,-=,sp,[2],1,sp,-=,"
 #define CALL(skipbytes) skipbytes",pc,+," PUSH2
-#define JMP(skipbytes) skipbytes",+,pc,+="
-#define CJMP(target, skipbytes) "?{," ESX_##target "" JMP(skipbytes) ",}"
+#define JMP "%4$d,pc,="
+#define CJMP "?{," JMP ",}"
 #define BIT_SET "%2$d,1,<<,"
 #define BIT_MASK BIT_SET "!,"
 #define BIT_R "%2$d,%1$d,[1],>>,1,&,"
@@ -105,7 +105,7 @@ static RI8051Reg registers[] = {
 
 // signed char variant
 #define ESX_L1 "%2$hhd,"
-#define ESX_L2 "%2$hhd,"
+#define ESX_L2 "%3$hhd,"
 
 #define ACC_IB1 "[1],"
 #define ACC_IB2 "[1],"
@@ -168,22 +168,23 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emitf (F_BIT_R "&,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
 		break;
 	case 0x30: /* jnb bit, offset */
-		emitf (F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
+//		emitf (F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
+		k (XR(BIT) BIT_MASK CJMP);
 		break;
 	case 0x40: /* jc offset */
-		emitf ("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]);
+		emitf ("C,!," CJMP);
 		break;
 	case 0x50: /* jnc offset */
-		emitf ("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
+		j ("C," CJMP );
 		break;
 	case 0x60: /* jz offset */
-		emitf ("a,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]);
+		j ("a,!," CJMP);
 		break;
 	case 0x70: /* jnz offset */
-		emitf ("a,""?{,%d,2,+,pc,+=,}", (st8)buf[1]);
+		j ("a," CJMP);
 		break;
 	case 0x80: /* sjmp offset */
-		j (ESX_L1 JMP("2"));
+		j (JMP);
 		break;
 
 	case 0x11: case 0x31: case 0x51: case 0x71:
@@ -406,7 +407,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		/* TODO */
 		break;
 	case 0xD5: /* djnz direct, offset */
-		h (XI(IB1, "--") "," XR(IB1) CJMP(L2, "2"));
+		h (XI(IB1, "--") "," XR(IB1) "!," CJMP);
 		break;
 	case 0xD6:
 	case 0xD7: /* xchd a, @Ri*/
@@ -416,7 +417,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD:
 	case 0xDE: case 0xDF: /* djnz Rn, offset */
-		h (XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
+		h (XI(R0, "--") "," XR(R0) CJMP);
+		break;
 	case 0xE0: /* movx a, @dptr */
 		emit (XRAM_BASE ",dptr,+,[2],a,=");
 		break;
@@ -536,10 +538,12 @@ static int esil_i8051_init (RAnalEsil *esil) {
 		return true;
 	}
 	ocbs = esil->cb;
-	/* these hooks seem to break ar command, as it does not call hook_reg_read */
+	/* these hooks seem to break esil emulation */
+	/* pc is not read properly, mem mapped registers are not shown in ar, ... */
 	/* all 8051 regs are mem mapped, and reg access via mem is very common */
-	esil->cb.hook_reg_read = i8051_hook_reg_read;
-	esil->cb.hook_reg_write = i8051_hook_reg_write;
+//  disabled to make esil work, before digging deeper
+//	esil->cb.hook_reg_read = i8051_hook_reg_read;
+//	esil->cb.hook_reg_write = i8051_hook_reg_write;
 	i8051_is_init = true;
 	return true;
 }
