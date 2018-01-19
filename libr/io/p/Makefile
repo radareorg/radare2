@@ -12,13 +12,15 @@ ifeq (${OSTYPE},windows)
 CFLAGS+=-lws2_32
 endif
 
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk windbg.mk bochs.mk qnx.mk r2k.mk ar.mk rbuf.mk
 #zip.mk
 #PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk mach.mk w32dbg.mk procpid.mk
 include ${PLUGINS}
+
+all:: $(ALL_TARGETS)
 
 #ALL_TARGETS+=io_ewf.so
 

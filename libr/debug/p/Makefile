@@ -3,11 +3,13 @@ include ../../config.mk
 ifeq ($(WITHPIC),1)
 CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
 
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 DEBUGS=native.mk gdb.mk qnx.mk windbg.mk bochs.mk
 include $(DEBUGS)
+
+all:: $(ALL_TARGETS)
 
 pre:
 	@cd libgdbwrap && ${MAKE}

@@ -13,7 +13,7 @@ endif
 CURDIR=
 
 ifeq ($(WITHPIC),1)
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
@@ -25,6 +25,8 @@ ARCHS+=6502.mk h8300.mk cr16.mk v850.mk spc700.mk propeller.mk msp430.mk i4004.m
 ARCHS+=lh5801.mk v810.mk mcs96.mk lm32.mk
 ARCHS+=riscv.mk rsp.mk
 include $(ARCHS)
+
+all:: $(ALL_TARGETS)
 
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}

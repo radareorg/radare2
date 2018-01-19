@@ -7,12 +7,15 @@ GRUB=$(LIBR)../shlr/grub/libgrub.a
 LDFLAGS+=${LINK}
 
 ifeq ($(WITHPIC),1)
-all:
+all::
 
+ALL_TARGETS=
 #FILESYSTEMS=hfs.mk iso9660.mk jfs.mk
 #FILESYSTEMS=hfsplus.mk
 FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk udf.mk ufs2.mk ufs.mk xfs.mk hfs.mk
 include $(FILESYSTEMS)
+
+all:: $(ALL_TARGETS)
 
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}

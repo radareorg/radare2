@@ -23,11 +23,13 @@ include $(STOP)/windbg/deps.mk
 LDFLAGS+=${LINK}
 
 ifeq ($(WITHPIC),1)
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 PLUGS=java.mk anal.mk
 include $(PLUGS)
+
+all:: $(ALL_TARGETS)
 
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}

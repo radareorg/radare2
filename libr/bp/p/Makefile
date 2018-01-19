@@ -5,11 +5,13 @@ ifeq ($(WITHPIC),1)
 CFLAGS+=-I../../include -I../arch/ -I../arch/include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB}
 CFLAGS+=-D__UNIX__
 
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 ARCHS=x86.mk arm.mk
 include $(ARCHS)
+
+all:: $(ALL_TARGETS)
 
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}

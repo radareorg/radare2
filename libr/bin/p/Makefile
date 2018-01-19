@@ -14,7 +14,7 @@ endif
 SHLR=$(LTOP)/../shlr
 
 ifeq ($(WITHPIC),1)
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
@@ -28,6 +28,8 @@ FORMATS+=xtr_dyldcache.mk
 FORMATS+=xtr_fatmach0.mk
 
 include $(FORMATS)
+
+all:: $(ALL_TARGETS)
 
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}

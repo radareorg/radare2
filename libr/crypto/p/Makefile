@@ -5,12 +5,14 @@ LINK+=-L../../util -lr_util
 LDFLAGS+=${LINK}
 
 ifeq ($(WITHPIC),1)
-all: ${ALL_TARGETS}
+all::
 
 ALL_TARGETS=
 CFLAGS+=-I../../include
 #ALGOS=aes.mk aes_cbc.mk
 include $(ALGOS)
+
+all:: $(ALL_TARGETS)
 
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
