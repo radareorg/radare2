@@ -2,8 +2,11 @@ OBJ_msp430=anal_msp430.o
 CFLAGS+=-I$(LIBR)/asm/arch/msp430/
 
 STATIC_OBJ+=${OBJ_msp430}
-OBJ_msp430+=../../asm/arch/msp430/msp430_disas.o
 TARGET_msp430=anal_msp430.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+OBJ_msp430+=../../asm/arch/msp430/msp430_disas.o
+endif
 
 ALL_TARGETS+=${TARGET_msp430}
 

@@ -1,9 +1,13 @@
-OBJ_PPC_CS=anal_ppc_cs.o ../../asm/arch/ppc/libvle/vle.o
+OBJ_PPC_CS=anal_ppc_cs.o
 
 include $(CURDIR)capstone.mk
 
 STATIC_OBJ+=${OBJ_PPC_CS}
 TARGET_PPC_CS=anal_ppc_cs.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+OBJ_PPC_CS+=../../asm/arch/ppc/libvle/vle.o
+endif
 
 ALL_TARGETS+=${TARGET_PPC_CS}
 

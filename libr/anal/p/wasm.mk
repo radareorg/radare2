@@ -1,10 +1,13 @@
-WASM_ROOT=../../asm/arch/wasm
+WASM_ROOT=$(LIBR)/asm/arch/wasm
 OBJ_WASM=anal_wasm.o
-OBJ_WASM+=$(WASM_ROOT)/wasm.o
 CFLAGS+=-I$(WASM_ROOT)
 
 STATIC_OBJ+=${OBJ_WASM}
 TARGET_WASM=anal_wasm.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+OBJ_WASM+=$(WASM_ROOT)/wasm.o
+endif
 
 ALL_TARGETS+=${TARGET_WASM}
 

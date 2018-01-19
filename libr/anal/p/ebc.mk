@@ -2,9 +2,11 @@ OBJ_EBC=anal_ebc.o
 CFLAGS+=-I$(LIBR)/asm/arch/ebc/
 
 STATIC_OBJ+=${OBJ_EBC}
-#OBJ_EBC+=../../../../../../../../../../../../../../../../../../../../${LTOP}/asm/arch/ebc/ebc_disas.o
-OBJ_EBC+=../../asm/arch/ebc/ebc_disas.o
 TARGET_EBC=anal_ebc.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+OBJ_EBC+=$(LIBR)/asm/arch/ebc/ebc_disas.o
+endif
 
 ALL_TARGETS+=${TARGET_EBC}
 
