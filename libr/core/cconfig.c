@@ -1557,6 +1557,15 @@ static int cb_ioautofd(void *user, void *data) {
 	return true;
 }
 
+static int cb_scr_color_grep(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+
+	/* Let cons know we have a new pager. */
+	core->cons->grep_color = node->i_value;
+	return true;
+}
+
 static int cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2746,6 +2755,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
 	SETCB ("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
+	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETPREF ("scr.pipecolor", "false", "Enable colors when using pipes");
 	SETPREF ("scr.promptfile", "false", "Show user prompt file (used by r2 -q)");
 	SETPREF ("scr.promptflag", "false", "Show flag name in the prompt");
