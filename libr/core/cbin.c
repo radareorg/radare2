@@ -206,11 +206,23 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 			int splits = r_str_split (addrs, ',');
 			int i;
 			char *ptr;
-			ut64 addr;
+			char *range_sep;
+			ut64 addr, from, to;
 			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
 				if (!strcmp (ptr, "true") && false_positive (str)) {
 					free (addrs);
 					return true;
+				}
+				range_sep = strchr (ptr, '-');
+				if (range_sep) {
+					*range_sep = 0;
+					from = r_num_get (NULL, ptr);
+					ptr = range_sep + 1;
+					to = r_num_get (NULL, ptr);
+					if (refaddr >= from && refaddr <= to) {
+						free (addrs);
+						return true;
+					}
 				}
 				addr = r_num_get (NULL, ptr);
 				if (addr != 0 || *ptr == '0') {
