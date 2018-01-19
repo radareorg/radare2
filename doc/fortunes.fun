@@ -229,3 +229,7 @@ You have been designated for disassembly
 Helping siol merge? No way, that would be like.. way too much not lazy. - vifino
 What is the most complex r2 command? q - then you have to deal with real life /o\
 If you're having fun using radare2, odds are that you're doing something wrong.
+Don't trust what can't be compiled
+Coffee time!
+Can you you challenge a perfect immortal machine?
+Add more blockchains to your life.
