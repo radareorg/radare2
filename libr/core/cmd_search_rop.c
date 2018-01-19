@@ -545,8 +545,8 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
-		free (op_result);
-		free (op_result_r);
+		R_FREE (op_result);
+		R_FREE (op_result_r);
 		return NULL;
 	}
 
@@ -580,8 +580,8 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 			mem_read  = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
 		} else {
-			free (op_result);
-			free (op_result_r);
+			R_FREE (op_result);
+			R_FREE (op_result_r);
 			goto continue_error;
 		}
 
@@ -621,7 +621,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 							simulate_r = simulate_op (op, value_ct, value_src1, 
 							  			value_ct, diff_src1, op_result_r, 
 										item_dst->size);
-							if (simulate && value_dst == *op_result) {
+							if (simulate op_result && && value_dst == *op_result) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
 									arithmetic = r_str_append (arithmetic, tmp);
