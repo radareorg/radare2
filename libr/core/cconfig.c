@@ -2473,7 +2473,11 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* dir */
 	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
-	SETPREF ("dir.magic", R_MAGIC_PATH, "Path to r_magic files");
+	{
+		char *path = r_str_newf ("%s/" R_MAGIC_PATH, r_config_get (core->config, "dir.prefix"));
+		SETPREF ("dir.magic", path, "Path to r_magic files");
+		free (path);
+	}
 #if __WINDOWS__
 	SETPREF ("dir.plugins", "plugins", "Path to plugin files to be loaded at startup");
 #else
