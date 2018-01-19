@@ -1,9 +1,7 @@
 include ../../config.mk
 include ../../../mk/platform.mk
 
-CFLAGS+=-I$(LIBR)/include -Wall -shared ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
-GRUB=$(LIBR)../shlr/grub/libgrub.a
-#CFLAGS+=-I../../include
+CFLAGS+=-I$(LIBR)/include -Wall -shared ${PIC_CFLAGS} ${LDFLAGS_LIB}
 LDFLAGS+=${LINK}
 
 ifeq ($(WITHPIC),1)
