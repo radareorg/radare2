@@ -219,7 +219,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #define K_MARK(x) sdb_fmt(0,"mark.%"PFMT64x,x)
 #define K_ELSE(x) sdb_fmt(0,"else.%"PFMT64x,x)
 #define K_INDENT(x) sdb_fmt(0,"loc.%"PFMT64x,x)
-#define SET_INDENT(x) { memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
+#define SET_INDENT(x) { x = x>0?x:1; memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
 		if (!bb) {
 			break;
 		}
@@ -233,8 +233,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (indent * I_TAB + 2 >= sizeof (indentstr)) {
 			indent = (sizeof (indentstr) / I_TAB) - 4;
 		}
-		memset (indentstr, ' ', indent * I_TAB);
-		indentstr [(indent * I_TAB) - 2] = 0;
+		SET_INDENT (indent);
 		code = r_str_prefix_all (code, indentstr);
 		if (!code) {
 			eprintf ("No code here\n");
