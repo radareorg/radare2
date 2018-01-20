@@ -200,6 +200,7 @@ static bool false_positive(const char *str) {
 }
 
 R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
+	bool purge = false;
 	if (core->bin->strpurge) {
 		char *addrs = strdup (core->bin->strpurge);
 		if (addrs) {
@@ -209,9 +210,9 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 			char *range_sep;
 			ut64 addr, from, to;
 			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
+				bool bang = false;
 				if (!strcmp (ptr, "true") && false_positive (str)) {
-					free (addrs);
-					return true;
+					purge = true;
 				}
 				range_sep = strchr (ptr, '-');
 				if (range_sep) {
@@ -220,22 +221,24 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 					ptr = range_sep + 1;
 					to = r_num_get (NULL, ptr);
 					if (refaddr >= from && refaddr <= to) {
-						free (addrs);
-						return true;
+						purge = true;
 					}
+				}
+				if (*ptr == '!') {
+					bang = true;
+					ptr++;
 				}
 				addr = r_num_get (NULL, ptr);
 				if (addr != 0 || *ptr == '0') {
 					if (refaddr == addr) {
-						free (addrs);
-						return true;
+						purge = bang ? false : true;
 					}
 				}
 			}
 			free (addrs);
 		}
 	}
-	return false;
+	return purge;
 }
 
 static bool string_filter(RCore *core, const char *str, ut64 addr) {

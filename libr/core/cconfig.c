@@ -2400,8 +2400,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.strpurge", "", &cb_strpurge, "Try to purge false positive strings (true: use the "
-	       "false_positive() classifier in cbin.c, [,addr]*: specific string addresses to purge, "
-	       "[,addr1-addr2]*: purge all strings in the range addr1-addr2 inclusive)");
+	       "false_positive() classifier in cbin.c, [,addr]*: specific string addrs to purge, "
+	       "[,addr1-addr2]*: purge all strings in the range addr1-addr2 inclusive, [,!addr]*: prevent "
+	       "purge of string at addr by prev entries)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.strfilter", "", &cb_strfilter);
