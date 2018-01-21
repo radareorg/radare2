@@ -215,6 +215,10 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 					purge = true;
 					continue;
 				}
+				if (*ptr == '!') {
+					bang = true;
+					ptr++;
+				}
 				range_sep = strchr (ptr, '-');
 				if (range_sep) {
 					*range_sep = 0;
@@ -222,13 +226,9 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 					ptr = range_sep + 1;
 					to = r_num_get (NULL, ptr);
 					if (refaddr >= from && refaddr <= to) {
-						purge = true;
+						purge = bang ? false : true;
 						continue;
 					}
-				}
-				if (*ptr == '!') {
-					bang = true;
-					ptr++;
 				}
 				addr = r_num_get (NULL, ptr);
 				if (addr != 0 || *ptr == '0') {
