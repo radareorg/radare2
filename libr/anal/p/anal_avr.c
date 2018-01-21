@@ -96,6 +96,14 @@ CPU_CONST cpu_memsize_m640_m1280m_m1281_m2560_m2561[] = {
 	{ NULL, 0, 0, 0 },
 };
 
+CPU_CONST cpu_memsize_xmega128a4u[] = {
+	{ "eeprom_size", CPU_CONST_PARAM,  0x800, sizeof (ut32) },
+	{ "io_size",     CPU_CONST_PARAM, 0x1000, sizeof (ut32) },
+	{ "sram_start",  CPU_CONST_PARAM,  0x800, sizeof (ut32) },
+	{ "sram_size",   CPU_CONST_PARAM, 0x2000, sizeof (ut32) },
+	{ NULL, 0, 0, 0 },
+};
+
 CPU_CONST cpu_pagesize_5_bits[] = {
 	{ "page_size", CPU_CONST_PARAM, 5, sizeof (ut8) },
 	{ NULL, 0, 0, 0 },
@@ -114,6 +122,15 @@ CPU_MODEL cpu_models[] = {
 			cpu_pagesize_7_bits,
 			NULL
 		},
+	},
+	{
+		.model = "ATxmega128a4u", .pc = 17,
+		.consts = {
+			cpu_reg_common,
+			cpu_memsize_xmega128a4u,
+			cpu_pagesize_7_bits,
+			NULL
+		}
 	},
 	{ .model = "ATmega1280",  .pc = 16, .inherit = "ATmega640" },
 	{ .model = "ATmega1281",  .pc = 16, .inherit = "ATmega640" },
