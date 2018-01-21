@@ -1609,7 +1609,7 @@ static int avr_custom_des (RAnalEsil *esil) {
 	if (des_round != desctx.round) {
 		desctx.round = des_round;
 	}
-	
+
 	if (!desctx.round) {
 		int i;
 		//generating all round keys
