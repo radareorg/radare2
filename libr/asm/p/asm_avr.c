@@ -420,6 +420,7 @@ RAsmPlugin r_asm_plugin_avr = {
 	.disassemble = &disassemble,
 	.assemble = &assemble,
 	.cpus =
+		"ATmega8," // First one is default
 		"ATmega1280,"
 		"ATmega1281,"
 		"ATmega168,"
@@ -429,7 +430,6 @@ RAsmPlugin r_asm_plugin_avr = {
 		"ATmega32u4,"
 		"ATmega48,"
 		"ATmega640,"
-		"ATmega8,"
 		"ATmega88,"
 		"ATxmega128a4u"
 };
