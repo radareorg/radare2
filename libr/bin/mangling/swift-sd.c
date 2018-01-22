@@ -508,7 +508,7 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 					q += len;
 					p = q;
 				} else {
-					if (q) {
+					if (q && *q) {
 						q++;
 					} else {
 						break;
