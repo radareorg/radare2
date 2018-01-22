@@ -867,7 +867,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (p) {
 		p->interrupt = 0;
 	}
-	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
+	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 1)) {
 		r_print_set_screenbounds (p, addr + i);
 		if (p && p->cons && p->cons->breaked) {
 			break;
@@ -1326,16 +1326,15 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 		size = p->zoom->size;
 	} else {
 		mode = p->zoom->mode;
-		bufz = (ut8 *) malloc (len);
+		bufz = (ut8 *) calloc (1, len);
 		if (!bufz) {
 			return;
 		}
-		bufz2 = (ut8 *) malloc (size);
+		bufz2 = (ut8 *) calloc (1, size);
 		if (!bufz2) {
 			free (bufz);
 			return;
 		}
-		memset (bufz, 0, len);
 
 		// TODO: memoize blocks or gtfo
 		for (i = 0; i < len; i++) {
@@ -1349,7 +1348,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 		p->zoom->buf = bufz;
 		p->zoom->from = from;
 		p->zoom->to = to;
-		p->zoom->size = size;
+		p->zoom->size = len; // size;
 	}
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
 	r_print_hexdump (p, from, bufz, len, 16, 1, size);

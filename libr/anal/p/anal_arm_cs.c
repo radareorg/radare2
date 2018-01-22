@@ -2369,7 +2369,6 @@ jmp $$ + 4 + ( [delta] * 2 )
 			int regBase = REGBASE(0);
 			int delta = MEMDISP(0);
 			if (regBase == ARM_REG_PC) {
-				eprintf ("IS PC\n");
 				op->ptr = addr + 4 + delta;
 			} else {
 				// exotic pld
