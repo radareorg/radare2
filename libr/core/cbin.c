@@ -226,14 +226,14 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 					ptr = range_sep + 1;
 					to = r_num_get (NULL, ptr);
 					if (refaddr >= from && refaddr <= to) {
-						purge = bang ? false : true;
+						purge = !bang;
 						continue;
 					}
 				}
 				addr = r_num_get (NULL, ptr);
 				if (addr != 0 || *ptr == '0') {
 					if (refaddr == addr) {
-						purge = bang ? false : true;
+						purge = !bang;
 						continue;
 					}
 				}
