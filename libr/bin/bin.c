@@ -959,9 +959,11 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	bin->rawstr = rawstr;
 	// Use the current RIODesc otherwise r_io_map_select can swap them later on
 	if (fd < 0) {
-		r_io_free (iob->io);
-		memset (&bin->iob, 0, sizeof (bin->iob));
-		bin->io_owned = false;
+		if (bin->io_owned) {
+			r_io_free (iob->io);
+			memset (&bin->iob, 0, sizeof (bin->iob));
+			bin->io_owned = false;
+		}
 		return false;
 	}
 	//Use the current RIODesc otherwise r_io_map_select can swap them later on
