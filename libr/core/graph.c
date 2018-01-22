@@ -2230,7 +2230,6 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		r_agraph_add_edge (g, fcn_anode, node);
 	}
-	r_list_free (refs);
 #else
 	eprintf ("Must be sdbized\n");
 #endif

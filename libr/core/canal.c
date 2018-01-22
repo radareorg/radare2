@@ -341,7 +341,6 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				}
 			}
 		}
-		r_list_free (refs);
 		// TODO: append counter if name already exists
 		if (use_getopt) {
 			RFlagItem *item = r_flag_get (core->flags, "main");
@@ -387,7 +386,6 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 			ref->type = R_ANAL_REF_TYPE_STRING;
 		}
 	}
-	r_list_free (refs);
 }
 
 static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
@@ -480,7 +478,6 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 		}
 	}
 
-	r_list_free (refs);
 	return 1;
 }
 
@@ -1415,11 +1412,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
 			r_list_foreach (xrefs, iter, ref) {
 				if (from == ref->addr) {
-					r_list_free (xrefs);
 					return true;
 				}
 			}
-			r_list_free (xrefs);
 			// we should analyze and add code ref otherwise aaa != aac
 			if (from != UT64_MAX) {
 				// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
@@ -1481,7 +1476,6 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 			r_cons_printf ("agn %s\n", dst);
 			r_cons_printf ("age %s %s\n", me, dst);
 		}
-		r_list_free (refs);
 		RList *list = r_anal_xrefs_get (core->anal, addr);
 		r_list_foreach (list, iter, ref) {
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
@@ -1558,7 +1552,6 @@ repeat:
 			}
 		} else if (fmt == 2) {
 			if (hideempty && !r_list_length (refs)) {
-				r_list_free (refs);
 				continue;
 			}
 			if (usenames) {
@@ -1682,7 +1675,6 @@ repeat:
 						}
 						first2 = 1;
 					}
-					r_list_free (refs1);
 				}
 			} else {
 				if (refgraph || fcnr->type == 'C') {
@@ -1695,7 +1687,6 @@ repeat:
 				}
 			}
 		}
-		r_list_free (refs);
 		if (fmt == 2) {
 			r_cons_printf ("]}");
 		}
@@ -1789,8 +1780,6 @@ static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 		fcn->meta.numcallrefs = numcallrefs;
 		xrefs = r_anal_xrefs_get (anal, fcn->addr);
 		fcn->meta.numrefs = xrefs? xrefs->length: 0;
-		r_list_free (refs);
-		r_list_free (xrefs);
 
 		// Determine the bounds of the functions address space
 		ut64 min = UT64_MAX;
@@ -1975,7 +1964,6 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		}
 		r_cons_printf ("]");
 	}
-	r_list_free (refs);
 
 	int indegree = 0;
 	xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
@@ -2005,7 +1993,6 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		}
 		r_cons_printf ("]");
 	}
-	r_list_free (xrefs);
 
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"difftype\":\"%s\"",
@@ -2094,7 +2081,6 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	}
 	/*Saving Function stack frame*/
 	r_cons_printf ("afS %"PFMT64d" @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
-	r_list_free (refs);
 	free (name);
 	return 0;
 }
@@ -2141,7 +2127,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 		}
 	}
-	r_list_free (refs);
 
 	int indegree = 0;
 	r_cons_printf ("\ncode-xrefs: ");
@@ -2184,7 +2169,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("function: %s", fcn->diff->name);
 		}
 	}
-	r_list_free (xrefs);
 	free (name);
 	return 0;
 }

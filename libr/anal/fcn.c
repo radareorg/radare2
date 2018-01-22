@@ -2038,12 +2038,60 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 	return edges;
 }
 
+static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
+	RList *result = r_list_new();
+	if (!result) {
+		eprintf ("Failed to create resulting xrefs list\n");
+		return false;
+	}
+	r_list_free (fcn->refs);
+
+	RListIter *iter;
+	RAnalRef *ref;
+	RList *all_refs = r_anal_refs_get (anal, UT64_MAX);
+	r_list_foreach (all_refs, iter, ref) {
+		if (r_anal_fcn_in (fcn, ref->at)) {
+			r_list_append (result, ref);
+		}
+	}
+	fcn->refs = result;
+	return true;
+}
+
+static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
+	RList *result = r_list_new();
+	if (!result) {
+		eprintf ("Failed to create resulting xrefs list\n");
+		return false;
+	}
+	r_list_free (fcn->xrefs);
+
+	RListIter *iter;
+	RAnalRef *ref;
+	RList *all_xrefs = r_anal_xrefs_get (anal, UT64_MAX);
+	r_list_foreach (all_xrefs, iter, ref) {
+		if (fcn->addr == ref->addr) {
+			r_list_append (result, ref);
+		}
+	}
+	fcn->xrefs = result;
+	return true;
+}
+
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = r_list_clone (fcn->refs);
-	return ret;
+	if (anal->ref_cache != fcn->ref_cache) {
+		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
+			fcn->ref_cache = anal->ref_cache;
+		}
+	}
+	return fcn->refs;
 }
 
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = r_list_clone (fcn->xrefs);
-	return ret;
+	if (anal->ref_cache != fcn->ref_cache) {
+		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
+			fcn->ref_cache = anal->ref_cache;
+		}
+	}
+	return fcn->xrefs;
 }
