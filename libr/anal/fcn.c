@@ -753,6 +753,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		}
 repeat:
 		if ((len - addrbytes * idx) < 5) {
+			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
+			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
 			break;
 		}
 		r_anal_op_fini (&op);
