@@ -2054,6 +2054,7 @@ static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
 			r_list_append (result, ref);
 		}
 	}
+	r_list_free (all_refs);
 	fcn->refs = result;
 	return true;
 }
@@ -2074,6 +2075,7 @@ static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
 			r_list_append (result, ref);
 		}
 	}
+	r_list_free (all_xrefs);
 	fcn->xrefs = result;
 	return true;
 }
