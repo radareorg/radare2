@@ -56,7 +56,7 @@ static inline bool r_itv_overlap(RInterval itv, RInterval x) {
 
 #define R_ITV_OVERLAP2(x,y,z) r_itv_overlap2(x->itv, y, z)
 static inline bool r_itv_overlap2(RInterval itv, ut64 addr, ut64 size) {
-	RInterval rai = (RInterval){addr, size};
+	RInterval rai = {addr, size};
 	return r_itv_overlap (itv, rai);
 }
 
