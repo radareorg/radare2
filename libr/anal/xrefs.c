@@ -211,6 +211,7 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	sdb_array_add_num (DB, key, from, 0);
 #endif
 
+	anal->ref_cache++;
 	return true;
 }
 
@@ -228,6 +229,7 @@ R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut
 	XREFKEY (key, sizeof (key), "xref", type, to);
 	sdb_array_remove_num (DB, key, from, 0);
 #endif
+	anal->ref_cache++;
 	return true;
 }
 
