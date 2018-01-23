@@ -773,6 +773,22 @@ static int cb_usextr(void *user, void *data) {
 static int cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		r_cons_printf (
+		    "There can be multiple entries separated by commas. No whitespace before/after entries.\n"
+		    "Possible entries:\n"
+		    "  true         : use the false_positive() classifier in cbin.c\n"
+		    "  addr         : purge string at addr\n"
+		    "  addr1-addr2  : purge all strings in the range addr1-addr2 inclusive\n"
+		    "  !addr        : prevent purge of string at addr by prev entries\n"
+		    "  !addr1-addr2 : prevent purge of strings in range addr1-addr2 inclusive by prev entries\n"
+		    "Neither !true nor !false is supported.\n"
+		    "\n"
+		    "Example usage: e bin.strpurge=true,0-0xff,!0x1a\n"
+		    "  -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
+		    "     with addresses in the range 0-0xff, but not the string at 0x1a.\n");
+		return false;
+	}
 	free (core->bin->strpurge);
 	core->bin->strpurge = !*node->value || !strcmp (node->value, "false")
 	                ? NULL : strdup (node->value);
@@ -2391,11 +2407,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
-	SETCB ("bin.strpurge", "", &cb_strpurge, "Purge strings (true: use the false_positive() "
-	       "classifier in cbin.c, [,addr]*: specific string addrs to purge, [,addr1-addr2]*: purge "
-	       "all strings in the range addr1-addr2 inclusive, [,!addr]*: prevent purge of string at "
-	       "addr by prev entries, [,!addr1-addr2]*: prevent purge of strings in range addr1-addr2 "
-	       "inclusive by prev entries). Neither !true nor !false is supported.");
+	SETCB ("bin.strpurge", "", &cb_strpurge, "Purge strings (e bin.strpurge=? provides more detail)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.strfilter", "", &cb_strfilter);
