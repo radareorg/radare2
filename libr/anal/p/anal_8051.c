@@ -315,7 +315,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emit ("a,pc,--,+,[1]," XW(A) FLAG_P);
 		break;
 	case 0x84: /* div ab */
-		emit ("b,!,OV,=,0,a,b,a,/=,a,b,*,-,-,b,=,0,c,=");
+		emit ("b,0,==,ov,=,b,a,\%,b,a,/=,b,=,0,c,=," FLAG_P);
 		break;
 	case 0x85: /* mov direct, direct */
 		h (XR(IB1) XW(IB2));
@@ -347,7 +347,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		h (XI(DP, "++"));
 		break;
 	case 0xA4: /* mul ab */
-		emit ("8,a,b,*,NUM,>>,NUM,!,!,ov,=,b,=,a,=,0,c,=");
+		emit ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,!,ov,=,0,c,=," FLAG_P);
 		break;
 	case 0xA5: /* "reserved" */
 		emit ("0,trap");
