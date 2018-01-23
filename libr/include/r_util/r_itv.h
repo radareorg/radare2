@@ -3,6 +3,10 @@
 
 #include <r_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // An interval in 64-bit address space which is aware of address space wraparound
 // Precondition: 0 <= size < 2**64 and addr + size <= 2**64
 typedef struct r_interval_t {
@@ -65,5 +69,9 @@ static inline RInterval r_itv_intersect(RInterval itv, RInterval x) {
 	RInterval rai = {addr, end - addr};
 	return rai;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // R_INTERVAL_H
