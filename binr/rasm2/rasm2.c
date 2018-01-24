@@ -604,10 +604,8 @@ int main (int argc, char *argv[]) {
 	r_asm_set_cpu (a, cpu);
 	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
 	r_anal_set_bits (anal, (env_bits && *env_bits)? atoi (env_bits): bits);
-	a->sysregs = r_sysregs_new ();
-	r_sysregs_setup (a->sysregs, arch, cpu);
 	a->syscall = r_syscall_new ();
-	r_syscall_setup (a->syscall, arch, kernel, bits);
+	r_syscall_setup (a->syscall, arch, bits, cpu, kernel);
 	{
 		bool canbebig = r_asm_set_big_endian (a, isbig);
 		if (isbig && !canbebig) {
