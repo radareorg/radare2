@@ -1968,8 +1968,13 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 			data[l++] = 0xe7;
 		} else if (op->operands[1].reg == X86R_EAX && op->operands[1].type & OT_DWORD) {
 			data[l++] = 0xe7;
+		} else {
+			// TODO: this is wrong
+			data[l++] = 0xe7;
 		}
 		data[l++] = immediate;
+	} else {
+		return -1;
 	}
 	return l;
 }
