@@ -655,6 +655,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
 	char *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
+	const char *asmcpu = NULL;
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
@@ -853,9 +854,11 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				else if (!strncmp (ptr, ".fill ", 6))
 					ret = r_asm_pseudo_fill (&op, ptr+6);
 				else if (!strncmp (ptr, ".kernel ", 8))
-					r_syscall_setup (a->syscall, a->cur->arch, ptr+8, a->bits);
+					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 8);
+				else if (!strncmp (ptr, ".cpu ", 5))
+					r_asm_set_cpu (a, ptr + 5);
 				else if (!strncmp (ptr, ".os ", 4))
-					r_syscall_setup (a->syscall, a->cur->arch, ptr+4, a->bits);
+					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 4);
 				else if (!strncmp (ptr, ".hex ", 5))
 					ret = r_asm_pseudo_hex (&op, ptr+5);
 				else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7))

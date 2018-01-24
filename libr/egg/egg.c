@@ -98,6 +98,7 @@ R_API void r_egg_reset (REgg *egg) {
 }
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
+	const char *asmcpu = NULL; // TODO
 	egg->remit = NULL;
 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
@@ -107,12 +108,12 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		egg->arch = R_SYS_ARCH_X86;
 		switch (bits) {
 		case 32:
-			r_syscall_setup (egg->syscall, arch, os, bits);
+			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
 			egg->remit = &emit_x86;
 			egg->bits = bits;
 			break;
 		case 64:
-			r_syscall_setup (egg->syscall, arch, os, bits);
+			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
 			egg->remit = &emit_x64;
 			egg->bits = bits;
 			break;
@@ -123,7 +124,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		switch (bits) {
 		case 16:
 		case 32:
-			r_syscall_setup (egg->syscall, arch, os, bits);
+			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
 			egg->remit = &emit_arm;
 			egg->bits = bits;
 			egg->endian = endian;

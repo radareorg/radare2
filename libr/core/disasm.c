@@ -2752,10 +2752,11 @@ static void ds_print_sysregs(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_STORE:
 		{
 			const int imm = (int)ds->analop.ptr;
-			const RSysregsItem *sr = r_sysregs_get (core->anal, imm, 0);
+			const char *sr = r_syscall_sysreg (core->anal->syscall, "reg", imm);
 			if (sr) {
 				ALIGN;
-				ds_comment (ds, true, "; REG %s - %s", sr->name, sr->description);
+				ds_comment (ds, true, "; REG %s - %s", sr, "");
+				// TODO: add register description description
 				ds->has_description = true;
 			}
 		}

@@ -393,7 +393,6 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 
 static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
-	char *cpu;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = NULL;
@@ -483,14 +482,9 @@ static int cb_asmarch(void *user, void *data) {
 			r_config_set_i (core->config, "asm.pcalign", 0);
 		}
 	}
-	if (cpu = r_config_get (core->config, "anal.cpu")) {
-		if (!r_sysregs_setup (core->anal->sysregs, asmos, cpu)) {
-			//eprintf ("asm.arch: Cannot setup sysregs '%s%s' from '%s'\n",
-			//	asmos, cpu, R2_LIBDIR"/radare2/"R2_VERSION"/sysregs");
-		}
-	}
 	if (core->anal) {
-		if (!r_syscall_setup (core->anal->syscall, node->value, asmos, core->anal->bits)) {
+		const char *asmcpu = r_config_get (core->config, "asm.cpu");
+		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
@@ -545,7 +539,7 @@ static int cb_dbgbtdepth(void *user, void *data) {
 }
 
 static int cb_asmbits(void *user, void *data) {
-	const char *asmos, *asmarch;
+	const char *asmos, *asmarch, *asmcpu;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int ret = 0, bits;
@@ -597,8 +591,9 @@ static int cb_asmbits(void *user, void *data) {
 
 	asmos = r_config_get (core->config, "asm.os");
 	asmarch = r_config_get (core->config, "asm.arch");
+	asmcpu = r_config_get (core->config, "asm.cpu");
 	if (core->anal) {
-		if (!r_syscall_setup (core->anal->syscall, asmarch, asmos, bits)) {
+		if (!r_syscall_setup (core->anal->syscall, asmarch, bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
@@ -722,8 +717,8 @@ static int cb_asmos(void *user, void *data) {
 	}
 	asmarch = r_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
-		r_syscall_setup (core->anal->syscall, asmarch->value,
-				node->value, core->anal->bits);
+		const char *asmcpu = r_config_get (core->config, "asm.cpu");
+		r_syscall_setup (core->anal->syscall, asmarch->value, core->anal->bits, asmcpu, node->value);
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
 	r_anal_set_os (core->anal, node->value);

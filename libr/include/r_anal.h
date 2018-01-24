@@ -610,7 +610,6 @@ typedef struct r_anal_t {
 	RList *vartypes;
 	RReg *reg;
 	ut8 *last_disasm_reg;
-	RSysregs *sysregs;
 	RSyscall *syscall;
 	struct r_anal_op_t *queued;
 	int diff_ops;
