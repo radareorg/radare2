@@ -75,7 +75,7 @@ static RI8051Reg registers[] = {
 #define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2], op->jump, op->fail, op->val)
 
 #define FLAG_C "$c7,c,=,"
-#define FLAG_B "$b7,c,=,"
+#define FLAG_B "$b8,c,=,"
 #define FLAG_AC "$c3,ac,=,"
 #define FLAG_AB "$b3,ac,=,"
 #define FLAG_OV "$c6,ov,=,"
@@ -315,7 +315,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emit ("a,pc,--,+,[1]," XW(A) FLAG_P);
 		break;
 	case 0x84: /* div ab */
-		emit ("b,!,OV,=,0,a,b,a,/=,a,b,*,-,-,b,=,0,c,=");
+		emit ("b,0,==,ov,=,b,a,\%,b,a,/=,b,=,0,c,=," FLAG_P);
 		break;
 	case 0x85: /* mov direct, direct */
 		h (XR(IB1) XW(IB2));
@@ -347,7 +347,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		h (XI(DP, "++"));
 		break;
 	case 0xA4: /* mul ab */
-		emit ("8,a,b,*,NUM,>>,NUM,!,!,ov,=,b,=,a,=,0,c,=");
+		emit ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,!,ov,=,0,c,=," FLAG_P);
 		break;
 	case 0xA5: /* "reserved" */
 		emit ("0,trap");
@@ -369,17 +369,17 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		h ("1," XI(C, "^"));
 		break;
 	case 0xB4: /* cjne a, imm, offset */
-		h (XR(L1) XR(A) "-," CJMP);
+		h (XR(L1) XR(A) "-," FLAG_B CJMP);
 		break;
 	case 0xB5: /* cjne a, direct, offset */
-		h (XR(IB1) XR(A) "-," CJMP);
+		h (XR(IB1) XR(A) "-," FLAG_B CJMP);
 		break;
 	case 0xB6: case 0xB7: /* cjne @ri, imm, offset */
-		j (XR(L1) XR(RI) "-," CJMP);
+		j (XR(L1) XR(RI) "-," FLAG_B CJMP);
 		break;
 	case 0xB8: case 0xB9: case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD: case 0xBE: case 0xBF: /* cjne Rn, imm, offset */
-		h (XR(L1) XR(RN) "-," CJMP);
+		h (XR(L1) XR(RN) "-," FLAG_B CJMP);
 		break;
 	case 0xC0: /* push direct */
 		h (XR(IB1) PUSH1);
