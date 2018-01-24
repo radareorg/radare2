@@ -2442,7 +2442,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("prj.git", "false", "Every project is a git repo and saving is committing");
 	SETPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
-	SETPREF ("prj.simple", "false", "Use simple project saving style (funcions, comments, options)");
+	SETPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
 	SETPREF ("cfg.plugins", "true", "Load plugins at startup");
