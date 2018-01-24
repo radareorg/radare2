@@ -1478,9 +1478,11 @@ static void visual_browse(RCore *core) {
 		" e  eval var configurations\n"
 		" b  blocks\n"
 		" c  classes\n"
-		" h  hud mode (V_)\n"
+		" _  hud mode (V_)\n"
+		" i  imports\n"
 		" t  types\n"
-		" s  seek history\n"
+		" s  symbols\n"
+		" h  history\n"
 		" m  maps\n"
 		" x  xrefs\n"
 		" X  refs\n"
@@ -1508,6 +1510,13 @@ static void visual_browse(RCore *core) {
 		case 'b':
 			r_core_cmd0 (core, "s $(afb~...)");
 			break;
+		case 'i':
+			// XXX ii shows index first and iiq shows no offset :(
+			r_core_cmd0 (core, "s $(ii~...)");
+			break;
+		case 's':
+			r_core_cmd0 (core, "s $(isq~...)");
+			break;
 		case 'm':
 			r_core_cmd0 (core, "s $(dm~...)");
 			break;
@@ -1517,13 +1526,12 @@ static void visual_browse(RCore *core) {
 		case 'X':
 			r_core_visual_refs (core, false);
 			break;
-		case 's':
+		case 'h': // seek history
 			r_core_cmdf (core, "s!~...");
 			break;
 		case 'v':
 			r_core_visual_anal (core);
 			break;
-		case 'h':
 		case '_':
 			r_core_visual_hudstuff (core);
 			break;

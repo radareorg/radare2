@@ -266,7 +266,6 @@ static void choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 	}
 }
 
-
 R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	int bits = 0;
 	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);

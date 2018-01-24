@@ -307,6 +307,7 @@ R_API int r_io_section_set_archbits(RIO *io, ut32 id, const char *arch, int bits
 
 R_API const char *r_io_section_get_archbits(RIO *io, ut64 vaddr, int *bits) {
 	//cache section so we avoid making so many looks up
+	// this may crash if we remove this section, we need a way to invalidate this cache
 	static RIOSection *s = NULL;
 	if (!s || (vaddr < s->vaddr) || (s->vaddr + s->vsize < vaddr)) {
 		s = r_io_section_vget (io, vaddr);
