@@ -207,7 +207,7 @@ def build_sdb(args):
             xp_compat(os.path.join(ROOT, SDB_BUILDDIR))
         if not args.project:
             project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
-            msbuild(project)
+            msbuild(project, '/m')
     else:
         ninja(SDB_BUILDDIR)
 
@@ -238,7 +238,7 @@ def build_r2(args):
             xp_compat(os.path.join(ROOT, args.dir))
         if not args.project:
             project = os.path.join(ROOT, args.dir, 'radare2.sln')
-            msbuild(project)
+            msbuild(project, '/m')
     else:
         ninja(args.dir)
 
