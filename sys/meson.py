@@ -61,19 +61,23 @@ def meson_run(args, launcher):
         log.error('Meson error. Exiting.')
         sys.exit(1)
 
-def ninja(folder, install=False):
+def ninja(folder, *targets):
     """ Start ninja build (i.e. ninja -C build) """
     command = ['ninja', '-C', os.path.join(ROOT, folder)]
-    if install: command.append('install')
+    if targets:
+        command.extend(targets)
     log.debug('Invoking ninja: {}'.format(command))
     ret = subprocess.call(command)
     if ret != 0:
         log.error('Ninja error. Exiting.')
         sys.exit(1)
 
-def msbuild(project):
-    log.info('Starting msbuild %s' % project)
-    ret = subprocess.call(['msbuild', project])
+def msbuild(project, *params):
+    command = ['msbuild', project]
+    if params:
+        command.extend(params)
+    log.info('Invoking MSbuild: %s' % command)
+    ret = subprocess.call(command)
     if ret != 0:
         log.error('MSbuild error. Exiting.')
         sys.exit(1)
@@ -148,7 +152,7 @@ def win_install(args):
     PATH_FMT['R2_VERSION'] = version
 
     if args.backend == 'ninja':
-        ninja(args.dir, install=True)
+        ninja(args.dir, 'install')
     else:
         for d in (r'{BIN}', r'{LIB}'):
             d = d.format(**PATH_FMT)
