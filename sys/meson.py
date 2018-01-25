@@ -2,7 +2,6 @@
 
 import argparse
 import glob
-import inspect
 import logging
 import os
 import re
@@ -27,10 +26,7 @@ def setGlobalVariables():
     global log
     global ROOT
 
-    ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) +
-            os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
-    #if os.name == 'nt' and ' ' in ROOT:
-    #    ROOT = '"{}"'.format(ROOT)
+    ROOT = os.path.abspath(os.path.join(__file__, os.path.pardir, os.path.pardir))
 
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
