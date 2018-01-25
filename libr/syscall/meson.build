@@ -1,6 +1,5 @@
 files=[
 'syscall.c',
-'sysregs.c',
 'ioports.c'
 ]
 
