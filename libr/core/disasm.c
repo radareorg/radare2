@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -243,6 +243,7 @@ typedef struct {
 
 	bool use_json;
 	bool first_line;
+	const char *strip;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -474,6 +475,7 @@ static RDisasmState * ds_init(RCore *core) {
 	}
 	ds->shortcut_pos = r_config_get_i (core->config, "asm.shortcut");
 	ds->core = core;
+	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 	ds->color_comment = P(comment): Color_CYAN;
@@ -821,6 +823,16 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		return source;
 	}
 	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
+}
+
+static bool ds_must_strip(RDisasmState *ds) {
+	if (ds && ds->strip && *ds->strip) {
+		const char * optype = r_anal_optype_to_string (ds->analop.type);
+		if (optype && *optype) {
+			return strstr (optype, ds->strip);
+		}
+	}
+	return false;
 }
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
@@ -4232,8 +4244,18 @@ toro:
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
-		r_asm_set_pc (core->assembler, ds->at);
-		ds_update_ref_lines (ds);
+		// XXX. this must be done in ds_update_pc()
+		// ds_update_pc (ds, ds->at);
+		{
+			r_asm_set_pc (core->assembler, ds->at);
+			ds_update_ref_lines (ds);
+			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
+		}
+		if (ds_must_strip (ds)) {
+			inc = ds->analop.size;
+			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
+			continue;
+		}
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
@@ -4303,12 +4325,20 @@ toro:
 		if (!core->inc) {
 			core->inc = ds->oplen;
 		}
+		// OOPs. double analysis here?
+#if 0
 		if (ds->analop.mnemonic || !ds->lastfail) {
 			r_anal_op_fini (&ds->analop);
 		}
 		if (!ds->lastfail) {
 			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
 		}
+#else
+		if (ds->analop.addr != ds->at) {
+			r_anal_op_fini (&ds->analop);
+			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
+		}
+#endif
 		if (ret < 1) {
 			r_strbuf_init (&ds->analop.esil);
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
@@ -4618,7 +4648,11 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i);
 			hasanal = true;
 		}
-		//r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		if (ds_must_strip (ds)) {
+			continue;
+		}
+		
+		// r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size) {
 			ret = ds->hint->size;
 			ds->oplen = ret;
