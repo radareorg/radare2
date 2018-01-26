@@ -608,16 +608,17 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg1) {
 	case A_DIRECT:
-		op->ptr = buf[1];
+		op->ptr = buf[1] + IRAM;
 		break;
 	case A_BIT:
-		op->ptr = arg_bit (buf[1]);
+		op->ptr = arg_bit (buf[1]) + IRAM;
 		break;
 	case A_IMMEDIATE:
 		op->val = buf[1];
 		break;
 	case A_IMM16:
 		op->val = buf[1] * 256 + buf[2];
+		op->ptr = IRAM + op->val;	// best guess, it's a IRAM pointer
 		break;
 	default:
 		break;
@@ -625,10 +626,15 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg2) {
 	case A_DIRECT:
-		op->ptr = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+		if (arg1 == A_RI || arg1 == A_RN) {
+			op->ptr = IRAM + buf[1];
+		} else if (arg1 != A_DIRECT) {
+			op->ptr = IRAM + buf[2];
+		}
 		break;
 	case A_BIT:
 		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
+		op->ptr += IRAM;
 		break;
 	case A_IMMEDIATE:
 		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
@@ -724,13 +730,8 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JBC:
 	case OP_JNB:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		if (op->size == 2) {
-			op->jump = arg_offset (addr + 2, buf[1]);
-			op->fail = addr + 2;
-		} else if (op->size == 3) {
-			op->jump = arg_offset (addr + 3, buf[2]);
-			op->fail = addr + 3;
-		}
+		op->jump = arg_offset (addr + op->size, buf[1]);
+		op->fail = addr + op->size;
 		break;
 	case OP_INVALID:
 		op->type = R_ANAL_OP_TYPE_ILL;
