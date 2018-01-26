@@ -1060,6 +1060,7 @@ int main(int argc, char **argv, char **envp) {
 					} else {
 						eprintf ("Cannot find project file\n");
 					}
+#if 0
 				} else {
 					// necessary for GDB, otherwise io only works with io.va=false
 					if (fh) {
@@ -1076,6 +1077,7 @@ int main(int argc, char **argv, char **envp) {
 							}
 						}
 					}
+#endif
 				}
 			}
 		} else {
