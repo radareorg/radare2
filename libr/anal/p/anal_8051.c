@@ -9,6 +9,7 @@
 #include <8051_ops.h>
 
 #define IRAM 0x10000
+#define XRAM 0x10100
 #define IRAM_BASE  "0x10000"
 #define XRAM_BASE  "0x10100"
 
@@ -618,7 +619,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case A_IMM16:
 		op->val = buf[1] * 256 + buf[2];
-		op->ptr = IRAM + op->val;	// best guess, it's a IRAM pointer
+		op->ptr = XRAM + op->val;	// best guess, it's a XRAM pointer
 		break;
 	default:
 		break;
