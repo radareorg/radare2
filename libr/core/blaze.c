@@ -223,7 +223,6 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	int invalid_instruction_barrier = -20000;
 	bool debug = r_config_get_i (core->config, "cfg.debug");
 
-
 	block_list = r_list_new ();
 	if (!block_list) {
 		eprintf ("Failed to create block_list\n");

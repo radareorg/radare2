@@ -16,9 +16,9 @@ void r_core_hack_help(const RCore *core) {
 		"wao", " ret1", "make the current opcode return 1",
 		"wao", " ret0", "make the current opcode return 0",
 		"wao", " retn", "make the current opcode return -1",
-		"wao", " un-cjmp", "remove conditional operation to branch",
+		"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
 		"wao", " trap", "make the current opcode a trap",
-		"wao", " swap-cjmp", "swap conditional branch",
+		"wao", " recj", "reverse (swap) conditional branch instruction",
 		"NOTE:", "", "those operations are only implemented for x86 and arm atm.", //TODO
 		NULL
 	};
@@ -94,7 +94,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("ARM jnz hack not supported\n");
 			return false;
 		}
-	} else if (!strcmp (op, "un-cjmp")) {
+	} else if (!strcmp (op, "nocj")) {
 		// TODO: drop conditional bit instead of that hack
 		if (bits == 16) {
 			switch (b[1]) {
@@ -114,7 +114,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("ARM un-cjmp hack not supported\n");
 			return false;
 		}
-	} else if (!strcmp (op, "swap-cjmp")) {
+	} else if (!strcmp (op, "recj")) {
 		eprintf ("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp (op, "ret1")) {
@@ -169,16 +169,23 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("Current opcode is not conditional\n");
 			return false;
 		}
-	} else if (!strcmp (op, "un-cjmp")) {
-		if (b[0] >= 0x70 && b[0] <= 0x7f) {
-			r_core_cmd0 (core, "wx eb\n");
+	} else if (!strcmp (op, "nocj")) {
+		if (*b == 0xf) {
+			r_core_cmd0 (core, "wx 90e9");
+		} else if (b[0] >= 0x70 && b[0] <= 0x7f) {
+			r_core_cmd0 (core, "wx eb");
 		} else {
 			eprintf ("Current opcode is not conditional\n");
 			return false;
 		}
-	} else if (!strcmp (op, "swap-cjmp")) {
-		if (b[0] < 0x80 && b[0] >= 0x70){ // jo, jno, jb, jae, je, jne, jbe, ja, js, jns
-			r_core_cmdf (core, "wx %x\n", (b[0]%2)? b[0] - 1: b[0] + 1);
+	} else if (!strcmp (op, "recj")) {
+		int of = *b == 0xf;
+		if (b[of] < 0x80 && b[of] >= 0x70) { // jo, jno, jb, jae, je, jne, jbe, ja, js, jns
+			if (of) {
+				r_core_cmdf (core, "wx 0f%x\n", (b[1]%2)? b[1] - 1: b[1] + 1);
+			} else {
+				r_core_cmdf (core, "wx %x\n", (b[0]%2)? b[0] - 1: b[0] + 1);
+			}
 		} else {
 			eprintf ("Invalid opcode\n");
 			return false;

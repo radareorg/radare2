@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -635,7 +635,9 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	}
 	case 'o': // "so"
-	{
+	if (input[1] == '?') {
+		eprintf ("Usage: so [n-instructions]\n");
+	} else {
 		int val = 0, ret, i, n = r_num_math (core->num, input + 1);
 		if (n == 0) {
 			n = 1;
