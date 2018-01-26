@@ -731,7 +731,11 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JBC:
 	case OP_JNB:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = arg_offset (addr + op->size, buf[1]);
+		if (op->size == 2) {
+			op->jump = arg_offset (addr + 2, buf[1]);
+		} else if (op->size == 3) {
+			op->jump = arg_offset (addr + 3, buf[2]);
+		}
 		op->fail = addr + op->size;
 		break;
 	case OP_INVALID:
