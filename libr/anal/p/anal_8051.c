@@ -316,7 +316,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emit ("a,pc,--,+,[1]," XW(A) FLAG_P);
 		break;
 	case 0x84: /* div ab */
-		emit ("b,0,==,ov,=,b,a,%%,b,a,/=,b,=,0,c,=," FLAG_P);
+		// note: escape % if this becomes a format string
+		emit ("b,0,==,ov,=,b,a,%,b,a,/=,b,=,0,c,=," FLAG_P);
 		break;
 	case 0x85: /* mov direct, direct */
 		h (XR(IB1) XW(IB2));
