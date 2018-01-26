@@ -2704,12 +2704,11 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		return -1;
 	}
 	buf = malloc (bsz);
-	block = malloc (bsz);
 	if (!buf) {
 		eprintf ("Error: cannot allocate a block\n");
-		free (block);
 		return -1;
 	}
+	block = malloc (bsz);
 	if (!block) {
 		eprintf ("Error: cannot allocate a temp block\n");
 		free (buf);
@@ -2718,7 +2717,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
-	r_io_use_fd (core->io, core->file->fd);
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
