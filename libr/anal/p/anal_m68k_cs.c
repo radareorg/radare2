@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2016 - pancake */
+/* radare2 - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -454,15 +454,24 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->jump = UT32_MAX & (ut64)IMM(0);
 		op->fail = addr + op->size;
 		break;
-	case M68K_INS_LINK:
 	case M68K_INS_LPSTOP:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
 	case M68K_INS_LSL:
 		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
+	case M68K_INS_LINK:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -(st16)IMM(1);
 		break;
 	case M68K_INS_LSR:
 		op->type = R_ANAL_OP_TYPE_SHR;
 		break;
+	case M68K_INS_PEA:
 	case M68K_INS_LEA:
+		op->type = R_ANAL_OP_TYPE_LEA;
+		break;
 	case M68K_INS_MOVE:
 	case M68K_INS_MOVEA:
 	case M68K_INS_MOVEC:
@@ -490,7 +499,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case M68K_INS_PACK:
-	case M68K_INS_PEA:
 	case M68K_INS_PFLUSH:
 	case M68K_INS_PFLUSHA:
 	case M68K_INS_PFLUSHAN:
@@ -574,8 +582,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
+	case M68K_INS_UNPK: // unpack BCD
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case M68K_INS_UNLK:
-	case M68K_INS_UNPK:
+		op->type = R_ANAL_OP_TYPE_POP;
+		// reset stackframe
+		op->stackop = R_ANAL_STACK_SET;
+		op->stackptr = 0;
 		break;
 	}
 	beach:
@@ -643,7 +657,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 RAnalPlugin r_anal_plugin_m68k_cs = {
-	.name = "m68k.cs",
+	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
 	.esil = false,
