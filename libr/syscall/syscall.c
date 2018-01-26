@@ -45,13 +45,11 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 	const char *file = sdb_fmt (0, "%s/%s/%s.sdb",
 		r_sys_prefix (NULL), SYSCALLPATH, name);
 	if (!r_file_exists (file)) {
-		// eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
+	//	eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return false;
 	}
-	sdb_close (db);
-	sdb_reset (db);
-	sdb_open (db, file);
-	return db;
+	sdb_free (db);
+	return sdb_new (0, file, 0);
 }
 
 // TODO: should be renamed to r_syscall_use();
@@ -101,10 +99,12 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 		}
 	}
 
+	sdb_free (s->db);
 	char *dbName = r_str_newf ("syscall/%s-%s-%d", os, arch, bits);
 	s->db = openDatabase (s->db, dbName);
 	free (dbName);
 
+	sdb_free (s->srdb);
 	dbName = r_str_newf ("sysregs/%s-%d-%s", arch, bits, cpu ? cpu: arch);
 	s->srdb = openDatabase (s->srdb, dbName);
 	free (dbName);
