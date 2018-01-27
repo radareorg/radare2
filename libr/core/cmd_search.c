@@ -575,9 +575,12 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 // TODO(maskray) returns RList<RInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, const char *prefix) {
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
-	char *bound_in = r_str_newf ("%s.%s", prefix, "in");
-	char *bound_from = r_str_newf ("%s.%s", prefix, "from");
-	char *bound_to = r_str_newf ("%s.%s", prefix, "to");
+	char bound_in[32];
+	char bound_from[32];
+	char bound_to[32];
+	snprintf (bound_in, sizeof (bound_in), "%s.%s", prefix, "in");
+	snprintf (bound_from, sizeof (bound_from), "%s.%s", prefix, "from");
+	snprintf (bound_to, sizeof (bound_to), "%s.%s", prefix, "to");
 	const ut64 search_from = r_config_get_i (core->config, bound_from),
 	      search_to = r_config_get_i (core->config, bound_to);
 	const RInterval search_itv = {search_from, search_to - search_from};
