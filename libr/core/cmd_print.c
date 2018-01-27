@@ -3008,7 +3008,6 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	int pushes = 0;
 	RAnalOp aop = {0};
 	int i, j, ret;
-	Sdb *db = sdb_new0 ();
 	ut8 *buf = calloc (core->blocksize, 1); // begin of instruction
 	if (!buf) {
 		return;
