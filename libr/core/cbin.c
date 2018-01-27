@@ -219,6 +219,10 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 					bang = true;
 					ptr++;
 				}
+				if (!strcmp (ptr, "all")) {
+					purge = !bang;
+					continue;
+				}
 				range_sep = strchr (ptr, '-');
 				if (range_sep) {
 					*range_sep = 0;
