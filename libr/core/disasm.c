@@ -829,7 +829,7 @@ static bool ds_must_strip(RDisasmState *ds) {
 	if (ds && ds->strip && *ds->strip) {
 		const char * optype = r_anal_optype_to_string (ds->analop.type);
 		if (optype && *optype) {
-			return strstr (optype, ds->strip);
+			return strstr (ds->strip, optype);
 		}
 	}
 	return false;

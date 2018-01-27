@@ -2995,8 +2995,132 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	}
 }
 
+#if 0
+dsmap {
+	r_itv_t addr;
+	ut64 size;
+	ut8 *dis;
+}
+#endif
+
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
+	bool push[512];
+	int pushes = 0;
+	RAnalOp aop = {0};
+	int i, j, ret;
+	Sdb *db = sdb_new0 ();
+	ut8 *buf = calloc (core->blocksize, 1); // begin of instruction
+	if (!buf) {
+		return;
+	}
+	ut8 *raw = calloc (core->blocksize, 1); // instruction coverage
+	if (!raw) {
+		return;
+	}
+	int count = 64;
+	int base = 0;
+	for (i = 0; count > 0 && i < core->blocksize; i++) {
+		r_anal_op_fini (&aop);
+		ret = r_anal_op (core->anal, &aop, addr + i, core->block + i , core->blocksize - i);
+		if (ret < 0 || aop.size < 1) {
+			continue;
+		}
+		buf[i] = 1;
+		for (j = i; j < i + aop.size; j++) {
+			raw[j] = 1;
+		}
+	//	r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr + i);
+		switch (aop.type) {
+		case R_ANAL_OP_TYPE_JMP:
+			r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, i + aop.size - base, addr + base);
+			i = aop.jump - addr - 1;
+			base = i + 1;
+			count--;
+			continue;
+			break;
+#if 0
+		case R_ANAL_OP_TYPE_CJMP:
+			if (aop.jump > addr + i) {
+				if (pushes > 500) {
+					eprintf ("Too deep\n");
+				}
+				push[pushes++] = i + aop.size;
+				i = aop.jump - addr - 1;
+				continue;
+			}
+			break;
+#endif
+		case R_ANAL_OP_TYPE_UCJMP:
+			break;
+		}
+		i += aop.size - 1;
+	}
+#if 0
+	if (base < i) {
+r_cons_printf ("base:\n");
+		r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, i - base, addr + base); //+ aop.size - base, addr + base);
+r_cons_printf ("base:\n");
+		
+	}
+#endif
+	// unlikely
+	int p;
+	for (p = 0; p<pushes; p++) {
+		r_cons_printf ("PUSH 0x%08"PFMT64x"\n", addr + push[p]);
+		for (i = push[p]; i < core->blocksize; i++) {
+			if (buf[i]) {
+				break;
+			}
+			buf[i] = 1;
+			r_anal_op_fini (&aop);
+			ret = r_anal_op (core->anal, &aop, addr + i, core->block + i , core->blocksize - i);
+			if (ret < 0 || aop.size < 1) {
+				continue;
+			}
+			// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr + i);
+			switch (aop.type) {
+			case R_ANAL_OP_TYPE_JMP:
+				if (aop.jump > addr + i) {
+					r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, i + aop.size - base, addr + base);
+					i = aop.jump - addr - 1;
+					base = i + 1;
+					continue;
+				}
+				break;
+#if 0
+			case R_ANAL_OP_TYPE_CJMP:
+				if (aop.jump > addr + i) {
+					if (pushes > 500) {
+						eprintf ("Too deep\n");
+					}
+					push[pushes++] = i + aop.size;
+					i = aop.jump - addr - 1;
+					continue;
+				}
+				break;
+#endif
+			case R_ANAL_OP_TYPE_UCJMP:
+				break;
+			}
+			i += aop.size - 1;
+		}
+	}
+#if 0
+	// linear disasm 
+	for (i = 0; i< core->blocksize; i++) {
+		if (!buf[i]) {
+			continue;
+		}
+		r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr + i);
+		r_anal_op_fini (&aop);
+		ret = r_anal_op (core->anal, &aop, addr + i, core->block + i , core->blocksize - i);
+		i += aop.size
+	}
+#endif
+}
+
+static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
@@ -3021,7 +3145,7 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				asmop.size = 1;
 				continue;
 			}
-			ret = r_anal_op (core->anal, &aop, addr + i, buf +i , len - i);
+			ret = r_anal_op (core->anal, &aop, addr + i, buf + i , len - i);
 			if (ret < 0) {
 				aop.size = 1;
 				continue;
@@ -3053,8 +3177,9 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				}
 			}
 			switch (aop.type) {
-			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_JMP:
+				break;
+			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CJMP:
 				sdb_set (db, sdb_fmt (-1, "label.0x%"PFMT64x, aop.jump),
 					sdb_fmt (-1, "from.0x%"PFMT64x, addr + i), 0);
