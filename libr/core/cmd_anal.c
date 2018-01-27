@@ -1507,7 +1507,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("cond", "%s\n", arg);
 				}
 			}
-			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
+			printline ("stackop", "%d\n", r_anal_stackop_tostring (op.stackop));
+			if (op.stackptr) {
+				printline ("stackptr", "%"PFMT64d"\n", op.stackptr);
+			}
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
@@ -3146,6 +3149,7 @@ repeat:
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
 	if (op.size < 1 || ret < 0) {
@@ -3251,6 +3255,7 @@ repeat:
 out_return_one:
 	r_anal_op_fini (&op);
 	r_cons_break_pop ();
+	// if (must mips here
 	return 1;
 out_return_zero:
 	r_anal_op_fini (&op);
