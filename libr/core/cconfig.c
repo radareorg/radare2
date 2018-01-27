@@ -779,6 +779,7 @@ static int cb_strpurge(void *user, void *data) {
 		r_cons_printf (
 		    "There can be multiple entries separated by commas. No whitespace before/after entries.\n"
 		    "Possible entries:\n"
+		    "  all          : purge all strings\n"
 		    "  true         : use the false_positive() classifier in cbin.c\n"
 		    "  addr         : purge string at addr\n"
 		    "  addr1-addr2  : purge all strings in the range addr1-addr2 inclusive\n"
@@ -786,9 +787,12 @@ static int cb_strpurge(void *user, void *data) {
 		    "  !addr1-addr2 : prevent purge of strings in range addr1-addr2 inclusive by prev entries\n"
 		    "Neither !true nor !false is supported.\n"
 		    "\n"
-		    "Example usage: e bin.strpurge=true,0-0xff,!0x1a\n"
-		    "  -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
-		    "     with addresses in the range 0-0xff, but not the string at 0x1a.\n");
+		    "Examples:\n"
+		    "  e bin.strpurge=true,0-0xff,!0x1a\n"
+		    "    -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
+		    "       with addresses in the range 0-0xff, but not the string at 0x1a.\n"
+		    "  e bin.strpurge=all,!0x1000-0x2000\n"
+		    "    -- purge all strings except the strings with addresses in the range 0x1000-0x2000.\n");
 		return false;
 	}
 	free (core->bin->strpurge);
