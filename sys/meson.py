@@ -197,13 +197,10 @@ def build_sdb(args):
     log.info('Building SDB')
     if not os.path.exists(SDB_BUILDDIR):
         meson(os.path.join(ROOT, 'shlr', 'sdb'), SDB_BUILDDIR,
-              args.prefix, args.backend, args.release, args.shared)
+              args.prefix, args.backend, args.release)
     if args.backend != 'ninja':
-        if args.xp:
-            xp_compat(os.path.join(ROOT, SDB_BUILDDIR))
-        if not args.project:
-            project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
-            msbuild(project, '/m')
+        project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
+        msbuild(project, '/m')
     else:
         ninja(SDB_BUILDDIR)
 
