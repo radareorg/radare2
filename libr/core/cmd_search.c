@@ -590,7 +590,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		fd = core->io->cur->fd;
 	}
 #endif
-	if (mode == NULL) {
+	if (!mode) {
 		mode = r_config_get (core->config, bound_in);
 	}
 	if (protection == -1) {
@@ -637,6 +637,19 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (end != UT64_MAX) {
 			append_bound (list, NULL, search_itv, begin, end - begin);
 			// eprintf ("-[%llx - %llx]\n", begin, end);
+		}
+	} else if (!strcmp (mode, "bin.sections")) {
+		RBinObject *obj = r_bin_cur_object (core->bin);
+		if (obj) {
+			RBinSection *sec;
+			RListIter *iter;
+			r_list_foreach (obj->sections, iter, sec) {
+				if (core->io->va) {
+					append_bound (list, core->io, search_itv, sec->vaddr, sec->vsize);
+				} else {
+					append_bound (list, core->io, search_itv, sec->paddr, sec->size);
+				}
+			}
 		}
 	} else if (!strcmp (mode, "io.section")) {
 		RIOSection *s = r_io_section_vget (core->io, core->offset);

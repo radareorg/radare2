@@ -2551,6 +2551,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	case '?':
 		r_cons_printf ("Usage: @@@ [type]     # types:\n"
 			" symbols\n"
+			" sections\n"
 			" imports\n"
 			" regs\n"
 			" threads\n"
@@ -2626,8 +2627,23 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 's':
-		// symbols
-		{
+		if (each[1] == 'e') {
+			RBinObject *obj = r_bin_cur_object (core->bin);
+			if (obj) {
+				ut64 offorig = core->offset;
+				ut64 bszorig = core->blocksize;
+				RBinSection *sec;
+				RListIter *iter;
+				r_list_foreach (obj->sections, iter, sec) {
+					r_core_seek (core, sec->vaddr, 1);
+					r_core_block_size (core, sec->vsize);
+					r_core_cmd0 (core, cmd);
+				}
+				r_core_seek (core, offorig, 1);
+				r_core_block_size (core, bszorig);
+			}
+		} else {
+			// symbols
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
 			list = r_bin_get_symbols (core->bin);
