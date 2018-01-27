@@ -19,7 +19,8 @@ static const char *help_msg_c[] = {
 	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-	"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
+	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte value",
+	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents",
 	"cw", "[?] [us?] [...]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
@@ -753,6 +754,30 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 	}
 	break;
+	case 'V': // "cV"
+	{
+		int sz = input[1];
+		if (sz == ' ') {
+			switch (r_config_get_i (core->config, "asm.bits")) {
+			case 8: sz = '1'; break;
+			case 16: sz = '2'; break;
+			case 32: sz = '4'; break;
+			case 64: sz = '8'; break;
+			default: sz = '4'; break; // default
+			}
+		} else if (sz == '?') {
+			eprintf ("Usage: cV[1248] [addr] @ addr2\n"
+				"Compare n bytes from one address to current one and return in $? 0 or 1\n");
+		}
+		sz -= '0';
+		if (sz > 0) {
+			ut64 at = r_num_math (core->num, input + 2);
+			ut8 buf[8] = {0};
+			r_io_read_at (core->io, at, buf, sizeof (buf));
+			core->num->value = memcmp (buf, core->block, sz)? 1: 0;
+		}
+	}
+		break;
 	case 'l':
 		if (strchr (input, 'f')) {
 			r_cons_flush ();
