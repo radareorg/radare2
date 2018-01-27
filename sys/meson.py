@@ -97,7 +97,7 @@ def copy(src, dst):
     dst = dst.format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
     log.debug('copy "%s" -> "%s%s"', src, dst, term)
-    for file in glob.iglob(src):
+    for file in glob.iglob(src, recursive='**' in src):
         shutil.copy2(file, dst)
 
 def makedirs(path):
@@ -125,7 +125,7 @@ def xp_compat(builddir):
     log.debug('Translating from %s to %s_xp', version, version)
     newversion = version+'_xp'
 
-    for f in glob.iglob(os.path.join(builddir, '**.vcxproj')):
+    for f in glob.iglob(os.path.join(builddir, '**', '*.vcxproj'), recursive=True):
         with open(f, 'r') as proj:
             c = proj.read()
         c = c.replace(version, newversion)
@@ -155,10 +155,10 @@ def win_install(args):
             if os.path.exists(d):
                 shutil.rmtree(d)
             os.makedirs(d)
-        copy(r'{BUILDDIR}\binr\**.exe', r'{BIN}')
-        copy(r'{BUILDDIR}\libr\**.dll', r'{BIN}')
-        copy(r'{BUILDDIR}\libr\**.lib', r'{LIB}')
-        copy(r'{BUILDDIR}\libr\**.a', r'{LIB}')
+        copy(r'{BUILDDIR}\binr\**\*.exe', r'{BIN}')
+        copy(r'{BUILDDIR}\libr\**\*.dll', r'{BIN}')
+        copy(r'{BUILDDIR}\libr\**\*.lib', r'{LIB}')
+        copy(r'{BUILDDIR}\libr\**\*.a', r'{LIB}')
     makedirs(r'{DIST}')
     move(r'{BIN}\*.exe', r'{DIST}')
     move(r'{BIN}\*.dll', r'{DIST}')
@@ -214,7 +214,7 @@ def build_sdb(args):
     datadirs = [os.path.abspath(p) for p in datadirs]
     for folder in datadirs:
         log.debug('Looking up %s', folder)
-        for f in glob.iglob(os.path.join(folder, '**.sdb.txt')):
+        for f in glob.iglob(os.path.join(folder, '**' '*.sdb.txt'), recursive=True):
             if os.path.isdir(f) or os.path.islink(f):
                 continue
             convert_sdb(f)
