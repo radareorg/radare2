@@ -1507,7 +1507,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("cond", "%s\n", arg);
 				}
 			}
-			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
+			printline ("stackop", "%d\n", r_anal_stackop_tostring (op.stackop));
+			if (op.stackptr) {
+				printline ("stackptr", "%"PFMT64d"\n", op.stackptr);
+			}
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
@@ -3146,6 +3149,7 @@ repeat:
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
 	if (op.size < 1 || ret < 0) {
@@ -3251,6 +3255,7 @@ repeat:
 out_return_one:
 	r_anal_op_fini (&op);
 	r_cons_break_pop ();
+	// if (must mips here
 	return 1;
 out_return_zero:
 	r_anal_op_fini (&op);
@@ -4545,12 +4550,11 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 }
 
 static void cmd_anal_blocks(RCore *core, const char *input) {
-	SdbListIter *iter;
-	RIOSection *s;
-	ut64 min = UT64_MAX;
-	ut64 max = 0;
 
+	ut64 from , to;
+	char *arg = strchr (input, ' ');
 	r_cons_break_push (NULL, NULL);
+#if 0
 	ls_foreach (core->io->sections, iter, s) {
 		/* is executable */
 		if (!(s->flags & R_IO_EXEC)) {
@@ -4570,6 +4574,29 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		if (r_cons_is_breaked ()) {
 			goto ctrl_c;
 		}
+	}
+#endif
+	if (!arg) {
+		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
+		RListIter *iter;
+		RIOMap* map;
+		r_list_foreach (list, iter, map) {
+			from = map->itv.addr;
+			to = r_itv_end (map->itv);
+			if (r_cons_is_breaked ()) {
+				goto ctrl_c;
+			}
+			if (!from && !to) {
+				eprintf ("Cannot determine search boundaries\n");
+			} else if (to - from > UT32_MAX) {
+				eprintf ("Skipping huge range\n");
+			} else {
+				r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
+			}
+		}
+	} else {
+		int sz = r_num_math (core->num, arg + 1);
+		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, sz, core->offset);
 	}
 ctrl_c:
 	r_cons_break_pop ();
@@ -4662,7 +4689,6 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 	RIOMap *r;
 	RBinFile *binfile;
 	ut64 addr;
-	const char *analin = r_config_get (core->config, "anal.in");
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
 		eprintf ("Too big\n");
@@ -4677,7 +4703,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 			m->itv.size = len;
 			r_list_append (ranges, m);
 		} else {
-			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
 		}
 	}
 	r_cons_break_push (NULL, NULL);
@@ -4685,7 +4711,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 		RListIter *iter;
 		RIOMap *map;
 		r_list_free (ranges);
-		ranges = r_core_get_boundaries_prot (core, 0, analin);
+		ranges = r_core_get_boundaries_prot (core, 0, NULL, "anal");
 		r_list_foreach (ranges, iter, map) {
 			ut64 addr = map->itv.addr;
 			if (only_print_flag) {
@@ -5757,8 +5783,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				to = map->addr_end;
 			}
 		} else {
-			const char *analin = r_config_get (core->config, "anal.in");
-			RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+			RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
 			RListIter *iter;
 			RIOMap* map;
 			r_list_foreach (list, iter, map) {
@@ -5984,7 +6009,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	ut64 o_align = geti ("search.align");
-	const char *analin = r_config_get (core->config, "anal.in");
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
@@ -6000,7 +6024,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	// body
 	r_cons_break_push (NULL, NULL);
 	if (is_debug) {
-		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map");
+		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
 		RListIter *iter;
 		RIOMap *map;
 		r_list_foreach (list, iter, map) {
@@ -6013,7 +6037,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	} else {
-		RList *list = r_core_get_boundaries_prot (core, 0, analin);
+		RList *list = r_core_get_boundaries_prot (core, 0, NULL, "anal");
 		RListIter *iter, *iter2;
 		RIOMap *map, *map2;
 		ut64 from = UT64_MAX;
@@ -6199,9 +6223,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 		RListIter *iter;
 		RIOMap* map;
-		// Honors anal.in
-		const char *analin = r_config_get (core->config, "anal.in");
-		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
 		r_list_foreach (list, iter, map) {
 			r_core_seek (core, map->itv.addr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
@@ -6227,10 +6249,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_esil (core, len, addr);
 		} else {
 			ut64 at = core->offset;
-			const char *analin = r_config_get (core->config, "anal.in");
 			RIOMap* map;
 			RListIter *iter;
-			RList *list = r_core_get_boundaries (core, analin);
+			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
 			r_list_foreach (list, iter, map) {
 				r_core_seek (core, map->itv.addr, 1);
 				r_core_anal_esil (core, "$SS", NULL);

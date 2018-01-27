@@ -1279,9 +1279,11 @@ static int cmd_write(void *data, const char *input) {
 	case 'a': // "wa"
 		switch (input[1]) {
 		case 'o': // "wao"
-			if (input[2] == ' ')
-				r_core_hack (core, input+3);
-			else r_core_hack_help (core);
+			if (input[2] == ' ') {
+				r_core_hack (core, input + 3);
+			} else {
+				r_core_hack_help (core);
+			}
 			break;
 		case ' ':
 		case '*':

@@ -160,7 +160,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 	int i, j;
 	RListIter *iter;
 
-	RList *list = r_core_get_boundaries_ok (core);
+	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 	if (!list) {
 		eprintf ("Invalid boundaries\n");
 		goto hell;
@@ -310,9 +310,9 @@ R_API int r_core_search_preludes(RCore *core) {
 	ut64 to = UT64_MAX;
 	int fc0, fc1;
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
-	const char *where = cfg_debug? "dbg.map": "io.sections.exec";
+	char *where = cfg_debug? "dbg.map": "io.sections.exec";
 
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where);
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, "search");
 	RListIter *iter;
 	RIOMap *p;
 
@@ -573,10 +573,13 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 }
 
 // TODO(maskray) returns RList<RInterval>
-R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode) {
+R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, const char *prefix) {
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
-	const ut64 search_from = r_config_get_i (core->config, "search.from"),
-			search_to = r_config_get_i (core->config, "search.to");
+	char *bound_in = r_str_newf ("%s.%s", prefix, "in");
+	char *bound_from = r_str_newf ("%s.%s", prefix, "from");
+	char *bound_to = r_str_newf ("%s.%s", prefix, "to");
+	const ut64 search_from = r_config_get_i (core->config, bound_from),
+	      search_to = r_config_get_i (core->config, bound_to);
 	const RInterval search_itv = {search_from, search_to - search_from};
 #if 0
 	int fd = -1;
@@ -584,6 +587,15 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		fd = core->io->cur->fd;
 	}
 #endif
+	if (mode == NULL) {
+		mode = r_config_get (core->config, bound_in);
+	}
+	if (protection == -1) {
+		protection = R_IO_RWX;
+	}
+	if (!core) {
+		return NULL;
+	}
 	if (!core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io));
 	} else if (!strcmp (mode, "block")) {
@@ -801,11 +813,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			append_bound (list, core->io, search_itv, core->offset, core->blocksize);
 		} else {
 			// TODO: repeat last search doesnt works for /a
-			ut64 from = r_config_get_i (core->config, "search.from");
+			ut64 from = r_config_get_i (core->config, bound_from);
 			if (from == UT64_MAX) {
 				from = core->offset;
 			}
-			ut64 to = r_config_get_i (core->config, "search.to");
+			ut64 to = r_config_get_i (core->config, bound_to);
 			if (to == UT64_MAX) {
 				if (core->io->va) {
 					/* TODO: section size? */
@@ -823,11 +835,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		list = NULL;
 	}
 	return list;
-}
-
-// XXX: deprecate and use _ok function only
-R_API RList *r_core_get_boundaries(RCore *core, const char *mode) {
-	return r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode);
 }
 
 static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
@@ -1134,6 +1141,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 	r_list_free (ropList);
 }
 
+#if 0
 R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	const char *searchin;
 	ut8 prot;
@@ -1162,7 +1170,7 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	if (!strncmp (searchin, "dbg.", 4)\
 	    || !strncmp (searchin, "io.sections", 11)\
 	    || prot & R_IO_EXEC) { /* always true */
-		list = r_core_get_boundaries_prot (core, prot, searchin);
+		list = r_core_get_boundaries_prot (core, prot, "", "search");
 	} else {
 		list = NULL;
 	}
@@ -1180,6 +1188,7 @@ R_API RList *r_core_get_boundaries_ok(RCore *core) {
 	}
 	return list;
 }
+#endif
 
 static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const char *grep, int regexp) {
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
@@ -1265,7 +1274,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	if (!strncmp (smode, "dbg.", 4)\
 	    || !strncmp (smode, "io.sections", 11)\
 	    || prot & R_IO_EXEC) {
-		list = r_core_get_boundaries_prot (core, prot, smode);
+		list = r_core_get_boundaries_prot (core, prot, NULL, "search");
 	} else {
 		list = NULL;
 	}
@@ -1658,8 +1667,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	RAnalEsil *esil = core->anal->esil;
-	const char *searchIn = r_config_get (core->config, "search.in");
-	RList *list = r_core_get_boundaries (core, searchIn);
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "search");
 	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -1959,7 +1967,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	}
 
 	r_list_free (param->boundaries);
-	param->boundaries = r_core_get_boundaries (core, param->mode);
+	param->boundaries = r_core_get_boundaries_prot (core, -1, param->mode, "search");
 	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
 
@@ -2307,10 +2315,9 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 static void search_similar_pattern(RCore *core, int count) {
 	RIOMap *p;
 	RListIter *iter;
-	const char *where = r_config_get (core->config, "search.in");
 
 	r_cons_break_push (NULL, NULL);
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where);
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "search");
 	r_list_foreach (list, iter, p) {
 		search_similar_pattern_in (core, count, p->itv.addr, r_itv_end (p->itv));
 	}
@@ -2458,7 +2465,7 @@ static int cmd_search(void *data, const char *input) {
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	param.mode = r_config_get (core->config, "search.in");
-	param.boundaries = r_core_get_boundaries (core, param.mode);
+	param.boundaries = r_core_get_boundaries_prot (core, -1, param.mode, "search");
 
 	/*
 	   this introduces a bug until we implement backwards search
@@ -2806,8 +2813,7 @@ reread:
 					if (vsize > 0) {
 						RIOMap *map;
 						RListIter *iter;
-						const char *searchIn = r_config_get (core->config, "search.in");
-						RList *list = r_core_get_boundaries (core, searchIn);
+						RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 						r_list_foreach (list, iter, map) {
 							err = 0;
 							int hits = r_core_search_value_in_range (core, map->itv,

@@ -9,6 +9,7 @@
 #include <8051_ops.h>
 
 #define IRAM 0x10000
+#define XRAM 0x10100
 #define IRAM_BASE  "0x10000"
 #define XRAM_BASE  "0x10100"
 
@@ -315,7 +316,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		emit ("a,pc,--,+,[1]," XW(A) FLAG_P);
 		break;
 	case 0x84: /* div ab */
-		emit ("b,0,==,ov,=,b,a,\%,b,a,/=,b,=,0,c,=," FLAG_P);
+		// note: escape % if this becomes a format string
+		emit ("b,0,==,ov,=,b,a,%,b,a,/=,b,=,0,c,=," FLAG_P);
 		break;
 	case 0x85: /* mov direct, direct */
 		h (XR(IB1) XW(IB2));
@@ -608,16 +610,17 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg1) {
 	case A_DIRECT:
-		op->ptr = buf[1];
+		op->ptr = buf[1] + IRAM;
 		break;
 	case A_BIT:
-		op->ptr = arg_bit (buf[1]);
+		op->ptr = arg_bit (buf[1]) + IRAM;
 		break;
 	case A_IMMEDIATE:
 		op->val = buf[1];
 		break;
 	case A_IMM16:
 		op->val = buf[1] * 256 + buf[2];
+		op->ptr = XRAM + op->val;	// best guess, it's a XRAM pointer
 		break;
 	default:
 		break;
@@ -625,10 +628,15 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg2) {
 	case A_DIRECT:
-		op->ptr = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+		if (arg1 == A_RI || arg1 == A_RN) {
+			op->ptr = IRAM + buf[1];
+		} else if (arg1 != A_DIRECT) {
+			op->ptr = IRAM + buf[2];
+		}
 		break;
 	case A_BIT:
 		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
+		op->ptr += IRAM;
 		break;
 	case A_IMMEDIATE:
 		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
@@ -726,11 +734,10 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (op->size == 2) {
 			op->jump = arg_offset (addr + 2, buf[1]);
-			op->fail = addr + 2;
 		} else if (op->size == 3) {
 			op->jump = arg_offset (addr + 3, buf[2]);
-			op->fail = addr + 3;
 		}
+		op->fail = addr + op->size;
 		break;
 	case OP_INVALID:
 		op->type = R_ANAL_OP_TYPE_ILL;

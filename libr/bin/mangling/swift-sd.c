@@ -360,7 +360,10 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 					{
 						int n;
 						const char *Q = getnum (q + 1, &n);
-						strcat (out, getstring (Q, n));
+						const char *res = getstring (Q, n);
+						if (res) {
+							strcat (out, res);
+						}
 						q = Q + n + 1;
 						continue;
 					}

@@ -1404,7 +1404,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x41;
 			}
 			if (op->operands[0].type & OT_WORD) {
-				data[l++] = 0x66;
+				if (a->bits > 16) {
+					data[l++] = 0x66;
+				}
 			}
 			if (op->operands[0].type & OT_BYTE) {
 				data[l++] = 0xb0 | op->operands[0].reg;
@@ -1466,7 +1468,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			} else if (op->operands[0].type & OT_BYTE) {
 				data[l++] = 0xc6;
 			} else if (op->operands[0].type & OT_WORD) {
-				data[l++] = 0x66;
+				if (a->bits > 16) {
+					data[l++] = 0x66;
+				}
 			}
 			offset = op->operands[0].offset * op->operands[0].offset_sign;
 

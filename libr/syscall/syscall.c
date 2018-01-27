@@ -45,10 +45,12 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 	const char *file = sdb_fmt (0, "%s/%s/%s.sdb",
 		r_sys_prefix (NULL), SYSCALLPATH, name);
 	if (!r_file_exists (file)) {
-		// eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
+	//	eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return false;
 	}
-	sdb_close (db);
+	if (!db) {
+		return sdb_new (0, file, 0);
+	}
 	sdb_reset (db);
 	sdb_open (db, file);
 	return db;
