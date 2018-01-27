@@ -310,7 +310,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'B': // "?B"
 		k = r_str_trim_ro (input + 1);
-		tmp = r_core_get_boundaries (core, k);
+		tmp = r_core_get_boundaries_prot (core, -1, k, "search");
 		r_list_foreach (tmp, iter, map) {
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 		}

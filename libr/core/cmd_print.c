@@ -2491,8 +2491,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	RIOMap* map;
 	RListIter *iter;
 	ut64 from = 0, to = 0;
-	const char *zoomin = r_config_get (core->config, "zoom.in");
-	RList *list = core_get_boundaries (core, -1, zoomin, 'z');
+	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
 	ut64 blocksize = 0;
 	int mode = 'b'; // e, p, b, ...
 	int submode = 0; // q, j, ...
@@ -3560,7 +3559,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		off = core->offset;
 		{
-			RList *list = r_core_get_boundaries (core, r_config_get (core->config, "search.in"));
+			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 			RIOMap *map = r_list_first (list);
 			if (map) {
 				from = map->itv.addr;
@@ -5544,8 +5543,7 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			RIOMap* map;
 			RListIter *iter;
-			const char *zoomin = r_config_get (core->config, "zoom.in");
-			RList *list = core_get_boundaries (core, -1, zoomin, 'z');
+			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
 			RListIter *iter1 = list->head;
 			RIOMap* map1 = iter1->data;
 			from = map1->itv.addr;
