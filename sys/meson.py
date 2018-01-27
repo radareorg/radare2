@@ -31,7 +31,7 @@ def setGlobalVariables():
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
-    log.debug('Root:{}'.format(ROOT))
+    log.debug('Root: %s', ROOT)
 
 def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     """ Start meson build (i.e. python meson.py ./ build) """
@@ -47,7 +47,7 @@ def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     else:
         command += ['--default-library', 'static']
 
-    log.debug('Invoking meson: {}'.format(command))
+    log.debug('Invoking meson: %s', command)
     launcher = os.path.join(ROOT, 'sys', 'meson.py')
     meson_run(command, launcher)
 
@@ -62,7 +62,7 @@ def ninja(folder, *targets):
     command = ['ninja', '-C', os.path.join(ROOT, folder)]
     if targets:
         command.extend(targets)
-    log.debug('Invoking ninja: {}'.format(command))
+    log.debug('Invoking ninja: %s', command)
     ret = subprocess.call(command)
     if ret != 0:
         log.error('Ninja error. Exiting.')
@@ -72,7 +72,7 @@ def msbuild(project, *params):
     command = ['msbuild', project]
     if params:
         command.extend(params)
-    log.info('Invoking MSbuild: %s' % command)
+    log.info('Invoking MSbuild: %s', command)
     ret = subprocess.call(command)
     if ret != 0:
         log.error('MSbuild error. Exiting.')
@@ -81,14 +81,14 @@ def msbuild(project, *params):
 def copytree(src, dst):
     src = src.format(**PATH_FMT)
     dst = dst.format(**PATH_FMT)
-    log.debug('copytree "%s" -> "%s"' % (src, dst))
+    log.debug('copytree "%s" -> "%s"', src, dst)
     shutil.copytree(src, dst)
 
 def move(src, dst):
     src = src.format(**PATH_FMT)
     dst = dst.format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
-    log.debug('move "%s" -> "%s%s"' % (src, dst, term))
+    log.debug('move "%s" -> "%s%s"', src, dst, term)
     for file in glob.iglob(src):
         shutil.move(file, dst)
 
@@ -96,20 +96,20 @@ def copy(src, dst):
     src = src.format(**PATH_FMT)
     dst = dst.format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
-    log.debug('copy "%s" -> "%s%s"' % (src, dst, term))
+    log.debug('copy "%s" -> "%s%s"', src, dst, term)
     for file in glob.iglob(src):
         shutil.copy2(file, dst)
 
 def makedirs(path):
     path = path.format(**PATH_FMT)
-    log.debug('makedirs "%s"' % path)
+    log.debug('makedirs "%s"', path)
     os.makedirs(path)
 
 def convert_sdb(f):
     """ Convert f to sdb format """
     sdb = os.path.splitext(f)[0]
     sdb_app = os.path.join(SDB_BUILDDIR, 'sdb')
-    log.debug('Converting {} to {}'.format(f, sdb))
+    log.debug('Converting %s to %s', f, sdb)
     os.system('{app} {outf} = <{inf}'.format(app=sdb_app, outf=sdb, inf=f))
 
 def xp_compat(builddir):
@@ -119,10 +119,10 @@ def xp_compat(builddir):
         version = re.search('<PlatformToolset>(.*)</PlatformToolset>', f.read()).group(1)
 
     if version.endswith('_xp'):
-        log.debug('Skipping %s\\*.vcxproj' % builddir)
+        log.debug('Skipping %s\\*.vcxproj', builddir)
         return
 
-    log.debug('Translating from %s to %s_xp' % (version, version))
+    log.debug('Translating from %s to %s_xp', version, version)
     newversion = version+'_xp'
 
     for f in glob.iglob(os.path.join(builddir, '**.vcxproj')):
@@ -131,7 +131,7 @@ def xp_compat(builddir):
         c = c.replace(version, newversion)
         with open(f, 'w') as proj:
             proj.write(c)
-            log.debug("%s .. OK" % f)
+            log.debug("%s .. OK", f)
 
 def win_install(args):
     global PATH_FMT
@@ -213,7 +213,7 @@ def build_sdb(args):
     datadirs = line.split('=')[1].split()
     datadirs = [os.path.abspath(p) for p in datadirs]
     for folder in datadirs:
-        log.debug('Looking up %s' % folder)
+        log.debug('Looking up %s', folder)
         for f in glob.iglob(os.path.join(folder, '**.sdb.txt')):
             if os.path.isdir(f) or os.path.islink(f):
                 continue
@@ -298,11 +298,11 @@ def main():
         log.error('--xp is not compatible with --backend ninja')
         sys.exit(1)
     if os.name == 'nt' and args.install and os.path.exists(args.install):
-        log.error('%s already exists' % args.install)
+        log.error('%s already exists', args.install)
         sys.exit(1)
 
     # Build it!
-    log.debug('Arguments: {}'.format(args))
+    log.debug('Arguments: %s', args)
     build(args)
     if args.install:
         install(args)
