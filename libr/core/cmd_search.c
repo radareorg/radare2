@@ -572,6 +572,35 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	}
 }
 
+
+R_API RList *core_get_boundaries(RCore *core, int prot, const char *mode, int conf) {
+	const ut64 search_from = r_config_get_i (core->config, "search.from"),
+	      search_to = r_config_get_i (core->config, "search.to");
+	ut64 from, to;
+
+	if (prot == -1) {
+		prot = R_IO_RWX;
+	}
+	switch (conf) {
+	case 'a': // anal.from/to
+		from = r_config_get_i (core->config, "anal.from");
+		to = r_config_get_i (core->config, "anal.to");
+		break;
+	case 'z': // zoom.from/to
+		from = r_config_get_i (core->config, "zoom.from");
+		to = r_config_get_i (core->config, "zoom.to");
+		break;
+	}
+	r_config_set_i (core->config, "search.from", from);
+	r_config_set_i (core->config, "search.to", to);
+
+	RList *list = r_core_get_boundaries_prot (core, prot, mode);
+
+	r_config_set_i (core->config, "search.from", search_from);
+	r_config_set_i (core->config, "search.to", search_to);
+	return list;
+}
+
 // TODO(maskray) returns RList<RInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode) {
 	RList *list = r_list_newf (free); // XXX r_io_map_free);

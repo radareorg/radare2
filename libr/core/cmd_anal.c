@@ -4573,7 +4573,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 #endif
 	if (!arg) {
 		const char *analin = r_config_get (core->config, "anal.in");
-		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+		RList *list = core_get_boundaries (core, R_IO_EXEC, analin, 'a');
 		RListIter *iter;
 		RIOMap* map;
 		r_list_foreach (list, iter, map) {
@@ -4700,7 +4700,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 			m->itv.size = len;
 			r_list_append (ranges, m);
 		} else {
-			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+			ranges = core_get_boundaries (core, R_IO_EXEC, analin, 'a');
 		}
 	}
 	r_cons_break_push (NULL, NULL);
@@ -4708,7 +4708,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 		RListIter *iter;
 		RIOMap *map;
 		r_list_free (ranges);
-		ranges = r_core_get_boundaries_prot (core, 0, analin);
+		ranges = core_get_boundaries (core, 0, analin, 'a');
 		r_list_foreach (ranges, iter, map) {
 			ut64 addr = map->itv.addr;
 			if (only_print_flag) {
@@ -5781,7 +5781,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			}
 		} else {
 			const char *analin = r_config_get (core->config, "anal.in");
-			RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+			RList *list = core_get_boundaries (core, R_IO_EXEC, analin, 'a');
 			RListIter *iter;
 			RIOMap* map;
 			r_list_foreach (list, iter, map) {
@@ -6036,7 +6036,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	} else {
-		RList *list = r_core_get_boundaries_prot (core, 0, analin);
+		RList *list = core_get_boundaries (core, 0, analin, 'a');
 		RListIter *iter, *iter2;
 		RIOMap *map, *map2;
 		ut64 from = UT64_MAX;
@@ -6224,7 +6224,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		RIOMap* map;
 		// Honors anal.in
 		const char *analin = r_config_get (core->config, "anal.in");
-		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, analin);
+		RList *list = core_get_boundaries (core, R_IO_EXEC, analin, 'a');
 		r_list_foreach (list, iter, map) {
 			r_core_seek (core, map->itv.addr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
@@ -6253,7 +6253,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			const char *analin = r_config_get (core->config, "anal.in");
 			RIOMap* map;
 			RListIter *iter;
-			RList *list = r_core_get_boundaries (core, analin);
+			RList *list = core_get_boundaries (core, -1, analin, 'a');
 			r_list_foreach (list, iter, map) {
 				r_core_seek (core, map->itv.addr, 1);
 				r_core_anal_esil (core, "$SS", NULL);
