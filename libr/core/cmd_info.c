@@ -48,7 +48,7 @@ static const char *help_msg_i[] = {
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
 	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
-	"iz-", "", "Purge string via bin.strpurge",
+	"iz-", " [addr]", "Purge string via bin.strpurge",
 	"iZ", "", "Guess size of binary program",
 	NULL
 };
@@ -645,13 +645,22 @@ static int cmd_info(void *data, const char *input) {
 		case 'z':
 			if (input[1] == '-') { //iz-
 				char *strpurge = core->bin->strpurge;
+				ut64 addr = core->offset;
 				bool old_tmpseek = core->tmpseek;
 				input++;
+				if (input[1] == ' ') {
+					const char *argstr = r_str_trim_ro (input + 2);
+					ut64 arg = r_num_get (NULL, argstr);
+					input++;
+					if (arg != 0 || *argstr == '0') {
+						addr = arg;
+					}
+				}
 				core->tmpseek = false;
 				r_core_cmdf (core, "e bin.strpurge=%s%s0x%" PFMT64x,
 				             strpurge ? strpurge : "",
 				             strpurge && *strpurge ? "," : "",
-				             core->offset);
+				             addr);
 				core->tmpseek = old_tmpseek;
 				newline = false;
 			} else if (input[1] == 'z') { //izz
