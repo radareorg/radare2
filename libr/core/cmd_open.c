@@ -103,7 +103,6 @@ static const char *help_msg_om[] = {
 	"ompf", "[fd]", "priorize map by fd",
 	"ompb", " binid", "priorize maps of mapped bin with binid",
 	"omps", " sectionid", "priorize maps of mapped section with sectionid",
-	"om*", "", "show r2 commands to restore mapaddr",
 	NULL
 };
 
@@ -611,12 +610,12 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		}
 		if (strchr (s, ' ')) {
-			int fd = 0, words = 0, rwx = 0;
+			int fd = 0, rwx = 0;
 			ut64 size = 0, vaddr = 0, paddr = 0;
 			const char *name = NULL;
 			bool rwx_arg = false;
 			RIODesc *desc = NULL;
-			words = r_str_word_set0 (s);
+			int words = r_str_word_set0 (s);
 			switch (words) {
 			case 6:
 				name = r_str_word_get0 (s, 5);
