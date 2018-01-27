@@ -125,12 +125,15 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup (loff);
 		if (!clean) return 0;
-		int *cpos;
-		r_str_ansi_filter (clean, NULL, &cpos, 0);
+		int *cpos = NULL;
+		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, 0);
 		m.rm_eo = slen = strlen (clean);
 		r_list_purge (mla[l]);
-		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)){
+		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)) {
 			RRegexMatch *ms = R_NEW0 (RRegexMatch);
+			if (!cpos || m.rm_so >= ncpos) {
+				break;
+			}
 			ms->rm_so = cpos[m.rm_so];
 			ms->rm_eo = cpos[m.rm_eo];
 			r_list_append (mla[l], ms);
