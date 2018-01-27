@@ -67,6 +67,7 @@ static const char *help_msg_ob[] = {
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"obb", " [fd]", "Switch to open binfile by fd number",
+	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
 	"ob-", "[objid]", "Delete binfile by binobjid",
@@ -372,12 +373,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 		r_core_cmd0 (core, ".is*");
 		break;
+	case 'f':
+		// TODO: specify path to file?
+		r_core_bin_load (core, NULL, UT64_MAX);
+		value = input[2] ? input + 2 : NULL;
+		// r2_obf (core, value);
+		break;
 	case 'o': // "obo"
-		value = input[3] ? input + 3 : NULL;
+		value = input[2] ? input + 2 : NULL;
 		if (!value) {
 			eprintf ("Invalid argument");
 			break;
 		}
+		if (*value == ' ') value ++;
 		binobj_num  = *value && r_is_valid_input_num_value (core->num, value) ?
 				r_get_input_num_value (core->num, value) : UT32_MAX;
 		if (binobj_num == UT32_MAX) {

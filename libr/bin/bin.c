@@ -2325,6 +2325,9 @@ R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 		binfile = r_bin_file_find_by_id (bin, binfile_id);
 		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
 	}
+	if (binfile && bin->cur == binfile) {
+		bin->cur = NULL;
+	}
 
 	if (binfile) {
 		binfile->o = NULL;
