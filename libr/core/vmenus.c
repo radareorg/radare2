@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_core.h"
 #include "r_util.h"
@@ -2376,6 +2376,7 @@ R_API void r_core_visual_anal(RCore *core) {
 	int nfcns = r_list_length (core->anal->fcns);
 	RConsEvent olde = core->cons->event_resize;
 	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh;
+	core->cons->event_data = (void *) core;
 	level = 0;
 	addr = core->offset;
 
