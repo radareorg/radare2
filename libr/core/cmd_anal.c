@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2018 - pancake, maijin */
 
 #include "r_util.h"
 #include "r_core.h"
@@ -1507,6 +1507,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("cond", "%s\n", arg);
 				}
 			}
+			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
 			printline ("stackop", "%d\n", r_anal_stackop_tostring (op.stackop));
 			if (op.stackptr) {
 				printline ("stackptr", "%"PFMT64d"\n", op.stackptr);
@@ -4424,7 +4425,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			count = 1;
 		}
 		core_anal_bytes (core, core->block, len, count, input[0]);
-	} break;
+		}
+		break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
@@ -4444,6 +4446,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			count = 1;
 		}
 		core_anal_bytes (core, core->block, len, count, 0);
+		break;
 	}
 	}
 }
