@@ -10,6 +10,7 @@ anal = [
 	'dalvik',
 	'i4004',
 	'i8080',
+	'gb',
 	'm68k_cs',
 	'malbolge',
 	'mips_cs',
