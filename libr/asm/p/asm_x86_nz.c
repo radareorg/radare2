@@ -1172,11 +1172,15 @@ static int opint(RAsm *a, ut8 *data, const Opcode *op) {
 static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	bool is_short = op->is_short;
-	int immediate = op->operands[0].immediate * op->operands[0].sign;
+	st64 bigimm = op->operands[0].immediate * op->operands[0].sign;
+	st64 immediate = op->operands[0].immediate * op->operands[0].sign;
 	if (is_short && (immediate > ST8_MAX || immediate < ST8_MIN)) {
 		return l;
 	}
 	immediate -= a->pc;
+	if (immediate > UT32_MAX || immediate < -UT32_MAX) {
+		return -1;
+	}
 	if (!strcmp (op->mnemonic, "jmp")) {
 		if (op->operands[0].type & OT_GPREG) {
 			data[l++] = 0xff;
@@ -1203,18 +1207,18 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		} else {
 			if (-0x80 <= (immediate - 2) && (immediate - 2) <= 0x7f) {
-					/* relative byte address */
-					data[l++] = 0xeb;
-					data[l++] = immediate - 2;
-				} else {
-					/* relative address */
-					immediate -= 5;
-					data[l++] = 0xe9;
-					data[l++] = immediate;
-					data[l++] = immediate >> 8;
-					data[l++] = immediate >> 16;
-					data[l++] = immediate >> 24;
-				}
+				/* relative byte address */
+				data[l++] = 0xeb;
+				data[l++] = immediate - 2;
+			} else {
+				/* relative address */
+				immediate -= 5;
+				data[l++] = 0xe9;
+				data[l++] = immediate;
+				data[l++] = immediate >> 8;
+				data[l++] = immediate >> 16;
+				data[l++] = immediate >> 24;
+			}
 		}
 		return l;
 	}
