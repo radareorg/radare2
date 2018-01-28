@@ -658,7 +658,7 @@ static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 			"(mdmp_location_descriptor)Location", 0);
 
 	/* Parse each entry in the directory */
-	for (i = 0; i < obj->hdr->number_of_streams; i++) {
+	for (i = 0; i < (int)obj->hdr->number_of_streams; i++) {
 		entry = (struct minidump_directory *)(directory_base + (i * sizeof (struct minidump_directory)));
 		r_bin_mdmp_init_directory_entry (obj, entry);
 	}
