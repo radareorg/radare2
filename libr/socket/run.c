@@ -235,7 +235,7 @@ static void setRVA(const char *v) {
 #endif
 
 // TODO: move into r_util? r_run_... ? with the rest of funcs?
-static void setASLR(int enabled) {
+static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
 	if (enabled) {
 		setRVA ("2\n");
@@ -252,8 +252,13 @@ static void setASLR(int enabled) {
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
 	// disable this because its
-	//eprintf ("Patch mach0.hdr.flags with:\n"
-	//	"f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
+	const char *argv0 = r->_system ? r->_system
+		: r->_program ? r->_program
+		: r->_args[0] ? r->_args[0]
+		: "/path/to/exec";
+	eprintf ("To disable aslr patch mach0.hdr.flags with:\n"
+		"r2 -qwnc 'wx 000000 @ 0x18' %s\n", argv0);
+	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
@@ -697,7 +702,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		return 1;
 	}
 	if (p->_aslr != -1)
-		setASLR (p->_aslr);
+		setASLR (p, p->_aslr);
 #if __UNIX__
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
 	if (p->_maxfd)
