@@ -1178,7 +1178,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 		return l;
 	}
 	immediate -= a->pc;
-	if (immediate > UT32_MAX || immediate < -UT32_MAX) {
+	if (immediate > ST32_MAX || immediate < -ST32_MAX) {
 		return -1;
 	}
 	if (!strcmp (op->mnemonic, "jmp")) {
