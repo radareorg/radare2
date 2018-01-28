@@ -791,8 +791,8 @@ static int cb_strpurge(void *user, void *data) {
 		    "  e bin.strpurge=true,0-0xff,!0x1a\n"
 		    "    -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
 		    "       with addresses in the range 0-0xff, but not the string at 0x1a.\n"
-		    "  e bin.strpurge=all,!0x1000-0x2000\n"
-		    "    -- purge all strings except the strings with addresses in the range 0x1000-0x2000.\n");
+		    "  e bin.strpurge=all,!0x1000-0x1fff\n"
+		    "    -- purge all strings except the strings with addresses in the range 0x1000-0x1fff.\n");
 		return false;
 	}
 	free (core->bin->strpurge);
