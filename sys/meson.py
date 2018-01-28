@@ -1,4 +1,4 @@
-## Meson build for radare2
+""" Meson build for radare2 """
 
 import argparse
 import glob
@@ -26,7 +26,7 @@ def setGlobalVariables():
     global log
     global ROOT
 
-    ROOT = os.path.abspath(os.path.join(__file__, os.path.pardir, os.path.pardir))
+    ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
@@ -119,7 +119,7 @@ def xp_compat(builddir):
         version = re.search('<PlatformToolset>(.*)</PlatformToolset>', f.read()).group(1)
 
     if version.endswith('_xp'):
-        log.debug('Skipping %s\\*.vcxproj', builddir)
+        log.info('Skipping %s', builddir)
         return
 
     log.debug('Translating from %s to %s_xp', version, version)
@@ -134,8 +134,6 @@ def xp_compat(builddir):
             log.debug("%s .. OK", f)
 
 def win_install(args):
-    global PATH_FMT
-
     with open(os.path.join(ROOT, 'configure.acr')) as f:
         f.readline()
         version = f.readline().split(' ')[1].rstrip()
@@ -197,7 +195,7 @@ def build_sdb(args):
     log.info('Building SDB')
     if not os.path.exists(SDB_BUILDDIR):
         meson(os.path.join(ROOT, 'shlr', 'sdb'), SDB_BUILDDIR,
-              args.prefix, args.backend, args.release)
+              os.path.join(ROOT, SDB_BUILDDIR), args.backend, args.release)
     if args.backend != 'ninja':
         project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
         msbuild(project, '/m')
@@ -214,7 +212,7 @@ def build_sdb(args):
     datadirs = [os.path.abspath(p) for p in datadirs]
     for folder in datadirs:
         log.debug('Looking up %s', folder)
-        for f in glob.iglob(os.path.join(folder, '**' '*.sdb.txt'), recursive=True):
+        for f in glob.iglob(os.path.join(folder, '**', '*.sdb.txt'), recursive=True):
             if os.path.isdir(f) or os.path.islink(f):
                 continue
             convert_sdb(f)
@@ -300,6 +298,8 @@ def main():
     if os.name == 'nt' and args.install and os.path.exists(args.install):
         log.error('%s already exists', args.install)
         sys.exit(1)
+    if os.name == 'nt' and not args.prefix:
+        args.prefix = os.path.join(ROOT, args.dir)
 
     # Build it!
     log.debug('Arguments: %s', args)
