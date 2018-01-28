@@ -313,9 +313,12 @@ purge-dev:
 include libr/config.mk
 
 strip:
-	-for FILE in ${R2BINS} ; do ${STRIP} -s "${DESTDIR}${BINDIR}/$$FILE" 2> /dev/null ; done
-	-for FILE in "${DESTDIR}${LIBDIR}/libr_"*".${EXT_SO}" "${DESTDIR}${LIBDIR}/libr2.${EXT_SO}" ; do \
-		 ${STRIP} -s "$$FILE" ; done
+	#-for FILE in ${R2BINS} ; do ${STRIP} -s "${DESTDIR}${BINDIR}/$$FILE" 2> /dev/null ; done
+ifeq ($(HOST_OS),darwin)
+	-${STRIP} -STxX "${DESTDIR}${LIBDIR}/libr_"*".${EXT_SO}"
+else
+	-${STRIP} -s "${DESTDIR}${LIBDIR}/libr_"*".${EXT_SO}"
+endif
 
 purge: purge-doc purge-dev user-uninstall
 	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
