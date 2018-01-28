@@ -1,8 +1,7 @@
-## Meson build for radare2
+""" Meson build for radare2 """
 
 import argparse
 import glob
-import inspect
 import logging
 import os
 import re
@@ -14,11 +13,8 @@ from mesonbuild import mesonmain
 
 BUILDDIR = 'build'
 SDB_BUILDDIR = 'build_sdb'
-SDB = os.path.join(SDB_BUILDDIR, 'sdb')
 
 BACKENDS = ['ninja', 'vs2015', 'vs2017']
-BLACKLIST = ['Makefile', 'makefile']
-EXTENSIONS = ['sdb.txt']
 
 PATH_FMT = {}
 
@@ -30,15 +26,12 @@ def setGlobalVariables():
     global log
     global ROOT
 
-    ROOT = os.path.abspath(inspect.getfile(inspect.currentframe()) +
-            os.path.join(os.path.pardir, os.path.pardir, os.path.pardir))
-    #if os.name == 'nt' and ' ' in ROOT:
-    #    ROOT = '"{}"'.format(ROOT)
+    ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
     logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
-    log.debug('Root:{}'.format(ROOT))
+    log.debug('Root: %s', ROOT)
 
 def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     """ Start meson build (i.e. python meson.py ./ build) """
@@ -54,7 +47,7 @@ def meson(root, build, prefix=None, backend=None, release=False, shared=False):
     else:
         command += ['--default-library', 'static']
 
-    log.debug('Invoking meson: {}'.format(command))
+    log.debug('Invoking meson: %s', command)
     launcher = os.path.join(ROOT, 'sys', 'meson.py')
     meson_run(command, launcher)
 
@@ -64,19 +57,23 @@ def meson_run(args, launcher):
         log.error('Meson error. Exiting.')
         sys.exit(1)
 
-def ninja(folder, install=False):
+def ninja(folder, *targets):
     """ Start ninja build (i.e. ninja -C build) """
     command = ['ninja', '-C', os.path.join(ROOT, folder)]
-    if install: command.append('install')
-    log.debug('Invoking ninja: {}'.format(command))
+    if targets:
+        command.extend(targets)
+    log.debug('Invoking ninja: %s', command)
     ret = subprocess.call(command)
     if ret != 0:
         log.error('Ninja error. Exiting.')
         sys.exit(1)
 
-def msbuild(project):
-    log.info('Starting msbuild %s' % project)
-    ret = subprocess.call(['msbuild', project])
+def msbuild(project, *params):
+    command = ['msbuild', project]
+    if params:
+        command.extend(params)
+    log.info('Invoking MSbuild: %s', command)
+    ret = subprocess.call(command)
     if ret != 0:
         log.error('MSbuild error. Exiting.')
         sys.exit(1)
@@ -84,14 +81,14 @@ def msbuild(project):
 def copytree(src, dst):
     src = src.format(**PATH_FMT)
     dst = dst.format(**PATH_FMT)
-    log.debug('copytree "%s" -> "%s"' % (src, dst))
+    log.debug('copytree "%s" -> "%s"', src, dst)
     shutil.copytree(src, dst)
 
 def move(src, dst):
     src = src.format(**PATH_FMT)
     dst = dst.format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
-    log.debug('move "%s" -> "%s%s"' % (src, dst, term))
+    log.debug('move "%s" -> "%s%s"', src, dst, term)
     for file in glob.iglob(src):
         shutil.move(file, dst)
 
@@ -99,43 +96,21 @@ def copy(src, dst):
     src = src.format(**PATH_FMT)
     dst = dst.format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
-    log.debug('copy "%s" -> "%s%s"' % (src, dst, term))
-    for file in glob.iglob(src):
+    log.debug('copy "%s" -> "%s%s"', src, dst, term)
+    for file in glob.iglob(src, recursive='**' in src):
         shutil.copy2(file, dst)
 
 def makedirs(path):
     path = path.format(**PATH_FMT)
-    log.debug('makedirs "%s"' % path)
+    log.debug('makedirs "%s"', path)
     os.makedirs(path)
 
-def convert_sdb(folder, f):
+def convert_sdb(f):
     """ Convert f to sdb format """
-    base, _ = get_base_extension(f)
-    inf = os.path.join(folder, f)
-    sdb = os.path.join(folder, base) + '.sdb'
-    log.debug('Converting {} to {}'.format(inf, sdb))
-    os.system('{sdb} {outf} = <{inf}'.format(sdb=SDB, outf=sdb, inf=inf))
-
-def get_base_extension(f):
-    """ file.sdb.txt => file, .txt """
-    n = f.split('.')
-    if len(n) == 1: return n[0], ''
-    return n[0], '.'.join(n[1:])
-
-def handle_folder(folder):
-    """ Convert each suitable file inside specified folder to sdb file """
-    log.debug('Handling {} directory...'.format(folder))
-    for f in os.listdir(folder):
-        if f in BLACKLIST:
-            continue
-        base, ext = get_base_extension(f)
-        absf = os.path.join(folder, f)
-        if os.path.isdir(absf) and not os.path.islink(absf):
-            handle_folder(absf)
-            continue
-        if ext not in EXTENSIONS:
-            continue
-        convert_sdb(folder, f)
+    sdb = os.path.splitext(f)[0]
+    sdb_app = os.path.join(SDB_BUILDDIR, 'sdb')
+    log.debug('Converting %s to %s', f, sdb)
+    os.system('{app} {outf} = <{inf}'.format(app=sdb_app, outf=sdb, inf=f))
 
 def xp_compat(builddir):
     log.info('Running XP compat script')
@@ -144,25 +119,21 @@ def xp_compat(builddir):
         version = re.search('<PlatformToolset>(.*)</PlatformToolset>', f.read()).group(1)
 
     if version.endswith('_xp'):
-        log.debug('Skipping %s\\*.vcxproj' % builddir)
+        log.info('Skipping %s', builddir)
         return
 
-    log.debug('Translating from %s to %s_xp' % (version, version))
+    log.debug('Translating from %s to %s_xp', version, version)
     newversion = version+'_xp'
 
-    for root, dirs, files in os.walk(builddir):
-        for f in files:
-            if f.endswith('.vcxproj'):
-                with open(os.path.join(root, f), 'r') as proj:
-                    c = proj.read()
-                c = c.replace(version, newversion)
-                with open(os.path.join(root, f), 'w') as proj:
-                    proj.write(c)
-                    log.debug("%s .. OK" % f)
+    for f in glob.iglob(os.path.join(builddir, '**', '*.vcxproj'), recursive=True):
+        with open(f, 'r') as proj:
+            c = proj.read()
+        c = c.replace(version, newversion)
+        with open(f, 'w') as proj:
+            proj.write(c)
+            log.debug("%s .. OK", f)
 
 def win_install(args):
-    global PATH_FMT
-
     with open(os.path.join(ROOT, 'configure.acr')) as f:
         f.readline()
         version = f.readline().split(' ')[1].rstrip()
@@ -175,7 +146,7 @@ def win_install(args):
     PATH_FMT['R2_VERSION'] = version
 
     if args.backend == 'ninja':
-        ninja(args.dir, install=True)
+        ninja(args.dir, 'install')
     else:
         for d in (r'{BIN}', r'{LIB}'):
             d = d.format(**PATH_FMT)
@@ -224,13 +195,10 @@ def build_sdb(args):
     log.info('Building SDB')
     if not os.path.exists(SDB_BUILDDIR):
         meson(os.path.join(ROOT, 'shlr', 'sdb'), SDB_BUILDDIR,
-              args.prefix, args.backend, args.release, args.shared)
+              os.path.join(ROOT, SDB_BUILDDIR), args.backend, args.release)
     if args.backend != 'ninja':
-        if args.xp:
-            xp_compat(os.path.join(ROOT, SDB_BUILDDIR))
-        if not args.project:
-            project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
-            msbuild(project)
+        project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
+        msbuild(project, '/m')
     else:
         ninja(SDB_BUILDDIR)
 
@@ -242,9 +210,12 @@ def build_sdb(args):
             line = f.readline()
     datadirs = line.split('=')[1].split()
     datadirs = [os.path.abspath(p) for p in datadirs]
-    log.debug('Looking up {}'.format(', '.join(datadirs)))
     for folder in datadirs:
-        handle_folder(folder)
+        log.debug('Looking up %s', folder)
+        for f in glob.iglob(os.path.join(folder, '**', '*.sdb.txt'), recursive=True):
+            if os.path.isdir(f) or os.path.islink(f):
+                continue
+            convert_sdb(f)
     log.debug('Done')
 
 def build_r2(args):
@@ -258,7 +229,7 @@ def build_r2(args):
             xp_compat(os.path.join(ROOT, args.dir))
         if not args.project:
             project = os.path.join(ROOT, args.dir, 'radare2.sln')
-            msbuild(project)
+            msbuild(project, '/m')
     else:
         ninja(args.dir)
 
@@ -325,11 +296,13 @@ def main():
         log.error('--xp is not compatible with --backend ninja')
         sys.exit(1)
     if os.name == 'nt' and args.install and os.path.exists(args.install):
-        log.error('%s already exists' % args.install)
+        log.error('%s already exists', args.install)
         sys.exit(1)
+    if os.name == 'nt' and not args.prefix:
+        args.prefix = os.path.join(ROOT, args.dir)
 
     # Build it!
-    log.debug('Arguments: {}'.format(args))
+    log.debug('Arguments: %s', args)
     build(args)
     if args.install:
         install(args)
