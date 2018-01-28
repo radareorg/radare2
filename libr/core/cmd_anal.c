@@ -1508,7 +1508,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 			}
 			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
-			printline ("stackop", "%d\n", r_anal_stackop_tostring (op.stackop));
+			printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
 			if (op.stackptr) {
 				printline ("stackptr", "%"PFMT64d"\n", op.stackptr);
 			}
