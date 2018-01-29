@@ -726,7 +726,7 @@ static int cmd_cmp(void *data, const char *input) {
 			core->num->value = 1;
 			if (*b == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0
+				core->num->value = 0;
 			}
 		}
 		break;
