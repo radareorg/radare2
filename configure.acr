@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 2.3.0-git
+VERSION 2.3.0
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -18,7 +18,7 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	LIBMAGIC = -lmagic ;
 }{
 	USE_LIB_MAGIC = 0 ;
-	LIBMAGIC = ;
+	LIBMAGIC = '' ;
 }
 
 (( useful for static builds . see sys/static.sh ))
@@ -43,11 +43,11 @@ IFAND HAVE_LIB_Z USE_ZIP {
 		LIBZIP = -lz -lzip ;
 	}{
 		USE_LIB_ZIP = 0 ;
-		LIBZIP = ; (( static linking to shlr/zip ))
+		LIBZIP = '' ; (( static linking to shlr/zip ))
 	}
 }{
 	USE_LIB_ZIP = 0 ;
-	LIBZIP = ; (( static linking to shlr/zip ))
+	LIBZIP = '' ; (( static linking to shlr/zip ))
 }
 
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
