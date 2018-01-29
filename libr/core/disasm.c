@@ -106,6 +106,7 @@ typedef struct {
 	bool show_offdec; // dupe for r_print->flags
 	bool show_bbline;
 	bool show_emu;
+	bool pre_emu;
 	bool show_emu_str;
 	bool show_emu_stack;
 	bool show_emu_write;
@@ -514,6 +515,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->immstr = r_config_get_i (core->config, "asm.immstr");
 	ds->immtrim = r_config_get_i (core->config, "asm.immtrim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
+	ds->pre_emu = r_config_get_i (core->config, "asm.emu.pre");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
@@ -3566,6 +3568,32 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	return 0;
 }
 
+static void ds_pre_emulation(RDisasmState *ds) {
+	RFlagItem *f = r_flag_get_at (ds->core->flags, ds->core->offset, true);
+	if (!f) {
+		return;
+	}
+	ut64 base = f->offset;
+	RAnalEsil *esil = ds->core->anal->esil;
+	int i, end = ds->core->offset - base;
+	int maxemu = 1024 * 1024;
+	if (end < 0 || end > maxemu) {
+		return;
+	}
+	for (i = 0; i < end; i++) {
+		ut64 addr = base + i;
+		RAnalOp* op = r_core_anal_op (ds->core, addr);
+		if (op) {
+			r_anal_esil_set_pc (esil, addr);
+			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
+			if (op->size > 0) {
+				i += op->size - 1;
+			}
+			r_anal_op_free (op);
+		}
+	}
+}
+
 static void ds_print_esil_anal_init(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
@@ -3592,6 +3620,11 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
 	}
 	ds->esil_regstate = r_reg_arena_peek (core->anal->reg);
+
+	// TODO: emulate N instructions BEFORE the current offset to get proper full function emulation
+	if (ds->pre_emu) {
+		ds_pre_emulation (ds);
+	}
 }
 
 static void ds_print_esil_anal_fini(RDisasmState *ds) {

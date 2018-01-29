@@ -2324,6 +2324,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.dwarf.file", "true", "Show filename of asm.dwarf in pd");
 	SETPREF ("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
+	SETPREF ("asm.emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETPREF ("asm.emustack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
