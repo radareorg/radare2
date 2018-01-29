@@ -361,7 +361,7 @@ dotherax:
 		char *out = calloc (sizeof (char), (len + 2) / 3 * 4 + 1); // ceil(len/3)*4 plus 1 for NUL
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
