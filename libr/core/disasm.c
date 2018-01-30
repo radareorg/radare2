@@ -571,9 +571,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
-	ds->show_emu_str = r_config_get_i (core->config, "asm.emustr");
-	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
-	ds->show_emu_stack = r_config_get_i (core->config, "asm.emustack");
+	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
+	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
+	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
 	ds->stackFd = -1;
 	if (ds->show_emu_stack) {
 		// TODO: initialize fake stack in here
@@ -3733,7 +3733,7 @@ static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
 
 static bool can_emulate_metadata(RCore * core, ut64 at) {
 	const char *infos;
-	const char *emuskipmeta = r_config_get (core->config, "asm.emuskip");
+	const char *emuskipmeta = r_config_get (core->config, "asm.emu.skip");
 	char key[32];
 	Sdb *s = core->anal->sdb_meta;
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
@@ -3980,7 +3980,7 @@ beach:
 
 static void ds_print_calls_hints(RDisasmState *ds) {
 	int emu = r_config_get_i (ds->core->config, "asm.emu");
-	int emuwrite = r_config_get_i (ds->core->config, "asm.emuwrite");
+	int emuwrite = r_config_get_i (ds->core->config, "asm.emu.write");
 	if (emu && emuwrite) {
 		// this is done by ESIL
 		return;
