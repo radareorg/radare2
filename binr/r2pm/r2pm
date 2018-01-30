@@ -490,6 +490,11 @@ case "$1" in
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
 	r2pm_uninstall "$@"
 	;;
+-cp)
+	if [ -n "${R2PM_PLUGDIR}" ]; then
+		rm -f "${R2PM_PLUGDIR}/*"
+	fi
+	;;
 -ci)
 	shift
 	${R2PM} clean $*
@@ -627,6 +632,7 @@ Commands:
  -H variable                 show value of given variable
  -c,clean ([git/dir])        clear source cache (GITDIR)
  -ci (pkgname)               clean install of given package
+ -cp                         clean the user's home plugin directory
  -d,doc [pkgname]            show documentation for given package
  -w <pkgname>                what/where is installed
  init | update ..            initialize/update database
