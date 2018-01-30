@@ -713,32 +713,40 @@ static int cmd_cmp(void *data, const char *input) {
 		case '1':
 		{
 			ut8 n = (ut8) r_num_math (core->num, input + 2);
+			core->num->value = 1;
 			if (core->block[0] == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
 		}
 		break;
 		case '2':
 		{
 			ut16 *b = (ut16 *) core->block, n = (ut16) r_num_math (core->num, input + 2);
+			core->num->value = 1;
 			if (*b == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
 		}
 		break;
 		case '4':
 		{
 			ut32 *b = (ut32 *) core->block, n = (ut32) r_num_math (core->num, input + 2);
+			core->num->value = 1;
 			if (*b == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
 		}
 		break;
 		case '8':
 		{
 			ut64 *b = (ut64 *) core->block, n = (ut64) r_num_math (core->num, input + 2);
+			core->num->value = 1;
 			if (*b == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
 		}
 		break;
