@@ -2326,10 +2326,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF ("asm.emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
-	SETPREF ("asm.emustack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
-	SETCB ("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
-	SETPREF ("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
-	n = NODECB ("asm.emuskip", "ds", &cb_emuskip);
+	SETPREF ("asm.emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
+	SETCB ("asm.emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
+	SETPREF ("asm.emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
+	n = NODECB ("asm.emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
 	SETOPTIONS (n, "d", "c", "s", "f", "m", "h", "C", "r", NULL);
 	SETPREF ("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
