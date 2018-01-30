@@ -591,8 +591,8 @@ static RDisasmState * ds_init(RCore *core) {
 		} else {
 			r_io_map_set_name (map, "fake.stack");
 		}
-eprintf ("Make fake stack\n");
 	}
+	ds->stackptr = core->anal->stackptr;
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -2060,6 +2060,28 @@ static void ds_print_cycles(RDisasmState *ds) {
 	}
 }
 
+static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
+	ds->ostackptr = ds->stackptr;
+	switch (op->stackop) {
+	case R_ANAL_STACK_RESET:
+		ds->stackptr = 0;
+		break;
+	case R_ANAL_STACK_SET:
+		ds->stackptr = op->stackptr;
+		break;
+	case R_ANAL_STACK_INC:
+		ds->stackptr += op->stackptr;
+		break;
+	}
+eprintf ("JAJA 0x%llx\n", op->addr);
+	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
+	 * Use RAnalFunction->RAnalOp->stackptr? */
+	if (op->type == R_ANAL_OP_TYPE_RET) {
+		ds->stackptr = 0;
+	}
+	ds->core->anal->stackptr = ds->stackptr;
+}
+
 static void ds_print_stackptr(RDisasmState *ds) {
 	if (ds->show_stackptr) {
 		r_cons_printf ("%5d%s", ds->stackptr,
@@ -2067,20 +2089,7 @@ static void ds_print_stackptr(RDisasmState *ds) {
 			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
 			ds->stackptr > ds->ostackptr? "+":
 			ds->stackptr < ds->ostackptr? "-": " ");
-		ds->ostackptr = ds->stackptr;
-		switch (ds->analop.stackop) {
-		case R_ANAL_STACK_RESET:
-			ds->stackptr = 0;
-			break;
-		case R_ANAL_STACK_INC:
-			ds->stackptr += ds->analop.stackptr;
-			break;
-		}
-		/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-		 * Use RAnalFunction->RAnalOp->stackptr? */
-		if (ds->analop.type == R_ANAL_OP_TYPE_RET) {
-			ds->stackptr = 0;
-		}
+		ds_update_stackptr (ds, &ds->analop);
 	}
 }
 
@@ -3569,6 +3578,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 }
 
 static void ds_pre_emulation(RDisasmState *ds) {
+	bool do_esil = ds->show_emu;
+	if (!ds->pre_emu) {
+		return;
+	}
 	RFlagItem *f = r_flag_get_at (ds->core->flags, ds->core->offset, true);
 	if (!f) {
 		return;
@@ -3580,15 +3593,19 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	if (end < 0 || end > maxemu) {
 		return;
 	}
+	ds->stackptr = ds->core->anal->stackptr;
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
 		RAnalOp* op = r_core_anal_op (ds->core, addr);
 		if (op) {
-			r_anal_esil_set_pc (esil, addr);
-			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
-			if (op->size > 0) {
-				i += op->size - 1;
+			if (do_esil) {
+				r_anal_esil_set_pc (esil, addr);
+				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
+				if (op->size > 0) {
+					i += op->size - 1;
+				}
 			}
+			ds_update_stackptr (ds, op);
 			r_anal_op_free (op);
 		}
 	}
@@ -3602,6 +3619,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		ds->esil_old_pc = core->offset;
 	}
 	if (!ds->show_emu) {
+		// XXX. stackptr not computed without asm.emu, when its not required
 		return;
 	}
 	if (!core->anal->esil) {
@@ -3622,9 +3640,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	ds->esil_regstate = r_reg_arena_peek (core->anal->reg);
 
 	// TODO: emulate N instructions BEFORE the current offset to get proper full function emulation
-	if (ds->pre_emu) {
-		ds_pre_emulation (ds);
-	}
+	ds_pre_emulation (ds);
 }
 
 static void ds_print_esil_anal_fini(RDisasmState *ds) {
@@ -4262,7 +4278,6 @@ toro:
 		len = ds->l = core->blocksize;
 	}
 
-	ds->stackptr = core->anal->stackptr;
 	r_cons_break_push (NULL, NULL);
 	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
