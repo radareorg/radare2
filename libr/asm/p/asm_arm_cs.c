@@ -131,7 +131,8 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		opsize = o > 0? 4: 2; //(o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
 		if (opsize == 4) {
 			if (a->big_endian) {
-				r_write_le32 (op->buf, opcode);
+				r_write_le16 (op->buf, opcode >> 16);
+				r_write_le16 (op->buf + 2, opcode & UT16_MAX);
 			} else {
 				r_write_be32 (op->buf, opcode);
 			}
