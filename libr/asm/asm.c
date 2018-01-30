@@ -157,8 +157,8 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 		count = bytes_read;
 	}
 	// Need to handle arbitrary amount of data
-	r_buf_free(op->buf_inc);
-	op->buf_inc = r_buf_new_with_string(content + skip);
+	r_buf_free (op->buf_inc);
+	op->buf_inc = r_buf_new_with_string (content + skip);
 	// Terminate the original buffer
 	op->buf_hex[0] = '\0';
 	free (content);
@@ -983,7 +983,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					if (strlen (acode->buf_hex) > 0) {
 						strcat (acode->buf_hex, "\n");
 					}
-					strcat (acode->buf_hex, r_buf_free_to_string(op.buf_inc));
+					strcat (acode->buf_hex, r_buf_free_to_string (op.buf_inc));
 				}
 
 			}
