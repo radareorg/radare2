@@ -156,13 +156,11 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	} else {
 		count = bytes_read;
 	}
-	if (op->buf_test) {
-		//free (op->buf_test);
-	}
-	op->buf_test = (char*)calloc (count + 1, sizeof(char*));
+	// Need to handle arbitrary amount of data
+	r_buf_free(op->buf_inc);
+	op->buf_inc = r_buf_new_with_string(content + skip);
+	// Terminate the original buffer
 	op->buf_hex[0] = '\0';
-	memcpy (op->buf_test, content + skip, count);
-	printf("buf %s\n", op->buf_test);
 	free (content);
 	return count;
 }
@@ -974,28 +972,20 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					return r_asm_code_free (acode);
 				}
 				acode->buf = (ut8*)newbuf;
-				printf ("1 %s\n", op.buf_test);
-				int x = 0;
-				if (op.buf_test) {
-					x = strlen (op.buf_test) + 1;
-				}
-				newbuf = realloc (acode->buf_hex, strlen (acode->buf_hex) + strlen (op.buf_hex) + x + 1);
+				newbuf = realloc (acode->buf_hex, strlen (acode->buf_hex) + strlen (op.buf_hex) + r_buf_size (op.buf_inc) + 1);
 				if (!newbuf) {
 					return r_asm_code_free (acode);
 				}
-				printf ("2\n");
-
 				acode->buf_hex = newbuf;
 				memcpy (acode->buf + idx, op.buf, ret);
-				printf ("3\n");
 				strcat (acode->buf_hex, op.buf_hex);
-				printf ("4\n");
-				if (op.buf_test) {
-					strcat (acode->buf_hex, "\n");
-					strcat (acode->buf_hex, op.buf_test);
+				if (r_buf_size (op.buf_inc) > 1) {
+					if (strlen (acode->buf_hex) > 0) {
+						strcat (acode->buf_hex, "\n");
+					}
+					strcat (acode->buf_hex, r_buf_free_to_string(op.buf_inc));
 				}
-				printf ("5\n");
-				printf ("catting %s, %s\n", acode->buf_hex, op.buf_hex);
+
 			}
 		}
 	}
