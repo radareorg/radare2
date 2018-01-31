@@ -3763,6 +3763,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int i, nargs;
 	ut64 at = p2v (ds, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
+	/* apply hint */	
+	RAnalHint *hint = r_anal_hint_get (core->anal, at);
+	r_anal_op_hint (&ds->analop, hint);
+	r_anal_hint_free (hint);
 	if (!hc) {
 		return;
 	}
