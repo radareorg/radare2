@@ -6423,6 +6423,8 @@ static int cmd_anal(void *data, const char *input) {
 	case 'b':
 		if (input[1] == 'b') { // "abb"
 			core_anal_bbs (core, input + 2);
+		} else if (input[1] == 'r') { // "abr"
+			core_anal_bbs_range (core, input + 2);
 		} else if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);
 			int len = r_hex_str2bin (input + 2, buf);
