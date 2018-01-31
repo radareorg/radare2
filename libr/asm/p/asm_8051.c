@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2017 - pancake, astuder */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake, astuder */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -26,7 +26,10 @@ RAsmPlugin r_asm_plugin_8051 = {
 	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "8051 Intel CPU",
 	.disassemble = &disassemble,
-	.license = "PD"
+	.license = "PD",
+	.cpus =
+		"8051-generic," // First one is default
+		"8051-shared-code-xdata"
 };
 
 #ifndef CORELIB

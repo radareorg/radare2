@@ -8,12 +8,93 @@
 
 #include <8051_ops.h>
 
-#define IRAM_BASE 0x10000
-#define XRAM_BASE 0x10100
+typedef struct {
+	const char *name;
+	ut32 map_code;
+	ut32 map_idata;
+	ut32 map_sfr;
+	ut32 map_xdata;
+	ut32 map_pdata;
+} i8051_cpu_model;
+
+static i8051_cpu_model cpu_models[] = {
+	{
+		.name = "8051-generic",
+		.map_code	= 0,
+		.map_idata	= 0x00010000,
+		.map_sfr	= 0x00010000,
+		.map_xdata	= 0x00010100,
+		.map_pdata	= 0x00000000
+	},
+	{
+		.name = "8051-shared-code-xdata",
+		.map_code	= 0,
+		.map_idata	= 0x00010000,
+		.map_sfr	= 0x00010000,
+		.map_xdata	= 0x00000000,
+		.map_pdata	= 0x00000000
+	},
+	{
+		.name = NULL	// last entry
+	}
+};
 
 static bool i8051_is_init = false;
-// doesnt needs to be global, but anyway :D
-static RAnalEsilCallbacks ocbs = {0};
+static const i8051_cpu_model *cpu_curr_model = NULL;
+
+static bool i8051_reg_write (RReg *reg, const char *regname, ut32 num) {
+	if (reg) {
+		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
+		if (item) {
+			r_reg_set_value (reg, item, num);
+			return true;
+		}
+	}
+	return false;
+}
+
+static ut32 i8051_reg_read (RReg *reg, const char *regname) {
+	if (reg) {
+		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
+		if (item) {
+			return r_reg_get_value (reg, item);
+		}
+	}
+	return 0;
+}
+
+static void set_cpu_model(RAnal *anal, bool force) {
+	if (!anal->reg) {
+		return;
+	}
+
+	const char *cpu = anal->cpu;
+	if (!cpu || !cpu[0]) {
+		cpu = cpu_models[0].name;
+	}
+
+	// if cpu model changed, reinitalize emulation
+	if (force || !cpu_curr_model || strcasecmp (cpu, cpu_curr_model->name) != 0) {
+		// find model by name
+		int i = 0;
+		while (cpu_models[i].name && strcasecmp (cpu, cpu_models[i].name) != 0) i++;
+		if (!cpu_models[i].name) {
+			i = 0;	// if not found, default to generic 8051
+		}
+		cpu_curr_model = &cpu_models[i];
+
+		// TODO: Allocate new memory (r_io sections?) as needed
+		// TODO: Add flags as needed
+		// TODO: Rearrange above gracefully when switching cpu
+
+		// set memory map registers
+		i8051_reg_write (anal->reg, "_code", cpu_models[i].map_code);
+		i8051_reg_write (anal->reg, "_idata", cpu_models[i].map_idata);
+		i8051_reg_write (anal->reg, "_sfr", cpu_models[i].map_sfr);
+		i8051_reg_write (anal->reg, "_xdata", cpu_models[i].map_xdata);
+		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
+	}
+}
 
 static ut8 bitindex[] = {
 	// bit 'i' can be found in (ram[bitindex[i>>3]] >> (i&7)) & 1
@@ -23,6 +104,7 @@ static ut8 bitindex[] = {
 	0xC0, 0xC8, 0xD0, 0xD8, 0xE0, 0xE8, 0xF0, 0xF8  // 0xC0
 };
 
+#if 0
 typedef struct {
 	const char *name;
 	ut8 offset; // offset into memory, where the value is held
@@ -32,7 +114,6 @@ typedef struct {
 	ut8 isdptr : 1;
 } RI8051Reg;
 
-#if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242
 static RI8051Reg registers[] = {
 	// keep these sorted
@@ -101,15 +182,23 @@ static void exr_a(RAnalOp *op, ut8 dummy) {
 }
 
 static void exr_bit(RAnalOp *op, ut8 addr) {
-	ef ("%d,%d,+,[1],", IRAM_BASE, addr);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,[1],", addr);
+	}
 }
 
 static void exr_dir1(RAnalOp *op, ut8 addr) {
-	ef ("%d,%d,+,[1],", IRAM_BASE, addr);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,[1],", addr);
+	}
 }
 
 static void exr_dpx (RAnalOp *op, ut8 dummy) {
-	ef ("%d,dptr,+,[1],", XRAM_BASE);
+	e ("_xdata,dptr,+,[1],");
 }
 
 static void exr_imm1(RAnalOp *op, ut8 val) {
@@ -125,11 +214,11 @@ static void exr_imm16(RAnalOp *op, ut16 val) {
 }
 
 static void exr_ri(RAnalOp *op, ut8 reg) {
-	ef ("%d,r%d,+,[1],", IRAM_BASE, reg);
+	ef ("_idata,r%d,+,[1],", reg);
 }
 
 static void exr_rix(RAnalOp *op, ut8 reg) {
-	ef ("%d,r%d,+,[1],", XRAM_BASE, reg);
+	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,[1],", reg);
 }
 
 static void exr_rn(RAnalOp *op, ut8 reg) {
@@ -137,13 +226,13 @@ static void exr_rn(RAnalOp *op, ut8 reg) {
 }
 
 static void exr_sp1(RAnalOp *op, ut8 dummy) {
-	ef ("%d,sp,+,[1],", IRAM_BASE);
+	e ("_idata,sp,+,[1],");
 	e ("1,sp,-=,");
 }
 
 static void exr_sp2(RAnalOp *op, ut8 dummy) {
 	e ("1,sp,-=,");
-	ef ("%d,sp,+,[2],", IRAM_BASE);
+	e ("_idata,sp,+,[2],");
 	e ("1,sp,-=,");
 }
 
@@ -156,15 +245,27 @@ static void exw_c(RAnalOp *op, ut8 dummy) {
 }
 
 static void exw_bit(RAnalOp *op, ut8 addr) {
-	ef ("%d,%d,+,=[1],", IRAM_BASE, addr);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,=[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,=[1],", addr);
+	}
 }
 
 static void exw_dir1(RAnalOp *op, ut8 addr) {
-	ef ("%d,%d,+,=[1],", IRAM_BASE, addr);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,=[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,=[1],", addr);
+	}
 }
 
 static void exw_dir2(RAnalOp *op, ut8 addr) {
-	ef ("%d,%d,+,=[1],", IRAM_BASE, addr);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,=[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,=[1],", addr);
+	}
 }
 
 static void exw_dp (RAnalOp *op, ut8 dummy) {
@@ -172,15 +273,15 @@ static void exw_dp (RAnalOp *op, ut8 dummy) {
 }
 
 static void exw_dpx (RAnalOp *op, ut8 dummy) {
-	ef ("%d,dptr,+,=[1],", XRAM_BASE);
+	e ("_xdata,dptr,+,=[1],");
 }
 
 static void exw_ri(RAnalOp *op, ut8 reg) {
-	ef ("%d,r%d,+,=[1],", IRAM_BASE, reg);
+	ef ("_idata,r%d,+,=[1],", reg);
 }
 
 static void exw_rix(RAnalOp *op, ut8 reg) {
-	ef ("%d,r%d,+,=[1],", XRAM_BASE, reg);
+	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,=[1],", reg);
 }
 
 static void exw_rn(RAnalOp *op, ut8 reg) {
@@ -189,12 +290,12 @@ static void exw_rn(RAnalOp *op, ut8 reg) {
 
 static void exw_sp1(RAnalOp *op, ut8 dummy) {
 	e ("1,sp,+=,");
-	ef ("%d,sp,+,=[1],", IRAM_BASE);
+	e ("_idata,sp,+,=[1],");
 }
 
 static void exw_sp2(RAnalOp *op, ut8 dummy) {
 	e ("1,sp,+=,");
-	ef ("%d,sp,+,=[2],", IRAM_BASE);
+	e ("_idata,sp,+,=[2],");
 	e ("1,sp,+=,");
 }
 
@@ -203,7 +304,11 @@ static void exi_a(RAnalOp *op, ut8 dummy, const char* operation) {
 }
 
 static void exi_bit (RAnalOp *op, ut8 addr, const char *operation) {
-	ef ("%d,%d,+,%s=[1],", IRAM_BASE, addr, operation);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,%s=[1],", addr, operation);
+	} else {
+		ef ("_sfr,%d,+,%s=[1],", addr, operation);
+	}
 }
 
 static void exi_c(RAnalOp *op, ut8 dummy, const char* operation) {
@@ -215,11 +320,15 @@ static void exi_dp (RAnalOp *op, ut8 dummy, const char *operation) {
 }
 
 static void exi_dir1 (RAnalOp *op, ut8 addr, const char *operation) {
-	ef ("%d,%d,+,%s=[1],", IRAM_BASE, addr, operation);
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,%s=[1],", addr, operation);
+	} else {
+		ef ("_sfr,%d,+,%s=[1],", addr, operation);
+	}
 }
 
 static void exi_ri(RAnalOp *op, ut8 reg, const char *operation) {
-	ef ("%d,r%d,+,%s=[1],", IRAM_BASE, reg, operation);
+	ef ("_idata,r%d,+,%s=[1],", reg, operation);
 }
 
 static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
@@ -559,6 +668,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
+static RAnalEsilCallbacks ocbs = {0};
+
 #if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242
 static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *, int *);
@@ -653,7 +764,7 @@ static int esil_i8051_fini (RAnalEsil *esil) {
 	return true;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static int set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -676,11 +787,53 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	ac	.1	.102	0\n"
 		"gpr	c	.1	.103	0\n"
 		"gpr	sp	.8	13	0\n"
-		"gpr	pc	.16	15	0\n";
-		return strdup (p);
+		"gpr	pc	.16	15	0\n"
+// ---------------------------------------------------
+// 8051 memory emulation control registers
+// These registers map 8051 memory classes to r2's
+// linear address space. Registers contain offset
+// to r2 memory representing the memory class.
+// Offsets are initialized based on asm.cpu, but can
+// be updated with ar command.
+//
+// _code
+//		program memory (CODE)
+// _idata
+//		internal data memory (IDATA, IRAM)
+// _sfr
+//		special function registers (SFR)
+// _xdata
+//		external data memory (XDATA, XRAM)
+// _pdata
+//		page accessed by movx @ri op (PDATA, XREG)
+//		r2 addr = (_pdata & 0xff) << 8 + x_data
+//		if 0xffffffnn, addr = ([SFRnn] << 8) + _xdata (TODO)
+		"gpr	_code	.32	20 0\n"
+		"gpr	_idata	.32 24 0\n"
+		"gpr	_sfr	.32	28 0\n"
+		"gpr	_xdata	.32 32 0\n"
+		"gpr	_pdata	.32	36 0\n";
+
+	int retval = r_reg_set_profile_string (anal->reg, p);
+	if (retval) {
+		// reset emulation control registers based on cpu
+		set_cpu_model (anal, true);
+	}
+
+	return retval;
+}
+
+static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
+	if (addr < 0x80) {
+		return addr + i8051_reg_read (anal->reg, "_idata");
+	} else {
+		return addr + i8051_reg_read (anal->reg, "_sfr");
+	}
 }
 
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	set_cpu_model (anal, false);
+
 	op->delay = 0;
 
 	int i = 0;
@@ -697,17 +850,17 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg1) {
 	case A_DIRECT:
-		op->ptr = buf[1] + IRAM_BASE;
+		op->ptr = map_direct_addr (anal, buf[1]);
 		break;
 	case A_BIT:
-		op->ptr = arg_bit (buf[1]) + IRAM_BASE;
+		op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
 		break;
 	case A_IMMEDIATE:
 		op->val = buf[1];
 		break;
 	case A_IMM16:
 		op->val = buf[1] * 256 + buf[2];
-		op->ptr = XRAM_BASE + op->val;	// best guess, it's a XRAM pointer
+		op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
 		break;
 	default:
 		break;
@@ -716,14 +869,14 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	switch (arg2) {
 	case A_DIRECT:
 		if (arg1 == A_RI || arg1 == A_RN) {
-			op->ptr = IRAM_BASE + buf[1];
+			op->ptr = map_direct_addr (anal, buf[1]);
 		} else if (arg1 != A_DIRECT) {
-			op->ptr = IRAM_BASE + buf[2];
+			op->ptr = map_direct_addr (anal, buf[2]);
 		}
 		break;
 	case A_BIT:
 		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
-		op->ptr += IRAM_BASE;
+		op->ptr = map_direct_addr (anal, op->ptr);
 		break;
 	case A_IMMEDIATE:
 		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
@@ -855,7 +1008,7 @@ RAnalPlugin r_anal_plugin_8051 = {
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
-	.get_reg_profile = &get_reg_profile,
+	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_i8051_init,
 	.esil_fini = esil_i8051_fini
 };
