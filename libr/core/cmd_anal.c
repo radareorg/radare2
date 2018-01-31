@@ -649,6 +649,10 @@ static void type_cmd(RCore *core, const char *input) {
 	r_cons_break_push (NULL, NULL);
 	switch (*input) {
 	case 'a': // "afta"
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			eprintf ("TOFIX: afta can't run in debugger mode.\n");
+			return;
+		}
 		seek = core->offset;
 		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
