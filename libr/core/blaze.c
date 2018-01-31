@@ -492,7 +492,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 	int invalid_instruction_barrier = -20000;
 	bool debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 lista[1024] = { 0 };
-	int indice = 0;
+	int idx = 0;
 
 	block_list = r_list_new ();
 	if (!block_list) {
@@ -502,7 +502,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	lista[indice++] = b_start;
+	lista[idx++] = b_start;
 	for (int x = 0; x < 1024; x++) {
 		if (lista[x] != 0) {
 			cur =0;
@@ -563,8 +563,8 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 						addBB (block_list, b_start, b_start + cur + op->size, op->jump, b_start + cur + op->size, NORMAL, block_score);
 						b_start = b_start + cur + op->size;
 						cur = 0;
-						if (indice < 1024) {
-							lista[indice++] = op->jump;
+						if (idx < 1024) {
+							lista[idx++] = op->jump;
 						}
 						block_score = 0;
 						break;
