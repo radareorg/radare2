@@ -22,7 +22,7 @@ static i8051_cpu_model cpu_models[] = {
 		.name = "8051-generic",
 		.map_code	= 0,
 		.map_idata	= 0x10000000,
-		.map_sfr	= 0x10000100,
+		.map_sfr	= 0x10000180,
 		.map_xdata	= 0x20000000,
 		.map_pdata	= 0x00000000
 	},
@@ -30,7 +30,7 @@ static i8051_cpu_model cpu_models[] = {
 		.name = "8051-shared-code-xdata",
 		.map_code	= 0,
 		.map_idata	= 0x10000000,
-		.map_sfr	= 0x10000100,
+		.map_sfr	= 0x10000180,
 		.map_xdata	= 0x00000000,
 		.map_pdata	= 0x00000000
 	},
@@ -113,7 +113,7 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		// (Re)allocate memory as needed.
 		// We assume that code is already allocated with firmware image
 		mem_idata = cpu_memory_map (anal->iob.io, mem_idata, cpu_models[i].map_idata, 0x100);
-		mem_sfr = cpu_memory_map (anal->iob.io, mem_sfr, cpu_models[i].map_sfr, 0x100);
+		mem_sfr = cpu_memory_map (anal->iob.io, mem_sfr, cpu_models[i].map_sfr, 0x80);
 		mem_xdata = cpu_memory_map (anal->iob.io, mem_xdata, cpu_models[i].map_xdata, 0x10000);
 
 		// TODO: Add flags as needed - seek using pseudo registers works w/o flags
@@ -216,7 +216,7 @@ static void exr_bit(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,[1],", addr);
+		ef ("_sfr,0x7f,%d,&,+,[1],", addr);
 	}
 }
 
@@ -224,7 +224,7 @@ static void exr_dir1(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,[1],", addr);
+		ef ("_sfr,0x7f,%d,&,+,[1],", addr);
 	}
 }
 
@@ -279,7 +279,7 @@ static void exw_bit(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,=[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,=[1],", addr);
+		ef ("_sfr,0x7f,%d,&,+,=[1],", addr);
 	}
 }
 
@@ -287,7 +287,7 @@ static void exw_dir1(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,=[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,=[1],", addr);
+		ef ("_sfr,0x7f,%d,&,+,=[1],", addr);
 	}
 }
 
@@ -295,7 +295,7 @@ static void exw_dir2(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,=[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,=[1],", addr);
+		ef ("_sfr,0x7f,%d,&,+,=[1],", addr);
 	}
 }
 
@@ -338,7 +338,7 @@ static void exi_bit (RAnalOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,%s=[1],", addr, operation);
 	} else {
-		ef ("_sfr,%d,+,%s=[1],", addr, operation);
+		ef ("_sfr,0x7f,%d,&,+,%s=[1],", addr, operation);
 	}
 }
 
@@ -354,7 +354,7 @@ static void exi_dir1 (RAnalOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,%s=[1],", addr, operation);
 	} else {
-		ef ("_sfr,%d,+,%s=[1],", addr, operation);
+		ef ("_sfr,0x7f,%d,&,+,%s=[1],", addr, operation);
 	}
 }
 
@@ -858,7 +858,7 @@ static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
 	if (addr < 0x80) {
 		return addr + i8051_reg_read (anal->reg, "_idata");
 	} else {
-		return addr + i8051_reg_read (anal->reg, "_sfr");
+		return (addr & 0x7f) + i8051_reg_read (anal->reg, "_sfr");
 	}
 }
 
