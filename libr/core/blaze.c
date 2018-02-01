@@ -493,6 +493,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 	bool debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 lista[1024] = { 0 };
 	int idx = 0;
+	int x;
 
 	block_list = r_list_new ();
 	if (!block_list) {
@@ -503,7 +504,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 		eprintf ("Creating basic blocks\b");
 	}
 	lista[idx++] = b_start;
-	for (int x = 0; x < 1024; x++) {
+	for (x = 0; x < 1024; x++) {
 		if (lista[x] != 0) {
 			cur =0;
 			b_start = lista[x];
