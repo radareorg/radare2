@@ -2061,6 +2061,7 @@ static void ds_print_cycles(RDisasmState *ds) {
 }
 
 static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
+	//ds->stackptr = ds->core->anal->stackptr;
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
 	case R_ANAL_STACK_RESET:
@@ -2072,14 +2073,17 @@ static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
 	case R_ANAL_STACK_INC:
 		ds->stackptr += op->stackptr;
 		break;
+	default:
+		/* nothing to do here */
+		break;
 	}
-eprintf ("JAJA 0x%llx\n", op->addr);
 	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
 	 * Use RAnalFunction->RAnalOp->stackptr? */
 	if (op->type == R_ANAL_OP_TYPE_RET) {
 		ds->stackptr = 0;
 	}
-	ds->core->anal->stackptr = ds->stackptr;
+//	ds->ostackptr = ds->stackptr;
+	//ds->core->anal->stackptr = ds->stackptr;
 }
 
 static void ds_print_stackptr(RDisasmState *ds) {
