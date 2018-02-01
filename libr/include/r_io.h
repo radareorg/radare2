@@ -249,6 +249,7 @@ typedef int (*RIOFdReadAt) (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 typedef int (*RIOFdWriteAt) (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 typedef bool (*RIOFdIsDbg) (RIO *io, int fd);
 typedef const char *(*RIOFdGetName) (RIO *io, int fd);
+typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef void (*RIOAlSort) (RIOAccessLog *log);
 typedef void (*RIOAlFree) (RIOAccessLog *log);
 typedef ut8 *(*RIOAlGetFbufByflags) (RIOAccessLog *log, int flags, ut64 *addr, int *len);
@@ -280,6 +281,7 @@ typedef struct r_io_bind_t {
 	RIOFdWriteAt fd_write_at;
 	RIOFdIsDbg fd_is_dbg;
 	RIOFdGetName fd_get_name;
+	RIOFdRemap fd_remap;
 	RIOAlSort al_sort;	//needed for esil
 	RIOAlFree al_free;	//needed for esil
 	RIOAlGetFbufByflags al_buf_byflags;	//needed for esil
@@ -293,6 +295,7 @@ typedef struct r_io_bind_t {
 R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline);
 R_API void r_io_map_init (RIO *io);
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr);
+R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr);
 R_API bool r_io_map_exists (RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id (RIO *io, ut32 id);
 R_API RIOMap *r_io_map_resolve (RIO *io, ut32 id);

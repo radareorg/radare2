@@ -67,26 +67,13 @@ static RIODesc *mem_idata = 0;
 static RIODesc *mem_sfr = 0;
 static RIODesc *mem_xdata = 0;
 
-static RIODesc* cpu_memory_map (RIO *io, RIODesc *desc, ut32 addr, ut32 size) {
-	RList *maps = 0;
-	RIOMap *map = 0;
+static RIODesc* cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr, ut32 size) {
 	char *mstr = r_str_newf ("malloc://%d", size);
-
-	if (desc) {
-		maps = r_io_map_get_for_fd (io, desc->fd);
-		if (maps) {
-			map = r_list_get_n (maps, 0);
-		}
-	}
-
-	if (map) {
-		r_io_map_remap (io, map->id, addr);
+	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
+		iob->fd_remap (iob->io, desc->fd, addr);
 	} else {
-		desc = r_io_open_at (io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
+		desc = iob->open_at (iob->io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
 	}
-
-	if (maps) r_list_free (maps);
-	r_str_free (mstr);
 	return desc;
 }
 
@@ -112,9 +99,9 @@ static void set_cpu_model(RAnal *anal, bool force) {
 
 		// (Re)allocate memory as needed.
 		// We assume that code is already allocated with firmware image
-		mem_idata = cpu_memory_map (anal->iob.io, mem_idata, cpu_models[i].map_idata, 0x100);
-		mem_sfr = cpu_memory_map (anal->iob.io, mem_sfr, cpu_models[i].map_sfr, 0x80);
-		mem_xdata = cpu_memory_map (anal->iob.io, mem_xdata, cpu_models[i].map_xdata, 0x10000);
+		mem_idata = cpu_memory_map (&anal->iob, mem_idata, cpu_models[i].map_idata, 0x100);
+		mem_sfr = cpu_memory_map (&anal->iob, mem_sfr, cpu_models[i].map_sfr, 0x80);
+		mem_xdata = cpu_memory_map (&anal->iob, mem_xdata, cpu_models[i].map_xdata, 0x10000);
 
 		// TODO: Add flags as needed - seek using pseudo registers works w/o flags
 
