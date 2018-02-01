@@ -39,7 +39,8 @@ enum {
 	TYPE_UDF = 14,
 	TYPE_SHFT = 15,
 	TYPE_COPROC = 16,
-	TYPE_ENDIAN= 17,
+	TYPE_ENDIAN = 17,
+	TYPE_MUL = 18,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -105,7 +106,19 @@ static ArmOp ops[] = {
 	{ "mov", 0xa001, TYPE_MOV },
 	{ "mvn", 0xe000, TYPE_MOV },
 	{ "svc", 0xf, TYPE_SWI }, // ???
-	{ "hlt", 0x70000001, TYPE_HLT }, // ???
+	{ "hlt", 0x70000001, TYPE_HLT }, // ???u
+
+	{ "mul", 0x900000e0, TYPE_MUL},
+	{ "smull", 0x9000c0e0, TYPE_MUL},
+	{ "umull", 0x900080e0, TYPE_MUL},
+	{ "smlal", 0x9000e0e0, TYPE_MUL},
+	{ "smlabb", 0x800000e1, TYPE_MUL},
+	{ "smlabt", 0xc00000e1, TYPE_MUL},
+	{ "smlatb", 0xa00000e1, TYPE_MUL},
+	{ "smlatt", 0xe00000e1, TYPE_MUL},
+	{ "smlawb", 0x800020e1, TYPE_MUL},
+	{ "smlawt", 0xc00020e1, TYPE_MUL},
+
 
 	{ "ands", 0x1000, TYPE_ARI },
 	{ "and", 0x0000, TYPE_ARI },
@@ -295,7 +308,6 @@ static ut32 getshift(const char *str) {
 			if (bracket) {
 				*bracket = '\0';
 			}
-			i = getnum (arg);
 			// ensure only the bottom 5 bits are used
 			i &= 0x1f;
 			if (!i) i = 32;
@@ -1219,6 +1231,51 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= 0x4003 | ret << 24;
 				ao->o |= (ret & 0xf000) >> 4;
 				ao->o |= (ret & 0xf00) << 8;
+				break;
+			case TYPE_MUL:
+				if (!strcmpnull (ao->op, "mul")) {
+					ret = getreg (ao->a[0]);
+					a = getreg (ao->a[1]);
+					b = getreg (ao->a[2]);
+					if (b == -1) {
+						b = a;
+						a = ret;
+					}
+					if (ret == -1 || a == -1) {
+						return 0;
+					}
+					ao->o |= ret << 8;
+					ao->o |= a << 24;
+					ao->o |= b << 16;
+				} else {
+					low = getreg (ao->a[0]);
+					high = getreg (ao->a[1]);
+					a = getreg (ao->a[2]);
+					b = getreg (ao->a[3]);
+					if (low == -1 || high == -1 || a == -1 || b == -1) {
+						return 0;
+					}
+					if (!strcmpnull (ao->op, "smlal")) {
+						ao->o |= low << 20;
+						ao->o |= high << 8;
+						ao->o |= a << 24;
+						ao->o |= b << 16;
+					} else if (!strncmp (ao->op, "smla", 4)) {
+						if (low > 14 || high > 14 || a > 14) {
+							return 0;
+						}
+						ao->o |= low << 8;
+						ao->o |= high << 24;
+						ao->o |= a << 16;
+						ao->o |= b << 20;
+						break;
+					} else {
+						ao->o |= low << 20;
+						ao->o |= high << 8;
+						ao->o |= a << 24;
+						ao->o |= b << 16;
+					}
+				}
 				break;
 			case TYPE_TST:
 				a = getreg (ao->a[0]);
