@@ -398,6 +398,7 @@ static const char *help_msg_ag[] = {
 	"agf", " [addr]", "Show ASCII art graph of given function",
 	"agg", "[?] [kdi*]", "Print graph in ASCII-Art, graphviz, k=v, r2 or visual",
 	"agj", " [addr]", "idem, but in JSON format",
+	"agJ", " [addr]", "idem, but in JSON format with formatted disassembly (like pdJ)",
 	"agk", " [addr]", "idem, but in SDB key-value format",
 	"agl", " [fcn name]", "output graphviz code using meta-data",
 	"agn", "[?] title body", "Add a node to the current graph",
@@ -5718,6 +5719,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'j': // "agj"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
+		break;
+	case 'J': // "agJ"
+		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
 		break;
 	case 'k': // "agk"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_KEYVALUE);

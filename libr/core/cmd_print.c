@@ -4524,6 +4524,9 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			free (block);
+			if (formatted_json) {
+				r_cons_print ("\n");
+			}
 		}
 		core->offset = current_offset;
 		// change back asm setting if they were changed

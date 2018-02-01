@@ -968,6 +968,7 @@ static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	int is_html = r_cons_singleton ()->is_html;
 	int is_json = opts & R_CORE_ANAL_JSON;
+	int is_json_format_disasm = opts & R_CORE_ANAL_JSON_FORMAT_DISASM;
 	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	RAnalBlock *bbi;
 	RListIter *iter;
@@ -1053,15 +1054,21 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"d}",
 					t->count, t->times);
 			}
-			r_cons_printf (",\"ops\":[");
+			r_cons_printf (",\"ops\":");
 			if (buf) {
 				r_io_read_at (core->io, bbi->addr, buf, bbi->size);
-				r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
+				if (is_json_format_disasm) {
+					r_core_print_disasm (core->print, core, bbi->addr, buf, bbi->size, bbi->size, 0, 1, true);
+				} else {
+					r_cons_print ("[");
+					r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
+					r_cons_print ("]");
+				}
 				free (buf);
 			} else {
 				eprintf ("cannot allocate %d byte(s)\n", bbi->size);
 			}
-			r_cons_printf ("]}");
+			r_cons_print ("}");
 			continue;
 		}
 		if (bbi->jump != UT64_MAX) {
