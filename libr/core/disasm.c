@@ -4575,7 +4575,7 @@ toro:
 	}
 #endif
 	if (ds->use_json) {
-		r_cons_print ("]\n");
+		r_cons_print ("]");
 	}
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);

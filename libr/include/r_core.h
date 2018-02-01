@@ -38,11 +38,12 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
-#define R_CORE_ANAL_GRAPHLINES 1
-#define R_CORE_ANAL_GRAPHBODY  2
-#define R_CORE_ANAL_GRAPHDIFF  4
-#define R_CORE_ANAL_JSON       8
-#define R_CORE_ANAL_KEYVALUE  16
+#define R_CORE_ANAL_GRAPHLINES          1
+#define R_CORE_ANAL_GRAPHBODY           2
+#define R_CORE_ANAL_GRAPHDIFF           4
+#define R_CORE_ANAL_JSON                8
+#define R_CORE_ANAL_KEYVALUE            16
+#define R_CORE_ANAL_JSON_FORMAT_DISASM  32
 
 ///
 #define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
