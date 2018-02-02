@@ -28,7 +28,7 @@ R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 def_val
 }
 
 R_API void r_anal_switch_op_free(RAnalSwitchOp * swop) {
-	if (!swop || (((ut32)(size_t)swop)==UT32_MAX)) {
+	if (!swop || (((ut32)(size_t)swop) == UT32_MAX)) {
 		return;
 	}
 	r_list_free (swop->cases);

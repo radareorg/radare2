@@ -2001,7 +2001,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_utf16_encode (symbol->name, -1);
-			str = r_str_replace (str, "\"", "\\\"", 1);
+			// str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","
 				"\"flagname\":\"%s\","
@@ -2011,7 +2011,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""), str,
+				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""),
+				str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
 				symbol->ordinal,
