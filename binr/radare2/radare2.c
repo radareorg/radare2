@@ -515,7 +515,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'A':
 			do_analysis += do_analysis ? 1: 2;
 			break;
-		case 'b': asmbits = optarg; break;
+		case 'b':
+			asmbits = optarg;
+			break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
 			va = 2;
