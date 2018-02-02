@@ -437,7 +437,7 @@ INST_HANDLER (and) {	// AND Rd, Rr
 INST_HANDLER (andi) {	// ANDI Rd, K
 			// CBR Rd, K (= ANDI Rd, 1-K)
 	int d = ((buf[0] >> 4) & 0xf) + 16;
-	int k = (buf[1] & 0xf0) | (buf[0] & 0x0f);
+	int k = ((buf[1] & 0x0f) << 4) | (buf[0] & 0x0f);
 	ESIL_A ("%d,r%d,&,", k, d);				// 0: Rd & Rr
 	__generic_bitop_flags (op);				// up flags
 	ESIL_A ("r%d,=,", d);					// Rd = Result
@@ -1131,8 +1131,8 @@ INST_HANDLER (ror) {	// ROR Rd
 }
 
 INST_HANDLER (sbc) {	// SBC Rd, Rr
-	int r = (buf[1] & 0x0f) | ((buf[0] & 0x2) >> 1);
-	int d = ((buf[1] >> 4) & 0xf) | (buf[0] & 0x1);
+	int r = (buf[0] & 0x0f) | ((buf[1] & 0x2) << 3);
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	ESIL_A ("cf,r%d,-,r%d,-,", r, d);		// 0: (Rd-Rr-C)
 	__generic_sub_update_flags_rr (op, d, r, 1);	// FLAGS (carry)
@@ -1463,7 +1463,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (sub,    0xfc00, 0x1800, 1,      2,   SUB    ), // SUB Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
-	INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
+	//INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
 	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
 	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
