@@ -3978,6 +3978,7 @@ callfallback:
 		}
 		break;
 	}
+	ds_print_color_reset (ds);
 beach:
 	if (esil) {
 		esil->cb.hook_mem_write = hook_mem_write;
