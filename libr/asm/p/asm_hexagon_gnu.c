@@ -90,8 +90,8 @@ print_insn_hexagon = hexagon_get_disassembler_from_mach(0,0);
 }
 
 RAsmPlugin r_asm_plugin_hexagon_gnu = {
-	.name = "hexagon",
-	.arch = "hexagon",
+	.name = "hexagon.gnu",
+	.arch = "hexagon.gnu",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.license = "GPL3",
