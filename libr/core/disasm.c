@@ -4031,6 +4031,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 			free (type);
 		}
 	}
+	ds_print_color_reset (ds);
 	free (name);
 }
 
