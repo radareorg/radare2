@@ -1405,7 +1405,7 @@ beach:
 	}
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
-	// exectution.
+	// execution.
 	//r_core_file_close (&r, fh);
 	r_core_fini (&r);
 	r_cons_set_raw (0);
