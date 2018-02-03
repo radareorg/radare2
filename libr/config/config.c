@@ -339,6 +339,9 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 		if (node->i_value || !strcmp (node->value, "false")) {
 			return node->i_value;
 		}
+		if (!strcmp (node->value, "true")) {
+			return 1;
+		}
 		return (ut64) r_num_math (cfg->num, node->value);
 	}
 	return (ut64) 0LL;
