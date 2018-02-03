@@ -1351,8 +1351,10 @@ static void printVarSummary(RDisasmState *ds, RList *list, const char *name) {
 			vars++;
 		}
 	}
+	ds_begin_json_line (ds);
 	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
-	r_cons_printf ("%s: %d (vars %d, args %d)\n", name, vars + args, vars, args);
+	r_cons_printf ("%s: %d (vars %d, args %d)", name, vars + args, vars, args);
+	ds_newline (ds);
 }
 
 static void ds_show_functions(RDisasmState *ds) {
