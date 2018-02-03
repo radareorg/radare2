@@ -1328,20 +1328,59 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 		base, sign, delta);
 }
 
-static void printVarSummary(RDisasmState *ds, RList *list, const char *name) {
+static void printVarSummary(RDisasmState *ds, RList *list) {
 	RAnalVar *var;
 	RListIter *iter;
-	int vars = 0;
-	int args = 0;
+	int bp_vars = 0;
+	int sp_vars = 0;
+	int rg_vars = 0;
+	int bp_args = 0;
+	int sp_args = 0;
+	int rg_args = 0;
+	int width = 0;
 	r_list_foreach (list, iter, var) {
 		if (var->delta > 0) {
-			args++;
+			switch(var->kind) {
+			case 'b':
+				bp_args++;
+				width = R_MAX (ceil (log10 (bp_args)), width);
+				break;
+			case 's':
+				sp_args++;
+				width = R_MAX (ceil (log10 (sp_args)), width);
+				break;
+			case 'r':
+				rg_args++;
+				width = R_MAX (ceil (log10 (rg_args)), width);
+				break;
+			}
 		} else {
-			vars++;
+			switch(var->kind) {
+			case 'b':
+				bp_vars++;
+				width = R_MAX (ceil (log10 (bp_vars)), width);
+				break;
+			case 's':
+				sp_vars++;
+				width = R_MAX (ceil (log10 (sp_vars)), width);
+				break;
+			case 'r':
+				rg_vars++;
+				width = R_MAX (ceil (log10 (rg_vars)), width);
+				break;
+			}
 		}
 	}
+	char *vars_format = malloc(32);
+	char *args_format = malloc(32);
+	snprintf (vars_format, 32, "vars: %%%dd %%%dd %%%dd\n", width, width, width);
+	snprintf (args_format, 32, "args: %%%dd %%%dd %%%dd\n", width, width, width);
 	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
-	r_cons_printf ("%s: %d (vars %d, args %d)\n", name, vars + args, vars, args);
+	r_cons_printf (vars_format, bp_vars, sp_vars, rg_vars);
+	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
+	r_cons_printf (args_format, bp_args, sp_args, rg_args);
+	free(vars_format);
+	free(args_format);
 }
 
 static void ds_show_functions(RDisasmState *ds) {
@@ -1432,15 +1471,11 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars && ds->show_varsum) {
-		RList *bp_vars = r_anal_var_list (core->anal, f, 'b');
-		RList *rg_vars = r_anal_var_list (core->anal, f, 'r');
-		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
-		printVarSummary (ds, bp_vars, "bp");
-		printVarSummary (ds, sp_vars, "sp");
-		printVarSummary (ds, rg_vars, "rg");
-		r_list_free (bp_vars);
-		r_list_free (rg_vars);
-		r_list_free (sp_vars);
+		RList *vars = r_anal_var_list (core->anal, f, 'b');
+		r_list_join(vars, r_anal_var_list (core->anal, f, 'r'));
+		r_list_join(vars, r_anal_var_list (core->anal, f, 's'));
+		printVarSummary(ds, vars);
+		r_list_free (vars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;

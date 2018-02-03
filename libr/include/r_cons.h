@@ -26,6 +26,7 @@ extern "C" {
 #include <wincon.h>
 #endif
 #include <unistd.h>
+#include <math.h>
 
 /* constants */
 #define ENUM_FOR_PAL 0
