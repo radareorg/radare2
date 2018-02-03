@@ -52,6 +52,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "fxch",  "#,# = #,#", {1, 2, 2, 1}},
 		{ "idiv",  "# /= #", {1, 2}},
 		{ "imul",  "# *= #", {1, 2}},
+		{ "imul",  "# *= #", {1, 3}},
 		{ "in",   "# = io[#]", {1, 2}},
 		{ "inc",  "#++", {1}},
 		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
