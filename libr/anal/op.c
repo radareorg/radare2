@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -50,6 +50,7 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
+	op->switch_op = NULL;
 	R_FREE (op->mnemonic);
 	return true;
 }
