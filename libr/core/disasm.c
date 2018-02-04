@@ -1629,8 +1629,13 @@ static void ds_print_pre(RDisasmState *ds) {
 	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	RAnalFunction *f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
+		char *pre_esc = NULL;
+		if (ds->use_json) {
+			pre_esc = r_str_escape (ds->pre);
+		}
 		r_cons_printf ("%s%s%s", COLOR (ds, color_fline),
-			ds->pre, COLOR_RESET (ds));
+			pre_esc ? pre_esc : ds->pre, COLOR_RESET (ds));
+		free (pre_esc);
 	} else {
 		if (ds->show_lines) {
 			r_cons_printf ("  ");
