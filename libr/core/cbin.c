@@ -254,7 +254,7 @@ R_API bool r_core_bin_strfilter(RCore *core, const char *str) {
 	case 'U': // only uppercase strings
 		for (i = 0; str[i]; i++) {
 			char ch = str[i];
-			if (ch == ' ') {
+			if (ch == ' ' || ch == '_') {
 				continue;
 			}
 			if (ch < '@'|| ch > 'Z') {
