@@ -250,7 +250,6 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 
 static bool string_filter(RCore *core, const char *str, ut64 addr) {
 	int i;
-	/* pointer/rawdata detection */
 	if (r_core_bin_strpurge (core, str, addr)) {
 		return false;
 	}
