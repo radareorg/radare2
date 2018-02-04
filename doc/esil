@@ -35,14 +35,14 @@ Default size is the destination of the operation. In this case 8bits, aka 1 byte
 ```
 movb $0, 0x80480     ->   0,0x80480,=[1]
 ```
-Conditionals are expressed with the '?' char at the beginning of the expression. This checks if the rest of the expression is 0 or not and skips the next expression if doesn't matches. % is the prefix for internal vars.
+Conditionals are expressed with the '?' char at the beginning of the expression. This checks if the rest of the expression is 0 or not and skips the next expression if doesn't matches. '$' is the prefix for internal vars.
 ```
-cmp eax, 123  ->   123,eax,==,%z,zf,=
+cmp eax, 123  ->   123,eax,==,$z,zf,=
 jz eax        ->   zf,?{,eax,eip,=,}
 ```
 So.. if you want to run more than one expression under a conditional, you'll have to write it 
 ```
-zf,?{,eip,esp,=[],eax,eip,=,%r,esp,-=,}
+zf,?{,eip,esp,=[],eax,eip,=,$r,esp,-=,}
 ```
 
 The whitespace, newlines and other chars are ignored in esil, so the first thing to do is:
@@ -79,7 +79,7 @@ indexOf("pc,=")    ->    modifies program counter (branch, jump, call)
 indexOf("sp,=")    ->    modifies the stack (what if we found sp+= or sp-=?)
 indexOf("=")       ->    retrieve src and dst
 indexOf(":")       ->    unknown esil, raw opcode ahead
-indexOf("%")       ->    accesses internal esil vm flags
+indexOf("$")       ->    accesses internal esil vm flags
 indexOf("$")       ->    syscall
 indexOf("$$")      ->    can trap
 indexOf('++')      ->    has iterator
@@ -106,12 +106,12 @@ ESIL Flags
 ==========
 ESIL VM have an internal state flags that can are read only and can be used to export those values to the underlaying CPU flags. This is because the ESIL vm defines all the flag changes, while the CPUs only update the flags under certain conditions or specific instructions.
 
-Those internal flags are prefixed by the '%' character.
+Those internal flags are prefixed by the '$' character.
 
 ```
 z - zero flag, only set if the result of an operation is 0
-b - borrow, this requires to specify from which bit (example: %b4 - checks if borrow from bit 4)
-c - carry, same like above (example: %c7 - checks if carry from bit 7)
+b - borrow, this requires to specify from which bit (example: $b4 - checks if borrow from bit 4)
+c - carry, same like above (example: $c7 - checks if carry from bit 7)
 p - parity
 r - regsize ( asm.bits/8 )
 ```
