@@ -5,19 +5,6 @@
 #include <r_core.h>
 #include "pdb_downloader.h"
 
-static bool checkExtract() {
-#if __WINDOWS__ && !__CYGWIN__
-	if (r_sys_cmd ("expand -? >nul") != 0) {
-		return false;
-	}
-#else
-	if (r_sys_cmd ("cabextract -v > /dev/null") != 0) {
-		return false;
-	}
-#endif
-	return true;
-}
-
 static bool checkCurl() {
 #if __WINDOWS__ && !__CYGWIN__
 	const char nul[] = "nul";
@@ -54,78 +41,27 @@ static int download(struct SPDBDownloader *pd) {
 		return 0;
 	}
 	memcpy (archive_name, opt->dbg_file, archive_name_len + 1);
-	archive_name[archive_name_len - 1] = '_';
 	if (opt->path && *opt->path) {
 		basepath = opt->path;
 	}
-	if (checkExtract () || opt->extract == 0) {
-		res = 1;
-		abspath_to_archive = r_str_newf ("%s%s%s", basepath,
-		                                 R_SYS_DIR, archive_name);
-		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
-		                       opt->user_agent,
-		                       opt->symbol_server,
-		                       opt->dbg_file,
-		                       opt->guid,
-		                       archive_name,
-		                       abspath_to_archive);
-#if __WINDOWS__ && !__CYGWIN__
-		const char *cabextractor = "expand";
-		const char *format = "%s %s %s";
-		char *abspath_to_file = strdup (abspath_to_archive);
-		if (abspath_to_file) {
-			int abspath_to_archive_len = archive_name_len + strlen (basepath) + 2;
-			abspath_to_file[abspath_to_archive_len - 2] = 'b';
-			// extractor_cmd -> %1 %2 %3
-			// %1 - 'expand'
-			// %2 - absolute path to archive
-			// %3 - absolute path to file that will be dearchive
-			extractor_cmd = r_str_newf (format, cabextractor,
-				abspath_to_archive, abspath_to_file);
-		}
-#else
-		const char *cabextractor = "cabextract";
-		const char *format = "%s -d \"%s\" \"%s\"";
-		// cabextract -d %1 %2
-		// %1 - path to directory where to extract all files from cab archive
-		// %2 - absolute path to cab archive
-		extractor_cmd = r_str_newf (format,
-		                            cabextractor, basepath, abspath_to_archive);
-#endif
-		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
-			eprintf("curl exited with error %d\n", cmd_ret);
-			res = 0;
-		}
-		if (opt->extract > 0) {
-			if (res && ((cmd_ret = r_sys_cmd (extractor_cmd)) != 0)) {
-				eprintf ("cab extractor exited with error %d\n", cmd_ret);
-				res = 0;
-			}
-			r_file_rm (abspath_to_archive);
-		}
-		R_FREE (curl_cmd);
-		R_FREE (abspath_to_archive);
+
+	res = 1;
+	abspath_to_archive = r_str_newf ("%s%s%s", basepath, R_SYS_DIR, archive_name);
+	curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
+							opt->user_agent,
+							opt->symbol_server,
+							opt->dbg_file,
+							opt->guid,
+							archive_name,
+							abspath_to_archive);
+
+	if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
+		eprintf("curl exited with error %d\n", cmd_ret);
+		res = 0;
 	}
-	if (res == 0) {
-		eprintf ("Falling back to uncompressed pdb\n");
-		res = 1;
-		archive_name[archive_name_len - 1] = 'b';
-		abspath_to_archive = r_str_newf ("%s%s%s", basepath,
-		                                 R_SYS_DIR, archive_name);
-		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
-		                       opt->user_agent,
-		                       opt->symbol_server,
-		                       opt->dbg_file,
-		                       opt->guid,
-		                       archive_name,
-		                       abspath_to_archive);
-		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
-			eprintf("curl exited with error %d\n", cmd_ret);
-			res = 0;
-		}
-		R_FREE (curl_cmd);
-		R_FREE (abspath_to_archive);
-	}
+
+	R_FREE (curl_cmd);
+	R_FREE (abspath_to_archive);
 	R_FREE (archive_name);
 	R_FREE (extractor_cmd);
 	return res;
@@ -141,7 +77,6 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt->symbol_server = strdup (opt->symbol_server);
 	pd->opt->user_agent = strdup (opt->user_agent);
 	pd->opt->path = strdup (opt->path);
-	pd->opt->extract = opt->extract;
 	pd->download = download;
 }
 
@@ -179,16 +114,15 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 	opt.symbol_server = options->symbol_server;
 	opt.user_agent = options->user_agent;
 	opt.path = path;
-	opt.extract = options->extract;
 
 	init_pdb_downloader (&opt, &pdb_downloader);
 	ret = pdb_downloader.download (&pdb_downloader);
 	if (isradjson && actions_done) {
 		printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
-		        *actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
+			*actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
 	} else {
 		printf ("PDB \"%s\" download %s\n",
-		        opt.dbg_file, ret ? "success" : "failed");
+			opt.dbg_file, ret ? "success" : "failed");
 	}
 	if (actions_done) {
 		(*actions_done)++;

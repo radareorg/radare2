@@ -20,7 +20,6 @@ typedef struct SPDBDownloaderOpt {
 	char *dbg_file;
 	char *guid;
 	char *path;
-	ut64 extract;
 } SPDBDownloaderOpt;
 
 typedef struct SPDBDownloader {
