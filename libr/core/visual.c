@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
 
@@ -1484,6 +1484,7 @@ static void visual_browse(RCore *core) {
 		" s  symbols\n"
 		" h  history\n"
 		" m  maps\n"
+		" p  pids/threads\n"
 		" x  xrefs\n"
 		" X  refs\n"
 		" v  vars\n"
@@ -1506,6 +1507,9 @@ static void visual_browse(RCore *core) {
 			break;
 		case 'e':
 			r_core_visual_config (core);
+			break;
+		case 'p':
+			r_core_cmd0 (core, "dpt=$(dpt~[1-])");
 			break;
 		case 'b':
 			r_core_cmd0 (core, "s $(afb~...)");
