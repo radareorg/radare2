@@ -248,12 +248,8 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 	return purge;
 }
 
-static bool string_filter(RCore *core, const char *str, ut64 addr) {
+R_API bool r_core_bin_strfilter(RCore *core, const char *str) {
 	int i;
-	if (r_core_bin_strpurge (core, str, addr)) {
-		return false;
-	}
-
 	switch (core->bin->strfilter) {
 	case 'U': // only uppercase strings
 		for (i = 0; str[i]; i++) {
@@ -358,6 +354,14 @@ static bool string_filter(RCore *core, const char *str, ut64 addr) {
 				return true;
 			}
 		}
+		return false;
+	}
+	return true;
+}
+
+static bool string_filter(RCore *core, const char *str, ut64 addr) {
+	if (r_core_bin_strpurge (core, str, addr)
+	    || !r_core_bin_strfilter (core, str)) {
 		return false;
 	}
 	return true;
