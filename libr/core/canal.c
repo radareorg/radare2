@@ -1947,6 +1947,9 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf (",\"ebbs\":%d", ebbs);
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
+	r_cons_printf (",\"minbound\":\"%d\"", fcn->meta.min);
+	r_cons_printf (",\"maxbound\":\"%d\"", fcn->meta.max);
+	r_cons_printf (",\"range\":\"%d\"", r_anal_fcn_size(fcn));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"diff\":\"%s\"",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
@@ -2059,6 +2062,10 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	}
 	r_cons_printf ("]\n");
 	return 0;
+}
+
+static int fcn_list_verbose_json(RCore *core, RList *fcns) {
+	return fcn_list_json(core, fcns, false);
 }
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
@@ -2255,7 +2262,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_core_anal_fcn_list_size (core);
 		break;
 	case 'l':
-		fcn_list_verbose (core, fcns);
+		if (rad[1] == 'j') {
+			fcn_list_verbose_json (core, fcns);
+		} else {
+			fcn_list_verbose (core, fcns);
+		}
 		break;
 	case 'q':
 		if (rad[1] == 'j') {
