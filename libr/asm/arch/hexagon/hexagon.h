@@ -64,7 +64,7 @@ typedef struct {
 	bool last; // is last in instruction packet?
 	int shift; // Optional shift left is it true?
 	ut8 op_count;
-	HexOp ops[5];
+	HexOp ops[6];
 	char mnem[128]; // Instruction mnemonic
 } HexInsn;
 
