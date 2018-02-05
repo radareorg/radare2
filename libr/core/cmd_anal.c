@@ -280,6 +280,7 @@ static const char *help_msg_afl[] = {
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
+	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "", "print sum of sizes of all functions",
