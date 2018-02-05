@@ -115,7 +115,7 @@ static void get_sval_name_len(SVal *val, int *res_len) {
 		}
 		default:
 			*res_len = 0;
-			printf("get_sval_name::oops\n");
+			printf("get_sval_name_len: Skipping unsupported type (%d)\n", val->value_or_type);
 			break;
 		}
 	}
@@ -130,6 +130,20 @@ static void get_sval_name(SVal *val, char **name) {
 //		strcpy(name, scstr->name);
 	} else {
 		switch (val->value_or_type) {
+		case eLF_UQUADWORD:
+		{
+			SVal_LF_UQUADWORD *lf_uquadword;
+			lf_uquadword = (SVal_LF_UQUADWORD *) val->name_or_val;
+			*name = lf_uquadword->name.name;
+			break;
+		}
+		case eLF_QUADWORD:
+		{
+			SVal_LF_QUADWORD *lf_quadword;
+			lf_quadword = (SVal_LF_QUADWORD *) val->name_or_val;
+			*name = lf_quadword->name.name;
+			break;
+		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR *lf_char;
@@ -162,9 +176,16 @@ static void get_sval_name(SVal *val, char **name) {
 //			strcpy(name, lf_ushort->name.name);
 			break;
 		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT *lf_short;
+			lf_short = (SVal_LF_SHORT *) val->name_or_val;
+			*name = lf_short->name.name;
+			break;
+		}
 		default:
 			*name = 0;
-			printf("get_sval_name::oops\n");
+			printf("get_sval_name: Skipping unsupported type (%d)\n", val->value_or_type);
 			break;
 		}
 	}
@@ -551,6 +572,20 @@ static void get_sval_val(SVal *val, int *res) {
 		*res = val->value_or_type;
 	} else {
 		switch (val->value_or_type) {
+		case eLF_UQUADWORD:
+		{
+			SVal_LF_UQUADWORD *lf_uqword;
+			lf_uqword = (SVal_LF_UQUADWORD *) val->name_or_val;
+			*res = lf_uqword->value;
+			break;
+		}
+		case eLF_QUADWORD:
+		{
+			SVal_LF_QUADWORD *lf_qword;
+			lf_qword = (SVal_LF_QUADWORD *) val->name_or_val;
+			*res = lf_qword->value;
+			break;
+		}
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
@@ -572,6 +607,13 @@ static void get_sval_val(SVal *val, int *res) {
 			*res = lf_ushort->value;
 			break;
 		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT *lf_short;
+			lf_short = (SVal_LF_SHORT *) val->name_or_val;
+			*res = lf_short->value;
+			break;
+		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR *lf_char;
@@ -582,7 +624,7 @@ static void get_sval_val(SVal *val, int *res) {
 
 		default:
 			*res = 0;
-			printf("get_sval_val::oops\n");
+			printf("get_sval_val: Skipping unsupported type (%d)\n", val->value_or_type);
 			break;
 		}
 	}
@@ -1471,6 +1513,26 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		val->name_or_val = sctr;
 	} else {
 		switch (val->value_or_type) {
+		case eLF_UQUADWORD:
+		{
+		    SVal_LF_UQUADWORD lf_uqword;
+		    READ8(*read_bytes, len, lf_uqword.value, leaf_data, st64);
+		    parse_sctring(&lf_uqword.name, leaf_data, read_bytes, len);
+		    val->name_or_val = malloc(sizeof(SVal_LF_UQUADWORD));
+		    if (!val->name_or_val) break;
+		    memcpy(val->name_or_val, &lf_uqword, sizeof(SVal_LF_UQUADWORD));
+		    break;
+		}
+		case eLF_QUADWORD:
+		{
+			SVal_LF_QUADWORD lf_qword;
+			READ8(*read_bytes, len, lf_qword.value, leaf_data, st64);
+			parse_sctring (&lf_qword.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc (sizeof (SVal_LF_QUADWORD));
+			if (!val->name_or_val) break;
+			memcpy (val->name_or_val, &lf_qword, sizeof (SVal_LF_QUADWORD));
+			break;
+		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR lf_char;
@@ -1480,7 +1542,6 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			if (!val->name_or_val) break;
 			memcpy (val->name_or_val, &lf_char, sizeof (SVal_LF_CHAR));
 			break;
-
 		}
 		case eLF_LONG:
 		{
@@ -1531,7 +1592,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			break;
 		}
 		default:
-			printf ("parse_sval()::oops\n");
+			printf ("parse_sval: Skipping unsupported type (%d)\n", val->value_or_type);
 			return 0;
 		}
 	}
