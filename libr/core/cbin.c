@@ -1686,6 +1686,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	int i = 0;
 
 	RList *imports = r_bin_get_imports (r->bin);
+	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
 	} else if (IS_MODE_RAD (mode)) {
@@ -1714,6 +1715,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		}
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
+			// Add a dword/qword for PE imports
+			if (strstr (symname, ".dll_") && cdsz) {
+				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
+			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {

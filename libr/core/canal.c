@@ -2920,6 +2920,9 @@ R_API int r_core_anal_all(RCore *core) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			if (strstr (symbol->name, ".dll_")) { // Stop analyzing PE imports further
+				continue;
+			}
 			if (isValidSymbol (symbol)) {
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr,
 					symbol->vaddr);
