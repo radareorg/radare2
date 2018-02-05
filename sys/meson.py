@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 
-from mesonbuild import mesonmain
+from mesonbuild import mesonmain, mesonlib
 
 BUILDDIR = 'build'
 SDB_BUILDDIR = 'build_sdb'
@@ -43,8 +43,8 @@ def set_global_variables():
     log.debug('r2-version: %s', version)
 
 def meson(root, build, prefix=None, backend=None,
-          release=False, shared=False, options=[]):
-    """[R2_MESON] Invoke meson"""
+          release=False, shared=False, *, options=[]):
+    """[R2_API] Invoke meson"""
     command = [root, build]
     if prefix:
         command.append('--prefix={}'.format(prefix))
@@ -59,8 +59,8 @@ def meson(root, build, prefix=None, backend=None,
     if options:
         command.extend(options)
 
-    log.debug('Invoking meson: %s', command)
     launcher = os.path.join(ROOT, 'sys', 'meson.py')
+    log.debug('Invoking meson: %s', [launcher] + command)
     meson_run(command, launcher)
 
 def meson_run(args, launcher):
@@ -172,7 +172,7 @@ def win_dist(args):
     if args.copylib:
         move(r'{LIB}\*.lib', r'{DIST}')
         move(r'{LIB}\*.a', r'{DIST}')
-    win_dist_libr2()
+    #win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
     """[R2_API] Add libr2 data (www, include, sdb's, ...) to dist directory"""
@@ -205,19 +205,18 @@ def win_dist_libr2(**path_fmt):
     makedirs(r'{DIST}\share\radare2\{R2_VERSION}\hud')
     copy(r'{ROOT}\doc\hud', r'{DIST}\share\radare2\{R2_VERSION}\hud\main')
 
-def build_sdb(backend, release=False):
+def build_sdb(backend, release=True):
     """[R2_API] Build and generate sdb files"""
     log.info('Building SDB')
     sdb_builddir = os.path.join(ROOT, SDB_BUILDDIR)
     if not os.path.exists(sdb_builddir):
         meson(os.path.join(ROOT, 'shlr', 'sdb'), sdb_builddir,
-              sdb_builddir, backend, release)
+              prefix=sdb_builddir, backend=backend, release=release)
     if backend != 'ninja':
         project = os.path.join(sdb_builddir, 'sdb.sln')
         msbuild(project, '/m')
     else:
         ninja(sdb_builddir)
-
     # Create .sdb files
     log.info('Generating sdb files.')
     with open(os.path.join(ROOT, 'Makefile'), 'r') as f:
@@ -239,8 +238,8 @@ def build_r2(args):
     log.info('Building radare2')
     r2_builddir = os.path.join(ROOT, args.dir)
     if not os.path.exists(r2_builddir):
-        meson(ROOT, r2_builddir, args.prefix, args.backend,
-              args.release, args.shared)
+        meson(ROOT, r2_builddir, prefix=args.prefix, backend=args.backend,
+              release=args.release, shared=args.shared)
     if args.backend != 'ninja':
         if args.xp:
             xp_compat(r2_builddir)
@@ -250,24 +249,29 @@ def build_r2(args):
     else:
         ninja(r2_builddir)
 
+
 def build(args):
     """ Prepare requirements and build radare2 """
     # Prepare capstone
     capstone_path = os.path.join(ROOT, 'shlr', 'capstone')
     if not os.path.isdir(capstone_path):
         log.info('Cloning capstone')
-        subprocess.call('git clone -b next --depth 10 https://github.com/aquynh/capstone.git'.split() + [capstone_path])
+        git_cmd = 'git clone -b next --depth 10 https://github.com/aquynh/capstone.git'
+        subprocess.call(git_cmd.split() + [capstone_path])
 
     # Build radare2
     build_r2(args)
-
+    if args.install:
+        win_dist(args)
     # Build sdb
     build_sdb(args.backend, release=args.release)
+    if args.install:
+        win_dist_libr2()
 
 def install(args):
     """ Install radare2 """
     if os.name == 'nt':
-        win_dist(args)
+        #win_dist(args)
         return
     log.warning('Install not implemented yet.')
     # TODO
