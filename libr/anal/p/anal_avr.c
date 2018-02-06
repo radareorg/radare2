@@ -897,6 +897,16 @@ INST_HANDLER (lds) {	// LDS Rd, k
 	ESIL_A ("r%d,=,", d);
 }
 
+INST_HANDLER (sts) {	// STS k, Rr
+	int r = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	int k = (buf[3] << 8) | buf[2];
+
+	ESIL_A ("r%d,", r);
+	__generic_ld_st (op, "ram", 0, 1, 0, k, 1);
+
+	op->cycles = 2;
+}
+
 INST_HANDLER (lds16) {	// LDS Rd, k
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0x0f)
@@ -1425,6 +1435,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
 	INST_DECL (lds,    0xfe0f, 0x9000, 0,      4,   LOAD   ), // LDS Rd, k
+	INST_DECL (sts,    0xfe0f, 0x9200, 2,      4,   STORE  ), // STS k, Rr
 	INST_DECL (lpm,    0xfe0f, 0x9004, 3,      2,   LOAD   ), // LPM Rd, Z
 	INST_DECL (lpm,    0xfe0f, 0x9005, 3,      2,   LOAD   ), // LPM Rd, Z+
 	INST_DECL (lsr,    0xfe0f, 0x9406, 1,      2,   SHR    ), // LSR Rd
