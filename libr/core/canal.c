@@ -1837,10 +1837,11 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %5d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %4d %5d %5d %5d %4d 0x%0*"PFMT64x" %5d 0x%0*"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = get_fcn_name(core, fcn);
 	int ebbs = 0;
+	int addrwidth = 8;
 	const char *color = "";
 	const char *color_end = "";
 	if (use_color) {
@@ -1854,16 +1855,20 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 		}
 	}
 
+	if (core->anal->bits == 64) {
+		addrwidth = 16;
+	}
+
 	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
-			fcn->addr,
+			addrwidth, fcn->addr,
 			r_anal_fcn_realsize (fcn),
 			r_list_length (fcn->bbs),
 			r_anal_fcn_count_edges (fcn, &ebbs),
 			r_anal_fcn_cc (fcn),
 			r_anal_fcn_cost (core->anal, fcn),
-			fcn->meta.min,
+			addrwidth, fcn->meta.min,
 			r_anal_fcn_size (fcn),
-			fcn->meta.max,
+			addrwidth, fcn->meta.max,
 			fcn->meta.numcallrefs,
 			r_anal_var_count (core->anal, fcn, 's', 0) +
 			r_anal_var_count (core->anal, fcn, 'b', 0) +
@@ -1881,14 +1886,20 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 
 static int fcn_list_verbose(RCore *core, RList *fcns) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
+	int headeraddr_width = 10;
+	char *headeraddr = "==========";
 
-	r_cons_printf ("%-11s %4s %5s %5s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
-			"address", "size", "nbbs", "edges", "cc", "cost", "min bound", "max bound",
-			"calls", "locals", "args", "xref", "frame", "name");
-	r_cons_printf ("%-11s %-4s %-5s %-5s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
-			"===========", "====", "=====", "=====", "=====", "====", "===========", "===========",
-			"=====", "======", "====", "====", "=====", "====");
+	if (core->anal->bits == 64) {
+		headeraddr_width = 18;
+		headeraddr = "==================";
+	}
 
+	r_cons_printf ("%-*s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
+			headeraddr_width, "address", "size", "nbbs", "edges", "cc", "cost",
+			headeraddr_width, "min bound", headeraddr_width, "max bound", "calls",
+			"locals", "args", "xref", "frame", "name");
+	r_cons_printf ("%s ==== ===== ===== ===== ==== %s ===== %s ===== ====== ==== ==== ===== ====\n",
+			headeraddr, headeraddr, headeraddr);
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
