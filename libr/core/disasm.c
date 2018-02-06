@@ -158,7 +158,7 @@ typedef struct {
 	int oplen;
 	bool show_varxs;
 	bool show_vars;
-	bool show_varsum;
+	int show_varsum;
 	int midflags;
 	bool midcursor;
 	bool show_noisy_comments;
@@ -1339,21 +1339,92 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 		base, sign, delta);
 }
 
-static void printVarSummary(RDisasmState *ds, RList *list, const char *name) {
+static void printVarSummary(RDisasmState *ds, RList *list) {
 	RAnalVar *var;
 	RListIter *iter;
-	int vars = 0;
-	int args = 0;
+	RCore *core = ds->core;
+	int bp_vars = 0;
+	int sp_vars = 0;
+	int rg_vars = 0;
+	int bp_args = 0;
+	int sp_args = 0;
+	int rg_args = 0;
+	char *bp_vars_color = COLOR_RESET (ds);
+	char *sp_vars_color = COLOR_RESET (ds);
+	char *rg_vars_color = COLOR_RESET (ds);
+	char *bp_args_color = COLOR_RESET (ds);
+	char *sp_args_color = COLOR_RESET (ds);
+	char *rg_args_color = COLOR_RESET (ds);
 	r_list_foreach (list, iter, var) {
 		if (var->delta > 0) {
-			args++;
+			switch(var->kind) {
+			case 'b':
+				bp_args++;
+				break;
+			case 's':
+				sp_args++;
+				break;
+			case 'r':
+				rg_args++;
+				break;
+			}
 		} else {
-			vars++;
+			switch(var->kind) {
+			case 'b':
+				bp_vars++;
+				break;
+			case 's':
+				sp_vars++;
+				break;
+			case 'r':
+				rg_vars++;
+				break;
+			}
 		}
+	}
+	if (bp_vars) { bp_vars_color = Color_GREEN; }
+	if (sp_vars) { sp_vars_color = Color_GREEN; }
+	if (rg_vars) { rg_vars_color = Color_GREEN; }
+	if (bp_args) { bp_args_color = Color_GREEN; }
+	if (sp_args) { sp_args_color = Color_GREEN; }
+	if (rg_args) { rg_args_color = Color_GREEN; }
+	if (ds->show_varsum == 2) {
+		ds_begin_json_line (ds);
+		r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
+		r_cons_printf ("vars: %s%d%s %s%d%s %s%d%s",
+				bp_vars_color, bp_vars, COLOR_RESET (ds),
+				sp_vars_color, sp_vars, COLOR_RESET (ds),
+				rg_vars_color, rg_vars, COLOR_RESET (ds));
+		ds_newline (ds);
+		ds_begin_json_line (ds);
+		r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
+		r_cons_printf ("args: %s%d%s %s%d%s %s%d%s",
+				bp_args_color, bp_args, COLOR_RESET (ds),
+				sp_args_color, sp_args, COLOR_RESET (ds),
+				rg_args_color, rg_args, COLOR_RESET (ds));
+		ds_newline (ds);
+		return;
 	}
 	ds_begin_json_line (ds);
 	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
-	r_cons_printf ("%s: %d (vars %d, args %d)", name, vars + args, vars, args);
+	r_cons_printf ("bp: %s%d%s (vars %s%d%s, args %s%d%s)",
+			bp_args || bp_vars ? Color_GREEN : COLOR_RESET (ds), bp_args+bp_vars, COLOR_RESET (ds),
+			bp_vars_color, bp_vars, COLOR_RESET (ds),
+			bp_args_color, bp_args, COLOR_RESET (ds));
+	ds_newline (ds);
+	ds_begin_json_line (ds);
+	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
+	r_cons_printf ("sp: %s%d%s (vars %s%d%s, args %s%d%s)",
+			sp_args || sp_vars ? Color_GREEN : COLOR_RESET (ds), sp_args+sp_vars, COLOR_RESET (ds),
+			sp_vars_color, sp_vars, COLOR_RESET (ds),
+			sp_args_color, sp_args, COLOR_RESET (ds));
+	ds_newline (ds);
+	ds_begin_json_line (ds);
+	r_cons_printf ("%s%s%s", COLOR (ds, color_fline), ds->pre, COLOR_RESET (ds));
+	r_cons_printf ("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
+			rg_args || rg_vars ? Color_GREEN : COLOR_RESET (ds), rg_args+rg_vars, COLOR_RESET (ds),
+			rg_vars_color, rg_vars, COLOR_RESET (ds),
+			rg_args_color, rg_args, COLOR_RESET (ds));
 	ds_newline (ds);
 }
 
@@ -1445,15 +1516,11 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars && ds->show_varsum) {
-		RList *bp_vars = r_anal_var_list (core->anal, f, 'b');
-		RList *rg_vars = r_anal_var_list (core->anal, f, 'r');
-		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
-		printVarSummary (ds, bp_vars, "bp");
-		printVarSummary (ds, sp_vars, "sp");
-		printVarSummary (ds, rg_vars, "rg");
-		r_list_free (bp_vars);
-		r_list_free (rg_vars);
-		r_list_free (sp_vars);
+		RList *vars = r_anal_var_list (core->anal, f, 'b');
+		r_list_join(vars, r_anal_var_list (core->anal, f, 'r'));
+		r_list_join(vars, r_anal_var_list (core->anal, f, 's'));
+		printVarSummary(ds, vars);
+		r_list_free (vars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
