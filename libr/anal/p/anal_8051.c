@@ -108,7 +108,7 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		// set memory map registers
 		i8051_reg_write (anal->reg, "_code", cpu_models[i].map_code);
 		i8051_reg_write (anal->reg, "_idata", cpu_models[i].map_idata);
-		i8051_reg_write (anal->reg, "_sfr", cpu_models[i].map_sfr);
+		i8051_reg_write (anal->reg, "_sfr", cpu_models[i].map_sfr - 0x80);
 		i8051_reg_write (anal->reg, "_xdata", cpu_models[i].map_xdata);
 		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
 	}
@@ -199,20 +199,16 @@ static void exr_a(RAnalOp *op, ut8 dummy) {
 	e ("a,");
 }
 
-static void exr_bit(RAnalOp *op, ut8 addr) {
-	if (addr < 0x80) {
-		ef ("_idata,%d,+,[1],", addr);
-	} else {
-		ef ("_sfr,0x7f,%d,&,+,[1],", addr);
-	}
-}
-
 static void exr_dir1(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,[1],", addr);
 	} else {
-		ef ("_sfr,0x7f,%d,&,+,[1],", addr);
+		ef ("_sfr,%d,+,[1],", addr);
 	}
+}
+
+static void exr_bit(RAnalOp *op, ut8 addr) {
+	exr_dir1 (op, addr);
 }
 
 static void exr_dpx (RAnalOp *op, ut8 dummy) {
@@ -262,28 +258,20 @@ static void exw_c(RAnalOp *op, ut8 dummy) {
 	e ("c,=,");
 }
 
-static void exw_bit(RAnalOp *op, ut8 addr) {
-	if (addr < 0x80) {
-		ef ("_idata,%d,+,=[1],", addr);
-	} else {
-		ef ("_sfr,0x7f,%d,&,+,=[1],", addr);
-	}
-}
-
 static void exw_dir1(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,=[1],", addr);
 	} else {
-		ef ("_sfr,0x7f,%d,&,+,=[1],", addr);
+		ef ("_sfr,%d,+,=[1],", addr);
 	}
 }
 
 static void exw_dir2(RAnalOp *op, ut8 addr) {
-	if (addr < 0x80) {
-		ef ("_idata,%d,+,=[1],", addr);
-	} else {
-		ef ("_sfr,0x7f,%d,&,+,=[1],", addr);
-	}
+	exw_dir1 (op, addr);
+}
+
+static void exw_bit(RAnalOp *op, ut8 addr) {
+	exw_dir1 (op, addr);
 }
 
 static void exw_dp (RAnalOp *op, ut8 dummy) {
@@ -321,14 +309,6 @@ static void exi_a(RAnalOp *op, ut8 dummy, const char* operation) {
 	ef ("a,%s=,", operation);
 }
 
-static void exi_bit (RAnalOp *op, ut8 addr, const char *operation) {
-	if (addr < 0x80) {
-		ef ("_idata,%d,+,%s=[1],", addr, operation);
-	} else {
-		ef ("_sfr,0x7f,%d,&,+,%s=[1],", addr, operation);
-	}
-}
-
 static void exi_c(RAnalOp *op, ut8 dummy, const char* operation) {
 	ef ("c,%s=,", operation);
 }
@@ -341,8 +321,12 @@ static void exi_dir1 (RAnalOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,%s=[1],", addr, operation);
 	} else {
-		ef ("_sfr,0x7f,%d,&,+,%s=[1],", addr, operation);
+		ef ("_sfr,%d,+,%s=[1],", addr, operation);
 	}
+}
+
+static void exi_bit (RAnalOp *op, ut8 addr, const char *operation) {
+	exi_dir1 (op, addr, operation);
 }
 
 static void exi_ri(RAnalOp *op, ut8 reg, const char *operation) {
@@ -809,8 +793,8 @@ static int set_reg_profile(RAnal *anal) {
 // ---------------------------------------------------
 // 8051 memory emulation control registers
 // These registers map 8051 memory classes to r2's
-// linear address space. Registers contain offset
-// to r2 memory representing the memory class.
+// linear address space. Registers contain base addr
+// in r2 memory space representing the memory class.
 // Offsets are initialized based on asm.cpu, but can
 // be updated with ar command.
 //
@@ -845,7 +829,7 @@ static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
 	if (addr < 0x80) {
 		return addr + i8051_reg_read (anal->reg, "_idata");
 	} else {
-		return (addr & 0x7f) + i8051_reg_read (anal->reg, "_sfr");
+		return addr + i8051_reg_read (anal->reg, "_sfr");
 	}
 }
 
@@ -906,13 +890,11 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	switch(_8051_ops[i].instr) {
 	case OP_PUSH:
 		op->type = R_ANAL_OP_TYPE_PUSH;
-		op->ptr = 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 1;
 		break;
 	case OP_POP:
 		op->type = R_ANAL_OP_TYPE_POP;
-		op->ptr = 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -1;
 		break;
@@ -959,6 +941,8 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case OP_CALL:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
 			op->jump = arg_addr11 (addr + op->size, buf);
 			op->fail = addr + op->size;
