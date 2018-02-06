@@ -983,7 +983,11 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					if (strlen (acode->buf_hex) > 0) {
 						strcat (acode->buf_hex, "\n");
 					}
-					strcat (acode->buf_hex, r_buf_free_to_string (op.buf_inc));
+					char *s = r_buf_free_to_string (op.buf_inc);
+					if (s) {
+						strcat (acode->buf_hex, s);
+						free (s);
+					}
 				}
 
 			}
