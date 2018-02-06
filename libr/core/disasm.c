@@ -1799,11 +1799,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		ds_begin_json_line (ds);
 		if (ds->show_flgoff) {
-			if (f) {
-				ds_beginline (ds);
-			} else {
-				ds_setup_print_pre (ds, false, false);
-			}
+			ds_beginline (ds);
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
