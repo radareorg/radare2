@@ -41124,7 +41124,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = cmpy (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = cmpy (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x54000c0) {
@@ -41143,7 +41143,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = cmpy (R%d, R%d *) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = cmpy (R%d, R%d *) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x70000c0) {
@@ -41162,7 +41162,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += cmpy (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += cmpy (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x70000e0) {
@@ -41181,7 +41181,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d -= cmpy (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= cmpy (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x74000c0) {
@@ -41200,7 +41200,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += cmpy (R%d, R%d *) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += cmpy (R%d, R%d *) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x74000e0) {
@@ -41219,7 +41219,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d -= cmpy (R%d, R%d *) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= cmpy (R%d, R%d *) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0x5000020) {
@@ -41298,7 +41298,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = cmpy (R%d, R%d) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = cmpy (R%d, R%d) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xd6000c0) {
@@ -41317,7 +41317,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = cmpy (R%d, R%d *) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = cmpy (R%d, R%d *) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x82000c0) {
@@ -41338,7 +41338,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vcmpyr (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vcmpyr (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x84000c0) {
@@ -41359,7 +41359,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vcmpyi (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vcmpyi (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0xa200080) {
@@ -41963,7 +41963,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyweh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyweh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x80000e0) {
@@ -41984,7 +41984,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpywoh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpywoh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x82000a0) {
@@ -42006,7 +42006,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyweh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyweh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x82000e0) {
@@ -42028,7 +42028,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpywoh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpywoh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa0000a0) {
@@ -42049,7 +42049,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyweh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyweh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa0000e0) {
@@ -42070,7 +42070,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpywoh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpywoh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa2000a0) {
@@ -42092,7 +42092,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyweh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyweh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa2000e0) {
@@ -42114,7 +42114,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpywoh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpywoh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x84000a0) {
@@ -42135,7 +42135,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyweuh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyweuh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x84000e0) {
@@ -42156,7 +42156,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpywouh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpywouh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x86000a0) {
@@ -42178,7 +42178,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyweuh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyweuh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x86000e0) {
@@ -42200,7 +42200,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpywouh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpywouh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa4000a0) {
@@ -42221,7 +42221,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyweuh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyweuh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa4000e0) {
@@ -42242,7 +42242,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpywouh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpywouh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa6000a0) {
@@ -42264,7 +42264,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyweuh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyweuh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa6000e0) {
@@ -42286,7 +42286,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpywouh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpywouh (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4000000) {
@@ -42304,7 +42304,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4000020) {
@@ -42322,7 +42322,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4000040) {
@@ -42340,7 +42340,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4000060) {
@@ -42358,7 +42358,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4200000) {
@@ -42377,7 +42377,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.L) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.L) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4200020) {
@@ -42396,7 +42396,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.H) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.L, R%d.H) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4200040) {
@@ -42415,7 +42415,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.L) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.L) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4200060) {
@@ -42434,7 +42434,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.H) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpy (R%d.H, R%d.H) %s:rnd", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6000000) {
@@ -42452,7 +42452,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6000020) {
@@ -42470,7 +42470,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6000040) {
@@ -42488,7 +42488,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6000060) {
@@ -42506,7 +42506,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6200000) {
@@ -42524,7 +42524,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6200020) {
@@ -42542,7 +42542,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6200040) {
@@ -42560,7 +42560,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6200060) {
@@ -42578,7 +42578,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc000000) {
@@ -42595,7 +42595,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc000020) {
@@ -42612,7 +42612,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc000040) {
@@ -42629,7 +42629,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc000060) {
@@ -42646,7 +42646,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc000080) {
@@ -42664,7 +42664,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc0000a0) {
@@ -42682,7 +42682,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc0000c0) {
@@ -42700,7 +42700,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc0000e0) {
@@ -42718,7 +42718,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc200000) {
@@ -42736,7 +42736,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc200020) {
@@ -42754,7 +42754,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc200040) {
@@ -42772,7 +42772,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc200060) {
@@ -42790,7 +42790,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s:rnd", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc200080) {
@@ -42809,7 +42809,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.L) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc2000a0) {
@@ -42828,7 +42828,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.L, R%d.H) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc2000c0) {
@@ -42847,7 +42847,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.L) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc2000e0) {
@@ -42866,7 +42866,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d.H, R%d.H) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe000000) {
@@ -42883,7 +42883,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe000020) {
@@ -42900,7 +42900,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe000040) {
@@ -42917,7 +42917,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe000060) {
@@ -42934,7 +42934,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe000080) {
@@ -42952,7 +42952,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe0000a0) {
@@ -42970,7 +42970,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.L, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe0000c0) {
@@ -42988,7 +42988,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe0000e0) {
@@ -43006,7 +43006,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpy (R%d.H, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe200000) {
@@ -43023,7 +43023,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe200020) {
@@ -43040,7 +43040,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe200040) {
@@ -43057,7 +43057,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe200060) {
@@ -43074,7 +43074,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe200080) {
@@ -43092,7 +43092,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe2000a0) {
@@ -43110,7 +43110,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.L, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe2000c0) {
@@ -43128,7 +43128,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.L) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe2000e0) {
@@ -43146,7 +43146,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpy (R%d.H, R%d.H) %s:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4400000) {
@@ -43164,7 +43164,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4400020) {
@@ -43182,7 +43182,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4400040) {
@@ -43200,7 +43200,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf600060) == 0x4400060) {
@@ -43218,7 +43218,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6400000) {
@@ -43236,7 +43236,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6400020) {
@@ -43254,7 +43254,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6400040) {
@@ -43272,7 +43272,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6400060) {
@@ -43290,7 +43290,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6600000) {
@@ -43308,7 +43308,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6600020) {
@@ -43326,7 +43326,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6600040) {
@@ -43344,7 +43344,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0x6600060) {
@@ -43362,7 +43362,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d -= mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc400000) {
@@ -43379,7 +43379,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc400020) {
@@ -43396,7 +43396,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc400040) {
@@ -43413,7 +43413,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xc400060) {
@@ -43430,7 +43430,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe400000) {
@@ -43447,7 +43447,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe400020) {
@@ -43464,7 +43464,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe400040) {
@@ -43481,7 +43481,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe400060) {
@@ -43498,7 +43498,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d += mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d += mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe600000) {
@@ -43515,7 +43515,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpyu (R%d.L, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe600020) {
@@ -43532,7 +43532,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpyu (R%d.L, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe600040) {
@@ -43549,7 +43549,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpyu (R%d.H, R%d.L) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6000e0) == 0xe600060) {
@@ -43566,7 +43566,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d -= mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d -= mpyu (R%d.H, R%d.H) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0x54000e0) {
@@ -43616,7 +43616,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = vrmpywoh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vrmpywoh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x8400080) {
@@ -43636,7 +43636,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d = vrmpyweh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vrmpyweh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa2000c0) {
@@ -43656,7 +43656,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += vrmpyweh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vrmpyweh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa6000c0) {
@@ -43676,7 +43676,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d:R%d += vrmpywoh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vrmpywoh (R%d:R%d, R%d:R%d) %s", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0xd200020) {
@@ -43818,7 +43818,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 						hi->pf |= HEX_PF_LSH1; // [:<<1]
 					}
 					hi->predicate = HEX_NOPRED;
-					sprintf(hi->mnem, "R%d = mpy (R%d, R%d) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = mpy (R%d, R%d) %s", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0xf600000) {
@@ -43961,7 +43961,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vdmpy (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vdmpy (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xa000080) {
@@ -43982,7 +43982,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vdmpy (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vdmpy (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf002060) == 0x9000000) {
@@ -44003,7 +44003,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = vdmpy (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = vdmpy (R%d:R%d, R%d:R%d) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0x8800020) {
@@ -44128,7 +44128,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyeh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyeh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0xa200040) {
@@ -44166,7 +44166,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyeh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyeh (R%d:R%d, R%d:R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg + 1, hi->ops[1].op.reg, hi->ops[2].op.reg + 1, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x50000a0) {
@@ -44185,7 +44185,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyh (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyh (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0x7200020) {
@@ -44219,7 +44219,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyh (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyh (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0xd2000e0) {
@@ -44238,7 +44238,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_RND; // :rnd
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d = vmpyh (R%d, R%d) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d = vmpyh (R%d, R%d) %s:rnd:sat", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x50000e0) {
@@ -44257,7 +44257,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d = vmpyhsu (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d = vmpyhsu (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xf6020e0) == 0x76000a0) {
@@ -44276,7 +44276,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi) {
 					}
 					hi->predicate = HEX_NOPRED;
 					hi->pf |= HEX_PF_SAT; // :sat
-					sprintf(hi->mnem, "R%d:R%d += vmpyhsu (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, (hi->pf & HEX_PF_LSH1 == HEX_PF_LSH1) ? ":<<1" : "");
+					sprintf(hi->mnem, "R%d:R%d += vmpyhsu (R%d, R%d) %s:sat", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.reg, ((hi->pf & HEX_PF_LSH1) == HEX_PF_LSH1) ? ":<<1" : "");
 					break;
 				}
 				if ((hi_u32 & 0xfe020e0) == 0x8000040) {
