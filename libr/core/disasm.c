@@ -3164,8 +3164,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	const char *prefix;
-	if (r_core_bin_strpurge (ds->core, str, refaddr)
-	    || !r_core_bin_strfilter (ds->core, str)) {
+	if (!r_core_bin_string_filter (ds->core, str, refaddr)) {
 		return;
 	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);

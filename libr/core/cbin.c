@@ -199,7 +199,7 @@ static bool false_positive(const char *str) {
 	return false;
 }
 
-R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
+static bool strpurge(RCore *core, const char *str, ut64 refaddr) {
 	bool purge = false;
 	if (core->bin->strpurge) {
 		char *addrs = strdup (core->bin->strpurge);
@@ -248,7 +248,7 @@ R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 	return purge;
 }
 
-R_API bool r_core_bin_strfilter(RCore *core, const char *str) {
+static bool strfilter(RCore *core, const char *str) {
 	int i;
 	switch (core->bin->strfilter) {
 	case 'U': // only uppercase strings
@@ -359,9 +359,8 @@ R_API bool r_core_bin_strfilter(RCore *core, const char *str) {
 	return true;
 }
 
-static bool string_filter(RCore *core, const char *str, ut64 addr) {
-	if (r_core_bin_strpurge (core, str, addr)
-	    || !r_core_bin_strfilter (core, str)) {
+R_API bool r_core_bin_string_filter(RCore *core, const char *str, ut64 addr) {
+	if (strpurge (core, str, addr) || !strfilter (core, str)) {
 		return false;
 	}
 	return true;
@@ -397,7 +396,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		paddr = string->paddr;
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
-		if (!string_filter (r, string->string, addr)) {
+		if (!r_core_bin_string_filter (r, string->string, addr)) {
 			continue;
 		}
 		if (string->length < minstr) {
