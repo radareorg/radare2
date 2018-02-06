@@ -2922,7 +2922,7 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	int depth = r_config_get_i (core->config, "anal.depth");
+	int depth = core->anal->opt.depth;
 	bool anal_vars = r_config_get_i (core->config, "anal.vars");
 
 	/* Analyze Functions */

@@ -573,6 +573,7 @@ typedef struct r_anal_callbacks_t {
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
 
 typedef struct r_anal_options_t {
+	int depth;
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
