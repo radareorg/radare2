@@ -1,4 +1,4 @@
-""" Meson build for radare2 """
+"""Meson build for radare2"""
 
 import argparse
 import glob
@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 
-from mesonbuild import mesonmain
+from mesonbuild import mesonmain, mesonlib
 
 BUILDDIR = 'build'
 SDB_BUILDDIR = 'build_sdb'
@@ -21,34 +21,46 @@ PATH_FMT = {}
 ROOT = None
 log = None
 
-def setGlobalVariables():
-    """ Set global variables """
+def set_global_variables():
+    """[R2_API] Set global variables"""
     global log
     global ROOT
 
     ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-    logging.basicConfig(format='[Meson][%(levelname)s]: %(message)s',
+    logging.basicConfig(format='[%(name)s][%(levelname)s]: %(message)s',
             level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
-    log.debug('Root: %s', ROOT)
 
-def meson(root, build, prefix=None, backend=None, release=False, shared=False):
-    """ Start meson build (i.e. python meson.py ./ build) """
+    with open(os.path.join(ROOT, 'configure.acr')) as f:
+        f.readline()
+        version = f.readline().split()[1].rstrip()
+
+    PATH_FMT['ROOT'] = ROOT
+    PATH_FMT['R2_VERSION'] = version
+
+    log.debug('Root: %s', ROOT)
+    log.debug('r2-version: %s', version)
+
+def meson(root, build, prefix=None, backend=None,
+          release=False, shared=False, *, options=[]):
+    """[R2_API] Invoke meson"""
     command = [root, build]
     if prefix:
-        command += ['--prefix={}'.format(prefix)]
+        command.append('--prefix={}'.format(prefix))
     if backend:
-        command += ['--backend={}'.format(backend)]
+        command.append('--backend={}'.format(backend))
     if release:
-        command += ['--buildtype=release']
+        command.append('--buildtype=release')
     if shared:
-        command += ['--default-library', 'shared']
+        command.append('--default-library=shared')
     else:
-        command += ['--default-library', 'static']
+        command.append('--default-library=static')
+    if options:
+        command.extend(options)
 
-    log.debug('Invoking meson: %s', command)
     launcher = os.path.join(ROOT, 'sys', 'meson.py')
+    log.debug('Invoking meson: %s', [launcher] + command)
     meson_run(command, launcher)
 
 def meson_run(args, launcher):
@@ -58,8 +70,8 @@ def meson_run(args, launcher):
         sys.exit(1)
 
 def ninja(folder, *targets):
-    """ Start ninja build (i.e. ninja -C build) """
-    command = ['ninja', '-C', os.path.join(ROOT, folder)]
+    """[R2_API] Invoke ninja"""
+    command = ['ninja', '-C', folder]
     if targets:
         command.extend(targets)
     log.debug('Invoking ninja: %s', command)
@@ -69,6 +81,7 @@ def ninja(folder, *targets):
         sys.exit(1)
 
 def msbuild(project, *params):
+    """[R2_API] Invoke MSbuild"""
     command = ['msbuild', project]
     if params:
         command.extend(params)
@@ -108,7 +121,7 @@ def makedirs(path):
 def convert_sdb(f):
     """ Convert f to sdb format """
     sdb = os.path.splitext(f)[0]
-    sdb_app = os.path.join(SDB_BUILDDIR, 'sdb')
+    sdb_app = os.path.join(ROOT, SDB_BUILDDIR, 'sdb')
     log.debug('Converting %s to %s', f, sdb)
     os.system('{app} {outf} = <{inf}'.format(app=sdb_app, outf=sdb, inf=f))
 
@@ -133,20 +146,16 @@ def xp_compat(builddir):
             proj.write(c)
             log.debug("%s .. OK", f)
 
-def win_install(args):
-    with open(os.path.join(ROOT, 'configure.acr')) as f:
-        f.readline()
-        version = f.readline().split(' ')[1].rstrip()
-
-    PATH_FMT['ROOT'] = ROOT
+def win_dist(args):
+    """Create r2 distribution for Windows"""
+    builddir = os.path.join(ROOT, args.dir)
     PATH_FMT['DIST'] = args.install
     PATH_FMT['BIN'] = os.path.join(args.prefix, 'bin')
     PATH_FMT['LIB'] = os.path.join(args.prefix, 'lib')
-    PATH_FMT['BUILDDIR'] = os.path.join(ROOT, args.dir)
-    PATH_FMT['R2_VERSION'] = version
+    PATH_FMT['BUILDDIR'] = builddir
 
     if args.backend == 'ninja':
-        ninja(args.dir, 'install')
+        ninja(builddir, 'install')
     else:
         for d in (r'{BIN}', r'{LIB}'):
             d = d.format(**PATH_FMT)
@@ -163,6 +172,12 @@ def win_install(args):
     if args.copylib:
         move(r'{LIB}\*.lib', r'{DIST}')
         move(r'{LIB}\*.a', r'{DIST}')
+    #win_dist_libr2()
+
+def win_dist_libr2(**path_fmt):
+    """[R2_API] Add libr2 data (www, include, sdb's, ...) to dist directory"""
+    PATH_FMT.update(path_fmt)
+
     copytree(r'{ROOT}\shlr\www', r'{DIST}\www')
     copytree(r'{ROOT}\libr\magic\d\default', r'{DIST}\share\radare2\{R2_VERSION}\magic')
     makedirs(r'{DIST}\share\radare2\{R2_VERSION}\syscall')
@@ -190,26 +205,26 @@ def win_install(args):
     makedirs(r'{DIST}\share\radare2\{R2_VERSION}\hud')
     copy(r'{ROOT}\doc\hud', r'{DIST}\share\radare2\{R2_VERSION}\hud\main')
 
-def build_sdb(args):
-    """ Build and generate sdb files """
+def build_sdb(backend, release=True):
+    """[R2_API] Build and generate sdb files"""
     log.info('Building SDB')
-    if not os.path.exists(SDB_BUILDDIR):
-        meson(os.path.join(ROOT, 'shlr', 'sdb'), SDB_BUILDDIR,
-              os.path.join(ROOT, SDB_BUILDDIR), args.backend, args.release)
-    if args.backend != 'ninja':
-        project = os.path.join(ROOT, SDB_BUILDDIR, 'sdb.sln')
+    sdb_builddir = os.path.join(ROOT, SDB_BUILDDIR)
+    if not os.path.exists(sdb_builddir):
+        meson(os.path.join(ROOT, 'shlr', 'sdb'), sdb_builddir,
+              prefix=sdb_builddir, backend=backend, release=release)
+    if backend != 'ninja':
+        project = os.path.join(sdb_builddir, 'sdb.sln')
         msbuild(project, '/m')
     else:
-        ninja(SDB_BUILDDIR)
-
+        ninja(sdb_builddir)
     # Create .sdb files
     log.info('Generating sdb files.')
-    with open('Makefile', 'r') as f:
+    with open(os.path.join(ROOT, 'Makefile'), 'r') as f:
         line = ''
         while 'DATADIRS' not in line:
             line = f.readline()
     datadirs = line.split('=')[1].split()
-    datadirs = [os.path.abspath(p) for p in datadirs]
+    datadirs = [os.path.join(ROOT, *p.split('/')) for p in datadirs]
     for folder in datadirs:
         log.debug('Looking up %s', folder)
         for f in glob.iglob(os.path.join(folder, '**', '*.sdb.txt'), recursive=True):
@@ -221,17 +236,19 @@ def build_sdb(args):
 def build_r2(args):
     """ Build radare2 """
     log.info('Building radare2')
-    if not os.path.exists(args.dir):
-        meson(ROOT, args.dir, args.prefix, args.backend,
-              args.release, args.shared)
+    r2_builddir = os.path.join(ROOT, args.dir)
+    if not os.path.exists(r2_builddir):
+        meson(ROOT, r2_builddir, prefix=args.prefix, backend=args.backend,
+              release=args.release, shared=args.shared)
     if args.backend != 'ninja':
         if args.xp:
-            xp_compat(os.path.join(ROOT, args.dir))
+            xp_compat(r2_builddir)
         if not args.project:
-            project = os.path.join(ROOT, args.dir, 'radare2.sln')
+            project = os.path.join(r2_builddir, 'radare2.sln')
             msbuild(project, '/m')
     else:
-        ninja(args.dir)
+        ninja(r2_builddir)
+
 
 def build(args):
     """ Prepare requirements and build radare2 """
@@ -239,18 +256,22 @@ def build(args):
     capstone_path = os.path.join(ROOT, 'shlr', 'capstone')
     if not os.path.isdir(capstone_path):
         log.info('Cloning capstone')
-        subprocess.call('git clone -b next --depth 10 https://github.com/aquynh/capstone.git'.split() + [capstone_path])
+        git_cmd = 'git clone -b next --depth 10 https://github.com/aquynh/capstone.git'
+        subprocess.call(git_cmd.split() + [capstone_path])
 
     # Build radare2
     build_r2(args)
-
+    if args.install:
+        win_dist(args)
     # Build sdb
-    build_sdb(args)
+    build_sdb(args.backend, release=args.release)
+    if args.install:
+        win_dist_libr2()
 
 def install(args):
     """ Install radare2 """
     if os.name == 'nt':
-        win_install(args)
+        #win_dist(args)
         return
     log.warning('Install not implemented yet.')
     # TODO
@@ -260,7 +281,7 @@ def install(args):
 
 def main():
     # Create logger and get applications paths
-    setGlobalVariables()
+    set_global_variables()
 
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
