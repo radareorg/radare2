@@ -199,7 +199,7 @@ static bool false_positive(const char *str) {
 	return false;
 }
 
-static bool strpurge(RCore *core, const char *str, ut64 refaddr) {
+R_API bool r_core_bin_strpurge(RCore *core, const char *str, ut64 refaddr) {
 	bool purge = false;
 	if (core->bin->strpurge) {
 		char *addrs = strdup (core->bin->strpurge);
@@ -360,7 +360,7 @@ static bool strfilter(RCore *core, const char *str) {
 }
 
 R_API bool r_core_bin_string_filter(RCore *core, const char *str, ut64 addr) {
-	if (strpurge (core, str, addr) || !strfilter (core, str)) {
+	if (r_core_bin_strpurge (core, str, addr) || !strfilter (core, str)) {
 		return false;
 	}
 	return true;
