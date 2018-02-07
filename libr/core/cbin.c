@@ -3016,7 +3016,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
 			sdb = sdb_ns_path (r->sdb, path_stringtable, 0);
 			bool firstit_for = true;
-			for (num_string = 0; sdb; ++num_string) {
+			for (num_string = 0; sdb; num_string++) {
 				char path_string[256] = R_EMPTY;
 				snprintf (path_string, sizeof (path_string), format_string, path_stringtable, num_string);
 				sdb = sdb_ns_path (r->sdb, path_string, 0);
