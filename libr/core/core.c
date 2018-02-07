@@ -1232,7 +1232,8 @@ static int autocomplete(RLine *line) {
 			int n, i = 0;
 			int sdelta = (line->buffer.data[1] == ' ')
 				? 2 : (line->buffer.data[2] == ' ')
-				? 3 : 4;
+				? 3 : (line->buffer.data[3] == ' ')
+				? 4 : 5;
 			n = strlen (line->buffer.data + sdelta);
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!strncmp (flag->name, line->buffer.data + sdelta, n)) {
