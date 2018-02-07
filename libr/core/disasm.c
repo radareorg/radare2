@@ -3506,7 +3506,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (*val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
-		if (ds && *str && r_str_is_printable (str)) {
+		if (ds && *str && !r_core_bin_strpurge (ds->core, str, *val) && r_str_is_printable (str)) {
 			bool jump_op = false;
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
