@@ -9,8 +9,6 @@ import shutil
 import subprocess
 import sys
 
-from mesonbuild import mesonmain, mesonlib
-
 BUILDDIR = 'build'
 SDB_BUILDDIR = 'build_sdb'
 
@@ -18,6 +16,7 @@ BACKENDS = ['ninja', 'vs2015', 'vs2017']
 
 PATH_FMT = {}
 
+MESON = None
 ROOT = None
 log = None
 
@@ -25,6 +24,7 @@ def set_global_variables():
     """[R2_API] Set global variables"""
     global log
     global ROOT
+    global MESON
 
     ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
@@ -36,16 +36,23 @@ def set_global_variables():
         f.readline()
         version = f.readline().split()[1].rstrip()
 
+    if os.name == 'nt':
+        meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.py')
+        MESON = [sys.executable, meson]
+    else:
+        MESON = ['meson']
+
     PATH_FMT['ROOT'] = ROOT
     PATH_FMT['R2_VERSION'] = version
 
     log.debug('Root: %s', ROOT)
+    log.debug('Meson: %s', MESON)
     log.debug('r2-version: %s', version)
 
 def meson(root, build, prefix=None, backend=None,
           release=False, shared=False, *, options=[]):
     """[R2_API] Invoke meson"""
-    command = [root, build]
+    command = MESON + [root, build]
     if prefix:
         command.append('--prefix={}'.format(prefix))
     if backend:
@@ -59,12 +66,8 @@ def meson(root, build, prefix=None, backend=None,
     if options:
         command.extend(options)
 
-    launcher = os.path.join(ROOT, 'sys', 'meson.py')
-    log.debug('Invoking meson: %s', [launcher] + command)
-    meson_run(command, launcher)
-
-def meson_run(args, launcher):
-    ret = mesonmain.run(args, launcher)
+    log.debug('Invoking meson: %s', command)
+    ret = subprocess.call(command)
     if ret != 0:
         log.error('Meson error. Exiting.')
         sys.exit(1)
@@ -329,9 +332,4 @@ def main():
         install(args)
 
 if __name__ == '__main__':
-    # meson internals
-    if len(sys.argv) > 1 and sys.argv[1] in ('test', '--internal'):
-        launcher = os.path.realpath(sys.argv[0])
-        meson_run(sys.argv[1:], launcher)
-        sys.exit()
     main()
