@@ -4254,15 +4254,24 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'b': // "pdb"
 			processed_cmd = true;
-			{
+			if (input[2] == '?') {
+				r_cons_printf ("Usage: pdb[j]  - disassemble basic block\n");
+			} else {
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 				if (b) {
 					ut8 *block = malloc (b->size + 1);
 					if (block) {
 						r_core_read_at (core, b->addr, block, b->size);
-						core->num->value = r_core_print_disasm (
-							core->print, core, b->addr, block,
-							b->size, 9999, 0, 2, input[2] == 'J');
+
+						if (input[2] == 'j') {
+							r_cons_print ("[");
+							r_core_print_disasm_json (core, b->addr, block, b->size, 0);
+							r_cons_print ("]\n");
+						} else {
+							core->num->value = r_core_print_disasm (
+								core->print, core, b->addr, block,
+								b->size, 9999, 0, 2, input[2] == 'J');
+						}
 						free (block);
 						pd_result = 0;
 					}
