@@ -29,7 +29,7 @@ def set_global_variables():
     ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
     logging.basicConfig(format='[%(name)s][%(levelname)s]: %(message)s',
-            level=logging.DEBUG)
+                        level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
 
     with open(os.path.join(ROOT, 'configure.acr')) as f:
@@ -47,7 +47,7 @@ def set_global_variables():
 
     log.debug('Root: %s', ROOT)
     log.debug('Meson: %s', MESON)
-    log.debug('r2-version: %s', version)
+    log.debug('Version: %s', version)
 
 def meson(root, build, prefix=None, backend=None,
           release=False, shared=False, *, options=[]):
@@ -175,7 +175,7 @@ def win_dist(args):
     if args.copylib:
         move(r'{LIB}\*.lib', r'{DIST}')
         move(r'{LIB}\*.a', r'{DIST}')
-    #win_dist_libr2()
+    win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
     """[R2_API] Add libr2 data (www, include, sdb's, ...) to dist directory"""
@@ -252,29 +252,24 @@ def build_r2(args):
     else:
         ninja(r2_builddir)
 
-
-def build(args):
-    """ Prepare requirements and build radare2 """
-    # Prepare capstone
+def prepare_capstone():
+    """[R2_API] Prepare capstone"""
     capstone_path = os.path.join(ROOT, 'shlr', 'capstone')
     if not os.path.isdir(capstone_path):
         log.info('Cloning capstone')
         git_cmd = 'git clone -b next --depth 10 https://github.com/aquynh/capstone.git'
         subprocess.call(git_cmd.split() + [capstone_path])
 
-    # Build radare2
-    build_r2(args)
-    if args.install:
-        win_dist(args)
-    # Build sdb
+def build(args):
+    """ Prepare requirements and build radare2 """
+    prepare_capstone()
     build_sdb(args.backend, release=args.release)
-    if args.install:
-        win_dist_libr2()
+    build_r2(args)
 
 def install(args):
     """ Install radare2 """
     if os.name == 'nt':
-        #win_dist(args)
+        win_dist(args)
         return
     log.warning('Install not implemented yet.')
     # TODO
