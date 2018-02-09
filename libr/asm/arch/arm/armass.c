@@ -511,19 +511,18 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (!strcmpnull (ao->op, "blx")) {
 		int reg = getreg (ao->a[0]);
-		ao->o = 0xf000e800;
-		//ao->o = 0x00f000e8;
+		ao->o = 0xf0000000;
 		if (reg == -1) {
 			ut64 n = getnum (ao->a[0]);
-			if ((st64)n < 4 || (n & 3)) {
-				eprintf ("Invalid destination for blx\n");
-				return 0;
-			}
-			n -= 4;
-			n -= ao->off;
-			n /= 4; // always aligned jump
-			ao->o |= (n & 0xffff) << 1;
-			ao->o |= (n >> 10 & 0xff) << 16;
+			ut64 pc = (ao->off + 4) & 0xFFFFFFFC;
+			n -= pc;
+			int l = (n >> 2) & 0x3ff;
+			int h = (n >> 12) & 0x3ff;
+			int s = (n >> 24) & 0x1;
+			int j1 = !((n >> 23) & 0x1) ^ s;
+			int j2 = !((n >> 22) & 0x1) ^ s;
+
+			ao->o |= s << 26 | h << 16 | (0x18 | j1 << 2| j2) << 11 | l << 1;
 			thumb_swap (&ao->o);
 		} else {
 			ao->o = 0x8047;
@@ -1123,8 +1122,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if ((ret = getreg (ao->a[0])) == -1) {
 					ut32 dst = getnum (ao->a[0]);
 					dst -= (ao->off + 8);
+					if (dst & 0x2) {
+						ao->o = 0xfb;
+					} else {
+						ao->o = 0xfa;
+					}
 					dst /= 4;
-					ao->o = 0xfa;
 					ao->o |= ((dst >> 16) & 0xff) << 8;
 					ao->o |= ((dst >> 8) & 0xff) << 16;
 					ao->o |= ((dst) & 0xff) << 24;
