@@ -1319,6 +1319,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
+	const char *numColor = ds->core->cons->pal.num;
 	RAnalVar *var;
 	RListIter *iter;
 	int bp_vars = 0;
@@ -1327,15 +1328,15 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	int bp_args = 0;
 	int sp_args = 0;
 	int rg_args = 0;
-	char *bp_vars_color = COLOR_RESET (ds);
-	char *sp_vars_color = COLOR_RESET (ds);
-	char *rg_vars_color = COLOR_RESET (ds);
-	char *bp_args_color = COLOR_RESET (ds);
-	char *sp_args_color = COLOR_RESET (ds);
-	char *rg_args_color = COLOR_RESET (ds);
+	const char *bp_vars_color = COLOR_RESET (ds);
+	const char *sp_vars_color = COLOR_RESET (ds);
+	const char *rg_vars_color = COLOR_RESET (ds);
+	const char *bp_args_color = COLOR_RESET (ds);
+	const char *sp_args_color = COLOR_RESET (ds);
+	const char *rg_args_color = COLOR_RESET (ds);
 	r_list_foreach (list, iter, var) {
 		if (var->delta > 0) {
-			switch(var->kind) {
+			switch (var->kind) {
 			case 'b':
 				bp_args++;
 				break;
@@ -1347,7 +1348,7 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 				break;
 			}
 		} else {
-			switch(var->kind) {
+			switch (var->kind) {
 			case 'b':
 				bp_vars++;
 				break;
@@ -1360,12 +1361,12 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 			}
 		}
 	}
-	if (bp_vars) { bp_vars_color = Color_GREEN; }
-	if (sp_vars) { sp_vars_color = Color_GREEN; }
-	if (rg_vars) { rg_vars_color = Color_GREEN; }
-	if (bp_args) { bp_args_color = Color_GREEN; }
-	if (sp_args) { sp_args_color = Color_GREEN; }
-	if (rg_args) { rg_args_color = Color_GREEN; }
+	if (bp_vars) { bp_vars_color = numColor; }
+	if (sp_vars) { sp_vars_color = numColor; }
+	if (rg_vars) { rg_vars_color = numColor; }
+	if (bp_args) { bp_args_color = numColor; }
+	if (sp_args) { sp_args_color = numColor; }
+	if (rg_args) { rg_args_color = numColor; }
 	if (ds->show_varsum == 2) {
 		ds_begin_json_line (ds);
 		ds_print_pre (ds);
@@ -1386,21 +1387,21 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	ds_begin_json_line (ds);
 	ds_print_pre (ds);
 	r_cons_printf ("bp: %s%d%s (vars %s%d%s, args %s%d%s)",
-			bp_args || bp_vars ? Color_GREEN : COLOR_RESET (ds), bp_args+bp_vars, COLOR_RESET (ds),
+			bp_args || bp_vars ? numColor : COLOR_RESET (ds), bp_args + bp_vars, COLOR_RESET (ds),
 			bp_vars_color, bp_vars, COLOR_RESET (ds),
 			bp_args_color, bp_args, COLOR_RESET (ds));
 	ds_newline (ds);
 	ds_begin_json_line (ds);
 	ds_print_pre (ds);
 	r_cons_printf ("sp: %s%d%s (vars %s%d%s, args %s%d%s)",
-			sp_args || sp_vars ? Color_GREEN : COLOR_RESET (ds), sp_args+sp_vars, COLOR_RESET (ds),
+			sp_args || sp_vars ? numColor : COLOR_RESET (ds), sp_args+sp_vars, COLOR_RESET (ds),
 			sp_vars_color, sp_vars, COLOR_RESET (ds),
 			sp_args_color, sp_args, COLOR_RESET (ds));
 	ds_newline (ds);
 	ds_begin_json_line (ds);
 	ds_print_pre (ds);
 	r_cons_printf ("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
-			rg_args || rg_vars ? Color_GREEN : COLOR_RESET (ds), rg_args+rg_vars, COLOR_RESET (ds),
+			rg_args || rg_vars ? numColor : COLOR_RESET (ds), rg_args+rg_vars, COLOR_RESET (ds),
 			rg_vars_color, rg_vars, COLOR_RESET (ds),
 			rg_args_color, rg_args, COLOR_RESET (ds));
 	ds_newline (ds);
