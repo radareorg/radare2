@@ -37,7 +37,7 @@ static int download(struct SPDBDownloader *pd) {
 	char *abspath_to_archive = NULL;
 	char *archive_name = NULL;
 	size_t archive_name_len = 0;
-	const char *basepath = ".";
+
 	int res = 0;
 	int cmd_ret;
 	if (!opt->dbg_file || !*opt->dbg_file) {
@@ -55,14 +55,16 @@ static int download(struct SPDBDownloader *pd) {
 	}
 	memcpy (archive_name, opt->dbg_file, archive_name_len + 1);
 	archive_name[archive_name_len - 1] = '_';
-	if (opt->path && *opt->path) {
-		basepath = opt->path;
-	}
+
 	if (checkExtract () || opt->extract == 0) {
 		res = 1;
-		abspath_to_archive = r_str_newf ("%s%s%s", basepath,
-		                                 R_SYS_DIR, archive_name);
-		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
+		abspath_to_archive = r_str_newf ("%s%s%s%s%s%s%s",
+						    opt->symbol_store_path, R_SYS_DIR,
+						    opt->dbg_file, R_SYS_DIR,
+						    opt->guid, R_SYS_DIR,
+						    archive_name);
+
+		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       opt->user_agent,
 		                       opt->symbol_server,
 		                       opt->dbg_file,
@@ -74,7 +76,7 @@ static int download(struct SPDBDownloader *pd) {
 		const char *format = "%s %s %s";
 		char *abspath_to_file = strdup (abspath_to_archive);
 		if (abspath_to_file) {
-			int abspath_to_archive_len = archive_name_len + strlen (basepath) + 2;
+			int abspath_to_archive_len = archive_name_len + strlen (opt->symbol_store_path) + 2;
 			abspath_to_file[abspath_to_archive_len - 2] = 'b';
 			// extractor_cmd -> %1 %2 %3
 			// %1 - 'expand'
@@ -110,9 +112,13 @@ static int download(struct SPDBDownloader *pd) {
 		eprintf ("Falling back to uncompressed pdb\n");
 		res = 1;
 		archive_name[archive_name_len - 1] = 'b';
-		abspath_to_archive = r_str_newf ("%s%s%s", basepath,
-		                                 R_SYS_DIR, archive_name);
-		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" -o \"%s\"",
+		abspath_to_archive = r_str_newf("%s%s%s%s%s%s%s",
+		    opt->symbol_store_path, R_SYS_DIR,
+		    opt->dbg_file, R_SYS_DIR,
+		    opt->guid, R_SYS_DIR,
+		    archive_name);
+
+		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       opt->user_agent,
 		                       opt->symbol_server,
 		                       opt->dbg_file,
@@ -140,7 +146,7 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt->guid = strdup (opt->guid);
 	pd->opt->symbol_server = strdup (opt->symbol_server);
 	pd->opt->user_agent = strdup (opt->user_agent);
-	pd->opt->path = strdup (opt->path);
+	pd->opt->symbol_store_path = strdup (opt->symbol_store_path);
 	pd->opt->extract = opt->extract;
 	pd->download = download;
 }
@@ -150,14 +156,13 @@ void deinit_pdb_downloader(SPDBDownloader *pd) {
 	R_FREE (pd->opt->guid);
 	R_FREE (pd->opt->symbol_server);
 	R_FREE (pd->opt->user_agent);
-	R_FREE (pd->opt->path);
+	R_FREE (pd->opt->symbol_store_path);
 	R_FREE (pd->opt);
 	pd->download = 0;
 }
 
 int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
 	int ret;
-	char *path;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
 	RBinInfo *info = r_bin_get_info (core->bin);
@@ -172,13 +177,11 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 		return 1;
 	}
 
-	path = info->file ? r_file_dirname (info->file) : strdup (".");
-
 	opt.dbg_file = info->debug_file_name;
 	opt.guid = info->guid;
 	opt.symbol_server = options->symbol_server;
 	opt.user_agent = options->user_agent;
-	opt.path = path;
+	opt.symbol_store_path = options->symbol_store_path;
 	opt.extract = options->extract;
 
 	init_pdb_downloader (&opt, &pdb_downloader);
@@ -195,6 +198,5 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 
-	free (path);
 	return 0;
 }

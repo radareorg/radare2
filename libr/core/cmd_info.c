@@ -546,6 +546,7 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
 					pdbopts.symbol_server = (char*) r_config_get (core->config, "pdb.server");
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
+					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
 					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
 					if (r > 0) {
 						eprintf ("Error while downloading pdb file");
@@ -584,10 +585,24 @@ static int cmd_info(void *data, const char *input) {
 								filename = strdup (basename);
 							}
 						}
+
+						// Last chance: Check if file is in downstream symbol store
+						if (!file_found) {
+							char* symstore_path = r_config_get (core->config, "pdb.symstore");
+							char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
+										     symstore_path, info->debug_file_name,
+										     info->guid, info->debug_file_name);
+							file_found = r_file_exists(pdb_path);
+							if (file_found) {
+								filename = pdb_path;
+							} else {
+								R_FREE(pdb_path);
+							}
+						}
 					}
 
 					if (!file_found) {
-						eprintf ("File '%s' not found", filename);
+						eprintf ("File '%s' not found in file directory or symbol store", info->debug_file_name);
 						free (filename);
 						break;
 					}
