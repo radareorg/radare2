@@ -1198,6 +1198,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		menu = 1;
 	}
 	for (;;) {
+		bool hasColor = r_config_get_i (core->config, "scr.color");
 		r_cons_clear00 ();
 
 		if (menu) {
@@ -1216,9 +1217,15 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					hit = 1;
 				}
 				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					bool cur = option == i;
+					if (cur && hasColor) {
+						r_cons_printf (Color_INVERT);
+					}
 					r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
-						(option==i)?'>':' ',
-						i, flag->offset, flag->size, flag->name);
+							cur?'>':' ', i, flag->offset, flag->size, flag->name);
+					if (cur && hasColor) {
+						r_cons_printf (Color_RESET);
+					}
 					j++;
 				}
 				i++;
@@ -1303,10 +1310,13 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'b': // back
 		case 'Q':
 		case 'q':
-			if (menu <= 0) return true;
+			if (menu <= 0) {
+				return true;
+			}
 			menu--;
 			option = _option;
 			if (menu == 0) {
+				r_flag_space_set (core->flags, NULL);
 				// if no flagspaces, just quit
 				for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
 					if (core->flags->spaces[i]) {
@@ -1443,16 +1453,18 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case ':':
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0]='\0';
+			*cmd = 0;
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
-				cmd[0]='\0';
-			//line[strlen(line)-1]='\0';
+			if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) <0) {
+				*cmd = 0;
+			}
+			cmd[sizeof (cmd) - 1] = 0;
 			r_core_cmd (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
-			if (cmd[0])
+			if (*cmd) {
 				r_cons_any_key (NULL);
+			}
 			//cons_gotoxy(0,0);
 			r_cons_clear ();
 			continue;
@@ -3020,7 +3032,7 @@ repeat:
 						   (const char *)name + 4);
 			}
 			r_name_filter (name, n + 10);
-			r_flag_set (core->flags, name, off+ntotal, n);
+			r_flag_set (core->flags, name, off + ntotal, n);
 			free (name);
 			if (is_wide) {
 				ntotal += n * 2 - 1;

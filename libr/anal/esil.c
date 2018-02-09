@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2017 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2018 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -228,10 +228,8 @@ static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
 
 static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
-	if (dataAlign > 0) {
-		if (addr % dataAlign) {
-			return false;
-		}
+	if (dataAlign > 0 && addr % dataAlign) {
+		return false;
 	}
 	return true;
 }
