@@ -142,9 +142,9 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	int count = 0;
 	int bytes_read = 0;
 	r_str_replace_char (input, ',', ' ');
-	int len = r_str_word_count (input);
+	// int len = r_str_word_count (input);
 	r_str_word_set0 (input);
-	char *filename = r_str_word_get0 (input, 0);
+	//const char *filename = r_str_word_get0 (input, 0);
 	skip = (int)r_num_math (NULL, r_str_word_get0 (input, 1));
 	count = (int)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);

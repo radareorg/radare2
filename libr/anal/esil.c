@@ -100,11 +100,10 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 
 R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
-	char *h;
 	if (!code || !op || !strlen (op) || !esil || !esil->ops) {
 		return false;
 	}
-	h = sdb_itoa (sdb_hash (op), t, 16);
+	char *h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
 	if (!sdb_num_exists (esil->ops, h)) {
 		eprintf ("can't set esil-op %s\n", op);

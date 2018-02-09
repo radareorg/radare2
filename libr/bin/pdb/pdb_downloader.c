@@ -91,8 +91,7 @@ static int download(struct SPDBDownloader *pd) {
 		// cabextract -d %1 %2
 		// %1 - path to directory where to extract all files from cab archive
 		// %2 - absolute path to cab archive
-		extractor_cmd = r_str_newf (format,
-		                            cabextractor, basepath, abspath_to_archive);
+		extractor_cmd = r_str_newf (format, cabextractor, ".", abspath_to_archive);
 #endif
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
