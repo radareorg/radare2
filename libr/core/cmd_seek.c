@@ -247,12 +247,12 @@ static int cmd_seek(void *data, const char *input) {
 			off = -(st64)off;
 		}
 	}
-#if 0
-	int sign = 1;
+#if 1
+//	int sign = 1;
 	if (input[0] == ' ') {
 		switch (input[1]) {
 		case '-':
-			sign = -1;
+//			sign = -1;
 			/* pass thru */
 		case '+':
 			input++;
