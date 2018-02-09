@@ -1195,21 +1195,6 @@ static int autocomplete(RLine *line) {
 			ls_free (ccs);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if (!strncmp (line->buffer.data, "db- ", 4)) {
-			RBreakpoint *bp = core->dbg->bp;
-			RBreakpointItem *b;
-			char *addr;
-			int n, i = 0;
-			n = strlen (line->buffer.data + 4);
-			r_list_foreach (bp->bps, iter, b) {
-				addr = r_str_newf ("0x%llx", b->addr);
-				if (!strncmp(addr, line->buffer.data + 4, n)) {
-					tmp_argv[i++] = addr;
-				}
-			}
-			tmp_argv[i] = NULL;
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
@@ -1236,7 +1221,6 @@ static int autocomplete(RLine *line) {
 		    (!strncmp (line->buffer.data, "/r ", 3)) ||
 		    (!strncmp (line->buffer.data, "/re ", 4)) ||
 		    (!strncmp (line->buffer.data, "db ", 3)) ||
-		    (!strncmp (line->buffer.data, "db- ", 4)) ||
 		    (!strncmp (line->buffer.data, "f ", 2)) ||
 		    (!strncmp (line->buffer.data, "f- ", 3)) ||
 		    (!strncmp (line->buffer.data, "fr ", 3)) ||
@@ -1259,6 +1243,22 @@ static int autocomplete(RLine *line) {
 				}
 			}
 			tmp_argv[i>255?255:i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "db- ", 4)) {
+			RBreakpoint *bp = core->dbg->bp;
+			RBreakpointItem *b;
+			char *addr, *str;
+			int n, i = 0, buflen = 4;
+			str = line->buffer.data + buflen;
+			n = strlen (str);
+			r_list_foreach (bp->bps, iter, b) {
+				addr = r_str_newf ("0x%llx", b->addr);
+				if (!strncmp(addr, str, n)) {
+					tmp_argv[i++] = addr;
+				}
+			}
+			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "-", 1)) {
