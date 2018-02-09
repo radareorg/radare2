@@ -2581,7 +2581,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 									ref->type, ref->at, ref->addr);
 						}
 					}
-					r_list_free (refs);
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", addr);
 				}
@@ -2718,7 +2717,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
 							// recursively follow fcn->refs again and again
 						}
-						r_list_free (refs1);
 					} else {
 						f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 						if (f) {
@@ -2734,7 +2732,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 #endif
 				}
-				r_list_free (refs);
 			}
 		}
 
@@ -5342,8 +5339,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (buf_asm);
 				}
 			}
-			r_list_free (list_);
-			r_list_free (list);
 		} else {
 			if (input[1] == 'j') { // axfj
 				r_cons_print ("[]\n");
@@ -6042,7 +6037,6 @@ static int compute_calls(RCore *core) {
 		xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
 		if (xrefs) {
 			cov += r_list_length (xrefs);
-			r_list_free (xrefs);
 			xrefs = NULL;
 		}
 	}

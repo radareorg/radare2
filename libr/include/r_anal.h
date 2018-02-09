@@ -3,7 +3,7 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-#define USE_DICT 0
+#define USE_DICT 1
 
 /* use sdb function storage */
 #define FCN_SDB 1
@@ -296,6 +296,7 @@ typedef struct r_anal_type_function_t {
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
+	ut64 ref_cache;
 #if FCN_OLD
 	RList *refs;
 	RList *xrefs;
@@ -695,6 +696,7 @@ typedef struct r_anal_t {
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	char *cmdtail;
 	int seggrn;
+	ut64 ref_cache;
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
@@ -1381,6 +1383,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn);
 
+
 /* locals */
 #if 0
 R_API int r_anal_fcn_local_add(RAnal *anal, RAnalFunction *fcn, int index, const char *name, const char *type);
@@ -1430,8 +1433,12 @@ R_API int r_anal_fcn_resize (const RAnal *anal, RAnalFunction *fcn, int newsize)
 #define r_anal_fcn_get_vars(x) x->vars
 #define r_anal_fcn_get_bbs(x) x->bbs
 #else
+typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
+R_API RList *r_anal_xref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data);
+R_API RList *r_anal_ref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data);
 R_API int r_anal_xrefs_count(RAnal *anal);
 R_API const char *r_anal_xrefs_type_tostring (char type);
+R_API RAnalRefType r_anal_xrefs_type_fromstring (const char *string);
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to);
 R_API RList *r_anal_refs_get (RAnal *anal, ut64 to);
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 from);

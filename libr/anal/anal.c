@@ -105,6 +105,7 @@ R_API RAnal *r_anal_new() {
 	anal->fcn_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
+	anal->ref_cache = 0;
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {

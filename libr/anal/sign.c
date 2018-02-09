@@ -54,7 +54,6 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 			}
 		}
 	}
-	r_list_free (refs);
 	return ret;
 }
 

@@ -367,6 +367,7 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 	// set global reference
 // r_cons_printf ("C 0x%llx  0x%llx\n", at, addr);
 	r_anal_xrefs_set (a, type, at, addr);
+	return true;
 	// set per-function reference
 #if FCN_OLD
 // TOO OLD we shouldnt be storing this.. or we do?
@@ -390,6 +391,8 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 }
 
 R_API int r_anal_fcn_xref_del(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
+	r_anal_xrefs_deln (a, type, at, addr);
+	return true;
 #if FCN_OLD
 	RAnalRef *ref;
 	RListIter *iter;
@@ -2320,12 +2323,65 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 	return edges;
 }
 
+static bool xref_fcn_cmp(RAnalRef *ref, void *data) {
+	RAnalFunction *fcn = (RAnalFunction*)data;
+	if (!fcn || !ref) {
+		return false;
+	}
+
+	if (fcn->addr == ref->addr) {
+		return true;
+	}
+
+	return false;
+}
+
+static bool ref_fcn_cmp(RAnalRef *ref, void *data) {
+	RAnalFunction *fcn = (RAnalFunction*)data;
+	if (!fcn || !ref) {
+		return false;
+	}
+
+	if (r_anal_fcn_in (fcn, ref->at)) {
+		return true;
+	}
+
+	return false;
+}
+
+
+static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
+	r_list_free (fcn->refs);
+	fcn->refs = r_anal_ref_get_cb (anal, &ref_fcn_cmp, (void*)fcn);
+	if (fcn->refs) {
+		return true;
+	} 
+	return false;
+}
+
+static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
+	r_list_free (fcn->xrefs);
+	fcn->xrefs = r_anal_xref_get_cb (anal, &xref_fcn_cmp, (void*)fcn);
+	if (fcn->xrefs) {
+		return true;
+	}
+	return false;
+}
+
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = (fcn) ? r_list_clone (fcn->refs) : NULL;
-	return ret;
+	if (anal->ref_cache != fcn->ref_cache) {
+		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
+			fcn->ref_cache = anal->ref_cache;
+		}
+	}
+	return fcn->refs;
 }
 
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = (fcn) ? r_list_clone (fcn->xrefs) : NULL;
-	return ret;
+	if (anal->ref_cache != fcn->ref_cache) {
+		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
+			fcn->ref_cache = anal->ref_cache;
+		}
+	}
+	return fcn->xrefs;
 }
