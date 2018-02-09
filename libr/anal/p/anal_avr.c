@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2018 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -491,6 +491,7 @@ INST_HANDLER (brbx) {	// BRBC s, k
 		+ ((((buf[1] & 0x03) << 6) | ((buf[0] & 0xf8) >> 2))
 			| (buf[1] & 0x2 ? ~((int) 0x7f) : 0))
 		+ 2;
+	op->fail = op->addr + op->size;
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
 			// so it cannot be really be known until this
 			// instruction is executed by the ESIL interpreter!!!
@@ -533,6 +534,7 @@ INST_HANDLER (call) {	// CALL k
 		 | (buf[1] & 0x01) << 23
 		 | (buf[0] & 0x01) << 17
 		 | (buf[0] & 0xf0) << 14;
+	op->fail = op->addr + op->size;
 	op->cycles = cpu->pc <= 16 ? 3 : 4;
 	if (!STR_BEGINS (cpu->model, "ATxmega")) {
 		op->cycles--;	// AT*mega optimizes one cycle
@@ -1074,6 +1076,7 @@ INST_HANDLER (rcall) {	// RCALL k
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
 			| (((buf[1] & 0x8) ? ~((int) 0x1fff) : 0)))
 		+ 2) & CPU_PC_MASK (cpu);
+	op->fail = op->addr + op->size;
 	// esil
 	ESIL_A ("pc,");				// esil already points to next
 						// instruction (@ret)
@@ -1509,7 +1512,9 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 			op->cycles = opcode_desc->cycles;
 			op->size = opcode_desc->size;
 			op->type = opcode_desc->type;
-			op->fail = addr + op->size;
+			op->jump = UT64_MAX;
+			op->fail = UT64_MAX;
+			// op->fail = addr + op->size;
 			op->addr = addr;
 
 			// start void esil expression
