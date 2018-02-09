@@ -10,12 +10,11 @@
 #include "hexagon_anal.h"
 
 static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	HexInsn hi;
+	HexInsn hi = {0};;
 	ut32 data = 0;
-	memset (op, 0, sizeof(RAnalOp));
-	memset(&hi, 0, sizeof(hi));
-	data = r_read_le32(buf);
-	int size = hexagon_disasm_instruction(data, &hi);
+	memset (op, 0, sizeof (RAnalOp));
+	data = r_read_le32 (buf);
+	int size = hexagon_disasm_instruction (data, &hi);
 	op->size = size;
 	if (size <= 0) {
 		return size;
@@ -24,8 +23,7 @@ static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
-	int ret = hexagon_anal_instruction(&hi, op);
-	return ret;
+	return hexagon_anal_instruction (&hi, op);
 }
 
 static int set_reg_profile(RAnal *anal) {
@@ -33,7 +31,7 @@ static int set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r29\n"
-		"=FP	r30\n"
+		"=BP	r30\n"
 		"=LR	r31\n"
 		"=ZF	z\n"
 		"=SF	s\n"

@@ -95,6 +95,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
+		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n");
 	}
 	return 1;
@@ -1047,6 +1048,12 @@ int main(int argc, char **argv) {
 		pdbopts.user_agent = (char*) r_config_get (core.config, "pdb.useragent");
 		pdbopts.symbol_server = (char*) r_config_get (core.config, "pdb.server");
 		pdbopts.extract = r_config_get_i (core.config, "pdb.extract");
+
+		if ((tmp = r_sys_getenv ("RABIN2_SYMSTORE"))) {
+			r_config_set (core.config, "pdb.symstore", tmp);
+			R_FREE (tmp);
+		}
+		pdbopts.symbol_store_path = (char*) r_config_get (core.config, "pdb.symstore");
 		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
 		r_core_fini (&core);
 		return r;

@@ -191,6 +191,13 @@ static int cb_analeobjmp(void *user, void *data) {
 	return true;
 }
 
+static int cb_analdepth(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.depth = node->i_value;
+	return true;
+}
+
 static int cb_analafterjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -588,7 +595,6 @@ static int cb_asmbits(void *user, void *data) {
 			(void)r_anal_set_reg_profile (core->anal);
 		}
 	}
-
 	asmos = r_config_get (core->config, "asm.os");
 	asmarch = r_config_get (core->config, "asm.arch");
 	asmcpu = r_config_get (core->config, "asm.cpu");
@@ -2210,6 +2216,11 @@ R_API int r_core_config_init(RCore *core) {
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
+	{
+		char *pdb_path = r_str_home(R2_HOMEDIR R_SYS_DIR "pdb");
+		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
+		R_FREE(pdb_path);
+	}
 	SETI ("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 	SETI ("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
@@ -2234,7 +2245,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB ("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETCB ("anal.afterjmp", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
-	SETI ("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
+	SETICB ("anal.depth", 16, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETPREF ("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
@@ -2369,7 +2380,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF ("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF ("asm.varsub", "true", "Substitute variables in disassembly");
-	SETPREF ("asm.varsum", "false", "Show variables summary instead of full list in disasm");
+	SETI ("asm.varsum", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETPREF ("asm.varsub_only", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETPREF ("asm.relsub", "true", "Substitute pc relative expressions in disasm");
 	SETPREF ("asm.cmtfold", "false", "Fold comments, toggle with Vz");

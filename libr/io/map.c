@@ -183,6 +183,21 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 	return false;
 }
 
+R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr) {
+	RList *maps;
+	RIOMap *map;
+	bool retval = false;
+	maps = r_io_map_get_for_fd (io, fd);
+	if (maps) {
+		map = r_list_get_n (maps, 0);
+		if (map) {
+			retval = r_io_map_remap (io, map->id, addr);
+		}
+		r_list_free (maps);
+	}
+	return retval;
+}
+
 static void _map_free(void* p) {
 	RIOMap* map = (RIOMap*) p;
 	if (map) {

@@ -691,6 +691,16 @@ typedef struct {
 } SVal_LF_ULONG;
 
 typedef struct {
+    int64_t value;
+    SCString name;
+} SVal_LF_QUADWORD;
+
+typedef struct {
+    uint64_t value;
+    SCString name;
+} SVal_LF_UQUADWORD;
+
+typedef struct {
 	unsigned short value_or_type;
 	void *name_or_val;
 } SVal;

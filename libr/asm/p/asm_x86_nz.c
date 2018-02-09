@@ -1172,7 +1172,7 @@ static int opint(RAsm *a, ut8 *data, const Opcode *op) {
 static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	bool is_short = op->is_short;
-	st64 bigimm = op->operands[0].immediate * op->operands[0].sign;
+	// st64 bigimm = op->operands[0].immediate * op->operands[0].sign;
 	st64 immediate = op->operands[0].immediate * op->operands[0].sign;
 	if (is_short && (immediate > ST8_MAX || immediate < ST8_MIN)) {
 		return l;

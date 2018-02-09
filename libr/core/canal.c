@@ -1837,10 +1837,11 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %5d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %4d %5d %5d %5d %4d 0x%0*"PFMT64x" %5d 0x%0*"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = get_fcn_name(core, fcn);
 	int ebbs = 0;
+	int addrwidth = 8;
 	const char *color = "";
 	const char *color_end = "";
 	if (use_color) {
@@ -1854,16 +1855,20 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 		}
 	}
 
+	if (core->anal->bits == 64) {
+		addrwidth = 16;
+	}
+
 	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
-			fcn->addr,
+			addrwidth, fcn->addr,
 			r_anal_fcn_realsize (fcn),
 			r_list_length (fcn->bbs),
 			r_anal_fcn_count_edges (fcn, &ebbs),
 			r_anal_fcn_cc (fcn),
 			r_anal_fcn_cost (core->anal, fcn),
-			fcn->meta.min,
+			addrwidth, fcn->meta.min,
 			r_anal_fcn_size (fcn),
-			fcn->meta.max,
+			addrwidth, fcn->meta.max,
 			fcn->meta.numcallrefs,
 			r_anal_var_count (core->anal, fcn, 's', 0) +
 			r_anal_var_count (core->anal, fcn, 'b', 0) +
@@ -1881,14 +1886,20 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 
 static int fcn_list_verbose(RCore *core, RList *fcns) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
+	int headeraddr_width = 10;
+	char *headeraddr = "==========";
 
-	r_cons_printf ("%-11s %4s %5s %5s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
-			"address", "size", "nbbs", "edges", "cc", "cost", "min bound", "max bound",
-			"calls", "locals", "args", "xref", "frame", "name");
-	r_cons_printf ("%-11s %-4s %-5s %-5s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
-			"===========", "====", "=====", "=====", "=====", "====", "===========", "===========",
-			"=====", "======", "====", "====", "=====", "====");
+	if (core->anal->bits == 64) {
+		headeraddr_width = 18;
+		headeraddr = "==================";
+	}
 
+	r_cons_printf ("%-*s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
+			headeraddr_width, "address", "size", "nbbs", "edges", "cc", "cost",
+			headeraddr_width, "min bound", headeraddr_width, "max bound", "calls",
+			"locals", "args", "xref", "frame", "name");
+	r_cons_printf ("%s ==== ===== ===== ===== ==== %s ===== %s ===== ====== ==== ==== ===== ====\n",
+			headeraddr, headeraddr, headeraddr);
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
@@ -1947,6 +1958,9 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf (",\"ebbs\":%d", ebbs);
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
+	r_cons_printf (",\"minbound\":\"%d\"", fcn->meta.min);
+	r_cons_printf (",\"maxbound\":\"%d\"", fcn->meta.max);
+	r_cons_printf (",\"range\":\"%d\"", r_anal_fcn_size(fcn));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"diff\":\"%s\"",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
@@ -2059,6 +2073,10 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	}
 	r_cons_printf ("]\n");
 	return 0;
+}
+
+static int fcn_list_verbose_json(RCore *core, RList *fcns) {
+	return fcn_list_json(core, fcns, false);
 }
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
@@ -2255,7 +2273,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_core_anal_fcn_list_size (core);
 		break;
 	case 'l':
-		fcn_list_verbose (core, fcns);
+		if (rad[1] == 'j') {
+			fcn_list_verbose_json (core, fcns);
+		} else {
+			fcn_list_verbose (core, fcns);
+		}
 		break;
 	case 'q':
 		if (rad[1] == 'j') {
@@ -2900,7 +2922,7 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	int depth = r_config_get_i (core->config, "anal.depth");
+	int depth = core->anal->opt.depth;
 	bool anal_vars = r_config_get_i (core->config, "anal.vars");
 
 	/* Analyze Functions */
@@ -2919,6 +2941,9 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, symbol) {
 			if (r_cons_is_breaked ()) {
 				break;
+			}
+			if (strstr (symbol->name, ".dll_")) { // Stop analyzing PE imports further
+				continue;
 			}
 			if (isValidSymbol (symbol)) {
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr,

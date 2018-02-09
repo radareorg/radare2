@@ -64,7 +64,7 @@ R_API bool r_flag_space_set_i(RFlag *f, int idx) {
 
 R_API int r_flag_space_set(RFlag *f, const char *name) {
 	int i;
-	if (!name || *name == '*') {
+	if (!name || !*name || *name == '*') {
 		f->space_idx = -1;
 		return f->space_idx;
 	}

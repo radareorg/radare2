@@ -142,9 +142,9 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	int count = 0;
 	int bytes_read = 0;
 	r_str_replace_char (input, ',', ' ');
-	int len = r_str_word_count (input);
+	// int len = r_str_word_count (input);
 	r_str_word_set0 (input);
-	char *filename = r_str_word_get0 (input, 0);
+	//const char *filename = r_str_word_get0 (input, 0);
 	skip = (int)r_num_math (NULL, r_str_word_get0 (input, 1));
 	count = (int)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);
@@ -983,7 +983,11 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					if (strlen (acode->buf_hex) > 0) {
 						strcat (acode->buf_hex, "\n");
 					}
-					strcat (acode->buf_hex, r_buf_free_to_string (op.buf_inc));
+					char *s = r_buf_free_to_string (op.buf_inc);
+					if (s) {
+						strcat (acode->buf_hex, s);
+						free (s);
+					}
 				}
 
 			}

@@ -70,6 +70,7 @@ R_API RAnal *r_anal_new() {
 	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
+	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	r_space_new (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, NULL, anal);
 	r_space_new (&anal->zign_spaces, "zs", zign_unset_for, zign_count_for, zign_rename_for, anal);

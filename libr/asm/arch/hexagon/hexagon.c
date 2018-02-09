@@ -215,7 +215,7 @@ char* hex_get_sub_regpair(int opreg)
 
 inline bool hex_if_duplex(uint32_t insn_word)
 {
-	if (insn_word & (3 << 14) == 0) {
+	if ((insn_word & (3 << 14)) == 0) {
 		return true;
 	}
 	return false;

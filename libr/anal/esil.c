@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2017 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2018 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -100,11 +100,10 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 
 R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
-	char *h;
 	if (!code || !op || !strlen (op) || !esil || !esil->ops) {
 		return false;
 	}
-	h = sdb_itoa (sdb_hash (op), t, 16);
+	char *h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
 	if (!sdb_num_exists (esil->ops, h)) {
 		eprintf ("can't set esil-op %s\n", op);
@@ -229,10 +228,8 @@ static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
 
 static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
-	if (dataAlign > 0) {
-		if (addr % dataAlign) {
-			return false;
-		}
+	if (dataAlign > 0 && addr % dataAlign) {
+		return false;
 	}
 	return true;
 }

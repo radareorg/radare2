@@ -1383,7 +1383,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		}
 	}
 	fcn->maxstack = 0;
-	ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
+	ret = fcn_recurse (anal, fcn, addr, buf, len, anal->opt.depth);
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 

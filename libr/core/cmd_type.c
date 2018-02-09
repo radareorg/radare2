@@ -9,6 +9,7 @@
 static const char *help_msg_t[] = {
 	"Usage: t", "", "# cparse types commands",
 	"t", "", "List all loaded types",
+	"tj", "", "List all loaded types as json",
 	"t", " <type>", "Show type in 'pf' syntax",
 	"t*", "", "List types info in r2 commands",
 	"t-", " <name>", "Delete types by its name",
@@ -311,31 +312,55 @@ static int typelist(void *p, const char *k, const char *v) {
 	return 1;
 }
 
-static int sdbforcb (void *p, const char *k, const char *v) {
-	if (!strncmp (v, "type", strlen ("type") + 1)) {
-		r_cons_println (k);
-	}
+static int sdbforcb_default (void *p, const char *k, const char *v) {
+	r_cons_println (k);
+	return 1;
+}
+
+static int sdbforcb_json (void *p, const char *k, const char *v) {
+	Sdb *sdb = (Sdb *)p;
+	char *sizecmd = r_str_newf ("type.%s.size", k);
+	char *formatcmd = r_str_newf ("type.%s", k);
+	r_cons_printf ("{\"type\":\"%s\",\"size\":%d,\"format\":\"%s\"}", k,
+			atoi (sdb_querys (sdb, NULL, -1, sizecmd)),
+			r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd)));
+	free (sizecmd);
+	free (formatcmd);
 	return 1;
 }
 
 static void typesList(RCore *core, int mode) {
 	switch (mode) {
-	case 'j':
-		eprintf ("TODO\n");
-		break;
 	case 1:
 	case '*':
 		sdb_foreach (core->anal->sdb_types, typelist, core);
 		break;
+	case 'j':
 	default:
 		{
 		SdbList *ls = sdb_foreach_list (core->anal->sdb_types, true);
+		SdbList *filtls = ls_new ();
 		SdbListIter *it;
 		SdbKv *kv;
 		ls_foreach (ls, it, kv) {
-			sdbforcb ((void *)core, kv->key, kv->value);
+			if (!strncmp (kv->value, "type", strlen ("type") + 1)) {
+				ls_append (filtls, kv);
+			}
+		}
+		if (mode == 'j') {
+			r_cons_print ("[");
+			ls_foreach (filtls, it, kv) {
+				sdbforcb_json ((void *)core->anal->sdb_types, kv->key, kv->value);
+				if (it->n) { r_cons_print (","); }
+			}
+			r_cons_println ("]");
+		} else {
+			ls_foreach (filtls, it, kv) {
+				sdbforcb_default ((void *)core->anal->sdb_types, kv->key, kv->value);
+			}
 		}
 		ls_free (ls);
+		ls_free (filtls);
 		}
 		break;
 	}

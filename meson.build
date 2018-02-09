@@ -8,8 +8,21 @@ else
   r2version = r2version.stdout().strip()
 endif
 
+repo = '.'
+if meson.is_subproject()
+  repo = meson.current_source_dir()
+  if host_machine.system() == 'windows'
+    py_cmd = 'print(__import__("os").readlink(r"@0@"))'.format(repo)
+    py_cmd = run_command('python', '-c', py_cmd)
+    if py_cmd.returncode() == 0
+      repo = py_cmd.stdout().strip()
+      message('r2 realpath: ' + repo)
+    endif
+  endif
+endif
+
 # Get version_commit
-version_commit = run_command('git', 'rev-list', '--all', '--count')
+version_commit = run_command('git', '-C', repo, 'rev-list', '--all', '--count')
 if version_commit.returncode() != 0
   version_commit = 0
 else
@@ -17,7 +30,7 @@ else
 endif
 
 # Get gittap
-gittap  = run_command('git', 'describe', '--tags', '--match', '[0-9]*')
+gittap  = run_command('git', '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
 if gittap.returncode() != 0
   gittap = ''
 else
@@ -25,7 +38,7 @@ else
 endif
 
 # Get gittip
-gittip  = run_command('git', 'rev-parse', 'HEAD')
+gittip  = run_command('git', '-C', repo, 'rev-parse', 'HEAD')
 if gittip.returncode() != 0
   gittip = 'unknown'
 else
@@ -62,24 +75,24 @@ else
 endif
 
 platform_deps = []
-platform_inc = include_directories(['.','../libr/include'])
+platform_inc = include_directories(['.','libr/include'])
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')]
-  platform_inc = include_directories(['.','../libr/include','../libr/include/msvc'])
+  platform_inc = include_directories(['.','libr/include','libr/include/msvc'])
   host_os = 'windows'
   if get_option('default_library') == 'static'
-	if get_option('buildtype') == 'release'
-	  add_global_arguments('/MT', language: 'c')
-	endif
-	message(' ------ WINDOWS VERSION: BUILD STATIC ------')
+    if get_option('buildtype') == 'release' and not meson.is_subproject()
+      add_project_arguments('/MT', language: 'c')
+    endif
+    message(' ------ WINDOWS VERSION: BUILD STATIC ------')
   else
-	message(' ------ WINDOWS VERSION: BUILD SHARED ------')
+    message(' ------ WINDOWS VERSION: BUILD SHARED ------')
   endif
 elif host_machine.system() == 'linux'
   if get_option('default_library') == 'static'
-	message(' ------ LINUX VERSION: BUILD STATIC ------')
+    message(' ------ LINUX VERSION: BUILD STATIC ------')
   else
-	message(' ------ LINUX VERSION: BUILD SHARED ------')
+    message(' ------ LINUX VERSION: BUILD SHARED ------')
   endif
 endif
 
@@ -115,9 +128,9 @@ userconf.set('HAVE_OPENSSL', 0)
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
 if host_machine.system() == 'windows'
-userconf.set('HAVE_JEMALLOC', 0)
+  userconf.set('HAVE_JEMALLOC', 0)
 else
-userconf.set('HAVE_JEMALLOC', 1)
+  userconf.set('HAVE_JEMALLOC', 1)
 endif
 configure_file(input : 'libr/include/r_userconf.h.in',
                output : 'r_userconf.h',
@@ -138,44 +151,45 @@ run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.
 
 subdir('shlr/')
 subdir('libr/util')
-
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')
 subdir('libr/io')
-subdir('binr/rahash2')
-subdir('binr/rarun2')
-
 subdir('libr/bp')
 subdir('libr/syscall')
 subdir('libr/cons')
 subdir('libr/search')
 subdir('libr/magic')
-
 subdir('libr/flag')
 subdir('libr/reg')
-
 subdir('libr/bin')
 subdir('libr/config')
-
 subdir('libr/parse')
 subdir('libr/lang')
-
 subdir('libr/asm')
 subdir('libr/anal')
-subdir('binr/rasm2')
 subdir('libr/egg')
-
 subdir('libr/fs')
-
 subdir('libr/debug')
-
 subdir('libr/core')
 
-subdir('binr/rabin2')
-subdir('binr/radare2')
-subdir('binr/ragg2')
-subdir('binr/r2agent')
-subdir('binr/radiff2')
-subdir('binr/rafind2')
-subdir('binr/rax2')
+if meson.is_subproject()
+  libr2_lib = [r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto,
+               r_egg, r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse,
+               r_reg, r_search, r_socket, r_syscall, r_util]
+  libr2_inc = include_directories(['.', 'libr/include'])
+  libr2_dep = declare_dependency(link_with: libr2_lib,
+                                 include_directories: libr2_inc,
+                                 version: r2version)
+else
+  subdir('binr/rahash2')
+  subdir('binr/rarun2')
+  subdir('binr/rasm2')
+  subdir('binr/rabin2')
+  subdir('binr/radare2')
+  subdir('binr/ragg2')
+  subdir('binr/r2agent')
+  subdir('binr/radiff2')
+  subdir('binr/rafind2')
+  subdir('binr/rax2')
+endif

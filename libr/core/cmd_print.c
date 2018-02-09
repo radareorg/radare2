@@ -138,7 +138,7 @@ static const char *help_msg_p_equal[] = {
 	"p==", "[..]", "same subcommands as p=, but using flame column graph instead of rows",
 	"p=", "b", "same as above",
 	"p=", "c", "print number of calls per block",
-	"p=", "d", "print different bytes from block",
+	"p=", "d", "print min/max/number of unique bytes in block",
 	"p=", "e", "print entropy for each filesize/blocksize",
 	"p=", "F", "print number of 0xFF bytes for each filesize/blocksize",
 	"p=", "i", "print number of invalid instructions per block",
@@ -705,7 +705,7 @@ static char get_string_type(const ut8 *buf, ut64 len){
 
 static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	int i;
-	int min = 0;
+	int min = -1;
 	int max = 0;
 	int dict = 0;
 	int range = 0;
@@ -715,7 +715,7 @@ static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	}
 	for (i = 0; i < 256; i++) {
 		if (histogram[i]) {
-			if (min == 0) {
+			if (min == -1) {
 				min = i;
 			}
 			max = i;
@@ -723,11 +723,11 @@ static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 		}
 	}
 	range = max - min;
-	r_cons_printf ("min:   %d  0x%x\n", min, min);
-	r_cons_printf ("max:   %d  0x%x\n", max, max);
-	r_cons_printf ("dict:  %d  0x%x\n", dict, dict);
-	r_cons_printf ("range: %d  0x%x\n", range, range);
-	r_cons_printf ("size:  %d  0x%x\n", bsz, bsz);
+	r_cons_printf ("min:              %d  0x%x\n", min, min);
+	r_cons_printf ("max:              %d  0x%x\n", max, max);
+	r_cons_printf ("unique (count):   %d  0x%x\n", dict, dict);
+	r_cons_printf ("range (max-min):  %d  0x%x\n", range, range);
+	r_cons_printf ("size (of block):  %d  0x%x\n", bsz, bsz);
 }
 
 R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
@@ -4254,15 +4254,24 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'b': // "pdb"
 			processed_cmd = true;
-			{
+			if (input[2] == '?') {
+				r_cons_printf ("Usage: pdb[j]  - disassemble basic block\n");
+			} else {
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 				if (b) {
 					ut8 *block = malloc (b->size + 1);
 					if (block) {
 						r_core_read_at (core, b->addr, block, b->size);
-						core->num->value = r_core_print_disasm (
-							core->print, core, b->addr, block,
-							b->size, 9999, 0, 2, input[2] == 'J');
+
+						if (input[2] == 'j') {
+							r_cons_print ("[");
+							r_core_print_disasm_json (core, b->addr, block, b->size, 0);
+							r_cons_print ("]\n");
+						} else {
+							core->num->value = r_core_print_disasm (
+								core->print, core, b->addr, block,
+								b->size, 9999, 0, 2, input[2] == 'J');
+						}
 						free (block);
 						pd_result = 0;
 					}
