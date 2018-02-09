@@ -1195,6 +1195,21 @@ static int autocomplete(RLine *line) {
 			ls_free (ccs);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "db- ", 4)) {
+			RBreakpoint *bp = core->dbg->bp;
+			RBreakpointItem *b;
+			char *addr;
+			int n, i = 0;
+			n = strlen (line->buffer.data + 4);
+			r_list_foreach (bp->bps, iter, b) {
+				addr = r_str_newf ("0x%llx", b->addr);
+				if (!strncmp(addr, line->buffer.data + 4, n)) {
+					tmp_argv[i++] = addr;
+				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
