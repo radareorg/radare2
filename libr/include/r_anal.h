@@ -3,7 +3,7 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-#define USE_DICT 0
+#define USE_DICT 1
 
 /* use sdb function storage */
 #define FCN_SDB 1
@@ -296,10 +296,6 @@ typedef struct r_anal_type_function_t {
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
-#if FCN_OLD
-	RList *refs;
-	RList *xrefs;
-#endif
 	RAnalFcnMeta meta;
 	RRangeTiny bbr;
 	RBNode rb;
@@ -654,14 +650,13 @@ typedef struct r_anal_t {
 	struct r_anal_plugin_t *cur;
 	RAnalRange *limit;
 	RList *plugins;
-	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	Sdb *sdb_zigns;
 
 #if USE_DICT
-	dict *dict_refs;
-	dict *dict_xrefs;
+	SdbHash *dict_refs;
+	SdbHash *dict_xrefs;
 #endif
 	bool recursive_noreturn;
 	RSpaces meta_spaces;
@@ -867,7 +862,7 @@ typedef enum {
 } RAnalRefType;
 
 typedef struct r_anal_ref_t {
-	int type;
+	RAnalRefType type;
 	ut64 addr;
 	ut64 at;
 } RAnalRef;
@@ -1381,6 +1376,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn);
 
+
 /* locals */
 #if 0
 R_API int r_anal_fcn_local_add(RAnal *anal, RAnalFunction *fcn, int index, const char *name, const char *type);
@@ -1415,7 +1411,7 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_trim_jmprefs(RAnalFunction *fcn);
+R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
@@ -1424,38 +1420,29 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_fcn_resize (const RAnal *anal, RAnalFunction *fcn, int newsize);
 
-#if 0
-#define r_anal_fcn_get_refs(x) x->refs
-#define r_anal_fcn_get_xrefs(x) x->xrefs
-#define r_anal_fcn_get_vars(x) x->vars
-#define r_anal_fcn_get_bbs(x) x->bbs
-#else
-R_API int r_anal_xrefs_count(RAnal *anal);
-R_API const char *r_anal_xrefs_type_tostring (char type);
-R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to);
-R_API RList *r_anal_refs_get (RAnal *anal, ut64 to);
-R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 from);
-R_API void r_anal_xrefs_list(RAnal *anal, int rad);
-R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn);
-R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
-R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
-R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
-R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile);
-R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
-R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
-R_API RList* r_anal_get_fcns (RAnal *anal);
-#endif
-
-/* ref.c */
+typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RAnalRef *r_anal_ref_new(void);
 R_API RList *r_anal_ref_list_new(void);
 R_API void r_anal_ref_free(void *ref);
-R_API const char *r_anal_ref_to_string(int type);
-R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type);
-R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr);
-R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr);
-R_API RList *r_anal_ref_get(RAnal *anal, ut64 addr);
+R_API int r_anal_xrefs_count(RAnal *anal);
+R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type);
+R_API RAnalRefType r_anal_xrefs_type(char ch);
+R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
+R_API RList *r_anal_refs_get(RAnal *anal, ut64 to);
+R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);
+R_API void r_anal_xrefs_list(RAnal *anal, int rad);
+R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn);
+R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
+R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
+R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
+R_API int r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
+
+R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
+R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
+R_API RList* r_anal_get_fcns (RAnal *anal);
 
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
@@ -1484,7 +1471,6 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, const char* name);
 
 /* project */
-R_API bool r_anal_project_save(RAnal *anal, const char *prjfile);
 R_API bool r_anal_xrefs_init (RAnal *anal);
 
 #define R_ANAL_THRESHOLDFCN 0.7F
@@ -1583,9 +1569,6 @@ R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 R_API bool r_meta_deserialize_val(RAnalMetaItem *it, int type, ut64 from, const char *v);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full);
-
-R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
-R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
 
 /* hints */
 

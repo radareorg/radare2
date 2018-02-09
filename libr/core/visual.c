@@ -1013,7 +1013,7 @@ repeat:
 					}
 					r_cons_printf (" %d [%s] 0x%08"PFMT64x " %s %cREF (%s)\n",
 						idx, cstr, refi->addr,
-						r_anal_ref_to_string (refi->type),
+						r_anal_xrefs_type_tostring (refi->type),
 						xref ? 'X':' ', name);
 					free (name);
 					if (idx == skip) {

@@ -1084,7 +1084,6 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 }
 
 static void ds_show_refs(RDisasmState *ds) {
-	RList *list;
 	RAnalRef *ref;
 	RListIter *iter;
 	RFlagItem *flagi, *flagat;
@@ -1092,7 +1091,8 @@ static void ds_show_refs(RDisasmState *ds) {
 	if (!ds->show_cmtrefs) {
 		return;
 	}
-	list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
+	RList *list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
+
 	r_list_foreach (list, iter, ref) {
 		char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		flagi = r_flag_get_i (ds->core->flags, ref->addr);
@@ -1127,6 +1127,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		}
 		ds_print_color_reset (ds);
 	}
+	r_list_free (list);
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
@@ -1141,7 +1142,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	/* show xrefs */
-	RList *xrefs = r_anal_xref_get (core->anal, ds->at);
+	RList *xrefs = r_anal_xrefs_get (core->anal, ds->at);
 	if (!xrefs) {
 		return;
 	}
@@ -2636,7 +2637,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 							dst->reg->name, ptr, off, item?item->name: "");
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
-							r_anal_ref_add (core->anal, ds->addr, off, 'd');
+							r_anal_xrefs_set (core->anal, off, ds->addr, R_ANAL_REF_TYPE_DATA);
 						}
 					}
 				}
@@ -2668,7 +2669,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					            dst->reg->name, ptr, off, item?item->name: s);
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
-							r_anal_ref_add (core->anal, ds->addr, ptr, 'd');
+							r_anal_xrefs_set (core->anal, ptr, ds->addr, R_ANAL_REF_TYPE_DATA);
 						}
 					}
 				}
@@ -5246,7 +5247,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		{
 			RAnalRef *ref;
 			RListIter *iter;
-			RList *xrefs = r_anal_xref_get (core->anal, at);
+			RList *xrefs = r_anal_xrefs_get (core->anal, at);
 			if (xrefs && !r_list_empty (xrefs)) {
 				r_cons_printf (",\"xrefs\":[");
 				r_list_foreach (xrefs, iter, ref) {

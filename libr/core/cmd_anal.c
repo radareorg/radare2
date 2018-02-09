@@ -560,7 +560,8 @@ static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", "", "list refs",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
-	"ax-", " [at]", "clean all refs (or refs from addr)",
+	"ax-", " [at]", "clean all refs/refs from addr",
+	"ax-*", "", "clean all refs/refs",
 	"axc", " addr [at]", "add code jmp ref // unused?",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
@@ -571,7 +572,6 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
-	"axk", " [query]", "perform sdb query",
 	"ax*", "", "output radare commands",
 	NULL
 };
@@ -2571,7 +2571,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (fcn) {
 					RAnalRef *ref;
 					RListIter *iter;
-					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+					RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 					r_list_foreach (refs, iter, ref) {
 						if (input[2] == 'j') {
 							r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64d",\"to\":%"PFMT64d"}%s",
@@ -2602,10 +2602,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 a, b;
 			char *mi = strdup (input);
 			if (mi && mi[3] == ' ' && (p = strchr (mi + 4, ' '))) {
+				RAnalRefType reftype = r_anal_xrefs_type (input[2]);
 				*p = 0;
 				a = r_num_math (core->num, mi + 3);
 				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_set (core->anal, input[2], a, b);
+				r_anal_xrefs_set (core->anal, a, b, reftype);
 			} else {
 				r_core_cmd_help (core, help_msg_afx);
 			}
@@ -2621,7 +2622,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				*p = 0;
 				a = r_num_math (core->num, mi);
 				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_deln (core->anal, -1, a, b);
+				r_anal_xrefs_deln (core->anal, a, b, -1);
 			} else {
 				eprintf ("Usage: afx- [src] [dst]\n");
 			}
@@ -2687,7 +2688,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				RAnalRef *ref;
 				RListIter *iter;
-				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+				RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 				r_list_foreach (refs, iter, ref) {
 					if (ref->addr == UT64_MAX) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
@@ -2707,7 +2708,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (f) {
 						RListIter *iter;
 						RAnalRef *ref;
-						RList *refs1 = r_anal_fcn_get_refs (core->anal, f);
+						RList *refs1 = r_anal_fcn_get_refs_sorted (core->anal, f);
 						r_list_foreach (refs1, iter, ref) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
 								continue;
@@ -4748,14 +4749,14 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 					if (!fcn) {
-						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
 					}
 				}
 #else
 				// add xref here
-				r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_CALL, addr, op.jump);
+				r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
 				}
 #endif
 			}
@@ -5086,7 +5087,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
 		char *ptr = r_str_trim_head (cp_inp);
-		if (!strcmp (ptr, "*")) {
+		if (!strcmp (ptr, "*")) { // "ax-*"
 			r_anal_xrefs_init (core->anal);
 		} else {
 			int n = r_str_word_set0 (ptr);
@@ -5106,14 +5107,14 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (list) {
 				r_list_foreach (list, iter, ref) {
 					if (from != UT64_MAX && from == ref->addr) {
-						r_anal_ref_del (core->anal, ref->addr, ref->at);
+						r_anal_xref_del (core->anal, ref->addr, ref->at);
 					}
 					if (from == UT64_MAX) {
-						r_anal_ref_del (core->anal, ref->addr, ref->at);
+						r_anal_xref_del (core->anal, ref->addr, ref->at);
 					}
 				}
-				r_list_free (list);
 			}
+			r_list_free (list);
 		}
 		free (cp_inp);
 	} break;
@@ -5126,15 +5127,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, R_CORE_ANAL_JSON);
 			}
 			sdb_free (db);
-		}
-		break;
-	case 'k': // "axk"
-		if (input[1] == '?') {
-			eprintf ("Usage: axk [query]\n");
-		} else if (input[1] == ' ') {
-			sdb_query (core->anal->sdb_xrefs, input + 2);
-		} else {
-			r_core_anal_ref_list (core, 'k');
 		}
 		break;
 	case '\0': // "ax"
@@ -5183,7 +5175,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"", ref->addr, r_anal_ref_to_string (ref->type), str);
+					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"", ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {
 						r_cons_printf (",\"fcn_addr\":%"PFMT64d",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
 					}
@@ -5256,17 +5248,17 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
 					r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
-						buf_fcn, ref->addr, r_anal_ref_to_string (ref->type), buf_asm);
+						buf_fcn, ref->addr, r_anal_xrefs_type_tostring (ref->type), buf_asm);
 					free (buf_asm);
 					free (buf_fcn);
 				}
 			}
-			r_list_free (list);
 		} else {
 			if (input[1] == 'j') { // "axtj"
 				r_cons_print ("[]\n");
 			}
 		}
+		r_list_free (list);
 	} break;
 	case 'f': { // "axf"
 		ut8 buf[12];
@@ -5286,7 +5278,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 			if (!list) {
 				RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-				list = r_anal_fcn_get_refs (core->anal, fcn);
+				list = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 			}
 		} else {
 			list = r_anal_refs_get (core->anal, addr);
@@ -5304,7 +5296,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_cons_printf ("{\"from\":%" PFMT64d ",\"to\":%" PFMT64d ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
-						ref->at, ref->addr, r_anal_ref_to_string (ref->type), asmop.buf_asm, iter->n? ",": "");
+						ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), asmop.buf_asm, iter->n? ",": "");
 				}
 				r_cons_print ("]\n");
 			} else if (input[1] == '*') { // axf*
@@ -5342,13 +5334,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (buf_asm);
 				}
 			}
-			r_list_free (list_);
-			r_list_free (list);
 		} else {
 			if (input[1] == 'j') { // axfj
 				r_cons_print ("[]\n");
 			}
 		}
+		r_list_free (list);
 	} break;
 	case 'F':
 		find_refs (core, input + 1);
@@ -5362,6 +5353,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		int n = r_str_word_set0 (ptr);
 		ut64 at = core->offset;
 		ut64 addr = UT64_MAX;
+		RAnalRefType reftype = r_anal_xrefs_type (input[0]);
 		switch (n) {
 		case 2: // get at
 			at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
@@ -5373,7 +5365,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (ptr);
 			return false;
 		}
-		r_anal_xrefs_set (core->anal, input[0], at, addr);
+		r_anal_xrefs_set (core->anal, at, addr, reftype);
 		free (ptr);
 		}
 	   	break;
@@ -6042,9 +6034,9 @@ static int compute_calls(RCore *core) {
 		xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
 		if (xrefs) {
 			cov += r_list_length (xrefs);
-			r_list_free (xrefs);
 			xrefs = NULL;
 		}
+		r_list_free (xrefs);
 	}
 	return cov;
 }
@@ -6143,7 +6135,7 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 #if 1
-		r_anal_ref_add (core->anal, to, from, ' ');
+		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
 		r_meta_add (core->anal, 'd', from, from + vsize, NULL);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
