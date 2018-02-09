@@ -293,7 +293,9 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header); // vtable[1];
+	SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
+	ut64 baddr = hdr->RamStart;
+	ptr->paddr = ptr->vaddr = baddr + 0x100 + sizeof (SMD_Header); // vtable[1];
 	r_list_append (ret, ptr);
 	return ret;
 }
