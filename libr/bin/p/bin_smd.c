@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015-2017 - pancake */
+/* radare - LGPL3 - 2015-2018 - pancake */
 
 #include <r_bin.h>
 
@@ -240,6 +240,8 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
+	const int RO = 4;
+	const int RX = 4 | 1;
 	RList *ret = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -251,7 +253,7 @@ static RList *sections(RBinFile *bf) {
 	strcpy (ptr->name, "vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = RO | R_BIN_SCN_MAP;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -261,7 +263,7 @@ static RList *sections(RBinFile *bf) {
 	strcpy (ptr->name, "header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = RO | R_BIN_SCN_MAP;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -276,7 +278,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = RX | R_BIN_SCN_MAP;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
