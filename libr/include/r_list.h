@@ -45,6 +45,9 @@ typedef struct r_oflist_t {
 #define r_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)
+#define r_list_foreach_iter(list, it)\
+	if (list)\
+		for (it = list->head; it; it = it->n)
 /* Safe when calling r_list_delete() while iterating over the list. */
 #define r_list_foreach_safe(list, it, tmp, pos)\
 	if (list)\

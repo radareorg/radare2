@@ -64,6 +64,7 @@ static void showBuffer(RBuffer *b) {
 	}
 }
 
+#if 0
 static int compileShellcode(REgg *egg, const char *input){
 	int i = 0;
 	RBuffer *b;
@@ -92,6 +93,7 @@ static int compileShellcode(REgg *egg, const char *input){
 	r_egg_reset (egg);
 	return 0;
 }
+#endif
 
 static int cmd_egg_compile(REgg *egg) {
 	RBuffer *b;

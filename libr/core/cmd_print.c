@@ -3118,6 +3118,7 @@ r_cons_printf ("base:\n");
 #endif
 }
 
+#if 0
 static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -3191,6 +3192,7 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	r_anal_op_fini (&aop);
 	sdb_free (db);
 }
+#endif
 
 static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print, bool fromHere) {
 	RListIter *iter;

@@ -588,11 +588,11 @@ static int cmd_info(void *data, const char *input) {
 
 						// Last chance: Check if file is in downstream symbol store
 						if (!file_found) {
-							char* symstore_path = r_config_get (core->config, "pdb.symstore");
+							const char* symstore_path = r_config_get (core->config, "pdb.symstore");
 							char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
 										     symstore_path, info->debug_file_name,
 										     info->guid, info->debug_file_name);
-							file_found = r_file_exists(pdb_path);
+							file_found = r_file_exists (pdb_path);
 							if (file_found) {
 								filename = pdb_path;
 							} else {

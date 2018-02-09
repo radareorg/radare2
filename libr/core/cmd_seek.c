@@ -247,6 +247,7 @@ static int cmd_seek(void *data, const char *input) {
 			off = -(st64)off;
 		}
 	}
+#if 0
 	int sign = 1;
 	if (input[0] == ' ') {
 		switch (input[1]) {
@@ -258,6 +259,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		}
 	}
+#endif
 	bool silent = false;
 	if (*input == 's') {
 		silent = true;

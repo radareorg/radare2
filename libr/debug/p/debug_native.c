@@ -623,6 +623,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 					continue;
 				}
 				// TODO: add support for gid in RDebugPid.new()
+				eprintf ("uid %d gid %d\n", uid, gid);
 				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
 		}
