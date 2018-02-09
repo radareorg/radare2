@@ -9,8 +9,6 @@ import shutil
 import subprocess
 import sys
 
-from mesonbuild import mesonmain, mesonlib
-
 BUILDDIR = 'build'
 SDB_BUILDDIR = 'build_sdb'
 
@@ -18,6 +16,7 @@ BACKENDS = ['ninja', 'vs2015', 'vs2017']
 
 PATH_FMT = {}
 
+MESON = None
 ROOT = None
 log = None
 
@@ -25,27 +24,35 @@ def set_global_variables():
     """[R2_API] Set global variables"""
     global log
     global ROOT
+    global MESON
 
     ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
     logging.basicConfig(format='[%(name)s][%(levelname)s]: %(message)s',
-            level=logging.DEBUG)
+                        level=logging.DEBUG)
     log = logging.getLogger('r2-meson')
 
     with open(os.path.join(ROOT, 'configure.acr')) as f:
         f.readline()
         version = f.readline().split()[1].rstrip()
 
+    if os.name == 'nt':
+        meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.py')
+        MESON = [sys.executable, meson]
+    else:
+        MESON = ['meson']
+
     PATH_FMT['ROOT'] = ROOT
     PATH_FMT['R2_VERSION'] = version
 
     log.debug('Root: %s', ROOT)
-    log.debug('r2-version: %s', version)
+    log.debug('Meson: %s', MESON)
+    log.debug('Version: %s', version)
 
 def meson(root, build, prefix=None, backend=None,
           release=False, shared=False, *, options=[]):
     """[R2_API] Invoke meson"""
-    command = [root, build]
+    command = MESON + [root, build]
     if prefix:
         command.append('--prefix={}'.format(prefix))
     if backend:
@@ -59,12 +66,8 @@ def meson(root, build, prefix=None, backend=None,
     if options:
         command.extend(options)
 
-    launcher = os.path.join(ROOT, 'sys', 'meson.py')
-    log.debug('Invoking meson: %s', [launcher] + command)
-    meson_run(command, launcher)
-
-def meson_run(args, launcher):
-    ret = mesonmain.run(args, launcher)
+    log.debug('Invoking meson: %s', command)
+    ret = subprocess.call(command)
     if ret != 0:
         log.error('Meson error. Exiting.')
         sys.exit(1)
@@ -172,7 +175,7 @@ def win_dist(args):
     if args.copylib:
         move(r'{LIB}\*.lib', r'{DIST}')
         move(r'{LIB}\*.a', r'{DIST}')
-    #win_dist_libr2()
+    win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
     """[R2_API] Add libr2 data (www, include, sdb's, ...) to dist directory"""
@@ -249,29 +252,24 @@ def build_r2(args):
     else:
         ninja(r2_builddir)
 
-
-def build(args):
-    """ Prepare requirements and build radare2 """
-    # Prepare capstone
+def prepare_capstone():
+    """[R2_API] Prepare capstone"""
     capstone_path = os.path.join(ROOT, 'shlr', 'capstone')
     if not os.path.isdir(capstone_path):
         log.info('Cloning capstone')
         git_cmd = 'git clone -b next --depth 10 https://github.com/aquynh/capstone.git'
         subprocess.call(git_cmd.split() + [capstone_path])
 
-    # Build radare2
-    build_r2(args)
-    if args.install:
-        win_dist(args)
-    # Build sdb
+def build(args):
+    """ Prepare requirements and build radare2 """
+    prepare_capstone()
     build_sdb(args.backend, release=args.release)
-    if args.install:
-        win_dist_libr2()
+    build_r2(args)
 
 def install(args):
     """ Install radare2 """
     if os.name == 'nt':
-        #win_dist(args)
+        win_dist(args)
         return
     log.warning('Install not implemented yet.')
     # TODO
@@ -329,9 +327,4 @@ def main():
         install(args)
 
 if __name__ == '__main__':
-    # meson internals
-    if len(sys.argv) > 1 and sys.argv[1] in ('test', '--internal'):
-        launcher = os.path.realpath(sys.argv[0])
-        meson_run(sys.argv[1:], launcher)
-        sys.exit()
     main()
