@@ -2903,7 +2903,7 @@ static int bin_mem(RCore *r, int mode) {
 	return true;
 }
 
-static void bin_pe_versioninfo(RCore *r) {
+static void bin_pe_versioninfo(RCore *r, int mode) {
 	Sdb *sdb = NULL;
 	int num_version = 0;
 	int num_stringtable = 0;
@@ -2911,36 +2911,89 @@ static void bin_pe_versioninfo(RCore *r) {
 	const char *format_version = "bin/cur/info/vs_version_info/VS_VERSIONINFO%d";
 	const char *format_stringtable = "%s/string_file_info/stringtable%d";
 	const char *format_string = "%s/string%d";
-	r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
+	if (!IS_MODE_JSON (mode)) {
+		r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
+	}
+	bool firstit_dowhile = true;
 	do {
 		char path_version[256] = R_EMPTY;
 		snprintf (path_version, sizeof (path_version), format_version, num_version);
 		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 			break;
 		}
-		r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
+		if (!firstit_dowhile && IS_MODE_JSON (mode)) { r_cons_printf (","); }
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("{\"VS_FIXEDFILEINFO\":{");
+		} else {
+			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
+		}
 		char path_fixedfileinfo[256] = R_EMPTY;
 		snprintf (path_fixedfileinfo, sizeof (path_fixedfileinfo), "%s/fixed_file_info", path_version);
 		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0))) {
+			r_cons_printf ("}");
 			break;
 		}
-		r_cons_printf ("  Signature: 0x%"PFMT64x"\n", sdb_num_get (sdb, "Signature", 0));
-		r_cons_printf ("  StrucVersion: 0x%"PFMT64x"\n", sdb_num_get (sdb, "StrucVersion", 0));
-		r_cons_printf ("  FileVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
-			sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
-			sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
-			sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
-			sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
-		r_cons_printf ("  ProductVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
-			sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
-			sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
-			sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
-			sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
-		r_cons_printf ("  FileFlagsMask: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlagsMask", 0));
-		r_cons_printf ("  FileFlags: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlags", 0));
-		r_cons_printf ("  FileOS: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileOS", 0));
-		r_cons_printf ("  FileType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileType", 0));
-		r_cons_printf ("  FileSubType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileSubType", 0));
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"Signature\":%"PFMT64u",", sdb_num_get (sdb, "Signature", 0));
+		} else {
+			r_cons_printf ("  Signature: 0x%"PFMT64x"\n", sdb_num_get (sdb, "Signature", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"StrucVersion\":%"PFMT64u",", sdb_num_get (sdb, "StrucVersion", 0));
+		} else {
+			r_cons_printf ("  StrucVersion: 0x%"PFMT64x"\n", sdb_num_get (sdb, "StrucVersion", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileVersion\":\"%"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\",",
+				sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
+		} else {
+			r_cons_printf ("  FileVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
+				sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"ProductVersion\":\"%"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\",",
+				sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
+		} else {
+			r_cons_printf ("  ProductVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
+				sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileFlagsMask\":%"PFMT64u",", sdb_num_get (sdb, "FileFlagsMask", 0));
+		} else {
+			r_cons_printf ("  FileFlagsMask: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlagsMask", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileFlags\":%"PFMT64u",", sdb_num_get (sdb, "FileFlags", 0));
+		} else {
+			r_cons_printf ("  FileFlags: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlags", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileOS\":%"PFMT64u",", sdb_num_get (sdb, "FileOS", 0));
+		} else {
+			r_cons_printf ("  FileOS: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileOS", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileType\":%"PFMT64u",", sdb_num_get (sdb, "FileType", 0));
+		} else {
+			r_cons_printf ("  FileType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileType", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileSubType\":%"PFMT64u, sdb_num_get (sdb, "FileSubType", 0));
+		} else {
+			r_cons_printf ("  FileSubType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileSubType", 0));
+		}
 #if 0
 		r_cons_printf ("  FileDate: %d.%d.%d.%d\n",
 			sdb_num_get (sdb, "FileDateMS", 0) >> 16,
@@ -2948,17 +3001,27 @@ static void bin_pe_versioninfo(RCore *r) {
 			sdb_num_get (sdb, "FileDateLS", 0) >> 16,
 			sdb_num_get (sdb, "FileDateLS", 0) & 0xFFFF);
 #endif
-		r_cons_newline ();
-		r_cons_println ("# StringTable\n");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("},");
+		} else {
+			r_cons_newline ();
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"StringTable\":{");
+		} else {
+			r_cons_printf ("# StringTable\n\n");
+		}
 		for (num_stringtable = 0; sdb; num_stringtable++) {
 			char path_stringtable[256] = R_EMPTY;
 			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
 			sdb = sdb_ns_path (r->sdb, path_stringtable, 0);
-			for (num_string = 0; sdb; ++num_string) {
+			bool firstit_for = true;
+			for (num_string = 0; sdb; num_string++) {
 				char path_string[256] = R_EMPTY;
 				snprintf (path_string, sizeof (path_string), format_string, path_stringtable, num_string);
 				sdb = sdb_ns_path (r->sdb, path_string, 0);
 				if (sdb) {
+					if (!firstit_for && IS_MODE_JSON (mode)) { r_cons_printf (","); }
 					int lenkey = 0;
 					int lenval = 0;
 					ut8 *key_utf16 = sdb_decode (sdb_const_get (sdb, "key", 0), &lenkey);
@@ -2969,6 +3032,12 @@ static void bin_pe_versioninfo(RCore *r) {
 					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
 						eprintf ("Warning: Cannot decode utf16 to utf8\n");
+					} else if (IS_MODE_JSON (mode)) {
+						char *escaped_key_utf8 = r_str_escape ((char*)key_utf8);
+						char *escaped_val_utf8 = r_str_escape ((char*)val_utf8);
+						r_cons_printf ("\"%s\":\"%s\"", escaped_key_utf8, escaped_val_utf8);
+						free (escaped_key_utf8);
+						free (escaped_val_utf8);
 					} else {
 						r_cons_printf ("  %s: %s\n", (char*)key_utf8, (char*)val_utf8);
 					}
@@ -2978,9 +3047,14 @@ static void bin_pe_versioninfo(RCore *r) {
 					free (key_utf16);
 					free (val_utf16);
 				}
+				firstit_for = false;
 			}
 		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("}}");
+		}
 		num_version++;
+		firstit_dowhile = false;
 	} while (sdb);
 }
 
@@ -3232,7 +3306,7 @@ static int bin_versioninfo(RCore *r, int mode) {
 		return false;
 	}
 	if (!strncmp ("pe", info->rclass, 2)) {
-		bin_pe_versioninfo (r);
+		bin_pe_versioninfo (r, mode);
 	} else if (!strncmp ("elf", info->rclass, 3)) {
 		bin_elf_versioninfo (r, mode);
 	} else if (!strncmp ("mach0", info->rclass, 5)) {
