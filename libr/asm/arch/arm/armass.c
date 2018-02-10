@@ -42,6 +42,7 @@ enum {
 	TYPE_ENDIAN = 17,
 	TYPE_MUL = 18,
 	TYPE_CLZ = 19,
+	TYPE_REV = 20,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -138,6 +139,11 @@ static ArmOp ops[] = {
 	{"asr", 0x5000a0e1, TYPE_SHFT},
 	{"lsl", 0x1000a0e1, TYPE_SHFT},
 	{"ror", 0x7000a0e1, TYPE_SHFT},
+
+	{"rev16", 0xb00fbf06, TYPE_REV},
+	{"revsh", 0xb00fff06, TYPE_REV},
+	{"rev",   0x300fbf06, TYPE_REV},
+	{"rbit",  0x300fff06, TYPE_REV},
 
 	{"mrc", 0x100010ee, TYPE_COPROC},
 	{"setend", 0x000001f1, TYPE_ENDIAN},
@@ -1335,6 +1341,20 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					return 0;
 				}
 				ao->o |= reg << 24;
+				break;
+			case TYPE_REV:
+				reg = getreg (ao->a[0]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 20;
+
+				reg = getreg (ao->a[1]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 24;
+
 				break;
 			case TYPE_ENDIAN:
 				if (!strcmp (ao->a[0], "le")) {
