@@ -1403,7 +1403,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (reg == -1 || reg > 14) {
 					return 0;
 				}
-				ao->o |= reg << 16;
+				ao->o |= reg << 20;
 
 				reg = getreg (ao->a[1]);
 				if (reg == -1 || reg > 14) {
