@@ -41,6 +41,7 @@ enum {
 	TYPE_COPROC = 16,
 	TYPE_ENDIAN = 17,
 	TYPE_MUL = 18,
+	TYPE_CLZ = 19,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -140,6 +141,7 @@ static ArmOp ops[] = {
 
 	{"mrc", 0x100010ee, TYPE_COPROC},
 	{"setend", 0x000001f1, TYPE_ENDIAN},
+	{ "clz", 0x000f6f01, TYPE_CLZ},
 
 	{ NULL }
 };
@@ -1392,6 +1394,22 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					// optional opcode
 					ao->o |= coproc << 29;
 				}
+
+				break;
+			case TYPE_CLZ:
+				ao->o |= 1 << 28;
+
+				reg = getreg (ao->a[0]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 16;
+
+				reg = getreg (ao->a[1]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 24;
 
 				break;
 			}
