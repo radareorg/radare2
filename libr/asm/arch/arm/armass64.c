@@ -244,7 +244,7 @@ static ut32 cmp(ArmOp *op) {
 }
 
 
-static ut32 sturop(ArmOp *op, int k) {
+static ut32 regsluop(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
 
 	if (op->operands[1].reg_type & ARM_REG32) {
@@ -914,7 +914,11 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return *op != -1;
 	}
 	if (!strncmp (str, "stur", 4)) {
-		*op = sturop (&ops, 0x000000f8);
+		*op = regsluop (&ops, 0x000000f8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldur", 4)) {
+		*op = regsluop (&ops, 0x000040f8);
 		return *op != -1;
 	}
 	if (!strncmp (str, "str", 3)) {
