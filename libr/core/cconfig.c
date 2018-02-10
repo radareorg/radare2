@@ -2339,6 +2339,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETPREF ("asm.emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("asm.emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
+	SETPREF ("asm.emu.stroff", "false", "Always show offset when printing asm.emu strings");
 	SETPREF ("asm.emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
 	n = NODECB ("asm.emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
