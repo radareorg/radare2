@@ -203,8 +203,7 @@ static RList* sections(RBinFile *bf) {
 	if (!ptr->vaddr) {
 		ptr->vaddr = ptr->paddr;
 	}
-	ut32 srwx = 1 | 2 | 4;
-	ptr->srwx = srwx | R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 	r_list_append (ret, ptr);
 	return ret;
 }
