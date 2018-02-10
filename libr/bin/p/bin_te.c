@@ -126,7 +126,7 @@ static RList *sections(RBinFile *bf) {
 			ptr->srwx |= R_BIN_SCN_WRITABLE;
 		}
 		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+			ptr->srwx |= R_BIN_SCN_READABLE;
 		}
 		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;
