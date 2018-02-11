@@ -307,14 +307,22 @@ static void playMsg(RCore *core, const char *n, int len) {
 	}
 }
 
-static void print_rabin2_strings (RCore *r , const char *input) {
+static void print_rabin2_strings (RCore *r, int mode, const char *input) {
 	if (r->io && r->io->desc && r->io->desc->uri) {
 		const char *file = r->io->desc->uri;
-		char *space = strchr (input, ' ');
-		if (space) {
-			*space = '\0';
+		char cmd;
+		if (mode == R_CORE_BIN_JSON) {
+			cmd = 'j';
+		} else if (mode == R_CORE_BIN_SIMPLE) {
+			cmd = 'q';
+		} else {
+			cmd = ' ';
 		}
-		r_sys_cmdf ("rabin2 -%s '%s'", input, file);
+		if (input[2] == 'z') { //izz
+			r_sys_cmdf ("rabin2 -zz%c '%s'", cmd, file);
+		} else {
+			r_sys_cmdf ("rabin2 -z%c '%s'", cmd, file);
+		}
 	}
 }
 
@@ -340,7 +348,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 	}
 	if (!bin_file && *input == 'z') { // when -n is used
-		print_rabin2_strings (core, input);
+		print_rabin2_strings (core, mode, input);
 		return 0;
 	}
 	if (mode == R_CORE_BIN_JSON) {
