@@ -59,6 +59,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "brge",    "if(var >= 0) goto A"},
 		{ "brlt",    "if(var < 0) goto A"},
 		{ "mov",     "A = B"},
+		{ "movw",    "A+1:A = B+1:B"},
 		{ "ldi",     "A = *(B)"},
 		{ "lds",     "A = *(B)"},
 		{ "ld",      "A = *(B)"},
@@ -93,6 +94,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "nop",     ""},
 		{ "halt",    "_halt()"},
 		{ "wdr",     "_watchdog_reset()"},
+		{ "std",     "*(A) = B"},
+		{ "st",      "*(A) = B"},
+		{ "sts",     "*(A) = B"},
 		{ NULL }
 	};
 
