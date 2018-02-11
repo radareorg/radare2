@@ -163,7 +163,7 @@ static int init_phdr(ELFOBJ *bin) {
 
 	bool linux_kern_hack = false;
 	/* Enable this hack only for the X86 64bit ELFs */
-	const int _128K = 1024 * 1024 * 128;
+	const int _128K = 1024 * 128;
 	if (bin->b->length > _128K && bin->ehdr.e_machine == EM_X86_64 ||
 		bin->ehdr.e_machine == EM_386) {
 		linux_kern_hack = true;
