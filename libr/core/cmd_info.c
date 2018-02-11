@@ -150,7 +150,7 @@ static void r_core_file_info(RCore *core, int mode) {
 	if (info) {
 		fn = info->file;
 		if (mode == R_CORE_BIN_JSON) {
-			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
+			r_cons_printf ("\"type\":\"%s\",", STR (info->type));
 		}
 	} else {
 		fn = desc ? desc->name: NULL;
@@ -166,7 +166,7 @@ static void r_core_file_info(RCore *core, int mode) {
 		}
 		{
 			char *escapedFile = r_str_utf16_encode (uri, -1);
-			r_cons_printf (",\"file\":\"%s\"", escapedFile);
+			r_cons_printf ("\"file\":\"%s\"", escapedFile);
 			free (escapedFile);
 		}
 		if (dbg) {
@@ -307,6 +307,17 @@ static void playMsg(RCore *core, const char *n, int len) {
 	}
 }
 
+static void print_rabin2_strings (RCore *r , const char *input) {
+	if (r->io && r->io->desc && r->io->desc->uri) {
+		const char *file = r->io->desc->uri;
+		char *space = strchr (input, ' ');
+		if (space) {
+			*space = '\0';
+		}
+		r_sys_cmdf ("rabin2 -%s '%s'", input, file);
+	}
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	bool newline = r_config_get_i (core->config, "scr.interactive");
@@ -315,6 +326,7 @@ static int cmd_info(void *data, const char *input) {
 	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	bool rdump = false;
+	RBinFile *bin_file = r_bin_cur (core->bin);
 	int is_array = 0;
 	Sdb *db;
 
@@ -327,7 +339,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'q': mode = R_CORE_BIN_SIMPLE; break;
 		}
 	}
-
+	if (!bin_file && *input == 'z') { // when -n is used
+		print_rabin2_strings (core, input);
+		return 0;
+	}
 	if (mode == R_CORE_BIN_JSON) {
 		if (strlen (input + 1) > 1) {
 			is_array = 1;
