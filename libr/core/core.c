@@ -698,8 +698,9 @@ R_API RCore *r_core_new() {
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
 	"?", "?v", "whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less",
-	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
-        "dp", "dr", "dcu", "dmd", "dmp", "dml",
+	"dH", "ds", "dso", "dsl", "dc", "dd", "dm",
+	"db ", "db-", "dbd", "dbe", "dbs", "dbte", "dbtd", "dbts",
+	"dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs", "eco",
 	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd", "Sl", "SSj", "Sr",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
@@ -971,11 +972,11 @@ static int autocomplete(RLine *line) {
 				line->completion.argc = j;
 				line->completion.argv = tmp_argv;
 			}
-		} else if ((!strncmp (line->buffer.data, "pf.", 3))
-		||  (!strncmp (line->buffer.data, "pf*.", 4))
-		||  (!strncmp (line->buffer.data, "pfd.", 4))
-		||  (!strncmp (line->buffer.data, "pfv.", 4))
-		||  (!strncmp (line->buffer.data, "pfj.", 4))) {
+		} else if (!strncmp (line->buffer.data, "pf.", 3)
+		|| !strncmp (line->buffer.data, "pf*.", 4)
+		|| !strncmp (line->buffer.data, "pfd.", 4)
+		|| !strncmp (line->buffer.data, "pfv.", 4)
+		|| !strncmp (line->buffer.data, "pfj.", 4)) {
 			char pfx[2];
 			int chr = (line->buffer.data[2]=='.')? 3: 4;
 			if (chr == 4) {
@@ -1059,34 +1060,34 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "o ", 2)
+		|| !strncmp (line->buffer.data, ". ", 2)
 		|| !strncmp (line->buffer.data, "o+ ", 3)
 		|| !strncmp (line->buffer.data, "oc ", 3)
 		|| !strncmp (line->buffer.data, "r2 ", 3)
 		|| !strncmp (line->buffer.data, "cd ", 3)
-		|| !strncmp (line->buffer.data, "zos ", 4)
-		|| !strncmp (line->buffer.data, "zfd ", 4)
-		|| !strncmp (line->buffer.data, "zfs ", 4)
-		|| !strncmp (line->buffer.data, "zfz ", 4)
 		|| !strncmp (line->buffer.data, "on ", 3)
 		|| !strncmp (line->buffer.data, "op ", 3)
-		|| !strncmp (line->buffer.data, ". ", 2)
 		|| !strncmp (line->buffer.data, "wf ", 3)
 		|| !strncmp (line->buffer.data, "rm ", 3)
 		|| !strncmp (line->buffer.data, "ls ", 3)
-		|| !strncmp (line->buffer.data, "ls -l ", 5)
 		|| !strncmp (line->buffer.data, "wF ", 3)
-		|| !strncmp (line->buffer.data, "cat ", 4)
-		|| !strncmp (line->buffer.data, "less ", 5)
-		|| !strncmp (line->buffer.data, "wta ", 4)
-		|| !strncmp (line->buffer.data, "wtf ", 4)
-		|| !strncmp (line->buffer.data, "wxf ", 4)
 		|| !strncmp (line->buffer.data, "wp ", 3)
 		|| !strncmp (line->buffer.data, "Sd ", 3)
 		|| !strncmp (line->buffer.data, "Sl ", 3)
 		|| !strncmp (line->buffer.data, "to ", 3)
 		|| !strncmp (line->buffer.data, "pm ", 3)
+		|| !strncmp (line->buffer.data, "/m ", 3)
+		|| !strncmp (line->buffer.data, "zos ", 4)
+		|| !strncmp (line->buffer.data, "zfd ", 4)
+		|| !strncmp (line->buffer.data, "zfs ", 4)
+		|| !strncmp (line->buffer.data, "zfz ", 4)
+		|| !strncmp (line->buffer.data, "cat ", 4)
+		|| !strncmp (line->buffer.data, "wta ", 4)
+		|| !strncmp (line->buffer.data, "wtf ", 4)
+		|| !strncmp (line->buffer.data, "wxf ", 4)
 		|| !strncmp (line->buffer.data, "dml ", 4)
-		|| !strncmp (line->buffer.data, "/m ", 3)) {
+		|| !strncmp (line->buffer.data, "less ", 5)
+		|| !strncmp (line->buffer.data, "ls -l ", 6)) {
 			autocompleteFilename (line, NULL, 1);
 		} else if (!strncmp (line->buffer.data, "zo ", 3)
 		|| !strncmp (line->buffer.data, "zoz ", 4)) {
@@ -1195,39 +1196,39 @@ static int autocomplete(RLine *line) {
 			ls_free (ccs);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if ((!strncmp (line->buffer.data, "s ", 2)) ||
-		    (!strncmp (line->buffer.data, "ad ", 3)) ||
-		    (!strncmp (line->buffer.data, "bf ", 3)) ||
-		    (!strncmp (line->buffer.data, "ag ", 3)) ||
-		    (!strncmp (line->buffer.data, "aav ", 4)) ||
-		    (!strncmp (line->buffer.data, "afi ", 4)) ||
-		    (!strncmp (line->buffer.data, "aep ", 4)) ||
-		    (!strncmp (line->buffer.data, "aef ", 4)) ||
-		    (!strncmp (line->buffer.data, "aecu ", 5)) ||
-		    (!strncmp (line->buffer.data, "aesu ", 5)) ||
-		    (!strncmp (line->buffer.data, "aeim ", 5)) ||
-		    (!strncmp (line->buffer.data, "afb ", 4)) ||
-		    (!strncmp (line->buffer.data, "afc ", 4)) ||
-		    (!strncmp (line->buffer.data, "axt ", 4)) ||
-		    (!strncmp (line->buffer.data, "axf ", 4)) ||
-		    (!strncmp (line->buffer.data, "aga ", 5)) ||
-		    (!strncmp (line->buffer.data, "agc ", 4)) ||
-		    (!strncmp (line->buffer.data, "agl ", 4)) ||
-		    (!strncmp (line->buffer.data, "agd ", 4)) ||
-		    (!strncmp (line->buffer.data, "agfl ", 5)) ||
-		    (!strncmp (line->buffer.data, "b ", 2)) ||
-		    (!strncmp (line->buffer.data, "dcu ", 4)) ||
-		    (!strncmp (line->buffer.data, "/v ", 3)) ||
-		    (!strncmp (line->buffer.data, "/r ", 3)) ||
-		    (!strncmp (line->buffer.data, "/re ", 4)) ||
-		    (!strncmp (line->buffer.data, "db ", 3)) ||
-		    (!strncmp (line->buffer.data, "f ", 2)) ||
-		    (!strncmp (line->buffer.data, "f- ", 3)) ||
-		    (!strncmp (line->buffer.data, "fr ", 3)) ||
-		    (!strncmp (line->buffer.data, "tf ", 3)) ||
-		    (!strncmp (line->buffer.data, "/a ", 3)) ||
-		    (!strncmp (line->buffer.data, "?v ", 3)) ||
-		    (!strncmp (line->buffer.data, "? ", 2))) {
+		} else if (!strncmp (line->buffer.data, "s ", 2)
+		|| !strncmp (line->buffer.data, "b ", 2)
+		|| !strncmp (line->buffer.data, "f ", 2)
+		|| !strncmp (line->buffer.data, "? ", 2)
+		|| !strncmp (line->buffer.data, "ad ", 3)
+		|| !strncmp (line->buffer.data, "bf ", 3)
+		|| !strncmp (line->buffer.data, "ag ", 3)
+		|| !strncmp (line->buffer.data, "db ", 3)
+		|| !strncmp (line->buffer.data, "f- ", 3)
+		|| !strncmp (line->buffer.data, "fr ", 3)
+		|| !strncmp (line->buffer.data, "tf ", 3)
+		|| !strncmp (line->buffer.data, "/a ", 3)
+		|| !strncmp (line->buffer.data, "?v ", 3)
+		|| !strncmp (line->buffer.data, "/v ", 3)
+		|| !strncmp (line->buffer.data, "/r ", 3)
+		|| !strncmp (line->buffer.data, "aav ", 4)
+		|| !strncmp (line->buffer.data, "afi ", 4)
+		|| !strncmp (line->buffer.data, "aep ", 4)
+		|| !strncmp (line->buffer.data, "aef ", 4)
+		|| !strncmp (line->buffer.data, "afb ", 4)
+		|| !strncmp (line->buffer.data, "afc ", 4)
+		|| !strncmp (line->buffer.data, "axt ", 4)
+		|| !strncmp (line->buffer.data, "axf ", 4)
+		|| !strncmp (line->buffer.data, "aga ", 4)
+		|| !strncmp (line->buffer.data, "agc ", 4)
+		|| !strncmp (line->buffer.data, "agl ", 4)
+		|| !strncmp (line->buffer.data, "agd ", 4)
+		|| !strncmp (line->buffer.data, "dcu ", 4)
+		|| !strncmp (line->buffer.data, "/re ", 4)
+		|| !strncmp (line->buffer.data, "agfl ", 5)
+		|| !strncmp (line->buffer.data, "aecu ", 5)
+		|| !strncmp (line->buffer.data, "aesu ", 5)
+		|| !strncmp (line->buffer.data, "aeim ", 5)) {
 			int n, i = 0;
 			int sdelta = (line->buffer.data[1] == ' ')
 				? 2 : (line->buffer.data[2] == ' ')
@@ -1245,11 +1246,19 @@ static int autocomplete(RLine *line) {
 			tmp_argv[i>255?255:i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if (!strncmp (line->buffer.data, "db- ", 4)) {
+		} else if (!strncmp (line->buffer.data, "db- ", 4)
+		|| !strncmp (line->buffer.data, "dbd ", 4)
+		|| !strncmp (line->buffer.data, "dbe ", 4)
+		|| !strncmp (line->buffer.data, "dbs ", 4)
+		|| !strncmp (line->buffer.data, "dbte ", 5)
+		|| !strncmp (line->buffer.data, "dbtd ", 5)
+		|| !strncmp (line->buffer.data, "dbts ", 5)) {
 			RBreakpoint *bp = core->dbg->bp;
 			RBreakpointItem *b;
 			char *addr, *str;
-			int n, i = 0, buflen = 4;
+			int n, i = 0;
+			int buflen = (line->buffer.data[3] == ' ')
+				? 4 : 5;
 			str = line->buffer.data + buflen;
 			n = strlen (str);
 			r_list_foreach (bp->bps, iter, b) {
