@@ -382,8 +382,12 @@ R_API int r_core_search_preludes(RCore *core) {
 		eprintf ("done\n");
 	}
 	fc1 = count_functions (core);
+	if (list) {
+		eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
+	} else {
+		eprintf ("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
+	}
 	r_list_free (list);
-	eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	return ret;
 }
 
