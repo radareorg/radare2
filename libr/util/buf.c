@@ -518,7 +518,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	if (!b || b->empty) {
 		return 0;
 	}
-	if (!b->iob || b->fd != -1) {
+	if (b->iob || b->fd != -1) {
 		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
 		return 0;
 	}
