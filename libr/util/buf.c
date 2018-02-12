@@ -461,6 +461,13 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (!b || b->empty) {
 		return 0;
 	}
+	if (b->iob) {
+		RIOBind *iob = b->iob;
+		if (write) {
+			return iob->write_at (iob->io, addr, src, len);
+		}
+		return iob->read_at (iob->io, addr, dst, len);
+	}
 	if (b->fd != -1) {
 		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
 			// seek failed - print error here?
@@ -505,9 +512,13 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
 	ut64 len, check_len;
-	int i, j, k, tsize, bigendian, m = 1;
-	if (!b || b->empty) return 0;
-	if (b->fd != -1) {
+	ut8 *mybuf = NULL;
+	int i, j, k, tsize, m = 1;
+	bool bigendian = true;
+	if (!b || b->empty) {
+		return 0;
+	}
+	if (!b->iob || b->fd != -1) {
 		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
 		return 0;
 	}
@@ -528,16 +539,17 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		#else
 		case '0'...'9':
 		#endif
-			if (m == 1)
+			if (m == 1) {
 				m = r_num_get (NULL, &fmt[j]);
+			}
 			continue;
-		case 's': tsize = 2; bigendian = 0; break;
-		case 'S': tsize = 2; bigendian = 1; break;
-		case 'i': tsize = 4; bigendian = 0; break;
-		case 'I': tsize = 4; bigendian = 1; break;
-		case 'l': tsize = 8; bigendian = 0; break;
-		case 'L': tsize = 8; bigendian = 1; break;
-		case 'c': tsize = 1; bigendian = 0; break;
+		case 's': tsize = 2; bigendian = false; break;
+		case 'S': tsize = 2; bigendian = true; break;
+		case 'i': tsize = 4; bigendian = false; break;
+		case 'I': tsize = 4; bigendian = true; break;
+		case 'l': tsize = 8; bigendian = false; break;
+		case 'L': tsize = 8; bigendian = true; break;
+		case 'c': tsize = 1; bigendian = false; break;
 		default: return -1;
 		}
 
@@ -557,10 +569,23 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		}
 
 		for (k = 0; k < m; k++) {
-			ut8* src1 = &b->buf[len+(k*tsize)];
-			ut8* src2 = &b->buf[addr+len+(k*tsize)];
-			void* dest1 = &buf[addr+len+(k*tsize)];
-			void* dest2 = &buf[len+(k*tsize)];
+			ut8 _dest1[sizeof (ut64)] = {0};
+			ut8 _dest2[sizeof (ut64)] = {0};
+			int left1, left2;
+			ut64 addr1 = len + (k * tsize);
+			ut64 addr2 = addr + addr1;
+			ut8 *src1 = r_buf_get_at (b, addr1, &left1);
+			ut8 *src2 = r_buf_get_at (b, addr2, &left2);
+			if (!src1 || !src2) {
+				left1 = r_buf_read_at (b, addr1, _dest1, sizeof (_dest1));
+				left2 = r_buf_read_at (b, addr2, _dest2, sizeof (_dest2));
+				src1 = _dest1;
+				src2 = _dest2;
+			}
+			//ut8* src1 = &b->buf[len+(k*tsize)];
+			//ut8* src2 = &b->buf[addr+len+(k*tsize)];
+			void* dest1 = buf + addr + addr1; //&buf[addr+len+(k*tsize)];
+			void* dest2 = buf + addr1; //&buf[len+(k*tsize)];
 			ut8* dest1_8 = (ut8*)dest1;
 			ut16* dest1_16 = (ut16*)dest1;
 			ut32* dest1_32 = (ut32*)dest1;
@@ -605,6 +630,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		m = 1;
 	}
 	b->cur = addr + len;
+	free (mybuf);
 	return len;
 }
 

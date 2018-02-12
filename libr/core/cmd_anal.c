@@ -3057,10 +3057,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
-R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
-
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
-	// Stepping
+#define return_tail(x) { tail_return_value = x; goto tail_return; }
+	int tail_return_value = 0;
 	int ret;
 	ut8 code[256];
 	RAnalOp op = {0};
@@ -3098,7 +3097,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 repeat:
 	if (r_cons_is_breaked ()) {
 		eprintf ("[+] ESIL emulation interrupted at 0x%08" PFMT64x "\n", addr);
-		goto out_return_zero;
+		return_tail (0);
 	}
 	if (!esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
@@ -3108,7 +3107,7 @@ repeat:
 		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 		int noNULL = r_config_get_i (core->config, "esil.noNULL");
 		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-			goto out_return_zero;
+			return_tail(0);
 		}
 		esil = core->anal->esil;
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
@@ -3139,8 +3138,7 @@ repeat:
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
-// RUN cmd.esil.trap here
-			goto out_return_one;
+			return_tail(1);
 		}
 	}
 	r_asm_set_pc (core->assembler, addr);
@@ -3150,7 +3148,7 @@ repeat:
 		r_core_cmd0 (core, pincmd);
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if (addr != pc) {
-			goto out_return_one;
+			return_tail (1);
 		}
 	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
@@ -3237,37 +3235,30 @@ repeat:
 	if (until_addr != UT64_MAX) {
 		if (r_reg_getv (core->anal->reg, name) == until_addr) {
 			// eprintf ("ADDR BREAK\n");
-			goto out_return_zero;
-		} else {
-			goto repeat;
+			return_tail (0);
 		}
+		goto repeat;
 	}
 	// check esil
 	if (esil && esil->trap) {
 		if (core->anal->esil->verbose) {
 			eprintf ("TRAP\n");
 		}
-		goto out_return_zero;
+		return_tail (0);
 	}
 	if (until_expr) {
 		if (r_anal_esil_condition (core->anal->esil, until_expr)) {
 			if (core->anal->esil->verbose) {
 				eprintf ("ESIL BREAK!\n");
 			}
-			goto out_return_zero;
-		} else {
-			goto repeat;
+			return_tail (0);
 		}
+		goto repeat;
 	}
-out_return_one:
+tail_return:
 	r_anal_op_fini (&op);
 	r_cons_break_pop ();
-	// if (must mips here
-	return 1;
-out_return_zero:
-	r_anal_op_fini (&op);
-	r_cons_break_pop ();
-	return 0;
+	return tail_return_value;
 }
 
 R_API int r_core_esil_step_back(RCore *core) {
