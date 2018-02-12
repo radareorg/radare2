@@ -1782,6 +1782,15 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	ds->show_comment_right = scr;
 }
 
+static int flagCmp(const void *a, const void *b) {
+	const RFlagItem *fa = a;
+	const RFlagItem *fb = b;
+	if (fa->realname && fb->realname) {
+		return !strcmp (fa->realname, fb->realname);
+	}
+	return !strcmp (fa->name, fb->name);
+}
+
 static void ds_show_flags(RDisasmState *ds) {
 	//const char *beginch;
 	RFlagItem *flag;
@@ -1795,6 +1804,9 @@ static void ds_show_flags(RDisasmState *ds) {
 	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
+	RList *uniqlist = r_list_uniq (flaglist, flagCmp);
+	// r_list_free (flaglist);
+	flaglist = uniqlist;
 	r_list_foreach (flaglist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
