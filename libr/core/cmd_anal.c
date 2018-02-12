@@ -3061,7 +3061,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
 	int ret;
-	ut8 code[256];
+	ut8 code[32];
 	RAnalOp op = {0};
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
@@ -3099,6 +3099,8 @@ repeat:
 		eprintf ("[+] ESIL emulation interrupted at 0x%08" PFMT64x "\n", addr);
 		return_tail (0);
 	}
+	ut64 oldPC = addr;
+	ut64 newPC = addr;
 	if (!esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
@@ -3171,19 +3173,6 @@ repeat:
 	}
 	r_reg_setv (core->anal->reg, name, addr + op.size);
 	if (ret) {
-		ut64 delay_slot = 0;
-		r_anal_esil_reg_read (esil, "$ds", &delay_slot, NULL);
-		if (delay_slot > 0) {
-			if (op.type >= R_ANAL_OP_TYPE_JMP &&
-			op.type <= R_ANAL_OP_TYPE_CRET) {
-				// branches are illegal in a delay slot
-				esil->trap = R_ANAL_TRAP_EXEC_ERR;
-				esil->trap_code = addr;
-				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-				return_tail (1);
-			}
-		}
-
 		r_anal_esil_set_pc (esil, addr);
 		if (core->dbg->trace->enabled) {
 			RReg *reg = core->dbg->reg;
@@ -3192,33 +3181,37 @@ repeat:
 			core->dbg->reg = reg;
 		} else {
 			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			newPC = r_reg_getv (core->anal->reg, pc) - op.size;
+
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}
 			//r_anal_esil_dumpstack (esil);
 			r_anal_esil_stack_free (esil);
-			delay_slot--;
-
-			if (((st64)delay_slot) <= 0) {
-				// no delay slot, or just consumed
-				ut64 jump_target_set = 0;
-				r_anal_esil_reg_read (esil, "$js", &jump_target_set, NULL);
-				if (jump_target_set) {
-					// perform the branch
-					ut64 jump_target = 0;
-					r_anal_esil_reg_read (esil, "$jt", &jump_target, NULL);
-					r_anal_esil_reg_write (esil, "$js", 0);
-					r_reg_setv (core->anal->reg, name, jump_target);
+		}
+		// only support 1 slot for now
+		if (op.delay) {
+			const bool jumpHappend = newPC != oldPC;
+			if (jumpHappend) {
+				ut8 code2[32];
+				ut64 naddr = addr + op.size;
+				RAnalOp op2 = {0};
+				// emulate only 1 instruction
+				r_anal_esil_set_pc (esil, naddr);
+				(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
+				// TODO: sometimes this is dupe
+				ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2));
+				if (op2.type >= R_ANAL_OP_TYPE_JMP &&
+						op2.type <= R_ANAL_OP_TYPE_CRET) {
+					// branches are illegal in a delay slot
+					esil->trap = R_ANAL_TRAP_EXEC_ERR;
+					esil->trap_code = addr;
+					eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+					return_tail (1);
 				}
-			}
-
-			if (((st64)delay_slot) >= 0) {
-				// save decreased delay slot counter
-				r_anal_esil_reg_write (esil, "$ds", delay_slot);
-				if (!esil->trap) {
-					// emulate the instruction and its delay slots in the same 'aes' step
-					goto repeat;
-				}
+				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
+				r_anal_op_fini (&op2);
 			}
 		}
 	}
