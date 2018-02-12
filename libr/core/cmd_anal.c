@@ -3180,7 +3180,7 @@ repeat:
 				esil->trap = R_ANAL_TRAP_EXEC_ERR;
 				esil->trap_code = addr;
 				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-				goto out_return_one;
+				return_tail (1);
 			}
 		}
 
