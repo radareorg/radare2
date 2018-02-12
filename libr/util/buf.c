@@ -106,6 +106,12 @@ static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
 	return set;
 }
 
+R_API RBuffer *r_buf_new_from_io(RIOBind *iob) {
+	RBuffer *b = r_buf_new ();
+	b->iob = iob;
+	return b;
+}
+
 R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
 	if (b && bytes && len > 0 && len != UT64_MAX) {
@@ -539,10 +545,12 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		   tsize and m are not user controled, then don't
 		   need to check possible overflow.
 		 */
-		if (!UT64_ADD (&check_len, len, tsize*m))
+		if (!UT64_ADD (&check_len, len, tsize*m)) {
 			return -1;
-		if (!UT64_ADD (&check_len, check_len, addr))
+		}
+		if (!UT64_ADD (&check_len, check_len, addr)) {
 			return -1;
+		}
 		if (check_len > b->length) {
 			return check_len;
 			// return -1;
@@ -604,7 +612,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (b->empty) {
 		return NULL;
 	}
-	if (b->fd != -1) {
+	if (b->iob || b->fd != -1) {
 		eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
 		return NULL;
 	}
@@ -624,6 +632,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 
 //ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
+	RIOBind *iob = b->iob;
 	st64 pa;
 	if (!b || !buf || len < 1) {
 		return 0;
@@ -633,6 +642,9 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 #endif
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;
+	}
+	if (iob) {
+		return iob->read_at (iob->io, addr - b->base, buf, len);
 	}
 	if (b->fd != -1) {
 		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
@@ -664,8 +676,12 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 //ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
+	RIOBind *iob = b->iob;
 	if (!b || !buf || len < 1) {
 		return 0;
+	}
+	if (iob) {
+		return iob->write_at (iob->io, addr - b->base, buf, len);
 	}
 	if (b->fd != -1) {
 		ut64 newlen = addr + len;

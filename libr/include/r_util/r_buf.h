@@ -20,6 +20,9 @@ typedef struct r_buf_t {
 	int Oxff;
 	RList *sparse;
 	int refctr;
+	// RIOBind *iob;
+	// forward declaration
+	void *iob;
 } RBuffer;
 
 typedef struct r_buf_cache_t {
