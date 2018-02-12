@@ -93,6 +93,10 @@ const ppc_t ppc_ops[] = {
 	{ "and."       , 0x7C000038, 0x7C000039 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "andc"       , 0x7C000078, 0x7C000078 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "andc."      , 0x7C000078, 0x7C000079 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "or"         , 0x7C000378, 0x7C000378 | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "or."        , 0x7C000378, 0x7C000379 | F_MASK_X   ,     F_X,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "nor"        , 0x7C0000f8, 0x7C0000f8 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_NOR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "nor."       , 0x7C0000f8, 0x7C0000f9 | F_MASK_X   ,     F_X,   R_ANAL_OP_TYPE_NOR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "brinc"      , 0x1000020F, 0x1000020F | F_MASK_EVX ,   F_EVX,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "cmp"        , 0x7C000000, 0x7C000000 | F_MASK_CMP ,   F_CMP,   R_ANAL_OP_TYPE_CMP, R_ANAL_COND_AL, {TYPE_CR, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "cmpl"       , 0x7C000040, 0x7C000040 | F_MASK_CMP ,   F_CMP,   R_ANAL_OP_TYPE_CMP, R_ANAL_COND_AL, {TYPE_CR, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
@@ -162,15 +166,22 @@ const ppc_t ppc_ops[] = {
  	{ "mfdcr"      , 0x7C000286, 0x7C000286 | F_MASK_MFPR,  F_MFPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "mfdcrux"    , 0x7C000246, 0x7C000246 | F_MASK_EXT ,   F_EXT,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "mfdcrx"     , 0x7C000206, 0x7C000206 | F_MASK_EXT ,   F_EXT,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
- 	{ "mfmsr"      , 0x7C000400, 0x7C000400 | F_MASK_XFX ,   F_XFX,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
- 	{ "mfspr"      , 0x7C0003A6, 0x7C000286 | F_MASK_MFPR,  F_MFPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
- 	{ "mtspr"      , 0x7C0003A6, 0x7C000286 | F_MASK_MTPR,  F_MTPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mfmsr"      , 0x7C0000A6, 0x7C0000A6 | F_MASK_XFX ,   F_XFX,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mfspr"      , 0x7C0002A6, 0x7C0002A6 | F_MASK_MFPR,  F_MFPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mtspr"      , 0x7C0003A6, 0x7C0003A6 | F_MASK_MTPR,  F_MTPR,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+ 	{ "mtmsr"      , 0x7C000124, 0x7C000124 | F_MASK_XFX ,   F_XFX,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "msync"      , 0x7C0004AC, 0x7C0004AC | F_MASK_XFX ,   F_XFX,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "tlbre"      , 0x7C000764, 0x7C000764 | F_MASK_XFX ,  F_NONE,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "tlbwe"      , 0x7C0007A4, 0x7C0007A4 | F_MASK_XFX ,  F_NONE,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "stwx"       , 0x7C00012E, 0x7C00012E | E_MASK_XL  ,   E_XL ,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "mfcr"       , 0x7C000026, 0x7C000026 | E_MASK_XL  ,   E_XL ,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
+	{ "mtcrf"      , 0x7C000120, 0x7C000120 | E_MASK_XL  ,   E_XL ,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}}, //crf rossz
 
 };
 
 const e_vle_t e_ops[] = {
 //	{ "name"       , op        , mask                    , type   ,   op_type           , R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_REG, TYPE_REG, TYPE_REG}}
-	{ "e_add16i"   , 0x1C000000, 0x1C000000 | E_MASK_D   , E_D    ,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
+	{ "e_add16i"   , 0x1C000000, 0x1F000000 | E_MASK_D   , E_D    ,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
 	{ "e_add2i."   , 0x70008800, 0x70008800 | E_MASK_I16A, E_I16A ,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
 	{ "e_add2is"   , 0x70009000, 0x70009000 | E_MASK_I16A, E_I16A ,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
 	{ "e_addi"     , 0x18008000, 0x18008000 | E_MASK_SCI8, E_SCI8 ,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
@@ -246,7 +257,7 @@ const e_vle_t e_ops[] = {
 	{ "e_li"       , 0x70000000, 0x70000000 | E_MASK_LI20, E_LI20 ,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_lis"      , 0x7000E000, 0x7000E000 | E_MASK_I16L, E_I16LS,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
 	{ "e_lmw"      , 0x18000800, 0x18000800 | E_MASK_D8  , E_D8   ,   R_ANAL_OP_TYPE_MUL, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
-	{ "e_lwz"      , 0x50000000, 0x50000000 | E_MASK_D   , E_D    ,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "e_lwz"      , 0x50000000, 0x53000000 | E_MASK_D   , E_D    ,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "e_lwzu"     , 0x18000200, 0x18000200 | E_MASK_D8  , E_D8   ,  R_ANAL_OP_TYPE_LOAD, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "e_mcrf"     , 0x7C000020, 0x7C000020 | E_MASK_XL  , E_XLSP ,   R_ANAL_OP_TYPE_MOV, R_ANAL_COND_AL, {TYPE_CR, TYPE_CR, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_mull2i"   , 0x7000A000, 0x7000A000 | E_MASK_I16A, E_I16A ,   R_ANAL_OP_TYPE_MUL, R_ANAL_COND_AL, {TYPE_IMM, TYPE_REG, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
@@ -270,7 +281,7 @@ const e_vle_t e_ops[] = {
 	{ "e_sth"      , 0x5C000000, 0x5C000000 | E_MASK_D   , E_D    , R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "e_sthu"     , 0x18000500, 0x18000500 | E_MASK_D8  , E_D8   , R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "e_stmw"     , 0x18000900, 0x18000900 | E_MASK_D8  , E_D8   , R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
-	{ "e_stw"      , 0x54000000, 0x54000000 | E_MASK_D   , E_D    , R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
+	{ "e_stw"      , 0x54000000, 0x56000000 | E_MASK_D   , E_D    , R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "e_stwu"     , 0x18000600, 0x18000600 | E_MASK_D8  , E_D8   , R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {TYPE_REG, TYPE_MEM, TYPE_REG, TYPE_NONE, TYPE_NONE}},
 	{ "e_subfic"   , 0x1800B000, 0x1800B000 | E_MASK_SCI8, E_SCI8 ,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
 	{ "e_subfic."  , 0x1800B800, 0x1800B800 | E_MASK_SCI8, E_SCI8 ,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
@@ -314,7 +325,7 @@ const se_vle_t se_ops[] = {
 	{ "se_addi"   , 0x2000, 0x21FF, 2,   R_ANAL_OP_TYPE_ADD, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_and"    , 0x4600, 0x46FF, 2,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {{0x00F0,  4,  0,  0, 1, TYPE_REG}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_and."   , 0x4700, 0x47FF, 2,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {{0x00F0,  4,  0,  0, 1, TYPE_REG}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
-	{ "se_andi"   , 0x2F00, 0x2FFF, 2,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
+	{ "se_andi"   , 0x2E00, 0x2FFF, 2,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_andc"   , 0x4500, 0x45FF, 2,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {{0x00F0,  4,  0,  0, 1, TYPE_REG}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_b"      , 0xE800, 0xE8FF, 1,   R_ANAL_OP_TYPE_JMP, R_ANAL_COND_AL, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_bl"     , 0xE900, 0xE9FF, 1,  R_ANAL_OP_TYPE_CALL, R_ANAL_COND_AL, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
@@ -329,7 +340,7 @@ const se_vle_t se_ops[] = {
 	{ "se_bso"    , 0xE000, 0xE7FF, 1,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_VS, {{0x00FF,  0,  1,  0, 0, TYPE_JMP}, {0}, {0}, {0}, {0}}},
 	{ "se_bc"     , 0xE000, 0xE7FF, 2,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_VS, {{0x0700,  8,  0, 32, 0, TYPE_JMP}, {0x00FF,  0,  1,  0,  1, TYPE_IMM}, {0}, {0}, {0}}},
 	{ "se_bclri"  , 0x6000, 0x61FF, 2,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_JMP}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
-	{ "se_bgeni"  , 0x6300, 0x63FF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
+	{ "se_bgeni"  , 0x6200, 0x63FF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_bmaski" , 0x2C00, 0x2DFF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_bseti"  , 0x6400, 0x65FF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 	{ "se_btsti"  , 0x6600, 0x67FF, 2,    R_ANAL_OP_TYPE_OR, R_ANAL_COND_AL, {{0x01F0,  4,  0,  0, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
@@ -349,8 +360,8 @@ const se_vle_t se_ops[] = {
 	{ "se_stb"    , 0x9000, 0x9FFF, 3, R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {{0x0F00,  6,  0,  0, 2, TYPE_MEM}, {0x00F0,  4,  0,  0,  0, TYPE_REG}, {0x000F,  0,  0,  0,  1, TYPE_MEM}, {0}, {0}}},
 	{ "se_sth"    , 0xB000, 0xBFFF, 3, R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {{0x0F00,  6,  0,  0, 2, TYPE_MEM}, {0x00F0,  4,  0,  0,  0, TYPE_REG}, {0x000F,  0,  0,  0,  1, TYPE_MEM}, {0}, {0}}},
 	{ "se_stw"    , 0xD000, 0xDFFF, 3, R_ANAL_OP_TYPE_STORE, R_ANAL_COND_AL, {{0x0F00,  6,  0,  0, 2, TYPE_MEM}, {0x00F0,  4,  0,  0,  0, TYPE_REG}, {0x000F,  0,  0,  0,  1, TYPE_MEM}, {0}, {0}}},
-	{ "se_subi"   , 0x2500, 0x25FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
-	{ "se_subi."  , 0x2700, 0x27FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
+	{ "se_subi"   , 0x2400, 0x25FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
+	{ "se_subi."  , 0x2600, 0x27FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 };
 
 static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
@@ -691,6 +702,7 @@ static void set_ppc_fields(vle_t * v, const ppc_t* p, ut32 data) {
 			v->fields[1].value = (data & 0x1FF800) >> 11;
 			v->fields[1].type = p->types[1];
 		}
+			break;
 		case F_MTPR:
 		{
 			v->n = 2;
@@ -812,13 +824,13 @@ vle_t* vle_next(vle_handle* handle) {
 	handle->pos += handle->inc;
 	// 'e-32' always before 'se-16'
 
-	if (USE_INTERNAL_PPC (handle) && handle->pos + 2 < handle->end) {
+	if (USE_INTERNAL_PPC (handle) && handle->pos + 4 <= handle->end) {
 		op = find_ppc (handle->pos);
 	}
-	if (!op && handle->pos + 2 < handle->end) {
+	if (!op && handle->pos + 4 <= handle->end) {
 		op = find_e (handle->pos);
 	}
-	if (!op) {
+	if (!op && handle->pos + 2 <= handle->end) {
 		op = find_se (handle->pos);
 	}
 
