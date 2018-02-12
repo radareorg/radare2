@@ -1255,16 +1255,18 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "dbts ", 5)) {
 			RBreakpoint *bp = core->dbg->bp;
 			RBreakpointItem *b;
-			char *addr, *str;
+			char *str;
 			int n, i = 0;
 			int buflen = (line->buffer.data[3] == ' ')
 				? 4 : 5;
 			str = line->buffer.data + buflen;
 			n = strlen (str);
 			r_list_foreach (bp->bps, iter, b) {
-				addr = r_str_newf ("0x%llx", b->addr);
-				if (!strncmp(addr, str, n)) {
+				char *addr = r_str_newf ("0x%llx", b->addr);
+				if (!strncmp (addr, str, n)) {
 					tmp_argv[i++] = addr;
+				} else {
+					free (addr);
 				}
 			}
 			tmp_argv[i] = NULL;

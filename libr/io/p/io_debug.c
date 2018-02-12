@@ -429,6 +429,7 @@ static char *get_and_escape_path (char *str)
 
 		if (!pp) {
 			// There is nothing more to parse
+			free (path_bin);
 			return str;
 		}
 
@@ -486,7 +487,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			char *path_escaped = get_and_escape_path (_cmd);
 			trace_me ();
 			argv = r_str_argv (path_escaped, NULL);
-			if (strstr (argv[0], "\\ ")) {
+			if (argv && strstr (argv[0], "\\ ")) {
 				argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
 			}
 			if (!argv) {
