@@ -1805,9 +1805,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = r_list_uniq (flaglist, flagCmp);
-	// r_list_free (flaglist);
-	flaglist = uniqlist;
-	r_list_foreach (flaglist, iter, flag) {
+	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
 			continue;
@@ -1849,6 +1847,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		ds_newline (ds);
 	}
+	r_list_free (uniqlist);
 }
 
 static void ds_update_ref_lines(RDisasmState *ds) {

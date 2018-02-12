@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake, alvarofe */
+/* radare - LGPL - Copyright 2007-2018 - pancake, alvarofe */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
@@ -560,7 +560,7 @@ R_API RList *r_list_uniq(const RList *list, RListComparator cmp) {
 	if (!list || !cmp) {
 		return NULL;
 	}
-	RList *nl = r_list_newf (list->free);
+	RList *nl = r_list_newf (NULL);
 	RListIter *iter, *iter2;
 	void *item, *item2;
 	r_list_foreach (list, iter, item) {
