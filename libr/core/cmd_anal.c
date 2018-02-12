@@ -3099,8 +3099,6 @@ repeat:
 		eprintf ("[+] ESIL emulation interrupted at 0x%08" PFMT64x "\n", addr);
 		return_tail (0);
 	}
-	ut64 oldPC = addr;
-	ut64 newPC = addr;
 	if (!esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
@@ -3181,38 +3179,36 @@ repeat:
 			core->dbg->reg = reg;
 		} else {
 			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-			newPC = r_reg_getv (core->anal->reg, pc) - op.size;
 
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}
-			//r_anal_esil_dumpstack (esil);
 			r_anal_esil_stack_free (esil);
 		}
 		// only support 1 slot for now
 		if (op.delay) {
-			const bool jumpHappend = newPC != oldPC;
-			if (jumpHappend) {
-				ut8 code2[32];
-				ut64 naddr = addr + op.size;
-				RAnalOp op2 = {0};
-				// emulate only 1 instruction
-				r_anal_esil_set_pc (esil, naddr);
-				(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
-				// TODO: sometimes this is dupe
-				ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2));
-				if (op2.type >= R_ANAL_OP_TYPE_JMP &&
-						op2.type <= R_ANAL_OP_TYPE_CRET) {
-					// branches are illegal in a delay slot
-					esil->trap = R_ANAL_TRAP_EXEC_ERR;
-					esil->trap_code = addr;
-					eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-					return_tail (1);
-				}
-				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
-				r_anal_op_fini (&op2);
+			ut8 code2[32];
+			ut64 naddr = addr + op.size;
+			RAnalOp op2 = {0};
+			// emulate only 1 instruction
+			r_anal_esil_set_pc (esil, naddr);
+			(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
+			// TODO: sometimes this is dupe
+			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2));
+			switch (op2.type) {
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CRET:
+			case R_ANAL_OP_TYPE_RET:
+				// branches are illegal in a delay slot
+				esil->trap = R_ANAL_TRAP_EXEC_ERR;
+				esil->trap_code = addr;
+				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+				return_tail (1);
+				break;
 			}
+			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
+			r_anal_op_fini (&op2);
 		}
 	}
 
@@ -3227,7 +3223,6 @@ repeat:
 	// check addr
 	if (until_addr != UT64_MAX) {
 		if (r_reg_getv (core->anal->reg, name) == until_addr) {
-			// eprintf ("ADDR BREAK\n");
 			return_tail (0);
 		}
 		goto repeat;
