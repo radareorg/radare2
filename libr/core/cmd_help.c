@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -89,7 +89,7 @@ static const char *help_msg_question[] = {
 	"?im", " message", "show message centered in screen",
 	"?in", " prompt", "noyes input prompt",
 	"?iy", " prompt", "yesno input prompt",
-	"?l", " str", "returns the length of string",
+	"?l", "[q] str", "returns the length of string ('q' for quiet, just set $?)",
 	"?o", " num", "get octal value",
 	"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 	"?p", " vaddr", "get physical address for given virtual address",
@@ -637,8 +637,14 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'l': // "?l"
-		for (input++; input[0] == ' '; input++);
-		core->num->value = strlen (input);
+		if (input[1] == 'q') {
+			for (input+=2; input[0] == ' '; input++);
+			core->num->value = strlen (input);
+		} else {
+			for (input++; input[0] == ' '; input++);
+			core->num->value = strlen (input);
+			r_cons_printf ("%d\n", core->num->value);
+		}
 		break;
 	case 'X': // "?X"
 		for (input++; input[0] == ' '; input++);
