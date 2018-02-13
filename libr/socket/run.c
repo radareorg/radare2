@@ -291,28 +291,37 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 		return -1;
 	}
 	int fdm, pid = forkpty (&fdm, NULL, NULL, NULL);
+	int fds = open(ttyname(fdm), O_RDWR);
 	if (pid == 0) {
+		close (fdm);
 		// child process
 		if (in) {
-			dup2 (fdm, STDIN_FILENO);
+			dup2 (fds, STDIN_FILENO);
 		}
 		if (out) {
-			dup2 (fdm, STDOUT_FILENO);
+			dup2 (fds, STDOUT_FILENO);
 		}
 		// child - program to run
 
 		// necessary because otherwise you can read the same thing you
 		// wrote on fdm.
 		struct termios t;
-		tcgetattr (0, &t);
+		tcgetattr (fds, &t);
 		cfmakeraw (&t);
-		tcsetattr (0, TCSANOW, &t);
+		tcsetattr (fds, TCSANOW, &t);
 
 		int code = r_sys_cmd (cmd);
 		restore_saved_fd (saved_stdin, in, STDIN_FILENO);
 		restore_saved_fd (saved_stdout, out, STDOUT_FILENO);
 		exit (code);
 	} else {
+		close (fds);
+		if (in) {
+			dup2 (fdm, STDIN_FILENO);
+		}
+		if (out) {
+			dup2 (fdm, STDOUT_FILENO);
+		}
 		// parent process
 		int status;
 		waitpid (pid, &status, 0);
