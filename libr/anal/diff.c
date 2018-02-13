@@ -80,8 +80,8 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 			}
 			free (op);
 		}
+		free (buf);
 	}
-	free (buf);
 	return bb->size;
 }
 
