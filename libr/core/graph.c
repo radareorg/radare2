@@ -3081,7 +3081,6 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			w - title_len, 1, ' ', true);
 	}
 
-
 	r_cons_canvas_print_region (g->can);
 	if (is_interactive) {
 		r_cons_newline ();
@@ -3105,6 +3104,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (!grd) {
 		return 0;
 	}
+	r_cons_singleton ()->event_data = grd;
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
 	RAnalFunction *f, **fcn = grd->fcn;
