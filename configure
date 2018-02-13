@@ -4,6 +4,7 @@
 # @url:    http://www.nopcode.org
 # @repo:   git clone https://github.com/radare/acr
 
+[ -z "${AWK}" ] && AWK=awk
 do_remove() {
 if [ "${ACR_RMFILES}" ]; then
   printf "cleaning temporally files... "
@@ -38,7 +39,7 @@ while : ; do
 ENVWORDS="${ENVWORDS} $1_CPU $1_OS"
 STR=`eval "echo ${S}$1"`
 SPLIT_CPU="`echo "$STR" | cut -d - -f 1`"
-SPLIT_OS="`echo "$STR" | awk -F - '{
+SPLIT_OS="`echo "$STR" | $AWK -F - '{
 	if ($2=="unknown"){
 		if (NF<3) { print $2; } else { print $3; }
 	} else {
@@ -212,7 +213,7 @@ exit 0
 
 parse_options() {
 flag=`echo $1| cut -d = -f 1`
-value=`echo $1| awk 'BEGIN{FS="=";}{print $2}'`
+value=`echo $1| $AWK 'BEGIN{FS="=";}{print $2}'`
 flag2=`echo $flag|cut -f2- -d -| sed -e 's,-,_,g' -e 's,^_,,g'|tr '[a-z]' '[A-Z]'`
 
 if [ "${TARGET_OS}" = "darwin" ]; then
@@ -548,7 +549,7 @@ if [ "$VALUE" = 0 ]; then ## FALSE
  MARK="##${A}##"
 if [ -n "`grep \"${MARK}\" ${SD_TARGET}.tmp`" ]; then
  mv ${SD_TARGET}.tmp ${SD_TARGET}.tmp2
- cat ${SD_TARGET}.tmp2 | MARK=$MARK awk 'BEGIN{a=0;}{if($1==ENVIRON["MARK"]){if(a)a=0;else a=1}else{if(!a)print;}}' > ${SD_TARGET}.tmp
+ cat ${SD_TARGET}.tmp2 | MARK=$MARK $AWK 'BEGIN{a=0;}{if($1==ENVIRON["MARK"]){if(a)a=0;else a=1}else{if(!a)print;}}' > ${SD_TARGET}.tmp
  fi
 fi
 done
