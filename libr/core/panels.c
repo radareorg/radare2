@@ -881,7 +881,9 @@ repeat:
 			if (curnode == 1) {
 				r_core_cmd0 (core, "s-8");
 			} else {
-				panels[curnode].sy--;
+				if (panels[curnode].sy > 0) {
+					panels[curnode].sy--;
+				}
 			}
 		}
 		break;
