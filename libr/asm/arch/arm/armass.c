@@ -517,40 +517,36 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o |= getreg (ao->a[0]) << 11;
 		return 2;
 	} else
-	if (!strcmpnull (ao->op, "blx")) {
+	if (!strcmpnull (ao->op, "blx") || !strcmpnull (ao->op, "bl")) {
 		int reg = getreg (ao->a[0]);
-		ao->o = 0xf0000000;
 		if (reg == -1) {
-			ut64 n = getnum (ao->a[0]);
-			ut64 pc = (ao->off + 4) & 0xFFFFFFFC;
+			ut64 n = r_num_math (NULL, ao->a[0]);
+			ut64 pc = ao->off + 4;
+			if (ao->op[2] == 'x') {
+				n |= pc & 0x2; // care for alignment
+				ao->o = 0xf000e800;
+			} else {
+				ao->o = 0xf000f800;
+			}
 			n -= pc;
-			int l = (n >> 2) & 0x3ff;
-			int h = (n >> 12) & 0x3ff;
-			int s = (n >> 24) & 0x1;
-			int j1 = !((n >> 23) & 0x1) ^ s;
-			int j2 = !((n >> 22) & 0x1) ^ s;
-
-			ao->o |= s << 26 | h << 16 | (0x18 | j1 << 2| j2) << 11 | l << 1;
+			if ((n < (-1 * (1 << 22)) &&
+			    (n > ((1 << 22) - 2)))) {
+				eprintf("branch out of range or not even\n");
+				return 0;
+			}
+			int l = (n >> 1) & 0x7ff;
+			int h = (n >> 12) & 0x7ff;
+			ao->o |= h << 16 | l;
 			thumb_swap (&ao->o);
 		} else {
-			ao->o = 0x8047;
-			ao->o |= reg << 11;
+			if (ao->op[2] == 'x') {
+				ao->o = 0x8047;
+				ao->o |= reg << 11;
+			} else {
+				eprintf("bad parameter\n");
+				return 0;
+			}
 		}
-		// XXX: length = 4
-		return 4;
-	} else
-	if (!strcmpnull (ao->op, "bl")) {
-		int high, low;
-		high = low = (getnum (ao->a[0]) - 4);
-		high &= 0x7FFFFF;
-		high >>= 12;
-		high |= 0xF000;
-		low &= 0xFFF;
-		low >>= 1;
-		low |= 0xF800;
-		ao->o = low;
-		ao->o |= (high << 16);
-		thumb_swap (&ao->o);
 		// XXX: length = 4
 		return 4;
 	} else
