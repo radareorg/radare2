@@ -37,6 +37,12 @@ static int download(struct SPDBDownloader *pd) {
 	char *abspath_to_archive = NULL;
 	char *archive_name = NULL;
 	size_t archive_name_len = 0;
+	char *symbol_store_path = NULL;
+	char *dbg_file = NULL;
+	char *guid = NULL;
+	char *archive_name_escaped  = NULL;
+	char *user_agent = NULL;
+	char *symbol_server = NULL;
 
 	int res = 0;
 	int cmd_ret;
@@ -55,21 +61,27 @@ static int download(struct SPDBDownloader *pd) {
 	}
 	memcpy (archive_name, opt->dbg_file, archive_name_len + 1);
 	archive_name[archive_name_len - 1] = '_';
+	symbol_store_path = r_str_escape (opt->symbol_store_path);
+	dbg_file = r_str_escape (opt->dbg_file);
+	guid = r_str_escape (opt->guid);
+	archive_name_escaped = r_str_escape (archive_name);
+	user_agent = r_str_escape (opt->user_agent);
+	symbol_server = r_str_escape (opt->symbol_server);
 
 	if (checkExtract () || opt->extract == 0) {
 		res = 1;
 		abspath_to_archive = r_str_newf ("%s%s%s%s%s%s%s",
-						    opt->symbol_store_path, R_SYS_DIR,
-						    opt->dbg_file, R_SYS_DIR,
-						    opt->guid, R_SYS_DIR,
-						    archive_name);
+						    symbol_store_path, R_SYS_DIR,
+						    dbg_file, R_SYS_DIR,
+						    guid, R_SYS_DIR,
+						    archive_name_escaped);
 
 		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
-		                       opt->user_agent,
-		                       opt->symbol_server,
-		                       opt->dbg_file,
-		                       opt->guid,
-		                       archive_name,
+		                       user_agent,
+		                       symbol_server,
+							   dbg_file,
+							   guid,
+		                       archive_name_escaped,
 		                       abspath_to_archive);
 #if __WINDOWS__ && !__CYGWIN__
 		const char *cabextractor = "expand";
@@ -112,10 +124,10 @@ static int download(struct SPDBDownloader *pd) {
 		res = 1;
 		archive_name[archive_name_len - 1] = 'b';
 		abspath_to_archive = r_str_newf("%s%s%s%s%s%s%s",
-		    opt->symbol_store_path, R_SYS_DIR,
-		    opt->dbg_file, R_SYS_DIR,
-		    opt->guid, R_SYS_DIR,
-		    archive_name);
+		    symbol_store_path, R_SYS_DIR,
+		    dbg_file, R_SYS_DIR,
+		    guid, R_SYS_DIR,
+		    archive_name_escaped);
 
 		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       opt->user_agent,
@@ -133,6 +145,12 @@ static int download(struct SPDBDownloader *pd) {
 	}
 	R_FREE (archive_name);
 	R_FREE (extractor_cmd);
+	R_FREE (symbol_store_path);
+	R_FREE (dbg_file);
+	R_FREE (guid);
+	R_FREE (archive_name_escaped);
+	R_FREE (user_agent);
+	R_FREE (symbol_server);
 	return res;
 }
 
