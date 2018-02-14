@@ -216,7 +216,7 @@ static char *getstr(const char *src) {
 	return ret;
 }
 
-static int parseBool (const char *e) {
+static int parseBool(const char *e) {
 	return (strcmp (e, "yes")?
 		(strcmp (e, "true")?
 		(strcmp (e, "1")?
@@ -267,17 +267,17 @@ static void setASLR(RRunProfile *r, int enabled) {
 #endif
 }
 
-static void restore_saved_fd (int saved, bool resore, int fd) {
+static void restore_saved_fd(int saved, bool restore, int fd) {
 	if (saved == -1) {
 		return;
 	}
-	if (resore) {
+	if (restore) {
 		dup2 (saved, fd);
 	}
 	close (saved);
 }
 
-static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err) {
+static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
@@ -291,28 +291,37 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 		return -1;
 	}
 	int fdm, pid = forkpty (&fdm, NULL, NULL, NULL);
+	int fds = open(ttyname(fdm), O_RDWR);
 	if (pid == 0) {
+		close (fdm);
 		// child process
 		if (in) {
-			dup2 (fdm, STDIN_FILENO);
+			dup2 (fds, STDIN_FILENO);
 		}
 		if (out) {
-			dup2 (fdm, STDOUT_FILENO);
+			dup2 (fds, STDOUT_FILENO);
 		}
 		// child - program to run
 
 		// necessary because otherwise you can read the same thing you
 		// wrote on fdm.
 		struct termios t;
-		tcgetattr (0, &t);
+		tcgetattr (fds, &t);
 		cfmakeraw (&t);
-		tcsetattr (0, TCSANOW, &t);
+		tcsetattr (fds, TCSANOW, &t);
 
 		int code = r_sys_cmd (cmd);
 		restore_saved_fd (saved_stdin, in, STDIN_FILENO);
 		restore_saved_fd (saved_stdout, out, STDOUT_FILENO);
 		exit (code);
 	} else {
+		close (fds);
+		if (in) {
+			dup2 (fdm, STDIN_FILENO);
+		}
+		if (out) {
+			dup2 (fdm, STDOUT_FILENO);
+		}
 		// parent process
 		int status;
 		waitpid (pid, &status, 0);
@@ -397,7 +406,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	}
 }
 
-R_API int r_run_parsefile (RRunProfile *p, const char *b) {
+R_API int r_run_parsefile(RRunProfile *p, const char *b) {
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
 		int ret = r_run_parse (p, s);
@@ -407,7 +416,7 @@ R_API int r_run_parsefile (RRunProfile *p, const char *b) {
 	return 0;
 }
 
-R_API bool r_run_parseline (RRunProfile *p, char *b) {
+R_API bool r_run_parseline(RRunProfile *p, char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
 	if (!e || *b == '#') {
@@ -551,7 +560,7 @@ R_API const char *r_run_help() {
 	"# #stdio=blah.txt\n"
 	"# #stderr=foo.txt\n"
 	"# stdout=foo.txt\n"
-	"# stdin=input.txt # or !program to redirect input to another program\n"
+	"# stdin=input.txt # or !program to redirect input from another program\n"
 	"# input=input.txt\n"
 	"# chdir=/\n"
 	"# chroot=/mnt/chroot\n"
