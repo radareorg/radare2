@@ -232,7 +232,7 @@ echo "PKGNAME:   radare2"
 echo "VERSION:   2.4.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
-echo "OPTIONAL:  libmagic"
+echo "OPTIONAL:  libmagic libz libzip libssl"
 echo "PKG-CONFIG:  capstone openssl"
 echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without-fork --with-syscapstone --with-syszip --without-gpl --with-openssl --with-rpath --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx --without-jemalloc"
 	exit 0
@@ -417,7 +417,15 @@ if [ $? = 0 ]; then
 	echo yes
 else
 	eval ${VAR}=0
-	echo no  ; fi }
+	echo no
+	if [ "${_REQUIRED}" = 1 ]; then
+	  echo "this library is required."
+	  do_remove
+	  exit 1
+	fi
+fi
+}
+
 check_library HAVE_LIB_MAGIC magic 0
 if [ 11 = "$HAVE_LIB_MAGIC$USE_MAGIC" ]; then
 
