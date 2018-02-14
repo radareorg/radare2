@@ -870,7 +870,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 		? (*(buf + i)) << 8 | (*(buf + i + 1))
 		: (*(buf + i + 1)) << 8 | (*(buf + i));
 	if (MUSTSET) {
-		p->cb_printf ("wx %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*2:0));
+		p->cb_printf ("wv2 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*2:0));
 	} else if (mode & R_PRINT_DOT) {
 		if (size == -1) {
 			p->cb_printf ("0x%04x", addr);
