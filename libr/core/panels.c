@@ -881,7 +881,7 @@ repeat:
 			if (curnode == 1) {
 				r_core_cmd0 (core, "s-8");
 			} else {
-				if(panels[curnode].sy > 0) {
+				if (panels[curnode].sy > 0) {
 					panels[curnode].sy--;
 				}
 			}
