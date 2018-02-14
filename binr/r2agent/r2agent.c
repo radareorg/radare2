@@ -116,21 +116,23 @@ int main(int argc, char **argv) {
 				int pid;
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + 11;
-				int filename_len = strlen (filename);
+				char *escaped_filename = r_str_escape (filename);
+				int escaped_len = strlen (escaped_filename);
 				char *cmd;
 
-				if (!(cmd = malloc (filename_len + 40))) {
+				if (!(cmd = malloc (escaped_len + 40))) {
 					perror ("malloc");
 					return 1;
 				}
 				sprintf (cmd, "r2 -q %s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
-					session_port, filename);
+					session_port, escaped_filename);
 
 				// TODO: use r_sys api to get pid when running in bg
 				pid = r_sys_cmdbg (cmd);
 				free (cmd);
-				result = result_heap = malloc (1024 + filename_len);
+				free (escaped_filename);
+				result = result_heap = malloc (1024 + escaped_len);
 				if (!result) {
 					perror ("malloc");
 					return 1;
