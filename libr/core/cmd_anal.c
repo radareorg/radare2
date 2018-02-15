@@ -3138,7 +3138,7 @@ repeat:
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
-			return_tail(1);
+			return_tail (1);
 		}
 	}
 	r_asm_set_pc (core->assembler, addr);
@@ -3210,6 +3210,7 @@ repeat:
 			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
 			r_anal_op_fini (&op2);
 		}
+		tail_return_value = 1;
 	}
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
