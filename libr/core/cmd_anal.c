@@ -1339,7 +1339,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			r_cons_printf ("{\"opcode\":\"%s\",", asmop.buf_asm);
 			{
-				char strsub[128];
+				char strsub[128] = { 0 };
 				// pc+33
 				r_parse_varsub (core->parser, NULL,
 					core->offset + idx,
