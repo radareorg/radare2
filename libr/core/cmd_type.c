@@ -320,9 +320,10 @@ static int sdbforcb_default (void *p, const char *k, const char *v) {
 static int sdbforcb_json (void *p, const char *k, const char *v) {
 	Sdb *sdb = (Sdb *)p;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
+	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
 	char *formatcmd = r_str_newf ("type.%s", k);
 	r_cons_printf ("{\"type\":\"%s\",\"size\":%d,\"format\":\"%s\"}", k,
-			atoi (sdb_querys (sdb, NULL, -1, sizecmd)),
+			size_s ? atoi (size_s) : -1,
 			r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd)));
 	free (sizecmd);
 	free (formatcmd);
