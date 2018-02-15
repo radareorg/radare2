@@ -3059,7 +3059,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
-	int tail_return_value = 0;
+	int tail_return_value = 1;
 	int ret;
 	ut8 code[32];
 	RAnalOp op = {0};
