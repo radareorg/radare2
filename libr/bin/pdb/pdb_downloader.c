@@ -87,16 +87,14 @@ static int download(struct SPDBDownloader *pd) {
 		const char *cabextractor = "expand";
 		const char *format = "%s %s %s";
 		char *abspath_to_file = strdup (abspath_to_archive);
-		if (abspath_to_file) {
-			int abspath_to_archive_len = archive_name_len + strlen (opt->symbol_store_path) + 2;
-			abspath_to_file[abspath_to_archive_len - 2] = 'b';
-			// extractor_cmd -> %1 %2 %3
-			// %1 - 'expand'
-			// %2 - absolute path to archive
-			// %3 - absolute path to file that will be dearchive
-			extractor_cmd = r_str_newf (format, cabextractor,
-				abspath_to_archive, abspath_to_file);
-		}
+		abspath_to_file[strlen (abspath_to_file) - 1] = 'b';
+
+		// extractor_cmd -> %1 %2 %3
+		// %1 - 'expand'
+		// %2 - absolute path to archive
+		// %3 - absolute path to file that will be dearchive
+		extractor_cmd = r_str_newf (format, cabextractor,
+			abspath_to_archive, abspath_to_file);
 #else
 		const char *cabextractor = "cabextract";
 		const char *format = "%s -d \"%s\" \"%s\"";
