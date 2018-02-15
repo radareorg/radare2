@@ -130,3 +130,221 @@ R_API void r_bin_filter_classes(RList *list) {
 	}
 	sdb_free (db);
 }
+
+static bool false_positive(const char *str) {
+	int i;
+	ut8 bo[0x100];
+	int up = 0;
+	int lo = 0;
+	int ot = 0;
+	int di = 0;
+	int ln = 0;
+	int sp = 0;
+	int nm = 0;
+	for (i = 0; i < 0x100; i++) {
+		bo[i] = 0;
+	}
+	for (i = 0; str[i]; i++) {
+		if (IS_DIGIT(str[i])) {
+			nm++;
+		} else if (str[i]>='a' && str[i]<='z') {
+			lo++;
+		} else if (str[i]>='A' && str[i]<='Z') {
+			up++;
+		} else {
+			ot++;
+		}
+		if (str[i]=='\\') {
+			ot++;
+		}
+		if (str[i]==' ') {
+			sp++;
+		}
+		bo[(ut8)str[i]] = 1;
+		ln++;
+	}
+	for (i = 0; i<0x100; i++) {
+		if (bo[i]) {
+			di++;
+		}
+	}
+	if (ln > 2 && str[0] != '_') {
+		if (ln < 10) {
+			return true;
+		}
+		if (ot >= (nm + up + lo)) {
+			return true;
+		}
+		if (lo < 3) {
+			return true;
+		}
+	}
+	return false;
+}
+
+R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
+	bool purge = false;
+	if (bin->strpurge) {
+		char *addrs = strdup (bin->strpurge);
+		if (addrs) {
+			int splits = r_str_split (addrs, ',');
+			int i;
+			char *ptr;
+			char *range_sep;
+			ut64 addr, from, to;
+			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
+				bool bang = false;
+				if (!strcmp (ptr, "true") && false_positive (str)) {
+					purge = true;
+					continue;
+				}
+				if (*ptr == '!') {
+					bang = true;
+					ptr++;
+				}
+				if (!strcmp (ptr, "all")) {
+					purge = !bang;
+					continue;
+				}
+				range_sep = strchr (ptr, '-');
+				if (range_sep) {
+					*range_sep = 0;
+					from = r_num_get (NULL, ptr);
+					ptr = range_sep + 1;
+					to = r_num_get (NULL, ptr);
+					if (refaddr >= from && refaddr <= to) {
+						purge = !bang;
+						continue;
+					}
+				}
+				addr = r_num_get (NULL, ptr);
+				if (addr != 0 || *ptr == '0') {
+					if (refaddr == addr) {
+						purge = !bang;
+						continue;
+					}
+				}
+			}
+			free (addrs);
+		}
+	}
+	return purge;
+}
+
+static bool bin_strfilter(RBin *bin, const char *str) {
+	int i;
+	switch (bin->strfilter) {
+	case 'U': // only uppercase strings
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (ch == ' ') {
+				continue;
+			}
+			if (ch < '@'|| ch > 'Z') {
+				return false;
+			}
+			if (ch < 0 || !IS_PRINTABLE (ch)) {
+				return false;
+			}
+		}
+		if (str[0] && str[1]) {
+			for (i = 2; i<6 && str[i]; i++) {
+				if (str[i] == str[0]) {
+					return false;
+				}
+				if (str[i] == str[1]) {
+					return false;
+				}
+			}
+		}
+		if (str[0] == str[2]) {
+			return false; // rm false positives
+		}
+		break;
+	case 'a': // only alphanumeric - plain ascii
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (ch < 1 || !IS_PRINTABLE (ch)) {
+				return false;
+			}
+		}
+		break;
+	case 'e': // emails
+		if (str && *str) {
+			if (!strstr (str + 1, "@")) {
+				return false;
+			}
+			if (!strstr (str + 1, ".")) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+		break;
+	case 'f': // format-string
+		if (str && *str) {
+			if (!strstr (str + 1, "%")) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+		break;
+	case 'u': // URLs
+		if (!strstr (str, "://")) {
+			return false;
+		}
+		break;
+        case 'i': //IPV4
+		{
+			int segment = 0;
+			int segmentsum = 0;
+			bool prevd = false;
+			for (i = 0; str[i]; i++) {
+				char ch = str[i];
+				if (IS_DIGIT (ch)) {
+					segmentsum = segmentsum*10 + (ch - '0');
+					if (segment == 3) {
+						return true;
+					}
+					prevd = true;
+				} else if (ch == '.') {
+					if (prevd == true && segmentsum < 256){
+						segment++;
+						segmentsum = 0;
+					} else {
+						segmentsum = 0;
+						segment = 0;
+					}
+					prevd = false;
+				} else {
+					segmentsum = 0;
+					prevd = false;
+					segment = 0;
+				}
+			}
+			return false;
+		}
+	case 'p': // path
+		if (str[0] != '/') {
+			return false;
+		}
+		break;
+	case '8': // utf8
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (ch < 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+	return true;
+}
+
+R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
+	if (r_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
+		return false;
+	}
+	return true;
+}

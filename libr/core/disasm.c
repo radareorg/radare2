@@ -3144,7 +3144,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	const char *prefix;
-	if (!r_core_bin_string_filter (ds->core, str, refaddr)) {
+	if (!r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
@@ -3520,7 +3520,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (*val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
-		if (ds && *str && !r_core_bin_strpurge (ds->core, str, *val) && r_str_is_printable (str)) {
+		if (ds && *str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)) {
 			bool jump_op = false;
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
