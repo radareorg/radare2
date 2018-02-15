@@ -1012,7 +1012,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		// TODO: show vars, refs and xrefs
 		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
 		r_cons_printf (",\"offset\":%"PFMT64d, fcn->addr);
-		r_cons_printf (",\"ninstr\":%"PFMT64d, fcn->ninstr);
+		r_cons_printf (",\"ninstr\":%"PFMT64d, (ut64)fcn->ninstr);
 		r_cons_printf (",\"nargs\":%d",
 			r_anal_var_count (core->anal, fcn, 'r', 1) +
 			r_anal_var_count (core->anal, fcn, 's', 1) +
