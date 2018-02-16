@@ -3607,10 +3607,12 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	RAnalEsil *esil = ds->core->anal->esil;
 	int i, end = ds->core->offset - base;
 	int maxemu = 1024 * 1024;
+	RAnalEsilHookRegWriteCB orig_cb = esil->cb.hook_reg_write;
 	if (end < 0 || end > maxemu) {
 		return;
 	}
 	ds->stackptr = ds->core->anal->stackptr;
+	esil->cb.hook_reg_write = NULL;
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
 		RAnalOp* op = r_core_anal_op (ds->core, addr);
@@ -3626,6 +3628,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 			r_anal_op_free (op);
 		}
 	}
+	esil->cb.hook_reg_write = orig_cb;
 }
 
 static void ds_print_esil_anal_init(RDisasmState *ds) {

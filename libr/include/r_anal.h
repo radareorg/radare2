@@ -1000,6 +1000,8 @@ typedef struct r_anal_esil_session_t {
 	RListIter *reg[R_REG_TYPE_LAST];
 } RAnalEsilSession;
 
+typedef int (*RAnalEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
+
 typedef struct r_anal_esil_callbacks_t {
 	void *user;
 	/* callbacks */
@@ -1011,7 +1013,7 @@ typedef struct r_anal_esil_callbacks_t {
 	int (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
 	int (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	int (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
-	int (*hook_reg_write)(ESIL *esil, const char *name, ut64 *val);
+	RAnalEsilHookRegWriteCB hook_reg_write;
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } RAnalEsilCallbacks;
 
