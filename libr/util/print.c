@@ -1850,21 +1850,25 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	p->cb_printf ("[");
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
-		case 8:
-			p->cb_printf ("%s%d", i?",":"", buf[i]);
+		case 8: {
+			p->cb_printf ("%s%d", i ? "," : "", buf[i]);
 			break;
-		case 16:
+		}
+		case 16: {
 			ut16 w16 = r_read_ble16 (&buf16[i], p->big_endian);
-			p->cb_printf ("%s%hd", i?",":"", w16);
+			p->cb_printf ("%s%hd", i ? "," : "", w16);
 			break;
-		case 32:
+		}
+		case 32: {
 			ut32 w32 = r_read_ble32 (&buf32[i], p->big_endian);
-			p->cb_printf ("%s%d", i?",":"", w32);
+			p->cb_printf ("%s%d", i ? "," : "", w32);
 			break;
-		case 64:
+		}
+		case 64: {
 			ut64 w64 = r_read_ble64 (&buf64[i], p->big_endian);
-			p->cb_printf ("%s%"PFMT64d, i?",":"", w64);
+			p->cb_printf ("%s%"PFMT64d, i ? "," : "", w64);
 			break;
+		}
 		}
 	}
 	p->cb_printf ("]\n");
