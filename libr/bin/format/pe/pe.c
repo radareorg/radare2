@@ -508,8 +508,8 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 	time_t rawtime;
 	struct tm *tminfo;
 	rawtime = (time_t)timeStamp;
-	//tminfo = localtime (&rawtime);
-	tminfo = gmtime (&rawtime);
+	tminfo = localtime (&rawtime);
+	//tminfo = gmtime (&rawtime);
 	return r_str_trim (strdup (asctime (tminfo)));
 #else
 	struct my_timezone {
