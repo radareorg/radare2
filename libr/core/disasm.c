@@ -3737,22 +3737,6 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 	}
 }
 
-static void get_fcn_args_info(RAnal *anal, const char *fcn_name, int arg_num, const char * cc, const char **name,
-		char **orig_c_type, char **c_type, const char **fmt, ut64 *size, const char **source) {
-	*name = r_anal_type_func_args_name (anal, fcn_name, arg_num);
-	*orig_c_type = r_anal_type_func_args_type (anal, fcn_name, arg_num);
-	if (!strncmp ("const ", *orig_c_type, 6)) {
-		*c_type = *orig_c_type+6;
-	} else {
-		*c_type = *orig_c_type;
-	}
-	const char *query = sdb_fmt (-1, "type.%s", *c_type);
-	*fmt = sdb_const_get (anal->sdb_types, query, 0);
-	const char *t_query = sdb_fmt (-1, "type.%s.size", *c_type);
-	*size = sdb_num_get (anal->sdb_types, t_query, 0) / 8;
-	*source = r_anal_cc_arg (anal, cc, arg_num+1);
-}
-
 static void print_fcn_arg(RCore *core, const char *type, const char *name,
 			   const char *fmt, const ut64 addr,
 			   const int on_stack) {
@@ -3890,7 +3874,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_CALL:
 		{
 			RAnalFunction *fcn;
+			RAnalFuncArg *arg;
+			RListIter *iter;
+			RListIter *nextele;
 			const char *fcn_name = NULL;
+			char *key;
 			ut64 pcv = ds->analop.jump;
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
@@ -3911,118 +3899,62 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				}
 			}
 			if (fcn_name) {
-				char * key = resolve_fcn_name (core->anal, fcn_name);
-				if (key) {
-					const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-					const char *fcn_type = r_anal_type_func_ret (core->anal, key);
-					const char * cc;
-					nargs = r_anal_type_func_args_count (core->anal, key);
-					// HACK: remove other comments
-					delete_last_comment (ds);
-					if (ds->show_color) {
-						ds_comment_esil (ds, true, false, ds->pal_comment);
-					}
+				key = resolve_fcn_name (core->anal, fcn_name);
+			}
+			if (key) {
+				const char *fcn_type = r_anal_type_func_ret (core->anal, key);
+				int nargs = r_anal_type_func_args_count (core->anal, key);
+				// remove other comments
+				delete_last_comment (ds);
+				if (ds->show_color) {
+					ds_comment_esil (ds, true, false, ds->pal_comment);
+				}
+				if (fcn_type) {
 					ds_comment_esil (ds, ds->show_color? false : true, false,
-							"; %s%s%s(", r_str_get (fcn_type), (fcn_type && *fcn_type &&
+							"; %s%s%s(", r_str_get (fcn_type), (*fcn_type &&
 							fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
 							r_str_get (key));
 					if (!nargs) {
 						ds_comment_esil (ds, false, true, "void)");
 						break;
 					}
-					cc = r_anal_type_func_cc (core->anal, key);
-					if (!cc) {
-						// unsupported calling convention
-						break;
-					}
-					ut64 spv = r_reg_getv (core->anal->reg, sp);
-					ut64 s_width = (core->anal->bits == 64)? 8: 4;
-					spv += s_width;
-					ut64 arg_addr = UT64_MAX;
-					//this should be taken out on its own function
-					for (i = 0; i < nargs; i++) {
-						const char *arg_name, *fmt, *cc_source = NULL;
-						char *arg_orig_c_type, *arg_c_type;
-						ut64 arg_size;
-						int on_stack = 0, warning = 0;
-						get_fcn_args_info (core->anal, key, i, cc, &arg_name,
-							&arg_orig_c_type, &arg_c_type, &fmt,
-							&arg_size, &cc_source);
-						if (cc_source && !strcmp (cc_source, "stack_rev")) {
-							int j;
-							free (arg_orig_c_type);
-							on_stack = 1;
-							for (j = nargs - 1; j >= i; j--) {
-								warning = 0;
-								get_fcn_args_info (core->anal, key, j, cc,
-									&arg_name, &arg_orig_c_type, &arg_c_type,
-									&fmt, &arg_size, &cc_source);
-								arg_addr = spv;
-								if (!arg_size) {
-									ds_comment_esil (ds, false, "%s: unk_size", arg_c_type);
-									warning = 1;
-									arg_size = s_width;
-								}
-								spv += arg_size;
-								if (!fmt) {
-									if (!warning) {
-										ds_comment_esil (ds, false, false, "%s : unk_format", arg_c_type);
-									} else {
-										ds_comment_esil (ds, false, false, "_format");
-									}
-									ds_comment_esil (ds, false, false, j!=i?", ":")");
-									free (arg_orig_c_type);
-									continue;
-								}
-								if (fmt) {
-									//print_fcn_arg may need ds_comment_esil
-									print_fcn_arg (core, arg_orig_c_type,
-										arg_name, fmt, arg_addr, on_stack);
-									ds_comment_esil (ds, false, false, j!=i?", ":")");
-								}
-								free (arg_orig_c_type);
-							}
-							break;
-						}
-						if (cc_source && !strncmp (cc_source, "stack", 5)) {
-							arg_addr = spv;
-							if (!arg_size) {
-								ds_comment_esil (ds, false, false, "%s: unk_size", arg_c_type);
-								warning = 1;
-								arg_size = s_width;
-							}
-							spv += arg_size;
-							on_stack = 1;
-						} else {
-							arg_addr = r_reg_getv (core->anal->reg, cc_source);
-						}
-						if (!fmt) {
-							if (!warning) {
-								ds_comment_esil (ds, false, false, "%s : unk_format", arg_c_type);
-							} else {
-								ds_comment_esil (ds, false, false, "_format");
-							}
-							ds_comment_esil (ds, false, false, i!=(nargs-1)?", ":")");
-							free (arg_orig_c_type);
-							continue;
-						}
-						if (fmt) {
-							//it may need ds_comment_esil
-							print_fcn_arg (core, arg_orig_c_type, arg_name,
-								fmt, arg_addr, on_stack);
-							ds_comment_esil (ds, false, false, i!=(nargs - 1)?", ":")");
-						}
-						free (arg_orig_c_type);
-					}
-					ds_comment_esil (ds, false, true, "");
-					free (key);
-				} else {
-					// function not in sdb
-					goto callfallback;
 				}
+			}
+			ut64 s_width = (core->anal->bits == 64)? 8: 4;
+			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+			ut64 spv = r_reg_getv (core->anal->reg, sp);
+			r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
+			RList *list = r_core_get_func_args (core, fcn_name);
+			if (!r_list_empty (list)) {
+				bool warning = false;
+				bool on_stack = false;
+				r_list_foreach (list, iter, arg) {
+					if (arg->cc_source && !strncmp (arg->cc_source, "stack", 5)) {
+						on_stack = true;
+					}
+					if (!arg->size) {
+						ds_comment_esil (ds, false, false, "%s: unk_size", arg->c_type);
+						warning = true;
+					}
+					nextele = r_list_iter_get_next (iter);
+					if (!arg->fmt) {
+						if (!warning) {
+							ds_comment_esil (ds, false, false, "%s : unk_format", arg->c_type);
+						} else {
+							ds_comment_esil (ds, false, false, "_format");
+						}
+						ds_comment_esil (ds, false, false, nextele?", ":")");
+					} else {
+						//print_fcn_arg may need ds_comment_esil
+						print_fcn_arg (core, arg->orig_c_type,
+								arg->name, arg->fmt, arg->src, on_stack);
+						ds_comment_esil (ds, false, false, nextele?", ":")");
+					}
+				}
+				break;
+				ds_comment_esil (ds, false, true, "");
 			} else {
 				// function name not resolved
-callfallback:
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
 					nargs = fcn->nargs;
@@ -4036,6 +3968,7 @@ callfallback:
 					ds_comment_esil (ds, false, true, "");
 				}
 			}
+			r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
 		}
 		break;
 	}

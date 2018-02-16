@@ -3029,7 +3029,7 @@ dodo:
 				snprintf (debugstr, sizeof (debugstr),
 					"?0;f tmp;ssr SP;%s %d@$$%c%d;"
 					"?1;%s;"
-					"?1;ss tmp;f-tmp;pd $r",
+					"?1;ss tmp;f-tmp;afal;pd $r",
 					pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}

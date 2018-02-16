@@ -365,6 +365,8 @@ R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
 R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits);
+R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
+R_API void r_core_print_func_args(RCore *core);
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);

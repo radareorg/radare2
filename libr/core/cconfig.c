@@ -2543,6 +2543,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETPREF ("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
+	SETPREF ("dbg.funcarg", "false", "Display arguments to function call in visual mode");
 
 	SETPREF ("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");
 	SETCB ("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
