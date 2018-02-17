@@ -3057,6 +3057,38 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
+static ut64 initializeEsil(RCore *core) {
+	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	RAnalEsil *esil = core->anal->esil;
+	int romem = r_config_get_i (core->config, "esil.romem");
+	int stats = r_config_get_i (core->config, "esil.stats");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	int exectrap = r_config_get_i (core->config, "esil.exectrap");
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	int noNULL = r_config_get_i (core->config, "esil.noNULL");
+	if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
+		return UT64_MAX;
+	}
+	ut64 addr;
+	esil = core->anal->esil;
+	r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+	esil->exectrap = exectrap;
+	RList *entries = r_bin_get_entries (core->bin);
+	RBinAddr *entry = NULL;
+	RBinInfo *info = NULL;
+	if (entries && !r_list_empty (entries)) {
+		entry = (RBinAddr *)r_list_pop (entries);
+		info = r_bin_get_info (core->bin);
+		addr = info->has_va? entry->vaddr: entry->paddr;
+		r_list_push (entries, entry);
+	} else {
+		addr = core->offset;
+	}
+	r_reg_setv (core->anal->reg, name, addr);
+	// set memory read only
+	return addr;
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
@@ -3066,6 +3098,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (!esil) {
+// TODO		inititalizeEsil (core);
+
 		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int romem = r_config_get_i (core->config, "esil.romem");
@@ -3089,9 +3123,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 	}
-	if (esil) {
-		esil->cmd = r_core_esil_cmd;
-	}
+	esil->cmd = r_core_esil_cmd;
 	ut64 addr = r_reg_getv (core->anal->reg, name);
 	r_cons_break_push (NULL, NULL);
 repeat:
@@ -3100,31 +3132,11 @@ repeat:
 		return_tail (0);
 	}
 	if (!esil) {
-		int romem = r_config_get_i (core->config, "esil.romem");
-		int stats = r_config_get_i (core->config, "esil.stats");
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		int exectrap = r_config_get_i (core->config, "esil.exectrap");
-		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-		int noNULL = r_config_get_i (core->config, "esil.noNULL");
-		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-			return_tail(0);
-		}
+		addr = initializeEsil (core);
 		esil = core->anal->esil;
-		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		esil->exectrap = exectrap;
-		RList *entries = r_bin_get_entries (core->bin);
-		RBinAddr *entry = NULL;
-		RBinInfo *info = NULL;
-		if (entries && !r_list_empty (entries)) {
-			entry = (RBinAddr *)r_list_pop (entries);
-			info = r_bin_get_info (core->bin);
-			addr = info->has_va? entry->vaddr: entry->paddr;
-			r_list_push (entries, entry);
-		} else {
-			addr = core->offset;
+		if (!esil) {
+			return_tail (0);
 		}
-		r_reg_setv (core->anal->reg, name, addr);
-		// set memory read only
 	} else {
 		esil->trap = 0;
 		addr = r_reg_getv (core->anal->reg, name);
