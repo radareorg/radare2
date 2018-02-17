@@ -1,19 +1,53 @@
-DEVELOPERS
-==========
+# DEVELOPERS
 
 This file aims to describe an introduction for developers to work
 on the code base of radare2 project.
 
-CODE STYLE
-----------
+## Code style
+
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
 You may find some notes on this topic [here](https://github.com/radare/radare2/blob/master/CONTRIBUTING.md#coding-style-guidelines)
 and doc/vim.
 
-MODULES
--------
+### Editor configuration
+
+Vim/Neovim:
+
+```vim
+setl cindent
+setl tabstop=4
+setl noexpandtab
+setl cino=:0,+0,(2,J0,{1,}0,>4,)1,m2
+```
+
+Emacs:
+
+```elisp
+(c-add-style "radare2"
+             '((c-basic-offset . 4)
+               (tab-width . 4)
+               (indent-tabs-mode . t)
+               ;;;; You would need (put 'c-auto-align-backslashes 'safe-local-variable 'booleanp) to enable this
+               ;; (c-auto-align-backslashes . nil)
+               (c-offsets-alist
+                (arglist-intro . ++)
+                (arglist-cont . ++)
+                (arglist-cont-nonempty . ++)
+                (statement-cont . ++)
+                )))
+```
+
+You may use directory-local variables by putting
+```elisp
+((c-mode .  ((c-file-style . "radare2"))))
+```
+
+into `.dir-locals.el`.
+
+## Modules
+
 The radare2 code base is modularized into different libraries that are
 found in libr/ directory. The binr/ directory contains the programs
 that use the libraries.
@@ -27,8 +61,8 @@ The following presentation gives a good overview of the libraries:
 
    http://radare.org/get/lacon-radare-2009/
 
-API
----
+## API
+
 As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
 from and documented in the radare2-bindings repository, found at:
@@ -45,13 +79,13 @@ If you are able to write a plugin for various IDE that can associate
 the bindings with the header files, such a contribution would be
 very welcome.
 
-DEPENDENCIES
-------------
+## Dependencies
+
 radare2 can be built without any special dependency. It just requires
 a C compiler, a GNU make and a unix-like system.
 
-CROSSCOMPILATION
-----------------
+## Cross compilation
+
 The instructions to crosscompile r2 to Windows are in doc/windows.
 
 You may find other documents in doc/ explaining how to build it on iOS,
@@ -63,8 +97,8 @@ linux-arm and others, but the procedure is like this:
  - type `make`
  - install in `DESTDIR`
 
-SOURCE REPOSITORY
------------------
+## Source repository
+
 The source of radare2 can be found in the following github repository.
 ```sh
    git clone git://github.com/radare/radare2
@@ -85,8 +119,9 @@ source directory type the following command:
    git clean -xdf
    git reset --hard
 ```
-COMPILATION
------------
+
+## Compilation
+
 Inter-module rebuild dependencies are not handled automatically and
 require human interaction to recompile the affected modules.
 
@@ -102,14 +137,14 @@ you should use ccache in this way:
   export CC="ccache gcc"
 ```
 
-INSTALLATION
-------------
+## Installation
+
 Developers use to modify the code, type make and then try.
 
 radare2 have a specific makefile target that allows you to install
 system wide but using symlinks instead of hard copies.
 ```sh
-   sudo make symstall
+sudo make symstall
 ```
 This kind of installation is really helpful if you do lot of changes
 in the code for various reasons.
@@ -117,8 +152,7 @@ in the code for various reasons.
   - only one install is required across multiple builds
   - installation time is much faster
 
-REGRESSION TESTING
-------------------
+## Regression testing
 
 The source of the radare2 regression test suite can be found in the
 following github repository.
@@ -126,13 +160,13 @@ following github repository.
    git clone git://github.com/radare/radare2-regressions
 ```
 
-See the README.md file in that repository for further information.
+See the `README.md` file in that repository for further information.
 
 The existing test coverage can always do with improvement, so if you can
 contribute additions tests that would be gratefully accepted.
 
-REPORTING BUGS
---------------
+## Reporting bugs
+
 If you notice any misfeature, issue, error, problem or you just
 don't know how to do something which is supposed to be covered
 by this framework.
@@ -152,8 +186,8 @@ have been reported classified with labels by difficulty, type,
 milestone, etc. it is a good place to start if you are looking
 to contribute.
 
-CONTRIBUTING WITH PATCHES
--------------------------
+## Contributing with patches
+
 All the development happens in the git repository. It is
 good that all patches can be applied against the `git HEAD`.
 
@@ -162,8 +196,7 @@ I can get patches in unidiff format like this:
    git diff > p
 ```
 
-HOW TO RELEASE 
---------------
+## HOW TO RELEASE
 
  - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.
  - Use `bsdtar` from libarchive package. GNU tar is broken.
