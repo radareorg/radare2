@@ -3034,14 +3034,14 @@ static void bin_pe_resources(RCore *r, int mode) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
-					"\"vaddr\":%"PFMT32d", \"size\":%d, \"lang\":\"%s\"}",
+					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\"}",
 					index? ",": "", name, index, type, vaddr, size, lang);
 		} else {
 			char *humanSize = r_num_units (NULL, size);
 			r_cons_printf ("Resource %d\n", index);
 			r_cons_printf ("\tname: %d\n", name);
 			r_cons_printf ("\ttimestamp: %s\n", timestr);
-			r_cons_printf ("\tvaddr: 0x%08"PFMT32x"\n", vaddr);
+			r_cons_printf ("\tvaddr: 0x%08"PFMT64x"\n", vaddr);
 			r_cons_printf ("\tsize: %s\n", humanSize);
 			r_cons_printf ("\ttype: %s\n", type);
 			r_cons_printf ("\tlanguage: %s\n", lang);

@@ -504,6 +504,14 @@ error:
 }
 
 static char *_time_stamp_to_str(ut32 timeStamp) {
+#ifdef _MSC_VER
+	time_t rawtime;
+	struct tm *tminfo;
+	rawtime = (time_t)timeStamp;
+	tminfo = localtime (&rawtime);
+	//tminfo = gmtime (&rawtime);
+	return r_str_trim (strdup (asctime (tminfo)));
+#else
 	struct my_timezone {
 		int tz_minuteswest;     /* minutes west of Greenwich */
 		int tz_dsttime;         /* type of DST correction */
@@ -513,8 +521,9 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 	time_t ts = (time_t) timeStamp;
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
-	ts += gmtoff;
+	ts += (time_t)gmtoff;
 	return r_str_trim (strdup (ctime (&ts)));
+#endif
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
