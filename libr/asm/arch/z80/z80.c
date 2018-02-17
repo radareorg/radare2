@@ -217,7 +217,8 @@ static int z80OpLength (const ut8 *buf, int len) {
 	return ret;
 }
 
-static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
+// #include'd in asm/p/asm_z80.c
+FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 	int ret = z80OpLength (buf, len);
 	z80_opcode *z_op;
 	char **cb_tab;

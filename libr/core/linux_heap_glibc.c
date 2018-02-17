@@ -493,7 +493,7 @@ static int GH(print_double_linked_list_bin)(RCore *core, GH(RHeap_MallocState)*m
 	}
 	int ret = 0;
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
-	if (num_bin < 0 || num_bin > 126) {
+	if (num_bin > 126) {
 		return -1;
 	}
 	GHT bin = main_arena->bins[num_bin];
