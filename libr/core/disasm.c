@@ -249,6 +249,7 @@ typedef struct {
 	int cmtcount;
 	int shortcut_pos;
 	bool asm_anal;
+	ut64 printed_str_addr;
 
 	bool use_json;
 	bool first_line;
@@ -661,6 +662,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->lastfail = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
+	ds->printed_str_addr = UT64_MAX;
 
 	ds->esil_old_pc = UT64_MAX;
 	ds->esil_regstate = NULL;
@@ -3151,6 +3153,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	if (escstr) {
 		ds_begin_comment (ds);
 		ds_comment (ds, true, "; %s\"%s\"", prefix, escstr);
+		ds->printed_str_addr = refaddr;
 		free (escstr);
 	}
 }
@@ -3520,7 +3523,8 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (*val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
-		if (ds && *str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)) {
+		if (ds && *str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
+		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
 			bool jump_op = false;
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
@@ -4310,6 +4314,7 @@ toro:
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
+		ds->printed_str_addr = UT64_MAX;
 		// XXX. this must be done in ds_update_pc()
 		// ds_update_pc (ds, ds->at);
 		{
@@ -5288,6 +5293,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}
 		}
 		do {
+			ds->printed_str_addr = UT64_MAX;
 			// XXX - why is it necessary to set this everytime?
 			r_asm_set_pc (core->assembler, ds->at);
 			if (ds->lines >= ds->l) {
