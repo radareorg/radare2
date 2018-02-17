@@ -60,7 +60,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "brlt",    "if(var < 0) goto A"},
 		{ "mov",     "A = B"},
 		{ "movw",    "A+1:A = B+1:B"},
-		{ "ldi",     "A = *(B)"},
+		{ "ldi",     "A = B"},
 		{ "lds",     "A = *(B)"},
 		{ "ld",      "A = *(B)"},
 		{ "ldd",     "A = *(B)"},
