@@ -98,10 +98,12 @@ static int download(struct SPDBDownloader *pd) {
 #else
 		const char *cabextractor = "cabextract";
 		const char *format = "%s -d \"%s\" \"%s\"";
+		char *abspath_to_dir = r_file_dirname (abspath_to_archive);
 		// cabextract -d %1 %2
 		// %1 - path to directory where to extract all files from cab archive
 		// %2 - absolute path to cab archive
-		extractor_cmd = r_str_newf (format, cabextractor, ".", abspath_to_archive);
+		extractor_cmd = r_str_newf (format, cabextractor, abspath_to_dir, abspath_to_archive);
+		R_FREE (abspath_to_dir);
 #endif
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
@@ -121,6 +123,8 @@ static int download(struct SPDBDownloader *pd) {
 		eprintf ("Falling back to uncompressed pdb\n");
 		res = 1;
 		archive_name[archive_name_len - 1] = 'b';
+		R_FREE (archive_name_escaped);
+		archive_name_escaped = r_str_escape (archive_name);
 		abspath_to_archive = r_str_newf("%s%s%s%s%s%s%s",
 		    symbol_store_path, R_SYS_DIR,
 		    dbg_file, R_SYS_DIR,
@@ -132,7 +136,7 @@ static int download(struct SPDBDownloader *pd) {
 		                       opt->symbol_server,
 		                       opt->dbg_file,
 		                       opt->guid,
-		                       archive_name,
+		                       archive_name_escaped,
 		                       abspath_to_archive);
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
