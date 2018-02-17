@@ -3061,7 +3061,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
 	int ret;
-	ut8 code[32];
+	ut8 code[48];
 	RAnalOp op = {0};
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
