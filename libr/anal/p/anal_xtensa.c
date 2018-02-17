@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - pancake */
+/* radare2 - LGPL - Copyright 2016-2018 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -20,15 +20,17 @@ static int xtensa_length(const ut8 *insn) {
 
 static inline ut64 xtensa_offset (ut64 addr, const ut8 *buf) {
 	ut32 offset = ((buf[0] >> 4) & 0xc) | (((ut32)buf[1]) << 4) | (((ut32)buf[2]) << 12);
-	if (offset & 0x80000)
+	if (offset & 0x80000) {
 		return (addr + 4 + offset - 0x100000) & ~3;
+	}
 	return (addr + 4 + offset) & ~3;
 }
 
 static inline ut64 xtensa_imm18s (ut64 addr, const ut8 *buf) {
 	ut32 offset = (buf[0] >> 6) | (((ut32)buf[1]) << 2) | (((ut32)buf[2]) << 10);
-	if (offset & 0x20000)
+	if (offset & 0x20000) {
 		return addr + 4 + offset - 0x40000;
+	}
 	return addr + 4 + offset;
 }
 
@@ -38,15 +40,17 @@ static inline ut64 xtensa_imm6s (ut64 addr, const ut8 *buf) {
 }
 
 static inline ut64 xtensa_imm8s (ut64 addr, ut8 imm8) {
-	if (imm8 & 0x80)
+	if (imm8 & 0x80) {
 		return (addr + 4 + imm8 - 0x100);
+	}
 	return (addr + 4 + imm8);
 }
 
 static inline ut64 xtensa_imm12s (ut64 addr, const ut8 *buf) {
 	ut16 imm12 = (buf[1] >> 4) | (((ut16)buf[2]) << 4);
-	if (imm12 & 0x800)
+	if (imm12 & 0x800) {
 		return (addr + 4 + imm12 - 0x1000);
+	}
 	return (addr + 4 + imm12);
 }
 
@@ -483,6 +487,7 @@ static XtensaOpFn xtensa_lsai_fns[] = {
 static void xtensa_lsai_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_lsai_fns[(buf[1] >> 4) & 0xf] (anal, op, addr, buf);
 }
+
 static void xtensa_lsci_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	ut8 r = buf[1] >> 4;
 	op->family = R_ANAL_OP_FAMILY_FPU;
@@ -495,6 +500,7 @@ static void xtensa_lsci_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 		xtensa_unk_op (anal, op, addr, buf);
 	}
 }
+
 static void xtensa_calln_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->type = R_ANAL_OP_TYPE_CALL;
 	op->fail = addr + op->size;
@@ -1605,7 +1611,7 @@ static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
 		);
 	}
 
-	r_strbuf_append (&op->esil, "$jt" CM "=");
+	r_strbuf_append (&op->esil, "pc" CM "=");
 }
 
 static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
