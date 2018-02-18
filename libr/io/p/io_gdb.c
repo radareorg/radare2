@@ -174,11 +174,12 @@ static int __close(RIODesc *fd) {
 	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
-	free (desc);
+	R_FREE (desc);
 	return -1;
 }
 
 static int __getpid(RIODesc *fd) {
+	// XXX dont use globals
 	return desc ? desc->pid : -1;
 #if 0
 	// dupe for ? r_io_desc_get_pid (desc);

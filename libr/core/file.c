@@ -18,7 +18,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
 		: NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
-	char *ofilepath = NULL, *obinfilepath = bf? strdup (bf->file): NULL;
+	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
 	int ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {

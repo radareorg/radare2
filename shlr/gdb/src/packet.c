@@ -215,6 +215,9 @@ int pack(libgdbr_t *g, const char *msg) {
 		eprintf ("%s: message too long: %s", __func__, msg);
 		return -1;
 	}
+	if (!g->send_buff) {
+		return -1;
+	}
 	g->send_buff[0] = '$';
 	g->send_len = 1;
 	src = msg;

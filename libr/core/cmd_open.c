@@ -804,7 +804,7 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 		return;
 	}
 	bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
-	binpath = bf ? strdup (bf->file) : NULL;
+	binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	if (!binpath) {
 		if (r_file_exists (desc->name)) {
 			binpath = strdup (desc->name);

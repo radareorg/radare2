@@ -511,6 +511,9 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 	if (!g) {
 		return -1;
 	}
+	if (len < 1) {
+		return len;
+	}
 	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	int data_sz = g->stub_features.pkt_sz / 2;
 	int num_pkts = len / data_sz;
@@ -589,7 +592,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	// Read complete pages
 	while (len > page_size) {
 		if ((ret = gdbr_read_memory_page (g, address, buf, page_size)) != page_size) {
-			if (ret < 0) {
+			if (ret < 1) {
 				return ret_len;
 			}
 			return ret_len + ret;
