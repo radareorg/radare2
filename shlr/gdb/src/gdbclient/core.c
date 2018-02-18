@@ -477,7 +477,7 @@ static int gdbr_read_registers_lldb(libgdbr_t *g) {
 
 int gdbr_read_registers(libgdbr_t *g) {
 	int ret = -1;
-	if (!g) {
+	if (!g || !g->data) {
 		return -1;
 	}
 	if (reg_cache.init && reg_cache.valid) {

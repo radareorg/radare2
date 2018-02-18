@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 pancake */
+/* radare - LGPL - Copyright 2010-2018 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -15,6 +15,7 @@ typedef struct {
 
 #define R_GDB_MAGIC r_str_hash ("gdb")
 
+static int __close(RIODesc *fd);
 static libgdbr_t *desc = NULL;
 static RIODesc *riogdb = NULL;
 
@@ -114,6 +115,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	gdbr_init (&riog->desc, false);
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
+		__close (NULL);
+		// R_FREE (desc);
 		desc = &riog->desc;
 		if (pid > 0) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
@@ -138,8 +141,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut64 addr = io->off;
-	if (!desc || !desc->data) return -1;
-	return debug_gdb_write_at(buf, count, addr);
+	if (!desc || !desc->data) {
+		return -1;
+	}
+	return debug_gdb_write_at (buf, count, addr);
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
