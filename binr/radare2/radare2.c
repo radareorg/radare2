@@ -1072,6 +1072,15 @@ int main(int argc, char **argv, char **envp) {
 					}
 				}
 			}
+			if (mapaddr) {
+				eprintf ("WARNING: using oba to load the syminfo from different mapaddress.\n");
+				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
+				if (r_config_get_i (r.config, "file.info")) {
+					// load symbols when using r2 -m 0x1000 /bin/ls
+					r_core_cmdf (&r, "oba 0x%"PFMT64x, mapaddr);
+					r_core_cmd0 (&r, ".ies*");
+				}
+			}
 		} else {
 			RCoreFile *f = r_core_file_open (&r, pfile, perms, mapaddr);
 			if (f) {
