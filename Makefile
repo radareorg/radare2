@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=1.6.0
+PREVIOUS_RELEASE=`git log --tags --simplify-by-decoration --pretty='format:%d'|head -n1|cut -d ' ' -f3 |sed -e 's,),,'`
 
 MESON?=meson
 PYTHON?=python
@@ -341,6 +341,10 @@ endif
 
 R2V=radare2-${VERSION}
 
+v ver version:
+	@echo CURRENT=${VERSION}
+	@echo PREVIOUS=${PREVIOUS_RELEASE}
+
 dist:
 	rm -rf $(R2V)
 	git clone . $(R2V)
@@ -397,9 +401,6 @@ quality:
 
 menu nconfig:
 	./sys/menu.sh || true
-
-pie:
-	sys/pie.sh ${PREVIOUS_RELEASE}
 
 meson:
 	@echo "[ Meson R2 Building ]"
