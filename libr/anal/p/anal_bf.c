@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include <r_core.h>
 
 static int countChar (const ut8 *buf, int len, char ch) {
 	int i;
@@ -21,6 +22,7 @@ static int getid (char ch) {
 	return cidx? cidx - keys + 1: 0;
 }
 
+#define BUFSIZE_INC 32
 static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 dst = 0LL;
 	if (!op) {
@@ -38,6 +40,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		{
 			const ut8 *p = buf + 1;
 			int lev = 0, i = 1;
+			bool buf_resized = false;
 			len--;
 			while (i < len && *p) {
 				if (*p == '[')
@@ -51,11 +54,28 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						r_strbuf_setf (&op->esil,
 								"$$,brk,=[1],brk,++=,"
 								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
-						break;
+						goto beach;
+					}
+				}
+				if (i == len - 1) {
+					const ut8 *new_buf;
+					new_buf = r_core_esil_resize_read_buf (anal, len + 1 + BUFSIZE_INC);
+					if (new_buf) {
+						if (buf_resized) {
+							free ((ut8 *)buf);
+						}
+						buf = new_buf;
+						p = buf + i;
+						len += BUFSIZE_INC;
+						buf_resized = true;
 					}
 				}
 				p++;
 				i++;
+			}
+beach:
+			if (buf_resized) {
+				free ((ut8 *)buf);
 			}
 		}
 		break;

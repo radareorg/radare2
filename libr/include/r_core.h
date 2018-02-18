@@ -384,6 +384,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr);
 R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 R_API int r_core_esil_step_back(RCore *core);
+R_API const ut8 *r_core_esil_resize_read_buf(RAnal *anal, int new_len);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr);
