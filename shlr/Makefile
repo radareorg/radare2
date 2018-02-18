@@ -195,10 +195,9 @@ tcc-sync sync-tcc:
 	$(GIT) add tcc
 	rm -rf _
 
-install:
-	#mkdir -p ${DESTDIR}${LIBDIR}
-	#cp -f tcc/libr_tcc* ${DESTDIR}${LIBDIR}
-	#cp -f zip/libr_z* ${DESTDIR}${LIBDIR}
+install: libr_shlr.${EXT_AR}
+	mkdir -p ${DESTDIR}/${LIBDIR}
+	cp -f libr_shlr.${EXT_AR} ${DESTDIR}/${LIBDIR}
 
 install-symlink symstall:
 	mkdir -p "${DESTDIR}${LIBDIR}"
@@ -206,8 +205,7 @@ install-symlink symstall:
 	#	ln -fs `pwd`/$$FILE ${DESTDIR}${LIBDIR}/$$FILE ; done
 
 uninstall deinstall:
-	#rm -f ${DESTDIR}${LIBDIR}/libr_tcc*
-	#rm -f ${DESTDIR}${LIBDIR}/libr_z*
+	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
 ifeq ($(USE_CAPSTONE),1)
 # Do nothing here
@@ -312,5 +310,26 @@ spp-sync sync-spp:
 
 spp: spp-sync
 	CFLAGS="-DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp
+
+SHLRS+=ar/libr_ar.a
+SHLRS+=bochs/lib/libbochs.a
+SHLRS+=capstone/libcapstone.a
+SHLRS+=gdb/lib/libgdbr.a
+SHLRS+=grub/libgrubfs.a
+SHLRS+=java/libr_java.a
+SHLRS+=lz4/liblz4.a
+SHLRS+=qnx/lib/libqnxr.a
+#SHLRS+=sdb/src/libsdb.a
+#SHLRS+=tcc/libr_tcc.a
+SHLRS+=windbg/libr_windbg.a
+SHLRS+=zip/librz.a
+
+libr_shlr.${EXT_AR}:
+	rm -rf .libr
+	mkdir .libr
+	for LIB in ${SHLRS} ; do \
+		${PARTIALLD} -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+	done
+	${AR} crs $@ .libr/*.o
 
 .PHONY: spp
