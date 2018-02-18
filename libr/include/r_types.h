@@ -150,6 +150,7 @@
   #define FUNC_ATTR_ALLOC_ALIGN(x)
   #define FUNC_ATTR_PURE
   #define FUNC_ATTR_CONST
+  #define FUNC_ATTR_USED
   #define FUNC_ATTR_WARN_UNUSED_RESULT
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
