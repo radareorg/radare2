@@ -1235,6 +1235,31 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	}
 }
 
+/* Define new data at relocation address if it's not in an executable section */
+static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
+	RBinFile * binfile = r->bin->cur;
+	RBinObject *binobj = binfile ? binfile->o: NULL;
+	RBinInfo *info = binobj ? binobj->info: NULL;
+	RIOSection *section;
+	int cdsz;
+
+	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	if (cdsz == 0) {
+		return;
+	}
+
+	section = r_io_section_vget (r->io, addr);
+	if (!section || section->flags & R_IO_EXEC) {
+		return;
+	}
+
+	if (IS_MODE_SET(mode)) {
+		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
+	} else if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("f Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
+	}
+}
+
 static int bin_relocs(RCore *r, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RList *relocs;
@@ -1260,17 +1285,11 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
-	RBinFile * binfile = r->bin->cur;
-	RBinObject *binobj = binfile ? binfile->o: NULL;
-	RBinInfo *info = binobj ? binobj->info: NULL;
-	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
-			if (cdsz) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
-			}
+			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
@@ -1288,9 +1307,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", name, addr);
-				if (cdsz) {
-					r_cons_printf ("f Cd %d @ 0x%08"PFMT64x"\n", cdsz, addr);
-				}
+				add_metadata (r, reloc, addr, mode);
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
