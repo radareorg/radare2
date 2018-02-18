@@ -11,7 +11,7 @@ Make sure you are testing using the latest git version of radare2 before submitt
 | OS/arch/bits (mandatory)                             | Debian arm 64, Ubuntu x86 32
 | File format of the file you reverse (mandatory)      | PE, ELF etc.
 | Architecture/bits of the file (mandatory)            | PPC, x86/32, x86/64 etc.
-| r2 -v full output, **not truncated** (mandatory)         | radare2 2.2.0 16809 @....
+| r2 -v full output, **not truncated** (mandatory)     | radare2 2.4.0-git 17284 @ darwin-x86-64 git.2.2.0-476-gf8cf84e06 commit: f8cf84e0653642d9ad34e760e0e56dd81860e799 build: 2018-02-17__11:08:27
 
 ### Expected behavior
 
