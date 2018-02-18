@@ -120,6 +120,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 			break;
 		} else {
 			addr += len1;
+			ret = false;
 		}
 		// Reaches the end
 		if (addr == vaddr + len) {
