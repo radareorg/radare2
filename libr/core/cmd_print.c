@@ -403,7 +403,7 @@ static void cmd_print_init(RCore *core) {
 }
 
 // colordump
-static void cmd_prc (RCore *core, int len) {
+static void cmd_prc (RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = true; //false;
 	int i, j;
@@ -419,12 +419,11 @@ static void cmd_prc (RCore *core, int len) {
 	for (i = 0; i < len; i += cols) {
 		r_print_addr (core->print, core->offset + i);
 		for (j = i; j < i + cols; j ++) {
-			ut8 *p = (ut8 *) core->block + j;
 			if (j >= len) {
 				break;
 			}
 			if (show_color) {
-				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[*p]);
+				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
 				color = r_cons_pal_parse (str);
 				free (str);
 				if (show_cursor && core->print->cur == j) {
@@ -437,7 +436,7 @@ static void cmd_prc (RCore *core, int len) {
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
 				} else {
-					const int idx = ((float)*p / 255) * (strlen (chars) - 1);
+					const int idx = ((float)block[j] / 255) * (strlen (chars) - 1);
 					ch = chars[idx];
 				}
 			}
@@ -3528,6 +3527,7 @@ static int cmd_print(void *data, const char *input) {
 	RCoreAnalStats *as;
 	RCoreAnalStatsItem total = {0};
 	int mode, w, p, i, l, len, ret;
+	const ut8* block;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
@@ -3619,6 +3619,8 @@ static int cmd_print(void *data, const char *input) {
 		r_core_seek (core, off, SEEK_SET);
 		r_core_block_read (core);
 	}
+	// TODO After core->block is removed, this should be changed to a block read.
+	block = core->block;
 	switch (*input) {
 	case 'w': // "pw"
 		if (input[1] == 'n') {
@@ -3660,14 +3662,12 @@ static int cmd_print(void *data, const char *input) {
 				r_core_cmdf (core, "pj %"PFMT64d" @ 0", core->offset);
 			}
 		} else {
-			char *str = r_str_ndup ((const char *)core->block, core->blocksize);
-			if (!memcmp (str, "\xff\xff\xff\xff", 4)) {
+			if (core->blocksize < 4 || !memcmp (core->block, "\xff\xff\xff\xff", 4)) {
 				eprintf ("Cannot read\n");
 			} else {
-				char *res = r_print_json_indent (str, true, "  ", NULL);
+				char *res = r_print_json_indent ((const char *)core->block, true, "  ", NULL);
 				r_cons_printf ("%s\n", res);
 				free (res);
-				free (str);
 			}
 		}
 		break;
@@ -3986,7 +3986,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			if (buf) {
 				int buf_len;
-				r_str_bits (buf, core->block, size, NULL);
+				r_str_bits (buf, block, size, NULL);
 				buf_len = strlen (buf);
 				if (from >= buf_len) {
 					from = buf_len;
@@ -4413,13 +4413,12 @@ static int cmd_print(void *data, const char *input) {
 			{
 				RAsmOp asmop;
 				int j, ret;
-				const ut8 *buf = core->block;
 				if (!l) {
 					l = len;
 				}
 				r_cons_break_push (NULL, NULL);
 				for (i = j = 0; i < core->blocksize && j < l; i += ret, j++) {
-					ret = r_asm_disassemble (core->assembler, &asmop, buf + i, len - i);
+					ret = r_asm_disassemble (core->assembler, &asmop, block + i, len - i);
 					if (r_cons_is_breaked ()) {
 						break;
 					}
@@ -4865,7 +4864,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'c': // "prc" // color raw dump
-			cmd_prc (core, len);
+			cmd_prc (core, block, len);
 			break;
 		case '?':
 			r_cons_printf ("|Usage: pr[glx] [size]\n"
@@ -4885,34 +4884,28 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			case 'i': // "prgi"
 			{
-				int sz, outlen = 0;
+				int outlen = 0;
 				int inConsumed = 0;
-				ut8 *in, *out;
-				in = core->block;
-				sz = core->blocksize;
-				out = r_inflate (in, sz, &inConsumed, &outlen);
+				ut8 *out;
+				out = r_inflate (block, core->blocksize, &inConsumed, &outlen);
 				r_cons_printf ("%d\n", inConsumed);
 				free (out);
 			}
 			break;
 			case 'o': // "prgo"
 			{
-				int sz, outlen = 0;
-				ut8 *in, *out;
-				in = core->block;
-				sz = core->blocksize;
-				out = r_inflate (in, sz, NULL, &outlen);
+				int outlen = 0;
+				ut8 *out;
+				out = r_inflate (block, core->blocksize, NULL, &outlen);
 				r_cons_printf ("%d\n", outlen);
 				free (out);
 			}
 			break;
 			default:
 			{
-				int sz, outlen = 0;
-				ut8 *in, *out;
-				in = core->block;
-				sz = core->blocksize;
-				out = r_inflate (in, sz, NULL, &outlen);
+				int outlen = 0;
+				ut8 *out;
+				out = r_inflate (block, core->blocksize, NULL, &outlen);
 				if (out) {
 					r_cons_memcat ((const char *) out, outlen);
 				}
@@ -4954,7 +4947,7 @@ static int cmd_print(void *data, const char *input) {
 			free (res);
 			free (data);
 		} else {
-			char *res = r_print_stereogram_bytes (core->block, core->blocksize);
+			char *res = r_print_stereogram_bytes (block, core->blocksize);
 			r_print_stereogram_print (core->print, res);
 			free (res);
 		}
@@ -5491,7 +5484,7 @@ static int cmd_print(void *data, const char *input) {
 			case 'd': // "p6d"
 				if (input[2] == '?') {
 					r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
-				} else if (r_base64_decode (buf, (const char *) core->block, len)) {
+				} else if (r_base64_decode (buf, (const char *) block, len)) {
 					r_cons_println ((const char *) buf);
 				} else {
 					eprintf ("r_base64_decode: invalid stream\n");
@@ -5503,7 +5496,7 @@ static int cmd_print(void *data, const char *input) {
 					break;
 				} else {
 					len = len > core->blocksize? core->blocksize: len;
-					r_base64_encode ((char *) buf, core->block, len);
+					r_base64_encode ((char *) buf, block, len);
 					r_cons_println ((const char *) buf);
 				}
 				break;
@@ -5527,7 +5520,7 @@ static int cmd_print(void *data, const char *input) {
 			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $F @ $B");
 			} else {
-				r_print_bytes (core->print, core->block, len, "%02x");
+				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}
 		break;
@@ -5555,7 +5548,7 @@ static int cmd_print(void *data, const char *input) {
 			r_list_free (pids);
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
-			char *s = r_print_randomart (core->block, len, core->offset);
+			char *s = r_print_randomart (block, len, core->offset);
 			r_cons_println (s);
 			free (s);
 		}
@@ -5609,7 +5602,7 @@ static int cmd_print(void *data, const char *input) {
 				len = len - (len % sizeof (ut32));
 			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
-				r_print_date_unix (core->print, core->block + l, sizeof (ut32));
+				r_print_date_unix (core->print, block + l, sizeof (ut32));
 			}
 			break;
 		case 'h': // "pth"
@@ -5621,7 +5614,7 @@ static int cmd_print(void *data, const char *input) {
 				len = len - (len % sizeof (ut32));
 			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
-				r_print_date_hfs (core->print, core->block + l, sizeof (ut32));
+				r_print_date_hfs (core->print, block + l, sizeof (ut32));
 			}
 			break;
 		case 'd': // "ptd"
@@ -5634,7 +5627,7 @@ static int cmd_print(void *data, const char *input) {
 				len = len - (len % sizeof (ut32));
 			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
-				r_print_date_dos (core->print, core->block + l, sizeof (ut32));
+				r_print_date_dos (core->print, block + l, sizeof (ut32));
 			}
 			break;
 		case 'n': // "ptn"
@@ -5645,7 +5638,7 @@ static int cmd_print(void *data, const char *input) {
 				len = len - (len % sizeof (ut64));
 			}
 			for (l = 0; l < len; l += sizeof (ut64)) {
-				r_print_date_w32 (core->print, core->block + l, sizeof (ut64));
+				r_print_date_w32 (core->print, block + l, sizeof (ut64));
 			}
 			break;
 		case '?':
@@ -5659,7 +5652,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		if (input[1] == 'z') { // "pqz"
-			len = r_str_nlen ((const char*)core->block, core->blocksize);
+			len = r_str_nlen ((const char *)block, core->blocksize);
 		} else {
 			if (len < 1) {
 				len = 0;
@@ -5669,7 +5662,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		bool inverted = (input[1] == 'i'); // pqi -- inverted colors
-		char *res = r_qrcode_gen (core->block, len, r_config_get_i (core->config, "scr.utf8"), inverted);
+		char *res = r_qrcode_gen (block, len, r_config_get_i (core->config, "scr.utf8"), inverted);
 		if (res) {
 			r_cons_printf ("%s\n", res);
 			free (res);
