@@ -207,7 +207,7 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	}
 #endif
 #if USE_DICT
-	eprintf ("Add ref %llx to %llx %c\n", from, to, type);
+	// eprintf ("Add ref %llx to %llx %c\n", from, to, type);
 	setxref (anal->dict_xrefs, to, from, type);
 	setxref (anal->dict_refs, from, to, type);
 	// setref (anal->dict_refs, from, to, type);

@@ -358,7 +358,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 		RListIter *iter;
 		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 		r_list_foreach (refs, iter, ref) {
-			eprintf ("0x%x -> 0x%x %c\n", ref->at, ref->addr, ref->type);
+		//	eprintf ("0x%x -> 0x%x %c\n", ref->at, ref->addr, ref->type);
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 			if (f) {
 				if (dump) {
