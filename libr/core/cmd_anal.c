@@ -164,7 +164,7 @@ static const char *help_detail_ae[] = {
 
 static const char *help_msg_aea[] = {
 	"Examples:", "aea", " show regs used in a range",
-	"aea", " [ops]", "Show regs used in N instructions",
+	"aea", " [ops]", "Show regs used in N instructions (all,read,{no,}written,memreads,memwrites)",
 	"aea*", " [ops]", "Create mem.* flags for memory accesses",
 	"aeaf", "", "Show regs used in current function",
 	"aear", " [ops]", "Show regs read in N instructions",
@@ -3845,13 +3845,13 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	} else if ((mode >> 5) & 1) {
 		// nothing
 	} else {
-		r_cons_printf ("A: ");
+		r_cons_printf (" A: ");
 		showregs (stats.regs);
-		r_cons_printf ("R: ");
+		r_cons_printf (" R: ");
 		showregs (stats.regread);
-		r_cons_printf ("W: ");
+		r_cons_printf (" W: ");
 		showregs (stats.regwrite);
-		r_cons_printf ("N: ");
+		r_cons_printf ("NW: ");
 		if (r_list_length (regnow)) {
 			showregs (regnow);
 		} else {
@@ -3861,11 +3861,11 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		ut64 *n;
 		int c = 0;
 		r_list_foreach (mymemxsr, iter, n) {
-			r_cons_printf ("L%d: 0x%08"PFMT64x"\n", c++, *n);
+			r_cons_printf ("R%d: 0x%08"PFMT64x"\n", c++, *n);
 		}
 		c = 0;
 		r_list_foreach (mymemxsw, iter, n) {
-			r_cons_printf ("L%d: 0x%08"PFMT64x"\n", c++, *n);
+			r_cons_printf ("W%d: 0x%08"PFMT64x"\n", c++, *n);
 		}
 	}
 	r_list_free (mymemxsr);
