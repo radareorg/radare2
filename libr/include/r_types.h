@@ -132,6 +132,7 @@
   #define FUNC_ATTR_ALLOC_ALIGN(x) __attribute__((alloc_align(x)))
   #define FUNC_ATTR_PURE __attribute__ ((pure))
   #define FUNC_ATTR_CONST __attribute__((const))
+  #define FUNC_ATTR_USED __attribute__((used))
   #define FUNC_ATTR_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
   #define FUNC_ATTR_ALWAYS_INLINE __attribute__((always_inline))
 

@@ -295,31 +295,6 @@ void linux_attach_new_process (RDebug *dbg) {
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
 }
 
-static RDebugPid *find_rdebug_pid(RDebug *dbg, int pid) {
-	RList *list = dbg->threads;
-	if (list) {
-		RDebugPid *th;
-		RListIter *it;
-		r_list_foreach (list, it, th) {
-			if (th->pid == pid) {
-				return th;
-			}
-		}
-	}
-	return NULL;
-}
-
-#if 0
-// UNUSED //
-static bool get_pid_signalled_status(RDebug *dbg, int pid) {
-	RDebugPid *th = find_rdebug_pid (dbg, pid);
-	if (th) {
-		return th->signalled;
-	}
-	return false;
-}
-#endif
-
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	int pid = (dbg->continue_all_threads && dbg->n_threads) ? -1 : dbg->main_pid;
