@@ -923,6 +923,15 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file && action & R_BIN_REQ_DLOPEN) {
+#if __UNIX__
+		int child = r_sys_fork ();
+		if (child == -1) {
+			return 1;
+		}
+		if (child == 0) {
+			return waitpid (child, NULL, 0);
+		}
+#endif
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
 			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
@@ -930,7 +939,7 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 		eprintf ("Cannot open the '%s' library\n", file);
-		return 1;
+		return 0;
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
 		RList *files = r_list_newf (NULL);
