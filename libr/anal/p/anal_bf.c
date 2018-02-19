@@ -34,12 +34,12 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->id = getid (buf[0]);
 	switch (buf[0]) {
 	case '[':
-		buf = (const ut8 *)strdup ((char *)buf);
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->fail = addr+1;
+		buf = r_mem_dup ((void *)buf, len);
 		if (!buf) {
 			break;
 		}
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->fail = addr+1;
 		{
 			const ut8 *p = buf + 1;
 			int lev = 0, i = 1;
