@@ -7,7 +7,7 @@
 #include <time.h>
 #include <sys/stat.h>
 
-R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
+R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	ut8 _time[2] = { buf[0], buf[1] };
 	ut8 _date[2] = { buf[2], buf[3] };
         ut32 t       = _time[1]<<8 | _time[0];
