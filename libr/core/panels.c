@@ -4,6 +4,11 @@
 
 #include <r_core.h>
 
+#define PANEL_TYPE_FRAME 0
+#define PANEL_TYPE_DIALOG 1
+#define PANEL_TYPE_FLOAT 2
+#define LIMIT 256
+
 typedef struct {
 	int x;
 	int y;
@@ -18,10 +23,6 @@ typedef struct {
 	char *text;
 } Panel;
 
-#define PANEL_TYPE_FRAME 0
-#define PANEL_TYPE_DIALOG 1
-#define PANEL_TYPE_FLOAT 2
-
 static int COLW = 80;
 static const int layoutCount = 2;
 static int layout = 0;
@@ -29,11 +30,14 @@ static RCore *_core;
 static int n_panels = 0;
 static void reloadPanels(RCore *core);
 static int menu_pos = 0;
-#define LIMIT 256
 struct {
 	int panels[LIMIT];
 	int size;
 } ostack;
+
+#define OS_INIT() ostack.size = 0; ostack.panels[0] = 0;
+#define OS_PUSH(x) if (ostack.size < LIMIT) { ostack.panels[++ostack.size] = x; }
+#define OS_POP() ((ostack.size > 0)? ostack.panels[--ostack.size]: 0)
 
 static RConsCanvas *can;
 static Panel *panels = NULL;
@@ -106,15 +110,6 @@ static const char **menus_sub[] = {
 // TODO: handle mouse wheel
 static int curnode = 0;
 
-#define G(x, y) r_cons_canvas_gotoxy (can, x, y)
-#define W(x) r_cons_canvas_write (can, x)
-#define B(x, y, w, h) r_cons_canvas_box (can, x, y, w, h, NULL)
-#define B1(x, y, w, h) r_cons_canvas_box (can, x, y, w, h, Color_BLUE)
-#define B2(x, y, w, h) r_cons_canvas_box (can, x, y, w, h, Color_MAGENTA)
-#define L(x, y, x2, y2) r_cons_canvas_line (can, x, y, x2, y2, 0)
-#define L1(x, y, x2, y2) r_cons_canvas_line (can, x, y, x2, y2, 1)
-#define L2(x, y, x2, y2) r_cons_canvas_line (can, x, y, x2, y2, 2)
-#define F(x, y, x2, y2, c) r_cons_canvas_fill (can, x, y, x2, y2, c, 0)
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	char title[128];
@@ -125,21 +120,20 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	delta_x = n->sx;
 	delta_y = n->sy;
 	// clear
-	F (n->x, n->y, n->w, n->h, ' ');
+	r_cons_canvas_fill (can, n->x, n->y, n->w, n->h, ' ', 0);
 	if (n->type == PANEL_TYPE_FRAME) {
 		if (cur) {
-			// F (n->x,n->y, n->w, n->h, '.');
 			snprintf (title, sizeof (title) - 1,
 				Color_BGREEN "[x] %s"Color_RESET, n->text);
 		} else {
 			snprintf (title, sizeof (title) - 1,
 				"   %s   ", n->text);
 		}
-		if (G (n->x + 1, n->y + 1)) {
-			W (title); // delta_x
+		if (r_cons_canvas_gotoxy (can, n->x + 1, n->y + 1)) {
+			r_cons_canvas_write (can, title); // delta_x
 		}
 	}
-	(void) G (n->x + 2, n->y + 2);
+	(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
 	// if (
 // TODO: only refresh if n->refresh is set
 // TODO: temporary crop depending on out of screen offsets
@@ -169,26 +163,26 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 		}
 		if (text) {
-			W (text);
+			r_cons_canvas_write (can, text);
 			free (text);
 		} else {
-			W (n->text);
+			r_cons_canvas_write (can, n->text);
 		}
 		free (foo);
 	} else {
 		char *text = r_str_ansi_crop (n->text,
 			delta_x, delta_y, n->w + 5, n->h - delta_y);
 		if (text) {
-			W (text);
+			r_cons_canvas_write (can, text);
 			free (text);
 		} else {
-			W (n->text);
+			r_cons_canvas_write (can, n->text);
 		}
 	}
 	if (cur) {
-		B1 (n->x, n->y, n->w, n->h);
+		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, Color_BLUE);
 	} else {
-		B (n->x, n->y, n->w, n->h);
+		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, NULL);
 	}
 }
 
@@ -412,7 +406,7 @@ static void r_core_panels_refresh(RCore *core) {
 		}
 	}
 
-	(void) G (-can->sx, -can->sy);
+	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	title[0] = 0;
 	if (curnode == 0) {
 		strcpy (title, "> ");
@@ -426,25 +420,24 @@ static void r_core_panels_refresh(RCore *core) {
 		strcat (title, str);
 	}
 	if (curnode == 0) {
-		W (Color_BLUE);
-		W (title);
-		W (Color_RESET);
+		r_cons_canvas_write (can, Color_BLUE);
+		r_cons_canvas_write (can, title);
+		r_cons_canvas_write (can, Color_RESET);
 	} else {
-		W (Color_RESET);
-		W (title);
+		r_cons_canvas_write (can, Color_RESET);
+		r_cons_canvas_write (can, title);
 	}
 
 	snprintf (title, sizeof (title) - 1,
 		"[0x%08"PFMT64x "]", core->offset);
-	(void) G (-can->sx + w - strlen (title), -can->sy);
-	W (title);
+	(void) r_cons_canvas_gotoxy (can, -can->sx + w - strlen (title), -can->sy);
+	r_cons_canvas_write (can, title);
 
 	r_cons_canvas_print (can);
 	r_cons_flush ();
 }
 
 static void reloadPanels(RCore *core) {
-	// W("HELLO WORLD");
 	Layout_run (panels);
 }
 
@@ -502,9 +495,6 @@ static void panel_continue(RCore *core) {
 }
 
 R_API int r_core_visual_panels(RCore *core) {
-#define OS_INIT() ostack.size = 0; ostack.panels[0] = 0;
-#define OS_PUSH(x) if (ostack.size < LIMIT) { ostack.panels[++ostack.size] = x; }
-#define OS_POP() ((ostack.size > 0)? ostack.panels[--ostack.size]: 0)
 	int okey, key, wheel;
 	int w, h;
 	int asm_comments = 0;
@@ -837,7 +827,7 @@ repeat:
 		r_core_cmd0 (core, ".dr*");
 		break;
 	case 'C':
-		can->color = !can->color;                               // WTF
+		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
 		// reloadPanels (core);
