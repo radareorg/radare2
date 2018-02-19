@@ -200,13 +200,9 @@ static void Layout_run(Panel *panels) {
 		COLW = w;
 		colpos = 0;
 	}
-	if (layout < 0) {
-		layout = layoutCount - 1;
-	}
 	if (layout >= layoutCount) {
 		layout = 0;
 	}
-
 	can->sx = 0;
 	can->sy = 0;
 	for (i = j = 0; panels[i].text; i++) {
@@ -284,8 +280,6 @@ static void Layout_run(Panel *panels) {
 					}
 				}
 				break;
-				break;
-
 			}
 			j++;
 		}
@@ -401,7 +395,7 @@ static void r_core_panels_refresh(RCore *core) {
 		}
 		for (i = 0; panels[i].text; i++) {
 			if (i != curnode) {
-				Panel_print (can, &panels[i], i == curnode);
+				Panel_print (can, &panels[i], 0);
 			}
 		}
 	}
@@ -411,10 +405,11 @@ static void r_core_panels_refresh(RCore *core) {
 	}
 	// redraw current node to make it appear on top
 	if (panels) {
-		if (curnode >= 0) {
+		if (curnode > 0) {
 			Panel_print (can, &panels[curnode], 1);
+		} else {
+			Panel_print (can, &panels[menu_pos], menu_y);
 		}
-		Panel_print (can, &panels[menu_pos], menu_y);
 	}
 
 	(void) G (-can->sx, -can->sy);
