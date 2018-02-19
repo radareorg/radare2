@@ -30,13 +30,13 @@ static const char *analref_toString(RAnalRefType type) {
 		/* do nothing */
 		break;
 	case R_ANAL_REF_TYPE_CODE:
-		return "code.jmp";
+		return "code jmp";
 	case R_ANAL_REF_TYPE_CALL:
-		return "code.call";
+		return "code call";
 	case R_ANAL_REF_TYPE_DATA:
-		return "data.mem";
+		return "data mem";
 	case R_ANAL_REF_TYPE_STRING:
-		return "data.string";
+		return "data string";
 	}
 	return "unk";
 }
@@ -573,13 +573,56 @@ static int xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 #if USE_DICT
+	bool is_first = true;
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *list = r_list_new();
 	listxrefs (anal->dict_xrefs, UT64_MAX, list);
+	if (rad == 'j') {
+		anal->cb_printf ("{");
+	}
 	r_list_foreach (list, iter, ref) {
-		int type = ref->type? ref->type: ' ';
-		r_cons_printf ("%c 0x%08llx -> 0x%08llx\n", type, ref->at, ref->addr);
+		int t = ref->type ? ref->type: ' ';
+		switch (rad) {
+			case '*':
+				anal->cb_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", ref->at, ref->addr);
+				break;
+			case '\0':
+				{
+					char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
+					r_str_replace_char (name, ' ', 0);
+					anal->cb_printf ("%40s", name? name: "");
+					free (name);
+					anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, analref_toString (t), ref->addr);
+					name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
+					r_str_replace_char (name, ' ', 0);
+					if (name && *name) {
+						anal->cb_printf (" %s\n", name);
+					} else {
+						anal->cb_printf ("\n");
+					}
+					free (name);
+				}
+				break;
+			case 'q':
+				anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", ref->at, ref->addr, analref_toString (t));
+				break;
+			case 'j':
+				{
+					if (is_first) {
+						is_first = false;
+					} else {
+						anal->cb_printf (",");
+					}
+					anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	if (rad == 'j') {
+		anal->cb_printf ("}\n");
 	}
 	r_list_free (list);
 #else
