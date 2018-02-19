@@ -3678,18 +3678,25 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			movspeed = g->movspeed;
 		}
 		const char *cmd;
+		const int K = 920;
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
-			agraph_update_seek (g, get_anode (g->curnode), true);
+				//		agraph_update_seek (g, get_anode (g->curnode), true);
+			// agraph_refresh (r_cons_singleton ()->event_data);
+			// agraph_update_seek (g, get_anode (g->curnode), false);
+			can->sy = (can->sy * K) / 1000;
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
-			agraph_update_seek (g, get_anode (g->curnode), true);
+			can->sy = (can->sy * 1000) / K;
+			// agraph_update_seek (g, get_anode (g->curnode), false);
+			// agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case '0':
 			agraph_set_zoom (g, ZOOM_DEFAULT);
 			agraph_update_seek (g, get_anode (g->curnode), true);
+// update scroll (with minor shift)
 			break;
 		case '|':
 		{         // TODO: edit

@@ -239,6 +239,8 @@ static int visual_help() {
 		" \\        toggle visual split mode\n"
 		" \"        toggle the column mode (uses pC..)\n"
 		" /        in cursor mode search in current block\n"
+		" (        toggle snow\n"
+		" )        toggle asm.emu.str\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
 		" 0        seek to beginning of current function\n"
@@ -1562,6 +1564,8 @@ static void applyDisMode(RCore *core) {
 	}
 }
 
+static bool oldEmu = false; // kill globals
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -2381,6 +2385,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (!snowMode) {
 				r_list_free (snows);
 				snows = NULL;
+			}
+			break;
+		case ')':
+			{
+			bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+			if (isEmuStr) {
+				r_config_set (core->config, "asm.emu.str", "false");
+				r_config_set (core->config, "asm.emu", r_str_bool (oldEmu));
+
+			} else {
+				oldEmu = r_config_get_i (core->config, "asm.emu");
+				r_config_set (core->config, "asm.emu.str", "true");
+			}
 			}
 			break;
 		case '*':
