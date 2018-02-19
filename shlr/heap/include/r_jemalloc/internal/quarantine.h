@@ -47,6 +47,10 @@ quarantine_alloc_hook(void)
 {
 	tsd_t *tsd;
 
+	/* TODO: Remove the assert. */
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */
+	/* ~Debily */
+
 	assert(config_fill && opt_quarantine);
 
 	tsd = tsd_fetch();

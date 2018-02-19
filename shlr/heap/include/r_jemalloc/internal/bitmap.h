@@ -155,8 +155,13 @@ bitmap_get(bitmap_t *bitmap, const bitmap_info_t *binfo, size_t bit)
 {
 	size_t goff;
 	bitmap_t g;
-
+#ifdef JEMALLOC_DEBUG
 	assert(bit < binfo->nbits);
+#else
+	if (unlikely(bit > binfo->nbits))
+		return (false);
+#endif /* JEMALLOC_DEBUG */
+
 	goff = bit >> LG_BITMAP_GROUP_NBITS;
 	g = bitmap[goff];
 	return (!(g & (ZU(1) << (bit & BITMAP_GROUP_NBITS_MASK))));
@@ -169,6 +174,9 @@ bitmap_set(bitmap_t *bitmap, const bitmap_info_t *binfo, size_t bit)
 	bitmap_t *gp;
 	bitmap_t g;
 
+	/* TODO: Remove the asserts. */
+	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
+	/* ~Debily */
 	assert(bit < binfo->nbits);
 	assert(!bitmap_get(bitmap, binfo, bit));
 	goff = bit >> LG_BITMAP_GROUP_NBITS;
@@ -204,7 +212,9 @@ bitmap_sfu(bitmap_t *bitmap, const bitmap_info_t *binfo)
 	size_t bit;
 	bitmap_t g;
 	unsigned i;
-
+	/* TODO: Remove the assert. */
+	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
+	/* ~Debily */
 	assert(!bitmap_full(bitmap, binfo));
 
 #ifdef USE_TREE
@@ -237,6 +247,9 @@ bitmap_unset(bitmap_t *bitmap, const bitmap_info_t *binfo, size_t bit)
 	bitmap_t g;
 	UNUSED bool propagate;
 
+	/* TODO: Remove the asserts. */
+	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
+	/* ~Debily */
 	assert(bit < binfo->nbits);
 	assert(bitmap_get(bitmap, binfo, bit));
 	goff = bit >> LG_BITMAP_GROUP_NBITS;

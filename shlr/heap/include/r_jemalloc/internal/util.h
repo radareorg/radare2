@@ -33,6 +33,11 @@
 #  define FMTxPTR PRIxPTR
 #endif
 
+/* NOTE: This file was left out of correcting assert() with error handling */
+/* since it provides rather complex math functions and returning an error might */
+/* break compatability. */
+/* ~Debily */
+
 /* Size of stack-allocated buffer passed to buferror(). */
 #define	BUFERROR_BUF		64
 

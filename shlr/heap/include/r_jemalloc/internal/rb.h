@@ -82,6 +82,9 @@ struct {								\
 /* Node initializer. */
 #define	rbt_node_new(a_type, a_field, a_rbt, a_node) do {		\
     /* Bookkeeping bit cannot be used by node pointer. */		\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
     assert(((uintptr_t)(a_node) & 0x1) == 0);				\
     rbtn_left_set(a_type, a_field, (a_node), NULL);	\
     rbtn_right_set(a_type, a_field, (a_node), NULL);	\
@@ -364,6 +367,9 @@ a_prefix##next(a_rbt_type *rbtree, a_type *node) {			\
 	  a_field, node), ret);						\
     } else {								\
 	a_type *tnode = rbtree->rbt_root;				\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	assert(tnode != NULL);						\
 	ret = NULL;							\
 	while (true) {							\
@@ -376,6 +382,9 @@ a_prefix##next(a_rbt_type *rbtree, a_type *node) {			\
 	    } else {							\
 		break;							\
 	    }								\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	    assert(tnode != NULL);					\
 	}								\
     }									\
@@ -389,6 +398,9 @@ a_prefix##prev(a_rbt_type *rbtree, a_type *node) {			\
 	  a_field, node), ret);						\
     } else {								\
 	a_type *tnode = rbtree->rbt_root;				\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	assert(tnode != NULL);						\
 	ret = NULL;							\
 	while (true) {							\
@@ -402,6 +414,9 @@ a_prefix##prev(a_rbt_type *rbtree, a_type *node) {			\
 		break;							\
 	    }								\
 	    assert(tnode != NULL);					\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	}								\
     }									\
     return (ret);							\
@@ -470,6 +485,9 @@ a_prefix##insert(a_rbt_type *rbtree, a_type *node) {			\
     path->node = rbtree->rbt_root;					\
     for (pathp = path; pathp->node != NULL; pathp++) {			\
 	int cmp = pathp->cmp = a_cmp(node, pathp->node);		\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	assert(cmp != 0);						\
 	if (cmp < 0) {							\
 	    pathp[1].node = rbtn_left_get(a_type, a_field,		\
@@ -560,6 +578,9 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
 	    }								\
 	}								\
     }									\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
     assert(nodep->node == node);					\
     pathp--;								\
     if (pathp->node != node) {						\
@@ -596,6 +617,11 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
 	if (left != NULL) {						\
 	    /* node has no successor, but it has a left child.        */\
 	    /* Splice node out, without losing the left child.        */\
+		\
+		\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	    assert(!rbtn_red_get(a_type, a_field, node));		\
 	    assert(rbtn_red_get(a_type, a_field, left));		\
 	    rbtn_black_set(a_type, a_field, left);			\
@@ -619,6 +645,9 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
     }									\
     if (rbtn_red_get(a_type, a_field, pathp->node)) {			\
 	/* Prune red node, which requires no fixup. */			\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
 	assert(pathp[-1].cmp < 0);					\
 	rbtn_left_set(a_type, a_field, pathp[-1].node, NULL);		\
 	return;								\
@@ -667,6 +696,9 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
 		}							\
 		/* Balance restored, but rotation modified subtree    */\
 		/* root.                                              */\
+		/* TODO: Remove the assert. */\
+		/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+		/* ~Debily */ \
 		assert((uintptr_t)pathp > (uintptr_t)path);		\
 		if (pathp[-1].cmp < 0) {				\
 		    rbtn_left_set(a_type, a_field, pathp[-1].node,	\
@@ -763,6 +795,9 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
 		    /*   (b)                                          */\
 		    /*   /                                            */\
 		    /* (b)                                            */\
+			/* TODO: Remove the assert. */\
+			/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+			/* ~Debily */ \
 		    assert(leftright != NULL);				\
 		    rbtn_red_set(a_type, a_field, leftright);		\
 		    rbtn_rotate_right(a_type, a_field, pathp->node,	\
@@ -867,6 +902,9 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
     }									\
     /* Set root. */							\
     rbtree->rbt_root = path->node;					\
+	/* TODO: Remove the assert. */\
+	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
+	/* ~Debily */ \
     assert(!rbtn_red_get(a_type, a_field, rbtree->rbt_root));		\
 }									\
 a_attr a_type *								\

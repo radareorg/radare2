@@ -140,6 +140,9 @@ rtree_start_level(rtree_t *rtree, uintptr_t key)
 
 	start_level = rtree->start_level[lg_floor(key) >>
 	    LG_RTREE_BITS_PER_LEVEL];
+	/* TODO: Remove the assert. */
+	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
+	/* ~Debily */
 	assert(start_level < rtree->height);
 	return (start_level);
 }
@@ -169,7 +172,12 @@ rtree_child_tryread(rtree_node_elm_t *elm, bool dependent)
 	child = elm->child;
 	if (!dependent && !rtree_node_valid(child))
 		child = atomic_read_p(&elm->pun);
+#ifdef JEMALLOC_DEBUG
 	assert(!dependent || child != NULL);
+#else
+	if (unlikely(dependent || child == NULL))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
 	return (child);
 }
 
@@ -182,7 +190,12 @@ rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm, unsigned level,
 	child = rtree_child_tryread(elm, dependent);
 	if (!dependent && unlikely(!rtree_node_valid(child)))
 		child = rtree_child_read_hard(rtree, elm, level);
+#ifdef JEMALLOC_DEBUG
 	assert(!dependent || child != NULL);
+#else
+	if (unlikely(dependent || child == NULL))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
 	return (child);
 }
 
@@ -224,7 +237,12 @@ rtree_subtree_tryread(rtree_t *rtree, unsigned level, bool dependent)
 	subtree = rtree->levels[level].subtree;
 	if (!dependent && unlikely(!rtree_node_valid(subtree)))
 		subtree = atomic_read_p(&rtree->levels[level].subtree_pun);
+#ifdef JEMALLOC_DEBUG
 	assert(!dependent || subtree != NULL);
+#else
+	if (unlikely(dependent || subtree == NULL))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
 	return (subtree);
 }
 
@@ -236,7 +254,12 @@ rtree_subtree_read(rtree_t *rtree, unsigned level, bool dependent)
 	subtree = rtree_subtree_tryread(rtree, level, dependent);
 	if (!dependent && unlikely(!rtree_node_valid(subtree)))
 		subtree = rtree_subtree_read_hard(rtree, level);
+#ifdef JEMALLOC_DEBUG
 	assert(!dependent || subtree != NULL);
+#else
+	if (unlikely(dependent || subtree == NULL))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
 	return (subtree);
 }
 
@@ -254,7 +277,12 @@ rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
 	switch (start_level + RTREE_GET_BIAS) {
 #define	RTREE_GET_SUBTREE(level)					\
 	case level:							\
+	#ifdef JEMALLOC_DEBUG \
 		assert(level < (RTREE_HEIGHT_MAX-1));			\
+	#else\
+		if (unlikely(level > (RTREE_HEIGHT_MAX-1)))\
+			return (NULL)\
+	#endif /* JEMALLOC_DEBUG */\
 		if (!dependent && unlikely(!rtree_node_valid(node)))	\
 			return (NULL);					\
 		subkey = rtree_subkey(rtree, key, level -		\
@@ -263,7 +291,12 @@ rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
 		/* Fall through. */
 #define	RTREE_GET_LEAF(level)						\
 	case level:							\
+#ifdef JEMALLOC_DEBUG \
 		assert(level == (RTREE_HEIGHT_MAX-1));			\
+#else 												\
+		if (unlikely(level != (RTREE_HEIGHT_MAX-1))) \
+			return (NULL); \
+#endif /* JEMALLOC_DEBUG */ \
 		if (!dependent && unlikely(!rtree_node_valid(node)))	\
 			return (NULL);					\
 		subkey = rtree_subkey(rtree, key, level -		\
@@ -353,7 +386,12 @@ rtree_set(rtree_t *rtree, uintptr_t key, const extent_node_t *val)
 			rtree_val_write(rtree, &node[subkey], val);
 			return (false);
 		}
+#ifdef JEMALLOC_DEBUG
 		assert(i + 1 < rtree->height);
+#else
+		if (unlikely (i + 1 > rtree->height))
+			return (false);
+#endif /* JEMALLOC_DEBUG */
 		child = rtree_child_read(rtree, &node[subkey], i, false);
 		if (child == NULL)
 			return (true);

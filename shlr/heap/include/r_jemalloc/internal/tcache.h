@@ -181,6 +181,10 @@ tcache_flush(void)
 {
 	tsd_t *tsd;
 
+	/* TODO: Remove the asserts.
+	 * I did not find a solution to error handling as i am not too familiar with the codebase.
+	 * ~Debily
+	 */
 	cassert(config_tcache);
 
 	tsd = tsd_fetch();
@@ -193,8 +197,12 @@ tcache_enabled_get(void)
 	tsd_t *tsd;
 	tcache_enabled_t tcache_enabled;
 
+#ifdef JEMALLOC_DEBUG
 	cassert(config_tcache);
-
+#else
+	if(unlikely(!config_tcache))
+		return false;
+#endif /* JEMALLOC_DEBUG */
 	tsd = tsd_fetch();
 	tcache_enabled = tsd_tcache_enabled_get(tsd);
 	if (tcache_enabled == tcache_enabled_default) {
@@ -211,6 +219,10 @@ tcache_enabled_set(bool enabled)
 	tsd_t *tsd;
 	tcache_enabled_t tcache_enabled;
 
+	/* TODO: Remove the asserts.
+	 * I did not find a solution to error handling as i am not too familiar with the codebase.
+	 * ~Debily
+	 */
 	cassert(config_tcache);
 
 	tsd = tsd_fetch();
@@ -287,11 +299,23 @@ tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 	tcache_bin_t *tbin;
 	bool tcache_success;
 	size_t usize JEMALLOC_CC_SILENCE_INIT(0);
-
+#ifdef JEMALLOC_DEBUG
 	assert(binind < JM_NBINS);
+#else
+	if (unlikely(binind > JM_NBINS))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
+
 	tbin = &tcache->tbins[binind];
 	ret = tcache_alloc_easy(tbin, &tcache_success);
+
+#ifdef JEMALLOC_DEBUG
 	assert(tcache_success == (ret != NULL));
+#else
+	if (unlikely(!(tcache_success == (ret != NULL))))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
+
 	if (unlikely(!tcache_success)) {
 		bool tcache_hard_success;
 		arena = arena_choose(tsd, arena);
@@ -303,8 +327,12 @@ tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 		if (tcache_hard_success == false)
 			return (NULL);
 	}
-
+#ifdef JEMALLOC_DEBUG
 	assert(ret);
+#else
+	if (unlikely(!ret))
+		return (NULL);
+#endif /* JEMALLOC _DEBUG */
 	/*
 	 * Only compute usize if required.  The checks in the following if
 	 * statement are all static.
@@ -346,10 +374,20 @@ tcache_alloc_large(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 	tcache_bin_t *tbin;
 	bool tcache_success;
 
+#ifdef JEMALLOC_DEBUG
 	assert(binind < nhbins);
+#else
+	if (unlikely(binind > nhbins))
+		return (NULL);
+#endif /* JEMALLOC_DEBUG */
 	tbin = &tcache->tbins[binind];
 	ret = tcache_alloc_easy(tbin, &tcache_success);
+#ifdef JEMALLOC_DEBUG
 	assert(tcache_success == (ret != NULL));
+#else
+	if (unlikely(!(tcache_success == (ret != NULL))))
+#endif /* JEMALLOC_DEBUG */
+
 	if (unlikely(!tcache_success)) {
 		/*
 		 * Only allocate one large object at a time, because it's quite
@@ -408,6 +446,10 @@ tcache_dalloc_small(tsd_t *tsd, tcache_t *tcache, void *ptr, szind_t binind,
 	tcache_bin_t *tbin;
 	tcache_bin_info_t *tbin_info;
 
+	/* TODO: Remove the asserts.
+	 * I did not find a solution to error handling as i am not too familiar with the codebase.
+	 * ~Debily
+	 */
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) <= SMALL_MAXCLASS);
 
 	if (slow_path && config_fill && unlikely(opt_junk_free))
@@ -434,6 +476,10 @@ tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, void *ptr, size_t size,
 	tcache_bin_t *tbin;
 	tcache_bin_info_t *tbin_info;
 
+	/* TODO: Remove the asserts.
+	 * I did not find a solution to error handling as i am not too familiar with the codebase.
+	 * ~Debily
+	 */
 	assert((size & PAGE_MASK) == 0);
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) > SMALL_MAXCLASS);
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) <= tcache_maxclass);
@@ -449,6 +495,8 @@ tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, void *ptr, size_t size,
 		tcache_bin_flush_large(tsd, tbin, binind,
 		    (tbin_info->ncached_max >> 1), tcache);
 	}
+
+	/* TODO: Remove assert */
 	assert(tbin->ncached < tbin_info->ncached_max);
 	tbin->ncached++;
 	*(tbin->avail - tbin->ncached) = ptr;
