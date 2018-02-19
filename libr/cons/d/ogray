@@ -37,7 +37,7 @@ ec graph.false rgb:777
 ec graph.trufae rgb:ddd
 ec graph.current rgb:f72
 ec graph.traced rgb:f00
-ec graph.box rgb:f72
+ec graph.box rgb:fff
 ec graph.box2 rgb:f72
 ec graph.box3 rgb:f00
 ec graph.box4 rgb:f00
