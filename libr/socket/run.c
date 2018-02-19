@@ -293,16 +293,19 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 	int fdm, pid = forkpty (&fdm, NULL, NULL, NULL);
 	if (pid == -1) {
 		close (saved_stdin);
+		close (saved_stdout);
 		return -1;
 	}
 	const char *tn = ttyname (fdm);
 	if (!tn) {
 		close (saved_stdin);
+		close (saved_stdout);
 		return -1;
 	}
 	int fds = open (tn, O_RDWR);
 	if (fds == -1) {
 		close (saved_stdin);
+		close (saved_stdout);
 		return -1;
 	}
 	if (pid == 0) {

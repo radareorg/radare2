@@ -40,8 +40,9 @@ libr.${EXT_SO}:
 	rm -rf .libr/tcc # WHY
 	$(CC) $(LDFLAGS) -shared -dynamic -arch arm64 -o libr.${EXT_SO} .libr/*/*.o ../shlr/gdb/lib/libgdbr.a
 
-#libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) $(shell find ../shlr -name '*.${EXT_AR}')
-#libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) $(shell find ../shlr -name '*.${EXT_AR}') ../shlr/libr_shlr.${EXT_AR}
+../shlr/libr_shlr.${EXT_AR}:
+	$(MAKE) -C ../shlr libr_shlr.${EXT_AR}
+
 libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir .libr
