@@ -21,6 +21,7 @@ static int getid (char ch) {
 	return cidx? cidx - keys + 1: 0;
 }
 
+#define BUFSIZE_INC 32
 static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 dst = 0LL;
 	if (!op) {
@@ -33,6 +34,10 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->id = getid (buf[0]);
 	switch (buf[0]) {
 	case '[':
+		buf = (const ut8 *)strdup ((char *)buf);
+		if (!buf) {
+			break;
+		}
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = addr+1;
 		{
@@ -51,13 +56,28 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						r_strbuf_setf (&op->esil,
 								"$$,brk,=[1],brk,++=,"
 								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
-						break;
+						goto beach;
+					}
+				}
+				if (*p == 0x00 || *p == 0xff) {
+					op->type = R_ANAL_OP_TYPE_TRAP;
+					goto beach;
+				}
+				if (i == len - 1 && anal->esil->cb.resize_read_buf) {
+					const ut8 *new_buf = anal->esil->cb.resize_read_buf (anal, len + 1 + BUFSIZE_INC);
+					if (new_buf) {
+						free ((ut8 *)buf);
+						buf = new_buf;
+						p = buf + i;
+						len += BUFSIZE_INC;
 					}
 				}
 				p++;
 				i++;
 			}
 		}
+beach:
+		free ((ut8 *)buf);
 		break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
