@@ -1564,8 +1564,6 @@ static void applyDisMode(RCore *core) {
 	}
 }
 
-static bool oldEmu = false; // kill globals
-
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -2390,12 +2388,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case ')':
 			{
 			bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
-			if (isEmuStr) {
-				r_config_set (core->config, "asm.emu.str", "false");
-				r_config_set (core->config, "asm.emu", r_str_bool (oldEmu));
-
+			bool isEmu = r_config_get_i (core->config, "asm.emu");
+			if (isEmu) {
+				if (isEmuStr) {
+					r_config_set (core->config, "asm.emu.str", "false");
+				} else {
+					r_config_set (core->config, "asm.emu", "false");
+				}
 			} else {
-				oldEmu = r_config_get_i (core->config, "asm.emu");
 				r_config_set (core->config, "asm.emu.str", "true");
 			}
 			}
