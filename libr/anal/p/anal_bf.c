@@ -57,6 +57,10 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						goto beach;
 					}
 				}
+				if (*p == 0x00 || *p == 0xff) {
+					op->type = R_ANAL_OP_TYPE_TRAP;
+					goto beach;
+				}
 				if (i == len - 1) {
 					const ut8 *new_buf;
 					new_buf = r_core_esil_resize_read_buf (anal, len + 1 + BUFSIZE_INC);
