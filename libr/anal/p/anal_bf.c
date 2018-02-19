@@ -5,7 +5,6 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <r_core.h>
 
 static int countChar (const ut8 *buf, int len, char ch) {
 	int i;
@@ -61,9 +60,9 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->type = R_ANAL_OP_TYPE_TRAP;
 					goto beach;
 				}
-				if (i == len - 1) {
+				if (i == len - 1 && anal->esil->cb.resize_read_buf) {
 					const ut8 *new_buf;
-					new_buf = r_core_esil_resize_read_buf (anal, len + 1 + BUFSIZE_INC);
+					new_buf = anal->esil->cb.resize_read_buf (anal, len + 1 + BUFSIZE_INC);
 					if (new_buf) {
 						if (buf_resized) {
 							free ((ut8 *)buf);

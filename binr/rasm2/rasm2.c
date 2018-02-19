@@ -778,8 +778,3 @@ beach:
 	}
 	return ret;
 }
-
-/* dummy function to unbreak rasm2 build */
-R_API const ut8 *r_core_esil_resize_read_buf(RAnal *anal, int new_len) {
-	return NULL;
-}

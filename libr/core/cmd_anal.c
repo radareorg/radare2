@@ -3089,6 +3089,18 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
+static const ut8 *resize_read_buf(RAnal *anal, int new_len) {
+	RCore *core = anal->user;
+	ut8 *buf = malloc (new_len);
+	if (!buf) {
+		return NULL;
+	}
+	const char *name = r_reg_get_name (anal->reg, R_REG_NAME_PC);
+	ut64 addr = r_reg_getv (anal->reg, name);
+	(void)r_io_read_at (core->io, addr, buf, new_len);
+	return buf;
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
@@ -3110,6 +3122,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return 0;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+		esil->cb.resize_read_buf = resize_read_buf;
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
@@ -3287,18 +3300,6 @@ R_API int r_core_esil_step_back(RCore *core) {
 	r_anal_esil_session_set (esil, before);
 	r_core_esil_step (core, prev, NULL, NULL);
 	return 1;
-}
-
-R_API const ut8 *r_core_esil_resize_read_buf(RAnal *anal, int new_len) {
-	RCore *core = anal->user;
-	ut8 *buf = malloc (new_len);
-	if (!buf) {
-		return NULL;
-	}
-	const char *name = r_reg_get_name (anal->reg, R_REG_NAME_PC);
-	ut64 addr = r_reg_getv (anal->reg, name);
-	(void)r_io_read_at (core->io, addr, buf, new_len);
-	return buf;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
