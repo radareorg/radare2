@@ -3521,11 +3521,39 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	}
 	memset (str, 0, sizeof (str));
 	if (*val) {
+		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
+		// support cstring here
+		{
+			ut64 *cstr = (ut64*) str;
+			ut64 addr = cstr[0];
+			if (!(*val >> 32)) {
+				addr = addr & UT32_MAX;
+			}
+			if (cstr[0] == 0 && cstr[1] < 0x1000) {
+				ut64 addr = cstr[2];
+				if (!(*val >> 32)) {
+					addr = addr & UT32_MAX;
+				}
+				(void)r_io_read_at (esil->anal->iob.io, addr,
+					(ut8*)str, sizeof (str)-1);
+			//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
+				type = r_str_newf ("(cstr 0x%08"PFMT64x") ", addr);
+				ds->printed_str_addr = cstr[2];
+			} else if (r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
+				ds->printed_str_addr = cstr[0];
+				type = r_str_newf ("(pstr 0x%08"PFMT64x") ", addr);
+				(void)r_io_read_at (esil->anal->iob.io, addr,
+					(ut8*)str, sizeof (str)-1);
+			//	eprintf ("IS PSTRING 0x%llx %s\n", addr, str);
+			}
+		}
+
 		if (ds && *str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
 		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
 			bool jump_op = false;
+			bool ignored = false;
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_UJMP:
@@ -3536,10 +3564,14 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
 				jump_op = true;
+				break;
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_RET:
+				ignored = true;
+				break;
 			}
-			if (!jump_op) {
+			if (!jump_op && !ignored) {
 				const char *prefix;
-				char *escstr;
 				ut32 len = sizeof (str) -1;
 #if 0
 				RCore *core = ds->core;
@@ -3548,9 +3580,9 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					len = R_DISASM_MAX_STR;
 				}
 #endif
-				escstr = ds_esc_str (ds, str, (int)len, &prefix);
+				char *escstr = ds_esc_str (ds, str, (int)len, &prefix);
 				if (escstr) {
-					msg = r_str_newf ("%s\"%s\"", prefix, escstr);
+					msg = r_str_newf ("%s%s\"%s\"", prefix, type, escstr);
 					free (escstr);
 				}
 			}
@@ -3566,6 +3598,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		}
+		R_FREE (type);
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 		if (fi) {
 			msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
