@@ -34,12 +34,15 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->id = getid (buf[0]);
 	switch (buf[0]) {
 	case '[':
+		buf = (const ut8 *)strdup ((char *)buf);
+		if (!buf) {
+			break;
+		}
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = addr+1;
 		{
 			const ut8 *p = buf + 1;
 			int lev = 0, i = 1;
-			bool buf_resized = false;
 			len--;
 			while (i < len && *p) {
 				if (*p == '[')
@@ -63,23 +66,18 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (i == len - 1 && anal->esil->cb.resize_read_buf) {
 					const ut8 *new_buf = anal->esil->cb.resize_read_buf (anal, len + 1 + BUFSIZE_INC);
 					if (new_buf) {
-						if (buf_resized) {
-							free ((ut8 *)buf);
-						}
+						free ((ut8 *)buf);
 						buf = new_buf;
 						p = buf + i;
 						len += BUFSIZE_INC;
-						buf_resized = true;
 					}
 				}
 				p++;
 				i++;
 			}
-beach:
-			if (buf_resized) {
-				free ((ut8 *)buf);
-			}
 		}
+beach:
+		free ((ut8 *)buf);
 		break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
