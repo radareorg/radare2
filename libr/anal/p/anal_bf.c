@@ -61,8 +61,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					goto beach;
 				}
 				if (i == len - 1 && anal->esil->cb.resize_read_buf) {
-					const ut8 *new_buf;
-					new_buf = anal->esil->cb.resize_read_buf (anal, len + 1 + BUFSIZE_INC);
+					const ut8 *new_buf = anal->esil->cb.resize_read_buf (anal, len + 1 + BUFSIZE_INC);
 					if (new_buf) {
 						if (buf_resized) {
 							free ((ut8 *)buf);

@@ -3091,7 +3091,7 @@ static ut64 initializeEsil(RCore *core) {
 
 static const ut8 *resize_read_buf(RAnal *anal, int new_len) {
 	RCore *core = anal->user;
-	ut8 *buf = malloc (new_len);
+	ut8 *buf = calloc (new_len, 1);
 	if (!buf) {
 		return NULL;
 	}
