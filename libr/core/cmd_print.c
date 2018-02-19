@@ -1961,11 +1961,13 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
+	bool asm_cmtright = r_config_get_i (core->config, "asm.cmtright");
 	RConsPalette *pal = &core->cons->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_i (core->config, "asm.tabs", 0);
+	r_config_set_i (core->config, "asm.cmtright", true);
 r_cons_push();
 	if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -1974,7 +1976,8 @@ r_cons_push();
 		} else {
 			eprintf ("Cannot find function.\n");
 			r_config_set_i (core->config, "scr.color", use_color);
-			return;
+			r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
+			goto restore_conf;
 		}
 	} else if (!strncmp (input, "ds ", 3)) {
 		char *cmd = r_str_newf ("pD %s", input + 3);
@@ -1985,10 +1988,11 @@ r_cons_push();
 	}
 r_cons_pop();
 	r_config_set_i (core->config, "scr.color", use_color);
+	r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
 		free (s);
-		return;
+		goto restore_conf;
 	}
 	for (i = 0; i < count; i++) {
 		ut64 addr = UT64_MAX;
@@ -2202,12 +2206,13 @@ r_cons_pop();
 		line += strlen (line) + 1;
 	}
 	// r_cons_printf ("%s", s);
-	r_config_set_i (core->config, "asm.offset", show_offset);
-	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	free (string2);
 	free (string);
 	free (s);
 	free (str);
+restore_conf:
+	r_config_set_i (core->config, "asm.offset", show_offset);
+	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 }
 
 static void algolist(int mode) {
