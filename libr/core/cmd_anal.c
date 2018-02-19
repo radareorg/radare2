@@ -4336,7 +4336,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				break;
 			}
 		} else {
-			cmd_aea (core, 0, core->offset, r_num_math (core->num, input+2));
+			const char *arg = input[1]? input + 2: "";
+			ut64 len = r_num_math (core->num, arg);
+			cmd_aea (core, 0, core->offset, len);
 		}
 		break;
 	case 'x': { // "aex"	
