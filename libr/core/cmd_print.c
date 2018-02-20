@@ -5685,12 +5685,17 @@ static int cmd_print(void *data, const char *input) {
 			RIOMap* map;
 			RListIter *iter;
 			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
-			RListIter *iter1 = list->head;
-			RIOMap* map1 = iter1->data;
-			from = map1->itv.addr;
-			r_list_foreach (list, iter, map) {
-				to = r_itv_end (map->itv);
-			}
+			if (list) {
+				RListIter *iter1 = list->head;
+				RIOMap* map1 = iter1->data;
+				from = map1->itv.addr;
+				r_list_foreach (list, iter, map) {
+					to = r_itv_end (map->itv);
+				}	
+			} else {
+				from = core->offset;
+				to = from + core->blocksize;
+			}	
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			int oldva = core->io->va;
 			char *oldmode = NULL;
