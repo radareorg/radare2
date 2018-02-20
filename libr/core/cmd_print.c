@@ -1962,6 +1962,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_cmtright = r_config_get_i (core->config, "asm.cmtright");
+	bool asm_emustr = r_config_get_i (core->config, "asm.emu.str");
+	r_config_set_i (core->config, "asm.emu.str", true);
 	RConsPalette *pal = &core->cons->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
@@ -2184,6 +2186,8 @@ r_cons_pop();
 				if (string) {
 					string = r_str_trim (string);
 					string2 = r_str_trim (string2);
+					//// TODO implememnt avoid duplicated strings
+					// eprintf ("---> %s\n", string);
 					if (use_color) {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
@@ -2213,6 +2217,7 @@ r_cons_pop();
 restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
+	r_config_set_i (core->config, "asm.emu.str", asm_emustr);
 }
 
 static void algolist(int mode) {
