@@ -125,6 +125,9 @@ R_API int r_th_wait_async(struct r_th_t *th) {
 }
 
 R_API void *r_th_free(struct r_th_t *th) {
+	if (!th) {
+		return NULL;
+	}
 	r_th_kill (th, true);
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	CloseHandle (th->tid);
