@@ -58,15 +58,6 @@ static const char *help_msg_db[] = {
 	"dbs", " <addr>", "Toggle breakpoint",
 	"dbf", "", "Put a breakpoint into every no-return function",
 	//
-	"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-	"dbt*", "", "Display backtrace in flags",
-	"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
-	"dbtj", "", "Display backtrace in JSON",
-	"dbta", "", "Display ascii-art representation of the stack backtrace",
-	"dbtv", "", "Display backtrace with local vars if any",
-	"dbte", " <addr>", "Enable Breakpoint Trace",
-	"dbtd", " <addr>", "Disable Breakpoint Trace",
-	"dbts", " <addr>", "Swap Breakpoint Trace",
 	"dbm", " <module> <offset>", "Add a breakpoint at an offset from a module's base",
 	"dbn", " [<name>]", "Show or set name for current breakpoint",
 	//
@@ -92,6 +83,7 @@ static const char *help_msg_dbt[] = {
 	"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dbt*", "", "Display backtrace in flags",
 	"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
+	"dbtv", "", "Display backtrace with local vars if any",
 	"dbtj", "", "Display backtrace in JSON",
 	"dbta", "", "Display ascii-art representation of the stack backtrace",
 	"dbte", " <addr>", "Enable Breakpoint Trace",
