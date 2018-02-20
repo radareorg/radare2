@@ -3582,7 +3582,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 #endif
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix);
 				if (escstr) {
-					msg = r_str_newf ("%s%s\"%s\"", prefix, type, escstr);
+					msg = r_str_newf ("%s%s\"%s\"", prefix, type? type: "", escstr);
 					free (escstr);
 				}
 			}

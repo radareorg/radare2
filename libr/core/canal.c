@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -100,23 +100,59 @@ static bool iscodesection(RCore *core, ut64 addr) {
 #endif
 
 static char *is_string_at(RCore *core, ut64 addr, int *olen) {
+	ut8 rstr[128] = {0};
+	int ret = 0, len = 0;
 	ut8 *str;
-	int ret, len = 0;
 	//there can be strings in code section
 #if 0
 	if (iscodesection (core, addr)) {
 		return NULL;
 	}
 #endif
-	str = calloc (1024, 1);
+	str = calloc (256, 1);
 	if (!str) {
 		return NULL;
 	}
-	r_io_read_at (core->io, addr, str, 1024);
-	str[1023] = 0;
+	r_io_read_at (core->io, addr, str, 255);
+
+	str[255] = 0;
+	if (is_string (str, 256, &len)) {
+		return str;
+	}
+	
+	ut64 *cstr = (ut64*)str;
+	ut64 lowptr = cstr[0];
+	if (lowptr >> 32) { // must be pa mode only
+		lowptr &= UT32_MAX;
+	}
+	// eprintf ("PTR %llx [ %llx %llx %llx ]\n", addr, cstr[0], cstr[1], cstr[2]);
+	// cstring
+	if (cstr[0] == 0 && cstr[1] < 0x1000) {
+		ut64 ptr = cstr[2];
+		if (ptr >> 32) { // must be pa mode only
+			ptr &= UT32_MAX;
+		}
+		if (ptr) {	
+			r_io_read_at (core->io, ptr, rstr, sizeof (rstr));
+			rstr[127] = 0;
+			ret = is_string (rstr, 128, &len);
+			if (ret) {
+				strcpy (str, rstr);
+				return str;
+			}
+		}
+	} else {
+		// pstring
+		r_io_read_at (core->io, lowptr, rstr, sizeof (rstr));
+		rstr[127] = 0;
+		ret = is_string (rstr, sizeof (rstr), &len);
+		if (ret) {
+			strcpy (str, rstr);
+			return str;
+		}
+	}
 	// check if current section have no exec bit
-	ret = is_string (str, 1024, &len);
-	if (!ret || len < 1) {
+	if (len < 1) {
 		ret = 0;
 		free (str);
 		len = -1;
@@ -527,6 +563,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
 		if (core->io->va) {
+
 			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
@@ -3837,7 +3874,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 						}
 					}
-					add_string_ref (core, dst);
+				//	if (cfg_anal_strings) {
+						add_string_ref (core, dst);
+				//	}
 				} else if ((core->anal->bits == 32 && core->anal->cur && !strcmp (core->anal->cur->arch, "mips"))) {
 					ut64 dst = ESIL->cur;
 					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
