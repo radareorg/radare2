@@ -1262,7 +1262,7 @@ static int autocomplete(RLine *line) {
 			str = line->buffer.data + buflen;
 			n = strlen (str);
 			r_list_foreach (bp->bps, iter, b) {
-				char *addr = r_str_newf ("0x%llx", b->addr);
+				char *addr = r_str_newf ("0x%"PFMT64x"", b->addr);
 				if (!strncmp (addr, str, n)) {
 					tmp_argv[i++] = addr;
 				} else {

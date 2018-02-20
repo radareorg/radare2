@@ -5,8 +5,7 @@
 #include <r_core.h>
 
 #define PANEL_TYPE_FRAME 0
-#define PANEL_TYPE_DIALOG 1
-#define PANEL_TYPE_FLOAT 2
+#define PANEL_TYPE_FLOAT 1
 #define LIMIT 256
 
 typedef struct {
