@@ -134,7 +134,7 @@ static int windows_step (RDebug *dbg) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	r_debug_handle_signals (dbg);
+	(void)r_debug_handle_signals (dbg);
 	return true;
 }
 #endif

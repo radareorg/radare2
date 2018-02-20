@@ -117,7 +117,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 
 	str[255] = 0;
 	if (is_string (str, 256, &len)) {
-		return str;
+		return (char*) str;
 	}
 	
 	ut64 *cstr = (ut64*)str;
@@ -137,8 +137,8 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 			rstr[127] = 0;
 			ret = is_string (rstr, 128, &len);
 			if (ret) {
-				strcpy (str, rstr);
-				return str;
+				strcpy ((char*) str, (char*) rstr);
+				return (char*) str;
 			}
 		}
 	} else {
@@ -147,8 +147,8 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		rstr[127] = 0;
 		ret = is_string (rstr, sizeof (rstr), &len);
 		if (ret) {
-			strcpy (str, rstr);
-			return str;
+			strcpy ((char*) str, (char*) rstr);
+			return (char*) str;
 		}
 	}
 	// check if current section have no exec bit

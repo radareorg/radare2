@@ -25,12 +25,11 @@ static void clear_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_Z) r_strbuf_append (&op->esil, ",0,z,=");
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len)
-{
+static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
 	ut8 opcode = 0;
-	char *reg1 = NULL, *reg2 = NULL;
+	const char *reg1 = NULL;
+	const char *reg2 = NULL;
 	ut32 bitmask = 0;
 	ut16 destaddr = 0;
 	st16 destaddrs = 0;

@@ -469,7 +469,6 @@ int main(int argc, char **argv, char **envp) {
 			r_list_free (prefiles); \
 		}
 
-	int va = 1; // set va = 0 to load physical offsets from rbin
 	bool noStderr = false;
 
 	r_sys_set_environ (envp);
@@ -544,7 +543,6 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
-			va = 2;
 			break;
 		case 'X':
 			r_config_set (r.config, "bin.usextr", "false");
@@ -1121,7 +1119,6 @@ int main(int argc, char **argv, char **envp) {
 			baddr = r_debug_get_baddr (r.dbg, pfile);
 			if (baddr != UT64_MAX && baddr != 0) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
-				va = 2;
 			}
 			if (run_anal > 0) {
 				if (baddr && baddr != UT64_MAX) {
