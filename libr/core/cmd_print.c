@@ -5525,6 +5525,7 @@ static int cmd_print(void *data, const char *input) {
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
+			block = core->block;
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
 			} else if (input[1] == 'f') { // "p8f"
