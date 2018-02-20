@@ -423,8 +423,8 @@ static char *get_and_escape_path (char *str)
 	char *final = NULL;
 
 	if (path_bin) {
-		char *p = r_str_lchr (str, '/');
-		char *pp = r_str_tok (p, ' ', -1);
+		char *p = (char*) r_str_lchr (str, '/');
+		char *pp = (char*) r_str_tok (p, ' ', -1);
 		char *args;
 
 		if (!pp) {

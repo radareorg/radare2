@@ -1236,7 +1236,7 @@ repeat:
 			FITFCNSZ ();
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
-river:
+//river:
 			break;
 		/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:

@@ -187,12 +187,13 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	}
 	return op->size;
 }
+#endif
+
+/*
 
 static int archinfo(RAnal *anal, int q) {
-	return 4; /* :D */
+	return 4; // :D
 }
-#endif
-/*
 
 RAnalPlugin r_anal_plugin_tms320c64x = {
 	.name = "tms320c64x",

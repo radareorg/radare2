@@ -94,9 +94,11 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+#if 0
 static void parse_mach0 (RList *ret, ut64 paddr, RBinFile *bf) {
 	// TODO
 }
+#endif
 
 static ut64 baddr(RBinFile *bf) {
 	// XXX hardcoded

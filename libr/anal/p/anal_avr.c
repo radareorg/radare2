@@ -909,6 +909,7 @@ INST_HANDLER (sts) {	// STS k, Rr
 	op->cycles = 2;
 }
 
+#if 0
 INST_HANDLER (lds16) {	// LDS Rd, k
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0x0f)
@@ -920,6 +921,7 @@ INST_HANDLER (lds16) {	// LDS Rd, k
 	__generic_ld_st (op, "ram", 0, 0, 0, k, 0);
 	ESIL_A ("r%d,=,", d);
 }
+#endif
 
 INST_HANDLER (lpm) {	// LPM
 			// LPM Rd, Z

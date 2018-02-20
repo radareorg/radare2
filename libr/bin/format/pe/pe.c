@@ -2753,7 +2753,7 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 				rsds_hdr.guid.data4[6],
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
-			basename = r_file_basename (rsds_hdr.file_name);
+			basename = r_file_basename ((char*) rsds_hdr.file_name);
 			strncpy (res->file_name, (const char*)
 				basename, sizeof (res->file_name));
 			res->file_name[sizeof (res->file_name) - 1] = 0;
