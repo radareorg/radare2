@@ -712,6 +712,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	acode->code_align = 0;
 	memset (&op, 0, sizeof (op));
 
+	/* consider ,, an alias for a newline */
+	lbuf = r_str_replace (lbuf, ",,", "\n", true);
 	/* accept ';' as comments when input is multiline */
 	{
 		char *nl = strchr (lbuf, '\n');
@@ -1066,12 +1068,13 @@ R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l) {
 }
 
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
-	RAsmCode *code;
 	r_asm_set_pc (a, addr);
-	code = r_asm_massemble (a, b);
+	RAsmCode *code = r_asm_massemble (a, b);
 	if (code) {
 		ut8 *buf = code->buf;
-		if (l) *l = code->len;
+		if (l) {
+			*l = code->len;
+		}
 		r_asm_code_free (code);
 		return buf;
 	}
