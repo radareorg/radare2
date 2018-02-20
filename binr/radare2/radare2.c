@@ -40,15 +40,17 @@ static char* get_file_in_cur_dir(const char *filepath) {
 
 static RThread *thread = NULL;
 
-static void* loading_thread(RThread *th, void *ptr) {
+static int loading_thread(RThread *th) {
 	const char *tok = "\\|/-";
 	int i = 0;
-	while (!th->breaked) {
-		eprintf ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
-		r_sys_usleep (100000);
-		i++;
+	if (th) {
+		while (!th->breaked) {
+			eprintf ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
+			r_sys_usleep (100000);
+			i++;
+		}
 	}
-	return NULL;
+	return 0;
 }
 
 static void loading_start() {
