@@ -75,10 +75,10 @@ else
 endif
 
 platform_deps = []
-platform_inc = include_directories(['.','libr/include'])
+platform_inc = include_directories(['.', 'libr/include'])
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')]
-  platform_inc = include_directories(['.','libr/include','libr/include/msvc'])
+  platform_inc = include_directories(['.', 'libr/include', 'libr/include/msvc'])
   host_os = 'windows'
   if get_option('default_library') == 'static'
     if get_option('buildtype') == 'release' and not meson.is_subproject()
@@ -112,9 +112,9 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ',&r_debug_plugin_'.join(deb
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ',&r_egg_plugin_'.join(egg) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ',&r_lang_plugin_'.join(lang) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ',&r_parse_plugin_'.join(parse) + ', 0')
-configure_file(input : 'libr/config.h.in',
-               output : 'config.h',
-               configuration : conf_data)
+configure_file(input: 'libr/config.h.in',
+               output: 'config.h',
+               configuration: conf_data)
 
 userconf = configuration_data()
 userconf.set('DEBUGGER', 1)
@@ -132,9 +132,9 @@ if host_machine.system() == 'windows'
 else
   userconf.set('HAVE_JEMALLOC', 1)
 endif
-configure_file(input : 'libr/include/r_userconf.h.in',
-               output : 'r_userconf.h',
-               configuration : userconf)
+configure_file(input: 'libr/include/r_userconf.h.in',
+               output: 'r_userconf.h',
+               configuration: userconf)
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
@@ -142,9 +142,9 @@ versionconf.set('R2_VERSION', r2version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
 versionconf.set('R2_BIRTH', r2birth)
-configure_file(input : 'libr/include/r_version.h.in',
-               output : 'r_version.h',
-               configuration : versionconf)
+configure_file(input: 'libr/include/r_version.h.in',
+               output: 'r_version.h',
+               configuration: versionconf)
 
 # Copy missing header
 run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
@@ -174,13 +174,17 @@ subdir('libr/debug')
 subdir('libr/core')
 
 if meson.is_subproject()
-  libr2_lib = [r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto,
-               r_egg, r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse,
-               r_reg, r_search, r_socket, r_syscall, r_util]
+  libr2_lib = [
+    r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto, r_egg,
+    r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse, r_reg, r_search,
+    r_socket, r_syscall, r_util
+  ]
   libr2_inc = include_directories(['.', 'libr/include'])
-  libr2_dep = declare_dependency(link_with: libr2_lib,
-                                 include_directories: libr2_inc,
-                                 version: r2version)
+  libr2_dep = declare_dependency(
+    link_with: libr2_lib,
+    include_directories: libr2_inc,
+    version: r2version
+  )
 else
   subdir('binr/rahash2')
   subdir('binr/rarun2')
