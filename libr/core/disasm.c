@@ -2374,11 +2374,14 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 				}
 			}
 		}
-		const RList *flags = r_flag_get_list (core->flags, n);
-		RListIter *iter;
-		RFlagItem *fi;
-		r_list_foreach (flags, iter, fi) {
-			r_cons_printf (" ; %s", fi->name);
+		ut64 min_for_a_flag = r_config_get_i (core->config, "asm.minvalsub");
+		if (n >= min_for_a_flag) {
+			const RList *flags = r_flag_get_list (core->flags, n);
+			RListIter *iter;
+			RFlagItem *fi;
+			r_list_foreach (flags, iter, fi) {
+				r_cons_printf (" ; %s", fi->name);
+			}
 		}
 	}
 	return true;
