@@ -954,6 +954,7 @@ static int autocomplete(RLine *line) {
 				ADDARG("ai.exec")
 				ADDARG("ai.seq")
 				ADDARG("ai.ascii")
+				ADDARG("ai.unmap")
 				ADDARG("graph.box")
 				ADDARG("graph.box2")
 				ADDARG("graph.box3")

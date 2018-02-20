@@ -120,6 +120,7 @@ enum {
 	R_CONS_PAL_AI_EXEC,
 	R_CONS_PAL_AI_SEQ,
 	R_CONS_PAL_AI_ASCII,
+	R_CONS_PAL_AI_UNMAP,
 	R_CONS_PAL_GUI_CFLOW,
 	R_CONS_PAL_GUI_DATAOFFSET,
 	R_CONS_PAL_GUI_BACKGROUND,
@@ -186,6 +187,7 @@ typedef struct r_cons_palette_t {
 	char *ai_exec;
 	char *ai_seq;
 	char *ai_ascii;
+	char *ai_unmap;
 	char *gui_cflow;
 	char *gui_dataoffset;
 	char *gui_background;
