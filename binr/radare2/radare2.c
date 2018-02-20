@@ -894,7 +894,7 @@ int main(int argc, char **argv, char **envp) {
 			return 1;
 		}
 	} else if (strcmp (argv[optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
-		if (zflag) {
+		if (threaded) {
 			loading_start ();
 		}
 		if (debug) {
