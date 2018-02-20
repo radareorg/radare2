@@ -250,6 +250,7 @@ typedef struct {
 	int shortcut_pos;
 	bool asm_anal;
 	ut64 printed_str_addr;
+	ut64 min_ref_addr;
 
 	bool use_json;
 	bool first_line;
@@ -670,6 +671,7 @@ static RDisasmState * ds_init(RCore *core) {
 
 	ds->showpayloads = r_config_get_i (ds->core->config, "asm.payloads");
 	ds->showrelocs = r_config_get_i (core->config, "bin.relocs");
+	ds->min_ref_addr = r_config_get_i (core->config, "asm.minvalsub");
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
@@ -2374,11 +2376,13 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 				}
 			}
 		}
-		const RList *flags = r_flag_get_list (core->flags, n);
-		RListIter *iter;
-		RFlagItem *fi;
-		r_list_foreach (flags, iter, fi) {
-			r_cons_printf (" ; %s", fi->name);
+		if (n >= ds->min_ref_addr) {
+			const RList *flags = r_flag_get_list (core->flags, n);
+			RListIter *iter;
+			RFlagItem *fi;
+			r_list_foreach (flags, iter, fi) {
+				r_cons_printf (" ; %s", fi->name);
+			}
 		}
 	}
 	return true;
