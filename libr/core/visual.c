@@ -87,6 +87,20 @@ static void rotateAsmBits(RCore *core) {
 	}
 }
 
+static void rotateAsmemu(RCore *core) {
+	const bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	if (isEmu) {
+		if (isEmuStr) {
+			r_config_set (core->config, "asm.emu.str", "false");
+		} else {
+			r_config_set (core->config, "asm.emu", "false");
+		}
+	} else {
+		r_config_set (core->config, "asm.emu.str", "true");
+	}
+}
+
 static void printSnow(RCore *core) {
 	if (!snows) {
 		snows = r_list_newf (free);
@@ -2386,19 +2400,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case ')':
-			{
-			bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
-			bool isEmu = r_config_get_i (core->config, "asm.emu");
-			if (isEmu) {
-				if (isEmuStr) {
-					r_config_set (core->config, "asm.emu.str", "false");
-				} else {
-					r_config_set (core->config, "asm.emu", "false");
-				}
-			} else {
-				r_config_set (core->config, "asm.emu.str", "true");
-			}
-			}
+			rotateAsmemu (core);
 			break;
 		case '*':
 			if (core->print->cur_enabled) {

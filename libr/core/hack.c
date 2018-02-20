@@ -26,9 +26,6 @@ void r_core_hack_help(const RCore *core) {
 }
 
 R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
-	const int bits = core->assembler->bits;
-	const ut8 *b = core->block;
-
 	if (!strcmp (op, "nop")) {
 		r_core_cmdf (core, "wx 1f2003d5");
 	} else if (!strcmp (op, "ret")) {
@@ -240,8 +237,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	const int asmbits = r_config_get (core->config, "asm.bits");
-	RAnalOp analop;
+	const int asmbits = core->assembler->bits;
 
 	if (!asmarch) {
 		return false;
@@ -258,6 +254,7 @@ R_API int r_core_hack(RCore *core, const char *op) {
 		eprintf ("TODO: write hacks are only for x86\n");
 	}
 	if (hack) {
+		RAnalOp analop;
 		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize)) {
 			eprintf ("anal op fail\n");
 			return false;

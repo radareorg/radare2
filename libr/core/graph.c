@@ -157,6 +157,21 @@ static int mode2opts(const RAGraph *g) {
 	return opts;
 }
 
+// duplicated from visual.c
+static void rotateAsmemu(RCore *core) {
+	const bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	if (isEmu) {
+		if (isEmuStr) {
+			r_config_set (core->config, "asm.emu.str", "false");
+		} else {
+			r_config_set (core->config, "asm.emu", "false");
+		}
+	} else {
+		r_config_set (core->config, "asm.emu.str", "true");
+	}
+}
+
 static char *get_title(ut64 addr) {
 	return r_str_newf ("0x%"PFMT64x, addr);
 }
@@ -3817,6 +3832,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" _            - enter hud selector\n"
 				" >            - show function callgraph (see graph.refs)\n"
 				" <            - show program callgraph (see graph.refs)\n"
+				" )            - rotate asm.emu and asm.emu.str\n"
 				" Home/End     - go to the top/bottom of the canvas\n"
 				" Page-UP/DOWN - scroll canvas up/down\n"
 				" C            - toggle scr.colors\n"
@@ -3973,6 +3989,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (mousemode < 0) {
 				mousemode = 3;
 			}
+			break;
+		case ')':
+			rotateAsmemu (core);
+				g->need_reload_nodes = true;
 			break;
 		case 'd':
 			{
