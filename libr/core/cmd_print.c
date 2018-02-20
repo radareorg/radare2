@@ -1656,7 +1656,7 @@ static void cmd_print_pwn(const RCore *core) {
 }
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {
-	RConsPalette *pal = &core->cons->pal;
+	RConsPrintablePalette *pal = &core->cons->pal;
 	int show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
@@ -1964,7 +1964,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool asm_cmtright = r_config_get_i (core->config, "asm.cmtright");
 	bool asm_emustr = r_config_get_i (core->config, "asm.emu.str");
 	r_config_set_i (core->config, "asm.emu.str", true);
-	RConsPalette *pal = &core->cons->pal;
+	RConsPrintablePalette *pal = &core->cons->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);

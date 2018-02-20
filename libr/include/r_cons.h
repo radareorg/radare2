@@ -139,7 +139,79 @@ enum {
 }
 #endif
 
+enum { ALPHA_BG = 0x00, ALPHA_NORMAL = 0x7f, ALPHA_BOLD = 0xff };
+
+typedef struct rcolor_t {
+	ut8 a;
+	ut8 r;
+	ut8 g;
+	ut8 b;
+} RColor;
+
 typedef struct r_cons_palette_t {
+	RColor b0x00;
+	RColor b0x7f;
+	RColor b0xff;
+	RColor args;
+	RColor bin;
+	RColor btext;
+	RColor call;
+	RColor cjmp;
+	RColor cmp;
+	RColor comment;
+	RColor usercomment;
+	RColor creg;
+	RColor flag;
+	RColor fline;
+	RColor floc;
+	RColor flow;
+	RColor flow2;
+	RColor fname;
+	RColor help;
+	RColor input;
+	RColor invalid;
+	RColor jmp;
+	RColor label;
+	RColor math;
+	RColor mov;
+	RColor nop;
+	RColor num;
+	RColor offset;
+	RColor other;
+	RColor pop;
+	RColor prompt;
+	RColor push;
+	RColor crypto;
+	RColor reg;
+	RColor reset;
+	RColor ret;
+	RColor swi;
+	RColor trap;
+	RColor ai_read;
+	RColor ai_write;
+	RColor ai_exec;
+	RColor ai_seq;
+	RColor ai_ascii;
+	RColor gui_cflow;
+	RColor gui_dataoffset;
+	RColor gui_background;
+	RColor gui_alt_background;
+	RColor gui_border;
+	RColor highlight;
+
+	/* Graph colors */
+	RColor graph_box;
+	RColor graph_box2;
+	RColor graph_box3;
+	RColor graph_box4;
+	RColor graph_true;
+	RColor graph_false;
+	RColor graph_trufae;
+	RColor graph_traced;
+	RColor graph_current;
+} RConsPalette;
+
+typedef struct r_cons_printable_palette_t {
 // TODO: this must be an array of char *
 #if ENUM_FOR_PAL
 	char *color[R_CONS_PAL_LAST];
@@ -210,7 +282,7 @@ typedef struct r_cons_palette_t {
 	char *list[R_CONS_PALETTE_LIST_SIZE];
 	char **rainbow; // rainbow
 	int rainbow_sz; // size of rainbow
-} RConsPalette;
+} RConsPrintablePalette;
 
 R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(void);
@@ -343,7 +415,8 @@ typedef struct r_cons_t {
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine;
-	RConsPalette pal;
+	RConsPalette cpal;
+	RConsPrintablePalette pal;
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
