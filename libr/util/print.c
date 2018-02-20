@@ -935,7 +935,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					r_print_cursor (p, j, 1);
 					// stub for colors
 					if (p && p->colorfor) {
-						a = p->colorfor (p->user, n, true);
+						if (!p->iob.addr_is_mapped (p->iob.io, addr + j)) {
+							a = p->cons->pal.ai_unmap;
+						} else {
+							a = p->colorfor (p->user, n, true);
+						}
 						if (a && *a) {
 							b = Color_RESET;
 						} else {
