@@ -2685,9 +2685,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_SYMBOLS &&
-		           sym[i].st_shndx != STN_UNDEF &&
-		           ELF_ST_TYPE (sym[i].st_info) != STT_SECTION &&
-		           ELF_ST_TYPE (sym[i].st_info) != STT_FILE) {
+		           sym[i].st_shndx != STN_UNDEF) {
 			tsize = sym[i].st_size;
 			toffset = (ut64) sym[i].st_value;
 		} else {
@@ -2962,9 +2960,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					}
 					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS &&
-					   sym[k].st_shndx != STN_UNDEF &&
-					   ELF_ST_TYPE (sym[k].st_info) != STT_SECTION &&
-					   ELF_ST_TYPE (sym[k].st_info) != STT_FILE) {
+					   sym[k].st_shndx != STN_UNDEF) {
 					//int idx = sym[k].st_shndx;
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; 
