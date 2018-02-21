@@ -40,7 +40,7 @@ Use zoom.byte=entropy and press 'z' in visual mode to zoom out to see the entrop
 Use 'zoom.byte=printable' in zoom mode ('z' in Visual mode) to find strings
 Set color to your screen with 'e scr.color=true'
 Trace register changes while debugging with 'e trace.cmtregs=true'
-Move the comments to the right changing their margin with asm.cmtmargin
+Move the comments to the right changing their margin with asm.cmt.margin
 Execute a command on the visual prompt with cmd.vprompt
 Reduce the delta where flag resolving by address is used with cfg.delta
 Disable these messages with 'e cfg.fortunes = false' in your ~/.radare2rc

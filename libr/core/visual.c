@@ -2224,9 +2224,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled &&
 				(core->printidx == R_CORE_VISUAL_MODE_PD ||
 				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 2))) {
-				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
+				int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 				if (cmtcol > 2) {
-					r_config_set_i (core->config, "asm.cmtcol", cmtcol - 2);
+					r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
 				}
 			}
 			// hex column
@@ -2243,8 +2243,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled &&
 				(core->printidx == R_CORE_VISUAL_MODE_PD ||
 				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 2))) {
-				int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
-				r_config_set_i (core->config, "asm.cmtcol", cmtcol + 2);
+				int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+				r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
 			}
 			// hex column
 			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
@@ -2589,7 +2589,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (fcn) {
 				fcn->folded = !fcn->folded;
 			} else {
-				r_config_toggle (core->config, "asm.cmtfold");
+				r_config_toggle (core->config, "asm.cmt.fold");
 			}
 		}
 		break;
@@ -2790,9 +2790,9 @@ static int visual_responsive(RCore *core) {
 	int h, w = r_cons_get_size (&h);
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w < 110) {
-			r_config_set_i (core->config, "asm.cmtright", 0);
+			r_config_set_i (core->config, "asm.cmt.right", 0);
 		} else {
-			r_config_set_i (core->config, "asm.cmtright", 1);
+			r_config_set_i (core->config, "asm.cmt.right", 1);
 		}
 		if (w < 68) {
 			r_config_set_i (core->config, "hex.cols", w / 5.2);
@@ -2807,7 +2807,7 @@ static int visual_responsive(RCore *core) {
 		if (w > 80) {
 			r_config_set_i (core->config, "asm.lineswidth", 14);
 			r_config_set_i (core->config, "asm.lineswidth", w - (w / 1.2));
-			r_config_set_i (core->config, "asm.cmtcol", w - (w / 2.5));
+			r_config_set_i (core->config, "asm.cmt.col", w - (w / 2.5));
 		} else {
 			r_config_set_i (core->config, "asm.lineswidth", 7);
 		}

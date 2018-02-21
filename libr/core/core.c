@@ -278,7 +278,7 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 	RIOSection *sec;
 	ut64 vaddr;
 
-	if (!r_config_get_i (core->config, "asm.cmtpatch")) {
+	if (!r_config_get_i (core->config, "asm.cmt.patch")) {
 		return;
 	}
 
