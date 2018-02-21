@@ -1111,11 +1111,11 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR);
 			esilprintf (op,
-					"%s,"
+					"%s,%s,"
 					"%d,%s,-=,%s,"
 					"=[],"
-					"%s,%s,=",
-					pc, rs, sp, sp, arg0, pc);
+					"%s,=",
+					arg0, pc, rs, sp, sp, pc);
 		}
 		break;
 	case X86_INS_LCALL:
