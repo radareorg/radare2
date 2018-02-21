@@ -17,6 +17,7 @@ static const char *help_msg_e[] = {
 	"e!", "a", "invert the boolean value of 'a' var",
 	"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", "var", "open editor to change the value of var",
+	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
@@ -440,6 +441,20 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			free (p);
 		}
+		}
+		break;
+	case 'd': // "ed"
+		{
+			if (r_config_get_i (core->config, "scr.interactive")) {
+				char *file = r_str_home(".radare2rc");
+				char * res = r_cons_editor (file, NULL);
+				if (res) {
+					if (r_cons_yesno ('y', "Reload? (Y/n)")) {
+						r_core_run_script (core, file);
+					}
+				}
+				free (file);
+			}
 		}
 		break;
 	case 'e': // "ee"
