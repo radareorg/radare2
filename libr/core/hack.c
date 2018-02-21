@@ -45,11 +45,11 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 		eprintf ("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp (op, "ret1")) {
-		r_core_cmdf (core, "wa x0, 1,,ret");
+		r_core_cmdf (core, "wa mov x0, 1,,ret");
 	} else if (!strcmp (op, "ret0")) {
-		r_core_cmdf (core, "wa x0, 0,,ret");
+		r_core_cmdf (core, "wa mov x0, 0,,ret");
 	} else if (!strcmp (op, "retn")) {
-		r_core_cmdf (core, "wa x0, -1,,ret");
+		r_core_cmdf (core, "wa mov x0, -1,,ret");
 	} else {
 		eprintf ("Invalid operation\n");
 		return false;
