@@ -503,7 +503,7 @@ static void panel_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
 
-static void init (RCore *core, int w, int h) {
+static bool init (RCore *core, int w, int h) {
 	panels = NULL;
 	layout = 0;
 	_core = core;
@@ -528,6 +528,7 @@ static void init (RCore *core, int w, int h) {
 		COLW = w / 3;
 	}
 	reloadPanels (core);
+	return true;
 }
 
 R_API int r_core_visual_panels(RCore *core) {
@@ -538,7 +539,9 @@ R_API int r_core_visual_panels(RCore *core) {
 	int have_utf8 = 0;
 
 	w = r_cons_get_size (&h);
-	init (core, w, h);
+	if (!init (core, w, h)) {
+		return false;
+	}
 
 	asm_comments = r_config_get_i (core->config, "asm.comments");
 	asm_bytes = r_config_get_i (core->config, "asm.bytes");
