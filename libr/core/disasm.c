@@ -4233,7 +4233,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	}
 	addr = ds->analop.jump;
 
-	fcn = r_anal_get_fcn_in (anal, addr, 0);
+	fcn = r_anal_get_fcn_at (anal, addr, 0);
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
