@@ -531,20 +531,19 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 	}
 }
 
+/* Modify the palette to set a color value.
+ * r_cons_pal_update_event () must be called after this function
+ * so the changes take effect. */
 R_API int r_cons_pal_set(const char *key, const char *val) {
 	int i;
 	char **color;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			eprintf("Setting %s to %s\n", keys[i].name, val);
 			//TODO xarkes use a macro
 			rcolor = (RColor *) ((char *)& (r_cons_singleton ()->cpal) + keys[i].coff);
-			//color = (char **) ((char *)& (r_cons_singleton ()->pal) + keys[i].off);
 
-			//*color = r_cons_pal_parse (val, &rcolor);
 			r_cons_pal_parse (val, rcolor);
-			eprintf("%d %d %d\n", rcolor->r, rcolor->g, rcolor->b);
 			return true;
 		}
 	}

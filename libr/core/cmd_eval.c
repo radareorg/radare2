@@ -432,6 +432,7 @@ static int cmd_eval(void *data, const char *input) {
 				// set
 				*q++ = 0;
 				r_cons_pal_set (p, q);
+				r_cons_pal_update_event ();
 			} else {
 				const char *k = r_cons_pal_get (p);
 				if (k) {
