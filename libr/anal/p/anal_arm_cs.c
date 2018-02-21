@@ -1197,34 +1197,34 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
 		if (ISPREINDEX64()) {
 			// "ldp x0, x1, [x8, -0x10]!"
-			// 16,x8,-=,x0,x8,[8],x1,x8,8,+,[8]
+			// 16,x8,-=,x8,[8],x0,=,x8,8,+,[8],x1,=
 			r_strbuf_setf (&op->esil,
 					"%"PFMT64d",%s,%c=,"
-					"%s,%s,[%d],"
-					"%s,%s,%d,+,[%d]",
+					"%s,[%d],%s,=,"
+					"%s,%d,+,[%d],%s,=",
 					abs, MEMBASE64(2), sign,
-					REG64(0), MEMBASE64(2), size,
-					REG64(1), MEMBASE64(2), size, size);
+					MEMBASE64(2), size, REG64(0),
+					MEMBASE64(2), size, size, REG64(1));
 		// Post-index case
 		} else if (ISPOSTINDEX64()) {
 			int val = IMM64(3);
 			sign = val>=0?'+':'-';
 			abs = val>=0? val: -val;
 			// ldp x4, x5, [x8], -0x10
-			// x4,x8,[8],x5,x8,8,+,[8],16,x8,+=
+			// x8,[8],x4,=,x8,8,+,[8],x5,=,16,x8,+=
 			r_strbuf_setf (&op->esil,
-					"%s,%s,[%d],"
-					"%s,%s,%d,+,[%d],"
+					"%s,[%d],%s,=,"
+					"%s,%d,+,[%d],%s,=,"
 					"%d,%s,%c=",
-					REG64(0), MEMBASE64(2), size,
-					REG64(1), MEMBASE64(2), size, size,
+					MEMBASE64(2), size, REG64(0),
+					MEMBASE64(2), size, size, REG64(1),
 					abs, MEMBASE64(2), sign);
 		} else {
 			r_strbuf_setf (&op->esil,
-					"%s,%s,%"PFMT64d",%c,[%d],"
-					"%s,%s,%"PFMT64d",%c,%d,+,[%d]",
-					REG64(0), MEMBASE64(2), abs, sign, size,
-					REG64(1), MEMBASE64(2), abs, sign, size, size);
+					"%s,%"PFMT64d",%c,[%d],%s,=,"
+					"%s,%"PFMT64d",%c,%d,%c,[%d],%s,=",
+					MEMBASE64(2), abs, sign, size, REG64(0),
+					MEMBASE64(2), abs, sign, size, sign, size, REG64(1));
 		}
 		}
 		break;
