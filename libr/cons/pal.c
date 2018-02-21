@@ -194,7 +194,7 @@ R_API void r_cons_pal_init () {
 	//cons->pal.graph_box = Color_RESET;
 
 	// TODO Check with update_event too
-	r_cons_pal_update_event();
+	r_cons_pal_update_event ();
 }
 
 R_API void r_cons_pal_free () {
