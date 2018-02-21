@@ -45,7 +45,6 @@ static const char *help_msg_ec[] = {
 	"ec", " prompt red blue", "change color and background of prompt",
 	"", " ", "",
 	"colors:", "", "rgb:000, red, green, blue, ...",
-	"e scr.rgbcolor", "=1|0", "for 256 color cube (boolean)",
 	"e scr.truecolor", "=1|0", "for 256*256*256 colors (boolean)",
 	"$DATADIR/radare2/cons", "", "~/.config/radare2/cons ./",
 	NULL
