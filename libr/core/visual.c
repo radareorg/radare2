@@ -1493,6 +1493,7 @@ static void visual_browse(RCore *core) {
 		" _  hud mode (V_)\n"
 		" b  blocks\n"
 		" c  classes\n"
+		" C  comments\n"
 		" e  eval var configurations\n"
 		" f  flags\n"
 		" F  functions\n"
@@ -1521,6 +1522,9 @@ static void visual_browse(RCore *core) {
 			break;
 		case 'c':
 			r_core_visual_classes (core);
+			break;
+		case 'C':
+			r_core_cmd0 (core, "s $(CC~...)");
 			break;
 		case 't':
 			r_core_visual_types (core);
