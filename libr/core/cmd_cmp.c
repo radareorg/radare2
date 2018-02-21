@@ -374,15 +374,27 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 }
 
 static int cmd_cp(void *data, const char *input) {
-	char *src, *dst;
+	RCore *core = (RCore *)data;
+	if (input[1] == '.') {
+		char *file = r_core_cmd_strf (core, "ij~{core.file}");
+		r_str_trim (file);
+		char *newfile = r_str_newf ("%s.%s", file, input + 2);
+		r_file_copy (file, newfile);
+		free (file);
+		free (newfile);
+		return true;
+	}
 	if (strlen (input) < 3) {
 		eprintf ("Usage: cp src dst\n");
+		eprintf ("Usage: cp.orig  # cp $file $file.orig\n");
 		return false;
 	}
-	src = strdup (input + 2);
-	dst = strchr (src, ' ');
+	char *src = strdup (input + 2);
+	char *dst = strchr (src, ' ');
 	if (dst) {
 		*dst++ = 0;
+		r_str_trim (src);
+		r_str_trim (dst);
 		bool rc = r_file_copy (src, dst);
 		free (src);
 		return rc;
