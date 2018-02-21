@@ -51,7 +51,8 @@ static struct {
 	{ "ai.seq", r_offsetof (RConsPrintablePalette, ai_seq), r_offsetof (RConsPalette, ai_seq) },
 	{ "ai.ascii", r_offsetof (RConsPrintablePalette, ai_ascii), r_offsetof (RConsPalette, ai_ascii) },
 
-	{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
+	// TODO xarkes bug here
+	//{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPrintablePalette, graph_box2), r_offsetof (RConsPalette, graph_box2) },
 	{ "graph.box3", r_offsetof (RConsPrintablePalette, graph_box3), r_offsetof (RConsPalette, graph_box3) },
 	{ "graph.box4", r_offsetof (RConsPrintablePalette, graph_box4), r_offsetof (RConsPalette, graph_box4) },
@@ -131,7 +132,7 @@ static const RColor RColor_BCYAN = { ALPHA_BOLD, 0x00, 0xff, 0xff };
 static const RColor RColor_BBLUE = { ALPHA_BOLD, 0x00, 0x00, 0xff };
 static const RColor RColor_BGRAY = { ALPHA_BOLD, 0x7f, 0x7f, 0x7f };
 
-R_API void r_cons_pal_init (const char *foo) {
+R_API void r_cons_pal_init () {
 	RCons *cons = r_cons_singleton ();
 
 	memset (&cons->cpal, 0, sizeof (cons->cpal));
@@ -214,7 +215,8 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.list[7] = strdup (Color_GREEN);
 
 	cons->pal.reset = Color_RESET;
-	cons->pal.graph_box = Color_RESET;
+	//TODO xarkes
+	//cons->pal.graph_box = Color_RESET;
 
 	// TODO Check with update_event too
 	r_cons_pal_update_event();
@@ -222,9 +224,15 @@ R_API void r_cons_pal_init (const char *foo) {
 
 R_API void r_cons_pal_free () {
 	int i;
+	char **color;
 	RCons *cons = r_cons_singleton ();
+	ut8 *pal = (ut8*) & (cons->pal);
 	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
 		if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
+	}
+	for (i = 0; keys[i].name; i++) {
+		char **color = (char**) (pal + keys[i].off);
+		if (color && *color) R_FREE (*color);
 	}
 }
 
@@ -541,11 +549,14 @@ R_API void r_cons_pal_update_event() {
 	ut8 *pal = (ut8*) & (cons->pal);
 	ut8 *cpal = (ut8*) & (cons->cpal);
 	int i, n = 0;
-	/* TODO Clean cons->pal with free check init too */
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char**) (pal + keys[i].off);
 		RColor *rcolor = (RColor *) (cpal + keys[i].coff);
+		if (*color) {
+			R_FREE (*color);
+		}
+		// Color is dynamically allocated, needs to be freed
 		*color = r_cons_rgb_str (NULL, rcolor->r, rcolor->g, rcolor->b, !rcolor->a);
 		const char *rgb = sdb_fmt (0, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);

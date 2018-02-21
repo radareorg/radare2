@@ -410,7 +410,7 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
+	int truecolor; // 0 = ansi, 1 = rgb (256), 2 = truecolor (16M)
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
@@ -674,7 +674,7 @@ R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
 R_API void r_cons_pal_update_event(void);
 R_API void r_cons_pal_free(void);
-R_API void r_cons_pal_init(const char *foo);
+R_API void r_cons_pal_init();
 R_API char *r_cons_pal_parse(const char *str);
 R_API void r_cons_pal_random(void);
 R_API const char *r_cons_pal_get(const char *key);

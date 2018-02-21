@@ -367,7 +367,7 @@ R_API RCons *r_cons_new() {
 	I.cons_stack = r_stack_newf (6, cons_stack_free);
 	I.break_stack = r_stack_newf (6, break_stack_free);
 	r_cons_pal_null ();
-	r_cons_pal_init (NULL);
+	r_cons_pal_init ();
 	r_cons_rgb_init ();
 	r_cons_reset ();
 	return &I;

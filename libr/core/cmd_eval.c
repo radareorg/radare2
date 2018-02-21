@@ -291,7 +291,7 @@ static int cmd_eval(void *data, const char *input) {
 	case 'c': // "ec"
 		switch (input[1]) {
 		case 'd':
-			r_cons_pal_init (NULL);
+			r_cons_pal_init ();
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_ec);

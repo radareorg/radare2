@@ -1798,8 +1798,10 @@ static int cb_tracetag(void *user, void *data) {
 
 static int cb_truecolor(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (r_cons_singleton()->truecolor)
-		r_cons_singleton()->truecolor = (node->i_value)? 2: 1;
+	if (r_cons_singleton ()->truecolor) {
+		r_cons_singleton ()->truecolor = (node->i_value)? 2: 1;
+		r_cons_pal_update_event ();
+	}
 	return true;
 }
 
