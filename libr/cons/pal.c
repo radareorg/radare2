@@ -2,6 +2,9 @@
 
 #include <r_cons.h>
 
+#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_singleton ()->cpal)) + keys[i].coff)
+#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_singleton ()->pal)) + keys[i].off)
+
 static struct {
 	const char *name;
 	int off;  // RConsPrintablePalette offset
@@ -461,31 +464,27 @@ R_API const char *r_cons_pal_get_color (int n) {
 }
 
 R_API void r_cons_pal_list (int rad, const char *arg) {
-	RConsPrintablePalette *pal = & (r_cons_singleton ()->pal);
-	ut8 r, g, b, *p = (ut8*)pal;
-	char *name, **color, rgbstr[32];
+	RColor *rcolor = NULL; 
+	char *name, **color;
 	const char *hasnext;
 	int i;
 	if (rad == 'j') {
 		r_cons_print ("{");
 	}
 	for (i = 0; keys[i].name; i++) {
-		color = (char**) (p + keys[i].off);
+		rcolor = RCOLOR_AT(i);
+		color = COLOR_AT(i);
 		switch (rad) {
 		case 'j':
-			r = g = b = 0;
-			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			hasnext = (keys[i + 1].name) ? "," : "";
 			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
-				keys[i].name, r, g, b, hasnext);
+				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
 			break;
 		case 'c': {
 			const char *prefix = r_str_trim_ro (arg);
 			if (!prefix) {
 				prefix = "";
 			}
-			r = g = b = 0;
-			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			hasnext = (keys[i + 1].name) ? "\n" : "";
 			//Need to replace the '.' char because this is not
 			//valid CSS
@@ -497,29 +496,22 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 				}
 			}
 			r_cons_printf (".%s%s { color: rgb(%d, %d, %d); }%s",
-				prefix, name, r, g, b, hasnext);
+				prefix, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
 			free (name);
 			}
 			break;
 		case 'h':
-			r = g = b = 0;
-			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
-			rgbstr[0] = 0;
 			name = strdup (keys[i].name);
 			r_str_replace_char (name, '.', '_');
 			r_cons_printf (".%s { color:#%02x%02x%02x }\n",
-				name, r, g, b);
+				name, rcolor->r, rcolor->g, rcolor->b);
 			free (name);
 			break;
 		case '*':
 		case 'r':
 		case 1:
-			r = g = b = 0;
-			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
-			rgbstr[0] = 0;
-			r_cons_rgb_str (rgbstr, r, g, b, 0);
 			r_cons_printf ("ec %s rgb:%02x%02x%02x\n",
-				keys[i].name, r, g, b);
+				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
 			break;
 		default:
 			r_cons_printf (" %s##"Color_RESET"  %s\n", *color,
@@ -540,9 +532,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			//TODO xarkes use a macro
-			rcolor = (RColor *) ((char *)& (r_cons_singleton ()->cpal) + keys[i].coff);
-
+			rcolor = RCOLOR_AT(i);
 			r_cons_pal_parse (val, rcolor);
 			return true;
 		}
@@ -569,14 +559,13 @@ R_API const char *r_cons_pal_get (const char *key) {
 
 R_API void r_cons_pal_update_event() {
 	Sdb *db = sdb_new0 ();
-	RCons *cons = r_cons_singleton ();
-	ut8 *pal = (ut8*) & (cons->pal);
-	ut8 *cpal = (ut8*) & (cons->cpal);
 	int i, n = 0;
+	char **color;
+	RColor *rcolor;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
-		char **color = (char**) (pal + keys[i].off);
-		RColor *rcolor = (RColor *) (cpal + keys[i].coff);
+		rcolor = RCOLOR_AT(i);
+		color = COLOR_AT(i);
 		if (*color) {
 			R_FREE (*color);
 		}
@@ -591,9 +580,9 @@ R_API void r_cons_pal_update_event() {
 	r_cons_rainbow_free ();
 	r_cons_rainbow_new (list->length);
 	ls_foreach (list, iter, kv) {
-		cons->pal.rainbow[n++] = strdup (kv->key);
+		r_cons_singleton ()->pal.rainbow[n++] = strdup (kv->key);
 	}
-	cons->pal.rainbow_sz = n;
+	r_cons_singleton ()->pal.rainbow_sz = n;
 	ls_free (list);
 	sdb_free (db);
 }
