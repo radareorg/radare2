@@ -1490,21 +1490,22 @@ static void visual_browse(RCore *core) {
 	const char *browsemsg = \
 		"Browse stuff:\n"
 		"-------------\n"
-		" f  flags\n"
-		" e  eval var configurations\n"
+		" _  hud mode (V_)\n"
 		" b  blocks\n"
 		" c  classes\n"
-		" _  hud mode (V_)\n"
-		" i  imports\n"
-		" t  types\n"
-		" s  symbols\n"
+		" e  eval var configurations\n"
+		" f  flags\n"
+		" F  functions\n"
 		" h  history\n"
+		" i  imports\n"
 		" m  maps\n"
 		" p  pids/threads\n"
+		" q  quit\n"
+		" s  symbols\n"
+		" t  types\n"
+		" v  vars\n"
 		" x  xrefs\n"
 		" X  refs\n"
-		" v  vars\n"
-		" q  quit\n"
 	;
 	for (;;) {
 		r_cons_clear00 ();
@@ -1514,6 +1515,9 @@ static void visual_browse(RCore *core) {
 		switch (ch) {
 		case 'f':
 			r_core_visual_trackflags (core);
+			break;
+		case 'F':
+			r_core_cmd0 (core, "s $(afl~...)");
 			break;
 		case 'c':
 			r_core_visual_classes (core);
