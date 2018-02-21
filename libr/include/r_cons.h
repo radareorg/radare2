@@ -504,6 +504,34 @@ typedef struct r_cons_t {
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
 
+#define RColor_BLACK	(RColor) { ALPHA_NORMAL, 0x00, 0x00, 0x00 }
+#define RColor_BGBLACK	(RColor) { ALPHA_BG, 0x00, 0x00, 0x00 }
+#define RColor_RED	(RColor) { ALPHA_NORMAL, 0xff, 0x00, 0x00 }
+#define RColor_BGRED	(RColor) { ALPHA_BG, 0xff, 0x00, 0x00 }
+#define RColor_WHITE	(RColor) { ALPHA_NORMAL, 0xff, 0xff, 0xff }
+#define RColor_BGWHITE	(RColor) { ALPHA_BG, 0xff, 0xff, 0xff }
+#define RColor_GREEN	(RColor) { ALPHA_NORMAL, 0x00, 0xff, 0x00 }
+#define RColor_BGGREEN	(RColor) { ALPHA_BG, 0x00, 0xff, 0x00 }
+#define RColor_MAGENTA	(RColor) { ALPHA_NORMAL, 0xff, 0x00, 0xff }
+#define RColor_BGMAGENTA (RColor) { ALPHA_BG, 0xff, 0x00, 0xff }
+#define RColor_YELLOW	(RColor) { ALPHA_NORMAL, 0xff, 0xff, 0x00 }
+#define RColor_BGYELLOW (RColor) { ALPHA_BG, 0xff, 0xff, 0x00 }
+#define RColor_CYAN	(RColor) { ALPHA_NORMAL, 0x00, 0xff, 0xff }
+#define RColor_BGCYAN	(RColor) { ALPHA_BG, 0x00, 0xff, 0xff }
+#define RColor_BLUE	(RColor) { ALPHA_NORMAL, 0x00, 0x00, 0xff }
+#define RColor_BGBLUE	(RColor) { ALPHA_BG, 0x00, 0x00, 0xff }
+#define RColor_GRAY	(RColor) { ALPHA_NORMAL, 0x7f, 0x7f, 0x7f }
+#define RColor_BGGRAY 	(RColor) { ALPHA_BG, 0x7f, 0x7f, 0x7f }
+#define RColor_BBLACK	(RColor) { ALPHA_BOLD, 0x00, 0x00, 0x00 }
+#define RColor_BRED	(RColor) { ALPHA_BOLD, 0xff, 0x00, 0x00 }
+#define RColor_BGBYELLOW (RColor) { ALPHA_BG, 0xff, 0xff, 0x00 } // TODO BGBold?
+#define RColor_BWHITE	(RColor) { ALPHA_BOLD, 0xff, 0xff, 0xff }
+#define RColor_BGREEN	(RColor) { ALPHA_BOLD, 0x00, 0xff, 0x00 }
+#define RColor_BMAGENTA	(RColor) { ALPHA_BOLD, 0xff, 0x00, 0xff }
+#define RColor_BYELLOW	(RColor) { ALPHA_BOLD, 0xff, 0xff, 0x00 }
+#define RColor_BCYAN	(RColor) { ALPHA_BOLD, 0x00, 0xff, 0xff }
+#define RColor_BBLUE	(RColor) { ALPHA_BOLD, 0x00, 0x00, 0xff }
+#define RColor_BGRAY	(RColor) { ALPHA_BOLD, 0x7f, 0x7f, 0x7f }
 
 #define Colors_PLAIN { \
 	Color_BLACK, Color_RED, Color_WHITE, \

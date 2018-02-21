@@ -191,9 +191,9 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 	case 0: // ansi 16 colors
 	default: {
 		int k = (r + g + b) / 3;
-		r = (r > k) ? 1 : 0;
-		g = (g > k) ? 1 : 0;
-		b = (b > k) ? 1 : 0;
+		r = (r >= k) ? 1 : 0;
+		g = (g >= k) ? 1 : 0;
+		b = (b >= k) ? 1 : 0;
 		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
 		sprintf (outstr, "\x1b[%dm", 30 + k);
 		}

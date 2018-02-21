@@ -76,27 +76,28 @@ static struct {
 
 struct {
 	const char *name;
+	RColor rcolor;
 	const char *code;
 	const char *bgcode;
 } colors[] = {
-	{ "black",    Color_BLACK,    Color_BGBLACK },
-	{ "red",      Color_RED,      Color_BGRED },
-	{ "bred",     Color_BRED,     Color_BGRED },
-	{ "white",    Color_WHITE,    Color_BGWHITE },
-	{ "green",    Color_GREEN,    Color_BGGREEN },
-	{ "bgreen",   Color_BGREEN,   Color_BGGREEN },
-	{ "magenta",  Color_MAGENTA,  Color_BGMAGENTA },
-	{ "bmagenta", Color_BMAGENTA, Color_BGMAGENTA },
-	{ "yellow",   Color_YELLOW,   Color_BGYELLOW },
-	{ "byellow",  Color_BYELLOW,  Color_BGBYELLOW },
-	{ "cyan",     Color_CYAN,     Color_BGCYAN },
-	{ "bcyan",    Color_BCYAN,    Color_BGCYAN },
-	{ "blue",     Color_BLUE,     Color_BGBLUE },
-	{ "bblue",    Color_BBLUE,    Color_BGBLUE },
-	{ "gray",     Color_GRAY,     Color_BGGRAY },
-	{ "bgray",    Color_BGRAY,    Color_BGGRAY },
-	{ "none",     Color_RESET,    Color_RESET },
-	{ NULL, NULL, NULL }
+	{ "black",    RColor_BLACK,    Color_BLACK,    Color_BGBLACK },
+	{ "red",      RColor_RED,      Color_RED,      Color_BGRED },
+	{ "bred",     RColor_BRED,     Color_BRED,     Color_BGRED },
+	{ "white",    RColor_WHITE,    Color_WHITE,    Color_BGWHITE },
+	{ "green",    RColor_GREEN,    Color_GREEN,    Color_BGGREEN },
+	{ "bgreen",   RColor_BGREEN,   Color_BGREEN,   Color_BGGREEN },
+	{ "magenta",  RColor_MAGENTA,  Color_MAGENTA,  Color_BGMAGENTA },
+	{ "bmagenta", RColor_BMAGENTA, Color_BMAGENTA, Color_BGMAGENTA },
+	{ "yellow",   RColor_YELLOW,   Color_YELLOW,   Color_BGYELLOW },
+	{ "byellow",  RColor_BYELLOW,  Color_BYELLOW,  Color_BGBYELLOW },
+	{ "cyan",     RColor_CYAN,     Color_CYAN,     Color_BGCYAN },
+	{ "bcyan",    RColor_BCYAN,    Color_BCYAN,    Color_BGCYAN },
+	{ "blue",     RColor_BLUE,     Color_BLUE,     Color_BGBLUE },
+	{ "bblue",    RColor_BBLUE,    Color_BBLUE,    Color_BGBLUE },
+	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
+	{ "bgray",    RColor_BGRAY,    Color_BGRAY,    Color_BGGRAY },
+	{ "none",     RColor_WHITE,    Color_RESET,    Color_RESET }, // TODO xarkes
+	{ NULL, { 0, 0, 0, 0}, NULL, NULL }
 };
 
 static inline ut8 rgbnum (const char ch1, const char ch2) {
@@ -105,35 +106,6 @@ static inline ut8 rgbnum (const char ch1, const char ch2) {
 	r_hex_to_byte (&r2, ch2);
 	return r << 4 | r2;
 }
-
-static const RColor RColor_BLACK = { ALPHA_NORMAL, 0x00, 0x00, 0x00 };
-static const RColor RColor_BGBLACK = { ALPHA_BG, 0x00, 0x00, 0x00 };
-static const RColor RColor_RED = { ALPHA_NORMAL, 0xff, 0x00, 0x00 };
-static const RColor RColor_BGRED = { ALPHA_BG, 0xff, 0x00, 0x00 };
-static const RColor RColor_WHITE = { ALPHA_NORMAL, 0xff, 0xff, 0xff };
-static const RColor RColor_BGWHITE = { ALPHA_BG, 0xff, 0xff, 0xff };
-static const RColor RColor_GREEN = { ALPHA_NORMAL, 0x00, 0xff, 0x00 };
-static const RColor RColor_BGGREEN = { ALPHA_BG, 0x00, 0xff, 0x00 };
-static const RColor RColor_MAGENTA = { ALPHA_NORMAL, 0xff, 0x00, 0xff };
-static const RColor RColor_BGMAGENTA = { ALPHA_BG, 0xff, 0x00, 0xff };
-static const RColor RColor_YELLOW = { ALPHA_NORMAL, 0xff, 0xff, 0x00 };
-static const RColor RColor_BGYELLOW= { ALPHA_BG, 0xff, 0xff, 0x00 };
-static const RColor RColor_CYAN = { ALPHA_NORMAL, 0x00, 0xff, 0xff };
-static const RColor RColor_BGCYAN = { ALPHA_BG, 0x00, 0xff, 0xff };
-static const RColor RColor_BLUE = { ALPHA_NORMAL, 0x00, 0x00, 0xff };
-static const RColor RColor_BGBLUE = { ALPHA_BG, 0x00, 0x00, 0xff };
-static const RColor RColor_GRAY = { ALPHA_NORMAL, 0x7f, 0x7f, 0x7f };
-static const RColor RColor_BGGRAY  = { ALPHA_BG, 0x7f, 0x7f, 0x7f };
-static const RColor RColor_BBLACK = { ALPHA_BOLD, 0x00, 0x00, 0x00 };
-static const RColor RColor_BRED = { ALPHA_BOLD, 0xff, 0x00, 0x00 };
-static const RColor RColor_BGBYELLOW= { ALPHA_BG, 0xff, 0xff, 0x00 }; // TODO
-static const RColor RColor_BWHITE = { ALPHA_BOLD, 0xff, 0xff, 0xff };
-static const RColor RColor_BGREEN = { ALPHA_BOLD, 0x00, 0xff, 0x00 };
-static const RColor RColor_BMAGENTA = { ALPHA_BOLD, 0xff, 0x00, 0xff };
-static const RColor RColor_BYELLOW = { ALPHA_BOLD, 0xff, 0xff, 0x00 };
-static const RColor RColor_BCYAN = { ALPHA_BOLD, 0x00, 0xff, 0xff };
-static const RColor RColor_BBLUE = { ALPHA_BOLD, 0x00, 0x00, 0xff };
-static const RColor RColor_BGRAY = { ALPHA_BOLD, 0x7f, 0x7f, 0x7f };
 
 R_API void r_cons_pal_init () {
 	RCons *cons = r_cons_singleton ();
@@ -227,14 +199,12 @@ R_API void r_cons_pal_init () {
 
 R_API void r_cons_pal_free () {
 	int i;
-	char **color;
 	RCons *cons = r_cons_singleton ();
-	ut8 *pal = (ut8*) & (cons->pal);
 	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
 		if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
 	}
 	for (i = 0; keys[i].name; i++) {
-		char **color = (char**) (pal + keys[i].off);
+		char **color = COLOR_AT(i);
 		if (color && *color) R_FREE (*color);
 	}
 }
@@ -289,15 +259,9 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	}
 	if (!strncmp (s, "#", 1)) { // "#00ff00" HTML format
 		if (strlen (s) == 7) {
-#define C(x) (x >> 4)
-			//TODO xarkes
-			int R, G, B;
-			sscanf (s, "%02x%02x%02x", &R, &G, &B);
-			rcolor.r = R;
-			rcolor.g = G;
-			rcolor.b = B;
+			sscanf (s, "%02hhx%02hhx%02hhx", &rcolor.r, &rcolor.g, &rcolor.b);
 			if (!outcol) {
-				r_cons_rgb_str (out, C(R), C(G), C(B), 0);
+				r_cons_rgb_str (out, rcolor.r, rcolor.g, rcolor.b, 0);
 			}
 		} else {
 			eprintf ("Invalid html color code\n");
@@ -318,8 +282,7 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 				r_cons_rgb_str (out, rcolor.r, rcolor.g, rcolor.b, 0);
 			}
 		}
-	}
-	if (p && !strncmp (p, "rgb:", 4)) {
+	} else if (p && !strncmp (p, "rgb:", 4)) { // "rgb:123" rgb format
 		if (strlen (p) == 7) {
 			rcolor.r = rgbnum (p[4], '0');
 			rcolor.g = rgbnum (p[5], '0');
@@ -338,12 +301,18 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	}
 	for (i = 0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name)) {
-			strncat (out, colors[i].code,
-				sizeof (out) - strlen (out) - 1);
+			rcolor = colors[i].rcolor;
+			if (!outcol) {
+				strncat (out, colors[i].code,
+					sizeof (out) - strlen (out) - 1);
+			}
 		}
 		if (p && !strcmp (p, colors[i].name)) {
-			strncat (out, colors[i].bgcode,
-				sizeof (out) - strlen (out) - 1);
+			rcolor = colors[i].rcolor;
+			if (!outcol) {
+				strncat (out, colors[i].bgcode,
+					sizeof (out) - strlen (out) - 1);
+			}
 		}
 	}
 	if (outcol) {
@@ -528,7 +497,6 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
  * so the changes take effect. */
 R_API int r_cons_pal_set(const char *key, const char *val) {
 	int i;
-	char **color;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
