@@ -385,7 +385,7 @@ static int cmd_eval(void *data, const char *input) {
 			case 'i': // "ecHi"
 				if (argc) {
 					char *dup = r_str_newf ("bgonly %s", argv[0]);
-					color_code = r_cons_pal_parse (dup);
+					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 				}
 				break;
@@ -398,7 +398,7 @@ static int cmd_eval(void *data, const char *input) {
 				word = strdup (argv[0]);
 				if (argc > 1) {
 					char *dup = r_str_newf ("bgonly %s", argv[1]);
-					color_code = r_cons_pal_parse (dup);
+					color_code = r_cons_pal_parse (dup, NULL);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[1]);
 						r_str_argv_free (argv);

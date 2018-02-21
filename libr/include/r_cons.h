@@ -675,7 +675,7 @@ R_API int r_cons_pal_set(const char *key, const char *val);
 R_API void r_cons_pal_update_event(void);
 R_API void r_cons_pal_free(void);
 R_API void r_cons_pal_init();
-R_API char *r_cons_pal_parse(const char *str);
+R_API char *r_cons_pal_parse(const char *str, RColor *outcol);
 R_API void r_cons_pal_random(void);
 R_API const char *r_cons_pal_get(const char *key);
 R_API const char *r_cons_pal_get_i(int n);

@@ -268,9 +268,10 @@ R_API void r_cons_pal_random () {
 	r_cons_pal_update_event();
 }
 
-R_API char *r_cons_pal_parse (const char *str) {
+/* Return NULL if outcol is given */
+R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	int i;
-	ut8 r, g, b;
+	RColor rcolor = { ALPHA_NORMAL, 0, 0, 0 };
 	char out[128];
 	char *s = strdup (str);
 	if (!s) {
@@ -283,39 +284,53 @@ R_API char *r_cons_pal_parse (const char *str) {
 		free (s);
 		return r_cons_color_random (0);
 	}
-	if (!strncmp (s, "#", 1)) {
+	if (!strncmp (s, "#", 1)) { // "#00ff00" HTML format
 		if (strlen (s) == 7) {
 #define C(x) (x >> 4)
+			//TODO xarkes
 			int R, G, B;
 			sscanf (s, "%02x%02x%02x", &R, &G, &B);
-			r_cons_rgb_str (out, C(R), C(G), C(B), 0);
+			rcolor.r = R;
+			rcolor.g = G;
+			rcolor.b = B;
+			if (!outcol) {
+				r_cons_rgb_str (out, C(R), C(G), C(B), 0);
+			}
 		} else {
 			eprintf ("Invalid html color code\n");
 		}
-	} else if (!strncmp (s, "rgb:", 4)) {
+	} else if (!strncmp (s, "rgb:", 4)) { // "rgb:123" rgb format
 		if (strlen (s) == 7) {
-			r = rgbnum (s[4], '0');
-			g = rgbnum (s[5], '0');
-			b = rgbnum (s[6], '0');
-			r_cons_rgb_str (out, r, g, b, 0);
+			rcolor.r = rgbnum (s[4], '0');
+			rcolor.g = rgbnum (s[5], '0');
+			rcolor.b = rgbnum (s[6], '0');
+			if (!outcol) {
+				r_cons_rgb_str (out, rcolor.r, rcolor.g, rcolor.b, 0);
+			}
 		} else if (strlen (s) == 10) {
-			r = rgbnum (s[4], s[5]);
-			g = rgbnum (s[6], s[7]);
-			b = rgbnum (s[8], s[9]);
-			r_cons_rgb_str (out, r, g, b, 0);
+			rcolor.r = rgbnum (s[4], s[5]);
+			rcolor.g = rgbnum (s[6], s[7]);
+			rcolor.b = rgbnum (s[8], s[9]);
+			if (!outcol) {
+				r_cons_rgb_str (out, rcolor.r, rcolor.g, rcolor.b, 0);
+			}
 		}
 	}
 	if (p && !strncmp (p, "rgb:", 4)) {
 		if (strlen (p) == 7) {
-			r = rgbnum (p[4], '0');
-			g = rgbnum (p[5], '0');
-			b = rgbnum (p[6], '0');
-			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
+			rcolor.r = rgbnum (p[4], '0');
+			rcolor.g = rgbnum (p[5], '0');
+			rcolor.b = rgbnum (p[6], '0');
+			if (!outcol) {
+				r_cons_rgb_str (out + strlen (out), rcolor.r, rcolor.g, rcolor.b, 1);
+			}
 		} else if (strlen (p) == 10) {
-			r = rgbnum (p[4], p[5]);
-			g = rgbnum (p[6], p[7]);
-			b = rgbnum (p[8], p[9]);
-			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
+			rcolor.r = rgbnum (p[4], p[5]);
+			rcolor.g = rgbnum (p[6], p[7]);
+			rcolor.b = rgbnum (p[8], p[9]);
+			if (!outcol) {
+				r_cons_rgb_str (out + strlen (out), rcolor.r, rcolor.g, rcolor.b, 1);
+			}
 		}
 	}
 	for (i = 0; colors[i].name; i++) {
@@ -328,8 +343,11 @@ R_API char *r_cons_pal_parse (const char *str) {
 				sizeof (out) - strlen (out) - 1);
 		}
 	}
+	if (outcol) {
+		*outcol = rcolor;
+	}
 	free (s);
-	return *out ? strdup (out) : NULL;
+	return (*out && !outcol) ? strdup (out) : NULL;
 }
 
 static void r_cons_pal_show_gs () {
@@ -515,11 +533,18 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 
 R_API int r_cons_pal_set(const char *key, const char *val) {
 	int i;
-	char **p;
+	char **color;
+	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			p = (char **) ((char *)& (r_cons_singleton ()->pal) + keys[i].off);
-			*p = r_cons_pal_parse (val);
+			eprintf("Setting %s to %s\n", keys[i].name, val);
+			//TODO xarkes use a macro
+			rcolor = (RColor *) ((char *)& (r_cons_singleton ()->cpal) + keys[i].coff);
+			//color = (char **) ((char *)& (r_cons_singleton ()->pal) + keys[i].off);
+
+			//*color = r_cons_pal_parse (val, &rcolor);
+			r_cons_pal_parse (val, rcolor);
+			eprintf("%d %d %d\n", rcolor->r, rcolor->g, rcolor->b);
 			return true;
 		}
 	}
@@ -606,9 +631,9 @@ R_API char *r_cons_rainbow_get(int idx, int last, bool bg) {
 	const char *a = cons->pal.rainbow[x];
 	if (bg) {
 		char *dup = r_str_newf ("%s %s", a, a);
-		char *res = r_cons_pal_parse (dup);
+		char *res = r_cons_pal_parse (dup, NULL);
 		free (dup);
 		return res;
 	}
-	return r_cons_pal_parse (a);
+	return r_cons_pal_parse (a, NULL);
 }

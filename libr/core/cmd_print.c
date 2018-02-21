@@ -424,7 +424,7 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 			}
 			if (show_color) {
 				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
-				color = r_cons_pal_parse (str);
+				color = r_cons_pal_parse (str, NULL);
 				free (str);
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
@@ -1351,7 +1351,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				hascolor = true;
 				if (usecolor) {
 					if (current_flag && current_flag->color) {
-						char *ansicolor = r_cons_pal_parse (current_flag->color);
+						char *ansicolor = r_cons_pal_parse (current_flag->color, NULL);
 						append (ebytes, ansicolor);
 						append (echars, ansicolor);
 						free (ansicolor);
