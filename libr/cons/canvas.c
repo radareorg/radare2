@@ -269,6 +269,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		if (attr_len > 0) {
 			stamp_attr (c, attr_len);
 		}
+		// XXX this is a bug if we scroll in the middle of \033
 		x = c->x - c->sx;
 		if (G (x, c->y - c->sy)) {
 			memcpy (p, s_part, slen);

@@ -1002,7 +1002,7 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE_H
-	return copyfile (src, dst, 0, 0) != -1;
+	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
 	return r_sys_cmdf ("copy %s %s", src, dst);
 #else

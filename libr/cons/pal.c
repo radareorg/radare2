@@ -59,6 +59,7 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.ai_exec = Color_RED;
 	cons->pal.ai_seq = Color_MAGENTA;
 	cons->pal.ai_ascii = Color_YELLOW;
+	cons->pal.ai_unmap = Color_BLACK;
 
 	cons->pal.gui_cflow = Color_YELLOW;
 	cons->pal.gui_dataoffset = Color_YELLOW;
@@ -265,6 +266,7 @@ static struct {
 	{ "ai.exec", r_offsetof (RConsPalette, ai_exec) },
 	{ "ai.seq", r_offsetof (RConsPalette, ai_seq) },
 	{ "ai.ascii", r_offsetof (RConsPalette, ai_ascii) },
+	{ "ai.unmap", r_offsetof (RConsPalette, ai_unmap) },
 
 	{ "graph.box", r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPalette, graph_box2) },

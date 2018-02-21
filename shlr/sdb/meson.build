@@ -38,11 +38,23 @@ files = [
 ]
 
 libsdb = static_library('sdb', files,
-  include_directories: [platform_inc, include_directories(['src'])]
+  include_directories: [
+    platform_inc,
+    include_directories([
+      'src'
+    ])
+  ],
+  implicit_include_directories: false
 )
 
 executable('sdb', 'src/main.c',
-  include_directories: [platform_inc, include_directories(['src'])],
+  include_directories: [
+    platform_inc,
+    include_directories([
+      'src'
+    ])
+  ],
   link_with: [libsdb],
-  install: true
+  install: true,
+  implicit_include_directories: false
 )

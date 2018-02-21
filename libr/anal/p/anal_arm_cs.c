@@ -1022,52 +1022,50 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		default:
 		    break;
 		}
-		if ((int)MEMDISP64(1) < 0) {
-			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",-,=[%d]",
-				REG64(0), MEMBASE64(1), -(int)MEMDISP64(1), size);
-		} else {
-			if (ISMEM64(1)) {
-				if (HASMEMINDEX64(1)) {
-					if (LSHIFT2_64(1)) {
-						r_strbuf_appendf (&op->esil, "%s,%d,%s,%s,+,[%d],%s,=",
-								MEMBASE64(1), LSHIFT2_64(1), MEMINDEX64(1), DECODE_SHIFT64(1), size, REG64(0));
-					} else {
-						r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s,=",
-								MEMBASE64(1), MEMINDEX64(1), size, REG64(0));
-					}
+		if (ISMEM64(1)) {
+			if (HASMEMINDEX64(1)) {
+				if (LSHIFT2_64(1)) {
+					r_strbuf_appendf (&op->esil, "%s,%d,%s,%s,+,[%d],%s,=",
+							MEMBASE64(1), LSHIFT2_64(1), MEMINDEX64(1), DECODE_SHIFT64(1), size, REG64(0));
 				} else {
-					if (LSHIFT2_64(1)) {
-						r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,[%d],%s,=",
-								MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
-					} else {
-						r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",+,DUP,tmp,=,[%d],%s,=,",
-								MEMBASE64(1), MEMDISP64(1), size, REG64(0));
-					}
+					r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s,=",
+							MEMBASE64(1), MEMINDEX64(1), size, REG64(0));
 				}
-				op->refptr = 4;
 			} else {
-				if (ISREG64(1)) {
-					if (OPCOUNT64() == 2) {
-						r_strbuf_setf (&op->esil, "%s,[%d],%s,=",
-							REG64(1), size, REG64(0));
-					} else if (OPCOUNT64() == 3) {
-						/*
-							This seems like a capstone bug:
-							instructions like
-								ldr x16, [x13, x9]
-								ldrb w2, [x19, x23]
-							are not detected as ARM64_OP_MEM type and
-							fall in this case instead.
-						*/
-						if (ISREG64(2)) {
-							r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,=",
-								REG64(1), REG64(2), size, REG64(0));
-						}
-					}
+				if (LSHIFT2_64(1)) {
+					r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,[%d],%s,=",
+							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
+				} else if ((int)MEMDISP64(1) < 0){
+					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-,DUP,tmp,=,[%d],%s,=,",
+							-(int)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				} else {
-					r_strbuf_setf (&op->esil, "%"PFMT64d",[%d],%s,=",
-						IMM64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",+,DUP,tmp,=,[%d],%s,=,",
+							MEMBASE64(1), MEMDISP64(1), size, REG64(0));
 				}
+			}
+			op->refptr = 4;
+		} else {
+			if (ISREG64(1)) {
+				if (OPCOUNT64() == 2) {
+					r_strbuf_setf (&op->esil, "%s,[%d],%s,=",
+						REG64(1), size, REG64(0));
+				} else if (OPCOUNT64() == 3) {
+					/*
+						This seems like a capstone bug:
+						instructions like
+							ldr x16, [x13, x9]
+							ldrb w2, [x19, x23]
+						are not detected as ARM64_OP_MEM type and
+						fall in this case instead.
+					*/
+					if (ISREG64(2)) {
+						r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,=",
+							REG64(1), REG64(2), size, REG64(0));
+					}
+				}
+			} else {
+				r_strbuf_setf (&op->esil, "%"PFMT64d",[%d],%s,=",
+					IMM64(1), size, REG64(0));
 			}
 		}
 		break;
@@ -1199,34 +1197,34 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
 		if (ISPREINDEX64()) {
 			// "ldp x0, x1, [x8, -0x10]!"
-			// 16,x8,-=,x0,x8,[8],x1,x8,8,+,[8]
+			// 16,x8,-=,x8,[8],x0,=,x8,8,+,[8],x1,=
 			r_strbuf_setf (&op->esil,
 					"%"PFMT64d",%s,%c=,"
-					"%s,%s,[%d],"
-					"%s,%s,%d,+,[%d]",
+					"%s,[%d],%s,=,"
+					"%s,%d,+,[%d],%s,=",
 					abs, MEMBASE64(2), sign,
-					REG64(0), MEMBASE64(2), size,
-					REG64(1), MEMBASE64(2), size, size);
+					MEMBASE64(2), size, REG64(0),
+					MEMBASE64(2), size, size, REG64(1));
 		// Post-index case
 		} else if (ISPOSTINDEX64()) {
 			int val = IMM64(3);
 			sign = val>=0?'+':'-';
 			abs = val>=0? val: -val;
 			// ldp x4, x5, [x8], -0x10
-			// x4,x8,[8],x5,x8,8,+,[8],16,x8,+=
+			// x8,[8],x4,=,x8,8,+,[8],x5,=,16,x8,+=
 			r_strbuf_setf (&op->esil,
-					"%s,%s,[%d],"
-					"%s,%s,%d,+,[%d],"
+					"%s,[%d],%s,=,"
+					"%s,%d,+,[%d],%s,=,"
 					"%d,%s,%c=",
-					REG64(0), MEMBASE64(2), size,
-					REG64(1), MEMBASE64(2), size, size,
+					MEMBASE64(2), size, REG64(0),
+					MEMBASE64(2), size, size, REG64(1),
 					abs, MEMBASE64(2), sign);
 		} else {
 			r_strbuf_setf (&op->esil,
-					"%s,%s,%"PFMT64d",%c,[%d],"
-					"%s,%s,%"PFMT64d",%c,%d,+,[%d]",
-					REG64(0), MEMBASE64(2), abs, sign, size,
-					REG64(1), MEMBASE64(2), abs, sign, size, size);
+					"%s,%"PFMT64d",%c,[%d],%s,=,"
+					"%s,%"PFMT64d",%c,%d,%c,[%d],%s,=",
+					MEMBASE64(2), abs, sign, size, REG64(0),
+					MEMBASE64(2), abs, sign, size, sign, size, REG64(1));
 		}
 		}
 		break;

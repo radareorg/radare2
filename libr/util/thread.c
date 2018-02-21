@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_th.h>
 
@@ -66,7 +66,7 @@ R_API void r_th_break(RThread *th) {
 	th->breaked = true;
 }
 
-R_API int r_th_kill(RThread *th, int force) {
+R_API bool r_th_kill(RThread *th, bool force) {
 	if (!th) {
 		return false;
 	}
@@ -125,6 +125,9 @@ R_API int r_th_wait_async(struct r_th_t *th) {
 }
 
 R_API void *r_th_free(struct r_th_t *th) {
+	if (!th) {
+		return NULL;
+	}
 	r_th_kill (th, true);
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	CloseHandle (th->tid);

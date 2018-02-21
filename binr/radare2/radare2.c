@@ -8,15 +8,15 @@
 #endif
 #endif
 #include <sdb.h>
-#include <r_core.h>
+#include <r_th.h>
 #include <r_io.h>
 #include <stdio.h>
 #include <getopt.c>
+#include <r_core.h>
 #include "../blob/version.c"
 
 
 #if USE_THREADS
-#include <r_th.h>
 static char *rabin_cmd = NULL;
 #endif
 static bool threaded = false;
@@ -36,6 +36,32 @@ static char* get_file_in_cur_dir(const char *filepath) {
 		return r_file_abspath (filepath);
 	}
 	return NULL;
+}
+
+static RThread *thread = NULL;
+
+static int loading_thread(RThread *th) {
+	const char *tok = "\\|/-";
+	int i = 0;
+	if (th) {
+		while (!th->breaked) {
+			eprintf ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
+			r_sys_usleep (100000);
+			i++;
+		}
+	}
+	return 0;
+}
+
+static void loading_start() {
+	thread = r_th_new (loading_thread, NULL, 1);
+	r_th_start (thread, true);
+}
+
+static void loading_stop() {
+	r_th_kill (thread, true);
+	r_th_free (thread);
+	thread = NULL;
 }
 
 static int verify_version(int show) {
@@ -445,7 +471,6 @@ int main(int argc, char **argv, char **envp) {
 			r_list_free (prefiles); \
 		}
 
-	int va = 1; // set va = 0 to load physical offsets from rbin
 	bool noStderr = false;
 
 	r_sys_set_environ (envp);
@@ -520,7 +545,6 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
-			va = 2;
 			break;
 		case 'X':
 			r_config_set (r.config, "bin.usextr", "false");
@@ -872,6 +896,9 @@ int main(int argc, char **argv, char **envp) {
 			return 1;
 		}
 	} else if (strcmp (argv[optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
+		if (threaded) {
+			loading_start ();
+		}
 		if (debug) {
 			if (asmbits) {
 				r_config_set (r.config, "asm.bits", asmbits);
@@ -1094,7 +1121,6 @@ int main(int argc, char **argv, char **envp) {
 			baddr = r_debug_get_baddr (r.dbg, pfile);
 			if (baddr != UT64_MAX && baddr != 0) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
-				va = 2;
 			}
 			if (run_anal > 0) {
 				if (baddr && baddr != UT64_MAX) {
@@ -1325,6 +1351,7 @@ int main(int argc, char **argv, char **envp) {
 				r_core_cmd0 (&r, "aeip");
 			}
 		}
+		loading_stop ();
 		for (;;) {
 #if USE_THREADS
 			do {

@@ -954,6 +954,7 @@ static int autocomplete(RLine *line) {
 				ADDARG("ai.exec")
 				ADDARG("ai.seq")
 				ADDARG("ai.ascii")
+				ADDARG("ai.unmap")
 				ADDARG("graph.box")
 				ADDARG("graph.box2")
 				ADDARG("graph.box3")
@@ -1262,7 +1263,7 @@ static int autocomplete(RLine *line) {
 			str = line->buffer.data + buflen;
 			n = strlen (str);
 			r_list_foreach (bp->bps, iter, b) {
-				char *addr = r_str_newf ("0x%llx", b->addr);
+				char *addr = r_str_newf ("0x%"PFMT64x"", b->addr);
 				if (!strncmp (addr, str, n)) {
 					tmp_argv[i++] = addr;
 				} else {

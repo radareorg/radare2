@@ -87,6 +87,20 @@ static void rotateAsmBits(RCore *core) {
 	}
 }
 
+static void rotateAsmemu(RCore *core) {
+	const bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	if (isEmu) {
+		if (isEmuStr) {
+			r_config_set (core->config, "asm.emu.str", "false");
+		} else {
+			r_config_set (core->config, "asm.emu", "false");
+		}
+	} else {
+		r_config_set (core->config, "asm.emu.str", "true");
+	}
+}
+
 static void printSnow(RCore *core) {
 	if (!snows) {
 		snows = r_list_newf (free);
@@ -239,6 +253,8 @@ static int visual_help() {
 		" \\        toggle visual split mode\n"
 		" \"        toggle the column mode (uses pC..)\n"
 		" /        in cursor mode search in current block\n"
+		" (        toggle snow\n"
+		" )        toggle asm.emu.str\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
 		" 0        seek to beginning of current function\n"
@@ -1474,21 +1490,23 @@ static void visual_browse(RCore *core) {
 	const char *browsemsg = \
 		"Browse stuff:\n"
 		"-------------\n"
-		" f  flags\n"
-		" e  eval var configurations\n"
+		" _  hud mode (V_)\n"
 		" b  blocks\n"
 		" c  classes\n"
-		" _  hud mode (V_)\n"
-		" i  imports\n"
-		" t  types\n"
-		" s  symbols\n"
+		" C  comments\n"
+		" e  eval var configurations\n"
+		" f  flags\n"
+		" F  functions\n"
 		" h  history\n"
+		" i  imports\n"
 		" m  maps\n"
 		" p  pids/threads\n"
+		" q  quit\n"
+		" s  symbols\n"
+		" t  types\n"
+		" v  vars\n"
 		" x  xrefs\n"
 		" X  refs\n"
-		" v  vars\n"
-		" q  quit\n"
 	;
 	for (;;) {
 		r_cons_clear00 ();
@@ -1499,8 +1517,14 @@ static void visual_browse(RCore *core) {
 		case 'f':
 			r_core_visual_trackflags (core);
 			break;
+		case 'F':
+			r_core_cmd0 (core, "s $(afl~...)");
+			break;
 		case 'c':
 			r_core_visual_classes (core);
+			break;
+		case 'C':
+			r_core_cmd0 (core, "s $(CC~...)");
 			break;
 		case 't':
 			r_core_visual_types (core);
@@ -2382,6 +2406,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_list_free (snows);
 				snows = NULL;
 			}
+			break;
+		case ')':
+			rotateAsmemu (core);
 			break;
 		case '*':
 			if (core->print->cur_enabled) {

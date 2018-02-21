@@ -682,6 +682,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->al_free = r_io_accesslog_free;
 	bnd->al_buf_byflags = r_io_accesslog_getf_buf_byflags;
 	bnd->is_valid_offset = r_io_is_valid_offset;
+	bnd->addr_is_mapped = r_io_addr_is_mapped;
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;
 	bnd->sect_vget = r_io_section_vget;

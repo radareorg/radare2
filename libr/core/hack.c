@@ -25,6 +25,37 @@ void r_core_hack_help(const RCore *core) {
 	r_core_cmd_help(core, help_msg);
 }
 
+R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
+	if (!strcmp (op, "nop")) {
+		r_core_cmdf (core, "wx 1f2003d5");
+	} else if (!strcmp (op, "ret")) {
+		r_core_cmdf (core, "wx c0035fd6t");
+	} else if (!strcmp (op, "trap")) {
+		r_core_cmdf (core, "wx 000020d4");
+	} else if (!strcmp (op, "jz")) {
+		eprintf ("ARM jz hack not supported\n");
+		return false;
+	} else if (!strcmp (op, "jnz")) {
+		eprintf ("ARM jnz hack not supported\n");
+		return false;
+	} else if (!strcmp (op, "nocj")) {
+		eprintf ("ARM jnz hack not supported\n");
+		return false;
+	} else if (!strcmp (op, "recj")) {
+		eprintf ("TODO: use jnz or jz\n");
+		return false;
+	} else if (!strcmp (op, "ret1")) {
+		r_core_cmdf (core, "wa mov x0, 1,,ret");
+	} else if (!strcmp (op, "ret0")) {
+		r_core_cmdf (core, "wa mov x0, 0,,ret");
+	} else if (!strcmp (op, "retn")) {
+		r_core_cmdf (core, "wa mov x0, -1,,ret");
+	} else {
+		eprintf ("Invalid operation\n");
+		return false;
+	}
+	return true;
+}
 R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 	const int bits = core->assembler->bits;
 	const ut8 *b = core->block;
@@ -206,7 +237,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	RAnalOp analop;
+	const int asmbits = core->assembler->bits;
 
 	if (!asmarch) {
 		return false;
@@ -214,11 +245,16 @@ R_API int r_core_hack(RCore *core, const char *op) {
 	if (strstr (asmarch, "x86")) {
 		hack = r_core_hack_x86;
 	} else if (strstr (asmarch, "arm")) {
-		hack = r_core_hack_arm;
+		if (asmbits == 64) {
+			hack = r_core_hack_arm64;
+		} else {
+			hack = r_core_hack_arm;
+		}
 	} else {
 		eprintf ("TODO: write hacks are only for x86\n");
 	}
 	if (hack) {
+		RAnalOp analop;
 		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize)) {
 			eprintf ("anal op fail\n");
 			return false;

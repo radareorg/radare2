@@ -161,11 +161,11 @@ static int init_phdr(ELFOBJ *bin) {
 		return false;
 	}
 
+	bool phdr_found = false;
 	bool linux_kern_hack = false;
 	/* Enable this hack only for the X86 64bit ELFs */
 	const int _128K = 1024 * 128;
-	if (bin->b->length > _128K && bin->ehdr.e_machine == EM_X86_64 ||
-		bin->ehdr.e_machine == EM_386) {
+	if (bin->b->length > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
 		linux_kern_hack = true;
 	}
 read_phdr:
@@ -178,6 +178,9 @@ read_phdr:
 			return false;
 		}
 		bin->phdr[i].p_type = READ32 (phdr, j)
+		if (bin->phdr[i].p_type == PT_PHDR) {
+			phdr_found = true;
+		}
 #if R_BIN_ELF64
 		bin->phdr[i].p_flags = READ32 (phdr, j)
 		bin->phdr[i].p_offset = READ64 (phdr, j)
@@ -203,7 +206,7 @@ read_phdr:
 	 *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
 	 * So after the first read, we fix the address and read it again
 	 */
-	if (linux_kern_hack) {
+	if (linux_kern_hack && phdr_found) {
 		ut64 load_addr = Elf_(r_bin_elf_get_baddr) (bin);
 		bin->ehdr.e_phoff = Elf_(r_bin_elf_v2p) (bin, load_addr + bin->ehdr.e_phoff);
 		linux_kern_hack = false;

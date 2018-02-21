@@ -1363,17 +1363,20 @@ static int cmd_open(void *data, const char *input) {
 				r_core_cmd_help (core, help_msg_oo_plus);
 			} else if (core && core->io && core->io->desc) {
 				int fd;
+				int perms = R_IO_READ | R_IO_WRITE;
 				if ((ptr = strrchr (input, ' ')) && ptr[1]) {
 					fd = (int)r_num_math (core->num, ptr + 1);
 				} else {
 					fd = core->io->desc->fd;
+					perms |= core->io->desc->flags;
 				}
-				if (r_io_reopen (core->io, fd, R_IO_READ | R_IO_WRITE, 644)) {
+				if (r_io_reopen (core->io, fd, perms, 644)) {
 					SdbListIter *iter;
 					RIOMap *map;
 					ls_foreach_prev (core->io->maps, iter, map) {
 						if (map->fd == fd) {
 							map->flags |= R_IO_WRITE;
+							map->flags |= R_IO_EXEC;
 						}
 					}
 				}
