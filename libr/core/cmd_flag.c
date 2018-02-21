@@ -837,7 +837,7 @@ rep:
 						ut64 loff = 0; 
 						ut64 uoff = 0;
 						ut64 curseek = core->offset;
-						char *lmatch , *umatch;
+						char *lmatch = NULL , *umatch = NULL;
 						RFlagItem *flag;
 						RListIter *iter;
 						r_list_foreach (f->flags, iter, flag) { // creating a local copy
