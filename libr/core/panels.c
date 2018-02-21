@@ -506,7 +506,6 @@ static void panel_continue(RCore *core) {
 static void init (RCore *core, int w, int h) {
 	panels = NULL;
 	layout = 0;
-	callgraph = 0;
 	_core = core;
 	menu_pos = 0;
 	menu_x = 0;
