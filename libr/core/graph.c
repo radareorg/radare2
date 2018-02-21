@@ -3677,7 +3677,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		key = r_cons_arrow_to_hjkl (okey);
 
 		if (core->cons->mouse_event) {
-			movspeed = r_config_get_i (core->config, "scr.wheelspeed");
+			movspeed = r_config_get_i (core->config, "scr.wheel.speed");
 			switch (key) {
 			case 'j':
 			case 'k':

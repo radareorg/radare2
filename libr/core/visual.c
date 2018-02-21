@@ -1604,7 +1604,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		return 1;
 	}
 	if (r_cons_singleton ()->mouse_event) {
-		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
+		wheelspeed = r_config_get_i (core->config, "scr.wheel.speed");
 	} else {
 		wheelspeed = 1;
 	}
@@ -2112,7 +2112,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				cursor_nextrow (core, false);
 			} else {
-				if (r_config_get_i (core->config, "scr.wheelnkey")) {
+				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
 					r_core_cmd0 (core, "sn");
 				} else {
 					int times = R_MAX (1, wheelspeed);
@@ -2174,7 +2174,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				cursor_prevrow (core, false);
 			} else {
-				if (r_config_get_i (core->config, "scr.wheelnkey")) {
+				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
 					r_core_cmd0 (core, "sp");
 				} else {
 					int times = wheelspeed;
