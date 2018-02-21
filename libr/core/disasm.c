@@ -3586,7 +3586,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 #endif
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix);
 				if (escstr) {
-					msg = r_str_newf ("%s%s\"%s\"", prefix, type? type: "", escstr);
+					if (ds->show_color) {
+						msg = r_str_newf ("%s%s"Color_INVERT"\"%s\""Color_RESET, prefix, type? type: "", escstr);
+					} else {
+						msg = r_str_newf ("%s%s\"%s\"", prefix, type? type: "", escstr);
+					}
 					free (escstr);
 				}
 			}
