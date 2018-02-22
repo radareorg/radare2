@@ -2026,6 +2026,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'f': // "aff"
 		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		break;
+	case 'a':
+		if (input[2] == 'l') { // afal : list function call arguments
+			int show_args = r_config_get_i (core->config, "dbg.funcarg");
+			if (show_args) {
+				r_core_print_func_args (core);
+			}
+			break;
+		}
 	case 'd': // "afd"
 		{
 		ut64 addr = 0;	

@@ -5,6 +5,7 @@ files = [
   'p/core_anal.c',
   'blaze.c',
   'canal.c',
+  'carg.c',
   'cbin.c',
   'cconfig.c',
   'cio.c',

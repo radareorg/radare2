@@ -305,6 +305,16 @@ typedef struct r_anal_type_function_t {
 	RBNode rb;
 } RAnalFunction;
 
+typedef struct r_anal_func_arg_t {
+	const char *name;
+	const char *fmt;
+	const char *cc_source;
+	char *orig_c_type;
+	char *c_type;
+	ut64 size;
+	ut64 src; //Function-call argument value or pointer to it
+} RAnalFuncArg;
+
 struct r_anal_type_t {
 	char *name;
 	ut32 type;
