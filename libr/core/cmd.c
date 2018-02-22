@@ -2239,10 +2239,9 @@ repeat_arroba:
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 					if (fcn) {
 						r_list_foreach (fcn->bbs, iter, bb) {
-							if (core->offset >= bb->addr && core->offset < bb->addr + bb->size) {
+							if ((core->offset >= bb->addr) && (core->offset < (bb->addr + bb->size))) {
 								int count = bb->op_pos_size / sizeof (bb->op_pos[0]);
-								int pos = (index < 0)
-									? count + index: index;
+								int pos = (index < 0) ? count + index + 1: index;
 								if (pos < 0) {
 									pos = 0;
 								}

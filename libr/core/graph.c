@@ -3479,6 +3479,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		RANode *addr_node = r_agraph_get_node (g, title);
 		if (addr_node) {
 			r_agraph_set_curnode (g, addr_node);
+			r_core_seek (core, addr, 0);
 			agraph_update_seek (g, addr_node, true);
 		} else {
 			r_io_sundo_push (core->io, core->offset, 0);
