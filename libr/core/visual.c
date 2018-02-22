@@ -2618,6 +2618,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 }
 
 R_API void r_core_visual_title(RCore *core, int color) {
+	bool showDelta = r_config_get_i (core->config, "scr.slow");
 	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
@@ -2693,12 +2694,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		core->flags->space_strict = true;
 		core->anal->flb.set_fs (core->flags, "symbols");
 		if (core->flags->space_idx != -1) {
-			f = core->anal->flb.get_at (core->flags, addr, false);
+			f = core->anal->flb.get_at (core->flags, addr, showDelta);
 		}
 		core->flags->space_strict = oss;
 		core->flags->space_idx = osi;
 		if (!f) {
-			f = r_flag_get_at (core->flags, addr, false);
+			f = r_flag_get_at (core->flags, addr, showDelta);
 		}
 #else
 		RFlagItem *f = r_flag_get_at (core->flags, addr, false);
