@@ -708,7 +708,7 @@ R_API void r_cons_pal_random(void);
 R_API const char *r_cons_pal_get(const char *key);
 R_API const char *r_cons_pal_get_i(int n);
 R_API const char *r_cons_pal_get_color(int n);
-R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg);
+R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(int rad, const char *arg);
 R_API void r_cons_pal_show(void);
@@ -734,10 +734,10 @@ R_API void r_cons_grep_process(char * grep);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API int r_cons_grepbuf(char *buf, int len);
 
-R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, int is_bg);
+R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init(void);
-R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg);
+R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a);
 R_API char *r_cons_rgb_str_off(char *outstr, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
 R_API char *r_cons_color_random(int bg);
