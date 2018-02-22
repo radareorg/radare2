@@ -1207,8 +1207,25 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		} else {
 			sz = 1;
 		}
+#if 1
+		// this is a hacky workaround to unbreak Vcj.. but its far from 
+		{
+			int left = core->blocksize - p->cur;
+			sz = r_asm_disassemble (core->assembler, &op,
+					core->block + p->cur, R_MIN (32, left));
+			if (sz < 1) {
+				sz = 1;
+			}
+			p->cur += sz;
+		}
+#else
 		delta = p->cur - roff;
-		p->cur = next_roff + R_MIN (delta, sz - 1);
+		if (delta < 1) {
+		} else {
+			p->cur += delta;
+		}
+#endif
+		// p->cur = next_roff + R_MIN (delta, sz - 1);
 	} else {
 		p->cur += R_MAX (1, p->cols);
 	}
