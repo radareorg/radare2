@@ -1260,6 +1260,27 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	}
 }
 
+static bool is_section_symbol(RBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	if (!s || *s->name) {
+		return false;
+	}
+	return (s->type && !strcmp (s->type, "SECTION"));
+}
+
+static bool is_section_reloc(RBinReloc *r) {
+	return is_section_symbol (r->symbol);
+}
+
+static bool is_file_symbol(RBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	return (s && s->type && !strcmp (s->type, "FILE"));
+}
+
+static bool is_file_reloc(RBinReloc *r) {
+	return is_file_symbol (r->symbol);
+}
+
 static int bin_relocs(RCore *r, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RList *relocs;
@@ -1287,7 +1308,12 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	}
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
+			/*
+			 * Skip section reloc because they will have their own flag.
+			 * Skip also file reloc because not useful for now.
+			 */
+		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
 			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -1731,7 +1757,12 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
+			/*
+			 * Skip section symbols because they will have their own flag.
+			 * Skip also file symbols because not useful for now.
+			 */
+		} else if (IS_MODE_SET (mode)) {
 			if (is_arm && info->bits < 33) { // 16 or 32
 				int force_bits = 0;
 				if (symbol->paddr & 1 || symbol->bits == 16) {
