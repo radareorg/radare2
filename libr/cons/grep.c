@@ -950,11 +950,3 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	return r_strbuf_drain (res);
 }
 
-R_API int r_cons_html_print(const char *ptr) {
-	char *res = r_cons_html_filter (ptr, NULL);
-	int res_len = strlen (res);
-	printf ("%s", res);
-	fflush (stdout);
-	free (res);
-	return res_len;
-}
