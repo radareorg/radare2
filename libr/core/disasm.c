@@ -250,6 +250,7 @@ typedef struct {
 	int shortcut_pos;
 	bool asm_anal;
 	ut64 printed_str_addr;
+	ut64 printed_flag_addr;
 	ut64 min_ref_addr;
 
 	bool use_json;
@@ -664,6 +665,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->ocols = 0;
 	ds->lcols = 0;
 	ds->printed_str_addr = UT64_MAX;
+	ds->printed_flag_addr = UT64_MAX;
 
 	ds->esil_old_pc = UT64_MAX;
 	ds->esil_regstate = NULL;
@@ -3251,6 +3253,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				    && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; %s", f->name);
+					ds->printed_flag_addr = p;
 					flag_printed = true;
 				}
 			}
@@ -3375,6 +3378,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 				ds_begin_comment (ds);
 				ds_comment (ds, true, "; %s", f->name);
+				ds->printed_flag_addr = refaddr;
 				flag_printed = true;
 			}
 		} else {
@@ -3607,9 +3611,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 		R_FREE (type);
-		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
-		if (fi) {
-			msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
+		if (ds && (ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)) {
+			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
+			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
+				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
+			}
 		}
 	}
 	if (ds) {
@@ -4289,6 +4295,7 @@ toro:
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		ds->printed_str_addr = UT64_MAX;
+		ds->printed_flag_addr = UT64_MAX;
 		// XXX. this must be done in ds_update_pc()
 		// ds_update_pc (ds, ds->at);
 		{
@@ -5268,6 +5275,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		}
 		do {
 			ds->printed_str_addr = UT64_MAX;
+			ds->printed_flag_addr = UT64_MAX;
 			// XXX - why is it necessary to set this everytime?
 			r_asm_set_pc (core->assembler, ds->at);
 			if (ds->lines >= ds->l) {
