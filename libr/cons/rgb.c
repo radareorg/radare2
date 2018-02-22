@@ -2,6 +2,10 @@
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
+//TODO xarkes
+//Baltringue check pop rsi => pop "rose" bold,  rsi cyan bold    (before)
+//			      pop violet normal,rsi cyan normal  (now)
+
 #include <r_cons.h>
 
 int color_table[256] = { 0 };
@@ -176,10 +180,21 @@ R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
 	return r_cons_rgb_str (outstr, r, g, b, false);
 }
 
+/* Return color string depending on cons->truecolor.
+ * is_bg: 0 is normal, 1 is background, 2 is bold */
 R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
-	int fgbg = is_bg ? 48: 38;
+	int fgbg;
 	if (!outstr) outstr = malloc (32);
 	if (!outstr) return NULL;
+	switch (is_bg) {
+	case ALPHA_BG:
+		fgbg = 48;
+		break;
+	default:
+	case ALPHA_NORMAL:
+		fgbg = 38;
+		break;
+	}
 
 	switch (r_cons_singleton ()->truecolor) {
 	case 1: // 256 color palette
@@ -191,11 +206,15 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 	case 0: // ansi 16 colors
 	default: {
 		int k = (r + g + b) / 3;
+		char bold[] = "1;";
 		r = (r >= k) ? 1 : 0;
 		g = (g >= k) ? 1 : 0;
 		b = (b >= k) ? 1 : 0;
 		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		sprintf (outstr, "\x1b[%dm", 30 + k);
+		if (is_bg != ALPHA_BOLD) {
+			bold[0] = '\0';
+		}
+		sprintf (outstr, "\x1b[%s%dm", bold, 30 + k);
 		}
 		break;
 	}
@@ -203,16 +222,8 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 }
 
 R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, int is_bg) {
-#if __WINDOWS__ && !__CYGWIN__
-#ifdef _MSC_VER
-#pragma message ("r_cons_rgb not yet supported on windows")
-#else
-#warning r_cons_rgb not yet supported on windows
-#endif
-#else
 	char outstr[64];
 	r_cons_strcat (r_cons_rgb_str (outstr, r, g, b, is_bg));
-#endif
 }
 
 R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B) {

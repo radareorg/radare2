@@ -97,7 +97,7 @@ struct {
 	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
 	{ "bgray",    RColor_BGRAY,    Color_BGRAY,    Color_BGGRAY },
 	{ "none",     RColor_WHITE,    Color_RESET,    Color_RESET }, // TODO xarkes
-	{ NULL, { 0, 0, 0, 0}, NULL, NULL }
+	{ NULL, { 0, 0, 0, 0 }, NULL, NULL }
 };
 
 static inline ut8 rgbnum (const char ch1, const char ch2) {
@@ -538,7 +538,7 @@ R_API void r_cons_pal_update_event() {
 			R_FREE (*color);
 		}
 		// Color is dynamically allocated, needs to be freed
-		*color = r_cons_rgb_str (NULL, rcolor->r, rcolor->g, rcolor->b, !rcolor->a);
+		*color = r_cons_rgb_str (NULL, rcolor->r, rcolor->g, rcolor->b, rcolor->a);
 		const char *rgb = sdb_fmt (0, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);
 	}

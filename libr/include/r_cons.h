@@ -139,7 +139,7 @@ enum {
 }
 #endif
 
-enum { ALPHA_BG = 0x00, ALPHA_NORMAL = 0x7f, ALPHA_BOLD = 0xff };
+enum { ALPHA_NORMAL = 0x00, ALPHA_BG = 0x01, ALPHA_BOLD = 0x02 };
 
 typedef struct rcolor_t {
 	ut8 a;
