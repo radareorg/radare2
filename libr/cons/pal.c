@@ -95,7 +95,7 @@ struct {
 	{ "bblue",    RColor_BBLUE,    Color_BBLUE,    Color_BGBLUE },
 	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
 	{ "bgray",    RColor_BGRAY,    Color_BGRAY,    Color_BGGRAY },
-	{ "none",     RColor_WHITE,    Color_RESET,    Color_RESET }, // TODO xarkes
+	{ "none",     RColor_WHITE,    Color_RESET,    Color_RESET },
 	{ NULL, RColor_NULL, NULL, NULL }
 };
 
