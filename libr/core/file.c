@@ -612,7 +612,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					r_config_get_i (r->config, "asm.bits"));
 		}
 	}
-	if (r_config_get_i (r->config, "io.exec")) {
+	if (desc && r_config_get_i (r->config, "io.exec")) {
 		desc->flags |= R_IO_EXEC;
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
