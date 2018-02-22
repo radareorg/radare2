@@ -3136,27 +3136,26 @@ repeat:
 
 R_API void r_core_visual_colors(RCore *core) {
 	char color[32], cstr[32];
-	const char *k, *kol;
 	int ch, opt = 0, oopt = -1;
-	ut8 r, g, b;
+	const char *k;
+	RColor rcolor;
 
-	r = g = b = 0;
-	kol = r_cons_pal_get_color (opt);
-	r_cons_rgb_parse (kol, &r, &g, &b, NULL);
+	rcolor = r_cons_pal_get_i (opt);
 	for (;;) {
 		r_cons_clear ();
-		k = r_cons_pal_get_i (opt);
+		k = r_cons_pal_get_name (opt);
 		if (!k) {
 			opt = 0;
-			k = r_cons_pal_get_i (opt);
+			k = r_cons_pal_get_name (opt);
 		}
 		r_cons_gotoxy (0, 0);
-		r_cons_rgb_str (cstr, r, g, b, 0);
-		r&=0xf;
-		g&=0xf;
-		b&=0xf;
-		sprintf (color, "rgb:%x%x%x", r, g, b);
-//r_cons_printf ("COLOR%s(%sXXX)"Color_RESET"\n", kol, kol?kol+1:"");
+		r_cons_rgb_str (cstr, rcolor.r, rcolor.g, rcolor.b, ALPHA_NORMAL);
+		if (r_cons_singleton ()->truecolor < 2) {
+			rcolor.r &= 0xf;
+			rcolor.g &= 0xf;
+			rcolor.b &= 0xf;
+		}
+		sprintf (color, "rgb:%x%x%x", rcolor.r, rcolor.g, rcolor.b);
 		r_cons_printf ("# Colorscheme %d - Use '.' and ':' to randomize palette\n"
 			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (%s)\n",
 			opt, k, color, atoi (cstr+7), cstr+1);
@@ -3172,9 +3171,9 @@ R_API void r_core_visual_colors(RCore *core) {
 #define CASE_RGB(x,X,y) \
 	case x:y--;if(y>0x7f)y=0;break;\
 	case X:y++;if(y>15)y=15;break;
-		CASE_RGB ('R','r',r);
-		CASE_RGB ('G','g',g);
-		CASE_RGB ('B','b',b);
+		CASE_RGB ('R','r',rcolor.r);
+		CASE_RGB ('G','g',rcolor.g);
+		CASE_RGB ('B','b',rcolor.b);
 		case 'Q':
 		case 'q': return;
 		case 'k': opt--; break;
@@ -3183,14 +3182,13 @@ R_API void r_core_visual_colors(RCore *core) {
 		case 'J': opt=0; break; // XXX must go to end
 		case ':': r_cons_pal_random (); break;
 		case '.':
-			r = r_num_rand (0xf);
-			g = r_num_rand (0xf);
-			b = r_num_rand (0xf);
+			rcolor.r = r_num_rand (0xff);
+			rcolor.g = r_num_rand (0xff);
+			rcolor.b = r_num_rand (0xff);
 			break;
 		}
 		if (opt != oopt) {
-			kol = r_cons_pal_get_color (opt);
-			r_cons_rgb_parse (kol, &r, &g, &b, NULL);
+			rcolor = r_cons_pal_get_i (opt);
 			oopt = opt;
 		}
 	}

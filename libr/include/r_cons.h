@@ -505,6 +505,7 @@ typedef struct r_cons_t {
 #define Color_BGRAY     "\x1b[1;38m"
 
 #define RColor_BLACK	(RColor) { ALPHA_NORMAL, 0x00, 0x00, 0x00 }
+#define RColor_NULL	RColor_BLACK
 #define RColor_BGBLACK	(RColor) { ALPHA_BG, 0x00, 0x00, 0x00 }
 #define RColor_RED	(RColor) { ALPHA_NORMAL, 0xff, 0x00, 0x00 }
 #define RColor_BGRED	(RColor) { ALPHA_BG, 0xff, 0x00, 0x00 }
@@ -705,9 +706,9 @@ R_API void r_cons_pal_free(void);
 R_API void r_cons_pal_init();
 R_API char *r_cons_pal_parse(const char *str, RColor *outcol);
 R_API void r_cons_pal_random(void);
-R_API const char *r_cons_pal_get(const char *key);
-R_API const char *r_cons_pal_get_i(int n);
-R_API const char *r_cons_pal_get_color(int n);
+R_API RColor r_cons_pal_get(const char *key);
+R_API RColor r_cons_pal_get_i(int index);
+R_API const char *r_cons_pal_get_name(int index);
 R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(int rad, const char *arg);
@@ -739,8 +740,7 @@ R_API void r_cons_rgb_init(void);
 R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a);
 R_API char *r_cons_rgb_str_off(char *outstr, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
-R_API char *r_cons_color_random(int bg);
-R_API char *r_cons_color_random_string(int bg);
+R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API char *r_cons_input(const char *msg);
