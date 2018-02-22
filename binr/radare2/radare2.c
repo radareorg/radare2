@@ -123,7 +123,7 @@ static int verify_version(int show) {
 static int main_help(int line) {
 	if (line < 2) {
 		printf ("Usage: r2 [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B baddr] [-M maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+			"          [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
 		printf (
