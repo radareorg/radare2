@@ -269,9 +269,6 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 static void r_cons_pal_null() {
 	int i;
 	RCons *cons = r_cons_singleton ();
-	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++){
-		cons->pal.list[i] = NULL;
-	}
 }
 
 R_API RCons *r_cons_new() {

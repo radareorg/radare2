@@ -54,8 +54,7 @@ static struct {
 	{ "ai.seq", r_offsetof (RConsPrintablePalette, ai_seq), r_offsetof (RConsPalette, ai_seq) },
 	{ "ai.ascii", r_offsetof (RConsPrintablePalette, ai_ascii), r_offsetof (RConsPalette, ai_ascii) },
 
-	// TODO xarkes bug here
-	//{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
+	{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPrintablePalette, graph_box2), r_offsetof (RConsPalette, graph_box2) },
 	{ "graph.box3", r_offsetof (RConsPrintablePalette, graph_box3), r_offsetof (RConsPalette, graph_box3) },
 	{ "graph.box4", r_offsetof (RConsPrintablePalette, graph_box4), r_offsetof (RConsPalette, graph_box4) },
@@ -147,8 +146,6 @@ R_API void r_cons_pal_init () {
 	cons->cpal.push = RColor_MAGENTA;
 	cons->cpal.crypto = RColor_BGBLUE;
 	cons->cpal.reg = RColor_CYAN;
-	//TODO xarkes
-	//cons->cpal.reset = RColor_RESET;
 	cons->cpal.ret = RColor_RED;
 	cons->cpal.swi = RColor_MAGENTA;
 	cons->cpal.trap = RColor_BRED;
@@ -166,8 +163,6 @@ R_API void r_cons_pal_init () {
 	cons->cpal.gui_border = RColor_BLACK;
 	cons->cpal.highlight = RColor_BGRED;
 
-	//TODO xarkes
-	//cons->cpal.graph_box = RColor_RESET;
 	cons->cpal.graph_box2 = RColor_BLUE;
 	cons->cpal.graph_box3 = RColor_MAGENTA;
 	cons->cpal.graph_box4 = RColor_GRAY;
@@ -180,30 +175,14 @@ R_API void r_cons_pal_init () {
 	cons->pal.rainbow = NULL;
 	cons->pal.rainbow_sz = 0;
 	r_cons_pal_free ();
-	//TODO xarkes wtf is this
-	cons->pal.list[0] = strdup (Color_RED);
-	cons->pal.list[1] = strdup (Color_YELLOW);
-	cons->pal.list[2] = strdup (Color_BGREEN);
-	cons->pal.list[3] = strdup (Color_CYAN);
-	cons->pal.list[4] = strdup (Color_MAGENTA);
-	cons->pal.list[5] = strdup (Color_GRAY);
-	cons->pal.list[6] = strdup (Color_BLUE);
-	cons->pal.list[7] = strdup (Color_GREEN);
+	cons->pal.reset = Color_RESET; // Reset is not user accessible, so we can use a const char*
+	cons->pal.graph_box = strdup (Color_RESET); // Accessible by user, strdup needed
 
-	cons->pal.reset = Color_RESET;
-	//TODO xarkes
-	//cons->pal.graph_box = Color_RESET;
-
-	// TODO Check with update_event too
 	r_cons_pal_update_event ();
 }
 
 R_API void r_cons_pal_free () {
 	int i;
-	RCons *cons = r_cons_singleton ();
-	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
-		if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
-	}
 	for (i = 0; keys[i].name; i++) {
 		char **color = COLOR_AT(i);
 		if (color && *color) R_FREE (*color);
@@ -217,11 +196,6 @@ R_API void r_cons_pal_random () {
 		rcolor = RCOLOR_AT(i);
 		*rcolor = r_cons_color_random (ALPHA_NORMAL);
 	}
-	//TODO xarkes is this list even useful?
-	//for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
-	//	if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
-	//	cons->pal.list[i] = r_cons_color_random (0);
-	//}
 	r_cons_pal_update_event ();
 }
 

@@ -28,7 +28,6 @@ extern "C" {
 #include <unistd.h>
 
 /* constants */
-#define ENUM_FOR_PAL 0
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
@@ -76,14 +75,13 @@ typedef struct r_cons_grep_t {
 	int icase;
 } RConsGrep;
 
-#if ENUM_FOR_PAL
 enum {
 	R_CONS_PAL_0x00 = 0,
 	R_CONS_PAL_0x7f,
 	R_CONS_PAL_0xff,
-	R_CONS_PAL_args,
-	R_CONS_PAL_bin,
-	R_CONS_PAL_btext,
+	R_CONS_PAL_ARGS,
+	R_CONS_PAL_BIN,
+	R_CONS_PAL_BTEXT,
 	R_CONS_PAL_CALL,
 	R_CONS_PAL_CJMP,
 	R_CONS_PAL_CMP,
@@ -94,9 +92,9 @@ enum {
 	R_CONS_PAL_FLOC,
 	R_CONS_PAL_FLOW,
 	R_CONS_PAL_FLOW2,
-	R_CONS_PAL_fname,
-	R_CONS_PAL_help,
-	R_CONS_PAL_input,
+	R_CONS_PAL_FNAME,
+	R_CONS_PAL_HELP,
+	R_CONS_PAL_INPUT,
 	R_CONS_PAL_INVALID,
 	R_CONS_PAL_JMP,
 	R_CONS_PAL_LABEL,
@@ -136,8 +134,7 @@ enum {
 	R_CONS_PAL_GRAPH_TRACED,
 	R_CONS_PAL_GRAPH_CURRENT,
 	R_CONS_PAL_LAST
-}
-#endif
+};
 
 enum { ALPHA_NORMAL = 0x00, ALPHA_BG = 0x01, ALPHA_BOLD = 0x02 };
 
@@ -212,10 +209,6 @@ typedef struct r_cons_palette_t {
 } RConsPalette;
 
 typedef struct r_cons_printable_palette_t {
-// TODO: this must be an array of char *
-#if ENUM_FOR_PAL
-	char *color[R_CONS_PAL_LAST];
-#else
 	char *b0x00;
 	char *b0x7f;
 	char *b0xff;
@@ -277,9 +270,6 @@ typedef struct r_cons_printable_palette_t {
 	char *graph_trufae;
 	char *graph_traced;
 	char *graph_current;
-#endif
-#define R_CONS_PALETTE_LIST_SIZE 8
-	char *list[R_CONS_PALETTE_LIST_SIZE];
 	char **rainbow; // rainbow
 	int rainbow_sz; // size of rainbow
 } RConsPrintablePalette;

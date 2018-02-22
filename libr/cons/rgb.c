@@ -2,10 +2,6 @@
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
-//TODO xarkes
-//Baltringue check pop rsi => pop "rose" bold,  rsi cyan bold    (before)
-//			      pop violet normal,rsi cyan normal  (now)
-
 #include <r_cons.h>
 
 int color_table[256] = { 0 };
