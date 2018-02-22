@@ -2230,6 +2230,40 @@ repeat_arroba:
 				flgspc = r_flag_space_get (core->flags, ptr + 2);
 				r_flag_space_set (core->flags, ptr + 2);
 				break;
+			case 'B': // "@B:#" // seek to the last instruction in current bb
+				{
+					int index = (int)r_num_math (core->num, ptr + 2);
+					// XXX this is slow, can be optimized to just retreive the bb we want
+					RListIter *iter;
+					RAnalBlock *bb;
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+					if (fcn) {
+						r_list_foreach (fcn->bbs, iter, bb) {
+							if (core->offset >= bb->addr && core->offset < bb->addr + bb->size) {
+								int count = bb->op_pos_size / sizeof (bb->op_pos[0]);
+								int pos = (index < 0)
+									? count + index: index;
+								if (pos < 0) {
+									pos = 0;
+								}
+								if (pos > count) {
+									pos = count;
+								}
+								int lastOp = bb->op_pos[pos];
+								for (i = 0; i < count; i++) {
+									eprintf ("%d 0x%llx %d\n", pos, core->offset + bb->op_pos[i], i);
+								}
+								r_core_seek (core, core->offset + lastOp, 1);
+								core->tmpseek = true;
+								goto fuji;
+								break;
+							}
+						}
+					} else {
+						eprintf ("Cant find a function for 0x%08"PFMT64x"\n", core->offset);
+					}
+				}
+				break;
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {

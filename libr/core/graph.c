@@ -3990,9 +3990,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				mousemode = 3;
 			}
 			break;
+		case '(':
+			r_core_cmd0 (core, "wao recj@B:-1");
+			g->need_reload_nodes = true;
+			break;
 		case ')':
 			rotateAsmemu (core);
-				g->need_reload_nodes = true;
+			g->need_reload_nodes = true;
 			break;
 		case 'd':
 			{

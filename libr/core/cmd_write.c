@@ -1300,7 +1300,9 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'o': // "wao"
 			if (input[2] == ' ') {
-				r_core_hack (core, input + 3);
+				char *op = r_str_trim (strdup (input + 3));
+				r_core_hack (core, op);
+				free (op);
 			} else {
 				r_core_hack_help (core);
 			}

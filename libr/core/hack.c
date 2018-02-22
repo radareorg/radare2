@@ -51,7 +51,7 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	} else if (!strcmp (op, "retn")) {
 		r_core_cmdf (core, "wa mov x0, -1,,ret");
 	} else {
-		eprintf ("Invalid operation\n");
+		eprintf ("Invalid operation '%s'\n", op);
 		return false;
 	}
 	return true;
@@ -228,7 +228,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	} else if (!strcmp (op, "retn")) {
 		r_core_cmd0 (core, "wx c2ffff\n");
 	} else {
-		eprintf ("Invalid operation\n");
+		eprintf ("Invalid operation '%s'\n", op);
 		return false;
 	}
 	return true;
