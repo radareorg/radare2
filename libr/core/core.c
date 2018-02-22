@@ -278,7 +278,7 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 	RIOSection *sec;
 	ut64 vaddr;
 
-	if (!r_config_get_i (core->config, "asm.cmtpatch")) {
+	if (!r_config_get_i (core->config, "asm.cmt.patch")) {
 		return;
 	}
 
@@ -2028,7 +2028,7 @@ static void set_prompt (RCore *r) {
 	if (cmdprompt && *cmdprompt)
 		r_core_cmd (r, cmdprompt, 0);
 
-	if (r_config_get_i (r->config, "scr.promptfile")) {
+	if (r_config_get_i (r->config, "scr.prompt.file")) {
 		free (filename);
 		filename = r_str_newf ("\"%s\"",
 			r_file_basename (r->io->desc->name));
@@ -2057,10 +2057,10 @@ static void set_prompt (RCore *r) {
 		int promptset = false;
 
 		sec[0] = '\0';
-		if (r_config_get_i (r->config, "scr.promptflag")) {
+		if (r_config_get_i (r->config, "scr.prompt.flag")) {
 			promptset = prompt_flag (r, p, sizeof (p));
 		}
-		if (r_config_get_i (r->config, "scr.promptsect")) {
+		if (r_config_get_i (r->config, "scr.prompt.sect")) {
 			prompt_sec (r, sec, sizeof (sec));
 		}
 

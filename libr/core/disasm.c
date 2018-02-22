@@ -623,14 +623,14 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
-	ds->cmtcol = r_config_get_i (core->config, "asm.cmtcol");
-	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
+	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
-	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmtrefs");
-	ds->cmtfold = r_config_get_i (core->config, "asm.cmtfold");
-	ds->show_cmtoff = r_config_get (core->config, "asm.cmtoff");
+	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmt.refs");
+	ds->cmtfold = r_config_get_i (core->config, "asm.cmt.fold");
+	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
@@ -652,7 +652,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->nb = 0;
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
-	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
+	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
@@ -1701,7 +1701,7 @@ static void ds_print_pre(RDisasmState *ds) {
 	free (c_esc);
 }
 
-//XXX review this with asm.cmtright
+//XXX review this with asm.cmt.right
 static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen, maxclen ;
 	RCore *core = ds->core;

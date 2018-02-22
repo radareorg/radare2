@@ -1936,8 +1936,8 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		return NULL;
 	}
 	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes",
-		"asm.cmtcol", "asm.marks", "asm.marks", "asm.offset",
-		"asm.comments", "asm.cmtright", NULL);
+		"asm.cmt.col", "asm.marks", "asm.marks", "asm.offset",
+		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
 	int o_cursor = core->print->cur_enabled;
@@ -1947,9 +1947,9 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
 	r_config_set_i (core->config, "asm.lines", false);
-	r_config_set_i (core->config, "asm.cmtcol", 0);
+	r_config_set_i (core->config, "asm.cmt.col", 0);
 	r_config_set_i (core->config, "asm.marks", false);
-	r_config_set_i (core->config, "asm.cmtright", (opts & BODY_SUMMARY) || o_cmtright);
+	r_config_set_i (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
 	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
 	core->print->cur_enabled = false;
 
@@ -3061,10 +3061,10 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		(void) G (-g->can->sx + 1, -g->can->sy + 2);
 		int scr_utf8 = r_config_get_i (core->config, "scr.utf8");
 		int asm_bytes = r_config_get_i (core->config, "asm.bytes");
-		int asm_cmtright = r_config_get_i (core->config, "asm.cmtright");
+		int asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
 		r_config_set_i (core->config, "scr.utf8", 0);
 		r_config_set_i (core->config, "asm.bytes", 0);
-		r_config_set_i (core->config, "asm.cmtright", 0);
+		r_config_set_i (core->config, "asm.cmt.right", 0);
 		char *str = r_core_cmd_str (core, "pd $r");
 		//r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
 		//		w - title_len, 1, ' ', true);
@@ -3072,7 +3072,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		free (str);
 		r_config_set_i (core->config, "scr.utf8", scr_utf8);
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
-		r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
+		r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	}
 	if (preEdges) {
 		agraph_print_edges (g);
@@ -3595,7 +3595,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
-	r_config_save_num (hc, "asm.cmtright", NULL);
+	r_config_save_num (hc, "asm.cmt.right", NULL);
 	if (!g) {
 		graph_allocated = true;
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3678,7 +3678,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		key = r_cons_arrow_to_hjkl (okey);
 
 		if (core->cons->mouse_event) {
-			movspeed = r_config_get_i (core->config, "scr.wheelspeed");
+			movspeed = r_config_get_i (core->config, "scr.wheel.speed");
 			switch (key) {
 			case 'j':
 			case 'k':

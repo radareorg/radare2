@@ -476,7 +476,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
 
-	r_config_set (core->config, "asm.cmtright", "false");
+	r_config_set (core->config, "asm.cmt.right", "false");
 #if 0
 	// WHY
 	r_config_set (core->config, "scr.html", "true");

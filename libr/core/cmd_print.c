@@ -1961,7 +1961,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
-	bool asm_cmtright = r_config_get_i (core->config, "asm.cmtright");
+	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
 	bool asm_emustr = r_config_get_i (core->config, "asm.emu.str");
 	r_config_set_i (core->config, "asm.emu.str", true);
 	RConsPalette *pal = &core->cons->pal;
@@ -1969,7 +1969,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_i (core->config, "asm.tabs", 0);
-	r_config_set_i (core->config, "asm.cmtright", true);
+	r_config_set_i (core->config, "asm.cmt.right", true);
 r_cons_push();
 	if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -1978,7 +1978,7 @@ r_cons_push();
 		} else {
 			eprintf ("Cannot find function.\n");
 			r_config_set_i (core->config, "scr.color", use_color);
-			r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
+			r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 			goto restore_conf;
 		}
 	} else if (!strncmp (input, "ds ", 3)) {
@@ -1990,7 +1990,7 @@ r_cons_push();
 	}
 r_cons_pop();
 	r_config_set_i (core->config, "scr.color", use_color);
-	r_config_set_i (core->config, "asm.cmtright", asm_cmtright);
+	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
 		free (s);

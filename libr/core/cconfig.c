@@ -2313,9 +2313,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
-	SETPREF ("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
-	SETPREF ("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
-	SETI ("asm.cmtcol", 71, "Column to align comments");
+	SETPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
+	SETPREF ("asm.cmt.right", "true", "Show comments at right of disassembly if they fit in screen");
+	SETI ("asm.cmt.col", 71, "Column to align comments");
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
@@ -2384,7 +2384,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.varsum", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETPREF ("asm.varsub_only", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETPREF ("asm.relsub", "true", "Substitute pc relative expressions in disasm");
-	SETPREF ("asm.cmtfold", "false", "Fold comments, toggle with Vz");
+	SETPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETPREF ("asm.family", "false", "Show family name in disasm");
 	SETPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETPREF ("asm.anal", "false", "Analyze code and refs while disassembling (see anal.strings)");
@@ -2422,9 +2422,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.describe", "false", "Show opcode description");
 	SETPREF ("asm.hints", "false", "Show hints for magic numbers in disasm");
 	SETPREF ("asm.marks", "true", "Show marks before the disassembly");
-	SETPREF ("asm.cmtrefs", "false", "Show flag and comments from refs in disasm");
-	SETPREF ("asm.cmtpatch", "false", "Show patch comments in disasm");
-	SETPREF ("asm.cmtoff", "nodup", "Show offset comment in disasm (true, false, nodup)");
+	SETPREF ("asm.cmt.refs", "false", "Show flag and comments from refs in disasm");
+	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
+	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 	SETPREF ("asm.asciidot", "false", "Enable a char filter for string comments that passes through chars in the "
 		 "range 0x20-0x7e and turns the rest into dots (except some control chars)");
@@ -2767,10 +2767,10 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF ("scr.responsive", "false", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #endif
-	SETPREF ("scr.wheelnkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
+	SETPREF ("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
 	SETPREF ("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETPREF ("scr.atport", "false", "V@ starts a background http server and spawns an r2 -C");
-	SETI ("scr.wheelspeed", 4, "Mouse wheel speed");
+	SETI ("scr.wheel.speed", 4, "Mouse wheel speed");
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
@@ -2791,9 +2791,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETPREF ("scr.pipecolor", "false", "Enable colors when using pipes");
-	SETPREF ("scr.promptfile", "false", "Show user prompt file (used by r2 -q)");
-	SETPREF ("scr.promptflag", "false", "Show flag name in the prompt");
-	SETPREF ("scr.promptsect", "false", "Show section name in the prompt");
+	SETPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");
+	SETPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
+	SETPREF ("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETPREF ("scr.tts", "false", "Use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");

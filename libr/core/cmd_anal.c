@@ -6524,12 +6524,12 @@ static int cmd_anal(void *data, const char *input) {
 		RAnalCycleHook *hook;
 		char *instr_tmp = NULL;
 		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
-		int cr = r_config_get_i (core->config, "asm.cmtright");
+		int cr = r_config_get_i (core->config, "asm.cmt.right");
 		int fun = r_config_get_i (core->config, "asm.functions");
 		int li = r_config_get_i (core->config, "asm.lines");
 		int xr = r_config_get_i (core->config, "asm.xrefs");
 
-		r_config_set_i (core->config, "asm.cmtright", true);
+		r_config_set_i (core->config, "asm.cmt.right", true);
 		r_config_set_i (core->config, "asm.functions", false);
 		r_config_set_i (core->config, "asm.lines", false);
 		r_config_set_i (core->config, "asm.xrefs", false);
@@ -6544,7 +6544,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		r_list_free (hooks);
 
-		r_config_set_i (core->config, "asm.cmtright", cr); //reset settings
+		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
 		r_config_set_i (core->config, "asm.functions", fun);
 		r_config_set_i (core->config, "asm.lines", li);
 		r_config_set_i (core->config, "asm.xrefs", xr);
