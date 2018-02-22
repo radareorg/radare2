@@ -9,7 +9,7 @@ ec cjmp rgb:A6df2E
 ec jmp rgb:A6df2E
 ec cmp rgb:ef8d1a
 ec comment rgb:66d9ef
-ec usrcmt rgb:ffffff rgb:f92672
+ec usrcmt rgb:f92672
 ec ret rgb:d66
 ec num rgb:a398e5
 ec fline rgb:2bc
