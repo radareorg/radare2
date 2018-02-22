@@ -175,8 +175,8 @@ R_API void r_cons_pal_init () {
 	cons->pal.rainbow = NULL;
 	cons->pal.rainbow_sz = 0;
 	r_cons_pal_free ();
-	cons->pal.reset = Color_RESET; // Reset is not user accessible, so we can use a const char*
-	cons->pal.graph_box = strdup (Color_RESET); // Accessible by user, strdup needed
+	cons->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
+	cons->pal.graph_box = strdup (Color_RESET); // customizable by users, going to be freed
 
 	r_cons_pal_update_event ();
 }

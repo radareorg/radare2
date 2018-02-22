@@ -266,11 +266,6 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 }
 
-static void r_cons_pal_null() {
-	int i;
-	RCons *cons = r_cons_singleton ();
-}
-
 R_API RCons *r_cons_new() {
 	I.refcnt++;
 	if (I.refcnt != 1) {
@@ -334,7 +329,6 @@ R_API RCons *r_cons_new() {
 	I.mouse = 0;
 	I.cons_stack = r_stack_newf (6, cons_stack_free);
 	I.break_stack = r_stack_newf (6, break_stack_free);
-	r_cons_pal_null ();
 	r_cons_pal_init ();
 	r_cons_rgb_init ();
 	r_cons_reset ();

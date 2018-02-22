@@ -434,9 +434,10 @@ static int cmd_eval(void *data, const char *input) {
 				r_cons_pal_set (p, q);
 				r_cons_pal_update_event ();
 			} else {
-				// TODO xarkes
+				char color[32];
 				RColor rcolor = r_cons_pal_get (p);
-				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, "TODO xarkes");
+				r_cons_rgb_str (color, rcolor.r, rcolor.g, rcolor.b, rcolor.a);
+				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
 			}
 			free (p);
 		}

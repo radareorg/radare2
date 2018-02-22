@@ -75,6 +75,9 @@ typedef struct r_cons_grep_t {
 	int icase;
 } RConsGrep;
 
+#if 0
+// TODO Might be better than using r_cons_pal_get_i
+// And have smaller RConsPrintablePalette and RConsPalette
 enum {
 	R_CONS_PAL_0x00 = 0,
 	R_CONS_PAL_0x7f,
@@ -135,6 +138,7 @@ enum {
 	R_CONS_PAL_GRAPH_CURRENT,
 	R_CONS_PAL_LAST
 };
+#endif
 
 enum { ALPHA_NORMAL = 0x00, ALPHA_BG = 0x01, ALPHA_BOLD = 0x02 };
 
