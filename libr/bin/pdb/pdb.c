@@ -1179,6 +1179,10 @@ R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 		pdb->cb_printf = (PrintfCallback) printf;
 	}
 	pdb->buf = r_buf_new_slurp (filename);
+	if (!pdb->buf) {
+		eprintf ("File reading error/empty file\n");		
+		goto error;
+	}	
 // pdb->fp = r_sandbox_fopen (filename, "rb");
 // if (!pdb->fp) {
 // eprintf ("file %s can not be open\n", filename);
