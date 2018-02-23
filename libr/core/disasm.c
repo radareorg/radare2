@@ -4215,6 +4215,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int continueoninvbreak = (len == l) && invbreak;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
+	bool calc_row_offsets = p->calc_row_offsets;
 	int ret, i, inc, skip_bytes = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
@@ -4231,6 +4232,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->hint = NULL;
 	ds->use_json = json;
 	ds->first_line = true;
+
+	// disable row_offsets to prevent other commands to overwrite computed info
+	p->calc_row_offsets = false;
+
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
@@ -4413,7 +4418,7 @@ toro:
 		}
 		ds_print_bbline (ds, false);
 		if (ds->at >= addr) {
-			r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
+			r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
 		if (ds->midflags) {
 			skip_bytes = handleMidFlags (core, ds, true);
@@ -4586,13 +4591,14 @@ toro:
 	if (ds->use_json) {
 		r_cons_print ("]");
 	}
-	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
-	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);
+	r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
+	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX, calc_row_offsets);
 	// TODO: this too (must review)
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_free (ds);
 	R_FREE (nbuf);
+	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */
 	r_reg_arena_pop (core->anal->reg);
 	return addrbytes * idx; //-ds->lastfail;

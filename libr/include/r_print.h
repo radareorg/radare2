@@ -89,6 +89,8 @@ typedef struct r_print_t {
 	int lines_abs;
 	bool esc_bslash;
 
+	// when true it uses row_offsets
+	bool calc_row_offsets;
 	// offset of the first byte of each printed row.
 	// Last elements is marked with a UT32_MAX.
 	ut32 *row_offsets;
@@ -170,7 +172,7 @@ R_API const char * r_print_color_op_type(RPrint *p, ut64 anal_type);
 R_API void r_print_set_interrupted(int i);
 R_API void r_print_init_rowoffsets(RPrint *p);
 R_API ut32 r_print_rowoff(RPrint *p, int i);
-R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset);
+R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite);
 R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);
