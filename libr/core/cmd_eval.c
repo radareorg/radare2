@@ -44,9 +44,8 @@ static const char *help_msg_ec[] = {
 	"ec", " prompt red", "change color of prompt",
 	"ec", " prompt red blue", "change color and background of prompt",
 	"", " ", "",
-	"colors:", "", "rgb:000, red, green, blue, ...",
-	"e scr.rgbcolor", "=1|0", "for 256 color cube (boolean)",
-	"e scr.truecolor", "=1|0", "for 256*256*256 colors (boolean)",
+	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
+	"e scr.truecolor", "=0", "use more colors (0: ansi 16, 1: 256, 2: 16M)",
 	"$DATADIR/radare2/cons", "", "~/.config/radare2/cons ./",
 	NULL
 };
@@ -292,7 +291,7 @@ static int cmd_eval(void *data, const char *input) {
 	case 'c': // "ec"
 		switch (input[1]) {
 		case 'd':
-			r_cons_pal_init (NULL);
+			r_cons_pal_init ();
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_ec);
@@ -386,7 +385,7 @@ static int cmd_eval(void *data, const char *input) {
 			case 'i': // "ecHi"
 				if (argc) {
 					char *dup = r_str_newf ("bgonly %s", argv[0]);
-					color_code = r_cons_pal_parse (dup);
+					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 				}
 				break;
@@ -399,7 +398,7 @@ static int cmd_eval(void *data, const char *input) {
 				word = strdup (argv[0]);
 				if (argc > 1) {
 					char *dup = r_str_newf ("bgonly %s", argv[1]);
-					color_code = r_cons_pal_parse (dup);
+					color_code = r_cons_pal_parse (dup, NULL);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[1]);
 						r_str_argv_free (argv);
@@ -416,7 +415,7 @@ static int cmd_eval(void *data, const char *input) {
 				return true;
 			}
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_pal_get ("highlight"));
+			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->pal.highlight);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			r_str_argv_free (argv);
 			R_FREE (word);
@@ -433,11 +432,12 @@ static int cmd_eval(void *data, const char *input) {
 				// set
 				*q++ = 0;
 				r_cons_pal_set (p, q);
+				r_cons_pal_update_event ();
 			} else {
-				const char *k = r_cons_pal_get (p);
-				if (k) {
-					eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, k);
-				}
+				char color[32];
+				RColor rcolor = r_cons_pal_get (p);
+				r_cons_rgb_str (color, rcolor.r, rcolor.g, rcolor.b, rcolor.a);
+				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
 			}
 			free (p);
 		}

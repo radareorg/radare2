@@ -1830,7 +1830,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		if (ds->show_color) {
 			bool hasColor = false;
 			if (flag->color) {
-				char *color = r_cons_pal_parse (flag->color);
+				char *color = r_cons_pal_parse (flag->color, NULL);
 				if (color) {
 					r_cons_strcat (color);
 					free (color);
@@ -2182,7 +2182,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (ds->at >= f->offset && ds->at < f->offset + f->size) {
 		//	if (r_itv_inrange (f->itv, ds->at))
 			if (color && *color) {
-				char *k = r_cons_pal_parse (f->color);
+				char *k = r_cons_pal_parse (f->color, NULL);
 				if (k) {
 					r_cons_printf ("%s", k);
 					hasCustomColor = true;

@@ -424,7 +424,7 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 			}
 			if (show_color) {
 				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
-				color = r_cons_pal_parse (str);
+				color = r_cons_pal_parse (str, NULL);
 				free (str);
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
@@ -1351,7 +1351,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				hascolor = true;
 				if (usecolor) {
 					if (current_flag && current_flag->color) {
-						char *ansicolor = r_cons_pal_parse (current_flag->color);
+						char *ansicolor = r_cons_pal_parse (current_flag->color, NULL);
 						append (ebytes, ansicolor);
 						append (echars, ansicolor);
 						free (ansicolor);
@@ -1656,7 +1656,7 @@ static void cmd_print_pwn(const RCore *core) {
 }
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {
-	RConsPalette *pal = &core->cons->pal;
+	RConsPrintablePalette *pal = &core->cons->pal;
 	int show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
@@ -1964,7 +1964,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
 	bool asm_emustr = r_config_get_i (core->config, "asm.emu.str");
 	r_config_set_i (core->config, "asm.emu.str", true);
-	RConsPalette *pal = &core->cons->pal;
+	RConsPrintablePalette *pal = &core->cons->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", 0);

@@ -977,17 +977,11 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 }
 
 static char *palColorFor(const char *k) {
-	RCons *cons = r_cons_singleton ();
-	if (!cons) {
+	if (!r_cons_singleton ()) {
 		return NULL;
 	}
-	const char *c = r_cons_pal_get (k);
-	if (c) {
-		ut8 r = 0, g = 0, b = 0;
-		r_cons_rgb_parse (c, &r, &g, &b, NULL);
-		return r_cons_rgb_tostring (r, g, b);
-	}
-	return NULL;
+	RColor rcolor = r_cons_pal_get (k);
+	return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 }
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
@@ -3067,7 +3061,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wo
 	r_io_read_at (core->io, addr, buf, len);
 	buf[len - 1] = 0;
 
-	RConsPalette *pal = r_config_get_i (core->config, "scr.color")? &r_cons_singleton()->pal: NULL;
+	RConsPrintablePalette *pal = r_config_get_i (core->config, "scr.color")? &r_cons_singleton()->pal: NULL;
 	for (i = j = 0; j < count; j++) {
 		if (i >= len) {
 			r_io_read_at (core->io, addr + i, buf, len);

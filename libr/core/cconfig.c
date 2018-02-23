@@ -1608,18 +1608,6 @@ static int cb_fps(void *user, void *data) {
 	return true;
 }
 
-static int cb_rgbcolors(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	RCore *core = (RCore *) user;
-	if (node->i_value) {
-		r_cons_singleton()->truecolor =
-			(r_config_get_i (core->config, "scr.truecolor"))?2:1;
-	} else {
-		r_cons_singleton()->truecolor = 0;
-	}
-	return true;
-}
-
 static int cb_scrbreakword(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value) {
@@ -1810,8 +1798,9 @@ static int cb_tracetag(void *user, void *data) {
 
 static int cb_truecolor(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (r_cons_singleton()->truecolor)
-		r_cons_singleton()->truecolor = (node->i_value)? 2: 1;
+	ut64 val = node->i_value > 2 ? 2 : node->i_value;
+	r_cons_singleton ()->truecolor = val;
+	r_cons_pal_update_event ();
 	return true;
 }
 
@@ -2799,13 +2788,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
-#if __WINDOWS__ && !__CYGWIN__
-	r_config_set_cb (cfg, "scr.rgbcolor", "false", &cb_rgbcolors);
-#else
-	r_config_set_cb (cfg, "scr.rgbcolor", "true", &cb_rgbcolors);
-#endif
-	r_config_desc (cfg, "scr.rgbcolor", "Use RGB colors (not available on Windows)");
-	SETCB ("scr.truecolor", "false", &cb_truecolor, "Manage color palette (0: ansi 16, 1: 256, 2: 16M)");
+	SETICB ("scr.truecolor", 0, &cb_truecolor, "Manage color palette (0: ansi 16, 1: 256, 2: 16M)");
 	SETCB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false", &cb_color, "Enable colors");
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
 	SETCB ("scr.utf8", r_cons_is_utf8()?"true":"false",

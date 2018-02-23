@@ -120,9 +120,9 @@ R_API void r_cons_rgb_init (void) {
 				rgbinit (r, g, b);
 }
 
-R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
+R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	const char *q = 0;
-	int isbg = 0, bold = 127; // 255; // 127; // 255 ?
+	ut8 isbg = 0, bold = 127; // 255; // 127; // 255 ?
 	//const double k = (256/6);
 	if (!p) return 0;
 	if (*p == 0x1b) p++;
@@ -154,7 +154,7 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 		return 1;
 	} else {
 		/* plain ansi escape codes */
-		if (is_bg) *is_bg = isbg;
+		if (a) *a = isbg;
 		switch (p[2]) {
 		case '0': SETRGB (0, 0, 0); break;
 		case '1': SETRGB (bold, 0, 0); break;
@@ -176,8 +176,9 @@ R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
 	return r_cons_rgb_str (outstr, r, g, b, false);
 }
 
-R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
-	int fgbg = is_bg ? 48: 38;
+/* Return color string depending on cons->truecolor */
+R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
+	ut8 fgbg = (a == ALPHA_BG)? 48: 38;
 	if (!outstr) outstr = malloc (32);
 	if (!outstr) return NULL;
 
@@ -190,29 +191,22 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 		break;
 	case 0: // ansi 16 colors
 	default: {
+		const char *bold = (a == ALPHA_BOLD)? "1;": "";
 		int k = (r + g + b) / 3;
-		r = (r > k) ? 1 : 0;
-		g = (g > k) ? 1 : 0;
-		b = (b > k) ? 1 : 0;
+		r = (r >= k) ? 1 : 0;
+		g = (g >= k) ? 1 : 0;
+		b = (b >= k) ? 1 : 0;
 		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		sprintf (outstr, "\x1b[%dm", 30 + k);
+		sprintf (outstr, "\x1b[%s%dm", bold, 30 + k);
 		}
 		break;
 	}
 	return outstr;
 }
 
-R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, int is_bg) {
-#if __WINDOWS__ && !__CYGWIN__
-#ifdef _MSC_VER
-#pragma message ("r_cons_rgb not yet supported on windows")
-#else
-#warning r_cons_rgb not yet supported on windows
-#endif
-#else
+R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, ut8 a) {
 	char outstr[64];
-	r_cons_strcat (r_cons_rgb_str (outstr, r, g, b, is_bg));
-#endif
+	r_cons_strcat (r_cons_rgb_str (outstr, r, g, b, a));
 }
 
 R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B) {

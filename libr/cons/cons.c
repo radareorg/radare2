@@ -71,64 +71,35 @@ static inline void r_cons_write(const char *buf, int len) {
 #endif
 }
 
-R_API char *r_cons_color_random_string(int bg) {
-	int r, g, b;
+R_API RColor r_cons_color_random(ut8 alpha) {
+	RColor rcolor;
 	if (I.truecolor > 0) {
-		char out[32];
-		r = r_num_rand (0xff);
-		g = r_num_rand (0xff);
-		b = r_num_rand (0xff);
-		r_cons_rgb_str (out, r, g, b, bg);
-		return strdup (out);
+		rcolor.r = r_num_rand (0xff);
+		rcolor.g = r_num_rand (0xff);
+		rcolor.b = r_num_rand (0xff);
+		rcolor.a = alpha;
+		return rcolor;
 	}
-	// random ansi
-	const char *color = "white";
-	r = r_num_rand (8);
+	int r = r_num_rand (16);
 	switch (r) {
-	case 0: color = "red"; break;
-	case 1: color = "white"; break;
-	case 2: color = "green"; break;
-	case 3: color = "magenta"; break;
-	case 4: color = "yellow"; break;
-	case 5: color = "cyan"; break;
-	case 6: color = "blue"; break;
-	case 7: color = "gray"; break;
+	case 0: rcolor = (RColor) RColor_RED; break;
+	case 1: rcolor = (RColor) RColor_BRED; break;
+	case 2: rcolor = (RColor) RColor_WHITE; break;
+	case 3: rcolor = (RColor) RColor_BWHITE; break;
+	case 4: rcolor = (RColor) RColor_GREEN; break;
+	case 5: rcolor = (RColor) RColor_BGREEN; break;
+	case 6: rcolor = (RColor) RColor_MAGENTA; break;
+	case 7: rcolor = (RColor) RColor_BMAGENTA; break;
+	case 8: rcolor = (RColor) RColor_YELLOW; break;
+	case 9: rcolor = (RColor) RColor_BYELLOW; break;
+	case 10: rcolor = (RColor) RColor_CYAN; break;
+	case 11: rcolor = (RColor) RColor_BCYAN; break;
+	case 12: rcolor = (RColor) RColor_BLUE; break;
+	case 13: rcolor = (RColor) RColor_BBLUE; break;
+	case 14: rcolor = (RColor) RColor_GRAY; break;
+	case 15: rcolor = (RColor) RColor_BGRAY; break;
 	}
-	return strdup (color);
-}
-
-R_API char *r_cons_color_random(int bg) {
-	int r, g, b;
-	if (I.truecolor > 0) {
-		char out[32];
-		r = r_num_rand (0xff);
-		g = r_num_rand (0xff);
-		b = r_num_rand (0xff);
-		r_cons_rgb_str (out, r, g, b, bg);
-		return strdup (out);
-	}
-	const char *color = Color_RESET;
-	// random ansi
-	r = r_num_rand (16);
-	switch (r) {
-	case 0: color = Color_RED; break;
-	case 1: color = Color_BRED; break;
-	case 2: color = Color_WHITE; break;
-	case 3: color = Color_BWHITE; break;
-	case 4: color = Color_GREEN; break;
-	case 5: color = Color_BGREEN; break;
-	case 6: color = Color_MAGENTA; break;
-	case 7: color = Color_BMAGENTA; break;
-	case 8: color = Color_YELLOW; break;
-	case 9: color = Color_BYELLOW; break;
-	case 10: color = Color_CYAN; break;
-	case 11: color = Color_BCYAN; break;
-	case 12: color = Color_BLUE; break;
-	case 13: color = Color_BBLUE; break;
-	case 14: color = Color_GRAY; break;
-	case 15: color = Color_BGRAY; break;
-	}
-	return strdup (color);
+	return rcolor;
 }
 
 R_API void r_cons_color (int fg, int r, int g, int b) {
@@ -295,14 +266,6 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 }
 
-static void r_cons_pal_null() {
-	int i;
-	RCons *cons = r_cons_singleton ();
-	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++){
-		cons->pal.list[i] = NULL;
-	}
-}
-
 R_API RCons *r_cons_new() {
 	I.refcnt++;
 	if (I.refcnt != 1) {
@@ -366,8 +329,7 @@ R_API RCons *r_cons_new() {
 	I.mouse = 0;
 	I.cons_stack = r_stack_newf (6, cons_stack_free);
 	I.break_stack = r_stack_newf (6, break_stack_free);
-	r_cons_pal_null ();
-	r_cons_pal_init (NULL);
+	r_cons_pal_init ();
 	r_cons_rgb_init ();
 	r_cons_reset ();
 	return &I;

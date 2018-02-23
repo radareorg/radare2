@@ -28,7 +28,6 @@ extern "C" {
 #include <unistd.h>
 
 /* constants */
-#define ENUM_FOR_PAL 0
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
@@ -76,14 +75,16 @@ typedef struct r_cons_grep_t {
 	int icase;
 } RConsGrep;
 
-#if ENUM_FOR_PAL
+#if 0
+// TODO Might be better than using r_cons_pal_get_i
+// And have smaller RConsPrintablePalette and RConsPalette
 enum {
 	R_CONS_PAL_0x00 = 0,
 	R_CONS_PAL_0x7f,
 	R_CONS_PAL_0xff,
-	R_CONS_PAL_args,
-	R_CONS_PAL_bin,
-	R_CONS_PAL_btext,
+	R_CONS_PAL_ARGS,
+	R_CONS_PAL_BIN,
+	R_CONS_PAL_BTEXT,
 	R_CONS_PAL_CALL,
 	R_CONS_PAL_CJMP,
 	R_CONS_PAL_CMP,
@@ -94,9 +95,9 @@ enum {
 	R_CONS_PAL_FLOC,
 	R_CONS_PAL_FLOW,
 	R_CONS_PAL_FLOW2,
-	R_CONS_PAL_fname,
-	R_CONS_PAL_help,
-	R_CONS_PAL_input,
+	R_CONS_PAL_FNAME,
+	R_CONS_PAL_HELP,
+	R_CONS_PAL_INPUT,
 	R_CONS_PAL_INVALID,
 	R_CONS_PAL_JMP,
 	R_CONS_PAL_LABEL,
@@ -136,14 +137,82 @@ enum {
 	R_CONS_PAL_GRAPH_TRACED,
 	R_CONS_PAL_GRAPH_CURRENT,
 	R_CONS_PAL_LAST
-}
+};
 #endif
 
+enum { ALPHA_NORMAL = 0x00, ALPHA_BG = 0x01, ALPHA_BOLD = 0x02 };
+
+typedef struct rcolor_t {
+	ut8 a;
+	ut8 r;
+	ut8 g;
+	ut8 b;
+} RColor;
+
 typedef struct r_cons_palette_t {
-// TODO: this must be an array of char *
-#if ENUM_FOR_PAL
-	char *color[R_CONS_PAL_LAST];
-#else
+	RColor b0x00;
+	RColor b0x7f;
+	RColor b0xff;
+	RColor args;
+	RColor bin;
+	RColor btext;
+	RColor call;
+	RColor cjmp;
+	RColor cmp;
+	RColor comment;
+	RColor usercomment;
+	RColor creg;
+	RColor flag;
+	RColor fline;
+	RColor floc;
+	RColor flow;
+	RColor flow2;
+	RColor fname;
+	RColor help;
+	RColor input;
+	RColor invalid;
+	RColor jmp;
+	RColor label;
+	RColor math;
+	RColor mov;
+	RColor nop;
+	RColor num;
+	RColor offset;
+	RColor other;
+	RColor pop;
+	RColor prompt;
+	RColor push;
+	RColor crypto;
+	RColor reg;
+	RColor reset;
+	RColor ret;
+	RColor swi;
+	RColor trap;
+	RColor ai_read;
+	RColor ai_write;
+	RColor ai_exec;
+	RColor ai_seq;
+	RColor ai_ascii;
+	RColor gui_cflow;
+	RColor gui_dataoffset;
+	RColor gui_background;
+	RColor gui_alt_background;
+	RColor gui_border;
+	RColor highlight;
+
+	/* Graph colors */
+	RColor graph_box;
+	RColor graph_box2;
+	RColor graph_box3;
+	RColor graph_box4;
+	RColor graph_true;
+	RColor graph_false;
+	RColor graph_trufae;
+	RColor graph_traced;
+	RColor graph_current;
+} RConsPalette;
+
+typedef struct r_cons_printable_palette_t {
 	char *b0x00;
 	char *b0x7f;
 	char *b0xff;
@@ -205,12 +274,9 @@ typedef struct r_cons_palette_t {
 	char *graph_trufae;
 	char *graph_traced;
 	char *graph_current;
-#endif
-#define R_CONS_PALETTE_LIST_SIZE 8
-	char *list[R_CONS_PALETTE_LIST_SIZE];
 	char **rainbow; // rainbow
 	int rainbow_sz; // size of rainbow
-} RConsPalette;
+} RConsPrintablePalette;
 
 R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(void);
@@ -338,12 +404,13 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
+	int truecolor; // 0 = ansi, 1 = rgb (256), 2 = truecolor (16M)
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine;
-	RConsPalette pal;
+	RConsPalette cpal;
+	RConsPrintablePalette pal;
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
@@ -431,6 +498,40 @@ typedef struct r_cons_t {
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
 
+#ifdef _MSC_VER
+#define RCOLOR(x, y, z, q) {x,y,z,q}
+#else
+#define RCOLOR(x, y, z, q) (RColor){x,y,z,q}
+#endif
+#define RColor_NULL      RCOLOR(0x00,         0x00, 0x00, 0x00)
+#define RColor_BLACK     RCOLOR(ALPHA_NORMAL, 0x00, 0x00, 0x00)
+#define RColor_BGBLACK   RCOLOR(ALPHA_BG,     0x00, 0x00, 0x00)
+#define RColor_RED       RCOLOR(ALPHA_NORMAL, 0xff, 0x00, 0x00)
+#define RColor_BGRED     RCOLOR(ALPHA_BG,     0xff, 0x00, 0x00)
+#define RColor_WHITE     RCOLOR(ALPHA_NORMAL, 0xff, 0xff, 0xff)
+#define RColor_BGWHITE   RCOLOR(ALPHA_BG,     0xff, 0xff, 0xff)
+#define RColor_GREEN     RCOLOR(ALPHA_NORMAL, 0x00, 0xff, 0x00)
+#define RColor_BGGREEN   RCOLOR(ALPHA_BG,     0x00, 0xff, 0x00)
+#define RColor_MAGENTA   RCOLOR(ALPHA_NORMAL, 0xff, 0x00, 0xff)
+#define RColor_BGMAGENTA RCOLOR(ALPHA_BG,     0xff, 0x00, 0xff)
+#define RColor_YELLOW    RCOLOR(ALPHA_NORMAL, 0xff, 0xff, 0x00)
+#define RColor_BGYELLOW  RCOLOR(ALPHA_BG,     0xff, 0xff, 0x00)
+#define RColor_CYAN      RCOLOR(ALPHA_NORMAL, 0x00, 0xff, 0xff)
+#define RColor_BGCYAN    RCOLOR(ALPHA_BG,     0x00, 0xff, 0xff)
+#define RColor_BLUE      RCOLOR(ALPHA_NORMAL, 0x00, 0x00, 0xff)
+#define RColor_BGBLUE    RCOLOR(ALPHA_BG,     0x00, 0x00, 0xff)
+#define RColor_GRAY      RCOLOR(ALPHA_NORMAL, 0x7f, 0x7f, 0x7f)
+#define RColor_BGGRAY    RCOLOR(ALPHA_BG,     0x7f, 0x7f, 0x7f)
+#define RColor_BBLACK    RCOLOR(ALPHA_BOLD,   0x00, 0x00, 0x00)
+#define RColor_BRED      RCOLOR(ALPHA_BOLD,   0xff, 0x00, 0x00)
+#define RColor_BGBYELLOW RCOLOR(ALPHA_BG,     0xff, 0xff, 0x00)
+#define RColor_BWHITE    RCOLOR(ALPHA_BOLD,   0xff, 0xff, 0xff)
+#define RColor_BGREEN    RCOLOR(ALPHA_BOLD,   0x00, 0xff, 0x00)
+#define RColor_BMAGENTA  RCOLOR(ALPHA_BOLD,   0xff, 0x00, 0xff)
+#define RColor_BYELLOW   RCOLOR(ALPHA_BOLD,   0xff, 0xff, 0x00)
+#define RColor_BCYAN     RCOLOR(ALPHA_BOLD,   0x00, 0xff, 0xff)
+#define RColor_BBLUE     RCOLOR(ALPHA_BOLD,   0x00, 0x00, 0xff)
+#define RColor_BGRAY     RCOLOR(ALPHA_BOLD,   0x7f, 0x7f, 0x7f)
 
 #define Colors_PLAIN { \
 	Color_BLACK, Color_RED, Color_WHITE, \
@@ -601,13 +702,13 @@ R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
 R_API void r_cons_pal_update_event(void);
 R_API void r_cons_pal_free(void);
-R_API void r_cons_pal_init(const char *foo);
-R_API char *r_cons_pal_parse(const char *str);
+R_API void r_cons_pal_init();
+R_API char *r_cons_pal_parse(const char *str, RColor *outcol);
 R_API void r_cons_pal_random(void);
-R_API const char *r_cons_pal_get(const char *key);
-R_API const char *r_cons_pal_get_i(int n);
-R_API const char *r_cons_pal_get_color(int n);
-R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg);
+R_API RColor r_cons_pal_get(const char *key);
+R_API RColor r_cons_pal_get_i(int index);
+R_API const char *r_cons_pal_get_name(int index);
+R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(int rad, const char *arg);
 R_API void r_cons_pal_show(void);
@@ -615,7 +716,6 @@ R_API int r_cons_get_size(int *rows);
 R_API bool r_cons_isatty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
-R_API int r_cons_html_print(const char *ptr);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 
 // TODO: use gets() .. MUST BE DEPRECATED
@@ -633,14 +733,13 @@ R_API void r_cons_grep_process(char * grep);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API int r_cons_grepbuf(char *buf, int len);
 
-R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, int is_bg);
+R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init(void);
-R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, int is_bg);
+R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a);
 R_API char *r_cons_rgb_str_off(char *outstr, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
-R_API char *r_cons_color_random(int bg);
-R_API char *r_cons_color_random_string(int bg);
+R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API char *r_cons_input(const char *msg);
