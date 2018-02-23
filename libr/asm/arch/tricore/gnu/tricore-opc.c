@@ -2082,6 +2082,8 @@ struct tricore_opcode tricore_opcodes[] =
 		 TRICORE_RIDER_B_UP, INDICES},
   {"st.b",       1, 0x00000025, 0x0c0000da, F(ABS),  2, "td",    "12",
 		 TRICORE_GENERIC, INDICES},
+  {"st.b",       1, 0x000000e9, 0x00000016, F(BOL),  3, "@wd",   "213",
+		 TRICORE_GENERIC, INDICES},
   {"st.b",       1, 0x00000089, 0x0fc00076, F(BO),   3, ">0d",   "213",
 		 TRICORE_GENERIC, INDICES},
   {"st.b",       1, 0x000000a9, 0xffff0056, F(BO),   2, "#d",    "23",
