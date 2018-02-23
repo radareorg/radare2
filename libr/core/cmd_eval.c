@@ -431,8 +431,9 @@ static int cmd_eval(void *data, const char *input) {
 			if (q) {
 				// set
 				*q++ = 0;
-				r_cons_pal_set (p, q);
-				r_cons_pal_update_event ();
+				if (r_cons_pal_set (p, q)) {
+					r_cons_pal_update_event ();
+				}
 			} else {
 				char color[32];
 				RColor rcolor = r_cons_pal_get (p);

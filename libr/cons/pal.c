@@ -384,7 +384,6 @@ R_API void r_cons_pal_show () {
 }
 
 R_API void r_cons_pal_list (int rad, const char *arg) {
-	RColor *rcolor = NULL; 
 	char *name, **color;
 	const char *hasnext;
 	int i;
@@ -392,7 +391,7 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 		r_cons_print ("{");
 	}
 	for (i = 0; keys[i].name; i++) {
-		rcolor = RCOLOR_AT (i);
+		RColor *rcolor = RCOLOR_AT (i);
 		color = COLOR_AT (i);
 		switch (rad) {
 		case 'j':
@@ -406,8 +405,7 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 				prefix = "";
 			}
 			hasnext = (keys[i + 1].name) ? "\n" : "";
-			//Need to replace the '.' char because this is not
-			//valid CSS
+			// TODO Need to replace the '.' char because this is not valid CSS
 			char *name = strdup (keys[i].name);
 			int j, len = strlen (name);
 			for (j = 0; j < len; j++) {
@@ -456,6 +454,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 			return true;
 		}
 	}
+	eprintf ("Invalid color %s\n", key);
 	return false;
 }
 
@@ -488,11 +487,10 @@ R_API void r_cons_pal_update_event() {
 	Sdb *db = sdb_new0 ();
 	int i, n = 0;
 	char **color;
-	RColor *rcolor;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
-		rcolor = RCOLOR_AT(i);
-		color = COLOR_AT(i);
+		RColor *rcolor = RCOLOR_AT (i);
+		color = COLOR_AT (i);
 		if (*color) {
 			R_FREE (*color);
 		}
