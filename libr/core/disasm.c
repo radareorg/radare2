@@ -3601,7 +3601,6 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		} else {
-			str[0] = 0;
 			if (!*n32) {
 				// msg = strdup ("NULL");
 			} else if (*n32 == UT32_MAX) {
