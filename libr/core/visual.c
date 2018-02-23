@@ -2683,7 +2683,8 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 	}
 
-	filename = (core->file && core->io) ? r_io_desc_get (core->io, core->file->fd)->name : "";
+	RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
+	filename = desc? desc->name: "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 #if 1
