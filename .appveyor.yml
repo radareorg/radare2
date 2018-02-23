@@ -64,7 +64,7 @@ install:
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson )
-  - cmd: if defined NINJA_URL ( [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; powershell -Command wget %NINJA_URL% -OutFile ninja.zip && unzip ninja.zip )
+  - cmd: if defined NINJA_URL ( powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; wget %NINJA_URL% -OutFile ninja.zip" && unzip ninja.zip )
 
 # Build scripts
 build_script:
