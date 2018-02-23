@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2017 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2018 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_print.h>
@@ -126,7 +126,7 @@ R_API void r_cons_println(const char* str) {
 R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
-		if (str[i]=='\n') {
+		if (str[i] == '\n') {
 			r_cons_memset (' ', j);
 			if (c) {
 				r_cons_memset (c, 1);
@@ -295,7 +295,7 @@ R_API RCons *r_cons_new() {
 	I.fdout = 1;
 	I.breaked = false;
 	I.break_lines = false;
-	//I.lines = 0;
+	I.lines = 0;
 	I.buffer = NULL;
 	I.buffer_sz = 0;
 	I.buffer_len = 0;

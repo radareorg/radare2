@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake, sghctoma */
+/* radare - LGPL - Copyright 2013-2018 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 
@@ -185,7 +185,9 @@ R_API void r_cons_pal_free () {
 	int i;
 	for (i = 0; keys[i].name; i++) {
 		char **color = COLOR_AT(i);
-		if (color && *color) R_FREE (*color);
+		if (color && *color) {
+			R_FREE (*color);
+		}
 	}
 }
 
@@ -193,7 +195,7 @@ R_API void r_cons_pal_random () {
 	int i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
-		rcolor = RCOLOR_AT(i);
+		rcolor = RCOLOR_AT (i);
 		*rcolor = r_cons_color_random (ALPHA_NORMAL);
 	}
 	r_cons_pal_update_event ();
@@ -204,13 +206,18 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	int i;
 	RColor rcolor = { ALPHA_NORMAL, 0, 0, 0 };
 	char out[128];
+	if (!str) {
+		return NULL;
+	}
 	char *s = strdup (str);
 	if (!s) {
 		return NULL;
 	}
 	char *p = strchr (s + 1, ' ');
 	out[0] = 0;
-	if (p) *p++ = 0;
+	if (p) {
+		*p++ = 0;
+	}
 	if (!strcmp (str, "random")) {
 		rcolor = r_cons_color_random (ALPHA_NORMAL);
 		if (!outcol) {
@@ -347,7 +354,6 @@ static void r_cons_pal_show_rgb () {
 				r_cons_rgb_str (bg, r, g, b, 1);
 				r_cons_printf ("%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, r, g, b);
-				//if (n++==7) {
 				if (n ++== 5) {
 					n = 0;
 					r_cons_newline ();
@@ -386,8 +392,8 @@ R_API void r_cons_pal_list (int rad, const char *arg) {
 		r_cons_print ("{");
 	}
 	for (i = 0; keys[i].name; i++) {
-		rcolor = RCOLOR_AT(i);
-		color = COLOR_AT(i);
+		rcolor = RCOLOR_AT (i);
+		color = COLOR_AT (i);
 		switch (rad) {
 		case 'j':
 			hasnext = (keys[i + 1].name) ? "," : "";
@@ -468,9 +474,7 @@ R_API RColor r_cons_pal_get (const char *key) {
 
 /* Get the RColor at specified index */
 R_API RColor r_cons_pal_get_i (int index) {
-	RColor *rcolor;
-	rcolor = RCOLOR_AT(index);
-	return *rcolor;
+	return *(RCOLOR_AT(index));
 }
 
 /* Get color name at index */

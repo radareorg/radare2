@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake, xarkes */
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
@@ -112,7 +112,13 @@ static inline void rgbinit (int r, int g, int b) {
 }
 
 R_API void r_cons_rgb_init (void) {
-	if (color_table[255] == 0) init_color_table ();
+	RCons *cons = r_cons_singleton ();
+	if (cons->truecolor < 2) {
+		return;
+	}
+	if (color_table[255] == 0) {
+		init_color_table ();
+	}
 	int r, g, b;
 	for (r = 0; r < 6; r++)
 		for (g = 0; g < 6; g++)
@@ -179,9 +185,13 @@ R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
 /* Return color string depending on cons->truecolor */
 R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38;
-	if (!outstr) outstr = malloc (32);
-	if (!outstr) return NULL;
-
+	if (!outstr) {
+		outstr = malloc (32);
+	}
+	if (!outstr) {
+		return NULL;
+	}
+	*outstr = 0;
 	switch (r_cons_singleton ()->truecolor) {
 	case 1: // 256 color palette
 		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, rgb (r, g, b));
@@ -224,6 +234,5 @@ R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	if (r == 0xff && g == 0xff && b == 0x00) str = "yellow";
 	if (r == 0x00 && g == 0xff && b == 0xff) str = "cyan";
 	if (r == 0xff && g == 0x00 && b == 0xff) str = "magenta";
-	if (str) return strdup (str);
-	return r_str_newf ("#%02x%02x%02x", r, g, b);
+	return str? strdup (str) : r_str_newf ("#%02x%02x%02x", r, g, b);
 }

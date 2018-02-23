@@ -68,9 +68,13 @@ static int *splitlines (char *s, int *lines_count) {
 	int i, row = 0;
 	int sidx = 0;
 
-	if (lines_size * sizeof(int) < lines_size) return NULL;
-	lines = malloc (lines_size * sizeof(int));
-	if (!lines) return NULL;
+	if (lines_size * sizeof (int) < lines_size) {
+		return NULL;
+	}
+	lines = malloc (lines_size * sizeof (int));
+	if (!lines) {
+		return NULL;
+	}
 	lines[row++] = 0;
 	for (i = 0; s[i]; i++) {
 		if (row >= lines_size) {
@@ -99,19 +103,27 @@ static int *splitlines (char *s, int *lines_count) {
 
 static int next_match(int from, RList **mla, int lcount){
 	int l;
-	if(from > lcount - 2) return from;
-	for(l = from + 1; l < lcount; l++){
+	if (from > lcount - 2) {
+		return from;
+	}
+	for (l = from + 1; l < lcount; l++){
 		/* if there's at least one match on the line */
-		if(r_list_first(mla[l])) return l;
+		if (r_list_first(mla[l])) {
+			return l;
+		}
 	}
 	return from;
 }
 
 static int prev_match(int from, RList **mla){
 	int l;
-	if(from < 1) return from;
-	for(l = from - 1; l > 0; l--){
-		if(r_list_first(mla[l])) return l;
+	if (from < 1) {
+		return from;
+	}
+	for (l = from - 1; l > 0; l--) {
+		if (r_list_first(mla[l])) {
+			return l;
+		}
 	}
 	return from;
 }
