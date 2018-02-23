@@ -82,22 +82,22 @@ R_API RColor r_cons_color_random(ut8 alpha) {
 	}
 	int r = r_num_rand (16);
 	switch (r) {
-	case 0: rcolor = RColor_RED; break;
-	case 1: rcolor = RColor_BRED; break;
-	case 2: rcolor = RColor_WHITE; break;
-	case 3: rcolor = RColor_BWHITE; break;
-	case 4: rcolor = RColor_GREEN; break;
-	case 5: rcolor = RColor_BGREEN; break;
-	case 6: rcolor = RColor_MAGENTA; break;
-	case 7: rcolor = RColor_BMAGENTA; break;
-	case 8: rcolor = RColor_YELLOW; break;
-	case 9: rcolor = RColor_BYELLOW; break;
-	case 10: rcolor = RColor_CYAN; break;
-	case 11: rcolor = RColor_BCYAN; break;
-	case 12: rcolor = RColor_BLUE; break;
-	case 13: rcolor = RColor_BBLUE; break;
-	case 14: rcolor = RColor_GRAY; break;
-	case 15: rcolor = RColor_BGRAY; break;
+	case 0: rcolor = (RColor) RColor_RED; break;
+	case 1: rcolor = (RColor) RColor_BRED; break;
+	case 2: rcolor = (RColor) RColor_WHITE; break;
+	case 3: rcolor = (RColor) RColor_BWHITE; break;
+	case 4: rcolor = (RColor) RColor_GREEN; break;
+	case 5: rcolor = (RColor) RColor_BGREEN; break;
+	case 6: rcolor = (RColor) RColor_MAGENTA; break;
+	case 7: rcolor = (RColor) RColor_BMAGENTA; break;
+	case 8: rcolor = (RColor) RColor_YELLOW; break;
+	case 9: rcolor = (RColor) RColor_BYELLOW; break;
+	case 10: rcolor = (RColor) RColor_CYAN; break;
+	case 11: rcolor = (RColor) RColor_BCYAN; break;
+	case 12: rcolor = (RColor) RColor_BLUE; break;
+	case 13: rcolor = (RColor) RColor_BBLUE; break;
+	case 14: rcolor = (RColor) RColor_GRAY; break;
+	case 15: rcolor = (RColor) RColor_BGRAY; break;
 	}
 	return rcolor;
 }
