@@ -329,9 +329,9 @@ R_API RCons *r_cons_new() {
 	I.mouse = 0;
 	I.cons_stack = r_stack_newf (6, cons_stack_free);
 	I.break_stack = r_stack_newf (6, break_stack_free);
+	r_cons_reset ();
 	r_cons_rgb_init ();
 	r_cons_pal_init ();
-	r_cons_reset ();
 	return &I;
 }
 
@@ -472,7 +472,6 @@ R_API void r_cons_reset() {
 	R_FREE (I.grep.str);
 	ZERO_FILL (I.grep.tokens);
 	I.grep.tokens_used = 0;
-	r_cons_pal_init ();
 }
 
 R_API const char *r_cons_get_buffer() {
