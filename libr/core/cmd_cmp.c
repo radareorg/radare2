@@ -9,14 +9,13 @@ static const char *help_msg_c[] = {
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
 	"cat", " [file]", "Show contents of file (see pwd, ls)",
-	"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
-	"ccc", " [at] [(at)]", "Same as above, but only showing different lines",
-	"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
+	"cc", " [at]", "Compares in two hexdump columns of block size",
+	"ccc", " [at]", "Same as above, but only showing different lines",
+	"ccd", " [at]", "Compares in two disasm columns of block size",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
-	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte value",
@@ -25,6 +24,9 @@ static const char *help_msg_c[] = {
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
+	"", "", "",
+	"cd", " [dir]", "chdir",
+	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	NULL
 };
 
@@ -415,6 +417,7 @@ static int cmd_cmp(void *data, const char *input) {
 	ut32 v32;
 	ut64 v64;
 	FILE *fd;
+	const ut8* block = core->block;
 
 	switch (*input) {
 	case 'p':
@@ -443,14 +446,14 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 
-		val = radare_compare (core, core->block, (ut8 *) input + 2,
+		val = radare_compare (core, block, (ut8 *) input + 2,
 			strlen (input + 2) + 1, '*');
 		break;
 	case ' ':
 	{
 		char *str = strdup (input + 1);
 		int len = r_str_unescape (str);
-		val = radare_compare (core, core->block, (ut8 *) str, len, 0);
+		val = radare_compare (core, block, (ut8 *) str, len, 0);
 		free (str);
 	}
 	break;
@@ -480,7 +483,7 @@ static int cmd_cmp(void *data, const char *input) {
 			free (filled);
 			return false;
 		}
-		ret = r_hex_bin2str (core->block, strlen (input) / 2, (char *) buf);
+		ret = r_hex_bin2str (block, strlen (input) / 2, (char *) buf);
 		for (i = 0; i < ret * 2; i++) {
 			if (filled[i] == '.') {
 				filled[i] = buf[i];
@@ -491,7 +494,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (ret < 1) {
 			eprintf ("Cannot parse hexpair\n");
 		} else {
-			val = radare_compare (core, core->block, buf, ret, mode);
+			val = radare_compare (core, block, buf, ret, mode);
 		}
 		free (buf);
 		free (filled);
@@ -503,7 +506,7 @@ static int cmd_cmp(void *data, const char *input) {
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {
-				val = radare_compare (core, core->block, buf, ret, mode);
+				val = radare_compare (core, block, buf, ret, mode);
 			}
 			free (buf);
 		}
@@ -524,8 +527,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (fread (buf, 1, core->blocksize, fd) < 1) {
 				eprintf ("Cannot read file %s\n", input + 2);
 			} else {
-				val = radare_compare (core, core->block,
-					buf, core->blocksize, 0);
+				val = radare_compare (core, block, buf, core->blocksize, 0);
 			}
 			fclose (fd);
 			free (buf);
@@ -534,7 +536,7 @@ static int cmd_cmp(void *data, const char *input) {
 			return false;
 		}
 		break;
-	case 'd':
+	case 'd': // "cd"
 		while (input[1] == ' ') input++;
 		if (input[1]) {
 			if (!strcmp (input + 1, "-")) {
@@ -580,20 +582,20 @@ static int cmd_cmp(void *data, const char *input) {
 			free (home);
 		}
 		break;
-	case '2':
+	case '2': // "c2"
 		v16 = (ut16) r_num_math (core->num, input + 1);
-		val = radare_compare (core, core->block, (ut8 *) &v16, sizeof (v16), 0);
+		val = radare_compare (core, block, (ut8 *) &v16, sizeof (v16), 0);
 		break;
-	case '4':
+	case '4': // "c4"
 		v32 = (ut32) r_num_math (core->num, input + 1);
-		val = radare_compare (core, core->block, (ut8 *) &v32, sizeof (v32), 0);
+		val = radare_compare (core, block, (ut8 *) &v32, sizeof (v32), 0);
 		break;
-	case '8':
+	case '8': // "c8"
 		v64 = (ut64) r_num_math (core->num, input + 1);
-		val = radare_compare (core, core->block, (ut8 *) &v64, sizeof (v64), 0);
+		val = radare_compare (core, block, (ut8 *) &v64, sizeof (v64), 0);
 		break;
 	case 'c': // "cc"
-		if (input[1] == 'd') {
+		if (input[1] == 'd') { // "ccd"
 			cmd_cmp_disasm (core, input + 2, 'c');
 		} else {
 			ut32 oflags = core->print->flags;
@@ -611,7 +613,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (b != NULL) {
 				memset (b, 0xff, core->blocksize);
 				r_core_read_at (core, addr, b, core->blocksize);
-				r_print_hexdiff (core->print, core->offset, core->block,
+				r_print_hexdiff (core->print, core->offset, block,
 					addr, b, core->blocksize, col);
 				free (b);
 			}
@@ -708,8 +710,7 @@ static int cmd_cmp(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_c);
 		break;
-	case 'v': // "cv"
-	{
+	case 'v': { // "cv"
 		int sz = input[1];
 		if (sz == ' ') {
 			switch (r_config_get_i (core->config, "asm.bits")) {
@@ -722,46 +723,42 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		// TODO: honor endian
 		switch (sz) {
-		case '1':
-		{
+		case '1': { // "cv1"
 			ut8 n = (ut8) r_num_math (core->num, input + 2);
 			core->num->value = 1;
-			if (core->block[0] == n) {
+			if (block[0] == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
+			break;
 		}
-		break;
-		case '2':
-		{
-			ut16 *b = (ut16 *) core->block, n = (ut16) r_num_math (core->num, input + 2);
+		case '2': { // "cv2"
+			ut16 n = (ut16) r_num_math (core->num, input + 2);
 			core->num->value = 1;
-			if (*b == n) {
+			if (core->blocksize >= 2 && *(ut16*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
+			break;
 		}
-		break;
-		case '4':
-		{
-			ut32 *b = (ut32 *) core->block, n = (ut32) r_num_math (core->num, input + 2);
+		case '4': { // "cv4"
+			ut32 n = (ut32) r_num_math (core->num, input + 2);
 			core->num->value = 1;
-			if (*b == n) {
+			if (core->blocksize >= 4 && *(ut32*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
+			break;
 		}
-		break;
-		case '8':
-		{
-			ut64 *b = (ut64 *) core->block, n = (ut64) r_num_math (core->num, input + 2);
+		case '8': { // "cv8"
+			ut64 n = (ut64) r_num_math (core->num, input + 2);
 			core->num->value = 1;
-			if (*b == n) {
+			if (core->blocksize >= 8 && *(ut64*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
+			break;
 		}
-		break;
 		default:
 		case '?':
 			eprintf ("Usage: cv[1248] [num]\n"
@@ -774,8 +771,7 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 	}
 	break;
-	case 'V': // "cV"
-	{
+	case 'V': { // "cV"
 		int sz = input[1];
 		if (sz == ' ') {
 			switch (r_config_get_i (core->config, "asm.bits")) {
@@ -796,9 +792,9 @@ static int cmd_cmp(void *data, const char *input) {
 			r_io_read_at (core->io, at, buf, sizeof (buf));
 			core->num->value = memcmp (buf, core->block, sz)? 1: 0;
 		}
-	}
 		break;
-	case 'l':
+	}
+	case 'l': // "cl"
 		if (strchr (input, 'f')) {
 			r_cons_flush ();
 		} else if (input[1] == 0) {
