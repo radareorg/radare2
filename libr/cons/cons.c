@@ -472,6 +472,7 @@ R_API void r_cons_reset() {
 	R_FREE (I.grep.str);
 	ZERO_FILL (I.grep.tokens);
 	I.grep.tokens_used = 0;
+	r_cons_pal_init ();
 }
 
 R_API const char *r_cons_get_buffer() {

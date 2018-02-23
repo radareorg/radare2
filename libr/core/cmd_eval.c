@@ -290,7 +290,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'c': // "ec"
 		switch (input[1]) {
-		case 'd':
+		case 'd': // "ecd"
 			r_cons_pal_init ();
 			break;
 		case '?':
