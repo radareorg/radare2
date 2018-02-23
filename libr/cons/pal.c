@@ -460,10 +460,10 @@ R_API RColor r_cons_pal_get (const char *key) {
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
 			rcolor = RCOLOR_AT(i);
-			return rcolor? *rcolor: RColor_NULL;
+			return rcolor? *rcolor: (RColor) RColor_NULL;
 		}
 	}
-	return RColor_NULL;
+	return (RColor) RColor_NULL;
 }
 
 /* Get the RColor at specified index */
