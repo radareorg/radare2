@@ -2623,6 +2623,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512], pcs[32];
+	RIODesc *desc = NULL;
 	if (!oldpc) {
 		oldpc = r_debug_reg_get (core->dbg, "PC");
 	}
@@ -2683,7 +2684,11 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 	}
 
-	filename = (core->file && core->io) ? r_io_desc_get (core->io, core->file->fd)->name : "";
+	if (core->file && core->io) {
+		desc = r_io_desc_get (core->io, core->file->fd);
+	}
+	filename = desc ? desc->name : "";
+
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 #if 1
