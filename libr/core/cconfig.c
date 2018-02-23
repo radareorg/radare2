@@ -2319,6 +2319,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
+	SETPREF ("asm.bbinfo", "false", "Show basic block information");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF ("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
 	SETPREF ("asm.jmpsub", "false", "Always substitute jump, call and branch targets in disassembly");

@@ -115,6 +115,7 @@ typedef struct {
 	bool show_emu;
 	bool pre_emu;
 	bool show_emu_str;
+	bool show_asm_bbinfo;
 	bool show_emu_stroff;
 	bool show_emu_stack;
 	bool show_emu_write;
@@ -589,6 +590,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
+	ds->show_asm_bbinfo = r_config_get_i (core->config, "asm.bbinfo");
 	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
 	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
@@ -3725,21 +3727,27 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 		R_FREE (ds->esil_regstate);
 	}
 	if (core && core->anal && core->anal->esil) {
-		//make sure to remove reference to ds to avoid UAF
+		// make sure to remove reference to ds to avoid UAF
 		core->anal->esil->user = NULL;
 	}
 }
 
 static void ds_print_bbline(RDisasmState *ds, bool force) {
-	if (ds->show_bbline && (force || (ds->fcn && r_anal_fcn_bbget (ds->fcn, ds->at)))) {
-		ds_begin_json_line (ds);
-		ds_setup_print_pre (ds, false, false);
-		ds_update_ref_lines (ds);
-		if (!ds->linesright && ds->show_lines && ds->line) {
-			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
-				ds->refline2, COLOR_RESET (ds));
+	if (ds->show_bbline) {
+		RAnalBlock *bb = r_anal_fcn_bbget (ds->fcn, ds->at);
+		if (force || (ds->fcn && bb)) {
+			if (bb && ds->show_asm_bbinfo) {
+				r_cons_printf ("[bb  size:%d ops:%d]\n", bb->size, bb->op_pos_size / sizeof (ut16));
+			}
+			ds_begin_json_line (ds);
+			ds_setup_print_pre (ds, false, false);
+			ds_update_ref_lines (ds);
+			if (!ds->linesright && ds->show_lines && ds->line) {
+				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
+						ds->refline2, COLOR_RESET (ds));
+			}
+			ds_newline (ds);
 		}
-		ds_newline (ds);
 	}
 }
 

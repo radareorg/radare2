@@ -217,7 +217,9 @@ R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb) {
 /* return the offset of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT16_MAX */
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
-	if (i < 0 || i >= bb->ninstr) return UT16_MAX;
+	if (i < 0 || i >= bb->ninstr) {
+		return UT16_MAX;
+	}
 	return (i > 0 && (i - 1) < bb->op_pos_size) ? bb->op_pos[i - 1] : 0;
 }
 
