@@ -372,11 +372,11 @@ R_API void r_cons_pal_show () {
 			colors[i].name);
 	}
 	switch (r_cons_singleton ()->color) {
-	case COLORS_RGB: // 256 color palette
+	case COLORS_256: // 256 color palette
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_256 ();
 		break;
-	case COLORS_TRUECOLOR: // 16M
+	case COLORS_16M: // 16M (truecolor)
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_rgb ();
 		break;
