@@ -140,6 +140,8 @@ enum {
 };
 #endif
 
+enum { COLORS_DISABLED = 0, COLORS_16, COLORS_256, COLORS_16M };
+
 enum { ALPHA_RESET = 0x00, ALPHA_NORMAL = 0x01, ALPHA_BG = 0x02, ALPHA_BOLD = 0x03 };
 
 typedef struct rcolor_t {
@@ -404,7 +406,7 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int truecolor; // 0 = ansi, 1 = rgb (256), 2 = truecolor (16M)
+	int color; // 0 = none, 1 = ansi (16), 2 = palette (256), 3 = truecolor (16M)
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
@@ -427,7 +429,6 @@ typedef struct r_cons_t {
 	char *break_word;
 	int break_word_len;
 	ut64 timeout;
-	bool use_color;
 	bool grep_color;
 	bool use_tts;
 	bool filter;

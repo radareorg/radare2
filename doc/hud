@@ -6,7 +6,9 @@ analyze function	af
 analyze preludes	ap
 continue process execution	dc;?i
 disable colors	e scr.color=0
-enable colors	e scr.color=1
+enable colors (ANSI 16)	e scr.color=1
+enable colors (256)	e scr.color=2
+enable colors (16M)	e scr.color=3
 randomize colors	ecr
 hide bytes in disassembly	e asm.bytes=false
 show bytes in disassembly	e asm.bytes=true

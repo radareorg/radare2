@@ -1010,10 +1010,10 @@ static int cb_color(void *user, void *data) {
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_COLOR;
 	} else {
-		//c:core->print->flags ^= R_PRINT_FLAGS_COLOR;
 		core->print->flags &= (~R_PRINT_FLAGS_COLOR);
 	}
-	r_cons_singleton ()->use_color = node->i_value? 1: 0;
+	r_cons_singleton ()->color = (node->i_value > COLORS_16M)? COLORS_16M: node->i_value;
+	r_cons_pal_update_event ();
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
 }
@@ -1793,14 +1793,6 @@ static int cb_tracetag(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->trace->tag = node->i_value;
-	return true;
-}
-
-static int cb_truecolor(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	ut64 val = node->i_value > 2 ? 2 : node->i_value;
-	r_cons_singleton ()->truecolor = val;
-	r_cons_pal_update_event ();
 	return true;
 }
 
@@ -2788,8 +2780,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
-	SETICB ("scr.truecolor", 0, &cb_truecolor, "Manage color palette (0: ansi 16, 1: 256, 2: 16M)");
-	SETCB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false", &cb_color, "Enable colors");
+	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLORS_16:COLORS_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
 	SETCB ("scr.utf8", r_cons_is_utf8()?"true":"false",
 		&cb_utf8, "Show UTF-8 characters instead of ANSI");

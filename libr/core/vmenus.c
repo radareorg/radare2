@@ -3150,7 +3150,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_gotoxy (0, 0);
 		r_cons_rgb_str (cstr, rcolor.r, rcolor.g, rcolor.b, ALPHA_NORMAL);
-		if (r_cons_singleton ()->truecolor < 2) {
+		if (r_cons_singleton ()->color < COLORS_16M) {
 			rcolor.r &= 0xf;
 			rcolor.g &= 0xf;
 			rcolor.b &= 0xf;

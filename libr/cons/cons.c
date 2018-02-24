@@ -73,7 +73,7 @@ static inline void r_cons_write(const char *buf, int len) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor;
-	if (I.truecolor > 0) {
+	if (I.color > COLORS_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -277,7 +277,7 @@ R_API RCons *r_cons_new() {
 	I.event_interrupt = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
-	I.use_color = false;
+	I.color = COLORS_DISABLED;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -325,7 +325,6 @@ R_API RCons *r_cons_new() {
 	}
 #endif
 	I.pager = NULL; /* no pager by default */
-	I.truecolor = 0;
 	I.mouse = 0;
 	I.cons_stack = r_stack_newf (6, cons_stack_free);
 	I.break_stack = r_stack_newf (6, break_stack_free);
