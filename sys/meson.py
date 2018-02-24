@@ -291,7 +291,7 @@ def install(args):
     if os.name == 'nt':
         win_dist(args)
         return
-    log.warning('Install not implemented yet.')
+    log.warning('Install not implemented yet for this platform.')
     # TODO
     #if os.name == 'posix':
     #    os.system('DESTDIR="{destdir}" ninja -C {build} install'

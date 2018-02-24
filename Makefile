@@ -412,6 +412,7 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 
 meson-symstall: symstall-sdb
+	@echo "[ Meson symstall (not stable) ]"
 	ln -fs $(PWD)/binr/r2pm/r2pm  ${B}/r2pm
 	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
 	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2

@@ -72,24 +72,26 @@ using root privileges and sudo, simply run:
 The sys/install.sh method uses acr+make to build r2 from sources, which is the default
 and recommended way, but there's also a work-in-progress support for Meson.
 
-Run first the configuration process:
-
-	$ ./configure
-
 You can install last version of meson and ninja using r2pm:
 
 	$ r2pm -i meson
 	$ r2pm -r make meson
 	$ r2pm -r make meson-symstall
 
-Or just run those lines if you have them available in PATH:
+Or just run this line if you have them available in PATH:
 
-	$ make meson                # will run make meson-config automatically
+        $ python ./sys/meson.py --prefix=/usr --shared --install
+
+Alternatively you can try these lines (but it is just a wrapper around the above script):
+
+        $ ./configure
+	$ make meson
 	$ sudo make meson-symstall  # symstall the meson build into PREFIX (/usr)
 	$ sudo make meson-uninstall # uninstall the meson installation
 
-The PREFIX is inherited from the last run of ./configure, so it's recommended to run
-sys/install.sh at least once to autodetect this, this step will end up into meson.
+But if you do it via the Makefile, note that the PREFIX is inherited from the last run
+of ./configure, so it's recommended to run sys/install.sh at least once to autodetect this,
+this step will end up into meson.
 
 At the moment, the meson build system doesnt supports much configuration options and it
 is not able to build all the plugins, it has been tested to work on the following hosts:
