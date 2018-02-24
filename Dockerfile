@@ -28,8 +28,8 @@
 # $ r2 -d /bin/true
 #
 
-# Using debian 8 as base image.
-FROM debian:8
+# Using debian 9 as base image.
+FROM debian:9
 
 # Label base
 LABEL r2docker latest
