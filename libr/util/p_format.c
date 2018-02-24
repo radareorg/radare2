@@ -996,10 +996,19 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		}
 	} else if (MUSTSEEJSON) {
 		int j = i;
+
 		p->cb_printf ("%d,\"string\":\"", seeki);
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j++) {
 			if (IS_PRINTABLE (buf[j])) {
-				p->cb_printf ("%c", buf[j]);
+				/* encoding here so the format of . for non printable chars will stay */
+				int k = 0;
+				char *encoded_char = r_str_utf16_encode ((const char *) &buf[j], 1);
+
+				for (k = 0; (k < strlen (encoded_char)) && (encoded_char != NULL ); ++k) {
+					p->cb_printf ("%c", encoded_char[k]);
+				}
+
+				free(encoded_char);
 			} else {
 				p->cb_printf (".");
 			}
