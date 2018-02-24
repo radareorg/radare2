@@ -63,11 +63,9 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->type = R_ANAL_OP_TYPE_ILL;
 					goto beach;
 				}
-				if (i == len - 1) {
-					const int new_len = len + 1 + BUFSIZE_INC;
-					ut8 *new_buf = calloc (new_len, 1);
+				if (i == len - 1 && anal->cb.resize_read_buf) {
+					const ut8 *new_buf = anal->cb.resize_read_buf (anal, len + 1 + BUFSIZE_INC);
 					if (new_buf) {
-						(void)r_io_read_at (anal->iob.io, addr, new_buf, new_len);
 						free ((ut8 *)buf);
 						buf = new_buf;
 						p = buf + i;
