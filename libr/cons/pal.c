@@ -95,7 +95,7 @@ struct {
 	{ "bblue",    RColor_BBLUE,    Color_BBLUE,    Color_BGBLUE },
 	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
 	{ "bgray",    RColor_BGRAY,    Color_BGRAY,    Color_BGGRAY },
-	{ "none",     RColor_WHITE,    Color_RESET,    Color_RESET },
+	{ "none",     RColor_NULL,     Color_RESET,    Color_RESET },
 	{ NULL, RColor_NULL, NULL, NULL }
 };
 
@@ -163,6 +163,7 @@ R_API void r_cons_pal_init () {
 	cons->cpal.gui_border         = (RColor) RColor_BLACK;
 	cons->cpal.highlight          = (RColor) RColor_BGRED;
 
+	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
 	cons->cpal.graph_box3         = (RColor) RColor_MAGENTA;
 	cons->cpal.graph_box4         = (RColor) RColor_GRAY;
@@ -176,7 +177,6 @@ R_API void r_cons_pal_init () {
 	cons->pal.rainbow_sz = 0;
 	r_cons_pal_free ();
 	cons->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
-	cons->pal.graph_box = strdup (Color_RESET); // customizable by users, going to be freed
 
 	r_cons_pal_update_event ();
 }
@@ -184,7 +184,7 @@ R_API void r_cons_pal_init () {
 R_API void r_cons_pal_free () {
 	int i;
 	for (i = 0; keys[i].name; i++) {
-		char **color = COLOR_AT(i);
+		char **color = COLOR_AT (i);
 		if (color && *color) {
 			R_FREE (*color);
 		}
@@ -449,7 +449,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			rcolor = RCOLOR_AT(i);
+			rcolor = RCOLOR_AT (i);
 			r_cons_pal_parse (val, rcolor);
 			return true;
 		}
@@ -464,7 +464,7 @@ R_API RColor r_cons_pal_get (const char *key) {
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			rcolor = RCOLOR_AT(i);
+			rcolor = RCOLOR_AT (i);
 			return rcolor? *rcolor: (RColor) RColor_NULL;
 		}
 	}
@@ -473,7 +473,7 @@ R_API RColor r_cons_pal_get (const char *key) {
 
 /* Get the RColor at specified index */
 R_API RColor r_cons_pal_get_i (int index) {
-	return *(RCOLOR_AT(index));
+	return *(RCOLOR_AT (index));
 }
 
 /* Get color name at index */

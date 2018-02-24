@@ -101,16 +101,6 @@ static void unrgb (int color, int *r, int *g, int *b) {
 	*b = rgb & 0xff;
 }
 
-static inline void rgbinit (int r, int g, int b) {
-#if __UNIX__ || __CYGWIN__
-	r_cons_printf ("\x1b]4;%d;rgb:%2.2x/%2.2x/%2.2x\x1b\\",
-			16 + (r * 36) + (g * 6) + b,
-			(r ? (r * 40 + 55) : 0),
-			(g ? (g * 40 + 55) : 0),
-			(b ? (b * 40 + 55) : 0));
-#endif
-}
-
 R_API void r_cons_rgb_init (void) {
 	RCons *cons = r_cons_singleton ();
 	if (cons->truecolor < 2) {
@@ -119,11 +109,6 @@ R_API void r_cons_rgb_init (void) {
 	if (color_table[255] == 0) {
 		init_color_table ();
 	}
-	int r, g, b;
-	for (r = 0; r < 6; r++)
-		for (g = 0; g < 6; g++)
-			for (b = 0; b < 6; b++)
-				rgbinit (r, g, b);
 }
 
 R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
@@ -192,6 +177,10 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
 		return NULL;
 	}
 	*outstr = 0;
+	if (a == ALPHA_RESET) {
+		sprintf (outstr, "%s", Color_RESET);
+		return outstr;
+	}
 	switch (r_cons_singleton ()->truecolor) {
 	case 1: // 256 color palette
 		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, rgb (r, g, b));

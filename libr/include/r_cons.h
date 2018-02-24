@@ -140,7 +140,7 @@ enum {
 };
 #endif
 
-enum { ALPHA_NORMAL = 0x00, ALPHA_BG = 0x01, ALPHA_BOLD = 0x02 };
+enum { ALPHA_RESET = 0x00, ALPHA_NORMAL = 0x01, ALPHA_BG = 0x02, ALPHA_BOLD = 0x03 };
 
 typedef struct rcolor_t {
 	ut8 a;
