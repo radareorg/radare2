@@ -578,6 +578,7 @@ typedef struct r_anal_callbacks_t {
 	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
 	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
 	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
+	const ut8 *(*resize_read_buf)(RANAL, int new_len);
 } RAnalCallbacks;
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
@@ -1025,7 +1026,6 @@ typedef struct r_anal_esil_callbacks_t {
 	int (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	RAnalEsilHookRegWriteCB hook_reg_write;
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
-	const ut8 *(*resize_read_buf)(RAnal *anal, int new_len);
 } RAnalEsilCallbacks;
 
 typedef struct r_anal_esil_t {
