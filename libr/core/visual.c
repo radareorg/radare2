@@ -203,7 +203,7 @@ R_API int r_core_visual_hud(RCore *core) {
 	char *homehud = r_str_home (R2_HOMEDIR "/hud");
 	char *res = NULL;
 	char *p = 0;
-	r_cons_singleton ()->use_color = use_color;
+	r_cons_singleton ()->color = use_color;
 
 	showcursor (core, true);
 	if (c && *c && r_file_exists (c)) {

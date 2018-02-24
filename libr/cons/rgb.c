@@ -103,7 +103,7 @@ static void unrgb (int color, int *r, int *g, int *b) {
 
 R_API void r_cons_rgb_init (void) {
 	RCons *cons = r_cons_singleton ();
-	if (cons->truecolor < 2) {
+	if (cons->color < COLORS_TRUECOLOR) {
 		return;
 	}
 	if (color_table[255] == 0) {
@@ -167,7 +167,7 @@ R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
 	return r_cons_rgb_str (outstr, r, g, b, false);
 }
 
-/* Return color string depending on cons->truecolor */
+/* Return color string depending on cons->color */
 R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38;
 	if (!outstr) {
@@ -181,15 +181,15 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
 		sprintf (outstr, "%s", Color_RESET);
 		return outstr;
 	}
-	switch (r_cons_singleton ()->truecolor) {
-	case 1: // 256 color palette
+	switch (r_cons_singleton ()->color) {
+	case COLORS_RGB: // 256 color palette
 		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, rgb (r, g, b));
 		break;
-	case 2: // 16M - xterm only
+	case COLORS_TRUECOLOR: // 16M - xterm only
 		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b);
 		break;
-	case 0: // ansi 16 colors
-	default: {
+	case COLORS_ANSI: // ansi 16 colors
+		{
 		const char *bold = (a == ALPHA_BOLD)? "1;": "";
 		int k = (r + g + b) / 3;
 		r = (r >= k) ? 1 : 0;

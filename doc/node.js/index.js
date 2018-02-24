@@ -24,7 +24,7 @@ function runWebServer(r) {
 		wwwroot = wwwroot.trim ();
 		r.cmd ("e http.port", function(port) {
 			port = +port.trim ();
-			r.cmd ("e scr.color=false", function() {});
+			r.cmd ("e scr.color=0", function() {});
 			r.cmd ("e scr.interactive=false", function() {});
 			r.cmd ("e scr.html=true", function(){});
 			var app = express();

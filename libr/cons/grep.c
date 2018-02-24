@@ -479,7 +479,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (use_color), "  ", palette);
+			char *out = r_print_json_indent (buf, I (color), "  ", palette);
 			if (!out) {
 				return 0;
 			}
