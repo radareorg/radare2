@@ -792,6 +792,7 @@ R_API void r_core_file_reopen_in_malloc (RCore *core) {
 		free (url);
 		break;
 	}
+	r_core_block_read (core);
 }
 
 R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
