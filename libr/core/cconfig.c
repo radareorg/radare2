@@ -1680,6 +1680,27 @@ static int cb_scrflush(void *user, void *data) {
 	return true;
 }
 
+static int cb_scrstrconv(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value[0] == '?') {
+		if (strlen (node->value) > 1 && node->value[1] == '?') {
+			r_cons_printf ("Valid values for scr.strconv:\n"
+				"  asciiesc  convert to ascii with non-ascii chars escaped\n"
+				"  asciidot  convert to ascii with non-ascii chars turned into a dot (except some control chars)\n"
+				"\n"
+				"Ascii chars are in the range 0x20-0x7e.\n");
+		} else {
+			print_node_options (node);
+		}
+		return false;
+	} else {
+		free ((char *)core->print->strconv_mode);
+		core->print->strconv_mode = strdup (node->value);
+	}
+	return true;
+}
+
 static int cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore*) user;
@@ -2408,8 +2429,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
 	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
-	SETPREF ("asm.asciidot", "false", "Enable a char filter for string comments that passes through chars in the "
-		 "range 0x20-0x7e and turns the rest into dots (except some control chars)");
 	n = NODECB ("asm.strenc", "guess", &cb_asmstrenc);
 	SETDESC (n, "Assumed string encoding for disasm");
 	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
@@ -2786,6 +2805,9 @@ R_API int r_core_config_init(RCore *core) {
 		&cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
 	SETPREF ("scr.histsave", "true", "Always save history on exit");
+	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
+	SETDESC (n, "Convert string before display");
+	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash (iz and Cs-based output only)");

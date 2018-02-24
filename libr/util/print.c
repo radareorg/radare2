@@ -303,6 +303,7 @@ R_API RPrint* r_print_new() {
 	p->vflush = true;
 	p->screen_bounds = 0;
 	p->esc_bslash = false;
+	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
 	return p;
 }

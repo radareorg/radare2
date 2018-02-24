@@ -636,7 +636,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
-	ds->show_asciidot = r_config_get_i (core->config, "asm.asciidot");
+	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
 	const char *strenc_str = r_config_get (core->config, "asm.strenc");
 	if (!strcmp (strenc_str, "latin1")) {
 		ds->strenc = R_STRING_ENC_LATIN1;
