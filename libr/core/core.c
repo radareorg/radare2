@@ -1311,6 +1311,11 @@ static int autocomplete(RLine *line) {
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if ( !strncmp (line->buffer.data, "Po ", 3)) {
+			char *projects_path = r_file_abspath (r_config_get (core->config, "dir.projects"));
+			char *paths[2] = { projects_path, NULL };
+			autocompleteFilename (line, paths, 1);
+			free (projects_path);
 		} else {
 			int i, j, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
 			if (cfg_newtab) {
