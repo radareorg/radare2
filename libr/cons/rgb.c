@@ -125,7 +125,7 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	}
 #define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
 	if (bold != 255 && strchr (p, ';')) {
-		if (p[4] == '5')  { // \x1b[%d;2;%dm is 256 colors
+		if (p[4] == '5')  { // \x1b[%d;5;%dm is 256 colors
 			int x, y, z;
 			int n = atoi (p + 6);
 			unrgb (n, &x, &y, &z);
