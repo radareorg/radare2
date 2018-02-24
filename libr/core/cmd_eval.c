@@ -429,7 +429,7 @@ static int cmd_eval(void *data, const char *input) {
 				q = strchr (p, ' ');
 			}
 			if (q) {
-				// set
+				// Set color
 				*q++ = 0;
 				if (r_cons_pal_set (p, q)) {
 					r_cons_pal_update_event ();
@@ -437,7 +437,7 @@ static int cmd_eval(void *data, const char *input) {
 			} else {
 				char color[32];
 				RColor rcolor = r_cons_pal_get (p);
-				r_cons_rgb_str (color, rcolor.r, rcolor.g, rcolor.b, rcolor.a);
+				r_cons_rgb_str (color, &rcolor);
 				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
 			}
 			free (p);
