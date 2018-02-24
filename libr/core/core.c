@@ -1321,7 +1321,7 @@ static int autocomplete(RLine *line) {
 			r_list_foreach (list, iter, foo) {
 				if (r_core_is_project (core, foo)) {
 					if (!strncmp (foo, line->buffer.data + 3, n)) {
-						tmp_argv[i++] = foo;
+						tmp_argv[i++] = r_str_newf ("%s", foo);
 						if (i == TMP_ARGV_SZ - 1) {
 							break;
 						}
