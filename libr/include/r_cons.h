@@ -406,7 +406,7 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int color; // 0 = none, 1 = ansi, 2 = rgb (256), 3 = truecolor (16M)
+	int color; // 0 = none, 1 = ansi (16), 2 = palette (256), 3 = truecolor (16M)
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;

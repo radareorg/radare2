@@ -2780,7 +2780,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
-	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLORS_16:COLORS_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: rgb, 3: truecolor)");
+	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLORS_16:COLORS_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
 	SETCB ("scr.utf8", r_cons_is_utf8()?"true":"false",
 		&cb_utf8, "Show UTF-8 characters instead of ANSI");
