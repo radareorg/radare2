@@ -24,6 +24,7 @@ static const char *tmp_argv[TMP_ARGV_SZ];
 static bool tmp_argv_heap = false;
 
 extern int r_is_heap (void *p);
+extern bool r_core_is_project (RCore *core, const char *name);
 
 static void r_line_free_autocomplete(RLine *line) {
 	int i;
@@ -1307,6 +1308,29 @@ static int autocomplete(RLine *line) {
 						break;
 					}
 				}
+			}
+			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else if ( !strncmp (line->buffer.data, "Po ", 3)) {
+			char *foo, *projects_path = r_file_abspath (r_config_get (core->config, "dir.projects"));
+			RList *list = r_sys_dir (projects_path);
+			RListIter *iter;
+			int n = strlen (line->buffer.data + 3);
+			int i = 0;
+			if (projects_path) {
+				r_list_foreach (list, iter, foo) {
+					if (r_core_is_project (core, foo)) {
+						if (!strncmp (foo, line->buffer.data + 3, n)) {
+							tmp_argv[i++] = r_str_newf ("%s", foo);
+							if (i == TMP_ARGV_SZ - 1) {
+								break;
+							}
+						}
+					}
+				}
+				free (projects_path);
+				r_list_free (list);
 			}
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
 			line->completion.argc = i;
