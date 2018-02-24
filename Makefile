@@ -278,7 +278,6 @@ deinstall uninstall:
 	cd binr && ${MAKE} uninstall PARENT=1
 	cd shlr && ${MAKE} uninstall PARENT=1
 	cd libr/syscall/d && ${MAKE} uninstall PARENT=1
-	cd libr/sysregs/d && ${MAKE} uninstall PARENT=1
 	cd libr/anal/d && ${MAKE} uninstall PARENT=1
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
