@@ -103,9 +103,6 @@ static void unrgb (int color, int *r, int *g, int *b) {
 
 R_API void r_cons_rgb_init (void) {
 	RCons *cons = r_cons_singleton ();
-	if (cons->color < COLORS_16M) {
-		return;
-	}
 	if (color_table[255] == 0) {
 		init_color_table ();
 	}
