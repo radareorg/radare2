@@ -111,13 +111,12 @@ R_API void r_cons_rgb_init (void) {
 	}
 }
 
+/* Parse an ANSI code string into RGB values -- Used by HTML filter only */
 R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	const char *q = 0;
-	ut8 isbg = 0, bold = 127; // 255; // 127; // 255 ?
-	//const double k = (256/6);
+	ut8 isbg = 0, bold = 127;
 	if (!p) return 0;
 	if (*p == 0x1b) p++;
-	//if (*p!='[') return 0;
 	if (*p != '[') p--;
 	switch (p[1]) {
 	case '1': bold = 255; p += 2; break;
@@ -126,15 +125,15 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	}
 #define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
 	if (bold != 255 && strchr (p, ';')) {
-		if (p[4] == '5')  {
+		if (p[4] == '5')  { // \x1b[%d;5;%dm is 256 colors
 			int x, y, z;
 			int n = atoi (p + 6);
 			unrgb (n, &x, &y, &z);
 			SETRGB (x, y, z);
-		} else {
-			/* truecolor */
+		} else { // 16M colors (truecolor)
 			/* complex rgb */
-			if (r) *r = atoi (p + 6);
+			p += 6;
+			if (r) *r = atoi (p);
 			q = strchr (p, ';');
 			if (!q) return 0;
 			if (g) *g = atoi (q + 1);

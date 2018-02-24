@@ -888,14 +888,14 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				str = ptr;
 				continue;
-			} else if (!strncmp (ptr, "48;5;", 5)) {
+			} else if (!strncmp (ptr, "48;5;", 5) || !strncmp (ptr, "48;2;", 5)) {
 				char *end = strchr (ptr, 'm');
 				r_strbuf_appendf (res, "<font style='background-color:%s'>", gethtmlrgb (ptr));
 				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
-			} else if (!strncmp (ptr, "38;5;", 5)) {
+			} else if (!strncmp (ptr, "38;5;", 5) || !strncmp (ptr, "38;2;", 5)) {
 				char *end = strchr (ptr, 'm');
 				r_strbuf_appendf (res, "<font color='%s'>", gethtmlrgb (ptr));
 				tag_font = true;
