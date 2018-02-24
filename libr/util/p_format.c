@@ -1008,7 +1008,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 				if (encoded_char){
 					encoded_length = strlen (encoded_char);
 
-					for (k = 0; (k < encoded_length); ++k) {
+					for (k = 0; k < encoded_length; ++k) {
 						p->cb_printf ("%c", encoded_char[k]);
 					}
 
