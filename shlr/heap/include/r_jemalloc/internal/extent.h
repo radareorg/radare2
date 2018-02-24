@@ -152,12 +152,8 @@ extent_node_zeroed_get(const extent_node_t *node)
 JEMALLOC_INLINE bool
 extent_node_committed_get(const extent_node_t *node)
 {
-	#ifdef JEMALLOC_DEBUG
-	assert(!node->en_achunk);
-	#else
 	if (unlikely(node->en_achunk))
 		return false;
-	#endif /* JEMALLOC_DEBUG */
 	return (node->en_committed);
 }
 

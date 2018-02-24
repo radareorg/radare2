@@ -718,12 +718,9 @@ tsd_fetch_impl(bool init)
 
 	if (!init && tsd_get_allocates() && tsd == NULL)
 		return (NULL);
-#ifdef JEMALLOC_DEBUG
-	assert(tsd != NULL);
-#else
+
 	if (unlikely(tsd == NULL))
 		return (NULL)
-#endif /* JEMALLOC_DEBUG */
 	if (unlikely(tsd->state != tsd_state_nominal)) {
 		if (tsd->state == tsd_state_uninitialized) {
 			tsd->state = tsd_state_nominal;
@@ -733,12 +730,8 @@ tsd_fetch_impl(bool init)
 			tsd->state = tsd_state_reincarnated;
 			tsd_set(tsd);
 		} else {
-#ifdef JEMALLOC_DEBUG
-			assert(tsd->state == tsd_state_reincarnated);
-#else
 			if (unlikely(tsd->state != tsd_state_reincarnated))
 				return (NULL);
-#endif /* JEMALLOC_DEBUG */
 		}
 	}
 
@@ -811,12 +804,8 @@ tsdn_null(const tsdn_t *tsdn)
 JEMALLOC_ALWAYS_INLINE tsd_t *
 tsdn_tsd(tsdn_t *tsdn)
 {
-#ifdef JEMALLOC_DEBUG
-	assert(!tsdn_null(tsdn));
-#else
 	if (unlikely(tsdn_null(tsdn)))
 		return (NULL);
-#endif /* JEMALLOC_DEBUG */
 	return (&tsdn->tsd);
 }
 #endif

@@ -155,12 +155,8 @@ bitmap_get(bitmap_t *bitmap, const bitmap_info_t *binfo, size_t bit)
 {
 	size_t goff;
 	bitmap_t g;
-#ifdef JEMALLOC_DEBUG
-	assert(bit < binfo->nbits);
-#else
 	if (unlikely(bit > binfo->nbits))
 		return (false);
-#endif /* JEMALLOC_DEBUG */
 
 	goff = bit >> LG_BITMAP_GROUP_NBITS;
 	g = bitmap[goff];

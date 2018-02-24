@@ -378,12 +378,8 @@ prof_tdata_get(tsd_t *tsd, bool create)
 {
 	prof_tdata_t *tdata;
 
-#ifdef JEMALLOC_DEBUG
-	cassert(config_prof);
-#else
 	if (unlikely(!config_prof))
 		return NULL;
-#endif /* JEMALLOC_DEBUG */
 
 	tdata = tsd_prof_tdata_get(tsd);
 	if (create) {
@@ -396,12 +392,8 @@ prof_tdata_get(tsd_t *tsd, bool create)
 			tdata = prof_tdata_reinit(tsd, tdata);
 			tsd_prof_tdata_set(tsd, tdata);
 		}
-#ifdef JEMALLOC_DEBUG
-		assert(tdata == NULL || tdata->attached);
-#else
 		if (unlikely ( ( (tdata != NULL) || ! (tdata->attached) ) ) )
 			return NULL;
-#endif /* JEMALLOC_DEBUG */
 	}
 
 	return (tdata);
@@ -410,13 +402,8 @@ prof_tdata_get(tsd_t *tsd, bool create)
 JEMALLOC_ALWAYS_INLINE prof_tctx_t *
 prof_tctx_get(tsdn_t *tsdn, const void *ptr)
 {
-#ifdef JEMALLOC_DEBUG
-	cassert(config_prof);
-	assert(ptr != NULL);
-#else
 	if (unlikely (!config_prof || ptr == NULL))
 		return NULL;
-#endif /* JEMALLOC_DEBUG */
 	return (arena_prof_tctx_get(tsdn, ptr));
 }
 
@@ -452,12 +439,8 @@ prof_sample_accum_update(tsd_t *tsd, size_t usize, bool update,
 {
 	prof_tdata_t *tdata;
 
-#ifdef JEMALLOC_DEBUG
-	cassert(config_prof);
-#else
 	if (unlikely(!config_prof))
 		return false;
-#endif /* JEMALLOC_DEBUG */
 
 	tdata = prof_tdata_get(tsd, true);
 	if (unlikely((uintptr_t)tdata <= (uintptr_t)PROF_TDATA_STATE_MAX))
@@ -488,12 +471,8 @@ prof_alloc_prep(tsd_t *tsd, size_t usize, bool prof_active, bool update)
 	prof_tdata_t *tdata;
 	prof_bt_t bt;
 
-#ifdef JEMALLOC_DEBUG
-	assert(usize == s2u(usize));
-#else
 	if (unlikely(usize != s2u(usize)))
 		return NULL;
-#endif /* JEMALLOC_DEBUG */
 
 	if (!prof_active || likely(prof_sample_accum_update(tsd, usize, update,
 	    &tdata)))
