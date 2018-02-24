@@ -178,13 +178,13 @@ R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
 		return outstr;
 	}
 	switch (r_cons_singleton ()->color) {
-	case COLORS_256: // 256 color palette
+	case COLOR_MODE_256: // 256 color palette
 		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, rgb (r, g, b));
 		break;
-	case COLORS_16M: // 16M (truecolor)
+	case COLOR_MODE_16M: // 16M (truecolor)
 		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b);
 		break;
-	case COLORS_16: // ansi 16 colors
+	case COLOR_MODE_16: // ansi 16 colors
 		{
 		const char *bold = (a == ALPHA_BOLD)? "1;": "";
 		int k = (r + g + b) / 3;

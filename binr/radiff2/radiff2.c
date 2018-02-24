@@ -816,8 +816,8 @@ int main(int argc, char **argv) {
 				addr = "main";
 			}
 			/* should be in mode not in bool pdc */
-			r_config_set (c->config, "scr.color", COLORS_DISABLED);
-			r_config_set (c2->config, "scr.color", COLORS_DISABLED);
+			r_config_set (c->config, "scr.color", COLOR_MODE_DISABLED);
+			r_config_set (c2->config, "scr.color", COLOR_MODE_DISABLED);
 
 			ut64 addra = r_num_math (c->num, addr);
 			bufa = (ut8 *) r_core_cmd_strf (c, "af;pdc @ 0x%08"PFMT64x, addra);

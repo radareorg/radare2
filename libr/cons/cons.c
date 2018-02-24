@@ -73,7 +73,7 @@ static inline void r_cons_write(const char *buf, int len) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor;
-	if (I.color > COLORS_16) {
+	if (I.color > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -277,7 +277,7 @@ R_API RCons *r_cons_new() {
 	I.event_interrupt = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
-	I.color = COLORS_DISABLED;
+	I.color = COLOR_MODE_DISABLED;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;

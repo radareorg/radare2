@@ -524,7 +524,7 @@ int main(int argc, char **argv, char **envp) {
 			/* implicit -q */
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
-			r_config_set_i (r.config, "scr.color", COLORS_DISABLED);
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
 			quiet = true;
 			break;
 		case 'u':
@@ -1292,7 +1292,7 @@ int main(int argc, char **argv, char **envp) {
 #if UNCOLORIZE_NONTTY
 #if __UNIX__
 	if (!r_cons_isatty ()) {
-		r_config_set_i (r.config, "scr.color", COLORS_DISABLED);
+		r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
 	}
 #endif
 #endif
