@@ -94,7 +94,7 @@ static int projectInit(RCore *core) {
 	return ret;
 }
 
-static bool r_core_is_project(RCore *core, const char *name) {
+R_API bool r_core_is_project(RCore *core, const char *name) {
 	bool ret = false;
 	if (name && *name && *name != '.') {
 		char *path = projectScriptPath (core, name);
