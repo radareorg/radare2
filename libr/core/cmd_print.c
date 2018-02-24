@@ -743,26 +743,21 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		bsize = -bsize;
 	}
 	r_cons_print ("[");
-	if (bsize <= core->blocksize) {
-		r_core_print_disasm_json (core, core->offset, core->block,
-			bsize, 0);
+	ut8 *buf = malloc (bsize);
+	if (buf) {
+		r_io_read_at (core->io, core->offset, buf, bsize);
+		r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
+		free (buf);
 	} else {
-		ut8 *buf = malloc (bsize);
-		if (buf) {
-			r_io_read_at (core->io, core->offset, buf, bsize);
-			r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
-			free (buf);
-		} else {
-			eprintf ("cannot allocate %d byte(s)\n", bsize);
-		}
+		eprintf ("cannot allocate %d byte(s)\n", bsize);
 	}
 	r_cons_print ("]");
 }
 
-static void cmd_pdj(RCore *core, const char *arg) {
+static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	int nblines = r_num_math (core->num, arg);
 	r_cons_print ("[");
-	r_core_print_disasm_json (core, core->offset, core->block, core->blocksize, nblines);
+	r_core_print_disasm_json (core, core->offset, block, core->blocksize, nblines);
 	r_cons_print ("]\n");
 }
 
@@ -947,7 +942,7 @@ static void print_format_help_help_help_help(RCore *core) {
 	r_core_cmd_help (core, help_msg);
 }
 
-static void cmd_print_format(RCore *core, const char *_input, int len) {
+static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input;
 	int mode = R_PRINT_MUSTSEE;
 	switch (_input[1]) {
@@ -1163,14 +1158,14 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 					*eq++ = 0;
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->offset,
-						core->block, core->blocksize, name, mode, eq, dot);
+						block, core->blocksize, name, mode, eq, dot);
 				} else {
 					r_print_format (core->print, core->offset,
-						core->block, core->blocksize, name, mode, NULL, dot);
+						block, core->blocksize, name, mode, NULL, dot);
 				}
 			} else {
 				r_print_format (core->print, core->offset,
-					core->block, core->blocksize, name, mode, NULL, NULL);
+					block, core->blocksize, name, mode, NULL, NULL);
 			}
 			free (name);
 		}
@@ -2288,7 +2283,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	return handled_cmd;
 }
 
-static void cmd_print_pv(RCore *core, const char *input) {
+static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 	const char *stack[] = {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
@@ -2370,23 +2365,23 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		}
 		switch (n) {
 		case 1:
-			v = r_read_ble8 (core->block);
+			v = r_read_ble8 (block);
 			r_cons_printf ("0x%02" PFMT64x "\n", v);
 			break;
 		case 2:
-			v = r_read_ble16 (core->block, core->print->big_endian);
+			v = r_read_ble16 (block, core->print->big_endian);
 			r_cons_printf ("0x%04" PFMT64x "\n", v);
 			break;
 		case 4:
-			v = r_read_ble32 (core->block, core->print->big_endian);
+			v = r_read_ble32 (block, core->print->big_endian);
 			r_cons_printf ("0x%08" PFMT64x "\n", v);
 			break;
 		case 8:
-			v = r_read_ble64 (core->block, core->print->big_endian);
+			v = r_read_ble64 (block, core->print->big_endian);
 			r_cons_printf ("0x%016" PFMT64x "\n", v);
 			break;
 		default:
-			v = r_read_ble64 (core->block, core->print->big_endian);
+			v = r_read_ble64 (block, core->print->big_endian);
 			switch (core->assembler->bits / 8) {
 			case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
 			case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
@@ -3537,7 +3532,7 @@ static int cmd_print(void *data, const char *input) {
 	RCoreAnalStats *as;
 	RCoreAnalStatsItem total = {0};
 	int mode, w, p, i, l, len, ret;
-	const ut8* block;
+	ut8* block;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
@@ -3685,7 +3680,7 @@ static int cmd_print(void *data, const char *input) {
 		cmd_print_ph (core, input + 1);
 		break;
 	case 'v': // "pv"
-		cmd_print_pv (core, input + 1);
+		cmd_print_pv (core, input + 1, block);
 		break;
 	case '-': // "p-"
 		mode = input[1];
@@ -4083,7 +4078,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'j': // pij is the same as pdj
 			if (l != 0) {
-				cmd_pdj (core, input + 2);
+				cmd_pdj (core, input + 2, block);
 			}
 			break;
 		case 'd': // "pid" is the same as pdi
@@ -4446,7 +4441,7 @@ static int cmd_print(void *data, const char *input) {
 			if (*input == 'D') {
 				cmd_pDj (core, input + 2);
 			} else {
-				cmd_pdj (core, input + 2);
+				cmd_pdj (core, input + 2, block);
 			}
 			r_cons_newline ();
 			pd_result = 0;
@@ -4467,20 +4462,21 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (!processed_cmd) {
 			ut64 addr = core->offset;
-			ut8 *block = NULL;
+			ut8 *block1 = NULL;
 			ut64 start;
 
 			if (bw_disassemble) {
-				block = malloc (core->blocksize);
+				block1 = malloc (core->blocksize);
 				if (l < 0) {
 					l = -l;
 				}
-				if (block) {
+				if (block1) {
 					if (*input == 'D') { // pD
-						free (block);
-						block = malloc (l);
-						r_core_read_at (core, addr - l, block, l); // core->blocksize);
-						core->num->value = r_core_print_disasm (core->print, core, addr - l, block, l, l, 0, 1, formatted_json);
+						free (block1);
+						if (!(block1 = malloc (l)))
+							break;
+						r_core_read_at (core, addr - l, block1, l); // core->blocksize);
+						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json);
 					} else { // pd
 						int instr_len;
 						if (r_core_prevop_addr (core, core->offset, l, &start)) {
@@ -4493,17 +4489,17 @@ static int cmd_print(void *data, const char *input) {
 						ut64 prevaddr = core->offset;
 						int bs = core->blocksize, bs1 = addrbytes * instr_len;
 						if (bs1 > bs) {
-							block = realloc (block, bs1);
+							block1 = realloc (block1, bs1);
 						}
 						r_core_seek (core, prevaddr - instr_len, true);
-						memcpy (block, core->block, bs);
+						memcpy (block1, block, bs);
 						if (bs1 > bs) {
-							r_core_read_at (core, addr + bs / addrbytes, block + (bs - bs % addrbytes),
+							r_core_read_at (core, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
 															bs1 - (bs - bs % addrbytes));
 						}
 
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block, bs1, l, 0, 1, formatted_json);
+							core, core->offset, block1, bs1, l, 0, 1, formatted_json);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -4519,31 +4515,31 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Block size too big\n");
 						return 1;
 					}
-					block = malloc (addrbytes * l);
-					if (block) {
+					block1 = malloc (addrbytes * l);
+					if (block1) {
 						if (addrbytes * l > core->blocksize) {
-							r_core_read_at (core, addr, block, addrbytes * l); // core->blocksize);
+							r_core_read_at (core, addr, block1, addrbytes * l); // core->blocksize);
 						} else {
-							memcpy (block, core->block, addrbytes * l);
+							memcpy (block1, block, addrbytes * l);
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr, block, addrbytes * l, l, 0, 1, formatted_json);
+							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json);
 					} else {
 						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
 				} else {
 					int bs1 = l * 16;
-					block = malloc (R_MAX (bs, bs1));
-					memcpy (block, core->block, bs);
+					block1 = malloc (R_MAX (bs, bs1));
+					memcpy (block1, block, bs);
 					if (bs1 > bs) {
-						r_core_read_at (core, addr + bs / addrbytes, block + (bs - bs % addrbytes),
+						r_core_read_at (core, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
 													  bs1 - (bs - bs % addrbytes));
 					}
 					core->num->value = r_core_print_disasm (core->print,
-						core, addr, block, bs1, l, 0, 0, formatted_json);
+						core, addr, block1, bs1, l, 0, 0, formatted_json);
 				}
 			}
-			free (block);
+			free (block1);
 			if (formatted_json) {
 				r_cons_print ("\n");
 			}
@@ -4640,7 +4636,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'x': // "psx"
 			if (l > 0) {
-				r_print_string (core->print, core->offset, core->block, len, 0);
+				r_print_string (core->print, core->offset, block, len, 0);
 			}
 			break;
 		case 'b': // "psb"
@@ -4655,7 +4651,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					// TODO: filter more chars?
 					for (i = j = 0; i < core->blocksize; i++) {
-						char ch = (char) core->block[i];
+						char ch = (char) block[i];
 						if (!ch) {
 							if (!hasnl) {
 								s[j] = 0;
@@ -5536,7 +5532,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'f': // "pf"
-		cmd_print_format (core, input, len);
+		cmd_print_format (core, input, block, len);
 		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {
