@@ -176,7 +176,7 @@ static void r_cons_rgb_gen (char *outstr, ut8 a, ut8 r, ut8 g, ut8 b) {
 		break;
 	case COLOR_MODE_16: // ansi 16 colors
 		{
-		fgbg = (a == ALPHA_BG)? 40: 30;
+		fgbg -= 8;
 		ut8 k = (r + g + b) / 3;
 		r = (r >= k) ? 1 : 0;
 		g = (g >= k) ? 1 : 0;
