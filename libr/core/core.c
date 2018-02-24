@@ -1318,21 +1318,23 @@ static int autocomplete(RLine *line) {
 			RListIter *iter;
 			int n = strlen (line->buffer.data + 3);
 			int i = 0;
-			r_list_foreach (list, iter, foo) {
-				if (r_core_is_project (core, foo)) {
-					if (!strncmp (foo, line->buffer.data + 3, n)) {
-						tmp_argv[i++] = r_str_newf ("%s", foo);
-						if (i == TMP_ARGV_SZ - 1) {
-							break;
+			if (projects_path) {
+				r_list_foreach (list, iter, foo) {
+					if (r_core_is_project (core, foo)) {
+						if (!strncmp (foo, line->buffer.data + 3, n)) {
+							tmp_argv[i++] = r_str_newf ("%s", foo);
+							if (i == TMP_ARGV_SZ - 1) {
+								break;
+							}
 						}
 					}
 				}
+				free (projects_path);
+				r_list_free (list);
 			}
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-			r_list_free (list);
-			free (projects_path);
 		} else {
 			int i, j, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
 			if (cfg_newtab) {
