@@ -176,17 +176,23 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	}
 	if (r_core_is_project (core, prjfile)) {
 		// rm project file
-		r_file_rm (path);
-		eprintf ("rm %s\n", path);
+		if(r_file_exists (path)) {
+			r_file_rm (path);
+			eprintf ("rm %s\n", path);
+		}
 
+		char* projectpath;
+		projectpath = r_file_dirname (path);
 		//rm xrefs.sdb file
 		path = r_file_dirname (path);
 		path = r_str_append (path, R_SYS_DIR);
 		path = r_str_append (path, "xrefs.sdb");
-		r_file_rm (path);
-		eprintf ("rm %s\n", path);
-
+		if(r_file_exists (path)) {
+			r_file_rm (path);
+			eprintf ("rm %s\n", path);
+		}
 		//change path to rop.d
+		path = r_file_dirname (path);
 		path = r_str_append(path,R_SYS_DIR);
 		path = r_str_append(path,"rop.d");
 
