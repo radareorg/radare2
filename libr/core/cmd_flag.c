@@ -819,13 +819,23 @@ rep:
 					addr = r_num_math (core->num, arg + 1);
 				}
 				break;
-			case '.':
-				strict_offset = true;
+			case '.': // list all flags at given offset
+				{
+				RFlagItem *flag;
+				RListIter *iter;
+				const RList *flaglist;
 				arg = strchr (input, ' ');
 				if (arg) {
 					addr = r_num_math (core->num, arg + 1);
 				}
-				break;
+				flaglist = r_flag_get_list (core->flags, addr);
+				r_list_foreach (flaglist, iter, flag) {
+					if (flag) {
+						r_cons_println (flag->name);
+					}
+				}
+				return 0;
+				}
 			case 'w':
 				{
 				arg = strchr (input, ' ');
