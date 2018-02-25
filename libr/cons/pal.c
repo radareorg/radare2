@@ -229,7 +229,10 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 		}
 	} else if (!strncmp (fgcolor, "#", 1)) { // "#00ff00" HTML format
 		if (strlen (fgcolor) == 7) {
-			sscanf (fgcolor, "%02hhx%02hhx%02hhx", &rcolor.r, &rcolor.g, &rcolor.b);
+			i = sscanf (fgcolor + 1, "%02hhx%02hhx%02hhx", &rcolor.r, &rcolor.g, &rcolor.b);
+			if (i != 3) {
+				eprintf ("Error while parsing HTML color: %s\n", fgcolor);
+			}
 			if (!outcol) {
 				r_cons_rgb_str (out, &rcolor);
 			}
