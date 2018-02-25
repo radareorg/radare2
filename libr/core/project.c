@@ -15,7 +15,7 @@ static void __section_list_for_projects (RIO *io, RPrint *print) {
 	if (!io || !io->sections || !print || !print->cb_printf) {
 		return;
 	}
-	ls_foreach (io->sections, iter, s) {	
+	ls_foreach (io->sections, iter, s) {
 		print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 			" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
 			i, s->paddr, r_str_rwx_i (s->flags), s->vaddr,
@@ -178,7 +178,18 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		// rm project file
 		r_file_rm (path);
 		eprintf ("rm %s\n", path);
-		path = r_str_append (path, ".d");
+
+		//rm xrefs.sdb file
+		path = r_file_dirname (path);
+		path = r_str_append (path, R_SYS_DIR);
+		path = r_str_append (path, "xrefs.sdb");
+		r_file_rm (path);
+		eprintf ("rm %s\n", path);
+
+		//change path to rop.d
+		path = r_str_append(path,R_SYS_DIR);
+		path = r_str_append(path,"rop.d");
+
 		if (r_file_is_directory (path)) {
 			char *f;
 			RListIter *iter;
@@ -945,4 +956,3 @@ R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcp
 	r_config_bump (core->config, "asm.arch");
 	return ret;
 }
-
