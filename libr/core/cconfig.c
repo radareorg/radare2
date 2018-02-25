@@ -2711,6 +2711,9 @@ R_API int r_core_config_init(RCore *core) {
 	free (tmpdir);
 	r_config_desc (cfg, "http.uproot", "Path where files are uploaded");
 
+	/* tcp */
+	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
+
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");

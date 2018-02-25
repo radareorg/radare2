@@ -1847,6 +1847,8 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	}
 
 	s = r_socket_new (0);
+	s->local = r_config_get_i(core->config, "tcp.islocal");
+
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Error listening on port %s\n", port);
 		r_socket_free (s);
