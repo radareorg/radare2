@@ -181,8 +181,6 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			eprintf ("rm %s\n", path);
 		}
 
-		char* projectpath;
-		projectpath = r_file_dirname (path);
 		//rm xrefs.sdb file
 		path = r_file_dirname (path);
 		path = r_str_append (path, R_SYS_DIR);
