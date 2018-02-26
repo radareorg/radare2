@@ -2057,7 +2057,7 @@ next:
 		if (!strcmp (str, "-")) {
 			use_editor = true;
 			str = r_file_temp ("dumpedit");
-			r_config_set (core->config, "scr.color", "false");
+			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		}
 		if (fdn > 0) {
 			pipefd = r_cons_pipe_open (str, fdn, ptr[1] == '>');

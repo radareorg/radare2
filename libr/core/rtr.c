@@ -481,7 +481,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	// WHY
 	r_config_set (core->config, "scr.html", "true");
 #endif
-	r_config_set (core->config, "scr.color", "false");
+	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
 	bool restoreSandbox = false;
@@ -509,7 +509,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		/* restore environment */
 		core->config = origcfg;
 		r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
-		r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
+		r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
 		r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
 
@@ -538,7 +538,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		core->http_up = 1;
 		core->config = newcfg;
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
-		r_config_set (newcfg, "scr.color", r_config_get (newcfg, "scr.color"));
+		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
 
 
@@ -836,7 +836,7 @@ the_end:
 	}
 	/* refresh settings - run callbacks */
 	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
-	r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
+	r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
 	r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
 	return ret;
 }
