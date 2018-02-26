@@ -29,7 +29,7 @@
 //TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
 static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64) {
-	float f = 0.0f;
+	float f = 0.0;
 	// assert sizeof (float) == sizeof (ut32))
 	ut32 tmpaddr;
 	// XXX 999 is used as an implicit buffer size, we should pass the buffer size to every function too, otherwise this code will give us some problems
@@ -858,6 +858,63 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 	}
 }
 
+
+static void r_print_format_double(const RPrint* p, int endian, int mode,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	double val_f = 0.0;
+	ut64 addr = 0;
+	int elem = -1;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size/ARRAYINDEX_COEF - 1;
+		size %= ARRAYINDEX_COEF;
+	}
+	updateAddr (buf + i, 999, endian, &addr, NULL);
+	r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
+	if (MUSTSET) {
+		p->cb_printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval,
+			seeki + ((elem >= 0) ? elem * 8 : 0));
+	} else if (mode & R_PRINT_DOT) {
+		p->cb_printf ("%f", val_f);
+	} else {
+		if (MUSTSEE) {
+			if (!SEEVALUE) {
+				p->cb_printf ("0x%08"PFMT64x" = ",
+					seeki + ((elem >= 0) ? elem * 8 : 0));
+			}
+		}
+		if (size == -1) {
+			p->cb_printf ("%f", val_f);
+		} else {
+			if (!SEEVALUE) {
+				p->cb_printf ("[ ");
+			}
+			while (size--) {
+				updateAddr (buf + i, 9999, endian, &addr, NULL);
+				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
+				if (elem == -1 || elem == 0) {
+					p->cb_printf ("%f", val_f);
+					if (elem == 0) {
+						elem = -2;
+					}
+				}
+				if (size != 0 && elem == -1) {
+					p->cb_printf (", ");
+				}
+				if (elem > -1) {
+					elem--;
+				}
+				i += 8;
+			}
+			if (!SEEVALUE) {
+				p->cb_printf (" ]");
+			}
+		}
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
+	}
+}
+
 static void r_print_format_word(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
@@ -1297,6 +1354,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			break;
 		case 'S':
 		case 'q':
+		case 'F':
 			size += tabsize * 8;
 			break;
 		case 'z':
@@ -1933,6 +1991,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				case 'f':
 					r_print_format_float (p, endian, mode, setval, seeki, buf, i, size);
 					i += (size==-1) ? 4 : 4*size;
+					break;
+				case 'F':
+					r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
+					i += (size==-1) ? 8 : 8*size;
 					break;
 				case 'i':
 					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
