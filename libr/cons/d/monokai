@@ -1,10 +1,10 @@
-ec b0x00 rgb:222
+ec b0x00 rgb:555
 ec b0x7f rgb:fff
 ec b0xff rgb:eee
 ec other rgb:888
-ec bin rgb:888
-ec btext ef8d1a
-ec call rgb:000000 rgb:ef8d1a
+ec bin rgb:FFE792
+ec btext rgb:a398e5
+ec call rgb:f1c40f
 ec cjmp rgb:A6df2E
 ec jmp rgb:A6df2E
 ec cmp rgb:ef8d1a
@@ -19,7 +19,7 @@ ec fname rgb:66d9ef
 ec label rgb:66d9ef
 ec math rgb:ddd
 ec mov rgb:ddd
-ec nop rgb:444
+ec nop rgb:FFE792
 ec offset rgb:f92672
 ec prompt rgb:ef8d1a
 ec pop rgb:ef8d1a
