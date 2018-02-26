@@ -63,7 +63,7 @@ script:
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
-  - $TRAVIS_PULL_REQUEST_BRANCH && git checkout $TRAVIS_PULL_REQUEST_BRANCH
+  - git checkout $TRAVIS_PULL_REQUEST_BRANCH
   - git rev-parse HEAD
   - VERBOSE=1 make -k all
 
