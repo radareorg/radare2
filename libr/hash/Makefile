@@ -1,6 +1,8 @@
 include ../config.mk
 
 NAME=r_hash
+DEPS=r_util
+
 # HACK
 ifneq ($(OSTYPE),darwin)
 ifneq ($(OSTYPE),haiku)
