@@ -53,7 +53,7 @@ script:
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
   - echo "${R2R_REPO}"
   - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "master")
-  - echo "${R2R_REPO} - branch: ${R2R_BRANCH}"
+  - echo "${R2R_BRANCH}"
   - git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}"
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
