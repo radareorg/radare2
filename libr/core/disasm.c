@@ -3527,14 +3527,15 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		return 0;
 	}
 	ds = esil->user;
-	if (ds) {
-		ds->esil_likely = true;
-		if (!ds->show_slow) {
-			return 0;
-		}
+	if (!ds) {
+		return 0;
+	}
+	ds->esil_likely = true;
+	if (!ds->show_slow) {
+		return 0;
 	}
 	memset (str, 0, sizeof (str));
-	if (*val && ds) {
+	if (*val) {
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
@@ -3564,7 +3565,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 
-		if (ds && *str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
+		if (*str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
 		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
 			bool jump_op = false;
 			bool ignored = false;
@@ -3610,40 +3611,38 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			} else if (*n32 == UT32_MAX) {
 				/* nothing */
 			} else {
-				if (ds && !ds->show_emu_str) {
+				if (!ds->show_emu_str) {
 					msg = r_str_newf ("-> 0x%x", *n32);
 				}
 			}
 		}
 		R_FREE (type);
-		if (ds && (ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)) {
+		if (ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
 			}
 		}
 	}
-	if (ds) {
-		if (ds->show_emu_str) {
-			if (msg && *msg) {
-				if (ds->show_emu_stroff && *msg == '"') {
-					ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
-				} else {
-					ds_comment_esil (ds, true, false, "; %s", msg);
-				}
-				if (ds->show_comments && !ds->show_comment_right) {
-					ds_newline (ds);
-				}
-			}
-		} else {
-			if (msg && *msg) {
-				ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x" %s", name, *val, msg);
+	if (ds->show_emu_str) {
+		if (msg && *msg) {
+			if (ds->show_emu_stroff && *msg == '"') {
+				ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
 			} else {
-				ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x, name, *val);
+				ds_comment_esil (ds, true, false, "; %s", msg);
 			}
 			if (ds->show_comments && !ds->show_comment_right) {
 				ds_newline (ds);
 			}
+		}
+	} else {
+		if (msg && *msg) {
+			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x" %s", name, *val, msg);
+		} else {
+			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x, name, *val);
+		}
+		if (ds->show_comments && !ds->show_comment_right) {
+			ds_newline (ds);
 		}
 	}
 	free (msg);
