@@ -448,8 +448,12 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
 
-	if (ds->show_comments && ds->show_comment_right && align) {
-		ds_align_comment (ds);
+	if (ds->show_comments) {
+		if (ds->show_comment_right && align) {
+			ds_align_comment (ds);
+		} else if (!ds->use_json) {
+			r_cons_printf ("%s", COLOR (ds, color_comment));
+		}
 	}
 
 	if (!ds->use_json) {
