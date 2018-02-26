@@ -44,7 +44,9 @@ before_script:
   - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 7
 
 script:
-  - export PR_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
+  - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
+  - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
+  - export USER_NAME=${PR_NAME:-DEFAULT_NAME}
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${PR_NAME}/g")
   - echo ${R2R_REPO}
   - git clone --depth 1 "${R2R_REPO}"
