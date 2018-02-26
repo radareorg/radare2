@@ -46,6 +46,7 @@ before_script:
 script:
   - export PR_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${PR_NAME}/g")
+  - echo ${R2R_REPO}
   - git clone --depth 1 "${R2R_REPO}"
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
