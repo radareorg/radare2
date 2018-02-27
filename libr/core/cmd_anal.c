@@ -5047,7 +5047,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'g': // "axg"
 		{
 			Sdb *db = sdb_new0 ();
-			anal_axg (core, input[1] ? input + 2 : NULL, 0, db);
+			if(input[1] == '\0') {
+				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0);
+			} else if(input[1] == 'j') {
+				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, R_CORE_ANAL_JSON);
+			}
 			sdb_free (db);
 		}
 		break;
