@@ -338,6 +338,7 @@ R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len);
 R_API RIOAccessLog *r_io_al_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
+R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API int r_io_nread_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API void r_io_alprint(RList *ls);

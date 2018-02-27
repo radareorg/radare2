@@ -442,6 +442,7 @@ R_API RIOAccessLog *r_io_al_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int l
 	return log;
 }
 
+// Deprecated, use either r_io_read_at_mapped or r_io_nread_at instead.
 // For virtual mode, returns true if all reads on mapped regions are successful
 // and complete.
 // For physical mode, the interface is broken because the actual read bytes are
@@ -456,6 +457,32 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 	if (io->va) {
 		ret = r_io_vread_at_mapped(io, addr, buf, len);
+	} else {
+		ret = r_io_pread_at(io, addr, buf, len) > 0;
+	}
+	if (io->cached & R_IO_READ) {
+		(void)r_io_cache_read(io, addr, buf, len);
+	}
+	return ret;
+}
+
+// Returns true iff all reads on mapped regions are successful and complete.
+// Unmapped regions are filled with io->Oxff in both physical and virtual modes.
+// Use this function if you want to ignore gaps or do not care about the number
+// of read bytes.
+R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
+	bool ret;
+	if (!io || !buf) {
+		return false;
+	}
+	if (io->buffer_enabled) {
+		return !!r_io_buffer_read(io, addr, buf, len);
+	}
+	if (io->ff) {
+		memset(buf, io->Oxff, len);
+	}
+	if (io->va) {
+		ret = on_map_skyline(io, addr, buf, len, R_IO_READ, fd_read_at_wrap, false);
 	} else {
 		ret = r_io_pread_at(io, addr, buf, len) > 0;
 	}
