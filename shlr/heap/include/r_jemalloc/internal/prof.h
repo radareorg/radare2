@@ -410,10 +410,6 @@ prof_tctx_get(tsdn_t *tsdn, const void *ptr)
 JEMALLOC_ALWAYS_INLINE void
 prof_tctx_set(tsdn_t *tsdn, const void *ptr, size_t usize, prof_tctx_t *tctx)
 {
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_prof);
 	assert(ptr != NULL);
 	arena_prof_tctx_set(tsdn, ptr, usize, tctx);
@@ -423,10 +419,6 @@ JEMALLOC_ALWAYS_INLINE void
 prof_tctx_reset(tsdn_t *tsdn, const void *ptr, size_t usize, const void *old_ptr,
     prof_tctx_t *old_tctx)
 {
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_prof);
 	assert(ptr != NULL);
 
@@ -489,10 +481,6 @@ prof_alloc_prep(tsd_t *tsd, size_t usize, bool prof_active, bool update)
 JEMALLOC_ALWAYS_INLINE void
 prof_malloc(tsdn_t *tsdn, const void *ptr, size_t usize, prof_tctx_t *tctx)
 {
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_prof);
 	assert(ptr != NULL);
 	assert(usize == isalloc(tsdn, ptr, true));
@@ -510,10 +498,6 @@ prof_realloc(tsd_t *tsd, const void *ptr, size_t usize, prof_tctx_t *tctx,
 {
 	bool sampled, old_sampled;
 
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_prof);
 	assert(ptr != NULL || (uintptr_t)tctx <= (uintptr_t)1U);
 
@@ -549,10 +533,6 @@ prof_free(tsd_t *tsd, const void *ptr, size_t usize)
 {
 	prof_tctx_t *tctx = prof_tctx_get(tsd_tsdn(tsd), ptr);
 
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_prof);
 	assert(usize == isalloc(tsd_tsdn(tsd), ptr, true));
 

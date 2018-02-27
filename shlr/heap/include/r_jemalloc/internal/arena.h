@@ -738,9 +738,7 @@ arena_miscelm_to_pageind(const arena_chunk_map_misc_t *miscelm)
 	arena_chunk_t *chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(miscelm);
 	size_t pageind = ((uintptr_t)miscelm - ((uintptr_t)chunk +
 	    map_misc_offset)) / sizeof(arena_chunk_map_misc_t) + map_bias;
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
+
 	assert(pageind >= map_bias);
 	assert(pageind < chunk_npages);
 
@@ -830,9 +828,6 @@ arena_mapbits_unallocated_size_get(const arena_chunk_t *chunk, size_t pageind)
 	size_t mapbits;
 
 	mapbits = arena_mapbits_get(chunk, pageind);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & (CHUNK_MAP_LARGE|CHUNK_MAP_ALLOCATED)) == 0);
 	return (arena_mapbits_size_decode(mapbits));
 }
@@ -843,9 +838,6 @@ arena_mapbits_large_size_get(const arena_chunk_t *chunk, size_t pageind)
 	size_t mapbits;
 
 	mapbits = arena_mapbits_get(chunk, pageind);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & (CHUNK_MAP_LARGE|CHUNK_MAP_ALLOCATED)) ==
 	    (CHUNK_MAP_LARGE|CHUNK_MAP_ALLOCATED));
 	return (arena_mapbits_size_decode(mapbits));
@@ -857,9 +849,6 @@ arena_mapbits_small_runind_get(const arena_chunk_t *chunk, size_t pageind)
 	size_t mapbits;
 
 	mapbits = arena_mapbits_get(chunk, pageind);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & (CHUNK_MAP_LARGE|CHUNK_MAP_ALLOCATED)) ==
 	    CHUNK_MAP_ALLOCATED);
 	return (mapbits >> CHUNK_MAP_RUNIND_SHIFT);
@@ -873,9 +862,6 @@ arena_mapbits_binind_get(const arena_chunk_t *chunk, size_t pageind)
 
 	mapbits = arena_mapbits_get(chunk, pageind);
 	binind = (mapbits & CHUNK_MAP_BININD_MASK) >> CHUNK_MAP_BININD_SHIFT;
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(binind < JM_NBINS || binind == BININD_INVALID);
 	return (binind);
 }
@@ -886,9 +872,6 @@ arena_mapbits_dirty_get(const arena_chunk_t *chunk, size_t pageind)
 	size_t mapbits;
 
 	mapbits = arena_mapbits_get(chunk, pageind);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & CHUNK_MAP_DECOMMITTED) == 0 || (mapbits &
 	    (CHUNK_MAP_DIRTY|CHUNK_MAP_UNZEROED)) == 0);
 	return (mapbits & CHUNK_MAP_DIRTY);
@@ -900,9 +883,6 @@ arena_mapbits_unzeroed_get(const arena_chunk_t *chunk, size_t pageind)
 	size_t mapbits;
 
 	mapbits = arena_mapbits_get(chunk, pageind);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & CHUNK_MAP_DECOMMITTED) == 0 || (mapbits &
 	    (CHUNK_MAP_DIRTY|CHUNK_MAP_UNZEROED)) == 0);
 	return (mapbits & CHUNK_MAP_UNZEROED);
@@ -914,9 +894,6 @@ arena_mapbits_decommitted_get(const arena_chunk_t *chunk, size_t pageind)
 	size_t mapbits;
 
 	mapbits = arena_mapbits_get(chunk, pageind);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & CHUNK_MAP_DECOMMITTED) == 0 || (mapbits &
 	    (CHUNK_MAP_DIRTY|CHUNK_MAP_UNZEROED)) == 0);
 	return (mapbits & CHUNK_MAP_DECOMMITTED);
@@ -959,9 +936,6 @@ arena_mapbits_size_encode(size_t size)
 #else
 	mapbits = size >> -CHUNK_MAP_SIZE_SHIFT;
 #endif
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((mapbits & ~CHUNK_MAP_SIZE_MASK) == 0);
 	return (mapbits);
 }
@@ -971,9 +945,6 @@ arena_mapbits_unallocated_set(arena_chunk_t *chunk, size_t pageind, size_t size,
     size_t flags)
 {
 	size_t *mapbitsp = arena_mapbitsp_get_mutable(chunk, pageind);
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((size & PAGE_MASK) == 0);
 	assert((flags & CHUNK_MAP_FLAGS_MASK) == flags);
 	assert((flags & CHUNK_MAP_DECOMMITTED) == 0 || (flags &
@@ -988,10 +959,6 @@ arena_mapbits_unallocated_size_set(arena_chunk_t *chunk, size_t pageind,
 {
 	size_t *mapbitsp = arena_mapbitsp_get_mutable(chunk, pageind);
 	size_t mapbits = arena_mapbitsp_read(mapbitsp);
-
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((size & PAGE_MASK) == 0);
 	assert((mapbits & (CHUNK_MAP_LARGE|CHUNK_MAP_ALLOCATED)) == 0);
 	arena_mapbitsp_write(mapbitsp, arena_mapbits_size_encode(size) |
@@ -1003,9 +970,6 @@ arena_mapbits_internal_set(arena_chunk_t *chunk, size_t pageind, size_t flags)
 {
 	size_t *mapbitsp = arena_mapbitsp_get_mutable(chunk, pageind);
 
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((flags & CHUNK_MAP_UNZEROED) == flags);
 	arena_mapbitsp_write(mapbitsp, flags);
 }
@@ -1016,9 +980,6 @@ arena_mapbits_large_set(arena_chunk_t *chunk, size_t pageind, size_t size,
 {
 	size_t *mapbitsp = arena_mapbitsp_get_mutable(chunk, pageind);
 
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert((size & PAGE_MASK) == 0);
 	assert((flags & CHUNK_MAP_FLAGS_MASK) == flags);
 	assert((flags & CHUNK_MAP_DECOMMITTED) == 0 || (flags &
@@ -1035,9 +996,6 @@ arena_mapbits_large_binind_set(arena_chunk_t *chunk, size_t pageind,
 	size_t *mapbitsp = arena_mapbitsp_get_mutable(chunk, pageind);
 	size_t mapbits = arena_mapbitsp_read(mapbitsp);
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(binind <= BININD_INVALID);
 	assert(arena_mapbits_large_size_get(chunk, pageind) == LARGE_MINCLASS +
 	    large_pad);
@@ -1051,9 +1009,6 @@ arena_mapbits_small_set(arena_chunk_t *chunk, size_t pageind, size_t runind,
 {
 	size_t *mapbitsp = arena_mapbitsp_get_mutable(chunk, pageind);
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(binind < BININD_INVALID);
 	assert(pageind - runind >= map_bias);
 	assert((flags & CHUNK_MAP_UNZEROED) == flags);
@@ -1147,9 +1102,6 @@ arena_ptr_small_binind_get(const void *ptr, size_t mapbits)
 		const arena_chunk_map_misc_t *miscelm;
 		const void *rpages;
 
-		/* TODO: Remove the asserts. */
-		/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-		/* ~Debily */
 		assert(binind != BININD_INVALID);
 		assert(binind < JM_NBINS);
 		chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
@@ -1183,9 +1135,7 @@ JEMALLOC_INLINE szind_t
 arena_bin_index(arena_t *arena, arena_bin_t *bin)
 {
 	szind_t binind = (szind_t)(bin - arena->bins);
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
+
 	assert(binind < JM_NBINS);
 	return (binind);
 }
@@ -1196,10 +1146,6 @@ arena_run_regind(arena_run_t *run, arena_bin_info_t *bin_info, const void *ptr)
 	size_t diff, interval, shift, regind;
 	arena_chunk_map_misc_t *miscelm = arena_run_to_miscelm(run);
 	void *rpages = arena_miscelm_to_rpages(miscelm);
-
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 
 	/*
 	 * Freeing a pointer lower than region zero can cause assertion
@@ -1262,9 +1208,6 @@ arena_run_regind(arena_run_t *run, arena_bin_info_t *bin_info, const void *ptr)
 #undef SIZE_INV_SHIFT
 	}
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(diff == regind * interval);
 	assert(regind < bin_info->nregs);
 
@@ -1307,9 +1250,6 @@ arena_prof_tctx_set(tsdn_t *tsdn, const void *ptr, size_t usize,
 {
 	arena_chunk_t *chunk;
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	cassert(config_prof);
 	assert(ptr != NULL);
 
@@ -1345,9 +1285,6 @@ arena_prof_tctx_reset(tsdn_t *tsdn, const void *ptr, size_t usize,
     const void *old_ptr, prof_tctx_t *old_tctx)
 {
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	cassert(config_prof);
 	assert(ptr != NULL);
 
@@ -1442,9 +1379,6 @@ arena_salloc(tsdn_t *tsdn, const void *ptr, bool demote)
 	size_t pageind;
 	szind_t binind;
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(ptr != NULL);
 
 	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
@@ -1491,9 +1425,6 @@ arena_dalloc(tsdn_t *tsdn, void *ptr, tcache_t *tcache, bool slow_path)
 {
 	arena_chunk_t *chunk;
 	size_t pageind, mapbits;
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(!tsdn_null(tsdn) || tcache == NULL);
 	assert(ptr != NULL);
 
@@ -1541,9 +1472,6 @@ arena_sdalloc(tsdn_t *tsdn, void *ptr, size_t size, tcache_t *tcache,
 {
 	arena_chunk_t *chunk;
 
-	/* TODO: Remove the asserts. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(!tsdn_null(tsdn) || tcache == NULL);
 
 	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);

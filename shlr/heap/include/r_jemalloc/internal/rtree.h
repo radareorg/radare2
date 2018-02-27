@@ -140,9 +140,6 @@ rtree_start_level(rtree_t *rtree, uintptr_t key)
 
 	start_level = rtree->start_level[lg_floor(key) >>
 	    LG_RTREE_BITS_PER_LEVEL];
-	/* TODO: Remove the assert. */
-	/* I did not find a solution to error handling as I am not too familiar with the codebase. */
-	/* ~Debily */
 	assert(start_level < rtree->height);
 	return (start_level);
 }

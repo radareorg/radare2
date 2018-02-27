@@ -224,9 +224,6 @@ a_attr a_type *								\
 a_name##tsd_get(bool init)						\
 {									\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
 	assert(a_name##tsd_booted);					\
 	return (&a_name##tsd_tls);					\
 }									\
@@ -234,9 +231,9 @@ a_attr void								\
 a_name##tsd_set(a_type *val)						\
 {									\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
+
+
+
 	assert(a_name##tsd_booted);					\
 	a_name##tsd_tls = (*val);					\
 	if (a_cleanup != malloc_tsd_no_cleanup)				\
@@ -287,9 +284,6 @@ a_attr a_type *								\
 a_name##tsd_get(bool init)						\
 {									\
 									\
-    /* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
 	assert(a_name##tsd_booted);					\
 	return (&a_name##tsd_tls);					\
 }									\
@@ -297,9 +291,6 @@ a_attr void								\
 a_name##tsd_set(a_type *val)						\
 {									\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
 	assert(a_name##tsd_booted);					\
 	a_name##tsd_tls = (*val);					\
 	if (a_cleanup != malloc_tsd_no_cleanup) {			\
@@ -428,9 +419,6 @@ a_name##tsd_get(bool init)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(init);			\
 	if (a_name##tsd_get_allocates() && !init && wrapper == NULL)	\
@@ -442,9 +430,9 @@ a_name##tsd_set(a_type *val)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
+
+
+
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(true);			\
 	wrapper->val = *(val);						\
@@ -571,9 +559,6 @@ a_name##tsd_get(bool init)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(init);			\
 	if (a_name##tsd_get_allocates() && !init && wrapper == NULL)	\
@@ -585,9 +570,9 @@ a_name##tsd_set(a_type *val)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
-	/* TODO: Remove the assert. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
+
+
+
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(true);			\
 	wrapper->val = *(val);						\

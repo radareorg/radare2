@@ -90,10 +90,6 @@ prng_lg_range_u32(uint32_t *state, unsigned lg_range, bool atomic)
 		return 0;
 	}
 #if 0
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert(lg_range > 0);
 	assert(lg_range <= 32);
 #endif
@@ -124,10 +120,6 @@ prng_lg_range_u64(uint64_t *state, unsigned lg_range)
 		return 0;
 	}
 #if 0
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert(lg_range > 0);
 	assert(lg_range <= 64);
 #endif
@@ -145,10 +137,6 @@ prng_lg_range_zu(size_t *state, unsigned lg_range, bool atomic)
 	size_t ret, state1;
 
 #if 0
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert(lg_range > 0);
 	assert(lg_range <= ZU(1) << (3 + LG_SIZEOF_PTR));
 #endif
@@ -176,10 +164,6 @@ prng_range_u32(uint32_t *state, uint32_t range, bool atomic)
 	unsigned lg_range;
 
 #if 0
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert(range > 1);
 #endif
 if (range <2) {
@@ -221,11 +205,6 @@ prng_range_zu(size_t *state, size_t range, bool atomic)
 {
 	size_t ret;
 	unsigned lg_range;
-
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert(range > 1);
 
 	/* Compute the ceiling of lg(range). */

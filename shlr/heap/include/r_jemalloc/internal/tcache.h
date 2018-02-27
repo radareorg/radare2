@@ -181,10 +181,6 @@ tcache_flush(void)
 {
 	tsd_t *tsd;
 
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_tcache);
 
 	tsd = tsd_fetch();
@@ -215,10 +211,6 @@ tcache_enabled_set(bool enabled)
 	tsd_t *tsd;
 	tcache_enabled_t tcache_enabled;
 
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	cassert(config_tcache);
 
 	tsd = tsd_fetch();
@@ -427,10 +419,6 @@ tcache_dalloc_small(tsd_t *tsd, tcache_t *tcache, void *ptr, szind_t binind,
 	tcache_bin_t *tbin;
 	tcache_bin_info_t *tbin_info;
 
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) <= SMALL_MAXCLASS);
 
 	if (slow_path && config_fill && unlikely(opt_junk_free))
@@ -457,10 +445,6 @@ tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, void *ptr, size_t size,
 	tcache_bin_t *tbin;
 	tcache_bin_info_t *tbin_info;
 
-	/* TODO: Remove the asserts.
-	 * I did not find a solution to error handling as i am not too familiar with the codebase.
-	 * ~Debily
-	 */
 	assert((size & PAGE_MASK) == 0);
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) > SMALL_MAXCLASS);
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) <= tcache_maxclass);
@@ -477,7 +461,6 @@ tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, void *ptr, size_t size,
 		    (tbin_info->ncached_max >> 1), tcache);
 	}
 
-	/* TODO: Remove assert */
 	assert(tbin->ncached < tbin_info->ncached_max);
 	tbin->ncached++;
 	*(tbin->avail - tbin->ncached) = ptr;

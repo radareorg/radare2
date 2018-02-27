@@ -51,9 +51,6 @@ struct {								\
 #define	phn_merge_ordered(a_type, a_field, a_phn0, a_phn1, a_cmp) do {	\
 	a_type *phn0child;						\
 									\
-	/* TODO: Remove the asserts. */\
-	/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-	/* ~Debily */ \
 	assert(a_phn0 != NULL);						\
 	assert(a_phn1 != NULL);						\
 	assert(a_cmp(a_phn0, a_phn1) <= 0);				\
@@ -143,16 +140,10 @@ struct {								\
 			while (true) {					\
 				head = phn_next_get(a_type, a_field,	\
 				    phn1);				\
-				/* TODO: Remove the assert. */\
-				/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-				/* ~Debily */ \
 				assert(phn_prev_get(a_type, a_field,	\
 				    phn0) == NULL);			\
 				phn_next_set(a_type, a_field, phn0,	\
 				    NULL);				\
-				/* TODO: Remove the assert. */\
-				/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-				/* ~Debily */ \
 				assert(phn_prev_get(a_type, a_field,	\
 				    phn1) == NULL);			\
 				phn_next_set(a_type, a_field, phn1,	\
@@ -180,9 +171,6 @@ struct {								\
 		phn_next_set(a_type, a_field, a_ph->ph_root, NULL);	\
 		phn_prev_set(a_type, a_field, phn, NULL);		\
 		ph_merge_siblings(a_type, a_field, phn, a_cmp, phn);	\
-		/* TODO: Remove the assert. */\
-		/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-		/* ~Debily */ \
 		assert(phn_next_get(a_type, a_field, phn) == NULL);	\
 		phn_merge(a_type, a_field, a_ph->ph_root, phn, a_cmp,	\
 		    a_ph->ph_root);					\
@@ -340,9 +328,6 @@ a_prefix##remove(a_ph_type *ph, a_type *phn)				\
 				    parent);				\
 			}						\
 		} else {						\
-			/* TODO: Remove the assert. */\
-			/* I did not find a solution to error handling as i am not too familiar with the codebase. */ \
-			/* ~Debily */ \
 			assert(phn_prev_get(a_type, a_field, phn) !=	\
 			    NULL);					\
 			phn_next_set(a_type, a_field,			\
