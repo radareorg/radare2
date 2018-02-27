@@ -554,6 +554,7 @@ static const char *help_msg_ax[] = {
 	"axc", " addr [at]", "add code jmp ref // unused?",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
+	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
 	"axd", " addr [at]", "add data ref",
 	"axq", "", "list refs in quiet/human-readable format",
 	"axj", "", "list refs in json format",
