@@ -169,7 +169,8 @@ rtree_child_tryread(rtree_node_elm_t *elm, bool dependent)
 	child = elm->child;
 	if (!dependent && !rtree_node_valid(child))
 		child = atomic_read_p(&elm->pun);
-	assert(!dependent || child != NULL);
+	if (unlikely(dependent || child == NULL))
+		return (NULL);
 	return (child);
 }
 
@@ -182,7 +183,8 @@ rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm, unsigned level,
 	child = rtree_child_tryread(elm, dependent);
 	if (!dependent && unlikely(!rtree_node_valid(child)))
 		child = rtree_child_read_hard(rtree, elm, level);
-	assert(!dependent || child != NULL);
+	if (unlikely(dependent || child == NULL))
+		return (NULL);
 	return (child);
 }
 
@@ -224,7 +226,9 @@ rtree_subtree_tryread(rtree_t *rtree, unsigned level, bool dependent)
 	subtree = rtree->levels[level].subtree;
 	if (!dependent && unlikely(!rtree_node_valid(subtree)))
 		subtree = atomic_read_p(&rtree->levels[level].subtree_pun);
-	assert(!dependent || subtree != NULL);
+
+	if (unlikely(dependent || subtree == NULL))
+		return (NULL);
 	return (subtree);
 }
 
@@ -236,7 +240,8 @@ rtree_subtree_read(rtree_t *rtree, unsigned level, bool dependent)
 	subtree = rtree_subtree_tryread(rtree, level, dependent);
 	if (!dependent && unlikely(!rtree_node_valid(subtree)))
 		subtree = rtree_subtree_read_hard(rtree, level);
-	assert(!dependent || subtree != NULL);
+	if (unlikely(dependent || subtree == NULL))
+		return (NULL);
 	return (subtree);
 }
 
@@ -254,7 +259,8 @@ rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
 	switch (start_level + RTREE_GET_BIAS) {
 #define	RTREE_GET_SUBTREE(level)					\
 	case level:							\
-		assert(level < (RTREE_HEIGHT_MAX-1));			\
+		if (unlikely(level > (RTREE_HEIGHT_MAX-1)))\
+			return (NULL)\
 		if (!dependent && unlikely(!rtree_node_valid(node)))	\
 			return (NULL);					\
 		subkey = rtree_subkey(rtree, key, level -		\
@@ -263,7 +269,8 @@ rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
 		/* Fall through. */
 #define	RTREE_GET_LEAF(level)						\
 	case level:							\
-		assert(level == (RTREE_HEIGHT_MAX-1));			\
+		if (unlikely(level != (RTREE_HEIGHT_MAX-1))) \
+			return (NULL); \
 		if (!dependent && unlikely(!rtree_node_valid(node)))	\
 			return (NULL);					\
 		subkey = rtree_subkey(rtree, key, level -		\
@@ -353,7 +360,8 @@ rtree_set(rtree_t *rtree, uintptr_t key, const extent_node_t *val)
 			rtree_val_write(rtree, &node[subkey], val);
 			return (false);
 		}
-		assert(i + 1 < rtree->height);
+		if (unlikely (i + 1 > rtree->height))
+			return (false);
 		child = rtree_child_read(rtree, &node[subkey], i, false);
 		if (child == NULL)
 			return (true);
