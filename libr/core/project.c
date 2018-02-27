@@ -164,7 +164,8 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
-	char *path;
+	char *path, *tmp, *prjDir;
+	size_t length;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
 		return 0;
@@ -175,31 +176,41 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
+
 		// rm project file
-		if(r_file_exists (path)) {
+		if (r_file_exists (path)) {
 			r_file_rm (path);
 			eprintf ("rm %s\n", path);
 		}
+
+		prjDir = r_file_dirname (path);
+		free (path);
 
 		//rm xrefs.sdb file
-		path = r_file_dirname (path);
-		path = r_str_append (path, R_SYS_DIR);
-		path = r_str_append (path, "xrefs.sdb");
-		if(r_file_exists (path)) {
-			r_file_rm (path);
-			eprintf ("rm %s\n", path);
+		length = strlen (prjDir) + strlen (R_SYS_DIR) + strlen ("xrefs.sdb") + 1;
+		tmp = (char *)malloc (length);
+		strcpy (tmp, prjDir);
+		strcat (tmp, R_SYS_DIR);
+		strcat (tmp, "xrefs.sdb");
+		if (r_file_exists (tmp)) {
+			r_file_rm (tmp);
+			eprintf ("rm %s\n", tmp);
 		}
-		//change path to rop.d
-		path = r_file_dirname (path);
-		path = r_str_append(path,R_SYS_DIR);
-		path = r_str_append(path,"rop.d");
+		free (tmp);
 
-		if (r_file_is_directory (path)) {
+		//change path to rop.d
+		length = strlen (prjDir) + strlen (R_SYS_DIR) + strlen ("rop.d") + 1;
+		tmp = (char *)malloc (length);
+		strcpy (tmp, prjDir);
+		strcat (tmp, R_SYS_DIR);
+		strcat (tmp, "rop.d");
+
+		if (r_file_is_directory (tmp)) {
 			char *f;
 			RListIter *iter;
-			RList *files = r_sys_dir (path);
+			RList *files = r_sys_dir (tmp);
 			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_append (strdup (path), R_SYS_DIR);
+				char *filepath = r_str_append (strdup (tmp), R_SYS_DIR);
 				filepath = r_str_append (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
@@ -207,14 +218,15 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 				}
 				free (filepath);
 			}
-			r_file_rm (path);
-			eprintf ("rm %s\n", path);
+			r_file_rm (tmp);
+			eprintf ("rm %s\n", tmp);
 			r_list_free (files);
 		}
+		free (tmp);
 		// TODO: remove .d directory (BEWARE OF ROOT RIMRAFS!)
 		// TODO: r_file_rmrf (path);
 	}
-	free (path);
+	free (prjDir);
 	return 0;
 }
 
