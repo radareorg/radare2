@@ -4638,16 +4638,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 	buf = malloc (bsz);
 	block = malloc (bsz);
-	if (!buf) {
-		eprintf ("Error: cannot allocate a block\n");
+	if (!buf || !block) {
+		eprintf ("Error: cannot allocate buf or block\n");
+		free (buf);
 		free (block);
 		return;
 	}
-	if (!block) {
-		eprintf ("Error: cannot allocate a temp block\n");
-		free (buf);
-		return;
-	}	
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
