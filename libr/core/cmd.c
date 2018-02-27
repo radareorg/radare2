@@ -184,6 +184,16 @@ static const char *help_msg_equalg[] = {
 	NULL
 };
 
+static const char *help_msg_equalh[] = {
+	"Usage:",  "=h[---*&] [port]", " # manage http connections",
+	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=h-", "", "stop background webserver",
+	"=h--", "", "stop foreground webserver",
+	"=h*", "", "restart current webserver",
+	"=h&", " port", "start http server in background",
+	NULL
+};
+
 static const char *help_msg_b[] = {
 	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
 	"b", "", "display current block size",
