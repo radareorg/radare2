@@ -5,4 +5,5 @@ EXTRAS=https://github.com/radare/radare2-extras
 CAPSTONE=https://github.com/radare/radare2-capstone
 BINDINGS=https://github.com/radare/radare2-bindings
 REGRESSIONS=https://github.com/radare/radare2-regressions
+PR_REGRESSIONS=https://github.com/__USER__/radare2-regressions
 [ -z "$1" ] && grep -h $0 | grep -v grep || eval echo \$$1
