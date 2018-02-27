@@ -1701,7 +1701,6 @@ static int cb_scrstrconv(void *user, void *data) {
 
 static int cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	RCore *core = (RCore*) user;
 	if (!strcmp (node->value, "?")) {
 		r_cons_printf ("dot\ngml\ngmlfcn\n");
 		return false;
