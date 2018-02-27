@@ -66,6 +66,8 @@ script:
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
+  - git remote -v
+  - git branch
   - git rev-parse HEAD
   - VERBOSE=1 make -k all
 
