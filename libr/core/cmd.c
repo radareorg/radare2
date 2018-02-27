@@ -162,7 +162,7 @@ static const char *help_msg_equal[] = {
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background)",
+	"=h&", " port", "start http server in background",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
 	"\ngdbserver:", "", "",
@@ -466,6 +466,10 @@ static void aliascmd(RCore *core, const char *str) {
 
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (input[1] == '?') {
+		r_core_cmd_help (core, help_msg_equal);
+		return 0;
+	}
 	switch (*input) {
 	case '\0': // "="
 		r_core_rtr_list (core);
@@ -535,6 +539,10 @@ static int cmd_rap_run(void *data, const char *input) {
 static int cmd_yank(void *data, const char *input) {
 	ut64 n;
 	RCore *core = (RCore *)data;
+	if (input[1] == '?') {
+		r_core_cmd_help (core, help_msg_y);
+		return true;
+	}
 	switch (input[0]) {
 	case ' ': // "y "
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
@@ -1010,6 +1018,10 @@ static int cmd_bsize(void *data, const char *input) {
 	ut64 n;
 	RFlagItem *flag;
 	RCore *core = (RCore *)data;
+	if (input[1] == '?') {
+		r_core_cmd_help (core, help_msg_b);
+		return 0;
+	}
 	switch (input[0]) {
 	case 'm': // "bm"
 		n = r_num_math (core->num, input + 1);
@@ -1054,6 +1066,10 @@ static int cmd_resize(void *data, const char *input) {
 	ut64 newsize = 0;
 	st64 delta = 0;
 	int grow, ret;
+	if (input[1] == '?') {
+		r_core_cmd_help (core, help_msg_r);
+		return true;
+	}
 
 	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
 	switch (*input) {
