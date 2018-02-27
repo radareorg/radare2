@@ -1,5 +1,6 @@
 FLIRT
 =====
+
 At the  moment of  writing r2  supports  loading  and finding  FLIRT
 patterns, those files can be generated with the FLIRT tools from IDA.
 R2 doesn't  yet supports creating  those files.  But it supports its
@@ -14,9 +15,7 @@ it is  not possible  to redistribute the  .pat or the .sig files.  It
 doesn't  seems to  have watermarks.  However it's  a bit unclear  what
 licence the file generated should have.  Mentioning the files should
 be free of copyrighted material  (the original libs bytes). That said,
-there's a paragraph in the flirt paper:
-
-	https://www.hex-rays.com/products/ida/tech/flirt/in_depth.shtml
+there's a paragraph in [IDA F.L.I.R.T. Technology: In-Depth](https://www.hex-rays.com/products/ida/tech/flirt/in_depth.shtml)
 
 
 Create the .pat file
@@ -39,11 +38,10 @@ conflicts.  Prepend a '+' on the lines  you're sure you  want to keep
 Using it with r2:
 -----------------
 
-    $ r2 -c 'zF libc.sig' staticbin
-
-PROFIT.
+    r2 -c 'zF libc.sig' staticbin
 
 refs:
-    flair/sigmake.txt
-    flair/pat.txt
+
+* flair/sigmake.txt
+* flair/pat.txt
 

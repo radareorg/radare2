@@ -82,6 +82,7 @@ Parsing
 Parsing is done by a state machine which reads the expression string and creates a keyvalue string that represents the ESIL instruction.
 
 This is an example
+```
 	switch (ch) {
 	case '+':
 	case '-':
@@ -93,3 +94,4 @@ This is an example
 		}
 		break;
 	}
+```

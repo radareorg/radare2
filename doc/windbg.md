@@ -11,8 +11,6 @@ just an initial implementation which will get better in time.
 It is also possible to use the remote GDB interface to connect and
 debug Windows kernels without depending on Windows capabilities.
 
-------8<--------------8<------------------8<------------------------
-
 Enable WinDBG support on Windows Vista and higher like this:
 
     bcdedit /debug on

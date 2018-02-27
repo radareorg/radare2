@@ -12,12 +12,15 @@ following some sane and basic OO concepts.
 
 Global picture
 --------------
+
+```
 [Class]
    |
    |-- [Plugins]  // shared among instances
    |        \
    |         \
    `------> [Instance] ----> [Liberation]
+```
 
 * We need a construction/destruction API for plugins among instances
   - simplify code
@@ -29,7 +32,8 @@ Plugins are singletons. Or we will have to create factories for every class.
 
 Lifecycle of the class
 ----------------------
-  Class
+
+Class
    - new
    - as_new
    - init
