@@ -162,12 +162,22 @@ static const char *help_msg_equal[] = {
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background)",
+	"=h&", " port", "start http server in background",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
 	"\ngdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
 	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
+	NULL
+};
+
+static const char *help_msg_equalh[] = {
+	"Usage:",  "=h[---*&] [port]", " # manage http connections",
+	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=h-", "", "stop background webserver",
+	"=h--", "", "stop foreground webserver",
+	"=h*", "", "restart current webserver",
+	"=h&", " port", "start http server in background",
 	NULL
 };
 
@@ -503,7 +513,11 @@ static int cmd_rap(void *data, const char *input) {
 		r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
 		break;
 	case 'h': // "=h"
-		r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		if (input[1] != '?') {
+			r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		} else { // "=h?"
+			r_core_cmd_help (core, help_msg_equalh);
+		}
 		break;
 	case 'H': // "=H"
 		while (input[1] == ' ') {
