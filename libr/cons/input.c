@@ -460,17 +460,31 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 
 // TODO: support binary? buf+len
 static char *readbuffer = NULL;
+static int readbuffer_length = 0;
 
-R_API void r_cons_readpush(const char *str) {
-	readbuffer = r_str_append (readbuffer, str);
+R_API bool r_cons_readpush(const char *str, int len) {
+	char *res = realloc (readbuffer, len + readbuffer_length);
+	if (res) {
+		readbuffer = res;
+		memmove (readbuffer + readbuffer_length, str, len);
+		readbuffer_length += len;
+		return true;
+	}
+	return false;
+}
+
+R_API void r_cons_readflush() {
+	R_FREE (readbuffer);
+	readbuffer_length = 0;
 }
 
 R_API int r_cons_readchar() {
 	char buf[2];
 	buf[0] = -1;
-	if (readbuffer && *readbuffer) {
+	if (readbuffer_length > 0) {
 		int ch = *readbuffer;
-		memmove (readbuffer, readbuffer + 1, strlen (readbuffer));
+		readbuffer_length--;
+		memmove (readbuffer, readbuffer + 1, readbuffer_length);
 		return ch;
 	}
 #if __WINDOWS__ && !__CYGWIN__ //&& !MINGW32

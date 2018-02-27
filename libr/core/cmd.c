@@ -1173,8 +1173,13 @@ static int cmd_visual(void *data, const char *input) {
 	if (!r_config_get_i (core->config, "scr.interactive")) {
 		return false;
 	}
-	r_cons_readpush (input);
-	return r_core_visual ((RCore *)data, ""); //NULL); //input);
+	char *buf = strdup (input);
+	int len = r_str_unescape (buf);
+	r_cons_readpush (buf, len);
+	free (buf);
+	int res = r_core_visual ((RCore *)data, ""); //input);
+	r_cons_readflush ();
+	return res;
 }
 
 static int task_finished(void *user, void *data) {
