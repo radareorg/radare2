@@ -26,8 +26,10 @@ try to keep the codebase consistent and clean.
 * When relevant, write a test for
   [radare2-regressions](https://github.com/radare/radare2-regressions) and
   submit a PR also there. Use the same branch name in both repositories, so
-  Travis will be able to use your new tests together with new changes. NOTE: when
-  merging PRs, *always* merge the radare2-regressions PR first.
+  Travis will be able to use your new tests together with new changes. 
+  AppVeyor (for now) still uses radare/radare2-regressions repo with branch
+  master. NOTE: when merging PRs, *always* merge the radare2-regressions PR
+  first.
 
 ## Coding Style guidelines
 
