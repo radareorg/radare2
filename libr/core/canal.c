@@ -958,7 +958,7 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
 		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
 		const bool asmComments = r_config_get (core->config, "asm.comments");
-		r_config_set (core->config, "scr.color", COLOR_MODE_DISABLED);
+		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		r_config_set (core->config, "scr.utf8", "false");
 		r_config_set (core->config, "asm.comments", "false");
 		snprintf (cmd, sizeof (cmd),

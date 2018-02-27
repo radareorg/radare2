@@ -102,7 +102,6 @@ static void unrgb (int color, int *r, int *g, int *b) {
 }
 
 R_API void r_cons_rgb_init (void) {
-	RCons *cons = r_cons_singleton ();
 	if (color_table[255] == 0) {
 		init_color_table ();
 	}
@@ -157,56 +156,56 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 }
 
 R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
-	const int r = (off >> 2) & 0xff;
-	const int g = (off >> 6) & 0xff;
-	const int b = (off >> 12) & 0xff;
-	return r_cons_rgb_str (outstr, r, g, b, false);
+	RColor rc = RColor_BLACK;
+	rc.r = (off >> 2) & 0xff;
+	rc.g = (off >> 6) & 0xff;
+	rc.b = (off >> 12) & 0xff;
+	return r_cons_rgb_str (outstr, &rc);
 }
 
-/* Return color string depending on cons->color */
-R_API char *r_cons_rgb_str(char *outstr, ut8 r, ut8 g, ut8 b, ut8 a) {
-	ut8 fgbg = (a == ALPHA_BG)? 48: 38;
-	if (!outstr) {
-		outstr = malloc (32);
-	}
-	if (!outstr) {
-		return NULL;
-	}
-	*outstr = 0;
-	if (a == ALPHA_RESET) {
-		sprintf (outstr, "%s", Color_RESET);
-		return outstr;
-	}
+/* Compute color string depending on cons->color */
+static void r_cons_rgb_gen (char *outstr, ut8 a, ut8 r, ut8 g, ut8 b) {
+	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
+	const char *bold = (a & ALPHA_BOLD)? "1;": "";
 	switch (r_cons_singleton ()->color) {
 	case COLOR_MODE_256: // 256 color palette
-		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, rgb (r, g, b));
+		sprintf (outstr, "\x1b[%s%d;5;%dm", bold, fgbg, rgb (r, g, b));
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
-		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b);
+		sprintf (outstr, "\x1b[%s%d;2;%d;%d;%dm", bold, fgbg, r, g, b);
 		break;
 	case COLOR_MODE_16: // ansi 16 colors
 		{
-		const char *bold = (a == ALPHA_BOLD)? "1;": "";
-		int k = (r + g + b) / 3;
+		fgbg -= 8;
+		ut8 k = (r + g + b) / 3;
 		r = (r >= k) ? 1 : 0;
 		g = (g >= k) ? 1 : 0;
 		b = (b >= k) ? 1 : 0;
 		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		sprintf (outstr, "\x1b[%s%dm", bold, 30 + k);
+		sprintf (outstr, "\x1b[%s%dm", bold, fgbg + k);
 		}
 		break;
 	}
+}
+
+/* Return the computed color string for the specified color */
+R_API char *r_cons_rgb_str (char *outstr, RColor *rcolor) {
+	if (!rcolor || (!outstr && !(outstr = malloc (32)))) {
+		return NULL;
+	}
+	*outstr = 0;
+	if (rcolor->a == ALPHA_RESET) {
+		sprintf (outstr, "%s", Color_RESET);
+		return outstr;
+	}
+	r_cons_rgb_gen (outstr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
+	// If the color handles both foreground and background, also add background
+	if (rcolor->a == ALPHA_FGBG) {
+		ut8 length = strlen (outstr);
+		r_cons_rgb_gen (outstr + length, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
+	}
+
 	return outstr;
-}
-
-R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, ut8 a) {
-	char outstr[64];
-	r_cons_strcat (r_cons_rgb_str (outstr, r, g, b, a));
-}
-
-R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B) {
-	r_cons_rgb (r, g, b, 0);
-	r_cons_rgb (R, G, B, 1);
 }
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {

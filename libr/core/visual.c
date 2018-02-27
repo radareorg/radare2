@@ -1504,6 +1504,7 @@ static void visual_browse(RCore *core) {
 		" q  quit\n"
 		" s  symbols\n"
 		" t  types\n"
+		" T  themes\n"
 		" v  vars\n"
 		" x  xrefs\n"
 		" X  refs\n"
@@ -1528,6 +1529,9 @@ static void visual_browse(RCore *core) {
 			break;
 		case 't':
 			r_core_visual_types (core);
+			break;
+		case 'T':
+			r_core_cmd0 (core, "eco $(eco~...)");
 			break;
 		case 'e':
 			r_core_visual_config (core);
