@@ -1389,13 +1389,13 @@ int main(int argc, char **argv, char **envp) {
 				if (debug) {
 					if (no_question_debug) {
 						if (r_config_get_i (r.config, "dbg.exitkills") && y_kill_debug){
-							r_debug_kill (r.dbg, 0, false, 9); // KILL
+							r_debug_kill (r.dbg, r.dbg->pid, r.dbg->tid, 9); // KILL
 						}
 					} else {
 						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
-								r_debug_kill (r.dbg, 0, false, 9); // KILL
+								r_debug_kill (r.dbg, r.dbg->pid, r.dbg->tid, 9); // KILL
 							} else {
 								r_debug_detach (r.dbg, r.dbg->pid);
 							}
