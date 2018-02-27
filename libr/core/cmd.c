@@ -157,7 +157,15 @@ static const char *help_msg_equal[] = {
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
 	"=&", ":port", "start rap server in background",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nhttp server:", "", "",
+	"\nother servers:","","",
+	"=h", "[?]", "listen for http connections",
+	"=g", "[?]", "using gdbserver",
+	NULL
+};
+
+static const char *help_msg_equalh[] = {
+	"Usage:", " =[hH] [...]", " # http server",
+	"http server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
@@ -165,7 +173,12 @@ static const char *help_msg_equal[] = {
 	"=h&", " port", "start http server in background",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
-	"\ngdbserver:", "", "",
+	NULL
+};
+
+static const char *help_msg_equalg[] = {
+	"Usage:", " =[g] [...]", " # gdb server",
+	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
 	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL
@@ -466,10 +479,6 @@ static void aliascmd(RCore *core, const char *str) {
 
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	if (input[1] == '?') {
-		r_core_cmd_help (core, help_msg_equal);
-		return 0;
-	}
 	switch (*input) {
 	case '\0': // "="
 		r_core_rtr_list (core);
@@ -504,16 +513,28 @@ static int cmd_rap(void *data, const char *input) {
 		r_core_rtr_session (core, input + 1);
 		break;
 	case 'g': // "=g"
-		r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalg);
+		} else {
+			r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		}
 		break;
 	case 'h': // "=h"
-		r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalh);
+		} else {
+			r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		}
 		break;
 	case 'H': // "=H"
-		while (input[1] == ' ') {
-			input++;
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalh);
+		} else {
+			while (input[1] == ' ') {
+				input++;
+			}
+			r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		}
-		r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		break;
 	case '?': // "=?"
 		r_core_cmd_help (core, help_msg_equal);
@@ -539,10 +560,6 @@ static int cmd_rap_run(void *data, const char *input) {
 static int cmd_yank(void *data, const char *input) {
 	ut64 n;
 	RCore *core = (RCore *)data;
-	if (input[1] == '?') {
-		r_core_cmd_help (core, help_msg_y);
-		return true;
-	}
 	switch (input[0]) {
 	case ' ': // "y "
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
@@ -1018,10 +1035,6 @@ static int cmd_bsize(void *data, const char *input) {
 	ut64 n;
 	RFlagItem *flag;
 	RCore *core = (RCore *)data;
-	if (input[1] == '?') {
-		r_core_cmd_help (core, help_msg_b);
-		return 0;
-	}
 	switch (input[0]) {
 	case 'm': // "bm"
 		n = r_num_math (core->num, input + 1);
@@ -1066,10 +1079,6 @@ static int cmd_resize(void *data, const char *input) {
 	ut64 newsize = 0;
 	st64 delta = 0;
 	int grow, ret;
-	if (input[1] == '?') {
-		r_core_cmd_help (core, help_msg_r);
-		return true;
-	}
 
 	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
 	switch (*input) {
