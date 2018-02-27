@@ -157,15 +157,28 @@ static const char *help_msg_equal[] = {
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
 	"=&", ":port", "start rap server in background",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nhttp server:", "", "",
+	"\nother servers:","","",
+	"=h", "[?]", "listen for http connections",
+	"=g", "[?]", "using gdbserver",
+	NULL
+};
+
+static const char *help_msg_equalh[] = {
+	"Usage:", " =[hH] [...]", " # http server",
+	"http server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background)",
+	"=h&", " port", "start http server in background",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
-	"\ngdbserver:", "", "",
+	NULL
+};
+
+static const char *help_msg_equalg[] = {
+	"Usage:", " =[g] [...]", " # gdb server",
+	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
 	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL
@@ -500,16 +513,28 @@ static int cmd_rap(void *data, const char *input) {
 		r_core_rtr_session (core, input + 1);
 		break;
 	case 'g': // "=g"
-		r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalg);
+		} else {
+			r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		}
 		break;
 	case 'h': // "=h"
-		r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalh);
+		} else {
+			r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		}
 		break;
 	case 'H': // "=H"
-		while (input[1] == ' ') {
-			input++;
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalh);
+		} else {
+			while (input[1] == ' ') {
+				input++;
+			}
+			r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		}
-		r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		break;
 	case '?': // "=?"
 		r_core_cmd_help (core, help_msg_equal);
