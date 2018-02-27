@@ -275,7 +275,7 @@ R_API int r_cons_any_key(const char *msg) {
 
 #if __WINDOWS__ && !__CYGWIN__
 static int readchar_win(ut32 usec) {
-	int ch=0;
+	int ch = 0;
 	BOOL ret;
 	BOOL bCtrl = FALSE;
 	DWORD mode, out;
@@ -458,9 +458,21 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 #endif
 }
 
+// TODO: support binary? buf+len
+static char *readbuffer = NULL;
+
+R_API void r_cons_readpush(const char *str) {
+	readbuffer = r_str_append (readbuffer, str);
+}
+
 R_API int r_cons_readchar() {
 	char buf[2];
 	buf[0] = -1;
+	if (readbuffer && *readbuffer) {
+		int ch = *readbuffer;
+		memmove (readbuffer, readbuffer + 1, strlen (readbuffer));
+		return ch;
+	}
 #if __WINDOWS__ && !__CYGWIN__ //&& !MINGW32
 	#if 1   // if something goes wrong set this to 0. skuater.....
 	return readchar_win(0);
