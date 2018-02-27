@@ -386,7 +386,7 @@ R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 }
 
 // Returns true iff all reads on mapped regions are successful and complete.
-static bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
+R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
 	}
@@ -400,19 +400,7 @@ static bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	return onIterMap_wrap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, NULL);
 }
 
-// Returns the number of bytes of read prefix.
-// Returns -1 on error.
-R_API int r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
-	if (!io || !buf) {
-		return -1;
-	}
-	if (io->ff) {
-		memset (buf, io->Oxff, len);
-	}
-	return on_map_skyline (io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, true);
-}
-
-R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
+static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
 	}
@@ -472,6 +460,31 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		ret = r_io_pread_at(io, addr, buf, len) > 0;
 	}
 	if (io->cached & R_IO_READ) {
+		(void)r_io_cache_read(io, addr, buf, len);
+	}
+	return ret;
+}
+
+// For both virtual and physical mode, returns the number of bytes of read
+// prefix.
+// Returns -1 on error.
+R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	int ret;
+	if (!io || !buf) {
+		return -1;
+	}
+	if (io->buffer_enabled) {
+		return r_io_buffer_read(io, addr, buf, len);
+	}
+	if (io->va) {
+		if (io->ff) {
+			memset(buf, io->Oxff, len);
+		}
+		ret = on_map_skyline(io, addr, buf, len, R_IO_READ, fd_read_at_wrap, true);
+	} else {
+		ret = r_io_pread_at(io, addr, buf, len);
+	}
+	if (ret > 0 && io->cached & R_IO_READ) {
 		(void)r_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
