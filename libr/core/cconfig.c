@@ -503,16 +503,14 @@ static int cb_asmarch(void *user, void *data) {
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
 	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		// try to set RAsm to LE
-		r_asm_set_big_endian (core->assembler, false);
-		// set endian of display to LE
-		core->print->big_endian = false;
-	} else {
-		// try to set endian of RAsm to match binary
-		r_asm_set_big_endian (core->assembler, bigbin);
-		// set endian of display to match binary
-		core->print->big_endian = bigbin;
+		bigbin = r_config_get_i (core->config, "cfg.bigendian");
 	}
+
+	// try to set endian of RAsm to match binary
+	r_asm_set_big_endian (core->assembler, bigbin);
+	// set endian of display to match binary
+	core->print->big_endian = bigbin;
+
 	r_asm_set_cpu (core->assembler, asm_cpu);
 	free (asm_cpu);
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
