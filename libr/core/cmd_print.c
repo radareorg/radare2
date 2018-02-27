@@ -88,6 +88,7 @@ static const char *help_msg_at_at[] = {
 	"x", " @@t", "run 'x' on all threads (see dp)",
 	"x", " @@b", "run 'x' on all basic blocks of current function (see afb)",
 	"x", " @@i", "run 'x' on all instructions of the current function (see pdr)",
+	"x", " @@iS", "run 'x' on all sections adjusting blocksize",
 	"x", " @@f", "run 'x' on all functions (see aflq)",
 	"x", " @@f:write", "run 'x' on all functions matching write in the name",
 	"x", " @@s:from to step", "run 'x' on all offsets from, to incrementing by step",

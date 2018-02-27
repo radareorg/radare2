@@ -1699,6 +1699,17 @@ static int cb_scrstrconv(void *user, void *data) {
 	return true;
 }
 
+static int cb_graphformat(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore*) user;
+	if (!strcmp (node->value, "?")) {
+		r_cons_printf ("dot\ngml\ngmlfcn\n");
+		return false;
+	}
+	return true;
+}
+
+
 static int cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore*) user;
@@ -2715,7 +2726,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
-	SETPREF ("graph.format", "dot", "Specify output format for graphs (dot, gml, gmlfcn)");
+	SETCB ("graph.format", "dot", &cb_graphformat, "Specify output format for graphs (dot, gml, gmlfcn)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
