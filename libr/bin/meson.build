@@ -122,3 +122,14 @@ r_bin = library('r_bin', files,
   install: true,
   implicit_include_directories: false
 )
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_bin],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_bin',
+             filebase: 'r_bin',
+             requires: [
+               'r_util', 'r_io', 'r_socket', 'r_magic'
+			 ],
+             description: 'radare foundation libraries')
