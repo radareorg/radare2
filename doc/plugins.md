@@ -7,7 +7,7 @@ Libraries can be compiled:
   - as shared libraries (so, dylib, dll)    (DEFAULT)
   - as static libraries (a, lib, ..)
 
-  ./configure-plugins --enable-shared --enable-dynamic
+        ./configure-plugins --enable-shared --enable-dynamic
 
 LIBR_PLUGINS environment variable is honored as another search path for plugins
 
@@ -16,8 +16,8 @@ Plugins can be:
   - compiled as shared
   - compiled as static (inside the related library)
 
-libr/plugins/shared
-libr/plugins/static
+        libr/plugins/shared
+        libr/plugins/static
 
 the configure-plugins script will regenerate the required Makefiles
 to build this stuff as defined.
