@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2016 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2018 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -15,7 +15,7 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 	};
 	int linv[2] = {
 		strlen (inv[0]),
-		strlen(inv[1])
+		strlen (inv[1])
 	};
 	r_strpool_empty (p);
 	r_list_foreach (ml, it, m) {
@@ -23,7 +23,9 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 		r_strpool_memcat (p, line + offset, m->rm_so - offset);
 		r_strpool_memcat (p, inv[0], linv[0]);
 		m_len = m->rm_eo - m->rm_so;
-		if (m_len<0) m_len = 0;
+		if (m_len < 0) {
+			m_len = 0;
+		}
 		m_addr = r_str_ndup (line + m->rm_so, m_len);
 		if (m_addr) {
 			/* in case there's a CSI in the middle of this match*/

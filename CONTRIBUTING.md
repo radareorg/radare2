@@ -48,8 +48,7 @@ default:
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
-  or in a while of a do-while statement. Always use braces for if and while,
-  except when the expressions are very simple and they can fit in a one-line.
+  or in a while of a do-while statement. Always use braces for if and while.
 
 ```c
 if (a == b) {
@@ -61,15 +60,6 @@ if (a == b) {
 } else if (a > b) {
 	...
 }
-
-if (a == b) do_something ();
-
-if (a == b) do_something ();
-else do_something_else ();
-
-if (!ok) return false;
-
-if (!buf) goto err_buf;
 
 if (a == b) {
 	...

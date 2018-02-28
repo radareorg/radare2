@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -342,28 +342,16 @@ do_it_again:
 								ch='J';
 							break;
 						case VK_F1:
-							if (bCtrl)
-								ch=R_CONS_KEY_F1;
-							else
-								ch=R_CONS_KEY_F1;
+							ch = R_CONS_KEY_F1;
 							break;
 						case VK_F2:
-							if (bCtrl)
-								ch=R_CONS_KEY_F2;
-							else
-								ch=R_CONS_KEY_F2;
+							ch = R_CONS_KEY_F2;
 							break;
 						case VK_F3:
-							if (bCtrl)
-								ch=R_CONS_KEY_F3;
-							else
-								ch=R_CONS_KEY_F3;
+							ch = R_CONS_KEY_F3;
 							break;
 						case VK_F4:
-							if (bCtrl)
-								ch=R_CONS_KEY_F4;
-							else
-								ch=R_CONS_KEY_F4;
+							ch = R_CONS_KEY_F4;
 							break;
 						case VK_F5:
 							if (bCtrl)
@@ -372,49 +360,28 @@ do_it_again:
 								ch=R_CONS_KEY_F5;
 							break;
 						case VK_F6:
-							if (bCtrl)
-								ch=R_CONS_KEY_F6;
-							else
-								ch=R_CONS_KEY_F6;
+							ch = R_CONS_KEY_F6;
 							break;
 						case VK_F7:
-							if (bCtrl)
-								ch=R_CONS_KEY_F7;
-							else
-								ch=R_CONS_KEY_F7;
+							ch = R_CONS_KEY_F7;
 							break;
 						case VK_F8:
-							if (bCtrl)
-								ch=R_CONS_KEY_F8;
-							else
-								ch=R_CONS_KEY_F8;
+							ch = R_CONS_KEY_F8;
 							break;
 						case VK_F9:
-							if (bCtrl)
-								ch=R_CONS_KEY_F9;
-							else
-								ch=R_CONS_KEY_F9;
+							ch = R_CONS_KEY_F9;
 							break;
 						case VK_F10:
-							if (bCtrl)
-								ch=R_CONS_KEY_F10;
-							else
-								ch=R_CONS_KEY_F10;
+							ch = R_CONS_KEY_F10;
 							break;
 						case VK_F11:
-							if (bCtrl)
-								ch=R_CONS_KEY_F11;
-							else
-								ch=R_CONS_KEY_F11;
+							ch = R_CONS_KEY_F11;
 							break;
 						case VK_F12:
-							if (bCtrl)
-								ch=R_CONS_KEY_F12;
-							else
-								ch=R_CONS_KEY_F12;
+							ch = R_CONS_KEY_F12;
 							break;
 						default:
-							ch=0;
+							ch = 0;
 							break;
 						}
 					}
@@ -422,7 +389,7 @@ do_it_again:
 			}
 		}
 	}
-	FlushConsoleInputBuffer(h);
+	FlushConsoleInputBuffer (h);
 	SetConsoleMode (h, mode);
 	if (ch == 0) {
 		goto do_it_again;
