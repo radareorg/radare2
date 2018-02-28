@@ -578,7 +578,7 @@ typedef struct r_anal_callbacks_t {
 	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
 	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
 	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
-	const ut8 *(*resize_read_buf)(RANAL, int new_len);
+	const ut8 *(*modify_read_window)(RANAL, ut64 new_addr, int new_len);
 } RAnalCallbacks;
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
@@ -703,6 +703,11 @@ typedef struct r_anal_hint_t {
 	char *offset;
 	int size;
 	int bits;
+	int new_bits; // change asm.bits after evaluating this instruction
+#if 0
+	int new_endian; // change the endianness
+	int new_bank; // select bank switch
+#endif
 	int immbase;
 	bool high; // highlight hint
 } RAnalHint;
@@ -790,6 +795,7 @@ typedef struct r_anal_op_t {
 	int scale;
 	ut64 disp;
 	RAnalSwitchOp *switch_op;
+	RAnalHint hint;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])

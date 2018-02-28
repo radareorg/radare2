@@ -1,6 +1,7 @@
 Not-much-updated graph of relationships between the libr APIs
 =============================================================
 
+```
              +--------+
            .-| config |
           /  +--------+
@@ -19,3 +20,4 @@ Not-much-updated graph of relationships between the libr APIs
   | plugins | +---------------+     |
   +-----.---+                       |
         `---------------------------'
+```

@@ -11,32 +11,32 @@ FreeBSD, as well as other BSD systems have some differences in the way commands 
 Radare2 Dependencies:
 ---------------------
 
-	# pkg install git gcc gmake patch pkgconf
+	sudo pkg install git gcc gmake patch pkgconf
 
-	$ git clone https://github.com/radare/radare2
-	$ cd radare2
-	$ sys/install.sh /usr/local
+	git clone https://github.com/radare/radare2
+	cd radare2
+	sys/install.sh /usr/local
 
 Python Swig Bindings Dependencies:
 ----------------------------------
 
-	# pkg install swig30 pkgconf vala
+	sudo pkg install swig30 pkgconf vala
 
-	$ git clone https://github.com/radare/valabind
-	$ cd valabind
-	$ gmake
-	$ sudo gmake install PREFIX=/usr/local
+	git clone https://github.com/radare/valabind
+	cd valabind
+	gmake
+	sudo gmake install PREFIX=/usr/local
 
 Building Python Swig Bindings:
 ------------------------------
 
-	$ git clone https://github.com/radare/radare2-bindings
-	$ cd radare2-bindings
-	$ export CC=cc
-	$ export CXX=c++
-	$ export SWIG=swig3.0
-	$ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-	$ ./configure --prefix=/usr/local
-	$ cd python
-	$ gmake CC=$CC CXX=$CXX
-	$ sudo gmake install
+	git clone https://github.com/radare/radare2-bindings
+	cd radare2-bindings
+	export CC=cc
+	export CXX=c++
+	export SWIG=swig3.0
+	export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+	./configure --prefix=/usr/local
+	cd python
+	gmake CC=$CC CXX=$CXX
+	sudo gmake install

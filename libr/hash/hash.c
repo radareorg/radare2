@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2017 pancake */
 
 #include <r_hash.h>
+#include "r_util.h"
 #ifdef _MSC_VER
 #define strcasecmp stricmp
 #endif
@@ -343,7 +344,10 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	r_hash_do_begin (ctx, algo);
 	digest_size = r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
-	if (digest_size > 0) {
+	if (digest_size == 0) {
+		digest_hex = calloc (16, 1);
+		snprintf (digest_hex, 15, "%02.8f", ctx->entropy);
+	} else if (digest_size > 0) {
 		if (digest_size * 2 < digest_size) {
 			digest_hex = NULL;
 		} else {

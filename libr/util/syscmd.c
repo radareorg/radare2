@@ -242,29 +242,25 @@ R_API char *r_syscmd_cat(const char *file) {
 }
 
 R_API char *r_syscmd_mkdir(const char *dir) {
-	bool show_help = true;
-	const char *p = strchr (dir, ' ');
-	if (p) {
-		int ret;
-		char *dirname;
-		if (!strncmp (p + 1, "-p ", 3)) {
-			dirname = r_str_trim (strdup (p + 3));
-			ret = r_sys_mkdirp (dirname);
-		} else {
-			dirname = r_str_trim (strdup (p + 1));
-			ret = r_sys_mkdir (dirname);
-		}
-		if (!ret) {
-			if (r_sys_mkdir_failed ()) {
-				eprintf ("Cannot create \"%s\"\n", dirname);
-			}
-		}
-		free (dirname);
-		show_help = false;
+	const char *suffix = r_str_trim (strchr (dir, ' '));
+	if (!suffix || !strncmp (suffix, "-p", 3)) {
+		return r_str_dup (NULL, "Usage: mkdir [-p] [directory]\n");
 	}
-	if (show_help) {
-		eprintf ("Usage: mkdir [-p] [directory]\n");
+	int ret;
+	char *dirname;
+	if (!strncmp (suffix, "-p ", 3)) {
+		dirname = r_str_trim (strdup (suffix + 3));
+		ret = r_sys_mkdirp (dirname);
+	} else {
+		dirname = r_str_trim (strdup (suffix));
+		ret = r_sys_mkdir (dirname);
 	}
+	if (!ret) {
+		if (r_sys_mkdir_failed ()) {
+			return r_str_newf ("Cannot create \"%s\"\n", dirname);
+		}
+	}
+	free (dirname);
 	return NULL;
 }
 

@@ -127,6 +127,7 @@ RList* search_virtual_tables(RCore *core){
 R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 	ut64 bits = r_config_get_i (((RCore *)core)->config, "asm.bits");
 	RList* vtables = search_virtual_tables ((RCore *)core);
+	RList *vtableMethods;
 	const char *noMethodName = "No Name found";
 	RListIter* vtableMethodNameIter;
 	RAnalFunction *curMethod;
@@ -144,15 +145,26 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 			if (!isFirstElement) {
 				r_cons_print (",");
 			}
-			r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":%d}",
-			  		table->saddr, table->methods);
+			bool isFirstMethod = true;
+			r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":[", table->saddr);
+			vtableMethods = getVtableMethods ((RCore *)core, table);
+			if(vtableMethods)
+				r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
+					if(!isFirstMethod)
+						r_cons_print (",");
+					const char* const name = curMethod->name;
+					r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
+						curMethod->addr, name? name : noMethodName);
+					isFirstMethod = false;
+				}
+			r_cons_print ("]}");
 			isFirstElement = false;
 		}
 		r_cons_println ("]");
 	} else {
 		r_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
-			RList *vtableMethods = getVtableMethods ((RCore *)core, table);
+			vtableMethods = getVtableMethods ((RCore *)core, table);
 			if (vtableMethods) {
 				r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", 
 				  		vtableStartAddress);

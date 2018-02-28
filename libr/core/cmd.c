@@ -157,15 +157,40 @@ static const char *help_msg_equal[] = {
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
 	"=&", ":port", "start rap server in background",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nhttp server:", "", "",
+	"\nother servers:","","",
+	"=h", "[?]", "listen for http connections",
+	"=g", "[?]", "using gdbserver",
+	NULL
+};
+
+#if 0
+static const char *help_msg_equalh[] = {
+	"Usage:",  "=h[---*&] [port]", " # manage http connections",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background)",
+	"=h&", " port", "start http server in background",
+	NULL
+};
+#endif
+
+static const char *help_msg_equalh[] = {
+	"Usage:", " =[hH] [...]", " # http server",
+	"http server:", "", "",
+	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=h-", "", "stop background webserver",
+	"=h--", "", "stop foreground webserver",
+	"=h*", "", "restart current webserver",
+	"=h&", " port", "start http server in background",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
-	"\ngdbserver:", "", "",
+	NULL
+};
+
+static const char *help_msg_equalg[] = {
+	"Usage:", " =[g] [...]", " # gdb server",
+	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
 	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL
@@ -500,16 +525,28 @@ static int cmd_rap(void *data, const char *input) {
 		r_core_rtr_session (core, input + 1);
 		break;
 	case 'g': // "=g"
-		r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalg);
+		} else {
+			r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
+		}
 		break;
 	case 'h': // "=h"
-		r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalh);
+		} else {
+			r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		}
 		break;
 	case 'H': // "=H"
-		while (input[1] == ' ') {
-			input++;
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_equalh);
+		} else {
+			while (input[1] == ' ') {
+				input++;
+			}
+			r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		}
-		r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
 		break;
 	case '?': // "=?"
 		r_core_cmd_help (core, help_msg_equal);
@@ -1136,7 +1173,25 @@ static int cmd_visual(void *data, const char *input) {
 	if (!r_config_get_i (core->config, "scr.interactive")) {
 		return false;
 	}
+#if 0
+	char *buf = strdup (input);
+	int len = r_str_unescape (buf);
+	r_cons_readpush (buf, len);
+	free (buf);
+	int res = r_core_visual ((RCore *)data, ""); //input);
+	r_cons_readflush ();
+	return res;
+#else
 	return r_core_visual ((RCore *)data, input);
+#endif
+}
+
+static int cmd_pipein(void *user, const char *input) {
+	char *buf = strdup (input);
+	int len = r_str_unescape (buf);
+	r_cons_readpush (buf, len);
+	free (buf);
+	return 0;
 }
 
 static int task_finished(void *user, void *data) {
@@ -1682,7 +1737,13 @@ static char* findSeparator(char *p) {
 	return strchr (p, '-');
 }
 
+static void tmpenvs_free(void *item) {
+	r_sys_setenv (item, NULL);
+	free (item);
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
+	RList *tmpenvs = r_list_newf (tmpenvs_free);
 	const char *quotestr = "`";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
@@ -2057,7 +2118,7 @@ next:
 		if (!strcmp (str, "-")) {
 			use_editor = true;
 			str = r_file_temp ("dumpedit");
-			r_config_set (core->config, "scr.color", "false");
+			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		}
 		if (fdn > 0) {
 			pipefd = r_cons_pipe_open (str, fdn, ptr[1] == '>');
@@ -2207,6 +2268,14 @@ repeat_arroba:
 
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
+		} else if (ptr[1] == '%') { // "@%"
+			char *k = strdup (ptr + 2);
+			char *v = strchr (k, '=');
+			if (v) {
+				*v++ = 0;
+				r_sys_setenv (k, v);
+				r_list_append (tmpenvs, k);
+			}
 		} else if (ptr[1] == '.') { // "@."
 			if (ptr[2] == '.') { // "@.."
 				if (ptr[3] == '.') { // "@..."
@@ -2533,6 +2602,7 @@ beach:
 	if (scr_color != -1) {
 		r_config_set_i (core->config, "scr.color", scr_color);
 	}
+	r_list_free (tmpenvs);
 	core->fixedblock = false;
 	return rc;
 fail:
@@ -2842,7 +2912,23 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 'i': // "@@i" - function instructions
-		{
+		if (each[1] == 'S') {
+			RListIter *it;
+			RBinSection *sec;
+			RBinObject *obj = r_bin_cur_object (core->bin);
+			int cbsz = core->blocksize;
+			r_list_foreach (obj->sections, it, sec){
+				ut64 addr = sec->vaddr;
+				ut64 size = sec->vsize;
+				// TODO: 
+				//if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
+				//	continue;
+				//}
+				r_core_seek_size (core, addr, size);
+				r_core_cmd (core, cmd, 0);
+			}
+			r_core_block_size (core, cbsz);
+		} else {
 			RListIter *iter;
 			RAnalBlock *bb;
 			int i;
@@ -3561,6 +3647,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"Text",     "Text log utility", cmd_log, cmd_log_init},
 		{"u",        "uname/undo", cmd_uname},
 		{"visual",   "enter visual mode", cmd_visual},
+		{"<",        "pipe into RCons.readChar", cmd_pipein},
 		{"Visual",   "enter visual mode", cmd_visual},
 		{"write",    "write bytes", cmd_write, cmd_write_init},
 		{"x",        "alias for px", cmd_hexdump},

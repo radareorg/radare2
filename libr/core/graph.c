@@ -3572,6 +3572,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	RConsCanvas *can, *o_can = NULL;
 	bool graph_allocated = false;
 	int movspeed;
+	ut64 oldseek = core->offset;
 	int ret, invscroll;
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
@@ -4164,9 +4165,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_set_i (core->config, "scr.interactive", false);
 			break;
 		case ':':
+			{
+			ut64 tempseek = core->offset;
 			r_core_visual_prompt_input (core);
 			get_bbupdate (g, core, fcn);
+			if (core->offset != tempseek) {
+				oldseek = core->offset;
+			}
 			break;
+			}
 		case 'w':
 			agraph_toggle_speed (g, core);
 			break;
@@ -4289,6 +4296,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		g->can = o_can;
 	}
+	r_core_seek (core, oldseek, 0);
 	r_config_restore (hc);
 	r_config_hold_free (hc);
 	return !is_error;

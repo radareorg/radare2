@@ -231,6 +231,9 @@ a_attr void								\
 a_name##tsd_set(a_type *val)						\
 {									\
 									\
+
+
+
 	assert(a_name##tsd_booted);					\
 	a_name##tsd_tls = (*val);					\
 	if (a_cleanup != malloc_tsd_no_cleanup)				\
@@ -427,6 +430,9 @@ a_name##tsd_set(a_type *val)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
+
+
+
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(true);			\
 	wrapper->val = *(val);						\
@@ -564,6 +570,9 @@ a_name##tsd_set(a_type *val)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
+
+
+
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(true);			\
 	wrapper->val = *(val);						\
@@ -694,8 +703,9 @@ tsd_fetch_impl(bool init)
 
 	if (!init && tsd_get_allocates() && tsd == NULL)
 		return (NULL);
-	assert(tsd != NULL);
 
+	if (unlikely(tsd == NULL))
+		return (NULL)
 	if (unlikely(tsd->state != tsd_state_nominal)) {
 		if (tsd->state == tsd_state_uninitialized) {
 			tsd->state = tsd_state_nominal;
@@ -704,8 +714,10 @@ tsd_fetch_impl(bool init)
 		} else if (tsd->state == tsd_state_purgatory) {
 			tsd->state = tsd_state_reincarnated;
 			tsd_set(tsd);
-		} else
-			assert(tsd->state == tsd_state_reincarnated);
+		} else {
+			if (unlikely(tsd->state != tsd_state_reincarnated))
+				return (NULL);
+		}
 	}
 
 	return (tsd);
@@ -777,9 +789,8 @@ tsdn_null(const tsdn_t *tsdn)
 JEMALLOC_ALWAYS_INLINE tsd_t *
 tsdn_tsd(tsdn_t *tsdn)
 {
-
-	assert(!tsdn_null(tsdn));
-
+	if (unlikely(tsdn_null(tsdn)))
+		return (NULL);
 	return (&tsdn->tsd);
 }
 #endif

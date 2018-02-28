@@ -29,15 +29,15 @@ well as setting up profiles. (??profiles??)
 The functionality lives in the following files:
 (?? why so many files? can this be simplified??)
 
-libr/reg/arena.c        // ?? used by anal and debugger
-libr/reg/cond.c         // condition registers
-libr/reg/double.c       // support for double-precision floating point numbers
-libr/reg/profile.c      // ?? used by anal and debugger
-libr/reg/reg.c          // top-level register specific code (all of r2)
-libr/reg/value.c        // dealing with register values
-libr/reg/t/p.c          // test code for printing general-purpose registers
-libr/reg/t/regdiff.c    // ?? test code for?
-libr/reg/t/test.c       // test code for register handling
+    libr/reg/arena.c        // ?? used by anal and debugger
+    libr/reg/cond.c         // condition registers
+    libr/reg/double.c       // support for double-precision floating point numbers
+    libr/reg/profile.c      // ?? used by anal and debugger
+    libr/reg/reg.c          // top-level register specific code (all of r2)
+    libr/reg/value.c        // dealing with register values
+    libr/reg/t/p.c          // test code for printing general-purpose registers
+    libr/reg/t/regdiff.c    // ?? test code for?
+    libr/reg/t/test.c       // test code for register handling
 
 
 ## libr/bp
@@ -47,27 +47,27 @@ with breakpoints on any given architecture. It handles managing the list of
 breakpoints and more.
 
 Radare supports a multitude of different types of breakpoints.
-(?? is there a list? sw, hw, and trace? anything else??)
+(`??` is there a list? sw, hw, and trace? anything else??)
 
-libr/bp/bp.c            // main breakpoint management code
-libr/bp/io.c            // setting and reseting(??) breakpoints
-libr/bp/parser.h        // header for breakpoint parser (??)
-libr/bp/parser.c        // code for breakpoint parser (??)
-libr/bp/plugin.c        // breakpoint plugin management
-libr/bp/traptrace.c     // traptrace (??)
-libr/bp/watch.c         // watch points (mostly not implemented)
+    libr/bp/bp.c            // main breakpoint management code
+    libr/bp/io.c            // setting and reseting(??) breakpoints
+    libr/bp/parser.h        // header for breakpoint parser (??)
+    libr/bp/parser.c        // code for breakpoint parser (??)
+    libr/bp/plugin.c        // breakpoint plugin management
+    libr/bp/traptrace.c     // traptrace (??)
+    libr/bp/watch.c         // watch points (mostly not implemented)
 
 For architecture specific-handling, "bp" delegates various functionality to
 plugins. The interface for these plugins is much simpler than other plugins
 used in the radare debugger -- they only define which byte sequences represent
 valid breakpoints for a given architecture.
 
-libr/bp/p/bp_arm.c      // ARM64, ARM, Thumb, Thumb-2 (big/little endians)
-libr/bp/p/bp_bf.c       // Brainfuck!
-libr/bp/p/bp_mips.c     // MIPS, big/little endian
-libr/bp/p/bp_ppc.c      // PowerPC, big/little endian
-libr/bp/p/bp_sh.c       // SuperH
-libr/bp/p/bp_x86.c      // int3...
+    libr/bp/p/bp_arm.c      // ARM64, ARM, Thumb, Thumb-2 (big/little endians)
+    libr/bp/p/bp_bf.c       // Brainfuck!
+    libr/bp/p/bp_mips.c     // MIPS, big/little endian
+    libr/bp/p/bp_ppc.c      // PowerPC, big/little endian
+    libr/bp/p/bp_sh.c       // SuperH
+    libr/bp/p/bp_x86.c      // int3...
 
 
 ## libr/debug/debug.c
@@ -76,17 +76,17 @@ The main top-level debugger functionality lives here. It aims to abstract away
 the common code flow and integration into radare while delegating more nuanced
 system interactions to plug-ins.
 
-libr/debug/arg.c        // used by the anal engine (??)
-libr/debug/desc.c       // code for handling file descriptors inside an inferior
-libr/debug/esil.c       // ESIL related debugging code (??)
-libr/debug/map.c        // top-level API for dealing with memory maps
-libr/debug/pid.c        // top-level API for dealing with processes
-libr/debug/plugin.c     // top-level debugger plugin API handling
-libr/debug/reg.c        // top-level code for register r/w and display
-libr/debug/signal.c     // top-level functions for signals
-libr/debug/snap.c       // code for saving, restoring, showing memory snapshots
-libr/debug/trace.c      // top-level tracing API (counting insn hits, etc)
-libr/debug/t/main.c     // test code for the debugger API
+    libr/debug/arg.c        // used by the anal engine (??)
+    libr/debug/desc.c       // code for handling file descriptors inside an inferior
+    libr/debug/esil.c       // ESIL related debugging code (??)
+    libr/debug/map.c        // top-level API for dealing with memory maps
+    libr/debug/pid.c        // top-level API for dealing with processes
+    libr/debug/plugin.c     // top-level debugger plugin API handling
+    libr/debug/reg.c        // top-level code for register r/w and display
+    libr/debug/signal.c     // top-level functions for signals
+    libr/debug/snap.c       // code for saving, restoring, showing memory snapshots
+    libr/debug/trace.c      // top-level tracing API (counting insn hits, etc)
+    libr/debug/t/main.c     // test code for the debugger API
 
 ## libr/core/cmd_debug.c
 
@@ -109,8 +109,8 @@ plug-in API defined in r_debug.h.
 
 A debugger plug-in capable of debugging brainfuck code!
 
-libr/debug/p/bfvm.c     // Brainfuck VM implementation
-libr/debug/p/bfvm.h
+    libr/debug/p/bfvm.c     // Brainfuck VM implementation
+    libr/debug/p/bfvm.h
 
 
 ### libr/debug/p/debug_bochs.c
@@ -137,61 +137,61 @@ thus much of the code within this plug-in is shared. The parts that are not
 shared are implemented by platform-specific functions that are provided in the
 following files:
 
-// architecture-specific debugger code
-libr/debug/p/native/arm.c                       // unused?
-
-// code for handling backtracing
-libr/debug/p/native/bt.c
-libr/debug/p/native/bt/fuzzy-all.c
-libr/debug/p/native/bt/generic-x64.c
-libr/debug/p/native/bt/generic-x86.c
-
-// architecture-specific register handling
-libr/debug/p/native/drx.c                       // x86-specific debug registers
-libr/debug/p/native/reg.c                       // cute include of the files below
-libr/debug/p/native/reg/kfbsd-x64.h
-libr/debug/p/native/reg/kfbsd-x86.h
-libr/debug/p/native/reg/netbsd-x64.h
-libr/debug/p/native/reg/netbsd-x86.h
-libr/debug/p/native/reg/windows-x64.h
-libr/debug/p/native/reg/windows-x86.h
-
-// platform-specific debugger code on Linux
-libr/debug/p/native/linux/linux_debug.c         // main linux-specific debugging code
-libr/debug/p/native/linux/linux_debug.h         // including cute penguin ascii art
-
-// architecture-specific register handling on Linux (?? what is this format??)
-libr/debug/p/native/linux/reg/linux-arm.h
-libr/debug/p/native/linux/reg/linux-arm64.h
-libr/debug/p/native/linux/reg/linux-mips.h
-libr/debug/p/native/linux/reg/linux-ppc.h
-libr/debug/p/native/linux/reg/linux-x64.h
-libr/debug/p/native/linux/reg/linux-x64-32.h
-libr/debug/p/native/linux/reg/linux-x86.h
-
-// platform-specific debugger code on Windows
-libr/debug/p/native/w32.c                       // main code for win32 debugger plugin
-libr/debug/p/native/maps/windows.c              // platform-specific memory map handling
-libr/debug/p/native/windows/windows_debug.c     // !! nothing in here
-libr/debug/p/native/windows/windows_debug.h     // !! nothing in here
-
-// platform-specific debugger code on XNU (OSX/iOS/etc)
-libr/debug/p/native/darwin.c                    // !! not used by anything else
-libr/debug/p/native/maps/darwin.c               // platform-specific memory map handling
-libr/debug/p/native/xnu/xnu_debug.c             // main XNU-specific debugging code
-libr/debug/p/native/xnu/xnu_debug.h             // including cute apple ascii art
-libr/debug/p/native/xnu/trap_arm.c              // ARM family hardware bps (??)
-libr/debug/p/native/xnu/trap_x86.c              // x86 family hardware bps (??)
-libr/debug/p/native/xnu/xnu_excthreads.c        // additional XNU thread handling
-libr/debug/p/native/xnu/xnu_threads.c           // XNU thread and register handling
-libr/debug/p/native/xnu/xnu_threads.h
-
-// architecture-specific register handling on XNU (?? what is this format??)
-libr/debug/p/native/xnu/reg/darwin-x86.h
-libr/debug/p/native/xnu/reg/darwin-arm.h
-libr/debug/p/native/xnu/reg/darwin-ppc.h
-libr/debug/p/native/xnu/reg/darwin-arm64.h
-libr/debug/p/native/xnu/reg/darwin-x64.h
+    // architecture-specific debugger code
+    libr/debug/p/native/arm.c                       // unused?
+    
+    // code for handling backtracing
+    libr/debug/p/native/bt.c
+    libr/debug/p/native/bt/fuzzy-all.c
+    libr/debug/p/native/bt/generic-x64.c
+    libr/debug/p/native/bt/generic-x86.c
+    
+    // architecture-specific register handling
+    libr/debug/p/native/drx.c                       // x86-specific debug registers
+    libr/debug/p/native/reg.c                       // cute include of the files below
+    libr/debug/p/native/reg/kfbsd-x64.h
+    libr/debug/p/native/reg/kfbsd-x86.h
+    libr/debug/p/native/reg/netbsd-x64.h
+    libr/debug/p/native/reg/netbsd-x86.h
+    libr/debug/p/native/reg/windows-x64.h
+    libr/debug/p/native/reg/windows-x86.h
+    
+    // platform-specific debugger code on Linux
+    libr/debug/p/native/linux/linux_debug.c         // main linux-specific debugging code
+    libr/debug/p/native/linux/linux_debug.h         // including cute penguin ascii art
+    
+    // architecture-specific register handling on Linux (?? what is this format??)
+    libr/debug/p/native/linux/reg/linux-arm.h
+    libr/debug/p/native/linux/reg/linux-arm64.h
+    libr/debug/p/native/linux/reg/linux-mips.h
+    libr/debug/p/native/linux/reg/linux-ppc.h
+    libr/debug/p/native/linux/reg/linux-x64.h
+    libr/debug/p/native/linux/reg/linux-x64-32.h
+    libr/debug/p/native/linux/reg/linux-x86.h
+    
+    // platform-specific debugger code on Windows
+    libr/debug/p/native/w32.c                       // main code for win32 debugger plugin
+    libr/debug/p/native/maps/windows.c              // platform-specific memory map handling
+    libr/debug/p/native/windows/windows_debug.c     // !! nothing in here
+    libr/debug/p/native/windows/windows_debug.h     // !! nothing in here
+    
+    // platform-specific debugger code on XNU (OSX/iOS/etc)
+    libr/debug/p/native/darwin.c                    // !! not used by anything else
+    libr/debug/p/native/maps/darwin.c               // platform-specific memory map handling
+    libr/debug/p/native/xnu/xnu_debug.c             // main XNU-specific debugging code
+    libr/debug/p/native/xnu/xnu_debug.h             // including cute apple ascii art
+    libr/debug/p/native/xnu/trap_arm.c              // ARM family hardware bps (??)
+    libr/debug/p/native/xnu/trap_x86.c              // x86 family hardware bps (??)
+    libr/debug/p/native/xnu/xnu_excthreads.c        // additional XNU thread handling
+    libr/debug/p/native/xnu/xnu_threads.c           // XNU thread and register handling
+    libr/debug/p/native/xnu/xnu_threads.h
+    
+    // architecture-specific register handling on XNU (?? what is this format??)
+    libr/debug/p/native/xnu/reg/darwin-x86.h
+    libr/debug/p/native/xnu/reg/darwin-arm.h
+    libr/debug/p/native/xnu/reg/darwin-ppc.h
+    libr/debug/p/native/xnu/reg/darwin-arm64.h
+    libr/debug/p/native/xnu/reg/darwin-x64.h
 
 
 ### libr/debug/p/debug_qnx.c

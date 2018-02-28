@@ -1323,7 +1323,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case 'd': // "ood" : reopen in debugger
 			if (input[2] == 'r') { // "oodr"
-				r_core_cmdf ("dor %s", input + 3);
+				r_core_cmdf (core, "dor %s", input + 3);
 				r_core_file_reopen_debug (core, "");
 			} else if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_ood);

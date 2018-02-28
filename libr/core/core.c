@@ -2139,7 +2139,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 	return ret;
 }
 
-R_API int r_core_block_size(RCore *core, int bsize) {
+R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 	ut8 *bump;
 	int ret = false;
 	if (bsize < 0) {
@@ -2159,6 +2159,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;
 	}
+	core->offset = addr;
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize>core->blocksize_max) {
@@ -2178,6 +2179,10 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		r_core_block_read (core);
 	}
 	return ret;
+}
+
+R_API int r_core_block_size(RCore *core, int bsize) {
+	return r_core_seek_size (core, core->offset, bsize);
 }
 
 R_API int r_core_seek_align(RCore *core, ut64 align, int times) {

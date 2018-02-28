@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -109,15 +109,22 @@ R_API int r_line_dietline_init() {
 /* read utf8 char into 's', return the length in bytes */
 static int r_line_readchar_utf8(ut8 *s, int slen) {
 	// TODO: add support for w32
-	ssize_t len, t, i;
+	ssize_t len, i;
 	if (slen < 1) {
 		return 0;
 	}
+	int ch = r_cons_readchar ();
+	if (ch == -1) {
+		return -1;
+	}
+	*s = ch;
+#if 0
 	if ((t = read (0, s, 1)) != 1) {
 		return t;
 	}
-	s[0] = r_cons_controlz (s[0]);
-	if (s[0] < 0x80) {
+#endif
+	*s = r_cons_controlz (*s);
+	if (*s < 0x80) {
 		len = 1;
 	} else if ((s[0] & 0xe0) == 0xc0) {
 		len = 2;
@@ -132,8 +139,10 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {
-		if ((t = read (0, s + i, 1)) != 1) {
-			return t;
+		int ch = r_cons_readchar ();
+		if (ch != -1) {
+			s[i] = ch;
+			return 1;
 		}
 		if ((s[i] & 0xc0) != 0x80) {
 			return -1;
@@ -199,6 +208,9 @@ do_it_again:
 	return buf[0];
 }
 #endif
+
+#if 0
+// TODO use define here to hac
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
@@ -237,7 +249,8 @@ do_it_again:
 			}
 			if (buf[0] == 70) {
 				return 5;
-			} else if (buf[0] == 72) {
+			}
+			if (buf[0] == 72) {
 				return 1;
 			}
 			return 0;
@@ -262,6 +275,7 @@ do_it_again:
 #endif
 	return buf[0];
 }
+#endif
 
 R_API int r_line_hist_add(const char *line) {
 	if (!line || !*line) {
@@ -548,6 +562,7 @@ R_API void r_line_autocomplete() {
 R_API const char *r_line_readline() {
 	return r_line_readline_cb (NULL, NULL);
 }
+
 #if __WINDOWS__ && !__CYGWIN__
 R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	int columns = r_cons_get_size (NULL) - 2;
@@ -961,9 +976,8 @@ _end:
 
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if __WINDOWS__ && !__CYGWIN__
-#if 1		// new implementation for read input at windows by skuater. If something fail set this to 0
+	// new implementation for read input at windows by skuater. If something fail set this to 0
 	return r_line_readline_cb_win (cb, user);
-#endif
 #endif
 	int columns = r_cons_get_size (NULL) - 2;
 	const char *gcomp_line = "";
@@ -1019,7 +1033,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 		buf[utflen] = 0;
 #else
-		ch = r_line_readchar ();
+		ch = r_cons_readchar ();
 		if (ch == -1) {
 			r_cons_break_pop ();
 			return NULL;
@@ -1242,7 +1256,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 27:// esc-5b-41-00-00
-			buf[0] = r_line_readchar ();
+			buf[0] = r_cons_readchar ();
 			switch (buf[0]) {
 			case 127: // alt+bkspace
 				unix_word_rubout ();
@@ -1283,7 +1297,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 				break;
 			default:
-				buf[1] = r_line_readchar ();
+				buf[1] = r_cons_readchar ();
 				if (buf[1] == -1) {
 					r_cons_break_pop ();
 					return NULL;
@@ -1296,7 +1310,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 								I.buffer.data + I.buffer.index + 1,
 								strlen (I.buffer.data + I.buffer.index + 1) + 1);
 						}
-						buf[1] = r_line_readchar ();
+						buf[1] = r_cons_readchar ();
 						if (buf[1] == -1) {
 							r_cons_break_pop ();
 							return NULL;

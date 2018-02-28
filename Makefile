@@ -338,6 +338,9 @@ ifneq ($(PREFIX),/usr/local)
 	$(MAKE) purge PREFIX=/usr/local
 endif
 
+purge3: purge2
+	sys/purge.sh distro
+
 R2V=radare2-${VERSION}
 
 v ver version:
@@ -460,3 +463,4 @@ include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
+.PHONY: purge purge2 purge3
