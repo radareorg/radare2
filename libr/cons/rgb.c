@@ -177,7 +177,7 @@ static void r_cons_rgb_gen (char *outstr, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) 
 		case 1u << 4: outstr[i] = '4'; break;
 		case 1u << 5: outstr[i] = '5'; break;
 		}
-		outstr[i+1] = ';';
+		outstr[i + 1] = ';';
 		i += 2;
 	}
 	switch (r_cons_singleton ()->color) {

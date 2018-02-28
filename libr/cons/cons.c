@@ -92,7 +92,7 @@ R_API RColor r_cons_color_random(ut8 alpha) {
 	case 14: case 15: rcolor = (RColor) RColor_GRAY; break;
 	}
 	if (r & 1) {
-		rcolor.attr = TERM_ATTR_BOLD;
+		rcolor.attr = R_CONS_ATTR_BOLD;
 	}
 	return rcolor;
 }

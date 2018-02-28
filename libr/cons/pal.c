@@ -112,7 +112,7 @@ R_API void r_cons_pal_init () {
 	cons->cpal.bin                = (RColor) RColor_CYAN;
 	cons->cpal.btext              = (RColor) RColor_YELLOW;
 	cons->cpal.call               = (RColor) RColor_GREEN;
-	cons->cpal.call.attr          = TERM_ATTR_BOLD;
+	cons->cpal.call.attr          = R_CONS_ATTR_BOLD;
 	cons->cpal.cjmp               = (RColor) RColor_GREEN;
 	cons->cpal.cmp                = (RColor) RColor_CYAN;
 	cons->cpal.comment            = (RColor) RColor_RED;
@@ -127,7 +127,7 @@ R_API void r_cons_pal_init () {
 	cons->cpal.help               = (RColor) RColor_GREEN;
 	cons->cpal.input              = (RColor) RColor_WHITE;
 	cons->cpal.invalid            = (RColor) RColor_RED;
-	cons->cpal.invalid.attr       = TERM_ATTR_BOLD;
+	cons->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
 	cons->cpal.jmp                = (RColor) RColor_GREEN;
 	cons->cpal.label              = (RColor) RColor_CYAN;
 	cons->cpal.math               = (RColor) RColor_YELLOW;
@@ -137,7 +137,7 @@ R_API void r_cons_pal_init () {
 	cons->cpal.offset             = (RColor) RColor_GREEN;
 	cons->cpal.other              = (RColor) RColor_WHITE;
 	cons->cpal.pop                = (RColor) RColor_MAGENTA;
-	cons->cpal.pop.attr           = TERM_ATTR_BOLD;
+	cons->cpal.pop.attr           = R_CONS_ATTR_BOLD;
 	cons->cpal.prompt             = (RColor) RColor_YELLOW;
 	cons->cpal.push               = (RColor) RColor_MAGENTA;
 	cons->cpal.crypto             = (RColor) RColor_BGBLUE;
@@ -145,7 +145,7 @@ R_API void r_cons_pal_init () {
 	cons->cpal.ret                = (RColor) RColor_RED;
 	cons->cpal.swi                = (RColor) RColor_MAGENTA;
 	cons->cpal.trap               = (RColor) RColor_RED;
-	cons->cpal.trap.attr          = TERM_ATTR_BOLD;
+	cons->cpal.trap.attr          = R_CONS_ATTR_BOLD;
 
 	cons->cpal.ai_read            = (RColor) RColor_GREEN;
 	cons->cpal.ai_write           = (RColor) RColor_BLUE;
@@ -304,15 +304,15 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 		// Parse extra attributes.
 		const char *p = attr;
 		while (p) {
-			if (!memcmp(p, "bold", 4)) {
-				rcolor.attr |= TERM_ATTR_BOLD;
-			} else if (!memcmp(p, "dim", 3)) {
+			if (!strncmp(p, "bold", 4)) {
+				rcolor.attr |= R_CONS_ATTR_BOLD;
+			} else if (!strncmp(p, "dim", 3)) {
 				rcolor.attr |= 1u << 2;
-			} else if (!memcmp(p, "italic", 6)) {
+			} else if (!strncmp(p, "italic", 6)) {
 				rcolor.attr |= 1u << 3;
-			} else if (!memcmp(p, "underline", 9)) {
+			} else if (!strncmp(p, "underline", 9)) {
 				rcolor.attr |= 1u << 4;
-			} else if (!memcmp(p, "blink", 5)) {
+			} else if (!strncmp(p, "blink", 5)) {
 				rcolor.attr |= 1u << 5;
 			} else {
 				eprintf ("Failed to parse terminal attributes: %s\n", p);

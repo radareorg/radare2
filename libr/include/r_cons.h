@@ -143,7 +143,7 @@ enum {
 enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M };
 
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
-enum { TERM_ATTR_BOLD = 1 << 1 };
+enum { R_CONS_ATTR_BOLD = 1 << 1 };
 
 typedef struct rcolor_t {
 	// bold, italic, underline, ...
