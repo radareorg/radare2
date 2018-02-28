@@ -51,7 +51,7 @@ script:
   - export USER_NAME=$([ -n "${PR_NAME}" ] && echo "${PR_NAME}" || echo "${DEFAULT_NAME}")
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
   - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
-  - git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}"
+  - git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
   - ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
