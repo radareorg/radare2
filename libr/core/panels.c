@@ -145,7 +145,6 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 	}
 	(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
-	// if (
 // TODO: only refresh if n->refresh is set
 // TODO: temporary crop depending on out of screen offsets
 	if (n->cmd && *n->cmd) {
@@ -345,7 +344,7 @@ static int bbPanels(RCore *core) {
 	addPanelFrame (PANEL_TITLE_STACK, "px 256@r:SP", 0);
 	addPanelFrame (PANEL_TITLE_REGISTERS, "dr=", 0);
 	addPanelFrame (PANEL_TITLE_REGISTERREFS, "drr", 0);
-	addPanelFrame (PANEL_TITLE_DISASSEMBLY, "pd 128", 0);
+	addPanelFrame (PANEL_TITLE_DISASSEMBLY, "pd $r", 0);
 	curnode = 1;
 	Layout_run (panels);
 	return n_panels;
@@ -861,7 +860,22 @@ repeat:
 			}
 		} else {
 			if (curnode == 1) {
-				r_core_cmd0 (core, "s+$l");
+				int cols = core->print->cols;
+				RAnalFunction *f = NULL;
+				RAsmOp op;
+				f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				op.size = 1;
+				if (f && f->folded) {
+					cols = core->offset - f->addr + r_anal_fcn_size (f);
+				} else {
+					r_asm_set_pc (core->assembler, core->offset);
+					cols = r_asm_disassemble (core->assembler,
+							&op, core->block, 32);
+				}
+				if (cols < 1) {
+					cols = op.size > 1 ? op.size : 1;
+				}
+				r_core_seek (core, core->offset + cols, 1);
 			} else {
 				panels[curnode].sy++;
 			}
