@@ -1052,14 +1052,12 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 			}
 		}
 	} else if (MUSTSEEJSON) {
-		int j = i;
+		char * utf_encoded_buf = NULL;
 		p->cb_printf ("%d,\"string\":\"", seeki);
-		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j++) {
-			if (IS_PRINTABLE (buf[j])) {
-				p->cb_printf ("%c", buf[j]);
-			} else {
-				p->cb_printf (".");
-			}
+		utf_encoded_buf = r_str_escape_utf8 ((const char *) buf, true, true);
+		if (utf_encoded_buf){
+			p->cb_printf ("%s", utf_encoded_buf);
+			free (utf_encoded_buf);
 		}
 		p->cb_printf ("\"}");
 	}
