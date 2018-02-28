@@ -1173,6 +1173,7 @@ static int cmd_visual(void *data, const char *input) {
 	if (!r_config_get_i (core->config, "scr.interactive")) {
 		return false;
 	}
+#if 0
 	char *buf = strdup (input);
 	int len = r_str_unescape (buf);
 	r_cons_readpush (buf, len);
@@ -1180,6 +1181,17 @@ static int cmd_visual(void *data, const char *input) {
 	int res = r_core_visual ((RCore *)data, ""); //input);
 	r_cons_readflush ();
 	return res;
+#else
+	return r_core_visual ((RCore *)data, input);
+#endif
+}
+
+static int cmd_pipein(void *user, const char *input) {
+	char *buf = strdup (input);
+	int len = r_str_unescape (buf);
+	r_cons_readpush (buf, len);
+	free (buf);
+	return 0;
 }
 
 static int task_finished(void *user, void *data) {
@@ -3635,6 +3647,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"Text",     "Text log utility", cmd_log, cmd_log_init},
 		{"u",        "uname/undo", cmd_uname},
 		{"visual",   "enter visual mode", cmd_visual},
+		{"<",        "pipe into RCons.readChar", cmd_pipein},
 		{"Visual",   "enter visual mode", cmd_visual},
 		{"write",    "write bytes", cmd_write, cmd_write_init},
 		{"x",        "alias for px", cmd_hexdump},

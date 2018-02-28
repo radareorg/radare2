@@ -190,7 +190,7 @@ static void r_cons_rgb_gen (char *outstr, ut8 a, ut8 r, ut8 g, ut8 b) {
 
 /* Return the computed color string for the specified color */
 R_API char *r_cons_rgb_str (char *outstr, RColor *rcolor) {
-	if (!rcolor || (!outstr && !(outstr = malloc (32)))) {
+	if (!rcolor || (!outstr && !(outstr = malloc (128)))) {
 		return NULL;
 	}
 	*outstr = 0;
