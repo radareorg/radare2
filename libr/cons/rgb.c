@@ -164,15 +164,28 @@ R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen (char *outstr, ut8 a, ut8 r, ut8 g, ut8 b) {
+static void r_cons_rgb_gen (char *outstr, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
-	const char *bold = (a & ALPHA_BOLD)? "1;": "";
+	int i = 2;
+	outstr[0] = '\x1b';
+	outstr[1] = '[';
+	for (; attr; attr &= attr - 1) {
+		switch (attr & -attr) {
+		case 1u << 1: outstr[i] = '1'; break;
+		case 1u << 2: outstr[i] = '2'; break;
+		case 1u << 3: outstr[i] = '3'; break;
+		case 1u << 4: outstr[i] = '4'; break;
+		case 1u << 5: outstr[i] = '5'; break;
+		}
+		outstr[i + 1] = ';';
+		i += 2;
+	}
 	switch (r_cons_singleton ()->color) {
 	case COLOR_MODE_256: // 256 color palette
-		sprintf (outstr, "\x1b[%s%d;5;%dm", bold, fgbg, rgb (r, g, b));
+		sprintf (outstr + i, "%d;5;%dm", fgbg, rgb (r, g, b));
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
-		sprintf (outstr, "\x1b[%s%d;2;%d;%d;%dm", bold, fgbg, r, g, b);
+		sprintf (outstr + i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
 		break;
 	case COLOR_MODE_16: // ansi 16 colors
 		{
@@ -182,7 +195,7 @@ static void r_cons_rgb_gen (char *outstr, ut8 a, ut8 r, ut8 g, ut8 b) {
 		g = (g >= k) ? 1 : 0;
 		b = (b >= k) ? 1 : 0;
 		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		sprintf (outstr, "\x1b[%s%dm", bold, fgbg + k);
+		sprintf (outstr + i, "%dm", fgbg + k);
 		}
 		break;
 	}
@@ -198,12 +211,11 @@ R_API char *r_cons_rgb_str (char *outstr, RColor *rcolor) {
 		sprintf (outstr, "%s", Color_RESET);
 		return outstr;
 	}
-	r_cons_rgb_gen (outstr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
-		ut8 length = strlen (outstr);
-		r_cons_rgb_gen (outstr + length, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
+		r_cons_rgb_gen (outstr, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
 	}
+	r_cons_rgb_gen (outstr + strlen (outstr), rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
 
 	return outstr;
 }
