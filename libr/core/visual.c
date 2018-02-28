@@ -2135,9 +2135,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
 								RAnalFunction *f = NULL;
-								if (true) {
-									f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-								}
+								f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 								op.size = 1;
 								if (f && f->folded) {
 									cols = core->offset - f->addr + r_anal_fcn_size (f);
@@ -2147,10 +2145,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 											&op, core->block, 32);
 								}
 								if (cols < 1) {
-									cols = op.size;
-								}
-								if (cols < 1) {
-									cols = 1;
+									cols = op.size > 1 ? op.size : 1;
 								}
 							}
 							r_core_seek (core, core->offset + cols, 1);
