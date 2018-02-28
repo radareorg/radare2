@@ -187,11 +187,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		free (path);
 
 		//rm xrefs.sdb file
-		length = strlen (prjDir) + strlen (R_SYS_DIR) + strlen ("xrefs.sdb") + 1;
-		tmp = (char *)malloc (length);
-		strcpy (tmp, prjDir);
-		strcat (tmp, R_SYS_DIR);
-		strcat (tmp, "xrefs.sdb");
+		tmp = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "xrefs.sdb");
 		if (r_file_exists (tmp)) {
 			r_file_rm (tmp);
 			eprintf ("rm %s\n", tmp);
@@ -199,11 +195,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		free (tmp);
 
 		//change path to rop.d
-		length = strlen (prjDir) + strlen (R_SYS_DIR) + strlen ("rop.d") + 1;
-		tmp = (char *)malloc (length);
-		strcpy (tmp, prjDir);
-		strcat (tmp, R_SYS_DIR);
-		strcat (tmp, "rop.d");
+		tmp = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
 
 		if (r_file_is_directory (tmp)) {
 			char *f;
