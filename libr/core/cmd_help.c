@@ -224,18 +224,41 @@ static char *filterFlags(RCore *core, const char *msg) {
 	return buf;
 }
 
-R_API void r_core_clippy(const char *msg) {
-	int msglen = strlen (msg);
-	char *l = strdup (r_str_pad ('-', msglen));
-	char *s = strdup (r_str_pad (' ', msglen));
-	r_cons_printf (
+static const char *getClippy() {
+	const int choose = r_num_rand (3);
+	switch (choose) {
+	case 0: return
 " .--.     .-%s-.\n"
 " | _|     | %s |\n"
 " | O O   <  %s |\n"
 " |  |  |  | %s |\n"
 " || | /   `-%s-'\n"
 " |`-'|\n"
-" `---'\n", l, s, msg, s, l);
+" `---'\n";
+	case 1: return
+" .--.     .-%s-.\n"
+" | __\\    | %s |\n"
+" | > <   <  %s |\n"
+" |  \\|    | %s |\n"
+" |/_//    `-%s-'\n"
+" |  / \n"
+" `-'\n";
+	case 2: return
+" .--.     .-%s-.\n"
+" | _|_    | %s |\n"
+" | O O   <  %s |\n"
+" |  ||    | %s |\n"
+" | _:|    `-%s-'\n"
+" |   |\n"
+" `---'\n";
+	}
+}
+
+R_API void r_core_clippy(const char *msg) {
+	int msglen = strlen (msg);
+	char *l = strdup (r_str_pad ('-', msglen));
+	char *s = strdup (r_str_pad (' ', msglen));
+	r_cons_printf (getClippy(), l, s, msg, s, l);
 	free (l);
 	free (s);
 }
