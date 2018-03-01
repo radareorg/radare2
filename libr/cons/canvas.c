@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_cons.h>
 
@@ -30,12 +30,13 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 }
 
 R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
-	RConsCanvas *c;
 	if (w < 1 || h < 1) {
 		return NULL;
 	}
-	c = R_NEW0 (RConsCanvas);
-	if (!c) return NULL;
+	RConsCanvas *c = R_NEW0 (RConsCanvas);
+	if (!c) {
+		return NULL;
+	}
 	c->color = 0;
 	c->sx = 0;
 	c->sy = 0;
@@ -98,14 +99,14 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	return ret;
 }
 
-static int is_ansi_seq(const char *s) {
+static bool is_ansi_seq(const char *s) {
 #if 0
 	/* check utf8 length */
 	if (((*s & 0xc0) == 0x80)) {
 		return false;
 	}
 #endif
-	return s && *s == 0x1b && *(s + 1) == '[';
+	return s && s[0] == 033 && s[1] == '[';
 }
 
 static int get_piece(const char *p, char *chr) {
@@ -116,6 +117,18 @@ static int get_piece(const char *p, char *chr) {
 	while (p && *p && *p != '\n' && !is_ansi_seq (p)) {
 		p++;
 	}
+	// XXX: this is wrong because is_ansi_seq requires skipping until JmH
+#if 0
+	while (p && *p && *p != '\n') {
+		if (is_ansi_seq (p)) {
+			p += 2;
+			while (*p && *p != 'J' && *p != 'm' && *p != 'H') {
+				p++;
+			}
+			p++;
+		}
+	}
+#endif
 	if (chr) {
 		*chr = *p;
 	}
@@ -399,10 +412,13 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	if (color) {
 		c->attr = color;
 	}
-	if (!c->color) c->attr = Color_RESET;
+	if (!c->color) {
+		c->attr = Color_RESET;
+	}
 	row = malloc (w + 1);
-	if (!row)
+	if (!row) {
 		return;
+	}
 	row[0] = roundcorners? '.': tl_corner[0];
 	if (w > 2) {
 		memset (row + 1, hline[0], w - 2);
@@ -431,7 +447,9 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		if (G (x + w - 1, y + i)) W (vline);
 	}
 	free (row);
-	if (color) c->attr = Color_RESET;
+	if (color) {
+		c->attr = Color_RESET;
+	}
 }
 
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {
