@@ -4927,8 +4927,8 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
 			if (is_json) {
-				r_cons_printf ("{\"0x%08"PFMT64x"\": {\"type\": \"fcn\"," 
-					"\"addr\": 0x%08"PFMT64x", \"name\": \"%s\", \"refs\": [",
+				r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"fcn\"," 
+					"\"fcn_addr\":%"PFMT64d",\"name\":\"%s\",\"refs\":[",
 					addr, fcn->addr, fcn->name);
 			} else {
 				//if (sdb_add (db, fcn->name, "1", 0)) {
@@ -4938,7 +4938,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 			}
 		} else {
 			if (is_json) {
-				r_cons_printf ("{\"0x%08"PFMT64x"\": {\"refs\": [", addr);
+				r_cons_printf ("{\"%"PFMT64d"\":{\"refs\":[", addr);
 			} else {
 			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
 			//if (sdb_add (db, arg, "1", 0)) {
@@ -4951,7 +4951,12 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
 		if (fcn) {
 			if (is_json) {
-				r_cons_printf ("{\"0x%08"PFMT64x"\": {\"type\": \"fcn\", \"addr\": 0x%08"PFMT64x", \"name\": \"%s\", \"refs\": [", ref->addr, fcn->addr, fcn->name);
+				if (level == 0) {
+					r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64d",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
+				} else {
+					r_cons_printf ("]}},{\"%"PFMT64d"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64d",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
+
+				}
 			} else {
 				r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
 			}
@@ -4970,7 +4975,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 			}
 		} else {
 			if (is_json) {
-				r_cons_printf ("{\"0x%08"PFMT64x"\": {\"type\": \"???\", \"refs\": [", ref->addr);
+				r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"???\",\"refs\":[", ref->addr);
 			} else {
 				r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
 			}
@@ -4991,6 +4996,9 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 	}
 	if (is_json) {
 		r_cons_printf("]}}");
+		if (level == 0) {
+			r_cons_printf("\n");
+		}
 	}
 	r_list_free (xrefs);
 }
