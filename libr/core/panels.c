@@ -876,6 +876,7 @@ repeat:
 					cols = op.size > 1 ? op.size : 1;
 				}
 				r_core_seek (core, core->offset + cols, 1);
+				r_core_block_read (core);
 			} else {
 				panels[curnode].sy++;
 			}
