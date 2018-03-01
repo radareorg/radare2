@@ -6260,8 +6260,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				if (input[1] == 'a') { // "aaaa"
-					bool ioCache = r_config_get_i (core->config, "io.cache");
-					r_config_set_i (core->config, "io.cache", 1);
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
 					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");
 					rowlog_done (core);
@@ -6272,7 +6272,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
 					}
-					r_config_set_i (core->config, "io.cache", ioCache);
+					r_config_set_i (core->config, "io.pcache", ioCache);
 				} else {
 					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
 					rowlog_done (core);
@@ -6287,8 +6287,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog_done (core);
 				}
 				if (input[1] == 'a') { // "aaaa"
-					bool ioCache = r_config_get_i (core->config, "io.cache");
-					r_config_set_i (core->config, "io.cache", 1);
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
 					if (sdb_count (core->anal->sdb_zigns) > 0) {
 						rowlog (core, "Check for zignature from zigns folder (z/)");
 						r_core_cmd0 (core, "z/");
@@ -6299,7 +6299,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
 					}
-					r_config_set_i (core->config, "io.cache", ioCache);
+					r_config_set_i (core->config, "io.pcache", ioCache);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
