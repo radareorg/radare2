@@ -86,6 +86,7 @@ if host_machine.system() == 'windows'
     endif
     message(' ------ WINDOWS VERSION: BUILD STATIC ------')
   else
+    add_project_link_arguments('/FORCE:MULTIPLE', language: 'c')
     message(' ------ WINDOWS VERSION: BUILD SHARED ------')
   endif
 elif host_machine.system() == 'linux'
