@@ -6202,13 +6202,21 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			r_cons_println ("Usage: See aa? for more help");
 		} else {
+			char *dh_orig = NULL;
+			if (!strncmp (input, "aaaaa", 5)) {
+				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
+				if (r_config_get_i (core->config, "scr.interactive")) {
+					r_cons_any_key (NULL);
+				}
+				goto jacuzzi;
+			}
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
-			char *dh_orig = core->dbg->h
+			dh_orig = core->dbg->h
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
 			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
