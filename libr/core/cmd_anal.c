@@ -6252,12 +6252,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				if (input[1] == 'a') { // "aaaa"
+					bool ioCache = r_config_get_i (core->config, "io.cache");
+					r_config_set_i (core->config, "io.cache", 1);
 					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
+					// drop cache writes is no cache was
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
+					}
+					r_config_set_i (core->config, "io.cache", ioCache);
 				} else {
 					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
 					rowlog_done (core);

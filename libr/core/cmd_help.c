@@ -252,6 +252,7 @@ static const char *getClippy() {
 " |   |\n"
 " `---'\n";
 	}
+	return "";
 }
 
 R_API void r_core_clippy(const char *msg) {
