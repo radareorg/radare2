@@ -69,7 +69,7 @@ ${CC} .test.c \
 	-I r2-static/usr/include/libr \
 	r2-static/usr/lib/libr.a
 res=$?
-if [ $? = 0 ]; then
+if [ $res = 0 ]; then
 	echo SUCCESS
 else
 	echo FAILURE
