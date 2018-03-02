@@ -3842,6 +3842,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" _            - enter hud selector\n"
 				" >            - show function callgraph (see graph.refs)\n"
 				" <            - show program callgraph (see graph.refs)\n"
+				" (            - reverse conditional branch of last instruction in bb\n"
 				" )            - rotate asm.emu and asm.emu.str\n"
 				" Home/End     - go to the top/bottom of the canvas\n"
 				" Page-UP/DOWN - scroll canvas up/down\n"
