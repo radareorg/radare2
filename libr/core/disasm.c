@@ -3739,7 +3739,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 		RAnalBlock *bb = r_anal_fcn_bbget (ds->fcn, ds->at);
 		if (force || (ds->fcn && bb)) {
 			if (bb && ds->show_asm_bbinfo) {
-				r_cons_printf ("[bb  size:%d ops:%d]\n", bb->size, bb->op_pos_size / sizeof (ut16));
+				eprintf ("[bb  size:%d ops:%lu]\n", bb->size, bb->op_pos_size / sizeof (ut16));
 			}
 			ds_begin_json_line (ds);
 			ds_setup_print_pre (ds, false, false);
@@ -3748,6 +3748,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 						ds->refline2, COLOR_RESET (ds));
 			}
+			r_cons_printf("|");
 			ds_newline (ds);
 		}
 	}
