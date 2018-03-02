@@ -1827,7 +1827,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'C':
-			color = color? 0: 1;
+			if (++color > 2) {
+				color = 0;
+			}
 			r_config_set_i (core->config, "scr.color", color);
 			break;
 		case 'd':

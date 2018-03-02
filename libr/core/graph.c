@@ -3560,6 +3560,14 @@ static void applyDisMode(RCore *core) {
 	}
 }
 
+static void rotateColor(RCore *core) {
+	int color = r_config_get_i (core->config, "scr.color");
+	if (++color > 2) {
+		color = 0;
+	}
+	r_config_set_i (core->config, "scr.color", color);
+}
+
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
@@ -3978,7 +3986,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'C':
-			r_config_toggle (core->config, "scr.color");
+			rotateColor (core);
 			break;
 		case 'm':
 			mousemode++;
