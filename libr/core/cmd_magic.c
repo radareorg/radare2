@@ -12,11 +12,11 @@ static int magicdepth = 99; //XXX: do not use global var here
 static RMagic *ck = NULL; // XXX: Use RCore->magic
 static char *ofile = NULL;
 
-static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
+static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v, const ut8* block) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
-	int found = 0, delta = 0, adelta = 0, ret;
+	int found = 0, adelta = 0, ret;
 	ut64 curoffset = core->offset;
 #define NAH 32
 
@@ -24,15 +24,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		ret = 0;
 		goto seek_exit;
 	}
-	if (addr != core->offset) {
-#if 1
-		if (addr >= core->offset && (addr+NAH) < (core->offset + core->blocksize)) {
-			delta = addr - core->offset;
-		} else {
-			r_core_seek (core, addr, true);
-		}
-#endif
-	}
+	r_core_seek (core, addr, true);
 	if (core->search->align) {
 		int mod = addr % core->search->align;
 		if (mod) {
@@ -79,12 +71,12 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	}
 //repeat:
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
-	if (delta+2>core->blocksize) {
+	if (2>core->blocksize) {
 		eprintf ("EOB\n");
 		ret = -1;
 		goto seek_exit;
 	}
-	str = r_magic_buffer (ck, core->block+delta, core->blocksize-delta);
+	str = r_magic_buffer (ck, block, core->blocksize);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
@@ -132,7 +124,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 						sscanf (q+3, "%"PFMT64x, &addr);
 					else sscanf (q+1, "%"PFMT64d, &addr);
 					if (!fmt || !*fmt) fmt = file;
-					r_core_magic_at (core, fmt, addr, depth, 1);
+					r_core_magic_at (core, fmt, addr, depth, 1, block);
 					*q = '@';
 				}
 				break;
@@ -146,7 +138,6 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 //		return adelta+1;
 	}
 	adelta ++;
-	delta ++;
 #if 0
 	if((core->blocksize-delta)>16)
 		goto repeat;
@@ -155,13 +146,13 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	r_magic_free (ck);
 	ck = NULL;
 #endif
-{
-	int mod = core->search->align;
-	if (mod) {
-		ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
-		goto seek_exit;
+	{
+		int mod = core->search->align;
+		if (mod) {
+			ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+			goto seek_exit;
+		}
 	}
-}
 	ret = adelta; //found;
 
 seek_exit:
@@ -169,10 +160,10 @@ seek_exit:
 	return ret;
 }
 
-static void r_core_magic(RCore *core, const char *file, int v) {
+static void r_core_magic(RCore *core, const char *file, int v, const ut8* block) {
 	ut64 addr = core->offset;
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, file, addr, magicdepth, v);
+	r_core_magic_at (core, file, addr, magicdepth, v, block);
 	if (addr != core->offset)
 		r_core_seek (core, addr, true);
 }

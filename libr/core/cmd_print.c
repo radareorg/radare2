@@ -4806,7 +4806,7 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
 			if (l > 0) {
-				r_core_magic (core, input + 1, true);
+				r_core_magic (core, input + 1, true, block);
 			}
 		}
 		break;
