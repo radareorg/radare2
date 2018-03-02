@@ -1,5 +1,8 @@
 #!/bin/sh
 
+if [ "$(uname)" = Linux ]; then
+	LDFLAGS="-lpthread -ldl -lutil -lm"
+fi
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
