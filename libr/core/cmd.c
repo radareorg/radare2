@@ -2652,15 +2652,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case '?':
-		r_cons_printf ("Usage: @@@ [type]     # types:\n"
-			" symbols\n"
-			" sections\n"
-			" imports\n"
-			" regs\n"
-			" threads\n"
-			" comments\n"
-			" functions\n"
-			" flags\n");
+		r_core_cmd_help (core, help_msg_at_at_at);
 		break;
 	case 'c':
 		switch (each[1]) {
@@ -2729,8 +2721,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 			r_core_seek (core, offorig, 1);
 		}
 		break;
-	case 's':
-		if (each[1] == 'e') {
+	case 'S':
+		{
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			if (obj) {
 				ut64 offorig = core->offset;
@@ -2745,7 +2737,29 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 				r_core_seek (core, offorig, 1);
 				r_core_block_size (core, bszorig);
 			}
-		} else {
+		}
+#if ATTIC
+		if (each[1] == 'S') {
+			RListIter *it;
+			RBinSection *sec;
+			RBinObject *obj = r_bin_cur_object (core->bin);
+			int cbsz = core->blocksize;
+			r_list_foreach (obj->sections, it, sec){
+				ut64 addr = sec->vaddr;
+				ut64 size = sec->vsize;
+				// TODO: 
+				//if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
+				//	continue;
+				//}
+				r_core_seek_size (core, addr, size);
+				r_core_cmd (core, cmd, 0);
+			}
+			r_core_block_size (core, cbsz);
+		}
+#endif
+		break;
+	case 's':
+		{
 			// symbols
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
@@ -2758,26 +2772,22 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 'f':
-		switch (each[1]) {
-		case 'l': // flags
-			r_list_foreach (core->flags->flags, iter, flg) {
-				r_core_seek (core, flg->offset, 1);
+		r_list_foreach (core->flags->flags, iter, flg) {
+			r_core_seek (core, flg->offset, 1);
+			r_core_cmd0 (core, cmd);
+		}
+		break;
+	case 'F':
+		{
+			ut64 offorig = core->offset;
+			RAnalFunction *fcn;
+			list = core->anal->fcns;
+			r_list_foreach (list, iter, fcn) {
+				r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
+				r_core_seek (core, fcn->addr, 1);
 				r_core_cmd0 (core, cmd);
 			}
-			break;
-		case 'u': // functions
-			{
-				ut64 offorig = core->offset;
-				RAnalFunction *fcn;
-				list = core->anal->fcns;
-				r_list_foreach (list, iter, fcn) {
-					r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
-					r_core_seek (core, fcn->addr, 1);
-					r_core_cmd0 (core, cmd);
-				}
-				r_core_seek (core, offorig, 1);
-			}
-			break;
+			r_core_seek (core, offorig, 1);
 		}
 		break;
 	}
@@ -2912,23 +2922,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 'i': // "@@i" - function instructions
-		if (each[1] == 'S') {
-			RListIter *it;
-			RBinSection *sec;
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			int cbsz = core->blocksize;
-			r_list_foreach (obj->sections, it, sec){
-				ut64 addr = sec->vaddr;
-				ut64 size = sec->vsize;
-				// TODO: 
-				//if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
-				//	continue;
-				//}
-				r_core_seek_size (core, addr, size);
-				r_core_cmd (core, cmd, 0);
-			}
-			r_core_block_size (core, cbsz);
-		} else {
+		{
 			RListIter *iter;
 			RAnalBlock *bb;
 			int i;

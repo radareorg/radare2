@@ -603,7 +603,11 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '@': // "?@"
 		if (input[1] == '@') {
-			r_core_cmd_help (core, help_msg_at_at);
+			if (input[2] == '@') {
+				r_core_cmd_help (core, help_msg_at_at_at);
+			} else {
+				r_core_cmd_help (core, help_msg_at_at);
+			}
 		} else {
 			r_core_cmd_help (core, help_msg_at);
 		}

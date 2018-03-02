@@ -98,6 +98,19 @@ static const char *help_msg_at_at[] = {
 	NULL
 };
 
+static const char *help_msg_at_at_at[] = {
+	"@@@", "", " # foreach offset+size iterator command:",
+	"x", " @@@i", "imports",
+	"x", " @@@s", "symbols",
+	"x", " @@@S", "sections",
+	"x", " @@@f", "flags",
+	"x", " @@@F", "functions",
+	"x", " @@@t", "threads",
+	"x", " @@@r", "regs",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL
+};
+
 static const char *help_msg_p[] = {
 	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
