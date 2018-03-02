@@ -2302,34 +2302,24 @@ repeat_arroba:
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 				{
 					int index = (int)r_num_math (core->num, ptr + 2);
-					// XXX this is slow, can be optimized to just retreive the bb we want
-					RListIter *iter;
-					RAnalBlock *bb;
-					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-					if (fcn) {
-						r_list_foreach (fcn->bbs, iter, bb) {
-							if ((core->offset >= bb->addr) && (core->offset < (bb->addr + bb->size))) {
-								int count = bb->op_pos_size / sizeof (bb->op_pos[0]);
-								int pos = (index < 0) ? count + index + 1: index;
-								if (pos < 0) {
-									pos = 0;
-								}
-								if (pos > count) {
-									pos = count;
-								}
-								int lastOp = bb->op_pos[pos];
-								for (i = 0; i < count; i++) {
-									eprintf ("%d 0x%llx %d\n", pos, core->offset + bb->op_pos[i], i);
-								}
-								r_core_seek (core, core->offset + lastOp, 1);
-								core->tmpseek = true;
-								goto fuji;
-								break;
-							}
+					RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+					if (bb) {
+						// handle negative indices
+						if (index < 0) {
+							index = bb->ninstr + index;
+						}
+
+						if (index >= 0 && index < bb->ninstr) {
+							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
+							r_core_seek (core, bb->addr + inst_off, 1);
+							core->tmpseek = true;
+						} else {
+							eprintf("The current basic block has %d instructions\n", bb->ninstr);
 						}
 					} else {
-						eprintf ("Cant find a function for 0x%08"PFMT64x"\n", core->offset);
+						eprintf ("Can't find a basic block for 0x%08"PFMT64x"\n", core->offset);
 					}
+					break;
 				}
 				break;
 			case 'f': // "@f:" // slurp file in block
