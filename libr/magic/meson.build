@@ -26,5 +26,5 @@ pkg.generate(libraries: [r_magic],
              filebase: 'r_magic',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

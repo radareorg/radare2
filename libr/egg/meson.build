@@ -31,5 +31,5 @@ pkg.generate(libraries: [r_egg],
              filebase: 'r_egg',
              requires: [
                'r_util', 'r_asm', 'r_syscall'
-			 ],
+             ],
              description: 'radare foundation libraries')

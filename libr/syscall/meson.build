@@ -19,5 +19,5 @@ pkg.generate(libraries: [r_syscall],
              filebase: 'r_syscall',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

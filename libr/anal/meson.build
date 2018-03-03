@@ -123,5 +123,5 @@ pkg.generate(libraries: [r_anal],
              filebase: 'r_anal',
              requires: [
                'r_util', 'r_reg', 'r_asm', 'r_syscall', 'r_search', 'r_cons', 'r_flag'
-			 ],
+             ],
              description: 'radare foundation libraries')

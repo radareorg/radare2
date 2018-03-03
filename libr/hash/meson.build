@@ -31,5 +31,5 @@ pkg.generate(libraries: [r_hash],
              filebase: 'r_hash',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

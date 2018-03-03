@@ -27,5 +27,5 @@ pkg.generate(libraries: [r_socket],
              filebase: 'r_socket',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

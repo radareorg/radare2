@@ -131,5 +131,5 @@ pkg.generate(libraries: [r_bin],
              filebase: 'r_bin',
              requires: [
                'r_util', 'r_io', 'r_socket', 'r_magic'
-			 ],
+             ],
              description: 'radare foundation libraries')
