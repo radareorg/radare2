@@ -660,8 +660,6 @@ static int cb_emustr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
 		r_config_set (core->config, "asm.emu", "true");
-	} else {
-		r_config_set (core->config, "asm.emu", "false");
 	}
 	return true;
 }
