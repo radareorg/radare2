@@ -180,5 +180,5 @@ pkg.generate(libraries: [r_asm],
              filebase: 'r_asm',
              requires: [
                'r_util', 'r_syscall', 'r_parse', 'r_lang', 'r_flag', 'r_socket'
-			 ],
+             ],
              description: 'radare foundation libraries')

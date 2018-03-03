@@ -80,6 +80,6 @@ pkg.generate(libraries: [r_debug],
              filebase: 'r_debug',
              requires: [
                'r_util', 'r_hash', 'r_reg', 'r_syscall', 'r_anal', 'r_flag', 'r_io', 'r_bp', 'r_search',
-			   'r_cons', 'r_lang', 'r_egg', 'r_socket'
-			 ],
+               'r_cons', 'r_lang', 'r_egg', 'r_socket'
+             ],
              description: 'radare foundation libraries')

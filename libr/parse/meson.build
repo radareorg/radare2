@@ -39,5 +39,5 @@ pkg.generate(libraries: [r_parse],
              filebase: 'r_parse',
              requires: [
                'r_util', 'r_flag', 'r_syscall', 'r_reg'
-			 ],
+             ],
              description: 'radare foundation libraries')

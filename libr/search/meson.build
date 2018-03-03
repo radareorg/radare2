@@ -26,5 +26,5 @@ pkg.generate(libraries: [r_search],
              filebase: 'r_search',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

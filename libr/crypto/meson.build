@@ -36,5 +36,5 @@ pkg.generate(libraries: [r_crypto],
              filebase: 'r_crypto',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

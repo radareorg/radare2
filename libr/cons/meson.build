@@ -33,5 +33,5 @@ pkg.generate(libraries: [r_cons],
              filebase: 'r_cons',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

@@ -21,5 +21,5 @@ pkg.generate(libraries: [r_flag],
              filebase: 'r_flag',
              requires: [
                'r_util'
-			 ],
+             ],
              description: 'radare foundation libraries')

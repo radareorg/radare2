@@ -83,5 +83,5 @@ pkg.generate(libraries: [r_io],
              filebase: 'r_io',
              requires: [
                'r_util', 'r_socket'
-			 ],
+             ],
              description: 'radare foundation libraries')
