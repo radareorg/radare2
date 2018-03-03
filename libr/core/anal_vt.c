@@ -94,7 +94,7 @@ RList* search_virtual_tables(RCore *core){
 	int wordSize = bits / 8;
 	r_list_foreach (sections, iter, section) {
 		if (!strcmp (section->name, ".rodata")) {
-			ut8 *segBuff = calloc (1, section->size);
+			ut8 *segBuff = calloc (1, section->vsize);
 			r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
 			startAddress = section->vaddr;
 			endAddress = startAddress + (section->vsize) - (bits/8);
