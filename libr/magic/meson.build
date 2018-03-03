@@ -16,3 +16,15 @@ r_magic = library('r_magic', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_magic],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_magic',
+             filebase: 'r_magic',
+             requires: [
+               'r_util'
+			 ],
+             description: 'radare foundation libraries')

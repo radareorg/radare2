@@ -57,7 +57,7 @@ else
   r2birth = r2birth.stdout().strip()
 endif
 
-prefix = '/usr/local'
+prefix = get_option('prefix')
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -112,9 +112,9 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ',&r_debug_plugin_'.join(deb
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ',&r_egg_plugin_'.join(egg) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ',&r_lang_plugin_'.join(lang) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ',&r_parse_plugin_'.join(parse) + ', 0')
-configure_file(input: 'libr/config.h.in',
-               output: 'config.h',
-               configuration: conf_data)
+config_h = configure_file(input: 'libr/config.h.in',
+                          output: 'config.h',
+                          configuration: conf_data)
 
 userconf = configuration_data()
 userconf.set('DEBUGGER', 1)
@@ -132,9 +132,10 @@ if host_machine.system() == 'windows'
 else
   userconf.set('HAVE_JEMALLOC', 1)
 endif
-configure_file(input: 'libr/include/r_userconf.h.in',
-               output: 'r_userconf.h',
-               configuration: userconf)
+r_userconf_h = configure_file(input: 'libr/include/r_userconf.h.in',
+                              output: 'r_userconf.h',
+                              configuration: userconf)
+install_headers(r_userconf_h, subdir: 'libr')
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
@@ -142,12 +143,23 @@ versionconf.set('R2_VERSION', r2version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
 versionconf.set('R2_BIRTH', r2birth)
-configure_file(input: 'libr/include/r_version.h.in',
-               output: 'r_version.h',
-               configuration: versionconf)
+r_version_h = configure_file(input: 'libr/include/r_version.h.in',
+                             output: 'r_version.h',
+                             configuration: versionconf)
+install_headers(r_version_h, subdir: 'libr')
 
 # Copy missing header
 run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
+
+
+pcconf = configuration_data()
+pcconf.set('PREFIX', prefix)
+pcconf.set('LIBDIR', prefix + '/lib')
+pcconf.set('VERSION', r2version)
+libr_pc = configure_file(input: 'libr/libr.pc.acr',
+                         output: 'libr.pc',
+                         configuration: userconf)
+install_data(libr_pc, install_dir: join_paths(get_option('libdir'), 'pkgconfig'))
 
 subdir('shlr/')
 subdir('libr/util')
@@ -172,6 +184,7 @@ subdir('libr/egg')
 subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
+subdir('libr/include')
 
 if meson.is_subproject()
   libr2_lib = [

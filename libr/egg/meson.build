@@ -21,3 +21,15 @@ r_egg = library('r_egg', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_egg],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_egg',
+             filebase: 'r_egg',
+             requires: [
+               'r_util', 'r_asm', 'r_syscall'
+			 ],
+             description: 'radare foundation libraries')
