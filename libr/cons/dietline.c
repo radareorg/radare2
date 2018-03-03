@@ -164,7 +164,8 @@ static int r_line_readchar_win(int *vch) { // this function handle the input in 
 	if (I.zerosep) {
 		*vch = 0;
 		buf[0] = 0;
-		read (0, buf, 1);
+		if (read (0, buf, 1) != 1)
+			return -1;
 		return buf[0];
 	}
 
