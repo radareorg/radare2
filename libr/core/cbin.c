@@ -897,12 +897,11 @@ static int bin_dwarf(RCore *core, int mode) {
 	return true;
 }
 
-static int bin_pdb(RCore *core, int mode) {
+R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	R_PDB pdb = R_EMPTY;
-	ut64 baddr = r_bin_get_baddr (core->bin);
 
 	pdb.cb_printf = r_cons_printf;
-	if (!init_pdb_parser (&pdb, core->bin->file)) {
+	if (!init_pdb_parser (&pdb, file)) {
 		return false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
@@ -942,6 +941,11 @@ static int bin_pdb(RCore *core, int mode) {
 	pdb.finish_pdb_parse (&pdb);
 
 	return true;
+}
+
+static int bin_pdb(RCore *core, int mode) {
+	ut64 baddr = r_bin_get_baddr (core->bin);
+	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
 static int bin_main(RCore *r, int mode, int va) {
