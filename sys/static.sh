@@ -70,7 +70,7 @@ if [ -z "${CC}" ]; then
 fi
 ${CC} .test.c \
 	-I r2-static/usr/include/libr \
-	r2-static/usr/lib/libr.a
+	r2-static/usr/lib/libr.a ${LDFLAGS}
 res=$?
 if [ $res = 0 ]; then
 	echo SUCCESS
