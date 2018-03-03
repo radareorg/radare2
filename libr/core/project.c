@@ -164,8 +164,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
-	char *path, *tmp, *prjDir;
-	size_t length;
+	char *path, *prjDir;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
 		return 0;
@@ -176,7 +175,6 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
-
 		// rm project file
 		if (r_file_exists (path)) {
 			r_file_rm (path);
@@ -187,22 +185,22 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		free (path);
 
 		//rm xrefs.sdb file
-		tmp = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "xrefs.sdb");
-		if (r_file_exists (tmp)) {
-			r_file_rm (tmp);
-			eprintf ("rm %s\n", tmp);
+		char *xrefs_sdb = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "xrefs.sdb");
+		if (r_file_exists (xrefs_sdb)) {
+			r_file_rm (xrefs_sdb);
+			eprintf ("rm %s\n", xrefs_sdb);
 		}
-		free (tmp);
+		free (xrefs_sdb);
 
 		//change path to rop.d
-		tmp = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
+		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
 
-		if (r_file_is_directory (tmp)) {
+		if (r_file_is_directory (rop_d)) {
 			char *f;
 			RListIter *iter;
-			RList *files = r_sys_dir (tmp);
+			RList *files = r_sys_dir (rop_d);
 			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_append (strdup (tmp), R_SYS_DIR);
+				char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
 				filepath = r_str_append (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
@@ -210,11 +208,11 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 				}
 				free (filepath);
 			}
-			r_file_rm (tmp);
-			eprintf ("rm %s\n", tmp);
+			r_file_rm (rop_d);
+			eprintf ("rm %s\n", rop_d);
 			r_list_free (files);
 		}
-		free (tmp);
+		free (rop_d);
 		// TODO: remove .d directory (BEWARE OF ROOT RIMRAFS!)
 		// TODO: r_file_rmrf (path);
 	}
