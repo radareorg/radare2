@@ -3571,6 +3571,8 @@ static void rotateColor(RCore *core) {
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
+	bool asm_pseudo = r_config_get_i (core->config, "asm.pseudo");
+	bool asm_esil = r_config_get_i (core->config, "asm.esil");
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;
@@ -3902,15 +3904,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'O':
 			disMode++;
-			if (disMode > 3) {
+			if (disMode > 2) {
 				disMode = 0;
 			}
 			applyDisMode (core);
-			if (disMode == 3) {
-				g->mode = R_AGRAPH_MODE_SUMMARY;
-			} else {
-				g->mode = 0;
-			}
 			g->need_reload_nodes = true;
 			get_bbupdate (g, core, fcn);
 			break;	
@@ -4304,6 +4301,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		g->can = o_can;
 	}
+	// Restore values
+	r_config_set_i (core->config, "asm.pseudo", asm_pseudo);
+	r_config_set_i (core->config, "asm.esil", asm_esil);
 	r_core_seek (core, oldseek, 0);
 	r_config_restore (hc);
 	r_config_hold_free (hc);
