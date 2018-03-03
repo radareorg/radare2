@@ -1117,7 +1117,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	}
 	if (ds->maxrefs < 1) {
 		ds_pre_xrefs (ds, false);
-		ds_comment (ds, false, "   %s; XREFS(%d)\n",
+		ds_comment (ds, false, "%s; XREFS(%d)\n",
 			ds->show_color? ds->pal_comment: "",
 			r_list_length (xrefs));
 		r_list_free (xrefs);
@@ -1128,7 +1128,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols -= 15;
 		cols /= 23;
 		ds_pre_xrefs (ds, false);
-		ds_comment (ds, false, "   %s; XREFS: ", ds->show_color? ds->pal_comment: "");
+		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
 			ds_comment (ds, false, "%s 0x%08"PFMT64x"  ",
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
@@ -1137,7 +1137,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ds_print_color_reset (ds);
 					ds_newline (ds);
 					ds_pre_xrefs (ds, false);
-					ds_comment (ds, false, "   %s; XREFS: ", ds->show_color? ds->pal_comment: "");
+					ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 				}
 				count = 0;
 			} else {
@@ -1172,8 +1172,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			}
 			ds_begin_json_line (ds);
 			ds_pre_xrefs (ds, false);
-			//those extra space to align
-			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s",
+			ds_comment (ds, false, "%s; %s XREF from 0x%08"PFMT64x" (%s)%s",
 				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
 				refi->addr, name, COLOR_RESET (ds));
 			ds_newline (ds);
