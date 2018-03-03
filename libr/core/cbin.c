@@ -358,12 +358,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 
 static bool bin_raw_strings(RCore *r, int mode, int va) {
 	RBinFile *bf = r_bin_cur (r->bin);
-	if (!bf && r->io && r->io->desc && r->io->desc->uri) {
-		// -n scenario is handled already
-		// eprintf ("Likely you used -nn \n");
-		// eprintf ("try: .!rabin2 -B <baddr> -zzr filename\n");
-		return false;
-	}
+	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
 		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
@@ -372,8 +367,48 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 		eprintf ("Core file not open\n");
 		return false;
 	}
+	if (!bf) {
+		bf = R_NEW0 (RBinFile);
+		if (!bf) {
+			return false;
+		}
+		RIODesc *desc = r_io_desc_get (r->io, r->file->fd);
+		if (!desc) {
+			free (bf);
+			return false;
+		}
+		bf->file = desc->name;
+		bf->size = r_io_desc_size (desc);
+		if (bf->size == UT64_MAX) {
+			free (bf);
+			return false;
+		}
+		bf->buf = r_buf_new ();
+		if (!bf->buf) {
+			free (bf);
+			return false;
+		}
+		bf->buf->buf = malloc (bf->size);
+		if (!bf->buf->buf) {
+			free (bf->buf);
+			free (bf);
+			return false;
+		}
+		bf->buf->fd = r->file->fd;
+		bf->buf->length = bf->size;
+		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+		bf->o = NULL;
+		bf->rbin = r->bin;
+		new_bf = true;
+		va = false;
+	}
 	RList *l = r_bin_raw_strings (bf, 0);
 	_print_strings (r, l, mode, va);
+	if (new_bf) {
+		free (bf->buf->buf);
+		free (bf->buf);
+		free (bf);
+	}
 	return true;
 }
 
