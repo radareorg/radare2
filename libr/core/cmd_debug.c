@@ -2792,7 +2792,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			list = r_debug_frames (core->dbg, addr);
 			r_cons_printf ("[");
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%s%08" PFMT64d,
+				r_cons_printf ("%s%"PFMT64d,
 					       (i ? "," : ""),
 					       frame->addr);
 				i++;
