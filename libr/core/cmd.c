@@ -1743,7 +1743,9 @@ static void tmpenvs_free(void *item) {
 }
 
 static bool set_tmp_arch(RCore *core, char *arch, char **tmparch, char **tmphintarch) {
-	assert (tmparch != NULL && tmphintarch != NULL);
+	if (tmparch == NULL || tmphintarch == NULL) {
+		eprintf ("tmparch and tmphintarch should be set\n");
+	}
 
 	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
 	// temporarily overwrite anal hints if there's any
@@ -1759,7 +1761,9 @@ static bool set_tmp_arch(RCore *core, char *arch, char **tmparch, char **tmphint
 }
 
 static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *tmphintbits) {
-	assert (tmpbits != NULL && tmphintbits != NULL);
+	if (tmpbits == NULL || tmphintbits == NULL) {
+		eprintf ("tmpbits and tmphintbits should be set\n");
+	}
 
 	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
 	// temporarily overwrite bits hint if there's any

@@ -4352,9 +4352,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		char *hex;
 		int ret, bufsz;
 
-		input++;
-		while (*input == ' ') input++;
+		input = r_str_trim_ro (input + 1);
 		hex = strdup (input);
+		if (!hex) {
+			break;
+		}
 
 		RAnalOp aop = R_EMPTY;
 		bufsz = r_hex_str2bin (hex, (ut8*)hex);

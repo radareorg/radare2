@@ -3714,8 +3714,7 @@ static int cmd_print(void *data, const char *input) {
 		const char *arg = NULL;
 
 		if (input[1] != '\0') {
-			arg = input + 2;
-			while (*arg != ' ') arg++;
+			arg = r_str_trim_ro (input + 2);
 		}
 
 		if (input[1] == 'e') { // "pae"
