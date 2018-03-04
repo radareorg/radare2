@@ -1975,6 +1975,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
+	bool asm_emu = r_config_get_i (core->config, "asm.emu");
 	bool asm_emustr = r_config_get_i (core->config, "asm.emu.str");
 	r_config_set_i (core->config, "asm.emu.str", true);
 	RConsPrintablePalette *pal = &core->cons->pal;
@@ -2231,6 +2232,7 @@ restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_i (core->config, "asm.emu.str", asm_emustr);
+	r_config_set_i (core->config, "asm.emu", asm_emu);
 }
 
 static void algolist(int mode) {

@@ -3583,6 +3583,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	ut64 oldseek = core->offset;
 	int ret, invscroll;
 	RConfigHold *hc = r_config_hold_new (core->config);
+	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 	if (!hc) {
 		return false;
 	}
@@ -3604,7 +3605,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
-	r_config_save_num (hc, "asm.cmt.right", NULL);
 	if (!g) {
 		graph_allocated = true;
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3902,16 +3902,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			visual_offset (g, core);
 			break;
 		case 'O':
-			disMode++;
-			if (disMode > 3) {
-				disMode = 0;
-			}
+			disMode = (disMode + 1) % 3;
 			applyDisMode (core);
-			if (disMode == 3) {
-				g->mode = R_AGRAPH_MODE_SUMMARY;
-			} else {
-				g->mode = 0;
-			}
 			g->need_reload_nodes = true;
 			get_bbupdate (g, core, fcn);
 			break;	
