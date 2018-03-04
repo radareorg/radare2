@@ -19,7 +19,7 @@ include $(SHLR)/java/deps.mk
 include $(SHLR)/ar/deps.mk
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
-OBJS=bin.o dbginfo.o bin_ldr.o bin_write.o demangle.o dwarf.o filter.o
+OBJS=bin.o dbginfo.o bin_ldr.o bin_write.o demangle.o dwarf.o filter.o file.o obj.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
 OBJS+=mangling/demangler.o
 OBJS+=mangling/microsoft_demangle.o
