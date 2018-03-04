@@ -184,7 +184,48 @@ subdir('libr/egg')
 subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
+
 subdir('libr/include')
+
+subdir('shlr/sdb')
+subdir('libr/anal/d')
+subdir('libr/asm/d')
+subdir('libr/bin/d')
+subdir('libr/syscall/d')
+
+subdir('libr/cons/d')
+subdir('libr/magic/d')
+
+install_subdir('shlr/www',
+  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version)
+)
+
+patterned_filelist = ['python', '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
+
+fortunes_files = run_command(patterned_filelist + ['doc/fortunes.*']).stdout().strip().split(';')
+install_data(fortunes_files,
+  install_dir: join_paths(get_option('datadir'), 'doc/radare2')
+)
+
+man1_files = run_command(patterned_filelist + ['man/*.1']).stdout().strip().split(';')
+install_data(man1_files,
+  install_dir: join_paths(get_option('datadir'), 'man/man1')
+)
+
+man7_files = run_command(patterned_filelist + ['man/*.7']).stdout().strip().split(';')
+install_data(man7_files,
+  install_dir: join_paths(get_option('datadir'), 'man/man7')
+)
+
+custom_target('hud',
+  input: 'doc/hud',
+  output: 'main',
+  command: ['python', '-c', 'from sys import argv; __import__("shutil").copy(argv[1], argv[2])', '@INPUT@', '@OUTPUT@'],
+  build_by_default: true,
+  build_always: false,
+  install: true,
+  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version, 'hud')
+)
 
 if meson.is_subproject()
   libr2_lib = [
