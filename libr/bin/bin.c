@@ -190,76 +190,6 @@ R_API void r_bin_string_free(void *_str) {
 	free (str);
 }
 
-static char *swiftField(const char *dn, const char *cn) {
-	char *p = strstr (dn, ".getter_");
-	if (!p) {
-		p = strstr (dn, ".setter_");
-		if (!p) {
-			p = strstr (dn, ".method_");
-		}
-	}
-	if (p) {
-		char *q = strstr (dn, cn);
-		if (q && q[strlen (cn)] == '.') {
-			q = strdup (q + strlen (cn) + 1);
-			char *r = strchr (q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
-}
-
-R_API RList *r_bin_classes_from_symbols (RBinFile *bf, RBinObject *o) {
-	RBinSymbol *sym;
-	RListIter *iter;
-	RList *symbols = o->symbols;
-	RList *classes = o->classes;
-	if (!classes) {
-		classes = r_list_newf ((RListFree)r_bin_class_free);
-	}
-	r_list_foreach (symbols, iter, sym) {
-		if (sym->name[0] != '_') {
-			continue;
-		}
-		const char *cn = sym->classname;
-		if (cn) {
-			RBinClass *c = r_bin_class_new (bf, sym->classname, NULL, 0);
-			if (!c) {
-				continue;
-			}
-			// swift specific
-			char *dn = sym->dname;
-			char *fn = swiftField (dn, cn);
-			if (fn) {
-				// eprintf ("FIELD %s  %s\n", cn, fn);
-				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL);
-				r_list_append (c->fields, f);
-				free (fn);
-			} else {
-				char *mn = strstr (dn, "..");
-				if (mn) {
-					// eprintf ("META %s  %s\n", sym->classname, mn);
-				} else {
-					char *mn = strstr (dn, cn);
-					if (mn && mn[strlen(cn)] == '.') {
-						mn += strlen (cn) + 1;
-						// eprintf ("METHOD %s  %s\n", sym->classname, mn);
-						r_list_append (c->methods, sym);
-					}
-				}
-			}
-		}
-	}
-	if (r_list_empty (classes)) {
-		r_list_free (classes);
-		return NULL;
-	}
-	return classes;
-}
-
 // XXX - change this to RBinObject instead of RBinFile
 // makes no sense to pass in a binfile and set the RBinObject
 // kinda a clunky functions
@@ -800,18 +730,10 @@ R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
 	return false;
 }
 
-static ut64 binobj_get_baddr(RBinObject *o) {
-	return o? o->baddr + o->baddr_shift: UT64_MAX;
-}
-
-R_API ut64 r_binfile_get_baddr(RBinFile *binfile) {
-	return binfile? binobj_get_baddr (binfile->o): UT64_MAX;
-}
-
 /* returns the base address of bin or UT64_MAX in case of errors */
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	return binobj_get_baddr (o);
+	return r_bin_object_get_baddr (o);
 }
 
 /* returns the load address of bin or UT64_MAX in case of errors */
@@ -1124,7 +1046,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 			obj->info->bits = bits;
 		}
 	}
-	return (binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj));
+	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
@@ -1138,8 +1060,7 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
 
-R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits,
-			       const char *name) {
+R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, const char *name) {
 	RBinObject *obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
 	return r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, obj);
 }
@@ -1161,10 +1082,7 @@ R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 		binfile = r_bin_file_find_by_id (bin, binfile_id);
 		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
 	}
-	if (!binfile || !obj) {
-		return false;
-	}
-	return obj && binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
+	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
 
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {
@@ -1177,8 +1095,7 @@ R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {
 	}
 	nbinfile = r_bin_file_find_by_name_n (bin, tname, idx);
 	obj = nbinfile? r_list_get_n (nbinfile->objs, idx): NULL;
-	return obj && nbinfile &&
-	       r_bin_file_set_cur_binfile_obj (bin, nbinfile, obj);
+	return r_bin_file_set_cur_binfile_obj (bin, nbinfile, obj);
 }
 
 static void list_xtr_archs(RBin *bin, int mode) {
@@ -1571,7 +1488,7 @@ R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const
 
 /* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
  * bin, paddr otherwise */
-R_API ut64 r_binfile_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
+R_API ut64 r_bin_file_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	int use_va = 0;
 	if (binfile && binfile->o && binfile->o->info) {
 		use_va = binfile->o->info->has_va;
@@ -1603,7 +1520,7 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 			}
 		}
 	}
-	return r_binfile_get_vaddr (bin->cur, paddr, vaddr);
+	return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
 }
 
 R_API ut64 r_bin_a2b(RBin *bin, ut64 addr) {

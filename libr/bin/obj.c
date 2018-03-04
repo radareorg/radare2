@@ -286,6 +286,10 @@ R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *
 	return obj;
 }
 
+R_API ut64 r_bin_object_get_baddr(RBinObject *o) {
+	return o? o->baddr + o->baddr_shift: UT64_MAX;
+}
+
 R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	RBinFile *binfile = NULL;
 	RBinObject *obj = NULL;

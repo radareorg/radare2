@@ -62,7 +62,6 @@ static void print_string(RBinString *string, RBinFile *bf) {
 	}
 }
 
-
 static int string_scan_range(RList *list, RBinFile *bf, int min,
 			      const ut64 from, const ut64 to, int type) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
@@ -100,8 +99,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		} else {
 			str_type = type;
 		}
-
-
 		runes = 0;
 		str_start = needle;
 
@@ -217,7 +214,75 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	return count;
 }
 
+static char *swiftField(const char *dn, const char *cn) {
+	char *p = strstr (dn, ".getter_");
+	if (!p) {
+		p = strstr (dn, ".setter_");
+		if (!p) {
+			p = strstr (dn, ".method_");
+		}
+	}
+	if (p) {
+		char *q = strstr (dn, cn);
+		if (q && q[strlen (cn)] == '.') {
+			q = strdup (q + strlen (cn) + 1);
+			char *r = strchr (q, '.');
+			if (r) {
+				*r = 0;
+			}
+			return q;
+		}
+	}
+	return NULL;
+}
 
+R_API RList *r_bin_classes_from_symbols (RBinFile *bf, RBinObject *o) {
+	RBinSymbol *sym;
+	RListIter *iter;
+	RList *symbols = o->symbols;
+	RList *classes = o->classes;
+	if (!classes) {
+		classes = r_list_newf ((RListFree)r_bin_class_free);
+	}
+	r_list_foreach (symbols, iter, sym) {
+		if (sym->name[0] != '_') {
+			continue;
+		}
+		const char *cn = sym->classname;
+		if (cn) {
+			RBinClass *c = r_bin_class_new (bf, sym->classname, NULL, 0);
+			if (!c) {
+				continue;
+			}
+			// swift specific
+			char *dn = sym->dname;
+			char *fn = swiftField (dn, cn);
+			if (fn) {
+				// eprintf ("FIELD %s  %s\n", cn, fn);
+				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL);
+				r_list_append (c->fields, f);
+				free (fn);
+			} else {
+				char *mn = strstr (dn, "..");
+				if (mn) {
+					// eprintf ("META %s  %s\n", sym->classname, mn);
+				} else {
+					char *mn = strstr (dn, cn);
+					if (mn && mn[strlen(cn)] == '.') {
+						mn += strlen (cn) + 1;
+						// eprintf ("METHOD %s  %s\n", sym->classname, mn);
+						r_list_append (c->methods, sym);
+					}
+				}
+			}
+		}
+	}
+	if (r_list_empty (classes)) {
+		r_list_free (classes);
+		return NULL;
+	}
+	return classes;
+}
 
 R_API RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
 	RBinFile *binfile = R_NEW0 (RBinFile);
@@ -551,7 +616,7 @@ R_API int r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 	return r_bin_file_set_cur_binfile (bin, bf);
 }
 
-R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
+R_API bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	RBinPlugin *plugin = NULL;
 	if (!bin || !bf || !obj) {
 		return false;
@@ -569,7 +634,7 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 
 R_API int r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf) {
 	RBinObject *obj = bf? bf->o: NULL;
-	return obj? r_bin_file_set_cur_binfile_obj (bin, bf, obj): false;
+	return r_bin_file_set_cur_binfile_obj (bin, bf, obj);
 }
 
 R_API int r_bin_file_set_cur_by_name(RBin *bin, const char *name) {
@@ -611,7 +676,9 @@ R_API int r_bin_file_deref(RBin *bin, RBinFile *a) {
 	// it is possible for a file not
 	// to be bound to RBin and RBinFiles
 	// XXX - is this an ok assumption?
-	if (bin) bin->cur = NULL;
+	if (bin) {
+		bin->cur = NULL;
+	}
 	return res;
 }
 
@@ -734,7 +801,6 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile) {
 	return binfile && binfile->o? binfile->o->plugin: NULL;
 }
 
-
 static int is_data_section(RBinFile *a, RBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
@@ -745,7 +811,6 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
  	// Rust
 	return (strstr (s->name, "_const") != NULL);
 }
-
 
 R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 	RListIter *iter;
@@ -865,3 +930,8 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 		}
 	}
 }
+
+R_API ut64 r_bin_file_get_baddr(RBinFile *binfile) {
+	return binfile? r_bin_object_get_baddr (binfile->o): UT64_MAX;
+}
+
