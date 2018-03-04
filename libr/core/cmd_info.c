@@ -635,16 +635,7 @@ static int cmd_info(void *data, const char *input) {
 					} else {
 						eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
 					}
-					void *res = r_core_file_open (core, filename, R_IO_READ, baddr);
-					if (!res) {
-						eprintf ("Error while opening '%s'", filename);
-						break;
-					}
-					int fd = r_io_fd_get_current (core->io);
-					r_core_bin_load (core, filename, baddr);
-					RCoreBinFilter filter = { 0 };
-					r_core_bin_info (core, R_CORE_BIN_ACC_PDB, mode, true, &filter, NULL);
-					r_core_file_close_fd (core, fd);
+					r_core_pdb_info (core, filename, baddr, mode);
 					free (filename);
 					break;
 				case '?':
