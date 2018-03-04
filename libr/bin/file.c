@@ -446,10 +446,12 @@ R_API RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 		}
 		return NULL;
 	}
+#if 0
 	/* WTF */
 	if (strcmp (plugin->name, "any")) {
 		bf->narch = 1;
 	}
+#endif
 
 	/* free unnecessary rbuffer (???) */
 	return bf;
