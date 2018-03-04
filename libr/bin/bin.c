@@ -519,9 +519,6 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 	RBinObject *o = a? a->o: NULL;
 	RList *ret;
 
-	if (!o) {
-		return NULL;
-	}
 	if (dump) {
 		/* dump to stdout, not stored in list */
 		ret = NULL;
@@ -531,7 +528,7 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 			return NULL;
 		}
 	}
-	if (o->sections && !r_list_empty (o->sections) && !a->rawstr) {
+	if (o && o->sections && !r_list_empty (o->sections) && !a->rawstr) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				get_strings_range (a, ret, min, section->paddr,
@@ -2779,11 +2776,14 @@ R_API ut64 r_binfile_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
-	if (!bin || !bin->cur) {
+	if (!bin) {
 		return UT64_MAX;
 	}
 	if (paddr == UT64_MAX) {
 		return UT64_MAX;
+	}
+	if (!bin->cur) {
+		return paddr;
 	}
 	/* hack to realign thumb symbols */
 	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
