@@ -320,7 +320,7 @@ static int r_line_hist_up() {
         I.buffer.index = I.buffer.length = strlen (I.buffer.data);
         return true;
     }
-    else if (I.history.index > 0) {
+    if (I.history.index > 0) {
 		strncpy (I.buffer.data, I.history.data[--I.history.index], R_LINE_BUFSIZE - 1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		return true;
