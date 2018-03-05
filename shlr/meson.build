@@ -1,6 +1,6 @@
 message('Cloning capstone')
-git_cmd = 'git clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
-res = run_command(git_cmd.split())
+git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
+res = run_command(git_exe, git_cmd.split())
 if res.returncode() == 0
   message('Cloned')
 else
