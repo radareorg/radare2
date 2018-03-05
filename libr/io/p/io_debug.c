@@ -341,6 +341,10 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 		char *_cmd = io->args
 			? r_str_appendf (strdup (cmd), " %s", io->args)
 			: strdup (cmd);
+		// XXX: this is a workaround to fix spawning programs with spaces in path
+		if (strstr (_cmd, "\\ ")) {
+			_cmd = r_str_replace (_cmd, "\\ ", " ", true);
+		}
 		argv = r_str_argv (_cmd, NULL);
 		if (!argv) {
 			free (_cmd);
@@ -370,10 +374,6 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 			if (dst) {
 				argv[0] = dst;
 			}
-		}
-		// XXX: this is a workaround to fix spawning programs with spaces in path
-		if (strstr (argv[0], "\\ ")) {
-			argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
 		}
 
 		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
@@ -484,12 +484,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			char *_cmd = io->args ?
 				r_str_appendf (strdup (cmd), " %s", io->args) :
 				strdup (cmd);
+			if (strstr (_cmd, "\\ ")) {
+				_cmd = r_str_replace (_cmd, "\\ ", " ", true);
+			}
 			char *path_escaped = get_and_escape_path (_cmd);
 			trace_me ();
 			argv = r_str_argv (path_escaped, NULL);
-			if (argv && strstr (argv[0], "\\ ")) {
-				argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
-			}
 			if (!argv) {
 				free (path_escaped);
 				free (_cmd);
