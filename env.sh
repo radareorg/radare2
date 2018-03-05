@@ -7,6 +7,11 @@ getabsolutepath() {
 
 pfx=$(getabsolutepath "$1")
 
+if [ "0$RADARE2_ENV_INIT_COUNT" -gt 5 ]; then
+    echo "Loop detected in the wrapper, please check your installation"
+    exit 1
+fi
+
 if [ -z "$1" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
 	exit 1
@@ -22,6 +27,7 @@ if [ -d "$pfx/usr/bin" ]; then
 	pfx="$pfx/usr"
 fi
 
+RADARE2_ENV_INIT_COUNT=$(( RADARE2_ENV_INIT_COUNT + 1 ))
 new_env='
 R2_ENV_IS_SET=1
 LIBR_PLUGINS=${pfx}/lib/radare2
@@ -29,6 +35,7 @@ PATH=$pfx/bin:${PATH}
 LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
 PKG_CONFIG_PATH=$pfx/lib/pkgconfig:$PKG_CONFIG_PATH
+RADARE2_ENV_INIT_COUNT=${RADARE2_ENV_INIT_COUNT}
 '
 
 shift
