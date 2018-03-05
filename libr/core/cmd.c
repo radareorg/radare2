@@ -1742,6 +1742,42 @@ static void tmpenvs_free(void *item) {
 	free (item);
 }
 
+static bool set_tmp_arch(RCore *core, char *arch, char **tmparch, char **tmphintarch) {
+	if (tmparch == NULL || tmphintarch == NULL) {
+		eprintf ("tmparch and tmphintarch should be set\n");
+	}
+
+	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+	// temporarily overwrite anal hints if there's any
+	if (hint) {
+		*tmphintarch = hint->arch ? strdup (hint->arch) : NULL;
+		r_anal_hint_set_arch (core->anal, core->offset, arch);
+	}
+	r_anal_hint_free (hint);
+
+	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
+	r_config_set (core->config, "asm.arch", arch);
+	return true;
+}
+
+static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *tmphintbits) {
+	if (tmpbits == NULL || tmphintbits == NULL) {
+		eprintf ("tmpbits and tmphintbits should be set\n");
+	}
+
+	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+	// temporarily overwrite bits hint if there's any
+	if (hint) {
+		*tmphintbits = hint->bits;
+		r_anal_hint_set_bits (core->anal, core->offset, bits);
+	}
+	r_anal_hint_free (hint);
+
+	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
+	r_config_set_i (core->config, "asm.bits", bits);
+	return true;
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
 	const char *quotestr = "`";
@@ -2240,8 +2276,11 @@ next2:
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
 		ut64 tmpbsz = core->blocksize;
+		bool is_bits_set = false;
+		bool is_arch_set = false;
 		char *tmpeval = NULL;
-		char *tmpasm = NULL;
+		char *tmpasm = NULL, *tmphintasm = NULL;
+		int tmphintbits = -1;
 		int flgspc = -123;
 		int tmpfd = -1;
 		int sz, len;
@@ -2360,9 +2399,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
-				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
-				r_config_set_i (core->config, "asm.bits",
-					r_num_math (core->num, ptr + 2));
+				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits, &tmphintbits);
 				break;
 			case 'i': // "@i:"
 				{
@@ -2417,14 +2454,12 @@ repeat_arroba:
 			case 'a': // "@a:"
 				if (ptr[1] == ':') {
 					char *q = strchr (ptr + 2, ':');
-					tmpasm = strdup (r_config_get (core->config, "asm.arch"));
 					if (q) {
 						*q++ = 0;
-						tmpbits = strdup (r_config_get (core->config, "asm.bits"));
-						r_config_set (core->config, "asm.bits", q);
+						int bits = r_num_math (core->num, q);
+						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &tmphintbits);
 					}
-					r_config_set (core->config, "asm.arch", ptr + 2);
-					// TODO: handle asm.bits
+					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm, &tmphintasm);
 				} else {
 					eprintf ("Usage: pd 10 @a:arm:32\n");
 				}
@@ -2558,16 +2593,30 @@ next_arroba:
 			*ptr2 = '!';
 			r_core_block_size (core, tmpbsz);
 		}
-		if (tmpasm) {
+		if (is_arch_set) {
 			r_config_set (core->config, "asm.arch", tmpasm);
-			tmpasm = NULL;
+			if (tmphintasm) {
+				r_anal_hint_set_arch (core->anal, core->offset, tmphintasm);
+			} else {
+				r_anal_hint_unset_arch (core->anal, core->offset);
+			}
+			R_FREE (tmpasm);
+			R_FREE (tmphintasm);
+			is_arch_set = false;
 		}
 		if (tmpfd != -1) {
 			r_io_use_fd (core->io, tmpfd);
 		}
-		if (tmpbits) {
+		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
-			tmpbits = NULL;
+			if (tmphintbits != -1) {
+				r_anal_hint_set_bits (core->anal, core->offset, tmphintbits);
+			} else {
+				r_anal_hint_unset_bits (core->anal, core->offset);
+			}
+			R_FREE (tmpbits);
+			tmphintbits = -1;
+			is_bits_set = false;
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);

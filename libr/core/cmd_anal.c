@@ -4349,35 +4349,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'x': { // "aex"	
-		ut32 new_bits = -1;
-		int segoff, old_bits, pos = 0;
-		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
-		old_arch = strdup (r_config_get (core->config, "asm.arch"));
-		old_bits = r_config_get_i (core->config, "asm.bits");
-		segoff = r_config_get_i (core->config, "asm.segoff");
-
-		if (input[0]) {
-			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
-				if (input[pos] == ' ') {
-					break;
-				}
-		}
-
-		if (!r_core_process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
-			// XXX - print help message
-			//return false;
-		}
-
-		if (!new_arch) {
-			new_arch = strdup (old_arch);
-		}
-		if (new_bits == -1) {new_bits = old_bits;
-		}
-
-		if (strcmp (new_arch, old_arch) || new_bits != old_bits) {
-			r_core_set_asm_configs (core, new_arch, new_bits, segoff);
-		}
+		char *hex;
 		int ret, bufsz;
+
+		input = r_str_trim_ro (input + 1);
+		hex = strdup (input);
+		if (!hex) {
+			break;
+		}
+
 		RAnalOp aop = R_EMPTY;
 		bufsz = r_hex_str2bin (hex, (ut8*)hex);
 		ret = r_anal_op (core->anal, &aop, core->offset,
@@ -4389,9 +4369,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			free (str2);
 		}
 		r_anal_op_fini (&aop);
-		free (old_arch);
-		}
 		break;
+	}
 	case '?': // "ae?"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_detail_ae);
