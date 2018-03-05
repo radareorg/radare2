@@ -155,6 +155,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	RBinString *string;
 	RBinSection *section;
 	char *q;
@@ -230,7 +231,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				",\"paddr\":%"PFMT64d",\"ordinal\":%d"
 				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
 				"\"type\":\"%s\",\"string\":\"%s\"",
-				iter->p ? ",": "",
+				last_processed ? ",": "",
 				vaddr, paddr, string->ordinal, string->size,
 				string->length, section_name, type_string, q);
 			switch (string->type) {
@@ -346,6 +347,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			r_cons_printf ("\n");
 		}
+		last_processed = iter;
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
