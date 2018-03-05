@@ -110,7 +110,7 @@ static int destroy(RBinFile *bf) {
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
-	ut64 mzaddr = NULL;
+	ut64 mzaddr = 0;
 	RBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch(type) {
