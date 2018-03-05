@@ -1962,6 +1962,7 @@ static int archinfo(RAnal *anal, int q) {
 static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
+	int idx;
 
 	if (!(op = r_anal_op_new ())) {
 		return NULL;
@@ -1976,7 +1977,7 @@ static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 
 	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
 
-	for (int idx = 0; idx + 1 < size; idx += op->size) {
+	for (idx = 0; idx + 1 < size; idx += op->size) {
 		OPCODE_DESC* opcode_desc = avr_op_analyze (anal, op, at + idx, data + idx, cpu);
 
 		if (op->size < 1) {
