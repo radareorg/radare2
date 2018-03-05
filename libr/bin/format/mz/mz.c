@@ -308,7 +308,7 @@ ut64 r_bin_mz_get_main_vaddr(struct r_bin_mz_obj_t *bin) {
 	entry = r_bin_mz_get_entrypoint (bin);
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry, b, sizeof (b)) < 0) {
-		eprintf ("Warning: Cannot read entry at 0x%08"PFMT32x "\n", entry);
+		eprintf ("Warning: Cannot read entry at 0x%08"PFMT32x "\n", (ut32) entry);
 		return 0LL;
 	}
 	// MSVC
