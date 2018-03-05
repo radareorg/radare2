@@ -134,8 +134,10 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	r_cons_canvas_fill (can, n->x, n->y, n->w, n->h, ' ', 0);
 	if (n->type == PANEL_TYPE_FRAME) {
 		if (cur) {
+			RCons * cons = r_cons_singleton ();
+			const char *k = cons->pal.graph_box;
 			snprintf (title, sizeof (title) - 1,
-				Color_BGREEN "[x] %s"Color_RESET, n->text);
+				"%s[x] %s"Color_RESET, k, n->text);
 		} else {
 			snprintf (title, sizeof (title) - 1,
 				"   %s   ", n->text);
@@ -189,10 +191,11 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 			r_cons_canvas_write (can, n->text);
 		}
 	}
+	RCons *cons = r_cons_singleton ();
 	if (cur) {
-		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, Color_BLUE);
+		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, NULL);
+		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box);
 	}
 }
 
@@ -344,7 +347,7 @@ static int bbPanels(RCore *core) {
 	addPanelFrame (PANEL_TITLE_STACK, "px 256@r:SP", 0);
 	addPanelFrame (PANEL_TITLE_REGISTERS, "dr=", 0);
 	addPanelFrame (PANEL_TITLE_REGISTERREFS, "drr", 0);
-	addPanelFrame (PANEL_TITLE_DISASSEMBLY, "pd $r", 0);
+	addPanelFrame (PANEL_TITLE_DISASSEMBLY, "pd $r @e:scr.utf8=0", 0);
 	curnode = 1;
 	Layout_run (panels);
 	return n_panels;
@@ -357,7 +360,7 @@ static int bbPanels(RCore *core) {
 // necessary
 static void r_core_panels_refresh(RCore *core) {
 	char title[1024];
-	const char *color = curnode? Color_BLUE: Color_BGREEN;
+	const char *color = curnode? core->cons->pal.graph_box : core->cons->pal.graph_box2;
 	char str[1024];
 	int i, j, h, w = r_cons_get_size (&h);
 	r_cons_clear00 ();
@@ -371,11 +374,7 @@ static void r_core_panels_refresh(RCore *core) {
 	r_cons_flush ();
 #endif
 	if (panels) {
-		if (menu_y > 0) {
-			panels[menu_pos].x = menu_x * 6;
-		} else {
-			panels[menu_pos].x = w;
-		}
+		panels[menu_pos].x = (menu_y > 0) ? menu_x * 6 : w;
 		panels[menu_pos].y = 1;
 		free (panels[menu_pos].text);
 		panels[menu_pos].text = calloc (1, 1024); // r_str_newf ("%d", menu_y);
@@ -547,7 +546,7 @@ R_API int r_core_visual_panels(RCore *core) {
 	have_utf8 = r_config_get_i (core->config, "scr.utf8");
 	r_config_set_i (core->config, "asm.comments", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
-	r_config_set_i (core->config, "scr.utf8", 0);
+	r_config_set_i (core->config, "scr.utf8", 1);
 
 repeat:
 	core->cons->event_data = core;
