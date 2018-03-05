@@ -1089,10 +1089,10 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 	int i, left;
 	ut64 omi = 0;
 	bool catchAll;
-	ut16 regsz, ins_size, outs_size, tries_size;
-	ut16 handler_off, start_addr, insn_count;
-	ut32 debug_info_off, insns_size;
-	const ut8 *encoded_method_addr;
+	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
+	ut16 handler_off, start_addr, insn_count = 0;
+	ut32 debug_info_off = 0, insns_size = 0;
+	const ut8 *encoded_method_addr = NULL;
 
 	if (DM > 4096) {
 		eprintf ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
@@ -1128,7 +1128,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 		// TODO: check size
 		// ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 		ut64 v2, handler_type, handler_addr;
-		int t;
+		int t = 0;
 		if (MC > 0) {
 			// TODO: parse debug info
 			// XXX why binfile->buf->base???
