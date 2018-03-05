@@ -313,14 +313,14 @@ static int r_line_hist_up() {
 	if (!I.history.data) {
 		inithist ();
 	}
-    if (strcmp(r_line_get_prompt(), "[offset]> ") == 0) {
-        while (I.history.index > 0 && I.history.data[--I.history.index][0] != 's' );
-        int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
-        strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
-        I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-        return true;
-    }
-    if (I.history.index > 0) {
+	if (strcmp(r_line_get_prompt(), "[offset]> ") == 0) {
+		while (I.history.index > 0 && I.history.data[--I.history.index][0] != 's' );
+		int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
+		strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
+		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+		return true;
+	}
+	if (I.history.index > 0) {
 		strncpy (I.buffer.data, I.history.data[--I.history.index], R_LINE_BUFSIZE - 1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		return true;
@@ -345,14 +345,14 @@ static int r_line_hist_down() {
 		I.buffer.index = I.buffer.length = 0;
 		return false;
 	}
-    if (strcmp(r_line_get_prompt(), "[offset]> ") == 0) {
-        while (I.history.index != I.history.top && I.history.data[I.history.index++][0] != 's' );
-        I.history.index--;
-        int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
-        strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
-        I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-        return true;
-    }
+	if (strcmp(r_line_get_prompt(), "[offset]> ") == 0) {
+		while (I.history.index != I.history.top && I.history.data[I.history.index++][0] != 's' );
+		I.history.index--;
+		int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
+		strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
+		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+		return true;
+	}
 	if (I.history.data[I.history.index]) {
 		strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE - 1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
