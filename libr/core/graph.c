@@ -97,9 +97,6 @@ struct agraph_refresh_data {
 
 #define G(x, y) r_cons_canvas_gotoxy (g->can, x, y)
 #define W(x) r_cons_canvas_write (g->can, x)
-#define B(x, y, w, h) r_cons_canvas_box (g->can, x, y, w, h, g->color_box)
-#define B1(x, y, w, h) r_cons_canvas_box (g->can, x, y, w, h, g->color_box2)
-#define B2(x, y, w, h) r_cons_canvas_box (g->can, x, y, w, h, g->color_box3)
 #define F(x, y, x2, y2, c) r_cons_canvas_fill (g->can, x, y, x2, y2, c, 0)
 
 static bool is_offset(const RAGraph *g) {
@@ -351,10 +348,11 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
+	RCons *cons = r_cons_singleton ();
 	if (cur) {
-		B1 (n->x, n->y, n->w, n->h);
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
 	} else {
-		B (n->x, n->y, n->w, n->h);
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->pal.graph_box);
 	}
 }
 
@@ -2035,13 +2033,6 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int shortcuts = 0;
 	core->keep_asmqjmps = false;
 
-	/* update colors from palette */
-	g->color_box = core->cons->pal.graph_box;
-	g->color_box2 = core->cons->pal.graph_box2;
-	g->color_box3 = core->cons->pal.graph_box3;
-	g->color_true = core->cons->pal.graph_true;
-	g->color_false = core->cons->pal.graph_false;
-
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
@@ -3176,9 +3167,6 @@ static void agraph_init(RAGraph *g) {
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->force_update_seek = true;
-	g->color_box = Color_RESET;
-	g->color_box2 = Color_BLUE; // selected node
-	g->color_box3 = Color_MAGENTA;
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 (); // XXX leak
 	g->edgemode = 2;
@@ -3215,11 +3203,12 @@ static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
 
 static void agraph_sdb_init(const RAGraph *g) {
 	sdb_bool_set (g->db, "agraph.is_callgraph", g->is_callgraph, 0);
-	sdb_set_enc (g->db, "agraph.color_box", g->color_box, 0);
-	sdb_set_enc (g->db, "agraph.color_box2", g->color_box2, 0);
-	sdb_set_enc (g->db, "agraph.color_box3", g->color_box3, 0);
-	sdb_set_enc (g->db, "agraph.color_true", g->color_true, 0);
-	sdb_set_enc (g->db, "agraph.color_false", g->color_false, 0);
+	RCons *cons = r_cons_singleton ();
+	sdb_set_enc (g->db, "agraph.color_box", cons->pal.graph_box, 0);
+	sdb_set_enc (g->db, "agraph.color_box2", cons->pal.graph_box2, 0);
+	sdb_set_enc (g->db, "agraph.color_box3", cons->pal.graph_box3, 0);
+	sdb_set_enc (g->db, "agraph.color_true", cons->pal.graph_true, 0);
+	sdb_set_enc (g->db, "agraph.color_false", cons->pal.graph_false, 0);
 }
 
 R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
@@ -3622,11 +3611,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_hold_free (hc);
 			return false;
 		}
-		g->color_box = core->cons->pal.graph_box;
-		g->color_box2 = core->cons->pal.graph_box2;
-		g->color_box3 = core->cons->pal.graph_box3;
-		g->color_true = core->cons->pal.graph_true;
-		g->color_false = core->cons->pal.graph_false;
 		g->is_tiny = is_interactive == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
 	} else {
@@ -3952,11 +3936,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_core_cmd0 (core, "ecn");
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
-			g->color_box = core->cons->pal.graph_box;
-			g->color_box2 = core->cons->pal.graph_box2;
-			g->color_box3 = core->cons->pal.graph_box3;
-			g->color_true = core->cons->pal.graph_true;
-			g->color_false = core->cons->pal.graph_false;
 			get_bbupdate (g, core, fcn);
 			break;
 		case '!':

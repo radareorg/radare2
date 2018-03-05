@@ -894,13 +894,6 @@ typedef struct r_ascii_graph_t {
 	int n_layers;
 	RList *dists; /* RList<struct dist_t> */
 	RList *edges; /* RList<AEdge> */
-
-	/* colors */
-	const char *color_box;
-	const char *color_box2;
-	const char *color_box3;
-	const char *color_true;
-	const char *color_false;
 } RAGraph;
 
 #ifdef R_API
