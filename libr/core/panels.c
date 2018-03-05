@@ -119,6 +119,79 @@ static const char **menus_sub[] = {
 	NULL
 };
 
+static char *str_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
+	char *r, *r_end, *ret;
+	const char *s;
+	size_t r_len, str_len = 0, nr_of_lines = 0;
+	ut32 currentHeight = 0, currentWidth = 0;
+	if (x2 < 1 || y2 < 1 || !str) {
+		return strdup ("");
+	}
+	s = str;
+	while (*s) {
+		str_len++;
+		if (*s == '\n') {
+			nr_of_lines++;
+		}
+		s++;
+	}
+	r_len = str_len + nr_of_lines * strlen (Color_RESET) + 1;
+	r = ret = malloc (r_len);
+	if (!r) {
+		return NULL;
+	}
+	r_end = r + r_len;
+	while (*str) {
+		if (currentHeight >= y2) {
+			r--;
+			break;
+		}
+		if (*str == '\n') {
+			if (currentHeight >= y && currentHeight < y2) {
+				const char *reset = Color_RESET "\n";
+				if (strlen (reset) < (r_end - r)) {
+					const int reset_length = strlen (reset);
+					memcpy (r, reset, reset_length);
+					r += reset_length;
+				}
+			}
+			str++;
+			currentHeight++;
+			currentWidth = 0;
+		} else {
+			if (currentHeight >= y && currentHeight < y2 && currentWidth >= x && currentWidth < x2) {
+				if (*str == 0x1b && *(str + 1) == '[') {
+					const char *ptr = str;
+					if ((r_end - r) > 2) {
+						/* copy 0x1b and [ */
+						*r++ = *str++;
+						*r++ = *str++;
+						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
+							*r++ = *ptr;
+						}
+						*r++ = *ptr++;
+					}
+					str = ptr;
+					continue;
+				} else {
+					*r++ = *str;
+				}
+			}
+			/* skip until newline */
+			if (currentWidth >= x2) {
+				while (*str && *str != '\n') {
+					str++;
+				}
+			} else {
+				str++;
+			}
+			currentWidth++;
+		}
+	}
+	*r = 0;
+	return ret;
+}
+
 // TODO: handle mouse wheel
 static int curnode = 0;
 
@@ -161,7 +234,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 				idx = sizeof (white) - 1;
 			}
 			white[idx] = 0;
-			text = r_str_ansi_crop (foo,
+			text = str_crop (foo,
 				0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
@@ -169,7 +242,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 				text = newText;
 			}
 		} else {
-			text = r_str_ansi_crop (foo,
+			text = str_crop (foo,
 				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 		}
 		if (text) {
@@ -180,7 +253,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 		free (foo);
 	} else {
-		char *text = r_str_ansi_crop (n->text,
+		char *text = str_crop (n->text,
 			delta_x, delta_y, n->w + 5, n->h - delta_y);
 		if (text) {
 			r_cons_canvas_write (can, text);
@@ -195,6 +268,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, NULL);
 	}
 }
+
 
 static void Layout_run(Panel *panels) {
 	int h, w = r_cons_get_size (&h);
