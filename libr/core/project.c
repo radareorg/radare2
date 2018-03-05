@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake, maijin */
+/* radare - LGPL - Copyright 2010-2018 - pancake, maijin */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -196,7 +196,6 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		}
 		free (xrefs_sdb);
 
-		//change path to rop.d
 		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
 
 		if (r_file_is_directory (rop_d)) {
@@ -217,8 +216,8 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			r_list_free (files);
 		}
 		free (rop_d);
-		// TODO: remove .d directory (BEWARE OF ROOT RIMRAFS!)
-		// TODO: r_file_rmrf (path);
+		// remove directory only if it's empty
+		r_file_rm (prjDir);
 	}
 	free (prjDir);
 	return 0;
