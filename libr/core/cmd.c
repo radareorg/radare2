@@ -1600,6 +1600,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	const char *cmdrep = NULL;
 	bool tmpseek = false;
+	bool original_tmpseek = core->tmpseek;
 	ut64 orig_offset;
 
 	cmd = r_str_trim_head_tail (icmd);
@@ -1700,6 +1701,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, 1);
+		core->tmpseek = original_tmpseek;
 	}
 	if (core->print) {
 		core->print->cur_enabled = ocur_enabled;
@@ -2267,7 +2269,7 @@ next2:
 		ptr = NULL;
 	}
 
-	core->tmpseek = ptr? true: false;
+	core->tmpseek = ptr ? true: false;
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
