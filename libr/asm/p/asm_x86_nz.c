@@ -1384,7 +1384,7 @@ static int oples(RAsm *a, ut8* data, const Opcode *op) {
 
 static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	long offset = 0;
+	st64 offset = 0;
 	int mod = 0;
 	int base = 0;
 	int rex = 0;
