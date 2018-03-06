@@ -578,7 +578,6 @@ typedef struct r_anal_callbacks_t {
 	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
 	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
 	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
-	bool (*read_at)(RANAL, ut64 new_addr, ut8 *buf, int new_len);
 } RAnalCallbacks;
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
@@ -681,6 +680,7 @@ typedef struct r_anal_t {
 	RListComparator columnSort;
 	int stackptr;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
+	bool (*read_at)(struct r_anal_t *anal, ut64 new_addr, ut8 *buf, int new_len);
 	char *cmdtail;
 } RAnal;
 

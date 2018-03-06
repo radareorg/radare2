@@ -3098,8 +3098,7 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-static bool read_at(void *anal_, ut64 new_addr, ut8 *buf, int new_len) {
-	RAnal *anal = anal_;
+static bool read_at(RAnal *anal, ut64 new_addr, ut8 *buf, int new_len) {
 	return r_io_read_at (anal->iob.io, new_addr, buf, new_len);
 }
 
@@ -3124,7 +3123,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return 0;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		core->anal->cb.read_at = read_at;
+		core->anal->read_at = read_at;
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
