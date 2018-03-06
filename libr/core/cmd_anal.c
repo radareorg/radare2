@@ -3098,7 +3098,7 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-static const ut8 *modify_read_window(void *anal_, ut64 new_addr, int new_len) {
+static const ut8 *new_read_window(void *anal_, ut64 new_addr, int new_len) {
 	RAnal *anal = anal_;
 	ut8 *buf = calloc (new_len, 1);
 	if (!buf) {
@@ -3129,7 +3129,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return 0;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		core->anal->cb.modify_read_window = modify_read_window;
+		core->anal->cb.new_read_window = new_read_window;
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
