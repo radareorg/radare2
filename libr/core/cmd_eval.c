@@ -207,7 +207,7 @@ done:
 	}
 	if (mode == 'l' && !curtheme && !r_list_empty (files)) {
 		//nextpal (core, mode);
-	} else if (mode != 'j') {
+	} else if (mode == 'n' || mode == 'p') {
 		if (curtheme) {
 			r_core_cmdf (core, "eco %s", curtheme);
 		}
