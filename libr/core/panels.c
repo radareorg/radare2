@@ -236,7 +236,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 				idx = sizeof (white) - 1;
 			}
 			white[idx] = 0;
-			text = str_crop (foo,
+			text = r_str_ansi_crop (foo,
 				0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
@@ -244,7 +244,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 				text = newText;
 			}
 		} else {
-			text = str_crop (foo,
+			text = r_str_ansi_crop (foo,
 				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 		}
 		if (text) {
@@ -255,7 +255,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 		free (foo);
 	} else {
-		char *text = str_crop (n->text,
+		char *text = r_str_ansi_crop (n->text,
 			delta_x, delta_y, n->w + 5, n->h - delta_y);
 		if (text) {
 			r_cons_canvas_write (can, text);

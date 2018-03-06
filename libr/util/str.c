@@ -1527,18 +1527,6 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 			str++;
 			ch++;
 			cw = 0;
-		} else if (*str == 0x1b && *(str + 1) == '[') {
-			const char *ptr = str;
-			if ((r_end - r) > 2) {
-				/* copy 0x1b and [ */
-				*r++ = *str++;
-				*r++ = *str++;
-				for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
-					*r++ = *ptr;
-				}
-				*r++ = *ptr++;
-			}
-			str = ptr;
 		} else {
 			if (ch >= y && ch < y2 && cw >= x && cw < x2) {
 				if (*str == 0x1b && *(str + 1) == '[') {
