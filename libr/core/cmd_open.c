@@ -122,28 +122,28 @@ static const char *help_msg_oo[] = {
 };
 
 static const char *help_msg_oo_plus[] = {
-	"oo+", "", "reopen in read-write",
+	"Usage:", "oo+", " # reopen in read-write",
 	NULL
 };
 
 static const char *help_msg_oob[] = {
-	"oob", "", "reopen loading rbin info",
+	"Usage:", "oob", " # reopen loading rbin info",
 	NULL
 };
 
 static const char *help_msg_ood[] = {
-	"ood"," [args]","reopen in debugger mode (with args)",
+	"Usage:", "ood [args]", " # reopen in debugger mode (with args)",
 	"oodr"," [rarun2]","same as dor ..;ood",
 	NULL
 };
 
 static const char *help_msg_oon[] = {
-	"oon", "", "reopen without loading rbin info",
+	"Usage:", "oon", " # reopen without loading rbin info",
 	NULL
 };
 
 static const char *help_msg_oonn[] = {
-	"oonn", "", "reopen without loading rbin info, but with header flags",
+	"Usage:", "oonn", " # reopen without loading rbin info, but with header flags",
 	NULL
 };
 
@@ -1323,7 +1323,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case 'd': // "ood" : reopen in debugger
 			if (input[2] == 'r') { // "oodr"
-				r_core_cmdf ("dor %s", input + 3);
+				r_core_cmdf (core, "dor %s", input + 3);
 				r_core_file_reopen_debug (core, "");
 			} else if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_ood);

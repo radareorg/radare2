@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
+#include <assert.h>
 #include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -852,6 +853,14 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 	}
 }
 
+static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
+	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)value);
+}
+
+static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
+	return (ut64)ht_find (ht, sdb_fmt (-1, "%d", key), found);
+}
+
 static RList* patch_relocs(RBin *b) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
@@ -859,10 +868,14 @@ static RList* patch_relocs(RBin *b) {
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOSection *g = NULL, *s = NULL;
+	SdbHash *relocs_by_sym;
 	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
+	RBinInfo *info;
+	int cdsz;
 	int i;
-	ut64 n_off, n_vaddr, vaddr, size, sym_addr = 0, offset = 0;
+	ut64 n_off, n_vaddr, vaddr, size, offset = 0;
+
 	if (!b)
 		return NULL;
 	io = b->iob.io;
@@ -880,6 +893,10 @@ static RList* patch_relocs(RBin *b) {
 	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
 		return relocs (r_bin_cur (b));
 	}
+
+	info = obj ? obj->info: NULL;
+	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+
 	ls_foreach (io->sections, iter, s) {
 		if (s->paddr > offset) {
 			offset = s->paddr;
@@ -903,11 +920,23 @@ static RList* patch_relocs(RBin *b) {
 		free (relcs);
 		return NULL;
 	}
+	if (!(relocs_by_sym = ht_new (NULL, NULL, NULL))) {
+		r_list_free (ret);
+		free (relcs);
+		return NULL;
+	}
 	vaddr = n_vaddr;
 	for (i = 0; !relcs[i].last; i++) {
+		ut64 sym_addr = 0;
+
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
-				sym_addr = 0;
+				bool found;
+
+				sym_addr = ht_find_intu64(relocs_by_sym, relcs[i].sym, &found);
+				if (!found) {
+					sym_addr = 0;
+				}
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
 			}
@@ -917,13 +946,17 @@ static RList* patch_relocs(RBin *b) {
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
-		ptr->vaddr = sym_addr ? sym_addr : vaddr;
-		if (!sym_addr) {
-			vaddr += 4;
+
+		if (sym_addr) {
+			ptr->vaddr = sym_addr;
+		} else {
+			ptr->vaddr = vaddr;
+			ht_insert_intu64 (relocs_by_sym, relcs[i].sym, vaddr);
+			vaddr += cdsz;
 		}
 		r_list_append (ret, ptr);
-		sym_addr = 0;
 	}
+	ht_free (relocs_by_sym);
 	free (relcs);
 	return ret;
 }

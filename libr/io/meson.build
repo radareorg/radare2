@@ -73,3 +73,15 @@ r_io = library('r_io', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_io],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_io',
+             filebase: 'r_io',
+             requires: [
+               'r_util', 'r_socket'
+             ],
+             description: 'radare foundation libraries')

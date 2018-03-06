@@ -554,6 +554,7 @@ static const char *help_msg_ax[] = {
 	"axc", " addr [at]", "add code jmp ref // unused?",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
+	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
 	"axd", " addr [at]", "add data ref",
 	"axq", "", "list refs in quiet/human-readable format",
 	"axj", "", "list refs in json format",
@@ -653,7 +654,7 @@ static void type_cmd(RCore *core, const char *input) {
 	case 'a': // "afta"
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			eprintf ("TOFIX: afta can't run in debugger mode.\n");
-			return;
+			break;
 		}
 		seek = core->offset;
 		r_core_cmd0 (core, "aei");
@@ -4348,35 +4349,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'x': { // "aex"	
-		ut32 new_bits = -1;
-		int segoff, old_bits, pos = 0;
-		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
-		old_arch = strdup (r_config_get (core->config, "asm.arch"));
-		old_bits = r_config_get_i (core->config, "asm.bits");
-		segoff = r_config_get_i (core->config, "asm.segoff");
-
-		if (input[0]) {
-			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
-				if (input[pos] == ' ') {
-					break;
-				}
-		}
-
-		if (!r_core_process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
-			// XXX - print help message
-			//return false;
-		}
-
-		if (!new_arch) {
-			new_arch = strdup (old_arch);
-		}
-		if (new_bits == -1) {new_bits = old_bits;
-		}
-
-		if (strcmp (new_arch, old_arch) || new_bits != old_bits) {
-			r_core_set_asm_configs (core, new_arch, new_bits, segoff);
-		}
+		char *hex;
 		int ret, bufsz;
+
+		input = r_str_trim_ro (input + 1);
+		hex = strdup (input);
+		if (!hex) {
+			break;
+		}
+
 		RAnalOp aop = R_EMPTY;
 		bufsz = r_hex_str2bin (hex, (ut8*)hex);
 		ret = r_anal_op (core->anal, &aop, core->offset,
@@ -4388,9 +4369,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			free (str2);
 		}
 		r_anal_op_fini (&aop);
-		free (old_arch);
-		}
 		break;
+	}
 	case '?': // "ae?"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_detail_ae);
@@ -4638,16 +4618,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 	buf = malloc (bsz);
 	block = malloc (bsz);
-	if (!buf) {
-		eprintf ("Error: cannot allocate a block\n");
+	if (!buf || !block) {
+		eprintf ("Error: cannot allocate buf or block\n");
+		free (buf);
 		free (block);
 		return;
 	}
-	if (!block) {
-		eprintf ("Error: cannot allocate a temp block\n");
-		free (buf);
-		return;
-	}	
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -4901,12 +4877,13 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	}
 }
 
-static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
+static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int opts) {
 	char arg[32], pre[128];
 	RList *xrefs;
 	RListIter *iter;
 	RAnalRef *ref;
 	ut64 addr = core->offset;
+	int is_json = opts & R_CORE_ANAL_JSON;
 	if (input && *input) {
 		addr = r_num_math (core->num, input);
 	}
@@ -4921,31 +4898,78 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 	if (!r_list_empty (xrefs)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
-			//if (sdb_add (db, fcn->name, "1", 0)) {
+			if (is_json) {
+				r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"fcn\"," 
+					"\"fcn_addr\":%"PFMT64d",\"name\":\"%s\",\"refs\":[",
+					addr, fcn->addr, fcn->name);
+			} else {
+				//if (sdb_add (db, fcn->name, "1", 0)) {
 				r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n",
 					pre + 2, addr, fcn->addr, fcn->name);
-			//}
+				//}
+			}
 		} else {
+			if (is_json) {
+				r_cons_printf ("{\"%"PFMT64d"\":{\"refs\":[", addr);
+			} else {
 			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
 			//if (sdb_add (db, arg, "1", 0)) {
 				r_cons_printf ("%s0x%08"PFMT64x"\n", pre+2, addr);
 			//}
+			}
 		}
 	}
 	r_list_foreach (xrefs, iter, ref) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
 		if (fcn) {
-			r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
+			if (is_json) {
+				if (level == 0) {
+					r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64d",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
+				} else {
+					r_cons_printf ("]}},{\"%"PFMT64d"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64d",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
+
+				}
+			} else {
+				r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
+			}
 			if (sdb_add (db, fcn->name, "1", 0)) {
 				snprintf (arg, sizeof (arg), "0x%08"PFMT64x, fcn->addr);
-				anal_axg (core, arg, level+1, db);
+				anal_axg (core, arg, level+1, db, opts);
+			} else {
+				if (is_json) {
+					r_cons_printf("]}}");
+				}
+			}
+			if (is_json) {
+				if (iter->n) {
+					r_cons_printf (",");
+				}
 			}
 		} else {
-			r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
+			if (is_json) {
+				r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"???\",\"refs\":[", ref->addr);
+			} else {
+				r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
+			}
 			snprintf (arg, sizeof (arg), "0x%08"PFMT64x, ref->addr);
 			if (sdb_add (db, arg, "1", 0)) {
-				anal_axg (core, arg, level +1, db);
+				anal_axg (core, arg, level +1, db, opts);
+			} else {
+				if (is_json) {
+					r_cons_printf("]}}");
+				}
 			}
+			if (is_json) {
+				if (iter->n) {
+					r_cons_printf (",");
+				}
+			}
+		}
+	}
+	if (is_json) {
+		r_cons_printf("]}}");
+		if (level == 0) {
+			r_cons_printf("\n");
 		}
 	}
 	r_list_free (xrefs);
@@ -5003,7 +5027,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'g': // "axg"
 		{
 			Sdb *db = sdb_new0 ();
-			anal_axg (core, input[1] ? input + 2 : NULL, 0, db);
+			if(input[1] == '\0') {
+				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0);
+			} else if(input[1] == 'j') {
+				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, R_CORE_ANAL_JSON);
+			}
 			sdb_free (db);
 		}
 		break;
@@ -6153,13 +6181,21 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			r_cons_println ("Usage: See aa? for more help");
 		} else {
+			char *dh_orig = NULL;
+			if (!strncmp (input, "aaaaa", 5)) {
+				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
+				if (r_config_get_i (core->config, "scr.interactive")) {
+					r_cons_any_key (NULL);
+				}
+				goto jacuzzi;
+			}
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
-			char *dh_orig = core->dbg->h
+			dh_orig = core->dbg->h
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
 			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
@@ -6203,12 +6239,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				if (input[1] == 'a') { // "aaaa"
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
 					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
+					// drop cache writes is no cache was
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
+					}
+					r_config_set_i (core->config, "io.pcache", ioCache);
 				} else {
 					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
 					rowlog_done (core);
@@ -6223,6 +6266,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog_done (core);
 				}
 				if (input[1] == 'a') { // "aaaa"
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
 					if (sdb_count (core->anal->sdb_zigns) > 0) {
 						rowlog (core, "Check for zignature from zigns folder (z/)");
 						r_core_cmd0 (core, "z/");
@@ -6230,6 +6275,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Type matching analysis for all functions (afta)");
 					r_core_cmd0 (core, "afta");
 					rowlog_done (core);
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
+					}
+					r_config_set_i (core->config, "io.pcache", ioCache);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {

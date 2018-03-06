@@ -155,6 +155,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	RBinString *string;
 	RBinSection *section;
 	char *q;
@@ -230,7 +231,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				",\"paddr\":%"PFMT64d",\"ordinal\":%d"
 				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
 				"\"type\":\"%s\",\"string\":\"%s\"",
-				iter->p ? ",": "",
+				last_processed ? ",": "",
 				vaddr, paddr, string->ordinal, string->size,
 				string->length, section_name, type_string, q);
 			switch (string->type) {
@@ -346,6 +347,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			r_cons_printf ("\n");
 		}
+		last_processed = iter;
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
@@ -358,12 +360,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 
 static bool bin_raw_strings(RCore *r, int mode, int va) {
 	RBinFile *bf = r_bin_cur (r->bin);
-	if (!bf && r->io && r->io->desc && r->io->desc->uri) {
-		// -n scenario is handled already
-		// eprintf ("Likely you used -nn \n");
-		// eprintf ("try: .!rabin2 -B <baddr> -zzr filename\n");
-		return false;
-	}
+	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
 		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
@@ -372,8 +369,48 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 		eprintf ("Core file not open\n");
 		return false;
 	}
+	if (!bf) {
+		bf = R_NEW0 (RBinFile);
+		if (!bf) {
+			return false;
+		}
+		RIODesc *desc = r_io_desc_get (r->io, r->file->fd);
+		if (!desc) {
+			free (bf);
+			return false;
+		}
+		bf->file = desc->name;
+		bf->size = r_io_desc_size (desc);
+		if (bf->size == UT64_MAX) {
+			free (bf);
+			return false;
+		}
+		bf->buf = r_buf_new ();
+		if (!bf->buf) {
+			free (bf);
+			return false;
+		}
+		bf->buf->buf = malloc (bf->size);
+		if (!bf->buf->buf) {
+			free (bf->buf);
+			free (bf);
+			return false;
+		}
+		bf->buf->fd = r->file->fd;
+		bf->buf->length = bf->size;
+		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+		bf->o = NULL;
+		bf->rbin = r->bin;
+		new_bf = true;
+		va = false;
+	}
 	RList *l = r_bin_raw_strings (bf, 0);
 	_print_strings (r, l, mode, va);
+	if (new_bf) {
+		free (bf->buf->buf);
+		free (bf->buf);
+		free (bf);
+	}
 	return true;
 }
 
@@ -897,12 +934,11 @@ static int bin_dwarf(RCore *core, int mode) {
 	return true;
 }
 
-static int bin_pdb(RCore *core, int mode) {
+R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	R_PDB pdb = R_EMPTY;
-	ut64 baddr = r_bin_get_baddr (core->bin);
 
 	pdb.cb_printf = r_cons_printf;
-	if (!init_pdb_parser (&pdb, core->bin->file)) {
+	if (!init_pdb_parser (&pdb, file)) {
 		return false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
@@ -942,6 +978,11 @@ static int bin_pdb(RCore *core, int mode) {
 	pdb.finish_pdb_parse (&pdb);
 
 	return true;
+}
+
+static int bin_pdb(RCore *core, int mode) {
+	ut64 baddr = r_bin_get_baddr (core->bin);
+	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
 static int bin_main(RCore *r, int mode, int va) {
@@ -1211,9 +1252,9 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 		reloc_name = reloc->import->name;
 		if (r->bin->prefix) {
-			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s_%d", r->bin->prefix, reloc_name, (int)(addr&0xff));
+			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
 		} else {
-			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s_%d", reloc_name, (int)(addr&0xff));
+			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
 		}
 		if (bin_demangle) {
 			demname = r_bin_demangle (r->bin->cur, lang, str, addr);
@@ -1233,6 +1274,52 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		char *reloc_name = get_reloc_name (reloc, addr);
 		r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 	}
+}
+
+/* Define new data at relocation address if it's not in an executable section */
+static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
+	RBinFile * binfile = r->bin->cur;
+	RBinObject *binobj = binfile ? binfile->o: NULL;
+	RBinInfo *info = binobj ? binobj->info: NULL;
+	RIOSection *section;
+	int cdsz;
+
+	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	if (cdsz == 0) {
+		return;
+	}
+
+	section = r_io_section_vget (r->io, addr);
+	if (!section || section->flags & R_IO_EXEC) {
+		return;
+	}
+
+	if (IS_MODE_SET(mode)) {
+		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
+	} else if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("f Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
+	}
+}
+
+static bool is_section_symbol(RBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	if (!s || *s->name) {
+		return false;
+	}
+	return (s->type && !strcmp (s->type, "SECTION"));
+}
+
+static bool is_section_reloc(RBinReloc *r) {
+	return is_section_symbol (r->symbol);
+}
+
+static bool is_file_symbol(RBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	return (s && s->type && !strcmp (s->type, "FILE"));
+}
+
+static bool is_file_reloc(RBinReloc *r) {
+	return is_file_symbol (r->symbol);
 }
 
 static int bin_relocs(RCore *r, int mode, int va) {
@@ -1260,17 +1347,16 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
-	RBinFile * binfile = r->bin->cur;
-	RBinObject *binobj = binfile ? binfile->o: NULL;
-	RBinInfo *info = binobj ? binobj->info: NULL;
-	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
+			/*
+			 * Skip section reloc because they will have their own flag.
+			 * Skip also file reloc because not useful for now.
+			 */
+		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
-			if (cdsz) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
-			}
+			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
@@ -1288,9 +1374,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", name, addr);
-				if (cdsz) {
-					r_cons_printf ("f Cd %d @ 0x%08"PFMT64x"\n", cdsz, addr);
-				}
+				add_metadata (r, reloc, addr, mode);
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
@@ -1714,7 +1798,12 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
+			/*
+			 * Skip section symbols because they will have their own flag.
+			 * Skip also file symbols because not useful for now.
+			 */
+		} else if (IS_MODE_SET (mode)) {
 			if (is_arm && info->bits < 33) { // 16 or 32
 				int force_bits = 0;
 				if (symbol->paddr & 1 || symbol->bits == 16) {

@@ -29,3 +29,15 @@ r_parse = library('r_parse', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_parse],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_parse',
+             filebase: 'r_parse',
+             requires: [
+               'r_util', 'r_flag', 'r_syscall', 'r_reg'
+             ],
+             description: 'radare foundation libraries')

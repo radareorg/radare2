@@ -1,10 +1,11 @@
-/* radare2 - LGPL - Copyright 2013-2017 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include "esil.h"
+
 /* arm64 */
 #define IMM64(x) (ut64)(insn->detail->arm64.operands[x].imm)
 
@@ -2533,8 +2534,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
+			op->hint.new_bits = (a->bits == 32)? 16 : 32;
 			//switch instruction set always with blx label
-			r_anal_hint_set_bits (a, op->jump, a->bits == 32? 16 : 32);
+			// r_anal_hint_set_bits (a, op->jump, a->bits == 32? 16 : 32);
 		}
 		break;
 	case ARM_INS_BL:

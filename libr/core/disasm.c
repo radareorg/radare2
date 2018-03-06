@@ -115,7 +115,6 @@ typedef struct {
 	bool show_emu;
 	bool pre_emu;
 	bool show_emu_str;
-	bool show_asm_bbinfo;
 	bool show_emu_stroff;
 	bool show_emu_stack;
 	bool show_emu_write;
@@ -594,7 +593,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
-	ds->show_asm_bbinfo = r_config_get_i (core->config, "asm.bbinfo");
 	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
 	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
@@ -1117,7 +1115,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	}
 	if (ds->maxrefs < 1) {
 		ds_pre_xrefs (ds, false);
-		ds_comment (ds, false, "   %s; XREFS(%d)\n",
+		ds_comment (ds, false, "%s; XREFS(%d)\n",
 			ds->show_color? ds->pal_comment: "",
 			r_list_length (xrefs));
 		r_list_free (xrefs);
@@ -1128,7 +1126,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols -= 15;
 		cols /= 23;
 		ds_pre_xrefs (ds, false);
-		ds_comment (ds, false, "   %s; XREFS: ", ds->show_color? ds->pal_comment: "");
+		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
 			ds_comment (ds, false, "%s 0x%08"PFMT64x"  ",
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
@@ -1137,7 +1135,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ds_print_color_reset (ds);
 					ds_newline (ds);
 					ds_pre_xrefs (ds, false);
-					ds_comment (ds, false, "   %s; XREFS: ", ds->show_color? ds->pal_comment: "");
+					ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 				}
 				count = 0;
 			} else {
@@ -1172,8 +1170,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			}
 			ds_begin_json_line (ds);
 			ds_pre_xrefs (ds, false);
-			//those extra space to align
-			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s",
+			ds_comment (ds, false, "%s; %s XREF from 0x%08"PFMT64x" (%s)%s",
 				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
 				refi->addr, name, COLOR_RESET (ds));
 			ds_newline (ds);
@@ -3527,14 +3524,15 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		return 0;
 	}
 	ds = esil->user;
-	if (ds) {
-		ds->esil_likely = true;
-		if (!ds->show_slow) {
-			return 0;
-		}
+	if (!ds) {
+		return 0;
+	}
+	ds->esil_likely = true;
+	if (!ds->show_slow) {
+		return 0;
 	}
 	memset (str, 0, sizeof (str));
-	if (*val && ds) {
+	if (*val) {
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
@@ -3564,7 +3562,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 
-		if (ds && *str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
+		if (*str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
 		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
 			bool jump_op = false;
 			bool ignored = false;
@@ -3610,40 +3608,38 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			} else if (*n32 == UT32_MAX) {
 				/* nothing */
 			} else {
-				if (ds && !ds->show_emu_str) {
+				if (!ds->show_emu_str) {
 					msg = r_str_newf ("-> 0x%x", *n32);
 				}
 			}
 		}
 		R_FREE (type);
-		if (ds && (ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)) {
+		if (ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
 			}
 		}
 	}
-	if (ds) {
-		if (ds->show_emu_str) {
-			if (msg && *msg) {
-				if (ds->show_emu_stroff && *msg == '"') {
-					ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
-				} else {
-					ds_comment_esil (ds, true, false, "; %s", msg);
-				}
-				if (ds->show_comments && !ds->show_comment_right) {
-					ds_newline (ds);
-				}
-			}
-		} else {
-			if (msg && *msg) {
-				ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x" %s", name, *val, msg);
+	if (ds->show_emu_str) {
+		if (msg && *msg) {
+			if (ds->show_emu_stroff && *msg == '"') {
+				ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
 			} else {
-				ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x, name, *val);
+				ds_comment_esil (ds, true, false, "; %s", msg);
 			}
 			if (ds->show_comments && !ds->show_comment_right) {
 				ds_newline (ds);
 			}
+		}
+	} else {
+		if (msg && *msg) {
+			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x" %s", name, *val, msg);
+		} else {
+			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x, name, *val);
+		}
+		if (ds->show_comments && !ds->show_comment_right) {
+			ds_newline (ds);
 		}
 	}
 	free (msg);
@@ -3739,9 +3735,6 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 	if (ds->show_bbline) {
 		RAnalBlock *bb = r_anal_fcn_bbget (ds->fcn, ds->at);
 		if (force || (ds->fcn && bb)) {
-			if (bb && ds->show_asm_bbinfo) {
-				r_cons_printf ("[bb  size:%d ops:%d]\n", bb->size, bb->op_pos_size / sizeof (ut16));
-			}
 			ds_begin_json_line (ds);
 			ds_setup_print_pre (ds, false, false);
 			ds_update_ref_lines (ds);
@@ -3749,6 +3742,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 						ds->refline2, COLOR_RESET (ds));
 			}
+			r_cons_printf("|");
 			ds_newline (ds);
 		}
 	}

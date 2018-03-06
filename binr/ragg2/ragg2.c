@@ -315,6 +315,12 @@ int main(int argc, char **argv) {
 
 	// catch this first
 	if (get_offset) {
+		if (strncmp (sequence, "0x", 2)) {
+			eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
+			free (sequence);
+			return 1;
+		}
+
 		get_offset = r_num_math (0, sequence);
 		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
 		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));

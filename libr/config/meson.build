@@ -9,3 +9,15 @@ r_config = library('r_config', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_config],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_config',
+             filebase: 'r_config',
+             requires: [
+               'r_util'
+             ],
+             description: 'radare foundation libraries')

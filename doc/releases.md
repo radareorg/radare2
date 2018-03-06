@@ -1,4 +1,4 @@
-radare2 releasing rules
+Releasing rules
 =======================
 
 The objective of this paper is to determine a set of rules to be done before
@@ -15,7 +15,7 @@ Before any release we have to:
  - Remove warnings
 
    We dont want to fall in the warning nightmare of r1. Releases should contain
-   no warnings with gcc -Wall or at least no dangerous ones.
+   no warnings with `gcc -Wall` or at least no dangerous ones.
 
  - Sync Vala APIs
 
@@ -34,7 +34,7 @@ Before any release we have to:
 
    The same codebase should be compilable on *nix and w32 systems without
    modifications. It should be also possible to build it with make threads,
-   so using quadcore boxes with -j8 should be a good place for finding
+   so using quadcore boxes with `-j8` should be a good place for finding
    race conditions in the build system.
 
  - Remove commented code and review TODO/BUG/XXX comments
@@ -44,7 +44,7 @@ Before any release we have to:
    while refactoring code or re-doing-it from scratch. This code, should be
    reviewed and removed if necessary.
 
-   $ grep -r -e TODO -e XXX -e FIX libr
+       $ grep -r -e TODO -e XXX -e FIX libr
 
  - Graph per symbol-module dependency graph to identify unused/dupped/-
    simplificable use cases of the API for every module.

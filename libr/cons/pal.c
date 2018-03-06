@@ -81,20 +81,13 @@ struct {
 } colors[] = {
 	{ "black",    RColor_BLACK,    Color_BLACK,    Color_BGBLACK },
 	{ "red",      RColor_RED,      Color_RED,      Color_BGRED },
-	{ "bred",     RColor_BRED,     Color_BRED,     Color_BGRED },
 	{ "white",    RColor_WHITE,    Color_WHITE,    Color_BGWHITE },
 	{ "green",    RColor_GREEN,    Color_GREEN,    Color_BGGREEN },
-	{ "bgreen",   RColor_BGREEN,   Color_BGREEN,   Color_BGGREEN },
 	{ "magenta",  RColor_MAGENTA,  Color_MAGENTA,  Color_BGMAGENTA },
-	{ "bmagenta", RColor_BMAGENTA, Color_BMAGENTA, Color_BGMAGENTA },
 	{ "yellow",   RColor_YELLOW,   Color_YELLOW,   Color_BGYELLOW },
-	{ "byellow",  RColor_BYELLOW,  Color_BYELLOW,  Color_BGBYELLOW },
 	{ "cyan",     RColor_CYAN,     Color_CYAN,     Color_BGCYAN },
-	{ "bcyan",    RColor_BCYAN,    Color_BCYAN,    Color_BGCYAN },
 	{ "blue",     RColor_BLUE,     Color_BLUE,     Color_BGBLUE },
-	{ "bblue",    RColor_BBLUE,    Color_BBLUE,    Color_BGBLUE },
 	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
-	{ "bgray",    RColor_BGRAY,    Color_BGRAY,    Color_BGGRAY },
 	{ "none",     RColor_NULL,     Color_RESET,    Color_RESET },
 	{ NULL, RColor_NULL, NULL, NULL }
 };
@@ -118,7 +111,8 @@ R_API void r_cons_pal_init () {
 	cons->cpal.args               = (RColor) RColor_YELLOW;
 	cons->cpal.bin                = (RColor) RColor_CYAN;
 	cons->cpal.btext              = (RColor) RColor_YELLOW;
-	cons->cpal.call               = (RColor) RColor_BGREEN;
+	cons->cpal.call               = (RColor) RColor_GREEN;
+	cons->cpal.call.attr          = R_CONS_ATTR_BOLD;
 	cons->cpal.cjmp               = (RColor) RColor_GREEN;
 	cons->cpal.cmp                = (RColor) RColor_CYAN;
 	cons->cpal.comment            = (RColor) RColor_RED;
@@ -132,7 +126,8 @@ R_API void r_cons_pal_init () {
 	cons->cpal.fname              = (RColor) RColor_RED;
 	cons->cpal.help               = (RColor) RColor_GREEN;
 	cons->cpal.input              = (RColor) RColor_WHITE;
-	cons->cpal.invalid            = (RColor) RColor_BRED;
+	cons->cpal.invalid            = (RColor) RColor_RED;
+	cons->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
 	cons->cpal.jmp                = (RColor) RColor_GREEN;
 	cons->cpal.label              = (RColor) RColor_CYAN;
 	cons->cpal.math               = (RColor) RColor_YELLOW;
@@ -141,14 +136,16 @@ R_API void r_cons_pal_init () {
 	cons->cpal.num                = (RColor) RColor_YELLOW;
 	cons->cpal.offset             = (RColor) RColor_GREEN;
 	cons->cpal.other              = (RColor) RColor_WHITE;
-	cons->cpal.pop                = (RColor) RColor_BMAGENTA;
+	cons->cpal.pop                = (RColor) RColor_MAGENTA;
+	cons->cpal.pop.attr           = R_CONS_ATTR_BOLD;
 	cons->cpal.prompt             = (RColor) RColor_YELLOW;
 	cons->cpal.push               = (RColor) RColor_MAGENTA;
 	cons->cpal.crypto             = (RColor) RColor_BGBLUE;
 	cons->cpal.reg                = (RColor) RColor_CYAN;
 	cons->cpal.ret                = (RColor) RColor_RED;
 	cons->cpal.swi                = (RColor) RColor_MAGENTA;
-	cons->cpal.trap               = (RColor) RColor_BRED;
+	cons->cpal.trap               = (RColor) RColor_RED;
+	cons->cpal.trap.attr          = R_CONS_ATTR_BOLD;
 
 	cons->cpal.ai_read            = (RColor) RColor_GREEN;
 	cons->cpal.ai_write           = (RColor) RColor_BLUE;
@@ -207,6 +204,7 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	RColor rcolor = (RColor) RColor_BLACK;
 	char *fgcolor;
 	char *bgcolor;
+	char *attr = NULL;
 	char out[128];
 	if (!str) {
 		return NULL;
@@ -218,7 +216,11 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	bgcolor = strchr (fgcolor + 1, ' ');
 	out[0] = 0;
 	if (bgcolor) {
-		*bgcolor++ = 0;
+		*bgcolor++ = '\0';
+		attr = strchr (bgcolor, ' ');
+		if (attr) {
+			*attr++ = '\0';
+		}
 	}
 
 	// Handle first color (fgcolor)
@@ -295,6 +297,30 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 			if (!outcol) {
 				strncat (out, colors[i].bgcode,
 					sizeof (out) - strlen (out) - 1);
+			}
+		}
+	}
+	if (attr) {
+		// Parse extra attributes.
+		const char *p = attr;
+		while (p) {
+			if (!strncmp(p, "bold", 4)) {
+				rcolor.attr |= R_CONS_ATTR_BOLD;
+			} else if (!strncmp(p, "dim", 3)) {
+				rcolor.attr |= 1u << 2;
+			} else if (!strncmp(p, "italic", 6)) {
+				rcolor.attr |= 1u << 3;
+			} else if (!strncmp(p, "underline", 9)) {
+				rcolor.attr |= 1u << 4;
+			} else if (!strncmp(p, "blink", 5)) {
+				rcolor.attr |= 1u << 5;
+			} else {
+				eprintf ("Failed to parse terminal attributes: %s\n", p);
+				break;
+			}
+			p = strchr (p, ' ');
+			if (p) {
+				p++;
 			}
 		}
 	}

@@ -596,6 +596,8 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
 	if (left != NULL) {						\
 	    /* node has no successor, but it has a left child.        */\
 	    /* Splice node out, without losing the left child.        */\
+		\
+		\
 	    assert(!rbtn_red_get(a_type, a_field, node));		\
 	    assert(rbtn_red_get(a_type, a_field, left));		\
 	    rbtn_black_set(a_type, a_field, left);			\

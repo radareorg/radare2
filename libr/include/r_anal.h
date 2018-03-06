@@ -703,6 +703,11 @@ typedef struct r_anal_hint_t {
 	char *offset;
 	int size;
 	int bits;
+	int new_bits; // change asm.bits after evaluating this instruction
+#if 0
+	int new_endian; // change the endianness
+	int new_bank; // select bank switch
+#endif
 	int immbase;
 	bool high; // highlight hint
 } RAnalHint;
@@ -790,6 +795,7 @@ typedef struct r_anal_op_t {
 	int scale;
 	ut64 disp;
 	RAnalSwitchOp *switch_op;
+	RAnalHint hint;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])

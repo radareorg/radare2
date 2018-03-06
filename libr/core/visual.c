@@ -1827,7 +1827,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'C':
-			color = color? 0: 1;
+			if (++color > 2) {
+				color = 0;
+			}
 			r_config_set_i (core->config, "scr.color", color);
 			break;
 		case 'd':
@@ -2135,9 +2137,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
 								RAnalFunction *f = NULL;
-								if (true) {
-									f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-								}
+								f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 								op.size = 1;
 								if (f && f->folded) {
 									cols = core->offset - f->addr + r_anal_fcn_size (f);
@@ -2147,10 +2147,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 											&op, core->block, 32);
 								}
 								if (cols < 1) {
-									cols = op.size;
-								}
-								if (cols < 1) {
-									cols = 1;
+									cols = op.size > 1 ? op.size : 1;
 								}
 							}
 							r_core_seek (core, core->offset + cols, 1);
@@ -2687,7 +2684,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 	}
 
-	RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
+	RIODesc *desc = core->file? r_io_desc_get (core->io, core->file->fd): NULL;
 	filename = desc? desc->name: "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);

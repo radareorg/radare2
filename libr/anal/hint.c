@@ -63,6 +63,13 @@ R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "jump:", addr, NULL, ptr);
 }
 
+R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits) {
+	a->bits_hints_changed = true;
+	setHint (a, "Bits:", addr, NULL, bits);
+}
+
+// TOOD: add helpers for newendian and newbank
+
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "fail:", addr, NULL, ptr);
 }
@@ -193,6 +200,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'f': hint->fail = sdb_atoi (nxt); break;
 			case 'p': hint->ptr  = sdb_atoi (nxt); break;
 			case 'b': hint->bits = sdb_atoi (nxt); break;
+			case 'B': hint->new_bits = sdb_atoi (nxt); break;
 			case 's': hint->size = sdb_atoi (nxt); break;
 			case 'S': hint->syntax = (char*)sdb_decode (nxt, 0); break;
 			case 'o': hint->opcode = (char*)sdb_decode (nxt, 0); break;

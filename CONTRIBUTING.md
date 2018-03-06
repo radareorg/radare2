@@ -23,7 +23,13 @@ try to keep the codebase consistent and clean.
 * Make commits of logical units.
 * Check for unnecessary whitespace with ```git diff --check``` and be sure to follow the CODINGSTYLE (more on this in the next section).
 * Submit the Pull Request(PR) on Github.
-* When relevant, write a test for [radare2-regressions](https://github.com/radare/radare2-regressions) and submit a PR also there.
+* When relevant, write a test for
+  [radare2-regressions](https://github.com/radare/radare2-regressions) and
+  submit a PR also there. Use the same branch name in both repositories, so
+  Travis will be able to use your new tests together with new changes. 
+  AppVeyor (for now) still uses radare/radare2-regressions repo with branch
+  master. NOTE: when merging PRs, *always* merge the radare2-regressions PR
+  first.
 
 ## Coding Style guidelines
 
@@ -42,8 +48,7 @@ default:
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
-  or in a while of a do-while statement. Always use braces for if and while,
-  except when the expressions are very simple and they can fit in a one-line.
+  or in a while of a do-while statement. Always use braces for if and while.
 
 ```c
 if (a == b) {
@@ -55,15 +60,6 @@ if (a == b) {
 } else if (a > b) {
 	...
 }
-
-if (a == b) do_something ();
-
-if (a == b) do_something ();
-else do_something_else ();
-
-if (!ok) return false;
-
-if (!buf) goto err_buf;
 
 if (a == b) {
 	...

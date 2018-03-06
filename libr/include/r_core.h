@@ -248,6 +248,7 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int count);
 R_API void r_core_seek_archbits (RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
+R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
@@ -364,7 +365,6 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
-R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits);
 R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
 
@@ -526,6 +526,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode);
+R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode);
 
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);

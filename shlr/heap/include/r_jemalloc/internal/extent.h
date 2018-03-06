@@ -152,8 +152,8 @@ extent_node_zeroed_get(const extent_node_t *node)
 JEMALLOC_INLINE bool
 extent_node_committed_get(const extent_node_t *node)
 {
-
-	assert(!node->en_achunk);
+	if (unlikely(node->en_achunk))
+		return false;
 	return (node->en_committed);
 }
 

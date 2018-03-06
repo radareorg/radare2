@@ -35,3 +35,15 @@ r_fs = library('r_fs', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_fs],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_fs',
+             filebase: 'r_fs',
+             requires: [
+               'r_util'
+             ],
+             description: 'radare foundation libraries')

@@ -1,3 +1,10 @@
+res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("capstone"))')
+if res.returncode() == 0
+  message('Cloning capstone')
+  git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
+  run_command(git_exe, git_cmd.split())
+endif
+
 bochs_files = [
   'bochs/src/libbochs.c'
 ]

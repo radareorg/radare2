@@ -24,6 +24,7 @@ Defining primitive types requires understanding of basic pf formats, you can fin
 |         c          |  char (signed byte)                      |
 |         d          |  0x%%08x hexadecimal value (4 bytes)     |
 |         f          |  float value (4 bytes)                   |
+|         F          |  double value (8 bytes)                  |
 |         i          |  %%i integer value (4 bytes)             |
 |         o          |  0x%%08o octal value (4 byte)            |
 |         p          |  pointer reference (2, 4 or 8 bytes)     |

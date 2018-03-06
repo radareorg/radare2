@@ -155,8 +155,9 @@ bitmap_get(bitmap_t *bitmap, const bitmap_info_t *binfo, size_t bit)
 {
 	size_t goff;
 	bitmap_t g;
+	if (unlikely(bit > binfo->nbits))
+		return (false);
 
-	assert(bit < binfo->nbits);
 	goff = bit >> LG_BITMAP_GROUP_NBITS;
 	g = bitmap[goff];
 	return (!(g & (ZU(1) << (bit & BITMAP_GROUP_NBITS_MASK))));

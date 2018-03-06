@@ -23,3 +23,15 @@ r_cons = library('r_cons', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_cons],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_cons',
+             filebase: 'r_cons',
+             requires: [
+               'r_util'
+             ],
+             description: 'radare foundation libraries')

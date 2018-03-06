@@ -503,16 +503,14 @@ static int cb_asmarch(void *user, void *data) {
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
 	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		// try to set RAsm to LE
-		r_asm_set_big_endian (core->assembler, false);
-		// set endian of display to LE
-		core->print->big_endian = false;
-	} else {
-		// try to set endian of RAsm to match binary
-		r_asm_set_big_endian (core->assembler, bigbin);
-		// set endian of display to match binary
-		core->print->big_endian = bigbin;
+		bigbin = r_config_get_i (core->config, "cfg.bigendian");
 	}
+
+	// try to set endian of RAsm to match binary
+	r_asm_set_big_endian (core->assembler, bigbin);
+	// set endian of display to match binary
+	core->print->big_endian = bigbin;
+
 	r_asm_set_cpu (core->assembler, asm_cpu);
 	free (asm_cpu);
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
@@ -1701,6 +1699,16 @@ static int cb_scrstrconv(void *user, void *data) {
 	return true;
 }
 
+static int cb_graphformat(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	if (!strcmp (node->value, "?")) {
+		r_cons_printf ("dot\ngml\ngmlfcn\n");
+		return false;
+	}
+	return true;
+}
+
+
 static int cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore*) user;
@@ -2321,7 +2329,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
-	SETPREF ("asm.bbinfo", "false", "Show basic block information");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF ("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
 	SETPREF ("asm.jmpsub", "false", "Always substitute jump, call and branch targets in disassembly");
@@ -2711,10 +2718,13 @@ R_API int r_core_config_init(RCore *core) {
 	free (tmpdir);
 	r_config_desc (cfg, "http.uproot", "Path where files are uploaded");
 
+	/* tcp */
+	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
+
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
-	SETPREF ("graph.format", "dot", "Specify output format for graphs (dot, gml, gmlfcn)");
+	SETCB ("graph.format", "dot", &cb_graphformat, "Specify output format for graphs (dot, gml, gmlfcn)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");

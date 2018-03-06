@@ -90,3 +90,13 @@ r_util = library('r_util', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_util],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_util',
+             filebase: 'r_util',
+             description: 'radare foundation libraries')
