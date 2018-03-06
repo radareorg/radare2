@@ -47,7 +47,7 @@
 
 #define XSTATE_SSE_MASK         (X87_BIT|SSE_BIT)
 #define XSTATE_AVX_MASK         (XSTATE_SSE_MASK|AVX_BIT)
-#define XSTATE_MPX_MASK         MPX_BIT
+#define XSTATE_MPX_MASK         (MPX_BIT|XSTATE_AVX_MASK|XSTATE_SSE_MASK)
 #define XSTATE_AVX512_MASK      (XSTATE_AVX_MASK|AVX512_FULL_BIT)
 /*********************************/
 #endif
