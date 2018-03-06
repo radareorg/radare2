@@ -1840,7 +1840,7 @@ R_API bool r_core_init(RCore *core) {
 	core->fs = r_fs_new ();
 	core->flags = r_flag_new ();
 	core->flags->cb_printf = r_cons_printf;
-	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
+	core->graph = r_agraph_new (r_cons_canvas_new (1, 1), r_config_get_i (core->config, "graph.dummy"));
 	core->graph->need_reload_nodes = false;
 	core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
 	if (sizeof (ut64) * core->asmqjmps_size < core->asmqjmps_size) {

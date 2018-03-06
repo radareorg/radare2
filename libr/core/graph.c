@@ -1645,11 +1645,9 @@ void backedge_info (RAGraph *g) {
 				arr[i][0] = tc;
 				arr[i][1] = tc + tl;
 			}
-
 			if (arr[i][0] > tc) {
 				arr[i][0] = tc;
 			}
-
 			if (arr[i][1] < tc + tl) {
 				arr[i][1] = tc + tl;
 			}
@@ -1796,7 +1794,14 @@ static void set_layout(RAGraph *g) {
 
 	remove_cycles (g);
 	assign_layers (g);
-	create_dummy_nodes (g);
+	if (g->use_dummynodes) {
+		// running this makes the graph look better, but 't' and 'f' keys
+		// dont work well because there are dummy nodes still in the graph
+		// which are not valid and should be fixed. The graph.dummy config
+		// var is the one used to choose this behaviour until the fix is done.
+		// also, layout times are improved without graph.dummy
+		create_dummy_nodes (g);
+	}
 	create_layers (g);
 	minimize_crossings (g);
 
@@ -2876,6 +2881,14 @@ static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 static void follow_nth(RAGraph *g, int nth) {
 	const RGraphNode *cn = r_graph_nth_neighbour (g->graph, g->curnode, nth);
+	RGraphNode *node;
+	RListIter *iter;
+	r_list_foreach (g->curnode->out_nodes, iter, node) {
+		RANode *an = node->data;
+		if (an->is_dummy) {
+			eprintf ("if there's a dummy node it means the graph hasnt been generated properly\n");
+		}
+	}
 	if (cn) {
 		r_agraph_set_curnode (g, get_anode (cn));
 	}
@@ -3168,12 +3181,13 @@ static void agraph_toggle_speed(RAGraph *g, RCore *core) {
 	g->movspeed = g->movspeed == DEFAULT_SPEED? alt: DEFAULT_SPEED;
 }
 
-static void agraph_init(RAGraph *g) {
+static void agraph_init(RAGraph *g, bool usedummy) {
 	g->is_callgraph = false;
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
+	g->use_dummynodes = usedummy;
 	g->nodes = sdb_new0 (); // XXX leak
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
@@ -3418,13 +3432,13 @@ R_API void r_agraph_free(RAGraph *g) {
 	}
 }
 
-R_API RAGraph *r_agraph_new(RConsCanvas *can) {
+R_API RAGraph *r_agraph_new(RConsCanvas *can, bool usedummy) {
 	RAGraph *g = R_NEW0 (RAGraph);
 	if (!g) {
 		return NULL;
 	}
 	g->can = can;
-	agraph_init (g);
+	agraph_init (g, usedummy);
 	agraph_sdb_init (g);
 	return g;
 }
@@ -3538,6 +3552,7 @@ static void graph_breakpoint(RCore *core) {
 static void graph_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
+
 static void applyDisMode(RCore *core) {
 	switch (disMode) {
 	case 0:
@@ -3609,7 +3624,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_cons_canvas_free (can);
 			return false;
 		}
-		g = r_agraph_new (can);
+		g = r_agraph_new (can, r_config_get_i (core->config, "graph.dummy"));
 		if (!g) {
 			r_cons_canvas_free (can);
 			r_config_restore (hc);

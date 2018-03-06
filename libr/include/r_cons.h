@@ -873,6 +873,7 @@ typedef struct r_ascii_graph_t {
 	bool is_callgraph;
 	int zoom;
 	int movspeed;
+	bool use_dummynodes;
 
 	RANode *update_seek_on;
 	bool need_reload_nodes;
@@ -897,7 +898,7 @@ typedef struct r_ascii_graph_t {
 } RAGraph;
 
 #ifdef R_API
-R_API RAGraph *r_agraph_new(RConsCanvas *can);
+R_API RAGraph *r_agraph_new(RConsCanvas *can, bool usedummy);
 R_API void r_agraph_free(RAGraph *g);
 R_API void r_agraph_reset(RAGraph *g);
 R_API void r_agraph_set_title(RAGraph *g, const char *title);
