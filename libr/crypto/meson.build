@@ -27,3 +27,14 @@ r_crypto = library('r_crypto', files,
   install: true,
   implicit_include_directories: false
 )
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_crypto],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_crypto',
+             filebase: 'r_crypto',
+             requires: [
+               'r_util'
+             ],
+             description: 'radare foundation libraries')

@@ -16,3 +16,15 @@ r_search = library('r_search', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_search],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_search',
+             filebase: 'r_search',
+             requires: [
+               'r_util'
+             ],
+             description: 'radare foundation libraries')

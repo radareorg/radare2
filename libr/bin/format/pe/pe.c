@@ -116,6 +116,19 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 					return entry;
 				}
 			}
+			//case4:
+			//50                                        push    eax
+			//57                                        push    edi
+			//FF 36                                     push    dword ptr[esi]
+			//E8 D9 FD FF FF                            call    _main
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x50 && b[n + 1] == 0x57 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
+					const st32 call_dst = r_read_ble32 (b + n + 5, bin->big_endian);
+					entry->paddr += (n + 5 + 4 + call_dst);
+					entry->vaddr += (n + 5 + 4 + call_dst);
+					return entry;
+				}
+			}
 
 		}
 	}

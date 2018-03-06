@@ -45,7 +45,7 @@ typedef struct _opcodes_tag_ {
 	ut64 type;
 } OPCODE_DESC;
 
-static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
+static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc, consts)				\
 	{								\
@@ -411,6 +411,7 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 	int d = ((buf[0] & 0x30) >> 3) + 24;
 	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
+	op->val = k;
 	ESIL_A ("r%d:r%d,%d,+,", d + 1, d, k);			// Rd+1:Rd + Rr
 								// FLAGS:
 	ESIL_A ("r%d,0x80,&,!,"					// V
@@ -438,6 +439,7 @@ INST_HANDLER (andi) {	// ANDI Rd, K
 			// CBR Rd, K (= ANDI Rd, 1-K)
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0x0f) << 4) | (buf[0] & 0x0f);
+	op->val = k;
 	ESIL_A ("%d,r%d,&,", k, d);				// 0: Rd & Rr
 	__generic_bitop_flags (op);				// up flags
 	ESIL_A ("r%d,=,", d);					// Rd = Result
@@ -887,12 +889,14 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 INST_HANDLER (ldi) {	// LDI Rd, K
 	int k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
 	int d = ((buf[0] >> 4) & 0xf) + 16;
+	op->val = k;
 	ESIL_A ("0x%x,r%d,=,", k, d);
 }
 
 INST_HANDLER (lds) {	// LDS Rd, k
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	int k = (buf[3] << 8) | buf[2];
+	op->ptr = k;
 
 	// load value from RAMPD:k
 	__generic_ld_st (op, "ram", 0, 1, 0, k, 0);
@@ -902,6 +906,7 @@ INST_HANDLER (lds) {	// LDS Rd, k
 INST_HANDLER (sts) {	// STS k, Rr
 	int r = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	int k = (buf[3] << 8) | buf[2];
+	op->ptr = k;
 
 	ESIL_A ("r%d,", r);
 	__generic_ld_st (op, "ram", 0, 1, 0, k, 1);
@@ -916,6 +921,7 @@ INST_HANDLER (lds16) {	// LDS Rd, k
 		| ((buf[1] << 3) & 0x30)
 		| ((buf[1] << 4) & 0x40)
 		| (~(buf[1] << 4) & 0x80);
+	op->ptr = k;
 
 	// load value from @k
 	__generic_ld_st (op, "ram", 0, 0, 0, k, 0);
@@ -1036,6 +1042,7 @@ INST_HANDLER (ori) {	// ORI Rd, K
 			// SBR Rd, K
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
+	op->val = k;
 	ESIL_A ("r%d,%d,|,", d, k);				// 0: (Rd | k)
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
@@ -1157,6 +1164,7 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 INST_HANDLER (sbci) {	// SBCI Rd, k
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
+	op->val = k;
 
 	ESIL_A ("cf,%d,+,r%d,-,", k, d);		// 0: (Rd-k-C)
 	__generic_sub_update_flags_rk (op, d, k, 1);	// FLAGS (carry)
@@ -1175,6 +1183,7 @@ INST_HANDLER (sub) {	// SUB Rd, Rr
 INST_HANDLER (subi) {	// SUBI Rd, k
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
+	op->val = k;
 
 	ESIL_A ("%d,r%d,-,", k, d);			// 0: (Rd-k)
 	__generic_sub_update_flags_rk (op, d, k, 1);	// FLAGS (no carry)
@@ -1241,6 +1250,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 INST_HANDLER (sbiw) {	// SBIW Rd+1:Rd, K
 	int d = ((buf[0] & 0x30) >> 3) + 24;
 	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
+	op->val = k;
 	ESIL_A ("%d,r%d:r%d,-,", k, d + 1, d);		// 0(Rd+1:Rd - Rr)
 	ESIL_A ("r%d,0x80,&,!,!,"			// V
 		"0,RPICK,0x8000,&,!,"
@@ -1495,7 +1505,7 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu) {
+static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	ut16 ins = (buf[1] << 8) | buf[0];
 	int fail;
@@ -1503,6 +1513,9 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 
 	// initialize op struct
 	memset (op, 0, sizeof (RAnalOp));
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
+	op->jump = UT64_MAX;
 	r_strbuf_init (&op->esil);
 
 	// process opcode
@@ -1542,7 +1555,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 				}
 			}
 
-			return op->size;
+			return opcode_desc;
 		}
 	}
 
@@ -1568,7 +1581,7 @@ INVALID_OP:
 	// and stinky situation
 	r_strbuf_set (&op->esil, "1,$");
 
-	return op->size;
+	return NULL;
 }
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -1945,6 +1958,54 @@ static int archinfo(RAnal *anal, int q) {
 	return 2; // XXX
 }
 
+
+static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
+	RAnalOp *op = NULL;
+	ut8 *ret = NULL;
+	int idx;
+
+	if (!(op = r_anal_op_new ())) {
+		return NULL;
+	}
+
+	if (!(ret = malloc (size))) {
+		r_anal_op_free (op);
+		return NULL;
+	}
+
+	memset (ret, 0xff, size);
+
+	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
+
+	for (idx = 0; idx + 1 < size; idx += op->size) {
+		OPCODE_DESC* opcode_desc = avr_op_analyze (anal, op, at + idx, data + idx, cpu);
+
+		if (op->size < 1) {
+			break;
+		}
+
+		if (!opcode_desc) { // invalid instruction
+			continue;
+		}
+
+		// the additional data for "long" opcodes (4 bytes) is usually something we want to ignore for matching
+		// (things like memory offsets or jump addresses)
+		if (op->size == 4) {
+			ret[idx + 2] = 0;
+			ret[idx + 3] = 0;
+		}
+
+		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
+			ret[idx] = opcode_desc->mask;
+			ret[idx + 1] = opcode_desc->mask >> 8;
+		}
+	}
+
+	r_anal_op_free (op);
+
+	return ret;
+}
+
 RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
@@ -1957,6 +2018,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,
 	.esil_fini = esil_avr_fini,
+	.anal_mask = anal_mask_avr,
 };
 
 #ifndef CORELIB

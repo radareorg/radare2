@@ -1,5 +1,8 @@
 #!/bin/sh
 
+if [ "$(uname)" = Linux ]; then
+	LDFLAGS="-lpthread -ldl -lutil -lm"
+fi
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
@@ -67,9 +70,9 @@ if [ -z "${CC}" ]; then
 fi
 ${CC} .test.c \
 	-I r2-static/usr/include/libr \
-	r2-static/usr/lib/libr.a
+	r2-static/usr/lib/libr.a ${LDFLAGS}
 res=$?
-if [ $? = 0 ]; then
+if [ $res = 0 ]; then
 	echo SUCCESS
 else
 	echo FAILURE

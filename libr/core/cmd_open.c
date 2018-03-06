@@ -122,28 +122,28 @@ static const char *help_msg_oo[] = {
 };
 
 static const char *help_msg_oo_plus[] = {
-	"oo+", "", "reopen in read-write",
+	"Usage:", "oo+", " # reopen in read-write",
 	NULL
 };
 
 static const char *help_msg_oob[] = {
-	"oob", "", "reopen loading rbin info",
+	"Usage:", "oob", " # reopen loading rbin info",
 	NULL
 };
 
 static const char *help_msg_ood[] = {
-	"ood"," [args]","reopen in debugger mode (with args)",
+	"Usage:", "ood [args]", " # reopen in debugger mode (with args)",
 	"oodr"," [rarun2]","same as dor ..;ood",
 	NULL
 };
 
 static const char *help_msg_oon[] = {
-	"oon", "", "reopen without loading rbin info",
+	"Usage:", "oon", " # reopen without loading rbin info",
 	NULL
 };
 
 static const char *help_msg_oonn[] = {
-	"oonn", "", "reopen without loading rbin info, but with header flags",
+	"Usage:", "oonn", " # reopen without loading rbin info, but with header flags",
 	NULL
 };
 

@@ -19,3 +19,15 @@ r_bp = library('r_bp', files,
   install: true,
   implicit_include_directories: false
 )
+
+
+pkg = import('pkgconfig')
+pkg.generate(libraries: [r_bp],
+             subdirs: 'libr',
+             version: r2version,
+             name: 'r_bp',
+             filebase: 'r_bp',
+             requires: [
+               'r_util'
+             ],
+             description: 'radare foundation libraries')

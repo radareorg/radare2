@@ -109,6 +109,23 @@ static int destroy(RBinFile *bf) {
 	return true;
 }
 
+static RBinAddr* binsym(RBinFile *bf, int type) {
+	ut64 mzaddr = 0;
+	RBinAddr *ret = NULL;
+	if (bf && bf->o && bf->o->bin_obj) {
+		switch(type) {
+		case R_BIN_SYM_MAIN:
+			mzaddr = r_bin_mz_get_main_vaddr (bf->o->bin_obj);
+			break;
+		}
+	}
+	if (mzaddr && (ret = R_NEW0 (RBinAddr))) {
+		ret->paddr = mzaddr;
+		ret->vaddr = mzaddr;
+	}
+	return ret;
+}
+
 static RList * entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *res = NULL;
@@ -255,6 +272,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

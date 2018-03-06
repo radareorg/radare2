@@ -565,8 +565,9 @@ R_API int r_utf8_strlen (const ut8 *str) {
 	int i, len = 0;
 
 	for (i = 0; str[i]; i++) {
-		if ((str[i] & 0xc0) != 0x80)
+		if ((str[i] & 0xc0) != 0x80) {
 			len++;
+		}
 	}
 
 	return len;

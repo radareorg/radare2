@@ -769,6 +769,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= (7 & a0) << 8;
 					ao->o |= (7 & a1) << 11;
 					ao->o |= (3 & (a2 / 4)) << 14;
+					ao->o |= ((28 & (a2 / 4)) / 4);
 				} else {
 					ao->o = 0x50;
 					ao->o |= (7 & a0) << 8;

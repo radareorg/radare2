@@ -57,7 +57,7 @@ else
   r2birth = r2birth.stdout().strip()
 endif
 
-prefix = '/usr/local'
+prefix = get_option('prefix')
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -112,9 +112,9 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ',&r_debug_plugin_'.join(deb
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ',&r_egg_plugin_'.join(egg) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ',&r_lang_plugin_'.join(lang) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ',&r_parse_plugin_'.join(parse) + ', 0')
-configure_file(input: 'libr/config.h.in',
-               output: 'config.h',
-               configuration: conf_data)
+config_h = configure_file(input: 'libr/config.h.in',
+                          output: 'config.h',
+                          configuration: conf_data)
 
 userconf = configuration_data()
 userconf.set('DEBUGGER', 1)
@@ -132,9 +132,10 @@ if host_machine.system() == 'windows'
 else
   userconf.set('HAVE_JEMALLOC', 1)
 endif
-configure_file(input: 'libr/include/r_userconf.h.in',
-               output: 'r_userconf.h',
-               configuration: userconf)
+r_userconf_h = configure_file(input: 'libr/include/r_userconf.h.in',
+                              output: 'r_userconf.h',
+                              configuration: userconf)
+install_headers(r_userconf_h, subdir: 'libr')
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
@@ -142,12 +143,23 @@ versionconf.set('R2_VERSION', r2version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
 versionconf.set('R2_BIRTH', r2birth)
-configure_file(input: 'libr/include/r_version.h.in',
-               output: 'r_version.h',
-               configuration: versionconf)
+r_version_h = configure_file(input: 'libr/include/r_version.h.in',
+                             output: 'r_version.h',
+                             configuration: versionconf)
+install_headers(r_version_h, subdir: 'libr')
 
 # Copy missing header
 run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
+
+
+pcconf = configuration_data()
+pcconf.set('PREFIX', prefix)
+pcconf.set('LIBDIR', prefix + '/lib')
+pcconf.set('VERSION', r2version)
+libr_pc = configure_file(input: 'libr/libr.pc.acr',
+                         output: 'libr.pc',
+                         configuration: userconf)
+install_data(libr_pc, install_dir: join_paths(get_option('libdir'), 'pkgconfig'))
 
 subdir('shlr/')
 subdir('libr/util')
@@ -172,6 +184,48 @@ subdir('libr/egg')
 subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
+
+subdir('libr/include')
+
+subdir('shlr/sdb')
+subdir('libr/anal/d')
+subdir('libr/asm/d')
+subdir('libr/bin/d')
+subdir('libr/syscall/d')
+
+subdir('libr/cons/d')
+subdir('libr/magic/d')
+
+install_subdir('shlr/www',
+  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version)
+)
+
+patterned_filelist = ['python', '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
+
+fortunes_files = run_command(patterned_filelist + ['doc/fortunes.*']).stdout().strip().split(';')
+install_data(fortunes_files,
+  install_dir: join_paths(get_option('datadir'), 'doc/radare2')
+)
+
+man1_files = run_command(patterned_filelist + ['man/*.1']).stdout().strip().split(';')
+install_data(man1_files,
+  install_dir: join_paths(get_option('datadir'), 'man/man1')
+)
+
+man7_files = run_command(patterned_filelist + ['man/*.7']).stdout().strip().split(';')
+install_data(man7_files,
+  install_dir: join_paths(get_option('datadir'), 'man/man7')
+)
+
+custom_target('hud',
+  input: 'doc/hud',
+  output: 'main',
+  command: ['python', '-c', 'from sys import argv; __import__("shutil").copy(argv[1], argv[2])', '@INPUT@', '@OUTPUT@'],
+  build_by_default: true,
+  build_always: false,
+  install: true,
+  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version, 'hud')
+)
 
 if meson.is_subproject()
   libr2_lib = [

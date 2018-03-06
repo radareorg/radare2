@@ -334,7 +334,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 			if (!b[p] || b[p] == '\n') {
 				break;
 			}
-			const char *rune = r_cons_get_rune((const ut8)b[p]);
+			const char *rune = r_cons_get_rune ((const ut8)b[p]);
 			if (rune) {
 				strcpy (o + olen, rune);
 				olen += strlen (rune);
@@ -443,8 +443,12 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		W (row_ptr);
 	}
 	for (i = 1; i < h - 1; i++) {
-		if (G (x, y + i)) W (vline);
-		if (G (x + w - 1, y + i)) W (vline);
+		if (G (x, y + i)) {
+			W (vline);
+		}
+		if (G (x + w - 1, y + i)) {
+			W (vline);
+		}
 	}
 	free (row);
 	if (color) {

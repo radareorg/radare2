@@ -3015,8 +3015,8 @@ found:
 static int decl0(int l, int is_for_loop_init)
 {
 	int v, has_init, r;
-	CType type, btype;
-	Sym *sym;
+	CType type = {.t = 0, .ref = NULL}, btype = {.t = 0, .ref = NULL};
+	Sym *sym = NULL;
 	AttributeDef ad;
 
 	for (;;) {
@@ -3097,10 +3097,14 @@ static int decl0(int l, int is_for_loop_init)
 
 				/* reject abstract declarators in function definition */
 				sym = type.ref;
-				while ((sym = sym->next) != NULL)
-					if (!(sym->v & ~SYM_FIELD)) {
-						expect ("identifier");
-					}
+				if (sym) {
+					while ((sym = sym->next) != NULL)
+						if (!(sym->v & ~SYM_FIELD)) {
+							expect ("identifier");
+						}
+				} else {
+					return 0; // XXX unmatching braces in typedef?
+				}
 
 				/* XXX: cannot do better now: convert extern line to static inline */
 				if ((type.t & (VT_EXTERN | VT_INLINE)) == (VT_EXTERN | VT_INLINE)) {

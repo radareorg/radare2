@@ -286,6 +286,7 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 static void cmd_write_op (RCore *core, const char *input) {
 	ut8 *buf;
 	int len;
+	int value;
 	if (!input[0])
 		return;
 	switch (input[1]) {
@@ -409,11 +410,13 @@ static void cmd_write_op (RCore *core, const char *input) {
 			}
 			break;
 		case 'O': // "wopO"
-			len = (int)(input[3]==' ')
-				? r_num_math (core->num, input + 3)
-				: core->blocksize;
-			core->num->value = r_debruijn_offset (len, r_config_get_i (core->config, "cfg.bigendian"));
-			r_cons_printf ("%"PFMT64d"\n", core->num->value);
+			if (strlen (input) > 4 && strncmp (input + 4, "0x", 2)) {
+				eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
+			} else if (input[3] == ' ') {
+				value = r_num_get (core->num, input + 4);
+				core->num->value = r_debruijn_offset (value, r_config_get_i (core->config, "cfg.bigendian"));
+				r_cons_printf ("%"PFMT64d"\n", core->num->value);
+			}
 			break;
 		case '\0':
 		case '?':

@@ -414,7 +414,6 @@ static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* lis
 				if (file->off == offset) {
 					r_list_append (list, found);
 				}
-				free (file->data);
 				r_fs_close (fs, file);
 			}
 		}

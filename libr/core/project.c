@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake, maijin */
+/* radare - LGPL - Copyright 2010-2018 - pancake, maijin */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -15,7 +15,7 @@ static void __section_list_for_projects (RIO *io, RPrint *print) {
 	if (!io || !io->sections || !print || !print->cb_printf) {
 		return;
 	}
-	ls_foreach (io->sections, iter, s) {	
+	ls_foreach (io->sections, iter, s) {
 		print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 			" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
 			i, s->paddr, r_str_rwx_i (s->flags), s->vaddr,
@@ -164,7 +164,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
-	char *path;
+	char *path, *prjDir = NULL;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
 		return 0;
@@ -175,16 +175,35 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
+		prjDir = r_file_dirname (path);
+		if (!prjDir) {
+			eprintf ("Cannot resolve directory\n");
+			return false;
+		}
 		// rm project file
-		r_file_rm (path);
-		eprintf ("rm %s\n", path);
-		path = r_str_append (path, ".d");
-		if (r_file_is_directory (path)) {
+		if (r_file_exists (path)) {
+			r_file_rm (path);
+			eprintf ("rm %s\n", path);
+		}
+
+		free (path);
+
+		//rm xrefs.sdb file
+		char *xrefs_sdb = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "xrefs.sdb");
+		if (r_file_exists (xrefs_sdb)) {
+			r_file_rm (xrefs_sdb);
+			eprintf ("rm %s\n", xrefs_sdb);
+		}
+		free (xrefs_sdb);
+
+		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
+
+		if (r_file_is_directory (rop_d)) {
 			char *f;
 			RListIter *iter;
-			RList *files = r_sys_dir (path);
+			RList *files = r_sys_dir (rop_d);
 			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_append (strdup (path), R_SYS_DIR);
+				char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
 				filepath = r_str_append (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
@@ -192,14 +211,15 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 				}
 				free (filepath);
 			}
-			r_file_rm (path);
-			eprintf ("rm %s\n", path);
+			r_file_rm (rop_d);
+			eprintf ("rm %s\n", rop_d);
 			r_list_free (files);
 		}
-		// TODO: remove .d directory (BEWARE OF ROOT RIMRAFS!)
-		// TODO: r_file_rmrf (path);
+		free (rop_d);
+		// remove directory only if it's empty
+		r_file_rm (prjDir);
 	}
-	free (path);
+	free (prjDir);
 	return 0;
 }
 
@@ -945,4 +965,3 @@ R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcp
 	r_config_bump (core->config, "asm.arch");
 	return ret;
 }
-
