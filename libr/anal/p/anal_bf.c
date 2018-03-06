@@ -65,7 +65,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				}
 				if (i == len - 1 && anal->read_at) {
 					int new_buf_len = len + 1 + BUFSIZE_INC;
-					const ut8 *new_buf = calloc (new_buf_len, 1);
+					ut8 *new_buf = calloc (new_buf_len, 1);
 					if (new_buf) {
 						free ((ut8 *)buf);
 						(void)anal->read_at (anal, addr, new_buf, new_buf_len);

@@ -402,10 +402,13 @@ static int **get_crossing_matrix(const RGraph *g,
 						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
 							// this should never happen
+							// but it happens if we do graph.dummy = false, so better hide it for now
+#if 0
 							eprintf ("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
 								ak->title, ak->layer,
 								at->title, at->layer,
 								i);
+#endif
 							continue;
 						}
 						m[ak->pos_in_layer][at->pos_in_layer]++;
