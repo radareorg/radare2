@@ -3098,8 +3098,8 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-static bool read_at(RAnal *anal, ut64 new_addr, ut8 *buf, int new_len) {
-	return r_io_read_at (anal->iob.io, new_addr, buf, new_len);
+static bool read_at(RAnal *anal, ut64 addr, ut8 *buf, int len) {
+	return r_io_read_at (anal->iob.io, addr, buf, len);
 }
 
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {

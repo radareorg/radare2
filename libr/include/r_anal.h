@@ -680,7 +680,7 @@ typedef struct r_anal_t {
 	RListComparator columnSort;
 	int stackptr;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
-	bool (*read_at)(struct r_anal_t *anal, ut64 new_addr, ut8 *buf, int new_len);
+	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	char *cmdtail;
 } RAnal;
 
