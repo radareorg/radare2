@@ -578,7 +578,7 @@ typedef struct r_anal_callbacks_t {
 	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
 	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
 	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
-	const ut8 *(*new_read_window)(RANAL, ut64 new_addr, int new_len);
+	bool (*read_at)(RANAL, ut64 new_addr, ut8 *buf, int new_len);
 } RAnalCallbacks;
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
