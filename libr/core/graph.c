@@ -2594,6 +2594,12 @@ static void agraph_print_edges_simple(RAGraph *g) {
 			r_cons_canvas_line (g->can,
 				n->x + sx, n->y + sy,
 				n2->x + sx2, n2->y, &style);
+
+			if (n2->is_dummy) {
+				r_cons_canvas_line (g->can,
+					n2->x, n2->y - 1,
+					n2->x, n2->y + n2->h, &style);
+			}
 		}
 	}
 }
