@@ -195,6 +195,64 @@ static ut32 getimmed8(const char *str) {
 	}
 }
 
+int firstsigdigit (unsigned int num) {
+	int f = -1;
+	int b = -1;
+	unsigned int forwardmask = 0x80000000;
+	unsigned int backwardmask = 0x1;
+	for (int i = 0;i<32; i++ ) {
+		if ( (forwardmask & num) && (f == -1)) {
+			f = i;
+		}
+		if ( (backwardmask & num) && (b == -1)) {
+			b = 32-i;
+		}
+		forwardmask >>= 1;
+		backwardmask <<= 1;
+	}
+
+	if ((b-f) < 9) {
+		return f;
+	} else {
+		return -1;
+	}
+}
+
+static ut32 getthimmed12(const char *str) {
+	ut32 num = getnum (str);
+	if (err) {
+		return 0;
+	}
+	int FSD = 0;
+	ut32 result = 0;
+	if (num <= 0xff) {
+		return num << 16;
+	} else 	if ( (num & 0xff00ff00 == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
+		result |= (num & 0x000000ff) << 8;
+		result |= 0x00000010;
+		return result;
+	} else if ( (num & 0x00ff00ff == 0) && ((num & 0xff000000) == ((num & 0x0000ff00) << 16)) ) {
+		result |= num & 0x0000ff00;
+		result |= 0x00000020;
+		return result;
+	} else if ( ((num & 0xff000000) == ((num & 0x00ff0000) << 8)) && ((num & 0xff000000) == ((num & 0x0000ff00) << 16)) && ((num &0xff000000) == ((num & 0x000000ff) << 24)) ) {
+		result |= num & 0x0000ff00;
+		result |= 0x00000030;
+		return result;
+	} else {
+		FSD = firstsigdigit(num);
+		if (FSD != -1) {
+			result |= ((num >> 24-FSD) & 0x0000007f) << 8;
+			result |= ((8+FSD) & 0x7) << 4;
+			result |= ((8+FSD) & 0x8) << 18;
+			return result;
+		} else {
+			err = true;
+			return 0;
+		}
+	}
+}
+
 static char *getrange(char *s) {
 	char *p = NULL;
 	while (s && *s) {
