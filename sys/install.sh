@@ -31,6 +31,8 @@ else
 	shift
 fi
 
+umask 0002
+
 export NOSUDO
 if [ -n "${NOSUDO}" ]; then
 	SUDO=""
