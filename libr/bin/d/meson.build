@@ -51,7 +51,7 @@ foreach file : sdb_files
     input: 'dll/@0@.sdb.txt'.format(file),
     output: outfile,
     command: sdb_gen_cmd,
-    depends: sdb_app,
+    depends: sdb_exe,
     build_by_default: true,
     build_always: false,
     install: true,

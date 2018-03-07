@@ -439,7 +439,7 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, GH(RHea
 }
 
 static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, GH(RHeap_MallocState) *main_arena, GHT brk_start) {
-	RAGraph *g = r_agraph_new (r_cons_canvas_new (1, 1));
+	RAGraph *g = r_agraph_new (r_cons_canvas_new (1, 1), r_config_get_i (core->config, "graph.dummy"));
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
 	RANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;
@@ -699,7 +699,7 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 	core->cons->use_utf8 = r_config_get_i (core->config, "scr.utf8");
-	RAGraph *g = r_agraph_new (can);
+	RAGraph *g = r_agraph_new (NULL, r_config_get_i (core->config, "graph.dummy"));
 	if (!g) {
 		r_cons_canvas_free (can);
 		r_config_restore (hc);
@@ -800,7 +800,7 @@ static void GH(print_heap_graph)(RCore *core, GH(RHeap_MallocState) *main_arena,
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 	core->cons->use_utf8 = r_config_get_i (core->config, "scr.utf8");
-	RAGraph *g = r_agraph_new (can);
+	RAGraph *g = r_agraph_new (can, r_config_get_i (core->config, "graph.dummy"));
 	if (!g) {
 		r_cons_canvas_free (can);
 		r_config_restore (hc);

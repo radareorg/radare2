@@ -1,7 +1,10 @@
-project('radare2', 'c')
+project('radare2', 'c', meson_version: '>=0.45.0')
+
+py3_exe = import('python3').find_python()
+git_exe = find_program('git')
 
 # Get r2 version
-r2version = run_command('python', 'sys/version.py')
+r2version = run_command(py3_exe, 'sys/version.py')
 if r2version.returncode() != 0
   r2version = 'unknown-error'
 else
@@ -13,7 +16,7 @@ if meson.is_subproject()
   repo = meson.current_source_dir()
   if host_machine.system() == 'windows'
     py_cmd = 'print(__import__("os").readlink(r"@0@"))'.format(repo)
-    py_cmd = run_command('python', '-c', py_cmd)
+    py_cmd = run_command(py3_exe, '-c', py_cmd)
     if py_cmd.returncode() == 0
       repo = py_cmd.stdout().strip()
       message('r2 realpath: ' + repo)
@@ -22,7 +25,7 @@ if meson.is_subproject()
 endif
 
 # Get version_commit
-version_commit = run_command('git', '-C', repo, 'rev-list', '--all', '--count')
+version_commit = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
 if version_commit.returncode() != 0
   version_commit = 0
 else
@@ -30,7 +33,7 @@ else
 endif
 
 # Get gittap
-gittap  = run_command('git', '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
+gittap  = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
 if gittap.returncode() != 0
   gittap = ''
 else
@@ -38,7 +41,7 @@ else
 endif
 
 # Get gittip
-gittip  = run_command('git', '-C', repo, 'rev-parse', 'HEAD')
+gittip  = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
 if gittip.returncode() != 0
   gittip = 'unknown'
 else
@@ -149,7 +152,7 @@ r_version_h = configure_file(input: 'libr/include/r_version.h.in',
 install_headers(r_version_h, subdir: 'libr')
 
 # Copy missing header
-run_command('python', '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
+run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
 
 
 pcconf = configuration_data()
@@ -200,7 +203,7 @@ install_subdir('shlr/www',
   install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version)
 )
 
-patterned_filelist = ['python', '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
+patterned_filelist = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 fortunes_files = run_command(patterned_filelist + ['doc/fortunes.*']).stdout().strip().split(';')
 install_data(fortunes_files,
@@ -220,7 +223,7 @@ install_data(man7_files,
 custom_target('hud',
   input: 'doc/hud',
   output: 'main',
-  command: ['python', '-c', 'from sys import argv; __import__("shutil").copy(argv[1], argv[2])', '@INPUT@', '@OUTPUT@'],
+  command: [py3_exe, '-c', 'from sys import argv; __import__("shutil").copy(argv[1], argv[2])', '@INPUT@', '@OUTPUT@'],
   build_by_default: true,
   build_always: false,
   install: true,

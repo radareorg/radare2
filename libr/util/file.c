@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -574,9 +574,13 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 	return true;
 }
 
-R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
+R_API bool r_file_touch(const char *file) {
+	return r_file_dump(file, NULL, 0, true);
+}
+
+R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 	FILE *fd;
-	if (!file || !*file || !buf || len < 0) {
+	if (!file || !*file) {
 		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
 		return false;
 	}
@@ -593,7 +597,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	if (len < 0) {
 		len = strlen ((const char *)buf);
 	}
-	if (fwrite (buf, len, 1, fd) != 1) {
+	if (len > 0 && fwrite (buf, len, 1, fd) != 1) {
 		r_sys_perror ("r_file_dump: fwrite: error\n");
 		fclose (fd);
 		return false;

@@ -1518,6 +1518,8 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 				}
 				r_anal_fcn_tree_delete (&a->fcn_tree, fcni);
 				r_list_delete (a->fcns, iter);
+			} else if (fcni->addr == addr) {
+				r_list_delete (a->fcns, iter);
 			}
 		}
 #endif

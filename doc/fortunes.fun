@@ -235,3 +235,6 @@ Can you you challenge a perfect immortal machine?
 Add more blockchains to your life.
 Congratulations! You got the segfault 1.000.000! Click [here] to win a prize!
 Well, it looks like it's working.
+There's more than one way to skin a cat
+git pull now
+git checkout hamster

@@ -207,7 +207,7 @@ done:
 	}
 	if (mode == 'l' && !curtheme && !r_list_empty (files)) {
 		//nextpal (core, mode);
-	} else if (mode != 'j') {
+	} else if (mode == 'n' || mode == 'p') {
 		if (curtheme) {
 			r_core_cmdf (core, "eco %s", curtheme);
 		}
@@ -445,17 +445,30 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "ed"
-		{
+		if (input[1] == '?') {
+			eprintf ("Usage: ed[-][?] - edit ~/.radare2rc with cfg.editor\n");
+			eprintf ("NOTE: ~ is HOME and this can be changed with %%HOME=/tmp\n");
+			eprintf ("  ed    : ${cfg.editor} ~/.radare2rc\n");
+			eprintf ("  ed-   : rm ~/.radare2rc\n");
+		} else if (input[1] == '-') {
+			char *file = r_str_home (".radare2rc");
+			r_cons_printf ("rm %s\n", file);
+			// r_file_rm (file);
+			free (file);
+		} else {
+			char *file = r_str_home (".radare2rc");
 			if (r_config_get_i (core->config, "scr.interactive")) {
-				char *file = r_str_home(".radare2rc");
+				r_file_touch (file);
 				char * res = r_cons_editor (file, NULL);
 				if (res) {
 					if (r_cons_yesno ('y', "Reload? (Y/n)")) {
 						r_core_run_script (core, file);
 					}
 				}
-				free (file);
+			} else {
+				r_core_run_script (core, file);
 			}
+			free (file);
 		}
 		break;
 	case 'e': // "ee"
