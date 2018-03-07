@@ -9,11 +9,9 @@
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)
 
 R_API void r_cons_canvas_free(RConsCanvas *c) {
-	if (c) {
-		free (c->b);
-		free (c->attrs);
-		free (c);
-	}
+	free (c->b);
+	free (c->attrs);
+	free (c);
 }
 
 R_API void r_cons_canvas_clear(RConsCanvas *c) {
