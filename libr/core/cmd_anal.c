@@ -6141,7 +6141,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
-		r_core_cmd0 (core, "af @ entry0");
+		r_core_cmd0 (core, "af @@ entry*");
 		break;
 	case 'd': // "aad"
 		cmd_anal_aad (core, input);
@@ -6157,7 +6157,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 's':
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
-		r_core_cmd0 (core, "af @ entry0");
+		r_core_cmd0 (core, "af @@ entry*");
 		break;
 	case 'n':
 		r_core_anal_autoname_all_fcns (core);
