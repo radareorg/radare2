@@ -796,6 +796,7 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
+	bool offset_prompt;
 }; /* RLine */
 
 #ifdef R_API

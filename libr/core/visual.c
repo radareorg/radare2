@@ -845,6 +845,7 @@ static void reset_print_cur(RPrint *p) {
 static void visual_offset(RCore *core) {
 	char buf[256];
 	r_line_set_prompt ("[offset]> ");
+	core->cons->line->offset_prompt = true;
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
 		if (buf[2] == '.') {
@@ -852,6 +853,7 @@ static void visual_offset(RCore *core) {
 		}
 		r_core_cmd0 (core, buf);
 		reset_print_cur (core->print);
+		core->cons->line->offset_prompt = false;
 	}
 }
 

@@ -313,7 +313,7 @@ static int r_line_hist_up() {
 	if (!I.history.data) {
 		inithist ();
 	}
-	if (!strcmp (r_line_get_prompt(), "[offset]> ")) {
+    if (I.offset_prompt) {
 		while (I.history.index > 0 && I.history.data[--I.history.index][0] != 's' );
 		int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
 		strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
@@ -345,7 +345,7 @@ static int r_line_hist_down() {
 		I.buffer.index = I.buffer.length = 0;
 		return false;
 	}
-	if (!strcmp (r_line_get_prompt(), "[offset]> ")) {
+    if (I.offset_prompt) {
 		while (I.history.index != I.history.top && I.history.data[I.history.index++][0] != 's' );
 		I.history.index--;
 		int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
