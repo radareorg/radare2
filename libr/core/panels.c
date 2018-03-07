@@ -199,7 +199,6 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	}
 }
 
-
 static void Layout_run(Panel *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
