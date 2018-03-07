@@ -4,7 +4,7 @@
    |    (  -  | |  ) -  |   (   _/  /  __/
    |__\__|_|__|___/__|__|_\__|___|  |____|
 
-                www.radare.org
+                https://www.radare.org
 
                                   --pancake
 ```
@@ -210,7 +210,7 @@ in the project root.
 
 # Pointers
 
-Website: http://www.radare.org/
+Website: https://www.radare.org/
 
 IRC: irc.freenode.net #radare
 
