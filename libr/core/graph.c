@@ -2879,8 +2879,14 @@ static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 static void follow_nth(RAGraph *g, int nth) {
 	const RGraphNode *cn = r_graph_nth_neighbour (g->graph, g->curnode, nth);
-	if (cn) {
-		r_agraph_set_curnode (g, get_anode (cn));
+	RANode *a = get_anode (cn);
+
+	while (a && a->is_dummy) {
+		cn = r_graph_nth_neighbour (g->graph, a->gnode, 0);
+		a = get_anode (cn);
+	}
+	if (a) {
+		r_agraph_set_curnode (g, a);
 	}
 }
 
