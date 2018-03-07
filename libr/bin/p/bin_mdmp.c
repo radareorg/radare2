@@ -248,8 +248,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = R_BIN_SCN_MAP;
-		ptr->srwx |= r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 	}
@@ -268,8 +267,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = R_BIN_SCN_MAP;
-		ptr->srwx |= r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 
@@ -291,7 +289,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
-		ptr->srwx = R_BIN_SCN_MAP;
+		ptr->srwx = 0;
 
 		r_list_append (ret, ptr);
 
@@ -343,8 +341,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module->start_of_memory_range;
 		ptr->size = (location->data_size);
-		ptr->perms = R_BIN_SCN_MAP;
-		ptr->perms |= r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -366,8 +363,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module64->start_of_memory_range;
 		ptr->size = module64->data_size;
-		ptr->perms = R_BIN_SCN_MAP;
-		ptr->perms |= r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;

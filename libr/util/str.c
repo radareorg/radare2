@@ -17,32 +17,23 @@
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 static const char *rwxstr[] = {
-	[0] = "----",
-	[1] = "---x",
-	[2] = "--w-",
-	[3] = "--wx",
-	[4] = "-r--",
-	[5] = "-r-x",
-	[6] = "-rw-",
-	[7] = "-rwx",
+	[0] = "---",
+	[1] = "--x",
+	[2] = "-w-",
+	[3] = "-wx",
+	[4] = "r--",
+	[5] = "r-x",
+	[6] = "rw-",
+	[7] = "rwx",
 
-	[8] = "----",
-	[9] = "---x",
-	[10] = "--w-",
-	[11] = "--wx",
-	[12] = "-r--",
-	[13] = "-r-x",
-	[14] = "-rw-",
-	[15] = "-rwx",
-
-	[16] = "m---",
-	[17] = "m--x",
-	[18] = "m-w-",
-	[19] = "m-wx",
-	[20] = "mr--",
-	[21] = "mr-x",
-	[22] = "mrw-",
-	[23] = "mrwx",
+	[8] = "---",
+	[9] = "--x",
+	[10] = "-w-",
+	[11] = "-wx",
+	[12] = "r--",
+	[13] = "r-x",
+	[14] = "rw-",
+	[15] = "rwx",
 };
 
 // In-place replace the first instance of the character a, with the character b.

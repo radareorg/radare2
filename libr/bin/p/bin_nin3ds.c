@@ -66,7 +66,7 @@ static RList *sections(RBinFile *bf) {
 			sections[i]->vsize = loaded_header.sections[i].size;
 			sections[i]->paddr = loaded_header.sections[i].offset;
 			sections[i]->vaddr = loaded_header.sections[i].address;
-			sections[i]->srwx = r_str_rwx ("mrwx");
+			sections[i]->srwx = r_str_rwx ("rwx");
 			sections[i]->add = true;
 		}
 	}

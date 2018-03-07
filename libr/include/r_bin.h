@@ -18,7 +18,6 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_SCN_WRITABLE   (1 << 1)
 #define R_BIN_SCN_READABLE   (1 << 2)
 #define R_BIN_SCN_SHAREABLE  (1 << 3)
-#define R_BIN_SCN_MAP        (1 << 4)
 
 #define R_BIN_DBG_STRIPPED 0x01
 #define R_BIN_DBG_STATIC   0x02

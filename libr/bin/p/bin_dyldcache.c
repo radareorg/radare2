@@ -205,7 +205,7 @@ static RList* sections(RBinFile *bf) {
 	if (!ptr->vaddr) {
 		ptr->vaddr = ptr->paddr;
 	}
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE;
 	r_list_append (ret, ptr);
 	return ret;
 }

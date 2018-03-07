@@ -1902,7 +1902,7 @@ static RList *sections(RBinFile *bf) {
 		strcpy (ptr->name, "header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -1912,7 +1912,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->vsize = ptr->size;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -1921,7 +1921,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->vsize = ptr->size;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -1937,7 +1937,7 @@ static RList *sections(RBinFile *bf) {
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; //|2;
+		ptr->srwx = R_BIN_SCN_READABLE; //|2;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}

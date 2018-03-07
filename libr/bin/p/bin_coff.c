@@ -151,7 +151,7 @@ static RList *sections(RBinFile *bf) {
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
 			ptr->add = true;
-			ptr->srwx = R_BIN_SCN_MAP;
+			ptr->srwx = 0;
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
 			}

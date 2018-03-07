@@ -132,7 +132,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = r_read_ble32 (buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr (bf);
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -148,7 +148,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->vsize = ptr->size + (ptr->size % 4096);
 		ptr->paddr = r_read_ble32 (buf + 40, false);
 		ptr->vaddr = ptr->paddr + baddr (bf);
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+		ptr->srwx = R_BIN_SCN_READABLE; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
