@@ -222,6 +222,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
 	bool debug = r_config_get_i (core->config, "cfg.debug");
+	bool nopskip = r_config_get_i (core->config, "anal.nopskip");
 
 	block_list = r_list_new ();
 	if (!block_list) {
@@ -257,6 +258,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_NOP:
+				if (nopskip && b_start == start + cur) {
+					b_start = start + cur + op->size;
+				}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
 			if (r_anal_noreturn_at (core->anal, op->jump)) {
