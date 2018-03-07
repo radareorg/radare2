@@ -489,6 +489,8 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	fflush (stderr);
 	r_cons_set_raw (true);
 	(void)read (0, &key, 1);
+	write (2, " ", 1);
+	write (2, &key, 1);
 	write (2, "\n", 1);
 	if (key == 'Y') {
 		key = 'y';
