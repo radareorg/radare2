@@ -195,12 +195,12 @@ static ut32 getimmed8(const char *str) {
 	}
 }
 
-int firstsigdigit (unsigned int num) {
-	int f = -1;
-	int b = -1;
-	unsigned int forwardmask = 0x80000000;
-	unsigned int backwardmask = 0x1;
-	for (int i = 0;i<32; i++ ) {
+st32 firstsigdigit (ut32 num) {
+	st32 f = -1;
+	st32 b = -1;
+	ut32 forwardmask = 0x80000000;
+	ut32 backwardmask = 0x1;
+	for (st32 i = 0; i < 32; i++ ) {
 		if ( (forwardmask & num) && (f == -1)) {
 			f = i;
 		}
@@ -213,9 +213,8 @@ int firstsigdigit (unsigned int num) {
 
 	if ((b-f) < 9) {
 		return f;
-	} else {
-		return -1;
 	}
+	return -1;
 }
 
 static ut32 getthimmed12(const char *str) {
@@ -223,7 +222,7 @@ static ut32 getthimmed12(const char *str) {
 	if (err) {
 		return 0;
 	}
-	int FSD = 0;
+	st32 FSD = 0;
 	ut32 result = 0;
 	if (num <= 0xff) {
 		return num << 16;
