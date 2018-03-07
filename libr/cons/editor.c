@@ -57,8 +57,9 @@ static void filesave() {
 	}
 	if (lines) {
 		for (i = 0; i < bytes; i++) {
-			if (lines[i] == '\0')
+			if (lines[i] == '\0') {
 				lines[i] = '\n';
+			}
 		}
 	}
 	if (r_file_dump (path, (const ut8 *)lines, bytes, 0)) {

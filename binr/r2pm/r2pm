@@ -20,15 +20,29 @@ export MAKE
 export GLOBAL=0
 export R2PM_JOBS=4
 export R2VERSION="`r2 -qv`"
+export R2PMCACHE="$HOME/.r2pm.cache"
 
 R2PM=$0
-PREFIX="`r2 -H PREFIX`"
+R2PMCACHE_LOADED=0
+if [ -f ~/.r2pm.cache ]; then
+	. ~/.r2pm.cache
+	export LIBEXT="$LIBEXT"
+	export R2HOMEDIR="$R2HOMEDIR"
+	PREFIX="$PREFIX"
+	if [ -z "${LIBEXT}" -o -z "${R2HOMEDIR}" -o -z "${PREFIX}" ]; then
+		echo "[r2pm] corrupted cache, please run r2pm cache"
+	else
+		R2PMCACHE_LOADED=1
+	fi
+fi
+if [ "${R2PMCACHE_LOADED}" != 1 ]; then
+	export LIBEXT="`r2 -H LIBEXT`"
+	export R2HOMEDIR="`r2 -H RHOMEDIR`"
+	PREFIX="`r2 -H PREFIX`"
+fi
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
-
-export LIBEXT="`r2 -H LIBEXT`"
-export R2HOMEDIR="`r2 -H RHOMEDIR`"
 
 # prefix
 export R2PM_SYSPREFIX="${PREFIX}"
@@ -552,6 +566,12 @@ ls)
 		exit 1
 	fi
 	;;
+cache)
+	echo "export LIBEXT=\"${LIBEXT}\"" > "${R2PMCACHE}"
+	echo "export R2HOMEDIR=\"${R2HOMEDIR}\"" >> "${R2PMCACHE}"
+	echo "export PREFIX=\"${PREFIX}\"" >> "${R2PMCACHE}"
+	echo "[r2pm] r2 environment cached in ${R2PMCACHE}"
+	;;
 -a|add)
 	if [ "$2" = "help" ]; then
 		printf '%s\n' \
@@ -639,6 +659,7 @@ Commands:
  cd [git/dir]                cd into given git (see 'r2pm ls')
  ls                          ls all cloned git repos in GITDIR
  suicide                     self remove all (home + system) installations of r2
+ cache                       cache contents of r2 -H to make r2pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
  R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins
