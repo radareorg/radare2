@@ -271,7 +271,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
-	if (STRNULL (name)) {
+	if (!cfg || STRNULL (name)) {
 		return NULL;
 	}
 	return ht_find (cfg->ht, name, NULL);

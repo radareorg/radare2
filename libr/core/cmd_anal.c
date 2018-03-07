@@ -3098,14 +3098,8 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-static const ut8 *modify_read_window(void *anal_, ut64 new_addr, int new_len) {
-	RAnal *anal = anal_;
-	ut8 *buf = calloc (new_len, 1);
-	if (!buf) {
-		return NULL;
-	}
-	(void)r_io_read_at (anal->iob.io, new_addr, buf, new_len);
-	return buf;
+static bool read_at(RAnal *anal, ut64 addr, ut8 *buf, int len) {
+	return r_io_read_at (anal->iob.io, addr, buf, len);
 }
 
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
@@ -3129,7 +3123,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return 0;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		core->anal->cb.modify_read_window = modify_read_window;
+		core->anal->read_at = read_at;
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
@@ -6147,7 +6141,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
-		r_core_cmd0 (core, "af @ entry0");
+		r_core_cmd0 (core, "af @@ entry*");
 		break;
 	case 'd': // "aad"
 		cmd_anal_aad (core, input);
@@ -6163,7 +6157,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 's':
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
-		r_core_cmd0 (core, "af @ entry0");
+		r_core_cmd0 (core, "af @@ entry*");
 		break;
 	case 'n':
 		r_core_anal_autoname_all_fcns (core);

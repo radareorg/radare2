@@ -1699,6 +1699,19 @@ static int cb_scrstrconv(void *user, void *data) {
 	return true;
 }
 
+static int cb_graphdummy(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (!strcmp (node->value, "?")) {
+		r_cons_printf ("dot\ngml\ngmlfcn\n");
+		return false;
+	}
+	if (core->graph) {
+		core->graph->use_dummynodes = node->i_value; 
+	}
+	return true;
+}
+
 static int cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (!strcmp (node->value, "?")) {
@@ -2722,6 +2735,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
 
 	/* graph */
+	SETCB ("graph.dummy", "true", &cb_graphdummy, "Add dummy nodes to improve edge");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
 	SETCB ("graph.format", "dot", &cb_graphformat, "Specify output format for graphs (dot, gml, gmlfcn)");
