@@ -98,3 +98,8 @@ r2-static/*
 binr/rasign2/rasign2
 binr/rasign2/rasign2.exe
 compile_commands.json
+# CLion
+.idea/
+CMakeLists.txt
+*.cmake
+cmake-build-*
