@@ -1088,6 +1088,7 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "wtf ", 4)
 		|| !strncmp (line->buffer.data, "wxf ", 4)
 		|| !strncmp (line->buffer.data, "dml ", 4)
+		|| !strncmp (line->buffer.data, "vim ", 4)
 		|| !strncmp (line->buffer.data, "less ", 5)
 		|| !strncmp (line->buffer.data, "ls -l ", 6)) {
 			autocompleteFilename (line, NULL, 1);

@@ -361,7 +361,7 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 
 	if (isvert) {
 		if (x2 == x) {
-			draw_vertical_line (c, x, y + 1, diff_y);
+			draw_vertical_line (c, x, y + 1, diff_y + 1);
 		} else if (y2 - y > 1) {
 			int h1 = 1 + bendpoint;
 			int h2 = diff_y - h1;
@@ -423,7 +423,7 @@ R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, i
 		draw_horizontal_line (c, min_x1, y + ybendpoint1 + 2, w1, REV_APEX_APEX);
 		draw_vertical_line (c, xbendpoint, y2 - ybendpoint2 + 1, diff_y - 1);
 		draw_horizontal_line (c, min_x2, y2 - ybendpoint2, w2, DOT_DOT);
-		draw_vertical_line (c, x2, y2 - ybendpoint2 + 1, ybendpoint2);
+		draw_vertical_line (c, x2, y2 - ybendpoint2 + 1, ybendpoint2 + 1);
 	} else {
 		int miny1 = R_MIN (y, xbendpoint);
 		int miny2 = R_MIN (y2, xbendpoint);
