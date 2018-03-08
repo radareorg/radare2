@@ -109,8 +109,8 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
 
-		io->cb_printf ("{\"Permissions\":\"%s\",\"Name\":\"%s\",\"Description\":\"%s\",\"License\":\"%s\"",
-				str, plugin->name,
+		io->cb_printf ("%s{\"Permissions\":\"%s\",\"Name\":\"%s\",\"Description\":\"%s\",\"License\":\"%s\"",
+				n? "," : "", str, plugin->name,
 			plugin->desc, plugin->license);
 		if (plugin->version) {
 			io->cb_printf (",\"version\":\"%s\"", plugin->version);
