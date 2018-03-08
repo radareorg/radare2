@@ -843,7 +843,7 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
-static int offset_history_up(RLine *line) {
+R_API int offset_history_up(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
 	if (line->offset_index <= -undo->undos) {
@@ -851,11 +851,9 @@ static int offset_history_up(RLine *line) {
 	}
 	line->offset_index--;
 	ut64 off = undo->seek[undo->idx + line->offset_index].off;
-	core->flags->space_strict = true;
-	RFlagItem *f = r_flag_get_at (core->flags, off, true);
-	core->flags->space_strict = false;
+	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command;
-	if (f && f->offset == off) {
+	if (f && f->offset == off && f->offset > 0) {
 		command = r_str_newf ("%s", f->name);
 	}
 	else {
@@ -866,7 +864,7 @@ static int offset_history_up(RLine *line) {
 	return true;
 }
 
-static int offset_history_down(RLine *line) {
+R_API int offset_history_down(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
 	if (line->offset_index >= undo->redos) {
@@ -879,11 +877,9 @@ static int offset_history_down(RLine *line) {
 		return false;
 	}
 	ut64 off = undo->seek[undo->idx + line->offset_index].off;
-	core->flags->space_strict = true;
-	RFlagItem *f = r_flag_get_at (core->flags, off, true);
-	core->flags->space_strict = false;
+	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command;
-	if (f && f->offset == off) {
+	if (f && f->offset == off && f->offset > 0) {
 		command = r_str_newf ("%s", f->name);
 	}
 	else {
@@ -896,9 +892,9 @@ static int offset_history_down(RLine *line) {
 
 static void visual_offset(RCore *core) {
 	char buf[256];
-	r_line_set_prompt ("[offset]> ");
 	core->cons->line->offset_prompt = true;
 	r_line_set_hist_callback (core->cons->line, &offset_history_up, &offset_history_down);
+	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
 		if (buf[2] == '.') {
