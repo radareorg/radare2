@@ -72,17 +72,29 @@ static void do_hash_seed(const char *seed) {
 
 static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
 	int i;
-	if (ule) {
-		for (i = len - 1; i >= 0; i--) {
-			printf ("%02x", c[i]);
+	if (!len) {
+		double e = r_hash_entropy (buf, len);
+		if (rad) {
+			printf ("entropy: %.8f\n", e);
+		} else {
+			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %.8f: ",
+				from, to > 0? to - 1: 0, e);
+			r_print_progressbar (NULL, 12.5 * e, 60);
+			printf ("\n");
 		}
 	} else {
-		for (i = 0; i < len; i++) {
-			printf ("%02x", c[i]);
+		if (ule) {
+			for (i = len - 1; i >= 0; i--) {
+				printf ("%02x", c[i]);
+			}
+		} else {
+			for (i = 0; i < len; i++) {
+				printf ("%02x", c[i]);
+			}
 		}
-	}
-	if (rad != 'j') {
-		printf ("\n");
+		if (rad != 'j') {
+			printf ("\n");
+		}
 	}
 }
 
@@ -130,12 +142,12 @@ static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int 
 	if (!print) {
 		return 1;
 	}
-	if (hash == R_HASH_ENTROPY) {
+	if (hash | R_HASH_ENTROPY) {
 		double e = r_hash_entropy (buf, len);
 		if (rad) {
-			eprintf ("entropy: %10f\n", e);
+			eprintf ("entropy: %.8f\n", e);
 		} else {
-			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %10f: ",
+			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %.8f: ",
 				from, to > 0? to - 1: 0, e);
 			r_print_progressbar (NULL, 12.5 * e, 60);
 			printf ("\n");
