@@ -797,6 +797,7 @@ struct r_line_t {
 	char *contents;
 	bool zerosep;
 	bool offset_prompt;
+	int offset_index;
 }; /* RLine */
 
 #ifdef R_API

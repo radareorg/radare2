@@ -846,6 +846,7 @@ static void visual_offset(RCore *core) {
 	char buf[256];
 	r_line_set_prompt ("[offset]> ");
 	core->cons->line->offset_prompt = true;
+	core->cons->line->offset_index = 0;
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
 		if (buf[2] == '.') {

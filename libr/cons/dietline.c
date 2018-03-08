@@ -16,6 +16,7 @@
 #define USE_UTF8 1
 #endif
 
+
 static char *r_line_nullstr = "";
 static const char dl_basic_word_break_characters[] =  " \t\n\"\\'`@$><=;|&{(";
 
@@ -314,9 +315,15 @@ static int r_line_hist_up() {
 		inithist ();
 	}
     if (I.offset_prompt) {
-		while (I.history.index > 0 && I.history.data[--I.history.index][0] != 's' );
-		int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
-		strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
+        RCore *core = I.user;
+        RIOUndo *undo = &core->io->undo;
+        char line[R_LINE_BUFSIZE - 1];
+        if (I.offset_index <= -undo->undos) {
+            return false;
+        }
+        I.offset_index--;
+        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index]);
+        strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		return true;
 	}
@@ -332,6 +339,24 @@ static int r_line_hist_down() {
 	if (I.hist_down) {
 		return I.hist_down (I.user);
 	}
+    if (I.offset_prompt) {
+        RCore *core = I.user;
+        RIOUndo *undo = &core->io->undo;
+        if (I.offset_index >= undo->redos) {
+            return false;
+        }
+        I.offset_index++;
+        if (I.offset_index == undo->redos) {
+            I.buffer.data[0] = '\0';
+            I.buffer.index = I.buffer.length = 0;
+            return false;
+        }
+        char line[R_LINE_BUFSIZE - 1];
+        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index]);
+        strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
+        I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+        return true;
+    }
 	I.buffer.index = 0;
 	if (!I.history.data) {
 		inithist ();
@@ -344,14 +369,6 @@ static int r_line_hist_down() {
 		I.buffer.data[0] = '\0';
 		I.buffer.index = I.buffer.length = 0;
 		return false;
-	}
-    if (I.offset_prompt) {
-		while (I.history.index != I.history.top && I.history.data[I.history.index++][0] != 's' );
-		I.history.index--;
-		int skip_whitespace = I.history.data[I.history.index][1] == ' ' ? 2 : 1;
-		strncpy (I.buffer.data, I.history.data[I.history.index] + skip_whitespace, R_LINE_BUFSIZE - 1);
-		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-		return true;
 	}
 	if (I.history.data[I.history.index]) {
 		strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE - 1);
