@@ -5518,9 +5518,7 @@ static int lenof(ut64 off, int two) {
 	return strlen (buf);
 }
 
-// TODO : move to r_util? .. depends on r_cons...
-// XXX: dupe of r_print_addr
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
+R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label) {
 	char space[32] = {
 		0
 	};
@@ -5538,7 +5536,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offde
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
-			s = (off - a) >> 4;
+			s = (off - a) >> seggrn;
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 				white = r_str_pad (' ', 9 - strlen (space));
@@ -5588,7 +5586,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offde
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
-			s = (off - a) >> 4;
+			s = (off - a) >> seggrn;
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 				white = r_str_pad (' ', 9 - strlen (space));
@@ -5617,4 +5615,10 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offde
 			}
 		}
 	}
+}
+
+// TODO : move to r_util? .. depends on r_cons...
+// XXX: dupe of r_print_addr
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
+	r_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
 }
