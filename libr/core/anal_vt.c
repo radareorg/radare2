@@ -35,23 +35,23 @@ static void vtable_begin(RCore *core, VTableContext *context) {
 static RList* vtable_get_methods(VTableContext *context, vtable_info *table) {
 	RCore *core = context->core;
 	RList* vtableMethods = r_list_new ();
-	if (table && core && vtableMethods) {
-		int curMethod = 0;
-		int totalMethods = table->methods;
-		ut64 startAddress = table->saddr;
-		while (curMethod < totalMethods) {
-			ut64 curAddressValue;
-			r_io_read_i (core->io, startAddress, &curAddressValue, 8, false);	//XXX
-			RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
-			r_list_append (vtableMethods, curFuntion);
-			startAddress += context->wordSize;
-			curMethod++;
-		}
-		table->funtions = vtableMethods;
-		return vtableMethods;
+	if (!table || !core || !vtableMethods) {
+		r_list_free (vtableMethods);
+		return NULL;
 	}
-	r_list_free (vtableMethods);
-	return NULL;
+	int curMethod = 0;
+	int totalMethods = table->methods;
+	ut64 startAddress = table->saddr;
+	while (curMethod < totalMethods) {
+		ut64 curAddressValue;
+		r_io_read_i (core->io, startAddress, &curAddressValue, context->wordSize, context->bigendian);
+		RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
+		r_list_append (vtableMethods, curFuntion);
+		startAddress += context->wordSize;
+		curMethod++;
+	}
+	table->funtions = vtableMethods;
+	return vtableMethods;
 }
 
 static int vtable_addr_in_text_section(VTableContext *context, ut64 curAddress) {
@@ -64,7 +64,7 @@ static int vtable_addr_in_text_section(VTableContext *context, ut64 curAddress) 
 static int vtable_is_value_in_text_section(VTableContext *context, ut64 curAddress) {
 	//value at the current address
 	ut64 curAddressValue;
-	r_io_read_i (context->core->io, curAddress, &curAddressValue, 8, false);	//XXX
+	r_io_read_i (context->core->io, curAddress, &curAddressValue, context->wordSize, context->bigendian);
 	//if the value is in text section
 	return vtable_addr_in_text_section (context, curAddressValue);
 }
@@ -76,10 +76,9 @@ static bool vtable_section_can_contain_vtables(VTableContext *context, RBinSecti
 }
 
 static int vtable_is_addr_vtable_start(VTableContext *context, ut64 curAddress) {
-	RAsmOp asmop = R_EMPTY;
 	RAnalRef *xref;
 	RListIter *xrefIter;
-	ut8 buf[VTABLE_BUFF_SIZE];
+
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
 	}
@@ -94,12 +93,15 @@ static int vtable_is_addr_vtable_start(VTableContext *context, ut64 curAddress) 
 	r_list_foreach (xrefs, xrefIter, xref) {
 		// section in which currenct xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
+			ut8 buf[VTABLE_BUFF_SIZE];
 			r_io_read_at (context->core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
-			if (!r_asm_disassemble (context->core->assembler, &asmop, buf, VTABLE_BUFF_SIZE) > 0) {
-				continue;
-			}
-			if ((!strncmp (asmop.buf_asm, "mov", 3)) ||
-				(!strncmp (asmop.buf_asm, "lea", 3))) {
+
+			RAnalOp analop = { 0 };
+			r_anal_op (context->core->anal, &analop, xref->addr, buf, VTABLE_BUFF_SIZE);
+			r_anal_op_fini (&analop);
+
+			if (analop.type == R_ANAL_OP_TYPE_MOV
+				|| analop.type == R_ANAL_OP_TYPE_LEA) {
 				return true;
 			}
 		}
@@ -112,29 +114,30 @@ RList* vtable_search(VTableContext *context) {
 	if (!core) {
 		return NULL;
 	}
-	ut64 startAddress;
-	ut64 endAddress;
-	RListIter * iter;
-	RBinSection *section;
+
 	RList *vtables = r_list_newf ((RListFree)free);
 	if (!vtables) {
 		return NULL;
 	}
+
 	RList *sections = r_bin_get_sections (core->bin);
 	if (!sections) {
 		r_list_free (vtables);
 		return NULL;
 	}
-	ut64 bits = r_config_get_i (core->config, "asm.bits");
-	int wordSize = bits / 8;
+
+	RListIter *iter;
+	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
 		if (!vtable_section_can_contain_vtables (context, section)) {
 			continue;
 		}
-		ut8 *segBuff = calloc (1, section->vsize);
-		r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
-		startAddress = section->vaddr;
-		endAddress = startAddress + (section->vsize) - wordSize;
+
+		// ut8 *segBuff = calloc (1, section->vsize);
+		// r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
+
+		ut64 startAddress = section->vaddr;
+		ut64 endAddress = startAddress + (section->vsize) - context->wordSize;
 		while (startAddress <= endAddress) {
 			if (vtable_is_addr_vtable_start (context, startAddress)) {
 				vtable_info *vtable = calloc (1, sizeof(vtable_info));
@@ -142,7 +145,7 @@ RList* vtable_search(VTableContext *context) {
 				int noOfMethods = 0;
 				while (vtable_is_value_in_text_section (context, startAddress)) {
 					noOfMethods++;
-					startAddress += wordSize;
+					startAddress += context->wordSize;
 				}
 				vtable->methods = noOfMethods;
 				r_list_append (vtables, vtable);
@@ -151,6 +154,7 @@ RList* vtable_search(VTableContext *context) {
 			startAddress += 1;
 		}
 	}
+
 	if (r_list_empty (vtables)) {
 		// stripped binary?
 		eprintf ("No virtual tables found\n");
