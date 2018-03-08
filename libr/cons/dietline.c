@@ -321,7 +321,7 @@ static int r_line_hist_up() {
             return false;
         }
         I.offset_index--;
-        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index]);
+        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index].off);
         strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		return true;
@@ -351,7 +351,7 @@ static int r_line_hist_down() {
             return false;
         }
         char line[R_LINE_BUFSIZE - 1];
-        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index]);
+        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index].off);
         strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
         I.buffer.index = I.buffer.length = strlen (I.buffer.data);
         return true;
