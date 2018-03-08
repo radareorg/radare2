@@ -3098,10 +3098,6 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-static bool read_at(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	return r_io_read_at (anal->iob.io, addr, buf, len);
-}
-
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
@@ -3123,7 +3119,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return 0;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		core->anal->read_at = read_at;
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
