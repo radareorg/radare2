@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
+#include <r_cons.h>
 
 static int obs = 0;
 static int blocksize = 0;
@@ -842,8 +843,57 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
+R_API int offset_history_up(RLine *line) {
+	RCore *core = line->user;
+	RIOUndo *undo = &core->io->undo;
+	if (line->offset_index <= -undo->undos) {
+		return false;
+	}
+	line->offset_index--;
+	ut64 off = undo->seek[undo->idx + line->offset_index].off;
+	RFlagItem *f = r_flag_get_at (core->flags, off, false);
+	char *command;
+	if (f && f->offset == off && f->offset > 0) {
+		command = r_str_newf ("%s", f->name);
+	}
+	else {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
+	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	return true;
+}
+
+R_API int offset_history_down(RLine *line) {
+	RCore *core = line->user;
+	RIOUndo *undo = &core->io->undo;
+	if (line->offset_index >= undo->redos) {
+		return false;
+	}
+	line->offset_index++;
+	if (line->offset_index == undo->redos) {
+		line->buffer.data[0] = '\0';
+		line->buffer.index = line->buffer.length = 0;
+		return false;
+	}
+	ut64 off = undo->seek[undo->idx + line->offset_index].off;
+	RFlagItem *f = r_flag_get_at (core->flags, off, false);
+	char *command;
+	if (f && f->offset == off && f->offset > 0) {
+		command = r_str_newf ("%s", f->name);
+	}
+	else {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
+	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	return true;
+}
+
 static void visual_offset(RCore *core) {
 	char buf[256];
+	core->cons->line->offset_prompt = true;
+	r_line_set_hist_callback (core->cons->line, &offset_history_up, &offset_history_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
@@ -852,6 +902,8 @@ static void visual_offset(RCore *core) {
 		}
 		r_core_cmd0 (core, buf);
 		reset_print_cur (core->print);
+		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+		core->cons->line->offset_prompt = false;
 	}
 }
 

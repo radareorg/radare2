@@ -781,9 +781,14 @@ typedef struct r_line_comp_t {
 
 typedef char* (*RLineEditorCb)(void *core, const char *str);
 
+typedef int (*RLineHistoryUpCb)(RLine* line);
+typedef int (*RLineHistoryDownCb)(RLine* line);
+
 struct r_line_t {
 	RLineCompletion completion;
 	RLineHistory history;
+	RLineHistoryUpCb history_up_cb;
+	RLineHistoryDownCb history_down_cb;
 	RLineBuffer buffer;
 	RLineEditorCb editor_cb;
 	int echo;
@@ -796,6 +801,8 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
+	bool offset_prompt;
+	int offset_index;
 }; /* RLine */
 
 #ifdef R_API
@@ -819,6 +826,10 @@ R_API int r_line_hist_label(const char *label, void (*cb)(const char*));
 R_API void r_line_label_show(void);
 R_API int r_line_hist_list(void);
 R_API const char *r_line_hist_get(int n);
+
+R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);
+R_API int cmd_history_up(RLine *line);
+R_API int cmd_history_down(RLine *line);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 

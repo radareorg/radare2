@@ -278,6 +278,52 @@ do_it_again:
 }
 #endif
 
+R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up_cb, RLineHistoryDownCb down_cb) {
+	line->history_up_cb = up_cb;
+	line->history_down_cb = down_cb;
+	line->offset_index = 0;
+	return 1;
+}
+
+R_API int cmd_history_up(RLine *line) {
+	if (line->hist_up) {
+		return line->hist_up (line->user);
+	}
+	if (!line->history.data) {
+		inithist ();
+	}
+	if (line->history.index > 0) {
+		strncpy (line->buffer.data, line->history.data[--line->history.index], R_LINE_BUFSIZE - 1);
+		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+		return true;
+	}
+	return false;
+}
+
+R_API int cmd_history_down(RLine *line) {
+	if (line->hist_down) {
+		return line->hist_down (line->user);
+	}
+	line->buffer.index = 0;
+	if (!line->history.data) {
+		inithist ();
+	}
+	if (line->history.index == line->history.top) {
+		return false;
+	}
+	line->history.index++;
+	if (line->history.index == line->history.top) {
+		line->buffer.data[0] = '\0';
+		line->buffer.index = line->buffer.length = 0;
+		return false;
+	}
+	if (line->history.data[line->history.index]) {
+		strncpy (line->buffer.data, line->history.data[line->history.index], R_LINE_BUFSIZE - 1);
+		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	}
+	return true;
+}
+
 R_API int r_line_hist_add(const char *line) {
 	if (!line || !*line) {
 		return false;
@@ -307,42 +353,17 @@ R_API int r_line_hist_add(const char *line) {
 }
 
 static int r_line_hist_up() {
-	if (I.hist_up) {
-		return I.hist_up (I.user);
+	if (!I.history_up_cb) {
+		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
 	}
-	if (!I.history.data) {
-		inithist ();
-	}
-	if (I.history.index > 0) {
-		strncpy (I.buffer.data, I.history.data[--I.history.index], R_LINE_BUFSIZE - 1);
-		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-		return true;
-	}
-	return false;
+	return I.history_up_cb (&I);
 }
 
 static int r_line_hist_down() {
-	if (I.hist_down) {
-		return I.hist_down (I.user);
+	if (!I.history_down_cb) {
+		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
 	}
-	I.buffer.index = 0;
-	if (!I.history.data) {
-		inithist ();
-	}
-	if (I.history.index == I.history.top) {
-		return false;
-	}
-	I.history.index++;
-	if (I.history.index == I.history.top) {
-		I.buffer.data[0] = '\0';
-		I.buffer.index = I.buffer.length = 0;
-		return false;
-	}
-	if (I.history.data[I.history.index]) {
-		strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE - 1);
-		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-	}
-	return true;
+	return I.history_down_cb (&I);
 }
 
 R_API const char *r_line_hist_get(int n) {

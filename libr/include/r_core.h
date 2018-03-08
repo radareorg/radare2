@@ -612,6 +612,9 @@ R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
 R_API void r_core_syscmd_mkdir(const char *dir);
 
+R_API int offset_history_up(RLine *line);
+R_API int offset_history_down(RLine *line);
+
 // TODO : move into debug or syscall++
 R_API char *cmd_syscall_dostr(RCore *core, int num);
 /* tasks */

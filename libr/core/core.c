@@ -1231,9 +1231,11 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "agfl ", 5)
 		|| !strncmp (line->buffer.data, "aecu ", 5)
 		|| !strncmp (line->buffer.data, "aesu ", 5)
-		|| !strncmp (line->buffer.data, "aeim ", 5)) {
+		|| !strncmp (line->buffer.data, "aeim ", 5)
+		|| line->offset_prompt) {
 			int n, i = 0;
-			int sdelta = (line->buffer.data[1] == ' ')
+			int sdelta = line->offset_prompt 
+				? 0 : (line->buffer.data[1] == ' ')
 				? 2 : (line->buffer.data[2] == ' ')
 				? 3 : (line->buffer.data[3] == ' ')
 				? 4 : 5;
