@@ -335,8 +335,8 @@ static ut32 thumb_getshift(const char *str) {
 	const char *shifts[] = {
 		"LSL", "LSR", "ASR", "ROR", 0, "RRX"
 	};
-	char type[128];
-	char arg[128];
+	char *type;
+	char *arg;
 	char *space;
 	ut32 res = 0;
 	ut32 shift = false;
@@ -344,23 +344,24 @@ static ut32 thumb_getshift(const char *str) {
 	ut32 argn;
 	ut32 i;
 	
-	strncpy (type, str, sizeof (type) - 1);
-	// XXX strcasecmp is probably unportable
-	if (!strcasecmp (type, shifts[5])) {
+	type = strdup(str);
+
+	r_str_case(type,true);
+	
+	if (strcmp(type, shifts[5])) {
 		// handle RRX alias case
-		res |= 3 << 4;
+		res |= 3 << 20;
 		return res;
 	} else {
-		space = strchr (type, ' ');
+		space = strchr(type, ' ');
 		if (!space) {
 			return 0;
 		}
 		*space = 0;
-		strncpy (arg, ++space, sizeof(arg) - 1);
+		arg = strdup(++space);
 
 		for (i = 0; shifts[i]; i++) {
-			// XXX strcasecmp is probably unportable
-			if (!strcasecmp (type, shifts[i])) {
+			if (!strcmp (type, shifts[i])) {
 				shift = true;
 				break;
 			}
@@ -369,15 +370,15 @@ static ut32 thumb_getshift(const char *str) {
 			err = true;
 			return 0;
 		}
-		res |= i << 4;
+		res |= i << 20;
 		
 		argn = getnum(arg);
 		if (err || argn > 32) {
 			err = true;
 			return 0;
 		}
-		res |= ((argn & 0x1c) << 10);
-		res |= ((argn & 0x3) << 6);
+		res |= ((argn & 0x1c) << 26);
+		res |= ((argn & 0x3) << 22);
 
 		return res;
 	}
