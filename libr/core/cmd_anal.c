@@ -6416,29 +6416,25 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 			curClass = c->bin->cur->o->info->rclass;
 		}
 	}
-	if (curArch && !strcmp (curArch, "x86") && !strcmp (curClass, "elf")) {
-		const char * help_msg[] = {
-			"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
-			NULL};
-		switch (input[0]) {
-		case '*'://av*
-			r_core_anal_list_vtables_all (core);
-			break;
-		case 'j': //avj
-			r_core_anal_list_vtables (core, true);
-			break;
-		case 'r': //avr
-			r_core_anal_print_rtti (core);
-			break;
-		case '\0': //av
-			r_core_anal_list_vtables (core, false);
-			break;
-		default :
-			r_core_cmd_help (core, help_msg);
-			break;
-		}
-	} else {
-		eprintf ("Unsupported architecture to find vtables\n");
+	const char * help_msg[] = {
+		"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
+		NULL};
+	switch (input[0]) {
+	case '*':// "av*"
+		r_core_anal_list_vtables_all (core);
+		break;
+	case 'j': // "avj"
+		r_core_anal_list_vtables (core, true);
+		break;
+	case 'r': // "avr"
+		r_core_anal_print_rtti (core);
+		break;
+	case '\0': // "av"
+		r_core_anal_list_vtables (core, false);
+		break;
+	default :
+		r_core_cmd_help (core, help_msg);
+		break;
 	}
 }
 

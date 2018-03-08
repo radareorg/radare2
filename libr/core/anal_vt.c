@@ -1,3 +1,8 @@
+/* radare - LGPL - Copyright 2009-2018 - pancake, maijin */
+
+#include "r_util.h"
+#include "r_core.h"
+
 #define VTABLE_BUFF_SIZE 10
 
 typedef struct vtable_info_t {
@@ -44,6 +49,12 @@ static int valueInTextSection(RCore *core, ut64 curAddress) {
 	return inTextSection (core, curAddressValue);
 }
 
+static bool sectionCanContainVtables(RBinSection *section) {
+	return !strcmp(section->name, ".rodata") ||
+		   !strcmp(section->name, ".rdata") ||
+		   !strcmp(section->name, ".data.rel.ro");
+}
+
 static int isVtableStart(RCore *core, ut64 curAddress) {
 	RAsmOp asmop = R_EMPTY;
 	RAnalRef *xref;
@@ -52,28 +63,31 @@ static int isVtableStart(RCore *core, ut64 curAddress) {
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
 	}
-	if (valueInTextSection (core, curAddress)) {
-		// total xref's to curAddress
-		RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
-		if (!r_list_empty (xrefs)) {
-			r_list_foreach (xrefs, xrefIter, xref) {
-				// section in which currenct xref lies
-				if (inTextSection (core, xref->addr)) {
-					r_io_read_at (core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
-					if (r_asm_disassemble (core->assembler, &asmop, buf, VTABLE_BUFF_SIZE) > 0) {
-						if ((!strncmp (asmop.buf_asm, "mov", 3)) ||
-						    (!strncmp (asmop.buf_asm, "lea", 3))) {
-							return true;
-						}
-					}
-				}
+	if (!valueInTextSection (core, curAddress)) {
+		return false;
+	}
+	// total xref's to curAddress
+	RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
+	if (r_list_empty (xrefs)) {
+		return false;
+	}
+	r_list_foreach (xrefs, xrefIter, xref) {
+		// section in which currenct xref lies
+		if (inTextSection (core, xref->addr)) {
+			r_io_read_at (core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
+			if (!r_asm_disassemble (core->assembler, &asmop, buf, VTABLE_BUFF_SIZE) > 0) {
+				continue;
+			}
+			if ((!strncmp (asmop.buf_asm, "mov", 3)) ||
+				(!strncmp (asmop.buf_asm, "lea", 3))) {
+				return true;
 			}
 		}
 	}
 	return false;
 }
 
-RList* search_virtual_tables(RCore *core){
+RList* search_virtual_tables(RCore *core) {
 	if (!core) {
 		return NULL;
 	}
@@ -93,26 +107,27 @@ RList* search_virtual_tables(RCore *core){
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
 	int wordSize = bits / 8;
 	r_list_foreach (sections, iter, section) {
-		if (!strcmp (section->name, ".rodata")) {
-			ut8 *segBuff = calloc (1, section->vsize);
-			r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
-			startAddress = section->vaddr;
-			endAddress = startAddress + (section->vsize) - (bits/8);
-			while (startAddress <= endAddress) {
-				if (isVtableStart (core, startAddress)) {
-					vtable_info *vtable = calloc (1, sizeof(vtable_info));
-					vtable->saddr = startAddress;
-					int noOfMethods = 0;
-					while (valueInTextSection (core, startAddress)) {
-						noOfMethods++;
-						startAddress += wordSize;
-					}
-					vtable->methods = noOfMethods;
-					r_list_append (vtables, vtable);
-					continue;
+		if (!sectionCanContainVtables (section)) {
+			continue;
+		}
+		ut8 *segBuff = calloc (1, section->vsize);
+		r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
+		startAddress = section->vaddr;
+		endAddress = startAddress + (section->vsize) - wordSize;
+		while (startAddress <= endAddress) {
+			if (isVtableStart (core, startAddress)) {
+				vtable_info *vtable = calloc (1, sizeof(vtable_info));
+				vtable->saddr = startAddress;
+				int noOfMethods = 0;
+				while (valueInTextSection (core, startAddress)) {
+					noOfMethods++;
+					startAddress += wordSize;
 				}
-				startAddress += 1;
+				vtable->methods = noOfMethods;
+				r_list_append (vtables, vtable);
+				continue;
 			}
+			startAddress += 1;
 		}
 	}
 	if (r_list_empty (vtables)) {
