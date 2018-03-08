@@ -313,16 +313,16 @@ static int r_line_hist_up() {
 	if (!I.history.data) {
 		inithist ();
 	}
-    if (I.offset_prompt) {
-        RCore *core = I.user;
-        RIOUndo *undo = &core->io->undo;
-        char line[R_LINE_BUFSIZE - 1];
-        if (I.offset_index <= -undo->undos) {
-            return false;
-        }
-        I.offset_index--;
-        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index].off);
-        strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
+	if (I.offset_prompt) {
+		RCore *core = I.user;
+		RIOUndo *undo = &core->io->undo;
+		/*char line[R_LINE_BUFSIZE - 1];*/
+		if (I.offset_index <= -undo->undos) {
+		return false;
+		}
+		I.offset_index--;
+		char *line = r_str_newf("0x%"PFMT64x, undo->seek[undo->idx + I.offset_index].off);
+		strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		return true;
 	}
@@ -338,24 +338,23 @@ static int r_line_hist_down() {
 	if (I.hist_down) {
 		return I.hist_down (I.user);
 	}
-    if (I.offset_prompt) {
-        RCore *core = I.user;
-        RIOUndo *undo = &core->io->undo;
-        if (I.offset_index >= undo->redos) {
-            return false;
-        }
-        I.offset_index++;
-        if (I.offset_index == undo->redos) {
-            I.buffer.data[0] = '\0';
-            I.buffer.index = I.buffer.length = 0;
-            return false;
-        }
-        char line[R_LINE_BUFSIZE - 1];
-        sprintf(line, "0x%"PFMT64x, undo->seek[undo->idx + I.offset_index].off);
-        strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
-        I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-        return true;
-    }
+	if (I.offset_prompt) {
+		RCore *core = I.user;
+		RIOUndo *undo = &core->io->undo;
+		if (I.offset_index >= undo->redos) {
+		return false;
+		}
+		I.offset_index++;
+		if (I.offset_index == undo->redos) {
+		I.buffer.data[0] = '\0';
+		I.buffer.index = I.buffer.length = 0;
+		return false;
+		}
+		char *line = r_str_newf("0x%"PFMT64x, undo->seek[undo->idx + I.offset_index].off);
+		strncpy(I.buffer.data, line, R_LINE_BUFSIZE - 1);
+		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+		return true;
+	}
 	I.buffer.index = 0;
 	if (!I.history.data) {
 		inithist ();
