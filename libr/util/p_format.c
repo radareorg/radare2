@@ -2209,6 +2209,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			// nested structs seem to be handled correctly above!
 			if (arg[0] == 'E') {
 				char *end_fmt = strchr (arg, ' ');
+				if (!end_fmt) {
+					goto beach;
+				}
 				char *next_args = strchr (end_fmt+1, ' ');
 				if (next_args) {
 					while (*next_args != '\0') {

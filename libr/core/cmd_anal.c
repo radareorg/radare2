@@ -5670,19 +5670,11 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_agg);
 		break;
 	default:
-		if (!core->graph) {
-			core->graph = r_agraph_new (NULL, r_config_get_i (core->config, "graph.dummy"));
-		}
-		if (core->graph) {
-			if (!core->graph->can) {
-				core->graph->can = r_cons_canvas_new (1, 1);
-			}
-			core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
-			core->graph->can->color = r_config_get_i (core->config, "scr.color");
-			r_agraph_set_title (core->graph,
-					r_config_get (core->config, "graph.title"));
-			r_agraph_print (core->graph);
-		}
+		core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
+		core->graph->can->color = r_config_get_i (core->config, "scr.color");
+		r_agraph_set_title (core->graph,
+			r_config_get (core->config, "graph.title"));
+		r_agraph_print (core->graph);
 		break;
 	}
 }

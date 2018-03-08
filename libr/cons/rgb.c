@@ -203,18 +203,22 @@ static void r_cons_rgb_gen (char *outstr, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) 
 
 /* Return the computed color string for the specified color */
 R_API char *r_cons_rgb_str (char *outstr, RColor *rcolor) {
-	if (!rcolor || (!outstr && !(outstr = malloc (128)))) {
+	if (!rcolor) {
 		return NULL;
+	}
+	if (!outstr) {
+		outstr = calloc (32, 1);
 	}
 	*outstr = 0;
 	if (rcolor->a == ALPHA_RESET) {
-		sprintf (outstr, "%s", Color_RESET);
+		strcpy (outstr, Color_RESET);
 		return outstr;
 	}
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
 		r_cons_rgb_gen (outstr, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
 	}
+	// APPEND
 	r_cons_rgb_gen (outstr + strlen (outstr), rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
 
 	return outstr;
