@@ -850,7 +850,17 @@ static int offset_history_up(RLine *line) {
 		return false;
 	}
 	line->offset_index--;
-	char *command = r_str_newf ("0x%"PFMT64x, undo->seek[undo->idx + line->offset_index].off);
+	ut64 off = undo->seek[undo->idx + line->offset_index].off;
+	core->flags->space_strict = true;
+	RFlagItem *f = r_flag_get_at (core->flags, off, true);
+	core->flags->space_strict = false;
+	char *command;
+	if (f && f->offset == off) {
+		command = r_str_newf ("%s", f->name);
+	}
+	else {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
 	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
@@ -868,7 +878,17 @@ static int offset_history_down(RLine *line) {
 		line->buffer.index = line->buffer.length = 0;
 		return false;
 	}
-	char *command = r_str_newf ("0x%"PFMT64x, undo->seek[undo->idx + line->offset_index].off);
+	ut64 off = undo->seek[undo->idx + line->offset_index].off;
+	core->flags->space_strict = true;
+	RFlagItem *f = r_flag_get_at (core->flags, off, true);
+	core->flags->space_strict = false;
+	char *command;
+	if (f && f->offset == off) {
+		command = r_str_newf ("%s", f->name);
+	}
+	else {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
 	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
