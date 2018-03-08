@@ -16,7 +16,6 @@
 #define USE_UTF8 1
 #endif
 
-
 static char *r_line_nullstr = "";
 static const char dl_basic_word_break_characters[] =  " \t\n\"\\'`@$><=;|&{(";
 
