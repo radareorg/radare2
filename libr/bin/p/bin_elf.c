@@ -13,6 +13,48 @@
 static RBinInfo* info(RBinFile *bf);
 
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
+
+static int get_file_type(RBinFile *bf) {
+	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
+	char *type = Elf_(r_bin_elf_get_file_type (obj));
+
+	if (type) {
+		return (!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT;
+	}
+	return -1;
+}
+
+static RList *maps(RBinFile *bf) {
+	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
+	RList *core_maps = r_list_new();
+	bool ret;
+
+	ret = Elf_(r_bin_elf_get_maps)(obj, core_maps);
+	if (!ret) {
+		eprintf ("An error has ocurred while trying to read the coredump\n");
+		r_list_free (core_maps);
+	}
+	return core_maps;
+}
+
+static char* regstate(RBinFile *bf) {
+	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
+	if (obj->ehdr.e_machine != EM_AARCH64 &&
+		obj->ehdr.e_machine != EM_386 &&
+		obj->ehdr.e_machine != EM_X86_64) {
+		eprintf ("Cannot retrieve regstate on: %s (not yet supported)\n",
+					Elf_(r_bin_elf_get_machine_name)(obj));
+		return NULL;
+	}
+
+	int len = 0;
+	ut8 *regs = Elf_(r_bin_elf_grab_regstate) (obj, &len);
+	char *hexregs = (regs && len > 0) ? r_hex_bin2strdup (regs, len) : NULL;
+
+	free (regs);
+	return hexregs;
+}
+
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
@@ -45,7 +87,6 @@ static Sdb* get_sdb(RBinFile *bf) {
 
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	struct Elf_(r_bin_elf_obj_t) *res;
-	char *elf_type;
 	RBuffer *tbuf;
 
 	if (!buf || !sz || sz == UT64_MAX) {
@@ -57,19 +98,6 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
-
-	elf_type = Elf_(r_bin_elf_get_file_type (res));
-	if (elf_type && !strncmp (elf_type, "CORE", 4)) {
-		int len = 0;
-		ut8 *regs = Elf_(r_bin_elf_grab_regstate)(res, &len);
-		if (regs && len > 0) {
-			char *hexregs = r_hex_bin2strdup (regs, len);
-			eprintf ("arw %s\n", hexregs);
-			free (hexregs);
-		}
-		free (regs);
-	}
-	free (elf_type);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -1250,6 +1278,9 @@ RBinPlugin r_bin_plugin_elf = {
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
+	.file_type = &get_file_type,
+	.regstate = &regstate,
+	.maps = &maps,
 };
 
 #ifndef CORELIB
