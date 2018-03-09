@@ -180,14 +180,14 @@ static int cmd_plugins(void *data, const char *input) {
 		RCorePlugin *cp;
 		switch (input[1]) {
 		case 'j': {
-			r_cons_printf("{[");
+			r_cons_printf("[");
 			bool is_first_element = true;
 			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_cons_printf ("%s{\"Name:\":%s,\"Description:%s\"}",
+				r_cons_printf ("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
 					is_first_element? "" : ",", cp->name, cp->desc);
 				is_first_element = false;
 			}
-			r_cons_printf("}]\n");
+			r_cons_printf("]\n");
 			break;
 			}
 		case 0 :
