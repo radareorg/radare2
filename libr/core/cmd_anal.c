@@ -3,9 +3,6 @@
 #include "r_util.h"
 #include "r_core.h"
 
-/* hacky inclusion */
-#include "anal_vt.c"
-
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
@@ -6406,31 +6403,22 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 	return true;
 }
 
-static void r_anal_virtual_functions(void *core, const char* input) {
-	const char *curArch = NULL;
-	const char *curClass = NULL;
-	if (core) {
-		RCore *c = (RCore*)core;
-		if (c->bin && c->bin->cur && c->bin->cur->o && c->bin->cur->o->info) {
-			curArch = c->bin->cur->o->info->arch;
-			curClass = c->bin->cur->o->info->rclass;
-		}
-	}
+static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	const char * help_msg[] = {
 		"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
 		NULL};
 	switch (input[0]) {
 	case '*':// "av*"
-		r_core_anal_list_vtables_all (core);
+		r_anal_list_vtables_all (core->anal);
 		break;
 	case 'j': // "avj"
-		r_core_anal_list_vtables (core, true);
+		r_anal_list_vtables (core->anal, true);
 		break;
 	case 'r': // "avr"
-		r_core_anal_print_rtti (core);
+		r_anal_print_rtti (core->anal);
 		break;
 	case '\0': // "av"
-		r_core_anal_list_vtables (core, false);
+		r_anal_list_vtables (core->anal, false);
 		break;
 	default :
 		r_core_cmd_help (core, help_msg);
@@ -6538,7 +6526,7 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_syscall (core, input + 1);
 		break;
 	case 'v': // "av"
-		r_anal_virtual_functions (core, input + 1);
+		cmd_anal_virtual_functions (core, input + 1);
 		break;
 	case 'x': // "ax"
 		if (!cmd_anal_refs (core, input + 1)) {

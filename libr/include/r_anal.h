@@ -1660,6 +1660,13 @@ R_API int r_sign_space_count_for(RAnal *a, int idx);
 R_API void r_sign_space_unset_for(RAnal *a, int idx);
 R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname);
 
+/* vtables */
+R_API void r_anal_list_vtables(RAnal *anal, bool printJson);
+R_API void r_anal_list_vtables_all(RAnal *anal);
+
+/* rtti */
+R_API void r_anal_print_rtti(RAnal *anal);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_xap;

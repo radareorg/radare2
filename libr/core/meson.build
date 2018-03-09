@@ -1,6 +1,5 @@
 files = [
   'anal_tp.c',
-  #'anal_vt.c',
   'asm.c',
   'p/core_anal.c',
   'blaze.c',

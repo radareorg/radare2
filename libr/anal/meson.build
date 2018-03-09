@@ -79,6 +79,7 @@ files = [
   'types.c',
   'value.c',
   'var.c',
+  'vtable.c',
   'xrefs.c',
   'arch/hexagon/hexagon_anal.c',
   '../asm/arch/hexagon/hexagon.c',
