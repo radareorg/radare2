@@ -2994,9 +2994,8 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			addr++;
 			continue;
 		}
-		buf[i] = 1;
-		r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, aop.size, addr);
-	//	r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
+	//	r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, aop.size, addr);
+		r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 		switch (aop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 			addr = aop.jump;
