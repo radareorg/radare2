@@ -34,11 +34,10 @@ static char *entitlements(RBinFile *bf, bool json) {
 
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
-	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	tbuf = r_buf_new ();
+	RBuffer *tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = MACH0_(new_buf) (tbuf, bf->rbin->verbose);
 	if (res) {

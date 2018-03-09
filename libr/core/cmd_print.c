@@ -2864,7 +2864,7 @@ dsmap {
 #endif
 
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
-static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
+static void disasm_recursive_old(RCore *core, ut64 addr, char type_print) {
 	bool push[512];
 	int pushes = 0;
 	RAnalOp aop = {0};
@@ -2875,6 +2875,7 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	}
 	ut8 *raw = calloc (core->blocksize, 1); // instruction coverage
 	if (!raw) {
+		free (buf);
 		return;
 	}
 	int count = 64;
@@ -2977,6 +2978,35 @@ r_cons_printf ("base:\n");
 		i += aop.size
 	}
 #endif
+}
+static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
+	bool push[512];
+	RAnalOp aop = {0};
+	int i, j, ret;
+	ut8 buf[128];
+	int count = 64; // must be user-defined
+	int base = 0;
+	while (count-- > 0) {
+		r_io_read_at (core->io, addr, buf, sizeof (buf));
+		r_anal_op_fini (&aop);
+		ret = r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+		if (ret < 0 || aop.size < 1) {
+			addr++;
+			continue;
+		}
+		buf[i] = 1;
+		r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, aop.size, addr);
+	//	r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
+		switch (aop.type) {
+		case R_ANAL_OP_TYPE_JMP:
+			addr = aop.jump;
+			continue;
+			break;
+		case R_ANAL_OP_TYPE_UCJMP:
+			break;
+		}
+		addr += aop.size;
+	}
 }
 
 #if 0
