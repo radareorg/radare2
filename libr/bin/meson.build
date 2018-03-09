@@ -119,7 +119,7 @@ r_bin = library('r_bin', files,
       'format'
     ])
   ],
-  c_args: ['-DCORELIB=1'],
+  c_args: ['-DCORELIB=1', '-DR_API_BIN_ONLY=1'],
   link_with: [r_util, r_io, r_socket, r_magic, libr_shlr],
   install: true,
   implicit_include_directories: false
