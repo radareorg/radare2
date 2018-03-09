@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
 
 #include "r_util.h"
-#include "r_core.h"
+#include "r_anal.h"
 
 #define VTABLE_BUFF_SIZE 10
 
@@ -10,32 +10,66 @@ typedef enum {
 	VTABLE_COMPILER_MSVC
 } VTableCompilerType;
 
+typedef bool (*VTableReadAddr) (RAnal *anal, ut64 addr, ut64 *buf);
+#define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
+	bool fname(RAnal *anal, ut64 addr, ut64 *buf) { \
+		ut8 tmp[sz]; \
+		if(!anal->iob.read_at(anal->iob.io, addr, tmp, sz)) { \
+			return false; \
+		} \
+		*buf = read_fname(tmp); \
+		return true; \
+	}
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_le8, r_read_le8, 1)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_le16, r_read_le16, 2)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_le32, r_read_le32, 4)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_le64, r_read_le64, 8)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_be8, r_read_be8, 1)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_be16, r_read_be16, 2)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_be32, r_read_be32, 4)
+VTABLE_READ_ADDR_FUNC (vtable_read_addr_be64, r_read_be64, 8)
+
 typedef struct {
-	RCore *core;
+	RAnal *anal;
 	VTableCompilerType compiler;
 	ut8 wordSize;
-	bool bigendian;
+	VTableReadAddr read_addr;
 } VTableContext;
+
 
 typedef struct vtable_info_t {
 	ut64 saddr; //starting address
 	int methods;
-	RList* funtions;
+	RList* functions;
 } vtable_info;
 
 
-static void vtable_begin(RCore *core, VTableContext *context) {
-	context->core = core;
+static bool vtable_begin(RAnal *anal, VTableContext *context) {
+	context->anal = anal;
 	context->compiler = VTABLE_COMPILER_ITANIUM;
-	ut64 bits = r_config_get_i (core->config, "asm.bits");
-	context->wordSize = (ut8)(bits / 8);
-	context->bigendian = r_config_get_i (core->config, "asm.bigendian") != 0;
+	context->wordSize = (ut8)(anal->bits / 8);
+	switch (anal->bits) {
+		case 8:
+			context->read_addr = anal->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
+			break;
+		case 16:
+			context->read_addr = anal->big_endian ? vtable_read_addr_be16 : vtable_read_addr_le16;
+			break;
+		case 32:
+			context->read_addr = anal->big_endian ? vtable_read_addr_be32 : vtable_read_addr_le32;
+			break;
+		case 64:
+			context->read_addr = anal->big_endian ? vtable_read_addr_be64 : vtable_read_addr_le64;
+			break;
+		default:
+			return false;
+	}
 }
 
 static RList* vtable_get_methods(VTableContext *context, vtable_info *table) {
-	RCore *core = context->core;
+	RAnal *anal = context->anal;
 	RList* vtableMethods = r_list_new ();
-	if (!table || !core || !vtableMethods) {
+	if (!table || !anal || !vtableMethods) {
 		r_list_free (vtableMethods);
 		return NULL;
 	}
@@ -44,27 +78,30 @@ static RList* vtable_get_methods(VTableContext *context, vtable_info *table) {
 	ut64 startAddress = table->saddr;
 	while (curMethod < totalMethods) {
 		ut64 curAddressValue;
-		r_io_read_i (core->io, startAddress, &curAddressValue, context->wordSize, context->bigendian);
-		RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
-		r_list_append (vtableMethods, curFuntion);
+		if (context->read_addr (context->anal, startAddress, &curAddressValue)) {
+			RAnalFunction *curFunction = r_anal_get_fcn_in (anal, curAddressValue, 0);
+			r_list_append (vtableMethods, curFunction);
+		}
 		startAddress += context->wordSize;
 		curMethod++;
 	}
-	table->funtions = vtableMethods;
+	table->functions = vtableMethods;
 	return vtableMethods;
 }
 
-static int vtable_addr_in_text_section(VTableContext *context, ut64 curAddress) {
+static bool vtable_addr_in_text_section(VTableContext *context, ut64 curAddress) {
 	//section of the curAddress
-	RBinSection* value = r_bin_get_section_at (context->core->bin->cur->o, curAddress, true);
+	RBinSection* value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
 	//If the pointed value lies in .text section
 	return value && !strcmp (value->name, ".text");
 }
 
-static int vtable_is_value_in_text_section(VTableContext *context, ut64 curAddress) {
+static bool vtable_is_value_in_text_section(VTableContext *context, ut64 curAddress) {
 	//value at the current address
 	ut64 curAddressValue;
-	r_io_read_i (context->core->io, curAddress, &curAddressValue, context->wordSize, context->bigendian);
+	if (!context->read_addr (context->anal, curAddress, &curAddressValue)) {
+		return false;
+	}
 	//if the value is in text section
 	return vtable_addr_in_text_section (context, curAddressValue);
 }
@@ -86,7 +123,7 @@ static int vtable_is_addr_vtable_start(VTableContext *context, ut64 curAddress) 
 		return false;
 	}
 	// total xref's to curAddress
-	RList *xrefs = r_anal_xrefs_get (context->core->anal, curAddress);
+	RList *xrefs = r_anal_xrefs_get (context->anal, curAddress);
 	if (r_list_empty (xrefs)) {
 		return false;
 	}
@@ -94,10 +131,10 @@ static int vtable_is_addr_vtable_start(VTableContext *context, ut64 curAddress) 
 		// section in which currenct xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
 			ut8 buf[VTABLE_BUFF_SIZE];
-			r_io_read_at (context->core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
+			context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof(buf));
 
 			RAnalOp analop = { 0 };
-			r_anal_op (context->core->anal, &analop, xref->addr, buf, VTABLE_BUFF_SIZE);
+			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof(buf));
 			r_anal_op_fini (&analop);
 
 			if (analop.type == R_ANAL_OP_TYPE_MOV
@@ -110,8 +147,8 @@ static int vtable_is_addr_vtable_start(VTableContext *context, ut64 curAddress) 
 }
 
 RList* vtable_search(VTableContext *context) {
-	RCore *core = context->core;
-	if (!core) {
+	RAnal *anal = context->anal;
+	if (!anal) {
 		return NULL;
 	}
 
@@ -120,7 +157,7 @@ RList* vtable_search(VTableContext *context) {
 		return NULL;
 	}
 
-	RList *sections = r_bin_get_sections (core->bin);
+	RList *sections = anal->binb.get_sections (anal->binb.bin);
 	if (!sections) {
 		r_list_free (vtables);
 		return NULL;
@@ -164,9 +201,9 @@ RList* vtable_search(VTableContext *context) {
 	return vtables;
 }
 
-R_API void r_core_anal_list_vtables(void *core, bool printJson) {
+R_API void r_anal_list_vtables(RAnal *anal, bool printJson) {
 	VTableContext context;
-	vtable_begin (core, &context);
+	vtable_begin ((RAnal *)anal, &context);
 	RList* vtables = vtable_search (&context);
 	RList *vtableMethods;
 	const char *noMethodName = "No Name found";
@@ -190,13 +227,13 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 			vtableMethods = vtable_get_methods (&context, table);
 			if(vtableMethods)
 				r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
-					if(!isFirstMethod)
-						r_cons_print (",");
-					const char* const name = curMethod->name;
-					r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
+				if(!isFirstMethod)
+					r_cons_print (",");
+				const char* const name = curMethod->name;
+				r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
 						curMethod->addr, name? name : noMethodName);
-					isFirstMethod = false;
-				}
+				isFirstMethod = false;
+			}
 			r_cons_print ("]}");
 			isFirstElement = false;
 		}
@@ -206,15 +243,15 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 			ut64 vtableStartAddress = table->saddr;
 			vtableMethods = vtable_get_methods (&context, table);
 			if (vtableMethods) {
-				r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", 
-				  		vtableStartAddress);
+				r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n",
+						vtableStartAddress);
 				r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
 					if (curMethod->name) {
-						r_cons_printf ("0x%08"PFMT64x" : %s\n", 
-						  		vtableStartAddress, curMethod->name);
+						r_cons_printf ("0x%08"PFMT64x" : %s\n",
+								vtableStartAddress, curMethod->name);
 					} else {
-						r_cons_printf ("0x%08"PFMT64x" : %s\n", 
-						  		vtableStartAddress, noMethodName);
+						r_cons_printf ("0x%08"PFMT64x" : %s\n",
+								vtableStartAddress, noMethodName);
 					}
 					vtableStartAddress += context.wordSize;
 				}
@@ -225,9 +262,9 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 	r_list_free (vtables);
 }
 
-static void r_core_anal_list_vtables_all(void *core) {
+R_API void r_anal_list_vtables_all(RAnal *anal) {
 	VTableContext context;
-	vtable_begin ((RCore *)core, &context);
+	vtable_begin ((RAnal *)anal, &context);
 	RList* vtables = vtable_search (&context);
 	RListIter* vtableIter;
 	RListIter* vtableMethodNameIter;
@@ -244,18 +281,94 @@ static void r_core_anal_list_vtables_all(void *core) {
 	r_list_free (vtables);
 }
 
-static rtti_struct* get_rtti_data (RCore *core, ut64 atAddress) {
-	ut64 bits = r_config_get_i (core->config, "asm.bits");
-	int wordSize = bits / 8;
-	ut64 BaseLocatorAddr;
-	r_io_read_i (core->io, atAddress - wordSize, &BaseLocatorAddr, wordSize, false);	//XXX
-	eprintf ("Trying to parse rtti at 0x%08"PFMT64x"\n", BaseLocatorAddr);
+
+
+
+/*
+	RTTI Parsing Information
+	MSVC(Microsoft visual studio compiler) rtti structure
+	information:
+*/
+
+typedef struct type_descriptor_t {
+	ut64 pVFTable;//Always point to type_info's vftable
+	int spare;
+	char* className;
+} type_descriptor;
+
+typedef struct class_hierarchy_descriptor_t {
+	int signature;//always 0
+
+	//bit 0 --> Multiple inheritance
+	//bit 1 --> Virtual inheritance
+	int attributes;
+
+	//total no of base classes
+	// including itself
+	int numBaseClasses;
+
+	//Array of base class descriptor's
+	RList* baseClassArray;
+} class_hierarchy_descriptor;
+
+typedef struct base_class_descriptor_t {
+	//Type descriptor of current base class
+	type_descriptor* typeDescriptor;
+
+	//Number of direct bases
+	//of this base class
+	int numContainedBases;
+
+	//vftable offset
+	int mdisp;
+
+	// vbtable offset
+	int pdisp;
+
+	//displacement of the base class
+	//vftable pointer inside the vbtable
+	int vdisp;
+
+	//don't know what's this
+	int attributes;
+
+	//class hierarchy descriptor
+	//of this base class
+	class_hierarchy_descriptor* classDescriptor;
+} base_class_descriptor;
+
+typedef struct rtti_complete_object_locator_t {
+	int signature;
+
+	//within class offset
+	int vftableOffset;
+
+	//don't know what's this
+	int cdOffset;
+
+	//type descriptor for the current class
+	type_descriptor* typeDescriptor;
+
+	//hierarchy descriptor for current class
+	class_hierarchy_descriptor* hierarchyDescriptor;
+} rtti_complete_object_locator;
+
+typedef struct run_time_type_information_t {
+	ut64 vtable_start_addr;
+	ut64 rtti_addr;
+} rtti_struct;
+
+static rtti_struct* get_rtti_data (RAnal *anal, ut64 atAddress) {
+	// int wordSize = anal->bits / 8;
+	// ut64 BaseLocatorAddr;
+	// anal->iob.read_at (anal->iob.io, atAddress - wordSize, &BaseLocatorAddr, wordSize); //XXX
+	// eprintf ("Trying to parse rtti at 0x%08"PFMT64x"\n", BaseLocatorAddr);
 	return NULL;
 }
 
-RList* r_core_anal_parse_rtti (void *core, bool printJson) {
+RList* r_anal_parse_rtti (void *anal, bool printJson) {
 	VTableContext context;
-	vtable_begin ((RCore *)core, &context);
+	vtable_begin ((RAnal *)anal, &context);
 	RList* vtables = vtable_search (&context);
 	RListIter* vtableIter;
 	RList* rtti_structures = r_list_new ();
@@ -263,7 +376,7 @@ RList* r_core_anal_parse_rtti (void *core, bool printJson) {
 
 	if (vtables) {
 		r_list_foreach (vtables, vtableIter, table) {
-			rtti_struct* current_rtti = get_rtti_data ((RCore *)core, table->saddr);
+			rtti_struct* current_rtti = get_rtti_data ((RAnal *)anal, table->saddr);
 			if (current_rtti) {
 				current_rtti->vtable_start_addr = table->saddr;
 				r_list_append (rtti_structures, current_rtti);
@@ -274,6 +387,6 @@ RList* r_core_anal_parse_rtti (void *core, bool printJson) {
 	return rtti_structures;
 }
 
-R_API void r_core_anal_print_rtti (void *core) {
+R_API void r_anal_print_rtti (RAnal *anal) {
 	eprintf ("Work in progress\n");
 }
