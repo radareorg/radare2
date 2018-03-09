@@ -1044,8 +1044,8 @@ R_API void r_cons_set_raw(bool is_raw) {
 	/* do nothing here */
 #elif __UNIX__ || __CYGWIN__
 	// enforce echo off
-	I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
 	if (is_raw) {
+		I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
 		tcsetattr (0, TCSANOW, &I.term_raw);
 	} else {
 		tcsetattr (0, TCSANOW, &I.term_buf);

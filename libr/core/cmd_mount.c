@@ -260,9 +260,10 @@ static int cmd_mount(void *data, const char *_input) {
 			return false;
 		}
 		input++;
-		if (input[0]==' ') {
+		if (input[0] == ' ') {
 			input++;
 		}
+		r_cons_set_raw (false);
 		r_fs_prompt (core->fs, input);
 		break;
 	case 'y':
