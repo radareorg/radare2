@@ -1125,6 +1125,14 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 		*q++ = '\\';
 		*q++ = 'b';
 		break;
+	case '\v':
+		*q++ = '\\';
+		*q++ = 'v';
+		break;
+	case '\a':
+		*q++ = '\\';
+		*q++ = 'a';
+		break;
 	default:
 		/* Outside the ASCII printable range */
 		if (!IS_PRINTABLE (*p)) {
