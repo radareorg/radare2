@@ -134,7 +134,7 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 		j++;
 	}
 	if (rad == 2) {
-		io->cb_printf ("]");
+		io->cb_printf ("]\n");
 	}
 	return false;
 }
