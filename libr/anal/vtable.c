@@ -44,7 +44,8 @@ typedef struct vtable_info_t {
 } vtable_info;
 
 typedef struct vtable_method_info_t {
-	ut64 addr;
+	ut64 addr;           // addr of the function
+	ut64 vtable_offset;  // offset inside the vtable
 } vtable_method_info;
 
 
@@ -55,6 +56,10 @@ static void vtable_info_fini(vtable_info *vtable) {
 		free (method);
 	}
 	r_list_free (vtable->methods);
+}
+
+static ut64 vtable_info_get_size(VTableContext *context, vtable_info *vtable) {
+	return (ut64)vtable->method_count * context->wordSize;
 }
 
 
@@ -97,6 +102,7 @@ static RList* vtable_get_methods(VTableContext *context, vtable_info *table) {
 		if (context->read_addr (context->anal, startAddress, &curAddressValue)
 			&& (methodInfo = (vtable_method_info *)malloc (sizeof (vtable_method_info)))) {
 			methodInfo->addr = curAddressValue;
+			methodInfo->vtable_offset = startAddress - table->saddr;
 			r_list_append (vtableMethods, methodInfo);
 		}
 		startAddress += context->wordSize;
@@ -129,7 +135,7 @@ static bool vtable_section_can_contain_vtables(VTableContext *context, RBinSecti
 		   !strcmp(section->name, ".rdata") ||
 		   !strcmp(section->name, ".data.rel.ro");
 }
-// idp;af@@pdb.*;
+
 static int vtable_is_addr_vtable_start(VTableContext *context, ut64 curAddress) {
 	RAnalRef *xref;
 	RListIter *xrefIter;
@@ -223,6 +229,7 @@ RList* vtable_search(VTableContext *context) {
 R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 	VTableContext context;
 	vtable_begin (anal, &context);
+
 	RList *vtableMethods;
 	const char *noMethodName = "No Name found";
 	RListIter* vtableMethodNameIter;
@@ -260,14 +267,19 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 		r_cons_println ("]");
 	} else if (rad == '*') {
 		r_list_foreach (vtables, vtableIter, table) {
+			r_cons_printf ("f vtable.0x%08"PFMT64x" %"PFMT64d" @ 0x%08"PFMT64x"\n",
+						   table->saddr,
+						   vtable_info_get_size (&context, table),
+						   table->saddr);
 			vtableMethods = vtable_get_methods (&context, table);
 			r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
+				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.wordSize, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				if (name) {
 					r_cons_printf ("f %s=0x%08"PFMT64x"\n", name, curMethod->addr);
 				} else {
-					r_cons_printf ("f method.0x%08"PFMT64x"=0x%08"PFMT64x"\n", curMethod->addr, curMethod->addr);
+					r_cons_printf ("f method.virtual.0x%08"PFMT64x"=0x%08"PFMT64x"\n", curMethod->addr, curMethod->addr);
 				}
 			}
 		}
