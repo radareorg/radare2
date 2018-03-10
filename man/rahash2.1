@@ -5,7 +5,7 @@
 .Nd block based hashing utility
 .Sh SYNOPSIS
 .Nm rahash2
-.Op Fl BdDehjrkvq
+.Op Fl BdDehjrklvq
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
 .Op Fl D Ar algo
@@ -52,6 +52,8 @@ Show output in JSON (see -r)
 Show per-block hash
 .It Fl k
 Show result using OpenSSH's VisualHostKey randomart algorithm
+.It Fl l
+do not output the trailing newline
 .It Fl s Ar string
 Hash this string instead of using the 'source' and 'hash-file' arguments.
 .It Fl S Ar [^]s:string|hexstr

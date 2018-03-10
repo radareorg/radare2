@@ -15,6 +15,7 @@ static ut64 to = 0LL;
 static int incremental = 1;
 static int iterations = 0;
 static int quiet = 0;
+static int linebreak = 1;
 static RHashSeed s = {
 	0
 }, *_s = NULL;
@@ -81,7 +82,7 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
 			printf ("%02x", c[i]);
 		}
 	}
-	if (rad != 'j') {
+	if (rad != 'j' && linebreak) {
 		printf ("\n");
 	}
 }
@@ -112,7 +113,10 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 		break;
 	default:
 		o = r_print_randomart (c, dlen, from);
-		printf ("%s\n%s\n", hname, o);
+		printf ("%s\n%s", hname, o);
+		if (linebreak) {
+			printf ("\n");
+		}
 		free (o);
 		break;
 	}
@@ -138,7 +142,9 @@ static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int 
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %10f: ",
 				from, to > 0? to - 1: 0, e);
 			r_print_progressbar (NULL, 12.5 * e, 60);
-			printf ("\n");
+			if (linebreak) {
+				printf("\n");
+			}
 		}
 	} else {
 		if (iterations > 0) {
@@ -222,17 +228,18 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 						printf (",");
 					}
 				}
-				if (!quiet && rad != 'j') {
+                		if (!quiet && rad != 'j') {
 					printf ("%s: ", file);
 				}
 				do_hash_print (ctx, i, dlen, quiet? 'n': rad, ule);
 				if (quiet == 1) {
-					printf (" %s\n", file);
-				} else {
-					if (quiet && !rad) {
+					printf (" %s", file);
+                		} 
+                		if (linebreak) {
+					if (quiet==1 || (quiet && !rad)) {
 						printf ("\n");
 					}
-				}
+                		}
 			}
 		}
 		if (_s) {
@@ -277,31 +284,32 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rahash2 [-rBhLlkvq] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
 	printf (
 		" -a algo     comma separated list of algorithms (default is 'sha256')\n"
-		" -b bsize    specify the size of the block (instead of full file)\n"
 		" -B          show per-block hash\n"
+		" -b bsize    specify the size of the block (instead of full file)\n"
 		" -c hash     compare with this hash\n"
-		" -e          swap endian (use little endian)\n"
-		" -E algo     encrypt. Use -S to set key and -I to set IV\n"
 		" -D algo     decrypt. Use -S to set key and -I to set IV\n"
+		" -E algo     encrypt. Use -S to set key and -I to set IV\n"
+		" -e          swap endian (use little endian)\n"
 		" -f from     start hashing at given address\n"
-		" -i num      repeat hash N iterations\n"
 		" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
+		" -i num      repeat hash N iterations\n"
+		" -k          show hash using the openssh's randomkey algorithm\n"
+		" -L          list all available algorithms (see -a)\n"
+		" -l          do not output the trailing newline\n"
+		" -q          run in quiet mode (-qq to show only the hash)\n"
+		" -r          output radare commands\n"
 		" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 		"             (- will slurp the key from stdin, the @ prefix points to a file\n"
-		" -k          show hash using the openssh's randomkey algorithm\n"
-		" -q          run in quiet mode (-qq to show only the hash)\n"
-		" -L          list all available algorithms (see -a)\n"
-		" -r          output radare commands\n"
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
-		" -x hexstr   hash this hexpair string instead of files\n"
-		" -v          show version information\n");
+		" -v          show version information\n"
+		" -x hexstr   hash this hexpair string instead of files\n");
 	return 0;
 }
 
@@ -367,6 +375,10 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
 					write (1, result, result_size);
+					// Add linebreak by default
+					if (linebreak) { 
+						write (1,"\n",1);
+					}
 					free (result);
 				}
 			} else {
@@ -448,7 +460,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqlc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
@@ -465,6 +477,7 @@ int main(int argc, char **argv) {
 		case 'D': decrypt = optarg; break;
 		case 'E': encrypt = optarg; break;
 		case 'L': algolist (); return 0;
+		case 'l': linebreak = 0;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
