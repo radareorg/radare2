@@ -1662,9 +1662,38 @@ R_API void r_sign_space_unset_for(RAnal *a, int idx);
 R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname);
 
 /* vtables */
+typedef enum {
+	VTABLE_COMPILER_ITANIUM,
+	VTABLE_COMPILER_MSVC
+} RVTableCompilerType;
+
+typedef struct {
+	RAnal *anal;
+	RVTableCompilerType compiler;
+	ut8 wordSize;;
+	bool (*read_addr) (RAnal *anal, ut64 addr, ut64 *buf);
+} RVTableContext;
+
+typedef struct vtable_info_t {
+	ut64 saddr; //starting address
+	int method_count;
+	RList* methods;
+} RVTableInfo;
+
+typedef struct vtable_method_info_t {
+	ut64 addr;           // addr of the function
+	ut64 vtable_offset;  // offset inside the vtable
+} RVTableMethodInfo;
+
+R_API void r_anal_vtable_info_fini(RVTableInfo *vtable);
+R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable);
+R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context);
+R_API RList *r_anal_vtable_search(RVTableContext *context);
+R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *table);
 R_API void r_anal_list_vtables(RAnal *anal, int rad);
 
 /* rtti */
+R_API RList *r_anal_rtti_msvc_parse(RVTableContext *context);
 R_API void r_anal_print_rtti(RAnal *anal);
 
 /* plugin pointers */
