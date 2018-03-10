@@ -6408,17 +6408,13 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 		"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
 		NULL};
 	switch (input[0]) {
+	case '\0': // "av"
 	case '*':// "av*"
-		r_anal_list_vtables_all (core->anal);
-		break;
 	case 'j': // "avj"
-		r_anal_list_vtables (core->anal, true);
+		r_anal_list_vtables (core->anal, input[0]);
 		break;
 	case 'r': // "avr"
 		r_anal_print_rtti (core->anal);
-		break;
-	case '\0': // "av"
-		r_anal_list_vtables (core->anal, false);
 		break;
 	default :
 		r_core_cmd_help (core, help_msg);
