@@ -71,6 +71,8 @@ files = [
   'pin.c',
   'ref.c',
   'reflines.c',
+  'rtti.c',
+  'rtti_msvc.c',
   'session.c',
   'sign.c',
   'state.c',
