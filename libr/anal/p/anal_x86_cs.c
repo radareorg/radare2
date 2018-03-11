@@ -1376,7 +1376,22 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 // http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
 // Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
 // IDIV RBX    ==   RDX:RAX /= RBX
-				esilprintf (op, "%s,%s,/=", arg0, "rax");
+				if (arg0) {
+					switch (arg0[0]) {
+					case 'r':
+						esilprintf (op, "%s,rax,/=", arg0);
+						break;
+					case 'e':
+						esilprintf (op, "%s,eax,/=", arg0);
+						break;
+					default:
+						esilprintf (op, "%s,al,/=", arg0);
+						break;
+					}
+				}
+				else {
+					/* should never happen */
+				}
 			} else {
 				esilprintf (op, "%s,%s,/,%s,=", arg2, arg1, arg0);
 			}
@@ -1411,7 +1426,22 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				if (arg1) {
 					esilprintf (op, "%s,%s,*=", arg1, arg0);
 				} else {
-					esilprintf (op, "%s,%s,*=", arg0, "rax");
+					if (arg0) {
+						switch (arg0[0]) {
+						case 'r':
+							esilprintf (op, "%s,rax,*=", arg0);
+							break;
+						case 'e':
+							esilprintf (op, "%s,eax,*=", arg0);
+							break;
+						default:
+							esilprintf (op, "%s,al,*=", arg0);
+							break;
+						}
+					}
+					else {
+						/* should never happen */
+					}
 				}
 			}
 		}
