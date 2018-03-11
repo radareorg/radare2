@@ -516,7 +516,9 @@ static bool init (RCore *core, int w, int h) {
 	if (w < 140) {
 		COLW = w / 3;
 	}
-	if (!initPanel ()) return false;
+	if (!initPanel ()) {
+		return false;
+	}
 	return true;
 }
 
