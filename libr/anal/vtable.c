@@ -35,14 +35,14 @@ R_API void r_anal_vtable_info_fini(RVTableInfo *vtable) {
 }
 
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable) {
-	return (ut64)vtable->method_count * context->wordSize;
+	return (ut64)vtable->method_count * context->word_size;
 }
 
 
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	context->anal = anal;
 	context->compiler = VTABLE_COMPILER_ITANIUM;
-	context->wordSize = (ut8)(anal->bits / 8);
+	context->word_size = (ut8)(anal->bits / 8);
 	switch (anal->bits) {
 		case 8:
 			context->read_addr = anal->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
@@ -82,7 +82,7 @@ R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *tab
 			methodInfo->vtable_offset = startAddress - table->saddr;
 			r_list_append (vtableMethods, methodInfo);
 		}
-		startAddress += context->wordSize;
+		startAddress += context->word_size;
 		curMethod++;
 	}
 
@@ -176,7 +176,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		// r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
 
 		ut64 startAddress = section->vaddr;
-		ut64 endAddress = startAddress + (section->vsize) - context->wordSize;
+		ut64 endAddress = startAddress + (section->vsize) - context->word_size;
 		while (startAddress <= endAddress) {
 			if (vtable_is_addr_vtable_start (context, startAddress)) {
 				RVTableInfo *vtable = calloc (1, sizeof(RVTableInfo));
@@ -184,7 +184,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 				int noOfMethods = 0;
 				while (vtable_is_value_in_text_section (context, startAddress)) {
 					noOfMethods++;
-					startAddress += context->wordSize;
+					startAddress += context->word_size;
 				}
 				vtable->method_count = noOfMethods;
 				r_list_append (vtables, vtable);
@@ -250,7 +250,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 						   table->saddr);
 			vtableMethods = r_anal_vtable_get_methods (&context, table);
 			r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
-				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.wordSize, table->saddr + curMethod->vtable_offset);
+				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				if (name) {
@@ -269,7 +269,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char* const name = fcn ? fcn->name : NULL;
 				r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, name ? name : noMethodName);
-				vtableStartAddress += context.wordSize;
+				vtableStartAddress += context.word_size;
 			}
 			r_cons_newline ();
 		}

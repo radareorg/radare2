@@ -1670,7 +1670,7 @@ typedef enum {
 typedef struct {
 	RAnal *anal;
 	RVTableCompilerType compiler;
-	ut8 wordSize;;
+	ut8 word_size;
 	bool (*read_addr) (RAnal *anal, ut64 addr, ut64 *buf);
 } RVTableContext;
 
