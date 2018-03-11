@@ -29,7 +29,7 @@ R_API int r_name_check(const char *name) {
 
 static inline bool is_special_char (char *name) {
 	const char n = *name;
-	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v');
+	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
 R_API int r_name_filter(char *name, int maxlen) {
