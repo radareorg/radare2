@@ -2022,7 +2022,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (!outmode) {
 			hits = NULL;
 		} else {
-			hits = r_core_asm_strsearch (core, input + 3,
+			hits = r_core_asm_strsearch (core, end_cmd,
 				from, to, maxhits, regexp, everyByte, mode);
 		}
 		if (hits) {
