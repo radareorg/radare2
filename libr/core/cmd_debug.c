@@ -383,7 +383,7 @@ static const char *help_msg_ds[] = {
 	"dso", " <num>", "Step over <num> instructions",
 	"dsp", "", "Step into program (skip libs)",
 	"dss", " <num>", "Skip <num> step instructions",
-	"dsu", "[?] <address>", "Step until <address>",
+	"dsu", "[?] <address>", "Step until <address>. See 'dsu?' for other step until cmds.",
 	NULL
 };
 
@@ -391,6 +391,7 @@ static const char *help_msg_dsu[] = {
 	"Usage: dsu", "", "Step until commands",
 	"dsu", " <address>", "Step until <address>",
 	"dsui", "[r] <instr>", "Step until an instruction that matches <instr>, use dsuir for regex match",
+	"dsuo", " <optype> [<optype> ...]", "Step until an instr matches one of the <optype>s.",
 	"dsue", " <esil>", "Step until <esil> expression matches",
 	"dsuf", " <flag>", "Step until pc == <flag> matching name",
 	NULL
@@ -789,6 +790,10 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	}
 	r_cons_break_pop ();
 	return true;
+}
+
+static int step_until_optype (RCore *core, const char *optypes) {
+	return 0;
 }
 
 static int step_until_flag(RCore *core, const char *instr) {
@@ -3884,10 +3889,10 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		break;
 	case 'u': // "dsu"
 		switch (input[2]) {
-		case 'f':
+		case 'f': // dsuf
 			step_until_flag (core, input + 3);
 			break;
-		case 'i':
+		case 'i': // dsui
 			if (input[3] == 'r') {
 				step_until_inst (core, input + 4, true);
 			}
@@ -3895,10 +3900,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				step_until_inst (core, input + 3, false);
 			}
 			break;
-		case 'e':
+		case 'e': // dsue
 			step_until_esil (core, input + 3);
 			break;
-		case ' ':
+		case 'o': // dsuo
+			step_until_optype (core, input + 3);
+			break;
+		case ' ': // dsu <address>
 			r_reg_arena_swap (core->dbg->reg, true);
 			step_until (core, r_num_math (core->num, input + 2)); // XXX dupped by times
 			break;
