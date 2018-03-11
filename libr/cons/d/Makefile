@@ -14,7 +14,7 @@ CWD=$(shell pwd)
 symstall install-symlink:
 	mkdir -p "$P"
 	for FILE in * ; do \
-		if [ $$FILE != Makefile -a -f $$FILE ]; then \
+		if [ $$FILE != Makefile -a $$FILE != meson.build -a -f $$FILE ]; then \
 			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done
