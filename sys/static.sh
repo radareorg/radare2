@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$(uname)" = Linux ]; then
-	LDFLAGS="-lpthread -ldl -lutil -lm"
+	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
 fi
 MAKE=make
 gmake --help >/dev/null 2>&1
@@ -33,7 +33,7 @@ if [ 1 = "${DOCFG}" ]; then
 	if [ -f config-user.mk ]; then
 		${MAKE} mrproper > /dev/null 2>&1
 	fi
-	export CFLAGS="-fPIC"
+	export CFLAGS="${CFLAGS} -fPIC"
 	cp -f plugins.static.cfg plugins.cfg
 #-D__ANDROID__=1"
 	./configure-plugins || exit 1
