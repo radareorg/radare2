@@ -383,10 +383,16 @@ static const char *help_msg_ds[] = {
 	"dso", " <num>", "Step over <num> instructions",
 	"dsp", "", "Step into program (skip libs)",
 	"dss", " <num>", "Skip <num> step instructions",
-	"dsu", "[?]<address>", "Step until address",
-	"dsui", "[r] <instr>", "Step until an instruction that matches `instr`, use dsuir for regex match",
-	"dsue", " <esil>", "Step until esil expression matches",
-	"dsuf", " <flag>", "Step until pc == flag matching name",
+	"dsu", "[?] <address>", "Step until <address>",
+	NULL
+};
+
+static const char *help_msg_dsu[] = {
+	"Usage: dsu", "", "Step until commands",
+	"dsu", " <address>", "Step until <address>",
+	"dsui", "[r] <instr>", "Step until an instruction that matches <instr>, use dsuir for regex match",
+	"dsue", " <esil>", "Step until <esil> expression matches",
+	"dsuf", " <flag>", "Step until pc == <flag> matching name",
 	NULL
 };
 
@@ -3897,8 +3903,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			step_until (core, r_num_math (core->num, input + 2)); // XXX dupped by times
 			break;
 		default:
-			r_cons_println ("Usage: dsu[fei] [arg]  . step until address ' ',"
-					" 'f'lag, 'e'sil or 'i'nstruction matching");
+			r_core_cmd_help (core, help_msg_dsu);
 			return 0;
 		}
 		break;
