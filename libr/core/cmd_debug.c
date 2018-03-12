@@ -832,7 +832,7 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 	}
 
 	r_cons_break_push (NULL, NULL);
-	for (int i = 0; i < 10; i++) {
+	for (;;) {
 		if (r_cons_is_breaked ()) {
 			core->break_loop = true;
 			break;
