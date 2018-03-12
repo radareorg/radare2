@@ -1900,7 +1900,9 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					if (fam) {
 						if (!*input || !strcmp (input, fam)) {
 							match = true;
-							r_cons_printf ("0x%08"PFMT64x " - %d %s\n", at, ret, fam);
+							if (mode == 0) {
+								r_cons_printf ("0x%08"PFMT64x " - %d %s\n", at, ret, fam);
+							}
 						}
 					}
 				} else {

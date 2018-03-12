@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -59,6 +59,8 @@ static RBinInfo *info(RBinFile *bf) {
 	eprintf ("ar ptr=data\n");
 	eprintf ("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
 	eprintf ("s 0\n");
+	eprintf ("e asm.bits=32\n");
+	eprintf ("dL bf\n");
 	return ret;
 }
 
@@ -105,7 +107,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_bf = {
+RBinPlugin r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",

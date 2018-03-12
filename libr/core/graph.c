@@ -3444,6 +3444,8 @@ static void visual_offset(RAGraph *g, RCore *core) {
 	r_cons_get_size (&rows);
 	r_cons_gotoxy (0, rows);
 	r_cons_flush ();
+	core->cons->line->offset_prompt = true;
+	r_line_set_hist_callback (core->cons->line, &offset_history_up, &offset_history_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
@@ -3451,6 +3453,8 @@ static void visual_offset(RAGraph *g, RCore *core) {
 			buf[1] = '.';
 		}
 		r_core_cmd0 (core, buf);
+		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+		core->cons->line->offset_prompt = false;
 	}
 }
 

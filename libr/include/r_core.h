@@ -605,12 +605,13 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
-R_API void r_core_anal_list_vtables (void *core, bool printJson);
-R_API void r_core_anal_print_rtti (void *core);
 
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
 R_API void r_core_syscmd_mkdir(const char *dir);
+
+R_API int offset_history_up(RLine *line);
+R_API int offset_history_down(RLine *line);
 
 // TODO : move into debug or syscall++
 R_API char *cmd_syscall_dostr(RCore *core, int num);
@@ -647,79 +648,6 @@ extern RCorePlugin r_core_plugin_anal;
 
 #endif
 
-/*
-	RTTI Parsing Information
-	MSVC(Microsoft visual studio compiler) rtti structure
-	information:
-*/
-
-typedef struct type_descriptor_t {
-	ut64 pVFTable;//Always point to type_info's vftable
-	int spare;
-	char* className;
-} type_descriptor;
-
-typedef struct class_hierarchy_descriptor_t {
-	int signature;//always 0
-
-	//bit 0 --> Multiple inheritance
-	//bit 1 --> Virtual inheritance
-	int attributes;
-
-	//total no of base classes
-	// including itself
-	int numBaseClasses;
-
-	//Array of base class descriptor's
-	RList* baseClassArray;
-} class_hierarchy_descriptor;
-
-typedef struct base_class_descriptor_t {
-	//Type descriptor of current base class
-	type_descriptor* typeDescriptor;
-
-	//Number of direct bases
-	//of this base class
-	int numContainedBases;
-
-	//vftable offset
-	int mdisp;
-
-	// vbtable offset
-	int pdisp;
-
-	//displacement of the base class
-	//vftable pointer inside the vbtable
-	int vdisp;
-
-	//don't know what's this
-	int attributes;
-
-	//class hierarchy descriptor
-	//of this base class
-	class_hierarchy_descriptor* classDescriptor;
-} base_class_descriptor;
-
-typedef struct rtti_complete_object_locator_t {
-	int signature;
-
-	//within class offset
-	int vftableOffset;
-
-	//don't know what's this
-	int cdOffset;
-
-	//type descriptor for the current class
-	type_descriptor* typeDescriptor;
-
-	//hierarchy descriptor for current class
-	class_hierarchy_descriptor* hierarchyDescriptor;
-} rtti_complete_object_locator;
-
-typedef struct run_time_type_information_t {
-	ut64 vtable_start_addr;
-	ut64 rtti_addr;
-} rtti_struct;
 
 #ifdef __cplusplus
 }

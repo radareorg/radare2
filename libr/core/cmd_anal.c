@@ -3,9 +3,6 @@
 #include "r_util.h"
 #include "r_core.h"
 
-/* hacky inclusion */
-#include "anal_vt.c"
-
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
@@ -3098,10 +3095,6 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-static bool read_at(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	return r_io_read_at (anal->iob.io, addr, buf, len);
-}
-
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
@@ -3123,7 +3116,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return 0;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		core->anal->read_at = read_at;
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
@@ -6411,39 +6403,22 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 	return true;
 }
 
-static void r_anal_virtual_functions(void *core, const char* input) {
-	const char *curArch = NULL;
-	const char *curClass = NULL;
-	if (core) {
-		RCore *c = (RCore*)core;
-		if (c->bin && c->bin->cur && c->bin->cur->o && c->bin->cur->o->info) {
-			curArch = c->bin->cur->o->info->arch;
-			curClass = c->bin->cur->o->info->rclass;
-		}
-	}
-	if (curArch && !strcmp (curArch, "x86") && !strcmp (curClass, "elf")) {
-		const char * help_msg[] = {
-			"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
-			NULL};
-		switch (input[0]) {
-		case '*'://av*
-			r_core_anal_list_vtables_all (core);
-			break;
-		case 'j': //avj
-			r_core_anal_list_vtables (core, true);
-			break;
-		case 'r': //avr
-			r_core_anal_print_rtti (core);
-			break;
-		case '\0': //av
-			r_core_anal_list_vtables (core, false);
-			break;
-		default :
-			r_core_cmd_help (core, help_msg);
-			break;
-		}
-	} else {
-		eprintf ("Unsupported architecture to find vtables\n");
+static void cmd_anal_virtual_functions(RCore *core, const char* input) {
+	const char * help_msg[] = {
+		"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
+		NULL};
+	switch (input[0]) {
+	case '\0': // "av"
+	case '*':// "av*"
+	case 'j': // "avj"
+		r_anal_list_vtables (core->anal, input[0]);
+		break;
+	case 'r': // "avr"
+		r_anal_print_rtti (core->anal);
+		break;
+	default :
+		r_core_cmd_help (core, help_msg);
+		break;
 	}
 }
 
@@ -6547,7 +6522,7 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_syscall (core, input + 1);
 		break;
 	case 'v': // "av"
-		r_anal_virtual_functions (core, input + 1);
+		cmd_anal_virtual_functions (core, input + 1);
 		break;
 	case 'x': // "ax"
 		if (!cmd_anal_refs (core, input + 1)) {

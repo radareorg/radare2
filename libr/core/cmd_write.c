@@ -19,7 +19,7 @@ static const char *help_msg_w[] = {
 	"wb"," 010203","fill current block with cyclic hexpairs",
 	"wB","[-]0xVALUE","set or unset bits with given value",
 	"wc","","list all write changes",
-	"wc","[?][ir*?]","write cache undo/commit/reset/list (io.cache)",
+	"wc","[?][jir+-*?]","write cache undo/commit/reset/list (io.cache)",
 	"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
 	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
 	"wf","[fs] -|file","write contents of file at current offset",
@@ -61,8 +61,9 @@ static const char *help_msg_wA[] = {
 };
 
 static const char *help_msg_wc[] = {
-	"Usage:", "wc[ir+-*?]","  # NOTE: Uses io.cache=true",
+	"Usage:", "wc[jir+-*?]","  # NOTE: Uses io.cache=true",
 	"wc","","list all write changes",
+	"wcj","","list all write changes in JSON",
 	"wc-"," [from] [to]","remove write op at curseek or given addr",
 	"wc+"," [addr]","commit change from cache to io",
 	"wc*","","\"\" in radare commands",

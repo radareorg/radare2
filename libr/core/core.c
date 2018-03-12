@@ -1231,9 +1231,11 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "agfl ", 5)
 		|| !strncmp (line->buffer.data, "aecu ", 5)
 		|| !strncmp (line->buffer.data, "aesu ", 5)
-		|| !strncmp (line->buffer.data, "aeim ", 5)) {
+		|| !strncmp (line->buffer.data, "aeim ", 5)
+		|| line->offset_prompt) {
 			int n, i = 0;
-			int sdelta = (line->buffer.data[1] == ' ')
+			int sdelta = line->offset_prompt 
+				? 0 : (line->buffer.data[1] == ' ')
 				? 2 : (line->buffer.data[2] == ' ')
 				? 3 : (line->buffer.data[3] == ' ')
 				? 4 : 5;
@@ -1723,6 +1725,10 @@ static bool r_core_anal_log(struct r_anal_t *anal, const char *msg) {
 	return true;
 }
 
+static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len) {
+	return r_io_read_at (anal->iob.io, addr, buf, len);
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -1816,6 +1822,7 @@ R_API bool r_core_init(RCore *core) {
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
 	core->anal->log = r_core_anal_log;
+	core->anal->read_at = r_core_anal_read_at;
 	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;

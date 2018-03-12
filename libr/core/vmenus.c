@@ -3157,7 +3157,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		sprintf (color, "rgb:%x%x%x", rcolor.r, rcolor.g, rcolor.b);
 		r_cons_printf ("# Colorscheme %d - Use '.' and ':' to randomize palette\n"
-			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (%s)\n",
+			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (\\x1b%s)\n",
 			opt, k, color, atoi (cstr+7), cstr+1);
 		r_core_cmdf (core, "ec %s %s", k, color);
 		char * res = r_core_cmd_str (core, "pd $r");
