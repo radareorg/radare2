@@ -797,7 +797,6 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
-	int i;
 
 	RList *optypes_list;
 	RListIter *iter;
