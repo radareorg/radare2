@@ -2199,6 +2199,8 @@ static void ds_print_offset(RDisasmState *ds) {
 		RFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
+		unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
+
 		if (ds->show_reloff) {
 			RAnalFunction *f = r_anal_get_fcn_at (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (!f) {
@@ -2245,13 +2247,13 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (hasCustomColor) {
 			int of = core->print->flags;
 			core->print->flags = 0;
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-					ds->show_offseg, ds->show_offdec, delta, label);
+			r_print_offset_sg (core->print, at, (at == ds->dest) || show_trace,
+					ds->show_offseg, seggrn, ds->show_offdec, delta, label);
 			core->print->flags = of;
 			r_cons_strcat (Color_RESET);
 		} else {
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-					ds->show_offseg, ds->show_offdec, delta, label);
+			r_print_offset_sg (core->print, at, (at == ds->dest) || show_trace,
+					ds->show_offseg, seggrn, ds->show_offdec, delta, label);
 		}
 	}
 	if (ds->atabsoff > 0) {
@@ -3092,26 +3094,27 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
+	bool esc_bslash = ds->core->print->esc_bslash;
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot, true);
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
 		break;
 	case R_STRING_ENC_UTF8:
-		escstr = r_str_escape_utf8 (str, ds->show_asciidot, true);
+		escstr = r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash);
 		break;
 	case R_STRING_ENC_UTF16LE:
-		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot, esc_bslash);
 		prefix = "u";
 		break;
 	case R_STRING_ENC_UTF32LE:
-		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
 		prefix = "U";
 		break;
 	default:
 		str_len = strlen (str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3])
 		    || (str_len == 3 && len > 5 && !memcmp (str, "\xff\xfe", 2) && str[4] && !str[5])) {
-			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot, esc_bslash);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RStrEnc enc = R_STRING_ENC_UTF32LE;
@@ -3128,10 +3131,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			if (enc == R_STRING_ENC_UTF32LE) {
-				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
 				prefix = "U";
 			} else {
-				escstr = r_str_escape_latin1 (str, ds->show_asciidot, true);
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
@@ -3143,8 +3146,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
-			          r_str_escape_utf8 (str, ds->show_asciidot, true) :
-			          r_str_escape_latin1 (str, ds->show_asciidot, true));
+			          r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash) :
+			          r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash));
 		}
 	}
 	if (prefix_out) {
@@ -5565,7 +5568,9 @@ toro:
 		if (show_offset) {
 			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
 			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
-			r_print_offset (core->print, at, 0, show_offseg, show_offdec, 0, NULL);
+			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
+
+			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret < 1) {

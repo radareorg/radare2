@@ -1685,9 +1685,12 @@ static int cb_scrstrconv(void *user, void *data) {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for scr.strconv:\n"
 				"  asciiesc  convert to ascii with non-ascii chars escaped\n"
-				"  asciidot  convert to ascii with non-ascii chars turned into a dot (except some control chars)\n"
+				"  asciidot  convert to ascii with non-ascii chars turned into a dot (except control chars stated below)\n"
 				"\n"
-				"Ascii chars are in the range 0x20-0x7e.\n");
+				"Ascii chars are in the range 0x20-0x7e. Always escaped control chars are alert (\\a),\n"
+				"backspace (\\b), formfeed (\\f), newline (\\n), carriage return (\\r), horizontal tab (\\t)\n"
+				"and vertical tab (\\v). Also, double quotes (\\\") are always escaped, but backslashes (\\\\)\n"
+				"are only escaped if str.escbslash = true.\n");
 		} else {
 			print_node_options (node);
 		}
@@ -1783,6 +1786,15 @@ static int cb_segoff(void *user, void *data) {
 	}
 	return true;
 }
+
+static int cb_seggrn(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->assembler->seggrn = node->i_value;
+	core->anal->seggrn = node->i_value;
+	return true;
+}
+
 
 static int cb_stopthreads(void *user, void *data) {
 	RCore *core = (RCore *) user;
@@ -2415,6 +2427,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
 	SETCB ("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB ("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");
+	SETICB ("asm.seggrn", 4, &cb_seggrn, "Segment granularity in bits (x86-16)");
 	n = NODECB ("asm.syntax", "intel", &cb_asmsyntax);
 	SETDESC (n, "Select assembly syntax");
 	SETOPTIONS (n, "att", "intel", "masm", "jz", "regnum", NULL);
@@ -2820,7 +2833,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 
 	/* str */
-	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash (iz and Cs-based output only)");
+	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
 
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");

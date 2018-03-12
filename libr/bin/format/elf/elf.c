@@ -2217,7 +2217,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 				}
 			}
 
-			int regdelta = (bits == 64)? 0x84: 0x40; // x64 vs x32
+			int regdelta = (bits == 64)? 0x84: 0x5c; // x64 vs x32
 			int regsize = 160; // for x86-64
 			ut8 *buf = malloc (regsize);
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
