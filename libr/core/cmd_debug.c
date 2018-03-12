@@ -797,7 +797,8 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
-
+	int i;
+	
 	RList *optypes_list = r_list_new ();
 	RListIter *iter;
 	char *optype;
@@ -818,7 +819,7 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 	// split optypes into an array by " "
 	// TODO: Should be refactored into a funtion?
 	// r_str_split_list could receive a ch to split by instead of always '\n'
-	for (int i = 0; ; i++) {
+	for (i = 0; ; i++) {
 		char *aux;
 		if (i == 0) {
 			aux = strtok(optypes, " ");
