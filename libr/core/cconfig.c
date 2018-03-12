@@ -2830,7 +2830,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 
 	/* str */
-	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash (iz and Cs-based output only)");
+	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
 
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
