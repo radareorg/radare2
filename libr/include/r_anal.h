@@ -604,6 +604,11 @@ typedef struct r_anal_options_t {
 	bool armthumb; //
 } RAnalOptions;
 
+typedef enum {
+	R_ANAL_CPP_ABI_ITANIUM = 0,
+	R_ANAL_CPP_ABI_MSVC
+} RAnalCPPABI;
+
 typedef struct r_anal_t {
 	char *cpu;
 	char *os;
@@ -612,6 +617,7 @@ typedef struct r_anal_t {
 	int big_endian;
 	int split; // used only from core
 	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
+	RAnalCPPABI cpp_abi;
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
 	RList *fcns;
@@ -1662,14 +1668,9 @@ R_API void r_sign_space_unset_for(RAnal *a, int idx);
 R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname);
 
 /* vtables */
-typedef enum {
-	VTABLE_COMPILER_ITANIUM,
-	VTABLE_COMPILER_MSVC
-} RVTableCompilerType;
-
 typedef struct {
 	RAnal *anal;
-	RVTableCompilerType compiler;
+	RAnalCPPABI abi;
 	ut8 word_size;
 	bool (*read_addr) (RAnal *anal, ut64 addr, ut64 *buf);
 } RVTableContext;
@@ -1693,7 +1694,7 @@ R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *tab
 R_API void r_anal_list_vtables(RAnal *anal, int rad);
 
 /* rtti */
-R_API RList *r_anal_rtti_msvc_parse(RVTableContext *context);
+R_API void r_anal_rtti_msvc_print_all(RVTableContext *context);
 R_API void r_anal_print_rtti(RAnal *anal);
 
 /* plugin pointers */

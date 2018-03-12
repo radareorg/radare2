@@ -5,5 +5,9 @@
 R_API void r_anal_print_rtti (RAnal *anal) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
-	r_anal_rtti_msvc_parse (&context);
+	if (context.abi == R_ANAL_CPP_ABI_MSVC) {
+		r_anal_rtti_msvc_print_all (&context);
+	} else {
+		eprint ("RTTI not supported yet for Itanium.\n");
+	}
 }

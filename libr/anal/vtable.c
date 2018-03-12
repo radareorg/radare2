@@ -41,7 +41,7 @@ R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vta
 
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	context->anal = anal;
-	context->compiler = VTABLE_COMPILER_ITANIUM;
+	context->abi = anal->cpp_abi;
 	context->word_size = (ut8)(anal->bits / 8);
 	switch (anal->bits) {
 		case 8:

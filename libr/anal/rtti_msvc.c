@@ -1,14 +1,8 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
 
-#include <r_anal.h>
+#include "r_anal.h"
 
 #define NAME_BUF_SIZE 64
-
-
-typedef struct run_time_type_information_t {
-	ut64 vtable_start_addr;
-	ut64 rtti_addr;
-} rtti_struct;
 
 
 typedef struct rtti_complete_object_locator_t {
@@ -43,11 +37,11 @@ typedef struct rtti_type_descriptor_t {
 	char *name;
 } rtti_type_descriptor;
 
+
+
 static void rtti_type_descriptor_fini(rtti_type_descriptor *td) {
 	free (td->name);
 }
-
-
 
 static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64 addr, rtti_complete_object_locator *col) {
 	ut8 buf[3*sizeof (ut32) + 2*sizeof (ut64)];
@@ -259,17 +253,17 @@ static void rtti_msvc_print_base_class_descriptor (rtti_base_class_descriptor *b
 				   prefix, bcd->attributes);
 }
 
-static rtti_struct *get_rtti_data(RVTableContext *context, ut64 atAddress) {
+static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress) {
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
 	if (!context->read_addr (context->anal, colRefAddr, &colAddr)) {
-		return NULL;
+		return;
 	}
 
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, colAddr, &col)) {
 		eprintf ("Failed to parse Complete Object Locator at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
-		return NULL;
+		return;
 	}
 	rtti_msvc_print_complete_object_locator (&col, colAddr, "");
 
@@ -306,26 +300,18 @@ static rtti_struct *get_rtti_data(RVTableContext *context, ut64 atAddress) {
 	} else {
 		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", col.class_descriptor_addr);
 	}
-
-	return NULL;
 }
 
-R_API RList *r_anal_rtti_msvc_parse(RVTableContext *context) {
+R_API void r_anal_rtti_msvc_print_all(RVTableContext *context) {
 	RList *vtables = r_anal_vtable_search (context);
 	RListIter *vtableIter;
-	RList *rtti_structures = r_list_new ();
 	RVTableInfo *table;
 
 	if (vtables) {
 		r_list_foreach (vtables, vtableIter, table) {
-			rtti_struct* current_rtti = get_rtti_data (context, table->saddr);
-			if (current_rtti) {
-				current_rtti->vtable_start_addr = table->saddr;
-				r_list_append (rtti_structures, current_rtti);
-			}
+			rtti_msvc_print_complete_object_locator_recurse (context, table->saddr);
 			r_cons_print ("\n");
 		}
 	}
 	r_list_free (vtables);
-	return rtti_structures;
 }
