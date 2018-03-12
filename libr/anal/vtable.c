@@ -113,6 +113,7 @@ static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSect
 		   !strcmp(section->name, ".data.rel.ro");
 }
 
+
 static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress) {
 	RAnalRef *xref;
 	RListIter *xrefIter;
@@ -185,6 +186,11 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 				while (vtable_is_value_in_text_section (context, startAddress)) {
 					noOfMethods++;
 					startAddress += context->word_size;
+
+					// a ref means the vtable has ended
+					if (!r_list_empty (r_anal_xrefs_get (context->anal, startAddress))) {
+						break;
+					}
 				}
 				vtable->method_count = noOfMethods;
 				r_list_append (vtables, vtable);
