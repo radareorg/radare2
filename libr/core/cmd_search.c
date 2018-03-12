@@ -1979,6 +1979,9 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (!regexp && input[1] == 'a') {
 		everyByte = true;
 	}
+	if (regexp && input[2] == 'j') {
+		json = true;
+	}
 	if (!end_cmd) {
 		outmode = input[1];
 	} else {
@@ -2021,7 +2024,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (!outmode) {
 			hits = NULL;
 		} else {
-			hits = r_core_asm_strsearch (core, input + 2,
+			hits = r_core_asm_strsearch (core, end_cmd,
 				from, to, maxhits, regexp, everyByte, mode);
 		}
 		if (hits) {
