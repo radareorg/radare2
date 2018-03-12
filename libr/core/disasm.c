@@ -3094,26 +3094,27 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
+	bool esc_bslash = ds->core->print->esc_bslash;
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot, true);
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
 		break;
 	case R_STRING_ENC_UTF8:
-		escstr = r_str_escape_utf8 (str, ds->show_asciidot, true);
+		escstr = r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash);
 		break;
 	case R_STRING_ENC_UTF16LE:
-		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+		escstr = r_str_escape_utf16le (str, len, ds->show_asciidot, esc_bslash);
 		prefix = "u";
 		break;
 	case R_STRING_ENC_UTF32LE:
-		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+		escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
 		prefix = "U";
 		break;
 	default:
 		str_len = strlen (str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3])
 		    || (str_len == 3 && len > 5 && !memcmp (str, "\xff\xfe", 2) && str[4] && !str[5])) {
-			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot);
+			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot, esc_bslash);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RStrEnc enc = R_STRING_ENC_UTF32LE;
@@ -3130,10 +3131,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			if (enc == R_STRING_ENC_UTF32LE) {
-				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot);
+				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
 				prefix = "U";
 			} else {
-				escstr = r_str_escape_latin1 (str, ds->show_asciidot, true);
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
@@ -3145,8 +3146,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
-			          r_str_escape_utf8 (str, ds->show_asciidot, true) :
-			          r_str_escape_latin1 (str, ds->show_asciidot, true));
+			          r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash) :
+			          r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash));
 		}
 	}
 	if (prefix_out) {
