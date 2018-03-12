@@ -626,6 +626,13 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
+static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
+	if (!anal || !op || !anal->flb.get_at) return false;
+	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
+	return (fi && fi->name && (strstr (fi->name, "imp.") || strstr (fi->name, "sym.")
+			|| strstr (fi->name, "entry") || strstr (fi->name, "main")));
+}
+
 static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 	int i;
 	ut64 dst;
@@ -651,7 +658,7 @@ static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 	if (!isValid) {
 		return false;
 	}
-	
+
 	/* check if jump table contains valid deltas */
 	anal->iob.read_at (anal->iob.io, ptr, (ut8 *) &jmptbl, 64);
 	// XXX this is not endian safe
@@ -969,12 +976,22 @@ repeat:
 					}
 					if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
 						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					} 
+					}
 					free (str);
 					// jmptbl_addr = op.ptr;
 					// jmptbl_size = -1;
 					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
 				}
+			}
+			break;
+		// Case of valid but unused "add [rax], al"
+		case R_ANAL_OP_TYPE_ADD:
+			if (((op.size + 4) <= len) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
+				bb->size -= oplen;
+				op.type = R_ANAL_OP_TYPE_RET;
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
 		case R_ANAL_OP_TYPE_ILL:
@@ -1244,6 +1261,12 @@ repeat:
 		case R_ANAL_OP_TYPE_RJMP:
 		case R_ANAL_OP_TYPE_IJMP:
 		case R_ANAL_OP_TYPE_IRJMP:
+			// if the next instruction is a symbol
+			if (isSymbolNextInstruction (anal, &op)) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
 			// switch statement
 			if (anal->opt.jmptbl) {
 				if (fcn->refs->tail) {
@@ -1287,9 +1310,24 @@ repeat:
 				}
 			}
 #endif
-			FITFCNSZ ();
-			r_anal_op_fini (&op);
-			return R_ANAL_RET_END;
+			if (anal->opt.ijmp) {
+				if (continue_after_jump) {
+					recurseAt (op.jump);
+					recurseAt (op.fail);
+					if (overlapped) {
+						goto analopfinish;
+					}
+				}
+				if (r_anal_noreturn_at (anal, op.jump) || op.eob) {
+					goto analopfinish;
+				}
+			} else {
+analopfinish:
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
+			break;
 		/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;
