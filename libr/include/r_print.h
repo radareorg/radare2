@@ -150,6 +150,7 @@ R_API int r_print_format_struct_size(const char *format, RPrint *p, int mode, in
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API int r_print_format_length(const char *fmt);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
+R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 #define R_PRINT_STRING_WIDE 1
 #define R_PRINT_STRING_ZEROEND 2
 #define R_PRINT_STRING_URLENCODE 4
