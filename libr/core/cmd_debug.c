@@ -798,8 +798,8 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 	ut64 pc;
 	int res = true;
 	int i;
-	
-	RList *optypes_list = r_list_new ();
+
+	RList *optypes_list;
 	RListIter *iter;
 	char *optype;
 	char *optypes = strdup(r_str_trim_head((char *) _optypes));
@@ -816,21 +816,7 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 		goto end;
 	}
 
-	// split optypes into an array by " "
-	// TODO: Should be refactored into a funtion?
-	// r_str_split_list could receive a ch to split by instead of always '\n'
-	for (i = 0; ; i++) {
-		char *aux;
-		if (i == 0) {
-			aux = strtok(optypes, " ");
-		} else {
-			aux = strtok(NULL, " ");
-		}
-		if (aux == NULL) {
-			break;
-		}
-		r_list_append (optypes_list, aux);
-	}
+	optypes_list = r_str_split_list(optypes, " ");
 
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
