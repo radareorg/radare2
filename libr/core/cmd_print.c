@@ -2980,12 +2980,10 @@ r_cons_printf ("base:\n");
 #endif
 }
 static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
-	bool push[512];
 	RAnalOp aop = {0};
-	int i, j, ret;
+	int ret;
 	ut8 buf[128];
 	int count = 64; // must be user-defined
-	int base = 0;
 	while (count-- > 0) {
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op_fini (&aop);
