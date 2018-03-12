@@ -383,10 +383,17 @@ static const char *help_msg_ds[] = {
 	"dso", " <num>", "Step over <num> instructions",
 	"dsp", "", "Step into program (skip libs)",
 	"dss", " <num>", "Skip <num> step instructions",
-	"dsu", "[?]<address>", "Step until address",
-	"dsui", "[r] <instr>", "Step until an instruction that matches `instr`, use dsuir for regex match",
-	"dsue", " <esil>", "Step until esil expression matches",
-	"dsuf", " <flag>", "Step until pc == flag matching name",
+	"dsu", "[?] <address>", "Step until <address>. See 'dsu?' for other step until cmds.",
+	NULL
+};
+
+static const char *help_msg_dsu[] = {
+	"Usage: dsu", "", "Step until commands",
+	"dsu", " <address>", "Step until <address>",
+	"dsui", "[r] <instr>", "Step until an instruction that matches <instr>, use dsuir for regex match",
+	"dsuo", " <optype> [<optype> ...]", "Step until an instr matches one of the <optype>s.",
+	"dsue", " <esil>", "Step until <esil> expression matches",
+	"dsuf", " <flag>", "Step until pc == <flag> matching name",
 	NULL
 };
 
@@ -783,6 +790,96 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	}
 	r_cons_break_pop ();
 	return true;
+}
+
+static int step_until_optype (RCore *core, const char *_optypes) {
+	RAnalOp op;
+	ut8 buf[32];
+	ut64 pc;
+	int res = true;
+	int i;
+	
+	RList *optypes_list = r_list_new ();
+	RListIter *iter;
+	char *optype;
+	char *optypes = strdup(r_str_trim_head((char *) _optypes));
+
+	if (!core || !core->dbg) {
+		eprint ("Wrong state");
+		res = false;
+		goto end;
+	}
+
+	if (!optypes || !*optypes) {
+		eprint ("Missing optypes. Usage example: 'dsuo ucall ujmp'");
+		res = false;
+		goto end;
+	}
+
+	// split optypes into an array by " "
+	// TODO: Should be refactored into a funtion?
+	// r_str_split_list could receive a ch to split by instead of always '\n'
+	for (i = 0; ; i++) {
+		char *aux;
+		if (i == 0) {
+			aux = strtok(optypes, " ");
+		} else {
+			aux = strtok(NULL, " ");
+		}
+		if (aux == NULL) {
+			break;
+		}
+		r_list_append (optypes_list, aux);
+	}
+
+	r_cons_break_push (NULL, NULL);
+	for (;;) {
+		if (r_cons_is_breaked ()) {
+			core->break_loop = true;
+			break;
+		}
+		if (r_debug_is_dead (core->dbg)) {
+			core->break_loop = true;
+			break;
+		}
+		r_debug_step (core->dbg, 1);
+
+		pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
+
+		// 'Copy' from r_debug_step_soft
+		if (!core->dbg->iob.read_at) {
+			eprint("ERROR\n");
+			res = false;
+			goto cleanup_after_push;
+		}
+		if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
+			eprint("ERROR\n");
+			res = false;
+			goto cleanup_after_push;
+		}
+		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf))) {
+			eprint("ERROR\n");
+			res = false;
+			goto cleanup_after_push;
+		}
+
+		// This is slow because we do lots of strcmp's.
+		// To improve this, the function r_anal_optype_string_to_int should be implemented
+		// I also don't check if the opcode type exists.
+		const char *optype_str = r_anal_optype_to_string(op.type);
+		r_list_foreach (optypes_list, iter, optype) {
+			if (!strcmp(optype_str, optype)) {
+				goto cleanup_after_push;
+			}
+		}
+	}
+
+cleanup_after_push:
+	r_cons_break_pop ();
+end:
+	free(optypes);
+	r_list_free(optypes_list);
+	return res;
 }
 
 static int step_until_flag(RCore *core, const char *instr) {
@@ -3878,10 +3975,10 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		break;
 	case 'u': // "dsu"
 		switch (input[2]) {
-		case 'f':
+		case 'f': // dsuf
 			step_until_flag (core, input + 3);
 			break;
-		case 'i':
+		case 'i': // dsui
 			if (input[3] == 'r') {
 				step_until_inst (core, input + 4, true);
 			}
@@ -3889,16 +3986,18 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				step_until_inst (core, input + 3, false);
 			}
 			break;
-		case 'e':
+		case 'e': // dsue
 			step_until_esil (core, input + 3);
 			break;
-		case ' ':
+		case 'o': // dsuo
+			step_until_optype (core, input + 3);
+			break;
+		case ' ': // dsu <address>
 			r_reg_arena_swap (core->dbg->reg, true);
 			step_until (core, r_num_math (core->num, input + 2)); // XXX dupped by times
 			break;
 		default:
-			r_cons_println ("Usage: dsu[fei] [arg]  . step until address ' ',"
-					" 'f'lag, 'e'sil or 'i'nstruction matching");
+			r_core_cmd_help (core, help_msg_dsu);
 			return 0;
 		}
 		break;
