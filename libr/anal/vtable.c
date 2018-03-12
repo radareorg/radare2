@@ -83,6 +83,7 @@ static bool vtable_begin(RAnal *anal, VTableContext *context) {
 		default:
 			return false;
 	}
+	return true;
 }
 
 static RList* vtable_get_methods(VTableContext *context, vtable_info *table) {
