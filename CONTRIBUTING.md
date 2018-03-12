@@ -44,7 +44,7 @@ default:
 }
 ```
 
-* Lines should be at most 78 chars. A tab is considered as 8 chars.
+* Lines should be at most 78 chars. A tab is considered as 4 chars.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
