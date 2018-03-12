@@ -44,8 +44,8 @@ static void rtti_type_descriptor_fini(rtti_type_descriptor *td) {
 }
 
 static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64 addr, rtti_complete_object_locator *col) {
-	ut8 buf[3*sizeof (ut32) + 2*sizeof (ut64)];
-	int colSize = 3*sizeof (ut32) + 2*context->word_size;
+	ut8 buf[3 * sizeof (ut32) + 2 * sizeof (ut64)];
+	int colSize = 3 * sizeof (ut32) + 2 * context->word_size;
 	if (colSize > sizeof (buf)) {
 		return false;
 	}
@@ -64,8 +64,8 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 }
 
 static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, rtti_class_hierarchy_descriptor *chd) {
-	ut8 buf[3*sizeof (ut32) + sizeof (ut64)];
-	int chdSize = 3*sizeof (ut32) + context->word_size;
+	ut8 buf[3 * sizeof (ut32) + sizeof (ut64)];
+	int chdSize = 3 * sizeof (ut32) + context->word_size;
 	if (chdSize > sizeof (buf)) {
 		return false;
 	}
