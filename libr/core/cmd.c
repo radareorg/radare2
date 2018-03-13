@@ -1931,7 +1931,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 		break;
 	case '?':
-		if ( cmd[1] && cmd[1] == '>' ) {
+		if (cmd[1] == '>') {
 			r_core_cmd_help (core, help_msg_greater_sign);
 			return true;
 		}
@@ -2130,7 +2130,7 @@ next:
 	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
 	if (ptr) {
-		if (ptr[1] && ptr[1] == '?') {
+		if (ptr[0] && ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_greater_sign);
 			return true;
 		}
