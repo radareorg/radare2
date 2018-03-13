@@ -152,9 +152,68 @@ static ArmOp ops[] = {
 	{ NULL }
 };
 
-static ut32 S_BIT = 0x1;
-static ut32 Q_BITS = 0x6;
-static ut32 C_BITS = 0x78;
+static ut32 M_BIT = 0x01;
+static ut32 S_BIT = 0x02;
+static ut32 C_BITS = 0x3c;
+static ut32 N_BIT = 0x40;
+static ut32 W_BIT = 0x80;
+
+ut32 opmask(char *input, char *opcode) {
+	ut32 res = 0;
+	ut32 i;
+	
+	const char *conds[] = {
+		"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
+		"hi", "ls", "ge", "lt", "gt", "le", "al", "nv", 0
+	};
+
+	const char *qs[] = {NULL, ".n", ".w", 0};
+
+	r_str_case (input, false);
+
+	if (strlen (opcode) > strlen (input)) {
+		return 0;
+	}
+
+	if (!strncmp (input, opcode, strlen (opcode))) {
+		input += strlen (opcode);
+		res |= M_BIT;
+		if (input[0] == 0) {
+			return res;
+		}
+
+		if (input[0] == 'S') {
+			res |= S_BIT;
+			input++;
+		}
+		if (input[0]==0) {
+			return res;
+		}
+		for (i = 0; conds[i]; i++) {
+			if (!strncmp (input, conds[i], strlen (conds[i]))) {
+				res |= i << 2;
+				input+= strlen (conds[i]);
+				break;
+			}
+		}
+		if (!conds[i]) {
+			// default is nv (no value)
+			res |= 15 << 2;
+		}
+		if (input[0]==0) {
+			return res;
+		}
+
+		if (!strncmp (input, ".n", 2)) {
+			res |= 1 << 6;
+		}
+
+		if (!strncmp (input, ".w", 2)) {
+			res |= 1 << 7;
+		}
+	}
+	return res;
+}
 
 static bool err;
 //decode str as number
@@ -538,6 +597,7 @@ static void thumb_swap (ut32 *a) {
 // TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int reg, j;
+	ut32 m;
 	ao->o = UT32_MAX;
 	if (!strcmpnull (ao->op, "pop") && ao->a[0]) {
 		ao->o = 0xbc;
@@ -1041,8 +1101,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		return 2;
 	} else
-	if (!strcmpnull (ao->op, "adc")) {
-		// TODO: implement S and .w
+	if (m = opmask (ao->op, "adc")) {
 		ut64 argt = thumb_selector(ao->a);
 		switch (argt) {
 		case 0x21: {
@@ -1052,17 +1111,24 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		        }
 			// intentional fallthrough
 		case 0x211: {
+			if (m & N_BIT) {
+				// this is explicitly an error
+				return -1;
+			}
 			ao->o = 0x40f10000;
 			ao->o |= (getreg (ao->a[0]));
 			ao->o |= getreg (ao->a[1]) << 24;
 			ao->o |= getthimmed12(ao->a[2]);
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
 			return 4;
 		        }
 			break;
 		case 0x11: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
-			if ( (reg1 < 8) && (reg2 < 8) ) {
+			if ( (reg1 < 8) && (reg2 < 8) && !(m & W_BIT)) {
 				ao->o = 0x4041;
 				ao->o |= (reg1 << 8);
 				ao->o |= (reg2 << 11);
@@ -1074,10 +1140,17 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		        }
 			// intentional fallthrough
 		case 0x111: {
+			if (m & N_BIT) {
+				// this is explicitly an error
+				return -1;
+			}
 			ao->o = 0x40eb0000;
 			ao->o |= (getreg (ao->a[0]));
 			ao->o |= (getreg (ao->a[1])) << 24;
 			ao->o |= (getreg (ao->a[2])) << 8;
+			if (m | S_BIT) {
+				ao->o |= 1 << 28;
+			}
 			return 4;
 		        }
 			break;
@@ -1089,11 +1162,18 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		        }
 			// intentional fallthrough
 		case 0x3111: {
+			if (m & N_BIT) {
+				// this is explicitly an error
+				return -1;
+			}
 			ao->o = 0x40eb0000;
 			ao->o |= (getreg (ao->a[0]));
 			ao->o |= (getreg (ao->a[1])) << 24;
 			ao->o |= (getreg (ao->a[2])) << 16;
 			ao->o |= thumb_getshift (ao->a[3]);
+			if (m | S_BIT) {
+				ao->o |= 1 << 28;
+			}
 			return 4;
 		        }
 			break;
