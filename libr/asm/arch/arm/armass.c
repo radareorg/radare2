@@ -477,7 +477,6 @@ static ut32 getshift(const char *str) {
 			i = (i * 8);
 			i |= shift; // lsl, ror, ...
 			i = i << 4;
-			test
 		}
 	}
 
