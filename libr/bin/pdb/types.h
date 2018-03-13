@@ -1209,8 +1209,10 @@ typedef union {
 	unsigned int virtual_address;
 } UMISC;
 
+#define PDB_SIZEOF_SECTION_NAME 8
+
 typedef struct {
-	char name[8];
+	char name[PDB_SIZEOF_SECTION_NAME];
 	UMISC misc;
 	unsigned int virtual_address;
 	unsigned int size_of_raw_data;
