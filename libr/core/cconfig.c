@@ -2123,6 +2123,28 @@ static int cb_anal_bb_max_size(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_cpp_abi(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+
+	if (*node->value == '?') {
+		print_node_options (node);
+		return false;
+	}
+
+	if (*node->value) {
+		if (strcmp (node->value, "itanium") == 0) {
+			core->anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
+			return true;
+		} else if (strcmp (node->value, "msvc") == 0) {
+			core->anal->cpp_abi = R_ANAL_CPP_ABI_MSVC;
+			return true;
+		}
+		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);
+	}
+	return false;
+}
+
 static int cb_linesto(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2304,6 +2326,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.bb.align", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
 	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
+
+	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);
+	SETDESC (n, "Select C++ ABI (Compiler)");
+	SETOPTIONS (n, "itanium", "msvc", NULL);
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
  	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
