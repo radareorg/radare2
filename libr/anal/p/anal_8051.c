@@ -79,17 +79,15 @@ static i8051_map_entry mem_map[3] = {
 	{ NULL, UT32_MAX, "xdata" }
 };
 
-static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size) {
+static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
 	RIODesc *desc = mem_map[entry].desc;
 	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
-		if (addr != mem_map[entry].addr) {
+		if (force || addr != mem_map[entry].addr) {
 			// reallocate mapped memory if address changed
-			eprintf ("realloc %s to 0x%08x\n", mem_map[entry].name, addr);
 			anal->iob.fd_remap (anal->iob.io, desc->fd, addr);
 		}
 	} else {
 		// allocate memory for address space
-		eprintf ("alloc %s to 0x%08x\n", mem_map[entry].name, addr);
 		char *mstr = r_str_newf ("malloc://%d", size);		
 		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);		
 		r_str_free (mstr);
@@ -136,24 +134,24 @@ static void set_cpu_model(RAnal *anal, bool force) {
 
 		// set memory map registers
 		addr_idata = cpu_models[i].map_idata;
-		addr_sfr = cpu_models[i].map_sfr - 0x80;
+		addr_sfr = cpu_models[i].map_sfr;
 		addr_xdata = cpu_models[i].map_xdata;
 		i8051_reg_write (anal->reg, "_code", cpu_models[i].map_code);
 		i8051_reg_write (anal->reg, "_idata", addr_idata);
-		i8051_reg_write (anal->reg, "_sfr", addr_sfr);
+		i8051_reg_write (anal->reg, "_sfr", addr_sfr - 0x80);
 		i8051_reg_write (anal->reg, "_xdata", addr_xdata);
 		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
 	} else {
 		addr_idata = i8051_reg_read (anal->reg, "_idata");
-		addr_sfr = i8051_reg_read (anal->reg, "_sfr");
+		addr_sfr = i8051_reg_read (anal->reg, "_sfr" + 0x80);
 		addr_xdata = i8051_reg_read (anal->reg, "_xdata");
 	}
 
 	// (Re)allocate memory as needed.
 	// We assume that code is allocated with firmware image
-	map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100);
-	map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80);
-	map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000);
+	map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100, force);
+	map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80, force);
+	map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000, force);
 }
 
 static ut8 bitindex[] = {
