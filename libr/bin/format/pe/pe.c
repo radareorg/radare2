@@ -3320,7 +3320,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 			}
 		} else {
 			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME - 1] = '\0';
+			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 		}
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size = shdr[i].SizeOfRawData;
