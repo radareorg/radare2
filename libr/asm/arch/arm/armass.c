@@ -152,6 +152,10 @@ static ArmOp ops[] = {
 	{ NULL }
 };
 
+static ut32 S_BIT = 0x1;
+static ut32 Q_BITS = 0x6;
+static ut32 C_BITS = 0x78;
+
 static bool err;
 //decode str as number
 static int getnum(const char *str) {
@@ -226,7 +230,7 @@ static ut32 getthimmed12(const char *str) {
 	st32 FSD = 0;
 	ut32 result = 0;
 	if (num <= 0xff) {
-		return num << 16;
+		return num << 8;
 	} else 	if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
 		result |= (num & 0x000000ff) << 8;
 		result |= 0x00000010;
@@ -243,8 +247,9 @@ static ut32 getthimmed12(const char *str) {
 		FSD = firstsigdigit(num);
 		if (FSD != -1) {
 		        result |= ((num >> (24-FSD)) & 0x0000007f) << 8;
-			result |= ((8+FSD) & 0x7) << 4;
-			result |= ((8+FSD) & 0x8) << 18;
+			result |= ((8+FSD) & 0x1) << 15;
+			result |= ((8+FSD) & 0xe) << 3;
+			result |= ((8+FSD) & 0x10) << 14;
 			return result;
 		} else {
 			err = true;
@@ -390,6 +395,38 @@ static ut32 thumb_getshift(const char *str) {
 	return res;
 }
 
+static ut64 thumb_selector(char *args[]) {
+	ut64 res = 0;
+	ut8 i;
+	
+	for (i = 0; i < 15; i++) {
+		if (args[i] == NULL) {
+			break;
+		}
+		if (getreg (args[i]) != -1) {
+			res |= 1 << (i*4);
+			continue;
+		}
+		
+		err = false;
+		getnum (args[i]);
+		if (!err) {
+			res |= 2 << (i*4);
+			continue;
+		}
+
+		err = false;		
+		thumb_getshift (args[i]);
+		if (!err) {
+			res |= 3 << (i*4);
+			continue;
+		}
+		res |= 0xf << (i*4);
+	}
+	err = false;
+	return res;
+}
+		
 static ut32 getshift(const char *str) {
 	char type[128];
 	char arg[128];
@@ -1004,6 +1041,66 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		return 2;
 	} else
+	if (!strcmpnull (ao->op, "adc")) {
+		// TODO: implement S and .w
+		ut64 argt = thumb_selector(ao->a);
+		switch (argt) {
+		case 0x21: {
+			// a bit naughty, perhaps?
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case 0x211: {
+			ao->o = 0x40f10000;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= getreg (ao->a[1]) << 24;
+			ao->o |= getthimmed12(ao->a[2]);
+			return 4;
+		        }
+			break;
+		case 0x11: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			if ( (reg1 < 8) && (reg2 < 8) ) {
+				ao->o = 0x4041;
+				ao->o |= (reg1 << 8);
+				ao->o |= (reg2 << 11);
+				return 2;
+			}
+			// a bit naughty, perhaps?
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case 0x111: {
+			ao->o = 0x40eb0000;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= (getreg (ao->a[1])) << 24;
+			ao->o |= (getreg (ao->a[2])) << 8;
+			return 4;
+		        }
+			break;
+		case 0x311: {
+			// a bit naughty, perhaps?
+			ao->a[3] = ao->a[2];
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case 0x3111: {
+			ao->o = 0x40eb0000;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= (getreg (ao->a[1])) << 24;
+			ao->o |= (getreg (ao->a[2])) << 16;
+			ao->o |= thumb_getshift (ao->a[3]);
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else		
 	if (!strcmpnull (ao->op, "sub")) {
 		int reg = getreg (ao->a[1]);
 		if (reg != -1) {
