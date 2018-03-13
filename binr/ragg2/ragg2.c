@@ -15,7 +15,7 @@
 struct cEnv_t {
 	char *SFLIBPATH;
 	char *CC;
-    const char *OBJCOPY;
+	const char *OBJCOPY;
 	char *CFLAGS;
 	char *LDFLAGS;
 	const char *JMP;
@@ -124,53 +124,24 @@ static int openfile(const char *f, int x) {
 #define ISEXEC (fmt!='r')
 
 static char* getCompiler(void) {
-	char *output = NULL;
-	char *CC = NULL;
+	size_t i;
+	const char *compilers[] = {"llvm-gcc", "clang", "gcc"};
+	char *output = r_sys_getenv ("CC");
 
-	output = r_sys_getenv ("CC");
-	// if CC is not set, or CC is not gcc, llvm-gcc, or clang
-	if (!output || (strcmp (output, "llvm-gcc") 
-  		&& strcmp (output, "clang") && strcmp (output, "gcc")))
-	{
-	   	output = r_sys_cmd_strf ("which llvm-gcc");
-		if (output) {
-            if (!(CC = strdup ("llvm-gcc"))) {
-				goto fail;
-			}
-		}
-
-		free (output);
-		output = r_sys_cmd_strf ("which clang");
-		if (output) {
-			if (!(CC = strdup ("clang"))) {
-				goto fail;
-			}
-		}
-
-		free (output);
-		output = r_sys_cmd_strf ("which gcc");
-		if (output) {
-			if (!(CC = strdup ("gcc"))) {
-				goto fail;
-			}
-		}
-
-		if (!CC) {
-			eprintf ("Please set CC before running.\n");
-			goto fail;
-		}
-	} else {
-		if (!(CC = strdup (output))) {
-			goto fail;
-		}
+	if (output) {
+		return output;
 	}
 
-	free (output);
-	return CC;
+	for (i = 0; i < 3; i++) { 
+		output = r_file_path (compilers[i]);
+		if (strcmp (output, compilers[i])) {
+			free (output);
+			return strdup (compilers[i]);
+		}
+		free (output);
+	}
 
-fail:
-	free (output);
-	free (CC);
+	eprintf ("Couldn't find a compiler ! Please, set CC.\n");
 	return NULL;
 }
 
@@ -183,7 +154,6 @@ static inline bool armOrMips(const char *arch) {
 static void free_cEnv(struct cEnv_t *cEnv) {
 	if (cEnv) {
 		free (cEnv->SFLIBPATH);
-		free (cEnv->CC);
 		free (cEnv->CFLAGS);
 		free (cEnv->LDFLAGS);
 		free (cEnv->SHDR);
@@ -207,7 +177,9 @@ static struct cEnv_t* set_cEnv(const char *arch, const char *os, int bits) {
 		return NULL;
 	}
 
-	cEnv->CC = getCompiler();
+	if (!(cEnv->CC = getCompiler())) {
+		goto fail;
+	}
 
 	cEnv->SFLIBPATH = r_sys_getenv ("SFLIBPATH");
 	if (!cEnv->SFLIBPATH) {
@@ -224,11 +196,7 @@ static struct cEnv_t* set_cEnv(const char *arch, const char *os, int bits) {
 		}
 	}
 
-	if (armOrMips (arch)) {
-		cEnv->JMP = "b";
-	} else {
-		cEnv->JMP = "jmp";
-	}
+	cEnv->JMP = armOrMips (arch) ? "b" : "jmp";
 
 	if (!strcmp (os, "darwin")) {
 		cEnv->OBJCOPY = "gobjcopy";
