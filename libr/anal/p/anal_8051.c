@@ -84,18 +84,27 @@ static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size) {
 	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
 		if (addr != mem_map[entry].addr) {
 			// reallocate mapped memory if address changed
+			eprintf ("realloc %s to 0x%08x\n", mem_map[entry].name, addr);
 			anal->iob.fd_remap (anal->iob.io, desc->fd, addr);
 		}
 	} else {
 		// allocate memory for address space
-		char *mstr = r_str_newf ("malloc://%d", size);
+		eprintf ("alloc %s to 0x%08x\n", mem_map[entry].name, addr);
+		char *mstr = r_str_newf ("malloc://%d", size);		
 		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);		
 		r_str_free (mstr);
 		// set 8051 address space as name of mapped memory
-		int 
-		char *cmdstr = r_str_newf ("omni %d %s", entry+1, mem_map[entry].name);
-		anal->coreb.cmd (anal->coreb.core, cmdstr);
-		r_str_free (cmdstr);
+		if (false && desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+			RList *maps = anal->iob.fd_get_map (anal->iob.io, desc->fd);
+			RIOMap *current_map;
+			RListIter *iter;
+			r_list_foreach (maps, iter, current_map) {
+				char *cmdstr = r_str_newf ("omni %d %s", current_map->id, mem_map[entry].name);
+				anal->coreb.cmd (anal->coreb.core, cmdstr);
+				r_str_free (cmdstr);
+			}
+			r_list_free (maps);
+		}
 	}
 	mem_map[entry].desc = desc;
 	mem_map[entry].addr = addr;
