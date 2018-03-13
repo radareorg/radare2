@@ -154,6 +154,7 @@ static inline bool armOrMips(const char *arch) {
 static void free_cEnv(struct cEnv_t *cEnv) {
 	if (cEnv) {
 		free (cEnv->SFLIBPATH);
+		free (cEnv->CC);
 		free (cEnv->CFLAGS);
 		free (cEnv->LDFLAGS);
 		free (cEnv->SHDR);
