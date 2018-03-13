@@ -815,7 +815,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 		goto end;
 	}
 
-	optypes_list = r_str_split_list(optypes, " ");
+	optypes_list = r_str_split_list (optypes, " ");
 
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
@@ -851,9 +851,9 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 		// This is slow because we do lots of strcmp's.
 		// To improve this, the function r_anal_optype_string_to_int should be implemented
 		// I also don't check if the opcode type exists.
-		const char *optype_str = r_anal_optype_to_string(op.type);
+		const char *optype_str = r_anal_optype_to_string (op.type);
 		r_list_foreach (optypes_list, iter, optype) {
-			if (!strcmp(optype_str, optype)) {
+			if (!strcmp (optype_str, optype)) {
 				goto cleanup_after_push;
 			}
 		}
@@ -862,8 +862,8 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 cleanup_after_push:
 	r_cons_break_pop ();
 end:
-	free(optypes);
-	r_list_free(optypes_list);
+	free (optypes);
+	r_list_free (optypes_list);
 	return res;
 }
 
