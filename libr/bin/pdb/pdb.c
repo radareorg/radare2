@@ -961,8 +961,8 @@ static void print_types(R_PDB *pdb, int mode) {
 					break;
 				case eLF_STRUCTURE:
 				case eLF_UNION:
-					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"%s\":[",
-						"structure", name, "members");
+					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"size\":%d,\"%s\":[",
+						"structure", name, val, "members");
 					break;
 				default:
 					continue;
