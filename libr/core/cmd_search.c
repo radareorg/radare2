@@ -36,7 +36,7 @@ static const char *help_msg_slash[] = {
 	"/o", " [n]", "show offset of n instructions backward",
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", " patternsize", "search for pattern of given size",
-	"/P", " patternsize", "search similar blocks",
+	"/P", " min_identical_bytes", "search similar blocks",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	"/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
@@ -2302,49 +2302,50 @@ static void rop_kuery(void *data, const char *input) {
 static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
 	int i, diff = 0;
 	for (i = 0; i < len; i++) {
-		if (a[i] == b[i] && a[i] == 0x00) {
-			/* ignore nulls */
-		} else if (a[i] != b[i]) {
+		if (a[i] != b[i]) {
 			diff++;
 		}
 	}
 	return diff;
 }
 
-static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to) {
+static void search_similar_pattern_in(RCore *core, const ut8* block, int blocksize, ut64 from, ut64 to, int min_identical) {
 	ut64 addr = from;
-	ut8 *block = calloc (core->blocksize, 1);
-	if (!block) {
+	ut8 *haystack = malloc (blocksize);
+	if (!haystack) {
 		return;
 	}
 	while (addr < to) {
-		(void) r_io_read_at (core->io, addr, block, core->blocksize);
-		if (r_cons_is_breaked ()) {
+		int equal = 0, i;
+		if (!r_io_read_at_mapped (core->io, addr, haystack, blocksize) || r_cons_is_breaked ()) {
 			break;
 		}
-		int diff = memcmpdiff (core->block, block, core->blocksize);
-		int equal = core->blocksize - diff;
-		if (equal >= count) {
-			int pc = (equal * 100) / core->blocksize;
-			r_cons_printf ("0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
+		for (i = 0; i < blocksize; i++) {
+			if (block[i] == haystack[i]) {
+				equal++;
+			}
+		}
+		if (equal >= min_identical) {
+			int pc = (equal * 100) / blocksize;
+			r_cons_printf ("0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, blocksize, pc);
 			ut8 ptr[2] = {
 				(ut8)(pc * 2.5), 0
 			};
-			r_print_fill (core->print, ptr, 1, UT64_MAX, core->blocksize);
+			r_print_fill (core->print, ptr, 1, UT64_MAX, blocksize);
 		}
-		addr += core->blocksize;
+		addr += blocksize;
 	}
-	free (block);
+	free (haystack);
 }
 
-static void search_similar_pattern(RCore *core, int count) {
+static void search_similar_pattern(RCore *core, const ut8* block, int blocksize, int min_identical) {
 	RIOMap *p;
 	RListIter *iter;
 
 	r_cons_break_push (NULL, NULL);
 	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "search");
 	r_list_foreach (list, iter, p) {
-		search_similar_pattern_in (core, count, p->itv.addr, r_itv_end (p->itv));
+		search_similar_pattern_in (core, block, blocksize, R_ITV_BEGIN (p), R_ITV_END (p), min_identical);
 	}
 	r_list_free (list);
 	r_cons_break_pop ();
@@ -2782,7 +2783,7 @@ reread:
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, file, addr, 99, false);
+					ret = r_core_magic_at (core, file, addr, 99, false, core->block);
 					if (ret == -1) {
 						// something went terribly wrong.
 						break;
@@ -2818,7 +2819,7 @@ reread:
 	}
 	break;
 	case 'P': // "/P"
-		search_similar_pattern (core, atoi (input + 1));
+		search_similar_pattern (core, core->block, core->blocksize, atoi (input + 1));
 		break;
 	case 's': // "/s"
 		do_syscall_search (core, &param);
