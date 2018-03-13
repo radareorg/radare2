@@ -1010,7 +1010,13 @@ static int cb_color(void *user, void *data) {
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_COLOR);
 	}
-	r_cons_singleton ()->color = (node->i_value > COLOR_MODE_16M)? COLOR_MODE_16M: node->i_value;
+	if (!strcmp (node->value, "true")) {
+		node->i_value = 1;
+	} else if (!strcmp (node->value, "false")) {
+		node->i_value = 0;
+	}
+	r_cons_singleton ()->color = (node->i_value > COLOR_MODE_16M)
+		? COLOR_MODE_16M: node->i_value;
 	r_cons_pal_update_event ();
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
