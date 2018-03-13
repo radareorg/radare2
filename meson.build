@@ -19,7 +19,7 @@ if meson.is_subproject()
     py_cmd = run_command(py3_exe, '-c', py_cmd)
     if py_cmd.returncode() == 0
       repo = py_cmd.stdout().strip()
-      message('r2 realpath: ' + repo)
+      message('r2 real path: ' + repo)
     endif
   endif
 endif
@@ -59,8 +59,6 @@ if r2birth.returncode() != 0
 else
   r2birth = r2birth.stdout().strip()
 endif
-
-prefix = get_option('prefix')
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -121,10 +119,10 @@ config_h = configure_file(input: 'libr/config.h.in',
 
 userconf = configuration_data()
 userconf.set('DEBUGGER', 1)
-userconf.set('PREFIX', prefix)
-userconf.set('LIBDIR', prefix + '/lib')
-userconf.set('INCLUDEDIR', prefix + '/include')
-userconf.set('DATADIR', prefix + '/share')
+userconf.set('PREFIX', get_option('prefix'))
+userconf.set('LIBDIR', get_option('libdir'))
+userconf.set('INCLUDEDIR', get_option('includedir'))
+userconf.set('DATADIR', get_option('datadir'))
 userconf.set('HAVE_LIB_MAGIC', 0)
 userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
@@ -154,10 +152,9 @@ install_headers(r_version_h, subdir: 'libr')
 # Copy missing header
 run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
 
-
 pcconf = configuration_data()
-pcconf.set('PREFIX', prefix)
-pcconf.set('LIBDIR', prefix + '/lib')
+pcconf.set('PREFIX', get_option('prefix'))
+pcconf.set('LIBDIR', get_option('libdir'))
 pcconf.set('VERSION', r2version)
 libr_pc = configure_file(input: 'libr/libr.pc.acr',
                          output: 'libr.pc',
@@ -199,6 +196,31 @@ subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
 
+if not meson.is_subproject()
+  subdir('binr/rahash2')
+  subdir('binr/rarun2')
+  subdir('binr/rasm2')
+  subdir('binr/rabin2')
+  subdir('binr/radare2')
+  subdir('binr/ragg2')
+  subdir('binr/r2agent')
+  subdir('binr/radiff2')
+  subdir('binr/rafind2')
+  subdir('binr/rax2')
+else
+  libr2_lib = [
+    r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto, r_egg,
+    r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse, r_reg, r_search,
+    r_socket, r_syscall, r_util
+  ]
+  libr2_inc = include_directories(['.', 'libr/include'])
+  libr2_dep = declare_dependency(
+    link_with: libr2_lib,
+    include_directories: libr2_inc,
+    version: r2version
+  )
+endif
+
 install_subdir('shlr/www',
   install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version)
 )
@@ -212,12 +234,12 @@ install_data(fortunes_files,
 
 man1_files = run_command(patterned_filelist + ['man/*.1']).stdout().strip().split(';')
 install_data(man1_files,
-  install_dir: join_paths(get_option('datadir'), 'man/man1')
+  install_dir: join_paths(get_option('mandir'), 'man1')
 )
 
 man7_files = run_command(patterned_filelist + ['man/*.7']).stdout().strip().split(';')
 install_data(man7_files,
-  install_dir: join_paths(get_option('datadir'), 'man/man7')
+  install_dir: join_paths(get_option('mandir'), 'man7')
 )
 
 custom_target('hud',
@@ -229,28 +251,3 @@ custom_target('hud',
   install: true,
   install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version, 'hud')
 )
-
-if meson.is_subproject()
-  libr2_lib = [
-    r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto, r_egg,
-    r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse, r_reg, r_search,
-    r_socket, r_syscall, r_util
-  ]
-  libr2_inc = include_directories(['.', 'libr/include'])
-  libr2_dep = declare_dependency(
-    link_with: libr2_lib,
-    include_directories: libr2_inc,
-    version: r2version
-  )
-else
-  subdir('binr/rahash2')
-  subdir('binr/rarun2')
-  subdir('binr/rasm2')
-  subdir('binr/rabin2')
-  subdir('binr/radare2')
-  subdir('binr/ragg2')
-  subdir('binr/r2agent')
-  subdir('binr/radiff2')
-  subdir('binr/rafind2')
-  subdir('binr/rax2')
-endif
