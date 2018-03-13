@@ -609,6 +609,11 @@ static int bin_info(RCore *r, int mode) {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
 			r_config_set (r->config, "asm.os", info->os);
+			if (info->rclass && !strcmp (info->rclass, "pe")) {
+				r_config_set (r->config, "anal.cpp.abi", "msvc");
+			} else {
+				r_config_set (r->config, "anal.cpp.abi", "itanium");
+			}
 			r_config_set (r->config, "asm.arch", info->arch);
 			if (info->cpu && *info->cpu) {
 				r_config_set (r->config, "asm.cpu", info->cpu);
