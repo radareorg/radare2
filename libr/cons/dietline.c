@@ -142,7 +142,6 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 		int ch = r_cons_readchar ();
 		if (ch != -1) {
 			s[i] = ch;
-			return 1;
 		}
 		if ((s[i] & 0xc0) != 0x80) {
 			return -1;
