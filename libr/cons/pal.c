@@ -356,31 +356,31 @@ static void r_cons_pal_show_gs () {
 static void r_cons_pal_show_256 () {
 	RColor rc = RColor_BLACK;
 	r_cons_print ("\n\nXTerm colors:\n");
-	for (rc.r = 0x00; rc.r <= 0xff; rc.r += 0x28) {
+	int r = 0;
+	int g = 0;
+	int b = 0;
+	for (r = 0x00; r <= 0xff; r += 0x28) {
+		rc.r = r;
 		if (rc.r == 0x28) {
 			rc.r = 0x5f;
 		}
-		for (rc.b = 0x00; rc.b <= 0xff; rc.b += 0x28) {
+		for (b = 0x00; b <= 0xff; b += 0x28) {
+			rc.b = b;
 			if (rc.b == 0x28) {
 				rc.b = 0x5f;
 			}
-			for (rc.g = 0x00; rc.g <= 0xff; rc.g += 0x28) {
-				char fg[32], bg[32];
+			for (g = 0x00; g <= 0xff; g += 0x28) {
+				rc.g = g;
+				char bg[32];
 				if (rc.g == 0x28) {
 					rc.g = 0x5f;
 				}
-				if ((rc.r <= 0x5f) && (rc.g <= 0x5f)) {
-					strcpy (fg, Color_WHITE);
-				} else {
-					strcpy (fg, Color_BLACK);
-				}
+				const char *fg = ((rc.r <= 0x5f) && (rc.g <= 0x5f)) ? Color_WHITE: Color_BLACK;
 				r_cons_rgb_str (bg, &rc);
 				r_cons_printf ("%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
-				if (rc.g == 0xff) {
-					r_cons_newline ();
-				}
 			}
+			r_cons_newline ();
 		}
 	}
 }
