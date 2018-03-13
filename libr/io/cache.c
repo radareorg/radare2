@@ -69,7 +69,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 
 	if (from < to) {
 		RInterval range = (RInterval){from, to - from};
-		r_list_foreach (io->cache, iter, c) {
+		r_list_foreach_prev (io->cache, iter, c) {
 			if (R_ITV_OVERLAP (c, range)) {
 				int cached = io->cached;
 				io->cached = 0;
