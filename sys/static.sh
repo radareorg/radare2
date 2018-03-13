@@ -69,6 +69,7 @@ if [ -z "${CC}" ]; then
 	CC=gcc
 fi
 ${CC} .test.c \
+	${CFLAGS} \
 	-I r2-static/usr/include/libr \
 	r2-static/usr/lib/libr.a ${LDFLAGS}
 res=$?
