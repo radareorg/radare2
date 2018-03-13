@@ -11,7 +11,21 @@
 #include <string.h>
 
 
-static int usage (int v) {
+// compilation environment
+struct cEnv_t {
+	char *SFLIBPATH;
+	char *CC;
+    const char *OBJCOPY;
+	char *CFLAGS;
+	char *LDFLAGS;
+	const char *JMP;
+	const char *FMT;
+	char *SHDR;
+	char *TRIPLET;
+	const char *TEXT;
+};
+
+static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 		"             [-q off] [-dDw off:hex] file|f.asm|-\n");
@@ -50,7 +64,8 @@ static int usage (int v) {
 	return 1;
 }
 
-static void list (REgg *egg) {
+
+static void list(REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
 	printf ("shellcodes:\n");
@@ -67,7 +82,7 @@ static void list (REgg *egg) {
 	}
 }
 
-static int create (const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
 	RBuffer *b;
 	if (!r_bin_use_arch (bin, arch, bits, format)) {
@@ -86,7 +101,7 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 	return 0;
 }
 
-static int openfile (const char *f, int x) {
+static int openfile(const char *f, int x) {
 	int fd = open (f, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
 		fd = open (f, O_RDWR);
@@ -107,6 +122,420 @@ static int openfile (const char *f, int x) {
 	return fd;
 }
 #define ISEXEC (fmt!='r')
+
+static char* getCompiler(void) {
+	char *output = NULL;
+	char *CC = NULL;
+
+	output = r_sys_getenv ("CC");
+	// if CC is not set, or CC is not gcc, llvm-gcc, or clang
+	if (!output || (strcmp (output, "llvm-gcc") 
+  		&& strcmp (output, "clang") && strcmp (output, "gcc")))
+	{
+	   	output = r_sys_cmd_strf ("which llvm-gcc");
+		if (output) {
+            if (!(CC = strdup ("llvm-gcc"))) {
+				goto fail;
+			}
+		}
+
+		free (output);
+		output = r_sys_cmd_strf ("which clang");
+		if (output) {
+			if (!(CC = strdup ("clang"))) {
+				goto fail;
+			}
+		}
+
+		free (output);
+		output = r_sys_cmd_strf ("which gcc");
+		if (output) {
+			if (!(CC = strdup ("gcc"))) {
+				goto fail;
+			}
+		}
+
+		if (!CC) {
+			eprintf ("Please set CC before running.\n");
+			goto fail;
+		}
+	} else {
+		if (!(CC = strdup (output))) {
+			goto fail;
+		}
+	}
+
+	free (output);
+	return CC;
+
+fail:
+	free (output);
+	free (CC);
+	return NULL;
+}
+
+static inline bool armOrMips(const char *arch) {
+	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64")
+	  	|| !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips")
+		|| !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
+}
+
+static void free_cEnv(struct cEnv_t *cEnv) {
+	if (cEnv) {
+		free (cEnv->SFLIBPATH);
+		free (cEnv->CC);
+		free (cEnv->CFLAGS);
+		free (cEnv->LDFLAGS);
+		free (cEnv->SHDR);
+		free (cEnv->TRIPLET);
+	}
+	free (cEnv);
+}
+
+static inline bool check_cEnv(struct cEnv_t *cEnv) {
+	return (!cEnv->SFLIBPATH || !cEnv->CC || !cEnv->CFLAGS || !cEnv->LDFLAGS
+		|| !cEnv->SHDR || !cEnv->TRIPLET);
+}
+
+static struct cEnv_t* set_cEnv(const char *arch, const char *os, int bits) {
+	struct cEnv_t *cEnv = calloc (1, sizeof (struct cEnv_t));
+	bool use_clang;
+	char *buffer = NULL;
+	char *output = NULL;
+
+	if (!cEnv) {
+		return NULL;
+	}
+
+	cEnv->CC = getCompiler();
+
+	cEnv->SFLIBPATH = r_sys_getenv ("SFLIBPATH");
+	if (!cEnv->SFLIBPATH) {
+		output = r_sys_cmd_strf ("r2 -hh | grep INCDIR | awk '{print $2}'");
+		if (!output || (output[0] == '\0')) {
+			eprintf ("Cannot find SFLIBPATH env var.\n"
+		  		 "Please define it, or fix r2 installation.\n");
+			goto fail;
+		}
+    
+		output[strlen (output) - 1] = '\0'; // strip the ending '\n'
+		if (!(cEnv->SFLIBPATH = r_str_newf ("%s/sflib", output))) {
+			goto fail;
+		}
+	}
+
+	if (armOrMips (arch)) {
+		cEnv->JMP = "b";
+	} else {
+		cEnv->JMP = "jmp";
+	}
+
+	if (!strcmp (os, "darwin")) {
+		cEnv->OBJCOPY = "gobjcopy";
+		cEnv->FMT = "mach0";
+		if (!strcmp (arch, "x86")) {
+			if (bits == 32) {
+				cEnv->CFLAGS = strdup ("-arch i386");
+				cEnv->LDFLAGS = strdup ("-arch i386 -shared -c");
+			} else {
+				cEnv->CFLAGS = strdup ("-arch x86_64");
+				cEnv->LDFLAGS = strdup ("-arch x86_64 -shared -c");
+			}
+		} else {
+			cEnv->LDFLAGS = strdup ("-shared -c");
+		}
+		cEnv->SHDR = r_str_newf ("\n.text\n%s _main\n", cEnv->JMP);
+
+	} else {
+		cEnv->OBJCOPY = "objcopy";
+		cEnv->FMT = "elf";
+		cEnv->SHDR = r_str_newf ("\n.section .text\n.globl  main\n"
+				   "// .type   main, @function\n%s main\n", cEnv->JMP);
+		if (!strcmp (arch, "x86")) {
+			if (bits == 32) {
+				cEnv->CFLAGS = strdup ("-fPIC -fPIE -pie -fpic -m32");
+				cEnv->LDFLAGS = strdup ("-fPIC -fPIE -pie -fpic -m32");
+			} else {
+				cEnv->CFLAGS = strdup ("-fPIC -fPIE -pie -fpic -m64");
+				cEnv->LDFLAGS = strdup ("-fPIC -fPIE -pie -fpic -m64");
+			}
+		} else {
+			cEnv->CFLAGS = strdup ("-fPIC -fPIE -pie -fpic -nostartfiles");
+			cEnv->LDFLAGS = strdup ("-fPIC -fPIE -pie -fpic -nostartfiles");
+		}
+	}
+
+	cEnv->TRIPLET = r_str_newf ("%s-%s-%d", os, arch, bits);
+
+	if (!strcmp (os, "windows")) {
+		cEnv->TEXT = ".text";
+		cEnv->FMT = "pe";
+	} else if (!strcmp (os, "darwin")) {
+		cEnv->TEXT = "0.__TEXT.__text";
+	} else {
+		cEnv->TEXT = ".text";
+	}
+		
+	use_clang = false;
+	if (!strcmp (cEnv->TRIPLET, "darwin-arm-64")) {
+		free (cEnv->CC);
+		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=0.0");
+		use_clang = true;
+		cEnv->TEXT = "0.__TEXT.__text";
+	} else if (!strcmp (cEnv->TRIPLET, "darwin-arm-32")) {
+		free (cEnv->CC);
+		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=0.0");
+		use_clang = true;
+		cEnv->TEXT = "0.__TEXT.__text";
+	}
+
+	buffer = r_str_newf ("%s -nostdinc -include '%s'/'%s'/sflib.h",
+	  		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
+	if (!buffer) {
+		goto fail;
+	}
+	free (cEnv->CFLAGS);
+	cEnv->CFLAGS = strdup (buffer);
+
+	if (use_clang) {
+		free (buffer);
+		buffer = r_str_newf ("%s -fomit-frame-pointer"
+		  		" -fno-zero-initialized-in-bss", cEnv->CFLAGS);
+		if (!buffer) {
+			goto fail;
+		}
+		free (cEnv->CFLAGS);
+		cEnv->CFLAGS = strdup (buffer);
+	} else { 
+		free (buffer);
+		buffer = r_str_newf ("%s -z execstack -fomit-frame-pointer"
+				" -finline-functions -fno-zero-initialized-in-bss", cEnv->CFLAGS);
+		if (!buffer) {
+			goto fail;
+		}
+		free (cEnv->CFLAGS);
+		cEnv->CFLAGS = strdup (buffer);
+	}
+	free (buffer);
+	buffer = r_str_newf ("%s -nostdlib", cEnv->LDFLAGS);
+	if (!buffer) {
+		goto fail;
+	}
+	free (cEnv->LDFLAGS);
+	cEnv->LDFLAGS = strdup (buffer);
+
+	if (check_cEnv (cEnv)) {
+		eprintf ("Error with cEnv allocation!\n");
+		goto fail;
+	}
+
+	free (buffer);
+	free (output);
+	return cEnv;
+
+fail:
+	free (buffer);
+	free (output);
+	free_cEnv (cEnv);
+	return NULL;
+}
+
+// Strips all the lines in str that contain key
+static char* r_str_stripLine(char *str, const char *key)
+{
+	size_t i, klen, slen, off;
+	const char *ptr; 
+	char *newStr = NULL;
+
+	if (!str || !key) {
+		return NULL;
+	}
+	klen = strlen (key);
+	slen = strlen (str);
+
+	for (i = 0; i < slen; ) {
+		ptr = (char*) r_mem_mem ((ut8*) str + i, slen - i, (ut8*) "\n", 1);
+		if (!ptr) {
+			ptr = (char*) r_mem_mem ((ut8*) str + i, slen - i, (ut8*) key, klen);
+			if (ptr) {
+				free (newStr);
+				newStr = malloc (i + 1);
+				memcpy (newStr, str, i);
+				newStr[i] = '\0';
+				free (str);
+				str = strdup (newStr);
+				break;
+			}
+			break;
+		}
+			
+		off = (size_t) (ptr - (str + i)) + 1;
+
+		ptr = (char*) r_mem_mem ((ut8*) str + i, off, (ut8*) key, klen);
+		if (ptr) {
+			free (newStr);
+			newStr = malloc (slen - off + 1);
+			if (!newStr) {
+				free (str);
+				str = NULL;
+				break;
+			}
+			memcpy (newStr, str, i);
+			memcpy (newStr + i, str + i + off, slen - i - off);
+			slen -= off;
+			newStr[slen] = '\0';
+			free (str);
+			str = strdup (newStr);
+		} else {
+			i += off;
+		}
+	}
+	free (newStr);
+	return str;
+}
+
+static bool parseCompiled(const char *file) {
+	char *fileExt = r_str_newf ("%s.tmp", file);
+	char *buffer = r_file_slurp (fileExt, NULL);
+
+	buffer = r_str_replace (buffer, "rdata", "text", false);
+	buffer = r_str_replace (buffer, "rodata", "text", false);
+	buffer = r_str_replace (buffer, "get_pc_thunk.bx", "__getesp__", true);
+
+	const char *words[] = {".cstring", "size", "___main", "section", "__alloca", "zero", "cfi"};
+	size_t i;
+	for (i = 0; i < 7; i++) {
+		if (!(buffer = r_str_stripLine (buffer, words[i]))) {
+			goto fail;
+		}
+	}
+
+	free (fileExt);
+	fileExt = r_str_newf ("%s.s", file);
+	if (!r_file_dump (fileExt, (const ut8*) buffer, strlen (buffer), true)) {
+		eprintf ("Error while opening %s.s\n", file);
+		goto fail;
+	}
+
+	free (buffer);
+	free (fileExt);
+	return true;
+
+fail:
+	free (buffer);
+	free (fileExt);
+	return false;
+}
+
+static char* parseCFile(const char *file, const char *arch, const char *os, int bits) {
+	char *output = NULL;
+	char *fileExt = NULL; // "file" with extension (.s, .text, ...)
+	struct cEnv_t *cEnv = set_cEnv (arch, os, bits);
+
+	if (!cEnv) {
+		goto fail;
+	}
+
+	r_str_sanitize (cEnv->CC);
+
+	//printf ("==> Compile\n");
+	printf ("'%s' %s -o '%s.tmp' -S -Os '%s'\n", cEnv->CC, cEnv->CFLAGS, file, file);
+
+	output = r_sys_cmd_strf ("('%s' %s -o '%s.tmp' -S -Os '%s') 2>&1",
+	  			cEnv->CC, cEnv->CFLAGS, file, file);
+	if (output == NULL) {
+		eprintf ("Compilation failed!\n");
+		goto fail;
+	}
+	printf ("%s", output);
+
+	if (!(fileExt = r_str_newf ("%s.s", file))) {
+		goto fail;
+	}
+
+	if (!r_file_dump (fileExt, (const ut8*) cEnv->SHDR, strlen (cEnv->SHDR), false)) {
+		eprintf ("Error while opening %s.s\n", file);
+		goto fail;
+	}
+
+	if (!parseCompiled (file)) {
+		goto fail;
+	}
+
+	//printf ("==> Assemble\n");
+	printf ("'%s' %s -Os -o '%s.o' '%s.s'\n", cEnv->CC, cEnv->LDFLAGS, file, file);
+
+	free (output);
+	output = r_sys_cmd_strf ("'%s' %s -Os -o '%s.o' '%s.s'",
+		   		cEnv->CC, cEnv->LDFLAGS, file, file);
+	if (!output) {
+		eprintf ("Assembly failed!\n");
+		goto fail;
+	}
+	printf ("%s", output);
+
+	//printf ("==> Link\n");
+	printf ("rabin2 -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
+
+	free (output);
+	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o",
+		   		file, cEnv->TEXT, file);
+	if (!output) {
+		eprintf ("Linkage failed!\n");
+		goto fail;
+	}
+
+	free (fileExt);
+	if (!(fileExt = r_str_newf ("%s.o", file))) {
+		goto fail;
+	}
+
+	if (!r_file_exists (fileExt)) {
+		eprintf ("Cannot find %s.o\n", file);
+		goto fail;
+	}
+
+	free (fileExt);
+	if (!(fileExt = r_str_newf ("%s.text", file))) {
+		goto fail;
+	}
+	if (r_file_size (fileExt) == 0) {
+		printf ("FALLBACK: Using objcopy instead of rabin2");
+
+		free (output);
+		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'", 
+		  		cEnv->OBJCOPY, file, file);
+		if (!output) {
+			eprintf ("objcopy failed!\n");
+			goto fail;
+		}
+	}
+
+	size_t i;
+	const char *extArray[] = {"bin", "tmp", "s", "o"};
+	for (i = 0; i < 4; i++) {
+		free (fileExt);
+		if (!(fileExt = r_str_newf ("%s.%s", file, extArray[i]))) {
+			goto fail;
+		}
+		r_file_rm (fileExt);
+	}
+
+	free (fileExt);
+	if ((fileExt = r_str_newf ("%s.text", file)) == NULL) {
+		goto fail;
+	}
+
+	free (output);
+	free_cEnv (cEnv);
+	return fileExt;
+
+fail:
+	free (fileExt);
+	free (output);
+	free_cEnv (cEnv);
+	return NULL;
+}
 
 int main(int argc, char **argv) {
 	const char *file = NULL;
@@ -156,7 +585,7 @@ int main(int argc, char **argv) {
 		case 'C':
 			contents = optarg;
 			break;
-		case 'w':
+		case 'w': 
 			{
 			char *arg = strdup (optarg);
 			char *p = strchr (arg, ':');
@@ -191,7 +620,7 @@ int main(int argc, char **argv) {
 			ut64 n = r_num_math (NULL, optarg);
 			r_egg_patch (egg, -1, (const ut8*)&n, 8);
 			append = 1;
-			} 
+			}
 			break;
 		case 'd':
 			{
@@ -340,6 +769,28 @@ int main(int argc, char **argv) {
 				}
 				r_egg_load (egg, buf, 0);
 			}
+		} else if (strstr (file, ".c")) {
+			char *fileSanitized = strdup (file);
+			r_str_sanitize (fileSanitized);
+			char *textFile = parseCFile (fileSanitized, arch, os, bits);
+
+			if (!textFile) {
+				eprintf ("Failure while parsing '%s'\n", fileSanitized);
+				goto fail;
+			}
+
+			int l;
+			char *buf = r_file_slurp (textFile, &l);
+			if (buf && l > 0) {
+				r_egg_raw (egg, (const ut8*)buf, l);
+			} else {
+				eprintf ("Error loading '%s'\n", textFile);
+			}
+
+			r_file_rm (textFile);
+			free (fileSanitized);
+			free (textFile);
+			free (buf);
 		} else {
 			if (strstr (file, ".s") || strstr (file, ".asm")) {
 				fmt = 'a';
