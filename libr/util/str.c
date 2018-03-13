@@ -2625,13 +2625,13 @@ R_API RList *r_str_split_list(char *str, const char *c)  {
 
 	for (;;) {
 		if (first_loop) {
-			aux = strtok(str, c);
+			aux = strtok (str, c);
 			first_loop = false;
 		} else {
-			aux = strtok(NULL, c);
+			aux = strtok (NULL, c);
 		}
 
-		if (aux == NULL) {
+		if (!aux) {
 			break;
 		}
 		r_list_append (lst, aux);

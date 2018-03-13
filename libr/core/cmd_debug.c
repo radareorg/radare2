@@ -792,7 +792,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static int step_until_optype (RCore *core, const char *_optypes) {
+static int step_until_optype(RCore *core, const char *_optypes) {
 	RAnalOp op;
 	ut8 buf[32];
 	ut64 pc;
@@ -801,7 +801,7 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 	RList *optypes_list;
 	RListIter *iter;
 	char *optype;
-	char *optypes = strdup(r_str_trim_head((char *) _optypes));
+	char *optypes = strdup (r_str_trim_head ((char *) _optypes));
 
 	if (!core || !core->dbg) {
 		eprint ("Wrong state");
