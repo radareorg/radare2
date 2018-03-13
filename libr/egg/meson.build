@@ -1,5 +1,6 @@
 files = [
   'egg.c',
+  'egg_Cfile.c',
   'egg_lang.c',
   'emit_arm.c',
   'emit_trace.c',

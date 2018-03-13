@@ -9,6 +9,7 @@ OBJS+=emit_x86.o
 OBJS+=emit_arm.o
 OBJS+=emit_x64.o
 OBJS+=emit_trace.o
+OBJS+=egg_Cfile.o
 
 all: ${LIBSO} ${LIBAR}
 
