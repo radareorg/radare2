@@ -2617,17 +2617,27 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 	return !strcmp (str + (slen - nlen), needle);
 }
 
-R_API RList *r_str_split_list(char *str) {
-	int i, count, *a = r_str_split_lines (str, &count);
-	if (a) {
-		RList *list = r_list_newf (free);
-		for (i = 0; i < count; i++) {
-			r_list_append (list, str + a[i]);
+// Splits the string <str> by string <c> and returns the result in a list.
+R_API RList *r_str_split_list(char *str, const char *c)  {
+	RList *lst = r_list_new ();
+	char *aux;
+	bool first_loop = true;
+
+	for (;;) {
+		if (first_loop) {
+			aux = strtok (str, c);
+			first_loop = false;
+		} else {
+			aux = strtok (NULL, c);
 		}
-		free (a);
-		return list;
+
+		if (!aux) {
+			break;
+		}
+		r_list_append (lst, aux);
 	}
-	return NULL;
+
+	return lst;
 }
 
 R_API int *r_str_split_lines(char *str, int *count) {
@@ -2721,7 +2731,7 @@ static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
 	int count = 0;
 	for (i = 0, j = 0; s1[i]  && s2[j] && count < n; i++, j++, count++) {
 		while (s1[i] == 0x1b) {
-			while (s1[i] && s1[i] != 'm') { 
+			while (s1[i] && s1[i] != 'm') {
 				i++;
 			}
 			if (s1[i]) {

@@ -792,17 +792,16 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static int step_until_optype (RCore *core, const char *_optypes) {
+static int step_until_optype(RCore *core, const char *_optypes) {
 	RAnalOp op;
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
-	int i;
-	
-	RList *optypes_list = r_list_new ();
+
+	RList *optypes_list;
 	RListIter *iter;
 	char *optype;
-	char *optypes = strdup(r_str_trim_head((char *) _optypes));
+	char *optypes = strdup (r_str_trim_head ((char *) _optypes));
 
 	if (!core || !core->dbg) {
 		eprint ("Wrong state");
@@ -816,21 +815,7 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 		goto end;
 	}
 
-	// split optypes into an array by " "
-	// TODO: Should be refactored into a funtion?
-	// r_str_split_list could receive a ch to split by instead of always '\n'
-	for (i = 0; ; i++) {
-		char *aux;
-		if (i == 0) {
-			aux = strtok(optypes, " ");
-		} else {
-			aux = strtok(NULL, " ");
-		}
-		if (aux == NULL) {
-			break;
-		}
-		r_list_append (optypes_list, aux);
-	}
+	optypes_list = r_str_split_list (optypes, " ");
 
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
@@ -866,9 +851,9 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 		// This is slow because we do lots of strcmp's.
 		// To improve this, the function r_anal_optype_string_to_int should be implemented
 		// I also don't check if the opcode type exists.
-		const char *optype_str = r_anal_optype_to_string(op.type);
+		const char *optype_str = r_anal_optype_to_string (op.type);
 		r_list_foreach (optypes_list, iter, optype) {
-			if (!strcmp(optype_str, optype)) {
+			if (!strcmp (optype_str, optype)) {
 				goto cleanup_after_push;
 			}
 		}
@@ -877,8 +862,8 @@ static int step_until_optype (RCore *core, const char *_optypes) {
 cleanup_after_push:
 	r_cons_break_pop ();
 end:
-	free(optypes);
-	r_list_free(optypes_list);
+	free (optypes);
+	r_list_free (optypes_list);
 	return res;
 }
 
