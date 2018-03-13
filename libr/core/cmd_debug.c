@@ -798,7 +798,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 	ut64 pc;
 	int res = true;
 
-	RList *optypes_list;
+	RList *optypes_list = NULL;
 	RListIter *iter;
 	char *optype;
 	char *optypes = strdup (r_str_trim_head ((char *) _optypes));
