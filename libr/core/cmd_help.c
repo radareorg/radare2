@@ -60,6 +60,7 @@ static const char *help_msg_root[] = {
 	"?[??]","[expr]", "Help or evaluate math expression",
 	"?$?", "", "Show available '$' variables and aliases",
 	"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
+	"?>?", "", "Output redirection",
 	NULL
 };
 
@@ -163,6 +164,15 @@ static const char *help_msg_question_V[] = {
 	"?Vc", "", "show numeric version",
 	"?Vj", "", "same as above but in JSON",
 	"?Vq", "", "quiet mode, just show the version number",
+	NULL
+};
+
+static const char *help_msg_greater_sign[] = {
+	"Usage:", "[cmd]>[file]", "Redirects the console output of 'cmd' to 'file'",
+	"[cmd] > [file]", "", "Redirects STDOUT of 'cmd' to 'file'",
+	"[cmd] H> [file]", "", "Redirects html output of 'cmd' to 'file'",
+	"[cmd] 2> [file]", "", "Redirects STDERR of 'cmd' to 'file'",
+	"[cmd] 2> /dev/null", "", "Omits the STDERR output of 'cmd'",
 	NULL
 };
 

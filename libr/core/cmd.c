@@ -1930,6 +1930,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			return r_cmd_call (core->rcmd, cmd);
 		}
 		break;
+	case '?':
+		if (cmd[1] == '>') {
+			r_core_cmd_help (core, help_msg_greater_sign);
+			return true;
+		}
 	}
 
 // TODO must honor `
@@ -2125,6 +2130,10 @@ next:
 	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
 	if (ptr) {
+		if (ptr[0] && ptr[1] == '?') {
+			r_core_cmd_help (core, help_msg_greater_sign);
+			return true;
+		}
 		int fdn = 1;
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
 		int use_editor = false;
