@@ -407,8 +407,8 @@ static bool isFunctionFlag(const char *n) {
 	return (!strncmp (n, "sym.func.", 9)
 	|| !strncmp (n, "method.", 7)
 	|| !strncmp (n, "sym.", 4)
-	|| !strncmp (n, "local.", 6)
-	|| !strncmp (n, "global.", 7)
+	|| !strncmp (n, "L.", 6)
+	|| !strncmp (n, "G.", 7)
 	|| !strncmp (n, "func.", 5)
 	|| !strncmp (n, "fcn.0", 5));
 }

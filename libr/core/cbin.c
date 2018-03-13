@@ -1655,10 +1655,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 static const char *getPrefixFor(const char *type, const char *bind) {
 	if (bind) {
 		if (!strcmp (bind, "LOCAL")) {
-			return "local";
+			return "L";
 		}
 		if (!strcmp (bind, "GLOBAL")) {
-			return "global";
+			return "G";
 		}
 	}
 	if (type) {
