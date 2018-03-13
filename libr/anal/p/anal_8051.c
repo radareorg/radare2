@@ -92,7 +92,7 @@ static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool f
 		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);		
 		r_str_free (mstr);
 		// set 8051 address space as name of mapped memory
-		if (false && desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
 			RList *maps = anal->iob.fd_get_map (anal->iob.io, desc->fd);
 			RIOMap *current_map;
 			RListIter *iter;
@@ -143,7 +143,7 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
 	} else {
 		addr_idata = i8051_reg_read (anal->reg, "_idata");
-		addr_sfr = i8051_reg_read (anal->reg, "_sfr" + 0x80);
+		addr_sfr = i8051_reg_read (anal->reg, "_sfr") + 0x80;
 		addr_xdata = i8051_reg_read (anal->reg, "_xdata");
 	}
 
