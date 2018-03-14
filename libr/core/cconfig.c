@@ -980,6 +980,15 @@ static int cb_cfg_fortunes_type(void *user, void *data) {
 	return true;
 }
 
+static int cb_cmdpdc(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->value[0] == '?') {
+		return false;
+	}
+	return true;
+}
+
 static int cb_cmdlog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2682,6 +2691,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.gprompt", "", "Graph visual prompt commands");
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
+	SETCB ("cmd.pdc", "", &cb_cmdpdc, "Select pseudo-decompiler command to run after pdc");
 	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
 	SETPREF ("cmd.prompt", "", "Prompt commands");
 	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "Empty command an alias for '..' (repeat last command)");
