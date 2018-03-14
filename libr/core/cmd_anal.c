@@ -5839,6 +5839,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 					r_core_anal_search_xrefs (core, from, to, rad);
 				}
 			}
+			free (ptr);
 			return 1;
 		}
 	} else if (n == 1) {
