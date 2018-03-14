@@ -490,6 +490,22 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 	}
 }
 
+static void ds_print_esil_anal_fini(RDisasmState *ds) {
+	RCore *core = ds->core;
+	if (ds->show_emu && ds->esil_regstate) {
+		RCore* core = ds->core;
+		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
+		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
+		R_FREE (ds->esil_regstate);
+	}
+	if (core && core->anal && core->anal->esil) {
+		// make sure to remove reference to ds to avoid UAF
+		core->anal->esil->user = NULL;
+	}
+}
+
 static RDisasmState * ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
 	if (!ds) {
@@ -789,6 +805,9 @@ static void ds_free(RDisasmState *ds) {
 	}
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
+	ds_print_esil_anal_fini (ds);
+	ds_reflines_fini (ds);
+	ds_print_esil_anal_fini (ds);
 	free (ds->comment);
 	free (ds->line);
 	free (ds->refline);
@@ -3710,22 +3729,6 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	ds_pre_emulation (ds);
 }
 
-static void ds_print_esil_anal_fini(RDisasmState *ds) {
-	RCore *core = ds->core;
-	if (ds->show_emu && ds->esil_regstate) {
-		RCore* core = ds->core;
-		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
-		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
-		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
-		R_FREE (ds->esil_regstate);
-	}
-	if (core && core->anal && core->anal->esil) {
-		// make sure to remove reference to ds to avoid UAF
-		core->anal->esil->user = NULL;
-	}
-}
-
 static void ds_print_bbline(RDisasmState *ds, bool force) {
 	if (ds->show_bbline) {
 		RAnalBlock *bb = r_anal_fcn_bbget (ds->fcn, ds->at);
@@ -4294,6 +4297,7 @@ toro:
 			dorepeat = 0;
 			R_FREE (nbuf);
 			r_cons_break_pop ();
+			ds_free (ds);
 			return 0; //break;
 		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
