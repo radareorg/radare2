@@ -134,16 +134,21 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	if (!name || !s) {
 		return NULL;
 	}
+	o = strdup (s);
+	int cols = r_str_split (o, ',');
+	if (cols < 3) {
+		free (o);
+		return NULL;
+	}
+
 	si = R_NEW0 (RSyscallItem);
 	if (!si) {
 		return NULL;
 	}
-	o = strdup (s);
-	r_str_split (o, ',');
 	si->name = strdup (name);
-	si->swi = r_num_get (NULL, r_str_word_get0 (o, 0));
-	si->num = r_num_get (NULL, r_str_word_get0 (o, 1));
-	si->args = r_num_get (NULL, r_str_word_get0 (o, 2));
+	si->swi = (int)r_num_get (NULL, r_str_word_get0 (o, 0));
+	si->num = (int)r_num_get (NULL, r_str_word_get0 (o, 1));
+	si->args = (int)r_num_get (NULL, r_str_word_get0 (o, 2));
 	//in a definition such as syscall=0x80,0,4,
 	//the string at index 3 is 0 causing oob read afterwards
 	si->sargs = calloc (si->args + 1, sizeof (char));
@@ -226,7 +231,7 @@ static int callback_list(void *u, const char *k, const char *v) {
 	if (!strchr (k, '.')) {
 		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
 		if (!si) {
-			return 0;
+			return 1;
 		}
 		if (!strchr (si->name, '.')) {
 			r_list_append (list, si);
