@@ -152,6 +152,69 @@ static ArmOp ops[] = {
 	{ NULL }
 };
 
+static ut32 M_BIT = 0x01;
+static ut32 S_BIT = 0x02;
+static ut32 C_BITS = 0x3c;
+static ut32 DOTN_BIT = 0x40;
+static ut32 DOTW_BIT = 0x80;
+
+ut32 opmask(char *input, char *opcode) {
+	ut32 res = 0;
+	ut32 i;
+	
+	const char *conds[] = {
+		"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
+		"hi", "ls", "ge", "lt", "gt", "le", "al", "nv", 0
+	};
+
+	const char *qs[] = {NULL, ".n", ".w", 0};
+
+	r_str_case (input, false);
+
+	if (strlen (opcode) > strlen (input)) {
+		return 0;
+	}
+
+	if (!strncmp (input, opcode, strlen (opcode))) {
+		input += strlen (opcode);
+		res |= M_BIT;
+		if (input[0] == 0) {
+			return res;
+		}
+
+		if (input[0] == 's') {
+			res |= S_BIT;
+			input++;
+		}
+		if (input[0]==0) {
+			return res;
+		}
+		for (i = 0; conds[i]; i++) {
+			if (!strncmp (input, conds[i], strlen (conds[i]))) {
+				res |= i << 2;
+				input+= strlen (conds[i]);
+				break;
+			}
+		}
+		if (!conds[i]) {
+			// default is nv (no value)
+			res |= 15 << 2;
+		}
+		if (input[0]==0) {
+			return res;
+		}
+
+		if (!strncmp (input, ".n", 2)) {
+			res |= 1 << 6;
+		}
+
+		if (!strncmp (input, ".w", 2)) {
+			res |= 1 << 7;
+		}
+	}
+	return res;
+}
+
 static bool err;
 //decode str as number
 static int getnum(const char *str) {
@@ -226,7 +289,7 @@ static ut32 getthimmed12(const char *str) {
 	st32 FSD = 0;
 	ut32 result = 0;
 	if (num <= 0xff) {
-		return num << 16;
+		return num << 8;
 	} else 	if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
 		result |= (num & 0x000000ff) << 8;
 		result |= 0x00000010;
@@ -243,8 +306,9 @@ static ut32 getthimmed12(const char *str) {
 		FSD = firstsigdigit(num);
 		if (FSD != -1) {
 		        result |= ((num >> (24-FSD)) & 0x0000007f) << 8;
-			result |= ((8+FSD) & 0x7) << 4;
-			result |= ((8+FSD) & 0x8) << 18;
+			result |= ((8+FSD) & 0x1) << 15;
+			result |= ((8+FSD) & 0xe) << 3;
+			result |= ((8+FSD) & 0x10) << 14;
 			return result;
 		} else {
 			err = true;
@@ -284,12 +348,16 @@ static int getshift_unused (const char *s) {
 //ret register #; -1 if failed
 static int getreg(const char *str) {
 	int i;
+	char *ep;
 	const char *aliases[] = { "sl", "fp", "ip", "sp", "lr", "pc", NULL };
 	if (!str || !*str) {
 		return -1;
 	}
 	if (*str == 'r') {
-		int reg = atoi (str + 1);
+		int reg = strtol (str + 1, &ep, 10);
+		if ((ep[0] != '\0') || (str[1] == '\0')) {
+			return -1;
+		}
 		if (reg < 16 && reg >= 0) {
 			return reg;
 		}
@@ -348,7 +416,7 @@ static ut32 thumb_getshift(const char *str) {
 	
 	if (!strcmp (type, shifts[5])) {
 		// handle RRX alias case
-		res |= 3 << 20;	
+		res |= 3 << 12;	
 		free (type);
 		return res;
 	}
@@ -356,6 +424,7 @@ static ut32 thumb_getshift(const char *str) {
 	space = strchr (type, ' ');
 	if (!space) {
 		free (type);
+		err = true;
 		return 0;
 	}
 	*space = 0;
@@ -373,7 +442,7 @@ static ut32 thumb_getshift(const char *str) {
 		free (arg);
 		return 0;
 	}
-	res |= i << 20;
+	res |= i << 12;
 		
 	argn = getnum (arg);
 	if (err || argn > 32) {
@@ -382,14 +451,46 @@ static ut32 thumb_getshift(const char *str) {
 		free (arg);
 		return 0;
 	}
-	res |= ( (argn & 0x1c) << 26);
-	res |= ( (argn & 0x3) << 22);
+	res |= ( (argn & 0x1c) << 2);
+	res |= ( (argn & 0x3) << 14);
 
 	free (type);
 	free (arg);
 	return res;
 }
 
+static ut64 thumb_selector(char *args[]) {
+	ut64 res = 0;
+	ut8 i;
+	
+	for (i = 0; i < 15; i++) {
+		if (args[i] == NULL) {
+			break;
+		}
+		if (getreg (args[i]) != -1) {
+			res |= 1 << (i*4);
+			continue;
+		}
+		
+		err = false;
+		getnum (args[i]);
+		if (!err) {
+			res |= 2 << (i*4);
+			continue;
+		}
+
+		err = false;		
+		thumb_getshift (args[i]);
+		if (!err) {
+			res |= 3 << (i*4);
+			continue;
+		}
+		res |= 0xf << (i*4);
+	}
+	err = false;
+	return res;
+}
+		
 static ut32 getshift(const char *str) {
 	char type[128];
 	char arg[128];
@@ -501,6 +602,7 @@ static void thumb_swap (ut32 *a) {
 // TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int reg, j;
+	ut32 m;
 	ao->o = UT32_MAX;
 	if (!strcmpnull (ao->op, "pop") && ao->a[0]) {
 		ao->o = 0xbc;
@@ -1004,6 +1106,86 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		return 2;
 	} else
+	if (m = opmask (ao->op, "adc")) {
+		ut64 argt = thumb_selector(ao->a);
+		switch (argt) {
+		case 0x21: {
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+			// a bit naughty, perhaps?
+		case 0x211: {
+			if (m & DOTN_BIT) {
+				// this is explicitly an error
+				return -1;
+			}
+			ao->o = 0x40f10000;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= getreg (ao->a[1]) << 24;
+			ao->o |= getthimmed12(ao->a[2]);
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		case 0x11: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			if ( (reg1 < 8) && (reg2 < 8) && !(m & DOTW_BIT)) {
+				ao->o = 0x4041;
+				ao->o |= (reg1 << 8);
+				ao->o |= (reg2 << 11);
+				return 2;
+			}
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+			// a bit naughty, perhaps?
+		case 0x111: {
+			if (m & DOTN_BIT) {
+				// this is explicitly an error
+				return -1;
+			}
+			ao->o = 0x40eb0000;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= (getreg (ao->a[1])) << 24;
+			ao->o |= (getreg (ao->a[2])) << 8;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		case 0x311: {
+			ao->a[3] = ao->a[2];
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+			// a bit naughty, perhaps?
+		case 0x3111: {
+			if (m & DOTN_BIT) {
+				// this is explicitly an error
+				return -1;
+			}
+			ao->o = 0x40eb0000;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= (getreg (ao->a[1])) << 24;
+			ao->o |= (getreg (ao->a[2])) << 8;
+			ao->o |= thumb_getshift (ao->a[3]);
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else		
 	if (!strcmpnull (ao->op, "sub")) {
 		int reg = getreg (ao->a[1]);
 		if (reg != -1) {
