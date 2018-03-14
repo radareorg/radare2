@@ -1786,6 +1786,8 @@ R_API bool r_core_init(RCore *core) {
 	core->egg = r_egg_new ();
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
+	core->undos = r_list_newf ((RListFree)r_core_undo_free);
+
 	/* initialize libraries */
 	core->cons = r_cons_new ();
 	if (core->cons->refcnt == 1) {
@@ -1921,6 +1923,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	//update_sdb (c);
 	// avoid double free
 	r_core_free_autocomplete (c);
+	R_FREE (c->cmdlog);
 	R_FREE (c->lastsearch);
 	c->cons->pager = NULL;
 	r_core_task_join (c, NULL);
@@ -1934,6 +1937,7 @@ R_API RCore *r_core_fini(RCore *c) {
 		c->cons->num = c->old_num;
 		c->old_num = NULL;
 	}
+	r_list_free (c->undos);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?

@@ -84,6 +84,19 @@ typedef struct r_core_rtr_host_t {
 	RSocket *fd;
 } RCoreRtrHost;
 
+typedef struct r_core_undo_t {
+	char *action;
+	char *revert;
+	ut64 tstamp;
+	ut64 offset;
+} RCoreUndo;
+
+typedef struct {
+	ut64 addr;
+	const char *glob;
+	ut64 minstamp;
+} RCoreUndoCondition;
+
 typedef struct r_core_log_t {
 	int first;
 	int last;
@@ -189,6 +202,7 @@ typedef struct r_core_t {
 	char *cmdfilter;
 	bool break_loop;
 	RThreadLock *lock;
+	RList *undos;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -572,6 +586,13 @@ R_API int r_core_cmpwatch_del (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_update (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_show (RCore *core, ut64 addr, int mode);
 R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
+
+/* undo */
+R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert);
+R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
+R_API void *r_core_undo_free(RCoreUndo *cu);
+R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
+R_API void r_core_undo_pop(RCore *core);
 
 /* logs */
 R_API void r_core_log_free(RCoreLog *log);
