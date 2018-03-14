@@ -792,7 +792,11 @@ R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (!cf || !cf->core) {
+	if (!cf) {
+		return;
+	}
+	if (!cf->core) {
+		free (cf);
 		return;
 	}
 	res = r_core_files_free (cf->core, cf);

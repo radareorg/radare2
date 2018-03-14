@@ -2868,6 +2868,7 @@ dsmap {
 #endif
 
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#if 0
 static void disasm_recursive_old(RCore *core, ut64 addr, char type_print) {
 	bool push[512];
 	int pushes = 0;
@@ -2983,6 +2984,8 @@ r_cons_printf ("base:\n");
 	}
 #endif
 }
+#endif
+
 static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	RAnalOp aop = {0};
 	int ret;
