@@ -314,11 +314,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 									break;
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
-								char *rest = r_str_newf ("%s%s",
-										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
-										ptr_right + 1);
-								strcpy (ptr_left + copied_len, rest);
-								free (rest);
+								strcpy (ptr_left + copied_len, ptr_right + 1);
 							}
 							break;
 						}
