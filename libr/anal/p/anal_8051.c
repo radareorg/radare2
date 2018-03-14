@@ -63,21 +63,54 @@ static ut32 i8051_reg_read (RReg *reg, const char *regname) {
 	return 0;
 }
 
-static RIODesc *mem_idata = 0;
-static RIODesc *mem_sfr = 0;
-static RIODesc *mem_xdata = 0;
+typedef struct {
+	RIODesc *desc;
+	ut32 addr;
+	const char *name;
+} i8051_map_entry;
 
-static RIODesc* cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr, ut32 size) {
-	char *mstr = r_str_newf ("malloc://%d", size);
-	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
-		iob->fd_remap (iob->io, desc->fd, addr);
+static const int I8051_IDATA = 0;
+static const int I8051_SFR = 1;
+static const int I8051_XDATA = 2;
+
+static i8051_map_entry mem_map[3] = {
+	{ NULL, UT32_MAX, "idata" },
+	{ NULL, UT32_MAX, "sfr" },
+	{ NULL, UT32_MAX, "xdata" }
+};
+
+static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
+	RIODesc *desc = mem_map[entry].desc;
+	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+		if (force || addr != mem_map[entry].addr) {
+			// reallocate mapped memory if address changed
+			anal->iob.fd_remap (anal->iob.io, desc->fd, addr);
+		}
 	} else {
-		desc = iob->open_at (iob->io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
+		// allocate memory for address space
+		char *mstr = r_str_newf ("malloc://%d", size);		
+		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);		
+		r_str_free (mstr);
+		// set 8051 address space as name of mapped memory
+		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+			RList *maps = anal->iob.fd_get_map (anal->iob.io, desc->fd);
+			RIOMap *current_map;
+			RListIter *iter;
+			r_list_foreach (maps, iter, current_map) {
+				char *cmdstr = r_str_newf ("omni %d %s", current_map->id, mem_map[entry].name);
+				anal->coreb.cmd (anal->coreb.core, cmdstr);
+				r_str_free (cmdstr);
+			}
+			r_list_free (maps);
+		}
 	}
-	return desc;
+	mem_map[entry].desc = desc;
+	mem_map[entry].addr = addr;
 }
 
 static void set_cpu_model(RAnal *anal, bool force) {
+	ut32 addr_idata, addr_sfr, addr_xdata;
+
 	if (!anal->reg) {
 		return;
 	}
@@ -97,21 +130,28 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		}
 		cpu_curr_model = &cpu_models[i];
 
-		// (Re)allocate memory as needed.
-		// We assume that code is already allocated with firmware image
-		mem_idata = cpu_memory_map (&anal->iob, mem_idata, cpu_models[i].map_idata, 0x100);
-		mem_sfr = cpu_memory_map (&anal->iob, mem_sfr, cpu_models[i].map_sfr, 0x80);
-		mem_xdata = cpu_memory_map (&anal->iob, mem_xdata, cpu_models[i].map_xdata, 0x10000);
-
 		// TODO: Add flags as needed - seek using pseudo registers works w/o flags
 
 		// set memory map registers
+		addr_idata = cpu_models[i].map_idata;
+		addr_sfr = cpu_models[i].map_sfr;
+		addr_xdata = cpu_models[i].map_xdata;
 		i8051_reg_write (anal->reg, "_code", cpu_models[i].map_code);
-		i8051_reg_write (anal->reg, "_idata", cpu_models[i].map_idata);
-		i8051_reg_write (anal->reg, "_sfr", cpu_models[i].map_sfr - 0x80);
-		i8051_reg_write (anal->reg, "_xdata", cpu_models[i].map_xdata);
+		i8051_reg_write (anal->reg, "_idata", addr_idata);
+		i8051_reg_write (anal->reg, "_sfr", addr_sfr - 0x80);
+		i8051_reg_write (anal->reg, "_xdata", addr_xdata);
 		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
+	} else {
+		addr_idata = i8051_reg_read (anal->reg, "_idata");
+		addr_sfr = i8051_reg_read (anal->reg, "_sfr") + 0x80;
+		addr_xdata = i8051_reg_read (anal->reg, "_xdata");
 	}
+
+	// (Re)allocate memory as needed.
+	// We assume that code is allocated with firmware image
+	map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100, force);
+	map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80, force);
+	map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000, force);
 }
 
 static ut8 bitindex[] = {

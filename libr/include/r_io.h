@@ -251,6 +251,7 @@ typedef int (*RIOFdReadAt) (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 typedef int (*RIOFdWriteAt) (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 typedef bool (*RIOFdIsDbg) (RIO *io, int fd);
 typedef const char *(*RIOFdGetName) (RIO *io, int fd);
+typedef RList *(*RIOFdGetMap) (RIO *io, int fd);
 typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef void (*RIOAlSort) (RIOAccessLog *log);
 typedef void (*RIOAlFree) (RIOAccessLog *log);
@@ -284,6 +285,7 @@ typedef struct r_io_bind_t {
 	RIOFdWriteAt fd_write_at;
 	RIOFdIsDbg fd_is_dbg;
 	RIOFdGetName fd_get_name;
+	RIOFdGetMap fd_get_map;
 	RIOFdRemap fd_remap;
 	RIOAlSort al_sort;	//needed for esil
 	RIOAlFree al_free;	//needed for esil
