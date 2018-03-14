@@ -4538,12 +4538,11 @@ static int cmd_debug(void *data, const char *input) {
 			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
 			eprintf ("Writing to file '%s'\n", corefile);
 			r_file_rm (corefile);
-			RBuffer *dst = r_buf_new ();
+			RBuffer *dst = r_buf_new_file (corefile, true);
 			if (dst) {
 				if (!core->dbg->h->gcore (core->dbg, dst)) {
 					eprintf ("dg: coredump failed\n");
 				}
-				r_file_dump (corefile, dst->buf, dst->length, 1);
 				r_buf_free (dst);
 			} else {
 				perror ("r_buf_new_file");

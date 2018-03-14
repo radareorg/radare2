@@ -723,7 +723,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset
 
 	/* write program headers */
 	for (me_p = maps; me_p; me_p = me_p->n) {
-		if (!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) {
+		if ((!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) || !me_p->dumpeable) {
 			continue;
 		}
 		phdr.p_type = PT_LOAD;
@@ -774,10 +774,6 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 			ret = r_buf_append_bytes (dest, (const ut8*)map_content, size);
 			if (!ret) {
 				eprintf ("r_buf_append_bytes - failed\n");
-				/* Huge map files can be a problem here:
-					Because sometimes r_buf_append_bytes fails reallocing new size due to a high memory usage.
-					Little trick for freeing some mem would be flush everything to disk and start from scratch. */
-				/* We need a trick */
 			}
 		}
 		free (map_content);
