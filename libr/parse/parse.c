@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2018 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -206,11 +206,11 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 #endif
 		ptr = nptr;
 		if (x86) {
+			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
+		} else {
 			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++) {
 		//		eprintf ("(%s) (%c)\n", optr, *ptr2);
 			}
-		} else {
-			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
 		}
 		off = r_num_math (NULL, ptr);
 		if (off >= p->minval) {
@@ -314,9 +314,11 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 									break;
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
-								sprintf (ptr_left + copied_len, "%s%s",
+								char *rest = r_str_newf ("%s%s",
 										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
 										ptr_right + 1);
+								strcpy (ptr_left + copied_len, rest);
+								free (rest);
 							}
 							break;
 						}
