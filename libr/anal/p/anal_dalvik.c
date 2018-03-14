@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2018 - pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "esil.h"
 
 #include "../../asm/arch/dalvik/opcode.h"
 #include "../../bin/format/dex/dex.h"

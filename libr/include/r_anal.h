@@ -22,6 +22,8 @@
 #include <r_flag.h>
 #include <r_bin.h>
 
+#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
