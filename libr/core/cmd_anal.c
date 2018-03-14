@@ -548,7 +548,8 @@ static const char *help_msg_av[] = {
 		"av", "", "search for vtables in data sections and show results",
 		"avj", "", "like av, but as json",
 		"av*", "", "like av, but as r2 commands",
-		"avr", "", "search for vtables and try to parse RTTI (see anal.cpp.abi)",
+		"avr", "[@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
+		"avra", "", "search for vtables and try to parse RTTI at each of them",
 		NULL
 };
 
@@ -6413,6 +6414,20 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 	return true;
 }
 
+static void cmd_anal_rtti(RCore *core, const char *input) {
+	switch (input[0]) {
+	case '\0': // "avr"
+		r_anal_rtti_print_at_vtable (core->anal, core->offset);
+		break;
+	case 'a': // "avra"
+		r_anal_rtti_print_all (core->anal);
+		break;
+	default :
+		r_core_cmd_help (core, help_msg_av);
+		break;
+	}
+}
+
 static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	switch (input[0]) {
 	case '\0': // "av"
@@ -6421,7 +6436,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 		r_anal_list_vtables (core->anal, input[0]);
 		break;
 	case 'r': // "avr"
-		r_anal_print_rtti (core->anal);
+		cmd_anal_rtti (core, input + 1);
 		break;
 	default :
 		r_core_cmd_help (core, help_msg_av);
