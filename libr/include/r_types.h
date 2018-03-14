@@ -341,7 +341,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_ABS(x) (((x)<0)?-(x):(x))
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
-#define R_FREE(x) { free(x); x = NULL; }
+#define R_FREE(x) { free((void *)x); x = NULL; }
 
 #if __WINDOWS__
 #define HAVE_REGEXP 0
