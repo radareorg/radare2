@@ -37,7 +37,7 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip udis86 java tcc
+MODS=sdb zip java tcc
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -171,9 +171,6 @@ sdb-sync sync-sdb:
 
 $(TCCLIB) libr_tcc/libr_tcc.${EXT_AR}:
 	cd libr_tcc ; $(MAKE)
-
-udis-sync udis86-sync sync-udis sync-udis86:
-	cd udis86 ; $(MAKE) sync
 
 tcc-clean tccclean:
 	cd libr_tcc ; $(MAKE) clean
