@@ -2686,6 +2686,12 @@ static int esil_x86_cs_init (RAnalEsil *esil) {
 	return true;
 }
 
+static int fini (void *p) {
+	cs_close (&handle);
+	handle = 0;
+	return true;
+}
+
 static int esil_x86_cs_fini (RAnalEsil *esil) {
 	return true;
 }
@@ -3093,6 +3099,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.op = &analop,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
+	.fini = fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 //	.esil_intr = esil_x86_cs_intr,
