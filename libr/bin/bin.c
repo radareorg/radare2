@@ -592,6 +592,7 @@ R_API void *r_bin_free(RBin *bin) {
 	r_list_free (bin->binfiles);
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->plugins);
+	r_list_free (bin->binldrs);
 	sdb_free (bin->sdb);
 	r_id_pool_free (bin->file_ids);
 	memset (bin, 0, sizeof (RBin));
