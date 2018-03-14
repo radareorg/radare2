@@ -984,6 +984,7 @@ static int cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
+		r_cons_printf ("pdc\n");
 		return false;
 	}
 	return true;
