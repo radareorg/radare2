@@ -139,6 +139,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_space_free (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
+	r_syscall_free (a->syscall);
 	r_list_free (a->types);
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);

@@ -13,6 +13,11 @@ R_LIB_VERSION (r_syscall);
 extern RSyscallPort sysport_x86[];
 extern RSyscallPort sysport_avr[];
 
+R_API RSyscall* r_syscall_ref(RSyscall *sc) {
+	sc->refs++;
+	return sc;
+}
+
 R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
@@ -26,6 +31,10 @@ R_API RSyscall* r_syscall_new() {
 
 R_API void r_syscall_free(RSyscall *s) {
 	if (s) {
+		if (s->refs > 0) {
+			s->refs--;
+			return;
+		}
 		sdb_free (s->srdb);
 		sdb_free (s->db);
 		free (s->os);
