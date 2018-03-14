@@ -6417,10 +6417,10 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 static void cmd_anal_rtti(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "avr"
-		r_anal_rtti_print_at_vtable (core->anal, core->offset);
+		r_anal_rtti_print_at_vtable (core->anal, core->offset, 0);
 		break;
 	case 'a': // "avra"
-		r_anal_rtti_print_all (core->anal);
+		r_anal_rtti_print_all (core->anal, input[1]);
 		break;
 	default :
 		r_core_cmd_help (core, help_msg_av);
