@@ -4059,9 +4059,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
-			n1 = strchr (n + 1, ' ');
-			if (!(n + 1) || !(n1 + 1)){
-				eprintf ("aesp [offset] [num]");
+			n1 = n ? strchr (n + 1, ' ') : NULL;
+			if ((!n || !n1) || (!(n + 1) || !(n1 + 1))) {
+				eprintf ("aesp [offset] [num]\n");
 				break;
 			}
 			adr = r_num_math (core->num, n + 1);

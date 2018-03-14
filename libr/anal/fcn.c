@@ -2026,11 +2026,11 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 }
 
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = r_list_clone (fcn->refs);
+	RList *ret = (fcn) ? r_list_clone (fcn->refs) : NULL;
 	return ret;
 }
 
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = r_list_clone (fcn->xrefs);
+	RList *ret = (fcn) ? r_list_clone (fcn->xrefs) : NULL;
 	return ret;
 }

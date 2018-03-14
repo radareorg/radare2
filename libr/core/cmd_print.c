@@ -2409,6 +2409,10 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		nblocks = totalsize / blocksize;
 	} else {
 		blocksize = totalsize / nblocks;
+		 if (blocksize < 1) {
+			eprintf ("Invalid block size: %d\n", (int)blocksize);
+			return;
+		}
 	}
 	switch (mode) {
 	case '?': // bars
