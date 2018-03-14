@@ -302,16 +302,6 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 }
 
-R_API void r_anal_rtti_msvc_print_all(RVTableContext *context) {
-	RList *vtables = r_anal_vtable_search (context);
-	RListIter *vtableIter;
-	RVTableInfo *table;
-
-	if (vtables) {
-		r_list_foreach (vtables, vtableIter, table) {
-			rtti_msvc_print_complete_object_locator_recurse (context, table->saddr);
-			r_cons_print ("\n");
-		}
-	}
-	r_list_free (vtables);
+R_API void r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr) {
+	rtti_msvc_print_complete_object_locator_recurse (context, addr);
 }
