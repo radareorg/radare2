@@ -36,6 +36,7 @@ files = [
   #'cmd_write.c',
   #'cmd_zign.c',
   'core.c',
+  'cundo.c',
   'disasm.c',
   'file.c',
   'fortune.c',
