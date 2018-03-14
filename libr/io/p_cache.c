@@ -155,6 +155,7 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 		// get an existing desc-cache, if it exists
 		if (!(cache = (RIODescCache *)(size_t)sdb_num_get (desc->cache, k, NULL))) {	
 			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
+			ptr += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
 		}
 		if ((len - amount) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
