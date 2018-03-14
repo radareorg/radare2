@@ -8,7 +8,7 @@ static int c2_idx(char c) {
 	return 26*2 + 10;
 }
 
-static TrieNode *r_trie_new_node(){
+static TrieNode *r_trie_new_node() {
 	TrieNode *n = R_NEW0 (TrieNode);
 	if (!n) return NULL;
 	int i;
@@ -41,7 +41,7 @@ static void *r_trie_node_find(TrieNode *n, char *name) {
 	return r_trie_node_find (n->child[idx], ++name);
 }
 
-static void r_trie_node_free(TrieNode *n){
+static void r_trie_node_free(TrieNode *n) {
 	if (!n) return;
 	int i;
 	for(i = 0; i < ALPHABET_SIZE; i++){
