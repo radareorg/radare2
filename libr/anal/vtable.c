@@ -166,9 +166,15 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		return NULL;
 	}
 
+	r_cons_break_push (NULL, NULL);
+
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+
 		if (!vtable_section_can_contain_vtables (context, section)) {
 			continue;
 		}
@@ -179,6 +185,10 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		ut64 startAddress = section->vaddr;
 		ut64 endAddress = startAddress + (section->vsize) - context->word_size;
 		while (startAddress <= endAddress) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+
 			if (vtable_is_addr_vtable_start (context, startAddress)) {
 				RVTableInfo *vtable = calloc (1, sizeof(RVTableInfo));
 				vtable->saddr = startAddress;
@@ -199,6 +209,8 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			startAddress += 1;
 		}
 	}
+
+	r_cons_break_pop ();
 
 	if (r_list_empty (vtables)) {
 		// stripped binary?

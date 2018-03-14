@@ -115,7 +115,12 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 	}
 	ret->free = free;
 
+	r_cons_break_push (NULL, NULL);
 	while (num_base_classes > 0) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+
 		ut64 bcdAddr;
 		if (!context->read_addr (context->anal, addr, &bcdAddr)) {
 			break;
@@ -132,6 +137,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		addr += context->word_size;
 		num_base_classes--;
 	}
+	r_cons_break_pop ();
 
 	if (num_base_classes > 0) {
 		// there was an error in the loop above
