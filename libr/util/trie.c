@@ -8,8 +8,8 @@ static int c2_idx(char c) {
 	return 26*2 + 10;
 }
 
-static TrieNode *r_trie_new_node() {
-	TrieNode *n = R_NEW0 (TrieNode);
+static RTrieNode *r_trie_new_node() {
+	RTrieNode *n = R_NEW0 (RTrieNode);
 	if (!n) return NULL;
 	int i;
 	for(i = 0; i < ALPHABET_SIZE; i++){
@@ -19,11 +19,11 @@ static TrieNode *r_trie_new_node() {
 	return n;
 }
 
-static TrieNode *r_trie_node_insert(TrieNode *n, char *name, void *f) {
+static RTrieNode *r_trie_node_insert(RTrieNode *n, char *name, void *f) {
 	if (!n) {
 		n = r_trie_new_node ();
 	}
-	if (*name=='\0') {
+	if (!*name) {
 		n->data = f;
 		n->is_leaf = 1;
 		return n;
@@ -33,29 +33,29 @@ static TrieNode *r_trie_node_insert(TrieNode *n, char *name, void *f) {
 	return n;
 }
 
-static void *r_trie_node_find(TrieNode *n, char *name) {
+static void *r_trie_node_find(RTrieNode *n, char *name) {
 	if (!n) return NULL;
-	if (*name=='\0' && n->is_leaf) return n->data;
-	if (*name=='\0') return NULL;
+	if (!*name && n->is_leaf) return n->data;
+	if (!*name) return NULL;
 	int idx = c2_idx (*name);
 	return r_trie_node_find (n->child[idx], ++name);
 }
 
-static void r_trie_node_free(TrieNode *n) {
+static void r_trie_node_free(RTrieNode *n) {
 	if (!n) return;
 	int i;
 	for(i = 0; i < ALPHABET_SIZE; i++){
 		r_trie_node_free (n->child[i]);
 	}
-	free (n);
+	R_FREE (n);
 }
 
-static bool r_trie_node_delete(TrieNode *n, char *name) {
+static bool r_trie_node_delete(RTrieNode *n, char *name) {
 	if (!n) return false;
-	if (*name=='\0' && n->is_leaf){
+	if (!*name && n->is_leaf){
 		n->is_leaf = 0;
 		int i;
-		for (i=0; i<ALPHABET_SIZE; i++) {
+		for (i = 0; i < ALPHABET_SIZE; i++) {
 			if (n->child[i]) {
 				return true;
 			}
@@ -63,12 +63,16 @@ static bool r_trie_node_delete(TrieNode *n, char *name) {
 		r_trie_node_free (n);
 		return true;
 	}
-	if (*name=='\0') return false;
+	if (!*name) {
+		return false;
+	}
 	int idx = c2_idx (*name);
 	r_trie_node_delete (n->child[idx], ++name);
-	if(!n) return true;
+	if(!n) {
+		return true;
+	}
 	int i;
-	for (i=0; i<ALPHABET_SIZE; i++) {
+	for (i = 0; i < ALPHABET_SIZE; i++) {
 		if (n->child[i]) {
 			return true;
 		}
@@ -77,38 +81,51 @@ static bool r_trie_node_delete(TrieNode *n, char *name) {
 	return true;
 }
 
-R_API Trie *r_trie_new() {
-	Trie * n = R_NEW0 (Trie);
-	if (!n) return NULL;
+R_API RTrie *r_trie_new() {
+	RTrie * n = R_NEW0 (RTrie);
+	if (!n) {
+		return NULL;
+	}
 	n->root = r_trie_new_node ();
-	if (!n->root) return NULL;
+	if (!n->root) {
+		return NULL;
+	}
 	return n;
 }
 
-R_API bool r_trie_insert(Trie * t, char * name, void * f) {
-	TrieNode *tmp = r_trie_node_insert (t->root, name, f);
-	if (!tmp) return false;
+R_API bool r_trie_insert(RTrie * t, char * name, void * f) {
+	RTrieNode *tmp = r_trie_node_insert (t->root, name, f);
+	if (!tmp) {
+		return false;
+	}
 	t->root = tmp;
 	return true;
 }
 
-R_API bool r_trie_update(Trie * t, char * name, void * f) {
+R_API bool r_trie_update(RTrie * t, char * name, void * f) {
 	return r_trie_insert (t, name, f);
 }
 
-R_API void *r_trie_find(Trie * t, char * name) {
+R_API void *r_trie_find(RTrie * t, char * name) {
 	return r_trie_node_find (t->root, name);
 }
 
-R_API void r_trie_free(Trie * t) {
-	if (!t) return;
+R_API void r_trie_free(RTrie * t) {
+	if (!t) {
+		return;
+	}
 	r_trie_node_free (t->root);
-	free(t);
+	R_FREE (t);
 }
 
-R_API bool r_trie_delete(Trie * t, char * name) {
+R_API bool r_trie_delete(RTrie * t, char * name) {
+	if (!t) {
+		return false;
+	}
 	bool res = r_trie_node_delete (t->root, name);
-	if (!t->root) r_trie_free (t);
+	if (!t->root) {
+		r_trie_free (t);
+	}
 	return res;
 }
 
