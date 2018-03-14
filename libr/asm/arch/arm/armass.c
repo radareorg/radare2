@@ -154,7 +154,7 @@ static ArmOp ops[] = {
 
 static ut32 M_BIT = 0x01;
 static ut32 S_BIT = 0x02;
-static ut32 C_BITS = 0x3c;
+// UNUSED static ut32 C_BITS = 0x3c;
 static ut32 DOTN_BIT = 0x40;
 static ut32 DOTW_BIT = 0x80;
 
@@ -167,7 +167,7 @@ ut32 opmask(char *input, char *opcode) {
 		"hi", "ls", "ge", "lt", "gt", "le", "al", "nv", 0
 	};
 
-	const char *qs[] = {NULL, ".n", ".w", 0};
+	// const char *qs[] = {NULL, ".n", ".w", 0};
 
 	r_str_case (input, false);
 
@@ -1106,7 +1106,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		return 2;
 	} else
-	if (m = opmask (ao->op, "adc")) {
+	if ((m = opmask (ao->op, "adc"))) {
 		ut64 argt = thumb_selector(ao->a);
 		switch (argt) {
 		case 0x21: {
