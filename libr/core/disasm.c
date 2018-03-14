@@ -4307,14 +4307,14 @@ toro:
 		ds->printed_flag_addr = UT64_MAX;
 		// XXX. this must be done in ds_update_pc()
 		// ds_update_pc (ds, ds->at);
-		{
 			r_asm_set_pc (core->assembler, ds->at);
 			ds_update_ref_lines (ds);
+			r_anal_op_fini (&ds->analop);
 			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
-		}
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
+			r_anal_op_fini (&ds->analop);
 			continue;
 		}
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -4341,6 +4341,7 @@ toro:
 				inc = 0; //delta;
 				idx = 0;
 				of = f;
+				r_anal_op_fini (&ds->analop);
 				if (len == l) {
 					break;
 				}
@@ -4351,6 +4352,7 @@ toro:
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				idx = 0;
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 		}
@@ -4365,6 +4367,7 @@ toro:
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
 				inc += r_anal_type_get_size (core->anal, link_type) / 8;
 				free (fmt);
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 		} else {
@@ -4372,6 +4375,7 @@ toro:
 				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
 				if (ret == -31337) {
 					inc = ds->oplen;
+					r_anal_op_fini (&ds->analop);
 					continue;
 				}
 			}
@@ -4379,6 +4383,7 @@ toro:
 		if (ds->retry) {
 			ds->retry = false;
 			r_cons_break_pop ();
+			r_anal_op_fini (&ds->analop);
 			goto retry;
 		}
 		ds_atabs_option (ds);
@@ -4401,6 +4406,7 @@ toro:
 		}
 #endif
 		if (ret < 1) {
+			r_strbuf_fini (&ds->analop.esil);
 			r_strbuf_init (&ds->analop.esil);
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -4551,6 +4557,7 @@ toro:
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
 	}
+	r_anal_op_fini (&ds->analop);
 
 	R_FREE (nbuf);
 	r_cons_break_pop ();
