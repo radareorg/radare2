@@ -186,7 +186,7 @@ R_API void r_cons_pal_free () {
 			R_FREE (*color);
 		}
 	}
-	R_FREE (r_cons_singleton ()->pal.rainbow);
+	r_cons_rainbow_free ();
 }
 
 R_API void r_cons_pal_random () {
