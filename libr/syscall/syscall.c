@@ -118,13 +118,13 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	free (dbName);
 
 	dbName = r_str_newf ("sysregs/%s-%d-%s", arch, bits, cpu ? cpu: arch);
+	sdb_free (s->srdb);
 	s->srdb = openDatabase (s->srdb, dbName);
 	free (dbName);
-
 	if (s->fd) {
 		fclose (s->fd);
+		s->fd = NULL;
 	}
-	s->fd = NULL;
 	return true;
 }
 
