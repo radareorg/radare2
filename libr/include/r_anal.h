@@ -1694,9 +1694,14 @@ R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *tab
 R_API void r_anal_list_vtables(RAnal *anal, int rad);
 
 /* rtti */
-R_API void r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr);
-R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr);
-R_API void r_anal_rtti_print_all(RAnal *anal);
+R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
+
+R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
+R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
