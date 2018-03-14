@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
 
+#include <r_anal.h>
 #include "r_anal.h"
 
 #define NAME_BUF_SIZE 64
@@ -7,26 +8,27 @@
 
 typedef struct rtti_complete_object_locator_t {
 	ut32 signature;
-	ut32 vtable_offset; // offset of the vtable within class
-	ut32 cd_offset;     // constructor displacement offset
-	ut64 type_descriptor_addr;
-	ut64 class_descriptor_addr;
+	ut32 vtable_offset;         // offset of the vtable within class
+	ut32 cd_offset;             // constructor displacement offset
+	ut32 type_descriptor_addr;  // only a relative offset for 64bit
+	ut32 class_descriptor_addr; // only a relative offset for 64bit
+	ut32 object_base;           // only for 64bit, see rtti_msvc_read_complete_object_locator()
 } rtti_complete_object_locator;
 
 typedef struct rtti_class_hierarchy_descriptor_t {
 	ut32 signature;
-	ut32 attributes; // bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
+	ut32 attributes;            // bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
 	ut32 num_base_classes;
-	ut64 base_class_array_addr;
+	ut32 base_class_array_addr; // only a relative offset for 64bit
 } rtti_class_hierarchy_descriptor;
 
 typedef struct rtti_base_class_descriptor_t {
-	ut64 type_descriptor_addr;
+	ut32 type_descriptor_addr;  // only a relative offset for 64bit
 	ut32 num_contained_bases;
 	struct {
-		st32 mdisp; // member displacement
-		st32 pdisp; // vbtable displacement
-		st32 vdisp; // displacement inside vbtable
+		st32 mdisp;             // member displacement
+		st32 pdisp;             // vbtable displacement
+		st32 vdisp;             // displacement inside vbtable
 	} where;
 	ut32 attributes;
 } rtti_base_class_descriptor;
@@ -48,8 +50,11 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 		return false;
 	}
 
-	ut8 buf[3 * sizeof (ut32) + 2 * sizeof (ut64)];
-	int colSize = 3 * sizeof (ut32) + 2 * context->word_size;
+	ut8 buf[6 * sizeof (ut32)];
+	int colSize = 5 * sizeof (ut32);
+	if (context->word_size == 8) {
+		colSize += sizeof(ut32);
+	}
 	if (colSize > sizeof (buf)) {
 		return false;
 	}
@@ -62,8 +67,20 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	col->signature = read_at_32 (buf, 0);
 	col->vtable_offset = read_at_32 (buf, 4);
 	col->cd_offset = read_at_32 (buf, 8);
-	col->type_descriptor_addr = r_read_ble (buf + 12, (bool) context->anal->big_endian, context->word_size * 8);
-	col->class_descriptor_addr = r_read_ble (buf + 12 + context->word_size, (bool) context->anal->big_endian, context->word_size * 8);
+
+	int offsetSize = R_MIN (context->word_size, 4);
+	col->type_descriptor_addr = (ut32) r_read_ble (buf + 12, (bool) context->anal->big_endian, offsetSize * 8);
+	col->class_descriptor_addr = (ut32) r_read_ble (buf + 12 + offsetSize, (bool) context->anal->big_endian, offsetSize * 8);
+	if (context->word_size == 8) {
+		// 64bit is special:
+		// Type Descriptor and Class Hierarchy Descriptor addresses are computed
+		// by 32 bit values *(col+12) + *(col+0x14)
+		// and *(col+16) + *(col+0x14) respectively
+		col->object_base = read_at_32 (buf, 20);
+	} else {
+		col->object_base = 0;
+	}
+
 	return true;
 }
 
@@ -72,8 +89,8 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 		return false;
 	}
 
-	ut8 buf[3 * sizeof (ut32) + sizeof (ut64)];
-	int chdSize = 3 * sizeof (ut32) + context->word_size;
+	ut8 buf[4 * sizeof (ut32)];
+	int chdSize = 3 * sizeof (ut32) + R_MIN (4, context->word_size);
 	if (chdSize > sizeof (buf)) {
 		return false;
 	}
@@ -86,7 +103,14 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 	chd->signature = read_at_32 (buf, 0);
 	chd->attributes = read_at_32 (buf, 4);
 	chd->num_base_classes = read_at_32 (buf, 8);
-	chd->base_class_array_addr = r_read_ble (buf + 12, (bool) context->anal->big_endian, context->word_size * 8);
+	if (context->word_size <= 4) {
+		chd->base_class_array_addr = (ut32) r_read_ble (buf + 12, (bool) context->anal->big_endian, context->word_size * 8);
+	} else {
+		// 64bit is special, like in Complete Object Locator.
+		// Only the offset from the base from Complete Object Locator
+		// is contained in Class Hierarchy Descriptor
+		chd->base_class_array_addr = read_at_32 (buf, 12);
+	}
 	return true;
 }
 
@@ -110,8 +134,9 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 	}
 
 	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
-	bcd->type_descriptor_addr = r_read_ble (buf, (bool) context->anal->big_endian, context->word_size * 8);
-	size_t offset = context->word_size;
+	int typeDescriptorAddrSize = R_MIN (context->word_size, 4);
+	bcd->type_descriptor_addr = (ut32) r_read_ble (buf, (bool) context->anal->big_endian, typeDescriptorAddrSize * 8);
+	size_t offset = (size_t) typeDescriptorAddrSize;
 	bcd->num_contained_bases = read_at_32 (buf, offset);
 	bcd->where.mdisp = read_at_32 (buf, offset + sizeof (ut32));
 	bcd->where.pdisp = read_at_32 (buf, offset + 2 * sizeof (ut32));
@@ -120,8 +145,8 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 	return true;
 }
 
-static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 addr) {
-	if (addr == UT64_MAX) {
+static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
+	if (base == UT64_MAX || offset == UT32_MAX) {
 		return false;
 	}
 
@@ -131,6 +156,9 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 	}
 	ret->free = free;
 
+	ut64 addr = base + offset;
+	ut64 stride = R_MIN (context->word_size, 4);
+
 	r_cons_break_push (NULL, NULL);
 	while (num_base_classes > 0) {
 		if (r_cons_is_breaked ()) {
@@ -138,9 +166,21 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		}
 
 		ut64 bcdAddr;
-		if (!context->read_addr (context->anal, addr, &bcdAddr)) {
-			break;
+		if (context->word_size <= 4) {
+			if (!context->read_addr (context->anal, addr, &bcdAddr)) {
+				break;
+			}
+		} else {
+			// special offset calculation for 64bit
+			ut8 tmp[4];
+			if(!context->anal->iob.read_at(context->anal->iob.io, addr, tmp, 4)) {
+				return false;
+			}
+			ut32 (*read_32)(const void *src) = context->anal->big_endian ? r_read_be32 : r_read_le32;
+			ut32 bcdOffset = read_32 (tmp);
+			bcdAddr = base + bcdOffset;
 		}
+
 		rtti_base_class_descriptor *bcd = malloc (sizeof (rtti_base_class_descriptor));
 		if (!bcd) {
 			break;
@@ -150,7 +190,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 			break;
 		}
 		r_list_append (ret, bcd);
-		addr += context->word_size;
+		addr += stride;
 		num_base_classes--;
 	}
 	r_cons_break_pop ();
@@ -226,14 +266,16 @@ static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator
 				   "%s\tsignature: %#x\n"
 				   "%s\tvftableOffset: %#x\n"
 				   "%s\tcdOffset: %#x\n"
-				   "%s\ttypeDescriptorAddr: 0x%08"PFMT64x"\n"
-				   "%s\tclassDescriptorAddr: 0x%08"PFMT64x"\n\n",
+				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
+				   "%s\tclassDescriptorAddr: 0x%08"PFMT32x"\n",
 				   prefix, addr,
 				   prefix, col->signature,
 				   prefix, col->vtable_offset,
 				   prefix, col->cd_offset,
 				   prefix, col->type_descriptor_addr,
 				   prefix, col->class_descriptor_addr);
+	r_cons_printf ("%s\tobjectBase: 0x%08"PFMT32x"\n\n",
+				   prefix, col->object_base);
 }
 
 static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr, const char *prefix) {
@@ -252,7 +294,7 @@ static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_desc
 				   "%s\tsignature: %#x\n"
 				   "%s\tattributes: %#x\n"
 				   "%s\tnumBaseClasses: %#x\n"
-				   "%s\tbaseClassArrayAddr: 0x%08"PFMT64x"\n\n",
+				   "%s\tbaseClassArrayAddr: 0x%08"PFMT32x"\n\n",
 				   prefix, addr,
 				   prefix, chd->signature,
 				   prefix, chd->attributes,
@@ -262,7 +304,7 @@ static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_desc
 
 static void rtti_msvc_print_base_class_descriptor(rtti_base_class_descriptor *bcd, const char *prefix) {
 	r_cons_printf ("%sBase Class Descriptor:\n"
-				   "%s\ttypeDescriptorAddr: 0x%08"PFMT64x"\n"
+				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
 				   "%s\tnumContainedBases: %#x\n"
 				   "%s\twhere:\n"
 				   "%s\t\tmdisp: %d\n"
@@ -330,38 +372,58 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 	rtti_msvc_print_complete_object_locator (&col, colAddr, "");
 
+	ut64 typeDescriptorAddr = col.type_descriptor_addr;
+	if (context->word_size == 8) {
+		typeDescriptorAddr += colAddr - col.object_base;
+	}
 	rtti_type_descriptor td = { 0 };
-	if (rtti_msvc_read_type_descriptor (context, col.type_descriptor_addr, &td)) {
-		rtti_msvc_print_type_descriptor (&td, col.type_descriptor_addr, "\t");
+	if (rtti_msvc_read_type_descriptor (context, typeDescriptorAddr, &td)) {
+		rtti_msvc_print_type_descriptor (&td, typeDescriptorAddr, "\t");
 		rtti_type_descriptor_fini (&td);
 	} else {
-		eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", col.type_descriptor_addr);
+		eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", typeDescriptorAddr);
 	}
 
+	ut64 classHierarchyDescriptorAddr = col.class_descriptor_addr;
+	if (context->word_size == 8) {
+		classHierarchyDescriptorAddr += colAddr - col.object_base;
+	}
 	rtti_class_hierarchy_descriptor chd;
-	if (rtti_msvc_read_class_hierarchy_descriptor (context, col.class_descriptor_addr, &chd)) {
-		rtti_msvc_print_class_hierarchy_descriptor (&chd, col.class_descriptor_addr, "\t");
+	if (rtti_msvc_read_class_hierarchy_descriptor (context, classHierarchyDescriptorAddr, &chd)) {
+		rtti_msvc_print_class_hierarchy_descriptor (&chd, classHierarchyDescriptorAddr, "\t");
 
-		RList *baseClassArray = rtti_msvc_read_base_class_array (context, chd.num_base_classes, chd.base_class_array_addr);
+		ut64 base = chd.base_class_array_addr;
+		ut32 baseClassArrayOffset = 0;
+		if (context->word_size == 8) {
+			base = colAddr - col.object_base;
+			baseClassArrayOffset = chd.base_class_array_addr;
+		}
+
+		RList *baseClassArray = rtti_msvc_read_base_class_array (context, chd.num_base_classes, base, baseClassArrayOffset);
 		if (baseClassArray) {
 			RListIter *bcdIter;
 			rtti_base_class_descriptor *bcd;
 			r_list_foreach (baseClassArray, bcdIter, bcd) {
 				rtti_msvc_print_base_class_descriptor (bcd, "\t\t");
 
+				ut64 baseTypeDescriptorAddr = bcd->type_descriptor_addr;
+				if (context->word_size == 8) {
+					baseTypeDescriptorAddr += colAddr - col.object_base;
+				}
+
 				rtti_type_descriptor btd = { 0 };
-				if (rtti_msvc_read_type_descriptor (context, bcd->type_descriptor_addr, &btd)) {
-					rtti_msvc_print_type_descriptor (&btd, col.type_descriptor_addr, "\t\t\t");
+				if (rtti_msvc_read_type_descriptor (context, baseTypeDescriptorAddr, &btd)) {
+					rtti_msvc_print_type_descriptor (&btd, baseTypeDescriptorAddr, "\t\t\t");
 					rtti_type_descriptor_fini (&btd);
 				} else {
-					eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", bcd->type_descriptor_addr);
+					eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", baseTypeDescriptorAddr);
 				}
 			}
 		} else {
-			eprintf ("Failed to parse Base Class Array starting at 0x%08"PFMT64x"\n", chd.base_class_array_addr);
+			eprintf ("Failed to parse Base Class Array starting at 0x%08"PFMT64x"\n", base + baseClassArrayOffset);
 		}
 	} else {
-		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", col.class_descriptor_addr);
+		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", classHierarchyDescriptorAddr);
 	}
 }
 
