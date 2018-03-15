@@ -93,7 +93,7 @@ static bool r_trie_node_delete(RTrieNode **n, char *name) {
 		}
 	}
 	const int idx = c2_idx (*name);
-	const int result = r_trie_node_delete ((*n)->child[idx], ++name);
+	const int result = r_trie_node_delete (&(*n)->child[idx], ++name);
 	if (!result) {
 		return false;
 	}
