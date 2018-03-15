@@ -18,6 +18,7 @@ R_API RTrie *r_trie_new(void);
 R_API bool r_trie_insert(RTrie * t, char * name, void * f);
 R_API bool r_trie_update(RTrie * t, char * name, void * f);
 R_API bool r_trie_delete(RTrie * t, char * name);
+R_API bool r_trie_erase(RTrie ** t, char * name);
 R_API void *r_trie_find(RTrie * t, char * name);
-R_API void r_trie_free(RTrie * t);
+R_API void r_trie_free(RTrie ** t);
 #endif
