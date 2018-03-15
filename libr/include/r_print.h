@@ -88,7 +88,7 @@ typedef struct r_print_t {
 	int lines_cache_sz;
 	int lines_abs;
 	bool esc_bslash;
-	char *strconv_mode;
+	const char *strconv_mode;
 
 	// when true it uses row_offsets
 	bool calc_row_offsets;

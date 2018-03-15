@@ -1711,7 +1711,7 @@ static int cb_scrstrconv(void *user, void *data) {
 		}
 		return false;
 	} else {
-		free (core->print->strconv_mode);
+		free ((char *)core->print->strconv_mode);
 		core->print->strconv_mode = strdup (node->value);
 	}
 	return true;
