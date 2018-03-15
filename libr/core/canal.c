@@ -563,7 +563,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
 		if (core->io->va) {
-
 			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}

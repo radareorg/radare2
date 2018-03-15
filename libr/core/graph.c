@@ -3128,7 +3128,8 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	r_cons_singleton ()->event_data = grd;
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
-	RAnalFunction *f, **fcn = grd->fcn;
+	RAnalFunction *f = NULL;
+	RAnalFunction **fcn = grd->fcn;
 
 	// allow to change the current function during debugging
 	if (g->is_instep && core->io->debug) {
@@ -3148,11 +3149,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		g->is_instep = false;
 	}
 
-	if (fcn) {
+	if (r_io_is_valid_offset (core->io, core->offset, 0)) {
 		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!f) {
-			// r_cons_message ("Not in a function. Type 'df' to define it here");
-			r_cons_flush ();
 			if (!g->is_dis) {
 				if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
 					return 0;
@@ -3162,14 +3161,18 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			g->need_reload_nodes = true;
 		}
-		if (f && f != *fcn) {
+		if (f && fcn && f != *fcn) {
 			*fcn = f;
 			g->need_reload_nodes = true;
 			g->force_update_seek = true;
 		}
+	} else {
+		// TODO: maybe go back to avoid seeking from graph view to an scary place?
+		r_cons_message ("This is not a valid offset\n");
+		r_cons_flush ();
 	}
 
-	return agraph_print (g, grd->fs, core, fcn != NULL? *fcn: NULL);
+	return agraph_print (g, grd->fs, core, fcn ? *fcn: NULL);
 }
 
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
