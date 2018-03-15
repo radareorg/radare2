@@ -40,6 +40,7 @@ static RList *maps(RBinFile *bf) {
 static char* regstate(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	if (obj->ehdr.e_machine != EM_AARCH64 &&
+		obj->ehdr.e_machine != EM_ARM &&
 		obj->ehdr.e_machine != EM_386 &&
 		obj->ehdr.e_machine != EM_X86_64) {
 		eprintf ("Cannot retrieve regstate on: %s (not yet supported)\n",

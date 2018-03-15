@@ -50,7 +50,7 @@ typedef struct reginfo {
 static reginfo_t reginf[ARCH_LEN] = {
 					{160, 0x5c},
 					{216, 0x84},
-					{0, 0},
+					{72, 0x5c},
 					{272, 0x84}
 				};
 
@@ -3315,7 +3315,7 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 							bin->phdr[ph].p_offset + offset,
 							elf_nhdr, elf_nhdr_size);
 				if (ret != elf_nhdr_size) {
-					eprintf ("Cannot read NOTES header from CORE\n");
+					eprintf ("Cannot read more NOTES header from CORE\n");
 					free (elf_nhdr);
 					goto fail;
 				}
@@ -3399,7 +3399,7 @@ bool *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin, RList *core_maps) {
 
 	if (core_maps->head) {
 		if (!get_nt_file_maps (bin, core_maps)) {
-			eprintf ("Could not retrieve maps from NT_FILE\n");
+			eprintf ("Could not retrieve the names of all maps from NT_FILE\n");
 		}
 	}
 
